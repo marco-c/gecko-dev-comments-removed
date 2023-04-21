@@ -136,7 +136,7 @@ var whitelist = [
   { file: "chrome://global/content/third_party/d3/d3.js" },
 
   
-  { file: "resource://gre/modules/reflect.jsm" },
+  { file: "resource://gre/modules/reflect.sys.mjs" },
 
   
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
