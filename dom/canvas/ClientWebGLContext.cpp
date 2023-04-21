@@ -474,7 +474,8 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   const auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
   auto& needsSync = fb ? fb->mNeedsRemoteTextureSync : mNeedsRemoteTextureSync;
   if (ownerId && textureId) {
-    if (gfx::gfxVars::WebglOopAsyncPresentForceSync() || needsSync) {
+    if (XRE_IsParentProcess() ||
+        gfx::gfxVars::WebglOopAsyncPresentForceSync() || needsSync) {
       needsSync = false;
       
       

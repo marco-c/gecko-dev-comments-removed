@@ -108,7 +108,7 @@ void RemoteTextureOwnerClient::PushDummyTexture(
 }
 
 void RemoteTextureOwnerClient::GetLatestBufferSnapshot(
-    const RemoteTextureOwnerId aOwnerId, const ipc::Shmem& aDestShmem,
+    const RemoteTextureOwnerId aOwnerId, const mozilla::ipc::Shmem& aDestShmem,
     const gfx::IntSize& aSize) {
   MOZ_ASSERT(IsRegistered(aOwnerId));
   RemoteTextureMap::Get()->GetLatestBufferSnapshot(aOwnerId, mForPid,
@@ -252,7 +252,7 @@ void RemoteTextureMap::PushTexture(
 
 void RemoteTextureMap::GetLatestBufferSnapshot(
     const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
-    const ipc::Shmem& aDestShmem, const gfx::IntSize& aSize) {
+    const mozilla::ipc::Shmem& aDestShmem, const gfx::IntSize& aSize) {
   
   CompositableTextureHostRef textureHostRef;
   RefPtr<TextureHost> releasingTexture;  
@@ -835,7 +835,7 @@ void RemoteTextureMap::UnregisterRemoteTexturePushListener(
 bool RemoteTextureMap::CheckRemoteTextureReady(
     const RemoteTextureInfo& aInfo,
     std::function<void(const RemoteTextureInfo&)>&& aCallback) {
-  MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   MonitorAutoLock lock(mMonitor);
 
@@ -870,6 +870,58 @@ bool RemoteTextureMap::CheckRemoteTextureReady(
   owner->mRenderingReadyCallbackHolders.push_back(std::move(callbackHolder));
 
   return false;
+}
+
+bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  MonitorAutoLock lock(mMonitor);
+
+  auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+  if (!owner) {
+    
+    return false;
+  }
+
+  const auto key = std::pair(aInfo.mForPid, aInfo.mTextureId);
+  auto it = mRemoteTextureHostWrapperHolders.find(key);
+  if (it == mRemoteTextureHostWrapperHolders.end()) {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    gfxCriticalNoteOnce << "Remote texture does not exist id:"
+                        << uint64_t(aInfo.mTextureId);
+    return false;
+  }
+
+  const TimeDuration timeout = TimeDuration::FromMilliseconds(1000);
+  TextureHost* remoteTexture = it->second->mAsyncRemoteTextureHost;
+
+  while (!remoteTexture) {
+    CVStatus status = mMonitor.Wait(timeout);
+    if (status == CVStatus::Timeout) {
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      gfxCriticalNoteOnce << "Remote texture wait time out id:"
+                          << uint64_t(aInfo.mTextureId);
+      return false;
+    }
+
+    auto it = mRemoteTextureHostWrapperHolders.find(key);
+    if (it == mRemoteTextureHostWrapperHolders.end()) {
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      return false;
+    }
+
+    remoteTexture = it->second->mAsyncRemoteTextureHost;
+    if (!remoteTexture) {
+      auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+      
+      if (!owner) {
+        
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 UniquePtr<TextureData> RemoteTextureMap::GetRecycledBufferTextureData(
