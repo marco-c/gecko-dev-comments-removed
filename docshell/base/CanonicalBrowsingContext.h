@@ -379,6 +379,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetForceAppWindowActive(bool, ErrorResult&);
   void RecomputeAppWindowVisibility();
 
+  already_AddRefed<nsISHEntry> GetMostRecentLoadingSessionHistoryEntry();
+
  protected:
   
   void CanonicalDiscard();
