@@ -93,15 +93,11 @@ export function getSourceActorBreakableLines(state, sourceActorId) {
 
 
 
-export function getBreakableLinesForSourceActors(
-  state,
-  sourceActorIDs,
-  isHTML
-) {
+export function getBreakableLinesForSourceActors(state, sourceActors, isHTML) {
   const allBreakableLines = [];
-  for (const sourceActorId of sourceActorIDs) {
+  for (const sourceActor of sourceActors) {
     const breakableLines = state.sourceActors.mutableBreakableLines.get(
-      sourceActorId
+      sourceActor.id
     );
     if (breakableLines) {
       if (isHTML) {
