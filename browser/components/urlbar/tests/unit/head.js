@@ -398,24 +398,6 @@ async function cleanupPlaces() {
 
 
 
-async function frecencyForUrl(aURI) {
-  let url = aURI;
-  if (aURI instanceof Ci.nsIURI) {
-    url = aURI.spec;
-  } else if (URL.isInstance(aURI)) {
-    url = aURI.href;
-  }
-  return PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
-    url,
-  });
-}
-
-
-
-
-
-
-
 
 
 

@@ -852,9 +852,10 @@ add_autofill_task(async function bookmarkBelowThreshold() {
 
   
   
-  let placeFrecency = await PlacesTestUtils.fieldInDB(
-    "http://" + url,
-    "frecency"
+  let placeFrecency = await PlacesTestUtils.getDatabaseValue(
+    "moz_places",
+    "frecency",
+    { url: "http://" + url }
   );
   let originFrecency = await getOriginFrecency("http://", host);
   let threshold = await getOriginAutofillThreshold();
@@ -903,9 +904,10 @@ add_autofill_task(async function bookmarkAboveThreshold() {
   
   
   
-  let placeFrecency = await PlacesTestUtils.fieldInDB(
-    "http://" + url,
-    "frecency"
+  let placeFrecency = await PlacesTestUtils.getDatabaseValue(
+    "moz_places",
+    "frecency",
+    { url: "http://" + url }
   );
   let originFrecency = await getOriginFrecency("http://", host);
   let threshold = await getOriginAutofillThreshold();
@@ -948,7 +950,11 @@ add_autofill_task(async function zeroThreshold() {
   });
 
   
-  let placeFrecency = await PlacesTestUtils.fieldInDB(pageUrl, "frecency");
+  let placeFrecency = await PlacesTestUtils.getDatabaseValue(
+    "moz_places",
+    "frecency",
+    { url: pageUrl }
+  );
   Assert.equal(placeFrecency, -1);
 
   

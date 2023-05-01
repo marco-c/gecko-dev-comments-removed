@@ -11,15 +11,28 @@ add_task(async function() {
     title: "A title",
   });
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
-  Assert.ok(frecencyForUrl(TEST_URI) > 0);
+  Assert.ok(
+    (await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
+      url: TEST_URI,
+    })) > 0
+  );
 
   
   
   await PlacesUtils.bookmarks.remove(bookmark.guid);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
-  Assert.equal(frecencyForUrl(TEST_URI), 0);
+  Assert.equal(
+    await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
+      url: TEST_URI,
+    }),
+    0
+  );
 
   
   await PlacesTestUtils.addVisits({ uri: TEST_URI });
-  Assert.ok(frecencyForUrl(TEST_URI) > 0);
+  Assert.ok(
+    (await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
+      url: TEST_URI,
+    })) > 0
+  );
 });

@@ -536,34 +536,6 @@ function check_JSON_backup(aIsAutomaticBackup) {
 
 
 
-function frecencyForUrl(aURI) {
-  let url = aURI;
-  if (aURI instanceof Ci.nsIURI) {
-    url = aURI.spec;
-  } else if (URL.isInstance(aURI)) {
-    url = aURI.href;
-  }
-  let stmt = DBConn().createStatement(
-    "SELECT frecency FROM moz_places WHERE url_hash = hash(?1) AND url = ?1"
-  );
-  stmt.bindByIndex(0, url);
-  try {
-    if (!stmt.executeStep()) {
-      throw new Error("No result for frecency.");
-    }
-    return stmt.getInt32(0);
-  } finally {
-    stmt.finalize();
-  }
-}
-
-
-
-
-
-
-
-
 function isUrlHidden(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = DBConn().createStatement(
@@ -629,31 +601,10 @@ function do_check_valid_places_guid(aGuid) {
 
 
 
-
-function do_get_guid_for_uri(aURI) {
-  let stmt = DBConn().createStatement(
-    `SELECT guid
-     FROM moz_places
-     WHERE url_hash = hash(:url) AND url = :url`
-  );
-  stmt.params.url = aURI.spec;
-  Assert.ok(stmt.executeStep(), "GUID for URI statement should succeed");
-  let guid = stmt.row.guid;
-  stmt.finalize();
-  do_check_valid_places_guid(guid);
-  return guid;
-}
-
-
-
-
-
-
-
-
-
-function do_check_guid_for_uri(aURI, aGUID) {
-  let guid = do_get_guid_for_uri(aURI);
+async function check_guid_for_uri(aURI, aGUID) {
+  let guid = await PlacesTestUtils.getDatabaseValue("moz_places", "guid", {
+    url: aURI,
+  });
   if (aGUID) {
     do_check_valid_places_guid(aGUID);
     Assert.equal(guid, aGUID, "Should have a guid in moz_places for the URI");
@@ -668,31 +619,10 @@ function do_check_guid_for_uri(aURI, aGUID) {
 
 
 
-
-function do_get_guid_for_bookmark(aId) {
-  let stmt = DBConn().createStatement(
-    `SELECT guid
-     FROM moz_bookmarks
-     WHERE id = :item_id`
-  );
-  stmt.params.item_id = aId;
-  Assert.ok(stmt.executeStep(), "Should succeed executing the SQL statement");
-  let guid = stmt.row.guid;
-  stmt.finalize();
-  do_check_valid_places_guid(guid);
-  return guid;
-}
-
-
-
-
-
-
-
-
-
-function do_check_guid_for_bookmark(aId, aGUID) {
-  let guid = do_get_guid_for_bookmark(aId);
+async function check_guid_for_bookmark(aId, aGUID) {
+  let guid = await PlacesTestUtils.getDatabaseValue("moz_bookmarks", "guid", {
+    id: aId,
+  });
   if (aGUID) {
     do_check_valid_places_guid(aGUID);
     Assert.equal(guid, aGUID, "Should have the correct GUID for the bookmark");
