@@ -633,12 +633,6 @@ Tester.prototype = {
         continue;
       }
 
-      
-      
-      if (name == "nsHttpConnectionMgr") {
-        continue;
-      }
-
       if (
         !this._repeatingTimers.find(t => t.delay == delay && t.name == name)
       ) {

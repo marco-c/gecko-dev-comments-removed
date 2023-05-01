@@ -5,7 +5,7 @@
 
 
 
-const TEST_URL = `${URL_ROOT_SSL}touch.html`;
+const TEST_URL = `${URL_ROOT}touch.html`;
 const PREF_DOM_META_VIEWPORT_ENABLED = "dom.meta-viewport.enabled";
 
 

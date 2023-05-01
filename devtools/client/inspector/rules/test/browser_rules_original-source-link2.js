@@ -6,7 +6,7 @@
 
 
 
-const TESTCASE_URI = URL_ROOT_SSL + "doc_sourcemaps2.html";
+const TESTCASE_URI = URL_ROOT + "doc_sourcemaps2.html";
 const PREF = "devtools.source-map.client-service.enabled";
 const SCSS_LOC = "doc_sourcemaps.scss:4";
 const CSS_LOC = "doc_sourcemaps2.css:1";

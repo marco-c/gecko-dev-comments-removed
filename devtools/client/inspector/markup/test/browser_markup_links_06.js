@@ -6,7 +6,7 @@
 
 
 
-const TEST_URL = URL_ROOT_SSL + "doc_markup_links.html";
+const TEST_URL = URL_ROOT + "doc_markup_links.html";
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
@@ -52,7 +52,7 @@ add_task(async function() {
   
   await toolbox.getPanelWhenReady("jsdebugger");
   const dbg = createDebuggerContext(toolbox);
-  await waitForSelectedSource(dbg, URL_ROOT_SSL + "lib_jquery_1.0.js");
+  await waitForSelectedSource(dbg, URL_ROOT + "lib_jquery_1.0.js");
 
   
   
