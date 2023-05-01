@@ -3466,9 +3466,6 @@ pref("network.connectivity-service.DNSv6.domain", "example.org");
 pref("network.connectivity-service.IPv4.url", "http://detectportal.firefox.com/success.txt?ipv4");
 pref("network.connectivity-service.IPv6.url", "http://detectportal.firefox.com/success.txt?ipv6");
 
-
-
-pref("network.trr.mode", 0);
 pref("network.trr.uri", "");
 
 pref("network.trr.credentials", "");

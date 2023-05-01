@@ -97,6 +97,8 @@ class TRRService : public TRRServiceBase,
   
   static const nsCString& ProviderKey();
   static void SetProviderDomain(const nsACString& aTRRDomain);
+  
+  static void SetCurrentTRRMode(nsIDNSService::ResolverMode aMode);
 
   void InitTRRConnectionInfo() override;
 
