@@ -4585,9 +4585,18 @@ bool jit::FoldLoadsWithUnbox(MIRGenerator* mir, MIRGraph& graph) {
 
       
       
+      
       MDefinition* defUse = load->maybeSingleDefUse();
       if (!defUse) {
         continue;
+      }
+      MLexicalCheck* lexicalCheck = nullptr;
+      if (defUse->isLexicalCheck()) {
+        lexicalCheck = defUse->toLexicalCheck();
+        defUse = lexicalCheck->maybeSingleDefUse();
+        if (!defUse) {
+          continue;
+        }
       }
       if (!defUse->isUnbox()) {
         continue;
@@ -4600,12 +4609,14 @@ bool jit::FoldLoadsWithUnbox(MIRGenerator* mir, MIRGraph& graph) {
       if (unbox->block() != *block) {
         continue;
       }
+      MOZ_ASSERT_IF(lexicalCheck, lexicalCheck->block() == *block);
 
       MOZ_ASSERT(!IsMagicType(unbox->type()));
 
       
       
-      if (load->isLoadElement() && !unbox->fallible()) {
+      
+      if ((load->isLoadElement() || lexicalCheck) && !unbox->fallible()) {
         continue;
       }
 
@@ -4645,12 +4656,21 @@ bool jit::FoldLoadsWithUnbox(MIRGenerator* mir, MIRGraph& graph) {
 
       block->insertBefore(load, replacement);
       unbox->replaceAllUsesWith(replacement);
+      if (lexicalCheck) {
+        lexicalCheck->replaceAllUsesWith(replacement);
+      }
       load->replaceAllUsesWith(replacement);
 
+      if (lexicalCheck && *insIter == lexicalCheck) {
+        insIter++;
+      }
       if (*insIter == unbox) {
         insIter++;
       }
       block->discard(unbox);
+      if (lexicalCheck) {
+        block->discard(lexicalCheck);
+      }
       block->discard(load);
     }
   }
