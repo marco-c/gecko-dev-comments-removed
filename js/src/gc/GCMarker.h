@@ -288,10 +288,6 @@ enum ShouldReportMarkTime : bool {
 
 } 
 
-
-
-static constexpr size_t TypicalCacheLineSize = 64;
-
 class alignas(TypicalCacheLineSize) GCMarker {
   enum MarkingState : uint8_t {
     

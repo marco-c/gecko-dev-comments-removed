@@ -118,7 +118,7 @@ inline bool CanNurseryAllocateFinalizedClass(const JSClass* const clasp) {
   return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
 }
 
-class Nursery {
+class alignas(TypicalCacheLineSize) Nursery {
  public:
   static const size_t Alignment = gc::ChunkSize;
   static const size_t ChunkShift = gc::ChunkShift;
@@ -446,19 +446,10 @@ class Nursery {
   }
 
  private:
-  gc::GCRuntime* const gc;
-
   
-  Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
 
   
   uintptr_t position_;
-
-  
-  
-  
-  unsigned currentStartChunk_;
-  uintptr_t currentStartPosition_;
 
   
   uintptr_t currentEnd_;
@@ -472,7 +463,20 @@ class Nursery {
   uintptr_t currentBigIntEnd_;
 
   
-  unsigned currentChunk_;
+
+  gc::GCRuntime* const gc;
+
+  
+  Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
+
+  
+  uint32_t currentChunk_;
+
+  
+  
+  
+  uint32_t currentStartChunk_;
+  uintptr_t currentStartPosition_;
 
   
   
