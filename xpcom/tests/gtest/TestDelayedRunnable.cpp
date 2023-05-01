@@ -151,6 +151,7 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
         
         innerMonitor.Wait();
         
+        MonitorAutoLock outerLock(outerMonitor);
         outerMonitor.NotifyAll();
       })));
   
