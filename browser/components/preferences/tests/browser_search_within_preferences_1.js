@@ -153,6 +153,7 @@ add_task(async function search_for_password_show_passwordGroup() {
     "browsingCategory",
     "networkProxyCategory",
     "dataMigrationGroup",
+    "translationsGroup",
   ];
   
   if (
