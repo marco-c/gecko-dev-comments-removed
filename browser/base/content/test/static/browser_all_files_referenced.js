@@ -71,6 +71,12 @@ var gExceptionPaths = [
 
   
   "resource://app/localization/en-US/browser/featureCallout.ftl",
+
+  
+  "resource://gre/modules/lz4.js",
+  "resource://gre/modules/lz4_internal.js",
+  "resource://gre/modules/osfile.jsm",
+  "resource://gre/modules/osfile/",
 ];
 
 
