@@ -1711,6 +1711,8 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
       return false;
     }
 
+    
+    
     for (uint32_t recGroupTypeIndex = 0; recGroupTypeIndex < recGroupLength;
          recGroupTypeIndex++) {
       uint32_t typeIndex =
@@ -1796,16 +1798,25 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
 
       if (superTypeDef) {
         
-        if (!TypeDef::canBeSubTypeOf(typeDef, superTypeDef)) {
-          return d.fail("incompatible super type");
-        }
-
-        
         if (superTypeDef->subTypingDepth() >= MaxSubTypingDepth) {
           return d.fail("type is too deep");
         }
 
         typeDef->setSuperTypeDef(superTypeDef);
+      }
+    }
+
+    
+    
+    
+    for (uint32_t recGroupTypeIndex = 0; recGroupTypeIndex < recGroupLength;
+         recGroupTypeIndex++) {
+      TypeDef* typeDef = &recGroup->type(recGroupTypeIndex);
+      if (typeDef->superTypeDef()) {
+        
+        if (!TypeDef::canBeSubTypeOf(typeDef, typeDef->superTypeDef())) {
+          return d.fail("incompatible super type");
+        }
       }
     }
 
