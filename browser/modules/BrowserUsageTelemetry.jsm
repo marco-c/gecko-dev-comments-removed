@@ -31,6 +31,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/components-utils/WindowsInstallsInfo.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
@@ -462,6 +463,11 @@ let BrowserUsageTelemetry = {
     Services.prefs.addObserver("browser.tabs.inTitlebar", this);
 
     this._recordUITelemetry();
+
+    this._onTabsOpenedTask = new lazy.DeferredTask(
+      () => this._onTabsOpened(),
+      0
+    );
   },
 
   
@@ -530,7 +536,7 @@ let BrowserUsageTelemetry = {
   handleEvent(event) {
     switch (event.type) {
       case "TabOpen":
-        this._onTabOpen(getOpenTabsAndWinsCounts());
+        this._onTabOpen();
         break;
       case "TabPinned":
         this._onTabPinned();
@@ -1047,10 +1053,21 @@ let BrowserUsageTelemetry = {
   
 
 
-
-  _onTabOpen({ tabCount, loadedTabCount }) {
+  _onTabOpen() {
     
     Services.telemetry.scalarAdd(TAB_OPEN_EVENT_COUNT_SCALAR_NAME, 1);
+
+    
+    
+    this._onTabsOpenedTask.disarm();
+    this._onTabsOpenedTask.arm();
+  },
+
+  
+
+
+  _onTabsOpened() {
+    const { tabCount, loadedTabCount } = getOpenTabsAndWinsCounts();
     Services.telemetry.scalarSetMaximum(MAX_TAB_COUNT_SCALAR_NAME, tabCount);
 
     this._recordTabCounts({ tabCount, loadedTabCount });
