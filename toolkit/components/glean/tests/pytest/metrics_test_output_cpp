@@ -18,155 +18,179 @@
 
 namespace mozilla::glean {
 struct NoExtraKeys;
+enum class DynamicLabel: uint16_t { };
 
 namespace test {
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::BooleanMetric boolean_metric(1);
+  constexpr impl::BooleanMetric boolean_metric(1);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::CounterMetric counter_metric(2);
+  constexpr impl::CounterMetric counter_metric(2);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::CustomDistributionMetric custom_distribution_metric(3);
+  constexpr impl::CustomDistributionMetric custom_distribution_metric(3);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::Labeled<impl::BooleanMetric> labeled_boolean_metric(4);
+  constexpr impl::Labeled<impl::BooleanMetric, DynamicLabel> labeled_boolean_metric(4);
 
-    
+  
 
 
-    
+  enum class LabeledBooleanMetricLabelsLabel: uint16_t {
+      eOneLabel = 0,
+      eTwoLabels = 1,
+      eThreeLabels = 2,
+      eFourLabels = 3,
+      eFiveLabels = 4,
+      eSixLabels = 5,
+      eSevenLabels = 6,
+      eEightLabels = 7,
+      eNineLabels = 8,
+      eTenLabels = 9,
+      e__Other__,
+    };
+  
 
 
 
-    constexpr impl::Labeled<impl::BooleanMetric> labeled_boolean_metric_labels(5);
+  constexpr impl::Labeled<impl::BooleanMetric, LabeledBooleanMetricLabelsLabel> labeled_boolean_metric_labels(5);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::Labeled<impl::CounterMetric> labeled_counter_metric(6);
+  constexpr impl::Labeled<impl::CounterMetric, DynamicLabel> labeled_counter_metric(6);
 
-    
+  
 
 
-    
+  enum class LabeledCounterMetricLabelsLabel: uint16_t {
+      eOneLabel = 0,
+      eTwoLabels = 1,
+      e__Other__,
+    };
+  
 
 
 
-    constexpr impl::Labeled<impl::CounterMetric> labeled_counter_metric_labels(7);
+  constexpr impl::Labeled<impl::CounterMetric, LabeledCounterMetricLabelsLabel> labeled_counter_metric_labels(7);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::Labeled<impl::StringMetric> labeled_string_metric(8);
+  constexpr impl::Labeled<impl::StringMetric, DynamicLabel> labeled_string_metric(8);
 
-    
+  
 
 
-    
+  enum class LabeledStringMetricLabelsLabel: uint16_t {
+      eOneLabel = 0,
+      eTwoLabels = 1,
+      e__Other__,
+    };
+  
 
 
 
-    constexpr impl::Labeled<impl::StringMetric> labeled_string_metric_labels(9);
+  constexpr impl::Labeled<impl::StringMetric, LabeledStringMetricLabelsLabel> labeled_string_metric_labels(9);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::MemoryDistributionMetric memory_distribution_metric(10);
+  constexpr impl::MemoryDistributionMetric memory_distribution_metric(10);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::StringListMetric string_list_metric(11);
+  constexpr impl::StringListMetric string_list_metric(11);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::StringMetric string_metric(12);
+  constexpr impl::StringMetric string_metric(12);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::TimespanMetric timespan_metric(13);
+  constexpr impl::TimespanMetric timespan_metric(13);
 
-    
+  
 
 
-    
+  
 
 
 
-    constexpr impl::TimingDistributionMetric timing_distribution_metric(14);
+  constexpr impl::TimingDistributionMetric timing_distribution_metric(14);
 
 }
 namespace test_nested {
-    
+  
 
 
-    
-
-
-
-    constexpr impl::DatetimeMetric datetime_metric(15);
-
-    
-
-
-    
+  
 
 
 
-    constexpr impl::EventMetric<NoExtraKeys> event_metric(16);
+  constexpr impl::DatetimeMetric datetime_metric(15);
 
-    
+  
+
+
+  
+
+
+
+  constexpr impl::EventMetric<NoExtraKeys> event_metric(16);
+
+  
 
 
     struct EventMetricWithExtraExtra {
@@ -187,56 +211,56 @@ namespace test_nested {
         return std::make_tuple(std::move(extraKeys), std::move(extraValues));
       }
     };
-    
+  
 
 
 
-    constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(17);
+  constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(17);
 
-    
-
-
-    
+  
 
 
-
-    constexpr impl::DenominatorMetric external_denominator(18);
-
-    
-
-
-    
+  
 
 
 
-    constexpr impl::QuantityMetric quantity_metric(19);
+  constexpr impl::DenominatorMetric external_denominator(18);
 
-    
-
-
-    
+  
 
 
-
-    constexpr impl::RateMetric rate_metric(20);
-
-    
-
-
-    
+  
 
 
 
-    constexpr impl::NumeratorMetric rate_with_external_denominator(21);
+  constexpr impl::QuantityMetric quantity_metric(19);
 
-    
-
-
-    
+  
 
 
+  
 
-    constexpr impl::UuidMetric uuid_metric(22);
+
+
+  constexpr impl::RateMetric rate_metric(20);
+
+  
+
+
+  
+
+
+
+  constexpr impl::NumeratorMetric rate_with_external_denominator(21);
+
+  
+
+
+  
+
+
+
+  constexpr impl::UuidMetric uuid_metric(22);
 
 }
 

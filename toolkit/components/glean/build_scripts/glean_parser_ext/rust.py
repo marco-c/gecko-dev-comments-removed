@@ -102,7 +102,10 @@ def type_name(obj):
     """
 
     if getattr(obj, "labeled", False):
-        return "LabeledMetric<Labeled{}>".format(class_name(obj.type))
+        label_enum = "super::DynamicLabel"
+        if obj.labels and len(obj.labels):
+            label_enum = f"{util.Camelize(obj.name)}Label"
+        return f"LabeledMetric<Labeled{class_name(obj.type)}, {label_enum}>"
     generate_enums = getattr(obj, "_generate_enums", [])  
     if len(generate_enums):
         for name, _ in generate_enums:
@@ -205,6 +208,16 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
     
     events_by_id = {}
 
+    
+    
+    
+    
+    
+    
+    
+    
+    labeleds_by_id_by_type = {}
+
     if "pings" in objs:
         template_filename = "rust_pings.jinja2"
         objs = {"pings": objs["pings"]}
@@ -224,6 +237,16 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
 
                 if metric.type == "event":
                     events_by_id[get_metric_id(metric)] = full_path
+                    continue
+
+                if getattr(metric, "labeled", False):
+                    labeled_type = metric.type[8:]
+                    if labeled_type not in labeleds_by_id_by_type:
+                        labeleds_by_id_by_type[labeled_type] = {}
+                    labeleds_by_id_by_type[labeled_type][get_metric_id(metric)] = (
+                        full_path,
+                        metric.labels and len(metric.labels),
+                    )
                     continue
 
                 if key not in objs_by_type:
@@ -252,6 +275,7 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
             metric_by_type=objs_by_type,
             extra_args=util.extra_args,
             events_by_id=events_by_id,
+            labeleds_by_id_by_type=labeleds_by_id_by_type,
             submetric_bit=ID_BITS - ID_SIGNAL_BITS,
             ping_names_by_app_id=ping_names_by_app_id,
         )
