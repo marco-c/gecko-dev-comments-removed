@@ -80,51 +80,36 @@ struct ProcessingTimeMarker {
 
 namespace mozilla::glean {
 
+
+enum ProcessType {
+  eParentActive,
+  eParentInactive,
+  eContentForeground,
+  eContentBackground,
+  eGpuProcess,
+  eUnknown,
+};
+
+
+
+
+static Atomic<ProcessType> gThisProcessType(eUnknown);
+
 #ifdef NIGHTLY_BUILD
 
 
 
 
 
-
-
-
-
-
-
-
-using LabeledCounterMetric = const impl::Labeled<impl::CounterMetric>;
-static Atomic<LabeledCounterMetric*> gCpuTimePerThreadMetric(nullptr);
-static Atomic<LabeledCounterMetric*> gWakeupsPerThreadMetric(nullptr);
-
-
-
-#  define SET_PER_THREAD_CPU_METRICS(aProcessType)                    \
-    gCpuTimePerThreadMetric = &power_cpu_ms_per_thread::aProcessType; \
-    gWakeupsPerThreadMetric = &power_wakeups_per_thread::aProcessType;
-
-#  define RESET_PER_THREAD_CPU_METRICS() \
-    gCpuTimePerThreadMetric = nullptr;   \
-    gWakeupsPerThreadMetric = nullptr;
-
 void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount) {
-  
-  
-  
-  LabeledCounterMetric* cpuTimeMetric = gCpuTimePerThreadMetric;
-  LabeledCounterMetric* wakeupsMetric = gWakeupsPerThreadMetric;
+  ProcessType processType = gThisProcessType;
 
-  if (!cpuTimeMetric || !wakeupsMetric) {
+  if (processType == ProcessType::eUnknown) {
     if (XRE_IsParentProcess()) {
       
       
-      SET_PER_THREAD_CPU_METRICS(parent_inactive);
-      cpuTimeMetric = gCpuTimePerThreadMetric;
-      wakeupsMetric = gWakeupsPerThreadMetric;
-      if (!cpuTimeMetric || !wakeupsMetric) {
-        return;
-      }
+      processType = eParentInactive;
     } else {
       
       
@@ -154,17 +139,62 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
 
   if (aCpuTimeMs != 0 &&
       MOZ_LIKELY(aCpuTimeMs < std::numeric_limits<int32_t>::max())) {
-    cpuTimeMetric->Get(threadName).Add(int32_t(aCpuTimeMs));
+    switch (processType) {
+      case eParentActive:
+        power_cpu_ms_per_thread::parent_active.Get(threadName)
+            .Add(int32_t(aCpuTimeMs));
+        break;
+      case eParentInactive:
+        power_cpu_ms_per_thread::parent_inactive.Get(threadName)
+            .Add(int32_t(aCpuTimeMs));
+        break;
+      case eContentForeground:
+        power_cpu_ms_per_thread::content_foreground.Get(threadName)
+            .Add(int32_t(aCpuTimeMs));
+        break;
+      case eContentBackground:
+        power_cpu_ms_per_thread::content_background.Get(threadName)
+            .Add(int32_t(aCpuTimeMs));
+        break;
+      case eGpuProcess:
+        power_cpu_ms_per_thread::gpu_process.Get(threadName)
+            .Add(int32_t(aCpuTimeMs));
+        break;
+      case eUnknown:
+        
+        break;
+    }
   }
 
   if (aWakeCount != 0 &&
       MOZ_LIKELY(aWakeCount < std::numeric_limits<int32_t>::max())) {
-    wakeupsMetric->Get(threadName).Add(int32_t(aWakeCount));
+    switch (processType) {
+      case eParentActive:
+        power_wakeups_per_thread::parent_active.Get(threadName)
+            .Add(int32_t(aWakeCount));
+        break;
+      case eParentInactive:
+        power_wakeups_per_thread::parent_inactive.Get(threadName)
+            .Add(int32_t(aWakeCount));
+        break;
+      case eContentForeground:
+        power_wakeups_per_thread::content_foreground.Get(threadName)
+            .Add(int32_t(aWakeCount));
+        break;
+      case eContentBackground:
+        power_wakeups_per_thread::content_background.Get(threadName)
+            .Add(int32_t(aWakeCount));
+        break;
+      case eGpuProcess:
+        power_wakeups_per_thread::gpu_process.Get(threadName)
+            .Add(int32_t(aWakeCount));
+        break;
+      case eUnknown:
+        
+        break;
+    }
   }
 }
-#else  
-#  define SET_PER_THREAD_CPU_METRICS(aProcessType)
-#  define RESET_PER_THREAD_CPU_METRICS()
 #endif
 
 void GetTrackerType(nsAutoCString& aTrackerType) {
@@ -252,32 +282,32 @@ void RecordPowerMetrics() {
         switch (cc->GetProcessPriority()) {
           case hal::PROCESS_PRIORITY_BACKGROUND:
             type.AppendLiteral(".background");
-            SET_PER_THREAD_CPU_METRICS(content_background);
+            gThisProcessType = ProcessType::eContentBackground;
             break;
           case hal::PROCESS_PRIORITY_FOREGROUND:
             type.AppendLiteral(".foreground");
-            SET_PER_THREAD_CPU_METRICS(content_foreground);
+            gThisProcessType = ProcessType::eContentForeground;
             break;
           case hal::PROCESS_PRIORITY_BACKGROUND_PERCEIVABLE:
             type.AppendLiteral(".background-perceivable");
-            RESET_PER_THREAD_CPU_METRICS();
+            gThisProcessType = ProcessType::eUnknown;
             break;
           default:
-            RESET_PER_THREAD_CPU_METRICS();
+            gThisProcessType = ProcessType::eUnknown;
             break;
         }
       }
       GetTrackerType(trackerType);
     } else {
-      RESET_PER_THREAD_CPU_METRICS();
+      gThisProcessType = ProcessType::eUnknown;
     }
   } else if (XRE_IsParentProcess()) {
     if (nsContentUtils::GetUserIsInteracting()) {
       type.AssignLiteral("parent.active");
-      SET_PER_THREAD_CPU_METRICS(parent_active);
+      gThisProcessType = ProcessType::eParentActive;
     } else {
       type.AssignLiteral("parent.inactive");
-      SET_PER_THREAD_CPU_METRICS(parent_inactive);
+      gThisProcessType = ProcessType::eParentInactive;
     }
     hal::WakeLockInformation info;
     GetWakeLockInfo(u"video-playing"_ns, &info);
@@ -290,9 +320,9 @@ void RecordPowerMetrics() {
       }
     }
   } else if (XRE_IsGPUProcess()) {
-    SET_PER_THREAD_CPU_METRICS(gpu_process);
+    gThisProcessType = ProcessType::eGpuProcess;
   } else {
-    RESET_PER_THREAD_CPU_METRICS();
+    gThisProcessType = ProcessType::eUnknown;
   }
 
   if (newCpuTime) {
