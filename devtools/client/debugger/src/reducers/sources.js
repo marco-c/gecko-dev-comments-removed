@@ -56,7 +56,18 @@ export function initialSourcesState(state) {
 
     mutableSourceActors: new Map(),
 
-    breakpointPositions: {},
+    
+
+
+
+
+
+
+
+
+
+
+    mutableBreakpointPositions: new Map(),
 
     
 
@@ -149,15 +160,18 @@ function update(state = initialSourcesState(), action) {
     }
 
     case "ADD_BREAKPOINT_POSITIONS": {
-      const { source, positions } = action;
-      const breakpointPositions = state.breakpointPositions[source.id];
+      
+      let positions = state.mutableBreakpointPositions.get(action.source.id);
+      if (positions) {
+        positions = { ...positions, ...action.positions };
+      } else {
+        positions = action.positions;
+      }
+
+      state.mutableBreakpointPositions.set(action.source.id, positions);
 
       return {
         ...state,
-        breakpointPositions: {
-          ...state.breakpointPositions,
-          [source.id]: { ...breakpointPositions, ...positions },
-        },
       };
     }
 
@@ -306,15 +320,11 @@ function insertSourceActors(state, action) {
     item => item.introductionType === "scriptElement"
   );
   if (scriptActors.length) {
-    const { ...breakpointPositions } = state.breakpointPositions;
-
     
     
     for (const { source } of scriptActors) {
-      delete breakpointPositions[source];
+      state.mutableBreakpointPositions.delete(source);
     }
-
-    state = { ...state, breakpointPositions };
   }
 
   return { ...state };

@@ -235,14 +235,8 @@ export function getPrettyPrintMessage(state, location) {
   return L10N.getStr("sourceTabs.prettyPrint");
 }
 
-
-export function getBreakpointPositions(state) {
-  return state.sources.breakpointPositions;
-}
-
 export function getBreakpointPositionsForSource(state, sourceId) {
-  const positions = getBreakpointPositions(state);
-  return positions?.[sourceId];
+  return state.sources.mutableBreakpointPositions.get(sourceId);
 }
 
 
