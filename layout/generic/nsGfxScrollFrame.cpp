@@ -2789,87 +2789,26 @@ void nsHTMLScrollFrame::ScrollVisual() {
 
 
 
-
-
-
-
-
-static nscoord ClampAndAlignWithPixels(nscoord aDesired, nscoord aBoundLower,
+static nscoord ClampScrollPositionAxis(nscoord aDesired, nscoord aBoundLower,
                                        nscoord aBoundUpper, nscoord aDestLower,
-                                       nscoord aDestUpper,
-                                       nscoord aAppUnitsPerPixel, double aRes,
-                                       nscoord aCurrent) {
+                                       nscoord aDestUpper) {
   
   
   nscoord destLower = clamped(aDestLower, aBoundLower, aBoundUpper);
   nscoord destUpper = clamped(aDestUpper, aBoundLower, aBoundUpper);
-
-  nscoord desired = clamped(aDesired, destLower, destUpper);
-
-  double currentLayerVal = (aRes * aCurrent) / aAppUnitsPerPixel;
-  double desiredLayerVal = (aRes * desired) / aAppUnitsPerPixel;
-  double delta = desiredLayerVal - currentLayerVal;
-  double nearestLayerVal = NS_round(delta) + currentLayerVal;
-
-  
-  
-  nscoord aligned =
-      aRes == 0.0
-          ? 0.0
-          : NSToCoordRoundWithClamp(nearestLayerVal * aAppUnitsPerPixel / aRes);
-
-  
-  
-  if (aBoundUpper == destUpper &&
-      static_cast<decltype(Abs(desired))>(aBoundUpper - desired) <
-          Abs(desired - aligned)) {
-    return aBoundUpper;
-  }
-
-  if (aBoundLower == destLower &&
-      static_cast<decltype(Abs(desired))>(desired - aBoundLower) <
-          Abs(aligned - desired)) {
-    return aBoundLower;
-  }
-
-  
-  if (aligned >= destLower && aligned <= destUpper) {
-    return aligned;
-  }
-
-  
-  double oppositeLayerVal =
-      nearestLayerVal + ((nearestLayerVal < desiredLayerVal) ? 1.0 : -1.0);
-  nscoord opposite = aRes == 0.0
-                         ? 0.0
-                         : NSToCoordRoundWithClamp(oppositeLayerVal *
-                                                   aAppUnitsPerPixel / aRes);
-  if (opposite >= destLower && opposite <= destUpper) {
-    return opposite;
-  }
-
-  
-  return desired;
+  return clamped(aDesired, destLower, destUpper);
 }
 
 
 
 
 
-
-static nsPoint ClampAndAlignWithLayerPixels(const nsPoint& aPt,
-                                            const nsRect& aBounds,
-                                            const nsRect& aRange,
-                                            const nsPoint& aCurrent,
-                                            nscoord aAppUnitsPerPixel,
-                                            const MatrixScales& aScale) {
-  return nsPoint(
-      ClampAndAlignWithPixels(aPt.x, aBounds.x, aBounds.XMost(), aRange.x,
-                              aRange.XMost(), aAppUnitsPerPixel, aScale.xScale,
-                              aCurrent.x),
-      ClampAndAlignWithPixels(aPt.y, aBounds.y, aBounds.YMost(), aRange.y,
-                              aRange.YMost(), aAppUnitsPerPixel, aScale.yScale,
-                              aCurrent.y));
+static nsPoint ClampScrollPosition(const nsPoint& aPt, const nsRect& aBounds,
+                                   const nsRect& aRange) {
+  return nsPoint(ClampScrollPositionAxis(aPt.x, aBounds.x, aBounds.XMost(),
+                                         aRange.x, aRange.XMost()),
+                 ClampScrollPositionAxis(aPt.y, aBounds.y, aBounds.YMost(),
+                                         aRange.y, aRange.YMost()));
 }
 
 
@@ -2983,11 +2922,7 @@ void nsHTMLScrollFrame::ScrollToImpl(
   }
 
   nsPresContext* presContext = PresContext();
-  nscoord appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-  
-  
-  MatrixScales scale = GetPaintedLayerScaleForFrame(mScrolledFrame);
-  nsPoint curPos = GetScrollPosition();
+  const nsPoint curPos = GetScrollPosition();
 
   
   
@@ -2999,8 +2934,7 @@ void nsHTMLScrollFrame::ScrollToImpl(
   
   
   
-  nsPoint pt = ClampAndAlignWithLayerPixels(aPt, GetLayoutScrollRange(), aRange,
-                                            curPos, appUnitsPerDevPixel, scale);
+  nsPoint pt = ClampScrollPosition(aPt, GetLayoutScrollRange(), aRange);
   if (pt == curPos) {
     
     
