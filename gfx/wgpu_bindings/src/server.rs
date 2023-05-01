@@ -328,11 +328,7 @@ pub extern "C" fn wgpu_server_device_create_buffer(
 ) {
     let utf8_label = label.map(|utf16| utf16.to_string());
     let label = utf8_label.as_ref().map(|s| Cow::from(&s[..]));
-
-    
-    
-    
-    let usage = unsafe { wgt::BufferUsages::from_bits_unchecked(usage) };
+    let usage = wgt::BufferUsages::from_bits_retain(usage);
 
     
     if size > MAX_BUFFER_SIZE {
