@@ -17,7 +17,6 @@
 #include "nsFont.h"
 #include "nsIFrame.h"
 #include "nsIXULRuntime.h"
-#include "nsLayoutUtils.h"
 #include "Theme.h"
 #include "SurfaceCacheUtils.h"
 #include "mozilla/dom/ContentParent.h"
@@ -549,10 +548,6 @@ void nsXPLookAndFeel::Init() {
   sInitialized = true;
 
   RecomputeColorSchemes();
-
-  if (XRE_IsParentProcess()) {
-    nsLayoutUtils::RecomputeSmoothScrollDefault();
-  }
 
   
   
@@ -1175,9 +1170,8 @@ void nsXPLookAndFeel::RefreshImpl() {
   sIntCache.Clear();
   RecomputeColorSchemes();
 
+  
   if (XRE_IsParentProcess()) {
-    nsLayoutUtils::RecomputeSmoothScrollDefault();
-    
     widget::RemoteLookAndFeel::ClearCachedData();
   }
 }
