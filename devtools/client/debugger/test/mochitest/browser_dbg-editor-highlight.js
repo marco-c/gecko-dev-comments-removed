@@ -41,9 +41,10 @@ add_task(async function() {
   
   
   const simple1 = findSource(dbg, "simple1.js");
-  is(getSettledSourceTextContent({ sourceId: simple1.id }), null);
+  const location = createLocation({ source: simple1 });
+  is(getSettledSourceTextContent(location), null);
 
   await waitForSelectedSource(dbg, "simple1.js");
-  ok(getSettledSourceTextContent({ sourceId: simple1.id }).value.value);
+  ok(getSettledSourceTextContent(location).value.value);
   assertHighlightLocation(dbg, "simple1.js", 6);
 });
