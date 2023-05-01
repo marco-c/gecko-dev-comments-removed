@@ -56,6 +56,8 @@ class MediaTransportHandler {
 
   typedef MozPromise<dom::Sequence<nsString>, nsresult, true> IceLogPromise;
 
+  virtual void Initialize() {}
+
   
   
   
