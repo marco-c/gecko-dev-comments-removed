@@ -1751,17 +1751,8 @@ void CookiePersistentStorage::InitDBConn() {
     CookieDomainTuple& tuple = mReadArray[i];
     MOZ_ASSERT(!tuple.cookie->isSession());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     RefPtr<Cookie> cookie =
-        Cookie::CreateValidated(*tuple.cookie, tuple.originAttributes);
+        Cookie::Create(*tuple.cookie, tuple.originAttributes);
     AddCookieToList(tuple.key.mBaseDomain, tuple.key.mOriginAttributes, cookie);
   }
 
