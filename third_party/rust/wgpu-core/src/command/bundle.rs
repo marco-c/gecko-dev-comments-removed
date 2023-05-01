@@ -86,8 +86,8 @@ use crate::{
     },
     conv,
     device::{
-        AttachmentData, Device, DeviceError, MissingDownlevelFlags, RenderPassContext,
-        SHADER_STAGE_COUNT,
+        AttachmentData, Device, DeviceError, MissingDownlevelFlags,
+        RenderPassCompatibilityCheckType, RenderPassContext, SHADER_STAGE_COUNT,
     },
     error::{ErrorFormatter, PrettyError},
     hub::{GlobalIdentityHandlerFactory, HalApi, Hub, Resource, Storage, Token},
@@ -367,7 +367,7 @@ impl RenderBundleEncoder {
                         .map_pass_err(scope)?;
 
                     self.context
-                        .check_compatible(&pipeline.pass_context)
+                        .check_compatible(&pipeline.pass_context, RenderPassCompatibilityCheckType::RenderPipeline)
                         .map_err(RenderCommandError::IncompatiblePipelineTargets)
                         .map_pass_err(scope)?;
 
@@ -695,19 +695,21 @@ impl RenderBundleEncoder {
 
 
 #[derive(Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum CreateRenderBundleError {
     #[error(transparent)]
     ColorAttachment(#[from] ColorAttachmentError),
-    #[error("invalid number of samples {0}")]
+    #[error("Invalid number of samples {0}")]
     InvalidSampleCount(u32),
 }
 
 
 #[derive(Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum ExecutionError {
-    #[error("buffer {0:?} is destroyed")]
+    #[error("Buffer {0:?} is destroyed")]
     DestroyedBuffer(id::BufferId),
-    #[error("using {0} in a render bundle is not implemented")]
+    #[error("Using {0} in a render bundle is not implemented")]
     Unimplemented(&'static str),
 }
 impl PrettyError for ExecutionError {
@@ -1377,7 +1379,7 @@ impl<A: HalApi> State<A> {
 
 #[derive(Clone, Debug, Error)]
 pub(super) enum RenderBundleErrorInner {
-    #[error("resource is not valid to use with this render bundle because the resource and the bundle come from different devices")]
+    #[error("Resource is not valid to use with this render bundle because the resource and the bundle come from different devices")]
     NotValidToUse,
     #[error(transparent)]
     Device(#[from] DeviceError),

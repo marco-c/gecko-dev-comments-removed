@@ -279,6 +279,24 @@ pub struct Writer<'a, W> {
     
     named_expressions: crate::NamedExpressions,
     wrapped: Wrapped,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
 }

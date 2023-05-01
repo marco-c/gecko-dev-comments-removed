@@ -140,7 +140,7 @@ impl PhysicalDeviceFeatures {
                     requested_features.contains(wgt::Features::TEXTURE_COMPRESSION_ETC2),
                 )
                 .texture_compression_astc_ldr(
-                    requested_features.contains(wgt::Features::TEXTURE_COMPRESSION_ASTC_LDR),
+                    requested_features.contains(wgt::Features::TEXTURE_COMPRESSION_ASTC),
                 )
                 .texture_compression_bc(
                     requested_features.contains(wgt::Features::TEXTURE_COMPRESSION_BC),
@@ -174,9 +174,9 @@ impl PhysicalDeviceFeatures {
                 
                 
                 
-                .shader_float64(requested_features.contains(wgt::Features::SHADER_FLOAT64))
+                .shader_float64(requested_features.contains(wgt::Features::SHADER_F64))
                 
-                .shader_int16(requested_features.contains(wgt::Features::SHADER_INT16))
+                .shader_int16(requested_features.contains(wgt::Features::SHADER_I16))
                 
                 .geometry_shader(requested_features.contains(wgt::Features::SHADER_PRIMITIVE_INDEX))
                 .build(),
@@ -278,7 +278,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            shader_float16: if requested_features.contains(wgt::Features::SHADER_FLOAT16) {
+            shader_float16: if requested_features.contains(wgt::Features::SHADER_F16) {
                 Some((
                     vk::PhysicalDeviceShaderFloat16Int8Features::builder()
                         .shader_float16(true)
@@ -322,7 +322,7 @@ impl PhysicalDeviceFeatures {
             | F::ADDRESS_MODE_CLAMP_TO_BORDER
             | F::ADDRESS_MODE_CLAMP_TO_ZERO
             | F::TIMESTAMP_QUERY
-            | F::WRITE_TIMESTAMP_INSIDE_PASSES
+            | F::TIMESTAMP_QUERY_INSIDE_PASSES
             | F::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES
             | F::CLEAR_TEXTURE;
 
@@ -374,7 +374,7 @@ impl PhysicalDeviceFeatures {
             self.core.texture_compression_etc2 != 0,
         );
         features.set(
-            F::TEXTURE_COMPRESSION_ASTC_LDR,
+            F::TEXTURE_COMPRESSION_ASTC,
             self.core.texture_compression_astc_ldr != 0,
         );
         features.set(
@@ -418,9 +418,9 @@ impl PhysicalDeviceFeatures {
         
         
         
-        features.set(F::SHADER_FLOAT64, self.core.shader_float64 != 0);
+        features.set(F::SHADER_F64, self.core.shader_float64 != 0);
         
-        features.set(F::SHADER_INT16, self.core.shader_int16 != 0);
+        features.set(F::SHADER_I16, self.core.shader_int16 != 0);
 
         
         
@@ -494,7 +494,7 @@ impl PhysicalDeviceFeatures {
 
         if let Some((ref f16_i8, ref bit16)) = self.shader_float16 {
             features.set(
-                F::SHADER_FLOAT16,
+                F::SHADER_F16,
                 f16_i8.shader_float16 != 0
                     && bit16.storage_buffer16_bit_access != 0
                     && bit16.uniform_and_storage_buffer16_bit_access != 0,
@@ -544,6 +544,7 @@ impl PhysicalDeviceFeatures {
 pub struct PhysicalDeviceCapabilities {
     supported_extensions: Vec<vk::ExtensionProperties>,
     properties: vk::PhysicalDeviceProperties,
+    maintenance_3: Option<vk::PhysicalDeviceMaintenance3Properties>,
     descriptor_indexing: Option<vk::PhysicalDeviceDescriptorIndexingPropertiesEXT>,
     driver: Option<vk::PhysicalDeviceDriverPropertiesKHR>,
     
@@ -603,6 +604,11 @@ impl PhysicalDeviceCapabilities {
             }
 
             
+            if self.supports_extension(vk::KhrMaintenance3Fn::name()) {
+                extensions.push(vk::KhrMaintenance3Fn::name());
+            }
+
+            
             extensions.push(vk::KhrStorageBufferStorageClassFn::name());
 
             
@@ -639,15 +645,10 @@ impl PhysicalDeviceCapabilities {
             
             if requested_features.intersects(indexing_features()) {
                 extensions.push(vk::ExtDescriptorIndexingFn::name());
-
-                
-                if self.effective_api_version < vk::API_VERSION_1_1 {
-                    extensions.push(vk::KhrMaintenance3Fn::name());
-                }
             }
 
             
-            if requested_features.contains(wgt::Features::SHADER_FLOAT16) {
+            if requested_features.contains(wgt::Features::SHADER_F16) {
                 extensions.push(vk::KhrShaderFloat16Int8Fn::name());
                 
                 if self.effective_api_version < vk::API_VERSION_1_1 {
@@ -798,6 +799,13 @@ impl super::InstanceShared {
                     || capabilities.supports_extension(vk::KhrDriverPropertiesFn::name());
 
                 let mut builder = vk::PhysicalDeviceProperties2KHR::builder();
+                if self.driver_api_version >= vk::API_VERSION_1_1
+                    || capabilities.supports_extension(vk::KhrMaintenance3Fn::name())
+                {
+                    capabilities.maintenance_3 =
+                        Some(vk::PhysicalDeviceMaintenance3Properties::default());
+                    builder = builder.push_next(capabilities.maintenance_3.as_mut().unwrap());
+                }
 
                 if supports_descriptor_indexing {
                     let next = capabilities
@@ -1312,7 +1320,6 @@ impl super::Adapter {
             },
             vendor_id: self.phd_capabilities.properties.vendor_id,
             timestamp_period: self.phd_capabilities.properties.limits.timestamp_period,
-            downlevel_flags: self.downlevel_flags,
             private_caps: self.private_caps.clone(),
             workarounds: self.workarounds,
             render_passes: Mutex::new(Default::default()),
@@ -1338,9 +1345,15 @@ impl super::Adapter {
         let mem_allocator = {
             let limits = self.phd_capabilities.properties.limits;
             let config = gpu_alloc::Config::i_am_prototyping(); 
+            let max_memory_allocation_size =
+                if let Some(maintenance_3) = self.phd_capabilities.maintenance_3 {
+                    maintenance_3.max_memory_allocation_size
+                } else {
+                    u64::max_value()
+                };
             let properties = gpu_alloc::DeviceProperties {
                 max_memory_allocation_count: limits.max_memory_allocation_count,
-                max_memory_allocation_size: u64::max_value(), 
+                max_memory_allocation_size,
                 non_coherent_atom_size: limits.non_coherent_atom_size,
                 memory_types: memory_types
                     .iter()

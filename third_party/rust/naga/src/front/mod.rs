@@ -3,6 +3,7 @@
 
 
 mod interpolator;
+mod type_gen;
 
 #[cfg(feature = "glsl-in")]
 pub mod glsl;

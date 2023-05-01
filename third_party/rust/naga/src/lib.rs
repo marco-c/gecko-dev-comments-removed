@@ -185,11 +185,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro,
-    clippy::if_same_then_else,
     clippy::collapsible_if,
     clippy::derive_partial_eq_without_eq,
     clippy::needless_borrowed_reference
@@ -200,7 +208,9 @@
     unused_extern_crates,
     unused_qualifications,
     clippy::pattern_type_mismatch,
-    clippy::missing_const_for_fn
+    clippy::missing_const_for_fn,
+    clippy::rest_pat_in_fully_bound_structs,
+    clippy::match_wildcard_for_single_variants
 )]
 #![cfg_attr(not(test), deny(clippy::panic))]
 
@@ -721,6 +731,12 @@ pub enum TypeInner {
     Sampler { comparison: bool },
 
     
+    AccelerationStructure,
+
+    
+    RayQuery,
+
+    
     
     
     
@@ -974,6 +990,17 @@ pub enum AtomicFunction {
     Min,
     Max,
     Exchange { compare: Option<Handle<Expression>> },
+}
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum DerivativeControl {
+    Coarse,
+    Fine,
+    None,
 }
 
 
@@ -1387,6 +1414,7 @@ pub enum Expression {
     
     Derivative {
         axis: DerivativeAxis,
+        ctrl: DerivativeControl,
         
         expr: Handle<Expression>,
     },
@@ -1423,18 +1451,33 @@ pub enum Expression {
     
     
     ArrayLength(Handle<Expression>),
+
+    
+    
+    
+    
+    RayQueryProceedResult,
+
+    
+    
+    
+    RayQueryGetIntersection {
+        query: Handle<Expression>,
+        committed: bool,
+    },
 }
 
 pub use block::Block;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum SwitchValue {
-    Integer(i32),
+    I32(i32),
+    U32(u32),
     Default,
 }
 
@@ -1452,6 +1495,48 @@ pub struct SwitchCase {
     
     
     pub fall_through: bool,
+}
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum RayQueryFunction {
+    
+    Initialize {
+        
+        
+        
+        
+        
+        acceleration_structure: Handle<Expression>,
+
+        #[allow(rustdoc::private_intra_doc_links)]
+        
+        
+        
+        
+        
+        descriptor: Handle<Expression>,
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    Proceed {
+        result: Handle<Expression>,
+    },
+
+    Terminate,
 }
 
 
@@ -1627,6 +1712,15 @@ pub enum Statement {
         arguments: Vec<Handle<Expression>>,
         result: Option<Handle<Expression>>,
     },
+    RayQuery {
+        
+        
+        
+        query: Handle<Expression>,
+
+        
+        fun: RayQueryFunction,
+    },
 }
 
 
@@ -1744,6 +1838,26 @@ pub struct EntryPoint {
 }
 
 
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "clone", derive(Clone))]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct SpecialTypes {
+    
+    
+    
+    
+    pub ray_desc: Option<Handle<Type>>,
+
+    
+    
+    
+    
+    pub ray_intersection: Option<Handle<Type>>,
+}
+
+
 
 
 
@@ -1762,6 +1876,8 @@ pub struct EntryPoint {
 pub struct Module {
     
     pub types: UniqueArena<Type>,
+    
+    pub special_types: SpecialTypes,
     
     pub constants: Arena<Constant>,
     

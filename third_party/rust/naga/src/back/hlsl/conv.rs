@@ -155,9 +155,6 @@ impl crate::BuiltIn {
             Self::ClipDistance => "SV_ClipDistance",
             Self::CullDistance => "SV_CullDistance",
             Self::InstanceIndex => "SV_InstanceID",
-            
-            
-            Self::PointSize => "PSIZE",
             Self::VertexIndex => "SV_VertexID",
             
             Self::FragDepth => "SV_Depth",
@@ -177,7 +174,7 @@ impl crate::BuiltIn {
             Self::BaseInstance | Self::BaseVertex | Self::WorkGroupSize => {
                 return Err(Error::Unimplemented(format!("builtin {self:?}")))
             }
-            Self::ViewIndex | Self::PointCoord => {
+            Self::PointSize | Self::ViewIndex | Self::PointCoord => {
                 return Err(Error::Custom(format!("Unsupported builtin {self:?}")))
             }
         })

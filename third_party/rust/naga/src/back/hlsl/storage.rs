@@ -4,6 +4,46 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use super::{super::FunctionCtx, BackendResult, Error};
 use crate::{
     proc::{Alignment, NameKey, TypeResolution},
@@ -14,9 +54,25 @@ use std::{fmt, mem};
 
 const STORE_TEMP_NAME: &str = "_value";
 
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub(super) enum SubAccess {
+    
+    
+    
     Offset(u32),
+
+    
+    
+    
     Index {
         value: Handle<crate::Expression>,
         stride: u32,
@@ -84,6 +140,15 @@ impl<W: fmt::Write> super::Writer<'_, W> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(super) fn write_storage_load(
         &mut self,
         module: &crate::Module,
@@ -147,12 +212,16 @@ impl<W: fmt::Write> super::Writer<'_, W> {
                 size: crate::ArraySize::Constant(const_handle),
                 ..
             } => {
-                write!(self.out, "{{")?;
+                let constructor = super::help::WrappedConstructor {
+                    ty: result_ty.handle().unwrap(),
+                };
+                self.write_wrapped_constructor_function_name(module, constructor)?;
+                write!(self.out, "(")?;
                 let count = module.constants[const_handle].to_array_length().unwrap();
                 let stride = module.types[base].inner.size(&module.constants);
                 let iter = (0..count).map(|i| (TypeResolution::Handle(base), stride * i));
                 self.write_storage_load_sequence(module, var_handle, iter, func_ctx)?;
-                write!(self.out, "}}")?;
+                write!(self.out, ")")?;
             }
             crate::TypeInner::Struct { ref members, .. } => {
                 let constructor = super::help::WrappedConstructor {
@@ -362,6 +431,17 @@ impl<W: fmt::Write> super::Writer<'_, W> {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(super) fn fill_access_chain(
         &mut self,
         module: &crate::Module,

@@ -479,9 +479,48 @@ impl<T, I: id::TypedId> Storage<T, I> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Access<A> {}
 
 pub enum Root {}
+
+
+
+
 
 impl Access<Instance> for Root {}
 impl Access<Surface> for Root {}
@@ -491,6 +530,10 @@ impl<A: HalApi> Access<Adapter<A>> for Surface {}
 impl<A: HalApi> Access<Device<A>> for Root {}
 impl<A: HalApi> Access<Device<A>> for Surface {}
 impl<A: HalApi> Access<Device<A>> for Adapter<A> {}
+impl<A: HalApi> Access<CommandBuffer<A>> for Root {}
+impl<A: HalApi> Access<CommandBuffer<A>> for Device<A> {}
+impl<A: HalApi> Access<RenderBundle<A>> for Device<A> {}
+impl<A: HalApi> Access<RenderBundle<A>> for CommandBuffer<A> {}
 impl<A: HalApi> Access<PipelineLayout<A>> for Root {}
 impl<A: HalApi> Access<PipelineLayout<A>> for Device<A> {}
 impl<A: HalApi> Access<PipelineLayout<A>> for RenderBundle<A> {}
@@ -502,21 +545,11 @@ impl<A: HalApi> Access<BindGroup<A>> for Device<A> {}
 impl<A: HalApi> Access<BindGroup<A>> for BindGroupLayout<A> {}
 impl<A: HalApi> Access<BindGroup<A>> for PipelineLayout<A> {}
 impl<A: HalApi> Access<BindGroup<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<CommandBuffer<A>> for Root {}
-impl<A: HalApi> Access<CommandBuffer<A>> for Device<A> {}
-impl<A: HalApi> Access<RenderBundle<A>> for Device<A> {}
-impl<A: HalApi> Access<RenderBundle<A>> for CommandBuffer<A> {}
 impl<A: HalApi> Access<ComputePipeline<A>> for Device<A> {}
 impl<A: HalApi> Access<ComputePipeline<A>> for BindGroup<A> {}
 impl<A: HalApi> Access<RenderPipeline<A>> for Device<A> {}
 impl<A: HalApi> Access<RenderPipeline<A>> for BindGroup<A> {}
 impl<A: HalApi> Access<RenderPipeline<A>> for ComputePipeline<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for Root {}
-impl<A: HalApi> Access<QuerySet<A>> for Device<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for RenderPipeline<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for ComputePipeline<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for Sampler<A> {}
 impl<A: HalApi> Access<ShaderModule<A>> for Device<A> {}
 impl<A: HalApi> Access<ShaderModule<A>> for BindGroupLayout<A> {}
 impl<A: HalApi> Access<Buffer<A>> for Root {}
@@ -537,9 +570,21 @@ impl<A: HalApi> Access<TextureView<A>> for Texture<A> {}
 impl<A: HalApi> Access<Sampler<A>> for Root {}
 impl<A: HalApi> Access<Sampler<A>> for Device<A> {}
 impl<A: HalApi> Access<Sampler<A>> for TextureView<A> {}
+impl<A: HalApi> Access<QuerySet<A>> for Root {}
+impl<A: HalApi> Access<QuerySet<A>> for Device<A> {}
+impl<A: HalApi> Access<QuerySet<A>> for CommandBuffer<A> {}
+impl<A: HalApi> Access<QuerySet<A>> for RenderPipeline<A> {}
+impl<A: HalApi> Access<QuerySet<A>> for ComputePipeline<A> {}
+impl<A: HalApi> Access<QuerySet<A>> for Sampler<A> {}
 
 #[cfg(debug_assertions)]
 thread_local! {
+    /// Per-thread state checking `Token<Root>` creation in debug builds.
+    ///
+    /// This is the number of `Token` values alive on the current
+    /// thread. Since `Token` creation respects the [`Access`] graph,
+    /// there can never be more tokens alive than there are fields of
+    /// [`Hub`], so a `u8` is plenty.
     static ACTIVE_TOKEN: Cell<u8> = Cell::new(0);
 }
 
@@ -548,11 +593,28 @@ thread_local! {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub(crate) struct Token<'a, T: 'a> {
-    level: PhantomData<&'a T>,
+    
+    level: PhantomData<&'a *const T>,
 }
 
 impl<'a, T> Token<'a, T> {
+    
+    
+    
     fn new() -> Self {
         #[cfg(debug_assertions)]
         ACTIVE_TOKEN.with(|active| {
@@ -565,6 +627,10 @@ impl<'a, T> Token<'a, T> {
 }
 
 impl Token<'static, Root> {
+    
+    
+    
+    
     pub fn root() -> Self {
         #[cfg(debug_assertions)]
         ACTIVE_TOKEN.with(|active| {
@@ -757,6 +823,22 @@ impl<T: Resource, I: id::TypedId + Copy, F: IdentityHandlerFactory<I>> Registry<
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn read<'a, A: Access<T>>(
         &'a self,
         _token: &'a mut Token<A>,
@@ -764,6 +846,22 @@ impl<T: Resource, I: id::TypedId + Copy, F: IdentityHandlerFactory<I>> Registry<
         (self.data.read(), Token::new())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn write<'a, A: Access<T>>(
         &'a self,
         _token: &'a mut Token<A>,
@@ -771,6 +869,12 @@ impl<T: Resource, I: id::TypedId + Copy, F: IdentityHandlerFactory<I>> Registry<
         (self.data.write(), Token::new())
     }
 
+    
+    
+    
+    
+    
+    
     pub fn unregister_locked(&self, id: I, guard: &mut Storage<T, I>) -> Option<T> {
         let value = guard.remove(id);
         
@@ -779,6 +883,23 @@ impl<T: Resource, I: id::TypedId + Copy, F: IdentityHandlerFactory<I>> Registry<
         value
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn unregister<'a, A: Access<T>>(
         &self,
         id: I,
@@ -837,6 +958,71 @@ impl HubReport {
         self.adapters.is_empty()
     }
 }
+
+#[allow(rustdoc::private_intra_doc_links)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub struct Hub<A: HalApi, F: GlobalIdentityHandlerFactory> {
     pub adapters: Registry<Adapter<A>, id::AdapterId, F>,
@@ -1032,6 +1218,20 @@ impl<A: HalApi, F: GlobalIdentityHandlerFactory> Hub<A, F> {
         if with_adapters {
             drop(devices);
             self.adapters.data.write().map.clear();
+        }
+    }
+
+    pub(crate) fn surface_unconfigure(
+        &self,
+        device_id: id::Valid<id::DeviceId>,
+        surface: &mut HalSurface<A>,
+    ) {
+        use hal::Surface as _;
+
+        let devices = self.devices.data.read();
+        let device = &devices[device_id];
+        unsafe {
+            surface.raw.unconfigure(&device.raw);
         }
     }
 

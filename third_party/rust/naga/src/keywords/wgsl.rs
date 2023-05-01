@@ -47,6 +47,7 @@ pub const RESERVED: &[&str] = &[
     "vec3",
     "vec4",
     
+    "alias",
     "bitcast",
     "break",
     "case",

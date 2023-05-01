@@ -594,6 +594,19 @@ impl<T: Eq + hash::Hash> UniqueArena<T> {
     
     
     
+    
+    
+    pub fn replace(&mut self, old: Handle<T>, new: T) {
+        let (index, added) = self.set.insert_full(new);
+        assert!(added && index == self.set.len() - 1);
+
+        self.set.swap_remove_index(old.index()).unwrap();
+    }
+
+    
+    
+    
+    
     pub fn get(&self, value: &T) -> Option<Handle<T>> {
         self.set
             .get_index_of(value)

@@ -294,6 +294,17 @@ platform supports.";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 macro_rules! define_backend_caller {
     { $public:ident, $private:ident, $feature:literal if $cfg:meta } => {
         #[cfg($cfg)]
@@ -388,9 +399,10 @@ macro_rules! gfx_select {
 
 
 type FastHashMap<K, V> =
-    std::collections::HashMap<K, V, std::hash::BuildHasherDefault<fxhash::FxHasher>>;
+    std::collections::HashMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
-type FastHashSet<K> = std::collections::HashSet<K, std::hash::BuildHasherDefault<fxhash::FxHasher>>;
+type FastHashSet<K> =
+    std::collections::HashSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 #[inline]
 pub(crate) fn get_lowest_common_denom(a: u32, b: u32) -> u32 {
