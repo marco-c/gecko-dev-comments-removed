@@ -25,6 +25,16 @@ use std::fmt;
 #[derive(Eq, PartialEq)]
 pub struct GeckoStyleSheet(*const DomStyleSheet);
 
+
+
+
+
+
+
+
+unsafe impl Send for GeckoStyleSheet {}
+unsafe impl Sync for GeckoStyleSheet {}
+
 impl fmt::Debug for GeckoStyleSheet {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let contents = self.contents();
