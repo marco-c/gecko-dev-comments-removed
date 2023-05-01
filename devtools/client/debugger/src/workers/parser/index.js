@@ -33,4 +33,21 @@ export class ParserDispatcher extends WorkerDispatcher {
   mapExpression = this.task("mapExpression");
 
   clear = this.task("clearState");
+
+  
+
+
+
+
+
+
+
+  isLocationSupported(location) {
+    
+    
+    
+    
+    
+    return !location.source.isWasm;
+  }
 }
