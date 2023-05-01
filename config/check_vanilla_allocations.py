@@ -42,6 +42,7 @@ import argparse
 import re
 import subprocess
 import sys
+from collections import defaultdict
 
 import buildconfig
 
@@ -79,9 +80,8 @@ def main():
     
     
     
-    
     nm = buildconfig.substs.get("NM") or "nm"
-    cmd = [nm, "-u", "-C", "-A", args.file]
+    cmd = [nm, "-C", "-A", args.file]
     lines = subprocess.check_output(
         cmd, universal_newlines=True, stderr=subprocess.PIPE
     ).split("\n")
@@ -112,21 +112,46 @@ def main():
     
     
     
-    alloc_fns_re = r"([^:/ ]+):\s+U (" + r"|".join(alloc_fns) + r")"
+    
+    nm_line_re = re.compile(r"([^:/ ]+):\s+[0-9a-fA-F]*\s+([TU]) (.*)")
+    alloc_fns_re = re.compile(r"|".join(alloc_fns))
 
     
+    functions = defaultdict(set)
+    files = defaultdict(int)
+
     
-    util_Utility_cpp = set([])
+    ignored_files = [
+        
+        
+        
+        
+        
+        "umutex.o",
+        
+        "Decimal.o",
+        
+        "regexp-ast.o",
+    ]
+    all_ignored_files = set((f, 1) for f in ignored_files)
 
     
     emit_line_info = False
 
+    prev_filename = None
     for line in lines:
-        m = re.search(alloc_fns_re, line)
+        m = nm_line_re.search(line)
         if m is None:
             continue
 
-        filename = m.group(1)
+        filename, symtype, fn = m.groups()
+        if prev_filename != filename:
+            
+            
+            
+            
+            files[filename] += 1
+            prev_filename = filename
 
         
         
@@ -147,30 +172,29 @@ def main():
         if "ProfilingStack" in filename:
             continue
 
-        
-        
-        
-        
-        
-        if filename == "umutex.o":
-            continue
-
-        
-        if filename == "Decimal.o":
-            continue
-
-        
-        if "intl_components" in filename:
-            continue
-
-        
-        if filename == "regexp-ast.o":
-            continue
-
-        fn = m.group(2)
-        if filename == "Utility.o":
-            util_Utility_cpp.add(fn)
+        if symtype == "T":
+            
+            
+            
+            
+            if fn.startswith("mozilla::intl::"):
+                all_ignored_files.add((filename, files[filename]))
         else:
+            m = alloc_fns_re.match(fn)
+            if m:
+                functions[(filename, files[filename])].add(m.group(0))
+
+    util_Utility_cpp = functions.pop(("Utility.o", 1))
+    if ("Utility.o", 2) in functions:
+        fail("There should be only one Utility.o file")
+
+    for f, n in all_ignored_files:
+        functions.pop((f, n), None)
+        if f in ignored_files and (f, 2) in functions:
+            fail(f"There should be only one {f} file")
+
+    for (filename, n) in sorted(functions):
+        for fn in functions[(filename, n)]:
             
             fail("'" + fn + "' present in " + filename)
             
