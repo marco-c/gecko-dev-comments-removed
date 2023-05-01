@@ -6,22 +6,43 @@
 
 #include "vm/JSONParser.h"
 
-#include "mozilla/Range.h"
-#include "mozilla/RangedPtr.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/TextUtils.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Range.h"       
+#include "mozilla/RangedPtr.h"   
 
-#include "jsnum.h"
+#include "mozilla/Sprintf.h"    
+#include "mozilla/TextUtils.h"  
 
-#include "builtin/Array.h"
-#include "js/ErrorReport.h"
+#include <stddef.h>  
+#include <stdint.h>  
+#include <utility>   
+
+#include "jsnum.h"  
+
+#include "builtin/Array.h"            
+#include "ds/IdValuePair.h"           
+#include "gc/Allocator.h"             
+#include "gc/Tracer.h"                
+#include "js/AllocPolicy.h"           
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
-#include "util/StringBuffer.h"
-#include "vm/ArrayObject.h"
-#include "vm/JSContext.h"
-#include "vm/PlainObject.h"  
+#include "js/GCVector.h"              
+#include "js/Id.h"                    
+#include "js/RootingAPI.h"  
+#include "js/TypeDecls.h"  
+#include "js/Utility.h"    
+#include "js/Value.h"  
+#include "js/Vector.h"          
+#include "util/StringBuffer.h"  
+#include "vm/ArrayObject.h"     
+#include "vm/ErrorReporting.h"  
+#include "vm/JSAtom.h"          
+#include "vm/JSContext.h"       
+#include "vm/PlainObject.h"     
+#include "vm/StringType.h"  
 
-#include "vm/JSAtom-inl.h"
+#include "vm/JSAtom-inl.h"  
 
 using namespace js;
 
@@ -597,7 +618,7 @@ void JSONParser<CharT>::trace(JSTracer* trc) {
 }
 
 inline void JSONFullParseHandlerAnyChar::setNumberValue(double d) {
-  v = NumberValue(d);
+  v = JS::NumberValue(d);
 }
 
 template <typename CharT>
@@ -610,7 +631,7 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(CharPtr start,
   if (!str) {
     return false;
   }
-  v = StringValue(str);
+  v = JS::StringValue(str);
   return true;
 }
 
@@ -624,7 +645,7 @@ inline bool JSONFullParseHandler<CharT>::setStringValue(
   if (!str) {
     return false;
   }
-  v = StringValue(str);
+  v = JS::StringValue(str);
   return true;
 }
 
@@ -967,8 +988,8 @@ bool JSONPerHandlerParser<CharT, HandlerT>::parseImpl(TempValueT& value,
 }
 
 template <typename CharT>
-bool JSONParser<CharT>::parse(MutableHandleValue vp) {
-  RootedValue tempValue(this->handler.cx);
+bool JSONParser<CharT>::parse(JS::MutableHandle<JS::Value> vp) {
+  JS::Rooted<JS::Value> tempValue(this->handler.cx);
 
   vp.setUndefined();
 
