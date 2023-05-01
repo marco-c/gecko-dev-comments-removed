@@ -66,7 +66,7 @@ class RenderOrReleaseOutput {
   java::Sample::GlobalRef mSample;
 };
 
-class RemoteVideoDecoder : public RemoteDataDecoder {
+class RemoteVideoDecoder final : public RemoteDataDecoder {
  public:
   
   
@@ -567,7 +567,7 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
 };
 
-class RemoteAudioDecoder : public RemoteDataDecoder {
+class RemoteAudioDecoder final : public RemoteDataDecoder {
  public:
   RemoteAudioDecoder(const AudioInfo& aConfig,
                      java::sdk::MediaFormat::Param aFormat,
