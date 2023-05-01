@@ -57,6 +57,8 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "mutex:GLContextGLX::~GLContextGLX\n"
          
+         "mutex:wl_registry_destroy\n"
+         
          "race:libavcodec.so*\n"
          "race:libavutil.so*\n"
          
@@ -79,6 +81,8 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:fire_glxtest_process\n"
          
          "race:swrast_dri.so\n"
+         
+         "race:mozilla::widget::WaylandBuffer::BufferReleaseCallbackHandler\n"
 
 
 
