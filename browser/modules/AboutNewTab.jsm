@@ -14,6 +14,11 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  RemotePages:
+    "resource://gre/modules/remotepagemanager/RemotePageManagerParent.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   ActivityStream: "resource://activity-stream/lib/ActivityStream.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
@@ -33,6 +38,8 @@ const AboutNewTab = {
   
   initialized: false,
 
+  pageListener: null,
+  isPageListenerOverridden: false,
   willNotifyUser: false,
 
   _activityStreamEnabled: false,
@@ -47,7 +54,13 @@ const AboutNewTab = {
   
 
 
-  init() {
+
+
+
+
+
+
+  init(pageListener) {
     Services.obs.addObserver(this, TOPIC_APP_QUIT);
     if (!AppConstants.RELEASE_OR_BETA) {
       XPCOMUtils.defineLazyPreferenceGetter(
@@ -75,7 +88,20 @@ const AboutNewTab = {
     this.toggleActivityStream(true);
     this.initialized = true;
 
-    Services.obs.addObserver(this, BROWSER_READY_NOTIFICATION);
+    if (this.isPageListenerOverridden) {
+      return;
+    }
+
+    
+    
+    
+    if (!pageListener) {
+      Services.obs.addObserver(this, BROWSER_READY_NOTIFICATION);
+    }
+
+    this.pageListener =
+      pageListener ||
+      new lazy.RemotePages(["about:home", "about:newtab", "about:welcome"]);
   },
 
   
@@ -194,6 +220,7 @@ const AboutNewTab = {
   
 
 
+
   uninit() {
     if (this.activityStream) {
       this._unsubscribeFromActivityStream?.();
@@ -201,7 +228,31 @@ const AboutNewTab = {
       this.activityStream = null;
     }
 
+    if (this.pageListener) {
+      this.pageListener.destroy();
+      this.pageListener = null;
+    }
     this.initialized = false;
+  },
+
+  overridePageListener(shouldPassPageListener) {
+    this.isPageListenerOverridden = true;
+
+    const pageListener = this.pageListener;
+    if (!pageListener) {
+      return null;
+    }
+    if (shouldPassPageListener) {
+      this.pageListener = null;
+      return pageListener;
+    }
+    this.uninit();
+    return null;
+  },
+
+  reset(pageListener) {
+    this.isPageListenerOverridden = false;
+    this.init(pageListener);
   },
 
   getTopSites() {

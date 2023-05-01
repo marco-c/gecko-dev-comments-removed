@@ -6,10 +6,21 @@
 
 const lazy = {};
 
+
+
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
+
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutHomeStartupCache: "resource:///modules/BrowserGlue.sys.mjs",
-  AboutNewTabParent: "resource:///actors/AboutNewTabParent.sys.mjs",
 });
+
+const { RemotePages } = ChromeUtils.importESModule(
+  "resource://gre/modules/remotepagemanager/RemotePageManagerParent.sys.mjs"
+);
 
 const {
   actionCreators: ac,
@@ -20,6 +31,7 @@ const {
 );
 
 const ABOUT_NEW_TAB_URL = "about:newtab";
+const ABOUT_HOME_URL = "about:home";
 
 const DEFAULT_OPTIONS = {
   dispatch(action) {
@@ -46,22 +58,18 @@ class ActivityStreamMessageChannel {
 
 
 
+
+
+
   constructor(options = {}) {
     Object.assign(this, DEFAULT_OPTIONS, options);
+    this.channel = null;
 
     this.middleware = this.middleware.bind(this);
     this.onMessage = this.onMessage.bind(this);
     this.onNewTabLoad = this.onNewTabLoad.bind(this);
     this.onNewTabUnload = this.onNewTabUnload.bind(this);
     this.onNewTabInit = this.onNewTabInit.bind(this);
-  }
-
-  
-
-
-  get loadedTabs() {
-    
-    return lazy.AboutNewTabParent?.loadedTabs || new Map();
   }
 
   
@@ -74,6 +82,10 @@ class ActivityStreamMessageChannel {
   middleware(store) {
     return next => action => {
       const skipMain = action.meta && action.meta.skipMain;
+      if (!this.channel && !skipMain) {
+        next(action);
+        return;
+      }
       if (au.isSendToOneContent(action)) {
         this.send(action);
       } else if (au.isBroadcastToContent(action)) {
@@ -108,13 +120,7 @@ class ActivityStreamMessageChannel {
     
     lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
-    for (let browser of this.loadedTabs.keys()) {
-      browser.sendMessageToActor(
-        this.outgoingMessageName,
-        action,
-        "AboutNewTab"
-      );
-    }
+    this.channel.sendAsyncMessage(this.outgoingMessageName, action);
   }
 
   
@@ -126,11 +132,7 @@ class ActivityStreamMessageChannel {
     const targetId = action.meta && action.meta.toTarget;
     const target = this.getTargetById(targetId);
     try {
-      target.sendMessageToActor(
-        this.outgoingMessageName,
-        action,
-        "AboutNewTab"
-      );
+      target.sendAsyncMessage(this.outgoingMessageName, action);
     } catch (e) {
       
     }
@@ -156,10 +158,9 @@ class ActivityStreamMessageChannel {
 
   getTargetById(id) {
     this.validatePortID(id);
-
-    for (let { portID, browser } of this.loadedTabs.values()) {
-      if (portID === id) {
-        return browser;
+    for (let port of this.channel.messagePorts) {
+      if (port.portID === id) {
+        return port;
       }
     }
     return null;
@@ -176,15 +177,11 @@ class ActivityStreamMessageChannel {
     
     lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
-    const preloadedBrowsers = this.getPreloadedBrowsers();
+    const preloadedBrowsers = this.getPreloadedBrowser();
     if (preloadedBrowsers && action.data) {
       for (let preloadedBrowser of preloadedBrowsers) {
         try {
-          preloadedBrowser.sendMessageToActor(
-            this.outgoingMessageName,
-            action,
-            "AboutNewTab"
-          );
+          preloadedBrowser.sendAsyncMessage(this.outgoingMessageName, action);
         } catch (e) {
           
         }
@@ -198,14 +195,14 @@ class ActivityStreamMessageChannel {
 
 
 
-  getPreloadedBrowsers() {
-    let preloadedBrowsers = [];
-    for (let browser of this.loadedTabs.keys()) {
-      if (this.isPreloadedBrowser(browser)) {
-        preloadedBrowsers.push(browser);
+  getPreloadedBrowser() {
+    let preloadedPorts = [];
+    for (let port of this.channel.messagePorts) {
+      if (this.isPreloadedBrowser(port.browser)) {
+        preloadedPorts.push(port);
       }
     }
-    return preloadedBrowsers.length ? preloadedBrowsers : null;
+    return preloadedPorts.length ? preloadedPorts : null;
   }
 
   
@@ -220,29 +217,56 @@ class ActivityStreamMessageChannel {
     return browser.getAttribute("preloadedState") === "preloaded";
   }
 
+  
+
+
+
+  createChannel() {
+    
+    const channel =
+      this.pageURL === ABOUT_NEW_TAB_URL &&
+      lazy.AboutNewTab.overridePageListener(true);
+    this.channel =
+      channel || new RemotePages([ABOUT_HOME_URL, ABOUT_NEW_TAB_URL]);
+    this.channel.addMessageListener("RemotePage:Init", this.onNewTabInit);
+    this.channel.addMessageListener("RemotePage:Load", this.onNewTabLoad);
+    this.channel.addMessageListener("RemotePage:Unload", this.onNewTabUnload);
+    this.channel.addMessageListener(this.incomingMessageName, this.onMessage);
+  }
+
   simulateMessagesForExistingTabs() {
     
-    for (const loadedTab of this.loadedTabs.values()) {
-      let simulatedDetails = {
-        browser: loadedTab.browser,
-        browsingContext: loadedTab.browsingContext,
-        portID: loadedTab.portID,
-        url: loadedTab.url,
-        simulated: true,
+    for (const target of this.channel.messagePorts) {
+      const simulatedMsg = {
+        target: Object.assign({ simulated: true }, target),
       };
-
-      this.onActionFromContent(
-        {
-          type: at.NEW_TAB_INIT,
-          data: simulatedDetails,
-        },
-        loadedTab.portID
-      );
-
-      if (loadedTab.loaded) {
-        this.tabLoaded(simulatedDetails);
+      this.onNewTabInit(simulatedMsg);
+      if (target.loaded) {
+        this.onNewTabLoad(simulatedMsg);
       }
     }
+  }
+
+  
+
+
+  destroyChannel() {
+    this.channel.removeMessageListener("RemotePage:Init", this.onNewTabInit);
+    this.channel.removeMessageListener("RemotePage:Load", this.onNewTabLoad);
+    this.channel.removeMessageListener(
+      "RemotePage:Unload",
+      this.onNewTabUnload
+    );
+    this.channel.removeMessageListener(
+      this.incomingMessageName,
+      this.onMessage
+    );
+    if (this.pageURL === ABOUT_NEW_TAB_URL) {
+      lazy.AboutNewTab.reset(this.channel);
+    } else {
+      this.channel.destroy();
+    }
+    this.channel = null;
   }
 
   
@@ -251,17 +275,13 @@ class ActivityStreamMessageChannel {
 
 
 
-
-
-
-
-  onNewTabInit(msg, tabDetails) {
+  onNewTabInit(msg) {
     this.onActionFromContent(
       {
         type: at.NEW_TAB_INIT,
-        data: tabDetails,
+        data: msg.target,
       },
-      msg.data.portID
+      msg.target.portID
     );
   }
 
@@ -270,15 +290,8 @@ class ActivityStreamMessageChannel {
 
 
 
-
-  onNewTabLoad(msg, tabDetails) {
-    this.tabLoaded(tabDetails);
-  }
-
-  tabLoaded(tabDetails) {
-    tabDetails.loaded = true;
-
-    let { browser } = tabDetails;
+  onNewTabLoad(msg) {
+    let { browser } = msg.target;
     if (
       this.isPreloadedBrowser(browser) &&
       browser.ownerGlobal.windowState !== browser.ownerGlobal.STATE_MINIMIZED &&
@@ -292,7 +305,16 @@ class ActivityStreamMessageChannel {
       browser.renderLayers = true;
     }
 
-    this.onActionFromContent({ type: at.NEW_TAB_LOAD }, tabDetails.portID);
+    this.onActionFromContent({ type: at.NEW_TAB_LOAD }, msg.target.portID);
+  }
+
+  
+
+
+
+
+  onNewTabUnload(msg) {
+    this.onActionFromContent({ type: at.NEW_TAB_UNLOAD }, msg.target.portID);
   }
 
   
@@ -302,25 +324,12 @@ class ActivityStreamMessageChannel {
 
 
 
-  onNewTabUnload(msg, tabDetails) {
-    this.onActionFromContent({ type: at.NEW_TAB_UNLOAD }, tabDetails.portID);
-  }
 
-  
-
-
-
-
-
-
-
-
-  onMessage(msg, tabDetails) {
+  onMessage(msg) {
+    const { portID } = msg.target;
     if (!msg.data || !msg.data.type) {
       console.error(
-        new Error(
-          `Received an improperly formatted message from ${tabDetails.portID}`
-        )
+        new Error(`Received an improperly formatted message from ${portID}`)
       );
       return;
     }
@@ -328,11 +337,8 @@ class ActivityStreamMessageChannel {
     Object.assign(action, msg.data);
     
     
-    action._target = {
-      browser: tabDetails.browser,
-    };
-
-    this.onActionFromContent(action, tabDetails.portID);
+    action._target = msg.target;
+    this.onActionFromContent(action, portID);
   }
 }
 

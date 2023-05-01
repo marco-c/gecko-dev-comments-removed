@@ -24,6 +24,7 @@ add_task(async function test_no_startup_actions() {
 
     
     
+    
     await SpecialPowers.spawn(browser, [], async () => {
       let xrayWindow = ChromeUtils.waiveXrays(content);
       xrayWindow.nonStartupActions = [];

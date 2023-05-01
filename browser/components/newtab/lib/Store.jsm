@@ -145,6 +145,7 @@ class Store {
     }
 
     this._prefs.observeBranch(this);
+    this._messageChannel.createChannel();
 
     
     if (initAction) {
@@ -182,13 +183,7 @@ class Store {
     this._prefs.ignoreBranch(this);
     this.feeds.clear();
     this._feedFactories = null;
-  }
-
-  
-
-
-  getMessageChannel() {
-    return this._messageChannel;
+    this._messageChannel.destroyChannel();
   }
 }
 
