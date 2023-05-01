@@ -19,6 +19,9 @@ ITEM_VALUE(CSSPrefersColorScheme, 0x0007)
 ITEM_VALUE(CSSPrefersReducedMotion, 0x0008)
 
 
+ITEM_VALUE(CSSPrefersContrast, 0x0009)
+
+
 
 
 
