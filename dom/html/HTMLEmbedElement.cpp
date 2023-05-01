@@ -84,14 +84,13 @@ void HTMLEmbedElement::UnbindFromTree(bool aNullParent) {
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
-nsresult HTMLEmbedElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                        const nsAttrValue* aValue,
-                                        const nsAttrValue* aOldValue,
-                                        nsIPrincipal* aSubjectPrincipal,
-                                        bool aNotify) {
+void HTMLEmbedElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                    const nsAttrValue* aValue,
+                                    const nsAttrValue* aOldValue,
+                                    nsIPrincipal* aSubjectPrincipal,
+                                    bool aNotify) {
   if (aValue) {
-    nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
-    NS_ENSURE_SUCCESS(rv, rv);
+    AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
   }
 
   if (aNamespaceID == kNameSpaceID_None &&
@@ -105,41 +104,37 @@ nsresult HTMLEmbedElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       aNamespaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
 }
 
-nsresult HTMLEmbedElement::OnAttrSetButNotChanged(
-    int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
-    bool aNotify) {
-  nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+void HTMLEmbedElement::OnAttrSetButNotChanged(int32_t aNamespaceID,
+                                              nsAtom* aName,
+                                              const nsAttrValueOrString& aValue,
+                                              bool aNotify) {
+  AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
   return nsGenericHTMLElement::OnAttrSetButNotChanged(aNamespaceID, aName,
                                                       aValue, aNotify);
 }
 
-nsresult HTMLEmbedElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
-                                                nsAtom* aName, bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::src) {
-      
-      
-      
-      
-      
-      
-      
-      if (aNotify && IsInComposedDoc() && !BlockEmbedOrObjectContentLoading()) {
-        nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-            "HTMLEmbedElement::LoadObject",
-            [self = RefPtr<HTMLEmbedElement>(this), aNotify]() {
-              if (self->IsInComposedDoc()) {
-                self->LoadObject(aNotify, true);
-              }
-            }));
-        return NS_OK;
-      }
-    }
+void HTMLEmbedElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
+                                            bool aNotify) {
+  if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::src) {
+    return;
   }
-
-  return NS_OK;
+  
+  
+  
+  
+  
+  
+  
+  if (!aNotify || !IsInComposedDoc() || BlockEmbedOrObjectContentLoading()) {
+    return;
+  }
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "HTMLEmbedElement::LoadObject",
+      [self = RefPtr<HTMLEmbedElement>(this), aNotify]() {
+        if (self->IsInComposedDoc()) {
+          self->LoadObject(aNotify, true);
+        }
+      }));
 }
 
 bool HTMLEmbedElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,

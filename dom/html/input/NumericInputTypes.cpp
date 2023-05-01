@@ -156,7 +156,7 @@ bool NumberInputType::IsMutable() const {
 }
 
 
-nsresult RangeInputType::MinMaxStepAttrChanged() {
+void RangeInputType::MinMaxStepAttrChanged() {
   
   
   
@@ -169,6 +169,5 @@ nsresult RangeInputType::MinMaxStepAttrChanged() {
   
   nsAutoString value;
   GetNonFileValueInternal(value);
-  return SetValueInternal(value,
-                          TextControlState::ValueSetterOption::ByInternalAPI);
+  SetValueInternal(value, TextControlState::ValueSetterOption::ByInternalAPI);
 }

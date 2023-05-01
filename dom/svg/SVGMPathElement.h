@@ -47,10 +47,10 @@ class SVGMPathElement final : public SVGMPathElementBase,
   void UnbindFromTree(bool aNullParent) override;
 
   
-  nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                        const nsAttrValue* aValue, const nsAttrValue* aOldValue,
-                        nsIPrincipal* aMaybeScriptedPrincipal,
-                        bool aNotify) override;
+  void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                    const nsAttrValue* aValue, const nsAttrValue* aOldValue,
+                    nsIPrincipal* aMaybeScriptedPrincipal,
+                    bool aNotify) override;
 
   
   

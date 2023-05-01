@@ -286,23 +286,19 @@ nsresult HTMLBodyElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return mAttrs.ForceMapped(this, &aContext.OwnerDoc());
 }
 
-nsresult HTMLBodyElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                       const nsAttrValue* aValue,
-                                       const nsAttrValue* aOldValue,
-                                       nsIPrincipal* aSubjectPrincipal,
-                                       bool aNotify) {
-  nsresult rv = nsGenericHTMLElement::AfterSetAttr(
-      aNameSpaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
+void HTMLBodyElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                                   const nsAttrValue* aValue,
+                                   const nsAttrValue* aOldValue,
+                                   nsIPrincipal* aSubjectPrincipal,
+                                   bool aNotify) {
+  nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
+                                     aSubjectPrincipal, aNotify);
   
   
   
   if (!aValue && IsAttributeMapped(aName)) {
-    nsresult rv = mAttrs.ForceMapped(this, OwnerDoc());
-    NS_ENSURE_SUCCESS(rv, rv);
+    Unused << mAttrs.ForceMapped(this, OwnerDoc());
   }
-
-  return NS_OK;
 }
 
 #define EVENT(name_, id_, type_, \

@@ -313,11 +313,10 @@ nsresult SVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   return NS_OK;
 }
 
-nsresult SVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                  const nsAttrValue* aValue,
-                                  const nsAttrValue* aOldValue,
-                                  nsIPrincipal* aSubjectPrincipal,
-                                  bool aNotify) {
+void SVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                              const nsAttrValue* aValue,
+                              const nsAttrValue* aOldValue,
+                              nsIPrincipal* aSubjectPrincipal, bool aNotify) {
   
   
   

@@ -174,14 +174,14 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
   
   nsIContent* AsContent() override { return this; }
 
-  virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue,
-                                nsIPrincipal* aSubjectPrincipal,
-                                bool aNotify) override;
-  virtual nsresult OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
-                                          const nsAttrValueOrString& aValue,
-                                          bool aNotify) override;
+  virtual void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                            const nsAttrValue* aValue,
+                            const nsAttrValue* aOldValue,
+                            nsIPrincipal* aSubjectPrincipal,
+                            bool aNotify) override;
+  virtual void OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
+                                      const nsAttrValueOrString& aValue,
+                                      bool aNotify) override;
 
  private:
   nsContentPolicyType GetContentPolicyType() const override {
@@ -205,8 +205,7 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
 
 
 
-  nsresult AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
-                                bool aNotify);
+  void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
 
   bool mIsDoneAddingChildren;
 };

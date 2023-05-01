@@ -250,11 +250,11 @@ ElementState SVGAElement::IntrinsicState() const {
   return Link::LinkState() | SVGAElementBase::IntrinsicState();
 }
 
-nsresult SVGAElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                   const nsAttrValue* aValue,
-                                   const nsAttrValue* aOldValue,
-                                   nsIPrincipal* aMaybeScriptedPrincipal,
-                                   bool aNotify) {
+void SVGAElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                               const nsAttrValue* aValue,
+                               const nsAttrValue* aOldValue,
+                               nsIPrincipal* aMaybeScriptedPrincipal,
+                               bool aNotify) {
   if (aName == nsGkAtoms::href && (aNameSpaceID == kNameSpaceID_XLink ||
                                    aNameSpaceID == kNameSpaceID_None)) {
     

@@ -111,52 +111,45 @@ void HTMLObjectElement::UnbindFromTree(bool aNullParent) {
   nsGenericHTMLFormControlElement::UnbindFromTree(aNullParent);
 }
 
-nsresult HTMLObjectElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                         const nsAttrValue* aValue,
-                                         const nsAttrValue* aOldValue,
-                                         nsIPrincipal* aSubjectPrincipal,
-                                         bool aNotify) {
-  nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+void HTMLObjectElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                     const nsAttrValue* aValue,
+                                     const nsAttrValue* aOldValue,
+                                     nsIPrincipal* aSubjectPrincipal,
+                                     bool aNotify) {
+  AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
   return nsGenericHTMLFormControlElement::AfterSetAttr(
       aNamespaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
 }
 
-nsresult HTMLObjectElement::OnAttrSetButNotChanged(
+void HTMLObjectElement::OnAttrSetButNotChanged(
     int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
     bool aNotify) {
-  nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
   return nsGenericHTMLFormControlElement::OnAttrSetButNotChanged(
       aNamespaceID, aName, aValue, aNotify);
 }
 
-nsresult HTMLObjectElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
-                                                 nsAtom* aName, bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None) {
-    
-    
-    
-    
-    
-    
-    
-    if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
-        aName == nsGkAtoms::data && !BlockEmbedOrObjectContentLoading()) {
-      nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "HTMLObjectElement::LoadObject",
-          [self = RefPtr<HTMLObjectElement>(this), aNotify]() {
-            if (self->IsInComposedDoc()) {
-              self->LoadObject(aNotify, true);
-            }
-          }));
-      return NS_OK;
-    }
+void HTMLObjectElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
+                                             nsAtom* aName, bool aNotify) {
+  
+  
+  
+  
+  
+  
+  
+  if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::data ||
+      !aNotify || !IsInComposedDoc() || !mIsDoneAddingChildren ||
+      BlockEmbedOrObjectContentLoading()) {
+    return;
   }
-
-  return NS_OK;
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "HTMLObjectElement::LoadObject",
+      [self = RefPtr<HTMLObjectElement>(this), aNotify]() {
+        if (self->IsInComposedDoc()) {
+          self->LoadObject(aNotify, true);
+        }
+      }));
 }
 
 bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
