@@ -5,12 +5,38 @@
 
 
 #include "ImportScanner.h"
+
+#include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {
 
 static inline bool IsWhitespace(char16_t aChar) {
   return nsContentUtils::IsHTMLWhitespace(aChar);
+}
+
+static inline bool OptionalSupportsMatches(const nsAString& aAfterRuleValue) {
+  
+  if (!StaticPrefs::layout_css_import_supports_enabled()) {
+    return true;
+  }
+
+  
+  if (aAfterRuleValue.IsEmpty()) {
+    return true;
+  }
+
+  NS_ConvertUTF16toUTF8 value(aAfterRuleValue);
+  return Servo_CSSSupportsForImport(&value);
+}
+
+void ImportScanner::ResetState() {
+  mInImportRule = false;
+  
+  mRuleName.Truncate(0);
+  mRuleValue.Truncate(0);
+  mAfterRuleValue.Truncate(0);
 }
 
 void ImportScanner::Start() {
@@ -26,12 +52,16 @@ void ImportScanner::EmitUrl() {
       
       mRuleValue.Trim(" \t\n\r\f", false);
     }
-    mUrlsFound.AppendElement(std::move(mRuleValue));
+
+    
+    
+    
+    
+    if (OptionalSupportsMatches(mAfterRuleValue)) {
+      mUrlsFound.AppendElement(std::move(mRuleValue));
+    }
   }
-  mInImportRule = false;
-  
-  mRuleName.Truncate(0);
-  mRuleValue.Truncate(0);
+  ResetState();
   MOZ_ASSERT(mRuleValue.IsEmpty());
 }
 
@@ -40,9 +70,7 @@ nsTArray<nsString> ImportScanner::Stop() {
     EmitUrl();
   }
   mState = State::OutsideOfStyleElement;
-  mInImportRule = false;
-  mRuleName.Truncate(0);
-  mRuleValue.Truncate(0);
+  ResetState();
   return std::move(mUrlsFound);
 }
 
@@ -190,6 +218,12 @@ auto ImportScanner::Scan(char16_t aChar) -> State {
       if (aChar == '{') {
         return State::Done;
       }
+
+      if (!mAfterRuleValue.Append(aChar, mozilla::fallible)) {
+        mAfterRuleValue.Truncate(0);
+        return State::Done;
+      }
+
       return mState;  
                       
     }
