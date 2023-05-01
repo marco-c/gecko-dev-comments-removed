@@ -174,11 +174,11 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
 
 void ParallelMarkTask::markOrRequestWork(AutoLockGC& lock) {
   for (;;) {
-    if (hasWork() && !tryMarking(lock)) {
-      return;
-    }
-
-    while (!hasWork()) {
+    if (hasWork()) {
+      if (!tryMarking(lock)) {
+        return;
+      }
+    } else {
       if (!requestWork(lock)) {
         return;
       }
@@ -221,10 +221,6 @@ bool ParallelMarkTask::requestWork(AutoLockGC& lock) {
   
   waitUntilResumed(lock);
 
-  if (hasWork()) {
-    pm->incActiveTasks(this, lock);
-  }
-
   return true;
 }
 
@@ -258,14 +254,22 @@ void ParallelMarkTask::resume() {
   {
     AutoLockGC lock(gc);
     MOZ_ASSERT(isWaiting);
+
     isWaiting = false;
+
+    
+    
+    if (hasWork()) {
+      pm->incActiveTasks(this, lock);
+    }
   }
 
   resumed.notify_all();
 }
 
-void ParallelMarkTask::resume(const AutoLockGC& lock) {
+void ParallelMarkTask::resumeOnFinish(const AutoLockGC& lock) {
   MOZ_ASSERT(isWaiting);
+  MOZ_ASSERT(!hasWork());
 
   isWaiting = false;
   resumed.notify_all();
@@ -310,7 +314,7 @@ void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
       ParallelMarkTask* task = waitingTasks.ref().popFront();
       MOZ_ASSERT(waitingTaskCount != 0);
       waitingTaskCount--;
-      task->resume(lock);
+      task->resumeOnFinish(lock);
     }
   }
 }
@@ -336,6 +340,7 @@ void ParallelMarker::donateWorkFrom(GCMarker* src) {
   gc->unlockGC();
 
   
+  MOZ_ASSERT(!waitingTask->hasWork());
   GCMarker::moveWork(waitingTask->marker, src);
 
   gc->stats().count(gcstats::COUNT_PARALLEL_MARK_INTERRUPTIONS);
