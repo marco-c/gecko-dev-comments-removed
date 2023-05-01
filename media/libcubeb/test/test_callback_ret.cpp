@@ -158,7 +158,7 @@ void run_test_callback(test_direction direction,
     cleanup_cubeb_at_exit(ctx, cubeb_destroy);
 
   if ((direction == INPUT_ONLY || direction == DUPLEX) &&
-      !has_available_input_device(ctx)) {
+      !can_run_audio_input_test(ctx)) {
     
 
     return;

@@ -66,6 +66,12 @@ TEST(cubeb, overload_callback)
   std::unique_ptr<cubeb, decltype(&cubeb_destroy)>
     cleanup_cubeb_at_exit(ctx, cubeb_destroy);
 
+  
+  
+  if (strcmp(cubeb_get_backend_id(ctx), "wasapi") != 0) {
+    return;
+  }
+
   output_params.format = STREAM_FORMAT;
   output_params.rate = 48000;
   output_params.channels = 2;

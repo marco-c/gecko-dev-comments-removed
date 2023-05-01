@@ -86,7 +86,7 @@ TEST(cubeb, record)
 
   
 
-  if (!has_available_input_device(ctx)) {
+  if (!can_run_audio_input_test(ctx)) {
     return;
   }
 
