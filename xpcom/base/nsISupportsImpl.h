@@ -1468,25 +1468,17 @@ constexpr bool ShouldLogInheritedRefcnt =
 
 
 
-#if defined(NS_BUILD_REFCNT_LOGGING)
-#  define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)  \
-    NS_IMETHOD_(MozExternalRefCountType) AddRef() override {  \
-      NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super);            \
-    }                                                         \
-    NS_IMETHOD_(MozExternalRefCountType) Release() override { \
-      NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);           \
-    }
-#else  
-   
-   
-   
-   
-   
-   
-#  define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super) \
-    using Super::AddRef;                                     \
-    using Super::Release;
-#endif  
+
+
+
+
+#define NS_INLINE_DECL_REFCOUNTING_INHERITED(Class, Super)  \
+  NS_IMETHOD_(MozExternalRefCountType) AddRef() override {  \
+    NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super);            \
+  }                                                         \
+  NS_IMETHOD_(MozExternalRefCountType) Release() override { \
+    NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);           \
+  }
 
 
 
