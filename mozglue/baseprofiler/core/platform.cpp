@@ -1473,9 +1473,9 @@ static void DoEHABIBacktrace(PSLockRef aLock,
 #ifdef USE_LUL_STACKWALK
 
 
-#  if defined(MOZ_HAVE_ASAN_BLACKLIST)
-MOZ_ASAN_BLACKLIST static void ASAN_memcpy(void* aDst, const void* aSrc,
-                                           size_t aLen) {
+#  if defined(MOZ_HAVE_ASAN_IGNORE)
+MOZ_ASAN_IGNORE static void ASAN_memcpy(void* aDst, const void* aSrc,
+                                        size_t aLen) {
   
   
   
@@ -1614,7 +1614,7 @@ static void DoLULBacktrace(PSLockRef aLock,
       
       
       
-#  if defined(MOZ_HAVE_ASAN_BLACKLIST)
+#  if defined(MOZ_HAVE_ASAN_IGNORE)
       ASAN_memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
 #  else
       memcpy(&stackImg.mContents[0], (void*)start, nToCopy);

@@ -220,19 +220,18 @@
 
 #if defined(__has_feature)
 #  if __has_feature(address_sanitizer)
-#    define MOZ_HAVE_ASAN_BLACKLIST
+#    define MOZ_HAVE_ASAN_IGNORE
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
-#    define MOZ_HAVE_ASAN_BLACKLIST
+#    define MOZ_HAVE_ASAN_IGNORE
 #  endif
 #endif
 
-#if defined(MOZ_HAVE_ASAN_BLACKLIST)
-#  define MOZ_ASAN_BLACKLIST \
-    MOZ_NEVER_INLINE __attribute__((no_sanitize_address))
+#if defined(MOZ_HAVE_ASAN_IGNORE)
+#  define MOZ_ASAN_IGNORE MOZ_NEVER_INLINE __attribute__((no_sanitize_address))
 #else
-#  define MOZ_ASAN_BLACKLIST
+#  define MOZ_ASAN_IGNORE
 #endif
 
 
@@ -243,13 +242,12 @@
 
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
-#    define MOZ_TSAN_BLACKLIST \
-      MOZ_NEVER_INLINE __attribute__((no_sanitize_thread))
+#    define MOZ_TSAN_IGNORE MOZ_NEVER_INLINE __attribute__((no_sanitize_thread))
 #  else
-#    define MOZ_TSAN_BLACKLIST
+#    define MOZ_TSAN_IGNORE
 #  endif
 #else
-#  define MOZ_TSAN_BLACKLIST
+#  define MOZ_TSAN_IGNORE
 #endif
 
 #if defined(__has_attribute)

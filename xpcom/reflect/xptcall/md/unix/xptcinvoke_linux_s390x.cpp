@@ -169,7 +169,7 @@ typedef nsresult (*vtable_func)(nsISupports *, uint64_t, uint64_t, uint64_t, uin
 
 
 
-MOZ_ASAN_BLACKLIST
+MOZ_ASAN_IGNORE
 EXPORT_XPCOM_API(nsresult)
 NS_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
                  uint32_t paramCount, nsXPTCVariant* params)
