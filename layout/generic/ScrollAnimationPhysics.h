@@ -55,8 +55,6 @@ static inline double ComputeAcceleratedWheelDelta(double aDelta,
   return (aDelta * aCounter * double(aFactor) / 10);
 }
 
-static const uint32_t kScrollSeriesTimeoutMs = 80;  
-
 }  
 
 #endif  
