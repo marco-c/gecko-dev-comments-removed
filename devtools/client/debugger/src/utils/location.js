@@ -33,6 +33,21 @@ export function createLocation({
   };
 }
 
+
+
+
+
+
+
+export function createPendingSelectedLocation(location) {
+  return {
+    url: location.source.url,
+
+    line: location.line,
+    column: location.column,
+  };
+}
+
 export function sortSelectedLocations(locations, selectedSource) {
   return Array.from(locations).sort((locationA, locationB) => {
     const aSelected = getSelectedLocation(locationA, selectedSource);

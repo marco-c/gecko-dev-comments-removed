@@ -9,6 +9,7 @@
 
 import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
+import { createPendingSelectedLocation } from "../utils/location";
 
 export function initialSourcesState(state) {
   return {
@@ -74,13 +75,13 @@ export function initialSourcesState(state) {
 
 
 
+
+
     pendingSelectedLocation: prefs.pendingSelectedLocation,
   };
 }
 
 function update(state = initialSourcesState(), action) {
-  let location = null;
-
   switch (action.type) {
     case "ADD_SOURCES":
       return addSources(state, action.sources);
@@ -91,44 +92,44 @@ function update(state = initialSourcesState(), action) {
     case "INSERT_SOURCE_ACTORS":
       return insertSourceActors(state, action);
 
-    case "SET_SELECTED_LOCATION":
-      location = {
-        ...action.location,
-        url: action.source.url,
-      };
+    case "SET_SELECTED_LOCATION": {
+      let pendingSelectedLocation = null;
 
       if (action.source.url) {
-        prefs.pendingSelectedLocation = location;
+        pendingSelectedLocation = createPendingSelectedLocation(
+          action.location
+        );
+        prefs.pendingSelectedLocation = pendingSelectedLocation;
       }
 
       return {
         ...state,
-        selectedLocation: {
-          sourceId: action.source.id,
-          ...action.location,
-        },
-        pendingSelectedLocation: location,
+        selectedLocation: action.location,
+        pendingSelectedLocation,
       };
+    }
 
-    case "CLEAR_SELECTED_LOCATION":
-      location = { url: "" };
-      prefs.pendingSelectedLocation = location;
+    case "CLEAR_SELECTED_LOCATION": {
+      const pendingSelectedLocation = { url: "" };
+      prefs.pendingSelectedLocation = pendingSelectedLocation;
 
       return {
         ...state,
         selectedLocation: null,
-        pendingSelectedLocation: location,
+        pendingSelectedLocation,
       };
+    }
 
-    case "SET_PENDING_SELECTED_LOCATION":
-      location = {
+    case "SET_PENDING_SELECTED_LOCATION": {
+      const pendingSelectedLocation = {
         url: action.url,
         line: action.line,
         column: action.column,
       };
 
-      prefs.pendingSelectedLocation = location;
-      return { ...state, pendingSelectedLocation: location };
+      prefs.pendingSelectedLocation = pendingSelectedLocation;
+      return { ...state, pendingSelectedLocation };
+    }
 
     case "SET_ORIGINAL_BREAKABLE_LINES": {
       const { breakableLines, sourceId } = action;

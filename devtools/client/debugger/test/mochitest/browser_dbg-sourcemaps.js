@@ -63,6 +63,16 @@ add_task(async function() {
   );
 
   
+  let pendingSelectedLocation = Services.prefs.getStringPref(
+    "devtools.debugger.pending-selected-location"
+  );
+  is(
+    pendingSelectedLocation,
+    JSON.stringify({ url: entrySrc.url, line: 0, column: undefined }),
+    "Pending selected location is the expected one"
+  );
+
+  
   await addBreakpoint(dbg, "entry.js", 15);
   is(getBreakpointCount(), 1, "One breakpoint exists");
   assertBreakpointExists(dbg, entrySrc, 15);
@@ -81,6 +91,15 @@ add_task(async function() {
   await dbg.actions.jumpToMappedSelectedLocation(getContext(dbg));
   await stepOut(dbg);
   assertPausedAtSourceAndLine(dbg, entrySrc.id, 16);
+
+  pendingSelectedLocation = Services.prefs.getStringPref(
+    "devtools.debugger.pending-selected-location"
+  );
+  is(
+    pendingSelectedLocation,
+    JSON.stringify({ url: entrySrc.url, line: 16, column: 0 }),
+    "Pending selected location is the expected one"
+  );
 });
 
 function assertBreakpointExists(dbg, source, line) {
