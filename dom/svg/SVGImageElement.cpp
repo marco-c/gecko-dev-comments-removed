@@ -284,18 +284,6 @@ SVGImageElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
-already_AddRefed<Path> SVGImageElement::BuildPath(PathBuilder* aBuilder) {
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE(
-      "There is no reason to call BuildPath for SVGImageElement");
-  return nullptr;
-}
-
-
-
-
 
 bool SVGImageElement::HasValidDimensions() const {
   float width, height;
