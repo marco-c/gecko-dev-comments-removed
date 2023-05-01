@@ -4,7 +4,7 @@
 
 "use strict";
 
-function networkRequest(url, opts) {
+async function networkRequest(url, opts) {
   const supportedProtocols = ["http:", "https:", "data:"];
 
   
@@ -17,24 +17,27 @@ function networkRequest(url, opts) {
   }
 
   if (supportedProtocols.every(protocol => !url.startsWith(protocol))) {
-    return Promise.reject(`unsupported protocol for sourcemap request ${url}`);
+    throw new Error(`unsupported protocol for sourcemap request ${url}`);
   }
 
-  return fetch(url, {
+  const response = await fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache",
     redirect: opts.allowRedirects ? "follow" : "error",
-  }).then(res => {
-    if (res.status >= 200 && res.status < 300) {
-      if (res.headers.get("Content-Type") === "application/wasm") {
-        return res.arrayBuffer().then(buffer => ({
-          content: buffer,
-          isDwarf: true,
-        }));
-      }
-      return res.text().then(text => ({ content: text }));
-    }
-    return Promise.reject(`request failed with status ${res.status}`);
   });
+
+  if (response.ok) {
+    if (response.headers.get("Content-Type") === "application/wasm") {
+      const buffer = await response.arrayBuffer();
+      return {
+        content: buffer,
+        isDwarf: true,
+      };
+    }
+    const text = await response.text();
+    return { content: text };
+  }
+
+  throw new Error(`request failed with status ${response.status}`);
 }
 
 module.exports = { networkRequest };

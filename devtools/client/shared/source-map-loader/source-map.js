@@ -306,8 +306,8 @@ async function getOriginalSourceText(originalSourceId) {
     } catch (err) {
       
       
+      
       err.metadata = {
-        ...err.metadata,
         url,
       };
       throw err;

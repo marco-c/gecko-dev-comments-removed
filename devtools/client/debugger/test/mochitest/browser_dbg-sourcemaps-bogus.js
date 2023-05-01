@@ -4,25 +4,55 @@
 
 
 
-
 "use strict";
 
 requestLongerTimeout(2);
 
 add_task(async function() {
   
-  const dbg = await initDebugger("doc-sourcemap-bogus.html", "bogus-map.js");
-
-  await selectSource(dbg, "bogus-map.js");
 
   
   
-  await addBreakpoint(dbg, "bogus-map.js", 4);
+  
+  
+  
+  const dbg = await initDebugger(
+    "doc-sourcemap-bogus.html",
+    "non-existant-map.js",
+    "map-with-failed-original-request.js",
+    "map-with-failed-original-request.original.js"
+  );
+  
+  is(dbg.selectors.getSourceCount(), 3, "Only 3 source exists");
+
+  await selectSource(dbg, "non-existant-map.js");
+
+  
+  
+  await addBreakpoint(dbg, "non-existant-map.js", 4);
   invokeInTab("runCode");
   await waitForPaused(dbg);
-  assertPausedAtSourceAndLine(dbg, findSource(dbg, "bogus-map.js").id, 4);
+  assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "non-existant-map.js").id,
+    4
+  );
+  await resume(dbg);
+
+  await selectSource(dbg, "map-with-failed-original-request.js");
+  await addBreakpoint(dbg, "map-with-failed-original-request.js", 7);
+  invokeInTab("changeStyleAttribute");
+  await waitForPaused(dbg);
 
   
   
-  is(dbg.selectors.getSourceCount(), 1, "Only 1 source exists");
+  
+  
+
+  is(
+    getCM(dbg).getValue(),
+    `Error while fetching an original source: request failed with status 404\nSource URL: ${EXAMPLE_URL}map-with-failed-original-request.original.js`
+  );
+
+  await resume(dbg);
 });
