@@ -158,13 +158,8 @@ class VideoCaptureModule : public rtc::RefCountInterface {
   
   virtual void SetTrackingId(uint32_t aTrackingIdProcId) {}
 
-  
-  void NotifyReleasing() { mOkToDestroy = true; }
-
  protected:
   ~VideoCaptureModule() override {}
-
-  std::atomic<bool> mOkToDestroy = {false};
 };
 
 }  
