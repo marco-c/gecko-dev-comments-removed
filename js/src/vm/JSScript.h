@@ -900,8 +900,8 @@ class ScriptSource {
   
   
   
-  template <typename Unit>
-  [[nodiscard]] bool setUncompressedSourceHelper(JSContext* cx,
+  template <typename ContextT, typename Unit>
+  [[nodiscard]] bool setUncompressedSourceHelper(ContextT* cx,
                                                  EntryUnits<Unit>&& source,
                                                  size_t length,
                                                  SourceRetrievable retrievable);
@@ -910,7 +910,7 @@ class ScriptSource {
   
   template <typename Unit>
   [[nodiscard]] bool initializeUnretrievableUncompressedSource(
-      JSContext* cx, EntryUnits<Unit>&& source, size_t length);
+      FrontendContext* fc, EntryUnits<Unit>&& source, size_t length);
 
   
   
