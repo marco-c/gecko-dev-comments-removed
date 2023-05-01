@@ -1048,6 +1048,126 @@ done:
 #undef NEED_NDIGITS_OR_LESS
 }
 
+int FixupNonFullYear(int year) {
+  if (year < 50) {
+    year += 2000;
+  } else if (year >= 50 && year < 100) {
+    year += 1900;
+  }
+  return year;
+}
+
+template <typename CharT>
+bool IsPrefixOfKeyword(const CharT* s, size_t len, const char* keyword) {
+  while (len > 0 && *keyword) {
+    MOZ_ASSERT(IsAsciiAlpha(*s));
+    MOZ_ASSERT(IsAsciiLowercaseAlpha(*keyword));
+
+    if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *keyword) {
+      break;
+    }
+
+    s++, keyword++;
+    len--;
+  }
+
+  return len == 0;
+}
+
+static constexpr const char* const months_names[] = {
+    "january", "february", "march",     "april",   "may",      "june",
+    "july",    "august",   "september", "october", "november", "december",
+};
+
+
+
+
+
+
+
+
+
+template <typename CharT>
+static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
+                                     size_t* indexOut, int* yearOut,
+                                     int* monOut, int* mdayOut) {
+  size_t i = 0;
+
+  size_t mday;
+  if (!ParseDigitsNOrLess(4, &mday, s, &i, length)) {
+    return false;
+  }
+  size_t mdayDigits = i;
+
+  if (i >= length || s[i] != '-') {
+    return false;
+  }
+  ++i;
+
+  size_t start = i;
+  for (; i < length; i++) {
+    if (!IsAsciiAlpha(s[i])) {
+      break;
+    }
+  }
+
+  
+  static constexpr size_t ShortestMonthNameLength = 3;
+  if (i - start < ShortestMonthNameLength) {
+    return false;
+  }
+
+  size_t mon = 0;
+  for (size_t m = 0; m < std::size(months_names); ++m) {
+    
+    
+    if (IsPrefixOfKeyword(s + start, i - start, months_names[m])) {
+      
+      mon = m + 1;
+      break;
+    }
+  }
+  if (mon == 0) {
+    return false;
+  }
+
+  if (i >= length || s[i] != '-') {
+    return false;
+  }
+  ++i;
+
+  size_t pre = i;
+  size_t year;
+  if (!ParseDigitsNOrLess(4, &year, s, &i, length)) {
+    return false;
+  }
+  size_t yearDigits = i - pre;
+
+  if (i < length && IsAsciiDigit(s[i])) {
+    return false;
+  }
+
+  
+  if (mday > 31 && year <= 31 && yearDigits < 4) {
+    std::swap(mday, year);
+    std::swap(mdayDigits, yearDigits);
+  }
+
+  if (mday > 31 || mdayDigits > 2) {
+    return false;
+  }
+
+  if (yearDigits < 4) {
+    year = FixupNonFullYear(year);
+  }
+
+  *indexOut = i;
+  *yearOut = year;
+  *monOut = mon;
+  *mdayOut = mday;
+  return true;
+}
+
 struct CharsAndAction {
   const char* chars;
   int action;
@@ -1131,6 +1251,17 @@ static bool ParseDate(DateTimeInfo::ShouldRFP shouldRFP, const CharT* s,
   bool negativeYear = false;
 
   size_t index = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  bool isDashedDate =
+      TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday);
+
   while (index < length) {
     int c = s[index];
     index++;
@@ -1316,23 +1447,6 @@ static bool ParseDate(DateTimeInfo::ShouldRFP shouldRFP, const CharT* s,
         return false;
       }
 
-      auto IsPrefixOfKeyword = [](const CharT* s, size_t len,
-                                  const char* keyword) {
-        while (len > 0 && *keyword) {
-          MOZ_ASSERT(IsAsciiAlpha(*s));
-          MOZ_ASSERT(IsAsciiLowercaseAlpha(*keyword));
-
-          if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *keyword) {
-            break;
-          }
-
-          s++, keyword++;
-          len--;
-        }
-
-        return len == 0;
-      };
-
       size_t k = std::size(keywords);
       while (k-- > 0) {
         const CharsAndAction& keyword = keywords[k];
@@ -1427,68 +1541,68 @@ static bool ParseDate(DateTimeInfo::ShouldRFP shouldRFP, const CharT* s,
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (seenMonthName) {
-    if (mday >= 100 && mon >= 100) {
-      return false;
-    }
-
-    if (year > 0 && (mday == 0 || mday > 31) && !seenFullYear) {
-      int temp = year;
-      year = mday;
-      mday = temp;
-    }
-
-    if (mday <= 0 || mday > 31) {
-      return false;
-    }
-
-  } else if (0 < mon && mon <= 12 && 0 < mday && mday <= 31) {
+  if (!isDashedDate) {
     
-  } else {
+
     
-    if (mon > 31 && mday <= 12 && year <= 31 && !seenFullYear) {
-      int temp = year;
-      year = mon;
-      mon = mday;
-      mday = temp;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (seenMonthName) {
+      if (mday >= 100 && mon >= 100) {
+        return false;
+      }
+
+      if (year > 0 && (mday == 0 || mday > 31) && !seenFullYear) {
+        int temp = year;
+        year = mday;
+        mday = temp;
+      }
+
+      if (mday <= 0 || mday > 31) {
+        return false;
+      }
+
+    } else if (0 < mon && mon <= 12 && 0 < mday && mday <= 31) {
+      
     } else {
-      return false;
+      
+      if (mon > 31 && mday <= 12 && year <= 31 && !seenFullYear) {
+        int temp = year;
+        year = mon;
+        mon = mday;
+        mday = temp;
+      } else {
+        return false;
+      }
     }
-  }
 
-  
-  
-  
-  
-  if (!seenFullYear) {
-    if (year < 50) {
-      year += 2000;
-    } else if (year >= 50 && year < 100) {
-      year += 1900;
+    
+    
+    
+    
+    if (!seenFullYear) {
+      year = FixupNonFullYear(year);
     }
-  }
 
-  if (negativeYear) {
-    year = -year;
+    if (negativeYear) {
+      year = -year;
+    }
   }
 
   mon -= 1; 
