@@ -152,11 +152,14 @@ function NetworkEventMessage({
       title: unicodeURL,
       href: url,
       onClick: e => {
+        
+        
+        
+        e.preventDefault();
         const shouldOpenLink =
           (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
         if (shouldOpenLink) {
           e.stopPropagation();
-          e.preventDefault();
           serviceContainer.openLink(url, e);
         }
       },
