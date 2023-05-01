@@ -712,6 +712,10 @@ class nsWindow final : public nsBaseWidget {
   virtual nsresult RestoreHiDPIMode() override;
 #endif
 
+  
+  
+  mozilla::Maybe<UINT> GetHiddenTaskbarEdge();
+
   static bool sTouchInjectInitialized;
   static InjectTouchInputPtr sInjectTouchFuncPtr;
   static uint32_t sInstanceCount;
