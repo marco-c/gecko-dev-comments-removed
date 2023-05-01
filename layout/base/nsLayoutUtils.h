@@ -3039,6 +3039,19 @@ class nsLayoutUtils {
 
   static nsIFrame* GetNearestOverflowClipFrame(nsIFrame* aFrame);
 
+  
+
+
+  static bool IsSmoothScrollingEnabled();
+
+  
+
+
+
+
+
+  static void RecomputeSmoothScrollDefault();
+
  private:
   
 

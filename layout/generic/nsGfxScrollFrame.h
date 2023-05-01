@@ -538,8 +538,6 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   void PostScrolledAreaEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrolledAreaEvent();
 
-  static bool IsSmoothScrollingEnabled();
-
   
 
 

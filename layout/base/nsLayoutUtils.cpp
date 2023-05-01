@@ -85,6 +85,7 @@
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_font.h"
+#include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layers.h"
@@ -7767,6 +7768,22 @@ size_t nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
     }
   }
   return total;
+}
+
+
+void nsLayoutUtils::RecomputeSmoothScrollDefault() {
+  
+  
+  
+  Preferences::SetBool(
+      "general.smoothScroll",
+      !LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0),
+      PrefValueKind::Default);
+}
+
+
+bool nsLayoutUtils::IsSmoothScrollingEnabled() {
+  return StaticPrefs::general_smoothScroll();
 }
 
 
