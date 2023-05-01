@@ -59,13 +59,13 @@ function testSendingPings(pingPaths) {
 
 
 function waitForPingDeletion(pingId) {
-  const path = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
+  const path = PathUtils.join(TelemetryStorage.pingDirectoryPath, pingId);
 
   let checkFn = (resolve, reject) =>
     setTimeout(() => {
-      OS.File.exists(path).then(exists => {
+      IOUtils.exists(path).then(exists => {
         if (!exists) {
-          Assert.ok(true, pingId + " was deleted");
+          Assert.ok(true, `${pingId} was deleted`);
           resolve();
         } else {
           checkFn(resolve, reject);
@@ -92,7 +92,7 @@ async function test_pingSender(version = "1.0") {
   await TelemetryStorage.savePing(data, true);
 
   
-  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
+  const pingPath = PathUtils.join(TelemetryStorage.pingDirectoryPath, data.id);
 
   
   
@@ -121,7 +121,7 @@ async function test_pingSender(version = "1.0") {
   
   await deferred404Hit.promise;
   Assert.ok(
-    await OS.File.exists(pingPath),
+    await IOUtils.exists(pingPath),
     "The pending ping must not be deleted if we fail to send using the PingSender"
   );
 
@@ -210,7 +210,7 @@ add_task(async function test_bannedDomains() {
   await TelemetryStorage.savePing(data, true);
 
   
-  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
+  const pingPath = PathUtils.join(TelemetryStorage.pingDirectoryPath, data.id);
 
   
   let bannedUris = [
@@ -252,7 +252,7 @@ add_task(async function test_pingSender_multiple_pings() {
 
   
   const pingPaths = data.map(d =>
-    OS.Path.join(TelemetryStorage.pingDirectoryPath, d.id)
+    PathUtils.join(TelemetryStorage.pingDirectoryPath, d.id)
   );
 
   

@@ -35,7 +35,7 @@ function fakeHealthSchedulerTimer(set, clear) {
   Policy.clearSchedulerTickTimeout = clear;
 }
 
-add_task(async function setup() {
+add_setup(async function setup() {
   
   do_get_profile(true);
   
@@ -49,6 +49,10 @@ add_task(async function setup() {
     TelemetryUtils.Preferences.Server,
     "http://localhost:" + PingServer.port
   );
+});
+
+registerCleanupFunction(async function cleanup() {
+  await PingServer.stop();
 });
 
 add_task(async function test_sendImmediately() {
@@ -227,7 +231,7 @@ add_task(async function test_discardedForSizePending() {
 add_task(async function test_usePingSenderOnShutdown() {
   if (
     gIsAndroid ||
-    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
+    (AppConstants.platform == "linux" && !Services.appinfo.is64Bit)
   ) {
     
     
@@ -272,8 +276,4 @@ add_task(async function test_usePingSenderOnShutdown() {
     "1.0",
     "Should have received the correct PingSender version string."
   );
-});
-
-add_task(async function cleanup() {
-  await PingServer.stop();
 });
