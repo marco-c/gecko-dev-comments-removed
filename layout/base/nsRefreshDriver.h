@@ -519,6 +519,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   void DoRefresh();
 
+  
+  void UpdateAnimatedImages(mozilla::TimeStamp aPreviousRefresh,
+                            mozilla::TimeStamp aNowTime);
+
   TickReasons GetReasonsToTick() const;
   void AppendTickReasonsToString(TickReasons aReasons, nsACString& aStr) const;
 
