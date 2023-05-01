@@ -120,13 +120,17 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
   
 
   const auto fnGetExistingTc =
-      [&](const Maybe<SurfaceDescriptor>& aDesc) -> RefPtr<TextureClient> {
+      [&](const Maybe<SurfaceDescriptor>& aDesc,
+          bool& aOutLostFrontTexture) -> RefPtr<TextureClient> {
     if (aDesc) {
       return GetFrontBufferFromDesc(*aDesc, flags);
     }
     if (provider) {
-      if (!provider->SetKnowsCompositor(forwarder)) {
+      if (!provider->SetKnowsCompositor(forwarder, aOutLostFrontTexture)) {
         gfxCriticalNote << "BufferProvider::SetForwarder failed";
+        return nullptr;
+      }
+      if (aOutLostFrontTexture) {
         return nullptr;
       }
 
@@ -196,7 +200,12 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
     EnsurePipeline();
 
     
-    auto tc = fnGetExistingTc(desc);
+    bool lostFrontTexture = false;
+    auto tc = fnGetExistingTc(desc, lostFrontTexture);
+    if (lostFrontTexture) {
+      
+      return;
+    }
     if (!tc) {
       
       tc = fnMakeTcFromSnapshot();
