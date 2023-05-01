@@ -1163,8 +1163,14 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     
     
     
-    classicScript = new JS::loader::ClassicScript(aRequest->mFetchOptions,
-                                                  aRequest->mBaseURL);
+    nsCOMPtr<nsIURI> requestBaseURI;
+    if (loadContext->mMutedErrorFlag.valueOr(false)) {
+      NS_NewURI(getter_AddRefs(requestBaseURI), "about:blank"_ns);
+    } else {
+      requestBaseURI = aRequest->mBaseURL;
+    }
+    classicScript =
+        new JS::loader::ClassicScript(aRequest->mFetchOptions, requestBaseURI);
   }
 
   bool successfullyEvaluated =
