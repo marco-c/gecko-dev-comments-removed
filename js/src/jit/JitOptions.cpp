@@ -180,6 +180,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(baselineJitWarmUpThreshold, 100);
 
   
+  SET_DEFAULT(disableJitHints, false);
+
+  
   
   SET_DEFAULT(trialInliningWarmUpThreshold, 500);
 
