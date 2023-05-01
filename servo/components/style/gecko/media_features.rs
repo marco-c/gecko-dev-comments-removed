@@ -698,7 +698,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 68] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -1014,6 +1014,7 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
     lnf_int_feature!(atom!("-moz-panel-animations"), PanelAnimations),
+    bool_pref_feature!(atom!("-moz-gtk-non-native-menus"), "widget.gtk.non-native-menu-styling"),
     
     bool_pref_feature!(
         atom!("-moz-mathml-core-maction-and-semantics"),
@@ -1025,8 +1026,5 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
         "mathml.ms_lquote_rquote_attributes.disabled"
     ),
     
-    bool_pref_feature!(
-        atom!("-moz-popover-enabled"),
-        "dom.element.popover.enabled"
-    ),
+    bool_pref_feature!(atom!("-moz-popover-enabled"), "dom.element.popover.enabled"),
 ];
