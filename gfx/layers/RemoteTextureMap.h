@@ -178,6 +178,9 @@ class RemoteTextureMap {
 
   bool WaitRemoteTextureReady(const RemoteTextureInfo& aInfo);
 
+  void SuppressRemoteTextureReadyCheck(const RemoteTextureId aTextureId,
+                                       const base::ProcessId aForPid);
+
   UniquePtr<TextureData> GetRecycledBufferTextureData(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
       gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
@@ -246,6 +249,7 @@ class RemoteTextureMap {
     
     
     CompositableTextureHostRef mAsyncRemoteTextureHost;
+    bool mReadyCheckSuppressed = false;
   };
 
   void UpdateTexture(const MonitorAutoLock& aProofOfLock,
