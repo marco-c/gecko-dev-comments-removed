@@ -390,6 +390,12 @@ SOCKET_PROCESSES_TESTS += [
 UTILITY_PROCESSES += [
     
     DllBlocklistEntry("cyinjct.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("ipseng64.dll", ALL_VERSIONS),
+    DllBlocklistEntry("ipseng32.dll", ALL_VERSIONS),
+    DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
+    DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
 ]
 
 UTILITY_PROCESSES_TESTS += [
