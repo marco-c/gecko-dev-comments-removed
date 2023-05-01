@@ -383,7 +383,8 @@ bool KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType) {
   
   
   
-  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check") ||
+  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check",
+                                                  RFPTarget::KeyboardEvents) ||
       mInitializedByJS || aCallerType == CallerType::System ||
       mEvent->mFlags.mInSystemGroup ||
       mEvent->AsKeyboardEvent()->mLocation ==
@@ -393,7 +394,8 @@ bool KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType) {
 
   nsCOMPtr<Document> doc = GetDocument();
   
-  return doc ? doc->ShouldResistFingerprinting() : true;
+  return doc ? doc->ShouldResistFingerprinting(RFPTarget::KeyboardEvents)
+             : true;
 }
 
 bool KeyboardEvent::GetSpoofedModifierStates(const Modifiers aModifierKey,
