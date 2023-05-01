@@ -293,7 +293,6 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 
   
   bool mightHaveEagerBaselineHint = false;
-#ifdef NIGHTLY_BUILD
   if (!JitOptions.disableJitHints && !script->noEagerBaselineHint()) {
     JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
     
@@ -302,7 +301,6 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
       mightHaveEagerBaselineHint = true;
     }
   }
-#endif
   
   if (!mightHaveEagerBaselineHint) {
     if (script->getWarmUpCount() <= JitOptions.baselineJitWarmUpThreshold) {
