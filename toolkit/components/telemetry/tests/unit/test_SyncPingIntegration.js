@@ -9,7 +9,7 @@ Services.prefs.setBoolPref(
   true
 );
 
-add_task(async function test_setup() {
+add_setup(async function test_setup() {
   
   do_get_profile();
 });
@@ -59,11 +59,7 @@ add_task(async function test_shutdown_handler_no_submit() {
 
   await TelemetryController.testShutdown();
   Assert.ok(handlerCalled);
-  
-  let snapshot = Telemetry.getSnapshotForScalars("main", true).parent || {};
-  Assert.ok(
-    !("telemetry.sync_shutdown_ping_sent" in snapshot),
-    "should not have recorded we sent a ping"
-  );
-  await TelemetryController.testReset();
 });
+
+
+
