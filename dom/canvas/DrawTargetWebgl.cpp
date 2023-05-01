@@ -1518,6 +1518,7 @@ void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
     return;
   }
 
+  IntRect samplingRect;
   if (!mSharedContext->IsCompatibleSurface(aSurface)) {
     
     
@@ -1530,18 +1531,16 @@ void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
 
     
     
-    if (aSurface->GetFormat() == mFormat && PrepareContext(false) &&
-        MarkChanged()) {
-      if (RefPtr<DataSourceSurface> data = aSurface->GetDataSurface()) {
-        mSharedContext->UploadSurface(data, mFormat, srcRect,
-                                      destRect.TopLeft(), false, false, mTex);
-      }
-      return;
+    
+    IntRect surfaceRect = aSurface->GetRect();
+    if (!srcRect.IsEqualEdges(surfaceRect)) {
+      samplingRect = srcRect.SafeIntersect(surfaceRect);
     }
   }
 
   Matrix matrix = Matrix::Translation(destRect.TopLeft() - srcRect.TopLeft());
-  SurfacePattern pattern(aSurface, ExtendMode::CLAMP, matrix);
+  SurfacePattern pattern(aSurface, ExtendMode::CLAMP, matrix,
+                         SamplingFilter::POINT, samplingRect);
   DrawRect(Rect(destRect), pattern, DrawOptions(1.0f, CompositionOp::OP_SOURCE),
            Nothing(), nullptr, false, false);
 }
