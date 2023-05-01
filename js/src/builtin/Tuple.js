@@ -151,6 +151,29 @@ function TupleToReversed() {
 }
 
 
+function IsConcatSpreadable(O) {
+  
+  if (!IsObject(O) && !IsTuple(O)) {
+    return false;
+  }
+
+  
+  var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
+
+  
+  if (spreadable !== undefined) {
+    return ToBoolean(spreadable);
+  }
+
+  if (IsTuple(O)) {
+    return true;
+  }
+
+  
+  return IsArray(O);
+}
+
+
 
 function TupleConcat() {
   
