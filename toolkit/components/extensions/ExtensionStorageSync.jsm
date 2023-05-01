@@ -151,6 +151,30 @@ class ExtensionStorageSync {
     return this._promisify("clear", extension, context);
   }
 
+  clearOnUninstall(extensionId) {
+    if (!this.migrationOk) {
+      
+      
+      return;
+    }
+    
+    
+    
+    return new Promise(resolve => {
+      const callback = new ExtensionStorageApiCallback(
+        resolve,
+        err => {
+          Cu.reportError(err);
+          resolve();
+        },
+        
+        
+        () => {}
+      );
+      lazy.storageSvc.clear(extensionId, callback);
+    });
+  }
+
   get(extension, spec, context) {
     return this._promisify("get", extension, context, spec);
   }
