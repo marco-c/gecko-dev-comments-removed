@@ -1,15 +1,11 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "PeerConnectionIdp",
-  "resource://gre/modules/media/PeerConnectionIdp.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  PeerConnectionIdp: "resource://gre/modules/media/PeerConnectionIdp.sys.mjs",
+});
 
 const PC_CONTRACT = "@mozilla.org/dom/peerconnection;1";
 const PC_OBS_CONTRACT = "@mozilla.org/dom/peerconnectionobserver;1";
@@ -49,12 +45,12 @@ let setupPrototype = (_class, dict) => {
   Object.assign(_class.prototype, dict);
 };
 
-
-
-class GlobalPCList {
+// Global list of PeerConnection objects, so they can be cleaned up when
+// a page is torn down. (Maps inner window ID to an array of PC objects).
+export class GlobalPCList {
   constructor() {
     this._list = {};
-    this._networkdown = false; 
+    this._networkdown = false; // XXX Need to query current state somehow
     this._lifecycleobservers = {};
     this._nextId = 1;
     Services.obs.addObserver(this, "inner-window-destroyed", true);
@@ -125,8 +121,8 @@ class GlobalPCList {
       }
     };
 
-    
-    
+    // a plugin crashed; if it's associated with any of our PCs, fire an
+    // event to the DOM window
     for (let winId in this._list) {
       broadcastPluginCrash(this._list, winId, data.pluginID, data.pluginName);
     }
@@ -165,8 +161,8 @@ class GlobalPCList {
       topic == "profile-change-net-teardown" ||
       topic == "network:offline-about-to-go-offline"
     ) {
-      
-      
+      // As Necko doesn't prevent us from accessing the network we still need to
+      // monitor the network offline/online state here. See bug 1326483
       this._networkdown = true;
     } else if (topic == "network:offline-status-changed") {
       if (data == "offline") {
@@ -205,6 +201,7 @@ class GlobalPCList {
     this._lifecycleobservers[winID] = cb;
   }
 }
+
 setupPrototype(GlobalPCList, {
   QueryInterface: ChromeUtils.generateQI([
     "nsIObserver",
@@ -215,7 +212,7 @@ setupPrototype(GlobalPCList, {
 
 var _globalPCList = new GlobalPCList();
 
-class RTCIceCandidate {
+export class RTCIceCandidate {
   init(win) {
     this._win = win;
   }
@@ -229,13 +226,14 @@ class RTCIceCandidate {
     Object.assign(this, dict);
   }
 }
+
 setupPrototype(RTCIceCandidate, {
   classID: PC_ICE_CID,
   contractID: PC_ICE_CONTRACT,
   QueryInterface: ChromeUtils.generateQI(["nsIDOMGlobalPropertyInitializer"]),
 });
 
-class RTCSessionDescription {
+export class RTCSessionDescription {
   init(win) {
     this._win = win;
     this._winID = this._win.windowGlobalChild.innerWindowId;
@@ -268,7 +266,7 @@ class RTCSessionDescription {
 
   warn() {
     if (!this._warned) {
-      
+      // Warn once per RTCSessionDescription about deprecated writable usage.
       this.logWarning(
         "RTCSessionDescription's members are readonly! " +
           "Writing to them is deprecated and will break soon!"
@@ -288,20 +286,21 @@ class RTCSessionDescription {
     );
   }
 }
+
 setupPrototype(RTCSessionDescription, {
   classID: PC_SESSION_CID,
   contractID: PC_SESSION_CONTRACT,
   QueryInterface: ChromeUtils.generateQI(["nsIDOMGlobalPropertyInitializer"]),
 });
 
-
+// Records PC related telemetry
 class PeerConnectionTelemetry {
-  
+  // ICE connection state enters connected or completed.
   recordConnected() {
     Services.telemetry.scalarAdd("webrtc.peerconnection.connected", 1);
     this.recordConnected = () => {};
   }
-  
+  // DataChannel is created
   _recordDataChannelCreated() {
     Services.telemetry.scalarAdd(
       "webrtc.peerconnection.datachannel_created",
@@ -309,7 +308,7 @@ class PeerConnectionTelemetry {
     );
     this._recordDataChannelCreated = () => {};
   }
-  
+  // DataChannel initialized with maxRetransmitTime
   _recordMaxRetransmitTime(maxRetransmitTime) {
     if (maxRetransmitTime === undefined) {
       return false;
@@ -321,7 +320,7 @@ class PeerConnectionTelemetry {
     this._recordMaxRetransmitTime = () => true;
     return true;
   }
-  
+  // DataChannel initialized with maxPacketLifeTime
   _recordMaxPacketLifeTime(maxPacketLifeTime) {
     if (maxPacketLifeTime === undefined) {
       return false;
@@ -333,7 +332,7 @@ class PeerConnectionTelemetry {
     this._recordMaxPacketLifeTime = () => true;
     return true;
   }
-  
+  // DataChannel initialized
   recordDataChannelInit(maxRetransmitTime, maxPacketLifeTime) {
     const retxUsed = this._recordMaxRetransmitTime(maxRetransmitTime);
     if (this._recordMaxPacketLifeTime(maxPacketLifeTime) && retxUsed) {
@@ -347,22 +346,22 @@ class PeerConnectionTelemetry {
   }
 }
 
-class RTCPeerConnection {
+export class RTCPeerConnection {
   constructor() {
     this._pc = null;
     this._closed = false;
 
-    
-    
-    
+    // http://rtcweb-wg.github.io/jsep/#rfc.section.4.1.9
+    // canTrickle == null means unknown; when a remote description is received it
+    // is set to true or false based on the presence of the "trickle" ice-option
     this._canTrickle = null;
 
-    
+    // So we can record telemetry on state transitions
     this._iceConnectionState = "new";
 
     this._hasStunServer = this._hasTurnServer = false;
     this._iceGatheredRelayCandidates = false;
-    
+    // Records telemetry
     this._pcTelemetry = new PeerConnectionTelemetry();
   }
 
@@ -370,7 +369,7 @@ class RTCPeerConnection {
     this._win = win;
   }
 
-  
+  // Pref-based overrides; will _not_ be reflected in getConfiguration
   _applyPrefsToConfig(rtcConfig) {
     if (
       rtcConfig.iceTransportPolicy == "all" &&
@@ -418,12 +417,12 @@ class RTCPeerConnection {
             `follow standard "unified-plan".`
         );
       }
-      
+      // Don't let it show up in getConfiguration.
       delete rtcConfig.sdpSemantics;
     }
 
     if (this._config) {
-      
+      // certificates must match
       if (rtcConfig.certificates.length != this._config.certificates.length) {
         throw new this._win.DOMException(
           "Cannot change certificates with setConfiguration (length differs)",
@@ -440,7 +439,7 @@ class RTCPeerConnection {
         }
       }
 
-      
+      // bundlePolicy must match
       if (rtcConfig.bundlePolicy != this._config.bundlePolicy) {
         throw new this._win.DOMException(
           "Cannot change bundlePolicy with setConfiguration",
@@ -448,7 +447,7 @@ class RTCPeerConnection {
         );
       }
 
-      
+      // peerIdentity must match
       if (
         rtcConfig.peerIdentity &&
         rtcConfig.peerIdentity != this._config.peerIdentity
@@ -459,13 +458,13 @@ class RTCPeerConnection {
         );
       }
 
-      
-      
-      
+      // TODO (bug 1339203): rtcpMuxPolicy must match
+      // TODO (bug 1529398): iceCandidatePoolSize must match if sLD has ever
+      // been called.
     }
 
-    
-    
+    // This gets executed in the typical case when iceServers
+    // are passed in through the web page.
     this._validateIceServers(
       rtcConfig.iceServers,
       "RTCPeerConnection constructor passed invalid RTCConfiguration"
@@ -498,9 +497,9 @@ class RTCPeerConnection {
       );
     }
 
-    
+    // TODO(bug 1531875): Check origin of certs
 
-    
+    // TODO(bug 1176518): Remove this code once we support multiple certs
     let certificate;
     if (certificates.length == 1) {
       certificate = certificates[0];
@@ -546,7 +545,7 @@ class RTCPeerConnection {
     this.__DOM_IMPL__._innerObject = this;
     const observer = new this._win.PeerConnectionObserver(this.__DOM_IMPL__);
 
-    
+    // Add a reference to the PeerConnection to global list (before init).
     _globalPCList.addPC(this);
 
     this._pc.initialize(observer, this._win);
@@ -569,8 +568,8 @@ class RTCPeerConnection {
     this._validateConfig(rtcConfig);
     this._checkIfIceRestartRequired(rtcConfig);
 
-    
-    
+    // Allow prefs to tweak these settings before passing to c++, but hide all
+    // of that from JS.
     const configWithPrefTweaks = Object.assign({}, rtcConfig);
     this._applyPrefsToConfig(configWithPrefTweaks);
     this._pc.setConfiguration(configWithPrefTweaks);
@@ -605,21 +604,21 @@ class RTCPeerConnection {
     this._remoteIdp = new lazy.PeerConnectionIdp(this._win, idpTimeout);
   }
 
-  
+  // Add a function to the internal operations chain.
 
   _chain(operation) {
     return this._pc.chain(operation);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // It's basically impossible to use async directly in JSImplemented code,
+  // because the implicit promise must be wrapped to the right type for content.
+  //
+  // The _async wrapper takes care of this. The _legacy wrapper implements
+  // legacy callbacks in a manner that produces correct line-numbers in errors,
+  // provided that methods validate their inputs before putting themselves on
+  // the pc's operations chain.
+  //
+  // These wrappers also serve as guards against settling promises past close().
 
   _async(func) {
     return this._win.Promise.resolve(this._closeWrapper(func));
@@ -667,7 +666,7 @@ class RTCPeerConnection {
     }
   }
 
-  
+  // This implements the fairly common "Queue a task" logic
   async _queueTaskWithClosedCheck(func) {
     const pc = this;
     return new this._win.Promise((resolve, reject) => {
@@ -686,25 +685,25 @@ class RTCPeerConnection {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * An RTCConfiguration may look like this:
+   *
+   * { "iceServers": [ { urls: "stun:stun.example.org", },
+   *                   { url: "stun:stun.example.org", }, // deprecated version
+   *                   { urls: ["turn:turn1.x.org", "turn:turn2.x.org"],
+   *                     username:"jib", credential:"mypass"} ] }
+   *
+   * This function normalizes the structure of the input for rtcConfig.iceServers for us,
+   * so we test well-formed stun/turn urls before passing along to C++.
+   *   msg - Error message to detail which array-entry failed, if any.
+   */
   _validateIceServers(iceServers, msg) {
-    
+    // Normalize iceServers input
     iceServers.forEach(server => {
       if (typeof server.urls === "string") {
         server.urls = [server.urls];
       } else if (!server.urls && server.url) {
-        
+        // TODO: Remove support for legacy iceServer.url eventually (Bug 1116766)
         server.urls = [server.url];
         this.logWarning("RTCIceServer.url is deprecated! Use urls instead.");
       }
@@ -728,7 +727,7 @@ class RTCPeerConnection {
 
     iceServers.forEach(({ urls, username, credential, credentialType }) => {
       if (!urls) {
-        
+        // TODO: Remove once url is deprecated (Bug 1369563)
         throw new this._win.TypeError(
           "Missing required 'urls' member of RTCIceServer"
         );
@@ -769,7 +768,7 @@ class RTCPeerConnection {
               );
             }
             this._hasTurnServer = true;
-            
+            // If this is not a TURN TCP/TLS server, it is also a STUN server
             const parameters = query.split("&");
             if (!parameters.includes("transport=tcp")) {
               this._hasStunServer = true;
@@ -800,10 +799,10 @@ class RTCPeerConnection {
     });
   }
 
-  
-  
-  
-  
+  // Ideally, this should be of the form _checkState(state),
+  // where the state is taken from an enumeration containing
+  // the valid peer connection states defined in the WebRTC
+  // spec. See Bug 831756.
   _checkClosed() {
     if (this._closed) {
       throw new this._win.DOMException(
@@ -814,14 +813,14 @@ class RTCPeerConnection {
   }
 
   dispatchEvent(event) {
-    
-    
+    // PC can close while events are firing if there is an async dispatch
+    // in c++ land. But let through "closed" signaling and ice connection events.
     if (!this._suppressEvents) {
       this.__DOM_IMPL__.dispatchEvent(event);
     }
   }
 
-  
+  // Log error message to web console and window.onerror, if present.
   logErrorAndCallOnError(e) {
     this.logMsg(
       e.message,
@@ -830,13 +829,13 @@ class RTCPeerConnection {
       Ci.nsIScriptError.errorFlag
     );
 
-    
+    // Safely call onerror directly if present (necessary for testing)
     try {
       if (typeof this._win.onerror === "function") {
         this._win.onerror(e.message, e.fileName, e.lineNumber);
       }
     } catch (e) {
-      
+      // If onerror itself throws, service it.
       try {
         this.logMsg(
           e.message,
@@ -903,15 +902,15 @@ class RTCPeerConnection {
     } else {
       options = optionsOrOnSucc;
     }
-    
+    // This entry-point handles both new and legacy call sig. Decipher which one
     if (onSuccess) {
       return this._legacy(onSuccess, onErr, () => this._createOffer(options));
     }
     return this._async(() => this._createOffer(options));
   }
 
-  
-  
+  // Ensures that we have at least one transceiver of |kind| that is
+  // configured to receive. It will create one if necessary.
   _ensureOfferToReceive(kind) {
     let hasRecv = this.getTransceivers().some(
       transceiver =>
@@ -926,7 +925,7 @@ class RTCPeerConnection {
     }
   }
 
-  
+  // Handles offerToReceiveAudio/Video
   _ensureTransceiversForOfferToReceive(options) {
     if (options.offerToReceiveAudio) {
       this._ensureOfferToReceive("audio");
@@ -990,7 +989,7 @@ class RTCPeerConnection {
   }
 
   createAnswer(optionsOrOnSucc, onErr) {
-    
+    // This entry-point handles both new and legacy call sig. Decipher which one
     if (typeof optionsOrOnSucc == "function") {
       return this._legacy(optionsOrOnSucc, onErr, () => this._createAnswer({}));
     }
@@ -1055,9 +1054,9 @@ class RTCPeerConnection {
   }
 
   _sanityCheckSdp(sdp) {
-    
-    
-    
+    // The fippo butter finger filter AKA non-ASCII chars
+    // Note: SDP allows non-ASCII character in the subject (who cares?)
+    // eslint-disable-next-line no-control-regex
     let pos = sdp.search(/[^\u0000-\u007f]/);
     if (pos != -1) {
       throw new this._win.DOMException(
@@ -1080,11 +1079,11 @@ class RTCPeerConnection {
     }
     this._checkClosed();
     return this._chain(async () => {
-      
-      
-      
-      
-      
+      // Avoid Promise.all ahead of synchronous part of spec algorithm, since it
+      // defers. NOTE: The spec says to return an already-rejected promise in
+      // some cases, which is difficult to achieve in practice from JS (would
+      // require avoiding await and then() entirely), but we want to come as
+      // close as we reasonably can.
       const p = this._getPermission();
       if (!type) {
         switch (this.signalingState) {
@@ -1124,15 +1123,15 @@ class RTCPeerConnection {
   }
 
   async _validateIdentity(sdp, origin) {
-    
-    
-    
+    // Only run a single identity verification at a time.  We have to do this to
+    // avoid problems with the fact that identity validation doesn't block the
+    // resolution of setRemoteDescription().
     const validate = async () => {
-      
+      // Access this._pc synchronously in case pc is closed later
       const identity = this._pc.peerIdentity;
       await this._lastIdentityValidation;
       const msg = await this._remoteIdp.verifyIdentityFromSDP(sdp, origin);
-      
+      // If this pc has an identity already, then the identity in sdp must match
       if (identity && (!msg || msg.identity !== identity)) {
         throw new this._win.DOMException(
           "Peer Identity mismatch, expected: " + identity,
@@ -1143,7 +1142,7 @@ class RTCPeerConnection {
         return;
       }
       if (msg) {
-        
+        // Set new identity and generate an event.
         this._pc.peerIdentity = msg.identity;
         this._resolvePeerIdentity(
           Cu.cloneInto(
@@ -1159,21 +1158,21 @@ class RTCPeerConnection {
 
     const haveValidation = validate();
 
-    
+    // Always eat errors on this chain
     this._lastIdentityValidation = haveValidation.catch(() => {});
 
-    
-    
-    
+    // If validation fails, we have some work to do. Fork it so it cannot
+    // interfere with the validation chain itself, even if the catch function
+    // throws.
     haveValidation.catch(e => {
       if (this._closed) {
         return;
       }
       this._rejectPeerIdentity(e);
 
-      
-      
-      
+      // If we don't expect a specific peer identity, failure to get a valid
+      // peer identity is not a terminal state, so replace the promise to
+      // allow another attempt.
       if (!this._pc.peerIdentity) {
         this._resetPeerIdentityPromise();
       }
@@ -1182,7 +1181,7 @@ class RTCPeerConnection {
     if (this._closed) {
       return;
     }
-    
+    // Only wait for IdP validation if we need identity matching
     if (this._pc.peerIdentity) {
       await haveValidation;
     }
@@ -1235,7 +1234,7 @@ class RTCPeerConnection {
         });
 
         if (type != "rollback") {
-          
+          // Do setRemoteDescription and identity validation in parallel
           await this._validateIdentity(sdp);
         }
         await p;
@@ -1295,7 +1294,7 @@ class RTCPeerConnection {
 
     let desc = null;
     try {
-      
+      // The getter for remoteDescription can throw if the pc is closed.
       desc = this.remoteDescription;
     } catch (e) {}
     if (!desc) {
@@ -1417,7 +1416,7 @@ class RTCPeerConnection {
       transceiver => !transceiver.stopped && transceiver.sender == sender
     );
 
-    
+    // If the transceiver was removed due to rollback, let it slide.
     if (!transceiver || !sender.track) {
       return;
     }
@@ -1452,9 +1451,9 @@ class RTCPeerConnection {
     try {
       return this._pc.addTransceiver(init, kind, sendTrack);
     } catch (e) {
-      
-      
-      
+      // Exceptions thrown by c++ code do not propagate. In most cases, that's
+      // fine because we're using Promises, which can be copied. But this is
+      // not promise-based, so we have to do this sketchy stuff.
       const holder = new StructuredCloneHolder(new ClonedErrorHolder(e));
       throw holder.deserialize(this._win);
     }
@@ -1602,8 +1601,8 @@ class RTCPeerConnection {
   }
 
   get signalingState() {
-    
-    
+    // checking for our local pc closed indication
+    // before invoking the pc methods.
     if (this._closed) {
       return "closed";
     }
@@ -1688,9 +1687,9 @@ class RTCPeerConnection {
     }
 
     if (protocol.length > 32767) {
-      
-      
-      
+      // At least 65536/2 UTF-16 characters. UTF-8 might be too long.
+      // Spec says to check how long |protocol| and |label| are in _bytes_. This
+      // is a little ambiguous. For now, examine the length of the utf-8 encoding.
       const byteCounter = new TextEncoder();
 
       if (byteCounter.encode(protocol).length > 65535) {
@@ -1722,7 +1721,7 @@ class RTCPeerConnection {
     if (id == 65535) {
       throw new this._win.TypeError("id cannot be 65535");
     }
-    
+    // Must determine the type where we still know if entries are undefined.
     let type;
     if (maxPacketLifeTime !== undefined) {
       type = Ci.IPeerConnection.kDataChannelPartialReliableTimed;
@@ -1731,7 +1730,7 @@ class RTCPeerConnection {
     } else {
       type = Ci.IPeerConnection.kDataChannelReliable;
     }
-    
+    // Synchronous since it doesn't block.
     let dataChannel;
     try {
       dataChannel = this._pc.createDataChannel(
@@ -1754,14 +1753,15 @@ class RTCPeerConnection {
       throw new this._win.DOMException(msg, "OperationError");
     }
 
-    
-    
-    
+    // Spec says to only do this if this is the first DataChannel created,
+    // but the c++ code that does the "is negotiation needed" checking will
+    // only ever return true on the first one.
     this.updateNegotiationNeeded();
 
     return dataChannel;
   }
 }
+
 setupPrototype(RTCPeerConnection, {
   classID: PC_CID,
   contractID: PC_CONTRACT,
@@ -1774,9 +1774,9 @@ setupPrototype(RTCPeerConnection, {
   },
 });
 
+// This is a separate class because we don't want to expose it to DOM.
 
-
-class PeerConnectionObserver {
+export class PeerConnectionObserver {
   init(win) {
     this._win = win;
   }
@@ -1843,30 +1843,30 @@ class PeerConnectionObserver {
     );
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This method is primarily responsible for updating iceConnectionState.
+  // This state is defined in the WebRTC specification as follows:
+  //
+  // iceConnectionState:
+  // -------------------
+  //   new           Any of the RTCIceTransports are in the new state and none
+  //                 of them are in the checking, failed or disconnected state.
+  //
+  //   checking      Any of the RTCIceTransports are in the checking state and
+  //                 none of them are in the failed or disconnected state.
+  //
+  //   connected     All RTCIceTransports are in the connected, completed or
+  //                 closed state and at least one of them is in the connected
+  //                 state.
+  //
+  //   completed     All RTCIceTransports are in the completed or closed state
+  //                 and at least one of them is in the completed state.
+  //
+  //   failed        Any of the RTCIceTransports are in the failed state.
+  //
+  //   disconnected  Any of the RTCIceTransports are in the disconnected state
+  //                 and none of them are in the failed state.
+  //
+  //   closed        All of the RTCIceTransports are in the closed state.
 
   handleIceConnectionStateChange(iceConnectionState) {
     let pc = this._dompc;
@@ -1957,7 +1957,7 @@ class PeerConnectionObserver {
         streams,
       })
     );
-    
+    // Fire legacy event as well for a little bit.
     this.dispatchEvent(
       new this._win.MediaStreamTrackEvent("addtrack", { track })
     );
@@ -1979,13 +1979,14 @@ class PeerConnectionObserver {
     }
   }
 }
+
 setupPrototype(PeerConnectionObserver, {
   classID: PC_OBS_CID,
   contractID: PC_OBS_CONTRACT,
   QueryInterface: ChromeUtils.generateQI(["nsIDOMGlobalPropertyInitializer"]),
 });
 
-class RTCPeerConnectionStatic {
+export class RTCPeerConnectionStatic {
   init(win) {
     this._winID = win.windowGlobalChild.innerWindowId;
   }
@@ -1994,29 +1995,21 @@ class RTCPeerConnectionStatic {
     _globalPCList._registerPeerConnectionLifecycleCallback(this._winID, cb);
   }
 }
+
 setupPrototype(RTCPeerConnectionStatic, {
   classID: PC_STATIC_CID,
   contractID: PC_STATIC_CONTRACT,
   QueryInterface: ChromeUtils.generateQI(["nsIDOMGlobalPropertyInitializer"]),
 });
 
-class CreateOfferRequest {
+export class CreateOfferRequest {
   constructor(windowID, innerWindowID, callID, isSecure) {
     Object.assign(this, { windowID, innerWindowID, callID, isSecure });
   }
 }
+
 setupPrototype(CreateOfferRequest, {
   classID: PC_COREQUEST_CID,
   contractID: PC_COREQUEST_CONTRACT,
   QueryInterface: ChromeUtils.generateQI([]),
 });
-
-var EXPORTED_SYMBOLS = [
-  "GlobalPCList",
-  "RTCIceCandidate",
-  "RTCSessionDescription",
-  "RTCPeerConnection",
-  "RTCPeerConnectionStatic",
-  "PeerConnectionObserver",
-  "CreateOfferRequest",
-];

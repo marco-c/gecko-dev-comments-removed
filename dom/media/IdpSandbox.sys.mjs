@@ -1,12 +1,10 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
-
+/** This little class ensures that redirects maintain an https:// origin */
 function RedirectHttpsOnly() {}
 
 RedirectHttpsOnly.prototype = {
@@ -24,15 +22,15 @@ RedirectHttpsOnly.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIChannelEventSink"]),
 };
 
-
-
+/** This class loads a resource into a single string. ResourceLoader.load() is
+ * the entry point. */
 function ResourceLoader(res, rej) {
   this.resolve = res;
   this.reject = rej;
   this.data = "";
 }
 
-
+/** Loads the identified https:// URL. */
 ResourceLoader.load = function(uri, doc) {
   return new Promise((resolve, reject) => {
     let listener = new ResourceLoader(resolve, reject);
@@ -79,9 +77,9 @@ ResourceLoader.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIStreamListener"]),
 };
 
-
-
-
+/**
+ * A simple implementation of the WorkerLocation interface.
+ */
 function createLocationFromURI(uri) {
   return {
     href: uri.spec,
@@ -99,15 +97,15 @@ function createLocationFromURI(uri) {
   };
 }
 
-
-
-
-
-
-
-
-
-function IdpSandbox(domain, protocol, win) {
+/**
+ * A javascript sandbox for running an IdP.
+ *
+ * @param domain (string) the domain of the IdP
+ * @param protocol (string?) the protocol of the IdP [default: 'default']
+ * @param win (obj) the current window
+ * @throws if the domain or protocol aren't valid
+ */
+export function IdpSandbox(domain, protocol, win) {
   this.source = IdpSandbox.createIdpUri(domain, protocol || "default");
   this.active = null;
   this.sandbox = null;
@@ -123,11 +121,11 @@ IdpSandbox.checkDomain = function(domain) {
   }
 };
 
-
-
-
-
-
+/**
+ * Checks that the IdP protocol is superficially sane.  In particular, we don't
+ * want someone adding relative paths (e.g., '../../myuri'), which could be used
+ * to move outside of /.well-known/ and into space that they control.
+ */
 IdpSandbox.checkProtocol = function(protocol) {
   let message = "Invalid protocol for identity provider: ";
   if (!protocol || typeof protocol !== "string") {
@@ -138,10 +136,10 @@ IdpSandbox.checkProtocol = function(protocol) {
   }
 };
 
-
-
-
-
+/**
+ * Turns a domain and protocol into a URI.  This does some aggressive checking
+ * to make sure that we aren't being fooled somehow.  Throws on fooling.
+ */
 IdpSandbox.createIdpUri = function(domain, protocol) {
   IdpSandbox.checkDomain(domain);
   IdpSandbox.checkProtocol(protocol);
@@ -185,9 +183,9 @@ IdpSandbox.prototype = {
     return this.active;
   },
 
-  
-  
-  
+  // Provides the sandbox with some useful facilities.  Initially, this is only
+  // a minimal set; it is far easier to add more as the need arises, than to
+  // take them back if we discover a mistake.
   _populateSandbox(uri) {
     this.sandbox.location = Cu.cloneInto(
       createLocationFromURI(uri),
@@ -225,8 +223,8 @@ IdpSandbox.prototype = {
       throw new Error("IdP setup failed");
     }
 
-    
-    
+    // have to use the ultimate URI, not the starting one to avoid
+    // that origin stealing from the one that redirected to it
     this._populateSandbox(result.request.URI);
     try {
       Cu.evalInSandbox(
@@ -237,8 +235,8 @@ IdpSandbox.prototype = {
         1
       );
     } catch (e) {
-      
-      
+      // These can be passed straight on, because they are explicitly labelled
+      // as being IdP errors by the IdP and we drop line numbers as a result.
       if (e.name === "IdpError" || e.name === "IdpLoginError") {
         throw e;
       }
@@ -252,9 +250,9 @@ IdpSandbox.prototype = {
     return registrar;
   },
 
-  
-  
-  
+  // Capture all the details from the error and log them to the console.  This
+  // can't rethrow anything else because that could leak information about the
+  // internal workings of the IdP across origins.
   _logError(e) {
     let winID = this.window.windowGlobalChild.innerWindowId;
     let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(
@@ -285,5 +283,3 @@ IdpSandbox.prototype = {
     return this.source.spec;
   },
 };
-
-var EXPORTED_SYMBOLS = ["IdpSandbox"];
