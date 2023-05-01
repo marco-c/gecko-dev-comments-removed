@@ -6,25 +6,6 @@
 
 
 const IS_USING_BLOCKLIST_V3 = AppConstants.NIGHTLY_BUILD;
-const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
-
-let MLBF_LOAD_ATTEMPTS;
-let MLBF_LOAD_RESULTS;
-let originalFetchMLBF;
-
-add_task(async function setup() {
-  MLBF_LOAD_RESULTS = [];
-  MLBF_LOAD_ATTEMPTS = [];
-
-  
-  originalFetchMLBF = ExtensionBlocklistMLBF._fetchMLBF;
-  ExtensionBlocklistMLBF._fetchMLBF = async function(record) {
-    MLBF_LOAD_ATTEMPTS.push(record);
-    let promise = originalFetchMLBF.apply(this, arguments);
-    MLBF_LOAD_RESULTS.push(promise);
-    return promise;
-  };
-});
 
 
 
@@ -85,6 +66,12 @@ add_task(
 add_task(
   { skip_if: () => !IS_USING_BLOCKLIST_V3 },
   async function verify_a_known_blocked_add_on_is_not_detected_as_blocked_at_first_run() {
+    const MLBF_LOAD_RESULTS = [];
+    const MLBF_LOAD_ATTEMPTS = [];
+    const onLoadAttempts = record => MLBF_LOAD_ATTEMPTS.push(record);
+    const onLoadResult = promise => MLBF_LOAD_RESULTS.push(promise);
+    spyOnExtensionBlocklistMLBF(onLoadAttempts, onLoadResult);
+
     
     Assert.equal(
       await Blocklist.getAddonBlocklistState(blockedAddon),
@@ -111,6 +98,23 @@ add_task(
       [],
       "MLBF is not fetched again after the first lookup"
     );
-    ExtensionBlocklistMLBF._fetchMLBF = originalFetchMLBF;
   }
 );
+
+function spyOnExtensionBlocklistMLBF(onLoadAttempts, onLoadResult) {
+  const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
+  
+  const originalFetchMLBF = ExtensionBlocklistMLBF._fetchMLBF;
+  ExtensionBlocklistMLBF._fetchMLBF = async function(record) {
+    onLoadAttempts(record);
+    let promise = originalFetchMLBF.apply(this, arguments);
+    onLoadResult(promise);
+    return promise;
+  };
+
+  registerCleanupFunction(
+    () => (ExtensionBlocklistMLBF._fetchMLBF = originalFetchMLBF)
+  );
+
+  return ExtensionBlocklistMLBF;
+}
