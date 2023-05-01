@@ -90,12 +90,13 @@ DDLoggedTypeDeclNameAndBase(WMFMediaDataDecoder, MediaDataDecoder);
 
 
 
-class WMFMediaDataDecoder
+class WMFMediaDataDecoder final
     : public MediaDataDecoder,
       public DecoderDoctorLifeLogger<WMFMediaDataDecoder> {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WMFMediaDataDecoder, final);
+
   explicit WMFMediaDataDecoder(MFTManager* aOutputSource);
-  ~WMFMediaDataDecoder();
 
   RefPtr<MediaDataDecoder::InitPromise> Init() override;
 
@@ -125,6 +126,8 @@ class WMFMediaDataDecoder
   virtual void SetSeekThreshold(const media::TimeUnit& aTime) override;
 
  private:
+  ~WMFMediaDataDecoder();
+
   RefPtr<DecodePromise> ProcessError(HRESULT aError, const char* aReason);
 
   
