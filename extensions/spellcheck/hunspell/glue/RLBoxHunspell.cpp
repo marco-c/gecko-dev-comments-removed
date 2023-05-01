@@ -39,9 +39,6 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
   
   
 
-  const uint64_t defaultMaxSizeForSandbox =
-      wasm_rt_get_default_max_linear_memory_size();
-
   
   
   
@@ -60,12 +57,11 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
   const uint64_t expectedMaxMemory = static_cast<uint64_t>(4.8 * dictSize);
 
   
-  
-  const uint64_t selectedMaxMemory =
-      std::max(expectedMaxMemory, defaultMaxSizeForSandbox);
+  const w2c_mem_capacity capacity = get_valid_wasm2c_memory_capacity(
+      expectedMaxMemory, true );
 
-  bool success = sandbox->create_sandbox( false,
-                                         selectedMaxMemory);
+  bool success =
+      sandbox->create_sandbox( false, &capacity);
 #elif defined(MOZ_WASM_SANDBOXING_HUNSPELL)
   bool success = sandbox->create_sandbox( false);
 #else

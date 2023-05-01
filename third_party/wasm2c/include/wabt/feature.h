@@ -1,0 +1,58 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef WABT_FEATURE_H_
+#define WABT_FEATURE_H_
+
+#include "wabt/common.h"
+
+namespace wabt {
+
+class OptionParser;
+
+class Features {
+ public:
+  void AddOptions(OptionParser*);
+
+  void EnableAll() {
+#define WABT_FEATURE(variable, flag, default_, help) enable_##variable();
+#include "wabt/feature.def"
+#undef WABT_FEATURE
+  }
+
+#define WABT_FEATURE(variable, flag, default_, help)              \
+  bool variable##_enabled() const { return variable##_enabled_; } \
+  void enable_##variable() { set_##variable##_enabled(true); }    \
+  void disable_##variable() { set_##variable##_enabled(false); }  \
+  void set_##variable##_enabled(bool value) {                     \
+    variable##_enabled_ = value;                                  \
+    UpdateDependencies();                                         \
+  }
+#include "wabt/feature.def"
+#undef WABT_FEATURE
+
+ private:
+  void UpdateDependencies();
+
+#define WABT_FEATURE(variable, flag, default_, help) \
+  bool variable##_enabled_ = default_;
+#include "wabt/feature.def"
+#undef WABT_FEATURE
+};
+
+}  
+
+#endif  

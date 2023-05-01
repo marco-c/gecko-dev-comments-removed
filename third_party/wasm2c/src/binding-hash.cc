@@ -14,12 +14,12 @@
 
 
 
-#include "src/binding-hash.h"
+#include "wabt/binding-hash.h"
 
 #include <algorithm>
 #include <vector>
 
-#include "src/ir.h"
+#include "wabt/ir.h"
 
 namespace wabt {
 

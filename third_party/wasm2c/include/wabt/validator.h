@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef WABT_VALIDATOR_H_
+#define WABT_VALIDATOR_H_
+
+#include "wabt/error.h"
+#include "wabt/feature.h"
+#include "wabt/shared-validator.h"
+
+namespace wabt {
+
+struct Module;
+struct Script;
+
+
+
+Result ValidateScript(const Script*, Errors*, const ValidateOptions&);
+Result ValidateModule(const Module*, Errors*, const ValidateOptions&);
+
+}  
+
+#endif  

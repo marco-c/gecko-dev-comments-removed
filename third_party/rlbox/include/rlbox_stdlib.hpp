@@ -228,29 +228,34 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
   copied = false;
 
   
-  detail::dynamic_check(num <= std::numeric_limits<uint32_t>::max(),
-                        "Granting access too large a region");
-  uint32_t num_trunc = num;
+  static_assert(sizeof(T) <= 2);
+
+  
+  size_t source_size = num * sizeof(T);
 
   
   
   if constexpr (detail::has_member_using_can_grant_deny_access_v<T_Sbx>) {
-    detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src, num_trunc);
+    detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src, source_size);
 
     bool success;
-    auto ret = sandbox.INTERNAL_grant_access(src, num_trunc, success);
+    auto ret = sandbox.INTERNAL_grant_access(src, num, success);
     if (success) {
       return ret;
     }
   }
 
+  
+  detail::dynamic_check(num <= std::numeric_limits<uint32_t>::max(),
+                        "Granting access too large a region");
   using T_nocv = std::remove_cv_t<T>;
   tainted<T_nocv*, T_Sbx> copy =
-    sandbox.template malloc_in_sandbox<T_nocv>(num_trunc);
+    sandbox.template malloc_in_sandbox<T_nocv>(static_cast<uint32_t>(num));
   if (!copy) {
     return nullptr;
   }
-  rlbox::memcpy(sandbox, copy, src, num * sizeof(T));
+
+  rlbox::memcpy(sandbox, copy, src, source_size);
   if (free_source_on_copy) {
     free(const_cast<void*>(reinterpret_cast<const void*>(src)));
   }
@@ -283,26 +288,36 @@ T* copy_memory_or_deny_access(rlbox_sandbox<T_Sbx>& sandbox,
                               bool free_source_on_copy,
                               bool& copied)
 {
+  copied = false;
+
+  
+  static_assert(sizeof(T) <= 2);
+
+  
+  size_t source_size = num * sizeof(T);
+
   
   
   if constexpr (detail::has_member_using_can_grant_deny_access_v<T_Sbx>) {
     detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(
-      src.INTERNAL_unverified_safe(), num);
+      src.INTERNAL_unverified_safe(), source_size);
 
     bool success;
     auto ret = sandbox.INTERNAL_deny_access(src, num, success);
     if (success) {
-      copied = false;
       return ret;
     }
   }
 
-  auto copy = static_cast<T*>(malloc(num));
+  auto copy = static_cast<T*>(malloc(source_size));
+  if (!copy) {
+    return nullptr;
+  }
 
   tainted<T*, T_Sbx> src_tainted = src;
   char* src_raw = src_tainted.copy_and_verify_buffer_address(
     [](uintptr_t val) { return reinterpret_cast<char*>(val); }, num);
-  std::memcpy(copy, src_raw, num);
+  std::memcpy(copy, src_raw, source_size);
   if (free_source_on_copy) {
     sandbox.free_in_sandbox(src);
   }

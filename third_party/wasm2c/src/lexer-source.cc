@@ -14,7 +14,7 @@
 
 
 
-#include "src/lexer-source.h"
+#include "wabt/lexer-source.h"
 
 #include <algorithm>
 

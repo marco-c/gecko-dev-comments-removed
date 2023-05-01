@@ -1415,7 +1415,9 @@ RLBoxExpatSandboxPool::CreateSandboxData(uint64_t aSize) {
   auto sandbox = mozilla::MakeUnique<rlbox_sandbox_expat>();
 
 #ifdef MOZ_WASM_SANDBOXING_EXPAT
-  bool create_ok = sandbox->create_sandbox( false, aSize);
+  const w2c_mem_capacity capacity =
+      get_valid_wasm2c_memory_capacity(aSize, true );
+  bool create_ok = sandbox->create_sandbox( false, &capacity);
 #else
   bool create_ok = sandbox->create_sandbox();
 #endif

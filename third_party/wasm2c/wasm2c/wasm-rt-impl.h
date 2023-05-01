@@ -19,4 +19,61 @@
 
 #include "wasm-rt.h"
 
-#endif  
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+extern WASM_RT_THREAD_LOCAL wasm_rt_jmp_buf g_wasm_rt_jmp_buf;
+
+#if WASM_RT_INSTALL_SIGNAL_HANDLER && !defined(_WIN32)
+#define WASM_RT_LONGJMP_UNCHECKED(buf, val) siglongjmp(buf, val)
+#else
+#define WASM_RT_LONGJMP_UNCHECKED(buf, val) longjmp(buf, val)
+#endif
+
+#define WASM_RT_LONGJMP(buf, val)
+ \
+  if (!((buf).initialized))                                        \
+    abort();                                                       \
+  (buf).initialized = false;                                       \
+  WASM_RT_LONGJMP_UNCHECKED((buf).buffer, val)
+
+#if WASM_RT_USE_STACK_DEPTH_COUNT
+
+extern WASM_RT_THREAD_LOCAL uint32_t wasm_rt_saved_call_stack_depth;
+#define WASM_RT_SAVE_STACK_DEPTH() \
+  wasm_rt_saved_call_stack_depth = wasm_rt_call_stack_depth
+#else
+#define WASM_RT_SAVE_STACK_DEPTH() (void)0
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define wasm_rt_impl_try()                                                    \
+  (WASM_RT_SAVE_STACK_DEPTH(), wasm_rt_set_unwind_target(&g_wasm_rt_jmp_buf), \
+   WASM_RT_SETJMP(g_wasm_rt_jmp_buf))
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif 

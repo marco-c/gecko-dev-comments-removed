@@ -21,4 +21,10 @@
 
 #define RLBOX_EMBEDDER_PROVIDES_TLS_STATIC_VARIABLES
 
+
+
+
+
+#define RLBOX_WASM2C_MODULE_NAME rlbox
+
 #endif

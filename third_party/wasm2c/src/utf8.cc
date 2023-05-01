@@ -14,13 +14,14 @@
 
 
 
-#include "src/utf8.h"
+#include "wabt/utf8.h"
 
 #include <cstdint>
 
 namespace wabt {
 
 namespace {
+
 
 const int s_utf8_length[256] = {
  
@@ -41,6 +42,7 @@ const int s_utf8_length[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,  
     4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  
 };
+
 
 
 bool IsCont(uint8_t c) {

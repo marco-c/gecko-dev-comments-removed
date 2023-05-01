@@ -14,11 +14,11 @@
 
 
 
-#include "src/lexer-source-line-finder.h"
+#include "wabt/lexer-source-line-finder.h"
 
 #include <algorithm>
 
-#include "src/lexer-source.h"
+#include "wabt/lexer-source.h"
 
 namespace wabt {
 

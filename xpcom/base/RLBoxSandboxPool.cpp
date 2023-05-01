@@ -9,8 +9,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RLBoxSandboxPool.h"
 #ifdef MOZ_USING_WASM_SANDBOXING
-#  include "mozilla/rlbox/rlbox_config.h"
-#  include "mozilla/rlbox/rlbox_wasm2c_sandbox.hpp"
+#  include "wasm2c_rt_mem.h"
 #endif
 
 using namespace mozilla;
@@ -95,21 +94,16 @@ UniquePtr<RLBoxSandboxPoolData> RLBoxSandboxPool::PopOrCreate(
 #ifdef MOZ_USING_WASM_SANDBOXING
     
     
-    
-    
-    const uint64_t defaultCapacityForSandbox =
-        wasm_rt_get_default_max_linear_memory_size();
-    const uint64_t minSandboxCapacity =
-        std::max(aMinSize, defaultCapacityForSandbox);
-    const uint64_t chosenAdjustedCapacity =
-        rlbox::rlbox_wasm2c_sandbox::rlbox_wasm2c_get_adjusted_heap_size(
-            minSandboxCapacity);
+    const w2c_mem_capacity w2c_capacity = get_valid_wasm2c_memory_capacity(
+        aMinSize, true );
+    const uint64_t chosenCapacity = w2c_capacity.max_size;
 #else
     
     
-    const uint64_t chosenAdjustedCapacity = static_cast<uint64_t>(1) << 32;
+    
+    const uint64_t chosenCapacity = static_cast<uint64_t>(1) << 32;
 #endif
-    sbxData = CreateSandboxData(chosenAdjustedCapacity);
+    sbxData = CreateSandboxData(chosenCapacity);
     NS_ENSURE_TRUE(sbxData, nullptr);
   }
 
