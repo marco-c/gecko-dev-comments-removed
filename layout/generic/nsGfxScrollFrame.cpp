@@ -2235,11 +2235,6 @@ void nsHTMLScrollFrame::AsyncScroll::InitSmoothScroll(
 }
 
 
-bool nsHTMLScrollFrame::IsSmoothScrollingEnabled() {
-  return StaticPrefs::general_smoothScroll();
-}
-
-
 
 
 
@@ -2560,7 +2555,8 @@ void nsHTMLScrollFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
     mAsyncScroll->SetRefreshObserver(this);
   }
 
-  const bool isSmoothScroll = aParams.IsSmooth() && IsSmoothScrollingEnabled();
+  const bool isSmoothScroll =
+      aParams.IsSmooth() && nsLayoutUtils::IsSmoothScrollingEnabled();
   if (isSmoothScroll) {
     mAsyncScroll->InitSmoothScroll(now, GetScrollPosition(), mDestination,
                                    aParams.mOrigin, range, currentVelocity);
@@ -7903,7 +7899,7 @@ bool nsHTMLScrollFrame::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
   
   
   if (aBehavior == dom::ScrollBehavior::Instant ||
-      !nsHTMLScrollFrame::IsSmoothScrollingEnabled()) {
+      !nsLayoutUtils::IsSmoothScrollingEnabled()) {
     return false;
   }
 
