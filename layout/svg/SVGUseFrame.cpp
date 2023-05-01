@@ -101,7 +101,11 @@ void SVGUseFrame::ReflowSVG() {
   
   
   
-  auto [x, y] = ResolvePosition();
+  auto* content = SVGUseElement::FromNode(GetContent());
+  float x = SVGContentUtils::CoordToFloat(content, StyleSVGReset()->mX,
+                                          SVGContentUtils::X);
+  float y = SVGContentUtils::CoordToFloat(content, StyleSVGReset()->mY,
+                                          SVGContentUtils::Y);
   mRect.MoveTo(nsLayoutUtils::RoundGfxRectToAppRect(gfxRect(x, y, 0, 0),
                                                     AppUnitsPerCSSPixel())
                    .TopLeft());
@@ -136,26 +140,6 @@ void SVGUseFrame::NotifySVGChanged(uint32_t aFlags) {
   
 
   SVGGFrame::NotifySVGChanged(aFlags);
-}
-
-SVGBBox SVGUseFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                         uint32_t aFlags) {
-  SVGBBox bbox =
-      SVGDisplayContainerFrame::GetBBoxContribution(aToBBoxUserspace, aFlags);
-
-  if (aFlags & SVGUtils::eForGetClientRects) {
-    auto [x, y] = ResolvePosition();
-    bbox.MoveBy(x, y);
-  }
-  return bbox;
-}
-
-std::pair<float, float> SVGUseFrame::ResolvePosition() const {
-  auto* content = SVGUseElement::FromNode(GetContent());
-  return std::make_pair(SVGContentUtils::CoordToFloat(
-                            content, StyleSVGReset()->mX, SVGContentUtils::X),
-                        SVGContentUtils::CoordToFloat(
-                            content, StyleSVGReset()->mY, SVGContentUtils::Y));
 }
 
 }  
