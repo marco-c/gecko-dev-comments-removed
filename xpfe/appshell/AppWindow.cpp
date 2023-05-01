@@ -2897,20 +2897,6 @@ bool AppWindow::RequestWindowClose(nsIWidget* aWidget) {
 }
 
 void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
-  const bool wasWidgetInFullscreen = mIsWidgetInFullscreen;
-  
-  
-  
-  
-  if (aSizeMode != nsSizeMode_Minimized) {
-    mIsWidgetInFullscreen = aSizeMode == nsSizeMode_Fullscreen;
-  }
-
-  const bool fullscreenChanged = wasWidgetInFullscreen != mIsWidgetInFullscreen;
-  if (fullscreenChanged) {
-    FullscreenWillChange(mIsWidgetInFullscreen);
-  }
-
   
   
   
@@ -2937,10 +2923,6 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
     presShell->GetPresContext()->SizeModeChanged(aSizeMode);
   }
 
-  if (fullscreenChanged) {
-    FullscreenChanged(mIsWidgetInFullscreen);
-  }
-
   
   
   
@@ -2964,22 +2946,7 @@ void AppWindow::FullscreenWillChange(bool aInFullscreen) {
     }
   }
   MOZ_ASSERT(mFullscreenChangeState == FullscreenChangeState::NotChanging);
-
-  int32_t winWidth = 0;
-  int32_t winHeight = 0;
-  GetSize(&winWidth, &winHeight);
-
-  int32_t screenWidth = 0;
-  int32_t screenHeight = 0;
-  GetAvailScreenSize(&screenWidth, &screenHeight);
-
-  
-  
-  
-  mFullscreenChangeState =
-      (aInFullscreen == (winWidth == screenWidth && winHeight == screenHeight))
-          ? FullscreenChangeState::WidgetResized
-          : FullscreenChangeState::WillChange;
+  mFullscreenChangeState = FullscreenChangeState::WillChange;
 }
 
 void AppWindow::FullscreenChanged(bool aInFullscreen) {
@@ -3452,6 +3419,17 @@ void AppWindow::WidgetListenerDelegate::SizeModeChanged(nsSizeMode aSizeMode) {
 void AppWindow::WidgetListenerDelegate::UIResolutionChanged() {
   RefPtr<AppWindow> holder = mAppWindow;
   holder->UIResolutionChanged();
+}
+
+void AppWindow::WidgetListenerDelegate::FullscreenWillChange(
+    bool aInFullscreen) {
+  RefPtr<AppWindow> holder = mAppWindow;
+  holder->FullscreenWillChange(aInFullscreen);
+}
+
+void AppWindow::WidgetListenerDelegate::FullscreenChanged(bool aInFullscreen) {
+  RefPtr<AppWindow> holder = mAppWindow;
+  holder->FullscreenChanged(aInFullscreen);
 }
 
 void AppWindow::WidgetListenerDelegate::MacFullscreenMenubarOverlapChanged(

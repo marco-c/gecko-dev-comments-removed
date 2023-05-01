@@ -1634,9 +1634,17 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
   
   mUpdateFullscreenOnResize =
       Some(aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed);
+
+  if (mWidgetListener) {
+    mWidgetListener->FullscreenWillChange(aFullscreen);
+  }
 }
 
 void nsCocoaWindow::CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen) {
+  if (mWidgetListener) {
+    mWidgetListener->FullscreenWillChange(!aAttemptedFullscreen);
+  }
+
   
   if (mUpdateFullscreenOnResize.isNothing()) {
     UpdateFullscreenState(!aAttemptedFullscreen, true);
@@ -1660,6 +1668,10 @@ void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
   }
 
   DispatchSizeModeEvent();
+
+  if (mWidgetListener) {
+    mWidgetListener->FullscreenChanged(aFullScreen);
+  }
 
   
   nsChildView* mainChildView = static_cast<nsChildView*>([[mWindow mainChildView] widget]);
@@ -1761,6 +1773,10 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::EmulatedFullscreen: {
         if (!mInFullScreenMode) {
+          
+          if (mWidgetListener) {
+            mWidgetListener->FullscreenWillChange(true);
+          }
           NSDisableScreenUpdates();
           mSuppressSizeModeEvents = true;
           
@@ -1782,6 +1798,10 @@ void nsCocoaWindow::ProcessTransitions() {
             [mWindow toggleFullScreen:nil];
             continue;
           } else {
+            
+            if (mWidgetListener) {
+              mWidgetListener->FullscreenWillChange(false);
+            }
             NSDisableScreenUpdates();
             mSuppressSizeModeEvents = true;
             
