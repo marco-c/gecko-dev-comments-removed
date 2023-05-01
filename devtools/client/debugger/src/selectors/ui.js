@@ -2,6 +2,8 @@
 
 
 
+import { getSelectedSource } from "./sources";
+
 export function getSelectedPrimaryPaneTab(state) {
   return state.ui.selectedPrimaryPaneTab;
 }
@@ -22,8 +24,20 @@ export function getPaneCollapse(state, position) {
   return state.ui.endPanelCollapsed;
 }
 
-export function getHighlightedLineRange(state) {
-  return state.ui.highlightedLineRange;
+export function getHighlightedLineRangeForSelectedSource(state) {
+  const selectedSource = getSelectedSource(state);
+  if (!selectedSource) {
+    return null;
+  }
+  
+  const highlightedLineRange = state.ui.highlightedLineRange;
+  if (
+    highlightedLineRange &&
+    selectedSource.id == highlightedLineRange.sourceId
+  ) {
+    return highlightedLineRange;
+  }
+  return null;
 }
 
 export function getConditionalPanelLocation(state) {
