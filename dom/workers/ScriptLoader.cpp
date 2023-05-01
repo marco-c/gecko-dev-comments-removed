@@ -506,12 +506,12 @@ WorkerScriptLoader::WorkerScriptLoader(
 
   nsIGlobalObject* global = GetGlobal();
   mController = global->GetController();
-  
-  
 
   if (!StaticPrefs::dom_workers_modules_enabled()) {
     return;
   }
+
+  
   if (!aWorkerPrivate->IsServiceWorker()) {
     InitModuleLoader();
   }
