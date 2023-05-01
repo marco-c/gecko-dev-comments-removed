@@ -376,6 +376,20 @@ add_task(async function test_bookmarkmenu() {
 
 
 
+add_task(async function test_historymenu() {
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+  PlacesCommandHook.searchHistory();
+  await searchPromise;
+
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    entry: "historymenu",
+  });
+  assertSearchModeScalars("historymenu", "history");
+});
+
+
+
 add_task(async function test_tabmenu() {
   let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   gTabsPanel.searchTabs();
