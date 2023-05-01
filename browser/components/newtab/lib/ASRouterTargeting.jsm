@@ -965,6 +965,20 @@ const TargetingGetters = {
       !!decodeAttributionValue(attributionData?.content)?.startsWith("rta:")
     );
   },
+
+  
+
+
+
+
+  get isDeviceMigration() {
+    const { attributionData } = this;
+
+    return (
+      attributionData?.source === "support.mozilla.org" &&
+      attributionData?.campaign === "migration"
+    );
+  },
 };
 
 const ASRouterTargeting = {
