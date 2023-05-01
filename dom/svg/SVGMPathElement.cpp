@@ -96,51 +96,46 @@ void SVGMPathElement::UnbindFromTree(bool aNullParent) {
   SVGMPathElementBase::UnbindFromTree(aNullParent);
 }
 
-bool SVGMPathElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
-                                     const nsAString& aValue,
-                                     nsIPrincipal* aMaybeScriptedPrincipal,
-                                     nsAttrValue& aResult) {
-  bool returnVal = SVGMPathElementBase::ParseAttribute(
-      aNamespaceID, aAttribute, aValue, aMaybeScriptedPrincipal, aResult);
-  if ((aNamespaceID == kNameSpaceID_XLink ||
-       aNamespaceID == kNameSpaceID_None) &&
-      aAttribute == nsGkAtoms::href && IsInComposedDoc()) {
-    
-    
-
-    
-    
-    if (aNamespaceID != kNameSpaceID_XLink ||
-        !mStringAttributes[HREF].IsExplicitlySet()) {
-      UpdateHrefTarget(GetParent(), aValue);
-    }
-  }
-  return returnVal;
-}
-
 nsresult SVGMPathElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                        const nsAttrValue* aValue,
                                        const nsAttrValue* aOldValue,
                                        nsIPrincipal* aMaybeScriptedPrincipal,
                                        bool aNotify) {
-  if (!aValue && aName == nsGkAtoms::href) {
-    
-    if (aNamespaceID == kNameSpaceID_None) {
-      UnlinkHrefTarget(true);
+  if (aName == nsGkAtoms::href) {
+    if (aValue) {
+      if ((aNamespaceID == kNameSpaceID_XLink ||
+           aNamespaceID == kNameSpaceID_None) &&
+          IsInComposedDoc()) {
+        
+        
 
-      
-      
-      const nsAttrValue* xlinkHref =
-          mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink);
-      if (xlinkHref) {
-        UpdateHrefTarget(GetParent(), xlinkHref->GetStringValue());
+        
+        
+        
+        if (aNamespaceID != kNameSpaceID_XLink ||
+            !mStringAttributes[HREF].IsExplicitlySet()) {
+          UpdateHrefTarget(GetParent(), aValue->GetStringValue());
+        }
       }
-    } else if (aNamespaceID == kNameSpaceID_XLink &&
-               !HasAttr(kNameSpaceID_None, nsGkAtoms::href)) {
-      UnlinkHrefTarget(true);
-    }  
-       
-       
+    } else {
+      
+      if (aNamespaceID == kNameSpaceID_None) {
+        UnlinkHrefTarget(true);
+
+        
+        
+        const nsAttrValue* xlinkHref =
+            mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink);
+        if (xlinkHref) {
+          UpdateHrefTarget(GetParent(), xlinkHref->GetStringValue());
+        }
+      } else if (aNamespaceID == kNameSpaceID_XLink &&
+                 !HasAttr(nsGkAtoms::href)) {
+        UnlinkHrefTarget(true);
+      }  
+         
+         
+    }
   }
 
   return SVGMPathElementBase::AfterSetAttr(
