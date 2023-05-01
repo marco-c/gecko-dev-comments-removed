@@ -940,7 +940,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
   void BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                     const nsAttrValueOrString* aValue, bool aNotify) override;
+                     const nsAttrValue* aValue, bool aNotify) override;
   
 
 

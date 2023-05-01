@@ -751,7 +751,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
  protected:
   void BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                     const nsAttrValueOrString* aValue, bool aNotify) override;
+                     const nsAttrValue* aValue, bool aNotify) override;
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void AfterSetAttr(
@@ -1054,8 +1054,8 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
  protected:
   virtual ~nsGenericHTMLFormElement() = default;
 
-  void BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                     const nsAttrValueOrString* aValue, bool aNotify) override;
+  void BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                     const nsAttrValue* aValue, bool aNotify) override;
 
   void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,

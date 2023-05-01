@@ -47,8 +47,6 @@ class MutationObservers {
 
 
 
-
-
   static void NotifyAttributeWillChange(mozilla::dom::Element* aElement,
                                         int32_t aNameSpaceID,
                                         nsAtom* aAttribute, int32_t aModType);

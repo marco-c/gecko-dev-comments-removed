@@ -1928,7 +1928,7 @@ class Element : public FragmentOrElement {
 
 
   virtual void BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                             const nsAttrValueOrString* aValue, bool aNotify);
+                             const nsAttrValue* aValue, bool aNotify);
 
   
 
@@ -1974,7 +1974,7 @@ class Element : public FragmentOrElement {
 
 
   void PreIdMaybeChange(int32_t aNamespaceID, nsAtom* aName,
-                        const nsAttrValueOrString* aValue);
+                        const nsAttrValue* aValue);
 
   
 
