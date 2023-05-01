@@ -249,16 +249,14 @@ class ServoStyleSet {
 
   
   
+  
   already_AddRefed<ComputedStyle> ResolveNonInheritingAnonymousBoxStyle(
-      PseudoStyleType aType) {
-    return ResolveNonInheritingAnonymousBoxStyle(aType, nullptr);
-  }
+      PseudoStyleType aType);
 
+  
+  
   already_AddRefed<ComputedStyle> ResolvePageContentStyle(
-      const nsAtom* aPageName) {
-    return ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType::pageContent,
-                                                 aPageName);
-  }
+      const nsAtom* aPageName);
 
   already_AddRefed<ComputedStyle> ResolveXULTreePseudoStyle(
       dom::Element* aParentElement, nsCSSAnonBoxPseudoStaticAtom* aPseudoTag,
@@ -643,9 +641,6 @@ class ServoStyleSet {
   EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
                   nsCSSAnonBoxes::NonInheriting::_Count, RefPtr<ComputedStyle>>
       mNonInheritingComputedStyles;
-
-  already_AddRefed<ComputedStyle> ResolveNonInheritingAnonymousBoxStyle(
-      PseudoStyleType aType, const nsAtom* aPageName);
 
  public:
   void PutCachedAnonymousContentStyles(
