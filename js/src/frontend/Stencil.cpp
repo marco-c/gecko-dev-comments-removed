@@ -7,6 +7,7 @@
 #include "frontend/Stencil.h"
 
 #include "mozilla/AlreadyAddRefed.h"        
+#include "mozilla/Assertions.h"             
 #include "mozilla/Maybe.h"                  
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/PodOperations.h"          
@@ -4587,6 +4588,7 @@ void ExtensibleCompilationStencil::dumpAtom(TaggedParserAtomIndex index) {
 
 JSString* CompilationAtomCache::getExistingStringAt(
     ParserAtomIndex index) const {
+  MOZ_RELEASE_ASSERT(atoms_.length() >= index);
   return atoms_[index];
 }
 
