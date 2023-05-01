@@ -315,7 +315,7 @@ class MegamorphicSetPropCache {
   
   
   
-  static constexpr size_t NumEntries = 1024;
+  static constexpr size_t NumEntries = 256;
   static constexpr uint8_t ShapeHashShift1 =
       mozilla::tl::FloorLog2<alignof(Shape)>::value;
   static constexpr uint8_t ShapeHashShift2 =
