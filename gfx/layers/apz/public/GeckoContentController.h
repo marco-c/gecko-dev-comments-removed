@@ -114,8 +114,13 @@ class GeckoContentController {
 
 
 
+
+
+
   virtual void NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                    APZStateChange aChange, int aArg = 0) {}
+                                    APZStateChange aChange, int aArg = 0,
+                                    Maybe<uint64_t> aInputBlockId = Nothing()) {
+  }
 
   
 

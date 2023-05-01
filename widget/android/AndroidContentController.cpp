@@ -40,12 +40,14 @@ void AndroidContentController::UpdateOverscrollOffset(
 }
 
 void AndroidContentController::NotifyAPZStateChange(
-    const ScrollableLayerGuid& aGuid, APZStateChange aChange, int aArg) {
+    const ScrollableLayerGuid& aGuid, APZStateChange aChange, int aArg,
+    Maybe<uint64_t> aInputBlockId) {
   
   
   
   
-  ChromeProcessController::NotifyAPZStateChange(aGuid, aChange, aArg);
+  ChromeProcessController::NotifyAPZStateChange(aGuid, aChange, aArg,
+                                                aInputBlockId);
   if (NS_IsMainThread()) {
     nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();

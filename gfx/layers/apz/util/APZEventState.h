@@ -15,11 +15,14 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/TouchCounter.h"         
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "nsCOMPtr.h"
-#include "nsISupportsImpl.h"        
+#include "nsISupportsImpl.h"  
+#include "nsITimer.h"
 #include "nsIWeakReferenceUtils.h"  
 
 #include <functional>
+#include <unordered_map>
 
 template <class>
 class nsCOMPtr;
@@ -39,6 +42,59 @@ typedef std::function<void(uint64_t ,
                            bool )>
     ContentReceivedInputBlockCallback;
 
+struct SingleTapTargetInfo {
+  nsWeakPtr mWidget;
+  LayoutDevicePoint mPoint;
+  Modifiers mModifiers;
+  int32_t mClickCount;
+  RefPtr<nsIContent> mTouchRollup;
+
+  explicit SingleTapTargetInfo(nsWeakPtr aWidget, LayoutDevicePoint aPoint,
+                               Modifiers aModifiers, int32_t aClickCount,
+                               RefPtr<nsIContent> aTouchRollup)
+      : mWidget(std::move(aWidget)),
+        mPoint(aPoint),
+        mModifiers(aModifiers),
+        mClickCount(aClickCount),
+        mTouchRollup(std::move(aTouchRollup)) {}
+
+  SingleTapTargetInfo(SingleTapTargetInfo&&) = default;
+  SingleTapTargetInfo& operator=(SingleTapTargetInfo&&) = default;
+};
+
+class DelayedFireSingleTapEvent final : public nsITimerCallback,
+                                        public nsINamed {
+ private:
+  explicit DelayedFireSingleTapEvent(Maybe<SingleTapTargetInfo>&& aTargetInfo,
+                                     const nsCOMPtr<nsITimer>& aTimer)
+      : mTargetInfo(std::move(aTargetInfo))
+        
+        ,
+        mTimer(aTimer) {}
+
+ public:
+  NS_DECL_ISUPPORTS
+
+  static RefPtr<DelayedFireSingleTapEvent> Create(
+      Maybe<SingleTapTargetInfo>&& aTargetInfo);
+
+  NS_IMETHOD Notify(nsITimer*) override;
+
+  NS_IMETHOD GetName(nsACString& aName) override;
+
+  void PopulateTargetInfo(SingleTapTargetInfo&& aTargetInfo);
+
+  void FireSingleTapEvent();
+
+  void ClearTimer() { mTimer = nullptr; }
+
+ private:
+  ~DelayedFireSingleTapEvent() = default;
+
+  Maybe<SingleTapTargetInfo> mTargetInfo;
+  nsCOMPtr<nsITimer> mTimer;
+};
+
 
 
 
@@ -55,7 +111,8 @@ class APZEventState final {
 
   void ProcessSingleTap(const CSSPoint& aPoint,
                         const CSSToLayoutDeviceScale& aScale,
-                        Modifiers aModifiers, int32_t aClickCount);
+                        Modifiers aModifiers, int32_t aClickCount,
+                        uint64_t aInputBlockId);
   MOZ_CAN_RUN_SCRIPT
   void ProcessLongTap(PresShell* aPresShell, const CSSPoint& aPoint,
                       const CSSToLayoutDeviceScale& aScale,
@@ -73,7 +130,8 @@ class APZEventState final {
                          uint64_t aInputBlockId);
   void ProcessMouseEvent(const WidgetMouseEvent& aEvent,
                          uint64_t aInputBlockId);
-  void ProcessAPZStateChange(ViewID aViewId, APZStateChange aChange, int aArg);
+  void ProcessAPZStateChange(ViewID aViewId, APZStateChange aChange, int aArg,
+                             Maybe<uint64_t> aInputBlockId);
 
  private:
   ~APZEventState();
@@ -98,6 +156,14 @@ class APZEventState final {
   bool mEndTouchIsClick;
   bool mFirstTouchCancelled;
   bool mTouchEndCancelled;
+
+  
+  
+  
+  
+  std::unordered_map<uint64_t, RefPtr<DelayedFireSingleTapEvent>>
+      mSingleTapsPendingTargetInfo;
+
   int32_t mLastTouchIdentifier;
   nsTArray<TouchBehaviorFlags> mTouchBlockAllowedBehaviors;
 
