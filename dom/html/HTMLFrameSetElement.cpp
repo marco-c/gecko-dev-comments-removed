@@ -25,9 +25,9 @@ JSObject* HTMLFrameSetElement::WrapNode(JSContext* aCx,
 
 NS_IMPL_ELEMENT_CLONE(HTMLFrameSetElement)
 
-nsresult HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                            const nsAttrValueOrString* aValue,
-                                            bool aNotify) {
+void HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                        const nsAttrValueOrString* aValue,
+                                        bool aNotify) {
   
 
 

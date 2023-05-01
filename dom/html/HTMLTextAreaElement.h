@@ -138,9 +138,9 @@ class HTMLTextAreaElement final : public TextControlElement,
   
 
 
-  virtual nsresult BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                 const nsAttrValueOrString* aValue,
-                                 bool aNotify) override;
+  virtual void BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                             const nsAttrValueOrString* aValue,
+                             bool aNotify) override;
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED

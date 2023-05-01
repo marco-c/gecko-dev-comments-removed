@@ -142,16 +142,14 @@ nsChangeHint HTMLOptionElement::GetAttributeChangeHint(const nsAtom* aAttribute,
   return retval;
 }
 
-nsresult HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                          const nsAttrValueOrString* aValue,
-                                          bool aNotify) {
-  nsresult rv =
-      nsGenericHTMLElement::BeforeSetAttr(aNamespaceID, aName, aValue, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
+void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                      const nsAttrValueOrString* aValue,
+                                      bool aNotify) {
+  nsGenericHTMLElement::BeforeSetAttr(aNamespaceID, aName, aValue, aNotify);
 
   if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::selected ||
       mSelectedChanged) {
-    return NS_OK;
+    return;
   }
 
   
@@ -162,7 +160,7 @@ nsresult HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
     
     
     mIsSelected = aValue;
-    return NS_OK;
+    return;
   }
 
   NS_ASSERTION(!mSelectedChanged, "Shouldn't be here");
@@ -193,8 +191,6 @@ nsresult HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   mSelectedChanged = false;
-
-  return NS_OK;
 }
 
 nsresult HTMLOptionElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,

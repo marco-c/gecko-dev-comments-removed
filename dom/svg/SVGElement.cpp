@@ -901,9 +901,9 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
   }
 }
 
-nsresult SVGElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                   const nsAttrValueOrString* aValue,
-                                   bool aNotify) {
+void SVGElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                               const nsAttrValueOrString* aValue,
+                               bool aNotify) {
   if (!aValue) {
     UnsetAttrInternal(aNamespaceID, aName, aNotify);
   }
@@ -1366,13 +1366,8 @@ nsAttrValue SVGElement::WillChangeValue(
   
   nsAttrValueOrString attrStringOrValue(attrValue ? *attrValue
                                                   : emptyOrOldAttrValue);
-  DebugOnly<nsresult> rv = BeforeSetAttr(
-      kNameSpaceID_None, aName, &attrStringOrValue, kNotifyDocumentObservers);
-  
-  
-  
-  MOZ_ASSERT(NS_SUCCEEDED(rv), "Unexpected failure from BeforeSetAttr");
-
+  BeforeSetAttr(kNameSpaceID_None, aName, &attrStringOrValue,
+                kNotifyDocumentObservers);
   return emptyOrOldAttrValue;
 }
 
