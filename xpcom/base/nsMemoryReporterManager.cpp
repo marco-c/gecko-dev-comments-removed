@@ -1488,8 +1488,10 @@ class ThreadsReporter final : public nsIMemoryReporter {
           "platform");
 #endif
 
+      nsCString threadName;
+      thread->GetThreadName(threadName);
       threads.AppendElement(ThreadData{
-          nsCString(PR_GetThreadName(thread->GetPRThread())),
+          std::move(threadName),
           thread->ThreadId(),
           
           
