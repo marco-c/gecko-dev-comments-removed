@@ -77,7 +77,6 @@ ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
   base::ProcessId pid = base::GetCurrentProcId();
   RefPtr<ImageBridgeParent> parent =
       new ImageBridgeParent(CompositorThread(), pid);
-  parent->mSelfRef = parent;
 
   {
     MonitorAutoLock lock(*sImageBridgesLock);
@@ -159,6 +158,7 @@ void ImageBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   
   
+  
 }
 
 class MOZ_STACK_CLASS AutoImageBridgeParentAsyncMessageSender final {
@@ -232,7 +232,6 @@ bool ImageBridgeParent::CreateForContent(
 
 void ImageBridgeParent::Bind(Endpoint<PImageBridgeParent>&& aEndpoint) {
   if (!aEndpoint.Bind(this)) return;
-  mSelfRef = this;
 
   
   
@@ -363,10 +362,7 @@ bool ImageBridgeParent::NotifyImageComposites(
   return ok;
 }
 
-void ImageBridgeParent::DeferredDestroy() {
-  mCompositorThreadHolder = nullptr;
-  mSelfRef = nullptr;  
-}
+void ImageBridgeParent::DeferredDestroy() { mCompositorThreadHolder = nullptr; }
 
 already_AddRefed<ImageBridgeParent> ImageBridgeParent::GetInstance(
     ProcessId aId) {
