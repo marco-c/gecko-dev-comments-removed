@@ -12,50 +12,8 @@ import { prefs } from "../utils/prefs";
 import { createPendingSelectedLocation } from "../utils/location";
 
 export function initialSourcesState(state) {
+  
   return {
-    
-
-
-
-
-    mutableSources: new Map(),
-
-    
-
-
-
-
-    mutableOverrideSources: state?.mutableOverrideSources || new Map(),
-
-    
-
-
-
-
-
-    mutableSourcesPerUrl: new Map(),
-
-    
-
-
-
-
-
-    mutableOriginalSources: new Map(),
-
-    
-
-
-
-
-
-
-
-
-
-
-    mutableSourceActors: new Map(),
-
     
 
 
@@ -82,11 +40,42 @@ export function initialSourcesState(state) {
 
 
 
+    mutableOriginalSources: new Map(),
+
+    
 
 
 
 
-    selectedLocation: undefined,
+    mutableOverrideSources: state?.mutableOverrideSources || new Map(),
+
+    
+
+
+
+
+
+
+
+
+
+
+    mutableSourceActors: new Map(),
+
+    
+
+
+
+
+    mutableSources: new Map(),
+
+    
+
+
+
+
+
+    mutableSourcesPerUrl: new Map(),
 
     
 
@@ -95,7 +84,20 @@ export function initialSourcesState(state) {
 
 
     pendingSelectedLocation: prefs.pendingSelectedLocation,
+
+    
+
+
+
+
+
+
+
+
+
+    selectedLocation: undefined,
   };
+  
 }
 
 function update(state = initialSourcesState(), action) {
