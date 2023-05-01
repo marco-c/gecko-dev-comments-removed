@@ -344,6 +344,8 @@ Tester.prototype = {
       "litElementVersions",
     ];
 
+    this._repeatingTimers = this._getRepeatingTimers();
+
     this.PerTestCoverageUtils.beforeTestSync();
 
     if (this.tests.length) {
@@ -353,6 +355,17 @@ Tester.prototype = {
     } else {
       this.finish();
     }
+  },
+
+  _getRepeatingTimers() {
+    const kNonRepeatingTimerTypes = [
+      Ci.nsITimer.TYPE_ONE_SHOT,
+      Ci.nsITimer.TYPE_ONE_SHOT_LOW_PRIORITY,
+    ];
+    return Cc["@mozilla.org/timer-manager;1"]
+      .getService(Ci.nsITimerManager)
+      .getTimers()
+      .filter(t => !kNonRepeatingTimerTypes.includes(t.type));
   },
 
   async waitForWindowsReady() {
@@ -598,6 +611,75 @@ Tester.prototype = {
     }
   },
 
+  getNewRepeatingTimers() {
+    let repeatingTimers = this._getRepeatingTimers();
+    let results = [];
+    for (let timer of repeatingTimers) {
+      let { name, delay } = timer;
+      
+      if (delay >= 10000) {
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      if (
+        AppConstants.platform == "linux" &&
+        name == "nsAvailableMemoryWatcher"
+      ) {
+        continue;
+      }
+
+      if (
+        !this._repeatingTimers.find(t => t.delay == delay && t.name == name)
+      ) {
+        results.push(timer);
+      }
+    }
+    if (results.length) {
+      ChromeUtils.addProfilerMarker(
+        "NewRepeatingTimers",
+        { category: "Test" },
+        results.map(t => `${t.name}: ${t.delay}ms`).join(", ")
+      );
+    }
+    return results;
+  },
+
+  async ensureNoNewRepeatingTimers() {
+    let newTimers;
+    try {
+      await this.TestUtils.waitForCondition(
+        async function() {
+          
+          
+          
+          
+          await this.TestUtils.waitForTick();
+
+          newTimers = this.getNewRepeatingTimers();
+          return !newTimers.length;
+        }.bind(this),
+        "waiting for new repeating timers to be cancelled"
+      );
+    } catch (e) {
+      this.Assert.ok(false, e);
+      for (let { name, delay } of newTimers) {
+        this.Assert.ok(
+          false,
+          `test left unexpected repeating timer ${name} (duration: ${delay}ms)`
+        );
+      }
+      
+      
+      
+      this._repeatingTimers.push(...newTimers);
+    }
+  },
+
   async nextTest() {
     if (this.currentTest) {
       if (this._coverageCollector) {
@@ -700,6 +782,8 @@ Tester.prototype = {
           }
         }
       }, this);
+
+      await this.ensureNoNewRepeatingTimers();
 
       
       await new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));

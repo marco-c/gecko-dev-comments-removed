@@ -120,6 +120,11 @@ add_setup(async function() {
           ["dom.security.featurePolicy.header.enabled", true],
           ["dom.security.featurePolicy.webidl.enabled", true],
           ["permissions.delegation.enabled", true],
+          
+          
+          
+          
+          ["geo.timeout", 4000],
         ],
       },
       r
