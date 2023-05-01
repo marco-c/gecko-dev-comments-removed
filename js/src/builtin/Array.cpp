@@ -4592,9 +4592,11 @@ static bool array_concat(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  bool isArraySpecies = IsArraySpecies(cx, obj);
+
   
   RootedObject arr(cx);
-  if (IsArraySpecies(cx, obj)) {
+  if (isArraySpecies) {
     arr = NewDenseEmptyArray(cx);
     if (!arr) {
       return false;
@@ -4639,27 +4641,55 @@ static bool array_concat(JSContext* cx, unsigned argc, Value* vp) {
       uint64_t k = 0;
 
       
-      while (k < len) {
-        if (!CheckForInterrupt(cx)) {
-          return false;
-        }
 
-        
-        bool hole;
-        if (!HasAndGetElement(cx, obj, k, &hole, &v)) {
+      
+      bool optimized = false;
+      if (len > 0 && isArraySpecies &&
+          CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, len) &&
+          n + len <= NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
+        NativeObject* nobj = &obj->as<NativeObject>();
+        ArrayObject* resArr = &arr->as<ArrayObject>();
+        uint32_t initLen =
+            std::min(uint32_t(len), nobj->getDenseInitializedLength());
+
+        DenseElementResult res = resArr->ensureDenseElements(cx, n, initLen);
+        if (res == DenseElementResult::Failure) {
           return false;
         }
-        if (!hole) {
-          
-          if (!DefineArrayElement(cx, arr, n, v)) {
+        if (res == DenseElementResult::Success) {
+          resArr->initDenseElementRange(n, nobj);
+          n += len;
+          optimized = true;
+        } else {
+          MOZ_ASSERT(res == DenseElementResult::Incomplete);
+        }
+      }
+
+      if (!optimized) {
+        
+        while (k < len) {
+          if (!CheckForInterrupt(cx)) {
             return false;
           }
-        }
-        
-        n++;
 
-        
-        k++;
+          
+          bool hole;
+          if (!HasAndGetElement(cx, obj, k, &hole, &v)) {
+            return false;
+          }
+          if (!hole) {
+            
+            if (!DefineArrayElement(cx, arr, n, v)) {
+              return false;
+            }
+          }
+
+          
+          n++;
+
+          
+          k++;
+        }
       }
     } else {
       
