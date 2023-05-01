@@ -2194,14 +2194,15 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      bool doGCCC = true;
-      while (doGCCC) {
+      bool repeatGCCC = true;
+      while (repeatGCCC) {
         JS::PrepareForFullGC(cx);
         JS::NonIncrementalGC(cx, JS::GCOptions::Shutdown,
                              JS::GCReason::WORKER_SHUTDOWN);
 
         
-        doGCCC = NS_HasPendingEvents(nullptr);
+        repeatGCCC = mWorkerPrivate->isLastCCCollectedAnything() ||
+                     NS_HasPendingEvents(nullptr);
         NS_ProcessPendingEvents(nullptr);
       }
 
