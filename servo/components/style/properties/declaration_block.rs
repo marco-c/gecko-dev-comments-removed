@@ -18,10 +18,12 @@ use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::SelectorImpl;
 use crate::shared_lock::Locked;
 use crate::str::{CssString, CssStringWriter};
-use crate::stylesheets::{CssRuleType, Origin, UrlExtraData, layer_rule::LayerOrder};
+use crate::stylesheets::{layer_rule::LayerOrder, CssRuleType, Origin, UrlExtraData};
 use crate::values::computed::Context;
-use cssparser::{parse_important, CowRcStr, DeclarationListParser, ParserInput};
-use cssparser::{AtRuleParser, DeclarationParser, Delimiter, ParseErrorKind, Parser};
+use cssparser::{
+    parse_important, AtRuleParser, CowRcStr, DeclarationListParser, DeclarationParser, Delimiter,
+    ParseErrorKind, Parser, ParserInput, QualifiedRuleParser,
+};
 use itertools::Itertools;
 use selectors::SelectorList;
 use smallbitvec::{self, SmallBitVec};
@@ -915,10 +917,7 @@ impl PropertyDeclarationBlock {
         &self,
         context: &Context,
     ) -> Option<Arc<crate::custom_properties::CustomPropertiesMap>> {
-        self.cascade_custom_properties(
-            context.style().custom_properties(),
-            context.device(),
-        )
+        self.cascade_custom_properties(context.style().custom_properties(), context.device())
     }
 
     
@@ -933,7 +932,13 @@ impl PropertyDeclarationBlock {
 
         for declaration in self.normal_declaration_iter() {
             if let PropertyDeclaration::Custom(ref declaration) = *declaration {
-                builder.cascade(declaration, CascadePriority::new(CascadeLevel::same_tree_author_normal(), LayerOrder::root()));
+                builder.cascade(
+                    declaration,
+                    CascadePriority::new(
+                        CascadeLevel::same_tree_author_normal(),
+                        LayerOrder::root(),
+                    ),
+                );
             }
         }
 
@@ -1097,12 +1102,11 @@ impl PropertyDeclarationBlock {
                 
                 
                 
-                let appendable_value = match shorthand
-                    .get_shorthand_appendable_value(&current_longhands)
-                {
-                    None => continue,
-                    Some(appendable_value) => appendable_value,
-                };
+                let appendable_value =
+                    match shorthand.get_shorthand_appendable_value(&current_longhands) {
+                        None => continue,
+                        Some(appendable_value) => appendable_value,
+                    };
 
                 
                 
@@ -1125,7 +1129,9 @@ impl PropertyDeclarationBlock {
                         AppendableValue::Css({
                             
                             #[cfg(feature = "gecko")]
-                            unsafe { v.as_str_unchecked() }
+                            unsafe {
+                                v.as_str_unchecked()
+                            }
                             #[cfg(feature = "servo")]
                             &v
                         })
@@ -1353,6 +1359,13 @@ struct PropertyDeclarationParser<'a, 'b: 'a> {
 impl<'a, 'b, 'i> AtRuleParser<'i> for PropertyDeclarationParser<'a, 'b> {
     type Prelude = ();
     type AtRule = Importance;
+    type Error = StyleParseErrorKind<'i>;
+}
+
+
+impl<'a, 'b, 'i> QualifiedRuleParser<'i> for PropertyDeclarationParser<'a, 'b> {
+    type Prelude = ();
+    type QualifiedRule = Importance;
     type Error = StyleParseErrorKind<'i>;
 }
 

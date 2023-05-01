@@ -29,8 +29,6 @@ use std::mem::MaybeUninit;
 
 
 
-
-
 #[macro_export]
 macro_rules! match_ignore_ascii_case {
     ( $input:expr,
@@ -51,7 +49,7 @@ macro_rules! match_ignore_ascii_case {
                     $( $( $pattern )+ )+
                 }
             }
-            _cssparser_internal_to_lowercase!($input, cssparser_internal::MAX_LENGTH => lowercase);
+            $crate::_cssparser_internal_to_lowercase!($input, cssparser_internal::MAX_LENGTH => lowercase);
             // "A" is a short string that we know is different for every string pattern,
             // since we’ve verified that none of them include ASCII upper case letters.
             match lowercase.unwrap_or("A") {
@@ -63,8 +61,6 @@ macro_rules! match_ignore_ascii_case {
         }
     };
 }
-
-
 
 
 
@@ -108,7 +104,7 @@ macro_rules! ascii_case_insensitive_phf_map {
                     $key => $value,
                 )*
             };
-            _cssparser_internal_to_lowercase!(input, _cssparser_internal::MAX_LENGTH => lowercase);
+            $crate::_cssparser_internal_to_lowercase!(input, _cssparser_internal::MAX_LENGTH => lowercase);
             lowercase.and_then(|s| MAP.get(s))
         }
     }
@@ -156,22 +152,21 @@ pub fn _cssparser_internal_to_lowercase<'a>(
         input: &'a str,
         first_uppercase: usize,
     ) -> &'a str {
-        unsafe {
-            
-            
-            let input_bytes = &*(input.as_bytes() as *const [u8] as *const [MaybeUninit<u8>]);
+        
+        
+        let input_bytes =
+            unsafe { &*(input.as_bytes() as *const [u8] as *const [MaybeUninit<u8>]) };
 
-            buffer.copy_from_slice(&*input_bytes);
+        buffer.copy_from_slice(&*input_bytes);
 
-            
-            let buffer = &mut *(buffer as *mut [MaybeUninit<u8>] as *mut [u8]);
+        
+        let buffer = unsafe { &mut *(buffer as *mut [MaybeUninit<u8>] as *mut [u8]) };
 
-            buffer[first_uppercase..].make_ascii_lowercase();
-            
-            
-            
-            ::std::str::from_utf8_unchecked(buffer)
-        }
+        buffer[first_uppercase..].make_ascii_lowercase();
+        
+        
+        
+        unsafe { ::std::str::from_utf8_unchecked(buffer) }
     }
 
     Some(

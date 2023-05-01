@@ -2,6 +2,9 @@
 
 
 
+
+#![allow(rustdoc::invalid_html_tags)]
+
 use std::f32::consts::PI;
 use std::fmt;
 use std::str::FromStr;
@@ -60,7 +63,6 @@ fn normalize_hue(hue: f32) -> f32 {
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[repr(C)]
 pub struct RGBA {
     
     pub red: Option<u8>,
@@ -150,6 +152,7 @@ impl ToCss for RGBA {
     }
 }
 
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Hsl {
     
@@ -163,6 +166,7 @@ pub struct Hsl {
 }
 
 impl Hsl {
+    
     pub fn new(
         hue: Option<f32>,
         saturation: Option<f32>,
@@ -215,6 +219,7 @@ impl<'de> Deserialize<'de> for Hsl {
     }
 }
 
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Hwb {
     
@@ -228,6 +233,7 @@ pub struct Hwb {
 }
 
 impl Hwb {
+    
     pub fn new(
         hue: Option<f32>,
         whiteness: Option<f32>,
@@ -285,7 +291,6 @@ impl<'de> Deserialize<'de> for Hwb {
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[repr(C)]
 pub struct Lab {
     
     pub lightness: Option<f32>,
@@ -299,7 +304,6 @@ pub struct Lab {
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[repr(C)]
 pub struct Oklab {
     
     pub lightness: Option<f32>,
@@ -378,7 +382,6 @@ impl_lab_like!(Oklab, "oklab");
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[repr(C)]
 pub struct Lch {
     
     pub lightness: Option<f32>,
@@ -392,7 +395,6 @@ pub struct Lch {
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-#[repr(C)]
 pub struct Oklch {
     
     pub lightness: Option<f32>,
@@ -590,6 +592,11 @@ impl ToCss for ColorFunction {
 
 
 
+
+
+
+
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Color {
     
@@ -715,12 +722,14 @@ pub trait ColorParser<'i> {
             Token::Dimension {
                 value: v, ref unit, ..
             } => {
-                let degrees = match_ignore_ascii_case! { &*unit,
+                let degrees = match_ignore_ascii_case! { unit,
                     "deg" => v,
                     "grad" => v * 360. / 400.,
                     "rad" => v * 360. / (2. * PI),
                     "turn" => v * 360.,
-                    _ => return Err(location.new_unexpected_token_error(Token::Ident(unit.clone()))),
+                    _ => {
+                        return Err(location.new_unexpected_token_error(Token::Ident(unit.clone())))
+                    }
                 };
 
                 AngleOrNumber::Angle { degrees }
@@ -773,7 +782,7 @@ impl Color {
     
     
     
-    pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Color, ParseError<'i, ()>> {
+    pub fn parse<'i>(input: &mut Parser<'i, '_>) -> Result<Color, ParseError<'i, ()>> {
         parse_color_with(&DefaultColorParser, input)
     }
 }
@@ -842,7 +851,7 @@ pub trait FromParsedColor {
 
 
 #[inline]
-pub fn parse_hash_color<'i, 't, O>(value: &[u8]) -> Result<O, ()>
+pub fn parse_hash_color<'i, O>(value: &[u8]) -> Result<O, ()>
 where
     O: FromParsedColor,
 {
@@ -888,11 +897,11 @@ where
     let token = input.next()?;
     match *token {
         Token::Hash(ref value) | Token::IDHash(ref value) => parse_hash_color(value.as_bytes()),
-        Token::Ident(ref value) => parse_color_keyword(&*value),
+        Token::Ident(ref value) => parse_color_keyword(value),
         Token::Function(ref name) => {
             let name = name.clone();
             return input.parse_nested_block(|arguments| {
-                parse_color_function(color_parser, &*name, arguments)
+                parse_color_function(color_parser, &name, arguments)
             });
         }
         _ => Err(()),
@@ -1431,7 +1440,7 @@ pub fn hwb_to_rgb(h: f32, w: f32, b: f32) -> (f32, f32, f32) {
 
 #[inline]
 pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) {
-    debug_assert!(hue >= 0.0 && hue <= 1.0);
+    debug_assert!((0.0..=1.0).contains(&hue));
 
     fn hue_to_rgb(m1: f32, m2: f32, mut h3: f32) -> f32 {
         if h3 < 0. {
@@ -1463,13 +1472,16 @@ pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) 
     (red, green, blue)
 }
 
+type IntoColorFn<Output> =
+    fn(l: Option<f32>, a: Option<f32>, b: Option<f32>, alpha: Option<f32>) -> Output;
+
 #[inline]
 fn parse_lab_like<'i, 't, P>(
     color_parser: &P,
     arguments: &mut Parser<'i, 't>,
     lightness_range: f32,
     a_b_range: f32,
-    into_color: fn(l: Option<f32>, a: Option<f32>, b: Option<f32>, alpha: Option<f32>) -> P::Output,
+    into_color: IntoColorFn<P::Output>,
 ) -> Result<P::Output, ParseError<'i, P::Error>>
 where
     P: ColorParser<'i>,
@@ -1495,7 +1507,7 @@ fn parse_lch_like<'i, 't, P>(
     arguments: &mut Parser<'i, 't>,
     lightness_range: f32,
     chroma_range: f32,
-    into_color: fn(l: Option<f32>, c: Option<f32>, h: Option<f32>, alpha: Option<f32>) -> P::Output,
+    into_color: IntoColorFn<P::Output>,
 ) -> Result<P::Output, ParseError<'i, P::Error>>
 where
     P: ColorParser<'i>,
@@ -1553,6 +1565,9 @@ where
     ))
 }
 
+type ComponentParseResult<'i, R1, R2, R3, Error> =
+    Result<(Option<R1>, Option<R2>, Option<R3>, Option<f32>), ParseError<'i, Error>>;
+
 
 pub fn parse_components<'i, 't, P, F1, F2, F3, R1, R2, R3>(
     color_parser: &P,
@@ -1560,7 +1575,7 @@ pub fn parse_components<'i, 't, P, F1, F2, F3, R1, R2, R3>(
     f1: F1,
     f2: F2,
     f3: F3,
-) -> Result<(Option<R1>, Option<R2>, Option<R3>, Option<f32>), ParseError<'i, P::Error>>
+) -> ComponentParseResult<'i, R1, R2, R3, P::Error>
 where
     P: ColorParser<'i>,
     F1: FnOnce(&P, &mut Parser<'i, 't>) -> Result<R1, ParseError<'i, P::Error>>,
