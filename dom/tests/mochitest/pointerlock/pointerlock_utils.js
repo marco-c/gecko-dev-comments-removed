@@ -42,25 +42,38 @@ SimpleTest.finish = function() {
   opener.nextTest();
 };
 
-
-
-
-var fullscreenChangeEnters = 0;
-
 addLoadEvent(function() {
-  info(`Resetting fullscreen enter count.`);
-  fullscreenChangeEnters = 0;
   if (typeof start !== "undefined") {
     
-    SimpleTest.executeSoon(start);
+    
+    SimpleTest.requestFlakyTimeout(
+      "Initial window opening animation takes some time."
+    );
+    SimpleTest.waitForFocus(() =>
+      setTimeout(() => requestAnimationFrame(() => setTimeout(start)), 100)
+    );
   }
 });
 
 
 
+
 function inFullscreenMode(win) {
-  return win.document.fullscreenElement;
+  return (
+    win.innerWidth == win.screen.width && win.innerHeight == win.screen.height
+  );
 }
+
+
+
+
+function inNormalMode(win) {
+  return (
+    win.innerWidth == win.normalSize.w && win.innerHeight == win.normalSize.h
+  );
+}
+
+
 
 
 
@@ -72,15 +85,23 @@ function inFullscreenMode(win) {
 function addFullscreenChangeContinuation(type, callback, inDoc) {
   var doc = inDoc || document;
   var topWin = doc.defaultView.top;
+  
+  if (!topWin.normalSize) {
+    topWin.normalSize = {
+      w: window.innerWidth,
+      h: window.innerHeight,
+    };
+  }
   function checkCondition() {
     if (type == "enter") {
-      fullscreenChangeEnters++;
       return inFullscreenMode(topWin);
     } else if (type == "exit") {
-      fullscreenChangeEnters--;
-      return fullscreenChangeEnters
-        ? inFullscreenMode(topWin)
-        : !inFullscreenMode(topWin);
+      
+      
+      
+      
+      
+      return topWin.document.fullscreenElement || inNormalMode(topWin);
     } else {
       throw "'type' must be either 'enter', or 'exit'.";
     }
@@ -92,8 +113,17 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
   }
   function onFullscreenChange(event) {
     doc.removeEventListener("fullscreenchange", onFullscreenChange);
-    ok(checkCondition(), `Should ${type} fullscreen.`);
-    invokeCallback(event);
+    if (checkCondition()) {
+      invokeCallback(event);
+      return;
+    }
+    function onResize() {
+      if (checkCondition()) {
+        topWin.removeEventListener("resize", onResize);
+        invokeCallback(event);
+      }
+    }
+    topWin.addEventListener("resize", onResize);
   }
   doc.addEventListener("fullscreenchange", onFullscreenChange);
 }
