@@ -124,6 +124,21 @@ enum class JSONParserState {
 
 class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
  public:
+  
+  
+  
+  
+  
+  
+
+  
+  
+  using ElementVector = GCVector<Value, 20>;
+
+  
+  
+  using PropertyVector = GCVector<IdValuePair, 10>;
+
   enum class ParseType {
     
     JSONParse,
@@ -132,32 +147,6 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
     
     AttemptForEval,
   };
-
- public:
-  
-
-  JSContext* cx;
-
-  Value v;
-
- protected:
-  const ParseType parseType;
-
- public:
-  
-  
-  
-  
-  
-  
-
-  
-  
-  typedef GCVector<Value, 20> ElementVector;
-
-  
-  
-  typedef GCVector<IdValuePair, 10> PropertyVector;
 
   
   struct StackEntry {
@@ -182,6 +171,16 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
    private:
     void* vector;
   };
+
+ public:
+  
+
+  JSContext* cx;
+
+  Value v;
+
+ protected:
+  const ParseType parseType;
 
  private:
   
