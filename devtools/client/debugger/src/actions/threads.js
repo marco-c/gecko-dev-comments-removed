@@ -3,20 +3,38 @@
 
 
 import { createThread } from "../client/firefox/create";
+import { getSourcesToRemoveForThread } from "../selectors";
 
 export function addTarget(targetFront) {
   return { type: "INSERT_THREAD", newThread: createThread(targetFront) };
 }
 
 export function removeTarget(targetFront) {
-  return {
-    type: "REMOVE_THREAD",
-    threadActorID: targetFront.targetForm.threadActor,
+  return ({ getState, dispatch }) => {
+    const threadActorID = targetFront.targetForm.threadActor;
+
+    
+    
+    
+    
+    
+    
+    const { actors, sources } = getSourcesToRemoveForThread(
+      getState(),
+      threadActorID
+    );
+
+    dispatch({
+      type: "REMOVE_THREAD",
+      threadActorID,
+      actors,
+      sources,
+    });
   };
 }
 
 export function toggleJavaScriptEnabled(enabled) {
-  return async ({ panel, dispatch, client }) => {
+  return async ({ dispatch, client }) => {
     await client.toggleJavaScriptEnabled(enabled);
     dispatch({
       type: "TOGGLE_JAVASCRIPT_ENABLED",

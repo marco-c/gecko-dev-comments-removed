@@ -159,7 +159,7 @@ function update(state = initialSourcesState(), action) {
       return initialSourcesState(state);
 
     case "REMOVE_THREAD": {
-      return removeSourcesAndActors(state, action.threadActorID);
+      return removeSourcesAndActors(state, action);
     }
 
     case "SET_OVERRIDE": {
@@ -210,7 +210,7 @@ function addSources(state, sources) {
   return state;
 }
 
-function removeSourcesAndActors(state, threadActorID) {
+function removeSourcesAndActors(state, action) {
   state = {
     ...state,
     urls: { ...state.urls },
@@ -218,43 +218,55 @@ function removeSourcesAndActors(state, threadActorID) {
     originalSources: { ...state.originalSources },
   };
 
-  for (const sourceId in state.actors) {
-    let i = state.actors[sourceId].length;
-    while (i--) {
-      
-      
-      if (state.actors[sourceId][i].thread == threadActorID) {
-        state.actors[sourceId].splice(i, 1);
+  const { urls, mutableSources, originalSources, actors } = state;
+  for (const removedSource of action.sources) {
+    const sourceId = removedSource.id;
+
+    
+    const sourceUrl = removedSource.url;
+    if (sourceUrl) {
+      let sourcesForUrl = urls[sourceUrl];
+      if (sourcesForUrl) {
+        sourcesForUrl = sourcesForUrl.filter(id => id !== sourceId);
+        urls[sourceUrl] = sourcesForUrl;
+        if (!sourcesForUrl.length) {
+          delete urls[sourceUrl];
+        }
       }
     }
+
+    mutableSources.delete(sourceId);
+
     
     
-    if (!state.actors[sourceId].length) {
-      delete state.actors[sourceId];
+    
+    
+    delete originalSources[sourceId];
 
-      const source = state.mutableSources.get(sourceId);
-      if (source.url) {
-        
-        if (state.urls[source.url]) {
-          state.urls[source.url] = state.urls[source.url].filter(
-            id => id !== source.id
-          );
-        }
-        if (state.urls[source.url]?.length == 0) {
-          delete state.urls[source.url];
-        }
-      }
+    
+    
+    delete actors[sourceId];
+  }
 
-      state.mutableSources.delete(sourceId);
-
+  for (const removedActor of action.actors) {
+    const sourceId = removedActor.source;
+    const actorsForSource = actors[sourceId];
+    
+    if (!actorsForSource) {
+      continue;
+    }
+    const idx = actorsForSource.indexOf(removedActor);
+    if (idx != -1) {
+      actorsForSource.splice(idx, 1);
       
-      const originalSourceIds = state.originalSources[sourceId];
-      if (originalSourceIds && originalSourceIds.length) {
-        originalSourceIds.forEach(id => state.mutableSources.delete(id));
-        delete state.originalSources[sourceId];
-      }
+      actors[sourceId] = [...actorsForSource];
+    }
+    
+    if (!actorsForSource.length) {
+      delete actors[sourceId];
     }
   }
+
   return state;
 }
 

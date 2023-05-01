@@ -309,3 +309,57 @@ export function isSourceOverridden(state, source) {
   }
   return state.sources.mutableOverrideSources.has(source.url);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+export function getSourcesToRemoveForThread(state, threadActorID) {
+  const sourcesToRemove = [];
+  const actorsToRemove = [];
+
+  const { actors } = state.sources;
+  for (const sourceId in actors) {
+    let removedActorsCount = 0;
+    
+    const actorsForSource = actors[sourceId];
+    for (const actor of actorsForSource) {
+      if (actor.thread == threadActorID) {
+        actorsToRemove.push(actor);
+        removedActorsCount++;
+      }
+    }
+
+    
+    
+    
+    if (
+      removedActorsCount == actorsForSource.length ||
+      !actorsForSource.length
+    ) {
+      sourcesToRemove.push(state.sources.mutableSources.get(sourceId));
+
+      
+      const originalSourceIds = state.sources.originalSources[sourceId];
+      if (originalSourceIds?.length > 0) {
+        for (const originalSourceId of originalSourceIds) {
+          sourcesToRemove.push(
+            state.sources.mutableSources.get(originalSourceId)
+          );
+        }
+      }
+    }
+  }
+
+  return {
+    actors: actorsToRemove,
+    sources: sourcesToRemove,
+  };
+}
