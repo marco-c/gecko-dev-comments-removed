@@ -3,7 +3,7 @@
 
 
 
-const TEST_URI = URL_ROOT + "browser_toolbox_options_disable_js.html";
+const TEST_URI = URL_ROOT_SSL + "browser_toolbox_options_disable_js.html";
 
 add_task(async function() {
   const tab = await addTab(TEST_URI);
