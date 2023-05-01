@@ -390,7 +390,6 @@ nsresult HeadlessWidget::MakeFullScreen(bool aFullScreen) {
   
   if (mWidgetListener) {
     mWidgetListener->SizeModeChanged(mSizeMode);
-    mWidgetListener->FullscreenChanged(aFullScreen);
   }
 
   
