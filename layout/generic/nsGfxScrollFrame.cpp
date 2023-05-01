@@ -6534,9 +6534,7 @@ void nsHTMLScrollFrame::LayoutScrollbars(ScrollReflowInput& aState,
       
       
       vRect.width += width;
-      if (scrollbarOnLeft) {
-        vRect.x += width;
-      } else {
+      if (!scrollbarOnLeft) {
         vRect.x -= width;
       }
     }
