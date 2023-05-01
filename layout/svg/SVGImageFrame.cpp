@@ -375,7 +375,7 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       
       
       const SVGImageContext context(
-          Some(CSSIntSize::Truncate(width, height)),
+          Some(CSSIntSize::Ceil(width, height)),
           Some(imgElem->mPreserveAspectRatio.GetAnimValue()));
 
       
@@ -617,7 +617,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
       flags |= imgIContainer::FLAG_RECORD_BLOB;
     }
     
-    svgContext.SetViewportSize(Some(CSSIntSize::Truncate(width, height)));
+    svgContext.SetViewportSize(Some(CSSIntSize::Ceil(width, height)));
     svgContext.SetPreserveAspectRatio(
         Some(imgElem->mPreserveAspectRatio.GetAnimValue()));
   }
