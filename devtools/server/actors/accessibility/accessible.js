@@ -167,7 +167,7 @@ function getSnapshot(acc, a11yService, targetActor) {
   const { nodeType, nodeCssSelector } = getNodeDescription(acc.DOMNode);
   const snapshot = {
     name: acc.name,
-    role: getStringRole(acc, a11yService),
+    role: a11yService.getStringRole(acc.role),
     actions,
     value: acc.value,
     nodeCssSelector,
@@ -190,27 +190,6 @@ function getSnapshot(acc, a11yService, targetActor) {
   }
 
   return snapshot;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStringRole(acc, a11yService) {
-  let role = acc.computedARIARole;
-  if (!role) {
-    
-    role = a11yService.getStringRole(acc.role);
-  }
-  return role;
 }
 
 
@@ -253,7 +232,7 @@ class AccessibleActor extends Actor {
     if (this.isDefunct) {
       return null;
     }
-    return getStringRole(this.rawAccessible, this.walker.a11yService);
+    return this.walker.a11yService.getStringRole(this.rawAccessible.role);
   }
 
   get name() {

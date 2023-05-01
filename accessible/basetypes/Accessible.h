@@ -13,7 +13,6 @@
 #include "Units.h"
 
 class nsAtom;
-class nsStaticAtom;
 
 struct nsRoleMapEntry;
 
@@ -354,13 +353,6 @@ class Accessible {
 
   
 
-
-
-
-  nsStaticAtom* ComputedARIARole() const;
-
-  
-
   virtual void TakeFocus() const = 0;
 
   
@@ -382,7 +374,7 @@ class Accessible {
   
 
 
-  virtual nsStaticAtom* LandmarkRole() const;
+  virtual nsAtom* LandmarkRole() const;
 
   
 
