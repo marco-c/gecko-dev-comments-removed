@@ -354,6 +354,13 @@ class Accessible {
 
   
 
+
+
+
+  nsStaticAtom* ComputedARIARole() const;
+
+  
+
   virtual void TakeFocus() const = 0;
 
   

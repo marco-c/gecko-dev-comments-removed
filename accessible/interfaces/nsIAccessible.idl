@@ -345,6 +345,13 @@ interface nsIAccessible : nsISupports
 
   void announce(in AString announcement, in unsigned short priority);
 
+  
+
+
+
+
+  readonly attribute AString computedARIARole;
+
   [notxpcom, nostdcall] InternalLocalAccessible toInternalAccessible();
   [notxpcom, nostdcall] InternalAccessible toInternalGeneric();
 
