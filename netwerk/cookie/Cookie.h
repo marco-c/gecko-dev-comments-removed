@@ -44,6 +44,10 @@ class Cookie final : public nsICookie {
          const OriginAttributes& aOriginAttributes)
       : mData(aCookieData), mOriginAttributes(aOriginAttributes) {}
 
+  static already_AddRefed<Cookie> FromCookieStruct(
+      const CookieStruct& aCookieData,
+      const OriginAttributes& aOriginAttributes);
+
  public:
   
   static bool ValidateSameSite(const CookieStruct& aCookieData);
@@ -54,6 +58,13 @@ class Cookie final : public nsICookie {
 
   
   static already_AddRefed<Cookie> Create(
+      const CookieStruct& aCookieData,
+      const OriginAttributes& aOriginAttributes);
+
+  
+  
+  
+  static already_AddRefed<Cookie> CreateValidated(
       const CookieStruct& aCookieData,
       const OriginAttributes& aOriginAttributes);
 

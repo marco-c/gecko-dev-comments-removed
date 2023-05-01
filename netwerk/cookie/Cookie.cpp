@@ -7,6 +7,7 @@
 #include "CookieStorage.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsIURLParser.h"
 #include "nsURLHelper.h"
@@ -44,6 +45,21 @@ int64_t Cookie::GenerateUniqueCreationTime(int64_t aCreationTime) {
 already_AddRefed<Cookie> Cookie::Create(
     const CookieStruct& aCookieData,
     const OriginAttributes& aOriginAttributes) {
+  RefPtr<Cookie> cookie =
+      Cookie::FromCookieStruct(aCookieData, aOriginAttributes);
+
+  
+  
+  if (cookie->mData.creationTime() > gLastCreationTime) {
+    gLastCreationTime = cookie->mData.creationTime();
+  }
+
+  return cookie.forget();
+}
+
+already_AddRefed<Cookie> Cookie::FromCookieStruct(
+    const CookieStruct& aCookieData,
+    const OriginAttributes& aOriginAttributes) {
   RefPtr<Cookie> cookie = new Cookie(aCookieData, aOriginAttributes);
 
   
@@ -53,15 +69,55 @@ already_AddRefed<Cookie> Cookie::Create(
 
   
   
-  if (cookie->mData.creationTime() > gLastCreationTime) {
-    gLastCreationTime = cookie->mData.creationTime();
-  }
-
-  
-  
   if (!Cookie::ValidateSameSite(cookie->mData)) {
     cookie->mData.sameSite() = nsICookie::SAMESITE_LAX;
     cookie->mData.rawSameSite() = nsICookie::SAMESITE_NONE;
+  }
+
+  return cookie.forget();
+}
+
+already_AddRefed<Cookie> Cookie::CreateValidated(
+    const CookieStruct& aCookieData,
+    const OriginAttributes& aOriginAttributes) {
+  if (!StaticPrefs::network_cookie_fixup_on_db_load()) {
+    return Cookie::Create(aCookieData, aOriginAttributes);
+  }
+
+  RefPtr<Cookie> cookie =
+      Cookie::FromCookieStruct(aCookieData, aOriginAttributes);
+
+  int64_t currentTimeInUsec = PR_Now();
+  
+  
+  
+  
+  MOZ_ASSERT(gLastCreationTime < currentTimeInUsec + 10000,
+             "Last creation time must not be higher than NOW");
+
+  
+  
+  if (cookie->mData.creationTime() > currentTimeInUsec) {
+    uint64_t diffInSeconds =
+        (cookie->mData.creationTime() - currentTimeInUsec) / PR_USEC_PER_SEC;
+    mozilla::glean::networking::cookie_creation_fixup_diff.AccumulateSamples(
+        {diffInSeconds});
+    glean::networking::cookie_timestamp_fixed_count.Get("creationTime"_ns)
+        .Add(1);
+
+    cookie->mData.creationTime() =
+        GenerateUniqueCreationTime(currentTimeInUsec);
+  }
+
+  if (cookie->mData.lastAccessed() > currentTimeInUsec) {
+    uint64_t diffInSeconds =
+        (cookie->mData.lastAccessed() - currentTimeInUsec) / PR_USEC_PER_SEC;
+    mozilla::glean::networking::cookie_access_fixup_diff.AccumulateSamples(
+        {diffInSeconds});
+    glean::networking::cookie_timestamp_fixed_count.Get("lastAccessed"_ns)
+        .Add(1);
+
+    cookie->mData.lastAccessed() = currentTimeInUsec;
   }
 
   return cookie.forget();
