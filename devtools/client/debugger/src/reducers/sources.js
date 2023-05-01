@@ -41,7 +41,7 @@ export function initialSourcesState(state) {
 
 
 
-    originalSources: {},
+    mutableOriginalSources: new Map(),
 
     
 
@@ -198,12 +198,18 @@ function addSources(state, sources) {
       state.urls[source.url] = [...existing, source.id];
     }
 
+    
     if (source.isOriginal) {
       const generatedSourceId = originalToGeneratedId(source.id);
-      if (!state.originalSources[generatedSourceId]) {
-        state.originalSources[generatedSourceId] = [];
+      let originalSourceIds = state.mutableOriginalSources.get(
+        generatedSourceId
+      );
+      if (!originalSourceIds) {
+        originalSourceIds = [];
+        state.mutableOriginalSources.set(generatedSourceId, originalSourceIds);
       }
-      state.originalSources[generatedSourceId].push(source.id);
+      
+      originalSourceIds.push(source.id);
     }
   }
 
@@ -215,10 +221,9 @@ function removeSourcesAndActors(state, action) {
     ...state,
     urls: { ...state.urls },
     actors: { ...state.actors },
-    originalSources: { ...state.originalSources },
   };
 
-  const { urls, mutableSources, originalSources, actors } = state;
+  const { urls, mutableSources, mutableOriginalSources, actors } = state;
   for (const removedSource of action.sources) {
     const sourceId = removedSource.id;
 
@@ -241,7 +246,7 @@ function removeSourcesAndActors(state, action) {
     
     
     
-    delete originalSources[sourceId];
+    mutableOriginalSources.delete(sourceId);
 
     
     
