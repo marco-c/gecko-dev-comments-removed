@@ -3,7 +3,7 @@
 
 
 import { correctIndentation } from "./indentation";
-import { getGrip } from "./evaluation-result";
+import { getGrip, getFront } from "./evaluation-result";
 
 const UNAVAILABLE_GRIP = { unavailable: true };
 
@@ -31,34 +31,37 @@ function isUnavailable(value) {
   );
 }
 
-export function getValue(expression) {
-  const { value, exception, error } = expression;
 
-  if (error) {
-    return error;
-  }
+
+
+
+
+
+
+
+
+
+
+export function getExpressionResultGripAndFront(expression) {
+  const { value } = expression;
 
   if (!value) {
-    return UNAVAILABLE_GRIP;
+    return { expressionResultGrip: UNAVAILABLE_GRIP };
   }
 
-  if (exception) {
-    if (isUnavailable(exception)) {
-      return UNAVAILABLE_GRIP;
-    }
-    return exception;
+  const expressionResultReturn = value.exception || value.result;
+  const valueGrip = getGrip(expressionResultReturn);
+  if (!valueGrip || isUnavailable(valueGrip)) {
+    return { expressionResultGrip: UNAVAILABLE_GRIP };
   }
 
-  const valueGrip = getGrip(value.result);
-
-  if (valueGrip && typeof valueGrip === "object" && valueGrip.isError) {
-    if (isUnavailable(valueGrip)) {
-      return UNAVAILABLE_GRIP;
-    }
-
+  if (valueGrip.isError) {
     const { name, message } = valueGrip.preview;
-    return `${name}: ${message}`;
+    return { expressionResultGrip: `${name}: ${message}` };
   }
 
-  return valueGrip;
+  return {
+    expressionResultGrip: valueGrip,
+    expressionResultFront: getFront(expressionResultReturn),
+  };
 }

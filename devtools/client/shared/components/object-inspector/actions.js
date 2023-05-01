@@ -143,8 +143,8 @@ function getActorIDs(roots) {
 }
 
 function closeObjectInspector(roots) {
-  return ({ dispatch, getState, client }) => {
-    releaseActors(roots, client, dispatch);
+  return ({ client }) => {
+    releaseActors(client, roots);
   };
 }
 
@@ -156,9 +156,9 @@ function closeObjectInspector(roots) {
 
 
 
-function rootsChanged(roots) {
-  return ({ dispatch, client, getState }) => {
-    releaseActors(roots, client, dispatch);
+function rootsChanged(roots, oldRoots) {
+  return ({ dispatch, client }) => {
+    releaseActors(client, oldRoots, roots);
     dispatch({
       type: "ROOTS_CHANGED",
       data: roots,
@@ -166,13 +166,28 @@ function rootsChanged(roots) {
   };
 }
 
-async function releaseActors(roots, client, dispatch) {
-  if (!client || !client.releaseActor) {
+
+
+
+
+
+
+
+async function releaseActors(client, oldRoots, newRoots = []) {
+  if (!client?.releaseActor ) {
     return;
   }
 
-  const actors = getActorIDs(roots);
-  await Promise.all(actors.map(client.releaseActor));
+  let actorIdsToRelease = getActorIDs(oldRoots);
+  if (newRoots.length) {
+    const newActorIds = getActorIDs(newRoots);
+    actorIdsToRelease = actorIdsToRelease.filter(id => !newActorIds.includes(id));
+  }
+
+  if (!actorIdsToRelease.length) {
+    return;
+  }
+  await Promise.all(actorIdsToRelease.map(client.releaseActor));
 }
 
 function invokeGetter(node, receiverId) {
