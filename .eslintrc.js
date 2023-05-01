@@ -310,7 +310,6 @@ module.exports = {
         "toolkit/components/narrate/Narrator.jsm",
         "toolkit/components/nimbus/**",
         "toolkit/components/normandy/**",
-        "toolkit/components/osfile/**",
         "toolkit/components/passwordmgr/**",
         "toolkit/components/pdfjs/**",
         "toolkit/components/pictureinpicture/**",
@@ -612,13 +611,6 @@ module.exports = {
         "browser/components/pocket/**",
         "devtools/**",
       ],
-    },
-    {
-      
-      files: ["toolkit/components/osfile/**"],
-      rules: {
-        "mozilla/reject-osfile": "off",
-      },
     },
     {
       
