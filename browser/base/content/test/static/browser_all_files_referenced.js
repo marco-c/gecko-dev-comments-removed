@@ -124,6 +124,12 @@ var whitelist = [
   },
 
   
+  
+  {
+    file: "resource://app/localization/en-US/browser/linuxDesktopEntry.ftl",
+  },
+
+  
   { file: "chrome://global/skin/aboutRights.css", skipUnofficial: true },
 
   
