@@ -49,7 +49,7 @@ if CONFIG["WRAP_STL_INCLUDES"]:
         
         
         
-        template_file = SRCDIR + "/%s-stl-wrapper.template.h" % stl_compiler
+        template_file = "%s-stl-wrapper.template.h" % stl_compiler
         output_dir = "/dist/stl_wrappers"
         
         
@@ -61,7 +61,8 @@ if CONFIG["WRAP_STL_INCLUDES"]:
             *outputs,
             script="make-stl-wrappers.py",
             entry_point="gen_wrappers",
-            flags=[TOPOBJDIR + output_dir, stl_compiler, template_file] + stl_headers
+            inputs=[template_file],
+            flags=[TOPOBJDIR + output_dir, stl_compiler] + stl_headers
         )
 
     
