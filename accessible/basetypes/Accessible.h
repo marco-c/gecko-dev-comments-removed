@@ -13,6 +13,7 @@
 #include "Units.h"
 
 class nsAtom;
+class nsStaticAtom;
 
 struct nsRoleMapEntry;
 
@@ -374,7 +375,7 @@ class Accessible {
   
 
 
-  virtual nsAtom* LandmarkRole() const;
+  virtual nsStaticAtom* LandmarkRole() const;
 
   
 
