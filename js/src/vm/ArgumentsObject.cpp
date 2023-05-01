@@ -177,6 +177,7 @@ struct CopyScriptFrameIterArgs {
     
     iter_.unaliasedForEachActual(
         cx, [this](const Value& v) { actualArgs_.infallibleAppend(v); });
+    MOZ_RELEASE_ASSERT(actualArgs_.length() == numActuals);
     return true;
   }
 
