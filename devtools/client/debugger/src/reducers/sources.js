@@ -54,7 +54,7 @@ export function initialSourcesState(state) {
 
 
 
-    actors: {},
+    mutableSourceActors: new Map(),
 
     breakpointPositions: {},
     breakableLines: {},
@@ -217,16 +217,11 @@ function addSources(state, sources) {
 }
 
 function removeSourcesAndActors(state, action) {
-  state = {
-    ...state,
-    actors: { ...state.actors },
-  };
-
   const {
     mutableSourcesPerUrl,
     mutableSources,
     mutableOriginalSources,
-    actors,
+    mutableSourceActors,
   } = state;
   for (const removedSource of action.sources) {
     const sourceId = removedSource.id;
@@ -256,12 +251,12 @@ function removeSourcesAndActors(state, action) {
 
     
     
-    delete actors[sourceId];
+    mutableSourceActors.delete(sourceId);
   }
 
   for (const removedActor of action.actors) {
     const sourceId = removedActor.source;
-    const actorsForSource = actors[sourceId];
+    const actorsForSource = mutableSourceActors.get(sourceId);
     
     if (!actorsForSource) {
       continue;
@@ -270,31 +265,35 @@ function removeSourcesAndActors(state, action) {
     if (idx != -1) {
       actorsForSource.splice(idx, 1);
       
-      actors[sourceId] = [...actorsForSource];
+      mutableSourceActors.set(sourceId, [...actorsForSource]);
     }
+
     
     if (!actorsForSource.length) {
-      delete actors[sourceId];
+      mutableSourceActors.delete(sourceId);
     }
   }
 
-  return state;
+  return { ...state };
 }
 
 function insertSourceActors(state, action) {
   const { sourceActors } = action;
-  state = {
-    ...state,
-    actors: { ...state.actors },
-  };
 
+  const { mutableSourceActors } = state;
   
   
   for (const sourceActor of sourceActors) {
-    state.actors[sourceActor.source] = [
-      ...(state.actors[sourceActor.source] || []),
-      sourceActor,
-    ];
+    const sourceId = sourceActor.source;
+    
+    
+    
+    const existing = mutableSourceActors.get(sourceId);
+    if (existing) {
+      mutableSourceActors.set(sourceId, [...existing, sourceActor]);
+    } else {
+      mutableSourceActors.set(sourceId, [sourceActor]);
+    }
   }
 
   const scriptActors = sourceActors.filter(
@@ -312,7 +311,7 @@ function insertSourceActors(state, action) {
     state = { ...state, breakpointPositions };
   }
 
-  return state;
+  return { ...state };
 }
 
 export default update;
