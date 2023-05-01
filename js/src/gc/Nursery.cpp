@@ -506,6 +506,11 @@ void* js::Nursery::allocateCell(gc::AllocSite* site, size_t size,
     MOZ_ASSERT_IF(site->isNormal(), site->isInAllocatedList());
   }
 
+  
+  
+  
+  stats().noteNurseryAlloc();
+
   gcprobes::NurseryAlloc(cell, kind);
   return cell;
 }
@@ -540,10 +545,6 @@ inline void* js::Nursery::allocate(size_t size) {
 
   void* thing = (void*)position();
   position_ = position() + size;
-  
-  
-  
-  stats().noteNurseryAlloc();
 
   DebugOnlyPoison(thing, JS_ALLOCATED_NURSERY_PATTERN, size,
                   MemCheckKind::MakeUndefined);
