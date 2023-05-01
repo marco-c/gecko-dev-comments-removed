@@ -3169,7 +3169,8 @@ bool nsGenericHTMLElement::PopoverOpen() const {
 
 
 bool nsGenericHTMLElement::CheckPopoverValidity(
-    PopoverVisibilityState aExpectedState, ErrorResult& aRv) {
+    PopoverVisibilityState aExpectedState, Document* aExpectedDocument,
+    ErrorResult& aRv) {
   if (!HasAttr(nsGkAtoms::popover)) {
     aRv.ThrowNotSupportedError("Element does not have the popover attribute");
     return false;
@@ -3177,6 +3178,11 @@ bool nsGenericHTMLElement::CheckPopoverValidity(
 
   if (!IsInComposedDoc()) {
     aRv.ThrowInvalidStateError("Element is not connected");
+    return false;
+  }
+
+  if (aExpectedDocument && aExpectedDocument != OwnerDoc()) {
+    aRv.ThrowInvalidStateError("Element is moved to other document");
     return false;
   }
 
@@ -3280,28 +3286,29 @@ void nsGenericHTMLElement::RunPopoverToggleEventTask(
 
 
 void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
-  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, aRv)) {
+  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
   }
+  RefPtr<Document> document = OwnerDoc();
+
   
   if (FireToggleEvent(PopoverVisibilityState::Hidden,
                       PopoverVisibilityState::Showing, u"beforetoggle"_ns)) {
     return;
   }
-  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, aRv)) {
+  if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
     return;
   }
   
 
-  const bool shouldRestoreFocus = !OwnerDoc()->GetTopmostAutoPopover();
+  const bool shouldRestoreFocus = !document->GetTopmostAutoPopover();
   
   
   nsWeakPtr originallyFocusedElement;
-  if (Document* doc = GetComposedDoc()) {
-    if (nsIContent* unretargetedFocus = doc->GetUnretargetedFocusedContent()) {
-      originallyFocusedElement =
-          do_GetWeakReference(unretargetedFocus->AsElement());
-    }
+  if (nsIContent* unretargetedFocus =
+          document->GetUnretargetedFocusedContent()) {
+    originallyFocusedElement =
+        do_GetWeakReference(unretargetedFocus->AsElement());
   }
 
   
