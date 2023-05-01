@@ -333,6 +333,8 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
        NS_ConvertUTF16toUTF8(aURL).get()));
 
   
+  mChild = child;
+  mDatagrams->SetChild(child);
   backgroundChild
       ->SendCreateWebTransportParent(aURL, principal, ipcClientInfo, dedicated,
                                      requireUnreliable,
@@ -340,9 +342,9 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                                      
                                      std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self = RefPtr{this},
-              child](PBackgroundChild::CreateWebTransportParentPromise::
-                         ResolveOrRejectValue&& aResult) {
+             [self = RefPtr{this}](
+                 PBackgroundChild::CreateWebTransportParentPromise::
+                     ResolveOrRejectValue&& aResult) {
                
                
                
@@ -353,21 +355,20 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                LOG(("isreject: %d nsresult 0x%x", aResult.IsReject(),
                     (uint32_t)rv));
                if (NS_FAILED(rv)) {
-                 self->RejectWaitingConnection(rv, child);
+                 self->RejectWaitingConnection(rv);
                } else {
                  
                  
 
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
-                         std::get<1>(aResult.ResolveValue())),
-                     child);
+                         std::get<1>(aResult.ResolveValue())));
                }
              });
 }
 
 void WebTransport::ResolveWaitingConnection(
-    WebTransportReliabilityMode aReliability, WebTransportChild* aChild) {
+    WebTransportReliabilityMode aReliability) {
   LOG(("Resolved Connection %p, reliability = %u", this,
        (unsigned)aReliability));
   
@@ -380,8 +381,6 @@ void WebTransport::ResolveWaitingConnection(
     return;
   }
 
-  mChild = aChild;
-  mDatagrams->SetChild(aChild);
   
   mState = WebTransportState::CONNECTED;
   
@@ -392,8 +391,7 @@ void WebTransport::ResolveWaitingConnection(
   mReady->MaybeResolveWithUndefined();
 }
 
-void WebTransport::RejectWaitingConnection(nsresult aRv,
-                                           WebTransportChild* aChild) {
+void WebTransport::RejectWaitingConnection(nsresult aRv) {
   LOG(("Rejected connection %p %x", this, (uint32_t)aRv));
   
 
@@ -408,7 +406,8 @@ void WebTransport::RejectWaitingConnection(nsresult aRv,
   
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED) {
-    aChild->Shutdown(true);
+    mChild->Shutdown(true);
+    mChild = nullptr;
     
     
     return;
@@ -421,8 +420,8 @@ void WebTransport::RejectWaitingConnection(nsresult aRv,
   
   Cleanup(error, nullptr, IgnoreErrors());
 
-  
-  aChild->Shutdown(true);
+  mChild->Shutdown(true);
+  mChild = nullptr;
 }
 
 bool WebTransport::ParseURL(const nsAString& aURL) const {
@@ -514,7 +513,8 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
     
     Cleanup(error, nullptr, aRv);
     
-    MOZ_ASSERT(!mChild);
+    mChild->Shutdown(true);
+    mChild = nullptr;
     return;
   }
   LOG(("Sending Close"));
@@ -596,6 +596,10 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
         LOG(("CreateBidirectionalStream response"));
         
         
+        if (BidirectionalStreamResponse::Tnsresult == aPipes.type()) {
+          promise->MaybeReject(aPipes.get_nsresult());
+          return;
+        }
         if (self->mState == WebTransportState::CLOSED ||
             self->mState == WebTransportState::FAILED) {
           promise->MaybeRejectWithInvalidStateError(
