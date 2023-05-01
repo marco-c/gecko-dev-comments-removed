@@ -14,7 +14,6 @@
 #include "MediaEventSource.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/StateWatching.h"
 #include "PerformanceRecorder.h"
 
 @interface VideoCaptureAdapter : NSObject <RTCVideoCapturerDelegate> {
@@ -56,18 +55,10 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
 
  private:
   
-  void ProcessNextFrame();
-
-  
   SequenceChecker mChecker;
-  const RefPtr<mozilla::AbstractThread> mCallbackThread;
   AVCaptureDevice* _Nonnull const mDevice RTC_GUARDED_BY(mChecker);
   VideoCaptureAdapter* _Nonnull const mAdapter RTC_GUARDED_BY(mChecker);
   RTCCameraVideoCapturer* _Nonnull const mCapturer RTC_GUARDED_BY(mChecker);
-  mozilla::WatchManager<VideoCaptureAvFoundation> mWatchManager RTC_GUARDED_BY(mChecker);
-  
-  mozilla::Watchable<__strong RTCVideoFrame* _Nullable> mNextFrameToProcess
-      RTC_GUARDED_BY(mChecker);
   
   mozilla::Maybe<VideoCaptureCapability> mCapability RTC_GUARDED_BY(mChecker);
   
