@@ -165,8 +165,7 @@ StartupCache::StartupCache()
       mWrittenOnce(false),
       mCurTableReferenced(false),
       mRequestedCount(0),
-      mCacheEntriesBaseOffset(0),
-      mPrefetchThread(nullptr) {}
+      mCacheEntriesBaseOffset(0) {}
 
 StartupCache::~StartupCache() { UnregisterWeakMemoryReporter(this); }
 
@@ -251,14 +250,13 @@ nsresult StartupCache::Init() {
   return NS_OK;
 }
 
-void StartupCache::StartPrefetchMemoryThread() {
-  
-  
-  
-  
-  mPrefetchThread = PR_CreateThread(
-      PR_USER_THREAD, StartupCache::ThreadedPrefetch, this, PR_PRIORITY_NORMAL,
-      PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 256 * 1024);
+void StartupCache::StartPrefetchMemory() {
+  {
+    MonitorAutoLock lock(mPrefetchComplete);
+    mPrefetchInProgress = true;
+  }
+  NS_DispatchBackgroundTask(NewRunnableMethod(
+      "StartupCache::ThreadedPrefetch", this, &StartupCache::ThreadedPrefetch));
 }
 
 
@@ -273,7 +271,7 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
   MOZ_TRY(mCacheData.init(mFile));
   auto size = mCacheData.size();
   if (CanPrefetchMemory()) {
-    StartPrefetchMemoryThread();
+    StartPrefetchMemory();
   }
 
   uint32_t headerSize;
@@ -309,7 +307,7 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
     }
     auto cleanup = MakeScopeExit([&]() {
       mTableLock.AssertCurrentThreadOwns();
-      WaitOnPrefetchThread();
+      WaitOnPrefetch();
       mTable.clear();
       mCacheData.reset();
     });
@@ -610,7 +608,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
 }
 
 void StartupCache::InvalidateCache(bool memoryOnly) {
-  WaitOnPrefetchThread();
+  WaitOnPrefetch();
   
   MutexAutoLock lock(mTableLock);
 
@@ -680,7 +678,7 @@ void StartupCache::EnsureShutdownWriteComplete() {
 
   
   
-  WaitOnPrefetchThread();
+  WaitOnPrefetch();
   mDirty = true;
   mCacheData.reset();
   
@@ -698,31 +696,30 @@ void StartupCache::IgnoreDiskCache() {
   if (gStartupCache) gStartupCache->InvalidateCache();
 }
 
-void StartupCache::WaitOnPrefetchThread() {
-  if (!mPrefetchThread || mPrefetchThread == PR_GetCurrentThread()) return;
-
-  PR_JoinThread(mPrefetchThread);
-  mPrefetchThread = nullptr;
+void StartupCache::WaitOnPrefetch() {
+  
+  MonitorAutoLock lock(mPrefetchComplete);
+  while (mPrefetchInProgress) {
+    mPrefetchComplete.Wait();
+  }
 }
 
-void StartupCache::ThreadedPrefetch(void* aClosure) {
-  AUTO_PROFILER_REGISTER_THREAD("StartupCache");
-  NS_SetCurrentThreadName("StartupCache");
-  mozilla::IOInterposer::RegisterCurrentThread();
-  StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
+void StartupCache::ThreadedPrefetch() {
   uint8_t* buf;
   size_t size;
   {
-    MutexAutoLock lock(startupCacheObj->mTableLock);
-    buf = startupCacheObj->mCacheData.get<uint8_t>().get();
-    size = startupCacheObj->mCacheData.size();
+    MutexAutoLock lock(mTableLock);
+    buf = mCacheData.get<uint8_t>().get();
+    size = mCacheData.size();
   }
   
   
   MMAP_FAULT_HANDLER_BEGIN_BUFFER(buf, size)
   PrefetchMemory(buf, size);
   MMAP_FAULT_HANDLER_CATCH()
-  mozilla::IOInterposer::UnregisterCurrentThread();
+  MonitorAutoLock lock(mPrefetchComplete);
+  mPrefetchInProgress = false;
+  mPrefetchComplete.NotifyAll();
 }
 
 
@@ -762,7 +759,7 @@ void StartupCache::MaybeWriteOffMainThread() {
     }
   }
   
-  WaitOnPrefetchThread();
+  WaitOnPrefetch();
   {
     MutexAutoLock lock(mTableLock);
     mDirty = true;
@@ -790,7 +787,7 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
 
   if (strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
     
-    sc->WaitOnPrefetchThread();
+    sc->WaitOnPrefetch();
     StartupCache::gShutdownInitiated = true;
     
     
