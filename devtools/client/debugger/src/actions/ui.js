@@ -139,6 +139,13 @@ export function togglePaneCollapse(position, paneCollapsed) {
 
 
 
+
+
+
+
+
+
+
 export function highlightLineRange(location) {
   return {
     type: "HIGHLIGHT_LINES",
@@ -152,10 +159,6 @@ export function flashLineRange(location) {
     setTimeout(() => dispatch(clearHighlightLineRange()), 200);
   };
 }
-
-
-
-
 
 export function clearHighlightLineRange() {
   return {
