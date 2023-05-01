@@ -190,7 +190,30 @@ class FuncType {
   static bool canBeSubTypeOf(const FuncType& subType,
                              const FuncType& superType) {
     
-    return FuncType::strictlyEquals(subType, superType);
+    if (subType.args().length() != superType.args().length()) {
+      return false;
+    }
+
+    
+    if (subType.results().length() != superType.results().length()) {
+      return false;
+    }
+
+    
+    for (uint32_t i = 0; i < superType.results().length(); i++) {
+      if (!ValType::isSubTypeOf(subType.results()[i], superType.results()[i])) {
+        return false;
+      }
+    }
+
+    
+    for (uint32_t i = 0; i < superType.args().length(); i++) {
+      if (!ValType::isSubTypeOf(superType.args()[i], subType.args()[i])) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   bool canHaveJitEntry() const;
