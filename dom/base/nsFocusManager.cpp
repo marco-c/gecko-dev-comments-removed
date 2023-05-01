@@ -2617,10 +2617,17 @@ void nsFocusManager::Focus(
 
   
   
-  RefPtr elementToFocus = FlushAndCheckIfFocusable(aElement, aFlags);
-  if (elementToFocus &&
-      GetFocusedBrowsingContext() == aWindow->GetBrowsingContext() &&
-      mFocusedElement == nullptr) {
+  
+  
+  
+  
+  RefPtr elementToFocus =
+      aElement && aElement->IsInComposedDoc() &&
+              aElement->GetComposedDoc() == aWindow->GetExtantDoc()
+          ? FlushAndCheckIfFocusable(aElement, aFlags)
+          : nullptr;
+  if (elementToFocus && !mFocusedElement &&
+      GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
     mFocusedElement = elementToFocus;
 
     nsIContent* focusedNode = aWindow->GetFocusedElement();
@@ -2684,7 +2691,7 @@ void nsFocusManager::Focus(
       }
     }
   } else {
-    if (!mFocusedElement) {
+    if (!mFocusedElement && mFocusedWindow == aWindow) {
       
       
       RefPtr<nsPresContext> presContext = presShell->GetPresContext();
