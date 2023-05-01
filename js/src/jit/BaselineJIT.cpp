@@ -293,7 +293,8 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 
   
   bool mightHaveEagerBaselineHint = false;
-  if (!JitOptions.disableJitHints && !script->noEagerBaselineHint()) {
+  if (!JitOptions.disableJitHints && !script->noEagerBaselineHint() &&
+      cx->runtime()->jitRuntime()->hasJitHintsMap()) {
     JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
     
     
