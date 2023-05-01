@@ -113,7 +113,7 @@ def main():
     
     
     
-    nm_line_re = re.compile(r"([^:/ ]+):\s+[0-9a-fA-F]*\s+([TU]) (.*)")
+    nm_line_re = re.compile(r"([^:/ ]+):\s*[0-9a-fA-F]*\s+([TU]) (.*)")
     alloc_fns_re = re.compile(r"|".join(alloc_fns))
 
     
