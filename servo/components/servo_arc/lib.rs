@@ -695,10 +695,16 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
     
     
     #[inline]
-    fn from_header_and_iter_alloc<F, I>(alloc: F, header: H, mut items: I, is_static: bool) -> Self
+    fn from_header_and_iter_alloc<F, I>(
+        alloc: F,
+        header: H,
+        mut items: I,
+        num_items: usize,
+        is_static: bool,
+    ) -> Self
     where
         F: FnOnce(Layout) -> *mut u8,
-        I: Iterator<Item = T> + ExactSizeIterator,
+        I: Iterator<Item = T>,
     {
         assert_ne!(size_of::<T>(), 0, "Need to think about ZST");
 
@@ -706,7 +712,6 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         debug_assert!(inner_align >= align_of::<T>());
 
         
-        let num_items = items.len();
         let size = {
             
             
@@ -777,8 +782,7 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
                 
                 
                 debug_assert!(
-                    (buffer.add(size) as usize - current as *mut u8 as usize) <
-                        inner_align
+                    (buffer.add(size) as usize - current as *mut u8 as usize) < inner_align
                 );
             }
             assert!(
@@ -786,7 +790,6 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
                 "ExactSizeIterator under-reported length"
             );
         }
-
         #[cfg(feature = "gecko_refcount_logging")]
         unsafe {
             if !is_static {
@@ -813,9 +816,9 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
     
     
     #[inline]
-    pub fn from_header_and_iter<I>(header: H, items: I) -> Self
+    pub fn from_header_and_iter_with_size<I>(header: H, items: I, num_items: usize) -> Self
     where
-        I: Iterator<Item = T> + ExactSizeIterator,
+        I: Iterator<Item = T>,
     {
         Arc::from_header_and_iter_alloc(
             |layout| {
@@ -832,8 +835,20 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
             },
             header,
             items,
+            num_items,
              false,
         )
+    }
+
+    
+    
+    #[inline]
+    pub fn from_header_and_iter<I>(header: H, items: I) -> Self
+    where
+        I: Iterator<Item = T> + ExactSizeIterator,
+    {
+        let len = items.len();
+        Self::from_header_and_iter_with_size(header, items, len)
     }
 
     #[inline]
@@ -863,10 +878,7 @@ pub struct HeaderWithLength<H> {
 impl<H> HeaderWithLength<H> {
     
     pub fn new(header: H, length: usize) -> Self {
-        HeaderWithLength {
-            header,
-            length,
-        }
+        HeaderWithLength { header, length }
     }
 }
 
@@ -959,9 +971,10 @@ impl<H, T> ThinArc<H, T> {
         F: FnOnce(Layout) -> *mut u8,
         I: Iterator<Item = T> + ExactSizeIterator,
     {
-        let header = HeaderWithLength::new(header, items.len());
+        let len = items.len();
+        let header = HeaderWithLength::new(header, len);
         Arc::into_thin(Arc::from_header_and_iter_alloc(
-            alloc, header, items,  true,
+            alloc, header, items, len,  true,
         ))
     }
 
@@ -1058,6 +1071,14 @@ impl<H, T> UniqueArc<HeaderSliceWithLength<H, [T]>> {
         Self(Arc::from_header_and_iter(header, items))
     }
 
+    #[inline]
+    pub fn from_header_and_iter_with_size<I>(header: HeaderWithLength<H>, items: I, num_items: usize) -> Self
+    where
+        I: Iterator<Item = T>,
+    {
+        Self(Arc::from_header_and_iter_with_size(header, items, num_items))
+    }
+
     
     pub fn header_mut(&mut self) -> &mut H {
         
@@ -1128,9 +1149,7 @@ impl<T> Clone for RawOffsetArc<T> {
 
 impl<T> Drop for RawOffsetArc<T> {
     fn drop(&mut self) {
-        let _ = Arc::from_raw_offset(RawOffsetArc {
-            ptr: self.ptr,
-        });
+        let _ = Arc::from_raw_offset(RawOffsetArc { ptr: self.ptr });
     }
 }
 
