@@ -606,6 +606,11 @@ void VideoTrackEncoder::NotifyEndOfStream() {
     }
   }
 
+  if (mCanceled) {
+    
+    return;
+  }
+
   mIncomingBuffer.Clear();
   mLastChunk.SetNull(0);
 
