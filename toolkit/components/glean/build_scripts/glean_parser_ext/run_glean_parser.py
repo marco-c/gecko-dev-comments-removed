@@ -98,21 +98,22 @@ def parse_with_options(input_files, options):
 
 
 
-DEPS_LEN = 17
+DEPS_LEN = 19
 
 
 def main(cpp_fd, *args):
     def open_output(filename):
         return FileAvoidWrite(os.path.join(os.path.dirname(cpp_fd.name), filename))
 
-    [js_h_path, rust_path] = args[-2:]
-    args = args[DEPS_LEN:-2]
+    [js_h_path, js_cpp_path, rust_path] = args[-3:]
+    args = args[DEPS_LEN:-3]
     all_objs, options = parse(args)
 
     cpp.output_cpp(all_objs, cpp_fd, options)
 
     with open_output(js_h_path) as js_fd:
-        js.output_js(all_objs, js_fd, options)
+        with open_output(js_cpp_path) as js_cpp_fd:
+            js.output_js(all_objs, js_fd, js_cpp_fd, options)
 
     
     ping_names_by_app_id = {}
