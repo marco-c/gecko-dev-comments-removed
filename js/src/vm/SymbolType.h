@@ -79,7 +79,9 @@ class Symbol
   
   
   bool isInterestingSymbol() const {
-    return code_ == SymbolCode::toStringTag || code_ == SymbolCode::toPrimitive;
+    return code_ == SymbolCode::toStringTag ||
+           code_ == SymbolCode::toPrimitive ||
+           code_ == SymbolCode::isConcatSpreadable;
   }
 
   
