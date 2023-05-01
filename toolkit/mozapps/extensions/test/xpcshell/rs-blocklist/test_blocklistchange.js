@@ -29,7 +29,11 @@ const URI_EXTENSION_BLOCKLIST_DIALOG =
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
-if (AppConstants.platform == "android") {
+const IS_ANDROID_WITH_BLOCKLIST_V2 =
+  AppConstants.platform == "android" && !AppConstants.NIGHTLY_BUILD;
+
+
+if (IS_ANDROID_WITH_BLOCKLIST_V2) {
   
   
   Assert.ok(

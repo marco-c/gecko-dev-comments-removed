@@ -1428,10 +1428,9 @@ let Blocklist = {
   recordAddonBlockChangeTelemetry(addon, reason) {
     BlocklistTelemetry.recordAddonBlockChangeTelemetry(addon, reason);
   },
-
   
-  
-  allowDeprecatedBlocklistV2: AppConstants.platform === "android",
+  allowDeprecatedBlocklistV2:
+    AppConstants.platform === "android" && !AppConstants.NIGHTLY_BUILD,
 
   _chooseExtensionBlocklistImplementationFromPref() {
     if (
