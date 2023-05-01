@@ -3652,12 +3652,6 @@ void nsWindow::CleanupFullscreenTransition() {
   mTransitionWnd = nullptr;
 }
 
-void nsWindow::OnFullscreenWillChange(bool aFullScreen) {
-  if (mWidgetListener) {
-    mWidgetListener->FullscreenWillChange(aFullScreen);
-  }
-}
-
 void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
   
   
@@ -3669,10 +3663,6 @@ void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
       aOldSizeMode == nsSizeMode_Minimized;
   if (!toOrFromMinimized) {
     InfallibleMakeFullScreen(aFullScreen);
-  }
-
-  if (mWidgetListener) {
-    mWidgetListener->FullscreenChanged(aFullScreen);
   }
 
   
@@ -9374,10 +9364,6 @@ void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode,
       mSizeMode == nsSizeMode_Fullscreen || aMode == nsSizeMode_Fullscreen;
   const bool fullscreen = aMode == nsSizeMode_Fullscreen;
 
-  if (fullscreenChange) {
-    mWindow->OnFullscreenWillChange(fullscreen);
-  }
-
   mLastSizeMode = mSizeMode;
   mSizeMode = aMode;
 
@@ -9387,11 +9373,11 @@ void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode,
     ShowWindowWithMode(mWindow->mWnd, aMode);
   }
 
-  mWindow->OnSizeModeChange();
-
   if (fullscreenChange) {
     mWindow->OnFullscreenChanged(oldSizeMode, fullscreen);
   }
+
+  mWindow->OnSizeModeChange();
 }
 
 void nsWindow::ContextMenuPreventer::Update(
