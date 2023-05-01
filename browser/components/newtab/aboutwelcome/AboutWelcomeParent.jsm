@@ -19,6 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShellService: "resource:///modules/ShellService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  UIState: "resource://services-sync/UIState.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
@@ -178,7 +179,8 @@ class AboutWelcomeParent extends JSWindowActorParent {
         }
         break;
       case "AWPage:SPECIAL_ACTION":
-        return lazy.SpecialMessageActions.handleAction(data, browser);
+        lazy.SpecialMessageActions.handleAction(data, browser);
+        break;
       case "AWPage:FXA_METRICS_FLOW_URI":
         return lazy.FxAccounts.config.promiseMetricsFlowURI("aboutwelcome");
       case "AWPage:TELEMETRY_EVENT":
@@ -240,11 +242,121 @@ class AboutWelcomeParent extends JSWindowActorParent {
       case "AWPage:SEND_TO_DEVICE_EMAILS_SUPPORTED": {
         return lazy.BrowserUtils.sendToDeviceEmailsSupported();
       }
+      case "AWPage:FXA_SIGNIN_TAB_FLOW": {
+        return this.fxaSignInTabFlow(data, browser);
+      }
       default:
         lazy.log.debug(`Unexpected event ${type} was not handled.`);
     }
 
     return undefined;
+  }
+
+  
+
+
+
+
+
+
+  async fxaSignInTabFlow(data, browser) {
+    if (!(await lazy.FxAccounts.canConnectAccount())) {
+      return false;
+    }
+    const url = await lazy.FxAccounts.config.promiseConnectAccountURI(
+      data?.entrypoint || "activity-stream-firstrun",
+      data?.extraParams || {}
+    );
+
+    let window = browser.ownerGlobal;
+
+    let fxaBrowser = await new Promise(resolve => {
+      window.openLinkIn(url, "tab", {
+        private: false,
+        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+          {}
+        ),
+        csp: null,
+        resolveOnNewTabCreated: resolve,
+        forceForeground: true,
+      });
+    });
+
+    let gBrowser = fxaBrowser.getTabBrowser();
+    let fxaTab = gBrowser.getTabForBrowser(fxaBrowser);
+
+    let didSignIn = await new Promise(resolve => {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let controller = new AbortController();
+      let { signal } = controller;
+
+      
+      
+      
+      let fxaObserver = {
+        QueryInterface: ChromeUtils.generateQI([
+          Ci.nsIObserver,
+          Ci.nsISupportsWeakReference,
+        ]),
+
+        observe(aSubject, aTopic, aData) {
+          let state = lazy.UIState.get();
+          if (state.status === lazy.UIState.STATUS_SIGNED_IN) {
+            
+            
+            controller.abort();
+            resolve(true);
+          }
+        },
+      };
+
+      
+      
+      
+      fxaTab.addEventListener(
+        "TabClose",
+        () => {
+          
+          
+          
+          controller.abort();
+          resolve(false);
+        },
+        { once: true, signal }
+      );
+
+      Services.obs.addObserver(fxaObserver, lazy.UIState.ON_UPDATE);
+
+      
+      
+      
+      signal.addEventListener(
+        "abort",
+        () => {
+          Services.obs.removeObserver(fxaObserver, lazy.UIState.ON_UPDATE);
+        },
+        { once: true }
+      );
+    });
+
+    
+    
+    if (didSignIn && data?.autoClose !== false) {
+      gBrowser.removeTab(fxaTab);
+    }
+
+    return didSignIn;
   }
 
   
