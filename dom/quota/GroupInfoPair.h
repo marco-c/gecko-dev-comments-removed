@@ -61,7 +61,8 @@ class GroupInfoPair {
   bool LockedHasGroupInfos() {
     AssertCurrentThreadOwnsQuotaMutex();
 
-    return mTemporaryStorageGroupInfo || mDefaultStorageGroupInfo;
+    return mTemporaryStorageGroupInfo || mDefaultStorageGroupInfo ||
+           mPrivateStorageGroupInfo;
   }
 
  private:
@@ -72,6 +73,7 @@ class GroupInfoPair {
   const nsCString mGroup;
   RefPtr<GroupInfo> mTemporaryStorageGroupInfo;
   RefPtr<GroupInfo> mDefaultStorageGroupInfo;
+  RefPtr<GroupInfo> mPrivateStorageGroupInfo;
 };
 
 }  
