@@ -6,7 +6,7 @@
 add_task(async function test_utf8_extension() {
   const mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   let someMIME = mimeService.getFromTypeAndExtension(
-    "application/x-gobbledygook",
+    "application/x-nonsense",
     ".тест"
   );
   Assert.stringContains(someMIME.description, "тест");
