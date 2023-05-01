@@ -707,25 +707,27 @@ function runInParent(aFunctionOrURL) {
 
 
 
-async function addLoginsInParent(...aLogins) {
+function addLoginsInParent(...aLogins) {
   let script = runInParent(function addLoginsInParentInner() {
     
-    addMessageListener("addLogins", async logins => {
+    addMessageListener("addLogins", logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
         Ci.nsILoginInfo,
         "init"
       );
 
-      const loginInfos = logins.map(login => new nsLoginInfo(...login));
-      try {
-        await Services.logins.addLogins(loginInfos);
-      } catch (e) {
-        assert.ok(false, "addLogins threw: " + e);
+      for (let login of logins) {
+        let loginInfo = new nsLoginInfo(...login);
+        try {
+          Services.logins.addLogin(loginInfo);
+        } catch (e) {
+          assert.ok(false, "addLogin threw: " + e);
+        }
       }
     });
   });
-  await script.sendQuery("addLogins", aLogins);
+  script.sendQuery("addLogins", aLogins);
   return script;
 }
 
