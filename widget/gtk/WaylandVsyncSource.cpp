@@ -14,6 +14,7 @@
 #  include "mozilla/ScopeExit.h"
 #  include "nsGtkUtils.h"
 #  include "mozilla/StaticPrefs_layout.h"
+#  include "mozilla/StaticPrefs_widget.h"
 #  include "nsWindow.h"
 
 #  include <gdk/gdkwayland.h>
@@ -229,12 +230,17 @@ void WaylandVsyncSource::SetupFrameCallback(const MutexAutoLock& aProofOfLock) {
     wl_display_flush(WaylandDisplayGet()->GetDisplay());
 
     if (!mIdleTimerID) {
-      mIdleTimerID = (int)g_timeout_add(
+      mIdleTimerID = g_timeout_add(
           mIdleTimeout,
           [](void* data) -> gint {
-            auto* vsync = static_cast<WaylandVsyncSource*>(data);
-            vsync->IdleCallback();
-            return true;
+            RefPtr vsync = static_cast<WaylandVsyncSource*>(data);
+            if (vsync->IdleCallback()) {
+              
+              return G_SOURCE_CONTINUE;
+            }
+            
+            vsync->mIdleTimerID = 0;
+            return G_SOURCE_REMOVE;
           },
           this);
     }
@@ -243,7 +249,7 @@ void WaylandVsyncSource::SetupFrameCallback(const MutexAutoLock& aProofOfLock) {
   mCallbackRequested = true;
 }
 
-void WaylandVsyncSource::IdleCallback() {
+bool WaylandVsyncSource::IdleCallback() {
   LOG("WaylandVsyncSource::IdleCallback");
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
@@ -258,13 +264,14 @@ void WaylandVsyncSource::IdleCallback() {
       
       LOG("  quit, mVsyncEnabled %d mMonitorEnabled %d", mVsyncEnabled,
           mMonitorEnabled);
-      return;
+      return false;
     }
 
     guint duration = static_cast<guint>(
         (TimeStamp::Now() - mLastVsyncTimeStamp).ToMilliseconds());
     if (duration < mIdleTimeout) {
-      return;
+      
+      return true;
     }
 
     LOG("  fire idle vsync");
@@ -279,11 +286,14 @@ void WaylandVsyncSource::IdleCallback() {
   
   window->NotifyOcclusionState(OcclusionState::OCCLUDED);
 
-  
-  
-  if (!window->IsDestroyed()) {
-    NotifyVsync(lastVSync, outputTimestamp);
+  if (window->IsDestroyed()) {
+    return false;
   }
+  
+  
+  
+  NotifyVsync(lastVSync, outputTimestamp);
+  return StaticPrefs::widget_wayland_vsync_keep_firing_at_idle();
 }
 
 void WaylandVsyncSource::FrameCallback(wl_callback* aCallback, uint32_t aTime) {
