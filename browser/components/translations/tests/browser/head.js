@@ -73,14 +73,36 @@ function click(button, message) {
 
 
 
-function getByL10nId(l10nId) {
-  const element = document.querySelector(`[data-l10n-id="${l10nId}"]`);
+
+function getByL10nId(l10nId, doc = document) {
+  const element = doc.querySelector(`[data-l10n-id="${l10nId}"]`);
   if (!element) {
     throw new Error("Could not find the element by l10n id: " + l10nId);
   }
-  const { visibility, display } = window.getComputedStyle(element);
+  const win = doc.ownerGlobal;
+  const { visibility, display } = win.getComputedStyle(element);
   if (visibility !== "visible" || display === "none") {
     throw new Error("The element is not visible in the DOM: " + l10nId);
+  }
+  return element;
+}
+
+
+
+
+
+
+
+function maybeGetByL10nId(l10nId, doc = document) {
+  const selector = `[data-l10n-id="${l10nId}"]`;
+  const element = doc.querySelector(selector);
+  if (!element) {
+    return null;
+  }
+  const win = doc.ownerGlobal;
+  const { visibility, display } = win.getComputedStyle(element);
+  if (visibility !== "visible" || display === "none") {
+    return null;
   }
   return element;
 }
