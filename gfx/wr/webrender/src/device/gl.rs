@@ -986,8 +986,6 @@ pub struct Capabilities {
     
     pub supports_r8_texture_upload: bool,
     
-    pub supports_qcom_tiled_rendering: bool,
-    
     
     pub uses_native_clip_mask: bool,
     
@@ -1841,8 +1839,6 @@ impl Device {
             true
         };
 
-        let supports_qcom_tiled_rendering = supports_extension(&extensions, "GL_QCOM_tiled_rendering");
-
         
         
         let requires_vao_rebind_after_orphaning = is_adreno_3xx;
@@ -1880,7 +1876,6 @@ impl Device {
                 prefers_clear_scissor,
                 supports_render_target_invalidate,
                 supports_r8_texture_upload,
-                supports_qcom_tiled_rendering,
                 uses_native_clip_mask,
                 uses_native_antialiasing,
                 supports_image_external_essl3,
