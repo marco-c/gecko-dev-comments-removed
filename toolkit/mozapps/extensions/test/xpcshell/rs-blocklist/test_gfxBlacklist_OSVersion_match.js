@@ -16,7 +16,6 @@ async function run_test() {
   }
 
   gfxInfo.QueryInterface(Ci.nsIGfxInfoDebug);
-  gfxInfo.fireTestProcess();
 
   
   gfxInfo.spoofDriverVersion("8.52.322.2201");

@@ -184,6 +184,11 @@ void GfxInfo::GetData() {
   }
   mInitialized = true;
 
+  
+  
+  
+  GfxInfo::FireGLXTestProcess();
+
   GfxInfoBase::GetData();
 
   char* glxData = nullptr;
@@ -1314,14 +1319,6 @@ NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString& aDriverVersion) {
 
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion) {
   
-  return NS_OK;
-}
-
-NS_IMETHODIMP GfxInfo::FireTestProcess() {
-  
-  
-  
-  FireGLXTestProcess();
   return NS_OK;
 }
 
