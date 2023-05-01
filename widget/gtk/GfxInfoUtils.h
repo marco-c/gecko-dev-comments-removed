@@ -30,6 +30,21 @@ static void log(const char* format, ...) {
   va_end(args);
 }
 
+static int output_pipe = 1;
+static void close_logging() {
+  
+  
+  
+  
+  int fd = open("/dev/null", O_WRONLY);
+  for (int i = 1; i < fd; i++) {
+    if (output_pipe != i) {
+      dup2(fd, i);
+    }
+  }
+  close(fd);
+}
+
 
 
 
@@ -70,11 +85,11 @@ static void record_warning(const char* str) {
   record_value("WARNING\n%s\n", str);
 }
 
-static void record_flush(int out_pipe) {
+static void record_flush() {
   if (!test_buf) {
     return;
   }
-  MOZ_UNUSED(write(out_pipe, test_buf, test_length));
+  MOZ_UNUSED(write(output_pipe, test_buf, test_length));
   if (enable_logging) {
     MOZ_UNUSED(write(LOG_PIPE, test_buf, test_length));
   }
