@@ -611,7 +611,9 @@ this.DateTimeBoxWidget = class {
         " target: " +
         aEvent.target +
         " rt: " +
-        aEvent.relatedTarget
+        aEvent.relatedTarget +
+        " open: " +
+        this.mIsPickerOpen
     );
 
     let target = aEvent.originalTarget;
@@ -619,11 +621,24 @@ this.DateTimeBoxWidget = class {
     this.setInputValueFromFields();
     
     
-    if (aEvent.relatedTarget != this.mInputElement) {
-      this.mInputElement.setFocusState(false);
-      if (this.mIsPickerOpen) {
-        this.closeDateTimePicker();
-      }
+    if (aEvent.relatedTarget == this.mInputElement) {
+      return;
+    }
+
+    
+    
+    
+    if (
+      !aEvent.relatedTarget &&
+      this.window.isChromeWindow &&
+      this.window == this.window.top
+    ) {
+      return;
+    }
+
+    this.mInputElement.setFocusState(false);
+    if (this.mIsPickerOpen) {
+      this.closeDateTimePicker();
     }
   }
 
