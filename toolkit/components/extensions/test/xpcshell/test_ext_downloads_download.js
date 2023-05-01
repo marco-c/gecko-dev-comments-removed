@@ -268,7 +268,7 @@ add_task(async function test_downloads() {
 
   
   const absolutePath = OS.Path.join(
-    WINDOWS ? "C:\\tmp" : "/tmp",
+    WINDOWS ? "\\tmp" : "/tmp",
     "file_download.txt"
   );
   await download({
