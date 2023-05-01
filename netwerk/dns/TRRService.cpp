@@ -43,11 +43,8 @@ StaticRefPtr<nsIThread> sTRRBackgroundThread;
 static Atomic<TRRService*> sTRRServicePtr;
 
 static Atomic<size_t, Relaxed> sDomainIndex(0);
-static Atomic<size_t, Relaxed> sCurrentTRRModeIndex(0);
 
-constexpr nsLiteralCString kTRRDomains[3][7] = {
-    
-    {
+constexpr nsLiteralCString kTRRDomains[] = {
     
     "(other)"_ns,
     "mozilla.cloudflare-dns.com"_ns,
@@ -56,42 +53,13 @@ constexpr nsLiteralCString kTRRDomains[3][7] = {
     "doh.xfinity.com"_ns,  
     "dns.shaw.ca"_ns, 
     "dooh.cloudflare-dns.com"_ns, 
-    },
-    {
-    "(other)_2"_ns,
-    "mozilla.cloudflare-dns.com_2"_ns,
-    "firefox.dns.nextdns.io_2"_ns,
-    "private.canadianshield.cira.ca_2"_ns,
-    "doh.xfinity.com_2"_ns,  
-    "dns.shaw.ca_2"_ns, 
-    "dooh.cloudflare-dns.com_2"_ns, 
-    },
-    {
-    "(other)_3"_ns,
-    "mozilla.cloudflare-dns.com_3"_ns,
-    "firefox.dns.nextdns.io_3"_ns,
-    "private.canadianshield.cira.ca_3"_ns,
-    "doh.xfinity.com_3"_ns,  
-    "dns.shaw.ca_3"_ns, 
-    "dooh.cloudflare-dns.com_3"_ns, 
-    },
     
 };
 
-
-void TRRService::SetCurrentTRRMode(nsIDNSService::ResolverMode aMode) {
-  
-  
-  
-  static const uint32_t index[] = {0, 0, 1, 2, 0, 0};
-  sCurrentTRRModeIndex = index[static_cast<size_t>(aMode)];
-}
-
-
 void TRRService::SetProviderDomain(const nsACString& aTRRDomain) {
   sDomainIndex = 0;
-  for (size_t i = 1; i < std::size(kTRRDomains[0]); i++) {
-    if (aTRRDomain.Equals(kTRRDomains[0][i])) {
+  for (size_t i = 1; i < std::size(kTRRDomains); i++) {
+    if (aTRRDomain.Equals(kTRRDomains[i])) {
       sDomainIndex = i;
       break;
     }
@@ -99,9 +67,7 @@ void TRRService::SetProviderDomain(const nsACString& aTRRDomain) {
 }
 
 
-const nsCString& TRRService::ProviderKey() {
-  return kTRRDomains[sCurrentTRRModeIndex][sDomainIndex];
-}
+const nsCString& TRRService::ProviderKey() { return kTRRDomains[sDomainIndex]; }
 
 NS_IMPL_ISUPPORTS_INHERITED(TRRService, TRRServiceBase, nsIObserver,
                             nsISupportsWeakReference)
