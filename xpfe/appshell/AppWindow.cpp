@@ -2946,7 +2946,22 @@ void AppWindow::FullscreenWillChange(bool aInFullscreen) {
     }
   }
   MOZ_ASSERT(mFullscreenChangeState == FullscreenChangeState::NotChanging);
-  mFullscreenChangeState = FullscreenChangeState::WillChange;
+
+  int32_t winWidth = 0;
+  int32_t winHeight = 0;
+  GetSize(&winWidth, &winHeight);
+
+  int32_t screenWidth = 0;
+  int32_t screenHeight = 0;
+  GetAvailScreenSize(&screenWidth, &screenHeight);
+
+  
+  
+  
+  mFullscreenChangeState =
+      (aInFullscreen == (winWidth == screenWidth && winHeight == screenHeight))
+          ? FullscreenChangeState::WidgetResized
+          : FullscreenChangeState::WillChange;
 }
 
 void AppWindow::FullscreenChanged(bool aInFullscreen) {
