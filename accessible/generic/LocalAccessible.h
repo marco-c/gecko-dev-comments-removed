@@ -514,11 +514,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual bool IsLink() const override;
 
   
-
-
-  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const;
-
-  
   
 
   

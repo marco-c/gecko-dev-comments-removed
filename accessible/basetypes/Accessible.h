@@ -17,6 +17,8 @@ class nsStaticAtom;
 
 struct nsRoleMapEntry;
 
+class nsIURI;
+
 namespace mozilla {
 namespace a11y {
 
@@ -588,7 +590,12 @@ class Accessible {
   
 
 
-  Accessible* AnchorAt(uint32_t aAnchorIndex);
+  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const;
+
+  
+
+
+  Accessible* AnchorAt(uint32_t aAnchorIndex) const;
 
   
 

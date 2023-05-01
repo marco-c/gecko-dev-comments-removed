@@ -66,9 +66,6 @@ class LinkableAccessible : public AccessibleWrap {
   
   const LocalAccessible* ActionWalk(bool* aIsLink = nullptr,
                                     bool* aIsOnclick = nullptr) const;
-  
-  virtual already_AddRefed<nsIURI> AnchorURIAt(
-      uint32_t aAnchorIndex) const override;
 
  protected:
   virtual ~LinkableAccessible() {}

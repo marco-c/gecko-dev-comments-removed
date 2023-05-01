@@ -138,24 +138,6 @@ KeyBinding LinkableAccessible::AccessKey() const {
 
 
 
-already_AddRefed<nsIURI> LinkableAccessible::AnchorURIAt(
-    uint32_t aAnchorIndex) const {
-  bool isLink;
-  const LocalAccessible* actionAcc = ActionWalk(&isLink);
-  if (isLink) {
-    NS_ASSERTION(actionAcc->IsLink(), "HyperLink isn't implemented.");
-
-    if (actionAcc->IsLink()) {
-      return actionAcc->AnchorURIAt(aAnchorIndex);
-    }
-  }
-
-  return nullptr;
-}
-
-
-
-
 
 uint64_t DummyAccessible::NativeState() const { return 0; }
 uint64_t DummyAccessible::NativeInteractiveState() const { return 0; }
