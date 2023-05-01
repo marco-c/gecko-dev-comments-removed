@@ -169,17 +169,25 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   return true;
 }
 
+static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
+  if (!obj->isUsedAsPrototype()) {
+    return true;
+  }
+  if (!ReshapeForProtoMutation(cx, obj)) {
+    return false;
+  }
+  if (obj->is<NativeObject>()) {
+    InvalidateMegamorphicCache(cx, obj.as<NativeObject>());
+  }
+  return true;
+}
+
 
 bool Watchtower::watchProtoChangeSlow(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(watchesProtoChange(obj));
 
-  if (obj->isUsedAsPrototype()) {
-    if (!ReshapeForProtoMutation(cx, obj)) {
-      return false;
-    }
-    if (obj->is<NativeObject>()) {
-      InvalidateMegamorphicCache(cx, obj.as<NativeObject>());
-    }
+  if (!WatchProtoChangeImpl(cx, obj)) {
+    return false;
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
@@ -267,17 +275,22 @@ bool Watchtower::watchFreezeOrSealSlow(JSContext* cx,
 }
 
 
-void Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
+bool Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
                                      HandleObject b) {
   MOZ_ASSERT(watchesObjectSwap(a, b));
 
-  if (a->isUsedAsPrototype() && a->is<NativeObject>()) {
-    InvalidateMegamorphicCache(cx, a.as<NativeObject>());
+  
+  
+  
+  if (!WatchProtoChangeImpl(cx, a)) {
+    return false;
   }
-  if (b->isUsedAsPrototype() && b->is<NativeObject>()) {
-    InvalidateMegamorphicCache(cx, b.as<NativeObject>());
+  if (!WatchProtoChangeImpl(cx, b)) {
+    return false;
   }
 
   
   
+
+  return true;
 }
