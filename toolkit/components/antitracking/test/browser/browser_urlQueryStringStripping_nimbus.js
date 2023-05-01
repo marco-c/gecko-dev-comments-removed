@@ -137,6 +137,8 @@ add_task(async function test() {
   }
 
   
-  await Promise
-    .all[(BrowserTestUtils.closeWindow(normalWindow), BrowserTestUtils.closeWindow(pbWindow))];
+  await Promise.all([
+    BrowserTestUtils.closeWindow(normalWindow),
+    BrowserTestUtils.closeWindow(pbWindow),
+  ]);
 });
