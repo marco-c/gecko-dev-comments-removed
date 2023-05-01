@@ -74,7 +74,6 @@ class Element;
 
 
 
-
 class ScriptLoadContext : public JS::loader::LoadContextBase,
                           public PreloaderBase {
  protected:

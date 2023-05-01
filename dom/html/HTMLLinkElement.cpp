@@ -311,30 +311,36 @@ void HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       aNameSpaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
 }
 
+static const DOMTokenListSupportedToken sSupportedRelValues[] = {
+    
+    
+    
+    "preload", "prefetch",      "dns-prefetch", "stylesheet",
+    "next",    "alternate",     "preconnect",   "icon",
+    "search",  "modulepreload", nullptr};
 
-#define SUPPORTED_REL_VALUES_BASE                                              \
-  "prefetch", "dns-prefetch", "stylesheet", "next", "alternate", "preconnect", \
-      "icon", "search", nullptr
-
-static const DOMTokenListSupportedToken sSupportedRelValueCombinations[][12] = {
-    {SUPPORTED_REL_VALUES_BASE},
-    {"manifest", SUPPORTED_REL_VALUES_BASE},
-    {"preload", SUPPORTED_REL_VALUES_BASE},
-    {"preload", "manifest", SUPPORTED_REL_VALUES_BASE},
-    {"modulepreload", SUPPORTED_REL_VALUES_BASE},
-    {"modulepreload", "manifest", SUPPORTED_REL_VALUES_BASE},
-    {"modulepreload", "preload", SUPPORTED_REL_VALUES_BASE},
-    {"modulepreload", "preload", "manifest", SUPPORTED_REL_VALUES_BASE}};
-#undef SUPPORTED_REL_VALUES_BASE
+static const DOMTokenListSupportedToken sSupportedRelValuesWithManifest[] = {
+    
+    
+    "preload",   "manifest",   "prefetch", "dns-prefetch", "stylesheet", "next",
+    "alternate", "preconnect", "icon",     "search",       nullptr};
 
 nsDOMTokenList* HTMLLinkElement::RelList() {
   if (!mRelList) {
-    int index = (StaticPrefs::dom_manifest_enabled() ? 1 : 0) |
-                (StaticPrefs::network_preload() ? 2 : 0) |
-                (StaticPrefs::network_modulepreload() ? 4 : 0);
-
-    mRelList = new nsDOMTokenList(this, nsGkAtoms::rel,
-                                  sSupportedRelValueCombinations[index]);
+    auto preload = StaticPrefs::network_preload();
+    auto manifest = StaticPrefs::dom_manifest_enabled();
+    if (manifest && preload) {
+      mRelList = new nsDOMTokenList(this, nsGkAtoms::rel,
+                                    sSupportedRelValuesWithManifest);
+    } else if (manifest && !preload) {
+      mRelList = new nsDOMTokenList(this, nsGkAtoms::rel,
+                                    &sSupportedRelValuesWithManifest[1]);
+    } else if (!manifest && preload) {
+      mRelList = new nsDOMTokenList(this, nsGkAtoms::rel, sSupportedRelValues);
+    } else {  
+      mRelList =
+          new nsDOMTokenList(this, nsGkAtoms::rel, &sSupportedRelValues[1]);
+    }
   }
   return mRelList;
 }
@@ -484,10 +490,7 @@ void HTMLLinkElement::
   }
 
   if (linkTypes & eMODULE_PRELOAD) {
-    ScriptLoader* scriptLoader = OwnerDoc()->ScriptLoader();
-    ModuleLoader* moduleLoader = scriptLoader->GetModuleLoader();
-
-    if (!moduleLoader) {
+    if (!OwnerDoc()->ScriptLoader()->GetModuleLoader()) {
       
       
       
@@ -497,52 +500,9 @@ void HTMLLinkElement::
       return;
     }
 
-    if (!StaticPrefs::network_modulepreload()) {
-      
-      
-      moduleLoader->DisallowImportMaps();
-      return;
-    }
-
     
     
-    nsAutoString media;
-    if (GetAttr(nsGkAtoms::media, media)) {
-      RefPtr<mozilla::dom::MediaList> mediaList =
-          mozilla::dom::MediaList::Create(NS_ConvertUTF16toUTF8(media));
-      if (!mediaList->Matches(*OwnerDoc())) {
-        return;
-      }
-    }
-
-    
-    if (!HasNonEmptyAttr(nsGkAtoms::href)) {
-      return;
-    }
-
-    nsAutoString as;
-    GetAttr(nsGkAtoms::as, as);
-
-    nsAttrValue asAttr;
-    net::ParseAsValue(as, asAttr);
-
-    if (!net::IsScriptLikeOrInvalid(asAttr)) {
-      RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-          this, u"error"_ns, CanBubble::eNo, ChromeOnlyDispatch::eNo);
-      asyncDispatcher->PostDOMEvent();
-      return;
-    }
-
-    nsCOMPtr<nsIURI> uri = GetURI();
-    if (!uri) {
-      return;
-    }
-
-    
-    
-    moduleLoader->DisallowImportMaps();
-
-    StartPreload(nsIContentPolicy::TYPE_SCRIPT);
+    OwnerDoc()->ScriptLoader()->GetModuleLoader()->DisallowImportMaps();
     return;
   }
 
