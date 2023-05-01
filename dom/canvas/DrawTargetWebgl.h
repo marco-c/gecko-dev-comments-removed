@@ -238,6 +238,11 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     Maybe<DeviceColor> mLastBlendColor;
 
     
+    
+    bool mScissorEnabled = false;
+    IntRect mLastScissor = {-1, -1, -1, -1};
+
+    
     LinkedList<RefPtr<TextureHandle>> mTextureHandles;
     size_t mNumTextureHandles = 0;
     
@@ -299,6 +304,9 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     void ClearLastTexture();
 
     bool SupportsPattern(const Pattern& aPattern);
+
+    void EnableScissor(const IntRect& aRect);
+    void DisableScissor();
 
     void SetTexFilter(WebGLTextureJS* aTex, bool aFilter);
     void InitTexParameters(WebGLTextureJS* aTex, bool aFilter = true);
