@@ -570,6 +570,13 @@ std::pair<nsIContent*, int32_t> TextLeafPoint::ToDOMPoint(
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
+  if (!aAcc) {
+    
+    mAcc = nullptr;
+    mOffset = 0;
+    return;
+  }
+
   
   
   if (aOffset != nsIAccessibleText::TEXT_OFFSET_CARET && !aAcc->IsOuterDoc() &&
