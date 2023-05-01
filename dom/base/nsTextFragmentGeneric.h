@@ -4,10 +4,14 @@
 
 
 
+#ifndef nsTextFragmentGeneric_h__
+#define nsTextFragmentGeneric_h__
+
+#include "nsTextFragmentGenericFwd.h"
+
 #include "nscore.h"
 #include "nsTextFragmentImpl.h"
 #include <algorithm>
-#include <xsimd/xsimd.hpp>
 
 namespace mozilla {
 
@@ -57,3 +61,5 @@ int32_t FirstNon8Bit(const char16_t* str, const char16_t* end) {
 }
 
 }  
+
+#endif
