@@ -197,8 +197,6 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
                                     DocAccessible* aDocument) {
   nsIFrame* frame = aContent->GetPrimaryFrame();
   MOZ_ASSERT(frame);
-  nsAutoCString overflow;
-  frame->Style()->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
   
   
   
@@ -209,8 +207,7 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
   return aContent->HasChildren() && !aContent->IsXULElement() &&
          (frame->IsTransformed() || frame->IsStickyPositioned() ||
           (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-           nsLayoutUtils::IsReallyFixedPos(frame)) ||
-          overflow.Equals("hidden"_ns));
+           nsLayoutUtils::IsReallyFixedPos(frame)));
 }
 
 

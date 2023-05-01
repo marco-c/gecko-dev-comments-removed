@@ -630,17 +630,6 @@ bool RemoteAccessibleBase<Derived>::IsFixedPos() const {
 }
 
 template <class Derived>
-bool RemoteAccessibleBase<Derived>::IsOverflowHidden() const {
-  MOZ_ASSERT(mCachedFields);
-  if (auto maybeOverflow =
-          mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::overflow)) {
-    return *maybeOverflow == nsGkAtoms::hidden;
-  }
-
-  return false;
-}
-
-template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     Maybe<nsRect> aOffset, bool aBoundsAreForHittesting) const {
   Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
@@ -717,11 +706,10 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           
           
           
-          if (aBoundsAreForHittesting &&
-              (hasScrollArea || remoteAcc->IsOverflowHidden())) {
-            nsRect selfRelativeVisibleBounds(0, 0, remoteBounds.width,
-                                             remoteBounds.height);
-            bounds = bounds.SafeIntersect(selfRelativeVisibleBounds);
+          if (aBoundsAreForHittesting && hasScrollArea) {
+            nsRect selfRelativeScrollBounds(0, 0, remoteBounds.width,
+                                            remoteBounds.height);
+            bounds = bounds.SafeIntersect(selfRelativeScrollBounds);
           }
         }
         if (remoteAcc->IsDoc()) {
