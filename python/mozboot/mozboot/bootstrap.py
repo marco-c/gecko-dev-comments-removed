@@ -170,12 +170,14 @@ class Bootstrapper(object):
         no_interactive=False,
         hg_configure=False,
         no_system_changes=False,
+        exclude=[],
         mach_context=None,
     ):
         self.instance = None
         self.choice = choice
         self.hg_configure = hg_configure
         self.no_system_changes = no_system_changes
+        self.exclude = exclude
         self.mach_context = mach_context
         cls = None
         args = {
@@ -257,7 +259,7 @@ class Bootstrapper(object):
         
         
         
-        self.instance.auto_bootstrap(application)
+        self.instance.auto_bootstrap(application, self.exclude)
         self.instance.install_toolchain_artifact("fix-stacks")
         self.instance.install_toolchain_artifact("minidump-stackwalk")
         if not self.instance.artifact_mode:
