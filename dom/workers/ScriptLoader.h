@@ -161,6 +161,11 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   
   
   
+  uint32_t mLoadingModuleRequestCount;
+
+  
+  
+  
   
   
   bool mCleanedUp MOZ_GUARDED_BY(
@@ -269,6 +274,10 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
   }
 
   void LogExceptionToConsole(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
+
+  bool AllModuleRequestsLoaded() const;
+  void IncreaseLoadingModuleRequestCount();
+  void DecreaseLoadingModuleRequestCount();
 };
 
 
