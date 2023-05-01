@@ -88,6 +88,12 @@ bool IsOtherInstanceRunning(MultiInstLockHandle lock, bool* aResult);
 
 already_AddRefed<nsIFile> GetNormalizedAppFile(nsIFile* aAppFile);
 
+
+
+bool GetMultiInstanceLockFileName(const char* nameToken,
+                                  const char16_t* installPath,
+                                  nsCString& filePath);
+
 };  
 
 #endif  
