@@ -13,11 +13,12 @@
 namespace mozilla {
 class CDMProxy;
 class ErrorResult;
+class MediaDrmCDMProxy;
 
 
 
 
-class MediaDrmCDMCallbackProxy : public DecryptorProxyCallback {
+class MediaDrmCDMCallbackProxy final : public DecryptorProxyCallback {
  public:
   void SetSessionId(uint32_t aCreateSessionToken,
                     const nsCString& aSessionId) override;
@@ -47,16 +48,15 @@ class MediaDrmCDMCallbackProxy : public DecryptorProxyCallback {
   void BatchedKeyStatusChanged(const nsCString& aSessionId,
                                const nsTArray<CDMKeyInfo>& aKeyInfos) override;
 
-  ~MediaDrmCDMCallbackProxy() {}
+  ~MediaDrmCDMCallbackProxy();
 
  private:
   friend class MediaDrmCDMProxy;
-  explicit MediaDrmCDMCallbackProxy(CDMProxy* aProxy);
+  explicit MediaDrmCDMCallbackProxy(MediaDrmCDMProxy* aProxy);
 
   void BatchedKeyStatusChangedInternal(const nsCString& aSessionId,
                                        const nsTArray<CDMKeyInfo>& aKeyInfos);
-  
-  CDMProxy* mProxy;
+  const RefPtr<MediaDrmCDMProxy> mProxy;
 };
 
 }  
