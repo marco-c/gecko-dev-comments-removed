@@ -25,8 +25,7 @@
 #include "nsTObserverArray.h"
 #include "nsURIHashKey.h"
 
-namespace mozilla {
-namespace places {
+namespace mozilla::places {
 
 struct VisitData;
 class ConcurrentStatementsHolder;
@@ -39,7 +38,7 @@ class VisitedQuery;
 
 
 
-#define RECENTLY_VISITED_URIS_MAX_AGE 6 * 60 * PR_USEC_PER_SEC
+#define RECENTLY_VISITED_URIS_MAX_AGE (6 * 60 * PR_USEC_PER_SEC)
 
 
 
@@ -73,7 +72,7 @@ class History final : public BaseHistory,
 
 
 
-  nsresult InsertPlace(VisitData& aVisitData);
+  nsresult InsertPlace(VisitData& aPlace);
 
   
 
@@ -81,7 +80,7 @@ class History final : public BaseHistory,
 
 
 
-  nsresult UpdatePlace(const VisitData& aVisitData);
+  nsresult UpdatePlace(const VisitData& aPlace);
 
   
 
@@ -199,7 +198,6 @@ class History final : public BaseHistory,
   nsTHashMap<nsURIHashKey, RecentURIVisit> mRecentlyVisitedURIs;
 };
 
-}  
 }  
 
 #endif  
