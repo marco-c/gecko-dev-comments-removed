@@ -33,7 +33,7 @@ export function initialSourcesState(state) {
 
 
 
-    urls: {},
+    mutableSourcesPerUrl: new Map(),
 
     
 
@@ -184,18 +184,18 @@ function update(state = initialSourcesState(), action) {
 
 
 function addSources(state, sources) {
-  state = {
-    ...state,
-    urls: { ...state.urls },
-  };
-
   for (const source of sources) {
     state.mutableSources.set(source.id, source);
 
     
-    const existing = state.urls[source.url] || [];
-    if (!existing.includes(source.id)) {
-      state.urls[source.url] = [...existing, source.id];
+    const existing = state.mutableSourcesPerUrl.get(source.url);
+    if (existing) {
+      
+      
+      
+      existing.push(source);
+    } else {
+      state.mutableSourcesPerUrl.set(source.url, [source]);
     }
 
     
@@ -213,30 +213,36 @@ function addSources(state, sources) {
     }
   }
 
-  return state;
+  return { ...state };
 }
 
 function removeSourcesAndActors(state, action) {
   state = {
     ...state,
-    urls: { ...state.urls },
     actors: { ...state.actors },
   };
 
-  const { urls, mutableSources, mutableOriginalSources, actors } = state;
+  const {
+    mutableSourcesPerUrl,
+    mutableSources,
+    mutableOriginalSources,
+    actors,
+  } = state;
   for (const removedSource of action.sources) {
     const sourceId = removedSource.id;
 
     
     const sourceUrl = removedSource.url;
     if (sourceUrl) {
-      let sourcesForUrl = urls[sourceUrl];
-      if (sourcesForUrl) {
-        sourcesForUrl = sourcesForUrl.filter(id => id !== sourceId);
-        urls[sourceUrl] = sourcesForUrl;
-        if (!sourcesForUrl.length) {
-          delete urls[sourceUrl];
-        }
+      const sourcesForSameUrl = (
+        mutableSourcesPerUrl.get(sourceUrl) || []
+      ).filter(s => s != removedSource);
+      if (!sourcesForSameUrl.length) {
+        
+        mutableSourcesPerUrl.delete(sourceUrl);
+      } else {
+        
+        mutableSourcesPerUrl.set(sourceUrl, sourcesForSameUrl);
       }
     }
 
