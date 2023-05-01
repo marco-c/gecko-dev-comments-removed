@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
   getTrimmedString: "resource://gre/modules/ExtensionTelemetry.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
 });
 
 
@@ -461,17 +460,15 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     abortIfShuttingDown();
 
     oldStoragePath = lazy.ExtensionStorage.getStorageFile(extension.id);
-    oldStorageExists = await lazy.OS.File.exists(oldStoragePath).catch(
-      fileErr => {
-        
-        
-        
-        extension.logWarning(
-          `Unable to access extension storage.local data file: ${fileErr.message}::${fileErr.stack}`
-        );
-        return false;
-      }
-    );
+    oldStorageExists = await IOUtils.exists(oldStoragePath).catch(fileErr => {
+      
+      
+      
+      extension.logWarning(
+        `Unable to access extension storage.local data file: ${fileErr.message}::${fileErr.stack}`
+      );
+      return false;
+    });
 
     
     
@@ -545,15 +542,12 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     try {
       
       
-      if (await lazy.OS.File.exists(oldStoragePath)) {
-        let openInfo = await lazy.OS.File.openUnique(
-          `${oldStoragePath}.migrated`,
-          {
-            humanReadable: true,
-          }
+      if (await IOUtils.exists(oldStoragePath)) {
+        const uniquePath = await IOUtils.createUniqueFile(
+          PathUtils.parent(oldStoragePath),
+          `${PathUtils.filename(oldStoragePath)}.migrated`
         );
-        await openInfo.file.close();
-        await lazy.OS.File.move(oldStoragePath, openInfo.path);
+        await IOUtils.move(oldStoragePath, uniquePath);
       }
     } catch (err) {
       nonFatalError = err;
