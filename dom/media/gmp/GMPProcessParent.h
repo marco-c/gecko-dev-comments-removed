@@ -13,6 +13,7 @@
 #include "base/thread.h"
 #include "chrome/common/child_process_host.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "nsIFile.h"
 
 class nsIRunnable;
 
@@ -78,14 +79,6 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
-  
-  
-  
-  
-  static nsresult NormalizePath(const char* aPath, nsACString& aNormalizedPath);
-
-  
-  
   bool mRequiresWindowServer;
 
 #  if defined(DEBUG)
@@ -93,6 +86,14 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   static bool sIsMainThreadInitDone;
 #  endif
 #endif
+
+  
+  
+  
+  
+  
+  
+  static nsresult NormalizePath(const char* aPath, PathString& aNormalizedPath);
 
   DISALLOW_COPY_AND_ASSIGN(GMPProcessParent);
 };
