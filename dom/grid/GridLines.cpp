@@ -116,8 +116,9 @@ void GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
       
       
       
+      nsTArray<RefPtr<nsAtom>> empty{};
       const nsTArray<RefPtr<nsAtom>>& possiblyDuplicateLineNames(
-          aLineInfo->mNames.SafeElementAt(i, nsTArray<RefPtr<nsAtom>>()));
+          aLineInfo->mNames.SafeElementAt(i, empty));
 
       nsTArray<RefPtr<nsAtom>> lineNames;
       AddLineNamesIfNotPresent(lineNames, possiblyDuplicateLineNames);
