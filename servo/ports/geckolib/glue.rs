@@ -122,8 +122,8 @@ use style::style_adjuster::StyleAdjuster;
 use style::stylesheets::container_rule::ContainerSizeQuery;
 use style::stylesheets::import_rule::ImportSheet;
 use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelector, KeyframesStepValue};
-use style::stylesheets::layer_rule::{LayerOrder, LayerName};
-use style::stylesheets::supports_rule::{parse_condition_or_declaration, SupportsCondition};
+use style::stylesheets::layer_rule::LayerOrder;
+use style::stylesheets::supports_rule::parse_condition_or_declaration;
 use style::stylesheets::{
     AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleType, CssRules,
     CssRulesHelpers, DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule,
@@ -148,7 +148,7 @@ use style::values::generics::easing::BeforeFlag;
 use style::values::specified::gecko::IntersectionObserverRootMargin;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
-use style_traits::{CssWriter, ParsingMode, ToCss, ParseError};
+use style_traits::{CssWriter, ParsingMode, ToCss};
 use to_shmem::SharedMemoryBuilder;
 
 trait ClosureHelper {
@@ -5854,37 +5854,10 @@ pub extern "C" fn Servo_CSSSupportsForImport(after_rule: &nsACString) -> bool {
         None,
     );
 
-    
-    
-    
-    
-    
-    
-    
-    let _ = input.try_parse(|input| -> Result<_, ParseError> {
-        
-        if !input.expect_ident_matching("layer").is_ok() {
-            
-            input.expect_function_matching("layer")?;
-            input.parse_nested_block(|input| {
-                LayerName::parse(&context, input)
-            })?;
-        }
-        Ok(())
-    });
-
-    
-    
-    
-    
-    
-    let cond = match input.try_parse(SupportsCondition::parse_for_import) {
-        Ok(c) => c,
-        Err(..) => return true,
-    };
-
     let namespaces = Default::default();
-    cond.eval(&context, &namespaces)
+    let (_layer, supports) = ImportRule::parse_layer_and_supports(&mut input, &context, &namespaces);
+
+    supports.map_or(true, |s| s.enabled)
 }
 
 #[no_mangle]
