@@ -398,11 +398,7 @@ bool DMABufSurfaceRGBA::Create(int aWidth, int aHeight,
     return false;
   }
 
-  mGmbFormat = GetDMABufDevice()->GetGbmFormat(mSurfaceFlags & DMABUF_ALPHA);
-  if (!mGmbFormat) {
-    
-    return false;
-  }
+  mGmbFormat = nsWaylandDisplay::GetGbmFormat(mSurfaceFlags & DMABUF_ALPHA);
   mDrmFormats[0] = mGmbFormat->mFormat;
 
   bool useModifiers = (aDMABufSurfaceFlags & DMABUF_USE_MODIFIERS) &&
