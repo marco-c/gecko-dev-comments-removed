@@ -25,7 +25,6 @@
 #include "jit/IonCompileTask.h"
 #include "jit/IonTypes.h"
 #include "jit/JitCode.h"
-#include "jit/JitHints.h"
 #include "jit/shared/Assembler-shared.h"
 #include "js/AllocPolicy.h"
 #include "js/ProfilingFrameIterator.h"
@@ -196,9 +195,6 @@ class JitRuntime {
 
   
   UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_{nullptr};
-
-  
-  MainThreadData<JitHintsMap*> jitHintsMap_{nullptr};
 
   
   
@@ -393,13 +389,6 @@ class JitRuntime {
   JitcodeGlobalTable* getJitcodeGlobalTable() {
     MOZ_ASSERT(hasJitcodeGlobalTable());
     return jitcodeGlobalTable_;
-  }
-
-  bool hasJitHintsMap() const { return jitHintsMap_ != nullptr; }
-
-  JitHintsMap* getJitHintsMap() {
-    MOZ_ASSERT(hasJitHintsMap());
-    return jitHintsMap_;
   }
 
   bool hasInterpreterEntryMap() const {

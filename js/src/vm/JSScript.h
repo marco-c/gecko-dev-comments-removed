@@ -555,10 +555,10 @@ class ScriptSource {
   ExclusiveData<ReaderInstances> readers_;
 
   
-  SharedImmutableString filename_;
+  bool hadCompressionTask_ = false;
 
   
-  HashNumber filenameHash_ = 0;
+  SharedImmutableString filename_;
 
   
   
@@ -606,9 +606,6 @@ class ScriptSource {
   
   JS::DelazificationOption delazificationMode_ =
       JS::DelazificationOption::OnDemandOnly;
-
-  
-  bool hadCompressionTask_ = false;
 
   
   
@@ -994,7 +991,6 @@ class ScriptSource {
       SharedImmutableString compressed);
 
  public:
-  HashNumber filenameHash() const { return filenameHash_; }
   const char* filename() const {
     return filename_ ? filename_.chars() : nullptr;
   }
@@ -1496,7 +1492,6 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   bool mutedErrors() const { return scriptSource()->mutedErrors(); }
 
   const char* filename() const { return scriptSource()->filename(); }
-  HashNumber filenameHash() const { return scriptSource()->filenameHash(); }
   const char* maybeForwardedFilename() const {
     return maybeForwardedScriptSource()->filename();
   }

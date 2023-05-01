@@ -306,8 +306,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
   Uninlineable = 1 << 19,
 
   
-  
-  NoEagerBaselineHint = 1 << 20,
 
   
   
