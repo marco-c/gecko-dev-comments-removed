@@ -1891,6 +1891,8 @@ class Document : public nsINode,
 
   nsTArray<Element*> GetTopLayer() const;
 
+  bool TopLayerContains(Element&) const;
+
   
   
   
@@ -3485,6 +3487,9 @@ class Document : public nsINode,
   
   void AddToAutoPopoverList(Element&);
   void RemoveFromAutoPopoverList(Element&);
+
+  void AddPopoverToTopLayer(Element&);
+  void RemovePopoverFromTopLayer(Element&);
 
   Element* GetTopLayerTop();
   
