@@ -2304,6 +2304,7 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
 
   mutedErrors_ = rhs.mutedErrors_;
   forceStrictMode_ = rhs.forceStrictMode_;
+  shouldResistFingerprinting_ = rhs.shouldResistFingerprinting_;
   sourcePragmas_ = rhs.sourcePragmas_;
   skipFilenameValidation_ = rhs.skipFilenameValidation_;
   hideScriptFromDebugger_ = rhs.hideScriptFromDebugger_;
@@ -2426,8 +2427,10 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
 
   
   
-  if (cx->realm()) {
-    discardSource = cx->realm()->behaviors().discardSource();
+  if (Realm* realm = cx->realm()) {
+    shouldResistFingerprinting_ =
+        realm->behaviors().shouldResistFingerprinting();
+    discardSource = realm->behaviors().discardSource();
   }
 }
 
