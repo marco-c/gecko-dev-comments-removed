@@ -13,6 +13,21 @@ class TestMainTabScalars(TelemetryTestCase):
         """Test for Telemetry Scalars."""
 
         with self.marionette.using_context(self.marionette.CONTEXT_CHROME):
+            
+            
+            
+            
+            
+            self.marionette.execute_script(
+                """
+                const { BrowserUsageTelemetry } = ChromeUtils.import(
+                    "resource:///modules/BrowserUsageTelemetry.jsm"
+                );
+
+                BrowserUsageTelemetry._onTabsOpenedTask._timeoutMs = 0;
+                """
+            )
+
             start_tab = self.marionette.current_window_handle
 
             tab2 = self.open_tab(focus=True)
