@@ -937,7 +937,20 @@ this.VideoControlsImplWidget = class {
             this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = true;
             this.updateReflowedDimensions();
             this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = false;
+
+            let scrubberWasHidden = this.scrubberStack.hidden;
             this.adjustControlSize();
+            if (scrubberWasHidden && !this.scrubberStack.hidden) {
+              
+              
+              this.window.requestAnimationFrame(() =>
+                this.window.setTimeout(() => {
+                  this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = true;
+                  this.updateReflowedDimensions();
+                  this.reflowTriggeringCallValidator.isReflowTriggeringPropsAllowed = false;
+                }, 0)
+              );
+            }
             this.updatePictureInPictureToggleDisplay();
             break;
           case "fullscreenchange":
@@ -1242,6 +1255,16 @@ this.VideoControlsImplWidget = class {
           scrubberProgress *
           this.reflowedDimensions.scrubberWidth *
           this.window.devicePixelRatio;
+        
+        
+        
+        
+        if (
+          !this.reflowedDimensions.scrubberWidth &&
+          !this.scrubberStack.hidden
+        ) {
+          devPxProgress = 1;
+        }
         
         
         
