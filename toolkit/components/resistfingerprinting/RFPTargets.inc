@@ -13,6 +13,9 @@ ITEM_VALUE(ScreenOrientation, 0x0005)
 ITEM_VALUE(SpeechSynthesis, 0x0006)
 
 
+ITEM_VALUE(CSSPrefersColorScheme, 0x0007)
+
+
 
 
 
