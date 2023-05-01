@@ -39,6 +39,7 @@ class CSSImportRule final : public css::Rule {
   StyleSheet* GetStyleSheet() const { return mChildSheet; }
   StyleSheet* GetStyleSheetForBindings();
   void GetLayerName(nsACString&) const;
+  void GetSupportsText(nsACString&) const;
 
   
   void DropSheetReference() final;
