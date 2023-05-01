@@ -1857,8 +1857,8 @@ bool nsRefreshDriver::HasObservers() const {
   
   
   
-  return mViewManagerFlushIsPending || !mStyleFlushObservers.IsEmpty() ||
-         !mLayoutFlushObservers.IsEmpty() ||
+  return (mViewManagerFlushIsPending && !mThrottled) ||
+         !mStyleFlushObservers.IsEmpty() || !mLayoutFlushObservers.IsEmpty() ||
          !mAnimationEventFlushObservers.IsEmpty() ||
          !mResizeEventFlushObservers.IsEmpty() ||
          !mPendingFullscreenEvents.IsEmpty() ||
@@ -1875,7 +1875,7 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
                         kFlushTypeNames[observer.mFlushType]);
     }
   }
-  if (mViewManagerFlushIsPending) {
+  if (mViewManagerFlushIsPending && !mThrottled) {
     aStr.AppendLiteral("View manager flush pending, ");
   }
   if (!mAnimationEventFlushObservers.IsEmpty()) {
@@ -1932,7 +1932,7 @@ auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   if (HasObservers()) {
     reasons |= TickReasons::eHasObservers;
   }
-  if (HasImageRequests()) {
+  if (HasImageRequests() && !mThrottled) {
     reasons |= TickReasons::eHasImageRequests;
   }
   if (mNeedToUpdateIntersectionObservations) {
@@ -2704,75 +2704,76 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   UpdateIntersectionObservations(aNowTime);
 
   
+  
+  
+  
+  if (!mThrottled) {
+    for (const auto& entry : mStartTable) {
+      const uint32_t& delay = entry.GetKey();
+      ImageStartData* data = entry.GetWeak();
 
+      if (data->mEntries.IsEmpty()) {
+        continue;
+      }
 
+      if (data->mStartTime) {
+        TimeStamp& start = *data->mStartTime;
 
+        if (previousRefresh >= start && aNowTime >= start) {
+          TimeDuration prev = previousRefresh - start;
+          TimeDuration curr = aNowTime - start;
+          uint32_t prevMultiple = uint32_t(prev.ToMilliseconds()) / delay;
 
-  for (const auto& entry : mStartTable) {
-    const uint32_t& delay = entry.GetKey();
-    ImageStartData* data = entry.GetWeak();
-
-    if (data->mEntries.IsEmpty()) {
-      continue;
-    }
-
-    if (data->mStartTime) {
-      TimeStamp& start = *data->mStartTime;
-
-      if (previousRefresh >= start && aNowTime >= start) {
-        TimeDuration prev = previousRefresh - start;
-        TimeDuration curr = aNowTime - start;
-        uint32_t prevMultiple = uint32_t(prev.ToMilliseconds()) / delay;
-
-        
-        
-        
-        
-        if (prevMultiple != uint32_t(curr.ToMilliseconds()) / delay) {
-          mozilla::TimeStamp desired =
-              start + TimeDuration::FromMilliseconds(prevMultiple * delay);
+          
+          
+          
+          
+          if (prevMultiple != uint32_t(curr.ToMilliseconds()) / delay) {
+            mozilla::TimeStamp desired =
+                start + TimeDuration::FromMilliseconds(prevMultiple * delay);
+            BeginRefreshingImages(data->mEntries, desired);
+          }
+        } else {
+          
+          
+          
+          
+          mozilla::TimeStamp desired = start;
           BeginRefreshingImages(data->mEntries, desired);
         }
       } else {
         
         
         
-        
-        mozilla::TimeStamp desired = start;
+        mozilla::TimeStamp desired = aNowTime;
         BeginRefreshingImages(data->mEntries, desired);
-      }
-    } else {
-      
-      
-      
-      mozilla::TimeStamp desired = aNowTime;
-      BeginRefreshingImages(data->mEntries, desired);
-      data->mStartTime.emplace(aNowTime);
-    }
-  }
-
-  if (!mRequests.IsEmpty()) {
-    
-    
-    
-    
-    nsTArray<nsCOMPtr<imgIContainer>> imagesToRefresh(mRequests.Count());
-
-    for (const auto& req : mRequests) {
-      nsCOMPtr<imgIContainer> image;
-      if (NS_SUCCEEDED(req->GetImage(getter_AddRefs(image)))) {
-        imagesToRefresh.AppendElement(image.forget());
+        data->mStartTime.emplace(aNowTime);
       }
     }
 
-    for (const auto& image : imagesToRefresh) {
-      image->RequestRefresh(aNowTime);
+    if (!mRequests.IsEmpty()) {
+      
+      
+      
+      
+      nsTArray<nsCOMPtr<imgIContainer>> imagesToRefresh(mRequests.Count());
+
+      for (const auto& req : mRequests) {
+        nsCOMPtr<imgIContainer> image;
+        if (NS_SUCCEEDED(req->GetImage(getter_AddRefs(image)))) {
+          imagesToRefresh.AppendElement(image.forget());
+        }
+      }
+
+      for (const auto& image : imagesToRefresh) {
+        image->RequestRefresh(aNowTime);
+      }
     }
   }
 
   double phasePaint = 0.0;
   bool dispatchTasksAfterTick = false;
-  if (mViewManagerFlushIsPending) {
+  if (mViewManagerFlushIsPending && !mThrottled) {
     AutoRecordPhase paintRecord(&phasePaint);
     nsCString transactionId;
     if (profiler_thread_is_being_profiled_for_markers()) {
@@ -3112,7 +3113,7 @@ void nsRefreshDriver::UpdateThrottledState() {
     return;
   }
   mThrottled = shouldThrottle;
-  if (mActiveTimer) {
+  if (mActiveTimer || GetReasonsToTick() != TickReasons::eNone) {
     
     
     EnsureTimerStarted(eForceAdjustTimer);
