@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["TouchBarHelper", "TouchBarInput"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -25,7 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsITouchBarUpdater"
 );
 
-
+// For accessing TouchBarHelper methods from static contexts in this file.
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "touchBarHelper",
@@ -33,13 +29,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsITouchBarHelper"
 );
 
-
-
-
-
-
-
-
+/**
+ * Executes a XUL command on the top window. Called by the callbacks in each
+ * TouchBarInput.
+ *
+ * @param {string} commandName
+ *        A XUL command.
+ */
 function execCommand(commandName) {
   if (!TouchBarHelper.window) {
     return;
@@ -50,13 +46,13 @@ function execCommand(commandName) {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Static helper function to convert a hexadecimal string to its integer
+ * value. Used to convert colours to a format accepted by Apple's NSColor code.
+ *
+ * @param {string} hexString
+ *        A hexadecimal string, optionally beginning with '#'.
+ */
 function hexToInt(hexString) {
   if (!hexString) {
     return null;
@@ -77,9 +73,9 @@ const kInputTypes = {
   SCRUBBER: "scrubber",
 };
 
-
-
-
+/**
+ * An object containing all implemented TouchBarInput objects.
+ */
 var gBuiltInInputs = {
   Back: {
     title: "back",
@@ -155,7 +151,7 @@ var gBuiltInInputs = {
     image: "chrome://browser/skin/reader-mode.svg",
     type: kInputTypes.BUTTON,
     callback: () => execCommand("View:ReaderView"),
-    disabled: true, 
+    disabled: true, // Updated when the page is found to be Reader View-able.
   },
   OpenLocation: {
     key: "open-location",
@@ -164,9 +160,9 @@ var gBuiltInInputs = {
     type: kInputTypes.MAIN_BUTTON,
     callback: () => lazy.touchBarHelper.toggleFocusUrlbar(),
   },
-  
-  
-  
+  // This is a special-case `type: kInputTypes.SCRUBBER` element.
+  // Scrubbers are not yet generally implemented.
+  // See follow-up bug 1502539.
   Share: {
     title: "share",
     image: "chrome://browser/skin/share.svg",
@@ -224,9 +220,9 @@ var gBuiltInInputs = {
   },
 };
 
-
-
-
+// We create a new flat object to cache strings. Since gBuiltInInputs is a
+// tree, caching/retrieval of localized strings would otherwise require tree
+// traversal.
 var localizedStrings = {};
 
 const kHelperObservers = new Set([
@@ -240,17 +236,17 @@ const kHelperObservers = new Set([
   "urlbar-blur",
 ]);
 
-
-
-
-
-class TouchBarHelper {
+/**
+ * JS-implemented TouchBarHelper class.
+ * Provides services to the Mac Touch Bar.
+ */
+export class TouchBarHelper {
   constructor() {
     for (let topic of kHelperObservers) {
       Services.obs.addObserver(this, topic);
     }
-    
-    
+    // We cache our search popover since otherwise it is frequently
+    // created/destroyed for the urlbar-focus/blur events.
     this._searchPopover = this.getTouchBarInput("SearchPopover");
 
     this._inputsNotUpdated = new Set();
@@ -290,9 +286,9 @@ class TouchBarHelper {
       return layoutItems;
     }
 
-    
-    
-    
+    // Every input must be updated at least once so that all assets (titles,
+    // icons) are loaded. We keep track of which inputs haven't updated and
+    // run an update on them ASAP.
     this._inputsNotUpdated.clear();
 
     for (let inputName of Object.keys(gBuiltInInputs)) {
@@ -361,8 +357,8 @@ class TouchBarHelper {
 
     let item = new TouchBarInput(inputData);
 
-    
-    
+    // Skip localization if there is already a cached localized title or if
+    // no title is needed.
     if (
       !inputData.hasOwnProperty("title") ||
       localizedStrings[inputData.title]
@@ -370,11 +366,11 @@ class TouchBarHelper {
       return item;
     }
 
-    
+    // Async l10n fills in the localized input labels after the initial load.
     this._l10n.formatValue(inputData.title).then(result => {
       item.title = result;
-      localizedStrings[inputData.title] = result; 
-      
+      localizedStrings[inputData.title] = result; // Cache result.
+      // Checking TouchBarHelper.window since this callback can fire after all windows are closed.
       if (TouchBarHelper.window) {
         if (this._inputsNotUpdated) {
           this._inputsNotUpdated.delete(inputName);
@@ -388,12 +384,12 @@ class TouchBarHelper {
     return item;
   }
 
-  
-
-
-
-
-
+  /**
+   * Fetches a specific Touch Bar Input by name and updates it on the Touch Bar.
+   *
+   * @param {...*} inputNames
+   *        A key/keys to a value/values in the gBuiltInInputs object in this file.
+   */
   _updateTouchBarInputs(...inputNames) {
     if (!TouchBarHelper.window || !inputNames.length) {
       return;
@@ -416,14 +412,14 @@ class TouchBarHelper {
     );
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Inserts a restriction token into the Urlbar ahead of the current typed
+   * search term.
+   *
+   * @param {string} restrictionToken
+   *        The restriction token to be inserted into the Urlbar. Preferably
+   *        sourced from UrlbarTokenizer.RESTRICT.
+   */
   insertRestrictionInUrlbar(restrictionToken) {
     if (!TouchBarHelper.window) {
       return;
@@ -456,9 +452,9 @@ class TouchBarHelper {
           .canGoForward;
         if (subject.QueryInterface(Ci.nsIWebProgress)?.isTopLevel) {
           this.activeUrl = data;
-          
-          
-          
+          // ReaderView button is disabled on every toplevel location change
+          // since Reader View must determine if the new page can be Reader
+          // Viewed.
           updatedInputs.push("ReaderView");
           gBuiltInInputs.ReaderView.disabled = !data.startsWith("about:reader");
         }
@@ -516,9 +512,9 @@ class TouchBarHelper {
         this._searchPopover = null;
         localizedStrings = {};
 
-        
-        
-        
+        // This event can fire before this._l10n updates to switch languages,
+        // so all the new translations are in the old language. To avoid this,
+        // we need to reinitialize this._l10n.
         this._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
         helperProto._l10n = this._l10n;
 
@@ -535,32 +531,32 @@ const helperProto = TouchBarHelper.prototype;
 helperProto.QueryInterface = ChromeUtils.generateQI(["nsITouchBarHelper"]);
 helperProto._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class TouchBarInput {
+/**
+ * A representation of a Touch Bar input.
+ *
+ *     @param {object} input
+ *            An object representing a Touch Bar Input.
+ *            Contains listed properties.
+ *     @param {string} input.title
+ *            The lookup key for the button's localized text title.
+ *     @param {string} input.image
+ *            A URL pointing to an SVG internal to Firefox.
+ *     @param {string} input.type
+ *            The type of Touch Bar input represented by the object.
+ *            Must be a value from kInputTypes.
+ *     @param {Function} input.callback
+ *            A callback invoked when a touchbar item is touched.
+ *     @param {string} [input.color]
+ *            A string in hex format specifying the button's background color.
+ *            If omitted, the default background color is used.
+ *     @param {bool} [input.disabled]
+ *            If `true`, the Touch Bar input is greyed out and inoperable.
+ *     @param {Array} [input.children]
+ *            An array of input objects that will be displayed as children of
+ *            this input. Available only for types KInputTypes.POPOVER and
+ *            kInputTypes.SCROLLVIEW.
+ */
+export class TouchBarInput {
   constructor(input) {
     this._key = input.key || input.title;
     this._title = localizedStrings[input.title] || "";
@@ -577,13 +573,13 @@ class TouchBarInput {
         if (!initializedChild) {
           continue;
         }
-        
-        
-        
-        
+        // Children's types are prepended by the parent's type. This is so we
+        // can uniquely identify a child input from a standalone input with
+        // the same name. (e.g. a button called "back" in a popover would be a
+        // "popover-button.back" vs. a "button.back").
         initializedChild.type = input.type + "-" + initializedChild.type;
         this._children.push(initializedChild);
-        
+        // Skip l10n for inputs without a title or those already localized.
         if (childData.title && !localizedStrings[childData.title]) {
           toLocalize.push(initializedChild);
         }
@@ -644,12 +640,12 @@ class TouchBarInput {
     return children;
   }
 
-  
-
-
-
-
-
+  /**
+   * Apply Fluent l10n to child inputs.
+   *
+   * @param {Array} children
+   *   An array of initialized TouchBarInputs.
+   */
   async _localizeChildren(children) {
     if (!children || !children.length) {
       return;
@@ -658,9 +654,9 @@ class TouchBarInput {
     let titles = await helperProto._l10n.formatValues(
       children.map(child => ({ id: child.key }))
     );
-    
-    
-    
+    // In the TouchBarInput constuctor, we filtered so children contains only
+    // those inputs with titles to be localized. We can be confident that the
+    // results in titles match up with the inputs to be localized.
     children.forEach(function(child, index) {
       child.title = titles[index];
       localizedStrings[child.key] = child.title;
