@@ -344,6 +344,10 @@ class CycleCollectedJSRuntime {
 
   const char* OOMStateToString(const OOMState aOomState) const;
 
+  
+  
+  bool OOMReported();
+
   void SetLargeAllocationFailure(OOMState aNewState);
 
   void AnnotateAndSetOutOfMemory(OOMState* aStatePtr, OOMState aNewState);
