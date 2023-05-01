@@ -14,7 +14,7 @@ namespace mozilla {
 
 
 
-[ManualDealloc, ChildImpl=virtual, ParentImpl=virtual]
+[ChildImpl=virtual, ParentImpl=virtual]
 async protocol PProfiler
 {
 child:
