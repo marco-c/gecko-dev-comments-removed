@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+function scoreAd(
+  adMetadata, bid, auctionConfig, trustedScoringSignals, browserSignals) {
+  return 2*bid;
+}
+
+function reportResult(auctionConfig, browserSignals) {
+  return;
+}
