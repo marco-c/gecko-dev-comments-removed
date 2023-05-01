@@ -106,7 +106,7 @@ static bool MakeFdNonBlocking(int fd) {
 static bool ManageChildProcess(int* aPID, int* aPipe, int aTimeout,
                                char** aData) {
   
-  if (*aPID == -1) {
+  if (*aPID < 0) {
     return false;
   }
 
@@ -121,10 +121,10 @@ static bool ManageChildProcess(int* aPID, int* aPipe, int aTimeout,
       close(*aPipe);
       *aPipe = -1;
     }
-    if (*aPID) {
+    if (*aPID > 0) {
       int status;
       waitpid(*aPID, &status, WNOHANG);
-      *aPID = 0;
+      *aPID = -1;
     }
   });
 
@@ -160,7 +160,7 @@ static bool ManageChildProcess(int* aPID, int* aPipe, int aTimeout,
 
   int status = 0;
   int pid = *aPID;
-  *aPID = 0;
+  *aPID = -1;
   ret = waitpid(pid, &status, WNOHANG);
   if (ret < 0) {
     gfxCriticalNote << "glxtest: waitpid failed: " << strerror(errno) << "\n";
@@ -591,10 +591,7 @@ int GfxInfo::FireTestProcess(const nsAString& aBinaryFile, int* aOutPipe,
 }
 
 bool GfxInfo::FireGLXTestProcess() {
-  
-  
-  
-  if (sGLXTestPID > 0) {
+  if (sGLXTestPID != 0) {
     return true;
   }
 
