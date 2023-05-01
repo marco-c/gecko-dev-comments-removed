@@ -45,11 +45,26 @@ public class WebResponse extends WebMessage {
 
   public final @Nullable InputStream body;
 
+  
+
+
+
+
+  public final @Nullable boolean requestExternalApp;
+
+  
+
+
+
+  public final @Nullable boolean skipConfirmation;
+
   protected WebResponse(final @NonNull Builder builder) {
     super(builder);
     this.statusCode = builder.mStatusCode;
     this.redirected = builder.mRedirected;
     this.body = builder.mBody;
+    this.requestExternalApp = builder.mRequestExternalApp;
+    this.skipConfirmation = builder.mSkipConfirmation;
     this.isSecure = builder.mIsSecure;
     this.certificate = builder.mCertificate;
 
@@ -77,6 +92,8 @@ public class WebResponse extends WebMessage {
      int mStatusCode;
      boolean mRedirected;
      InputStream mBody;
+     boolean mRequestExternalApp = false;
+     boolean mSkipConfirmation = false;
      boolean mIsSecure;
      X509Certificate mCertificate;
 
@@ -115,6 +132,33 @@ public class WebResponse extends WebMessage {
 
     public @NonNull Builder body(final @NonNull InputStream stream) {
       mBody = stream;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder requestExternalApp(final boolean requestExternalApp) {
+      mRequestExternalApp = requestExternalApp;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull Builder skipConfirmation(final boolean skipConfirmation) {
+      mSkipConfirmation = skipConfirmation;
       return this;
     }
 
