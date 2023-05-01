@@ -110,6 +110,18 @@ class MOZ_STACK_CLASS JSONTokenizer {
 };
 
 
+enum class JSONParserState {
+  
+  FinishArrayElement,
+
+  
+  FinishObjectMember,
+
+  
+  JSONValue
+};
+
+
 
 
 class MOZ_STACK_CLASS JSONParserBase {
@@ -148,36 +160,24 @@ class MOZ_STACK_CLASS JSONParserBase {
   typedef GCVector<IdValuePair, 10> PropertyVector;
 
   
-  enum ParserState {
-    
-    FinishArrayElement,
-
-    
-    FinishObjectMember,
-
-    
-    JSONValue
-  };
-
-  
   struct StackEntry {
     ElementVector& elements() {
-      MOZ_ASSERT(state == FinishArrayElement);
+      MOZ_ASSERT(state == JSONParserState::FinishArrayElement);
       return *static_cast<ElementVector*>(vector);
     }
 
     PropertyVector& properties() {
-      MOZ_ASSERT(state == FinishObjectMember);
+      MOZ_ASSERT(state == JSONParserState::FinishObjectMember);
       return *static_cast<PropertyVector*>(vector);
     }
 
     explicit StackEntry(ElementVector* elements)
-        : state(FinishArrayElement), vector(elements) {}
+        : state(JSONParserState::FinishArrayElement), vector(elements) {}
 
     explicit StackEntry(PropertyVector* properties)
-        : state(FinishObjectMember), vector(properties) {}
+        : state(JSONParserState::FinishObjectMember), vector(properties) {}
 
-    ParserState state;
+    JSONParserState state;
 
    private:
     void* vector;
