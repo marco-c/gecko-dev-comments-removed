@@ -8,7 +8,9 @@
 #ifndef mozilla_${HEADER}_h
 #define mozilla_${HEADER}_h
 
-#if defined(__cpp_exceptions) && __cpp_exceptions
+
+
+#if defined(__EXCEPTIONS) && __EXCEPTIONS && !(__OBJC__ && __GNUC__ && XP_IOS)
 #  error "STL code can only be used with -fno-exceptions"
 #endif
 
