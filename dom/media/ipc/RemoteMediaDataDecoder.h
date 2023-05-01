@@ -22,12 +22,10 @@ DDLoggedTypeCustomNameAndBase(RemoteMediaDataDecoder, RemoteMediaDataDecoder,
 
 
 
-class RemoteMediaDataDecoder final
+class RemoteMediaDataDecoder
     : public MediaDataDecoder,
       public DecoderDoctorLifeLogger<RemoteMediaDataDecoder> {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteMediaDataDecoder, final);
-
   explicit RemoteMediaDataDecoder(RemoteDecoderChild* aChild);
 
   

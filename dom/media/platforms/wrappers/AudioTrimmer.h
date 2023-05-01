@@ -14,10 +14,8 @@ namespace mozilla {
 
 DDLoggedTypeDeclNameAndBase(AudioTrimmer, MediaDataDecoder);
 
-class AudioTrimmer final : public MediaDataDecoder {
+class AudioTrimmer : public MediaDataDecoder {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioTrimmer, final);
-
   AudioTrimmer(already_AddRefed<MediaDataDecoder> aDecoder,
                const CreateDecoderParams& aParams)
       : mDecoder(aDecoder) {}
@@ -39,8 +37,6 @@ class AudioTrimmer final : public MediaDataDecoder {
   ConversionRequired NeedsConversion() const override;
 
  private:
-  ~AudioTrimmer() = default;
-
   
   
   RefPtr<DecodePromise> HandleDecodedResult(

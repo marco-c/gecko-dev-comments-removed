@@ -446,7 +446,7 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
       DecodePromise;
   typedef MozPromise<bool, MediaResult,  true> FlushPromise;
 
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDecoder)
 
   
   

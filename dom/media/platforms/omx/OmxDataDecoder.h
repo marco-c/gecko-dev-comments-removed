@@ -56,14 +56,12 @@ DDLoggedTypeDeclNameAndBase(OmxDataDecoder, MediaDataDecoder);
 
 
 
-class OmxDataDecoder final : public MediaDataDecoder,
-                             public DecoderDoctorLifeLogger<OmxDataDecoder> {
+class OmxDataDecoder : public MediaDataDecoder,
+                       public DecoderDoctorLifeLogger<OmxDataDecoder> {
  protected:
   virtual ~OmxDataDecoder();
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OmxDataDecoder, final);
-
   OmxDataDecoder(const TrackInfo& aTrackInfo,
                  layers::ImageContainer* aImageContainer,
                  Maybe<TrackingId> aTrackingId);

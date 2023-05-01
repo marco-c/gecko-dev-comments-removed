@@ -190,10 +190,8 @@ class MFMediaEngineStream
 
 
 
-class MFMediaEngineStreamWrapper final : public MediaDataDecoder {
+class MFMediaEngineStreamWrapper : public MediaDataDecoder {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFMediaEngineStreamWrapper, final);
-
   MFMediaEngineStreamWrapper(MFMediaEngineStream* aStream,
                              TaskQueue* aTaskQueue,
                              const CreateDecoderParams& aParams)
@@ -214,8 +212,6 @@ class MFMediaEngineStreamWrapper final : public MediaDataDecoder {
   ConversionRequired NeedsConversion() const override;
 
  private:
-  ~MFMediaEngineStreamWrapper() = default;
-
   Microsoft::WRL::ComPtr<MFMediaEngineStream> mStream;
   RefPtr<TaskQueue> mTaskQueue;
 };
