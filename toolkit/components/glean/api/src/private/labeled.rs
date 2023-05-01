@@ -10,7 +10,6 @@ use super::{
 };
 use crate::ipc::need_ipc;
 use std::borrow::Cow;
-use std::marker::PhantomData;
 
 
 
@@ -116,7 +115,7 @@ impl<T> AllowLabeled for T where T: private::Sealed {}
 
 
 
-pub struct LabeledMetric<T: AllowLabeled, E> {
+pub struct LabeledMetric<T: AllowLabeled> {
     
     id: MetricId,
 
@@ -124,11 +123,9 @@ pub struct LabeledMetric<T: AllowLabeled, E> {
     
     
     core: glean::private::LabeledMetric<T::GleanMetric>,
-
-    label_enum: PhantomData<E>,
 }
 
-impl<T, E> LabeledMetric<T, E>
+impl<T> LabeledMetric<T>
 where
     T: AllowLabeled,
 {
@@ -139,18 +136,14 @@ where
         id: MetricId,
         meta: CommonMetricData,
         labels: Option<Vec<Cow<'static, str>>>,
-    ) -> LabeledMetric<T, E> {
+    ) -> LabeledMetric<T> {
         let core = glean::private::LabeledMetric::new(meta, labels);
-        LabeledMetric {
-            id,
-            core,
-            label_enum: PhantomData,
-        }
+        LabeledMetric { id, core }
     }
 }
 
 #[inherent]
-impl<U, E> glean::traits::Labeled<U> for LabeledMetric<U, E>
+impl<U> glean::traits::Labeled<U> for LabeledMetric<U>
 where
     U: AllowLabeled + Clone,
 {
@@ -198,23 +191,21 @@ mod test {
 
     use super::*;
     use crate::common_test::*;
-    use crate::metrics::DynamicLabel;
 
     
-    static GLOBAL_METRIC: Lazy<LabeledMetric<LabeledBooleanMetric, DynamicLabel>> =
-        Lazy::new(|| {
-            LabeledMetric::new(
-                0.into(),
-                CommonMetricData {
-                    name: "global".into(),
-                    category: "metric".into(),
-                    send_in_pings: vec!["ping".into()],
-                    disabled: false,
-                    ..Default::default()
-                },
-                None,
-            )
-        });
+    static GLOBAL_METRIC: Lazy<LabeledMetric<LabeledBooleanMetric>> = Lazy::new(|| {
+        LabeledMetric::new(
+            0.into(),
+            CommonMetricData {
+                name: "global".into(),
+                category: "metric".into(),
+                send_in_pings: vec!["ping".into()],
+                disabled: false,
+                ..Default::default()
+            },
+            None,
+        )
+    });
 
     #[test]
     fn smoke_test_global_metric() {
@@ -232,7 +223,7 @@ mod test {
         let _lock = lock_test();
         let store_names: Vec<String> = vec!["store1".into()];
 
-        let metric: LabeledMetric<LabeledBooleanMetric, DynamicLabel> = LabeledMetric::new(
+        let metric: LabeledMetric<LabeledBooleanMetric> = LabeledMetric::new(
             0.into(),
             CommonMetricData {
                 name: "bool".into(),
@@ -255,7 +246,7 @@ mod test {
         let _lock = lock_test();
         let store_names: Vec<String> = vec!["store1".into()];
 
-        let metric: LabeledMetric<LabeledStringMetric, DynamicLabel> = LabeledMetric::new(
+        let metric: LabeledMetric<LabeledStringMetric> = LabeledMetric::new(
             0.into(),
             CommonMetricData {
                 name: "string".into(),
@@ -281,7 +272,7 @@ mod test {
         let _lock = lock_test();
         let store_names: Vec<String> = vec!["store1".into()];
 
-        let metric: LabeledMetric<LabeledCounterMetric, DynamicLabel> = LabeledMetric::new(
+        let metric: LabeledMetric<LabeledCounterMetric> = LabeledMetric::new(
             0.into(),
             CommonMetricData {
                 name: "counter".into(),
@@ -304,7 +295,7 @@ mod test {
         let _lock = lock_test();
         let store_names: Vec<String> = vec!["store1".into()];
 
-        let metric: LabeledMetric<LabeledBooleanMetric, DynamicLabel> = LabeledMetric::new(
+        let metric: LabeledMetric<LabeledBooleanMetric> = LabeledMetric::new(
             0.into(),
             CommonMetricData {
                 name: "bool".into(),
@@ -329,12 +320,7 @@ mod test {
         let _lock = lock_test();
         let store_names: Vec<String> = vec!["store1".into()];
 
-        #[allow(dead_code)]
-        enum MetricLabels {
-            Label1 = 0,
-            Label2 = 1,
-        }
-        let metric: LabeledMetric<LabeledBooleanMetric, MetricLabels> = LabeledMetric::new(
+        let metric: LabeledMetric<LabeledBooleanMetric> = LabeledMetric::new(
             0.into(),
             CommonMetricData {
                 name: "bool".into(),

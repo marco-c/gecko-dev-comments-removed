@@ -50,13 +50,10 @@ def type_name(obj):
 
     if getattr(obj, "labeled", False):
         class_name = util.Camelize(obj.type[8:])  
-        label_enum = "DynamicLabel"
-        if obj.labels and len(obj.labels):
-            label_enum = f"{util.Camelize(obj.name)}Label"
-        return f"Labeled<impl::{class_name}Metric, {label_enum}>"
+        return "Labeled<impl::{}Metric>".format(class_name)
     generate_enums = getattr(obj, "_generate_enums", [])  
     if len(generate_enums):
-        for name, _ in generate_enums:
+        for name, suffix in generate_enums:
             if not len(getattr(obj, name)) and isinstance(obj, metrics.Event):
                 return util.Camelize(obj.type) + "Metric<NoExtraKeys>"
             else:
