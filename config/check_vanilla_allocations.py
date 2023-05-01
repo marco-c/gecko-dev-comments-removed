@@ -89,23 +89,35 @@ def main():
     
     
 
-    alloc_fns = [
+    operator_news = [
         
-        r"operator new\(unsigned",
+        r"operator new(unsigned",
         
-        r"operator new\[\]\(unsigned",
-        r"memalign",
-        
-        
-        
-        
+        r"operator new[](unsigned",
     ]
+
+    
+    inlined_operator_news = [
+        r"moz_xmalloc",
+    ]
+
+    alloc_fns = (
+        operator_news
+        + inlined_operator_news
+        + [
+            r"memalign",
+            
+            
+            
+            
+        ]
+    )
 
     if args.aggressive:
         alloc_fns += [r"malloc", r"calloc", r"realloc", r"free", r"strdup"]
 
     
-    alloc_fns_unescaped = [fn.replace("\\", "") for fn in alloc_fns]
+    alloc_fns_escaped = [re.escape(fn) for fn in alloc_fns]
 
     
     
@@ -113,8 +125,8 @@ def main():
     
     
     
-    nm_line_re = re.compile(r"([^:/ ]+):\s*[0-9a-fA-F]*\s+([TU]) (.*)")
-    alloc_fns_re = re.compile(r"|".join(alloc_fns))
+    nm_line_re = re.compile(r"([^:/ ]+):\s*[0-9a-fA-F]*\s+([TUw]) (.*)")
+    alloc_fns_re = re.compile(r"|".join(alloc_fns_escaped))
 
     
     functions = defaultdict(set)
@@ -202,9 +214,24 @@ def main():
 
     
     
-    for fn in alloc_fns_unescaped:
+    
+    has_operator_news = any(fn in operator_news for fn in util_Utility_cpp)
+    has_inlined_operator_news = any(
+        fn in inlined_operator_news for fn in util_Utility_cpp
+    )
+    if has_operator_news and has_inlined_operator_news:
+        fail(
+            "Both operator new and moz_xmalloc aren't expected in util/Utility.cpp at the same time"
+        )
+
+    for fn in alloc_fns:
         if fn not in util_Utility_cpp:
-            fail("'" + fn + "' isn't used as expected in util/Utility.cpp")
+            if (
+                (fn in operator_news and not has_inlined_operator_news)
+                or (fn in inlined_operator_news and not has_operator_news)
+                or (fn not in operator_news and fn not in inlined_operator_news)
+            ):
+                fail("'" + fn + "' isn't used as expected in util/Utility.cpp")
         else:
             util_Utility_cpp.remove(fn)
 
@@ -240,7 +267,9 @@ def main():
         
         
         
-        alloc_lines_re = r"U ((" + r"|".join(alloc_fns) + r").*)\s+(\S+:\d+)$"
+        alloc_lines_re = (
+            r"[Uw] ((" + r"|".join(alloc_fns_escaped) + r").*)\s+(\S+:\d+)$"
+        )
 
         for line in lines:
             m = re.search(alloc_lines_re, line)
