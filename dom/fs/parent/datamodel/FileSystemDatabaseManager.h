@@ -78,16 +78,13 @@ class FileSystemDatabaseManager {
 
 
 
-
-
   virtual Result<EntryId, QMResult> GetOrCreateFile(
-      const FileSystemChildMetadata& aHandle, const ContentType& aType,
-      bool aCreate) = 0;
+      const FileSystemChildMetadata& aHandle, bool aCreate) = 0;
 
   
 
 
-  virtual nsresult GetFile(const EntryId& aEntryId, ContentType& aType,
+  virtual nsresult GetFile(const EntryId& aEntryId, nsString& aType,
                            TimeStamp& lastModifiedMilliSeconds, Path& aPath,
                            nsCOMPtr<nsIFile>& aFile) const = 0;
 

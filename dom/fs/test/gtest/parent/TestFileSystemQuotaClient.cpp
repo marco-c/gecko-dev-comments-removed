@@ -112,21 +112,20 @@ class TestFileSystemQuotaClient
       const FileSystemChildMetadata& aFileSlot, EntryId& aFileId) {
     
     Result<EntryId, QMResult> existingTestFile =
-        aDatabaseManager->GetOrCreateFile(aFileSlot, sContentType,
-                                           false);
+        aDatabaseManager->GetOrCreateFile(aFileSlot,  false);
     ASSERT_TRUE(existingTestFile.isErr());
     ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR,
                 ToNSResult(existingTestFile.unwrapErr()));
 
     
     TEST_TRY_UNWRAP(aFileId, aDatabaseManager->GetOrCreateFile(
-                                 aFileSlot, sContentType,  true));
+                                 aFileSlot,  true));
   }
 
   static void WriteDataToFile(
       data::FileSystemDatabaseManager* const aDatabaseManager,
       const EntryId& aFileId, const nsCString& aData) {
-    ContentType type;
+    nsString type;
     TimeStamp lastModMilliS = 0;
     Path path;
     nsCOMPtr<nsIFile> fileObj;
@@ -199,11 +198,7 @@ class TestFileSystemQuotaClient
     const auto actual = dbUsage.value();
     ASSERT_GT(actual, expected);
   }
-
-  static ContentType sContentType;
 };
-
-ContentType TestFileSystemQuotaClient::sContentType;
 
 TEST_F(TestFileSystemQuotaClient, CheckUsageBeforeAnyFilesOnDisk) {
   auto backgroundTask = []() {

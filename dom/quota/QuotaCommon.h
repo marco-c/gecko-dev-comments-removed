@@ -1061,11 +1061,6 @@ bool IsSpecificError(const nsresult aValue) {
   return aValue == ErrorValue;
 }
 
-template <nsresult ErrorValue>
-bool IsSpecificError(const QMResult& aValue) {
-  return aValue.NSResult() == ErrorValue;
-}
-
 
 
 
@@ -1075,11 +1070,6 @@ bool IsSpecificError(const QMResult& aValue) {
 
 template <auto SuccessValue, typename V = decltype(SuccessValue)>
 auto ErrToOk(const nsresult aValue) -> Result<V, nsresult> {
-  return V{SuccessValue};
-}
-
-template <auto SuccessValue, typename V = decltype(SuccessValue)>
-auto ErrToOkFromQMResult(const QMResult& aValue) -> Result<V, QMResult> {
   return V{SuccessValue};
 }
 
