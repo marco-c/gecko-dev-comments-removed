@@ -3842,6 +3842,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  void branchWasmGcObjectIsRefType(Register object, const wasm::RefType& type,
+                                   Label* label, bool onSuccess,
+                                   Register superSuperTypeVector,
+                                   Register scratch1, Register scratch2);
+  static bool needScratch1ForBranchWasmGcRefType(const wasm::RefType& type);
+  static bool needScratch2ForBranchWasmGcRefType(const wasm::RefType& type);
+  static bool needSuperSuperTypeVectorForBranchWasmGcRefType(
+      const wasm::RefType& type);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void branchWasmSuperTypeVectorIsSubtype(Register subSuperTypeVector,
                                           Register superSuperTypeVector,
                                           Register scratch,

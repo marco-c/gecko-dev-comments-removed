@@ -1340,9 +1340,7 @@ struct BaseCompiler final {
   
   
   [[nodiscard]] bool jumpConditionalWithResults(BranchState* b, RegRef object,
-                                                uint32_t typeIndex,
-                                                bool succeedOnNull,
-                                                bool onSuccess);
+                                                RefType type, bool onSuccess);
 #endif
   template <typename Cond>
   [[nodiscard]] bool sniffConditionalControlCmp(Cond compareOp,
@@ -1657,8 +1655,7 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitBrOnCastCommon(bool onSuccess,
                                         uint32_t labelRelativeDepth,
                                         const ResultType& labelType,
-                                        uint32_t destTypeIndex,
-                                        bool succeedOnNull);
+                                        const RefType& destType);
   [[nodiscard]] bool emitBrOnCast();
   [[nodiscard]] bool emitExternInternalize();
   [[nodiscard]] bool emitExternExternalize();
@@ -1679,10 +1676,6 @@ struct BaseCompiler final {
   
   RegPtr loadSuperTypeVector(uint32_t typeIndex);
 
-  
-  
-  void branchGcObjectType(RegRef object, uint32_t typeIndex, Label* label,
-                          bool succeedOnNull, bool onSuccess);
   RegPtr emitGcArrayGetData(RegRef rp);
   template <typename NullCheckPolicy>
   RegI32 emitGcArrayGetNumElements(RegRef rp);
@@ -1693,11 +1686,14 @@ struct BaseCompiler final {
   void emitGcSetScalar(const T& dst, FieldType type, AnyReg value);
 
   
+  void emitRefTestCommon(const RefType& type);
   
-  void emitRefTestCommon(uint32_t typeIndex, bool succeedOnNull);
+  void emitRefCastCommon(const RefType& type);
+
   
   
-  void emitRefCastCommon(uint32_t typeIndex, bool succeedOnNull);
+  void branchGcRefType(RegRef object, const RefType& type, Label* label,
+                       bool onSuccess);
 
   
   

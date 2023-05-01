@@ -37,6 +37,7 @@ using mozilla::Maybe;
 class RecGroup;
 class TypeDef;
 class TypeContext;
+enum class TypeDefKind : uint8_t;
 
 
 union PackedTypeCode {
@@ -315,27 +316,6 @@ class RefType {
  private:
   PackedTypeCode ptc_;
 
-#ifdef DEBUG
-  bool isValid() const {
-    MOZ_ASSERT((ptc_.typeCode() == AbstractTypeRefCode) ==
-               (ptc_.typeDef() != nullptr));
-    switch (ptc_.typeCode()) {
-      case TypeCode::FuncRef:
-      case TypeCode::ExternRef:
-      case TypeCode::AnyRef:
-      case TypeCode::EqRef:
-      case TypeCode::StructRef:
-      case TypeCode::ArrayRef:
-      case TypeCode::NullFuncRef:
-      case TypeCode::NullExternRef:
-      case TypeCode::NullAnyRef:
-      case AbstractTypeRefCode:
-        return true;
-      default:
-        return false;
-    }
-  }
-#endif
   RefType(Kind kind, bool nullable)
       : ptc_(PackedTypeCode::pack(TypeCode(kind), nullable)) {
     MOZ_ASSERT(isValid());
@@ -366,6 +346,28 @@ class RefType {
   PackedTypeCode packed() const { return ptc_; }
   PackedTypeCode* addressOfPacked() { return &ptc_; }
   const PackedTypeCode* addressOfPacked() const { return &ptc_; }
+
+#ifdef DEBUG
+  bool isValid() const {
+    MOZ_ASSERT((ptc_.typeCode() == AbstractTypeRefCode) ==
+               (ptc_.typeDef() != nullptr));
+    switch (ptc_.typeCode()) {
+      case TypeCode::FuncRef:
+      case TypeCode::ExternRef:
+      case TypeCode::AnyRef:
+      case TypeCode::EqRef:
+      case TypeCode::StructRef:
+      case TypeCode::ArrayRef:
+      case TypeCode::NullFuncRef:
+      case TypeCode::NullExternRef:
+      case TypeCode::NullAnyRef:
+      case AbstractTypeRefCode:
+        return true;
+      default:
+        return false;
+    }
+  }
+#endif
 
   static RefType func() { return RefType(Func, true); }
   static RefType extern_() { return RefType(Extern, true); }
@@ -406,6 +408,10 @@ class RefType {
   
   
   RefType topType() const;
+
+  
+  
+  TypeDefKind typeDefKind() const;
 
   bool operator==(const RefType& that) const { return ptc_ == that.ptc_; }
   bool operator!=(const RefType& that) const { return ptc_ != that.ptc_; }
