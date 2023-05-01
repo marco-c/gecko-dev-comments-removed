@@ -5112,15 +5112,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   GfxInfo::FireGLXTestProcess();
 #endif
 
-#ifdef MOZ_WAYLAND
-  
-  
-  
-  if (IsWaylandEnabled()) {
-    MOZ_UNUSED(WaylandDisplayGet());
-  }
-#endif
-
   return 0;
 }
 
