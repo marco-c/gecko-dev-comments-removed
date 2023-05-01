@@ -1453,7 +1453,8 @@ class NativeObject : public JSObject {
 
   
   
-  inline void initDenseElementRange(uint32_t destStart, NativeObject* src);
+  inline void initDenseElementRange(uint32_t destStart, NativeObject* src,
+                                    uint32_t count);
 
   
   
