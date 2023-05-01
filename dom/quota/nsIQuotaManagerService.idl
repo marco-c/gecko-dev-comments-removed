@@ -170,6 +170,15 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+  [must_use] nsIQuotaRequest
+  clearStoragesForPrivateBrowsing();
+
+  
+
+
+
+
+
 
 
 
