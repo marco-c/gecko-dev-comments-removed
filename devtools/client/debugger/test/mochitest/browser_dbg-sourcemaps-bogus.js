@@ -45,10 +45,15 @@ add_task(async function() {
   await waitForPaused(dbg);
 
   
-  
-  
-  
+  assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "map-with-failed-original-request.js").id,
+    7
+  );
 
+  
+  
+  await selectSource(dbg, "map-with-failed-original-request.original.js");
   is(
     getCM(dbg).getValue(),
     `Error while fetching an original source: request failed with status 404\nSource URL: ${EXAMPLE_URL}map-with-failed-original-request.original.js`

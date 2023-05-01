@@ -121,10 +121,21 @@ add_task(async function() {
   await addBreakpoint(dbg, binarySource, virtualBinaryLine);
   invokeInTab("runWasm");
 
+  
+  
   await waitForPaused(dbg);
+  
+  assertPausedAtSourceAndLine(dbg, binarySource.id, virtualBinaryLine);
+
+  
   info(
-    "The original C source is automatically displayed, even if we originaly set the breakpoint from the binary source"
+    "Manually switch to original C source as we set the breakpoint on binary source, we paused on it"
   );
+  await dbg.actions.jumpToMappedSelectedLocation(getContext(dbg));
+
+  
+  
+  await waitForPaused(dbg);
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
 
   info("Reselect the binary source");

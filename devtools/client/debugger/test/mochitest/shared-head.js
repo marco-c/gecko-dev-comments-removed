@@ -230,7 +230,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
       }
 
       
-      if (!getSymbols(location)) {
+      if (!getSymbols(location) && !isWasmBinarySource(location.source)) {
         return false;
       }
 
@@ -249,6 +249,17 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
     },
     "selected source"
   );
+}
+
+
+
+
+
+
+
+
+function isWasmBinarySource(source) {
+  return source.isWasm && !source.isOriginal;
 }
 
 function getVisibleSelectedFrameLine(dbg) {
@@ -327,9 +338,14 @@ function assertHighlightLocation(dbg, source, line) {
 
 
 function _assertDebugLine(dbg, line, column) {
+  const source = dbg.selectors.getSelectedSource();
+  
+  if (isWasmBinarySource(source)) {
+    line = dbg.wasmOffsetToLine(source.id, line) + 1;
+  }
+
   
   const lineInfo = getCM(dbg).lineInfo(line - 1);
-  const source = dbg.selectors.getSelectedSource();
   const sourceTextContent = dbg.selectors.getSelectedSourceTextContent();
   if (source && !sourceTextContent) {
     const url = source.url;
@@ -368,7 +384,7 @@ function _assertDebugLine(dbg, line, column) {
   ok(isVisibleInEditor(dbg, debugLine), "debug line is visible");
 
   const markedSpans = lineInfo.handle.markedSpans;
-  if (markedSpans && markedSpans.length) {
+  if (markedSpans && markedSpans.length && !isWasmBinarySource(source)) {
     const hasExpectedDebugLine = markedSpans.some(
       span =>
         span.marker.className?.includes("debug-expression") &&
@@ -425,6 +441,13 @@ function assertPausedAtSourceAndLine(
   ok(isVisibleInEditor(dbg, getCM(dbg).display.gutters), "gutter is visible");
 
   const frames = dbg.selectors.getCurrentThreadFrames();
+  const source = dbg.selectors.getSelectedSource();
+
+  
+  if (isWasmBinarySource(source)) {
+    return;
+  }
+
   ok(frames.length >= 1, "Got at least one frame");
 
   

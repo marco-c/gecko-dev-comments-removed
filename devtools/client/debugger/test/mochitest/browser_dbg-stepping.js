@@ -8,8 +8,15 @@
 requestLongerTimeout(5);
 
 add_task(async function test() {
-  const dbg = await initDebugger("big-sourcemap.html", "bundle.js");
+  const dbg = await initDebugger(
+    "big-sourcemap.html",
+    "bundle.js",
+    "step-in-test.js"
+  );
   invokeInTab("hitDebugStatement");
+  
+  
+  
   await waitForPaused(dbg, "bundle.js");
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "bundle.js").id, 52411);
 
@@ -34,5 +41,7 @@ add_task(async function test() {
   await stepIn(dbg);
   await stepIn(dbg);
 
+  
+  await dbg.actions.jumpToMappedSelectedLocation(getContext(dbg));
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "step-in-test.js").id, 7679);
 });
