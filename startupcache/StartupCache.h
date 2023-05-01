@@ -181,11 +181,13 @@ class StartupCache : public nsIMemoryReporter {
 
   
   
-  size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
+      MOZ_REQUIRES(mTableLock);
 
-  bool ShouldCompactCache();
+  bool ShouldCompactCache() MOZ_REQUIRES(mTableLock);
   nsresult ResetStartupWriteTimerCheckingReadCount();
-  nsresult ResetStartupWriteTimer();
+  nsresult ResetStartupWriteTimerAndLock();
+  nsresult ResetStartupWriteTimer() MOZ_REQUIRES(mTableLock);
   bool StartupWriteComplete();
 
  private:
@@ -205,7 +207,7 @@ class StartupCache : public nsIMemoryReporter {
   Result<Ok, nsresult> OpenCache();
 
   
-  Result<Ok, nsresult> WriteToDisk();
+  Result<Ok, nsresult> WriteToDisk() MOZ_REQUIRES(mTableLock);
 
   void WaitOnPrefetchThread();
   void StartPrefetchMemoryThread();
@@ -215,25 +217,28 @@ class StartupCache : public nsIMemoryReporter {
   void MaybeWriteOffMainThread();
   static void ThreadedPrefetch(void* aClosure);
 
-  HashMap<nsCString, StartupCacheEntry> mTable;
+  
+  
+  HashMap<nsCString, StartupCacheEntry> mTable MOZ_GUARDED_BY(mTableLock);
   
   
   
   
   
-  nsTArray<decltype(mTable)> mOldTables;
+  nsTArray<decltype(mTable)> mOldTables MOZ_GUARDED_BY(mTableLock);
   size_t mAllowedInvalidationsCount;
   nsCOMPtr<nsIFile> mFile;
-  loader::AutoMemMap mCacheData;
-  Mutex mTableLock MOZ_UNANNOTATED;
+  loader::AutoMemMap mCacheData MOZ_GUARDED_BY(mTableLock);
+  Mutex mTableLock;
 
   nsCOMPtr<nsIObserverService> mObserverService;
   RefPtr<StartupCacheListener> mListener;
   nsCOMPtr<nsITimer> mTimer;
 
-  Atomic<bool> mDirty;
-  Atomic<bool> mWrittenOnce;
-  bool mCurTableReferenced;
+  bool mDirty MOZ_GUARDED_BY(mTableLock);
+  bool mWrittenOnce MOZ_GUARDED_BY(mTableLock);
+  bool mCurTableReferenced MOZ_GUARDED_BY(mTableLock);
+
   uint32_t mRequestedCount;
   size_t mCacheEntriesBaseOffset;
 
