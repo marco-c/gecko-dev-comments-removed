@@ -57,6 +57,11 @@ class JsepSessionCopyableStuff {
   std::vector<std::pair<size_t, std::string>> mLastSdpParsingErrors;
   bool mEncodeTrackId = true;
   SsrcGenerator mSsrcGenerator;
+  
+  
+  std::vector<JsepTransceiver> mTransceivers;
+  
+  std::vector<JsepTransceiver> mOldTransceivers;
 };
 
 class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
@@ -167,16 +172,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   virtual std::set<std::pair<std::string, std::string>> GetLocalIceCredentials()
       const override;
 
-  virtual const std::vector<RefPtr<JsepTransceiver>>& GetTransceivers()
-      const override {
-    return mTransceivers;
-  }
-
-  virtual std::vector<RefPtr<JsepTransceiver>>& GetTransceivers() override {
-    return mTransceivers;
-  }
-
-  virtual void AddTransceiver(RefPtr<JsepTransceiver> transceiver) override;
+  virtual void AddTransceiver(const JsepTransceiver& transceiver) override;
 
   virtual bool CheckNegotiationNeeded() const override;
 
@@ -185,6 +181,15 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
       override;
 
  private:
+  friend class JsepSessionTest;
+  virtual const std::vector<JsepTransceiver>& GetTransceivers() const override {
+    return mTransceivers;
+  }
+
+  virtual std::vector<JsepTransceiver>& GetTransceivers() override {
+    return mTransceivers;
+  }
+
   
   nsresult CreateGenericSDP(UniquePtr<Sdp>* sdp);
   void AddExtmap(SdpMediaSection* msection);
@@ -208,16 +213,17 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   nsresult ValidateOffer(const Sdp& offer);
   nsresult ValidateAnswer(const Sdp& offer, const Sdp& answer);
   nsresult UpdateTransceiversFromRemoteDescription(const Sdp& remote);
-  JsepTransceiver* GetTransceiverForLevel(size_t level) const;
-  JsepTransceiver* GetTransceiverForMid(const std::string& mid) const;
-  JsepTransceiver* GetTransceiverForLocal(size_t level);
-  JsepTransceiver* GetTransceiverForRemote(const SdpMediaSection& msection);
-  JsepTransceiver* GetTransceiverWithTransport(
+  Maybe<JsepTransceiver> GetTransceiverForLevel(size_t level) const;
+  Maybe<JsepTransceiver> GetTransceiverForMid(const std::string& mid) const;
+  Maybe<JsepTransceiver> GetTransceiverForLocal(size_t level);
+  Maybe<JsepTransceiver> GetTransceiverForRemote(
+      const SdpMediaSection& msection);
+  Maybe<JsepTransceiver> GetTransceiverWithTransport(
       const std::string& transportId) const;
   
   
-  JsepTransceiver* FindUnassociatedTransceiver(SdpMediaSection::MediaType type,
-                                               bool magic);
+  Maybe<JsepTransceiver> FindUnassociatedTransceiver(
+      SdpMediaSection::MediaType type, bool magic);
   
   void RollbackLocalOffer();
   
@@ -241,14 +247,14 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
                                       SdpSetupAttribute::Role* rolep);
   nsresult MakeNegotiatedTransceiver(const SdpMediaSection& remote,
                                      const SdpMediaSection& local,
-                                     JsepTransceiver* transceiverOut);
+                                     JsepTransceiver& transceiverOut);
   void EnsureHasOwnTransport(const SdpMediaSection& msection,
-                             JsepTransceiver* transceiver);
+                             JsepTransceiver& transceiver);
   void CopyBundleTransports();
 
   nsresult FinalizeTransport(const SdpAttributeList& remote,
                              const SdpAttributeList& answer,
-                             JsepTransport* transport);
+                             JsepTransport* transport) const;
 
   nsresult GetNegotiatedBundledMids(SdpHelper::BundledMids* bundledMids);
 
@@ -262,12 +268,6 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   void SetIceRestarting(bool restarting);
 
   void InitTransceiver(JsepTransceiver& aTransceiver);
-
-  
-  
-  std::vector<RefPtr<JsepTransceiver>> mTransceivers;
-  
-  std::vector<RefPtr<JsepTransceiver>> mOldTransceivers;
 
   UniquePtr<JsepUuidGenerator> mUuidGen;
   UniquePtr<Sdp> mGeneratedOffer;   
