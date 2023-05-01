@@ -30,24 +30,8 @@ using namespace js;
 using mozilla::Utf8Unit;
 
 #ifdef DEBUG
-bool XDRCoderBase::validateResultCode(JSContext* cx, FrontendContext* fc,
+bool XDRCoderBase::validateResultCode(FrontendContext* fc,
                                       JS::TranscodeResult code) const {
-  
-  
-  if (cx->isHelperThreadContext()) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (cx->isExceptionPending()) {
-    return bool(code == JS::TranscodeResult::Throw);
-  }
-
   return fc->hadErrors() == bool(code == JS::TranscodeResult::Throw);
 }
 #endif
