@@ -57,7 +57,7 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
   
   LaunchParameters mParameters;
 
-  RemoteSandboxBrokerParent mParent;
+  RefPtr<RemoteSandboxBrokerParent> mParent;
 
   
   
