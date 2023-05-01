@@ -19,7 +19,6 @@ add_setup(async () => {
 
 
 
-
 add_task(async function test_fxa_sign_success() {
   let sandbox = sinon.createSandbox();
   registerCleanupFunction(() => {
@@ -30,7 +29,7 @@ add_task(async function test_fxa_sign_success() {
     let fxaTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
     let resultPromise = SpecialPowers.spawn(browser, [], async () => {
       return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
-        type: "FXA_SIGNIN_TAB_FLOW",
+        type: "FXA_SIGNIN_FLOW",
       });
     });
     let fxaTab = await fxaTabPromise;
@@ -49,7 +48,7 @@ add_task(async function test_fxa_sign_success() {
     await fxaTabClosing;
     Assert.ok(true, "FxA tab automatically closed.");
     let result = await resultPromise;
-    Assert.ok(result, "FXA_SIGNIN_TAB_FLOW action's result should be true");
+    Assert.ok(result, "FXA_SIGNIN_FLOW action's result should be true");
   });
 
   sandbox.restore();
@@ -69,7 +68,7 @@ add_task(async function test_fxa_sign_success_no_autoclose() {
     let fxaTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
     let resultPromise = SpecialPowers.spawn(browser, [], async () => {
       return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
-        type: "FXA_SIGNIN_TAB_FLOW",
+        type: "FXA_SIGNIN_FLOW",
         data: { autoClose: false },
       });
     });
@@ -86,7 +85,7 @@ add_task(async function test_fxa_sign_success_no_autoclose() {
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
 
     let result = await resultPromise;
-    Assert.ok(result, "AWFxASignInTabFlow should have resolved to true");
+    Assert.ok(result, "FXA_SIGNIN_FLOW should have resolved to true");
     Assert.ok(!fxaTab.closing, "FxA tab was not asked to close.");
     BrowserTestUtils.removeTab(fxaTab);
   });
@@ -103,7 +102,7 @@ add_task(async function test_fxa_signin_aborted() {
     let fxaTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
     let resultPromise = SpecialPowers.spawn(browser, [], async () => {
       return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
-        type: "FXA_SIGNIN_TAB_FLOW",
+        type: "FXA_SIGNIN_FLOW",
       });
     });
     let fxaTab = await fxaTabPromise;
@@ -111,6 +110,163 @@ add_task(async function test_fxa_signin_aborted() {
 
     BrowserTestUtils.removeTab(fxaTab);
     let result = await resultPromise;
-    Assert.ok(!result, "FXA_SIGNIN_TAB_FLOW action's result should be false");
+    Assert.ok(!result, "FXA_SIGNIN_FLOW action's result should be false");
   });
+});
+
+
+
+
+
+add_task(async function test_fxa_signin_window_aborted() {
+  await BrowserTestUtils.withNewTab("about:welcome", async browser => {
+    let fxaWindowPromise = BrowserTestUtils.waitForNewWindow();
+    let resultPromise = SpecialPowers.spawn(browser, [], async () => {
+      return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
+        type: "FXA_SIGNIN_FLOW",
+        data: {
+          where: "window",
+        },
+      });
+    });
+    let fxaWindow = await fxaWindowPromise;
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close yet.");
+
+    await BrowserTestUtils.closeWindow(fxaWindow);
+    let result = await resultPromise;
+    Assert.ok(!result, "FXA_SIGNIN_FLOW action's result should be false");
+  });
+});
+
+
+
+
+
+add_task(async function test_fxa_signin_window_success() {
+  let sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+
+  await BrowserTestUtils.withNewTab("about:welcome", async browser => {
+    let fxaWindowPromise = BrowserTestUtils.waitForNewWindow();
+    let resultPromise = SpecialPowers.spawn(browser, [], async () => {
+      return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
+        type: "FXA_SIGNIN_FLOW",
+        data: {
+          where: "window",
+        },
+      });
+    });
+    let fxaWindow = await fxaWindowPromise;
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close yet.");
+
+    let windowClosed = BrowserTestUtils.windowClosed(fxaWindow);
+
+    
+    
+    sandbox.stub(UIState, "get").returns({
+      status: UIState.STATUS_SIGNED_IN,
+      syncEnabled: true,
+      email: "email@example.com",
+    });
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+
+    let result = await resultPromise;
+    Assert.ok(result, "FXA_SIGNIN_FLOW action's result should be true");
+
+    await windowClosed;
+    Assert.ok(fxaWindow.closed, "Sign-in window was automatically closed.");
+  });
+
+  sandbox.restore();
+});
+
+
+
+
+
+
+
+
+
+add_task(async function test_fxa_signin_window_multiple_tabs_aborted() {
+  await BrowserTestUtils.withNewTab("about:welcome", async browser => {
+    let fxaWindowPromise = BrowserTestUtils.waitForNewWindow();
+    let resultPromise = SpecialPowers.spawn(browser, [], async () => {
+      return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
+        type: "FXA_SIGNIN_FLOW",
+        data: {
+          where: "window",
+        },
+      });
+    });
+    let fxaWindow = await fxaWindowPromise;
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close yet.");
+    let fxaTab = fxaWindow.gBrowser.selectedTab;
+    await BrowserTestUtils.openNewForegroundTab(
+      fxaWindow.gBrowser,
+      "about:blank"
+    );
+    BrowserTestUtils.removeTab(fxaTab);
+
+    let result = await resultPromise;
+    Assert.ok(!result, "FXA_SIGNIN_FLOW action's result should be false");
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close.");
+    await BrowserTestUtils.closeWindow(fxaWindow);
+  });
+});
+
+
+
+
+
+
+
+
+
+add_task(async function test_fxa_signin_window_multiple_tabs_success() {
+  let sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+
+  await BrowserTestUtils.withNewTab("about:welcome", async browser => {
+    let fxaWindowPromise = BrowserTestUtils.waitForNewWindow();
+    let resultPromise = SpecialPowers.spawn(browser, [], async () => {
+      return content.wrappedJSObject.AWSendToParent("SPECIAL_ACTION", {
+        type: "FXA_SIGNIN_FLOW",
+        data: {
+          where: "window",
+        },
+      });
+    });
+    let fxaWindow = await fxaWindowPromise;
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close yet.");
+    let fxaTab = fxaWindow.gBrowser.selectedTab;
+
+    
+    await BrowserTestUtils.addTab(fxaWindow.gBrowser);
+    let fxaTabClosed = BrowserTestUtils.waitForTabClosing(fxaTab);
+
+    
+    
+    sandbox.stub(UIState, "get").returns({
+      status: UIState.STATUS_SIGNED_IN,
+      syncEnabled: true,
+      email: "email@example.com",
+    });
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+
+    let result = await resultPromise;
+    Assert.ok(result, "FXA_SIGNIN_FLOW action's result should be true");
+    await fxaTabClosed;
+
+    Assert.ok(!fxaWindow.closed, "FxA window was not asked to close.");
+    await BrowserTestUtils.closeWindow(fxaWindow);
+  });
+
+  sandbox.restore();
 });
