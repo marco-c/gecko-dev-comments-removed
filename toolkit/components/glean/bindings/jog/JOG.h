@@ -91,10 +91,26 @@ class JOG {
 
 
 
+  static void GetMetricNames(const nsACString& aCategoryName,
+                             nsTArray<nsString>& aNames);
+
+  
+
+
+
+
+
 
 
 
   static Maybe<uint32_t> GetPing(const nsACString& aPingName);
+
+  
+
+
+
+
+  static void GetPingNames(nsTArray<nsString>& aNames);
 };
 
 }  
