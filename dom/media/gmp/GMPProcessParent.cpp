@@ -6,6 +6,7 @@
 
 #include "GMPProcessParent.h"
 #include "GMPUtils.h"
+#include "nsIFile.h"
 #include "nsIRunnable.h"
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 #  include "WinUtils.h"
@@ -92,44 +93,22 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
 #  endif
 #endif
 
-  
-  
-  
-#ifdef XP_WIN
-  nsAutoString normalizedPath;
-#else
-  nsAutoCString normalizedPath;
-#endif
-  nsresult rv = NormalizePath(mGMPPath.c_str(), normalizedPath);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    GMP_LOG_DEBUG(
-        "GMPProcessParent::Launch: "
-        "plugin path normaliziation failed for path: %s",
-        mGMPPath.c_str());
-  }
-
-#ifdef XP_WIN
-  std::wstring wGMPPath;
-  if (NS_SUCCEEDED(rv)) {
-    wGMPPath = normalizedPath.get();
-  } else {
-    wGMPPath = UTF8ToWide(mGMPPath.c_str());
-  }
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  std::wstring wGMPPath = UTF8ToWide(mGMPPath.c_str());
 
   
   
   
   
-  if (NS_WARN_IF(
-          !widget::WinUtils::ResolveJunctionPointsAndSymLinks(wGMPPath))) {
+  if (!widget::WinUtils::ResolveJunctionPointsAndSymLinks(wGMPPath)) {
     GMP_LOG_DEBUG("ResolveJunctionPointsAndSymLinks failed for GMP path=%S",
                   wGMPPath.c_str());
+    NS_WARNING("ResolveJunctionPointsAndSymLinks failed for GMP path.");
     return false;
   }
   GMP_LOG_DEBUG("GMPProcessParent::Launch() resolved path to %S",
                 wGMPPath.c_str());
 
-#  ifdef MOZ_SANDBOX
   
   
   wchar_t volPath[MAX_PATH];
@@ -142,15 +121,25 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   } else {
     mAllowedFilesRead.push_back(wGMPPath + L"\\*");
   }
-#  endif
 
   args.push_back(WideToUTF8(wGMPPath));
-#else
-  if (NS_SUCCEEDED(rv)) {
-    args.push_back(normalizedPath.get());
-  } else {
+#elif defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  nsAutoCString normalizedPath;
+  nsresult rv = NormalizePath(mGMPPath.c_str(), normalizedPath);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    GMP_LOG_DEBUG(
+        "GMPProcessParent::Launch: "
+        "plugin path normaliziation failed for path: %s",
+        mGMPPath.c_str());
     args.push_back(mGMPPath);
+  } else {
+    args.push_back(normalizedPath.get());
   }
+#else
+  args.push_back(mGMPPath);
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -269,10 +258,9 @@ bool GMPProcessParent::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
   }
   return true;
 }
-#endif
 
 nsresult GMPProcessParent::NormalizePath(const char* aPath,
-                                         PathString& aNormalizedPath) {
+                                         nsACString& aNormalizedPath) {
   nsCOMPtr<nsIFile> fileOrDir;
   nsresult rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(aPath), true,
                                 getter_AddRefs(fileOrDir));
@@ -281,17 +269,9 @@ nsresult GMPProcessParent::NormalizePath(const char* aPath,
   rv = fileOrDir->Normalize();
   NS_ENSURE_SUCCESS(rv, rv);
 
-#ifdef XP_WIN
-  return fileOrDir->GetTarget(aNormalizedPath);
-#else
-  bool isLink = false;
-  rv = fileOrDir->IsSymlink(&isLink);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (isLink) {
-    return fileOrDir->GetNativeTarget(aNormalizedPath);
-  }
-  return fileOrDir->GetNativePath(aNormalizedPath);
-#endif
+  fileOrDir->GetNativePath(aNormalizedPath);
+  return NS_OK;
 }
+#endif
 
 }  
