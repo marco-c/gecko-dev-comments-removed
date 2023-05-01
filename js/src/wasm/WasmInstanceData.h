@@ -112,6 +112,12 @@ struct TableInstanceData {
 
 
 
+struct TagInstanceData {
+  GCPtr<WasmTagObject*> object;
+};
+
+
+
 
 struct FunctionTableElem {
   
