@@ -2006,16 +2006,22 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         
         if (Maybe<IntRect> intRect =
                 IsAlignedRect(aTransformed, currentTransform, aRect)) {
-          if (!intRect->Contains(mClipRect)) {
-            EnableScissor(intRect->Intersect(mClipRect));
+          
+          
+          if (intRect->Area() >=
+              (mViewportSize.width / 2) * (mViewportSize.height / 2)) {
+            if (!intRect->Contains(mClipRect)) {
+              EnableScissor(intRect->Intersect(mClipRect));
+            }
+            if (aOptions.mCompositionOp == CompositionOp::OP_CLEAR) {
+              color =
+                  PremultiplyColor(mCurrentTarget->GetClearPattern().mColor);
+            }
+            mWebgl->ClearColor(color.b, color.g, color.r, color.a);
+            mWebgl->Clear(LOCAL_GL_COLOR_BUFFER_BIT);
+            success = true;
+            break;
           }
-          if (aOptions.mCompositionOp == CompositionOp::OP_CLEAR) {
-            color = PremultiplyColor(mCurrentTarget->GetClearPattern().mColor);
-          }
-          mWebgl->ClearColor(color.b, color.g, color.r, color.a);
-          mWebgl->Clear(LOCAL_GL_COLOR_BUFFER_BIT);
-          success = true;
-          break;
         }
       }
       
