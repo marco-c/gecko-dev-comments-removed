@@ -5538,7 +5538,22 @@ void nsFlexContainerFrame::PopulateReflowOutput(
       desiredSizeInFlexWM.BSize(flexWM) = std::min(
           effectiveContentBSizeWithBStartBP, aMaxBlockEndEdgeOfChildren);
 
-      if (aMaxBlockEndEdgeOfChildren >= effectiveContentBSizeWithBStartBP) {
+      if ((aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE ||
+           !aAnyChildIncomplete) &&
+          aMaxBlockEndEdgeOfChildren >= effectiveContentBSizeWithBStartBP) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         isStatusIncomplete = false;
