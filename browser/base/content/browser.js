@@ -9698,7 +9698,7 @@ var ConfirmationHint = {
     
     
     
-    const DURATION = options.showDescription ? 4000 : 1500;
+    const DURATION = options.showDescription ? 6000 : 3000;
     this._panel.addEventListener(
       "popupshown",
       () => {
