@@ -223,7 +223,8 @@ impl super::Adapter {
             | wgt::Features::CLEAR_TEXTURE
             | wgt::Features::TEXTURE_FORMAT_16BIT_NORM
             | wgt::Features::PUSH_CONSTANTS
-            | wgt::Features::SHADER_PRIMITIVE_INDEX;
+            | wgt::Features::SHADER_PRIMITIVE_INDEX
+            | wgt::Features::RG11B10UFLOAT_RENDERABLE;
         
         
         
