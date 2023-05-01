@@ -411,6 +411,7 @@ void ElementInternals::Unlink() {
   if (mForm) {
     
     ClearForm(true, true);
+    MOZ_DIAGNOSTIC_ASSERT(!mForm);
   }
   if (mFieldSet) {
     mFieldSet->RemoveElement(mTarget);
