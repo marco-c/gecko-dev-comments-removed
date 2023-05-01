@@ -684,7 +684,6 @@ class ContentParent final : public PContentParent,
                                     const char* aOperation) const;
 
   void ActorDestroy(ActorDestroyReason why) override;
-  void ActorDealloc() override;
 
   bool ShouldContinueFromReplyTimeout() override;
 
@@ -1485,9 +1484,6 @@ class ContentParent final : public PContentParent,
   void AssertAlive();
 
  private:
-  
-  RefPtr<ContentParent> mSelfRef;
-
   
   
   
