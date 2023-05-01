@@ -24,7 +24,7 @@ NDK_VERSION = "r23c"
 CMDLINE_TOOLS_VERSION_STRING = "9.0"
 CMDLINE_TOOLS_VERSION = "9477386"
 
-BUNDLETOOL_VERSION = "1.14.0"
+BUNDLETOOL_VERSION = "1.14.1"
 
 
 LINUX_X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
@@ -42,8 +42,8 @@ AVD_MANIFEST_ARM = Path(__file__).resolve().parent / "android-avds/arm.json"
 AVD_MANIFEST_ARM64 = Path(__file__).resolve().parent / "android-avds/arm64.json"
 
 JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.6"
-JAVA_VERSION_PATCH = "10"
+JAVA_VERSION_MINOR = "0.7"
+JAVA_VERSION_PATCH = "7"
 
 ANDROID_NDK_EXISTS = """
 Looks like you have the correct version of the Android NDK installed at:
