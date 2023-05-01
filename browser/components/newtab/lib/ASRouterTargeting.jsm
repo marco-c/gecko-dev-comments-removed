@@ -136,6 +136,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.migrate.interactions.passwords",
   false
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "useEmbeddedMigrationWizard",
+  "browser.migrate.content-modal.about-welcome-behavior",
+  "default",
+  null,
+  behaviorString => {
+    return behaviorString === "embedded";
+  }
+);
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   AUS: ["@mozilla.org/updates/update-service;1", "nsIApplicationUpdateService"],
@@ -929,6 +939,17 @@ const TargetingGetters = {
 
   get hasMigratedPasswords() {
     return lazy.hasMigratedPasswords;
+  },
+
+  
+
+
+
+
+
+
+  get useEmbeddedMigrationWizard() {
+    return lazy.useEmbeddedMigrationWizard;
   },
 
   
