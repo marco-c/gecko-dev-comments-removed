@@ -16,6 +16,9 @@ ITEM_VALUE(SpeechSynthesis, 0x0006)
 ITEM_VALUE(CSSPrefersColorScheme, 0x0007)
 
 
+ITEM_VALUE(CSSPrefersReducedMotion, 0x0008)
+
+
 
 
 
