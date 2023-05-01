@@ -661,6 +661,8 @@ class DiscoveryStreamFeed {
 
       const pocketConfig =
         this.store.getState().Prefs.values?.pocketConfig || {};
+      const onboardingExperience =
+        this.isBff && pocketConfig.onboardingExperience;
 
       let items = isBasicLayout ? 3 : 21;
       if (pocketConfig.fourCardLayout || pocketConfig.hybridLayout) {
@@ -742,6 +744,7 @@ class DiscoveryStreamFeed {
           this.locale.startsWith("en-") && pocketConfig.essentialReadsHeader,
         editorsPicksHeader:
           this.locale.startsWith("en-") && pocketConfig.editorsPicksHeader,
+        onboardingExperience,
       });
     }
 
@@ -2209,6 +2212,7 @@ class DiscoveryStreamFeed {
 
 
 
+
 getHardcodedLayout = ({
   spocsUrl = SPOCS_URL,
   feedUrl = FEED_URL,
@@ -2227,6 +2231,7 @@ getHardcodedLayout = ({
   compactGrid = false,
   essentialReadsHeader = false,
   editorsPicksHeader = false,
+  onboardingExperience = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -2324,6 +2329,7 @@ getHardcodedLayout = ({
             compactGrid,
             essentialReadsHeader,
             editorsPicksHeader,
+            onboardingExperience,
           },
           widgets: {
             positions: widgetPositions.map(position => {
