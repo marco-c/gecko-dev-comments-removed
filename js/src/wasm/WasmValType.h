@@ -396,6 +396,10 @@ class RefType {
   
   static bool isSubTypeOf(RefType subType, RefType superType);
 
+  
+  
+  RefType topType() const;
+
   bool operator==(const RefType& that) const { return ptc_ == that.ptc_; }
   bool operator!=(const RefType& that) const { return ptc_ != that.ptc_; }
 };
