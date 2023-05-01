@@ -284,9 +284,6 @@ class BlocklistDescriptor(object):
             )
 
         
-        self.ensure_no_dupes(unified_list)
-
-        
         filtered_list = filter(filter_func, unified_list)
 
         
