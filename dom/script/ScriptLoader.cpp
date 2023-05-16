@@ -786,8 +786,7 @@ nsresult ScriptLoader::StartLoadInternal(
       aRequest->mURI, aRequest->CORSMode(), aRequest->mKind);
   aRequest->GetScriptLoadContext()->NotifyOpen(
       key, channel, mDocument,
-      aRequest->GetScriptLoadContext()->IsLinkPreloadScript(),
-      aRequest->IsModuleRequest());
+      aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
 
   if (aEarlyHintPreloaderId) {
     nsCOMPtr<nsIHttpChannelInternal> channelInternal =
