@@ -36,17 +36,6 @@ add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.notification_enable_delay", TEST_SECURITY_DELAY]],
   });
-  
-  
-  
-  
-  
-  let originalButtonDelay = PopupNotifications.buttonDelay;
-  PopupNotifications.buttonDelay = TEST_SECURITY_DELAY;
-  
-  registerCleanupFunction(async function() {
-    PopupNotifications.buttonDelay = originalButtonDelay;
-  });
 });
 
 
