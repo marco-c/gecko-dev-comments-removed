@@ -34,11 +34,14 @@ class RtpPacket {
   
   RtpPacket();
   explicit RtpPacket(const ExtensionManager* extensions);
-  RtpPacket(const RtpPacket&);
   RtpPacket(const ExtensionManager* extensions, size_t capacity);
-  ~RtpPacket();
 
-  RtpPacket& operator=(const RtpPacket&) = default;
+  RtpPacket(const RtpPacket&);
+  RtpPacket(RtpPacket&&);
+  RtpPacket& operator=(const RtpPacket&);
+  RtpPacket& operator=(RtpPacket&&);
+
+  ~RtpPacket();
 
   
   
