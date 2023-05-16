@@ -35,7 +35,7 @@ using SessionClosedSignalHandler = void (*)(GDBusConnection*,
 
 
 
-class ScreenCapturePortalInterface {
+class RTC_EXPORT ScreenCapturePortalInterface {
  public:
   virtual ~ScreenCapturePortalInterface() {}
   
