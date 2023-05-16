@@ -1,8 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export var Toolbars = {
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Toolbars"];
+
+var Toolbars = {
   init(libDir) {},
 
   configurations: {
@@ -23,7 +27,7 @@ export var Toolbars = {
     allToolbars: {
       selectors: ["#navigator-toolbox"],
       async applyConfig() {
-        // Boookmarks and menubar
+        
         let browserWindow = Services.wm.getMostRecentWindow(
           "navigator:browser"
         );
@@ -47,12 +51,12 @@ export var Toolbars = {
   },
 };
 
-// helpers
+
 
 function toggleMenubarIfNecessary(visible) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-  // The menubar is not shown on OS X or while in fullScreen
-  if (Services.appinfo.OS != "Darwin" /* && !browserWindow.fullScreen*/) {
+  
+  if (Services.appinfo.OS != "Darwin" ) {
     let menubar = browserWindow.document.getElementById("toolbar-menubar");
     browserWindow.setToolbarVisibility(menubar, visible);
   }

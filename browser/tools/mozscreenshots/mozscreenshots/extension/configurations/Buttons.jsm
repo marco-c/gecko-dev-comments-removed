@@ -1,12 +1,16 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Buttons"];
 
 const { CustomizableUI } = ChromeUtils.import(
   "resource:///modules/CustomizableUI.jsm"
 );
 
-export var Buttons = {
+var Buttons = {
   init(libDir) {
     createWidget();
   },
@@ -85,7 +89,7 @@ function createWidget() {
   };
   CustomizableUI.createWidget(spec);
 
-  // Append a <style> for the image
+  
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let st = browserWindow.document.createElementNS(
     "http://www.w3.org/1999/xhtml",

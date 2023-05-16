@@ -1,13 +1,21 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-// Create a new instance of the ConsoleAPI so we can control the maxLogLevel with a pref.
-// See LOG_LEVELS in Console.sys.mjs. Common examples: "All", "Info", "Warn", &
-// "Error".
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Screenshot"];
+
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+
+
+
 const PREF_LOG_LEVEL = "extensions.mozscreenshots@mozilla.org.loglevel";
 const lazy = {};
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
@@ -22,7 +30,7 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
-export var Screenshot = {
+var Screenshot = {
   _extensionPath: null,
   _path: null,
   _imagePrefix: "",
@@ -62,7 +70,7 @@ export var Screenshot = {
     );
   },
 
-  // Capture the whole screen using an external application.
+  
   async captureExternal(filename) {
     let imagePath = this._buildImagePath(filename);
     await this._screenshotFunction(imagePath);
@@ -70,7 +78,7 @@ export var Screenshot = {
     return imagePath;
   },
 
-  // helpers
+  
 
   _screenshotWindows(filename) {
     return new Promise((resolve, reject) => {
@@ -98,7 +106,7 @@ export var Screenshot = {
   async _screenshotOSX(filename) {
     let screencapture = (windowID = null) => {
       return new Promise((resolve, reject) => {
-        // Get the screencapture executable
+        
         let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.initWithPath("/usr/sbin/screencapture");
 
@@ -107,7 +115,7 @@ export var Screenshot = {
         );
         process.init(file);
 
-        // Run the process.
+        
         let args = ["-x", "-t", "png"];
         args.push(filename);
         process.runAsync(
@@ -124,7 +132,7 @@ export var Screenshot = {
 
     let promiseWindowID = () => {
       return new Promise((resolve, reject) => {
-        // Get the window ID of the application (assuming its front-most)
+        
         let osascript = Cc["@mozilla.org/file/local;1"].createInstance(
           Ci.nsIFile
         );
@@ -180,7 +188,7 @@ export var Screenshot = {
         switch (topic) {
           case "process-finished":
             try {
-              // Wait 1s after process to resolve
+              
               setTimeout(resolve, 1000);
             } catch (ex) {
               reject(ex);
