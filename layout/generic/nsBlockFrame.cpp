@@ -2056,16 +2056,22 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
       const nscoord maxBSize = aReflowInput.ComputedMaxBSize();
       if (maxBSize != NS_UNCONSTRAINEDSIZE &&
           aState.mConsumedBSize + bSize - borderPadding.BStart(wm) > maxBSize) {
-        nscoord bEnd = std::max(0, maxBSize - aState.mConsumedBSize) +
-                       borderPadding.BStart(wm);
         
         
-        bEnd += aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
-        if (bEnd <= aReflowInput.AvailableBSize()) {
+        const nscoord clampedBSizeWithoutEndBP =
+            std::max(0, maxBSize - aState.mConsumedBSize) +
+            borderPadding.BStart(wm);
+        const nscoord clampedBSize =
+            clampedBSizeWithoutEndBP + borderPadding.BEnd(wm);
+        if (clampedBSize <= aReflowInput.AvailableBSize()) {
           
           
-          bSize = bEnd;
+          bSize = clampedBSize;
           aState.mReflowStatus.SetOverflowIncomplete();
+        } else {
+          
+          
+          bSize = clampedBSizeWithoutEndBP;
         }
       }
       finalSize.BSize(wm) = bSize;
