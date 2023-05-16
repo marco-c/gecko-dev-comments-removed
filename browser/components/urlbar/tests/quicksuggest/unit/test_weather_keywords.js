@@ -26,7 +26,7 @@ add_task(async function() {
   await doKeywordsTest({
     desc: "No data",
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
@@ -55,7 +55,7 @@ add_task(async function() {
     desc: "Empty settings",
     settingsData: {},
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
@@ -86,14 +86,14 @@ add_task(async function() {
       keywords: ["weather", "forecast"],
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
       weat: false,
       weath: false,
       weathe: false,
-      weather: false,
+      weather: true,
       f: false,
       fo: false,
       for: false,
@@ -101,7 +101,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -118,14 +118,14 @@ add_task(async function() {
       min_keyword_length: 0,
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
       weat: false,
       weath: false,
       weathe: false,
-      weather: false,
+      weather: true,
       f: false,
       fo: false,
       for: false,
@@ -133,7 +133,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -246,7 +246,7 @@ add_task(async function() {
     settingsData: {},
     nimbusValues: {},
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
@@ -280,7 +280,7 @@ add_task(async function() {
       weatherKeywords: ["forecast"],
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
@@ -295,7 +295,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -315,7 +315,7 @@ add_task(async function() {
       weatherKeywords: ["forecast"],
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
@@ -330,7 +330,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -531,14 +531,14 @@ add_task(async function() {
       weatherKeywords: ["weather", "forecast"],
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
       weat: false,
       weath: false,
       weathe: false,
-      weather: false,
+      weather: true,
       f: false,
       fo: false,
       for: false,
@@ -546,7 +546,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -563,14 +563,14 @@ add_task(async function() {
       weatherKeywordsMinimumLength: 0,
     },
     tests: {
-      "": true,
+      "": false,
       w: false,
       we: false,
       wea: false,
       weat: false,
       weath: false,
       weathe: false,
-      weather: false,
+      weather: true,
       f: false,
       fo: false,
       for: false,
@@ -578,7 +578,7 @@ add_task(async function() {
       forec: false,
       foreca: false,
       forecas: false,
-      forecast: false,
+      forecast: true,
     },
   });
 });
@@ -702,6 +702,25 @@ add_task(async function leadingAndTrailingSpaces() {
   });
 });
 
+add_task(async function caseInsensitive() {
+  await doKeywordsTest({
+    desc: "Case insensitive",
+    settingsData: {
+      keywords: ["weather"],
+      min_keyword_length: 3,
+    },
+    tests: {
+      wea: true,
+      WEA: true,
+      Wea: true,
+      WeA: true,
+      WEATHER: true,
+      Weather: true,
+      WeAtHeR: true,
+    },
+  });
+});
+
 async function doKeywordsTest({
   desc,
   tests,
@@ -712,6 +731,16 @@ async function doKeywordsTest({
   info("Doing keywords test: " + desc);
   info(JSON.stringify({ nimbusValues, settingsData, minKeywordLength }));
 
+  
+  
+  let fetchPromise;
+  if (
+    !QuickSuggest.weather.suggestion &&
+    (nimbusValues?.weatherKeywords || settingsData?.keywords)
+  ) {
+    fetchPromise = QuickSuggest.weather.waitForFetches();
+  }
+
   let nimbusCleanup;
   if (nimbusValues) {
     nimbusCleanup = await UrlbarTestUtils.initNimbusFeature(nimbusValues);
@@ -721,6 +750,13 @@ async function doKeywordsTest({
 
   if (minKeywordLength) {
     UrlbarPrefs.set("weather.minKeywordLength", minKeywordLength);
+  }
+
+  if (fetchPromise) {
+    info("Waiting for fetch");
+    assertFetchingStarted({ pendingFetchCount: 1 });
+    await fetchPromise;
+    info("Got fetch");
   }
 
   for (let [searchString, expected] of Object.entries(tests)) {
@@ -743,97 +779,15 @@ async function doKeywordsTest({
   }
 
   await nimbusCleanup?.();
-  QuickSuggest.weather._test_setRsData(null);
-  UrlbarPrefs.clear("weather.minKeywordLength");
-}
 
-
-
-
-add_task(async function zeroPrefix_withoutNimbus() {
-  info("1. Doing searches before installing experiment and setting keyword");
-  await check_results({
-    context: createContext("", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [makeExpectedResult()],
-  });
-  await check_results({
-    context: createContext("weather", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [],
-  });
-
-  let cleanup = await UrlbarTestUtils.initNimbusFeature({
-    weatherKeywords: ["weather"],
-    weatherKeywordsMinimumLength: 1,
-  });
-
-  info("2. Doing searches after installing experiment and setting keyword");
-  await check_results({
-    context: createContext("", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [],
-  });
-  await check_results({
-    context: createContext("weather", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [makeExpectedResult({ suggestedIndex: 1 })],
-  });
-
-  await cleanup();
-
-  info("3. Doing searches after uninstalling experiment");
-  await check_results({
-    context: createContext("", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [makeExpectedResult()],
-  });
-  await check_results({
-    context: createContext("weather", {
-      providers: [UrlbarProviderWeather.name],
-      isPrivate: false,
-    }),
-    matches: [],
-  });
-});
-
-
-
-add_task(async function zeroPrefix_spacesInSearchString() {
-  for (let searchString of [" ", "  ", "   ", " doesn't match anything"]) {
-    await check_results({
-      context: createContext(searchString, {
-        providers: [UrlbarProviderWeather.name],
-        isPrivate: false,
-      }),
-      matches: [],
-    });
+  fetchPromise = null;
+  if (!QuickSuggest.weather.suggestion) {
+    fetchPromise = QuickSuggest.weather.waitForFetches();
   }
-});
-
-
-
-add_task(async function zeroPrefix_nonEmptySearchString() {
-  
-  let context = createContext("this shouldn't match anything", {
-    providers: [UrlbarProviderWeather.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-});
+  QuickSuggest.weather._test_setRsData(MerinoTestUtils.WEATHER_RS_DATA);
+  UrlbarPrefs.clear("weather.minKeywordLength");
+  await fetchPromise;
+}
 
 
 
@@ -1270,12 +1224,27 @@ async function doIncrementTest({ desc, setup, tests }) {
 
   let { nimbusValues, settingsData } = setup;
 
+  let fetchPromise;
+  if (
+    !QuickSuggest.weather.suggestion &&
+    (nimbusValues?.weatherKeywords || settingsData?.keywords)
+  ) {
+    fetchPromise = QuickSuggest.weather.waitForFetches();
+  }
+
   let nimbusCleanup;
   if (nimbusValues) {
     nimbusCleanup = await UrlbarTestUtils.initNimbusFeature(nimbusValues);
   }
 
   QuickSuggest.weather._test_setRsData(settingsData);
+
+  if (fetchPromise) {
+    info("Waiting for fetch");
+    assertFetchingStarted({ pendingFetchCount: 1 });
+    await fetchPromise;
+    info("Got fetch");
+  }
 
   for (let { minKeywordLength, canIncrement, searches } of tests) {
     info(
@@ -1321,8 +1290,14 @@ async function doIncrementTest({ desc, setup, tests }) {
   }
 
   await nimbusCleanup?.();
-  QuickSuggest.weather._test_setRsData(null);
+
+  fetchPromise = null;
+  if (!QuickSuggest.weather.suggestion) {
+    fetchPromise = QuickSuggest.weather.waitForFetches();
+  }
+  QuickSuggest.weather._test_setRsData(MerinoTestUtils.WEATHER_RS_DATA);
   UrlbarPrefs.clear("weather.minKeywordLength");
+  await fetchPromise;
 }
 
 function makeExpectedResult({
@@ -1369,4 +1344,20 @@ function makeExpectedResult({
       shouldNavigate: true,
     },
   };
+}
+
+function assertFetchingStarted() {
+  info("Asserting fetching has started");
+
+  Assert.notEqual(
+    QuickSuggest.weather._test_fetchTimer,
+    0,
+    "Fetch timer is non-zero"
+  );
+  Assert.ok(QuickSuggest.weather._test_merino, "Merino client is non-null");
+  Assert.equal(
+    QuickSuggest.weather._test_pendingFetchCount,
+    1,
+    "Expected pending fetch count"
+  );
 }
