@@ -122,6 +122,14 @@ def set_test_manifests(config, tasks):
             remaining_manifests = []
 
             
+            for m in input_paths:
+                if m.startswith("testing/web-platform/tests/"):
+                    if not isinstance(loader, DefaultLoader):
+                        task["chunks"] = "dynamic"
+                    yield task
+                    break
+
+            
             
             for m in input_paths:
                 if [tm for tm in task["test-manifests"]["active"] if tm.startswith(m)]:
@@ -130,10 +138,6 @@ def set_test_manifests(config, tasks):
             
             for m in input_paths:
                 man = m
-                if m.startswith("testing/web-platform/tests/"):
-                    man = m.split("testing/web-platform/tests")[-1]
-                    if man in task["test-manifests"]["active"]:
-                        remaining_manifests.append(man)
                 for tm in task["test-manifests"]["other_dirs"]:
                     matched_dirs = [
                         dp
