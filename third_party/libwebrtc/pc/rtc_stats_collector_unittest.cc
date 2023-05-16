@@ -3889,8 +3889,7 @@ TEST_F(RTCStatsCollectorTest, GetStatsWithNullReceiverSelector) {
 
 
 
-
-TEST_F(RTCStatsCollectorTest, StatsReportedOnZeroSsrc) {
+TEST_F(RTCStatsCollectorTest, RtpIsMissingWhileSsrcIsZero) {
   rtc::scoped_refptr<MediaStreamTrackInterface> track =
       CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "audioTrack",
                       MediaStreamTrackInterface::kLive);
@@ -3901,16 +3900,15 @@ TEST_F(RTCStatsCollectorTest, StatsReportedOnZeroSsrc) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
-  std::vector<const DEPRECATED_RTCMediaStreamTrackStats*> track_stats =
-      report->GetStatsOfType<DEPRECATED_RTCMediaStreamTrackStats>();
-  EXPECT_EQ(1U, track_stats.size());
-
-  std::vector<const RTCRTPStreamStats*> rtp_stream_stats =
-      report->GetStatsOfType<RTCRTPStreamStats>();
-  EXPECT_EQ(0U, rtp_stream_stats.size());
+  auto tracks = report->GetStatsOfType<DEPRECATED_RTCMediaStreamTrackStats>();
+  EXPECT_EQ(1U, tracks.size());
+  auto outbound_rtps = report->GetStatsOfType<RTCOutboundRTPStreamStats>();
+  EXPECT_TRUE(outbound_rtps.empty());
 }
 
-TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
+
+
+TEST_F(RTCStatsCollectorTest, DoNotCrashIfSsrcIsKnownButInfosAreStillMissing) {
   rtc::scoped_refptr<MediaStreamTrackInterface> track =
       CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "audioTrack",
                       MediaStreamTrackInterface::kLive);
@@ -3925,6 +3923,8 @@ TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
   std::vector<const DEPRECATED_RTCMediaStreamTrackStats*> track_stats =
       report->GetStatsOfType<DEPRECATED_RTCMediaStreamTrackStats>();
   EXPECT_EQ(1U, track_stats.size());
+  auto outbound_rtps = report->GetStatsOfType<RTCOutboundRTPStreamStats>();
+  EXPECT_TRUE(outbound_rtps.empty());
 }
 
 
