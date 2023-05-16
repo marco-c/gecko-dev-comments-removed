@@ -136,11 +136,7 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(FetchBody, BodyStreamHolder)
 
-  bool GetBodyUsed(ErrorResult& aRv) const;
-
-  
-  
-  bool CheckBodyUsed() const;
+  bool BodyUsed() const;
 
   already_AddRefed<Promise> ArrayBuffer(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, BodyConsumer::CONSUME_ARRAYBUFFER, aRv);
