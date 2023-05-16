@@ -1,36 +1,6 @@
 "use strict";
 
-const SIGNUP_DETECTION_HISTOGRAM = "PWMGR_SIGNUP_FORM_DETECTION_MS";
 const TEST_URL = `https://example.com${DIRECTORY_PATH}form_signup_detection.html`;
-
-
-
-
-
-
-function countEntries(histogramData) {
-  info(typeof histogramData);
-  return histogramData
-    ? Object.values(histogramData.values).reduce((a, b) => a + b, 0)
-    : null;
-}
-
-
-
-
-
-async function countEntriesOfChildHistogram(id, expected) {
-  let histogram;
-  await TestUtils.waitForCondition(() => {
-    let histograms = Services.telemetry.getSnapshotForHistograms("main", false)
-      .content;
-
-    histogram = histograms[id];
-
-    return !!histogram && countEntries(histogram) == expected;
-  }, `The histogram ${id} was expected to have ${expected} entries.`);
-  Assert.equal(countEntries(histogram), expected);
-}
 
 add_task(async () => {
   await BrowserTestUtils.withNewTab(
@@ -39,9 +9,6 @@ add_task(async () => {
       url: TEST_URL,
     },
     async function(browser) {
-      
-      Services.telemetry.getHistogramById(SIGNUP_DETECTION_HISTOGRAM).clear();
-
       await SpecialPowers.spawn(browser, [], async () => {
         const doc = content.document;
         const { LoginManagerChild } = ChromeUtils.importESModule(
@@ -72,9 +39,4 @@ add_task(async () => {
       });
     }
   );
-
-  info(
-    "Test case: After running isProbablyASignUpForm against two <form> HTML elements, the histogram PWMGR_SIGNUP_FORM_DETECTION_MS should have two entries."
-  );
-  await countEntriesOfChildHistogram(SIGNUP_DETECTION_HISTOGRAM, 2);
 });
