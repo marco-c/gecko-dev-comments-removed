@@ -40,7 +40,12 @@ static T get_real_symbol(const char* aName, T aReplacementSymbol) {
     
     
     
-    real_symbol = dlsym_wrapper<T>(RTLD_DEFAULT, aName);
+    
+    void* handle = dlopen("libc.so", RTLD_LAZY);
+
+    if (handle) {
+      real_symbol = dlsym_wrapper<T>(handle, aName);
+    }
   }
 #endif
 
