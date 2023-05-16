@@ -363,7 +363,9 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
   
 
 
-  void ClearAllImages();
+
+
+  void ClearAllImages() MOZ_EXCLUDES(mRecursiveMutex);
 
   
 
@@ -544,10 +546,7 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
   void NotifyComposite(const ImageCompositeNotification& aNotification);
   void NotifyDropped(uint32_t aDropped);
 
-  already_AddRefed<ImageContainerListener> GetImageContainerListener() {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-    return do_AddRef(mNotifyCompositeListener);
-  }
+  already_AddRefed<ImageContainerListener> GetImageContainerListener() const;
 
   
 
@@ -645,8 +644,7 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
   
   ProducerID mCurrentProducerID MOZ_GUARDED_BY(mRecursiveMutex);
 
-  RefPtr<ImageContainerListener> mNotifyCompositeListener
-      MOZ_GUARDED_BY(mRecursiveMutex);
+  RefPtr<ImageContainerListener> mNotifyCompositeListener;
 
   static mozilla::Atomic<uint32_t> sGenerationCounter;
 };
