@@ -31,21 +31,11 @@ namespace mozilla {
 
 
 
-
-
-
-
 template <class T>
 class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticAutoPtr {
  public:
-  
-  
-  
-#ifdef DEBUG
-  StaticAutoPtr() { MOZ_ASSERT(!mRawPtr); }
-#else
   constexpr StaticAutoPtr() = default;
-#endif
+  StaticAutoPtr(const StaticAutoPtr&) = delete;
 
   StaticAutoPtr<T>& operator=(T* aRhs) {
     Assign(aRhs);
@@ -70,14 +60,6 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticAutoPtr {
   }
 
  private:
-  
-  
-  
-  
-#ifdef DEBUG
-  StaticAutoPtr(StaticAutoPtr<T>& aOther);
-#endif
-
   void Assign(T* aNewPtr) {
     MOZ_ASSERT(!aNewPtr || mRawPtr != aNewPtr);
     T* oldPtr = mRawPtr;
@@ -91,14 +73,8 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticAutoPtr {
 template <class T>
 class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticRefPtr {
  public:
-  
-  
-  
-#ifdef DEBUG
-  StaticRefPtr() { MOZ_ASSERT(!mRawPtr); }
-#else
   constexpr StaticRefPtr() = default;
-#endif
+  StaticRefPtr(const StaticRefPtr&) = delete;
 
   StaticRefPtr<T>& operator=(T* aRhs) {
     AssignWithAddref(aRhs);
