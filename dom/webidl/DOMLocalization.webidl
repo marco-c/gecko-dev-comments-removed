@@ -110,6 +110,24 @@ interface DOMLocalization : Localization {
 
 
 
+  [Throws] undefined setArgs(Element aElement, optional object? aArgs);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
