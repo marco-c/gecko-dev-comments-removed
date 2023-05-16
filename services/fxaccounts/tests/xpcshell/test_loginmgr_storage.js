@@ -305,7 +305,7 @@ add_task(async function test_uidMigration() {
     "", 
     ""
   ); 
-  Services.logins.addLogin(login);
+  await Services.logins.addLoginAsync(login);
 
   
   let storage = new LoginManagerStorage();

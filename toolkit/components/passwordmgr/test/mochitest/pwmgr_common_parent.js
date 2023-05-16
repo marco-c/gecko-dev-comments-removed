@@ -40,7 +40,7 @@ if (LoginHelper.improvedPasswordRulesEnabled) {
 
 
 
-function commonInit(selfFilling, testDependsOnDeprecatedLogin) {
+async function commonInit(selfFilling, testDependsOnDeprecatedLogin) {
   var pwmgr = Services.logins;
   assert.ok(pwmgr != null, "Access LoginManager");
 
@@ -69,7 +69,7 @@ function commonInit(selfFilling, testDependsOnDeprecatedLogin) {
       "uname",
       "pword"
     );
-    pwmgr.addLogin(login);
+    await pwmgr.addLoginAsync(login);
   }
 
   
@@ -145,8 +145,11 @@ addMessageListener("cleanup", () => {
 
 addMessageListener(
   "setupParent",
-  ({ selfFilling = false, testDependsOnDeprecatedLogin = false } = {}) => {
-    commonInit(selfFilling, testDependsOnDeprecatedLogin);
+  async ({
+    selfFilling = false,
+    testDependsOnDeprecatedLogin = false,
+  } = {}) => {
+    await commonInit(selfFilling, testDependsOnDeprecatedLogin);
     sendAsyncMessage("doneSetup");
   }
 );
