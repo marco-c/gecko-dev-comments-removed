@@ -33,7 +33,6 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
   private InputStream mPdfInputStream;
   private Context mContext;
   private Boolean mDoDeleteTmpPdf;
-  private GeckoResult<Boolean> mPrintDialogFinish = null;
 
   
 
@@ -47,24 +46,6 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
     this.mPdfInputStream = pdfInputStream;
     this.mContext = context;
     this.mDoDeleteTmpPdf = true;
-  }
-
-  
-
-
-
-
-
-
-
-  public GeckoViewPrintDocumentAdapter(
-      @NonNull final InputStream pdfInputStream,
-      @NonNull final Context context,
-      @Nullable final GeckoResult<Boolean> printDialogFinish) {
-    this.mPdfInputStream = pdfInputStream;
-    this.mContext = context;
-    this.mDoDeleteTmpPdf = true;
-    this.mPrintDialogFinish = printDialogFinish;
   }
 
   
@@ -188,9 +169,6 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
     } catch (final NullPointerException npe) {
       
       
-    }
-    if (this.mPrintDialogFinish != null) {
-      mPrintDialogFinish.complete(true);
     }
   }
 }
