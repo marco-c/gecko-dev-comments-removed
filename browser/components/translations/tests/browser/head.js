@@ -71,20 +71,46 @@ function click(button, message) {
 
 
 
+function isVisible(element) {
+  const win = element.ownerDocument.ownerGlobal;
+  const { visibility, display } = win.getComputedStyle(element);
+  return visibility === "visible" && display !== "none";
+}
+
+
+
+
+
 
 
 
 function getByL10nId(l10nId, doc = document) {
-  const element = doc.querySelector(`[data-l10n-id="${l10nId}"]`);
-  if (!element) {
+  const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
+  if (elements.length === 0) {
     throw new Error("Could not find the element by l10n id: " + l10nId);
   }
-  const win = doc.ownerGlobal;
-  const { visibility, display } = win.getComputedStyle(element);
-  if (visibility !== "visible" || display === "none") {
-    throw new Error("The element is not visible in the DOM: " + l10nId);
+  for (const element of elements) {
+    if (isVisible(element)) {
+      return element;
+    }
   }
-  return element;
+  throw new Error("The element is not visible in the DOM: " + l10nId);
+}
+
+
+
+
+
+
+function getById(id, doc = document) {
+  const element = doc.getElementById(id);
+  if (!element) {
+    throw new Error("Could not find the element by id: #" + id);
+  }
+  if (isVisible(element)) {
+    return element;
+  }
+  throw new Error("The element is not visible in the DOM: #" + id);
 }
 
 
@@ -95,16 +121,13 @@ function getByL10nId(l10nId, doc = document) {
 
 function maybeGetByL10nId(l10nId, doc = document) {
   const selector = `[data-l10n-id="${l10nId}"]`;
-  const element = doc.querySelector(selector);
-  if (!element) {
-    return null;
+  const elements = doc.querySelectorAll(selector);
+  for (const element of elements) {
+    if (isVisible(element)) {
+      return element;
+    }
   }
-  const win = doc.ownerGlobal;
-  const { visibility, display } = win.getComputedStyle(element);
-  if (visibility !== "visible" || display === "none") {
-    return null;
-  }
-  return element;
+  return null;
 }
 
 
@@ -115,22 +138,34 @@ function maybeGetByL10nId(l10nId, doc = document) {
 
 
 
-function waitForTranslationsPopupEvent(eventName) {
-  return new Promise(resolve => {
-    const panel = document.getElementById("translations-panel");
-    if (!panel) {
-      throw new Error("Unable to find the translations panel element.");
-    }
 
-    function handleEvent(event) {
-      if (event.type === eventName) {
-        panel.removeEventListener(eventName, handleEvent);
-        
-        
-        setTimeout(resolve, 0);
-      }
-    }
+async function waitForTranslationsPopupEvent(eventName, callback) {
+  const panel = document.getElementById("translations-panel");
+  if (!panel) {
+    throw new Error("Unable to find the translations panel element.");
+  }
+  const promise = BrowserTestUtils.waitForEvent(panel, eventName);
+  callback();
+  info("Waiting for the translations panel popup to be shown");
+  await promise;
+  
+  await new Promise(resolve => setTimeout(resolve, 0));
+}
 
-    panel.addEventListener(eventName, handleEvent);
-  });
+
+
+
+
+
+
+async function waitForViewShown(callback) {
+  const panel = document.getElementById("translations-panel");
+  if (!panel) {
+    throw new Error("Unable to find the translations panel element.");
+  }
+  const promise = BrowserTestUtils.waitForEvent(panel, "ViewShown");
+  callback();
+  info("Waiting for the translations panel view to be shown");
+  await promise;
+  await new Promise(resolve => setTimeout(resolve, 0));
 }
