@@ -1616,7 +1616,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", 
   pref("browser.newtabpage.activity-stream.discoverystream.locale-list-config", "");
 #endif
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN");
+pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "FR,IT,ES");
 
@@ -1636,7 +1636,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", tr
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.dismissed", false);
-pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
