@@ -228,10 +228,50 @@ class WasmStructObject : public WasmGcObject {
   
   
   
+  template <bool ZeroFields>
+  static MOZ_NEVER_INLINE WasmStructObject* createStructOOL(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::InitialHeap initialHeap, uint32_t inlineBytes,
+      uint32_t outlineBytes);
+
+  
+  
+  
+  
+  
+  
   template <bool ZeroFields = true>
-  static WasmStructObject* createStruct(JSContext* cx,
-                                        wasm::TypeDefInstanceData* typeDefData,
-                                        js::gc::InitialHeap initialHeap);
+  static inline WasmStructObject* createStruct(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::InitialHeap initialHeap) {
+    const wasm::TypeDef* typeDef = typeDefData->typeDef;
+    MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
+
+    uint32_t totalBytes = typeDef->structType().size_;
+    uint32_t inlineBytes, outlineBytes;
+    WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+
+    if (MOZ_LIKELY(outlineBytes == 0)) {
+      
+      
+      WasmStructObject* structObj =
+          (WasmStructObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
+      if (MOZ_UNLIKELY(!structObj)) {
+        ReportOutOfMemory(cx);
+        return nullptr;
+      }
+
+      structObj->outlineData_ = nullptr;
+      if constexpr (ZeroFields) {
+        memset(&(structObj->inlineData_[0]), 0, inlineBytes);
+      }
+      return structObj;
+    }
+
+    
+    return WasmStructObject::createStructOOL<ZeroFields>(
+        cx, typeDefData, initialHeap, inlineBytes, outlineBytes);
+  }
 
   
   
@@ -284,11 +324,12 @@ static_assert((WasmStructObject_MaxInlineBytes % 16) == 0);
 inline void WasmStructObject::getDataByteSizes(uint32_t totalBytes,
                                                uint32_t* inlineBytes,
                                                uint32_t* outlineBytes) {
-  *inlineBytes = totalBytes;
-  *outlineBytes = 0;
-  if (totalBytes > WasmStructObject_MaxInlineBytes) {
+  if (MOZ_UNLIKELY(totalBytes > WasmStructObject_MaxInlineBytes)) {
     *inlineBytes = WasmStructObject_MaxInlineBytes;
-    *outlineBytes = totalBytes - *inlineBytes;
+    *outlineBytes = totalBytes - WasmStructObject_MaxInlineBytes;
+  } else {
+    *inlineBytes = totalBytes;
+    *outlineBytes = 0;
   }
 }
 
