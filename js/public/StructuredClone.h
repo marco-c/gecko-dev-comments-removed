@@ -282,6 +282,18 @@ typedef bool (*WriteStructuredCloneOp)(JSContext* cx,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 typedef void (*StructuredCloneErrorOp)(JSContext* cx, uint32_t errorid,
                                        void* closure, const char* errorMessage);
 
