@@ -1,8 +1,8 @@
 
 
 
-const Arithmetic = ChromeUtils.import(
-  "resource://gre/modules/RustArithmetic.jsm"
+const Arithmetic = ChromeUtils.importESModule(
+  "resource://gre/modules/RustArithmetic.sys.mjs"
 );
 
 add_task(async function() {
