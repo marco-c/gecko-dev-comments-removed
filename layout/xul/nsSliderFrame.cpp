@@ -908,6 +908,13 @@ void nsSliderFrame::CurrentPositionChanged() {
   thumbFrame->SetRect(newThumbRect);
 
   
+  
+  
+  
+  
+  MarkNeedsDisplayItemRebuild();
+
+  
   nsIScrollbarMediator* mediator = scrollbarBox->GetScrollbarMediator();
   if (!mediator || !mediator->ShouldSuppressScrollbarRepaints()) {
     SchedulePaint();
