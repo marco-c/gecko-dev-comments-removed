@@ -1473,18 +1473,13 @@ void nsIFrame::AssertNewStyleIsSane(ComputedStyle& aNewStyle) {
 #endif
 
 void nsIFrame::ReparentFrameViewTo(nsViewManager* aViewManager,
-                                   nsView* aNewParentView,
-                                   nsView* aOldParentView) {
+                                   nsView* aNewParentView) {
   if (HasView()) {
     if (IsMenuPopupFrame()) {
       
       return;
     }
     nsView* view = GetView();
-    
-    
-    
-
     aViewManager->RemoveChild(view);
 
     
@@ -1498,8 +1493,7 @@ void nsIFrame::ReparentFrameViewTo(nsViewManager* aViewManager,
       
       
       for (nsIFrame* child : childList.mList) {
-        child->ReparentFrameViewTo(aViewManager, aNewParentView,
-                                   aOldParentView);
+        child->ReparentFrameViewTo(aViewManager, aNewParentView);
       }
     }
   }
@@ -1556,7 +1550,7 @@ void nsIFrame::CreateView() {
   
   
   
-  ReparentFrameViewTo(viewManager, view, parentView);
+  ReparentFrameViewTo(viewManager, view);
 
   
   SetView(view);

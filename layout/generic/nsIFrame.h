@@ -4876,8 +4876,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  void ReparentFrameViewTo(nsViewManager* aViewManager, nsView* aNewParentView,
-                           nsView* aOldParentView);
+  void ReparentFrameViewTo(nsViewManager* aViewManager, nsView* aNewParentView);
 
   
   nsRect mRect;
