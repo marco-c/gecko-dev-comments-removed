@@ -11,22 +11,10 @@ user_pref("browser.dom.window.dump.enabled", true);
 user_pref("devtools.console.stdout.chrome", true);
 
 user_pref("browser.newtabpage.activity-stream.asrouter.providers.cfr", "null");
-user_pref(
-  "browser.newtabpage.activity-stream.asrouter.providers.snippets",
-  "null"
-);
-user_pref(
-  "browser.newtabpage.activity-stream.asrouter.providers.message-groups",
-  "null"
-);
-user_pref(
-  "browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel",
-  "null"
-);
-user_pref(
-  "browser.newtabpage.activity-stream.asrouter.providers.messaging-experiments",
-  "null"
-);
+user_pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "null");
+user_pref("browser.newtabpage.activity-stream.asrouter.providers.message-groups", "null");
+user_pref("browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel", "null");
+user_pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-experiments", "null");
 user_pref("browser.newtabpage.activity-stream.feeds.system.topstories", false);
 user_pref("browser.newtabpage.activity-stream.feeds.snippets", false);
 user_pref("browser.newtabpage.activity-stream.tippyTop.service.endpoint", "");
@@ -58,10 +46,7 @@ user_pref("extensions.experiments.enabled", true);
 
 user_pref("extensions.update.enabled", false);
 
-user_pref(
-  "extensions.getAddons.discovery.api_url",
-  "data:;base64,eyJyZXN1bHRzIjpbXX0%3D"
-);
+user_pref("extensions.getAddons.discovery.api_url", "data:;base64,eyJyZXN1bHRzIjpbXX0%3D");
 
 user_pref("extensions.webextensions.warnings-as-errors", true);
 
@@ -71,10 +56,7 @@ user_pref("media.gmp-manager.updateEnabled", false);
 
 user_pref("security.certerrors.mitm.priming.enabled", false);
 
-user_pref(
-  "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
-  true
-);
+user_pref("security.turn_off_all_security_so_that_viruses_can_take_over_this_computer", true);
 user_pref("xpinstall.signatures.required", false);
 
 user_pref("services.settings.server", "data:,#remote-settings-dummy/v1");
