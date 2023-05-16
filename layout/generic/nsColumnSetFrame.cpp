@@ -632,10 +632,11 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       ReflowInput kidReflowInput(PresContext(), aReflowInput, child, availSize,
                                  Some(kidCBSize));
       kidReflowInput.mFlags.mIsTopOfPage = [&]() {
-        const bool isNestedMulticol =
+        const bool isNestedMulticolOrPaginated =
             aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
-                NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
-        if (isNestedMulticol) {
+                NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
+            PresContext()->IsPaginated();
+        if (isNestedMulticolOrPaginated) {
           if (aConfig.mForceAuto) {
             
             
