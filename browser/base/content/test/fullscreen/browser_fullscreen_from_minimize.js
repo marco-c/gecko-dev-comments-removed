@@ -27,8 +27,8 @@ const restoreWindowToNormal = async () => {
 };
 
 add_task(async function() {
-  registerCleanupFunction(async function() {
-    await restoreWindowToNormal();
+  registerCleanupFunction(function() {
+    window.restore();
   });
 
   
