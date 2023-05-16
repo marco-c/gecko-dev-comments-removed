@@ -128,8 +128,13 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
   auto noTailTaskQueue =
       TaskQueue::Create(do_AddRef(pool), "TestDelayedRunnable noTailTaskQueue",
                          false);
-  Monitor outerMonitor MOZ_UNANNOTATED(__func__);
-  MonitorAutoLock lock(outerMonitor);
+  enum class State : uint8_t {
+    Start,
+    TimerRan,
+    TasksFinished,
+  } state = State::Start;
+  Monitor monitor MOZ_UNANNOTATED(__func__);
+  MonitorAutoLock lock(monitor);
   MOZ_ALWAYS_SUCCEEDS(
       tailTaskQueue1->Dispatch(NS_NewRunnableFunction(__func__, [&] {
         
@@ -138,22 +143,26 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
         EXPECT_TRUE(tailTaskQueue1->RequiresTailDispatch(tailTaskQueue2));
         tailTaskQueue2->DelayedDispatch(
             NS_NewRunnableFunction(__func__, [&] {}), 1);
-        Monitor innerMonitor MOZ_UNANNOTATED(__func__);
-        MonitorAutoLock lock(innerMonitor);
+        MonitorAutoLock lock(monitor);
         auto timer = MakeRefPtr<mozilla::MediaTimer>();
         timer->WaitFor(mozilla::TimeDuration::FromMilliseconds(1), __func__)
             ->Then(noTailTaskQueue, __func__, [&] {
-              MonitorAutoLock lock(innerMonitor);
-              innerMonitor.NotifyAll();
+              MonitorAutoLock lock(monitor);
+              state = State::TimerRan;
+              monitor.NotifyAll();
             });
         
         
         
-        innerMonitor.Wait();
+        while (state != State::TimerRan) {
+          monitor.Wait();
+        }
         
-        MonitorAutoLock outerLock(outerMonitor);
-        outerMonitor.NotifyAll();
+        state = State::TasksFinished;
+        monitor.Notify();
       })));
   
-  outerMonitor.Wait();
+  while (state != State::TasksFinished) {
+    monitor.Wait();
+  }
 }
