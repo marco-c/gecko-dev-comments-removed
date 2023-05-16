@@ -582,6 +582,51 @@ static RefPtr<NativeItemPromise> GetClipboardNativeItem(
   return NativeEntryPromise::All(GetCurrentSerialEventTarget(), promises);
 }
 
+class ClipboardWriteCallback final : public nsIAsyncSetClipboardDataCallback {
+ public:
+  
+  
+  NS_DECL_ISUPPORTS
+
+  explicit ClipboardWriteCallback(Promise* aPromise,
+                                  ClipboardItem* aClipboardItem)
+      : mPromise(aPromise), mClipboardItem(aClipboardItem) {}
+
+  
+  NS_IMETHOD OnComplete(nsresult aResult) override {
+    MOZ_ASSERT(mPromise);
+
+    RefPtr<Promise> promise = std::move(mPromise);
+    
+    
+    
+    if (promise->State() == Promise::PromiseState::Pending) {
+      if (NS_FAILED(aResult)) {
+        promise->MaybeRejectWithNotAllowedError(
+            "Clipboard write is not allowed.");
+        return NS_OK;
+      }
+
+      promise->MaybeResolveWithUndefined();
+    }
+
+    return NS_OK;
+  }
+
+ protected:
+  ~ClipboardWriteCallback() {
+    
+    MOZ_ASSERT(!mPromise);
+  };
+
+  
+  RefPtr<Promise> mPromise;
+  
+  RefPtr<ClipboardItem> mClipboardItem;
+};
+
+NS_IMPL_ISUPPORTS(ClipboardWriteCallback, nsIAsyncSetClipboardDataCallback)
+
 }  
 
 already_AddRefed<Promise> Clipboard::Write(
@@ -638,9 +683,19 @@ already_AddRefed<Promise> Clipboard::Write(
     return p.forget();
   }
 
+  nsCOMPtr<nsIAsyncSetClipboardData> request;
+  RefPtr<ClipboardWriteCallback> callback =
+      MakeRefPtr<ClipboardWriteCallback>(p, aData[0]);
+  nsresult rv = clipboard->AsyncSetData(nsIClipboard::kGlobalClipboard,
+                                        callback, getter_AddRefs(request));
+  if (NS_FAILED(rv)) {
+    p->MaybeReject(rv);
+    return p.forget();
+  }
+
   GetClipboardNativeItem(aData[0])->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [owner, p, clipboard, context, principal = RefPtr{&aSubjectPrincipal}](
+      [owner, request, context, principal = RefPtr{&aSubjectPrincipal}](
           const nsTArray<NativeEntry>& aEntries) {
         RefPtr<DataTransfer> dataTransfer =
             new DataTransfer(owner, eCopy,
@@ -652,7 +707,7 @@ already_AddRefed<Promise> Clipboard::Write(
               entry.mType, entry.mData, 0, principal);
 
           if (NS_FAILED(rv)) {
-            p->MaybeRejectWithUndefined();
+            request->Abort(rv);
             return;
           }
         }
@@ -661,24 +716,16 @@ already_AddRefed<Promise> Clipboard::Write(
         RefPtr<nsITransferable> transferable =
             dataTransfer->GetTransferable(0, context);
         if (!transferable) {
-          p->MaybeRejectWithUndefined();
+          request->Abort(NS_ERROR_FAILURE);
           return;
         }
 
         
-        nsresult rv =
-            clipboard->SetData(transferable,
-                                nullptr,
-                               nsIClipboard::kGlobalClipboard);
-        if (NS_FAILED(rv)) {
-          p->MaybeRejectWithUndefined();
-          return;
-        }
-
-        p->MaybeResolveWithUndefined();
+        request->SetData(transferable,  nullptr);
       },
-      [p](const CopyableErrorResult& aErrorResult) {
+      [p, request](const CopyableErrorResult& aErrorResult) {
         p->MaybeReject(CopyableErrorResult(aErrorResult));
+        request->Abort(NS_ERROR_ABORT);
       });
 
   return p.forget();

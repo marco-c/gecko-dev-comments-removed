@@ -46,7 +46,8 @@ class nsClipboard : public nsBaseClipboard {
 
  protected:
   
-  NS_IMETHOD SetNativeClipboardData(int32_t aWhichClipboard) override;
+  NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+                                    int32_t aWhichClipboard) override;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
   void ClearSelectionCache();

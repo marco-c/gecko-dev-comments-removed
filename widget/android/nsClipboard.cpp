@@ -12,19 +12,18 @@
 
 using namespace mozilla;
 
-NS_IMPL_ISUPPORTS(nsClipboard, nsIClipboard)
+NS_IMPL_ISUPPORTS_INHERITED0(nsClipboard, ClipboardSetDataHelper)
 
 
 
 
 
 
-
-nsClipboard::nsClipboard() {}
 
 NS_IMETHODIMP
-nsClipboard::SetData(nsITransferable* aTransferable, nsIClipboardOwner* anOwner,
-                     int32_t aWhichClipboard) {
+nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
+                                    nsIClipboardOwner* aOwner,
+                                    int32_t aWhichClipboard) {
   if (aWhichClipboard != kGlobalClipboard) return NS_ERROR_NOT_IMPLEMENTED;
 
   if (!jni::IsAvailable()) {
