@@ -179,6 +179,16 @@ enum ProvisionalAnswerUsage {
 
 
 
+enum RtcpMuxPolicyUsage {
+  kRtcpMuxPolicyUsageRequire = 0,
+  kRtcpMuxPolicyUsageNegotiate = 1,
+  kRtcpMuxPolicyUsageMax
+};
+
+
+
+
+
 }  
 
 #endif  
