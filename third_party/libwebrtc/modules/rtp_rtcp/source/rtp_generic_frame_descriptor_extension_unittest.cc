@@ -21,8 +21,6 @@ using ::testing::IsEmpty;
 
 constexpr uint8_t kDeprecatedFlags = 0x30;
 
-
-
 TEST(RtpGenericFrameDescriptorExtensionTest,
      ParseFirstPacketOfIndependenSubFrame) {
   const int kTemporalLayer = 5;
