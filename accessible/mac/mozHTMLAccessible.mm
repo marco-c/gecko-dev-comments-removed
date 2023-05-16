@@ -18,16 +18,13 @@ using namespace mozilla::a11y;
 
 - (NSString*)moxTitle {
   nsAutoString title;
-  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
-    mozilla::ErrorResult rv;
-    
-    
-    acc->GetContent()->GetTextContent(title, rv);
-  } else if (RemoteAccessible* proxy = mGeckoAccessible->AsRemote()) {
-    proxy->Title(title);
-  }
 
-  title.CompressWhitespace();
+  ENameValueFlag flag = mGeckoAccessible->Name(title);
+  if (flag != eNameFromSubtree) {
+    
+    
+    return nil;
+  }
 
   return nsCocoaUtils::ToNSString(title);
 }
