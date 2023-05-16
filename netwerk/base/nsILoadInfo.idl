@@ -513,6 +513,11 @@ interface nsILoadInfo : nsISupports
   
 
 
+[infallible] attribute boolean hstsStatus;
+
+  
+
+
 
 
 

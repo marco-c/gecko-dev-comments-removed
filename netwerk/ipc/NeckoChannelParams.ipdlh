@@ -166,6 +166,7 @@ struct LoadInfoArgs
   nsString                    cspNonce;
   bool                        skipContentSniffing;
   uint32_t                    httpsOnlyStatus;
+  bool                        hstsStatus;
   bool                        hasValidUserGestureActivation;
   bool                        allowDeprecatedSystemRequests;
   bool                        isInDevToolsContext;
@@ -213,6 +214,8 @@ struct ParentLoadInfoForwarderArgs
   bool skipContentSniffing;
 
   uint32_t httpsOnlyStatus;
+
+  bool hstsStatus;
 
   
   
