@@ -503,13 +503,12 @@ def initialize(topsrcdir):
     
     
     repo = resolve_repository()
-    if repo != "SOURCE":
-        missing_ok = (
-            repo is not None and repo.sparse_checkout_present()
-        ) or os.path.exists(os.path.join(topsrcdir, "INSTALL"))
-    else:
-        missing_ok = ()
+    missing_ok = (
+        repo is not None and repo.sparse_checkout_present()
+    ) or os.path.exists(os.path.join(topsrcdir, "INSTALL"))
+
     driver.load_commands_from_spec(MACH_COMMANDS, topsrcdir, missing_ok=missing_ok)
+
     return driver
 
 
