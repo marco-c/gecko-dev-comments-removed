@@ -738,8 +738,8 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
       amount = length + ObjectElements::VALUES_PER_HEADER;
     }
 
-    if (amount < SLOT_CAPACITY_MIN) {
-      amount = SLOT_CAPACITY_MIN;
+    if (amount < ELEMENT_CAPACITY_MIN) {
+      amount = ELEMENT_CAPACITY_MIN;
     }
 
     *goodAmount = amount;
