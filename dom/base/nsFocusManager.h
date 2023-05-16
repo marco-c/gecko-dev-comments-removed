@@ -79,9 +79,6 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   mozilla::dom::Element* GetFocusedElement() { return mFocusedElement; }
-  static mozilla::dom::Element* GetFocusedElementStatic() {
-    return sInstance ? sInstance->GetFocusedElement() : nullptr;
-  }
 
   
 
