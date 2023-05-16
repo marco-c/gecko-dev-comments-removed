@@ -807,8 +807,15 @@ DevToolsClient.prototype = {
 
 
 
-  createObjectFront(grip, threadFront) {
-    return new ObjectFront(this, threadFront.targetFront, threadFront, grip);
+
+
+
+  createObjectFront(grip, threadFront, parentFront) {
+    if (!parentFront) {
+      parentFront = threadFront;
+    }
+
+    return new ObjectFront(this, threadFront.targetFront, parentFront, grip);
   },
 
   get transport() {
