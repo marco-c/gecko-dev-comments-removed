@@ -717,6 +717,8 @@ function makeRemoteTabResult(
 
 
 
+
+
 function makeSearchResult(
   queryContext,
   {
@@ -735,6 +737,7 @@ function makeSearchResult(
     isPrivateEngine,
     heuristic = false,
     trending = false,
+    isRichSuggestion = false,
     type = UrlbarUtils.RESULT_TYPE.SEARCH,
     source = UrlbarUtils.RESULT_SOURCE.SEARCH,
     satisfiesAutofillThreshold = false,
@@ -795,6 +798,7 @@ function makeSearchResult(
   if (typeof suggestion == "string") {
     result.payload.lowerCaseSuggestion = result.payload.suggestion.toLocaleLowerCase();
     result.payload.trending = trending;
+    result.payload.isRichSuggestion = isRichSuggestion;
   }
 
   if (providerName) {
