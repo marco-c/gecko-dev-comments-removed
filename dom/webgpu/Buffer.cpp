@@ -332,4 +332,17 @@ void Buffer::Destroy(JSContext* aCx, ErrorResult& aRv) {
   
 }
 
+dom::GPUBufferMapState Buffer::MapState() const {
+  
+  
+
+  if (mMapped) {
+    return dom::GPUBufferMapState::Mapped;
+  }
+  if (mMapRequest) {
+    return dom::GPUBufferMapState::Pending;
+  }
+  return dom::GPUBufferMapState::Unmapped;
+}
+
 }  
