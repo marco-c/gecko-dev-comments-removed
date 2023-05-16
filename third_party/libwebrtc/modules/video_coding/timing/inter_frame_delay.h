@@ -16,7 +16,7 @@
 #include "absl/types/optional.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/include/module_common_types_public.h"
+#include "rtc_base/numerics/sequence_number_unwrapper.h"
 
 namespace webrtc {
 
@@ -35,7 +35,7 @@ class InterFrameDelay {
  private:
   
   int64_t prev_rtp_timestamp_unwrapped_;
-  TimestampUnwrapper unwrapper_;
+  RtpTimestampUnwrapper unwrapper_;
 
   
   absl::optional<Timestamp> prev_wall_clock_;
