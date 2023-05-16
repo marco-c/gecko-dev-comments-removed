@@ -440,6 +440,46 @@ bool IsActiveFromEncodings(
   return false;
 }
 
+bool IsScalabilityModeSupportedByCodec(
+    const VideoCodec& codec,
+    const std::string& scalability_mode,
+    const webrtc::VideoSendStream::Config& config) {
+  return config.encoder_settings.encoder_factory
+      ->QueryCodecSupport(webrtc::SdpVideoFormat(codec.name, codec.params),
+                          scalability_mode)
+      .is_supported;
+}
+
+
+
+void FallbackToDefaultScalabilityModeIfNotSupported(
+    const VideoCodec& codec,
+    const webrtc::VideoSendStream::Config& config,
+    std::vector<webrtc::RtpEncodingParameters>& encodings) {
+  if (!absl::c_any_of(encodings,
+                      [](const webrtc::RtpEncodingParameters& encoding) {
+                        return encoding.scalability_mode &&
+                               !encoding.scalability_mode->empty();
+                      })) {
+    
+    
+    return;
+  }
+  if (config.encoder_settings.encoder_factory == nullptr) {
+    return;
+  }
+  for (auto& encoding : encodings) {
+    RTC_LOG(LS_INFO) << "Encoding scalability_mode: "
+                     << encoding.scalability_mode.value_or("-");
+    if (!encoding.scalability_mode.has_value() ||
+        !IsScalabilityModeSupportedByCodec(codec, *encoding.scalability_mode,
+                                           config)) {
+      encoding.scalability_mode = webrtc::kDefaultScalabilityModeStr;
+      RTC_LOG(LS_INFO) << " -> " << *encoding.scalability_mode;
+    }
+  }
+}
+
 }  
 
 
@@ -2184,6 +2224,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetSsrcs() const {
 void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
     const VideoCodecSettings& codec_settings) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  FallbackToDefaultScalabilityModeIfNotSupported(
+      codec_settings.codec, parameters_.config, rtp_parameters_.encodings);
+
   parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
   RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
@@ -2298,7 +2341,9 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
         (new_parameters.encodings[i].num_temporal_layers !=
          rtp_parameters_.encodings[i].num_temporal_layers) ||
         (new_parameters.encodings[i].requested_resolution !=
-         rtp_parameters_.encodings[i].requested_resolution)) {
+         rtp_parameters_.encodings[i].requested_resolution) ||
+        (new_parameters.encodings[i].scalability_mode !=
+         rtp_parameters_.encodings[i].scalability_mode)) {
       new_param = true;
       break;
     }
@@ -2313,11 +2358,9 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
   
   
   
-  bool reconfigure_encoder = new_param ||
-                             (new_parameters.encodings[0].bitrate_priority !=
-                              rtp_parameters_.encodings[0].bitrate_priority) ||
-                             new_parameters.encodings[0].scalability_mode !=
-                                 rtp_parameters_.encodings[0].scalability_mode;
+  bool reconfigure_encoder =
+      new_param || (new_parameters.encodings[0].bitrate_priority !=
+                    rtp_parameters_.encodings[0].bitrate_priority);
 
   
   
@@ -2547,6 +2590,9 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::ReconfigureEncoder(
 
   RTC_CHECK(parameters_.codec_settings);
   VideoCodecSettings codec_settings = *parameters_.codec_settings;
+
+  FallbackToDefaultScalabilityModeIfNotSupported(
+      codec_settings.codec, parameters_.config, rtp_parameters_.encodings);
 
   webrtc::VideoEncoderConfig encoder_config =
       CreateVideoEncoderConfig(codec_settings.codec);

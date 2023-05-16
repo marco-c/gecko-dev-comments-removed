@@ -23,6 +23,8 @@ enum class ScalabilityModeResolutionRatio {
   kThreeToTwo,  
 };
 
+static constexpr char kDefaultScalabilityModeStr[] = "L1T2";
+
 absl::optional<ScalabilityMode> ScalabilityModeFromString(
     absl::string_view scalability_mode_string);
 
