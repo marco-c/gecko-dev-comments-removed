@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("Testing if word spacing is working properly");
+var t = async_test("Testing if word spacing is working properly with font-relative length");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
@@ -18,7 +18,9 @@ var ctx = canvas.getContext('2d');
 
 _assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
 _assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
+ctx.font = "10px monospace";
 var width_normal = ctx.measureText('Hello World, again').width;
+var ch_width = width_normal / 18;
 
 function test_word_spacing(value, difference_spacing, epsilon) {
   ctx.wordSpacing = value;
@@ -32,14 +34,9 @@ function test_word_spacing(value, difference_spacing, epsilon) {
 
 
 
-
-test_cases = [['3px', 6, 0],
-              ['5px', 10, 0],
-              ['-2px', -4, 0],
-              ['1em', 20, 0],
-              ['1in', 192, 0],
-              ['-0.1cm', -7.57, 0.2],
-              ['-0.6mm', -4.54, 0.2]]
+test_cases = [['1em', 20, 0.1],
+              ['-0.5em', -10, 0.1],
+              ['1ch', 2 * ch_width, 0.1]]
 
 for (const test_case of test_cases) {
   test_word_spacing(test_case[0], test_case[1], test_case[2]);

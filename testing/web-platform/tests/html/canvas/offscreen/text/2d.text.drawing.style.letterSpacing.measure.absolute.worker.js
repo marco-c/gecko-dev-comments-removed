@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("Testing letter spacing and word spacing");
+var t = async_test("Testing letter spacing with absolute length");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
@@ -33,11 +33,10 @@ function test_letter_spacing(value, difference_spacing, epsilon) {
 
 
 
-test_cases = [['3px', 33, 0],
-              ['5px', 55, 0],
-              ['-2px', -22, 0],
-              ['1em', 110, 0],
-              ['1in', 1056, 0],
+test_cases = [['3px', 33, 0.1],
+              ['5px', 55, 0.1],
+              ['-2px', -22, 0.1],
+              ['1in', 1056, 0.1],
               ['-0.1cm', -41.65, 0.2],
               ['-0.6mm', -24,95, 0.2]]
 
