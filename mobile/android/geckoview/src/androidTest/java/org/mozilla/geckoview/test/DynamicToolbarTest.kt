@@ -703,4 +703,45 @@ class DynamicToolbarTest : BaseSessionTest() {
             assertScreenshotResult(it.capturePixels(), reference)
         }
     }
+
+    @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
+    @Test
+    fun backgroundAttachmentFixed() {
+        
+        
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "ui.scrollbarFadeBeginDelay" to 0
+            )
+        )
+
+        val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
+
+        
+        mainSession.setActive(true)
+
+        mainSession.loadTestPath(BaseSessionTest.TOUCH_ACTION_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        
+        
+        mainSession.evaluateJS("document.documentElement.style.background = 'rgb(0, 128, 0) fixed'")
+
+        
+        mainSession.evaluateJS("document.documentElement.style.height = '100vh'")
+
+        mainSession.flushApzRepaints()
+
+        
+        sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
+
+        mainSession.flushApzRepaints()
+
+        sessionRule.display?.let {
+            assertScreenshotResult(it.capturePixels(), reference)
+        }
+    }
 }
