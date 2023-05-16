@@ -208,47 +208,19 @@ nsresult TextEditor::HandlePaste(AutoEditActionDataSetter& aEditActionData,
   return rv;
 }
 
-nsresult TextEditor::PasteTransferableAsAction(nsITransferable* aTransferable,
-                                               nsIPrincipal* aPrincipal) {
-  AutoEditActionDataSetter editActionData(*this, EditAction::ePaste,
-                                          aPrincipal);
-  
-  
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  {
-    
-    
-    
-    Result<ClipboardEventResult, nsresult> ret =
-        DispatchClipboardEventAndUpdateClipboard(ePaste, -1);
-    if (MOZ_UNLIKELY(ret.isErr())) {
-      NS_WARNING(
-          "EditorBase::DispatchClipboardEventAndUpdateClipboard(ePaste, -1) "
-          "failed");
-      return EditorBase::ToGenericNSResult(ret.unwrapErr());
-    }
-    switch (ret.inspect()) {
-      case ClipboardEventResult::DoDefault:
-        break;
-      case ClipboardEventResult::DefaultPreventedOfPaste:
-      case ClipboardEventResult::IgnoredOrError:
-        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
-      case ClipboardEventResult::CopyOrCutHandled:
-        MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
-    }
-  }
-
+nsresult TextEditor::HandlePasteTransferable(
+    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable) {
   if (!IsModifiable()) {
     return NS_OK;
   }
 
-  nsresult rv = InsertTextFromTransferable(aTransferable);
+  
+  
+  
+  nsresult rv = InsertTextFromTransferable(&aTransferable);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditor::InsertTextFromTransferable() failed");
-  return EditorBase::ToGenericNSResult(rv);
+  return rv;
 }
 
 bool TextEditor::CanPaste(int32_t aClipboardType) const {
