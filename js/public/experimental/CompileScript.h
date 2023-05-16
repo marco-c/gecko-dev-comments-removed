@@ -54,6 +54,7 @@ struct CompilationStorage {
   
   
   JS_HAZ_NON_GC_POINTER js::frontend::CompilationInput* input_ = nullptr;
+  bool isBorrowed_ = false;
 
   friend JS_PUBLIC_API already_AddRefed<JS::Stencil>
   CompileGlobalScriptToStencil(JS::FrontendContext* fc,
@@ -89,7 +90,10 @@ struct CompilationStorage {
 
  public:
   CompilationStorage() = default;
-  CompilationStorage(CompilationStorage&& other) : input_(other.input_) {
+  explicit CompilationStorage(js::frontend::CompilationInput* input)
+      : input_(input), isBorrowed_(true) {}
+  CompilationStorage(CompilationStorage&& other)
+      : input_(other.input_), isBorrowed_(other.isBorrowed_) {
     other.input_ = nullptr;
   }
 
@@ -102,10 +106,18 @@ struct CompilationStorage {
  public:
   bool hasInput() { return !!input_; }
 
+  
+  
+  bool allocateInput(FrontendContext* fc,
+                     const JS::ReadOnlyCompileOptions& options);
+
   js::frontend::CompilationInput& getInput() {
     MOZ_ASSERT(hasInput());
     return *input_;
   }
+
+  
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   void trace(JSTracer* trc);
 };

@@ -23,7 +23,8 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"
 #include "js/CompileOptions.h"
-#include "js/experimental/JSStencil.h"
+#include "js/experimental/CompileScript.h"  
+#include "js/experimental/JSStencil.h"      
 #include "js/HelperThreadAPI.h"
 #include "js/Stack.h"  
 #include "js/TypeDecls.h"
@@ -522,12 +523,12 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   mozilla::Vector<RefPtr<JS::Stencil>> stencils;
 
   
-  UniquePtr<frontend::CompilationInput> stencilInput_;
+  JS::CompilationStorage compileStorage_;
 
   
   RefPtr<frontend::CompilationStencil> stencil_;
 
-  UniquePtr<frontend::CompilationGCOutput> gcOutput_;
+  JS::InstantiationStorage instantiationStorage_;
 
   
   FrontendContext fc_;
