@@ -284,11 +284,11 @@ impl Default for ScrollAxis {
 #[repr(C)]
 pub struct ScrollFunction {
     
-    #[css(skip_if = "ScrollAxis::is_default")]
-    pub axis: ScrollAxis,
-    
     #[css(skip_if = "Scroller::is_default")]
     pub scroller: Scroller,
+    
+    #[css(skip_if = "ScrollAxis::is_default")]
+    pub axis: ScrollAxis,
 }
 
 impl ScrollFunction {
@@ -296,11 +296,25 @@ impl ScrollFunction {
     fn parse_arguments<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         
         
-        
-        
+        let mut scroller = None;
+        let mut axis = None;
+        loop {
+            if scroller.is_none() {
+                scroller = input.try_parse(Scroller::parse).ok();
+            }
+
+            if axis.is_none() {
+                axis = input.try_parse(ScrollAxis::parse).ok();
+                if axis.is_some() {
+                    continue;
+                }
+            }
+            break;
+        }
+
         Ok(Self {
-            axis: input.try_parse(ScrollAxis::parse).unwrap_or_default(),
-            scroller: input.try_parse(Scroller::parse).unwrap_or_default(),
+            scroller: scroller.unwrap_or_default(),
+            axis: axis.unwrap_or_default(),
         })
     }
 }
