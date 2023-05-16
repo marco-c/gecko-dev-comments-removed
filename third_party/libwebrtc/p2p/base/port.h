@@ -176,7 +176,7 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 
 
-class Port : public PortInterface, public sigslot::has_slots<> {
+class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
  public:
   
   

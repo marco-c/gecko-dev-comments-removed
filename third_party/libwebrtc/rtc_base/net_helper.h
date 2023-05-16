@@ -13,13 +13,14 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "rtc_base/system/rtc_export.h"
 
 
 
 namespace cricket {
 
-extern const char UDP_PROTOCOL_NAME[];
-extern const char TCP_PROTOCOL_NAME[];
+RTC_EXPORT extern const char UDP_PROTOCOL_NAME[];
+RTC_EXPORT extern const char TCP_PROTOCOL_NAME[];
 extern const char SSLTCP_PROTOCOL_NAME[];
 extern const char TLS_PROTOCOL_NAME[];
 
