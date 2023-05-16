@@ -21,16 +21,14 @@
 #include "nsString.h"
 
 class nsMappedAttributes;
+struct RawServoDeclarationBlock;
 namespace mozilla {
-struct StyleLockedDeclarationBlock;
 namespace dom {
 class Document;
 }  
 }  
 
 class nsHTMLStyleSheet final {
-  using StyleLockedDeclarationBlock = mozilla::StyleLockedDeclarationBlock;
-
  public:
   explicit nsHTMLStyleSheet(mozilla::dom::Document* aDocument);
 
@@ -45,13 +43,13 @@ class nsHTMLStyleSheet final {
   nsresult SetActiveLinkColor(nscolor aColor);
   nsresult SetVisitedLinkColor(nscolor aColor);
 
-  const StyleLockedDeclarationBlock* GetServoUnvisitedLinkDecl() const {
+  const RefPtr<RawServoDeclarationBlock>& GetServoUnvisitedLinkDecl() const {
     return mServoUnvisitedLinkDecl;
   }
-  const StyleLockedDeclarationBlock* GetServoVisitedLinkDecl() const {
+  const RefPtr<RawServoDeclarationBlock>& GetServoVisitedLinkDecl() const {
     return mServoVisitedLinkDecl;
   }
-  const mozilla::StyleLockedDeclarationBlock* GetServoActiveLinkDecl() const {
+  const RefPtr<RawServoDeclarationBlock>& GetServoActiveLinkDecl() const {
     return mServoActiveLinkDecl;
   }
 
@@ -71,15 +69,15 @@ class nsHTMLStyleSheet final {
   ~nsHTMLStyleSheet() = default;
 
   
-  nsresult ImplLinkColorSetter(
-      RefPtr<mozilla::StyleLockedDeclarationBlock>& aDecl, nscolor aColor);
+  nsresult ImplLinkColorSetter(RefPtr<RawServoDeclarationBlock>& aDecl,
+                               nscolor aColor);
 
  public:  
  private:
   mozilla::dom::Document* mDocument;
-  RefPtr<StyleLockedDeclarationBlock> mServoUnvisitedLinkDecl;
-  RefPtr<StyleLockedDeclarationBlock> mServoVisitedLinkDecl;
-  RefPtr<StyleLockedDeclarationBlock> mServoActiveLinkDecl;
+  RefPtr<RawServoDeclarationBlock> mServoUnvisitedLinkDecl;
+  RefPtr<RawServoDeclarationBlock> mServoVisitedLinkDecl;
+  RefPtr<RawServoDeclarationBlock> mServoActiveLinkDecl;
 
   PLDHashTable mMappedAttrTable;
   

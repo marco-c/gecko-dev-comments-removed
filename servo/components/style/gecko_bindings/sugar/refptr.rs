@@ -4,13 +4,14 @@
 
 
 
+use crate::gecko_bindings::sugar::ownership::HasArcFFI;
 use crate::gecko_bindings::{bindings, structs};
 use crate::Atom;
 use servo_arc::Arc;
-use std::fmt::Write;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::{fmt, mem, ptr};
+use std::fmt::Write;
 
 
 
@@ -200,6 +201,17 @@ impl<T> structs::RefPtr<T> {
     }
 
     
+    pub fn from_arc_ffi<U>(s: Arc<U>) -> Self
+    where
+        U: HasArcFFI<FFIType = T>,
+    {
+        Self {
+            mRawPtr: unsafe { mem::transmute(Arc::into_raw_offset(s)) },
+            _phantom_0: PhantomData,
+        }
+    }
+
+    
     pub fn set_arc(&mut self, other: Arc<T>) {
         unsafe {
             if !self.mRawPtr.is_null() {
@@ -207,6 +219,17 @@ impl<T> structs::RefPtr<T> {
             }
             self.mRawPtr = Arc::into_raw(other) as *mut _;
         }
+    }
+
+    
+    pub fn set_arc_ffi<U>(&mut self, other: Arc<U>)
+    where
+        U: HasArcFFI<FFIType = T>,
+    {
+        unsafe {
+            U::release_opt(self.mRawPtr.as_ref());
+        }
+        *self = unsafe { mem::transmute(Arc::into_raw_offset(other)) };
     }
 }
 

@@ -399,7 +399,7 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   mNonRuleFacesDirty = false;
 
   
-  nsTHashMap<nsPtrHashKey<StyleLockedFontFaceRule>, FontFaceImpl*> ruleFaceMap;
+  nsTHashMap<nsPtrHashKey<RawServoFontFaceRule>, FontFaceImpl*> ruleFaceMap;
   for (size_t i = 0, i_end = mRuleFaces.Length(); i < i_end; ++i) {
     FontFaceImpl* f = mRuleFaces[i].mFontFace;
     if (!f || !f->GetOwner()) {
@@ -429,14 +429,14 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   
   
   
-  nsTHashSet<StyleLockedFontFaceRule*> handledRules;
+  nsTHashSet<RawServoFontFaceRule*> handledRules;
 
   for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
     
     
     
     
-    StyleLockedFontFaceRule* rule = aRules[i].mRule;
+    RawServoFontFaceRule* rule = aRules[i].mRule;
     if (!handledRules.EnsureInserted(rule)) {
       
       continue;
@@ -618,7 +618,7 @@ void FontFaceSetDocumentImpl::InsertRuleFontFace(
   AddUserFontEntry(family, entry);
 }
 
-StyleLockedFontFaceRule* FontFaceSetDocumentImpl::FindRuleForEntry(
+RawServoFontFaceRule* FontFaceSetDocumentImpl::FindRuleForEntry(
     gfxFontEntry* aFontEntry) {
   NS_ASSERTION(!aFontEntry->mIsUserFontContainer, "only platform font entries");
   for (uint32_t i = 0; i < mRuleFaces.Length(); ++i) {
@@ -631,7 +631,7 @@ StyleLockedFontFaceRule* FontFaceSetDocumentImpl::FindRuleForEntry(
   return nullptr;
 }
 
-StyleLockedFontFaceRule* FontFaceSetDocumentImpl::FindRuleForUserFontEntry(
+RawServoFontFaceRule* FontFaceSetDocumentImpl::FindRuleForUserFontEntry(
     gfxUserFontEntry* aUserFontEntry) {
   for (uint32_t i = 0; i < mRuleFaces.Length(); ++i) {
     FontFaceImpl* f = mRuleFaces[i].mFontFace;

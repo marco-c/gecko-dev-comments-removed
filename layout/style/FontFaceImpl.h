@@ -18,11 +18,11 @@
 #include "nsTHashSet.h"
 
 class gfxFontFaceBufferSource;
+struct RawServoFontFaceRule;
 
 namespace mozilla {
 struct CSSFontFaceDescriptors;
 class PostTraversalTask;
-struct StyleLockedFontFaceRule;
 namespace dom {
 class CSSFontFaceRule;
 class FontFace;
@@ -101,9 +101,9 @@ class FontFaceImpl final {
 
   static already_AddRefed<FontFaceImpl> CreateForRule(
       FontFace* aOwner, FontFaceSetImpl* aFontFaceSet,
-      StyleLockedFontFaceRule* aRule);
+      RawServoFontFaceRule* aRule);
 
-  StyleLockedFontFaceRule* GetRule() { return mRule; }
+  RawServoFontFaceRule* GetRule() { return mRule; }
 
   bool HasLocalSrc() const;
 
@@ -235,7 +235,7 @@ class FontFaceImpl final {
 
   void GetDesc(nsCSSFontDesc aDescID, nsACString& aResult) const;
 
-  StyleLockedFontFaceRule* GetData() const {
+  RawServoFontFaceRule* GetData() const {
     AssertIsOnOwningThread();
     return HasRule() ? mRule : mDescriptors;
   }
@@ -249,7 +249,7 @@ class FontFaceImpl final {
 
   
   
-  RefPtr<StyleLockedFontFaceRule> mRule;
+  RefPtr<RawServoFontFaceRule> mRule;
 
   
   
@@ -281,7 +281,7 @@ class FontFaceImpl final {
   
   
   
-  RefPtr<StyleLockedFontFaceRule> mDescriptors;
+  RefPtr<RawServoFontFaceRule> mDescriptors;
 
   
   
