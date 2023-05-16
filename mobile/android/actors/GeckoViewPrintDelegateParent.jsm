@@ -33,6 +33,44 @@ class GeckoViewPrintDelegateParent extends GeckoViewActorParent {
     Glean.dotprint.requested.add(1);
   }
 
+  telemetryDotPrintPdfCompleted(status) {
+    if (status.isPdfSuccessful) {
+      Glean.dotprint.androidDialogRequested.add(1);
+    } else {
+      var reason = "";
+      switch (status.errorReason) {
+        
+        case -1: {
+          reason = "no_settings_service";
+          break;
+        }
+        
+        case -2: {
+          reason = "no_settings";
+          break;
+        }
+        
+        case -3: {
+          reason = "no_canonical_context";
+          break;
+        }
+        
+        case -4: {
+          reason = "no_activity_context_delegate";
+          break;
+        }
+        
+        case -5: {
+          reason = "no_activity_context";
+          break;
+        }
+        default:
+          reason = "unknown";
+      }
+      Glean.dotprint.failure[reason].add(1);
+    }
+  }
+
   printRequest() {
     if (this.browserStaticClone != null) {
       this.telemetryDotPrintRequested();
