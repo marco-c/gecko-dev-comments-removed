@@ -638,33 +638,6 @@ impl Parse for VerticalAlign {
 }
 
 
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToCss,
-    ToShmem,
-    ToComputedValue,
-    ToResolvedValue,
-)]
-#[repr(u8)]
-pub enum BaselineSource {
-    
-    Auto,
-    
-    First,
-    
-    Last,
-}
-
-
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AnimationIterationCount {
     
