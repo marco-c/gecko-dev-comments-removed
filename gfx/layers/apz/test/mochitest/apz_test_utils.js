@@ -841,6 +841,10 @@ function centerOf(element) {
 
 
 
+
+
+
+
 function hitTest(point) {
   var utils = getHitTestConfig().utils;
   dump("Hit-testing point (" + point.x + ", " + point.y + ")\n");
