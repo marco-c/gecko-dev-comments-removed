@@ -784,7 +784,9 @@ async function doEagerEvalESGetters(commands) {
 
 async function doEagerEvalDOMGetters(commands) {
   
-  const testData = [
+  
+  
+  const testDataExplicit = [
     
     ["document.documentElement.classList.length", 1],
     ["document.documentElement.classList.value", "class1"],
@@ -884,10 +886,10 @@ async function doEagerEvalDOMGetters(commands) {
   ];
   if (typeof Scheduler === "function") {
     
-    testData.push(["window.scheduler.constructor.name", "Scheduler"]);
+    testDataExplicit.push(["window.scheduler.constructor.name", "Scheduler"]);
   }
 
-  for (const [code, expectedResult] of testData) {
+  for (const [code, expectedResult] of testDataExplicit) {
     const response = await commands.scriptCommand.execute(code, {
       eager: true,
     });
@@ -904,42 +906,44 @@ async function doEagerEvalDOMGetters(commands) {
     ok(!response.helperResult, "no helper result");
   }
 
-  const testDataWithSideEffect = [
+  
+  
+  const testDataImplicit = [
     
     
-    `document.implementation`,
-    `document.domain`,
-    `document.referrer`,
-    `document.cookie`,
-    `document.lastModified`,
-    `document.readyState`,
-    `document.designMode`,
-    `document.onbeforescriptexecute`,
-    `document.onafterscriptexecute`,
+    [`document.implementation.constructor.name`, "DOMImplementation"],
+    [`typeof document.domain`, "string"],
+    [`typeof document.referrer`, "string"],
+    [`typeof document.cookie`, "string"],
+    [`typeof document.lastModified`, "string"],
+    [`typeof document.readyState`, "string"],
+    [`typeof document.designMode`, "string"],
+    [`typeof document.onbeforescriptexecute`, "object"],
+    [`typeof document.onafterscriptexecute`, "object"],
 
     
-    `document.documentElement.scrollTop`,
-    `document.documentElement.scrollLeft`,
-    `document.documentElement.scrollWidth`,
-    `document.documentElement.scrollHeight`,
+    [`typeof document.documentElement.scrollTop`, "number"],
+    [`typeof document.documentElement.scrollLeft`, "number"],
+    [`typeof document.documentElement.scrollWidth`, "number"],
+    [`typeof document.documentElement.scrollHeight`, "number"],
 
     
-    `performance.onresourcetimingbufferfull`,
+    [`typeof performance.onresourcetimingbufferfull`, "object"],
 
     
-    `window.name`,
-    `window.history`,
-    `window.customElements`,
-    `window.locationbar`,
-    `window.menubar`,
-    `window.status`,
-    `window.closed`,
+    [`typeof window.name`, "string"],
+    [`window.history.constructor.name`, "History"],
+    [`window.customElements.constructor.name`, "CustomElementRegistry"],
+    [`window.locationbar.constructor.name`, "BarProp"],
+    [`window.menubar.constructor.name`, "BarProp"],
+    [`typeof window.status`, "string"],
+    [`window.closed`, false],
 
     
-    `testCanvasContext.globalAlpha`,
+    [`testCanvasContext.globalAlpha`, 1],
   ];
 
-  for (const code of testDataWithSideEffect) {
+  for (const [code, expectedResult] of testDataImplicit) {
     const response = await commands.scriptCommand.execute(code, {
       eager: true,
     });
@@ -947,7 +951,7 @@ async function doEagerEvalDOMGetters(commands) {
       response,
       {
         input: code,
-        result: { type: "undefined" },
+        result: expectedResult,
       },
       code
     );

@@ -424,7 +424,7 @@ function makeSideeffectFreeDebugger(maybeEvalGlobal) {
       
       if (
         (reason == "get" || reason == "call") &&
-        nativeHasNoSideEffects(callee)
+        nativeIsEagerlyEvaluateable(callee)
       ) {
         
         return undefined;
@@ -531,9 +531,21 @@ function ensureSideEffectFreeNatives(maybeEvalGlobal) {
   gSideEffectFreeNatives = map;
 }
 
-function nativeHasNoSideEffects(fn) {
+function nativeIsEagerlyEvaluateable(fn) {
   if (fn.isBoundFunction) {
     fn = fn.boundTargetFunction;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (fn.isNativeGetterWithJitInfo()) {
+    return true;
   }
 
   
