@@ -8,6 +8,8 @@
 
 #  include "mozilla/Assertions.h"
 
+#  include "mozilla/mozalloc_oom.h"
+
 
 #  include "mozilla/rlbox/rlbox_config.h"
 #  include "mozilla/rlbox/rlbox_wasm2c_tls.hpp"
@@ -33,6 +35,13 @@ void moz_wasm2c_trap_handler(wasm_rt_trap_t code) {
 void moz_wasm2c_memgrow_failed() {
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::WasmLibrarySandboxMallocFailed, true);
+}
+
+
+
+
+void Z_hostgeckoZ_mozalloc_handle_oomZ_vi(void* ctx, uint32_t size) {
+  mozalloc_handle_oom(size);
 }
 }
 
