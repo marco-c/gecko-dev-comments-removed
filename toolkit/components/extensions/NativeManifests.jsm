@@ -93,6 +93,9 @@ var NativeManifests = {
       return null;
     }
 
+    
+    path = path.replaceAll("/", "\\");
+
     let manifest = await this._tryPath(type, path, name, context, true);
     return manifest ? { path, manifest } : null;
   },
