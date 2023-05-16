@@ -3235,15 +3235,6 @@ JS_PUBLIC_API void js::DumpInterpreterFrame(JSContext* cx,
 
 #endif 
 
-namespace js {
-
-
-
-
-JS_PUBLIC_API void DumpBacktrace(JSContext* cx, js::GenericPrinter& out);
-
-}  
-
 JS_PUBLIC_API void js::DumpBacktrace(JSContext* cx, FILE* fp) {
   Fprinter out(fp);
   js::DumpBacktrace(cx, out);
