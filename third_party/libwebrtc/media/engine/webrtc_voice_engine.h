@@ -88,6 +88,9 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   
   void StopAecDump() override;
 
+  absl::optional<webrtc::AudioDeviceModule::Stats> GetAudioDeviceStats()
+      override;
+
  private:
   
   

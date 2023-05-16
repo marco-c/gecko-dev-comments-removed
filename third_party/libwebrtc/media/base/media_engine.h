@@ -116,6 +116,9 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
 
   
   virtual void StopAecDump() = 0;
+
+  virtual absl::optional<webrtc::AudioDeviceModule::Stats>
+  GetAudioDeviceStats() = 0;
 };
 
 class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {

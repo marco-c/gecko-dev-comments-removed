@@ -29,6 +29,7 @@
 #include "api/stats/rtcstats_objects.h"
 #include "call/call.h"
 #include "media/base/media_channel.h"
+#include "modules/audio_device/include/audio_device.h"
 #include "pc/data_channel_utils.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/rtp_receiver.h"
@@ -205,6 +206,9 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   void ProducePeerConnectionStats_s(Timestamp timestamp,
                                     RTCStatsReport* report) const;
   
+  void ProduceAudioPlayoutStats_s(Timestamp timestamp,
+                                  RTCStatsReport* report) const;
+  
   
   
   
@@ -297,6 +301,8 @@ class RTCStatsCollector : public rtc::RefCountInterface,
       RTC_GUARDED_BY(cached_certificates_mutex_);
 
   Call::Stats call_stats_;
+
+  absl::optional<AudioDeviceModule::Stats> audio_device_stats_;
 
   
   
