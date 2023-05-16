@@ -175,13 +175,9 @@ class nsScannerSubstring {
 
   size_type Length() const { return mLength; }
 
-  int32_t CountChar(char16_t) const;
-
   void Rebind(const nsScannerSubstring&, const nsScannerIterator&,
               const nsScannerIterator&);
   void Rebind(const nsAString&);
-
-  const nsAString& AsString() const;
 
   bool GetNextFragment(nsScannerFragment&) const;
   bool GetPrevFragment(nsScannerFragment&) const;
@@ -222,10 +218,6 @@ class nsScannerSubstring {
   nsScannerBufferList* mBufferList;
   size_type mLength;
 
-  
-  nsDependentSubstring mFlattenedRep;
-  bool mIsDirty;
-
   friend class nsScannerSharedSubstring;
 };
 
@@ -255,7 +247,6 @@ class nsScannerString : public nsScannerSubstring {
 
 
 
-
 class nsScannerSharedSubstring {
  public:
   nsScannerSharedSubstring() : mBuffer(nullptr), mBufferList(nullptr) {}
@@ -268,20 +259,12 @@ class nsScannerSharedSubstring {
   void Rebind(const nsScannerIterator& aStart, const nsScannerIterator& aEnd);
 
   
-  nsAString& writable() {
-    if (mBufferList) MakeMutable();
-
-    return mString;
-  }
-
-  
   const nsAString& str() const { return mString; }
 
  private:
   typedef nsScannerBufferList::Buffer Buffer;
 
   void ReleaseBuffer();
-  void MakeMutable();
 
   nsDependentSubstring mString;
   Buffer* mBuffer;
@@ -470,39 +453,7 @@ inline size_t Distance(const nsScannerIterator& aStart,
 bool CopyUnicodeTo(const nsScannerIterator& aSrcStart,
                    const nsScannerIterator& aSrcEnd, nsAString& aDest);
 
-inline bool CopyUnicodeTo(const nsScannerSubstring& aSrc, nsAString& aDest) {
-  nsScannerIterator begin, end;
-  return CopyUnicodeTo(aSrc.BeginReading(begin), aSrc.EndReading(end), aDest);
-}
-
 bool AppendUnicodeTo(const nsScannerIterator& aSrcStart,
                      const nsScannerIterator& aSrcEnd, nsAString& aDest);
-
-inline bool AppendUnicodeTo(const nsScannerSubstring& aSrc, nsAString& aDest) {
-  nsScannerIterator begin, end;
-  return AppendUnicodeTo(aSrc.BeginReading(begin), aSrc.EndReading(end), aDest);
-}
-
-bool AppendUnicodeTo(const nsScannerIterator& aSrcStart,
-                     const nsScannerIterator& aSrcEnd,
-                     nsScannerSharedSubstring& aDest);
-
-bool FindCharInReadable(char16_t aChar, nsScannerIterator& aStart,
-                        const nsScannerIterator& aEnd);
-
-bool FindInReadable(const nsAString& aPattern, nsScannerIterator& aStart,
-                    nsScannerIterator& aEnd,
-                    nsStringComparator = nsTDefaultStringComparator);
-
-bool RFindInReadable(const nsAString& aPattern, nsScannerIterator& aStart,
-                     nsScannerIterator& aEnd,
-                     nsStringComparator = nsTDefaultStringComparator);
-
-inline bool CaseInsensitiveFindInReadable(const nsAString& aPattern,
-                                          nsScannerIterator& aStart,
-                                          nsScannerIterator& aEnd) {
-  return FindInReadable(aPattern, aStart, aEnd,
-                        nsCaseInsensitiveStringComparator);
-}
 
 #endif  

@@ -108,35 +108,15 @@ nsScannerSubstring::nsScannerSubstring()
     : mStart(nullptr, nullptr),
       mEnd(nullptr, nullptr),
       mBufferList(nullptr),
-      mLength(0),
-      mIsDirty(true) {}
+      mLength(0) {}
 
 nsScannerSubstring::nsScannerSubstring(const nsAString& s)
-    : mBufferList(nullptr), mIsDirty(true) {
+    : mBufferList(nullptr) {
   Rebind(s);
 }
 
 nsScannerSubstring::~nsScannerSubstring() {
   release_ownership_of_buffer_list();
-}
-
-int32_t nsScannerSubstring::CountChar(char16_t c) const {
-  
-
-
-
-  size_type result = 0;
-  size_type lengthToExamine = Length();
-
-  nsScannerIterator iter;
-  for (BeginReading(iter);;) {
-    int32_t lengthToExamineInThisFragment = iter.size_forward();
-    const char16_t* fromBegin = iter.get();
-    result += size_type(
-        NS_COUNT(fromBegin, fromBegin + lengthToExamineInThisFragment, c));
-    if (!(lengthToExamine -= lengthToExamineInThisFragment)) return result;
-    iter.advance(lengthToExamineInThisFragment);
-  }
 }
 
 void nsScannerSubstring::Rebind(const nsScannerSubstring& aString,
@@ -151,38 +131,15 @@ void nsScannerSubstring::Rebind(const nsScannerSubstring& aString,
   mEnd = aEnd;
   mBufferList = aString.mBufferList;
   mLength = Distance(aStart, aEnd);
-  mIsDirty = true;
 }
 
 void nsScannerSubstring::Rebind(const nsAString& aString) {
   release_ownership_of_buffer_list();
 
   mBufferList = new nsScannerBufferList(AllocBufferFromString(aString));
-  mIsDirty = true;
 
   init_range_from_buffer_list();
   acquire_ownership_of_buffer_list();
-}
-
-const nsAString& nsScannerSubstring::AsString() const {
-  if (mIsDirty) {
-    nsScannerSubstring* mutable_this = const_cast<nsScannerSubstring*>(this);
-
-    if (mStart.mBuffer == mEnd.mBuffer) {
-      
-      
-      mutable_this->mFlattenedRep.Rebind(mStart.mPosition, mEnd.mPosition);
-    } else {
-      
-      nsScannerIterator start, end;
-      CopyUnicodeTo(BeginReading(start), EndReading(end),
-                    mutable_this->mFlattenedRep);
-    }
-
-    mutable_this->mIsDirty = false;
-  }
-
-  return mFlattenedRep;
 }
 
 nsScannerIterator& nsScannerSubstring::BeginReading(
@@ -273,8 +230,6 @@ void nsScannerString::AppendBuffer(Buffer* aBuf) {
 
   mEnd.mBuffer = aBuf;
   mEnd.mPosition = aBuf->DataEnd();
-
-  mIsDirty = true;
 }
 
 void nsScannerString::DiscardPrefix(const nsScannerIterator& aIter) {
@@ -286,8 +241,6 @@ void nsScannerString::DiscardPrefix(const nsScannerIterator& aIter) {
   old_start.mBuffer->DecrementUsageCount();
 
   mBufferList->DiscardUnreferencedPrefix(old_start.mBuffer);
-
-  mIsDirty = true;
 }
 
 void nsScannerString::UngetReadable(const nsAString& aReadable,
@@ -321,8 +274,6 @@ void nsScannerString::UngetReadable(const nsAString& aReadable,
 
   mEnd.mBuffer = mBufferList->Tail();
   mEnd.mPosition = mEnd.mBuffer->DataEnd();
-
-  mIsDirty = true;
 }
 
 
@@ -364,16 +315,6 @@ void nsScannerSharedSubstring::ReleaseBuffer() {
   mBuffer->DecrementUsageCount();
   mBufferList->DiscardUnreferencedPrefix(mBuffer);
   mBufferList->Release();
-}
-
-void nsScannerSharedSubstring::MakeMutable() {
-  nsString temp(mString);  
-  mString.Assign(temp);    
-
-  ReleaseBuffer();
-
-  mBuffer = nullptr;
-  mBufferList = nullptr;
 }
 
 
@@ -418,20 +359,6 @@ bool CopyUnicodeTo(const nsScannerIterator& aSrcStart,
 }
 
 bool AppendUnicodeTo(const nsScannerIterator& aSrcStart,
-                     const nsScannerIterator& aSrcEnd,
-                     nsScannerSharedSubstring& aDest) {
-  
-  if (aDest.str().IsEmpty()) {
-    
-    
-    aDest.Rebind(aSrcStart, aSrcEnd);
-    return true;
-  }
-  
-  return AppendUnicodeTo(aSrcStart, aSrcEnd, aDest.writable());
-}
-
-bool AppendUnicodeTo(const nsScannerIterator& aSrcStart,
                      const nsScannerIterator& aSrcEnd, nsAString& aDest) {
   const nsAString::size_type oldLength = aDest.Length();
   mozilla::CheckedInt<nsAString::size_type> newLen(
@@ -449,128 +376,4 @@ bool AppendUnicodeTo(const nsScannerIterator& aSrcStart,
 
   copy_multifragment_string(fromBegin, aSrcEnd, writer);
   return true;
-}
-
-bool FindCharInReadable(char16_t aChar, nsScannerIterator& aSearchStart,
-                        const nsScannerIterator& aSearchEnd) {
-  while (aSearchStart != aSearchEnd) {
-    int32_t fragmentLength;
-    if (SameFragment(aSearchStart, aSearchEnd))
-      fragmentLength = aSearchEnd.get() - aSearchStart.get();
-    else
-      fragmentLength = aSearchStart.size_forward();
-
-    const char16_t* charFoundAt =
-        nsCharTraits<char16_t>::find(aSearchStart.get(), fragmentLength, aChar);
-    if (charFoundAt) {
-      aSearchStart.advance(charFoundAt - aSearchStart.get());
-      return true;
-    }
-
-    aSearchStart.advance(fragmentLength);
-  }
-
-  return false;
-}
-
-bool FindInReadable(const nsAString& aPattern, nsScannerIterator& aSearchStart,
-                    nsScannerIterator& aSearchEnd,
-                    const nsStringComparator compare) {
-  bool found_it = false;
-
-  
-  if (aSearchStart != aSearchEnd) {
-    nsAString::const_iterator aPatternStart, aPatternEnd;
-    aPattern.BeginReading(aPatternStart);
-    aPattern.EndReading(aPatternEnd);
-
-    
-    while (!found_it) {
-      
-      
-      while (aSearchStart != aSearchEnd &&
-             compare(aPatternStart.get(), aSearchStart.get(), 1, 1))
-        ++aSearchStart;
-
-      
-      
-      if (aSearchStart == aSearchEnd) break;
-
-      
-      nsAString::const_iterator testPattern(aPatternStart);
-      nsScannerIterator testSearch(aSearchStart);
-
-      
-      
-      for (;;) {
-        
-        
-        ++testPattern;
-        ++testSearch;
-
-        
-        
-        if (testPattern == aPatternEnd) {
-          found_it = true;
-          aSearchEnd = testSearch;  
-                                    
-          break;
-        }
-
-        
-        
-        
-        if (testSearch == aSearchEnd) {
-          aSearchStart = aSearchEnd;
-          break;
-        }
-
-        
-        
-        
-        if (compare(testPattern.get(), testSearch.get(), 1, 1)) {
-          ++aSearchStart;
-          break;
-        }
-      }
-    }
-  }
-
-  return found_it;
-}
-
-
-
-
-
-
-
-bool RFindInReadable(const nsAString& aPattern, nsScannerIterator& aSearchStart,
-                     nsScannerIterator& aSearchEnd,
-                     const nsStringComparator aComparator) {
-  bool found_it = false;
-
-  nsScannerIterator savedSearchEnd(aSearchEnd);
-  nsScannerIterator searchStart(aSearchStart), searchEnd(aSearchEnd);
-
-  while (searchStart != searchEnd) {
-    if (FindInReadable(aPattern, searchStart, searchEnd, aComparator)) {
-      found_it = true;
-
-      
-      aSearchStart = searchStart;
-      aSearchEnd = searchEnd;
-
-      
-      
-      
-      ++searchStart;
-      searchEnd = savedSearchEnd;
-    }
-  }
-
-  
-  if (!found_it) aSearchStart = aSearchEnd;
-
-  return found_it;
 }
