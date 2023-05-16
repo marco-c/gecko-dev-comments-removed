@@ -1,7 +1,7 @@
 
 
-const { ComponentUtils } = ChromeUtils.import(
-  "resource://gre/modules/ComponentUtils.jsm"
+const { ComponentUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/ComponentUtils.sys.mjs"
 );
 
 const WEBEXTENSION_ID = "tabswitch-talos@mozilla.org";
