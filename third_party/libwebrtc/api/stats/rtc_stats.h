@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/system/rtc_export_template.h"
@@ -55,15 +56,20 @@ class RTCStatsMemberInterface;
 
 class RTC_EXPORT RTCStats {
  public:
+  RTCStats(const std::string& id, Timestamp timestamp)
+      : id_(id), timestamp_(timestamp) {}
   RTCStats(std::string id, int64_t timestamp_us)
-      : id_(std::move(id)), timestamp_us_(timestamp_us) {}
+      : RTCStats(std::move(id), Timestamp::Micros(timestamp_us)) {}
+
   virtual ~RTCStats() {}
 
   virtual std::unique_ptr<RTCStats> copy() const = 0;
 
   const std::string& id() const { return id_; }
   
-  int64_t timestamp_us() const { return timestamp_us_; }
+  int64_t timestamp_us() const { return timestamp_.us(); }
+  Timestamp timestamp() const { return timestamp_; }
+
   
   virtual const char* type() const = 0;
   
@@ -97,7 +103,7 @@ class RTC_EXPORT RTCStats {
   MembersOfThisObjectAndAncestors(size_t additional_capacity) const;
 
   std::string const id_;
-  int64_t timestamp_us_;
+  Timestamp timestamp_;
 };
 
 
