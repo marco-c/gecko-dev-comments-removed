@@ -12,8 +12,9 @@ use crate::{
     util_libc::{last_os_error, sys_fill_exact},
     {use_file, Error},
 };
+use core::mem::MaybeUninit;
 
-pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
+pub fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     
     static HAS_GETRANDOM: LazyBool = LazyBool::new();
     if HAS_GETRANDOM.unsync_init(is_getrandom_available) {

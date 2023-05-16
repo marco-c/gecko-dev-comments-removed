@@ -8,7 +8,7 @@
 use crate::Error;
 
 extern crate std;
-use std::thread_local;
+use std::{mem::MaybeUninit, thread_local};
 
 use js_sys::{global, Function, Uint8Array};
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
@@ -16,6 +16,8 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 
 
 const WEB_CRYPTO_BUFFER_SIZE: usize = 256;
+
+const NODE_MAX_BUFFER_SIZE: usize = (1 << 31) - 1;
 
 enum RngSource {
     Node(NodeCrypto),
@@ -28,14 +30,27 @@ thread_local!(
     static RNG_SOURCE: Result<RngSource, Error> = getrandom_init();
 );
 
-pub(crate) fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
+pub(crate) fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     RNG_SOURCE.with(|result| {
         let source = result.as_ref().map_err(|&e| e)?;
 
         match source {
             RngSource::Node(n) => {
-                if n.random_fill_sync(dest).is_err() {
-                    return Err(Error::NODE_RANDOM_FILL_SYNC);
+                for chunk in dest.chunks_mut(NODE_MAX_BUFFER_SIZE) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let res = n.random_fill_sync(unsafe {
+                        Uint8Array::view_mut_raw(chunk.as_mut_ptr() as *mut u8, chunk.len())
+                    });
+                    if res.is_err() {
+                        return Err(Error::NODE_RANDOM_FILL_SYNC);
+                    }
                 }
             }
             RngSource::Web(crypto, buf) => {
@@ -49,7 +64,9 @@ pub(crate) fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
                     if crypto.get_random_values(&sub_buf).is_err() {
                         return Err(Error::WEB_GET_RANDOM_VALUES);
                     }
-                    sub_buf.copy_to(chunk);
+
+                    
+                    unsafe { sub_buf.raw_copy_to_ptr(chunk.as_mut_ptr() as *mut u8) };
                 }
             }
         };
@@ -120,7 +137,7 @@ extern "C" {
     type NodeCrypto;
     
     #[wasm_bindgen(method, js_name = randomFillSync, catch)]
-    fn random_fill_sync(this: &NodeCrypto, buf: &mut [u8]) -> Result<(), JsValue>;
+    fn random_fill_sync(this: &NodeCrypto, buf: Uint8Array) -> Result<(), JsValue>;
 
     
     

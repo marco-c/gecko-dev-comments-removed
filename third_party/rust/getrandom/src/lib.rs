@@ -174,10 +174,17 @@
 
 
 
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/getrandom/0.2.8"
+    html_root_url = "https://docs.rs/getrandom/0.2.9"
 )]
 #![no_std]
 #![warn(rust_2018_idioms, unused_lifetimes, missing_docs)]
@@ -185,6 +192,9 @@
 
 #[macro_use]
 extern crate cfg_if;
+
+use crate::util::{slice_as_uninit_mut, slice_assume_init_mut};
+use core::mem::MaybeUninit;
 
 mod error;
 mod util;
@@ -200,9 +210,12 @@ pub use crate::error::Error;
 
 
 
+
+
+
+
 cfg_if! {
-    if #[cfg(any(target_os = "emscripten", target_os = "haiku",
-                 target_os = "redox"))] {
+    if #[cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "aix"))] {
         mod util_libc;
         #[path = "use_file.rs"] mod imp;
     } else if #[cfg(any(target_os = "android", target_os = "linux"))] {
@@ -222,8 +235,8 @@ cfg_if! {
         #[path = "dragonfly.rs"] mod imp;
     } else if #[cfg(target_os = "fuchsia")] {
         #[path = "fuchsia.rs"] mod imp;
-    } else if #[cfg(target_os = "ios")] {
-        #[path = "ios.rs"] mod imp;
+    } else if #[cfg(any(target_os = "ios", target_os = "watchos", target_os = "tvos"))] {
+        #[path = "apple-other.rs"] mod imp;
     } else if #[cfg(target_os = "macos")] {
         mod util_libc;
         mod use_file;
@@ -231,10 +244,10 @@ cfg_if! {
     } else if #[cfg(target_os = "openbsd")] {
         mod util_libc;
         #[path = "openbsd.rs"] mod imp;
-    } else if #[cfg(target_os = "wasi")] {
+    } else if #[cfg(all(target_arch = "wasm32", target_os = "wasi"))] {
         #[path = "wasi.rs"] mod imp;
-    } else if #[cfg(all(target_arch = "x86_64", target_os = "hermit"))] {
-        #[path = "rdrand.rs"] mod imp;
+    } else if #[cfg(target_os = "hermit")] {
+        #[path = "hermit.rs"] mod imp;
     } else if #[cfg(target_os = "vxworks")] {
         mod util_libc;
         #[path = "vxworks.rs"] mod imp;
@@ -244,23 +257,28 @@ cfg_if! {
         #[path = "espidf.rs"] mod imp;
     } else if #[cfg(windows)] {
         #[path = "windows.rs"] mod imp;
+    } else if #[cfg(all(target_os = "horizon", target_arch = "arm"))] {
+        // We check for target_arch = "arm" because the Nintendo Switch also
+        // uses Horizon OS (it is aarch64).
+        mod util_libc;
+        #[path = "3ds.rs"] mod imp;
+    } else if #[cfg(target_os = "emscripten")] {
+        mod util_libc;
+        #[path = "emscripten.rs"] mod imp;
     } else if #[cfg(all(target_arch = "x86_64", target_env = "sgx"))] {
         #[path = "rdrand.rs"] mod imp;
     } else if #[cfg(all(feature = "rdrand",
                         any(target_arch = "x86_64", target_arch = "x86")))] {
         #[path = "rdrand.rs"] mod imp;
     } else if #[cfg(all(feature = "js",
-                        target_arch = "wasm32", target_os = "unknown"))] {
+                        any(target_arch = "wasm32", target_arch = "wasm64"),
+                        target_os = "unknown"))] {
         #[path = "js.rs"] mod imp;
-    } else if #[cfg(all(target_os = "horizon", target_arch = "arm"))] {
-        // We check for target_arch = "arm" because the Nintendo Switch also
-        // uses Horizon OS (it is aarch64).
-        mod util_libc;
-        #[path = "3ds.rs"] mod imp;
     } else if #[cfg(feature = "custom")] {
         use custom as imp;
-    } else if #[cfg(all(target_arch = "wasm32", target_os = "unknown"))] {
-        compile_error!("the wasm32-unknown-unknown target is not supported by \
+    } else if #[cfg(all(any(target_arch = "wasm32", target_arch = "wasm64"),
+                        target_os = "unknown"))] {
+        compile_error!("the wasm*-unknown-unknown targets are not supported by \
                         default, you may need to enable the \"js\" feature. \
                         For more information see: \
                         https://docs.rs/getrandom/#webassembly-support");
@@ -283,9 +301,42 @@ cfg_if! {
 
 
 
+#[inline]
 pub fn getrandom(dest: &mut [u8]) -> Result<(), Error> {
-    if dest.is_empty() {
-        return Ok(());
+    
+    
+    
+    getrandom_uninit(unsafe { slice_as_uninit_mut(dest) })?;
+    Ok(())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn getrandom_uninit(dest: &mut [MaybeUninit<u8>]) -> Result<&mut [u8], Error> {
+    if !dest.is_empty() {
+        imp::getrandom_inner(dest)?;
     }
-    imp::getrandom_inner(dest)
+    
+    
+    Ok(unsafe { slice_assume_init_mut(dest) })
 }

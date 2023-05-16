@@ -16,29 +16,30 @@
 
 
 
-
 use crate::{
     use_file,
     util_libc::{sys_fill_exact, Weak},
     Error,
 };
-use core::mem;
+use core::mem::{self, MaybeUninit};
 
-#[cfg(target_os = "illumos")]
-type GetRandomFn = unsafe extern "C" fn(*mut u8, libc::size_t, libc::c_uint) -> libc::ssize_t;
-#[cfg(target_os = "solaris")]
-type GetRandomFn = unsafe extern "C" fn(*mut u8, libc::size_t, libc::c_uint) -> libc::c_int;
+static GETRANDOM: Weak = unsafe { Weak::new("getrandom\0") };
+type GetRandomFn =
+    unsafe extern "C" fn(*mut libc::c_void, libc::size_t, libc::c_uint) -> libc::ssize_t;
 
-pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
-    
-    static GETRANDOM: Weak = unsafe { Weak::new("getrandom\0") };
+pub fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     if let Some(fptr) = GETRANDOM.ptr() {
         let func: GetRandomFn = unsafe { mem::transmute(fptr) };
         
         
         for chunk in dest.chunks_mut(256) {
             sys_fill_exact(chunk, |buf| unsafe {
-                func(buf.as_mut_ptr(), buf.len(), 0) as libc::ssize_t
+                
+                func(
+                    buf.as_mut_ptr() as *mut libc::c_void,
+                    buf.len(),
+                    libc::GRND_RANDOM as libc::c_uint,
+                )
             })?
         }
         Ok(())

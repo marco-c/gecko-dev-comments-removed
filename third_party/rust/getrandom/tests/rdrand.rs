@@ -11,5 +11,10 @@ mod rdrand;
 #[path = "../src/util.rs"]
 mod util;
 
-use rdrand::getrandom_inner as getrandom_impl;
+
+
+fn getrandom_impl(dest: &mut [u8]) -> Result<(), Error> {
+    rdrand::getrandom_inner(unsafe { util::slice_as_uninit_mut(dest) })?;
+    Ok(())
+}
 mod common;

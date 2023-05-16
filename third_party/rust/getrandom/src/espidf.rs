@@ -8,13 +8,13 @@
 
 
 use crate::Error;
-use core::ffi::c_void;
+use core::{ffi::c_void, mem::MaybeUninit};
 
 extern "C" {
     fn esp_fill_random(buf: *mut c_void, len: usize) -> u32;
 }
 
-pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
+pub fn getrandom_inner(dest: &mut [MaybeUninit<u8>]) -> Result<(), Error> {
     
     
     

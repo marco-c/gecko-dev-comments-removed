@@ -6,7 +6,11 @@
 
 
 #![allow(dead_code)]
-use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+use core::{
+    mem::MaybeUninit,
+    ptr,
+    sync::atomic::{AtomicUsize, Ordering::Relaxed},
+};
 
 
 
@@ -61,4 +65,37 @@ impl LazyBool {
     pub fn unsync_init(&self, init: impl FnOnce() -> bool) -> bool {
         self.0.unsync_init(|| init() as usize) != 0
     }
+}
+
+
+
+
+#[inline(always)]
+pub unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
+    
+    &mut *(slice as *mut [MaybeUninit<T>] as *mut [T])
+}
+
+#[inline]
+pub fn uninit_slice_fill_zero(slice: &mut [MaybeUninit<u8>]) -> &mut [u8] {
+    unsafe { ptr::write_bytes(slice.as_mut_ptr(), 0, slice.len()) };
+    unsafe { slice_assume_init_mut(slice) }
+}
+
+#[inline(always)]
+pub fn slice_as_uninit<T>(slice: &[T]) -> &[MaybeUninit<T>] {
+    
+    
+    
+    unsafe { &*(slice as *const [T] as *const [MaybeUninit<T>]) }
+}
+
+
+
+
+
+#[inline(always)]
+pub unsafe fn slice_as_uninit_mut<T>(slice: &mut [T]) -> &mut [MaybeUninit<T>] {
+    
+    &mut *(slice as *mut [T] as *mut [MaybeUninit<T>])
 }
