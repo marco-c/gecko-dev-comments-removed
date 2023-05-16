@@ -1,11 +1,5 @@
 "use strict";
 
-
-
-
-
-var location_href = globalThis.location.href;
-
 self.addEventListener("message", ({ data }) => foo(data));
 
 function foo(data) {

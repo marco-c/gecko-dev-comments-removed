@@ -107,7 +107,7 @@ add_task(async function() {
   );
 
   
-  setInputValue(hud, "globalThis.location_href");
+  setInputValue(hud, "globalThis.location.href");
   await waitForEagerEvaluationResult(hud, `"${documentWithWorkerUrl}"`);
 
   info("Select the worker target");
