@@ -3086,13 +3086,8 @@ impl ComputedValues {
     }
 
     
-    pub fn visited_style(&self) -> Option<<&ComputedValues> {
-        self.visited_style.as_deref()
-    }
-
-    
     pub fn visited_rules(&self) -> Option<<&StrongRuleNode> {
-        self.visited_style.as_ref().and_then(|s| s.rules.as_ref())
+        self.visited_style().and_then(|s| s.rules.as_ref())
     }
 
     
@@ -3320,6 +3315,11 @@ impl ops::DerefMut for ComputedValues {
 
 #[cfg(feature = "servo")]
 impl ComputedValuesInner {
+    
+    pub fn visited_style(&self) -> Option<<&ComputedValues> {
+        self.visited_style.as_deref()
+    }
+
     % for style_struct in data.active_style_structs():
         
         #[inline]
@@ -3330,12 +3330,6 @@ impl ComputedValuesInner {
         
         #[inline]
         pub fn get_${style_struct.name_lower}(&self) -> &style_structs::${style_struct.name} {
-            &self.${style_struct.ident}
-        }
-
-        
-        
-        pub fn ${style_struct.name_lower}_arc(&self) -> &Arc<style_structs::${style_struct.name}> {
             &self.${style_struct.ident}
         }
 
@@ -3537,24 +3531,10 @@ impl ComputedValuesInner {
     }
 }
 
-% if engine == "gecko":
-    pub use crate::servo_arc::RawOffsetArc as BuilderArc;
-    
-    fn clone_arc<T: 'static>(x: &BuilderArc<T>) -> Arc<T> {
-        Arc::from_raw_offset(x.clone())
-    }
-% else:
-    pub use crate::servo_arc::Arc as BuilderArc;
-    
-    fn clone_arc<T: 'static>(x: &BuilderArc<T>) -> Arc<T> {
-        x.clone()
-    }
-% endif
-
 
 pub enum StyleStructRef<'a, T: 'static> {
     
-    Borrowed(&'a BuilderArc<T>),
+    Borrowed(&'a T),
     
     Owned(UniqueArc<T>),
     
@@ -3569,7 +3549,7 @@ where
     
     pub fn mutate(&mut self) -> &mut T {
         if let StyleStructRef::Borrowed(v) = *self {
-            *self = StyleStructRef::Owned(UniqueArc::new((**v).clone()));
+            *self = StyleStructRef::Owned(UniqueArc::new(v.clone()));
         }
 
         match *self {
@@ -3588,8 +3568,8 @@ where
     pub fn ptr_eq(&self, struct_to_copy_from: &T) -> bool {
         match *self {
             StyleStructRef::Owned(..) => false,
-            StyleStructRef::Borrowed(arc) => {
-                &**arc as *const T == struct_to_copy_from as *const T
+            StyleStructRef::Borrowed(s) => {
+                s as *const T == struct_to_copy_from as *const T
             }
             StyleStructRef::Vacated => panic!("Accessed vacated style struct")
         }
@@ -3606,7 +3586,7 @@ where
 
         match inner {
             StyleStructRef::Owned(arc) => arc,
-            StyleStructRef::Borrowed(arc) => UniqueArc::new((**arc).clone()),
+            StyleStructRef::Borrowed(s) => UniqueArc::new(s.clone()),
             StyleStructRef::Vacated => panic!("Accessed vacated style struct"),
         }
     }
@@ -3632,7 +3612,8 @@ where
     pub fn build(self) -> Arc<T> {
         match self {
             StyleStructRef::Owned(v) => v.shareable(),
-            StyleStructRef::Borrowed(v) => clone_arc(v),
+            
+            StyleStructRef::Borrowed(v) => unsafe { Arc::from_raw_addrefed(v) },
             StyleStructRef::Vacated => panic!("Accessed vacated style struct")
         }
     }
@@ -3644,7 +3625,7 @@ impl<'a, T: 'a> ops::Deref for StyleStructRef<'a, T> {
     fn deref(&self) -> &T {
         match *self {
             StyleStructRef::Owned(ref v) => &**v,
-            StyleStructRef::Borrowed(v) => &**v,
+            StyleStructRef::Borrowed(v) => v,
             StyleStructRef::Vacated => panic!("Accessed vacated style struct")
         }
     }
@@ -3747,9 +3728,9 @@ impl<'a> StyleBuilder<'a> {
             visited_style: None,
             % for style_struct in data.active_style_structs():
             % if style_struct.inherited:
-            ${style_struct.ident}: StyleStructRef::Borrowed(inherited_style.${style_struct.name_lower}_arc()),
+            ${style_struct.ident}: StyleStructRef::Borrowed(inherited_style.get_${style_struct.name_lower}()),
             % else:
-            ${style_struct.ident}: StyleStructRef::Borrowed(reset_style.${style_struct.name_lower}_arc()),
+            ${style_struct.ident}: StyleStructRef::Borrowed(reset_style.get_${style_struct.name_lower}()),
             % endif
             % endfor
         }
@@ -3787,7 +3768,7 @@ impl<'a> StyleBuilder<'a> {
             visited_style: None,
             % for style_struct in data.active_style_structs():
             ${style_struct.ident}: StyleStructRef::Borrowed(
-                style_to_derive_from.${style_struct.name_lower}_arc()
+                style_to_derive_from.get_${style_struct.name_lower}()
             ),
             % endfor
         }
@@ -3798,7 +3779,7 @@ impl<'a> StyleBuilder<'a> {
         % for style_struct in data.active_style_structs():
         % if not style_struct.inherited:
         self.${style_struct.ident} =
-            StyleStructRef::Borrowed(style.${style_struct.name_lower}_arc());
+            StyleStructRef::Borrowed(style.get_${style_struct.name_lower}());
         % endif
         % endfor
     }
@@ -3965,7 +3946,7 @@ impl<'a> StyleBuilder<'a> {
         
         pub fn reset_${style_struct.name_lower}_struct(&mut self) {
             self.${style_struct.ident} =
-                StyleStructRef::Borrowed(self.reset_style.${style_struct.name_lower}_arc());
+                StyleStructRef::Borrowed(self.reset_style.get_${style_struct.name_lower}());
         }
     % endfor
     <% del style_struct %>

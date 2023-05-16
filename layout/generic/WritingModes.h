@@ -15,6 +15,7 @@
 
 #include "nsRect.h"
 #include "nsBidiUtils.h"
+#include "nsStyleStruct.h"
 
 
 

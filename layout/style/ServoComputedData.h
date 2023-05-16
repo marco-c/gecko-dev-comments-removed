@@ -15,27 +15,7 @@ class nsWindowSizes;
 
 
 
-#define STYLE_STRUCT(name_) struct nsStyle##name_;
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-
 namespace mozilla {
-
-template <typename T>
-struct ServoRawOffsetArc {
-  
-  
-  T* mPtr;
-};
-
-
-
-
-
-template <typename T>
-struct ServoManuallyDrop {
-  T mInner;
-};
 
 struct ServoWritingMode {
   uint8_t mBits;
@@ -51,18 +31,11 @@ struct ServoRuleNode {
 
 class ComputedStyle;
 
-struct ServoVisitedStyle {
-  
-  
-  
-  ComputedStyle* mPtr;
-};
+}  
 
-#define STYLE_STRUCT(name_) struct Gecko##name_;
+#define STYLE_STRUCT(name_) struct nsStyle##name_;
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
-
-}  
 
 class ServoComputedData;
 
@@ -86,9 +59,11 @@ class ServoComputedData {
   
   explicit ServoComputedData(const ServoComputedDataForgotten aValue);
 
-#define STYLE_STRUCT(name_)                                \
-  mozilla::ServoRawOffsetArc<mozilla::Gecko##name_> name_; \
-  inline const nsStyle##name_* GetStyle##name_() const;
+#define STYLE_STRUCT(name_)                                       \
+  const nsStyle##name_* name_;                                    \
+  const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN { \
+    return name_;                                                 \
+  }
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
@@ -107,7 +82,7 @@ class ServoComputedData {
   
   
   
-  mozilla::ServoVisitedStyle visited_style;
+  const mozilla::ComputedStyle* visited_style;
 
   
   
