@@ -82,7 +82,8 @@ class RtpReplayer final {
   
   static void ReplayPackets(rtc::FakeClock* clock,
                             Call* call,
-                            test::RtpFileReader* rtp_reader);
+                            test::RtpFileReader* rtp_reader,
+                            const RtpHeaderExtensionMap& extensions);
 };  
 
 }  
