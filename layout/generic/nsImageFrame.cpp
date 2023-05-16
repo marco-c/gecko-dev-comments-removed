@@ -1079,11 +1079,6 @@ auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
     return ImageFrameType::ForElementRequest;
   }
 
-  
-  if (StaticPrefs::browser_display_force_inline_alttext()) {
-    return ImageFrameType::None;
-  }
-
   if (!HasAltText(aElement)) {
     return ImageFrameType::ForElementRequest;
   }
