@@ -5,11 +5,11 @@
 
 
 DIRS += [
+    "commands",
     "listeners",
 ]
 
 DevToolsModules(
-    "commands.js",
     "eager-ecma-allowlist.js",
     "eager-function-allowlist.js",
     "eval-with-debugger.js",
