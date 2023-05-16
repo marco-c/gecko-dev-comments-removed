@@ -311,6 +311,12 @@ var whitelist = [
 
   
   { file: "resource://gre/modules/PlacesQuery.sys.mjs" },
+
+  
+  { file: "resource://app/localization/en-US/browser/mozTabList.ftl" },
+  { file: "chrome://browser/content/moz-tab-list.css" },
+  { file: "chrome://browser/content/moz-tab-list.mjs" },
+  { file: "chrome://browser/content/moz-tab-row.css" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
