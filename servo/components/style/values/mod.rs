@@ -106,6 +106,11 @@ where
     }
 
     if !v.is_finite() && nan_inf_enabled() {
+        
+        
+        
+        
+
         if v.is_nan() {
             dest.write_str("NaN * 1")?;
         } else if v == f32::INFINITY {
@@ -387,6 +392,14 @@ impl std::borrow::Borrow<crate::gecko_string_cache::WeakAtom> for AtomIdent {
 
 
 pub fn serialize_percentage<W>(value: CSSFloat, dest: &mut CssWriter<W>) -> fmt::Result
+where
+    W: Write,
+{
+    serialize_specified_dimension(value * 100., "%",  false, dest)
+}
+
+
+pub fn serialize_normalized_percentage<W>(value: CSSFloat, dest: &mut CssWriter<W>) -> fmt::Result
 where
     W: Write,
 {
