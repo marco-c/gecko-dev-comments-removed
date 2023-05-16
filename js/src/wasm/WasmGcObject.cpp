@@ -703,33 +703,29 @@ js::gc::AllocKind js::WasmStructObject::allocKindForTypeDef(
 
 
 template <bool ZeroFields>
-WasmStructObject* WasmStructObject::createStruct(
+WasmStructObject* WasmStructObject::createStructOOL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::InitialHeap initialHeap) {
-  const TypeDef* typeDef = typeDefData->typeDef;
-  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
-
-  uint32_t totalBytes = typeDef->structType().size_;
-  uint32_t inlineBytes, outlineBytes;
-  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+    js::gc::InitialHeap initialHeap, uint32_t inlineBytes,
+    uint32_t outlineBytes) {
+  
+  
+  
 
   
   
   Nursery& nursery = cx->nursery();
-  PointerAndUint7 outlineData(nullptr, 0);
-  if (outlineBytes > 0) {
-    outlineData = nursery.mallocedBlockCache().alloc(outlineBytes);
-    if (!outlineData.pointer()) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
+  PointerAndUint7 outlineData =
+      nursery.mallocedBlockCache().alloc(outlineBytes);
+  if (MOZ_UNLIKELY(!outlineData.pointer())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
   }
 
   
   Rooted<WasmStructObject*> structObj(cx);
   structObj =
       (WasmStructObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
-  if (!structObj) {
+  if (MOZ_UNLIKELY(!structObj)) {
     ReportOutOfMemory(cx);
     if (outlineData.pointer()) {
       nursery.mallocedBlockCache().free(outlineData);
@@ -739,21 +735,16 @@ WasmStructObject* WasmStructObject::createStruct(
 
   
   structObj->outlineData_ = (uint8_t*)outlineData.pointer();
-
   if constexpr (ZeroFields) {
     memset(&(structObj->inlineData_[0]), 0, inlineBytes);
+    memset(outlineData.pointer(), 0, outlineBytes);
   }
-  if (outlineBytes > 0) {
-    if constexpr (ZeroFields) {
-      memset(outlineData.pointer(), 0, outlineBytes);
-    }
-    if (js::gc::IsInsideNursery(structObj)) {
-      
-      if (!nursery.registerTrailer(outlineData, outlineBytes)) {
-        nursery.mallocedBlockCache().free(outlineData);
-        ReportOutOfMemory(cx);
-        return nullptr;
-      }
+  if (MOZ_LIKELY(js::gc::IsInsideNursery(structObj))) {
+    
+    if (!nursery.registerTrailer(outlineData, outlineBytes)) {
+      nursery.mallocedBlockCache().free(outlineData);
+      ReportOutOfMemory(cx);
+      return nullptr;
     }
   }
 
