@@ -5,347 +5,133 @@
 
 
 #include <string.h>
-#include "mozilla/Telemetry.h"
 #include "sqlite3.h"
-#include "nsThreadUtils.h"
 #include "mozilla/net/IOActivityMonitor.h"
-#include "mozilla/IOInterposer.h"
-
-
-#define LAST_KNOWN_VFS_VERSION 3
-
-
-#define LAST_KNOWN_IOMETHODS_VERSION 3
 
 namespace {
+
+
+constexpr int kLastKnowVfsVersion = 3;
+
+
+constexpr int kLastKnownIOMethodsVersion = 3;
 
 using namespace mozilla;
 using namespace mozilla::net;
 
-struct Histograms {
-  const char* name;
-  const Telemetry::HistogramID readB;
-  const Telemetry::HistogramID writeB;
-  const Telemetry::HistogramID readMS;
-  const Telemetry::HistogramID writeMS;
-  const Telemetry::HistogramID syncMS;
-};
-
-#define SQLITE_TELEMETRY(FILENAME, HGRAM)             \
-  {                                                   \
-    FILENAME, Telemetry::MOZ_SQLITE_##HGRAM##_READ_B, \
-        Telemetry::MOZ_SQLITE_##HGRAM##_WRITE_B,      \
-        Telemetry::MOZ_SQLITE_##HGRAM##_READ_MS,      \
-        Telemetry::MOZ_SQLITE_##HGRAM##_WRITE_MS,     \
-        Telemetry::MOZ_SQLITE_##HGRAM##_SYNC_MS       \
-  }
-
-Histograms gHistograms[] = {SQLITE_TELEMETRY("places.sqlite", PLACES),
-                            SQLITE_TELEMETRY("cookies.sqlite", COOKIES),
-                            SQLITE_TELEMETRY("webappsstore.sqlite", WEBAPPS),
-                            SQLITE_TELEMETRY(nullptr, OTHER)};
-#undef SQLITE_TELEMETRY
-
-
-
-class IOThreadAutoTimer {
- public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  explicit IOThreadAutoTimer(
-      Telemetry::HistogramID aId,
-      IOInterposeObserver::Operation aOp = IOInterposeObserver::OpNone)
-      : start(TimeStamp::Now()),
-        id(aId)
-#if !defined(XP_WIN)
-        ,
-        op(aOp)
-#endif
-  {
-  }
-
-  
-
-
-
-
-
-  explicit IOThreadAutoTimer(IOInterposeObserver::Operation aOp)
-      : start(TimeStamp::Now()),
-        id(Telemetry::HistogramCount)
-#if !defined(XP_WIN)
-        ,
-        op(aOp)
-#endif
-  {
-  }
-
-  ~IOThreadAutoTimer() {
-    TimeStamp end(TimeStamp::Now());
-    uint32_t mainThread = NS_IsMainThread() ? 1 : 0;
-    if (id != Telemetry::HistogramCount) {
-      Telemetry::AccumulateTimeDelta(
-          static_cast<Telemetry::HistogramID>(id + mainThread), start, end);
-    }
-    
-    
-    
-#if !defined(XP_WIN)
-    if (IOInterposer::IsObservedOperation(op)) {
-      const char* main_ref = "sqlite-mainthread";
-      const char* other_ref = "sqlite-otherthread";
-
-      
-      IOInterposeObserver::Observation ob(op, start, end,
-                                          (mainThread ? main_ref : other_ref));
-      
-      IOInterposer::Report(ob);
-    }
-#endif 
-  }
-
- private:
-  const TimeStamp start;
-  const Telemetry::HistogramID id;
-#if !defined(XP_WIN)
-  IOInterposeObserver::Operation op;
-#endif
-};
-
-struct telemetry_file {
+struct BaseFile {
   
   sqlite3_file base;
-
-  
-  Histograms* histograms;
-
   
   char* location;
-
   
   sqlite3_file pReal[1];
 };
 
-
-
-
-int xClose(sqlite3_file* pFile) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  {  
-    IOThreadAutoTimer ioTimer(IOInterposeObserver::OpClose);
-    rc = p->pReal->pMethods->xClose(p->pReal);
-  }
-  if (rc == SQLITE_OK) {
-    delete p->base.pMethods;
-    p->base.pMethods = nullptr;
-    delete[] p->location;
-  }
-  return rc;
+int BaseClose(sqlite3_file* pFile) {
+  BaseFile* p = (BaseFile*)pFile;
+  delete[] p->location;
+  return p->pReal->pMethods->xClose(p->pReal);
 }
 
-
-
-
-int xRead(sqlite3_file* pFile, void* zBuf, int iAmt, sqlite_int64 iOfst) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  IOThreadAutoTimer ioTimer(p->histograms->readMS, IOInterposeObserver::OpRead);
-  int rc;
-  rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+int BaseRead(sqlite3_file* pFile, void* zBuf, int iAmt, sqlite_int64 iOfst) {
+  BaseFile* p = (BaseFile*)pFile;
+  int rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
   if (rc == SQLITE_OK && IOActivityMonitor::IsActive()) {
     IOActivityMonitor::Read(nsDependentCString(p->location), iAmt);
   }
-  
-  if (rc != SQLITE_IOERR_SHORT_READ)
-    Telemetry::Accumulate(p->histograms->readB, rc == SQLITE_OK ? iAmt : 0);
   return rc;
 }
 
-
-
-
-int xFileSize(sqlite3_file* pFile, sqlite_int64* pSize) {
-  IOThreadAutoTimer ioTimer(IOInterposeObserver::OpStat);
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
-  return rc;
-}
-
-
-
-
-int xWrite(sqlite3_file* pFile, const void* zBuf, int iAmt,
-           sqlite_int64 iOfst) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  IOThreadAutoTimer ioTimer(p->histograms->writeMS,
-                            IOInterposeObserver::OpWrite);
-  int rc;
-  rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
+int BaseWrite(sqlite3_file* pFile, const void* zBuf, int iAmt,
+              sqlite_int64 iOfst) {
+  BaseFile* p = (BaseFile*)pFile;
+  int rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
   if (rc == SQLITE_OK && IOActivityMonitor::IsActive()) {
     IOActivityMonitor::Write(nsDependentCString(p->location), iAmt);
   }
-  Telemetry::Accumulate(p->histograms->writeB, rc == SQLITE_OK ? iAmt : 0);
   return rc;
 }
 
-
-
-
-int xTruncate(sqlite3_file* pFile, sqlite_int64 size) {
-  IOThreadAutoTimer ioTimer(Telemetry::MOZ_SQLITE_TRUNCATE_MS);
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  Telemetry::AutoTimer<Telemetry::MOZ_SQLITE_TRUNCATE_MS> timer;
-  rc = p->pReal->pMethods->xTruncate(p->pReal, size);
-  return rc;
+int BaseTruncate(sqlite3_file* pFile, sqlite_int64 size) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xTruncate(p->pReal, size);
 }
 
-
-
-
-int xSync(sqlite3_file* pFile, int flags) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  IOThreadAutoTimer ioTimer(p->histograms->syncMS,
-                            IOInterposeObserver::OpFSync);
+int BaseSync(sqlite3_file* pFile, int flags) {
+  BaseFile* p = (BaseFile*)pFile;
   return p->pReal->pMethods->xSync(p->pReal, flags);
 }
 
-
-
-
-int xLock(sqlite3_file* pFile, int eLock) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xLock(p->pReal, eLock);
-  return rc;
+int BaseFileSize(sqlite3_file* pFile, sqlite_int64* pSize) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xFileSize(p->pReal, pSize);
 }
 
-
-
-
-int xUnlock(sqlite3_file* pFile, int eLock) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xUnlock(p->pReal, eLock);
-  return rc;
+int BaseLock(sqlite3_file* pFile, int eLock) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xLock(p->pReal, eLock);
 }
 
-
-
-
-int xCheckReservedLock(sqlite3_file* pFile, int* pResOut) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc = p->pReal->pMethods->xCheckReservedLock(p->pReal, pResOut);
-  return rc;
+int BaseUnlock(sqlite3_file* pFile, int eLock) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xUnlock(p->pReal, eLock);
 }
 
-
-
-
-int xFileControl(sqlite3_file* pFile, int op, void* pArg) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc = p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
-  return rc;
+int BaseCheckReservedLock(sqlite3_file* pFile, int* pResOut) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xCheckReservedLock(p->pReal, pResOut);
 }
 
-
-
-
-int xSectorSize(sqlite3_file* pFile) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xSectorSize(p->pReal);
-  return rc;
+int BaseFileControl(sqlite3_file* pFile, int op, void* pArg) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
 }
 
-
-
-
-int xDeviceCharacteristics(sqlite3_file* pFile) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xDeviceCharacteristics(p->pReal);
-  return rc;
+int BaseSectorSize(sqlite3_file* pFile) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xSectorSize(p->pReal);
 }
 
-
-
-
-int xShmLock(sqlite3_file* pFile, int ofst, int n, int flags) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  return p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
+int BaseDeviceCharacteristics(sqlite3_file* pFile) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xDeviceCharacteristics(p->pReal);
 }
 
-int xShmMap(sqlite3_file* pFile, int iRegion, int szRegion, int isWrite,
-            void volatile** pp) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
-  return rc;
+int BaseShmMap(sqlite3_file* pFile, int iPg, int pgsz, int bExtend,
+               void volatile** pp) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xShmMap(p->pReal, iPg, pgsz, bExtend, pp);
 }
 
-void xShmBarrier(sqlite3_file* pFile) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  p->pReal->pMethods->xShmBarrier(p->pReal);
+int BaseShmLock(sqlite3_file* pFile, int offset, int n, int flags) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xShmLock(p->pReal, offset, n, flags);
 }
 
-int xShmUnmap(sqlite3_file* pFile, int delFlag) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xShmUnmap(p->pReal, delFlag);
-  return rc;
+void BaseShmBarrier(sqlite3_file* pFile) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xShmBarrier(p->pReal);
 }
 
-int xFetch(sqlite3_file* pFile, sqlite3_int64 iOff, int iAmt, void** pp) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  MOZ_ASSERT(p->pReal->pMethods->iVersion >= 3);
-  return p->pReal->pMethods->xFetch(p->pReal, iOff, iAmt, pp);
+int BaseShmUnmap(sqlite3_file* pFile, int deleteFlag) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xShmUnmap(p->pReal, deleteFlag);
 }
 
-int xUnfetch(sqlite3_file* pFile, sqlite3_int64 iOff, void* pResOut) {
-  telemetry_file* p = (telemetry_file*)pFile;
-  MOZ_ASSERT(p->pReal->pMethods->iVersion >= 3);
-  return p->pReal->pMethods->xUnfetch(p->pReal, iOff, pResOut);
+int BaseFetch(sqlite3_file* pFile, sqlite3_int64 iOfst, int iAmt, void** pp) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xFetch(p->pReal, iOfst, iAmt, pp);
 }
 
-int xOpen(sqlite3_vfs* vfs, const char* zName, sqlite3_file* pFile, int flags,
-          int* pOutFlags) {
-  IOThreadAutoTimer ioTimer(Telemetry::MOZ_SQLITE_OPEN_MS,
-                            IOInterposeObserver::OpCreateOrOpen);
-  Telemetry::AutoTimer<Telemetry::MOZ_SQLITE_OPEN_MS> timer;
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  int rc;
-  telemetry_file* p = (telemetry_file*)pFile;
-  Histograms* h = nullptr;
-  
-  for (size_t i = 0; i < sizeof(gHistograms) / sizeof(gHistograms[0]); i++) {
-    h = &gHistograms[i];
-    
-    if (!h->name) break;
-    if (!zName) continue;
-    const char* match = strstr(zName, h->name);
-    if (!match) continue;
-    char c = match[strlen(h->name)];
-    
-    if (!c || c == '-') break;
-  }
-  p->histograms = h;
+int BaseUnfetch(sqlite3_file* pFile, sqlite3_int64 iOfst, void* pPage) {
+  BaseFile* p = (BaseFile*)pFile;
+  return p->pReal->pMethods->xUnfetch(p->pReal, iOfst, pPage);
+}
 
-  rc = orig_vfs->xOpen(orig_vfs, zName, p->pReal, flags, pOutFlags);
-  if (rc != SQLITE_OK) return rc;
-
+int BaseOpen(sqlite3_vfs* vfs, const char* zName, sqlite3_file* pFile,
+             int flags, int* pOutFlags) {
+  BaseFile* p = (BaseFile*)pFile;
   if (zName) {
     p->location = new char[7 + strlen(zName) + 1];
     strcpy(p->location, "file://");
@@ -355,129 +141,46 @@ int xOpen(sqlite3_vfs* vfs, const char* zName, sqlite3_file* pFile, int flags,
     strcpy(p->location, "file://");
   }
 
-  if (p->pReal->pMethods) {
-    sqlite3_io_methods* pNew = new sqlite3_io_methods;
-    const sqlite3_io_methods* pSub = p->pReal->pMethods;
-    memset(pNew, 0, sizeof(*pNew));
-    
-    
-    
-    pNew->iVersion = pSub->iVersion;
-    MOZ_ASSERT(pNew->iVersion <= LAST_KNOWN_IOMETHODS_VERSION);
-    pNew->xClose = xClose;
-    pNew->xRead = xRead;
-    pNew->xWrite = xWrite;
-    pNew->xTruncate = xTruncate;
-    pNew->xSync = xSync;
-    pNew->xFileSize = xFileSize;
-    pNew->xLock = xLock;
-    pNew->xUnlock = xUnlock;
-    pNew->xCheckReservedLock = xCheckReservedLock;
-    pNew->xFileControl = xFileControl;
-    pNew->xSectorSize = xSectorSize;
-    pNew->xDeviceCharacteristics = xDeviceCharacteristics;
-    if (pNew->iVersion >= 2) {
-      
-      pNew->xShmMap = pSub->xShmMap ? xShmMap : 0;
-      pNew->xShmLock = pSub->xShmLock ? xShmLock : 0;
-      pNew->xShmBarrier = pSub->xShmBarrier ? xShmBarrier : 0;
-      pNew->xShmUnmap = pSub->xShmUnmap ? xShmUnmap : 0;
-    }
-    if (pNew->iVersion >= 3) {
-      
-      
-      
-      
-      MOZ_ASSERT(pSub->xFetch);
-      pNew->xFetch = xFetch;
-      MOZ_ASSERT(pSub->xUnfetch);
-      pNew->xUnfetch = xUnfetch;
-    }
-    pFile->pMethods = pNew;
+  sqlite3_vfs* origVfs = (sqlite3_vfs*)(vfs->pAppData);
+  int rc = origVfs->xOpen(origVfs, zName, p->pReal, flags, pOutFlags);
+  if (rc) {
+    return rc;
   }
-  return rc;
-}
+  if (p->pReal->pMethods) {
+    
+    
+    
+    MOZ_ASSERT(p->pReal->pMethods->iVersion == kLastKnownIOMethodsVersion);
+    static const sqlite3_io_methods IOmethods = {
+        kLastKnownIOMethodsVersion, 
+        BaseClose,                  
+        BaseRead,                   
+        BaseWrite,                  
+        BaseTruncate,               
+        BaseSync,                   
+        BaseFileSize,               
+        BaseLock,                   
+        BaseUnlock,                 
+        BaseCheckReservedLock,      
+        BaseFileControl,            
+        BaseSectorSize,             
+        BaseDeviceCharacteristics,  
+        BaseShmMap,                 
+        BaseShmLock,                
+        BaseShmBarrier,             
+        BaseShmUnmap,               
+        BaseFetch,                  
+        BaseUnfetch                 
+    };
+    pFile->pMethods = &IOmethods;
+  }
 
-int xDelete(sqlite3_vfs* vfs, const char* zName, int syncDir) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xDelete(orig_vfs, zName, syncDir);
-}
-
-int xAccess(sqlite3_vfs* vfs, const char* zName, int flags, int* pResOut) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xAccess(orig_vfs, zName, flags, pResOut);
-}
-
-int xFullPathname(sqlite3_vfs* vfs, const char* zName, int nOut, char* zOut) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xFullPathname(orig_vfs, zName, nOut, zOut);
-}
-
-void* xDlOpen(sqlite3_vfs* vfs, const char* zFilename) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xDlOpen(orig_vfs, zFilename);
-}
-
-void xDlError(sqlite3_vfs* vfs, int nByte, char* zErrMsg) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  orig_vfs->xDlError(orig_vfs, nByte, zErrMsg);
-}
-
-void (*xDlSym(sqlite3_vfs* vfs, void* pHdle, const char* zSym))(void) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xDlSym(orig_vfs, pHdle, zSym);
-}
-
-void xDlClose(sqlite3_vfs* vfs, void* pHandle) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  orig_vfs->xDlClose(orig_vfs, pHandle);
-}
-
-int xRandomness(sqlite3_vfs* vfs, int nByte, char* zOut) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xRandomness(orig_vfs, nByte, zOut);
-}
-
-int xSleep(sqlite3_vfs* vfs, int microseconds) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xSleep(orig_vfs, microseconds);
-}
-
-int xCurrentTime(sqlite3_vfs* vfs, double* prNow) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xCurrentTime(orig_vfs, prNow);
-}
-
-int xGetLastError(sqlite3_vfs* vfs, int nBuf, char* zBuf) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xGetLastError(orig_vfs, nBuf, zBuf);
-}
-
-int xCurrentTimeInt64(sqlite3_vfs* vfs, sqlite3_int64* piNow) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xCurrentTimeInt64(orig_vfs, piNow);
-}
-
-static int xSetSystemCall(sqlite3_vfs* vfs, const char* zName,
-                          sqlite3_syscall_ptr pFunc) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xSetSystemCall(orig_vfs, zName, pFunc);
-}
-
-static sqlite3_syscall_ptr xGetSystemCall(sqlite3_vfs* vfs, const char* zName) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xGetSystemCall(orig_vfs, zName);
-}
-
-static const char* xNextSystemCall(sqlite3_vfs* vfs, const char* zName) {
-  sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
-  return orig_vfs->xNextSystemCall(orig_vfs, zName);
+  return SQLITE_OK;
 }
 
 }  
 
-namespace mozilla {
-namespace storage {
+namespace mozilla::storage {
 
 const char* GetBaseVFSName(bool exclusive) {
   return exclusive ? "base-vfs-excl" : "base-vfs";
@@ -492,56 +195,55 @@ UniquePtr<sqlite3_vfs> ConstructBaseVFS(bool exclusive) {
 #  define EXPECTED_VFS_EXCL "unix-excl"
 #endif
 
-  bool expected_vfs;
-  sqlite3_vfs* vfs;
-  if (!exclusive) {
-    
-    vfs = sqlite3_vfs_find(nullptr);
-    expected_vfs = vfs->zName && !strcmp(vfs->zName, EXPECTED_VFS);
-  } else {
-    vfs = sqlite3_vfs_find(EXPECTED_VFS_EXCL);
-    expected_vfs = (vfs != nullptr);
-  }
-  if (!expected_vfs) {
+  if (sqlite3_vfs_find(GetBaseVFSName(exclusive))) {
     return nullptr;
   }
 
-  auto tvfs = MakeUnique<::sqlite3_vfs>();
-  memset(tvfs.get(), 0, sizeof(::sqlite3_vfs));
-  
-  
-  
-  tvfs->iVersion = vfs->iVersion;
-  MOZ_ASSERT(vfs->iVersion <= LAST_KNOWN_VFS_VERSION);
-  tvfs->szOsFile =
-      sizeof(telemetry_file) - sizeof(sqlite3_file) + vfs->szOsFile;
-  tvfs->mxPathname = vfs->mxPathname;
-  tvfs->zName = GetBaseVFSName(exclusive);
-  tvfs->pAppData = vfs;
-  tvfs->xOpen = xOpen;
-  tvfs->xDelete = xDelete;
-  tvfs->xAccess = xAccess;
-  tvfs->xFullPathname = xFullPathname;
-  tvfs->xDlOpen = xDlOpen;
-  tvfs->xDlError = xDlError;
-  tvfs->xDlSym = xDlSym;
-  tvfs->xDlClose = xDlClose;
-  tvfs->xRandomness = xRandomness;
-  tvfs->xSleep = xSleep;
-  tvfs->xCurrentTime = xCurrentTime;
-  tvfs->xGetLastError = xGetLastError;
-  if (tvfs->iVersion >= 2) {
+  bool found;
+  sqlite3_vfs* origVfs;
+  if (!exclusive) {
     
-    tvfs->xCurrentTimeInt64 = xCurrentTimeInt64;
+    origVfs = sqlite3_vfs_find(nullptr);
+    found = origVfs && origVfs->zName && !strcmp(origVfs->zName, EXPECTED_VFS);
+  } else {
+    origVfs = sqlite3_vfs_find(EXPECTED_VFS_EXCL);
+    found = (origVfs != nullptr);
   }
-  if (tvfs->iVersion >= 3) {
-    
-    tvfs->xSetSystemCall = xSetSystemCall;
-    tvfs->xGetSystemCall = xGetSystemCall;
-    tvfs->xNextSystemCall = xNextSystemCall;
+  if (!found) {
+    return nullptr;
   }
-  return tvfs;
+
+  
+  
+  
+  MOZ_ASSERT(origVfs->iVersion == kLastKnowVfsVersion);
+
+  sqlite3_vfs vfs = {
+      kLastKnowVfsVersion,                                    
+      origVfs->szOsFile + static_cast<int>(sizeof(BaseFile)), 
+      origVfs->mxPathname,                                    
+      nullptr,                                                
+      GetBaseVFSName(exclusive),                              
+      origVfs,                                                
+      BaseOpen,                                               
+      origVfs->xDelete,                                       
+      origVfs->xAccess,                                       
+      origVfs->xFullPathname,     
+      origVfs->xDlOpen,           
+      origVfs->xDlError,          
+      origVfs->xDlSym,            
+      origVfs->xDlClose,          
+      origVfs->xRandomness,       
+      origVfs->xSleep,            
+      origVfs->xCurrentTime,      
+      origVfs->xGetLastError,     
+      origVfs->xCurrentTimeInt64, 
+      origVfs->xSetSystemCall,    
+      origVfs->xGetSystemCall,    
+      origVfs->xNextSystemCall    
+  };
+
+  return MakeUnique<sqlite3_vfs>(vfs);
 }
 
-}  
 }  
