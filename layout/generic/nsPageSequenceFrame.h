@@ -77,27 +77,6 @@ class nsSharedPageData {
   
   
   
-  
-  
-  float mPagesPerSheetScale = 1.0f;
-  
-  
-  
-  
-  
-  uint32_t mPagesPerSheetNumCols = 1;
-  nsPoint mPagesPerSheetGridOrigin;
-
-  
-  
-  float mCellWidth = 1.0f;
-  float mCellHeight = 1.0f;
-
-  
-  
-  
-  
-  
   const nsPagesPerSheetInfo* PagesPerSheetInfo();
 
  private:

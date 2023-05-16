@@ -48,6 +48,14 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
   uint32_t GetNumPages() const { return mNumPages; }
 
+  float GetPagesPerSheetScale() const { return mPagesPerSheetScale; }
+  uint32_t GetPagesPerSheetNumCols() const { return mPagesPerSheetNumCols; }
+  nsPoint GetPagesPerSheetGridOrigin() const {
+    return mPagesPerSheetGridOrigin;
+  }
+  float GetGridCellWidth() const { return mGridCellWidth; }
+  float GetGridCellHeight() const { return mGridCellHeight; }
+
  private:
   
   
@@ -64,6 +72,28 @@ class PrintedSheetFrame final : public nsContainerFrame {
   nsSharedPageData* mPD = nullptr;
   
   uint32_t mNumPages = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  float mPagesPerSheetScale = 1.0f;
+  
+  
+  
+  
+  
+  uint32_t mPagesPerSheetNumCols = 1;
+
+  nsPoint mPagesPerSheetGridOrigin;
+
+  
+  
+  float mGridCellWidth = 1.0f;
+  float mGridCellHeight = 1.0f;
 };
 
 }  

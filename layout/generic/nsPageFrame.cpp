@@ -25,6 +25,7 @@
 #include "nsTextFormatter.h"      
 #include "nsBidiUtils.h"
 #include "nsIPrintSettings.h"
+#include "PrintedSheetFrame.h"
 
 #include "mozilla/Logging.h"
 extern mozilla::LazyLogModule gLayoutPrintingLog;
@@ -542,6 +543,11 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   MOZ_ASSERT(aFrame->IsPageFrame());
   auto* pageFrame = static_cast<const nsPageFrame*>(aFrame);
 
+  const nsContainerFrame* const parentFrame = pageFrame->GetParent();
+  MOZ_ASSERT(parentFrame->IsPrintedSheetFrame(),
+             "Parent of nsPageFrame should be PrintedSheetFrame");
+  auto* sheetFrame = static_cast<const PrintedSheetFrame*>(parentFrame);
+
   
   
   const nsSize contentPageSize = pageFrame->ComputePageSize();
@@ -553,10 +559,10 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   nsSharedPageData* pd = pageFrame->GetSharedPageData();
   const auto* ppsInfo = pd->PagesPerSheetInfo();
   if (ppsInfo->mNumPages > 1) {
-    scale *= pd->mPagesPerSheetScale;
-    gridOrigin = pd->mPagesPerSheetGridOrigin;
-    std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
-                                                   pd->mPagesPerSheetNumCols);
+    scale *= sheetFrame->GetPagesPerSheetScale();
+    gridOrigin = sheetFrame->GetPagesPerSheetGridOrigin();
+    std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(
+        pageFrame->IndexOnSheet(), sheetFrame->GetPagesPerSheetNumCols());
   }
 
   
@@ -584,7 +590,8 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     }
 
     if (angle != 0.0) {
-      float cellRatio = pd->mCellWidth / pd->mCellHeight;
+      float cellRatio =
+          sheetFrame->GetGridCellWidth() / sheetFrame->GetGridCellHeight();
       float pageRatio =
           float(contentPageSize.width) / float(contentPageSize.height);
       

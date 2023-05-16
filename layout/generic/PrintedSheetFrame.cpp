@@ -288,9 +288,9 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
     
     
     NS_WARNING("Zero area for pages-per-sheet grid, or zero-sized grid");
-    mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
-    mPD->mPagesPerSheetNumCols = 1;
-    mPD->mPagesPerSheetScale = 0.0f;
+    mPagesPerSheetGridOrigin = pageGridOrigin;
+    mPagesPerSheetNumCols = 1;
+    mPagesPerSheetScale = 0.0f;
     return;
   }
 
@@ -325,11 +325,11 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
   
 
   
-  mPD->mPagesPerSheetGridOrigin = pageGridOrigin;
-  mPD->mPagesPerSheetNumCols = numCols;
-  mPD->mPagesPerSheetScale = scale;
-  mPD->mCellWidth = float(availSpaceOnSheet.width) / float(numCols);
-  mPD->mCellHeight = float(availSpaceOnSheet.height) / float(numRows);
+  mPagesPerSheetGridOrigin = pageGridOrigin;
+  mPagesPerSheetNumCols = numCols;
+  mPagesPerSheetScale = scale;
+  mGridCellWidth = float(availSpaceOnSheet.width) / float(numCols);
+  mGridCellHeight = float(availSpaceOnSheet.height) / float(numRows);
 }
 
 #ifdef DEBUG_FRAME_DUMP
