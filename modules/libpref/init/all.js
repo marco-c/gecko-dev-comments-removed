@@ -3810,6 +3810,11 @@ pref("browser.translations.simulateUnsupportedEngine", false);
 
 
 
+pref("browser.translations.chaos.errors", false);
+pref("browser.translations.chaos.timeoutMS", 0);
+
+
+
 
 
 
