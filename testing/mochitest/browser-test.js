@@ -1040,8 +1040,8 @@ Tester.prototype = {
           }
 
           
-          let { BackgroundPageThumbs } = ChromeUtils.import(
-            "resource://gre/modules/BackgroundPageThumbs.jsm"
+          let { BackgroundPageThumbs } = ChromeUtils.importESModule(
+            "resource://gre/modules/BackgroundPageThumbs.sys.mjs"
           );
           BackgroundPageThumbs._destroy();
 
