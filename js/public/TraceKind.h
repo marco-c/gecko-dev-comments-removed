@@ -42,6 +42,7 @@ enum class TraceKind {
   
   
   
+  
   Object = 0x00,
   BigInt = 0x01,
   String = 0x02,

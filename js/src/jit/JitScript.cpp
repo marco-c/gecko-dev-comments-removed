@@ -637,7 +637,7 @@ gc::AllocSite* JitScript::createAllocSite(JSScript* script) {
   if (!nursery.canCreateAllocSite()) {
     
     
-    return script->zone()->unknownAllocSite();
+    return script->zone()->unknownAllocSite(JS::TraceKind::Object);
   }
 
   if (!allocSites_.reserve(allocSites_.length() + 1)) {
@@ -651,7 +651,7 @@ gc::AllocSite* JitScript::createAllocSite(JSScript* script) {
     return nullptr;
   }
 
-  new (site) gc::AllocSite(script->zone(), script);
+  new (site) gc::AllocSite(script->zone(), script, JS::TraceKind::Object);
 
   allocSites_.infallibleAppend(site);
 

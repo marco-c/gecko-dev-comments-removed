@@ -535,10 +535,7 @@ void MacroAssembler::nurseryAllocateString(Register result, Register temp,
   
 
   CompileZone* zone = realm()->zone();
-  uint64_t* allocStrsPtr = &zone->zone()->nurseryAllocatedStrings.ref();
-  inc64(AbsoluteAddress(allocStrsPtr));
   size_t thingSize = gc::Arena::thingSize(allocKind);
-
   bumpPointerAllocate(result, temp, fail, zone,
                       zone->addressOfStringNurseryPosition(),
                       zone->addressOfStringNurseryCurrentEnd(),
@@ -592,26 +589,30 @@ void MacroAssembler::bumpPointerAllocate(Register result, Register temp,
   storePtr(result, Address(temp, 0));
   subPtr(Imm32(size), result);
 
-  if (runtime()->geckoProfiler().enabled()) {
-    uint32_t* countAddress = zone->addressOfNurseryAllocCount();
-    CheckedInt<int32_t> counterOffset =
-        (CheckedInt<uintptr_t>(uintptr_t(countAddress)) -
-         CheckedInt<uintptr_t>(uintptr_t(posAddr)))
-            .toChecked<int32_t>();
-    if (counterOffset.isValid()) {
-      add32(Imm32(1), Address(temp, counterOffset.value()));
-    } else {
-      movePtr(ImmPtr(countAddress), temp);
-      add32(Imm32(1), Address(temp, 0));
-    }
-  }
-
   if (allocSite.is<gc::CatchAllAllocSite>()) {
     
     
     gc::CatchAllAllocSite siteKind = allocSite.as<gc::CatchAllAllocSite>();
-    storePtr(ImmWord(zone->nurseryCellHeader(traceKind, siteKind)),
+    gc::AllocSite* site = zone->catchAllAllocSite(traceKind, siteKind);
+    uintptr_t headerWord = gc::NurseryCellHeader::MakeValue(site, traceKind);
+    storePtr(ImmWord(headerWord),
              Address(result, -js::Nursery::nurseryCellHeaderSize()));
+
+    
+    
+    if (runtime()->geckoProfiler().enabled()) {
+      uint32_t* countAddress = site->nurseryAllocCountAddress();
+      CheckedInt<int32_t> counterOffset =
+          (CheckedInt<uintptr_t>(uintptr_t(countAddress)) -
+           CheckedInt<uintptr_t>(uintptr_t(posAddr)))
+              .toChecked<int32_t>();
+      if (counterOffset.isValid()) {
+        add32(Imm32(1), Address(temp, counterOffset.value()));
+      } else {
+        movePtr(ImmPtr(countAddress), temp);
+        add32(Imm32(1), Address(temp, 0));
+      }
+    }
   } else {
     
     

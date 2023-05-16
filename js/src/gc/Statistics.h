@@ -234,20 +234,12 @@ struct Statistics {
   }
   bool hasTrigger() const { return recordedTrigger.isSome(); }
 
-  void noteNurseryAlloc() { allocsSinceMinorGC.nursery++; }
-
   
   void setAllocsSinceMinorGCTenured(uint32_t allocs) {
-    allocsSinceMinorGC.tenured = allocs;
+    tenuredAllocsSinceMinorGC = allocs;
   }
 
-  uint32_t allocsSinceMinorGCNursery() { return allocsSinceMinorGC.nursery; }
-
-  uint32_t allocsSinceMinorGCTenured() { return allocsSinceMinorGC.tenured; }
-
-  uint32_t* addressOfAllocsSinceMinorGCNursery() {
-    return &allocsSinceMinorGC.nursery;
-  }
+  uint32_t allocsSinceMinorGCTenured() { return tenuredAllocsSinceMinorGC; }
 
   void beginNurseryCollection(JS::GCReason reason);
   void endNurseryCollection(JS::GCReason reason);
@@ -398,10 +390,7 @@ struct Statistics {
 
 
 
-  struct {
-    uint32_t nursery;
-    uint32_t tenured;
-  } allocsSinceMinorGC;
+  uint32_t tenuredAllocsSinceMinorGC;
 
   
   size_t preTotalHeapBytes;

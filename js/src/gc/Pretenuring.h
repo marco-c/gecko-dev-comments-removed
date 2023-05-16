@@ -36,6 +36,10 @@ namespace gc {
 class GCRuntime;
 class PretenuringNursery;
 
+
+
+static constexpr size_t NurseryTraceKinds = 3;
+
 enum class CatchAllAllocSite { Unknown, Optimized };
 
 
@@ -55,7 +59,7 @@ class AllocSite {
   static_assert((AllocSite::LONG_LIVED_BIT & int32_t(State::ShortLived)) == 0);
 
  private:
-  JS::Zone* zone_;
+  JS::Zone* zone_ = nullptr;
 
   
   
@@ -76,7 +80,11 @@ class AllocSite {
   uint32_t nurseryTenuredCount : 24;
 
   
-  uint32_t invalidationCount : 8;
+  uint32_t invalidationCount : 4;
+
+  
+  
+  uint32_t traceKind_ : 4;
 
   static AllocSite* const EndSentinel;
 
@@ -89,26 +97,46 @@ class AllocSite {
   uintptr_t rawScript() const { return scriptAndState & ~STATE_MASK; }
 
  public:
-  
-  explicit AllocSite(JS::Zone* zone)
-      : zone_(zone), nurseryTenuredCount(0), invalidationCount(0) {}
+  AllocSite() : nurseryTenuredCount(0), invalidationCount(0), traceKind_(0) {}
 
   
-  AllocSite(JS::Zone* zone, JSScript* script) : AllocSite(zone) {
+  explicit AllocSite(JS::Zone* zone, JS::TraceKind kind)
+      : zone_(zone),
+        nurseryTenuredCount(0),
+        invalidationCount(0),
+        traceKind_(uint32_t(kind)) {
+    MOZ_ASSERT(traceKind_ < NurseryTraceKinds);
+  }
+
+  
+  AllocSite(JS::Zone* zone, JSScript* script, JS::TraceKind kind)
+      : AllocSite(zone, kind) {
     MOZ_ASSERT(script != WasmScript);
     setScript(script);
+  }
+
+  void initUnknownSite(JS::Zone* zone, JS::TraceKind kind) {
+    MOZ_ASSERT(!zone_ && scriptAndState == uintptr_t(State::Unknown));
+    zone_ = zone;
+    nurseryTenuredCount = 0;
+    invalidationCount = 0;
+    traceKind_ = uint32_t(kind);
+    MOZ_ASSERT(traceKind_ < NurseryTraceKinds);
   }
 
   
   void initWasm(JS::Zone* zone) {
     MOZ_ASSERT(!zone_ && scriptAndState == uintptr_t(State::Unknown));
     zone_ = zone;
+    setScript(WasmScript);
     nurseryTenuredCount = 0;
     invalidationCount = 0;
-    setScript(WasmScript);
+    traceKind_ = uint32_t(JS::TraceKind::Object);
   }
 
   JS::Zone* zone() const { return zone_; }
+
+  JS::TraceKind traceKind() const { return JS::TraceKind(traceKind_); }
 
   State state() const { return State(scriptAndState & STATE_MASK); }
 
@@ -143,6 +171,7 @@ class AllocSite {
   }
 
   uint32_t incAllocCount() { return ++nurseryAllocCount; }
+  uint32_t* nurseryAllocCountAddress() { return &nurseryAllocCount; }
 
   void incTenuredCount() {
     
@@ -198,13 +227,10 @@ class AllocSite {
 
 class PretenuringZone {
  public:
-  explicit PretenuringZone(JS::Zone* zone)
-      : unknownAllocSite(zone), optimizedAllocSite(zone) {}
-
   
   
   
-  AllocSite unknownAllocSite;
+  AllocSite unknownAllocSites[NurseryTraceKinds];
 
   
   
@@ -226,6 +252,23 @@ class PretenuringZone {
   
   uint32_t highNurserySurvivalCount = 0;
 
+  
+  
+  uint32_t nurseryAllocCounts[NurseryTraceKinds] = {0};
+
+  explicit PretenuringZone(JS::Zone* zone)
+      : optimizedAllocSite(zone, JS::TraceKind::Object) {
+    for (uint32_t i = 0; i < NurseryTraceKinds; i++) {
+      unknownAllocSites[i].initUnknownSite(zone, JS::TraceKind(i));
+    }
+  }
+
+  AllocSite& unknownAllocSite(JS::TraceKind kind) {
+    size_t i = size_t(kind);
+    MOZ_ASSERT(i < NurseryTraceKinds);
+    return unknownAllocSites[i];
+  }
+
   void clearCellCountsInNewlyCreatedArenas() {
     allocCountInNewlyCreatedArenas = 0;
     survivorCountInNewlyCreatedArenas = 0;
@@ -245,6 +288,15 @@ class PretenuringZone {
   
   bool shouldResetNurseryAllocSites();
   bool shouldResetPretenuredAllocSites();
+
+  uint32_t& nurseryAllocCount(JS::TraceKind kind) {
+    size_t i = size_t(kind);
+    MOZ_ASSERT(i < NurseryTraceKinds);
+    return nurseryAllocCounts[i];
+  }
+  uint32_t nurseryAllocCount(JS::TraceKind kind) const {
+    return const_cast<PretenuringZone*>(this)->nurseryAllocCount(kind);
+  }
 };
 
 
@@ -252,6 +304,8 @@ class PretenuringNursery {
   gc::AllocSite* allocatedSites;
 
   size_t allocSitesCreated = 0;
+
+  uint32_t totalAllocCount_ = 0;
 
  public:
   PretenuringNursery() : allocatedSites(AllocSite::EndSentinel) {}
@@ -275,11 +329,19 @@ class PretenuringNursery {
 
   void maybeStopPretenuring(GCRuntime* gc);
 
+  uint32_t totalAllocCount() const { return totalAllocCount_; }
+
   void* addressOfAllocatedSites() { return &allocatedSites; }
 
  private:
-  void reportAndResetCatchAllSite(AllocSite* site, bool reportInfo,
-                                  size_t reportThreshold);
+  class MaybeGCSession;
+  void processSite(GCRuntime* gc, AllocSite* site, size_t& sitesActive,
+                   size_t& sitesPretenured, size_t& sitesInvalidated,
+                   MaybeGCSession& session, bool reportInfo,
+                   size_t reportThreshold);
+  void processCatchAllSite(AllocSite* site, bool reportInfo,
+                           size_t reportThreshold);
+  void updateAllocCounts(AllocSite* site);
 };
 
 }  
