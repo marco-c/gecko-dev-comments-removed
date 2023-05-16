@@ -7608,6 +7608,11 @@ bool nsIFrame::IsInvalid(nsRect& aRect) {
 }
 
 void nsIFrame::SchedulePaint(PaintType aType, bool aFrameChanged) {
+  if (PresShell()->IsPaintingSuppressed()) {
+    
+    
+    return;
+  }
   nsIFrame* displayRoot = nsLayoutUtils::GetDisplayRootFrame(this);
   InvalidateRenderingObservers(displayRoot, this, aFrameChanged);
   SchedulePaintInternal(displayRoot, this, aType);
