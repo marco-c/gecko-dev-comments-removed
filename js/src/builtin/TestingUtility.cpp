@@ -50,7 +50,7 @@ bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
       return false;
     }
     if (fileNameBytes) {
-      *fileNameBytes = JS_EncodeStringToUTF8(cx, s);
+      *fileNameBytes = JS_EncodeStringToLatin1(cx, s);
       if (!*fileNameBytes) {
         return false;
       }

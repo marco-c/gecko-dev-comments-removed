@@ -76,13 +76,14 @@ bool EnterDebuggeeNoExecute::reportIfFoundInStack(JSContext* cx,
       const char* filename = script->filename() ? script->filename() : "(none)";
       char linenoStr[15];
       SprintfLiteral(linenoStr, "%u", script->lineno());
+      
       if (warning) {
-        return WarnNumberUTF8(cx, JSMSG_DEBUGGEE_WOULD_RUN, filename,
-                              linenoStr);
+        return WarnNumberLatin1(cx, JSMSG_DEBUGGEE_WOULD_RUN, filename,
+                                linenoStr);
       }
 
-      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_DEBUGGEE_WOULD_RUN, filename, linenoStr);
+      JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr,
+                                 JSMSG_DEBUGGEE_WOULD_RUN, filename, linenoStr);
       return false;
     }
   }

@@ -113,20 +113,24 @@ static bool Load(JSContext* cx, unsigned argc, JS::Value* vp) {
 
   for (unsigned i = 0; i < args.length(); i++) {
     JS::Rooted<JSString*> str(cx, JS::ToString(cx, args[i]));
-    if (!str) {
-      return false;
-    }
-    JS::UniqueChars filename = JS_EncodeStringToUTF8(cx, str);
-    if (!filename) {
+    if (!str) return false;
+    JS::UniqueChars filename = JS_EncodeStringToLatin1(cx, str);
+    if (!filename) return false;
+    FILE* file = fopen(filename.get(), "r");
+    if (!file) {
+      filename = JS_EncodeStringToUTF8(cx, str);
+      if (!filename) return false;
+      JS_ReportErrorUTF8(cx, "cannot open file '%s' for reading",
+                         filename.get());
       return false;
     }
 
     JS::CompileOptions options(cx);
-    JS::Rooted<JSScript*> script(
-        cx, JS::CompileUtf8Path(cx, options, filename.get()));
-    if (!script) {
-      return false;
-    }
+    options.setFileAndLine(filename.get(), 1);
+
+    JS::Rooted<JSScript*> script(cx, JS::CompileUtf8File(cx, options, file));
+    fclose(file);
+    if (!script) return false;
 
     if (!JS_ExecuteScript(cx, script)) {
       return false;
@@ -252,6 +256,8 @@ void XPCShellEnvironment::ProcessFile(JSContext* cx, const char* filename,
     file = stdin;
   } else if (!isatty(fileno(file))) {
     
+
+
 
 
 
