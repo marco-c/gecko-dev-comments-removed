@@ -201,8 +201,8 @@ void CSP_LogMessage(const nsAString& aMessage, const nsAString& aSourceName,
 
   
   nsString cspMsg;
-  cspMsg.AppendLiteral(u"Content Security Policy: ");
-  cspMsg.Append(aMessage);
+  CSP_GetLocalizedStr("CSPMessagePrefix",
+                      AutoTArray<nsString, 1>{nsString(aMessage)}, cspMsg);
 
   
   
