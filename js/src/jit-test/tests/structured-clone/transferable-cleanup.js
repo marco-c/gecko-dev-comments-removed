@@ -232,7 +232,7 @@ function testMultiWithDeserializeReadErrorCrossRealm() {
 
 testBasic();
 testErrorDuringWrite();
-
+testErrorDuringTransfer();
 testMultiOk();
 testMultiOkCrossRealm();
 testMultiOkWithDeserialize();
