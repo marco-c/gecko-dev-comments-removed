@@ -442,8 +442,12 @@ RtpVideoStreamReceiver2::ParseGenericDependenciesExtension(
       
       
       
-      RTC_LOG(LS_WARNING) << "ssrc: " << rtp_packet.Ssrc()
-                          << " Failed to parse dependency descriptor.";
+      Timestamp now = clock_->CurrentTime();
+      if (now - last_logged_failed_to_parse_dd_ > TimeDelta::Seconds(1)) {
+        last_logged_failed_to_parse_dd_ = now;
+        RTC_LOG(LS_WARNING) << "ssrc: " << rtp_packet.Ssrc()
+                            << " Failed to parse dependency descriptor.";
+      }
       return kDropPacket;
     }
     if (dependency_descriptor.attached_structure != nullptr &&
