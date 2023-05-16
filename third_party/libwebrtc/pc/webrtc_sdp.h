@@ -50,7 +50,6 @@ struct SdpParseError;
 
 
 
-
 std::string SdpSerialize(const JsepSessionDescription& jdesc);
 
 

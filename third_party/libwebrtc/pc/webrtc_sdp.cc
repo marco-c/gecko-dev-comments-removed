@@ -277,16 +277,26 @@ static void BuildMediaDescription(const ContentInfo* content_info,
                                   const std::vector<Candidate>& candidates,
                                   int msid_signaling,
                                   std::string* message);
+static void BuildMediaLine(const cricket::MediaType media_type,
+                           const ContentInfo* content_info,
+                           const MediaContentDescription* media_desc,
+                           std::string* message);
 static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
                                       const cricket::MediaType media_type,
                                       int msid_signaling,
                                       std::string* message);
+static void BuildRtpHeaderExtensions(const RtpHeaderExtensions& extensions,
+                                     std::string* message);
 static void BuildRtpmap(const MediaContentDescription* media_desc,
                         const cricket::MediaType media_type,
                         std::string* message);
 static void BuildCandidate(const std::vector<Candidate>& candidates,
                            bool include_ufrag,
                            std::string* message);
+static void BuildIceUfragPwd(const TransportInfo* transport_info,
+                             std::string* message);
+static void BuildDtlsFingerprintSetup(const TransportInfo* transport_info,
+                                      std::string* message);
 static void BuildIceOptions(const std::vector<std::string>& transport_options,
                             std::string* message);
 static bool ParseSessionDescription(absl::string_view message,
@@ -1360,19 +1370,66 @@ static void BuildSctpContentAttributes(
   }
 }
 
-void BuildMediaDescription(const ContentInfo* content_info,
-                           const TransportInfo* transport_info,
-                           const cricket::MediaType media_type,
-                           const std::vector<Candidate>& candidates,
-                           int msid_signaling,
-                           std::string* message) {
-  RTC_DCHECK(message != NULL);
-  if (content_info == NULL || message == NULL) {
+void BuildIceUfragPwd(const TransportInfo* transport_info,
+                      std::string* message) {
+  RTC_DCHECK(transport_info);
+
+  rtc::StringBuilder os;
+  
+  
+  
+  
+  if (!transport_info->description.ice_ufrag.empty()) {
+    InitAttrLine(kAttributeIceUfrag, &os);
+    os << kSdpDelimiterColon << transport_info->description.ice_ufrag;
+    AddLine(os.str(), message);
+  }
+  
+  if (!transport_info->description.ice_pwd.empty()) {
+    InitAttrLine(kAttributeIcePwd, &os);
+    os << kSdpDelimiterColon << transport_info->description.ice_pwd;
+    AddLine(os.str(), message);
+  }
+}
+
+void BuildDtlsFingerprintSetup(const TransportInfo* transport_info,
+                               std::string* message) {
+  RTC_DCHECK(transport_info);
+
+  rtc::StringBuilder os;
+  
+  
+  
+  
+  
+  auto fingerprint = transport_info->description.identity_fingerprint.get();
+  if (!fingerprint) {
     return;
   }
+  InitAttrLine(kAttributeFingerprint, &os);
+  os << kSdpDelimiterColon << fingerprint->algorithm << kSdpDelimiterSpace
+     << fingerprint->GetRfc4572Fingerprint();
+  AddLine(os.str(), message);
+
+  
+  if (transport_info->description.connection_role !=
+      cricket::CONNECTIONROLE_NONE) {
+    
+    cricket::ConnectionRole role = transport_info->description.connection_role;
+    std::string dtls_role_str;
+    const bool success = cricket::ConnectionRoleToString(role, &dtls_role_str);
+    RTC_DCHECK(success);
+    InitAttrLine(kAttributeSetup, &os);
+    os << kSdpDelimiterColon << dtls_role_str;
+    AddLine(os.str(), message);
+  }
+}
+
+void BuildMediaLine(const cricket::MediaType media_type,
+                    const ContentInfo* content_info,
+                    const MediaContentDescription* media_desc,
+                    std::string* message) {
   rtc::StringBuilder os;
-  const MediaContentDescription* media_desc = content_info->media_description();
-  RTC_DCHECK(media_desc);
 
   
   
@@ -1438,15 +1495,29 @@ void BuildMediaDescription(const ContentInfo* content_info,
     port = rtc::ToString(media_desc->connection_address().port());
   }
 
-  rtc::SSLFingerprint* fp =
-      (transport_info) ? transport_info->description.identity_fingerprint.get()
-                       : NULL;
-
   
   InitLine(kLineTypeMedia, type, &os);
   os << " " << port << " " << media_desc->protocol() << fmt;
   AddLine(os.str(), message);
+}
 
+void BuildMediaDescription(const ContentInfo* content_info,
+                           const TransportInfo* transport_info,
+                           const cricket::MediaType media_type,
+                           const std::vector<Candidate>& candidates,
+                           int msid_signaling,
+                           std::string* message) {
+  RTC_DCHECK(message);
+  if (!content_info) {
+    return;
+  }
+  rtc::StringBuilder os;
+  const MediaContentDescription* media_desc = content_info->media_description();
+  RTC_DCHECK(media_desc);
+
+  
+  BuildMediaLine(media_type, content_info, media_desc, message);
+  
   InitLine(kLineTypeConnection, kConnectionNettype, &os);
   if (media_desc->connection_address().IsNil()) {
     os << " " << kConnectionIpv4Addrtype << " " << kDummyAddress;
@@ -1496,51 +1567,15 @@ void BuildMediaDescription(const ContentInfo* content_info,
   BuildCandidate(candidates, false, message);
 
   
+  
   if (transport_info) {
-    
-    
-    
-    
-    if (!transport_info->description.ice_ufrag.empty()) {
-      InitAttrLine(kAttributeIceUfrag, &os);
-      os << kSdpDelimiterColon << transport_info->description.ice_ufrag;
-      AddLine(os.str(), message);
-    }
-    
-    if (!transport_info->description.ice_pwd.empty()) {
-      InitAttrLine(kAttributeIcePwd, &os);
-      os << kSdpDelimiterColon << transport_info->description.ice_pwd;
-      AddLine(os.str(), message);
-    }
+    BuildIceUfragPwd(transport_info, message);
 
     
     BuildIceOptions(transport_info->description.transport_options, message);
 
     
-    
-    
-    if (fp) {
-      
-      InitAttrLine(kAttributeFingerprint, &os);
-      os << kSdpDelimiterColon << fp->algorithm << kSdpDelimiterSpace
-         << fp->GetRfc4572Fingerprint();
-      AddLine(os.str(), message);
-
-      
-      if (transport_info->description.connection_role !=
-          cricket::CONNECTIONROLE_NONE) {
-        
-        cricket::ConnectionRole role =
-            transport_info->description.connection_role;
-        std::string dtls_role_str;
-        const bool success =
-            cricket::ConnectionRoleToString(role, &dtls_role_str);
-        RTC_DCHECK(success);
-        InitAttrLine(kAttributeSetup, &os);
-        os << kSdpDelimiterColon << dtls_role_str;
-        AddLine(os.str(), message);
-      }
-    }
+    BuildDtlsFingerprintSetup(transport_info, message);
   }
 
   
@@ -1576,20 +1611,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
     AddLine(os.str(), message);
   }
-  
-  
-  
-  
-  for (size_t i = 0; i < media_desc->rtp_header_extensions().size(); ++i) {
-    const RtpExtension& extension = media_desc->rtp_header_extensions()[i];
-    InitAttrLine(kAttributeExtmap, &os);
-    os << kSdpDelimiterColon << extension.id;
-    if (extension.encrypt) {
-      os << kSdpDelimiterSpace << RtpExtension::kEncryptHeaderExtensionsUri;
-    }
-    os << kSdpDelimiterSpace << extension.uri;
-    AddLine(os.str(), message);
-  }
+  BuildRtpHeaderExtensions(media_desc->rtp_header_extensions(), message);
 
   
   
@@ -1750,6 +1772,25 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     InitAttrLine(kAttributeSimulcast, &os);
     os << kSdpDelimiterColon
        << serializer.SerializeSimulcastDescription(simulcast);
+    AddLine(os.str(), message);
+  }
+}
+
+void BuildRtpHeaderExtensions(const RtpHeaderExtensions& extensions,
+                              std::string* message) {
+  rtc::StringBuilder os;
+
+  
+  
+  
+  
+  for (const RtpExtension& extension : extensions) {
+    InitAttrLine(kAttributeExtmap, &os);
+    os << kSdpDelimiterColon << extension.id;
+    if (extension.encrypt) {
+      os << kSdpDelimiterSpace << RtpExtension::kEncryptHeaderExtensionsUri;
+    }
+    os << kSdpDelimiterSpace << extension.uri;
     AddLine(os.str(), message);
   }
 }
