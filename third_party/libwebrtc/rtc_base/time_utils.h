@@ -114,17 +114,6 @@ inline int64_t TimeUntil(int64_t later) {
   return later - TimeMillis();
 }
 
-class TimestampWrapAroundHandler {
- public:
-  TimestampWrapAroundHandler();
-
-  int64_t Unwrap(uint32_t ts);
-
- private:
-  uint32_t last_ts_;
-  int64_t num_wrap_;
-};
-
 
 
 
