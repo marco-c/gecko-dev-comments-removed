@@ -6548,141 +6548,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
   return AttachDecision::Attach;
 }
 
-
-
-static bool HasOptimizableLastIndexSlot(RegExpObject* regexp, JSContext* cx) {
-  auto lastIndexProp = regexp->lookupPure(cx->names().lastIndex);
-  MOZ_ASSERT(lastIndexProp->isDataProperty());
-  if (!lastIndexProp->writable()) {
-    return false;
-  }
-  Value lastIndex = regexp->getLastIndex();
-  if (!lastIndex.isInt32() || lastIndex.toInt32() < 0) {
-    return false;
-  }
-  return true;
-}
-
-static void EmitGuardLastIndexIsNonNegativeInt32(CacheIRWriter& writer,
-                                                 ObjOperandId regExpId) {
-  size_t offset =
-      NativeObject::getFixedSlotOffset(RegExpObject::lastIndexSlot());
-  ValOperandId lastIndexValId = writer.loadFixedSlot(regExpId, offset);
-  Int32OperandId lastIndexId = writer.guardToInt32(lastIndexValId);
-  writer.guardInt32IsNonNegative(lastIndexId);
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpBuiltinExec(
-    InlinableNative native) {
-  
-  MOZ_ASSERT(argc_ == 2);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isString());
-
-  RegExpObject* re = &args_[0].toObject().as<RegExpObject>();
-  if (!HasOptimizableLastIndexSlot(re, cx_)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  initializeInputOperand();
-
-  
-
-  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  ObjOperandId regExpId = writer.guardToObject(arg0Id);
-  writer.guardShape(regExpId, re->shape());
-  EmitGuardLastIndexIsNonNegativeInt32(writer, regExpId);
-
-  ValOperandId arg1Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
-  StringOperandId inputId = writer.guardToString(arg1Id);
-
-  if (native == InlinableNative::IntrinsicRegExpBuiltinExecForTest) {
-    writer.regExpBuiltinExecTestResult(regExpId, inputId);
-  } else {
-    writer.regExpBuiltinExecMatchResult(regExpId, inputId);
-  }
-  writer.returnFromIC();
-
-  trackAttached("IntrinsicRegExpBuiltinExec");
-  return AttachDecision::Attach;
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
-    InlinableNative native) {
-  
-  MOZ_ASSERT(argc_ == 2);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isString());
-
-  if (!args_[0].toObject().is<RegExpObject>()) {
-    return AttachDecision::NoAction;
-  }
-  RegExpObject* re = &args_[0].toObject().as<RegExpObject>();
-  if (!HasOptimizableLastIndexSlot(re, cx_)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  if (re->containsPure(cx_->names().exec)) {
-    return AttachDecision::NoAction;
-  }
-  MOZ_ASSERT(cx_->global()->maybeGetRegExpPrototype());
-  auto* regExpProto =
-      &cx_->global()->maybeGetRegExpPrototype()->as<NativeObject>();
-  if (re->staticPrototype() != regExpProto) {
-    return AttachDecision::NoAction;
-  }
-  auto execProp = regExpProto->as<NativeObject>().lookupPure(cx_->names().exec);
-  if (!execProp || !execProp->isDataProperty()) {
-    return AttachDecision::NoAction;
-  }
-  
-  
-  if (regExpProto->isFixedSlot(execProp->slot())) {
-    return AttachDecision::NoAction;
-  }
-  Value execVal = regExpProto->getSlot(execProp->slot());
-  PropertyName* execName = cx_->names().RegExp_prototype_Exec;
-  if (!IsSelfHostedFunctionWithName(execVal, execName)) {
-    return AttachDecision::NoAction;
-  }
-  JSFunction* execFunction = &execVal.toObject().as<JSFunction>();
-
-  
-  initializeInputOperand();
-
-  
-
-  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  ObjOperandId regExpId = writer.guardToObject(arg0Id);
-  writer.guardShape(regExpId, re->shape());
-  EmitGuardLastIndexIsNonNegativeInt32(writer, regExpId);
-
-  
-  ObjOperandId regExpProtoId = writer.loadObject(regExpProto);
-  writer.guardShape(regExpProtoId, regExpProto->shape());
-  size_t offset =
-      regExpProto->dynamicSlotIndex(execProp->slot()) * sizeof(Value);
-  writer.guardDynamicSlotValue(regExpProtoId, offset,
-                               ObjectValue(*execFunction));
-
-  ValOperandId arg1Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
-  StringOperandId inputId = writer.guardToString(arg1Id);
-
-  if (native == InlinableNative::IntrinsicRegExpExecForTest) {
-    writer.regExpBuiltinExecTestResult(regExpId, inputId);
-  } else {
-    writer.regExpBuiltinExecMatchResult(regExpId, inputId);
-  }
-  writer.returnFromIC();
-
-  trackAttached("IntrinsicRegExpExec");
-  return AttachDecision::Attach;
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcher(
+AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcherTester(
     InlinableNative native) {
   
   MOZ_ASSERT(argc_ == 3);
@@ -6721,6 +6587,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcher(
       writer.callRegExpSearcherResult(reId, inputId, lastIndexId);
       writer.returnFromIC();
       trackAttached("RegExpSearcher");
+      break;
+
+    case InlinableNative::RegExpTester:
+      writer.callRegExpTesterResult(reId, inputId, lastIndexId);
+      writer.returnFromIC();
+      trackAttached("RegExpTester");
       break;
 
     default:
@@ -10579,19 +10451,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
                                 true);
     case InlinableNative::RegExpMatcher:
     case InlinableNative::RegExpSearcher:
-      return tryAttachRegExpMatcherSearcher(native);
+    case InlinableNative::RegExpTester:
+      return tryAttachRegExpMatcherSearcherTester(native);
     case InlinableNative::RegExpPrototypeOptimizable:
       return tryAttachRegExpPrototypeOptimizable();
     case InlinableNative::RegExpInstanceOptimizable:
       return tryAttachRegExpInstanceOptimizable();
     case InlinableNative::GetFirstDollarIndex:
       return tryAttachGetFirstDollarIndex();
-    case InlinableNative::IntrinsicRegExpBuiltinExec:
-    case InlinableNative::IntrinsicRegExpBuiltinExecForTest:
-      return tryAttachIntrinsicRegExpBuiltinExec(native);
-    case InlinableNative::IntrinsicRegExpExec:
-    case InlinableNative::IntrinsicRegExpExecForTest:
-      return tryAttachIntrinsicRegExpExec(native);
 
     
     case InlinableNative::String:

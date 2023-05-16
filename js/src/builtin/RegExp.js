@@ -149,7 +149,7 @@ function RegExpMatch(string) {
     }
 
     
-    return RegExpBuiltinExec(rx, S);
+    return RegExpBuiltinExec(rx, S, false);
   }
 
   
@@ -165,7 +165,7 @@ function RegExpMatchSlowPath(rx, S) {
 
   
   if (!callFunction(std_String_includes, flags, "g")) {
-    return RegExpExec(rx, S);
+    return RegExpExec(rx, S, false);
   }
 
   
@@ -183,7 +183,7 @@ function RegExpMatchSlowPath(rx, S) {
   
   while (true) {
     
-    var result = RegExpExec(rx, S);
+    var result = RegExpExec(rx, S, false);
 
     
     if (result === null) {
@@ -427,7 +427,7 @@ function RegExpReplaceSlowPath(
   
   while (true) {
     
-    var result = RegExpExec(rx, S);
+    var result = RegExpExec(rx, S, false);
 
     
     if (result === null) {
@@ -976,7 +976,7 @@ function RegExpSearch(string) {
 
 function RegExpSearchSlowPath(rx, S, previousLastIndex) {
   
-  var result = RegExpExec(rx, S);
+  var result = RegExpExec(rx, S, false);
 
   
   var currentLastIndex = rx.lastIndex;
@@ -1102,7 +1102,7 @@ function RegExpSplit(string, limit) {
     if (optimizable) {
       z = RegExpMatcher(splitter, S, 0);
     } else {
-      z = RegExpExec(splitter, S);
+      z = RegExpExec(splitter, S, false);
     }
 
     
@@ -1148,7 +1148,7 @@ function RegExpSplit(string, limit) {
       splitter.lastIndex = q;
 
       
-      z = RegExpExec(splitter, S);
+      z = RegExpExec(splitter, S, false);
 
       
       if (z === null) {
@@ -1236,11 +1236,110 @@ function RegExp_prototype_Exec(string) {
   var S = ToString(string);
 
   
-  return RegExpBuiltinExec(R, S);
+  return RegExpBuiltinExec(R, S, false);
+}
+
+
+function RegExpExec(R, S, forTest) {
+  
+
+  
+  var exec = R.exec;
+
+  
+  
+  
+  if (exec === RegExp_prototype_Exec || !IsCallable(exec)) {
+    
+
+    
+    return RegExpBuiltinExec(R, S, forTest);
+  }
+
+  
+  var result = callContentFunction(exec, R, S);
+
+  
+  if (result !== null && !IsObject(result)) {
+    ThrowTypeError(JSMSG_EXEC_NOT_OBJORNULL);
+  }
+
+  
+  return forTest ? result !== null : result;
+}
+
+
+
+function RegExpBuiltinExec(R, S, forTest) {
+  
+  
+  
+  if (!IsRegExpObject(R)) {
+    return UnwrapAndCallRegExpBuiltinExec(R, S, forTest);
+  }
+
+  
+
+  
+  var lastIndex = ToLength(R.lastIndex);
+
+  
+  var flags = UnsafeGetInt32FromReservedSlot(R, REGEXP_FLAGS_SLOT);
+
+  
+  var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
+
+  
+  if (!globalOrSticky) {
+    lastIndex = 0;
+  } else {
+    
+    if (lastIndex > S.length) {
+      
+      if (globalOrSticky) {
+        R.lastIndex = 0;
+      }
+      return forTest ? false : null;
+    }
+  }
+
+  if (forTest) {
+    
+    var endIndex = RegExpTester(R, S, lastIndex);
+    if (endIndex === -1) {
+      
+      if (globalOrSticky) {
+        R.lastIndex = 0;
+      }
+      return false;
+    }
+
+    
+    if (globalOrSticky) {
+      R.lastIndex = endIndex;
+    }
+
+    return true;
+  }
+
+  
+  var result = RegExpMatcher(R, S, lastIndex);
+  if (result === null) {
+    
+    if (globalOrSticky) {
+      R.lastIndex = 0;
+    }
+  } else {
+    
+    if (globalOrSticky) {
+      R.lastIndex = result.index + result[0].length;
+    }
+  }
+
+  return result;
 }
 
 function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
-  assert(typeof forTest === "boolean", "forTest must be a boolean");
   return callFunction(
     CallRegExpMethodIfWrapped,
     R,
@@ -1251,11 +1350,7 @@ function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
 }
 
 function CallRegExpBuiltinExec(S, forTest) {
-  assert(typeof forTest === "boolean", "forTest must be a boolean");
-  if (forTest) {
-    return RegExpBuiltinExecForTest(this, S);
-  }
-  return RegExpBuiltinExec(this, S);
+  return RegExpBuiltinExec(this, S, forTest);
 }
 
 
@@ -1270,7 +1365,7 @@ function RegExpTest(string) {
   var S = ToString(string);
 
   
-  return RegExpExecForTest(R, S);
+  return RegExpExec(R, S, true);
 }
 
 
@@ -1524,7 +1619,7 @@ function RegExpStringIteratorNext() {
   }
 
   
-  var match = RegExpExec(regexp, string);
+  var match = RegExpExec(regexp, string, false);
 
   
   if (match === null) {
