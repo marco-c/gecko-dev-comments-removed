@@ -40,12 +40,6 @@ function initSandbox({ pin = true, isDefault = false } = {}) {
   return sandbox;
 }
 
-add_setup(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.aboutwelcome.transitions", false]],
-  });
-});
-
 
 
 
@@ -354,7 +348,6 @@ add_task(async function test_aboutwelcome_gratitude() {
   
   await test_screen_content(
     browser,
-    "home",
     
     ["body.activity-stream"],
 
@@ -426,15 +419,6 @@ add_task(async function test_aboutwelcome_embedded_migration() {
     let shadow = wizard.openOrClosedShadowRoot;
     let deck = shadow.querySelector("#wizard-deck");
 
-    await ContentTaskUtils.waitForMutationCondition(
-      content.document.querySelector(".onboardingContainer"),
-      { attributeFilter: ["class"] },
-      () =>
-        !content.document
-          .querySelector(".onboardingContainer")
-          .classList.contains("transition-in")
-    );
-
     
     
     if (deck.selectedViewName !== MigrationWizardConstants.PAGES.SELECTION) {
@@ -477,22 +461,11 @@ add_task(async function test_aboutwelcome_embedded_migration() {
     
     
     
-    
     let panelTopLeftRelativeToAnchorTopLeft =
       panelRect.top - selectorRect.top - selectorRect.height;
-
-    function isfuzzy(actual, expected, epsilon, msg) {
-      if (actual >= expected - epsilon && actual <= expected + epsilon) {
-        ok(true, msg);
-      } else {
-        is(actual, expected, msg);
-      }
-    }
-
-    isfuzzy(
+    Assert.equal(
       panelTopLeftRelativeToAnchorTopLeft,
       0,
-      1,
       "Panel should be tightly anchored to the bottom of the button shadow node."
     );
   });
