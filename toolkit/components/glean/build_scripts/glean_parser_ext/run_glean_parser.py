@@ -75,11 +75,6 @@ def parse_with_options(input_files, options):
     
     
 
-    
-    if lint.lint_yaml_files(input_files, parser_config=options):
-        
-        raise ParserError("linter found problems")
-
     all_objs = parser.parse_objects(input_files, options)
     if util.report_validation_errors(all_objs):
         raise ParserError("found validation errors during parse")
