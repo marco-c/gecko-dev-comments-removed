@@ -43,11 +43,6 @@ class ReceiveStreamInterface {
     
     
     
-    bool transport_cc = false;
-
-    
-    
-    
     std::vector<RtpExtension> extensions;
   };
 
