@@ -14,22 +14,18 @@
 
 
 
-import fs from 'fs';
+import {mkdtemp} from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import {promisify} from 'util';
 
 import expect from 'expect';
 import {
   PuppeteerLaunchOptions,
   PuppeteerNode,
 } from 'puppeteer-core/internal/node/PuppeteerNode.js';
-import rimraf from 'rimraf';
+import {rmSync} from 'puppeteer-core/internal/node/util/fs.js';
 
 import {getTestState} from './mocha-utils.js';
-
-const rmAsync = promisify(rimraf);
-const mkdtempAsync = promisify(fs.mkdtemp);
 
 const TMP_FOLDER = path.join(os.tmpdir(), 'pptr_tmp_folder-');
 
@@ -216,7 +212,7 @@ describe('headful tests', function () {
       
       const {server, puppeteer} = getTestState();
 
-      const userDataDir = await mkdtempAsync(TMP_FOLDER);
+      const userDataDir = await mkdtemp(TMP_FOLDER);
       
       const headfulBrowser = await launchBrowser(
         puppeteer,
@@ -241,7 +237,9 @@ describe('headful tests', function () {
       });
       await headlessBrowser.close();
       
-      await rmAsync(userDataDir).catch(() => {});
+      try {
+        rmSync(userDataDir);
+      } catch {}
       expect(cookie).toBe('foo=true');
     });
     

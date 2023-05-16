@@ -16,16 +16,20 @@
 
 import {Protocol} from 'devtools-protocol';
 
-import {ElementHandle} from '../api/ElementHandle.js';
-import {Page} from '../api/Page.js';
+import {type ClickOptions, ElementHandle} from '../api/ElementHandle.js';
+import {HTTPResponse} from '../api/HTTPResponse.js';
+import {Page, WaitTimeoutOptions} from '../api/Page.js';
+import {assert} from '../util/assert.js';
 import {isErrorLike} from '../util/ErrorLike.js';
 
 import {CDPSession} from './Connection.js';
+import {
+  DeviceRequestPrompt,
+  DeviceRequestPromptManager,
+} from './DeviceRequestPrompt.js';
 import {ExecutionContext} from './ExecutionContext.js';
 import {FrameManager} from './FrameManager.js';
 import {getQueryHandlerAndSelector} from './GetQueryHandler.js';
-import {HTTPResponse} from './HTTPResponse.js';
-import {MouseButton} from './Input.js';
 import {
   IsolatedWorld,
   IsolatedWorldChart,
@@ -35,7 +39,7 @@ import {MAIN_WORLD, PUPPETEER_WORLD} from './IsolatedWorlds.js';
 import {LazyArg} from './LazyArg.js';
 import {LifecycleWatcher, PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
 import {EvaluateFunc, EvaluateFuncWith, HandleFor, NodeFor} from './types.js';
-import {importFS} from './util.js';
+import {importFSPromises} from './util.js';
 
 
 
@@ -60,6 +64,10 @@ export interface FrameWaitForFunctionOptions {
 
 
   timeout?: number;
+  
+
+
+  signal?: AbortSignal;
 }
 
 
@@ -793,17 +801,7 @@ export class Frame {
     }
 
     if (path) {
-      let fs;
-      try {
-        fs = (await import('fs')).promises;
-      } catch (error) {
-        if (error instanceof TypeError) {
-          throw new Error(
-            'Can only pass a file path in a Node-like environment.'
-          );
-        }
-        throw error;
-      }
+      const fs = await importFSPromises();
       content = await fs.readFile(path, 'utf8');
       content += `//# sourceURL=${path.replace(/\n/g, '')}`;
     }
@@ -878,17 +876,7 @@ export class Frame {
     }
 
     if (path) {
-      let fs: typeof import('fs').promises;
-      try {
-        fs = (await importFS()).promises;
-      } catch (error) {
-        if (error instanceof TypeError) {
-          throw new Error(
-            'Can only pass a file path in a Node-like environment.'
-          );
-        }
-        throw error;
-      }
+      const fs = await importFSPromises();
 
       content = await fs.readFile(path, 'utf8');
       content += '/*# sourceURL=' + path.replace(/\n/g, '') + '*/';
@@ -959,11 +947,7 @@ export class Frame {
 
   async click(
     selector: string,
-    options: {
-      delay?: number;
-      button?: MouseButton;
-      clickCount?: number;
-    } = {}
+    options: Readonly<ClickOptions> = {}
   ): Promise<void> {
     return this.worlds[PUPPETEER_WORLD].click(selector, options);
   }
@@ -1081,6 +1065,47 @@ export class Frame {
 
   async title(): Promise<string> {
     return this.worlds[PUPPETEER_WORLD].title();
+  }
+
+  
+
+
+  _deviceRequestPromptManager(): DeviceRequestPromptManager {
+    if (this.isOOPFrame()) {
+      return this._frameManager._deviceRequestPromptManager(this.#client);
+    }
+    const parentFrame = this.parentFrame();
+    assert(parentFrame !== null);
+    return parentFrame._deviceRequestPromptManager();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForDevicePrompt(
+    options: WaitTimeoutOptions = {}
+  ): Promise<DeviceRequestPrompt> {
+    return this._deviceRequestPromptManager().waitForDevicePrompt(options);
   }
 
   

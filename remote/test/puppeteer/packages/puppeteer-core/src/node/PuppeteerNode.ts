@@ -14,8 +14,6 @@
 
 
 
-import {join} from 'path';
-
 import {Browser} from '../api/Browser.js';
 import {BrowserConnectOptions} from '../common/BrowserConnector.js';
 import {Configuration} from '../common/Configuration.js';
@@ -27,7 +25,6 @@ import {
 } from '../common/Puppeteer.js';
 import {PUPPETEER_REVISIONS} from '../revisions.js';
 
-import {BrowserFetcher, BrowserFetcherOptions} from './BrowserFetcher.js';
 import {ChromeLauncher} from './ChromeLauncher.js';
 import {FirefoxLauncher} from './FirefoxLauncher.js';
 import {
@@ -116,7 +113,7 @@ export class PuppeteerNode extends Puppeteer {
         break;
       default:
         this.configuration.defaultProduct = 'chrome';
-        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chromium;
+        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chrome;
         break;
     }
 
@@ -124,12 +121,9 @@ export class PuppeteerNode extends Puppeteer {
     this.launch = this.launch.bind(this);
     this.executablePath = this.executablePath.bind(this);
     this.defaultArgs = this.defaultArgs.bind(this);
-    this.createBrowserFetcher = this.createBrowserFetcher.bind(this);
   }
 
   
-
-
 
 
 
@@ -193,7 +187,7 @@ export class PuppeteerNode extends Puppeteer {
     }
     switch (this.lastLaunchedProduct) {
       case 'chrome':
-        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chromium;
+        this.defaultBrowserRevision = PUPPETEER_REVISIONS.chrome;
         this.#_launcher = new ChromeLauncher(this);
         break;
       case 'firefox':
@@ -207,8 +201,6 @@ export class PuppeteerNode extends Puppeteer {
   }
 
   
-
-
 
 
   executablePath(channel?: ChromeReleaseChannel): string {
@@ -233,15 +225,10 @@ export class PuppeteerNode extends Puppeteer {
 
 
   get defaultDownloadPath(): string | undefined {
-    return (
-      this.configuration.downloadPath ??
-      join(this.configuration.cacheDirectory!, this.product)
-    );
+    return this.configuration.downloadPath ?? this.configuration.cacheDirectory;
   }
 
   
-
-
 
 
   get lastLaunchedProduct(): Product {
@@ -249,8 +236,6 @@ export class PuppeteerNode extends Puppeteer {
   }
 
   
-
-
 
 
 
@@ -267,8 +252,6 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-
-
   get product(): string {
     return this.#launcher.product;
   }
@@ -278,44 +261,7 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-
-
   defaultArgs(options: BrowserLaunchArgumentOptions = {}): string[] {
     return this.#launcher.defaultArgs(options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  createBrowserFetcher(
-    options: Partial<BrowserFetcherOptions> = {}
-  ): BrowserFetcher {
-    const downloadPath = this.defaultDownloadPath;
-    if (!options.path && downloadPath) {
-      options.path = downloadPath;
-    }
-    if (!options.path) {
-      throw new Error('A `path` must be specified for `puppeteer-core`.');
-    }
-    if (
-      !('useMacOSARMBinary' in options) &&
-      this.configuration.experiments?.macArmChromiumEnabled
-    ) {
-      options.useMacOSARMBinary = true;
-    }
-    if (!('host' in options) && this.configuration.downloadHost) {
-      options.host = this.configuration.downloadHost;
-    }
-    if (!('product' in options) && this.configuration.defaultProduct) {
-      options.product = this.configuration.defaultProduct;
-    }
-    return new BrowserFetcher(options as BrowserFetcherOptions);
   }
 }

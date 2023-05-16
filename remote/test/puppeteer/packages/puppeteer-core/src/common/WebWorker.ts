@@ -125,6 +125,13 @@ export class WebWorker extends EventEmitter {
   
 
 
+  get client(): CDPSession {
+    return this.#client;
+  }
+
+  
+
+
 
 
 

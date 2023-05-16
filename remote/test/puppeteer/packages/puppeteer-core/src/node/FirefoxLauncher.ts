@@ -1,18 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import fs from 'fs';
+import {rename, unlink, mkdtemp} from 'fs/promises';
 import os from 'os';
 import path from 'path';
 
-import {Browser} from '../api/Browser.js';
-import {CDPBrowser} from '../common/Browser.js';
+import {
+  Browser as SupportedBrowsers,
+  createProfile,
+  Cache,
+  detectBrowserPlatform,
+  Browser,
+} from '@puppeteer/browsers';
+
+import {debugError} from '../common/util.js';
 import {assert} from '../util/assert.js';
 
-import {BrowserRunner} from './BrowserRunner.js';
 import {
   BrowserLaunchArgumentOptions,
   PuppeteerNodeLaunchOptions,
 } from './LaunchOptions.js';
-import {ProductLauncher} from './ProductLauncher.js';
+import {ProductLauncher, ResolvedLaunchArgs} from './ProductLauncher.js';
 import {PuppeteerNode} from './PuppeteerNode.js';
+import {rm} from './util/fs.js';
 
 
 
@@ -21,28 +45,19 @@ export class FirefoxLauncher extends ProductLauncher {
   constructor(puppeteer: PuppeteerNode) {
     super(puppeteer, 'firefox');
   }
+  
 
-  override async launch(
+
+  override async computeLaunchArguments(
     options: PuppeteerNodeLaunchOptions = {}
-  ): Promise<Browser> {
+  ): Promise<ResolvedLaunchArgs> {
     const {
       ignoreDefaultArgs = false,
       args = [],
-      dumpio = false,
       executablePath,
       pipe = false,
-      env = process.env,
-      handleSIGINT = true,
-      handleSIGTERM = true,
-      handleSIGHUP = true,
-      ignoreHTTPSErrors = false,
-      defaultViewport = {width: 800, height: 600},
-      slowMo = 0,
-      timeout = 30000,
       extraPrefsFirefox = {},
-      waitForInitialPage = true,
       debuggingPort = null,
-      protocol = 'cdp',
     } = options;
 
     const firefoxArguments = [];
@@ -90,13 +105,16 @@ export class FirefoxLauncher extends ProductLauncher {
       
       
       isTempUserDataDir = false;
-      const prefs = this.defaultPreferences(extraPrefsFirefox);
-      this.writePreferences(prefs, userDataDir);
     } else {
-      userDataDir = await this._createProfile(extraPrefsFirefox);
+      userDataDir = await mkdtemp(this.getProfilePath());
       firefoxArguments.push('--profile');
       firefoxArguments.push(userDataDir);
     }
+
+    await createProfile(SupportedBrowsers.FIREFOX, {
+      path: userDataDir,
+      preferences: extraPrefsFirefox,
+    });
 
     let firefoxExecutable: string;
     if (this.puppeteer._isPuppeteerCore || executablePath) {
@@ -109,96 +127,58 @@ export class FirefoxLauncher extends ProductLauncher {
       firefoxExecutable = this.executablePath();
     }
 
-    const runner = new BrowserRunner(
-      this.product,
-      firefoxExecutable,
-      firefoxArguments,
+    return {
+      isTempUserDataDir,
       userDataDir,
-      isTempUserDataDir
-    );
-    runner.start({
-      handleSIGHUP,
-      handleSIGTERM,
-      handleSIGINT,
-      dumpio,
-      env,
-      pipe,
-    });
+      args: firefoxArguments,
+      executablePath: firefoxExecutable,
+    };
+  }
 
-    if (protocol === 'webDriverBiDi') {
-      let browser;
+  
+
+
+  override async cleanUserDataDir(
+    userDataDir: string,
+    opts: {isTemp: boolean}
+  ): Promise<void> {
+    if (opts.isTemp) {
       try {
-        const connection = await runner.setupWebDriverBiDiConnection({
-          timeout,
-          slowMo,
-          preferredRevision: this.puppeteer.browserRevision,
-        });
-        const BiDi = await import(
-           '../common/bidi/bidi.js'
-        );
-        browser = await BiDi.Browser.create({
-          connection,
-          closeCallback: runner.close.bind(runner),
-          process: runner.proc,
-        });
+        await rm(userDataDir);
       } catch (error) {
-        runner.kill();
+        debugError(error);
         throw error;
       }
-
-      return browser;
-    }
-
-    let browser;
-    try {
-      const connection = await runner.setupConnection({
-        usePipe: pipe,
-        timeout,
-        slowMo,
-        preferredRevision: this.puppeteer.browserRevision,
-      });
-      browser = await CDPBrowser._create(
-        this.product,
-        connection,
-        [],
-        ignoreHTTPSErrors,
-        defaultViewport,
-        runner.proc,
-        runner.close.bind(runner),
-        options.targetFilter
-      );
-    } catch (error) {
-      runner.kill();
-      throw error;
-    }
-
-    if (waitForInitialPage) {
+    } else {
       try {
-        await browser.waitForTarget(
-          t => {
-            return t.type() === 'page';
-          },
-          {timeout}
-        );
+        
+        
+        await unlink(path.join(userDataDir, 'user.js'));
+
+        const prefsBackupPath = path.join(userDataDir, 'prefs.js.puppeteer');
+        if (fs.existsSync(prefsBackupPath)) {
+          const prefsPath = path.join(userDataDir, 'prefs.js');
+          await unlink(prefsPath);
+          await rename(prefsBackupPath, prefsPath);
+        }
       } catch (error) {
-        await browser.close();
-        throw error;
+        debugError(error);
       }
     }
-
-    return browser;
   }
 
   override executablePath(): string {
     
     if (this.puppeteer.browserRevision === 'latest') {
-      const browserFetcher = this.puppeteer.createBrowserFetcher({
-        product: this.product,
-        path: this.puppeteer.defaultDownloadPath!,
+      const cache = new Cache(this.puppeteer.defaultDownloadPath!);
+      const installedFirefox = cache.getInstalledBrowsers().find(browser => {
+        return (
+          browser.platform === detectBrowserPlatform() &&
+          browser.browser === Browser.FIREFOX
+        );
       });
-      const localRevisions = browserFetcher.localRevisions();
-      if (localRevisions[0]) {
-        this.actualBrowserRevision = localRevisions[0];
+      if (installedFirefox) {
+        this.actualBrowserRevision = installedFirefox.buildId;
       }
     }
     return this.resolveExecutablePath();
@@ -241,257 +221,5 @@ export class FirefoxLauncher extends ProductLauncher {
     }
     firefoxArguments.push(...args);
     return firefoxArguments;
-  }
-
-  defaultPreferences(extraPrefs: {[x: string]: unknown}): {
-    [x: string]: unknown;
-  } {
-    const server = 'dummy.test';
-
-    const defaultPrefs = {
-      
-      'app.normandy.api_url': '',
-      
-      'app.update.checkInstallTime': false,
-      
-      'app.update.disabledForTesting': true,
-
-      
-      'apz.content_response_timeout': 60000,
-
-      
-      
-      'browser.contentblocking.features.standard':
-        '-tp,tpPrivate,cookieBehavior0,-cm,-fp',
-
-      
-      
-      
-      'browser.dom.window.dump.enabled': true,
-      
-      'browser.newtabpage.activity-stream.feeds.system.topstories': false,
-      
-      'browser.newtabpage.enabled': false,
-      
-      
-      'browser.pagethumbnails.capturing_disabled': true,
-
-      
-      'browser.safebrowsing.blockedURIs.enabled': false,
-      'browser.safebrowsing.downloads.enabled': false,
-      'browser.safebrowsing.malware.enabled': false,
-      'browser.safebrowsing.passwords.enabled': false,
-      'browser.safebrowsing.phishing.enabled': false,
-
-      
-      'browser.search.update': false,
-      
-      'browser.sessionstore.resume_from_crash': false,
-      
-      'browser.shell.checkDefaultBrowser': false,
-
-      
-      'browser.startup.homepage': 'about:blank',
-      
-      'browser.startup.homepage_override.mstone': 'ignore',
-      
-      'browser.startup.page': 0,
-
-      
-      
-      
-      'browser.tabs.disableBackgroundZombification': false,
-      
-      'browser.tabs.warnOnCloseOtherTabs': false,
-      
-      'browser.tabs.warnOnOpen': false,
-
-      
-      'browser.uitour.enabled': false,
-      
-      
-      'browser.urlbar.suggest.searches': false,
-      
-      'browser.usedOnWindows10.introURL': '',
-      
-      'browser.warnOnQuit': false,
-
-      
-      'datareporting.healthreport.documentServerURI': `http://${server}/dummy/healthreport/`,
-      'datareporting.healthreport.logging.consoleEnabled': false,
-      'datareporting.healthreport.service.enabled': false,
-      'datareporting.healthreport.service.firstRun': false,
-      'datareporting.healthreport.uploadEnabled': false,
-
-      
-      'datareporting.policy.dataSubmissionEnabled': false,
-      'datareporting.policy.dataSubmissionPolicyBypassNotification': true,
-
-      
-      
-      'devtools.jsonview.enabled': false,
-
-      
-      'dom.disable_open_during_load': false,
-
-      
-      
-      'dom.file.createInChild': true,
-
-      
-      'dom.ipc.reportProcessHangs': false,
-
-      
-      'dom.max_chrome_script_run_time': 0,
-      'dom.max_script_run_time': 0,
-
-      
-      
-      'extensions.autoDisableScopes': 0,
-      'extensions.enabledScopes': 5,
-
-      
-      'extensions.getAddons.cache.enabled': false,
-
-      
-      'extensions.installDistroAddons': false,
-
-      
-      'extensions.screenshots.disabled': true,
-
-      
-      'extensions.update.enabled': false,
-
-      
-      'extensions.update.notifyUser': false,
-
-      
-      'extensions.webservice.discoverURL': `http://${server}/dummy/discoveryURL`,
-
-      
-      'fission.bfcacheInParent': false,
-
-      
-      'fission.webContentIsolationStrategy': 0,
-
-      
-      'focusmanager.testmode': true,
-      
-      'general.useragent.updates.enabled': false,
-      
-      
-      'geo.provider.testing': true,
-      
-      'geo.wifi.scan': false,
-      
-      'hangmonitor.timeout': 0,
-      
-      'javascript.options.showInConsole': true,
-
-      
-      'media.gmp-manager.updateEnabled': false,
-      
-      
-      'network.cookie.cookieBehavior': 0,
-
-      
-      'network.cookie.sameSite.laxByDefault': false,
-
-      
-      'network.http.prompt-temp-redirect': false,
-
-      
-      
-      'network.http.speculative-parallel-limit': 0,
-
-      
-      'network.manage-offline-status': false,
-
-      
-      'network.sntp.pools': server,
-
-      
-      'plugin.state.flash': 0,
-
-      'privacy.trackingprotection.enabled': false,
-
-      
-      
-      'remote.enabled': true,
-
-      
-      'security.certerrors.mitm.priming.enabled': false,
-      
-      
-      'security.fileuri.strict_origin_policy': false,
-      
-      'security.notification_enable_delay': 0,
-
-      
-      'services.settings.server': `http://${server}/dummy/blocklist/`,
-
-      
-      
-      'signon.autofillForms': false,
-      
-      
-      'signon.rememberSignons': false,
-
-      
-      'startup.homepage_welcome_url': 'about:blank',
-
-      
-      'startup.homepage_welcome_url.additional': '',
-
-      
-      'toolkit.cosmeticAnimations.enabled': false,
-
-      
-      'toolkit.startup.max_resumed_crashes': -1,
-    };
-
-    return Object.assign(defaultPrefs, extraPrefs);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async writePreferences(
-    prefs: {[x: string]: unknown},
-    profilePath: string
-  ): Promise<void> {
-    const lines = Object.entries(prefs).map(([key, value]) => {
-      return `user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`;
-    });
-
-    await fs.promises.writeFile(
-      path.join(profilePath, 'user.js'),
-      lines.join('\n')
-    );
-
-    
-    const prefsPath = path.join(profilePath, 'prefs.js');
-    if (fs.existsSync(prefsPath)) {
-      const prefsBackupPath = path.join(profilePath, 'prefs.js.puppeteer');
-      await fs.promises.copyFile(prefsPath, prefsBackupPath);
-    }
-  }
-
-  async _createProfile(extraPrefs: {[x: string]: unknown}): Promise<string> {
-    const temporaryProfilePath = await fs.promises.mkdtemp(
-      this.getProfilePath()
-    );
-
-    const prefs = this.defaultPreferences(extraPrefs);
-    await this.writePreferences(prefs, temporaryProfilePath);
-
-    return temporaryProfilePath;
   }
 }

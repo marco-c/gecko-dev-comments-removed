@@ -73,13 +73,15 @@ export class FileChooser {
 
 
 
-  async accept(filePaths: string[]): Promise<void> {
+
+
+  async accept(paths: string[]): Promise<void> {
     assert(
       !this.#handled,
       'Cannot accept FileChooser which is already handled!'
     );
     this.#handled = true;
-    await this.#element.uploadFile(...filePaths);
+    await this.#element.uploadFile(...paths);
   }
 
   

@@ -38,7 +38,7 @@ const puppeteer = require('puppeteer');
   await page.click(allResultsSelector);
 
   
-  const resultsSelector = '.gsc-results .gs-title';
+  const resultsSelector = '.gsc-table-result a.gs-title[href]';
   await page.waitForSelector(resultsSelector);
 
   

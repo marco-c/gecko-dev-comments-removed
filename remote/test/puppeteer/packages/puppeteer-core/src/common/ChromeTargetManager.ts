@@ -18,6 +18,7 @@ import {Protocol} from 'devtools-protocol';
 
 import {TargetFilterCallback} from '../api/Browser.js';
 import {assert} from '../util/assert.js';
+import {createDeferredPromise} from '../util/DeferredPromise.js';
 
 import {CDPSession, Connection} from './Connection.js';
 import {EventEmitter} from './EventEmitter.js';
@@ -59,7 +60,6 @@ export class ChromeTargetManager extends EventEmitter implements TargetManager {
   
 
 
-
   #attachedTargetsBySessionId: Map<string, Target> = new Map();
   
 
@@ -81,10 +81,7 @@ export class ChromeTargetManager extends EventEmitter implements TargetManager {
     (event: Protocol.Target.DetachedFromTargetEvent) => void
   > = new WeakMap();
 
-  #initializeCallback = () => {};
-  #initializePromise: Promise<void> = new Promise(resolve => {
-    this.#initializeCallback = resolve;
-  });
+  #initializePromise = createDeferredPromise<void>();
   #targetsIdsForInit: Set<string> = new Set();
 
   constructor(
@@ -103,13 +100,11 @@ export class ChromeTargetManager extends EventEmitter implements TargetManager {
     this.#connection.on('sessiondetached', this.#onSessionDetached);
     this.#setupAttachmentListeners(this.#connection);
 
-    
-    
     this.#connection
       .send('Target.setDiscoverTargets', {
         discover: true,
         filter: [{type: 'tab', exclude: true}, {}],
-      } as any)
+      })
       .then(this.#storeExistingTargetsForInit)
       .catch(debugError);
   }
@@ -384,7 +379,7 @@ export class ChromeTargetManager extends EventEmitter implements TargetManager {
   #finishInitializationIfReady(targetId?: string): void {
     targetId !== undefined && this.#targetsIdsForInit.delete(targetId);
     if (this.#targetsIdsForInit.size === 0) {
-      this.#initializeCallback();
+      this.#initializePromise.resolve();
     }
   }
 

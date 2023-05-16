@@ -37,10 +37,21 @@ const puppeteer = new PuppeteerNode({
 });
 
 export const {
+  
+
+
   connect,
-  createBrowserFetcher,
+  
+
+
   defaultArgs,
+  
+
+
   executablePath,
+  
+
+
   launch,
 } = puppeteer;
 

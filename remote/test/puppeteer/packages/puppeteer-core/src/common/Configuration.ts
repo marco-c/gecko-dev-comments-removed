@@ -23,21 +23,7 @@ import {Product} from './Product.js';
 
 
 
-export interface ExperimentsConfiguration {
-  
-
-
-
-
-
-
-
-
-
-
-
-  macArmChromiumEnabled?: boolean;
-}
+export type ExperimentsConfiguration = Record<string, never>;
 
 
 

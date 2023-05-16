@@ -27,6 +27,12 @@ export interface BrowserLaunchArgumentOptions {
 
 
 
+
+
+
+
+
+
   headless?: boolean | 'new';
   
 

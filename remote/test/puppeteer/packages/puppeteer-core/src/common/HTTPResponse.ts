@@ -14,10 +14,15 @@
 
 
 import {Protocol} from 'devtools-protocol';
-import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
 
+import {
+  HTTPResponse as BaseHTTPResponse,
+  RemoteAddress,
+} from '../api/HTTPResponse.js';
+import {createDeferredPromise} from '../util/DeferredPromise.js';
+
+import {CDPSession} from './Connection.js';
 import {ProtocolError} from './Errors.js';
-import {EventEmitter} from './EventEmitter.js';
 import {Frame} from './Frame.js';
 import {HTTPRequest} from './HTTPRequest.js';
 import {SecurityDetails} from './SecurityDetails.js';
@@ -25,30 +30,11 @@ import {SecurityDetails} from './SecurityDetails.js';
 
 
 
-export interface RemoteAddress {
-  ip?: string;
-  port?: number;
-}
-
-interface CDPSession extends EventEmitter {
-  send<T extends keyof ProtocolMapping.Commands>(
-    method: T,
-    ...paramArgs: ProtocolMapping.Commands[T]['paramsType']
-  ): Promise<ProtocolMapping.Commands[T]['returnType']>;
-}
-
-
-
-
-
-
-
-export class HTTPResponse {
+export class HTTPResponse extends BaseHTTPResponse {
   #client: CDPSession;
   #request: HTTPRequest;
   #contentPromise: Promise<Buffer> | null = null;
-  #bodyLoadedPromise: Promise<Error | void>;
-  #bodyLoadedPromiseFulfill: (err: Error | void) => void = () => {};
+  #bodyLoadedPromise = createDeferredPromise<Error | void>();
   #remoteAddress: RemoteAddress;
   #status: number;
   #statusText: string;
@@ -59,21 +45,15 @@ export class HTTPResponse {
   #securityDetails: SecurityDetails | null;
   #timing: Protocol.Network.ResourceTiming | null;
 
-  
-
-
   constructor(
     client: CDPSession,
     request: HTTPRequest,
     responsePayload: Protocol.Network.Response,
     extraInfo: Protocol.Network.ResponseReceivedExtraInfoEvent | null
   ) {
+    super();
     this.#client = client;
     this.#request = request;
-
-    this.#bodyLoadedPromise = new Promise(fulfill => {
-      this.#bodyLoadedPromiseFulfill = fulfill;
-    });
 
     this.#remoteAddress = {
       ip: responsePayload.remoteIPAddress,
@@ -119,81 +99,47 @@ export class HTTPResponse {
     return statusText;
   }
 
-  
-
-
-  _resolveBody(err: Error | null): void {
+  override _resolveBody(err: Error | null): void {
     if (err) {
-      return this.#bodyLoadedPromiseFulfill(err);
+      return this.#bodyLoadedPromise.resolve(err);
     }
-    return this.#bodyLoadedPromiseFulfill();
+    return this.#bodyLoadedPromise.resolve();
   }
 
-  
-
-
-
-  remoteAddress(): RemoteAddress {
+  override remoteAddress(): RemoteAddress {
     return this.#remoteAddress;
   }
 
-  
-
-
-  url(): string {
+  override url(): string {
     return this.#url;
   }
 
-  
-
-
-  ok(): boolean {
+  override ok(): boolean {
     
     return this.#status === 0 || (this.#status >= 200 && this.#status <= 299);
   }
 
-  
-
-
-  status(): number {
+  override status(): number {
     return this.#status;
   }
 
-  
-
-
-
-  statusText(): string {
+  override statusText(): string {
     return this.#statusText;
   }
 
-  
-
-
-
-  headers(): Record<string, string> {
+  override headers(): Record<string, string> {
     return this.#headers;
   }
 
-  
-
-
-
-  securityDetails(): SecurityDetails | null {
+  override securityDetails(): SecurityDetails | null {
     return this.#securityDetails;
   }
 
-  
-
-
-  timing(): Protocol.Network.ResourceTiming | null {
+  override timing(): Protocol.Network.ResourceTiming | null {
     return this.#timing;
   }
 
-  
-
-
-  buffer(): Promise<Buffer> {
+  override buffer(): Promise<Buffer> {
     if (!this.#contentPromise) {
       this.#contentPromise = this.#bodyLoadedPromise.then(async error => {
         if (error) {
@@ -224,55 +170,19 @@ export class HTTPResponse {
     return this.#contentPromise;
   }
 
-  
-
-
-  async text(): Promise<string> {
-    const content = await this.buffer();
-    return content.toString('utf8');
-  }
-
-  
-
-
-
-
-
-
-
-
-  async json(): Promise<any> {
-    const content = await this.text();
-    return JSON.parse(content);
-  }
-
-  
-
-
-  request(): HTTPRequest {
+  override request(): HTTPRequest {
     return this.#request;
   }
 
-  
-
-
-
-  fromCache(): boolean {
+  override fromCache(): boolean {
     return this.#fromDiskCache || this.#request._fromMemoryCache;
   }
 
-  
-
-
-  fromServiceWorker(): boolean {
+  override fromServiceWorker(): boolean {
     return this.#fromServiceWorker;
   }
 
-  
-
-
-
-  frame(): Frame | null {
+  override frame(): Frame | null {
     return this.#request.frame();
   }
 }

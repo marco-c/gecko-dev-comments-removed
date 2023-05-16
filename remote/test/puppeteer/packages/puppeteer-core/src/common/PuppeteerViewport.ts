@@ -32,6 +32,10 @@ export interface Viewport {
 
 
 
+
+
+
+
   deviceScaleFactor?: number;
   
 

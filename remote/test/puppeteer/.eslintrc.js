@@ -13,33 +13,33 @@ module.exports = {
 
   rules: {
     
-    curly: [2, 'all'],
+    curly: ['error', 'all'],
     
     'arrow-body-style': ['error', 'always'],
     
-    'prettier/prettier': 2,
+    'prettier/prettier': 'error',
     
     'spaced-comment': [
-      2,
+      'error',
       'always',
       {
         markers: ['*'],
       },
     ],
-    eqeqeq: [2],
+    eqeqeq: ['error'],
     'accessor-pairs': [
-      2,
+      'error',
       {
         getWithoutSet: false,
         setWithoutGet: false,
       },
     ],
-    'new-parens': 2,
-    'func-call-spacing': 2,
-    'prefer-const': 2,
+    'new-parens': 'error',
+    'func-call-spacing': 'error',
+    'prefer-const': 'error',
 
     'max-len': [
-      2,
+      'error',
       {
         
 
@@ -58,27 +58,27 @@ module.exports = {
       },
     ],
     
-    'no-var': 2,
-    'no-with': 2,
-    'no-multi-str': 2,
-    'no-caller': 2,
-    'no-implied-eval': 2,
-    'no-labels': 2,
-    'no-new-object': 2,
-    'no-octal-escape': 2,
-    'no-self-compare': 2,
-    'no-shadow-restricted-names': 2,
-    'no-cond-assign': 2,
-    'no-debugger': 2,
-    'no-dupe-keys': 2,
-    'no-duplicate-case': 2,
-    'no-empty-character-class': 2,
-    'no-unreachable': 2,
-    'no-unsafe-negation': 2,
-    radix: 2,
-    'valid-typeof': 2,
+    'no-var': 'error',
+    'no-with': 'error',
+    'no-multi-str': 'error',
+    'no-caller': 'error',
+    'no-implied-eval': 'error',
+    'no-labels': 'error',
+    'no-new-object': 'error',
+    'no-octal-escape': 'error',
+    'no-self-compare': 'error',
+    'no-shadow-restricted-names': 'error',
+    'no-cond-assign': 'error',
+    'no-debugger': 'error',
+    'no-dupe-keys': 'error',
+    'no-duplicate-case': 'error',
+    'no-empty-character-class': 'error',
+    'no-unreachable': 'error',
+    'no-unsafe-negation': 'error',
+    radix: 'error',
+    'valid-typeof': 'error',
     'no-unused-vars': [
-      2,
+      'error',
       {
         args: 'none',
         vars: 'local',
@@ -86,11 +86,11 @@ module.exports = {
           '([fx]?describe|[fx]?it|beforeAll|beforeEach|afterAll|afterEach)',
       },
     ],
-    'no-implicit-globals': [2],
+    'no-implicit-globals': ['error'],
 
     
-    'require-yield': 2,
-    'template-curly-spacing': [2, 'never'],
+    'require-yield': 'error',
+    'template-curly-spacing': ['error', 'never'],
 
     
     'mocha/no-exclusive-tests': 'error',
@@ -127,6 +127,10 @@ module.exports = {
   overrides: [
     {
       files: ['*.ts'],
+      parserOptions: {
+        allowAutomaticSingleRunInference: true,
+        project: './tsconfig.base.json',
+      },
       extends: [
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
@@ -134,33 +138,33 @@ module.exports = {
       plugins: ['eslint-plugin-tsdoc', 'local'],
       rules: {
         
-        'local/prettier-comments': 2,
+        'local/prettier-comments': 'error',
         
-        curly: [2, 'all'],
+        curly: ['error', 'all'],
         
         'arrow-body-style': ['error', 'always'],
         
-        'tsdoc/syntax': 2,
+        'tsdoc/syntax': 'error',
         
         '@typescript-eslint/array-type': ['error', {default: 'array-simple'}],
-        'no-unused-vars': 0,
+        'no-unused-vars': 'off',
         '@typescript-eslint/no-unused-vars': [
           'error',
           {argsIgnorePattern: '^_'},
         ],
-        'func-call-spacing': 0,
-        '@typescript-eslint/func-call-spacing': 2,
-        semi: 0,
-        '@typescript-eslint/semi': 2,
-        '@typescript-eslint/no-empty-function': 0,
-        '@typescript-eslint/no-use-before-define': 0,
+        'func-call-spacing': 'off',
+        '@typescript-eslint/func-call-spacing': 'error',
+        semi: 'off',
+        '@typescript-eslint/semi': 'error',
+        '@typescript-eslint/no-empty-function': 'off',
+        '@typescript-eslint/no-use-before-define': 'off',
         
-        '@typescript-eslint/no-explicit-any': 0,
+        '@typescript-eslint/no-explicit-any': 'off',
         
         
-        '@typescript-eslint/explicit-function-return-type': 0,
+        '@typescript-eslint/explicit-function-return-type': 'off',
         
-        '@typescript-eslint/no-non-null-assertion': 0,
+        '@typescript-eslint/no-non-null-assertion': 'off',
         
 
 
@@ -182,7 +186,7 @@ module.exports = {
           },
         ],
         
-        '@typescript-eslint/explicit-module-boundary-types': 2,
+        '@typescript-eslint/explicit-module-boundary-types': 'error',
         'no-restricted-syntax': [
           'error',
           {
@@ -190,6 +194,10 @@ module.exports = {
             selector: "CallExpression[callee.name='require']",
             message: '`require` statements are not allowed. Use `import`.',
           },
+        ],
+        '@typescript-eslint/no-floating-promises': [
+          'error',
+          {ignoreVoid: true, ignoreIIFE: true},
         ],
       },
     },

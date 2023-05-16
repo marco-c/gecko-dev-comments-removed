@@ -19,12 +19,13 @@ import {Protocol} from 'devtools-protocol';
 import {CDPSession} from '../common/Connection.js';
 import {ExecutionContext} from '../common/ExecutionContext.js';
 import {Frame} from '../common/Frame.js';
-import {MouseButton} from '../common/Input.js';
+import {MouseClickOptions} from '../common/Input.js';
 import {WaitForSelectorOptions} from '../common/IsolatedWorld.js';
 import {
   ElementFor,
   EvaluateFuncWith,
   HandleFor,
+  HandleOr,
   NodeFor,
 } from '../common/types.js';
 import {KeyInput} from '../common/USKeyboardLayout.js';
@@ -75,21 +76,7 @@ export interface Offset {
 
 
 
-export interface ClickOptions {
-  
-
-
-
-
-  delay?: number;
-  
-
-
-  button?: MouseButton;
-  
-
-
-  clickCount?: number;
+export interface ClickOptions extends MouseClickOptions {
   
 
 
@@ -158,8 +145,108 @@ export class ElementHandle<
   
 
 
-  constructor() {
+  protected handle;
+
+  
+
+
+  constructor(handle: JSHandle<ElementType>) {
     super();
+    this.handle = handle;
+  }
+
+  
+
+
+  override get id(): string | undefined {
+    return this.handle.id;
+  }
+
+  
+
+
+  override get disposed(): boolean {
+    return this.handle.disposed;
+  }
+
+  
+
+
+  override async getProperty<K extends keyof ElementType>(
+    propertyName: HandleOr<K>
+  ): Promise<HandleFor<ElementType[K]>>;
+  
+
+
+  override async getProperty(propertyName: string): Promise<JSHandle<unknown>>;
+  override async getProperty<K extends keyof ElementType>(
+    propertyName: HandleOr<K>
+  ): Promise<HandleFor<ElementType[K]>> {
+    return this.handle.getProperty(propertyName);
+  }
+
+  
+
+
+  override async getProperties(): Promise<Map<string, JSHandle>> {
+    return this.handle.getProperties();
+  }
+
+  
+
+
+  override async evaluate<
+    Params extends unknown[],
+    Func extends EvaluateFuncWith<ElementType, Params> = EvaluateFuncWith<
+      ElementType,
+      Params
+    >
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<Awaited<ReturnType<Func>>> {
+    return this.handle.evaluate(pageFunction, ...args);
+  }
+
+  
+
+
+  override evaluateHandle<
+    Params extends unknown[],
+    Func extends EvaluateFuncWith<ElementType, Params> = EvaluateFuncWith<
+      ElementType,
+      Params
+    >
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+    return this.handle.evaluateHandle(pageFunction, ...args);
+  }
+
+  
+
+
+  override async jsonValue(): Promise<ElementType> {
+    return this.handle.jsonValue();
+  }
+
+  
+
+
+  override toString(): string {
+    return this.handle.toString();
+  }
+
+  
+
+
+  override async dispose(): Promise<void> {
+    return await this.handle.dispose();
+  }
+
+  override asElement(): ElementHandle<ElementType> {
+    return this;
   }
 
   
@@ -371,6 +458,23 @@ export class ElementHandle<
 
 
 
+  async isVisible(): Promise<boolean> {
+    throw new Error('Not implemented.');
+  }
+
+  
+
+
+
+  async isHidden(): Promise<boolean> {
+    throw new Error('Not implemented.');
+  }
+
+  
+
+
+
+
 
 
 
@@ -466,10 +570,6 @@ export class ElementHandle<
     K extends keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap
   >(): Promise<HandleFor<ElementFor<K>>> {
     throw new Error('Not implemented');
-  }
-
-  override asElement(): ElementHandle<ElementType> | null {
-    return this;
   }
 
   
@@ -597,9 +697,10 @@ export class ElementHandle<
 
 
 
+
   async uploadFile(
     this: ElementHandle<HTMLInputElement>,
-    ...filePaths: string[]
+    ...paths: string[]
   ): Promise<void>;
   async uploadFile(this: ElementHandle<HTMLInputElement>): Promise<void> {
     throw new Error('Not implemented');
@@ -634,6 +735,8 @@ export class ElementHandle<
   }
 
   
+
+
 
 
 
@@ -716,13 +819,99 @@ export class ElementHandle<
   
 
 
+  protected async assertConnectedElement(): Promise<void> {
+    const error = await this.evaluate(
+      async (element): Promise<string | undefined> => {
+        if (!element.isConnected) {
+          return 'Node is detached from document';
+        }
+        if (element.nodeType !== Node.ELEMENT_NODE) {
+          return 'Node is not of type HTMLElement';
+        }
+        return;
+      }
+    );
+
+    if (error) {
+      throw new Error(error);
+    }
+  }
+
+  
+
+
+
+
+
+
+
   async isIntersectingViewport(
     this: ElementHandle<Element>,
     options?: {
       threshold?: number;
     }
-  ): Promise<boolean>;
-  async isIntersectingViewport(): Promise<boolean> {
+  ): Promise<boolean> {
+    await this.assertConnectedElement();
+
+    const {threshold = 0} = options ?? {};
+    const svgHandle = await this.#asSVGElementHandle(this);
+    const intersectionTarget: ElementHandle<Element> = svgHandle
+      ? await this.#getOwnerSVGElement(svgHandle)
+      : this;
+
+    try {
+      return await intersectionTarget.evaluate(async (element, threshold) => {
+        const visibleRatio = await new Promise<number>(resolve => {
+          const observer = new IntersectionObserver(entries => {
+            resolve(entries[0]!.intersectionRatio);
+            observer.disconnect();
+          });
+          observer.observe(element);
+        });
+        return threshold === 1 ? visibleRatio === 1 : visibleRatio > threshold;
+      }, threshold);
+    } finally {
+      if (intersectionTarget !== this) {
+        await intersectionTarget.dispose();
+      }
+    }
+  }
+
+  
+
+
+
+  async scrollIntoView(this: ElementHandle<Element>): Promise<void> {
     throw new Error('Not implemented');
+  }
+
+  
+
+
+
+  async #asSVGElementHandle(
+    handle: ElementHandle<Element>
+  ): Promise<ElementHandle<SVGElement> | null> {
+    if (
+      await handle.evaluate(element => {
+        return element instanceof SVGElement;
+      })
+    ) {
+      return handle as ElementHandle<SVGElement>;
+    } else {
+      return null;
+    }
+  }
+
+  async #getOwnerSVGElement(
+    handle: ElementHandle<SVGElement>
+  ): Promise<ElementHandle<SVGSVGElement>> {
+    
+    return await handle.evaluateHandle(element => {
+      if (element instanceof SVGSVGElement) {
+        return element;
+      }
+      return element.ownerSVGElement!;
+    });
   }
 }

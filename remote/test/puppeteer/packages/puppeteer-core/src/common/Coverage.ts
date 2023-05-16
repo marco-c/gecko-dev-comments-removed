@@ -185,6 +185,7 @@ export class Coverage {
 
 
 
+
   async stopCSSCoverage(): Promise<CoverageEntry[]> {
     return await this.#cssCoverage.stop();
   }

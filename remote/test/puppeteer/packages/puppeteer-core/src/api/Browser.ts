@@ -425,6 +425,7 @@ export class Browser extends EventEmitter {
 
 
 
+
   close(): Promise<void> {
     throw new Error('Not implemented');
   }

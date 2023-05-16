@@ -94,6 +94,7 @@ export class Dialog {
 
 
 
+
   async accept(promptText?: string): Promise<void> {
     assert(!this.#handled, 'Cannot accept dialog which is already handled!');
     this.#handled = true;

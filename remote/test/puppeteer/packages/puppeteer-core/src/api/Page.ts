@@ -18,10 +18,13 @@ import type {Readable} from 'stream';
 
 import {Protocol} from 'devtools-protocol';
 
+import type {HTTPRequest} from '../api/HTTPRequest.js';
+import type {HTTPResponse} from '../api/HTTPResponse.js';
 import type {Accessibility} from '../common/Accessibility.js';
 import type {ConsoleMessage} from '../common/ConsoleMessage.js';
 import type {Coverage} from '../common/Coverage.js';
 import {Device} from '../common/Device.js';
+import {DeviceRequestPrompt} from '../common/DeviceRequestPrompt.js';
 import type {Dialog} from '../common/Dialog.js';
 import {EventEmitter, Handler} from '../common/EventEmitter.js';
 import type {FileChooser} from '../common/FileChooser.js';
@@ -31,18 +34,16 @@ import type {
   FrameAddStyleTagOptions,
   FrameWaitForFunctionOptions,
 } from '../common/Frame.js';
-import type {HTTPRequest} from '../common/HTTPRequest.js';
-import type {HTTPResponse} from '../common/HTTPResponse.js';
-import type {
-  Keyboard,
-  Mouse,
-  MouseButton,
-  Touchscreen,
-} from '../common/Input.js';
+import type {Keyboard, Mouse, Touchscreen} from '../common/Input.js';
 import type {WaitForSelectorOptions} from '../common/IsolatedWorld.js';
 import type {PuppeteerLifeCycleEvent} from '../common/LifecycleWatcher.js';
 import type {Credentials, NetworkConditions} from '../common/NetworkManager.js';
-import type {PDFOptions} from '../common/PDFOptions.js';
+import {
+  LowerCasePaperFormat,
+  paperFormats,
+  ParsedPDFOptions,
+  PDFOptions,
+} from '../common/PDFOptions.js';
 import type {Viewport} from '../common/PuppeteerViewport.js';
 import type {Target} from '../common/Target.js';
 import type {Tracing} from '../common/Tracing.js';
@@ -52,11 +53,13 @@ import type {
   HandleFor,
   NodeFor,
 } from '../common/types.js';
+import {importFSPromises, isNumber, isString} from '../common/util.js';
 import type {WebWorker} from '../common/WebWorker.js';
+import {assert} from '../util/assert.js';
 
 import type {Browser} from './Browser.js';
 import type {BrowserContext} from './BrowserContext.js';
-import type {ElementHandle} from './ElementHandle.js';
+import type {ClickOptions, ElementHandle} from './ElementHandle.js';
 import type {JSHandle} from './JSHandle.js';
 
 
@@ -207,7 +210,6 @@ export interface ScreenshotOptions {
 
 export const enum PageEmittedEvents {
   
-
 
 
   Close = 'close',
@@ -589,21 +591,36 @@ export class Page extends EventEmitter {
     throw new Error('Not implemented');
   }
 
+  
+
+
   get keyboard(): Keyboard {
     throw new Error('Not implemented');
   }
+
+  
+
 
   get touchscreen(): Touchscreen {
     throw new Error('Not implemented');
   }
 
+  
+
+
   get coverage(): Coverage {
     throw new Error('Not implemented');
   }
 
+  
+
+
   get tracing(): Tracing {
     throw new Error('Not implemented');
   }
+
+  
+
 
   get accessibility(): Accessibility {
     throw new Error('Not implemented');
@@ -1303,6 +1320,8 @@ export class Page extends EventEmitter {
 
 
 
+
+
   async metrics(): Promise<Metrics> {
     throw new Error('Not implemented');
   }
@@ -1312,16 +1331,20 @@ export class Page extends EventEmitter {
 
 
 
-
   url(): string {
     throw new Error('Not implemented');
   }
+
+  
+
 
   async content(): Promise<string> {
     throw new Error('Not implemented');
   }
 
   
+
+
 
 
 
@@ -1959,6 +1982,8 @@ export class Page extends EventEmitter {
 
 
 
+
+
   viewport(): Viewport | null {
     throw new Error('Not implemented');
   }
@@ -2078,6 +2103,22 @@ export class Page extends EventEmitter {
   
 
 
+  async _maybeWriteBufferToFile(
+    path: string | undefined,
+    buffer: Buffer
+  ): Promise<void> {
+    if (!path) {
+      return;
+    }
+
+    const fs = await importFSPromises();
+
+    await fs.writeFile(path, buffer);
+  }
+
+  
+
+
 
 
 
@@ -2138,6 +2179,59 @@ export class Page extends EventEmitter {
   
 
 
+  _getPDFOptions(
+    options: PDFOptions = {},
+    lengthUnit: 'in' | 'cm' = 'in'
+  ): ParsedPDFOptions {
+    const defaults = {
+      scale: 1,
+      displayHeaderFooter: false,
+      headerTemplate: '',
+      footerTemplate: '',
+      printBackground: false,
+      landscape: false,
+      pageRanges: '',
+      preferCSSPageSize: false,
+      omitBackground: false,
+      timeout: 30000,
+    };
+
+    let width = 8.5;
+    let height = 11;
+    if (options.format) {
+      const format =
+        paperFormats[options.format.toLowerCase() as LowerCasePaperFormat];
+      assert(format, 'Unknown paper format: ' + options.format);
+      width = format.width;
+      height = format.height;
+    } else {
+      width = convertPrintParameterToInches(options.width, lengthUnit) ?? width;
+      height =
+        convertPrintParameterToInches(options.height, lengthUnit) ?? height;
+    }
+
+    const margin = {
+      top: convertPrintParameterToInches(options.margin?.top, lengthUnit) || 0,
+      left:
+        convertPrintParameterToInches(options.margin?.left, lengthUnit) || 0,
+      bottom:
+        convertPrintParameterToInches(options.margin?.bottom, lengthUnit) || 0,
+      right:
+        convertPrintParameterToInches(options.margin?.right, lengthUnit) || 0,
+    };
+
+    const output = {
+      ...defaults,
+      ...options,
+      width,
+      height,
+      margin,
+    };
+
+    return output;
+  }
+
+  
 
 
 
@@ -2160,13 +2254,13 @@ export class Page extends EventEmitter {
   
 
 
-
   async pdf(options?: PDFOptions): Promise<Buffer>;
   async pdf(): Promise<Buffer> {
     throw new Error('Not implemented');
   }
 
   
+
 
 
 
@@ -2187,6 +2281,9 @@ export class Page extends EventEmitter {
   isClosed(): boolean {
     throw new Error('Not implemented');
   }
+
+  
+
 
   get mouse(): Mouse {
     throw new Error('Not implemented');
@@ -2217,14 +2314,7 @@ export class Page extends EventEmitter {
 
 
 
-  click(
-    selector: string,
-    options?: {
-      delay?: number;
-      button?: MouseButton;
-      clickCount?: number;
-    }
-  ): Promise<void>;
+  click(selector: string, options?: Readonly<ClickOptions>): Promise<void>;
   click(): Promise<void> {
     throw new Error('Not implemented');
   }
@@ -2248,6 +2338,7 @@ export class Page extends EventEmitter {
   }
 
   
+
 
 
 
@@ -2295,6 +2386,7 @@ export class Page extends EventEmitter {
   }
 
   
+
 
 
 
@@ -2419,6 +2511,7 @@ export class Page extends EventEmitter {
 
 
 
+
   async waitForSelector<Selector extends string>(
     selector: Selector,
     options?: WaitForSelectorOptions
@@ -2430,6 +2523,7 @@ export class Page extends EventEmitter {
   }
 
   
+
 
 
 
@@ -2558,6 +2652,36 @@ export class Page extends EventEmitter {
   >(): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
     throw new Error('Not implemented');
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForDevicePrompt(
+    options?: WaitTimeoutOptions
+  ): Promise<DeviceRequestPrompt>;
+  waitForDevicePrompt(): Promise<DeviceRequestPrompt> {
+    throw new Error('Not implemented');
+  }
 }
 
 
@@ -2588,3 +2712,37 @@ export const unitToPixels = {
   cm: 37.8,
   mm: 3.78,
 };
+
+function convertPrintParameterToInches(
+  parameter?: string | number,
+  lengthUnit: 'in' | 'cm' = 'in'
+): number | undefined {
+  if (typeof parameter === 'undefined') {
+    return undefined;
+  }
+  let pixels;
+  if (isNumber(parameter)) {
+    
+    pixels = parameter;
+  } else if (isString(parameter)) {
+    const text = parameter;
+    let unit = text.substring(text.length - 2).toLowerCase();
+    let valueText = '';
+    if (unit in unitToPixels) {
+      valueText = text.substring(0, text.length - 2);
+    } else {
+      
+      
+      unit = 'px';
+      valueText = text;
+    }
+    const value = Number(valueText);
+    assert(!isNaN(value), 'Failed to parse parameter value: ' + text);
+    pixels = value * unitToPixels[unit as keyof typeof unitToPixels];
+  } else {
+    throw new Error(
+      'page.pdf() Cannot handle parameter type: ' + typeof parameter
+    );
+  }
+  return pixels / unitToPixels[lengthUnit];
+}

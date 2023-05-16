@@ -17,42 +17,41 @@
 import {readFile, rm, writeFile} from 'fs/promises';
 import {join} from 'path';
 
-import {describeInstallation} from './describeInstallation.js';
+import {configureSandbox} from './sandbox.js';
 import {execFile, readAsset} from './util.js';
 
-describeInstallation(
-  '`puppeteer` with Webpack',
-  {
-    dependencies: ['puppeteer-core', 'puppeteer'],
+describe('`puppeteer` with Webpack', () => {
+  configureSandbox({
+    dependencies: ['@puppeteer/browsers', 'puppeteer-core', 'puppeteer'],
     devDependencies: ['webpack', 'webpack-cli'],
     env: cwd => {
       return {
         PUPPETEER_CACHE_DIR: join(cwd, '.cache', 'puppeteer'),
       };
     },
-  },
-  ({itEvaluates}) => {
-    itEvaluates('Webpack bundles', {commonjs: true}, async cwd => {
-      
-      await writeFile(
-        join(cwd, 'webpack.config.mjs'),
-        await readAsset('puppeteer', 'webpack', 'webpack.config.js')
-      );
+  });
 
-      
-      await writeFile(
-        join(cwd, 'index.js'),
-        await readAsset('puppeteer', 'basic.js')
-      );
+  it('evaluates WebPack Bundles', async function () {
+    
+    await writeFile(
+      join(this.sandbox, 'webpack.config.mjs'),
+      await readAsset('puppeteer', 'webpack', 'webpack.config.js')
+    );
 
-      
-      await execFile('npx', ['webpack'], {cwd, shell: true});
+    
+    await writeFile(
+      join(this.sandbox, 'index.js'),
+      await readAsset('puppeteer', 'basic.js')
+    );
 
-      
-      await rm('node_modules', {recursive: true, force: true});
+    
+    await execFile('npx', ['webpack'], {cwd: this.sandbox, shell: true});
 
-      
-      return await readFile(join(cwd, 'bundle.js'), 'utf-8');
-    });
-  }
-);
+    
+    await rm('node_modules', {recursive: true, force: true});
+
+    const script = await readFile(join(this.sandbox, 'bundle.js'), 'utf-8');
+
+    await this.runScript(script, 'cjs');
+  });
+});

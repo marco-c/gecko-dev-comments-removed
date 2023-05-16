@@ -1,9 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
 import {debugError, isDate, isPlainObject, isRegExp} from '../util.js';
 
+import {Context} from './Context.js';
+import {ElementHandle} from './ElementHandle.js';
 import {JSHandle} from './JSHandle.js';
-import {Page} from './Page.js';
 
 
 
@@ -130,10 +147,13 @@ export class BidiSerializer {
 
   static serialize(
     arg: unknown,
-    context: Page
+    context: Context
   ): Bidi.CommonDataTypes.LocalOrRemoteValue {
     
-    const objectHandle = arg && arg instanceof JSHandle ? arg : null;
+    const objectHandle =
+      arg && (arg instanceof JSHandle || arg instanceof ElementHandle)
+        ? arg
+        : null;
     if (objectHandle) {
       if (objectHandle.context() !== context) {
         throw new Error(
@@ -143,7 +163,7 @@ export class BidiSerializer {
       if (objectHandle.disposed) {
         throw new Error('JSHandle is disposed!');
       }
-      return objectHandle.bidiObject();
+      return objectHandle.remoteValue();
     }
 
     return BidiSerializer.serializeRemoveValue(arg);

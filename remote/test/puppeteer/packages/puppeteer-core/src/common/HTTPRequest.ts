@@ -14,129 +14,36 @@
 
 
 import {Protocol} from 'devtools-protocol';
-import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
 
+import {
+  ContinueRequestOverrides,
+  ErrorCode,
+  headersArray,
+  HTTPRequest as BaseHTTPRequest,
+  InterceptResolutionAction,
+  InterceptResolutionState,
+  ResourceType,
+  ResponseForRequest,
+  STATUS_TEXTS,
+} from '../api/HTTPRequest.js';
+import {HTTPResponse} from '../api/HTTPResponse.js';
 import {assert} from '../util/assert.js';
 
+import {CDPSession} from './Connection.js';
 import {ProtocolError} from './Errors.js';
-import {EventEmitter} from './EventEmitter.js';
 import {Frame} from './Frame.js';
-import {HTTPResponse} from './HTTPResponse.js';
 import {debugError, isString} from './util.js';
 
 
 
 
-export interface ContinueRequestOverrides {
-  
-
-
-  url?: string;
-  method?: string;
-  postData?: string;
-  headers?: Record<string, string>;
-}
-
-
-
-
-export interface InterceptResolutionState {
-  action: InterceptResolutionAction;
-  priority?: number;
-}
-
-
-
-
-
-
-export interface ResponseForRequest {
-  status: number;
-  
-
-
-  headers: Record<string, unknown>;
-  contentType: string;
-  body: string | Buffer;
-}
-
-
-
-
-
-
-export type ResourceType = Lowercase<Protocol.Network.ResourceType>;
-
-
-
-
-
-
-export const DEFAULT_INTERCEPT_RESOLUTION_PRIORITY = 0;
-
-interface CDPSession extends EventEmitter {
-  send<T extends keyof ProtocolMapping.Commands>(
-    method: T,
-    ...paramArgs: ProtocolMapping.Commands[T]['paramsType']
-  ): Promise<ProtocolMapping.Commands[T]['returnType']>;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class HTTPRequest {
-  
-
-
-  _requestId: string;
-  
-
-
-  _interceptionId: string | undefined;
-  
-
-
-  _failureText: string | null = null;
-  
-
-
-  _response: HTTPResponse | null = null;
-  
-
-
-  _fromMemoryCache = false;
-  
-
-
-  _redirectChain: HTTPRequest[];
+export class HTTPRequest extends BaseHTTPRequest {
+  override _requestId: string;
+  override _interceptionId: string | undefined;
+  override _failureText: string | null = null;
+  override _response: HTTPResponse | null = null;
+  override _fromMemoryCache = false;
+  override _redirectChain: HTTPRequest[];
 
   #client: CDPSession;
   #isNavigationRequest: boolean;
@@ -156,95 +63,87 @@ export class HTTPRequest {
     action: InterceptResolutionAction.None,
   };
   #interceptHandlers: Array<() => void | PromiseLike<any>>;
-  #initiator: Protocol.Network.Initiator;
+  #initiator?: Protocol.Network.Initiator;
 
-  
-
-
-
-
-  get client(): CDPSession {
+  override get client(): CDPSession {
     return this.#client;
   }
-
-  
-
 
   constructor(
     client: CDPSession,
     frame: Frame | null,
     interceptionId: string | undefined,
     allowInterception: boolean,
-    event: Protocol.Network.RequestWillBeSentEvent,
+    data: {
+      
+
+
+      requestId: Protocol.Network.RequestId;
+      
+
+
+      loaderId?: Protocol.Network.LoaderId;
+      
+
+
+      documentURL?: string;
+      
+
+
+      request: Protocol.Network.Request;
+      
+
+
+      initiator?: Protocol.Network.Initiator;
+      
+
+
+      type?: Protocol.Network.ResourceType;
+    },
     redirectChain: HTTPRequest[]
   ) {
+    super();
     this.#client = client;
-    this._requestId = event.requestId;
+    this._requestId = data.requestId;
     this.#isNavigationRequest =
-      event.requestId === event.loaderId && event.type === 'Document';
+      data.requestId === data.loaderId && data.type === 'Document';
     this._interceptionId = interceptionId;
     this.#allowInterception = allowInterception;
-    this.#url = event.request.url;
-    this.#resourceType = (event.type || 'other').toLowerCase() as ResourceType;
-    this.#method = event.request.method;
-    this.#postData = event.request.postData;
+    this.#url = data.request.url;
+    this.#resourceType = (data.type || 'other').toLowerCase() as ResourceType;
+    this.#method = data.request.method;
+    this.#postData = data.request.postData;
     this.#frame = frame;
     this._redirectChain = redirectChain;
     this.#continueRequestOverrides = {};
     this.#interceptHandlers = [];
-    this.#initiator = event.initiator;
+    this.#initiator = data.initiator;
 
-    for (const [key, value] of Object.entries(event.request.headers)) {
+    for (const [key, value] of Object.entries(data.request.headers)) {
       this.#headers[key.toLowerCase()] = value;
     }
   }
 
-  
-
-
-  url(): string {
+  override url(): string {
     return this.#url;
   }
 
-  
-
-
-
-
-  continueRequestOverrides(): ContinueRequestOverrides {
+  override continueRequestOverrides(): ContinueRequestOverrides {
     assert(this.#allowInterception, 'Request Interception is not enabled!');
     return this.#continueRequestOverrides;
   }
 
-  
-
-
-
-  responseForRequest(): Partial<ResponseForRequest> | null {
+  override responseForRequest(): Partial<ResponseForRequest> | null {
     assert(this.#allowInterception, 'Request Interception is not enabled!');
     return this.#responseForRequest;
   }
 
-  
-
-
-  abortErrorReason(): Protocol.Network.ErrorReason | null {
+  override abortErrorReason(): Protocol.Network.ErrorReason | null {
     assert(this.#allowInterception, 'Request Interception is not enabled!');
     return this.#abortErrorReason;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  interceptResolutionState(): InterceptResolutionState {
+  override interceptResolutionState(): InterceptResolutionState {
     if (!this.#allowInterception) {
       return {action: InterceptResolutionAction.Disabled};
     }
@@ -254,31 +153,17 @@ export class HTTPRequest {
     return {...this.#interceptResolutionState};
   }
 
-  
-
-
-
-  isInterceptResolutionHandled(): boolean {
+  override isInterceptResolutionHandled(): boolean {
     return this.#interceptionHandled;
   }
 
-  
-
-
-
-
-
-  enqueueInterceptAction(
+  override enqueueInterceptAction(
     pendingHandler: () => void | PromiseLike<unknown>
   ): void {
     this.#interceptHandlers.push(pendingHandler);
   }
 
-  
-
-
-
-  async finalizeInterceptions(): Promise<void> {
+  override async finalizeInterceptions(): Promise<void> {
     await this.#interceptHandlers.reduce((promiseChain, interceptAction) => {
       return promiseChain.then(interceptAction);
     }, Promise.resolve());
@@ -296,118 +181,43 @@ export class HTTPRequest {
     }
   }
 
-  
-
-
-
-  resourceType(): ResourceType {
+  override resourceType(): ResourceType {
     return this.#resourceType;
   }
 
-  
-
-
-  method(): string {
+  override method(): string {
     return this.#method;
   }
 
-  
-
-
-  postData(): string | undefined {
+  override postData(): string | undefined {
     return this.#postData;
   }
 
-  
-
-
-
-  headers(): Record<string, string> {
+  override headers(): Record<string, string> {
     return this.#headers;
   }
 
-  
-
-
-
-  response(): HTTPResponse | null {
+  override response(): HTTPResponse | null {
     return this._response;
   }
 
-  
-
-
-
-  frame(): Frame | null {
+  override frame(): Frame | null {
     return this.#frame;
   }
 
-  
-
-
-  isNavigationRequest(): boolean {
+  override isNavigationRequest(): boolean {
     return this.#isNavigationRequest;
   }
 
-  
-
-
-  initiator(): Protocol.Network.Initiator {
+  override initiator(): Protocol.Network.Initiator | undefined {
     return this.#initiator;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  redirectChain(): HTTPRequest[] {
+  override redirectChain(): HTTPRequest[] {
     return this._redirectChain.slice();
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  failure(): {errorText: string} | null {
+  override failure(): {errorText: string} | null {
     if (!this._failureText) {
       return null;
     }
@@ -416,36 +226,7 @@ export class HTTPRequest {
     };
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async continue(
+  override async continue(
     overrides: ContinueRequestOverrides = {},
     priority?: number
   ): Promise<void> {
@@ -509,39 +290,7 @@ export class HTTPRequest {
       });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async respond(
+  override async respond(
     response: Partial<ResponseForRequest>,
     priority?: number
   ): Promise<void> {
@@ -622,20 +371,7 @@ export class HTTPRequest {
       });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async abort(
+  override async abort(
     errorCode: ErrorCode = 'failed',
     priority?: number
   ): Promise<void> {
@@ -681,44 +417,6 @@ export class HTTPRequest {
   }
 }
 
-
-
-
-export enum InterceptResolutionAction {
-  Abort = 'abort',
-  Respond = 'respond',
-  Continue = 'continue',
-  Disabled = 'disabled',
-  None = 'none',
-  AlreadyHandled = 'already-handled',
-}
-
-
-
-
-
-
-export type InterceptResolutionStrategy = InterceptResolutionAction;
-
-
-
-
-export type ErrorCode =
-  | 'aborted'
-  | 'accessdenied'
-  | 'addressunreachable'
-  | 'blockedbyclient'
-  | 'blockedbyresponse'
-  | 'connectionaborted'
-  | 'connectionclosed'
-  | 'connectionfailed'
-  | 'connectionrefused'
-  | 'connectionreset'
-  | 'internetdisconnected'
-  | 'namenotresolved'
-  | 'timedout'
-  | 'failed';
-
 const errorReasons: Record<ErrorCode, Protocol.Network.ErrorReason> = {
   aborted: 'Aborted',
   accessdenied: 'AccessDenied',
@@ -736,31 +434,6 @@ const errorReasons: Record<ErrorCode, Protocol.Network.ErrorReason> = {
   failed: 'Failed',
 } as const;
 
-
-
-
-export type ActionResult = 'continue' | 'abort' | 'respond';
-
-function headersArray(
-  headers: Record<string, string | string[]>
-): Array<{name: string; value: string}> {
-  const result = [];
-  for (const name in headers) {
-    const value = headers[name];
-
-    if (!Object.is(value, undefined)) {
-      const values = Array.isArray(value) ? value : [value];
-
-      result.push(
-        ...values.map(value => {
-          return {name, value: value + ''};
-        })
-      );
-    }
-  }
-  return result;
-}
-
 async function handleError(error: ProtocolError) {
   if (['Invalid header'].includes(error.originalMessage)) {
     throw error;
@@ -770,72 +443,3 @@ async function handleError(error: ProtocolError) {
   
   debugError(error);
 }
-
-
-
-
-const STATUS_TEXTS: {[key: string]: string | undefined} = {
-  '100': 'Continue',
-  '101': 'Switching Protocols',
-  '102': 'Processing',
-  '103': 'Early Hints',
-  '200': 'OK',
-  '201': 'Created',
-  '202': 'Accepted',
-  '203': 'Non-Authoritative Information',
-  '204': 'No Content',
-  '205': 'Reset Content',
-  '206': 'Partial Content',
-  '207': 'Multi-Status',
-  '208': 'Already Reported',
-  '226': 'IM Used',
-  '300': 'Multiple Choices',
-  '301': 'Moved Permanently',
-  '302': 'Found',
-  '303': 'See Other',
-  '304': 'Not Modified',
-  '305': 'Use Proxy',
-  '306': 'Switch Proxy',
-  '307': 'Temporary Redirect',
-  '308': 'Permanent Redirect',
-  '400': 'Bad Request',
-  '401': 'Unauthorized',
-  '402': 'Payment Required',
-  '403': 'Forbidden',
-  '404': 'Not Found',
-  '405': 'Method Not Allowed',
-  '406': 'Not Acceptable',
-  '407': 'Proxy Authentication Required',
-  '408': 'Request Timeout',
-  '409': 'Conflict',
-  '410': 'Gone',
-  '411': 'Length Required',
-  '412': 'Precondition Failed',
-  '413': 'Payload Too Large',
-  '414': 'URI Too Long',
-  '415': 'Unsupported Media Type',
-  '416': 'Range Not Satisfiable',
-  '417': 'Expectation Failed',
-  '418': "I'm a teapot",
-  '421': 'Misdirected Request',
-  '422': 'Unprocessable Entity',
-  '423': 'Locked',
-  '424': 'Failed Dependency',
-  '425': 'Too Early',
-  '426': 'Upgrade Required',
-  '428': 'Precondition Required',
-  '429': 'Too Many Requests',
-  '431': 'Request Header Fields Too Large',
-  '451': 'Unavailable For Legal Reasons',
-  '500': 'Internal Server Error',
-  '501': 'Not Implemented',
-  '502': 'Bad Gateway',
-  '503': 'Service Unavailable',
-  '504': 'Gateway Timeout',
-  '505': 'HTTP Version Not Supported',
-  '506': 'Variant Also Negotiates',
-  '507': 'Insufficient Storage',
-  '508': 'Loop Detected',
-  '510': 'Not Extended',
-  '511': 'Network Authentication Required',
-} as const;

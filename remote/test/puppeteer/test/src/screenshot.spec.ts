@@ -99,7 +99,7 @@ describe('Screenshots', function () {
         );
       }
       const screenshots = await Promise.all(promises);
-      expect(screenshots[1]!).toBeGolden('grid-cell-1.png');
+      expect(screenshots[1]).toBeGolden('grid-cell-1.png');
     });
     it('should take fullPage screenshots', async () => {
       const {page, server} = getTestState();
@@ -193,11 +193,7 @@ describe('Screenshots', function () {
       const screenshot = await page.screenshot({
         encoding: 'base64',
       });
-      
-      
-      
-      
-      expect(Buffer.from(screenshot as string, 'base64')).toBeGolden(
+      expect(Buffer.from(screenshot, 'base64')).toBeGolden(
         'screenshot-sanity.png'
       );
     });

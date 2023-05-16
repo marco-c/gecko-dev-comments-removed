@@ -17,6 +17,9 @@
 const versionsPerRelease = new Map([
   
   
+  ['113.0.5672.63', 'v20.1.0'],
+  ['112.0.5615.121', 'v20.0.0'],
+  ['112.0.5614.0', 'v19.8.0'],
   ['111.0.5556.0', 'v19.7.0'],
   ['110.0.5479.0', 'v19.6.0'],
   ['109.0.5412.0', 'v19.4.0'],
@@ -56,15 +59,15 @@ const versionsPerRelease = new Map([
 ]);
 
 
-const lastMaintainedChromiumVersion = '108.0.5351.0';
+const lastMaintainedChromeVersion = '109.0.5412.0';
 
-if (!versionsPerRelease.has(lastMaintainedChromiumVersion)) {
+if (!versionsPerRelease.has(lastMaintainedChromeVersion)) {
   throw new Error(
-    'lastMaintainedChromiumVersion is missing from versionsPerRelease'
+    'lastMaintainedChromeVersion is missing from versionsPerRelease'
   );
 }
 
 module.exports = {
   versionsPerRelease,
-  lastMaintainedChromiumVersion,
+  lastMaintainedChromeVersion,
 };
