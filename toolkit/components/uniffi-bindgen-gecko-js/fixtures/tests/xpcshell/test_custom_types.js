@@ -1,8 +1,8 @@
 
 
 
-const CustomTypes = ChromeUtils.import(
-  "resource://gre/modules/RustCustomTypes.jsm"
+const CustomTypes = ChromeUtils.importESModule(
+  "resource://gre/modules/RustCustomTypes.sys.mjs"
 );
 
 add_task(async function() {
