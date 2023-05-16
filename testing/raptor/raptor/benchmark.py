@@ -24,6 +24,16 @@ class Benchmark(object):
         self.config = config
         self.test = test
 
+        
+        
+        
+        if self.config.get("benchmark_repository", None):
+            self.test["repository"] = self.config["benchmark_repository"]
+            self.test["repository_revision"] = self.config["benchmark_revision"]
+
+            if self.config.get("benchmark_branch", None):
+                self.test["branch"] = self.config["benchmark_branch"]
+
         self.setup_benchmarks(
             os.getenv("MOZ_DEVELOPER_REPO_DIR"),
             os.getenv("MOZ_MOZBUILD_DIR"),
