@@ -407,6 +407,12 @@ pref("browser.urlbar.suggest.calculator",           false);
   pref("browser.urlbar.quickactions.showPrefs", true);
 #endif
 
+#if defined(EARLY_BETA_OR_EARLIER)
+  
+  pref("browser.urlbar.trending.featureGate", true);
+  pref("browser.urlbar.trending.requireSearchMode", false);
+#endif
+
 
 pref("browser.urlbar.weather.featureGate", false);
 
