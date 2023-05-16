@@ -2335,6 +2335,17 @@ void nsGenericHTMLElement::HandleKeyboardActivation(
   MOZ_ASSERT(aVisitor.mEvent->HasKeyEventMessage());
   MOZ_ASSERT(aVisitor.mEvent->IsTrusted());
 
+  
+  
+  
+  
+  
+  
+  
+  if (nsFocusManager::GetFocusedElementStatic() != this) {
+    return;
+  }
+
   const auto message = aVisitor.mEvent->mMessage;
   const WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
   if (nsEventStatus_eIgnore != aVisitor.mEventStatus) {
