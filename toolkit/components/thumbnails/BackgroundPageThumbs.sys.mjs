@@ -1,19 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const DEFAULT_CAPTURE_TIMEOUT = 30000; // ms
+// For testing, the above timeout is excessive, and makes our tests overlong.
+const TESTING_CAPTURE_TIMEOUT = 5000; // ms
 
+const DESTROY_BROWSER_TIMEOUT = 60000; // ms
 
-
-const EXPORTED_SYMBOLS = ["BackgroundPageThumbs"];
-
-const DEFAULT_CAPTURE_TIMEOUT = 30000; 
-
-const TESTING_CAPTURE_TIMEOUT = 5000; 
-
-const DESTROY_BROWSER_TIMEOUT = 60000; 
-
-
-
+// Let the page settle for this amount of milliseconds before capturing to allow
+// for any in-page changes or redirects.
 const SETTLE_WAIT_TIME = 2500;
-
+// For testing, the above timeout is excessive, and makes our tests overlong.
 const TESTING_SETTLE_WAIT_TIME = 0;
 
 const TELEMETRY_HISTOGRAM_ID_PREFIX = "FX_THUMBNAILS_BG_";
@@ -25,10 +23,10 @@ const { PageThumbs, PageThumbsStorage } = ChromeUtils.import(
   "resource://gre/modules/PageThumbs.jsm"
 );
 
-
+// possible FX_THUMBNAILS_BG_CAPTURE_DONE_REASON_2 telemetry values
 const TEL_CAPTURE_DONE_OK = 0;
 const TEL_CAPTURE_DONE_TIMEOUT = 1;
-
+// 2 and 3 were used when we had special handling for private-browsing.
 const TEL_CAPTURE_DONE_CRASHED = 4;
 const TEL_CAPTURE_DONE_BAD_URI = 5;
 const TEL_CAPTURE_DONE_LOAD_FAILED = 6;
@@ -41,38 +39,38 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
 });
 
-const BackgroundPageThumbs = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export const BackgroundPageThumbs = {
+  /**
+   * Asynchronously captures a thumbnail of the given URL.
+   *
+   * The page is loaded anonymously, and plug-ins are disabled.
+   *
+   * @param url      The URL to capture.
+   * @param options  An optional object that configures the capture.  Its
+   *                 properties are the following, and all are optional:
+   * @opt onDone     A function that will be asynchronously called when the
+   *                 capture is complete or times out.  It's called as
+   *                   onDone(url),
+   *                 where `url` is the captured URL.
+   * @opt timeout    The capture will time out after this many milliseconds have
+   *                 elapsed after the capture has progressed to the head of
+   *                 the queue and started.  Defaults to 30000 (30 seconds).
+   * @opt isImage    If true, backgroundPageThumbsContent will attempt to render
+   *                 the url directly to canvas. Note that images will mostly get
+   *                 detected and rendered as such anyway, but this will ensure it.
+   * @opt targetWidth The target width when capturing an image.
+   * @opt backgroundColor The background colour when capturing an image.
+   * @opt dontStore  If set to true, the image blob won't be stored to disk, an
+   *                 object will instead be passed as third argument to onDone:
+   *                 {
+   *                   data: an ArrayBuffer containing the data
+   *                   contentType: the data content-type
+   *                   originalUrl: the originally requested url
+   *                   currentUrl: the final url after redirects
+   *                 }
+   * @opt contentType can be set to an image contentType for the capture,
+   *                  defaults to PageThumbs.contentType.
+   */
   capture(url, options = {}) {
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone) {
@@ -85,14 +83,14 @@ const BackgroundPageThumbs = {
 
     tel("QUEUE_SIZE_ON_CAPTURE", this._captureQueue.length);
 
-    
-    
+    // We want to avoid duplicate captures for the same URL.  If there is an
+    // existing one, we just add the callback to that one and we are done.
     let existing = this._capturesByURL.get(url);
     if (existing) {
       if (options.onDone) {
         existing.doneCallbacks.push(options.onDone);
       }
-      
+      // The queue is already being processed, so nothing else to do...
       return;
     }
     let cap = new Capture(url, this._onCaptureOrTimeout.bind(this), options);
@@ -101,29 +99,29 @@ const BackgroundPageThumbs = {
     this._processCaptureQueue();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously captures a thumbnail of the given URL if one does not
+   * already exist.  Otherwise does nothing.
+   *
+   * @param url      The URL to capture.
+   * @param options  An optional object that configures the capture.  See
+   *                 capture() for description.
+   *   unloadingPromise This option is resolved when the calling context is
+   *                    unloading, so things can be cleaned up to avoid leak.
+   * @return {Promise} A Promise that resolves when this task completes
+   */
   async captureIfMissing(url, options = {}) {
-    
-    
+    // Short circuit this function if pref is enabled, or else we leak observers.
+    // See Bug 1400562
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone) {
         options.onDone(url);
       }
       return url;
     }
-    
-    
-    
+    // The fileExistsForURL call is an optimization, potentially but unlikely
+    // incorrect, and no big deal when it is.  After the capture is done, we
+    // atomically test whether the file exists before writing it.
     let exists = await PageThumbsStorage.fileExistsForURL(url);
     if (exists) {
       if (options.onDone) {
@@ -148,8 +146,8 @@ const BackgroundPageThumbs = {
       Services.obs.addObserver(observe, "page-thumbnail:create");
       Services.obs.addObserver(observe, "page-thumbnail:error");
 
-      
-      
+      // Make sure to clean up to avoid leaks by removing observers when
+      // observed or when our caller is unloading
       function cleanup() {
         if (observe) {
           Services.obs.removeObserver(observe, "page-thumbnail:create");
@@ -173,10 +171,10 @@ const BackgroundPageThumbs = {
     return url;
   },
 
-  
-
-
-
+  /**
+   * Tell the service that the thumbnail browser should be recreated at next
+   * call of _ensureBrowser().
+   */
   renewThumbnailBrowser() {
     this._renewThumbBrowser = true;
   },
@@ -185,27 +183,27 @@ const BackgroundPageThumbs = {
     return Services.appinfo.fissionAutostart;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Ensures that initialization of the thumbnail browser's parent window has
+   * begun.
+   *
+   * @return  True if the parent window is completely initialized and can be
+   *          used, and false if initialization has started but not completed.
+   */
   _ensureParentWindowReady() {
     if (this._parentWin) {
-      
+      // Already fully initialized.
       return true;
     }
     if (this._startedParentWinInit) {
-      
+      // Already started initializing.
       return false;
     }
 
     this._startedParentWinInit = true;
 
-    
-    
+    // Create a windowless browser and load our hosting
+    // (privileged) document in it.
     const flags = this.useFissionBrowser
       ? Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW |
         Ci.nsIWebBrowserChrome.CHROME_FISSION_WINDOW
@@ -230,7 +228,7 @@ const BackgroundPageThumbs = {
       ) {
         webProgress.removeProgressListener(this._listener);
         delete this._listener;
-        
+        // Get the window reference via the document.
         this._parentWin = wlBrowser.document.defaultView;
         this._processCaptureQueue();
       }
@@ -267,10 +265,10 @@ const BackgroundPageThumbs = {
     }
   },
 
-  
-
-
-
+  /**
+   * Destroys the service.  Queued and pending captures will never complete, and
+   * their consumer callbacks will never be called.
+   */
   _destroy() {
     if (this._captureQueue) {
       this._captureQueue.forEach(cap => cap.destroy());
@@ -301,8 +299,8 @@ const BackgroundPageThumbs = {
       stateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
       stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK
     ) {
-      
-      
+      // If about:blank is being loaded after a capture, move on
+      // to the next capture, otherwise ignore about:blank loads.
       if (
         request instanceof Ci.nsIChannel &&
         request.URI.spec == "about:blank"
@@ -340,9 +338,9 @@ const BackgroundPageThumbs = {
     }
   },
 
-  
-
-
+  /**
+   * Creates the thumbnail browser if it doesn't already exist.
+   */
   _ensureBrowser() {
     if (this._thumbBrowser && !this._renewThumbBrowser) {
       return;
@@ -361,23 +359,23 @@ const BackgroundPageThumbs = {
     browser.setAttribute("messagemanagergroup", "thumbnails");
 
     if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
-      
+      // Use the private container for thumbnails.
       let privateIdentity = lazy.ContextualIdentityService.getPrivateIdentity(
         "userContextIdInternal.thumbnail"
       );
       browser.setAttribute("usercontextid", privateIdentity.userContextId);
     }
 
-    
-    
-    
+    // Size the browser.  Make its aspect ratio the same as the canvases' that
+    // the thumbnails are drawn into; the canvases' aspect ratio is the same as
+    // the screen's, so use that.  Aim for a size in the ballpark of 1024x768.
     let [swidth, sheight] = [{}, {}];
     Cc["@mozilla.org/gfx/screenmanager;1"]
       .getService(Ci.nsIScreenManager)
       .primaryScreen.GetRectDisplayPix({}, {}, swidth, sheight);
     let bwidth = Math.min(1024, swidth.value);
-    
-    
+    // Setting the width and height attributes doesn't work -- the resulting
+    // thumbnails are blank and transparent -- but setting the style does.
     browser.style.width = bwidth + "px";
     browser.style.height = (bwidth * sheight.value) / swidth.value + "px";
     browser.style.colorScheme = "env(-moz-content-preferred-color-scheme)";
@@ -387,37 +385,37 @@ const BackgroundPageThumbs = {
     browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
     browser.mute();
 
-    
-    
+    // an event that is sent if the remote process crashes - no need to remove
+    // it as we want it to be there as long as the browser itself lives.
     browser.addEventListener("oop-browser-crashed", event => {
       if (!event.isTopFrame) {
-        
+        // It was a subframe that crashed. We'll ignore this.
         return;
       }
 
       console.error("BackgroundThumbnails remote process crashed - recovering");
       this._destroyBrowser();
       let curCapture = this._captureQueue.length ? this._captureQueue[0] : null;
-      
-      
-      
-      
-      
+      // we could retry the pending capture, but it's possible the crash
+      // was due directly to it, so trying again might just crash again.
+      // We could keep a flag to indicate if it previously crashed, but
+      // "resetting" the capture requires more work - so for now, we just
+      // discard it.
       if (curCapture) {
-        
-        
-        
-        
-        
-        
-        
+        // Continue queue processing by calling curCapture._done().  Do it after
+        // this crashed listener returns, though.  A new browser will be created
+        // immediately (on the same stack as the _done call stack) if there are
+        // any more queued-up captures, and that seems to mess up the new
+        // browser's message manager if it happens on the same stack as the
+        // listener.  Trying to send a message to the manager in that case
+        // throws NS_ERROR_NOT_INITIALIZED.
         Services.tm.dispatchToMainThread(() => {
           curCapture._done(browser, null, TEL_CAPTURE_DONE_CRASHED);
         });
       }
-      
-      
-      
+      // else: we must have been idle and not currently doing a capture (eg,
+      // maybe a GC or similar crashed) - so there's no need to attempt a
+      // queue restart - the next capture request will set everything up.
     });
 
     this._thumbBrowser = browser;
@@ -450,10 +448,10 @@ const BackgroundPageThumbs = {
     );
   },
 
-  
-
-
-
+  /**
+   * Starts the next capture if the queue is not empty and the service is fully
+   * initialized.
+   */
   _processCaptureQueue() {
     if (!this._captureQueue.length) {
       if (this._thumbBrowser) {
@@ -470,7 +468,7 @@ const BackgroundPageThumbs = {
       return;
     }
 
-    
+    // Ready to start the first capture in the queue.
     this._ensureBrowser();
     this._captureQueue[0].start(this._thumbBrowser);
     if (this._destroyBrowserTimer) {
@@ -479,13 +477,13 @@ const BackgroundPageThumbs = {
     }
   },
 
-  
-
-
-
+  /**
+   * Called when the current capture completes or fails (eg, times out, remote
+   * process crashes.)
+   */
   _onCaptureOrTimeout(capture, reason) {
-    
-    
+    // Since timeouts start as an item is being processed, only the first
+    // item in the queue can be passed to this method.
     if (capture !== this._captureQueue[0]) {
       throw new Error("The capture should be at the head of the queue.");
     }
@@ -496,7 +494,7 @@ const BackgroundPageThumbs = {
       Services.obs.notifyObservers(null, "page-thumbnail:error", capture.url);
     }
 
-    
+    // Start the destroy-browser timer *before* processing the capture queue.
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     timer.initWithCallback(
       this._destroyBrowser.bind(this),
@@ -513,14 +511,14 @@ const BackgroundPageThumbs = {
 
 BackgroundPageThumbs._init();
 
-
-
-
-
-
-
-
-
+/**
+ * Represents a single capture request in the capture queue.
+ *
+ * @param url              The URL to capture.
+ * @param captureCallback  A function you want called when the capture
+ *                         completes.
+ * @param options          The capture options.
+ */
 function Capture(url, captureCallback, options) {
   this.url = url;
   this.captureCallback = captureCallback;
@@ -540,11 +538,11 @@ Capture.prototype = {
     return !!this._timeoutTimer;
   },
 
-  
-
-
-
-
+  /**
+   * Sends a message to the content script to start the capture.
+   *
+   * @param browser  The thumbnail browser.
+   */
   start(browser) {
     this.startDate = new Date();
     tel("CAPTURE_QUEUE_TIME_MS", this.startDate - this.creationDate);
@@ -553,7 +551,7 @@ Capture.prototype = {
       ? TESTING_CAPTURE_TIMEOUT
       : DEFAULT_CAPTURE_TIMEOUT;
 
-    
+    // timeout timer
     let timeout =
       typeof this.options.timeout == "number"
         ? this.options.timeout
@@ -584,16 +582,16 @@ Capture.prototype = {
       })
       .then(
         success => {
-          
-          
-          
+          // If it failed, then this was likely a bad url. If successful,
+          // BackgroundPageThumbs.onStateChange will call _done() after the
+          // load has completed.
           if (!success) {
             this._done(browser, null, TEL_CAPTURE_DONE_BAD_URI);
           }
         },
         failure => {
-          
-          
+          // The query can fail when a crash occurs while loading. The error causes
+          // thumbnail crash tests to fail with an uninteresting error message.
         }
       );
   },
@@ -622,14 +620,14 @@ Capture.prototype = {
       ? TESTING_SETTLE_WAIT_TIME
       : SETTLE_WAIT_TIME;
 
-    
+    // There was additional activity, so restart the wait timer
     if (this.redirectTimer) {
       this.redirectTimer.delay = waitTime;
       return;
     }
 
-    
-    
+    // The requested page has loaded or stopped/aborted, so capture the page
+    // soon but first let it settle in case of in-page redirects
     await new Promise(resolve => {
       this.redirectTimer = Cc["@mozilla.org/timer;1"].createInstance(
         Ci.nsITimer
@@ -682,14 +680,14 @@ Capture.prototype = {
     });
   },
 
-  
-
-
-
-
+  /**
+   * The only intended external use of this method is by the service when it's
+   * uninitializing and doing things like destroying the thumbnail browser.  In
+   * that case the consumer's completion callback will never be called.
+   */
   destroy() {
-    
-    
+    // This method may be called for captures that haven't started yet, so
+    // guard against not yet having _timeoutTimer, _msgMan etc properties...
     if (this._timeoutTimer) {
       this._timeoutTimer.cancel();
       delete this._timeoutTimer;
@@ -699,16 +697,16 @@ Capture.prototype = {
     delete this.options;
   },
 
-  
+  // Called when the timeout timer fires.
   notify() {
     this.timedOut = true;
     this._browser.stop();
   },
 
   _done(browser, imageData, reason, telemetry) {
-    
-    
-    
+    // Note that _done will be called only once, by either receiveMessage or
+    // notify, since it calls destroy here, which cancels the timeout timer and
+    // removes the didCapture message listener.
     let { captureCallback, doneCallbacks, options } = this;
     this.destroy();
 
@@ -719,7 +717,7 @@ Capture.prototype = {
     tel("CAPTURE_DONE_REASON_2", reason);
 
     if (telemetry) {
-      
+      // Telemetry is currently disabled in the content process (bug 680508).
       for (let id in telemetry) {
         tel(id, telemetry[id]);
       }
@@ -736,7 +734,7 @@ Capture.prototype = {
       }
 
       if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
-        
+        // Clear the data in the private container for thumbnails.
         let privateIdentity = lazy.ContextualIdentityService.getPrivateIdentity(
           "userContextIdInternal.thumbnail"
         );
@@ -773,12 +771,12 @@ Capture.prototype = {
 
 Capture.nextID = 0;
 
-
-
-
-
-
-
+/**
+ * Adds a value to one of this module's telemetry histograms.
+ *
+ * @param histogramID  This is prefixed with this module's ID.
+ * @param value        The value to add.
+ */
 function tel(histogramID, value) {
   let id = TELEMETRY_HISTOGRAM_ID_PREFIX + histogramID;
   Services.telemetry.getHistogramById(id).add(value);

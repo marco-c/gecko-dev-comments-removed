@@ -1,12 +1,10 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const THUMBNAIL_DIRECTORY = "thumbnails";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -21,12 +19,12 @@ XPCOMUtils.defineLazyGetter(lazy, "gUnicodeConverter", function() {
   converter.charset = "utf8";
   return converter;
 });
-function PageThumbsStorageService() {}
+export function PageThumbsStorageService() {}
 
 PageThumbsStorageService.prototype = {
   classID: Components.ID("{97943eec-0e48-49ef-b7b7-cf4aa0109bb6}"),
   QueryInterface: ChromeUtils.generateQI(["nsIPageThumbsStorageService"]),
-  
+  // The path for the storage
   _path: null,
   get path() {
     if (!this._path) {
@@ -67,5 +65,3 @@ PageThumbsStorageService.prototype = {
     return hex;
   },
 };
-
-var EXPORTED_SYMBOLS = ["PageThumbsStorageService"];
