@@ -1278,6 +1278,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 74) {
+        rv = MigrateV74Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -1308,6 +1315,8 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PLACES_GUID);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PLACES_ORIGIN_ID);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PLACES_ALT_FRECENCY);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2507,6 +2516,26 @@ nsresult Database::MigrateV73Up() {
     rv = mMainConn->ExecuteSimpleSQL(
         "ALTER TABLE moz_origins "
         "ADD COLUMN recalc_alt_frecency INTEGER NOT NULL DEFAULT 0"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV74Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT alt_frecency FROM moz_places"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places "
+        "ADD COLUMN alt_frecency INTEGER"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places "
+        "ADD COLUMN recalc_alt_frecency INTEGER NOT NULL DEFAULT 0"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PLACES_ALT_FRECENCY);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
