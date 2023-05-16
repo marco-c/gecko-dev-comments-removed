@@ -143,6 +143,13 @@ struct Params {
   PeerConnectionInterface::RTCOfferAnswerOptions rtc_offer_answer_options;
   BitrateSettings bitrate_settings;
   std::vector<VideoCodecConfig> video_codecs;
+
+  
+  
+  std::vector<std::string> extra_video_rtp_header_extensions;
+  
+  
+  std::vector<std::string> extra_audio_rtp_header_extensions;
 };
 
 

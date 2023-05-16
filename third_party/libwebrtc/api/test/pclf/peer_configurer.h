@@ -122,7 +122,15 @@ class PeerConfigurer {
   PeerConfigurer* SetVideoCodecs(std::vector<VideoCodecConfig> video_codecs);
   
   
+  PeerConfigurer* SetExtraVideoRtpHeaderExtensions(
+      std::vector<std::string> extensions);
+  
+  
   PeerConfigurer* SetAudioConfig(AudioConfig config);
+  
+  
+  PeerConfigurer* SetExtraAudioRtpHeaderExtensions(
+      std::vector<std::string> extensions);
 
   
   PeerConfigurer* SetUseUlpFEC(bool value);
