@@ -12,6 +12,7 @@
 #include "nsIInputStream.h"
 #include "nsIDocShell.h"
 #include "nsRefreshObservers.h"
+#include "nsRFPService.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/Maybe.h"
@@ -210,6 +211,14 @@ class nsICanvasRenderingContextInternal : public nsISupports,
 
   void DoSecurityCheck(nsIPrincipal* aPrincipal, bool forceWriteOnly,
                        bool CORSUsed);
+
+  
+  
+  
+  
+  
+  bool ShouldResistFingerprinting(
+      mozilla::RFPTarget aTarget = mozilla::RFPTarget::Unknown) const;
 
  protected:
   RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
