@@ -106,7 +106,7 @@ static Maybe<HistogramID> HistogramIdForMetric(uint32_t aId) {
     case 10: { 
       return Some(HistogramID::SOME_MEM_HISTOGRAM_KB);
     }
-    case 14: { 
+    case 15: { 
       return Some(HistogramID::SOME_TIME_HISTOGRAM_MS);
     }
     default: {
