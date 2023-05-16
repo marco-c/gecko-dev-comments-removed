@@ -463,6 +463,17 @@ void ReflowInput::Init(nsPresContext* aPresContext,
                        "intrinsic inline-size calculation");
 }
 
+static bool MightBeContainingBlockFor(nsIFrame* aMaybeContainingBlock,
+                                      nsIFrame* aFrame,
+                                      const nsStyleDisplay* aStyleDisplay) {
+  
+  if (aFrame->IsAbsolutelyPositioned(aStyleDisplay) &&
+      aMaybeContainingBlock == aFrame->GetParent()) {
+    return true;
+  }
+  return aMaybeContainingBlock->IsBlockContainer();
+}
+
 void ReflowInput::InitCBReflowInput() {
   if (!mParentReflowInput) {
     mCBReflowInput = nullptr;
@@ -473,8 +484,12 @@ void ReflowInput::InitCBReflowInput() {
     return;
   }
 
-  if (mParentReflowInput->mFrame ==
-      mFrame->GetContainingBlock(0, mStyleDisplay)) {
+  
+  
+  if (MightBeContainingBlockFor(mParentReflowInput->mFrame, mFrame,
+                                mStyleDisplay) &&
+      mParentReflowInput->mFrame ==
+          mFrame->GetContainingBlock(0, mStyleDisplay)) {
     
     
     if (mFrame->IsTableFrame()) {

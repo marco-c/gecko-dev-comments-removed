@@ -8028,6 +8028,9 @@ bool nsIFrame::IsBlockContainer() const {
 nsIFrame* nsIFrame::GetContainingBlock(
     uint32_t aFlags, const nsStyleDisplay* aStyleDisplay) const {
   MOZ_ASSERT(aStyleDisplay == StyleDisplay());
+
+  
+
   if (!GetParent()) {
     return nullptr;
   }
