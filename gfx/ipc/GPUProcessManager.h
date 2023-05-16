@@ -96,7 +96,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
-  bool EnsureGPUReady();
+  nsresult EnsureGPUReady();
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
       nsBaseWidget* aWidget, WebRenderLayerManager* aLayerManager,
@@ -284,10 +284,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void EnsureVsyncIOThread();
   void ShutdownVsyncIOThread();
 
-  void EnsureProtocolsReady();
-  void EnsureCompositorManagerChild();
-  void EnsureImageBridgeChild();
-  void EnsureVRManager();
+  bool EnsureProtocolsReady();
+  bool EnsureCompositorManagerChild();
+  bool EnsureImageBridgeChild();
+  bool EnsureVRManager();
 
 #if defined(XP_WIN)
   void SetProcessIsForeground();
