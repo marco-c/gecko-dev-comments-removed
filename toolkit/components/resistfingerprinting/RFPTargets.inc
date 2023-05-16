@@ -2,7 +2,6 @@
 
 
 
-
 ITEM_VALUE(TouchEvents, 0x0001)
 ITEM_VALUE(PointerEvents, 0x0002)
 ITEM_VALUE(KeyboardEvents, 0x0003)
@@ -20,6 +19,17 @@ ITEM_VALUE(CSSPrefersReducedMotion, 0x0008)
 
 
 ITEM_VALUE(CSSPrefersContrast, 0x0009)
+
+ITEM_VALUE(CanvasRandomization, 0x000A)
+
+
+ITEM_VALUE(CanvasImageExtractionPrompt, 0x000B)
+
+
+
+
+
+
 
 
 
