@@ -754,9 +754,9 @@ class EditorBase : public nsIEditor,
 
 
   enum class DispatchPasteEvent { No, Yes };
-  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsAction(
-      int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr) = 0;
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteAsAction(int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
+                nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -784,9 +784,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
+  MOZ_CAN_RUN_SCRIPT nsresult PasteAsQuotationAsAction(
       int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr) = 0;
+      nsIPrincipal* aPrincipal = nullptr);
 
  protected:  
   class AutoEditActionDataSetter;
@@ -2647,6 +2647,20 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<ClipboardEventResult, nsresult>
   DispatchClipboardEventAndUpdateClipboard(EventMessage aEventMessage,
                                            int32_t aClipboardType);
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePaste(
+      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteAsQuotation(
+      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
