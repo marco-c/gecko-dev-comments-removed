@@ -8105,15 +8105,6 @@ void Document::DispatchContentLoadedEvents() {
     }
   }
 
-  
-  
-  Element* root = GetRootElement();
-  if (root && root->HasAttr(kNameSpaceID_None, nsGkAtoms::manifest)) {
-    nsContentUtils::DispatchChromeEvent(this, ToSupports(this),
-                                        u"MozApplicationManifest"_ns,
-                                        CanBubble::eYes, Cancelable::eYes);
-  }
-
   nsPIDOMWindowInner* inner = GetInnerWindow();
   if (inner) {
     inner->NoteDOMContentLoaded();
