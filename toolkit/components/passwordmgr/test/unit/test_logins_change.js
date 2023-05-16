@@ -23,14 +23,17 @@ const MAX_DATE_MS = 8640000000000000;
 
 
 
-function checkLoginInvalid(aLoginInfo, aExpectedError) {
+async function checkLoginInvalid(aLoginInfo, aExpectedError) {
   
-  Assert.throws(() => Services.logins.addLogin(aLoginInfo), aExpectedError);
+  await Assert.rejects(
+    Services.logins.addLoginAsync(aLoginInfo),
+    aExpectedError
+  );
   LoginTestUtils.checkLogins([]);
 
   
   let testLogin = TestData.formLogin({ origin: "http://modify.example.com" });
-  Services.logins.addLogin(testLogin);
+  await Services.logins.addLoginAsync(testLogin);
 
   
   Assert.throws(
@@ -87,16 +90,17 @@ function compareAttributes(objectA, objectB, attributes) {
 
 
 
-add_task(function test_addLogin_removeLogin() {
+add_task(async function test_addLogin_removeLogin() {
   
-  for (let loginInfo of TestData.loginList()) {
-    Services.logins.addLogin(loginInfo);
-  }
+  await Services.logins.addLogins(TestData.loginList());
   LoginTestUtils.checkLogins(TestData.loginList());
 
   
   for (let loginInfo of TestData.loginList()) {
-    Assert.throws(() => Services.logins.addLogin(loginInfo), /already exists/);
+    await Assert.rejects(
+      Services.logins.addLoginAsync(loginInfo),
+      /This login already exists./
+    );
   }
 
   
@@ -183,15 +187,15 @@ add_task(async function event_data_includes_plaintext_username_and_password() {
 
 
 
-add_task(function test_invalid_httpRealm_formActionOrigin() {
+add_task(async function test_invalid_httpRealm_formActionOrigin() {
   
-  checkLoginInvalid(
+  await checkLoginInvalid(
     TestData.formLogin({ formActionOrigin: null }),
     /without a httpRealm or formActionOrigin/
   );
 
   
-  checkLoginInvalid(
+  await checkLoginInvalid(
     TestData.authLogin({ httpRealm: "" }),
     /without a httpRealm or formActionOrigin/
   );
@@ -204,43 +208,49 @@ add_task(function test_invalid_httpRealm_formActionOrigin() {
   
   let login = TestData.formLogin({ formActionOrigin: "" });
   login.httpRealm = "";
-  checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
+  await checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
 
   
   login = TestData.formLogin();
   login.httpRealm = "The HTTP Realm";
-  checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
+  await checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
 
   
   login = TestData.formLogin();
   login.httpRealm = "";
-  checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
+  await checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
 
   
   login = TestData.authLogin();
   login.formActionOrigin = "";
-  checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
+  await checkLoginInvalid(login, /both a httpRealm and formActionOrigin/);
 });
 
 
 
 
-add_task(function test_missing_properties() {
-  checkLoginInvalid(
+add_task(async function test_missing_properties() {
+  await checkLoginInvalid(
     TestData.formLogin({ origin: null }),
     /null or empty origin/
   );
 
-  checkLoginInvalid(TestData.formLogin({ origin: "" }), /null or empty origin/);
+  await checkLoginInvalid(
+    TestData.formLogin({ origin: "" }),
+    /null or empty origin/
+  );
 
-  checkLoginInvalid(TestData.formLogin({ username: null }), /null username/);
+  await checkLoginInvalid(
+    TestData.formLogin({ username: null }),
+    /null username/
+  );
 
-  checkLoginInvalid(
+  await checkLoginInvalid(
     TestData.formLogin({ password: null }),
     /null or empty password/
   );
 
-  checkLoginInvalid(
+  await checkLoginInvalid(
     TestData.formLogin({ password: "" }),
     /null or empty password/
   );
@@ -249,7 +259,7 @@ add_task(function test_missing_properties() {
 
 
 
-add_task(function test_invalid_characters() {
+add_task(async function test_invalid_characters() {
   let loginList = [
     TestData.authLogin({ origin: "http://null\0X.example.com" }),
     TestData.authLogin({ httpRealm: "realm\0" }),
@@ -261,7 +271,7 @@ add_task(function test_invalid_characters() {
     TestData.formLogin({ password: "pass\0word" }),
   ];
   for (let loginInfo of loginList) {
-    checkLoginInvalid(loginInfo, /login values can't contain nulls/);
+    await checkLoginInvalid(loginInfo, /login values can't contain nulls/);
   }
 });
 
@@ -278,10 +288,9 @@ add_task(function test_removeLogin_nonexisting() {
 
 
 
-add_task(function test_removeAllUserFacingLogins() {
-  for (let loginInfo of TestData.loginList()) {
-    Services.logins.addLogin(loginInfo);
-  }
+add_task(async function test_removeAllUserFacingLogins() {
+  await Services.logins.addLogins(TestData.loginList());
+
   Services.logins.removeAllUserFacingLogins();
   LoginTestUtils.checkLogins([]);
 
@@ -292,7 +301,7 @@ add_task(function test_removeAllUserFacingLogins() {
 
 
 
-add_task(function test_modifyLogin_nsILoginInfo() {
+add_task(async function test_modifyLogin_nsILoginInfo() {
   let loginInfo = TestData.formLogin();
   let updatedLoginInfo = TestData.formLogin({
     username: "new username",
@@ -309,7 +318,7 @@ add_task(function test_modifyLogin_nsILoginInfo() {
   );
 
   
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
   Services.logins.modifyLogin(loginInfo, updatedLoginInfo);
 
   
@@ -324,7 +333,7 @@ add_task(function test_modifyLogin_nsILoginInfo() {
   LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
@@ -340,7 +349,7 @@ add_task(function test_modifyLogin_nsILoginInfo() {
 
 
 
-add_task(function test_modifyLogin_nsIProperyBag() {
+add_task(async function test_modifyLogin_nsIProperyBag() {
   let loginInfo = TestData.formLogin();
   let updatedLoginInfo = TestData.formLogin({
     username: "new username",
@@ -367,7 +376,7 @@ add_task(function test_modifyLogin_nsIProperyBag() {
 
   
   
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
   Services.logins.modifyLogin(
     loginInfo,
     newPropertyBag({
@@ -405,7 +414,7 @@ add_task(function test_modifyLogin_nsIProperyBag() {
   LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
@@ -509,7 +518,7 @@ add_task(function test_deduplicate_keeps_most_recent() {
 
 
 
-add_task(function test_addLogin_badDates() {
+add_task(async function test_addLogin_badDates() {
   LoginTestUtils.clearData();
 
   let now = Date.now();
@@ -524,7 +533,7 @@ add_task(function test_addLogin_badDates() {
     Assert.ok(!defaultsLogin[pname]);
   }
   Assert.ok(
-    !!Services.logins.addLogin(defaultsLogin),
+    !!(await Services.logins.addLoginAsync(defaultsLogin)),
     "Sanity check adding defaults formLogin"
   );
   Services.logins.removeAllUserFacingLogins();
@@ -537,7 +546,7 @@ add_task(function test_addLogin_badDates() {
       })
     );
     Assert.ok(
-      !!Services.logins.addLogin(loginInfo),
+      !!(await Services.logins.addLoginAsync(loginInfo)),
       "Check 0 value for " + pname
     );
     Services.logins.removeAllUserFacingLogins();
@@ -551,7 +560,7 @@ add_task(function test_addLogin_badDates() {
       })
     );
     Assert.ok(
-      !!Services.logins.addLogin(loginInfo),
+      !!(await Services.logins.addLoginAsync(loginInfo)),
       "Check -1 value for " + pname
     );
     Services.logins.removeAllUserFacingLogins();
@@ -564,8 +573,8 @@ add_task(function test_addLogin_badDates() {
         [pname]: MAX_DATE_MS + 1,
       })
     );
-    Assert.throws(
-      () => Services.logins.addLogin(loginInfo),
+    await Assert.rejects(
+      Services.logins.addLoginAsync(loginInfo),
       /invalid date properties/
     );
     Assert.equal(Services.logins.getAllLogins().length, 0);
@@ -583,33 +592,35 @@ add_task(async function test_addLogins_badDates() {
   let defaultsLogin = TestData.formLogin({
     username: "defaults",
   });
+  await Services.logins.addLoginAsync(defaultsLogin);
 
   
   let timeCreatedLogin = TestData.formLogin({
     username: "tc",
     timeCreated: -11644473600000,
   });
+  await Assert.rejects(
+    Services.logins.addLoginAsync(timeCreatedLogin),
+    /Can\'t add a login with invalid date properties./
+  );
 
   let timeLastUsedLogin = TestData.formLogin({
     username: "tlu",
     timeLastUsed: -11644473600000,
   });
+  await Assert.rejects(
+    Services.logins.addLoginAsync(timeLastUsedLogin),
+    /Can\'t add a login with invalid date properties./
+  );
 
   let timePasswordChangedLogin = TestData.formLogin({
     username: "tpc",
     timePasswordChanged: -11644473600000,
   });
-
-  await Services.logins.addLogins([
-    defaultsLogin,
-    timeCreatedLogin,
-    timeLastUsedLogin,
-    timePasswordChangedLogin,
-  ]);
-
-  
-  let savedLogins = Services.logins.getAllLogins();
-  Assert.equal(savedLogins.length, 1);
+  await Assert.rejects(
+    Services.logins.addLoginAsync(timePasswordChangedLogin),
+    /Can\'t add a login with invalid date properties./
+  );
 
   Services.logins.removeAllUserFacingLogins();
 });
