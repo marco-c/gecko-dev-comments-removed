@@ -16,6 +16,7 @@
 
 #include "api/array_view.h"
 #include "api/video/video_frame_type.h"
+#include "modules/rtp_rtcp/source/leb128.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
@@ -23,8 +24,6 @@
 
 namespace webrtc {
 namespace {
-
-
 constexpr int kAggregationHeaderSize = 1;
 
 
@@ -45,29 +44,6 @@ bool ObuHasSize(uint8_t obu_header) {
 
 int ObuType(uint8_t obu_header) {
   return (obu_header & 0b0'1111'000) >> 3;
-}
-
-int Leb128Size(int value) {
-  RTC_DCHECK_GE(value, 0);
-  int size = 0;
-  while (value >= 0x80) {
-    ++size;
-    value >>= 7;
-  }
-  return size + 1;
-}
-
-
-int WriteLeb128(uint32_t value, uint8_t* buffer) {
-  int size = 0;
-  while (value >= 0x80) {
-    buffer[size] = 0x80 | (value & 0x7F);
-    ++size;
-    value >>= 7;
-  }
-  buffer[size] = value;
-  ++size;
-  return size;
 }
 
 

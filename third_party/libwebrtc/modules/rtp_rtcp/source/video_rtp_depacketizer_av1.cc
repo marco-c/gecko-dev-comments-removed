@@ -15,6 +15,7 @@
 
 #include <utility>
 
+#include "modules/rtp_rtcp/source/leb128.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
@@ -263,19 +264,6 @@ VectorObuInfo ParseObus(
 }
 
 
-int WriteLeb128(uint32_t value, uint8_t* buffer) {
-  int size = 0;
-  while (value >= 0x80) {
-    buffer[size] = 0x80 | (value & 0x7F);
-    ++size;
-    value >>= 7;
-  }
-  buffer[size] = value;
-  ++size;
-  return size;
-}
-
-
 
 
 bool CalculateObuSizes(ObuInfo* obu_info) {
@@ -331,7 +319,7 @@ bool CalculateObuSizes(ObuInfo* obu_info) {
   }
   obu_info->payload_offset = it;
   obu_info->prefix_size +=
-      WriteLeb128(rtc::dchecked_cast<uint32_t>(obu_info->payload_size),
+      WriteLeb128(rtc::dchecked_cast<uint64_t>(obu_info->payload_size),
                   obu_info->prefix.data() + obu_info->prefix_size);
   return true;
 }
