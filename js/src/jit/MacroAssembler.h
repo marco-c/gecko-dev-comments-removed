@@ -3842,7 +3842,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
   void branchWasmGcObjectIsRefType(Register object, const wasm::RefType& type,
                                    Label* label, bool onSuccess,
                                    Register superSuperTypeVector,
