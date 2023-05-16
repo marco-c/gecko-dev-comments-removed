@@ -3291,6 +3291,7 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
     return;
   }
   RefPtr<Document> document = OwnerDoc();
+  MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
   
   if (FireToggleEvent(PopoverVisibilityState::Hidden,
@@ -3300,7 +3301,21 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
     return;
   }
-  
+
+  if (IsAutoPopover()) {
+    RefPtr<Element> ancestor = GetTopmostPopoverAncestor();
+    if (!ancestor) {
+      ancestor = document->GetDocumentElement();
+    }
+    document->HideAllPopoversUntil(*ancestor, false, true);
+
+    
+    
+    if (!IsAutoPopover() ||
+        !CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
+      return;
+    }
+  }
 
   const bool shouldRestoreFocus = !document->GetTopmostAutoPopover();
   
@@ -3312,7 +3327,7 @@ void nsGenericHTMLElement::ShowPopover(ErrorResult& aRv) {
         do_GetWeakReference(unretargetedFocus->AsElement());
   }
 
-  
+  document->AddPopoverToTopLayer(*this);
 
   PopoverPseudoStateUpdate(true, true);
   GetPopoverData()->SetPopoverVisibilityState(PopoverVisibilityState::Showing);

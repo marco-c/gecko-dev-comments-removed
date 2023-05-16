@@ -14977,6 +14977,14 @@ nsTArray<Element*> Document::GetTopLayer() const {
   return elements;
 }
 
+bool Document::TopLayerContains(Element& aElement) const {
+  if (mTopLayer.IsEmpty()) {
+    return false;
+  }
+  nsWeakPtr weakElement = do_GetWeakReference(&aElement);
+  return mTopLayer.Contains(weakElement);
+}
+
 void Document::HideAllPopoversUntil(nsINode& aEndpoint,
                                     bool aFocusPreviousElement,
                                     bool aFireEvents) {
@@ -15029,7 +15037,19 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     return;
   }
 
-  
+  if (popoverHTMLEl->IsAutoPopover()) {
+    
+    
+    HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, aFireEvents);
+    if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
+                                             nullptr, aRv)) {
+      return;
+    }
+    
+    
+    
+    MOZ_ASSERT(GetTopmostAutoPopover() == popoverHTMLEl);
+  }
 
   aPopover.SetHasPopoverInvoker(false);
 
@@ -15046,7 +15066,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     }
   }
 
-  
+  RemovePopoverFromTopLayer(aPopover);
 
   popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
   popoverHTMLEl->GetPopoverData()->SetPopoverVisibilityState(
@@ -15093,6 +15113,16 @@ void Document::AddToAutoPopoverList(Element& aElement) {
 
 void Document::RemoveFromAutoPopoverList(Element& aElement) {
   MOZ_ASSERT(aElement.IsAutoPopover());
+  TopLayerPop(aElement);
+}
+
+void Document::AddPopoverToTopLayer(Element& aElement) {
+  MOZ_ASSERT(aElement.GetPopoverData());
+  TopLayerPush(aElement);
+}
+
+void Document::RemovePopoverFromTopLayer(Element& aElement) {
+  MOZ_ASSERT(aElement.GetPopoverData());
   TopLayerPop(aElement);
 }
 
