@@ -9,7 +9,7 @@
 use num_traits::{Float, Zero};
 use smallvec::SmallVec;
 use std::fmt::{self, Write};
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use std::{cmp, mem};
 use style_traits::{CssWriter, ToCss};
 
@@ -162,6 +162,8 @@ pub enum GenericCalcNode<L> {
     
     Leaf(L),
     
+    Negate(Box<GenericCalcNode<L>>),
+    
     
     Sum(crate::OwnedSlice<GenericCalcNode<L>>),
     
@@ -247,10 +249,80 @@ pub trait CalcNodeLeaf: Clone + Sized + PartialOrd + PartialEq + ToCss {
     fn sort_key(&self) -> SortKey;
 }
 
+
+enum ArgumentLevel {
+    
+    CalculationRoot,
+    
+    
+    ArgumentRoot,
+    
+    Nested,
+}
+
 impl<L: CalcNodeLeaf> CalcNode<L> {
     
-    fn negate(&mut self) {
-        self.map(std::ops::Neg::neg);
+    
+    pub fn negate(&mut self) {
+        match *self {
+            CalcNode::Leaf(ref mut leaf) => leaf.map(|l| l.neg()),
+            CalcNode::Negate(ref mut value) => {
+                
+                let result = mem::replace(
+                    value.as_mut(),
+                    Self::MinMax(Default::default(), MinMaxOp::Max),
+                );
+                *self = result;
+            },
+            CalcNode::Sum(ref mut children) => {
+                for child in children.iter_mut() {
+                    child.negate();
+                }
+            },
+            CalcNode::MinMax(ref mut children, ref mut op) => {
+                for child in children.iter_mut() {
+                    child.negate();
+                }
+
+                
+                *op = match *op {
+                    MinMaxOp::Min => MinMaxOp::Max,
+                    MinMaxOp::Max => MinMaxOp::Min,
+                };
+            },
+            CalcNode::Clamp {
+                ref mut min,
+                ref mut center,
+                ref mut max,
+            } => {
+                min.negate();
+                center.negate();
+                max.negate();
+
+                mem::swap(min, max);
+            },
+            CalcNode::Round {
+                ref mut value,
+                ref mut step,
+                ..
+            } => {
+                value.negate();
+                step.negate();
+            },
+            CalcNode::ModRem {
+                ref mut dividend,
+                ref mut divisor,
+                ..
+            } => {
+                dividend.negate();
+                divisor.negate();
+            },
+            CalcNode::Hypot(ref mut children) => {
+                for child in children.iter_mut() {
+                    child.negate();
+                }
+            },
+        }
     }
 
     fn sort_key(&self) -> SortKey {
@@ -296,6 +368,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
         fn map_internal<L: CalcNodeLeaf>(node: &mut CalcNode<L>, op: &mut impl FnMut(f32) -> f32) {
             match node {
                 CalcNode::Leaf(l) => l.map(op),
+                CalcNode::Negate(v) => map_internal(v, op),
                 CalcNode::Sum(children) => {
                     for node in &mut **children {
                         map_internal(node, op);
@@ -363,6 +436,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
 
         match *self {
             Self::Leaf(ref l) => CalcNode::Leaf(map(l)),
+            Self::Negate(ref c) => CalcNode::Negate(Box::new(c.map_leaves_internal(map))),
             Self::Sum(ref c) => CalcNode::Sum(map_children(c, map)),
             Self::MinMax(ref c, op) => CalcNode::MinMax(map_children(c, map), op),
             Self::Clamp {
@@ -440,6 +514,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
     {
         Ok(match *self {
             Self::Leaf(ref l) => return leaf_to_output_fn(l),
+            Self::Negate(ref c) => c.resolve_internal(leaf_to_output_fn)?.neg(),
             Self::Sum(ref c) => {
                 let mut result = Zero::zero();
                 for child in &**c {
@@ -631,6 +706,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
     pub fn mul_by(&mut self, scalar: f32) {
         match *self {
             Self::Leaf(ref mut l) => l.map(|v| v * scalar),
+            Self::Negate(ref mut value) => value.mul_by(scalar),
             
             Self::Sum(ref mut children) => {
                 for node in &mut **children {
@@ -733,11 +809,16 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     child.visit_depth_first_internal(f);
                 }
             },
+            Self::Negate(ref mut value) => {
+                value.visit_depth_first_internal(f);
+            },
             Self::Leaf(..) => {},
         }
         f(self);
     }
 
+    
+    
     
     
     
@@ -1062,6 +1143,24 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
 
                 replace_self_with!(&mut result);
             },
+            Self::Negate(ref mut child) => {
+                
+                match &mut **child {
+                    CalcNode::Leaf(_) => {
+                        
+                        
+                        child.negate();
+                        replace_self_with!(&mut **child);
+                    },
+                    CalcNode::Negate(value) => {
+                        
+                        replace_self_with!(&mut **value);
+                    },
+                    _ => {
+                        
+                    },
+                }
+            },
             Self::Leaf(ref mut l) => {
                 l.simplify();
             },
@@ -1073,7 +1172,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
         self.visit_depth_first(|node| node.simplify_and_sort_direct_children())
     }
 
-    fn to_css_impl<W>(&self, dest: &mut CssWriter<W>, is_outermost: bool) -> fmt::Result
+    fn to_css_impl<W>(&self, dest: &mut CssWriter<W>, level: ArgumentLevel) -> fmt::Result
     where
         W: Write,
     {
@@ -1111,11 +1210,34 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 dest.write_str("hypot(")?;
                 true
             },
-            _ => {
-                if is_outermost {
+            Self::Negate(_) => {
+                
+                
+                
+                debug_assert!(
+                    false,
+                    "We never serialize Negate nodes as they are handled inside Sum nodes."
+                );
+                dest.write_str("(-1 * ")?;
+                true
+            },
+            Self::Sum(_) => match level {
+                ArgumentLevel::CalculationRoot => {
                     dest.write_str("calc(")?;
-                }
-                is_outermost
+                    true
+                },
+                ArgumentLevel::ArgumentRoot => false,
+                ArgumentLevel::Nested => {
+                    dest.write_str("(")?;
+                    true
+                },
+            },
+            Self::Leaf(_) => match level {
+                ArgumentLevel::CalculationRoot => {
+                    dest.write_str("calc(")?;
+                    true
+                },
+                ArgumentLevel::ArgumentRoot | ArgumentLevel::Nested => false,
             },
         };
 
@@ -1127,25 +1249,38 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                         dest.write_str(", ")?;
                     }
                     first = false;
-                    child.to_css_impl(dest, false)?;
+                    child.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
                 }
             },
+            Self::Negate(ref value) => value.to_css_impl(dest, ArgumentLevel::Nested)?,
             Self::Sum(ref children) => {
                 let mut first = true;
                 for child in &**children {
                     if !first {
-                        if child.is_negative_leaf() {
-                            dest.write_str(" - ")?;
-                            let mut c = child.clone();
-                            c.negate();
-                            c.to_css_impl(dest, false)?;
-                        } else {
-                            dest.write_str(" + ")?;
-                            child.to_css_impl(dest, false)?;
+                        match child {
+                            Self::Leaf(l) => {
+                                if l.is_negative() {
+                                    dest.write_str(" - ")?;
+                                    let mut negated = l.clone();
+                                    negated.negate();
+                                    negated.to_css(dest)?;
+                                } else {
+                                    dest.write_str(" + ")?;
+                                    l.to_css(dest)?;
+                                }
+                            },
+                            Self::Negate(n) => {
+                                dest.write_str(" - ")?;
+                                n.to_css_impl(dest, ArgumentLevel::Nested)?;
+                            },
+                            _ => {
+                                dest.write_str(" + ")?;
+                                child.to_css_impl(dest, ArgumentLevel::Nested)?;
+                            },
                         }
                     } else {
                         first = false;
-                        child.to_css_impl(dest, false)?;
+                        child.to_css_impl(dest, ArgumentLevel::Nested)?;
                     }
                 }
             },
@@ -1154,29 +1289,29 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 ref center,
                 ref max,
             } => {
-                min.to_css_impl(dest, false)?;
+                min.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
                 dest.write_str(", ")?;
-                center.to_css_impl(dest, false)?;
+                center.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
                 dest.write_str(", ")?;
-                max.to_css_impl(dest, false)?;
+                max.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
             },
             Self::Round {
                 ref value,
                 ref step,
                 ..
             } => {
-                value.to_css_impl(dest, false)?;
+                value.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
                 dest.write_str(", ")?;
-                step.to_css_impl(dest, false)?;
+                step.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
             },
             Self::ModRem {
                 ref dividend,
                 ref divisor,
                 ..
             } => {
-                dividend.to_css_impl(dest, false)?;
+                dividend.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
                 dest.write_str(", ")?;
-                divisor.to_css_impl(dest, false)?;
+                divisor.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
             },
             Self::Leaf(ref l) => l.to_css(dest)?,
         }
@@ -1203,6 +1338,6 @@ impl<L: CalcNodeLeaf> ToCss for CalcNode<L> {
     where
         W: Write,
     {
-        self.to_css_impl(dest,  true)
+        self.to_css_impl(dest, ArgumentLevel::CalculationRoot)
     }
 }
