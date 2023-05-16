@@ -58,8 +58,6 @@ struct UniqueIdGCPolicy {
 using UniqueIdMap = GCHashMap<Cell*, uint64_t, PointerHasher<Cell*>,
                               SystemAllocPolicy, UniqueIdGCPolicy>;
 
-extern uint64_t NextCellUniqueId(JSRuntime* rt);
-
 template <typename T>
 class ZoneAllCellIter;
 
@@ -545,28 +543,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   BoundPrefixCache& boundPrefixCache() { return boundPrefixCache_.ref(); }
 
   js::ShapeZone& shapeZone() { return shapeZone_.ref(); }
-
-  
-  [[nodiscard]] bool maybeGetUniqueId(js::gc::Cell* cell, uint64_t* uidp);
-
-  
-  
-  [[nodiscard]] bool getOrCreateUniqueId(js::gc::Cell* cell, uint64_t* uidp);
-
-  uint64_t getUniqueIdInfallible(js::gc::Cell* cell);
-
-  
-  [[nodiscard]] bool hasUniqueId(js::gc::Cell* cell);
-
-  
-  
-  void transferUniqueId(js::gc::Cell* tgt, js::gc::Cell* src);
-
-  
-  void removeUniqueId(js::gc::Cell* cell);
-
-  
-  bool setOrUpdateUniqueId(JSContext* cx, js::gc::Cell* cell, uint64_t uid);
 
   bool keepPropMapTables() const { return keepPropMapTables_; }
   void setKeepPropMapTables(bool b) { keepPropMapTables_ = b; }

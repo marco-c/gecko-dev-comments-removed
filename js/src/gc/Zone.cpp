@@ -4,7 +4,7 @@
 
 
 
-#include "gc/Zone-inl.h"
+#include "gc/Zone.h"
 #include "js/shadow/Zone.h"  
 
 #include "mozilla/Sprintf.h"

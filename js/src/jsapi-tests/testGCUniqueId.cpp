@@ -9,7 +9,9 @@
 
 #include "jsapi-tests/tests.h"
 
-#include "gc/Zone-inl.h"
+#include "gc/StableCellHasher-inl.h"
+
+using namespace js;
 
 static void MinimizeHeap(JSContext* cx) {
   
@@ -31,29 +33,29 @@ BEGIN_TEST(testGCUID) {
   JS::RootedObject obj(cx, JS_NewPlainObject(cx));
   uintptr_t nurseryAddr = uintptr_t(obj.get());
   CHECK(obj);
-  CHECK(js::gc::IsInsideNursery(obj));
+  CHECK(gc::IsInsideNursery(obj));
 
   
-  CHECK(!obj->zone()->hasUniqueId(obj));
+  CHECK(!gc::HasUniqueId(obj));
 
   
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
-  CHECK(uid > js::gc::LargestTaggedNullCellPointer);
+  CHECK(gc::GetOrCreateUniqueId(obj, &uid));
+  CHECK(uid > gc::LargestTaggedNullCellPointer);
 
   
-  CHECK(obj->zone()->hasUniqueId(obj));
+  CHECK(gc::HasUniqueId(obj));
 
   
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(gc::GetOrCreateUniqueId(obj, &tmp));
   CHECK(uid == tmp);
 
   
   MinimizeHeap(cx);
   uintptr_t tenuredAddr = uintptr_t(obj.get());
   CHECK(tenuredAddr != nurseryAddr);
-  CHECK(!js::gc::IsInsideNursery(obj));
-  CHECK(obj->zone()->hasUniqueId(obj));
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(!gc::IsInsideNursery(obj));
+  CHECK(gc::HasUniqueId(obj));
+  CHECK(gc::GetOrCreateUniqueId(obj, &tmp));
   CHECK(uid == tmp);
 
   
@@ -61,7 +63,7 @@ BEGIN_TEST(testGCUID) {
   obj = JS_NewPlainObject(cx);
   CHECK(obj);
   CHECK(uintptr_t(obj.get()) == nurseryAddr);
-  CHECK(!obj->zone()->hasUniqueId(obj));
+  CHECK(!gc::HasUniqueId(obj));
 
   
   
@@ -70,8 +72,8 @@ BEGIN_TEST(testGCUID) {
   obj = JS_NewPlainObject(cx);
   MinimizeHeap(cx);
   CHECK(uintptr_t(obj.get()) == tenuredAddr);
-  CHECK(!obj->zone()->hasUniqueId(obj));
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(!gc::HasUniqueId(obj));
+  CHECK(gc::GetOrCreateUniqueId(obj, &tmp));
   CHECK(uid != tmp);
   uid = tmp;
 
@@ -100,9 +102,9 @@ BEGIN_TEST(testGCUID) {
   
   obj = vec2.back();
   CHECK(obj);
-  CHECK(!js::gc::IsInsideNursery(obj));
+  CHECK(!gc::IsInsideNursery(obj));
   tenuredAddr = uintptr_t(obj.get());
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
+  CHECK(gc::GetOrCreateUniqueId(obj, &uid));
 
   
   
@@ -114,8 +116,8 @@ BEGIN_TEST(testGCUID) {
   
   
   CHECK(uintptr_t(obj.get()) != tenuredAddr);
-  CHECK(obj->zone()->hasUniqueId(obj));
-  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(gc::HasUniqueId(obj));
+  CHECK(gc::GetOrCreateUniqueId(obj, &tmp));
   CHECK(uid == tmp);
 
   return true;

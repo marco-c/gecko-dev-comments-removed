@@ -67,7 +67,7 @@
 #endif
 #include "wasm/WasmGcObject.h"
 
-#include "gc/Zone-inl.h"
+#include "gc/StableCellHasher-inl.h"
 #include "vm/BooleanObject-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/Interpreter-inl.h"
@@ -1273,26 +1273,26 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   
   uint64_t aid = 0;
   uint64_t bid = 0;
-  (void)zone->maybeGetUniqueId(a, &aid);
-  (void)zone->maybeGetUniqueId(b, &bid);
+  (void)gc::MaybeGetUniqueId(a, &aid);
+  (void)gc::MaybeGetUniqueId(b, &bid);
   NativeObject* na = a->is<NativeObject>() ? &a->as<NativeObject>() : nullptr;
   NativeObject* nb = b->is<NativeObject>() ? &b->as<NativeObject>() : nullptr;
   if ((aid || bid) && (na || nb)) {
     
     
     
-    if (!zone->getOrCreateUniqueId(a, &aid) ||
-        !zone->getOrCreateUniqueId(b, &bid)) {
+    if (!gc::GetOrCreateUniqueId(a, &aid) ||
+        !gc::GetOrCreateUniqueId(b, &bid)) {
       oomUnsafe.crash("Failed to create unique ID during swap");
     }
 
     
     
     if (pa && aid) {
-      zone->removeUniqueId(a);
+      gc::RemoveUniqueId(a);
     }
     if (pb && bid) {
-      zone->removeUniqueId(b);
+      gc::RemoveUniqueId(b);
     }
   }
 
@@ -1389,13 +1389,13 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
 
   
   if ((aid || bid) && (na || nb)) {
-    if ((aid && !zone->setOrUpdateUniqueId(cx, a, aid)) ||
-        (bid && !zone->setOrUpdateUniqueId(cx, b, bid))) {
+    if ((aid && !gc::SetOrUpdateUniqueId(cx, a, aid)) ||
+        (bid && !gc::SetOrUpdateUniqueId(cx, b, bid))) {
       oomUnsafe.crash("Failed to set unique ID after swap");
     }
   }
-  MOZ_ASSERT_IF(aid, zone->getUniqueIdInfallible(a) == aid);
-  MOZ_ASSERT_IF(bid, zone->getUniqueIdInfallible(b) == bid);
+  MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
+  MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
 
   
 
