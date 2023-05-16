@@ -136,11 +136,17 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
 
   
-  if (frameInfo.videoType != VideoType::kMJPEG &&
-      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
-          videoFrameLength) {
-    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
-    return -1;
+  if (frameInfo.videoType != VideoType::kMJPEG) {
+    
+    
+    
+    
+    if (auto size = CalcBufferSize(frameInfo.videoType, width, abs(height));
+        videoFrameLength < size) {
+      RTC_LOG(LS_ERROR) << "Wrong incoming frame length. Expected " << size
+                        << ", Got " << videoFrameLength << ".";
+      return -1;
+    }
   }
 
   int target_width = width;
