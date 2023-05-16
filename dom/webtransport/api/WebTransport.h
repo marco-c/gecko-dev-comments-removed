@@ -10,6 +10,7 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "nsISupports.h"
+#include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/Promise.h"
@@ -75,10 +76,12 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   
   void NewBidirectionalStream(
+      uint64_t aStreamId,
       const RefPtr<mozilla::ipc::DataPipeReceiver>& aIncoming,
       const RefPtr<mozilla::ipc::DataPipeSender>& aOutgoing);
 
   void NewUnidirectionalStream(
+      uint64_t aStreamId,
       const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream);
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,
@@ -86,6 +89,9 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   void RemoteClosed(bool aCleanly, const uint32_t& aCode,
                     const nsACString& aReason);
+
+  void OnStreamResetOrStopSending(uint64_t aStreamId,
+                                  const StreamResetOrStopSendingError& aError);
   
   nsIGlobalObject* GetParentObject() const;
 
@@ -121,6 +127,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
  private:
   ~WebTransport();
 
+  template <typename Stream>
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void PropagateError(Stream* aStream,
+                                                  WebTransportError* aError);
+
   nsCOMPtr<nsIGlobalObject> mGlobal;
   
   
@@ -136,10 +146,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   
   
   
-  
-  
-  nsTArray<RefPtr<WebTransportSendStream>> mSendStreams;
-  nsTArray<RefPtr<WebTransportReceiveStream>> mReceiveStreams;
+  nsTHashMap<uint64_t, RefPtr<WebTransportSendStream>> mSendStreams;
+  nsTHashMap<uint64_t, RefPtr<WebTransportReceiveStream>> mReceiveStreams;
 
   WebTransportState mState;
   RefPtr<Promise> mReady;
@@ -151,8 +159,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   
   
   
-  nsTArray<RefPtr<mozilla::ipc::DataPipeReceiver>> mUnidirectionalStreams;
-  nsTArray<UniquePtr<BidirectionalPair>> mBidirectionalStreams;
+  nsTArray<std::tuple<uint64_t, RefPtr<mozilla::ipc::DataPipeReceiver>>>
+      mUnidirectionalStreams;
+  nsTArray<std::tuple<uint64_t, UniquePtr<BidirectionalPair>>>
+      mBidirectionalStreams;
 
   
   RefPtr<ReadableStream> mIncomingUnidirectionalStreams;

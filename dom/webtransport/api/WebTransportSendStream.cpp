@@ -39,7 +39,7 @@ JSObject* WebTransportSendStream::WrapObject(
 
 
 already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
-    WebTransport* aWebTransport, nsIGlobalObject* aGlobal,
+    WebTransport* aWebTransport, nsIGlobalObject* aGlobal, uint64_t aStreamId,
     DataPipeSender* sender, ErrorResult& aRv) {
   
   AutoJSAPI jsapi;
@@ -69,7 +69,7 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
   
 
   
-  aWebTransport->mSendStreams.AppendElement(stream);
+  aWebTransport->mSendStreams.InsertOrUpdate(aStreamId, stream);
   
   return stream.forget();
 }

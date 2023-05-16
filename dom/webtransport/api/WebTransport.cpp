@@ -41,14 +41,22 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingBidirectionalStreams)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingUnidirectionalAlgorithm)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingBidirectionalAlgorithm)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSendStreams)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReceiveStreams)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDatagrams)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReady)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mClosed)
+  for (const auto& hashEntry : tmp->mSendStreams.Values()) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSendStreams entry item");
+    cb.NoteXPCOMChild(hashEntry);
+  }
+  for (const auto& hashEntry : tmp->mReceiveStreams.Values()) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mReceiveStreams entry item");
+    cb.NoteXPCOMChild(hashEntry);
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
+  tmp->mSendStreams.Clear();
+  tmp->mReceiveStreams.Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mUnidirectionalStreams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBidirectionalStreams)
@@ -56,8 +64,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingBidirectionalStreams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingUnidirectionalAlgorithm)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingBidirectionalAlgorithm)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSendStreams)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReceiveStreams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDatagrams)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReady)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mClosed)
@@ -98,7 +104,7 @@ WebTransport::~WebTransport() {
 
 
 void WebTransport::NewBidirectionalStream(
-    const RefPtr<DataPipeReceiver>& aIncoming,
+    uint64_t aStreamId, const RefPtr<DataPipeReceiver>& aIncoming,
     const RefPtr<DataPipeSender>& aOutgoing) {
   LOG_VERBOSE(("NewBidirectionalStream()"));
   
@@ -107,7 +113,9 @@ void WebTransport::NewBidirectionalStream(
 
   UniquePtr<BidirectionalPair> streams(
       new BidirectionalPair(aIncoming, aOutgoing));
-  mBidirectionalStreams.AppendElement(std::move(streams));
+  auto tuple = std::tuple<uint64_t, UniquePtr<BidirectionalPair>>(
+      aStreamId, std::move(streams));
+  mBidirectionalStreams.AppendElement(std::move(tuple));
   
 
   
@@ -122,13 +130,15 @@ void WebTransport::NewBidirectionalStream(
 }
 
 void WebTransport::NewUnidirectionalStream(
-    const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream) {
+    uint64_t aStreamId, const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream) {
   LOG_VERBOSE(("NewUnidirectionalStream()"));
   
   
   
 
-  mUnidirectionalStreams.AppendElement(aStream);
+  mUnidirectionalStreams.AppendElement(
+      std::tuple<uint64_t, RefPtr<mozilla::ipc::DataPipeReceiver>>(aStreamId,
+                                                                   aStream));
   
   
   
@@ -495,6 +505,56 @@ void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
   Cleanup(error, &closeinfo, errorresult);
 }
 
+template <typename Stream>
+void WebTransport::PropagateError(Stream* aStream, WebTransportError* aError) {
+  ErrorResult rv;
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobal)) {
+    rv.ThrowUnknownError("Internal error");
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JS::Value> errorValue(cx);
+  bool ok = ToJSValue(cx, aError, &errorValue);
+  if (!ok) {
+    rv.ThrowUnknownError("Internal error");
+    return;
+  }
+
+  aStream->ErrorNative(cx, errorValue, IgnoreErrors());
+}
+
+void WebTransport::OnStreamResetOrStopSending(
+    uint64_t aStreamId, const StreamResetOrStopSendingError& aError) {
+  LOG(("WebTransport::OnStreamResetOrStopSending %p id=%" PRIx64, this,
+       aStreamId));
+  if (aError.type() == StreamResetOrStopSendingError::TStopSendingError) {
+    RefPtr<WebTransportSendStream> stream = mSendStreams.Get(aStreamId);
+    if (!stream) {
+      return;
+    }
+    uint8_t errorCode = net::GetWebTransportErrorFromNSResult(
+        aError.get_StopSendingError().error());
+    RefPtr<WebTransportError> error = new WebTransportError(
+        "WebTransportStream StopSending"_ns, WebTransportErrorSource::Stream,
+        Nullable<uint8_t>(errorCode));
+    PropagateError(stream.get(), error);
+  } else if (aError.type() == StreamResetOrStopSendingError::TResetError) {
+    RefPtr<WebTransportReceiveStream> stream = mReceiveStreams.Get(aStreamId);
+    LOG(("WebTransport::OnStreamResetOrStopSending reset %p stream=%p", this,
+         stream.get()));
+    if (!stream) {
+      return;
+    }
+    uint8_t errorCode =
+        net::GetWebTransportErrorFromNSResult(aError.get_ResetError().error());
+    RefPtr<WebTransportError> error = new WebTransportError(
+        "WebTransportStream Reset"_ns, WebTransportErrorSource::Stream,
+        Nullable<uint8_t>(errorCode));
+    PropagateError(stream.get(), error);
+  }
+}
+
 void WebTransport::Close(const WebTransportCloseInfo& aOptions,
                          ErrorResult& aRv) {
   LOG(("Close() called"));
@@ -608,10 +668,12 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
               "Transport close/errored before CreateBidirectional finished");
           return;
         }
+        uint64_t id = aPipes.get_BidirectionalStream().streamId();
+        LOG(("Create WebTransportBidirectionalStream id=%" PRIx64, id));
         ErrorResult error;
         RefPtr<WebTransportBidirectionalStream> newStream =
             WebTransportBidirectionalStream::Create(
-                self, self->mGlobal,
+                self, self->mGlobal, id,
                 aPipes.get_BidirectionalStream().inStream(),
                 aPipes.get_BidirectionalStream().outStream(), error);
         LOG(("Returning a bidirectionalStream"));
@@ -658,8 +720,7 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
   
   mChild->SendCreateUnidirectionalStream(
       sendOrder,
-      [self = RefPtr{this},
-       promise](RefPtr<::mozilla::ipc::DataPipeSender>&& aPipe)
+      [self = RefPtr{this}, promise](UnidirectionalStreamResponse&& aResponse)
           MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             LOG(("CreateUnidirectionalStream response"));
             
@@ -669,7 +730,9 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
             
             
             if (self->mState == WebTransportState::CLOSED ||
-                self->mState == WebTransportState::FAILED) {
+                self->mState == WebTransportState::FAILED ||
+                aResponse.type() !=
+                    UnidirectionalStreamResponse::TUnidirectionalStream) {
               promise->MaybeRejectWithInvalidStateError(
                   "Transport close/errored during CreateUnidirectional");
               return;
@@ -679,16 +742,17 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
             
             
             ErrorResult error;
+            uint64_t id = aResponse.get_UnidirectionalStream().streamId();
+            LOG(("Create WebTransportSendStream id=%" PRIx64, id));
             RefPtr<WebTransportSendStream> writableStream =
-                WebTransportSendStream::Create(self, self->mGlobal, aPipe,
-                                               error);
+                WebTransportSendStream::Create(
+                    self, self->mGlobal, id,
+                    aResponse.get_UnidirectionalStream().outStream(), error);
             if (!writableStream) {
               promise->MaybeReject(std::move(error));
               return;
             }
             LOG(("Returning a writableStream"));
-            
-            self->mSendStreams.AppendElement(writableStream);
             
             promise->MaybeResolve(writableStream);
           },
@@ -723,9 +787,9 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   LOG(("Cleanup started"));
-  nsTArray<RefPtr<WebTransportSendStream>> sendStreams;
+  nsTHashMap<uint64_t, RefPtr<WebTransportSendStream>> sendStreams;
   sendStreams.SwapElements(mSendStreams);
-  nsTArray<RefPtr<WebTransportReceiveStream>> receiveStreams;
+  nsTHashMap<uint64_t, RefPtr<WebTransportReceiveStream>> receiveStreams;
   receiveStreams.SwapElements(mReceiveStreams);
 
   
@@ -746,13 +810,13 @@ void WebTransport::Cleanup(WebTransportError* aError,
     return;
   }
 
-  for (const auto& stream : sendStreams) {
+  for (const auto& stream : sendStreams.Values()) {
     
     MOZ_KnownLive(stream)->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
   
-  for (const auto& stream : receiveStreams) {
+  for (const auto& stream : receiveStreams.Values()) {
     stream->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
