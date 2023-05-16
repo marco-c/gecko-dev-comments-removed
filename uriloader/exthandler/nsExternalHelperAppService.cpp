@@ -119,7 +119,7 @@ using namespace mozilla;
 using namespace mozilla::ipc;
 using namespace mozilla::dom;
 
-#define kDefaultMaxFileNameLength 255
+#define kDefaultMaxFileNameLength 254
 
 
 #define NS_PREF_DOWNLOAD_DIR "browser.download.dir"
