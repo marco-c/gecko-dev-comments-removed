@@ -250,10 +250,50 @@ class LanguageIdEngine {
 
 
 
-
-
   #formatLangTag(langTag) {
-    return langTag.slice(-2);
+    
+    
+    let formattedTag = langTag.replace("__label__", "");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    switch (formattedTag) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      case "eml": {
+        formattedTag = "egl";
+        break;
+      }
+      
+      
+      
+      
+      
+      
+      case "no": {
+        formattedTag = "nb";
+        break;
+      }
+    }
+    return formattedTag;
   }
 
   
