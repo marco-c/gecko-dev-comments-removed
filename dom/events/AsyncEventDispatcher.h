@@ -110,6 +110,19 @@ class AsyncEventDispatcher : public CancelableRunnable {
   void RunDOMEventWhenSafe();
 
   
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult RunDOMEventWhenSafe(
+      nsINode& aTarget, WidgetEvent& aEvent,
+      nsEventStatus* aEventStatus = nullptr);
+
+  
   
   
   void RequireNodeInDocument();

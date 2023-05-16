@@ -1199,18 +1199,16 @@ void FragmentOrElement::SaveSubtreeState() {
 
 
 void FragmentOrElement::FireNodeInserted(
-    Document* aDoc, nsINode* aParent, nsTArray<nsCOMPtr<nsIContent>>& aNodes) {
-  uint32_t count = aNodes.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    nsIContent* childContent = aNodes[i];
-
+    Document* aDoc, nsINode* aParent,
+    const nsTArray<nsCOMPtr<nsIContent>>& aNodes) {
+  for (const nsCOMPtr<nsIContent>& childContent : aNodes) {
     if (nsContentUtils::HasMutationListeners(
             childContent, NS_EVENT_BITS_MUTATION_NODEINSERTED, aParent)) {
       InternalMutationEvent mutation(true, eLegacyNodeInserted);
       mutation.mRelatedNode = aParent;
 
       mozAutoSubtreeModified subtree(aDoc, aParent);
-      (new AsyncEventDispatcher(childContent, mutation))->RunDOMEventWhenSafe();
+      AsyncEventDispatcher::RunDOMEventWhenSafe(*childContent, mutation);
     }
   }
 }
@@ -1966,6 +1964,9 @@ static bool ContainsMarkup(const nsAString& aStr) {
 
 void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
                                              ErrorResult& aError) {
+  
+  
+  
   FragmentOrElement* target = this;
   
   if (target->IsTemplateElement()) {
@@ -1974,7 +1975,6 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
     MOZ_ASSERT(frag);
     target = frag;
   }
-
   
   
   
@@ -1988,7 +1988,9 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
     return;
   }
 
-  Document* doc = target->OwnerDoc();
+  
+  
+  Document* const doc = target->OwnerDoc();
 
   
   mozAutoSubtreeModified subtree(doc, nullptr);

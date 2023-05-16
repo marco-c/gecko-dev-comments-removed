@@ -7,6 +7,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
 #include "nsContentUtils.h"
@@ -97,6 +98,21 @@ nsresult AsyncEventDispatcher::PostDOMEvent() {
 void AsyncEventDispatcher::RunDOMEventWhenSafe() {
   RefPtr<AsyncEventDispatcher> ensureDeletionWhenFailing = this;
   nsContentUtils::AddScriptRunner(this);
+}
+
+
+nsresult AsyncEventDispatcher::RunDOMEventWhenSafe(
+    nsINode& aTarget, WidgetEvent& aEvent,
+    nsEventStatus* aEventStatus ) {
+  if (nsContentUtils::IsSafeToRunScript()) {
+    
+    nsPresContext* presContext = aTarget.OwnerDoc()->GetPresContext();
+    return EventDispatcher::Dispatch(MOZ_KnownLive(&aTarget),
+                                     MOZ_KnownLive(presContext), &aEvent,
+                                     nullptr, aEventStatus);
+  }
+  (new AsyncEventDispatcher(&aTarget, aEvent))->RunDOMEventWhenSafe();
+  return NS_OK;
 }
 
 void AsyncEventDispatcher::RequireNodeInDocument() {

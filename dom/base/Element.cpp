@@ -2555,7 +2555,7 @@ nsresult Element::SetAttrAndNotify(
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
     nsIPrincipal* aSubjectPrincipal, uint8_t aModType, bool aFireMutation,
     bool aNotify, bool aCallAfterSetAttr, Document* aComposedDocument,
-    const mozAutoDocUpdate&) {
+    const mozAutoDocUpdate& aGuard) {
   nsresult rv;
   nsMutationGuard::DidMutate();
 
@@ -2690,7 +2690,7 @@ nsresult Element::SetAttrAndNotify(
     mutation.mAttrChange = aModType;
 
     mozAutoSubtreeModified subtree(OwnerDoc(), this);
-    (new AsyncEventDispatcher(this, mutation))->RunDOMEventWhenSafe();
+    AsyncEventDispatcher::RunDOMEventWhenSafe(*this, mutation);
   }
 
   return NS_OK;
@@ -2953,7 +2953,7 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
     mutation.mAttrChange = MutationEvent_Binding::REMOVAL;
 
     mozAutoSubtreeModified subtree(OwnerDoc(), this);
-    (new AsyncEventDispatcher(this, mutation))->RunDOMEventWhenSafe();
+    AsyncEventDispatcher::RunDOMEventWhenSafe(*this, mutation);
   }
 
   return NS_OK;
@@ -3919,7 +3919,9 @@ void Element::InsertAdjacentHTML(const nsAString& aPosition,
     destination = this;
   }
 
-  Document* doc = OwnerDoc();
+  
+  
+  Document* const doc = OwnerDoc();
 
   
   mozAutoDocUpdate updateBatch(doc, true);
@@ -4812,7 +4814,6 @@ void Element::RegUnRegAccessKey(bool aDoReg) {
 
 void Element::SetHTML(const nsAString& aInnerHTML,
                       const SetHTMLOptions& aOptions, ErrorResult& aError) {
-  FragmentOrElement* target = this;
   
   if (IsHTMLElement(nsGkAtoms::script)) {
     aError.ThrowTypeError("This does not work on <script> elements");
@@ -4828,6 +4829,10 @@ void Element::SetHTML(const nsAString& aInnerHTML,
   }
 
   
+  
+  
+  FragmentOrElement* target = this;
+  
   if (target->IsTemplateElement()) {
     DocumentFragment* frag =
         static_cast<HTMLTemplateElement*>(target)->Content();
@@ -4838,7 +4843,9 @@ void Element::SetHTML(const nsAString& aInnerHTML,
   
   
 
-  Document* doc = target->OwnerDoc();
+  
+  
+  Document* const doc = target->OwnerDoc();
 
   
   mozAutoSubtreeModified subtree(doc, nullptr);

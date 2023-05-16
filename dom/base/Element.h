@@ -1041,7 +1041,7 @@ class Element : public FragmentOrElement {
 
 
 
-  nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttribute, bool aNotify);
+  nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify);
 
   
 
@@ -1851,11 +1851,14 @@ class Element : public FragmentOrElement {
 
 
 
+
+
+
   nsresult SetAttrAndNotify(int32_t aNamespaceID, nsAtom* aName,
                             nsAtom* aPrefix, const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
-                            nsIPrincipal* aMaybeScriptedPrincipal,
-                            uint8_t aModType, bool aFireMutation, bool aNotify,
+                            nsIPrincipal* aSubjectPrincipal, uint8_t aModType,
+                            bool aFireMutation, bool aNotify,
                             bool aCallAfterSetAttr, Document* aComposedDocument,
                             const mozAutoDocUpdate& aGuard);
 
