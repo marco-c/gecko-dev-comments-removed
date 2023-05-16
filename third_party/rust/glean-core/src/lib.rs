@@ -25,6 +25,7 @@ use std::thread;
 use std::time::Duration;
 
 use crossbeam_channel::unbounded;
+use log::{self, LevelFilter};
 use once_cell::sync::{Lazy, OnceCell};
 use uuid::Uuid;
 
@@ -125,6 +126,8 @@ pub struct InternalConfiguration {
     pub use_core_mps: bool,
     
     pub trim_data_to_registered_pings: bool,
+    
+    pub log_level: Option<LevelFilter>,
 }
 
 
@@ -305,6 +308,11 @@ fn initialize_inner(
         .spawn(move || {
             let upload_enabled = cfg.upload_enabled;
             let trim_data_to_registered_pings = cfg.trim_data_to_registered_pings;
+
+            
+            if let Some(level) = cfg.log_level {
+                log::set_max_level(level)
+            }
 
             let glean = match Glean::new(cfg) {
                 Ok(glean) => glean,
@@ -558,7 +566,30 @@ pub fn shutdown() {
     });
 
     
-    dispatcher::block_on_queue();
+    
+    
+    
+    
+    
+    let timer_id = core::with_glean(|glean| {
+        glean
+            .additional_metrics
+            .shutdown_dispatcher_wait
+            .start_sync()
+    });
+    if dispatcher::block_on_queue_timeout(Duration::from_secs(10)).is_err() {
+        log::error!(
+            "Timeout while blocking on the dispatcher. No further shutdown cleanup will happen."
+        );
+        return;
+    }
+    let stop_time = time::precise_time_ns();
+    core::with_glean(|glean| {
+        glean
+            .additional_metrics
+            .shutdown_dispatcher_wait
+            .set_stop_and_accumulate(glean, timer_id, stop_time);
+    });
 
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);

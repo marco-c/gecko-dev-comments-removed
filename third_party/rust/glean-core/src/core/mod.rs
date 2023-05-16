@@ -133,6 +133,7 @@ where
 
 
 
+
 #[derive(Debug)]
 pub struct Glean {
     upload_enabled: bool,
@@ -293,6 +294,7 @@ impl Glean {
             app_build: "Unknown".into(),
             use_core_mps: false,
             trim_data_to_registered_pings: false,
+            log_level: None,
         };
 
         let mut glean = Self::new(cfg).unwrap();

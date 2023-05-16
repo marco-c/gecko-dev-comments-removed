@@ -29,9 +29,10 @@ use std::{
         Arc,
     },
     thread::{self, JoinHandle},
+    time::Duration,
 };
 
-use crossbeam_channel::{bounded, unbounded, SendError, Sender};
+use crossbeam_channel::{bounded, unbounded, RecvTimeoutError, SendError, Sender};
 use thiserror::Error;
 
 pub use global::*;
@@ -159,6 +160,26 @@ impl DispatchGuard {
 
         rx.recv()
             .expect("Failed to receive message on single-use channel");
+    }
+
+    
+    fn block_on_queue_timeout(&self, timeout: Duration) -> Result<(), RecvTimeoutError> {
+        let (tx, rx) = crossbeam_channel::bounded(0);
+
+        
+        
+        
+        
+
+        let task = Command::Task(Box::new(move || {
+            tx.send(())
+                .expect("(worker) Can't send message on single-use channel");
+        }));
+        self.sender
+            .send(task)
+            .expect("Failed to launch the blocking task");
+
+        rx.recv_timeout(timeout)
     }
 
     fn kill(&mut self) -> Result<(), DispatchError> {

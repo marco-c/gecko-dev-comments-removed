@@ -24,6 +24,9 @@ pub struct AdditionalMetrics {
 
     
     pub shutdown_wait: TimingDistributionMetric,
+
+    
+    pub shutdown_dispatcher_wait: TimingDistributionMetric,
 }
 
 impl CoreMetrics {
@@ -89,6 +92,18 @@ impl AdditionalMetrics {
             shutdown_wait: TimingDistributionMetric::new(
                 CommonMetricData {
                     name: "shutdown_wait".into(),
+                    category: "glean.validation".into(),
+                    send_in_pings: vec!["metrics".into()],
+                    lifetime: Lifetime::Ping,
+                    disabled: false,
+                    dynamic_label: None,
+                },
+                TimeUnit::Millisecond,
+            ),
+
+            shutdown_dispatcher_wait: TimingDistributionMetric::new(
+                CommonMetricData {
+                    name: "shutdown_dispatcher_wait".into(),
                     category: "glean.validation".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
