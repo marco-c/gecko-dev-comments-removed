@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/TemplateLib.h"
+#include "mozilla/UniquePtr.h"
 
 #include "frontend/ScopeBindingCache.h"
 #include "gc/Tracer.h"
@@ -514,7 +515,7 @@ class StringToAtomCache {
 class RuntimeCaches {
  public:
   MegamorphicCache megamorphicCache;
-  MegamorphicSetPropCache megamorphicSetPropCache;
+  UniquePtr<MegamorphicSetPropCache> megamorphicSetPropCache;
   GSNCache gsnCache;
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
@@ -543,7 +544,12 @@ class RuntimeCaches {
     evalCache.clear();
     stringToAtomCache.purge();
     megamorphicCache.bumpGeneration();
-    megamorphicSetPropCache.bumpGeneration();
+    if (megamorphicSetPropCache) {
+      
+      
+      
+      megamorphicSetPropCache->bumpGeneration();
+    }
     scopeCache.purge();
   }
 
