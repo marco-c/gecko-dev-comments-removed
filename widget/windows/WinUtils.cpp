@@ -19,7 +19,6 @@
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/FileUtilsWin.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
@@ -1583,29 +1582,13 @@ bool WinUtils::ResolveJunctionPointsAndSymLinks(std::wstring& aPath) {
     return false;
   }
 
-  
-  
-  
-  
   DWORD pathLen = GetFinalPathNameByHandleW(
-      handle, path, MAX_PATH, FILE_NAME_NORMALIZED | VOLUME_NAME_NT);
-  if (pathLen >= MAX_PATH) {
-    LOG_E("Path is too long.");
-    return false;
-  }
-
-  if (pathLen == 0) {
+      handle, path, MAX_PATH, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+  if (pathLen == 0 || pathLen >= MAX_PATH) {
     LOG_E("GetFinalPathNameByHandleW failed. GetLastError=%lu", GetLastError());
     return false;
   }
-
-  nsAutoString dosPath;
-  if (!NtPathToDosPath(nsDependentString(path), dosPath)) {
-    LOG_E("NtPathToDosPath failed.");
-    return false;
-  }
-
-  aPath = dosPath.get();
+  aPath = path;
 
   
   
