@@ -511,7 +511,8 @@ function ensureSideEffectFreeNatives(maybeEvalGlobal) {
   }
 
   const natives = [
-    ...eagerEcmaAllowlist,
+    ...eagerEcmaAllowlist.functions,
+    ...eagerEcmaAllowlist.getters,
 
     
     

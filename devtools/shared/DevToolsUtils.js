@@ -28,6 +28,10 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ObjectUtils.jsm"
 );
 
+ChromeUtils.defineLazyGetter(lazy, "eagerEcmaAllowlist", () => {
+  return require("resource://devtools/server/actors/webconsole/eager-ecma-allowlist.js");
+});
+
 
 
 var DevToolsUtils = exports;
@@ -267,6 +271,28 @@ exports.isSafeDebuggerObject = function(obj) {
 };
 
 
+let gSideEffectFreeGetters; 
+
+
+
+
+function ensureSideEffectFreeGetters() {
+  if (gSideEffectFreeGetters) {
+    return;
+  }
+
+  const map = new Map();
+  for (const n of lazy.eagerEcmaAllowlist.getters) {
+    if (!map.has(n.name)) {
+      map.set(n.name, []);
+    }
+    map.get(n.name).push(n);
+  }
+
+  gSideEffectFreeGetters = map;
+}
+
+
 
 
 
@@ -279,7 +305,35 @@ exports.hasSafeGetter = function(desc) {
   
   let fn = desc.get;
   fn = fn && exports.unwrap(fn);
-  return fn?.callable && fn?.class == "Function" && fn?.script === undefined;
+  if (!fn) {
+    return false;
+  }
+  if (!fn.callable || fn.class !== "Function") {
+    return false;
+  }
+  if (fn.script !== undefined) {
+    
+    return false;
+  }
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (fn.isNativeGetterWithJitInfo()) {
+    return true;
+  }
+
+  
+  ensureSideEffectFreeGetters();
+  const natives = gSideEffectFreeGetters.get(fn.name);
+  return natives && natives.some(n => fn.isSameNative(n));
 };
 
 
