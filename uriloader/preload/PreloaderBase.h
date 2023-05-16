@@ -45,9 +45,10 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   
   
   void NotifyOpen(const PreloadHashKey& aKey, dom::Document* aDocument,
-                  bool aIsPreload);
+                  bool aIsPreload, bool aIsModule = false);
   void NotifyOpen(const PreloadHashKey& aKey, nsIChannel* aChannel,
-                  dom::Document* aDocument, bool aIsPreload);
+                  dom::Document* aDocument, bool aIsPreload,
+                  bool aIsModule = false);
 
   
   
