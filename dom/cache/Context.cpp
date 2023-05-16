@@ -357,20 +357,20 @@ Context::QuotaInitRunnable::Run() {
         break;
       }
 
-      mDirectoryMetadata.emplace(
-          QuotaManager::GetInfoFromValidatedPrincipalInfo(*mPrincipalInfo));
-
       QM_TRY(QuotaManager::EnsureCreated(), QM_PROPAGATE,
              [&resolver](const auto rv) { resolver->Resolve(rv); });
 
-      MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
+      auto* const quotaManager = QuotaManager::Get();
+      MOZ_DIAGNOSTIC_ASSERT(quotaManager);
+
+      mDirectoryMetadata.emplace(
+          quotaManager->GetInfoFromValidatedPrincipalInfo(*mPrincipalInfo));
 
       
-      RefPtr<DirectoryLock> directoryLock =
-          QuotaManager::Get()->CreateDirectoryLock(PERSISTENCE_TYPE_DEFAULT,
-                                                   *mDirectoryMetadata,
-                                                   quota::Client::DOMCACHE,
-                                                    false);
+      RefPtr<DirectoryLock> directoryLock = quotaManager->CreateDirectoryLock(
+          PERSISTENCE_TYPE_DEFAULT, *mDirectoryMetadata,
+          quota::Client::DOMCACHE,
+           false);
 
       
       
