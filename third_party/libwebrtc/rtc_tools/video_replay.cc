@@ -570,7 +570,17 @@ class RtpReplayer final {
       if (!rtp_reader_->NextPacket(&packet)) {
         break;
       }
-      rtc::CopyOnWriteBuffer packet_buffer(packet.data, packet.length);
+      rtc::CopyOnWriteBuffer packet_buffer(
+          packet.original_length > 0 ? packet.original_length : packet.length);
+      memcpy(packet_buffer.MutableData(), packet.data, packet.length);
+      if (packet.length < packet.original_length) {
+        
+        
+        
+        memset(packet_buffer.MutableData() + packet.length, 0,
+               packet.original_length - packet.length);
+        packet_buffer.MutableData()[0] &= ~0x20;
+      }
       RtpPacket header;
       header.Parse(packet_buffer);
       if (header.Timestamp() < start_timestamp ||
