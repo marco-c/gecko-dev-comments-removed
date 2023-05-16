@@ -75,11 +75,6 @@ class MediaChannel : public MediaSendChannelInterface,
   virtual ~MediaChannel();
 
   
-  MediaSendChannelInterface* AsSendChannel() { return this; }
-
-  MediaReceiveChannelInterface* AsReceiveChannel() { return this; }
-
-  
   virtual VideoMediaChannel* AsVideoChannel() {
     RTC_CHECK_NOTREACHED();
     return nullptr;
