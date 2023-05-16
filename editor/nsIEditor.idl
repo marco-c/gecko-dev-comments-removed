@@ -378,6 +378,7 @@ interface nsIEditor  : nsISupports
 
 
 
+  [can_run_script]
   void copy();
 
   

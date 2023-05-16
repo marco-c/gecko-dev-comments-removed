@@ -2626,11 +2626,26 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-  bool FireClipboardEvent(EventMessage aEventMessage, int32_t aClipboardType,
-                          bool* aActionTaken = nullptr);
+  enum class ClipboardEventResult {
+    
+    
+    
+    IgnoredOrError,
+    
+    DefaultPreventedOfPaste,
+    
+    
+    
+    
+    CopyOrCutHandled,
+    
+    
+    
+    DoDefault,
+  };
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<ClipboardEventResult, nsresult>
+  DispatchClipboardEventAndUpdateClipboard(EventMessage aEventMessage,
+                                           int32_t aClipboardType);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
