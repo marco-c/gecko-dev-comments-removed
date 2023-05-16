@@ -48,6 +48,17 @@ TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp_Wraparound_Detected) {
             RtpToNtpEstimator::kInvalidMeasurement);
 }
 
+TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp_NegativeWraparound) {
+  RtpToNtpEstimator estimator;
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0),
+            RtpToNtpEstimator::kNewMeasurement);
+  
+  
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + 2 * kOneMsInNtp),
+                                         0xFFFFFFFF - 2 * kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
+}
+
 TEST(WrapAroundTests, NewRtcpWrapped) {
   RtpToNtpEstimator estimator;
   EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFF),
