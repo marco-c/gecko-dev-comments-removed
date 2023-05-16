@@ -1173,17 +1173,36 @@ function queryTelemetryEvents(query) {
   return filtersChangedEvents.map(event => event[5]);
 }
 
-function validateRequests(requests, monitor) {
+
+
+
+
+
+
+
+
+
+
+
+function validateRequests(requests, monitor, options = {}) {
+  const { allowDifferentOrder } = options;
   const { document, store, windowRequire } = monitor.panelWin;
 
   const { getDisplayedRequests } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
   );
+  const sortedRequests = getSortedRequests(store.getState());
 
   requests.forEach((spec, i) => {
     const { method, url, causeType, causeUri, stack } = spec;
 
-    const requestItem = getSortedRequests(store.getState())[i];
+    let requestItem;
+    if (allowDifferentOrder) {
+      requestItem = sortedRequests.find(r => r.url === url);
+    } else {
+      requestItem = sortedRequests[i];
+    }
+
     verifyRequestItemTarget(
       document,
       getDisplayedRequests(store.getState()),
