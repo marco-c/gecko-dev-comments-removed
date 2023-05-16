@@ -171,12 +171,9 @@ void RemoveSsrcsAndMsids(cricket::SessionDescription* desc);
 
 void RemoveSsrcsAndKeepMsids(cricket::SessionDescription* desc);
 
-
-
 int FindFirstMediaStatsIndexByKind(
     const std::string& kind,
-    const std::vector<const webrtc::DEPRECATED_RTCMediaStreamTrackStats*>&
-        media_stats_vec);
+    const std::vector<const webrtc::RTCInboundRTPStreamStats*>& inbound_rtps);
 
 class TaskQueueMetronome : public webrtc::Metronome {
  public:
