@@ -365,15 +365,4 @@ IsUserCetAvailableInEnvironment(
 
 #endif 
 
-#if defined(__MINGW32__)
-
-
-#define THREAD_DYNAMIC_CODE_ALLOW   1     
-
-
-
-#define ThreadDynamicCodePolicy static_cast<THREAD_INFORMATION_CLASS>(2)
-
-#endif 
-
 #endif 
