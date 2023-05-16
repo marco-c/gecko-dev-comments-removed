@@ -161,7 +161,6 @@ bool RenderCompositorEGL::Resume() {
     
     DestroyEGLSurface();
 
-#ifdef MOZ_WIDGET_ANDROID
     auto size = GetBufferSize();
     GLint maxTextureSize = 0;
     gl()->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&maxTextureSize);
@@ -179,7 +178,6 @@ bool RenderCompositorEGL::Resume() {
       return false;
     }
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
-#endif  
   } else if (kIsWayland || kIsX11) {
     
     
