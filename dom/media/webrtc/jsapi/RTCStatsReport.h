@@ -46,12 +46,16 @@ struct RTCStatsTimestampState {
   const uint64_t mRandomTimelineSeed;
   
   
-  const TimeStamp mStartRealtime;
+  const TimeStamp mStartDomRealtime;
   
   const RTPCallerType mRTPCallerType;
   
   const DOMHighResTimeStamp mStartWallClockRaw;
 };
+
+
+
+
 
 
 
@@ -76,6 +80,7 @@ class RTCStatsTimestamp {
   webrtc::Timestamp ToRealtime() const;
   webrtc::Timestamp To1Jan1970() const;
   webrtc::Timestamp ToNtp() const;
+  webrtc::Timestamp ToDomRealtime() const;
   DOMHighResTimeStamp ToDom() const;
 
   static RTCStatsTimestamp FromMozTime(const RTCStatsTimestampMaker& aMaker,
@@ -86,6 +91,8 @@ class RTCStatsTimestamp {
                                         webrtc::Timestamp aRealtime);
   static RTCStatsTimestamp FromNtp(const RTCStatsTimestampMaker& aMaker,
                                    webrtc::Timestamp aRealtime);
+  static RTCStatsTimestamp FromDomRealtime(const RTCStatsTimestampMaker& aMaker,
+                                           webrtc::Timestamp aDomRealtime);
   
   
 

@@ -11,6 +11,13 @@
 #include "mozilla/TimeStamp.h"
 #include "system_wrappers/include/clock.h"
 
+
+
+
+
+static constexpr webrtc::TimeDelta kWebrtcTimeOffset =
+    webrtc::TimeDelta::Micros(0x10000000);
+
 namespace mozilla {
 class RTCStatsTimestampMakerRealtimeClock : public webrtc::Clock {
  public:
