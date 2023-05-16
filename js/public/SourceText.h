@@ -62,13 +62,19 @@ namespace mozilla {
 union Utf8Unit;
 }
 
+namespace js {
+class FrontendContext;
+}  
+
 namespace JS {
 
 class JS_PUBLIC_API AutoStableStringChars;
+using FrontendContext = js::FrontendContext;
 
 namespace detail {
 
 MOZ_COLD extern JS_PUBLIC_API void ReportSourceTooLong(JSContext* cx);
+MOZ_COLD extern JS_PUBLIC_API void ReportSourceTooLong(JS::FrontendContext* fc);
 
 }  
 
@@ -131,21 +137,12 @@ class SourceText final {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JSContext* cx, const Unit* units,
-                                            size_t unitsLength,
-                                            SourceOwnership ownership) {
+ private:
+  template <typename ContextT>
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool initImpl(ContextT* context,
+                                                const Unit* units,
+                                                size_t unitsLength,
+                                                SourceOwnership ownership) {
     MOZ_ASSERT_IF(units == nullptr, unitsLength == 0);
 
     
@@ -169,11 +166,36 @@ class SourceText final {
     
     
     if (MOZ_UNLIKELY(unitsLength > UINT32_MAX)) {
-      detail::ReportSourceTooLong(cx);
+      detail::ReportSourceTooLong(context);
       return false;
     }
 
     return true;
+  }
+
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JSContext* cx, const Unit* units,
+                                            size_t unitsLength,
+                                            SourceOwnership ownership) {
+    return initImpl(cx, units, unitsLength, ownership);
+  }
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JS::FrontendContext* fc,
+                                            const Unit* units,
+                                            size_t unitsLength,
+                                            SourceOwnership ownership) {
+    return initImpl(fc, units, unitsLength, ownership);
   }
 
   
@@ -190,8 +212,18 @@ class SourceText final {
   [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JSContext* cx, const Char* chars,
                                             size_t charsLength,
                                             SourceOwnership ownership) {
-    return init(cx, reinterpret_cast<const Unit*>(chars), charsLength,
-                ownership);
+    return initImpl(cx, reinterpret_cast<const Unit*>(chars), charsLength,
+                    ownership);
+  }
+  template <typename Char,
+            typename = std::enable_if_t<std::is_same_v<Char, CharT> &&
+                                        !std::is_same_v<Char, Unit>>>
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JS::FrontendContext* fc,
+                                            const Char* chars,
+                                            size_t charsLength,
+                                            SourceOwnership ownership) {
+    return initImpl(fc, reinterpret_cast<const Unit*>(chars), charsLength,
+                    ownership);
   }
 
   
@@ -200,7 +232,14 @@ class SourceText final {
   [[nodiscard]] bool init(JSContext* cx,
                           js::UniquePtr<Unit[], JS::FreePolicy> data,
                           size_t dataLength) {
-    return init(cx, data.release(), dataLength, SourceOwnership::TakeOwnership);
+    return initImpl(cx, data.release(), dataLength,
+                    SourceOwnership::TakeOwnership);
+  }
+  [[nodiscard]] bool init(JS::FrontendContext* fc,
+                          js::UniquePtr<Unit[], JS::FreePolicy> data,
+                          size_t dataLength) {
+    return initImpl(fc, data.release(), dataLength,
+                    SourceOwnership::TakeOwnership);
   }
 
   
@@ -220,6 +259,14 @@ class SourceText final {
                           size_t dataLength) {
     return init(cx, data.release(), dataLength, SourceOwnership::TakeOwnership);
   }
+  template <typename Char,
+            typename = std::enable_if_t<std::is_same_v<Char, CharT> &&
+                                        !std::is_same_v<Char, Unit>>>
+  [[nodiscard]] bool init(JS::FrontendContext* fc,
+                          js::UniquePtr<Char[], JS::FreePolicy> data,
+                          size_t dataLength) {
+    return init(fc, data.release(), dataLength, SourceOwnership::TakeOwnership);
+  }
 
   
 
@@ -229,6 +276,8 @@ class SourceText final {
 
 
   [[nodiscard]] bool initMaybeBorrowed(JSContext* cx,
+                                       AutoStableStringChars& linearChars);
+  [[nodiscard]] bool initMaybeBorrowed(JS::FrontendContext* fc,
                                        AutoStableStringChars& linearChars);
 
   
