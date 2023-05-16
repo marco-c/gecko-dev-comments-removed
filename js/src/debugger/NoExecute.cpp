@@ -20,6 +20,7 @@
 #include "vm/Realm.h"                 
 #include "vm/Warnings.h"              
 
+#include "gc/StableCellHasher-inl.h"
 #include "vm/Realm-inl.h"  
 
 using namespace js;

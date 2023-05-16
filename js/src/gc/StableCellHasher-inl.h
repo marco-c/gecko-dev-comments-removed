@@ -9,7 +9,10 @@
 
 #include "gc/StableCellHasher.h"
 
+#include "mozilla/HashFunctions.h"
+
 #include "gc/Cell.h"
+#include "gc/Marking.h"
 #include "gc/Zone.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
@@ -162,6 +165,94 @@ inline void RemoveUniqueId(Cell* cell) {
 }
 
 }  
+
+static inline js::HashNumber UniqueIdToHash(uint64_t uid) {
+  return mozilla::HashGeneric(uid);
+}
+
+template <typename T>
+ bool StableCellHasher<T>::maybeGetHash(const Lookup& l,
+                                                    HashNumber* hashOut) {
+  if (!l) {
+    *hashOut = 0;
+    return true;
+  }
+
+  uint64_t uid;
+  if (!gc::MaybeGetUniqueId(l, &uid)) {
+    return false;
+  }
+
+  *hashOut = UniqueIdToHash(uid);
+  return true;
+}
+
+template <typename T>
+ bool StableCellHasher<T>::ensureHash(const Lookup& l,
+                                                  HashNumber* hashOut) {
+  if (!l) {
+    *hashOut = 0;
+    return true;
+  }
+
+  uint64_t uid;
+  if (!gc::GetOrCreateUniqueId(l, &uid)) {
+    return false;
+  }
+
+  *hashOut = UniqueIdToHash(uid);
+  return true;
+}
+
+template <typename T>
+ HashNumber StableCellHasher<T>::hash(const Lookup& l) {
+  if (!l) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT(CurrentThreadCanAccessZone(l->zoneFromAnyThread()) ||
+             CurrentThreadIsPerformingGC());
+
+  return UniqueIdToHash(gc::GetUniqueIdInfallible(l));
+}
+
+template <typename T>
+ bool StableCellHasher<T>::match(const Key& k, const Lookup& l) {
+  if (k == l) {
+    return true;
+  }
+
+  if (!k || !l) {
+    return false;
+  }
+
+  MOZ_ASSERT(CurrentThreadCanAccessZone(l->zoneFromAnyThread()) ||
+             CurrentThreadIsPerformingGC());
+
+#ifdef DEBUG
+  
+  
+  
+  if (!gc::HasUniqueId(k)) {
+    Key key = k;
+    MOZ_ASSERT(IsAboutToBeFinalizedUnbarriered(key));
+  }
+  MOZ_ASSERT(gc::HasUniqueId(l));
+#endif
+
+  uint64_t keyId;
+  if (!gc::MaybeGetUniqueId(k, &keyId)) {
+    
+    return false;
+  }
+
+  return keyId == gc::GetUniqueIdInfallible(l);
+}
+
 }  
 
 #endif  

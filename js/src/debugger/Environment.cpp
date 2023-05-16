@@ -32,6 +32,7 @@
 #include "vm/Scope.h"                 
 #include "vm/StringType.h"            
 
+#include "gc/StableCellHasher-inl.h"
 #include "vm/Compartment-inl.h"        
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSObject-inl.h"  

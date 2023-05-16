@@ -70,6 +70,7 @@
 #include "vm/WellKnownAtom.h"            
 #include "vm/WrapperObject.h"            
 
+#include "gc/StableCellHasher-inl.h"
 #include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"  
 #include "vm/NativeObject-inl.h"      

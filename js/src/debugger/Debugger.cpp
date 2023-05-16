@@ -118,6 +118,7 @@
 #include "debugger/Script-inl.h"   
 #include "gc/GC-inl.h"             
 #include "gc/Marking-inl.h"        
+#include "gc/StableCellHasher-inl.h"
 #include "gc/WeakMap-inl.h"        
 #include "vm/Compartment-inl.h"    
 #include "vm/GeckoProfiler-inl.h"  
