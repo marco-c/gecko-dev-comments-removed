@@ -10,7 +10,9 @@
 #include "ErrorList.h"
 #include "PLDHashTable.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/gfx/Types.h"
 #include "nsHashtablesFwd.h"
+#include "nsICookieJarSettings.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
@@ -266,6 +268,12 @@ class nsRFPService final : public nsIObserver {
                                               bool aIsPrivate);
 
   
+  
+  static nsresult RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
+                                  uint8_t* aData, uint32_t aSize,
+                                  mozilla::gfx::SurfaceFormat aSurfaceFormat);
+
+  
 
  private:
   nsresult Init();
@@ -311,6 +319,12 @@ class nsRFPService final : public nsIObserver {
   static void TypeToText(TimerPrecisionType aType, nsACString& aText);
 
   
+
+  
+  
+  static nsresult GenerateCanvasKeyFromImageData(
+      nsICookieJarSettings* aCookieJarSettings, uint8_t* aImageData,
+      uint32_t aSize, nsTArray<uint8_t>& aCanvasKey);
 
   
   nsresult EnsureSessionKey(bool aIsPrivate);
