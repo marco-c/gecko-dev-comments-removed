@@ -44,6 +44,10 @@ static NativeException NullWeakPtr() {
 }
 
 namespace mozilla {
+
+template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
+class MozPromise;
+
 namespace jni {
 
 
@@ -628,71 +632,6 @@ class MOZ_HEAP_CLASS NativeWeakPtrControlBlock final {
 
 
 
-
-
-
-template <typename NativeImpl>
-class NativeWeakPtrDetachRunnable final : public Runnable {
- public:
-  NativeWeakPtrDetachRunnable(
-      already_AddRefed<detail::NativeWeakPtrControlBlock<NativeImpl>> aCtlBlock,
-      const Object::LocalRef& aOwner,
-      typename NativeWeakPtrControlBlockStorageTraits<NativeImpl>::Type
-          aNativeImpl)
-      : Runnable("mozilla::jni::detail::NativeWeakPtrDetachRunnable"),
-        mCtlBlock(aCtlBlock),
-        mOwner(aOwner),
-        mNativeImpl(std::move(aNativeImpl)),
-        mHasRun(false) {
-    MOZ_RELEASE_ASSERT(!!mCtlBlock);
-    MOZ_RELEASE_ASSERT(!!mNativeImpl);
-  }
-
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(NativeWeakPtrDetachRunnable, Runnable)
-
-  NS_IMETHOD Run() override {
-    mHasRun = true;
-
-    if (!NS_IsMainThread()) {
-      NS_DispatchToMainThread(this);
-      return NS_OK;
-    }
-
-    
-    auto owner = ToLocalRef(mOwner);
-    auto attachedNativeImpl = NativePtrTraits<NativeImpl>::Get(owner);
-    MOZ_RELEASE_ASSERT(!!attachedNativeImpl);
-
-    
-    
-    
-    if (attachedNativeImpl->IsSame(mCtlBlock)) {
-      NativePtrTraits<NativeImpl>::ClearFinish(owner);
-    }
-
-    
-    mNativeImpl = nullptr;
-    return NS_OK;
-  }
-
- private:
-  ~NativeWeakPtrDetachRunnable() {
-    
-    MOZ_RELEASE_ASSERT(mHasRun, "You must run/dispatch this runnable!");
-  }
-
- private:
-  RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>> mCtlBlock;
-  Object::GlobalRef mOwner;
-  typename NativeWeakPtrControlBlockStorageTraits<NativeImpl>::Type mNativeImpl;
-  bool mHasRun;
-};
-
-
-
-
-
-
 template <typename NativeImpl>
 class MOZ_STACK_CLASS Accessor final {
  public:
@@ -755,6 +694,8 @@ class MOZ_STACK_CLASS Accessor final {
 
 }  
 
+using DetachPromise = mozilla::MozPromise<bool, nsresult, true>;
+
 
 
 
@@ -791,31 +732,7 @@ class NativeWeakPtr {
 
 
 
-  void Detach() {
-    if (!IsAttached()) {
-      
-      return;
-    }
-
-    auto native = mCtlBlock->Clear();
-    if (!native) {
-      
-      return;
-    }
-
-    Object::LocalRef owner(mCtlBlock->GetJavaOwner());
-    MOZ_RELEASE_ASSERT(!!owner);
-
-    
-    
-    
-    NativeImpl* rawImpl =
-        detail::NativeWeakPtrControlBlock<NativeImpl>::StorageTraits::AsRaw(
-            native);
-    rawImpl->OnWeakNonIntrusiveDetach(
-        do_AddRef(new NativeWeakPtrDetachRunnable<NativeImpl>(
-            mCtlBlock.forget(), owner, std::move(native))));
-  }
+  RefPtr<DetachPromise> Detach();
 
   
 
