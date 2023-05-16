@@ -49,20 +49,9 @@ bool SimulcastUtility::ValidSimulcastParameters(const VideoCodec& codec,
       return false;
     }
   }
-  if (codec.codecType == webrtc::kVideoCodecVP8) {
-    for (int i = 1; i < num_streams; ++i) {
-      if (codec.simulcastStream[i].width < codec.simulcastStream[i - 1].width) {
-        return false;
-      }
-    }
-  } else {
-    
-    
-    for (int i = 1; i < num_streams; ++i) {
-      if (codec.simulcastStream[i].width !=
-          codec.simulcastStream[i - 1].width * 2) {
-        return false;
-      }
+  for (int i = 1; i < num_streams; ++i) {
+    if (codec.simulcastStream[i].width < codec.simulcastStream[i - 1].width) {
+      return false;
     }
   }
 
