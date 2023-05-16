@@ -161,7 +161,10 @@ customElements.define(
       }
 
       this.setAttribute("extension-id", this.extension.id);
-      this.classList.add("unified-extensions-item");
+      this.classList.add(
+        "toolbaritem-combined-buttons",
+        "unified-extensions-item"
+      );
 
       
       

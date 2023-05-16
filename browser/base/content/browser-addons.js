@@ -1784,12 +1784,22 @@ var gUnifiedExtensions = {
       return;
     }
 
-    const actionButton = CustomizableUI.getWidget(aWidgetId)
-      ?.forWindow(window)
-      ?.node?.querySelector(".unified-extensions-item-action-button");
+    const node = CustomizableUI.getWidget(aWidgetId)?.forWindow(window)?.node;
+    const actionButton = node?.querySelector(
+      ".unified-extensions-item-action-button"
+    );
     if (actionButton) {
       actionButton.classList.toggle("subviewbutton", inPanel);
+      actionButton.classList.toggle("subviewbutton-iconic", inPanel);
       actionButton.classList.toggle("toolbarbutton-1", !inPanel);
+    }
+    const menuButton = node?.querySelector(
+      ".unified-extensions-item-menu-button"
+    );
+    if (menuButton) {
+      menuButton.classList.toggle("subviewbutton", inPanel);
+      menuButton.classList.toggle("subviewbutton-iconic", inPanel);
+      menuButton.classList.toggle("toolbarbutton-1", !inPanel);
     }
   },
 };
