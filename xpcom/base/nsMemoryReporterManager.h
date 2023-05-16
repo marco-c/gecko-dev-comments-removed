@@ -18,6 +18,11 @@
 #  include <windows.h>
 #endif  
 
+#if defined(MOZ_MEMORY)
+#  define HAVE_JEMALLOC_STATS 1
+#  include "mozmemory.h"
+#endif  
+
 namespace mozilla {
 class MemoryReportingProcess;
 namespace dom {
@@ -197,6 +202,13 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
     mozilla::NonJSSizeOfTabFn mNonJS = nullptr;
   };
   SizeOfTabFns mSizeOfTabFns;
+
+#ifdef HAVE_JEMALLOC_STATS
+  
+  
+  static size_t HeapAllocated(const jemalloc_stats_t& stats);
+  static int64_t HeapOverheadFraction(const jemalloc_stats_t& stats);
+#endif
 
  private:
   bool IsRegistrationBlocked() MOZ_EXCLUDES(mMutex) {

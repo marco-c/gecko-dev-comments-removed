@@ -66,11 +66,6 @@ using namespace mozilla;
 using namespace mozilla::ipc;
 using namespace dom;
 
-#if defined(MOZ_MEMORY)
-#  define HAVE_JEMALLOC_STATS 1
-#  include "mozmemory.h"
-#endif  
-
 #if defined(XP_LINUX)
 
 #  include "mozilla/MemoryMapping.h"
@@ -1257,7 +1252,10 @@ static size_t HeapOverhead(const jemalloc_stats_t& aStats) {
 
 
 
-static int64_t HeapOverheadFraction(const jemalloc_stats_t& aStats) {
+
+
+int64_t nsMemoryReporterManager::HeapOverheadFraction(
+    const jemalloc_stats_t& aStats) {
   size_t heapOverhead = HeapOverhead(aStats);
   size_t heapCommitted = aStats.allocated + heapOverhead;
   return int64_t(10000 * (heapOverhead / (double)heapCommitted));
@@ -2563,12 +2561,19 @@ int64_t nsMemoryReporterManager::ResidentUnique(ResidentUniqueArg) {
 
 #endif  
 
+#ifdef HAVE_JEMALLOC_STATS
+
+size_t nsMemoryReporterManager::HeapAllocated(const jemalloc_stats_t& aStats) {
+  return aStats.allocated;
+}
+#endif
+
 NS_IMETHODIMP
 nsMemoryReporterManager::GetHeapAllocated(int64_t* aAmount) {
 #ifdef HAVE_JEMALLOC_STATS
   jemalloc_stats_t stats;
   jemalloc_stats(&stats);
-  *aAmount = stats.allocated;
+  *aAmount = HeapAllocated(stats);
   return NS_OK;
 #else
   *aAmount = 0;
