@@ -5645,7 +5645,7 @@ bool Debugger::CallData::findScripts() {
 
 class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
  public:
-  using SourceSet = JS::GCHashSet<JSObject*, js::MovableCellHasher<JSObject*>,
+  using SourceSet = JS::GCHashSet<JSObject*, js::StableCellHasher<JSObject*>,
                                   ZoneAllocPolicy>;
 
   SourceQuery(JSContext* cx, Debugger* dbg)

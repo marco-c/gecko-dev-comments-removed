@@ -379,7 +379,7 @@ class WasmMemoryObject : public NativeObject {
 
   using InstanceSet = JS::WeakCache<GCHashSet<
       WeakHeapPtr<WasmInstanceObject*>,
-      MovableCellHasher<WeakHeapPtr<WasmInstanceObject*>>, CellAllocPolicy>>;
+      StableCellHasher<WeakHeapPtr<WasmInstanceObject*>>, CellAllocPolicy>>;
   bool hasObservers() const;
   InstanceSet& observers() const;
   InstanceSet* getOrCreateObservers(JSContext* cx);

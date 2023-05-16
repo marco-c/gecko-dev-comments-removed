@@ -531,7 +531,7 @@ class InnerViewTable {
   
   
   using Map = GCHashMap<UnsafeBarePtr<JSObject*>, ViewVector,
-                        MovableCellHasher<JSObject*>, ZoneAllocPolicy>;
+                        StableCellHasher<JSObject*>, ZoneAllocPolicy>;
 
   
   

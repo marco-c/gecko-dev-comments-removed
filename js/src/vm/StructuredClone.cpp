@@ -647,9 +647,8 @@ struct JSStructuredCloneWriter {
   
   
   
-  using CloneMemory =
-      GCHashMap<JSObject*, uint32_t, MovableCellHasher<JSObject*>,
-                SystemAllocPolicy>;
+  using CloneMemory = GCHashMap<JSObject*, uint32_t,
+                                StableCellHasher<JSObject*>, SystemAllocPolicy>;
   Rooted<CloneMemory> memory;
 
   
