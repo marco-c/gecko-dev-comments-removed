@@ -8,39 +8,41 @@
 #ifndef mozilla_throw_gcc_h
 #define mozilla_throw_gcc_h
 
-#include "mozilla/Attributes.h"
+#ifndef __wasm__
 
-#include <stdio.h>   
-#include <string.h>  
+#  include "mozilla/Attributes.h"
 
-
-
-
-
-#include "mozilla/mozalloc_abort.h"
+#  include <stdio.h>   
+#  include <string.h>  
 
 
 
 
-#if defined(__clang__)
-#  if __has_feature(cxx_attributes) && defined(_LIBCPP_VERSION) && \
-      _LIBCPP_VERSION >= 4000
-#    define MOZ_THROW_NORETURN [[noreturn]]
+
+#  include "mozilla/mozalloc_abort.h"
+
+
+
+
+#  if defined(__clang__)
+#    if __has_feature(cxx_attributes) && defined(_LIBCPP_VERSION) && \
+        _LIBCPP_VERSION >= 4000
+#      define MOZ_THROW_NORETURN [[noreturn]]
+#    endif
 #  endif
-#endif
-#ifndef MOZ_THROW_NORETURN
-#  define MOZ_THROW_NORETURN MOZ_NORETURN
-#endif
+#  ifndef MOZ_THROW_NORETURN
+#    define MOZ_THROW_NORETURN MOZ_NORETURN
+#  endif
 
 
 
-#ifdef __MINGW32__
-#  define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE_EVEN_DEBUG
-#  define MOZ_THROW_EXPORT
-#else
-#  define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE
-#  define MOZ_THROW_EXPORT MOZ_EXPORT
-#endif
+#  ifdef __MINGW32__
+#    define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE_EVEN_DEBUG
+#    define MOZ_THROW_EXPORT
+#  else
+#    define MOZ_THROW_INLINE MOZ_ALWAYS_INLINE
+#    define MOZ_THROW_EXPORT MOZ_EXPORT
+#  endif
 
 namespace std {
 
@@ -142,7 +144,9 @@ MOZ_THROW_NORETURN MOZ_EXPORT MOZ_ALWAYS_INLINE void __throw_regex_error(
 
 }  
 
-#undef MOZ_THROW_NORETURN
-#undef MOZ_THROW_INLINE
+#  undef MOZ_THROW_NORETURN
+#  undef MOZ_THROW_INLINE
+
+#endif
 
 #endif  
