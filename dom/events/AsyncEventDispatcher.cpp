@@ -113,11 +113,11 @@ void AsyncEventDispatcher::RunDOMEventWhenSafe() {
 
 
 void AsyncEventDispatcher::RunDOMEventWhenSafe(
-    nsINode& aTarget, const nsAString& aEventType, CanBubble aCanBubble,
-    ChromeOnlyDispatch aOnlyChromeDispatch,
+    EventTarget& aTarget, const nsAString& aEventType, CanBubble aCanBubble,
+    ChromeOnlyDispatch aOnlyChromeDispatch ,
     Composed aComposed ) {
   if (nsContentUtils::IsSafeToRunScript()) {
-    OwningNonNull<nsINode> target = aTarget;
+    OwningNonNull<EventTarget> target = aTarget;
     DispatchEventOnTarget(target, aEventType, aCanBubble, aOnlyChromeDispatch,
                           aComposed);
     return;
