@@ -118,7 +118,7 @@ async function verifyTelemetryForProcess(process, codecNames, extraKey = "") {
   
   
   codecNames.forEach(codecName => {
-    Assert.greaterOrEqual(
+    Assert.equal(
       telemetry[MEDIA_AUDIO_PROCESS][`${process},${codecName}${extraKey}`],
       1,
       `${MEDIA_AUDIO_PROCESS} must have the correct value (${process}, ${codecName}).`

@@ -194,6 +194,8 @@ class MediaFormatReader final
   RefPtr<GenericPromise> RequestDebugInfo(
       dom::MediaFormatReaderDebugInfo& aInfo);
 
+  nsCString GetAudioProcessPerCodec();
+
   
   
   
@@ -364,6 +366,8 @@ class MediaFormatReader final
           mType(aType),
           mMutex("DecoderData"),
           mDescription("shutdown"),
+          mProcessName(""),
+          mCodecName(""),
           mUpdateScheduled(false),
           mDemuxEOS(false),
           mWaitingForData(false),
@@ -415,6 +419,8 @@ class MediaFormatReader final
     
     RefPtr<MediaDataDecoder> mDecoder;
     nsCString mDescription;
+    nsCString mProcessName;
+    nsCString mCodecName;
     void ShutdownDecoder();
 
     
