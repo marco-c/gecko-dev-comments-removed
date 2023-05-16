@@ -10,6 +10,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
+#include "mozilla/WeakPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
@@ -194,8 +195,7 @@ class InputStreamHolder final : public nsIInputStreamCallback {
   ~InputStreamHolder();
 
   
-  
-  InputToReadableStreamAlgorithms* mCallback;
+  WeakPtr<InputToReadableStreamAlgorithms> mCallback;
   
   RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
   RefPtr<StrongWorkerRef> mWorkerRef;
@@ -204,7 +204,8 @@ class InputStreamHolder final : public nsIInputStreamCallback {
 
 class InputToReadableStreamAlgorithms final
     : public UnderlyingSourceAlgorithmsWrapper,
-      public nsIInputStreamCallback {
+      public nsIInputStreamCallback,
+      public SupportsWeakPtr {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InputToReadableStreamAlgorithms,
