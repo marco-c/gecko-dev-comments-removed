@@ -105,7 +105,6 @@ add_task(async function test_v3_action_context_menu() {
       action: {
         default_title: "Test Action",
         default_popup: "test.html",
-        
         browser_style: true,
       },
     },
