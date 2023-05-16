@@ -277,13 +277,11 @@ void WebAuthnController::Register(
 
 
 #ifndef MOZ_WIDGET_ANDROID
-  const auto& extra = aInfo.Extra().ref();
-
   
   
   
   
-  const nsString& attestation = extra.attestationConveyancePreference();
+  const nsString& attestation = aInfo.attestationConveyancePreference();
   static_assert(MOZ_WEBAUTHN_ENUM_STRINGS_VERSION == 2);
   if (attestation.EqualsLiteral(
           MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT) ||
@@ -437,9 +435,8 @@ void WebAuthnController::RunFinishRegister(
   }
 
   nsTArray<WebAuthnExtensionResult> extensions;
-  nsTArray<uint8_t> regData; 
   WebAuthnMakeCredentialResult result(clientDataJson, attObj, credentialId,
-                                      regData, extensions);
+                                      extensions);
 
   Telemetry::ScalarAdd(Telemetry::ScalarID::SECURITY_WEBAUTHN_USED,
                        u"CTAPRegisterFinish"_ns, 1);
@@ -475,12 +472,9 @@ void WebAuthnController::Sign(PWebAuthnTransactionParent* aTransactionParent,
   }
 
   Maybe<nsTArray<uint8_t>> appIdHash = Nothing();
-  if (aInfo.Extra().isSome()) {
-    const auto& extra = aInfo.Extra().ref();
-    for (const WebAuthnExtension& ext : extra.Extensions()) {
-      if (ext.type() == WebAuthnExtension::TWebAuthnExtensionAppId) {
-        appIdHash = Some(ext.get_WebAuthnExtensionAppId().AppId().Clone());
-      }
+  for (const WebAuthnExtension& ext : aInfo.Extensions()) {
+    if (ext.type() == WebAuthnExtension::TWebAuthnExtensionAppId) {
+      appIdHash = Some(ext.get_WebAuthnExtensionAppId().AppId().Clone());
     }
   }
 
@@ -679,10 +673,9 @@ void WebAuthnController::RunResumeWithSelectedSignResult(
     extensions.AppendElement(WebAuthnExtensionResultAppId(usedAppId));
   }
 
-  nsTArray<uint8_t> signatureData;  
   WebAuthnGetAssertionResult result(mTransaction.ref().mClientDataJSON,
                                     credentialId, signature, authenticatorData,
-                                    extensions, signatureData, userHandle);
+                                    extensions, userHandle);
 
   Telemetry::ScalarAdd(Telemetry::ScalarID::SECURITY_WEBAUTHN_USED,
                        u"CTAPSignFinish"_ns, 1);

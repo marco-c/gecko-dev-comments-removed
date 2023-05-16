@@ -281,23 +281,20 @@ void U2FTokenManager::Register(
 
 
 #ifndef MOZ_WIDGET_ANDROID
-  if (aTransactionInfo.Extra().isSome()) {
-    const auto& extra = aTransactionInfo.Extra().ref();
-
-    
-    
-    
-    
-    const nsString& attestation = extra.attestationConveyancePreference();
-    static_assert(MOZ_WEBAUTHN_ENUM_STRINGS_VERSION == 2);
-    if (attestation.EqualsLiteral(
-            MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT) ||
-        attestation.EqualsLiteral(
-            MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_INDIRECT) ||
-        attestation.EqualsLiteral(
-            MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ENTERPRISE)) {
-      noneAttestationRequested = false;
-    }
+  
+  
+  
+  
+  const nsString& attestation =
+      aTransactionInfo.attestationConveyancePreference();
+  static_assert(MOZ_WEBAUTHN_ENUM_STRINGS_VERSION == 2);
+  if (attestation.EqualsLiteral(
+          MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT) ||
+      attestation.EqualsLiteral(
+          MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_INDIRECT) ||
+      attestation.EqualsLiteral(
+          MOZ_WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ENTERPRISE)) {
+    noneAttestationRequested = false;
   }
 #endif  
 
