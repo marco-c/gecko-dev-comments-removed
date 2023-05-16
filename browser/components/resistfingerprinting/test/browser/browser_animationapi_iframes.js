@@ -80,8 +80,8 @@ let expectedResults = {};
 
 function addAllTests(extraData_, extraPrefs_) {
   add_task(
-    partial(
-      defaultsTest,
+    defaultsTest.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -93,22 +93,8 @@ function addAllTests(extraData_, extraPrefs_) {
   );
 
   add_task(
-    partial(
-      simpleRFPTest,
-      uri,
-      iframe_domain,
-      cross_origin_domain,
-      testTimePrecision,
-      expectedResults,
-      extraData_,
-      extraPrefs_
-    )
-  );
-
-  
-  add_task(
-    partial(
-      testA,
+    simpleRFPTest.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -121,8 +107,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testB,
+    testA.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -135,8 +121,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testC,
+    testB.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -149,8 +135,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testD,
+    testC.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -163,8 +149,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testE,
+    testD.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -177,8 +163,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testF,
+    testE.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -191,8 +177,8 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testG,
+    testF.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,
@@ -205,8 +191,22 @@ function addAllTests(extraData_, extraPrefs_) {
 
   
   add_task(
-    partial(
-      testH,
+    testG.bind(
+      null,
+      uri,
+      iframe_domain,
+      cross_origin_domain,
+      testTimePrecision,
+      expectedResults,
+      extraData_,
+      extraPrefs_
+    )
+  );
+
+  
+  add_task(
+    testH.bind(
+      null,
       uri,
       iframe_domain,
       cross_origin_domain,

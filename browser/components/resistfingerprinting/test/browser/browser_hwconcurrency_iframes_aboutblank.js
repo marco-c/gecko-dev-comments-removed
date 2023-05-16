@@ -55,10 +55,10 @@ requestLongerTimeout(2);
 
 let expectedResults = {};
 
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  partial(
-    defaultsTest,
+  defaultsTest.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -67,23 +67,10 @@ add_task(
   )
 );
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    simpleRFPTest,
-    uri,
-    IFRAME_DOMAIN,
-    CROSS_ORIGIN_DOMAIN,
-    testHWConcurrency,
-    expectedResults
-  )
-);
-
-
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
-add_task(
-  partial(
-    testA,
+  simpleRFPTest.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -93,10 +80,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  partial(
-    testB,
+  testA.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -106,10 +93,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  partial(
-    testC,
+  testB.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -119,10 +106,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testD,
+  testC.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -132,10 +119,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testE,
+  testD.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -145,10 +132,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testF,
+  testE.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -158,10 +145,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testG,
+  testF.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,
@@ -171,10 +158,23 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testH,
+  testG.bind(
+    this,
+    uri,
+    IFRAME_DOMAIN,
+    CROSS_ORIGIN_DOMAIN,
+    testHWConcurrency,
+    expectedResults
+  )
+);
+
+
+expectedResults = structuredClone(allSpoofed);
+add_task(
+  testH.bind(
+    this,
     uri,
     IFRAME_DOMAIN,
     CROSS_ORIGIN_DOMAIN,

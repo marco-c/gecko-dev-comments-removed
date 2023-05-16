@@ -350,10 +350,10 @@ requestLongerTimeout(2);
 
 let expectedResults = {};
 
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  partial(
-    defaultsTest,
+  defaultsTest.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -362,23 +362,10 @@ add_task(
   )
 );
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    simpleRFPTest,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
-
-
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
-add_task(
-  partial(
-    testA,
+  simpleRFPTest.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -388,10 +375,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allNotSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
 add_task(
-  partial(
-    testB,
+  testA.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -401,12 +388,25 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allNotSpoofed);
+add_task(
+  testB.bind(
+    this,
+    uri,
+    iframe_domain,
+    cross_origin_domain,
+    testNavigator,
+    expectedResults
+  )
+);
+
+
+expectedResults = structuredClone(allSpoofed);
 expectedResults.framer_crossOrigin_userAgentHTTPHeader = defaultUserAgent;
 expectedResults.framee_crossOrigin_userAgentHTTPHeader = spoofedUserAgentHeader;
 add_task(
-  partial(
-    testC,
+  testC.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -416,12 +416,12 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 expectedResults.framer_crossOrigin_userAgentHTTPHeader = defaultUserAgent;
 expectedResults.framee_crossOrigin_userAgentHTTPHeader = spoofedUserAgentHeader;
 add_task(
-  partial(
-    testD,
+  testD.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -431,10 +431,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testE,
+  testE.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -444,10 +444,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testF,
+  testF.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -457,10 +457,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testG,
+  testG.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
@@ -470,10 +470,10 @@ add_task(
 );
 
 
-expectedResults = JSON.parse(JSON.stringify(allSpoofed));
+expectedResults = structuredClone(allSpoofed);
 add_task(
-  partial(
-    testH,
+  testH.bind(
+    this,
     uri,
     iframe_domain,
     cross_origin_domain,
