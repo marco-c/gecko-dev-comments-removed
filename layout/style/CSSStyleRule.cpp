@@ -196,7 +196,7 @@ void CSSStyleRule::SetSelectorText(const nsACString& aSelectorText) {
 
     
     
-    const RawServoStyleSheetContents* contents = sheet->RawContents();
+    const StyleStylesheetContents* contents = sheet->RawContents();
     if (Servo_StyleRule_SetSelectorText(contents, mRawRule, &aSelectorText)) {
       sheet->RuleChanged(this, StyleRuleChangeKind::Generic);
     }

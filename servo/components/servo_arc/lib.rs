@@ -228,7 +228,7 @@ impl<T> Arc<T> {
     
     
     #[inline]
-    fn into_raw(this: Self) -> *const T {
+    pub fn into_raw(this: Self) -> *const T {
         let ptr = unsafe { &((*this.ptr()).data) as *const _ };
         mem::forget(this);
         ptr
@@ -238,10 +238,8 @@ impl<T> Arc<T> {
     
     
     
-    
-    
     #[inline]
-    unsafe fn from_raw(ptr: *const T) -> Self {
+    pub unsafe fn from_raw(ptr: *const T) -> Self {
         
         
         let ptr = (ptr as *const u8).sub(data_offset::<T>());
