@@ -495,6 +495,13 @@ class WinUtils {
   
 
 
+
+  static void InvalidatePluginAsWorkaround(nsIWidget* aWidget,
+                                           const LayoutDeviceIntRect& aRect);
+
+  
+
+
   static bool IsIMEEnabled(const InputContext& aInputContext);
   static bool IsIMEEnabled(IMEEnabled aIMEState);
 
