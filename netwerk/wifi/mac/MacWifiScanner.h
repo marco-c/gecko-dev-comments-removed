@@ -1,0 +1,28 @@
+
+
+
+
+#pragma once
+
+#include "WifiScanner.h"
+
+class nsWifiAccessPoint;
+
+namespace mozilla {
+
+class WifiScannerImpl final : public WifiScanner {
+ public:
+  
+
+
+
+
+
+
+
+
+  nsresult GetAccessPointsFromWLAN(
+      nsTArray<RefPtr<nsIWifiAccessPoint>>& accessPoints);
+};
+
+}  
