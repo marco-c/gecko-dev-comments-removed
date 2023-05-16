@@ -38,7 +38,22 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #ifdef WIN32
+
+
+
+
+
+
+
+#define UINT8 UBLAH_IGNORE_ME_PLEASE
+#define INT8 BLAH_IGNORE_ME_PLEASE
 #include <winsock2.h>
+#undef UINT8
+#undef INT8
+#include <r_types.h>
+
+
+
 #include <ws2tcpip.h>
 #else
 #include <sys/socket.h>
