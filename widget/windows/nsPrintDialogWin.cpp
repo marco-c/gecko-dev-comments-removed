@@ -22,6 +22,8 @@
 #include "nsServiceManagerUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsQueryObject.h"
+#include "WidgetUtils.h"
+#include "WinUtils.h"
 
 static const char* kPageSetupDialogURL =
     "chrome://global/content/printPageSetup.xhtml";
@@ -142,40 +144,8 @@ nsresult nsPrintDialogServiceWin::DoDialog(mozIDOMWindowProxy* aParent,
 }
 
 HWND nsPrintDialogServiceWin::GetHWNDForDOMWindow(mozIDOMWindowProxy* aWindow) {
-  nsCOMPtr<nsIWebBrowserChrome> chrome;
-
-  
-  if (mWatcher) {
-    nsCOMPtr<mozIDOMWindowProxy> fosterParent;
-    
-    if (!aWindow) {
-      mWatcher->GetActiveWindow(getter_AddRefs(fosterParent));
-      aWindow = fosterParent;
-    }
-    mWatcher->GetChromeForWindow(aWindow, getter_AddRefs(chrome));
-  }
-
-  if (chrome) {
-    nsCOMPtr<nsIBaseWindow> site(do_QueryInterface(chrome));
-    if (site) {
-      HWND w;
-      site->GetParentNativeWindow(reinterpret_cast<void**>(&w));
-      return w;
-    }
-  }
-
-  
-  nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
-
-  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome =
-      window->GetWebBrowserChrome();
-  if (!webBrowserChrome) return nullptr;
-
-  nsCOMPtr<nsIBaseWindow> baseWin(do_QueryInterface(webBrowserChrome));
-  if (!baseWin) return nullptr;
-
-  nsCOMPtr<nsIWidget> widget;
-  baseWin->GetMainWidget(getter_AddRefs(widget));
+  nsCOMPtr<nsIWidget> widget =
+      WidgetUtils::DOMWindowToWidget(nsPIDOMWindowOuter::From(aWindow));
   if (!widget) return nullptr;
 
   return (HWND)widget->GetNativeData(NS_NATIVE_TMP_WINDOW);
