@@ -556,14 +556,8 @@ function nativeIsEagerlyEvaluateable(fn) {
       return true;
   }
 
-  
-  
-  
-  
-  
-  
   const natives = gSideEffectFreeNatives.get(fn.name);
-  return natives && natives.some(n => fn.isSameNativeWithJitInfo(n));
+  return natives && natives.some(n => fn.isSameNative(n));
 }
 
 function updateConsoleInputEvaluation(dbg, webConsole) {
