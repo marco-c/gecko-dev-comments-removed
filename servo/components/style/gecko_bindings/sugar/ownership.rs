@@ -21,43 +21,6 @@ pub unsafe trait HasFFI: Sized + 'static {
 
 
 
-pub unsafe trait HasSimpleFFI: HasFFI {
-    #[inline]
-    
-    
-    
-    
-    fn as_ffi(&self) -> &Self::FFIType {
-        unsafe { transmute(self) }
-    }
-    #[inline]
-    
-    
-    
-    
-    fn as_ffi_mut(&mut self) -> &mut Self::FFIType {
-        unsafe { transmute(self) }
-    }
-    #[inline]
-    
-    
-    
-    
-    fn from_ffi(ffi: &Self::FFIType) -> &Self {
-        unsafe { transmute(ffi) }
-    }
-    #[inline]
-    
-    
-    
-    
-    fn from_ffi_mut(ffi: &mut Self::FFIType) -> &mut Self {
-        unsafe { transmute(ffi) }
-    }
-}
-
-
-
 
 
 
