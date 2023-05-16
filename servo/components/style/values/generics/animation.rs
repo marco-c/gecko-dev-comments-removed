@@ -5,8 +5,81 @@
 
 
 use crate::values::generics::length::GenericLengthPercentageOrAuto;
+use crate::values::specified::animation::{ScrollAxis, ScrollFunction};
+use crate::values::TimelineName;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
+
+
+
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[css(function = "view")]
+#[repr(C)]
+pub struct GenericViewFunction<LengthPercent> {
+    
+    #[css(skip_if = "ScrollAxis::is_default")]
+    pub axis: ScrollAxis,
+    
+    #[css(skip_if = "GenericViewTimelineInset::is_auto")]
+    #[css(field_bound)]
+    pub inset: GenericViewTimelineInset<LengthPercent>,
+}
+
+pub use self::GenericViewFunction as ViewFunction;
+
+
+
+
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericAnimationTimeline<LengthPercent> {
+    
+    Auto,
+    
+    
+    
+    Timeline(TimelineName),
+    
+    
+    Scroll(ScrollFunction),
+    
+    
+    View(#[css(field_bound)] GenericViewFunction<LengthPercent>),
+}
+
+pub use self::GenericAnimationTimeline as AnimationTimeline;
+
+impl<LengthPercent> AnimationTimeline<LengthPercent> {
+    
+    pub fn auto() -> Self {
+        Self::Auto
+    }
+
+    
+    pub fn is_auto(&self) -> bool {
+        matches!(self, Self::Auto)
+    }
+}
 
 
 
@@ -31,6 +104,14 @@ pub struct GenericViewTimelineInset<LengthPercent> {
 }
 
 pub use self::GenericViewTimelineInset as ViewTimelineInset;
+
+impl<LengthPercent> ViewTimelineInset<LengthPercent> {
+    
+    #[inline]
+    fn is_auto(&self) -> bool {
+        self.start.is_auto() && self.end.is_auto()
+    }
+}
 
 impl<LengthPercent> ToCss for ViewTimelineInset<LengthPercent>
 where

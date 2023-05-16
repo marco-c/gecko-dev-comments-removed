@@ -11,7 +11,7 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::animation::{
-    AnimationName, AnimationTimeline, ScrollAxis, ScrollTimelineName, TransitionProperty,
+    AnimationName, ScrollAxis, ScrollTimelineName, TransitionProperty,
 };
 
 
@@ -61,6 +61,9 @@ impl ToCss for AnimationIterationCount {
         }
     }
 }
+
+
+pub type AnimationTimeline = generics::GenericAnimationTimeline<LengthPercentage>;
 
 
 pub type ViewTimelineInset = generics::GenericViewTimelineInset<LengthPercentage>;

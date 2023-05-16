@@ -13,7 +13,9 @@ use crate::values::{CustomIdent, KeyframesName, TimelineName};
 use crate::Atom;
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, ToCss};
+use style_traits::{
+    CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
+};
 
 
 
@@ -204,8 +206,14 @@ pub enum Scroller {
     
     Root,
     
+}
+
+impl Scroller {
     
-    
+    #[inline]
+    fn is_default(&self) -> bool {
+        matches!(*self, Self::Nearest)
+    }
 }
 
 impl Default for Scroller {
@@ -245,25 +253,25 @@ pub enum ScrollAxis {
     Horizontal = 3,
 }
 
+impl ScrollAxis {
+    
+    #[inline]
+    pub fn is_default(&self) -> bool {
+        matches!(*self, Self::Block)
+    }
+}
+
 impl Default for ScrollAxis {
     fn default() -> Self {
         Self::Block
     }
 }
 
-#[inline]
-fn is_default<T: Default + PartialEq>(value: &T) -> bool {
-    *value == Default::default()
-}
-
-
 
 
 #[derive(
     Clone,
     Debug,
-    Eq,
-    Hash,
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
@@ -272,40 +280,77 @@ fn is_default<T: Default + PartialEq>(value: &T) -> bool {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C, u8)]
-pub enum AnimationTimeline {
+#[css(function = "scroll")]
+#[repr(C)]
+pub struct ScrollFunction {
     
-    Auto,
+    #[css(skip_if = "ScrollAxis::is_default")]
+    pub axis: ScrollAxis,
     
-    
-    
-    Timeline(TimelineName),
-    
-    
-    #[css(function)]
-    Scroll(
-        #[css(skip_if = "is_default")] ScrollAxis,
-        #[css(skip_if = "is_default")] Scroller,
-    ),
+    #[css(skip_if = "Scroller::is_default")]
+    pub scroller: Scroller,
 }
 
-impl AnimationTimeline {
+impl ScrollFunction {
     
-    pub fn auto() -> Self {
-        Self::Auto
-    }
-
-    
-    pub fn is_auto(&self) -> bool {
-        matches!(self, Self::Auto)
+    fn parse_arguments<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        
+        
+        
+        
+        Ok(Self {
+            axis: input.try_parse(ScrollAxis::parse).unwrap_or_default(),
+            scroller: input.try_parse(Scroller::parse).unwrap_or_default(),
+        })
     }
 }
+
+impl generics::ViewFunction<LengthPercentage> {
+    
+    fn parse_arguments<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        
+        let mut axis = None;
+        let mut inset = None;
+        loop {
+            if axis.is_none() {
+                axis = input.try_parse(ScrollAxis::parse).ok();
+            }
+
+            if inset.is_none() {
+                inset = input
+                    .try_parse(|i| ViewTimelineInset::parse(context, i))
+                    .ok();
+                if inset.is_some() {
+                    continue;
+                }
+            }
+            break;
+        }
+
+        Ok(Self {
+            inset: inset.unwrap_or_default(),
+            axis: axis.unwrap_or_default(),
+        })
+    }
+}
+
+
+pub type AnimationTimeline = generics::GenericAnimationTimeline<LengthPercentage>;
 
 impl Parse for AnimationTimeline {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
+        use crate::values::generics::animation::ViewFunction;
+
+        
+        
+
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
             return Ok(Self::Auto);
         }
@@ -314,20 +359,24 @@ impl Parse for AnimationTimeline {
             return Ok(AnimationTimeline::Timeline(TimelineName::none()));
         }
 
-        
-        if input
-            .try_parse(|i| i.expect_function_matching("scroll"))
-            .is_ok()
-        {
-            return input.parse_nested_block(|i| {
-                Ok(Self::Scroll(
-                    i.try_parse(ScrollAxis::parse).unwrap_or(ScrollAxis::Block),
-                    i.try_parse(Scroller::parse).unwrap_or(Scroller::Nearest),
-                ))
-            });
+        if let Ok(name) = input.try_parse(|i| TimelineName::parse(context, i)) {
+            return Ok(AnimationTimeline::Timeline(name));
         }
 
-        TimelineName::parse(context, input).map(AnimationTimeline::Timeline)
+        
+        let location = input.current_source_location();
+        let function = input.expect_function()?.clone();
+        input.parse_nested_block(move |i| {
+            match_ignore_ascii_case! { &function,
+                "scroll" => ScrollFunction::parse_arguments(i).map(Self::Scroll),
+                "view" => ViewFunction::parse_arguments(context, i).map(Self::View),
+                _ => {
+                    Err(location.new_custom_error(
+                        StyleParseErrorKind::UnexpectedFunction(function.clone())
+                    ))
+                },
+            }
+        })
     }
 }
 
