@@ -29,9 +29,6 @@ class RedirectChannelRegistrar final : public nsIRedirectChannelRegistrar {
   
   static already_AddRefed<nsIRedirectChannelRegistrar> GetOrCreate();
 
-  
-  static void Shutdown();
-
  protected:
   using ChannelHashtable = nsInterfaceHashtable<nsUint64HashKey, nsIChannel>;
   using ParentChannelHashtable =
