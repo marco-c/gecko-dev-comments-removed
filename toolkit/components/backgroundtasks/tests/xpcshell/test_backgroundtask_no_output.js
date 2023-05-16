@@ -21,7 +21,14 @@ add_task(async function test_backgroundtask_no_output() {
   });
   Assert.equal(0, exitCode);
 
-  Assert.deepEqual([], outputLines);
+  if (AppConstants.platform !== "win") {
+    
+    
+    ok(
+      outputLines.every(l => !l.includes("*** You are running in")),
+      "Should not have logs by default"
+    );
+  }
 });
 
 

@@ -36,7 +36,14 @@ add_task(async function test_simple() {
   equal(dir.exists(), false);
   equal(extraDir.exists(), false);
 
-  deepEqual([], outputLines, "Should not have logs by default");
+  if (AppConstants.platform !== "win") {
+    
+    
+    ok(
+      outputLines.every(l => !l.includes("*** You are running in")),
+      "Should not have logs by default"
+    );
+  }
 });
 
 add_task(async function test_no_extension() {

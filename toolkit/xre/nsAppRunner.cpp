@@ -3865,6 +3865,29 @@ static void MaybeAddCPUMicrocodeCrashAnnotation() {
 #endif
 }
 
+#if defined(MOZ_BACKGROUNDTASKS)
+static void SetupConsoleForBackgroundTask(
+    const nsCString& aBackgroundTaskName) {
+  
+  
+  
+  
+  
+#  ifndef XP_WIN
+  if (BackgroundTasks::IsNoOutputTaskName(aBackgroundTaskName) &&
+      !CheckArg("attach-console") &&
+      !EnvHasValue("MOZ_BACKGROUNDTASKS_IGNORE_NO_OUTPUT")) {
+    
+    
+    Unused << freopen("/dev/null", "w", stdout);
+    Unused << freopen("/dev/null", "w", stderr);
+    return;
+  }
+#  endif
+  printf_stderr("*** You are running in background task mode. ***\n");
+}
+#endif
+
 
 
 
@@ -3896,30 +3919,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
       CheckArg("backgroundtask", &backgroundTaskName, CheckArgFlag::None)) {
     backgroundTask = Some(backgroundTaskName);
 
-    CheckArgFlag checkArgFlag =
-#  ifdef XP_WIN
-        CheckArgFlag::None;  
-                             
-#  else
-        CheckArgFlag::RemoveArg;  
-                                  
-#  endif
-
-    if (BackgroundTasks::IsNoOutputTaskName(backgroundTask.ref()) &&
-        !CheckArg("attach-console", nullptr, checkArgFlag) &&
-        !EnvHasValue("MOZ_BACKGROUNDTASKS_IGNORE_NO_OUTPUT")) {
-      
-      
-#  ifdef XP_WIN
-      Unused << freopen("nul:", "w", stdout);
-      Unused << freopen("nul:", "w", stderr);
-#  else
-      Unused << freopen("/dev/null", "w", stdout);
-      Unused << freopen("/dev/null", "w", stderr);
-#  endif
-    } else {
-      printf_stderr("*** You are running in background task mode. ***\n");
-    }
+    SetupConsoleForBackgroundTask(backgroundTask.ref());
   }
 
   BackgroundTasks::Init(backgroundTask);
