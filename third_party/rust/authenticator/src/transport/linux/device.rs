@@ -158,26 +158,6 @@ impl HIDDevice for Device {
     fn set_authenticator_info(&mut self, authenticator_info: AuthenticatorInfo) {
         self.authenticator_info = Some(authenticator_info);
     }
-
-    
-    
-    fn clone_device_as_write_only(&self) -> Result<Self, HIDError> {
-        let fd = OpenOptions::new()
-            .write(true)
-            .open(&self.path)
-            .map_err(|e| (HIDError::IO(Some(self.path.clone()), e)))?;
-
-        Ok(Self {
-            path: self.path.clone(),
-            fd,
-            in_rpt_size: self.in_rpt_size,
-            out_rpt_size: self.out_rpt_size,
-            cid: self.cid,
-            dev_info: self.dev_info.clone(),
-            secret: self.secret.clone(),
-            authenticator_info: self.authenticator_info.clone(),
-        })
-    }
 }
 
 impl FidoDevice for Device {}

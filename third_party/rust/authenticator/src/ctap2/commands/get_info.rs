@@ -62,17 +62,17 @@ fn true_val() -> bool {
     true
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
-pub(crate) struct AuthenticatorOptions {
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq, Serialize)]
+pub struct AuthenticatorOptions {
     
     
     #[serde(rename = "plat", default)]
-    pub(crate) platform_device: bool,
+    pub platform_device: bool,
     
     
     
     #[serde(rename = "rk", default)]
-    pub(crate) resident_key: bool,
+    pub resident_key: bool,
 
     
     
@@ -83,11 +83,11 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "clientPin")]
-    pub(crate) client_pin: Option<bool>,
+    pub client_pin: Option<bool>,
 
     
     #[serde(rename = "up", default = "true_val")]
-    pub(crate) user_presence: bool,
+    pub user_presence: bool,
 
     
     
@@ -107,7 +107,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "uv")]
-    pub(crate) user_verification: Option<bool>,
+    pub user_verification: Option<bool>,
 
     
     
@@ -124,7 +124,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "pinUvAuthToken")]
-    pub(crate) pin_uv_auth_token: Option<bool>,
+    pub pin_uv_auth_token: Option<bool>,
 
     
     
@@ -141,7 +141,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "noMcGaPermissionsWithClientPin")]
-    pub(crate) no_mc_ga_permissions_with_client_pin: Option<bool>,
+    pub no_mc_ga_permissions_with_client_pin: Option<bool>,
 
     
     
@@ -149,7 +149,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "largeBlobs")]
-    pub(crate) large_blobs: Option<bool>,
+    pub large_blobs: Option<bool>,
 
     
     
@@ -162,7 +162,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "ep")]
-    pub(crate) ep: Option<bool>,
+    pub ep: Option<bool>,
 
     
     
@@ -174,7 +174,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "bioEnroll")]
-    pub(crate) bio_enroll: Option<bool>,
+    pub bio_enroll: Option<bool>,
 
     
     
@@ -187,7 +187,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "userVerificationMgmtPreview")]
-    pub(crate) user_verification_mgmt_preview: Option<bool>,
+    pub user_verification_mgmt_preview: Option<bool>,
 
     
     
@@ -199,7 +199,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "uvBioEnroll")]
-    pub(crate) uv_bio_enroll: Option<bool>,
+    pub uv_bio_enroll: Option<bool>,
 
     
     
@@ -208,7 +208,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "authnrCfg")]
-    pub(crate) authnr_cfg: Option<bool>,
+    pub authnr_cfg: Option<bool>,
 
     
     
@@ -220,7 +220,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "uvAcfg")]
-    pub(crate) uv_acfg: Option<bool>,
+    pub uv_acfg: Option<bool>,
 
     
     
@@ -229,7 +229,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "credMgmt")]
-    pub(crate) cred_mgmt: Option<bool>,
+    pub cred_mgmt: Option<bool>,
 
     
     
@@ -238,7 +238,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "credentialMgmtPreview")]
-    pub(crate) credential_mgmt_preview: Option<bool>,
+    pub credential_mgmt_preview: Option<bool>,
 
     
     
@@ -248,7 +248,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "setMinPINLength")]
-    pub(crate) set_min_pin_length: Option<bool>,
+    pub set_min_pin_length: Option<bool>,
 
     
     
@@ -261,7 +261,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "makeCredUvNotRqd")]
-    pub(crate) make_cred_uv_not_rqd: Option<bool>,
+    pub make_cred_uv_not_rqd: Option<bool>,
 
     
     
@@ -274,7 +274,7 @@ pub(crate) struct AuthenticatorOptions {
     
     
     #[serde(rename = "alwaysUv")]
-    pub(crate) always_uv: Option<bool>,
+    pub always_uv: Option<bool>,
 }
 
 impl Default for AuthenticatorOptions {
@@ -312,30 +312,30 @@ pub enum AuthenticatorVersion {
     FIDO_2_1,
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct AuthenticatorInfo {
-    pub(crate) versions: Vec<AuthenticatorVersion>,
-    pub(crate) extensions: Vec<String>,
-    pub(crate) aaguid: AAGuid,
-    pub(crate) options: AuthenticatorOptions,
-    pub(crate) max_msg_size: Option<usize>,
-    pub(crate) pin_protocols: Vec<u64>,
+    pub versions: Vec<AuthenticatorVersion>,
+    pub extensions: Vec<String>,
+    pub aaguid: AAGuid,
+    pub options: AuthenticatorOptions,
+    pub max_msg_size: Option<usize>,
+    pub pin_protocols: Vec<u64>,
     
-    pub(crate) max_credential_count_in_list: Option<usize>,
-    pub(crate) max_credential_id_length: Option<usize>,
-    pub(crate) transports: Option<Vec<String>>,
-    pub(crate) algorithms: Option<Vec<PublicKeyCredentialParameters>>,
-    pub(crate) max_ser_large_blob_array: Option<u64>,
-    pub(crate) force_pin_change: Option<bool>,
-    pub(crate) min_pin_length: Option<u64>,
-    pub(crate) firmware_version: Option<u64>,
-    pub(crate) max_cred_blob_length: Option<u64>,
-    pub(crate) max_rpids_for_set_min_pin_length: Option<u64>,
-    pub(crate) preferred_platform_uv_attempts: Option<u64>,
-    pub(crate) uv_modality: Option<u64>,
-    pub(crate) certifications: Option<BTreeMap<String, u64>>,
-    pub(crate) remaining_discoverable_credentials: Option<u64>,
-    pub(crate) vendor_prototype_config_commands: Option<Vec<u64>>,
+    pub max_credential_count_in_list: Option<usize>,
+    pub max_credential_id_length: Option<usize>,
+    pub transports: Option<Vec<String>>,
+    pub algorithms: Option<Vec<PublicKeyCredentialParameters>>,
+    pub max_ser_large_blob_array: Option<u64>,
+    pub force_pin_change: Option<bool>,
+    pub min_pin_length: Option<u64>,
+    pub firmware_version: Option<u64>,
+    pub max_cred_blob_length: Option<u64>,
+    pub max_rpids_for_set_min_pin_length: Option<u64>,
+    pub preferred_platform_uv_attempts: Option<u64>,
+    pub uv_modality: Option<u64>,
+    pub certifications: Option<BTreeMap<String, u64>>,
+    pub remaining_discoverable_credentials: Option<u64>,
+    pub vendor_prototype_config_commands: Option<Vec<u64>>,
 }
 
 impl AuthenticatorInfo {

@@ -17,7 +17,7 @@ use crate::ctap2::commands::client_pin::Pin;
 use crate::ctap2::commands::get_assertion::CheckKeyHandle;
 use crate::ctap2::server::{
     PublicKeyCredentialDescriptor, PublicKeyCredentialParameters, RelyingParty,
-    RelyingPartyWrapper, RpIdHash, User,
+    RelyingPartyWrapper, RpIdHash, User, UserVerificationRequirement,
 };
 use crate::errors::AuthenticatorError;
 use crate::transport::{
@@ -174,7 +174,6 @@ pub struct MakeCredentials {
     pub(crate) pin: Option<Pin>,
     pub(crate) pin_uv_auth_param: Option<PinUvAuthParam>,
     pub(crate) enterprise_attestation: Option<u64>,
-    pub(crate) use_ctap1_fallback: bool,
 }
 
 impl MakeCredentials {
@@ -188,9 +187,8 @@ impl MakeCredentials {
         options: MakeCredentialsOptions,
         extensions: MakeCredentialsExtensions,
         pin: Option<Pin>,
-        use_ctap1_fallback: bool,
-    ) -> Result<Self, HIDError> {
-        Ok(Self {
+    ) -> Self {
+        Self {
             client_data_hash,
             rp,
             user,
@@ -201,8 +199,7 @@ impl MakeCredentials {
             pin,
             pin_uv_auth_param: None,
             enterprise_attestation: None,
-            use_ctap1_fallback,
-        })
+        }
     }
 }
 
@@ -235,10 +232,6 @@ impl PinUvAuthCommand for MakeCredentials {
         self.options.user_verification = uv;
     }
 
-    fn get_uv_option(&mut self) -> Option<bool> {
-        self.options.user_verification
-    }
-
     fn get_rp_id(&self) -> Option<&String> {
         match &self.rp {
             
@@ -247,7 +240,11 @@ impl PinUvAuthCommand for MakeCredentials {
         }
     }
 
-    fn can_skip_user_verification(&mut self, info: &AuthenticatorInfo) -> bool {
+    fn can_skip_user_verification(
+        &mut self,
+        info: &AuthenticatorInfo,
+        uv_req: UserVerificationRequirement,
+    ) -> bool {
         
         
 
@@ -260,27 +257,13 @@ impl PinUvAuthCommand for MakeCredentials {
         
         let always_uv = info.options.always_uv == Some(true)
             || info.max_supported_version() == AuthenticatorVersion::FIDO_2_0;
-        let uv_discouraged = self.get_uv_option() == Some(false);
+        let uv_discouraged = uv_req == UserVerificationRequirement::Discouraged;
 
         
         
         let can_make_cred_without_uv = make_cred_uv_not_required && uv_discouraged;
 
-        if always_uv || (device_protected && !can_make_cred_without_uv) {
-            
-            self.set_uv_option(Some(true));
-            false
-        } else {
-            
-            
-            
-            
-            
-            
-            
-            self.set_uv_option(Some(false));
-            true
-        }
+        !always_uv && (!device_protected || can_make_cred_without_uv)
     }
 }
 
@@ -353,14 +336,6 @@ impl RequestCtap1 for MakeCredentials {
     where
         Dev: io::Read + io::Write + fmt::Debug + FidoDevice,
     {
-        
-        
-        
-        
-        
-        
-        
-
         let is_already_registered = self
             .exclude_list
             .iter()
@@ -469,7 +444,7 @@ impl RequestCtap2 for MakeCredentials {
 }
 
 pub(crate) fn dummy_make_credentials_cmd() -> Result<MakeCredentials, HIDError> {
-    MakeCredentials::new(
+    let mut req = MakeCredentials::new(
         CollectedClientData {
             webauthn_type: WebauthnType::Create,
             challenge: Challenge::new(vec![0, 1, 2, 3, 4]),
@@ -477,8 +452,7 @@ pub(crate) fn dummy_make_credentials_cmd() -> Result<MakeCredentials, HIDError> 
             cross_origin: false,
             token_binding: None,
         }
-        .hash()
-        .expect("failed to serialize client data"),
+        .hash()?,
         RelyingPartyWrapper::Data(RelyingParty {
             id: String::from("make.me.blink"),
             ..Default::default()
@@ -495,8 +469,12 @@ pub(crate) fn dummy_make_credentials_cmd() -> Result<MakeCredentials, HIDError> 
         MakeCredentialsOptions::default(),
         MakeCredentialsExtensions::default(),
         None,
-        false,
-    )
+    );
+    
+    
+    
+    req.pin_uv_auth_param = Some(PinUvAuthParam::create_empty());
+    Ok(req)
 }
 
 #[cfg(test)]
@@ -648,9 +626,7 @@ pub mod test {
             },
             Default::default(),
             None,
-            false,
-        )
-        .expect("Failed to create MakeCredentials");
+        );
 
         let mut device = Device::new("commands/make_credentials").unwrap(); 
         let req_serialized = req
@@ -708,9 +684,7 @@ pub mod test {
             },
             Default::default(),
             None,
-            false,
-        )
-        .expect("Failed to create MakeCredentials");
+        );
 
         let mut device = Device::new("commands/make_credentials").unwrap(); 
         let (req_serialized, _) = req
