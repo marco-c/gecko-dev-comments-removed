@@ -104,10 +104,24 @@ class AsyncEventDispatcher : public CancelableRunnable {
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, WidgetEvent& aEvent);
 
-  NS_IMETHOD Run() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override;
   nsresult Cancel() override;
   nsresult PostDOMEvent();
   void RunDOMEventWhenSafe();
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void RunDOMEventWhenSafe(
+      nsINode& aTarget, const nsAString& aEventType, CanBubble aCanBubble,
+      ChromeOnlyDispatch aOnlyChromeDispatch,
+      Composed aComposed = Composed::eDefault);
 
   
 
@@ -127,6 +141,13 @@ class AsyncEventDispatcher : public CancelableRunnable {
   
   void RequireNodeInDocument();
 
+ protected:
+  MOZ_CAN_RUN_SCRIPT static void DispatchEventOnTarget(
+      dom::EventTarget* aTarget, const nsAString& aEventType,
+      CanBubble aCanBubble, ChromeOnlyDispatch aOnlyChromeDispatch,
+      Composed aComposed = Composed::eDefault, dom::Event* aEvent = nullptr);
+
+ public:
   nsCOMPtr<dom::EventTarget> mTarget;
   RefPtr<dom::Event> mEvent;
   

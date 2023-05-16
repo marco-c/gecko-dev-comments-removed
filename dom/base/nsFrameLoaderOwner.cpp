@@ -216,10 +216,9 @@ void nsFrameLoaderOwner::ChangeFrameLoaderCommon(Element* aOwner,
     
     
     
-    (new mozilla::AsyncEventDispatcher(aOwner, u"XULFrameLoaderCreated"_ns,
-                                       mozilla::CanBubble::eYes,
-                                       mozilla::ChromeOnlyDispatch::eYes))
-        ->RunDOMEventWhenSafe();
+    mozilla::AsyncEventDispatcher::RunDOMEventWhenSafe(
+        *aOwner, u"XULFrameLoaderCreated"_ns, mozilla::CanBubble::eYes,
+        mozilla::ChromeOnlyDispatch::eYes);
   }
 
   if (mFrameLoader) {
