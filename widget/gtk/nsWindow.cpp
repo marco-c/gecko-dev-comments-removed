@@ -3628,10 +3628,23 @@ void nsWindow::CaptureRollupEvents(bool aDoCapture) {
       return;
     }
 
-    GdkGrabStatus status = gdk_device_grab(
-        GdkGetPointer(), GetToplevelGdkWindow(), GDK_OWNERSHIP_NONE,
-         true, kCaptureEventsMask,
-         nullptr, GetLastUserInputTime());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GdkGrabStatus status =
+        gdk_pointer_grab(GetToplevelGdkWindow(),
+                          true, kCaptureEventsMask,
+                          nullptr,
+                          nullptr, GetLastUserInputTime());
     Unused << NS_WARN_IF(status != GDK_GRAB_SUCCESS);
     LOG(" > pointer grab with status %d", int(status));
     gtk_grab_add(GTK_WIDGET(mContainer));
@@ -3640,7 +3653,7 @@ void nsWindow::CaptureRollupEvents(bool aDoCapture) {
     
     
     gtk_grab_remove(GTK_WIDGET(mContainer));
-    gdk_device_ungrab(GdkGetPointer(), GetLastUserInputTime());
+    gdk_pointer_ungrab(GetLastUserInputTime());
   }
 }
 
