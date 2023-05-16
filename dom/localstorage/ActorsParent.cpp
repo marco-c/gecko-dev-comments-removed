@@ -6678,6 +6678,9 @@ nsresult PrepareDatastoreOp::Start() {
     
     
     mMainThreadOrigin = std::move(principalMetadata.mOrigin);
+    mOriginMetadata.mStorageOrigin =
+        std::move(principalMetadata.mStorageOrigin);
+    mOriginMetadata.mIsPrivate = principalMetadata.mIsPrivate;
     mOriginMetadata.mPersistenceType = PERSISTENCE_TYPE_DEFAULT;
   }
 
