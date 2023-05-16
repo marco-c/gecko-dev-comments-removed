@@ -93,6 +93,13 @@ function targetIsWindow(aTarget) {
   return aTarget.Window && aTarget instanceof aTarget.Window;
 }
 
+function targetIsTopWindow(aTarget) {
+  if (!targetIsWindow(aTarget)) {
+    return false;
+  }
+  return aTarget == aTarget.top;
+}
+
 
 function windowForTarget(aTarget) {
   if (targetIsWindow(aTarget)) {
@@ -1294,7 +1301,7 @@ function promiseMoveMouseAndScrollWheelOver(
   return p;
 }
 
-function scrollbarDragStart(aTarget, aScaleFactor) {
+async function scrollbarDragStart(aTarget, aScaleFactor) {
   var targetElement = elementForTarget(aTarget);
   var w = {},
     h = {};
@@ -1309,6 +1316,16 @@ function scrollbarDragStart(aTarget, aScaleFactor) {
   var startY = upArrowHeight + 5; 
   startX *= aScaleFactor;
   startY *= aScaleFactor;
+
+  
+  
+  
+  
+  if (targetIsTopWindow(aTarget)) {
+    var resolution = await getResolution();
+    startX /= resolution;
+    startY /= resolution;
+  }
 
   return { x: startX, y: startY };
 }
@@ -1334,7 +1351,7 @@ async function promiseVerticalScrollbarDrag(
   aIncrement = 5,
   aScaleFactor = 1
 ) {
-  var startPoint = scrollbarDragStart(aTarget, aScaleFactor);
+  var startPoint = await scrollbarDragStart(aTarget, aScaleFactor);
   var targetElement = elementForTarget(aTarget);
   if (startPoint == null) {
     return null;
@@ -1401,7 +1418,7 @@ async function promiseVerticalScrollbarTouchDrag(
   aDistance = 20,
   aScaleFactor = 1
 ) {
-  var startPoint = scrollbarDragStart(aTarget, aScaleFactor);
+  var startPoint = await scrollbarDragStart(aTarget, aScaleFactor);
   var targetElement = elementForTarget(aTarget);
   if (startPoint == null) {
     return false;
