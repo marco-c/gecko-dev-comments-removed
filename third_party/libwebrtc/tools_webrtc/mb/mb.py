@@ -119,16 +119,10 @@ class WebRTCMetaBuildWrapper(mb.MetaBuildWrapper):
           '../../tools_webrtc/gtest-parallel-wrapper.py',
       ]
       output_dir = '${ISOLATED_OUTDIR}/test_logs'
-      timeout = isolate_map[target].get('timeout', 900)
       cmdline += [
           '../../tools_webrtc/gtest-parallel-wrapper.py',
           '--output_dir=%s' % output_dir,
           '--gtest_color=no',
-          
-          
-          
-          
-          '--timeout=%s' % timeout,
       ]
       if test_type == 'non_parallel_console_test_launcher':
         
