@@ -174,9 +174,23 @@ bool RenderCompositorEGL::Resume() {
 
     mEGLSurface = CreateEGLSurface();
     if (mEGLSurface == EGL_NO_SURFACE) {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!mHandlingNewSurfaceError) {
+        mHandlingNewSurfaceError = true;
+      } else {
+        RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
+      }
       return false;
     }
+    mHandlingNewSurfaceError = false;
+
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
   } else if (kIsWayland || kIsX11) {
     

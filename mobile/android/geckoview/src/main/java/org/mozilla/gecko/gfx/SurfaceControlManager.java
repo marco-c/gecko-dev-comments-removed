@@ -78,6 +78,18 @@ public class SurfaceControlManager {
 
   
   
+  
+  @RequiresApi(api = Build.VERSION_CODES.Q)
+  @WrapForJNI(exceptionMode = "abort")
+  public synchronized void removeSurface(final SurfaceControl parent) {
+    final SurfaceControl child = mChildSurfaceControls.remove(parent);
+    if (child != null) {
+      child.release();
+    }
+  }
+
+  
+  
   @RequiresApi(api = Build.VERSION_CODES.Q)
   @WrapForJNI(exceptionMode = "abort")
   public synchronized void onGpuProcessLoss() {

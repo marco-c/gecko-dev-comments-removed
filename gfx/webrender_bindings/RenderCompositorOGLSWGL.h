@@ -71,6 +71,11 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
   EGLSurface mEGLSurface = EGL_NO_SURFACE;
   bool mFullRender = false;
 
+  
+  
+  
+  bool mHandlingNewSurfaceError = false;
+
   class TileOGL : public RenderCompositorLayersSWGL::Tile {
    public:
     TileOGL(RefPtr<layers::TextureImageTextureSourceOGL>&& aTexture,
