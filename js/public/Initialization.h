@@ -28,7 +28,10 @@ enum class InitState { Uninitialized = 0, Initializing, Running, ShutDown };
 
 extern JS_PUBLIC_DATA InitState libraryInitState;
 
-extern JS_PUBLIC_API const char* InitWithFailureDiagnostic(bool isDebugBuild);
+enum class FrontendOnly { No, Yes };
+
+extern JS_PUBLIC_API const char* InitWithFailureDiagnostic(
+    bool isDebugBuild, FrontendOnly frontendOnly = FrontendOnly::No);
 
 }  
 }  
@@ -80,6 +83,21 @@ inline const char* JS_InitWithFailureDiagnostic(void) {
   return JS::detail::InitWithFailureDiagnostic(true);
 #else
   return JS::detail::InitWithFailureDiagnostic(false);
+#endif
+}
+
+
+
+
+
+
+inline bool JS_FrontendOnlyInit(void) {
+#ifdef DEBUG
+  return !JS::detail::InitWithFailureDiagnostic(true,
+                                                JS::detail::FrontendOnly::Yes);
+#else
+  return !JS::detail::InitWithFailureDiagnostic(false,
+                                                JS::detail::FrontendOnly::Yes);
 #endif
 }
 
@@ -173,6 +191,12 @@ JS_PUBLIC_API void DisableJitBackend();
 
 
 extern JS_PUBLIC_API void JS_ShutDown(void);
+
+
+
+
+
+extern JS_PUBLIC_API void JS_FrontendOnlyShutDown(void);
 
 #if defined(ENABLE_WASM_SIMD) && \
     (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86))
