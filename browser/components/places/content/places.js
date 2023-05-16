@@ -38,6 +38,16 @@ const RESTORE_FILEPICKER_FILTER_EXT = "*.json;*.jsonlz4";
 const HISTORY_LIBRARY_SEARCH_TELEMETRY =
   "PLACES_HISTORY_LIBRARY_SEARCH_TIME_MS";
 
+const SORTBY_L10N_IDS = new Map([
+  ["title", "places-view-sortby-name"],
+  ["url", "places-view-sortby-url"],
+  ["date", "places-view-sortby-date"],
+  ["visitCount", "places-view-sortby-visit-count"],
+  ["dateAdded", "places-view-sortby-date-added"],
+  ["lastModified", "places-view-sortby-last-modified"],
+  ["tags", "places-view-sortby-tags"],
+]);
+
 var PlacesOrganizer = {
   _places: null,
 
@@ -847,7 +857,7 @@ var PlacesSearchBox = {
 
 
 
-  search: function PSB_search(filterString) {
+  search(filterString) {
     var PO = PlacesOrganizer;
     
     
@@ -907,7 +917,7 @@ var PlacesSearchBox = {
   
 
 
-  findAll: function PSB_findAll() {
+  findAll() {
     switch (this.filterCollection) {
       case "history":
         PlacesQueryBuilder.setScope("history");
@@ -925,22 +935,19 @@ var PlacesSearchBox = {
   
 
 
-
-
-
-  updateCollectionTitle: function PSB_updateCollectionTitle(aTitle) {
-    let title = "";
+  updatePlaceholder() {
+    let l10nId = "";
     switch (this.filterCollection) {
       case "history":
-        title = PlacesUIUtils.getString("searchHistory");
+        l10nId = "places-search-history";
         break;
       case "downloads":
-        title = PlacesUIUtils.getString("searchDownloads");
+        l10nId = "places-search-downloads";
         break;
       default:
-        title = PlacesUIUtils.getString("searchBookmarks");
+        l10nId = "places-search-bookmarks";
     }
-    this.searchFilter.placeholder = title;
+    document.l10n.setAttributes(this.searchFilter, l10nId);
   },
 
   
@@ -957,21 +964,21 @@ var PlacesSearchBox = {
     }
 
     this.searchFilter.setAttribute("collection", collectionName);
-    this.updateCollectionTitle();
+    this.updatePlaceholder();
   },
 
   
 
 
-  focus: function PSB_focus() {
+  focus() {
     this.searchFilter.focus();
   },
 
   
 
 
-  init: function PSB_init() {
-    this.updateCollectionTitle();
+  init() {
+    this.updatePlaceholder();
   },
 
   
@@ -1040,8 +1047,7 @@ var PlacesQueryBuilder = {
 
 
 
-
-  setScope: function PQB_setScope(aScope) {
+  setScope(aScope) {
     
     var filterCollection;
     var folders = [];
@@ -1147,15 +1153,12 @@ var ViewMenu = {
 
 
 
-
-
-
   fillWithColumns: function VM_fillWithColumns(
     event,
     startID,
     endID,
     type,
-    propertyPrefix
+    localize
   ) {
     var popup = event.target;
     var pivot = this._clean(popup, startID, endID);
@@ -1167,18 +1170,13 @@ var ViewMenu = {
       var menuitem = document.createXULElement("menuitem");
       menuitem.id = "menucol_" + column.id;
       menuitem.column = column;
-      var label = column.getAttribute("label");
-      if (propertyPrefix) {
-        var menuitemPrefix = propertyPrefix;
-        
-        
-        var columnId = column.getAttribute("anonid");
-        menuitemPrefix += columnId == "title" ? "name" : columnId;
-        label = PlacesUIUtils.getString(menuitemPrefix + ".label");
-        var accesskey = PlacesUIUtils.getString(menuitemPrefix + ".accesskey");
-        menuitem.setAttribute("accesskey", accesskey);
+      if (localize) {
+        const l10nId = SORTBY_L10N_IDS.get(column.getAttribute("anonid"));
+        document.l10n.setAttributes(menuitem, l10nId);
+      } else {
+        const label = column.getAttribute("label");
+        menuitem.setAttribute("label", label);
       }
-      menuitem.setAttribute("label", label);
       if (type == "radio") {
         menuitem.setAttribute("type", "radio");
         menuitem.setAttribute("name", "columns");
@@ -1218,7 +1216,7 @@ var ViewMenu = {
       "viewUnsorted",
       "directionSeparator",
       "radio",
-      "view.sortBy.1."
+      true
     );
 
     var sortColumn = this._getSortColumn();
