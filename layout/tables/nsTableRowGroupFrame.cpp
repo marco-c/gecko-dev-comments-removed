@@ -940,7 +940,8 @@ void nsTableRowGroupFrame::CreateContinuingRowFrame(nsIFrame& aRowFrame,
   mFrames.InsertFrame(nullptr, &aRowFrame, *aContRowFrame);
 
   
-  PushChildren(*aContRowFrame, &aRowFrame);
+  
+  PushChildrenToOverflow(*aContRowFrame, &aRowFrame);
 }
 
 
@@ -1047,6 +1048,8 @@ void nsTableRowGroupFrame::UndoContinuedRow(nsPresContext* aPresContext,
   MOZ_ASSERT(mFrames.ContainsFrame(rowBefore),
              "rowBefore not in our frame list?");
 
+  
+  
   AutoFrameListPtr overflows(aPresContext, StealOverflowFrames());
   if (!rowBefore || !overflows || overflows->IsEmpty() ||
       overflows->FirstChild() != aRow) {
