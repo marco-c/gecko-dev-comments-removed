@@ -2492,7 +2492,16 @@ void WarpBuilder::buildCheckLexicalOp(BytecodeLocation loc) {
   current->push(lexicalCheck);
 
   if (snapshot().bailoutInfo().failedLexicalCheck()) {
+    
+    
+    
+    
+    
+    
     lexicalCheck->setNotMovable();
+    if (op == JSOp::CheckAliasedLexical) {
+      mirGen().disableLICM();
+    }
   }
 
   if (op == JSOp::CheckLexical) {

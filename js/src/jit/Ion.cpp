@@ -1182,8 +1182,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   
   
   
-  if (mir->optimizationInfo().licmEnabled() &&
-      !mir->outerInfo().hadLICMInvalidation()) {
+  if (mir->licmEnabled()) {
     JitSpewCont(JitSpew_LICM, "\n");
     if (!LICM(mir, graph)) {
       return false;
