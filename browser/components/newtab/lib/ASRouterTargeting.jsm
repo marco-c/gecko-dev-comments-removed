@@ -974,10 +974,7 @@ const TargetingGetters = {
   get isDeviceMigration() {
     const { attributionData } = this;
 
-    return (
-      attributionData?.source === "support.mozilla.org" &&
-      attributionData?.campaign === "migration"
-    );
+    return attributionData?.campaign === "migration";
   },
 };
 
