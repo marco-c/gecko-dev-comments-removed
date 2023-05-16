@@ -31,8 +31,9 @@
 
 namespace mozilla {
 
-static bool GetLockFileName(const char* nameToken, const char16_t* installPath,
-                            nsCString& filePath) {
+bool GetMultiInstanceLockFileName(const char* nameToken,
+                                  const char16_t* installPath,
+                                  nsCString& filePath) {
 #ifdef XP_WIN
   
   
@@ -108,7 +109,7 @@ static bool GetLockFileName(const char* nameToken, const char16_t* installPath,
 MultiInstLockHandle OpenMultiInstanceLock(const char* nameToken,
                                           const char16_t* installPath) {
   nsCString filePath;
-  if (!GetLockFileName(nameToken, installPath, filePath)) {
+  if (!GetMultiInstanceLockFileName(nameToken, installPath, filePath)) {
     return MULTI_INSTANCE_LOCK_HANDLE_ERROR;
   }
 
