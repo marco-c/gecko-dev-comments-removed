@@ -447,6 +447,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
 
   
 
+  RTCStatsMember<std::string> playout_id;
   RTCStatsMember<std::string> track_identifier;
   RTCStatsMember<std::string> mid;
   RTCStatsMember<std::string> remote_id;
