@@ -150,12 +150,9 @@ void HTMLDialogElement::FocusDialog() {
   
   
   
-  RefPtr<Document> doc = OwnerDoc();
-  if (IsInComposedDoc()) {
+  if (RefPtr<Document> doc = GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
-
-  doc->HideAllPopoversWithoutRunningScript();
 
   RefPtr<Element> control = GetFocusDelegate(false );
 

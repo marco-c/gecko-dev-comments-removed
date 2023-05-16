@@ -3469,7 +3469,6 @@ class Document : public nsINode,
                                                bool aFocusPreviousElement,
                                                bool aFireEvents);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HideAllPopoversWithoutRunningScript();
   
   
   MOZ_CAN_RUN_SCRIPT void HidePopover(Element& popover,
