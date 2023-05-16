@@ -259,9 +259,15 @@ class SourcesManager extends EventEmitter {
 
 
   isBlackBoxed(url, line, column) {
+    if (!this.blackBoxedSources.has(url)) {
+      return false;
+    }
+
     const ranges = this.blackBoxedSources.get(url);
+
+    
     if (!ranges) {
-      return this.blackBoxedSources.has(url);
+      return true;
     }
 
     const range = ranges.find(r => isLocationInRange({ line, column }, r));
