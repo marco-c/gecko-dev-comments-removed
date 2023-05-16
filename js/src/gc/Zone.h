@@ -549,16 +549,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   [[nodiscard]] bool maybeGetUniqueId(js::gc::Cell* cell, uint64_t* uidp);
 
-  [[nodiscard]] bool maybeGetHashCode(js::gc::Cell* cell,
-                                      js::HashNumber* hashOut);
-
   
   
   [[nodiscard]] bool getOrCreateUniqueId(js::gc::Cell* cell, uint64_t* uidp);
-  [[nodiscard]] bool getOrCreateHashCode(js::gc::Cell* cell,
-                                         js::HashNumber* hashOut);
 
-  js::HashNumber getHashCodeInfallible(js::gc::Cell* cell);
   uint64_t getUniqueIdInfallible(js::gc::Cell* cell);
 
   
