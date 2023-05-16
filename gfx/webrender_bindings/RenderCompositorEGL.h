@@ -60,6 +60,11 @@ class RenderCompositorEGL : public RenderCompositor {
   
   
   
+  bool mHandlingNewSurfaceError = false;
+
+  
+  
+  
   
   ipc::FileDescriptor mReleaseFenceFd;
 };
