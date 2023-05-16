@@ -579,12 +579,6 @@ class QuotaManager final : public BackgroundThreadObject {
 
   bool IsSanitizedOriginValid(const nsACString& aSanitizedOrigin);
 
-  Result<nsCString, nsresult> EnsureStorageOriginFromOrigin(
-      const nsACString& aOrigin);
-
-  Result<nsCString, nsresult> GetOriginFromStorageOrigin(
-      const nsACString& aStorageOrigin);
-
   int64_t GenerateDirectoryLockId();
 
   bool ShutdownStarted() const;
@@ -662,10 +656,6 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   nsTHashMap<nsCStringHashKey, bool> mValidOrigins;
-
-  
-  nsTHashMap<nsCStringHashKey, nsCString> mOriginToStorageOriginMap;
-  nsTHashMap<nsCStringHashKey, nsCString> mStorageOriginToOriginMap;
 
   
   
