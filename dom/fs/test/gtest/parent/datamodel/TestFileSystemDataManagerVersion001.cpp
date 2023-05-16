@@ -109,13 +109,18 @@ static void MakeDatabaseManagerVersion001(
 
 class TestFileSystemDatabaseManagerVersion001
     : public quota::test::QuotaManagerDependencyFixture {
+ public:
   void SetUp() override { ASSERT_NO_FATAL_FAILURE(InitializeFixture()); }
 
   void TearDown() override {
     ASSERT_NO_FATAL_FAILURE(ClearStoragesForOrigin(GetTestOriginMetadata()));
     ASSERT_NO_FATAL_FAILURE(ShutdownFixture());
   }
+
+  static ContentType sContentType;
 };
+
+ContentType TestFileSystemDatabaseManagerVersion001::sContentType = "psid"_ns;
 
 TEST_F(TestFileSystemDatabaseManagerVersion001,
        smokeTestCreateRemoveDirectories) {
@@ -218,17 +223,19 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
 
     FileSystemChildMetadata firstChildMeta(rootId, u"First"_ns);
     
-    TEST_TRY_UNWRAP_ERR(
-        rv, dm->GetOrCreateFile(firstChildMeta,  false));
+    TEST_TRY_UNWRAP_ERR(rv, dm->GetOrCreateFile(firstChildMeta, sContentType,
+                                                 false));
     ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
     
-    TEST_TRY_UNWRAP(EntryId firstChild,
-                    dm->GetOrCreateFile(firstChildMeta,  true));
+    TEST_TRY_UNWRAP(
+        EntryId firstChild,
+        dm->GetOrCreateFile(firstChildMeta, sContentType,  true));
 
     
-    TEST_TRY_UNWRAP(EntryId firstChildClone,
-                    dm->GetOrCreateFile(firstChildMeta,  true));
+    TEST_TRY_UNWRAP(
+        EntryId firstChildClone,
+        dm->GetOrCreateFile(firstChildMeta, sContentType,  true));
     ASSERT_EQ(firstChild, firstChildClone);
 
     
@@ -243,7 +250,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
     << firstItemRef.entryName();
     ASSERT_EQ(firstChild, firstItemRef.entryId());
 
-    nsString type;
+    ContentType type;
     TimeStamp lastModifiedMilliSeconds;
     Path path;
     nsCOMPtr<nsIFile> file;
@@ -251,7 +258,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
                      path, file);
     ASSERT_NSEQ(NS_OK, rv);
 
-    ASSERT_TRUE(type.IsEmpty());
+    ASSERT_STREQ(sContentType, type);
 
     const int64_t nowMilliSeconds = PR_Now() / 1000;
     ASSERT_GE(nowMilliSeconds, lastModifiedMilliSeconds);
@@ -278,8 +285,8 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
 
     EntryId notAChildHash = "0123456789abcdef0123456789abcdef"_ns;
     FileSystemChildMetadata notAChildMeta(notAChildHash, u"Dummy"_ns);
-    TEST_TRY_UNWRAP_ERR(rv,
-                        dm->GetOrCreateFile(notAChildMeta,  true));
+    TEST_TRY_UNWRAP_ERR(rv, dm->GetOrCreateFile(notAChildMeta, sContentType,
+                                                 true));
     ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
 
     
@@ -301,8 +308,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
 
     
     FileSystemChildMetadata thirdChildMeta(secondChild, u"Third"_ns);
-    TEST_TRY_UNWRAP(EntryId thirdChild,
-                    dm->GetOrCreateFile(thirdChildMeta,  true));
+    TEST_TRY_UNWRAP(
+        EntryId thirdChild,
+        dm->GetOrCreateFile(thirdChildMeta, sContentType,  true));
 
     FileSystemEntryPair entryPair(rootId, thirdChild);
     TEST_TRY_UNWRAP(Path entryPath, dm->Resolve(entryPair));
@@ -322,8 +330,8 @@ TEST_F(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles) {
     ASSERT_TRUE(isDeleted);
 
     
-    TEST_TRY_UNWRAP_ERR(rv,
-                        dm->GetOrCreateFile(thirdChildMeta,  true));
+    TEST_TRY_UNWRAP_ERR(rv, dm->GetOrCreateFile(thirdChildMeta, sContentType,
+                                                 true));
     ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
 
     
@@ -472,8 +480,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
 
     
     FileSystemChildMetadata testFileMeta(firstChildDir, u"Subfile"_ns);
-    TEST_TRY_UNWRAP(EntryId testFile,
-                    dm->GetOrCreateFile(testFileMeta,  true));
+    TEST_TRY_UNWRAP(
+        EntryId testFile,
+        dm->GetOrCreateFile(testFileMeta, sContentType,  true));
 
     
     FileSystemEntryMetadata subSubDir;
@@ -567,8 +576,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       TEST_TRY_UNWRAP(bool isMoved, dm->MoveEntry(src, dest));
       ASSERT_TRUE(isMoved);
 
-      TEST_TRY_UNWRAP(EntryId testFileCheck,
-                      dm->GetOrCreateFile(testFileMeta,  true));
+      TEST_TRY_UNWRAP(
+          EntryId testFileCheck,
+          dm->GetOrCreateFile(testFileMeta, sContentType,  true));
       ASSERT_EQ(testFile, testFileCheck);
     }
 
@@ -609,7 +619,8 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
     {
       
       TEST_TRY_UNWRAP_ERR(
-          nsresult rv, dm->GetOrCreateFile(testFileMeta,  false));
+          nsresult rv,
+          dm->GetOrCreateFile(testFileMeta, sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
     }
 
@@ -638,8 +649,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                           firstChildDescendantMeta.childName()};
 
       
-      TEST_TRY_UNWRAP_ERR(nsresult rv,
-                          dm->GetOrCreateFile(oldLocation,  false));
+      TEST_TRY_UNWRAP_ERR(
+          nsresult rv,
+          dm->GetOrCreateFile(oldLocation, sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       TEST_TRY_UNWRAP(EntryId firstChildDescendantCheck,
@@ -684,8 +696,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                           firstChildDescendantMeta.childName()};
 
       
-      TEST_TRY_UNWRAP_ERR(nsresult rv,
-                          dm->GetOrCreateFile(oldLocation,  false));
+      TEST_TRY_UNWRAP_ERR(
+          nsresult rv,
+          dm->GetOrCreateFile(oldLocation, sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       TEST_TRY_UNWRAP(EntryId firstChildDescendantCheck,
@@ -722,8 +735,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
                                            oldLocation,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
-      TEST_TRY_UNWRAP(EntryId testFileCheck,
-                      dm->GetOrCreateFile(oldLocation,  true));
+      TEST_TRY_UNWRAP(
+          EntryId testFileCheck,
+          dm->GetOrCreateFile(oldLocation, sContentType,  true));
       ASSERT_NE(testFile, testFileCheck);
       testFile = testFileCheck;
     }
@@ -731,8 +745,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
     
     FileSystemChildMetadata newFileMeta{firstChildDescendant,
                                         testFileMeta.childName()};
-    TEST_TRY_UNWRAP(EntryId newFile,
-                    dm->GetOrCreateFile(newFileMeta,  true));
+    TEST_TRY_UNWRAP(
+        EntryId newFile,
+        dm->GetOrCreateFile(newFileMeta, sContentType,  true));
 
     {
       TEST_TRY_UNWRAP(Path entryPath, dm->Resolve({rootId, newFile}));
@@ -760,8 +775,9 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       
-      TEST_TRY_UNWRAP(EntryId handle, dm->GetOrCreateFile(newFileMeta,
-                                                           false));
+      TEST_TRY_UNWRAP(
+          EntryId handle,
+          dm->GetOrCreateFile(newFileMeta, sContentType,  false));
       ASSERT_EQ(handle, newFile);
 
       TEST_TRY_UNWRAP(
@@ -861,13 +877,13 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
       
       TEST_TRY_UNWRAP_ERR(
           nsresult rv, dm->GetOrCreateFile({rootId, testFileMeta.childName()},
-                                            false));
+                                           sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       TEST_TRY_UNWRAP_ERR(
           rv,
           dm->GetOrCreateFile({rootId, firstChildDescendantMeta.childName()},
-                               false));
+                              sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       TEST_TRY_UNWRAP_ERR(
@@ -883,7 +899,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
 
       TEST_TRY_UNWRAP_ERR(
           rv, dm->GetOrCreateFile({firstChildDir, testFileMeta.childName()},
-                                   false));
+                                  sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_TYPE_MISMATCH_ERR, rv);
 
       TEST_TRY_UNWRAP_ERR(
@@ -894,7 +910,7 @@ TEST_F(TestFileSystemDatabaseManagerVersion001,
 
       TEST_TRY_UNWRAP_ERR(
           rv, dm->GetOrCreateFile({testFile, newFileMeta.childName()},
-                                   false));
+                                  sContentType,  false));
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
     }
   };
