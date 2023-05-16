@@ -43,14 +43,8 @@ bool CanCreateWMFEncoder(MediaDataEncoder::CodecType aCodec) {
     if (!wmf::MediaFoundationInitializer::HasInitialized()) {
       return;
     }
-    
-    auto enc = MakeRefPtr<MFTEncoder>(false );
+    RefPtr<MFTEncoder> enc(new MFTEncoder());
     canCreate = SUCCEEDED(enc->Create(CodecToSubtype(aCodec)));
-    if (!canCreate) {
-      
-      enc = MakeRefPtr<MFTEncoder>(true );
-      canCreate = SUCCEEDED(enc->Create(CodecToSubtype(aCodec)));
-    }
   });
   return canCreate;
 }
