@@ -54,9 +54,6 @@ class ImageCacheKey final {
   const nsCString& IsolationKeyRef() const { return mIsolationKey; }
 
   
-  bool IsChrome() const { return mIsChrome; }
-
-  
   
   void* ControlledDocument() const { return mControlledDocument; }
 
@@ -77,7 +74,6 @@ class ImageCacheKey final {
   void* mControlledDocument;
   nsCString mIsolationKey;
   mutable Maybe<PLDHashNumber> mHash;
-  bool mIsChrome;
 };
 
 }  
