@@ -54,7 +54,6 @@ class LogModule;
 
 namespace ipc {
 class IProtocol;
-class IPCResult;
 
 template <typename T>
 struct IPDLParamTraits;
@@ -790,9 +789,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   IPCInitializer GetIPCInitializer();
 
   
-  static mozilla::ipc::IPCResult CreateFromIPC(IPCInitializer&& aInitializer,
-                                               BrowsingContextGroup* aGroup,
-                                               ContentParent* aOriginProcess);
+  static void CreateFromIPC(IPCInitializer&& aInitializer,
+                            BrowsingContextGroup* aGroup,
+                            ContentParent* aOriginProcess);
 
   bool IsSandboxedFrom(BrowsingContext* aTarget);
 
@@ -959,7 +958,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                                        bool aHasPostData);
 
  private:
-  mozilla::ipc::IPCResult Attach(bool aFromIPC, ContentParent* aOriginProcess);
+  void Attach(bool aFromIPC, ContentParent* aOriginProcess);
 
   
   
