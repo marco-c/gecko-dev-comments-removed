@@ -7638,12 +7638,23 @@ var WebAuthnPromptHelper = {
 
   prompt_for_password(origin, wasInvalid, retriesLeft, aPassword) {
     let dialogText;
-    if (wasInvalid) {
-      dialogText = this._l10n.formatValueSync("webauthn-pin-invalid-prompt", {
-        retriesLeft,
-      });
-    } else {
+    if (!wasInvalid) {
       dialogText = this._l10n.formatValueSync("webauthn-pin-required-prompt");
+    } else if (retriesLeft < 0 || retriesLeft > 3) {
+      
+      
+      
+      
+      dialogText = this._l10n.formatValueSync(
+        "webauthn-pin-invalid-short-prompt"
+      );
+    } else {
+      
+      
+      dialogText = this._l10n.formatValueSync(
+        "webauthn-pin-invalid-long-prompt",
+        { retriesLeft }
+      );
     }
 
     let res = Services.prompt.promptPasswordBC(
