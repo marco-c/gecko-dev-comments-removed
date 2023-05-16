@@ -509,14 +509,10 @@ WebConsoleCommandsManager.register("copy", function(owner, value) {
 
 
 WebConsoleCommandsManager.register("screenshot", function(owner, args = {}) {
-  owner.helperResult = (async () => {
-    
-    
-    return {
-      type: "screenshotOutput",
-      args,
-    };
-  })();
+  owner.helperResult = {
+    type: "screenshotOutput",
+    args,
+  };
 });
 
 
@@ -527,14 +523,10 @@ WebConsoleCommandsManager.register("screenshot", function(owner, args = {}) {
 
 
 WebConsoleCommandsManager.register("history", function(owner, args = {}) {
-  owner.helperResult = (async () => {
-    
-    
-    return {
-      type: "historyOutput",
-      args,
-    };
-  })();
+  owner.helperResult = {
+    type: "historyOutput",
+    args,
+  };
 });
 
 

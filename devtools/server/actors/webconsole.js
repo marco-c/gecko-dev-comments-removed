@@ -887,41 +887,26 @@ class WebConsoleActor extends Actor {
 
 
   async _maybeWaitForResponseResult(response) {
-    if (!response) {
+    if (!response?.awaitResult) {
       return response;
     }
 
-    const thenable = obj => obj && typeof obj.then === "function";
-    const waitForHelperResult =
-      response.helperResult && thenable(response.helperResult);
-    const waitForAwaitResult =
-      response.awaitResult && thenable(response.awaitResult);
+    let result;
+    try {
+      result = await response.awaitResult;
 
-    if (!waitForAwaitResult && !waitForHelperResult) {
-      return response;
+      
+      
+      const dbgResult = this.makeDebuggeeValue(result);
+      response.result = this.createValueGrip(dbgResult);
+    } catch (e) {
+      
+      
+      response.topLevelAwaitRejected = true;
     }
 
     
-    if (waitForHelperResult) {
-      response.helperResult = await response.helperResult;
-    } else if (waitForAwaitResult) {
-      let result;
-      try {
-        result = await response.awaitResult;
-
-        
-        
-        const dbgResult = this.makeDebuggeeValue(result);
-        response.result = this.createValueGrip(dbgResult);
-      } catch (e) {
-        
-        
-        response.topLevelAwaitRejected = true;
-      }
-
-      
-      delete response.awaitResult;
-    }
+    delete response.awaitResult;
 
     return response;
   }
