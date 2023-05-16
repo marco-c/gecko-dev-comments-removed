@@ -19,7 +19,6 @@
 
 #include <functional>
 #include "wabt/common.h"
-#include "wabt/feature.h"
 #include "wabt/ir.h"
 
 namespace wabt {
@@ -29,8 +28,6 @@ class Stream;
 
 struct WriteCOptions {
   std::string_view module_name;
-  
-  Features* features;
   
 
 
