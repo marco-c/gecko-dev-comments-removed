@@ -756,6 +756,12 @@ bool nsPresContext::UpdateFontVisibility() {
   FontVisibility oldValue = mFontVisibility;
 
   
+  if (IsChrome()) {
+    mFontVisibility = FontVisibility::User;
+    return mFontVisibility != oldValue;
+  }
+
+  
   bool isPrivate = false;
   if (nsCOMPtr<nsILoadContext> loadContext = mDocument->GetLoadContext()) {
     isPrivate = loadContext->UsePrivateBrowsing();
