@@ -1,23 +1,13 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["CustomizableWidgets"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { CustomizableUI } = ChromeUtils.import(
   "resource:///modules/CustomizableUI.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 
 const lazy = {};
 
@@ -99,7 +89,7 @@ function setAttributes(aNode, aAttrs) {
   }
 }
 
-const CustomizableWidgets = [
+export const CustomizableWidgets = [
   {
     id: "history-panelmenu",
     type: "view",
@@ -146,7 +136,7 @@ const CustomizableWidgets = [
         "appMenu-restoreSession"
       ).hidden = !lazy.SessionStore.canRestoreLastSession;
 
-      
+      // We restrict the amount of results to 42. Not 50, but 42. Why? Because 42.
       let query =
         "place:queryType=" +
         Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY +
@@ -159,8 +149,8 @@ const CustomizableWidgets = [
         document.getElementById("appMenu_historyMenu"),
         panelview
       );
-      
-      
+      // When either of these sub-subviews show, populate them with recently closed
+      // objects data.
       lazy.PanelMultiView.getViewNode(
         document,
         this.recentlyClosedTabsPanel
@@ -169,8 +159,8 @@ const CustomizableWidgets = [
         document,
         this.recentlyClosedWindowsPanel
       ).addEventListener("ViewShowing", this);
-      
-      
+      // When the popup is hidden (thus the panelmultiview node as well), make
+      // sure to stop listening to PlacesDatabase updates.
       panelview.panelMultiView.addEventListener("PanelMultiViewHidden", this);
       window.addEventListener("unload", this);
     },
@@ -285,7 +275,7 @@ const CustomizableWidgets = [
       win.SidebarUI.toggle();
     },
     onCreated(aNode) {
-      
+      // Add an observer so the button is checked while the sidebar is open
       let doc = aNode.ownerDocument;
       let obChecked = doc.createXULElement("observes");
       obChecked.setAttribute("element", "sidebar-box");
@@ -342,7 +332,7 @@ const CustomizableWidgets = [
         "title",
         CustomizableUI.getLocalizedProperty(this, "tooltiptext")
       );
-      
+      // Set this as an attribute in addition to the property to make sure we can style correctly.
       node.setAttribute("removable", "true");
       node.classList.add("chromeclass-toolbar-additional");
       node.classList.add("toolbaritem-combined-buttons");
@@ -400,7 +390,7 @@ const CustomizableWidgets = [
         "title",
         CustomizableUI.getLocalizedProperty(this, "tooltiptext")
       );
-      
+      // Set this as an attribute in addition to the property to make sure we can style correctly.
       node.setAttribute("removable", "true");
       node.classList.add("chromeclass-toolbar-additional");
       node.classList.add("toolbaritem-combined-buttons");

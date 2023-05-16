@@ -330,8 +330,8 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", () => {
 });
 
 XPCOMUtils.defineLazyGetter(this, "gCustomizeMode", () => {
-  let { CustomizeMode } = ChromeUtils.import(
-    "resource:///modules/CustomizeMode.jsm"
+  let { CustomizeMode } = ChromeUtils.importESModule(
+    "resource:///modules/CustomizeMode.sys.mjs"
   );
   return new CustomizeMode(window);
 });

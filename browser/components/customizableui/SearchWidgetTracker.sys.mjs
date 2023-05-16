@@ -1,19 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * Keeps the "browser.search.widget.inNavBar" preference synchronized,
+ * and ensures persisted widths are updated if the search bar is removed.
+ */
 
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SearchWidgetTracker"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -31,7 +25,7 @@ ChromeUtils.defineModuleGetter(
 const WIDGET_ID = "search-container";
 const PREF_NAME = "browser.search.widget.inNavBar";
 
-const SearchWidgetTracker = {
+export const SearchWidgetTracker = {
   init() {
     this.onWidgetReset = this.onWidgetUndoMove = node => {
       if (node.id == WIDGET_ID) {
@@ -59,17 +53,17 @@ const SearchWidgetTracker = {
   },
 
   onAreaNodeRegistered(aArea) {
-    
-    
-    
+    // The placement of the widget always takes priority, and the preference
+    // should always match the actual placement when the browser starts up - i.e.
+    // once the navigation bar has been registered.
     if (aArea == lazy.CustomizableUI.AREA_NAVBAR) {
       this.syncPreferenceWithWidget();
     }
   },
 
   onCustomizeEnd() {
-    
-    
+    // onWidgetUndoMove does not fire when the search container is moved back to
+    // the customization palette as a result of an undo, so we sync again here.
     this.syncPreferenceWithWidget();
   },
 
@@ -84,8 +78,8 @@ const SearchWidgetTracker = {
     }
 
     if (newValue) {
-      
-      
+      // The URL bar widget is always present in the navigation toolbar, so we
+      // can simply read its position to place the search bar right after it.
       lazy.CustomizableUI.addWidgetToArea(
         WIDGET_ID,
         lazy.CustomizableUI.AREA_NAVBAR,

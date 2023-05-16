@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["CustomizeMode"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const kPrefCustomizationDebug = "browser.uiCustomization.debug";
 const kPaletteId = "customization-palette";
@@ -25,12 +21,8 @@ const kDownloadAutoHidePref = "browser.download.autohideButton";
 const { CustomizableUI } = ChromeUtils.import(
   "resource:///modules/CustomizableUI.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -39,20 +31,16 @@ ChromeUtils.defineModuleGetter(
   "AddonManager",
   "resource://gre/modules/AddonManager.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "DragPositionManager",
-  "resource:///modules/DragPositionManager.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  DragPositionManager: "resource:///modules/DragPositionManager.sys.mjs",
+  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
+});
 ChromeUtils.defineModuleGetter(
   lazy,
   "BrowserUsageTelemetry",
   "resource:///modules/BrowserUsageTelemetry.jsm"
 );
-ChromeUtils.defineESModuleGetters(lazy, {
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
-});
 XPCOMUtils.defineLazyGetter(lazy, "gWidgetsBundle", function() {
   const kUrl =
     "chrome://browser/locale/customizableui/customizableWidgets.properties";
@@ -93,9 +81,9 @@ function closeGlobalTab() {
 
 var gTabsProgressListener = {
   onLocationChange(aBrowser, aWebProgress, aRequest, aLocation, aFlags) {
-    
-    
-    
+    // Tear down customize mode when the customize mode tab loads some other page.
+    // Customize mode will be re-entered if "about:blank" is loaded again, so
+    // don't tear down in this case.
     if (
       !gTab ||
       gTab.linkedBrowser != aBrowser ||
@@ -119,7 +107,7 @@ function unregisterGlobalTab() {
   gTab = null;
 }
 
-function CustomizeMode(aWindow) {
+export function CustomizeMode(aWindow) {
   this.window = aWindow;
   this.document = aWindow.document;
   this.browser = aWindow.gBrowser;
@@ -139,10 +127,10 @@ function CustomizeMode(aWindow) {
       container.lastChild
     );
   }
-  
-  
-  
-  
+  // There are two palettes - there's the palette that can be overlayed with
+  // toolbar items in browser.xhtml. This is invisible, and never seen by the
+  // user. Then there's the visible palette, which gets populated and displayed
+  // to the user when in customizing mode.
   this.visiblePalette = this.$(kPaletteId);
   this.pongArena = this.$("customization-pong-arena");
 
@@ -153,10 +141,10 @@ function CustomizeMode(aWindow) {
     this.$("customization-titlebar-visibility-checkbox").hidden = true;
   }
 
-  
-  
-  
-  
+  // Observe pref changes to the bookmarks toolbar visibility,
+  // since we won't get a toolbarvisibilitychange event if the
+  // toolbar is changing from 'newtab' to 'always' in Customize mode
+  // since the toolbar is shown with the 'newtab' setting.
   Services.prefs.addObserver(kBookmarksToolbarPref, this);
 
   this.window.addEventListener("unload", this);
@@ -167,24 +155,24 @@ CustomizeMode.prototype = {
   _transitioning: false,
   window: null,
   document: null,
-  
+  // areas is used to cache the customizable areas when in customization mode.
   areas: null,
-  
-  
-  
-  
-  
-  
-  
+  // When in customizing mode, we swap out the reference to the invisible
+  // palette in gNavToolbox.palette for our visiblePalette. This way, for the
+  // customizing browser window, when widgets are removed from customizable
+  // areas and added to the palette, they're added to the visible palette.
+  // _stowedPalette is a reference to the old invisible palette so we can
+  // restore gNavToolbox.palette to its original state after exiting
+  // customization mode.
   _stowedPalette: null,
   _dragOverItem: null,
   _customizing: false,
   _skipSourceNodeCheck: null,
   _mainViewContext: null,
 
-  
-  
-  
+  // These are the commands we continue to leave enabled while in customize mode.
+  // All other commands are disabled, and we remove the disabled attribute when
+  // leaving customize mode.
   _enabledCommands: new Set([
     "cmd_newNavigator",
     "cmd_newNavigatorTab",
@@ -291,7 +279,7 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
+    // Exiting; want to re-enter once we've done that.
     if (this._handler.isExitingCustomizeMode) {
       lazy.log.debug(
         "Attempted to enter while we're in the middle of exiting. " +
@@ -312,8 +300,8 @@ CustomizeMode.prototype = {
       return;
     }
     if (!gTab.selected) {
-      
-      
+      // This will force another .enter() to be called via the
+      // onlocationchange handler of the tabbrowser, so we return early.
       gTab.ownerGlobal.gBrowser.selectedTab = gTab;
       return;
     }
@@ -327,13 +315,13 @@ CustomizeMode.prototype = {
 
     this._handler.isEnteringCustomizeMode = true;
 
-    
-    
+    // Always disable the reset button at the start of customize mode, it'll be re-enabled
+    // if necessary when we finish entering:
     let resetButton = this.$("customization-reset-button");
     resetButton.setAttribute("disabled", "true");
 
     (async () => {
-      
+      // We shouldn't start customize mode until after browser-delayed-startup has finished:
       if (!this.window.gBrowserInit.delayedStartupFinished) {
         await new Promise(resolve => {
           let delayedStartupObserver = aSubject => {
@@ -356,12 +344,12 @@ CustomizeMode.prototype = {
       CustomizableUI.dispatchToolboxEvent("beforecustomization", {}, window);
       CustomizableUI.notifyStartCustomizing(this.window);
 
-      
-      
+      // Add a keypress listener to the document so that we can quickly exit
+      // customization mode when pressing ESC.
       document.addEventListener("keypress", this);
 
-      
-      
+      // Same goes for the menu button - if we're customizing, a click on the
+      // menu button means a quick exit from customization mode.
       window.PanelUI.hide();
 
       let panelHolder = document.getElementById("customization-panelHolder");
@@ -394,7 +382,7 @@ CustomizeMode.prototype = {
 
       this._updateOverflowPanelArrowOffset();
 
-      
+      // Let everybody in this window know that we're about to customize.
       CustomizableUI.dispatchToolboxEvent("customizationstarting", {}, window);
 
       await this._wrapToolbarItems();
@@ -418,11 +406,11 @@ CustomizeMode.prototype = {
       this._customizing = true;
       this._transitioning = false;
 
-      
+      // Show the palette now that the transition has finished.
       this.visiblePalette.hidden = false;
       window.setTimeout(() => {
-        
-        
+        // Force layout reflow to ensure the animation runs,
+        // and make it async so it doesn't affect the timing.
         this.visiblePalette.clientTop;
         this.visiblePalette.setAttribute("showing", "true");
       }, 0);
@@ -442,7 +430,7 @@ CustomizeMode.prototype = {
     })().catch(e => {
       lazy.log.error("Error entering customize mode", e);
       this._handler.isEnteringCustomizeMode = false;
-      
+      // Exit customize mode to ensure proper clean-up when entering failed.
       this.exit();
     });
   },
@@ -454,7 +442,7 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
+    // Entering; want to exit once we've done that.
     if (this._handler.isEnteringCustomizeMode) {
       lazy.log.debug(
         "Attempted to exit while we're in the middle of entering. " +
@@ -487,7 +475,7 @@ CustomizeMode.prototype = {
 
     this.togglePong(false);
 
-    
+    // Disable the reset and undo reset buttons while transitioning:
     let resetButton = this.$("customization-reset-button");
     let undoResetButton = this.$("customization-undo-reset-button");
     undoResetButton.hidden = resetButton.disabled = true;
@@ -496,10 +484,10 @@ CustomizeMode.prototype = {
 
     this._depopulatePalette();
 
-    
-    
-    
-    
+    // We need to set this._customizing to false and remove the `customizing`
+    // attribute before removing the tab or else
+    // XULBrowserWindow.onLocationChange might think that we're still in
+    // customization mode and need to exit it for a second time.
     this._customizing = false;
     document.documentElement.removeAttribute("customizing");
 
@@ -519,11 +507,11 @@ CustomizeMode.prototype = {
     (async () => {
       await this._unwrapToolbarItems();
 
-      
+      // And drop all area references.
       this.areas.clear();
 
-      
-      
+      // Let everybody in this window know that we're starting to
+      // exit customization mode.
       CustomizableUI.dispatchToolboxEvent("customizationending", {}, window);
 
       window.PanelUI.menuButton.disabled = false;
@@ -560,12 +548,12 @@ CustomizeMode.prototype = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * The overflow panel in customize mode should have its arrow pointing
+   * at the overflow button. In order to do this correctly, we pass the
+   * distance between the inside of window and the middle of the button
+   * to the customize mode markup in which the arrow and panel are placed.
+   */
   async _updateOverflowPanelArrowOffset() {
     let currentDensity = this.document.documentElement.getAttribute(
       "uidensity"
@@ -594,11 +582,11 @@ CustomizeMode.prototype = {
   },
 
   _getCustomizableChildForNode(aNode) {
-    
-    
+    // NB: adjusted from _getCustomizableParent to keep that method fast
+    // (it's used during drags), and avoid multiple DOM loops
     let areas = CustomizableUI.areas;
-    
-    
+    // Caching this length is important because otherwise we'll also iterate
+    // over items we add to the end from within the loop.
     let numberOfAreas = areas.length;
     for (let i = 0; i < numberOfAreas; i++) {
       let area = areas[i];
@@ -667,8 +655,8 @@ CustomizeMode.prototype = {
         resolve(animationNode);
       }
 
-      
-      
+      // Wait until the next frame before setting the class to ensure
+      // we do start the animation.
       this.window.requestAnimationFrame(() => {
         this.window.requestAnimationFrame(() => {
           animationNode.classList.add("animate-out");
@@ -715,7 +703,7 @@ CustomizeMode.prototype = {
       CustomizableUI.dispatchToolboxEvent("customizationchange");
     }
 
-    
+    // If the user explicitly moves this item, turn off autohide.
     if (aNode.id == "downloads-button") {
       Services.prefs.setBoolPref(kDownloadAutoHidePref, false);
       if (this._customizing) {
@@ -746,7 +734,7 @@ CustomizeMode.prototype = {
       CustomizableUI.dispatchToolboxEvent("customizationchange");
     }
 
-    
+    // If the user explicitly moves this item, turn off autohide.
     if (aNode.id == "downloads-button") {
       Services.prefs.setBoolPref(kDownloadAutoHidePref, false);
       if (this._customizing) {
@@ -788,7 +776,7 @@ CustomizeMode.prototype = {
       CustomizableUI.dispatchToolboxEvent("customizationchange");
     }
 
-    
+    // If the user explicitly removes this item, turn off autohide.
     if (aNode.id == "downloads-button") {
       Services.prefs.setBoolPref(kDownloadAutoHidePref, false);
       if (this._customizing) {
@@ -824,19 +812,19 @@ CustomizeMode.prototype = {
       this._stowedPalette = this.window.gNavToolbox.palette;
       this.window.gNavToolbox.palette = this.visiblePalette;
 
-      
-      
-      
+      // Now that the palette items are all here, disable all commands.
+      // We do this here rather than directly in `enter` because we
+      // need to do/undo this when we're called from reset(), too.
       this._updateCommandsDisabledState(true);
     } catch (ex) {
       lazy.log.error(ex);
     }
   },
 
-  
-  
-  
-  
+  // XXXunf Maybe this should use -moz-element instead of wrapping the node?
+  //       Would ensure no weird interactions/event handling from original node,
+  //       and makes it possible to put this in a lazy-loaded iframe/real tab
+  //       while still getting rid of the need for overlays.
   makePaletteItem(aWidget, aPlace) {
     let widgetNode = aWidget.forWindow(this.window).node;
     if (!widgetNode) {
@@ -845,7 +833,7 @@ CustomizeMode.prototype = {
       );
       return null;
     }
-    
+    // Do not build a palette item for hidden widgets; there's not much to show.
     if (widgetNode.hidden) {
       return null;
     }
@@ -856,7 +844,7 @@ CustomizeMode.prototype = {
   },
 
   _depopulatePalette() {
-    
+    // Quick, undo the command disabling before we depopulate completely:
     this._updateCommandsDisabledState(false);
 
     this.visiblePalette.hidden = true;
@@ -868,11 +856,11 @@ CustomizeMode.prototype = {
       if (CustomizableUI.isSpecialWidget(itemId)) {
         this.visiblePalette.removeChild(paletteChild);
       } else {
-        
-        
-        
-        
-        
+        // XXXunf Currently this doesn't destroy the (now unused) node in the
+        //       API provider case. It would be good to do so, but we need to
+        //       keep strong refs to it in CustomizableUI (can't iterate of
+        //       WeakMaps), and there's the question of what behavior
+        //       wrappers should have if consumers keep hold of them.
         let unwrappedPaletteItem = this.unwrapToolbarItem(paletteChild);
         this._stowedPalette.appendChild(unwrappedPaletteItem);
       }
@@ -930,11 +918,11 @@ CustomizeMode.prototype = {
     }
     let wrapper = this.createOrUpdateWrapper(aNode, aPlace);
 
-    
-    
-    
-    
-    
+    // It's possible that this toolbar node is "mid-flight" and doesn't have
+    // a parent, in which case we skip replacing it. This can happen if a
+    // toolbar item has been dragged into the palette. In that case, we tell
+    // CustomizableUI to remove the widget from its area before putting the
+    // widget in the palette - so the node will have no parent.
     if (aNode.parentNode) {
       aNode = aNode.parentNode.replaceChild(wrapper, aNode);
     }
@@ -942,10 +930,10 @@ CustomizeMode.prototype = {
     return wrapper;
   },
 
-  
-
-
-
+  /**
+   * Helper to set the label, either directly or to set up the translation
+   * observer so we can set the label once it's available.
+   */
   _updateWrapperLabel(aNode, aIsUpdate, aWrapper = aNode.parentElement) {
     if (aNode.hasAttribute("label")) {
       aWrapper.setAttribute("title", aNode.getAttribute("label"));
@@ -961,9 +949,9 @@ CustomizeMode.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Called when a node without a label or title is updated.
+   */
   _onTranslations(aMutations) {
     for (let mut of aMutations) {
       let { target } = mut;
@@ -987,14 +975,14 @@ CustomizeMode.prototype = {
       aPlace = wrapper.getAttribute("place");
     } else {
       wrapper = this.document.createXULElement("toolbarpaletteitem");
-      
+      // "place" is used to show the label when it's sitting in the palette.
       wrapper.setAttribute("place", aPlace);
     }
 
-    
-    
-    
-    
+    // Ensure the wrapped item doesn't look like it's in any special state, and
+    // can't be interactved with when in the customization palette.
+    // Note that some buttons opt out of this with the
+    // keepbroadcastattributeswhencustomizing attribute.
     if (
       aNode.hasAttribute("command") &&
       aNode.getAttribute(kKeepBroadcastAttributes) != "true"
@@ -1030,8 +1018,8 @@ CustomizeMode.prototype = {
       aPlace == "palette" || CustomizableUI.isWidgetRemovable(aNode);
     wrapper.setAttribute("removable", removable);
 
-    
-    
+    // Allow touch events to initiate dragging in customize mode.
+    // This is only supported on Windows for now.
     wrapper.setAttribute("touchdownstartsdrag", "true");
 
     let contextMenuAttrName = "";
@@ -1046,7 +1034,7 @@ CustomizeMode.prototype = {
     if (aPlace != "toolbar") {
       wrapper.setAttribute("context", contextMenuForPlace);
     }
-    
+    // Only keep track of the menu if it is non-default.
     if (currentContextMenu && currentContextMenu != contextMenuForPlace) {
       aNode.setAttribute("wrapped-context", currentContextMenu);
       aNode.setAttribute("wrapped-contextAttrName", contextMenuAttrName);
@@ -1055,7 +1043,7 @@ CustomizeMode.prototype = {
       aNode.removeAttribute(contextMenuAttrName);
     }
 
-    
+    // Only add listeners for newly created wrappers:
     if (!aIsUpdate) {
       wrapper.addEventListener("mousedown", this);
       wrapper.addEventListener("mouseup", this);
@@ -1118,7 +1106,7 @@ CustomizeMode.prototype = {
       let commandID = aWrapper.getAttribute("itemcommand");
       toolbarItem.setAttribute("command", commandID);
 
-      
+      // XXX Bug 309953 - toolbarbuttons aren't in sync with their commands after customizing
       let command = this.$(commandID);
       if (command && command.hasAttribute("disabled")) {
         toolbarItem.setAttribute("disabled", command.getAttribute("disabled"));
@@ -1191,7 +1179,7 @@ CustomizeMode.prototype = {
   },
 
   _addDragHandlers(aTarget) {
-    
+    // Allow dropping on the padding of the arrow panel.
     if (aTarget.id == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
       aTarget = this.$("customization-panelHolder");
     }
@@ -1211,8 +1199,8 @@ CustomizeMode.prototype = {
   },
 
   _removeDragHandlers(aTarget) {
-    
-    
+    // Remove handler from different target if it was added to
+    // allow dropping on the padding of the arrow panel.
     if (aTarget.id == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
       aTarget = this.$("customization-panelHolder");
     }
@@ -1247,7 +1235,7 @@ CustomizeMode.prototype = {
 
   reset() {
     this.resetting = true;
-    
+    // Disable the reset button temporarily while resetting:
     let btn = this.$("customization-reset-button");
     btn.disabled = true;
     return (async () => {
@@ -1319,8 +1307,8 @@ CustomizeMode.prototype = {
     if (aContainer.ownerGlobal != this.window || this.resetting) {
       return;
     }
-    
-    
+    // If we get called for widgets that aren't in the window yet, they might not have
+    // a parentNode at all.
     if (aNodeToChange.parentNode) {
       this.unwrapToolbarItem(aNodeToChange.parentNode);
     }
@@ -1333,7 +1321,7 @@ CustomizeMode.prototype = {
     if (aContainer.ownerGlobal != this.window || this.resetting) {
       return;
     }
-    
+    // If the node is still attached to the container, wrap it again:
     if (aNodeToChange.parentNode) {
       let place = CustomizableUI.getPlaceForItem(aNodeToChange);
       this.wrapToolbarItem(aNodeToChange, place);
@@ -1341,12 +1329,12 @@ CustomizeMode.prototype = {
         this.wrapToolbarItem(aSecondaryNode, place);
       }
     } else {
-      
+      // If not, it got removed.
 
-      
-      
-      
-      
+      // If an API-based widget is removed while customizing, append it to the palette.
+      // The _applyDrop code itself will take care of positioning it correctly, if
+      // applicable. We need the code to be here so removing widgets using CustomizableUI's
+      // API also does the right thing (and adds it to the palette)
       let widgetId = aNodeToChange.id;
       let widget = CustomizableUI.getWidget(widgetId);
       if (widget.provider == CustomizableUI.PROVIDER_API) {
@@ -1364,8 +1352,8 @@ CustomizeMode.prototype = {
   },
 
   onWidgetAfterCreation(aWidgetId, aArea) {
-    
-    
+    // If the node was added to an area, we would have gotten an onWidgetAdded notification,
+    // plus associated DOM change notifications, so only do stuff for the palette:
     if (!aArea) {
       let widgetNode = this.$(aWidgetId);
       if (widgetNode) {
@@ -1423,8 +1411,8 @@ CustomizeMode.prototype = {
 
     Services.prefs.setIntPref(gUIDensity.uiDensityPref, mode);
 
-    
-    
+    // If the user is choosing a different UI density mode while
+    // the mode is overriden to Touch, remove the override.
     if (currentDensity.overridden) {
       Services.prefs.setBoolPref(gUIDensity.autoTouchModePref, false);
     }
@@ -1467,13 +1455,13 @@ CustomizeMode.prototype = {
     let touchItem = doc.getElementById(
       "customization-uidensity-menuitem-touch"
     );
-    
+    // Touch mode can not be enabled in OSX right now.
     if (touchItem) {
       touchItem.mode = gUIDensity.MODE_TOUCH;
       items.push(touchItem);
     }
 
-    
+    // Mark the active mode menuitem.
     for (let item of items) {
       if (item.mode == currentDensity.mode) {
         item.setAttribute("aria-checked", "true");
@@ -1484,8 +1472,8 @@ CustomizeMode.prototype = {
       }
     }
 
-    
-    
+    // Add menu items for automatically switching to Touch mode in Windows Tablet Mode,
+    // which is only available in Windows 10.
     if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
       let spacer = doc.getElementById("customization-uidensity-touch-spacer");
       let checkbox = doc.getElementById(
@@ -1494,7 +1482,7 @@ CustomizeMode.prototype = {
       spacer.removeAttribute("hidden");
       checkbox.removeAttribute("hidden");
 
-      
+      // Show a hint that the UI density was overridden automatically.
       if (currentDensity.overridden) {
         let sb = Services.strings.createBundle(
           "chrome://browser/locale/uiDensity.properties"
@@ -1520,8 +1508,8 @@ CustomizeMode.prototype = {
 
   updateAutoTouchMode(checked) {
     Services.prefs.setBoolPref("browser.touchmode.auto", checked);
-    
-    
+    // Re-render the menu items since the active mode might have
+    // change because of this.
     this.onUIDensityMenuShowing();
     this._onUIChange();
   },
@@ -1576,8 +1564,8 @@ CustomizeMode.prototype = {
   },
 
   _updateDensityMenu() {
-    
-    
+    // If we're entering Customize Mode, and we're using compact mode,
+    // then show the button after that.
     let gUIDensity = this.window.gUIDensity;
     if (gUIDensity.getCurrentDensity().mode == gUIDensity.MODE_COMPACT) {
       Services.prefs.setBoolPref(kCompactModeShowPref, true);
@@ -1626,10 +1614,10 @@ CustomizeMode.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * We handle dragover/drop on the outer palette separately
+   * to avoid overlap with other drag/drop handlers.
+   */
   _setupPaletteDragging() {
     this._addDragHandlers(this.visiblePalette);
 
@@ -1642,7 +1630,7 @@ CustomizeMode.prototype = {
       ) {
         return;
       }
-      
+      // We have a dragover/drop on the palette.
       if (aEvent.type == "dragover") {
         this._onDragOver(aEvent, this.visiblePalette);
       } else {
@@ -1714,9 +1702,9 @@ CustomizeMode.prototype = {
   _updateTitlebarCheckbox() {
     let drawInTitlebar = Services.appinfo.drawInTitlebar;
     let checkbox = this.$("customization-titlebar-visibility-checkbox");
-    
-    
-    
+    // Drawing in the titlebar means 'hiding' the titlebar.
+    // We use the attribute rather than a property because if we're not in
+    // customize mode the button is hidden and properties don't work.
     if (drawInTitlebar) {
       checkbox.removeAttribute("checked");
     } else {
@@ -1725,7 +1713,7 @@ CustomizeMode.prototype = {
   },
 
   toggleTitlebar(aShouldShowTitlebar) {
-    
+    // Drawing in the titlebar means not showing the titlebar, hence the negation:
     Services.prefs.setIntPref(kDrawInTitlebarPref, !aShouldShowTitlebar);
   },
 
@@ -1774,12 +1762,12 @@ CustomizeMode.prototype = {
 
     gDraggingInToolbars = new Set();
 
-    
-    
+    // Hack needed so that the dragimage will still show the
+    // item as it appeared before it was hidden.
     this._initializeDragAfterMove = () => {
-      
-      
-      
+      // For automated tests, we sometimes start exiting customization mode
+      // before this fires, which leaves us with placeholders inserted after
+      // we've exited. So we need to check that we are indeed customizing.
       if (this._customizing && !this._transitioning) {
         item.hidden = true;
         lazy.DragPositionManager.start(this.window);
@@ -1840,12 +1828,12 @@ CustomizeMode.prototype = {
     );
     let originArea = this._getCustomizableParent(draggedWrapper);
 
-    
+    // Do nothing if the target or origin are not customizable.
     if (!targetArea || !originArea) {
       return;
     }
 
-    
+    // Do nothing if the widget is not allowed to be removed.
     if (
       targetArea.id == kPaletteId &&
       !CustomizableUI.isWidgetRemovable(draggedItemId)
@@ -1853,7 +1841,7 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
+    // Do nothing if the widget is not allowed to move to the target area.
     if (!CustomizableUI.canWidgetMoveToArea(draggedItemId, targetArea.id)) {
       return;
     }
@@ -1866,12 +1854,12 @@ CustomizeMode.prototype = {
       draggedItemId
     );
 
-    
-    
+    // We need to determine the place that the widget is being dropped in
+    // the target.
     let dragOverItem, dragValue;
     if (targetNode == CustomizableUI.getCustomizationTarget(targetArea)) {
-      
-      
+      // We'll assume if the user is dragging directly over the target, that
+      // they're attempting to append a child to that target.
       dragOverItem =
         (targetAreaType == "toolbar"
           ? this._findVisiblePreviousSiblingNode(targetNode.lastElementChild)
@@ -1892,7 +1880,7 @@ CustomizeMode.prototype = {
       } else {
         dragOverItem = targetParent.children[position];
         if (targetAreaType == "toolbar") {
-          
+          // Check if the aDraggedItem is hovered past the first half of dragOverItem
           let itemRect = this._getBoundsWithoutFlushing(dragOverItem);
           let dropTargetCenter = itemRect.left + itemRect.width / 2;
           let existingDir = dragOverItem.getAttribute("dragover");
@@ -1975,13 +1963,13 @@ CustomizeMode.prototype = {
     if (this._dragSizeMap) {
       this._dragSizeMap = new WeakMap();
     }
-    
+    // Do nothing if the target area or origin area are not customizable.
     if (!targetArea || !originArea) {
       return;
     }
     let targetNode = this._dragOverItem;
     let dropDir = targetNode.getAttribute("dragover");
-    
+    // Need to insert *after* this node if we promised the user that:
     if (targetNode != targetArea && dropDir == "after") {
       if (targetNode.nextElementSibling) {
         targetNode = targetNode.nextElementSibling;
@@ -2007,7 +1995,7 @@ CustomizeMode.prototype = {
       lazy.log.error(ex, ex.stack);
     }
 
-    
+    // If the user explicitly moves this item, turn off autohide.
     if (draggedItemId == "downloads-button") {
       Services.prefs.setBoolPref(kDownloadAutoHidePref, false);
       this._showDownloadsAutoHidePanel();
@@ -2025,8 +2013,8 @@ CustomizeMode.prototype = {
       toolbarParent.style.removeProperty("min-height");
     }
 
-    
-    
+    // Do nothing if the target was dropped onto itself (ie, no change in area
+    // or position).
     if (draggedItem == aTargetNode) {
       return;
     }
@@ -2035,9 +2023,9 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
+    // Is the target area the customization palette?
     if (aTargetArea.id == kPaletteId) {
-      
+      // Did we drag from outside the palette?
       if (aOriginArea.id !== kPaletteId) {
         if (!CustomizableUI.isWidgetRemovable(aDraggedItemId)) {
           return;
@@ -2049,30 +2037,30 @@ CustomizeMode.prototype = {
           null,
           "drag"
         );
-        
+        // Special widgets are removed outright, we can return here:
         if (CustomizableUI.isSpecialWidget(aDraggedItemId)) {
           return;
         }
       }
       draggedItem = draggedItem.parentNode;
 
-      
+      // If the target node is the palette itself, just append
       if (aTargetNode == this.visiblePalette) {
         this.visiblePalette.appendChild(draggedItem);
       } else {
-        
+        // The items in the palette are wrapped, so we need the target node's parent here:
         this.visiblePalette.insertBefore(draggedItem, aTargetNode.parentNode);
       }
       this._onDragEnd(aEvent);
       return;
     }
 
-    
+    // Skipintoolbarset items won't really be moved:
     let areaCustomizationTarget = CustomizableUI.getCustomizationTarget(
       aTargetArea
     );
     if (draggedItem.getAttribute("skipintoolbarset") == "true") {
-      
+      // These items should never leave their area:
       if (aTargetArea != aOriginArea) {
         return;
       }
@@ -2089,7 +2077,7 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
+    // Force creating a new spacer/spring/separator if dragging from the palette
     if (
       CustomizableUI.isSpecialWidget(aDraggedItemId) &&
       aOriginArea.id == kPaletteId
@@ -2099,8 +2087,8 @@ CustomizeMode.prototype = {
       )[1];
     }
 
-    
-    
+    // Is the target the customization area itself? If so, we just add the
+    // widget to the end of the area.
     if (aTargetNode == areaCustomizationTarget) {
       CustomizableUI.addWidgetToArea(aDraggedItemId, aTargetArea.id);
       lazy.BrowserUsageTelemetry.recordWidgetChange(
@@ -2112,11 +2100,11 @@ CustomizeMode.prototype = {
       return;
     }
 
-    
-    
+    // We need to determine the place that the widget is being dropped in
+    // the target.
     let placement;
     let itemForPlacement = aTargetNode;
-    
+    // Skip the skipintoolbarset items when determining the place of the item:
     while (
       itemForPlacement &&
       itemForPlacement.getAttribute("skipintoolbarset") == "true" &&
@@ -2151,9 +2139,9 @@ CustomizeMode.prototype = {
     }
     let position = placement ? placement.position : null;
 
-    
-    
-    
+    // Is the target area the same as the origin? Since we've already handled
+    // the possibility that the target is the customization palette, we know
+    // that the widget is moving within a customizable area.
     if (aTargetArea == aOriginArea) {
       CustomizableUI.moveWidgetWithinArea(aDraggedItemId, position);
       lazy.BrowserUsageTelemetry.recordWidgetChange(
@@ -2172,7 +2160,7 @@ CustomizeMode.prototype = {
 
     this._onDragEnd(aEvent);
 
-    
+    // If we dropped onto a skipintoolbarset item, manually correct the drop location:
     if (aTargetNode != itemForPlacement) {
       let draggedWrapper = draggedItem.parentNode;
       let container = draggedWrapper.parentNode;
@@ -2187,22 +2175,22 @@ CustomizeMode.prototype = {
 
     __dumpDragData(aEvent);
 
-    
-    
-    
-    
-    
+    // When leaving customization areas, cancel the drag on the last dragover item
+    // We've attached the listener to areas, so aEvent.currentTarget will be the area.
+    // We don't care about dragleave events fired on descendants of the area,
+    // so we check that the event's target is the same as the area to which the listener
+    // was attached.
     if (this._dragOverItem && aEvent.target == aEvent.currentTarget) {
       this._cancelDragActive(this._dragOverItem);
       this._dragOverItem = null;
     }
   },
 
-  
-
-
-
-
+  /**
+   * To workaround bug 460801 we manually forward the drop event here when dragend wouldn't be fired.
+   *
+   * Note that that means that this function may be called multiple times by a single drag operation.
+   */
   _onDragEnd(aEvent) {
     if (this._isUnwantedDragDrop(aEvent)) {
       return;
@@ -2226,8 +2214,8 @@ CustomizeMode.prototype = {
 
     let draggedWrapper = document.getElementById("wrapper-" + draggedItemId);
 
-    
-    
+    // DraggedWrapper might no longer available if a widget node is
+    // destroyed after starting (but before stopping) a drag.
     if (draggedWrapper) {
       draggedWrapper.hidden = false;
       draggedWrapper.removeAttribute("mousedown");
@@ -2246,21 +2234,21 @@ CustomizeMode.prototype = {
   },
 
   _isUnwantedDragDrop(aEvent) {
-    
-    
-    
-    
-    
-    
+    // The synthesized events for tests generated by synthesizePlainDragAndDrop
+    // and synthesizeDrop in mochitests are used only for testing whether the
+    // right data is being put into the dataTransfer. Neither cause a real drop
+    // to occur, so they don't set the source node. There isn't a means of
+    // testing real drag and drops, so this pref skips the check but it should
+    // only be set by test code.
     if (this._skipSourceNodeCheck) {
       return false;
     }
 
-    
-
+    /* Discard drag events that originated from a separate window to
+       prevent content->chrome privilege escalations. */
     let mozSourceNode = aEvent.dataTransfer.mozSourceNode;
-    
-    
+    // mozSourceNode is null in the dragStart event handler or if
+    // the drag event originated in an external application.
     return !mozSourceNode || mozSourceNode.ownerGlobal != this.window;
   },
 
@@ -2286,7 +2274,7 @@ CustomizeMode.prototype = {
           makeSpaceImmediately = originArea == targetArea;
         }
         let propertyToMeasure = aAreaType == "toolbar" ? "width" : "height";
-        
+        // Calculate width/height of the item when it'd be dropped in this position.
         let borderWidth = this._getDragItemSize(aItem, draggedItem)[
           propertyToMeasure
         ];
@@ -2305,7 +2293,7 @@ CustomizeMode.prototype = {
         aItem.style[prop] = borderWidth + "px";
         aItem.style.removeProperty(otherProp);
         if (makeSpaceImmediately) {
-          
+          // Force a layout flush:
           aItem.getBoundingClientRect();
           aItem.removeAttribute("notransition");
         }
@@ -2327,14 +2315,14 @@ CustomizeMode.prototype = {
         aItem.setAttribute("notransition", "true");
       }
       aItem.removeAttribute("dragover");
-      
-      
+      // Remove all property values in the case that the end padding
+      // had been set.
       aItem.style.removeProperty("border-inline-start-width");
       aItem.style.removeProperty("border-inline-end-width");
       aItem.style.removeProperty("border-block-start-width");
       aItem.style.removeProperty("border-block-end-width");
       if (aNoTransition) {
-        
+        // Force a layout flush:
         aItem.getBoundingClientRect();
         aItem.removeAttribute("notransition");
       }
@@ -2342,11 +2330,11 @@ CustomizeMode.prototype = {
       aItem.removeAttribute("dragover");
       if (aNextItem) {
         if (nextArea == currentArea) {
-          
+          // No need to do anything if we're still dragging in this area:
           return;
         }
       }
-      
+      // Otherwise, clear everything out:
       let positionManager = lazy.DragPositionManager.getManagerForArea(
         currentArea
       );
@@ -2371,7 +2359,7 @@ CustomizeMode.prototype = {
   },
 
   _getDragItemSize(aDragOverNode, aDraggedItem) {
-    
+    // Cache it good, cache it real good.
     if (!this._dragSizeMap) {
       this._dragSizeMap = new WeakMap();
     }
@@ -2381,22 +2369,22 @@ CustomizeMode.prototype = {
     let itemMap = this._dragSizeMap.get(aDraggedItem);
     let targetArea = this._getCustomizableParent(aDragOverNode);
     let currentArea = this._getCustomizableParent(aDraggedItem);
-    
+    // Return the size for this target from cache, if it exists.
     let size = itemMap.get(targetArea);
     if (size) {
       return size;
     }
 
-    
+    // Calculate size of the item when it'd be dropped in this position.
     let currentParent = aDraggedItem.parentNode;
     let currentSibling = aDraggedItem.nextElementSibling;
     const kAreaType = "cui-areatype";
     let areaType, currentType;
 
     if (targetArea != currentArea) {
-      
+      // Move the widget temporarily next to the placeholder.
       aDragOverNode.parentNode.insertBefore(aDraggedItem, aDragOverNode);
-      
+      // Update the node's areaType.
       areaType = CustomizableUI.getAreaType(targetArea.id);
       currentType =
         aDraggedItem.hasAttribute(kAreaType) &&
@@ -2410,17 +2398,17 @@ CustomizeMode.prototype = {
       aDraggedItem.parentNode.hidden = false;
     }
 
-    
+    // Fetch the new size.
     let rect = aDraggedItem.parentNode.getBoundingClientRect();
     size = { width: rect.width, height: rect.height };
-    
+    // Cache the found value of size for this target.
     itemMap.set(targetArea, size);
 
     if (targetArea != currentArea) {
       this.unwrapToolbarItem(aDraggedItem.parentNode);
-      
+      // Put the item back into its previous position.
       currentParent.insertBefore(aDraggedItem, currentSibling);
-      
+      // restore the areaType
       if (areaType) {
         if (currentType === false) {
           aDraggedItem.removeAttribute(kAreaType);
@@ -2438,7 +2426,7 @@ CustomizeMode.prototype = {
 
   _getCustomizableParent(aElement) {
     if (aElement) {
-      
+      // Deal with drag/drop on the padding of the panel.
       let containingPanelHolder = aElement.closest(
         "#customization-panelHolder"
       );
@@ -2460,12 +2448,12 @@ CustomizeMode.prototype = {
     if (!expectedParent.contains(aEvent.target)) {
       return expectedParent;
     }
-    
-    
+    // Offset the drag event's position with the offset to the center of
+    // the thing we're dragging
     let dragX = aEvent.clientX - this._dragOffset.x;
     let dragY = aEvent.clientY - this._dragOffset.y;
 
-    
+    // Ensure this is within the container
     let boundsContainer = expectedParent;
     let bounds = this._getBoundsWithoutFlushing(boundsContainer);
     dragX = Math.min(bounds.right, Math.max(dragX, bounds.left));
@@ -2481,10 +2469,10 @@ CustomizeMode.prototype = {
       let positionManager = lazy.DragPositionManager.getManagerForArea(
         aAreaElement
       );
-      
+      // Make it relative to the container:
       dragX -= bounds.left;
       dragY -= bounds.top;
-      
+      // Find the closest node:
       targetNode = positionManager.find(aAreaElement, dragX, dragY);
     }
     return targetNode || aEvent.target;
@@ -2590,9 +2578,9 @@ CustomizeMode.prototype = {
   },
 
   _maybeMoveDownloadsButtonToNavBar() {
-    
-    
-    
+    // If the user toggled the autohide checkbox while the item was in the
+    // palette, and hasn't moved it since, move the item to the default
+    // location in the navbar for them.
     if (
       !CustomizableUI.getPlacementOfWidget("downloads-button") &&
       this._moveDownloadsButtonToNavBar &&
@@ -2602,7 +2590,7 @@ CustomizeMode.prototype = {
       let insertionPoint = navbarPlacements.indexOf("urlbar-container");
       while (++insertionPoint < navbarPlacements.length) {
         let widget = navbarPlacements[insertionPoint];
-        
+        // If we find a non-searchbar, non-spacer node, break out of the loop:
         if (
           widget != "search-container" &&
           !(CustomizableUI.isSpecialWidget(widget) && widget.includes("spring"))
@@ -2628,7 +2616,7 @@ CustomizeMode.prototype = {
     let panel = doc.getElementById(kDownloadAutohidePanelId);
     panel.hidePopup();
     let button = doc.getElementById("downloads-button");
-    
+    // We don't show the tooltip if the button is in the panel.
     if (button.closest("#widget-overflow-fixed-list")) {
       return;
     }
@@ -2658,8 +2646,8 @@ CustomizeMode.prototype = {
     }
     let position;
     if (panelOnTheLeft) {
-      
-      
+      // Tested in RTL, these get inverted automatically, so this does the
+      // right thing without taking RTL into account explicitly.
       position = "topleft topright";
       if (toolbarContainer) {
         offsetX = 8;
@@ -2678,8 +2666,8 @@ CustomizeMode.prototype = {
       checkbox.removeAttribute("checked");
     }
 
-    
-    
+    // We don't use the icon to anchor because it might be resizing because of
+    // the animations for drag/drop. Hence the use of offsets.
     panel.openPopup(button, position, offsetX, offsetY);
   },
 
@@ -2688,7 +2676,7 @@ CustomizeMode.prototype = {
       kDownloadAutohideCheckboxId
     );
     Services.prefs.setBoolPref(kDownloadAutoHidePref, checkbox.checked);
-    
+    // Ensure we move the button (back) after the user leaves customize mode.
     event.view.gCustomizeMode._moveDownloadsButtonToNavBar = checkbox.checked;
   },
 
@@ -2700,9 +2688,9 @@ CustomizeMode.prototype = {
   },
 
   togglePong(enabled) {
-    
-    
-    
+    // It's possible we're toggling for a reason other than hitting
+    // the button (we might be exiting, for example), so make sure that
+    // the state and checkbox are in sync.
     let whimsyButton = this.$("whimsy-button");
     whimsyButton.checked = enabled;
 
@@ -2863,7 +2851,7 @@ CustomizeMode.prototype = {
           spacer.setAttribute("kcode", "true");
         }
       }
-      if (event.which == 37  || event.which == 39 ) {
+      if (event.which == 37 /* left */ || event.which == 39 /* right */) {
         keydown = event.which;
         keydownAdj *= 1.05;
       }
@@ -2970,7 +2958,7 @@ function __dumpDragData(aEvent, caller) {
   let str =
     "Dumping drag data (" +
     (caller ? caller + " in " : "") +
-    "CustomizeMode.jsm) {\n";
+    "CustomizeMode.sys.mjs) {\n";
   str += "  type: " + aEvent.type + "\n";
   for (let el of ["target", "currentTarget", "relatedTarget"]) {
     if (aEvent[el]) {
