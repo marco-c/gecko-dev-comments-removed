@@ -184,20 +184,12 @@ nsresult nsGenericHTMLElement::CopyInnerTo(Element* aDst) {
 static const nsAttrValue::EnumTable kDirTable[] = {
     {"ltr", eDir_LTR}, {"rtl", eDir_RTL}, {"auto", eDir_Auto}, {nullptr, 0}};
 
-namespace {
-
-enum class PopoverAttributeKeyword : uint8_t { Auto, EmptyString, Manual };
-}  
-
 static const nsAttrValue::EnumTable kPopoverTable[] = {
-    {"auto", PopoverAttributeKeyword::Auto},
-    {"", PopoverAttributeKeyword::EmptyString},
-    {"manual", PopoverAttributeKeyword::Manual},
+    {"auto", PopoverState::Auto},
+    {"manual", PopoverState::Manual},
     {nullptr, 0}};
 
-
-static const nsAttrValue::EnumTable* kPopoverTableInvalidValueDefault =
-    &kPopoverTable[2];
+static const nsAttrValue::EnumTable* kPopoverTableDefault = &kPopoverTable[1];
 
 void nsGenericHTMLElement::AddToNameTable(nsAtom* aName) {
   MOZ_ASSERT(HasName(), "Node doesn't have name?");
@@ -661,36 +653,22 @@ void nsGenericHTMLElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                                  aNotify);
 }
 
-namespace {
-constexpr PopoverState ToPopoverState(
-    PopoverAttributeKeyword aPopoverAttributeKeyword) {
-  
-  switch (aPopoverAttributeKeyword) {
-    case PopoverAttributeKeyword::Auto:
-      return PopoverState::Auto;
-    case PopoverAttributeKeyword::EmptyString:
-      return PopoverState::Auto;
-    case PopoverAttributeKeyword::Manual:
-      return PopoverState::Manual;
-  }
-}
-}  
-
 void nsGenericHTMLElement::AfterSetPopoverAttr() {
   const nsAttrValue* newValue = GetParsedAttr(nsGkAtoms::popover);
 
+  
   PopoverState newState;
   if (newValue) {
-    MOZ_ASSERT(newValue->Type() == nsAttrValue::eEnum);
-    const PopoverAttributeKeyword popoverAttributeKeyword =
-        static_cast<PopoverAttributeKeyword>(newValue->GetEnumValue());
-    newState = ToPopoverState(popoverAttributeKeyword);
+    if (newValue->Type() == nsAttrValue::eEnum) {
+      newState = static_cast<dom::PopoverState>(newValue->GetEnumValue());
+    } else {
+      
+      newState = PopoverState::Manual;
+    }
   } else {
-    
     
     newState = PopoverState::None;
   }
-
   PopoverState oldState = GetPopoverState();
   if (newState != oldState) {
     if (oldState != PopoverState::None) {
@@ -979,7 +957,7 @@ bool nsGenericHTMLElement::ParseAttribute(int32_t aNamespaceID,
     if (aAttribute == nsGkAtoms::popover &&
         StaticPrefs::dom_element_popover_enabled()) {
       return aResult.ParseEnumValue(aValue, kPopoverTable, false,
-                                    kPopoverTableInvalidValueDefault);
+                                    kPopoverTableDefault);
     }
 
     if (aAttribute == nsGkAtoms::tabindex) {
