@@ -53,6 +53,31 @@ const WebConsoleCommandsManager = {
   getAllCommandNames() {
     return [...this._registeredCommands.keys()];
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getAllColonCommandNames() {
+    return ["block", "help", "history", "screenshot", "unblock"];
+  },
+
+  
+
+
+
+  getColonOnlyCommandNames() {
+    return ["screenshot"];
+  },
 };
 
 exports.WebConsoleCommandsManager = WebConsoleCommandsManager;
@@ -63,22 +88,6 @@ exports.WebConsoleCommandsManager = WebConsoleCommandsManager;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const validCommands = ["block", "help", "history", "screenshot", "unblock"];
-exports.validCommands = validCommands;
 
 
 

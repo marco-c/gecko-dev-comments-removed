@@ -717,7 +717,10 @@ function bindCommands(isCmd, dbgGlobal, bindSelf, frame, helpers) {
       );
     }
     
-    helpersToDisable.push("screenshot");
+    
+    helpersToDisable.push(
+      ...WebConsoleCommandsManager.getColonOnlyCommandNames()
+    );
   }
 
   for (const helper of helpersToDisable) {
