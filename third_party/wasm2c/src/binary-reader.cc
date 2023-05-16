@@ -560,7 +560,14 @@ Index BinaryReader::NumTotalFuncs() {
 
 Result BinaryReader::ReadInitExpr(Index index) {
   
-  return ReadInstructions(true, read_end_, NULL);
+  Opcode final_opcode(Opcode::Invalid);
+  CHECK_RESULT(
+      ReadInstructions(true, read_end_, &final_opcode));
+  ERROR_UNLESS(state_.offset <= read_end_,
+               "init expression longer than given size");
+  ERROR_UNLESS(final_opcode == Opcode::End,
+               "init expression must end with END opcode");
+  return Result::Ok;
 }
 
 Result BinaryReader::ReadTable(Type* out_elem_type, Limits* out_elem_limits) {
