@@ -67,7 +67,7 @@ CSSFontFaceRule* InspectorFontFace::GetRule() {
   if (!mRule) {
     
     
-    RawServoFontFaceRule* rule = nullptr;
+    StyleLockedFontFaceRule* rule = nullptr;
     if (mFontEntry->IsUserFont()) {
       auto* fontFaceSet =
           static_cast<FontFaceSetImpl*>(mFontGroup->GetUserFontSet());

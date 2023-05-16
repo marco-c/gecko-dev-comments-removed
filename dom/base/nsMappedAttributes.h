@@ -77,7 +77,7 @@ class nsMappedAttributes final {
   
   
   
-  const RefPtr<RawServoDeclarationBlock>& GetServoStyle() const {
+  const mozilla::StyleLockedDeclarationBlock* GetServoStyle() const {
     return mServoStyle;
   }
 
@@ -102,7 +102,7 @@ class nsMappedAttributes final {
 #endif
   nsHTMLStyleSheet* mSheet;  
   nsMapRuleToAttributesFunc mRuleMapper;
-  RefPtr<RawServoDeclarationBlock> mServoStyle;
+  RefPtr<mozilla::StyleLockedDeclarationBlock> mServoStyle;
   InternalAttr mBuffer[0];
 
   static bool sShuttingDown;

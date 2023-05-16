@@ -24,7 +24,7 @@
 class nsIGlobalObject;
 class nsINode;
 class nsIPrincipal;
-struct ServoCssRules;
+struct StyleLockedCssRules;
 class nsIReferrerInfo;
 
 namespace mozilla {
@@ -440,13 +440,13 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  const ServoCssRules* ToShared(StyleSharedMemoryBuilder* aBuilder,
-                                nsCString& aErrorMessage);
+  const StyleLockedCssRules* ToShared(StyleSharedMemoryBuilder* aBuilder,
+                                      nsCString& aErrorMessage);
 
   
   
   
-  void SetSharedContents(const ServoCssRules* aSharedRules);
+  void SetSharedContents(const StyleLockedCssRules* aSharedRules);
 
   
   

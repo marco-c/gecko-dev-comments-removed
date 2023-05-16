@@ -25,7 +25,7 @@ class Rule;
 
 class ServoCSSRuleList final : public dom::CSSRuleList {
  public:
-  ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
+  ServoCSSRuleList(already_AddRefed<StyleLockedCssRules> aRawRules,
                    StyleSheet* aSheet, css::GroupRule* aParentRule);
   css::GroupRule* GetParentRule() const { return mParentRule; }
   void DropSheetReference();
@@ -51,8 +51,8 @@ class ServoCSSRuleList final : public dom::CSSRuleList {
   
   
   
-  void SetRawContents(RefPtr<ServoCssRules>, bool aFromClone);
-  void SetRawAfterClone(RefPtr<ServoCssRules> aRules) {
+  void SetRawContents(RefPtr<StyleLockedCssRules>, bool aFromClone);
+  void SetRawAfterClone(RefPtr<StyleLockedCssRules> aRules) {
     SetRawContents(std::move(aRules),  true);
   }
 
@@ -83,7 +83,7 @@ class ServoCSSRuleList final : public dom::CSSRuleList {
   StyleSheet* mStyleSheet = nullptr;
   
   css::GroupRule* mParentRule = nullptr;
-  RefPtr<ServoCssRules> mRawRules;
+  RefPtr<StyleLockedCssRules> mRawRules;
   
   
   

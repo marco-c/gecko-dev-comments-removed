@@ -50,7 +50,7 @@ class FontFaceSetDocumentImpl final : public FontFaceSetImpl,
 
   bool UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) override;
 
-  RawServoFontFaceRule* FindRuleForEntry(gfxFontEntry* aFontEntry) override;
+  StyleLockedFontFaceRule* FindRuleForEntry(gfxFontEntry* aFontEntry) override;
 
   
 
@@ -85,7 +85,7 @@ class FontFaceSetDocumentImpl final : public FontFaceSetImpl,
       const gfxFontFaceSrc* aFontFaceSrc) override;
 
   
-  RawServoFontFaceRule* FindRuleForUserFontEntry(
+  StyleLockedFontFaceRule* FindRuleForUserFontEntry(
       gfxUserFontEntry* aUserFontEntry) override;
 
   void FindMatchingFontFaces(const nsTHashSet<FontFace*>& aMatchingFaces,

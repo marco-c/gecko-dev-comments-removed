@@ -18,7 +18,6 @@
 #include "nsStringFwd.h"
 
 struct nsCSSRect;
-struct RawServoDeclarationBlock;
 template <class T>
 class RefPtr;
 
@@ -30,6 +29,7 @@ struct StyleFontFamilyList;
 struct StyleFontStretch;
 struct StyleFontWeight;
 struct StyleFontStyle;
+struct StyleLockedDeclarationBlock;
 union StyleComputedFontStyleDescriptor;
 
 template <typename Integer, typename Number, typename LinearStops>
@@ -90,7 +90,7 @@ class ServoCSSParser {
 
 
 
-  static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
+  static already_AddRefed<StyleLockedDeclarationBlock> ParseProperty(
       nsCSSPropertyID aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
       ParsingMode aParsingMode = ParsingMode::Default);

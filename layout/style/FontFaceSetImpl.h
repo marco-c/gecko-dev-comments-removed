@@ -25,9 +25,9 @@ class nsFontFaceLoader;
 class nsIChannel;
 class nsIPrincipal;
 class nsPIDOMWindowInner;
-struct RawServoFontFaceRule;
 
 namespace mozilla {
+struct StyleLockedFontFaceRule;
 class PostTraversalTask;
 class Runnable;
 class SharedFontList;
@@ -102,7 +102,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   }
 
   
-  virtual RawServoFontFaceRule* FindRuleForEntry(gfxFontEntry* aFontEntry) {
+  virtual StyleLockedFontFaceRule* FindRuleForEntry(gfxFontEntry* aFontEntry) {
     MOZ_ASSERT_UNREACHABLE("Not implemented!");
     return nullptr;
   }
@@ -211,7 +211,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   };
 
   
-  virtual RawServoFontFaceRule* FindRuleForUserFontEntry(
+  virtual StyleLockedFontFaceRule* FindRuleForUserFontEntry(
       gfxUserFontEntry* aUserFontEntry) {
     return nullptr;
   }

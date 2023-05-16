@@ -200,8 +200,9 @@ AnimationValue AnimationValue::FromString(nsCSSPropertyID aProperty,
       nsComputedDOMStyle::GetComputedStyle(aElement);
   MOZ_ASSERT(computedStyle);
 
-  RefPtr<RawServoDeclarationBlock> declarations = ServoCSSParser::ParseProperty(
-      aProperty, aValue, ServoCSSParser::GetParsingEnvironment(doc));
+  RefPtr<StyleLockedDeclarationBlock> declarations =
+      ServoCSSParser::ParseProperty(aProperty, aValue,
+                                    ServoCSSParser::GetParsingEnvironment(doc));
 
   if (!declarations) {
     return result;

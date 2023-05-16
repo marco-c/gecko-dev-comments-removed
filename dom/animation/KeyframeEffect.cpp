@@ -1294,7 +1294,7 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       return;
     }
 
-    RefPtr<RawServoDeclarationBlock> customProperties;
+    RefPtr<StyleLockedDeclarationBlock> customProperties;
     
     
     
