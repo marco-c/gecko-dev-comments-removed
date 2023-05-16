@@ -451,7 +451,6 @@ RTCError ValidateBundledPayloadTypes(
   
   
   
-  std::map<int, RtpCodecParameters> payload_to_codec_parameters;
   std::vector<const cricket::ContentGroup*> bundle_groups =
       description.GetGroupsByName(cricket::GROUP_TYPE_BUNDLE);
   for (const cricket::ContentGroup* bundle_group : bundle_groups) {
