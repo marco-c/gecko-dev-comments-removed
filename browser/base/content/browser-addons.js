@@ -1616,9 +1616,16 @@ var gUnifiedExtensions = {
     const menuSeparator = menu.querySelector(
       ".unified-extensions-context-menu-management-separator"
     );
+    const moveUp = menu.querySelector(
+      ".unified-extensions-context-menu-move-widget-up"
+    );
+    const moveDown = menu.querySelector(
+      ".unified-extensions-context-menu-move-widget-down"
+    );
 
-    menuSeparator.hidden = !forBrowserAction;
-    pinButton.hidden = !forBrowserAction;
+    for (const element of [menuSeparator, pinButton, moveUp, moveDown]) {
+      element.hidden = !forBrowserAction;
+    }
 
     reportButton.hidden = !gAddonAbuseReportEnabled;
     
@@ -1634,6 +1641,28 @@ var gUnifiedExtensions = {
       let area = CustomizableUI.getPlacementOfWidget(widgetId).area;
       let inToolbar = area != CustomizableUI.AREA_ADDONS;
       pinButton.setAttribute("checked", inToolbar);
+
+      const placement = CustomizableUI.getPlacementOfWidget(widgetId);
+      const notInPanel = placement?.area !== CustomizableUI.AREA_ADDONS;
+      
+      
+      
+      
+      if (
+        notInPanel ||
+        document.querySelector("#unified-extensions-area > :first-child")
+          ?.id === widgetId
+      ) {
+        moveUp.hidden = true;
+      }
+
+      if (
+        notInPanel ||
+        document.querySelector("#unified-extensions-area > :last-child")?.id ===
+          widgetId
+      ) {
+        moveDown.hidden = true;
+      }
     }
 
     ExtensionsUI.originControlsMenu(menu, id);
@@ -1646,6 +1675,16 @@ var gUnifiedExtensions = {
 
   
   onContextMenuCommand(menu, event) {
+    
+    
+    const { classList } = event.target;
+    if (
+      classList.contains("unified-extensions-context-menu-move-widget-up") ||
+      classList.contains("unified-extensions-context-menu-move-widget-down")
+    ) {
+      return;
+    }
+
     this.togglePanel();
   },
 
@@ -1722,6 +1761,39 @@ var gUnifiedExtensions = {
     CustomizableUI.addWidgetToArea(widgetId, newArea, newPosition);
 
     this.updateAttention();
+  },
+
+  async moveWidget(menu, direction) {
+    
+    
+    
+    
+    const node = menu.triggerNode.closest(".unified-extensions-item");
+
+    
+    
+    
+    
+    let element;
+    if (direction === "up" && node.previousElementSibling) {
+      element = node.previousElementSibling;
+    } else if (direction === "down" && node.nextElementSibling) {
+      element = node.nextElementSibling;
+    }
+
+    
+    const placement = CustomizableUI.getPlacementOfWidget(element?.id);
+    if (placement) {
+      let newPosition = placement.position;
+      
+      
+      
+      if (direction === "down") {
+        newPosition += 1;
+      }
+
+      CustomizableUI.moveWidgetWithinArea(node.id, newPosition);
+    }
   },
 
   onWidgetAdded(aWidgetId, aArea, aPosition) {
