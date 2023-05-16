@@ -14,9 +14,7 @@ namespace webrtc {
 
 namespace {
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_ARCH_ARM)
-
-
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 constexpr int kDefaultComplexity = 5;
 #else
 constexpr int kDefaultComplexity = 9;
