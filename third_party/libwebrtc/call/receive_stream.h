@@ -43,9 +43,6 @@ class ReceiveStreamInterface {
     
     
     
-    
-    
-    
     bool transport_cc = false;
 
     
@@ -58,16 +55,6 @@ class ReceiveStreamInterface {
   
   virtual void SetRtpExtensions(std::vector<RtpExtension> extensions) = 0;
   virtual RtpHeaderExtensionMap GetRtpExtensionMap() const = 0;
-
-  
-  
-  
-  
-  
-  
-  virtual bool transport_cc() const = 0;
-
-  virtual void SetTransportCc(bool transport_cc) = 0;
 
  protected:
   virtual ~ReceiveStreamInterface() {}
