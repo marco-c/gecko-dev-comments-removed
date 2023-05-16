@@ -672,8 +672,41 @@ struct BandwidthEstimationInfo {
 
 typedef std::map<int, webrtc::RtpCodecParameters> RtpCodecParametersMap;
 
+
+struct VoiceMediaSendInfo {
+  VoiceMediaSendInfo();
+  ~VoiceMediaSendInfo();
+  void Clear() {
+    senders.clear();
+    send_codecs.clear();
+  }
+  std::vector<VoiceSenderInfo> senders;
+  RtpCodecParametersMap send_codecs;
+};
+
+
+struct VoiceMediaReceiveInfo {
+  VoiceMediaReceiveInfo();
+  ~VoiceMediaReceiveInfo();
+  void Clear() {
+    receivers.clear();
+    receive_codecs.clear();
+  }
+  std::vector<VoiceReceiverInfo> receivers;
+  RtpCodecParametersMap receive_codecs;
+  int32_t device_underrun_count = 0;
+};
+
+
+
 struct VoiceMediaInfo {
   VoiceMediaInfo();
+  VoiceMediaInfo(VoiceMediaSendInfo&& send, VoiceMediaReceiveInfo&& receive)
+      : senders(std::move(send.senders)),
+        receivers(std::move(receive.receivers)),
+        send_codecs(std::move(send.send_codecs)),
+        receive_codecs(std::move(receive.receive_codecs)),
+        device_underrun_count(receive.device_underrun_count) {}
   ~VoiceMediaInfo();
   void Clear() {
     senders.clear();
@@ -688,8 +721,49 @@ struct VoiceMediaInfo {
   int32_t device_underrun_count = 0;
 };
 
+
+struct VideoMediaSendInfo {
+  VideoMediaSendInfo();
+  ~VideoMediaSendInfo();
+  void Clear() {
+    senders.clear();
+    aggregated_senders.clear();
+    send_codecs.clear();
+  }
+  
+  
+  
+  std::vector<VideoSenderInfo> senders;
+  
+  
+  
+  
+  std::vector<VideoSenderInfo> aggregated_senders;
+  RtpCodecParametersMap send_codecs;
+};
+
+
+struct VideoMediaReceiveInfo {
+  VideoMediaReceiveInfo();
+  ~VideoMediaReceiveInfo();
+  void Clear() {
+    receivers.clear();
+    receive_codecs.clear();
+  }
+  std::vector<VideoReceiverInfo> receivers;
+  RtpCodecParametersMap receive_codecs;
+};
+
+
+
 struct VideoMediaInfo {
   VideoMediaInfo();
+  VideoMediaInfo(VideoMediaSendInfo&& send, VideoMediaReceiveInfo&& receive)
+      : senders(std::move(send.senders)),
+        aggregated_senders(std::move(send.aggregated_senders)),
+        receivers(std::move(receive.receivers)),
+        send_codecs(std::move(send.send_codecs)),
+        receive_codecs(std::move(receive.receive_codecs)) {}
   ~VideoMediaInfo();
   void Clear() {
     senders.clear();
@@ -797,6 +871,7 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   virtual bool InsertDtmf(uint32_t ssrc, int event, int duration) = 0;
+  virtual bool GetStats(VoiceMediaSendInfo* stats) = 0;
 };
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -820,6 +895,7 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
   virtual void SetDefaultRawAudioSink(
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
+  virtual bool GetStats(VoiceMediaReceiveInfo* stats, bool reset_legacy) = 0;
 };
 
 
@@ -861,6 +937,8 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
                                     const std::vector<std::string>& rids) = 0;
   
   virtual void SetVideoCodecSwitchingEnabled(bool enabled) = 0;
+  virtual bool GetStats(VideoMediaSendInfo* stats) = 0;
+  virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -889,6 +967,7 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
       std::function<void(const webrtc::RecordableEncodedFrame&)> callback) = 0;
   
   virtual void ClearRecordableEncodedFrameCallback(uint32_t ssrc) = 0;
+  virtual bool GetStats(VideoMediaReceiveInfo* stats) = 0;
 };
 
 
