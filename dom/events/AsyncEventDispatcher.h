@@ -83,11 +83,14 @@ class AsyncEventDispatcher : public CancelableRunnable {
 
 
 
-  AsyncEventDispatcher(dom::EventTarget* aTarget, dom::Event* aEvent)
+  AsyncEventDispatcher(
+      dom::EventTarget* aTarget, dom::Event* aEvent,
+      ChromeOnlyDispatch aOnlyChromeDispatch = ChromeOnlyDispatch::eNo)
       : CancelableRunnable("AsyncEventDispatcher"),
         mTarget(aTarget),
         mEvent(aEvent),
-        mEventMessage(eUnidentifiedEvent) {
+        mEventMessage(eUnidentifiedEvent),
+        mOnlyChromeDispatch(aOnlyChromeDispatch) {
     MOZ_ASSERT(
         aEvent->IsSafeToBeDispatchedAsynchronously(),
         "The DOM event should be created without Widget*Event and "
@@ -100,7 +103,6 @@ class AsyncEventDispatcher : public CancelableRunnable {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override;
   nsresult Cancel() override;
   nsresult PostDOMEvent();
-  void RunDOMEventWhenSafe();
 
   
 
@@ -126,6 +128,20 @@ class AsyncEventDispatcher : public CancelableRunnable {
 
 
 
+
+  MOZ_CAN_RUN_SCRIPT static void RunDOMEventWhenSafe(
+      dom::EventTarget& aTarget, dom::Event& aEvent,
+      ChromeOnlyDispatch aOnlyChromeDispatch = ChromeOnlyDispatch::eNo);
+
+  
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult RunDOMEventWhenSafe(
       nsINode& aTarget, WidgetEvent& aEvent,
       nsEventStatus* aEventStatus = nullptr);
@@ -136,10 +152,14 @@ class AsyncEventDispatcher : public CancelableRunnable {
   void RequireNodeInDocument();
 
  protected:
+  void RunDOMEventWhenSafe();
+  MOZ_CAN_RUN_SCRIPT static void DispatchEventOnTarget(
+      dom::EventTarget* aTarget, dom::Event* aEvent,
+      ChromeOnlyDispatch aOnlyChromeDispatch, Composed aComposed);
   MOZ_CAN_RUN_SCRIPT static void DispatchEventOnTarget(
       dom::EventTarget* aTarget, const nsAString& aEventType,
       CanBubble aCanBubble, ChromeOnlyDispatch aOnlyChromeDispatch,
-      Composed aComposed = Composed::eDefault, dom::Event* aEvent = nullptr);
+      Composed aComposed);
 
  public:
   nsCOMPtr<dom::EventTarget> mTarget;
