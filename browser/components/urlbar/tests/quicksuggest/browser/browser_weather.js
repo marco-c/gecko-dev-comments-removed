@@ -48,7 +48,8 @@ add_task(async function test_weather_result_selection() {
 });
 
 
-add_task(async function showLessFrequently() {
+
+add_task(async function showLessFrequentlyCapReached() {
   
   QuickSuggest.weather._test_setRsData({
     keywords: ["weather"],
@@ -83,6 +84,11 @@ add_task(async function showLessFrequently() {
   Assert.ok(
     details.element.row.hasAttribute("feedback-acknowledgment"),
     "Row should have feedback acknowledgment after clicking command"
+  );
+  Assert.equal(
+    UrlbarPrefs.get("weather.minKeywordLength"),
+    4,
+    "weather.minKeywordLength should be incremented once"
   );
 
   
@@ -133,21 +139,23 @@ add_task(async function showLessFrequently() {
 
 
 add_task(async function notInterested() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: MerinoTestUtils.WEATHER_KEYWORD,
+  });
   await doDismissTest("not_interested");
 });
 
 
 add_task(async function notRelevant() {
-  await doDismissTest("not_relevant");
-});
-
-async function doDismissTest(command) {
-  
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: MerinoTestUtils.WEATHER_KEYWORD,
   });
+  await doDismissTest("not_relevant");
+});
 
+async function doDismissTest(command) {
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
   let resultIndex = 1;
@@ -162,7 +170,7 @@ async function doDismissTest(command) {
   await UrlbarTestUtils.openResultMenuAndClickItem(
     window,
     ["[data-l10n-id=firefox-suggest-weather-command-dont-show-this]", command],
-    { resultIndex }
+    { resultIndex, openByMouse: true }
   );
 
   Assert.ok(
@@ -187,6 +195,10 @@ async function doDismissTest(command) {
     details.result.payload.type,
     "dismissalAcknowledgment",
     "Tip type should be dismissalAcknowledgment"
+  );
+  Assert.ok(
+    !details.element.row.hasAttribute("feedback-acknowledgment"),
+    "Row should not have feedback acknowledgment after dismissal"
   );
 
   
@@ -225,4 +237,52 @@ async function doDismissTest(command) {
   info("Waiting for weather fetch after re-enabling the suggestion");
   await fetchPromise;
   info("Got weather fetch");
+}
+
+
+
+
+add_task(async function inaccurateLocationAndDismissal() {
+  await doSessionOngoingCommandTest("inaccurate_location");
+});
+
+
+
+
+add_task(async function showLessFrequentlyAndDismissal() {
+  await doSessionOngoingCommandTest("show_less_frequently");
+  UrlbarPrefs.clear("weather.minKeywordLength");
+});
+
+async function doSessionOngoingCommandTest(command) {
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: MerinoTestUtils.WEATHER_KEYWORD,
+  });
+
+  let resultIndex = 1;
+  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
+  Assert.equal(
+    details.result.providerName,
+    UrlbarProviderWeather.name,
+    "Weather suggestion should be present at expected index after search"
+  );
+
+  
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
+    resultIndex,
+  });
+
+  Assert.ok(
+    gURLBar.view.isOpen,
+    "The view should remain open clicking the command"
+  );
+  Assert.ok(
+    details.element.row.hasAttribute("feedback-acknowledgment"),
+    "Row should have feedback acknowledgment after clicking command"
+  );
+
+  info("Doing dismissal");
+  await doDismissTest("not_interested");
 }
