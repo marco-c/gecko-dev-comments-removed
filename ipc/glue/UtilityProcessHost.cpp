@@ -318,8 +318,7 @@ void UtilityProcessHost::ResolvePromise() {
     mLaunchPromise->Resolve(true, __func__);
     mLaunchPromiseSettled = true;
   }
-  
-  
+
   mLaunchCompleted = true;
 }
 
@@ -332,8 +331,7 @@ void UtilityProcessHost::RejectPromise() {
     mLaunchPromise->Reject(NS_ERROR_FAILURE, __func__);
     mLaunchPromiseSettled = true;
   }
-  
-  
+
   mLaunchCompleted = true;
 }
 
