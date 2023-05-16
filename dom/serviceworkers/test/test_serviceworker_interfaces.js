@@ -353,17 +353,23 @@ let interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
-  "WebTransport",
+  { name: "WebTransport", nightly: true },
   
-  "WebTransportBidirectionalStream",
+  {
+    name: "WebTransportBidirectionalStream",
+    nightly: true,
+  },
   
-  "WebTransportDatagramDuplexStream",
+  {
+    name: "WebTransportDatagramDuplexStream",
+    nightly: true,
+  },
   
-  "WebTransportError",
+  { name: "WebTransportError", nightly: true },
   
-  "WebTransportReceiveStream",
+  { name: "WebTransportReceiveStream", nightly: true },
   
-  "WebTransportSendStream",
+  { name: "WebTransportSendStream", nightly: true },
   
   "WebGL2RenderingContext",
   

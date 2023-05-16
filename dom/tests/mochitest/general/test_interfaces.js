@@ -1448,17 +1448,41 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WebSocket", insecureContext: true },
   
-  { name: "WebTransport", insecureContext: false },
+  {
+    name: "WebTransport",
+    insecureContext: false,
+    nightly: true,
+  },
   
-  { name: "WebTransportBidirectionalStream", insecureContext: false },
+  {
+    name: "WebTransportBidirectionalStream",
+    insecureContext: false,
+    nightly: true,
+  },
   
-  { name: "WebTransportDatagramDuplexStream", insecureContext: false },
+  {
+    name: "WebTransportDatagramDuplexStream",
+    insecureContext: false,
+    nightly: true,
+  },
   
-  { name: "WebTransportError", insecureContext: false },
+  {
+    name: "WebTransportError",
+    insecureContext: false,
+    nightly: true,
+  },
   
-  { name: "WebTransportReceiveStream", insecureContext: false },
+  {
+    name: "WebTransportReceiveStream",
+    insecureContext: false,
+    nightly: true,
+  },
   
-  { name: "WebTransportSendStream", insecureContext: false },
+  {
+    name: "WebTransportSendStream",
+    insecureContext: false,
+    nightly: true,
+  },
   
   { name: "WheelEvent", insecureContext: true },
   
