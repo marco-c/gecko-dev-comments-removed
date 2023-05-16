@@ -1029,6 +1029,8 @@ struct ExtensibleCompilationStencil;
 
 
 
+
+
 struct CompilationStencil {
   friend struct ExtensibleCompilationStencil;
 
@@ -1232,6 +1234,8 @@ struct CompilationStencil {
   void dumpAtom(TaggedParserAtomIndex index) const;
 #endif
 };
+
+
 
 
 
