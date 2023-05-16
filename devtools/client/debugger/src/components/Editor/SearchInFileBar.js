@@ -68,6 +68,20 @@ class SearchInFileBar extends Component {
     this.doSearch.cancel();
   }
 
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    const { query } = this.props;
+    
+    if (
+      this.props.selectedSource &&
+      nextProps.selectedSource !== this.props.selectedSource &&
+      this.props.searchInFileEnabled &&
+      query
+    ) {
+      this.doSearch(query, false);
+    }
+  }
+
   componentDidMount() {
     
     
@@ -137,13 +151,13 @@ class SearchInFileBar extends Component {
     }
   };
 
-  doSearch = query => {
+  doSearch = (query, focusFirstResult = true) => {
     const { cx, selectedSource, selectedContentLoaded } = this.props;
     if (!selectedSource || !selectedContentLoaded) {
       return;
     }
 
-    this.props.doSearch(cx, query, this.props.editor);
+    this.props.doSearch(cx, query, this.props.editor, focusFirstResult);
   };
 
   traverseResults = (e, rev) => {
