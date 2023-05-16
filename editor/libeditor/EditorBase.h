@@ -766,8 +766,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
-      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr) = 0;
+  MOZ_CAN_RUN_SCRIPT nsresult PasteTransferableAsAction(
+      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -2661,6 +2661,14 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteAsQuotation(
       AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteTransferable(
+      AutoEditActionDataSetter& aEditActionData,
+      nsITransferable& aTransferable) = 0;
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

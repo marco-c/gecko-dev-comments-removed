@@ -2388,53 +2388,17 @@ nsresult HTMLEditor::PasteInternal(int32_t aClipboardType) {
   return rv;
 }
 
-nsresult HTMLEditor::PasteTransferableAsAction(nsITransferable* aTransferable,
-                                               nsIPrincipal* aPrincipal) {
+nsresult HTMLEditor::HandlePasteTransferable(
+    AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable) {
   
   
-  if (IsReadonly()) {
-    return NS_OK;
-  }
+  aEditActionData.InitializeDataTransfer(&aTransferable);
 
-  AutoEditActionDataSetter editActionData(*this, EditAction::ePaste,
-                                          aPrincipal);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  
-  
-  editActionData.InitializeDataTransfer(aTransferable);
-
-  
-  
-  
-  {
-    Result<ClipboardEventResult, nsresult> ret =
-        DispatchClipboardEventAndUpdateClipboard(
-            ePaste, nsIClipboard::kGlobalClipboard);
-    if (MOZ_UNLIKELY(ret.isErr())) {
-      NS_WARNING(
-          "EditorBase::DispatchClipboardEventAndUpdateClipboard(ePaste, "
-          "nsIClipboard::kGlobalClipboard) failed");
-      return EditorBase::ToGenericNSResult(ret.unwrapErr());
-    }
-    switch (ret.inspect()) {
-      case ClipboardEventResult::DoDefault:
-        break;
-      case ClipboardEventResult::DefaultPreventedOfPaste:
-      case ClipboardEventResult::IgnoredOrError:
-        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
-      case ClipboardEventResult::CopyOrCutHandled:
-        MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
-    }
-  }
-
-  
-  nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+  nsresult rv = aEditActionData.MaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "MaybeDispatchBeforeInputEvent(), failed");
-    return EditorBase::ToGenericNSResult(rv);
+    return rv;
   }
 
   RefPtr<DataTransfer> dataTransfer = GetInputEventDataTransfer();
@@ -2448,15 +2412,16 @@ nsresult HTMLEditor::PasteTransferableAsAction(nsITransferable* aTransferable,
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::InsertFromDataTransfer("
                          "DeleteSelectedContent::Yes) failed");
-  } else {
-    nsAutoString contextStr, infoStr;
-    rv = InsertFromTransferableAtSelection(aTransferable, contextStr, infoStr,
-                                           HavePrivateHTMLFlavor::No);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::InsertFromTransferableAtSelection("
-                         "HavePrivateHTMLFlavor::No) failed");
+    return rv;
   }
-  return EditorBase::ToGenericNSResult(rv);
+
+  nsAutoString contextStr, infoStr;
+  rv = InsertFromTransferableAtSelection(&aTransferable, contextStr, infoStr,
+                                         HavePrivateHTMLFlavor::No);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::InsertFromTransferableAtSelection("
+                       "HavePrivateHTMLFlavor::No) failed");
+  return rv;
 }
 
 nsresult HTMLEditor::PasteNoFormattingAsAction(int32_t aSelectionType,
