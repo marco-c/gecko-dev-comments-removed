@@ -65,7 +65,7 @@ class InputVolumeController final {
     float speech_probability_threshold = 0.7f;
     
     
-    float speech_ratio_threshold = 0.9f;
+    float speech_ratio_threshold = 0.6f;
   };
 
   
