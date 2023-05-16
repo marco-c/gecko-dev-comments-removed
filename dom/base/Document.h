@@ -1344,7 +1344,7 @@ class Document : public nsINode,
 
   already_AddRefed<AnonymousContent> InsertAnonymousContent(
       Element& aElement, bool aForce, ErrorResult& aError);
-  void RemoveAnonymousContent(AnonymousContent& aContent, ErrorResult& aError);
+  void RemoveAnonymousContent(AnonymousContent& aContent);
   
 
 

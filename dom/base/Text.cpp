@@ -79,7 +79,7 @@ static Text* LastLogicallyAdjacentTextNode(Text* aNode) {
   } while (1);  
 }
 
-void Text::GetWholeText(nsAString& aWholeText, ErrorResult& aRv) {
+void Text::GetWholeText(nsAString& aWholeText) {
   nsIContent* parent = GetParent();
 
   

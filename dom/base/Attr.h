@@ -92,7 +92,7 @@ class Attr final : public nsINode {
   
   
 
-  Element* GetOwnerElement(ErrorResult& aRv);
+  Element* GetOwnerElement();
 
  protected:
   virtual Element* GetNameSpaceElement() override { return GetElement(); }
