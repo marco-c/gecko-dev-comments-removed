@@ -56,10 +56,6 @@ class RenderCompositorEGL : public RenderCompositor {
   RefPtr<gl::GLContext> mGL;
 
   EGLSurface mEGLSurface;
-#ifdef MOZ_WIDGET_ANDROID
-  
-  LayoutDeviceIntSize mEGLSurfaceSize;
-#endif
 
   
   
