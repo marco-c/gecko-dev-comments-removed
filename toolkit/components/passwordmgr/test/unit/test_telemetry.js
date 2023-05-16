@@ -111,7 +111,7 @@ function testHistogram(histogramId, expectedNonZeroRanges) {
 
 
 
-add_setup(async () => {
+add_task(function test_initialize() {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
   registerCleanupFunction(function() {
@@ -119,16 +119,16 @@ add_setup(async () => {
   });
 
   let uniqueNumber = 1;
-  let logins = [];
   for (let loginModifications of StatisticsTestData) {
     loginModifications.origin = `http://${uniqueNumber++}.example.com`;
+    let login;
     if (typeof loginModifications.httpRealm != "undefined") {
-      logins.push(TestData.authLogin(loginModifications));
+      login = TestData.authLogin(loginModifications);
     } else {
-      logins.push(TestData.formLogin(loginModifications));
+      login = TestData.formLogin(loginModifications);
     }
+    Services.logins.addLogin(login);
   }
-  await Services.logins.addLogins(logins);
 });
 
 

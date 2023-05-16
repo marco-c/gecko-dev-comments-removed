@@ -186,57 +186,6 @@ function getPasswordEditedMessage() {
 
 
 
-function createLoginForm({
-  action = "",
-  username = {
-    value: "",
-  },
-  password = {
-    type: "password",
-  },
-} = {}) {
-  info(`Creating login form ${JSON.stringify({ action, username, password })}`);
-
-  const form = document.createElement("form");
-  form.action = action;
-
-  const usernameInput = document.createElement("input");
-  usernameInput.type = "text";
-  usernameInput.name = "uname";
-  usernameInput.value = username.value;
-  if (username.autocomplete) {
-    usernameInput.setAttribute("autocomplete", username.autocomplete);
-  }
-  form.appendChild(usernameInput);
-
-  if (password) {
-    const passwordInput = document.createElement("input");
-    passwordInput.type = password.type;
-    passwordInput.name = "pword";
-    form.appendChild(passwordInput);
-  }
-
-  const submitButton = document.createElement("button");
-  submitButton.type = "submit";
-  submitButton.name = "submit";
-  submitButton.innerText = "Submit";
-  form.appendChild(submitButton);
-
-  const content = document.getElementById("content");
-
-  if (content.firstChild) {
-    content.replaceChild(form, content.firstChild);
-  } else {
-    content.appendChild(form);
-  }
-
-  return form;
-}
-
-
-
-
-
 function checkLoginForm(
   usernameField,
   expectedUsername,
@@ -756,50 +705,29 @@ function runInParent(aFunctionOrURL) {
 
 
 
-function manageLoginsInParent() {
-  return runInParent(function addLoginsInParentInner() {
-    
-    addMessageListener("removeAllUserFacingLogins", () => {
-      Services.logins.removeAllUserFacingLogins();
-    });
 
+
+function addLoginsInParent(...aLogins) {
+  let script = runInParent(function addLoginsInParentInner() {
     
-    addMessageListener("addLogins", async logins => {
+    addMessageListener("addLogins", logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
         Ci.nsILoginInfo,
         "init"
       );
 
-      const loginInfos = logins.map(login => new nsLoginInfo(...login));
-      try {
-        await Services.logins.addLogins(loginInfos);
-      } catch (e) {
-        assert.ok(false, "addLogins threw: " + e);
+      for (let login of logins) {
+        let loginInfo = new nsLoginInfo(...login);
+        try {
+          Services.logins.addLogin(loginInfo);
+        } catch (e) {
+          assert.ok(false, "addLogin threw: " + e);
+        }
       }
     });
   });
-}
-
-
-
-
-
-async function addLoginsInParent(...aLogins) {
-  const script = manageLoginsInParent();
-  await script.sendQuery("addLogins", aLogins);
-  return script;
-}
-
-
-
-
-
-
-async function setStoredLoginsAsync(...aLogins) {
-  const script = manageLoginsInParent();
-  script.sendQuery("removeAllUserFacingLogins");
-  await script.sendQuery("addLogins", aLogins);
+  script.sendQuery("addLogins", aLogins);
   return script;
 }
 

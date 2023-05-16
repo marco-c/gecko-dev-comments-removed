@@ -82,9 +82,9 @@ add_task(function test_initialize() {
 
 
 
-add_task(async function test_addLogin_metainfo() {
+add_task(function test_addLogin_metainfo() {
   
-  await Services.logins.addLoginAsync(gLoginInfo1);
+  Services.logins.addLogin(gLoginInfo1);
 
   
   Assert.equal(gLoginInfo1.guid, null);
@@ -104,7 +104,7 @@ add_task(async function test_addLogin_metainfo() {
 
   
   let originalLogin = gLoginInfo2.clone().QueryInterface(Ci.nsILoginMetaInfo);
-  await Services.logins.addLoginAsync(gLoginInfo2);
+  Services.logins.addLogin(gLoginInfo2);
 
   
   assertMetaInfoEqual(gLoginInfo2, originalLogin);
@@ -114,7 +114,7 @@ add_task(async function test_addLogin_metainfo() {
   assertMetaInfoEqual(gLoginMetaInfo2, gLoginInfo2);
 
   
-  await Services.logins.addLoginAsync(gLoginInfo3);
+  Services.logins.addLogin(gLoginInfo3);
   gLoginMetaInfo3 = retrieveLoginMatching(gLoginInfo3);
   LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
 });
@@ -122,13 +122,13 @@ add_task(async function test_addLogin_metainfo() {
 
 
 
-add_task(async function test_addLogin_metainfo_duplicate() {
+add_task(function test_addLogin_metainfo_duplicate() {
   let loginInfo = TestData.formLogin({
     origin: "http://duplicate.example.com",
     guid: gLoginMetaInfo2.guid,
   });
-  await Assert.rejects(
-    Services.logins.addLoginAsync(loginInfo),
+  Assert.throws(
+    () => Services.logins.addLogin(loginInfo),
     /specified GUID already exists/
   );
 
