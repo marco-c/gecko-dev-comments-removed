@@ -16,6 +16,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 public class SurfaceViewWrapper {
@@ -111,6 +112,27 @@ public class SurfaceViewWrapper {
   public View getView() {
     return mView;
   }
+
+  
+
+
+
+
+
+
+
+  public static boolean isSurfaceAbandoned(final Surface surface) {
+    
+    
+    if (!GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+      return false;
+    }
+
+    return isSurfaceAbandonedNative(surface);
+  }
+
+  @WrapForJNI(calledFrom = "ui", dispatchTo = "current", stubName = "IsSurfaceAbandoned")
+  private static native boolean isSurfaceAbandonedNative(final Surface surface);
 
   
 

@@ -277,22 +277,9 @@ bool RenderCompositorOGLSWGL::Resume() {
 
   mEGLSurface = CreateEGLSurface();
   if (mEGLSurface == EGL_NO_SURFACE) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!mHandlingNewSurfaceError) {
-      mHandlingNewSurfaceError = true;
-    } else {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    }
+    RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
     return false;
   }
-  mHandlingNewSurfaceError = false;
 
   gl::GLContextEGL::Cast(GetGLContext())->SetEGLSurfaceOverride(mEGLSurface);
   mCompositor->SetDestinationSurfaceSize(size.ToUnknownSize());

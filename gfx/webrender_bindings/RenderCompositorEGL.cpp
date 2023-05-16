@@ -161,6 +161,7 @@ bool RenderCompositorEGL::Resume() {
     
     DestroyEGLSurface();
 
+#ifdef MOZ_WIDGET_ANDROID
     auto size = GetBufferSize();
     GLint maxTextureSize = 0;
     gl()->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&maxTextureSize);
@@ -174,24 +175,11 @@ bool RenderCompositorEGL::Resume() {
 
     mEGLSurface = CreateEGLSurface();
     if (mEGLSurface == EGL_NO_SURFACE) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!mHandlingNewSurfaceError) {
-        mHandlingNewSurfaceError = true;
-      } else {
-        RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-      }
+      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
       return false;
     }
-    mHandlingNewSurfaceError = false;
-
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
+#endif  
   } else if (kIsWayland || kIsX11) {
     
     
