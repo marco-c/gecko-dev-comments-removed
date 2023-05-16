@@ -116,7 +116,7 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
 
   void CancelImageRequests();
 
-  void ManageReflowCallback(const nsRect& aRect, nscoord aHorzWidth);
+  void ManageReflowCallback();
 
   void DidReflow(nsPresContext*, const ReflowInput*) override;
 
@@ -567,6 +567,9 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   
   nscoord mAdjustWidth;
+
+  
+  Maybe<nsRect> mLastReflowRect;
 
   
   nsRect mInnerBox;  
