@@ -18,19 +18,17 @@
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Monitor.h"
-#include "WifiScanner.h"
 
-namespace mozilla {
-class TestWifiMonitor;
-}
+#ifdef XP_WIN
+#  include "win_wifiScanner.h"
+#endif
 
 extern mozilla::LazyLogModule gWifiMonitorLog;
+#define LOG(args) MOZ_LOG(gWifiMonitorLog, mozilla::LogLevel::Debug, args)
 
 class nsWifiAccessPoint;
 
-
-#define WIFI_SCAN_INTERVAL_MS_PREF "network.wifi.scanning_period"
+#define kDefaultWifiScanInterval 5 /* seconds */
 
 #ifdef XP_MACOSX
 
@@ -38,86 +36,48 @@ class nsWifiAccessPoint;
 #  define kMacOS13MonitorStackSize (512 * 1024)
 #endif
 
-struct WifiListenerHolder {
-  RefPtr<nsIWifiListener> mListener;
-  bool mShouldPoll;
-  bool mHasSentData = false;
+class nsWifiListener {
+ public:
+  explicit nsWifiListener(nsMainThreadPtrHolder<nsIWifiListener>* aListener) {
+    mListener = aListener;
+    mHasSentData = false;
+  }
+  ~nsWifiListener() = default;
 
-  explicit WifiListenerHolder(nsIWifiListener* aListener,
-                              bool aShouldPoll = false)
-      : mListener(aListener), mShouldPoll(aShouldPoll) {}
+  nsMainThreadPtrHandle<nsIWifiListener> mListener;
+  bool mHasSentData;
 };
 
-class nsWifiMonitor final : public nsIWifiMonitor, public nsIObserver {
+class nsWifiMonitor final : nsIRunnable, nsIWifiMonitor, nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIWIFIMONITOR
+  NS_DECL_NSIRUNNABLE
   NS_DECL_NSIOBSERVER
 
-  explicit nsWifiMonitor(
-      mozilla::UniquePtr<mozilla::WifiScanner>&& aScanner = nullptr);
+  nsWifiMonitor();
 
  private:
-  friend class mozilla::TestWifiMonitor;
+  ~nsWifiMonitor() = default;
 
-  ~nsWifiMonitor();
-
-  nsresult DispatchScanToBackgroundThread(uint64_t aPollingId = 0,
-                                          uint32_t aWaitMs = 0);
-
-  void Scan(uint64_t aPollingId);
   nsresult DoScan();
 
-  nsresult CallWifiListeners(
-      nsTArray<RefPtr<nsIWifiAccessPoint>>&& aAccessPoints,
-      bool aAccessPointsChanged);
+  nsresult CallWifiListeners(const nsCOMArray<nsWifiAccessPoint>& aAccessPoints,
+                             bool aAccessPointsChanged);
 
-  nsresult PassErrorToWifiListeners(nsresult rv);
+  uint32_t GetMonitorThreadStackSize();
 
-  void Close();
+  mozilla::Atomic<bool> mKeepGoing;
+  mozilla::Atomic<bool> mThreadComplete;
+  nsCOMPtr<nsIThread> mThread;  
 
-  bool IsBackgroundThread();
+  nsTArray<nsWifiListener> mListeners MOZ_GUARDED_BY(mReentrantMonitor);
 
-  bool ShouldPoll() {
-    MOZ_ASSERT(!IsBackgroundThread());
-    return (mShouldPollForCurrentNetwork && !mListeners.IsEmpty()) ||
-           mNumPollingListeners > 0;
-  };
+  mozilla::ReentrantMonitor mReentrantMonitor;
 
-#ifdef ENABLE_TESTS
-  
-  
-  
-  bool IsPolling() { return mThread && mPollingId; }
+#ifdef XP_WIN
+  mozilla::UniquePtr<WinWifiScanner> mWinWifiScanner;
 #endif
-
-  
-  nsCOMPtr<nsIThread> mThread;
-
-  
-  nsTArray<WifiListenerHolder> mListeners;
-
-  
-  mozilla::UniquePtr<mozilla::WifiScanner> mWifiScanner;
-
-  
-  nsTArray<RefPtr<nsIWifiAccessPoint>> mLastAccessPoints;
-
-  
-  
-  
-  
-  mozilla::Atomic<uint64_t> mPollingId;
-
-  
-  
-  
-  uint32_t mNumPollingListeners = 0;
-
-  
-  
-  
-  bool mShouldPollForCurrentNetwork = false;
 };
 
 #endif
