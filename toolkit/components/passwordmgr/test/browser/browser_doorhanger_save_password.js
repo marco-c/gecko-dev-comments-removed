@@ -89,7 +89,7 @@ async function test_save_change(testData) {
   } = testData;
   
   if (oldPassword) {
-    Services.logins.addLogin(
+    await Services.logins.addLoginAsync(
       LoginTestUtils.testData.formLogin({
         origin: "https://example.com",
         formActionOrigin: "https://example.com",
