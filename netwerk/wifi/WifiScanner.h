@@ -1,0 +1,33 @@
+
+
+
+
+
+
+#pragma once
+
+#include "nsTArray.h"
+#include "mozilla/RefPtr.h"
+
+class nsIWifiAccessPoint;
+
+namespace mozilla {
+
+class WifiScanner {
+ public:
+  
+
+
+
+
+
+
+
+
+  virtual nsresult GetAccessPointsFromWLAN(
+      nsTArray<RefPtr<nsIWifiAccessPoint>>& accessPoints) = 0;
+
+  virtual ~WifiScanner() = default;
+};
+
+}  

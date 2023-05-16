@@ -2,7 +2,7 @@
 
 
 
-#include "win_wlanLibrary.h"
+#include "WlanLibrary.h"
 
 
 
@@ -19,17 +19,6 @@ WinWLANLibrary* WinWLANLibrary::Load() {
 
   return ret;
 }
-
-WinWLANLibrary::WinWLANLibrary()
-    : mWlanLibrary(nullptr),
-      mWlanHandle(nullptr),
-      mWlanEnumInterfacesPtr(nullptr),
-      mWlanGetNetworkBssListPtr(nullptr),
-      mWlanFreeMemoryPtr(nullptr),
-      mWlanCloseHandlePtr(nullptr),
-      mWlanOpenHandlePtr(nullptr),
-      mWlanRegisterNotificationPtr(nullptr),
-      mWlanScanPtr(nullptr) {}
 
 HANDLE
 WinWLANLibrary::GetWLANHandle() const { return mWlanHandle; }

@@ -1,0 +1,36 @@
+
+
+
+
+#pragma once
+
+#include "mozilla/UniquePtr.h"
+#include "WlanLibrary.h"
+#include "WifiScanner.h"
+
+class nsIWifiAccessPoint;
+
+namespace mozilla {
+
+class WifiScannerImpl final : public WifiScanner {
+ public:
+  WifiScannerImpl();
+  ~WifiScannerImpl();
+
+  
+
+
+
+
+
+
+
+
+  nsresult GetAccessPointsFromWLAN(
+      nsTArray<RefPtr<nsIWifiAccessPoint>>& accessPoints);
+
+ private:
+  mozilla::UniquePtr<WinWLANLibrary> mWlanLibrary;
+};
+
+}  
