@@ -4673,6 +4673,11 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     return result;
   }
 
+  bool isBackgroundTaskMode = false;
+#ifdef MOZ_BACKGROUNDTASKS
+  isBackgroundTaskMode = BackgroundTasks::IsBackgroundTaskMode();
+#endif
+
 #ifdef MOZ_HAS_REMOTE
   if (gfxPlatform::IsHeadless()) {
     mDisableRemoteClient = true;
@@ -4684,12 +4689,12 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   
   
-  if (!gfxPlatform::IsHeadless()) {
+  if (!isBackgroundTaskMode && !gfxPlatform::IsHeadless()) {
     XInitThreads();
   }
 #endif
 #if defined(MOZ_WIDGET_GTK)
-  if (!gfxPlatform::IsHeadless()) {
+  if (!isBackgroundTaskMode && !gfxPlatform::IsHeadless()) {
     const char* display_name = nullptr;
     bool saveDisplayArg = false;
 
@@ -5107,18 +5112,19 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   mozilla::glean_pings::Pageload.Submit("startup"_ns);
 
+  if (!isBackgroundTaskMode) {
 #ifdef USE_GLX_TEST
-  GfxInfo::FireGLXTestProcess();
+    GfxInfo::FireGLXTestProcess();
 #endif
-
 #ifdef MOZ_WAYLAND
-  
-  
-  
-  if (IsWaylandEnabled()) {
-    MOZ_UNUSED(WaylandDisplayGet());
-  }
+    
+    
+    
+    if (IsWaylandEnabled()) {
+      MOZ_UNUSED(WaylandDisplayGet());
+    }
 #endif
+  }
 
   return 0;
 }
