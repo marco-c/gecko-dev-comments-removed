@@ -636,14 +636,18 @@ class PerftestAndroid(Perftest):
                     % (e.__class__.__name__, e)
                 )
 
-        if self.config["app"] == "chrome-m":
+        if self.config["app"] == "chrome-m" or browser_version is None:
             
             
             
             from mozdevice import ADBDeviceFactory
 
             device = ADBDeviceFactory(verbose=True)
+
+            
             binary = "com.android.chrome"
+            if self.config["app"] not in ("chrome-m",):
+                binary = self.config["binary"]
 
             pkg_info = device.shell_output("dumpsys package %s" % binary)
             version_matcher = re.compile(r".*versionName=([\d.]+)")
