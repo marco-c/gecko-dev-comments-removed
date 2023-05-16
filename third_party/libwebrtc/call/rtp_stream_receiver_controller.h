@@ -15,6 +15,7 @@
 #include "api/sequence_checker.h"
 #include "call/rtp_demuxer.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
+#include "modules/rtp_rtcp/include/recovered_packet_receiver.h"
 
 namespace webrtc {
 
@@ -24,8 +25,8 @@ class RtpPacketReceived;
 
 
 
-class RtpStreamReceiverController
-    : public RtpStreamReceiverControllerInterface {
+class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
+                                    public RecoveredPacketReceiver {
  public:
   RtpStreamReceiverController();
   ~RtpStreamReceiverController() override;
@@ -37,6 +38,10 @@ class RtpStreamReceiverController
 
   
   bool OnRtpPacket(const RtpPacketReceived& packet);
+
+  
+  
+  void OnRecoveredPacket(const RtpPacketReceived& packet) override;
 
  private:
   class Receiver : public RtpStreamReceiverInterface {

@@ -54,6 +54,9 @@ class RtpPacket {
   void IdentifyExtensions(ExtensionManager extensions);
 
   
+  const ExtensionManager& extension_manager() const { return extensions_; }
+
+  
   bool Marker() const { return marker_; }
   uint8_t PayloadType() const { return payload_type_; }
   uint16_t SequenceNumber() const { return sequence_number_; }
