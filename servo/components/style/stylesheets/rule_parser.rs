@@ -204,7 +204,7 @@ pub enum AtRulePrelude {
     
     Document(DocumentCondition),
     
-    Import(CssUrl, Arc<Locked<MediaList>>, Option<ImportSupportsCondition>, ImportLayer),
+    Import(CssUrl, Arc<Locked<MediaList>>, Option<ImportSupportsCondition>, Option<ImportLayer>),
     
     Namespace(Option<Prefix>, Namespace),
     
