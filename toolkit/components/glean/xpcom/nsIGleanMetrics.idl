@@ -663,34 +663,3 @@ interface nsIGleanUrl : nsISupports
   [implicit_jscontext]
   jsval testGetValue([optional] in AUTF8String aPingName);
 };
-
-[scriptable, uuid(fafceafb-c3a0-4424-b3b9-b7bd487f6bb4)]
-interface nsIGleanText : nsISupports
-{
-  
-
-
-
-
-  void set(in AUTF8String value);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  jsval testGetValue([optional] in AUTF8String aPingName);
-};
