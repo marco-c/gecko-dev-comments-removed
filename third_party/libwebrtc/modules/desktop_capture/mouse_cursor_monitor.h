@@ -91,7 +91,7 @@ class MouseCursorMonitor {
   
   
   
-  static std::unique_ptr<MouseCursorMonitor> Create(
+  static RTC_EXPORT std::unique_ptr<MouseCursorMonitor> Create(
       const DesktopCaptureOptions& options);
 
   
