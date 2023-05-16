@@ -144,6 +144,7 @@
 #include "mozilla/css/Rule.h"
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
@@ -16170,10 +16171,23 @@ void Document::SendPageUseCounters() {
 }
 
 void Document::RecomputeResistFingerprinting() {
-  mShouldResistFingerprinting =
-      !nsContentUtils::IsChromeDoc(this) &&
-      nsContentUtils::ShouldResistFingerprinting(
-          mChannel, RFPTarget::IsAlwaysEnabledForPrecompute);
+  if (mParentDocument &&
+      (NodePrincipal()->Equals(mParentDocument->NodePrincipal()) ||
+       NodePrincipal()->GetIsNullPrincipal())) {
+    
+    
+    
+    
+    
+    mShouldResistFingerprinting = !nsContentUtils::IsChromeDoc(this) &&
+                                  mParentDocument->ShouldResistFingerprinting(
+                                      RFPTarget::IsAlwaysEnabledForPrecompute);
+  } else {
+    mShouldResistFingerprinting =
+        !nsContentUtils::IsChromeDoc(this) &&
+        nsContentUtils::ShouldResistFingerprinting(
+            mChannel, RFPTarget::IsAlwaysEnabledForPrecompute);
+  }
 }
 
 bool Document::ShouldResistFingerprinting(
