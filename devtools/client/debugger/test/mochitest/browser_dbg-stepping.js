@@ -42,6 +42,6 @@ add_task(async function test() {
   await stepIn(dbg);
 
   
-  await dbg.actions.jumpToMappedSelectedLocation(getContext(dbg));
+  
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "step-in-test.js").id, 7679);
 });

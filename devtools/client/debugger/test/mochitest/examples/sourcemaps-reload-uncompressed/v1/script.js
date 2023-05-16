@@ -1,2 +1,8 @@
 console.log("only one breakable line");
 
+
+function nonSourceMappedFunction () {
+  console.log("non source mapped function");
+  
+  return removedOriginal();
+}

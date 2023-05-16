@@ -28,7 +28,7 @@ import {
   getSourceByURL,
   getPrettySource,
   getSelectedLocation,
-  getSelectedSource,
+  getShouldSelectOriginalLocation,
   canPrettyPrintSource,
   getIsCurrentThreadPaused,
   getSourceTextContent,
@@ -36,11 +36,15 @@ import {
 } from "../../selectors";
 
 
-export const setSelectedLocation = (cx, source, location) => ({
+export const setSelectedLocation = (
+  cx,
+  location,
+  shouldSelectOriginalLocation
+) => ({
   type: "SET_SELECTED_LOCATION",
   cx,
-  source,
   location,
+  shouldSelectOriginalLocation,
 });
 
 
@@ -143,16 +147,24 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
     
     
     
-    const selectedSource = getSelectedSource(getState());
-    if (
-      keepContext &&
-      selectedSource &&
-      selectedSource.isOriginal != isOriginalId(location.sourceId)
-    ) {
-      
-      
-      location = await getRelatedMapLocation(location, thunkArgs);
-      source = location.source;
+    let shouldSelectOriginalLocation = getShouldSelectOriginalLocation(
+      getState()
+    );
+    if (keepContext) {
+      if (shouldSelectOriginalLocation != isOriginalId(location.sourceId)) {
+        
+        
+        location = await getRelatedMapLocation(location, thunkArgs);
+        
+        
+        
+        
+        
+
+        source = location.source;
+      }
+    } else {
+      shouldSelectOriginalLocation = isOriginalId(location.sourceId);
     }
 
     let sourceActor = location.sourceActor;
@@ -168,7 +180,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       dispatch(addTab(source, sourceActor));
     }
 
-    dispatch(setSelectedLocation(cx, source, location));
+    dispatch(setSelectedLocation(cx, location, shouldSelectOriginalLocation));
 
     await dispatch(loadSourceText(cx, source, sourceActor));
 
