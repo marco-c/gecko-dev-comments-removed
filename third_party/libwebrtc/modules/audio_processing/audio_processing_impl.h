@@ -227,10 +227,12 @@ class AudioProcessingImpl : public AudioProcessing {
   static AudioProcessing::Config AdjustConfig(
       const AudioProcessing::Config& config,
       const absl::optional<GainController2ExperimentParams>& experiment_params);
-  static TransientSuppressor::VadMode GetTransientSuppressorVadMode(
+  
+  static bool UseApmVadSubModule(
+      const AudioProcessing::Config& config,
       const absl::optional<GainController2ExperimentParams>& experiment_params);
 
-  const TransientSuppressor::VadMode transient_suppressor_vad_mode_;
+  TransientSuppressor::VadMode transient_suppressor_vad_mode_;
 
   SwapQueue<RuntimeSetting> capture_runtime_settings_;
   SwapQueue<RuntimeSetting> render_runtime_settings_;
@@ -319,12 +321,13 @@ class AudioProcessingImpl : public AudioProcessing {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
   
   
-  void InitializeGainController2(bool config_has_changed)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
+  void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
   
   
   
-  void InitializeVoiceActivityDetector(bool config_has_changed)
+  
+  
+  void InitializeVoiceActivityDetector()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
   void InitializeNoiseSuppressor() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
   void InitializeCaptureLevelsAdjuster()
