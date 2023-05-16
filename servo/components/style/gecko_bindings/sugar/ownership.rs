@@ -12,20 +12,17 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 
-pub unsafe trait HasFFI: Sized + 'static {
+
+
+
+
+
+pub unsafe trait HasArcFFI: Sized + 'static {
     
     
     
     type FFIType: Sized;
-}
 
-
-
-
-
-
-
-pub unsafe trait HasArcFFI: HasFFI {
     
     
     
@@ -163,26 +160,21 @@ impl<GeckoType> Strong<GeckoType> {
 
 
 
-pub unsafe trait FFIArcHelpers {
+pub unsafe trait FFIArcHelpers<T: HasArcFFI> {
     
-    type Inner: HasArcFFI;
+    
+    
+    fn into_strong(self) -> Strong<T::FFIType>;
 
     
     
     
-    fn into_strong(self) -> Strong<<Self::Inner as HasFFI>::FFIType>;
-
     
     
-    
-    
-    
-    fn as_borrowed(&self) -> &<Self::Inner as HasFFI>::FFIType;
+    fn as_borrowed(&self) -> &T::FFIType;
 }
 
-unsafe impl<T: HasArcFFI> FFIArcHelpers for RawOffsetArc<T> {
-    type Inner = T;
-
+unsafe impl<T: HasArcFFI> FFIArcHelpers<T> for RawOffsetArc<T> {
     #[inline]
     fn into_strong(self) -> Strong<T::FFIType> {
         unsafe { transmute(self) }
@@ -194,9 +186,7 @@ unsafe impl<T: HasArcFFI> FFIArcHelpers for RawOffsetArc<T> {
     }
 }
 
-unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
-    type Inner = T;
-
+unsafe impl<T: HasArcFFI> FFIArcHelpers<T> for Arc<T> {
     #[inline]
     fn into_strong(self) -> Strong<T::FFIType> {
         Arc::into_raw_offset(self).into_strong()
