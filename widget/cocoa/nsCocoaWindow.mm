@@ -1882,6 +1882,18 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(const TransitionType& aTra
   }
 }
 
+bool nsCocoaWindow::HandleUpdateFullscreenOnResize() {
+  if (mUpdateFullscreenOnResize.isNothing()) {
+    return false;
+  }
+
+  bool toFullscreen = (*mUpdateFullscreenOnResize == TransitionType::Fullscreen);
+  mUpdateFullscreenOnResize.reset();
+  UpdateFullscreenState(toFullscreen, true);
+
+  return true;
+}
+
 
 void nsCocoaWindow::DoResize(double aX, double aY, double aWidth, double aHeight, bool aRepaint,
                              bool aConstrainToCurrentScreen) {
@@ -2835,14 +2847,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   
   UpdateBounds();
 
-  if (mUpdateFullscreenOnResize.isSome()) {
-    
-    
-    
-    bool toFullscreen = (*mUpdateFullscreenOnResize == TransitionType::Fullscreen);
-    mUpdateFullscreenOnResize.reset();
-
-    UpdateFullscreenState(toFullscreen, true);
+  if (HandleUpdateFullscreenOnResize()) {
     ReportSizeEvent();
     return;
   }
@@ -2929,6 +2934,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
     return;
   }
 
+  mGeckoWindow->HandleUpdateFullscreenOnResize();
   mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Fullscreen);
 }
 
@@ -2943,6 +2949,8 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (!mGeckoWindow) {
     return;
   }
+
+  mGeckoWindow->HandleUpdateFullscreenOnResize();
   mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Windowed);
 }
 

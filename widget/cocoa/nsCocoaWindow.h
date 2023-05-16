@@ -380,6 +380,13 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   void FinishCurrentTransition();
   void FinishCurrentTransitionIfMatching(const TransitionType& aTransition);
 
+  
+  
+  
+  
+  
+  bool HandleUpdateFullscreenOnResize();
+
  protected:
   virtual ~nsCocoaWindow();
 
