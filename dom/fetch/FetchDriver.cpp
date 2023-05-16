@@ -648,6 +648,12 @@ nsresult FetchDriver::HttpFetch(
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  if (mAssociatedBrowsingContextID) {
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
+    rv = loadInfo->SetWorkerAssociatedBrowsingContextID(
+        mAssociatedBrowsingContextID);
+  }
+
   
   
   

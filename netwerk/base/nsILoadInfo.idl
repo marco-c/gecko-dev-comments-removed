@@ -808,6 +808,18 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+  [infallible] attribute unsigned long long workerAssociatedBrowsingContextID;
+  [infallible] readonly attribute BrowsingContext workerAssociatedBrowsingContext;
+
+  
+
+
+
+
+
+
+
   [infallible] readonly attribute unsigned long long frameBrowsingContextID;
   [infallible] readonly attribute BrowsingContext frameBrowsingContext;
 
