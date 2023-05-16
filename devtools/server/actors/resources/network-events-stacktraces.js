@@ -105,7 +105,14 @@ class NetworkEventStackTracesWatcher {
         } catch (e3) {
           
           
-          return;
+          try {
+            channel = subject.QueryInterface(Ci.nsIWorkerChannelInfo);
+            id = channel.channelId;
+          } catch (e4) {
+            
+            
+            return;
+          }
         }
       }
     }
