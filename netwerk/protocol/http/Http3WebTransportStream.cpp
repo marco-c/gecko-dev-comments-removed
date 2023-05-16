@@ -400,6 +400,15 @@ nsresult Http3WebTransportStream::ReadSegments() {
         rv = mSendStreamPipeIn->AsyncWait(this, 0, 0, gSocketTransportService);
       }
       again = false;
+
+      
+      if (rv >= NS_ERROR_WEBTRANSPORT_CODE_BASE &&
+          rv <= NS_ERROR_WEBTRANSPORT_CODE_END) {
+        uint8_t errorCode = GetWebTransportErrorFromNSResult(rv);
+        mSendState = SEND_DONE;
+        Reset(WebTransportErrorToHttp3Error(errorCode));
+        rv = NS_OK;
+      }
     } else if (NS_FAILED(mSocketOutCondition)) {
       if (mSocketOutCondition != NS_BASE_STREAM_WOULD_BLOCK) {
         rv = mSocketOutCondition;
@@ -491,6 +500,10 @@ nsresult Http3WebTransportStream::WritePipeSegment(nsIOutputStream* stream,
 
 nsresult Http3WebTransportStream::WriteSegments() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (!mReceiveStreamPipeOut) {
+    return NS_OK;
+  }
+
   LOG(("Http3WebTransportStream::WriteSegments [this=%p]", this));
 
   nsresult rv = NS_OK;
@@ -529,8 +542,7 @@ nsresult Http3WebTransportStream::WriteSegments() {
 }
 
 bool Http3WebTransportStream::Done() const {
-  
-  return false;
+  return mSendState == SEND_DONE && mRecvState == RECV_DONE;
 }
 
 void Http3WebTransportStream::Close(nsresult aResult) {
@@ -555,7 +567,7 @@ void Http3WebTransportStream::SendFin() {
   LOG(("Http3WebTransportStream::SendFin [this=%p mSendState=%d]", this,
        mSendState));
 
-  if (mSendFin || !mSession) {
+  if (mSendFin || !mSession || mResetError) {
     
     return;
   }
@@ -582,12 +594,12 @@ void Http3WebTransportStream::SendFin() {
   }
 }
 
-void Http3WebTransportStream::Reset(uint8_t aErrorCode) {
+void Http3WebTransportStream::Reset(uint64_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportStream::Reset [this=%p, mSendState=%d]", this,
        mSendState));
 
-  if (mResetError || !mSession) {
+  if (mResetError || !mSession || mSendFin) {
     
     return;
   }
@@ -606,6 +618,7 @@ void Http3WebTransportStream::Reset(uint8_t aErrorCode) {
             NS_NewRunnableFunction("Http3WebTransportStream::Reset", [self]() {
               self->mSession->ResetWebTransportStream(self, *self->mResetError);
               self->mSession->StreamHasDataToWrite(self);
+              self->mSession->ConnectSlowConsumer(self);
             }));
       });
     } break;
@@ -616,6 +629,7 @@ void Http3WebTransportStream::Reset(uint8_t aErrorCode) {
       mSession->ResetWebTransportStream(this, *mResetError);
       
       mSession->StreamHasDataToWrite(this);
+      mSession->ConnectSlowConsumer(this);
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("invalid mSendState!");

@@ -7,6 +7,8 @@
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
 #include "StreamUtils.h"
 #include "mozilla/dom/UnionTypes.h"
+#include "mozilla/dom/WebTransportError.h"
+#include "nsHttp.h"
 
 using namespace mozilla::dom;
 
@@ -253,9 +255,22 @@ already_AddRefed<Promise> WritableStreamToOutput::AbortCallbackImpl(
   
   
 
+  if (aReason.WasPassed() && aReason.Value().isObject()) {
+    JS::Rooted<JSObject*> obj(aCx, &aReason.Value().toObject());
+    RefPtr<WebTransportError> error;
+    UnwrapObject<prototypes::id::WebTransportError, WebTransportError>(
+        obj, error, nullptr);
+    if (error) {
+      mOutput->CloseWithStatus(net::GetNSResultFromWebTransportError(
+          error->GetStreamErrorCode().Value()));
+      return nullptr;
+    }
+  }
+
   
   
-  mOutput->CloseWithStatus(NS_ERROR_ABORT);
+  
+  mOutput->CloseWithStatus(NS_ERROR_WEBTRANSPORT_CODE_BASE);
 
   
   

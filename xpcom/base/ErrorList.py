@@ -447,6 +447,11 @@ with modules["NETWORK"]:
     
     errors["NS_ERROR_INTERCEPTION_FAILED"] = FAILURE(100)
 
+    errors["NS_ERROR_WEBTRANSPORT_CODE_BASE"] = FAILURE(200)
+    errors["NS_ERROR_WEBTRANSPORT_CODE_END"] = (
+        errors["NS_ERROR_WEBTRANSPORT_CODE_BASE"] + 255
+    )
+
     
     errors["NS_ERROR_PROXY_CODE_BASE"] = FAILURE(1000)
     
