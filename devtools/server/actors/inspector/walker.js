@@ -2458,7 +2458,17 @@ class WalkerActor extends Actor {
 
 
   _isInDOMTree(rawNode) {
-    const walker = this.getDocumentWalker(rawNode);
+    let walker;
+    try {
+      walker = this.getDocumentWalker(rawNode);
+    } catch (e) {
+      
+      
+      if (e.name == "NS_ERROR_ILLEGAL_VALUE") {
+        return false;
+      }
+      throw e;
+    }
     let current = walker.currentNode;
 
     
