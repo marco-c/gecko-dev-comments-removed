@@ -37,8 +37,9 @@
 #include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
+class RtpPacketReceived;
 class VideoFrame;
-}
+}  
 
 namespace mozilla {
 namespace dom {
@@ -135,7 +136,8 @@ class MediaSessionConduit {
   
   
   virtual void ConnectReceiverRtpEvent(
-      MediaEventSourceExc<MediaPacket, webrtc::RTPHeader>& aEvent) = 0;
+      MediaEventSourceExc<webrtc::RtpPacketReceived, webrtc::RTPHeader>&
+          aEvent) = 0;
   
   virtual void ConnectReceiverRtcpEvent(
       MediaEventSourceExc<MediaPacket>& aEvent) = 0;
