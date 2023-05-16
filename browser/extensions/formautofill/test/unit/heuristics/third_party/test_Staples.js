@@ -7,138 +7,70 @@ runHeuristicsTest(
     {
       fixturePath: "Basic.html",
       expectedResult: [
-        [
+        {
           
-          [
-            {
-              section: "",
-              addressType: "", 
-              contactType: "", 
-              fieldName: "given-name"
-            },
-            {
-              section: "",
-              addressType: "", 
-              contactType: "", 
-              fieldName: "family-name"
-            },
-            {
-              section: "",
-              addressType: "", 
-              contactType: "", 
-              fieldName: "address-line1"
-            },
-            {
-              section: "",
-              addressType: "", 
-              contactType: "", 
-              fieldName: "email"
-            },
-            {
-              section: "",
-              addressType: "", 
-              contactType: "", 
-              fieldName: "tel"
-            },
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "family-name" },
+            { fieldName: "address-line1" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization"
-            },
+            { fieldName: "organization" },
           ]
-        ],
+        },
       ],
     },
     {
       fixturePath: "Basic_ac_on.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line1",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
-            { 
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "tel" 
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "family-name" },
+            { fieldName: "address-line1" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization",
-            },
+            { fieldName: "organization" },
           ],
-        ],
+        },
       ],
     },
     {
       fixturePath: "PaymentBilling.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-number", reason: "fathom" },
+            { fieldName: "cc-exp" },
             
           ],
-        ],
+        },
       ],
     },
     {
       fixturePath: "PaymentBilling_ac_on.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-number", reason: "fathom" },
+            { fieldName: "cc-exp" },
             
           ],
-        ],
+        },
       ],
     },
   ],

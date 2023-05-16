@@ -7,440 +7,162 @@ runHeuristicsTest(
     {
       fixturePath: "ShippingAddress.html",
       expectedResult: [
-        [],
-        [],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "additional-name",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "country",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line1",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line2",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level2",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level1",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "postal-code",
-            },
-            { section: "", addressType: "", contactType: "", fieldName: "tel" },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "additional-name" }, 
+            { fieldName: "family-name" },
+            { fieldName: "organization" },
+            { fieldName: "country" },
+            { fieldName: "address-line1" },
+            { fieldName: "address-line2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level1" }, 
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
+            { fieldName: "email" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "additional-name",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "country",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line1",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line2",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level2",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level1",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "postal-code",
-            },
-            { section: "", addressType: "", contactType: "", fieldName: "tel" },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "additional-name" }, 
+            { fieldName: "family-name" },
+            { fieldName: "organization" },
+            { fieldName: "country" },
+            { fieldName: "address-line1" },
+            { fieldName: "address-line2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level1" }, 
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
+            { fieldName: "email" },
           ],
-        ],
-        [],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
-        [],
+        },
       ],
     },
     {
       fixturePath: "Payment.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-type",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp-month",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp-year",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-type" }, 
+            { fieldName: "cc-number", reason: "fathom" }, 
+            { fieldName: "cc-exp-month" },
+            { fieldName: "cc-exp-year" },
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-name",
-            }, 
+            { fieldName: "cc-name", reason: "fathom" }, 
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            }, 
+        },
+        {
+          default: {
+            reason: "fathom",
+          },
+          fields: [
+            { fieldName: "cc-number" }, 
           ],
-        ],
-        [],
-        [],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "additional-name",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "country",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line1",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line2",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level2",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level1",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "postal-code",
-            },
-            { section: "", addressType: "", contactType: "", fieldName: "tel" },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "additional-name" }, 
+            { fieldName: "family-name" },
+            { fieldName: "organization" },
+            { fieldName: "country" },
+            { fieldName: "address-line1" },
+            { fieldName: "address-line2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level1" }, 
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
+            { fieldName: "email" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "additional-name",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "organization",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "country",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line1",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-line2",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level2",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "address-level1",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "postal-code",
-            },
-            { section: "", addressType: "", contactType: "", fieldName: "tel" },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "additional-name" }, 
+            { fieldName: "family-name" },
+            { fieldName: "organization" },
+            { fieldName: "country" },
+            { fieldName: "address-line1" },
+            { fieldName: "address-line2" },
+            { fieldName: "address-level2" },
+            { fieldName: "address-level1" }, 
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
+            { fieldName: "email" },
           ],
-        ],
-        [],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
-        [],
+        },
       ],
     },
     {
       fixturePath: "SignIn.html",
       expectedResult: [
-        [],
-        [],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
-        ],
-        [],
-        [
-          [
+        },
+        {
+          fields: [
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
             
           ],
-        ],
-        [
-          [
+        },
+        {
+          fields: [
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
-        ],
-        [],
+        }
       ],
     },
   ],

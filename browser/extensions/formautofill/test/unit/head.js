@@ -182,40 +182,101 @@ async function initProfileStorage(
   return profileStorage;
 }
 
-function verifySectionFieldDetails(sections, expectedResults) {
-  Assert.equal(
-    sections.length,
-    expectedResults.length,
-    "Expected section count."
-  );
-  sections.forEach((sectionInfo, sectionIndex) => {
-    let expectedSectionInfo = expectedResults[sectionIndex];
-    info("FieldName Prediction Results: " + sectionInfo.map(i => i.fieldName));
+function verifySectionFieldDetails(sections, expectedSectionsInfo) {
+  sections.map((section, index) => {
+    const expectedSection = expectedSectionsInfo[index];
+
+    const fieldDetails = section.fieldDetails;
+    const expectedFieldDetails = expectedSection.fields;
+
+    info(`section[${index}] ${expectedSection.description ?? ""}:`);
+    info(`FieldName Prediction Results: ${fieldDetails.map(i => i.fieldName)}`);
     info(
-      "FieldName Expected Results:   " +
-        expectedSectionInfo.map(i => i.fieldName)
+      `FieldName Expected Results:   ${expectedFieldDetails.map(
+        detail => detail.fieldName
+      )}`
     );
     Assert.equal(
-      sectionInfo.length,
-      expectedSectionInfo.length,
-      "Expected field count."
+      fieldDetails.length,
+      expectedFieldDetails.length,
+      `Expected field count.`
     );
 
-    sectionInfo.forEach((field, fieldIndex) => {
-      let expectedField = expectedSectionInfo[fieldIndex];
-      if (!("part" in expectedField)) {
-        expectedField.part = null;
-      }
-      delete field.reason;
+    fieldDetails.forEach((field, fieldIndex) => {
+      const expectedFieldDetail = expectedFieldDetails[fieldIndex];
+
+      const expected = {
+        ...{
+          part: null,
+          reason: "autocomplete",
+          section: "",
+          contactType: "",
+          addressType: "",
+        },
+        ...expectedSection.default,
+        ...expectedFieldDetail,
+      };
+
       delete field.elementWeakRef;
       delete field.confidence;
-      Assert.deepEqual(field, expectedField);
+      const keys = new Set([...Object.keys(field), ...Object.keys(expected)]);
+      for (const key of keys) {
+        const expectedValue = expected[key];
+        const actualValue = field[key];
+        Assert.equal(
+          expectedValue,
+          actualValue,
+          `${key} should be equal, expect ${expectedValue}, got ${actualValue}`
+        );
+      }
     });
   });
 }
 
 var FormAutofillHeuristics, LabelUtils;
 var AddressDataLoader, FormAutofillUtils;
+
+function autofillFieldSelector(doc) {
+  return doc.querySelectorAll("input, select");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function runHeuristicsTest(patterns, fixturePathPrefix) {
   add_setup(async () => {
@@ -233,34 +294,34 @@ async function runHeuristicsTest(patterns, fixturePathPrefix) {
   patterns.forEach(testPattern => {
     add_task(async function() {
       info("Starting test fixture: " + testPattern.fixturePath);
-      let file = do_get_file(fixturePathPrefix + testPattern.fixturePath);
-      let doc = MockDocument.createTestDocumentFromFile(
+      const file = do_get_file(fixturePathPrefix + testPattern.fixturePath);
+      const doc = MockDocument.createTestDocumentFromFile(
         "http://localhost:8080/test/",
         file
       );
 
-      let forms = [];
-
-      for (let field of FormAutofillUtils.autofillFieldSelector(doc)) {
-        let formLike = FormLikeFactory.createFromField(field);
-        if (!forms.some(form => form.rootElement === formLike.rootElement)) {
-          forms.push(formLike);
-        }
-      }
-
-      Assert.equal(
-        forms.length,
-        testPattern.expectedResult.length,
-        "Expected form count."
+      let forms = [...doc.querySelectorAll("input, select")].reduce(
+        (acc, field) => {
+          const formLike = FormLikeFactory.createFromField(field);
+          if (!acc.some(form => form.rootElement === formLike.rootElement)) {
+            acc.push(formLike);
+          }
+          return acc;
+        },
+        []
       );
 
-      forms.forEach((form, formIndex) => {
-        let sections = FormAutofillHeuristics.getFormInfo(form);
-        verifySectionFieldDetails(
-          sections.map(section => section.fieldDetails),
-          testPattern.expectedResult[formIndex]
-        );
+      const sections = forms.flatMap(form => {
+        return FormAutofillHeuristics.getFormInfo(form);
       });
+
+      Assert.equal(
+        sections.length,
+        testPattern.expectedResult.length,
+        "Expected section count."
+      );
+
+      verifySectionFieldDetails(sections, testPattern.expectedResult);
     });
   });
 }

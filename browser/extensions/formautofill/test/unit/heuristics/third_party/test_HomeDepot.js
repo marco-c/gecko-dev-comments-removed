@@ -7,102 +7,66 @@ runHeuristicsTest(
     {
       fixturePath: "Checkout_ShippingPayment.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "given-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "family-name",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
-            { section: "", addressType: "", contactType: "", fieldName: "tel" },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "street-address",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "postal-code",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "given-name" },
+            { fieldName: "family-name" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
+            { fieldName: "street-address" },
+            { fieldName: "postal-code" },
           ],
-          [
+        },
+        {
+          default: {
+            reason: "autocomplete",
+          },
+          fields: [
             
             
             
             
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp-month",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp-year",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            },
-            
-            
-
+            { fieldName: "cc-exp-month" },
+            { fieldName: "cc-exp-year" },
+            { fieldName: "cc-number", reason: "fathom" },
             
           ],
-          [
+        },
+        {
+          default: {
+            reason: "autocomplete",
+            addressType: "billing",
+          },
+          fields: [
             {
-              section: "",
-              addressType: "billing",
-              contactType: "",
               fieldName: "street-address",
             }, 
           ],
-        ],
+        },
       ],
     },
     {
       fixturePath: "SignIn.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
+        },
       ],
     },
   ],

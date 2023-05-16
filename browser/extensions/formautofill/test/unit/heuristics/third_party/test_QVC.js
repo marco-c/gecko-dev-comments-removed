@@ -7,140 +7,103 @@ runHeuristicsTest(
     {
       fixturePath: "YourInformation.html",
       expectedResult: [
-        [
-          [
-            {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"}, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "tel"}, 
+            { fieldName: "email" },
             
             
             
           ],
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-type",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            },
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp",
-            },
+        },
+        {
+          default: {
+            reason: "fathom",
+          },
+          fields: [
+            { fieldName: "cc-type", reason: "regex-heuristic" },
+            { fieldName: "cc-number" },
+            { fieldName: "cc-exp", reason: "regex-heuristic" },
             
           ],
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number", 
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-number" }, 
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
+        },
       ],
     },
     {
       fixturePath: "PaymentMethod.html",
       expectedResult: [
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "tel"
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "tel" }, 
+            { fieldName: "email" },
             
             
             
           ],
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-type",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number",
-            }, 
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-exp",
-            },
+        },
+        {
+          default: {
+            reason: "fathom",
+          },
+          fields: [
+            { fieldName: "cc-type", reason: "regex-heuristic" }, 
+            { fieldName: "cc-number" }, 
+            { fieldName: "cc-exp", reason: "regex-heuristic" },
             
           ],
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "cc-number", 
-            }, 
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-number" }, 
           ],
-        ],
-        [
-          [
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
+        },
       ],
     },
     {
       fixturePath: "SignIn.html",
       expectedResult: [
-        [],
-        [
-          [
-            
-            {
-              section: "",
-              addressType: "",
-              contactType: "",
-              fieldName: "email",
-            },
+        {
+          
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "email" },
           ],
-        ],
-        [],
+        },
       ],
     },
   ],
