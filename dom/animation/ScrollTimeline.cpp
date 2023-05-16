@@ -90,11 +90,11 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeAnonymous(
       scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
       break;
     }
+    case StyleScroller::SelfElement:
+      scroller = Scroller::Self(aTarget.mElement, aTarget.mPseudoType);
+      break;
   }
 
-  
-  
-  
   
   
   
@@ -255,6 +255,7 @@ const nsIScrollableFrame* ScrollTimeline::GetScrollFrame() const {
       return nullptr;
     case Scroller::Type::Nearest:
     case Scroller::Type::Name:
+    case Scroller::Type::Self:
       return nsLayoutUtils::FindScrollableFrameFor(mSource.mElement);
   }
 

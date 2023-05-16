@@ -70,11 +70,11 @@ class ScrollTimeline : public AnimationTimeline {
   struct Scroller {
     
     
-    
     enum class Type : uint8_t {
       Root,
       Nearest,
       Name,
+      Self,
     };
     Type mType = Type::Root;
     RefPtr<Element> mElement;
@@ -98,6 +98,10 @@ class ScrollTimeline : public AnimationTimeline {
 
     static Scroller Named(Element* aElement, PseudoStyleType aPseudoType) {
       return {Type::Name, aElement, aPseudoType};
+    }
+
+    static Scroller Self(Element* aElement, PseudoStyleType aPseudoType) {
+      return {Type::Self, aElement, aPseudoType};
     }
 
     explicit operator bool() const { return mElement; }

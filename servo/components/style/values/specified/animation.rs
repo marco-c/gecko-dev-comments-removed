@@ -206,6 +206,8 @@ pub enum Scroller {
     
     Root,
     
+    #[css(keyword = "self")]
+    SelfElement,
 }
 
 impl Scroller {
