@@ -4326,6 +4326,10 @@ void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
       if (aPersistedRect.IsEmpty()) {
         
         mWebglValid = true;
+        
+        
+        
+        mIsClear = false;
       } else {
         FlushFromSkia();
       }
