@@ -20,16 +20,7 @@ namespace webrtc {
 
 class RecoveredPacketReceiver {
  public:
-  
-  
-  virtual void OnRecoveredPacket(const uint8_t* packet, size_t length) {
-    RTC_DCHECK_NOTREACHED();
-  }
-  
-  
-  virtual void OnRecoveredPacket(const RtpPacketReceived& packet) {
-    OnRecoveredPacket(packet.Buffer().data(), packet.Buffer().size());
-  }
+  virtual void OnRecoveredPacket(const RtpPacketReceived& packet) = 0;
 
  protected:
   virtual ~RecoveredPacketReceiver() = default;

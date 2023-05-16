@@ -29,8 +29,8 @@ namespace webrtc {
 
 namespace {
 using ::testing::_;
-using ::testing::Args;
-using ::testing::ElementsAreArray;
+using ::testing::Eq;
+using ::testing::Property;
 
 using test::fec::AugmentedPacket;
 using Packet = ForwardErrorCorrection::Packet;
@@ -41,7 +41,7 @@ constexpr uint32_t kMediaSsrc = 835424;
 
 class NullRecoveredPacketReceiver : public RecoveredPacketReceiver {
  public:
-  void OnRecoveredPacket(const uint8_t* packet, size_t length) override {}
+  void OnRecoveredPacket(const RtpPacketReceived& packet) override {}
 };
 
 }  
@@ -143,15 +143,14 @@ void UlpfecReceiverTest::VerifyReconstructedMediaPacket(
   
   
   
-  EXPECT_CALL(recovered_packet_receiver_,
-              OnRecoveredPacket(_, packet.data.size()))
-      .With(
-          Args<0, 1>(ElementsAreArray(packet.data.cdata(), packet.data.size())))
+  EXPECT_CALL(
+      recovered_packet_receiver_,
+      OnRecoveredPacket(Property(&RtpPacketReceived::Buffer, Eq(packet.data))))
       .Times(times);
 }
 
 void UlpfecReceiverTest::InjectGarbagePacketLength(size_t fec_garbage_offset) {
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _));
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_));
 
   const size_t kNumFecPackets = 1;
   std::list<AugmentedPacket*> augmented_media_packets;
@@ -389,7 +388,7 @@ TEST_F(UlpfecReceiverTest, PacketNotDroppedTooEarly) {
   EncodeFec(media_packets_batch1, kNumFecPacketsBatch1, &fec_packets);
 
   BuildAndAddRedMediaPacket(augmented_media_packets_batch1.front());
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
   receiver_fec_.ProcessReceivedFec();
   delayed_fec = fec_packets.front();
 
@@ -404,13 +403,13 @@ TEST_F(UlpfecReceiverTest, PacketNotDroppedTooEarly) {
   for (auto it = augmented_media_packets_batch2.begin();
        it != augmented_media_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
-    EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+    EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
     receiver_fec_.ProcessReceivedFec();
   }
 
   
   BuildAndAddRedFecPacket(delayed_fec);
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
   receiver_fec_.ProcessReceivedFec();
 }
 
@@ -428,7 +427,7 @@ TEST_F(UlpfecReceiverTest, PacketDroppedWhenTooOld) {
   EncodeFec(media_packets_batch1, kNumFecPacketsBatch1, &fec_packets);
 
   BuildAndAddRedMediaPacket(augmented_media_packets_batch1.front());
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
   receiver_fec_.ProcessReceivedFec();
   delayed_fec = fec_packets.front();
 
@@ -443,14 +442,14 @@ TEST_F(UlpfecReceiverTest, PacketDroppedWhenTooOld) {
   for (auto it = augmented_media_packets_batch2.begin();
        it != augmented_media_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
-    EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+    EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
     receiver_fec_.ProcessReceivedFec();
   }
 
   
   
   BuildAndAddRedFecPacket(delayed_fec);
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(0);
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(0);
   receiver_fec_.ProcessReceivedFec();
 }
 
@@ -469,7 +468,7 @@ TEST_F(UlpfecReceiverTest, OldFecPacketDropped) {
     for (auto it = fec_packets.begin(); it != fec_packets.end(); ++it) {
       
       BuildAndAddRedFecPacket(*it);
-      EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(0);
+      EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(0);
       receiver_fec_.ProcessReceivedFec();
     }
     
@@ -484,7 +483,7 @@ TEST_F(UlpfecReceiverTest, OldFecPacketDropped) {
   
   
   BuildAndAddRedMediaPacket(augmented_media_packets.front());
-  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, _)).Times(1);
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_)).Times(1);
   receiver_fec_.ProcessReceivedFec();
 }
 
