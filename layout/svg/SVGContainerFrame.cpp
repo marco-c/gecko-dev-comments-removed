@@ -244,10 +244,60 @@ void SVGDisplayContainerFrame::PaintSVG(gfxContext& aContext,
 }
 
 nsIFrame* SVGDisplayContainerFrame::GetFrameForPoint(const gfxPoint& aPoint) {
-  NS_ASSERTION(HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
+  NS_ASSERTION(HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD),
                "Only hit-testing of a clipPath's contents should take this "
                "code path");
-  return SVGUtils::HitTestChildren(this, aPoint);
+  
+  
+  gfxPoint point = aPoint;
+  if (const auto* svg = SVGElement::FromNode(GetContent())) {
+    gfxMatrix m = svg->PrependLocalTransformsTo({}, eChildToUserSpace);
+    if (!m.IsIdentity()) {
+      if (!m.Invert()) {
+        return nullptr;
+      }
+      point = m.TransformPoint(point);
+    }
+  }
+
+  
+  
+  nsIFrame* result = nullptr;
+  for (nsIFrame* current = PrincipalChildList().LastChild(); current;
+       current = current->GetPrevSibling()) {
+    ISVGDisplayableFrame* SVGFrame = do_QueryFrame(current);
+    if (!SVGFrame) {
+      continue;
+    }
+    const nsIContent* content = current->GetContent();
+    if (const auto* svg = SVGElement::FromNode(content)) {
+      if (!svg->HasValidDimensions()) {
+        continue;
+      }
+    }
+    
+    
+    gfxPoint p = point;
+    if (const auto* svg = SVGElement::FromNode(content)) {
+      gfxMatrix m = svg->PrependLocalTransformsTo({}, eUserSpaceToParent);
+      if (!m.IsIdentity()) {
+        if (!m.Invert()) {
+          continue;
+        }
+        p = m.TransformPoint(p);
+      }
+    }
+    result = SVGFrame->GetFrameForPoint(p);
+    if (result) {
+      break;
+    }
+  }
+
+  if (result && !SVGUtils::HitTestClip(this, aPoint)) {
+    result = nullptr;
+  }
+
+  return result;
 }
 
 void SVGDisplayContainerFrame::ReflowSVG() {
