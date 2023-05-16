@@ -21,6 +21,7 @@
 #include "Http2Stream.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
 #include "nsAlgorithm.h"
 #include "nsHttp.h"
@@ -565,8 +566,14 @@ void Http2StreamBase::UpdateTransportSendEvents(uint32_t count) {
   
   
   
+
+  
+  
+  
+  
   uint32_t bufferSize = gHttpHandler->SpdySendBufferSize();
-  if ((mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
+  if (StaticPrefs::network_http_http2_send_buffer_size() > 0 &&
+      (mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
     mSetTCPSocketBuffer = 1;
     mSocketTransport->SetSendBufferSize(bufferSize);
   }
