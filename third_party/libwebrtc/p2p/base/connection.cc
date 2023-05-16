@@ -465,86 +465,95 @@ void Connection::OnReadPacket(const char* data,
              "Resetting state to STATE_WRITE_INIT.";
       set_write_state(STATE_WRITE_INIT);
     }
+    return;
   } else if (!msg) {
     
+    return;
+  }
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (IsStunRequestType(msg->type())) {
+    if (msg->integrity() != StunMessage::IntegrityStatus::kIntegrityOk) {
+      
+      RTC_LOG(LS_VERBOSE) << ToString() << ": Discarding "
+                          << StunMethodToString(msg->type())
+                          << ", id=" << rtc::hex_encode(msg->transaction_id())
+                          << " with invalid message integrity: "
+                          << static_cast<int>(msg->integrity());
+      return;
+    }
+    
+  } else if (IsStunSuccessResponseType(msg->type()) ||
+             IsStunErrorResponseType(msg->type())) {
+    RTC_DCHECK(msg->integrity() == StunMessage::IntegrityStatus::kNotSet);
+    if (msg->ValidateMessageIntegrity(remote_candidate().password()) !=
+        StunMessage::IntegrityStatus::kIntegrityOk) {
+      
+      RTC_LOG(LS_VERBOSE) << ToString() << ": Discarding "
+                          << StunMethodToString(msg->type())
+                          << ", id=" << rtc::hex_encode(msg->transaction_id())
+                          << " with invalid message integrity: "
+                          << static_cast<int>(msg->integrity());
+      return;
+    }
   } else {
+    RTC_DCHECK(IsStunIndicationType(msg->type()));
     
-    
-    
-    
-    
-    rtc::LoggingSeverity sev = (!writable() ? rtc::LS_INFO : rtc::LS_VERBOSE);
-    switch (msg->integrity()) {
-      case StunMessage::IntegrityStatus::kNotSet:
-        
-        
-        msg->ValidateMessageIntegrity(remote_candidate().password());
-        break;
-      case StunMessage::IntegrityStatus::kIntegrityOk:
-        if (remote_candidate().password() != msg->password()) {
-          
-          RTC_DLOG(LS_VERBOSE)
-              << "STUN code error - Different passwords, old = "
-              << absl::CHexEscape(msg->password()) << ", new "
-              << absl::CHexEscape(remote_candidate().password());
-        }
-        break;
-      default:
-        
-        
-        RTC_DCHECK_NOTREACHED();
-        break;
-    }
-    switch (msg->type()) {
-      case STUN_BINDING_REQUEST:
-        RTC_LOG_V(sev) << ToString() << ": Received "
-                       << StunMethodToString(msg->type())
-                       << ", id=" << rtc::hex_encode(msg->transaction_id());
-        if (remote_ufrag == remote_candidate_.username()) {
-          HandleStunBindingOrGoogPingRequest(msg.get());
-        } else {
-          
-          
-          RTC_LOG(LS_ERROR)
-              << ToString()
-              << ": Received STUN request with bad remote username "
-              << remote_ufrag;
-          port_->SendBindingErrorResponse(msg.get(), addr,
-                                          STUN_ERROR_UNAUTHORIZED,
-                                          STUN_ERROR_REASON_UNAUTHORIZED);
-        }
-        break;
+  }
 
-      
-      
-      
-      case STUN_BINDING_RESPONSE:
-      case STUN_BINDING_ERROR_RESPONSE:
-        if (msg->IntegrityOk()) {
-          requests_.CheckResponse(msg.get());
-        }
-        
-        break;
-
-      
-      
-      
-      case STUN_BINDING_INDICATION:
-        ReceivedPing(msg->transaction_id());
-        break;
-      case GOOG_PING_REQUEST:
+  rtc::LoggingSeverity sev = (!writable() ? rtc::LS_INFO : rtc::LS_VERBOSE);
+  switch (msg->type()) {
+    case STUN_BINDING_REQUEST:
+      RTC_LOG_V(sev) << ToString() << ": Received "
+                     << StunMethodToString(msg->type())
+                     << ", id=" << rtc::hex_encode(msg->transaction_id());
+      if (remote_ufrag == remote_candidate_.username()) {
         HandleStunBindingOrGoogPingRequest(msg.get());
-        break;
-      case GOOG_PING_RESPONSE:
-      case GOOG_PING_ERROR_RESPONSE:
-        if (msg->IntegrityOk()) {
-          requests_.CheckResponse(msg.get());
-        }
-        break;
-      default:
-        RTC_DCHECK_NOTREACHED();
-        break;
-    }
+      } else {
+        
+        
+        RTC_LOG(LS_ERROR) << ToString()
+                          << ": Received STUN request with bad remote username "
+                          << remote_ufrag;
+        port_->SendBindingErrorResponse(msg.get(), addr,
+                                        STUN_ERROR_UNAUTHORIZED,
+                                        STUN_ERROR_REASON_UNAUTHORIZED);
+      }
+      break;
+
+      
+      
+      
+    case STUN_BINDING_RESPONSE:
+    case STUN_BINDING_ERROR_RESPONSE:
+      requests_.CheckResponse(msg.get());
+      break;
+
+      
+      
+      
+    case STUN_BINDING_INDICATION:
+      ReceivedPing(msg->transaction_id());
+      break;
+    case GOOG_PING_REQUEST:
+      
+      HandleStunBindingOrGoogPingRequest(msg.get());
+      break;
+    case GOOG_PING_RESPONSE:
+    case GOOG_PING_ERROR_RESPONSE:
+      requests_.CheckResponse(msg.get());
+      break;
+    default:
+      RTC_DCHECK_NOTREACHED();
+      break;
   }
 }
 
