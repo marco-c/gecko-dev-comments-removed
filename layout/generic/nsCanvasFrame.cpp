@@ -798,12 +798,17 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
       
       
       
+      
+      
+      
+      
+      
       if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE &&
           !kidFrame->IsPlaceholderFrame()) {
         LogicalSize finalSize = aReflowInput.ComputedSize();
-        finalSize.BSize(wm) =
+        finalSize.BSize(wm) = nsPresContext::RoundUpAppUnitsToCSSPixel(
             kidFrame->GetLogicalSize(wm).BSize(wm) +
-            kidReflowInput.ComputedLogicalMargin(wm).BStartEnd(wm);
+            kidReflowInput.ComputedLogicalMargin(wm).BStartEnd(wm));
         aDesiredSize.SetSize(wm, finalSize);
         aDesiredSize.SetOverflowAreasToDesiredBounds();
       }

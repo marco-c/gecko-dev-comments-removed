@@ -417,9 +417,8 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
       
       reflowInput.SetAvailableBSize(maxSize.BSize(wm));
       
-      NS_ASSERTION(
-          reflowInput.ComputedPhysicalBorderPadding() == nsMargin(0, 0, 0, 0),
-          "Viewports can't have border/padding");
+      NS_ASSERTION(reflowInput.ComputedPhysicalBorderPadding() == nsMargin(),
+                   "Viewports can't have border/padding");
       reflowInput.SetComputedBSize(maxSize.BSize(wm));
     }
 
