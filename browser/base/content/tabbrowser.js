@@ -4377,29 +4377,6 @@
 
 
 
-    handleNewTabMiddleClick(node, event) {
-      
-      
-      
-      if (node.getAttribute("disabled") == "true") {
-        return;
-      } 
-
-      if (event.button == 1) {
-        BrowserOpenTab({ event });
-        
-        
-        
-        event.stopPropagation();
-      }
-    },
-
-    
-
-
-
-
-
 
 
     _findTabToBlurTo(aTab, aExcludeTabs = []) {
