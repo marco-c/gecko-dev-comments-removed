@@ -66,8 +66,7 @@ struct FrameStats {
   uint32_t target_encode_bitrate = 0;
   
   
-  
-  SamplesStatsCounter qp_values;
+  std::map<int, SamplesStatsCounter> spatial_layers_qp;
 
   absl::optional<int> decoded_frame_width = absl::nullopt;
   absl::optional<int> decoded_frame_height = absl::nullopt;

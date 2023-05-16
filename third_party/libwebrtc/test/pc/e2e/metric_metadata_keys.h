@@ -37,6 +37,8 @@ class MetricMetadataKey {
   
   static constexpr char kExperimentalTestNameMetadataKey[] =
       "experimental_test_name";
+  
+  static constexpr char kSpatialLayerMetadataKey[] = "spatial_layer";
 
  private:
   MetricMetadataKey() = default;
