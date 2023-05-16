@@ -947,16 +947,18 @@ async function isVideoMuted(browser, videoID) {
 
 
 
+
 async function prepareVideosAndWebVTTTracks(
   browser,
   videoID,
-  defaultTrackIndex = 0
+  defaultTrackIndex = 0,
+  trackMode = "showing"
 ) {
   info("Preparing video and initial text tracks");
   await ensureVideosReady(browser);
   await SpecialPowers.spawn(
     browser,
-    [{ videoID, defaultTrackIndex }],
+    [{ videoID, defaultTrackIndex, trackMode }],
     async args => {
       let video = content.document.getElementById(args.videoID);
       let tracks = video.textTracks;
@@ -967,8 +969,8 @@ async function prepareVideosAndWebVTTTracks(
       if (args.defaultTrackIndex >= 0) {
         info(`Loading track ${args.defaultTrackIndex + 1}`);
         let track = tracks[args.defaultTrackIndex];
-        tracks.mode = "showing";
-        track.mode = "showing";
+        tracks.mode = args.trackMode;
+        track.mode = args.trackMode;
       }
 
       
