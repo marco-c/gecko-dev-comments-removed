@@ -1009,6 +1009,7 @@ extern JS_PUBLIC_API bool WasIncrementalGC(JSRuntime* rt);
 
 
 
+
 class JS_PUBLIC_API AutoDisableGenerationalGC {
   JSContext* cx;
 
