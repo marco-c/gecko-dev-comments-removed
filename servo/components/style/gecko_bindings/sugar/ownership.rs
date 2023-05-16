@@ -12,17 +12,57 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 
-
-
-
-
-
-pub unsafe trait HasArcFFI: Sized + 'static {
+pub unsafe trait HasFFI: Sized + 'static {
     
     
     
     type FFIType: Sized;
+}
 
+
+
+pub unsafe trait HasSimpleFFI: HasFFI {
+    #[inline]
+    
+    
+    
+    
+    fn as_ffi(&self) -> &Self::FFIType {
+        unsafe { transmute(self) }
+    }
+    #[inline]
+    
+    
+    
+    
+    fn as_ffi_mut(&mut self) -> &mut Self::FFIType {
+        unsafe { transmute(self) }
+    }
+    #[inline]
+    
+    
+    
+    
+    fn from_ffi(ffi: &Self::FFIType) -> &Self {
+        unsafe { transmute(ffi) }
+    }
+    #[inline]
+    
+    
+    
+    
+    fn from_ffi_mut(ffi: &mut Self::FFIType) -> &mut Self {
+        unsafe { transmute(ffi) }
+    }
+}
+
+
+
+
+
+
+
+pub unsafe trait HasArcFFI: HasFFI {
     
     
     
@@ -160,21 +200,26 @@ impl<GeckoType> Strong<GeckoType> {
 
 
 
-pub unsafe trait FFIArcHelpers<T: HasArcFFI> {
+pub unsafe trait FFIArcHelpers {
+    
+    type Inner: HasArcFFI;
+
     
     
     
-    fn into_strong(self) -> Strong<T::FFIType>;
+    fn into_strong(self) -> Strong<<Self::Inner as HasFFI>::FFIType>;
 
     
     
     
     
     
-    fn as_borrowed(&self) -> &T::FFIType;
+    fn as_borrowed(&self) -> &<Self::Inner as HasFFI>::FFIType;
 }
 
-unsafe impl<T: HasArcFFI> FFIArcHelpers<T> for RawOffsetArc<T> {
+unsafe impl<T: HasArcFFI> FFIArcHelpers for RawOffsetArc<T> {
+    type Inner = T;
+
     #[inline]
     fn into_strong(self) -> Strong<T::FFIType> {
         unsafe { transmute(self) }
@@ -186,7 +231,9 @@ unsafe impl<T: HasArcFFI> FFIArcHelpers<T> for RawOffsetArc<T> {
     }
 }
 
-unsafe impl<T: HasArcFFI> FFIArcHelpers<T> for Arc<T> {
+unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
+    type Inner = T;
+
     #[inline]
     fn into_strong(self) -> Strong<T::FFIType> {
         Arc::into_raw_offset(self).into_strong()
