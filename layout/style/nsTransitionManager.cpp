@@ -139,8 +139,6 @@ bool nsTransitionManager::DoUpdateTransitions(
   
   
   
-  
-  
   if (aElementTransitions) {
     bool checkProperties =
         aStyle.GetTransitionProperty(0) != eCSSPropertyExtra_all_properties;
@@ -162,33 +160,20 @@ bool nsTransitionManager::DoUpdateTransitions(
     do {
       --i;
       CSSTransition* anim = animations[i];
-      
-      if ((checkProperties &&
-           !allTransitionProperties.HasProperty(anim->TransitionProperty())) ||
+      const nsCSSPropertyID property = anim->TransitionProperty();
+      if (
+          
+          (checkProperties && !allTransitionProperties.HasProperty(property)) ||
           
           
           
           
-          
-          !ExtractNonDiscreteComputedValue(anim->TransitionProperty(),
-                                           aNewStyle, currentValue) ||
+          !ExtractNonDiscreteComputedValue(property, aNewStyle, currentValue) ||
           currentValue != anim->ToValue()) {
         
-        if (anim->HasCurrentEffect()) {
-          EffectSet* effectSet = EffectSet::Get(aElement, aPseudoType);
-          if (effectSet) {
-            effectSet->UpdateAnimationGeneration(mPresContext);
-          }
-        }
-        anim->CancelFromStyle(PostRestyleMode::IfNeeded);
-        animations.RemoveElementAt(i);
+        DoCancelTransition(aElement, aPseudoType, aElementTransitions, i);
       }
     } while (i != 0);
-
-    if (animations.IsEmpty()) {
-      aElementTransitions->Destroy();
-      aElementTransitions = nullptr;
-    }
   }
 
   return startedAny;
@@ -363,22 +348,8 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
       
       
       
-      OwningCSSTransitionPtrArray& animations =
-          aElementTransitions->mAnimations;
-      animations[currentIndex]->CancelFromStyle(PostRestyleMode::IfNeeded);
-      oldTransition = nullptr;  
-      animations.RemoveElementAt(currentIndex);
-      EffectSet* effectSet = EffectSet::Get(aElement, aPseudoType);
-      if (effectSet) {
-        effectSet->UpdateAnimationGeneration(mPresContext);
-      }
-
-      if (animations.IsEmpty()) {
-        aElementTransitions->Destroy();
-        
-        aElementTransitions = nullptr;
-      }
-      
+      DoCancelTransition(aElement, aPseudoType, aElementTransitions,
+                         currentIndex);
     }
     return false;
   }
@@ -508,3 +479,26 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
 
   return true;
 }
+
+void nsTransitionManager::DoCancelTransition(
+    dom::Element* aElement, PseudoStyleType aPseudoType,
+    CSSTransitionCollection*& aElementTransitions, size_t aIndex) {
+  MOZ_ASSERT(aElementTransitions);
+  OwningCSSTransitionPtrArray& transitions = aElementTransitions->mAnimations;
+  CSSTransition* transition = transitions[aIndex];
+
+  if (transition->HasCurrentEffect()) {
+    if (auto* effectSet = EffectSet::Get(aElement, aPseudoType)) {
+      effectSet->UpdateAnimationGeneration(mPresContext);
+    }
+  }
+  transition->CancelFromStyle(PostRestyleMode::IfNeeded);
+  transitions.RemoveElementAt(aIndex);
+
+  if (transitions.IsEmpty()) {
+    aElementTransitions->Destroy();
+    
+    aElementTransitions = nullptr;
+  }
+}
+
