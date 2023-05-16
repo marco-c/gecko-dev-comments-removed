@@ -135,7 +135,7 @@ namespace test {
 
 
 
-    constexpr impl::TextMetric text_metric(13);
+    constexpr impl::TimespanMetric timespan_metric(13);
 
     
 
@@ -144,16 +144,7 @@ namespace test {
 
 
 
-    constexpr impl::TimespanMetric timespan_metric(14);
-
-    
-
-
-    
-
-
-
-    constexpr impl::TimingDistributionMetric timing_distribution_metric(15);
+    constexpr impl::TimingDistributionMetric timing_distribution_metric(14);
 
 }
 namespace test_nested {
@@ -164,7 +155,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::DatetimeMetric datetime_metric(16);
+    constexpr impl::DatetimeMetric datetime_metric(15);
 
     
 
@@ -173,7 +164,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::EventMetric<NoExtraKeys> event_metric(17);
+    constexpr impl::EventMetric<NoExtraKeys> event_metric(16);
 
     
 
@@ -200,7 +191,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(18);
+    constexpr impl::EventMetric<EventMetricWithExtraExtra> event_metric_with_extra(17);
 
     
 
@@ -209,7 +200,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::DenominatorMetric external_denominator(19);
+    constexpr impl::DenominatorMetric external_denominator(18);
 
     
 
@@ -218,7 +209,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::QuantityMetric quantity_metric(20);
+    constexpr impl::QuantityMetric quantity_metric(19);
 
     
 
@@ -227,7 +218,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::RateMetric rate_metric(21);
+    constexpr impl::RateMetric rate_metric(20);
 
     
 
@@ -236,7 +227,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::NumeratorMetric rate_with_external_denominator(22);
+    constexpr impl::NumeratorMetric rate_with_external_denominator(21);
 
     
 
@@ -245,7 +236,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::UuidMetric uuid_metric(23);
+    constexpr impl::UuidMetric uuid_metric(22);
 
 }
 
