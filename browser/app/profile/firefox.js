@@ -1893,6 +1893,7 @@ pref("dom.storage_access.enabled", true);
 
 #ifdef NIGHTLY_BUILD
 pref("privacy.query_stripping.enabled", true);
+pref("privacy.query_stripping.strip_on_share.enabled", true);
 #endif
 
 pref("browser.contentblocking.cryptomining.preferences.ui.enabled", true);
