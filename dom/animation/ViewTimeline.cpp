@@ -28,10 +28,22 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
   auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
 
   
-  return RefPtr<ViewTimeline>(
-             new ViewTimeline(aDocument, scroller, aStyleTimeline.GetAxis(),
-                              aSubject, aPseudoType, aStyleTimeline.GetInset()))
-      .forget();
+  return MakeAndAddRef<ViewTimeline>(aDocument, scroller,
+                                     aStyleTimeline.GetAxis(), aSubject,
+                                     aPseudoType, aStyleTimeline.GetInset());
+}
+
+
+already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
+    Document* aDocument, const NonOwningAnimationTarget& aTarget,
+    StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
+  
+  auto [element, pseudo] =
+      FindNearestScroller(aTarget.mElement, aTarget.mPseudoType);
+  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
+                                     aTarget.mElement, aTarget.mPseudoType,
+                                     aInset);
 }
 
 void ViewTimeline::ReplacePropertiesWith(Element* aSubjectElement,
