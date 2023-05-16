@@ -41,24 +41,27 @@
 
 
 
-add_task(function test_addLogin_wildcard() {
+add_task(async function test_addLogin_wildcard() {
   let loginInfo = TestData.formLogin({
     origin: "http://any.example.com",
     formActionOrigin: "",
   });
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
 
   
   loginInfo = TestData.formLogin({ origin: "http://any.example.com" });
-  Assert.throws(() => Services.logins.addLogin(loginInfo), /already exists/);
+  await Assert.rejects(
+    Services.logins.addLoginAsync(loginInfo),
+    /already exists/
+  );
 
   
   loginInfo = TestData.authLogin({ origin: "http://any.example.com" });
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
 
   
   loginInfo = TestData.formLogin({ origin: "http://other.example.com" });
-  Services.logins.addLogin(loginInfo);
+  await Services.logins.addLoginAsync(loginInfo);
 });
 
 

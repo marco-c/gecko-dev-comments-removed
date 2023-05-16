@@ -28,9 +28,7 @@ function resetPrimaryPassword() {
 
 add_task(async function test_logins_decrypt_failure() {
   let logins = TestData.loginList();
-  for (let loginInfo of logins) {
-    Services.logins.addLogin(loginInfo);
-  }
+  await Services.logins.addLogins(logins);
 
   
   resetPrimaryPassword();
@@ -57,9 +55,7 @@ add_task(async function test_logins_decrypt_failure() {
   Assert.equal(Services.logins.countLogins("", "", ""), logins.length);
 
   
-  for (let loginInfo of logins) {
-    Services.logins.addLogin(loginInfo);
-  }
+  await Services.logins.addLogins(logins);
   LoginTestUtils.checkLogins(logins);
   Assert.equal(
     (await Services.logins.getAllLoginsAsync()).length,
@@ -92,7 +88,7 @@ add_task(async function test_logins_decrypt_failure() {
 
 
 
-add_task(function test_add_logins_with_decrypt_failure() {
+add_task(async function test_add_logins_with_decrypt_failure() {
   
   let login = new LoginInfo(
     "http://www.example2.com",
@@ -120,7 +116,7 @@ add_task(function test_add_logins_with_decrypt_failure() {
   loginDupeGuid.QueryInterface(Ci.nsILoginMetaInfo);
   loginDupeGuid.guid = login.guid;
 
-  Services.logins.addLogin(login);
+  await Services.logins.addLoginAsync(login);
 
   
   let searchProp = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
@@ -131,13 +127,13 @@ add_task(function test_add_logins_with_decrypt_failure() {
   equal(Services.logins.searchLogins(searchProp).length, 1);
 
   
-  Assert.throws(
-    () => Services.logins.addLogin(login),
+  await Assert.rejects(
+    Services.logins.addLoginAsync(login),
     /This login already exists./
   );
   
-  Assert.throws(
-    () => Services.logins.addLogin(loginDupeGuid),
+  await Assert.rejects(
+    Services.logins.addLoginAsync(loginDupeGuid),
     /specified GUID already exists/
   );
 
@@ -148,7 +144,7 @@ add_task(function test_add_logins_with_decrypt_failure() {
   equal(Services.logins.searchLogins(searchProp).length, 0);
 
   
-  Services.logins.addLogin(login);
+  await Services.logins.addLoginAsync(login);
   equal(Services.logins.searchLogins(searchProp).length, 1);
 
   Services.logins.removeAllUserFacingLogins();
