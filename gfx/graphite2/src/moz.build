@@ -33,3 +33,7 @@ for k, v in graphite_defines:
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'gkmedias'
+
+
+
+DEFINES['GRAPHITE2_CUSTOM_HEADER'] = '"MozGrMalloc.h"'
