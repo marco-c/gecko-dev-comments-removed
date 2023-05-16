@@ -383,6 +383,7 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
     case RtcEvent::Type::GenericPacketSent:
     case RtcEvent::Type::GenericAckReceived:
     case RtcEvent::Type::FrameDecoded:
+    case RtcEvent::Type::NetEqSetMinimumDelay:
       
       return "";
   }
