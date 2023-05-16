@@ -1175,7 +1175,14 @@ let BrowserUsageTelemetry = {
 
   
   async reportProfileCount() {
-    if (AppConstants.platform != "win") {
+    if (
+      AppConstants.platform != "win" ||
+      !AppConstants.MOZ_TELEMETRY_REPORTING
+    ) {
+      
+      
+      
+      
       
       return;
     }
