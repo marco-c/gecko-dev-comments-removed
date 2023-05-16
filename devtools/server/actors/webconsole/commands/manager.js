@@ -4,6 +4,13 @@
 
 "use strict";
 
+loader.lazyRequireGetter(
+  this,
+  ["isCommand"],
+  "resource://devtools/server/actors/webconsole/commands/parser.js",
+  true
+);
+
 
 
 
@@ -99,6 +106,21 @@ const WebConsoleCommandsManager = {
 
 
 
+  _isCommandNameAlreadyInScope(name, frame, dbgGlobal) {
+    
+    if (frame && frame.environment) {
+      return !!frame.environment.find(name);
+    }
+    return !!dbgGlobal.getOwnPropertyDescriptor(name);
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -120,6 +142,7 @@ const WebConsoleCommandsManager = {
   getWebConsoleCommands(
     consoleActor,
     debuggerGlobal,
+    frame,
     evalInput,
     selectedNodeActorID
   ) {
@@ -163,7 +186,24 @@ const WebConsoleCommandsManager = {
     
     
     const commands = isWorker ? [] : this.getAllCommands();
+
+    
+    const isCmd = isCommand(evalInput);
+
+    const colonOnlyCommandNames = this.getColonOnlyCommandNames();
     for (const [name, command] of commands) {
+      
+      
+      
+      
+      if (
+        !isCmd &&
+        (this._isCommandNameAlreadyInScope(name, frame, debuggerGlobal) ||
+          colonOnlyCommandNames.includes(name))
+      ) {
+        continue;
+      }
+
       const descriptor = {
         
         

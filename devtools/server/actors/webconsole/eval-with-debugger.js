@@ -127,19 +127,23 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const helpers = WebConsoleCommandsManager.getWebConsoleCommands(
     webConsole,
     dbgGlobal,
+    frame,
     string,
     options.selectedNodeActor
   );
-  let bindings = bindCommands(
-    isCommand(string),
-    dbgGlobal,
-    bindSelf,
-    frame,
-    helpers.bindings
-  );
+  let { bindings } = helpers;
 
+  
+  
+  
+  if (bindSelf) {
+    bindings._self = bindSelf;
+  }
+
+  
+  
   if (options.bindings) {
-    bindings = { ...(bindings || {}), ...options.bindings };
+    bindings = { ...bindings, ...options.bindings };
   }
 
   const evalOptions = {};
@@ -668,42 +672,4 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   const bindSelf = dbgGlobal.makeDebuggeeValue(jsVal);
   return { bindSelf, dbgGlobal, evalGlobal };
-}
-
-
-function bindCommands(isCmd, dbgGlobal, bindSelf, frame, bindings) {
-  if (bindSelf) {
-    bindings._self = bindSelf;
-  }
-  
-  
-  
-  const availableCommands = WebConsoleCommandsManager.getAllCommandNames();
-
-  let helpersToDisable = [];
-
-  
-  
-  if (!isCmd) {
-    if (frame) {
-      const env = frame.environment;
-      if (env) {
-        helpersToDisable = availableCommands.filter(name => !!env.find(name));
-      }
-    } else {
-      helpersToDisable = availableCommands.filter(
-        name => !!dbgGlobal.getOwnPropertyDescriptor(name)
-      );
-    }
-    
-    
-    helpersToDisable.push(
-      ...WebConsoleCommandsManager.getColonOnlyCommandNames()
-    );
-  }
-
-  for (const helper of helpersToDisable) {
-    delete bindings[helper];
-  }
-  return bindings;
 }
