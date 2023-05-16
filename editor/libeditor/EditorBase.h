@@ -766,8 +766,11 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT nsresult PasteTransferableAsAction(
-      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr);
+      nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr);
 
   
 

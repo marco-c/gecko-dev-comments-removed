@@ -1652,6 +1652,12 @@ nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
   }
 
   {
+    RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+    if (NS_WARN_IF(!focusManager)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
+
     Result<ClipboardEventResult, nsresult> ret =
         DispatchClipboardEventAndUpdateClipboard(
             eCut, nsIClipboard::kGlobalClipboard);
@@ -1670,6 +1676,24 @@ nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
         return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
       case ClipboardEventResult::DefaultPreventedOfPaste:
         MOZ_ASSERT_UNREACHABLE("Invalid result for eCut");
+    }
+
+    
+    
+    const RefPtr<Element> newFocusedElement = focusManager->GetFocusedElement();
+    if (MOZ_UNLIKELY(focusedElement != newFocusedElement)) {
+      if (focusManager->GetFocusedWindow() != GetWindow()) {
+        return NS_OK;
+      }
+      RefPtr<EditorBase> editorBase =
+          nsContentUtils::GetActiveEditor(GetPresContext());
+      if (!editorBase || (editorBase->IsHTMLEditor() &&
+                          !editorBase->AsHTMLEditor()->IsActiveInDOMWindow())) {
+        return NS_OK;
+      }
+      if (editorBase != this) {
+        return NS_OK;
+      }
     }
   }
 
@@ -1789,6 +1813,12 @@ nsresult EditorBase::PasteAsAction(int32_t aClipboardType,
   }
 
   if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
+    RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+    if (NS_WARN_IF(!focusManager)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
+
     Result<ClipboardEventResult, nsresult> ret =
         DispatchClipboardEventAndUpdateClipboard(ePaste, aClipboardType);
     if (MOZ_UNLIKELY(ret.isErr())) {
@@ -1805,6 +1835,31 @@ nsresult EditorBase::PasteAsAction(int32_t aClipboardType,
         return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
       case ClipboardEventResult::CopyOrCutHandled:
         MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
+    }
+
+    
+    
+    const RefPtr<Element> newFocusedElement = focusManager->GetFocusedElement();
+    if (MOZ_UNLIKELY(focusedElement != newFocusedElement)) {
+      
+      
+      if (focusManager->GetFocusedWindow() != GetWindow()) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      RefPtr<EditorBase> editorBase =
+          nsContentUtils::GetActiveEditor(GetPresContext());
+      if (!editorBase || (editorBase->IsHTMLEditor() &&
+                          !editorBase->AsHTMLEditor()->IsActiveInDOMWindow())) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      if (editorBase != this) {
+        nsresult rv = editorBase->PasteAsAction(
+            aClipboardType, DispatchPasteEvent::No, aPrincipal);
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "EditorBase::PasteAsAction(DispatchPasteEvent::No) failed");
+        return EditorBase::ToGenericNSResult(rv);
+      }
     }
   } else {
     
@@ -1833,6 +1888,12 @@ nsresult EditorBase::PasteAsQuotationAsAction(
   }
 
   if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
+    RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+    if (NS_WARN_IF(!focusManager)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
+
     Result<ClipboardEventResult, nsresult> ret =
         DispatchClipboardEventAndUpdateClipboard(ePaste, aClipboardType);
     if (MOZ_UNLIKELY(ret.isErr())) {
@@ -1850,6 +1911,31 @@ nsresult EditorBase::PasteAsQuotationAsAction(
       case ClipboardEventResult::CopyOrCutHandled:
         MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
     }
+
+    
+    
+    const RefPtr<Element> newFocusedElement = focusManager->GetFocusedElement();
+    if (MOZ_UNLIKELY(focusedElement != newFocusedElement)) {
+      
+      
+      if (focusManager->GetFocusedWindow() != GetWindow()) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      RefPtr<EditorBase> editorBase =
+          nsContentUtils::GetActiveEditor(GetPresContext());
+      if (!editorBase || (editorBase->IsHTMLEditor() &&
+                          !editorBase->AsHTMLEditor()->IsActiveInDOMWindow())) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      if (editorBase != this) {
+        nsresult rv = editorBase->PasteAsQuotationAsAction(
+            aClipboardType, DispatchPasteEvent::No, aPrincipal);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "EditorBase::PasteAsQuotationAsAction("
+                             "DispatchPasteEvent::No) failed");
+        return EditorBase::ToGenericNSResult(rv);
+      }
+    }
   } else {
     
     editActionData.NotifyOfDispatchingClipboardEvent();
@@ -1862,7 +1948,8 @@ nsresult EditorBase::PasteAsQuotationAsAction(
 }
 
 nsresult EditorBase::PasteTransferableAsAction(
-    nsITransferable* aTransferable, nsIPrincipal* aPrincipal ) {
+    nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
+    nsIPrincipal* aPrincipal ) {
   
   
   if (IsHTMLEditor() && IsReadonly()) {
@@ -1875,7 +1962,13 @@ nsresult EditorBase::PasteTransferableAsAction(
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  {
+  if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
+    RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+    if (NS_WARN_IF(!focusManager)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
+
     
     
     
@@ -1897,6 +1990,34 @@ nsresult EditorBase::PasteTransferableAsAction(
       case ClipboardEventResult::CopyOrCutHandled:
         MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
     }
+
+    
+    
+    const RefPtr<Element> newFocusedElement = focusManager->GetFocusedElement();
+    if (MOZ_UNLIKELY(focusedElement != newFocusedElement)) {
+      
+      
+      if (focusManager->GetFocusedWindow() != GetWindow()) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      RefPtr<EditorBase> editorBase =
+          nsContentUtils::GetActiveEditor(GetPresContext());
+      if (!editorBase || (editorBase->IsHTMLEditor() &&
+                          !editorBase->AsHTMLEditor()->IsActiveInDOMWindow())) {
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      }
+      if (editorBase != this) {
+        nsresult rv = editorBase->PasteTransferableAsAction(
+            aTransferable, DispatchPasteEvent::No, aPrincipal);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "EditorBase::PasteTransferableAsAction("
+                             "DispatchPasteEvent::No) failed");
+        return EditorBase::ToGenericNSResult(rv);
+      }
+    }
+  } else {
+    
+    editActionData.NotifyOfDispatchingClipboardEvent();
   }
 
   if (NS_WARN_IF(!aTransferable)) {
@@ -1983,9 +2104,11 @@ EditorBase::SafeToInsertData EditorBase::IsSafeToInsertData(
 }
 
 NS_IMETHODIMP EditorBase::PasteTransferable(nsITransferable* aTransferable) {
-  nsresult rv = PasteTransferableAsAction(aTransferable);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::PasteTransferableAsAction() failed");
+  nsresult rv =
+      PasteTransferableAsAction(aTransferable, DispatchPasteEvent::Yes);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::PasteTransferableAsAction(DispatchPasteEvent::Yes) failed");
   return rv;
 }
 

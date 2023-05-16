@@ -240,8 +240,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT nsresult PasteNoFormattingAsAction(
-      int32_t aSelectionType, nsIPrincipal* aPrincipal = nullptr);
+      int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr);
 
   bool CanPasteTransferable(nsITransferable* aTransferable) final;
 
