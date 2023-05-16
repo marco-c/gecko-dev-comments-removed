@@ -217,17 +217,6 @@ class nsBaseChannel
   void SetStreamListener(nsIStreamListener* listener) { mListener = listener; }
   nsIStreamListener* StreamListener() { return mListener; }
 
-  
-  
-  
-  
-  
-  
-  
-  nsresult PushStreamConverter(const char* fromType, const char* toType,
-                               bool invalidatesContentLength = true,
-                               nsIStreamListener** result = nullptr);
-
  protected:
   void DisallowThreadRetargeting() { mAllowThreadRetargeting = false; }
 
