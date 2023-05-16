@@ -21,7 +21,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
@@ -117,8 +116,9 @@ void StreamStatisticianImpl::UpdateCounters(const RtpPacketReceived& packet) {
   receive_counters_.transmitted.AddPacket(packet);
   --cumulative_loss_;
 
-  int64_t sequence_number =
-      seq_unwrapper_.UnwrapWithoutUpdate(packet.SequenceNumber());
+  
+  
+  int64_t sequence_number = seq_unwrapper_.PeekUnwrap(packet.SequenceNumber());
 
   if (!ReceivedRtpPacket()) {
     received_seq_first_ = sequence_number;
@@ -131,7 +131,8 @@ void StreamStatisticianImpl::UpdateCounters(const RtpPacketReceived& packet) {
   
   cumulative_loss_ += sequence_number - received_seq_max_;
   received_seq_max_ = sequence_number;
-  seq_unwrapper_.UpdateLast(sequence_number);
+  
+  seq_unwrapper_.Unwrap(packet.SequenceNumber());
 
   
   
