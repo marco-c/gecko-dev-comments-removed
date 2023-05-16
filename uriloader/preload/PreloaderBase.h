@@ -72,7 +72,8 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   
   
   enum class LoadBackground { Keep, Drop };
-  void NotifyUsage(LoadBackground aLoadBackground = LoadBackground::Drop);
+  void NotifyUsage(dom::Document* aDocument,
+                   LoadBackground aLoadBackground = LoadBackground::Drop);
   
   bool IsUsed() const { return mIsUsed; }
 
@@ -121,6 +122,8 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   };
 
   const nsTArray<RedirectRecord>& Redirects() { return mRedirectRecords; }
+
+  void SetForEarlyHints() { mIsEarlyHintsPreload = true; }
 
  protected:
   virtual ~PreloaderBase();
@@ -182,6 +185,9 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
 
   
   bool mUsageTelementryReported = false;
+
+  
+  bool mIsEarlyHintsPreload = false;
 
   
   

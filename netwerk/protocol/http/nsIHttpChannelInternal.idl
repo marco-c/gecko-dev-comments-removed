@@ -506,4 +506,10 @@ interface nsIHttpChannelInternal : nsISupports
 
     [must_use] void setWebTransportSessionEventListener(
         in WebTransportSessionEventListener aListener);
+
+    
+
+
+
+    [must_use] attribute unsigned long earlyHintLinkType;
 };

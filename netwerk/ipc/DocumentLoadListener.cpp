@@ -1457,10 +1457,12 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
 void DocumentLoadListener::SerializeRedirectData(
     RedirectToRealChannelArgs& aArgs, bool aIsCrossProcess,
     uint32_t aRedirectFlags, uint32_t aLoadFlags, ContentParent* aParent,
-    nsTArray<EarlyHintConnectArgs>&& aEarlyHints) const {
+    nsTArray<EarlyHintConnectArgs>&& aEarlyHints,
+    uint32_t aEarlyHintLinkType) const {
   aArgs.uri() = GetChannelCreationURI();
   aArgs.loadIdentifier() = mLoadIdentifier;
   aArgs.earlyHints() = std::move(aEarlyHints);
+  aArgs.earlyHintLinkType() = aEarlyHintLinkType;
 
   
   
@@ -2096,7 +2098,8 @@ DocumentLoadListener::RedirectToRealChannel(
 
     RedirectToRealChannelArgs args;
     SerializeRedirectData(args,  true, aRedirectFlags,
-                          aLoadFlags, cp, std::move(ehArgs));
+                          aLoadFlags, cp, std::move(ehArgs),
+                          mEarlyHintsService.LinkType());
     if (mTiming) {
       mTiming->Anonymize(args.uri());
       args.timing() = std::move(mTiming);
@@ -2142,10 +2145,11 @@ DocumentLoadListener::RedirectToRealChannel(
   nsTArray<EarlyHintConnectArgs> ehArgs;
   mEarlyHintsService.RegisterLinksAndGetConnectArgs(ehArgs);
 
-  mOpenPromise->Resolve(OpenPromiseSucceededType(
-                            {std::move(aStreamFilterEndpoints), aRedirectFlags,
-                             aLoadFlags, std::move(ehArgs), promise}),
-                        __func__);
+  mOpenPromise->Resolve(
+      OpenPromiseSucceededType({std::move(aStreamFilterEndpoints),
+                                aRedirectFlags, aLoadFlags, std::move(ehArgs),
+                                mEarlyHintsService.LinkType(), promise}),
+      __func__);
 
   
   

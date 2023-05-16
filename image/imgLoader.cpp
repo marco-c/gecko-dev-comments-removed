@@ -2418,7 +2418,7 @@ nsresult imgLoader::LoadImage(
       
       
       proxy->RemoveSelf(aLoadingDocument);
-      proxy->NotifyUsage();
+      proxy->NotifyUsage(aLoadingDocument);
 
       imgRequest* request = proxy->GetOwner();
       nsresult rv =

@@ -1370,7 +1370,7 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
 
   
   
-  request->GetScriptLoadContext()->NotifyUsage();
+  request->GetScriptLoadContext()->NotifyUsage(mDocument);
   
   
   
