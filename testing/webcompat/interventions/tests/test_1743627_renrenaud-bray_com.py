@@ -1,11 +1,8 @@
 import pytest
 
-
-
-
-URL = "https://www.coldwellbankerhomes.com/ri/little-compton/kvc-17_1,17_2/"
-ERROR_MSG = 'can\'t access property "dataset", v[0] is undefined'
-SUCCESS_CSS = "img.psr-lazy:not([src*='spacer'])"
+URL = "https://www.renaud-bray.com/accueil.aspx"
+ERROR_MSG = "ua.split(...)[1] is undefined"
+MENU_CSS = "#pageHeader_menuStores"
 
 
 @pytest.mark.only_platforms("android")
@@ -13,7 +10,12 @@ SUCCESS_CSS = "img.psr-lazy:not([src*='spacer'])"
 @pytest.mark.with_interventions
 async def test_enabled(client):
     await client.navigate(URL)
-    assert client.await_css(SUCCESS_CSS)
+    assert client.execute_script(
+        """
+        return arguments[0].style.zIndex == "7000";
+    """,
+        client.await_css(MENU_CSS),
+    )
 
 
 @pytest.mark.only_platforms("android")
