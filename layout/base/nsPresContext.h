@@ -1046,7 +1046,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   bool IsRootContentDocumentCrossProcess() const;
 
   bool HadNonBlankPaint() const { return mHadNonBlankPaint; }
-  bool HadContentfulPaint() const { return mHadContentfulPaint; }
+  bool HadFirstContentfulPaint() const { return mHadFirstContentfulPaint; }
   void NotifyNonBlankPaint();
   void NotifyContentfulPaint();
   void NotifyPaintStatusReset();
@@ -1358,7 +1358,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   unsigned mHadNonBlankPaint : 1;
   
-  unsigned mHadContentfulPaint : 1;
+  unsigned mHadFirstContentfulPaint : 1;
   
   
   
