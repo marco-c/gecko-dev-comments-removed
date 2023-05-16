@@ -140,9 +140,15 @@ impl DeepCloneWithLock for ImportSheet {
 
 
 #[derive(Debug, Clone)]
-pub struct ImportLayer {
+pub enum ImportLayer {
     
-    pub name: Option<LayerName>,
+    None,
+
+    
+    Anonymous,
+
+    
+    Named(LayerName),
 }
 
 
@@ -160,9 +166,10 @@ impl ToCss for ImportLayer {
     where
         W: Write,
     {
-        match self.name {
-            None => dest.write_str("layer"),
-            Some(ref name) => {
+        match *self {
+            ImportLayer::None => Ok(()),
+            ImportLayer::Anonymous => dest.write_str("layer"),
+            ImportLayer::Named(ref name) => {
                 dest.write_str("layer(")?;
                 name.to_css(dest)?;
                 dest.write_char(')')
@@ -188,7 +195,7 @@ pub struct ImportRule {
     pub supports: Option<ImportSupportsCondition>,
 
     
-    pub layer: Option<ImportLayer>,
+    pub layer: ImportLayer,
 
     
     pub source_location: SourceLocation,
@@ -207,21 +214,21 @@ impl ImportRule {
         input: &mut Parser<'i, 't>,
         context: &ParserContext,
         namespaces: &Namespaces,
-    ) -> (Option<ImportLayer>, Option<ImportSupportsCondition>) {
+    ) -> (ImportLayer, Option<ImportSupportsCondition>) {
         let layer = if input
             .try_parse(|input| input.expect_ident_matching("layer"))
             .is_ok()
         {
-            Some(ImportLayer { name: None })
+            ImportLayer::Anonymous
         } else {
             input
                 .try_parse(|input| {
                     input.expect_function_matching("layer")?;
                     input
                         .parse_nested_block(|input| LayerName::parse(context, input))
-                        .map(|name| ImportLayer { name: Some(name) })
+                        .map(|name| ImportLayer::Named(name))
                 })
-                .ok()
+                .ok().unwrap_or(ImportLayer::None)
         };
 
         let supports = if !static_prefs::pref!("layout.css.import-supports.enabled") {
@@ -272,9 +279,9 @@ impl ToCssWithGuard for ImportRule {
         dest.write_str("@import ")?;
         self.url.to_css(&mut CssWriter::new(dest))?;
 
-        if let Some(ref layer) = self.layer {
+        if !matches!(self.layer, ImportLayer::None) {
             dest.write_char(' ')?;
-            layer.to_css(&mut CssWriter::new(dest))?;
+            self.layer.to_css(&mut CssWriter::new(dest))?;
         }
 
         if let Some(ref supports) = self.supports {
