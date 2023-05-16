@@ -237,7 +237,7 @@ testMultiOk();
 testMultiOkCrossRealm();
 testMultiOkWithDeserialize();
 testMultiOkWithDeserializeCrossRealm();
-
-
+testMultiWithDeserializeReadTransferError();
+testMultiWithDeserializeReadTransferErrorCrossRealm();
 testMultiWithDeserializeReadError();
 testMultiWithDeserializeReadErrorCrossRealm();
