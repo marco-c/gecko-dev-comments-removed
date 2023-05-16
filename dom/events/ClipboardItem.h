@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/ClipboardBinding.h"
+#include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/MozPromise.h"
 
 #include "nsWrapperCache.h"
@@ -24,41 +25,72 @@ class Promise;
 
 class ClipboardItem final : public nsWrapperCache {
  public:
-  class ItemEntry final {
+  class ItemEntry final : public PromiseNativeHandler {
    public:
-    NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ItemEntry)
-    NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ItemEntry)
+    using GetDataPromise =
+        MozPromise<OwningStringOrBlob, nsresult,  true>;
 
-    explicit ItemEntry(const nsAString& aType) : mType(aType) {}
-    ItemEntry(const nsAString& aType, OwningStringOrBlob&& aData)
-        : ItemEntry(aType) {
-      mData = std::move(aData);
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_CYCLE_COLLECTION_CLASS(ItemEntry)
+
+    explicit ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType)
+        : mGlobal(aGlobal), mType(aType) {
+      MOZ_ASSERT(mGlobal);
     }
-    ItemEntry(const nsAString& aType, const OwningStringOrBlob& aData)
-        : ItemEntry(aType) {
-      mData = aData;
+    ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType,
+              const nsAString& aData)
+        : ItemEntry(aGlobal, aType) {
+      mLoadResult.emplace(NS_OK);
+      mData.SetAsString() = aData;
     }
+
+    
+    void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                          ErrorResult& aRv) override;
+    void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                          ErrorResult& aRv) override;
 
     const nsString& Type() const { return mType; }
-    const OwningStringOrBlob& Data() const { return mData; }
+    RefPtr<GetDataPromise> GetData();
 
-    void SetData(already_AddRefed<Blob>&& aBlob);
-    void LoadData(nsIGlobalObject& aGlobal, nsITransferable& aTransferable);
+    
+    void LoadDataFromSystemClipboard(nsITransferable& aTransferable);
+    void LoadDataFromDataPromise(Promise& aDataPromise);
+
     
     
     
     
-    void ReactPromise(nsIGlobalObject& aGlobal, Promise& aPromise);
+    void ReactGetTypePromise(Promise& aPromise);
 
    private:
-    ~ItemEntry() { mLoadingPromise.DisconnectIfExists(); }
+    ~ItemEntry() {
+      mLoadingPromise.DisconnectIfExists();
+      if (!mPendingGetDataRequests.IsEmpty()) {
+        RejectPendingPromises(NS_ERROR_FAILURE);
+      }
+    };
 
-    void ResolvePendingGetTypePromises(Blob& aBlob);
-    void RejectPendingGetTypePromises(nsresult rv);
+    void MaybeResolveGetTypePromise(const OwningStringOrBlob& aData,
+                                    Promise& aPromise);
+    void MaybeResolvePendingPromises(OwningStringOrBlob&& aData);
+    void RejectPendingPromises(nsresult rv);
 
+    nsCOMPtr<nsIGlobalObject> mGlobal;
+
+    
     nsString mType;
+
+    
     OwningStringOrBlob mData;
+    Maybe<nsresult> mLoadResult;
+
+    
+    bool mIsLoadingData = false;
     MozPromiseRequestHolder<GenericPromise> mLoadingPromise;
+
+    
+    nsTArray<MozPromiseHolder<GetDataPromise>> mPendingGetDataRequests;
     nsTArray<RefPtr<Promise>> mPendingGetTypeRequests;
   };
 
@@ -70,7 +102,7 @@ class ClipboardItem final : public nsWrapperCache {
 
   static already_AddRefed<ClipboardItem> Constructor(
       const GlobalObject& aGlobal,
-      const Record<nsString, OwningStringOrBlob>& aItems,
+      const Record<nsString, OwningNonNull<Promise>>& aItems,
       const ClipboardItemOptions& aOptions, ErrorResult& aRv);
 
   dom::PresentationStyle PresentationStyle() const {
