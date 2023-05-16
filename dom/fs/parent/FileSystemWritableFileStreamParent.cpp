@@ -70,7 +70,8 @@ void FileSystemWritableFileStreamParent::Close() {
 
   mClosed.Flip();
 
-  mManager->DataManagerStrongRef()->UnlockShared(mEntryId);
+  
+  mManager->DataManagerStrongRef()->UnlockExclusive(mEntryId);
 }
 
 }  
