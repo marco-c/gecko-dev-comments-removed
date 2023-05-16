@@ -130,8 +130,8 @@ class nsHTMLScrollFrame : public nsContainerFrame,
       mozilla::WritingMode aWM,
       BaselineSharingGroup aBaselineGroup) const override;
   Maybe<nscoord> GetNaturalBaselineBOffset(
-      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
-      BaselineExportContext aExportContext) const override;
+      mozilla::WritingMode aWM,
+      BaselineSharingGroup aBaselineGroup) const override;
 
   
   
