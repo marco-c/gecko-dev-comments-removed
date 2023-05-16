@@ -5512,11 +5512,12 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   
   
   if (aMouseEvent->IsControl()) {
-    DebugOnly<nsresult> rv =
-        aEditorBase->PasteAsQuotationAsAction(clipboardType, false);
+    DebugOnly<nsresult> rv = aEditorBase->PasteAsQuotationAsAction(
+        clipboardType, EditorBase::DispatchPasteEvent::No);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to paste as quotation");
   } else {
-    DebugOnly<nsresult> rv = aEditorBase->PasteAsAction(clipboardType, false);
+    DebugOnly<nsresult> rv = aEditorBase->PasteAsAction(
+        clipboardType, EditorBase::DispatchPasteEvent::No);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to paste");
   }
   *aStatus = nsEventStatus_eConsumeNoDefault;
