@@ -3896,8 +3896,17 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
       CheckArg("backgroundtask", &backgroundTaskName, CheckArgFlag::None)) {
     backgroundTask = Some(backgroundTaskName);
 
+    CheckArgFlag checkArgFlag =
+#  ifdef XP_WIN
+        CheckArgFlag::None;  
+                             
+#  else
+        CheckArgFlag::RemoveArg;  
+                                  
+#  endif
+
     if (BackgroundTasks::IsNoOutputTaskName(backgroundTask.ref()) &&
-        !CheckArgExists("attach-console") &&
+        !CheckArg("attach-console", nullptr, checkArgFlag) &&
         !EnvHasValue("MOZ_BACKGROUNDTASKS_IGNORE_NO_OUTPUT")) {
       
       
