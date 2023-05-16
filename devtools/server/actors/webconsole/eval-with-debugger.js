@@ -707,9 +707,7 @@ function bindCommands(isCmd, dbgGlobal, bindSelf, frame, helpers) {
   
   
   
-  const availableHelpers = [
-    ...WebConsoleCommandsManager._originalCommands.keys(),
-  ];
+  const availableHelpers = WebConsoleCommandsManager.getAllCommandNames();
 
   let helpersToDisable = [];
   const helperCache = {};

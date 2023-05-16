@@ -13,19 +13,6 @@
 
 const WebConsoleCommandsManager = {
   _registeredCommands: new Map(),
-  _originalCommands: new Map(),
-
-  
-
-
-
-
-
-
-  _registerOriginal(name, command) {
-    this.register(name, command);
-    this._originalCommands.set(name, this.getCommand(name));
-  },
 
   
 
@@ -63,36 +50,8 @@ const WebConsoleCommandsManager = {
 
 
 
-
-
-
-  unregister(name) {
-    this._registeredCommands.delete(name);
-    if (this._originalCommands.has(name)) {
-      this.register(name, this._originalCommands.get(name));
-    }
-  },
-
-  
-
-
-
-
-
-
-  getCommand(name) {
-    return this._registeredCommands.get(name);
-  },
-
-  
-
-
-
-
-
-
-  hasCommand(name) {
-    return this._registeredCommands.has(name);
+  getAllCommandNames() {
+    return [...this._registeredCommands.keys()];
   },
 };
 
@@ -129,7 +88,7 @@ exports.validCommands = validCommands;
 
 
 
-WebConsoleCommandsManager._registerOriginal("$", function(owner, selector) {
+WebConsoleCommandsManager.register("$", function(owner, selector) {
   try {
     return owner.window.document.querySelector(selector);
   } catch (err) {
@@ -146,7 +105,7 @@ WebConsoleCommandsManager._registerOriginal("$", function(owner, selector) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("$$", function(owner, selector) {
+WebConsoleCommandsManager.register("$$", function(owner, selector) {
   let nodes;
   try {
     nodes = owner.window.document.querySelectorAll(selector);
@@ -170,7 +129,7 @@ WebConsoleCommandsManager._registerOriginal("$$", function(owner, selector) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("$_", {
+WebConsoleCommandsManager.register("$_", {
   get(owner) {
     return owner.consoleActor.getLastConsoleInputEvaluation();
   },
@@ -187,7 +146,7 @@ WebConsoleCommandsManager._registerOriginal("$_", {
 
 
 
-WebConsoleCommandsManager._registerOriginal("$x", function(
+WebConsoleCommandsManager.register("$x", function(
   owner,
   xPath,
   context,
@@ -260,7 +219,7 @@ WebConsoleCommandsManager._registerOriginal("$x", function(
 
 
 
-WebConsoleCommandsManager._registerOriginal("$0", {
+WebConsoleCommandsManager.register("$0", {
   get(owner) {
     return owner.makeDebuggeeValue(owner.selectedNode);
   },
@@ -269,7 +228,7 @@ WebConsoleCommandsManager._registerOriginal("$0", {
 
 
 
-WebConsoleCommandsManager._registerOriginal("clear", function(owner) {
+WebConsoleCommandsManager.register("clear", function(owner) {
   owner.helperResult = {
     type: "clearOutput",
   };
@@ -278,7 +237,7 @@ WebConsoleCommandsManager._registerOriginal("clear", function(owner) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("clearHistory", function(owner) {
+WebConsoleCommandsManager.register("clearHistory", function(owner) {
   owner.helperResult = {
     type: "clearHistory",
   };
@@ -291,7 +250,7 @@ WebConsoleCommandsManager._registerOriginal("clearHistory", function(owner) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("keys", function(owner, object) {
+WebConsoleCommandsManager.register("keys", function(owner, object) {
   
   return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
 });
@@ -303,7 +262,7 @@ WebConsoleCommandsManager._registerOriginal("keys", function(owner, object) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("values", function(owner, object) {
+WebConsoleCommandsManager.register("values", function(owner, object) {
   const values = [];
   
   const waived = Cu.waiveXrays(object);
@@ -319,7 +278,7 @@ WebConsoleCommandsManager._registerOriginal("values", function(owner, object) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("help", function(owner) {
+WebConsoleCommandsManager.register("help", function(owner) {
   owner.helperResult = { type: "help" };
 });
 
@@ -329,7 +288,7 @@ WebConsoleCommandsManager._registerOriginal("help", function(owner) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("inspect", function(
+WebConsoleCommandsManager.register("inspect", function(
   owner,
   object,
   forceExpandInConsole = false
@@ -354,7 +313,7 @@ WebConsoleCommandsManager._registerOriginal("inspect", function(
 
 
 
-WebConsoleCommandsManager._registerOriginal("copy", function(owner, value) {
+WebConsoleCommandsManager.register("copy", function(owner, value) {
   let payload;
   try {
     if (Element.isInstance(value)) {
@@ -385,10 +344,7 @@ WebConsoleCommandsManager._registerOriginal("copy", function(owner, value) {
 
 
 
-WebConsoleCommandsManager._registerOriginal("screenshot", function(
-  owner,
-  args = {}
-) {
+WebConsoleCommandsManager.register("screenshot", function(owner, args = {}) {
   owner.helperResult = (async () => {
     
     
@@ -406,10 +362,7 @@ WebConsoleCommandsManager._registerOriginal("screenshot", function(
 
 
 
-WebConsoleCommandsManager._registerOriginal("history", function(
-  owner,
-  args = {}
-) {
+WebConsoleCommandsManager.register("history", function(owner, args = {}) {
   owner.helperResult = (async () => {
     
     
@@ -428,10 +381,7 @@ WebConsoleCommandsManager._registerOriginal("history", function(
 
 
 
-WebConsoleCommandsManager._registerOriginal("block", function(
-  owner,
-  args = {}
-) {
+WebConsoleCommandsManager.register("block", function(owner, args = {}) {
   if (!args.url) {
     owner.helperResult = {
       type: "error",
@@ -454,10 +404,7 @@ WebConsoleCommandsManager._registerOriginal("block", function(
 
 
 
-WebConsoleCommandsManager._registerOriginal("unblock", function(
-  owner,
-  args = {}
-) {
+WebConsoleCommandsManager.register("unblock", function(owner, args = {}) {
   if (!args.url) {
     owner.helperResult = {
       type: "error",
