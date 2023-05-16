@@ -786,7 +786,8 @@ nsresult ScriptLoader::StartLoadInternal(
       aRequest->mURI, aRequest->CORSMode(), aRequest->mKind);
   aRequest->GetScriptLoadContext()->NotifyOpen(
       key, channel, mDocument,
-      aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
+      aRequest->GetScriptLoadContext()->IsLinkPreloadScript(),
+      aRequest->IsModuleRequest());
 
   if (aEarlyHintPreloaderId) {
     nsCOMPtr<nsIHttpChannelInternal> channelInternal =
@@ -1327,10 +1328,13 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
   if (i == nsTArray<PreloadInfo>::NoIndex) {
     return nullptr;
   }
+  RefPtr<ScriptLoadRequest> request = mPreloads[i].mRequest;
+  if (aScriptKind != request->mKind) {
+    return nullptr;
+  }
 
   
   
-  RefPtr<ScriptLoadRequest> request = mPreloads[i].mRequest;
   request->GetScriptLoadContext()->SetIsLoadRequest(aElement);
 
   if (request->GetScriptLoadContext()->mWasCompiledOMT &&
@@ -1346,9 +1350,11 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
   nsAutoString elementCharset;
   aElement->GetScriptCharset(elementCharset);
 
-  if (!elementCharset.Equals(preloadCharset) ||
-      aElement->GetCORSMode() != request->CORSMode() ||
-      aScriptKind != request->mKind) {
+  
+  
+  if (!request->IsModuleRequest() &&
+      (!elementCharset.Equals(preloadCharset) ||
+       aElement->GetCORSMode() != request->CORSMode())) {
     
     request->Cancel();
     AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::RequestMismatch);
