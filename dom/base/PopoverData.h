@@ -72,6 +72,9 @@ class PopoverData {
   void SetToggleEventTask(PopoverToggleEventTask* aTask) { mTask = aTask; }
   void ClearToggleEventTask() { mTask = nullptr; }
 
+  bool IsHiding() const { return mIsHiding; }
+  void SetIsHiding(bool aIsHiding) { mIsHiding = aIsHiding; }
+
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
   PopoverState mState = PopoverState::None;
@@ -83,6 +86,7 @@ class PopoverData {
   
   
   bool mHasPopoverInvoker = false;
+  bool mIsHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
 };
 }  

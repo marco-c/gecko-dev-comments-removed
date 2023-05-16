@@ -15034,9 +15034,15 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     return;
   }
 
+  bool wasHiding = popoverHTMLEl->GetPopoverData()->IsHiding();
+  popoverHTMLEl->GetPopoverData()->SetIsHiding(true);
+  auto restoreIsHiding = MakeScopeExit([&]() {
+    if (auto* popoverData = popoverHTMLEl->GetPopoverData()) {
+      popoverData->SetIsHiding(wasHiding);
+    }
+  });
+
   if (popoverHTMLEl->IsAutoPopover()) {
-    
-    
     HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, aFireEvents);
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
                                              nullptr, aRv)) {
@@ -15061,7 +15067,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   aPopover.SetHasPopoverInvoker(false);
 
   
-  if (aFireEvents) {
+  if (aFireEvents && !wasHiding) {
     
     
     popoverHTMLEl->FireToggleEvent(PopoverVisibilityState::Showing,
