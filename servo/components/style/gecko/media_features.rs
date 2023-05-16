@@ -698,7 +698,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 68] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -1014,7 +1014,6 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 68] = [
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
     lnf_int_feature!(atom!("-moz-panel-animations"), PanelAnimations),
-    bool_pref_feature!(atom!("-moz-gtk-non-native-menus"), "widget.gtk.non-native-menu-styling"),
     
     bool_pref_feature!(
         atom!("-moz-mathml-core-maction-and-semantics"),

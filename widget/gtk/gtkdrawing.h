@@ -232,25 +232,13 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_TREEVIEW_EXPANDER,
   
-  MOZ_GTK_MENUBAR,
-  
   MOZ_GTK_MENUPOPUP,
   
   MOZ_GTK_MENUARROW,
   
   MOZ_GTK_TOOLBARBUTTON_ARROW,
   
-  MOZ_GTK_MENUBARITEM,
-  
   MOZ_GTK_MENUITEM,
-  
-
-  MOZ_GTK_CHECKMENUITEM,
-  
-  MOZ_GTK_CHECKMENUITEM_INDICATOR,
-  MOZ_GTK_RADIOMENUITEM,
-  MOZ_GTK_RADIOMENUITEM_INDICATOR,
-  MOZ_GTK_MENUSEPARATOR,
   
   MOZ_GTK_SPLITTER_HORIZONTAL,
   
@@ -312,8 +300,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_WINDOW_DECORATION,
   MOZ_GTK_WINDOW_DECORATION_SOLID,
-
-  MOZ_GTK_MENUPOPUP_DECORATION,
 
   MOZ_GTK_WIDGET_NODE_COUNT
 };
@@ -425,16 +411,6 @@ gint moz_gtk_radio_get_metrics(gint* indicator_size, gint* indicator_spacing);
 
 
 
-gint moz_gtk_menuitem_get_horizontal_padding(gint* horizontal_padding);
-
-gint moz_gtk_checkmenuitem_get_horizontal_padding(gint* horizontal_padding);
-
-
-
-
-
-
-
 
 
 
@@ -523,14 +499,6 @@ gint moz_gtk_get_expander_size(gint* size);
 
 
 gint moz_gtk_get_treeview_expander_size(gint* size);
-
-
-
-
-
-
-
-gint moz_gtk_get_menu_separator_height(gint* size);
 
 
 
