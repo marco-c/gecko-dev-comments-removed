@@ -59,8 +59,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void AddHighlightSelectionsToFrameSelection(
-      ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void AddHighlightSelectionsToFrameSelection();
 
   
 
@@ -71,7 +70,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
   MOZ_CAN_RUN_SCRIPT void MaybeAddRangeToHighlightSelection(
-      AbstractRange& aRange, Highlight& aHighlight, ErrorResult& aRv);
+      AbstractRange& aRange, Highlight& aHighlight);
 
   
 

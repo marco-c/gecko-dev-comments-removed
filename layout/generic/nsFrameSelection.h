@@ -437,8 +437,7 @@ class nsFrameSelection final {
 
 
   MOZ_CAN_RUN_SCRIPT void AddHighlightSelection(
-      const nsAtom* aHighlightName, const mozilla::dom::Highlight& aHighlight,
-      mozilla::ErrorResult& aRv);
+      const nsAtom* aHighlightName, const mozilla::dom::Highlight& aHighlight);
   
 
 
@@ -453,7 +452,7 @@ class nsFrameSelection final {
 
   MOZ_CAN_RUN_SCRIPT void AddHighlightSelectionRange(
       const nsAtom* aHighlightName, const mozilla::dom::Highlight& aHighlight,
-      mozilla::dom::AbstractRange& aRange, mozilla::ErrorResult& aRv);
+      mozilla::dom::AbstractRange& aRange);
 
   
 
