@@ -355,8 +355,8 @@ bool nsINode::IsSelected(const uint32_t aStartOffset,
                  "Why is this range registered with a node?");
       
       if (range->IsInAnySelection()) {
-        for (const auto* selectionWrapper : range->GetSelections()) {
-          ancestorSelections.Insert(selectionWrapper->Get());
+        for (const WeakPtr<Selection>& selection : range->GetSelections()) {
+          ancestorSelections.Insert(selection);
         }
       }
     }
