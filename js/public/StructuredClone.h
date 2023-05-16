@@ -254,10 +254,14 @@ class CloneDataPolicy {
 
 
 
+
+
+
 typedef JSObject* (*ReadStructuredCloneOp)(
     JSContext* cx, JSStructuredCloneReader* r,
     const JS::CloneDataPolicy& cloneDataPolicy, uint32_t tag, uint32_t data,
     void* closure);
+
 
 
 
@@ -296,6 +300,10 @@ typedef bool (*WriteStructuredCloneOp)(JSContext* cx,
 
 typedef void (*StructuredCloneErrorOp)(JSContext* cx, uint32_t errorid,
                                        void* closure, const char* errorMessage);
+
+
+
+
 
 
 
