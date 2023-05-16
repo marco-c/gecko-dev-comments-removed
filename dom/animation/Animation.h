@@ -96,8 +96,18 @@ class Animation : public DOMEventTargetHelper,
   virtual void SetEffect(AnimationEffect* aEffect);
   void SetEffectNoUpdate(AnimationEffect* aEffect);
 
-  AnimationTimeline* GetTimeline() const { return mTimeline; }
   
+  
+  
+  already_AddRefed<AnimationTimeline> GetTimelineFromJS() const {
+    return mTimeline && mTimeline->IsScrollTimeline() ? nullptr
+                                                      : do_AddRef(mTimeline);
+  }
+  void SetTimelineFromJS(AnimationTimeline* aTimeline) {
+    SetTimeline(aTimeline);
+  }
+
+  AnimationTimeline* GetTimeline() const { return mTimeline; }
   void SetTimeline(AnimationTimeline* aTimeline);
   void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
 
