@@ -1012,6 +1012,40 @@ class SaveOriginAccessTimeOp : public NormalOriginOperationBase {
   virtual void SendResults() override;
 };
 
+
+
+
+
+
+
+
+class ClearPrivateRepositoryOp : public NormalOriginOperationBase {
+  MozPromiseHolder<BoolPromise> mPromiseHolder;
+
+ public:
+  ClearPrivateRepositoryOp()
+      : NormalOriginOperationBase(
+            "dom::quota::ClearPrivateRepositoryOp",
+            Nullable<PersistenceType>(PERSISTENCE_TYPE_PRIVATE),
+            OriginScope::FromNull(), Nullable<Client::Type>(),
+             true) {
+    AssertIsOnOwningThread();
+  }
+
+  RefPtr<BoolPromise> OnResults() {
+    AssertIsOnOwningThread();
+
+    return mPromiseHolder.Ensure(__func__);
+  }
+
+ private:
+  ~ClearPrivateRepositoryOp() = default;
+
+  nsresult DoDirectoryWork(QuotaManager& aQuotaManager) override;
+
+  void SendResults() override;
+};
+
 class ShutdownStorageOp : public NormalOriginOperationBase {
   MozPromiseHolder<BoolPromise> mPromiseHolder;
 
@@ -2912,6 +2946,10 @@ QuotaManager::GetOrCreate() {
   QM_TRY(MOZ_TO_RESULT(instance->Init()));
 
   gInstance = instance;
+
+  
+  
+  gInstance->ClearPrivateRepository();
 
   return WrapMovingNotNullUnchecked(std::move(instance));
 }
@@ -6124,6 +6162,16 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
       "dom::quota::FirstInitializationAttempt::TemporaryStorage"_ns, innerFunc);
 }
 
+RefPtr<BoolPromise> QuotaManager::ClearPrivateRepository() {
+  auto clearPrivateRepositoryOp = MakeRefPtr<ClearPrivateRepositoryOp>();
+
+  RegisterNormalOriginOp(*clearPrivateRepositoryOp);
+
+  clearPrivateRepositoryOp->RunImmediately();
+
+  return clearPrivateRepositoryOp->OnResults();
+}
+
 RefPtr<BoolPromise> QuotaManager::ShutdownStorage() {
   if (!mShuttingDownStorage) {
     mShuttingDownStorage = true;
@@ -7553,6 +7601,44 @@ void SaveOriginAccessTimeOp::SendResults() {
 #ifdef DEBUG
   NoteActorDestroyed();
 #endif
+}
+
+nsresult ClearPrivateRepositoryOp::DoDirectoryWork(
+    QuotaManager& aQuotaManager) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(!mPersistenceType.IsNull());
+  MOZ_ASSERT(mPersistenceType.Value() == PERSISTENCE_TYPE_PRIVATE);
+
+  AUTO_PROFILER_LABEL("ClearPrivateRepositoryOp::DoDirectoryWork", OTHER);
+
+  QM_TRY_INSPECT(
+      const auto& directory,
+      QM_NewLocalFile(aQuotaManager.GetStoragePath(mPersistenceType.Value())));
+
+  nsresult rv = directory->Remove(true);
+  if (rv != NS_ERROR_FILE_NOT_FOUND && NS_FAILED(rv)) {
+    
+    
+    MOZ_ASSERT(false, "Failed to remove directory!");
+  }
+
+  aQuotaManager.RemoveQuotaForRepository(mPersistenceType.Value());
+
+  aQuotaManager.RepositoryClearCompleted(mPersistenceType.Value());
+
+  return NS_OK;
+}
+
+void ClearPrivateRepositoryOp::SendResults() {
+#ifdef DEBUG
+  NoteActorDestroyed();
+#endif
+
+  if (NS_SUCCEEDED(mResultCode)) {
+    mPromiseHolder.ResolveIfExists(true, __func__);
+  } else {
+    mPromiseHolder.RejectIfExists(mResultCode, __func__);
+  }
 }
 
 #ifdef DEBUG
