@@ -513,7 +513,7 @@ function createAttachmentMock(client) {
 
 async function createTranslationModelsRemoteClient(langPairs) {
   const records = [];
-  for (const { fromLang, toLang } of langPairs) {
+  for (const { fromLang, toLang, isBeta } of langPairs) {
     const lang = fromLang + toLang;
     const models = [
       { fileType: "model", name: `model.${lang}.intgemm.alphas.bin` },
@@ -529,7 +529,7 @@ async function createTranslationModelsRemoteClient(langPairs) {
         fromLang,
         toLang,
         fileType,
-        version: "1.0",
+        version: isBeta ? "0.1" : "1.0",
         last_modified: Date.now(),
         schema: Date.now(),
       });
