@@ -52,6 +52,10 @@ inline bool MaybeGetUniqueId(Cell* cell, uint64_t* uidp) {
   return true;
 }
 
+extern bool CreateUniqueIdForNativeObject(NativeObject* obj, uint64_t* uidp);
+extern bool CreateUniqueIdForNonNativeObject(Cell* cell, UniqueIdMap::AddPtr,
+                                             uint64_t* uidp);
+
 inline bool GetOrCreateUniqueId(Cell* cell, uint64_t* uidp) {
   MOZ_ASSERT(uidp);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cell->runtimeFromAnyThread()) ||
@@ -66,38 +70,18 @@ inline bool GetOrCreateUniqueId(Cell* cell, uint64_t* uidp) {
         return true;
       }
 
-      JSRuntime* runtime = cell->runtimeFromMainThread();
-      *uidp = NextCellUniqueId(runtime);
-      JSContext* cx = runtime->mainContextFromOwnThread();
-      return nobj->setUniqueId(cx, *uidp);
+      return CreateUniqueIdForNativeObject(nobj, uidp);
     }
   }
 
   
-  UniqueIdMap& uniqueIds = cell->zone()->uniqueIds();
-  auto p = uniqueIds.lookupForAdd(cell);
+  auto p = cell->zone()->uniqueIds().lookupForAdd(cell);
   if (p) {
     *uidp = p->value();
     return true;
   }
 
-  
-  JSRuntime* runtime = cell->runtimeFromMainThread();
-  *uidp = NextCellUniqueId(runtime);
-  if (!uniqueIds.add(p, cell, *uidp)) {
-    return false;
-  }
-
-  
-  
-  
-  if (IsInsideNursery(cell) &&
-      !runtime->gc.nursery().addedUniqueIdToCell(cell)) {
-    uniqueIds.remove(cell);
-    return false;
-  }
-
-  return true;
+  return CreateUniqueIdForNonNativeObject(cell, p, uidp);
 }
 
 inline bool SetOrUpdateUniqueId(JSContext* cx, Cell* cell, uint64_t uid) {
