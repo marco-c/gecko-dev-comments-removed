@@ -46,7 +46,6 @@ JSObject* FileAsTypedArray(JSContext* cx, JS::HandleString pathnameStr);
 
 
 
-
 JS::UniqueChars GetCWD(JSContext* cx);
 
 
@@ -70,10 +69,8 @@ FILE* OpenFile(JSContext* cx, const char* filename, const char* mode);
 
 
 
-
 bool ReadFile(JSContext* cx, const char* filename, FILE* file, char* buffer,
               size_t length);
-
 
 
 

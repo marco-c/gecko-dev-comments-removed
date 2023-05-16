@@ -14,6 +14,7 @@
 #  include "js/Vector.h"
 #endif  
 
+#include "js/CharacterEncoding.h"     
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 
@@ -103,6 +104,22 @@ static bool NormalizeWASIPath(const char* filename,
 }
 #endif
 
+static FILE* OpenFile(JSContext* cx, const char* filename) {
+#ifdef XP_WIN
+  JS::UniqueWideChars wideFilename = JS::EncodeUtf8ToWide(cx, filename);
+  if (!wideFilename) {
+    return nullptr;
+  }
+  return _wfopen(wideFilename.get(), L"r");
+#else
+  JS::UniqueChars narrowFilename = JS::EncodeUtf8ToNarrow(cx, filename);
+  if (!narrowFilename) {
+    return nullptr;
+  }
+  return fopen(narrowFilename.get(), "r");
+#endif
+}
+
 
 
 
@@ -116,17 +133,13 @@ bool js::AutoFile::open(JSContext* cx, const char* filename) {
     if (!NormalizeWASIPath(filename, &normalized, cx)) {
       return false;
     }
-    fp_ = fopen(normalized.begin(), "r");
+    fp_ = OpenFile(cx, normalized.begin());
 #else
-    fp_ = fopen(filename, "r");
+    fp_ = OpenFile(cx, filename);
 #endif
     if (!fp_) {
-      
-
-
-
-      JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr, JSMSG_CANT_OPEN,
-                                 filename, "No such file or directory");
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_CANT_OPEN,
+                               filename, "No such file or directory");
       return false;
     }
   }

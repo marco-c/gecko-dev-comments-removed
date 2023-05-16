@@ -2606,7 +2606,8 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
   
 
   if (metadata().filenameIsURL) {
-    return NewStringCopyZ<CanGC>(cx, metadata().filename.get());
+    const char* filename = metadata().filename.get();
+    return NewStringCopyUTF8N(cx, JS::UTF8Chars(filename, strlen(filename)));
   }
 
   
