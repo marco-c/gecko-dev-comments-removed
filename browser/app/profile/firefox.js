@@ -598,6 +598,13 @@ pref("browser.urlbar.bestMatch.blockingEnabled", true);
 
 pref("browser.urlbar.contextualSearch.enabled", false);
 
+
+pref("browser.urlbar.addons.featureGate", false);
+
+
+
+pref("browser.urlbar.addons.minKeywordLength", 0);
+
 pref("browser.altClickSave", false);
 
 
