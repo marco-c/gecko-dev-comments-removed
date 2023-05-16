@@ -324,11 +324,22 @@ class StyleRuleActor extends Actor {
 
         
         
-        
-        if (this._parentSheet.ownerRule.media?.mediaText) {
+        if (
+          this._parentSheet.ownerRule.media?.mediaText ||
+          this._parentSheet.ownerRule.supportsText
+        ) {
+          const parts = [];
+          if (this._parentSheet.ownerRule.supportsText) {
+            parts.push(`supports(${this._parentSheet.ownerRule.supportsText})`);
+          }
+
+          if (this._parentSheet.ownerRule.media?.mediaText) {
+            parts.push(this._parentSheet.ownerRule.media.mediaText);
+          }
+
           form.ancestorData.unshift({
             type: "import",
-            value: this._parentSheet.ownerRule.media.mediaText,
+            value: parts.join(" "),
           });
         }
       }
