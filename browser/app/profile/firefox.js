@@ -412,6 +412,10 @@ pref("browser.urlbar.weather.featureGate", false);
 
 
 
+pref("browser.urlbar.weather.ignoreVPN", false);
+
+
+
 
 pref("browser.urlbar.weather.minKeywordLength", 0);
 

@@ -1107,6 +1107,16 @@ add_task(async function vpn() {
   Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should be null");
 
   
+  UrlbarPrefs.set("weather.ignoreVPN", true);
+  await QuickSuggest.weather._test_fetch();
+  Assert.ok(QuickSuggest.weather.suggestion, "Suggestion should be fetched");
+
+  
+  UrlbarPrefs.clear("weather.ignoreVPN");
+  await QuickSuggest.weather._test_fetch();
+  Assert.ok(!QuickSuggest.weather.suggestion, "Suggestion should be null");
+
+  
   
   let fetchPromise = QuickSuggest.weather.waitForFetches();
   QuickSuggest.weather.observe(null, "network:link-status-changed", "changed");
