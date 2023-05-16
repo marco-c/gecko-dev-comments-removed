@@ -9,7 +9,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsWindow.h"
-#include "SurfaceViewWrapperSupport.h"
 
 namespace mozilla {
 namespace widget {
@@ -82,13 +81,6 @@ bool AndroidCompositorWidget::OnResumeComposition() {
   if (!mSurface) {
     gfxCriticalError() << "OnResumeComposition called with null Surface";
     return false;
-  }
-
-  
-  
-  
-  if (SurfaceViewWrapperSupport::IsSurfaceAbandoned(mSurface)) {
-    MOZ_CRASH("Compositor resumed with abandoned Surface");
   }
 
   return true;
