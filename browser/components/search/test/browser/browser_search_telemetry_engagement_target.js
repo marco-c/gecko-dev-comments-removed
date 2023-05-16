@@ -76,6 +76,13 @@ const TEST_PROVIDER_INFO = [
           },
           children: [
             {
+              
+              
+              
+              
+              selector: "textarea",
+            },
+            {
               selector: "input",
             },
           ],
