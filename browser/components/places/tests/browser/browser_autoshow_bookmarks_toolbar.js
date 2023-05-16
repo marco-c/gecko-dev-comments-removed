@@ -12,10 +12,6 @@ add_setup(async function() {
   Services.prefs.clearUserPref(LOCATION_PREF);
   await PlacesUtils.bookmarks.eraseEverything();
 
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
-  });
   win = await BrowserTestUtils.openNewBrowserWindow();
 
   let oldTimeout = win.StarUI._autoCloseTimeout;
@@ -66,19 +62,12 @@ async function checkResponse({ showToolbar, expectedFolder, reason }) {
     `Toolbar should be ${showToolbar ? "visible" : "hidden"} ${reason}.`
   );
 
+  
   let hiddenPromise = promisePopupHidden(
     win.document.getElementById("editBookmarkPanel")
   );
-  
-
-  let guid = win.gEditItemOverlay._paneInfo.itemGuid;
-  let promiseRemoved = PlacesTestUtils.waitForNotification(
-    "bookmark-removed",
-    events => events.some(e => e.guid == guid)
-  );
   win.document.getElementById("editBookmarkPanelRemoveButton").click();
   await hiddenPromise;
-  await promiseRemoved;
 }
 
 

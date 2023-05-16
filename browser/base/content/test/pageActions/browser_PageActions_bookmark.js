@@ -28,125 +28,8 @@ add_task(async function starButtonCtrlClick() {
 
 add_task(async function bookmark() {
   
-  
-  let url = "http://example.com/browser_page_action_menu";
+  const url = "http://example.com/browser_page_action_menu";
 
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
-  });
-  const win = await BrowserTestUtils.openNewBrowserWindow();
-  registerCleanupFunction(async () => {
-    await BrowserTestUtils.closeWindow(win);
-  });
-
-  await BrowserTestUtils.withNewTab(
-    { gBrowser: win.gBrowser, url },
-    async () => {
-      
-      
-      let bookmarkButton = win.BrowserPageActions.urlbarButtonNodeForActionID(
-        "bookmark"
-      );
-      await TestUtils.waitForCondition(
-        () =>
-          document.l10n.getAttributes(bookmarkButton).id ===
-          "urlbar-star-add-bookmark",
-        "Expecting the tooltip text to be updated. Tooltip text: " +
-          bookmarkButton.getAttribute("tooltiptext")
-      );
-      Assert.ok(!bookmarkButton.hasAttribute("starred"));
-
-      info("Click the button.");
-      
-      
-      await TestUtils.waitForCondition(
-        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
-      );
-      let onItemAddedPromise = PlacesTestUtils.waitForNotification(
-        "bookmark-added",
-        events => events.some(event => event.url == url)
-      );
-      let promise = BrowserTestUtils.waitForPopupEvent(
-        win.StarUI.panel,
-        "shown"
-      );
-      EventUtils.synthesizeMouseAtCenter(bookmarkButton, {}, win);
-      await promise;
-      await onItemAddedPromise;
-
-      Assert.equal(
-        win.BookmarkingUI.starBox.getAttribute("open"),
-        "true",
-        "Star has open attribute"
-      );
-      
-      
-      await TestUtils.waitForCondition(
-        () =>
-          document.l10n.getAttributes(bookmarkButton).id ===
-          "urlbar-star-edit-bookmark",
-        "Expecting the tooltip text to be updated. Tooltip text: " +
-          bookmarkButton.getAttribute("tooltiptext")
-      );
-      Assert.equal(bookmarkButton.firstChild.getAttribute("starred"), "true");
-
-      win.StarUI.panel.hidePopup();
-      Assert.ok(
-        !win.BookmarkingUI.starBox.hasAttribute("open"),
-        "Star no longer has open attribute"
-      );
-
-      info("Click it again.");
-      
-      
-      await TestUtils.waitForCondition(
-        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
-      );
-      promise = BrowserTestUtils.waitForPopupEvent(win.StarUI.panel, "shown");
-      EventUtils.synthesizeMouseAtCenter(bookmarkButton, {}, win);
-      await promise;
-
-      let onItemRemovedPromise = PlacesTestUtils.waitForNotification(
-        "bookmark-removed",
-        events => events.some(event => event.url == url)
-      );
-      
-      win.StarUI._element("editBookmarkPanelRemoveButton").click();
-      
-      await onItemRemovedPromise;
-
-      
-      let contextMenuPromise = promisePopupNotShown("pageActionContextMenu");
-      
-      
-      await TestUtils.waitForCondition(
-        () => win.BookmarkingUI.status != win.BookmarkingUI.STATUS_UPDATING
-      );
-      EventUtils.synthesizeMouseAtCenter(
-        bookmarkButton,
-        {
-          type: "contextmenu",
-          button: 2,
-        },
-        win
-      );
-      await contextMenuPromise;
-    }
-  );
-});
-
-add_task(async function bookmarkDelayedApply() {
-  
-  const url = "http://example.com/browser_page_action_menu_delayed_apply";
-
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.bookmarks.editDialog.delayedApply.enabled", true]],
-  });
   const win = await BrowserTestUtils.openNewBrowserWindow();
   registerCleanupFunction(async () => {
     await BrowserTestUtils.closeWindow(win);
@@ -209,16 +92,13 @@ add_task(async function bookmarkDelayedApply() {
   );
 });
 
-add_task(async function bookmarkDelayedApplyNoEditDialog() {
+add_task(async function bookmarkNoEditDialog() {
   const url =
     
-    "http://example.com/browser_page_action_menu_delayed_apply_no_edit_dialog";
+    "http://example.com/browser_page_action_menu_no_edit_dialog";
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.bookmarks.editDialog.delayedApply.enabled", true],
-      ["browser.bookmarks.editDialog.showForNewBookmarks", false],
-    ],
+    set: [["browser.bookmarks.editDialog.showForNewBookmarks", false]],
   });
   const win = await BrowserTestUtils.openNewBrowserWindow();
   registerCleanupFunction(async () => {

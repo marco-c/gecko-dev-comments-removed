@@ -32,7 +32,6 @@ ChromeUtils.defineModuleGetter(
 
 var StarUI = {
   _itemGuids: null,
-  _batching: false,
   _isNewBookmark: false,
   _isComposing: false,
   _autoCloseTimer: 0,
@@ -80,11 +79,7 @@ var StarUI = {
       case "popuphidden": {
         clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
-          if (gEditItemOverlay.delayedApplyEnabled) {
-            this._handlePopupHiddenEvent().catch(console.error);
-          } else {
-            this._handlePopupHiddenEventInstantApply().catch(console.error);
-          }
+          this._handlePopupHiddenEvent().catch(console.error);
         }
         break;
       }
@@ -211,41 +206,6 @@ var StarUI = {
     }
   },
 
-  
-
-
-  async _handlePopupHiddenEventInstantApply() {
-    const { selectedFolderGuid, didChangeFolder } = gEditItemOverlay;
-    gEditItemOverlay.uninitPanel(true);
-
-    
-    
-    const removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
-    this._removeBookmarksOnPopupHidden = false;
-    const guidsForRemoval = this._itemGuids;
-    this._itemGuids = null;
-
-    if (this._batching) {
-      this.endBatch();
-    }
-
-    if (removeBookmarksOnPopupHidden && guidsForRemoval) {
-      if (this._isNewBookmark) {
-        await PlacesTransactions.undo();
-        return;
-      }
-      
-      
-      await PlacesTransactions.Remove(guidsForRemoval).transact();
-    } else if (this._isNewBookmark) {
-      this.showConfirmation();
-    }
-
-    if (!removeBookmarksOnPopupHidden) {
-      await this._storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder);
-    }
-  },
-
   async showEditBookmarkPopup(aNode, aIsNewBookmark, aUrl) {
     
     
@@ -285,10 +245,6 @@ var StarUI = {
     }
 
     this._setIconAndPreviewImage();
-
-    if (!gEditItemOverlay.delayedApplyEnabled) {
-      this.beginBatch();
-    }
 
     let onPanelReady = fn => {
       let target = this.panel;
@@ -351,40 +307,6 @@ var StarUI = {
   removeBookmarkButtonCommand: function SU_removeBookmarkButtonCommand() {
     this._removeBookmarksOnPopupHidden = true;
     this.panel.hidePopup();
-  },
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _batchBlockingDeferred: null,
-  beginBatch() {
-    if (this._batching) {
-      return;
-    }
-    this._batchBlockingDeferred = PromiseUtils.defer();
-    PlacesTransactions.batch(async () => {
-      
-      await this._batchBlockingDeferred.promise;
-      
-      await Promise.all(gEditItemOverlay.transactionPromises);
-    });
-    this._batching = true;
-  },
-
-  endBatch() {
-    if (!this._batching) {
-      return;
-    }
-
-    this._batchBlockingDeferred.resolve();
-    this._batching = false;
   },
 
   async _storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder) {
@@ -514,17 +436,7 @@ var PlacesCommandHook = {
         console.error(e);
       }
 
-      if (showEditUI && !gEditItemOverlay.delayedApplyEnabled) {
-        
-        
-        
-        StarUI.beginBatch();
-      }
-
-      if (
-        !gEditItemOverlay.delayedApplyEnabled ||
-        !StarUI.showForNewBookmarks
-      ) {
+      if (!StarUI.showForNewBookmarks) {
         info.guid = await PlacesTransactions.NewBookmark(info).transact();
       } else {
         info.guid = PlacesUtils.bookmarks.unsavedGuid;
