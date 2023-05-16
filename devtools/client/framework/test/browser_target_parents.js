@@ -107,7 +107,10 @@ add_task(async function() {
     } catch (e) {
       
       
-      if (e.message.includes("nsIWorkerDebugger.initialize")) {
+      if (
+        e.message.includes("nsIWorkerDebugger.initialize") ||
+        targetFront.isDestroyed()
+      ) {
         info("Failed to connect to " + workerDescriptorFront.url);
         continue;
       }
