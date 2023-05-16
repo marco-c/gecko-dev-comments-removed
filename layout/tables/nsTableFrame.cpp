@@ -2813,10 +2813,9 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   
   bool allowRepeatedFooter = false;
   for (size_t childX = 0; childX < rowGroups.Length(); childX++) {
-    nsIFrame* kidFrame = rowGroups[childX];
-    nsTableRowGroupFrame* rowGroupFrame = rowGroups[childX];
-    nscoord cellSpacingB = GetRowSpacing(rowGroupFrame->GetStartRowIndex() +
-                                         rowGroupFrame->GetRowCount());
+    nsTableRowGroupFrame* kidFrame = rowGroups[childX];
+    const nscoord cellSpacingB =
+        GetRowSpacing(kidFrame->GetStartRowIndex() + kidFrame->GetRowCount());
     
     
     if (reflowAllKids || kidFrame->IsSubtreeDirty() ||
