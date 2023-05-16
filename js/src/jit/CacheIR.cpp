@@ -1000,9 +1000,6 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
     return false;
   }
 
-  
-  
-  
   if (obj->is<NativeObject>() && obj->as<NativeObject>().numFixedSlots() == 0) {
     return false;
   }
