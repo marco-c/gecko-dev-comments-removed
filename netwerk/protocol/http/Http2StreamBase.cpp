@@ -565,8 +565,14 @@ void Http2StreamBase::UpdateTransportSendEvents(uint32_t count) {
   
   
   
+
+  
+  
+  
+  
   uint32_t bufferSize = gHttpHandler->SpdySendBufferSize();
-  if ((mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
+  if (StaticPrefs::network_http_http2_send_buffer_size() > 0 &&
+      (mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
     mSetTCPSocketBuffer = 1;
     mSocketTransport->SetSendBufferSize(bufferSize);
   }
