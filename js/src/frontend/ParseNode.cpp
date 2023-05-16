@@ -16,7 +16,7 @@
 #include "frontend/Parser.h"      
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
-#include "vm/Printer.h"
+#include "js/Printer.h"
 #include "vm/Scope.h"  
 
 using namespace js;

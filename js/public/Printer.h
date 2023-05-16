@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_Printer_h
-#define vm_Printer_h
+#ifndef js_Printer_h
+#define js_Printer_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Range.h"
@@ -27,7 +27,7 @@ class LifoAlloc;
 
 
 
-class GenericPrinter {
+class JS_PUBLIC_API GenericPrinter {
  protected:
   bool hadOOM_;  
 
@@ -55,7 +55,7 @@ class GenericPrinter {
 };
 
 
-class Sprinter final : public GenericPrinter {
+class JS_PUBLIC_API Sprinter final : public GenericPrinter {
  public:
   struct InvariantChecker {
     const Sprinter* parent;
@@ -134,7 +134,7 @@ class Sprinter final : public GenericPrinter {
 };
 
 
-class Fprinter final : public GenericPrinter {
+class JS_PUBLIC_API Fprinter final : public GenericPrinter {
  private:
   FILE* file_;
   bool init_;
@@ -164,7 +164,7 @@ class Fprinter final : public GenericPrinter {
 
 
 
-class LSprinter final : public GenericPrinter {
+class JS_PUBLIC_API LSprinter final : public GenericPrinter {
  private:
   struct Chunk {
     Chunk* next;
@@ -205,23 +205,23 @@ extern const char js_EscapeMap[];
 
 
 
-extern JS::UniqueChars QuoteString(JSContext* cx, JSString* str,
-                                   char quote = '\0');
+extern JS_PUBLIC_API JS::UniqueChars QuoteString(JSContext* cx, JSString* str,
+                                                 char quote = '\0');
 
 
 
-extern bool QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
+extern JS_PUBLIC_API bool QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
 
 
 
-extern bool JSONQuoteString(Sprinter* sp, JSString* str);
+extern JS_PUBLIC_API bool JSONQuoteString(Sprinter* sp, JSString* str);
 
 
 enum class QuoteTarget { String, JSON };
 
 template <QuoteTarget target, typename CharT>
-bool QuoteString(Sprinter* sp, const mozilla::Range<const CharT> chars,
-                 char quote = '\0');
+bool JS_PUBLIC_API QuoteString(Sprinter* sp, const mozilla::Range<const CharT> chars,
+                               char quote = '\0');
 
 }  
 
