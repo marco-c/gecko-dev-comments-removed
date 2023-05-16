@@ -1249,7 +1249,10 @@ void ProduceReceiverMediaTrackStats(
   }
 }
 
-rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
+}  
+
+rtc::scoped_refptr<RTCStatsReport>
+RTCStatsCollector::CreateReportFilteredBySelector(
     bool filter_by_sender_selector,
     rtc::scoped_refptr<const RTCStatsReport> report,
     rtc::scoped_refptr<RtpSenderInternal> sender_selector,
@@ -1259,19 +1262,18 @@ rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
     
     if (sender_selector) {
       
-      
-      
-      
-      std::string track_id =
-          DEPRECATED_RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
-              kDirectionOutbound, sender_selector->AttachmentId());
-      for (const auto& stats : *report) {
-        if (stats.type() != RTCOutboundRTPStreamStats::kType)
-          continue;
-        const auto& outbound_rtp = stats.cast_to<RTCOutboundRTPStreamStats>();
-        if (outbound_rtp.track_id.is_defined() &&
-            *outbound_rtp.track_id == track_id) {
-          rtpstream_ids.push_back(outbound_rtp.id());
+      auto encodings = sender_selector->GetParametersInternal().encodings;
+      for (const auto* outbound_rtp :
+           report->GetStatsOfType<RTCOutboundRTPStreamStats>()) {
+        RTC_DCHECK(outbound_rtp->ssrc.is_defined());
+        auto it = std::find_if(
+            encodings.begin(), encodings.end(),
+            [ssrc =
+                 *outbound_rtp->ssrc](const RtpEncodingParameters& encoding) {
+              return encoding.ssrc.has_value() && encoding.ssrc.value() == ssrc;
+            });
+        if (it != encodings.end()) {
+          rtpstream_ids.push_back(outbound_rtp->id());
         }
       }
     }
@@ -1279,19 +1281,15 @@ rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
     
     if (receiver_selector) {
       
-      
-      
-      
-      std::string track_id =
-          DEPRECATED_RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
-              kDirectionInbound, receiver_selector->AttachmentId());
-      for (const auto& stats : *report) {
-        if (stats.type() != RTCInboundRTPStreamStats::kType)
-          continue;
-        const auto& inbound_rtp = stats.cast_to<RTCInboundRTPStreamStats>();
-        if (inbound_rtp.track_id.is_defined() &&
-            *inbound_rtp.track_id == track_id) {
-          rtpstream_ids.push_back(inbound_rtp.id());
+      absl::optional<uint32_t> ssrc;
+      worker_thread_->BlockingCall([&] { ssrc = receiver_selector->ssrc(); });
+      if (ssrc.has_value()) {
+        for (const auto* inbound_rtp :
+             report->GetStatsOfType<RTCInboundRTPStreamStats>()) {
+          RTC_DCHECK(inbound_rtp->ssrc.is_defined());
+          if (*inbound_rtp->ssrc == *ssrc) {
+            rtpstream_ids.push_back(inbound_rtp->id());
+          }
         }
       }
     }
@@ -1300,8 +1298,6 @@ rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
     return RTCStatsReport::Create(report->timestamp());
   return TakeReferencedStats(report->Copy(), rtpstream_ids);
 }
-
-}  
 
 RTCStatsCollector::CertificateStatsPair
 RTCStatsCollector::CertificateStatsPair::Copy() const {

@@ -279,6 +279,8 @@ class MediaReceiveChannelInterface
   
   virtual void ResetUnsignaledRecvStream() = 0;
   
+  virtual absl::optional<uint32_t> GetUnsignaledSsrc() const = 0;
+  
   
   
   

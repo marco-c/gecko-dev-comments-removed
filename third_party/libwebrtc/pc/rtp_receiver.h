@@ -68,7 +68,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
       rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
   
   
-  virtual uint32_t ssrc() const = 0;
+  virtual absl::optional<uint32_t> ssrc() const = 0;
 
   
   

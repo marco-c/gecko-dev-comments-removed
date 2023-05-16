@@ -1966,6 +1966,15 @@ void WebRtcVoiceMediaChannel::ResetUnsignaledRecvStream() {
   }
 }
 
+absl::optional<uint32_t> WebRtcVoiceMediaChannel::GetUnsignaledSsrc() const {
+  if (unsignaled_recv_ssrcs_.empty()) {
+    return absl::nullopt;
+  }
+  
+  
+  return unsignaled_recv_ssrcs_.back();
+}
+
 
 
 
