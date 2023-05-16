@@ -2524,6 +2524,7 @@ RegExpTree* RegExpParserImpl<CharT>::ParseClassStringDisjunction(
   }
 
   AddClassString(string, string_builder.ToRegExp(), ranges, strings, zone());
+  CharacterRange::Canonicalize(ranges);
 
   
   
@@ -2764,6 +2765,14 @@ RegExpTree* RegExpParserImpl<CharT>::ParseClassUnion(
 
   if (is_negated && may_contain_strings) {
     return ReportError(RegExpError::kNegatedCharacterClassWithStrings);
+  }
+
+  if (operands->is_empty()) {
+    
+    
+    DCHECK(ranges->is_empty());
+    DCHECK(strings->empty());
+    return RegExpClassSetExpression::Empty(zone(), is_negated);
   }
 
   return zone()->template New<RegExpClassSetExpression>(
