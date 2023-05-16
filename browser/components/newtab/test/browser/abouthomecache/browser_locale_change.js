@@ -13,6 +13,7 @@ add_task(async function test_locale_change() {
     await ensureCachedAboutHome(browser);
 
     Services.obs.notifyObservers(null, "intl:app-locales-changed");
+    await AboutHomeStartupCache.ensureCacheEntry();
 
     
     
