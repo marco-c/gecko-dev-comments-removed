@@ -5280,6 +5280,7 @@ static void LoadDOMPrivate(MacroAssembler& masm, Register obj, Register priv,
   switch (kind) {
     case DOMObjectKind::Native:
       
+      
       masm.debugAssertObjHasFixedSlots(obj, priv);
       masm.loadPrivate(Address(obj, NativeObject::getFixedSlotOffset(0)), priv);
       break;
