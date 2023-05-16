@@ -52,6 +52,7 @@
 #include "nsContentSecurityManager.h"
 #include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
+#include "nsDebug.h"
 #include "nsEscape.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsHttpChannel.h"
@@ -104,9 +105,9 @@
 #include "nsQueryObject.h"
 
 using mozilla::dom::RequestMode;
-extern mozilla::LazyLogModule gORBLog;
-#define LOGORB(msg, ...)            \
-  MOZ_LOG(gORBLog, LogLevel::Debug, \
+
+#define LOGORB(msg, ...)                \
+  MOZ_LOG(GetORBLog(), LogLevel::Debug, \
           ("%s: %p " msg, __func__, this, ##__VA_ARGS__))
 
 namespace mozilla {
@@ -183,6 +184,17 @@ class AddHeadersToChannelVisitor final : public nsIHttpHeaderVisitor {
 };
 
 NS_IMPL_ISUPPORTS(AddHeadersToChannelVisitor, nsIHttpHeaderVisitor)
+
+static OpaqueResponseFilterFetch ConfiguredFilterFetchResponseBehaviour() {
+  uint32_t pref = StaticPrefs::
+      browser_opaqueResponseBlocking_filterFetchResponse_DoNotUseDirectly();
+  if (NS_WARN_IF(pref >
+                 static_cast<uint32_t>(OpaqueResponseFilterFetch::All))) {
+    return OpaqueResponseFilterFetch::All;
+  }
+
+  return static_cast<OpaqueResponseFilterFetch>(pref);
+}
 
 HttpBaseChannel::HttpBaseChannel()
     : mReportCollector(new ConsoleReportCollector()),
@@ -3017,6 +3029,19 @@ nsresult HttpBaseChannel::ValidateMIMEType() {
   return NS_OK;
 }
 
+bool HttpBaseChannel::ShouldFilterOpaqueResponse(
+    OpaqueResponseFilterFetch aFilterType) const {
+  MOZ_DIAGNOSTIC_ASSERT(ShouldBlockOpaqueResponse());
+
+  if (!mLoadInfo || ConfiguredFilterFetchResponseBehaviour() != aFilterType) {
+    return false;
+  }
+
+  
+  
+  return mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_FETCH;
+}
+
 bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
   if (!mURI || !mResponseHead || !mLoadInfo) {
     
@@ -3036,6 +3061,7 @@ bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
   
   
   nsContentPolicyType contentPolicy = mLoadInfo->InternalContentPolicyType();
+
   
   if (contentPolicy == nsIContentPolicy::TYPE_DOCUMENT ||
       contentPolicy == nsIContentPolicy::TYPE_SUBDOCUMENT ||
@@ -3102,6 +3128,41 @@ bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
   return true;
 }
 
+OpaqueResponse HttpBaseChannel::BlockOrFilterOpaqueResponse(
+    OpaqueResponseBlocker* aORB, const nsAString& aReason, const char* aFormat,
+    ...) {
+  const bool shouldFilter =
+      ShouldFilterOpaqueResponse(OpaqueResponseFilterFetch::BlockedByORB);
+
+  if (MOZ_UNLIKELY(MOZ_LOG_TEST(GetORBLog(), LogLevel::Debug))) {
+    va_list ap;
+    va_start(ap, aFormat);
+    nsVprintfCString logString(aFormat, ap);
+    va_end(ap);
+
+    LOGORB("%s: %s", shouldFilter ? "Filtered" : "Blocked", logString.get());
+  }
+
+  if (shouldFilter) {
+    
+    
+    
+    
+    
+    
+    if (aORB) {
+      MOZ_DIAGNOSTIC_ASSERT(!mORB || aORB == mORB);
+      aORB->FilterResponse();
+    } else {
+      mListener = new OpaqueResponseFilter(mListener);
+    }
+    return OpaqueResponse::Allow;
+  }
+
+  LogORBError(aReason);
+  return OpaqueResponse::Block;
+}
+
 
 
 
@@ -3113,13 +3174,40 @@ OpaqueResponse
 HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
+  
+  if (!ShouldBlockOpaqueResponse()) {
+    return OpaqueResponse::Allow;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (ShouldFilterOpaqueResponse(OpaqueResponseFilterFetch::All)) {
+    mListener = new OpaqueResponseFilter(mListener);
+
+    
+    
+    
+    return OpaqueResponse::Allow;
+  }
+
   if (!mCachedOpaqueResponseBlockingPref) {
     return OpaqueResponse::Allow;
   }
 
   
-  if (!ShouldBlockOpaqueResponse()) {
-    return OpaqueResponse::Allow;
+  
+  
+  
+  
+  
+  
+  
+  if (ShouldFilterOpaqueResponse(OpaqueResponseFilterFetch::AllowedByORB)) {
+    mListener = new OpaqueResponseFilter(mListener);
   }
 
   Telemetry::ScalarAdd(
@@ -3147,24 +3235,22 @@ HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
       
       return OpaqueResponse::Allow;
     case OpaqueResponseBlockedReason::BLOCKED_BLOCKLISTED_NEVER_SNIFFED:
-      
-      LOGORB("Blocked: BLOCKED_BLOCKLISTED_NEVER_SNIFFED");
-      LogORBError(
-          u"mimeType is an opaque-blocklisted-never-sniffed MIME type"_ns);
-      return OpaqueResponse::Block;
+      return BlockOrFilterOpaqueResponse(
+          mORB, u"mimeType is an opaque-blocklisted-never-sniffed MIME type"_ns,
+          "BLOCKED_BLOCKLISTED_NEVER_SNIFFED");
     case OpaqueResponseBlockedReason::BLOCKED_206_AND_BLOCKLISTED:
       
-      LOGORB("Blocked: BLOCKED_206_AND_BLOCKEDLISTED");
-      LogORBError(
-          u"response's status is 206 and mimeType is an opaque-blocklisted MIME type"_ns);
-      return OpaqueResponse::Block;
+      return BlockOrFilterOpaqueResponse(
+          mORB,
+          u"response's status is 206 and mimeType is an opaque-blocklisted MIME type"_ns,
+          "BLOCKED_206_AND_BLOCKEDLISTED");
     case OpaqueResponseBlockedReason::
         BLOCKED_NOSNIFF_AND_EITHER_BLOCKLISTED_OR_TEXTPLAIN:
       
-      LOGORB("Blocked: BLOCKED_NOSNIFF_AND_EITHER_BLOCKLISTED_OR_TEXTPLAIN");
-      LogORBError(
-          u"nosniff is true and mimeType is an opaque-blocklisted MIME type or its essence is 'text/plain'"_ns);
-      return OpaqueResponse::Block;
+      return BlockOrFilterOpaqueResponse(
+          mORB,
+          u"nosniff is true and mimeType is an opaque-blocklisted MIME type or its essence is 'text/plain'"_ns,
+          "BLOCKED_NOSNIFF_AND_EITHER_BLOCKLISTED_OR_TEXTPLAIN");
     default:
       break;
   }
@@ -3185,9 +3271,9 @@ HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
   
   if (mResponseHead->Status() == 206 &&
       !IsFirstPartialResponse(*mResponseHead)) {
-    LOGORB("Blocked: Is not a valid partial response given 0");
-    LogORBError(u"response status is 206 and not first partial response"_ns);
-    return OpaqueResponse::Block;
+    return BlockOrFilterOpaqueResponse(
+        mORB, u"response status is 206 and not first partial response"_ns,
+        "Is not a valid partial response given 0");
   }
 
   
@@ -3242,25 +3328,22 @@ OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
   bool isMediaRequest;
   mLoadInfo->GetIsMediaRequest(&isMediaRequest);
   if (isMediaRequest) {
-    LOGORB("Blocked: media request");
-    LogORBError(u"after sniff: media request"_ns);
-    return OpaqueResponse::Block;
+    return BlockOrFilterOpaqueResponse(mORB, u"after sniff: media request"_ns,
+                                       "media request");
   }
 
   
   if (aNoSniff) {
-    LOGORB("Blocked: nosniff");
-    LogORBError(u"after sniff: nosniff is true"_ns);
-    return OpaqueResponse::Block;
+    return BlockOrFilterOpaqueResponse(mORB, u"after sniff: nosniff is true"_ns,
+                                       "nosniff");
   }
 
   
   if (mResponseHead &&
       (mResponseHead->Status() < 200 || mResponseHead->Status() > 299)) {
-    LOGORB("Blocked: status code (%d) is not allowed ",
-           mResponseHead->Status());
-    LogORBError(u"after sniff: status code is not in allowed range"_ns);
-    return OpaqueResponse::Block;
+    return BlockOrFilterOpaqueResponse(
+        mORB, u"after sniff: status code is not in allowed range"_ns,
+        "status code (%d) is not allowed", mResponseHead->Status());
   }
 
   
@@ -3273,10 +3356,10 @@ OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
   if (StringBeginsWith(aContentType, "image/"_ns) ||
       StringBeginsWith(aContentType, "video/"_ns) ||
       StringBeginsWith(aContentType, "audio/"_ns)) {
-    LOGORB("Blocked: ContentType is image/video/audio");
-    LogORBError(
-        u"after sniff: content-type declares image/video/audio, but sniffing fails"_ns);
-    return OpaqueResponse::Block;
+    return BlockOrFilterOpaqueResponse(
+        mORB,
+        u"after sniff: content-type declares image/video/audio, but sniffing fails"_ns,
+        "ContentType is image/video/audio");
   }
 
   return OpaqueResponse::Sniff;

@@ -10,6 +10,7 @@
 
 #include <utility>
 
+#include "OpaqueResponseUtils.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/dom/DOMTypes.h"
@@ -41,6 +42,7 @@
 #include "nsIURI.h"
 #include "nsIUploadChannel2.h"
 #include "nsStringEnumerator.h"
+#include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
@@ -80,7 +82,9 @@ enum CacheDisposition : uint8_t {
   kCacheUnknown = 5
 };
 
-enum class OpaqueResponse { Block, Allow, SniffCompressed, Sniff };
+
+
+enum class OpaqueResponseFilterFetch { Never, AllowedByORB, BlockedByORB, All };
 
 
 
@@ -557,7 +561,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   bool HasRedirectTaintedOrigin() { return LoadTaintedOriginFlag(); }
 
-  bool ChannelBlockedByOpaqueResponse() {
+  bool ChannelBlockedByOpaqueResponse() const {
     return mChannelBlockedByOpaqueResponse;
   }
   bool CachedOpaqueResponseBlockingPref() const {
@@ -649,7 +653,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   nsresult ValidateMIMEType();
 
+  bool ShouldFilterOpaqueResponse(OpaqueResponseFilterFetch aFilterType) const;
   bool ShouldBlockOpaqueResponse() const;
+  OpaqueResponse BlockOrFilterOpaqueResponse(OpaqueResponseBlocker* aORB,
+                                             const nsAString& aReason,
+                                             const char* aFormat, ...);
 
   OpaqueResponse PerformOpaqueResponseSafelistCheckBeforeSniff();
 
