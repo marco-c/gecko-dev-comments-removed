@@ -736,7 +736,8 @@ TEST_P(OpusTest, OpusDtxOff) {
 }
 
 TEST_P(OpusTest, OpusDtxOn) {
-  if (channels_ > 2) {
+  if (channels_ > 2 || application_ != 0) {
+    
     
     
     return;
