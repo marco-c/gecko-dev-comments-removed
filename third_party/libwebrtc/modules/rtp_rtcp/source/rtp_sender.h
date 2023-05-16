@@ -106,6 +106,9 @@ class RTPSender {
   absl::optional<uint32_t> RtxSsrc() const RTC_LOCKS_EXCLUDED(send_mutex_) {
     return rtx_ssrc_;
   }
+  
+  
+  size_t RtxPacketOverhead() const;
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type)
       RTC_LOCKS_EXCLUDED(send_mutex_);
