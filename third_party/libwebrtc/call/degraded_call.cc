@@ -348,25 +348,6 @@ void DegradedCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   call_->OnSentPacket(sent_packet);
 }
 
-PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
-    MediaType media_type,
-    rtc::CopyOnWriteBuffer packet,
-    int64_t packet_time_us) {
-  RTC_DCHECK_RUN_ON(&received_packet_sequence_checker_);
-  PacketReceiver::DeliveryStatus status = receive_pipe_->DeliverPacket(
-      media_type, std::move(packet), packet_time_us);
-  
-  
-  
-  
-  
-  
-  
-  
-  receive_pipe_->Process();
-  return status;
-}
-
 void DegradedCall::DeliverRtpPacket(
     MediaType media_type,
     RtpPacketReceived packet,

@@ -164,12 +164,6 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
 
   
   
-  PacketReceiver::DeliveryStatus DeliverPacket(MediaType media_type,
-                                               rtc::CopyOnWriteBuffer packet,
-                                               int64_t packet_time_us) override;
-
-  
-  
   void Process() override;
   absl::optional<int64_t> TimeUntilNextProcess() override;
 

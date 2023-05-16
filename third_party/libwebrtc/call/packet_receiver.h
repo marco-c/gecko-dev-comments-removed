@@ -20,26 +20,8 @@ namespace webrtc {
 
 class PacketReceiver {
  public:
-  enum DeliveryStatus {
-    DELIVERY_OK,
-    DELIVERY_UNKNOWN_SSRC,
-    DELIVERY_PACKET_ERROR,
-  };
-
   
-  
-  virtual DeliveryStatus DeliverPacket(MediaType media_type,
-                                       rtc::CopyOnWriteBuffer packet,
-                                       int64_t packet_time_us) {
-    RTC_CHECK_NOTREACHED();
-  }
-
-  
-  virtual void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) {
-    
-    
-    RTC_CHECK_NOTREACHED();
-  }
+  virtual void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) = 0;
 
   
   
@@ -50,11 +32,7 @@ class PacketReceiver {
   virtual void DeliverRtpPacket(
       MediaType media_type,
       RtpPacketReceived packet,
-      OnUndemuxablePacketHandler undemuxable_packet_handler) {
-    
-    
-    RTC_CHECK_NOTREACHED();
-  }
+      OnUndemuxablePacketHandler undemuxable_packet_handler) = 0;
 
  protected:
   virtual ~PacketReceiver() {}
