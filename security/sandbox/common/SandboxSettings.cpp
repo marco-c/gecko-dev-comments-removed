@@ -136,6 +136,18 @@ int GetEffectiveContentSandboxLevel() {
 #endif
 #ifdef XP_LINUX
   
+  
+  
+  
+  
+  
+  
+  static constexpr int kMinSupportedLevel = 2;
+
+  if (level > 0 && level <= kMinSupportedLevel) {
+    level = kMinSupportedLevel;
+  }
+  
   if (level > 3 && !StaticPrefs::media_cubeb_sandbox()) {
     level = 3;
   }

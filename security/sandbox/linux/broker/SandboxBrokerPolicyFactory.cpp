@@ -773,6 +773,8 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   const int level = GetEffectiveContentSandboxLevel();
   
   if (level <= 1) {
+    
+    MOZ_ASSERT(level == 0);
     return nullptr;
   }
 
