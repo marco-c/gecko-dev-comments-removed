@@ -147,16 +147,13 @@ extern decltype(&DetouredCallCode) gDetouredCall;
 
 
 
-
-
-
-
-
-
-
-__declspec(dllexport noinline guard(nocf)) void DetouredCallJumper(
+__attribute__((naked)) __declspec(dllexport noinline) void DetouredCallJumper(
     uintptr_t aCallee) {
-  gDetouredCall(aCallee);
+  
+  
+  
+  
+  asm volatile("jmpq *0(%rip)");
 }
 #    endif  
 

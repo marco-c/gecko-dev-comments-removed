@@ -968,6 +968,32 @@ struct DetouredCallChunk {
 
 decltype(&DetouredCallCode) gDetouredCall =
     []() -> decltype(&DetouredCallCode) {
+  
+  
+  
+  
+  uint8_t bytes[6]{0xff, 0x25, 0, 0, 0, 0};
+  if (0 != memcmp(bytes, reinterpret_cast<void*>(DetouredCallJumper),
+                  sizeof bytes)) {
+    return nullptr;
+  }
+
+  DWORD oldProtect{};
+  if (!VirtualProtect(reinterpret_cast<void*>(DetouredCallJumper), sizeof bytes,
+                      PAGE_READWRITE, &oldProtect)) {
+    return nullptr;
+  }
+
+  *reinterpret_cast<uint32_t*>(&bytes[2]) = static_cast<uint32_t>(
+      reinterpret_cast<uintptr_t>(&gDetouredCall) -
+      (reinterpret_cast<uintptr_t>(DetouredCallJumper) + sizeof bytes));
+  memcpy(reinterpret_cast<void*>(DetouredCallJumper), bytes, sizeof bytes);
+
+  if (!VirtualProtect(reinterpret_cast<void*>(DetouredCallJumper), sizeof bytes,
+                      oldProtect, &oldProtect)) {
+    return nullptr;
+  }
+
   auto detouredCallChunk = reinterpret_cast<DetouredCallChunk*>(
       VirtualAlloc(nullptr, sizeof(DetouredCallChunk), MEM_RESERVE | MEM_COMMIT,
                    PAGE_READWRITE));
@@ -988,7 +1014,6 @@ decltype(&DetouredCallCode) gDetouredCall =
          reinterpret_cast<void*>(DetouredCallCode),
          sizeof(detouredCallChunk->code));
 
-  DWORD oldProtect = 0;
   if (!VirtualProtect(reinterpret_cast<void*>(detouredCallChunk),
                       sizeof(DetouredCallChunk), PAGE_EXECUTE_READ,
                       &oldProtect)) {
