@@ -6802,17 +6802,12 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
 
   
   AutoReportFrontendContext fc(cx);
-  Rooted<frontend::CompilationInput> input(cx,
-                                           frontend::CompilationInput(options));
-  if (!input.get().initForGlobal(&fc)) {
-    return false;
-  }
   frontend::CompilationStencil stencil(nullptr);
 
   
   JS::TranscodeRange xdrRange(xdrObj->buffer(), xdrObj->bufferLength());
   bool succeeded = false;
-  if (!stencil.deserializeStencils(&fc, input.get(), xdrRange, &succeeded)) {
+  if (!stencil.deserializeStencils(&fc, options, xdrRange, &succeeded)) {
     return false;
   }
   if (!succeeded) {
