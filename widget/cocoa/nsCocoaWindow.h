@@ -364,6 +364,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   
   
   void CocoaWindowWillEnterFullscreen(bool aFullscreen);
+  void CocoaWindowDidEnterFullscreen(bool aFullscreen);
   void CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen);
   void CocoaWindowDidResize();
   void CocoaSendToplevelActivateEvents();
@@ -461,6 +462,12 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   
   
   int mIgnoreOcclusionCount;
+
+  
+  
+  
+  
+  bool mHasStartedNativeFullscreen;
 
   bool mModal;
   bool mFakeModal;

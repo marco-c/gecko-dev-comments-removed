@@ -146,6 +146,7 @@ nsCocoaWindow::nsCocoaWindow()
       mInFullScreenMode(false),
       mInNativeFullScreenMode(false),
       mIgnoreOcclusionCount(0),
+      mHasStartedNativeFullscreen(false),
       mModal(false),
       mFakeModal(false),
       mIsAnimationSuppressed(false),
@@ -1630,13 +1631,26 @@ static bool AlwaysUsesNativeFullScreen() {
 void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
   MOZ_ASSERT(mUpdateFullscreenOnResize.isNothing());
 
+  mHasStartedNativeFullscreen = true;
+
   
   
   mUpdateFullscreenOnResize =
       Some(aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed);
 }
 
+void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
+  mHasStartedNativeFullscreen = false;
+  DispatchOcclusionEvent();
+  HandleUpdateFullscreenOnResize();
+  FinishCurrentTransitionIfMatching(aFullscreen ? TransitionType::Fullscreen
+                                                : TransitionType::Windowed);
+}
+
 void nsCocoaWindow::CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen) {
+  mHasStartedNativeFullscreen = false;
+  DispatchOcclusionEvent();
+
   
   if (mUpdateFullscreenOnResize.isNothing()) {
     UpdateFullscreenState(!aAttemptedFullscreen, true);
@@ -2266,7 +2280,9 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
     return;
   }
 
-  bool newOcclusionState = !([mWindow occlusionState] & NSWindowOcclusionStateVisible);
+  
+  bool newOcclusionState =
+      !(mHasStartedNativeFullscreen || ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
 
   
   if (mIsFullyOccluded == newOcclusionState) {
@@ -2933,9 +2949,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (!mGeckoWindow) {
     return;
   }
-
-  mGeckoWindow->HandleUpdateFullscreenOnResize();
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Fullscreen);
+  mGeckoWindow->CocoaWindowDidEnterFullscreen(true);
 }
 
 - (void)windowWillExitFullScreen:(NSNotification*)notification {
@@ -2949,9 +2963,7 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   if (!mGeckoWindow) {
     return;
   }
-
-  mGeckoWindow->HandleUpdateFullscreenOnResize();
-  mGeckoWindow->FinishCurrentTransitionIfMatching(nsCocoaWindow::TransitionType::Windowed);
+  mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
 - (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
