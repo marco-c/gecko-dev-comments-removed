@@ -8325,6 +8325,9 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
   bool consumeRollupEvent = false;
   Maybe<POINT> touchPoint;  
 
+  
+  
+  auto allowAnimations = nsIRollupListener::AllowAnimations::Yes;
   nsWindow* popupWindow = static_cast<nsWindow*>(popup.get());
   UINT nativeMessage = WinUtils::GetNativeMessage(aMessage);
   switch (nativeMessage) {
@@ -8405,6 +8408,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       return consumeRollupEvent;
 
     case WM_ACTIVATEAPP:
+      allowAnimations = nsIRollupListener::AllowAnimations::No;
       break;
 
     case WM_ACTIVATE:
@@ -8468,6 +8472,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
           return false;
         }
       }
+      allowAnimations = nsIRollupListener::AllowAnimations::No;
       break;
 
     case MOZ_WM_REACTIVATE:
@@ -8532,6 +8537,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
     case WM_SHOWWINDOW:
       
       if (aLParam == SW_PARENTCLOSING) {
+        allowAnimations = nsIRollupListener::AllowAnimations::No;
         break;
       }
       return false;
@@ -8540,6 +8546,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       
       
       if (IsDifferentThreadWindow(reinterpret_cast<HWND>(aWParam))) {
+        allowAnimations = nsIRollupListener::AllowAnimations::No;
         break;
       }
       return false;
@@ -8558,6 +8565,8 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
   nsIRollupListener::RollupOptions rollupOptions{
       popupsToRollup,
       nsIRollupListener::FlushViews::Yes,
+       nullptr,
+      allowAnimations,
   };
 
   if (nativeMessage == WM_TOUCH || nativeMessage == WM_LBUTTONDOWN ||
