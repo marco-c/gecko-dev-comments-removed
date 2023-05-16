@@ -389,7 +389,7 @@ class ServoStyleSet {
   void GetAnimationValues(
       RawServoDeclarationBlock* aDeclarations, dom::Element* aElement,
       const mozilla::ComputedStyle* aStyle,
-      nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues);
+      nsTArray<RefPtr<StyleAnimationValue>>& aAnimationValues);
 
   void AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
 
@@ -418,7 +418,7 @@ class ServoStyleSet {
   
   already_AddRefed<ComputedStyle> ResolveServoStyleByAddingAnimation(
       dom::Element* aElement, const ComputedStyle* aStyle,
-      RawServoAnimationValue* aAnimationValue);
+      StyleAnimationValue* aAnimationValue);
   
 
 
@@ -428,7 +428,7 @@ class ServoStyleSet {
       const ComputedStyle* aParentOrNull,
       const RawServoDeclarationBlock* aDeclarations);
 
-  already_AddRefed<RawServoAnimationValue> ComputeAnimationValue(
+  already_AddRefed<StyleAnimationValue> ComputeAnimationValue(
       dom::Element* aElement, RawServoDeclarationBlock* aDeclaration,
       const mozilla::ComputedStyle* aStyle);
 

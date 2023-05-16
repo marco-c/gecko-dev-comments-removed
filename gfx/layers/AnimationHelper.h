@@ -100,7 +100,7 @@ class AnimationHelper {
       const MutexAutoLock& aProofOfMapLock, TimeStamp aPreviousFrameTime,
       TimeStamp aCurrentFrameTime, const AnimatedValue* aPreviousValue,
       nsTArray<PropertyAnimationGroup>& aPropertyAnimationGroups,
-      nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues);
+      nsTArray<RefPtr<StyleAnimationValue>>& aAnimationValues);
 
   
 
@@ -161,7 +161,7 @@ class AnimationHelper {
 
 
   static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
-      const nsTArray<RefPtr<RawServoAnimationValue>>& aValue,
+      const nsTArray<RefPtr<StyleAnimationValue>>& aValue,
       const TransformData& aTransformData, gfx::Path* aCachedMotionPath);
 
   

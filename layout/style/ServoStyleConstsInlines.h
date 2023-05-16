@@ -32,7 +32,7 @@ namespace mozilla {
 
 template struct StyleStrong<ComputedStyle>;
 template struct StyleStrong<ServoCssRules>;
-template struct StyleStrong<RawServoAnimationValue>;
+template struct StyleStrong<StyleAnimationValue>;
 template struct StyleStrong<RawServoDeclarationBlock>;
 template struct StyleStrong<StyleStylesheetContents>;
 template struct StyleStrong<RawServoKeyframe>;

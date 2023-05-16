@@ -45,7 +45,7 @@ enum class PseudoStyleType : uint8_t;
 struct PropertyStyleAnimationValuePair;
 
 struct AnimationValue {
-  explicit AnimationValue(const RefPtr<RawServoAnimationValue>& aValue)
+  explicit AnimationValue(const RefPtr<StyleAnimationValue>& aValue)
       : mServo(aValue) {}
   AnimationValue() = default;
 
@@ -110,10 +110,10 @@ struct AnimationValue {
   
   
   
-  static already_AddRefed<RawServoAnimationValue> FromAnimatable(
+  static already_AddRefed<StyleAnimationValue> FromAnimatable(
       nsCSSPropertyID aProperty, const layers::Animatable& aAnimatable);
 
-  RefPtr<RawServoAnimationValue> mServo;
+  RefPtr<StyleAnimationValue> mServo;
 };
 
 inline std::ostream& operator<<(std::ostream& aOut,

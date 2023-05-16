@@ -9,7 +9,7 @@ use crate::gecko_bindings::{bindings, structs};
 use crate::Atom;
 use servo_arc::Arc;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::{fmt, mem, ptr};
 use std::fmt::Write;
 
@@ -40,18 +40,6 @@ impl<T: RefCounted> fmt::Debug for RefPtr<T> {
     }
 }
 
-
-
-
-
-
-
-
-pub struct UniqueRefPtr<T: RefCounted>(RefPtr<T>);
-
-
-
-
 impl<T: RefCounted> RefPtr<T> {
     
     
@@ -59,7 +47,7 @@ impl<T: RefCounted> RefPtr<T> {
     pub unsafe fn from_addrefed(ptr: *mut T) -> Self {
         debug_assert!(!ptr.is_null());
         RefPtr {
-            ptr: ptr,
+            ptr,
             _marker: PhantomData,
         }
     }
@@ -125,41 +113,11 @@ impl<T: RefCounted> RefPtr<T> {
     }
 }
 
-impl<T: RefCounted> UniqueRefPtr<T> {
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_addrefed(ptr: *mut T) -> Self {
-        UniqueRefPtr(RefPtr::from_addrefed(ptr))
-    }
-
-    
-    pub fn get(self) -> RefPtr<T> {
-        self.0
-    }
-}
-
 impl<T: RefCounted> Deref for RefPtr<T> {
     type Target = T;
     fn deref(&self) -> &T {
         debug_assert!(!self.ptr.is_null());
         unsafe { &*self.ptr }
-    }
-}
-
-impl<T: RefCounted> Deref for UniqueRefPtr<T> {
-    type Target = T;
-    fn deref(&self) -> &T {
-        unsafe { &*self.0.ptr }
-    }
-}
-
-impl<T: RefCounted> DerefMut for UniqueRefPtr<T> {
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut *self.0.ptr }
     }
 }
 
@@ -227,23 +185,50 @@ impl<T: RefCounted> structs::RefPtr<T> {
 
 impl<T> structs::RefPtr<T> {
     
+    pub fn null() -> Self {
+        Self {
+            mRawPtr: ptr::null_mut(),
+            _phantom_0: PhantomData,
+        }
+    }
+
     
-    pub fn set_arc<U>(&mut self, other: Arc<U>)
+    pub fn from_arc(s: Arc<T>) -> Self {
+        Self {
+            mRawPtr: Arc::into_raw(s) as *mut _,
+            _phantom_0: PhantomData,
+        }
+    }
+
+    
+    pub fn from_arc_ffi<U>(s: Arc<U>) -> Self
+    where
+        U: HasArcFFI<FFIType = T>,
+    {
+        Self {
+            mRawPtr: unsafe { mem::transmute(Arc::into_raw_offset(s)) },
+            _phantom_0: PhantomData,
+        }
+    }
+
+    
+    pub fn set_arc(&mut self, other: Arc<T>) {
+        unsafe {
+            if !self.mRawPtr.is_null() {
+                let _ = Arc::from_raw(self.mRawPtr);
+            }
+            self.mRawPtr = Arc::into_raw(other) as *mut _;
+        }
+    }
+
+    
+    pub fn set_arc_ffi<U>(&mut self, other: Arc<U>)
     where
         U: HasArcFFI<FFIType = T>,
     {
         unsafe {
             U::release_opt(self.mRawPtr.as_ref());
         }
-        self.set_arc_leaky(other);
-    }
-
-    
-    
-    pub fn set_arc_leaky<U>(&mut self, other: Arc<U>)
-    where
-        U: HasArcFFI<FFIType = T>,
-    {
         *self = unsafe { mem::transmute(Arc::into_raw_offset(other)) };
     }
 }

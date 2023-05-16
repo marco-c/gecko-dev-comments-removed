@@ -253,7 +253,7 @@ size_t Gecko_ElementTransitions_Length(
 nsCSSPropertyID Gecko_ElementTransitions_PropertyAt(
     const mozilla::dom::Element* aElementOrPseudo, size_t aIndex);
 
-const RawServoAnimationValue* Gecko_ElementTransitions_EndValueAt(
+const mozilla::StyleAnimationValue* Gecko_ElementTransitions_EndValueAt(
     const mozilla::dom::Element* aElementOrPseudo, size_t aIndex);
 
 double Gecko_GetProgressFromComputedTiming(const mozilla::ComputedTiming*);
@@ -266,7 +266,7 @@ double Gecko_GetPositionInSegment(const mozilla::AnimationPropertySegment*,
 
 
 
-const RawServoAnimationValue* Gecko_AnimationGetBaseStyle(
+const mozilla::StyleAnimationValue* Gecko_AnimationGetBaseStyle(
     const RawServoAnimationValueTable* aBaseStyles, nsCSSPropertyID aProperty);
 
 void Gecko_StyleTransition_SetUnsupportedProperty(
