@@ -3532,18 +3532,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
-  if (aCacheDomain & CacheDomain::ScrollPosition && frame) {
-    const auto [scrollPosition, scrollRange] = mDoc->ComputeScrollData(this);
-    if (scrollRange.width || scrollRange.height) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
+  if (aCacheDomain & CacheDomain::ScrollPosition) {
+    nsPoint scrollPosition;
+    std::tie(scrollPosition, std::ignore) = mDoc->ComputeScrollData(this);
+    if (scrollPosition.x || scrollPosition.y) {
       nsTArray<int32_t> positionArr(2);
       positionArr.AppendElement(scrollPosition.x);
       positionArr.AppendElement(scrollPosition.y);
@@ -3651,17 +3643,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(nsGkAtoms::position, nsGkAtoms::fixed);
     } else if (aUpdateType != CacheUpdateType::Initial) {
       fields->SetAttribute(nsGkAtoms::position, DeleteEntry());
-    }
-
-    if (frame) {
-      nsAutoCString overflow;
-      frame->Style()->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
-      RefPtr<nsAtom> overflowAtom = NS_Atomize(overflow);
-      if (overflowAtom == nsGkAtoms::hidden) {
-        fields->SetAttribute(nsGkAtoms::overflow, nsGkAtoms::hidden);
-      } else if (aUpdateType != CacheUpdateType::Initial) {
-        fields->SetAttribute(nsGkAtoms::overflow, DeleteEntry());
-      }
     }
   }
 
@@ -3866,24 +3847,6 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
 
   if (nsIFrame* frame = GetFrame()) {
     const ComputedStyle* newStyle = frame->Style();
-
-    nsAutoCString oldOverflow, newOverflow;
-    mOldComputedStyle->GetComputedPropertyValue(eCSSProperty_overflow,
-                                                oldOverflow);
-    newStyle->GetComputedPropertyValue(eCSSProperty_overflow, newOverflow);
-
-    if (oldOverflow != newOverflow) {
-      if (oldOverflow.Equals("hidden"_ns) || newOverflow.Equals("hidden"_ns)) {
-        mDoc->QueueCacheUpdate(this, CacheDomain::Style);
-      }
-      if (oldOverflow.Equals("auto"_ns) || newOverflow.Equals("auto"_ns) ||
-          oldOverflow.Equals("scroll"_ns) || newOverflow.Equals("scroll"_ns)) {
-        
-        
-        
-        mDoc->QueueCacheUpdate(this, CacheDomain::ScrollPosition);
-      }
-    }
 
     nsAutoCString oldDisplay, newDisplay;
     mOldComputedStyle->GetComputedPropertyValue(eCSSProperty_display,
