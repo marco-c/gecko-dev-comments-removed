@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const suggestion_type = "weather";
 const match_type = "firefox-suggest";
-const index = 1;
+const index = 0;
 const position = index + 1;
 
 const { TELEMETRY_SCALARS: WEATHER_SCALARS } = UrlbarProviderWeather;
@@ -41,10 +41,10 @@ add_task(async function() {
     suggestion,
     providerName: UrlbarProviderWeather.name,
     showSuggestion: async () => {
-      await UrlbarTestUtils.promiseAutocompleteResultPopup({
-        window,
-        value: MerinoTestUtils.WEATHER_KEYWORD,
-      });
+      await SimpleTest.promiseFocus(window);
+      await UrlbarTestUtils.promisePopupOpen(window, () =>
+        document.getElementById("Browser:OpenLocation").doCommand()
+      );
     },
     teardown: async () => {
       
@@ -60,8 +60,15 @@ add_task(async function() {
       }
     },
     
+    exposure: {
+      scalars: {
+        [WEATHER_SCALARS.EXPOSURE]: position,
+      },
+    },
+    
     impressionOnly: {
       scalars: {
+        [WEATHER_SCALARS.EXPOSURE]: position,
         [WEATHER_SCALARS.IMPRESSION]: position,
       },
       event: {
@@ -79,6 +86,7 @@ add_task(async function() {
       
       "urlbarView-row-inner": {
         scalars: {
+          [WEATHER_SCALARS.EXPOSURE]: position,
           [WEATHER_SCALARS.IMPRESSION]: position,
           [WEATHER_SCALARS.CLICK]: position,
         },
@@ -96,6 +104,7 @@ add_task(async function() {
       
       "urlbarView-button-block": {
         scalars: {
+          [WEATHER_SCALARS.EXPOSURE]: position,
           [WEATHER_SCALARS.IMPRESSION]: position,
           [WEATHER_SCALARS.BLOCK]: position,
         },
@@ -113,6 +122,7 @@ add_task(async function() {
       
       "urlbarView-button-help": {
         scalars: {
+          [WEATHER_SCALARS.EXPOSURE]: position,
           [WEATHER_SCALARS.IMPRESSION]: position,
           [WEATHER_SCALARS.HELP]: position,
         },
