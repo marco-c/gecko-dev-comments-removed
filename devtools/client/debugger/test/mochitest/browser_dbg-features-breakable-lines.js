@@ -32,13 +32,14 @@ add_task(async function testBreakableLinesOverReloads() {
   
   
   
-  await assertBreakableLines(dbg, "original.js", 13, [
+  await assertBreakableLines(dbg, "original.js", 15, [
     ...getRange(1, 3),
-    ...getRange(5, 8),
+    5,
+    ...getRange(8, 10),
   ]);
 
   info("Assert breakable lines of the simple first load of script.js");
-  await assertBreakableLines(dbg, "script.js", 3, [1, 3]);
+  await assertBreakableLines(dbg, "script.js", 9, [1, 5, 7, 8, 9]);
 
   info("Assert breakable lines of the first iframe page load");
   await assertBreakableLines(dbg, "iframe.html", 30, [
@@ -51,6 +52,10 @@ add_task(async function testBreakableLinesOverReloads() {
   );
   testServer.switchToNextVersion();
   await reload(dbg, "index.html", "script.js", "original.js", "iframe.html");
+
+  
+  
+  await waitForSelectedSource(dbg, "iframe.html");
 
   info("Assert breakable lines of the more complex second load of script.js");
   await assertBreakableLines(dbg, "script.js", 23, [2, ...getRange(13, 23)]);

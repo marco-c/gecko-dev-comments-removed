@@ -11,7 +11,7 @@ const TEST_URL = testServer.urlFor("index.html");
 
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(4);
 
 
 
@@ -56,26 +56,32 @@ add_task(async function testBreakableLinesOverReloads() {
   
   
   
-  await assertBreakablePositions(dbg, "original.js", 13, [
+  await assertBreakablePositions(dbg, "original.js", 15, [
     { line: 1, columns: [] },
     { line: 2, columns: [2, 9, 32] },
     { line: 3, columns: [] },
     { line: 5, columns: [] },
-    { line: 6, columns: [2, 8] },
-    { line: 7, columns: [2, 10] },
-    { line: 8, columns: [] },
+    { line: 8, columns: [2, 8] },
+    { line: 9, columns: [2, 10] },
+    { line: 10, columns: [] },
   ]);
 
   info("Assert breakable lines of the simple first load of script.js");
-  await assertBreakablePositions(dbg, "script.js", 3, [
+  await assertBreakablePositions(dbg, "script.js", 9, [
     { line: 1, columns: [0, 8] },
-    { line: 3, columns: [] },
+    { line: 5, columns: [2, 10] },
+    { line: 7, columns: [2, 9] },
+    { line: 8, columns: [] },
+    { line: 9, columns: [] },
   ]);
 
   info("Pretty print first load of script.js and assert breakable lines");
   await prettyPrint(dbg);
-  await assertBreakablePositions(dbg, "script.js:formatted", 3, [
+  await assertBreakablePositions(dbg, "script.js:formatted", 8, [
     { line: 1, columns: [0, 8] },
+    { line: 4, columns: [2, 10] },
+    { line: 6, columns: [2, 9] },
+    { line: 7, columns: [] },
   ]);
   await closeTab(dbg, "script.js:formatted");
 
