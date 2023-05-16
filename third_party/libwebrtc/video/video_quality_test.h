@@ -65,8 +65,6 @@ class VideoQualityTest : public test::CallTest,
   static std::vector<int> ParseCSV(const std::string& str);
 
  protected:
-  std::map<uint8_t, webrtc::MediaType> payload_type_map_;
-
   
   
   void TestBody() override;
