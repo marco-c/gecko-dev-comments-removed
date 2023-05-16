@@ -705,10 +705,13 @@ function runInParent(aFunctionOrURL) {
 
 
 
+function manageLoginsInParent() {
+  return runInParent(function addLoginsInParentInner() {
+    
+    addMessageListener("removeAllUserFacingLogins", () => {
+      Services.logins.removeAllUserFacingLogins();
+    });
 
-
-async function addLoginsInParent(...aLogins) {
-  let script = runInParent(function addLoginsInParentInner() {
     
     addMessageListener("addLogins", async logins => {
       let nsLoginInfo = Components.Constructor(
@@ -725,6 +728,26 @@ async function addLoginsInParent(...aLogins) {
       }
     });
   });
+}
+
+
+
+
+
+async function addLoginsInParent(...aLogins) {
+  const script = manageLoginsInParent();
+  await script.sendQuery("addLogins", aLogins);
+  return script;
+}
+
+
+
+
+
+
+async function setStoredLoginsAsync(...aLogins) {
+  const script = manageLoginsInParent();
+  script.sendQuery("removeAllUserFacingLogins");
   await script.sendQuery("addLogins", aLogins);
   return script;
 }
