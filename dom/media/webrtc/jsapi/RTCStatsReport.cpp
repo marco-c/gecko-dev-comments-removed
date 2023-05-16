@@ -12,29 +12,36 @@
 
 namespace mozilla::dom {
 
-RTCStatsTimestampMaker::RTCStatsTimestampMaker()
+RTCStatsTimestampState::RTCStatsTimestampState()
     : mRandomTimelineSeed(0),
       mStartRealtime(WebrtcSystemTimeBase()),
       mRTPCallerType(RTPCallerType::Normal),
       mStartWallClockRaw(
           PerformanceService::GetOrCreate()->TimeOrigin(mStartRealtime)) {}
 
-RTCStatsTimestampMaker::RTCStatsTimestampMaker(nsPIDOMWindowInner* aWindow)
-    : mRandomTimelineSeed(
-          aWindow && aWindow->GetPerformance()
-              ? aWindow->GetPerformance()->GetRandomTimelineSeed()
-              : 0),
-      mStartRealtime(aWindow && aWindow->GetPerformance()
-                         ? aWindow->GetPerformance()->CreationTimeStamp()
-                         : WebrtcSystemTimeBase()),
-      mRTPCallerType(aWindow && aWindow->GetPerformance()
-                         ? aWindow->GetPerformance()->GetRTPCallerType()
-                         : RTPCallerType::Normal),
+RTCStatsTimestampState::RTCStatsTimestampState(Performance& aPerformance)
+    : mRandomTimelineSeed(aPerformance.GetRandomTimelineSeed()),
+      mStartRealtime(aPerformance.CreationTimeStamp()),
+      mRTPCallerType(aPerformance.GetRTPCallerType()),
       mStartWallClockRaw(
           PerformanceService::GetOrCreate()->TimeOrigin(mStartRealtime)) {}
 
-DOMHighResTimeStamp RTCStatsTimestampMaker::ReduceRealtimePrecision(
-    webrtc::Timestamp aRealtime) const {
+TimeStamp RTCStatsTimestamp::ToMozTime() const { return mMozTime; }
+
+webrtc::Timestamp RTCStatsTimestamp::ToRealtime() const {
+  return webrtc::Timestamp::Micros(
+      (mMozTime - mState.mStartRealtime).ToMicroseconds());
+}
+
+webrtc::Timestamp RTCStatsTimestamp::To1Jan1970() const {
+  return ToRealtime() + webrtc::TimeDelta::Millis(mState.mStartWallClockRaw);
+}
+
+webrtc::Timestamp RTCStatsTimestamp::ToNtp() const {
+  return To1Jan1970() + webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970);
+}
+
+DOMHighResTimeStamp RTCStatsTimestamp::ToDom() const {
   
   
   
@@ -43,11 +50,11 @@ DOMHighResTimeStamp RTCStatsTimestampMaker::ReduceRealtimePrecision(
   
   
 
-  DOMHighResTimeStamp realtime = aRealtime.ms<double>();
+  DOMHighResTimeStamp realtime = ToRealtime().ms<double>();
   
-  if (mRandomTimelineSeed) {
+  if (mState.mRandomTimelineSeed) {
     realtime = nsRFPService::ReduceTimePrecisionAsMSecs(
-        realtime, mRandomTimelineSeed, mRTPCallerType);
+        realtime, mState.mRandomTimelineSeed, mState.mRTPCallerType);
   }
 
   
@@ -56,39 +63,63 @@ DOMHighResTimeStamp RTCStatsTimestampMaker::ReduceRealtimePrecision(
   
   
   DOMHighResTimeStamp start = nsRFPService::ReduceTimePrecisionAsMSecs(
-      mStartWallClockRaw, 0, mRTPCallerType);
+      mState.mStartWallClockRaw, 0, mState.mRTPCallerType);
 
   return start + realtime;
 }
 
-webrtc::Timestamp RTCStatsTimestampMaker::ConvertRealtimeTo1Jan1970(
-    webrtc::Timestamp aRealtime) const {
-  return aRealtime + webrtc::TimeDelta::Millis(mStartWallClockRaw);
+ RTCStatsTimestamp RTCStatsTimestamp::FromMozTime(
+    const RTCStatsTimestampMaker& aMaker, TimeStamp aMozTime) {
+  return RTCStatsTimestamp(aMaker.mState, aMozTime);
 }
 
-DOMHighResTimeStamp RTCStatsTimestampMaker::ConvertNtpToDomTime(
-    webrtc::Timestamp aNtpTime) const {
+ RTCStatsTimestamp RTCStatsTimestamp::FromRealtime(
+    const RTCStatsTimestampMaker& aMaker, webrtc::Timestamp aRealtime) {
+  return RTCStatsTimestamp(aMaker.mState, aMaker.mState.mStartRealtime +
+                                              TimeDuration::FromMicroseconds(
+                                                  aRealtime.us<double>()));
+}
+
+ RTCStatsTimestamp RTCStatsTimestamp::From1Jan1970(
+    const RTCStatsTimestampMaker& aMaker, webrtc::Timestamp a1Jan1970) {
+  const auto& state = aMaker.mState;
+  return FromRealtime(
+      aMaker, a1Jan1970 - webrtc::TimeDelta::Millis(state.mStartWallClockRaw));
+}
+
+ RTCStatsTimestamp RTCStatsTimestamp::FromNtp(
+    const RTCStatsTimestampMaker& aMaker, webrtc::Timestamp aNtpTime) {
+  const auto& state = aMaker.mState;
   const auto realtime = aNtpTime -
                         webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970) -
-                        webrtc::TimeDelta::Millis(mStartWallClockRaw);
+                        webrtc::TimeDelta::Millis(state.mStartWallClockRaw);
   
   
   
-  return ReduceRealtimePrecision(realtime - webrtc::TimeDelta::Micros(500));
+  return FromRealtime(aMaker, realtime - webrtc::TimeDelta::Micros(500));
 }
 
-webrtc::Timestamp RTCStatsTimestampMaker::ConvertMozTimeToRealtime(
-    TimeStamp aMozTime) const {
-  return webrtc::Timestamp::Micros(
-      (aMozTime - mStartRealtime).ToMicroseconds());
+RTCStatsTimestamp::RTCStatsTimestamp(RTCStatsTimestampState aState,
+                                     TimeStamp aMozTime)
+    : mState(aState), mMozTime(aMozTime) {}
+
+RTCStatsTimestampMaker::RTCStatsTimestampMaker(RTCStatsTimestampState aState)
+    : mState(aState) {}
+
+
+RTCStatsTimestampMaker RTCStatsTimestampMaker::Create(
+    nsPIDOMWindowInner* aWindow ) {
+  if (!aWindow) {
+    return RTCStatsTimestampMaker(RTCStatsTimestampState());
+  }
+  if (Performance* p = aWindow->GetPerformance()) {
+    return RTCStatsTimestampMaker(RTCStatsTimestampState(*p));
+  }
+  return RTCStatsTimestampMaker(RTCStatsTimestampState());
 }
 
-DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
-  return ReduceRealtimePrecision(GetNowRealtime());
-}
-
-webrtc::Timestamp RTCStatsTimestampMaker::GetNowRealtime() const {
-  return ConvertMozTimeToRealtime(TimeStamp::Now());
+RTCStatsTimestamp RTCStatsTimestampMaker::GetNow() const {
+  return RTCStatsTimestamp::FromMozTime(*this, TimeStamp::Now());
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(RTCStatsReport, mParent)

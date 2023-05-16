@@ -34,6 +34,24 @@ namespace dom {
 
 
 
+struct RTCStatsTimestampState {
+  RTCStatsTimestampState();
+  explicit RTCStatsTimestampState(Performance& aPerformance);
+
+  RTCStatsTimestampState(const RTCStatsTimestampState&) = default;
+
+  
+
+  
+  const uint64_t mRandomTimelineSeed;
+  
+  
+  const TimeStamp mStartRealtime;
+  
+  const RTPCallerType mRTPCallerType;
+  
+  const DOMHighResTimeStamp mStartWallClockRaw;
+};
 
 
 
@@ -46,26 +64,48 @@ namespace dom {
 
 
 
+
+
+
+
+
+class RTCStatsTimestampMaker;
+class RTCStatsTimestamp {
+ public:
+  TimeStamp ToMozTime() const;
+  webrtc::Timestamp ToRealtime() const;
+  webrtc::Timestamp To1Jan1970() const;
+  webrtc::Timestamp ToNtp() const;
+  DOMHighResTimeStamp ToDom() const;
+
+  static RTCStatsTimestamp FromMozTime(const RTCStatsTimestampMaker& aMaker,
+                                       TimeStamp aMozTime);
+  static RTCStatsTimestamp FromRealtime(const RTCStatsTimestampMaker& aMaker,
+                                        webrtc::Timestamp aRealtime);
+  static RTCStatsTimestamp From1Jan1970(const RTCStatsTimestampMaker& aMaker,
+                                        webrtc::Timestamp aRealtime);
+  static RTCStatsTimestamp FromNtp(const RTCStatsTimestampMaker& aMaker,
+                                   webrtc::Timestamp aRealtime);
+  
+  
+
+ private:
+  RTCStatsTimestamp(RTCStatsTimestampState aState, TimeStamp aMozTime);
+
+  const RTCStatsTimestampState mState;
+  const TimeStamp mMozTime;
+};
 
 class RTCStatsTimestampMaker {
  public:
-  RTCStatsTimestampMaker();
-  explicit RTCStatsTimestampMaker(nsPIDOMWindowInner* aWindow);
+  static RTCStatsTimestampMaker Create(nsPIDOMWindowInner* aWindow = nullptr);
 
-  DOMHighResTimeStamp GetNow() const;
+  RTCStatsTimestamp GetNow() const;
 
-  webrtc::Timestamp GetNowRealtime() const;
-  webrtc::Timestamp ConvertMozTimeToRealtime(TimeStamp aMozTime) const;
-  webrtc::Timestamp ConvertRealtimeTo1Jan1970(
-      webrtc::Timestamp aRealtime) const;
-  DOMHighResTimeStamp ConvertNtpToDomTime(webrtc::Timestamp aNtpTime) const;
-  DOMHighResTimeStamp ReduceRealtimePrecision(
-      webrtc::Timestamp aRealtime) const;
+  const RTCStatsTimestampState mState;
 
-  const uint64_t mRandomTimelineSeed;
-  const TimeStamp mStartRealtime;
-  const RTPCallerType mRTPCallerType;
-  const DOMHighResTimeStamp mStartWallClockRaw;
+ private:
+  explicit RTCStatsTimestampMaker(RTCStatsTimestampState aState);
 };
 
 
