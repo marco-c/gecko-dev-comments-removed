@@ -186,34 +186,93 @@ function getPasswordEditedMessage() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createLoginForm({
+  num = 1,
   action = "",
-  username = {
-    value: "",
-  },
-  password = {
-    type: "password",
-  },
+  autocomplete = null,
+  username = {},
+  password = {},
 } = {}) {
-  info(`Creating login form ${JSON.stringify({ action, username, password })}`);
+  username.id ||= null;
+  username.name ||= "uname";
+  username.type ||= "text";
+  username.value ||= null;
+  username.autocomplete ||= null;
+  password.id ||= null;
+  password.name ||= "pword";
+  password.type ||= "password";
+  password.value ||= null;
+  password.label ||= null;
+  password.autocomplete ||= null;
+
+  info(
+    `Creating login form ${JSON.stringify({ num, action, username, password })}`
+  );
 
   const form = document.createElement("form");
+  form.id = `form${num}`;
   form.action = action;
+  form.onsubmit = () => false;
+
+  if (autocomplete != null) {
+    form.setAttribute("autocomplete", autocomplete);
+  }
 
   const usernameInput = document.createElement("input");
-  usernameInput.type = "text";
-  usernameInput.name = "uname";
-  usernameInput.value = username.value;
-  if (username.autocomplete) {
+  if (username.id != null) {
+    usernameInput.id = username.id;
+  }
+  usernameInput.type = username.type;
+  usernameInput.name = username.name;
+  if (username.value != null) {
+    usernameInput.value = username.value;
+  }
+  if (username.autocomplete != null) {
     usernameInput.setAttribute("autocomplete", username.autocomplete);
   }
   form.appendChild(usernameInput);
 
   if (password) {
     const passwordInput = document.createElement("input");
+    if (password.id != null) {
+      passwordInput.id = password.id;
+    }
     passwordInput.type = password.type;
-    passwordInput.name = "pword";
-    form.appendChild(passwordInput);
+    passwordInput.name = password.name;
+    if (password.value != null) {
+      passwordInput.value = password.value;
+    }
+    if (password.autocomplete != null) {
+      passwordInput.setAttribute("autocomplete", password.autocomplete);
+    }
+    if (password.label != null) {
+      const passwordLabel = document.createElement("label");
+      passwordLabel.innerText = password.label;
+      passwordLabel.appendChild(passwordInput);
+      form.appendChild(passwordLabel);
+    } else {
+      form.appendChild(passwordInput);
+    }
   }
 
   const submitButton = document.createElement("button");
@@ -224,8 +283,9 @@ function createLoginForm({
 
   const content = document.getElementById("content");
 
-  if (content.firstChild) {
-    content.replaceChild(form, content.firstChild);
+  const oldForm = document.getElementById(form.id);
+  if (oldForm) {
+    content.replaceChild(form, oldForm);
   } else {
     content.appendChild(form);
   }
