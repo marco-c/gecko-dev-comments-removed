@@ -121,11 +121,10 @@ void TaskQueueGcd::PostDelayedHighPrecisionTask(
 
 void TaskQueueGcd::RunTask(void* task_context) {
   std::unique_ptr<TaskContext> tc(static_cast<TaskContext*>(task_context));
-  if (!tc->queue->is_active_)
-    return;
-
   CurrentTaskQueueSetter set_current(tc->queue);
-  std::move(tc->task)();
+  if (tc->queue->is_active_) {
+    std::move(tc->task)();
+  }
   
   
   tc = nullptr;

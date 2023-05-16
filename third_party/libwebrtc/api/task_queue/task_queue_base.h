@@ -56,6 +56,12 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
+  
+  
+  
+  
+  
+  
   virtual void PostTask(absl::AnyInvocable<void() &&> task) = 0;
 
   
