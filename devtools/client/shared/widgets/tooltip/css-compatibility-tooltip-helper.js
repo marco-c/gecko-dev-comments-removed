@@ -20,7 +20,10 @@ class CssCompatibilityTooltipHelper {
     this.addTab = this.addTab.bind(this);
   }
 
-  _createElement(doc, tag, classList = [], attributeList = {}) {
+  #currentTooltip = null;
+  #currentUrl = null;
+
+  #createElement(doc, tag, classList = [], attributeList = {}) {
     const XHTML_NS = "http://www.w3.org/1999/xhtml";
     const newElement = doc.createElementNS(XHTML_NS, tag);
     for (const elementClass of classList) {
@@ -39,7 +42,7 @@ class CssCompatibilityTooltipHelper {
 
 
 
-  _renderUnsupportedBrowserList(container, unsupportedBrowsers) {
+  #renderUnsupportedBrowserList(container, unsupportedBrowsers) {
     
     
     
@@ -50,7 +53,7 @@ class CssCompatibilityTooltipHelper {
 
     const { require } = BrowserLoader({
       baseURI: "resource://devtools/client/shared/widgets/tooltip/",
-      window: this._currentTooltip.doc.defaultView,
+      window: this.#currentTooltip.doc.defaultView,
     });
     const {
       createFactory,
@@ -77,9 +80,9 @@ class CssCompatibilityTooltipHelper {
 
 
 
-  _getCompatibilityMessage(doc, data) {
+  #getCompatibilityMessage(doc, data) {
     const { msgId, property } = data;
-    return this._createElement(doc, "p", [], {
+    return this.#createElement(doc, "p", [], {
       "data-l10n-id": msgId,
       "data-l10n-args": JSON.stringify({ property }),
     });
@@ -101,13 +104,13 @@ class CssCompatibilityTooltipHelper {
 
 
 
-  _getBrowserListContainer(doc, unsupportedBrowsers) {
+  #getBrowserListContainer(doc, unsupportedBrowsers) {
     if (!unsupportedBrowsers.length) {
       return null;
     }
 
-    const browserList = this._createElement(doc, "p");
-    const browserListWrapper = this._createElement(doc, "div", [
+    const browserList = this.#createElement(doc, "p");
+    const browserListWrapper = this.#createElement(doc, "div", [
       "compatibility-browser-list-wrapper",
     ]);
     browserList.appendChild(browserListWrapper);
@@ -115,22 +118,22 @@ class CssCompatibilityTooltipHelper {
     return browserList;
   }
 
-  
-
-
-
-
-
-
-
-
-  _getLearnMoreMessage(doc, { rootProperty }) {
-    const learnMoreMessage = this._createElement(doc, "p", [], {
+  /*
+   * This is the learn more message element linking to the MDN documentation
+   * for the particular incompatible CSS declaration.
+   * The element returned is:
+   *   <p data-l10n-id="css-compatibility-learn-more-message"
+   *       data-l10n-args="{&quot;property&quot;:&quot;user-select&quot;}">
+   *     <span data-l10n-name="link" class="link"></span>
+   *   </p>
+   */
+  #getLearnMoreMessage(doc, { rootProperty }) {
+    const learnMoreMessage = this.#createElement(doc, "p", [], {
       "data-l10n-id": "css-compatibility-learn-more-message",
       "data-l10n-args": JSON.stringify({ rootProperty }),
     });
     learnMoreMessage.appendChild(
-      this._createElement(doc, "span", ["link"], {
+      this.#createElement(doc, "span", ["link"], {
         "data-l10n-name": "link",
       })
     );
@@ -225,16 +228,16 @@ class CssCompatibilityTooltipHelper {
     const { doc } = tooltip;
     const { url, unsupportedBrowsers } = data;
 
-    this._currentTooltip = tooltip;
-    this._currentUrl = `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`;
-    const templateNode = this._createElement(doc, "template");
+    this.#currentTooltip = tooltip;
+    this.#currentUrl = `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`;
+    const templateNode = this.#createElement(doc, "template");
 
-    const tooltipContainer = this._createElement(doc, "div", [
+    const tooltipContainer = this.#createElement(doc, "div", [
       "devtools-tooltip-css-compatibility",
     ]);
 
-    tooltipContainer.appendChild(this._getCompatibilityMessage(doc, data));
-    const browserListContainer = this._getBrowserListContainer(
+    tooltipContainer.appendChild(this.#getCompatibilityMessage(doc, data));
+    const browserListContainer = this.#getBrowserListContainer(
       doc,
       unsupportedBrowsers
     );
@@ -242,36 +245,36 @@ class CssCompatibilityTooltipHelper {
       tooltipContainer.appendChild(browserListContainer);
     }
 
-    tooltipContainer.appendChild(this._getLearnMoreMessage(doc, data));
+    tooltipContainer.appendChild(this.#getLearnMoreMessage(doc, data));
     templateNode.content.appendChild(tooltipContainer);
 
-    this._renderUnsupportedBrowserList(tooltipContainer, unsupportedBrowsers);
+    this.#renderUnsupportedBrowserList(tooltipContainer, unsupportedBrowsers);
     return doc.importNode(templateNode.content, true);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Hide the tooltip, open `this.#currentUrl` in a new tab and focus it.
+   *
+   * @param {DOMEvent} event
+   *        The click event originating from the tooltip.
+   *
+   */
   addTab(event) {
-    
-    
-    
+    // The XUL panel swallows click events so handlers can't be added directly
+    // to the link span. As a workaround we listen to all click events in the
+    // panel and if a link span is clicked we proceed.
     if (event.target.className !== "link") {
       return;
     }
 
-    const tooltip = this._currentTooltip;
+    const tooltip = this.#currentTooltip;
     tooltip.hide();
-    openDocLink(this._currentUrl);
+    openDocLink(this.#currentUrl);
   }
 
   destroy() {
-    this._currentTooltip = null;
-    this._currentUrl = null;
+    this.#currentTooltip = null;
+    this.#currentUrl = null;
   }
 }
 
