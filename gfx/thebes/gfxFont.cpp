@@ -2445,7 +2445,21 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
   
   bool doMultistrikeBold = ApplySyntheticBold() && !textDrawer;
   if (doMultistrikeBold) {
-    gfx::Float xscale = CalcXScale(aRunParams.context->GetDrawTarget());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Float xscale =
+        std::min<Float>(GetAdjustedSize() / 48.0,
+                        CalcXScale(aRunParams.context->GetDrawTarget()));
     fontParams.synBoldOnePixelOffset = aRunParams.direction * xscale;
     if (xscale != 0.0) {
       static const int32_t kMaxExtraStrikes = 128;
@@ -2461,6 +2475,9 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
         
         fontParams.extraStrikes = NS_lroundf(std::max(1.0, extraStrikes));
       }
+    } else {
+      
+      fontParams.extraStrikes = 0;
     }
   } else {
     fontParams.synBoldOnePixelOffset = 0;
