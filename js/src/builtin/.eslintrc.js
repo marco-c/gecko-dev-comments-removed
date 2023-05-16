@@ -136,6 +136,7 @@ module.exports = {
         SetIsInlinableLargeFunction: "readonly",
         ToNumeric: "readonly",
         ToString: "readonly",
+        IsNullOrUndefined: "readonly",
 
         
         

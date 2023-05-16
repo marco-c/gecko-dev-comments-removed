@@ -32,7 +32,7 @@ function IteratorClose(iteratorRecord, value) {
   
   const returnMethod = iterator.return;
   
-  if (returnMethod !== undefined && returnMethod !== null) {
+  if (!IsNullOrUndefined(returnMethod)) {
     const result = callContentFunction(returnMethod, iterator);
     
     if (!IsObject(result)) {
@@ -124,7 +124,7 @@ function GetIteratorDirectWrapper(obj) {
     },
     return(value) {
       const returnMethod = obj.return;
-      if (returnMethod !== undefined && returnMethod !== null) {
+      if (!IsNullOrUndefined(returnMethod)) {
         return callContentFunction(returnMethod, obj, value);
       }
       return { done: true, value };
@@ -165,7 +165,7 @@ function IteratorFrom(O) {
 
   let iteratorRecord;
   
-  if (usingIterator !== undefined && usingIterator !== null) {
+  if (!IsNullOrUndefined(usingIterator)) {
     
     
     const iterator = callContentFunction(usingIterator, O);
@@ -240,7 +240,7 @@ function WrapForValidIteratorReturn(value) {
   
   const iterator = iterated.iterator;
   const returnMethod = iterator.return;
-  if (returnMethod !== undefined && returnMethod !== null) {
+  if (!IsNullOrUndefined(returnMethod)) {
     let innerResult = callContentFunction(returnMethod, iterator);
     if (!IsObject(innerResult)) {
       ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, innerResult));
@@ -271,7 +271,7 @@ function WrapForValidIteratorThrow(value) {
   
   const throwMethod = iterator.throw;
   
-  if (throwMethod === undefined || throwMethod === null) {
+  if (IsNullOrUndefined(throwMethod)) {
     throw value;
   }
   
