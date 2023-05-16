@@ -513,7 +513,13 @@ void HTMLFormElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       
       
       
-      mDeferSubmission = true;
+      if (!aVisitor.mEvent->IsTrusted()) {
+        
+        
+        
+        
+        mDeferSubmission = true;
+      }
     } else if (msg == eFormReset) {
       if (mGeneratingReset) {
         aVisitor.mCanHandle = false;
@@ -541,11 +547,6 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
       CanSubmit(*aVisitor.mEvent)) {
     EventMessage msg = aVisitor.mEvent->mMessage;
-    if (msg == eFormSubmit) {
-      
-      mDeferSubmission = false;
-    }
-
     if (aVisitor.mEventStatus == nsEventStatus_eIgnore) {
       switch (msg) {
         case eFormReset: {
@@ -553,14 +554,6 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           break;
         }
         case eFormSubmit: {
-          if (mPendingSubmission) {
-            
-            
-            
-            
-            
-            mPendingSubmission = nullptr;
-          }
           if (!aVisitor.mEvent->IsTrusted()) {
             
             OwnerDoc()->WarnOnceAbout(
@@ -572,14 +565,16 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         default:
           break;
       }
-    } else {
-      if (msg == eFormSubmit) {
-        
-        
-        
-        
-        FlushPendingSubmission();
-      }
+    }
+
+    
+    
+    
+    if (msg == eFormSubmit && !aVisitor.mEvent->IsTrusted()) {
+      
+      mDeferSubmission = false;
+      
+      FlushPendingSubmission();
     }
 
     if (msg == eFormSubmit) {

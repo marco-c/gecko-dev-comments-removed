@@ -221,17 +221,6 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     }
   }
 
-  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK)) {
-    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
-    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
-    MOZ_ASSERT(form);
-    
-    
-    
-    
-    form->OnSubmitClickEnd();
-  }
-
   if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
     WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
     if (keyEvent && keyEvent->IsTrusted()) {
@@ -251,7 +240,6 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         }
         
         
-        return rv;
       }
       HandlePopoverTargetAction();
     }
@@ -261,6 +249,11 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
     RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
     MOZ_ASSERT(form);
+    
+    
+    
+    
+    form->OnSubmitClickEnd();
     
     
     
