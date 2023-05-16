@@ -244,7 +244,7 @@ var whitelist = [
   
   { file: "chrome://pippki/content/resetpassword.xhtml" },
   
-  { file: "resource://gre/modules/Manifest.jsm" },
+  { file: "resource://gre/modules/Manifest.sys.mjs" },
   
   
   

@@ -1,31 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+/*
+ * Helper functions extract values from manifest members
+ * and reports conformance errors.
+ */
 
-
-
-
-
-
-
-"use strict";
-
-class ValueExtractor {
+export class ValueExtractor {
   constructor(errors, aBundle) {
     this.errors = errors;
     this.domBundle = aBundle;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * @param options
+   *        The 'spec' object.
+   * @note  This function takes a 'spec' object and destructures it to extract
+   *        a value. If the value is of the wrong type, it warns the developer
+   *        and returns undefined.
+   *        expectedType: is the type of a JS primitive (string, number, etc.)
+   *        object: is the object from which to extract the value.
+   *        objectName: string used to construct the developer warning.
+   *        property: the name of the property being extracted.
+   *        throwTypeError: boolean, throw a TypeError if the type is incorrect.
+   *        trim: boolean, if the value should be trimmed (used by string type).
+   */
   extractValue(options) {
     const {
       expectedType,
@@ -38,7 +37,7 @@ class ValueExtractor {
     const value = object[property];
     const isArray = Array.isArray(value);
 
-    
+    // We need to special-case "array", as it's not a JS primitive.
     const type = isArray ? "array" : typeof value;
     if (type !== expectedType) {
       if (type !== "undefined") {
@@ -54,7 +53,7 @@ class ValueExtractor {
       return undefined;
     }
 
-    
+    // Trim string and returned undefined if the empty string.
     const shouldTrim = expectedType === "string" && value && trim;
     if (shouldTrim) {
       return value.trim() || undefined;
@@ -102,5 +101,3 @@ class ValueExtractor {
     return langTag;
   }
 }
-
-const EXPORTED_SYMBOLS = ["ValueExtractor"];

@@ -1,24 +1,23 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * ManifestProcessor
+ * Implementation of processing algorithms from:
+ * http://www.w3.org/2008/webapps/manifest/
+ *
+ * Creates manifest processor that lets you process a JSON file
+ * or individual parts of a manifest object. A manifest is just a
+ * standard JS object that has been cleaned up.
+ *
+ *   .process({jsonText,manifestURL,docURL});
+ *
+ * Depends on ImageObjectProcessor to process things like
+ * icons and splash_screens.
+ *
+ * TODO: The constructor should accept the UA's supported orientations.
+ * TODO: The constructor should accept the UA's supported display modes.
+ */
 
 const displayModes = new Set([
   "fullscreen",
@@ -38,21 +37,18 @@ const orientationTypes = new Set([
 ]);
 const textDirections = new Set(["ltr", "rtl", "auto"]);
 
+// ValueExtractor is used by the various processors to get values
+// from the manifest and to report errors.
+import { ValueExtractor } from "resource://gre/modules/ValueExtractor.sys.mjs";
 
-
-const { ValueExtractor } = ChromeUtils.import(
-  "resource://gre/modules/ValueExtractor.jsm"
-);
-
-const { ImageObjectProcessor } = ChromeUtils.import(
-  "resource://gre/modules/ImageObjectProcessor.jsm"
-);
+// ImageObjectProcessor is used to process things like icons and images
+import { ImageObjectProcessor } from "resource://gre/modules/ImageObjectProcessor.sys.mjs";
 
 const domBundle = Services.strings.createBundle(
   "chrome://global/locale/dom/dom.properties"
 );
 
-var ManifestProcessor = {
+export var ManifestProcessor = {
   get defaultDisplayMode() {
     return "browser";
   },
@@ -65,14 +61,14 @@ var ManifestProcessor = {
   get textDirections() {
     return textDirections;
   },
-  
-  
-  
-  
-  
-  
-  
-  
+  // process() method processes JSON text into a clean manifest
+  // that conforms with the W3C specification. Takes an object
+  // expecting the following dictionary items:
+  //  * jsonText: the JSON string to be processed.
+  //  * manifestURL: the URL of the manifest, to resolve URLs.
+  //  * docURL: the URL of the owner doc, for security checks
+  //  * checkConformance: boolean. If true, collects any conformance
+  //    errors into a "moz_validation" property on the returned manifest.
   process(aOptions) {
     const {
       jsonText,
@@ -81,7 +77,7 @@ var ManifestProcessor = {
       checkConformance,
     } = aOptions;
 
-    
+    // The errors get populated by the different process* functions.
     const errors = [];
 
     let rawManifest = {};
@@ -228,7 +224,7 @@ var ManifestProcessor = {
         errors.push({ warn });
         return defaultScope;
       }
-      
+      // If start URL is not within scope of scope URL:
       if (
         startURL.origin !== scopeURL.origin ||
         startURL.pathname.startsWith(scopeURL.pathname) === false
@@ -239,8 +235,8 @@ var ManifestProcessor = {
         errors.push({ warn });
         return defaultScope;
       }
-      
-      
+      // Drop search params and fragment
+      // https://github.com/w3c/manifest/pull/961
       scopeURL.hash = "";
       scopeURL.search = "";
       return scopeURL.href;
@@ -311,8 +307,8 @@ var ManifestProcessor = {
     }
 
     function processIdMember() {
-      
-      
+      // the start_url serves as the fallback, in case the id is not specified
+      // or in error. A start_url is assured.
       const startURL = new URL(processedManifest.start_url);
 
       const spec = {
@@ -347,4 +343,3 @@ var ManifestProcessor = {
     }
   },
 };
-var EXPORTED_SYMBOLS = ["ManifestProcessor"];
