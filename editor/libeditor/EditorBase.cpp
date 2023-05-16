@@ -33,6 +33,7 @@
 
 #include "ErrorList.h"
 #include "gfxFontUtils.h"  
+#include "mozilla/Assertions.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
@@ -1578,35 +1579,64 @@ bool EditorBase::CheckForClipboardCommandListener(
   return false;
 }
 
-bool EditorBase::FireClipboardEvent(EventMessage aEventMessage,
-                                    int32_t aClipboardType,
-                                    bool* aActionTaken) {
+Result<EditorBase::ClipboardEventResult, nsresult>
+EditorBase::DispatchClipboardEventAndUpdateClipboard(EventMessage aEventMessage,
+                                                     int32_t aClipboardType) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (aEventMessage == ePaste) {
     CommitComposition();
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
   }
 
   RefPtr<PresShell> presShell = GetPresShell();
   if (NS_WARN_IF(!presShell)) {
-    return false;
+    return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  RefPtr<Selection> sel = &SelectionRef();
-  if (IsHTMLEditor() && aEventMessage == eCopy && sel->IsCollapsed()) {
-    
-    
-    
-    sel = nsCopySupport::GetSelectionForCopy(GetDocument());
-  }
+  const RefPtr<Selection> sel = [&]() {
+    if (IsHTMLEditor() && aEventMessage == eCopy &&
+        SelectionRef().IsCollapsed()) {
+      
+      
+      
+      return nsCopySupport::GetSelectionForCopy(GetDocument());
+    }
+    return do_AddRef(&SelectionRef());
+  }();
 
-  const bool clipboardEventCanceled = !nsCopySupport::FireClipboardEvent(
-      aEventMessage, aClipboardType, presShell, sel, aActionTaken);
+  bool actionTaken = false;
+  const bool doDefault = nsCopySupport::FireClipboardEvent(
+      aEventMessage, aClipboardType, presShell, sel, &actionTaken);
   NotifyOfDispatchingClipboardEvent();
 
+  if (NS_WARN_IF(Destroyed())) {
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+
+  if (doDefault) {
+    MOZ_ASSERT(actionTaken);
+    return ClipboardEventResult::DoDefault;
+  }
   
   
-  return !clipboardEventCanceled && !mDidPreDestroy;
+  
+  if (aEventMessage == ePaste) {
+    return actionTaken ? ClipboardEventResult::DefaultPreventedOfPaste
+                       : ClipboardEventResult::IgnoredOrError;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  return actionTaken ? ClipboardEventResult::CopyOrCutHandled
+                     : ClipboardEventResult::IgnoredOrError;
 }
 
 NS_IMETHODIMP EditorBase::Cut() {
@@ -1621,10 +1651,26 @@ nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  bool actionTaken = false;
-  if (!FireClipboardEvent(eCut, nsIClipboard::kGlobalClipboard, &actionTaken)) {
-    return EditorBase::ToGenericNSResult(
-        actionTaken ? NS_OK : NS_ERROR_EDITOR_ACTION_CANCELED);
+  {
+    Result<ClipboardEventResult, nsresult> ret =
+        DispatchClipboardEventAndUpdateClipboard(
+            eCut, nsIClipboard::kGlobalClipboard);
+    if (MOZ_UNLIKELY(ret.isErr())) {
+      NS_WARNING(
+          "EditorBase::DispatchClipboardEventAndUpdateClipboard(eCut, "
+          "nsIClipboard::kGlobalClipboard) failed");
+      return EditorBase::ToGenericNSResult(ret.unwrapErr());
+    }
+    switch (ret.unwrap()) {
+      case ClipboardEventResult::DoDefault:
+        break;
+      case ClipboardEventResult::CopyOrCutHandled:
+        return NS_OK;
+      case ClipboardEventResult::IgnoredOrError:
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+      case ClipboardEventResult::DefaultPreventedOfPaste:
+        MOZ_ASSERT_UNREACHABLE("Invalid result for eCut");
+    }
   }
 
   
@@ -1678,11 +1724,25 @@ NS_IMETHODIMP EditorBase::Copy() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  bool actionTaken = false;
-  FireClipboardEvent(eCopy, nsIClipboard::kGlobalClipboard, &actionTaken);
-
-  return EditorBase::ToGenericNSResult(
-      actionTaken ? NS_OK : NS_ERROR_EDITOR_ACTION_CANCELED);
+  Result<ClipboardEventResult, nsresult> ret =
+      DispatchClipboardEventAndUpdateClipboard(eCopy,
+                                               nsIClipboard::kGlobalClipboard);
+  if (MOZ_UNLIKELY(ret.isErr())) {
+    NS_WARNING(
+        "EditorBase::DispatchClipboardEventAndUpdateClipboard(eCopy, "
+        "nsIClipboard::kGlobalClipboard) failed");
+    return EditorBase::ToGenericNSResult(ret.unwrapErr());
+  }
+  switch (ret.unwrap()) {
+    case ClipboardEventResult::DoDefault:
+    case ClipboardEventResult::CopyOrCutHandled:
+      return NS_OK;
+    case ClipboardEventResult::IgnoredOrError:
+      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
+    case ClipboardEventResult::DefaultPreventedOfPaste:
+      MOZ_ASSERT_UNREACHABLE("Invalid result for eCopy");
+  }
+  return NS_ERROR_UNEXPECTED;
 }
 
 NS_IMETHODIMP EditorBase::CanCopy(bool* aCanCopy) {
