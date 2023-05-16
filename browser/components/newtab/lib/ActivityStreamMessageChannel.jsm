@@ -108,12 +108,12 @@ class ActivityStreamMessageChannel {
     
     lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
-    for (let browser of this.loadedTabs.keys()) {
-      browser.sendMessageToActor(
-        this.outgoingMessageName,
-        action,
-        "AboutNewTab"
-      );
+    for (let { actor } of this.loadedTabs.values()) {
+      try {
+        actor.sendAsyncMessage(this.outgoingMessageName, action);
+      } catch (e) {
+        
+      }
     }
   }
 
@@ -126,11 +126,7 @@ class ActivityStreamMessageChannel {
     const targetId = action.meta && action.meta.toTarget;
     const target = this.getTargetById(targetId);
     try {
-      target.sendMessageToActor(
-        this.outgoingMessageName,
-        action,
-        "AboutNewTab"
-      );
+      target.sendAsyncMessage(this.outgoingMessageName, action);
     } catch (e) {
       
     }
@@ -157,9 +153,9 @@ class ActivityStreamMessageChannel {
   getTargetById(id) {
     this.validatePortID(id);
 
-    for (let { portID, browser } of this.loadedTabs.values()) {
+    for (let { portID, actor } of this.loadedTabs.values()) {
       if (portID === id) {
-        return browser;
+        return actor;
       }
     }
     return null;
@@ -176,15 +172,11 @@ class ActivityStreamMessageChannel {
     
     lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
-    const preloadedBrowsers = this.getPreloadedBrowsers();
-    if (preloadedBrowsers && action.data) {
-      for (let preloadedBrowser of preloadedBrowsers) {
+    const preloadedActors = this.getPreloadedActors();
+    if (preloadedActors && action.data) {
+      for (let preloadedActor of preloadedActors) {
         try {
-          preloadedBrowser.sendMessageToActor(
-            this.outgoingMessageName,
-            action,
-            "AboutNewTab"
-          );
+          preloadedActor.sendAsyncMessage(this.outgoingMessageName, action);
         } catch (e) {
           
         }
@@ -198,14 +190,14 @@ class ActivityStreamMessageChannel {
 
 
 
-  getPreloadedBrowsers() {
-    let preloadedBrowsers = [];
-    for (let browser of this.loadedTabs.keys()) {
+  getPreloadedActors() {
+    let preloadedActors = [];
+    for (let { actor, browser } of this.loadedTabs.values()) {
       if (this.isPreloadedBrowser(browser)) {
-        preloadedBrowsers.push(browser);
+        preloadedActors.push(actor);
       }
     }
-    return preloadedBrowsers.length ? preloadedBrowsers : null;
+    return preloadedActors.length ? preloadedActors : null;
   }
 
   
@@ -224,6 +216,7 @@ class ActivityStreamMessageChannel {
     
     for (const loadedTab of this.loadedTabs.values()) {
       let simulatedDetails = {
+        actor: loadedTab.actor,
         browser: loadedTab.browser,
         browsingContext: loadedTab.browsingContext,
         portID: loadedTab.portID,
