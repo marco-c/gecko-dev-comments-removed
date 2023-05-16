@@ -2136,6 +2136,11 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
 
       
       Matrix invMatrix = surfacePattern.mMatrix;
+      
+      
+      if (aVertexRange && !aTransformed) {
+        invMatrix *= currentTransform;
+      }
       if (!invMatrix.Invert()) {
         break;
       }
