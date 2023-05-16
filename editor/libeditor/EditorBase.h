@@ -753,10 +753,20 @@ class EditorBase : public nsIEditor,
 
 
 
-  enum class DispatchPasteEvent { No, Yes };
-  MOZ_CAN_RUN_SCRIPT nsresult
-  PasteAsAction(int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
-                nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr) = 0;
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
+      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr) = 0;
 
   
 
@@ -768,28 +778,14 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult PasteTransferableAsAction(
-      nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr);
-
-  
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult PasteAsQuotationAsAction(
-      int32_t aClipboardType, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr) = 0;
 
  protected:  
   class AutoEditActionDataSetter;
@@ -2630,48 +2626,11 @@ class EditorBase : public nsIEditor,
 
 
 
-  enum class ClipboardEventResult {
-    
-    
-    
-    IgnoredOrError,
-    
-    DefaultPreventedOfPaste,
-    
-    
-    
-    
-    CopyOrCutHandled,
-    
-    
-    
-    DoDefault,
-  };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<ClipboardEventResult, nsresult>
-  DispatchClipboardEventAndUpdateClipboard(EventMessage aEventMessage,
-                                           int32_t aClipboardType);
-
-  
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePaste(
-      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteAsQuotation(
-      AutoEditActionDataSetter& aEditActionData, int32_t aClipboardType) = 0;
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteTransferable(
-      AutoEditActionDataSetter& aEditActionData,
-      nsITransferable& aTransferable) = 0;
+  bool FireClipboardEvent(EventMessage aEventMessage, int32_t aClipboardType,
+                          bool* aActionTaken = nullptr);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
