@@ -62,6 +62,9 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
   virtual std::vector<uint8_t> GetAdditionalData() const = 0;
 
   virtual const VideoFrameMetadata& GetMetadata() const = 0;
+  
+  
+  virtual void SetMetadata(const VideoFrameMetadata&) {}
 };
 
 
