@@ -86,6 +86,12 @@ class HyperTextAccessibleBase {
   
 
 
+
+  virtual int32_t CaretLineNumber();
+
+  
+
+
   index_t ConvertMagicOffset(int32_t aOffset) const;
 
   
