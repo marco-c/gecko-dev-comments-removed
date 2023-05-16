@@ -60,6 +60,7 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/Likely.h"
 #include "mozilla/PreXULSkeletonUI.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
@@ -2909,6 +2910,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     
+    
     int verticalResize = 0;
     if (IsWin10OrLater()) {
       verticalResize =
@@ -3647,7 +3649,153 @@ void nsWindow::CleanupFullscreenTransition() {
   mTransitionWnd = nullptr;
 }
 
+void nsWindow::TryDwmResizeHack() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+  
+  
+  
+  {
+    
+    static bool sIsFirstFullscreenEntry = true;
+    bool isFirstFullscreenEntry = sIsFirstFullscreenEntry;
+    sIsFirstFullscreenEntry = false;
+    if (MOZ_LIKELY(!isFirstFullscreenEntry)) {
+      return;
+    }
+    MOZ_LOG(gWindowsLog, LogLevel::Verbose,
+            ("%s: first fullscreen entry", __PRETTY_FUNCTION__));
+  }
+
+  
+  
+  {
+    const auto hackApplicationHeuristics = [&]() -> bool {
+      
+      
+      if (!IsWin11OrLater()) {
+        return false;
+      }
+
+      KnowsCompositor const* const kc = mWindowRenderer->AsKnowsCompositor();
+      
+      MOZ_ASSERT(kc);
+      
+      if (!kc) {
+        return false;
+      }
+
+      
+      
+      
+      if (kc->GetUseCompositorWnd()) {
+        return false;
+      }
+
+      
+      return true;
+    };
+
+    
+    
+    bool const shouldApplyHack = [&]() {
+      enum Reason : bool { Pref, Heuristics };
+      auto const msg = [&](bool decision, Reason reason) -> bool {
+        MOZ_LOG(gWindowsLog, LogLevel::Verbose,
+                ("%s %s per %s", decision ? "applying" : "skipping",
+                 "DWM resize hack", reason == Pref ? "pref" : "heuristics"));
+        return decision;
+      };
+      switch (StaticPrefs::widget_windows_apply_dwm_resize_hack()) {
+        case 0:
+          return msg(false, Pref);
+        case 1:
+          return msg(true, Pref);
+        default:  
+          return msg(hackApplicationHeuristics(), Heuristics);
+      }
+    }();
+
+    if (!shouldApplyHack) {
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "nsWindow::TryFullscreenResizeHack", [self = RefPtr(this)]() {
+        HWND const hwnd = self->GetWindowHandle();
+
+        if (self->mFrameState->GetSizeMode() != nsSizeMode_Fullscreen) {
+          MOZ_LOG(gWindowsLog, mozilla::LogLevel::Info,
+                  ("DWM resize hack: window no longer fullscreen; aborting"));
+          return;
+        }
+
+        RECT origRect;
+        if (!::GetWindowRect(hwnd, &origRect)) {
+          MOZ_LOG(gWindowsLog, mozilla::LogLevel::Error,
+                  ("DWM resize hack: could not get window size?!"));
+          return;
+        }
+        LONG const x = origRect.left;
+        LONG const y = origRect.top;
+        LONG const width = origRect.right - origRect.left;
+        LONG const height = origRect.bottom - origRect.top;
+
+        MOZ_DIAGNOSTIC_ASSERT(!self->mIsPerformingDwmFlushHack);
+        auto const onExit =
+            MakeScopeExit([&, oldVal = self->mIsPerformingDwmFlushHack]() {
+              self->mIsPerformingDwmFlushHack = oldVal;
+            });
+        self->mIsPerformingDwmFlushHack = true;
+
+        MOZ_LOG(gWindowsLog, LogLevel::Debug,
+                ("beginning DWM resize hack for HWND %08" PRIXPTR,
+                 uintptr_t(hwnd)));
+        ::MoveWindow(hwnd, x, y, width, height - 1, FALSE);
+        ::MoveWindow(hwnd, x, y, width, height, TRUE);
+        MOZ_LOG(gWindowsLog, LogLevel::Debug,
+                ("concluded DWM resize hack for HWND %08" PRIXPTR,
+                 uintptr_t(hwnd)));
+      }));
+}
+
 void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
+  MOZ_ASSERT((aOldSizeMode != nsSizeMode_Fullscreen) == aFullScreen);
+
+  
+  
+  if (aFullScreen) {
+    TryDwmResizeHack();
+  }
+
   
   
   
@@ -5097,6 +5245,17 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
   bool result = false;  
   *aRetValue = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(mIsPerformingDwmFlushHack)) {
+    return true;
+  }
 
   
   LRESULT dwmHitResult;
