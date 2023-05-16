@@ -276,16 +276,6 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
   }
 
   
-  
-  rv = mInputStream->AsyncWait(this, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
-                               mOwningEventTarget);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    ErrorPropagation(aCx, aStream, rv);
-    return;
-  }
-  mAsyncWaitWorkerRef = mWorkerRef;
-
-  
 }
 
 void BodyStream::CloseInputAndReleaseObjects() {
@@ -412,6 +402,19 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
   JS::Rooted<JS::Value> chunkValue(aCx);
   chunkValue.setObject(*chunk);
   aStream->EnqueueNative(aCx, chunkValue, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  
+  nsresult rv = mInputStream->AsyncWait(
+      this, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0, mOwningEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return;
+  }
+  mAsyncWaitWorkerRef = mWorkerRef;
 }
 
 NS_IMETHODIMP
@@ -473,7 +476,11 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   
   
   
-  MOZ_ASSERT_IF(!mPullPromise, IsClosed());
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise);
   if (mPullPromise) {
     mPullPromise->MaybeResolveWithUndefined();
     mPullPromise = nullptr;

@@ -296,10 +296,6 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
     mPullPromise = nullptr;
   }
 
-  
-  
-  
-
   return NS_OK;
 }
 
@@ -341,15 +337,6 @@ void InputToReadableStreamAlgorithms::WriteIntoReadRequestBuffer(
 
   if (written == 0) {
     CloseAndReleaseObjects(aCx, aStream);
-    return;
-  }
-
-  
-  
-  rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
-                         mOwningEventTarget);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    ErrorPropagation(aCx, aStream, rv);
     return;
   }
 
@@ -397,6 +384,18 @@ void InputToReadableStreamAlgorithms::EnqueueChunkWithSizeIntoStream(
   JS::Rooted<JS::Value> chunkValue(aCx);
   chunkValue.setObject(*chunk);
   aStream->EnqueueNative(aCx, chunkValue, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  
+  nsresult rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
+                                  mOwningEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return;
+  }
 }
 
 void InputToReadableStreamAlgorithms::CloseAndReleaseObjects(
