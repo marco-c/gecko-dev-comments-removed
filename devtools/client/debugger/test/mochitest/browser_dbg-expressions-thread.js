@@ -21,12 +21,10 @@ add_task(async function() {
     "simple2.js"
   );
 
-  
   const threadsPaneEl = await waitForElementWithSelector(
     dbg,
     ".threads-pane .header-label"
   );
-  threadsPaneEl.click();
 
   await waitForElement(dbg, "threadsPaneItems");
   const threadsEl = findAllElements(dbg, "threadsPaneItems");
