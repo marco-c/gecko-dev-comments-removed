@@ -195,9 +195,17 @@ add_task(async function test_negotiateLangPacks() {
       
       
       systemLocale: "zh-Hans-CN",
-      availableLangPacks: ["en", "en-US", "zh", "zh-CN", "zh-Hans-CN"],
+      availableLangPacks: ["en", "en-US", "zh", "zh-CN", "zh-TW", "zh-Hans-CN"],
       expectedLangPack: "zh-Hans-CN",
       expectedDisplayName: "Chinese (Hans, China)",
+    },
+    {
+      
+      
+      systemLocale: "zh-Hant-TW",
+      availableLangPacks: ["en", "zh", "zh-CN", "zh-TW"],
+      expectedLangPack: "zh-TW",
+      expectedDisplayName: "正體中文",
     },
     {
       
