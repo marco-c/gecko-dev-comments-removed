@@ -1889,6 +1889,15 @@ TEST_F(RtpSenderReceiverTest,
 }
 
 
+TEST_F(RtpSenderReceiverTest, SenderSetStreamsEliminatesDuplicateIds) {
+  AddVideoTrack();
+  video_rtp_sender_ =
+      VideoRtpSender::Create(worker_thread_, video_track_->id(), nullptr);
+  video_rtp_sender_->SetStreams({"1", "2", "1"});
+  EXPECT_EQ(video_rtp_sender_->stream_ids().size(), 2u);
+}
+
+
 std::pair<RidList, RidList> CreatePairOfRidVectors(
     const std::vector<std::string>& first,
     const std::vector<std::string>& second) {
