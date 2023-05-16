@@ -227,7 +227,7 @@ class Browsertime(Perftest):
                 
                 browsertime_script = None
                 for option in self.browsertime_user_args:
-                    arg, val = option.split("=")
+                    arg, val = option.split("=", 1)
                     if arg in ("test_script", "url"):
                         browsertime_script = val
                 if browsertime_script is None:
@@ -505,7 +505,7 @@ class Browsertime(Perftest):
         
         
         for user_arg in self.browsertime_user_args:
-            arg, val = user_arg.split("=")
+            arg, val = user_arg.split("=", 1)
             priority1_options.extend([f"--{arg}", val])
 
         
