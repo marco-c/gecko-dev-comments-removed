@@ -56,7 +56,7 @@ async function openAboutTranslations({
   disabled,
   runInPage,
   detectedLanguageConfidence,
-  detectedLanguageLabel,
+  detectedLangTag,
   languagePairs,
   prefs,
 }) {
@@ -95,7 +95,7 @@ async function openAboutTranslations({
     TranslationsParent.mockLanguagePairs(languagePairs);
   }
   TranslationsParent.mockLanguageIdentification(
-    detectedLanguageLabel ?? "en",
+    detectedLangTag ?? "en",
     detectedLanguageConfidence ?? "0.5"
   );
 
@@ -112,7 +112,7 @@ async function openAboutTranslations({
   if (languagePairs) {
     TranslationsParent.mockLanguagePairs(null);
   }
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
+  if (detectedLangTag && detectedLanguageConfidence) {
     TranslationsParent.mockLanguageIdentification(null, null);
   }
   BrowserTestUtils.removeTab(tab);
@@ -273,7 +273,7 @@ async function setupActorTest({
   languagePairs,
   prefs,
   detectedLanguageConfidence,
-  detectedLanguageLabel,
+  detectedLangTag,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -291,9 +291,9 @@ async function setupActorTest({
     TranslationsParent.translationModelsRemoteClient = translationModels.client;
   }
 
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
+  if (detectedLangTag && detectedLanguageConfidence) {
     TranslationsParent.mockLanguageIdentification(
-      detectedLanguageLabel,
+      detectedLangTag,
       detectedLanguageConfidence
     );
   }
@@ -316,7 +316,7 @@ async function setupActorTest({
 async function loadTestPage({
   languagePairs,
   detectedLanguageConfidence,
-  detectedLanguageLabel,
+  detectedLangTag,
   page,
   prefs,
 }) {
@@ -341,9 +341,9 @@ async function loadTestPage({
     TranslationsParent.mockLanguagePairs(languagePairs);
   }
 
-  if (detectedLanguageLabel && detectedLanguageConfidence) {
+  if (detectedLangTag && detectedLanguageConfidence) {
     TranslationsParent.mockLanguageIdentification(
-      detectedLanguageLabel,
+      detectedLangTag,
       detectedLanguageConfidence
     );
   }
@@ -362,7 +362,7 @@ async function loadTestPage({
         TranslationsParent.mockLanguagePairs(null);
       }
 
-      if (detectedLanguageLabel && detectedLanguageConfidence) {
+      if (detectedLangTag && detectedLanguageConfidence) {
         TranslationsParent.mockLanguageIdentification(null, null);
       }
 

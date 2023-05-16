@@ -99,8 +99,8 @@ async function handleInitializationMessage({ data }) {
 
 
 function isMockedDataPayload(data) {
-  let { languageLabel, confidence } = data;
-  return languageLabel && confidence;
+  let { langTag, confidence } = data;
+  return langTag && confidence;
 }
 
 
@@ -158,14 +158,14 @@ async function initializeLanguageIdEngine(data) {
 
 
 function initializeMockedLanguageIdEngine(data) {
-  const { languageLabel, confidence } = data;
-  if (!languageLabel) {
-    throw new Error('MockedLanguageIdEngine missing "languageLabel"');
+  const { langTag, confidence } = data;
+  if (!langTag) {
+    throw new Error('MockedLanguageIdEngine missing "langTag"');
   }
   if (!confidence) {
     throw new Error('MockedLanguageIdEngine missing "confidence"');
   }
-  return new MockedLanguageIdEngine(languageLabel, confidence);
+  return new MockedLanguageIdEngine(langTag, confidence);
 }
 
 
@@ -193,13 +193,12 @@ function handleMessages(languageIdEngine) {
         case "language-id-request": {
           const { message, messageId } = data;
           try {
-            const [
-              confidence,
-              languageLabel,
-            ] = languageIdEngine.identifyLanguage(message);
+            const [confidence, langTag] = languageIdEngine.identifyLanguage(
+              message
+            );
             postMessage({
               type: "language-id-response",
-              languageLabel,
+              langTag,
               confidence,
               messageId,
             });
@@ -253,11 +252,12 @@ class LanguageIdEngine {
 
 
 
-  #formatLanguageLabel(label) {
-    return label.slice(-2);
+  #formatLangTag(langTag) {
+    return langTag.slice(-2);
   }
 
   
+
 
 
 
@@ -279,8 +279,8 @@ class LanguageIdEngine {
       throw new Error("Unable to identify a language");
     }
 
-    const [confidence, languageLabel] = mostLikelyLanguageData;
-    return [confidence, this.#formatLanguageLabel(languageLabel)];
+    const [confidence, langTag] = mostLikelyLanguageData;
+    return [confidence, this.#formatLangTag(langTag)];
   }
 }
 
@@ -291,7 +291,7 @@ class LanguageIdEngine {
 
 class MockedLanguageIdEngine {
   
-  #languageLabel;
+  #langTag;
   
   #confidence;
 
@@ -299,8 +299,8 @@ class MockedLanguageIdEngine {
 
 
 
-  constructor(languageLabel, confidence) {
-    this.#languageLabel = languageLabel;
+  constructor(langTag, confidence) {
+    this.#langTag = langTag;
     this.#confidence = confidence;
   }
 
@@ -309,6 +309,6 @@ class MockedLanguageIdEngine {
 
 
   identifyLanguage(_message) {
-    return [this.#confidence, this.#languageLabel];
+    return [this.#confidence, this.#langTag];
   }
 }
