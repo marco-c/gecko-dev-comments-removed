@@ -12,7 +12,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/TemplateLib.h"
-#include "mozilla/UniquePtr.h"
 
 #include "frontend/ScopeBindingCache.h"
 #include "gc/Tracer.h"
@@ -316,7 +315,7 @@ class MegamorphicSetPropCache {
   
   
   
-  static constexpr size_t NumEntries = 1024;
+  static constexpr size_t NumEntries = 256;
   static constexpr uint8_t ShapeHashShift1 =
       mozilla::tl::FloorLog2<alignof(Shape)>::value;
   static constexpr uint8_t ShapeHashShift2 =
@@ -515,7 +514,7 @@ class StringToAtomCache {
 class RuntimeCaches {
  public:
   MegamorphicCache megamorphicCache;
-  UniquePtr<MegamorphicSetPropCache> megamorphicSetPropCache;
+  MegamorphicSetPropCache megamorphicSetPropCache;
   GSNCache gsnCache;
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
@@ -544,7 +543,7 @@ class RuntimeCaches {
     evalCache.clear();
     stringToAtomCache.purge();
     megamorphicCache.bumpGeneration();
-    megamorphicSetPropCache->bumpGeneration();
+    megamorphicSetPropCache.bumpGeneration();
     scopeCache.purge();
   }
 
