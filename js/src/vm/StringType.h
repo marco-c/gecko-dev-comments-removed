@@ -54,7 +54,7 @@ struct CompilationAtomCache;
 }  
 
 class ArrayObject;
-class JS_PUBLIC_API GenericPrinter;
+class GenericPrinter;
 class PropertyName;
 class StringBuffer;
 

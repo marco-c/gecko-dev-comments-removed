@@ -17,7 +17,6 @@
 
 #include "jstypes.h"  
 
-#include "js/Printer.h"  
 #include "js/Utility.h"  
 
 class JS_PUBLIC_API JSAtom;
@@ -100,8 +99,6 @@ extern JS_PUBLIC_API bool DumpScript(JSContext* cx, JSScript* scriptArg);
 
 
 extern JS_PUBLIC_API void DumpBacktrace(JSContext* cx, FILE* fp);
-
-extern JS_PUBLIC_API void DumpBacktrace(JSContext* cx, GenericPrinter& out);
 
 extern JS_PUBLIC_API void DumpBacktrace(JSContext* cx);
 

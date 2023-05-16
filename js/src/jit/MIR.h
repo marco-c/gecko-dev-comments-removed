@@ -61,7 +61,7 @@ class FuncExport;
 extern uint32_t MIRTypeToABIResultSize(jit::MIRType);
 }  
 
-class JS_PUBLIC_API GenericPrinter;
+class GenericPrinter;
 class NativeIteratorListHead;
 class StringObject;
 
