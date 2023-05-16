@@ -58,6 +58,8 @@ struct RTPVideoHeader {
     std::bitset<32> active_decode_targets = ~uint32_t{0};
   };
 
+  static RTPVideoHeader FromMetadata(const VideoFrameMetadata& metadata);
+
   RTPVideoHeader();
   RTPVideoHeader(const RTPVideoHeader& other);
 
@@ -65,6 +67,7 @@ struct RTPVideoHeader {
 
   
   VideoFrameMetadata GetAsMetadata() const;
+  void SetFromMetadata(const VideoFrameMetadata& metadata);
 
   absl::optional<GenericDescriptorInfo> generic;
 
