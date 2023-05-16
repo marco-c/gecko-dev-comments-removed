@@ -273,7 +273,8 @@ void gfxConfigManager::ConfigureWebRender() {
                              "FEATURE_FAILURE_NO_GPU_PROCESS"_ns);
   }
 
-  if (StaticPrefs::gfx_webrender_dcomp_apply_1704954_AtStartup()) {
+  if (!mIsNightly &&
+      StaticPrefs::gfx_webrender_dcomp_apply_1704954_AtStartup()) {
     
     
     

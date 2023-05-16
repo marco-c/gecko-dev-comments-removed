@@ -2808,11 +2808,19 @@ void gfxPlatform::InitWebRenderConfig() {
     gfxVars::SetReuseDecoderDevice(true);
   }
 
-  if (Preferences::GetBool("gfx.webrender.flip-sequential", false)) {
+  
+  
+  
+  
+  
+  
+  
+  if (Preferences::GetBool("gfx.webrender.flip-sequential", IsWin10OrLater())) {
     if (gfxVars::UseWebRenderANGLE()) {
       gfxVars::SetUseWebRenderFlipSequentialWin(true);
     }
   }
+
   if (Preferences::GetBool("gfx.webrender.triple-buffering.enabled", false)) {
     if (gfxVars::UseWebRenderDCompWin() ||
         gfxVars::UseWebRenderFlipSequentialWin()) {
