@@ -8830,7 +8830,15 @@ class StringBuilder {
   
   
   static constexpr uint32_t TARGET_SIZE = 16 * 1024;
-  static const uint32_t STRING_BUFFER_UNITS = TARGET_SIZE / sizeof(Unit) - 1;
+
+  
+  
+  
+  
+  static constexpr uint32_t PADDING_UNITS = sizeof(void*) == 8 ? 1 : 2;
+
+  static constexpr uint32_t STRING_BUFFER_UNITS =
+      TARGET_SIZE / sizeof(Unit) - PADDING_UNITS;
 
   StringBuilder() : mLast(this), mLength(0) { MOZ_COUNT_CTOR(StringBuilder); }
 
