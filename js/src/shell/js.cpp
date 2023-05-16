@@ -11088,7 +11088,7 @@ int main(int argc, char** argv) {
 
   
   
-  moz_set_max_dirty_page_modifier(3);
+  moz_set_max_dirty_page_modifier(4);
 
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
   if (!InitOptionParser(op)) {
