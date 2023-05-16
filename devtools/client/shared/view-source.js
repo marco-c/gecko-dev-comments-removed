@@ -136,7 +136,7 @@ exports.viewSourceInDebugger = async function(
   }
 
   
-  exports.viewSource(toolbox, generatedURL, generatedLine);
+  exports.viewSource(toolbox, generatedURL, generatedLine, generatedColumn);
   return false;
 };
 
@@ -181,10 +181,17 @@ async function getOriginalLocation(
 
 
 
-exports.viewSource = async function(toolbox, sourceURL, sourceLine) {
+
+exports.viewSource = async function(
+  toolbox,
+  sourceURL,
+  sourceLine,
+  sourceColumn
+) {
   const utils = toolbox.gViewSourceUtils;
   utils.viewSource({
     URL: sourceURL,
     lineNumber: sourceLine || -1,
+    columnNumber: sourceColumn || -1,
   });
 };

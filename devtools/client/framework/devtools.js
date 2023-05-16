@@ -931,6 +931,49 @@ DevTools.prototype = {
 
 
 
+
+
+
+
+  async openSourceInDebugger(window, { url, line, column }) {
+    const toolbox = await gDevTools.getToolboxForTab(
+      window.gBrowser.selectedTab
+    );
+    if (toolbox) {
+      
+      await toolbox.viewSourceInDebugger(
+        url,
+        line,
+        column,
+        null,
+        "CommandLine"
+      );
+      
+      
+      
+      if (toolbox.win) {
+        toolbox.win.focus();
+      }
+      return;
+    }
+
+    
+    window.gViewSourceUtils.viewSource({
+      URL: url,
+      lineNumber: parseInt(line, 10),
+      columnNumber: parseInt(column, 10),
+    });
+    
+    window.focus();
+  },
+
+  
+
+
+
+
+
+
   destroy({ shuttingDown }) {
     
     if (!shuttingDown) {

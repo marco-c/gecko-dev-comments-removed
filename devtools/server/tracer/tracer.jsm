@@ -238,7 +238,18 @@ class JavaScriptTracer {
           frame.offset
         );
         const padding = "—".repeat(this.depth + 1);
-        const message = `${padding}[${frame.implementation}]—> ${script.source.url} @ ${lineNumber}:${columnNumber} - ${formatedDisplayName}`;
+        
+        
+        const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
+
+        
+        
+        const urlLink = `\x1B]8;;${href}\x1B\\${href}\x1B]8;;\x1B\\`;
+
+        const message = `${padding}[${
+          frame.implementation
+        }]—> ${urlLink} - ${formatDisplayName(frame)}`;
+
         dump(this.prefix + message + "\n");
       }
 
