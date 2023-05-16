@@ -831,6 +831,13 @@ pref("security.allow_parent_unrestricted_js_loads", false);
 
 pref("browser.tabs.min_inactive_duration_before_unload", 600000);
 
+
+#ifdef UNIX_BUT_NOT_MAC
+pref("browser.tabs.searchclipboardfor.middleclick", true);
+#else
+pref("browser.tabs.searchclipboardfor.middleclick", false);
+#endif
+
 #if defined(XP_MACOSX)
   
   
