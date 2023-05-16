@@ -10,7 +10,7 @@ const { FormAutofillHandler } = ChromeUtils.importESModule(
 
 
 ({ FormAutofillUtils } = ChromeUtils.importESModule(
-  "resource://autofill/FormAutofillUtils.sys.mjs"
+  "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 ));
 const { FIELD_STATES } = FormAutofillUtils;
 const PREVIEW = FIELD_STATES.PREVIEW;
