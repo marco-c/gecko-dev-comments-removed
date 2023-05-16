@@ -207,6 +207,49 @@ public:
                       const MacroDefinition &Md) override;
 };
 
+
+class HeuristicResolver {
+public:
+  
+  
+  static std::vector<const NamedDecl *>
+  resolveMemberExpr(const CXXDependentScopeMemberExpr *ME) {
+    const Type *BaseType = ME->getBaseType().getTypePtrOrNull();
+    return resolveDependentMember(BaseType, ME->getMember());
+  }
+
+private:
+  
+  
+  
+  
+  
+  
+  static std::vector<const NamedDecl *>
+  resolveDependentMember(const Type *T, DeclarationName Name) {
+    if (!T)
+      return {};
+
+    const auto *TST = T->getAs<TemplateSpecializationType>();
+    if (!TST) {
+      return {};
+    }
+
+    const ClassTemplateDecl *TD = dyn_cast_or_null<ClassTemplateDecl>(
+        TST->getTemplateName().getAsTemplateDecl());
+    if (!TD)
+      return {};
+
+    CXXRecordDecl *RD = TD->getTemplatedDecl();
+    if (!RD->hasDefinition())
+      return {};
+
+    RD = RD->getDefinition();
+    return RD->lookupDependentName(Name,
+                                   [](const NamedDecl *) { return true; });
+  }
+};
+
 class IndexConsumer : public ASTConsumer,
                       public RecursiveASTVisitor<IndexConsumer>,
                       public DiagnosticConsumer {
@@ -2009,6 +2052,17 @@ public:
       return true;
     }
 
+    
+    for (const NamedDecl *D : HeuristicResolver::resolveMemberExpr(E)) {
+      if (const FunctionDecl *F = dyn_cast<FunctionDecl>(D)) {
+        std::string Mangled = getMangledName(CurMangleContext, F);
+        visitIdentifier("use", "function", getQualifiedName(F), Loc, Mangled,
+                        F->getType(), getContext(Loc));
+      }
+    }
+
+    
+    
     if (TemplateStack) {
       TemplateStack->visitDependent(Loc);
     }
