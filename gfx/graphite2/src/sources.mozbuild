@@ -44,9 +44,6 @@ graphite_defines = [
     
     
     ('GRAPHITE2_STATIC', True),
-    
-    
-    ('GRAPHITE2_CUSTOM_HEADER', '"MozGrMalloc.h"'),
 ]
 
 
