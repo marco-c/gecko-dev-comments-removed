@@ -332,6 +332,10 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   
+  txn.SetDefaultLoadFlags(GetDefaultLoadFlags());
+
+  
+  
   
   txn.SetSandboxFlags(GetSandboxFlags());
   txn.SetInitialSandboxFlags(GetSandboxFlags());
