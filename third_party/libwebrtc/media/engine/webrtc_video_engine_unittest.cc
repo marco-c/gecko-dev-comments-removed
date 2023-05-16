@@ -53,6 +53,7 @@
 #include "media/engine/fake_webrtc_video_engine.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/min_video_bitrate_experiment.h"
@@ -85,6 +86,7 @@ using ::testing::Values;
 using ::webrtc::BitrateConstraints;
 using ::webrtc::RtpExtension;
 using ::webrtc::RtpPacket;
+using ::webrtc::RtpPacketReceived;
 
 namespace {
 static const int kDefaultQpMax = 56;
@@ -1453,7 +1455,7 @@ class WebRtcVideoChannelEncodedFrameCallbackTest : public ::testing::Test {
   }
 
   void DeliverKeyFrame(uint32_t ssrc) {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetMarker(true);
     packet.SetPayloadType(96);  
     packet.SetSsrc(ssrc);
@@ -1469,8 +1471,7 @@ class WebRtcVideoChannelEncodedFrameCallbackTest : public ::testing::Test {
     buf_ptr[8] = height & 255;
     buf_ptr[9] = height >> 8;
 
-    call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet.Buffer(),
-                                     0);
+    channel_->OnPacketReceived(packet.Buffer(), -1);
   }
 
   void DeliverKeyFrameAndWait(uint32_t ssrc) {
@@ -1564,6 +1565,7 @@ TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
   EXPECT_TRUE(channel_->SetSink(kSsrc + 1, &renderer_));
   channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
   DeliverKeyFrame(kSsrc);  
+  channel_->SetDefaultSink(&renderer_);
   DeliverKeyFrameAndWait(kSsrc + 1);
   receive_channel_->RemoveRecvStream(kSsrc + 1);
 }
@@ -2057,13 +2059,13 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSendSsrcAfterSetCodecs) {
 
 
 TEST_F(WebRtcVideoChannelBaseTest, SetSink) {
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetSsrc(kSsrc);
   channel_->SetDefaultSink(NULL);
   EXPECT_TRUE(SetDefaultCodec());
   EXPECT_TRUE(SetSend(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(packet.Buffer(),  -1);
+  channel_->OnPacketReceived(packet.Buffer(), -1);
   channel_->SetDefaultSink(&renderer_);
   SendFrame();
   EXPECT_FRAME_WAIT(1, kVideoWidth, kVideoHeight, kTimeout);
@@ -2498,9 +2500,8 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
 
   
   
-  void ReceivePacketAndAdvanceTime(rtc::CopyOnWriteBuffer packet,
-                                   int64_t packet_time_us) {
-    receive_channel_->OnPacketReceived(packet, packet_time_us);
+  void ReceivePacketAndAdvanceTime(const RtpPacketReceived& packet) {
+    receive_channel_->OnPacketReceived(packet.Buffer(), -1);
     rtc::Thread::Current()->ProcessMessages(0);
     time_controller_.AdvanceTime(
         webrtc::TimeDelta::Millis(kUnsignalledReceiveStreamCooldownMs));
@@ -6534,9 +6535,9 @@ TEST_F(WebRtcVideoChannelTest, DefaultReceiveStreamReconfiguresToUseRtx) {
   const std::vector<uint32_t> rtx_ssrcs = MAKE_VECTOR(kRtxSsrcs1);
 
   ASSERT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetSsrc(ssrcs[0]);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
 
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "No default receive stream created.";
@@ -6701,9 +6702,9 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
 
   
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetSsrc(kIncomingUnsignalledSsrc);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
 
   
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
@@ -6718,14 +6719,14 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
 
   
   
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
 
   
   
   
   receive_channel_->OnDemuxerCriteriaUpdateComplete();
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   EXPECT_TRUE(
       fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group.empty());
@@ -6737,9 +6738,9 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_TRUE(fake_call_->GetVideoReceiveStreams().empty());
 
   
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetSsrc(kIncomingUnsignalledSsrc);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
 
   
   const auto& receivers1 = fake_call_->GetVideoReceiveStreams();
@@ -6785,15 +6786,15 @@ TEST_F(WebRtcVideoChannelTest,
   
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc1);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
 
   
@@ -6811,15 +6812,15 @@ TEST_F(WebRtcVideoChannelTest,
   
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc1);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
 
   
@@ -6858,15 +6859,15 @@ TEST_F(WebRtcVideoChannelTest,
   
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc1);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
 
   
@@ -6883,15 +6884,15 @@ TEST_F(WebRtcVideoChannelTest,
   
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc1);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
 
   
@@ -6926,9 +6927,9 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
   
   
   {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 1u);
 
@@ -6939,9 +6940,9 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
   
   
   {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
 
@@ -6953,9 +6954,9 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
   
   
   {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
@@ -6967,9 +6968,9 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
   
   
   {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
@@ -6981,9 +6982,9 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
   
   
   {
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc);
-    ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+    ReceivePacketAndAdvanceTime(packet);
   }
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 3u);
@@ -6996,10 +6997,9 @@ TEST_F(WebRtcVideoChannelTest, UnsignalledSsrcHasACooldown) {
   
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc1);
-    receive_channel_->OnPacketReceived(packet.Buffer(),
-                                        -1);
+    receive_channel_->OnPacketReceived(packet.Buffer(), -1);
   }
   rtc::Thread::Current()->ProcessMessages(0);
   time_controller_.AdvanceTime(
@@ -7012,10 +7012,9 @@ TEST_F(WebRtcVideoChannelTest, UnsignalledSsrcHasACooldown) {
 
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    receive_channel_->OnPacketReceived(packet.Buffer(),
-                                        -1);
+    receive_channel_->OnPacketReceived(packet.Buffer(), -1);
   }
   rtc::Thread::Current()->ProcessMessages(0);
 
@@ -7030,10 +7029,9 @@ TEST_F(WebRtcVideoChannelTest, UnsignalledSsrcHasACooldown) {
   time_controller_.AdvanceTime(webrtc::TimeDelta::Millis(1));
   {
     
-    RtpPacket packet;
+    RtpPacketReceived packet;
     packet.SetSsrc(kSsrc2);
-    receive_channel_->OnPacketReceived(packet.Buffer(),
-                                        -1);
+    receive_channel_->OnPacketReceived(packet.Buffer(), -1);
   }
   rtc::Thread::Current()->ProcessMessages(0);
 
@@ -7074,9 +7072,9 @@ TEST_F(WebRtcVideoChannelTest, BaseMinimumPlayoutDelayMsUnsignaledRecvStream) {
 
   
   
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetSsrc(kIncomingUnsignalledSsrc);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
 
   recv_stream = fake_call_->GetVideoReceiveStream(kIncomingUnsignalledSsrc);
   EXPECT_EQ(recv_stream->base_mininum_playout_delay_ms(), 200);
@@ -7108,10 +7106,10 @@ void WebRtcVideoChannelTest::TestReceiveUnsignaledSsrcPacket(
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
 
   ASSERT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetPayloadType(payload_type);
   packet.SetSsrc(kIncomingUnsignalledSsrc);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
 
   if (expect_created_receive_stream) {
     EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
@@ -7180,19 +7178,19 @@ TEST_F(WebRtcVideoChannelTest,
   const uint32_t rtx_ssrc = ssrc + 1;
 
   
-  RtpPacket packet;
+  RtpPacketReceived packet;
   packet.SetPayloadType(payload_type);
   packet.SetSsrc(ssrc);
-  ReceivePacketAndAdvanceTime(packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(packet);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "Should have created a receive stream for payload type: "
       << payload_type;
 
   
-  RtpPacket rtx_packet;
+  RtpPacketReceived rtx_packet;
   rtx_packet.SetPayloadType(rtx_vp8_payload_type);
   rtx_packet.SetSsrc(rtx_ssrc);
-  ReceivePacketAndAdvanceTime(rtx_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtx_packet);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "RTX packet should not have added or removed a receive stream";
 
@@ -7226,10 +7224,10 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   channel_->SetDefaultSink(&renderer);
 
   
-  RtpPacket rtp_packet;
+  RtpPacketReceived rtp_packet;
   rtp_packet.SetPayloadType(GetEngineCodec("VP8").id);
   rtp_packet.SetSsrc(kIncomingUnsignalledSsrc + 1);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -7248,7 +7246,7 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   
   rtp_packet.SetPayloadType(GetEngineCodec("VP9").id);
   rtp_packet.SetSsrc(kIncomingUnsignalledSsrc + 2);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -7268,7 +7266,7 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   
   rtp_packet.SetPayloadType(126);
   rtp_packet.SetSsrc(kIncomingUnsignalledSsrc + 3);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -7300,10 +7298,10 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
 
   
-  RtpPacket rtp_packet;
+  RtpPacketReceived rtp_packet;
   rtp_packet.SetPayloadType(GetEngineCodec("VP8").id);
   rtp_packet.SetSsrc(kSsrcs3[0]);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   FakeVideoReceiveStream* recv_stream0 =
@@ -7319,7 +7317,7 @@ TEST_F(WebRtcVideoChannelTest,
 
   
   rtp_packet.SetSsrc(kSsrcs3[1]);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   
   ASSERT_EQ(2u, fake_call_->GetVideoReceiveStreams().size());
   EXPECT_EQ(recv_stream0, fake_call_->GetVideoReceiveStreams()[0]);
@@ -8952,10 +8950,10 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
 
   
-  RtpPacket rtp_packet;
+  RtpPacketReceived rtp_packet;
   rtp_packet.SetPayloadType(GetEngineCodec("VP8").id);
   rtp_packet.SetSsrc(kIncomingUnsignalledSsrc);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
 
   
   rtp_parameters = channel_->GetDefaultRtpReceiveParameters();
@@ -8969,11 +8967,11 @@ TEST_F(WebRtcVideoChannelTest,
 TEST_F(WebRtcVideoChannelTest,
        AddReceiveStreamAfterReceivingNonPrimaryUnsignaledSsrc) {
   
-  RtpPacket rtp_packet;
+  RtpPacketReceived rtp_packet;
   const cricket::VideoCodec vp8 = GetEngineCodec("VP8");
   rtp_packet.SetPayloadType(default_apt_rtx_types_[vp8.id]);
   rtp_packet.SetSsrc(2);
-  ReceivePacketAndAdvanceTime(rtp_packet.Buffer(),  -1);
+  ReceivePacketAndAdvanceTime(rtp_packet);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
 
   cricket::StreamParams params = cricket::StreamParams::CreateLegacy(1);
