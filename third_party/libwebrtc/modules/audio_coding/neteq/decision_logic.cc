@@ -71,6 +71,7 @@ DecisionLogic::Config::Config() {
       "enable_stable_playout_delay", &enable_stable_playout_delay,  
       "reinit_after_expands", &reinit_after_expands,                
       "packet_history_size_ms", &packet_history_size_ms,            
+      "cng_timeout_ms", &cng_timeout_ms,                            
       "deceleration_target_level_offset_ms",
       &deceleration_target_level_offset_ms)
       ->Parse(webrtc::field_trial::FindFullName(
@@ -80,6 +81,7 @@ DecisionLogic::Config::Config() {
                    << enable_stable_playout_delay
                    << " reinit_after_expands=" << reinit_after_expands
                    << " packet_history_size_ms=" << packet_history_size_ms
+                   << " cng_timeout_ms=" << cng_timeout_ms.value_or(-1)
                    << " deceleration_target_level_offset_ms="
                    << deceleration_target_level_offset_ms;
 }
@@ -321,6 +323,11 @@ NetEq::Operation DecisionLogic::NoPacket(NetEqController::NetEqStatus status) {
     return NetEq::Operation::kRfc3389CngNoPacket;
   } else if (cng_state_ == kCngInternalOn) {
     
+    if (config_.cng_timeout_ms &&
+        status.generated_noise_samples >
+            static_cast<size_t>(*config_.cng_timeout_ms * sample_rate_khz_)) {
+      return NetEq::Operation::kExpand;
+    }
     return NetEq::Operation::kCodecInternalCng;
   } else if (status.play_dtmf) {
     return NetEq::Operation::kDtmf;
