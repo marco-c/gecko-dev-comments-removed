@@ -547,10 +547,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     webrtc::Mutex sink_lock_;
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_
         RTC_GUARDED_BY(sink_lock_);
-    
-    
-    rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_
-        RTC_GUARDED_BY(sink_lock_);
     int64_t first_frame_timestamp_ RTC_GUARDED_BY(sink_lock_);
     
     
