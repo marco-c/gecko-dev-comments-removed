@@ -6,6 +6,8 @@
 
 
 
+
+
 pref("browser.dom.window.dump.enabled", true);
 pref("devtools.console.stdout.chrome", true);
 
