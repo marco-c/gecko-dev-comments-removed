@@ -56,7 +56,7 @@ class AudioTransport {
       uint32_t currentMicLevel,
       bool keyPressed,
       uint32_t& newMicLevel,
-      int64_t estimatedCaptureTimeNS) {  
+      absl::optional<int64_t> estimatedCaptureTimeNS) {  
     
     
     

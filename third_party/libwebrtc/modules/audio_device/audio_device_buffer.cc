@@ -55,7 +55,6 @@ AudioDeviceBuffer::AudioDeviceBuffer(TaskQueueFactory* task_queue_factory)
       typing_status_(false),
       play_delay_ms_(0),
       rec_delay_ms_(0),
-      capture_timestamp_ns_(0),
       num_stat_reports_(0),
       last_timer_task_time_(0),
       rec_stat_count_(0),
@@ -231,12 +230,13 @@ void AudioDeviceBuffer::SetVQEData(int play_delay_ms, int rec_delay_ms) {
 
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t samples_per_channel) {
-  return SetRecordedBuffer(audio_buffer, samples_per_channel, 0);
+  return SetRecordedBuffer(audio_buffer, samples_per_channel, absl::nullopt);
 }
 
-int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
-                                             size_t samples_per_channel,
-                                             int64_t capture_timestamp_ns) {
+int32_t AudioDeviceBuffer::SetRecordedBuffer(
+    const void* audio_buffer,
+    size_t samples_per_channel,
+    absl::optional<int64_t> capture_timestamp_ns) {
   
   const size_t old_size = rec_buffer_.size();
   rec_buffer_.SetData(static_cast<const int16_t*>(audio_buffer),
@@ -247,17 +247,13 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
     RTC_LOG(LS_INFO) << "Size of recording buffer: " << rec_buffer_.size();
   }
 
-  
-  
-  
-  
-  capture_timestamp_ns_ =
-      (capture_timestamp_ns > 0)
-          ? rtc::kNumNanosecsPerMicrosec *
-                timestamp_aligner_.TranslateTimestamp(
-                    capture_timestamp_ns_ / rtc::kNumNanosecsPerMicrosec,
-                    rtc::TimeMicros())
-          : capture_timestamp_ns;
+  if (capture_timestamp_ns) {
+    capture_timestamp_ns_ =
+        rtc::kNumNanosecsPerMicrosec *
+        timestamp_aligner_.TranslateTimestamp(
+            *capture_timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+            rtc::TimeMicros());
+  }
   
   int16_t max_abs = 0;
   RTC_DCHECK_LT(rec_stat_count_, 50);
