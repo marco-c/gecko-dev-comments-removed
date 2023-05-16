@@ -191,9 +191,9 @@ void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
   mProcessedSPSCQueue->ResetThreadIds();
 
   
-  int sampleCount = mProcessedSPSCQueue->AvailableRead();
+  int sampleInRingbuffer = mProcessedSPSCQueue->AvailableRead();
 
-  if (!sampleCount) {
+  if (!sampleInRingbuffer) {
     return;
   }
 
@@ -207,44 +207,66 @@ void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
     rate = mOutputRate;
   }
 
-  uint32_t frameCount = sampleCount / channelCount;
-  auto duration = FramesToTimeUnit(frameCount, rate);
-  if (!duration.IsValid()) {
-    NS_WARNING("Int overflow in AudioSink");
-    mErrored = true;
-    return;
-  }
+  uint32_t framesRemaining = sampleInRingbuffer / channelCount;
 
-  AlignedAudioBuffer queuedAudio(sampleCount);
-  DebugOnly<int> samplesRead =
-      mProcessedSPSCQueue->Dequeue(queuedAudio.Data(), sampleCount);
-  MOZ_ASSERT(samplesRead == sampleCount);
-
-  
-  
-  
-  
+  nsTArray<AlignedAudioBuffer> packetsToReenqueue;
   RefPtr<AudioData> frontPacket = mAudioQueue.PeekFront();
   uint32_t offset;
   TimeUnit time;
+  uint32_t typicalPacketFrameCount;
+  
+  
+  
+  
   if (!frontPacket) {
     
+    typicalPacketFrameCount = 1024;  
     offset = 0;
-    time = std::max(GetPosition() - duration, TimeUnit::Zero());
+    time = GetPosition();
   } else {
+    typicalPacketFrameCount = frontPacket->Frames();
     offset = frontPacket->mOffset;
-    time = frontPacket->mTime - duration;
+    time = frontPacket->mTime;
   }
-  RefPtr<AudioData> data =
-      new AudioData(offset, time, std::move(queuedAudio), channelCount, rate);
-  MOZ_DIAGNOSTIC_ASSERT(duration == data->mDuration, "must be equal");
 
-  SINK_LOG(
-      "Muting: Pushing back %u frames (%lfms) from the ring buffer back into "
-      "the audio queue",
-      frameCount, static_cast<float>(frameCount) / rate);
+  
+  
+  while (framesRemaining) {
+    uint32_t packetFrameCount =
+        std::min(framesRemaining, typicalPacketFrameCount);
+    framesRemaining -= packetFrameCount;
 
-  mAudioQueue.PushFront(data);
+    int packetSampleCount = packetFrameCount * channelCount;
+    AlignedAudioBuffer packetData(packetSampleCount);
+    DebugOnly<int> samplesRead =
+        mProcessedSPSCQueue->Dequeue(packetData.Data(), packetSampleCount);
+    MOZ_ASSERT(samplesRead == packetSampleCount);
+
+    packetsToReenqueue.AppendElement(packetData);
+  }
+  
+  
+  while (!packetsToReenqueue.IsEmpty()) {
+    auto packetData = packetsToReenqueue.PopLastElement();
+    uint32_t packetFrameCount = packetData.Length() / channelCount;
+    auto duration = FramesToTimeUnit(packetFrameCount, rate);
+    if (!duration.IsValid()) {
+      NS_WARNING("Int overflow in AudioSink");
+      mErrored = true;
+      return;
+    }
+    time -= duration;
+    RefPtr<AudioData> packet =
+        new AudioData(offset, time, std::move(packetData), channelCount, rate);
+    MOZ_DIAGNOSTIC_ASSERT(duration == packet->mDuration, "must be equal");
+
+    SINK_LOG(
+        "Muting: Pushing back %u frames (%lfms) from the ring buffer back into "
+        "the audio queue at pts %lf",
+        packetFrameCount, 1000 * static_cast<float>(packetFrameCount) / rate,
+        time.ToSeconds());
+    mAudioQueue.PushFront(packet);
+  }
 }
 
 Maybe<MozPromiseHolder<MediaSink::EndedPromise>> AudioSink::Shutdown(
