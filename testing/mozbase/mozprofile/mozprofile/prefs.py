@@ -172,12 +172,31 @@ class Preferences(object):
         marker = "##//"  
         lines = [i.strip() for i in mozfile.load(path).readlines()]
         _lines = []
+        multi_line_pref = None
         for line in lines:
             
             if isinstance(line, bytes):
                 line = line.decode()
-            if not line.startswith(pref_setter):
+            pref_start = line.startswith(pref_setter)
+
+            
+            
+            
+            
+            if pref_start and not ");" in line:
+                multi_line_pref = line
                 continue
+            elif multi_line_pref:
+                multi_line_pref = multi_line_pref + line
+                if ");" in line:
+                    if "//" in multi_line_pref:
+                        multi_line_pref = multi_line_pref.replace("//", marker)
+                    _lines.append(multi_line_pref)
+                    multi_line_pref = None
+                continue
+            elif not pref_start:
+                continue
+
             if "//" in line:
                 line = line.replace("//", marker)
             _lines.append(line)

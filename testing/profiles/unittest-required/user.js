@@ -26,25 +26,64 @@ user_pref("browser.bookmarks.max_backups", 0);
 user_pref("browser.console.showInPanel", true);
 
 
-user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%s");
+user_pref(
+  "browser.contentHandlers.types.0.uri",
+  "http://test1.example.org/rss?url=%s"
+);
+user_pref(
+  "browser.contentHandlers.types.1.uri",
+  "http://test1.example.org/rss?url=%s"
+);
+user_pref(
+  "browser.contentHandlers.types.2.uri",
+  "http://test1.example.org/rss?url=%s"
+);
+user_pref(
+  "browser.contentHandlers.types.3.uri",
+  "http://test1.example.org/rss?url=%s"
+);
+user_pref(
+  "browser.contentHandlers.types.4.uri",
+  "http://test1.example.org/rss?url=%s"
+);
+user_pref(
+  "browser.contentHandlers.types.5.uri",
+  "http://test1.example.org/rss?url=%s"
+);
 
 
 user_pref("browser.download.panel.shown", true);
 user_pref("browser.newtabpage.activity-stream.default.sites", "");
 user_pref("browser.newtabpage.activity-stream.telemetry", false);
 
-user_pref("browser.safebrowsing.downloads.remote.url", "http://{server}/safebrowsing-dummy/update");
-user_pref("browser.safebrowsing.provider.google.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
-user_pref("browser.safebrowsing.provider.google.updateURL", "http://{server}/safebrowsing-dummy/update");
-user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://{server}/safebrowsing4-dummy/gethash");
-user_pref("browser.safebrowsing.provider.google4.updateURL", "http://{server}/safebrowsing4-dummy/update");
-user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
-user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
+user_pref(
+  "browser.safebrowsing.downloads.remote.url",
+  "http://{server}/safebrowsing-dummy/update"
+);
+user_pref(
+  "browser.safebrowsing.provider.google.gethashURL",
+  "http://{server}/safebrowsing-dummy/gethash"
+);
+user_pref(
+  "browser.safebrowsing.provider.google.updateURL",
+  "http://{server}/safebrowsing-dummy/update"
+);
+user_pref(
+  "browser.safebrowsing.provider.google4.gethashURL",
+  "http://{server}/safebrowsing4-dummy/gethash"
+);
+user_pref(
+  "browser.safebrowsing.provider.google4.updateURL",
+  "http://{server}/safebrowsing4-dummy/update"
+);
+user_pref(
+  "browser.safebrowsing.provider.mozilla.gethashURL",
+  "http://{server}/safebrowsing-dummy/gethash"
+);
+user_pref(
+  "browser.safebrowsing.provider.mozilla.updateURL",
+  "http://{server}/safebrowsing-dummy/update"
+);
 user_pref("browser.search.suggest.timeout", 10000); 
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("browser.startup.page", 0); 
@@ -56,13 +95,25 @@ user_pref("browser.tabs.disableBackgroundZombification", true);
 
 user_pref("browser.tabs.remote.autostart", false);
 
-user_pref("browser.translation.bing.authURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
-user_pref("browser.translation.bing.translateArrayURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
+user_pref(
+  "browser.translation.bing.authURL",
+  "http://{server}/browser/browser/components/translation/test/bing.sjs"
+);
+user_pref(
+  "browser.translation.bing.translateArrayURL",
+  "http://{server}/browser/browser/components/translation/test/bing.sjs"
+);
 user_pref("browser.translation.engine", "Bing");
-user_pref("browser.translation.yandex.translateURLOverride", "http://{server}/browser/browser/components/translation/test/yandex.sjs");
+user_pref(
+  "browser.translation.yandex.translateURLOverride",
+  "http://{server}/browser/browser/components/translation/test/yandex.sjs"
+);
 user_pref("browser.ui.layout.tablet", 0); 
 
-user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
+user_pref(
+  "browser.uitour.pinnedTabUrl",
+  "http://{server}/uitour-dummy/pinnedTab"
+);
 user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
 
 
@@ -77,12 +128,18 @@ user_pref("browser.fixup.domainsuffixwhitelist.test", true);
 user_pref("browser.warnOnQuit", false);
 
 user_pref("browser.webapps.testing", true);
-user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
+user_pref(
+  "captivedetect.canonicalURL",
+  "http://{server}/captive-detect/success.txt"
+);
 
 user_pref("consoleservice.logcat", true);
 
 
-user_pref("datareporting.healthreport.documentServerURI", "http://{server}/healthreport/");
+user_pref(
+  "datareporting.healthreport.documentServerURI",
+  "http://{server}/healthreport/"
+);
 user_pref("datareporting.healthreport.uploadEnabled", false);
 user_pref("devtools.browsertoolbox.panel", "jsdebugger");
 user_pref("devtools.debugger.remote-port", 6023);
@@ -106,25 +163,49 @@ user_pref("dom.successive_dialog_time_limit", 0);
 
 user_pref("dom.use_xbl_scopes_for_remote_xul", true);
 user_pref("extensions.autoDisableScopes", 0);
-user_pref("extensions.blocklist.detailsURL", "http://{server}/extensions-dummy/blocklistDetailsURL");
-user_pref("extensions.blocklist.itemURL", "http://{server}/extensions-dummy/blocklistItemURL");
+user_pref(
+  "extensions.blocklist.detailsURL",
+  "http://{server}/extensions-dummy/blocklistDetailsURL"
+);
+user_pref(
+  "extensions.blocklist.itemURL",
+  "http://{server}/extensions-dummy/blocklistItemURL"
+);
 
 user_pref("extensions.defaultProviders.enabled", true);
 
 user_pref("extensions.getAddons.cache.enabled", false);
 
-user_pref("extensions.getAddons.get.url", "http://{server}/extensions-dummy/repositoryGetURL");
-user_pref("extensions.getAddons.search.browseURL", "http://{server}/extensions-dummy/repositoryBrowseURL");
-user_pref("extensions.hotfix.url", "http://{server}/extensions-dummy/hotfixURL");
+user_pref(
+  "extensions.getAddons.get.url",
+  "http://{server}/extensions-dummy/repositoryGetURL"
+);
+user_pref(
+  "extensions.getAddons.search.browseURL",
+  "http://{server}/extensions-dummy/repositoryBrowseURL"
+);
+user_pref(
+  "extensions.hotfix.url",
+  "http://{server}/extensions-dummy/hotfixURL"
+);
 
 user_pref("extensions.installDistroAddons", false);
 
 user_pref("extensions.screenshots.disabled", true);
-user_pref("extensions.systemAddon.update.url", "http://{server}/dummy-system-addons.xml");
+user_pref(
+  "extensions.systemAddon.update.url",
+  "http://{server}/dummy-system-addons.xml"
+);
 user_pref("extensions.systemAddon.update.enabled", false);
-user_pref("extensions.update.background.url", "http://{server}/extensions-dummy/updateBackgroundURL");
+user_pref(
+  "extensions.update.background.url",
+  "http://{server}/extensions-dummy/updateBackgroundURL"
+);
 
-user_pref("extensions.update.url", "http://{server}/extensions-dummy/updateURL");
+user_pref(
+  "extensions.update.url",
+  "http://{server}/extensions-dummy/updateURL"
+);
 user_pref("findbar.highlightAll", false);
 user_pref("findbar.modalHighlight", false);
 
@@ -137,7 +218,10 @@ user_pref("geo.provider.testing", true);
 user_pref("geo.provider.network.logging.enabled", true);
 user_pref("geo.provider.network.scan", false);
 user_pref("geo.provider.network.timeToWaitBeforeSending", 2000);
-user_pref("geo.provider.network.url", "http://{server}/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs");
+user_pref(
+  "geo.provider.network.url",
+  "http://{server}/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs"
+);
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.logging.level", 1);
 
@@ -157,7 +241,10 @@ user_pref("media.dormant-on-pause-timeout-ms", 0);
 
 user_pref("media.eme.chromium-api.video-shmems", 0);
 
-user_pref("media.gmp-manager.url.override", "http://{server}/dummy-gmp-manager.xml");
+user_pref(
+  "media.gmp-manager.url.override",
+  "http://{server}/dummy-gmp-manager.xml"
+);
 user_pref("media.hls.server.url", "http://{server}/tests/dom/media/test/hls");
 
 
@@ -188,7 +275,10 @@ user_pref("network.sntp.pools", "{server}");
 
 
 user_pref("places.database.lastMaintenance", 2147483647);
-user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
+user_pref(
+  "privacy.trackingprotection.introURL",
+  "http://{server}/trackingprotection/tour"
+);
 
 
 
@@ -238,4 +328,3 @@ user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 
 user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
-
