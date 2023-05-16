@@ -506,7 +506,9 @@ nsFileInputStream::Read(char* aBuf, uint32_t aCount, uint32_t* _retval) {
     return rv;
   }
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   
   if (mBehaviorFlags & CLOSE_ON_EOF && *_retval == 0) {
