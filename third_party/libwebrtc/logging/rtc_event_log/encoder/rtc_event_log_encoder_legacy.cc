@@ -374,6 +374,10 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
       
       RTC_DCHECK_NOTREACHED();
       break;
+    case RtcEvent::Type::FakeEvent:
+      
+      RTC_DCHECK_NOTREACHED();
+      break;
     case RtcEvent::Type::RouteChangeEvent:
     case RtcEvent::Type::GenericPacketReceived:
     case RtcEvent::Type::GenericPacketSent:

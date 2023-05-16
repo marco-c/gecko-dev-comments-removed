@@ -33,12 +33,25 @@ namespace webrtc {
 
 class RtcEventLogImpl final : public RtcEventLog {
  public:
-  RtcEventLogImpl(EncodingType encoding_type,
-                  TaskQueueFactory* task_queue_factory);
+  
+  static constexpr size_t kMaxEventsInHistory = 10000;
+  
+  
+  
+  static constexpr size_t kMaxEventsInConfigHistory = 1000;
+
+  RtcEventLogImpl(
+      std::unique_ptr<RtcEventLogEncoder> encoder,
+      TaskQueueFactory* task_queue_factory,
+      size_t max_events_in_history = kMaxEventsInHistory,
+      size_t max_config_events_in_history = kMaxEventsInConfigHistory);
   RtcEventLogImpl(const RtcEventLogImpl&) = delete;
   RtcEventLogImpl& operator=(const RtcEventLogImpl&) = delete;
 
   ~RtcEventLogImpl() override;
+
+  static std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
+      EncodingType encoding_type);
 
   
   
@@ -63,6 +76,12 @@ class RtcEventLogImpl final : public RtcEventLog {
   void StopLoggingInternal() RTC_RUN_ON(task_queue_);
 
   void ScheduleOutput() RTC_RUN_ON(task_queue_);
+
+  
+  const size_t max_events_in_history_;
+
+  
+  const size_t max_config_events_in_history_;
 
   
   std::deque<std::unique_ptr<RtcEvent>> config_history_

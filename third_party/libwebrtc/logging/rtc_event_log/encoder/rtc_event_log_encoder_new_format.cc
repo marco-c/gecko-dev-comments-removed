@@ -883,6 +883,10 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           
           RTC_DCHECK_NOTREACHED();
           break;
+        case RtcEvent::Type::FakeEvent:
+          
+          RTC_DCHECK_NOTREACHED();
+          break;
       }
     }
 
