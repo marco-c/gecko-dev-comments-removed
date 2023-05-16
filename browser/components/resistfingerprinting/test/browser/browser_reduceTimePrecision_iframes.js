@@ -15,9 +15,6 @@
 
 
 
-
-
-
 "use strict";
 
 requestLongerTimeout(3);
@@ -60,10 +57,7 @@ async function testTimePrecision(results, expectedResults, extraData) {
 }
 
 const RFP_TIME_ATOM_MS = 16.667;
-const framer_domain = "example.com";
-const iframe_domain = "example.org";
-const cross_origin_domain = "example.net";
-const uri = `https://${framer_domain}/browser/browser/components/resistfingerprinting/test/browser/file_reduceTimePrecision_iframer.html`;
+const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_reduceTimePrecision_iframer.html`;
 
 
 let extraData = {};
@@ -78,8 +72,6 @@ function addAllTests(extraData_, extraPrefs_) {
     defaultsTest.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -91,8 +83,6 @@ function addAllTests(extraData_, extraPrefs_) {
     simpleRFPTest.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -105,8 +95,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testA.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -119,8 +107,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testB.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -133,8 +119,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testC.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -147,8 +131,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testD.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -161,8 +143,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testE.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -175,8 +155,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testF.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -189,8 +167,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testG.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,
@@ -203,8 +179,6 @@ function addAllTests(extraData_, extraPrefs_) {
     testH.bind(
       null,
       uri,
-      iframe_domain,
-      cross_origin_domain,
       testTimePrecision,
       expectedResults,
       extraData_,

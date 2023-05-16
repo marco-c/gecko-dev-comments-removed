@@ -21,7 +21,6 @@
 
 
 
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -341,143 +340,53 @@ const allSpoofed = {
   framee_crossOrigin_userAgentHTTPHeader: spoofedUserAgentHeader,
 };
 
-const framer_domain = "example.com";
-const iframe_domain = "example.org";
-const cross_origin_domain = "example.net";
-const uri = `https://${framer_domain}/browser/browser/components/resistfingerprinting/test/browser/file_navigator_iframer.html`;
+const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_navigator_iframer.html`;
 
 requestLongerTimeout(2);
 
 let expectedResults = {};
 
 expectedResults = structuredClone(allNotSpoofed);
-add_task(
-  defaultsTest.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(defaultsTest.bind(null, uri, testNavigator, expectedResults));
 
 expectedResults = structuredClone(allSpoofed);
-add_task(
-  simpleRFPTest.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(simpleRFPTest.bind(null, uri, testNavigator, expectedResults));
+
+
+
 
 
 expectedResults = structuredClone(allNotSpoofed);
-add_task(
-  testA.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testA.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allNotSpoofed);
-add_task(
-  testB.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testB.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
 expectedResults.framer_crossOrigin_userAgentHTTPHeader = defaultUserAgent;
 expectedResults.framee_crossOrigin_userAgentHTTPHeader = spoofedUserAgentHeader;
-add_task(
-  testC.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testC.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
 expectedResults.framer_crossOrigin_userAgentHTTPHeader = defaultUserAgent;
 expectedResults.framee_crossOrigin_userAgentHTTPHeader = spoofedUserAgentHeader;
-add_task(
-  testD.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testD.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
-add_task(
-  testE.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testE.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
-add_task(
-  testF.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testF.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
-add_task(
-  testG.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testG.bind(null, uri, testNavigator, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
-add_task(
-  testH.bind(
-    this,
-    uri,
-    iframe_domain,
-    cross_origin_domain,
-    testNavigator,
-    expectedResults
-  )
-);
+add_task(testH.bind(null, uri, testNavigator, expectedResults));
