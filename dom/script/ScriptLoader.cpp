@@ -786,8 +786,7 @@ nsresult ScriptLoader::StartLoadInternal(
       aRequest->mURI, aRequest->CORSMode(), aRequest->mKind);
   aRequest->GetScriptLoadContext()->NotifyOpen(
       key, channel, mDocument,
-      aRequest->GetScriptLoadContext()->IsLinkPreloadScript(),
-      aRequest->IsModuleRequest());
+      aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
 
   if (aEarlyHintPreloaderId) {
     nsCOMPtr<nsIHttpChannelInternal> channelInternal =
@@ -1351,17 +1350,8 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
       aElement->GetCORSMode() != request->CORSMode() ||
       aScriptKind != request->mKind) {
     
-    
-    
-    
-    
-    
-    if (!(request->IsModuleRequest() &&
-          request->GetScriptLoadContext()->IsLinkPreloadScript())) {
-      
-      request->Cancel();
-      AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::RequestMismatch);
-    }
+    request->Cancel();
+    AccumulateCategorical(LABELS_DOM_SCRIPT_PRELOAD_RESULT::RequestMismatch);
     return nullptr;
   }
 
