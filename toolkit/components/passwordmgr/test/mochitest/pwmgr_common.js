@@ -186,117 +186,6 @@ function getPasswordEditedMessage() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createLoginForm({
-  num = 1,
-  action = "",
-  autocomplete = null,
-  username = {},
-  password = {},
-} = {}) {
-  username.id ||= null;
-  username.name ||= "uname";
-  username.type ||= "text";
-  username.value ||= null;
-  username.autocomplete ||= null;
-  password.id ||= null;
-  password.name ||= "pword";
-  password.type ||= "password";
-  password.value ||= null;
-  password.label ||= null;
-  password.autocomplete ||= null;
-
-  info(
-    `Creating login form ${JSON.stringify({ num, action, username, password })}`
-  );
-
-  const form = document.createElement("form");
-  form.id = `form${num}`;
-  form.action = action;
-  form.onsubmit = () => false;
-
-  if (autocomplete != null) {
-    form.setAttribute("autocomplete", autocomplete);
-  }
-
-  const usernameInput = document.createElement("input");
-  if (username.id != null) {
-    usernameInput.id = username.id;
-  }
-  usernameInput.type = username.type;
-  usernameInput.name = username.name;
-  if (username.value != null) {
-    usernameInput.value = username.value;
-  }
-  if (username.autocomplete != null) {
-    usernameInput.setAttribute("autocomplete", username.autocomplete);
-  }
-  form.appendChild(usernameInput);
-
-  if (password) {
-    const passwordInput = document.createElement("input");
-    if (password.id != null) {
-      passwordInput.id = password.id;
-    }
-    passwordInput.type = password.type;
-    passwordInput.name = password.name;
-    if (password.value != null) {
-      passwordInput.value = password.value;
-    }
-    if (password.autocomplete != null) {
-      passwordInput.setAttribute("autocomplete", password.autocomplete);
-    }
-    if (password.label != null) {
-      const passwordLabel = document.createElement("label");
-      passwordLabel.innerText = password.label;
-      passwordLabel.appendChild(passwordInput);
-      form.appendChild(passwordLabel);
-    } else {
-      form.appendChild(passwordInput);
-    }
-  }
-
-  const submitButton = document.createElement("button");
-  submitButton.type = "submit";
-  submitButton.name = "submit";
-  submitButton.innerText = "Submit";
-  form.appendChild(submitButton);
-
-  const content = document.getElementById("content");
-
-  const oldForm = document.getElementById(form.id);
-  if (oldForm) {
-    content.replaceChild(form, oldForm);
-  } else {
-    content.appendChild(form);
-  }
-
-  return form;
-}
-
-
-
-
-
 function checkLoginForm(
   usernameField,
   expectedUsername,
@@ -816,50 +705,29 @@ function runInParent(aFunctionOrURL) {
 
 
 
-function manageLoginsInParent() {
-  return runInParent(function addLoginsInParentInner() {
-    
-    addMessageListener("removeAllUserFacingLogins", () => {
-      Services.logins.removeAllUserFacingLogins();
-    });
 
+
+function addLoginsInParent(...aLogins) {
+  let script = runInParent(function addLoginsInParentInner() {
     
-    addMessageListener("addLogins", async logins => {
+    addMessageListener("addLogins", logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
         Ci.nsILoginInfo,
         "init"
       );
 
-      const loginInfos = logins.map(login => new nsLoginInfo(...login));
-      try {
-        await Services.logins.addLogins(loginInfos);
-      } catch (e) {
-        assert.ok(false, "addLogins threw: " + e);
+      for (let login of logins) {
+        let loginInfo = new nsLoginInfo(...login);
+        try {
+          Services.logins.addLogin(loginInfo);
+        } catch (e) {
+          assert.ok(false, "addLogin threw: " + e);
+        }
       }
     });
   });
-}
-
-
-
-
-
-async function addLoginsInParent(...aLogins) {
-  const script = manageLoginsInParent();
-  await script.sendQuery("addLogins", aLogins);
-  return script;
-}
-
-
-
-
-
-
-async function setStoredLoginsAsync(...aLogins) {
-  const script = manageLoginsInParent();
-  script.sendQuery("removeAllUserFacingLogins");
-  await script.sendQuery("addLogins", aLogins);
+  script.sendQuery("addLogins", aLogins);
   return script;
 }
 

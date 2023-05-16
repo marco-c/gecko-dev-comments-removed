@@ -55,8 +55,10 @@ function checkSearch(aQuery, aExpectedCount) {
 
 
 
-add_setup(async () => {
-  await Services.logins.addLogins(TestData.loginList());
+add_task(function test_initialize() {
+  for (let login of TestData.loginList()) {
+    Services.logins.addLogin(login);
+  }
 });
 
 
