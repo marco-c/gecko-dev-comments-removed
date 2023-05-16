@@ -393,7 +393,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   
   uint16_t mRestartCount{0};
-  uint32_t mCaps{0};
+  Atomic<uint32_t, ReleaseAcquire> mCaps{0};
 
   HttpVersion mHttpVersion{HttpVersion::UNKNOWN};
   uint16_t mHttpResponseCode{0};
