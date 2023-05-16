@@ -1,23 +1,15 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["Tabs"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const CUST_TAB = "chrome://browser/skin/customize.svg";
 const PREFS_TAB = "chrome://global/skin/icons/settings.svg";
 const DEFAULT_FAVICON_TAB = `data:text/html,<meta%20charset="utf-8"><title>No%20favicon</title>`;
 
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
-var Tabs = {
+export var Tabs = {
   init(libDir) {},
 
   configurations: {
@@ -61,7 +53,7 @@ var Tabs = {
         browserWindow.gBrowser.pinTab(tab);
         browserWindow.gBrowser.selectTabAtIndex(5);
         hoverTab(browserWindow.gBrowser.tabs[2]);
-        
+        // also hover the new tab button
         let newTabButton = browserWindow.gBrowser.tabContainer.newTabButton;
         hoverTab(newTabButton);
 
@@ -127,7 +119,7 @@ var Tabs = {
           setTimeout(resolve, 3000);
         });
 
-        
+        // Make sure the tabstrip is scrolled all the way to the left.
         browserWindow.gBrowser.tabContainer.arrowScrollbox.scrollByIndex(
           -100,
           true
@@ -139,7 +131,7 @@ var Tabs = {
   },
 };
 
-
+/* helpers */
 
 async function allTabTitlesDisplayed(browserWindow) {
   let specToTitleMap = {
@@ -178,7 +170,7 @@ async function allTabTitlesDisplayed(browserWindow) {
 }
 
 function fiveTabsHelper() {
-  
+  // some with no favicon and some with. Selected tab in middle.
   closeAllButOneTab("about:addons");
 
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
@@ -202,7 +194,7 @@ function fiveTabsHelper() {
 function closeAllButOneTab(url = "about:blank") {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let gBrowser = browserWindow.gBrowser;
-  
+  // Close all tabs except the last so we don't quit the browser.
   while (gBrowser.tabs.length > 1) {
     gBrowser.removeTab(gBrowser.selectedTab, { animate: false });
   }

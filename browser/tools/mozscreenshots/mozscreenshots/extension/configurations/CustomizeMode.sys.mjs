@@ -1,16 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["CustomizeMode"];
-
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-
-var CustomizeMode = {
+export var CustomizeMode = {
   init(libDir) {},
 
   configurations: {
@@ -32,7 +26,7 @@ var CustomizeMode = {
               "aftercustomization",
               onCustomizationEnds
             );
-            
+            // Wait for final changes
             setTimeout(
               () => resolve("notCustomizing: onCustomizationEnds"),
               500
@@ -65,7 +59,7 @@ var CustomizeMode = {
               "customizationready",
               onCustomizing
             );
-            
+            // Wait for final changes
             setTimeout(() => resolve("customizing: onCustomizing"), 500);
           }
           browserWindow.gNavToolbox.addEventListener(

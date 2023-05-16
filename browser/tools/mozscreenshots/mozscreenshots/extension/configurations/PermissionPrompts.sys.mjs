@@ -1,23 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Various parts here are run in the content process.
+/* global content */
 
-
-
-"use strict";
-
-
-
-
-var EXPORTED_SYMBOLS = ["PermissionPrompts"];
-
-const { BrowserTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/BrowserTestUtils.sys.mjs"
-);
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 
 const URL =
   "https://test1.example.com/browser/browser/tools/mozscreenshots/mozscreenshots/extension/mozscreenshots/browser/resources/lib/permissionPrompts.html";
 let lastTab = null;
 
-var PermissionPrompts = {
+export var PermissionPrompts = {
   init(libDir) {
     Services.prefs.setBoolPref("media.navigator.permission.fake", true);
     Services.prefs.setBoolPref("extensions.install.requireBuiltInCerts", false);
@@ -77,7 +71,7 @@ var PermissionPrompts = {
       selectors: ["#notification-popup", "#identity-box"],
       async applyConfig() {
         await closeLastTab();
-        
+        // we need to emulate user input in the form for the save-password prompt to be shown
         await clickOn("#login-capture", function beforeContentFn() {
           const { E10SUtils } = ChromeUtils.importESModule(
             "resource://gre/modules/E10SUtils.sys.mjs"
@@ -125,8 +119,8 @@ var PermissionPrompts = {
         await closeLastTab();
         await clickOn("#addons");
 
-        
-        
+        // We want to skip the progress-notification, so we wait for
+        // the install-confirmation screen to be "not hidden" = shown.
         return BrowserTestUtils.waitForCondition(
           () => !notification.hidden,
           "addon install confirmation did not show",
@@ -150,7 +144,7 @@ async function closeLastTab() {
 async function clickOn(selector, beforeContentFn) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
-  
+  // Save the tab so we can close it later.
   lastTab = await BrowserTestUtils.openNewForegroundTab(
     browserWindow.gBrowser,
     URL
@@ -170,7 +164,7 @@ async function clickOn(selector, beforeContentFn) {
     return EventUtils.synthesizeClick(element);
   });
 
-  
+  // Wait for the popup to actually be shown before making the screenshot
   await BrowserTestUtils.waitForEvent(
     browserWindow.PopupNotifications.panel,
     "popupshown"

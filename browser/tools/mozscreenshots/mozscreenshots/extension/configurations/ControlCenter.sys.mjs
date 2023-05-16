@@ -1,24 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ControlCenter"];
-
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-const { BrowserTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/BrowserTestUtils.sys.mjs"
-);
 const { SitePermissions } = ChromeUtils.import(
   "resource:///modules/SitePermissions.jsm"
 );
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 let { UrlClassifierTestUtils } = ChromeUtils.import(
   "resource://testing-common/UrlClassifierTestUtils.jsm"
@@ -38,7 +29,7 @@ const MIXED_ACTIVE_CONTENT_URL = `https://example.com/${RESOURCE_PATH}/mixed_act
 const MIXED_PASSIVE_CONTENT_URL = `https://example.com/${RESOURCE_PATH}/mixed_passive.html`;
 const TRACKING_PAGE = `http://tracking.example.org/${RESOURCE_PATH}/tracking.html`;
 
-var ControlCenter = {
+export var ControlCenter = {
   init(libDir) {},
 
   configurations: {
@@ -51,7 +42,7 @@ var ControlCenter = {
     },
 
     localFile: {
-      
+      // This selector is different so we can exclude the changing file: path
       selectors: ["#identity-popup-security-button"],
       async applyConfig() {
         let channel = NetUtil.newChannel({
@@ -124,8 +115,8 @@ var ControlCenter = {
     allPermissions: {
       selectors: CC_SELECTORS,
       async applyConfig() {
-        
-        
+        // TODO: (Bug 1330601) Rewrite this to consider temporary (TAB) permission states.
+        // There are 2 possible non-default permission states, so we alternate between them.
         let states = [SitePermissions.ALLOW, SitePermissions.BLOCK];
         let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
           PERMISSIONS_PAGE
@@ -276,7 +267,7 @@ var ControlCenter = {
 
         await loadPage(TRACKING_PAGE);
 
-        
+        // unblock the page
         let loaded = BrowserTestUtils.browserLoaded(
           gBrowser.selectedBrowser,
           false,
@@ -301,16 +292,16 @@ async function openIdentityPopup(expand) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let gBrowser = browserWindow.gBrowser;
   let { gIdentityHandler } = gBrowser.ownerGlobal;
-  
+  // Ensure the popup is available, if it's never been opened.
   gIdentityHandler._initializePopup();
   gIdentityHandler._identityPopup.hidePopup();
-  
+  // Disable the popup shadow on OSX until we have figured out bug 1425253.
   if (AppConstants.platform == "macosx") {
     gIdentityHandler._identityPopup.classList.add("no-shadow");
   }
   gIdentityHandler._identityIconBox.click();
   if (expand) {
-    
+    // give some time for opening to avoid weird style issues
     await new Promise(c => setTimeout(c, 500));
     gIdentityHandler._identityPopup
       .querySelector("#identity-popup-security-button")
@@ -322,14 +313,14 @@ async function openProtectionsPopup() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let gBrowser = browserWindow.gBrowser;
   let { gProtectionsHandler } = gBrowser.ownerGlobal;
-  
+  // Force initializing the popup; we can't add classes otherwise.
   gProtectionsHandler._initializePopup();
   gProtectionsHandler._protectionsPopup.hidePopup();
-  
+  // Disable the popup shadow on OSX until we have figured out bug 1425253.
   if (AppConstants.platform == "macosx") {
     gProtectionsHandler._protectionsPopup.classList.add("no-shadow");
   }
   gProtectionsHandler.showProtectionsPopup();
-  
+  // Wait for any animation.
   await new Promise(_ => setTimeout(_, 500));
 }
