@@ -37,6 +37,31 @@ static bool IsOpaqueSafeListedMIMEType(const nsACString& aContentType) {
   return nsContentUtils::IsJavascriptMIMEType(typeString);
 }
 
+static bool IsOpaqueSafeListedSpecBreakingMIMEType(
+    const nsACString& aContentType, bool aNoSniff) {
+  
+  if (aContentType.EqualsLiteral(APPLICATION_DASH_XML) ||
+      aContentType.EqualsLiteral(APPLICATION_MPEGURL) ||
+      aContentType.EqualsLiteral(TEXT_VTT)) {
+    return true;
+  }
+
+  
+  
+  if (aContentType.EqualsLiteral(TEXT_PLAIN) && aNoSniff) {
+    return true;
+  }
+
+  
+  
+  
+  if (StringBeginsWith(aContentType, "audio/mpeg"_ns)) {
+    return true;
+  }
+
+  return false;
+}
+
 static bool IsOpaqueBlockListedMIMEType(const nsACString& aContentType) {
   return aContentType.EqualsLiteral(TEXT_HTML) ||
          StringEndsWith(aContentType, "+json"_ns) ||
@@ -89,7 +114,8 @@ static bool IsOpaqueBlockListedNeverSniffedMIMEType(
          aContentType.EqualsLiteral(MULTIPART_SIGNED) ||
          aContentType.EqualsLiteral(TEXT_EVENT_STREAM) ||
          aContentType.EqualsLiteral(TEXT_CSV) ||
-         aContentType.EqualsLiteral(TEXT_VTT);
+         aContentType.EqualsLiteral(TEXT_VTT) ||
+         aContentType.EqualsLiteral(APPLICATION_DASH_XML);
 }
 
 OpaqueResponseBlockedReason GetOpaqueResponseBlockedReason(
@@ -100,6 +126,12 @@ OpaqueResponseBlockedReason GetOpaqueResponseBlockedReason(
 
   if (IsOpaqueSafeListedMIMEType(aContentType)) {
     return OpaqueResponseBlockedReason::ALLOWED_SAFE_LISTED;
+  }
+
+  
+  
+  if (IsOpaqueSafeListedSpecBreakingMIMEType(aContentType, aNoSniff)) {
+    return OpaqueResponseBlockedReason::ALLOWED_SAFE_LISTED_SPEC_BREAKING;
   }
 
   if (IsOpaqueBlockListedNeverSniffedMIMEType(aContentType)) {
