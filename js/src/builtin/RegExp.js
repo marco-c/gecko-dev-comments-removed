@@ -149,7 +149,7 @@ function RegExpMatch(string) {
     }
 
     
-    return RegExpBuiltinExec(rx, S, false);
+    return RegExpBuiltinExec(rx, S);
   }
 
   
@@ -165,7 +165,7 @@ function RegExpMatchSlowPath(rx, S) {
 
   
   if (!callFunction(std_String_includes, flags, "g")) {
-    return RegExpExec(rx, S, false);
+    return RegExpExec(rx, S);
   }
 
   
@@ -183,7 +183,7 @@ function RegExpMatchSlowPath(rx, S) {
   
   while (true) {
     
-    var result = RegExpExec(rx, S, false);
+    var result = RegExpExec(rx, S);
 
     
     if (result === null) {
@@ -427,7 +427,7 @@ function RegExpReplaceSlowPath(
   
   while (true) {
     
-    var result = RegExpExec(rx, S, false);
+    var result = RegExpExec(rx, S);
 
     
     if (result === null) {
@@ -976,7 +976,7 @@ function RegExpSearch(string) {
 
 function RegExpSearchSlowPath(rx, S, previousLastIndex) {
   
-  var result = RegExpExec(rx, S, false);
+  var result = RegExpExec(rx, S);
 
   
   var currentLastIndex = rx.lastIndex;
@@ -1102,7 +1102,7 @@ function RegExpSplit(string, limit) {
     if (optimizable) {
       z = RegExpMatcher(splitter, S, 0);
     } else {
-      z = RegExpExec(splitter, S, false);
+      z = RegExpExec(splitter, S);
     }
 
     
@@ -1148,7 +1148,7 @@ function RegExpSplit(string, limit) {
       splitter.lastIndex = q;
 
       
-      z = RegExpExec(splitter, S, false);
+      z = RegExpExec(splitter, S);
 
       
       if (z === null) {
@@ -1236,10 +1236,11 @@ function RegExp_prototype_Exec(string) {
   var S = ToString(string);
 
   
-  return RegExpBuiltinExec(R, S, false);
+  return RegExpBuiltinExec(R, S);
 }
 
 function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
+  assert(typeof forTest === "boolean", "forTest must be a boolean");
   return callFunction(
     CallRegExpMethodIfWrapped,
     R,
@@ -1250,7 +1251,11 @@ function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
 }
 
 function CallRegExpBuiltinExec(S, forTest) {
-  return RegExpBuiltinExec(this, S, forTest);
+  assert(typeof forTest === "boolean", "forTest must be a boolean");
+  if (forTest) {
+    return RegExpBuiltinExecForTest(this, S);
+  }
+  return RegExpBuiltinExec(this, S);
 }
 
 
@@ -1265,7 +1270,7 @@ function RegExpTest(string) {
   var S = ToString(string);
 
   
-  return RegExpExec(R, S, true);
+  return RegExpExecForTest(R, S);
 }
 
 
@@ -1519,7 +1524,7 @@ function RegExpStringIteratorNext() {
   }
 
   
-  var match = RegExpExec(regexp, string, false);
+  var match = RegExpExec(regexp, string);
 
   
   if (match === null) {
