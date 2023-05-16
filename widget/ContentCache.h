@@ -45,8 +45,6 @@ class ContentCache {
 
   ContentCache() = default;
 
-  [[nodiscard]] bool IsValid() const;
-
  protected:
   
   Maybe<nsString> mText;
@@ -90,11 +88,6 @@ class ContentCache {
         mAnchor = aSelectionChangeData.AnchorOffset();
         mFocus = aSelectionChangeData.FocusOffset();
       }
-    }
-
-    [[nodiscard]] bool IsValidIn(const nsAString& aText) const {
-      return !mHasRange ||
-             (mAnchor <= aText.Length() && mFocus <= aText.Length());
     }
 
     explicit Selection(const WidgetQueryContentEvent& aQuerySelectedTextEvent);
@@ -200,10 +193,6 @@ class ContentCache {
 
     uint32_t Offset() const { return mOffset; }
     bool HasRect() const { return !mRect.IsEmpty(); }
-
-    [[nodiscard]] bool IsValidIn(const nsAString& aText) const {
-      return mOffset <= aText.Length();
-    }
 
     friend std::ostream& operator<<(std::ostream& aStream,
                                     const Caret& aCaret) {
@@ -344,9 +333,7 @@ class ContentCacheInChild final : public ContentCache {
 
 
 
-
-
-  [[nodiscard]] bool SetSelection(
+  void SetSelection(
       nsIWidget* aWidget,
       const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
 
