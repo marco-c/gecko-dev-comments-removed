@@ -93,14 +93,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   void NotifyOwnerDocumentActivityChanged();
 
   
-
-
-
-
-  void ForceImageState(bool aForce,
-                       mozilla::dom::ElementState::InternalType aState);
-
-  
   already_AddRefed<mozilla::dom::Promise> RecognizeCurrentImageText(
       mozilla::ErrorResult&);
 
@@ -541,12 +533,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
 
-  
-
-
-
-  mozilla::dom::ElementState mForcedImageState;
-
   mozilla::TimeStamp mMostRecentRequestChange;
 
   
@@ -567,11 +553,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   uint32_t mRequestGeneration;
 
   bool mLoadingEnabled : 1;
-
-  
-
-
-  bool mIsImageStateForced : 1;
 
   
 

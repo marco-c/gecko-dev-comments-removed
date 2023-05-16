@@ -98,18 +98,6 @@ nsresult nsVideoFrame::CreateAnonymousContent(
     NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
     mPosterImage = NS_NewHTMLImageElement(nodeInfo.forget());
     NS_ENSURE_TRUE(mPosterImage, NS_ERROR_OUT_OF_MEMORY);
-
-    
-    
-    
-    
-    HTMLImageElement* imgContent = HTMLImageElement::FromNode(mPosterImage);
-    NS_ENSURE_TRUE(imgContent, NS_ERROR_FAILURE);
-
-    imgContent->ForceImageState(true, 0);
-    
-    mPosterImage->UpdateState(false);
-
     UpdatePosterSource(false);
 
     
