@@ -93,34 +93,6 @@ bool UtilityProcessHost::Launch(StringVector aExtraOpts) {
 
   mLaunchPhase = LaunchPhase::Waiting;
 
-  int32_t timeoutMs = StaticPrefs::general_utility_process_startup_timeout_ms();
-
-  
-  
-  
-  if (PR_GetEnv("MOZ_DEBUG_CHILD_PROCESS") ||
-      PR_GetEnv("MOZ_DEBUG_CHILD_PAUSE")) {
-    timeoutMs = 0;
-  }
-  if (timeoutMs) {
-    
-    
-    GetMainThreadSerialEventTarget()->DelayedDispatch(
-        NS_NewRunnableFunction(
-            "UtilityProcessHost::Launchtimeout",
-            [this, liveToken = mLiveToken]() {
-              if (!*liveToken || mTimerChecked) {
-                
-                
-                return;
-              }
-              InitAfterConnect(false);
-              MOZ_ASSERT(mTimerChecked,
-                         "InitAfterConnect must have acted on the promise");
-            }),
-        timeoutMs);
-  }
-
   if (!GeckoChildProcessHost::AsyncLaunch(aExtraOpts)) {
     NS_WARNING("UtilityProcess AsyncLaunch failed, aborting.");
     mLaunchPhase = LaunchPhase::Complete;
@@ -147,11 +119,10 @@ RefPtr<GenericNonExclusivePromise> UtilityProcessHost::LaunchPromise() {
           
           return;
         }
-        if (mTimerChecked) {
-          
+        if (mLaunchCompleted) {
           return;
         }
-        mTimerChecked = true;
+        mLaunchCompleted = true;
         if (aResult.IsReject()) {
           RejectPromise();
         }
@@ -349,7 +320,7 @@ void UtilityProcessHost::ResolvePromise() {
   }
   
   
-  mTimerChecked = true;
+  mLaunchCompleted = true;
 }
 
 void UtilityProcessHost::RejectPromise() {
@@ -363,7 +334,7 @@ void UtilityProcessHost::RejectPromise() {
   }
   
   
-  mTimerChecked = true;
+  mLaunchCompleted = true;
 }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
