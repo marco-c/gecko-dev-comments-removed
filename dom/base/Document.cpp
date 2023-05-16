@@ -15047,7 +15047,17 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
     
     
-    MOZ_ASSERT(GetTopmostAutoPopover() == popoverHTMLEl);
+    
+    
+    if (NS_WARN_IF(GetTopmostAutoPopover() != popoverHTMLEl)) {
+      HideAllPopoversUntil(*popoverHTMLEl, aFocusPreviousElement, false);
+      if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
+                                               nullptr, aRv)) {
+        return;
+      }
+      MOZ_ASSERT(GetTopmostAutoPopover() == popoverHTMLEl,
+                 "popoverHTMLEl should be on top of auto popover list");
+    }
   }
 
   aPopover.SetHasPopoverInvoker(false);
