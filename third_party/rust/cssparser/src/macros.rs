@@ -111,6 +111,16 @@ macro_rules! ascii_case_insensitive_phf_map {
 }
 
 
+#[inline(always)]
+pub fn _cssparser_internal_create_uninit_array<const N: usize>() -> [MaybeUninit<u8>; N] {
+    unsafe {
+        
+        
+        MaybeUninit::<[MaybeUninit<u8>; N]>::uninit().assume_init()
+    }
+}
+
+
 
 
 
@@ -121,11 +131,7 @@ macro_rules! ascii_case_insensitive_phf_map {
 #[doc(hidden)]
 macro_rules! _cssparser_internal_to_lowercase {
     ($input: expr, $BUFFER_SIZE: expr => $output: ident) => {
-        #[allow(unsafe_code)]
-        let mut buffer = unsafe {
-            ::std::mem::MaybeUninit::<[::std::mem::MaybeUninit<u8>; $BUFFER_SIZE]>::uninit()
-                .assume_init()
-        };
+        let mut buffer = $crate::_cssparser_internal_create_uninit_array::<{ $BUFFER_SIZE }>();
         let input: &str = $input;
         let $output = $crate::_cssparser_internal_to_lowercase(&mut buffer, input);
     };
