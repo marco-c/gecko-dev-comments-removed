@@ -1,18 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Various parts here are run in the content process.
+/* global content */
 
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
-
-"use strict";
-
-
-
-
-var EXPORTED_SYMBOLS = ["Preferences"];
-
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-var Preferences = {
+export var Preferences = {
   init(libDir) {
     let panes = [
       ["paneGeneral"],
@@ -56,13 +51,13 @@ let prefHelper = async function(primary, customFn = null) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let selectedBrowser = browserWindow.gBrowser.selectedBrowser;
 
-  
+  // close any dialog that might still be open
   await selectedBrowser.ownerGlobal.SpecialPowers.spawn(
     selectedBrowser,
     [],
     async function() {
-      
-      
+      // Check that gSubDialog is defined on the content window
+      // and that there is an open dialog to close
       if (!content.window.gSubDialog || !content.window.gSubDialog._topDialog) {
         return;
       }
@@ -76,7 +71,7 @@ let prefHelper = async function(primary, customFn = null) {
       selectedBrowser.currentURI.spec ==
       "about:preferences#" + primary.replace(/^pane/, "")
     ) {
-      
+      // We're already on the correct pane.
       readyPromise = Promise.resolve();
     } else {
       readyPromise = paintPromise(browserWindow);

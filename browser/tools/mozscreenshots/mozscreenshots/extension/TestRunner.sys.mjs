@@ -1,37 +1,23 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TestRunner"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const APPLY_CONFIG_TIMEOUT_MS = 60 * 1000;
 const HOME_PAGE = "resource://mozscreenshots/lib/mozscreenshots.html";
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-const { Rect } = ChromeUtils.importESModule(
-  "resource://gre/modules/Geometry.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { Rect } from "resource://gre/modules/Geometry.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.sys.mjs",
+  // Screenshot.sys.mjs must be imported this way for xpcshell tests to work
+  Screenshot: "resource://mozscreenshots/Screenshot.jsm",
 });
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "Screenshot",
-  "resource://mozscreenshots/Screenshot.jsm"
-);
-
-var TestRunner = {
+export var TestRunner = {
   combos: null,
   completedCombos: 0,
   currentComboIndex: 0,
@@ -45,12 +31,12 @@ var TestRunner = {
     this.setupOS();
   },
 
-  
-
-
-
-
-
+  /**
+   * Initialize the mochitest interface. This allows TestRunner to integrate
+   * with mochitest functions like is(...) and ok(...). This must be called
+   * prior to invoking any of the TestRunner functions. Note that this should
+   * be properly setup in head.js, so you probably don't need to call it.
+   */
   initTest(mochitestScope) {
     this.mochitestScope = mochitestScope;
   },
@@ -82,9 +68,9 @@ var TestRunner = {
     killallP.run(true, killallArgs, killallArgs.length);
   },
 
-  
-
-
+  /**
+   * Load specified sets, execute all combinations of them, and capture screenshots.
+   */
   async start(setNames, jobName = null) {
     let subDirs = [
       "mozscreenshots",
@@ -94,8 +80,8 @@ var TestRunner = {
 
     const MOZ_UPLOAD_DIR = Services.env.get("MOZ_UPLOAD_DIR");
     const GECKO_HEAD_REPOSITORY = Services.env.get("GECKO_HEAD_REPOSITORY");
-    
-    
+    // We don't want to upload images (from MOZ_UPLOAD_DIR) on integration
+    // branches in order to reduce bandwidth/storage.
     if (MOZ_UPLOAD_DIR && !GECKO_HEAD_REPOSITORY.includes("/integration/")) {
       screenshotPath = MOZ_UPLOAD_DIR;
     }
@@ -124,25 +110,25 @@ var TestRunner = {
     this.currentComboIndex = this.completedCombos = 0;
     this._lastCombo = null;
 
-    
+    // Setup some prefs
     Services.prefs.setCharPref(
       "extensions.ui.lastCategory",
       "addons://list/extension"
     );
-    
+    // Don't let the caret blink since it causes false positives for image diffs
     Services.prefs.setIntPref("ui.caretBlinkTime", -1);
-    
-    
+    // Disable some animations that can cause false positives, such as the
+    // reload/stop button spinning animation.
     Services.prefs.setIntPref("ui.prefersReducedMotion", 1);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
-    
+    // Prevent the mouse cursor from causing hover styles or tooltips to appear.
     browserWindow.windowUtils.disableNonTestMouseEvents(true);
 
-    
-    
-    
+    // When being automated through Marionette, Firefox shows a prominent indication
+    // in the urlbar and identity block. We don't want this to show when testing browser UI.
+    // Note that this doesn't prevent subsequently opened windows from showing the automation UI.
     browserWindow.document
       .getElementById("main-window")
       .removeAttribute("remotecontrol");
@@ -166,19 +152,19 @@ var TestRunner = {
     this.cleanup();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Helper function for loadSets. This filters out the restricted configs from setName.
+   * This was made a helper function to facilitate xpcshell unit testing.
+   * @param {String} setName - set name to be filtered e.g. "Toolbars[onlyNavBar,allToolbars]"
+   * @return {Object} Returns an object with two values: the filtered set name and a set of
+   *                  restricted configs.
+   */
   filterRestrictions(setName) {
     let match = /\[([^\]]+)\]$/.exec(setName);
     if (!match) {
       throw new Error(`Invalid restrictions in ${setName}`);
     }
-    
+    // Trim the restrictions from the set name.
     setName = setName.slice(0, match.index);
     let restrictions = match[1]
       .split(",")
@@ -187,11 +173,11 @@ var TestRunner = {
     return { trimmedSetName: setName, restrictions };
   },
 
-  
-
-
-
-
+  /**
+   * Load sets of configurations from JSMs.
+   * @param {String[]} setNames - array of set names (e.g. ["Tabs", "WindowSize"].
+   * @return {Object[]} Array of sets containing `name` and `configurations` properties.
+   */
   loadSets(setNames) {
     let sets = [];
     for (let setName of setNames) {
@@ -211,7 +197,7 @@ var TestRunner = {
           setName + " has no configurations for this environment"
         );
       }
-      
+      // Checks to see if nonexistent configuration have been specified
       if (restrictions) {
         let incorrectConfigs = [...restrictions].filter(
           r => !configurationNames.includes(r)
@@ -222,10 +208,10 @@ var TestRunner = {
       }
       let configurations = {};
       for (let config of configurationNames) {
-        
-        
+        // Automatically set the name property of the configuration object to
+        // its name from the configuration object.
         imported[setName].configurations[config].name = config;
-        
+        // Filter restricted configurations.
         if (!restrictions || restrictions.has(config)) {
           configurations[config] = imported[setName].configurations[config];
         }
@@ -252,23 +238,23 @@ var TestRunner = {
     browserWindow.windowUtils.disableNonTestMouseEvents(false);
   },
 
-  
+  // helpers
 
-  
-
-
-
-
-
+  /**
+   * Calculate the bounding box based on CSS selector from config for cropping
+   *
+   * @param {String[]} selectors - array of CSS selectors for relevant DOM element
+   * @return {Geometry.sys.mjs Rect} Rect holding relevant x, y, width, height with padding
+   **/
   _findBoundingBox(selectors, windowType) {
     if (!selectors.length) {
       throw new Error("No selectors specified.");
     }
 
-    
+    // Set window type, default "navigator:browser"
     windowType = windowType || "navigator:browser";
     let browserWindow = Services.wm.getMostRecentWindow(windowType);
-    
+    // Scale for high-density displays
     const scale = Cc["@mozilla.org/gfx/screenmanager;1"]
       .getService(Ci.nsIScreenManager)
       .screenForRect(browserWindow.screenX, browserWindow.screenY, 1, 1)
@@ -281,10 +267,10 @@ var TestRunner = {
 
     let bounds;
     const rects = [];
-    
+    // Grab bounding boxes and find the union
     for (let selector of selectors) {
       let elements;
-      
+      // Check for function to find anonymous content
       if (typeof selector == "function") {
         elements = [selector()];
       } else {
@@ -296,10 +282,10 @@ var TestRunner = {
       }
 
       for (let element of elements) {
-        
+        // Calculate box region, convert to Rect
         let elementRect = element.getBoundingClientRect();
-        
-        
+        // ownerGlobal doesn't exist in content privileged windows.
+        // eslint-disable-next-line mozilla/use-ownerGlobal
         let win = element.ownerDocument.defaultView;
         let rect = new Rect(
           (win.mozInnerScreenX + elementRect.left) * scale,
@@ -363,8 +349,8 @@ var TestRunner = {
       ).substring(1)}`
     );
 
-    
-    
+    // Notice that this does need to be a closure, not a function, as otherwise
+    // "this" gets replaced and we lose access to this.mochitestScope.
     const changeConfig = config => {
       this.mochitestScope.info("calling " + config.name);
 
@@ -374,8 +360,8 @@ var TestRunner = {
       });
 
       this.mochitestScope.info("called " + config.name);
-      
-      
+      // Add a default timeout of 700ms to avoid conflicts when configurations
+      // try to apply at the same time. e.g WindowSize and TabsInTitlebar
       return Promise.race([applyPromise, timeoutPromise]).then(result => {
         return new Promise(resolve => {
           setTimeout(() => resolve(result), 700);
@@ -384,7 +370,7 @@ var TestRunner = {
     };
 
     try {
-      
+      // First go through and actually apply all of the configs
       for (let i = 0; i < combo.length; i++) {
         let config = combo[i];
         if (!this._lastCombo || config !== this._lastCombo[i]) {
@@ -397,21 +383,21 @@ var TestRunner = {
         }
       }
 
-      
+      // Update the lastCombo since it's now been applied regardless of whether it's accepted below.
       this.mochitestScope.info(
         "fulfilled all applyConfig so setting lastCombo."
       );
       this._lastCombo = combo;
 
-      
-      
-      
+      // Then ask configs if the current setup is valid. We can't can do this in
+      // the applyConfig methods of the config since it doesn't know what configs
+      // later in the loop will do that may invalidate the combo.
       for (let i = 0; i < combo.length; i++) {
         let config = combo[i];
-        
-        
-        
-        
+        // A configuration can specify an optional verifyConfig method to indicate
+        // if the current config is valid for a screenshot. This gets called even
+        // if the this config was used in the lastCombo since another config may
+        // have invalidated it.
         if (config.verifyConfig) {
           this.mochitestScope.info(
             `checking if the combo is valid with ${config.name}`
@@ -442,7 +428,7 @@ var TestRunner = {
         .join(", ")} ] successfully`
     );
 
-    
+    // Collect selectors from combo configs for cropping region
     let windowType;
     const finalSelectors = [];
     for (const obj of combo) {
@@ -501,16 +487,16 @@ var TestRunner = {
     const promise = new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        
-        
-        
+        // Clip the cropping region to the size of the screenshot
+        // This is necessary mostly to deal with offscreen windows, since we
+        // are capturing an image of the operating system's desktop.
         bounds.left = Math.max(0, bounds.left);
         bounds.right = Math.min(img.naturalWidth, bounds.right);
         bounds.top = Math.max(0, bounds.top);
         bounds.bottom = Math.min(img.naturalHeight, bounds.bottom);
 
-        
-        
+        // Create a new offscreen canvas with the width and height given by the
+        // size of the region we want to crop to
         const canvas = document.createElementNS(
           "http://www.w3.org/1999/xhtml",
           "canvas"
@@ -549,16 +535,16 @@ var TestRunner = {
           );
         }
 
-        
+        // Converts the canvas to a binary blob, which can be saved to a png
         canvas.toBlob(blob => {
-          
+          // Use a filereader to convert the raw binary blob into a writable buffer
           const fr = new FileReader();
           fr.onload = e => {
             const buffer = new Uint8Array(e.target.result);
-            
+            // Save the file and complete the promise
             IOUtils.write(targetPath, buffer).then(resolve);
           };
-          
+          // Do the conversion
           fr.readAsArrayBuffer(blob);
         });
       };
@@ -566,17 +552,17 @@ var TestRunner = {
       img.onerror = function() {
         reject(`error loading image ${srcPath}`);
       };
-      
+      // Load the src image for drawing
       img.src = srcPath;
     });
     return promise;
   },
 
-  
-
-
-
-
+  /**
+   * Finds the index of the first comma that is not enclosed within square brackets.
+   * @param {String} envVar - the string that needs to be searched
+   * @return {Integer} index of valid comma or -1 if not found.
+   */
   findComma(envVar) {
     let nestingDepth = 0;
     for (let i = 0; i < envVar.length; i++) {
@@ -592,12 +578,12 @@ var TestRunner = {
     return -1;
   },
 
-  
-
-
-
-
-
+  /**
+   * Splits the environment variable around commas not enclosed in brackets.
+   * @param {String} envVar - The environment variable
+   * @return {String[]} Array of strings containing the configurations
+   * e.g. ["Toolbars[onlyNavBar,allToolbars]","DevTools[jsdebugger,webconsole]","Tabs"]
+   */
   splitEnv(envVar) {
     let result = [];
 
@@ -612,15 +598,15 @@ var TestRunner = {
   },
 };
 
-
-
-
+/**
+ * Helper to lazily compute the Cartesian product of all of the sets of configurations.
+ **/
 function LazyProduct(sets) {
-  
-
-
-
-
+  /**
+   * An entry for each set with the value being:
+   * [the number of permutations of the sets with lower index,
+   *  the number of items in the set at the index]
+   */
   this.sets = sets;
   this.lookupTable = [];
   let combinations = 1;
@@ -641,8 +627,8 @@ LazyProduct.prototype = {
   },
 
   item(n) {
-    
-    
+    // For set i, get the item from the set with the floored value of
+    // (n / the number of permutations of the sets already chosen from) modulo the length of set i
     let result = [];
     for (let i = this.sets.length - 1; i >= 0; i--) {
       let priorCombinations = this.lookupTable[i][0];

@@ -699,7 +699,7 @@ module.exports = {
         "browser/base/content/test/sanitize/browser_sanitize-history.js",
         "devtools/client/shared/test/shared-head.js",
         "devtools/client/shared/test/head.js",
-        "browser/tools/mozscreenshots/mozscreenshots/extension/configurations/ControlCenter.jsm",
+        "browser/tools/mozscreenshots/mozscreenshots/extension/configurations/ControlCenter.sys.mjs",
         
         "browser/base/content/test/favicons/browser_favicon_nostore.js",
         
