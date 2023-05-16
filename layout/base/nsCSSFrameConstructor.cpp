@@ -1330,12 +1330,14 @@ nsFrameConstructorSaveState::~nsFrameConstructorSaveState() {
 
 static void MoveChildrenTo(nsIFrame* aOldParent, nsContainerFrame* aNewParent,
                            nsFrameList& aFrameList) {
+#ifdef DEBUG
   bool sameGrandParent = aOldParent->GetParent() == aNewParent->GetParent();
 
   if (aNewParent->HasView() || aOldParent->HasView() || !sameGrandParent) {
     
     nsContainerFrame::ReparentFrameViewList(aFrameList, aOldParent, aNewParent);
   }
+#endif
 
   aFrameList.ApplySetParent(aNewParent);
 

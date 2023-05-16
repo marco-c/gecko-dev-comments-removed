@@ -582,9 +582,10 @@ void nsContainerFrame::PositionFrameView(nsIFrame* aKidFrame) {
   vm->MoveViewTo(view, pt.x, pt.y);
 }
 
-nsresult nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
-                                             nsIFrame* aOldParentFrame,
-                                             nsIFrame* aNewParentFrame) {
+void nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
+                                         nsIFrame* aOldParentFrame,
+                                         nsIFrame* aNewParentFrame) {
+#ifdef DEBUG
   MOZ_ASSERT(aChildFrame, "null child frame pointer");
   MOZ_ASSERT(aOldParentFrame, "null old parent frame pointer");
   MOZ_ASSERT(aNewParentFrame, "null new parent frame pointer");
@@ -619,7 +620,7 @@ nsresult nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
     
     
     
-    return NS_OK;
+    return;
   }
 
   
@@ -631,17 +632,18 @@ nsresult nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
   
   
   if (oldParentView != newParentView) {
+    MOZ_ASSERT_UNREACHABLE("can't move frames between views");
     
     aChildFrame->ReparentFrameViewTo(oldParentView->GetViewManager(),
                                      newParentView);
   }
-
-  return NS_OK;
+#endif
 }
 
 void nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
                                              nsIFrame* aOldParentFrame,
                                              nsIFrame* aNewParentFrame) {
+#ifdef DEBUG
   MOZ_ASSERT(aChildFrameList.NotEmpty(), "empty child frame list");
   MOZ_ASSERT(aOldParentFrame, "null old parent frame pointer");
   MOZ_ASSERT(aNewParentFrame, "null new parent frame pointer");
@@ -688,6 +690,7 @@ void nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
   
   
   if (oldParentView != newParentView) {
+    MOZ_ASSERT_UNREACHABLE("can't move frames between views");
     nsViewManager* viewManager = oldParentView->GetViewManager();
 
     
@@ -695,6 +698,7 @@ void nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
       f->ReparentFrameViewTo(viewManager, newParentView);
     }
   }
+#endif
 }
 
 void nsContainerFrame::ReparentFrame(nsIFrame* aFrame,
