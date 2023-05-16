@@ -3,8 +3,6 @@ window.bar = function bar() {
 }
 
 window.foo = async function foo() {
-  
-  
-  await nonSourceMappedFunction();
+  await bar();
   console.log("YO")
 }

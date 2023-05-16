@@ -132,10 +132,6 @@ export function getSelectedSourceId(state) {
   return source?.id;
 }
 
-export function getShouldSelectOriginalLocation(state) {
-  return state.sources.shouldSelectOriginalLocation;
-}
-
 
 
 
@@ -154,10 +150,6 @@ export function getFirstSourceActorForGeneratedSource(
   threadId
 ) {
   let source = getSource(state, sourceId);
-  
-  if (!source) {
-    return null;
-  }
   if (source.isOriginal) {
     source = getSource(state, originalToGeneratedId(source.id));
   }

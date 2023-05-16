@@ -96,16 +96,6 @@ export function initialSourcesState(state) {
 
 
     selectedLocation: undefined,
-
-    
-
-
-
-
-
-
-
-    shouldSelectOriginalLocation: true,
   };
   
 }
@@ -124,7 +114,7 @@ function update(state = initialSourcesState(), action) {
     case "SET_SELECTED_LOCATION": {
       let pendingSelectedLocation = null;
 
-      if (action.location.source.url) {
+      if (action.source.url) {
         pendingSelectedLocation = createPendingSelectedLocation(
           action.location
         );
@@ -135,7 +125,6 @@ function update(state = initialSourcesState(), action) {
         ...state,
         selectedLocation: action.location,
         pendingSelectedLocation,
-        shouldSelectOriginalLocation: action.shouldSelectOriginalLocation,
       };
     }
 
