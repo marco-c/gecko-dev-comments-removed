@@ -102,7 +102,7 @@ struct ContainSizeAxes {
 }  
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
-  nsStyleFont(const nsStyleFont& aStyleFont);
+  nsStyleFont(const nsStyleFont&);
   explicit nsStyleFont(const mozilla::dom::Document&);
   MOZ_COUNTED_DTOR(nsStyleFont)
   static constexpr bool kHasTriggerImageLoads = false;
@@ -144,15 +144,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   mozilla::StyleMathStyle mMathStyle;
 
   
-  uint8_t mMinFontSizeRatio;  
+  uint8_t mMinFontSizeRatio = 100;  
 
   
-  bool mExplicitLanguage;
+  bool mExplicitLanguage = false;
 
-  
-  
-  
-  bool mAllowZoomAndMinSize;
+  mozilla::StyleXTextScale mXTextScale;
+
+  bool MinFontSizeEnabled() const {
+    return mXTextScale == mozilla::StyleXTextScale::All;
+  }
 
   
   mozilla::NonNegativeLength mScriptUnconstrainedSize;

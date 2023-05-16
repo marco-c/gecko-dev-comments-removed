@@ -1375,17 +1375,18 @@ void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
 Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
                                         const Document* aDocument) {
   
-  
-  if (aFont->mSize.IsZero() || !aFont->mAllowZoomAndMinSize ||
-      nsContentUtils::IsChromeDoc(aDocument)) {
+  if (aFont->mSize.IsZero()) {
     return {0};
   }
-
+  
+  if (!aFont->MinFontSizeEnabled()) {
+    return {0};
+  }
   Length minFontSize;
   bool needsCache = false;
 
   auto MinFontSize = [&](bool* aNeedsToCache) {
-    auto* prefs =
+    const auto* prefs =
         aDocument->GetFontPrefsForLang(aFont->mLanguage, aNeedsToCache);
     return prefs ? prefs->mMinimumFontSize : Length{0};
   };

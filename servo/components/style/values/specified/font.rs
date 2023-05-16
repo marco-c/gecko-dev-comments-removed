@@ -1908,6 +1908,7 @@ impl MetricsOverride {
     Copy,
     Debug,
     MallocSizeOf,
+    Parse,
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,
@@ -1915,19 +1916,22 @@ impl MetricsOverride {
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(u8)]
 
-pub struct XTextZoom(#[css(skip)] pub bool);
+pub enum XTextScale {
+    
+    All,
+    
+    ZoomOnly,
+    
+    None,
+}
 
-impl Parse for XTextZoom {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<XTextZoom, ParseError<'i>> {
-        debug_assert!(
-            false,
-            "Should be set directly by presentation attributes only."
-        );
-        Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+impl XTextScale {
+    
+    #[inline]
+    pub fn text_zoom_enabled(self) -> bool {
+        self != Self::None
     }
 }
 
