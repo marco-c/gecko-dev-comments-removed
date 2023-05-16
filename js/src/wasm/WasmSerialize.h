@@ -247,6 +247,16 @@ inline constexpr bool is_cacheable_pod = IsCacheablePod<T>::value;
 
 
 
+#define WASM_CHECK_CACHEABLE_POD_PADDING(Type)                \
+  class __CHECK_PADING_##Type : public Type {                 \
+   public:                                                    \
+    char c;                                                   \
+  };                                                          \
+  static_assert(sizeof(__CHECK_PADING_##Type) > sizeof(Type), \
+                #Type " will overlap with next field if inherited");
+
+
+
 
 #define WASM_DECLARE_CACHEABLE_POD(Type)                                      \
   static_assert(!std::is_polymorphic_v<Type>,                                 \
