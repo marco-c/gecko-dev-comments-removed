@@ -33,6 +33,8 @@ class DenormalDisabler {
   
   
   
+  DenormalDisabler();
+  
   
   explicit DenormalDisabler(bool enabled);
   DenormalDisabler(const DenormalDisabler&) = delete;

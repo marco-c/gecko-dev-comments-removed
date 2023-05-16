@@ -42,7 +42,7 @@ class DenormalDisablerParametrization : public ::testing::TestWithParam<bool> {
 
 
 
-TEST_P(DenormalDisablerParametrization, InfNotZeroed) {
+TEST_P(DenormalDisablerParametrization, InfNotZeroedExplicitlySetEnabled) {
   DenormalDisabler denormal_disabler(GetParam());
   constexpr float kMax = std::numeric_limits<float>::max();
   for (float x : {-2.0f, 2.0f}) {
@@ -54,7 +54,7 @@ TEST_P(DenormalDisablerParametrization, InfNotZeroed) {
 
 
 
-TEST_P(DenormalDisablerParametrization, NanNotZeroed) {
+TEST_P(DenormalDisablerParametrization, NanNotZeroedExplicitlySetEnabled) {
   DenormalDisabler denormal_disabler(GetParam());
   volatile float kNan = std::sqrt(-1.0f);
   EXPECT_TRUE(std::isnan(kNan));
@@ -66,6 +66,26 @@ INSTANTIATE_TEST_SUITE_P(DenormalDisabler,
                          [](const ::testing::TestParamInfo<bool>& info) {
                            return info.param ? "enabled" : "disabled";
                          });
+
+
+
+TEST(DenormalDisabler, InfNotZeroed) {
+  DenormalDisabler denormal_disabler;
+  constexpr float kMax = std::numeric_limits<float>::max();
+  for (float x : {-2.0f, 2.0f}) {
+    SCOPED_TRACE(x);
+    volatile float multiplication = kMax * x;
+    EXPECT_TRUE(std::isinf(multiplication));
+  }
+}
+
+
+
+TEST(DenormalDisabler, NanNotZeroed) {
+  DenormalDisabler denormal_disabler;
+  volatile float kNan = std::sqrt(-1.0f);
+  EXPECT_TRUE(std::isnan(kNan));
+}
 
 
 
@@ -89,6 +109,20 @@ TEST(DenormalDisabler, ZeroDenormals) {
   if (!DenormalDisabler::IsSupported()) {
     GTEST_SKIP() << "Unsupported platform.";
   }
+  DenormalDisabler denormal_disabler;
+  for (float x : kDenormalDivisors) {
+    SCOPED_TRACE(x);
+    EXPECT_FALSE(DivisionIsDenormal(-kSmallest, x));
+    EXPECT_FALSE(DivisionIsDenormal(kSmallest, x));
+  }
+}
+
+
+
+TEST(DenormalDisabler, ZeroDenormalsExplicitlyEnabled) {
+  if (!DenormalDisabler::IsSupported()) {
+    GTEST_SKIP() << "Unsupported platform.";
+  }
   DenormalDisabler denormal_disabler(true);
   for (float x : kDenormalDivisors) {
     SCOPED_TRACE(x);
@@ -100,6 +134,21 @@ TEST(DenormalDisabler, ZeroDenormals) {
 
 
 TEST(DenormalDisabler, RestoreDenormalsEnabled) {
+  if (!DenormalDisabler::IsSupported()) {
+    GTEST_SKIP() << "Unsupported platform.";
+  }
+  ASSERT_TRUE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]))
+      << "Precondition not met: denormals must be enabled.";
+  {
+    DenormalDisabler denormal_disabler;
+    ASSERT_FALSE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
+  }
+  EXPECT_TRUE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
+}
+
+
+
+TEST(DenormalDisabler, RestoreDenormalsEnabledExplicitlyEnabled) {
   if (!DenormalDisabler::IsSupported()) {
     GTEST_SKIP() << "Unsupported platform.";
   }
@@ -119,6 +168,22 @@ TEST(DenormalDisabler, ZeroDenormalsNested) {
   if (!DenormalDisabler::IsSupported()) {
     GTEST_SKIP() << "Unsupported platform.";
   }
+  DenormalDisabler d1;
+  ASSERT_FALSE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
+  {
+    DenormalDisabler d2;
+    ASSERT_FALSE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
+  }
+  EXPECT_FALSE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
+}
+
+
+
+
+TEST(DenormalDisabler, ZeroDenormalsNestedExplicitlyEnabled) {
+  if (!DenormalDisabler::IsSupported()) {
+    GTEST_SKIP() << "Unsupported platform.";
+  }
   DenormalDisabler d1(true);
   ASSERT_FALSE(DivisionIsDenormal(kSmallest, kDenormalDivisors[0]));
   {
@@ -131,6 +196,21 @@ TEST(DenormalDisabler, ZeroDenormalsNested) {
 
 
 TEST(DenormalDisabler, DoNotZeroDenormalsIfUnsupported) {
+  if (DenormalDisabler::IsSupported()) {
+    GTEST_SKIP() << "This test should only run on platforms without support "
+                    "for DenormalDisabler.";
+  }
+  DenormalDisabler denormal_disabler;
+  for (float x : kDenormalDivisors) {
+    SCOPED_TRACE(x);
+    EXPECT_TRUE(DivisionIsDenormal(-kSmallest, x));
+    EXPECT_TRUE(DivisionIsDenormal(kSmallest, x));
+  }
+}
+
+
+
+TEST(DenormalDisabler, DoNotZeroDenormalsIfUnsupportedExplicitlyEnabled) {
   if (DenormalDisabler::IsSupported()) {
     GTEST_SKIP() << "This test should only run on platforms without support "
                     "for DenormalDisabler.";
