@@ -26,9 +26,13 @@ class PacketReceiver {
     DELIVERY_PACKET_ERROR,
   };
 
+  
+  
   virtual DeliveryStatus DeliverPacket(MediaType media_type,
                                        rtc::CopyOnWriteBuffer packet,
-                                       int64_t packet_time_us) = 0;
+                                       int64_t packet_time_us) {
+    RTC_CHECK_NOTREACHED();
+  }
 
   
   virtual void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) {

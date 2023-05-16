@@ -202,8 +202,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool CanInsertDtmf() override;
   bool InsertDtmf(uint32_t ssrc, int event, int duration) override;
 
-  void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
-                        int64_t packet_time_us) override;
+  void OnPacketReceived(const webrtc::RtpPacketReceived& packet) override;
   void OnPacketSent(const rtc::SentPacket& sent_packet) override;
   void OnNetworkRouteChanged(absl::string_view transport_name,
                              const rtc::NetworkRoute& network_route) override;
@@ -253,6 +252,11 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool DeleteVoEChannel(int channel);
   bool SetMaxSendBitrate(int bps);
   void SetupRecording();
+
+  
+  
+  
+  bool MaybeCreateDefaultReceiveStream(const webrtc::RtpPacketReceived& packet);
   
   
   bool MaybeDeregisterUnsignaledRecvStream(uint32_t ssrc);
@@ -311,6 +315,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   class WebRtcAudioReceiveStream;
   std::map<uint32_t, WebRtcAudioReceiveStream*> recv_streams_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+  webrtc::RtpHeaderExtensionMap recv_rtp_extension_map_;
 
   absl::optional<webrtc::AudioSendStream::Config::SendCodecSpec>
       send_codec_spec_;
