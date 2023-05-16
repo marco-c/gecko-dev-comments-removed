@@ -9,6 +9,8 @@
 
 
 
+
+
 "use strict";
 
 const SOURCE_FILES = {
@@ -24,7 +26,7 @@ const NODE_SELECTORS = {
   nodeUnBlackBoxAllOutside: "#node-unblackbox-all-outside",
 };
 
-add_task(async function() {
+add_task(async function testBlackBoxOnMultipleFiles() {
   const dbg = await initDebugger(
     "doc-blackbox-all.html",
     SOURCE_FILES.nestedSource,
@@ -124,6 +126,71 @@ add_task(async function() {
 
   assertSourceNodeIsBlackBoxed(dbg, SOURCE_FILES.nestedSource, false);
   assertSourceNodeIsBlackBoxed(dbg, SOURCE_FILES.codeReload1, false);
+});
+
+add_task(async function testHideAndShowBlackBoxedFiles() {
+  Services.prefs.setBoolPref("devtools.debugger.hide-ignored-sources", false);
+
+  const dbg = await initDebugger(
+    "doc-blackbox-all.html",
+    SOURCE_FILES.nestedSource,
+    SOURCE_FILES.codeReload1
+  );
+
+  await waitForSourcesInSourceTree(dbg, Object.values(SOURCE_FILES));
+  await selectSource(dbg, SOURCE_FILES.nestedSource);
+  clickElement(dbg, "blackbox");
+  await waitForDispatch(dbg.store, "BLACKBOX_WHOLE_SOURCES");
+
+  info("Assert and click the hide ignored files button in the settings menu");
+  await toggleDebbuggerSettingsMenuItem(dbg, {
+    className: ".debugger-settings-menu-item-hide-ignored-sources",
+    isChecked: false,
+  });
+
+  info("Wait until ignored sources are no longer visible");
+  await waitUntil(
+    () => !findSourceNodeWithText(dbg, SOURCE_FILES.nestedSource)
+  );
+
+  is(
+    Services.prefs.getBoolPref("devtools.debugger.hide-ignored-sources"),
+    true,
+    "Hide ignored files is enabled"
+  );
+
+  is(
+    dbg.win.document.querySelector(".source-list-footer").innerText,
+    "Ignored sources are hidden.\nShow all sources",
+    "Notification is visible with the correct message"
+  );
+
+  info("Assert that newly ignored files are automatically hidden");
+  await selectSource(dbg, SOURCE_FILES.codeReload1);
+  await triggerSourceTreeContextMenu(
+    dbg,
+    findSourceNodeWithText(dbg, SOURCE_FILES.codeReload1),
+    "#node-menu-blackbox"
+  );
+  await waitForDispatch(dbg.store, "BLACKBOX_WHOLE_SOURCES");
+  await waitUntil(() => !findSourceNodeWithText(dbg, SOURCE_FILES.codeReload1));
+
+  info("Show the hidden ignored files using the button in the notification");
+  clickElementWithSelector(dbg, ".source-list-footer button");
+
+  info("Wait until ignored sources are visible");
+  await waitUntil(() => findSourceNodeWithText(dbg, SOURCE_FILES.nestedSource));
+
+  is(
+    Services.prefs.getBoolPref("devtools.debugger.hide-ignored-sources"),
+    false,
+    "Hide ignored files is disabled"
+  );
+
+  ok(
+    !document.querySelector(".source-list-footer"),
+    "Notification is no longer visible"
+  );
 });
 
 function waitForBlackboxCount(dbg, count) {

@@ -2486,7 +2486,12 @@ async function toggleDebbuggerSettingsMenuItem(dbg, { className, isChecked }) {
 
   menuButton.click();
   
-  await waitFor(() => document.querySelector("#debugger-settings-menu-list"));
+  await waitFor(() => {
+    const menuListEl = document.querySelector("#debugger-settings-menu-list");
+    
+    
+    return menuListEl && menuListEl.offsetParent !== null;
+  });
 
   const menuItem = document.querySelector(className);
 
