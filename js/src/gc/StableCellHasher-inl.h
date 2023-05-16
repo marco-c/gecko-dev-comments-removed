@@ -151,7 +151,10 @@ inline void RemoveUniqueId(Cell* cell) {
 }  
 
 static inline js::HashNumber UniqueIdToHash(uint64_t uid) {
-  return mozilla::HashGeneric(uid);
+  
+  
+  
+  return DefaultHasher<uint64_t>::hash(uid);
 }
 
 template <typename T>
