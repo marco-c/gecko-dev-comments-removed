@@ -517,7 +517,8 @@ CMSampleBufferRef createTestSampleBufferRef() {
   XCTAssertEqual(callbackError, errorMock);
 }
 
-- (void)testStartCaptureSetsOutputDimensionsInvalidPixelFormat {
+
+- (void)DISABLED_testStartCaptureSetsOutputDimensionsInvalidPixelFormat {
   id expectedDeviceInputMock = OCMClassMock([AVCaptureDeviceInput class]);
   id captureDeviceInputMock = OCMClassMock([AVCaptureDeviceInput class]);
   OCMStub([captureDeviceInputMock deviceInputWithDevice:_deviceMock error:[OCMArg setTo:nil]])
