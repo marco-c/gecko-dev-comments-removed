@@ -128,7 +128,7 @@ class RTC_EXPORT SocketAddress {
 
   
   
-  std::string ToResolvedSensitiveString() const;
+  std::string ToSensitiveNameAndAddressString() const;
 
   
   bool FromString(absl::string_view str);
