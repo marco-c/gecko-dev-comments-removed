@@ -70,6 +70,38 @@ bool nsTransitionManager::UpdateTransitions(dom::Element* aElement,
                              collection, aOldStyle, aNewStyle);
 }
 
+
+
+
+template <typename T>
+static void ExpandTransitionProperty(nsCSSPropertyID aProperty, T aHandler) {
+  if (aProperty == eCSSPropertyExtra_no_properties ||
+      aProperty == eCSSPropertyExtra_variable ||
+      aProperty == eCSSProperty_UNKNOWN) {
+    
+    return;
+  }
+
+  
+  
+  if (aProperty == eCSSPropertyExtra_all_properties) {
+    for (nsCSSPropertyID p = nsCSSPropertyID(0);
+         p < eCSSProperty_COUNT_no_shorthands; p = nsCSSPropertyID(p + 1)) {
+      if (!nsCSSProps::IsEnabled(p, CSSEnabledState::ForAllContent)) {
+        continue;
+      }
+      aHandler(p);
+    }
+  } else if (nsCSSProps::IsShorthand(aProperty)) {
+    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, aProperty,
+                                         CSSEnabledState::ForAllContent) {
+      aHandler(*subprop);
+    }
+  } else {
+    aHandler(aProperty);
+  }
+}
+
 bool nsTransitionManager::DoUpdateTransitions(
     const nsStyleUIReset& aStyle, dom::Element* aElement,
     PseudoStyleType aPseudoType, CSSTransitionCollection*& aElementTransitions,
@@ -90,41 +122,14 @@ bool nsTransitionManager::DoUpdateTransitions(
       continue;
     }
 
-    nsCSSPropertyID property = aStyle.GetTransitionProperty(i);
-    if (property == eCSSPropertyExtra_no_properties ||
-        property == eCSSPropertyExtra_variable ||
-        property == eCSSProperty_UNKNOWN) {
-      
-      continue;
-    }
-    
-    
-    
-    
-    
-    
-    if (property == eCSSPropertyExtra_all_properties) {
-      for (nsCSSPropertyID p = nsCSSPropertyID(0);
-           p < eCSSProperty_COUNT_no_shorthands; p = nsCSSPropertyID(p + 1)) {
-        if (!nsCSSProps::IsEnabled(p, CSSEnabledState::ForAllContent)) {
-          continue;
-        }
-        startedAny |= ConsiderInitiatingTransition(
-            p, aStyle, i, aElement, aPseudoType, aElementTransitions, aOldStyle,
-            aNewStyle, propertiesChecked);
-      }
-    } else if (nsCSSProps::IsShorthand(property)) {
-      CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, property,
-                                           CSSEnabledState::ForAllContent) {
-        startedAny |= ConsiderInitiatingTransition(
-            *subprop, aStyle, i, aElement, aPseudoType, aElementTransitions,
-            aOldStyle, aNewStyle, propertiesChecked);
-      }
-    } else {
-      startedAny |= ConsiderInitiatingTransition(
-          property, aStyle, i, aElement, aPseudoType, aElementTransitions,
-          aOldStyle, aNewStyle, propertiesChecked);
-    }
+    ExpandTransitionProperty(
+        aStyle.GetTransitionProperty(i), [&](nsCSSPropertyID aProperty) {
+          
+          
+          startedAny |= ConsiderInitiatingTransition(
+              aProperty, aStyle, i, aElement, aPseudoType, aElementTransitions,
+              aOldStyle, aNewStyle, propertiesChecked);
+        });
   }
 
   
@@ -142,30 +147,11 @@ bool nsTransitionManager::DoUpdateTransitions(
     nsCSSPropertyIDSet allTransitionProperties;
     if (checkProperties) {
       for (uint32_t i = aStyle.mTransitionPropertyCount; i-- != 0;) {
-        
-        
-        nsCSSPropertyID property = aStyle.GetTransitionProperty(i);
-        if (property == eCSSPropertyExtra_no_properties ||
-            property == eCSSPropertyExtra_variable ||
-            property == eCSSProperty_UNKNOWN) {
-          
-        } else if (property == eCSSPropertyExtra_all_properties) {
-          for (nsCSSPropertyID p = nsCSSPropertyID(0);
-               p < eCSSProperty_COUNT_no_shorthands;
-               p = nsCSSPropertyID(p + 1)) {
-            allTransitionProperties.AddProperty(
-                nsCSSProps::Physicalize(p, aNewStyle));
-          }
-        } else if (nsCSSProps::IsShorthand(property)) {
-          CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, property,
-                                               CSSEnabledState::ForAllContent) {
-            auto p = nsCSSProps::Physicalize(*subprop, aNewStyle);
-            allTransitionProperties.AddProperty(p);
-          }
-        } else {
-          allTransitionProperties.AddProperty(
-              nsCSSProps::Physicalize(property, aNewStyle));
-        }
+        ExpandTransitionProperty(
+            aStyle.GetTransitionProperty(i), [&](nsCSSPropertyID aProperty) {
+              allTransitionProperties.AddProperty(
+                  nsCSSProps::Physicalize(aProperty, aNewStyle));
+            });
       }
     }
 
