@@ -4327,13 +4327,6 @@ BOOL CALLBACK nsWindow::DispatchStarvedPaints(HWND aWnd, LPARAM aMsg) {
 
 
 void nsWindow::DispatchPendingEvents() {
-  if (mPainting) {
-    NS_WARNING(
-        "We were asked to dispatch pending events during painting, "
-        "denying since that's unsafe.");
-    return;
-  }
-
   
   
   
@@ -5581,12 +5574,10 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     
     
-    case WM_ERASEBKGND:
-      if (!AutoErase((HDC)wParam)) {
-        *aRetValue = 1;
-        result = true;
-      }
-      break;
+    case WM_ERASEBKGND: {
+      *aRetValue = 1;
+      result = true;
+    } break;
 
     case WM_MOUSEMOVE: {
       MaybeHideCursor(false);
@@ -7509,9 +7500,6 @@ void nsWindow::OnSizeModeChange() {
 }
 
 bool nsWindow::OnHotKey(WPARAM wParam, LPARAM lParam) { return true; }
-
-
-bool nsWindow::AutoErase(HDC dc) { return false; }
 
 bool nsWindow::IsPopup() { return mWindowType == WindowType::Popup; }
 
