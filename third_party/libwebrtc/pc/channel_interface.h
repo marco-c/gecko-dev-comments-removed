@@ -49,19 +49,17 @@ class ChannelInterface {
   virtual cricket::MediaType media_type() const = 0;
 
   
-  virtual MediaChannel* media_channel() const = 0;
-  virtual MediaSendChannelInterface* media_send_channel() const = 0;
+  virtual MediaChannel* media_channel() = 0;
+  virtual MediaSendChannelInterface* media_send_channel() = 0;
   
   
-  virtual VideoMediaSendChannelInterface* video_media_send_channel() const = 0;
-  virtual VoiceMediaSendChannelInterface* voice_media_send_channel() const = 0;
-  virtual MediaReceiveChannelInterface* media_receive_channel() const = 0;
+  virtual VideoMediaSendChannelInterface* video_media_send_channel() = 0;
+  virtual VoiceMediaSendChannelInterface* voice_media_send_channel() = 0;
+  virtual MediaReceiveChannelInterface* media_receive_channel() = 0;
   
   
-  virtual VideoMediaReceiveChannelInterface* video_media_receive_channel()
-      const = 0;
-  virtual VoiceMediaReceiveChannelInterface* voice_media_receive_channel()
-      const = 0;
+  virtual VideoMediaReceiveChannelInterface* video_media_receive_channel() = 0;
+  virtual VoiceMediaReceiveChannelInterface* voice_media_receive_channel() = 0;
 
   
   
