@@ -380,7 +380,9 @@ RawId WebGPUChild::DeviceCreateBuffer(RawId aSelfId,
 
 RawId WebGPUChild::DeviceCreateTexture(RawId aSelfId,
                                        const dom::GPUTextureDescriptor& aDesc) {
-  ffi::WGPUTextureDescriptor desc = {};
+  
+  
+  ffi::WGPUTextureDescriptor______nsACString__FfiSlice_TextureFormat desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
