@@ -399,6 +399,12 @@ void Instrument::VisitLoadStoreExclusive(const Instruction* instr) {
   counter->Increment();
 }
 
+void Instrument::VisitAtomicMemory(const Instruction* instr) {
+  USE(instr);
+  Update();
+  static Counter* counter = GetCounter("Other");
+  counter->Increment();
+}
 
 void Instrument::VisitLoadLiteral(const Instruction* instr) {
   USE(instr);
