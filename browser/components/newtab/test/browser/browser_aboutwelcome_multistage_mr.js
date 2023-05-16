@@ -10,6 +10,9 @@ const { AboutWelcomeTelemetry } = ChromeUtils.import(
 const { AWScreenUtils } = ChromeUtils.import(
   "resource://activity-stream/lib/AWScreenUtils.jsm"
 );
+const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
+  "resource:///modules/InternalTestingProfileMigrator.sys.mjs"
+);
 
 async function clickVisibleButton(browser, selector) {
   
@@ -367,6 +370,37 @@ add_task(async function test_aboutwelcome_embedded_migration() {
     set: [["browser.migrate.internal-testing.enabled", true]],
   });
 
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(InternalTestingProfileMigrator.prototype, "getResources")
+    .callsFake(() =>
+      Promise.resolve([
+        {
+          type: MigrationUtils.resourceTypes.BOOKMARKS,
+          migrate: () => {},
+        },
+      ])
+    );
+  sandbox.stub(MigrationUtils, "_importQuantities").value({
+    bookmarks: 123,
+    history: 123,
+    logins: 123,
+  });
+  const migrated = new Promise(resolve => {
+    sandbox
+      .stub(InternalTestingProfileMigrator.prototype, "migrate")
+      .callsFake((aResourceTypes, aStartup, aProfile, aProgressCallback) => {
+        aProgressCallback(MigrationUtils.resourceTypes.BOOKMARKS);
+        Services.obs.notifyObservers(null, "Migration:Ended");
+        resolve();
+      });
+  });
+
+  let telemetrySpy = sandbox.spy(
+    AboutWelcomeTelemetry.prototype,
+    "sendTelemetry"
+  );
+
   const TEST_CONTENT = [
     {
       id: "AW_IMPORT_SETTINGS_EMBEDDED",
@@ -380,6 +414,12 @@ add_task(async function test_aboutwelcome_embedded_migration() {
         background:
           "url('chrome://activity-stream/content/data/content/assets/mr-import.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
         progress_bar: true,
+        migrate_start: {
+          action: {},
+        },
+        migrate_close: {
+          action: { navigate: true },
+        },
         secondary_button: {
           label: {
             string_id: "mr2022-onboarding-secondary-skip-button-label",
@@ -388,6 +428,31 @@ add_task(async function test_aboutwelcome_embedded_migration() {
             navigate: true,
           },
           has_arrow_icon: true,
+        },
+      },
+    },
+    {
+      id: "AW_STEP2",
+      content: {
+        position: "split",
+        split_narrow_bkg_position: "-228px",
+        background:
+          "url('chrome://activity-stream/content/data/content/assets/mr-gratitude.svg') var(--mr-secondary-position) no-repeat, var(--mr-screen-background-color)",
+        progress_bar: true,
+        logo: {},
+        title: {
+          string_id: "mr2022-onboarding-gratitude-title",
+        },
+        subtitle: {
+          string_id: "mr2022-onboarding-gratitude-subtitle",
+        },
+        primary_button: {
+          label: {
+            string_id: "mr2022-onboarding-gratitude-primary-button-label",
+          },
+          action: {
+            navigate: true,
+          },
         },
       },
     },
@@ -410,68 +475,115 @@ add_task(async function test_aboutwelcome_embedded_migration() {
 
   
   
-  await SpecialPowers.spawn(browser, [], async () => {
-    const { MigrationWizardConstants } = ChromeUtils.importESModule(
-      "chrome://browser/content/migration/migration-wizard-constants.mjs"
-    );
+  await SpecialPowers.spawn(
+    browser,
+    [`panel-item[key="${InternalTestingProfileMigrator.key}"]`],
+    async menuitemSelector => {
+      const { MigrationWizardConstants } = ChromeUtils.importESModule(
+        "chrome://browser/content/migration/migration-wizard-constants.mjs"
+      );
 
+      let wizard = content.document.querySelector("migration-wizard");
+      let shadow = wizard.openOrClosedShadowRoot;
+      let deck = shadow.querySelector("#wizard-deck");
+
+      
+      
+      if (deck.selectedViewName !== MigrationWizardConstants.PAGES.SELECTION) {
+        await ContentTaskUtils.waitForMutationCondition(
+          deck,
+          { attributeFilter: ["selected-view"] },
+          () => {
+            return (
+              deck.getAttribute("selected-view") ===
+              `page-${MigrationWizardConstants.PAGES.SELECTION}`
+            );
+          }
+        );
+      }
+
+      Assert.ok(true, "Selection page is being shown in the migration wizard.");
+
+      
+      let panelList = wizard.querySelector("panel-list");
+      Assert.ok(panelList, "Found the <panel-list>.");
+
+      
+      
+      
+      
+      let shown = ContentTaskUtils.waitForEvent(
+        panelList,
+        "shown",
+        false ,
+        null ,
+        true 
+      );
+      let selector = shadow.querySelector("#browser-profile-selector");
+      selector.click();
+      await shown;
+
+      let panelRect = panelList.getBoundingClientRect();
+      let selectorRect = selector.getBoundingClientRect();
+
+      
+      
+      
+      let panelTopLeftRelativeToAnchorTopLeft =
+        panelRect.top - selectorRect.top - selectorRect.height;
+      Assert.equal(
+        panelTopLeftRelativeToAnchorTopLeft,
+        0,
+        "Panel should be tightly anchored to the bottom of the button shadow node."
+      );
+
+      let panelItem = wizard.querySelector(menuitemSelector);
+      panelItem.click();
+
+      let importButton = shadow.querySelector("#import");
+      importButton.click();
+    }
+  );
+
+  await migrated;
+  Assert.ok(
+    telemetrySpy.calledWithMatch({
+      event: "CLICK_BUTTON",
+      event_context: { source: "primary_button", page: "about:welcome" },
+      message_id: sinon.match.string,
+    }),
+    "Should have sent telemetry for clicking the 'Import' button."
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
     let wizard = content.document.querySelector("migration-wizard");
     let shadow = wizard.openOrClosedShadowRoot;
-    let deck = shadow.querySelector("#wizard-deck");
-
-    
-    
-    if (deck.selectedViewName !== MigrationWizardConstants.PAGES.SELECTION) {
-      await ContentTaskUtils.waitForMutationCondition(
-        deck,
-        { attributeFilter: ["selected-view"] },
-        () => {
-          return (
-            deck.getAttribute("selected-view") ===
-            `page-${MigrationWizardConstants.PAGES.SELECTION}`
-          );
-        }
-      );
-    }
-
-    Assert.ok(true, "Selection page is being shown in the migration wizard.");
-
-    
-    let panelList = wizard.querySelector("panel-list");
-    Assert.ok(panelList, "Found the <panel-list>.");
-
-    
-    
-    
-    
-    let shown = ContentTaskUtils.waitForEvent(
-      panelList,
-      "shown",
-      false ,
-      null ,
-      true 
+    let continueButton = shadow.querySelector(
+      "div[name='page-progress'] .continue-button"
     );
-    let selector = shadow.querySelector("#browser-profile-selector");
-    selector.click();
-    await shown;
-
-    let panelRect = panelList.getBoundingClientRect();
-    let selectorRect = selector.getBoundingClientRect();
-
-    
-    
-    
-    let panelTopLeftRelativeToAnchorTopLeft =
-      panelRect.top - selectorRect.top - selectorRect.height;
-    Assert.equal(
-      panelTopLeftRelativeToAnchorTopLeft,
-      0,
-      "Panel should be tightly anchored to the bottom of the button shadow node."
+    continueButton.click();
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("main.AW_STEP2"),
+      "Waiting for step 2 to render"
     );
   });
+
+  Assert.ok(
+    telemetrySpy.calledWithMatch({
+      event: "CLICK_BUTTON",
+      event_context: { source: "migrate_close", page: "about:welcome" },
+      message_id: sinon.match.string,
+    }),
+    "Should have sent telemetry for clicking the 'Continue' button."
+  );
 
   
   await SpecialPowers.popPrefEnv(); 
   await SpecialPowers.popPrefEnv(); 
   await cleanup();
+  sandbox.restore();
+  let migrator = await MigrationUtils.getMigrator(
+    InternalTestingProfileMigrator.key
+  );
+  migrator.flushResourceCache();
 });

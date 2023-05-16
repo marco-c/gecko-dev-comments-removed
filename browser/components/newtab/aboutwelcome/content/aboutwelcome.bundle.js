@@ -185,7 +185,7 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(16);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(17);
 
 
 
@@ -493,6 +493,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       props
     } = this;
     const value = event.currentTarget.value ?? event.currentTarget.getAttribute("value");
+    const source = event.source || value;
     let targetContent = props.content[value] || props.content.tiles || props.content.languageSwitcher;
 
     if (!(targetContent && targetContent.action)) {
@@ -500,12 +501,12 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     } 
 
 
-    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, value, event.name); 
+    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name); 
     
     
 
     if (value === "dismiss_button" && !event.name) {
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, value);
+      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source);
     }
 
     let {
@@ -737,6 +738,8 @@ __webpack_require__.r(__webpack_exports__);
  var _HeroImage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(13);
  var _OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(14);
  var _AdditionalCTA__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(15);
+ var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(16);
+
 
 
 
@@ -909,9 +912,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       activeMultiSelect: this.props.activeMultiSelect,
       setActiveMultiSelect: this.props.setActiveMultiSelect,
       handleAction: this.props.handleAction
-    }) : null, content.tiles && content.tiles.type === "migration-wizard" ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("migration-wizard", {
-      "auto-request-state": ""
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("panel-list", null)) : null);
+    }) : null, content.tiles && content.tiles.type === "migration-wizard" ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_12__.EmbeddedMigrationWizard, {
+      handleAction: this.props.handleAction
+    }) : null);
   }
 
   renderNoodles() {
@@ -1865,6 +1868,59 @@ const AdditionalCTA = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "EmbeddedMigrationWizard": () => ( EmbeddedMigrationWizard)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+const EmbeddedMigrationWizard = ({
+  handleAction
+}) => {
+  const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)();
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const handleBeginMigration = () => {
+      handleAction({
+        currentTarget: {
+          value: "migrate_start"
+        },
+        source: "primary_button"
+      });
+    };
+
+    const handleClose = () => {
+      handleAction({
+        currentTarget: {
+          value: "migrate_close"
+        }
+      });
+    };
+
+    const {
+      current
+    } = ref;
+    current === null || current === void 0 ? void 0 : current.addEventListener("MigrationWizard:BeginMigration", handleBeginMigration);
+    current === null || current === void 0 ? void 0 : current.addEventListener("MigrationWizard:Close", handleClose);
+    return () => {
+      current === null || current === void 0 ? void 0 : current.removeEventListener("MigrationWizard:BeginMigration", handleBeginMigration);
+      current === null || current === void 0 ? void 0 : current.removeEventListener("MigrationWizard:Close", handleClose);
+    };
+  }, []); 
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("migration-wizard", {
+    "auto-request-state": "",
+    ref: ref
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("panel-list", null));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "BASE_PARAMS": () => ( BASE_PARAMS),
    "addUtmParams": () => ( addUtmParams)
  });
@@ -1913,7 +1969,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(16);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
 
 
 
@@ -2108,7 +2164,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(17);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(18);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
