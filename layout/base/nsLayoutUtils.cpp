@@ -5954,8 +5954,8 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
     
     
     if (aFrame->IsColumnSetFrame()) {
-      const auto baseline =
-          aFrame->GetNaturalBaselineBOffset(aWM, BaselineSharingGroup::Last);
+      const auto baseline = aFrame->GetNaturalBaselineBOffset(
+          aWM, BaselineSharingGroup::Last, BaselineExportContext::Other);
       if (!baseline) {
         return false;
       }
