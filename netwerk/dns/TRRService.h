@@ -102,6 +102,8 @@ class TRRService : public TRRServiceBase,
 
   void InitTRRConnectionInfo() override;
 
+  void DontUseTRRThread() { mDontUseTRRThread = true; }
+
  private:
   virtual ~TRRService();
 
@@ -149,6 +151,7 @@ class TRRService : public TRRServiceBase,
       false};  
   Atomic<bool, Relaxed> mDisableIPv6;  
   Atomic<bool, Relaxed> mShutdown{false};
+  Atomic<bool, Relaxed> mDontUseTRRThread{false};
 
   
   
