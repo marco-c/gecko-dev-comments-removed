@@ -33,6 +33,7 @@
 
 
 
+
 ALL_PROCESSES += [
     
     DllBlocklistEntry("npffaddon.dll", ALL_VERSIONS),
@@ -403,3 +404,15 @@ UTILITY_PROCESSES_TESTS += [
     DllBlocklistEntry("testdllblocklist_utilityprocessonly.dll", ALL_VERSIONS),
 ]
 
+GMPLUGIN_PROCESSES += [
+    
+    DllBlocklistEntry("ipseng64.dll", ALL_VERSIONS),
+    DllBlocklistEntry("ipseng32.dll", ALL_VERSIONS),
+    DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
+    DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
+]
+
+GMPLUGIN_PROCESSES_TESTS += [
+    
+    DllBlocklistEntry("testdllblocklist_gmpluginprocessonly.dll", ALL_VERSIONS),
+]

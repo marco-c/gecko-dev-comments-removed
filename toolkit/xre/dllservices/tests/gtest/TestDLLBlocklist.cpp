@@ -206,6 +206,17 @@ TEST(TestDllBlocklist, UtilityProcessOnly_AllowInMainProcess)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 }
 
+TEST(TestDllBlocklist, GMPluginProcessOnly_AllowInMainProcess)
+{
+  constexpr auto kLeafName = u"TestDllBlocklist_GMPluginProcessOnly.dll"_ns;
+  nsString dllPath = GetFullPath(kLeafName);
+
+  nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
+
+  EXPECT_TRUE(!!hDll);
+  EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
+}
+
 
 
 

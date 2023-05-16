@@ -45,6 +45,7 @@ struct DllBlockInfoT {
     UTILITY_PROCESSES_ONLY = 1 << 6,
     SOCKET_PROCESSES_ONLY = 1 << 7,
     GPU_PROCESSES_ONLY = 1 << 8,
+    GMPLUGIN_PROCESSES_ONLY = 1 << 9,
   } mFlags;
 
   bool IsVersionBlocked(const uint64_t aOther) const {
