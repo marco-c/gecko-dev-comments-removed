@@ -47,14 +47,20 @@ public final class SessionPdfFileSaver {
 
 
 
+
+
   public static @Nullable WebResponse createResponse(
       @NonNull final byte[] data,
       @NonNull final String filename,
-      @NonNull final String originalUrl) {
+      @NonNull final String originalUrl,
+      final boolean skipConfirmation,
+      final boolean requestExternalApp) {
     try {
       return new WebResponse.Builder(originalUrl)
           .statusCode(200)
           .body(new ByteArrayInputStream(data))
+          .skipConfirmation(skipConfirmation)
+          .requestExternalApp(requestExternalApp)
           .addHeader("Content-Type", "application/pdf")
           .addHeader("Content-Length", Integer.toString(data.length))
           .addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
