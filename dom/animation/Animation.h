@@ -408,7 +408,7 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  void ComposeStyle(RawServoAnimationValueMap& aComposeResult,
+  void ComposeStyle(StyleAnimationValueMap& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();

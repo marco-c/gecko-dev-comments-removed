@@ -58,26 +58,6 @@ pub unsafe trait HasSimpleFFI: HasFFI {
 
 
 
-pub unsafe trait HasBoxFFI: HasSimpleFFI {
-    #[inline]
-    
-    
-    
-    fn into_ffi(self: Box<Self>) -> Owned<Self::FFIType> {
-        unsafe { transmute(self) }
-    }
-
-    
-    
-    
-    #[inline]
-    unsafe fn drop_ffi(ptr: *mut Self::FFIType) {
-        let _ = Box::from_raw(ptr as *mut Self);
-    }
-}
-
-
-
 
 
 
@@ -262,75 +242,6 @@ unsafe impl<T: HasArcFFI> FFIArcHelpers for Arc<T> {
     #[inline]
     fn as_borrowed(&self) -> &T::FFIType {
         unsafe { &*(&**self as *const T as *const T::FFIType) }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug)]
-
-
-
-
-pub struct Owned<GeckoType> {
-    ptr: *mut GeckoType,
-    _marker: PhantomData<GeckoType>,
-}
-
-impl<GeckoType> Owned<GeckoType> {
-    
-    pub fn maybe(self) -> OwnedOrNull<GeckoType> {
-        unsafe { transmute(self) }
-    }
-}
-
-impl<GeckoType> Deref for Owned<GeckoType> {
-    type Target = GeckoType;
-    fn deref(&self) -> &GeckoType {
-        unsafe { &*self.ptr }
-    }
-}
-
-impl<GeckoType> DerefMut for Owned<GeckoType> {
-    fn deref_mut(&mut self) -> &mut GeckoType {
-        unsafe { &mut *self.ptr }
-    }
-}
-
-#[repr(C)]
-
-
-
-pub struct OwnedOrNull<GeckoType> {
-    ptr: *mut GeckoType,
-    _marker: PhantomData<GeckoType>,
-}
-
-impl<GeckoType> OwnedOrNull<GeckoType> {
-    
-    #[inline]
-    pub fn null() -> Self {
-        Self {
-            ptr: ptr::null_mut(),
-            _marker: PhantomData,
-        }
-    }
-
-    
-    #[inline]
-    pub fn is_null(&self) -> bool {
-        self.ptr.is_null()
-    }
-
-    
-    
-    pub fn borrow(&self) -> Option<&GeckoType> {
-        unsafe { transmute(self) }
-    }
-
-    
-    
-    pub fn borrow_mut(&self) -> Option<&mut GeckoType> {
-        unsafe { transmute(self) }
     }
 }
 

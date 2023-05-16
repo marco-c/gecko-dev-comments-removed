@@ -283,7 +283,7 @@ GlobalStyleSheetCache::GlobalStyleSheetCache() {
   
   
   if (sSharedMemory) {
-    if (auto header = static_cast<Header*>(sSharedMemory->memory())) {
+    if (auto* header = static_cast<Header*>(sSharedMemory->memory())) {
       MOZ_RELEASE_ASSERT(header->mMagic == Header::kMagic);
 
 #define STYLE_SHEET(identifier_, url_, shared_)                    \
@@ -373,17 +373,16 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
   }
   address = shm->memory();
 
-  auto header = static_cast<Header*>(address);
+  auto* header = static_cast<Header*>(address);
   header->mMagic = Header::kMagic;
 #ifdef DEBUG
-  for (auto ptr : header->mSheets) {
+  for (const auto* ptr : header->mSheets) {
     MOZ_RELEASE_ASSERT(!ptr, "expected shared memory to have been zeroed");
   }
 #endif
 
-  UniquePtr<RawServoSharedMemoryBuilder> builder(
-      Servo_SharedMemoryBuilder_Create(
-          header->mBuffer, kSharedMemorySize - offsetof(Header, mBuffer)));
+  UniquePtr<StyleSharedMemoryBuilder> builder(Servo_SharedMemoryBuilder_Create(
+      header->mBuffer, kSharedMemorySize - offsetof(Header, mBuffer)));
 
   nsCString message;
 

@@ -26,7 +26,6 @@ class nsAtom;
 class nsIFrame;
 class nsPresContext;
 enum class DisplayItemType : uint8_t;
-struct RawServoAnimationValueMap;
 
 namespace mozilla {
 
@@ -34,6 +33,7 @@ class ComputedStyle;
 class EffectSet;
 class RestyleTracker;
 class StyleAnimationValue;
+struct StyleAnimationValueMap;
 struct AnimationProperty;
 struct NonOwningAnimationTarget;
 
@@ -128,7 +128,7 @@ class EffectCompositor {
   bool GetServoAnimationRule(const dom::Element* aElement,
                              PseudoStyleType aPseudoType,
                              CascadeLevel aCascadeLevel,
-                             RawServoAnimationValueMap* aAnimationValues);
+                             StyleAnimationValueMap* aAnimationValues);
 
   
   
@@ -137,7 +137,7 @@ class EffectCompositor {
   
   bool ComposeServoAnimationRuleForEffect(
       dom::KeyframeEffect& aEffect, CascadeLevel aCascadeLevel,
-      RawServoAnimationValueMap* aAnimationValues);
+      StyleAnimationValueMap* aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
 

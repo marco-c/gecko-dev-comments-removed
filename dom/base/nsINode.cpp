@@ -2984,12 +2984,12 @@ uint32_t nsINode::Length() const {
   }
 }
 
-const RawServoSelectorList* nsINode::ParseSelectorList(
+const StyleSelectorList* nsINode::ParseSelectorList(
     const nsACString& aSelectorString, ErrorResult& aRv) {
   Document* doc = OwnerDoc();
 
   Document::SelectorCache& cache = doc->GetSelectorCache();
-  RawServoSelectorList* list = cache.GetListOrInsertFrom(aSelectorString, [&] {
+  StyleSelectorList* list = cache.GetListOrInsertFrom(aSelectorString, [&] {
     
     
     
@@ -2998,8 +2998,8 @@ const RawServoSelectorList* nsINode::ParseSelectorList(
     
     
     
-    return Servo_SelectorList_Parse(&aSelectorString, doc->ChromeRulesEnabled())
-        .Consume();
+    return WrapUnique(
+        Servo_SelectorList_Parse(&aSelectorString, doc->ChromeRulesEnabled()));
   });
 
   if (!list) {
@@ -3052,7 +3052,7 @@ Element* nsINode::QuerySelector(const nsACString& aSelector,
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("nsINode::QuerySelector",
                                         LAYOUT_SelectorQuery, aSelector);
 
-  const RawServoSelectorList* list = ParseSelectorList(aSelector, aResult);
+  const StyleSelectorList* list = ParseSelectorList(aSelector, aResult);
   if (!list) {
     return nullptr;
   }
@@ -3067,7 +3067,7 @@ already_AddRefed<nsINodeList> nsINode::QuerySelectorAll(
                                         LAYOUT_SelectorQuery, aSelector);
 
   RefPtr<nsSimpleContentList> contentList = new nsSimpleContentList(this);
-  const RawServoSelectorList* list = ParseSelectorList(aSelector, aResult);
+  const StyleSelectorList* list = ParseSelectorList(aSelector, aResult);
   if (!list) {
     return contentList.forget();
   }

@@ -1474,7 +1474,7 @@ Document::Document(const char* aContentType)
 
   
   
-  mStyleUseCounters = Servo_UseCounters_Create().Consume();
+  mStyleUseCounters.reset(Servo_UseCounters_Create());
 
   SetContentType(nsDependentCString(aContentType));
 

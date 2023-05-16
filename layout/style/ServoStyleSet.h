@@ -151,10 +151,10 @@ class ServoStyleSet {
   
   
   inline nscoord EvaluateSourceSizeList(
-      const RawServoSourceSizeList* aSourceSizeList) const;
+      const StyleSourceSizeList* aSourceSizeList) const;
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
-  const RawServoStyleSet* RawSet() const { return mRawSet.get(); }
+  const StylePerDocumentStyleData* RawData() const { return mRawData.get(); }
 
   bool GetAuthorStyleDisabled() const { return mAuthorStyleDisabled; }
 
@@ -623,7 +623,7 @@ class ServoStyleSet {
   
   
   dom::Document* mDocument;
-  UniquePtr<RawServoStyleSet> mRawSet;
+  UniquePtr<StylePerDocumentStyleData> mRawData;
 
   
   

@@ -185,8 +185,6 @@ class nsTextNode;
 class nsViewManager;
 class nsXULPrototypeDocument;
 struct JSContext;
-struct RawServoSelectorList;
-struct StyleUseCounters;
 struct nsFont;
 
 namespace mozilla {
@@ -212,6 +210,8 @@ enum class StyleCursorKind : uint8_t;
 class SVGContextPaint;
 enum class ColorScheme : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
+struct StyleSelectorList;
+struct StyleUseCounters;
 template <typename>
 class OwningNonNull;
 struct URLExtraData;
@@ -1640,7 +1640,7 @@ class Document : public nsINode,
  public:
   class SelectorCache final : public nsExpirationTracker<SelectorCacheKey, 4> {
    public:
-    using SelectorList = UniquePtr<RawServoSelectorList>;
+    using SelectorList = UniquePtr<StyleSelectorList>;
     using Table = nsTHashMap<nsCStringHashKey, SelectorList>;
 
     explicit SelectorCache(nsIEventTarget* aEventTarget);
@@ -1654,8 +1654,8 @@ class Document : public nsINode,
     
     
     template <typename F>
-    RawServoSelectorList* GetListOrInsertFrom(const nsACString& aSelector,
-                                              F&& aFrom) {
+    StyleSelectorList* GetListOrInsertFrom(const nsACString& aSelector,
+                                           F&& aFrom) {
       MOZ_ASSERT(NS_IsMainThread());
       return mTable.LookupOrInsertWith(aSelector, std::forward<F>(aFrom)).get();
     }

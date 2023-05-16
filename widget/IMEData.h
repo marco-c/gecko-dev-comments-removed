@@ -786,8 +786,6 @@ struct IMENotification final {
     bool mCausedBySelectionEvent;
     bool mOccurredDuringComposition;
 
-    
-    
     void SetWritingMode(const WritingMode& aWritingMode);
     WritingMode GetWritingMode() const;
 

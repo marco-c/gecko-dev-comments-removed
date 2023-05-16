@@ -272,7 +272,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  void ComposeStyle(RawServoAnimationValueMap& aComposeResult,
+  void ComposeStyle(StyleAnimationValueMap& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   
@@ -470,7 +470,7 @@ class KeyframeEffect : public AnimationEffect {
  private:
   nsChangeHint mCumulativeChangeHint = nsChangeHint{0};
 
-  void ComposeStyleRule(RawServoAnimationValueMap& aAnimationValues,
+  void ComposeStyleRule(StyleAnimationValueMap& aAnimationValues,
                         const AnimationProperty& aProperty,
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);

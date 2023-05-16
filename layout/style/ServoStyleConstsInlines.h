@@ -30,12 +30,6 @@ namespace mozilla {
 
 
 
-template struct StyleOwned<RawServoAnimationValueMap>;
-template struct StyleOwned<RawServoAuthorStyles>;
-template struct StyleOwned<RawServoSourceSizeList>;
-template struct StyleOwned<StyleUseCounters>;
-template struct StyleOwnedOrNull<StyleUseCounters>;
-template struct StyleOwnedOrNull<RawServoSelectorList>;
 template struct StyleStrong<ComputedStyle>;
 template struct StyleStrong<ServoCssRules>;
 template struct StyleStrong<RawServoAnimationValue>;
