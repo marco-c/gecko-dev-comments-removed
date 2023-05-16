@@ -993,6 +993,9 @@ const getTurnHostname = turnUrl => {
 
 
 
+
+
+
 const GleanTest = new Proxy(
   {},
   {
@@ -1001,21 +1004,48 @@ const GleanTest = new Proxy(
         {},
         {
           get(target, metricName, receiver) {
-            return {
-              
-              async testGetValue() {
-                return SpecialPowers.spawnChrome(
-                  [categoryName, metricName],
-                  async (categoryName, metricName) => {
-                    await Services.fog.testFlushAllChildren();
-                    const window = this.browsingContext.topChromeWindow;
-                    return window.Glean[categoryName][
-                      metricName
-                    ].testGetValue();
-                  }
-                );
+            return new Proxy(
+              {
+                async testGetValue() {
+                  return SpecialPowers.spawnChrome(
+                    [categoryName, metricName],
+                    async (categoryName, metricName) => {
+                      await Services.fog.testFlushAllChildren();
+                      const window = this.browsingContext.topChromeWindow;
+                      return window.Glean[categoryName][
+                        metricName
+                      ].testGetValue();
+                    }
+                  );
+                },
               },
-            };
+              {
+                get(target, prop, receiver) {
+                  
+                  
+                  if (prop in target) {
+                    return target[prop];
+                  }
+
+                  
+                  const label = prop;
+                  return {
+                    async testGetValue() {
+                      return SpecialPowers.spawnChrome(
+                        [categoryName, metricName, label],
+                        async (categoryName, metricName, label) => {
+                          await Services.fog.testFlushAllChildren();
+                          const window = this.browsingContext.topChromeWindow;
+                          return window.Glean[categoryName][metricName][
+                            label
+                          ].testGetValue();
+                        }
+                      );
+                    },
+                  };
+                },
+              }
+            );
           },
         }
       );

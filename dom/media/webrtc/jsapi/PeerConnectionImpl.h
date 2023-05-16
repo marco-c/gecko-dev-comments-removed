@@ -521,7 +521,7 @@ class PeerConnectionImpl final
   
   
   
-  static bool HostnameInPref(const char* aPrefList, nsIURI* aDocURI);
+  static bool HostnameInPref(const char* aPrefList, const nsCString& aHostName);
 
   void StampTimecard(const char* aEvent);
 
@@ -548,6 +548,9 @@ class PeerConnectionImpl final
   }
 
   bool ShouldAllowOldSetParameters() const { return mAllowOldSetParameters; }
+
+  nsCString GetHostname() const { return mHostname; }
+  nsCString GetEffectiveTLDPlus1() const { return mEffectiveTLDPlus1; }
 
   void SendWarningToConsole(const nsCString& aWarning);
 
@@ -688,6 +691,8 @@ class PeerConnectionImpl final
 
   
   std::string mName;
+  nsCString mHostname;
+  nsCString mEffectiveTLDPlus1;
 
   
   nsCOMPtr<nsISerialEventTarget> mSTSThread;
