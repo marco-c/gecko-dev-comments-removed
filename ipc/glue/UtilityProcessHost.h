@@ -96,7 +96,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
-  void InitAfterConnect(bool aSucceeded, const char* aCallSite = "");
+  void InitAfterConnect(bool aSucceeded);
 
   
   
@@ -131,7 +131,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool mShutdownRequested = false;
 
-  void RejectPromise(const char* aCallSite);
+  void RejectPromise();
   void ResolvePromise();
 
   
