@@ -160,6 +160,77 @@ add_task(async function test_translations_panel() {
 
 
 
+add_task(async function test_translations_panel() {
+  const { cleanup, runInPage } = await loadTestPage({
+    page: spanishPageUrl,
+    languagePairs,
+  });
+
+  const button = await assertTranslationsButton(
+    b => !b.hidden,
+    "The button is available."
+  );
+
+  await runInPage(async TranslationsTest => {
+    const { getH1 } = TranslationsTest.getSelectors();
+    await TranslationsTest.assertTranslationResult(
+      "The page's H1 is in Spanish.",
+      getH1,
+      "Don Quijote de La Mancha"
+    );
+  });
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(button, "Opening the popup");
+  });
+
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(
+      getByL10nId("translations-panel-default-translate-button"),
+      "Start translating by clicking the translate button."
+    );
+  });
+
+  await runInPage(async TranslationsTest => {
+    const { getH1 } = TranslationsTest.getSelectors();
+    await TranslationsTest.assertTranslationResult(
+      "The pages H1 is translated.",
+      getH1,
+      "DON QUIJOTE DE LA MANCHA [es to en, html]"
+    );
+  });
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(button, "Re-opening the popup");
+  });
+
+  info('Switch to language to "fr"');
+  const toSelect = getById("translations-panel-revisit-to");
+  toSelect.value = "fr";
+  toSelect.dispatchEvent(new Event("command"));
+
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(
+      getByL10nId("translations-panel-revisit-translate-button"),
+      "Re-translate the page by clicking the translate button."
+    );
+  });
+
+  await runInPage(async TranslationsTest => {
+    const { getH1 } = TranslationsTest.getSelectors();
+    await TranslationsTest.assertTranslationResult(
+      "The pages H1 is translated using the changed languages.",
+      getH1,
+      "DON QUIJOTE DE LA MANCHA [es to fr, html]"
+    );
+  });
+
+  await cleanup();
+});
+
+
+
+
 add_task(async function test_translations_panel_switch_language() {
   const { cleanup, runInPage } = await loadTestPage({
     page: spanishPageUrl,
@@ -180,32 +251,59 @@ add_task(async function test_translations_panel_switch_language() {
     );
   });
 
-  {
-    const popupshown = waitForTranslationsPopupEvent("popupshown");
+  await waitForTranslationsPopupEvent("popupshown", () => {
     click(button, "Opening the popup");
-    await popupshown;
-  }
+  });
 
-  const fromSelect = document.getElementById("translations-panel-from");
+  const gearIcon = getByL10nId("translations-panel-settings-button");
+  click(gearIcon, "Open the preferences menu");
+
+  await waitForViewShown(() => {
+    info("Switch to choose language view");
+    getByL10nId(
+      "translations-panel-settings-change-source-language"
+    ).doCommand();
+  });
+
+  const translateButton = getByL10nId(
+    "translations-panel-default-translate-button"
+  );
+  const fromSelect = getById("translations-panel-dual-from");
+  const toSelect = getById("translations-panel-dual-to");
+
+  ok(translateButton.disabled, "The translate button starts as disabled");
+
+  info('Switch from language to "en"');
   fromSelect.value = "en";
-  fromSelect.dispatchEvent(new Event("input"));
+  fromSelect.dispatchEvent(new Event("command"));
 
-  const toSelect = document.getElementById("translations-panel-to");
+  info('Switch to language to "fr"');
   toSelect.value = "fr";
-  toSelect.dispatchEvent(new Event("input"));
+  toSelect.dispatchEvent(new Event("command"));
 
-  {
-    const translateButton = getByL10nId(
-      "translations-panel-dual-translate-button"
-    );
+  ok(!translateButton.disabled, "The translate button can now be used");
 
-    const popuphidden = waitForTranslationsPopupEvent("popuphidden");
+  info('Switch to language to "en"');
+  toSelect.value = "en";
+  toSelect.dispatchEvent(new Event("command"));
+
+  ok(
+    translateButton.disabled,
+    "Choosing to translate to and from English causes the translate button to be disabled again."
+  );
+
+  info('Switch to language back to "fr"');
+  toSelect.value = "fr";
+  toSelect.dispatchEvent(new Event("command"));
+
+  ok(!translateButton.disabled, "The translate button can be used again.");
+
+  await waitForTranslationsPopupEvent("popuphidden", () => {
     click(
       translateButton,
       "Start translating by clicking the translate button."
     );
-    await popuphidden;
-  }
+  });
 
   await runInPage(async TranslationsTest => {
     const { getH1 } = TranslationsTest.getSelectors();
@@ -213,6 +311,34 @@ add_task(async function test_translations_panel_switch_language() {
       "The pages H1 is translated using the changed languages.",
       getH1,
       "DON QUIJOTE DE LA MANCHA [en to fr, html]"
+    );
+  });
+
+  await cleanup();
+});
+
+
+
+
+add_task(async function test_translations_panel_cancel() {
+  const { cleanup } = await loadTestPage({
+    page: spanishPageUrl,
+    languagePairs,
+  });
+
+  const button = await assertTranslationsButton(
+    b => !b.hidden,
+    "The button is available."
+  );
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(button, "Opening the popup");
+  });
+
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(
+      getByL10nId("translations-panel-default-translate-cancel"),
+      "Click the cancel button."
     );
   });
 
@@ -256,11 +382,49 @@ add_task(async function test_translations_panel_display_beta_languages() {
     }
   }
 
-  const fromSelect = document.getElementById("translations-panel-from");
-  const toSelect = document.getElementById("translations-panel-to");
+  const fromSelect = document.getElementById("translations-panel-dual-from");
+  const toSelect = document.getElementById("translations-panel-dual-to");
 
   assertBetaDisplay(fromSelect);
   assertBetaDisplay(toSelect);
+
+  await cleanup();
+});
+
+
+
+
+add_task(async function test_translations_panel_manage_languages() {
+  const { cleanup } = await loadTestPage({
+    page: spanishPageUrl,
+    languagePairs,
+  });
+
+  const button = await assertTranslationsButton(
+    b => !b.hidden,
+    "The button is available."
+  );
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(button, "Opening the popup");
+  });
+
+  const gearIcon = getByL10nId("translations-panel-settings-button");
+  click(gearIcon, "Open the preferences menu");
+
+  const manageLanguages = getByL10nId(
+    "translations-panel-settings-manage-languages"
+  );
+  info("Choose to manage the languages.");
+  manageLanguages.doCommand();
+
+  await TestUtils.waitForCondition(
+    () => gBrowser.currentURI.spec === "about:preferences#general",
+    "Waiting for about:preferences to be opened."
+  );
+
+  info("Remove the about:preferences tab");
+  gBrowser.removeCurrentTab();
 
   await cleanup();
 });
