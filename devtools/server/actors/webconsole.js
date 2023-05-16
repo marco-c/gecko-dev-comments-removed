@@ -60,7 +60,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["addWebConsoleCommands", "WebConsoleCommandsManager"],
+  ["WebConsoleCommandsManager"],
   "resource://devtools/server/actors/webconsole/commands/manager.js",
   true
 );
@@ -1349,78 +1349,6 @@ class WebConsoleActor extends Actor {
   }
 
   
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _getWebConsoleCommands(debuggerGlobal, evalInput, selectedNodeActorID) {
-    const helpers = {
-      window: this.evalGlobal,
-      makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
-      createValueGrip: this.createValueGrip.bind(this),
-      preprocessDebuggerObject: this.preprocessDebuggerObject.bind(this),
-      sandbox: Object.create(null),
-      helperResult: null,
-      consoleActor: this,
-      evalInput,
-    };
-    if (selectedNodeActorID) {
-      const actor = this.conn.getActor(selectedNodeActorID);
-      if (actor) {
-        helpers.selectedNode = actor.rawNode;
-      }
-    }
-    addWebConsoleCommands(helpers);
-
-    const evalGlobal = this.evalGlobal;
-    function maybeExport(obj, name) {
-      if (typeof obj[name] != "function") {
-        return;
-      }
-
-      
-      
-      
-      
-      
-      
-      obj[name] = Cu.exportFunction(obj[name], evalGlobal, {
-        allowCrossOriginArguments: true,
-      });
-    }
-    for (const name in helpers.sandbox) {
-      const desc = Object.getOwnPropertyDescriptor(helpers.sandbox, name);
-
-      
-      if (!isWorker) {
-        maybeExport(desc, "get");
-        maybeExport(desc, "set");
-        maybeExport(desc, "value");
-      }
-      if (desc.value) {
-        
-        desc.value = debuggerGlobal.makeDebuggeeValue(desc.value);
-      }
-      Object.defineProperty(helpers.sandbox, name, desc);
-    }
-    return helpers;
-  }
 
   
 

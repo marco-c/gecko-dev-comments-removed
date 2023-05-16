@@ -108,8 +108,6 @@ function isObject(value) {
 
 
 
-
-
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   if (isCommand(string.trim()) && options.eager) {
     return {
@@ -126,7 +124,8 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
     webConsole
   );
 
-  const helpers = webConsole._getWebConsoleCommands(
+  const helpers = WebConsoleCommandsManager.getWebConsoleCommands(
+    webConsole,
     dbgGlobal,
     string,
     options.selectedNodeActor
@@ -136,7 +135,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
     dbgGlobal,
     bindSelf,
     frame,
-    helpers
+    helpers.bindings
   );
 
   if (options.bindings) {
@@ -193,17 +192,14 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   }
 
   
-  const { helperResult } = helpers;
-
-  
   delete helpers.evalInput;
-  delete helpers.helperResult;
   delete helpers.selectedNode;
   cleanupBindings(bindings, helperCache);
 
   return {
     result,
-    helperResult,
+    
+    helperResult: helpers.getHelperResult(),
     dbg,
     frame,
     dbgGlobal,
@@ -690,8 +686,7 @@ function cleanupBindings(bindings, helperCache) {
   }
 }
 
-function bindCommands(isCmd, dbgGlobal, bindSelf, frame, helpers) {
-  const bindings = helpers.sandbox;
+function bindCommands(isCmd, dbgGlobal, bindSelf, frame, bindings) {
   if (bindSelf) {
     bindings._self = bindSelf;
   }
