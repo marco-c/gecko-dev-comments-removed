@@ -3741,7 +3741,10 @@ class AudioContextOperationControlMessage : public ControlMessage {
 void MediaTrackGraphImpl::ApplyAudioContextOperationImpl(
     AudioContextOperationControlMessage* aMessage) {
   MOZ_ASSERT(OnGraphThread());
-  AudioContextState state;
+  
+  
+  
+  AudioContextState state{0};
   switch (aMessage->mAudioContextOperation) {
     
     
