@@ -13,6 +13,7 @@
 #include "JavaExceptions.h"
 #include "mozilla/java/WebAuthnTokenManagerWrappers.h"
 #include "mozilla/jni/Conversions.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "WebAuthnEnumStrings.h"
 
 namespace mozilla {
@@ -156,10 +157,13 @@ RefPtr<U2FRegisterPromise> AndroidWebAuthnTokenManager::Register(
 
           const WebAuthnAuthenticatorSelection& sel =
               extra.AuthenticatorSelection();
-          if (sel.residentKey().EqualsLiteral(
-                  MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_REQUIRED)) {
-            GECKOBUNDLE_PUT(authSelBundle, "requireResidentKey",
-                            java::sdk::Integer::ValueOf(1));
+          
+          
+          
+          if (StaticPrefs::
+                  security_webauthn_webauthn_enable_android_fido2_residentkey()) {
+            GECKOBUNDLE_PUT(authSelBundle, "residentKey",
+                            jni::StringParam(sel.residentKey()));
           }
 
           if (sel.userVerificationRequirement().EqualsLiteral(
