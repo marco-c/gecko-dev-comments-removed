@@ -197,6 +197,8 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
                                     DocAccessible* aDocument) {
   nsIFrame* frame = aContent->GetPrimaryFrame();
   MOZ_ASSERT(frame);
+  nsAutoCString overflow;
+  frame->Style()->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
   
   
   
@@ -207,7 +209,8 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
   return aContent->HasChildren() && !aContent->IsXULElement() &&
          (frame->IsTransformed() || frame->IsStickyPositioned() ||
           (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-           nsLayoutUtils::IsReallyFixedPos(frame)));
+           nsLayoutUtils::IsReallyFixedPos(frame)) ||
+          overflow.Equals("hidden"_ns));
 }
 
 
@@ -524,11 +527,13 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
     
     const nsIFrame* frame = aContent->GetPrimaryFrame();
     const ComputedStyle* newStyle = frame ? frame->Style() : nullptr;
+    nsAutoCString overflow;
+    newStyle->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
     if (newStyle &&
         (newStyle->StyleDisplay()->HasTransform(frame) ||
          newStyle->StyleDisplay()->mPosition == StylePositionProperty::Fixed ||
-         newStyle->StyleDisplay()->mPosition ==
-             StylePositionProperty::Sticky)) {
+         newStyle->StyleDisplay()->mPosition == StylePositionProperty::Sticky ||
+         overflow.Equals("hidden"_ns))) {
       document->ContentInserted(aContent, aContent->GetNextSibling());
     }
   } else if (accessible && IPCAccessibilityActive() &&
