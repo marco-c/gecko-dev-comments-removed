@@ -294,6 +294,9 @@ class Browsertime(Perftest):
             "--pageCompleteCheckPollTimeout",
             "1000",
             
+            "--beforePageCompleteWaitTime",
+            "2000",
+            
             "--timeouts.pageLoad",
             str(timeout),
             "--timeouts.script",
