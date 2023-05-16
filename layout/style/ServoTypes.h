@@ -15,16 +15,15 @@
 #include "nsCoord.h"
 #include "X11UndefineNone.h"
 
-struct RawServoFontFaceRule;
-
 namespace mozilla {
+struct StyleLockedFontFaceRule;
 enum class StyleOrigin : uint8_t;
 struct LangGroupFontPrefs;
 }  
 
 
 struct nsFontFaceRuleContainer {
-  RefPtr<RawServoFontFaceRule> mRule;
+  RefPtr<mozilla::StyleLockedFontFaceRule> mRule;
   mozilla::StyleOrigin mOrigin;
 };
 

@@ -51,50 +51,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef mozilla_ServoBindingTypes_h
 #define mozilla_ServoBindingTypes_h
 
@@ -107,10 +63,6 @@
 #include "nsTArray.h"
 
 
-
-#define SERVO_ARC_TYPE(name_, type_) struct type_;
-#include "mozilla/ServoArcTypeList.h"
-#undef SERVO_ARC_TYPE
 
 class nsCSSPropertyIDSet;
 class nsCSSValue;
@@ -154,11 +106,17 @@ class Element;
     static void Release(type_* aPtr) { Servo_##name_##_Release(aPtr); } \
   };                                                                    \
   }
-#include "mozilla/ServoArcTypeList.h"
+#define SERVO_LOCKED_ARC_TYPE(name_) \
+  namespace mozilla {                \
+  struct StyleLocked##name_;         \
+  }                                  \
+  SERVO_ARC_TYPE(name_, mozilla::StyleLocked##name_)
+#include "mozilla/ServoLockedArcTypeList.h"
 SERVO_ARC_TYPE(AnimationValue, mozilla::StyleAnimationValue)
 SERVO_ARC_TYPE(ComputedStyle, mozilla::ComputedStyle)
 SERVO_ARC_TYPE(CssUrlData, mozilla::StyleCssUrlData)
 SERVO_ARC_TYPE(StyleSheetContents, mozilla::StyleStylesheetContents)
+#undef SERVO_LOCKED_ARC_TYPE
 #undef SERVO_ARC_TYPE
 
 #define SERVO_BOXED_TYPE(name_, type_)                                        \
