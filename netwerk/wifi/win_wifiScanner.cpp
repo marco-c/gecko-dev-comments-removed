@@ -3,11 +3,12 @@
 
 
 #include "nsWifiAccessPoint.h"
-#include "WinWifiScanner.h"
+#include "win_wifiScanner.h"
+
+
+#include "win_wlanLibrary.h"
 
 #define DOT11_BSS_TYPE_UNUSED static_cast<DOT11_BSS_TYPE>(0)
-
-namespace mozilla {
 
 class InterfaceScanCallbackData {
  public:
@@ -56,7 +57,7 @@ static void WINAPI OnScanComplete(PWLAN_NOTIFICATION_DATA data, PVOID context) {
   cbData->OnInterfaceScanComplete();
 }
 
-WifiScannerImpl::WifiScannerImpl() {
+WinWifiScanner::WinWifiScanner() {
   
   
   
@@ -69,10 +70,10 @@ WifiScannerImpl::WifiScannerImpl() {
   }
 }
 
-WifiScannerImpl::~WifiScannerImpl() {}
+WinWifiScanner::~WinWifiScanner() {}
 
-nsresult WifiScannerImpl::GetAccessPointsFromWLAN(
-    nsTArray<RefPtr<nsIWifiAccessPoint>>& accessPoints) {
+nsresult WinWifiScanner::GetAccessPointsFromWLAN(
+    nsCOMArray<nsWifiAccessPoint>& accessPoints) {
   accessPoints.Clear();
 
   
@@ -160,11 +161,9 @@ nsresult WifiScannerImpl::GetAccessPointsFromWLAN(
       ap->setSSID(reinterpret_cast<char const*>(bss_entry.dot11Ssid.ucSSID),
                   bss_entry.dot11Ssid.uSSIDLength);
 
-      accessPoints.AppendElement(ap);
+      accessPoints.AppendObject(ap);
     }
   }
 
   return NS_OK;
 }
-
-}  
