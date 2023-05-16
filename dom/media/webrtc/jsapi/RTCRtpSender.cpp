@@ -564,7 +564,6 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
 
-  bool compatModeAllowedRidChange = false;
   
   if (paramsCopy.mEncodings.Length() != oldParams->mEncodings.Length()) {
     nsCString error("Cannot change the number of encodings with setParameters");
@@ -577,7 +576,10 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
       p->MaybeRejectWithInvalidModificationError(error);
       return p.forget();
     }
-    compatModeAllowedRidChange = true;
+    
+    
+    mPendingRidChangeFromCompatMode = true;
+    mSimulcastEnvelopeSet = true;
     if (!mHaveWarnedBecauseEncodingCountChange) {
       mHaveWarnedBecauseEncodingCountChange = true;
       mozilla::glean::rtcrtpsender_setparameters::warn_length_changed
@@ -719,10 +721,6 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   uint32_t serialNumber = ++mNumSetParametersCalls;
   MaybeUpdateConduit();
 
-  if (compatModeAllowedRidChange) {
-    mSimulcastEnvelopeSet = true;
-  }
-
   
   
   GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -738,6 +736,9 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
         
         if (serialNumber == mNumSetParametersCalls) {
           mPendingParameters = Nothing();
+          
+          
+          mPendingRidChangeFromCompatMode = false;
         }
         MOZ_ASSERT(mParameters.mEncodings.Length());
         
@@ -972,6 +973,7 @@ void RTCRtpSender::MaybeGetJsepRids() {
       mParameters.mEncodings = ToSendEncodings(jsepRids);
     }
     mSimulcastEnvelopeSet = true;
+    mSimulcastEnvelopeSetByJSEP = true;
   }
 }
 
@@ -1276,8 +1278,20 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
     
     
     std::vector<std::string> rids = aJsepTransceiver.mSendTrack.GetRids();
-    mParameters.mEncodings = GetMatchingEncodings(rids);
-    MOZ_ASSERT(mParameters.mEncodings.Length());
+    if (mSimulcastEnvelopeSetByJSEP && rids.empty()) {
+      
+      
+      
+      mParameters.mEncodings = GetMatchingEncodings(rids);
+      MOZ_ASSERT(mParameters.mEncodings.Length());
+      mSimulcastEnvelopeSetByJSEP = false;
+      mSimulcastEnvelopeSet = false;
+    } else if (!rids.empty()) {
+      
+      
+      mParameters.mEncodings = GetMatchingEncodings(rids);
+      MOZ_ASSERT(mParameters.mEncodings.Length());
+    }
   }
 
   MaybeUpdateConduit();
@@ -1297,7 +1311,17 @@ void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
 
   if (mSimulcastEnvelopeSet) {
     std::vector<std::string> rids;
-    for (const auto& encoding : mParameters.mEncodings) {
+    Maybe<RTCRtpSendParameters> parameters;
+    if (mPendingRidChangeFromCompatMode) {
+      
+      
+      
+      
+      parameters = mPendingParameters;
+    } else {
+      parameters = Some(mParameters);
+    }
+    for (const auto& encoding : parameters->mEncodings) {
       if (encoding.mRid.WasPassed()) {
         rids.push_back(NS_ConvertUTF16toUTF8(encoding.mRid.Value()).get());
       } else {
