@@ -181,12 +181,14 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> nurseryStringsDisabled;
   js::MainThreadData<bool> nurseryBigIntsDisabled;
 
+ private:
   
   
-  js::MainThreadData<bool> allocNurseryObjects;
-  js::MainThreadData<bool> allocNurseryStrings;
-  js::MainThreadData<bool> allocNurseryBigInts;
+  js::MainThreadData<bool> allocNurseryObjects_;
+  js::MainThreadData<bool> allocNurseryStrings_;
+  js::MainThreadData<bool> allocNurseryBigInts_;
 
+ public:
   
   
   
@@ -469,6 +471,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void fixupScriptMapsAfterMovingGC(JSTracer* trc);
 
   void updateNurseryAllocFlags(const js::Nursery& nursery);
+  bool allocNurseryObjects() const { return allocNurseryObjects_; }
+  bool allocNurseryStrings() const { return allocNurseryStrings_; }
+  bool allocNurseryBigInts() const { return allocNurseryBigInts_; }
 
   mozilla::LinkedList<detail::WeakCacheBase>& weakCaches() {
     return weakCaches_.ref();
