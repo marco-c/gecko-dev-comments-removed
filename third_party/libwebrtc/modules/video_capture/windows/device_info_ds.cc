@@ -505,9 +505,9 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
       }
 
       if (hrVC == S_OK) {
-        LONGLONG* frameDurationList;
-        LONGLONG maxFPS;
-        long listSize;
+        LONGLONG* frameDurationList = NULL;
+        LONGLONG maxFPS = 0;
+        long listSize = 0;
         SIZE size;
         size.cx = capability.width;
         size.cy = capability.height;
@@ -522,7 +522,8 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
 
         
         
-        if (hrVC == S_OK && listSize > 0 &&
+        
+        if (hrVC == S_OK &&
             0 != (maxFPS = GetMaxOfFrameArray(frameDurationList, listSize))) {
           capability.maxFPS = static_cast<int>(10000000 / maxFPS);
           capability.supportFrameRateControl = true;
