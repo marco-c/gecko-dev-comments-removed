@@ -634,8 +634,8 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
   
   
   if (mState == WebTransportState::CLOSED ||
-      mState == WebTransportState::FAILED) {
-    aRv.ThrowInvalidStateError("WebTransport close or failed");
+      mState == WebTransportState::FAILED || !mChild) {
+    aRv.ThrowInvalidStateError("WebTransport closed or failed");
     return nullptr;
   }
 
@@ -656,6 +656,10 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
       [self = RefPtr{this}, promise](
           BidirectionalStreamResponse&& aPipes) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         LOG(("CreateBidirectionalStream response"));
+        if (BidirectionalStreamResponse::Tnsresult == aPipes.type()) {
+          promise->MaybeReject(aPipes.get_nsresult());
+          return;
+        }
         
         
         if (BidirectionalStreamResponse::Tnsresult == aPipes.type()) {
@@ -700,8 +704,8 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
   
   
   if (mState == WebTransportState::CLOSED ||
-      mState == WebTransportState::FAILED) {
-    aRv.ThrowInvalidStateError("WebTransport close or failed");
+      mState == WebTransportState::FAILED || !mChild) {
+    aRv.ThrowInvalidStateError("WebTransport closed or failed");
     return nullptr;
   }
 
@@ -723,6 +727,10 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
       [self = RefPtr{this}, promise](UnidirectionalStreamResponse&& aResponse)
           MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             LOG(("CreateUnidirectionalStream response"));
+            if (UnidirectionalStreamResponse::Tnsresult == aResponse.type()) {
+              promise->MaybeReject(aResponse.get_nsresult());
+              return;
+            }
             
             
             
