@@ -42,23 +42,6 @@ typedef DWORD FILEOPENDIALOGOPTIONS;
 
 
 
-
-
-class AutoDestroyTmpWindow {
- public:
-  explicit AutoDestroyTmpWindow(HWND aTmpWnd) : mWnd(aTmpWnd) {}
-
-  ~AutoDestroyTmpWindow() {
-    if (mWnd) DestroyWindow(mWnd);
-  }
-
-  inline HWND get() const { return mWnd; }
-
- private:
-  HWND mWnd;
-};
-
-
 class AutoWidgetPickerState {
  public:
   explicit AutoWidgetPickerState(nsIWidget* aWidget)
@@ -148,15 +131,12 @@ bool nsFilePicker::ShowFolderPicker(const nsString& aInitialDir) {
     }
   }
 
-  AutoDestroyTmpWindow adtw(
-      (HWND)(mParentWidget.get()
-                 ? mParentWidget->GetNativeData(NS_NATIVE_TMP_WINDOW)
-                 : nullptr));
+  ScopedRtlShimWindow shim(mParentWidget.get());
 
   
   mozilla::BackgroundHangMonitor().NotifyWait();
   RefPtr<IShellItem> item;
-  if (FAILED(dialog->Show(adtw.get())) ||
+  if (FAILED(dialog->Show(shim.get())) ||
       FAILED(dialog->GetResult(getter_AddRefs(item))) || !item) {
     return false;
   }
@@ -315,14 +295,11 @@ bool nsFilePicker::ShowFilePicker(const nsString& aInitialDir) {
   
 
   {
-    AutoDestroyTmpWindow adtw(
-        (HWND)(mParentWidget.get()
-                   ? mParentWidget->GetNativeData(NS_NATIVE_TMP_WINDOW)
-                   : nullptr));
+    ScopedRtlShimWindow shim(mParentWidget.get());
     AutoWidgetPickerState awps(mParentWidget);
 
     mozilla::BackgroundHangMonitor().NotifyWait();
-    if (FAILED(dialog->Show(adtw.get()))) {
+    if (FAILED(dialog->Show(shim.get()))) {
       return false;
     }
   }

@@ -152,8 +152,8 @@ static void GetDefaultPrinterNameFromGlobalPrinters(nsAString& aPrinterName) {
 
 
 
-static nsresult ShowNativePrintDialog(HWND aHWnd, bool aHaveSelection,
-                                      nsIPrintSettings* aPrintSettings) {
+nsresult NativeShowPrintDialog(HWND aHWnd, bool aHaveSelection,
+                               nsIPrintSettings* aPrintSettings) {
   
   NS_ENSURE_ARG_POINTER(aPrintSettings);
 
@@ -358,17 +358,4 @@ static nsresult ShowNativePrintDialog(HWND aHWnd, bool aHaveSelection,
 
   cancelOnExit.release();
   return NS_OK;
-}
-
-
-
-
-nsresult NativeShowPrintDialog(HWND aHWnd, bool aHaveSelection,
-                               nsIPrintSettings* aPrintSettings) {
-  nsresult rv = ShowNativePrintDialog(aHWnd, aHaveSelection, aPrintSettings);
-  if (aHWnd) {
-    ::DestroyWindow(aHWnd);
-  }
-
-  return rv;
 }
