@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * The version used for desktop is located at
+ * toolkit/components/aboutmemory/content/aboutMemory.css.
+ * Mobile-specific stuff is at the bottom of this file.
+ */
 
 html {
   background: -moz-Dialog;
@@ -16,12 +16,11 @@ html {
 
 body {
   padding: 0 2em;
-  margin: 0;
   min-width: 45em;
   margin: auto;
 }
 
-
+/* The comment at the top of aboutMemory.xhtml explains this font choice. */
 pre {
   font-family: Fira Mono, DejaVu Sans Mono, Liberation Mono, monospace;
 }
@@ -66,7 +65,7 @@ div.sidebarItem {
   border-radius: 10px;
   background: Field;
   color: FieldText;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 input.filterInput {
@@ -120,11 +119,11 @@ h2 {
 }
 
 .accuracyWarning, .badInputWarning, .invalid {
-  
-
-
-
-
+  /*
+   * Technically this should be used with the default background colour,
+   * instead we're using the default field background colour,
+   * I hope this will be okay.
+   */
   color: -moz-activehyperlinktext;
 }
 
@@ -146,17 +145,17 @@ h2 {
 }
 
 .noselect {
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .option {
   font-size: 80%;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .legend {
   font-size: 80%;
-  user-select: none;  
+  user-select: none;  /* no need to include this when cutting+pasting */
 }
 
 .debug {
@@ -167,9 +166,9 @@ h2 {
   display: none;
 }
 
+/* Mobile-specific parts go here. */
 
-
-
+/* buttons are different sizes and overlapping without this */
 button {
   margin: 1%;
   padding: 2%;
