@@ -222,6 +222,7 @@ ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx);
 
 
 bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
+bool IsSelfHostedFunctionWithName(const Value& v, JSAtom* name);
 
 
 

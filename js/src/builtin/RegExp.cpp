@@ -1874,6 +1874,67 @@ bool js::RegExpBuiltinExec(JSContext* cx, Handle<RegExpObject*> regexp,
 
 
 
+
+
+
+
+
+bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
+                    Handle<JSString*> string, bool forTest,
+                    MutableHandle<Value> rval) {
+  
+  Rooted<Value> exec(cx);
+  Rooted<PropertyKey> execKey(cx, PropertyKey::NonIntAtom(cx->names().exec));
+  if (!GetProperty(cx, regexp, regexp, execKey, &exec)) {
+    return false;
+  }
+
+  
+  
+  
+  PropertyName* execName = cx->names().RegExp_prototype_Exec;
+  if (MOZ_LIKELY(IsSelfHostedFunctionWithName(exec, execName)) ||
+      !IsCallable(exec)) {
+    
+    if (MOZ_LIKELY(regexp->is<RegExpObject>())) {
+      return RegExpBuiltinExec(cx, regexp.as<RegExpObject>(), string, forTest,
+                               rval);
+    }
+    
+    
+    FixedInvokeArgs<3> args(cx);
+    args[0].setObject(*regexp);
+    args[1].setString(string);
+    args[2].setBoolean(forTest);
+    return CallSelfHostedFunction(cx,
+                                  cx->names().UnwrapAndCallRegExpBuiltinExec,
+                                  UndefinedHandleValue, args, rval);
+  }
+
+  
+  Rooted<Value> thisv(cx, ObjectValue(*regexp));
+  FixedInvokeArgs<1> args(cx);
+  args[0].setString(string);
+  if (!Call(cx, thisv, exec, args, rval)) {
+    return false;
+  }
+
+  
+  if (!rval.isObjectOrNull()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_EXEC_NOT_OBJORNULL);
+    return false;
+  }
+
+  
+  if (forTest) {
+    rval.setBoolean(rval.isObject());
+  }
+  return true;
+}
+
+
+
 bool js::RegExpGetSubstitution(JSContext* cx, Handle<ArrayObject*> matchResult,
                                Handle<JSLinearString*> string, size_t position,
                                Handle<JSLinearString*> replacement,

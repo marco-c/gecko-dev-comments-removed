@@ -1239,35 +1239,6 @@ function RegExp_prototype_Exec(string) {
   return RegExpBuiltinExec(R, S, false);
 }
 
-
-function RegExpExec(R, S, forTest) {
-  
-
-  
-  var exec = R.exec;
-
-  
-  
-  
-  if (exec === RegExp_prototype_Exec || !IsCallable(exec)) {
-    
-
-    
-    return RegExpBuiltinExec(R, S, forTest);
-  }
-
-  
-  var result = callContentFunction(exec, R, S);
-
-  
-  if (result !== null && !IsObject(result)) {
-    ThrowTypeError(JSMSG_EXEC_NOT_OBJORNULL);
-  }
-
-  
-  return forTest ? result !== null : result;
-}
-
 function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
   return callFunction(
     CallRegExpMethodIfWrapped,
