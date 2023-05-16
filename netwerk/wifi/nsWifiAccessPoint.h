@@ -67,13 +67,12 @@ class nsWifiAccessPoint final : public nsIWifiAccessPoint {
       mSsidLen = 0;
     }
   }
+
+  
+  int Compare(const nsWifiAccessPoint& o) const;
+
+  bool operator==(const nsWifiAccessPoint& o) const;
+  bool operator!=(const nsWifiAccessPoint& o) const { return !(*this == o); }
 };
-
-
-
-bool AccessPointsEqual(nsCOMArray<nsWifiAccessPoint>& a,
-                       nsCOMArray<nsWifiAccessPoint>& b);
-void ReplaceArray(nsCOMArray<nsWifiAccessPoint>& a,
-                  nsCOMArray<nsWifiAccessPoint>& b);
 
 #endif
