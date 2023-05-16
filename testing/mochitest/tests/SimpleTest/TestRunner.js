@@ -212,8 +212,8 @@ TestRunner._checkForHangs = function() {
       var frameWindow =
         (!testInXOriginFrame() && testIframe.contentWindow.wrappedJSObject) ||
         testIframe.contentWindow;
-      
       reportError(frameWindow, "Test timed out.");
+      TestRunner.updateUI([{ result: false }]);
 
       
       
@@ -239,6 +239,7 @@ TestRunner._checkForHangs = function() {
           await killTest(frameWindow);
         } catch (e) {
           reportError(frameWindow, "Test error: " + e);
+          TestRunner.updateUI([{ result: false }]);
         }
       }, 1000);
 
