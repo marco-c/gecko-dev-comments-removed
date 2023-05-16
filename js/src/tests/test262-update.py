@@ -30,8 +30,6 @@ UNSUPPORTED_FEATURES = set(
         "regexp-v-flag",  
         "decorators",  
         "regexp-duplicate-named-groups",  
-        "String.prototype.isWellFormed",  
-        "String.prototype.toWellFormed",  
         "symbols-as-weakmap-keys",  
         "arraybuffer-transfer",  
         "json-parse-with-source",  
@@ -45,6 +43,8 @@ FEATURE_CHECK_NEEDED = {
     "array-grouping": "!Array.prototype.group",  
     "change-array-by-copy": "!Array.prototype.with",  
     "Array.fromAsync": "!Array.fromAsync",  
+    "String.prototype.isWellFormed": "!String.prototype.isWellFormed",
+    "String.prototype.toWellFormed": "!String.prototype.toWellFormed",
 }
 RELEASE_OR_BETA = set(
     [
@@ -57,6 +57,8 @@ SHELL_OPTIONS = {
     "array-grouping": "--enable-array-grouping",
     "change-array-by-copy": "--enable-change-array-by-copy",
     "Array.fromAsync": "--enable-array-from-async",
+    "String.prototype.isWellFormed": "--enable-well-formed-unicode-strings",
+    "String.prototype.toWellFormed": "--enable-well-formed-unicode-strings",
 }
 
 
