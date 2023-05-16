@@ -8490,18 +8490,18 @@ function OnboardingExperience({
     className: "ds-onboarding-ref",
     ref: heightElement
   }, external_React_default().createElement("div", {
-    className: "ds-onboarding"
+    className: "ds-onboarding-container"
   }, external_React_default().createElement(DSDismiss, {
     onDismissClick: onDismissClick,
-    extraClasses: `ds-onboarding-dismiss`
-  }, external_React_default().createElement("div", {
-    className: "ds-onboarding-graphic"
-  }), external_React_default().createElement("header", null, external_React_default().createElement("span", {
+    extraClasses: `ds-onboarding`
+  }, external_React_default().createElement("div", null, external_React_default().createElement("header", null, external_React_default().createElement("span", {
     className: "icon icon-pocket"
   }), external_React_default().createElement("span", {
     "data-l10n-id": "newtab-pocket-onboarding-discover"
   })), external_React_default().createElement("p", {
     "data-l10n-id": "newtab-pocket-onboarding-cta"
+  })), external_React_default().createElement("div", {
+    className: "ds-onboarding-graphic"
   })))));
 }
 function CardGrid_IntersectionObserver({
