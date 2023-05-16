@@ -36,7 +36,7 @@ namespace fs::data {
 
 
 Result<nsCOMPtr<nsIFile>, QMResult> GetFileSystemDirectory(
-    const Origin& aOrigin);
+    const quota::OriginMetadata& aOriginMetadata);
 
 
 
@@ -56,7 +56,8 @@ nsresult EnsureFileSystemDirectory(
 
 
 
-Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(const Origin& aOrigin);
+Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(
+    const quota::OriginMetadata& aOriginMetadata);
 
 
 
@@ -68,7 +69,8 @@ Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(const Origin& aOrigin);
 
 
 Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
-    const Origin& aOrigin, const int64_t aDirectoryLockId);
+    const quota::OriginMetadata& aOriginMetadata,
+    const int64_t aDirectoryLockId);
 
 
 
@@ -97,7 +99,7 @@ class FileSystemFileManager {
 
 
   static Result<FileSystemFileManager, QMResult> CreateFileSystemFileManager(
-      const Origin& aOrigin);
+      const quota::OriginMetadata& aOriginMetadata);
 
   
 

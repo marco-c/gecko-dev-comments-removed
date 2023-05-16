@@ -23,7 +23,15 @@ namespace mozilla {
 template <typename V, typename E>
 class Result;
 
-namespace dom::fs {
+namespace dom {
+
+namespace quota {
+
+struct OriginMetadata;
+
+}  
+
+namespace fs {
 
 class FileSystemChildMetadata;
 class FileSystemEntryMetadata;
@@ -40,7 +48,7 @@ class FileSystemDatabaseManager {
 
 
   static nsresult RescanUsages(const ResultConnection& aConnection,
-                               const Origin& aOrigin);
+                               const quota::OriginMetadata& aOriginMetadata);
 
   
 
@@ -53,7 +61,8 @@ class FileSystemDatabaseManager {
 
 
   static Result<quota::UsageInfo, QMResult> GetUsage(
-      const ResultConnection& aConnection, const Origin& aOrigin);
+      const ResultConnection& aConnection,
+      const quota::OriginMetadata& aOriginMetadata);
 
   
 
@@ -162,6 +171,7 @@ class FileSystemDatabaseManager {
   virtual ~FileSystemDatabaseManager() = default;
 };
 
+}  
 }  
 }  
 }  

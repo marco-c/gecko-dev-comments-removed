@@ -43,8 +43,9 @@ class FileSystemDatabaseManagerVersion001 : public FileSystemDatabaseManager {
       const EntryId& aRootEntry);
 
   
-  static nsresult RescanTrackedUsages(const FileSystemConnection& aConnection,
-                                      const Origin& aOrigin);
+  static nsresult RescanTrackedUsages(
+      const FileSystemConnection& aConnection,
+      const quota::OriginMetadata& aOriginMetadata);
 
   
   static Result<Usage, QMResult> GetFileUsage(
