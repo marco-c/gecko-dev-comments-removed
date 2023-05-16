@@ -1112,7 +1112,7 @@ TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
     }
   }
   TextLeafPoint searchFrom = *this;
-  if (aDirection == eDirNext && (IsLineFeedChar() || IsEmptyLastLine())) {
+  if (aDirection == eDirNext && IsLineFeedChar()) {
     
     
     
@@ -1121,6 +1121,11 @@ TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
   }
   TextLeafPoint lineStart = searchFrom.FindBoundary(
       nsIAccessibleText::BOUNDARY_LINE_START, aDirection, aFlags);
+  if (aDirection == eDirNext && IsEmptyLastLine()) {
+    
+    
+    return lineStart;
+  }
   
   
   TextLeafPoint prevChar =

@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* clang-format off */
+/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* clang-format on */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import "CachedTextMarker.h"
 
@@ -18,7 +18,7 @@
 namespace mozilla {
 namespace a11y {
 
-
+// CachedTextMarker
 
 CachedTextMarker::CachedTextMarker(Accessible* aAcc, int32_t aOffset) {
   HyperTextAccessibleBase* ht = aAcc->AsHyperTextBase();
@@ -36,18 +36,18 @@ CachedTextMarker CachedTextMarker::MarkerFromIndex(Accessible* aRoot,
       TextLeafPoint(aRoot, 0),
       TextLeafPoint(aRoot, nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT));
   int32_t index = aIndex;
-  
-  
+  // Iterate through all segments until we exhausted the index sum
+  // so we can find the segment the index lives in.
   for (TextLeafRange segment : range) {
     if (segment.End().mAcc->Role() == roles::LISTITEM_MARKER) {
-      
-      
+      // XXX: MacOS expects bullets to be in the range's text, but not in
+      // the calculated length!
       continue;
     }
 
     index -= segment.End().mOffset - segment.Start().mOffset;
     if (index <= 0) {
-      
+      // The index is in the current segment.
       return CachedTextMarker(segment.Start().mAcc,
                               segment.End().mOffset + index);
     }
@@ -81,9 +81,9 @@ bool CachedTextMarker::Previous() {
   return false;
 }
 
-
-
-
+/**
+ * Return true if the given point is inside editable content.
+ */
 static bool IsPointInEditable(const TextLeafPoint& aPoint) {
   if (aPoint.mAcc) {
     if (aPoint.mAcc->State() & states::EDITABLE) {
@@ -151,7 +151,7 @@ CachedTextMarkerRange CachedTextMarker::RightWordRange() const {
                           TextLeafPoint::BoundaryFlags::eStopInEditable);
 
   if (end == mPoint) {
-    
+    // No word to the right of this point.
     return CachedTextMarkerRange(mPoint, mPoint);
   }
 
@@ -162,7 +162,7 @@ CachedTextMarkerRange CachedTextMarker::RightWordRange() const {
   if (start.FindBoundary(nsIAccessibleText::BOUNDARY_WORD_END, eDirNext,
                          TextLeafPoint::BoundaryFlags::eStopInEditable) <
       mPoint) {
-    
+    // Word end is inside of an input to the left of this.
     return CachedTextMarkerRange(mPoint, mPoint);
   }
 
@@ -181,9 +181,14 @@ CachedTextMarkerRange CachedTextMarker::LineRange() const {
       TextLeafPoint::BoundaryFlags::eStopInEditable |
           TextLeafPoint::BoundaryFlags::eIgnoreListItemMarker |
           TextLeafPoint::BoundaryFlags::eIncludeOrigin);
+  // If this is a blank line containing only a line feed, the start boundary
+  // is the same as the end boundary. We do not want to walk to the end of the
+  // next line.
   TextLeafPoint end =
-      start.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_END, eDirNext,
-                         TextLeafPoint::BoundaryFlags::eStopInEditable);
+      start.IsLineFeedChar()
+          ? start
+          : start.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_END, eDirNext,
+                               TextLeafPoint::BoundaryFlags::eStopInEditable);
 
   return CachedTextMarkerRange(start, end);
 }
@@ -212,7 +217,7 @@ CachedTextMarkerRange CachedTextMarker::RightLineRange() const {
 }
 
 CachedTextMarkerRange CachedTextMarker::ParagraphRange() const {
-  
+  // XXX: WebKit gets trapped in inputs. Maybe we shouldn't?
   TextLeafPoint end =
       mPoint.FindBoundary(nsIAccessibleText::BOUNDARY_PARAGRAPH, eDirNext,
                           TextLeafPoint::BoundaryFlags::eStopInEditable);
@@ -225,8 +230,8 @@ CachedTextMarkerRange CachedTextMarker::ParagraphRange() const {
 
 CachedTextMarkerRange CachedTextMarker::StyleRange() const {
   if (mPoint.mOffset == 0) {
-    
-    
+    // If the marker is on the boundary between two leafs, MacOS expects the
+    // previous leaf.
     TextLeafPoint prev = mPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
         TextLeafPoint::BoundaryFlags::eIgnoreListItemMarker);
@@ -244,8 +249,8 @@ Accessible* CachedTextMarker::Leaf() {
   MOZ_ASSERT(mPoint.mAcc);
   Accessible* acc = mPoint.mAcc;
   if (mPoint.mOffset == 0) {
-    
-    
+    // If the marker is on the boundary between two leafs, MacOS expects the
+    // previous leaf.
     TextLeafPoint prev = mPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
         TextLeafPoint::BoundaryFlags::eIgnoreListItemMarker);
@@ -256,7 +261,7 @@ Accessible* CachedTextMarker::Leaf() {
   return parent && nsAccUtils::MustPrune(parent) ? parent : acc;
 }
 
-
+// CachedTextMarkerRange
 
 CachedTextMarkerRange::CachedTextMarkerRange(Accessible* aAccessible) {
   mRange = TextLeafRange(
@@ -337,14 +342,14 @@ NSAttributedString* CachedTextMarkerRange::AttributedText() const {
       continue;
     }
     if (!currentRun) {
-      
+      // This is the first segment that isn't an empty input.
       currentRun = start.GetTextAttributes();
     }
     TextLeafPoint attributesNext;
     do {
       attributesNext = start.FindTextAttrsStart(eDirNext, false);
       if (attributesNext == start) {
-        
+        // XXX: FindTextAttrsStart should not return the same point.
         break;
       }
       RefPtr<AccAttributes> attributes = start.GetTextAttributes();
@@ -375,8 +380,8 @@ int32_t CachedTextMarkerRange::Length() const {
   int32_t length = 0;
   for (TextLeafRange segment : mRange) {
     if (segment.End().mAcc->Role() == roles::LISTITEM_MARKER) {
-      
-      
+      // XXX: MacOS expects bullets to be in the range's text, but not in
+      // the calculated length!
       continue;
     }
     length += segment.End().mOffset - segment.Start().mOffset;
@@ -408,23 +413,23 @@ bool CachedTextMarkerRange::Crop(Accessible* aContainer) {
                              nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
 
   if (mRange.End() < containerStart || containerEnd < mRange.Start()) {
-    
+    // The range ends before the container, or starts after it.
     return false;
   }
 
   if (mRange.Start() < containerStart) {
-    
-    
+    // If range start is before container start, adjust range start to
+    // start of container.
     mRange.SetStart(containerStart);
   }
 
   if (containerEnd < mRange.End()) {
-    
-    
+    // If range end is after container end, adjust range end to end of
+    // container.
     mRange.SetEnd(containerEnd);
   }
 
   return true;
 }
-}  
-}  
+}  // namespace a11y
+}  // namespace mozilla
