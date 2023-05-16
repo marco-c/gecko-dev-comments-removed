@@ -114,8 +114,6 @@ class PacketArrivalTimeMap {
   void SetNotReceived(int64_t begin_sequence_number_inclusive,
                       int64_t end_sequence_number_exclusive);
 
-  void TrimLeadingNotReceivedEntries();
-
   
   
   void AdjustToSize(int new_size);
