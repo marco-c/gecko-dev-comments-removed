@@ -350,6 +350,9 @@ nsresult DragDataProducer::GetAnchorURL(nsIContent* aContent, nsAString& aURL) {
   nsAutoCString spec;
   nsresult rv = linkURI->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);
+  nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
+  rv = secMan->CheckLoadURIStrWithPrincipal(aContent->NodePrincipal(), spec, 0);
+  NS_ENSURE_SUCCESS(rv, rv);
   CopyUTF8toUTF16(spec, aURL);
   return NS_OK;
 }
@@ -558,11 +561,11 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
         }
 
         
-        mIsAnchor = true;
-
-        
         nsresult rv = GetAnchorURL(draggedNode, mUrlString);
         NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        mIsAnchor = true;
 
         mHtmlString.AssignLiteral("<a href=\"");
         mHtmlString.Append(mUrlString);
@@ -572,20 +575,25 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
 
         dragNode = draggedNode;
       } else if (image) {
-        mIsAnchor = true;
         
         
         
         nsCOMPtr<nsIURI> imageURI;
         image->GetCurrentURI(getter_AddRefs(imageURI));
+        nsCOMPtr<Element> imageElement(do_QueryInterface(image));
         if (imageURI) {
           nsAutoCString spec;
           rv = imageURI->GetSpec(spec);
           NS_ENSURE_SUCCESS(rv, rv);
+          nsIScriptSecurityManager* secMan =
+              nsContentUtils::GetSecurityManager();
+          rv = secMan->CheckLoadURIStrWithPrincipal(
+              imageElement->NodePrincipal(), spec, 0);
+          NS_ENSURE_SUCCESS(rv, rv);
+          mIsAnchor = true;
           CopyUTF8toUTF16(spec, mUrlString);
         }
 
-        nsCOMPtr<Element> imageElement(do_QueryInterface(image));
         
         
         
@@ -627,9 +635,9 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
       }
 
       if (linkNode) {
-        mIsAnchor = true;
         rv = GetAnchorURL(linkNode, mUrlString);
         NS_ENSURE_SUCCESS(rv, rv);
+        mIsAnchor = true;
         dragNode = linkNode;
       }
     }
