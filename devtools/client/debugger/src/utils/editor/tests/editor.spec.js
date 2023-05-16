@@ -3,7 +3,6 @@
 
 
 import {
-  traverseResults,
   toEditorLine,
   toEditorPosition,
   toEditorRange,
@@ -20,32 +19,6 @@ import {
 } from "../index";
 
 import { makeMockSource } from "../../test-mockup";
-
-describe("traverseResults", () => {
-  const e = { stopPropagation: jest.fn(), preventDefault: jest.fn() };
-  const ctx = {};
-  const query = "Awesome books";
-  const modifiers = {
-    caseSensitive: false,
-    regexMatch: false,
-    wholeWord: false,
-  };
-  it("traverses next", () => {
-    traverseResults(e, ctx, query, "next", modifiers);
-    expect(e.stopPropagation).toHaveBeenCalled();
-    expect(e.preventDefault).toHaveBeenCalled();
-    
-  });
-
-  it("traverses previous", () => {
-    e.stopPropagation.mockClear();
-    e.preventDefault.mockClear();
-    traverseResults(e, ctx, query, "prev", modifiers);
-    expect(e.stopPropagation).toHaveBeenCalled();
-    expect(e.preventDefault).toHaveBeenCalled();
-    
-  });
-});
 
 describe("toEditorLine", () => {
   it("returns an editor line", () => {
