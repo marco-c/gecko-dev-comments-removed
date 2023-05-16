@@ -1373,7 +1373,12 @@ class WebConsoleActor extends Actor {
 
 
 
-  _getWebConsoleCommands(debuggerGlobal) {
+
+
+
+
+
+  _getWebConsoleCommands(debuggerGlobal, evalInput, selectedNodeActorID) {
     const helpers = {
       window: this.evalGlobal,
       makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
@@ -1382,7 +1387,14 @@ class WebConsoleActor extends Actor {
       sandbox: Object.create(null),
       helperResult: null,
       consoleActor: this,
+      evalInput,
     };
+    if (selectedNodeActorID) {
+      const actor = this.conn.getActor(selectedNodeActorID);
+      if (actor) {
+        helpers.selectedNode = actor.rawNode;
+      }
+    }
     addWebConsoleCommands(helpers);
 
     const evalGlobal = this.evalGlobal;
