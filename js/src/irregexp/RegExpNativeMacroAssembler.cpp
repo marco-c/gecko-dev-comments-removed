@@ -1019,6 +1019,7 @@ Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source) {
 
 
 
+
 void SMRegExpMacroAssembler::createStackFrame() {
 #ifdef JS_CODEGEN_ARM64
   
@@ -1034,23 +1035,22 @@ void SMRegExpMacroAssembler::createStackFrame() {
   masm_.initPseudoStackPtr();
 #endif
 
+  masm_.Push(js::jit::FramePointer);
+  masm_.moveStackPtrTo(js::jit::FramePointer);
+
   
-  size_t pushedNonVolatileRegisters = 0;
   for (GeneralRegisterForwardIterator iter(savedRegisters_); iter.more();
        ++iter) {
     masm_.Push(*iter);
-    pushedNonVolatileRegisters++;
   }
 
   
   
   
 #ifdef JS_CODEGEN_X86
-  Address ioDataAddr(masm_.getStackPointer(),
-                     (pushedNonVolatileRegisters + 1) * sizeof(void*));
+  Address ioDataAddr(js::jit::FramePointer, 2 * sizeof(void*));
   masm_.loadPtr(ioDataAddr, temp0_);
 #else
-  (void)pushedNonVolatileRegisters;
   if (js::jit::IntArgReg0 != temp0_) {
     masm_.movePtr(js::jit::IntArgReg0, temp0_);
   }
@@ -1225,6 +1225,8 @@ void SMRegExpMacroAssembler::exitHandler() {
     masm_.Pop(*iter);
   }
 
+  masm_.Pop(js::jit::FramePointer);
+
 #ifdef JS_CODEGEN_ARM64
   
 
@@ -1288,7 +1290,7 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
   volatileRegs.takeUnchecked(temp1_);
   masm_.PushRegsInMask(volatileRegs);
 
-  using Fn = bool (*)(RegExpStack * regexp_stack);
+  using Fn = bool (*)(RegExpStack* regexp_stack);
   masm_.setupUnalignedABICall(temp0_);
   masm_.passABIArg(temp1_);
   masm_.callWithABI<Fn, ::js::irregexp::GrowBacktrackStack>();
