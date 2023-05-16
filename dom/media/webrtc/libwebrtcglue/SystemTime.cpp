@@ -10,6 +10,13 @@
 
 namespace mozilla {
 
+
+
+
+
+static constexpr webrtc::TimeDelta kWebrtcTimeOffset =
+    webrtc::TimeDelta::Micros(0x10000000);
+
 RTCStatsTimestampMakerRealtimeClock::RTCStatsTimestampMakerRealtimeClock(
     const dom::RTCStatsTimestampMaker& aTimestampMaker)
     : mTimestampMaker(aTimestampMaker) {}

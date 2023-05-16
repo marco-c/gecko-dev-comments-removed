@@ -48,6 +48,9 @@ struct RTCStatsTimestampState {
   
   const TimeStamp mStartDomRealtime;
   
+  
+  const webrtc::Timestamp mStartRealtime;
+  
   const RTPCallerType mRTPCallerType;
   
   const DOMHighResTimeStamp mStartWallClockRaw;
