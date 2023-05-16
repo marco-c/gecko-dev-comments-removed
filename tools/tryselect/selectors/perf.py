@@ -970,9 +970,10 @@ class PerfParser(CompareParser):
                 
                 
                 updated = False
-                try_config.setdefault("env", {})[
-                    "PERF_BASE_REVISION"
-                ] = base_revision_treeherder
+                if base_revision_treeherder is not None:
+                    try_config.setdefault("env", {})[
+                        "PERF_BASE_REVISION"
+                    ] = base_revision_treeherder
                 vcs.update(current_revision_ref)
 
             with redirect_stdout(log_processor):
