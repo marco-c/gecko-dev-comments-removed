@@ -17,7 +17,9 @@ fn main() {
 
     let ver = version().unwrap();
     let max_oom_hook_version = Version::parse("1.71.0-alpha").unwrap();
-    let max_alloc_error_panic_version = Version::parse("1.72.0-alpha").unwrap();
+    
+    
+    let max_alloc_error_panic_version = Version::parse("1.71.0-alpha").unwrap();
 
     if ver < max_oom_hook_version {
         println!("cargo:rustc-cfg=feature=\"oom_with_hook\"");
