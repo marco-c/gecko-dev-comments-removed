@@ -1,15 +1,31 @@
 
 
+
+
+
 let g = newGlobal({newCompartment: true});
 let dbg = new Debugger(g);
 
-let sizeOfAM = byteSize(allocationMarker());
+dbg.memory.allocationSamplingProbability = 1;
+dbg.memory.trackingAllocationSites = true;
 
 
 g.eval('var hold = allocationMarker();');
-let census = dbg.memory.takeCensus({ breakdown: { by: 'objectClass' } });
-assertEq(census.AllocationMarker.count, 1);
-assertEq(census.AllocationMarker.bytes, sizeOfAM);
+let census = dbg.memory.takeCensus({
+  breakdown: { by: 'objectClass',
+               then: { by: 'allocationStack' }
+             }
+});
+let markers = 0;
+let count;
+let sizeOfAM;
+census.AllocationMarker.forEach((v, k) => {
+  count = v.count;
+  sizeOfAM = v.bytes;
+  markers++;
+});
+assertEq(markers, 1);
+assertEq(count, 1);
 
 g.evaluate(`
            var objs = [];
@@ -20,9 +36,6 @@ g.evaluate(`
            }
            `,
            { fileName: 'J. Edgar Hoover', lineNumber: 2000 });
-
-dbg.memory.allocationSamplingProbability = 1;
-dbg.memory.trackingAllocationSites = true;
 
 g.hold = null;
 g.fnerd();
@@ -46,7 +59,7 @@ census.AllocationMarker.forEach((v, k) => {
 
   case 2005:
     assertEq(v.count, 10);
-    assertEq(v.bytes, 10 * sizeOfAM);
+    assertEq(v.bytes >= 10 * sizeOfAM, true);
     seen++;
     break;
 

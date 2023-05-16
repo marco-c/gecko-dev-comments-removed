@@ -2520,7 +2520,7 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
 
   MOZ_ASSERT(nativeTemplateObj.numFixedSlots() == 0);
   
-  MOZ_ASSERT(nativeTemplateObj.numDynamicSlots() == 3);
+  MOZ_ASSERT(nativeTemplateObj.numDynamicSlots() == 6);
   static_assert(RegExpRealm::MatchResultObjectIndexSlot == 0,
                 "First slot holds the 'index' property");
   static_assert(RegExpRealm::MatchResultObjectInputSlot == 1,

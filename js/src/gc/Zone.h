@@ -571,6 +571,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void removeUniqueId(js::gc::Cell* cell);
 
+  
+  bool setOrUpdateUniqueId(JSContext* cx, js::gc::Cell* cell, uint64_t uid);
+
   bool keepPropMapTables() const { return keepPropMapTables_; }
   void setKeepPropMapTables(bool b) { keepPropMapTables_ = b; }
 
