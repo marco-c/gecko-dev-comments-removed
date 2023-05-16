@@ -72,8 +72,8 @@ add_task(async function test_cancel_after_asyncOpen() {
 
 
 
-const NS_NET_STATUS_WAITING_FOR = 0x804b000a; 
-const NS_NET_STATUS_RECEIVING_FROM = 0x804b0006;
+const NS_NET_STATUS_WAITING_FOR = 0x4b000a; 
+const NS_NET_STATUS_RECEIVING_FROM = 0x4b0006;
 
 
 
