@@ -10,7 +10,10 @@
 #ifndef CALL_PACKET_RECEIVER_H_
 #define CALL_PACKET_RECEIVER_H_
 
+#include "absl/functional/any_invocable.h"
 #include "api/media_types.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
@@ -26,6 +29,28 @@ class PacketReceiver {
   virtual DeliveryStatus DeliverPacket(MediaType media_type,
                                        rtc::CopyOnWriteBuffer packet,
                                        int64_t packet_time_us) = 0;
+
+  
+  virtual void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) {
+    
+    
+    RTC_CHECK_NOTREACHED();
+  }
+
+  
+  
+  using OnUndemuxablePacketHandler =
+      absl::AnyInvocable<bool(const RtpPacketReceived& parsed_packet)>;
+
+  
+  virtual void DeliverRtpPacket(
+      MediaType media_type,
+      RtpPacketReceived packet,
+      OnUndemuxablePacketHandler undemuxable_packet_handler) {
+    
+    
+    RTC_CHECK_NOTREACHED();
+  }
 
  protected:
   virtual ~PacketReceiver() {}
