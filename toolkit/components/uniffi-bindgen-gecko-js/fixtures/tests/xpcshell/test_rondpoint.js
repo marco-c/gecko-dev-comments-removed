@@ -1,8 +1,8 @@
 
 
 
-const Rondpoint = ChromeUtils.importESModule(
-  "resource://gre/modules/RustRondpoint.sys.mjs"
+const Rondpoint = ChromeUtils.import(
+  "resource://gre/modules/RustRondpoint.jsm"
 );
 
 const {

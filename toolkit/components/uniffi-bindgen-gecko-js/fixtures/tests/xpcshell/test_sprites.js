@@ -1,9 +1,7 @@
 
 
 
-const Sprites = ChromeUtils.importESModule(
-  "resource://gre/modules/RustSprites.sys.mjs"
-);
+const Sprites = ChromeUtils.import("resource://gre/modules/RustSprites.jsm");
 
 add_task(async function() {
   Assert.ok(Sprites.Sprite);

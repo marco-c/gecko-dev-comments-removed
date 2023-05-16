@@ -1,8 +1,8 @@
 
 
 
-const ExternalTypes = ChromeUtils.importESModule(
-  "resource://gre/modules/RustExternalTypes.sys.mjs"
+const ExternalTypes = ChromeUtils.import(
+  "resource://gre/modules/RustExternalTypes.jsm"
 );
 
 add_task(async function() {

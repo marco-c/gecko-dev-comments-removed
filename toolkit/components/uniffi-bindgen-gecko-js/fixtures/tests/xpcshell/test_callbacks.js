@@ -1,8 +1,8 @@
 
 
 
-const { logEvenNumbers, logEvenNumbersMainThread } = ChromeUtils.importESModule(
-  "resource://gre/modules/RustFixtureCallbacks.sys.mjs"
+const { logEvenNumbers, logEvenNumbersMainThread } = ChromeUtils.import(
+  "resource://gre/modules/RustFixtureCallbacks.jsm"
 );
 
 class Logger {

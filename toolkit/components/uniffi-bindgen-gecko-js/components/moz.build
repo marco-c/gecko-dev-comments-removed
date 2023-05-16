@@ -5,7 +5,7 @@
 
 
 EXTRA_JS_MODULES += [
-    "generated/RustTabs.sys.mjs",
+    "generated/RustTabs.jsm",
 ]
 
 with Files("**"):

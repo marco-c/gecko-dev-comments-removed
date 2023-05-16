@@ -1,9 +1,7 @@
 
 
 
-const Geometry = ChromeUtils.importESModule(
-  "resource://gre/modules/RustGeometry.sys.mjs"
-);
+const Geometry = ChromeUtils.import("resource://gre/modules/RustGeometry.jsm");
 
 add_task(async function() {
   const ln1 = new Geometry.Line(
