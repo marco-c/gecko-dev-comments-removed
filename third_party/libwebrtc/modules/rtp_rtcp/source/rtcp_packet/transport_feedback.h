@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "api/function_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
@@ -29,23 +30,17 @@ class TransportFeedback : public Rtpfb {
   class ReceivedPacket {
    public:
     ReceivedPacket(uint16_t sequence_number, int16_t delta_ticks)
-        : sequence_number_(sequence_number),
-          delta_ticks_(delta_ticks),
-          received_(true) {}
-    explicit ReceivedPacket(uint16_t sequence_number)
-        : sequence_number_(sequence_number), received_(false) {}
+        : sequence_number_(sequence_number), delta_ticks_(delta_ticks) {}
     ReceivedPacket(const ReceivedPacket&) = default;
     ReceivedPacket& operator=(const ReceivedPacket&) = default;
 
     uint16_t sequence_number() const { return sequence_number_; }
     int16_t delta_ticks() const { return delta_ticks_; }
     TimeDelta delta() const { return delta_ticks_ * kDeltaTick; }
-    bool received() const { return received_; }
 
    private:
     uint16_t sequence_number_;
     int16_t delta_ticks_;
-    bool received_;
   };
   
   static constexpr uint8_t kFeedbackMessageType = 15;
@@ -58,8 +53,7 @@ class TransportFeedback : public Rtpfb {
 
   
   
-  explicit TransportFeedback(bool include_timestamps,
-                             bool include_lost = false);
+  explicit TransportFeedback(bool include_timestamps);
   TransportFeedback(const TransportFeedback&);
   TransportFeedback(TransportFeedback&&);
 
@@ -72,7 +66,14 @@ class TransportFeedback : public Rtpfb {
   
   bool AddReceivedPacket(uint16_t sequence_number, Timestamp timestamp);
   const std::vector<ReceivedPacket>& GetReceivedPackets() const;
-  const std::vector<ReceivedPacket>& GetAllPackets() const;
+
+  
+  
+  
+  
+  void ForAllPackets(
+      rtc::FunctionView<void(uint16_t sequence_number,
+                             TimeDelta delta_since_base)> handler) const;
 
   uint16_t GetBaseSequence() const;
 
@@ -164,7 +165,6 @@ class TransportFeedback : public Rtpfb {
   
   bool AddMissingPackets(size_t num_missing_packets);
 
-  const bool include_lost_;
   uint16_t base_seq_no_;
   uint16_t num_seq_no_;
   uint32_t base_time_ticks_;

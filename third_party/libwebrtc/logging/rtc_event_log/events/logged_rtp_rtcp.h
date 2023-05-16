@@ -214,8 +214,7 @@ struct LoggedRtcpPacketPli {
 
 struct LoggedRtcpPacketTransportFeedback {
   LoggedRtcpPacketTransportFeedback()
-      : transport_feedback(true,  true) {
-  }
+      : transport_feedback(true) {}
   LoggedRtcpPacketTransportFeedback(
       Timestamp timestamp,
       const rtcp::TransportFeedback& transport_feedback)
