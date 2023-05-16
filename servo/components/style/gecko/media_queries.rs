@@ -511,24 +511,24 @@ impl Device {
 
     
     #[inline]
-    fn effective_text_zoom(&self) -> f32 {
+    fn text_zoom(&self) -> f32 {
         let pc = match self.pres_context() {
             Some(pc) => pc,
             None => return 1.,
         };
-        pc.mEffectiveTextZoom
+        pc.mTextZoom
     }
 
     
     #[inline]
     pub fn zoom_text(&self, size: Length) -> Length {
-        size.scale_by(self.effective_text_zoom())
+        size.scale_by(self.text_zoom())
     }
 
     
     #[inline]
     pub fn unzoom_text(&self, size: Length) -> Length {
-        size.scale_by(1. / self.effective_text_zoom())
+        size.scale_by(1. / self.text_zoom())
     }
 
     

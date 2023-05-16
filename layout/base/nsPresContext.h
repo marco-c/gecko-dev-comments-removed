@@ -513,40 +513,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   mozilla::EventStateManager* EventStateManager() { return mEventManager; }
 
   
-
-
-
-  float GetSystemFontScale() const { return mSystemFontScale; }
-  void SetSystemFontScale(float aFontScale) {
-    MOZ_ASSERT(aFontScale > 0.0f, "invalid font scale");
-    if (aFontScale == mSystemFontScale || IsPrintingOrPrintPreview()) {
-      return;
-    }
-
-    mSystemFontScale = aFontScale;
-    UpdateEffectiveTextZoom();
-  }
-
-  
-
-
-
-
-
-
-
-
   float TextZoom() const { return mTextZoom; }
-
-  
-
-
-
-
-
-
-
-  float EffectiveTextZoom() const { return mEffectiveTextZoom; }
 
   
 
@@ -562,19 +529,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
  protected:
   void CancelManagedPostRefreshObservers();
 
-  void UpdateEffectiveTextZoom();
-
 #ifdef DEBUG
   void ValidatePresShellAndDocumentReleation() const;
 #endif  
 
-  void SetTextZoom(float aZoom) {
-    MOZ_ASSERT(aZoom > 0.0f, "invalid zoom factor");
-    if (aZoom == mTextZoom) return;
-
-    mTextZoom = aZoom;
-    UpdateEffectiveTextZoom();
-  }
+  void SetTextZoom(float aZoom);
   void SetFullZoom(float aZoom);
   void SetOverrideDPPX(float);
   void SetInRDMPane(bool aInRDMPane);
@@ -1213,10 +1172,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   MediaEmulationData mMediaEmulationData;
 
-  float mSystemFontScale;    
-  float mTextZoom;           
-  float mEffectiveTextZoom;  
-  float mFullZoom;           
+  float mTextZoom;  
+  float mFullZoom;  
   gfxSize mLastFontInflationScreenSize;
 
   int32_t mCurAppUnitsPerDevPixel;
