@@ -1123,14 +1123,19 @@ void nsCSPDirective::toString(nsAString& outStr) const {
 void nsCSPDirective::toDomCSPStruct(mozilla::dom::CSP& outCSP) const {
   mozilla::dom::Sequence<nsString> srcs;
   nsString src;
+  if (NS_WARN_IF(!srcs.SetCapacity(mSrcs.Length(), mozilla::fallible))) {
+    MOZ_ASSERT(false,
+               "Not enough memory for 'sources' sequence in "
+               "nsCSPDirective::toDomCSPStruct().");
+    return;
+  }
   for (uint32_t i = 0; i < mSrcs.Length(); i++) {
     src.Truncate();
     mSrcs[i]->toString(src);
     if (!srcs.AppendElement(src, mozilla::fallible)) {
-      
-      
-      
-      mozalloc_handle_oom(0);
+      MOZ_ASSERT(false,
+                 "Failed to append to 'sources' sequence in "
+                 "nsCSPDirective::toDomCSPStruct().");
     }
   }
 
