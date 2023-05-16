@@ -701,20 +701,12 @@ nsresult StorageDBThread::ConfigureWALBehavior() {
 
   
   
+  
   int32_t thresholdInPages =
       static_cast<int32_t>(MAX_WAL_SIZE_BYTES / pageSize);
   nsAutoCString thresholdPragma("PRAGMA wal_autocheckpoint = ");
   thresholdPragma.AppendInt(thresholdInPages);
   rv = mWorkerConnection->ExecuteSimpleSQL(thresholdPragma);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  nsAutoCString journalSizePragma("PRAGMA journal_size_limit = ");
-  
-  
-  journalSizePragma.AppendInt(MAX_WAL_SIZE_BYTES * 3);
-  rv = mWorkerConnection->ExecuteSimpleSQL(journalSizePragma);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;

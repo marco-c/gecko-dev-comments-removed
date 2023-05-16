@@ -581,14 +581,13 @@ nsresult InitializeConnection(mozIStorageConnection& aConn) {
 
   
   
+  
   QM_TRY(MOZ_TO_RESULT(aConn.ExecuteSimpleSQL(nsPrintfCString(
       
       "PRAGMA wal_autocheckpoint = %u; "
       
-      "PRAGMA journal_size_limit = %u; "
-      
       "PRAGMA journal_mode = WAL; ",
-      kWalAutoCheckpointPages, kWalAutoCheckpointSize))));
+      kWalAutoCheckpointPages))));
 
   
   
