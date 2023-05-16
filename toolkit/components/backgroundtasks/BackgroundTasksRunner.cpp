@@ -5,8 +5,9 @@
 #include "mozilla/BackgroundTasksRunner.h"
 
 #include "base/process_util.h"
-#include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/StaticPrefs_datareporting.h"
+#include "mozilla/StaticPrefs_telemetry.h"
+#include "mozilla/StaticPrefs_toolkit.h"
 #include "nsIFile.h"
 
 #ifdef XP_WIN
@@ -83,8 +84,16 @@ NS_IMETHODIMP BackgroundTasksRunner::RemoveDirectoryInDetachedProcess(
     sleep.AppendInt(testingSleepMs);
     argv.AppendElement(sleep);
   }
-  if (!aMetricsId.IsEmpty() &&
-      StaticPrefs::datareporting_healthreport_uploadEnabled()) {
+
+  bool telemetryEnabled =
+      StaticPrefs::datareporting_healthreport_uploadEnabled() &&
+      
+      
+      
+      
+      StaticPrefs::telemetry_fog_test_localhost_port() != -1;
+
+  if (!aMetricsId.IsEmpty() && telemetryEnabled) {
     argv.AppendElement("--metrics-id");
     argv.AppendElement(aMetricsId);
   }
