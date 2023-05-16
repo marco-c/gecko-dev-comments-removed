@@ -32,7 +32,6 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "media/base/media_engine.h"
-#include "media/engine/unhandled_packets_buffer.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
@@ -234,10 +233,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   static constexpr int kDefaultQpMax = 56;
 
   std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override;
-
-  
-  
-  void BackfillBufferedPackets(rtc::ArrayView<const uint32_t> ssrcs);
 
   
   void RequestEncoderFallback() override;
@@ -469,7 +464,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
     WebRtcVideoReceiveStream(
-        WebRtcVideoChannel* channel,
         webrtc::Call* call,
         const StreamParams& sp,
         webrtc::VideoReceiveStreamInterface::Config config,
@@ -537,7 +531,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     
     bool ReconfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
 
-    WebRtcVideoChannel* const channel_;
     webrtc::Call* const call_;
     const StreamParams stream_params_;
 
@@ -680,10 +673,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   
   rtc::scoped_refptr<webrtc::FrameTransformerInterface>
       unsignaled_frame_transformer_ RTC_GUARDED_BY(thread_checker_);
-
-  
-  std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
-      RTC_GUARDED_BY(thread_checker_);
 
   
   
