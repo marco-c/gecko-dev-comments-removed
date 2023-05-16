@@ -31,9 +31,6 @@ class VideoColorSpace final : public nsISupports, public nsWrapperCache {
   ~VideoColorSpace() = default;
 
  public:
-  
-  
-  
   nsIGlobalObject* GetParentObject() const;
 
   JSObject* WrapObject(JSContext* aCx,
