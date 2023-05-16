@@ -33,9 +33,33 @@ public class GeckoDisplay {
 
 
 
+
+
+  public interface NewSurfaceProvider {
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    void requestNewSurface();
+  }
+
+  
+
+
+
   public static class SurfaceInfo {
      final @NonNull Surface mSurface;
      final @Nullable SurfaceControl mSurfaceControl;
+     final @Nullable NewSurfaceProvider mNewSurfaceProvider;
      final int mLeft;
      final int mTop;
      final int mWidth;
@@ -44,6 +68,7 @@ public class GeckoDisplay {
     private SurfaceInfo(final @NonNull Builder builder) {
       mSurface = builder.mSurface;
       mSurfaceControl = builder.mSurfaceControl;
+      mNewSurfaceProvider = builder.mNewSurfaceProvider;
       mLeft = builder.mLeft;
       mTop = builder.mTop;
       mWidth = builder.mWidth;
@@ -54,6 +79,7 @@ public class GeckoDisplay {
     public static class Builder {
       private Surface mSurface;
       private SurfaceControl mSurfaceControl;
+      private NewSurfaceProvider mNewSurfaceProvider;
       private int mLeft;
       private int mTop;
       private int mWidth;
@@ -82,6 +108,24 @@ public class GeckoDisplay {
       @UiThread
       public @NonNull Builder surfaceControl(final @Nullable SurfaceControl surfaceControl) {
         mSurfaceControl = surfaceControl;
+        return this;
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull Builder newSurfaceProvider(
+          final @Nullable NewSurfaceProvider newSurfaceProvider) {
+        mNewSurfaceProvider = newSurfaceProvider;
         return this;
       }
 
