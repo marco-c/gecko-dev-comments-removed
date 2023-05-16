@@ -281,6 +281,11 @@ class LintRoller(object):
                     "warning: {} support-file modified, linting entire tree "
                     "(press ctrl-c to cancel)".format(linter["name"])
                 )
+            elif paths == {self.root}:
+                
+                
+                
+                lpaths = __get_current_paths()
             else:
                 lpaths = paths.union(vcs_paths)
 
