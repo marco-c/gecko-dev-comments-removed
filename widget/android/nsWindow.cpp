@@ -1700,9 +1700,29 @@ void GeckoViewSupport::Transfer(const GeckoSession::Window::LocalRef& inst,
   mWindow->mAndroidView->mEventDispatcher->Attach(
       java::EventDispatcher::Ref::From(aDispatcher), mDOMWindow);
 
-  mWindow->mSessionAccessibility.Detach();
+  RefPtr<jni::DetachPromise> promise = mWindow->mSessionAccessibility.Detach();
   if (aSessionAccessibility) {
-    AttachAccessibility(inst, aSessionAccessibility);
+    
+    
+    auto sa = java::SessionAccessibility::NativeProvider::LocalRef(
+        aSessionAccessibility);
+    promise->Then(
+        GetMainThreadSerialEventTarget(),
+        "GeckoViewSupprt::Transfer::SessionAccessibility",
+        [inst = GeckoSession::Window::GlobalRef(inst),
+         sa = java::SessionAccessibility::NativeProvider::GlobalRef(sa),
+         window = mWindow, gvs = mWindow->mGeckoViewSupport](
+            const mozilla::jni::DetachPromise::ResolveOrRejectValue& aValue) {
+          MOZ_ASSERT(aValue.IsResolve());
+          if (window->Destroyed()) {
+            return;
+          }
+
+          MOZ_ASSERT(!window->mSessionAccessibility.IsAttached());
+          if (auto gvsAccess{gvs.Access()}) {
+            gvsAccess->AttachAccessibility(inst, sa);
+          }
+        });
   }
 
   if (mIsReady) {
