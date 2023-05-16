@@ -22,7 +22,7 @@ let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 
 
-let [serverCert, clientCert] = certDB.getCerts();
+let [clientCert] = certDB.getCerts();
 
 function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
   let attrs = getOAWithPartitionKey({ topLevelBaseDomain }, originAttributes);
@@ -31,7 +31,7 @@ function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
 
   gSSService.processHeader(uri, "max-age=1000;", attrs);
 
-  cars.rememberDecisionScriptable(host, attrs, serverCert, clientCert);
+  cars.rememberDecisionScriptable(host, attrs, clientCert);
 }
 
 function addTestSecurityInfo() {
@@ -82,12 +82,7 @@ function testSecurityInfo({
     `HSTS ${expectedHSTS ? "is set" : "is not set"} ${messageSuffix}`
   );
 
-  let hasRemembered = cars.hasRememberedDecisionScriptable(
-    host,
-    attrs,
-    serverCert,
-    {}
-  );
+  let hasRemembered = cars.hasRememberedDecisionScriptable(host, attrs, {});
   
   
   Assert.equal(

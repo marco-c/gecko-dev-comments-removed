@@ -27,11 +27,11 @@ function getOAWithPartitionKey(
 
 
 
-let [serverCert, clientCert] = certDB.getCerts();
+let [clientCert] = certDB.getCerts();
 
 function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
   let attrs = getOAWithPartitionKey({ topLevelBaseDomain }, originAttributes);
-  cars.rememberDecisionScriptable(host, attrs, serverCert, clientCert);
+  cars.rememberDecisionScriptable(host, attrs, clientCert);
 }
 
 function testSecurityInfo({
@@ -47,12 +47,7 @@ function testSecurityInfo({
     messageSuffix += ` partitioned under ${topLevelBaseDomain}`;
   }
 
-  let hasRemembered = cars.hasRememberedDecisionScriptable(
-    host,
-    attrs,
-    serverCert,
-    {}
-  );
+  let hasRemembered = cars.hasRememberedDecisionScriptable(host, attrs, {});
 
   Assert.equal(
     hasRemembered,
