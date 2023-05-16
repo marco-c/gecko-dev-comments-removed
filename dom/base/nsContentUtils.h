@@ -460,7 +460,7 @@ class nsContentUtils {
   
 
 
-  static nsINode* GetAnElementForTiming(Element* aTarget,
+  static Element* GetAnElementForTiming(Element* aTarget,
                                         const Document* aDocument,
                                         nsIGlobalObject* aGlobal);
 
