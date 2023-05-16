@@ -233,8 +233,13 @@ int32_t VideoCaptureDS::SetCameraOutput(
 
     
     if (pmt->subtype == MEDIASUBTYPE_dvsl ||
-        pmt->subtype == MEDIASUBTYPE_dvsd || pmt->subtype == MEDIASUBTYPE_dvhd)
+        pmt->subtype == MEDIASUBTYPE_dvsd ||
+        pmt->subtype == MEDIASUBTYPE_dvhd) {
       isDVCamera = true;  
+    }
+
+    FreeMediaType(pmt);
+    pmt = NULL;
   }
   RELEASE_AND_CLEAR(streamConfig);
 
