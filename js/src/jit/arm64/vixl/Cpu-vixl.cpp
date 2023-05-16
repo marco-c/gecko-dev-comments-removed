@@ -214,6 +214,10 @@ CPUFeatures CPU::InferCPUFeaturesFromOS(
   for (size_t i = 0; i < kFeatureBitCount; i++) {
     if (auxv & (1UL << i)) features.Combine(kFeatureBits[i]);
   }
+#elif defined(XP_MACOSX)
+  
+  features.Combine(CPUFeatures::kJSCVT, CPUFeatures::kDotProduct,
+                   CPUFeatures::kAtomics);
 #endif  
 
   if ((option == CPUFeatures::kQueryIDRegistersIfAvailable) &&
