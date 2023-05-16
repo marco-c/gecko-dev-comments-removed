@@ -23,8 +23,6 @@ const SUPPORTED_OPTIONS = {
   
   ignoreCaughtExceptions: true,
   
-  shouldShowOverlay: true,
-  
   shouldIncludeSavedFrames: true,
   
   shouldIncludeAsyncLiveFrames: true,
