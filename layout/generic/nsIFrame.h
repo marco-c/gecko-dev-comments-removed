@@ -3408,6 +3408,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+  bool IsBlockContainer() const;
+
+  
+
+
+
   virtual bool IsFloatContainingBlock() const { return false; }
 
   

@@ -8000,25 +8000,29 @@ bool nsIFrame::IsSubgrid() const {
 }
 
 static nsIFrame* GetNearestBlockContainer(nsIFrame* frame) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  while (frame->IsFrameOfType(nsIFrame::eLineParticipant) ||
-         frame->IsBlockWrapper() || frame->IsSubgrid() ||
-         
-         frame->IsTableRowFrame()) {
+  while (!frame->IsBlockContainer()) {
     frame = frame->GetParent();
     NS_ASSERTION(
         frame,
         "How come we got to the root frame without seeing a containing block?");
   }
   return frame;
+}
+
+bool nsIFrame::IsBlockContainer() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return !IsFrameOfType(nsIFrame::eLineParticipant) && !IsBlockWrapper() &&
+         !IsSubgrid() &&
+         
+         !IsTableRowFrame();
 }
 
 nsIFrame* nsIFrame::GetContainingBlock(
