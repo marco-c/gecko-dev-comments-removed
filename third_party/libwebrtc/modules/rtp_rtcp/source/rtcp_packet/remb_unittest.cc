@@ -108,6 +108,19 @@ TEST(RtcpPacketRembTest, ParseFailsWhenBitrateDoNotFitIn64bits) {
   EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
 }
 
+TEST(RtcpPacketRembTest, ParseFailsWhenBitrateDoNotFitIn63bits) {
+  uint8_t packet[kPacketLength];
+  memcpy(packet, kPacket, kPacketLength);
+  packet[17] = 56 << 2;  
+  packet[18] = 0;        
+  packet[19] = 200;
+
+  
+  
+  Remb remb;
+  EXPECT_FALSE(test::ParseSinglePacket(packet, &remb));
+}
+
 TEST(RtcpPacketRembTest, ParseFailsWhenSsrcCountMismatchLength) {
   uint8_t packet[kPacketLength];
   memcpy(packet, kPacket, kPacketLength);
