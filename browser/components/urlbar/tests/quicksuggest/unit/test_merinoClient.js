@@ -563,7 +563,7 @@ add_task(async function nimbus() {
 
   
   
-  await fetchAndCheckSuggestions({ expected: null });
+  await fetchAndCheckSuggestions({ expected: [] });
 
   
   

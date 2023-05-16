@@ -81,7 +81,6 @@ add_task(async function() {
           position: position.toString(),
         },
       },
-      ping: null,
     },
     selectables: {
       
@@ -101,7 +100,6 @@ add_task(async function() {
             position: position.toString(),
           },
         },
-        pings: [],
       },
       
       "urlbarView-button-block": {
@@ -120,7 +118,6 @@ add_task(async function() {
             position: position.toString(),
           },
         },
-        pings: [],
       },
       
       "urlbarView-button-help": {
@@ -139,7 +136,6 @@ add_task(async function() {
             position: position.toString(),
           },
         },
-        pings: [],
       },
     },
   });

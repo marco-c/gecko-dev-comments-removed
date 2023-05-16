@@ -507,8 +507,9 @@ async function doSelectableTest({
   info("Checking events. Expected: " + JSON.stringify([expected.event]));
   QuickSuggestTestUtils.assertEvents([expected.event]);
 
-  info("Checking pings. Expected: " + JSON.stringify(expected.pings));
-  QuickSuggestTestUtils.assertPings(spy, expected.pings);
+  let expectedPings = expected.pings ?? [];
+  info("Checking pings. Expected: " + JSON.stringify(expectedPings));
+  QuickSuggestTestUtils.assertPings(spy, expectedPings);
 
   if (className == "urlbarView-button-block") {
     await QuickSuggest.blockedSuggestions.clear();
