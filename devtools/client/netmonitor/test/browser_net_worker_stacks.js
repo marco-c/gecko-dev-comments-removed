@@ -70,16 +70,21 @@ const EXPECTED_REQUESTS = [
       { file: WORKER_URL, line: 18 },
     ],
   },
-  {
-    method: "GET",
-    url: HTTPS_EXAMPLE_URL + "missing.txt",
-    causeType: "fetch",
-    causeUri: TOP_URL,
-    stack: [
-      { fn: "fetchThing", file: WORKER_URL, line: 29 },
-      { file: WORKER_URL, line: 26 },
-    ],
-  },
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
 ];
 
 add_task(async function() {

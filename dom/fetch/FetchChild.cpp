@@ -15,7 +15,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/SecurityPolicyViolationEventBinding.h"
-#include "mozilla/dom/WorkerChannelInfo.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerScope.h"
@@ -273,41 +272,6 @@ mozilla::ipc::IPCResult FetchChild::RecvOnReportPerformanceTiming(
         aTiming.entryName(), aTiming.initiatorType(),
         MakeUnique<PerformanceTimingData>(aTiming.timingData()));
   }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult FetchChild::RecvOnNotifyNetworkMonitorAlternateStack(
-    uint64_t aChannelID) {
-  FETCH_LOG(
-      ("FetchChild::RecvOnNotifyNetworkMonitorAlternateStack [%p]", this));
-  if (mIsShutdown) {
-    return IPC_OK();
-  }
-  
-  
-  MOZ_ASSERT(mWorkerRef->Private());
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
-
-  if (!mOriginStack) {
-    return IPC_OK();
-  }
-
-  if (!mWorkerChannelInfo) {
-    mWorkerChannelInfo = MakeRefPtr<WorkerChannelInfo>(
-        aChannelID, mWorkerRef->Private()->AssociatedBrowsingContextID());
-  }
-
-  
-  
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [channel = mWorkerChannelInfo,
-                 stack = std::move(mOriginStack)]() mutable {
-        NotifyNetworkMonitorAlternateStack(channel, std::move(stack));
-      });
-
-  MOZ_ALWAYS_SUCCEEDS(
-      SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
-
   return IPC_OK();
 }
 
