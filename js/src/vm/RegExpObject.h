@@ -88,23 +88,23 @@ class RegExpObject : public NativeObject {
   static bool isInitialShape(RegExpObject* rx) {
     
     
+    
     MOZ_ASSERT(!rx->empty());
     PropertyInfoWithKey prop = rx->getLastProperty();
-    return prop.isDataProperty() && prop.slot() == LAST_INDEX_SLOT;
+    return prop.isDataProperty() && prop.slot() == LAST_INDEX_SLOT &&
+           prop.writable();
   }
 
   const Value& getLastIndex() const { return getReservedSlot(LAST_INDEX_SLOT); }
 
-  void setLastIndex(double d) {
-    setReservedSlot(LAST_INDEX_SLOT, NumberValue(d));
-  }
-
-  void zeroLastIndex(JSContext* cx) {
+  void setLastIndex(JSContext* cx, int32_t lastIndex) {
+    MOZ_ASSERT(lastIndex >= 0);
     MOZ_ASSERT(lookupPure(cx->names().lastIndex)->writable(),
-               "can't infallibly zero a non-writable lastIndex on a "
+               "can't infallibly set a non-writable lastIndex on a "
                "RegExp that's been exposed to script");
-    setReservedSlot(LAST_INDEX_SLOT, Int32Value(0));
+    setReservedSlot(LAST_INDEX_SLOT, Int32Value(lastIndex));
   }
+  void zeroLastIndex(JSContext* cx) { setLastIndex(cx, 0); }
 
   static JSLinearString* toString(JSContext* cx, Handle<RegExpObject*> obj);
 

@@ -496,6 +496,22 @@ bool js::IsRegExp(JSContext* cx, HandleValue value, bool* result) {
 }
 
 
+
+static bool SetLastIndex(JSContext* cx, Handle<RegExpObject*> regexp,
+                         int32_t lastIndex) {
+  MOZ_ASSERT(lastIndex >= 0);
+
+  if (MOZ_LIKELY(RegExpObject::isInitialShape(regexp)) ||
+      regexp->lookupPure(cx->names().lastIndex)->writable()) {
+    regexp->setLastIndex(cx, lastIndex);
+    return true;
+  }
+
+  Rooted<Value> val(cx, Int32Value(lastIndex));
+  return SetProperty(cx, regexp, cx->names().lastIndex, val);
+}
+
+
 MOZ_ALWAYS_INLINE bool regexp_compile_impl(JSContext* cx,
                                            const CallArgs& args) {
   MOZ_ASSERT(IsRegExpObject(args.thisv()));
@@ -551,13 +567,8 @@ MOZ_ALWAYS_INLINE bool regexp_compile_impl(JSContext* cx,
   
   
   
-  if (regexp->lookupPure(cx->names().lastIndex)->writable()) {
-    regexp->zeroLastIndex(cx);
-  } else {
-    RootedValue zero(cx, Int32Value(0));
-    if (!SetProperty(cx, regexp, cx->names().lastIndex, zero)) {
-      return false;
-    }
+  if (!SetLastIndex(cx, regexp, 0)) {
+    return false;
   }
 
   args.rval().setObject(*regexp);
