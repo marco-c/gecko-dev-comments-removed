@@ -256,6 +256,10 @@ nscoord nsFontMetrics::AveCharWidth() const {
   return CEIL_TO_TWIPS(GetMetrics(this).aveCharWidth);
 }
 
+nscoord nsFontMetrics::ZeroOrAveCharWidth() const {
+  return CEIL_TO_TWIPS(GetMetrics(this).ZeroOrAveCharWidth());
+}
+
 nscoord nsFontMetrics::SpaceWidth() const {
   
   

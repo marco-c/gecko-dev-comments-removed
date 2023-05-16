@@ -176,6 +176,11 @@ class nsFontMetrics final {
   
 
 
+  nscoord ZeroOrAveCharWidth() const;
+
+  
+
+
   nscoord SpaceWidth() const;
 
   

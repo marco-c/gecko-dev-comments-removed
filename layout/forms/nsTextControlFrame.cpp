@@ -180,33 +180,30 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(
   LogicalSize intrinsicSize(aWM);
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, aFontSizeInflation);
-  nscoord lineHeight =
+  const nscoord lineHeight =
       ReflowInput::CalcLineHeight(*Style(), PresContext(), GetContent(),
                                   NS_UNCONSTRAINEDSIZE, aFontSizeInflation);
   
-  nscoord charWidth = fontMet->AveCharWidth();
-  nscoord charMaxAdvance = fontMet->MaxAdvance();
+  
+  const nscoord charWidth =
+      std::max(fontMet->ZeroOrAveCharWidth(), fontMet->AveCharWidth());
+  const nscoord charMaxAdvance = fontMet->MaxAdvance();
 
   
-  int32_t cols = GetCols();
+  const int32_t cols = GetCols();
   intrinsicSize.ISize(aWM) = cols * charWidth;
 
   
   
   
-  if (mozilla::Abs(charWidth - charMaxAdvance) >
-      (unsigned)nsPresContext::CSSPixelsToAppUnits(1)) {
+  
+  
+  
+  if (charMaxAdvance - charWidth > AppUnitsPerCSSPixel()) {
     nscoord internalPadding =
-        std::max(0, charMaxAdvance - nsPresContext::CSSPixelsToAppUnits(4));
-    nscoord t = nsPresContext::CSSPixelsToAppUnits(1);
-    
-    nscoord rest = internalPadding % t;
-    if (rest < t - rest) {
-      internalPadding -= rest;
-    } else {
-      internalPadding += t - rest;
-    }
-    
+        std::max(0, std::min(charMaxAdvance, charWidth * 2) -
+                        nsPresContext::CSSPixelsToAppUnits(4));
+    internalPadding = RoundToMultiple(internalPadding, AppUnitsPerCSSPixel());
     intrinsicSize.ISize(aWM) += internalPadding;
   } else {
     
