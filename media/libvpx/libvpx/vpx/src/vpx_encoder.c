@@ -54,6 +54,10 @@ vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
     res = ctx->iface->init(ctx, NULL);
 
     if (res) {
+      
+      
+      
+      
       ctx->err_detail = ctx->priv ? ctx->priv->err_detail : NULL;
       vpx_codec_destroy(ctx);
     }

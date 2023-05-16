@@ -123,7 +123,7 @@ static void calc_av_activity(VP8_COMP *cpi, int64_t activity_sum) {
     unsigned int tmp;
 
     
-    CHECK_MEM_ERROR(sortlist,
+    CHECK_MEM_ERROR(&cpi->common.error, sortlist,
                     vpx_calloc(sizeof(unsigned int), cpi->common.MBs));
 
     

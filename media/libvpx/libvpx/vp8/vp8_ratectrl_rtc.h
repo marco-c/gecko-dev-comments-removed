@@ -43,6 +43,9 @@ class VP8RateControlRTC {
   
   int GetQP() const;
   
+  
+  int GetLoopfilterLevel() const;
+  
   void ComputeQP(const VP8FrameParamsQpRTC &frame_params);
   
   void PostEncodeUpdate(uint64_t encoded_frame_size);

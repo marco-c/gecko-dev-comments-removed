@@ -58,7 +58,7 @@ extern "C" {
 
 
 #define VPX_ENCODER_ABI_VERSION \
-  (15 + VPX_CODEC_ABI_VERSION + \
+  (16 + VPX_CODEC_ABI_VERSION + \
    VPX_EXT_RATECTRL_ABI_VERSION) /**<\hideinitializer*/
 
 
@@ -251,6 +251,31 @@ enum vpx_kf_mode {
   VPX_KF_AUTO,        
   VPX_KF_DISABLED = 0 
 };
+
+
+typedef struct VpxTplBlockStats {
+  int64_t intra_cost;  
+  int64_t inter_cost;  
+  int16_t mv_r;        
+  int16_t mv_c;        
+  int64_t recrf_rate;  
+  int64_t recrf_dist;  
+  int ref_frame_index; 
+} VpxTplBlockStats;
+
+
+typedef struct VpxTplFrameStats {
+  int frame_width;  
+  int frame_height; 
+  int num_blocks;   
+  VpxTplBlockStats *block_stats_list; 
+} VpxTplFrameStats;
+
+
+typedef struct VpxTplGopStats {
+  int size; 
+  VpxTplFrameStats *frame_stats_list; 
+} VpxTplGopStats;
 
 
 
@@ -855,6 +880,9 @@ typedef struct vpx_svc_parameters {
   int temporal_layering_mode;             
   int loopfilter_ctrl[VPX_MAX_LAYERS];    
 } vpx_svc_extra_cfg_t;
+
+
+
 
 
 

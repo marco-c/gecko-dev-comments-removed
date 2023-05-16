@@ -166,7 +166,7 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     } while (n_coeffs > 0);
   }
 
-#ifdef __aarch64__
+#if VPX_ARCH_AARCH64
   *eob_ptr = vmaxvq_u16(eob_max);
 #else
   {
@@ -291,7 +291,7 @@ void vpx_highbd_quantize_b_32x32_neon(
     }
   }
 
-#ifdef __aarch64__
+#if VPX_ARCH_AARCH64
   *eob_ptr = vmaxvq_u16(eob_max);
 #else
   {

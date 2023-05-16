@@ -150,6 +150,7 @@ void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob) {
+  assert(((intptr_t)input) % 32 == 0);
   
 
   if (eob == 1) 
@@ -164,6 +165,7 @@ void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
 
 void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
                        int eob) {
+  assert(((intptr_t)input) % 32 == 0);
   if (eob == 1)
     vpx_idct32x32_1_add(input, dest, stride);
   else if (eob <= 34)

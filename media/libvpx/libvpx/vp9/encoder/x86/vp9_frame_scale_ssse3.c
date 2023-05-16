@@ -469,18 +469,18 @@ static void scale_plane_4_to_3_general(const uint8_t *src, const int src_stride,
   
   const int offset_idx1 = (offset1_q4 >> 4) & 1;
   const int offset_idx2 = (offset2_q4 >> 4) & 1;
-  static const shuffle_filter_funcs shuffle_filter_funcs[2] = {
+  static const shuffle_filter_funcs kShuffleFilterFuncs[2] = {
     shuffle_filter_ssse3, shuffle_filter_odd_ssse3
   };
-  static const convolve8_funcs convolve8_funcs[2] = {
+  static const convolve8_funcs kConvolve8Funcs[2] = {
     convolve8_8_even_offset_ssse3, convolve8_8_odd_offset_ssse3
   };
 
   assert(w && h);
 
   shuffle_filter_ssse3(coef[(phase_scaler + 0 * step_q4) & SUBPEL_MASK], f0);
-  shuffle_filter_funcs[offset_idx1](coef[offset1_q4 & SUBPEL_MASK], f1);
-  shuffle_filter_funcs[offset_idx2](coef[offset2_q4 & SUBPEL_MASK], f2);
+  kShuffleFilterFuncs[offset_idx1](coef[offset1_q4 & SUBPEL_MASK], f1);
+  kShuffleFilterFuncs[offset_idx2](coef[offset2_q4 & SUBPEL_MASK], f2);
 
   
   
@@ -522,11 +522,11 @@ static void scale_plane_4_to_3_general(const uint8_t *src, const int src_stride,
       
       
       d[0] = convolve8_8_even_offset_ssse3(&s[0], f0);
-      d[1] = convolve8_funcs[offset_idx1](&s[offset1_q4 >> 5], f1);
-      d[2] = convolve8_funcs[offset_idx2](&s[offset2_q4 >> 5], f2);
+      d[1] = kConvolve8Funcs[offset_idx1](&s[offset1_q4 >> 5], f1);
+      d[2] = kConvolve8Funcs[offset_idx2](&s[offset2_q4 >> 5], f2);
       d[3] = convolve8_8_even_offset_ssse3(&s[2], f0);
-      d[4] = convolve8_funcs[offset_idx1](&s[2 + (offset1_q4 >> 5)], f1);
-      d[5] = convolve8_funcs[offset_idx2](&s[2 + (offset2_q4 >> 5)], f2);
+      d[4] = kConvolve8Funcs[offset_idx1](&s[2 + (offset1_q4 >> 5)], f1);
+      d[5] = kConvolve8Funcs[offset_idx2](&s[2 + (offset2_q4 >> 5)], f2);
 
       
       
@@ -598,11 +598,11 @@ static void scale_plane_4_to_3_general(const uint8_t *src, const int src_stride,
       loadu_8bit_16x4(t, stride_hor, &s[4]);
 
       d[0] = convolve8_8_even_offset_ssse3(&s[0], f0);
-      d[1] = convolve8_funcs[offset_idx1](&s[offset1_q4 >> 5], f1);
-      d[2] = convolve8_funcs[offset_idx2](&s[offset2_q4 >> 5], f2);
+      d[1] = kConvolve8Funcs[offset_idx1](&s[offset1_q4 >> 5], f1);
+      d[2] = kConvolve8Funcs[offset_idx2](&s[offset2_q4 >> 5], f2);
       d[3] = convolve8_8_even_offset_ssse3(&s[2], f0);
-      d[4] = convolve8_funcs[offset_idx1](&s[2 + (offset1_q4 >> 5)], f1);
-      d[5] = convolve8_funcs[offset_idx2](&s[2 + (offset2_q4 >> 5)], f2);
+      d[4] = kConvolve8Funcs[offset_idx1](&s[2 + (offset1_q4 >> 5)], f1);
+      d[5] = kConvolve8Funcs[offset_idx2](&s[2 + (offset2_q4 >> 5)], f2);
 
       
       

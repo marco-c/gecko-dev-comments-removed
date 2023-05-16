@@ -31,7 +31,7 @@
 
 
 
-#if defined(__aarch64__) && \
+#if VPX_ARCH_AARCH64 && \
     (defined(__ARM_FEATURE_DOTPROD) || defined(__ARM_FEATURE_MATMUL_INT8))
 
 DECLARE_ALIGNED(16, static const uint8_t, dot_prod_permute_tbl[48]) = {

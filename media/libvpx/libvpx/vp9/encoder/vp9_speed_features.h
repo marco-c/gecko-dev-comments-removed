@@ -210,6 +210,10 @@ typedef struct MV_SPEED_FEATURES {
 
   
   int fullpel_search_step_param;
+
+  
+  
+  int use_downsampled_sad;
 } MV_SPEED_FEATURES;
 
 typedef struct PARTITION_SEARCH_BREAKOUT_THR {
@@ -286,7 +290,16 @@ typedef struct SPEED_FEATURES {
   
   
   
-  BLOCK_SIZE comp_inter_joint_search_thresh;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int comp_inter_joint_search_iter_level;
 
   
   

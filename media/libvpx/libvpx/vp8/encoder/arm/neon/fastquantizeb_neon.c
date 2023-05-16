@@ -28,7 +28,7 @@ void vp8_fast_quantize_b_neon(BLOCK *b, BLOCKD *d) {
                    zig_zag1 = vld1q_u16(inv_zig_zag + 8);
   int16x8_t x0, x1, sz0, sz1, y0, y1;
   uint16x8_t eob0, eob1;
-#ifndef __aarch64__
+#if !VPX_ARCH_AARCH64
   uint16x4_t eob_d16;
   uint32x2_t eob_d32;
   uint32x4_t eob_q32;
@@ -70,7 +70,7 @@ void vp8_fast_quantize_b_neon(BLOCK *b, BLOCKD *d) {
 
   
   eob0 = vmaxq_u16(eob0, eob1);
-#ifdef __aarch64__
+#if VPX_ARCH_AARCH64
   *d->eob = (int8_t)vmaxvq_u16(eob0);
 #else
   eob_d16 = vmax_u16(vget_low_u16(eob0), vget_high_u16(eob0));
