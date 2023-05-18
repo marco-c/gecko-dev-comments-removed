@@ -203,32 +203,21 @@ void MediaSourceDecoder::AddSizeOfResources(ResourceSizes* aSizes) {
   }
 }
 
-void MediaSourceDecoder::SetInitialDuration(int64_t aDuration) {
+void MediaSourceDecoder::SetInitialDuration(const TimeUnit& aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
   if (!mMediaSource || !std::isnan(ExplicitDuration())) {
     return;
   }
-  double duration = aDuration;
-  
-  if (aDuration >= 0) {
-    duration /= USECS_PER_S;
-  }
-  SetMediaSourceDuration(duration);
+  SetMediaSourceDuration(aDuration);
 }
 
-void MediaSourceDecoder::SetMediaSourceDuration(double aDuration) {
+void MediaSourceDecoder::SetMediaSourceDuration(const TimeUnit& aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!IsShutdown());
-  if (aDuration >= 0) {
-    int64_t checkedDuration;
-    if (NS_FAILED(SecondsToUsecs(aDuration, checkedDuration))) {
-      
-      
-      checkedDuration = INT64_MAX - 1;
-    }
-    SetExplicitDuration(aDuration);
+  if (aDuration.IsPositiveOrZero()) {
+    SetExplicitDuration(aDuration.ToSeconds());
   } else {
     SetExplicitDuration(PositiveInfinity<double>());
   }
@@ -304,7 +293,7 @@ bool MediaSourceDecoder::CanPlayThroughImpl() {
   TimeUnit timeAhead =
       std::min(duration, currentPosition + TimeUnit::FromSeconds(3));
   TimeInterval interval(currentPosition, timeAhead);
-  return buffered.ContainsWithStrictEnd(ClampIntervalToEnd(interval));
+  return buffered.ToMicrosecondResolution().ContainsWithStrictEnd(ClampIntervalToEnd(interval));
 }
 
 TimeInterval MediaSourceDecoder::ClampIntervalToEnd(
@@ -314,7 +303,7 @@ TimeInterval MediaSourceDecoder::ClampIntervalToEnd(
   if (!mEnded) {
     return aInterval;
   }
-  TimeUnit duration = TimeUnit::FromSeconds(GetDuration());
+  TimeUnit duration = mDuration;
   if (duration < aInterval.mStart) {
     return aInterval;
   }
