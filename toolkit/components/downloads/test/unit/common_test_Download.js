@@ -23,11 +23,6 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 
-Cc["@mozilla.org/net/osfileconstantsservice;1"]
-  .getService(Ci.nsIOSFileConstantsService)
-  .init();
-
-
 
 
 
@@ -287,7 +282,7 @@ add_task(async function test_unix_permissions() {
           
           Assert.equal(
             stat.permissions,
-            isTemporary ? 0o400 : 0o666 & ~OS.Constants.Sys.umask
+            isTemporary ? 0o400 : 0o666 & ~Services.sysinfo.getProperty("umask")
           );
         }
       }
