@@ -287,11 +287,7 @@ pref("browser.shell.setDefaultPDFHandler.onlyReplaceBrowsers", true);
 
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "about:home");
-#ifdef NIGHTLY_BUILD
 pref("browser.startup.homepage.abouthome_cache.enabled", true);
-#else
-pref("browser.startup.homepage.abouthome_cache.enabled", false);
-#endif
 pref("browser.startup.homepage.abouthome_cache.loglevel", "Warn");
 
 
@@ -410,7 +406,6 @@ pref("browser.urlbar.suggest.calculator",           false);
 #if defined(EARLY_BETA_OR_EARLIER)
   
   pref("browser.urlbar.trending.featureGate", true);
-  pref("browser.urlbar.trending.requireSearchMode", false);
 #endif
 
 
@@ -1963,10 +1958,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 
 
 
-
-
-
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,lvl2PBM,rp,rpTop,ocsp,qps,qpsPBM");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,emailTP,emailTPPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM");
 
 
 
