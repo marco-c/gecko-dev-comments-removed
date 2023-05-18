@@ -104,6 +104,11 @@ function SetPref(name, value) {
   }
 }
 
+
+function getDateForSync() {
+  return Math.round(Date.now() / 10) / 100;
+}
+
 async function loadExtension() {
   AddonTestUtils.createAppInfo(
     "xpcshell@tests.mozilla.org",
