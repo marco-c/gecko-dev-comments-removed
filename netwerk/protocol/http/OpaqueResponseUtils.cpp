@@ -42,6 +42,7 @@ static bool IsOpaqueSafeListedSpecBreakingMIMEType(
   
   if (aContentType.EqualsLiteral(APPLICATION_DASH_XML) ||
       aContentType.EqualsLiteral(APPLICATION_MPEGURL) ||
+      aContentType.EqualsLiteral(AUDIO_MPEG_URL) ||
       aContentType.EqualsLiteral(TEXT_VTT)) {
     return true;
   }
@@ -55,7 +56,8 @@ static bool IsOpaqueSafeListedSpecBreakingMIMEType(
   
   
   
-  if (StringBeginsWith(aContentType, "audio/mpeg"_ns)) {
+  if (aContentType.EqualsLiteral(AUDIO_MP3) ||
+      aContentType.EqualsLiteral(AUDIO_AAC)) {
     return true;
   }
 
