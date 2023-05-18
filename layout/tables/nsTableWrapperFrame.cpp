@@ -41,7 +41,8 @@ nscoord nsTableWrapperFrame::SynthesizeFallbackBaseline(
 }
 
 Maybe<nscoord> nsTableWrapperFrame::GetNaturalBaselineBOffset(
-    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+    BaselineExportContext aExportContext) const {
   
   
   
@@ -52,7 +53,8 @@ Maybe<nscoord> nsTableWrapperFrame::GetNaturalBaselineBOffset(
     return Nothing{};
   }
   auto* innerTable = InnerTableFrame();
-  return innerTable->GetNaturalBaselineBOffset(aWM, aBaselineGroup)
+  return innerTable
+      ->GetNaturalBaselineBOffset(aWM, aBaselineGroup, aExportContext)
       .map([this, aWM, aBaselineGroup, innerTable](nscoord aBaseline) {
         auto bStart = innerTable->BStart(aWM, mRect.Size());
         if (aBaselineGroup == BaselineSharingGroup::First) {

@@ -3541,7 +3541,8 @@ nscoord nsTableFrame::SynthesizeFallbackBaseline(
 
 
 Maybe<nscoord> nsTableFrame::GetNaturalBaselineBOffset(
-    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+    BaselineExportContext) const {
   if (StyleDisplay()->IsContainLayout()) {
     return Nothing{};
   }
@@ -5834,7 +5835,8 @@ struct BCBlockDirSeg {
   BCBlockDirSeg();
 
   void Start(BCPaintBorderIterator& aIter, BCBorderOwner aBorderOwner,
-             BCPixelSize aBlockSegISize, BCPixelSize aInlineSegBSize);
+             BCPixelSize aBlockSegISize, BCPixelSize aInlineSegBSize,
+             Maybe<nscoord> aEmptyRowEndSize);
 
   void Initialize(BCPaintBorderIterator& aIter);
   void GetBEndCorner(BCPaintBorderIterator& aIter, BCPixelSize aInlineSegBSize);
@@ -6529,7 +6531,8 @@ BCBlockDirSeg::BCBlockDirSeg()
 void BCBlockDirSeg::Start(BCPaintBorderIterator& aIter,
                           BCBorderOwner aBorderOwner,
                           BCPixelSize aBlockSegISize,
-                          BCPixelSize aInlineSegBSize) {
+                          BCPixelSize aInlineSegBSize,
+                          Maybe<nscoord> aEmptyRowEndBSize) {
   LogicalSide ownerSide = eLogicalSideBStart;
   bool bevel = false;
 
@@ -6548,7 +6551,14 @@ void BCBlockDirSeg::Start(BCPaintBorderIterator& aIter,
   
   mBStartBevelSide =
       (aInlineSegBSize > 0) ? eLogicalSideIEnd : eLogicalSideIStart;
-  mOffsetB += offset;
+  if (aEmptyRowEndBSize && *aEmptyRowEndBSize < offset) {
+    
+    
+    
+    mOffsetB += *aEmptyRowEndBSize;
+  } else {
+    mOffsetB += offset;
+  }
   mLength = -offset;
   mWidth = aBlockSegISize;
   mOwner = aBorderOwner;
@@ -7262,12 +7272,14 @@ void BCPaintBorderIterator::AccumulateOrDoActionBlockDirSegment(
   if (!blockDirSeg.mCol) {  
                             
     blockDirSeg.Initialize(*this);
-    blockDirSeg.Start(*this, borderOwner, blockSegISize, inlineSegBSize);
+    blockDirSeg.Start(*this, borderOwner, blockSegISize, inlineSegBSize,
+                      Nothing{});
   }
 
   if (!IsDamageAreaBStartMost() &&
       (isSegStart || IsDamageAreaBEndMost() || IsAfterRepeatedHeader() ||
        StartRepeatedFooter())) {
+    Maybe<nscoord> emptyRowEndSize;
     
     if (blockDirSeg.mLength > 0) {
       blockDirSeg.GetBEndCorner(*this, inlineSegBSize);
@@ -7286,24 +7298,12 @@ void BCPaintBorderIterator::AccumulateOrDoActionBlockDirSegment(
         }
       }
       blockDirSeg.AdvanceOffsetB();
-      
-      
-      
-      
       if (mRow->PrincipalChildList().IsEmpty()) {
-        const auto rowSize = mRow->BSize(mTableWM);
-        if (blockDirSeg.mBEndOffset > 0 && blockDirSeg.mBEndOffset > rowSize) {
-          blockDirSeg.mOffsetB -= blockDirSeg.mBEndOffset - rowSize;
-        } else if (blockDirSeg.mBEndOffset < 0 &&
-                   -blockDirSeg.mBEndOffset > rowSize) {
-          
-          
-          
-          blockDirSeg.mOffsetB += blockDirSeg.mBEndOffset + rowSize;
-        }
+        emptyRowEndSize = Some(mRow->BSize(mTableWM));
       }
     }
-    blockDirSeg.Start(*this, borderOwner, blockSegISize, inlineSegBSize);
+    blockDirSeg.Start(*this, borderOwner, blockSegISize, inlineSegBSize,
+                      emptyRowEndSize);
   }
   blockDirSeg.IncludeCurrentBorder(*this);
   mPrevInlineSegBSize = inlineSegBSize;

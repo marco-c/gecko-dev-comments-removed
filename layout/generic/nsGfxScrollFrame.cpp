@@ -1421,7 +1421,8 @@ nscoord nsHTMLScrollFrame::SynthesizeFallbackBaseline(
 }
 
 Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
-    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+    BaselineExportContext aExportContext) const {
   
   
   
@@ -1429,7 +1430,8 @@ Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
   
   
   
-  if (aBaselineGroup == BaselineSharingGroup::Last &&
+  if (aExportContext == BaselineExportContext::LineLayout &&
+      aBaselineGroup == BaselineSharingGroup::Last &&
       mScrolledFrame->IsBlockFrameOrSubclass()) {
     return Some(SynthesizeFallbackBaseline(aWM, aBaselineGroup));
   }
@@ -1439,7 +1441,8 @@ Maybe<nscoord> nsHTMLScrollFrame::GetNaturalBaselineBOffset(
   }
 
   
-  return mScrolledFrame->GetNaturalBaselineBOffset(aWM, aBaselineGroup)
+  return mScrolledFrame
+      ->GetNaturalBaselineBOffset(aWM, aBaselineGroup, aExportContext)
       .map([this, aWM](nscoord aBaseline) {
         
         
