@@ -3,20 +3,36 @@
 
 "use strict";
 
-
-Cc["@mozilla.org/net/osfileconstantsservice;1"]
-  .getService(Ci.nsIOSFileConstantsService)
-  .init();
-
-registerCleanupFunction(() => {
-  delete window.OS;
-});
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/" +
     "security/sandbox/test/browser_content_sandbox_utils.js",
   this
 );
+
+const ERRNO = {
+  EACCES: 13,
+  EINVAL: 22,
+  get ENOSYS() {
+    const os = Services.appinfo.OS;
+
+    if (["Linux", "Android"].includes(os)) {
+      
+      return 38;
+    } else if (["Darwin", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)) {
+      
+
+
+
+
+
+      return 78;
+    } else if (os === "WINNT") {
+      
+      return 40;
+    }
+    throw new Error("Unsupported OS");
+  },
+};
 
 
 
@@ -371,9 +387,13 @@ add_task(async function() {
 
   if (isLinux()) {
     
-    let option = OS.Constants.libc.PR_CAPBSET_READ;
+    const AT_EACCESS = 512;
+    const PR_CAPBSET_READ = 23;
+
+    
+    let option = PR_CAPBSET_READ;
     let rv = await SpecialPowers.spawn(browser, [{ lib, option }], callPrctl);
-    ok(rv == OS.Constants.libc.EINVAL, "prctl(PR_CAPBSET_READ) is blocked");
+    ok(rv === ERRNO.EINVAL, "prctl(PR_CAPBSET_READ) is blocked");
 
     const kernelVersion = await getKernelVersion();
     const glibcVersion = getGlibcVersion();
@@ -389,18 +409,15 @@ add_task(async function() {
         [{ lib, dirfd, path, mode, flag: 0x01 }],
         callFaccessat2
       );
-      ok(
-        rv == OS.Constants.libc.ENOSYS,
-        "faccessat2 (flag=0x01) was blocked with ENOSYS"
-      );
+      ok(rv === ERRNO.ENOSYS, "faccessat2 (flag=0x01) was blocked with ENOSYS");
 
       rv = await SpecialPowers.spawn(
         browser,
-        [{ lib, dirfd, path, mode, flag: OS.Constants.libc.AT_EACCESS }],
+        [{ lib, dirfd, path, mode, flag: AT_EACCESS }],
         callFaccessat2
       );
       ok(
-        rv == OS.Constants.libc.EACCES,
+        rv === ERRNO.EACCES,
         "faccessat2 (flag=0x200) was allowed, errno=EACCES"
       );
     } else {
