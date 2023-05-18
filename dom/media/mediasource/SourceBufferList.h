@@ -79,7 +79,7 @@ class SourceBufferList final : public DOMEventTargetHelper {
   void Ended();
 
   
-  double GetHighestBufferedEndTime();
+  media::TimeUnit GetHighestBufferedEndTime();
 
   
   void AppendSimple(SourceBuffer* aSourceBuffer);
@@ -88,8 +88,8 @@ class SourceBufferList final : public DOMEventTargetHelper {
   
   void ClearSimple();
 
-  double HighestStartTime();
-  double HighestEndTime();
+  media::TimeUnit HighestStartTime();
+  media::TimeUnit HighestEndTime();
 
  private:
   ~SourceBufferList();
