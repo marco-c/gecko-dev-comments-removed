@@ -1872,10 +1872,11 @@ UniquePtr<uint8_t[]> CanvasRenderingContext2D::GetImageBuffer(
 
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
-  if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-    nsRFPService::RandomizePixels(GetCookieJarSettings(), ret.get(),
-                                  GetWidth() * GetHeight() * 4,
-                                  SurfaceFormat::A8R8G8B8_UINT32);
+  if (ret && ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+    nsRFPService::RandomizePixels(
+        GetCookieJarSettings(), ret.get(),
+        out_imageSize->width * out_imageSize->height * 4,
+        SurfaceFormat::A8R8G8B8_UINT32);
   }
 
   return ret;
@@ -5829,11 +5830,6 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   RefPtr<DataSourceSurface> readback = snapshot->GetDataSurface();
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
-  DataSourceSurface::MappedSurface rawData;
-  if (!readback || !readback->Map(DataSourceSurface::READ, &rawData)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
   
   
   
@@ -5845,6 +5841,24 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   } else if (mOffscreenCanvas) {
     usePlaceholder = mOffscreenCanvas->ShouldResistFingerprinting(
         RFPTarget::CanvasImageExtractionPrompt);
+  }
+
+  
+  
+  
+  
+  
+  
+  bool needRandomizePixels = false;
+  if (!usePlaceholder &&
+      ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+    needRandomizePixels = true;
+    readback = CreateDataSourceSurfaceByCloning(readback);
+  }
+
+  DataSourceSurface::MappedSurface rawData;
+  if (!readback || !readback->Map(DataSourceSurface::READ, &rawData)) {
+    return NS_ERROR_OUT_OF_MEMORY;
   }
 
   do {
@@ -5866,16 +5880,17 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
       break;
     }
 
+    
+    if (needRandomizePixels) {
+      const IntSize size = readback->GetSize();
+      nsRFPService::RandomizePixels(GetCookieJarSettings(), rawData.mData,
+                                    size.height * size.width * 4,
+                                    SurfaceFormat::A8R8G8B8_UINT32);
+    }
+
     uint32_t srcStride = rawData.mStride;
     uint8_t* src =
         rawData.mData + srcReadRect.y * srcStride + srcReadRect.x * 4;
-
-    
-    if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
-      nsRFPService::RandomizePixels(GetCookieJarSettings(), src,
-                                    GetWidth() * GetHeight() * 4,
-                                    SurfaceFormat::A8R8G8B8_UINT32);
-    }
 
     uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
 

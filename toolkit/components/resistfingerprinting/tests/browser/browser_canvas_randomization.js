@@ -35,7 +35,10 @@ var TEST_CASES = [
 
         const imageData = context.getImageData(0, 0, 100, 100);
 
-        return imageData.data;
+        
+        const imageDataSecond = context.getImageData(0, 0, 100, 100);
+
+        return [imageData.data, imageDataSecond.data];
       });
     },
     isDataRandomized(data1, data2, isCompareOriginal) {
@@ -75,7 +78,12 @@ var TEST_CASES = [
         
         content.document.body.appendChild(canvas);
 
-        return canvas.toDataURL();
+        const dataURL = canvas.toDataURL();
+
+        
+        const dataURLSecond = canvas.toDataURL();
+
+        return [dataURL, dataURLSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -105,7 +113,12 @@ var TEST_CASES = [
         
         content.document.body.appendChild(canvas);
 
-        return canvas.toDataURL();
+        const dataURL = canvas.toDataURL();
+
+        
+        const dataURLSecond = canvas.toDataURL();
+
+        return [dataURL, dataURLSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -138,7 +151,12 @@ var TEST_CASES = [
         const bitmapContext = bitmapCanvas.getContext("bitmaprenderer");
         bitmapContext.transferFromImageBitmap(bitmap);
 
-        return bitmapCanvas.toDataURL();
+        const dataURL = bitmapCanvas.toDataURL();
+
+        
+        const dataURLSecond = bitmapCanvas.toDataURL();
+
+        return [dataURL, dataURLSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -172,7 +190,18 @@ var TEST_CASES = [
           });
         });
 
-        return data;
+        
+        let dataSecond = await new content.Promise(resolve => {
+          canvas.toBlob(blob => {
+            let fileReader = new content.FileReader();
+            fileReader.onload = () => {
+              resolve(fileReader.result);
+            };
+            fileReader.readAsArrayBuffer(blob);
+          });
+        });
+
+        return [data, dataSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -212,7 +241,12 @@ var TEST_CASES = [
           });
         });
 
-        return data;
+        
+        
+        
+        
+
+        return [data, data];
       });
     },
     isDataRandomized(data1, data2) {
@@ -255,7 +289,18 @@ var TEST_CASES = [
           });
         });
 
-        return data;
+        
+        let dataSecond = await new content.Promise(resolve => {
+          bitmapCanvas.toBlob(blob => {
+            let fileReader = new content.FileReader();
+            fileReader.onload = () => {
+              resolve(fileReader.result);
+            };
+            fileReader.readAsArrayBuffer(blob);
+          });
+        });
+
+        return [data, dataSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -284,7 +329,18 @@ var TEST_CASES = [
           fileReader.readAsArrayBuffer(blob);
         });
 
-        return data;
+        
+        let blobSecond = await offscreenCanvas.convertToBlob();
+
+        let dataSecond = await new content.Promise(resolve => {
+          let fileReader = new content.FileReader();
+          fileReader.onload = () => {
+            resolve(fileReader.result);
+          };
+          fileReader.readAsArrayBuffer(blobSecond);
+        });
+
+        return [data, dataSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -321,7 +377,18 @@ var TEST_CASES = [
           fileReader.readAsArrayBuffer(blob);
         });
 
-        return data;
+        
+        let blobSecond = await offscreenCanvas.convertToBlob();
+
+        let dataSecond = await new content.Promise(resolve => {
+          let fileReader = new content.FileReader();
+          fileReader.onload = () => {
+            resolve(fileReader.result);
+          };
+          fileReader.readAsArrayBuffer(blobSecond);
+        });
+
+        return [data, dataSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -356,7 +423,18 @@ var TEST_CASES = [
           fileReader.readAsArrayBuffer(blob);
         });
 
-        return data;
+        
+        let blobSecond = await bitmapCanvas.convertToBlob();
+
+        let dataSecond = await new content.Promise(resolve => {
+          let fileReader = new content.FileReader();
+          fileReader.onload = () => {
+            resolve(fileReader.result);
+          };
+          fileReader.readAsArrayBuffer(blobSecond);
+        });
+
+        return [data, dataSecond];
       });
     },
     isDataRandomized(data1, data2) {
@@ -377,7 +455,10 @@ var TEST_CASES = [
 
         const imageData = context.getImageData(0, 0, 100, 100);
 
-        return imageData.data;
+        
+        const imageDataSecond = context.getImageData(0, 0, 100, 100);
+
+        return [imageData.data, imageDataSecond.data];
       });
     },
     isDataRandomized(data1, data2, isCompareOriginal) {
@@ -431,7 +512,7 @@ async function runTest(enabled) {
   for (let test of TEST_CASES) {
     info(`Testing ${test.name}`);
     let data = await test.extractCanvasData(tab.linkedBrowser);
-    let result = test.isDataRandomized(data, test.originalData);
+    let result = test.isDataRandomized(data[0], test.originalData);
 
     is(
       result,
@@ -439,19 +520,29 @@ async function runTest(enabled) {
       `The image data is ${enabled ? "randomized" : "the same"}.`
     );
 
+    ok(
+      !test.isDataRandomized(data[0], data[1]),
+      "The data of first and second access should be the same."
+    );
+
     let privateData = await test.extractCanvasData(privateTab.linkedBrowser);
 
     
-    result = test.isDataRandomized(privateData, test.originalData, true);
+    result = test.isDataRandomized(privateData[0], test.originalData, true);
     is(
       result,
       enabled,
       `The private image data is ${enabled ? "randomized" : "the same"}.`
     );
 
+    ok(
+      !test.isDataRandomized(privateData[0], privateData[1]),
+      "The data of first and second access should be the same for private windows."
+    );
+
     
     
-    result = test.isDataRandomized(privateData, data);
+    result = test.isDataRandomized(privateData[0], data[0]);
     is(
       result,
       enabled,
@@ -482,7 +573,8 @@ add_setup(async function() {
 
   
   for (let test of TEST_CASES) {
-    test.originalData = await test.extractCanvasData(tab.linkedBrowser);
+    let data = await test.extractCanvasData(tab.linkedBrowser);
+    test.originalData = data[0];
   }
 
   BrowserTestUtils.removeTab(tab);
