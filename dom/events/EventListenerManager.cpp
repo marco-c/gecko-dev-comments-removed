@@ -788,28 +788,32 @@ bool EventListenerManager::ListenerCanHandle(const Listener* aListener,
                  aEventMessage == GetLegacyEventMessage(aEvent->mMessage),
              "aEvent and aEventMessage should agree, modulo legacyness");
 
-  
-  if (aListener->mListenerType == Listener::eNoListener) {
-    return false;
-  }
+  auto listenerEnabled = [&]() {
+    
+    if (aListener->mListenerType == Listener::eNoListener) {
+      return false;
+    }
 
-  
-  if (!aListener->mEnabled) {
-    return false;
-  }
+    
+    if (!aListener->mEnabled) {
+      return false;
+    }
+    return true;
+  };
 
   
   
   
   
   if (MOZ_UNLIKELY(aListener->mAllEvents)) {
-    return true;
+    return listenerEnabled();
   }
   if (aEvent->mMessage == eUnidentifiedEvent) {
-    return aListener->mTypeAtom == aEvent->mSpecifiedEventType;
+    return aListener->mTypeAtom == aEvent->mSpecifiedEventType &&
+           listenerEnabled();
   }
   MOZ_ASSERT(mIsMainThreadELM);
-  return aListener->mEventMessage == aEventMessage;
+  return aListener->mEventMessage == aEventMessage && listenerEnabled();
 }
 
 static bool IsDefaultPassiveWhenOnRoot(EventMessage aMessage) {
