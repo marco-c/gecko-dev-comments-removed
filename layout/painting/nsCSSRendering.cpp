@@ -921,6 +921,13 @@ nsCSSRendering::CreateNullBorderRendererWithStyleBorder(
   if (appearance != StyleAppearance::None) {
     nsITheme* theme = aPresContext->Theme();
     if (theme->ThemeSupportsWidget(aPresContext, aForFrame, appearance)) {
+      
+      
+      
+      
+      if (aOutBorderIsEmpty) {
+        *aOutBorderIsEmpty = true;
+      }
       return Nothing();
     }
   }
