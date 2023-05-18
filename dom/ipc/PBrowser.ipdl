@@ -23,7 +23,6 @@ include NeckoChannelParams;
 include WindowGlobalTypes;
 include IPCBlob;
 include IPCStream;
-include IPCTransferable;
 include URIParams;
 include PPrintingTypes;
 include PTabContext;
@@ -629,7 +628,7 @@ parent:
     [Nested=inside_sync] sync DispatchKeyboardEvent(WidgetKeyboardEvent event);
     [Nested=inside_sync] sync DispatchTouchEvent(WidgetTouchEvent event);
 
-    async InvokeDragSession(IPCTransferableData[] transfers, uint32_t action,
+    async InvokeDragSession(IPCDataTransfer[] transfers, uint32_t action,
                             BigBuffer? visualData,
                             uint32_t stride, SurfaceFormat format,
                             LayoutDeviceIntRect dragRect,
@@ -865,8 +864,7 @@ child:
 
 
 
-    
-    async PasteTransferable(IPCTransferableData aTransferableData,
+    async PasteTransferable(IPCDataTransfer aDataTransfer,
                             bool aIsPrivateData,
                             nullable nsIPrincipal aRequestingPrincipal,
                             nsContentPolicyType aContentPolicyType);
