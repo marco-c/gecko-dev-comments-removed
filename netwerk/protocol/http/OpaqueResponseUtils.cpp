@@ -55,8 +55,7 @@ static bool IsOpaqueSafeListedSpecBreakingMIMEType(
   
   
   
-  if (aContentType.EqualsLiteral(AUDIO_MP3) ||
-      aContentType.EqualsLiteral(AUDIO_AAC)) {
+  if (StringBeginsWith(aContentType, "audio/mpeg"_ns)) {
     return true;
   }
 
