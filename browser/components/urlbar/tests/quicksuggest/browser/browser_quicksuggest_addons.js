@@ -447,6 +447,9 @@ async function doDismissTest(command) {
   );
 
   
+  Assert.ok(UrlbarPrefs.get("suggest.addons"));
+
+  
   await UrlbarTestUtils.openResultMenuAndClickItem(
     window,
     ["[data-l10n-id=firefox-suggest-command-dont-show-this]", command],
@@ -454,8 +457,8 @@ async function doDismissTest(command) {
   );
 
   Assert.ok(
-    !UrlbarPrefs.get("addons.featureGate"),
-    "addons.featureGate pref should be set to false after dismissal"
+    !UrlbarPrefs.get("suggest.addons"),
+    "suggest.addons pref should be set to false after dismissal"
   );
 
   
@@ -513,5 +516,5 @@ async function doDismissTest(command) {
 
   await cleanUpNimbus;
   await SpecialPowers.popPrefEnv();
-  UrlbarPrefs.clear("addons.featureGate");
+  UrlbarPrefs.clear("suggest.addons");
 }

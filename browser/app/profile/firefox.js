@@ -598,6 +598,10 @@ pref("browser.urlbar.addons.featureGate", false);
 
 
 
+pref("browser.urlbar.suggest.addons", true);
+
+
+
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
 pref("browser.altClickSave", false);

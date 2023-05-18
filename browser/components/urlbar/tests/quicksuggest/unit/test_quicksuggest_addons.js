@@ -85,6 +85,40 @@ add_task(async function nonsponsoredDisabled() {
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 });
 
+
+
+add_task(async function addonSuggestionsSpecificPrefDisabled() {
+  const prefs = ["suggest.addons", "addons.featureGate"];
+  for (const pref of prefs) {
+    
+    await check_results({
+      context: createContext("test", {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [
+        makeExpectedResult({
+          isBestMatch: true,
+          suggestedIndex: 1,
+        }),
+      ],
+    });
+
+    
+    UrlbarPrefs.set(pref, false);
+    await check_results({
+      context: createContext("test", {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
+      matches: [],
+    });
+
+    
+    UrlbarPrefs.set(pref, true);
+  }
+});
+
 add_task(async function hideIfAlreadyInstalled() {
   
   await check_results({
