@@ -1,4 +1,4 @@
-use crate::consts::HIDCmd;
+use crate::consts::{Capability, HIDCmd};
 use crate::crypto::{PinUvAuthProtocol, PinUvAuthToken, SharedSecret};
 use crate::ctap2::commands::client_pin::{
     GetKeyAgreement, GetPinToken, GetPinUvAuthTokenUsingPinWithPermissions,
@@ -100,7 +100,7 @@ pub trait FidoDevice: HIDDevice {
             return Err(HIDError::DeviceNotInitialized);
         }
 
-        if self.supports_ctap2() {
+        if self.get_authenticator_info().is_some() {
             self.send_cbor_cancellable(msg, keep_alive)
         } else {
             self.send_ctap1_cancellable(msg, keep_alive)
@@ -114,7 +114,7 @@ pub trait FidoDevice: HIDDevice {
     ) -> Result<Req::Output, HIDError> {
         debug!("sending {:?} to {:?}", msg, self);
 
-        let mut data = msg.wire_format(self)?;
+        let mut data = msg.wire_format()?;
         let mut buf: Vec<u8> = Vec::with_capacity(data.len() + 1);
         
         buf.push(Req::command() as u8);
@@ -142,7 +142,7 @@ pub trait FidoDevice: HIDDevice {
         keep_alive: &dyn Fn() -> bool,
     ) -> Result<Req::Output, HIDError> {
         debug!("sending {:?} to {:?}", msg, self);
-        let (data, add_info) = msg.ctap1_format(self)?;
+        let (data, add_info) = msg.ctap1_format()?;
 
         while keep_alive() {
             
@@ -185,20 +185,29 @@ pub trait FidoDevice: HIDDevice {
     
     fn init(&mut self, nonce: Nonce) -> Result<(), HIDError> {
         <Self as HIDDevice>::initialize(self, nonce)?;
-        
-        
-        if self.supports_ctap2() {
-            let command = GetInfo::default();
-            let info = self.send_cbor(&command)?;
-            debug!("{:?} infos: {:?}", self.id(), info);
 
-            self.set_authenticator_info(info);
-        }
-        if self.supports_ctap1() {
-            let command = GetVersion::default();
+        
+        
+        
+        
+        if self.get_device_info().cap_flags.contains(Capability::CBOR) {
+            let command = GetInfo::default();
+            if let Ok(info) = self.send_cbor(&command) {
+                debug!("{:?}: {:?}", self.id(), info);
+                if info.max_supported_version() != AuthenticatorVersion::U2F_V2 {
+                    
+                    self.set_authenticator_info(info);
+                    return Ok(());
+                }
+            }
             
-            self.send_ctap1(&command)?;
+            
+            
         }
+        
+        
+        let command = GetVersion::default();
+        self.send_ctap1(&command)?;
         Ok(())
     }
 
@@ -212,12 +221,7 @@ pub trait FidoDevice: HIDDevice {
         } else {
             
             
-            let msg = match dummy_make_credentials_cmd() {
-                Ok(m) => m,
-                Err(_) => {
-                    return BlinkResult::Cancelled;
-                }
-            };
+            let msg = dummy_make_credentials_cmd();
             info!("Trying to blink: {:?}", &msg);
             
             self.send_msg_cancellable(&msg, keep_alive).map(|_| ())
@@ -251,13 +255,12 @@ pub trait FidoDevice: HIDDevice {
     }
 
     fn establish_shared_secret(&mut self) -> Result<SharedSecret, HIDError> {
-        if !self.supports_ctap2() {
-            return Err(HIDError::UnsupportedCommand);
-        }
+        
+        let info = match self.get_authenticator_info() {
+            Some(info) => info,
+            None => return Err(HIDError::UnsupportedCommand),
+        };
 
-        let info = self
-            .get_authenticator_info()
-            .ok_or(HIDError::DeviceNotInitialized)?;
         let pin_protocol = PinUvAuthProtocol::try_from(info)?;
 
         

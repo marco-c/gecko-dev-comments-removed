@@ -77,6 +77,14 @@ impl RelyingPartyWrapper {
             RelyingPartyWrapper::Hash(ref d) => d.clone(),
         }
     }
+
+    pub fn id(&self) -> Option<&String> {
+        match self {
+            
+            RelyingPartyWrapper::Hash(..) => None,
+            RelyingPartyWrapper::Data(r) => Some(&r.id),
+        }
+    }
 }
 
 

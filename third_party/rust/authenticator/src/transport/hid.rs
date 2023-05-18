@@ -1,4 +1,4 @@
-use crate::consts::{Capability, HIDCmd, CID_BROADCAST};
+use crate::consts::{HIDCmd, CID_BROADCAST};
 use crate::crypto::SharedSecret;
 use crate::ctap2::commands::get_info::AuthenticatorInfo;
 use crate::transport::{errors::HIDError, Nonce};
@@ -30,16 +30,6 @@ where
     fn set_authenticator_info(&mut self, authenticator_info: AuthenticatorInfo);
     fn set_shared_secret(&mut self, secret: SharedSecret);
     fn get_shared_secret(&self) -> Option<&SharedSecret>;
-
-    fn supports_ctap1(&self) -> bool {
-        
-        
-        !self.get_device_info().cap_flags.contains(Capability::NMSG)
-    }
-
-    fn supports_ctap2(&self) -> bool {
-        self.get_device_info().cap_flags.contains(Capability::CBOR)
-    }
 
     
     fn initialize(&mut self, noncecmd: Nonce) -> Result<(), HIDError> {
@@ -74,7 +64,7 @@ where
             .get_property("Product")
             .unwrap_or_else(|_| String::from("Unknown Device"));
 
-        self.set_device_info(U2FDeviceInfo {
+        let info = U2FDeviceInfo {
             vendor_name: vendor.as_bytes().to_vec(),
             device_name: product.as_bytes().to_vec(),
             version_interface: rsp.version_interface,
@@ -82,7 +72,9 @@ where
             version_minor: rsp.version_minor,
             version_build: rsp.version_build,
             cap_flags: rsp.cap_flags,
-        });
+        };
+        debug!("{:?}: {:?}", self.id(), info);
+        self.set_device_info(info);
 
         
         
@@ -116,7 +108,7 @@ where
 
         
         
-        if self.supports_ctap2() {
+        if self.get_authenticator_info().is_some() {
             self.u2f_write(u8::from(HIDCmd::Cancel), &[])?;
         }
         

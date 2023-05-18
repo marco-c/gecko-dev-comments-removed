@@ -60,6 +60,8 @@ pub enum StatusUpdate {
     
     DeviceUnavailable { dev_info: u2ftypes::U2FDeviceInfo },
     
+    PresenceRequired,
+    
     Success { dev_info: u2ftypes::U2FDeviceInfo },
     
     

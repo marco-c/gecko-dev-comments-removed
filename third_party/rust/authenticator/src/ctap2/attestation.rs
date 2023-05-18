@@ -203,9 +203,15 @@ fn parse_attested_cred_data(
 }
 
 bitflags! {
+    // Defining an exhaustive list of flags here ensures that `from_bits_truncate` is lossless and
+    // that `from_bits` never returns None.
     pub struct AuthenticatorDataFlags: u8 {
         const USER_PRESENT = 0x01;
+        const RESERVED_1 = 0x02;
         const USER_VERIFIED = 0x04;
+        const RESERVED_3 = 0x08;
+        const RESERVED_4 = 0x10;
+        const RESERVED_5 = 0x20;
         const ATTESTED = 0x40;
         const EXTENSION_DATA = 0x80;
     }
@@ -224,7 +230,6 @@ fn parse_ad(input: &[u8]) -> IResult<&[u8], AuthenticatorData, NomError<&[u8]>> 
     let (rest, rp_id_hash_res) = map(take(32u8), RpIdHash::from)(input)?;
     
     let rp_id_hash = rp_id_hash_res.unwrap();
-    
     
     let (rest, flags) = map(be_u8, AuthenticatorDataFlags::from_bits_truncate)(rest)?;
     let (rest, counter) = be_u32(rest)?;
@@ -839,5 +844,17 @@ mod test {
         let result = AAGuid::from(&input).expect("Failed to parse AAGuid");
         let res_str = format!("{result:?}");
         assert_eq!(expected, &res_str);
+    }
+
+    #[test]
+    fn test_ad_flags_from_bits() {
+        
+        
+        for x in 0..=u8::MAX {
+            assert_eq!(
+                AuthenticatorDataFlags::from_bits(x),
+                Some(AuthenticatorDataFlags::from_bits_truncate(x))
+            );
+        }
     }
 }
