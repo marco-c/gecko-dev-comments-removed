@@ -11,7 +11,6 @@
 
 #include "FFmpegDataDecoder.h"
 #include "FFmpegLog.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
 #include "prsystem.h"
 #include "VideoUtils.h"
@@ -25,7 +24,7 @@ FFmpegDataDecoder<LIBAV_VER>::FFmpegDataDecoder(FFmpegLibWrapper* aLib,
     : mLib(aLib),
       mCodecContext(nullptr),
       mCodecParser(nullptr),
-      mFrame(nullptr),
+      mFrame(NULL),
       mExtraData(nullptr),
       mCodecID(aCodecID),
       mTaskQueue(TaskQueue::Create(
@@ -80,15 +79,6 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder() {
     FFMPEG_LOG("  couldn't find ffmpeg decoder for codec id %d", mCodecID);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("unable to find codec"));
-  }
-  
-  
-  if (!strcmp(codec->name, "libopenh264") &&
-      !StaticPrefs::media_ffmpeg_allow_openh264()) {
-    FFMPEG_LOG("  unable to find codec (openh264 disabled by pref)");
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("unable to find codec (openh264 disabled by pref)"));
   }
   FFMPEG_LOG("  codec %s : %s", codec->name, codec->long_name);
 
