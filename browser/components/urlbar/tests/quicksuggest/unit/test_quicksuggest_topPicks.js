@@ -42,6 +42,7 @@ const MERINO_SUGGESTIONS = [
 add_setup(async function init() {
   UrlbarPrefs.set("quicksuggest.enabled", true);
   UrlbarPrefs.set("bestMatch.enabled", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
 
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
@@ -49,6 +50,42 @@ add_setup(async function init() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
   });
+});
+
+
+
+add_task(async function nonsponsoredDisabled() {
+  
+  
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+
+  
+  
+  await check_results({
+    context: createContext(SUGGESTION_SEARCH_STRING, {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [
+      makeExpectedResult({
+        isBestMatch: true,
+        suggestedIndex: 1,
+      }),
+    ],
+  });
+
+  
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+  await check_results({
+    context: createContext(SUGGESTION_SEARCH_STRING, {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [],
+  });
+
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 });
 
 
