@@ -2008,7 +2008,36 @@ static bool PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm,
   masm.store32(Imm32(MatchPair::NoMatch), firstMatchStartAddress);
 
   
-  masm.branchIfRope(input, failure);
+  
+  LiveGeneralRegisterSet volatileRegs;
+  if (lastIndex.volatile_()) {
+    volatileRegs.add(lastIndex);
+  }
+  if (input.volatile_()) {
+    volatileRegs.add(input);
+  }
+  if (regexp.volatile_()) {
+    volatileRegs.add(regexp);
+  }
+
+  
+  Label isLinear;
+  masm.branchIfNotRope(input, &isLinear);
+  {
+    masm.PushRegsInMask(volatileRegs);
+
+    using Fn = JSLinearString* (*)(JSString*);
+    masm.setupUnalignedABICall(temp1);
+    masm.passABIArg(input);
+    masm.callWithABI<Fn, js::jit::LinearizeForCharAccessPure>();
+
+    MOZ_ASSERT(!volatileRegs.has(temp1));
+    masm.storeCallPointerResult(temp1);
+    masm.PopRegsInMask(volatileRegs);
+
+    masm.branchTestPtr(Assembler::Zero, temp1, temp1, failure);
+  }
+  masm.bind(&isLinear);
 
   
   Register regexpReg = temp1;
@@ -2023,14 +2052,9 @@ static bool PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm,
                  Address(regexpReg, RegExpShared::offsetOfPatternAtom()),
                  ImmWord(0), &notAtom);
   {
-    LiveGeneralRegisterSet regsToSave(GeneralRegisterSet::Volatile());
-    regsToSave.takeUnchecked(temp1);
-    regsToSave.takeUnchecked(temp2);
-    regsToSave.takeUnchecked(temp3);
-
     masm.computeEffectiveAddress(matchPairsAddress, temp3);
 
-    masm.PushRegsInMask(regsToSave);
+    masm.PushRegsInMask(volatileRegs);
     using Fn = RegExpRunStatus (*)(RegExpShared* re, JSLinearString* input,
                                    size_t start, MatchPairs* matchPairs);
     masm.setupUnalignedABICall(temp2);
@@ -2040,8 +2064,9 @@ static bool PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm,
     masm.passABIArg(temp3);
     masm.callWithABI<Fn, js::ExecuteRegExpAtomRaw>();
 
+    MOZ_ASSERT(!volatileRegs.has(temp1));
     masm.storeCallInt32Result(temp1);
-    masm.PopRegsInMask(regsToSave);
+    masm.PopRegsInMask(volatileRegs);
 
     masm.jump(&checkSuccess);
   }
@@ -2103,18 +2128,6 @@ static bool PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm,
   masm.computeEffectiveAddress(matchPairsAddress, temp2);
   masm.storePtr(temp2, matchesAddress);
   masm.storePtr(lastIndex, startIndexAddress);
-
-  
-  LiveGeneralRegisterSet volatileRegs;
-  if (lastIndex.volatile_()) {
-    volatileRegs.add(lastIndex);
-  }
-  if (input.volatile_()) {
-    volatileRegs.add(input);
-  }
-  if (regexp.volatile_()) {
-    volatileRegs.add(regexp);
-  }
 
   
   masm.computeEffectiveAddress(
