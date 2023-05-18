@@ -391,7 +391,8 @@ void MediaSource::EndOfStream(
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->Ended();
   if (!aError.WasPassed()) {
-    DurationChange(mSourceBuffers->GetHighestBufferedEndTime(), aRv);
+    DurationChange(mSourceBuffers->GetHighestBufferedEndTime().ToBase(1000000),
+                   aRv);
     
     mDecoder->Ended(true);
     return;
