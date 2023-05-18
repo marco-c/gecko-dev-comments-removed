@@ -27,6 +27,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 @property NSPoint position;
 @property(retain) NSView* view;
 @property(retain) NSAppearance* appearance;
+@property BOOL isContextMenu;
 @end
 
 @implementation MOZMenuOpeningInfo
@@ -64,7 +65,8 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 - (NSInteger)asynchronouslyOpenMenu:(NSMenu*)aMenu
                    atScreenPosition:(NSPoint)aPosition
                             forView:(NSView*)aView
-                     withAppearance:(NSAppearance*)aAppearance {
+                     withAppearance:(NSAppearance*)aAppearance
+                      asContextMenu:(BOOL)aIsContextMenu {
   MOZ_RELEASE_ASSERT(!mPendingOpening,
                      "A menu is already waiting to open. Before opening the next one, either wait "
                      "for this one to open or cancel the request.");
@@ -77,6 +79,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   info.position = aPosition;
   info.view = aView;
   info.appearance = aAppearance;
+  info.isContextMenu = aIsContextMenu;
   mPendingOpening = [info retain];
   [info release];
 
@@ -102,7 +105,8 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
       [self _openMenu:info.menu
           atScreenPosition:info.position
                    forView:info.view
-            withAppearance:info.appearance];
+            withAppearance:info.appearance
+             asContextMenu:info.isContextMenu];
     } @catch (NSException* exception) {
       nsObjCExceptionLog(exception);
     }
@@ -126,7 +130,10 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 - (void)_openMenu:(NSMenu*)aMenu
     atScreenPosition:(NSPoint)aPosition
              forView:(NSView*)aView
-      withAppearance:(NSAppearance*)aAppearance {
+      withAppearance:(NSAppearance*)aAppearance
+       asContextMenu:(BOOL)aIsContextMenu {
+  
+  
   
   
   
@@ -167,18 +174,28 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 
   if (aView) {
     NSWindow* window = aView.window;
-    
     NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(window, aPosition);
-    NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
-                                        location:locationInWindow
-                                   modifierFlags:0
-                                       timestamp:NSProcessInfo.processInfo.systemUptime
-                                    windowNumber:window.windowNumber
-                                         context:nil
-                                     eventNumber:0
-                                      clickCount:1
-                                        pressure:0.0f];
-    [NSMenu popUpContextMenu:aMenu withEvent:event forView:aView];
+    if (aIsContextMenu) {
+      
+      NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
+                                          location:locationInWindow
+                                     modifierFlags:0
+                                         timestamp:NSProcessInfo.processInfo.systemUptime
+                                      windowNumber:window.windowNumber
+                                           context:nil
+                                       eventNumber:0
+                                        clickCount:1
+                                          pressure:0.0f];
+      [NSMenu popUpContextMenu:aMenu withEvent:event forView:aView];
+    } else {
+      
+      
+      
+      
+      
+      NSPoint locationInView = [aView convertPoint:locationInWindow fromView:nil];
+      [aMenu popUpMenuPositioningItem:nil atLocation:locationInView inView:aView];
+    }
   } else {
     
     

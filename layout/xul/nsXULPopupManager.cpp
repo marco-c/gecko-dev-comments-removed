@@ -810,11 +810,34 @@ void nsXULPopupManager::ShowMenu(nsIContent* aMenu, bool aSelectFirstItem) {
   BeginShowingPopup(pendingPopup, parentIsContextMenu, aSelectFirstItem);
 }
 
+static bool ShouldUseNativeContextMenus() {
+#ifdef HAS_NATIVE_MENU_SUPPORT
+  return mozilla::widget::NativeMenuSupport::ShouldUseNativeContextMenus();
+#else
+  return false;
+#endif
+}
+
 void nsXULPopupManager::ShowPopup(Element* aPopup, nsIContent* aAnchorContent,
                                   const nsAString& aPosition, int32_t aXPos,
                                   int32_t aYPos, bool aIsContextMenu,
                                   bool aAttributesOverride,
                                   bool aSelectFirstItem, Event* aTriggerEvent) {
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  if (!aAnchorContent && aPosition.IsEmpty() && ShouldUseNativeContextMenus() &&
+      aPopup->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menupopup) &&
+      ShowPopupAsNativeMenu(aPopup, aXPos, aYPos, aIsContextMenu,
+                            aTriggerEvent)) {
+    return;
+  }
+#endif
+
   nsMenuPopupFrame* popupFrame = GetPopupFrameForContent(aPopup, true);
   if (!popupFrame || !MayShowPopup(popupFrame)) {
     return;
@@ -828,14 +851,6 @@ void nsXULPopupManager::ShowPopup(Element* aPopup, nsIContent* aAnchorContent,
                               aAttributesOverride);
 
   BeginShowingPopup(pendingPopup, aIsContextMenu, aSelectFirstItem);
-}
-
-static bool ShouldUseNativeContextMenus() {
-#ifdef HAS_NATIVE_MENU_SUPPORT
-  return mozilla::widget::NativeMenuSupport::ShouldUseNativeContextMenus();
-#else
-  return false;
-#endif
 }
 
 void nsXULPopupManager::ShowPopupAtScreen(Element* aPopup, int32_t aXPos,
@@ -912,7 +927,8 @@ bool nsXULPopupManager::ShowPopupAsNativeMenu(Element* aPopup, int32_t aXPos,
   if (!frame) {
     frame = presContext->PresShell()->GetRootFrame();
   }
-  mNativeMenu->ShowAsContextMenu(frame, CSSIntPoint(aXPos, aYPos));
+  mNativeMenu->ShowAsContextMenu(frame, CSSIntPoint(aXPos, aYPos),
+                                 aIsContextMenu);
 
   
   
