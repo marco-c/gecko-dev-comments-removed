@@ -32,6 +32,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 template <unsigned int key_bits=16,
 	 unsigned int value_bits=8 + 32 - key_bits,
 	 unsigned int cache_bits=8,

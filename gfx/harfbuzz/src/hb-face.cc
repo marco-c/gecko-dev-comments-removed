@@ -60,6 +60,12 @@
 
 
 
+
+
+
+
+
+
 unsigned int
 hb_face_count (hb_blob_t *blob)
 {

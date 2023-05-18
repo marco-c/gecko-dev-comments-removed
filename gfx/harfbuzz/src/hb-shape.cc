@@ -271,9 +271,13 @@ hb_shape_justify (hb_font_t          *font,
 
   
   if (min_target_advance <= *advance && *advance <= max_target_advance)
+  {
+    *var_tag = HB_TAG_NONE;
+    *var_value = 0.0f;
     return hb_shape_full (font, buffer,
 			  features, num_features,
 			  shaper_list);
+  }
 
   hb_face_t *face = font->face;
 
@@ -297,6 +301,8 @@ hb_shape_justify (hb_font_t          *font,
   
   if (!tag)
   {
+    *var_tag = HB_TAG_NONE;
+    *var_value = 0.0f;
     if (hb_shape_full (font, buffer,
 		       features, num_features,
 		       shaper_list))
@@ -331,7 +337,11 @@ hb_shape_justify (hb_font_t          *font,
 
 
   if (min_target_advance <= *advance && *advance <= max_target_advance)
+  {
+    *var_tag = HB_TAG_NONE;
+    *var_value = 0.0f;
     return true;
+  }
 
   
   double a, b, ya, yb;
@@ -355,6 +365,7 @@ hb_shape_justify (hb_font_t          *font,
 
     if (yb <= (double) max_target_advance)
     {
+      *var_value = (float) b;
       *advance = (float) yb;
       return true;
     }
@@ -379,6 +390,7 @@ hb_shape_justify (hb_font_t          *font,
 
     if (ya >= (double) min_target_advance)
     {
+      *var_value = (float) a;
       *advance = (float) ya;
       return true;
     }

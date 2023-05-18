@@ -55,6 +55,11 @@
 
 
 
+
+
+
+
+
 hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
 			     const hb_segment_properties_t *b)
@@ -263,7 +268,7 @@ hb_buffer_t::similar (const hb_buffer_t &src)
   unicode = hb_unicode_funcs_reference (src.unicode);
   flags = src.flags;
   cluster_level = src.cluster_level;
-  replacement = src.invisible;
+  replacement = src.replacement;
   invisible = src.invisible;
   not_found = src.not_found;
 }

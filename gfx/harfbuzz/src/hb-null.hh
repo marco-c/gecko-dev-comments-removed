@@ -37,7 +37,7 @@
 
 
 
-#define HB_NULL_POOL_SIZE 448
+#define HB_NULL_POOL_SIZE 520
 
 template <typename T, typename>
 struct _hb_has_min_size : hb_false_type {};

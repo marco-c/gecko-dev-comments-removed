@@ -66,6 +66,11 @@
 
 
 
+
+
+
+
+
 static hb_bool_t
 hb_font_get_font_h_extents_nil (hb_font_t         *font HB_UNUSED,
 				void              *font_data HB_UNUSED,

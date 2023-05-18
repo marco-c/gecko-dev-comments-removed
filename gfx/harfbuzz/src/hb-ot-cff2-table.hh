@@ -38,7 +38,7 @@ namespace CFF {
 
 
 
-#define HB_OT_TAG_cff2 HB_TAG('C','F','F','2')
+#define HB_OT_TAG_CFF2 HB_TAG('C','F','F','2')
 
 typedef CFFIndex<HBUINT32>  CFF2Index;
 template <typename Type> struct CFF2IndexOf : CFFIndexOf<HBUINT32, Type> {};
@@ -379,7 +379,7 @@ using namespace CFF;
 
 struct cff2
 {
-  static constexpr hb_tag_t tableTag = HB_OT_TAG_cff2;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_CFF2;
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

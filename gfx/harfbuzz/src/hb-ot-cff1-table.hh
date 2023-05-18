@@ -44,7 +44,7 @@ namespace CFF {
 
 
 
-#define HB_OT_TAG_cff1 HB_TAG('C','F','F',' ')
+#define HB_OT_TAG_CFF1 HB_TAG('C','F','F',' ')
 
 #define CFF_UNDEF_SID   CFF_UNDEF_CODE
 
@@ -1019,7 +1019,7 @@ using namespace CFF;
 
 struct cff1
 {
-  static constexpr hb_tag_t tableTag = HB_OT_TAG_cff1;
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_CFF1;
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

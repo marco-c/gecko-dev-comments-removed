@@ -520,6 +520,37 @@ hb_subset_preprocess (hb_face_t *source)
   return new_source;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN hb_map_t*
+hb_subset_input_old_to_new_glyph_mapping (hb_subset_input_t *input)
+{
+  return &input->glyph_map;
+}
+
 #ifdef HB_EXPERIMENTAL_API
 
 

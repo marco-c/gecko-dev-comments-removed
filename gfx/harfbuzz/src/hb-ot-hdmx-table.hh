@@ -76,7 +76,7 @@ struct DeviceRecord
   HBUINT8			maxWidth;	
   UnsizedArrayOf<HBUINT8>	widthsZ;	
   public:
-  DEFINE_SIZE_ARRAY (2, widthsZ);
+  DEFINE_SIZE_UNBOUNDED (2);
 };
 
 
@@ -86,14 +86,6 @@ struct hdmx
 
   unsigned int get_size () const
   { return min_size + numRecords * sizeDeviceRecord; }
-
-  const DeviceRecord& operator [] (unsigned int i) const
-  {
-    
-
-    if (unlikely (i >= numRecords)) return Null (DeviceRecord);
-    return StructAtOffset<DeviceRecord> (&this->firstDeviceRecord, i * sizeDeviceRecord);
-  }
 
   template<typename Iterator,
 	   hb_requires (hb_is_iterator (Iterator))>

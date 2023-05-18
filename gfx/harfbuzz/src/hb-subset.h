@@ -76,6 +76,8 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
+
+
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -87,6 +89,7 @@ typedef enum {
   HB_SUBSET_FLAGS_NOTDEF_OUTLINE =	     0x00000040u,
   HB_SUBSET_FLAGS_GLYPH_NAMES =		     0x00000080u,
   HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES =  0x00000100u,
+  HB_SUBSET_FLAGS_NO_LAYOUT_CLOSURE =        0x00000200u,
 } hb_subset_flags_t;
 
 
@@ -150,6 +153,9 @@ hb_subset_input_glyph_set (hb_subset_input_t *input);
 
 HB_EXTERN hb_set_t *
 hb_subset_input_set (hb_subset_input_t *input, hb_subset_sets_t set_type);
+
+HB_EXTERN hb_map_t*
+hb_subset_input_old_to_new_glyph_mapping (hb_subset_input_t *input);
 
 HB_EXTERN hb_subset_flags_t
 hb_subset_input_get_flags (hb_subset_input_t *input);

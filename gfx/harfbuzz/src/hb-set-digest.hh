@@ -58,6 +58,12 @@
 
 
 
+
+
+
+
+
+
 template <typename mask_t, unsigned int shift>
 struct hb_set_digest_bits_pattern_t
 {
