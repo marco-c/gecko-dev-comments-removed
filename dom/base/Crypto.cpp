@@ -92,7 +92,7 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
   aRetval.set(view);
 }
 
-void Crypto::RandomUUID(nsAString& aRetVal) {
+void Crypto::RandomUUID(nsACString& aRetVal) {
   
   static_assert(NSID_LENGTH == 39);
 
@@ -100,7 +100,7 @@ void Crypto::RandomUUID(nsAString& aRetVal) {
   MOZ_ASSERT(strlen(uuidString.get()) == NSID_LENGTH - 1);
 
   
-  CopyASCIItoUTF16(Substring(uuidString.get() + 1, NSID_LENGTH - 3), aRetVal);
+  aRetVal = Substring(uuidString.get() + 1, NSID_LENGTH - 3);
   MOZ_ASSERT(aRetVal.Length() == NSID_LENGTH - 3);
 }
 
