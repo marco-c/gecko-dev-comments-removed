@@ -494,7 +494,9 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
             
             
             
-            const TimeUnit CROSS_MOOF_CTS_MERGE_THRESHOLD = TimeUnit::FromSeconds(aMvhd.mTimescale / 1000000., aMvhd.mTimescale);
+            const TimeUnit CROSS_MOOF_CTS_MERGE_THRESHOLD =
+                TimeUnit::FromSeconds(aMvhd.mTimescale / 1000000.,
+                                      aMvhd.mTimescale);
             
             
             if (ctsOrder[0]->mCompositionRange.start > prevCts.mCtsEndTime &&
@@ -532,7 +534,8 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
               : TimeUnit::Zero(aMvhd.mTimescale);
       TimeUnit decodeDuration = endDecodeTime - mIndex[0].mDecodeTime;
       double adjust = !presentationDuration.IsZero()
-                          ? (double)decodeDuration.ToMicroseconds() / (double)presentationDuration.ToMicroseconds()
+                          ? (double)decodeDuration.ToMicroseconds() /
+                                (double)presentationDuration.ToMicroseconds()
                           : 0.;
       TimeUnit dtsOffset = mIndex[0].mDecodeTime;
       TimeUnit compositionDuration(0, aMvhd.mTimescale);
@@ -542,9 +545,9 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
         sample.mDecodeTime = dtsOffset + compositionDuration.MultDouble(adjust);
         compositionDuration += sample.mCompositionRange.Length();
       }
-      mTimeRange = MP4Interval<TimeUnit>(
-          ctsOrder[0]->mCompositionRange.start,
-          ctsOrder.LastElement()->mCompositionRange.end);
+      mTimeRange =
+          MP4Interval<TimeUnit>(ctsOrder[0]->mCompositionRange.start,
+                                ctsOrder.LastElement()->mCompositionRange.end);
     }
     ProcessCencAuxInfo(aSinf.mDefaultEncryptionType);
   }
@@ -808,17 +811,16 @@ Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
       offset += sampleSize;
 
       TimeUnit decodeOffset, emptyOffset, startCts, endCts;
-      MOZ_TRY_VAR(decodeOffset, aMdhd.ToTimeUnit((int64_t)decodeTime - aEdts.mMediaStart));
+      MOZ_TRY_VAR(decodeOffset,
+                  aMdhd.ToTimeUnit((int64_t)decodeTime - aEdts.mMediaStart));
       MOZ_TRY_VAR(emptyOffset, aMvhd.ToTimeUnit(aEdts.mEmptyOffset));
       sample.mDecodeTime = decodeOffset + emptyOffset;
-      MOZ_TRY_VAR(startCts,
-                  aMdhd.ToTimeUnit((int64_t)decodeTime + ctsOffset -
-                                       aEdts.mMediaStart));
-      MOZ_TRY_VAR(endCts,
-                  aMdhd.ToTimeUnit((int64_t)decodeTime + ctsOffset +
-                                       sampleDuration - aEdts.mMediaStart));
-      sample.mCompositionRange = MP4Interval<TimeUnit>(
-          startCts + emptyOffset, endCts + emptyOffset);
+      MOZ_TRY_VAR(startCts, aMdhd.ToTimeUnit((int64_t)decodeTime + ctsOffset -
+                                             aEdts.mMediaStart));
+      MOZ_TRY_VAR(endCts, aMdhd.ToTimeUnit((int64_t)decodeTime + ctsOffset +
+                                           sampleDuration - aEdts.mMediaStart));
+      sample.mCompositionRange =
+          MP4Interval<TimeUnit>(startCts + emptyOffset, endCts + emptyOffset);
       
       
       sample.mSync = !(sampleFlags & 0x1010000) || aIsAudio;

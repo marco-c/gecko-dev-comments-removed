@@ -189,8 +189,9 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      RefPtr<MP4TrackDemuxer> demuxer = new MP4TrackDemuxer(
-          mResource, std::move(info.Ref()), *indices.Ref().get(), info.Ref()->mTimeScale);
+      RefPtr<MP4TrackDemuxer> demuxer =
+          new MP4TrackDemuxer(mResource, std::move(info.Ref()),
+                              *indices.Ref().get(), info.Ref()->mTimeScale);
       DDLINKCHILD("audio demuxer", demuxer.get());
       mAudioDemuxers.AppendElement(std::move(demuxer));
     }
@@ -226,8 +227,9 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      RefPtr<MP4TrackDemuxer> demuxer = new MP4TrackDemuxer(
-          mResource, std::move(info.Ref()), *indices.Ref().get(), info.Ref()->mTimeScale);
+      RefPtr<MP4TrackDemuxer> demuxer =
+          new MP4TrackDemuxer(mResource, std::move(info.Ref()),
+                              *indices.Ref().get(), info.Ref()->mTimeScale);
       DDLINKCHILD("video demuxer", demuxer.get());
       mVideoDemuxers.AppendElement(std::move(demuxer));
     }
@@ -310,7 +312,8 @@ UniquePtr<EncryptionInfo> MP4Demuxer::GetCrypto() {
 
 MP4TrackDemuxer::MP4TrackDemuxer(MediaResource* aResource,
                                  UniquePtr<TrackInfo>&& aInfo,
-                                 const IndiceWrapper& aIndices, int32_t aTimeScale)
+                                 const IndiceWrapper& aIndices,
+                                 int32_t aTimeScale)
     : mResource(aResource),
       mStream(new ResourceStream(aResource)),
       mInfo(std::move(aInfo)),
@@ -335,9 +338,9 @@ MP4TrackDemuxer::MP4TrackDemuxer(MediaResource* aResource,
       videoInfo->mDisplay.height = spsdata.display_height;
     }
   } else if (videoInfo && VPXDecoder::IsVP9(mInfo->mMimeType)) {
-      mType = kVP9;
+    mType = kVP9;
   } else if (audioInfo && MP4Decoder::IsAAC(mInfo->mMimeType)) {
-      mType = kAAC;
+    mType = kAAC;
   }
 }
 
@@ -453,23 +456,27 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
       sample->mTime = TimeUnit::Zero(originalPts);
       sample->mDuration = std::max(TimeUnit::Zero(sample->mTime),
                                    originalPts + sample->mDuration);
-      sample->mOriginalPresentationWindow = Some(TimeInterval{originalPts, originalEnd});
+      sample->mOriginalPresentationWindow =
+          Some(TimeInterval{originalPts, originalEnd});
     }
     
     
     
     
     
-    TimeUnit totalMediaDurationIncludingTrimming = info->mDuration - info->mMediaTime;
-    if (mType == kAAC && sample->GetEndTime() == totalMediaDurationIncludingTrimming) {
+    TimeUnit totalMediaDurationIncludingTrimming =
+        info->mDuration - info->mMediaTime;
+    if (mType == kAAC &&
+        sample->GetEndTime() == totalMediaDurationIncludingTrimming) {
       MOZ_ASSERT(!mIterator->HasNext());
       
       mIterator->Seek(sample->mTime - sample->mDuration);
       RefPtr<MediaRawData> previousSample = mIterator->GetNext();
       if (previousSample) {
-        TimeInterval fullPacketDuration{previousSample->mTime, previousSample->GetEndTime()};
-        sample->mOriginalPresentationWindow = Some(
-            TimeInterval{originalPts, originalPts + fullPacketDuration.Length()});
+        TimeInterval fullPacketDuration{previousSample->mTime,
+                                        previousSample->GetEndTime()};
+        sample->mOriginalPresentationWindow = Some(TimeInterval{
+            originalPts, originalPts + fullPacketDuration.Length()});
       }
       
       
@@ -561,8 +568,7 @@ nsresult MP4TrackDemuxer::GetNextRandomAccessPoint(TimeUnit* aTime) {
 }
 
 RefPtr<MP4TrackDemuxer::SkipAccessPointPromise>
-MP4TrackDemuxer::SkipToNextRandomAccessPoint(
-    const TimeUnit& aTimeThreshold) {
+MP4TrackDemuxer::SkipToNextRandomAccessPoint(const TimeUnit& aTimeThreshold) {
   mQueuedSample = nullptr;
   
   uint32_t parsed = 0;
