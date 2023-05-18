@@ -271,6 +271,15 @@ const startupPhases = {
       condition: WIN,
       stat: 1,
     },
+    {
+      
+      
+      
+      path: "GreD:jogfile.json",
+      condition:
+        WIN && Services.prefs.getBoolPref("telemetry.fog.artifact_build"),
+      stat: 1,
+    },
   ],
 
   
