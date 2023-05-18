@@ -5,7 +5,7 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use crate::values::animated::{Animate, Procedure, ToAnimatedZero, lists};
+use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::CSSFloat;
 use cssparser::Parser;
@@ -14,6 +14,14 @@ use std::iter::{Cloned, Peekable};
 use std::slice;
 use style_traits::values::SequenceWriter;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(missing_docs)]
+pub enum AllowEmpty {
+    Yes,
+    No,
+}
 
 
 
@@ -160,6 +168,41 @@ impl SVGPathData {
 
         Ok(SVGPathData(crate::ArcSlice::from_iter(result.into_iter())))
     }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse<'i, 't>(
+        input: &mut Parser<'i, 't>,
+        allow_empty: AllowEmpty,
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        let path_string = input.expect_string()?.as_ref();
+
+        
+        let mut path_parser = PathParser::new(path_string);
+        while skip_wsp(&mut path_parser.chars) {
+            if path_parser.parse_subpath().is_err() {
+                return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+            }
+        }
+
+        
+        
+        
+        
+        if matches!(allow_empty, AllowEmpty::No) && path_parser.path.is_empty() {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+
+        Ok(SVGPathData(crate::ArcSlice::from_iter(
+            path_parser.path.into_iter(),
+        )))
+    }
 }
 
 impl ToCss for SVGPathData {
@@ -180,29 +223,14 @@ impl ToCss for SVGPathData {
 }
 
 impl Parse for SVGPathData {
-    
-    
-    
-    
-    
     fn parse<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let location = input.current_source_location();
-        let path_string = input.expect_string()?.as_ref();
-
         
-        let mut path_parser = PathParser::new(path_string);
-        while skip_wsp(&mut path_parser.chars) {
-            if path_parser.parse_subpath().is_err() {
-                return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-            }
-        }
-
-        Ok(SVGPathData(crate::ArcSlice::from_iter(
-            path_parser.path.into_iter(),
-        )))
+        
+        
+        SVGPathData::parse(input, AllowEmpty::Yes)
     }
 }
 
