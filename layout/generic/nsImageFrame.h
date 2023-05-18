@@ -293,9 +293,14 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   friend class nsImageLoadingContent;
   friend class mozilla::PresShell;
 
-  void OnSizeAvailable(imgIRequest* aRequest);
+  void OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
   void OnFrameUpdate(imgIRequest* aRequest, const nsIntRect* aRect);
-  void OnLoadComplete(imgIRequest* aRequest);
+  void OnLoadComplete(imgIRequest* aRequest, nsresult aStatus);
+
+  
+
+
+  void NotifyNewCurrentRequest(imgIRequest* aRequest, nsresult aStatus);
 
   
   void SetForceSyncDecoding(bool aForce) { mForceSyncDecoding = aForce; }
@@ -352,7 +357,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
   void UpdateImage(imgIRequest*, imgIContainer*);
-  void UpdateImage(imgIRequest*);
 
   
 
