@@ -237,6 +237,8 @@ class HTMLEditUtils final {
                              const nsIContent& aChild) {
     switch (aChild.NodeType()) {
       case nsINode::TEXT_NODE:
+      case nsINode::COMMENT_NODE:
+      case nsINode::CDATA_SECTION_NODE:
       case nsINode::ELEMENT_NODE:
       case nsINode::DOCUMENT_FRAGMENT_NODE:
         return HTMLEditUtils::CanNodeContain(aParentNodeName,
@@ -249,9 +251,11 @@ class HTMLEditUtils final {
   
   static bool CanNodeContain(nsAtom& aParentNodeName, nsAtom& aChildNodeName) {
     nsHTMLTag childTagEnum;
-    
     if (&aChildNodeName == nsGkAtoms::textTagName) {
       childTagEnum = eHTMLTag_text;
+    } else if (&aChildNodeName == nsGkAtoms::commentTagName ||
+               &aChildNodeName == nsGkAtoms::cdataTagName) {
+      childTagEnum = eHTMLTag_comment;
     } else {
       childTagEnum = nsHTMLTags::AtomTagToId(&aChildNodeName);
     }
