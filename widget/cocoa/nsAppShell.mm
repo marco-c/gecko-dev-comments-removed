@@ -27,7 +27,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsObjCExceptions.h"
 #include "nsCocoaUtils.h"
-#include "nsCocoaFeatures.h"
 #include "nsChildView.h"
 #include "nsToolkit.h"
 #include "TextInputHandler.h"
@@ -786,35 +785,6 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
 
 
 
-
-static void PinSidecarCoreTextCStringSections() {
-  if (!dlopen("/System/Library/PrivateFrameworks/SidecarCore.framework/SidecarCore", RTLD_LAZY)) {
-    return;
-  }
-
-  
-  
-  Class displayManagerClass = NSClassFromString(@"SidecarDisplayManager");
-  if ([displayManagerClass respondsToSelector:@selector(sharedManager)]) {
-    id sharedManager = [displayManagerClass performSelector:@selector(sharedManager)];
-    if ([sharedManager respondsToSelector:@selector(devices)]) {
-      [sharedManager performSelector:@selector(devices)];
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 NS_IMETHODIMP
 nsAppShell::Run(void) {
   NS_ASSERTION(!mStarted, "nsAppShell::Run() called multiple times");
@@ -823,9 +793,6 @@ nsAppShell::Run(void) {
   mStarted = true;
 
   if (XRE_IsParentProcess()) {
-    if (nsCocoaFeatures::OnVenturaOrLater()) {
-      PinSidecarCoreTextCStringSections();
-    }
     AddScreenWakeLockListener();
   }
 
