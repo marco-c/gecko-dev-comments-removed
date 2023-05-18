@@ -350,8 +350,6 @@ class nsContentList : public nsBaseContentList,
 
   void LastRelease() override;
 
-  class HashEntry;
-
  protected:
   
   
@@ -487,15 +485,6 @@ class nsContentList : public nsBaseContentList,
 
 
   const bool mIsLiveList : 1;
-  
-
-
-
-
-
-
-
-  bool mInHashtable : 1;
 
 #ifdef DEBUG_CONTENT_LIST
   void AssertInSync();
@@ -542,8 +531,6 @@ class nsCacheableFuncStringContentList : public nsContentList {
 #ifdef DEBUG
   ContentListType mType;
 #endif
-
-  class HashEntry;
 
  protected:
   nsCacheableFuncStringContentList(
