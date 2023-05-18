@@ -71,6 +71,7 @@ user_pref("media.peerconnection.enabled", true);
 
 
 user_pref("places.database.lastMaintenance", 2147483647);
+user_pref("plugin.state.flash", 0);
 user_pref("privacy.reduceTimerPrecision", false); 
 user_pref("privacy.trackingprotection.annotate_channels", false);
 user_pref("privacy.trackingprotection.enabled", false);
