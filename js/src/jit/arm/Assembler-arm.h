@@ -261,7 +261,6 @@ static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
 
 static constexpr Register RegExpExecTestRegExpReg = CallTempReg0;
 static constexpr Register RegExpExecTestStringReg = CallTempReg1;
-static constexpr Register RegExpExecTestLastIndexReg = CallTempReg2;
 
 
 static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
