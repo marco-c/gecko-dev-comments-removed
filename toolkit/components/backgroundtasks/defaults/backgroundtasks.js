@@ -43,3 +43,6 @@ pref("gfx.font-list-omt.enabled", false);
 
 
 pref("security.nocertdb", true);
+
+
+pref("preferences.allow.omt-write", false);
