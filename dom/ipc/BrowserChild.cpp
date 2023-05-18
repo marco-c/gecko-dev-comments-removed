@@ -2135,7 +2135,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityInsertText(
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvPasteTransferable(
-    const IPCDataTransfer& aDataTransfer, const bool& aIsPrivateData,
+    const IPCTransferableData& aTransferableData, const bool& aIsPrivateData,
     nsIPrincipal* aRequestingPrincipal,
     const nsContentPolicyType& aContentPolicyType) {
   nsresult rv;
@@ -2144,9 +2144,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvPasteTransferable(
   NS_ENSURE_SUCCESS(rv, IPC_OK());
   trans->Init(nullptr);
 
-  rv = nsContentUtils::IPCTransferableToTransferable(
-      aDataTransfer, aIsPrivateData, aRequestingPrincipal, aContentPolicyType,
-      true , trans, false );
+  rv = nsContentUtils::IPCTransferableDataToTransferable(
+      aTransferableData, aIsPrivateData, aRequestingPrincipal,
+      aContentPolicyType, true , trans,
+      false );
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   nsCOMPtr<nsIDocShell> ourDocShell = do_GetInterface(WebNavigation());
