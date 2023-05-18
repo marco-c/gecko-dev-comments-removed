@@ -70,6 +70,17 @@ struct AacCodecSpecificData {
            *mDecoderConfigDescriptorBinaryBlob ==
                *rhs.mDecoderConfigDescriptorBinaryBlob;
   }
+  
+  
+  
+
+  
+  
+  uint32_t mEncoderDelayFrames{0};
+
+  
+  
+  uint64_t mMediaFrameCount{0};
 
   
   
