@@ -66,7 +66,6 @@ pref("browser.cache.memory_limit", 5120);
 pref("image.cache.size", 1048576); 
 
 
-pref("browser.offline-apps.notify", true);
 pref("browser.cache.offline.capacity", 5120); 
 
 
