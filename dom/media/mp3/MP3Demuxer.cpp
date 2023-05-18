@@ -681,6 +681,7 @@ already_AddRefed<MediaRawData> MP3TrackDemuxer::GetNextFrame(
 
   
   
+  
   MOZ_ASSERT(frame->mDuration.IsPositiveOrZero());
 
   frame->mDuration = Duration(1);
@@ -688,8 +689,37 @@ already_AddRefed<MediaRawData> MP3TrackDemuxer::GetNextFrame(
   frame->mKeyframe = true;
   frame->mEOS = mEOS;
 
-  if (frame->mEOS) {
+  
+  
+  
+  
+  
+  
+  if (mParser.VBRInfo().Type() == FrameParser::VBRHeader::XING &&
+      Padding().IsPositive() &&
+      frame->GetEndTime() > Duration().valueOr(TimeUnit::FromInfinity())) {
+    TimeUnit duration = Duration().value();
+    TimeUnit inPaddingZone = frame->GetEndTime() - duration;
+    TimeUnit originalEnd = frame->GetEndTime();
+    TimeUnit originalPts = frame->mTime;
+    frame->mDuration -= inPaddingZone;
+    
+    if (frame->mDuration.IsNegative()) {
+      frame->mDuration = TimeUnit::Zero();
+    }
+    MP3LOG(
+        "Found padding spanning multiple packets -- trimming [%lf,%lf] to "
+        "[%lf,%lf] (stream duration: %lf)",
+        originalPts.ToSeconds(), originalEnd.ToSeconds(),
+        frame->mTime.ToSeconds(), frame->GetEndTime().ToSeconds(),
+        duration.ToSeconds());
+  } else if (frame->mEOS && Padding() <= frame->mDuration) {
     frame->mDuration -= Padding();
+    MOZ_ASSERT(frame->mDuration.IsPositiveOrZero());
+    MP3LOG(
+        "Trimming last packet %lf to [%lf,%lf]",
+        Padding().ToSeconds(), frame->mTime.ToSeconds(),
+        frame->GetEndTime().ToSeconds());
   }
 
 
