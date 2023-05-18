@@ -142,7 +142,7 @@ class MediaSource final : public DOMEventTargetHelper,
   void DurationChange(double aNewDuration, ErrorResult& aRv);
 
   
-  void SetDuration(double aDuration);
+  void SetDuration(const media::TimeUnit& aDuration);
 
   typedef MozPromise<bool, MediaResult,  true>
       ActiveCompletionPromise;

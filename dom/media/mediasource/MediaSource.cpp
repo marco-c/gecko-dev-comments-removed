@@ -265,9 +265,9 @@ void MediaSource::SetDuration(double aDuration, ErrorResult& aRv) {
           aRv.ErrorCodeAsInt());
 }
 
-void MediaSource::SetDuration(double aDuration) {
+void MediaSource::SetDuration(const media::TimeUnit& aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetDuration(aDuration=%f)", aDuration);
+  MSE_API("SetDuration(aDuration=%f)", aDuration.ToSeconds());
   mDecoder->SetMediaSourceDuration(aDuration);
 }
 
@@ -614,7 +614,7 @@ void MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv) {
 
   
   
-  mDecoder->SetMediaSourceDuration(aNewDuration);
+  mDecoder->SetMediaSourceDuration(media::TimeUnit::FromSeconds(aNewDuration));
 }
 
 already_AddRefed<Promise> MediaSource::MozDebugReaderData(ErrorResult& aRv) {
