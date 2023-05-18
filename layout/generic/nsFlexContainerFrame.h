@@ -166,8 +166,8 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 #endif
 
   Maybe<nscoord> GetNaturalBaselineBOffset(
-      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
-      BaselineExportContext) const override;
+      mozilla::WritingMode aWM,
+      BaselineSharingGroup aBaselineGroup) const override;
 
   
   void UnionInFlowChildOverflow(mozilla::OverflowAreas&);
