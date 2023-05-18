@@ -5549,7 +5549,7 @@ void nsBlockFrame::DrainSelfPushedFloats() {
   
   
   
-  nsPresContext* presContext = PresContext();
+  mozilla::PresShell* presShell = PresShell();
   nsFrameList* ourPushedFloats = GetPushedFloats();
   if (ourPushedFloats) {
     
@@ -5563,17 +5563,16 @@ void nsBlockFrame::DrainSelfPushedFloats() {
       insertionPrevSibling = f;
     }
 
-    for (nsIFrame *f = ourPushedFloats->LastChild(), *next; f; f = next) {
-      next = f->GetPrevSibling();
+    nsIFrame* f = ourPushedFloats->LastChild();
+    while (f) {
+      nsIFrame* prevSibling = f->GetPrevSibling();
 
       if (f->GetPrevContinuation()) {
         
       } else {
         nsPlaceholderFrame* placeholder = f->GetPlaceholderFrame();
         nsIFrame* floatOriginalParent =
-            presContext->PresShell()
-                ->FrameConstructor()
-                ->GetFloatContainingBlock(placeholder);
+            presShell->FrameConstructor()->GetFloatContainingBlock(placeholder);
         if (floatOriginalParent != this) {
           
           
@@ -5583,10 +5582,12 @@ void nsBlockFrame::DrainSelfPushedFloats() {
           mFloats.InsertFrame(nullptr, insertionPrevSibling, f);
         }
       }
+
+      f = prevSibling;
     }
 
     if (ourPushedFloats->IsEmpty()) {
-      RemovePushedFloats()->Delete(presContext->PresShell());
+      RemovePushedFloats()->Delete(presShell);
     }
   }
 }
