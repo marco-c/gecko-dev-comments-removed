@@ -92,7 +92,9 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   
   const uint32_t desiredPagesPerSheet = mPD->PagesPerSheetInfo()->mNumPages;
 
-  if (desiredPagesPerSheet > 1) {
+  
+  
+  if (desiredPagesPerSheet > 1 && !GetPrevContinuation()) {
     ComputePagesPerSheetOriginAndScale();
   }
 
