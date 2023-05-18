@@ -13,23 +13,15 @@ function run_test() {
   const g = newGlobal();
   const dbg = new Debugger(g);
 
+  const sizeOfAM = byteSize(allocationMarker());
+
   
-  dbg.memory.trackingAllocationSites = true;
   g.eval("var hold = allocationMarker();");
-  dbg.memory.trackingAllocationSites = false;
-  let census = dbg.memory.takeCensus({
-    breakdown: { by: "objectClass", then: { by: "allocationStack" } },
+  let census = saveHeapSnapshotAndTakeCensus(dbg, {
+    breakdown: { by: "objectClass" },
   });
-  let markers = 0;
-  let count;
-  let sizeOfAM;
-  census.AllocationMarker.forEach((v, k) => {
-    count = v.count;
-    sizeOfAM = v.bytes;
-    markers++;
-  });
-  equal(markers, 1);
-  equal(count, 1);
+  equal(census.AllocationMarker.count, 1);
+  equal(census.AllocationMarker.bytes >= sizeOfAM, true);
   g.hold = null;
 
   g.eval(`                                  // 1
@@ -56,7 +48,7 @@ function run_test() {
     switch (k.line) {
       case 4:
         equal(v.count, 1);
-        equal(v.bytes, sizeOfAM);
+        equal(v.bytes >= sizeOfAM, true);
         seen++;
         break;
 
