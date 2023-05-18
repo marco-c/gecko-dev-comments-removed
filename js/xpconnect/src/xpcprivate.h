@@ -178,19 +178,8 @@ extern const char XPC_XPCONNECT_CONTRACTID[];
 
 
 
-#define XPC_STRING_GETTER_BODY(dest, src)   \
-  NS_ENSURE_ARG_POINTER(dest);              \
-  *dest = src ? moz_xstrdup(src) : nullptr; \
-  return NS_OK
-
-
-
-static inline bool IS_WN_CLASS(const JSClass* clazz) {
-  return clazz->isWrappedNative();
-}
-
 static inline bool IS_WN_REFLECTOR(JSObject* obj) {
-  return IS_WN_CLASS(JS::GetClass(obj));
+  return JS::GetClass(obj)->isWrappedNative();
 }
 
 
