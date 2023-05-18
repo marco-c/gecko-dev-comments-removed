@@ -6,20 +6,10 @@
 
 use crate::gecko_bindings::structs::nsCOMPtr;
 
-#[cfg(feature = "gecko_debug")]
 impl<T> nsCOMPtr<T> {
     
     #[inline]
-    pub fn raw<U>(&self) -> *mut T {
+    pub fn raw(&self) -> *mut T {
         self.mRawPtr
-    }
-}
-
-#[cfg(not(feature = "gecko_debug"))]
-impl nsCOMPtr {
-    
-    #[inline]
-    pub fn raw<T>(&self) -> *mut T {
-        self._base.mRawPtr as *mut _
     }
 }
