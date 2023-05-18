@@ -754,6 +754,14 @@ nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
 
   
   MOZ_ASSERT(NS_IsMainThread());
+
+#  ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    
+    return nsIXULRuntime::ContentWin32kLockdownState::DisabledByDefault;
+  }
+#  endif
+
   mozilla::EnsureWin32kInitialized();
   gfxPlatform::GetPlatform();
 
