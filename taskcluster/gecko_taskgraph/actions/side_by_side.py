@@ -48,7 +48,7 @@ def side_by_side_modifier(task, input):
     
     task.task["metadata"][
         "name"
-    ] = f"{input['platform']} {input['test_name']} {input['label']}"
+    ] = f"{input['label']} for {input['platform']} {input['test_name']} from revision {input['base_revision'][:12]} to {input['new_revision'][:12]}"
     
     
     task.task["extra"]["treeherder"]["symbol"] += f"-{input['symbol']}"
@@ -101,9 +101,9 @@ def side_by_side_action(parameters, graph_config, input, task_group_id, task_id)
     )
     
     
-    if (
-        "browsertime-tp6" not in task["metadata"]["name"]
-        or "welcome" not in task["metadata"]["name"]
+    if not (
+        "browsertime-tp6" in task["metadata"]["name"]
+        or "welcome" in task["metadata"]["name"]
     ):
         logger.exception(
             f"Task {task['metadata']['name']} is not side-by-side comparable."
