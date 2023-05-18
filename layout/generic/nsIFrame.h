@@ -519,6 +519,7 @@ class nsIFrame : public nsQueryFrame {
  public:
   using AlignmentContext = mozilla::AlignmentContext;
   using BaselineSharingGroup = mozilla::BaselineSharingGroup;
+  using BaselineExportContext = mozilla::BaselineExportContext;
   template <typename T>
   using Maybe = mozilla::Maybe<T>;
   template <typename T, typename E>
@@ -1533,8 +1534,13 @@ class nsIFrame : public nsQueryFrame {
 
 
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const;
+  
+
+
+
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM,
-                             BaselineSharingGroup aBaselineGroup) const;
+                             BaselineSharingGroup aBaselineGroup,
+                             BaselineExportContext aExportContext) const;
 
   
 
@@ -1548,8 +1554,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
+
+
   virtual Maybe<nscoord> GetNaturalBaselineBOffset(
-      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+      BaselineExportContext aExportContext) const {
     return Nothing{};
   }
 
@@ -1656,6 +1669,7 @@ class nsIFrame : public nsQueryFrame {
 
  public:
   
+
 
 
   virtual BaselineSharingGroup GetDefaultBaselineSharingGroup() const {
