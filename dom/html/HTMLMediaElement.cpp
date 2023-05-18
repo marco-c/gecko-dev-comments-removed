@@ -3200,7 +3200,9 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
                           mCurrentPlayRangeStart, rangeEndTime));
     
     if (mCurrentPlayRangeStart != rangeEndTime) {
-      mPlayed->Add(mCurrentPlayRangeStart, rangeEndTime);
+      
+      
+      mPlayed->Add(mCurrentPlayRangeStart, ToMicrosecondResolution(rangeEndTime));
     }
     
     
@@ -3292,7 +3294,11 @@ double HTMLMediaElement::Duration() const {
 
   if (mDecoder) {
     
-    return std::round(mDecoder->GetDuration() * 1000000.) / 1000000;
+    double duration = mDecoder->GetDuration();
+    if (IsFinite<double>(duration)) {
+      return ToMicrosecondResolution(mDecoder->GetDuration());
+    }
+    return duration;
   }
 
   return std::numeric_limits<double>::quiet_NaN();
@@ -3321,7 +3327,9 @@ already_AddRefed<TimeRanges> HTMLMediaElement::Played() {
   if (mCurrentPlayRangeStart != -1.0) {
     double now = CurrentTime();
     if (mCurrentPlayRangeStart != now) {
-      ranges->Add(mCurrentPlayRangeStart, now);
+      
+      
+      ranges->Add(mCurrentPlayRangeStart, ToMicrosecondResolution(now));
     }
   }
 
