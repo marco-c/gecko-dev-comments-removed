@@ -585,14 +585,6 @@ class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun zoomedOverflowHidden() {
-        
-        
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.scrollbarFadeBeginDelay" to 0
-            )
-        )
-
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
@@ -606,6 +598,9 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         
         mainSession.evaluateJS("document.body.style.background = 'rgb(0, 128, 0)'")
+
+        
+        mainSession.evaluateJS("document.documentElement.style.scrollbarWidth = 'none'")
 
         
         mainSession.setResolutionAndScaleTo(10.0f)
@@ -623,14 +618,6 @@ class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun zoomedPositionFixedRoot() {
-        
-        
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.scrollbarFadeBeginDelay" to 0
-            )
-        )
-
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
@@ -651,6 +638,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.evaluateJS("document.documentElement.style.position = 'fixed'")
 
         
+        mainSession.evaluateJS("document.documentElement.style.scrollbarWidth = 'none'")
+
+        
         mainSession.setResolutionAndScaleTo(10.0f)
 
         
@@ -666,14 +656,6 @@ class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun backgroundImageFixed() {
-        
-        
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.scrollbarFadeBeginDelay" to 0
-            )
-        )
-
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
@@ -692,6 +674,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         
         mainSession.evaluateJS("document.documentElement.style.height = '100vh'")
 
+        
+        mainSession.evaluateJS("document.documentElement.style.scrollbarWidth = 'none'")
+
         mainSession.flushApzRepaints()
 
         
@@ -707,14 +692,6 @@ class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun backgroundAttachmentFixed() {
-        
-        
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.scrollbarFadeBeginDelay" to 0
-            )
-        )
-
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
@@ -732,6 +709,9 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         
         mainSession.evaluateJS("document.documentElement.style.height = '100vh'")
+
+        
+        mainSession.evaluateJS("document.documentElement.style.scrollbarWidth = 'none'")
 
         mainSession.flushApzRepaints()
 
