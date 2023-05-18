@@ -6,11 +6,16 @@
 
 #![deny(missing_docs)]
 
-use super::*;
+use super::generated::{
+    shorthands, AllShorthand, ComputedValues, LogicalGroupSet, LonghandIdSet,
+    NonCustomPropertyIdSet, PropertyDeclaration, PropertyDeclarationId, PropertyId, ShorthandId,
+    SourcePropertyDeclaration, SourcePropertyDeclarationDrain, SubpropertiesVec,
+};
 use crate::applicable_declarations::CascadePriority;
 use crate::context::QuirksMode;
 use crate::custom_properties::{self, CustomPropertiesBuilder};
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
+use crate::media_queries::Device;
 use crate::parser::ParserContext;
 use crate::properties::animated_properties::{AnimationValue, AnimationValueMap};
 use crate::rule_tree::CascadeLevel;
@@ -21,11 +26,12 @@ use crate::str::{CssString, CssStringWriter};
 use crate::stylesheets::{layer_rule::LayerOrder, CssRuleType, Origin, UrlExtraData};
 use crate::values::computed::Context;
 use cssparser::{
-    parse_important, AtRuleParser, CowRcStr, DeclarationListParser, DeclarationParser, Delimiter,
-    ParseErrorKind, Parser, ParserInput, QualifiedRuleParser,
+    parse_important, AtRuleParser, CowRcStr, DeclarationParser, Delimiter, ParseErrorKind, Parser,
+    ParserInput, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser,
 };
 use itertools::Itertools;
 use selectors::SelectorList;
+use servo_arc::Arc;
 use smallbitvec::{self, SmallBitVec};
 use smallvec::SmallVec;
 use std::fmt::{self, Write};
@@ -576,8 +582,9 @@ impl PropertyDeclarationBlock {
                 .all_shorthand
                 .declarations()
                 .any(|decl| {
-                    !self.contains(decl.id()) ||
-                        self.declarations
+                    !self.contains(decl.id())
+                        || self
+                            .declarations
                             .iter()
                             .enumerate()
                             .find(|&(_, ref d)| d.id() == decl.id())
@@ -619,9 +626,9 @@ impl PropertyDeclarationBlock {
                                     }
                                     return DeclarationUpdate::UpdateInPlace { pos };
                                 }
-                                if !needs_append &&
-                                    id.logical_group() == Some(logical_group) &&
-                                    id.is_logical() != longhand_id.is_logical()
+                                if !needs_append
+                                    && id.logical_group() == Some(logical_group)
+                                    && id.is_logical() != longhand_id.is_logical()
                                 {
                                     needs_append = true;
                                 }
@@ -1286,6 +1293,7 @@ pub fn parse_style_attribute(
         Some(rule_type),
         ParsingMode::DEFAULT,
         quirks_mode,
+         Default::default(),
         error_reporter,
         None,
     );
@@ -1316,6 +1324,7 @@ pub fn parse_one_declaration_into(
         Some(rule_type),
         parsing_mode,
         quirks_mode,
+         Default::default(),
         error_reporter,
         None,
     );
@@ -1405,6 +1414,12 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for PropertyDeclarationParser<'a, 'b> {
     }
 }
 
+impl<'a, 'b, 'i> RuleBodyItemParser<'i, Importance, StyleParseErrorKind<'i>> for PropertyDeclarationParser<'a, 'b> {
+    fn parse_declarations(&self) -> bool { true }
+    
+    fn parse_qualified(&self) -> bool { false }
+}
+
 type SmallParseErrorVec<'i> = SmallVec<[(ParseError<'i>, &'i str, Option<PropertyId>); 2]>;
 
 fn alias_of_known_property(name: &str) -> Option<PropertyId> {
@@ -1492,12 +1507,12 @@ pub fn parse_property_declaration_list(
 ) -> PropertyDeclarationBlock {
     let mut declarations = SourcePropertyDeclaration::new();
     let mut block = PropertyDeclarationBlock::new();
-    let parser = PropertyDeclarationParser {
+    let mut parser = PropertyDeclarationParser {
         context,
         last_parsed_property_id: None,
         declarations: &mut declarations,
     };
-    let mut iter = DeclarationListParser::new(input, parser);
+    let mut iter = RuleBodyParser::new(input, &mut parser);
     let mut errors = SmallParseErrorVec::new();
     while let Some(declaration) = iter.next() {
         match declaration {

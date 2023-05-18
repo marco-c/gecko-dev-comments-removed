@@ -48,9 +48,7 @@ use crate::rule_tree::StrongRuleNode;
 use crate::Zero;
 use crate::str::{CssString, CssStringWriter};
 use std::cell::Cell;
-
-pub use self::declaration_block::*;
-pub use self::cascade::*;
+use super::declaration_block::AppendableValue;
 
 <%!
     from collections import defaultdict
@@ -58,11 +56,6 @@ pub use self::cascade::*;
                      to_camel_case, RULE_VALUES, SYSTEM_FONT_LONGHANDS
     import os.path
 %>
-
-#[path="${repr(os.path.join(os.path.dirname(__file__), 'declaration_block.rs'))[1:-1]}"]
-pub mod declaration_block;
-#[path="${repr(os.path.join(os.path.dirname(__file__), 'cascade.rs'))[1:-1]}"]
-pub mod cascade;
 
 
 pub trait MaybeBoxed<Out> {
@@ -428,7 +421,7 @@ impl PropertyDeclaration {
 
     
     
-    pub(crate) fn color_value(&self) -> Option<<&crate::values::specified::Color> {
+    pub(super) fn color_value(&self) -> Option<<&crate::values::specified::Color> {
         ${static_longhand_id_set("COLOR_PROPERTIES", lambda p: p.predefined_type == "Color")}
         <%
             # sanity check
@@ -1004,7 +997,7 @@ impl LonghandIdSet {
     
     
     
-    fn visited_dependent() -> &'static Self {
+    pub(super) fn visited_dependent() -> &'static Self {
         ${static_longhand_id_set(
             "VISITED_DEPENDENT",
             lambda p: is_visited_dependent(p)
@@ -1014,7 +1007,7 @@ impl LonghandIdSet {
     }
 
     #[inline]
-    fn writing_mode_group() -> &'static Self {
+    pub(super) fn writing_mode_group() -> &'static Self {
         ${static_longhand_id_set(
             "WRITING_MODE_GROUP",
             lambda p: p.name in CASCADE_GROUPS["writing_mode"]
@@ -1023,7 +1016,7 @@ impl LonghandIdSet {
     }
 
     #[inline]
-    fn fonts_and_color_group() -> &'static Self {
+    pub(super) fn fonts_and_color_group() -> &'static Self {
         ${static_longhand_id_set(
             "FONTS_AND_COLOR_GROUP",
             lambda p: p.name in CASCADE_GROUPS["fonts_and_color"]
@@ -1032,13 +1025,13 @@ impl LonghandIdSet {
     }
 
     #[inline]
-    fn late_group_only_inherited() -> &'static Self {
+    pub(super) fn late_group_only_inherited() -> &'static Self {
         ${static_longhand_id_set("LATE_GROUP_ONLY_INHERITED", lambda p: p.style_struct.inherited and in_late_group(p))}
         &LATE_GROUP_ONLY_INHERITED
     }
 
     #[inline]
-    fn late_group() -> &'static Self {
+    pub(super) fn late_group() -> &'static Self {
         ${static_longhand_id_set("LATE_GROUP", lambda p: in_late_group(p))}
         &LATE_GROUP
     }
@@ -1271,7 +1264,8 @@ impl LonghandId {
         !LonghandIdSet::reset().contains(self)
     }
 
-    fn shorthands(&self) -> NonCustomPropertyIterator<ShorthandId> {
+    
+    pub fn shorthands(&self) -> NonCustomPropertyIterator<ShorthandId> {
         
         
         
@@ -1440,7 +1434,7 @@ impl LonghandId {
     
     
     #[inline]
-    fn ignored_when_document_colors_disabled(self) -> bool {
+    pub fn ignored_when_document_colors_disabled(self) -> bool {
         LonghandIdSet::ignored_when_colors_disabled().contains(self)
     }
 }
@@ -1709,7 +1703,7 @@ pub type ShorthandsWithPropertyReferencesCache =
     FxHashMap<(ShorthandId, LonghandId), PropertyDeclaration>;
 
 impl UnparsedValue {
-    fn substitute_variables<'cache>(
+    pub(super) fn substitute_variables<'cache>(
         &self,
         longhand_id: LonghandId,
         writing_mode: WritingMode,
@@ -1764,6 +1758,7 @@ impl UnparsedValue {
             None,
             ParsingMode::DEFAULT,
             quirks_mode,
+             Default::default(),
             None,
             None,
         );
@@ -2231,10 +2226,12 @@ pub struct WideKeywordDeclaration {
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, PartialEq, ToCss, ToShmem)]
 pub struct VariableDeclaration {
+    
     #[css(skip)]
-    id: LonghandId,
+    pub id: LonghandId,
+    
     #[cfg_attr(feature = "gecko", ignore_malloc_size_of = "XXX: how to handle this?")]
-    value: Arc<UnparsedValue>,
+    pub value: Arc<UnparsedValue>,
 }
 
 
@@ -2592,16 +2589,17 @@ const SUB_PROPERTIES_ARRAY_CAP: usize =
     ${max(len(s.sub_properties) for s in data.shorthands_except_all()) \
           if data.shorthands_except_all() else 0};
 
-type SubpropertiesVec<T> = ArrayVec<T, SUB_PROPERTIES_ARRAY_CAP>;
+
+pub type SubpropertiesVec<T> = ArrayVec<T, SUB_PROPERTIES_ARRAY_CAP>;
 
 
 
 
 pub struct SourcePropertyDeclaration {
-    declarations: SubpropertiesVec<PropertyDeclaration>,
-
     
-    all_shorthand: AllShorthand,
+    pub declarations: SubpropertiesVec<PropertyDeclaration>,
+    
+    pub all_shorthand: AllShorthand,
 }
 
 
@@ -2652,20 +2650,26 @@ impl SourcePropertyDeclaration {
 
 
 pub struct SourcePropertyDeclarationDrain<'a> {
-    declarations: ArrayVecDrain<'a, PropertyDeclaration, SUB_PROPERTIES_ARRAY_CAP>,
-    all_shorthand: AllShorthand,
+    
+    pub declarations: ArrayVecDrain<'a, PropertyDeclaration, SUB_PROPERTIES_ARRAY_CAP>,
+    
+    pub all_shorthand: AllShorthand,
 }
 
-enum AllShorthand {
+
+pub enum AllShorthand {
+    
     NotSet,
+    
     CSSWideKeyword(CSSWideKeyword),
+    
     WithVariables(Arc<UnparsedValue>)
 }
 
 impl AllShorthand {
     
     #[inline]
-    fn declarations(&self) -> AllShorthandDeclarationIterator {
+    pub fn declarations(&self) -> AllShorthandDeclarationIterator {
         AllShorthandDeclarationIterator {
             all_shorthand: self,
             longhands: ShorthandId::All.longhands(),
@@ -2673,7 +2677,8 @@ impl AllShorthand {
     }
 }
 
-struct AllShorthandDeclarationIterator<'a> {
+
+pub struct AllShorthandDeclarationIterator<'a> {
     all_shorthand: &'a AllShorthand,
     longhands: NonCustomPropertyIterator<LonghandId>,
 }
@@ -2701,7 +2706,7 @@ impl<'a> Iterator for AllShorthandDeclarationIterator<'a> {
 }
 
 #[cfg(feature = "gecko")]
-pub use crate::gecko_properties::style_structs;
+pub use super::gecko::style_structs;
 
 
 #[cfg(feature = "servo")]
@@ -3013,7 +3018,7 @@ pub mod style_structs {
 
 
 #[cfg(feature = "gecko")]
-pub use crate::gecko_properties::{ComputedValues, ComputedValuesInner};
+pub use super::gecko::{ComputedValues, ComputedValuesInner};
 
 #[cfg(feature = "servo")]
 #[cfg_attr(feature = "servo", derive(Clone, Debug))]
@@ -3684,7 +3689,7 @@ pub struct StyleBuilder<'a> {
     
     
     
-    visited_style: Option<Arc<ComputedValues>>,
+    pub visited_style: Option<Arc<ComputedValues>>,
     % for style_struct in data.active_style_structs():
         ${style_struct.ident}: StyleStructRef<'a, style_structs::${style_struct.name}>,
     % endfor
@@ -3692,7 +3697,7 @@ pub struct StyleBuilder<'a> {
 
 impl<'a> StyleBuilder<'a> {
     
-    fn new(
+    pub(super) fn new(
         device: &'a Device,
         parent_style: Option<<&'a ComputedValues>,
         parent_style_ignoring_first_line: Option<<&'a ComputedValues>,
@@ -3977,13 +3982,13 @@ impl<'a> StyleBuilder<'a> {
     }
 
     
-    fn clear_modified_reset(&mut self) {
+    pub fn clear_modified_reset(&mut self) {
         self.modified_reset = false;
     }
 
     
     
-    fn modified_reset(&self) -> bool {
+    pub fn modified_reset(&self) -> bool {
         self.modified_reset
     }
 
@@ -4023,10 +4028,7 @@ impl<'a> StyleBuilder<'a> {
     }
 
     
-    
-    
-    
-    fn custom_properties(&self) -> Option<<&Arc<crate::custom_properties::CustomPropertiesMap>> {
+    pub fn custom_properties(&self) -> Option<<&Arc<crate::custom_properties::CustomPropertiesMap>> {
         self.custom_properties.as_ref()
     }
 
