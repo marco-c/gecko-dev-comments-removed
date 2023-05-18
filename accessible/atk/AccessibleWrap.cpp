@@ -892,24 +892,15 @@ AtkRelationSet* refRelationSetCB(AtkObject* aAtkObj) {
 
 
 AccessibleWrap* GetAccessibleWrap(AtkObject* aAtkObj) {
-  bool isMAIObject = IS_MAI_OBJECT(aAtkObj);
-  NS_ENSURE_TRUE(isMAIObject || MAI_IS_ATK_SOCKET(aAtkObj), nullptr);
+  NS_ENSURE_TRUE(IS_MAI_OBJECT(aAtkObj), nullptr);
 
-  AccessibleWrap* accWrap = nullptr;
-  if (isMAIObject) {
-    
-    
-    Accessible* storedAcc = MAI_ATK_OBJECT(aAtkObj)->acc;
-    if (!storedAcc) {
-      return nullptr;
-    }
-
-    accWrap = static_cast<AccessibleWrap*>(storedAcc->AsLocal());
-  } else {
-    
-    
-    accWrap = MAI_ATK_SOCKET(aAtkObj)->accWrap;
+  
+  
+  Accessible* storedAcc = MAI_ATK_OBJECT(aAtkObj)->acc;
+  if (!storedAcc) {
+    return nullptr;
   }
+  auto* accWrap = static_cast<AccessibleWrap*>(storedAcc->AsLocal());
 
   
   if (!accWrap) return nullptr;
