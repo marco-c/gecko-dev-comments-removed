@@ -25,6 +25,8 @@ struct ParamTraits;
 
 
 #  include "TimeStamp_windows.h"
+
+#  include "mozilla/Maybe.h"  
 #endif
 
 namespace mozilla {
@@ -449,6 +451,24 @@ class TimeStamp {
 
 
   static MFBT_API void RecordProcessRestart();
+
+#ifdef XP_LINUX
+  uint64_t RawClockMonotonicNanosecondsSinceBoot() {
+    return static_cast<uint64_t>(mValue);
+  }
+#endif
+
+#ifdef XP_MACOSX
+  uint64_t RawMachAbsoluteTimeValue() { return static_cast<uint64_t>(mValue); }
+#endif
+
+#ifdef XP_WIN
+  Maybe<uint64_t> RawQueryPerformanceCounterValue() {
+    
+    
+    return mValue.mHasQPC ? Some(mValue.mQPC / 1000ULL) : Nothing();
+  }
+#endif
 
   
 
