@@ -672,6 +672,13 @@ class MediaRawData final : public MediaData {
   Maybe<media::TimeInterval> mOriginalPresentationWindow;
 
   
+  
+  bool mShouldCopyCryptoToRemoteRawData = false;
+
+  
+  CryptoSample& GetWritableCrypto() { return mCryptoInternal; }
+
+  
   already_AddRefed<MediaRawData> Clone() const;
   
   
