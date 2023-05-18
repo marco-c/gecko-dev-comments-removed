@@ -298,9 +298,6 @@ class SVGUtils final {
   static gfxRect GetClipRectForFrame(const nsIFrame* aFrame, float aX, float aY,
                                      float aWidth, float aHeight);
 
-  static void SetClipRect(gfxContext* aContext, const gfxMatrix& aCTM,
-                          const gfxRect& aRect);
-
   
 
 

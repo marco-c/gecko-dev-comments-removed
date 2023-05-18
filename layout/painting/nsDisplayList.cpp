@@ -7646,9 +7646,9 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
   pixelVisible.Inflate(2);
   pixelVisible.RoundOut();
 
-  bool willClip = !aBuilder->IsForGenerateGlyphMask() && !aIsRecording;
-  if (willClip) {
-    aCtx->Clip(pixelVisible);
+  gfxClipAutoSaveRestore autoSaveClip(aCtx);
+  if (!aBuilder->IsForGenerateGlyphMask() && !aIsRecording) {
+    autoSaveClip.Clip(pixelVisible);
   }
 
   NS_ASSERTION(mVisIStartEdge >= 0, "illegal start edge");
@@ -7689,10 +7689,6 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
 
   f->PaintText(params, mVisIStartEdge, mVisIEndEdge, ToReferenceFrame(),
                f->IsSelected(), aOpacity);
-
-  if (willClip) {
-    aCtx->PopClip();
-  }
 }
 
 
@@ -8024,12 +8020,11 @@ void nsDisplayMasksAndClipPaths::PaintWithContentsPaintCallback(
     const std::function<void()>& aPaintChildren) {
   
   
-  gfxContext* context = aCtx;
-
   Rect bounds = NSRectToRect(GetPaintRect(aBuilder, aCtx),
                              mFrame->PresContext()->AppUnitsPerDevPixel());
   bounds.RoundOut();
-  context->Clip(bounds);
+  gfxClipAutoSaveRestore autoSaveClip(aCtx);
+  autoSaveClip.Clip(bounds);
 
   imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
@@ -8039,8 +8034,6 @@ void nsDisplayMasksAndClipPaths::PaintWithContentsPaintCallback(
   ComputeMaskGeometry(params);
 
   SVGIntegrationUtils::PaintMaskAndClipPath(params, aPaintChildren);
-
-  context->PopClip();
 }
 
 void nsDisplayMasksAndClipPaths::Paint(nsDisplayListBuilder* aBuilder,
