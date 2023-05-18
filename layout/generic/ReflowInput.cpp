@@ -141,7 +141,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
     Init(aPresContext);
   }
   
-  
   mFlags.mCanHaveClassABreakpoints = false;
 }
 
@@ -207,9 +206,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   if (aParentReflowInput.mFlags.mCanHaveClassABreakpoints) {
     MOZ_ASSERT(aPresContext->IsPaginated(),
                "mCanHaveClassABreakpoints set during non-paginated reflow.");
-    MOZ_ASSERT(StaticPrefs::layout_css_named_pages_enabled(),
-               "mCanHaveClassABreakpoints should not be set when "
-               "layout.css.named-pages.enabled is false");
   }
 
   {
@@ -222,8 +218,7 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
         MOZ_ASSERT(!mFlags.mCanHaveClassABreakpoints,
                    "mFlags.mCanHaveClassABreakpoints should have been "
                    "initalized to false before we found nsPageContentFrame");
-        mFlags.mCanHaveClassABreakpoints =
-            StaticPrefs::layout_css_named_pages_enabled();
+        mFlags.mCanHaveClassABreakpoints = true;
         break;
       case LayoutFrameType::Block:          
       case LayoutFrameType::Canvas:         

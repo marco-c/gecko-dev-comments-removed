@@ -1387,8 +1387,7 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
     AutoFrameConstructionPageName(nsFrameConstructorState& aState,
                                   nsIFrame* const aFrame)
     : mState(aState), mNameToRestore(nullptr) {
-  if (!aState.mPresContext->IsPaginated() ||
-      !StaticPrefs::layout_css_named_pages_enabled()) {
+  if (!aState.mPresContext->IsPaginated()) {
     MOZ_ASSERT(!aState.mAutoPageNameValue,
                "Page name should not have been set");
     return;
@@ -1410,7 +1409,6 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
 
 nsCSSFrameConstructor::AutoFrameConstructionPageName::
     ~AutoFrameConstructionPageName() {
-  
   
   
   
@@ -6632,8 +6630,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
       mPresShell, GetAbsoluteContainingBlock(parentFrame, FIXED_POS),
       GetAbsoluteContainingBlock(parentFrame, ABS_POS), containingBlock);
 
-  if (mPresShell->GetPresContext()->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled()) {
+  if (mPresShell->GetPresContext()->IsPaginated()) {
     
     
     
@@ -7168,8 +7165,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   nsFrameConstructorSaveState floatSaveState;
   state.MaybePushFloatContainingBlock(insertion.mParentFrame, floatSaveState);
 
-  if (state.mPresContext->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled()) {
+  if (state.mPresContext->IsPaginated()) {
     
     
     
@@ -9521,9 +9517,7 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
   
   
   
-  if (aState.mPresContext->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled() &&
-      aParentFrame->IsBlockFrame()) {
+  if (aState.mPresContext->IsPaginated() && aParentFrame->IsBlockFrame()) {
     
     
     

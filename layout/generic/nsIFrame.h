@@ -1302,7 +1302,6 @@ class nsIFrame : public nsQueryFrame {
   
   
   
-  
   struct PageValues {
     
     
