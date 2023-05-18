@@ -4,14 +4,14 @@
 
 from __future__ import with_statement
 
-import collections
-import collections.abc
 import errno
 import filecmp
 import os.path
 import re
 import tempfile
 import sys
+
+from six.moves import collections_abc
 
 
 
@@ -483,7 +483,7 @@ def uniquer(seq, idfun=None):
 
 
 
-class OrderedSet(collections.abc.MutableSet):
+class OrderedSet(collections_abc.MutableSet):
   def __init__(self, iterable=None):
     self.end = end = []
     end += [None, end, end]         
