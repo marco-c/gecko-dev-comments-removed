@@ -5362,7 +5362,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
         Result<MoveNodeResult, nsresult> moveChildrenResult =
             aHTMLEditor.MoveChildrenWithTransaction(
                 MOZ_KnownLive(*content->AsElement()), pointToInsert,
-                mPreserveWhiteSpaceStyle);
+                mPreserveWhiteSpaceStyle, RemoveIfCommentNode::Yes);
         if (MOZ_UNLIKELY(moveChildrenResult.isErr())) {
           NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
           moveContentsInLineResult.IgnoreCaretPointSuggestion();
@@ -5383,7 +5383,8 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
       }
       
       
-      else if (HTMLEditUtils::IsEmptyInlineContainer(
+      else if (content->IsComment() ||
+               HTMLEditUtils::IsEmptyInlineContainer(
                    content, {EmptyCheckOption::TreatSingleBRElementAsVisible,
                              EmptyCheckOption::TreatListItemAsVisible,
                              EmptyCheckOption::TreatTableCellAsVisible})) {
@@ -5404,8 +5405,8 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
         
         Result<MoveNodeResult, nsresult> moveNodeOrChildrenResult =
             aHTMLEditor.MoveNodeOrChildrenWithTransaction(
-                MOZ_KnownLive(content), pointToInsert,
-                mPreserveWhiteSpaceStyle);
+                MOZ_KnownLive(content), pointToInsert, mPreserveWhiteSpaceStyle,
+                RemoveIfCommentNode::Yes);
         if (MOZ_UNLIKELY(moveNodeOrChildrenResult.isErr())) {
           NS_WARNING("HTMLEditor::MoveNodeOrChildrenWithTransaction() failed");
           moveContentsInLineResult.IgnoreCaretPointSuggestion();
@@ -5614,7 +5615,8 @@ Result<bool, nsresult> HTMLEditor::CanMoveNodeOrChildren(
 
 Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeOrChildrenWithTransaction(
     nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert,
-    PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle) {
+    PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
+    RemoveIfCommentNode aRemoveIfCommentNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsInContentNode());
 
@@ -5664,6 +5666,23 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeOrChildrenWithTransaction(
         return u""_ns;
     }
   };
+
+  if (aRemoveIfCommentNode == RemoveIfCommentNode::Yes &&
+      aContentToMove.IsComment()) {
+    EditorDOMPoint pointToInsert(aPointToInsert);
+    {
+      AutoTrackDOMPoint trackPointToInsert(RangeUpdaterRef(), &pointToInsert);
+      nsresult rv = DeleteNodeWithTransaction(aContentToMove);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+        return Err(rv);
+      }
+    }
+    if (NS_WARN_IF(!pointToInsert.IsSetAndValid())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    return MoveNodeResult::HandledResult(std::move(pointToInsert));
+  }
 
   
   if (HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(),
@@ -5751,7 +5770,8 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeOrChildrenWithTransaction(
     }
     Result<MoveNodeResult, nsresult> moveChildrenResult =
         MoveChildrenWithTransaction(MOZ_KnownLive(*aContentToMove.AsElement()),
-                                    aPointToInsert, aPreserveWhiteSpaceStyle);
+                                    aPointToInsert, aPreserveWhiteSpaceStyle,
+                                    aRemoveIfCommentNode);
     NS_WARNING_ASSERTION(moveChildrenResult.isOk(),
                          "HTMLEditor::MoveChildrenWithTransaction() failed");
     return moveChildrenResult;
@@ -5798,7 +5818,8 @@ Result<bool, nsresult> HTMLEditor::CanMoveChildren(
 
 Result<MoveNodeResult, nsresult> HTMLEditor::MoveChildrenWithTransaction(
     Element& aElement, const EditorDOMPoint& aPointToInsert,
-    PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle) {
+    PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
+    RemoveIfCommentNode aRemoveIfCommentNode) {
   MOZ_ASSERT(aPointToInsert.IsSet());
 
   if (NS_WARN_IF(&aElement == aPointToInsert.GetContainer())) {
@@ -5812,7 +5833,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveChildrenWithTransaction(
         MoveNodeOrChildrenWithTransaction(
             MOZ_KnownLive(*aElement.GetFirstChild()),
             moveChildrenResult.NextInsertionPointRef(),
-            aPreserveWhiteSpaceStyle);
+            aPreserveWhiteSpaceStyle, aRemoveIfCommentNode);
     if (MOZ_UNLIKELY(moveNodeOrChildrenResult.isErr())) {
       NS_WARNING("HTMLEditor::MoveNodeOrChildrenWithTransaction() failed");
       moveChildrenResult.IgnoreCaretPointSuggestion();
