@@ -347,9 +347,6 @@ class HTMLTextAreaElement final : public TextControlElement,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
 
-  void SetDirectionFromValue(bool aNotify,
-                             const nsAString* aKnownValue = nullptr);
-
   
 
 
