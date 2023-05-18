@@ -447,6 +447,7 @@ class Longhand(Property):
                 "AlignSelf",
                 "Appearance",
                 "AspectRatio",
+                "BaselineSource",
                 "BreakBetween",
                 "BreakWithin",
                 "BackgroundRepeat",
@@ -809,6 +810,8 @@ class PropertyRestrictions:
                 "-webkit-text-fill-color",
                 "-webkit-text-stroke-color",
                 "vertical-align",
+                
+                "baseline-source",
                 "line-height",
                 
                 "background-blend-mode",
@@ -842,6 +845,8 @@ class PropertyRestrictions:
                 "-webkit-text-fill-color",
                 "-webkit-text-stroke-color",
                 "vertical-align",
+                
+                "baseline-source",
                 "line-height",
                 
                 "background-blend-mode",
