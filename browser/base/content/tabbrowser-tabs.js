@@ -266,10 +266,14 @@
       ) {
         let tab = event.target ? event.target.closest("tab") : null;
         if (tab) {
-          gBrowser.removeTab(tab, {
-            animate: true,
-            triggeringEvent: event,
-          });
+          if (tab.multiselected) {
+            gBrowser.removeMultiSelectedTabs();
+          } else {
+            gBrowser.removeTab(tab, {
+              animate: true,
+              triggeringEvent: event,
+            });
+          }
         } else if (event.originalTarget.closest("scrollbox")) {
           
           
