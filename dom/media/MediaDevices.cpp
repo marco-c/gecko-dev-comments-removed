@@ -98,32 +98,7 @@ already_AddRefed<Promise> MediaDevices::GetUserMedia(
       }
     }
   }
-  RefPtr<MediaDevices> self(this);
-  GetUserMedia(owner, aConstraints, aCallerType)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
-            if (!GetWindowIfCurrent()) {
-              return;  
-            }
-            p->MaybeResolve(std::move(aStream));
-          },
-          [this, self, p](const RefPtr<MediaMgrError>& error) {
-            nsPIDOMWindowInner* window = GetWindowIfCurrent();
-            if (!window) {
-              return;  
-            }
-            error->Reject(p);
-          });
-  return p.forget();
-}
-
-RefPtr<MediaDevices::StreamPromise> MediaDevices::GetUserMedia(
-    nsPIDOMWindowInner* aWindow, const MediaStreamConstraints& aConstraints,
-    CallerType aCallerType) {
-  MOZ_ASSERT(NS_IsMainThread());
   bool haveFake = aConstraints.mFake.WasPassed() && aConstraints.mFake.Value();
-  const OwningBooleanOrMediaTrackConstraints& video = aConstraints.mVideo;
   const OwningBooleanOrMediaTrackConstraints& audio = aConstraints.mAudio;
   bool isMicrophone =
       !haveFake &&
@@ -135,26 +110,32 @@ RefPtr<MediaDevices::StreamPromise> MediaDevices::GetUserMedia(
       (video.IsBoolean()
            ? video.GetAsBoolean()
            : !video.GetAsMediaTrackConstraints().mMediaSource.WasPassed());
-
   RefPtr<MediaDevices> self(this);
-  return MediaManager::Get()
-      ->GetUserMedia(aWindow, aConstraints, aCallerType)
+  MediaManager::Get()
+      ->GetUserMedia(owner, aConstraints, aCallerType)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [this, self, isMicrophone,
+          [this, self, p, isMicrophone,
            isCamera](RefPtr<DOMMediaStream>&& aStream) {
+            if (!GetWindowIfCurrent()) {
+              return;  
+            }
             if (isMicrophone) {
               mCanExposeMicrophoneInfo = true;
             }
             if (isCamera) {
               mCanExposeCameraInfo = true;
             }
-            return StreamPromise::CreateAndResolve(std::move(aStream),
-                                                   __func__);
+            p->MaybeResolve(std::move(aStream));
           },
-          [](RefPtr<MediaMgrError>&& aError) {
-            return StreamPromise::CreateAndReject(std::move(aError), __func__);
+          [this, self, p](const RefPtr<MediaMgrError>& error) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
+              return;  
+            }
+            error->Reject(p);
           });
+  return p.forget();
 }
 
 already_AddRefed<Promise> MediaDevices::EnumerateDevices(ErrorResult& aRv) {
@@ -257,7 +238,6 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
     
     
   }
-  bool legacy = StaticPrefs::media_devices_enumerate_legacy_enabled();
   bool outputIsDefault = true;  
   bool haveDefaultOutput = false;
   nsTHashSet<nsString> exposedMicrophoneGroupIds;
@@ -270,16 +250,12 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
         if (mCanExposeMicrophoneInfo) {
           exposedMicrophoneGroupIds.Insert(device->mRawGroupID);
         }
-        if (!mCanExposeMicrophoneInfo && !legacy) {
-          dropMics = true;
-        }
+        
+        
         break;
       case MediaDeviceKind::Videoinput:
         if (dropCams) {
           continue;
-        }
-        if (!mCanExposeCameraInfo && !legacy) {
-          dropCams = true;
         }
         break;
       case MediaDeviceKind::Audiooutput:
@@ -325,23 +301,6 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
   return exposed;
 }
 
-bool MediaDevices::CanExposeInfo(MediaDeviceKind aKind) const {
-  switch (aKind) {
-    case MediaDeviceKind::Audioinput:
-      return mCanExposeMicrophoneInfo;
-    case MediaDeviceKind::Videoinput:
-      return mCanExposeCameraInfo;
-    case MediaDeviceKind::Audiooutput:
-      
-      return true;
-    case MediaDeviceKind::EndGuard_:
-      MOZ_ASSERT_UNREACHABLE("unexpected MediaDeviceKind");
-      return false;
-      
-      
-  }
-};
-
 bool MediaDevices::ShouldQueueDeviceChange(
     const MediaDeviceSet& aExposedDevices) const {
   if (!mLastPhysicalDevices) {  
@@ -358,6 +317,22 @@ bool MediaDevices::ShouldQueueDeviceChange(
   
   
   
+  auto CanExposeNonZeroChanges = [this](MediaDeviceKind aKind) {
+    switch (aKind) {
+      case MediaDeviceKind::Audioinput:
+        return mCanExposeMicrophoneInfo;
+      case MediaDeviceKind::Videoinput:
+        return mCanExposeCameraInfo;
+      case MediaDeviceKind::Audiooutput:
+        return true;
+      case MediaDeviceKind::EndGuard_:
+        break;
+        
+        
+    }
+    MOZ_ASSERT_UNREACHABLE("unexpected MediaDeviceKind");
+    return false;
+  };
   while (exposed < exposedEnd && last < lastEnd) {
     
     
@@ -369,7 +344,7 @@ bool MediaDevices::ShouldQueueDeviceChange(
       return true;
     }
     
-    if (CanExposeInfo(kind)) {
+    if (CanExposeNonZeroChanges(kind)) {
       
       
       if ((*exposed)->mRawID != (*last)->mRawID) {
@@ -424,16 +399,37 @@ void MediaDevices::ResumeEnumerateDevices(
 
 void MediaDevices::ResolveEnumerateDevicesPromise(
     Promise* aPromise, const LocalMediaDeviceSet& aDevices) const {
+  nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
+  auto windowId = window->WindowID();
   nsTArray<RefPtr<MediaDeviceInfo>> infos;
-  bool legacy = StaticPrefs::media_devices_enumerate_legacy_enabled();
-
+  bool allowLabel =
+      aDevices.Length() == 0 ||
+      MediaManager::Get()->IsActivelyCapturingOrHasAPermission(windowId);
   for (const RefPtr<LocalMediaDevice>& device : aDevices) {
-    bool exposeInfo = CanExposeInfo(device->Kind()) || legacy;
-    bool exposeLabel = legacy ? DeviceInformationCanBeExposed() : exposeInfo;
-    infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
-        exposeInfo ? device->mID : u""_ns, device->Kind(),
-        exposeLabel ? device->mName : u""_ns,
-        exposeInfo ? device->mGroupID : u""_ns));
+    nsString label;
+    MOZ_ASSERT(device->Kind() < MediaDeviceKind::EndGuard_);
+    switch (device->Kind()) {
+      case MediaDeviceKind::Audioinput:
+      case MediaDeviceKind::Videoinput:
+        
+        
+        
+        
+        if (allowLabel || Preferences::GetBool(
+                              "media.navigator.permission.disabled", false)) {
+          label = device->mName;
+        }
+        break;
+      case MediaDeviceKind::Audiooutput:
+        label = device->mName;
+        break;
+      case MediaDeviceKind::EndGuard_:
+        break;
+        
+        
+    }
+    infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(device->mID, device->Kind(),
+                                                    label, device->mGroupID));
   }
   aPromise->MaybeResolve(std::move(infos));
 }
@@ -786,10 +782,6 @@ void MediaDevices::SetOndevicechange(
 void MediaDevices::EventListenerAdded(nsAtom* aType) {
   DOMEventTargetHelper::EventListenerAdded(aType);
   SetupDeviceChangeListener();
-}
-
-bool MediaDevices::DeviceInformationCanBeExposed() const {
-  return mCanExposeCameraInfo || mCanExposeMicrophoneInfo;
 }
 
 JSObject* MediaDevices::WrapObject(JSContext* aCx,
