@@ -108,6 +108,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   
   
+  
+  
 
   Register actReg = regs.takeAny();
   masm.loadJSContext(actReg);
@@ -162,6 +164,11 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
                 &handle_BaselineStub);
   masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::Rectifier),
                 &handle_Rectifier);
+  if (JitOptions.emitInterpreterEntryTrampoline) {
+    masm.branch32(Assembler::Equal, scratch,
+                  Imm32(FrameType::BaselineInterpreterEntry),
+                  &handle_Rectifier);  
+  }
   masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::CppToJSJit),
                 &handle_Entry);
   masm.branch32(Assembler::Equal, scratch, Imm32(FrameType::BaselineJS),
