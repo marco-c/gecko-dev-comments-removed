@@ -210,8 +210,9 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   
   
   
-  TimeDelta diff = now - packet->capture_time();
-  if (packet->HasExtension<TransmissionOffset>()) {
+  if (packet->HasExtension<TransmissionOffset>() &&
+      packet->capture_time() > Timestamp::Zero()) {
+    TimeDelta diff = now - packet->capture_time();
     packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff.ms());
   }
   if (packet->HasExtension<AbsoluteSendTime>()) {
