@@ -352,6 +352,43 @@ pub enum CssRuleType {
     FontPaletteValues = 19,
 }
 
+impl CssRuleType {
+    
+    #[inline]
+    pub const fn bit(self) -> u32 {
+        1 << self as u32
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct CssRuleTypes(u32);
+
+impl From<CssRuleType> for CssRuleTypes {
+    fn from(ty: CssRuleType) -> Self {
+        Self(ty.bit())
+    }
+}
+
+impl CssRuleTypes {
+    
+    #[inline]
+    pub fn contains(self, ty: CssRuleType) -> bool {
+        self.0 & ty.bit() != 0
+    }
+
+    
+    pub fn bits(self) -> u32 {
+        self.0
+    }
+
+    
+    #[inline]
+    pub fn insert(&mut self, ty: CssRuleType) {
+        self.0 |= ty.bit()
+    }
+}
+
 #[allow(missing_docs)]
 pub enum RulesMutateError {
     Syntax,
@@ -422,10 +459,12 @@ impl CssRule {
             dom_error: None,
             insert_rule_context: Some(insert_rule_context),
             allow_import_rules,
+            declaration_parser_state: Default::default(),
+            rules: Default::default(),
         };
 
         match parse_one_rule(&mut input, &mut rule_parser) {
-            Ok((_, rule)) => Ok(rule),
+            Ok(_) => Ok(rule_parser.rules.pop().unwrap()),
             Err(_) => Err(rule_parser.dom_error.unwrap_or(RulesMutateError::Syntax)),
         }
     }

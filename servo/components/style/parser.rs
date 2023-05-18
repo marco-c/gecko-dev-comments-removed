@@ -6,7 +6,7 @@
 
 use crate::context::QuirksMode;
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
-use crate::stylesheets::{CssRuleType, Namespaces, Origin, UrlExtraData};
+use crate::stylesheets::{CssRuleType, CssRuleTypes, Namespaces, Origin, UrlExtraData};
 use crate::use_counters::UseCounters;
 use cssparser::{Parser, SourceLocation, UnicodeRange};
 use std::borrow::Cow;
@@ -46,7 +46,7 @@ pub struct ParserContext<'a> {
     
     pub url_data: &'a UrlExtraData,
     
-    pub rule_type: Option<CssRuleType>,
+    pub rule_types: CssRuleTypes,
     
     pub parsing_mode: ParsingMode,
     
@@ -75,7 +75,7 @@ impl<'a> ParserContext<'a> {
         Self {
             stylesheet_origin,
             url_data,
-            rule_type,
+            rule_types: rule_type.map(CssRuleTypes::from).unwrap_or_default(),
             parsing_mode,
             quirks_mode,
             error_reporter,
@@ -86,23 +86,22 @@ impl<'a> ParserContext<'a> {
 
     
     pub fn nest_for_rule<R>(&mut self, rule_type: CssRuleType, cb: impl FnOnce(&mut Self) -> R) -> R {
-        let old_rule_type = std::mem::replace(&mut self.rule_type, Some(rule_type));
+        let old_rule_types = self.rule_types;
+        self.rule_types.insert(rule_type);
         let r = cb(self);
-        self.rule_type = old_rule_type;
+        self.rule_types = old_rule_types;
         r
     }
 
     
     #[inline]
     pub fn in_page_rule(&self) -> bool {
-        self.rule_type
-            .map_or(false, |rule_type| rule_type == CssRuleType::Page)
+        self.rule_types.contains(CssRuleType::Page)
     }
 
     
-    pub fn rule_type(&self) -> CssRuleType {
-        self.rule_type
-            .expect("Rule type expected, but none was found.")
+    pub fn rule_types(&self) -> CssRuleTypes {
+        self.rule_types
     }
 
     
