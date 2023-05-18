@@ -1080,14 +1080,6 @@ pref("plugins.show_infobar", false);
 #endif
 
 
-
-
-
-
-pref("plugins.favorfallback.mode", "follow-ctp");
-pref("plugins.favorfallback.rules", "nosrc,video");
-
-
 pref("browser.preferences.search", true);
 #if defined(NIGHTLY_BUILD)
 pref("browser.preferences.experimental", true);

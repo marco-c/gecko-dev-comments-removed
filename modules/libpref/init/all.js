@@ -2060,20 +2060,6 @@ pref("plugin.default.state", 2);
 
 
 
-
-
-
-pref("plugins.favorfallback.mode", "never");
-
-
-
-
-pref("plugins.favorfallback.rules", "");
-
-
-
-
-
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && !defined(MOZ_TSAN)
   
   
