@@ -217,7 +217,6 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 
   
   
-  RefPtr<ReadableStreamDefaultReader> mReadableStreamReader;
   RefPtr<FetchStreamReader> mFetchStreamReader;
 
   explicit FetchBody(nsIGlobalObject* aOwner);
