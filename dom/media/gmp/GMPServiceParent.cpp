@@ -644,7 +644,7 @@ void GeckoMediaPluginServiceParent::SendFlushFOGData(
   MutexAutoLock lock(mMutex);
 
   for (const RefPtr<GMPParent>& gmp : mPlugins) {
-    if (gmp->State() != GMPState::Loaded) {
+    if (gmp->State() != GMPState::GMPStateLoaded) {
       
       
       
@@ -682,7 +682,7 @@ GeckoMediaPluginServiceParent::TestTriggerMetrics() {
   {
     MutexAutoLock lock(mMutex);
     for (const RefPtr<GMPParent>& gmp : mPlugins) {
-      if (gmp->State() != GMPState::Loaded) {
+      if (gmp->State() != GMPState::GMPStateLoaded) {
         
         
         
@@ -1008,7 +1008,7 @@ void GeckoMediaPluginServiceParent::RemoveOnGMPThread(
     }
 
     RefPtr<GMPParent> gmp = mPlugins[i];
-    if (aDeleteFromDisk && gmp->State() != GMPState::NotLoaded) {
+    if (aDeleteFromDisk && gmp->State() != GMPStateNotLoaded) {
       
       
       inUse = true;
@@ -1019,7 +1019,7 @@ void GeckoMediaPluginServiceParent::RemoveOnGMPThread(
       }
     }
 
-    if (gmp->State() == GMPState::NotLoaded || !aCanDefer) {
+    if (gmp->State() == GMPStateNotLoaded || !aCanDefer) {
       
       deadPlugins.AppendElement(gmp);
       mPlugins.RemoveElementAt(i);
