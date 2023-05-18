@@ -102,7 +102,7 @@ class SVGElement : public SVGElementBase
 
   void SetNonce(const nsAString& aNonce) {
     SetProperty(nsGkAtoms::nonce, new nsString(aNonce),
-                nsINode::DeleteProperty<nsString>);
+                nsINode::DeleteProperty<nsString>,  true);
   }
   void RemoveNonce() { RemoveProperty(nsGkAtoms::nonce); }
   void GetNonce(nsAString& aNonce) const {
