@@ -1,15 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorParent } from "resource://gre/modules/GeckoViewActorParent.sys.mjs";
 
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewPrintDelegateParent"];
-
-const { GeckoViewActorParent } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorParent.sys.mjs"
-);
-
-class GeckoViewPrintDelegateParent extends GeckoViewActorParent {
+export class GeckoViewPrintDelegateParent extends GeckoViewActorParent {
   constructor() {
     super();
     this._browserStaticClone = null;
@@ -24,7 +19,7 @@ class GeckoViewPrintDelegateParent extends GeckoViewActorParent {
   }
 
   clearStaticClone() {
-    
+    // Removes static browser element from DOM that was made for window.print
     this.browserStaticClone?.remove();
     this.browserStaticClone = null;
   }
@@ -39,27 +34,27 @@ class GeckoViewPrintDelegateParent extends GeckoViewActorParent {
     } else {
       var reason = "";
       switch (status.errorReason) {
-        
+        // ERROR_PRINT_SETTINGS_SERVICE_NOT_AVAILABLE
         case -1: {
           reason = "no_settings_service";
           break;
         }
-        
+        // ERROR_UNABLE_TO_CREATE_PRINT_SETTINGS
         case -2: {
           reason = "no_settings";
           break;
         }
-        
+        // ERROR_UNABLE_TO_RETRIEVE_CANONICAL_BROWSING_CONTEXT
         case -3: {
           reason = "no_canonical_context";
           break;
         }
-        
+        // ERROR_NO_ACTIVITY_CONTEXT_DELEGATE
         case -4: {
           reason = "no_activity_context_delegate";
           break;
         }
-        
+        // ERROR_NO_ACTIVITY_CONTEXT
         case -5: {
           reason = "no_activity_context";
           break;

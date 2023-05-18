@@ -1,15 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
-
-const EXPORTED_SYMBOLS = ["ScrollDelegateChild"];
-
-class ScrollDelegateChild extends GeckoViewActorChild {
-  
+export class ScrollDelegateChild extends GeckoViewActorChild {
+  // eslint-disable-next-line complexity
   handleEvent(aEvent) {
     if (aEvent.originalTarget.ownerGlobal != this.contentWindow) {
       return;

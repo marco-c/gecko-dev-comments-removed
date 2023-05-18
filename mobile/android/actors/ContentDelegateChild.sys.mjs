@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
 const lazy = {};
 
@@ -12,9 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
 });
 
-var EXPORTED_SYMBOLS = ["ContentDelegateChild"];
-
-class ContentDelegateChild extends GeckoViewActorChild {
+export class ContentDelegateChild extends GeckoViewActorChild {
   notifyParentOfViewportFit() {
     if (this.triggerViewportFitChange) {
       this.contentWindow.cancelIdleCallback(this.triggerViewportFitChange);
@@ -35,7 +31,7 @@ class ContentDelegateChild extends GeckoViewActorChild {
     );
   }
 
-  
+  // eslint-disable-next-line complexity
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
 
@@ -83,9 +79,9 @@ class ContentDelegateChild extends GeckoViewActorChild {
         if (uri || isImage || isMedia) {
           const msg = {
             type: "GeckoView:ContextMenu",
-            
-            
-            
+            // We don't have full zoom on Android, so using CSS coordinates
+            // here is fine, since the CSS coordinate spaces match between the
+            // child and parent processes.
             screenX: aEvent.screenX,
             screenY: aEvent.screenY,
             baseUri: (baseUri && baseUri.displaySpec) || null,
@@ -107,13 +103,13 @@ class ContentDelegateChild extends GeckoViewActorChild {
       }
       case "MozDOMFullscreen:Entered":
       case "MozDOMFullscreen:Exited":
-        
-        
-        
+        // Content may change fullscreen state by itself, and we should ensure
+        // that the parent always exits fullscreen when content has left
+        // full screen mode.
         if (this.contentWindow?.document.fullscreenElement) {
           break;
         }
-      
+      // fall-through
       case "MozDOMFullscreen:Exit":
         this.sendAsyncMessage("GeckoView:DOMFullscreenExit", {});
         break;
@@ -124,12 +120,12 @@ class ContentDelegateChild extends GeckoViewActorChild {
         break;
       case "DOMContentLoaded": {
         if (aEvent.originalTarget.ownerGlobal == this.contentWindow) {
-          
-          
+          // If loaded content doesn't have viewport-fit, parent still
+          // uses old value of previous content.
           this.notifyParentOfViewportFit();
         }
         if (this.contentWindow !== this.contentWindow?.top) {
-          
+          // Only check WebApp manifest on the top level window.
           return;
         }
         this.contentWindow.requestIdleCallback(async () => {

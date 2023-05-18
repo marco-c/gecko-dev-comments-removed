@@ -1,13 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -17,9 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginManagerChild: "resource://gre/modules/LoginManagerChild.sys.mjs",
 });
 
-const EXPORTED_SYMBOLS = ["GeckoViewAutoFillChild"];
-
-class GeckoViewAutoFillChild extends GeckoViewActorChild {
+export class GeckoViewAutoFillChild extends GeckoViewActorChild {
   constructor() {
     super();
 
@@ -27,7 +21,7 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     this._autofillInfos = undefined;
   }
 
-  
+  // eslint-disable-next-line complexity
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
     switch (aEvent.type) {
@@ -51,7 +45,7 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
         }
         GeckoViewUtils.waitForPanZoomState(this.contentWindow).finally(() => {
           if (Cu.isDeadWrapper(element)) {
-            
+            // Focus element is removed or document is navigated to new page.
             return;
           }
           const focusedElement =
@@ -91,21 +85,21 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Process an auto-fillable form and send the relevant details of the form
+   * to Java. Multiple calls within a short time period for the same form are
+   * coalesced, so that, e.g., if multiple inputs are added to a form in
+   * succession, we will only perform one processing pass. Note that for inputs
+   * without forms, FormLikeFactory treats the document as the "form", but
+   * there is no difference in how we process them.
+   *
+   * @param aFormLike A FormLike object produced by FormLikeFactory.
+   */
   async addElement(aFormLike) {
     debug`Adding auto-fill ${aFormLike.rootElement.tagName}`;
 
     const window = aFormLike.rootElement.ownerGlobal;
-    
+    // Get password field to get better form data via LoginManagerChild.
     let passwordField;
     for (const field of aFormLike.elements) {
       if (
@@ -157,19 +151,19 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
       });
 
     try {
-      
-      
+      // We don't await here so that we can send a focus event immediately
+      // after this as the app might not know which element is focused.
       const responsePromise = this.sendQuery("Add", {
         node: rootInfo,
       });
 
       if (sendFocusEvent) {
-        
+        // We might have missed sending a focus event for the active element.
         this.onFocus(aFormLike.ownerDocument.activeElement);
       }
 
       const responses = await responsePromise;
-      
+      // `responses` is an object with global IDs as keys.
       debug`Performing auto-fill ${Object.keys(responses)}`;
 
       const AUTOFILL_STATE = "autofill";
@@ -188,10 +182,10 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
         ) {
           element.setUserInput(value);
           if (winUtils && element.value === value) {
-            
+            // Add highlighting for autofilled fields.
             winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
 
-            
+            // Remove highlighting when the field is changed.
             element.addEventListener(
               "input",
               _ => winUtils.removeManuallyManagedState(element, AUTOFILL_STATE),
@@ -227,7 +221,7 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
       uuid: Services.uuid
         .generateUUID()
         .toString()
-        .slice(1, -1), 
+        .slice(1, -1), // discard the surrounding curly braces
       parentUuid: aParent,
       rootUuid: aRoot,
       tag: aElement.tagName,
@@ -269,9 +263,9 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     };
 
     if (aElement === aUsernameField) {
-      info.autofillhint = "username"; 
+      info.autofillhint = "username"; // AUTOFILL.HINT.USERNAME
     } else if (isInputElement) {
-      
+      // Using autocomplete attribute if it is email.
       const autocompleteInfo = aElement.getAutocompleteInfo();
       if (autocompleteInfo) {
         const autocompleteAttr = autocompleteInfo.fieldName;
@@ -307,11 +301,11 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     return updated;
   }
 
-  
-
-
-
-
+  /**
+   * Called when an auto-fillable field is focused or blurred.
+   *
+   * @param aTarget Focused element, or null if an element has lost focus.
+   */
   onFocus(aTarget) {
     debug`Auto-fill focus on ${aTarget && aTarget.tagName}`;
 
@@ -365,9 +359,9 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     }
   }
 
-  
-
-
+  /**
+   * Clear all tracked auto-fill forms and notify Java.
+   */
   clearElements(browsingContext) {
     this._autofillInfos = undefined;
     this._autofillElements = undefined;
@@ -377,23 +371,23 @@ class GeckoViewAutoFillChild extends GeckoViewActorChild {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Scan for auto-fillable forms and add them if necessary. Called when a page
+   * is navigated to through history, in which case we don't get our typical
+   * "input added" notifications.
+   *
+   * @param aDoc Document to scan.
+   */
   scanDocument(aDoc) {
-    
+    // Add forms first; only check forms with password inputs.
     const inputs = aDoc.querySelectorAll("input[type=password]");
     let inputAdded = false;
     for (let i = 0; i < inputs.length; i++) {
       if (inputs[i].form) {
-        
+        // Let addElement coalesce multiple calls for the same form.
         this.addElement(lazy.FormLikeFactory.createFromForm(inputs[i].form));
       } else if (!inputAdded) {
-        
+        // Treat inputs without forms as one unit, and process them only once.
         inputAdded = true;
         this.addElement(lazy.FormLikeFactory.createFromField(inputs[i]));
       }

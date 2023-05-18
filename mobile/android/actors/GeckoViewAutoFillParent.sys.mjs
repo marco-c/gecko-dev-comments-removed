@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewAutoFillParent"];
-
-const { GeckoViewActorParent } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorParent.sys.mjs"
-);
+import { GeckoViewActorParent } from "resource://gre/modules/GeckoViewActorParent.sys.mjs";
 
 const lazy = {};
 
@@ -15,13 +10,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   gAutofillManager: "resource://gre/modules/GeckoViewAutofill.sys.mjs",
 });
 
-class GeckoViewAutoFillParent extends GeckoViewActorParent {
+export class GeckoViewAutoFillParent extends GeckoViewActorParent {
   constructor() {
     super();
     this.sessionId = Services.uuid
       .generateUUID()
       .toString()
-      .slice(1, -1); 
+      .slice(1, -1); // discard the surrounding curly braces
   }
 
   get rootActor() {
@@ -35,7 +30,7 @@ class GeckoViewAutoFillParent extends GeckoViewActorParent {
   }
 
   add(node) {
-    
+    // We will start a new session if the current one does not exist.
     const autofill = lazy.gAutofillManager.ensure(
       this.sessionId,
       this.eventDispatcher
@@ -63,8 +58,8 @@ class GeckoViewAutoFillParent extends GeckoViewActorParent {
     const { name } = aMessage;
     debug`receiveMessage ${name}`;
 
-    
-    
+    // We need to re-route all messages through the root actor to ensure that we
+    // have a consistent sessionId for the entire browsingContext tree.
     switch (name) {
       case "Add": {
         return this.rootActor.add(aMessage.data.node);

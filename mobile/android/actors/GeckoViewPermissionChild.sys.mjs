@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewPermissionChild"];
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
 const lazy = {};
 
@@ -17,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const PERM_ACCESS_FINE_LOCATION = "android.permission.ACCESS_FINE_LOCATION";
 
-class GeckoViewPermissionChild extends GeckoViewActorChild {
+export class GeckoViewPermissionChild extends GeckoViewActorChild {
   getMediaPermission(aPermission) {
     return this.eventDispatcher.sendRequestForResult({
       type: "GeckoView:MediaPermission",
@@ -41,7 +36,7 @@ class GeckoViewPermissionChild extends GeckoViewActorChild {
   }
 
   async promptPermission(aRequest) {
-    
+    // Only allow exactly one permission request here.
     const types = aRequest.types.QueryInterface(Ci.nsIArray);
     if (types.length !== 1) {
       return { allow: false };
@@ -56,7 +51,7 @@ class GeckoViewPermissionChild extends GeckoViewActorChild {
         true
       )
     ) {
-      
+      // We need user interaction and don't have it.
       return { allow: false };
     }
 
@@ -79,7 +74,7 @@ class GeckoViewPermissionChild extends GeckoViewActorChild {
       });
 
       if (allowOrDeny === Services.perms.ALLOW_ACTION) {
-        
+        // Ask for app permission after asking for content permission.
         if (perm.type === "geolocation") {
           const granted = await this.getAppPermissions([
             PERM_ACCESS_FINE_LOCATION,
@@ -94,12 +89,12 @@ class GeckoViewPermissionChild extends GeckoViewActorChild {
       allowOrDeny = Services.perms.DENY_ACTION;
     }
 
-    
+    // Manually release the target request here to facilitate garbage collection.
     aRequest = undefined;
 
     const allow = allowOrDeny === Services.perms.ALLOW_ACTION;
 
-    
+    // The storage access code adds itself to the perm manager; no need for us to do it.
     if (perm.type === "storage-access") {
       if (allow) {
         return { allow, permission: { "storage-access": "allow" } };

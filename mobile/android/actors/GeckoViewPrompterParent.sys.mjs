@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewPrompterParent"];
-
-const { GeckoViewActorParent } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorParent.sys.mjs"
-);
+import { GeckoViewActorParent } from "resource://gre/modules/GeckoViewActorParent.sys.mjs";
 
 const DIALOGS = [
   "alert",
@@ -19,7 +13,7 @@ const DIALOGS = [
   "promptCheck",
 ];
 
-class GeckoViewPrompterParent extends GeckoViewActorParent {
+export class GeckoViewPrompterParent extends GeckoViewActorParent {
   constructor() {
     super();
     this._prompts = new Map();
@@ -43,7 +37,7 @@ class GeckoViewPrompterParent extends GeckoViewActorParent {
   }
 
   notifyPromptShow(promptId) {
-    
+    // ToDo: Bug 1761480 - GeckoView can send additional prompts to Marionette
     if (this._prompts.get(promptId).isDialog) {
       Services.obs.notifyObservers({ id: promptId }, "geckoview-prompt-show");
     }
@@ -52,13 +46,13 @@ class GeckoViewPrompterParent extends GeckoViewActorParent {
   getPrompts() {
     const self = this;
     const prompts = [];
-    
+    // Marionette expects this event to be fired from the parent
     const dialogClosedEvent = new CustomEvent("DOMModalDialogClosed", {
       cancelable: true,
       bubbles: true,
     });
     for (const [, prompt] of this._prompts) {
-      
+      // Adding only WebDriver compliant dialogs to the window
       if (prompt.isDialog) {
         prompts.push({
           args: {
@@ -89,13 +83,13 @@ class GeckoViewPrompterParent extends GeckoViewActorParent {
     return prompts;
   }
 
-  
-
-
-
-
-
-  
+  /**
+   * Handles the message coming from GeckoViewPrompterChild.
+   *
+   * @param   {string} message.name The subject of the message.
+   * @param   {object} message.data The data of the message.
+   */
+  // eslint-disable-next-line consistent-return
   async receiveMessage({ name, data }) {
     switch (name) {
       case "RegisterPrompt": {
@@ -124,7 +118,7 @@ class RemotePrompt {
     this.actor = actor;
   }
 
-  
+  // Checks if the prompt conforms to a WebDriver simple dialog.
   get isDialog() {
     return DIALOGS.includes(this.type);
   }

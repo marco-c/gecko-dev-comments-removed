@@ -1,15 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorParent } from "resource://gre/modules/GeckoViewActorParent.sys.mjs";
 
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SelectionActionDelegateParent"];
-
-const { GeckoViewActorParent } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorParent.sys.mjs"
-);
-
-class SelectionActionDelegateParent extends GeckoViewActorParent {
+export class SelectionActionDelegateParent extends GeckoViewActorParent {
   respondTo = null;
   actionId = null;
 
@@ -39,9 +34,9 @@ class SelectionActionDelegateParent extends GeckoViewActorParent {
   }
 
   hideSelectionAction(aRespondTo, reason) {
-    
-    
-    
+    // Mark previous actions as stale. Don't do this for "invisibleselection"
+    // or "scroll" because previous actions should still be valid even after
+    // these events occur.
     if (reason !== "invisibleselection" && reason !== "scroll") {
       this.actionId = null;
     }

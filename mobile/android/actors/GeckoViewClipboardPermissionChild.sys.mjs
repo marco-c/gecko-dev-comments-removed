@@ -1,15 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
-
-"use strict";
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
-
-const EXPORTED_SYMBOLS = ["GeckoViewClipboardPermissionChild"];
-
-class GeckoViewClipboardPermissionChild extends GeckoViewActorChild {
+export class GeckoViewClipboardPermissionChild extends GeckoViewActorChild {
   constructor() {
     super();
     this._pendingPromise = null;
@@ -36,8 +31,8 @@ class GeckoViewClipboardPermissionChild extends GeckoViewActorChild {
     try {
       const allowOrDeny = await promise;
       if (this._pendingPromise !== promise) {
-        
-        
+        // Current pending promise is newer. So it means that this promise
+        // is already resolved or rejected. Do nothing.
         return;
       }
       this.contentWindow.navigator.clipboard.onUserReactedToPasteMenuPopup(
@@ -48,8 +43,8 @@ class GeckoViewClipboardPermissionChild extends GeckoViewActorChild {
       debug`Permission error: ${error}`;
 
       if (this._pendingPromise !== promise) {
-        
-        
+        // Current pending promise is newer. So it means that this promise
+        // is already resolved or rejected. Do nothing.
         return;
       }
 
@@ -70,16 +65,16 @@ class GeckoViewClipboardPermissionChild extends GeckoViewActorChild {
         }
         break;
 
-      
+      // page hide or deactivate cancel clipboard permission.
       case "pagehide":
-      
+      // fallthrough for the next three events.
       case "deactivate":
       case "mousedown":
       case "mozvisualscroll":
-        
-        
-        
-        
+        // Gecko desktop uses XUL popup to show clipboard permission prompt.
+        // So it will be closed automatically by scroll and other user
+        // activation. So GeckoView has to close permission prompt by some user
+        // activations, too.
 
         this.eventDispatcher.sendRequest({
           type: "GeckoView:DismissClipboardPermissionRequest",

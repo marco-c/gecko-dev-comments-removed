@@ -1,23 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
-
-var { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-
+// This needs to match ScreenLength.java
 const SCREEN_LENGTH_TYPE_PIXEL = 0;
 const SCREEN_LENGTH_TYPE_VISUAL_VIEWPORT_WIDTH = 1;
 const SCREEN_LENGTH_TYPE_VISUAL_VIEWPORT_HEIGHT = 2;
 const SCREEN_LENGTH_DOCUMENT_WIDTH = 3;
 const SCREEN_LENGTH_DOCUMENT_HEIGHT = 4;
 
-
+// This need to match PanZoomController.java
 const SCROLL_BEHAVIOR_SMOOTH = 0;
 const SCROLL_BEHAVIOR_AUTO = 1;
 
@@ -32,9 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Utils: "resource://gre/modules/sessionstore/Utils.sys.mjs",
 });
 
-var EXPORTED_SYMBOLS = ["GeckoViewContentChild"];
-
-class GeckoViewContentChild extends GeckoViewActorChild {
+export class GeckoViewContentChild extends GeckoViewActorChild {
   constructor() {
     super();
     this.lastOrientation = SCREEN_ORIENTATION_PORTRAIT;
@@ -85,7 +77,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
     let formdata = SessionStoreUtils.collectFormData(contentWindow);
     let scrolldata = SessionStoreUtils.collectScrollPosition(contentWindow);
 
-    
+    // Save the current document resolution.
     let zoom = 1;
     const domWindowUtils = contentWindow.windowUtils;
     zoom = domWindowUtils.getResolution();
@@ -93,8 +85,8 @@ class GeckoViewContentChild extends GeckoViewActorChild {
     scrolldata.zoom = {};
     scrolldata.zoom.resolution = zoom;
 
-    
-    
+    // Save some data that'll help in adjusting the zoom level
+    // when restoring in a different screen orientation.
     const displaySize = {};
     const width = {},
       height = {};
@@ -113,8 +105,8 @@ class GeckoViewContentChild extends GeckoViewActorChild {
   orientation() {
     const currentOrientationType = this.contentWindow?.screen.orientation.type;
     if (!currentOrientationType) {
-      
-      
+      // Unfortunately, we don't know current screen orientation.
+      // Return portrait as default.
       return SCREEN_ORIENTATION_PORTRAIT;
     }
     if (currentOrientationType.startsWith("landscape")) {
@@ -134,9 +126,9 @@ class GeckoViewContentChild extends GeckoViewActorChild {
           !this.contentWindow?.windowUtils.handleFullscreenRequests() &&
           !this.contentWindow?.document.fullscreenElement
         ) {
-          
-          
-          
+          // If we don't actually have any pending fullscreen request
+          // to handle, neither we have been in fullscreen, tell the
+          // parent to just exit.
           const actor = this.contentWindow?.windowGlobalChild?.getActor(
             "ContentDelegate"
           );
@@ -144,7 +136,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
         }
         break;
       case "GeckoView:DOMFullscreenExited":
-        
+        // During fullscreen, window size is changed. So don't restore viewport size.
         const restoreViewSize = this.orientation() == this.lastOrientation;
         this.contentWindow?.windowUtils.exitFullscreen(!restoreViewSize);
         break;
@@ -181,10 +173,10 @@ class GeckoViewContentChild extends GeckoViewActorChild {
 
         contentWindow.addEventListener("resize", onResize, { capture: true });
 
-        
-        
-        
-        
+        // When the keyboard is displayed, we can get one resize event,
+        // multiple resize events, or none at all. Try to handle all these
+        // cases by allowing resizing within a set interval, and still zoom to
+        // input if there is no resize event at the end of the interval.
         contentWindow.setTimeout(() => {
           contentWindow.removeEventListener("resize", onResize, {
             capture: true,
@@ -209,7 +201,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
           );
 
           if (!switchId) {
-            
+            // TODO: Bug 1648158 This won't work for Fission or HistoryInParent.
             webNavigation.sessionHistory.legacySHistory.reloadCurrentEntry();
           } else {
             webNavigation.resumeRedirectedLoad(switchId, historyIndex);
@@ -218,7 +210,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
         break;
       }
       case "GeckoView:UpdateInitData": {
-        
+        // Provide a hook for native code to detect a transfer.
         Services.obs.notifyObservers(
           this.docShell,
           "geckoview-content-global-transferred"
@@ -284,7 +276,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
   }
 
   async restoreSessionState(message) {
-    
+    // Make sure we showed something before restoring scrolling and form data
     await this.pageShow;
 
     const { contentWindow } = this;
@@ -295,9 +287,9 @@ class GeckoViewContentChild extends GeckoViewActorChild {
         contentWindow,
         formdata,
         (frame, data) => {
-          
-          
-          
+          // restore() will return false, and thus abort restoration for the
+          // current |frame| and its descendants, if |data.url| is given but
+          // doesn't match the loaded document's URL.
           return SessionStoreUtils.restoreFormData(frame.document, data);
         }
       );
@@ -317,7 +309,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
 
     if (scrolldata && scrolldata.zoom && scrolldata.zoom.displaySize) {
       const utils = contentWindow.windowUtils;
-      
+      // Restore zoom level.
       utils.setRestoreResolution(
         scrolldata.zoom.resolution,
         scrolldata.zoom.displaySize.width,
@@ -326,7 +318,7 @@ class GeckoViewContentChild extends GeckoViewActorChild {
     }
   }
 
-  
+  // eslint-disable-next-line complexity
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
 

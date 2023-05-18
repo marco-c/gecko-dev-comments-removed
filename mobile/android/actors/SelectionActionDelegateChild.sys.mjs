@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
 const lazy = {};
 
@@ -12,15 +10,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LayoutUtils: "resource://gre/modules/LayoutUtils.sys.mjs",
 });
 
-const EXPORTED_SYMBOLS = ["SelectionActionDelegateChild"];
-
 const MAGNIFIER_PREF = "layout.accessiblecaret.magnifier.enabled";
 const ACCESSIBLECARET_HEIGHT_PREF = "layout.accessiblecaret.height";
 const PREFS = [MAGNIFIER_PREF, ACCESSIBLECARET_HEIGHT_PREF];
 
-
-
-class SelectionActionDelegateChild extends GeckoViewActorChild {
+// Dispatches GeckoView:ShowSelectionAction and GeckoView:HideSelectionAction to
+// the GeckoSession on accessible caret changes.
+export class SelectionActionDelegateChild extends GeckoViewActorChild {
   constructor(aModuleName, aMessageManager) {
     super(aModuleName, aMessageManager);
 
@@ -28,9 +24,9 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
     this._isActive = false;
     this._previousMessage = "";
 
-    
-    
-    
+    // Bug 1570744 - JSWindowActorChild's cannot be used as nsIObserver's
+    // directly, so we create a new function here instead to act as our
+    // nsIObserver, which forwards the notification to the observe method.
     this._observerFunction = (subject, topic, data) => {
       this.observe(subject, topic, data);
     };
@@ -113,7 +109,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
         if (e.reason === "longpressonemptycontent") {
           return false;
         }
-        
+        // When on design mode, focusedElement will be null.
         const element =
           Services.focus.focusedElement || e.target?.activeElement;
         if (e.selectionEditable && e.target && element) {
@@ -126,8 +122,8 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
           ) {
             value = element.innerText;
           }
-          
-          
+          // Do not show SELECT_ALL if the editable is empty
+          // or all the editable text is already selected.
           return value !== "" && value !== e.selectedTextContent;
         }
         return true;
@@ -167,7 +163,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
       win &&
       win.HTMLInputElement &&
       win.HTMLInputElement.isInstance(focus) &&
-      !focus.mozIsTextField( true)
+      !focus.mozIsTextField(/* excludePassword */ true)
     );
   }
 
@@ -180,7 +176,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
       return true;
     }
 
-    
+    // focused element isn't <input> nor <textarea>
     const win = aEvent.target.defaultView;
     const focus = Services.focus.focusedElement;
     return (
@@ -213,7 +209,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
       win.HTMLInputElement?.isInstance(focus) &&
       focus.mozIsTextField(false)
     ) {
-      
+      // <input> element. Use vertical center position of input element.
       const bounds = focus.getBoundingClientRect();
       const rect = lazy.LayoutUtils.rectToScreenRect(
         aEvent.target.ownerGlobal,
@@ -228,19 +224,19 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
     }
 
     if (win.HTMLTextAreaElement?.isInstance(focus)) {
-      
-      
+      // TODO:
+      // <textarea> element. How to get better selection bounds?
       return this._getDefaultMagnifierPoint(aEvent);
     }
 
     const selection = win.getSelection();
     if (selection.rangeCount != 1) {
-      
-      
+      // When selecting text using accessible caret, selection count will be 1.
+      // This situation means that current selection isn't into text.
       return this._getDefaultMagnifierPoint(aEvent);
     }
 
-    
+    // We are looking for better selection bounds, then use it.
     const bounds = (() => {
       const range = selection.getRangeAt(0);
       let distance = Number.MAX_SAFE_INTEGER;
@@ -279,13 +275,13 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
     }
   }
 
-  
-
-
-
+  /**
+   * Receive and act on AccessibleCarets caret state-change
+   * (mozcaretstatechanged and pagehide) events.
+   */
   handleEvent(aEvent) {
     if (aEvent.type === "pagehide" || aEvent.type === "deactivate") {
-      
+      // Hide any selection actions on page hide or deactivate.
       aEvent = {
         reason: "visibilitychange",
         caretVisibile: false,
@@ -298,7 +294,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
     let reason = aEvent.reason;
 
     if (this._isActive && !aEvent.caretVisible) {
-      
+      // For mozcaretstatechanged, "visibilitychange" means the caret is hidden.
       reason = "visibilitychange";
     } else if (!aEvent.collapsed && !aEvent.selectionVisible) {
       reason = "invisibleselection";
@@ -313,9 +309,9 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
         false
       )
     ) {
-      
-      
-      
+      // Don't show selection actions when merely focusing on an editor or
+      // repositioning the cursor. Wait until long press or the caret is tapped
+      // in order to match Android behavior.
       reason = "visibilitychange";
     }
 
@@ -366,15 +362,15 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
       };
 
       if (this._isActive && JSON.stringify(msg) === this._previousMessage) {
-        
+        // Don't call again if we're already active and things haven't changed.
         return;
       }
 
       this._isActive = true;
       this._previousMessage = JSON.stringify(msg);
 
-      
-      
+      // We can't just listen to the response of the message because we accept
+      // multiple callbacks.
       this._actionCallback = data => {
         const action = actions.find(action => action.id === data.id);
         if (action) {
@@ -398,16 +394,16 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
       }
       this._isActive = false;
 
-      
-      
-      
+      // Mark previous actions as stale. Don't do this for "invisibleselection"
+      // or "scroll" because previous actions should still be valid even after
+      // these events occur.
       if (reason !== "invisibleselection" && reason !== "scroll") {
         this._seqNo++;
       }
 
       this.sendAsyncMessage("HideSelectionAction", { reason });
     } else if (reason == "dragcaret") {
-      
+      // nothing for selection action
     } else {
       warn`Unknown reason: ${reason}`;
     }
@@ -428,7 +424,7 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
         this._magnifierEnabled = Services.prefs.getBoolPref(MAGNIFIER_PREF);
         break;
     }
-    
+    // Reset magnifier
     this.eventDispatcher.sendRequest({
       type: "GeckoView:HideMagnifier",
     });
