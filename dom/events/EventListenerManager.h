@@ -159,8 +159,6 @@ class EventListenerManagerBase {
   uint16_t mMayHaveTouchEventListener : 1;
   uint16_t mMayHaveMouseEnterLeaveEventListener : 1;
   uint16_t mMayHavePointerEnterLeaveEventListener : 1;
-  uint16_t mMayHaveKeyEventListener : 1;
-  uint16_t mMayHaveInputOrCompositionEventListener : 1;
   uint16_t mMayHaveSelectionChangeEventListener : 1;
   uint16_t mMayHaveFormSelectEventListener : 1;
   uint16_t mMayHaveTransitionEventListener : 1;
@@ -503,21 +501,6 @@ class EventListenerManager final : public EventListenerManagerBase {
   }
   bool MayHaveTransitionEventListener() {
     return mMayHaveTransitionEventListener;
-  }
-
-  
-
-
-
-  bool MayHaveKeyEventListener() const { return mMayHaveKeyEventListener; }
-
-  
-
-
-
-
-  bool MayHaveInputOrCompositionEventListener() const {
-    return mMayHaveInputOrCompositionEventListener;
   }
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
