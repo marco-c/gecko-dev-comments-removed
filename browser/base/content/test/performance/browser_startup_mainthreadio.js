@@ -399,6 +399,34 @@ const startupPhases = {
       close: 1,
     },
     {
+      path: "XREAppFeat:webcompat-reporter@mozilla.org.xpi",
+      condition: !WIN,
+      ignoreIfUnused: true,
+      stat: 1,
+      close: 1,
+    },
+    {
+      
+      path: "ProfD:wmfvpxvideo.guard",
+      condition: WIN,
+      ignoreIfUnused: true,
+      stat: 1,
+      close: 1,
+    },
+    {
+      
+      path: "ProfD:extensions",
+      ignoreIfUnused: true,
+      condition: WIN,
+      stat: 1,
+    },
+  ],
+
+  
+  
+  
+  "before becoming idle": [
+    {
       
       path: `ProfD:cert9.db`,
       condition: WIN,
@@ -427,49 +455,21 @@ const startupPhases = {
       
       path: `ProfD:key4.db`,
       condition: WIN,
-      read: 8,
+      read: 10,
       stat: AppConstants.NIGHTLY_BUILD ? 5 : 4,
     },
     {
       
       path: `ProfD:key4.db-journal`,
       condition: WIN,
-      stat: 5,
+      stat: 7,
     },
     {
       
       path: `ProfD:key4.db-wal`,
       condition: WIN,
-      stat: 5,
+      stat: 7,
     },
-    {
-      path: "XREAppFeat:webcompat-reporter@mozilla.org.xpi",
-      condition: !WIN,
-      ignoreIfUnused: true,
-      stat: 1,
-      close: 1,
-    },
-    {
-      
-      path: "ProfD:wmfvpxvideo.guard",
-      condition: WIN,
-      ignoreIfUnused: true,
-      stat: 1,
-      close: 1,
-    },
-    {
-      
-      path: "ProfD:extensions",
-      ignoreIfUnused: true,
-      condition: WIN,
-      stat: 1,
-    },
-  ],
-
-  
-  
-  
-  "before becoming idle": [
     {
       path: "XREAppFeat:screenshots@mozilla.org.xpi",
       ignoreIfUnused: true,
@@ -548,16 +548,6 @@ const startupPhases = {
       read: 8,
       stat: 4,
       write: 1300,
-    },
-    {
-      path: `ProfD:key4.db-journal`,
-      condition: WIN,
-      stat: 2,
-    },
-    {
-      path: `ProfD:key4.db-wal`,
-      condition: WIN,
-      stat: 2,
     },
     {
       path: "ProfD:",
