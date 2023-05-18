@@ -350,6 +350,8 @@ class nsContentList : public nsBaseContentList,
 
   void LastRelease() override;
 
+  class HashEntry;
+
  protected:
   
   
@@ -531,6 +533,8 @@ class nsCacheableFuncStringContentList : public nsContentList {
 #ifdef DEBUG
   ContentListType mType;
 #endif
+
+  class HashEntry;
 
  protected:
   nsCacheableFuncStringContentList(
