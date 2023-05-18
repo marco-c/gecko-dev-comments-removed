@@ -121,7 +121,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
 
   
   
-  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
+  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, uint32_t aSize);
 
   
   double AverageFrameLength() const;
@@ -161,7 +161,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   int64_t mTotalFrameLen;
 
   
-  int32_t mSamplesPerFrame;
+  uint32_t mSamplesPerFrame;
 
   
   
