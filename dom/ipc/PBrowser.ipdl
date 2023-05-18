@@ -23,6 +23,7 @@ include NeckoChannelParams;
 include WindowGlobalTypes;
 include IPCBlob;
 include IPCStream;
+include IPCTransferable;
 include URIParams;
 include PPrintingTypes;
 include PTabContext;
@@ -864,6 +865,7 @@ child:
 
 
 
+    
     async PasteTransferable(IPCTransferableData aTransferableData,
                             bool aIsPrivateData,
                             nullable nsIPrincipal aRequestingPrincipal,
