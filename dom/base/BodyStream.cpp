@@ -195,9 +195,6 @@ already_AddRefed<Promise> BodyStream::PullCallback(
   MOZ_ASSERT(!mPullPromise);
   mPullPromise = Promise::CreateInfallible(aController.GetParentObject());
 
-  
-  mStreamHolder->MarkAsRead();
-
   if (!mInputStream) {
     
     
@@ -281,11 +278,6 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
 void BodyStream::CloseInputAndReleaseObjects() {
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
-  if (mStreamHolder) {
-    
-    mStreamHolder->MarkAsRead();
-  }
-
   if (mInputStream) {
     mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
@@ -345,11 +337,6 @@ void BodyStream::ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
     IgnoredErrorResult rv;
     aStream->ErrorNative(aCx, errorValue, rv);
     NS_WARNING_ASSERTION(!rv.Failed(), "Failed to error BodyStream");
-  }
-
-  if (mStreamHolder) {
-    
-    mStreamHolder->MarkAsRead();
   }
 
   if (mInputStream) {
@@ -570,7 +557,6 @@ void BodyStream::ReleaseObjects() {
   mPullPromise = nullptr;
 
   RefPtr<BodyStream> self = mStreamHolder->TakeBodyStream();
-  mStreamHolder->NullifyStream();
   mStreamHolder = nullptr;
 }
 
