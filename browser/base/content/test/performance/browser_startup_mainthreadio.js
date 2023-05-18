@@ -312,8 +312,16 @@ const startupPhases = {
     {
       
       path: "XREAppDist:distribution.ini",
-      condition: WIN,
+      
+      condition: WIN && !Services.sysinfo.getProperty("hasWinPackageId"),
       stat: 1,
+    },
+    {
+      
+      path: "XREAppDist:distribution.ini",
+      condition: WIN && Services.sysinfo.getProperty("hasWinPackageId"),
+      stat: 1,
+      read: 1,
     },
     {
       
