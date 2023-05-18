@@ -103,10 +103,6 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
       
       return undefined;
     }
-    const syncPrefsButtonEl = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-sync-prefs-button"
-    );
     return SyncedTabs.getTabClients()
       .then(clients => {
         let noTabs = !UIState.get().syncEnabled || !clients.length;
@@ -114,9 +110,6 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
         if (this.separator) {
           this.separator.hidden = noTabs;
         }
-
-        syncPrefsButtonEl.hidden =
-          !UIState.get().syncEnabled || clients.length <= 1;
 
         
         if (!this.tabsList) {
@@ -543,6 +536,14 @@ var gSync = {
         : "sync-now-data-l10n-id"
     );
     syncNowBtn.setAttribute("data-l10n-id", l10nId);
+
+    
+    
+    const syncPrefsButtonEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-prefs-button"
+    );
+    syncPrefsButtonEl.hidden = !UIState.get().syncEnabled;
 
     panelview.syncedTabsPanelList = new SyncedTabsPanelList(
       panelview,
