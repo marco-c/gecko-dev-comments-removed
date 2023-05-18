@@ -542,6 +542,19 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     const nsIFrame* aFrame, float aAppUnitsPerPixel) {
   MOZ_ASSERT(aFrame->IsPageFrame());
   auto* pageFrame = static_cast<const nsPageFrame*>(aFrame);
+  const nsSize contentPageSize = pageFrame->ComputePageSize();
+  nsSharedPageData* pd = pageFrame->GetSharedPageData();
+  const auto* ppsInfo = pd->PagesPerSheetInfo();
+
+  gfx::Matrix4x4 transform;
+
+  if (ppsInfo->mNumPages == 1) {
+    float scale = pageFrame->ComputePageSizeScale(contentPageSize);
+    transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
+    return transform;
+  }
+
+  
 
   const nsContainerFrame* const parentFrame = pageFrame->GetParent();
   MOZ_ASSERT(parentFrame->IsPrintedSheetFrame(),
@@ -550,25 +563,20 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
 
   
   
-  const nsSize contentPageSize = pageFrame->ComputePageSize();
-  float scale = pageFrame->ComputePageSizeScale(contentPageSize);
-  nsPoint gridOrigin;
-  uint32_t rowIdx = 0;
-  uint32_t colIdx = 0;
-
-  nsSharedPageData* pd = pageFrame->GetSharedPageData();
-  const auto* ppsInfo = pd->PagesPerSheetInfo();
-  if (ppsInfo->mNumPages > 1) {
-    scale *= sheetFrame->GetPagesPerSheetScale();
-    gridOrigin = sheetFrame->GetPagesPerSheetGridOrigin();
-    std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(
-        pageFrame->IndexOnSheet(), sheetFrame->GetPagesPerSheetNumCols());
-  }
+  nsPoint gridOrigin = sheetFrame->GetPagesPerSheetGridOrigin();
+  transform = gfx::Matrix4x4::Translation(
+      NSAppUnitsToFloatPixels(gridOrigin.x, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(gridOrigin.y, aAppUnitsPerPixel), 0);
 
   
-  auto transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
+  float scale = pageFrame->ComputePageSizeScale(contentPageSize) *
+                sheetFrame->GetPagesPerSheetScale();
+  transform.PreScale(scale, scale, 1);
 
   
+  uint32_t rowIdx, colIdx;
+  std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(
+      pageFrame->IndexOnSheet(), sheetFrame->GetPagesPerSheetNumCols());
   transform.PreTranslate(
       NSAppUnitsToFloatPixels(colIdx * contentPageSize.width,
                               aAppUnitsPerPixel),
@@ -577,8 +585,7 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
       0);
 
   
-  if (ppsInfo->mNumPages > 1 &&
-      StaticPrefs::layout_css_page_orientation_enabled()) {
+  if (StaticPrefs::layout_css_page_orientation_enabled()) {
     const StylePageOrientation& orientation =
         pageFrame->PageContentFrame()->StylePage()->mPageOrientation;
 
@@ -620,14 +627,7 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     }
   }
 
-  
-  
-  
-  
-  
-  return transform.PostTranslate(
-      NSAppUnitsToFloatPixels(gridOrigin.x, aAppUnitsPerPixel),
-      NSAppUnitsToFloatPixels(gridOrigin.y, aAppUnitsPerPixel), 0);
+  return transform;
 }
 
 nsIFrame::ComputeTransformFunction nsPageFrame::GetTransformGetter() const {
