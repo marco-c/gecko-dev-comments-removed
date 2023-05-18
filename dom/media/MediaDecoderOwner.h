@@ -165,9 +165,11 @@ class MediaDecoderOwner {
   
   
   
-  virtual void Invalidate(bool aImageSizeChanged,
+  enum class ImageSizeChanged { No, Yes };
+  enum class ForceInvalidate { No, Yes };
+  virtual void Invalidate(ImageSizeChanged aImageSizeChanged,
                           const Maybe<nsIntSize>& aNewIntrinsicSize,
-                          bool aForceInvalidate) {}
+                          ForceInvalidate aForceInvalidate) {}
 
   
   
