@@ -52,12 +52,7 @@ class FFmpegAudioDecoder<LIBAV_VER>
   uint64_t TotalFrames() const;
   
   
-  uint64_t mDecodedFrames = 0;
-  
-  
   uint32_t mEncoderDelay = 0;
-  
-  uint32_t mRemainingEncoderDelay = 0;
   
   
   
