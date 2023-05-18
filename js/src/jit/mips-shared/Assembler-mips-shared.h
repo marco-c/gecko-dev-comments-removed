@@ -108,14 +108,20 @@ static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
 static const int32_t WasmGlobalRegBias = 32768;
 
 
+
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
 
 
-static constexpr Register RegExpTesterRegExpReg = CallTempReg0;
-static constexpr Register RegExpTesterStringReg = CallTempReg1;
-static constexpr Register RegExpTesterLastIndexReg = CallTempReg2;
+static constexpr Register RegExpExecTestRegExpReg = CallTempReg0;
+static constexpr Register RegExpExecTestStringReg = CallTempReg1;
+static constexpr Register RegExpExecTestLastIndexReg = CallTempReg2;
+
+
+static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
+static constexpr Register RegExpSearcherStringReg = CallTempReg1;
+static constexpr Register RegExpSearcherLastIndexReg = CallTempReg2;
 
 static constexpr uint32_t CodeAlignment = 8;
 

@@ -154,14 +154,20 @@ static constexpr Register PreBarrierReg = edx;
 static constexpr Register InterpreterPCReg = InvalidReg;
 
 
+
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
 
 
-static constexpr Register RegExpTesterRegExpReg = CallTempReg0;
-static constexpr Register RegExpTesterStringReg = CallTempReg2;
-static constexpr Register RegExpTesterLastIndexReg = CallTempReg3;
+static constexpr Register RegExpExecTestRegExpReg = CallTempReg0;
+static constexpr Register RegExpExecTestStringReg = CallTempReg2;
+static constexpr Register RegExpExecTestLastIndexReg = CallTempReg3;
+
+
+static constexpr Register RegExpSearcherRegExpReg = CallTempReg0;
+static constexpr Register RegExpSearcherStringReg = CallTempReg2;
+static constexpr Register RegExpSearcherLastIndexReg = CallTempReg3;
 
 
 

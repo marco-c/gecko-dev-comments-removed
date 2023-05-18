@@ -2950,9 +2950,9 @@ static const int32_t RegExpSearcherResultFailed = -2;
 JitCode* JitRealm::generateRegExpSearcherStub(JSContext* cx) {
   JitSpew(JitSpew_Codegen, "# Emitting RegExpSearcher stub");
 
-  Register regexp = RegExpTesterRegExpReg;
-  Register input = RegExpTesterStringReg;
-  Register lastIndex = RegExpTesterLastIndexReg;
+  Register regexp = RegExpSearcherRegExpReg;
+  Register input = RegExpSearcherStringReg;
+  Register lastIndex = RegExpSearcherLastIndexReg;
   Register result = ReturnReg;
 
   
@@ -3103,14 +3103,14 @@ void CodeGenerator::visitOutOfLineRegExpSearcher(OutOfLineRegExpSearcher* ool) {
 }
 
 void CodeGenerator::visitRegExpSearcher(LRegExpSearcher* lir) {
-  MOZ_ASSERT(ToRegister(lir->regexp()) == RegExpTesterRegExpReg);
-  MOZ_ASSERT(ToRegister(lir->string()) == RegExpTesterStringReg);
-  MOZ_ASSERT(ToRegister(lir->lastIndex()) == RegExpTesterLastIndexReg);
+  MOZ_ASSERT(ToRegister(lir->regexp()) == RegExpSearcherRegExpReg);
+  MOZ_ASSERT(ToRegister(lir->string()) == RegExpSearcherStringReg);
+  MOZ_ASSERT(ToRegister(lir->lastIndex()) == RegExpSearcherLastIndexReg);
   MOZ_ASSERT(ToRegister(lir->output()) == ReturnReg);
 
-  static_assert(RegExpTesterRegExpReg != ReturnReg);
-  static_assert(RegExpTesterStringReg != ReturnReg);
-  static_assert(RegExpTesterLastIndexReg != ReturnReg);
+  static_assert(RegExpSearcherRegExpReg != ReturnReg);
+  static_assert(RegExpSearcherStringReg != ReturnReg);
+  static_assert(RegExpSearcherLastIndexReg != ReturnReg);
 
   masm.reserveStack(RegExpReservedStack);
 
@@ -3128,20 +3128,23 @@ void CodeGenerator::visitRegExpSearcher(LRegExpSearcher* lir) {
   masm.freeStack(RegExpReservedStack);
 }
 
-static const int32_t RegExpTesterResultFailed = -1;
+static const int32_t RegExpExecTestResultFailed = -1;
 
-JitCode* JitRealm::generateRegExpTesterStub(JSContext* cx) {
-  JitSpew(JitSpew_Codegen, "# Emitting RegExpTester stub");
+JitCode* JitRealm::generateRegExpExecTestStub(JSContext* cx) {
+  JitSpew(JitSpew_Codegen, "# Emitting RegExpExecTest stub");
 
-  Register regexp = RegExpTesterRegExpReg;
-  Register input = RegExpTesterStringReg;
-  Register lastIndex = RegExpTesterLastIndexReg;
+  Register regexp = RegExpExecTestRegExpReg;
+  Register input = RegExpExecTestStringReg;
+  Register lastIndex = RegExpExecTestLastIndexReg;
   Register result = ReturnReg;
+
+  static_assert(RegExpExecTestLastIndexReg != ReturnReg,
+                "setting ReturnReg must not clobber LastIndexReg");
 
   TempAllocator temp(&cx->tempLifoAlloc());
   JitContext jcx(cx);
   StackMacroAssembler masm(cx, temp);
-  AutoCreatedBy acb(masm, "JitRealm::generateRegExpTesterStub");
+  AutoCreatedBy acb(masm, "JitRealm::generateRegExpExecTestStub");
 
 #ifdef JS_USE_LINK_REGISTER
   masm.pushReturnAddress();
@@ -3194,7 +3197,6 @@ JitCode* JitRealm::generateRegExpTesterStub(JSContext* cx) {
   
   
   
-  
 
   int32_t pairsVectorStartOffset =
       RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
@@ -3218,7 +3220,7 @@ JitCode* JitRealm::generateRegExpTesterStub(JSContext* cx) {
   masm.jump(&done);
 
   masm.bind(&oolEntry);
-  masm.move32(Imm32(RegExpTesterResultFailed), result);
+  masm.move32(Imm32(RegExpExecTestResultFailed), result);
 
   masm.bind(&done);
   masm.freeStack(RegExpReservedStack);
@@ -3231,9 +3233,9 @@ JitCode* JitRealm::generateRegExpTesterStub(JSContext* cx) {
     return nullptr;
   }
 
-  CollectPerfSpewerJitCodeProfile(code, "RegExpTesterStub");
+  CollectPerfSpewerJitCodeProfile(code, "RegExpExecTestStub");
 #ifdef MOZ_VTUNE
-  vtune::MarkStub(code, "RegExpTesterStub");
+  vtune::MarkStub(code, "RegExpExecTestStub");
 #endif
 
   return code;
@@ -3255,7 +3257,7 @@ class OutOfLineRegExpExecTest : public OutOfLineCodeBase<CodeGenerator> {
 void CodeGenerator::visitOutOfLineRegExpExecTest(OutOfLineRegExpExecTest* ool) {
   LRegExpExecTest* lir = ool->lir();
   Register lastIndex = ToRegister(lir->temp0());
-  MOZ_ASSERT(lastIndex == RegExpTesterLastIndexReg);
+  MOZ_ASSERT(lastIndex == RegExpExecTestLastIndexReg);
   Register input = ToRegister(lir->string());
   Register regexp = ToRegister(lir->regexp());
 
@@ -3273,24 +3275,24 @@ void CodeGenerator::visitOutOfLineRegExpExecTest(OutOfLineRegExpExecTest* ool) {
 }
 
 void CodeGenerator::visitRegExpExecTest(LRegExpExecTest* lir) {
-  MOZ_ASSERT(ToRegister(lir->regexp()) == RegExpTesterRegExpReg);
-  MOZ_ASSERT(ToRegister(lir->string()) == RegExpTesterStringReg);
-  MOZ_ASSERT(ToRegister(lir->temp0()) == RegExpTesterLastIndexReg);
+  MOZ_ASSERT(ToRegister(lir->regexp()) == RegExpExecTestRegExpReg);
+  MOZ_ASSERT(ToRegister(lir->string()) == RegExpExecTestStringReg);
+  MOZ_ASSERT(ToRegister(lir->temp0()) == RegExpExecTestLastIndexReg);
   MOZ_ASSERT(ToRegister(lir->output()) == ReturnReg);
 
-  static_assert(RegExpTesterRegExpReg != ReturnReg);
-  static_assert(RegExpTesterStringReg != ReturnReg);
-  static_assert(RegExpTesterLastIndexReg != ReturnReg);
+  static_assert(RegExpExecTestRegExpReg != ReturnReg);
+  static_assert(RegExpExecTestStringReg != ReturnReg);
+  static_assert(RegExpExecTestLastIndexReg != ReturnReg);
 
   auto* ool = new (alloc()) OutOfLineRegExpExecTest(lir);
   addOutOfLineCode(ool, lir->mir());
 
   const JitRealm* jitRealm = gen->realm->jitRealm();
-  JitCode* regExpTesterStub =
-      jitRealm->regExpTesterStubNoBarrier(&realmStubsToReadBarrier_);
-  masm.call(regExpTesterStub);
+  JitCode* regExpExecTestStub =
+      jitRealm->regExpExecTestStubNoBarrier(&realmStubsToReadBarrier_);
+  masm.call(regExpExecTestStub);
 
-  masm.branch32(Assembler::Equal, ReturnReg, Imm32(RegExpTesterResultFailed),
+  masm.branch32(Assembler::Equal, ReturnReg, Imm32(RegExpExecTestResultFailed),
                 ool->entry());
 
   masm.bind(ool->rejoin());
