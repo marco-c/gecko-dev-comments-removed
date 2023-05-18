@@ -816,6 +816,12 @@ bool ReadableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
   
   
   
+  
+  
+  
+  if (IsReadableStreamLocked(this)) {
+    return false;
+  }
 
   
   
@@ -903,6 +909,12 @@ bool WritableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
   
   
   
+  
+  
+  
+  if (IsWritableStreamLocked(this)) {
+    return false;
+  }
 
   
   
@@ -995,6 +1007,12 @@ bool TransformStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId1,
   
   
   
+  
+  
+  
+  if (IsReadableStreamLocked(mReadable) || IsWritableStreamLocked(mWritable)) {
+    return false;
+  }
 
   
   
