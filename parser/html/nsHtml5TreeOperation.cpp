@@ -1107,12 +1107,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       
       
       
-      bool doesNotReturnData = false;
-      rv =
-          NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
-                              &doesNotReturnData);
-      NS_ENSURE_SUCCESS(rv, NS_OK);
-      if (!doesNotReturnData) {
+      if (!nsContentUtils::IsExternalProtocol(uri)) {
         viewSourceUrl.AssignLiteral("view-source:");
       }
 

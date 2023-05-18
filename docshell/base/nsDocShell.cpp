@@ -10186,11 +10186,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
     if (StaticPrefs::dom_block_external_protocol_in_iframes()) {
       
-      bool doesNotReturnData = false;
-      NS_URIChainHasFlags(aLoadState->URI(),
-                          nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
-                          &doesNotReturnData);
-      if (doesNotReturnData) {
+      if (nsContentUtils::IsExternalProtocol(aLoadState->URI())) {
         
         
         
@@ -12849,6 +12845,11 @@ nsresult nsDocShell::OnLinkClick(
 
   if (aContent->IsEditable()) {
     return NS_OK;
+  }
+
+  Document* ownerDoc = aContent->OwnerDoc();
+  if (nsContentUtils::IsExternalProtocol(aURI)) {
+    ownerDoc->EnsureNotEnteringAndExitFullscreen();
   }
 
   bool noOpenerImplied = false;
