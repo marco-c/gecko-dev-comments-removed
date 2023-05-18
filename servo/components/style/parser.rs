@@ -9,7 +9,6 @@ use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
 use crate::stylesheets::{CssRuleType, Namespaces, Origin, UrlExtraData};
 use crate::use_counters::UseCounters;
 use cssparser::{Parser, SourceLocation, UnicodeRange};
-use std::borrow::Cow;
 use style_traits::{OneOrMoreSeparated, ParseError, ParsingMode, Separator};
 
 
@@ -54,7 +53,7 @@ pub struct ParserContext<'a> {
     
     error_reporter: Option<&'a dyn ParseErrorReporter>,
     
-    pub namespaces: Cow<'a, Namespaces>,
+    pub namespaces: Option<&'a Namespaces>,
     
     pub use_counters: Option<&'a UseCounters>,
 }
@@ -68,7 +67,6 @@ impl<'a> ParserContext<'a> {
         rule_type: Option<CssRuleType>,
         parsing_mode: ParsingMode,
         quirks_mode: QuirksMode,
-        namespaces: Cow<'a, Namespaces>,
         error_reporter: Option<&'a dyn ParseErrorReporter>,
         use_counters: Option<&'a UseCounters>,
     ) -> Self {
@@ -79,17 +77,29 @@ impl<'a> ParserContext<'a> {
             parsing_mode,
             quirks_mode,
             error_reporter,
-            namespaces,
+            namespaces: None,
             use_counters,
         }
     }
 
     
-    pub fn nest_for_rule<R>(&mut self, rule_type: CssRuleType, cb: impl FnOnce(&mut Self) -> R) -> R {
-        let old_rule_type = std::mem::replace(&mut self.rule_type, Some(rule_type));
-        let r = cb(self);
-        self.rule_type = old_rule_type;
-        r
+    
+    #[inline]
+    pub fn new_with_rule_type(
+        context: &'a ParserContext,
+        rule_type: CssRuleType,
+        namespaces: &'a Namespaces,
+    ) -> ParserContext<'a> {
+        Self {
+            stylesheet_origin: context.stylesheet_origin,
+            url_data: context.url_data,
+            rule_type: Some(rule_type),
+            parsing_mode: context.parsing_mode,
+            quirks_mode: context.quirks_mode,
+            namespaces: Some(namespaces),
+            error_reporter: context.error_reporter,
+            use_counters: context.use_counters,
+        }
     }
 
     
