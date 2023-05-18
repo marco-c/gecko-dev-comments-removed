@@ -696,6 +696,10 @@ void StartupCache::IgnoreDiskCache() {
   if (gStartupCache) gStartupCache->InvalidateCache();
 }
 
+bool StartupCache::GetIgnoreDiskCache() {
+  return gIgnoreDiskCache;
+}
+
 void StartupCache::WaitOnPrefetch() {
   
   MonitorAutoLock lock(mPrefetchComplete);
