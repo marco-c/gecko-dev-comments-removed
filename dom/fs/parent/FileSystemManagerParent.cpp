@@ -102,7 +102,7 @@ IPCResult FileSystemManagerParent::RecvGetFileHandle(
     aResolver(response);
   };
 
-  ContentType type;
+  const ContentType& type = VoidCString();  
   QM_TRY_UNWRAP(fs::EntryId entryId,
                 mDataManager->MutableDatabaseManagerPtr()->GetOrCreateFile(
                     aRequest.handle(), type, aRequest.create()),
