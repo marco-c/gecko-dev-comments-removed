@@ -32,7 +32,7 @@
 #include "vm/ThrowMsgKind.h"   
 
 namespace js {
-class Sprinter;
+class JS_PUBLIC_API Sprinter;
 }  
 
 
