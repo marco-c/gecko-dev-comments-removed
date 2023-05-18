@@ -230,7 +230,7 @@ class FrameParser {
 
     
     
-    int64_t Offset(float aDurationFac) const;
+    int64_t Offset(media::TimeUnit aTime, media::TimeUnit aDuration) const;
 
     
     
@@ -268,6 +268,8 @@ class FrameParser {
 
     
     VBRHeaderType mType;
+
+    uint16_t mVBRISeekOffsetsFramesPerEntry = 0;
 
     
     
