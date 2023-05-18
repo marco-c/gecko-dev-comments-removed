@@ -2127,6 +2127,19 @@ var gEMENonMSEFailTests = [
 ];
 
 
+var gSeamlessLoopingTests = [
+  
+  
+  
+  
+  
+  
+  
+  { name: "sin-441-1s-44100-lame.mp3", type: "audio/mpeg" },
+  { name: "sin-441-1s-44100.flac", type: "audio/flac" },
+];
+
+
 
 var gDecodeSuspendTests = [
   { name: "gizmo.mp4", type: "video/mp4", duration: 5.56 },
