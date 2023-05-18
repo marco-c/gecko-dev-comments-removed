@@ -307,10 +307,10 @@ var whitelist = [
   { file: "resource://gre/modules/PlacesQuery.sys.mjs" },
 
   
-  { file: "resource://app/localization/en-US/browser/mozTabList.ftl" },
-  { file: "chrome://browser/content/firefoxview/moz-tab-list.css" },
-  { file: "chrome://browser/content/firefoxview/moz-tab-list.mjs" },
-  { file: "chrome://browser/content/firefoxview/moz-tab-row.css" },
+  { file: "resource://app/localization/en-US/browser/fxviewTabList.ftl" },
+  { file: "chrome://browser/content/firefoxview/fxview-tab-list.css" },
+  { file: "chrome://browser/content/firefoxview/fxview-tab-list.mjs" },
+  { file: "chrome://browser/content/firefoxview/fxview-tab-row.css" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
