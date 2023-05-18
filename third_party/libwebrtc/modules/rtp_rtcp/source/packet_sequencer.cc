@@ -118,18 +118,8 @@ void PacketSequencer::PopulatePaddingFields(RtpPacketToSend& packet) {
     return;
   }
 
-  if (last_timestamp_time_ms_ > 0) {
-    RTC_DCHECK_GT(last_rtp_timestamp_, 0);
-    RTC_DCHECK_GT(last_capture_time_ms_, 0);
-    packet.SetTimestamp(last_rtp_timestamp_);
-    packet.set_capture_time(Timestamp::Millis(last_capture_time_ms_));
-  } else {
-    
-    
-    auto now = clock_->CurrentTime();
-    packet.SetTimestamp(now.ms() * kTimestampTicksPerMs);
-    packet.set_capture_time(now);
-  }
+  packet.SetTimestamp(last_rtp_timestamp_);
+  packet.set_capture_time(Timestamp::Millis(last_capture_time_ms_));
 
   
   
