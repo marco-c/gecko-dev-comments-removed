@@ -4253,11 +4253,9 @@ void MacroAssembler::branchIfNotRegExpInstanceOptimizable(Register regexp,
   branchTestObjShapeUnsafe(Assembler::NotEqual, regexp, temp, label);
 }
 
-void MacroAssembler::loadAndUpdateRegExpLastIndex(bool forTest, Register regexp,
-                                                  Register string,
-                                                  Register lastIndex,
-                                                  TypedOrValueRegister output,
-                                                  Label* done) {
+void MacroAssembler::loadRegExpLastIndex(Register regexp, Register string,
+                                         Register lastIndex,
+                                         Label* notFoundZeroLastIndex) {
   Address flagsSlot(regexp, RegExpObject::offsetOfFlags());
   Address lastIndexSlot(regexp, RegExpObject::offsetOfLastIndex());
   Address stringLength(string, JSString::offsetOfLength());
@@ -4268,6 +4266,7 @@ void MacroAssembler::loadAndUpdateRegExpLastIndex(bool forTest, Register regexp,
                Imm32(JS::RegExpFlag::Global | JS::RegExpFlag::Sticky),
                &notGlobalOrSticky);
   {
+    
     
     
     
@@ -4297,22 +4296,7 @@ void MacroAssembler::loadAndUpdateRegExpLastIndex(bool forTest, Register regexp,
       bind(&ok);
     }
 #endif
-    branch32(Assembler::AboveOrEqual, stringLength, lastIndex,
-             &loadedLastIndex);
-    {
-      storeValue(Int32Value(0), lastIndexSlot);
-      if (forTest) {
-        if (output.hasValue()) {
-          moveValue(BooleanValue(false), output.valueReg());
-        } else {
-          MOZ_ASSERT(output.type() == MIRType::Boolean);
-          move32(Imm32(0), output.typedReg().gpr());
-        }
-      } else {
-        moveValue(NullValue(), output.valueReg());
-      }
-      jump(done);
-    }
+    branch32(Assembler::Below, stringLength, lastIndex, notFoundZeroLastIndex);
     jump(&loadedLastIndex);
   }
 
