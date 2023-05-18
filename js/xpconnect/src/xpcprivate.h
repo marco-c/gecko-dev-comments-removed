@@ -178,9 +178,13 @@ extern const char XPC_XPCONNECT_CONTRACTID[];
 
 
 
-static inline bool IS_WN_REFLECTOR(JSObject* obj) {
+namespace xpc {
+
+inline bool IsWrappedNativeReflector(JSObject* obj) {
   return JS::GetClass(obj)->isWrappedNative();
 }
+
+}  
 
 
 
@@ -1393,7 +1397,7 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
   void SetSet(already_AddRefed<XPCNativeSet> set) { mSet = set; }
 
   static XPCWrappedNative* Get(JSObject* obj) {
-    MOZ_ASSERT(IS_WN_REFLECTOR(obj));
+    MOZ_ASSERT(xpc::IsWrappedNativeReflector(obj));
     return JS::GetObjectISupports<XPCWrappedNative>(obj);
   }
 

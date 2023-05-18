@@ -1016,7 +1016,7 @@ bool XPCConvert::JSObject2NativeInterface(JSContext* cx, void** dest,
 
     
     XPCWrappedNative* wrappedNative = nullptr;
-    if (IS_WN_REFLECTOR(inner)) {
+    if (IsWrappedNativeReflector(inner)) {
       wrappedNative = XPCWrappedNative::Get(inner);
     }
     if (wrappedNative) {
