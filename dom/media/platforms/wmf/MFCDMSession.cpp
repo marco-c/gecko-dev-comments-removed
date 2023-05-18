@@ -201,18 +201,6 @@ void MFCDMSession::OnSessionKeysChange() {
   UINT count = 0;
   RETURN_VOID_IF_FAILED(mSession->GetKeyStatuses(&keyStatuses, &count));
 
-  static auto ByteArrayFromGUID = [](REFGUID aGuid,
-                                     nsTArray<uint8_t>& aByteArrayOut) {
-    aByteArrayOut.SetLength(sizeof(GUID));
-    
-    GUID* reversedGuid = reinterpret_cast<GUID*>(aByteArrayOut.Elements());
-    *reversedGuid = aGuid;
-    reversedGuid->Data1 = _byteswap_ulong(aGuid.Data1);
-    reversedGuid->Data2 = _byteswap_ushort(aGuid.Data2);
-    reversedGuid->Data3 = _byteswap_ushort(aGuid.Data3);
-    
-  };
-
   static auto ToMediaKeyStatus = [](MF_MEDIAKEY_STATUS aStatus) {
     
     switch (aStatus) {
