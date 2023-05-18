@@ -116,7 +116,6 @@ const INTEGRATION_TEST_PAGE_SOURCES = [
   "replaced-bundle.js",
   "removed-original.js",
   "named-eval.js",
-  "react-component-module.js",
   
   "文字コード.js",
   

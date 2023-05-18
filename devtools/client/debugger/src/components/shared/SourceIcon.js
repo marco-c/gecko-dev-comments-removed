@@ -10,7 +10,12 @@ import { connect } from "../../utils/connect";
 import AccessibleImage from "./AccessibleImage";
 
 import { getSourceClassnames } from "../../utils/source";
-import { getSymbols, isSourceBlackBoxed, hasPrettyTab } from "../../selectors";
+import {
+  getSymbols,
+  getSelectedLocation,
+  isSourceBlackBoxed,
+  hasPrettyTab,
+} from "../../selectors";
 
 import "./SourceIcon.css";
 
@@ -18,7 +23,7 @@ class SourceIcon extends PureComponent {
   static get propTypes() {
     return {
       modifier: PropTypes.func.isRequired,
-      location: PropTypes.object.isRequired,
+      source: PropTypes.object.isRequired,
       iconClass: PropTypes.string,
       forTab: PropTypes.bool,
     };
@@ -41,23 +46,16 @@ class SourceIcon extends PureComponent {
 }
 
 export default connect((state, props) => {
-  const { forTab, location } = props;
+  const { forTab, source } = props;
+  const symbols = getSymbols(state, getSelectedLocation(state));
+  const isBlackBoxed = isSourceBlackBoxed(state, source);
   
-  
-  
-  if (!location.source.isOriginal && !location.sourceActor) {
-    return "file";
-  }
-  const symbols = getSymbols(state, location);
-  const isBlackBoxed = isSourceBlackBoxed(state, location.source);
-  
-  const hasMatchingPrettyTab =
-    !forTab && hasPrettyTab(state, location.source.url);
+  const hasMatchingPrettyTab = !forTab && hasPrettyTab(state, source.url);
 
   
   
   const iconClass = getSourceClassnames(
-    location.source,
+    source,
     symbols,
     isBlackBoxed,
     hasMatchingPrettyTab
