@@ -1535,6 +1535,10 @@ nsresult nsHttpChannel::CallOnStartRequest() {
                      "CORS preflight must have been finished by the time we "
                      "call OnStartRequest");
 
+  MOZ_RELEASE_ASSERT(mCanceled || LoadProcessCrossOriginSecurityHeadersCalled(),
+                     "Security headers need to have been processed before "
+                     "calling CallOnStartRequest");
+
   mEarlyHintObserver = nullptr;
 
   if (LoadOnStartRequestCalled()) {
@@ -5462,8 +5466,16 @@ NS_IMETHODIMP nsHttpChannel::OnAuthCancelled(bool userCancel) {
     if (LoadProxyAuthPending()) Cancel(NS_ERROR_PROXY_CONNECTION_REFUSED);
 
     
+    nsresult rv = ProcessCrossOriginSecurityHeaders();
+    if (NS_FAILED(rv)) {
+      mStatus = rv;
+      HandleAsyncAbort();
+      return rv;
+    }
+
     
-    nsresult rv = CallOnStartRequest();
+    
+    rv = CallOnStartRequest();
 
     
     
