@@ -140,11 +140,6 @@ pub fn create_sample_table(
     track: &Track,
     track_offset_time: CheckedInteger<i64>,
 ) -> Option<TryVec<Indice>> {
-    let timescale = match track.timescale {
-        Some(ref t) => TrackTimeScale::<i64>(t.0 as i64, t.1),
-        _ => return None,
-    };
-
     let (stsc, stco, stsz, stts) = match (&track.stsc, &track.stco, &track.stsz, &track.stts) {
         (Some(a), Some(b), Some(c), Some(d)) => (a, b, c, d),
         _ => return None,
@@ -238,15 +233,15 @@ pub fn create_sample_table(
         
         let ctts_offset = ctts_offset_iter.next_offset_time();
 
-        let start_composition = track_time_to_us((decode_time + ctts_offset)?, timescale)?.0;
+        let start_composition = decode_time + ctts_offset;
 
-        let end_composition = track_time_to_us((sum_delta + ctts_offset)?, timescale)?.0;
+        let end_composition = sum_delta + ctts_offset;
 
-        let start_decode = track_time_to_us(decode_time, timescale)?.0;
+        let start_decode = decode_time;
 
-        sample.start_composition = (track_offset_time + start_composition)?;
-        sample.end_composition = (track_offset_time + end_composition)?;
-        sample.start_decode = start_decode.into();
+        sample.start_composition = CheckedInteger(track_offset_time.0 + start_composition?.0);
+        sample.end_composition = CheckedInteger(track_offset_time.0 + end_composition?.0);
+        sample.start_decode = CheckedInteger(start_decode.0);
     }
 
     
