@@ -734,6 +734,8 @@ class MediaDecoderStateMachine::DecodingState
     return rv;
   }
 
+  virtual bool IsBufferingAllowed() const { return true; }
+
  private:
   void DispatchDecodeTasksIfNeeded();
   void MaybeStartBuffering();
@@ -932,12 +934,18 @@ class MediaDecoderStateMachine::LoopingDecodingState
     if (mMaster->HasAudio() && HasDecodedLastAudioFrame()) {
       SLOG("Mark audio queue as finished");
       mMaster->mAudioDataRequest.DisconnectIfExists();
+      mMaster->mAudioWaitRequest.DisconnectIfExists();
       AudioQueue().Finish();
     }
     if (mMaster->HasVideo() && HasDecodedLastVideoFrame()) {
       SLOG("Mark video queue as finished");
       mMaster->mVideoDataRequest.DisconnectIfExists();
+      mMaster->mVideoWaitRequest.DisconnectIfExists();
       VideoQueue().Finish();
+    }
+
+    if (mWaitingAudioDataFromStart) {
+      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
     }
 
     
@@ -961,6 +969,11 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   void HandleAudioDecoded(AudioData* aAudio) override {
     
+
+    if (mWaitingAudioDataFromStart) {
+      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
+      mWaitingAudioDataFromStart = false;
+    }
 
     
     DecodingState::HandleAudioDecoded(aAudio);
@@ -1514,12 +1527,13 @@ class MediaDecoderStateMachine::LoopingDecodingState
     
     
     
+    
     bool isWaitingForNewData = false;
     if (mMaster->HasAudio()) {
-      isWaitingForNewData |= mIsReachingAudioEOS;
+      isWaitingForNewData |= (mIsReachingAudioEOS && AudioQueue().IsFinished());
     }
     if (mMaster->HasVideo()) {
-      isWaitingForNewData |= mIsReachingVideoEOS;
+      isWaitingForNewData |= (mIsReachingVideoEOS && VideoQueue().IsFinished());
     }
     return !isWaitingForNewData && DecodingState::ShouldStopPrerolling();
   }
@@ -1545,6 +1559,10 @@ class MediaDecoderStateMachine::LoopingDecodingState
       return mAudioSeekRequest.Exists() || mAudioDataRequest.Exists();
     }
     return mVideoSeekRequest.Exists() || mVideoDataRequest.Exists();
+  }
+
+  bool IsBufferingAllowed() const override {
+    return !mIsReachingAudioEOS && !mIsReachingVideoEOS;
   }
 
   bool mIsReachingAudioEOS;
@@ -1595,6 +1613,12 @@ class MediaDecoderStateMachine::LoopingDecodingState
   
   bool mAudioEndedBeforeEnteringStateWithoutDuration;
   bool mVideoEndedBeforeEnteringStateWithoutDuration;
+
+  
+  
+  
+  
+  bool mWaitingAudioDataFromStart = false;
 };
 
 
@@ -3038,8 +3062,9 @@ void MediaDecoderStateMachine::DecodingState::Step() {
   mMaster->UpdatePlaybackPositionPeriodically();
   MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),
              "Must have timer scheduled");
-
-  MaybeStartBuffering();
+  if (IsBufferingAllowed()) {
+    MaybeStartBuffering();
+  }
 }
 
 void MediaDecoderStateMachine::DecodingState::HandleEndOfAudio() {
@@ -3137,11 +3162,23 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
     case NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA:
       if (aIsAudio) {
         HandleWaitingForAudio();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mWaitingAudioDataFromStart = true;
+        mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(true);
       } else {
         HandleWaitingForVideo();
       }
-      break;
+      [[fallthrough]];
     case NS_ERROR_DOM_MEDIA_END_OF_STREAM:
+      
       
       
       if (mIsReachingAudioEOS && mIsReachingVideoEOS) {
@@ -3157,8 +3194,11 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
 void MediaDecoderStateMachine::SeekingState::SeekCompleted() {
   const auto newCurrentTime = CalculateNewCurrentTime();
 
-  if (newCurrentTime == mMaster->Duration() && !mMaster->mIsLiveStream) {
-    
+  if ((newCurrentTime == mMaster->Duration() ||
+       newCurrentTime.EqualsAtLowestResolution(
+           mMaster->Duration().ToBase(USECS_PER_S))) &&
+      !mMaster->mIsLiveStream) {
+    SLOG("Seek completed, seeked to end: %s", newCurrentTime.ToString().get());
     
     
     
@@ -4709,12 +4749,44 @@ void MediaDecoderStateMachine::CancelSuspendTimer() {
 
 void MediaDecoderStateMachine::AdjustByLooping(media::TimeUnit& aTime) const {
   MOZ_ASSERT(OnTaskQueue());
+
   
-  
-  if (mOriginalDecodedDuration != media::TimeUnit::Zero()) {
-    aTime = aTime % mOriginalDecodedDuration;
+  if (mOriginalDecodedDuration == media::TimeUnit::Zero()) {
+    return;
   }
+
   
+  
+  
+  
+  
+  
+  
+  
+  if (mStateObj->GetState() != DECODER_STATE_LOOPING_DECODING) {
+    
+    
+    
+    
+    
+    
+    
+    TimeUnit offset = TimeUnit::FromInfinity();
+    if (HasAudio()) {
+      offset = std::min(AudioQueue().GetOffset(), offset);
+    }
+    if (HasVideo()) {
+      offset = std::min(VideoQueue().GetOffset(), offset);
+    }
+    if (aTime > offset) {
+      aTime -= offset;
+      return;
+    }
+  }
+
+  
+  
+  aTime = aTime % mOriginalDecodedDuration;
 }
 
 bool MediaDecoderStateMachine::IsInSeamlessLooping() const {
