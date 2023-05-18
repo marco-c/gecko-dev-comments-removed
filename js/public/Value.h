@@ -464,6 +464,11 @@ static MOZ_ALWAYS_INLINE double GenericNaN() {
 }
 
 
+static MOZ_ALWAYS_INLINE double Infinity() {
+  return mozilla::BitwiseCast<double>(detail::InfinityBits);
+}
+
+
 
 static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
   if (MOZ_UNLIKELY(std::isnan(d))) {

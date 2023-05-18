@@ -12,6 +12,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/TDZCheckCache.h"
 #include "frontend/ValueUsage.h"
+#include "js/Value.h"
 #include "vm/Opcodes.h"
 
 using namespace js;
@@ -44,9 +45,25 @@ bool NameOpEmitter::emitGet() {
           return false;
         }
       } else {
-        if (!bce_->emitAtomOp(JSOp::GetGName, name_)) {
-          
-          return false;
+        
+        
+        if (name_ == TaggedParserAtomIndex::WellKnown::undefined()) {
+          if (!bce_->emit1(JSOp::Undefined)) {
+            return false;
+          }
+        } else if (name_ == TaggedParserAtomIndex::WellKnown::NaN()) {
+          if (!bce_->emitDouble(JS::GenericNaN())) {
+            return false;
+          }
+        } else if (name_ == TaggedParserAtomIndex::WellKnown::Infinity()) {
+          if (!bce_->emitDouble(JS::Infinity())) {
+            return false;
+          }
+        } else {
+          if (!bce_->emitAtomOp(JSOp::GetGName, name_)) {
+            
+            return false;
+          }
         }
       }
       break;
