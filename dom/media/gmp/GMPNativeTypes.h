@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef GMPNativeTypes_h_
+#define GMPNativeTypes_h_
+
+enum class GMPPluginType {
+  Unknown,
+  Fake,
+  Clearkey,
+  OpenH264,
+  Widevine,
+};
+
+#endif
