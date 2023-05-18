@@ -22,6 +22,7 @@ namespace layers {
 class APZInputBridgeParent;
 class AsyncPanZoomController;
 class InputBlockState;
+class TouchBlockState;
 struct ScrollableLayerGuid;
 struct TargetConfirmationFlags;
 struct PointerEventsConsumableFlags;
@@ -121,6 +122,12 @@ struct APZEventResult {
                               const AsyncPanZoomController* aTarget);
 
   
+  void SetStatusForFastFling(const TouchBlockState& aBlock,
+                             TargetConfirmationFlags aFlags,
+                             PointerEventsConsumableFlags aConsumableFlags,
+                             const AsyncPanZoomController* aTarget);
+
+  
   
   void UpdateStatus(nsEventStatus aStatus) { mStatus = aStatus; }
   nsEventStatus GetStatus() const { return mStatus; };
@@ -140,6 +147,11 @@ struct APZEventResult {
   }
 
  private:
+  void UpdateHandledResult(const InputBlockState& aBlock,
+                           PointerEventsConsumableFlags aConsumableFlags,
+                           const AsyncPanZoomController* aTarget,
+                           bool aDispatchToContent);
+
   
 
 

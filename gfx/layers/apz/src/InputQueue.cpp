@@ -177,15 +177,15 @@ APZEventResult InputQueue::ReceiveTouchInput(
   
   
   
+  PointerEventsConsumableFlags consumableFlags;
+  if (target) {
+    consumableFlags = target->ArePointerEventsConsumable(block, aEvent);
+  }
   if (block->IsDuringFastFling()) {
     INPQ_LOG("dropping event due to block %p being in fast motion\n",
              block.get());
-    result.SetStatusAsConsumeNoDefault();
+    result.SetStatusForFastFling(*block, aFlags, consumableFlags, target);
   } else {  
-    PointerEventsConsumableFlags consumableFlags;
-    if (target) {
-      consumableFlags = target->ArePointerEventsConsumable(block, aEvent);
-    }
     bool consumable = consumableFlags.IsConsumable();
     if (block->UpdateSlopState(aEvent, consumable)) {
       INPQ_LOG("dropping event due to block %p being in %sslop\n", block.get(),

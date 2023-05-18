@@ -79,10 +79,17 @@ void APZEventResult::SetStatusForTouchEvent(
   
   
   
-  bool consumable = aConsumableFlags.IsConsumable();
-  mStatus =
-      consumable ? nsEventStatus_eConsumeDoDefault : nsEventStatus_eIgnore;
+  mStatus = aConsumableFlags.IsConsumable() ? nsEventStatus_eConsumeDoDefault
+                                            : nsEventStatus_eIgnore;
 
+  UpdateHandledResult(aBlock, aConsumableFlags, aTarget,
+                      aFlags.mDispatchToContent);
+}
+
+void APZEventResult::UpdateHandledResult(
+    const InputBlockState& aBlock,
+    PointerEventsConsumableFlags aConsumableFlags,
+    const AsyncPanZoomController* aTarget, bool aDispatchToContent) {
   
   
   
@@ -93,8 +100,7 @@ void APZEventResult::SetStatusForTouchEvent(
     return;
   }
 
-  if (mHandledResult && !aFlags.mDispatchToContent &&
-      !aConsumableFlags.mHasRoom) {
+  if (mHandledResult && !aDispatchToContent && !aConsumableFlags.mHasRoom) {
     
     
     
@@ -117,14 +123,32 @@ void APZEventResult::SetStatusForTouchEvent(
       
       
       
-      mHandledResult = aFlags.mDispatchToContent
-                           ? Nothing()
-                           : Some(APZHandledResult{
-                                 consumable ? APZHandledPlace::HandledByRoot
-                                            : APZHandledPlace::Unhandled,
-                                 rootApzc});
+      mHandledResult =
+          aDispatchToContent
+              ? Nothing()
+              : Some(APZHandledResult{aConsumableFlags.IsConsumable()
+                                          ? APZHandledPlace::HandledByRoot
+                                          : APZHandledPlace::Unhandled,
+                                      rootApzc});
     }
   }
+}
+
+void APZEventResult::SetStatusForFastFling(
+    const TouchBlockState& aBlock, TargetConfirmationFlags aFlags,
+    PointerEventsConsumableFlags aConsumableFlags,
+    const AsyncPanZoomController* aTarget) {
+  MOZ_ASSERT(aBlock.IsDuringFastFling());
+
+  
+  
+  mStatus = nsEventStatus_eConsumeNoDefault;
+
+  
+  
+  
+  UpdateHandledResult(aBlock, aConsumableFlags, aTarget, false 
+);
 }
 
 static bool WillHandleMouseEvent(const WidgetMouseEventBase& aEvent) {
