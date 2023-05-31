@@ -100,6 +100,8 @@ var TranslationsPanel = new (class {
       };
 
       getter("button", "translations-button");
+      getter("buttonLocale", "translations-button-locale");
+      getter("buttonCircleArrows", "translations-button-circle-arrows");
       getter("defaultDescription", "translations-panel-default-description");
       getter("defaultToMenuList", "translations-panel-default-to");
       getter("dualFromMenuList", "translations-panel-dual-from");
@@ -482,15 +484,36 @@ var TranslationsPanel = new (class {
           detectedLanguages,
           requestedTranslationPair,
           error,
+          isEngineReady,
         } = event.detail;
-        const { panel, button } = this.elements;
+        const {
+          panel,
+          button,
+          buttonLocale,
+          buttonCircleArrows,
+        } = this.elements;
 
         if (detectedLanguages) {
           button.hidden = false;
           if (requestedTranslationPair) {
+            
             button.setAttribute("translationsactive", true);
+            if (isEngineReady) {
+              
+              buttonLocale.hidden = false;
+              buttonCircleArrows.hidden = true;
+              buttonLocale.innerText = requestedTranslationPair.toLanguage;
+            } else {
+              
+              
+              buttonCircleArrows.hidden = false;
+              buttonLocale.hidden = true;
+            }
           } else {
+            
             button.removeAttribute("translationsactive");
+            buttonLocale.hidden = true;
+            buttonCircleArrows.hidden = true;
           }
         } else {
           button.removeAttribute("translationsactive");
