@@ -337,9 +337,7 @@ void MacroAssembler::nurseryAllocateObject(Register result, Register temp,
   MOZ_ASSERT(totalSize < INT32_MAX);
   MOZ_ASSERT(totalSize % gc::CellAlignBytes == 0);
 
-  bumpPointerAllocate(result, temp, fail, zone,
-                      zone->addressOfNurseryPosition(),
-                      zone->addressOfNurseryCurrentEnd(), JS::TraceKind::Object,
+  bumpPointerAllocate(result, temp, fail, zone, JS::TraceKind::Object,
                       totalSize, allocSite);
 
   if (nDynamicSlots) {
@@ -545,10 +543,8 @@ void MacroAssembler::nurseryAllocateString(Register result, Register temp,
 
   CompileZone* zone = realm()->zone();
   size_t thingSize = gc::Arena::thingSize(allocKind);
-  bumpPointerAllocate(result, temp, fail, zone,
-                      zone->addressOfStringNurseryPosition(),
-                      zone->addressOfStringNurseryCurrentEnd(),
-                      JS::TraceKind::String, thingSize);
+  bumpPointerAllocate(result, temp, fail, zone, JS::TraceKind::String,
+                      thingSize);
 }
 
 
@@ -562,15 +558,25 @@ void MacroAssembler::nurseryAllocateBigInt(Register result, Register temp,
   CompileZone* zone = realm()->zone();
   size_t thingSize = gc::Arena::thingSize(gc::AllocKind::BIGINT);
 
-  bumpPointerAllocate(result, temp, fail, zone,
-                      zone->addressOfBigIntNurseryPosition(),
-                      zone->addressOfBigIntNurseryCurrentEnd(),
-                      JS::TraceKind::BigInt, thingSize);
+  bumpPointerAllocate(result, temp, fail, zone, JS::TraceKind::BigInt,
+                      thingSize);
+}
+
+static bool IsNurseryAllocEnabled(CompileZone* zone, JS::TraceKind kind) {
+  switch (kind) {
+    case JS::TraceKind::Object:
+      return zone->allocNurseryObjects();
+    case JS::TraceKind::String:
+      return zone->allocNurseryStrings();
+    case JS::TraceKind::BigInt:
+      return zone->allocNurseryBigInts();
+    default:
+      MOZ_CRASH("Bad nursery allocation kind");
+  }
 }
 
 void MacroAssembler::bumpPointerAllocate(Register result, Register temp,
                                          Label* fail, CompileZone* zone,
-                                         void* posAddr, const void* curEndAddr,
                                          JS::TraceKind traceKind, uint32_t size,
                                          const AllocSiteInput& allocSite) {
   MOZ_ASSERT(size >= gc::MinCellSize);
@@ -581,20 +587,20 @@ void MacroAssembler::bumpPointerAllocate(Register result, Register temp,
 
   
   
+  if (!IsNurseryAllocEnabled(zone, traceKind)) {
+    jump(fail);
+    return;
+  }
+
   
   
-  
-  
-  
+  void* posAddr = zone->addressOfNurseryPosition();
+  int32_t endOffset = Nursery::offsetOfCurrentEndFromPosition();
+
   movePtr(ImmPtr(posAddr), temp);
   loadPtr(Address(temp, 0), result);
   addPtr(Imm32(totalSize), result);
-  CheckedInt<int32_t> endOffset =
-      (CheckedInt<uintptr_t>(uintptr_t(curEndAddr)) -
-       CheckedInt<uintptr_t>(uintptr_t(posAddr)))
-          .toChecked<int32_t>();
-  MOZ_ASSERT(endOffset.isValid(), "Position and end pointers must be nearby");
-  branchPtr(Assembler::Below, Address(temp, endOffset.value()), result, fail);
+  branchPtr(Assembler::Below, Address(temp, endOffset), result, fail);
   storePtr(result, Address(temp, 0));
   subPtr(Imm32(size), result);
 

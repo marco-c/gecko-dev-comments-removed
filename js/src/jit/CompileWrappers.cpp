@@ -132,38 +132,20 @@ gc::FreeSpan** CompileZone::addressOfFreeList(gc::AllocKind allocKind) {
   return zone()->arenas.addressOfFreeList(allocKind);
 }
 
+bool CompileZone::allocNurseryObjects() {
+  return zone()->allocNurseryObjects();
+}
+
+bool CompileZone::allocNurseryStrings() {
+  return zone()->allocNurseryStrings();
+}
+
+bool CompileZone::allocNurseryBigInts() {
+  return zone()->allocNurseryBigInts();
+}
+
 void* CompileZone::addressOfNurseryPosition() {
   return zone()->runtimeFromAnyThread()->gc.addressOfNurseryPosition();
-}
-
-void* CompileZone::addressOfStringNurseryPosition() {
-  
-  return zone()->runtimeFromAnyThread()->gc.addressOfNurseryPosition();
-}
-
-void* CompileZone::addressOfBigIntNurseryPosition() {
-  
-  return zone()->runtimeFromAnyThread()->gc.addressOfNurseryPosition();
-}
-
-const void* CompileZone::addressOfNurseryCurrentEnd() {
-  return zone()->runtimeFromAnyThread()->gc.addressOfNurseryCurrentEnd();
-}
-
-const void* CompileZone::addressOfStringNurseryCurrentEnd() {
-  
-  
-  
-  
-  
-  
-  return zone()->runtimeFromAnyThread()->gc.addressOfStringNurseryCurrentEnd();
-}
-
-const void* CompileZone::addressOfBigIntNurseryCurrentEnd() {
-  
-  
-  return zone()->runtimeFromAnyThread()->gc.addressOfBigIntNurseryCurrentEnd();
 }
 
 void* CompileZone::addressOfNurseryAllocatedSites() {

@@ -182,9 +182,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
  private:
   
   
-  js::MainThreadData<bool> allocNurseryObjects_;
-  js::MainThreadData<bool> allocNurseryStrings_;
-  js::MainThreadData<bool> allocNurseryBigInts_;
+  js::MainThreadOrIonCompileData<bool> allocNurseryObjects_;
+  js::MainThreadOrIonCompileData<bool> allocNurseryStrings_;
+  js::MainThreadOrIonCompileData<bool> allocNurseryBigInts_;
 
  public:
   

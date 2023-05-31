@@ -348,13 +348,10 @@ class alignas(TypicalCacheLineSize) Nursery {
   void printTotalProfileTimes();
 
   void* addressOfPosition() const { return (void**)&position_; }
-  const void* addressOfCurrentEnd() const { return (void**)&currentEnd_; }
-  const void* addressOfCurrentStringEnd() const {
-    return (void*)&currentStringEnd_;
+  static constexpr int32_t offsetOfCurrentEndFromPosition() {
+    return offsetof(Nursery, currentEnd_) - offsetof(Nursery, position_);
   }
-  const void* addressOfCurrentBigIntEnd() const {
-    return (void*)&currentBigIntEnd_;
-  }
+
   void* addressOfNurseryAllocatedSites() {
     return pretenuringNursery.addressOfAllocatedSites();
   }
@@ -420,14 +417,6 @@ class alignas(TypicalCacheLineSize) Nursery {
 
   
   uintptr_t currentEnd_;
-
-  
-  
-  uintptr_t currentStringEnd_;
-
-  
-  
-  uintptr_t currentBigIntEnd_;
 
   
 
@@ -582,7 +571,6 @@ class alignas(TypicalCacheLineSize) Nursery {
 
   NurseryChunk& chunk(unsigned index) const { return *chunks_[index]; }
 
-  
   
   
   
