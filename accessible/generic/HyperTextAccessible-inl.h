@@ -89,17 +89,6 @@ inline void HyperTextAccessible::PasteText(int32_t aPosition) {
   }
 }
 
-inline uint32_t HyperTextAccessible::AdjustCaretOffset(uint32_t aOffset) const {
-  
-  
-  
-  
-  
-  if (aOffset > 0 && IsCaretAtEndOfLine()) return aOffset - 1;
-
-  return aOffset;
-}
-
 inline bool HyperTextAccessible::IsCaretAtEndOfLine() const {
   RefPtr<nsFrameSelection> frameSelection = FrameSelection();
   return frameSelection && frameSelection->GetHint() == CARET_ASSOCIATE_BEFORE;

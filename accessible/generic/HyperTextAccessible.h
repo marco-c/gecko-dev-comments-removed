@@ -12,8 +12,6 @@
 #include "nsIAccessibleTypes.h"
 #include "nsIFrame.h"  
 #include "nsISelectionController.h"
-#include "nsDirection.h"
-#include "WordMovementType.h"
 
 class nsFrameSelection;
 class nsIFrame;
@@ -125,37 +123,6 @@ class HyperTextAccessible : public AccessibleWrap,
   
   
 
-  using HyperTextAccessibleBase::CharAt;
-
-  
-
-
-  bool IsCharAt(int32_t aOffset, char16_t aChar) {
-    return CharAt(aOffset) == aChar;
-  }
-
-  
-
-
-  bool IsLineEndCharAt(int32_t aOffset) { return IsCharAt(aOffset, '\n'); }
-
-  virtual void TextBeforeOffset(int32_t aOffset,
-                                AccessibleTextBoundary aBoundaryType,
-                                int32_t* aStartOffset, int32_t* aEndOffset,
-                                nsAString& aText) override;
-  virtual void TextAtOffset(int32_t aOffset,
-                            AccessibleTextBoundary aBoundaryType,
-                            int32_t* aStartOffset, int32_t* aEndOffset,
-                            nsAString& aText) override;
-  virtual void TextAfterOffset(int32_t aOffset,
-                               AccessibleTextBoundary aBoundaryType,
-                               int32_t* aStartOffset, int32_t* aEndOffset,
-                               nsAString& aText) override;
-
-  virtual already_AddRefed<AccAttributes> TextAttributes(
-      bool aIncludeDefAttrs, int32_t aOffset, int32_t* aStartOffset,
-      int32_t* aEndOffset) override;
-
   virtual already_AddRefed<AccAttributes> DefaultTextAttributes() override;
 
   
@@ -169,13 +136,6 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
   int32_t OffsetAtPoint(int32_t aX, int32_t aY, uint32_t aCoordType) override;
-
-  LayoutDeviceIntRect TextBounds(
-      int32_t aStartOffset, int32_t aEndOffset,
-      uint32_t aCoordType =
-          nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE) override;
-
-  LayoutDeviceIntRect CharBounds(int32_t aOffset, uint32_t aCoordType) override;
 
   
 
@@ -271,75 +231,6 @@ class HyperTextAccessible : public AccessibleWrap,
 
   
 
-
-  uint32_t AdjustCaretOffset(uint32_t aOffset) const;
-
-  
-
-
-  bool IsEmptyLastLineOffset(int32_t aOffset) {
-    return aOffset == static_cast<int32_t>(CharacterCount()) &&
-           IsLineEndCharAt(aOffset - 1);
-  }
-
-  
-
-
-  uint32_t FindWordBoundary(uint32_t aOffset, nsDirection aDirection,
-                            EWordMovementType aWordMovementType);
-
-  
-
-
-
-
-
-  enum EWhichLineBoundary {
-    ePrevLineBegin,
-    ePrevLineEnd,
-    eThisLineBegin,
-    eThisLineEnd,
-    eNextLineBegin,
-    eNextLineEnd
-  };
-
-  
-
-
-  uint32_t FindLineBoundary(uint32_t aOffset,
-                            EWhichLineBoundary aWhichLineBoundary);
-
-  
-
-
-
-  int32_t FindParagraphStartOffset(uint32_t aOffset);
-
-  
-
-
-
-  int32_t FindParagraphEndOffset(uint32_t aOffset);
-
-  
-
-
-
-  uint32_t FindOffset(uint32_t aOffset, nsDirection aDirection,
-                      nsSelectionAmount aAmount,
-                      EWordMovementType aWordMovementType = eDefaultBehavior);
-
-  
-
-
-
-
-  LayoutDeviceIntRect GetBoundsInFrame(nsIFrame* aFrame,
-                                       uint32_t aStartRenderedOffset,
-                                       uint32_t aEndRenderedOffset);
-
-  
-
   
 
 
@@ -356,26 +247,6 @@ class HyperTextAccessible : public AccessibleWrap,
                                                          int32_t aEndPos);
 
   
-  nsresult GetDOMPointByFrameOffset(nsIFrame* aFrame, int32_t aOffset,
-                                    LocalAccessible* aAccessible,
-                                    mozilla::a11y::DOMPoint* aPoint);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void GetSpellTextAttr(nsINode* aNode, uint32_t aNodeOffset,
-                        uint32_t* aStartOffset, uint32_t* aEndOffset,
-                        AccAttributes* aAttributes);
 
   
 
