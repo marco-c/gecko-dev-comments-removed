@@ -25,6 +25,7 @@
 
 
 
+
 assert.sameValue(/./.flags, '', 'no flags');
 assert.sameValue(/./d.flags, 'd', 'hasIndices');
 assert.sameValue(/./g.flags, 'g', 'global');

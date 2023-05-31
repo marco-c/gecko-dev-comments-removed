@@ -18,6 +18,7 @@
 
 
 
+
 var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, "unicodeSets");
 
 assert.sameValue(desc.set, undefined);

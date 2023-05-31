@@ -14,6 +14,7 @@
 
 
 
+
 testExtendedCharacterClass({
   regExp: /^[\d--\d]+$/v,
   expression: "[\d--\d]",

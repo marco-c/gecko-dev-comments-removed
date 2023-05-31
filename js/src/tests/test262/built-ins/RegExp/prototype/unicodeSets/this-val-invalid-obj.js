@@ -15,6 +15,7 @@
 
 
 
+
 var unicodeSets = Object.getOwnPropertyDescriptor(RegExp.prototype, 'unicodeSets').get;
 
 assert.throws(TypeError, function() {

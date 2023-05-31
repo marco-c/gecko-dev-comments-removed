@@ -14,6 +14,7 @@
 
 
 
+
 testExtendedCharacterClass({
   regExp: /^[\p{ASCII_Hex_Digit}--\p{Emoji_Keycap_Sequence}]+$/v,
   expression: "[\p{ASCII_Hex_Digit}--\p{Emoji_Keycap_Sequence}]",
