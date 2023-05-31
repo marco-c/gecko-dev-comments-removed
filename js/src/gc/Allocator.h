@@ -66,15 +66,12 @@ class CellAllocator {
   
   
   template <JS::TraceKind traceKind, AllowGC allowGC = CanGC>
-  static void* AllocateNurseryOrTenuredCell(JSContext* cx,
-                                            gc::AllocKind allocKind,
-                                            gc::InitialHeap heap,
-                                            AllocSite* site);
+  static void* AllocNurseryOrTenuredCell(JSContext* cx, gc::AllocKind allocKind,
+                                         gc::InitialHeap heap, AllocSite* site);
 
   
   template <AllowGC allowGC = CanGC>
-  static void* AllocateTenuredCell(JSContext* cx, gc::AllocKind kind,
-                                   size_t size);
+  static void* AllocTenuredCell(JSContext* cx, gc::AllocKind kind, size_t size);
 
   
   
@@ -82,11 +79,10 @@ class CellAllocator {
   
   
   template <typename T, AllowGC allowGC = CanGC, typename... Args>
-  static T* AllocateString(JSContext* cx, gc::InitialHeap heap,
-                           Args&&... args) {
+  static T* NewString(JSContext* cx, gc::InitialHeap heap, Args&&... args) {
     static_assert(std::is_base_of_v<JSString, T>);
     gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
-    void* ptr = AllocateNurseryOrTenuredCell<JS::TraceKind::String, allowGC>(
+    void* ptr = AllocNurseryOrTenuredCell<JS::TraceKind::String, allowGC>(
         cx, kind, heap, nullptr);
     if (!ptr) {
       return nullptr;
@@ -95,8 +91,8 @@ class CellAllocator {
   }
 
   template <typename T, AllowGC allowGC >
-  static T* AllocateBigInt(JSContext* cx, InitialHeap heap) {
-    void* ptr = AllocateNurseryOrTenuredCell<JS::TraceKind::BigInt, allowGC>(
+  static T* NewBigInt(JSContext* cx, InitialHeap heap) {
+    void* ptr = AllocNurseryOrTenuredCell<JS::TraceKind::BigInt, allowGC>(
         cx, gc::AllocKind::BIGINT, heap, nullptr);
     if (ptr) {
       return new (mozilla::KnownNotNull, ptr) T();
@@ -105,14 +101,13 @@ class CellAllocator {
   }
 
   template <typename T, AllowGC allowGC = CanGC>
-  static T* AllocateObject(JSContext* cx, gc::AllocKind kind,
-                           gc::InitialHeap heap, const JSClass* clasp,
-                           gc::AllocSite* site = nullptr) {
+  static T* NewObject(JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
+                      const JSClass* clasp, gc::AllocSite* site = nullptr) {
     MOZ_ASSERT(IsObjectAllocKind(kind));
     MOZ_ASSERT_IF(heap != gc::TenuredHeap && clasp->hasFinalize() &&
                       !clasp->isProxyObject(),
                   CanNurseryAllocateFinalizedClass(clasp));
-    void* cell = AllocateNurseryOrTenuredCell<JS::TraceKind::Object, allowGC>(
+    void* cell = AllocNurseryOrTenuredCell<JS::TraceKind::Object, allowGC>(
         cx, kind, heap, site);
     if (!cell) {
       return nullptr;
@@ -122,9 +117,9 @@ class CellAllocator {
 
   
   template <typename T, AllowGC allowGC = CanGC, typename... Args>
-  static T* AllocateTenured(JSContext* cx, Args&&... args) {
+  static T* NewTenuredCell(JSContext* cx, Args&&... args) {
     gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
-    void* cell = AllocateTenuredCell<allowGC>(cx, kind, sizeof(T));
+    void* cell = AllocTenuredCell<allowGC>(cx, kind, sizeof(T));
     if (!cell) {
       return nullptr;
     }
@@ -147,12 +142,12 @@ T* gc::CellAllocator::NewCell(JSContext* cx, Args&&... args) {
 
   
   if constexpr (std::is_base_of_v<JSObject, T>) {
-    return AllocateObject<T, allowGC>(cx, std::forward<Args>(args)...);
+    return NewObject<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 
   
   else if constexpr (std::is_base_of_v<JS::BigInt, T>) {
-    return AllocateBigInt<T, allowGC>(cx, std::forward<Args>(args)...);
+    return NewBigInt<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 
   
@@ -162,14 +157,14 @@ T* gc::CellAllocator::NewCell(JSContext* cx, Args&&... args) {
   else if constexpr (std::is_base_of_v<JSString, T> &&
                      !std::is_base_of_v<JSAtom, T> &&
                      !std::is_base_of_v<JSExternalString, T>) {
-    return AllocateString<T, allowGC>(cx, std::forward<Args>(args)...);
+    return NewString<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 
   else {
     
     
     
-    return AllocateTenured<T, allowGC>(cx, std::forward<Args>(args)...);
+    return NewTenuredCell<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 }
 
