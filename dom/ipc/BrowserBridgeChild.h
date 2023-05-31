@@ -59,12 +59,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   }
 
   uint64_t GetEmbedderAccessibleID() { return mEmbedderAccessibleID; }
-
-#  if defined(XP_WIN)
-  already_AddRefed<IDispatch> GetEmbeddedDocAccessible() {
-    return RefPtr{mEmbeddedDocAccessible}.forget();
-  }
-#  endif  
 #endif    
 
   static BrowserBridgeChild* GetFrom(nsFrameLoader* aFrameLoader);
@@ -83,9 +77,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 
   mozilla::ipc::IPCResult RecvMoveFocus(const bool& aForward,
                                         const bool& aForDocumentNavigation);
-
-  mozilla::ipc::IPCResult RecvSetEmbeddedDocAccessibleCOMProxy(
-      const IDispatchHolder& aCOMProxy);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult
@@ -122,9 +113,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   
   
   uint64_t mEmbedderAccessibleID = 0;
-#  if defined(XP_WIN)
-  RefPtr<IDispatch> mEmbeddedDocAccessible;
-#  endif  
 #endif    
 };
 
