@@ -267,13 +267,15 @@
     }
 
     _removeNotificationElement(aChild) {
+      let hadFocus = aChild.matches(":focus-within");
+
       if (aChild.eventCallback) {
         aChild.eventCallback("removed");
       }
       aChild.remove();
 
       
-      if (!Services.focus.getFocusedElementForWindow(window, false, {})) {
+      if (hadFocus) {
         Services.focus.moveFocus(
           window,
           this.stack,
