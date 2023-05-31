@@ -54,6 +54,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
+  Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
 });
 ChromeUtils.defineModuleGetter(
   lazy,
@@ -66,6 +67,17 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
     "resource://messaging-system/lib/Logger.sys.mjs"
   );
   return new Logger("TopSitesFeed");
+});
+
+
+const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
+XPCOMUtils.defineLazyGetter(lazy, "contextId", () => {
+  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
+  if (!_contextId) {
+    _contextId = String(Services.uuid.generateUUID());
+    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
+  }
+  return _contextId;
 });
 
 const DEFAULT_SITES_PREF = "default.sites";
@@ -93,6 +105,8 @@ const NIMBUS_VARIABLE_MAX_SPONSORED = "topSitesMaxSponsored";
 
 const NIMBUS_VARIABLE_ADDITIONAL_TILES =
   "topSitesUseAdditionalTilesFromContile";
+
+const NIMBUS_VARIABLE_CONTILE_SOV_ENABLED = "topSitesContileSovEnabled";
 
 
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
@@ -123,6 +137,14 @@ const CONTILE_CACHE_PREF = "browser.topsites.contile.cachedTiles";
 const CONTILE_CACHE_VALID_FOR_PREF = "browser.topsites.contile.cacheValidFor";
 const CONTILE_CACHE_LAST_FETCH_PREF = "browser.topsites.contile.lastFetch";
 
+
+const SPONSORED_TILE_PARTNER_AMP = "amp";
+const SPONSORED_TILE_PARTNER_MOZ_SALES = "moz-sales";
+const SPONSORED_TILE_PARTNERS = new Set([
+  SPONSORED_TILE_PARTNER_AMP,
+  SPONSORED_TILE_PARTNER_MOZ_SALES,
+]);
+
 function getShortURLForCurrentSearch() {
   const url = shortURL({ url: Services.search.defaultEngine.searchForm });
   return url;
@@ -133,10 +155,16 @@ class ContileIntegration {
     this._topSitesFeed = topSitesFeed;
     this._lastPeriodicUpdate = 0;
     this._sites = [];
+    
+    this._sov = null;
   }
 
   get sites() {
     return this._sites;
+  }
+
+  get sov() {
+    return this._sov;
   }
 
   periodicUpdate() {
@@ -266,6 +294,10 @@ class ContileIntegration {
         return false;
       }
       const body = await response.json();
+
+      if (body?.sov) {
+        this._sov = JSON.parse(atob(body.sov));
+      }
       if (body?.tiles && Array.isArray(body.tiles)) {
         const useAdditionalTiles = lazy.NimbusFeatures.newtab.getVariable(
           NIMBUS_VARIABLE_ADDITIONAL_TILES
@@ -458,6 +490,7 @@ class TopSitesFeed {
           sponsored_click_url: site.click_url,
           sponsored_impression_url: site.impression_url,
           sponsored_tile_id: site.id,
+          partner: SPONSORED_TILE_PARTNER_AMP,
         };
         if (site.image_url && site.image_size >= MIN_FAVICON_SIZE) {
           
@@ -751,7 +784,13 @@ class TopSitesFeed {
     return false;
   }
 
-  insertDiscoveryStreamSpocs(sponsored) {
+  
+
+
+
+
+  fetchDiscoveryStreamSpocs() {
+    let sponsored = [];
     const { DiscoveryStream } = this.store.getState();
     if (DiscoveryStream) {
       const discoveryStreamSpocs =
@@ -814,11 +853,13 @@ class TopSitesFeed {
             sponsored_position: positionIndex + 1,
             
             hostname: shortURL({ url: spoc.url }),
+            partner: SPONSORED_TILE_PARTNER_MOZ_SALES,
           };
           sponsored.push(link);
         }
       }
     }
+    return sponsored;
   }
 
   
@@ -850,15 +891,8 @@ class TopSitesFeed {
     }
 
     
-    let date = new Date();
-    let pad = number => number.toString().padStart(2, "0");
-    let yyyymmddhh =
-      String(date.getFullYear()) +
-      pad(date.getMonth() + 1) +
-      pad(date.getDate()) +
-      pad(date.getHours());
+    let contileSponsored = [];
     let notBlockedDefaultSites = [];
-    let sponsored = [];
     for (let link of DEFAULT_TOP_SITES) {
       
       
@@ -878,24 +912,6 @@ class TopSitesFeed {
         continue;
       }
       
-      let url_end;
-      let url_start;
-      if (this._useRemoteSetting) {
-        [url_start, url_end] = link.url.split("%YYYYMMDDHH%");
-      }
-      if (typeof url_end === "string") {
-        link = {
-          ...link,
-          
-          
-          original_url: link.url,
-          url: url_start + yyyymmddhh + url_end,
-        };
-        if (link.url_urlbar) {
-          link.url_urlbar = link.url_urlbar.replace("%YYYYMMDDHH%", yyyymmddhh);
-        }
-      }
-      
       
       const searchProvider = getSearchProvider(shortURL(link));
       if (
@@ -908,7 +924,7 @@ class TopSitesFeed {
         if (!prefValues[SHOW_SPONSORED_PREF]) {
           continue;
         }
-        sponsored[link.sponsored_position - 1] = link;
+        contileSponsored[link.sponsored_position - 1] = link;
 
         
         
@@ -922,7 +938,12 @@ class TopSitesFeed {
       }
     }
 
-    this.insertDiscoveryStreamSpocs(sponsored);
+    const discoverySponsored = this.fetchDiscoveryStreamSpocs();
+
+    const sponsored = await this._mergeSponsoredLinks({
+      [SPONSORED_TILE_PARTNER_AMP]: contileSponsored,
+      [SPONSORED_TILE_PARTNER_MOZ_SALES]: discoverySponsored,
+    });
 
     this._maybeCapSponsoredLinks(sponsored);
 
@@ -1059,6 +1080,73 @@ class TopSitesFeed {
     if (links.length > maxSponsored) {
       links.length = maxSponsored;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  async _mergeSponsoredLinks(sponsoredLinks) {
+    if (
+      !this._contile.sov ||
+      !lazy.NimbusFeatures.pocketNewtab.getVariable(
+        NIMBUS_VARIABLE_CONTILE_SOV_ENABLED
+      )
+    ) {
+      return Object.values(sponsoredLinks).flat();
+    }
+
+    const sampleInput = `${lazy.contextId}-${this._contile.sov.name}`;
+    let sponsored = [];
+
+    for (const allocation of this._contile.sov.allocations) {
+      let link = null;
+      let chosenPartner = null;
+      const ratios = allocation.allocation.map(alloc => alloc.percentage);
+      if (ratios.length) {
+        const index = await lazy.Sampling.ratioSample(sampleInput, ratios);
+        chosenPartner = allocation.allocation[index].partner;
+        
+        
+        link = sponsoredLinks[chosenPartner]?.shift();
+      }
+
+      if (!link) {
+        
+        
+        
+        for (const partner of SPONSORED_TILE_PARTNERS) {
+          if (
+            partner === chosenPartner ||
+            sponsoredLinks[partner].length === 0
+          ) {
+            continue;
+          }
+          link = sponsoredLinks[partner].shift();
+          break;
+        }
+
+        if (!link) {
+          
+          return sponsored;
+        }
+      }
+
+      
+      link.sponsored_position = allocation.position;
+      if (link.pos !== undefined) {
+        
+        link.pos = allocation.position - 1;
+      }
+      sponsored.push(link);
+    }
+
+    return sponsored;
   }
 
   

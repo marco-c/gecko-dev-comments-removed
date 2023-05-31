@@ -7249,8 +7249,9 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
               tile_id: card.id,
               source: "newtab",
               advertiser: card.advertiser,
-              position: card.pos + 1 
-
+              
+              
+              position: card.pos
             }
           }));
         }
@@ -8410,6 +8411,8 @@ const TopicsWidget = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 
 const PREF_ONBOARDING_EXPERIENCE_DISMISSED = "discoverystream.onboardingExperience.dismissed";
 const CardGrid_INTERSECTION_RATIO = 0.5;
+const CardGrid_VISIBLE = "visible";
+const CardGrid_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const WIDGET_IDS = {
   TOPICS: 1
 };
@@ -8462,9 +8465,21 @@ function OnboardingExperience({
       }
     }, options);
 
-    if (heightElement.current) {
-      resizeObserver.observe(heightElement.current);
+    const onVisibilityChange = () => {
       intersectionObserver.observe(heightElement.current);
+      windowObj.document.removeEventListener(CardGrid_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
+    };
+
+    if (heightElement.current) {
+      resizeObserver.observe(heightElement.current); 
+      
+
+      if (windowObj.document.visibilityState === CardGrid_VISIBLE) {
+        intersectionObserver.observe(heightElement.current);
+      } else {
+        windowObj.document.addEventListener(CardGrid_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
+      }
+
       setMaxHeight(heightElement.current.offsetHeight);
     } 
 
@@ -8472,6 +8487,7 @@ function OnboardingExperience({
     return () => {
       resizeObserver === null || resizeObserver === void 0 ? void 0 : resizeObserver.disconnect();
       intersectionObserver === null || intersectionObserver === void 0 ? void 0 : intersectionObserver.disconnect();
+      windowObj.document.removeEventListener(CardGrid_VISIBILITY_CHANGE_EVENT, onVisibilityChange);
     };
   }, [dispatch, windowObj]);
   const style = {};
