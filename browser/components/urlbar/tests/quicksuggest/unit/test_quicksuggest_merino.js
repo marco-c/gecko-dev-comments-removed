@@ -641,7 +641,7 @@ add_task(async function block() {
 
 add_task(async function bestMatch() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   
