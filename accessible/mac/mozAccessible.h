@@ -76,8 +76,6 @@ enum CheckedState {
 
 - (mozilla::a11y::Accessible*)geckoAccessible;
 
-- (mozilla::a11y::Accessible*)geckoDocument;
-
 
 - (void)dealloc;
 
