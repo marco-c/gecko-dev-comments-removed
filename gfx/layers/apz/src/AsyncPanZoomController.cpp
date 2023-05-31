@@ -1853,7 +1853,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
 }
 
 nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
-  MOZ_ASSERT(mAnimation == nullptr);
+  MOZ_ASSERT(!mAnimation);
   MOZ_ASSERT(GetCurrentTouchBlock() || GetCurrentPanGestureBlock());
   GetCurrentInputBlock()->GetOverscrollHandoffChain()->FlushRepaints();
   ParentLayerPoint flingVelocity = GetVelocityVector();
@@ -2887,7 +2887,8 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   
   
   PanZoomState currentState = GetState();
-  if (currentState == OVERSCROLL_ANIMATION || currentState == NOTHING) {
+  if (currentState == OVERSCROLL_ANIMATION || currentState == NOTHING ||
+      currentState == FLING) {
     return nsEventStatus_eIgnore;
   }
 
