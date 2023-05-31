@@ -12,7 +12,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
-#include "gc/GCParallelTask.h"
 #include "gc/Heap.h"
 #include "gc/MallocedBlockCache.h"
 #include "gc/Pretenuring.h"
@@ -21,6 +20,7 @@
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
 #include "js/TypeDecls.h"
+#include "js/UniquePtr.h"
 #include "js/Vector.h"
 #include "util/Text.h"
 
@@ -81,33 +81,6 @@ enum class AllocKind : uint8_t;
 namespace jit {
 class MacroAssembler;
 }  
-
-class NurseryDecommitTask : public GCParallelTask {
- public:
-  explicit NurseryDecommitTask(gc::GCRuntime* gc);
-  bool reserveSpaceForBytes(size_t nbytes);
-
-  bool isEmpty(const AutoLockHelperThreadState& lock) const;
-
-  void queueChunk(NurseryChunk* chunk, const AutoLockHelperThreadState& lock);
-  void queueRange(size_t newCapacity, NurseryChunk& chunk,
-                  const AutoLockHelperThreadState& lock);
-
- private:
-  using NurseryChunkVector = Vector<NurseryChunk*, 0, SystemAllocPolicy>;
-
-  void run(AutoLockHelperThreadState& lock) override;
-
-  NurseryChunkVector& chunksToDecommit() { return chunksToDecommit_.ref(); }
-  const NurseryChunkVector& chunksToDecommit() const {
-    return chunksToDecommit_.ref();
-  }
-
-  MainThreadOrGCTaskData<NurseryChunkVector> chunksToDecommit_;
-
-  MainThreadOrGCTaskData<NurseryChunk*> partialChunk;
-  MainThreadOrGCTaskData<size_t> partialCapacity;
-};
 
 
 
@@ -428,7 +401,7 @@ class alignas(TypicalCacheLineSize) Nursery {
   static const size_t NurseryChunkUsableSize =
       gc::ChunkSize - sizeof(gc::ChunkBase);
 
-  void joinDecommitTask() { decommitTask.join(); }
+  void joinDecommitTask();
 
   mozilla::TimeStamp collectionStartTime() {
     return startTimes_[ProfileKey::Total];
@@ -662,7 +635,7 @@ class alignas(TypicalCacheLineSize) Nursery {
   Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
   Vector<SetObject*, 0, SystemAllocPolicy> setsWithNurseryMemory_;
 
-  NurseryDecommitTask decommitTask;
+  UniquePtr<NurseryDecommitTask> decommitTask;
 
   
   
