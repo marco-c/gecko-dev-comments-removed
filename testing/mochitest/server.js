@@ -700,9 +700,7 @@ function regularListing(metadata, response) {
 
 
 function convertManifestToTestLinks(root, manifest) {
-  const { NetUtil } = ChromeUtils.importESModule(
-    "resource://gre/modules/NetUtil.sys.mjs"
-  );
+  const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
   var manifestFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   manifestFile.initWithFile(serverBasePath);

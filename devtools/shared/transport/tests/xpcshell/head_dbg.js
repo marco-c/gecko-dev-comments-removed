@@ -12,9 +12,7 @@ var CC = Components.Constructor;
 const { require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
-const { NetUtil } = ChromeUtils.importESModule(
-  "resource://gre/modules/NetUtil.sys.mjs"
-);
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 

@@ -4,9 +4,7 @@
 
 
 
-const { NetUtil } = ChromeUtils.importESModule(
-  "resource://gre/modules/NetUtil.sys.mjs"
-);
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 const gAppRep = Cc[
   "@mozilla.org/reputationservice/application-reputation-service;1"

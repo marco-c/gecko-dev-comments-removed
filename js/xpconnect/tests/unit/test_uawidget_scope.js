@@ -3,7 +3,7 @@
 
 
 ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
-const {NetUtil} = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const {TestUtils} = ChromeUtils.importESModule("resource://testing-common/TestUtils.sys.mjs");
 
 function getWindowlessBrowser(url) {
