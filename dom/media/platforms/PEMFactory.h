@@ -22,7 +22,7 @@ class PEMFactory final {
   
   
   already_AddRefed<MediaDataEncoder> CreateEncoder(
-      const CreateEncoderParams& aParams);
+      const CreateEncoderParams& aParams, const bool aHardwareNotAllowed);
 
   bool SupportsMimeType(const nsACString& aMimeType) const;
 
