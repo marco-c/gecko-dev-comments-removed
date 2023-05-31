@@ -98,6 +98,19 @@ TEST(SequenceCheckerTest, MethodNotAllowedOnDifferentThreadInDebug) {
       [&] { EXPECT_EQ(sequence_checker.IsCurrent(), !RTC_DCHECK_IS_ON); });
 }
 
+#if RTC_DCHECK_IS_ON
+TEST(SequenceCheckerTest, OnlyCurrentOnOneThread) {
+  SequenceChecker sequence_checker(SequenceChecker::kDetached);
+  RunOnDifferentThread([&] {
+    EXPECT_TRUE(sequence_checker.IsCurrent());
+    
+    
+    
+    RunOnDifferentThread([&] { EXPECT_FALSE(sequence_checker.IsCurrent()); });
+  });
+}
+#endif
+
 TEST(SequenceCheckerTest, MethodNotAllowedOnDifferentTaskQueueInDebug) {
   SequenceChecker sequence_checker;
   TaskQueueForTest queue;
