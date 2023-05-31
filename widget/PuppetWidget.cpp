@@ -833,7 +833,13 @@ nsresult PuppetWidget::NotifyIMEOfSelectionChange(
 
   
   
-  mContentCache.SetSelection(this, aIMENotification.mSelectionChangeData);
+  if (MOZ_UNLIKELY(!mContentCache.SetSelection(
+          this, aIMENotification.mSelectionChangeData))) {
+    
+    
+    
+    return NS_OK;
+  }
 
   mBrowserChild->SendNotifyIMESelection(mContentCache, aIMENotification);
 
