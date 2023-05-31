@@ -1374,7 +1374,7 @@ const MultiSelect = props => {
 
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       key: id + label,
-      className: "checkbox-container"
+      className: "checkbox-container multi-select-item"
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
       type: "checkbox",
       id: id,
