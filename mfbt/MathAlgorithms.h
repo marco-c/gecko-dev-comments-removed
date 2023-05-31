@@ -12,12 +12,37 @@
 #include "mozilla/Assertions.h"
 
 #include <cmath>
-#include <algorithm>
 #include <limits.h>
 #include <stdint.h>
 #include <type_traits>
 
 namespace mozilla {
+
+
+template <typename IntegerType>
+MOZ_ALWAYS_INLINE IntegerType EuclidGCD(IntegerType aA, IntegerType aB) {
+  
+  
+  MOZ_ASSERT(aA > IntegerType(0));
+  MOZ_ASSERT(aB > IntegerType(0));
+
+  while (aA != aB) {
+    if (aA > aB) {
+      aA = aA - aB;
+    } else {
+      aB = aB - aA;
+    }
+  }
+
+  return aA;
+}
+
+
+template <typename IntegerType>
+MOZ_ALWAYS_INLINE IntegerType EuclidLCM(IntegerType aA, IntegerType aB) {
+  
+  return (aA / EuclidGCD(aA, aB)) * aB;
+}
 
 namespace detail {
 
@@ -426,65 +451,6 @@ inline T Clamp(const T aValue, const T aMin, const T aMax) {
   if (aValue <= aMin) return aMin;
   if (aValue >= aMax) return aMax;
   return aValue;
-}
-
-template <typename T>
-inline uint_fast8_t CountTrailingZeroes(T aValue) {
-  static_assert(sizeof(T) <= 8);
-  static_assert(std::is_integral_v<T>);
-  
-  if constexpr (sizeof(T) <= 4) {
-    return CountTrailingZeroes32(aValue);
-  }
-  
-  if constexpr (sizeof(T) == 8) {
-    return CountTrailingZeroes64(aValue);
-  }
-}
-
-
-
-template <typename T>
-MOZ_ALWAYS_INLINE T GCD(T aA, T aB) {
-  static_assert(std::is_integral_v<T>);
-
-  MOZ_ASSERT(aA >= 0);
-  MOZ_ASSERT(aB >= 0);
-
-  if (aA == 0) {
-    return aB;
-  }
-  if (aB == 0) {
-    return aA;
-  }
-
-  T az = CountTrailingZeroes(aA);
-  T bz = CountTrailingZeroes(aB);
-  T shift = std::min<T>(az, bz);
-  aA >>= az;
-  aB >>= bz;
-
-  while (aA != 0) {
-    if constexpr (!std::is_signed_v<T>) {
-      if (aA < aB) {
-        std::swap(aA, aB);
-      }
-    }
-    T diff = aA - aB;
-    if constexpr (std::is_signed_v<T>) {
-      aB = std::min<T>(aA, aB);
-    }
-    if constexpr (std::is_signed_v<T>) {
-      aA = std::abs(diff);
-    } else {
-      aA = diff;
-    }
-    if (aA) {
-      aA >>= CountTrailingZeroes(aA);
-    }
-  }
-
-  return aB << shift;
 }
 
 } 

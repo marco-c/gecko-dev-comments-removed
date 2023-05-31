@@ -47,8 +47,8 @@ class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
   
   
   virtual MediaResult ParseStartAndEndTimestamps(const MediaSpan& aData,
-                                                 media::TimeUnit& aStart,
-                                                 media::TimeUnit& aEnd);
+                                                 int64_t& aStart,
+                                                 int64_t& aEnd);
 
   
   

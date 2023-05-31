@@ -139,11 +139,10 @@ class MediaSource final : public DOMEventTargetHelper,
   void DispatchSimpleEvent(const char* aName);
   void QueueAsyncSimpleEvent(const char* aName);
 
-  void DurationChange(const media::TimeUnit& aNewDuration, ErrorResult& aRv);
   void DurationChange(double aNewDuration, ErrorResult& aRv);
 
   
-  void SetDuration(const media::TimeUnit& aDuration);
+  void SetDuration(double aDuration);
 
   typedef MozPromise<bool, MediaResult,  true>
       ActiveCompletionPromise;

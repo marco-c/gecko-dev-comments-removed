@@ -291,8 +291,7 @@ TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
   while (RefPtr<EncodedFrame> frame = encoder.mEncodedVideoQueue.PopFront()) {
     totalDuration += frame->mDuration;
   }
-  
-  const uint64_t oneSecond = PR_USEC_PER_SEC - 1;
+  const uint64_t oneSecond = PR_USEC_PER_SEC;
   EXPECT_EQ(oneSecond, totalDuration);
 }
 

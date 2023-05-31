@@ -43,21 +43,8 @@ class FFmpegAudioDecoder<LIBAV_VER>
  private:
   MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                        bool* aGotFrame, DecodedData& aResults) override;
-  
-  
-  uint64_t Padding() const;
-  
-  
-  
-  uint64_t TotalFrames() const;
-  
-  
   uint32_t mEncoderDelay = 0;
-  
-  
-  
-  
-  uint64_t mEncoderPaddingOrTotalFrames = 0;
+  uint32_t mEncoderPadding = 0;
 };
 
 }  

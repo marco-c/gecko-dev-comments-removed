@@ -24,7 +24,6 @@ class ID3Parser {
    public:
     
     static const int SIZE = 10;
-    static const int ID3v1_SIZE = 128;
 
     
     ID3Header();
@@ -69,7 +68,7 @@ class ID3Parser {
     bool Update(uint8_t c);
 
     
-    uint8_t mRaw[SIZE] = {};
+    uint8_t mRaw[SIZE];
 
     
     
@@ -78,13 +77,11 @@ class ID3Parser {
 
     
     
-    int mPos = 0;
+    int mPos;
   };
 
   
   static bool IsBufferStartingWithID3Tag(BufferReader* aReader);
-  
-  static bool IsBufferStartingWithID3v1Tag(BufferReader* aReader);
 
   
   const ID3Header& Header() const;
@@ -188,11 +185,11 @@ class FrameParser {
     bool Update(const uint8_t c);
 
     
-    uint8_t mRaw[SIZE] = {};
+    uint8_t mRaw[SIZE];
 
     
     
-    int mPos = 0;
+    int mPos;
   };
 
   
@@ -230,7 +227,7 @@ class FrameParser {
 
     
     
-    int64_t Offset(media::TimeUnit aTime, media::TimeUnit aDuration) const;
+    int64_t Offset(float aDurationFac) const;
 
     
     
@@ -269,8 +266,6 @@ class FrameParser {
     
     VBRHeaderType mType;
 
-    uint16_t mVBRISeekOffsetsFramesPerEntry = 0;
-
     
     
     
@@ -283,7 +278,7 @@ class FrameParser {
   class Frame {
    public:
     
-    uint32_t Length() const;
+    int32_t Length() const;
 
     
     const FrameHeader& Header() const;
@@ -314,9 +309,6 @@ class FrameParser {
 
   
   const ID3Parser::ID3Header& ID3Header() const;
-
-  
-  bool ID3v1MetadataFound() const;
 
   
   uint32_t TotalID3HeaderSize() const;
@@ -361,12 +353,6 @@ class FrameParser {
   Frame mFirstFrame;
   Frame mFrame;
   Frame mPrevFrame;
-  
-  
-  
-  
-  
-  bool mID3v1MetadataFound = false;
 };
 
 }  

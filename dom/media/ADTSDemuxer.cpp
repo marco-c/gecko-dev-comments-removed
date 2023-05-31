@@ -347,9 +347,7 @@ bool ADTSTrackDemuxer::Init() {
   
   
   
-  
-  
-  mPreRoll = TimeUnit(1024, mSamplesPerSecond);
+  mPreRoll = TimeUnit::FromMicroseconds(2112 * 1000000ULL / mSamplesPerSecond);
   return mChannels;
 }
 
@@ -498,13 +496,13 @@ int64_t ADTSTrackDemuxer::StreamLength() const { return mSource.GetLength(); }
 
 TimeUnit ADTSTrackDemuxer::Duration() const {
   if (!mNumParsedFrames) {
-    return TimeUnit::Invalid();
+    return TimeUnit::FromMicroseconds(-1);
   }
 
   const int64_t streamLen = StreamLength();
   if (streamLen < 0) {
     
-    return TimeUnit::Invalid();
+    return TimeUnit::FromMicroseconds(-1);
   }
   const int64_t firstFrameOffset = mParser->FirstFrame().Offset();
   int64_t numFrames = (streamLen - firstFrameOffset) / AverageFrameLength();
@@ -513,10 +511,10 @@ TimeUnit ADTSTrackDemuxer::Duration() const {
 
 TimeUnit ADTSTrackDemuxer::Duration(int64_t aNumFrames) const {
   if (!mSamplesPerSecond) {
-    return TimeUnit::Invalid();
+    return TimeUnit::FromMicroseconds(-1);
   }
 
-  return TimeUnit(aNumFrames * mSamplesPerFrame, mSamplesPerSecond);
+  return FramesToTimeUnit(aNumFrames * mSamplesPerFrame, mSamplesPerSecond);
 }
 
 const adts::Frame& ADTSTrackDemuxer::FindNextFrame(
@@ -648,36 +646,13 @@ already_AddRefed<MediaRawData> ADTSTrackDemuxer::GetNextFrame(
 
   UpdateState(aFrame);
 
-  TimeUnit rawpts = Duration(mFrameIndex - 1) - mPreRoll;
-  TimeUnit rawDuration = Duration(1);
-  TimeUnit rawend = rawpts + rawDuration;
-
-  frame->mTime = std::max(TimeUnit::Zero(), rawpts);
+  frame->mTime = Duration(mFrameIndex - 1);
   frame->mDuration = Duration(1);
   frame->mTimecode = frame->mTime;
   frame->mKeyframe = true;
 
-  
-  
-  if (rawpts.IsNegative()) {
-    frame->mDuration = std::max(TimeUnit::Zero(), rawend - frame->mTime);
-  }
-
-  
-  
-  MOZ_ASSERT(frame->mDuration.IsPositiveOrZero());
-
-  ADTSLOG("ADTS packet demuxed: pts [%lf, %lf] (duration: %lf)",
-          frame->mTime.ToSeconds(), frame->GetEndTime().ToSeconds(),
-          frame->mDuration.ToSeconds());
-
-  
-  if (frame->mDuration != rawDuration) {
-    frame->mOriginalPresentationWindow =
-        Some(media::TimeInterval{rawpts, rawend});
-    ADTSLOG("Total packet time excluding trimming: [%lf, %lf]",
-            rawpts.ToSeconds(), rawend.ToSeconds());
-  }
+  MOZ_ASSERT(!frame->mTime.IsNegative());
+  MOZ_ASSERT(frame->mDuration.IsPositive());
 
   ADTSLOGV("GetNext() End mOffset=%" PRIu64 " mNumParsedFrames=%" PRIu64
            " mFrameIndex=%" PRId64 " mTotalFrameLen=%" PRIu64

@@ -265,9 +265,9 @@ void MediaSource::SetDuration(double aDuration, ErrorResult& aRv) {
           aRv.ErrorCodeAsInt());
 }
 
-void MediaSource::SetDuration(const media::TimeUnit& aDuration) {
+void MediaSource::SetDuration(double aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetDuration(aDuration=%f)", aDuration.ToSeconds());
+  MSE_API("SetDuration(aDuration=%f)", aDuration);
   mDecoder->SetMediaSourceDuration(aDuration);
 }
 
@@ -391,8 +391,7 @@ void MediaSource::EndOfStream(
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->Ended();
   if (!aError.WasPassed()) {
-    DurationChange(mSourceBuffers->GetHighestBufferedEndTime().ToBase(1000000),
-                   aRv);
+    DurationChange(mSourceBuffers->GetHighestBufferedEndTime(), aRv);
     
     mDecoder->Ended(true);
     return;
@@ -589,13 +588,12 @@ void MediaSource::QueueAsyncSimpleEvent(const char* aName) {
   mAbstractMainThread->Dispatch(event.forget());
 }
 
-void MediaSource::DurationChange(const media::TimeUnit& aNewDuration,
-                                 ErrorResult& aRv) {
+void MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("DurationChange(aNewDuration=%s)", aNewDuration.ToString().get());
+  MSE_DEBUG("DurationChange(aNewDuration=%f)", aNewDuration);
 
   
-  if (mDecoder->GetDuration() == aNewDuration.ToSeconds()) {
+  if (mDecoder->GetDuration() == aNewDuration) {
     return;
   }
 
@@ -609,43 +607,14 @@ void MediaSource::DurationChange(const media::TimeUnit& aNewDuration,
 
   
   
-  media::TimeUnit highestEndTime = mSourceBuffers->HighestEndTime();
+  double highestEndTime = mSourceBuffers->HighestEndTime();
   
   
-  media::TimeUnit newDuration = std::max(aNewDuration, highestEndTime);
+  aNewDuration = std::max(aNewDuration, highestEndTime);
 
   
   
-  mDecoder->SetMediaSourceDuration(newDuration);
-}
-
-void MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("DurationChange(aNewDuration=%f)", aNewDuration);
-
-  
-  if (mDecoder->GetDuration() == aNewDuration) {
-    return;
-  }
-
-  
-  
-  
-  if (aNewDuration < mSourceBuffers->HighestStartTime().ToSeconds()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
-
-  
-  
-  double highestEndTime = mSourceBuffers->HighestEndTime().ToSeconds();
-  
-  
-  double newDuration = std::max(aNewDuration, highestEndTime);
-
-  
-  
-  mDecoder->SetMediaSourceDuration(newDuration);
+  mDecoder->SetMediaSourceDuration(aNewDuration);
 }
 
 already_AddRefed<Promise> MediaSource::MozDebugReaderData(ErrorResult& aRv) {

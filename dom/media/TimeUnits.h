@@ -7,7 +7,6 @@
 #ifndef TIME_UNITS_H
 #define TIME_UNITS_H
 
-#include <limits>
 #include <type_traits>
 
 #include "Intervals.h"
@@ -16,7 +15,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "nsPrintfCString.h"
 
 namespace mozilla::media {
 class TimeIntervals;
@@ -31,15 +29,15 @@ struct nsTArray_RelocationStrategy<mozilla::media::TimeIntervals> {
 namespace mozilla {
 
 
-static const int64_t MSECS_PER_S = 1000;
-
-
 static const int64_t USECS_PER_S = 1000000;
 
 
-static const int64_t NSECS_PER_S = 1000000000;
+static const int64_t USECS_PER_MS = 1000;
 
 namespace media {
+
+
+static const int64_t NSECS_PER_S = 1000000000;
 
 #ifndef PROCESS_DECODE_LOG
 #  define PROCESS_DECODE_LOG(sample)                                   \
@@ -53,117 +51,154 @@ namespace media {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class TimeUnit final {
  public:
-  constexpr TimeUnit(CheckedInt64 aTicks, int64_t aBase)
-      : mTicks(aTicks), mBase(aBase) {
-    MOZ_RELEASE_ASSERT(mBase > 0);
+  static TimeUnit FromSeconds(double aValue) {
+    MOZ_ASSERT(!std::isnan(aValue));
+
+    if (std::isinf(aValue)) {
+      return aValue > 0 ? FromInfinity() : FromNegativeInfinity();
+    }
+    
+    
+    double halfUsec = .0000005;
+    double val =
+        (aValue <= 0 ? aValue - halfUsec : aValue + halfUsec) * USECS_PER_S;
+    if (val >= double(INT64_MAX)) {
+      return FromMicroseconds(INT64_MAX);
+    }
+    if (val <= double(INT64_MIN)) {
+      return FromMicroseconds(INT64_MIN);
+    }
+    return FromMicroseconds(int64_t(val));
   }
 
-  explicit constexpr TimeUnit(CheckedInt64 aTicks)
-      : mTicks(aTicks), mBase(USECS_PER_S) {}
-
-  
-  static constexpr int64_t MaxTicks() {
-    return std::numeric_limits<int64_t>::max() - 1;
-  }
-
-  
-  static TimeUnit FromSeconds(double aValue, int64_t aBase = USECS_PER_S);
   static constexpr TimeUnit FromMicroseconds(int64_t aValue) {
-    return TimeUnit(aValue, USECS_PER_S);
+    return TimeUnit(aValue);
   }
-  static TimeUnit FromHns(int64_t aValue, int64_t aBase) {
-    return TimeUnit::FromNanoseconds(aValue * 100).ToBase(aBase);
-  }
-  static constexpr TimeUnit FromNanoseconds(int64_t aValue) {
-    return TimeUnit(aValue, NSECS_PER_S);
-  }
-  static TimeUnit FromInfinity();
-  static TimeUnit FromNegativeInfinity();
-  static TimeUnit FromTimeDuration(const TimeDuration& aDuration);
-  static constexpr TimeUnit Zero(int64_t aBase = USECS_PER_S) {
-    return TimeUnit(0, aBase);
-  }
-  static constexpr TimeUnit Zero(const TimeUnit& aOther) {
-    return TimeUnit(0, aOther.mBase);
-  }
-  static TimeUnit Invalid();
-  int64_t ToMilliseconds() const;
-  int64_t ToMicroseconds() const;
-  int64_t ToNanoseconds() const;
-  int64_t ToTicksAtRate(int64_t aRate) const;
-  double ToSeconds() const;
-  nsCString ToString() const;
-  TimeDuration ToTimeDuration() const;
-  bool IsInfinite() const;
-  bool IsPositive() const;
-  bool IsPositiveOrZero() const;
-  bool IsZero() const;
-  bool IsNegative() const;
 
-  
-  
-  bool EqualsAtLowestResolution(const TimeUnit& aOther) const;
-  
-  bool operator==(const TimeUnit& aOther) const;
-  bool operator!=(const TimeUnit& aOther) const;
-  bool operator>=(const TimeUnit& aOther) const;
-  bool operator>(const TimeUnit& aOther) const;
-  bool operator<=(const TimeUnit& aOther) const;
-  bool operator<(const TimeUnit& aOther) const;
-  TimeUnit operator%(const TimeUnit& aOther) const;
-  TimeUnit operator+(const TimeUnit& aOther) const;
-  TimeUnit operator-(const TimeUnit& aOther) const;
-  TimeUnit& operator+=(const TimeUnit& aOther);
-  TimeUnit& operator-=(const TimeUnit& aOther);
+  static constexpr TimeUnit FromNanoseconds(int64_t aValue) {
+    return TimeUnit(aValue / 1000);
+  }
+
+  static constexpr TimeUnit FromInfinity() { return TimeUnit(INT64_MAX); }
+
+  static constexpr TimeUnit FromNegativeInfinity() {
+    return TimeUnit(INT64_MIN);
+  }
+
+  static TimeUnit FromTimeDuration(const TimeDuration& aDuration) {
+    return FromSeconds(aDuration.ToSeconds());
+  }
+
+  static constexpr TimeUnit Zero() { return TimeUnit(0); }
+
+  static TimeUnit Invalid() {
+    TimeUnit ret;
+    ret.mValue = CheckedInt64(INT64_MAX);
+    
+    ret.mValue += 1;
+    return ret;
+  }
+
+  int64_t ToMicroseconds() const { return mValue.value(); }
+
+  int64_t ToNanoseconds() const { return mValue.value() * 1000; }
+
+  double ToSeconds() const {
+    if (IsPosInf()) {
+      return PositiveInfinity<double>();
+    }
+    if (IsNegInf()) {
+      return NegativeInfinity<double>();
+    }
+    return double(mValue.value()) / USECS_PER_S;
+  }
+
+  TimeDuration ToTimeDuration() const {
+    return TimeDuration::FromMicroseconds(mValue.value());
+  }
+
+  bool IsInfinite() const { return IsPosInf() || IsNegInf(); }
+
+  bool IsPositive() const { return mValue.value() > 0; }
+
+  bool IsNegative() const { return mValue.value() < 0; }
+
+  bool operator==(const TimeUnit& aOther) const {
+    MOZ_ASSERT(IsValid() && aOther.IsValid());
+    return mValue.value() == aOther.mValue.value();
+  }
+  bool operator!=(const TimeUnit& aOther) const {
+    MOZ_ASSERT(IsValid() && aOther.IsValid());
+    return mValue.value() != aOther.mValue.value();
+  }
+  bool operator>=(const TimeUnit& aOther) const {
+    MOZ_ASSERT(IsValid() && aOther.IsValid());
+    return mValue.value() >= aOther.mValue.value();
+  }
+  bool operator>(const TimeUnit& aOther) const { return !(*this <= aOther); }
+  bool operator<=(const TimeUnit& aOther) const {
+    MOZ_ASSERT(IsValid() && aOther.IsValid());
+    return mValue.value() <= aOther.mValue.value();
+  }
+  bool operator<(const TimeUnit& aOther) const { return !(*this >= aOther); }
+  TimeUnit operator%(const TimeUnit& aOther) const {
+    MOZ_ASSERT(IsValid() && aOther.IsValid());
+    return TimeUnit(mValue % aOther.mValue);
+  }
+
+  TimeUnit operator+(const TimeUnit& aOther) const {
+    if (IsInfinite() || aOther.IsInfinite()) {
+      
+      
+      
+      double result = ToSeconds() + aOther.ToSeconds();
+      return std::isnan(result) ? TimeUnit::Invalid() : FromSeconds(result);
+    }
+    return TimeUnit(mValue + aOther.mValue);
+  }
+
+  TimeUnit operator-(const TimeUnit& aOther) const {
+    if (IsInfinite() || aOther.IsInfinite()) {
+      
+      
+      
+      double result = ToSeconds() - aOther.ToSeconds();
+      return std::isnan(result) ? TimeUnit::Invalid() : FromSeconds(result);
+    }
+    MOZ_ASSERT(!IsInfinite() && !aOther.IsInfinite());
+    return TimeUnit(mValue - aOther.mValue);
+  }
+  TimeUnit& operator+=(const TimeUnit& aOther) {
+    *this = *this + aOther;
+    return *this;
+  }
+  TimeUnit& operator-=(const TimeUnit& aOther) {
+    *this = *this - aOther;
+    return *this;
+  }
+
   template <typename T>
   TimeUnit operator*(T aVal) const {
     
     
     static_assert(std::is_integral_v<T>, "Must be an integral type");
-    return TimeUnit(mTicks * aVal, mBase);
+    return TimeUnit(mValue * aVal);
   }
-  TimeUnit MultDouble(double aVal) const;
+  TimeUnit MultDouble(double aVal) const {
+    return TimeUnit::FromSeconds(ToSeconds() * aVal);
+  }
   friend TimeUnit operator/(const TimeUnit& aUnit, int64_t aVal) {
     MOZ_DIAGNOSTIC_ASSERT(0 <= aVal && aVal <= UINT32_MAX);
-    return TimeUnit(aUnit.mTicks / aVal, aUnit.mBase);
+    return TimeUnit(aUnit.mValue / aVal);
   }
   friend TimeUnit operator%(const TimeUnit& aUnit, int64_t aVal) {
     MOZ_DIAGNOSTIC_ASSERT(0 <= aVal && aVal <= UINT32_MAX);
-    return TimeUnit(aUnit.mTicks % aVal, aUnit.mBase);
+    return TimeUnit(aUnit.mValue % aVal);
   }
 
-  TimeUnit ToBase(int64_t aTargetBase) const;
-  TimeUnit ToBase(const TimeUnit& aTimeUnit) const;
-  
-  TimeUnit ToBase(const TimeUnit& aTimeUnit, double& aOutError) const;
-  TimeUnit ToBase(int64_t aTargetBase, double& aOutError) const;
-  bool IsValid() const;
+  bool IsValid() const { return mValue.isValid(); }
 
   constexpr TimeUnit() = default;
 
@@ -171,34 +206,28 @@ class TimeUnit final {
 
   TimeUnit& operator=(const TimeUnit&) = default;
 
-  bool IsPosInf() const;
-  bool IsNegInf() const;
+  bool IsPosInf() const {
+    return mValue.isValid() && mValue.value() == INT64_MAX;
+  }
+  bool IsNegInf() const {
+    return mValue.isValid() && mValue.value() == INT64_MIN;
+  }
 
-  
-  friend IPC::ParamTraits<mozilla::media::TimeUnit>;
-
-#ifndef VISIBLE_TIMEUNIT_INTERNALS
  private:
-#endif
-  int64_t ToCommonUnit(int64_t aRatio) const;
-  
-  
-  TimeUnit Reduced() const;
+  explicit constexpr TimeUnit(CheckedInt64 aMicroseconds)
+      : mValue(aMicroseconds) {}
 
-  CheckedInt64 mTicks{0};
   
-  int64_t mBase{USECS_PER_S};
+  CheckedInt64 mValue{0};
 };
 
-using NullableTimeUnit = Maybe<TimeUnit>;
+typedef Maybe<TimeUnit> NullableTimeUnit;
 
-using TimeInterval = Interval<TimeUnit>;
-
+typedef Interval<TimeUnit> TimeInterval;
 
 class TimeIntervals : public IntervalSet<TimeUnit> {
  public:
-  using BaseType = IntervalSet<TimeUnit>;
-  using InnerType = TimeUnit;
+  typedef IntervalSet<TimeUnit> BaseType;
 
   
   
@@ -221,61 +250,7 @@ class TimeIntervals : public IntervalSet<TimeUnit> {
     return Length() == 1 && Start(0).IsNegInf() && End(0).IsNegInf();
   }
 
-  
-  
-  
-  TimeIntervals ToMicrosecondResolution() const {
-    TimeIntervals output;
-
-    for (const auto& interval : mIntervals) {
-      TimeInterval reducedPrecision{interval.mStart.ToBase(USECS_PER_S),
-                                    interval.mEnd.ToBase(USECS_PER_S),
-                                    interval.mFuzz.ToBase(USECS_PER_S)};
-      output += reducedPrecision;
-    }
-    return output;
-  }
-
   TimeIntervals() = default;
-};
-
-using TimeRange = Interval<double>;
-
-
-class TimeRanges : public IntervalSet<double> {
- public:
-  using BaseType = IntervalSet<double>;
-  using InnerType = double;
-  using nld = std::numeric_limits<double>;
-
-  
-  
-  
-  
-
-  
-  
-  MOZ_IMPLICIT TimeRanges(const BaseType& aOther) : BaseType(aOther) {}
-  MOZ_IMPLICIT TimeRanges(BaseType&& aOther) : BaseType(std::move(aOther)) {}
-  explicit TimeRanges(const BaseType::ElemType& aOther) : BaseType(aOther) {}
-  explicit TimeRanges(BaseType::ElemType&& aOther)
-      : BaseType(std::move(aOther)) {}
-
-  static TimeRanges Invalid() {
-    return TimeRanges(TimeRange(-nld::infinity(), nld::infinity()));
-  }
-  bool IsInvalid() const {
-    return Length() == 1 && Start(0) == -nld::infinity() &&
-           End(0) == nld::infinity();
-  }
-  
-  explicit TimeRanges(const TimeIntervals& aIntervals) {
-    for (const auto& interval : aIntervals) {
-      Add(TimeRange(interval.mStart.ToSeconds(), interval.mEnd.ToSeconds()));
-    }
-  }
-
-  TimeRanges() = default;
 };
 
 }  

@@ -70,17 +70,6 @@ struct AacCodecSpecificData {
            *mDecoderConfigDescriptorBinaryBlob ==
                *rhs.mDecoderConfigDescriptorBinaryBlob;
   }
-  
-  
-  
-
-  
-  
-  uint32_t mEncoderDelayFrames{0};
-
-  
-  
-  uint64_t mMediaFrameCount{0};
 
   
   
@@ -275,7 +264,6 @@ class TrackInfo {
   nsCString mMimeType;
   media::TimeUnit mDuration;
   media::TimeUnit mMediaTime;
-  uint32_t mTimeScale = 0;
   CryptoTrack mCrypto;
 
   CopyableTArray<MetadataTag> mTags;

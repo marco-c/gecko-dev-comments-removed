@@ -77,10 +77,6 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
       const media::TimeUnit& aTimeThreshold) override;
   int64_t GetResourceOffset() const override;
   media::TimeIntervals GetBuffered() override;
-  
-  uint32_t EncoderDelayFrames() const;
-  
-  uint32_t PaddingFrames() const;
 
  private:
   
@@ -121,7 +117,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
 
   
   
-  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, uint32_t aSize);
+  uint32_t Read(uint8_t* aBuffer, int64_t aOffset, int32_t aSize);
 
   
   double AverageFrameLength() const;
@@ -129,12 +125,6 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   
   
   Maybe<uint32_t> ValidNumAudioFrames() const;
-
-  
-  media::TimeUnit EncoderDelay() const;
-
-  
-  media::TimeUnit Padding() const;
 
   
   MediaResourceIndex mSource;
@@ -161,7 +151,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   int64_t mTotalFrameLen;
 
   
-  uint32_t mSamplesPerFrame;
+  int32_t mSamplesPerFrame;
 
   
   
