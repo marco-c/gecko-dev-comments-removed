@@ -4427,6 +4427,22 @@ var AddonManager = {
       );
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aAddon.isBuiltinColorwayTheme) {
+      return true;
+    }
+
     if (!("applyBackgroundUpdates" in aAddon)) {
       return false;
     }
