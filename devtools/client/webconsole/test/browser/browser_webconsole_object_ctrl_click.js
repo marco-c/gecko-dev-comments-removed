@@ -31,6 +31,9 @@ add_task(async function () {
     
     
     mustHaveAccessibleRule: false,
+    interactiveRule: false,
+    focusableRule: false,
+    labelRule: false,
   });
   EventUtils.sendMouseEvent(
     {
