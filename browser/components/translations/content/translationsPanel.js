@@ -371,6 +371,23 @@ var TranslationsPanel = new (class {
 
 
 
+  async #updateSettingsMenuSiteCheckboxStates() {
+    const { panel } = this.elements;
+    const neverTranslateSiteMenuItems = panel.querySelectorAll(
+      ".never-translate-site-menuitem"
+    );
+    const neverTranslateSite =
+      await this.#getTranslationsActor().shouldNeverTranslateSite();
+
+    for (const menuitem of neverTranslateSiteMenuItems) {
+      menuitem.setAttribute("checked", neverTranslateSite ? "true" : "false");
+    }
+  }
+
+  
+
+
+
   async #populateSettingsMenuItems() {
     const docLangTag = await this.#getDocLangTag();
     const displayNames = new Services.intl.DisplayNames(undefined, {
@@ -398,7 +415,10 @@ var TranslationsPanel = new (class {
       });
     }
 
-    await this.#updateSettingsMenuLanguageCheckboxStates();
+    await Promise.all([
+      this.#updateSettingsMenuLanguageCheckboxStates(),
+      this.#updateSettingsMenuSiteCheckboxStates(),
+    ]);
   }
 
   
@@ -529,6 +549,7 @@ var TranslationsPanel = new (class {
 
   openSettingsPopup(button) {
     this.#updateSettingsMenuLanguageCheckboxStates();
+    this.#updateSettingsMenuSiteCheckboxStates();
     const popup = button.querySelector("menupopup");
     popup.openPopup(button);
   }
@@ -567,6 +588,16 @@ var TranslationsPanel = new (class {
   
 
 
+
+
+  async onNeverTranslateSite() {
+    await this.#getTranslationsActor().toggleNeverTranslateSitePermissions();
+    await this.#updateSettingsMenuSiteCheckboxStates();
+  }
+
+  
+
+
   async onRestore() {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
@@ -597,7 +628,9 @@ var TranslationsPanel = new (class {
           
           !TranslationsParent.shouldNeverTranslateLanguage(
             detectedLanguages.docLangTag
-          )
+          ) &&
+          
+          !(await this.#getTranslationsActor().shouldNeverTranslateSite())
         ) {
           button.hidden = false;
           if (requestedTranslationPair) {
