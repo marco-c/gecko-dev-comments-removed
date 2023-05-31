@@ -16,18 +16,6 @@ interface nsIConsoleService : nsISupports
     
     
     
-    
-    
-    
-    
-    
-    
-    [implicit_jscontext]
-    jsval callFunctionAndLogException(in jsval targetGlobal, in jsval function);
-
-    
-    
-    
     cenum OutputMode : 8 {
         SuppressLog = 0,
         OutputToLog
