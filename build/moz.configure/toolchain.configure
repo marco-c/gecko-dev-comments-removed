@@ -721,11 +721,18 @@ def rust_search_path(rust_path, search_order, original_path):
 
 
 
-@depends(mozillabuild_bin_paths)
+@depends(mozillabuild_bin_paths, clang_search_path, target, original_path)
 @imports("os")
-def altered_path(mozillabuild_bin_paths):
+def altered_path(mozillabuild_bin_paths, clang_search_path, target, original_path):
     altered_path = mozillabuild_bin_paths
-    for p in os.environ["PATH"].split(os.pathsep):
+    if target.kernel == "Darwin":
+        
+        
+        
+        path = clang_search_path
+    else:
+        path = original_path
+    for p in path:
         if p not in altered_path:
             altered_path.append(p)
     return os.pathsep.join(altered_path)
