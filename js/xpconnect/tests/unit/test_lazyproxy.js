@@ -75,39 +75,39 @@ add_task(function test_lazy_proxy() {
 add_task(function test_module_version() {
   
   
-  const NET_UTIL_URI = "resource://gre/modules/NetUtil.jsm";
+  const TEST_FILE_URI = "resource://test/TestFile.jsm";
   let underlyingObject;
 
-  Cu.unload(NET_UTIL_URI);
+  Cu.unload(TEST_FILE_URI);
 
   let lazyProxy = XPCOMUtils.defineLazyProxy(
     null,
-    "NetUtil",
-    NET_UTIL_URI,
+    "TestFile",
+    TEST_FILE_URI,
     null, 
     function untrapCallback(object) {
       underlyingObject = object;
     }
   );
 
-  Assert.ok(!Cu.isModuleLoaded(NET_UTIL_URI), "The NetUtil module was not loaded by the lazy proxy definition");
+  Assert.ok(!Cu.isModuleLoaded(TEST_FILE_URI), "The NetUtil module was not loaded by the lazy proxy definition");
 
   
   lazyProxy.foo = "bar";
 
   
-  Assert.ok(Cu.isModuleLoaded(NET_UTIL_URI), "The NetUtil module was loaded");
+  Assert.ok(Cu.isModuleLoaded(TEST_FILE_URI), "The NetUtil module was loaded");
 
-  let { NetUtil } = ChromeUtils.import(NET_UTIL_URI, {});
-
-  
-  Assert.ok(NetUtil === underlyingObject, "The module loaded is the same as the one directly obtained by ChromeUtils.import");
+  let { TestFile } = ChromeUtils.import(TEST_FILE_URI, {});
 
   
-  Assert.equal(NetUtil.foo, "bar", "Proxy correctly passed the setter to the underlying object");
+  Assert.ok(TestFile === underlyingObject, "The module loaded is the same as the one directly obtained by ChromeUtils.import");
+
+  
+  Assert.equal(TestFile.foo, "bar", "Proxy correctly passed the setter to the underlying object");
 
   delete lazyProxy.foo;
 
   
-  Assert.ok(!NetUtil.hasOwnProperty("foo"), "Proxy correctly passed the delete operation to the underlying object");
+  Assert.ok(!TestFile.hasOwnProperty("foo"), "Proxy correctly passed the delete operation to the underlying object");
 });
