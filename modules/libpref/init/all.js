@@ -3777,6 +3777,13 @@ pref("browser.translations.enable", false);
 pref("browser.translations.logLevel", "Error");
 
 
+pref("browser.translations.alwaysTranslateLanguages", "");
+
+
+
+pref("browser.translations.neverTranslateLanguages", "");
+
+
 
 pref("browser.translations.useHTML", false);
 
