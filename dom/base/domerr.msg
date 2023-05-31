@@ -41,6 +41,11 @@ DOM4_MSG_DEF(DataError, "Data provided to an operation does not meet requirement
 DOM4_MSG_DEF(OperationError, "The operation failed for an operation-specific reason", NS_ERROR_DOM_OPERATION_ERR)
 
 
+DOM4_MSG_DEF(QuotaExceededError, "MediaKeys object is already bound to another HTMLMediaElement.", NS_ERROR_DOM_MEDIA_KEY_QUOTA_EXCEEDED_ERR)
+DOM4_MSG_DEF(QuotaExceededError, "Too many SourceBuffer objects created for a single MediaSource object.", NS_ERROR_DOM_MEDIA_SOURCE_MAX_BUFFER_QUOTA_EXCEEDED_ERR)
+DOM4_MSG_DEF(QuotaExceededError, "MediaSource buffer not sufficient.", NS_ERROR_DOM_MEDIA_SOURCE_FULL_BUFFER_QUOTA_EXCEEDED_ERR)
+
+
 
 DOM4_MSG_DEF(UnknownError, "The operation failed for reasons unrelated to the database itself and not covered by any other error code.", NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR)
 DOM4_MSG_DEF(ConstraintError, "A mutation operation in the transaction failed because a constraint was not satisfied.", NS_ERROR_DOM_INDEXEDDB_CONSTRAINT_ERR)
