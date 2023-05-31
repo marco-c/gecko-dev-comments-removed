@@ -23,7 +23,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, "unicodeSets");
 
 assert.sameValue(desc.get.length, 0);

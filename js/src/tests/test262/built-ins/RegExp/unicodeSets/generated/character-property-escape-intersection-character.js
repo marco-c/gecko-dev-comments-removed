@@ -14,7 +14,6 @@
 
 
 
-
 testExtendedCharacterClass({
   regExp: /^[\p{ASCII_Hex_Digit}&&_]+$/v,
   expression: "[\p{ASCII_Hex_Digit}&&_]",

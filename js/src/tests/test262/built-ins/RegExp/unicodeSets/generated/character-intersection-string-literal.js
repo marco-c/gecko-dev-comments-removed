@@ -14,7 +14,6 @@
 
 
 
-
 testExtendedCharacterClass({
   regExp: /^[_&&\q{0|2|4|9\uFE0F\u20E3}]+$/v,
   expression: "[_&&\q{0|2|4|9\uFE0F\u20E3}]",
