@@ -1,19 +1,16 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ManifestMessagesChild"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.*/
+/*
+ * Manifest obtainer frame script implementation of:
+ * http://www.w3.org/TR/appmanifest/#obtaining
+ *
+ * It searches a top-level browsing context for
+ * a <link rel=manifest> element. Then fetches
+ * and processes the linked manifest.
+ *
+ * BUG: https://bugzilla.mozilla.org/show_bug.cgi?id=1083410
+ */
 
 const lazy = {};
 
@@ -23,7 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
 });
 
-class ManifestMessagesChild extends JSWindowActorChild {
+export class ManifestMessagesChild extends JSWindowActorChild {
   receiveMessage(message) {
     switch (message.name) {
       case "DOM:WebManifest:hasManifestLink":
@@ -36,9 +33,9 @@ class ManifestMessagesChild extends JSWindowActorChild {
     return undefined;
   }
 
-  
-
-
+  /**
+   * Check if the document includes a link to a web manifest.
+   */
   hasManifestLink() {
     const response = makeMsgResponse();
     response.result = lazy.ManifestFinder.contentHasManifestLink(
@@ -48,11 +45,11 @@ class ManifestMessagesChild extends JSWindowActorChild {
     return response;
   }
 
-  
-
-
-
-
+  /**
+   * Asynchronously obtains a web manifest from this window by using the
+   * ManifestObtainer and returns the result.
+   * @param {Object} checkConformance True if spec conformance messages should be collected.
+   */
   async obtainManifest(options) {
     const { checkConformance } = options;
     const response = makeMsgResponse();
@@ -68,10 +65,10 @@ class ManifestMessagesChild extends JSWindowActorChild {
     return response;
   }
 
-  
-
-
-
+  /**
+   * Given a manifest and an expected icon size, ask ManifestIcons
+   * to fetch the appropriate icon and send along result
+   */
   async fetchIcon({ data: { manifest, iconSize } }) {
     const response = makeMsgResponse();
     try {
@@ -88,13 +85,13 @@ class ManifestMessagesChild extends JSWindowActorChild {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Utility function to Serializes an JS Error, so it can be transferred over
+ * the message channel.
+ * FIX ME: https://bugzilla.mozilla.org/show_bug.cgi?id=1172586
+ * @param  {Error} aError The error to serialize.
+ * @return {Object} The serialized object.
+ */
 function serializeError(aError) {
   const clone = {
     fileName: aError.fileName,
