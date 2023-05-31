@@ -222,6 +222,11 @@ extern "C" NS_EXPORT void JOG_RegisterMetric(
     return;
   }
 
+  MOZ_LOG(mozilla::glean::sLog, mozilla::LogLevel::Verbose,
+          ("Registering metric %s.%s id %" PRIu32 " id+type %" PRIu32 "",
+           PromiseFlatCString(aCategory).get(), PromiseFlatCString(aName).get(),
+           aMetricId, aMetric));
+
   
   auto categoryCamel = dottedSnakeToCamel(aCategory);
   auto nameCamel = dottedSnakeToCamel(aName);
