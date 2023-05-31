@@ -832,7 +832,6 @@ function ArrayKeys() {
   return CreateArrayIterator(this, ITEM_KIND_KEY);
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -1006,7 +1005,6 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
   
   return fromAsyncClosure();
 }
-#endif
 
 
 function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {

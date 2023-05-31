@@ -2228,6 +2228,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
        id == NameToId(cx->names().groupToMap))) {
     return true;
   }
+#endif
 
   
   
@@ -2237,7 +2238,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       id == NameToId(cx->names().fromAsync)) {
     return true;
   }
-#endif
 
   if (key == JSProto_Array &&
       !cx->realm()->creationOptions().getChangeArrayByCopyEnabled() &&
