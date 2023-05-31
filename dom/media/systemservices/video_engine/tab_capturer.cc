@@ -55,13 +55,17 @@ class CaptureFrameRequest {
   MozPromiseRequestHolder<CapturePromise> mRequest;
 };
 
-TabCapturerWebrtc::TabCapturerWebrtc(
-    const webrtc::DesktopCaptureOptions& options)
+TabCapturerWebrtc::TabCapturerWebrtc()
     : mMainThreadWorker(
           TaskQueue::Create(do_AddRef(GetMainThreadSerialEventTarget()),
                             "TabCapturerWebrtc::mMainThreadWorker")) {
   RTC_DCHECK_RUN_ON(&mControlChecker);
   mCallbackChecker.Detach();
+}
+
+
+std::unique_ptr<webrtc::DesktopCapturer> TabCapturerWebrtc::Create() {
+  return std::unique_ptr<webrtc::DesktopCapturer>(new TabCapturerWebrtc());
 }
 
 TabCapturerWebrtc::~TabCapturerWebrtc() {
@@ -300,16 +304,6 @@ auto TabCapturerWebrtc::CaptureFrameNow() -> RefPtr<CapturePromise> {
   RefPtr<CapturePromise> p = holder.Ensure(__func__);
   TabCapturedHandler::Create(promise, std::move(holder));
   return p;
-}
-}  
-
-namespace webrtc {
-
-std::unique_ptr<webrtc::DesktopCapturer>
-webrtc::DesktopCapturer::CreateRawTabCapturer(
-    const webrtc::DesktopCaptureOptions& options) {
-  return std::unique_ptr<webrtc::DesktopCapturer>(
-      new mozilla::TabCapturerWebrtc(options));
 }
 
 }  
