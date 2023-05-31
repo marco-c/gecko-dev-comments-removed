@@ -25,12 +25,16 @@
 #include "nsComponentManagerUtils.h"
 #include "nsIBrowserDOMWindow.h"
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/PDocAccessible.h"
+#endif
 #include "GMPServiceParent.h"
 #include "HandlerServiceParent.h"
 #include "IHistory.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #  include "mozilla/a11y/AccessibleWrap.h"
 #  include "mozilla/a11y/Compatibility.h"
+#  include "mozilla/mscom/ActCtxResource.h"
 #endif
 #include <map>
 #include <utility>
@@ -312,6 +316,10 @@
 #ifdef XP_WIN
 #  include "mozilla/widget/AudioSession.h"
 #  include "mozilla/WinDllServices.h"
+#endif
+
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
@@ -2640,6 +2648,20 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   ::mozilla::ipc::ExportSharedJSInit(*mSubprocess, extraArgs);
+
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  
+  
+  
+  if (!a11y::IsCacheActive()) {
+    
+    
+    auto resourceId = mscom::ActCtxResource::GetAccessibilityResourceId();
+    if (resourceId) {
+      geckoargs::sA11yResourceId.Put(resourceId, extraArgs);
+    }
+  }
+#endif
 
   
   
@@ -6240,6 +6262,22 @@ ContentParent::RecvUnstoreAndBroadcastBlobURLUnregistration(
   BroadcastBlobURLUnregistration(aURI, aPrincipal, this);
   mBlobURLs.RemoveElement(aURI);
   return IPC_OK();
+}
+
+bool ContentParent::HandleWindowsMessages(const Message& aMsg) const {
+  MOZ_ASSERT(aMsg.is_sync());
+
+#ifdef ACCESSIBILITY
+  
+  
+  
+  if (a11y::PDocAccessible::PDocAccessibleStart < aMsg.type() &&
+      a11y::PDocAccessible::PDocAccessibleEnd > aMsg.type()) {
+    return false;
+  }
+#endif
+
+  return true;
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvGetFilesRequest(

@@ -61,6 +61,11 @@ bool ShouldA11yBeEnabled();
 
 
 
+bool IsHandlerRegistered();
+
+
+
+
 void SetInstantiator(const uint32_t aInstantiatorPid);
 bool GetInstantiator(nsIFile** aOutInstantiator);
 #endif

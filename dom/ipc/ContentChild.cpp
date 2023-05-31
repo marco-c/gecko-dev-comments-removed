@@ -770,6 +770,9 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   
   
   GetIPCChannel()->SetAbortOnError(true);
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+  GetIPCChannel()->SetChannelFlags(MessageChannel::REQUIRE_A11Y_REENTRY);
+#endif
 
   
   

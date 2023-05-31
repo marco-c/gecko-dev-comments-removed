@@ -470,6 +470,12 @@ class IToplevelProtocol : public IProtocol {
 
   bool IsOnCxxStack() const;
 
+  
+
+
+
+  virtual bool HandleWindowsMessages(const Message& aMsg) const { return true; }
+
   virtual void ProcessRemoteNativeEventsInInterruptCall() {}
 
   virtual void OnChannelReceivedMessage(const Message& aMsg) {}

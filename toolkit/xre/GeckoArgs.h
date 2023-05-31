@@ -134,6 +134,10 @@ static CommandLineArg<bool> sNotForBrowser{"-notForBrowser", "notforbrowser"};
 static CommandLineArg<bool> sWin32kLockedDown{"-win32kLockedDown",
                                               "win32klockeddown"};
 #  endif  
+#  if defined(ACCESSIBILITY)
+static CommandLineArg<uint64_t> sA11yResourceId{"-a11yResourceId",
+                                                "a11yresourceid"};
+#  endif  
 static CommandLineArg<bool> sDisableDynamicDllBlocklist{
     "-disableDynamicBlocklist", "disabledynamicblocklist"};
 #endif  
