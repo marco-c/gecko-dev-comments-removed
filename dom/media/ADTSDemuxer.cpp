@@ -347,7 +347,9 @@ bool ADTSTrackDemuxer::Init() {
   
   
   
-  mPreRoll = TimeUnit::FromMicroseconds(2112 * 1000000ULL / mSamplesPerSecond);
+  
+  
+  mPreRoll = TimeUnit::FromMicroseconds(1024u * 1000000ULL / mSamplesPerSecond);
   return mChannels;
 }
 
@@ -646,12 +648,11 @@ already_AddRefed<MediaRawData> ADTSTrackDemuxer::GetNextFrame(
 
   UpdateState(aFrame);
 
-  frame->mTime = Duration(mFrameIndex - 1);
+  frame->mTime = Duration(mFrameIndex - 1) - mPreRoll;
   frame->mDuration = Duration(1);
   frame->mTimecode = frame->mTime;
   frame->mKeyframe = true;
 
-  MOZ_ASSERT(!frame->mTime.IsNegative());
   MOZ_ASSERT(frame->mDuration.IsPositive());
 
   ADTSLOGV("GetNext() End mOffset=%" PRIu64 " mNumParsedFrames=%" PRIu64
