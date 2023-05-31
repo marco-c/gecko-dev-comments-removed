@@ -94,7 +94,6 @@ using nsEventStatus from "mozilla/EventForwards.h";
 using mozilla::Modifiers from "mozilla/EventForwards.h";
 using struct mozilla::widget::CandidateWindowPosition from "ipc/nsGUIEventIPC.h";
 using struct mozilla::FontRange from "ipc/nsGUIEventIPC.h";
-using mozilla::a11y::IAccessibleHolder from "mozilla/a11y/IPCTypes.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 using mozilla::dom::EffectsInfo from "mozilla/dom/EffectsInfo.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
@@ -213,11 +212,8 @@ parent:
 
 
 
-
-
     async PDocAccessible(nullable PDocAccessible aParentDoc, uint64_t aParentAcc,
-                         MaybeDiscardedBrowsingContext aBrowsingContext,
-                         uint32_t aMsaaID, IAccessibleHolder aDocCOMProxy);
+                         MaybeDiscardedBrowsingContext aBrowsingContext);
 #endif
 
     async PPaymentRequest();

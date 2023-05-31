@@ -267,15 +267,6 @@ class DocAccessibleParent : public RemoteAccessible,
 
 
 
-
-
-
-  void SendParentCOMProxy(Accessible* aOuterDoc);
-
-  
-
-
-
   void SetEmulatedWindowHandle(HWND aWindowHandle);
   HWND GetEmulatedWindowHandle() const { return mEmulatedWindowHandle; }
 #endif
@@ -406,13 +397,7 @@ class DocAccessibleParent : public RemoteAccessible,
 #if defined(XP_WIN)
   
   HWND mEmulatedWindowHandle;
-
-#  if defined(MOZ_SANDBOX)
-  mscom::PreservedStreamPtr mParentProxyStream;
-  mscom::PreservedStreamPtr mDocProxyStream;
-  mscom::PreservedStreamPtr mTopLevelDocProxyStream;
-#  endif  
-#endif    
+#endif  
 
   
 

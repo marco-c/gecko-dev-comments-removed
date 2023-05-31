@@ -22,10 +22,7 @@
 #include "RootAccessible.h"
 
 #if defined(XP_WIN)
-#  include "AccessibleWrap.h"
 #  include "Compatibility.h"
-#  include "mozilla/mscom/PassthruProxy.h"
-#  include "mozilla/mscom/Ptr.h"
 #  include "nsWinUtils.h"
 #else
 #  include "mozilla/a11y/DocAccessiblePlatformExtParent.h"
@@ -42,19 +39,6 @@
 #endif
 
 namespace mozilla {
-
-#if defined(XP_WIN)
-namespace mscom {
-namespace detail {
-
-template <>
-struct VTableSizer<IAccessible> {
-  
-  enum { Size = 28 };
-};
-}  
-}  
-#endif  
 
 namespace a11y {
 uint64_t DocAccessibleParent::sMaxDocID = 0;
@@ -306,18 +290,8 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvHideEvent(
     return IPC_OK();
   }
 
-#ifdef XP_WIN
-  WeakPtr<RemoteAccessible> parent = root->RemoteParent();
-#else
   RemoteAccessible* parent = root->RemoteParent();
-#endif
   ProxyShowHideEvent(root, parent, false, aFromUser);
-#ifdef XP_WIN
-  if (!parent) {
-    MOZ_ASSERT(!a11y::IsCacheActive());
-    return IPC_FAIL(this, "Parent removed while removing child");
-  }
-#endif
 
   RefPtr<xpcAccHideEvent> event = nullptr;
   if (nsCoreUtils::AccEventObserversExist()) {
@@ -856,12 +830,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     return IPC_FAIL(this, "binding to nonexistant proxy!");
   }
 
-#ifdef XP_WIN
-  WeakPtr<RemoteAccessible> outerDoc = e->mProxy;
-#else
   RemoteAccessible* outerDoc = e->mProxy;
-#endif
-
   MOZ_ASSERT(outerDoc);
 
   
@@ -899,83 +868,6 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         embeddedBrowser->GetBrowserBridgeParent();
     if (bridge) {
 #if defined(XP_WIN)
-      if (!a11y::IsCacheActive()) {
-        RefPtr<DocAccessibleParent> thisDoc = this;
-        RefPtr<DocAccessibleParent> childDoc = aChildDoc;
-        
-        
-        
-        RefPtr<IDispatch> docAcc;
-        childDoc->GetCOMInterface((void**)getter_AddRefs(docAcc));
-        MOZ_ASSERT(docAcc);
-        if (docAcc) {
-          RefPtr<IDispatch> docWrapped(
-              mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(docAcc)));
-          IDispatchHolder::COMPtrType docPtr(
-              mscom::ToProxyUniquePtr(std::move(docWrapped)));
-          IDispatchHolder docHolder(std::move(docPtr));
-          if (bridge->SendSetEmbeddedDocAccessibleCOMProxy(docHolder)) {
-#  if defined(MOZ_SANDBOX)
-            childDoc->mDocProxyStream = docHolder.GetPreservedStream();
-#  endif  
-          }
-        }
-        if (!outerDoc) {
-          return IPC_FAIL(this, "OuterDoc removed while adding child doc");
-        }
-        if (childDoc->IsShutdown()) {
-          return IPC_FAIL(this, "Child doc removed while adding it");
-        }
-        
-        
-        
-        childDoc->SendParentCOMProxy(outerDoc);
-        if (childDoc->IsShutdown()) {
-          return IPC_FAIL(this, "Child doc removed while adding it");
-        }
-        if (nsWinUtils::IsWindowEmulationStarted()) {
-          
-          
-          
-          
-          Unused << childDoc->SendEmulatedWindow(
-              reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
-        }
-        if (thisDoc->IsShutdown()) {
-          return IPC_FAIL(this, "Parent doc removed while adding child doc");
-        }
-        
-        
-        
-        
-        DocAccessibleParent* topDoc = thisDoc;
-        while (DocAccessibleParent* parentDoc = topDoc->ParentDoc()) {
-          topDoc = parentDoc;
-        }
-        MOZ_ASSERT(topDoc && topDoc->IsTopLevel());
-        RefPtr<IAccessible> topDocAcc;
-        topDoc->GetCOMInterface((void**)getter_AddRefs(topDocAcc));
-        MOZ_ASSERT(topDocAcc);
-        if (topDocAcc) {
-          RefPtr<IAccessible> topDocWrapped(
-              mscom::PassthruProxy::Wrap<IAccessible>(WrapNotNull(topDocAcc)));
-          IAccessibleHolder::COMPtrType topDocPtr(
-              mscom::ToProxyUniquePtr(std::move(topDocWrapped)));
-          IAccessibleHolder topDocHolder(std::move(topDocPtr));
-          if (childDoc->SendTopLevelDocCOMProxy(topDocHolder)) {
-#  if defined(MOZ_SANDBOX)
-            aChildDoc->mTopLevelDocProxyStream =
-                topDocHolder.GetPreservedStream();
-#  endif  
-          }
-        }
-        if (!outerDoc) {
-          return IPC_FAIL(this, "OuterDoc removed while adding child doc");
-        }
-        if (childDoc->IsShutdown()) {
-          return IPC_FAIL(this, "Child doc removed while adding it");
-        }
-      }
       if (nsWinUtils::IsWindowEmulationStarted()) {
         aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
       }
@@ -1173,25 +1065,9 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
   
   RefPtr<DocAccessibleParent> thisRef = this;
   nsWinUtils::NativeWindowCreateProc onCreate([thisRef](HWND aHwnd) -> void {
-    IDispatchHolder hWndAccHolder;
-
     ::SetPropW(aHwnd, kPropNameDocAccParent,
                reinterpret_cast<HANDLE>(thisRef.get()));
-
     thisRef->SetEmulatedWindowHandle(aHwnd);
-
-    RefPtr<IAccessible> hwndAcc;
-    if (SUCCEEDED(::AccessibleObjectFromWindow(
-            aHwnd, OBJID_WINDOW, IID_IAccessible, getter_AddRefs(hwndAcc)))) {
-      RefPtr<IDispatch> wrapped(
-          mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(hwndAcc)));
-      hWndAccHolder.Set(IDispatchHolder::COMPtrType(
-          mscom::ToProxyUniquePtr(std::move(wrapped))));
-    }
-
-    Unused << thisRef->SendEmulatedWindow(
-        reinterpret_cast<uintptr_t>(thisRef->mEmulatedWindowHandle),
-        hWndAccHolder);
   });
 
   HWND parentWnd = reinterpret_cast<HWND>(rootDocument->GetNativeWindow());
@@ -1199,37 +1075,6 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
       kClassNameTabContent, parentWnd, rect.X(), rect.Y(), rect.Width(),
       rect.Height(), isActive, &onCreate);
   MOZ_ASSERT(hWnd);
-}
-
-void DocAccessibleParent::SendParentCOMProxy(Accessible* aOuterDoc) {
-  
-  auto tab = static_cast<dom::BrowserParent*>(Manager());
-  MOZ_ASSERT(tab);
-  if (tab->IsDestroyed()) {
-    return;
-  }
-
-  RefPtr<IDispatch> nativeAcc =
-      already_AddRefed<IDispatch>(MsaaAccessible::NativeAccessible(aOuterDoc));
-  if (NS_WARN_IF(!nativeAcc)) {
-    
-    
-    
-    return;
-  }
-
-  RefPtr<IDispatch> wrapped(
-      mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(nativeAcc)));
-
-  IDispatchHolder::COMPtrType ptr(mscom::ToProxyUniquePtr(std::move(wrapped)));
-  IDispatchHolder holder(std::move(ptr));
-  if (!PDocAccessibleParent::SendParentCOMProxy(holder)) {
-    return;
-  }
-
-#  if defined(MOZ_SANDBOX)
-  mParentProxyStream = holder.GetPreservedStream();
-#  endif  
 }
 
 void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {

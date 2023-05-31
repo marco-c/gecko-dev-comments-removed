@@ -4,6 +4,8 @@
 
 
 
+include "mozilla/GfxMessageUtils.h";
+
 include protocol PBrowser;
 include protocol PInProcess;
 include SessionStoreTypes;
