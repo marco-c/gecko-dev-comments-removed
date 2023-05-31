@@ -5,8 +5,20 @@
 
 "use strict";
 
-const kPermissionType = "translate";
-const kLanguagesPref = "browser.translation.neverForLanguages";
+
+
+
+const TRANSLATIONS_PERMISSION = "translations";
+
+
+
+const ALWAYS_TRANSLATE_LANGS_PREF =
+  "browser.translations.alwaysTranslateLanguages";
+
+
+
+const NEVER_TRANSLATE_LANGS_PREF =
+  "browser.translations.neverTranslateLanguages";
 
 function Tree(aId, aData) {
   this._data = aData;
@@ -83,100 +95,206 @@ Lang.prototype = {
   },
 };
 
-var gTranslationExceptions = {
+var gTranslationsSettings = {
   onLoad() {
-    if (this._siteTree) {
+    if (this._neverTranslateSiteTree) {
       
-      this.uninit();
+      this.removeObservers();
     }
 
     
-    this._sites = [];
-    for (let perm of Services.perms.all) {
-      if (
-        perm.type == kPermissionType &&
-        perm.capability == Services.perms.DENY_ACTION
-      ) {
-        this._sites.push(perm.principal.origin);
+    this._neverTranslateSites = [];
+    for (const perm of Services.perms.getAllByTypes([
+      TRANSLATIONS_PERMISSION,
+    ])) {
+      if (perm.capability === Services.perms.DENY_ACTION) {
+        this._neverTranslateSites.push(perm.principal.origin);
       }
     }
+    let stripProtocol = s => s?.replace(/^\w+:/, "") || "";
+    this._neverTranslateSites.sort((a, b) => {
+      return stripProtocol(a).localeCompare(stripProtocol(b));
+    });
+
+    
+    this._alwaysTranslateLangs = this.getAlwaysTranslateLanguages();
+    this._neverTranslateLangs = this.getNeverTranslateLanguages();
+
+    
     Services.obs.addObserver(this, "perm-changed");
-    this._sites.sort();
+    Services.prefs.addObserver(ALWAYS_TRANSLATE_LANGS_PREF, this);
+    Services.prefs.addObserver(NEVER_TRANSLATE_LANGS_PREF, this);
 
-    this._siteTree = new Tree("sitesTree", this._sites);
-    this.onSiteSelected();
+    
+    this._alwaysTranslateLangsTree = new Tree(
+      "alwaysTranslateLanguagesTree",
+      this._alwaysTranslateLangs
+    );
+    this._neverTranslateLangsTree = new Tree(
+      "neverTranslateLanguagesTree",
+      this._neverTranslateLangs
+    );
+    this._neverTranslateSiteTree = new Tree(
+      "neverTranslateSitesTree",
+      this._neverTranslateSites
+    );
 
-    this._langs = this.getLanguageExceptions();
-    Services.prefs.addObserver(kLanguagesPref, this);
-    this._langTree = new Tree("languagesTree", this._langs);
-    this.onLanguageSelected();
+    
+    this.onSelectAlwaysTranslateLanguage();
+    this.onSelectNeverTranslateLanguage();
+    this.onSelectNeverTranslateSite();
   },
 
   
-  getLanguageExceptions() {
-    let langs = Services.prefs.getCharPref(kLanguagesPref);
-    if (!langs) {
+
+
+
+
+
+
+
+
+
+  getLangsFromPref(pref) {
+    let rawLangs = Services.prefs.getCharPref(pref);
+    if (!rawLangs) {
       return [];
     }
 
-    let langArr = langs.split(",");
+    let langArr = rawLangs.split(",");
     let displayNames = Services.intl.getLanguageDisplayNames(
       undefined,
       langArr
     );
-    let result = langArr.map((lang, i) => new Lang(lang, displayNames[i]));
-    result.sort();
+    let langs = langArr.map((lang, i) => new Lang(lang, displayNames[i]));
+    langs.sort();
 
-    return result;
+    return langs;
   },
 
+  
+
+
+
+  getAlwaysTranslateLanguages() {
+    return this.getLangsFromPref(ALWAYS_TRANSLATE_LANGS_PREF);
+  },
+
+  
+
+
+
+  getNeverTranslateLanguages() {
+    return this.getLangsFromPref(NEVER_TRANSLATE_LANGS_PREF);
+  },
+
+  
+
+
   observe(aSubject, aTopic, aData) {
-    if (aTopic == "perm-changed") {
-      if (aData == "cleared") {
-        if (!this._sites.length) {
+    if (aTopic === "perm-changed") {
+      if (aData === "cleared") {
+        
+        if (!this._neverTranslateSites.length) {
+          
           return;
         }
-        let removed = this._sites.splice(0, this._sites.length);
-        this._siteTree.tree.rowCountChanged(0, -removed.length);
+        
+        let removed = this._neverTranslateSites.splice(
+          0,
+          this._neverTranslateSites.length
+        );
+        this._neverTranslateSiteTree.tree.rowCountChanged(0, -removed.length);
       } else {
         let perm = aSubject.QueryInterface(Ci.nsIPermission);
-        if (perm.type != kPermissionType) {
+        if (perm.type != TRANSLATIONS_PERMISSION) {
+          
           return;
         }
-
-        if (aData == "added") {
+        if (aData === "added") {
           if (perm.capability != Services.perms.DENY_ACTION) {
+            
+            
             return;
           }
-          this._sites.push(perm.principal.origin);
-          this._sites.sort();
-          let tree = this._siteTree.tree;
+          this._neverTranslateSites.push(perm.principal.origin);
+          this._neverTranslateSites.sort();
+          let tree = this._neverTranslateSiteTree.tree;
           tree.rowCountChanged(0, 1);
           tree.invalidate();
         } else if (aData == "deleted") {
-          let index = this._sites.indexOf(perm.principal.origin);
+          let index = this._neverTranslateSites.indexOf(perm.principal.origin);
           if (index == -1) {
+            
             return;
           }
-          this._sites.splice(index, 1);
-          this._siteTree.tree.rowCountChanged(index, -1);
-          this.onSiteSelected();
-          return;
+          this._neverTranslateSites.splice(index, 1);
+          this._neverTranslateSiteTree.tree.rowCountChanged(index, -1);
         }
       }
-      this.onSiteSelected();
-    } else if (aTopic == "nsPref:changed") {
-      this._langs = this.getLanguageExceptions();
-      let change = this._langs.length - this._langTree.rowCount;
-      this._langTree._data = this._langs;
-      let tree = this._langTree.tree;
-      if (change) {
-        tree.rowCountChanged(0, change);
+      
+      this.onSelectNeverTranslateSite();
+    } else if (aTopic === "nsPref:changed") {
+      switch (aData) {
+        case ALWAYS_TRANSLATE_LANGS_PREF: {
+          this._alwaysTranslateLangs = this.getAlwaysTranslateLanguages();
+
+          let alwaysTranslateLangsChange =
+            this._alwaysTranslateLangs.length -
+            this._alwaysTranslateLangsTree.rowCount;
+
+          this._alwaysTranslateLangsTree._data = this._alwaysTranslateLangs;
+          let alwaysTranslateLangsTree = this._alwaysTranslateLangsTree.tree;
+
+          if (alwaysTranslateLangsChange) {
+            alwaysTranslateLangsTree.rowCountChanged(
+              0,
+              alwaysTranslateLangsChange
+            );
+          }
+
+          alwaysTranslateLangsTree.invalidate();
+
+          
+          this.onSelectAlwaysTranslateLanguage();
+          break;
+        }
+        case NEVER_TRANSLATE_LANGS_PREF: {
+          this._neverTranslateLangs = this.getNeverTranslateLanguages();
+
+          let neverTranslateLangsChange =
+            this._neverTranslateLangs.length -
+            this._neverTranslateLangsTree.rowCount;
+
+          this._neverTranslateLangsTree._data = this._neverTranslateLangs;
+          let neverTranslateLangsTree = this._neverTranslateLangsTree.tree;
+
+          if (neverTranslateLangsChange) {
+            neverTranslateLangsTree.rowCountChanged(
+              0,
+              neverTranslateLangsChange
+            );
+          }
+
+          neverTranslateLangsTree.invalidate();
+
+          
+          this.onSelectNeverTranslateLanguage();
+          break;
+        }
       }
-      tree.invalidate();
-      this.onLanguageSelected();
     }
   },
+
+  
+
+
+
+
+
+
+
+
 
   _handleButtonDisabling(aTree, aIdPart) {
     let empty = aTree.isEmpty;
@@ -185,70 +303,163 @@ var gTranslationExceptions = {
       empty || !aTree.hasSelection;
   },
 
-  onLanguageSelected() {
-    this._handleButtonDisabling(this._langTree, "Language");
+  
+
+
+  onSelectAlwaysTranslateLanguage() {
+    this._handleButtonDisabling(
+      this._alwaysTranslateLangsTree,
+      "AlwaysTranslateLanguage"
+    );
   },
 
-  onSiteSelected() {
-    this._handleButtonDisabling(this._siteTree, "Site");
+  
+
+
+  onSelectNeverTranslateLanguage() {
+    this._handleButtonDisabling(
+      this._neverTranslateLangsTree,
+      "NeverTranslateLanguage"
+    );
   },
 
-  onLanguageDeleted() {
-    let langs = Services.prefs.getCharPref(kLanguagesPref);
+  
+
+
+  onSelectNeverTranslateSite() {
+    this._handleButtonDisabling(
+      this._neverTranslateSiteTree,
+      "NeverTranslateSite"
+    );
+  },
+
+  
+
+
+
+
+
+
+  _onRemoveLanguage(pref, tree) {
+    let langs = Services.prefs.getCharPref(pref);
     if (!langs) {
       return;
     }
 
-    let removed = this._langTree.getSelectedItems().map(l => l.langCode);
+    let removed = tree.getSelectedItems().map(l => l.langCode);
 
     langs = langs.split(",").filter(l => !removed.includes(l));
-    Services.prefs.setCharPref(kLanguagesPref, langs.join(","));
+    Services.prefs.setCharPref(pref, langs.join(","));
   },
 
-  onAllLanguagesDeleted() {
-    Services.prefs.setCharPref(kLanguagesPref, "");
+  
+
+
+
+  onRemoveAlwaysTranslateLanguage() {
+    this._onRemoveLanguage(
+      ALWAYS_TRANSLATE_LANGS_PREF,
+      this._alwaysTranslateLangsTree
+    );
   },
 
-  onSiteDeleted() {
-    let removedSites = this._siteTree.getSelectedItems();
-    for (let origin of removedSites) {
+  
+
+
+
+  onRemoveNeverTranslateLanguage() {
+    this._onRemoveLanguage(
+      NEVER_TRANSLATE_LANGS_PREF,
+      this._neverTranslateLangsTree
+    );
+  },
+
+  
+
+
+  onRemoveNeverTranslateSite() {
+    let removedNeverTranslateSites =
+      this._neverTranslateSiteTree.getSelectedItems();
+    for (let origin of removedNeverTranslateSites) {
       let principal =
         Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
-      Services.perms.removeFromPrincipal(principal, kPermissionType);
+      Services.perms.removeFromPrincipal(principal, TRANSLATIONS_PERMISSION);
     }
   },
 
-  onAllSitesDeleted() {
-    if (this._siteTree.isEmpty) {
+  
+
+
+  onRemoveAllAlwaysTranslateLanguages() {
+    Services.prefs.setCharPref(ALWAYS_TRANSLATE_LANGS_PREF, "");
+  },
+
+  
+
+
+  onRemoveAllNeverTranslateLanguages() {
+    Services.prefs.setCharPref(NEVER_TRANSLATE_LANGS_PREF, "");
+  },
+
+  
+
+
+  onRemoveAllNeverTranslateSites() {
+    if (this._neverTranslateSiteTree.isEmpty) {
       return;
     }
 
-    let removedSites = this._sites.splice(0, this._sites.length);
-    this._siteTree.tree.rowCountChanged(0, -removedSites.length);
+    let removedNeverTranslateSites = this._neverTranslateSites.splice(
+      0,
+      this._neverTranslateSites.length
+    );
+    this._neverTranslateSiteTree.tree.rowCountChanged(
+      0,
+      -removedNeverTranslateSites.length
+    );
 
-    for (let origin of removedSites) {
+    for (let origin of removedNeverTranslateSites) {
       let principal =
         Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
-      Services.perms.removeFromPrincipal(principal, kPermissionType);
+      Services.perms.removeFromPrincipal(principal, TRANSLATIONS_PERMISSION);
     }
 
-    this.onSiteSelected();
+    this.onSelectNeverTranslateSite();
   },
 
-  onSiteKeyPress(aEvent) {
+  
+
+
+  onAlwaysTranslateLanguageKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
-      this.onSiteDeleted();
+      this.onRemoveAlwaysTranslateLanguage();
     }
   },
 
-  onLanguageKeyPress(aEvent) {
+  
+
+
+  onNeverTranslateLanguageKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
-      this.onLanguageDeleted();
+      this.onRemoveNeverTranslateLanguage();
     }
   },
 
-  uninit() {
+  
+
+
+  onNeverTranslateSiteKeyPress(aEvent) {
+    if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
+      this.onRemoveNeverTranslateSite();
+    }
+  },
+
+  
+
+
+  removeObservers() {
     Services.obs.removeObserver(this, "perm-changed");
-    Services.prefs.removeObserver(kLanguagesPref, this);
+    Services.prefs.removeObserver(ALWAYS_TRANSLATE_LANGS_PREF, this);
+    Services.prefs.removeObserver(NEVER_TRANSLATE_LANGS_PREF, this);
   },
 };

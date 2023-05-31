@@ -444,11 +444,13 @@ var gMainPane = {
       "click",
       gMainPane.openTranslationProviderAttribution
     );
+    
     setEventListener(
       "translateButton",
       "command",
       gMainPane.showTranslationExceptions
     );
+    
     setEventListener(
       "fxtranslateButton",
       "command",
@@ -525,6 +527,7 @@ var gMainPane = {
       }
     }
 
+    
     
     const fxtranslationsDisabledPrefName = "extensions.translations.disabled";
     if (!Services.prefs.getBoolPref(fxtranslationsDisabledPrefName, true)) {
@@ -1123,6 +1126,9 @@ var gMainPane = {
       constructor(state) {
         this.state = state;
         this.elements = {
+          settingsButton: document.getElementById(
+            "translations-manage-settings-button"
+          ),
           installList: document.getElementById(
             "translations-manage-install-list"
           ),
@@ -1138,6 +1144,10 @@ var gMainPane = {
       setup() {
         this.buildLanguageList();
 
+        this.elements.settingsButton.addEventListener(
+          "command",
+          gMainPane.showTranslationsSettings
+        );
         this.elements.installAll.addEventListener(
           "command",
           this.handleInstallAll
@@ -1909,9 +1919,16 @@ var gMainPane = {
 
 
 
+  
   showTranslationExceptions() {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml"
+    );
+  },
+
+  showTranslationsSettings() {
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/translations.xhtml"
     );
   },
 
