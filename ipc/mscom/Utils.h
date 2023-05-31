@@ -70,15 +70,6 @@ long CreateStream(const uint8_t* aBuf, const uint32_t aBufLen,
 
 
 
-
-
-
-long CopySerializedProxy(IStream* aInStream, IStream** aOutStream);
-
-
-
-
-
 constexpr size_t kGuidRegFormatCharLenInclNul = 39;
 
 #if defined(MOZILLA_INTERNAL_API)
@@ -118,19 +109,6 @@ void DiagnosticNameForIID(REFIID aIid, nsACString& aOutString);
 #else
 void GUIDToString(REFGUID aGuid,
                   wchar_t (&aOutBuf)[kGuidRegFormatCharLenInclNul]);
-#endif  
-
-#if defined(ACCESSIBILITY)
-bool IsVtableIndexFromParentInterface(REFIID aInterface,
-                                      unsigned long aVtableIndex);
-
-#  if defined(MOZILLA_INTERNAL_API)
-bool IsCallerExternalProcess();
-
-bool IsInterfaceEqualToOrInheritedFrom(REFIID aInterface, REFIID aFrom,
-                                       unsigned long aVtableIndexHint);
-#  endif  
-
 #endif  
 
 

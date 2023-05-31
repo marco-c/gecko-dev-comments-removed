@@ -1687,10 +1687,10 @@ void ContentParent::Init() {
 #  if defined(XP_WIN)
     
     if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
-      Unused << SendActivateA11y(::GetCurrentThreadId());
+      Unused << SendActivateA11y();
     }
 #  else
-    Unused << SendActivateA11y(0);
+    Unused << SendActivateA11y();
 #  endif
   }
 #endif  
@@ -4051,10 +4051,10 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
-        Unused << SendActivateA11y(::GetCurrentThreadId());
+        Unused << SendActivateA11y();
       }
 #  else
-      Unused << SendActivateA11y(0);
+      Unused << SendActivateA11y();
 #  endif
     } else {
       
