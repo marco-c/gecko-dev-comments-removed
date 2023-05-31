@@ -13,11 +13,6 @@
 #include "mozilla/a11y/AccessibleWrap.h"
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
-#include "mozilla/dom/BrowserBridgeChild.h"
-#include "mozilla/dom/BrowserBridgeParent.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/mscom/Interceptor.h"
-#include "nsAccessibilityService.h"
 #include "MsaaAccessible.h"
 #include "MsaaDocAccessible.h"
 #include "MsaaRootAccessible.h"
@@ -31,7 +26,6 @@
 #include "HyperTextAccessible-inl.h"
 #include "ServiceProvider.h"
 #include "Statistics.h"
-#include "GeckoCustom.h"
 #include "ARIAMap.h"
 #include "mozilla/PresShell.h"
 
@@ -47,12 +41,7 @@ ITypeInfo* MsaaAccessible::gTypeInfo = nullptr;
 
 MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
   
-  
-  MOZ_ASSERT(!a11y::IsCacheActive() || XRE_IsParentProcess());
-  if (!a11y::IsCacheActive() && aAcc->IsRemote()) {
-    
-    return new MsaaAccessible(aAcc);
-  }
+  MOZ_ASSERT(XRE_IsParentProcess());
   
   
   
@@ -106,46 +95,13 @@ void MsaaAccessible::MsaaShutdown() {
     return;
   }
 
-  if (!a11y::IsCacheActive() && mAcc->IsRemote()) {
-    
-    mAcc = nullptr;
-    return;
-  }
-
   if (mID != kNoID) {
     auto doc = MsaaDocAccessible::GetFromOwned(mAcc);
     MOZ_ASSERT(doc);
     doc->RemoveID(mID);
   }
 
-  if (XRE_IsContentProcess()) {
-    
-    
-    
-    
-    
-    
-    IUnknown* unk = static_cast<IAccessible*>(this);
-    mscom::Interceptor::DisconnectRemotesForTarget(unk);
-    
-    
-    
-    
-    
-    unk = static_cast<IAccessibleHyperlink*>(this);
-    mscom::Interceptor::DisconnectRemotesForTarget(unk);
-    for (auto& assocUnk : mAssociatedCOMObjectsForDisconnection) {
-      mscom::Interceptor::DisconnectRemotesForTarget(assocUnk);
-    }
-    mAssociatedCOMObjectsForDisconnection.Clear();
-  }
-
   mAcc = nullptr;
-}
-
-void MsaaAccessible::SetID(uint32_t aID) {
-  MOZ_ASSERT(XRE_IsParentProcess() && mAcc && !a11y::IsCacheActive());
-  mID = aID;
 }
 
 int32_t MsaaAccessible::GetChildIDFor(Accessible* aAccessible) {
@@ -155,14 +111,6 @@ int32_t MsaaAccessible::GetChildIDFor(Accessible* aAccessible) {
 
   if (!aAccessible) {
     return 0;
-  }
-
-  
-  
-  if (!a11y::IsCacheActive() && aAccessible->IsRemote()) {
-    const uint32_t id = MsaaAccessible::GetFrom(aAccessible)->mID;
-    MOZ_ASSERT(id != kNoID);
-    return id;
   }
 
   auto doc = MsaaDocAccessible::GetFromOwned(aAccessible);
@@ -267,34 +215,6 @@ HWND MsaaAccessible::GetHWNDFor(Accessible* aAccessible) {
   return static_cast<HWND>(document->GetNativeWindow());
 }
 
-static bool IsHandlerInvalidationNeeded(uint32_t aEvent) {
-  
-  
-  switch (aEvent) {
-    case EVENT_OBJECT_STATECHANGE:
-    case EVENT_OBJECT_LOCATIONCHANGE:
-    case EVENT_OBJECT_NAMECHANGE:
-    case EVENT_OBJECT_DESCRIPTIONCHANGE:
-    case EVENT_OBJECT_VALUECHANGE:
-    case EVENT_OBJECT_FOCUS:
-    case IA2_EVENT_ACTION_CHANGED:
-    case IA2_EVENT_DOCUMENT_LOAD_COMPLETE:
-    case IA2_EVENT_DOCUMENT_LOAD_STOPPED:
-    case IA2_EVENT_DOCUMENT_ATTRIBUTE_CHANGED:
-    case IA2_EVENT_DOCUMENT_CONTENT_CHANGED:
-    case IA2_EVENT_PAGE_CHANGED:
-    case IA2_EVENT_TEXT_ATTRIBUTE_CHANGED:
-    case IA2_EVENT_TEXT_CHANGED:
-    case IA2_EVENT_TEXT_INSERTED:
-    case IA2_EVENT_TEXT_REMOVED:
-    case IA2_EVENT_TEXT_UPDATED:
-    case IA2_EVENT_OBJECT_ATTRIBUTE_CHANGED:
-      return true;
-    default:
-      return false;
-  }
-}
-
 void MsaaAccessible::FireWinEvent(Accessible* aTarget, uint32_t aEventType) {
   MOZ_ASSERT(XRE_IsParentProcess());
   static_assert(sizeof(gWinEventMap) / sizeof(gWinEventMap[0]) ==
@@ -315,10 +235,6 @@ void MsaaAccessible::FireWinEvent(Accessible* aTarget, uint32_t aEventType) {
     return;
   }
 
-  if (IsHandlerInvalidationNeeded(winEvent)) {
-    AccessibleWrap::InvalidateHandlers();
-  }
-
   
   ::NotifyWinEvent(winEvent, hwnd, OBJID_CLIENT, childID);
 }
@@ -331,28 +247,6 @@ AccessibleWrap* MsaaAccessible::LocalAcc() {
   MOZ_ASSERT(!acc || !acc->IsDefunct(),
              "mAcc defunct but MsaaShutdown wasn't called");
   return acc;
-}
-
-
-
-
-
-
-
-
-static already_AddRefed<IDispatch> MaybeGetOOPIframeDocCOMProxy(
-    Accessible* aAcc) {
-  if (!XRE_IsContentProcess() || !aAcc->IsOuterDoc()) {
-    return nullptr;
-  }
-  MOZ_ASSERT(!a11y::IsCacheActive());
-  LocalAccessible* outerDoc = aAcc->AsLocal();
-  auto bridge = dom::BrowserBridgeChild::GetFrom(outerDoc->GetContent());
-  if (!bridge) {
-    
-    return nullptr;
-  }
-  return bridge->GetEmbeddedDocAccessible();
 }
 
 
@@ -395,11 +289,6 @@ MsaaAccessible::ResolveChild(const VARIANT& aVarChild,
 
   if (aVarChild.lVal == CHILDID_SELF) {
     return S_OK;
-  }
-
-  if (aVarChild.lVal == 1 && RefPtr{MaybeGetOOPIframeDocCOMProxy(mAcc)}) {
-    
-    return E_FAIL;
   }
 
   bool isDefunct = false;
@@ -447,49 +336,6 @@ static Accessible* GetAccessibleInSubtree(DocAccessibleParent* aDoc,
   return nullptr;
 }
 
-static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
-    DocAccessibleParent* aDoc, const VARIANT& aVarChild) {
-  MOZ_ASSERT(!a11y::IsCacheActive());
-  RefPtr<IAccessible> comProxy;
-  int32_t docWrapperChildId = MsaaAccessible::GetChildIDFor(aDoc);
-  
-  
-  if (aDoc->IsTopLevelInContentProcess()) {
-    aDoc->GetCOMInterface(getter_AddRefs(comProxy));
-  } else {
-    auto tab = static_cast<dom::BrowserParent*>(aDoc->Manager());
-    MOZ_ASSERT(tab);
-    DocAccessibleParent* topLevelDoc = tab->GetTopLevelDocAccessible();
-    MOZ_ASSERT(topLevelDoc && topLevelDoc->IsTopLevelInContentProcess());
-    VARIANT docId = {{{VT_I4}}};
-    docId.lVal = docWrapperChildId;
-    RefPtr<IDispatch> disp = GetProxiedAccessibleInSubtree(topLevelDoc, docId);
-    if (!disp) {
-      return nullptr;
-    }
-
-    DebugOnly<HRESULT> hr =
-        disp->QueryInterface(IID_IAccessible, getter_AddRefs(comProxy));
-    MOZ_ASSERT(SUCCEEDED(hr));
-  }
-
-  MOZ_ASSERT(comProxy);
-  if (!comProxy) {
-    return nullptr;
-  }
-
-  if (docWrapperChildId == aVarChild.lVal) {
-    return comProxy.forget();
-  }
-
-  RefPtr<IDispatch> disp;
-  if (FAILED(comProxy->get_accChild(aVarChild, getter_AddRefs(disp)))) {
-    return nullptr;
-  }
-
-  return disp.forget();
-}
-
 static bool IsInclusiveDescendantOf(DocAccessible* aAncestor,
                                     DocAccessible* aDescendant) {
   for (DocAccessible* doc = aDescendant; doc; doc = doc->ParentDocument()) {
@@ -516,9 +362,7 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
     return nullptr;
   }
 
-  AccessibleWrap* localAcc = static_cast<AccessibleWrap*>(mAcc->AsLocal());
   if (varChild.lVal == CHILDID_SELF) {
-    MOZ_ASSERT(localAcc || a11y::IsCacheActive());
     result = this;
     return result.forget();
   }
@@ -529,81 +373,28 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  if (XRE_IsParentProcess() && localAcc && varChild.lVal < 0 &&
-      !sIDGen.IsChromeID(varChild.lVal)) {
-    MOZ_ASSERT(!a11y::IsCacheActive());
-    if (!localAcc->IsRootForHWND()) {
-      
-      
-      
-      
-      
-      return nullptr;
-    }
-    return GetRemoteIAccessibleFor(varChild);
-  }
-
   if (varChild.lVal > 0) {
     
-    if (varChild.lVal == 1) {
-      RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(localAcc);
-      if (disp) {
-        
-        
-        
-        disp.forget((void**)getter_AddRefs(result));
-        return result.forget();
-      }
-    }
     Accessible* xpAcc = mAcc->ChildAt(varChild.lVal - 1);
     if (!xpAcc) {
       return nullptr;
     }
     MOZ_ASSERT(xpAcc->IsRemote() || !xpAcc->AsLocal()->IsDefunct(),
                "Shouldn't get a defunct child");
-    if (!a11y::IsCacheActive() && localAcc && xpAcc->IsRemote()) {
-      
-      
-      MOZ_ASSERT(localAcc->IsOuterDoc());
-      xpAcc->AsRemote()->GetCOMInterface(getter_AddRefs(result));
-      return result.forget();
-    }
     result = MsaaAccessible::GetFrom(xpAcc);
     return result.forget();
   }
 
   
   
-  
-  
-  if (!localAcc && !a11y::IsCacheActive()) {
-    DocAccessibleParent* proxyDoc = mAcc->AsRemote()->Document();
-    RefPtr<IDispatch> disp = GetProxiedAccessibleInSubtree(proxyDoc, varChild);
-    if (!disp) {
-      return nullptr;
-    }
-
-    MOZ_ASSERT(mscom::IsProxy(disp));
-    DebugOnly<HRESULT> hr =
-        disp->QueryInterface(IID_IAccessible, getter_AddRefs(result));
-    MOZ_ASSERT(SUCCEEDED(hr));
-    return result.forget();
-  }
-
   Accessible* doc = nullptr;
   Accessible* child = nullptr;
   auto id = static_cast<uint32_t>(varChild.lVal);
-  if (localAcc) {
+  if (LocalAccessible* localAcc = mAcc->AsLocal()) {
     DocAccessible* localDoc = localAcc->Document();
     doc = localDoc;
     child = GetAccessibleInSubtree(localDoc, id);
-    if (!child && a11y::IsCacheActive()) {
+    if (!child) {
       
       const auto remoteDocs = DocManager::TopLevelRemoteDocs();
       if (!remoteDocs) {
@@ -621,7 +412,7 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
         }
       }
     }
-  } else if (a11y::IsCacheActive()) {
+  } else {
     DocAccessibleParent* remoteDoc = mAcc->AsRemote()->Document();
     doc = remoteDoc;
     child = GetAccessibleInSubtree(remoteDoc, id);
@@ -630,7 +421,6 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
     return nullptr;
   }
 
-  MOZ_ASSERT(child->IsLocal() || a11y::IsCacheActive());
   MOZ_ASSERT(child->IsRemote() || !child->AsLocal()->IsDefunct(),
              "Shouldn't get a defunct child");
   
@@ -656,112 +446,6 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
   return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
-
-template <typename Callback>
-static bool VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-    dom::BrowserParent* aBrowser, Callback aCallback) {
-  
-  
-  const auto& rawBridges = aBrowser->ManagedPBrowserBridgeParent();
-  nsTArray<RefPtr<dom::BrowserBridgeParent>> bridges(rawBridges.Count());
-  for (const auto bridge : rawBridges) {
-    bridges.AppendElement(static_cast<dom::BrowserBridgeParent*>(bridge));
-  }
-  return std::all_of(bridges.cbegin(), bridges.cend(), [&](const auto& bridge) {
-    RefPtr<dom::BrowserParent> childBrowser = bridge->GetBrowserParent();
-    if (!childBrowser) {
-      return true;
-    }
-    DocAccessibleParent* childDocAcc = childBrowser->GetTopLevelDocAccessible();
-    if (!childDocAcc || childDocAcc->IsShutdown()) {
-      return true;
-    }
-    if (!aCallback(childDocAcc)) {
-      return false;  
-    }
-    if (!VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-            childBrowser, aCallback)) {
-      return false;  
-    }
-    return true;  
-  });
-}
-
-already_AddRefed<IAccessible> MsaaAccessible::GetRemoteIAccessibleFor(
-    const VARIANT& aVarChild) {
-  a11y::RootAccessible* root = LocalAcc()->RootAccessible();
-  const nsTArray<DocAccessibleParent*>* rawRemoteDocs =
-      DocManager::TopLevelRemoteDocs();
-  if (!rawRemoteDocs) {
-    return nullptr;
-  }
-  nsTArray<RefPtr<DocAccessibleParent>> remoteDocs(rawRemoteDocs->Length());
-  for (auto rawRemoteDoc : *rawRemoteDocs) {
-    remoteDocs.AppendElement(rawRemoteDoc);
-  }
-
-  RefPtr<IAccessible> result;
-
-  for (auto topRemoteDoc : remoteDocs) {
-    if (topRemoteDoc->IsShutdown()) {
-      continue;
-    }
-    LocalAccessible* outerDoc = topRemoteDoc->OuterDocOfRemoteBrowser();
-    if (!outerDoc) {
-      continue;
-    }
-
-    if (outerDoc->RootAccessible() != root) {
-      continue;
-    }
-
-    RefPtr<IDispatch> disp;
-    auto checkDoc = [&aVarChild,
-                     &disp](DocAccessibleParent* aRemoteDoc) -> bool {
-      uint32_t remoteDocMsaaId =
-          MsaaAccessible::GetFrom(aRemoteDoc)->GetExistingID();
-      if (!sIDGen.IsSameContentProcessFor(aVarChild.lVal, remoteDocMsaaId)) {
-        return true;  
-      }
-      if ((disp = GetProxiedAccessibleInSubtree(aRemoteDoc, aVarChild))) {
-        return false;  
-      }
-      return true;  
-    };
-
-    
-    checkDoc(topRemoteDoc);
-    if (!disp) {
-      
-      
-      VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-          static_cast<dom::BrowserParent*>(topRemoteDoc->Manager()), checkDoc);
-    }
-
-    if (!disp) {
-      continue;
-    }
-
-    DebugOnly<HRESULT> hr =
-        disp->QueryInterface(IID_IAccessible, getter_AddRefs(result));
-    
-    
-    NS_WARNING_ASSERTION(SUCCEEDED(hr), "QI failed on remote IDispatch");
-    return result.forget();
-  }
-
-  return nullptr;
-}
-
 IDispatch* MsaaAccessible::NativeAccessible(Accessible* aAccessible) {
   if (!aAccessible) {
     NS_WARNING("Not passing in an aAccessible");
@@ -769,13 +453,7 @@ IDispatch* MsaaAccessible::NativeAccessible(Accessible* aAccessible) {
   }
 
   RefPtr<IDispatch> disp;
-  if (!a11y::IsCacheActive() && aAccessible->IsRemote()) {
-    
-    
-    aAccessible->AsRemote()->GetCOMInterface(getter_AddRefs(disp));
-  } else {
-    disp = MsaaAccessible::GetFrom(aAccessible);
-  }
+  disp = MsaaAccessible::GetFrom(aAccessible);
   IDispatch* rawDisp;
   disp.forget(&rawDisp);
   return rawDisp;
@@ -852,15 +530,8 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
   }
   AccessibleWrap* localAcc = LocalAcc();
   if (IID_IEnumVARIANT == iid) {
-    if (
-        
-        !mAcc->HasChildren() || nsAccUtils::MustPrune(mAcc) ||
-        
-        
-        
-        
-        (localAcc && localAcc->IsOuterDoc() && !a11y::IsCacheActive() &&
-         localAcc->FirstChild()->IsRemote())) {
+    
+    if (!mAcc->HasChildren() || nsAccUtils::MustPrune(mAcc)) {
       return E_NOINTERFACE;
     }
     *ppv = static_cast<IEnumVARIANT*>(new ChildrenEnumVariant(this));
@@ -892,13 +563,6 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
     if (SUCCEEDED(hr)) return hr;
   }
 
-  if (!*ppv && iid == IID_IGeckoCustom) {
-    MOZ_ASSERT(XRE_IsContentProcess() && !a11y::IsCacheActive());
-    RefPtr<GeckoCustom> gkCrap = new GeckoCustom(this);
-    gkCrap.forget(ppv);
-    return S_OK;
-  }
-
   if (nullptr == *ppv) return E_NOINTERFACE;
 
   (reinterpret_cast<IUnknown*>(*ppv))->AddRef();
@@ -919,7 +583,6 @@ MsaaAccessible::get_accParent(IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
 
   Accessible* xpParentAcc = mAcc->Parent();
   if (!xpParentAcc) return S_FALSE;
-  MOZ_ASSERT(a11y::IsCacheActive() || xpParentAcc->IsLocal());
 
   *ppdispParent = NativeAccessible(xpParentAcc);
   return S_OK;
@@ -945,9 +608,6 @@ MsaaAccessible::get_accChildCount(long __RPC_FAR* pcountChildren) {
   if (nsAccUtils::MustPrune(mAcc)) return S_OK;
 
   *pcountChildren = mAcc->ChildCount();
-  if (*pcountChildren == 0 && RefPtr{MaybeGetOOPIframeDocCOMProxy(mAcc)}) {
-    *pcountChildren = 1;
-  }
   return S_OK;
 }
 
@@ -1437,7 +1097,6 @@ MsaaAccessible::get_accSelection(VARIANT __RPC_FAR* pvarChildren) {
   } else if (count > 1) {
     RefPtr<AccessibleEnumerator> pEnum =
         new AccessibleEnumerator(selectedItems);
-    AssociateCOMObjectForDisconnection(pEnum);
     pvarChildren->vt =
         VT_UNKNOWN;  
     NS_ADDREF(pvarChildren->punkVal = pEnum);
@@ -1488,19 +1147,6 @@ MsaaAccessible::accSelect(
   }
 
   if (flagsSelect & SELFLAG_TAKEFOCUS) {
-    if (XRE_IsContentProcess()) {
-      
-      
-      
-      
-      MOZ_ASSERT(mAcc->IsLocal(),
-                 "Content process should only have local accessibles");
-      nsCOMPtr<nsIRunnable> runnable = mozilla::NewRunnableMethod(
-          "LocalAccessible::TakeFocus", mAcc->AsLocal(),
-          &LocalAccessible::TakeFocus);
-      NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
-      return S_OK;
-    }
     mAcc->TakeFocus();
     return S_OK;
   }
@@ -1574,8 +1220,6 @@ MsaaAccessible::accNavigate(
   if (accessible) {
     return accessible->accNavigate(navDir, kVarChildIdSelf, pvarEndUpAt);
   }
-  
-  MOZ_ASSERT(mAcc->IsLocal() || a11y::IsCacheActive());
 
   Accessible* navAccessible = nullptr;
   Maybe<RelationType> xpRelation;
@@ -1587,20 +1231,12 @@ MsaaAccessible::accNavigate(
 
   switch (navDir) {
     case NAVDIR_FIRSTCHILD:
-      if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
-        pvarEndUpAt->vt = VT_DISPATCH;
-        disp.forget(&pvarEndUpAt->pdispVal);
-        return S_OK;
-      } else if (!nsAccUtils::MustPrune(mAcc)) {
+      if (!nsAccUtils::MustPrune(mAcc)) {
         navAccessible = mAcc->FirstChild();
       }
       break;
     case NAVDIR_LASTCHILD:
-      if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
-        pvarEndUpAt->vt = VT_DISPATCH;
-        disp.forget(&pvarEndUpAt->pdispVal);
-        return S_OK;
-      } else if (!nsAccUtils::MustPrune(mAcc)) {
+      if (!nsAccUtils::MustPrune(mAcc)) {
         navAccessible = mAcc->LastChild();
       }
       break;
@@ -1652,15 +1288,13 @@ MsaaAccessible::accHitTest(
     return CO_E_OBJNOTCONNECTED;
   }
 
+  
+  
+  
+  
+  
   Accessible* accessible = mAcc->ChildAtPoint(
-      xLeft, yTop,
-      
-      
-      
-      
-      
-      a11y::IsCacheActive() ? Accessible::EWhichChildAtPoint::DeepestChild
-                            : Accessible::EWhichChildAtPoint::DirectChild);
+      xLeft, yTop, Accessible::EWhichChildAtPoint::DeepestChild);
 
   
   if (accessible) {
@@ -1673,17 +1307,6 @@ MsaaAccessible::accHitTest(
     }
   } else {
     
-    if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
-      
-      
-      
-      LayoutDeviceIntRect docRect = mAcc->AsLocal()->Bounds();
-      if (docRect.Contains(xLeft, yTop)) {
-        pvarChild->vt = VT_DISPATCH;
-        disp.forget(&pvarChild->pdispVal);
-        return S_OK;
-      }
-    }
     pvarChild->vt = VT_EMPTY;
     return S_FALSE;
   }

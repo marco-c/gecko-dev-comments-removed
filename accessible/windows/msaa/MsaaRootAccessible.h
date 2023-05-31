@@ -35,11 +35,6 @@ class MsaaRootAccessible : public MsaaDocAccessible {
 
   already_AddRefed<IUnknown> GetInternalUnknown();
 
-  virtual  HRESULT STDMETHODCALLTYPE accNavigate(
-       long navDir,
-       VARIANT varStart,
-       VARIANT __RPC_FAR* pvarEndUpAt) override;
-
  private:
   
   

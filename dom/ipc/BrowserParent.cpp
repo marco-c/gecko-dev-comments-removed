@@ -1189,9 +1189,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
 
 #  ifdef XP_WIN
     MOZ_ASSERT(aDocCOMProxy.IsNull());
-    if (!a11y::IsCacheActive()) {
-      a11y::MsaaAccessible::GetFrom(doc)->SetID(aMsaaID);
-    }
     if (a11y::nsWinUtils::IsWindowEmulationStarted()) {
       doc->SetEmulatedWindowHandle(parentDoc->GetEmulatedWindowHandle());
     }
@@ -1211,23 +1208,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     
     MOZ_ASSERT(!aParentDoc && !aParentID);
     doc->SetTopLevelInContentProcess();
-#  ifdef XP_WIN
-    if (!a11y::IsCacheActive()) {
-      MOZ_ASSERT(!aDocCOMProxy.IsNull());
-      RefPtr<IAccessible> proxy(aDocCOMProxy.Get());
-      doc->SetCOMInterface(proxy);
-    }
-#  endif
     a11y::ProxyCreated(doc);
-#  ifdef XP_WIN
-    if (!a11y::IsCacheActive()) {
-      
-      
-      a11y::MsaaAccessible* msaa = a11y::MsaaAccessible::GetFrom(doc);
-      MOZ_ASSERT(msaa);
-      msaa->SetID(aMsaaID);
-    }
-#  endif
     
     
     
@@ -1262,19 +1243,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     doc->SetTopLevel();
     a11y::DocManager::RemoteDocAdded(doc);
 #  ifdef XP_WIN
-    if (a11y::IsCacheActive()) {
-      doc->MaybeInitWindowEmulation();
-    } else {
-      a11y::MsaaAccessible::GetFrom(doc)->SetID(aMsaaID);
-      MOZ_ASSERT(!aDocCOMProxy.IsNull());
-
-      RefPtr<IAccessible> proxy(aDocCOMProxy.Get());
-      doc->SetCOMInterface(proxy);
-      doc->MaybeInitWindowEmulation();
-      if (a11y::LocalAccessible* outerDoc = doc->OuterDocOfRemoteBrowser()) {
-        doc->SendParentCOMProxy(outerDoc);
-      }
-    }
+    doc->MaybeInitWindowEmulation();
 #  endif
   }
   return IPC_OK();

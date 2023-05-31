@@ -31,7 +31,6 @@ MsaaDocAccessible* MsaaDocAccessible::GetFrom(DocAccessible* aDoc) {
 
 
 MsaaDocAccessible* MsaaDocAccessible::GetFrom(DocAccessibleParent* aDoc) {
-  MOZ_ASSERT(a11y::IsCacheActive());
   return static_cast<MsaaDocAccessible*>(
       reinterpret_cast<MsaaAccessible*>(aDoc->GetWrapper()));
 }
@@ -70,7 +69,6 @@ MsaaDocAccessible::get_accParent(
   }
 
   if (mAcc->IsRemote()) {
-    MOZ_ASSERT(a11y::IsCacheActive());
     DocAccessibleParent* remoteDoc = mAcc->AsRemote()->AsDoc();
     if (nsWinUtils::IsWindowEmulationStarted() && remoteDoc->IsTopLevel()) {
       
@@ -90,30 +88,9 @@ MsaaDocAccessible::get_accParent(
   MOZ_ASSERT(docAcc);
 
   
-  DocAccessibleChild* ipcDoc = docAcc->IPCDoc();
-  if (ipcDoc && static_cast<dom::BrowserChild*>(ipcDoc->Manager())
-                        ->GetTopLevelDocAccessibleChild() == ipcDoc) {
-    MOZ_ASSERT(!a11y::IsCacheActive());
-    
-    
-    RefPtr<IDispatch> dispParent = ipcDoc->GetEmulatedWindowIAccessible();
-    if (!dispParent) {
-      dispParent = ipcDoc->GetParentIAccessible();
-    }
-
-    if (!dispParent) {
-      return S_FALSE;
-    }
-
-    dispParent.forget(ppdispParent);
-    return S_OK;
-  }
-
   
-  
-  
-  if (XRE_IsParentProcess() &&
-      (!docAcc->ParentDocument() ||
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if ((!docAcc->ParentDocument() ||
        (nsWinUtils::IsWindowEmulationStarted() &&
         nsCoreUtils::IsTopLevelContentDocInProcess(docAcc->DocumentNode())))) {
     HWND hwnd = static_cast<HWND>(docAcc->GetNativeWindow());

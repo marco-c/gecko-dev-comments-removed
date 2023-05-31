@@ -35,7 +35,6 @@ class MsaaAccessible : public ia2Accessible,
 
   uint32_t GetExistingID() const { return mID; }
   static const uint32_t kNoID = 0;
-  void SetID(uint32_t aID);
 
   static int32_t GetChildIDFor(Accessible* aAccessible);
   static uint32_t GetContentProcessIdFor(dom::ContentParentId aIPCContentId);
@@ -50,20 +49,6 @@ class MsaaAccessible : public ia2Accessible,
 
   [[nodiscard]] already_AddRefed<IAccessible> GetIAccessibleFor(
       const VARIANT& aVarChild, bool* aIsDefunct);
-
-  
-
-
-
-
-
-  void AssociateCOMObjectForDisconnection(IUnknown* aObject) {
-    
-    
-    if (XRE_IsContentProcess()) {
-      mAssociatedCOMObjectsForDisconnection.AppendElement(aObject);
-    }
-  }
 
   void MsaaShutdown();
 
@@ -197,14 +182,6 @@ class MsaaAccessible : public ia2Accessible,
   };
 
  private:
-  
-
-
-  [[nodiscard]] already_AddRefed<IAccessible> GetRemoteIAccessibleFor(
-      const VARIANT& aVarChild);
-
-  nsTArray<RefPtr<IUnknown>> mAssociatedCOMObjectsForDisconnection;
-
   
 
 
