@@ -224,11 +224,6 @@ class MessageChannel : HasResultCodes {
     
     
     REQUIRE_DEFERRED_MESSAGE_PROTECTION = 1 << 0,
-    
-    
-    
-    
-    REQUIRE_A11Y_REENTRY = 1 << 1,
   };
   void SetChannelFlags(ChannelFlags aFlags) { mFlags = aFlags; }
   ChannelFlags GetChannelFlags() { return mFlags; }
@@ -363,9 +358,6 @@ class MessageChannel : HasResultCodes {
 
  private:
   void SpinInternalEventLoop();
-#  if defined(ACCESSIBILITY)
-  bool WaitForSyncNotifyWithA11yReentry();
-#  endif  
 #endif    
 
  private:
