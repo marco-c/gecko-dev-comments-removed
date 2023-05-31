@@ -4248,6 +4248,19 @@ void Element::ClearServoData(Document* aDoc) {
   }
 }
 
+bool Element::HasPopoverInvoker() const {
+  auto* popoverData = GetPopoverData();
+  return popoverData && popoverData->HasPopoverInvoker();
+}
+
+void Element::SetHasPopoverInvoker(bool aHasInvoker) {
+  if (aHasInvoker) {
+    EnsurePopoverData().SetHasPopoverInvoker(true);
+  } else if (auto* popoverData = GetPopoverData()) {
+    popoverData->SetHasPopoverInvoker(false);
+  }
+}
+
 bool Element::IsAutoPopover() const {
   const auto* htmlElement = nsGenericHTMLElement::FromNode(this);
   return htmlElement &&
@@ -4293,8 +4306,7 @@ Element* Element::GetTopmostPopoverAncestor() const {
   checkAncestor(newPopover->GetFlattenedTreeParentElement());
 
   
-  RefPtr<Element> invoker = newPopover->GetPopoverData()->GetInvoker();
-  checkAncestor(invoker);
+  
 
   return topmostPopoverAncestor;
 }

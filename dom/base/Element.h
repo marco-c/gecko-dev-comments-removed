@@ -581,6 +581,10 @@ class Element : public FragmentOrElement {
     return CreatePopoverData();
   }
 
+  
+  bool HasPopoverInvoker() const;
+  void SetHasPopoverInvoker(bool);
+
   bool IsAutoPopover() const;
   bool IsPopoverOpen() const;
 
