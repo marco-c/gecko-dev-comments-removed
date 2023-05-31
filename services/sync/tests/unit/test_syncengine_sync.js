@@ -798,7 +798,9 @@ add_task(async function test_processIncoming_notify_count() {
 
     
     do_check_attribute_count(engine._store.items, 14);
-    Assert.deepEqual(Array.from(engine.previousFailed), ["record-no-00"]);
+    
+    
+    Assert.deepEqual(Array.from(engine.previousFailed), []);
 
     Assert.equal(called, 2);
     Assert.equal(counts.failed, 1);
@@ -893,13 +895,10 @@ add_task(async function test_processIncoming_previousFailed() {
     
     await engine._processIncoming();
 
-    
-    
     do_check_attribute_count(engine._store.items, 10);
-    Assert.deepEqual(
-      Array.from(engine.previousFailed).sort(),
-      ["record-no-00", "record-no-01", "record-no-08", "record-no-09"].sort()
-    );
+    
+    
+    Assert.deepEqual(Array.from(engine.previousFailed).sort(), []);
 
     
     Assert.equal(engine._store.items["record-no-04"], "Record No. 4");
@@ -1035,8 +1034,9 @@ add_task(async function test_processIncoming_failed_records() {
     Assert.equal(await batchDownload(3), 3);
 
     
-    _("Test batching with sufficient ID batch size.");
-    Assert.equal(await batchDownload(BOGUS_RECORDS.length), 1);
+    
+    _("Test that the second time a record failed to sync, gets ignored");
+    Assert.equal(await batchDownload(BOGUS_RECORDS.length), 0);
   } finally {
     await cleanAndGo(engine, server);
   }
