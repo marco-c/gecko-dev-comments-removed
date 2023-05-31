@@ -3773,12 +3773,8 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("browser.translations.enable", true);
-#else
-pref("browser.translations.enable", false);
-#endif
 
+pref("browser.translations.enable", false);
 
 
 
