@@ -226,6 +226,40 @@ class CalculateFrecencyFunction final : public mozIStorageFunction {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+class CalculateAltFrecencyFunction final : public mozIStorageFunction {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection* aDBConn);
+
+ private:
+  ~CalculateAltFrecencyFunction() = default;
+};
+
+
+
+
+
+
+
 class GenerateGUIDFunction final : public mozIStorageFunction {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
