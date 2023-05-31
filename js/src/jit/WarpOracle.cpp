@@ -256,11 +256,7 @@ ICEntry& WarpScriptOracle::getICEntryAndFallback(BytecodeLocation loc,
 
 WarpEnvironment WarpScriptOracle::createEnvironment() {
   
-  
-  
-  
-  if (!script_->jitScript()->usesEnvironmentChain() &&
-      !script_->needsArgsObj()) {
+  if (!script_->jitScript()->usesEnvironmentChain()) {
     return WarpEnvironment(NoEnvironment());
   }
 

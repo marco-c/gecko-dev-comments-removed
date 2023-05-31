@@ -2005,7 +2005,7 @@
 
 
  \
-    MACRO(Generator, generator, NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(Generator, generator, NULL, 1, 0, 1, JOF_BYTE|JOF_USES_ENV) \
     
 
 
@@ -3378,7 +3378,7 @@
 
 
  \
-    MACRO(Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE|JOF_USES_ENV) \
     
 
 
