@@ -4070,7 +4070,7 @@ bool BaseCompiler::emitCatch() {
   
   
   
-  if (!stk_.reserve(stk_.length() + params.length())) {
+  if (!stk_.reserve(stk_.length() + params.length() + 1)) {
     return false;
   }
 
