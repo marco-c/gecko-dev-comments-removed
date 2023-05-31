@@ -471,7 +471,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   
   [[nodiscard]] bool checkTopTypeMatches(ResultType expected,
                                          ValueVector* values,
-                                         bool retypePolymorphics);
+                                         bool rewriteStackTypes);
 
   [[nodiscard]] bool pushControl(LabelKind kind, BlockType type);
   [[nodiscard]] bool checkStackAtEndOfBlock(ResultType* type,
@@ -1075,7 +1075,7 @@ inline bool OpIter<Policy>::popWithRefType(Value* value, StackType* type) {
 template <typename Policy>
 inline bool OpIter<Policy>::checkTopTypeMatches(ResultType expected,
                                                 ValueVector* values,
-                                                bool retypePolymorphics) {
+                                                bool rewriteStackTypes) {
   if (expected.empty()) {
     return true;
   }
@@ -1115,7 +1115,7 @@ inline bool OpIter<Policy>::checkTopTypeMatches(ResultType expected,
       
       
       TypeAndValue newTandV =
-          retypePolymorphics ? TypeAndValue(expectedType) : TypeAndValue();
+          rewriteStackTypes ? TypeAndValue(expectedType) : TypeAndValue();
       if (!valueStack_.insert(valueStack_.begin() + currentValueStackLength,
                               newTandV)) {
         return false;
@@ -1126,11 +1126,6 @@ inline bool OpIter<Policy>::checkTopTypeMatches(ResultType expected,
       TypeAndValue& observed = valueStack_[currentValueStackLength - 1];
 
       if (observed.type().isBottom()) {
-        if (retypePolymorphics) {
-          
-          observed.setType(StackType(expectedType));
-        }
-
         collectValue(Value());
       } else {
         if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
@@ -1138,6 +1133,10 @@ inline bool OpIter<Policy>::checkTopTypeMatches(ResultType expected,
         }
 
         collectValue(observed.value());
+      }
+
+      if (rewriteStackTypes) {
+        observed.setType(StackType(expectedType));
       }
     }
   }
