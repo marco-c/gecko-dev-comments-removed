@@ -121,17 +121,22 @@ class Virtualenv:
         
         call(self.pip_path, "install", "--prefer-binary", *requirements)
 
-    def install_requirements(self, requirements_path):
-        with open(requirements_path) as f:
-            try:
-                self.working_set.require(f.read())
-            except Exception:
-                pass
-            else:
-                return
+    def install_requirements(self, *requirements_paths):
+        install = []
+        
+        
+        
+        for requirements_path in requirements_paths:
+            with open(requirements_path) as f:
+                try:
+                    self.working_set.require(f.read())
+                except Exception:
+                    install.append(requirements_path)
 
-        
-        
-        call(
-            self.pip_path, "install", "--prefer-binary", "-r", requirements_path
-        )
+        if install:
+            
+            
+            cmd = [self.pip_path, "install", "--prefer-binary"]
+            for path in install:
+                cmd.extend(["-r", path])
+            call(*cmd)
