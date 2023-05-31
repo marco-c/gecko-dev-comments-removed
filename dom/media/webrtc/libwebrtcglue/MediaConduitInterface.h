@@ -184,6 +184,8 @@ class MediaSessionConduit {
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
 
+  virtual void SetJitterBufferTarget(DOMHighResTimeStamp aTargetMs) = 0;
+
   
   
   void InsertAudioLevelForContributingSource(const uint32_t aCsrcSource,

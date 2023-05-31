@@ -75,6 +75,13 @@ class RTCRtpReceiver : public nsISupports,
   nsPIDOMWindowInner* GetParentObject() const;
   nsTArray<RefPtr<RTCStatsPromise>> GetStatsInternal(
       bool aSkipIceStats = false);
+  Nullable<DOMHighResTimeStamp> GetJitterBufferTarget(
+      ErrorResult& aError) const {
+    return mJitterBufferTarget.isSome() ? Nullable(mJitterBufferTarget.value())
+                                        : Nullable<DOMHighResTimeStamp>();
+  }
+  void SetJitterBufferTarget(const Nullable<DOMHighResTimeStamp>& aTargetMs,
+                             ErrorResult& aError);
 
   void Shutdown();
   void BreakCycles();
@@ -170,6 +177,8 @@ class RTCRtpReceiver : public nsISupports,
   
   
   bool mReceptive = false;
+  
+  Maybe<DOMHighResTimeStamp> mJitterBufferTarget;
 
   MediaEventListener mRtcpByeListener;
   MediaEventListener mRtcpTimeoutListener;
