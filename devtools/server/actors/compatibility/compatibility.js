@@ -82,19 +82,12 @@ class CompatibilityActor extends Actor {
 
 
 
-
-
-
-
-
-
-
-
-
-  getCSSDeclarationBlockIssues(declarationBlock, targetBrowsers) {
-    return mdnCompatibility.getCSSDeclarationBlockIssues(
-      declarationBlock,
-      targetBrowsers
+  getCSSDeclarationBlockIssues(domRulesDeclarations, targetBrowsers) {
+    return domRulesDeclarations.map(declarationBlock =>
+      mdnCompatibility.getCSSDeclarationBlockIssues(
+        declarationBlock,
+        targetBrowsers
+      )
     );
   }
 

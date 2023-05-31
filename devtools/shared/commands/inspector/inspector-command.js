@@ -4,10 +4,21 @@
 
 "use strict";
 
+loader.lazyRequireGetter(
+  this,
+  ["TARGET_BROWSER_PREF", "getTargetBrowsers"],
+  "resource://devtools/shared/compatibility/compatibility-user-settings.js",
+  true
+);
+
 class InspectorCommand {
   constructor({ commands }) {
     this.commands = commands;
   }
+
+  #cssDeclarationBlockIssuesQueuedDomRulesDeclarations = [];
+  #cssDeclarationBlockIssuesPendingTimeoutPromise;
+  #cssDeclarationBlockIssuesTargetBrowsersPromise;
 
   
 
@@ -333,6 +344,102 @@ class InspectorCommand {
     }
 
     return selectors;
+  }
+
+  #updateTargetBrowsersCache = async () => {
+    this.#cssDeclarationBlockIssuesTargetBrowsersPromise = getTargetBrowsers();
+  };
+
+  
+
+
+
+
+
+
+
+  async getCSSDeclarationBlockIssues(domRuleDeclarations) {
+    const resultIndex =
+      this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations.length;
+    this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations.push(
+      domRuleDeclarations
+    );
+
+    
+    
+    if (!this.#cssDeclarationBlockIssuesTargetBrowsersPromise) {
+      this.#updateTargetBrowsersCache();
+      
+      
+      Services.prefs.addObserver(
+        TARGET_BROWSER_PREF,
+        this.#updateTargetBrowsersCache
+      );
+    }
+
+    
+    
+    
+    if (!this.#cssDeclarationBlockIssuesPendingTimeoutPromise) {
+      
+      
+      this.#cssDeclarationBlockIssuesPendingTimeoutPromise = new Promise(
+        resolve => {
+          setTimeout(() => {
+            this.#cssDeclarationBlockIssuesPendingTimeoutPromise = null;
+            this.#batchedGetCSSDeclarationBlockIssues().then(data =>
+              resolve(data)
+            );
+          }, 50);
+        }
+      );
+    }
+
+    const results = await this.#cssDeclarationBlockIssuesPendingTimeoutPromise;
+    return results?.[resultIndex] || [];
+  }
+
+  
+
+
+
+  #batchedGetCSSDeclarationBlockIssues = async () => {
+    const declarations = Array.from(
+      this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations
+    );
+    this.#cssDeclarationBlockIssuesQueuedDomRulesDeclarations = [];
+
+    const { targetFront } = this.commands.targetCommand;
+    try {
+      
+      
+      
+      const inspectorFront = await targetFront.getFront("inspector");
+
+      const [compatibilityFront, targetBrowsers] = await Promise.all([
+        inspectorFront.getCompatibilityFront(),
+        this.#cssDeclarationBlockIssuesTargetBrowsersPromise,
+      ]);
+
+      const data = await compatibilityFront.getCSSDeclarationBlockIssues(
+        declarations,
+        targetBrowsers
+      );
+      return data;
+    } catch (e) {
+      if (this.destroyed || targetFront.isDestroyed()) {
+        return [];
+      }
+      throw e;
+    }
+  };
+
+  destroy() {
+    Services.prefs.removeObserver(
+      TARGET_BROWSER_PREF,
+      this.#updateTargetBrowsersCache
+    );
+    this.destroyed = true;
   }
 }
 
