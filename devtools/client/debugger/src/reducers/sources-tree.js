@@ -149,18 +149,36 @@ export default function update(state = initialSourcesTreeState(), action) {
       return state;
 
     case "REMOVE_THREAD": {
+      const { threadActorID } = action;
       const index = state.threadItems.findIndex(item => {
-        return item.threadActorID == action.threadActorID;
+        return item.threadActorID == threadActorID;
       });
 
       if (index == -1) {
         return state;
       }
+
+      
+      
+      
+      let { focusedItem } = state;
+      if (focusedItem && focusedItem.uniquePath.startsWith(threadActorID)) {
+        focusedItem = null;
+      }
+      const expanded = new Set();
+      for (const path of state.expanded) {
+        if (!path.startsWith(threadActorID)) {
+          expanded.add(path);
+        }
+      }
+
       const threadItems = [...state.threadItems];
       threadItems.splice(index, 1);
       return {
         ...state,
         threadItems,
+        focusedItem,
+        expanded,
       };
     }
 
