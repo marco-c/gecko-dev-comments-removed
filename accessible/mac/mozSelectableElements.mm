@@ -76,11 +76,6 @@ using namespace mozilla::a11y;
   }
 
   mGeckoAccessible->SetSelected([selected boolValue]);
-
-  
-  
-  
-  [self invalidateState];
 }
 
 @end
@@ -315,7 +310,6 @@ using namespace mozilla::a11y;
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
-      [self invalidateState];
       
       mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
       [parent moxPostNotification:

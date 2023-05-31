@@ -65,11 +65,6 @@ enum CheckedState {
 
   mozilla::a11y::role mRole;
 
-  
-
-
-  uint64_t mCachedState;
-
   nsStaticAtom* mARIARole;
 
   bool mIsLiveRegion;
@@ -111,9 +106,6 @@ enum CheckedState {
 
 
 - (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled;
-
-
-- (void)invalidateState;
 
 
 - (mozAccessible*)topWebArea;
