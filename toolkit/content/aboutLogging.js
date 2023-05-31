@@ -96,6 +96,9 @@ const gLoggingSettings = {
   
   
   profilerThreads: null,
+  
+  
+  profilerStacks: null,
 };
 
 
@@ -103,13 +106,16 @@ const gLoggingSettings = {
 
 let gProfilerPromise = null;
 
+
 function presets() {
   return gLoggingPresets;
 }
 
+
 function settings() {
   return gLoggingSettings;
 }
+
 
 function profilerPromise() {
   return gProfilerPromise;
@@ -157,19 +163,24 @@ function populatePresets() {
 
 function updateLoggingOutputType(profilerOutputType) {
   gLoggingSettings.loggingOutputType = profilerOutputType;
+  Services.prefs.setCharPref("logging.config.output_type", profilerOutputType);
+  $(`input[type=radio][value=${profilerOutputType}]`).checked = true;
 
-  if (gLoggingSettings.loggingOutputType === "profiler") {
-    
-    $("#log-file-configuration").hidden = true;
-  } else if (gLoggingSettings.loggingOutputType === "file") {
-    $("#log-file-configuration").hidden = false;
-    $("#no-log-file").hidden = !!$("#current-log-file").innerText.length;
+  switch (profilerOutputType) {
+    case "profiler":
+      if (!gLoggingSettings.profilerStacks) {
+        
+        $("#with-profiler-stacks-checkbox").disabled = false;
+      }
+      
+      $("#log-file-configuration").hidden = true;
+      break;
+    case "file":
+      $("#with-profiler-stacks-checkbox").disabled = true;
+      $("#log-file-configuration").hidden = false;
+      $("#no-log-file").hidden = !!$("#current-log-file").innerText.length;
+      break;
   }
-
-  Services.prefs.setCharPref(
-    "logging.config.output_type",
-    gLoggingSettings.loggingOutputType
-  );
 }
 
 function displayErrorMessage(error) {
@@ -207,7 +218,8 @@ function parseURL() {
     outputTypeOverriden = null,
     loggingPresetOverriden = null,
     threadsOverriden = null,
-    profilerPresetOverriden = null;
+    profilerPresetOverriden = null,
+    profilerStacksOverriden = null;
   try {
     for (let [k, v] of options) {
       switch (k) {
@@ -238,6 +250,9 @@ function parseURL() {
             throw new Error(["about-logging-unknown-profiler-preset", k, v]);
           }
           profilerPresetOverriden = v;
+          break;
+        case "profilerstacks":
+          profilerStacksOverriden = true;
           break;
         default:
           throw new ParseError("about-logging-unknown-option", k, v);
@@ -286,12 +301,18 @@ function parseURL() {
     updateLogModules();
   }
   if (outputTypeOverriden) {
-    $$("input[type=radio]").forEach(e => {
-      e.setAttribute("disabled", true);
-      someElementsDisabled = true;
-      e.checked = e.value == outputTypeOverriden;
-    });
+    $$("input[type=radio]").forEach(e => (e.disabled = true));
+    someElementsDisabled = true;
+    updateLoggingOutputType(outputTypeOverriden);
   }
+  if (profilerStacksOverriden) {
+    const checkbox = $("#with-profiler-stacks-checkbox");
+    checkbox.disabled = true;
+    someElementsDisabled = true;
+    Services.prefs.setBoolPref("logging.config.profilerstacks", true);
+    gLoggingSettings.profilerStacks = true;
+  }
+
   if (loggingPresetOverriden) {
     gLoggingSettings.loggingPreset = loggingPresetOverriden;
   }
@@ -335,16 +356,26 @@ function init() {
     };
   });
 
-  try {
-    let loggingOutputType = Services.prefs.getCharPref(
-      "logging.config.output_type"
+  $("#with-profiler-stacks-checkbox").addEventListener("change", e => {
+    Services.prefs.setBoolPref(
+      "logging.config.profilerstacks",
+      e.target.checked
     );
-    if (loggingOutputType.length) {
-      updateLoggingOutputType(loggingOutputType);
-    }
-  } catch {
-    updateLoggingOutputType("profiler");
+    updateLogModules();
+  });
+
+  let loggingOutputType = Services.prefs.getCharPref(
+    "logging.config.output_type",
+    "profiler"
+  );
+  if (loggingOutputType.length) {
+    updateLoggingOutputType(loggingOutputType);
   }
+
+  $("#with-profiler-stacks-checkbox").checked = Services.prefs.getBoolPref(
+    "logging.config.profilerstacks",
+    false
+  );
 
   try {
     let loggingPreset = Services.prefs.getCharPref("logging.config.preset");
@@ -452,22 +483,6 @@ function updateLogModules() {
     setLogModulesButton.disabled = true;
   } else {
     let activeLogModules = [];
-    try {
-      if (Services.prefs.getBoolPref("logging.config.add_timestamp")) {
-        activeLogModules.push("timestamp");
-      }
-    } catch (e) {}
-    try {
-      if (Services.prefs.getBoolPref("logging.config.sync")) {
-        activeLogModules.push("sync");
-      }
-    } catch (e) {}
-    try {
-      if (Services.prefs.getBoolPref("logging.config.profilerstacks")) {
-        activeLogModules.push("profilerstacks");
-      }
-    } catch (e) {}
-
     let children = Services.prefs.getBranch("logging.").getChildList("");
 
     for (let pref of children) {
@@ -480,6 +495,19 @@ function updateLogModules() {
         activeLogModules.push(`${pref}:${value}`);
       } catch (e) {
         console.error(e);
+      }
+    }
+
+    if (activeLogModules.length) {
+      
+      if (Services.prefs.getBoolPref("logging.config.add_timestamp", false)) {
+        activeLogModules.push("timestamp");
+      }
+      if (Services.prefs.getBoolPref("logging.config.sync", false)) {
+        activeLogModules.push("sync");
+      }
+      if (Services.prefs.getBoolPref("logging.config.profilerstacks", false)) {
+        activeLogModules.push("profilerstacks");
       }
     }
 
