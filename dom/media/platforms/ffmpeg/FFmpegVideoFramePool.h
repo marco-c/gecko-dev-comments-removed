@@ -100,8 +100,7 @@ class VideoFrameSurface<LIBAV_VER> {
   bool IsFFMPEGSurface() const { return !!mLib; }
 
   void MarkAsUsed(VASurfaceID aFFMPEGSurfaceID) {
-    mFFMPEGSurfaceID = aFFMPEGSurfaceID;
-    mUsed = true;
+    mFFMPEGSurfaceID = Some(aFFMPEGSurfaceID);
   }
 
  private:
@@ -111,11 +110,7 @@ class VideoFrameSurface<LIBAV_VER> {
   const FFmpegLibWrapper* mLib;
   AVBufferRef* mAVHWFrameContext;
   AVBufferRef* mHWAVBuffer;
-  VASurfaceID mFFMPEGSurfaceID;
-  
-  
-  
-  bool mUsed = false;
+  Maybe<VASurfaceID> mFFMPEGSurfaceID;
 };
 
 
