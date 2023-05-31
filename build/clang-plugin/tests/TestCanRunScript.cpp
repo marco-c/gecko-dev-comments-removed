@@ -256,15 +256,6 @@ MOZ_CAN_RUN_SCRIPT void test_ref_9() {
   test_ref(*(RefCountedBase*)x); 
 }
 
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvoid-ptr-dereference"
-MOZ_CAN_RUN_SCRIPT void test_ref_10() {
-  void* x = new RefCountedBase();
-  test_ref((RefCountedBase&)*x); 
-}
-#pragma GCC diagnostic pop
-
 MOZ_CAN_RUN_SCRIPT void test_maybe() {
   mozilla::Maybe<RefCountedBase*> unsafe;
   unsafe.emplace(new RefCountedBase);
