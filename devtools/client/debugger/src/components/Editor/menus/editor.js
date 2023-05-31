@@ -131,15 +131,17 @@ export const blackBoxLineMenuItem = (
     ? blackboxRange.start.line == blackboxRange.end.line
     : startLine == endLine;
 
+  const isSourceFullyBlackboxed =
+    blackboxedRanges[selectedSource.url] &&
+    !blackboxedRanges[selectedSource.url].length;
+
   
   
   
   
   
   const shouldDisable =
-    isSourceOnIgnoreList ||
-    !blackboxedRanges[selectedSource.url]?.length ||
-    !isSingleLine;
+    isSourceOnIgnoreList || isSourceFullyBlackboxed || !isSingleLine;
 
   return {
     id: "node-menu-blackbox-line",
