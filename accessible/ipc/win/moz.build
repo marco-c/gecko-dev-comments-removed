@@ -27,7 +27,6 @@ if CONFIG["ACCESSIBILITY"]:
         "DocAccessibleChild.cpp",
         "HandlerProvider.cpp",
         "PlatformChild.cpp",
-        "RemoteAccessible.cpp",
     ]
 
     
