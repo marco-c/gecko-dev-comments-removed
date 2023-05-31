@@ -65,10 +65,6 @@ class RegisteredProxy {
 enum class RegistrationFlags { eUseBinDirectory, eUseSystemDirectory };
 
 
-
-UniquePtr<RegisteredProxy> RegisterProxy();
-
-
 UniquePtr<RegisteredProxy> RegisterProxy(
     const wchar_t* aLeafName,
     RegistrationFlags aFlags = RegistrationFlags::eUseBinDirectory);
