@@ -170,13 +170,6 @@ interface nsIAccessible : nsISupports
   
 
 
-
-
-  readonly attribute AString help;
-
-  
-
-
   readonly attribute nsIAccessible focusedChild;
 
   
