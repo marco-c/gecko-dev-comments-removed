@@ -491,20 +491,6 @@ const startupPhases = {
     },
     {
       
-      path: "*ld.so.conf*",
-      condition:
-        LINUX &&
-        !AppConstants.MOZ_CODE_COVERAGE &&
-        Services.prefs.getBoolPref(
-          "browser.opaqueResponseBlocking.javascriptValidator"
-        ),
-      read: 14,
-      
-      ignoreIfUnused: true,
-      close: 7,
-    },
-    {
-      
       path: "ProfD:places.sqlite-journal",
       ignoreIfUnused: true,
       fsync: 1,
