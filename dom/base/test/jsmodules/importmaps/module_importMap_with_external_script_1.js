@@ -1,2 +1,0 @@
-
-import {} from "./bad/module_1.js";
