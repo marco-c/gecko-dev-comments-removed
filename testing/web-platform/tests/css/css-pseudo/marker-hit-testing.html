@@ -34,9 +34,9 @@ li {
   display: list-item;
 }
 </style>
-
-
-
+<!-- The <li> are 50px wide, and the ::marker are at least 50px wide.
+     Since they are outside, try to locate them at -40px to the left of
+     the <li>, i.e. -65px from the center of the <li> -->
 <ol class="outside" data-x="-65">
   <li class="image"></li>
   <li class="string"></li>
@@ -44,8 +44,8 @@ li {
   <li class="nested image"></li>
   <li class="nested string"></li>
 </ol>
-
-
+<!-- The <li> are 50px wide, and the inside ::marker are at least 50px,
+     so locate them at the horizontal center of the <li> -->
 <ol class="inside" data-x="0">
   <li class="image"></li>
   <li class="string"></li>
@@ -67,8 +67,8 @@ function check(event, li) {
   const el = document.elementFromPoint(event.clientX, event.clientY);
   assert_equals(el, li, "elementFromPoint");
 }
-(async function() {
-  setup({ explicit_done: true });
+setup({ explicit_done: true });
+addEventListener("load", async function() {
   for (let list of document.querySelectorAll("ol")) {
     for (let li of list.querySelectorAll("li")) {
       const listener = e => check(e, li);
@@ -91,6 +91,6 @@ function check(event, li) {
     }
   }
   done();
-})();
+});
 </script>
 
