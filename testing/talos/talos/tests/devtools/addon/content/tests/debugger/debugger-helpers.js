@@ -206,7 +206,7 @@ function selectSource(dbg, url) {
 }
 exports.selectSource = selectSource;
 
-function evalInContent(dbg, tab, testFunction) {
+function evalInContent(tab, testFunction) {
   dump(`Run function in content process: ${testFunction}\n`);
   
   
@@ -288,7 +288,7 @@ exports.removeBreakpoints = removeBreakpoints;
 async function pauseDebugger(dbg, tab, testFunction, { line, file }) {
   await addBreakpoint(dbg, line, file);
   const onPaused = waitForPaused(dbg);
-  await evalInContent(dbg, tab, testFunction);
+  await evalInContent(tab, testFunction);
   return onPaused;
 }
 exports.pauseDebugger = pauseDebugger;
