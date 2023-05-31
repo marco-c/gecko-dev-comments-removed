@@ -407,6 +407,8 @@ function ArrayGroupToMap(callbackfn ) {
   return map;
 }
 
+#endif
+
 
 function ArrayReduce(callbackfn ) {
   
@@ -1407,6 +1409,8 @@ function ArrayAt(index) {
 }
 
 SetIsInlinableLargeFunction(ArrayAt);
+
+#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
 
 
