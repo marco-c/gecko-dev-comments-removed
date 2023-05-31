@@ -34,7 +34,7 @@ const l10n = new Localization([
   "branding/brand.ftl",
 ]);
 
-l10n.formatValue("webext-perms-add");
+l10n.formatValue("webext-perms-sideload-text");
 
 
 

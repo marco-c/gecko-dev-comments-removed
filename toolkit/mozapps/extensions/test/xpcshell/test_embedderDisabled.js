@@ -7,10 +7,7 @@ const PREF_IS_EMBEDDED = "extensions.isembedded";
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "49");
 
-
-
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref(PREF_DISABLE_SECURITY);
   Services.prefs.clearUserPref(PREF_IS_EMBEDDED);
 });
 
@@ -23,7 +20,6 @@ async function installExtension() {
 }
 
 add_task(async function test_setup() {
-  Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
   await promiseStartupManager();
 });
 

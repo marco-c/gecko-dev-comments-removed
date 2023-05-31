@@ -8,12 +8,6 @@ const { Service } = ChromeUtils.importESModule(
   "resource://services-sync/service.sys.mjs"
 );
 
-
-
-
-
-do_disable_fast_shutdown();
-
 add_task(async function run_test() {
   let engine = Service.engineManager.get("prefs");
   let tracker = engine._tracker;

@@ -3,6 +3,11 @@
 
 
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/undefined/);
+
 const { XPCShellContentUtils } = ChromeUtils.importESModule(
   "resource://testing-common/XPCShellContentUtils.sys.mjs"
 );

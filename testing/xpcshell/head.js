@@ -34,7 +34,6 @@ var _tests_pending = 0;
 var _cleanupFunctions = [];
 var _pendingTimers = [];
 var _profileInitialized = false;
-var _fastShutdownDisabled = false;
 
 
 var _XPCSHELL_PROCESS;
@@ -724,16 +723,6 @@ function _execute_test() {
     !_AppConstants.ASAN &&
     !_AppConstants.TSAN
   ) {
-    if (_fastShutdownDisabled) {
-      _testLogger.info("fast shutdown disabled by the test.");
-      return;
-    }
-
-    
-    _Services.prefs.setBoolPref(
-      "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
-      true
-    );
     Cu.exitIfInAutomation();
   }
 }
@@ -1232,14 +1221,6 @@ function do_parse_document(aPath, aType) {
 
 function registerCleanupFunction(aFunction) {
   _cleanupFunctions.push(aFunction);
-}
-
-
-
-
-
-function do_disable_fast_shutdown() {
-  _fastShutdownDisabled = true;
 }
 
 

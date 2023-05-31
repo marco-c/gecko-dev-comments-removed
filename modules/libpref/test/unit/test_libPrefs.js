@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+Services.prefs.setBoolPref(
+  "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+  false
+);
+
 const PREF_INVALID = 0;
 const PREF_BOOL = 128;
 const PREF_INT = 64;
