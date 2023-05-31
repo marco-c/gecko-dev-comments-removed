@@ -575,6 +575,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
 
+  bool pendingRidChangeFromCompatMode = false;
   
   if (paramsCopy.mEncodings.Length() != oldParams->mEncodings.Length()) {
     nsCString error("Cannot change the number of encodings with setParameters");
@@ -589,7 +590,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     }
     
     
-    mPendingRidChangeFromCompatMode = true;
+    pendingRidChangeFromCompatMode = true;
     mSimulcastEnvelopeSet = true;
     if (!mHaveWarnedBecauseEncodingCountChange) {
       mHaveWarnedBecauseEncodingCountChange = true;
@@ -743,6 +744,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
   
+  mPendingRidChangeFromCompatMode = pendingRidChangeFromCompatMode;
   mPendingParameters = Some(paramsCopy);
   uint32_t serialNumber = ++mNumSetParametersCalls;
   MaybeUpdateConduit();
