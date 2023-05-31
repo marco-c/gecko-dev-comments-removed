@@ -9854,14 +9854,16 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
         if (!isInitialRequest) {
           
           BlockOpaqueResponseAfterSniff(
-              u"media request after sniffing, but not initial request"_ns);
+              u"media request after sniffing, but not initial request"_ns,
+              OpaqueResponseBlockedTelemetryReason::MEDIA_NOT_INITIAL);
           return;
         }
 
         if (mResponseHead->Status() != 200 && mResponseHead->Status() != 206) {
           
           BlockOpaqueResponseAfterSniff(
-              u"media request's response status is neither 200 nor 206"_ns);
+              u"media request's response status is neither 200 nor 206"_ns,
+              OpaqueResponseBlockedTelemetryReason::MEDIA_INCORRECT_RESP);
           return;
         }
       }
