@@ -2,9 +2,9 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+ChromeUtils.defineESModuleGetters(this, {
   CustomizableUITestUtils:
-    "resource://testing-common/CustomizableUITestUtils.jsm",
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs",
 });
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
