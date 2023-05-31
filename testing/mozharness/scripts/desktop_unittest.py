@@ -666,7 +666,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             if c["enable_xorigin_tests"]:
                 base_cmd.append("--enable-xorigin-tests")
 
-            if suite_category != "cppunittest":
+            if suite_category not in ["cppunittest", "gtest", "jittest"]:
                 
                 
                 base_cmd.append("--setpref=layout.css.stylo-threads=4")
