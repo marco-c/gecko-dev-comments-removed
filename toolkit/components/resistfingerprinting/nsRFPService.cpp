@@ -920,7 +920,10 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
 static const char* GetSpoofedVersion() {
 #ifdef ANDROID
   
-  return "102.0";
+  
+  
+  
+  return "115.0";
 #else
   return MOZILLA_UAVERSION;
 #endif
