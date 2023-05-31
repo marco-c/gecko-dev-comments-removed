@@ -52,10 +52,6 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   ],
 });
 
-const PREF_DISABLE_SECURITY =
-  "security.turn_off_all_security_so_that_" +
-  "viruses_can_take_over_this_computer";
-
 const ArrayBufferInputStream = Components.Constructor(
   "@mozilla.org/io/arraybuffer-input-stream;1",
   "nsIArrayBufferInputStream",
@@ -1749,9 +1745,7 @@ var AddonTestUtils = {
 
 
 
-
   initializeURLPreloader() {
-    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
     lazy.aomStartup.initializeURLPreloader();
   },
 
@@ -1762,9 +1756,6 @@ var AddonTestUtils = {
 
 
   async overrideBuiltIns(data) {
-    
-    
-    let prevPrefVal = Services.prefs.getBoolPref(PREF_DISABLE_SECURITY, false);
     this.initializeURLPreloader();
 
     let file = this.tempDir.clone();
@@ -1780,7 +1771,6 @@ var AddonTestUtils = {
         Services.io.newFileURI(file).spec,
       ],
     ]);
-    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, prevPrefVal);
   },
 
   

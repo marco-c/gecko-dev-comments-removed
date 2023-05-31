@@ -9,13 +9,6 @@ const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
 
-
-
-Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref(PREF_DISABLE_SECURITY);
-});
-
 Services.policies; 
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2");

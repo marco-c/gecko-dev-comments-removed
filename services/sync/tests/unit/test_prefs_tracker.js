@@ -8,11 +8,7 @@ const { Service } = ChromeUtils.importESModule(
   "resource://services-sync/service.sys.mjs"
 );
 
-
-
-
-
-do_disable_fast_shutdown();
+Services.prefs.setBoolPref("preferences.force-disable.check.once.policy", true);
 
 add_task(async function run_test() {
   let engine = Service.engineManager.get("prefs");

@@ -15,6 +15,8 @@ ChromeUtils.defineModuleGetter(
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
+Services.prefs.setBoolPref("preferences.force-disable.check.once.policy", true);
+
 const SETTINGS_ID = "test_settings_staged_restart_webext@tests.mozilla.org";
 
 const { createAppInfo, promiseShutdownManager, promiseStartupManager } =
