@@ -7500,7 +7500,7 @@ var TabContextMenu = {
 
     
     document.getElementById("context_undoCloseTab").disabled =
-      SessionStore.getClosedTabCount(window) == 0;
+      SessionStore.getClosedTabCountForWindow(window) == 0;
 
     
     

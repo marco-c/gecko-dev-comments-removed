@@ -90,13 +90,13 @@ add_task(async function () {
 
 
   
-  let count = ss.getClosedTabCount(window);
+  let count = ss.getClosedTabCountForWindow(window);
   let max_tabs_undo = Services.prefs.getIntPref(
     "browser.sessionstore.max_tabs_undo"
   );
   ok(
     0 <= count && count <= max_tabs_undo,
-    "getClosedTabCount returns zero or at most max_tabs_undo"
+    "getClosedTabCountForWindow returns zero or at most max_tabs_undo"
   );
 
   
@@ -117,10 +117,10 @@ add_task(async function () {
   await promiseRemoveTabAndSessionState(tab);
 
   
-  let newcount = ss.getClosedTabCount(window);
+  let newcount = ss.getClosedTabCountForWindow(window);
   ok(
     newcount > count,
-    "after closing a tab, getClosedTabCount has been incremented"
+    "after closing a tab, getClosedTabCountForWindow has been incremented"
   );
 
   

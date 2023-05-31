@@ -22,7 +22,7 @@ async function closeWindow(win) {
 add_task(async function test_undoCloseById() {
   
   forgetClosedWindows();
-  while (SessionStore.getClosedTabCount(window)) {
+  while (SessionStore.getClosedTabCountForWindow(window)) {
     SessionStore.forgetClosedTab(window, 0);
   }
 
@@ -38,7 +38,7 @@ add_task(async function test_undoCloseById() {
   );
 
   
-  let initialClosedId = SessionStore.getClosedTabData(win)[0].closedId;
+  let initialClosedId = SessionStore.getClosedTabDataForWindow(win)[0].closedId;
 
   
   let win2 = await openWindow("about:mozilla");

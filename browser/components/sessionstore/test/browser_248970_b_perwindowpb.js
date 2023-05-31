@@ -100,13 +100,13 @@ function test() {
     windowsToClose.push(aWin);
 
     
-    let count = ss.getClosedTabCount(aWin);
+    let count = ss.getClosedTabCountForWindow(aWin);
     let max_tabs_undo = Services.prefs.getIntPref(
       "browser.sessionstore.max_tabs_undo"
     );
     ok(
       0 <= count && count <= max_tabs_undo,
-      "getClosedTabCount should return zero or at most max_tabs_undo"
+      "getClosedTabCountForWindow should return zero or at most max_tabs_undo"
     );
 
     
@@ -133,8 +133,8 @@ function test() {
 
       
       ok(
-        ss.getClosedTabCount(aWin) > count,
-        "getClosedTabCount has increased after closing a tab"
+        ss.getClosedTabCountForWindow(aWin) > count,
+        "getClosedTabCountForWindow has increased after closing a tab"
       );
 
       

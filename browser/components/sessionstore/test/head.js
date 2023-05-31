@@ -469,7 +469,7 @@ function forgetClosedWindows() {
 
 
 function forgetClosedTabs(win) {
-  while (ss.getClosedTabCount(win) > 0) {
+  while (ss.getClosedTabCountForWindow(win) > 0) {
     ss.forgetClosedTab(win, 0);
   }
 }

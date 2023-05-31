@@ -35,7 +35,7 @@ add_task(async function () {
 
   await promiseRemoveTabAndSessionState(tab);
   is(
-    ss.getClosedTabCount(window),
+    ss.getClosedTabCountForWindow(window),
     0,
     "The closed blank tab wasn't added to Recently Closed Tabs"
   );

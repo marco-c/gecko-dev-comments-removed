@@ -25,7 +25,7 @@ add_task(async function () {
 
   
   win.gBrowser.removeTab(tab);
-  is(ss.getClosedTabCount(win), 1, "there is a single tab to restore");
+  is(ss.getClosedTabCountForWindow(win), 1, "there is a single tab to restore");
 
   
   await BrowserTestUtils.closeWindow(win);
