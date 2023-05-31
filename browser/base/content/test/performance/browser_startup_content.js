@@ -74,6 +74,10 @@ const intermittently_loaded_scripts = {
     "resource://gre/modules/sessionstore/Utils.sys.mjs",
 
     
+    "resource://gre/actors/TranslationsChild.sys.mjs",
+    "resource://gre/modules/ConsoleAPIStorage.sys.mjs", 
+
+    
     "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
 
     
