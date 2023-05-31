@@ -1326,8 +1326,7 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
 
   
   
-  if (subType.isNullable() != superType.isNullable() &&
-      !superType.isNullable()) {
+  if (subType.isNullable() && !superType.isNullable()) {
     return false;
   }
 
@@ -1388,6 +1387,30 @@ inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
   }
 
   return false;
+}
+
+
+inline bool RefType::castPossible(RefType sourceType, RefType destType) {
+  
+  if (sourceType.isNullable() && destType.isNullable()) {
+    return true;
+  }
+
+  
+  
+  
+  if (sourceType.isRefBottom() || destType.isRefBottom()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  RefType sourceNonNull = sourceType.withIsNullable(false);
+  RefType destNonNull = destType.withIsNullable(false);
+  return RefType::isSubTypeOf(sourceNonNull, destNonNull) ||
+         RefType::isSubTypeOf(destNonNull, sourceNonNull);
 }
 
 

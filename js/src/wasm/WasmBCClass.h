@@ -1340,7 +1340,9 @@ struct BaseCompiler final {
   
   
   [[nodiscard]] bool jumpConditionalWithResults(BranchState* b, RegRef object,
-                                                RefType type, bool onSuccess);
+                                                RefType sourceType,
+                                                RefType destType,
+                                                bool onSuccess);
 #endif
   template <typename Cond>
   [[nodiscard]] bool sniffConditionalControlCmp(Cond compareOp,
@@ -1655,7 +1657,7 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitBrOnCastCommon(bool onSuccess,
                                         uint32_t labelRelativeDepth,
                                         const ResultType& labelType,
-                                        const RefType& destType);
+                                        RefType sourceType, RefType destType);
   [[nodiscard]] bool emitBrOnCast();
   [[nodiscard]] bool emitExternInternalize();
   [[nodiscard]] bool emitExternExternalize();
@@ -1686,14 +1688,14 @@ struct BaseCompiler final {
   void emitGcSetScalar(const T& dst, FieldType type, AnyReg value);
 
   
-  void emitRefTestCommon(const RefType& type);
+  void emitRefTestCommon(RefType sourceType, RefType destType);
   
-  void emitRefCastCommon(const RefType& type);
+  void emitRefCastCommon(RefType sourceType, RefType destType);
 
   
   
-  void branchGcRefType(RegRef object, const RefType& type, Label* label,
-                       bool onSuccess);
+  void branchGcRefType(RegRef object, RefType sourceType, RefType destType,
+                       Label* label, bool onSuccess);
 
   
   

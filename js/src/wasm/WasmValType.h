@@ -396,6 +396,8 @@ class RefType {
     return RefType(ptc_.withIsNullable(nullable));
   }
 
+  bool isRefBottom() const { return isNone() || isNoFunc() || isNoExtern(); }
+
   
   
   inline RefTypeHierarchy hierarchy() const;
@@ -404,6 +406,7 @@ class RefType {
   inline bool isExternHierarchy() const;
   inline bool isAnyHierarchy() const;
   static bool isSubTypeOf(RefType subType, RefType superType);
+  static bool castPossible(RefType sourceType, RefType destType);
 
   
   

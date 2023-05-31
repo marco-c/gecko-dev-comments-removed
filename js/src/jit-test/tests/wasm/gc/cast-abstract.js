@@ -11,7 +11,14 @@ const preamble = `
   (elem declare func $f) ;; allow $f to be ref.func'd
 `;
 
-const hierarchies = [
+
+
+const subtypes = [
+  ['$s2', '$s1'],
+  ['$a2', '$a1'],
+];
+
+const typeSets = [
   [
     { name: 'any' },
     { name: 'eq' },
@@ -28,6 +35,15 @@ const hierarchies = [
     { name: '$a2', make: '(array.new_default $a2 (i32.const 10))' },
     { name: 'none', none: true },
   ],
+  [
+    { name: 'any' },
+    { name: 'eq' },
+    { name: '$s1', make: 'struct.new_default $s1' },
+    { name: '$s2', make: 'struct.new_default $s2' },
+    { name: '$a1', make: '(array.new_default $a1 (i32.const 10))' },
+    { name: '$a2', make: '(array.new_default $a2 (i32.const 10))' },
+    { name: 'none', none: true },
+  ],
   
 
   
@@ -40,14 +56,28 @@ const hierarchies = [
   
 ];
 
-const nulls = [           
+const nullables = [       
   [true, true, true],     
   [true, true, false],    
+  [true, false, true],    
+  [true, false, false],   
   [false, true, true],    
   [false, true, false],   
   [false, false, true],   
   [false, false, false],  
 ]
+
+function isSubtype(src, dest) {
+  if (src.name === dest.name) {
+    return true;
+  }
+  for (const [src2, dest2] of subtypes) {
+    if (src.name === src2 && dest.name === dest2) {
+      return true;
+    }
+  }
+  return false;
+}
 
 let numCases = 0;
 
@@ -56,165 +86,174 @@ const specificTest = '';
 
 
 
-for (const hierarchy of hierarchies) {
-  for (const [istart, start] of hierarchy.entries()) {
-    for (const [imiddle, middle] of hierarchy.entries()) {
-      for (const [iend, end] of hierarchy.entries()) {
-        for (const [null0, null1, null2] of nulls) {
-          const concreteType = !!start.make;
+for (const typeSet of typeSets) {
+  for (const start of typeSet) {
+    for (const middle of typeSet) {
+      for (const end of typeSet) {
+        for (const [nullable0, nullable1, nullable2] of nullables) {
+          for (const makeNull of [true, false]) {
+            const concrete0 = !!start.make;
+            const concrete1 = !!middle.make;
+            const concrete2 = !!end.make;
 
-          if (!concreteType && !null0) {
+            if (!concrete0 && !makeNull) {
+              
+              continue;
+            }
+
+            if (!nullable0 && makeNull) {
+              
+              continue;
+            }
+
+            numCases += 1;
+
+            let good1 = true;
+            let good2 = true;
+
             
-            continue;
-          }
-
-          numCases += 1;
-
-          let good1 = true;
-          let good2 = true;
-
-          
-          if (null0) {
-            if (!null1) {
-              good1 = false;
-            }
-            if (!null2) {
-              good2 = false;
-            }
-          }
-
-          
-          if (!null0) {
-            if (middle.none) {
-              good1 = false;
-            }
-            if (end.none) {
-              good2 = false;
-            }
-          }
-
-          
-          if (concreteType && !null0) {
-            if (istart < imiddle) {
-              good1 = false;
-            }
-            if (istart < iend) {
-              good2 = false;
-            }
-          }
-
-          let emoji1 = good1 ? '✅' : '❌';
-          let emoji2 = good2 ? '✅' : '❌';
-
-          if (!good1) {
-            good2 = false;
-            emoji2 = '❓';
-          }
-
-          const name = `${null0 ? 'null ' : ''}${start.name} -> ${null1 ? 'null ' : ''}${middle.name} -> ${null2 ? 'null ' : ''}${end.name}`;
-          if (specificTest && name != specificTest) {
-            continue;
-          }
-
-          print(`${emoji1}${emoji2} ${name}`);
-          const make = null0 ? `ref.null ${start.name}` : start.make;
-          const type1 = `(ref ${null1 ? 'null ' : ''}${middle.name})`;
-          const type2 = `(ref ${null2 ? 'null ' : ''}${end.name})`;
-          const moduleText = `(module
-            ${preamble}
-            (func (export "cast1") (result ${type1})
-              ${make}
-              ref.cast ${type1}
-            )
-            (func (export "cast2") (param ${type1}) (result ${type2})
-              local.get 0
-              ref.cast ${type2}
-            )
-
-            (func (export "test1") (result i32)
-              ${make}
-              ref.test ${type1}
-            )
-            (func (export "test2") (param ${type1}) (result i32)
-              local.get 0
-              ref.test ${type2}
-            )
-
-            ;; these are basically ref.test but with branches
-            (func (export "branch1") (result i32)
-              (block (result ${type1})
-                ${make}
-                br_on_cast 0 anyref ${type1}
-                drop
-                (return (i32.const 0))
-              )
-              drop
-              (return (i32.const 1))
-            )
-            (func (export "branch2") (param ${type1}) (result i32)
-              (block (result ${type2})
-                local.get 0
-                br_on_cast 0 anyref ${type2}
-                drop
-                (return (i32.const 0))
-              )
-              drop
-              (return (i32.const 1))
-            )
-            (func (export "branchfail1") (result i32)
-              (block (result anyref)
-                ${make}
-                br_on_cast_fail 0 anyref ${type1}
-                drop
-                (return (i32.const 1))
-              )
-              drop
-              (return (i32.const 0))
-            )
-            (func (export "branchfail2") (param ${type1}) (result i32)
-              (block (result anyref)
-                local.get 0
-                br_on_cast_fail 0 anyref ${type2}
-                drop
-                (return (i32.const 1))
-              )
-              drop
-              (return (i32.const 0))
-            )
-          )`;
-
-          try {
-            
-            const {
-              cast1, cast2,
-              test1, test2,
-              branch1, branch2,
-              branchfail1, branchfail2,
-            } = wasmEvalText(moduleText).exports;
-
-            function assertCast(func, good) {
-              if (good) {
-                return [func(), true];
-              } else {
-                assertErrorMessage(func, WebAssembly.RuntimeError, /bad cast/);
-                return [null, false];
+            if (makeNull) {
+              if (!nullable1) {
+                good1 = false;
+              }
+              if (!nullable2) {
+                good2 = false;
               }
             }
 
-            const [res1, ok1] = assertCast(cast1, good1);
-            assertEq(test1(), good1 ? 1 : 0);
-            assertEq(branch1(), good1 ? 1 : 0);
-            assertEq(branchfail1(), good1 ? 1 : 0);
-            if (ok1) {
-              assertCast(() => cast2(res1), good2);
-              assertEq(test2(res1), good2 ? 1 : 0);
-              assertEq(branch2(res1), good2 ? 1 : 0);
-              assertEq(branchfail2(res1), good2 ? 1 : 0);
+            
+            if (!makeNull) {
+              if (middle.none) {
+                good1 = false;
+              }
+              if (end.none) {
+                good2 = false;
+              }
             }
-          } catch (e) {
-            print("Failed! Module text was:");
-            print(moduleText);
-            throw e;
+
+            
+            if (!makeNull) {
+              if (concrete1 && !isSubtype(start, middle)) {
+                good1 = false;
+              }
+              if (concrete2 && !isSubtype(start, end)) {
+                good2 = false;
+              }
+            }
+
+            let emoji1 = good1 ? '✅' : '❌';
+            let emoji2 = good2 ? '✅' : '❌';
+
+            if (!good1) {
+              good2 = false;
+              emoji2 = '❓';
+            }
+
+            const name = `${makeNull ? 'null' : 'non-null'} (ref ${nullable0 ? 'null ' : ''}${start.name}) -> (ref ${nullable1 ? 'null ' : ''}${middle.name}) -> (ref ${nullable2 ? 'null ' : ''}${end.name})`;
+            if (specificTest && name != specificTest) {
+              continue;
+            }
+
+            print(`${emoji1}${emoji2} ${name}`);
+            const make = makeNull ? `ref.null ${start.name}` : start.make;
+            const type1 = `(ref ${nullable1 ? 'null ' : ''}${middle.name})`;
+            const type2 = `(ref ${nullable2 ? 'null ' : ''}${end.name})`;
+            const moduleText = `(module
+              ${preamble}
+              (func (export "cast1") (result ${type1})
+                ${make}
+                ref.cast ${type1}
+              )
+              (func (export "cast2") (param ${type1}) (result ${type2})
+                local.get 0
+                ref.cast ${type2}
+              )
+
+              (func (export "test1") (result i32)
+                ${make}
+                ref.test ${type1}
+              )
+              (func (export "test2") (param ${type1}) (result i32)
+                local.get 0
+                ref.test ${type2}
+              )
+
+              ;; these are basically ref.test but with branches
+              (func (export "branch1") (result i32)
+                (block (result ${type1})
+                  ${make}
+                  br_on_cast 0 anyref ${type1}
+                  drop
+                  (return (i32.const 0))
+                )
+                drop
+                (return (i32.const 1))
+              )
+              (func (export "branch2") (param ${type1}) (result i32)
+                (block (result ${type2})
+                  local.get 0
+                  br_on_cast 0 anyref ${type2}
+                  drop
+                  (return (i32.const 0))
+                )
+                drop
+                (return (i32.const 1))
+              )
+              (func (export "branchfail1") (result i32)
+                (block (result anyref)
+                  ${make}
+                  br_on_cast_fail 0 anyref ${type1}
+                  drop
+                  (return (i32.const 1))
+                )
+                drop
+                (return (i32.const 0))
+              )
+              (func (export "branchfail2") (param ${type1}) (result i32)
+                (block (result anyref)
+                  local.get 0
+                  br_on_cast_fail 0 anyref ${type2}
+                  drop
+                  (return (i32.const 1))
+                )
+                drop
+                (return (i32.const 0))
+              )
+            )`;
+
+            try {
+              
+              const {
+                cast1, cast2,
+                test1, test2,
+                branch1, branch2,
+                branchfail1, branchfail2,
+              } = wasmEvalText(moduleText).exports;
+
+              function assertCast(func, good) {
+                if (good) {
+                  return [func(), true];
+                } else {
+                  assertErrorMessage(func, WebAssembly.RuntimeError, /bad cast/);
+                  return [null, false];
+                }
+              }
+
+              const [res1, ok1] = assertCast(cast1, good1);
+              assertEq(test1(), good1 ? 1 : 0);
+              assertEq(branch1(), good1 ? 1 : 0);
+              assertEq(branchfail1(), good1 ? 1 : 0);
+              if (ok1) {
+                assertCast(() => cast2(res1), good2);
+                assertEq(test2(res1), good2 ? 1 : 0);
+                assertEq(branch2(res1), good2 ? 1 : 0);
+                assertEq(branchfail2(res1), good2 ? 1 : 0);
+              }
+            } catch (e) {
+              print("Failed! Module text was:");
+              print(moduleText);
+              throw e;
+            }
           }
         }
       }
