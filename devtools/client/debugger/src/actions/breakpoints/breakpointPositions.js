@@ -31,11 +31,14 @@ async function mapLocations(generatedLocations, { getState, sourceMapLoader }) {
 
   return originalLocations.map((location, index) => ({
     
-    
-    location: createLocation({
-      ...location,
-      source: getSource(getState(), location.sourceId),
-    }),
+    location: location
+      ? createLocation({
+          ...location,
+          
+          
+          source: getSource(getState(), location.sourceId),
+        })
+      : generatedLocations[index],
     generatedLocation: generatedLocations[index],
   }));
 }
