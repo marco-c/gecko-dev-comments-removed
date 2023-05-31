@@ -2,12 +2,7 @@
 
 
 
-import {
-  actions,
-  selectors,
-  createStore,
-  makeSource,
-} from "../../utils/test-head";
+import { actions, createStore, makeSource } from "../../utils/test-head";
 
 import {
   getColumnBreakpoints,
@@ -123,9 +118,10 @@ describe("getFirstBreakpointPosition", () => {
     const store = createStore();
     const { dispatch, getState } = store;
 
-    await dispatch(actions.newGeneratedSource(makeSource("foo1")));
+    const fooSource = await dispatch(
+      actions.newGeneratedSource(makeSource("foo1"))
+    );
 
-    const fooSource = selectors.getSourceFromId(getState(), "foo1");
     dispatch({
       type: "ADD_BREAKPOINT_POSITIONS",
       positions: [pp(1, 5), pp(1, 3)],
