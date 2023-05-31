@@ -166,7 +166,24 @@ nsresult nsHttpHeaderArray::SetHeaderFromNet(
   if (!IsIgnoreMultipleHeader(header)) {
     
     
-    if (!entry->value.Equals(value)) {
+    if (header == nsHttp::Content_Length) {
+      
+      
+      
+      
+      
+      
+
+      nsAutoCString headerValue;
+      RemoveDuplicateHeaderValues(value, headerValue);
+
+      nsAutoCString entryValue;
+      RemoveDuplicateHeaderValues(entry->value, entryValue);
+      if (entryValue != headerValue) {
+        
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
+    } else if (!entry->value.Equals(value)) {  
       if (IsSuspectDuplicateHeader(header)) {
         
         return NS_ERROR_CORRUPTED_CONTENT;
@@ -174,6 +191,7 @@ nsresult nsHttpHeaderArray::SetHeaderFromNet(
       LOG(("Header %s silently dropped as non mergeable header\n",
            header.get()));
     }
+
     if (response) {
       return SetHeader_internal(header, headerNameOriginal, value,
                                 eVarietyResponseNetOriginal);

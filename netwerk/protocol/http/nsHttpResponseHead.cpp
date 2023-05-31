@@ -609,15 +609,16 @@ nsresult nsHttpResponseHead::ParseHeaderLine_locked(
 
   
   if (hdr == nsHttp::Content_Length) {
-    int64_t len;
-    const char* ignored;
-    
-    if (nsHttp::ParseInt64(val.get(), &ignored, &len)) {
-      mContentLength = len;
-    } else {
-      
-      LOG(("invalid content-length! %s\n", val.get()));
+    rv = ParseResponseContentLength(val);
+    if (rv == NS_ERROR_ILLEGAL_VALUE) {
+      LOG(("illegal content-length! %s\n", val.get()));
+      return rv;
     }
+
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      LOG(("content-length value ignored! %s\n", val.get()));
+    }
+
   } else if (hdr == nsHttp::Content_Type) {
     LOG(("ParseContentType [type=%s]\n", val.get()));
     bool dummy;
@@ -1211,6 +1212,57 @@ void nsHttpResponseHead::ParsePragma(const char* val) {
   
   
   mPragmaNoCache = nsHttp::FindToken(val, "no-cache", HTTP_HEADER_VALUE_SEPS);
+}
+
+nsresult nsHttpResponseHead::ParseResponseContentLength(
+    const nsACString& aHeaderStr) {
+  int64_t contentLength = 0;
+  
+  
+  
+  
+  
+  if (aHeaderStr.IsEmpty()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  Maybe<nsAutoCString> candidateValue;
+  
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizerTemplate<
+           NS_IsAsciiWhitespace, nsTokenizerFlags::IncludeEmptyTokenAtEnd>(
+           aHeaderStr, ',')
+           .ToRange()) {
+    
+    if (candidateValue.isNothing()) {
+      candidateValue.emplace(token);
+    }
+    
+    if (candidateValue.value() != token) {
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+  }
+  
+  
+  if (candidateValue.isNothing()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  const char* end = nullptr;
+  if (!net::nsHttp::ParseInt64(candidateValue->get(), &end, &contentLength)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  if (*end != '\0') {
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mContentLength = contentLength;
+  return NS_OK;
 }
 
 nsresult nsHttpResponseHead::VisitHeaders(

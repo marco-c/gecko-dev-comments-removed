@@ -167,6 +167,12 @@ class nsHttpHeaderArray {
   bool IsSuspectDuplicateHeader(const nsHttpAtom& header);
 
   
+  
+  
+  void RemoveDuplicateHeaderValues(const nsACString& aHeaderValue,
+                                   nsACString& aResult);
+
+  
   CopyableTArray<nsEntry> mHeaders;
 
   friend struct IPC::ParamTraits<nsHttpHeaderArray>;
@@ -286,6 +292,33 @@ inline bool nsHttpHeaderArray::IsSuspectDuplicateHeader(
              "Only non-mergeable headers should be in this list\n");
 
   return retval;
+}
+
+inline void nsHttpHeaderArray::RemoveDuplicateHeaderValues(
+    const nsACString& aHeaderValue, nsACString& aResult) {
+  mozilla::Maybe<nsAutoCString> result;
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(aHeaderValue, ',').ToRange()) {
+    if (result.isNothing()) {
+      
+      result.emplace(token);
+      continue;
+    }
+    if (*result != token) {
+      
+      result.reset();
+      break;
+    }
+  }
+
+  if (result.isSome()) {
+    aResult = *result;
+  } else {
+    
+    
+    
+    aResult = aHeaderValue;
+  }
 }
 
 }  
