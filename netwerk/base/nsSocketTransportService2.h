@@ -160,9 +160,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   Atomic<bool> mInitialized{false};
   
   Atomic<bool> mShuttingDown{false};
-  Atomic<bool> mSocketThreadShutDown{false};
-  
-  RefPtr<nsSocketTransportService> mSelf;
 
   Mutex mLock{"nsSocketTransportService::mLock"};
   

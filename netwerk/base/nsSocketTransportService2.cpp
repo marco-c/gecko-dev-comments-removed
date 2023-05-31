@@ -253,7 +253,6 @@ bool nsSocketTransportService::UpdatePortRemapPreference(
 nsSocketTransportService::~nsSocketTransportService() {
   NS_ASSERTION(NS_IsMainThread(), "wrong thread");
   NS_ASSERTION(!mInitialized, "not shutdown properly");
-  MOZ_ASSERT(mSocketThreadShutDown);
 
   gSocketTransportService = nullptr;
 }
@@ -414,7 +413,7 @@ bool nsSocketTransportService::CanAttachSocket() {
     reported900FDLimit = true;
     Telemetry::Accumulate(Telemetry::NETWORK_SESSION_AT_900FD, true);
   }
-  MOZ_ASSERT(!mSocketThreadShutDown);
+  MOZ_ASSERT(mInitialized);
   return rv;
 }
 
@@ -753,8 +752,6 @@ nsSocketTransportService::Init() {
     nsresult rv = NS_NewNamedThread("Socket Thread", getter_AddRefs(thread),
                                     this, {.stackSize = GetThreadStackSize()});
     NS_ENSURE_SUCCESS(rv, rv);
-    
-    mSelf = this;
   } else {
     
     
@@ -775,9 +772,9 @@ nsSocketTransportService::Init() {
     
     thread.swap(mThread);
     mDirectTaskDispatcher = do_QueryInterface(mThread);
-  MOZ_DIAGNOSTIC_ASSERT(
-      mDirectTaskDispatcher,
-      "Underlying thread must support direct task dispatching");
+    MOZ_DIAGNOSTIC_ASSERT(
+        mDirectTaskDispatcher,
+        "Underlying thread must support direct task dispatching");
   }
 
   Preferences::RegisterCallbacks(UpdatePrefs, gCallbackPrefs, this);
@@ -819,23 +816,22 @@ nsSocketTransportService::Shutdown(bool aXpcomShutdown) {
       observer->Observe();
     }
   }
-  if (!XRE_IsContentProcess() ||
-      StaticPrefs::network_allow_raw_sockets_in_content_processes_AtStartup()) {
-    
-    
-    mShuttingDown = true;
 
-    {
-      MutexAutoLock lock(mLock);
+  mShuttingDown = true;
 
-      if (mPollableEvent) {
-        mPollableEvent->Signal();
-      }
+  {
+    MutexAutoLock lock(mLock);
+
+    if (mPollableEvent) {
+      mPollableEvent->Signal();
     }
-  } else {
-    
+  }
+
+  
+  
+  
+  if (!aXpcomShutdown) {
     ShutdownThread();
-    mSocketThreadShutDown = true;
   }
 
   return NS_OK;
@@ -1257,10 +1253,6 @@ nsSocketTransportService::Run() {
   MOZ_ASSERT(mPollList.Length() == 1);
   MOZ_ASSERT(mActiveList.IsEmpty());
   MOZ_ASSERT(mIdleList.IsEmpty());
-  mSocketThreadShutDown = true;
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "nsSocketTransportService::mSelf",
-      [self = RefPtr{mSelf.forget()}]() { self->ShutdownThread(); }));
 
   return NS_OK;
 }
@@ -1625,7 +1617,7 @@ nsSocketTransportService::Observe(nsISupports* subject, const char* topic,
                               nsITimer::TYPE_ONE_SHOT);
     }
   } else if (!strcmp(topic, "xpcom-shutdown-threads")) {
-    Shutdown(true);
+    ShutdownThread();
   } else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
     mLastNetworkLinkChangeTime = PR_IntervalNow();
   }
