@@ -48,7 +48,7 @@ def side_by_side_modifier(task, input):
     
     task.task["metadata"][
         "name"
-    ] = f"{input['label']} for {input['platform']} {input['test_name']} from revision {input['base_revision'][:12]} to {input['new_revision'][:12]}"
+    ] = f"{input['platform']} {input['test_name']} {input['base_revision'][:12]} {input['new_revision'][:12]}"
     
     
     task.task["extra"]["treeherder"]["symbol"] += f"-{input['symbol']}"
