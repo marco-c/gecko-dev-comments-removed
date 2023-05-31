@@ -5,37 +5,21 @@
 
 "use strict";
 
-
-
-
-const markup1 = `
-  <html>
-  <body>
-    <form>
-      <p><label>country: <input type="text" id="country" name="country" /></label></p>
-      <p><label>tel: <input type="text" id="tel" name="tel" /></label></p>
-      <p><label><input type="text" id="housenumber" /></label></p>
-    </form>
-  </body>
-  </html>
-`;
-
-const markup2 = `
-  <html>
-  <body>
-    <form>
-      <p><label>country: <input type="text" id="country" name="country" /></label></p>
-      <p><label>tel: <input type="text" id="tel" name="tel" /></label></p>
-      <p><label><input type="text" id="housenumber" /></label></p>
-      <p><label><input type="text" id="addrcomplement" /></label></p>
-    </form>
-  </body>
-  </html>
-`;
-
 add_heuristic_tests([
   {
-    fixtureData: markup1,
+    
+    
+    
+    fixtureData: `
+        <html>
+        <body>
+          <form>
+            <p><label>country: <input type="text" id="country" name="country" /></label></p>
+            <p><label>tel: <input type="text" id="tel" name="tel" /></label></p>
+            <p><label><input type="text" id="housenumber" /></label></p>
+          </form>
+        </body>
+        </html>`,
     expectedResult: [
       {
         description:
@@ -52,7 +36,17 @@ add_heuristic_tests([
     ],
   },
   {
-    fixtureData: markup2,
+    fixtureData: `
+        <html>
+        <body>
+          <form>
+            <p><label>country: <input type="text" id="country" name="country" /></label></p>
+            <p><label>tel: <input type="text" id="tel" name="tel" /></label></p>
+            <p><label><input type="text" id="housenumber" /></label></p>
+            <p><label><input type="text" id="addrcomplement" /></label></p>
+          </form>
+        </body>
+        </html>`,
     expectedResult: [
       {
         description:
@@ -65,6 +59,78 @@ add_heuristic_tests([
           { fieldName: "tel" },
           { fieldName: "address-line1" },
           { fieldName: "address-line2" },
+        ],
+      },
+    ],
+  },
+  {
+    
+    description:
+      "street-address field is treated as address-line1 when address-line2 is present while adddress-line1 is not",
+    fixtureData: `
+        <html>
+        <body>
+          <form>
+            <input type="text" id="street-address" autocomplete="street-address"/>
+            <input type="text" id="address-line2" autocomplete="address-line2"/>
+            <input type="text" id="email" autocomplete="email"/>
+          </form>
+        </body>
+        </html>`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "address-line1", reason: "regexp-heuristic" },
+          { fieldName: "address-line2", reason: "autocomplete" },
+          { fieldName: "email", reason: "autocomplete" },
+        ],
+      },
+    ],
+  },
+  {
+    
+    description:
+      "street-address field should not be treated as address-line1 when address-line2 is not present",
+    fixtureData: `
+        <html>
+        <body>
+          <form>
+            <input type="text" id="street-address" autocomplete="street-address"/>
+            <input type="text" id="address-line3" autocomplete="address-line3"/>
+            <input type="text" id="email" autocomplete="email"/>
+          </form>
+        </body>
+        </html>`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "street-address", reason: "autocomplete" },
+          { fieldName: "address-line3", reason: "autocomplete" },
+          { fieldName: "email", reason: "autocomplete" },
+        ],
+      },
+    ],
+  },
+  {
+    
+    description:
+      "street-address field should not be treated as address-line1 when address-line1 is present",
+    fixtureData: `
+        <html>
+        <body>
+          <form>
+            <input type="text" id="street-address" autocomplete="street-address"/>
+            <input type="text" id="address-line1" autocomplete="address-line1"/>
+            <input type="text" id="email" autocomplete="email"/>
+          </form>
+        </body>
+        </html>`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "street-address", reason: "autocomplete" },
+          { fieldName: "address-line1", reason: "autocomplete" },
+          { fieldName: "email", reason: "autocomplete" },
         ],
       },
     ],
