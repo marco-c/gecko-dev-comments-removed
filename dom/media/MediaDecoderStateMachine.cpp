@@ -4802,6 +4802,16 @@ bool MediaDecoderStateMachine::HasLastDecodedData(MediaData::Type aType) {
   return mDecodedVideoEndTime != TimeUnit::Zero();
 }
 
+bool MediaDecoderStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
+#ifdef MOZ_WMF_CDM
+  MOZ_ASSERT(aProxy);
+  
+  return !aProxy->AsWMFCDMProxy();
+#else
+  return true;
+#endif
+}
+
 }  
 
 

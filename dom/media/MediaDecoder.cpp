@@ -426,7 +426,8 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
 #ifndef MOZ_WMF_MEDIA_ENGINE
   DecodeError(aError);
 #else
-  if (aError != NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR) {
+  if (aError != NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR &&
+      aError != NS_ERROR_DOM_MEDIA_CDM_PROXY_NOT_SUPPORTED_ERR) {
     DecodeError(aError);
     return;
   }
@@ -443,7 +444,6 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
   
   
   
-  MOZ_ASSERT(aError == NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR);
   RefPtr<MediaDecoderStateMachineBase> discardStateMachine =
       mDecoderStateMachine;
 
@@ -452,12 +452,25 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
   DisconnectEvents();
 
   
-  LOG("Need to create a new state machine");
-  nsresult rv =
-      CreateAndInitStateMachine(false, true );
+  bool needExternalEngine = false;
+  if (aError == NS_ERROR_DOM_MEDIA_CDM_PROXY_NOT_SUPPORTED_ERR) {
+#  ifdef MOZ_WMF_CDM
+    if (aError.GetCDMProxy()->AsWMFCDMProxy()) {
+      needExternalEngine = true;
+    }
+#  endif
+  }
+  LOG("Need to create a new %s state machine",
+      needExternalEngine ? "external engine" : "normal");
+
+  nsresult rv = CreateAndInitStateMachine(
+      false ,
+      !needExternalEngine );
   if (NS_WARN_IF(NS_FAILED(rv))) {
     LOG("Failed to create a new state machine!");
   }
+
+  
   discardStateMachine->BeginShutdown()->Then(
       AbstractThread::MainThread(), __func__, [discardStateMachine] {});
 #endif
@@ -1437,13 +1450,14 @@ RefPtr<SetCDMPromise> MediaDecoder::SetCDMProxy(CDMProxy* aProxy) {
 #ifdef MOZ_WMF_MEDIA_ENGINE
   
   
-  if (GetStateMachine()->IsExternalStateMachine() &&
-      !StaticPrefs::media_wmf_media_engine_drm_playback()) {
-    LOG("Disable external state machine due to DRM playback not allowed");
+  if (aProxy && !GetStateMachine()->IsCDMProxySupported(aProxy)) {
+    LOG("CDM proxy not supported! Switch to another state machine.");
     OnPlaybackErrorEvent(
-        MediaResult{NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR});
+        MediaResult{NS_ERROR_DOM_MEDIA_CDM_PROXY_NOT_SUPPORTED_ERR, aProxy});
   }
 #endif
+  MOZ_DIAGNOSTIC_ASSERT_IF(aProxy,
+                           GetStateMachine()->IsCDMProxySupported(aProxy));
   return GetStateMachine()->SetCDMProxy(aProxy);
 }
 

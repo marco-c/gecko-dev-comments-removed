@@ -1158,6 +1158,18 @@ RefPtr<SetCDMPromise> ExternalEngineStateMachine::SetCDMProxy(
   return MediaDecoderStateMachineBase::SetCDMProxy(aProxy);
 }
 
+bool ExternalEngineStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
+#ifdef MOZ_WMF_CDM
+  MOZ_ASSERT(aProxy);
+  
+  
+  return StaticPrefs::media_wmf_media_engine_drm_playback() &&
+         aProxy->AsWMFCDMProxy();
+#else
+  return false;
+#endif
+}
+
 #undef FMT
 #undef LOG
 #undef LOGV
