@@ -7,19 +7,6 @@
 
 var EXPORTED_SYMBOLS = ["DelayedInit"];
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const lazy = {};
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "MessageLoop",
-  "@mozilla.org/message-loop;1",
-  "nsIMessageLoop"
-);
-
 
 
 
@@ -98,10 +85,9 @@ var Impl = {
 
     if (nextDue !== undefined) {
       
-      lazy.MessageLoop.postIdleTask(
-        () => this.onIdle(),
-        Math.max(0, nextDue - time)
-      );
+      ChromeUtils.idleDispatch(() => this.onIdle(), {
+        timeout: Math.max(0, nextDue - time),
+      });
     }
   },
 
@@ -123,7 +109,7 @@ var Impl = {
 
     if (!this.pendingInits.length) {
       
-      lazy.MessageLoop.postIdleTask(() => this.onIdle(), wait);
+      ChromeUtils.idleDispatch(() => this.onIdle(), { timeout: wait });
     }
     this.pendingInits.push(init);
     return init;
