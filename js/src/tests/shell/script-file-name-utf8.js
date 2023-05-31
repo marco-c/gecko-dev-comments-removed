@@ -166,6 +166,20 @@ function getLcovInfoScriptName(fileName) {
 }
 
 
+function moduleResolutionError(fileName) {
+  const a = parseModule(`import { x } from "b";`, fileName);
+  const ma = registerModule("a", a);
+  const b = parseModule(`export var y = 10;`);
+  const mb = registerModule("b", b);
+
+  try {
+    moduleLink(ma);
+  } catch (e) {
+    return e.fileName;
+  }
+}
+
+
 function geckoInterpProfilingStack(fileName) {
   enableGeckoProfilingWithSlowAssertions();
   const stack = evaluate(`readGeckoInterpProfilingStack();`, { fileName });
@@ -191,6 +205,7 @@ const testFunctions = [
   fromErrorStackAsmJS,
   fromErrorStackStreamingWasm,
   getBacktraceScriptName,
+  moduleResolutionError,
 ];
 
 if (isLcovEnabled()) {
