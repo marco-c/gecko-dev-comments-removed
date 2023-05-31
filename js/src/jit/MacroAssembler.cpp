@@ -306,6 +306,12 @@ void MacroAssembler::nurseryAllocateObject(Register result, Register temp,
   
   
   
+  MOZ_ASSERT(!IsForegroundFinalized(allocKind));
+
+  
+  
+  
+  
   if (nDynamicSlots >= Nursery::MaxNurseryBufferSize / sizeof(Value)) {
     jump(fail);
     return;
