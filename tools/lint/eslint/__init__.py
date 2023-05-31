@@ -114,10 +114,9 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
             binary,
             os.path.join(module_path, "node_modules", "prettier", "bin-prettier.js"),
             "--list-different",
+            "--no-error-on-unmatched-pattern",
         ]
         + extra_args
-        
-        
         
         
         + paths
@@ -223,17 +222,10 @@ def run_prettier(cmd_args, config, fix):
         errors = [
             error
             for error in errors
-            if not (
-                "No supported files were found" in error
-                or "No files matching the pattern were found" in error
-                
-                
-                or "Ignored unknown option" in error
-            )
+            
+            
+            if not ("Ignored unknown option" in error)
         ]
-        
-        
-        
         if len(errors):
             print(PRETTIER_ERROR_MESSAGE.format("\n".join(errors)))
 
