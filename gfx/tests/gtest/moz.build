@@ -49,17 +49,8 @@ UNIFIED_SOURCES += [
     ]
 ]
 
-
-
-
-
-
-SOURCES += [
-    "/gfx/ots/tests/%s" % p
-    for p in [
-        "cff_charstring_test.cc",
-        "layout_common_table_test.cc",
-    ]
+UNIFIED_SOURCES += [
+    "/gfx/ots/tests/cff_charstring_test.cc",
 ]
 
 

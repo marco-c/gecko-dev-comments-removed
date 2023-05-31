@@ -319,7 +319,7 @@ struct Font {
   Table* GetTypedTable(uint32_t tag) const;
 
   
-  void AddTable(Table* table);
+  void AddTable(TableEntry entry, Table* table);
 
   
   void DropGraphite();

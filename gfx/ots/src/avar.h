@@ -35,6 +35,10 @@ class OpenTypeAVAR : public Table {
   };
 
   std::vector<std::vector<AxisValueMap>> axisSegmentMaps;
+
+  
+  const uint8_t *m_data;
+  size_t m_length;
 };
 
 }  
