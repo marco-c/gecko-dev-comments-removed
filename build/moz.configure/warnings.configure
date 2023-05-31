@@ -307,6 +307,11 @@ check_and_add_warning("-Werror=unguarded-availability-new", when=target_is_osx)
 
 
 
+check_and_add_warning("-Wno-error=builtin-macro-redefined")
+
+
+
+
 check_and_add_warning("-Wno-unknown-warning-option")
 
 set_config("WARNINGS_CFLAGS", warnings_flags.cflags)
