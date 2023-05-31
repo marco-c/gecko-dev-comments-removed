@@ -100,7 +100,6 @@ using RejectCallback = std::function<void(ResponseRejectReason)>;
 enum ChannelState {
   ChannelClosed,
   ChannelConnected,
-  ChannelTimeout,
   ChannelClosing,
   ChannelError
 };
@@ -201,8 +200,6 @@ class MessageChannel : HasResultCodes {
   
   
   void CloseWithError() MOZ_EXCLUDES(*mMonitor);
-
-  void CloseWithTimeout() MOZ_EXCLUDES(*mMonitor);
 
   void SetAbortOnError(bool abort) MOZ_EXCLUDES(*mMonitor) {
     MonitorAutoLock lock(*mMonitor);
@@ -447,7 +444,15 @@ class MessageChannel : HasResultCodes {
     return mDispatchingAsyncMessageNestedLevel;
   }
 
+  
+  
+  
   bool Connected() const MOZ_REQUIRES(*mMonitor);
+
+  
+  
+  
+  bool ConnectedOrClosing() const MOZ_REQUIRES(*mMonitor);
 
  private:
   
@@ -457,9 +462,6 @@ class MessageChannel : HasResultCodes {
   
   bool MaybeInterceptSpecialIOMessage(const Message& aMsg)
       MOZ_REQUIRES(*mMonitor);
-
-  
-  void SynchronouslyClose() MOZ_REQUIRES(*mMonitor);
 
   
   
