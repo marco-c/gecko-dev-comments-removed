@@ -520,6 +520,13 @@ nsIFrame* FindFrameTargetedByInputEvent(
   }();
 
   
+  nsIContent* targetContent = target ? target->GetContent() : nullptr;
+  if (targetContent && targetContent->IsEditable()) {
+    PET_LOG("Target %p is editable\n", target);
+    return target;
+  }
+
+  
   
   
   
