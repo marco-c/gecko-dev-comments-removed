@@ -9,7 +9,7 @@
 
 namespace mozilla {
 
-#if defined(XP_MACOSX)
+#if defined(XP_DARWIN)
 
 class MacMemoryPressureLevel {
  public:
