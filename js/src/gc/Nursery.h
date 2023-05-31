@@ -67,16 +67,6 @@ class GCSchedulingTunables;
 class TenuringTracer;
 }  
 
-
-
-
-
-
-inline bool CanNurseryAllocateFinalizedClass(const JSClass* const clasp) {
-  MOZ_ASSERT(clasp->hasFinalize());
-  return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
-}
-
 class alignas(TypicalCacheLineSize) Nursery {
  public:
   static const size_t Alignment = gc::ChunkSize;
@@ -131,23 +121,6 @@ class alignas(TypicalCacheLineSize) Nursery {
 
   template <typename T>
   inline bool isInside(const SharedMem<T>& p) const;
-
-  
-  
-  void* allocateObject(gc::AllocSite* site, size_t size, const JSClass* clasp) {
-    MOZ_ASSERT_IF(clasp->hasFinalize() && !clasp->isProxyObject(),
-                  CanNurseryAllocateFinalizedClass(clasp));
-    return allocateCell(site, size, JS::TraceKind::Object);
-  }
-
-  void* allocateBigInt(gc::AllocSite* site, size_t size) {
-    MOZ_ASSERT(canAllocateBigInts());
-    return allocateCell(site, size, JS::TraceKind::BigInt);
-  }
-  void* allocateString(gc::AllocSite* site, size_t size) {
-    MOZ_ASSERT(canAllocateStrings());
-    return allocateCell(site, size, JS::TraceKind::String);
-  }
 
   
   

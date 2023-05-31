@@ -818,6 +818,16 @@ enum class ESClass {
 
 bool Unbox(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
 
+
+
+
+
+
+inline bool CanNurseryAllocateFinalizedClass(const JSClass* const clasp) {
+  MOZ_ASSERT(clasp->hasFinalize());
+  return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
+}
+
 #ifdef DEBUG
 JS_PUBLIC_API bool HasObjectMovedOp(JSObject* obj);
 #endif
