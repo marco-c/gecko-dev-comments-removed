@@ -117,7 +117,7 @@ var gTests = [
 
       
       let win = openDialog(
-        "chrome://browser/content/preferences/dialogs/translation.xhtml",
+        "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml",
         "Browser:TranslationExceptions",
         "",
         null
@@ -183,7 +183,7 @@ var gTests = [
 
       
       let win = openDialog(
-        "chrome://browser/content/preferences/dialogs/translation.xhtml",
+        "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml",
         "Browser:TranslationExceptions",
         "",
         null
