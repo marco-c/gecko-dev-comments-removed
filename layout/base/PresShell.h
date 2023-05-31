@@ -910,6 +910,15 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+  void AddPrintPreviewBackgroundItem(nsDisplayListBuilder* aBuilder,
+                                     nsDisplayList* aList, nsIFrame* aFrame,
+                                     const nsRect& aBounds);
+
+  
+
+
+
+
   nscolor ComputeBackstopColor(nsView* aDisplayRoot);
 
   void ObserveNativeAnonMutationsForPrint(bool aObserve) {

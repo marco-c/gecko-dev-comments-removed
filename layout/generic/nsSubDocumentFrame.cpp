@@ -488,10 +488,18 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       
       
-      
-      presShell->AddCanvasBackgroundColorItem(
-          aBuilder, &childItems, frame, bounds, NS_RGBA(0, 0, 0, 0),
-          AddCanvasBackgroundColorFlags::ForceDraw);
+      if (nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
+        presShell->AddPrintPreviewBackgroundItem(aBuilder, &childItems, frame,
+                                                 bounds);
+      } else {
+        
+        
+        
+        
+        presShell->AddCanvasBackgroundColorItem(
+            aBuilder, &childItems, frame, bounds, NS_RGBA(0, 0, 0, 0),
+            AddCanvasBackgroundColorFlags::ForceDraw);
+      }
     }
   }
 
