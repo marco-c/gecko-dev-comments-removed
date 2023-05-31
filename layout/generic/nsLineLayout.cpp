@@ -3046,7 +3046,8 @@ void nsLineLayout::ExpandInlineRubyBoxes(PerSpanData* aSpan) {
   }
 }
 
-nscoord nsLineLayout::GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL) {
+nscoord nsLineLayout::GetHangFrom(const PerSpanData* aSpan,
+                                  bool aLineIsRTL) const {
   const PerFrameData* pfd = aSpan->mLastFrame;
   nscoord result = 0;
   while (pfd) {
@@ -3079,6 +3080,36 @@ nscoord nsLineLayout::GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL) {
   return result;
 }
 
+gfxTextRun::TrimmableWS nsLineLayout::GetTrimFrom(const PerSpanData* aSpan,
+                                                  bool aLineIsRTL) const {
+  const PerFrameData* pfd = aSpan->mLastFrame;
+  while (pfd) {
+    if (const PerSpanData* childSpan = pfd->mSpan) {
+      return GetTrimFrom(childSpan, aLineIsRTL);
+    }
+    if (pfd->mIsTextFrame) {
+      auto* lastText = static_cast<nsTextFrame*>(pfd->mFrame);
+      auto result = lastText->GetTrimmableWS();
+      if (result.mAdvance) {
+        lastText->EnsureTextRun(nsTextFrame::eInflated);
+        auto* textRun = lastText->GetTextRun(nsTextFrame::eInflated);
+        if (textRun && textRun->IsRightToLeft() != aLineIsRTL) {
+          result.mAdvance = -result.mAdvance;
+        }
+      }
+      return result;
+    }
+    if (!pfd->mSkipWhenTrimmingWhitespace) {
+      
+      
+      return gfxTextRun::TrimmableWS{};
+    }
+    
+    pfd = pfd->mPrev;
+  }
+  return gfxTextRun::TrimmableWS{};
+}
+
 
 
 void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
@@ -3106,8 +3137,15 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
 
   
   nscoord hang = 0;
+  uint32_t trimCount = 0;
   if (aLine->IsLineWrapped()) {
-    hang = GetHangFrom(mRootSpan, lineWM.IsBidiRTL());
+    if (textAlign == StyleTextAlign::Justify) {
+      auto trim = GetTrimFrom(mRootSpan, lineWM.IsBidiRTL());
+      hang = NSToCoordRound(trim.mAdvance);
+      trimCount = trim.mCount;
+    } else {
+      hang = GetHangFrom(mRootSpan, lineWM.IsBidiRTL());
+    }
   }
 
   bool isSVG = LineContainerFrame()->IsInSVGTextSubtree();
@@ -3144,9 +3182,11 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
     switch (textAlign) {
       case StyleTextAlign::Justify: {
         int32_t opportunities =
-            psd->mFrame->mJustificationInfo.mInnerOpportunities;
+            psd->mFrame->mJustificationInfo.mInnerOpportunities -
+            (hang ? trimCount : 0);
         if (opportunities > 0) {
           int32_t gaps = opportunities * 2 + additionalGaps;
+          remainingISize += std::abs(hang);
           JustificationApplicationState applyState(gaps, remainingISize);
 
           
@@ -3154,11 +3194,29 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
           aLine->ExpandBy(ApplyFrameJustification(psd, applyState),
                           ContainerSizeForSpan(psd));
 
-          MOZ_ASSERT(applyState.mGaps.mHandled == applyState.mGaps.mCount,
+          
+          
+          
+          
+          
+          if (hang < 0) {
+            dx = hang - trimCount * remainingISize / opportunities;
+          }
+
+          
+          
+          DebugOnly<int32_t> trimmedGaps = hang ? trimCount * 2 : 0;
+          MOZ_ASSERT(applyState.mGaps.mHandled ==
+                         applyState.mGaps.mCount + trimmedGaps,
                      "Unprocessed justification gaps");
-          NS_ASSERTION(
-              applyState.mWidth.mConsumed == applyState.mWidth.mAvailable,
-              "Unprocessed justification width");
+          
+          
+          
+          DebugOnly<int32_t> trimmedAdjustment =
+              trimCount * remainingISize / opportunities;
+          NS_ASSERTION(applyState.mWidth.mConsumed ==
+                           applyState.mWidth.mAvailable + trimmedAdjustment,
+                       "Unprocessed justification width");
           break;
         }
         

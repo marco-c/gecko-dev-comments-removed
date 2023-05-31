@@ -198,6 +198,8 @@ NS_DECLARE_FRAME_PROPERTY_RELEASABLE(UninflatedTextRunProperty, gfxTextRun)
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(FontSizeInflationProperty, float)
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(HangableWhitespaceProperty, nscoord)
+NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(TrimmableWhitespaceProperty,
+                                      gfxTextRun::TrimmableWS)
 
 struct nsTextFrame::PaintTextSelectionParams : nsTextFrame::PaintTextParams {
   Point textBaselinePt;
@@ -3888,7 +3890,7 @@ nsTArray<nsTextFrame*>* nsTextFrame::GetContinuations() {
   if (!mNextContinuation) {
     return nullptr;
   }
-  if (mHasContinuationsProperty) {
+  if (mPropertyFlags & PropertyFlags::Continuations) {
     return GetProperty(ContinuationsProperty());
   }
   size_t count = 0;
@@ -3906,7 +3908,7 @@ nsTArray<nsTextFrame*>* nsTextFrame::GetContinuations() {
     continuations = nullptr;
   }
   AddProperty(ContinuationsProperty(), continuations);
-  mHasContinuationsProperty = true;
+  mPropertyFlags |= PropertyFlags::Continuations;
   return continuations;
 }
 
@@ -8155,20 +8157,53 @@ void nsTextFrame::SetFontSizeInflation(float aInflation) {
 void nsTextFrame::SetHangableISize(nscoord aISize) {
   MOZ_ASSERT(aISize >= 0, "unexpected negative hangable advance");
   if (aISize <= 0) {
-    if (mHasHangableWS) {
-      RemoveProperty(HangableWhitespaceProperty());
-    }
-    mHasHangableWS = false;
+    ClearHangableISize();
     return;
   }
   SetProperty(HangableWhitespaceProperty(), aISize);
-  mHasHangableWS = true;
+  mPropertyFlags |= PropertyFlags::HangableWS;
 }
 
 nscoord nsTextFrame::GetHangableISize() const {
-  MOZ_ASSERT(mHasHangableWS == HasProperty(HangableWhitespaceProperty()),
+  MOZ_ASSERT(!!(mPropertyFlags & PropertyFlags::HangableWS) ==
+                 HasProperty(HangableWhitespaceProperty()),
              "flag/property mismatch!");
-  return mHasHangableWS ? GetProperty(HangableWhitespaceProperty()) : 0;
+  return (mPropertyFlags & PropertyFlags::HangableWS)
+             ? GetProperty(HangableWhitespaceProperty())
+             : 0;
+}
+
+void nsTextFrame::ClearHangableISize() {
+  if (mPropertyFlags & PropertyFlags::HangableWS) {
+    RemoveProperty(HangableWhitespaceProperty());
+    mPropertyFlags &= ~PropertyFlags::HangableWS;
+  }
+}
+
+void nsTextFrame::SetTrimmableWS(gfxTextRun::TrimmableWS aTrimmableWS) {
+  MOZ_ASSERT(aTrimmableWS.mAdvance >= 0, "negative trimmable size");
+  if (aTrimmableWS.mAdvance <= 0) {
+    ClearTrimmableWS();
+    return;
+  }
+  SetProperty(TrimmableWhitespaceProperty(), aTrimmableWS);
+  mPropertyFlags |= PropertyFlags::TrimmableWS;
+}
+
+gfxTextRun::TrimmableWS nsTextFrame::GetTrimmableWS() const {
+  MOZ_ASSERT(!!(mPropertyFlags & PropertyFlags::TrimmableWS) ==
+                 HasProperty(TrimmableWhitespaceProperty()),
+             "flag/property mismatch!");
+  return (mPropertyFlags & PropertyFlags::TrimmableWS)
+             ? GetProperty(TrimmableWhitespaceProperty())
+             : gfxTextRun::TrimmableWS{};
+}
+
+void nsTextFrame::ClearTrimmableWS() {
+  if (mPropertyFlags & PropertyFlags::TrimmableWS) {
+    RemoveProperty(TrimmableWhitespaceProperty());
+    mPropertyFlags &= ~PropertyFlags::TrimmableWS;
+  }
 }
 
 
@@ -9167,7 +9202,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   gfxTextRun::Metrics textMetrics;
   uint32_t transformedLastBreak = 0;
   bool usedHyphenation = false;
-  gfxFloat trimmableWidth = 0;
+  gfxTextRun::TrimmableWS trimmableWS;
   gfxFloat availWidth = aAvailableWidth;
   if (Style()->IsTextCombined()) {
     
@@ -9192,8 +9227,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
       availWidth, provider, suppressBreak, boundingBoxType, aDrawTarget,
       textStyle->WordCanWrap(this), isBreakSpaces,
       
-      canTrimTrailingWhitespace || whitespaceCanHang ? &trimmableWidth
-                                                     : nullptr,
+      canTrimTrailingWhitespace || whitespaceCanHang ? &trimmableWS : nullptr,
       textMetrics, usedHyphenation, transformedLastBreak,
       
       breakPriority);
@@ -9254,7 +9288,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   }
 
   bool brokeText = forceBreak >= 0 || transformedCharsFit < transformedLength;
-  if (trimmableWidth > 0.0) {
+  if (trimmableWS.mAdvance > 0.0) {
     if (canTrimTrailingWhitespace) {
       
       
@@ -9262,32 +9296,41 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
         
         
         AddStateBits(TEXT_TRIMMED_TRAILING_WHITESPACE);
-        textMetrics.mAdvanceWidth -= trimmableWidth;
-        trimmableWidth = 0.0;
+        textMetrics.mAdvanceWidth -= trimmableWS.mAdvance;
+        trimmableWS.mAdvance = 0.0;
       }
-      SetHangableISize(0);
+      ClearHangableISize();
+      ClearTrimmableWS();
     } else if (whitespaceCanHang) {
       
       gfxFloat hang =
           std::min(std::max(0.0, textMetrics.mAdvanceWidth - availWidth),
-                   trimmableWidth);
-      SetHangableISize(NSToCoordRound(trimmableWidth - hang));
+                   gfxFloat(trimmableWS.mAdvance));
+      SetHangableISize(NSToCoordRound(trimmableWS.mAdvance - hang));
+      
+      
+      if (textStyle->mTextAlign == StyleTextAlign::Justify ||
+          textStyle->mTextAlignLast == StyleTextAlignLast::Justify) {
+        SetTrimmableWS(trimmableWS);
+      }
       textMetrics.mAdvanceWidth -= hang;
-      trimmableWidth = 0.0;
+      trimmableWS.mAdvance = 0.0;
     } else {
-      MOZ_ASSERT_UNREACHABLE("How did trimmableWidth get set?!");
-      SetHangableISize(0);
-      trimmableWidth = 0.0;
+      MOZ_ASSERT_UNREACHABLE("How did trimmableWS get set?!");
+      ClearHangableISize();
+      ClearTrimmableWS();
+      trimmableWS.mAdvance = 0.0;
     }
   } else {
     
-    SetHangableISize(0);
+    ClearHangableISize();
+    ClearTrimmableWS();
   }
 
   if (!brokeText && lastBreak >= 0) {
     
     
-    NS_ASSERTION(textMetrics.mAdvanceWidth - trimmableWidth <= availWidth,
+    NS_ASSERTION(textMetrics.mAdvanceWidth - trimmableWS.mAdvance <= availWidth,
                  "If the text doesn't fit, and we have a break opportunity, "
                  "why didn't MeasureText use it?");
     MOZ_ASSERT(lastBreak >= offset, "Strange break position");
@@ -9415,7 +9458,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   
   if (transformedCharsFit > 0) {
-    aLineLayout.SetTrimmableISize(NSToCoordFloor(trimmableWidth));
+    aLineLayout.SetTrimmableISize(NSToCoordFloor(trimmableWS.mAdvance));
     AddStateBits(TEXT_HAS_NONCOLLAPSED_CHARACTERS);
   }
   bool breakAfter = forceBreakAfter;
@@ -9443,7 +9486,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
       
       
       
-      if (textMetrics.mAdvanceWidth - trimmableWidth > availWidth) {
+      if (textMetrics.mAdvanceWidth - trimmableWS.mAdvance > availWidth) {
         breakAfter = true;
       } else {
         aLineLayout.NotifyOptionalBreakPosition(this, length, true,

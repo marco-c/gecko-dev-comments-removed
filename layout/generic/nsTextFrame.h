@@ -773,6 +773,11 @@ class nsTextFrame : public nsIFrame {
 
   void SetHangableISize(nscoord aISize);
   nscoord GetHangableISize() const;
+  void ClearHangableISize();
+
+  void SetTrimmableWS(gfxTextRun::TrimmableWS aTrimmableWS);
+  gfxTextRun::TrimmableWS GetTrimmableWS() const;
+  void ClearTrimmableWS();
 
  protected:
   virtual ~nsTextFrame();
@@ -809,12 +814,19 @@ class nsTextFrame : public nsIFrame {
   mutable SelectionState mIsSelected;
 
   
-  bool mHasContinuationsProperty = false;
+  
+ public:
+  enum class PropertyFlags : uint8_t {
+    
+    Continuations = 1 << 0,
+    
+    HangableWS = 1 << 1,
+    
+    TrimmableWS = 2 << 1,
+  };
 
-  
-  
-  
-  bool mHasHangableWS = false;
+ protected:
+  PropertyFlags mPropertyFlags = PropertyFlags(0);
 
   
 
@@ -1000,13 +1012,7 @@ class nsTextFrame : public nsIFrame {
 
   
   
-  void ClearCachedContinuations() {
-    MOZ_ASSERT(NS_IsMainThread());
-    if (mHasContinuationsProperty) {
-      RemoveProperty(ContinuationsProperty());
-      mHasContinuationsProperty = false;
-    }
-  }
+  inline void ClearCachedContinuations();
 
   
 
@@ -1022,5 +1028,14 @@ class nsTextFrame : public nsIFrame {
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::TrimmedOffsetFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::PropertyFlags)
+
+inline void nsTextFrame::ClearCachedContinuations() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mPropertyFlags & PropertyFlags::Continuations) {
+    RemoveProperty(ContinuationsProperty());
+    mPropertyFlags &= ~PropertyFlags::Continuations;
+  }
+}
 
 #endif
