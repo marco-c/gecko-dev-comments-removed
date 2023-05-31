@@ -531,6 +531,16 @@ add_task(async function test_aboutwelcome_embedded_migration() {
         true 
       );
       let selector = shadow.querySelector("#browser-profile-selector");
+
+      
+      
+      
+      
+      
+      if (!selector.matches(":focus")) {
+        await ContentTaskUtils.waitForEvent(selector, "focus");
+      }
+
       selector.click();
       await shown;
 
