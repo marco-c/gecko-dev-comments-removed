@@ -5,7 +5,12 @@
 "use strict";
 
 test_newtab({
-  before: setDefaultTopSites,
+  async before() {
+    
+    
+    await clearHistoryAndBookmarks();
+    await setDefaultTopSites();
+  },
   
   test: async function defaultTopSites_menuOptions() {
     const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
