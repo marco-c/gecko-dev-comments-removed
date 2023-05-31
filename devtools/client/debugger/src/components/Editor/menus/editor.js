@@ -312,47 +312,45 @@ export function editorMenuItems({
     blackBoxMenuItem(cx, selectedSource, blackboxedRanges, editorActions)
   );
 
-  if (features.blackboxLines) {
-    const startLine = toSourceLine(
-      selectedSource.id,
-      editor.codeMirror.getCursor("from").line
+  const startLine = toSourceLine(
+    selectedSource.id,
+    editor.codeMirror.getCursor("from").line
+  );
+  const endLine = toSourceLine(
+    selectedSource.id,
+    editor.codeMirror.getCursor("to").line
+  );
+
+  
+  const blackboxRange = findBlackBoxRange(selectedSource, blackboxedRanges, {
+    start: startLine,
+    end: endLine,
+  });
+
+  const isMultiLineSelection = blackboxRange
+    ? blackboxRange.start.line !== blackboxRange.end.line
+    : startLine !== endLine;
+
+  
+  
+  const theWholeSourceIsBlackBoxed =
+    blackboxedRanges[selectedSource.url] &&
+    !blackboxedRanges[selectedSource.url].length;
+
+  if (!theWholeSourceIsBlackBoxed) {
+    const blackBoxSourceLinesMenuItem = isMultiLineSelection
+      ? blackBoxLinesMenuItem
+      : blackBoxLineMenuItem;
+
+    items.push(
+      blackBoxSourceLinesMenuItem(
+        cx,
+        selectedSource,
+        editorActions,
+        editor,
+        blackboxedRanges
+      )
     );
-    const endLine = toSourceLine(
-      selectedSource.id,
-      editor.codeMirror.getCursor("to").line
-    );
-
-    
-    const blackboxRange = findBlackBoxRange(selectedSource, blackboxedRanges, {
-      start: startLine,
-      end: endLine,
-    });
-
-    const isMultiLineSelection = blackboxRange
-      ? blackboxRange.start.line !== blackboxRange.end.line
-      : startLine !== endLine;
-
-    
-    
-    const theWholeSourceIsBlackBoxed =
-      blackboxedRanges[selectedSource.url] &&
-      !blackboxedRanges[selectedSource.url].length;
-
-    if (!theWholeSourceIsBlackBoxed) {
-      const blackBoxSourceLinesMenuItem = isMultiLineSelection
-        ? blackBoxLinesMenuItem
-        : blackBoxLineMenuItem;
-
-      items.push(
-        blackBoxSourceLinesMenuItem(
-          cx,
-          selectedSource,
-          editorActions,
-          editor,
-          blackboxedRanges
-        )
-      );
-    }
   }
 
   if (isTextSelected) {
