@@ -397,11 +397,13 @@ function PrompterProxy(chromeScript) {
               outParams = [];
               break;
             }
-            case "promptPassword": {
+            case "promptPassword":
+            case "asyncPromptPassword": {
               outParams = [ 4];
               break;
             }
-            case "promptUsernameAndPassword": {
+            case "promptUsernameAndPassword":
+            case "asyncPromptUsernameAndPassword": {
               outParams = [ 4,  5];
               break;
             }
