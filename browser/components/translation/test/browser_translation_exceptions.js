@@ -4,7 +4,6 @@
 
 
 
-
 const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
@@ -118,7 +117,7 @@ var gTests = [
 
       
       let win = openDialog(
-        "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml",
+        "chrome://browser/content/preferences/dialogs/translation.xhtml",
         "Browser:TranslationExceptions",
         "",
         null
@@ -184,7 +183,7 @@ var gTests = [
 
       
       let win = openDialog(
-        "chrome://browser/content/preferences/dialogs/translationExceptions.xhtml",
+        "chrome://browser/content/preferences/dialogs/translation.xhtml",
         "Browser:TranslationExceptions",
         "",
         null
