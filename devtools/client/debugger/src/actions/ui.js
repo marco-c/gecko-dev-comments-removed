@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 
 import {
   getActiveSearch,
@@ -9,6 +9,9 @@ import {
   getSource,
   getSourceContent,
   getMainThread,
+  getIgnoreListSourceUrls,
+  getSourceByURL,
+  getBreakpointsForSource,
 } from "../selectors";
 import { selectSource } from "../actions/sources/select";
 import {
@@ -16,6 +19,8 @@ import {
   getLocationsInViewport,
   updateDocuments,
 } from "../utils/editor";
+import { blackboxSourceActorsForSource } from "./sources/blackbox";
+import { toggleBreakpoints } from "./breakpoints";
 import { copyToTheClipboard } from "../utils/clipboard";
 import { isFulfilled } from "../utils/async-value";
 
@@ -122,17 +127,17 @@ export function togglePaneCollapse(position, paneCollapsed) {
   };
 }
 
-/**
- * Highlight one or many lines in CodeMirror for a given source.
- *
- * @param {Object} location
- * @param {String} location.sourceId
- *        The precise source to highlight.
- * @param {Number} location.start
- *        The 1-based index of first line to highlight.
- * @param {Number} location.end
- *        The 1-based index of last line to highlight.
- */
+
+
+
+
+
+
+
+
+
+
+
 export function highlightLineRange(location) {
   return {
     type: "HIGHLIGHT_LINES",
@@ -182,11 +187,11 @@ export function clearProjectDirectoryRoot(cx) {
 
 export function setProjectDirectoryRoot(cx, newRoot, newName) {
   return ({ dispatch, getState }) => {
-    // If the new project root is against the top level thread,
-    // replace its thread ID with "top-level", so that later,
-    // getDirectoryForUniquePath could match the project root,
-    // even after a page reload where the new top level thread actor ID
-    // will be different.
+    
+    
+    
+    
+    
     const mainThread = getMainThread(getState());
     if (mainThread && newRoot.startsWith(mainThread.actor)) {
       newRoot = newRoot.replace(mainThread.actor, "top-level");
@@ -240,5 +245,24 @@ export function setJavascriptTracingLogMethod(value) {
 export function setHideOrShowIgnoredSources(shouldHide) {
   return ({ dispatch, getState }) => {
     dispatch({ type: "HIDE_IGNORED_SOURCES", shouldHide });
+  };
+}
+
+export function toggleSourceMapIgnoreList(cx, shouldEnable) {
+  return async thunkArgs => {
+    const { dispatch, getState } = thunkArgs;
+    const ignoreListSourceUrls = getIgnoreListSourceUrls(getState());
+    
+    for (const url of ignoreListSourceUrls) {
+      const source = getSourceByURL(getState(), url);
+      await blackboxSourceActorsForSource(thunkArgs, source, shouldEnable);
+      
+      const breakpoints = getBreakpointsForSource(getState(), source.id);
+      await dispatch(toggleBreakpoints(cx, shouldEnable, breakpoints));
+    }
+    await dispatch({
+      type: "ENABLE_SOURCEMAP_IGNORELIST",
+      shouldEnable,
+    });
   };
 }
