@@ -471,6 +471,11 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
   }
 
   
+  
+  
+  
+  mPendingStatusUpdateForNewlyCreatedStateMachine = true;
+
   discardStateMachine->BeginShutdown()->Then(
       AbstractThread::MainThread(), __func__, [discardStateMachine] {});
 #endif
@@ -778,6 +783,18 @@ void MediaDecoder::MetadataLoaded(
   
   
   Invalidate();
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  if (mPendingStatusUpdateForNewlyCreatedStateMachine) {
+    mPendingStatusUpdateForNewlyCreatedStateMachine = false;
+    if (mLogicalPosition != 0) {
+      Seek(mLogicalPosition, SeekTarget::Accurate);
+    }
+    if (mPlaybackRate != 0 && mPlaybackRate != 1.0) {
+      mDecoderStateMachine->DispatchSetPlaybackRate(mPlaybackRate);
+    }
+  }
+#endif
 
   EnsureTelemetryReported();
 }
