@@ -4737,6 +4737,10 @@ let gShareUtils = {
 
 
   updateShareURLMenuItem(browser, insertAfterEl) {
+    if (!Services.prefs.getBoolPref("browser.menu.share_url.allow", true)) {
+      return;
+    }
+
     
     if (
       AppConstants.platform != "macosx" &&

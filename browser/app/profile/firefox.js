@@ -2786,6 +2786,11 @@ pref("first-startup.timeout", 30000);
 #endif
 
 
+#ifdef MOZ_PROXY_BYPASS_PROTECTION
+  pref("browser.menu.share_url.allow", false);
+#endif
+
+
 
 
 
