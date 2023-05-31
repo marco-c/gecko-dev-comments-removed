@@ -8717,6 +8717,17 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
 
   
   
+  if (forwardScanFromStartOfListItemResult.ReachedBlockBoundary()) {
+    return InsertParagraphResult(
+        &rightListItemElement,
+        HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+            forwardScanFromStartOfListItemResult.GetContent()
+                ? *forwardScanFromStartOfListItemResult.GetContent()
+                : rightListItemElement));
+  }
+
+  
+  
   
   return InsertParagraphResult(
       &rightListItemElement,
