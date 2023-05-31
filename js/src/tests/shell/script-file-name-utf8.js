@@ -4,6 +4,9 @@
 
 
 
+const NOT_SUPPORTED = "*not supported*";
+
+
 function errorFileName(fileName) {
   return evaluate("new Error().fileName", {fileName});
 }
@@ -162,6 +165,18 @@ function getLcovInfoScriptName(fileName) {
   return scriptFiles[0].substring(3);
 }
 
+
+function geckoInterpProfilingStack(fileName) {
+  enableGeckoProfilingWithSlowAssertions();
+  const stack = evaluate(`readGeckoInterpProfilingStack();`, { fileName });
+  if (stack.length === 0) {
+    return NOT_SUPPORTED;
+  }
+  const result = stack[0].dynamicString;
+  disableGeckoProfiling();
+  return result;
+}
+
 const testFunctions = [
   errorFileName,
   errorFileNameParser,
@@ -193,7 +208,11 @@ const fileNames = [
 
 for (const fn of testFunctions) {
   for (const fileName of fileNames) {
-    assertEq(fn(fileName), fileName, `Caller '${fn.name}'`);
+    const result = fn(fileName);
+    if (result === NOT_SUPPORTED) {
+      continue;
+    }
+    assertEq(result, fileName, `Caller '${fn.name}'`);
   }
 }
 
