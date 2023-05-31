@@ -1162,9 +1162,14 @@ bool ExternalEngineStateMachine::IsCDMProxySupported(CDMProxy* aProxy) {
 #ifdef MOZ_WMF_CDM
   MOZ_ASSERT(aProxy);
   
+  if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
+      StaticPrefs::media_wmf_media_engine_enabled() != 2) {
+    return false;
+  }
+
   
-  return StaticPrefs::media_wmf_media_engine_drm_playback() &&
-         aProxy->AsWMFCDMProxy();
+  
+  return aProxy->AsWMFCDMProxy();
 #else
   return false;
 #endif
