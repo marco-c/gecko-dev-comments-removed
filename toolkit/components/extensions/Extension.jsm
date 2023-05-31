@@ -162,7 +162,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "browserStyleMV3sameAsMV2",

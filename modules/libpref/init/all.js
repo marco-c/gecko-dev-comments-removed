@@ -1948,8 +1948,7 @@ pref("extensions.install_origins.enabled", false);
 
 pref("extensions.browser_style_mv3.supported", true);
 
-
-pref("extensions.browser_style_mv3.same_as_mv2", true);
+pref("extensions.browser_style_mv3.same_as_mv2", false);
 
 
 pref("middlemouse.paste", false);
