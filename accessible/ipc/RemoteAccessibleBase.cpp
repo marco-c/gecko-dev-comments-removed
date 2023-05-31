@@ -499,22 +499,6 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           
           
           lastMatch = acc;
-          if (lastMatch->Role() == roles::TEXT_CONTAINER) {
-            
-            
-            
-            
-            while (lastMatch->ChildCount() == 1) {
-              if (lastMatch->Role() == roles::TEXT_CONTAINER) {
-                lastMatch = lastMatch->RemoteChildAt(0);
-              } else {
-                break;
-              }
-            }
-            
-            
-            lastMatch = lastMatch->IsTextLeaf() ? lastMatch : acc;
-          }
           break;
         }
       }
