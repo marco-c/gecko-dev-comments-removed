@@ -834,6 +834,8 @@ function ArrayKeys() {
 
 #ifdef NIGHTLY_BUILD
 
+
+
 function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
   
   var C = this;
@@ -879,12 +881,6 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
 
     
     
-    
-    
-    let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
-
-    
-    
     if (usingAsyncIterator !== undefined || usingSyncIterator !== undefined) {
       
       
@@ -897,6 +893,14 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
       
       
       
+
+      
+      
+      
+      
+      
+      let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
+
 
       
       let k = 0;
@@ -964,9 +968,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     
     
     
-    
-    
-    A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
+    let A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
 
     
     let k = 0;
