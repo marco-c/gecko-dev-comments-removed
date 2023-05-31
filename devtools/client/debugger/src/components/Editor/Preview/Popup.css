@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .popover .preview-popup {
   background: var(--theme-body-background);
@@ -91,7 +91,6 @@
 .tooltip .preview-popup {
   background: var(--theme-toolbar-background);
   max-width: inherit;
-  min-height: 80px;
   border: 1px solid var(--theme-splitter-color);
   box-shadow: 1px 2px 4px 1px var(--theme-toolbar-background-alt);
   padding: 5px;
@@ -139,7 +138,7 @@
   color: var(--theme-comment);
 }
 
-
+/* Exception popup */
 .exception-popup .exception-text {
   color: var(--red-70);
 }
@@ -185,7 +184,7 @@
   direction: rtl;
   text-align: end;
   white-space: nowrap;
-  
+  /* Force the location to be on one line and crop at start if wider then max-width */
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 350px;
