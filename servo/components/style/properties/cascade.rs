@@ -6,25 +6,27 @@
 
 use crate::applicable_declarations::CascadePriority;
 use crate::color::AbsoluteColor;
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::QuirksMode;
 use crate::custom_properties::CustomPropertiesBuilder;
 use crate::dom::TElement;
 use crate::font_metrics::FontMetricsOrientation;
-use crate::values::specified::length::FontBaseSize;
 use crate::logical_geometry::WritingMode;
 use crate::media_queries::Device;
-use crate::properties::{
-    CSSWideKeyword, ComputedValueFlags, ComputedValues, DeclarationImportanceIterator, Importance,
-    LonghandId, LonghandIdSet, PropertyDeclaration, PropertyDeclarationId, PropertyFlags,
-    ShorthandsWithPropertyReferencesCache, StyleBuilder, CASCADE_PROPERTY,
+use crate::properties::declaration_block::{DeclarationImportanceIterator, Importance};
+use crate::properties::generated::{
+    CSSWideKeyword, ComputedValues, LonghandId, LonghandIdSet, PropertyDeclaration,
+    PropertyDeclarationId, PropertyFlags, ShorthandsWithPropertyReferencesCache, StyleBuilder,
+    CASCADE_PROPERTY,
 };
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
-use crate::rule_tree::{StrongRuleNode, CascadeLevel};
+use crate::rule_tree::{CascadeLevel, StrongRuleNode};
 use crate::selector_parser::PseudoElement;
 use crate::shared_lock::StylesheetGuards;
 use crate::style_adjuster::StyleAdjuster;
-use crate::stylesheets::{Origin, layer_rule::LayerOrder};
 use crate::stylesheets::container_rule::ContainerSizeQuery;
+use crate::stylesheets::{layer_rule::LayerOrder, Origin};
+use crate::values::specified::length::FontBaseSize;
 use crate::values::{computed, specified};
 use fxhash::FxHashMap;
 use servo_arc::Arc;
@@ -367,7 +369,7 @@ where
             } else {
                 LonghandIdSet::late_group()
             }
-        }
+        },
     };
 
     cascade.apply_properties(
@@ -426,7 +428,10 @@ fn tweak_when_ignoring_colors(
     }
 
     
-    let forced = context.builder.get_inherited_text().clone_forced_color_adjust();
+    let forced = context
+        .builder
+        .get_inherited_text()
+        .clone_forced_color_adjust();
     if forced == computed::ForcedColorAdjust::None {
         return;
     }
@@ -434,7 +439,10 @@ fn tweak_when_ignoring_colors(
     
     
     
-    if context.builder.pseudo.map_or(false, |p| p.is_color_swatch()) &&
+    if context
+        .builder
+        .pseudo
+        .map_or(false, |p| p.is_color_swatch()) &&
         longhand_id == LonghandId::BackgroundColor
     {
         return;
@@ -477,13 +485,22 @@ fn tweak_when_ignoring_colors(
         },
         PropertyDeclaration::Color(ref color) => {
             
-            if color.0.honored_in_forced_colors_mode( true) {
+            if color
+                .0
+                .honored_in_forced_colors_mode( true)
+            {
                 return;
             }
             
             
             
-            if context.builder.get_parent_inherited_text().clone_color().alpha == 0.0 {
+            if context
+                .builder
+                .get_parent_inherited_text()
+                .clone_color()
+                .alpha ==
+                0.0
+            {
                 let color = context.builder.device.default_color();
                 declarations_to_apply_unless_overriden.push(PropertyDeclaration::Color(
                     specified::ColorPropertyValue(color.into()),
@@ -495,7 +512,11 @@ fn tweak_when_ignoring_colors(
         PropertyDeclaration::BackgroundImage(ref bkg) => {
             use crate::values::generics::image::Image;
             if static_prefs::pref!("browser.display.permit_backplate") {
-                if bkg.0.iter().all(|image| matches!(*image, Image::Url(..) | Image::None)) {
+                if bkg
+                    .0
+                    .iter()
+                    .all(|image| matches!(*image, Image::Url(..) | Image::None))
+                {
                     return;
                 }
             }
@@ -595,7 +616,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         declaration.value.substitute_variables(
             declaration.id,
             self.context.builder.writing_mode,
-            self.context.builder.custom_properties.as_ref(),
+            self.context.builder.custom_properties(),
             self.context.quirks_mode,
             self.context.device(),
             cache,
@@ -627,7 +648,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             return false;
         }
 
-        let can_have_logical_properties = can_have_logical_properties == CanHaveLogicalProperties::Yes;
+        let can_have_logical_properties =
+            can_have_logical_properties == CanHaveLogicalProperties::Yes;
 
         let ignore_colors = !self.context.builder.device.use_document_colors();
         let mut declarations_to_apply_unless_overriden = DeclarationsToApplyUnlessOverriden::new();
@@ -657,7 +679,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             }
 
             if self.reverted_set.contains(physical_longhand_id) {
-                if let Some(&(reverted_priority, is_origin_revert)) = self.reverted.get(&physical_longhand_id) {
+                if let Some(&(reverted_priority, is_origin_revert)) =
+                    self.reverted.get(&physical_longhand_id)
+                {
                     if !reverted_priority.allows_when_reverted(&priority, is_origin_revert) {
                         continue;
                     }
@@ -686,14 +710,14 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             let is_unset = match declaration.get_css_wide_keyword() {
                 Some(keyword) => match keyword {
-                    CSSWideKeyword::RevertLayer |
-                    CSSWideKeyword::Revert => {
+                    CSSWideKeyword::RevertLayer | CSSWideKeyword::Revert => {
                         let origin_revert = keyword == CSSWideKeyword::Revert;
                         
                         
                         
                         self.reverted_set.insert(physical_longhand_id);
-                        self.reverted.insert(physical_longhand_id, (priority, origin_revert));
+                        self.reverted
+                            .insert(physical_longhand_id, (priority, origin_revert));
                         continue;
                     },
                     CSSWideKeyword::Unset => true,
@@ -828,11 +852,17 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_WORD_SPACING);
         }
 
-        if self.author_specified.contains(LonghandId::FontSynthesisWeight) {
+        if self
+            .author_specified
+            .contains(LonghandId::FontSynthesisWeight)
+        {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_SYNTHESIS_WEIGHT);
         }
 
-        if self.author_specified.contains(LonghandId::FontSynthesisStyle) {
+        if self
+            .author_specified
+            .contains(LonghandId::FontSynthesisStyle)
+        {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_SYNTHESIS_STYLE);
         }
 
@@ -911,7 +941,10 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             };
 
             let initial_generic = font.mFont.family.families.single_generic();
-            debug_assert!(initial_generic.is_some(), "Initial font should be just one generic font");
+            debug_assert!(
+                initial_generic.is_some(),
+                "Initial font should be just one generic font"
+            );
             if initial_generic == Some(default_font_type) {
                 return;
             }
@@ -920,7 +953,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         };
 
         
-        builder.mutate_font().mFont.family.families = FontFamily::generic(default_font_type).families.clone();
+        builder.mutate_font().mFont.family.families =
+            FontFamily::generic(default_font_type).families.clone();
     }
 
     
@@ -958,14 +992,16 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         };
 
         let font = builder.mutate_font();
-        font.mFont.family.families.prioritize_first_generic_or_prepend(default_font_type);
+        font.mFont
+            .family
+            .families
+            .prioritize_first_generic_or_prepend(default_font_type);
     }
 
     
     #[cfg(feature = "gecko")]
     fn recompute_keyword_font_size_if_needed(&mut self) {
         use crate::values::computed::ToComputedValue;
-        use crate::values::specified;
 
         if !self.seen.contains(LonghandId::XLang) && !self.seen.contains(LonghandId::FontFamily) {
             return;
@@ -1077,7 +1113,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             return;
         }
 
-        const SCALE_FACTOR_WHEN_INCREMENTING_MATH_DEPTH_BY_ONE : f32 = 0.71;
+        const SCALE_FACTOR_WHEN_INCREMENTING_MATH_DEPTH_BY_ONE: f32 = 0.71;
 
         
         
@@ -1098,7 +1134,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             let mut b = computed_math_depth;
             let c = SCALE_FACTOR_WHEN_INCREMENTING_MATH_DEPTH_BY_ONE;
             let scale_between_0_and_1 = parent_script_percent_scale_down.unwrap_or_else(|| c);
-            let scale_between_0_and_2 = parent_script_script_percent_scale_down.unwrap_or_else(|| c * c);
+            let scale_between_0_and_2 =
+                parent_script_script_percent_scale_down.unwrap_or_else(|| c * c);
             let mut s = 1.0;
             let mut invert_scale_factor = false;
             if a == b {
@@ -1147,7 +1184,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             
             
             let scale = if parent_font.mScriptSizeMultiplier !=
-                SCALE_FACTOR_WHEN_INCREMENTING_MATH_DEPTH_BY_ONE {
+                SCALE_FACTOR_WHEN_INCREMENTING_MATH_DEPTH_BY_ONE
+            {
                 (parent_font.mScriptSizeMultiplier as f32).powi(delta as i32)
             } else {
                 
@@ -1160,7 +1198,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                     parent_font.mMathDepth as i32,
                     font.mMathDepth as i32,
                     font_metrics.script_percent_scale_down,
-                    font_metrics.script_script_percent_scale_down
+                    font_metrics.script_script_percent_scale_down,
                 )
             };
 

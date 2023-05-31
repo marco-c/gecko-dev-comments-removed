@@ -74,7 +74,18 @@ impl PaperSize {
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[repr(u8)]
 pub enum PageOrientation {
@@ -128,7 +139,10 @@ pub enum GenericPageSize<S> {
     
     Orientation(PageSizeOrientation),
     
-    PaperSize(PaperSize, #[css(skip_if = "is_portrait")] PageSizeOrientation),
+    PaperSize(
+        PaperSize,
+        #[css(skip_if = "is_portrait")] PageSizeOrientation,
+    ),
 }
 
 pub use self::GenericPageSize as PageSize;

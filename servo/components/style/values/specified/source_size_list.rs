@@ -55,10 +55,12 @@ impl SourceSizeList {
     
     pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> Au {
         computed::Context::for_media_query_evaluation(device, quirks_mode, |context| {
-            let matching_source_size = self
-                .source_sizes
-                .iter()
-                .find(|source_size| source_size.condition.matches(context).to_bool( false));
+            let matching_source_size = self.source_sizes.iter().find(|source_size| {
+                source_size
+                    .condition
+                    .matches(context)
+                    .to_bool( false)
+            });
 
             match matching_source_size {
                 Some(source_size) => source_size.value.to_computed_value(context),

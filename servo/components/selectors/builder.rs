@@ -379,8 +379,7 @@ where
 
 pub(crate) fn selector_list_specificity_and_flags<'a, Impl: SelectorImpl>(
     itr: impl Iterator<Item = &'a Selector<Impl>>,
-) -> SpecificityAndFlags
-{
+) -> SpecificityAndFlags {
     let mut specificity = 0;
     let mut flags = SelectorFlags::empty();
     for selector in itr {

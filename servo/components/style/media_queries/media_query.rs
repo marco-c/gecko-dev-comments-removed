@@ -120,7 +120,9 @@ impl MediaQuery {
     
     pub fn is_viewport_dependent(&self) -> bool {
         self.condition.as_ref().map_or(false, |c| {
-            return c.cumulative_flags().contains(FeatureFlags::VIEWPORT_DEPENDENT)
+            return c
+                .cumulative_flags()
+                .contains(FeatureFlags::VIEWPORT_DEPENDENT);
         })
     }
 

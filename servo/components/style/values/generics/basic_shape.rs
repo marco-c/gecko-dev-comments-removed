@@ -5,7 +5,7 @@
 
 
 
-use crate::values::animated::{Animate, Procedure, ToAnimatedZero, lists};
+use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::border::GenericBorderRadius;
 use crate::values::generics::position::GenericPosition;
@@ -479,7 +479,8 @@ where
         if self.fill != other.fill {
             return Err(());
         }
-        let coordinates = lists::by_computed_value::animate(&self.coordinates, &other.coordinates, procedure)?;
+        let coordinates =
+            lists::by_computed_value::animate(&self.coordinates, &other.coordinates, procedure)?;
         Ok(Polygon {
             fill: self.fill,
             coordinates,

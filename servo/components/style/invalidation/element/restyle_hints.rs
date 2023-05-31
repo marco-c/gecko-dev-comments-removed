@@ -144,7 +144,11 @@ impl RestyleHint {
     
     #[inline]
     pub fn has_animation_hint_or_recascade(&self) -> bool {
-        self.intersects(Self::for_animations() | Self::RECASCADE_SELF | Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE)
+        self.intersects(
+            Self::for_animations() |
+                Self::RECASCADE_SELF |
+                Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE,
+        )
     }
 
     
