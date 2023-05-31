@@ -2856,14 +2856,14 @@ class EditorBase : public nsIEditor,
   
   
   
-  typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 2>
-      AutoActionListenerArray;
+  using AutoActionListenerArray =
+      AutoTArray<OwningNonNull<nsIEditActionListener>, 2>;
   AutoActionListenerArray mActionListeners;
   
   
   
-  typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
-      AutoDocumentStateListenerArray;
+  using AutoDocumentStateListenerArray =
+      AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>;
   AutoDocumentStateListenerArray mDocStateListeners;
 
   

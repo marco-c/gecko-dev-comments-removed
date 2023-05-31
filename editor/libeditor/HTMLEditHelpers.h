@@ -781,7 +781,7 @@ class MOZ_RAII DOMIterator {
 
 
 
-  typedef bool (*BoolFunctor)(nsINode& aNode, void* aClosure);
+  using BoolFunctor = bool (*)(nsINode& aNode, void* aClosure);
   template <class NodeClass>
   void AppendNodesToArray(BoolFunctor aFunctor,
                           nsTArray<OwningNonNull<NodeClass>>& aArrayOfNodes,

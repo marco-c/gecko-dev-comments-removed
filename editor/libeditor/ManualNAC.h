@@ -16,7 +16,7 @@ namespace mozilla {
 
 
 
-typedef AutoTArray<RefPtr<dom::Element>, 16> ManualNACArray;
+using ManualNACArray = AutoTArray<RefPtr<dom::Element>, 16>;
 
 
 
