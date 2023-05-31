@@ -203,10 +203,14 @@ class Response:
         elif isinstance(self.content, str):
             yield self.content.encode(self.encoding)
         elif hasattr(self.content, "read"):
-            if read_file:
-                yield self.content.read()
-            else:
-                yield self.content
+            
+            
+            while True:
+                read = self.content.read(32 * 1024)
+                if len(read) == 0:
+                    break
+                yield read
+            self.content.close()
         else:
             for item in self.content:
                 if hasattr(item, "__call__"):
