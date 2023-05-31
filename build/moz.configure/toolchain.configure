@@ -2461,7 +2461,7 @@ def security_hardening_cflags(
     
     
     if asan:
-        flags.append("-U_FORTIFY_SOURCE")
+        flags.append("-D_FORTIFY_SOURCE=0")
 
     
     
