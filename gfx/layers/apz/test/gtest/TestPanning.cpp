@@ -217,3 +217,35 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
             velocityFromFullDataViaHistory);
   EXPECT_NE(velocityFromPartialData, velocityFromFullDataViaHistory);
 }
+
+TEST_F(APZCPanningTester, DuplicatePanEndEvents_Bug1833950) {
+  
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+             true);
+
+  
+  SampleAnimationOnce();
+  apzc->AssertStateIsFling();
+
+  
+  
+  
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
+             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+             true);
+}
