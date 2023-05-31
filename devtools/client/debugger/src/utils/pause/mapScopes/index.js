@@ -2,7 +2,10 @@
 
 
 
-import { debuggerToSourceMapLocation } from "../../location";
+import {
+  debuggerToSourceMapLocation,
+  sourceMapToDebuggerLocation,
+} from "../../location";
 import { locColumn } from "./locColumn";
 import { loadRangeMetadata, findMatchingRange } from "./rangeMetadata";
 
@@ -25,6 +28,27 @@ import { getGeneratedLocation } from "../../source-maps";
 
 import { log } from "../../log";
 
+
+
+
+
+function updateLocationsInScopes(state, scopes) {
+  for (const item of scopes) {
+    for (const name of Object.keys(item.bindings)) {
+      for (const ref of item.bindings[name].refs) {
+        const locs = [ref];
+        if (ref.type !== "ref") {
+          locs.push(ref.declaration);
+        }
+        for (const loc of locs) {
+          loc.start = sourceMapToDebuggerLocation(state, loc.start);
+          loc.end = sourceMapToDebuggerLocation(state, loc.end);
+        }
+      }
+    }
+  }
+}
+
 export async function buildMappedScopes(
   source,
   content,
@@ -32,14 +56,16 @@ export async function buildMappedScopes(
   scopes,
   thunkArgs
 ) {
-  const { parserWorker } = thunkArgs;
+  const { getState, parserWorker } = thunkArgs;
   if (!parserWorker.isLocationSupported(frame.location)) {
     return null;
   }
   const originalAstScopes = await parserWorker.getScopes(frame.location);
+  updateLocationsInScopes(getState(), originalAstScopes);
   const generatedAstScopes = await parserWorker.getScopes(
     frame.generatedLocation
   );
+  updateLocationsInScopes(getState(), generatedAstScopes);
 
   if (!originalAstScopes || !generatedAstScopes) {
     return null;

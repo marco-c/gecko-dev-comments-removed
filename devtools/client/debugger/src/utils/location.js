@@ -3,6 +3,7 @@
 
 
 import { getSelectedLocation } from "./selected-location";
+import { getSource } from "../selectors";
 
 
 
@@ -100,5 +101,34 @@ export function sortSelectedLocations(locations, selectedSource) {
     }
 
     return aSelected.column < bSelected.column ? -1 : 1;
+  });
+}
+
+
+
+
+
+export function sourceMapToDebuggerLocation(state, location) {
+  
+  
+  
+  if (location.source) {
+    return location;
+  }
+
+  
+  
+  const source = getSource(state, location.sourceId);
+  if (!source) {
+    throw new Error(`Could not find source-map source ${location.sourceId}`);
+  }
+
+  return createLocation({
+    ...location,
+    source,
+
+    
+    
+    sourceUrl: source.url,
   });
 }
