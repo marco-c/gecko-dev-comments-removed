@@ -386,8 +386,10 @@ this.browserAction = class extends ExtensionAPIPersistent {
         const popup = target.ownerDocument.getElementById(
           "unified-extensions-context-menu"
         );
+        
+        const anchor = target.firstElementChild;
         popup.openPopup(
-          target,
+          anchor,
           "after_end",
           0,
           0,
