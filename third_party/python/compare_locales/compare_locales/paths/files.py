@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import
 import os
 from compare_locales import mozpath
 
@@ -20,7 +19,7 @@ class ConfigList(list):
             self.append(config)
 
 
-class ProjectFiles(object):
+class ProjectFiles:
     '''Iterable object to get all files and tests for a locale and a
     list of ProjectConfigs.
 
@@ -93,6 +92,10 @@ class ProjectFiles(object):
                         mozpath.realpath(m_['l10n'].prefix)):
                     
                     continue
+                if m['l10n'].pattern != m_['l10n'].pattern:
+                    
+                    
+                    continue
                 
                 if 'reference' in m:
                     if (mozpath.realpath(m['reference'].prefix) !=
@@ -110,8 +113,7 @@ class ProjectFiles(object):
         
         
         inner = self.iter_locale() if self.locale else self.iter_reference()
-        for t in inner:
-            yield t
+        yield from inner
 
     def iter_locale(self):
         '''Iterate over locale files.'''
@@ -189,8 +191,7 @@ class ProjectFiles(object):
         return os.path.isfile(path)
 
     def _walk(self, base):
-        for d, dirs, files in os.walk(base):
-            yield d, dirs, files
+        yield from os.walk(base)
 
     def match(self, path):
         '''Return the tuple of l10n_path, reference, mergepath, tests

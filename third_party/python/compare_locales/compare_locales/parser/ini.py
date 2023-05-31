@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 import re
 
 from .base import (
@@ -49,10 +47,10 @@ class IniParser(Parser):
         if m:
             return IniSection(ctx, m.span(), m.span('val'))
 
-        return super(IniParser, self).getNext(ctx, offset)
+        return super().getNext(ctx, offset)
 
     def getJunk(self, ctx, offset, *expressions):
         
         
         expressions = expressions + (self.reSection,)
-        return super(IniParser, self).getJunk(ctx, offset, *expressions)
+        return super().getJunk(ctx, offset, *expressions)

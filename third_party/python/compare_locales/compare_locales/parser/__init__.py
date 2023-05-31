@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 import re
 
 from .base import (
@@ -60,7 +58,7 @@ def getParser(path):
             p = entry_point.resolve()()
             if p.use(path):
                 return p
-    except (ImportError, IOError):
+    except (ImportError, OSError):
         pass
     raise UserWarning("Cannot find Parser")
 

@@ -2,11 +2,9 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from io import BytesIO
 import re
 from xml import sax
-import six
 
 from compare_locales.parser import DTDParser
 from .base import Checker, CSSCheckMixin
@@ -30,10 +28,10 @@ class DTDChecker(Checker, CSSCheckMixin):
     tmpl = b'''<!DOCTYPE elem [%s]>
 <elem>%s</elem>
 '''
-    xmllist = set(('amp', 'lt', 'gt', 'apos', 'quot'))
+    xmllist = {'amp', 'lt', 'gt', 'apos', 'quot'}
 
     def __init__(self, extra_tests, locale=None):
-        super(DTDChecker, self).__init__(extra_tests, locale=locale)
+        super().__init__(extra_tests, locale=locale)
         self.processContent = False
         if self.extra_tests is not None and 'android-dtd' in self.extra_tests:
             self.processContent = True
@@ -49,8 +47,7 @@ class DTDChecker(Checker, CSSCheckMixin):
             else self.entities_for_value(refValue)
 
     def entities_for_value(self, value):
-        reflist = set(m.group(1)
-                      for m in self.eref.finditer(value))
+        reflist = {m.group(1) for m in self.eref.finditer(value)}
         reflist -= self.xmllist
         return reflist
 
@@ -75,10 +72,7 @@ class DTDChecker(Checker, CSSCheckMixin):
 
         Return a checker that offers just those entities.
         """
-        for encoding_trouble in super(
-            DTDChecker, self
-        ).check(refEnt, l10nEnt):
-            yield encoding_trouble
+        yield from super().check(refEnt, l10nEnt)
         refValue, l10nValue = refEnt.raw_val, l10nEnt.raw_val
         
         
@@ -91,14 +85,14 @@ class DTDChecker(Checker, CSSCheckMixin):
         parser.setContentHandler(self.defaulthandler)
         try:
             parser.parse(
-                six.BytesIO(self.tmpl %
-                            (entities.encode('utf-8'),
-                             refValue.encode('utf-8'))))
+                BytesIO(self.tmpl %
+                        (entities.encode('utf-8'),
+                         refValue.encode('utf-8'))))
             
             parser.parse(
-                six.BytesIO(self.tmpl %
-                            ((refEnt.all + entities).encode('utf-8'),
-                             b'&%s;' % refEnt.key.encode('utf-8'))))
+                BytesIO(self.tmpl %
+                        ((refEnt.all + entities).encode('utf-8'),
+                         b'&%s;' % refEnt.key.encode('utf-8'))))
         except sax.SAXParseException as e:
             e  
             yield ('warning',
@@ -114,15 +108,15 @@ class DTDChecker(Checker, CSSCheckMixin):
             self.texthandler.textcontent = ''
             parser.setContentHandler(self.texthandler)
         try:
-            parser.parse(six.BytesIO(self.tmpl % (_entities.encode('utf-8'),
+            parser.parse(BytesIO(self.tmpl % (_entities.encode('utf-8'),
                          l10nValue.encode('utf-8'))))
             
             
             parser.setContentHandler(self.defaulthandler)
             parser.parse(
-                six.BytesIO(self.tmpl %
-                            ((l10nEnt.all + _entities).encode('utf-8'),
-                             b'&%s;' % l10nEnt.key.encode('utf-8'))))
+                BytesIO(self.tmpl %
+                        ((l10nEnt.all + _entities).encode('utf-8'),
+                         b'&%s;' % l10nEnt.key.encode('utf-8'))))
         except sax.SAXParseException as e:
             
             
@@ -141,7 +135,7 @@ class DTDChecker(Checker, CSSCheckMixin):
                     col -= len("<!DOCTYPE elem [")  
             yield ('error', (lnr, col), ' '.join(e.args), 'xmlparse')
 
-        warntmpl = u'Referencing unknown entity `%s`'
+        warntmpl = 'Referencing unknown entity `%s`'
         if reflist:
             if inContext:
                 elsewhere = reflist - inContext
@@ -160,7 +154,7 @@ class DTDChecker(Checker, CSSCheckMixin):
             mismatch = sorted(l10nlist - inContext - set(missing))
             for key in mismatch:
                 yield ('warning', (0, 0),
-                       'Entity %s referenced, but %s used in context' % (
+                       'Entity {} referenced, but {} used in context'.format(
                            key,
                            ', '.join(sorted(inContext))
                 ), 'xmlparse')
@@ -173,12 +167,10 @@ class DTDChecker(Checker, CSSCheckMixin):
         if self.length.match(refValue) and not self.length.match(l10nValue):
             yield ('error', 0, 'reference is a CSS length', 'css')
         
-        for t in self.maybe_style(refValue, l10nValue):
-            yield t
+        yield from self.maybe_style(refValue, l10nValue)
 
         if self.extra_tests is not None and 'android-dtd' in self.extra_tests:
-            for t in self.processAndroidContent(self.texthandler.textcontent):
-                yield t
+            yield from self.processAndroidContent(self.texthandler.textcontent)
 
     quoted = re.compile("(?P<q>[\"']).*(?P=q)$")
 

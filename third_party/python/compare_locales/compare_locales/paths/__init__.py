@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import
 from compare_locales import mozpath
 from .files import ProjectFiles, REFERENCE_LOCALE
 from .ini import (
@@ -24,7 +23,7 @@ __all__ = [
 ]
 
 
-class File(object):
+class File:
 
     def __init__(self, fullpath, file, module=None, locale=None):
         self.fullpath = fullpath

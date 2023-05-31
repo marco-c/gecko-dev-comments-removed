@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from collections import Counter
 import os
@@ -11,7 +9,7 @@ from compare_locales import parser, checks
 from compare_locales.paths import File, REFERENCE_LOCALE
 
 
-class L10nLinter(object):
+class L10nLinter:
 
     def lint(self, files, get_reference_and_tests):
         results = []
@@ -44,7 +42,7 @@ class L10nLinter(object):
                 yield result
 
 
-class EntityLinter(object):
+class EntityLinter:
     '''Factored out helper to run linters on a single entity.'''
     def __init__(self, current, checker, reference):
         self.key_count = Counter(entity.key for entity in current)
