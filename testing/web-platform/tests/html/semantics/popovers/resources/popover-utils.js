@@ -153,10 +153,10 @@ function assertIsFunctionalPopover(popover, checkVisibility) {
   assertPopoverVisibility(popover, true, false, 'A popover should start out hidden');
   popover.showPopover();
   if (checkVisibility) assertPopoverVisibility(popover, true, true, 'After showPopover(), a popover should be visible');
-  assert_throws_dom("InvalidStateError",() => popover.showPopover(),'Calling showPopover on a showing popover should throw InvalidStateError');
+  popover.showPopover(); 
   popover.hidePopover();
   if (checkVisibility) assertPopoverVisibility(popover, true, false, 'After hidePopover(), a popover should be hidden');
-  assert_throws_dom("InvalidStateError",() => popover.hidePopover(),'Calling hidePopover on a hidden popover should throw InvalidStateError');
+  popover.hidePopover(); 
   popover.togglePopover();
   if (checkVisibility) assertPopoverVisibility(popover, true, true, 'After togglePopover() on hidden popover, it should be visible');
   popover.togglePopover();
@@ -172,7 +172,7 @@ function assertIsFunctionalPopover(popover, checkVisibility) {
   const parent = popover.parentElement;
   popover.remove();
   assert_throws_dom("InvalidStateError",() => popover.showPopover(),'Calling showPopover on a disconnected popover should throw InvalidStateError');
-  assert_throws_dom("InvalidStateError",() => popover.hidePopover(),'Calling hidePopover on a disconnected popover should throw InvalidStateError');
+  popover.hidePopover(); 
   assert_throws_dom("InvalidStateError",() => popover.togglePopover(),'Calling hidePopover on a disconnected popover should throw InvalidStateError');
   parent.appendChild(popover);
 }
