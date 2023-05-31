@@ -38,7 +38,7 @@ div {
     <li> Click the Done button
   </ul>
 </p>
-
+<!-- draggable is set to false because there is a difference between auto draggable value in different browsers -->
 <object id="obj" draggable="false"></object>
 <button id="done">Done</button>
 <div id="log"></div>
@@ -61,6 +61,12 @@ var previous_done_clicked = 0;
     receivedEvents.push(event.type);
   });
 });
+
+// Simple test to check that passive listeners can't prevent compatibility events.
+target.addEventListener("pointerdown", function(event) {
+    event.preventDefault();
+  },
+  { passive: true, once: true });
 
 document.getElementById('done').addEventListener('click', (e) => done_clicked++);
 
