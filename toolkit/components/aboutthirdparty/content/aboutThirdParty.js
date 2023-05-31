@@ -635,6 +635,9 @@ async function onLoad() {
   Promise.all(backgroundTasks)
     .then(() => {
       gBackgroundTasksDone = true;
+      
+      
+      document.getElementById("background-data-loading").hidden = true;
       if (!hasData) {
         
         
