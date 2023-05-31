@@ -37,26 +37,26 @@ class JSInlineString;
 class JSRope;
 
 namespace JS {
-
 class JS_PUBLIC_API AutoStableStringChars;
-
 }  
 
 namespace js {
 
-namespace frontend {
+class ArrayObject;
+class GenericPrinter;
+class PropertyName;
+class StringBuffer;
 
+namespace frontend {
 class ParserAtomsTable;
 class TaggedParserAtomIndex;
 class WellKnownParserAtoms;
 struct CompilationAtomCache;
-
 }  
 
-class ArrayObject;
-class JS_PUBLIC_API GenericPrinter;
-class PropertyName;
-class StringBuffer;
+namespace jit {
+class MacroAssembler;
+}  
 
 
 static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
