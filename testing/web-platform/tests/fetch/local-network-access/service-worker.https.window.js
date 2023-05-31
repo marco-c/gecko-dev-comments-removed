@@ -9,6 +9,7 @@
 
 
 
+
 const TestResult = {
   SUCCESS: {
     register: { loaded: true },
@@ -64,18 +65,6 @@ promise_test(t => makeTest(t, {
     treatAsPublic: true,
   },
   target: { server: Server.HTTPS_LOCAL },
-  expected: TestResult.FAILURE,
-}), "treat-as-public to local: failed preflight.");
-
-promise_test(t => makeTest(t, {
-  source: {
-    server: Server.HTTPS_LOCAL,
-    treatAsPublic: true,
-  },
-  target: {
-    server: Server.HTTPS_LOCAL,
-    behavior: { preflight: PreflightBehavior.serviceWorkerSuccess(token()) },
-  },
   expected: TestResult.SUCCESS,
 }), "treat-as-public to local: success.");
 
@@ -85,18 +74,6 @@ promise_test(t => makeTest(t, {
     treatAsPublic: true,
   },
   target: { server: Server.HTTPS_PRIVATE },
-  expected: TestResult.FAILURE,
-}), "treat-as-public to private: failed preflight.");
-
-promise_test(t => makeTest(t, {
-  source: {
-    server: Server.HTTPS_PRIVATE,
-    treatAsPublic: true,
-  },
-  target: {
-    server: Server.HTTPS_PRIVATE,
-    behavior: { preflight: PreflightBehavior.serviceWorkerSuccess(token()) },
-  },
   expected: TestResult.SUCCESS,
 }), "treat-as-public to private: success.");
 

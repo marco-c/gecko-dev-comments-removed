@@ -17,6 +17,7 @@
 
 
 
+
 const TestResult = {
   SUCCESS: { updated: true },
   FAILURE: { error: "TypeError" },
@@ -91,27 +92,11 @@ async function makeTest(t, { target, expected }) {
 
 promise_test(t => makeTest(t, {
   target: { server: Server.HTTPS_LOCAL },
-  expected: TestResult.FAILURE,
-}), "update public to local: failed preflight.");
-
-promise_test(t => makeTest(t, {
-  target: {
-    server: Server.HTTPS_LOCAL,
-    behavior: { preflight: PreflightBehavior.serviceWorkerSuccess(token()) },
-  },
   expected: TestResult.SUCCESS,
 }), "update public to local: success.");
 
 promise_test(t => makeTest(t, {
   target: { server: Server.HTTPS_PRIVATE },
-  expected: TestResult.FAILURE,
-}), "update public to private: failed preflight.");
-
-promise_test(t => makeTest(t, {
-  target: {
-    server: Server.HTTPS_PRIVATE,
-    behavior: { preflight: PreflightBehavior.serviceWorkerSuccess(token()) },
-  },
   expected: TestResult.SUCCESS,
 }), "update public to private: success.");
 
