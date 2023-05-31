@@ -72,10 +72,10 @@ class nsPageFrame final : public nsContainerFrame {
   
   
   
-  float ComputePageSizeScale(const nsSize aContentPageSize) const;
-  inline float ComputePageSizeScale() const {
-    return ComputePageSizeScale(ComputePageSize());
-  }
+  
+  
+  
+  float ComputeSinglePPSPageSizeScale(const nsSize aContentPageSize) const;
 
   
   

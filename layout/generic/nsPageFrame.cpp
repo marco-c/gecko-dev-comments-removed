@@ -66,7 +66,10 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-  const float pageSizeScale = ComputePageSizeScale(pageSize);
+  
+  const auto* ppsInfo = GetSharedPageData()->PagesPerSheetInfo();
+  const float pageSizeScale =
+      ppsInfo->mNumPages == 1 ? ComputeSinglePPSPageSizeScale(pageSize) : 1.0f;
   
   
   
@@ -550,7 +553,7 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   gfx::Matrix4x4 transform;
 
   if (ppsInfo->mNumPages == 1) {
-    float scale = pageFrame->ComputePageSizeScale(contentPageSize);
+    float scale = pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
     transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
     return transform;
   }
@@ -700,7 +703,10 @@ nsSize nsPageFrame::ComputePageSize() const {
   return size;
 }
 
-float nsPageFrame::ComputePageSizeScale(const nsSize aContentPageSize) const {
+float nsPageFrame::ComputeSinglePPSPageSizeScale(
+    const nsSize aContentPageSize) const {
+  MOZ_ASSERT(GetSharedPageData()->PagesPerSheetInfo()->mNumPages == 1,
+             "Only intended for the pps==1 case");
   MOZ_ASSERT(aContentPageSize == ComputePageSize(),
              "Incorrect content page size");
 
