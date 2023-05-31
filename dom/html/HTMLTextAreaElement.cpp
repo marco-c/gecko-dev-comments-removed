@@ -714,19 +714,7 @@ HTMLTextAreaElement::SubmitNamesValues(FormData* aFormData) {
   }
 
   
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::dirname)) {
-    nsAutoString dirname;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::dirname, dirname);
-    if (!dirname.IsEmpty()) {
-      const Directionality eDir = GetDirectionality();
-      MOZ_ASSERT(eDir == eDir_RTL || eDir == eDir_LTR,
-                 "The directionality of an element is either ltr or rtl");
-      const nsString dir = eDir == eDir_LTR ? u"ltr"_ns : u"rtl"_ns;
-      return aFormData->AddNameValuePair(dirname, dir);
-    }
-  }
-
-  return NS_OK;
+  return SubmitDirnameDir(aFormData);
 }
 
 void HTMLTextAreaElement::SaveState() {
