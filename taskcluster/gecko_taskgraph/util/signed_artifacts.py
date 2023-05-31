@@ -56,14 +56,8 @@ def generate_specifications_of_artifacts_to_sign(
     
     elif "macosx" in build_platform:
         langpack_formats = []
-        if is_notarization_kind(dep_kind) or is_mac_signing_king(dep_kind):
-            
-            
-            
-            formats = []
-            if config.kind.endswith("-mac-notarization"):
-                
-                formats = ["apple_notarization"]
+        if is_notarization_kind(config.kind):
+            formats = ["apple_notarization"]
             artifacts_specifications = [
                 {
                     "artifacts": [
@@ -74,8 +68,6 @@ def generate_specifications_of_artifacts_to_sign(
                 }
             ]
         else:
-            
-            
             
             if is_partner_kind(kind):
                 extension = "tar.gz"

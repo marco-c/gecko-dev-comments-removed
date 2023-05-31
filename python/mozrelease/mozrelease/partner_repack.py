@@ -513,11 +513,16 @@ class RepackMac(RepackBase):
 
     def getAppName(self):
         
-        
         t = tarfile.open(self.build.rsplit(".", 1)[0])
         for name in t.getnames():
-            if name.endswith(".app"):
-                return name
+            root_object = name.split("/")[0]
+            if root_object.endswith(".app"):
+                log.info(f"Found app name in tarball: {root_object}")
+                return root_object
+        log.error(
+            f"Error: Unable to determine app name from tarball: {self.build} - Expected .app in root"
+        )
+        sys.exit(1)
 
     def copyFiles(self):
         super(RepackMac, self).copyFiles(Path(self.appName) / MAC_DEST_DIR)
