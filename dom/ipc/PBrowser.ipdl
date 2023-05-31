@@ -228,13 +228,6 @@ parent:
 
 
 
-    sync DispatchFocusToTopLevelWindow();
-
-    
-
-
-
-
     [Priority=control] async DidUnsuppressPainting();
 
     async DidUnsuppressPaintingNormalPriority();
