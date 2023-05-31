@@ -122,6 +122,9 @@ const METRICS = [
 ];
 
 add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
+  
+  
+  Glean.testOnly.badCode;
   for (let metric of METRICS) {
     Services.fog.testRegisterRuntimeMetric(...metric);
   }
@@ -170,6 +173,9 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
 add_task(
   { skip_if: () => !runningInParent },
   async function test_child_metrics() {
+    
+    
+    Glean.testOnly.badCode;
     for (let metric of METRICS) {
       Services.fog.testRegisterRuntimeMetric(...metric);
     }
