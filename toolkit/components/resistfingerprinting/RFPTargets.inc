@@ -2,32 +2,28 @@
 
 
 
-ITEM_VALUE(TouchEvents, 0x0001)
-ITEM_VALUE(PointerEvents, 0x0002)
-ITEM_VALUE(KeyboardEvents, 0x0003)
-
-ITEM_VALUE(ScreenOrientation, 0x0005)
-
-
-ITEM_VALUE(SpeechSynthesis, 0x0006)
-
-
-ITEM_VALUE(CSSPrefersColorScheme, 0x0007)
-
-
-ITEM_VALUE(CSSPrefersReducedMotion, 0x0008)
-
-
-ITEM_VALUE(CSSPrefersContrast, 0x0009)
-
-
-ITEM_VALUE(CanvasRandomization, 0x000A)
 
 
 
-ITEM_VALUE(CanvasImageExtractionPrompt, 0x000B)
-ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 0x000C)
-ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 0x000D)
+ITEM_VALUE(TouchEvents,                 1u << 0)
+ITEM_VALUE(PointerEvents,               1u << 1)
+ITEM_VALUE(KeyboardEvents,              1u << 2)
+ITEM_VALUE(ScreenOrientation,           1u << 3)
+
+ITEM_VALUE(SpeechSynthesis,             1u << 4)
+
+ITEM_VALUE(CSSPrefersColorScheme,       1u << 5)
+
+ITEM_VALUE(CSSPrefersReducedMotion,     1u << 6)
+
+ITEM_VALUE(CSSPrefersContrast,          1u << 7)
+
+ITEM_VALUE(CanvasRandomization,         1u << 8)
+
+
+ITEM_VALUE(CanvasImageExtractionPrompt, 1u << 9)
+ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 1u << 10)
+ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 1u << 11)
 
 
 
@@ -38,11 +34,14 @@ ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 0x000D)
 
 
 
-ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0xFFFE)
+
+
+
+ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0)
 
 
 
 
 
 
-ITEM_VALUE(Unknown, 0xFFFF)
+ITEM_VALUE(Unknown, 0xffffffff)
