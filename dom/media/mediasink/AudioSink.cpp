@@ -53,12 +53,20 @@ AudioSink::AudioSink(AbstractThread* aThread,
       mProcessedQueueThresholdMS(
           StaticPrefs::media_audio_audiosink_threshold_ms()) {
   
-  float capacitySeconds = mProcessedQueueThresholdMS / 1000.f * 2;
-  mProcessedSPSCQueue =
-      MakeUnique<SPSCQueue<AudioDataValue>>(static_cast<uint32_t>(
-          capacitySeconds * static_cast<float>(mOutputChannels * mOutputRate)));
+  if (!aInfo.IsValid()) {
+    mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(0);
+    return;
+  }
+  
+  double capacitySeconds = mProcessedQueueThresholdMS / 1000.f * 2;
+  
+  int elementCount = static_cast<int>(std::clamp(capacitySeconds * mOutputChannels * mOutputRate,
+                                      0., std::numeric_limits<int>::max() - 1.));
+  elementCount -= elementCount % mOutputChannels;
+  mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(elementCount);
   SINK_LOG("Ringbuffer has space for %u elements (%lf seconds)",
-           mProcessedSPSCQueue->Capacity(), capacitySeconds);
+           mProcessedSPSCQueue->Capacity(),
+           static_cast<float>(elementCount) / mOutputChannels / mOutputRate);
   
   
   RefPtr<AudioData> frontPacket = mAudioQueue.PeekFront();
