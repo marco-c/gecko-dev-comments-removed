@@ -41,7 +41,9 @@ from mercurial import (
 
 EXIT_PURGE_CACHE = 72
 
-testedwith = b"4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9"
+testedwith = (
+    b"4.5 4.6 4.7 4.8 4.9 5.0 5.1 5.2 5.3 5.4 5.5 5.6 5.7 5.8 5.9 6.0 6.1 6.2 6.3 6.4"
+)
 minimumhgversion = b"4.5"
 
 cmdtable = {}
@@ -806,7 +808,14 @@ def _docheckout(
             
             
             
-            with repo.wlock(), repo.dirstate.parentchange(), timeit(
+            
+            
+            def parentchange(repo):
+                if util.safehasattr(repo.dirstate, "changing_parents"):
+                    return repo.dirstate.changing_parents(repo)
+                return repo.dirstate.parentchange()
+
+            with repo.wlock(), parentchange(repo), timeit(
                 "sparse_update_config", "sparse-update-config"
             ):
                 
