@@ -43,9 +43,7 @@ class mock_Link : public mozilla::dom::Link {
   bool GotNotified() const { return !mDeathGrip; }
 
   void AwaitNewNotification(Handler aNewHandler) {
-    MOZ_ASSERT(
-        !mDeathGrip || !mozilla::StaticPrefs::layout_css_notify_of_unvisited(),
-        "Still waiting for a notification");
+    MOZ_ASSERT(!mDeathGrip, "Still waiting for a notification");
     
     
     

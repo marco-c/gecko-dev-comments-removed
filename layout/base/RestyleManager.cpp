@@ -3307,17 +3307,10 @@ void RestyleManager::ElementStateChanged(Element* aElement,
   
   
   
-  
-  
-  
-  
   if (aChangedBits.HasAllStates(kVisitedAndUnvisited)) {
-    if (!Gecko_VisitedStylesEnabled(aElement->OwnerDoc()) ||
-        StaticPrefs::layout_css_always_repaint_on_unvisited()) {
-      aChangedBits &= ~kVisitedAndUnvisited;
-      if (aChangedBits.IsEmpty()) {
-        return;
-      }
+    aChangedBits &= ~kVisitedAndUnvisited;
+    if (aChangedBits.IsEmpty()) {
+      return;
     }
   }
 
