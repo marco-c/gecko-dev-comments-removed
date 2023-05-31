@@ -34,9 +34,9 @@ async function sendTab() {
 
 
 
-async function sendEscape() {
+async function sendEscape(element) {
   await waitForRender();
-  await new test_driver.send_keys(document.body,'\uE00C'); 
+  await new test_driver.send_keys(element ? element : document.body,'\uE00C'); 
   await waitForRender();
 }
 async function sendEnter() {
