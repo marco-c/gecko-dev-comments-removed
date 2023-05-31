@@ -385,13 +385,6 @@ class gfxTextRun : public gfxShapedText {
                                 HyphenationState* aWordState);
 
   
-  
-  struct TrimmableWS {
-    mozilla::gfx::Float mAdvance = 0;
-    uint32_t mCount = 0;
-  };
-
-  
 
 
 
@@ -462,7 +455,7 @@ class gfxTextRun : public gfxShapedText {
       SuppressBreak aSuppressBreak, gfxFont::BoundingBoxType aBoundingBoxType,
       DrawTarget* aRefDrawTarget, bool aCanWordWrap, bool aCanWhitespaceWrap,
       
-      TrimmableWS* aOutTrimmableWhitespace,  
+      gfxFloat* aOutTrimmableWhitespace,  
       Metrics& aOutMetrics, bool& aOutUsedHyphenation, uint32_t& aOutLastBreak,
       
       gfxBreakPriority& aBreakPriority);

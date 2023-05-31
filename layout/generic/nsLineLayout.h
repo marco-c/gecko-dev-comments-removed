@@ -10,7 +10,6 @@
 #define nsLineLayout_h___
 
 #include "gfxTypes.h"
-#include "gfxTextRun.h"
 #include "JustificationUtils.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/WritingModes.h"
@@ -527,9 +526,7 @@ class nsLineLayout {
 
   
   
-  nscoord GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL) const;
-  gfxTextRun::TrimmableWS GetTrimFrom(const PerSpanData* aSpan,
-                                      bool aLineIsRTL) const;
+  nscoord GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL);
 
   gfxBreakPriority mLastOptionalBreakPriority;
   int32_t mLastOptionalBreakFrameOffset;
