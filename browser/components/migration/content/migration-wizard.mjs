@@ -182,7 +182,7 @@ export class MigrationWizard extends HTMLElement {
             </ol>
             <moz-button-group class="buttons" part="buttons">
               <button class="cancel-close" data-l10n-id="migration-cancel-button-label"></button>
-              <button id="safari-request-permissions" class="primary" data-l10n-id="migration-wizard-safari-select-button"></button>
+              <button id="safari-request-permissions" class="primary" data-l10n-id="migration-continue-button-label"></button>
             </moz-button-group>
           </div>
 
@@ -606,6 +606,7 @@ export class MigrationWizard extends HTMLElement {
           "migration-wizard-progress-icon-in-progress"
         );
         progressIcon.classList.remove("completed");
+        successText.textContent = "";
         // With no status text, we re-insert the &nbsp; so that the status
         // text area does not fully collapse.
         successText.appendChild(document.createTextNode("\u00A0"));
