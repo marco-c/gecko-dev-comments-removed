@@ -33,37 +33,40 @@ class RegExpFlag {
   
 
 
-  static constexpr uint8_t HasIndices = 0b100'0000;
+  static constexpr uint8_t HasIndices = 0b0100'0000;
 
   
 
 
 
-  static constexpr uint8_t Global = 0b000'0010;
+  static constexpr uint8_t Global = 0b0000'0010;
 
   
 
 
 
-  static constexpr uint8_t IgnoreCase = 0b000'0001;
+  static constexpr uint8_t IgnoreCase = 0b0000'0001;
 
   
-  static constexpr uint8_t Multiline = 0b000'0100;
+  static constexpr uint8_t Multiline = 0b0000'0100;
 
   
-  static constexpr uint8_t DotAll = 0b010'0000;
+  static constexpr uint8_t DotAll = 0b0010'0000;
 
   
-  static constexpr uint8_t Unicode = 0b001'0000;
+  static constexpr uint8_t Unicode = 0b0001'0000;
 
   
-  static constexpr uint8_t Sticky = 0b000'1000;
+  static constexpr uint8_t UnicodeSets = 0b1000'0000;
 
   
-  static constexpr uint8_t NoFlags = 0b000'0000;
+  static constexpr uint8_t Sticky = 0b0000'1000;
 
   
-  static constexpr uint8_t AllFlags = 0b111'1111;
+  static constexpr uint8_t NoFlags = 0b0000'0000;
+
+  
+  static constexpr uint8_t AllFlags = 0b1111'1111;
 };
 
 
@@ -119,6 +122,7 @@ class RegExpFlags {
   bool multiline() const { return flags_ & RegExpFlag::Multiline; }
   bool dotAll() const { return flags_ & RegExpFlag::DotAll; }
   bool unicode() const { return flags_ & RegExpFlag::Unicode; }
+  bool unicodeSets() const { return flags_ & RegExpFlag::UnicodeSets; }
   bool sticky() const { return flags_ & RegExpFlag::Sticky; }
 
   explicit operator bool() const { return flags_ != 0; }
