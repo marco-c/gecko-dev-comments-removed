@@ -41,13 +41,17 @@ struct RayReferenceData {
   CSSPoint mInitialPosition;
   
   CSSRect mContainingBlockRect;
+  
+  
+  CSSSize mBorderBoxSize;
 
   RayReferenceData() = default;
   explicit RayReferenceData(const nsIFrame* aFrame);
 
   bool operator==(const RayReferenceData& aOther) const {
     return mInitialPosition == aOther.mInitialPosition &&
-           mContainingBlockRect == aOther.mContainingBlockRect;
+           mContainingBlockRect == aOther.mContainingBlockRect &&
+           mBorderBoxSize == aOther.mBorderBoxSize;
   }
 };
 
