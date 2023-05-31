@@ -36,19 +36,13 @@ interface nsICertOverride : nsISupports {
 
 
 
-  readonly attribute boolean isTemporary;
-
-  
-
-
-  readonly attribute ACString dbKey;
-
-  
-
-
-
 
   readonly attribute ACString hostPort;
+
+  
+
+
+  readonly attribute ACString fingerprint;
 
   
 
