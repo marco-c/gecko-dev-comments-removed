@@ -109,21 +109,6 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         return result
 
     
-    patterns = []
-    arg_wrapper = ""
-    if is_windows():
-        arg_wrapper = '"'
-    for p in paths:
-        filename, file_extension = os.path.splitext(p)
-        if file_extension:
-            patterns.append(p)
-        else:
-            patterns.append(
-                "{}{}/**/*.+({}){}".format(
-                    arg_wrapper, p, "|".join(config["extensions"]), arg_wrapper
-                )
-            )
-
     cmd_args = (
         [
             binary,
@@ -135,7 +120,7 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         
         
         
-        + patterns
+        + paths
     )
     log.debug("Prettier command: {}".format(" ".join(cmd_args)))
 
@@ -234,18 +219,29 @@ def run_prettier(cmd_args, config, fix):
         return {"results": [], "fixed": 0}
 
     if errors:
-        errors = errors.decode(encoding, "replace")
+        errors = errors.decode(encoding, "replace").strip().split("\n")
+        errors = [
+            error
+            for error in errors
+            if not (
+                "No supported files were found" in error
+                or "No files matching the pattern were found" in error
+                
+                
+                or "Ignored unknown option" in error
+            )
+        ]
         
         
         
-        if "No matching files." in errors:
-            return {"results": [], "fixed": 0}
-        print(PRETTIER_ERROR_MESSAGE.format(errors))
-
-    if proc.returncode >= 2:
-        return 1
+        if len(errors):
+            print(PRETTIER_ERROR_MESSAGE.format("\n".join(errors)))
 
     if not output:
+        
+        if errors and len(errors):
+            return 1
+
         return {"results": [], "fixed": 0}  
 
     output = output.decode(encoding, "replace").splitlines()
