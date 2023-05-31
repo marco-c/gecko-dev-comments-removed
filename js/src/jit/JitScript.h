@@ -57,7 +57,6 @@ class JitZone;
 
 struct IonBytecodeInfo {
   bool usesEnvironmentChain = false;
-  bool modifiesArguments = false;
 };
 
 
@@ -430,9 +429,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   EnvironmentObject* templateEnvironment() const { return templateEnv_.ref(); }
 
-  bool modifiesArguments() const {
-    return cachedIonBytecodeInfo().modifiesArguments;
-  }
   bool usesEnvironmentChain() const {
     return cachedIonBytecodeInfo().usesEnvironmentChain;
   }
