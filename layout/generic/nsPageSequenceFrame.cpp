@@ -332,6 +332,14 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   nscoord maxInflatedSheetHeight = 0;
 
   
+  
+  
+  nsSize sheetSize = aPresContext->GetPageSize();
+  if (mPageData->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    std::swap(sheetSize.width, sheetSize.height);
+  }
+
+  
   for (nsIFrame* kidFrame : mFrames) {
     
     MOZ_ASSERT(kidFrame->IsPrintedSheetFrame(),
@@ -342,8 +350,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     
     
     sheet->ClaimPageFrameFromPrevInFlow();
-
-    const nsSize sheetSize = sheet->PrecomputeSheetSize(aPresContext);
 
     
     ReflowInput kidReflowInput(
@@ -370,8 +376,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
 
     FinishReflowChild(kidFrame, aPresContext, kidReflowOutput, &kidReflowInput,
                       x, y, ReflowChildFlags::Default);
-    MOZ_ASSERT(kidFrame->GetSize() == sheetSize,
-               "PrintedSheetFrame::PrecomputeSheetSize gave the wrong size!");
     y += kidReflowOutput.Height();
     y += pageCSSMargin.bottom;
 

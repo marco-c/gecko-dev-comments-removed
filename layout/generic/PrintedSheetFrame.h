@@ -55,22 +55,6 @@ class PrintedSheetFrame final : public nsContainerFrame {
   nscoord GetGridCellWidth() const { return mGridCellWidth; }
   nscoord GetGridCellHeight() const { return mGridCellHeight; }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  nsSize PrecomputeSheetSize(const nsPresContext* aPresContext);
-  nsSize GetPrecomputedSheetSize() const { return mPrecomputedSize; }
-
  private:
   
   
@@ -91,8 +75,6 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   
   void ComputePagesPerSheetGridMetrics(const nsSize& aSheetSize);
-
-  nsSize mPrecomputedSize;
 
   
   
