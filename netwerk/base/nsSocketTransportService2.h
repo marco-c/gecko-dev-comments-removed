@@ -164,20 +164,20 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   RefPtr<nsSocketTransportService> mSelf;
 
-  Mutex mLock MOZ_UNANNOTATED{"nsSocketTransportService::mLock"};
+  Mutex mLock{"nsSocketTransportService::mLock"};
   
 
   
   
   
   
-  nsCOMPtr<nsIThread> mThread;
+  nsCOMPtr<nsIThread> mThread MOZ_GUARDED_BY(mLock);
   
   
-  nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher;
-  UniquePtr<PollableEvent> mPollableEvent;
-  bool mOffline{false};
-  bool mGoingOffline{false};
+  nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher MOZ_GUARDED_BY(mLock);
+  UniquePtr<PollableEvent> mPollableEvent MOZ_GUARDED_BY(mLock);
+  bool mOffline MOZ_GUARDED_BY(mLock) = false;
+  bool mGoingOffline MOZ_GUARDED_BY(mLock) = false;
 
   
   void Reset(bool aGuardLocals);
@@ -288,7 +288,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   bool mKeepaliveEnabledPref{false};
   
-  TimeDuration mPollableEventTimeout;
+  TimeDuration mPollableEventTimeout MOZ_GUARDED_BY(mLock);
 
   Atomic<bool> mServingPendingQueue{false};
   Atomic<int32_t, Relaxed> mMaxTimePerPollIter{100};
