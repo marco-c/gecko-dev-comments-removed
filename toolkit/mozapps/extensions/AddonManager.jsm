@@ -781,6 +781,23 @@ var AddonManagerInternal = {
       gStartedPromise.reject("startup failed");
     }
 
+    
+    
+    if (
+      Services.prefs.getBoolPref(
+        "extensions.webextensions.addons-restricted-domains@mozilla.com.disabled",
+        false
+      )
+    ) {
+      Services.prefs.setBoolPref(
+        "extensions.quarantinedDomains.enabled",
+        false
+      );
+      logger.debug(
+        "Disabled quarantined domains because the system add-on was disabled"
+      );
+    }
+
     logger.debug("Completed startup sequence");
     this.callManagerListeners("onStartup");
   },
