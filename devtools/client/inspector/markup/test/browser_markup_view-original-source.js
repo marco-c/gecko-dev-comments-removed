@@ -7,7 +7,7 @@ const TEST_URI = URL_ROOT + "doc_markup_view-original-source.html";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, tab, toolbox } = await openInspectorForURL(TEST_URI);
 
   const nodeFront = await getNodeFront("#foo", inspector);

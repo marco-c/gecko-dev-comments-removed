@@ -10,7 +10,7 @@ var { Front } = require("resource://devtools/shared/protocol/Front.js");
 
 
 
-var generateRequestMethods = function(actorSpec, frontProto) {
+var generateRequestMethods = function (actorSpec, frontProto) {
   if (frontProto._actorSpec) {
     throw new Error("frontProto called twice on the same front prototype!");
   }
@@ -22,7 +22,7 @@ var generateRequestMethods = function(actorSpec, frontProto) {
   methods.forEach(spec => {
     const name = spec.name;
 
-    frontProto[name] = function(...args) {
+    frontProto[name] = function (...args) {
       
       if (this.isDestroyed()) {
         throw new Error(
@@ -72,7 +72,7 @@ var generateRequestMethods = function(actorSpec, frontProto) {
     
     if (spec.release) {
       const fn = frontProto[name];
-      frontProto[name] = function(...args) {
+      frontProto[name] = function (...args) {
         return fn.apply(this, args).then(result => {
           this.destroy();
           return result;
@@ -110,7 +110,7 @@ var generateRequestMethods = function(actorSpec, frontProto) {
 
 
 
-var FrontClassWithSpec = function(actorSpec) {
+var FrontClassWithSpec = function (actorSpec) {
   class OneFront extends Front {}
   generateRequestMethods(actorSpec, OneFront.prototype);
   return OneFront;

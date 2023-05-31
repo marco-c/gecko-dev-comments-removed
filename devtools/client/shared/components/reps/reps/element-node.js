@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const {
     button,
@@ -84,7 +84,7 @@ define(function(require, exports, module) {
       
       if (shouldRenderTooltip) {
         
-        const tooltipString = tinyElements.reduce(function(acc, cur) {
+        const tooltipString = tinyElements.reduce(function (acc, cur) {
           return acc.concat(cur.content);
         }, "");
 
@@ -92,7 +92,7 @@ define(function(require, exports, module) {
       }
 
       
-      const tinyElementsRender = tinyElements.reduce(function(acc, cur) {
+      const tinyElementsRender = tinyElements.reduce(function (acc, cur) {
         acc.push(span(cur.config, cur.content));
         return acc;
       }, []);

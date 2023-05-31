@@ -6,7 +6,7 @@
 
 const TEST_URL = URL_ROOT + "doc_inspector_menu.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("devtools.webconsole.input.eagerEvaluation", false);

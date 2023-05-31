@@ -8,7 +8,7 @@
 
 const FILE_ENTRY = "201: ";
 
-onmessage = async function(msg) {
+onmessage = async function (msg) {
   try {
     let extractedPaths = [];
     
@@ -36,7 +36,7 @@ onmessage = async function(msg) {
       let filePathResponse = await fetch(filePath);
       let fileContents = await filePathResponse.blob();
       let fileData = await new Promise(resolve => {
-        reader.onloadend = function() {
+        reader.onloadend = function () {
           resolve(reader.result);
         };
         reader.readAsArrayBuffer(fileContents);

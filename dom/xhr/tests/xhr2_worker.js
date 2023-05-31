@@ -3,7 +3,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   const url = event.data;
 
   var xhr = new XMLHttpRequest();

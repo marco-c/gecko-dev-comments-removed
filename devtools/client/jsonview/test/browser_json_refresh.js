@@ -5,7 +5,7 @@
 
 const TEST_JSON_FILE = "simple_json.json";
 
-add_task(async function() {
+add_task(async function () {
   info("Test JSON refresh started");
 
   
@@ -20,7 +20,7 @@ add_task(async function() {
     tab.linkedBrowser,
     [{ TEST_JSON_FILE }],
     
-    async function({ TEST_JSON_FILE }) {
+    async function ({ TEST_JSON_FILE }) {
       const channel = content.docShell.currentDocumentChannel;
       const channelURI = channel.URI.spec;
       ok(
@@ -61,7 +61,7 @@ add_task(async function() {
     tab.linkedBrowser,
     [{ TEST_JSON_FILE }],
     
-    async function({ TEST_JSON_FILE }) {
+    async function ({ TEST_JSON_FILE }) {
       
       const channel = content.docShell.currentDocumentChannel;
       const channelURI = channel.URI.spec;

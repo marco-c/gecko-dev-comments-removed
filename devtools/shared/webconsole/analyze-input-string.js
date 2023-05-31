@@ -58,7 +58,7 @@ const OPERATOR_CHARS_SET = new Set(";,:=<>+-*%|&^~!".split(""));
 
 
 
-exports.analyzeInputString = function(str, timeout = 2500) {
+exports.analyzeInputString = function (str, timeout = 2500) {
   
   const bodyStack = [];
   let state = STATE_NORMAL;
@@ -359,7 +359,7 @@ exports.analyzeInputString = function(str, timeout = 2500) {
 
 
 
-exports.shouldInputBeAutocompleted = function(inputAnalysisState) {
+exports.shouldInputBeAutocompleted = function (inputAnalysisState) {
   const { err, state, lastStatement } = inputAnalysisState;
 
   
@@ -394,7 +394,7 @@ exports.shouldInputBeAutocompleted = function(inputAnalysisState) {
 
 
 
-exports.shouldInputBeEagerlyEvaluated = function({ lastStatement }) {
+exports.shouldInputBeEagerlyEvaluated = function ({ lastStatement }) {
   const inComputedProperty =
     lastStatement.lastIndexOf("[") !== -1 &&
     lastStatement.lastIndexOf("[") > lastStatement.lastIndexOf("]");

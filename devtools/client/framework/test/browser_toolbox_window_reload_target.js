@@ -30,7 +30,7 @@ const L10N = new LocalizationHelper(
 
 var reloadsSent = 0;
 
-add_task(async function() {
+add_task(async function () {
   await addTab(TEST_URL);
   const tab = gBrowser.selectedTab;
   const toolIDs = await getSupportedToolIds(tab);

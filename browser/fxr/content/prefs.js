@@ -49,7 +49,7 @@ function initClearAllData() {
 
   
   document.getElementById("eClearConfirm").addEventListener("click", () => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, function(
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, function (
       aFailedFlags
     ) {
       if (aFailedFlags == 0) {

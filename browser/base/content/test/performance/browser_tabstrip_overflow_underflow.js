@@ -28,7 +28,7 @@ const EXPECTED_UNDERFLOW_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   gReduceMotionOverride = false;
 
@@ -87,7 +87,7 @@ add_task(async function() {
   };
 
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserOpenTab();
       await BrowserTestUtils.waitForEvent(
@@ -112,7 +112,7 @@ add_task(async function() {
   
   
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserOpenTab();
       await switchDone;
@@ -126,7 +126,7 @@ add_task(async function() {
   );
 
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserTestUtils.removeTab(gBrowser.selectedTab, { animate: true });
       await switchDone;
@@ -149,7 +149,7 @@ add_task(async function() {
 
   
   await withPerfObserver(
-    async function() {
+    async function () {
       let firstTab = gBrowser.tabs[0];
       await BrowserTestUtils.switchTab(gBrowser, firstTab);
       await TestUtils.waitForCondition(() => {
@@ -182,7 +182,7 @@ add_task(async function() {
     
     
     await withPerfObserver(
-      async function() {
+      async function () {
         let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
         BrowserTestUtils.removeTab(lastTab, { animate: true });
         await switchDone;

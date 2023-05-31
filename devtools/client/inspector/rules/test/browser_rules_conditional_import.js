@@ -17,7 +17,7 @@ const TEST_URI = `
   <h1>Hello @import!</h1>
 `;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("layout.css.import-supports.enabled", true);
 

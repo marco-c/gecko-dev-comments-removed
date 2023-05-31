@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   const TEST_URL = MAIN_DOMAIN + "storage-cookies-sort.html";
   await openTabAndSetupStorage(TEST_URL);
   showAllColumns(true);
@@ -53,7 +53,7 @@ function checkCells(expected) {
   const cells = [
     ...gPanelWindow.document.querySelectorAll("#name .table-widget-cell"),
   ];
-  cells.forEach(function(cell, i, arr) {
+  cells.forEach(function (cell, i, arr) {
     
     
     ok(

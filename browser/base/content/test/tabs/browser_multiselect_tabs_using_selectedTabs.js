@@ -2,13 +2,7 @@
 
 
 
-const PREF_MULTISELECT_TABS = "browser.tabs.multiselect";
-
-add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[PREF_MULTISELECT_TABS, true]],
-  });
-
+add_task(async function () {
   function testSelectedTabs(tabs) {
     is(
       gBrowser.tabContainer.getAttribute("aria-multiselectable"),

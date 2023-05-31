@@ -10,7 +10,7 @@ const {
 } = require("resource://devtools/client/shared/remote-debugging/adb/commands/run-command.js");
 
 
-const forwardPort = function(deviceId, localPort, devicePort) {
+const forwardPort = function (deviceId, localPort, devicePort) {
   dumpn("forwardPort " + localPort + " -- " + devicePort);
   
   
@@ -22,7 +22,7 @@ const forwardPort = function(deviceId, localPort, devicePort) {
   });
 };
 
-const getFreeTCPPort = function() {
+const getFreeTCPPort = function () {
   const serv = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
   );
@@ -34,7 +34,7 @@ const getFreeTCPPort = function() {
 
 
 
-const prepareTCPConnection = async function(deviceId, socketPath) {
+const prepareTCPConnection = async function (deviceId, socketPath) {
   const port = getFreeTCPPort();
   const local = `tcp:${port}`;
   const remote = socketPath.startsWith("@")

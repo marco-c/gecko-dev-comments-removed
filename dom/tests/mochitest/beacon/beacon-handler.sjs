@@ -29,7 +29,7 @@ function setOurState(data) {
 
 function getOurState() {
   var data;
-  getObjectState("beacon-handler", function(x) {
+  getObjectState("beacon-handler", function (x) {
     
     if (x) {
       data = x.wrappedJSObject.data;

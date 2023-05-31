@@ -45,7 +45,7 @@ for (const key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-exports.executeSoon = function(fn) {
+exports.executeSoon = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
@@ -70,7 +70,7 @@ exports.executeSoon = function(fn) {
 
 
 
-exports.executeSoonWithMicroTask = function(fn) {
+exports.executeSoonWithMicroTask = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
@@ -101,7 +101,7 @@ exports.executeSoonWithMicroTask = function(fn) {
 
 
 
-exports.waitForTick = function() {
+exports.waitForTick = function () {
   return new Promise(resolve => {
     exports.executeSoon(resolve);
   });
@@ -115,7 +115,7 @@ exports.waitForTick = function() {
 
 
 
-exports.waitForTime = function(delay) {
+exports.waitForTime = function (delay) {
   return new Promise(resolve => setTimeout(resolve, delay));
 };
 
@@ -132,7 +132,7 @@ exports.waitForTime = function(delay) {
 
 
 
-exports.defineLazyPrototypeGetter = function(object, key, callback) {
+exports.defineLazyPrototypeGetter = function (object, key, callback) {
   Object.defineProperty(object, key, {
     configurable: true,
     get() {
@@ -164,7 +164,7 @@ exports.defineLazyPrototypeGetter = function(object, key, callback) {
 
 
 
-exports.getProperty = function(object, key, invokeUnsafeGetters = false) {
+exports.getProperty = function (object, key, invokeUnsafeGetters = false) {
   const root = object;
   while (object && exports.isSafeDebuggerObject(object)) {
     let desc;
@@ -244,7 +244,7 @@ exports.unwrap = function unwrap(obj) {
 
 
 
-exports.isSafeDebuggerObject = function(obj) {
+exports.isSafeDebuggerObject = function (obj) {
   const unwrapped = exports.unwrap(obj);
 
   
@@ -300,7 +300,7 @@ function ensureSideEffectFreeGetters() {
 
 
 
-exports.hasSafeGetter = function(desc) {
+exports.hasSafeGetter = function (desc) {
   
   
   let fn = desc.get;
@@ -349,7 +349,7 @@ exports.hasSafeGetter = function(desc) {
 
 
 
-exports.isUnsafeGetter = function(object, key) {
+exports.isUnsafeGetter = function (object, key) {
   while (object && exports.isSafeDebuggerObject(object)) {
     let desc;
     try {
@@ -382,7 +382,7 @@ exports.isUnsafeGetter = function(object, key) {
 
 
 
-exports.isSafeJSObject = function(obj) {
+exports.isSafeJSObject = function (obj) {
   
   
   if (isWorker) {
@@ -428,7 +428,7 @@ exports.isSafeJSObject = function(obj) {
 
 
 
-exports.dumpn = function(str) {
+exports.dumpn = function (str) {
   if (flags.wantLogging) {
     dump("DBG-SERVER: " + str + "\n");
   }
@@ -440,7 +440,7 @@ exports.dumpn = function(str) {
 
 
 
-exports.dumpv = function(msg) {
+exports.dumpv = function (msg) {
   if (flags.wantVerbose) {
     exports.dumpn(msg);
   }
@@ -457,7 +457,7 @@ exports.dumpv = function(msg) {
 
 
 
-exports.defineLazyGetter = function(object, name, lambda) {
+exports.defineLazyGetter = function (object, name, lambda) {
   Object.defineProperty(object, name, {
     get() {
       delete object[name];
@@ -481,7 +481,7 @@ DevToolsUtils.defineLazyGetter(this, "AppConstants", () => {
 
 
 
-exports.noop = function() {};
+exports.noop = function () {};
 
 let assertionFailureCount = 0;
 
@@ -802,7 +802,7 @@ if (this.isWorker) {
   
   
   
-  exports.fetch = function(url, options) {
+  exports.fetch = function (url, options) {
     return rpc("fetch", url, options);
   };
 } else {
@@ -816,7 +816,7 @@ if (this.isWorker) {
 
 
 
-exports.openFileStream = function(filePath) {
+exports.openFileStream = function (filePath) {
   return new Promise((resolve, reject) => {
     const uri = NetUtil.newURI(new lazy.FileUtils.File(filePath));
     NetUtil.asyncFetch(
@@ -849,7 +849,7 @@ exports.openFileStream = function(filePath) {
 
 
 
-exports.saveAs = async function(
+exports.saveAs = async function (
   parentWindow,
   dataArray,
   fileName = "",
@@ -888,7 +888,7 @@ exports.saveAs = async function(
 
 
 
-exports.showSaveFileDialog = function(
+exports.showSaveFileDialog = function (
   parentWindow,
   suggestedFilename,
   filters = []

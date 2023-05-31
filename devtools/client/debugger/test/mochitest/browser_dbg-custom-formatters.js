@@ -6,7 +6,7 @@
 
 const TEST_FILENAME = `doc_dbg-custom-formatters.html`;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.custom-formatters", true);
   await pushPref("devtools.custom-formatters.enabled", true);

@@ -5,17 +5,17 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   info("Make sure navigation through links in resource:// pages work");
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "resource://gre/" },
-    async function(browser) {
+    async function (browser) {
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         let link = Array.prototype.filter.call(
           content.document.getElementsByClassName("dir"),
-          function(element) {
+          function (element) {
             let name = element.textContent;
             
             
@@ -38,7 +38,7 @@ add_task(async function() {
       );
 
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         let link = content.document
           .getElementById("UI_goUp")
           .getElementsByTagName("a")[0];
@@ -53,10 +53,10 @@ add_task(async function() {
       );
 
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         let link = Array.prototype.filter.call(
           content.document.getElementsByClassName("file"),
-          function(element) {
+          function (element) {
             return element.textContent == "greprefs.js";
           }
         )[0];

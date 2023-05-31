@@ -14,7 +14,7 @@ var parentRunner = null;
 
 
 
-let isSameOrigin = function(w) {
+let isSameOrigin = function (w) {
   try {
     w.top.TestRunner;
   } catch (e) {
@@ -165,7 +165,7 @@ let xOriginRunner = {
 
 
 
-(function() {
+(function () {
   function ancestor(w) {
     return w.parent != w
       ? w.parent
@@ -255,12 +255,12 @@ if (typeof repr == "undefined") {
 
 
 if (typeof partial == "undefined") {
-  this.partial = function(func) {
+  this.partial = function (func) {
     var args = [];
     for (let i = 1; i < arguments.length; i++) {
       args.push(arguments[i]);
     }
-    return function() {
+    return function () {
       if (arguments.length) {
         for (let i = 1; i < arguments.length; i++) {
           args.push(arguments[i]);
@@ -272,13 +272,13 @@ if (typeof partial == "undefined") {
 }
 
 if (typeof getElement == "undefined") {
-  this.getElement = function(id) {
+  this.getElement = function (id) {
     return typeof id == "string" ? document.getElementById(id) : id;
   };
   this.$ = this.getElement;
 }
 
-SimpleTest._newCallStack = function(path) {
+SimpleTest._newCallStack = function (path) {
   var rval = function callStackHandler() {
     var callStack = callStackHandler.callStack;
     for (var i = 0; i < callStack.length; i++) {
@@ -297,7 +297,7 @@ SimpleTest._newCallStack = function(path) {
 };
 
 if (typeof addLoadEvent == "undefined") {
-  this.addLoadEvent = function(func) {
+  this.addLoadEvent = function (func) {
     var existing = window.onload;
     var regfunc = existing;
     if (
@@ -338,7 +338,7 @@ function createEl(type, attrs, html) {
 
 
 if (typeof computedStyle == "undefined") {
-  this.computedStyle = function(elem, cssProperty) {
+  this.computedStyle = function (elem, cssProperty) {
     elem = getElement(elem);
     if (elem.currentStyle) {
       return elem.currentStyle[cssProperty];
@@ -396,7 +396,7 @@ function recordIfMatchesFailurePattern(name, diag) {
   return false;
 }
 
-SimpleTest.setExpected = function() {
+SimpleTest.setExpected = function () {
   if (!parentRunner) {
     return;
   }
@@ -416,7 +416,7 @@ SimpleTest.setExpected();
 
 
 
-SimpleTest.ok = function(condition, name) {
+SimpleTest.ok = function (condition, name) {
   if (arguments.length > 2) {
     const diag = "Too many arguments passed to `ok(condition, name)`";
     SimpleTest.record(false, name, diag);
@@ -425,7 +425,7 @@ SimpleTest.ok = function(condition, name) {
   }
 };
 
-SimpleTest.record = function(condition, name, diag, stack, expected) {
+SimpleTest.record = function (condition, name, diag, stack, expected) {
   var test = { result: !!condition, name, diag };
   let successInfo;
   let failureInfo;
@@ -500,14 +500,14 @@ SimpleTest.record = function(condition, name, diag, stack, expected) {
 
 
 
-SimpleTest.is = function(a, b, name) {
+SimpleTest.is = function (a, b, name) {
   
   var pass = Object.is(a, b);
   var diag = pass ? "" : "got " + repr(a) + ", expected " + repr(b);
   SimpleTest.record(pass, name, diag);
 };
 
-SimpleTest.isfuzzy = function(a, b, epsilon, name) {
+SimpleTest.isfuzzy = function (a, b, epsilon, name) {
   var pass = a >= b - epsilon && a <= b + epsilon;
   var diag = pass
     ? ""
@@ -520,7 +520,7 @@ SimpleTest.isfuzzy = function(a, b, epsilon, name) {
   SimpleTest.record(pass, name, diag);
 };
 
-SimpleTest.isnot = function(a, b, name) {
+SimpleTest.isnot = function (a, b, name) {
   var pass = !Object.is(a, b);
   var diag = pass ? "" : "didn't expect " + repr(a) + ", but got it";
   SimpleTest.record(pass, name, diag);
@@ -529,7 +529,7 @@ SimpleTest.isnot = function(a, b, name) {
 
 
 
-SimpleTest.doesThrow = function(fn, name) {
+SimpleTest.doesThrow = function (fn, name) {
   var gotException = false;
   try {
     fn();
@@ -541,7 +541,7 @@ SimpleTest.doesThrow = function(fn, name) {
 
 
 
-SimpleTest.todo = function(condition, name, diag) {
+SimpleTest.todo = function (condition, name, diag) {
   var test = { result: !!condition, name, diag, todo: true };
   if (
     test.result &&
@@ -579,7 +579,7 @@ SimpleTest.todo = function(condition, name, diag) {
 
 
 
-SimpleTest.getTestFileURL = function(path) {
+SimpleTest.getTestFileURL = function (path) {
   var location = window.location;
   
   var remotePath = location.pathname.replace(/\/[^\/]+?$/, "");
@@ -587,7 +587,7 @@ SimpleTest.getTestFileURL = function(path) {
   return url;
 };
 
-SimpleTest._getCurrentTestURL = function() {
+SimpleTest._getCurrentTestURL = function () {
   return (
     (SimpleTest.harnessParameters &&
       SimpleTest.harnessParameters.currentTestURL) ||
@@ -602,7 +602,7 @@ SimpleTest._forceLogMessageOutput = false;
 
 
 
-SimpleTest.requestCompleteLog = function() {
+SimpleTest.requestCompleteLog = function () {
   if (!parentRunner || SimpleTest._forceLogMessageOutput) {
     return;
   }
@@ -610,13 +610,13 @@ SimpleTest.requestCompleteLog = function() {
   parentRunner.structuredLogger.deactivateBuffering();
   SimpleTest._forceLogMessageOutput = true;
 
-  SimpleTest.registerCleanupFunction(function() {
+  SimpleTest.registerCleanupFunction(function () {
     parentRunner.structuredLogger.activateBuffering();
     SimpleTest._forceLogMessageOutput = false;
   });
 };
 
-SimpleTest._logResult = function(test, passInfo, failInfo, stack) {
+SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
   var url = SimpleTest._getCurrentTestURL();
   var result = test.result ? passInfo : failInfo;
   var diagnostic = test.diag || null;
@@ -653,7 +653,7 @@ SimpleTest._logResult = function(test, passInfo, failInfo, stack) {
   }
 };
 
-SimpleTest.info = function(name, message) {
+SimpleTest.info = function (name, message) {
   var log = message ? name + " | " + message : name;
   if (parentRunner) {
     parentRunner.structuredLogger.info(log);
@@ -666,7 +666,7 @@ SimpleTest.info = function(name, message) {
 
 
 
-SimpleTest.todo_is = function(a, b, name) {
+SimpleTest.todo_is = function (a, b, name) {
   var pass = Object.is(a, b);
   var diag = pass
     ? repr(a) + " should equal " + repr(b)
@@ -674,7 +674,7 @@ SimpleTest.todo_is = function(a, b, name) {
   SimpleTest.todo(pass, name, diag);
 };
 
-SimpleTest.todo_isnot = function(a, b, name) {
+SimpleTest.todo_isnot = function (a, b, name) {
   var pass = !Object.is(a, b);
   var diag = pass
     ? repr(a) + " should not equal " + repr(b)
@@ -685,12 +685,12 @@ SimpleTest.todo_isnot = function(a, b, name) {
 
 
 
-SimpleTest.report = function() {
+SimpleTest.report = function () {
   var passed = 0;
   var failed = 0;
   var todo = 0;
 
-  var tallyAndCreateDiv = function(test) {
+  var tallyAndCreateDiv = function (test) {
     var cls, msg, div;
     var diag = test.diag ? " - " + test.diag : "";
     if (test.todo && !test.result) {
@@ -737,7 +737,7 @@ SimpleTest.report = function() {
 
 
 
-SimpleTest.toggle = function(el) {
+SimpleTest.toggle = function (el) {
   if (computedStyle(el, "display") == "block") {
     el.style.display = "none";
   } else {
@@ -748,7 +748,7 @@ SimpleTest.toggle = function(el) {
 
 
 
-SimpleTest.toggleByClass = function(cls, evt) {
+SimpleTest.toggleByClass = function (cls, evt) {
   var children = document.getElementsByTagName("div");
   var elements = [];
   for (var i = 0; i < children.length; i++) {
@@ -777,7 +777,7 @@ SimpleTest.toggleByClass = function(cls, evt) {
 
 
 
-SimpleTest.showReport = function() {
+SimpleTest.showReport = function () {
   var togglePassed = createEl("a", { href: "#" }, "Toggle passed checks");
   var toggleFailed = createEl("a", { href: "#" }, "Toggle failed checks");
   var toggleTodo = createEl("a", { href: "#" }, "Toggle todo checks");
@@ -795,11 +795,11 @@ SimpleTest.showReport = function() {
   var firstChild = body.childNodes[0];
   var addNode;
   if (firstChild) {
-    addNode = function(el) {
+    addNode = function (el) {
       body.insertBefore(el, firstChild);
     };
   } else {
-    addNode = function(el) {
+    addNode = function (el) {
       body.appendChild(el);
     };
   }
@@ -820,7 +820,7 @@ SimpleTest.showReport = function() {
 
 
 
-SimpleTest.waitForExplicitFinish = function() {
+SimpleTest.waitForExplicitFinish = function () {
   SimpleTest._stopOnLoad = false;
 };
 
@@ -835,7 +835,7 @@ SimpleTest.waitForExplicitFinish = function() {
 
 
 
-SimpleTest.requestLongerTimeout = function(factor) {
+SimpleTest.requestLongerTimeout = function (factor) {
   if (parentRunner) {
     parentRunner.requestLongerTimeout(factor);
   } else {
@@ -879,7 +879,7 @@ SimpleTest.requestLongerTimeout = function(factor) {
 
 
 
-SimpleTest.expectAssertions = function(min, max) {
+SimpleTest.expectAssertions = function (min, max) {
   if (parentRunner) {
     parentRunner.expectAssertions(min, max);
   }
@@ -935,7 +935,7 @@ window.setTimeout = function SimpleTest_setTimeoutShim() {
 
 
 
-SimpleTest.requestFlakyTimeout = function(reason) {
+SimpleTest.requestFlakyTimeout = function (reason) {
   SimpleTest.is(typeof reason, "string", "A valid string reason is expected");
   SimpleTest.isnot(reason, "", "Reason cannot be empty");
   SimpleTest._flakyTimeoutIsOK = true;
@@ -968,7 +968,7 @@ SimpleTest.requestFlakyTimeout = function(reason) {
 
 
 
-SimpleTest.promiseFocus = async function(
+SimpleTest.promiseFocus = async function (
   aObject,
   aExpectBlankPage = false,
   aBlurSubframe = false
@@ -1051,14 +1051,14 @@ SimpleTest.promiseFocus = async function(
 
 
 
-SimpleTest.waitForFocus = function(callback, aObject, expectBlankPage) {
+SimpleTest.waitForFocus = function (callback, aObject, expectBlankPage) {
   SimpleTest.promiseFocus(aObject, expectBlankPage).then(focusedBC => {
     callback(focusedBC?.window);
   });
 };
 
 
-SimpleTest.stripLinebreaksAndWhitespaceAfterTags = function(aString) {
+SimpleTest.stripLinebreaksAndWhitespaceAfterTags = function (aString) {
   return aString.replace(/(>\s*(\r\n|\n|\r)*\s*)/gm, ">");
 };
 
@@ -1119,7 +1119,7 @@ const kTextHtmlSuffixClipboardDataWindows =
 
 
 
-SimpleTest.waitForClipboard = function(
+SimpleTest.waitForClipboard = function (
   aExpectedStringOrValidatorFn,
   aSetupFn,
   aSuccessFn,
@@ -1143,7 +1143,7 @@ SimpleTest.waitForClipboard = function(
 
 
 
-SimpleTest.promiseClipboardChange = async function(
+SimpleTest.promiseClipboardChange = async function (
   aExpectedStringOrValidatorFn,
   aSetupFn,
   aFlavor,
@@ -1167,7 +1167,7 @@ SimpleTest.promiseClipboardChange = async function(
       );
     }
 
-    inputValidatorFn = function(aData) {
+    inputValidatorFn = function (aData) {
       return aData != initialVal;
     };
     
@@ -1178,7 +1178,7 @@ SimpleTest.promiseClipboardChange = async function(
       );
     }
     if (requestedFlavor === "text/html" && navigator.platform.includes("Win")) {
-      inputValidatorFn = function(aData) {
+      inputValidatorFn = function (aData) {
         return (
           aData.replace(/\r\n?/g, "\n") ===
           kTextHtmlPrefixClipboardDataWindows +
@@ -1187,7 +1187,7 @@ SimpleTest.promiseClipboardChange = async function(
         );
       };
     } else {
-      inputValidatorFn = function(aData) {
+      inputValidatorFn = function (aData) {
         return aData.replace(/\r\n?/g, "\n") === aExpectedStringOrValidatorFn;
       };
     }
@@ -1237,10 +1237,10 @@ SimpleTest.promiseClipboardChange = async function(
     
     SimpleTest.info(`Initializing clipboard with "${preExpectedVal}"...`);
     await putAndVerify(
-      function() {
+      function () {
         SpecialPowers.clipboardCopyString(preExpectedVal);
       },
-      function(aData) {
+      function (aData) {
         return aData == preExpectedVal;
       },
       "text/plain",
@@ -1273,10 +1273,10 @@ SimpleTest.promiseClipboardChange = async function(
 
 
 
-SimpleTest.waitForCondition = function(aCond, aCallback, aErrorMsg) {
+SimpleTest.waitForCondition = function (aCond, aCallback, aErrorMsg) {
   this.promiseWaitForCondition(aCond, aErrorMsg).then(() => aCallback());
 };
-SimpleTest.promiseWaitForCondition = async function(aCond, aErrorMsg) {
+SimpleTest.promiseWaitForCondition = async function (aCond, aErrorMsg) {
   for (let tries = 0; tries < 30; ++tries) {
     
     await new Promise(resolve => {
@@ -1304,7 +1304,7 @@ SimpleTest.promiseWaitForCondition = async function(aCond, aErrorMsg) {
 
 
 
-SimpleTest.executeSoon = function(aFunc) {
+SimpleTest.executeSoon = function (aFunc) {
   if ("SpecialPowers" in window) {
     return SpecialPowers.executeSoon(aFunc, window);
   }
@@ -1321,15 +1321,15 @@ SimpleTest.executeSoon = function(aFunc) {
 
 
 
-SimpleTest.registerCleanupFunction = function(aFunc) {
+SimpleTest.registerCleanupFunction = function (aFunc) {
   SimpleTest._cleanupFunctions.push(aFunc);
 };
 
-SimpleTest.registerTimeoutFunction = function(aFunc) {
+SimpleTest.registerTimeoutFunction = function (aFunc) {
   SimpleTest._timeoutFunctions.push(aFunc);
 };
 
-SimpleTest.testInChaosMode = function() {
+SimpleTest.testInChaosMode = function () {
   if (SimpleTest._inChaosMode) {
     
     return;
@@ -1341,14 +1341,14 @@ SimpleTest.testInChaosMode = function() {
   SimpleTest.requestLongerTimeout(20);
 };
 
-SimpleTest.timeout = async function() {
+SimpleTest.timeout = async function () {
   for (const func of SimpleTest._timeoutFunctions) {
     await func();
   }
   SimpleTest._timeoutFunctions = [];
 };
 
-SimpleTest.finishWithFailure = function(msg) {
+SimpleTest.finishWithFailure = function (msg) {
   SimpleTest.ok(false, msg);
   SimpleTest.finish();
 };
@@ -1357,7 +1357,7 @@ SimpleTest.finishWithFailure = function(msg) {
 
 
 
-SimpleTest.finish = function() {
+SimpleTest.finish = function () {
   if (SimpleTest._alreadyFinished) {
     var err =
       "TEST-UNEXPECTED-FAIL | SimpleTest | this test already called finish!";
@@ -1428,7 +1428,7 @@ SimpleTest.finish = function() {
     SimpleTest._inChaosMode = false;
   }
 
-  var afterCleanup = async function() {
+  var afterCleanup = async function () {
     SpecialPowers.removeFiles();
 
     if (SpecialPowers.DOMWindowUtils.isTestControllingRefreshes) {
@@ -1499,8 +1499,8 @@ SimpleTest.finish = function() {
       }
 
       if (!parentRunner || parentRunner.showTestReport) {
-        SpecialPowers.flushPermissions(function() {
-          SpecialPowers.flushPrefEnv(function() {
+        SpecialPowers.flushPermissions(function () {
+          SpecialPowers.flushPrefEnv(function () {
             SimpleTest.showReport();
           });
         });
@@ -1514,7 +1514,7 @@ SimpleTest.finish = function() {
     }
   };
 
-  var executeCleanupFunction = function() {
+  var executeCleanupFunction = function () {
     var func = SimpleTest._cleanupFunctions.pop();
 
     if (!func) {
@@ -1574,7 +1574,11 @@ SimpleTest.finish = function() {
 
 
 
-SimpleTest.monitorConsole = function(continuation, msgs, forbidUnexpectedMsgs) {
+SimpleTest.monitorConsole = function (
+  continuation,
+  msgs,
+  forbidUnexpectedMsgs
+) {
   if (SimpleTest._stopOnLoad) {
     ok(false, "Console monitoring requires use of waitForExplicitFinish.");
   }
@@ -1666,7 +1670,7 @@ SimpleTest.monitorConsole = function(continuation, msgs, forbidUnexpectedMsgs) {
 
 
 
-SimpleTest.endMonitorConsole = function() {
+SimpleTest.endMonitorConsole = function () {
   SpecialPowers.postConsoleSentinel();
 };
 
@@ -1679,7 +1683,7 @@ SimpleTest.endMonitorConsole = function() {
 
 
 
-SimpleTest.expectConsoleMessages = function(testfn, msgs, continuation) {
+SimpleTest.expectConsoleMessages = function (testfn, msgs, continuation) {
   SimpleTest.monitorConsole(continuation, msgs);
   testfn();
   SimpleTest.executeSoon(SimpleTest.endMonitorConsole);
@@ -1689,7 +1693,7 @@ SimpleTest.expectConsoleMessages = function(testfn, msgs, continuation) {
 
 
 
-SimpleTest.runTestExpectingConsoleMessages = function(testfn, msgs) {
+SimpleTest.runTestExpectingConsoleMessages = function (testfn, msgs) {
   SimpleTest.waitForExplicitFinish();
   SimpleTest.expectConsoleMessages(testfn, msgs, SimpleTest.finish);
 };
@@ -1699,7 +1703,7 @@ SimpleTest.runTestExpectingConsoleMessages = function(testfn, msgs) {
 
 
 
-SimpleTest.expectChildProcessCrash = function() {
+SimpleTest.expectChildProcessCrash = function () {
   if (parentRunner) {
     parentRunner.expectChildProcessCrash();
   }
@@ -1709,7 +1713,7 @@ SimpleTest.expectChildProcessCrash = function() {
 
 
 
-SimpleTest.expectUncaughtException = function(aExpecting) {
+SimpleTest.expectUncaughtException = function (aExpecting) {
   SimpleTest._expectingUncaughtException =
     aExpecting === void 0 || !!aExpecting;
 };
@@ -1718,7 +1722,7 @@ SimpleTest.expectUncaughtException = function(aExpecting) {
 
 
 
-SimpleTest.isExpectingUncaughtException = function() {
+SimpleTest.isExpectingUncaughtException = function () {
   return SimpleTest._expectingUncaughtException;
 };
 
@@ -1727,7 +1731,7 @@ SimpleTest.isExpectingUncaughtException = function() {
 
 
 
-SimpleTest.ignoreAllUncaughtExceptions = function(aIgnoring) {
+SimpleTest.ignoreAllUncaughtExceptions = function (aIgnoring) {
   SimpleTest._ignoringAllUncaughtExceptions =
     aIgnoring === void 0 || !!aIgnoring;
 };
@@ -1736,7 +1740,7 @@ SimpleTest.ignoreAllUncaughtExceptions = function(aIgnoring) {
 
 
 
-SimpleTest.isIgnoringAllUncaughtExceptions = function() {
+SimpleTest.isIgnoringAllUncaughtExceptions = function () {
   return SimpleTest._ignoringAllUncaughtExceptions;
 };
 
@@ -1744,7 +1748,7 @@ SimpleTest.isIgnoringAllUncaughtExceptions = function() {
 
 
 
-SimpleTest.expectRegisteredServiceWorker = function() {
+SimpleTest.expectRegisteredServiceWorker = function () {
   SimpleTest._expectingRegisteredServiceWorker = true;
 };
 
@@ -1753,7 +1757,7 @@ SimpleTest.expectRegisteredServiceWorker = function() {
 
 
 
-SimpleTest.reset = function() {
+SimpleTest.reset = function () {
   SimpleTest._ignoringAllUncaughtExceptions = false;
   SimpleTest._expectingUncaughtException = false;
   SimpleTest._expectingRegisteredServiceWorker = false;
@@ -1761,7 +1765,7 @@ SimpleTest.reset = function() {
 };
 
 if (isPrimaryTestWindow) {
-  addLoadEvent(function() {
+  addLoadEvent(function () {
     if (SimpleTest._stopOnLoad) {
       SimpleTest.finish();
     }
@@ -1773,7 +1777,7 @@ if (isPrimaryTestWindow) {
 SimpleTest.DNE = { dne: "Does not exist" };
 SimpleTest.LF = "\r\n";
 
-SimpleTest._deepCheck = function(e1, e2, stack, seen) {
+SimpleTest._deepCheck = function (e1, e2, stack, seen) {
   var ok = false;
   if (Object.is(e1, e2)) {
     
@@ -1796,7 +1800,7 @@ SimpleTest._deepCheck = function(e1, e2, stack, seen) {
   return ok;
 };
 
-SimpleTest._eqArray = function(a1, a2, stack, seen) {
+SimpleTest._eqArray = function (a1, a2, stack, seen) {
   
   if (a1 == a2) {
     return true;
@@ -1839,7 +1843,7 @@ SimpleTest._eqArray = function(a1, a2, stack, seen) {
   return ok;
 };
 
-SimpleTest._eqAssoc = function(o1, o2, stack, seen) {
+SimpleTest._eqAssoc = function (o1, o2, stack, seen) {
   
   if (o1 == o2) {
     return true;
@@ -1891,7 +1895,7 @@ SimpleTest._eqAssoc = function(o1, o2, stack, seen) {
   return ok;
 };
 
-SimpleTest._formatStack = function(stack) {
+SimpleTest._formatStack = function (stack) {
   var variable = "$Foo";
   for (let i = 0; i < stack.length; i++) {
     var entry = stack[i];
@@ -1929,7 +1933,7 @@ SimpleTest._formatStack = function(stack) {
   return "    " + out;
 };
 
-SimpleTest.isDeeply = function(it, as, name) {
+SimpleTest.isDeeply = function (it, as, name) {
   var stack = [{ vals: [it, as] }];
   var seen = [];
   if (SimpleTest._deepCheck(it, as, stack, seen)) {
@@ -1939,7 +1943,7 @@ SimpleTest.isDeeply = function(it, as, name) {
   }
 };
 
-SimpleTest.typeOf = function(object) {
+SimpleTest.typeOf = function (object) {
   var c = Object.prototype.toString.apply(object);
   var name = c.substring(8, c.length - 1);
   if (name != "Object") {
@@ -1954,7 +1958,7 @@ SimpleTest.typeOf = function(object) {
   return name;
 };
 
-SimpleTest.isa = function(object, clas) {
+SimpleTest.isa = function (object, clas) {
   return SimpleTest.typeOf(object) == clas;
 };
 
@@ -2064,7 +2068,7 @@ function getAndroidSdk() {
 
 
 
-var add_task = (function() {
+var add_task = (function () {
   
   var task_list = [];
   var run_only_this_task = null;
@@ -2076,7 +2080,7 @@ var add_task = (function() {
   }
 
   
-  return function(generatorFunction, options = { isSetup: false }) {
+  return function (generatorFunction, options = { isSetup: false }) {
     if (task_list.length === 0) {
       
       

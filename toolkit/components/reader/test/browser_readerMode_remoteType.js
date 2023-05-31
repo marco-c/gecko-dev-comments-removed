@@ -19,13 +19,13 @@ const CROSS_SITE_TEST_PATH = getRootDirectory(gTestPath).replace(
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("opening readermode normally to ensure process doesn't change");
   let articleRemoteType;
   let aboutReaderURL;
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticleShort.html",
-    async function(browser) {
+    async function (browser) {
       articleRemoteType = browser.remoteType;
 
       
@@ -54,7 +54,7 @@ add_task(async function() {
   info(
     "opening new tab directly with about reader URL into correct remote type"
   );
-  await BrowserTestUtils.withNewTab(aboutReaderURL, async function(browser) {
+  await BrowserTestUtils.withNewTab(aboutReaderURL, async function (browser) {
     is(
       browser.remoteType,
       articleRemoteType,
@@ -65,7 +65,7 @@ add_task(async function() {
   info("navigating process into correct remote type");
   await BrowserTestUtils.withNewTab(
     CROSS_SITE_TEST_PATH + "readerModeArticleShort.html",
-    async function(browser) {
+    async function (browser) {
       if (SpecialPowers.useRemoteSubframes) {
         isnot(
           browser.remoteType,

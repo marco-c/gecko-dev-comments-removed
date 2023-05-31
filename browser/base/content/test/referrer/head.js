@@ -137,7 +137,7 @@ function clickTheLink(aWindow, aLinkId, aOptions) {
 
 
 function referrerResultExtracted(aWindow) {
-  return SpecialPowers.spawn(aWindow.gBrowser.selectedBrowser, [], function() {
+  return SpecialPowers.spawn(aWindow.gBrowser.selectedBrowser, [], function () {
     return content.document.getElementById("testdiv").textContent;
   });
 }
@@ -149,7 +149,7 @@ function referrerResultExtracted(aWindow) {
 
 
 function delayedStartupFinished(aWindow) {
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     Services.obs.addObserver(function observer(aSubject, aTopic) {
       if (aWindow == aSubject) {
         Services.obs.removeObserver(observer, aTopic);
@@ -257,7 +257,7 @@ function checkReferrerAndStartNextTest(
   aStartTestCase,
   aParams = {}
 ) {
-  referrerResultExtracted(aNewWindow || gTestWindow).then(function(result) {
+  referrerResultExtracted(aNewWindow || gTestWindow).then(function (result) {
     
     let test = getReferrerTest(aTestNumber);
     let desc = getReferrerTestDescription(aTestNumber);
@@ -272,13 +272,13 @@ function checkReferrerAndStartNextTest(
     
     var nextTestNumber = aTestNumber + 1;
     if (getReferrerTest(nextTestNumber)) {
-      referrerTestCaseLoaded(nextTestNumber, aParams).then(function() {
+      referrerTestCaseLoaded(nextTestNumber, aParams).then(function () {
         aStartTestCase(nextTestNumber);
       });
     } else if (rounds == 0) {
       nextTestNumber = 0;
       rounds = 1;
-      referrerTestCaseLoaded(nextTestNumber, aParams).then(function() {
+      referrerTestCaseLoaded(nextTestNumber, aParams).then(function () {
         aStartTestCase(nextTestNumber);
       });
     } else {
@@ -298,13 +298,13 @@ function startReferrerTest(aStartTestCase, params = {}) {
 
   
   gTestWindow = openDialog(location, "", "chrome,all,dialog=no", "about:blank");
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     gTestWindow && gTestWindow.close();
   });
 
   
-  delayedStartupFinished(gTestWindow).then(function() {
-    referrerTestCaseLoaded(0, params).then(function() {
+  delayedStartupFinished(gTestWindow).then(function () {
+    referrerTestCaseLoaded(0, params).then(function () {
       aStartTestCase(0);
     });
   });

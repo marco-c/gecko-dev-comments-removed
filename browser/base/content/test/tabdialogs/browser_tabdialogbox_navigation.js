@@ -10,7 +10,7 @@ const TEST_DIALOG_PATH = TEST_ROOT_CHROME + "subdialog.xhtml";
 
 
 add_task(async function test_tabdialogbox_multiple_close_on_nav() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com", async function (
     browser
   ) {
     
@@ -41,7 +41,7 @@ add_task(async function test_tabdialogbox_multiple_close_on_nav() {
 
 
 add_task(async function test_tabdialogbox_close_on_content_nav() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com", async function (
     browser
   ) {
     
@@ -114,7 +114,7 @@ add_task(async function test_tabdialogbox_close_on_content_nav() {
 
 
 add_task(async function test_tabdialogbox_hide() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com", async function (
     browser
   ) {
     

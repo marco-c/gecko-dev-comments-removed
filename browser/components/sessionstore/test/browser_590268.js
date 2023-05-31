@@ -136,7 +136,7 @@ function test() {
     
     
     
-    executeSoon(function() {
+    executeSoon(function () {
       ss.setBrowserState(stateBackup);
       executeSoon(finish);
     });

@@ -125,7 +125,7 @@ function delayed(aIsSelectedTab) {
 }
 
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   if (gNewTab) {
     gBrowser
       .getBrowserForTab(gNewTab)

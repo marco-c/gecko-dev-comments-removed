@@ -7,7 +7,7 @@
 const kWidgetId = "test-892956-destroyWidget-defaultPlacement";
 
 
-add_task(async function() {
+add_task(async function () {
   ok(
     CustomizableUI.inDefaultState,
     "Should be in the default state when we start"

@@ -14,7 +14,7 @@ const {
 
 const STUB_FILE = "platformMessage.js";
 
-add_task(async function() {
+add_task(async function () {
   const isStubsUpdate = Services.env.get(STUBS_UPDATE_ENV) == "true";
   info(`${isStubsUpdate ? "Update" : "Check"} ${STUB_FILE}`);
 
@@ -69,7 +69,7 @@ async function generatePlatformMessagesStubs() {
   
   
   
-  let handlePlatformMessage = function() {};
+  let handlePlatformMessage = function () {};
 
   const onPlatformMessageAvailable = resources => {
     for (const resource of resources) {

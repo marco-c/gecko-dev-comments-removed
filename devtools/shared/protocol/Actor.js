@@ -174,11 +174,11 @@ exports.Actor = Actor;
 
 
 
-var generateRequestTypes = function(actorSpec) {
+var generateRequestTypes = function (actorSpec) {
   
   const requestTypes = Object.create(null);
   actorSpec.methods.forEach(spec => {
-    const handler = function(packet, conn) {
+    const handler = function (packet, conn) {
       try {
         const startTime = isWorker ? null : Cu.now();
         let args;

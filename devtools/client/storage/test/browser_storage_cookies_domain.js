@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies.html");
 
   await checkState([

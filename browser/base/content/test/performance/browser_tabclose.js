@@ -18,7 +18,7 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   gReduceMotionOverride = false;
 
@@ -41,7 +41,7 @@ add_task(async function() {
 
   
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       gBrowser.removeTab(tab, { animate: true });
       await BrowserTestUtils.waitForEvent(tab, "TabAnimationEnd");

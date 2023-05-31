@@ -11,7 +11,7 @@ function waitUntil(predicate, interval = 10) {
     return Promise.resolve(true);
   }
   return new Promise(resolve => {
-    setTimeout(function() {
+    setTimeout(function () {
       waitUntil(predicate, interval).then(() => resolve(true));
     }, interval);
   });
@@ -19,13 +19,13 @@ function waitUntil(predicate, interval = 10) {
 
 
 let canInstall = false;
-self.addEventListener("message", function(event) {
+self.addEventListener("message", function (event) {
   if (event.data === "install-service-worker") {
     canInstall = true;
   }
 });
 
 
-self.addEventListener("install", function(event) {
+self.addEventListener("install", function (event) {
   event.waitUntil(waitUntil(() => canInstall));
 });

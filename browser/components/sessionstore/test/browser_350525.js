@@ -1,12 +1,12 @@
 "use strict";
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount", 1]],
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   
 
   function test(aLambda) {

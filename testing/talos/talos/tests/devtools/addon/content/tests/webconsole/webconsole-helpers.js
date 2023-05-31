@@ -20,10 +20,14 @@ const {
 
 
 
-exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
+exports.reloadConsoleAndLog = async function (
+  label,
+  toolbox,
+  expectedMessages
+) {
   const webConsole = toolbox.getPanel("webconsole");
   const onWebConsoleReload = webConsole.once("reloaded");
-  const onReload = async function() {
+  const onReload = async function () {
     const { hud } = webConsole;
     const expected =
       typeof expectedMessages === "number"

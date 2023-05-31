@@ -12,12 +12,12 @@ function test() {
 
   
   
-  whenNewWindowLoaded({ private: true }, function(win) {
+  whenNewWindowLoaded({ private: true }, function (win) {
     info("The private window got loaded");
     win.addEventListener(
       "SSWindowClosing",
-      function() {
-        executeSoon(function() {
+      function () {
+        executeSoon(function () {
           is(
             ss.getClosedWindowCount(),
             0,

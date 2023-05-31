@@ -1,7 +1,7 @@
 
-oninstall = function(e) {
+oninstall = function (e) {
   e.waitUntil(
-    new Promise(function(resolve, reject) {
+    new Promise(function (resolve, reject) {
       undefined.doSomething;
       resolve();
     })

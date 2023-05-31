@@ -18,12 +18,12 @@ function testBFCache() {
     );
     gBrowser.selectedBrowser.addEventListener(
       "pageshow",
-      function() {
+      function () {
         var window = gBrowser.contentWindow;
         
         
         if (
-          !actOnMozImage(window.document, "img1", function(image) {
+          !actOnMozImage(window.document, "img1", function (image) {
             gImage = image;
             gFrames = gImage.framesNotified;
           })
@@ -46,7 +46,7 @@ function testBFCache() {
     do {
       gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       gTimer.initWithCallback(
-        function() {
+        function () {
           if (gImage.framesNotified >= 20) {
             goer.send(true);
           } else {
@@ -67,11 +67,11 @@ function testBFCache() {
     
     gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     gTimer.initWithCallback(
-      function() {
+      function () {
         gFrames = gImage.framesNotified;
         gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
         gTimer.initWithCallback(
-          function() {
+          function () {
             
             var additionalFrames = gImage.framesNotified - gFrames;
             is(
@@ -99,7 +99,7 @@ function testBFCache() {
     do {
       gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       gTimer.initWithCallback(
-        function() {
+        function () {
           if (gImage.framesNotified - gFrames >= 20) {
             goer.send(true);
           } else {
@@ -121,7 +121,7 @@ function testBFCache() {
     var doc = gBrowser.selectedBrowser.contentWindow.document;
     var div = doc.getElementById("background_div");
     div.innerHTML += '<img src="animated2.gif" id="img3">';
-    actOnMozImage(doc, "img3", function(image) {
+    actOnMozImage(doc, "img3", function (image) {
       is(
         Math.abs(image.framesNotified - gImage.framesNotified) /
           gImage.framesNotified <
@@ -157,8 +157,8 @@ function testSharedContainers() {
     );
     gBrowser.selectedBrowser.addEventListener(
       "pageshow",
-      function() {
-        actOnMozImage(gBrowser.contentDocument, "img1", function(image) {
+      function () {
+        actOnMozImage(gBrowser.contentDocument, "img1", function (image) {
           gImages[0] = image;
           gFrames = image.framesNotified; 
           
@@ -172,7 +172,7 @@ function testSharedContainers() {
     
     gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     gTimer.initWithCallback(
-      function() {
+      function () {
         goer.next();
       },
       1500,
@@ -186,9 +186,9 @@ function testSharedContainers() {
     );
     gBrowser.selectedBrowser.addEventListener(
       "pageshow",
-      function() {
-        [1, 2].forEach(function(i) {
-          actOnMozImage(gBrowser.contentDocument, "img" + i, function(image) {
+      function () {
+        [1, 2].forEach(function (i) {
+          actOnMozImage(gBrowser.contentDocument, "img" + i, function (image) {
             gImages[i] = image;
           });
         });
@@ -202,7 +202,7 @@ function testSharedContainers() {
     do {
       gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       gTimer.initWithCallback(
-        function() {
+        function () {
           if (gImages[0].framesNotified - gFrames >= 10) {
             goer.send(true);
           } else {
@@ -222,7 +222,7 @@ function testSharedContainers() {
 
     
     var theFrames = null;
-    [0, 1, 2].forEach(function(i) {
+    [0, 1, 2].forEach(function (i) {
       var frames = gImages[i].framesNotified;
       if (theFrames == null) {
         theFrames = frames;

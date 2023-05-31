@@ -18,7 +18,7 @@ const EMPTY_SW_HTML = URL_ROOT_SSL + "resources/service-workers/empty-sw.html";
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableServiceWorkerDebugging();
   const { document, tab, window } = await openAboutDebugging({
     enableWorkerUpdates: true,

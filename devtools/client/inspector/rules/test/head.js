@@ -62,7 +62,7 @@ async function hideTooltipAndWaitForRuleViewChanged(editorTooltip, view) {
 
 
 
-var waitForSuccess = async function(validatorFn, desc = "untitled") {
+var waitForSuccess = async function (validatorFn, desc = "untitled") {
   let i = 0;
   while (true) {
     info("Checking: " + desc);
@@ -98,7 +98,7 @@ var waitForSuccess = async function(validatorFn, desc = "untitled") {
 
 
 
-var simulateColorPickerChange = async function(
+var simulateColorPickerChange = async function (
   ruleView,
   colorPicker,
   newRgba,
@@ -152,7 +152,7 @@ var simulateColorPickerChange = async function(
 
 
 
-var openColorPickerAndSelectColor = async function(
+var openColorPickerAndSelectColor = async function (
   view,
   ruleIndex,
   propIndex,
@@ -195,7 +195,7 @@ var openColorPickerAndSelectColor = async function(
 
 
 
-var openCubicBezierAndChangeCoords = async function(
+var openCubicBezierAndChangeCoords = async function (
   view,
   ruleIndex,
   propIndex,
@@ -250,7 +250,7 @@ var openCubicBezierAndChangeCoords = async function(
 
 
 
-var addProperty = async function(
+var addProperty = async function (
   view,
   ruleIndex,
   name,
@@ -362,7 +362,7 @@ var addProperty = async function(
 
 
 
-var setProperty = async function(
+var setProperty = async function (
   view,
   textProp,
   value,
@@ -435,7 +435,7 @@ var setProperty = async function(
 
 
 
-var renameProperty = async function(view, textProp, name) {
+var renameProperty = async function (view, textProp, name) {
   await focusEditableField(view, textProp.editor.nameSpan);
 
   const onNameDone = view.once("ruleview-changed");
@@ -465,7 +465,7 @@ var renameProperty = async function(view, textProp, name) {
 
 
 
-var removeProperty = async function(view, textProp, blurNewProperty = true) {
+var removeProperty = async function (view, textProp, blurNewProperty = true) {
   await focusEditableField(view, textProp.editor.nameSpan);
 
   const onModifications = view.once("ruleview-changed");
@@ -487,7 +487,7 @@ var removeProperty = async function(view, textProp, blurNewProperty = true) {
 
 
 
-var togglePropStatus = async function(view, textProp) {
+var togglePropStatus = async function (view, textProp) {
   const onRuleViewRefreshed = view.once("ruleview-changed");
   textProp.editor.enable.click();
   await onRuleViewRefreshed;
@@ -579,7 +579,7 @@ async function sendKeysAndWaitForFocus(view, element, keys) {
 
 
 function waitForStyleModification(inspector) {
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     function checkForStyleModification(mutations) {
       for (const mutation of mutations) {
         if (

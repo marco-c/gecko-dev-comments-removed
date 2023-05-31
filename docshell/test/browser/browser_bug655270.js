@@ -53,7 +53,7 @@ add_task(async function test() {
   is(icon1, faviconURL, "FaviconURL for original URI");
   
   
-  SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+  SpecialPowers.spawn(tab.linkedBrowser, [], function () {
     content.history.pushState("", "", "?new_page");
   });
   await promiseIcon2;

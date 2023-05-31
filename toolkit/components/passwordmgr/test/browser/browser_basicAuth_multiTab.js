@@ -88,7 +88,7 @@ async function testTabAuthed(expectAuthed, { tab, loadPromise, authOptions }) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     
     set: [["prompts.modalType.httpAuth", Services.prompt.MODAL_TYPE_TAB]],

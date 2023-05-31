@@ -38,7 +38,7 @@ async function testPageInfoNotEncrypted(uri) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let uri =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content",
@@ -121,7 +121,7 @@ function startServer(cert) {
   return tlsServer;
 }
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     
     set: [["network.dns.disableIPv6", true]],

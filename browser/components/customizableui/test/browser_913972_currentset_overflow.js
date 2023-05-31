@@ -11,7 +11,7 @@ registerCleanupFunction(async function asyncCleanup() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let originalWindowWidth = window.outerWidth;
   ok(
     !navbar.hasAttribute("overflowing"),
@@ -76,7 +76,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
   await startCustomizing();
   ok(

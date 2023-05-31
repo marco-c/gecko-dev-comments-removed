@@ -7,7 +7,7 @@ let finderIterator = new FinderIterator();
 var gFindResults = [];
 
 
-finderIterator._iterateDocument = function*(word, window, finder) {
+finderIterator._iterateDocument = function* (word, window, finder) {
   for (let range of gFindResults) {
     yield range;
   }

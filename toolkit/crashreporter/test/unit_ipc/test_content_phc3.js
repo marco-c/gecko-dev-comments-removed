@@ -13,10 +13,10 @@ add_task(async function run_test() {
   
   
   await do_content_crash(
-    function() {
+    function () {
       crashType = CrashTestUtils.CRASH_PHC_BOUNDS_VIOLATION;
     },
-    function(mdump, extra) {
+    function (mdump, extra) {
       Assert.equal(extra.PHCKind, "GuardPage");
 
       

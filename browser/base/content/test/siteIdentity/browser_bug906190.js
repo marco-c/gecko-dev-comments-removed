@@ -35,7 +35,7 @@ async function doTest(
       gBrowser,
       url: parentTabSpec,
     },
-    async function(browser) {
+    async function (browser) {
       
       await assertMixedContentBlockingState(gBrowser, {
         activeLoaded: false,
@@ -149,7 +149,7 @@ add_task(async function test_same_origin() {
   await doTest(
     HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
-    async function() {
+    async function () {
       
       
       
@@ -180,7 +180,7 @@ add_task(async function test_different_origin() {
   await doTest(
     HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
     HTTPS_TEST_ROOT_2 + "file_bug906190_2.html",
-    async function() {
+    async function () {
       
       
       
@@ -213,7 +213,7 @@ add_task(async function test_same_origin_metarefresh_same_origin() {
   await doTest(
     HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_1 + "file_bug906190_3_4.html",
-    async function() {
+    async function () {
       
       await assertMixedContentBlockingState(gBrowser, {
         activeLoaded: true,
@@ -244,7 +244,7 @@ add_task(async function test_same_origin_metarefresh_different_origin() {
   await doTest(
     HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_2 + "file_bug906190_3_4.html",
-    async function() {
+    async function () {
       
       await assertMixedContentBlockingState(gBrowser, {
         activeLoaded: false,
@@ -275,7 +275,7 @@ add_task(async function test_same_origin_302redirect_same_origin() {
   await doTest(
     HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_1 + "file_bug906190.sjs",
-    async function() {
+    async function () {
       
       
       ok(
@@ -305,7 +305,7 @@ add_task(async function test_same_origin_302redirect_different_origin() {
   await doTest(
     HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_2 + "file_bug906190.sjs",
-    async function() {
+    async function () {
       
       await assertMixedContentBlockingState(gBrowser, {
         activeLoaded: false,
@@ -332,7 +332,7 @@ add_task(async function test_bad_redirection() {
   await doTest(
     HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
     HTTPS_TEST_ROOT_2 + "file_bug906190.sjs?bad-redirection=1",
-    function() {
+    function () {
       
       ok(true, "Nothing to do");
     }

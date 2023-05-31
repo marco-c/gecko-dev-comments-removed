@@ -23,7 +23,7 @@ const DEFAULT_WIDGET_IDS = [
 ];
 const OVERFLOWED_EXTENSIONS_LIST_ID = "overflowed-extensions-list";
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   

@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let testTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
     skipAnimation: true,

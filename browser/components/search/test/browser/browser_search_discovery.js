@@ -9,7 +9,7 @@
 
 requestLongerTimeout(2);
 
-add_task(async function() {
+add_task(async function () {
   let url =
     "http://mochi.test:8888/browser/browser/components/search/test/browser/discovery.html";
   info("Test search discovery");

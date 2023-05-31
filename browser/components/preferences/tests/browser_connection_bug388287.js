@@ -12,7 +12,7 @@ function test() {
   
   
   let oldNetworkProxyType = Services.prefs.getIntPref("network.proxy.type");
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     Services.prefs.setIntPref("network.proxy.type", oldNetworkProxyType);
     Services.prefs.clearUserPref("network.proxy.share_proxy_settings");
     for (let proxyType of ["http", "ssl", "socks"]) {

@@ -8,7 +8,7 @@
 requestLongerTimeout(5);
 
 
-add_task(async function() {
+add_task(async function () {
   const dbg = await initDebugger("doc-sourcemapped.html");
   dbg.actions.toggleMapScopes();
 

@@ -84,7 +84,7 @@ function getAccessibleName(accessible) {
 
 
 
-const mustHaveNonEmptyNameRule = function(issue, accessible) {
+const mustHaveNonEmptyNameRule = function (issue, accessible) {
   const name = getAccessibleName(accessible);
   return name ? null : { score: FAIL, issue };
 };
@@ -97,7 +97,7 @@ const mustHaveNonEmptyNameRule = function(issue, accessible) {
 
 
 
-const shouldHaveNonEmptyNameRule = function(issue, accessible) {
+const shouldHaveNonEmptyNameRule = function (issue, accessible) {
   const name = getAccessibleName(accessible);
   return name ? null : { score: BEST_PRACTICES, issue };
 };
@@ -134,7 +134,7 @@ const dialogRule = shouldHaveNonEmptyNameRule.bind(null, DIALOG_NO_NAME);
 
 
 
-const imageRule = function(accessible) {
+const imageRule = function (accessible) {
   const name = getAccessibleName(accessible);
   return name != null ? null : { score: FAIL, issue: IMAGE_NO_NAME };
 };
@@ -148,7 +148,7 @@ const imageRule = function(accessible) {
 
 
 
-const formRule = function(accessible) {
+const formRule = function (accessible) {
   const name = getAccessibleName(accessible);
   if (!name) {
     return { score: FAIL, issue: FORM_NO_NAME };
@@ -174,7 +174,7 @@ const formRule = function(accessible) {
 
 
 
-const formGroupingRule = function(accessible) {
+const formGroupingRule = function (accessible) {
   const name = getAccessibleName(accessible);
   const { DOMNode } = accessible;
 
@@ -221,7 +221,7 @@ const formGroupingRule = function(accessible) {
 
 
 
-const textContainerRule = function(accessible) {
+const textContainerRule = function (accessible) {
   const { DOMNode } = accessible;
 
   switch (DOMNode.nodeName) {
@@ -248,7 +248,7 @@ const textContainerRule = function(accessible) {
 
 
 
-const internalFrameRule = function(accessible) {
+const internalFrameRule = function (accessible) {
   const { DOMNode } = accessible;
   switch (DOMNode.nodeName) {
     case "FRAME":
@@ -288,7 +288,7 @@ const internalFrameRule = function(accessible) {
 
 
 
-const documentRule = function(accessible) {
+const documentRule = function (accessible) {
   const title = accessible.DOMNode.title && accessible.DOMNode.title.trim();
   return title ? null : { score: FAIL, issue: DOCUMENT_NO_TITLE };
 };
@@ -301,7 +301,7 @@ const documentRule = function(accessible) {
 
 
 
-const headingRule = function(accessible) {
+const headingRule = function (accessible) {
   const name = getAccessibleName(accessible);
   if (!name) {
     return { score: FAIL, issue: HEADING_NO_NAME };
@@ -320,7 +320,7 @@ const headingRule = function(accessible) {
 
 
 
-const toolbarRule = function(accessible) {
+const toolbarRule = function (accessible) {
   const toolbars = accessible.DOMNode.ownerDocument.querySelectorAll(
     `[role="toolbar"]`
   );
@@ -339,7 +339,7 @@ const toolbarRule = function(accessible) {
 
 
 
-const linkRule = function(accessible) {
+const linkRule = function (accessible) {
   const { DOMNode } = accessible;
   if (DOMNode.nodeName === "AREA" && DOMNode.hasAttribute("href")) {
     const alt = DOMNode.getAttribute("alt");
@@ -361,7 +361,7 @@ const linkRule = function(accessible) {
 
 
 
-const mathmlGlyphRule = function(accessible) {
+const mathmlGlyphRule = function (accessible) {
   const name = getAccessibleName(accessible);
   if (name) {
     return null;

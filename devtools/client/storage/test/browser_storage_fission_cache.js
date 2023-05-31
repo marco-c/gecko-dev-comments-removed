@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const URL = URL_ROOT_COM_SSL + "storage-cache-basic.html";
   await SpecialPowers.addPermission(

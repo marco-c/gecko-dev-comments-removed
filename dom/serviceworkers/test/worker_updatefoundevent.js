@@ -3,8 +3,8 @@
 
 
 
-registration.onupdatefound = function(e) {
-  clients.matchAll().then(function(clients) {
+registration.onupdatefound = function (e) {
+  clients.matchAll().then(function (clients) {
     if (!clients.length) {
       
       

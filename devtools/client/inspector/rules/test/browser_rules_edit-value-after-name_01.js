@@ -16,7 +16,7 @@ const TEST_URI = `
   <div id="testid">Styled Node</div>
 `;
 
-add_task(async function() {
+add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 
@@ -42,7 +42,7 @@ async function testColorValueSpanClickWithoutNameChange(propEditor, view) {
 
   
   
-  const onPropertyValueUpdated = function() {
+  const onPropertyValueUpdated = function () {
     ok(false, 'The "property-value-updated" should not be emitted');
   };
   view.on("property-value-updated", onPropertyValueUpdated);

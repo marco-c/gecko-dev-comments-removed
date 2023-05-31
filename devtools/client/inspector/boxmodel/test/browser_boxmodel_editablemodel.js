@@ -17,7 +17,7 @@ const TEST_URI =
   "<div id='div1'></div><div id='div2'></div>" +
   "<div id='div3'></div><div id='div4'></div>";
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("devtools.toolbox.footer.height", 500);

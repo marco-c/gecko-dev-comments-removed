@@ -45,7 +45,7 @@ var SelectBookmarkDialog = {
 
     
     this.selectionChanged();
-    document.addEventListener("dialogaccept", function() {
+    document.addEventListener("dialogaccept", function () {
       SelectBookmarkDialog.accept();
     });
   },

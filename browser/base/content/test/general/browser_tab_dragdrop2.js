@@ -7,7 +7,7 @@ const URI = ROOT + "browser_tab_dragdrop2_frame1.xhtml";
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let args = "chrome,all,dialog=no";
   let win = window.openDialog(

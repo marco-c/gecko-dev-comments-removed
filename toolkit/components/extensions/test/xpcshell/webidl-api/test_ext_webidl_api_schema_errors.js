@@ -48,7 +48,7 @@ const SCHEMA = [
   },
 ];
 
-add_setup(async function() {
+add_setup(async function () {
   await AddonTestUtils.promiseStartupManager();
 
   

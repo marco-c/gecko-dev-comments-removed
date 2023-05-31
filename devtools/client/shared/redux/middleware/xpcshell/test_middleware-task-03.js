@@ -17,7 +17,7 @@ const {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const store = applyMiddleware(task)(createStore)(reducer);
 
   store.dispatch(asyncError());

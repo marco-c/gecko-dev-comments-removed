@@ -75,7 +75,7 @@ function hideStatusMessage() {
   toggleStatusMessage(false);
 }
 
-var connect = async function() {
+var connect = async function () {
   
 
   
@@ -153,7 +153,7 @@ function setPrefDefaults() {
 
 window.addEventListener(
   "load",
-  async function() {
+  async function () {
     gShortcuts = new KeyShortcuts({ window });
     gShortcuts.on("CmdOrCtrl+W", onCloseCommand);
     gShortcuts.on("CmdOrCtrl+Alt+Shift+I", onDebugBrowserToolbox);

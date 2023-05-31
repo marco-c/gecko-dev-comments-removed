@@ -21,7 +21,7 @@ Services.scriptloader.loadSubScript(
 );
 
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   
   
   Services.prefs.clearUserPref("devtools.toolbox.selectedTool");

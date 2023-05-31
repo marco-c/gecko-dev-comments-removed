@@ -10,7 +10,7 @@ const BROTLI_REQUESTS = 1;
 
 
 
-add_task(async function() {
+add_task(async function () {
   const {
     L10N,
   } = require("resource://devtools/client/netmonitor/src/utils/l10n.js");

@@ -10,7 +10,7 @@ const TEST_URI =
   "data:text/html;charset=utf8,<!DOCTYPE html><p>hello world" +
   "<button onclick='foobar.explode()'>click!</button>";
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);

@@ -29,7 +29,7 @@ const INSECURE_PASSWORDS_URI =
   "https://developer.mozilla.org/docs/Web/Security/Insecure_passwords" +
   DOCS_GA_PARAMS;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("dom.security.https_first", false);
   await testUriWarningMessage(INSECURE_IFRAME_URI, INSECURE_IFRAME_MSG);

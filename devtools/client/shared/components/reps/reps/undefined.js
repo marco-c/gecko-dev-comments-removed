@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 

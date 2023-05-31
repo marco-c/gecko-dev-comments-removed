@@ -10,7 +10,7 @@ const TEST_URL = URL_ROOT_SSL + "doc_markup_events_toggle.html";
 
 loadHelperScript("helper_events_test_runner.js");
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, toolbox } = await openInspectorForURL(TEST_URL);
   const { resourceCommand } = toolbox.commands;
   await inspector.markup.expandAll();
@@ -291,7 +291,7 @@ async function toggleEventListenerCheckbox(tooltip, headerEl) {
 
 
 function getTargetElementHandledEventData() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     
     
     return JSON.parse(

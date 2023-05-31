@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let payload = {
     data: {
       deviceName: "Laptop",

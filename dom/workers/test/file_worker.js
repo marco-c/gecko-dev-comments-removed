@@ -1,7 +1,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   var file = event.data;
 
   var rtnObj = new Object();

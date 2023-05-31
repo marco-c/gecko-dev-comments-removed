@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.autoFill", false]],
   });
@@ -27,7 +27,7 @@ function promiseNewTabSwitched() {
   return new Promise(resolve => {
     gBrowser.addEventListener(
       "TabSwitchDone",
-      function() {
+      function () {
         executeSoon(resolve);
       },
       { once: true }
@@ -70,7 +70,7 @@ async function testURL(url, loadFunc, endFunc) {
   await SpecialPowers.spawn(
     browser,
     [{ isRemote: gMultiProcessBrowser }],
-    async function(arg) {
+    async function (arg) {
       Assert.equal(
         Services.focus.focusedElement,
         null,

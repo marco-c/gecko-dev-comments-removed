@@ -24,7 +24,7 @@ function clickOnNodeArrow(node, panel) {
   );
 }
 
-this.test = makeMemoryTest(TEST_URL, async function({ panel }) {
+this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   
   requestLongerTimeout(4);
 

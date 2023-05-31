@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.sessionstore.restore_on_demand", true],

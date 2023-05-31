@@ -1,7 +1,7 @@
 
 
 
-onmessage = function(pingEvt) {
+onmessage = function (pingEvt) {
   if (pingEvt.data == "ping") {
     let { port1, port2 } = new MessageChannel();
     port2.onmessage = helloEvt => {

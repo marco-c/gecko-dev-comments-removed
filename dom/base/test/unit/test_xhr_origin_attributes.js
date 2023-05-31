@@ -30,7 +30,7 @@ function run_test() {
   );
   xhr.send(null);
 
-  xhr.onload = function() {
+  xhr.onload = function () {
     
     
     
@@ -46,7 +46,7 @@ function run_test() {
     let loadInfo = xhr2.channel.loadInfo;
     Assert.equal(loadInfo.originAttributes.userContextId, 1);
 
-    xhr2.onload = function() {
+    xhr2.onload = function () {
       server.stop(do_test_finished);
     };
   };

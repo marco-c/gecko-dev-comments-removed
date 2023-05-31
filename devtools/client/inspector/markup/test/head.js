@@ -69,7 +69,7 @@ function getContainerForNodeFront(nodeFront, { markup }) {
 
 
 
-var getContainerForSelector = async function(
+var getContainerForSelector = async function (
   selector,
   inspector,
   expectFailure = false
@@ -128,7 +128,7 @@ function waitForChildrenUpdated({ markup }) {
 
 
 
-var clickContainer = async function(selector, inspector) {
+var clickContainer = async function (selector, inspector) {
   info("Clicking on the markup-container for node " + selector);
 
   const nodeFront = await getNodeFront(selector, inspector);
@@ -177,7 +177,7 @@ function setEditableFieldValue(field, value, inspector) {
 
 
 
-var addNewAttributes = async function(selector, text, inspector) {
+var addNewAttributes = async function (selector, text, inspector) {
   info(`Entering text "${text}" in new attribute field for node ${selector}`);
 
   const container = await focusNode(selector, inspector);
@@ -199,7 +199,7 @@ var addNewAttributes = async function(selector, text, inspector) {
 
 
 
-var assertAttributes = async function(selector, expected) {
+var assertAttributes = async function (selector, expected) {
   const actualAttributes = await getContentPageElementAttributes(selector);
   is(
     actualAttributes.length,
@@ -290,7 +290,7 @@ function searchUsingSelectorSearch(selector, inspector) {
 
 
 
-var isEditingMenuDisabled = async function(
+var isEditingMenuDisabled = async function (
   nodeFront,
   inspector,
   assert = true
@@ -331,7 +331,11 @@ var isEditingMenuDisabled = async function(
 
 
 
-var isEditingMenuEnabled = async function(nodeFront, inspector, assert = true) {
+var isEditingMenuEnabled = async function (
+  nodeFront,
+  inspector,
+  assert = true
+) {
   
   clipboard.copyString("<p>test</p>");
 
@@ -447,7 +451,7 @@ function checkFocusedAttribute(attrName, editMode) {
 
 
 
-var getAttributesFromEditor = async function(selector, inspector) {
+var getAttributesFromEditor = async function (selector, inspector) {
   const nodeList = (
     await getContainerForSelector(selector, inspector)
   ).tagLine.querySelectorAll("[data-attr]");

@@ -45,7 +45,7 @@ function createPromiseForTransferComplete(aDesirableFileName) {
       MockFilePicker.filterIndex = 0; 
 
       MockFilePicker.showCallback = null;
-      mockTransferCallback = function(downloadSuccess) {
+      mockTransferCallback = function (downloadSuccess) {
         ok(downloadSuccess, "File should have been downloaded successfully");
         mockTransferCallback = () => {};
         resolve();
@@ -82,11 +82,11 @@ function createPromiseForObservingChannel(aURL, aPartitionKey) {
   });
 }
 
-add_setup(async function() {
+add_setup(async function () {
   info("Setting MockFilePicker.");
   mockTransferRegisterer.register();
 
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     mockTransferRegisterer.unregister();
     MockFilePicker.cleanup();
     tempDir.remove(true);

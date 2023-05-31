@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_setup(async function() {
+add_setup(async function () {
   await setupPolicyEngineWithJson({
     policies: {
       SupportMenu: {

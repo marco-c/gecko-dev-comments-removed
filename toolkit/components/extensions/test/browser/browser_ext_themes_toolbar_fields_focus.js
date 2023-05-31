@@ -1,6 +1,6 @@
 "use strict";
 
-add_setup(async function() {
+add_setup(async function () {
   
   document.documentElement.removeAttribute("remotecontrol");
   registerCleanupFunction(() => {

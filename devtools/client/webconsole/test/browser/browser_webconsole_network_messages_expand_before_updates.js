@@ -83,7 +83,7 @@ async function openRequestBeforeUpdates(hud, tab) {
   const onMessage = waitForMessageByType(hud, xhrUrl, ".network");
 
   
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     content.wrappedJSObject.testXhrPostSlowResponse();
   });
   info(`Wait for ${xhrUrl} message`);

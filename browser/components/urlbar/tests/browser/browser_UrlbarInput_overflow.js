@@ -94,12 +94,12 @@ async function testVal(aExpected, overflowSide = "") {
   }
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     gURLBar.setURI();
     BrowserTestUtils.removeTab(tab);
   });

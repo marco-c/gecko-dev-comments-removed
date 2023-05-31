@@ -31,7 +31,7 @@ async function tearDown(sandbox) {
   Services.prefs.clearUserPref("identity.fxaccounts.enabled");
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   gSync.init();
 
@@ -42,7 +42,7 @@ add_setup(async function() {
     ],
   });
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     
     TabsSetupFlowManager.resetInternalState();
     await tearDown(gSandbox);

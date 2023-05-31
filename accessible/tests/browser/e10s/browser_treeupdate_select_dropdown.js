@@ -24,7 +24,7 @@ const snippet = `
 
 addAccessibleTask(
   snippet,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     await invokeFocus(browser, "select");
     
     

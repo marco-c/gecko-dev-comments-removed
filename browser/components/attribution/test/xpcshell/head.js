@@ -110,11 +110,7 @@ async function setupStubs() {
   
   
   let caller = Components.stack.caller;
-  const testID = caller.filename
-    .toString()
-    .split("/")
-    .pop()
-    .split(".")[0];
+  const testID = caller.filename.toString().split("/").pop().split(".")[0];
   notEqual(testID, "head");
 
   let applicationFile = do_get_tempdir();

@@ -21,7 +21,7 @@ add_task(async function test_accessing_shistory() {
       "heap-minimize"
     );
     SpecialPowers.DOMWindowUtils.garbageCollect();
-    await new Promise(function(r) {
+    await new Promise(function (r) {
       
       setTimeout(r, 50);
     });

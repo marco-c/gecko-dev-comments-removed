@@ -11,7 +11,7 @@ const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-eval-in-stackframe.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("devtools.debugger.features.inline-preview", false);

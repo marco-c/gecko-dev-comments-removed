@@ -112,7 +112,7 @@ async function loadContentPage() {
   return page;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   Services.prefs.setIntPref(PROCESS_COUNT_PREF, 1);

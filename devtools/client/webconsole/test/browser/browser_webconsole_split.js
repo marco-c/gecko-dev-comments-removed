@@ -9,7 +9,7 @@ const TEST_URI =
 
 requestLongerTimeout(4);
 
-add_task(async function() {
+add_task(async function () {
   let toolbox;
   const getFluentString = await getFluentStringHelper([
     "devtools/client/toolbox.ftl",

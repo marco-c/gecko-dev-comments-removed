@@ -38,7 +38,7 @@ function isLikelyFocusChange(rects) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -132,7 +132,7 @@ add_task(async function() {
   };
 
   await withPerfObserver(
-    async function() {
+    async function () {
       
       await new Promise(resolve => {
         win.addEventListener(

@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",
@@ -58,6 +58,12 @@ add_task(async function test_showLoginItemErrors() {
         
         new content.CustomEvent("AboutLoginsCreateLogin", event)
       );
+
+      await ContentTaskUtils.waitForCondition(() => {
+        return (
+          loginList.shadowRoot.querySelectorAll(".login-list-item").length === 3
+        );
+      }, "Waiting for login item to be created.");
 
       Assert.ok(
         loginItemErrorMessage.hidden,

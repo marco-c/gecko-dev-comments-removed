@@ -4,7 +4,7 @@
 
 
 
-module.exports = async function(context, commands) {
+module.exports = async function (context, commands) {
   const benchmark_url = "https://grandprixbench.netlify.app/";
   const iterations = `${context.options.browsertime.grandprix_iterations}`;
   const tests = [

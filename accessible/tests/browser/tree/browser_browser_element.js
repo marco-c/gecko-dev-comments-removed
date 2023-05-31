@@ -8,7 +8,7 @@ loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
 
-addAccessibleTask(`test`, async function(browser, docAcc) {
+addAccessibleTask(`test`, async function (browser, docAcc) {
   
   testAccessibleTree(browser, {
     INTERNAL_FRAME: [{ DOCUMENT: [{ TEXT_LEAF: [] }] }],

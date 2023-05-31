@@ -66,12 +66,7 @@ describe("FilterBar component:", () => {
     expect(clearButton.attr("title")).toBe("Clear the Web Console output");
 
     
-    expect(
-      toolbar
-        .children()
-        .eq(1)
-        .attr("class")
-    ).toBe("devtools-separator");
+    expect(toolbar.children().eq(1).attr("class")).toBe("devtools-separator");
 
     
     const textInput = toolbar.children().eq(2);

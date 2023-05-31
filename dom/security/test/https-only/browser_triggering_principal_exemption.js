@@ -5,7 +5,7 @@
 const TRIGGERING_PAGE = "http://example.org";
 const LOADED_RESOURCE = "http://example.com";
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_only_mode", true]],

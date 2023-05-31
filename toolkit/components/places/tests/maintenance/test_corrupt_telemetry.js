@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await createCorruptDb("places.sqlite");
 
   let count = Services.telemetry

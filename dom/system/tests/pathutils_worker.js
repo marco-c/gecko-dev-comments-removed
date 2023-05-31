@@ -8,7 +8,7 @@
 
 importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
 
-self.onmessage = async function(message) {
+self.onmessage = async function (message) {
   let expected = message.data;
   info("ON message");
   info(JSON.stringify(expected));

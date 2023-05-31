@@ -1,6 +1,6 @@
-// This file expects imgutils.js to be loaded as well.
-/* import-globals-from imgutils.js */
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+
+
+
 var currentTest;
 var gIsRefImageLoaded = false;
 const gShouldOutputDebugInfo = false;
@@ -52,34 +52,34 @@ function failTest() {
   currentTest.cleanUpAndFinish();
 }
 
-/**
- * Create a new AnimationTest object.
- *
- * @param pollFreq The amount of time (in ms) to wait between consecutive
- *        snapshots if the reference image and the test image don't match.
- * @param timeout The total amount of time (in ms) to wait before declaring the
- *        test as failed.
- * @param referenceElementId The id attribute of the reference image element, or
- *        the source of the image to change to, once the reference snapshot has
- *        been successfully taken. This latter option could be used if you don't
- *        want the image to become invisible at any time during the test.
- * @param imageElementId The id attribute of the test image element.
- * @param debugElementId The id attribute of the div where links should be
- *        appended if the test fails.
- * @param cleanId The id attribute of the div or element to use as the 'clean'
- *        test. This element is only enabled when we are testing to verify that
- *        the reference image has been loaded. It can be undefined.
- * @param srcAttr The location of the source of the image, for preloading. This
- *        is usually not required, but it useful for preloading reference
- *        images.
- * @param xulTest A boolean value indicating whether or not this is a XUL test
- *        (uses hidden=true/false rather than display: none to hide/show
- *        elements).
- * @param closeFunc A function that should be called when this test is finished.
- *        If null, then cleanUpAndFinish() will be called. This can be used to
- *        chain tests together, so they are all finished exactly once.
- * @returns {AnimationTest}
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function AnimationTest(
   pollFreq,
   timeout,
@@ -91,8 +91,8 @@ function AnimationTest(
   xulTest,
   closeFunc
 ) {
-  // We want to test the cold loading behavior, so clear cache in case an
-  // earlier test got our image in there already.
+  
+  
   clearAllImageCaches();
 
   this.wereFailures = false;
@@ -102,15 +102,15 @@ function AnimationTest(
   this.referenceElementId = referenceElementId;
 
   if (!document.getElementById(referenceElementId)) {
-    // In this case, we're assuming the user passed in a string that
-    // indicates the source of the image they want to change to,
-    // after the reference image has been taken.
+    
+    
+    
     this.reusingImageAsReference = true;
   }
 
   this.srcAttr = srcAttr;
   this.debugElementId = debugElementId;
-  this.referenceSnapshot = ""; // value will be set in takeReferenceSnapshot()
+  this.referenceSnapshot = ""; 
   this.pollCounter = 0;
   this.isTestFinished = false;
   this.numRefsTaken = 0;
@@ -121,10 +121,10 @@ function AnimationTest(
   this.closeFunc = closeFunc ? closeFunc : "";
 }
 
-AnimationTest.prototype.preloadImage = function() {
+AnimationTest.prototype.preloadImage = function () {
   if (this.srcAttr) {
     this.myImage = new Image();
-    this.myImage.onload = function() {
+    this.myImage.onload = function () {
       currentTest.continueTest();
     };
     this.myImage.src = this.srcAttr;
@@ -133,7 +133,7 @@ AnimationTest.prototype.preloadImage = function() {
   }
 };
 
-AnimationTest.prototype.outputDebugInfo = function(message, id, dataUri) {
+AnimationTest.prototype.outputDebugInfo = function (message, id, dataUri) {
   if (!gShouldOutputDebugInfo) {
     return;
   }
@@ -148,25 +148,25 @@ AnimationTest.prototype.outputDebugInfo = function(message, id, dataUri) {
   todo(false, "Debug (" + id + "): " + message + " " + dataUri);
 };
 
-AnimationTest.prototype.isFinished = function() {
+AnimationTest.prototype.isFinished = function () {
   return this.isTestFinished;
 };
 
-AnimationTest.prototype.takeCleanSnapshot = function() {
+AnimationTest.prototype.takeCleanSnapshot = function () {
   var cleanElement;
   if (this.cleanId) {
     cleanElement = document.getElementById(this.cleanId);
   }
 
-  // Enable clean page comparison element
+  
   if (cleanElement) {
     this.enableDisplay(cleanElement);
   }
 
-  // Take a snapshot of the initial (clean) page
+  
   this.cleanSnapshot = snapshotWindow(window, false);
 
-  // Disable the clean page comparison element
+  
   if (cleanElement) {
     this.disableDisplay(cleanElement);
   }
@@ -179,8 +179,8 @@ AnimationTest.prototype.takeCleanSnapshot = function() {
   );
 };
 
-AnimationTest.prototype.takeBlankSnapshot = function() {
-  // Take a snapshot of the initial (essentially blank) page
+AnimationTest.prototype.takeBlankSnapshot = function () {
+  
   this.blankSnapshot = snapshotWindow(window, false);
 
   var dataString1 = "Initial Blank Snapshot";
@@ -191,14 +191,14 @@ AnimationTest.prototype.takeBlankSnapshot = function() {
   );
 };
 
-/**
- * Begin the AnimationTest. This will utilize the information provided in the
- * constructor to invoke a mochitest on animated images. It will automatically
- * fail if allowed to run past the timeout. This will attempt to preload an
- * image, if applicable, and then asynchronously call continueTest(), or if not
- * applicable, synchronously trigger a call to continueTest().
- */
-AnimationTest.prototype.beginTest = function() {
+
+
+
+
+
+
+
+AnimationTest.prototype.beginTest = function () {
   SimpleTest.waitForExplicitFinish();
   SimpleTest.requestFlakyTimeout("untriaged");
 
@@ -206,14 +206,14 @@ AnimationTest.prototype.beginTest = function() {
   this.preloadImage();
 };
 
-/**
- * This is the second part of the test. It is triggered (eventually) from
- * beginTest() either synchronously or asynchronously, as an image load
- * callback.
- */
-AnimationTest.prototype.continueTest = async function() {
-  // In case something goes wrong, fail earlier than mochitest timeout,
-  // and with more information.
+
+
+
+
+
+AnimationTest.prototype.continueTest = async function () {
+  
+  
   setTimeout(failTest, this.timeout);
 
   if (!this.reusingImageAsReference) {
@@ -230,8 +230,8 @@ AnimationTest.prototype.continueTest = async function() {
   });
 };
 
-AnimationTest.prototype.setupPolledImage = function() {
-  // Make sure the image is visible
+AnimationTest.prototype.setupPolledImage = function () {
+  
   if (!this.reusingImageAsReference) {
     this.enableDisplay(document.getElementById(this.imageElementId));
     var currentSnapshot = snapshotWindow(window, false);
@@ -244,7 +244,7 @@ AnimationTest.prototype.setupPolledImage = function() {
     this.currentSnapshotDataURI = currentSnapshot.toDataURL();
 
     if (result[0]) {
-      // SUCCESS!
+      
       ok(true, "Animated image looks correct, at poll #" + this.pollCounter);
 
       this.outputDebugInfo(
@@ -270,15 +270,15 @@ AnimationTest.prototype.setupPolledImage = function() {
   }
 };
 
-AnimationTest.prototype.checkImage = function() {
+AnimationTest.prototype.checkImage = function () {
   if (this.isTestFinished) {
     return;
   }
 
   this.pollCounter++;
 
-  // We need this for some tests, because we need to force the
-  // test image to be visible.
+  
+  
   if (!this.reusingImageAsReference) {
     this.enableDisplay(document.getElementById(this.imageElementId));
   }
@@ -289,7 +289,7 @@ AnimationTest.prototype.checkImage = function() {
   this.currentSnapshotDataURI = currentSnapshot.toDataURL();
 
   if (result[0]) {
-    // SUCCESS!
+    
     ok(true, "Animated image looks correct, at poll #" + this.pollCounter);
 
     this.outputDebugInfo("Animated image", "animImage", result[1]);
@@ -300,21 +300,21 @@ AnimationTest.prototype.checkImage = function() {
   }
 };
 
-AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
+AnimationTest.prototype.takeReferenceSnapshot = function (resolve) {
   this.numRefsTaken++;
 
-  // Test to make sure the reference image doesn't match a clean snapshot
+  
   if (!this.cleanSnapshot) {
     this.takeCleanSnapshot();
   }
 
-  // Used later to verify that the reference div disappeared
+  
   if (!this.blankSnapshot) {
     this.takeBlankSnapshot();
   }
 
   if (this.reusingImageAsReference) {
-    // Show reference elem (which is actually our image), & take a snapshot
+    
     var referenceElem = document.getElementById(this.imageElementId);
     this.enableDisplay(referenceElem);
 
@@ -327,8 +327,8 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
     );
     if (!snapResult[0]) {
       if (this.blankWaitTime > 2000) {
-        // if it took longer than two seconds to load the image, we probably
-        // have a problem.
+        
+        
         this.wereFailures = true;
         ok(
           snapResult[0],
@@ -336,7 +336,7 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
         );
       } else {
         this.blankWaitTime += currentTest.pollFreq;
-        // let's wait a bit and see if it clears up
+        
         setTimeout(
           () => this.takeReferenceSnapshot(resolve),
           currentTest.pollFreq
@@ -357,10 +357,10 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
       this.referenceSnapshot.toDataURL()
     );
   } else {
-    // Make sure the animation section is hidden
+    
     this.disableDisplay(document.getElementById(this.imageElementId));
 
-    // Show reference div, & take a snapshot
+    
     var referenceDiv = document.getElementById(this.referenceElementId);
     this.enableDisplay(referenceDiv);
 
@@ -372,8 +372,8 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
     );
     if (!snapResult[0]) {
       if (this.blankWaitTime > 2000) {
-        // if it took longer than two seconds to load the image, we probably
-        // have a problem.
+        
+        
         this.wereFailures = true;
         ok(
           snapResult[0],
@@ -381,7 +381,7 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
         );
       } else {
         this.blankWaitTime += 20;
-        // let's wait a bit and see if it clears up
+        
         setTimeout(() => this.takeReferenceSnapshot(resolve), 20);
         return;
       }
@@ -399,14 +399,14 @@ AnimationTest.prototype.takeReferenceSnapshot = function(resolve) {
       this.referenceSnapshot.toDataURL()
     );
 
-    // Re-hide reference div, and take another snapshot to be sure it's gone
+    
     this.disableDisplay(referenceDiv);
     this.testBlankCameBack();
   }
   resolve();
 };
 
-AnimationTest.prototype.enableDisplay = function(element) {
+AnimationTest.prototype.enableDisplay = function (element) {
   if (!element) {
     return;
   }
@@ -418,7 +418,7 @@ AnimationTest.prototype.enableDisplay = function(element) {
   }
 };
 
-AnimationTest.prototype.disableDisplay = function(element) {
+AnimationTest.prototype.disableDisplay = function (element) {
   if (!element) {
     return;
   }
@@ -430,7 +430,7 @@ AnimationTest.prototype.disableDisplay = function(element) {
   }
 };
 
-AnimationTest.prototype.testBlankCameBack = function() {
+AnimationTest.prototype.testBlankCameBack = function () {
   var blankSnapshot2 = snapshotWindow(window, false);
   var result = compareSnapshots(this.blankSnapshot, blankSnapshot2, true);
   ok(
@@ -445,16 +445,16 @@ AnimationTest.prototype.testBlankCameBack = function() {
   }
 };
 
-AnimationTest.prototype.cleanUpAndFinish = function() {
-  // On the off chance that failTest and checkImage are triggered
-  // back-to-back, use a flag to prevent multiple calls to SimpleTest.finish.
+AnimationTest.prototype.cleanUpAndFinish = function () {
+  
+  
   if (this.isTestFinished) {
     return;
   }
 
   this.isTestFinished = true;
 
-  // Call our closing function, if one exists
+  
   if (this.closeFunc) {
     this.closeFunc();
     return;

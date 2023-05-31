@@ -137,7 +137,7 @@ var tags = [
 
 
 function makeTagFunc(tagName) {
-  return function(attrs ) {
+  return function (attrs ) {
     var startChildren = 0;
     var response = "";
 
@@ -332,7 +332,7 @@ function createMochitestServer(serverBasePath) {
   var serverRoot = {
     getFile: function getFile(path) {
       var file = serverBasePath.clone().QueryInterface(Ci.nsIFile);
-      path.split("/").forEach(function(p) {
+      path.split("/").forEach(function (p) {
         file.appendRelativePath(p);
       });
       return file;
@@ -675,7 +675,7 @@ function arrayOfTestFiles(linkArray, fileArray, testPattern) {
 function jsonArrayOfTestFiles(links) {
   var testFiles = [];
   arrayOfTestFiles(links, testFiles);
-  testFiles = testFiles.map(function(file) {
+  testFiles = testFiles.map(function (file) {
     return '"' + file.url + '"';
   });
 
@@ -717,7 +717,7 @@ function convertManifestToTestLinks(root, manifest) {
   var paths = manifestObj.tests;
   var pathPrefix = "/" + root + "/";
   return [
-    paths.reduce(function(t, p) {
+    paths.reduce(function (t, p) {
       t[pathPrefix + p.path] = true;
       return t;
     }, {}),

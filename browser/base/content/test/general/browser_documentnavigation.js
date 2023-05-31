@@ -24,7 +24,7 @@ async function expectFocusOnF6(
     let success = await SpecialPowers.spawn(
       gBrowser.selectedBrowser,
       [expectedElement],
-      async function(expectedElementId) {
+      async function (expectedElementId) {
         content.lastResult = "";
         let contentExpectedElement = content.document.getElementById(
           expectedElementId
@@ -47,7 +47,7 @@ async function expectFocusOnF6(
 
         contentExpectedElement.addEventListener(
           "focus",
-          function() {
+          function () {
             let details =
               Services.focus.focusedWindow.document.documentElement.id;
             if (Services.focus.focusedElement) {
@@ -116,7 +116,7 @@ async function expectFocusOnF6(
 }
 
 
-add_task(async function() {
+add_task(async function () {
   let page1Promise = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
@@ -153,7 +153,7 @@ add_task(async function() {
     "basic focus content page with button focused"
   );
 
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     return content.document.getElementById("button1").focus();
   });
 
@@ -175,7 +175,7 @@ add_task(async function() {
   );
 
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     Assert.ok(
       content.document.activeElement == content.document.documentElement,
       "basic focus again content page with button focused child root is focused"
@@ -184,7 +184,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage2);
 
   await expectFocusOnF6(
@@ -207,7 +207,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   gURLBar.focus();
   await expectFocusOnF6(
     true,
@@ -226,7 +226,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let sidebar = document.getElementById("sidebar");
 
   let loadPromise = BrowserTestUtils.waitForEvent(sidebar, "load", true);
@@ -359,7 +359,7 @@ add_task(async function test_download_focus() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage3);
 
   
@@ -400,7 +400,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "http://mochi.test:8888/browser/browser/base/content/test/general/file_documentnavigation_frameset.html"

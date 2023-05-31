@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(URL_ROOT + "doc_infinity_duration.html");
   const { inspector, panel } = await openAnimationInspector();
 

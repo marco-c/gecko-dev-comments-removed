@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let panelContainer = document.getElementById("customization-panel-container");
   
@@ -47,7 +47,7 @@ add_task(async function() {
   );
 });
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   await gCustomizeMode.reset();
   await endCustomizing();
 });

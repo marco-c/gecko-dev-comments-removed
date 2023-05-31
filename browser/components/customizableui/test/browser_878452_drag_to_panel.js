@@ -10,7 +10,7 @@ CustomizableUI.createWidget({
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let btn = document.getElementById("new-window-button");
   let placements = getAreaWidgetIds(CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
@@ -35,7 +35,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   CustomizableUI.addWidgetToArea(
     "cui-panel-item-to-drag-to",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
@@ -60,7 +60,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let widgetIds = getAreaWidgetIds(CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   while (widgetIds.length) {
     CustomizableUI.removeWidgetFromArea(widgetIds.shift());

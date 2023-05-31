@@ -66,7 +66,7 @@ function waitForTransitionEnd(...els) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({

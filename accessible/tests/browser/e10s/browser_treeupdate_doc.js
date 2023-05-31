@@ -19,7 +19,7 @@ const iframeSrc = `data:text/html,
 addAccessibleTask(
   `
   <iframe id="iframe" src="${iframeSrc}"></iframe>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     const id = "inner-iframe";
 

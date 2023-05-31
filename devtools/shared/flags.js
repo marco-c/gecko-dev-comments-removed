@@ -33,7 +33,7 @@ function makePrefTrackedFlag(exports, name, pref) {
     Services.prefs.addObserver(pref, prefObserver);
 
     
-    const unloadObserver = function(subject) {
+    const unloadObserver = function (subject) {
       if (subject.wrappedJSObject == require("@loader/unload")) {
         Services.prefs.removeObserver(pref, prefObserver);
         Services.obs.removeObserver(unloadObserver, "devtools:loader:destroy");

@@ -436,7 +436,7 @@ function check_results(aActualAddons, aExpectedAddons, aFromRepository) {
 
   
   
-  aActualAddons.forEach(function(aActualAddon) {
+  aActualAddons.forEach(function (aActualAddon) {
     if (aActualAddon.updateDate) {
       let time = aActualAddon.updateDate.getTime();
       Assert.equal(time === 1000 * REPOSITORY_UPDATEDATE, aFromRepository);
@@ -470,7 +470,7 @@ function check_cache(aExpectedToFind, aExpectedImmediately) {
         let expected = aExpectedToFind[i] ? REPOSITORY_ADDONS[i] : null;
         
         
-        AddonRepository.getCachedAddonByID(REPOSITORY_ADDONS[i].id, function(
+        AddonRepository.getCachedAddonByID(REPOSITORY_ADDONS[i].id, function (
           aAddon
         ) {
           Assert.equal(immediatelyFound, aExpectedImmediately);

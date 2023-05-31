@@ -17,7 +17,7 @@ add_task(
   })
 );
 
-const testBreakpoint = async function(threadFront) {
+const testBreakpoint = async function (threadFront) {
   evalSetupCode();
 
   

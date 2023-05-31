@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await runTest({
     description: "Load site with HTTP and HOM disabled",
@@ -90,7 +90,7 @@ const SERVER_URL = scheme =>
   `${scheme}://example.com/browser/dom/security/test/https-only/file_cors_mixedcontent.html`;
 
 async function runTest(test) {
-  await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     let loaded = BrowserTestUtils.browserLoaded(browser);
 
     BrowserTestUtils.loadURIString(browser, SERVER_URL(test.topLevelScheme));
@@ -98,7 +98,7 @@ async function runTest(test) {
     await loaded;
 
     
-    await SpecialPowers.spawn(browser, [test], async function(test) {
+    await SpecialPowers.spawn(browser, [test], async function (test) {
       const promise = new Promise(resolve => {
         content.addEventListener("FetchEnded", resolve, {
           once: true,

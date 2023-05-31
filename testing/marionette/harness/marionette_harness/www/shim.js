@@ -21,7 +21,7 @@
 
 "use strict";
 
-(function() {
+(function () {
   
   if (MouseEventShim) {
     return;

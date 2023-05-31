@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(URL_ROOT + "doc_edit_imported_selector.html");
   const { inspector, view } = await openRuleView();
 

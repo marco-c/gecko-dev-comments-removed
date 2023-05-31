@@ -12,7 +12,7 @@ Services.scriptloader.loadSubScript(
 
 
 
-add_task(async function() {
+add_task(async function () {
   setupTelemetryTest();
 
   const { tab } = await openAboutDebugging();

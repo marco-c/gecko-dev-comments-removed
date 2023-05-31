@@ -98,7 +98,7 @@ function testInit() {
     );
   } else {
     
-    let messageHandler = function(m) {
+    let messageHandler = function (m) {
       
       messageManager.removeMessageListener("chromeEvent", messageHandler);
       var url = m.json.data;
@@ -659,7 +659,7 @@ Tester.prototype = {
     let newTimers;
     try {
       await this.TestUtils.waitForCondition(
-        async function() {
+        async function () {
           
           
           
@@ -768,7 +768,7 @@ Tester.prototype = {
       this.PromiseTestUtils.assertNoMoreExpectedRejections();
       await this.ensureVsyncDisabled();
 
-      Object.keys(window).forEach(function(prop) {
+      Object.keys(window).forEach(function (prop) {
         if (parseInt(prop) == prop) {
           
           
@@ -1249,7 +1249,7 @@ Tester.prototype = {
     scope.TestUtils = this.TestUtils;
     scope.ExtensionTestUtils = this.ExtensionTestUtils;
     
-    scope.Assert = new this.Assert(function(err, message, stack) {
+    scope.Assert = new this.Assert(function (err, message, stack) {
       currentTest.addResult(
         new testResult(
           err
@@ -1272,14 +1272,14 @@ Tester.prototype = {
     this.ContentTask.setTestScope(currentScope);
 
     
-    scope.export_assertions = function() {
+    scope.export_assertions = function () {
       for (let func in this.Assert) {
         this[func] = this.Assert[func].bind(this.Assert);
       }
     };
 
     
-    SIMPLETEST_OVERRIDES.forEach(function(m) {
+    SIMPLETEST_OVERRIDES.forEach(function (m) {
       this.SimpleTest[m] = this[m];
     }, scope);
 
@@ -1792,7 +1792,7 @@ function testScope(aTester, aTest, expected) {
   this.finish = function test_finish() {
     self.__done = true;
     if (self.__waitTimer) {
-      self.executeSoon(function() {
+      self.executeSoon(function () {
         if (self.__done && self.__waitTimer) {
           clearTimeout(self.__waitTimer);
           self.__waitTimer = null;
@@ -1804,7 +1804,7 @@ function testScope(aTester, aTest, expected) {
 
   this.requestCompleteLog = function test_requestCompleteLog() {
     self.__tester.structuredLogger.deactivateBuffering();
-    self.registerCleanupFunction(function() {
+    self.registerCleanupFunction(function () {
       self.__tester.structuredLogger.activateBuffering();
     });
   };

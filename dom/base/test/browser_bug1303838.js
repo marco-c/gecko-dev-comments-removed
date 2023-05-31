@@ -15,7 +15,7 @@
 
 const BASE_URL = "http://mochi.test:8888/browser/dom/base/test/";
 
-add_task(async function() {
+add_task(async function () {
   
   
   

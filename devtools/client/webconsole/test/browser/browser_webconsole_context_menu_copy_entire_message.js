@@ -4,7 +4,7 @@
 "use strict";
 
 const httpServer = createTestHTTPServer();
-httpServer.registerPathHandler(`/`, function(request, response) {
+httpServer.registerPathHandler(`/`, function (request, response) {
   response.setStatusLine(request.httpVersion, 200, "OK");
   response.write(`
     <meta charset=utf8>
@@ -12,7 +12,7 @@ httpServer.registerPathHandler(`/`, function(request, response) {
     <script type="text/javascript" src="test.js"></script>`);
 });
 
-httpServer.registerPathHandler("/test.js", function(request, response) {
+httpServer.registerPathHandler("/test.js", function (request, response) {
   response.setHeader("Content-Type", "application/javascript");
   response.write(`
     window.logStuff = function() {
@@ -38,7 +38,7 @@ const PREF_MESSAGE_TIMESTAMP = "devtools.webconsole.timestampMessages";
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref(PREF_MESSAGE_TIMESTAMP, true);
 
   const hud = await openNewTabAndConsole(TEST_URI);

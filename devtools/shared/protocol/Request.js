@@ -18,7 +18,7 @@ var { types } = require("resource://devtools/shared/protocol/types.js");
 
 
 
-var Request = function(template = {}) {
+var Request = function (template = {}) {
   this.type = template.type;
   this.template = template;
   this.args = findPlaceholders(template, Arg);
@@ -99,10 +99,10 @@ exports.Request = Request;
 
 
 
-var Arg = function(index, type) {
+var Arg = function (index, type) {
   this.index = index;
   
-  loader.lazyGetter(this, "type", function() {
+  loader.lazyGetter(this, "type", function () {
     return types.getType(type);
   });
 };
@@ -118,7 +118,7 @@ Arg.prototype = {
 };
 
 
-exports.Arg = function(index, type) {
+exports.Arg = function (index, type) {
   return new Arg(index, type);
 };
 
@@ -139,7 +139,7 @@ exports.Arg = function(index, type) {
 
 
 
-var Option = function(index, type) {
+var Option = function (index, type) {
   Arg.call(this, index, type);
 };
 
@@ -164,6 +164,6 @@ Option.prototype = extend(Arg.prototype, {
 });
 
 
-exports.Option = function(index, type) {
+exports.Option = function (index, type) {
   return new Option(index, type);
 };

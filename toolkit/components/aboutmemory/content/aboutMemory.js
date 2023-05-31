@@ -140,7 +140,7 @@ function stringMatchesFilter(aString, aFilter) {
 
 
 
-window.onunload = function() {};
+window.onunload = function () {};
 
 
 
@@ -298,20 +298,22 @@ function appendHiddenFileInput(aP, aId, aChangeListener) {
   return input;
 }
 
-window.onload = function() {
+window.onload = function () {
   
 
   let header = appendElement(document.body, "div", "ancillary");
 
   
-  let fileInput1 = appendHiddenFileInput(header, "fileInput1", function() {
+  let fileInput1 = appendHiddenFileInput(header, "fileInput1", function () {
     let file = this.files[0];
     let filename = file.mozFullPath;
     updateAboutMemoryFromFile(filename);
   });
 
   
-  let fileInput2 = appendHiddenFileInput(header, "fileInput2", function(aElem) {
+  let fileInput2 = appendHiddenFileInput(header, "fileInput2", function (
+    aElem
+  ) {
     let file = this.files[0];
     
     
@@ -636,7 +638,7 @@ function updateAboutMemoryFromReporters() {
     gFilter = "";
 
     
-    let handleReport = function(
+    let handleReport = function (
       aProcess,
       aUnsafePath,
       aKind,
@@ -654,7 +656,7 @@ function updateAboutMemoryFromReporters() {
       });
     };
 
-    let displayReports = function() {
+    let displayReports = function () {
       updateTitleMainAndFooter(
         "live measurement",
         "",
@@ -878,8 +880,8 @@ function updateAboutMemoryFromFile(aFilename) {
 
 function updateAboutMemoryFromTwoFiles(aFilename1, aFilename2) {
   let titleNote = `diff of ${aFilename1} and ${aFilename2}`;
-  loadMemoryReportsFromFile(aFilename1, titleNote, function(aStr1) {
-    loadMemoryReportsFromFile(aFilename2, titleNote, function(aStr2) {
+  loadMemoryReportsFromFile(aFilename1, titleNote, function (aStr1) {
+    loadMemoryReportsFromFile(aFilename2, titleNote, function (aStr2) {
       try {
         let obj1 = parseAndUnwrapIfCrashDump(aStr1);
         let obj2 = parseAndUnwrapIfCrashDump(aStr2);
@@ -1315,7 +1317,7 @@ function appendAboutMemoryMain(
   function displayReports() {
     
     let processes = Object.keys(infoByProcess);
-    processes.sort(function(aProcessA, aProcessB) {
+    processes.sort(function (aProcessA, aProcessB) {
       assert(
         aProcessA != aProcessB,
         `Elements of Object.keys() should be unique, but ` +
@@ -1449,11 +1451,11 @@ function appendAboutMemoryMain(
     
     
     let filterUpdateTimeout;
-    let filterUpdate = function() {
+    let filterUpdate = function () {
       if (filterUpdateTimeout) {
         window.clearTimeout(filterUpdateTimeout);
       }
-      filterUpdateTimeout = window.setTimeout(function() {
+      filterUpdateTimeout = window.setTimeout(function () {
         try {
           gFilter =
             filterRegExCheckbox.checked && filterInput.value != ""
@@ -1563,7 +1565,7 @@ TreeNode.prototype = {
 
 
 
-TreeNode.compareAmounts = function(aA, aB) {
+TreeNode.compareAmounts = function (aA, aB) {
   let a, b;
   if (gIsDiff) {
     a = aA.maxAbsDescendant();
@@ -1581,7 +1583,7 @@ TreeNode.compareAmounts = function(aA, aB) {
   return TreeNode.compareUnsafeNames(aA, aB);
 };
 
-TreeNode.compareUnsafeNames = function(aA, aB) {
+TreeNode.compareUnsafeNames = function (aA, aB) {
   return aA._unsafeName.localeCompare(aB._unsafeName);
 };
 
@@ -1881,7 +1883,7 @@ function appendProcessAboutMemoryElements(
   aHasMozMallocUsableSize,
   aFiltered
 ) {
-  let appendLink = function(aHere, aThere, aArrow) {
+  let appendLink = function (aHere, aThere, aArrow) {
     let link = appendElementWithText(aP, "a", "upDownArrow", aArrow);
     link.href = "#" + aThere + aN;
     link.id = aHere + aN;
@@ -2433,7 +2435,7 @@ function saveReportsToFile() {
   fp.addToRecentDocs = true;
   fp.defaultString = "memory-report.json.gz";
 
-  let fpFinish = function(aFile) {
+  let fpFinish = function (aFile) {
     let dumper = Cc["@mozilla.org/memory-info-dumper;1"].getService(
       Ci.nsIMemoryInfoDumper
     );
@@ -2453,7 +2455,7 @@ function saveReportsToFile() {
     );
   };
 
-  let fpCallback = function(aResult) {
+  let fpCallback = function (aResult) {
     if (
       aResult == Ci.nsIFilePicker.returnOK ||
       aResult == Ci.nsIFilePicker.returnReplace
@@ -2467,7 +2469,7 @@ function saveReportsToFile() {
   } catch (ex) {
     
     
-    Downloads.getSystemDownloadsDirectory().then(function(aDirPath) {
+    Downloads.getSystemDownloadsDirectory().then(function (aDirPath) {
       let file = FileUtils.File(aDirPath);
       file.append(fp.defaultString);
       fpFinish(file);

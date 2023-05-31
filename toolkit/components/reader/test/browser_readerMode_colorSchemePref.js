@@ -26,7 +26,7 @@ async function testColorScheme(aPref, aExpectation) {
   
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticle.html",
-    async function(browser) {
+    async function (browser) {
       let pageShownPromise = BrowserTestUtils.waitForContentEvent(
         browser,
         "AboutReaderContentReady"
@@ -55,7 +55,7 @@ async function testColorScheme(aPref, aExpectation) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await testColorScheme(0, "auto");
   await testColorScheme(1, "auto");
   await testColorScheme(0, "light");

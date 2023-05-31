@@ -52,7 +52,7 @@ const SENTINEL_KEY = "WRITE_BATCH_SENTINEL";
 var storageEventsPromise = null;
 function listenForStorageEvents(sentinelValue) {
   const recordedEvents = [];
-  storageEventsPromise = new Promise(function(resolve, reject) {
+  storageEventsPromise = new Promise(function (resolve, reject) {
     window.addEventListener("storage", function thisHandler(event) {
       if (event.key === SENTINEL_KEY) {
         
@@ -71,7 +71,7 @@ function listenForStorageEvents(sentinelValue) {
 }
 
 function mutateStorage({ mutations, sentinelValue }) {
-  mutations.forEach(function([key, value]) {
+  mutations.forEach(function ([key, value]) {
     if (key !== null) {
       if (value === null) {
         localStorage.removeItem(key);
@@ -89,7 +89,7 @@ function mutateStorage({ mutations, sentinelValue }) {
 
 
 function waitForSentinelValue(sentinelValue) {
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     function checkFunc() {
       if (localStorage.getItem(SENTINEL_KEY) === sentinelValue) {
         resolve();

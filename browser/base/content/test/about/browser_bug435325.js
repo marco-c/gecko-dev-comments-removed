@@ -18,7 +18,7 @@ add_task(async function checkSwitchPageToOnlineMode() {
     ],
   });
 
-  await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
 
     
@@ -35,7 +35,7 @@ add_task(async function checkSwitchPageToOnlineMode() {
     );
 
     
-    await SpecialPowers.spawn(browser, [], async function() {
+    await SpecialPowers.spawn(browser, [], async function () {
       ok(
         content.document.documentURI.startsWith("about:neterror?e=netOffline"),
         "Should be showing error page"
@@ -53,6 +53,6 @@ add_task(async function checkSwitchPageToOnlineMode() {
   });
 });
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   Services.io.offline = false;
 });

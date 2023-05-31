@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(CYRILLIC_URL, {
     requestCount: 1,
   });

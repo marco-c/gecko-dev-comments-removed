@@ -8,7 +8,7 @@
 
 const TEST_URL = `${URL_ROOT}page_style.html`;
 
-addRDMTask(TEST_URL, async function({ ui, manager }) {
+addRDMTask(TEST_URL, async function ({ ui, manager }) {
   
   const rdmWindow = ui.toolWindow;
   const rdmTextColor = rdmWindow.getComputedStyle(rdmWindow.document.body)
@@ -54,7 +54,7 @@ function waitForContentPageTextColor(ui, expectedColor) {
   return SpecialPowers.spawn(
     ui.getViewportBrowser(),
     [{ expectedColor }],
-    function(args) {
+    function (args) {
       return new Promise(resolve => {
         const interval = content.setInterval(() => {
           const color = content.getComputedStyle(content.document.body).color;

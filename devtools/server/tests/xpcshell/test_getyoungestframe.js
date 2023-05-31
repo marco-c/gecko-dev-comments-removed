@@ -17,12 +17,12 @@ function run_test() {
   dbg.uncaughtExceptionHook = testExceptionHook;
 
   dbg.addDebuggee(g);
-  dbg.onDebuggerStatement = function(frame) {
+  dbg.onDebuggerStatement = function (frame) {
     Assert.ok(frame === dbg.getNewestFrame());
     
     
 
-    executeSoon(function() {
+    executeSoon(function () {
       try {
         Assert.ok(frame === dbg.getNewestFrame());
       } finally {

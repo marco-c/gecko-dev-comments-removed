@@ -1,6 +1,6 @@
 
 
-(function() {
+(function () {
   addEventListener(
     "load",
     loadevt => {

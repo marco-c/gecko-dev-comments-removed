@@ -9,9 +9,9 @@ add_task(async function test_bug1174036() {
       gBrowser,
       url: "data:text/html;charset=utf-8," + encodeURIComponent(URI),
     },
-    async function(browser) {
+    async function (browser) {
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         content.document.getElementsByTagName("textarea")[0].style.display =
           "none";
       });

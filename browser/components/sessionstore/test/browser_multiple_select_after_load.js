@@ -15,7 +15,7 @@ const VALUES = ["1", "3"];
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
   await promiseBrowserLoaded(tab.linkedBrowser);

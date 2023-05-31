@@ -140,7 +140,7 @@ function timerGuard(p, time, message) {
 
 
 
-PeerConnectionTest.prototype.closePC = function() {
+PeerConnectionTest.prototype.closePC = function () {
   info("Closing peer connections");
 
   var closeIt = pc => {
@@ -195,7 +195,7 @@ PeerConnectionTest.prototype.closePC = function() {
 
 
 
-PeerConnectionTest.prototype.close = function() {
+PeerConnectionTest.prototype.close = function () {
   var allChannels = (this.pcLocal || this.pcRemote).dataChannels;
   return timerGuard(
     Promise.all(allChannels.map((channel, i) => this.closeDataChannels(i))),
@@ -210,7 +210,7 @@ PeerConnectionTest.prototype.close = function() {
 
 
 
-PeerConnectionTest.prototype.closeDataChannels = function(index) {
+PeerConnectionTest.prototype.closeDataChannels = function (index) {
   info("closeDataChannels called with index: " + index);
   var localChannel = null;
   if (this.pcLocal) {
@@ -271,7 +271,7 @@ PeerConnectionTest.prototype.closeDataChannels = function(index) {
 
 
 
-PeerConnectionTest.prototype.send = async function(data, options) {
+PeerConnectionTest.prototype.send = async function (data, options) {
   options = options || {};
   const source =
     options.sourceChannel ||
@@ -324,7 +324,7 @@ PeerConnectionTest.prototype.send = async function(data, options) {
 
 
 
-PeerConnectionTest.prototype.createDataChannel = function(options) {
+PeerConnectionTest.prototype.createDataChannel = function (options) {
   var remotePromise;
   if (!options.negotiated) {
     this.pcRemote.expectDataChannel("pcRemote expected data channel");
@@ -363,7 +363,7 @@ PeerConnectionTest.prototype.createDataChannel = function(options) {
 
 
 
-PeerConnectionTest.prototype.createAnswer = function(peer) {
+PeerConnectionTest.prototype.createAnswer = function (peer) {
   return peer.createAnswer().then(answer => {
     
     this.originalAnswer = new RTCSessionDescription(
@@ -380,7 +380,7 @@ PeerConnectionTest.prototype.createAnswer = function(peer) {
 
 
 
-PeerConnectionTest.prototype.createOffer = function(peer) {
+PeerConnectionTest.prototype.createOffer = function (peer) {
   return peer.createOffer().then(offer => {
     
     this.originalOffer = new RTCSessionDescription(
@@ -399,7 +399,7 @@ PeerConnectionTest.prototype.createOffer = function(peer) {
 
 
 
-PeerConnectionTest.prototype.setLocalDescription = function(
+PeerConnectionTest.prototype.setLocalDescription = function (
   peer,
   desc,
   stateExpected
@@ -444,7 +444,7 @@ PeerConnectionTest.prototype.setLocalDescription = function(
 
 
 
-PeerConnectionTest.prototype.setMediaConstraints = function(
+PeerConnectionTest.prototype.setMediaConstraints = function (
   constraintsLocal,
   constraintsRemote
 ) {
@@ -461,7 +461,7 @@ PeerConnectionTest.prototype.setMediaConstraints = function(
 
 
 
-PeerConnectionTest.prototype.setOfferOptions = function(options) {
+PeerConnectionTest.prototype.setOfferOptions = function (options) {
   if (this.pcLocal) {
     this.pcLocal.offerOptions = options;
   }
@@ -476,7 +476,7 @@ PeerConnectionTest.prototype.setOfferOptions = function(options) {
 
 
 
-PeerConnectionTest.prototype.setRemoteDescription = function(
+PeerConnectionTest.prototype.setRemoteDescription = function (
   peer,
   desc,
   stateExpected
@@ -513,7 +513,7 @@ PeerConnectionTest.prototype.setRemoteDescription = function(
 
 
 
-PeerConnectionTest.prototype.updateChainSteps = function() {
+PeerConnectionTest.prototype.updateChainSteps = function () {
   if (this.testOptions.h264) {
     this.chain.insertAfterEach("PC_LOCAL_CREATE_OFFER", [
       PC_LOCAL_REMOVE_ALL_BUT_H264_FROM_OFFER,
@@ -548,7 +548,7 @@ PeerConnectionTest.prototype.updateChainSteps = function() {
 
 
 
-PeerConnectionTest.prototype.run = async function() {
+PeerConnectionTest.prototype.run = async function () {
   
 
   this.updateChainSteps();
@@ -567,7 +567,10 @@ PeerConnectionTest.prototype.run = async function() {
 
 
 
-PeerConnectionTest.prototype.iceCandidateHandler = function(caller, candidate) {
+PeerConnectionTest.prototype.iceCandidateHandler = function (
+  caller,
+  candidate
+) {
   info("Received: " + JSON.stringify(candidate) + " from " + caller);
 
   var target = null;
@@ -596,7 +599,7 @@ PeerConnectionTest.prototype.iceCandidateHandler = function(caller, candidate) {
 
 
 
-PeerConnectionTest.prototype.setupSignalingClient = function() {
+PeerConnectionTest.prototype.setupSignalingClient = function () {
   this.signalingMessageQueue = [];
   this.signalingCallbacks = {};
   this.signalingLoopRun = true;
@@ -629,7 +632,7 @@ PeerConnectionTest.prototype.setupSignalingClient = function() {
 
 
 
-PeerConnectionTest.prototype.signalingMessagesFinished = function() {
+PeerConnectionTest.prototype.signalingMessagesFinished = function () {
   this.signalingLoopRun = false;
 };
 
@@ -644,7 +647,7 @@ PeerConnectionTest.prototype.signalingMessagesFinished = function() {
 
 
 
-PeerConnectionTest.prototype.registerSignalingCallback = function(
+PeerConnectionTest.prototype.registerSignalingCallback = function (
   messageType,
   onMessage
 ) {
@@ -659,7 +662,7 @@ PeerConnectionTest.prototype.registerSignalingCallback = function(
 
 
 
-PeerConnectionTest.prototype.getSignalingMessage = function(messageType) {
+PeerConnectionTest.prototype.getSignalingMessage = function (messageType) {
   var i = this.signalingMessageQueue.findIndex(m => m.type === messageType);
   if (i >= 0) {
     info(

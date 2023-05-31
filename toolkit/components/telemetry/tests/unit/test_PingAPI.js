@@ -13,7 +13,7 @@ const { TelemetryArchive } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryArchive.sys.mjs"
 );
 
-XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
+XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function () {
   return PathUtils.join(PathUtils.profileDir, "datareporting", "archived");
 });
 
@@ -37,7 +37,7 @@ function fakeStorageQuota(aArchiveQuota) {
 
 
 
-var getArchivedPingsInfo = async function() {
+var getArchivedPingsInfo = async function () {
   let archivedPings = [];
 
   
@@ -118,7 +118,7 @@ add_task(async function test_archivedPings() {
   }
 
   
-  let checkLoadingPings = async function() {
+  let checkLoadingPings = async function () {
     for (let data of PINGS) {
       let ping = await TelemetryArchive.promiseArchivedPingById(data.id);
       Assert.equal(ping.id, data.id, "Archived ping should have matching id");
@@ -149,7 +149,7 @@ add_task(async function test_archivedPings() {
   await checkLoadingPings();
 
   
-  let writeToArchivedDir = async function(
+  let writeToArchivedDir = async function (
     dirname,
     filename,
     content,
@@ -279,7 +279,7 @@ add_task(async function test_archiveCleanup() {
   let expectedPrunedInfo = [];
   let expectedNotPrunedInfo = [];
 
-  let checkArchive = async function() {
+  let checkArchive = async function () {
     
     for (let prunedInfo of expectedPrunedInfo) {
       await Assert.rejects(

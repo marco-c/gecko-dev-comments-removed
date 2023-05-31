@@ -11,7 +11,7 @@ const NEW_TAB_URL = `data:text/html,<title>${NEW_TAB_TITLE}</title>`;
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
 
   info("Open a new background tab.");

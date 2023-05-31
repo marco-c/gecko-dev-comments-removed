@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(URL_ROOT + "doc_markup_image_and_canvas.html");
   const { inspector } = await openInspector();
 

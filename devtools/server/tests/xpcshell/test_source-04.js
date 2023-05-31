@@ -39,7 +39,7 @@ add_task(
       
       let pausedOne = false;
       let onResumed = null;
-      threadFront.once("paused", function(packet) {
+      threadFront.once("paused", function (packet) {
         pausedOne = true;
         onResumed = resume(threadFront);
       });
@@ -61,7 +61,7 @@ add_task(
       
       
       let pausedTwo = false;
-      threadFront.once("paused", function(packet) {
+      threadFront.once("paused", function (packet) {
         pausedTwo = true;
         onResumed = resume(threadFront);
       });

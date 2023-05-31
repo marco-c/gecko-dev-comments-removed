@@ -4,7 +4,7 @@
 
 ignoreAllUncaughtExceptions();
 
-add_task(async function() {
+add_task(async function () {
   
   info("Search suggestion smoke test");
 
@@ -19,7 +19,7 @@ add_task(async function() {
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:home" },
-    async function(browser) {
+    async function (browser) {
       
       let engine;
       await promiseContentSearchChange(browser, async () => {
@@ -34,7 +34,7 @@ add_task(async function() {
         return engine.name;
       });
 
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         
         let input = content.document.querySelector([
           "#searchText",
@@ -45,7 +45,7 @@ add_task(async function() {
 
       await BrowserTestUtils.synthesizeKey("x", {}, browser);
 
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         
         let table = content.document.getElementById("searchSuggestionTable");
         let input = content.document.querySelector([
@@ -65,7 +65,7 @@ add_task(async function() {
       await BrowserTestUtils.synthesizeKey("a", { accelKey: true }, browser);
       await BrowserTestUtils.synthesizeKey("VK_DELETE", {}, browser);
 
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         let table = content.document.getElementById("searchSuggestionTable");
         await ContentTaskUtils.waitForCondition(
           () => table.hidden,

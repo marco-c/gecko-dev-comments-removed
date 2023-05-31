@@ -2,7 +2,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   var blob = event.data.blob;
   var start = event.data.start;
   var end = event.data.end;

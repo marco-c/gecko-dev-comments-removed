@@ -24,7 +24,7 @@ add_task(async function see_hsts_header() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   requestLongerTimeout(4);
@@ -55,7 +55,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.security.https_only_mode", true],
@@ -75,10 +75,10 @@ add_task(async function() {
       url: TEST_PAGE,
       waitForLoad: true,
     },
-    async function(browser) {
+    async function (browser) {
       const UPGRADED_URL = TEST_PAGE.replace("http:", "https:");
 
-      await SpecialPowers.spawn(browser, [UPGRADED_URL], async function(url) {
+      await SpecialPowers.spawn(browser, [UPGRADED_URL], async function (url) {
         is(content.window.location.href, url);
 
         content.window.addEventListener("scroll", () => {
@@ -99,7 +99,7 @@ add_task(async function() {
 
       await BrowserTestUtils.browserLoaded(browser);
 
-      await SpecialPowers.spawn(browser, [UPGRADED_URL], async function(url) {
+      await SpecialPowers.spawn(browser, [UPGRADED_URL], async function (url) {
         is(content.window.location.href, url + "#foo");
       });
     }
@@ -108,7 +108,7 @@ add_task(async function() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function() {
+add_task(async function () {
   
   readMessage = false;
   let clearHstsUrl =

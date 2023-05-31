@@ -39,7 +39,7 @@ const TEST_URL =
 `);
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
   const view = selectRuleView(inspector);
 

@@ -58,7 +58,7 @@ add_task(async function test_crash_in_previous_frameloader() {
       gBrowser,
       url: "http://example.com",
     },
-    async function(browser) {
+    async function (browser) {
       
       Assert.ok(
         browser.isRemoteBrowser,
@@ -83,12 +83,12 @@ add_task(async function test_crash_in_previous_frameloader() {
 
       
       
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         const { ctypes } = ChromeUtils.importESModule(
           "resource://gre/modules/ctypes.sys.mjs"
         );
 
-        let dies = function() {
+        let dies = function () {
           ChromeUtils.privateNoteIntentionalCrash();
           let zero = new ctypes.intptr_t(8);
           let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
@@ -98,7 +98,7 @@ add_task(async function test_crash_in_previous_frameloader() {
         
         
         
-        docShell.chromeEventHandler.addEventListener("pagehide", function() {
+        docShell.chromeEventHandler.addEventListener("pagehide", function () {
           dump("\nEt tu, Brute?\n");
           dies();
         });

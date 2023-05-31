@@ -3,7 +3,7 @@
 
 
 export function addExceptionFromResources(resources) {
-  return async function({ dispatch }) {
+  return async function ({ dispatch }) {
     for (const resource of resources) {
       const { pageError } = resource;
       if (!pageError.error) {

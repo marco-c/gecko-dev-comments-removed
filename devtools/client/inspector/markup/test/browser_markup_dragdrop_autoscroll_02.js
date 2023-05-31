@@ -8,7 +8,7 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_dragdrop_autoscroll_02.html";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.toolbox.footer.height", 150);
 

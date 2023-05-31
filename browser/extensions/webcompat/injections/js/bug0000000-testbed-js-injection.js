@@ -3,9 +3,9 @@
 
 
 Object.defineProperty(window.wrappedJSObject, "isTestFeatureSupported", {
-  get: exportFunction(function() {
+  get: exportFunction(function () {
     return true;
   }, window),
 
-  set: exportFunction(function() {}, window),
+  set: exportFunction(function () {}, window),
 });

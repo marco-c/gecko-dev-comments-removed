@@ -136,7 +136,7 @@ async function testDownloadsPanelAfterDialog({
   
   if (askWhereToSave) {
     MockFilePicker.returnValue = MockFilePicker.returnOK;
-    MockFilePicker.showCallback = function(fp) {
+    MockFilePicker.showCallback = function (fp) {
       
       let testFile = MockFilePicker.displayDirectory.clone();
       testFile.append(fp.defaultString);

@@ -15,7 +15,7 @@ function synthesizeKeyAndWaitForTabToGetKeyboardFocus(tab, keyCode, options) {
   return focused;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   CustomizableUI.removeWidgetFromArea("developer-button");

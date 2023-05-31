@@ -9,7 +9,7 @@ const PAGE = WEB_ROOT + "page_style_sample.html";
 
 
 
-add_task(async function() {
+add_task(async function () {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:blank",

@@ -107,7 +107,7 @@ function createToolMenuElements(toolDefinition, doc) {
     return null;
   }
 
-  const oncommand = async function(id, event) {
+  const oncommand = async function (id, event) {
     try {
       const window = event.target.ownerDocument.defaultView;
       await gDevToolsBrowser.selectToolCommand(window, id, Cu.now());
@@ -321,7 +321,7 @@ function removeTopLevelItems(doc) {
 
 
 
-exports.addMenus = function(doc) {
+exports.addMenus = function (doc) {
   addTopLevelItems(doc);
 
   addAllToolsToMenu(doc);
@@ -333,7 +333,7 @@ exports.addMenus = function(doc) {
 
 
 
-exports.removeMenus = function(doc) {
+exports.removeMenus = function (doc) {
   
   
   removeTopLevelItems(doc);

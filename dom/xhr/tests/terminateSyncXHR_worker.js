@@ -3,13 +3,13 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   throw new Error("No messages should reach me!");
 };
 
 var xhr = new XMLHttpRequest();
 xhr.open("GET", "worker_testXHR.txt", false);
-xhr.addEventListener("loadstart", function() {
+xhr.addEventListener("loadstart", function () {
   
   postMessage("TERMINATE");
   

@@ -7,13 +7,15 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.navigation.requireUserInteraction", false]],
   });
   let baseURL = `${TEST_BASE_URL}dummy_page.html`;
   let url = baseURL + "#foo";
-  await BrowserTestUtils.withNewTab({ gBrowser, url }, async function(browser) {
+  await BrowserTestUtils.withNewTab({ gBrowser, url }, async function (
+    browser
+  ) {
     let identityBox = document.getElementById("identity-box");
     let expectedURL = url;
 
@@ -73,7 +75,7 @@ add_task(async function() {
     verifyURLBarState("after a URL bar hash navigation");
 
     expectURL(baseURL + "#foo");
-    await SpecialPowers.spawn(browser, [], function() {
+    await SpecialPowers.spawn(browser, [], function () {
       let a = content.document.createElement("a");
       a.href = "#foo";
       a.textContent = "Foo Link";
@@ -111,7 +113,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   NewTabPagePreloading.removePreloadedBrowser(window);
   let tab = await BrowserTestUtils.openNewForegroundTab(

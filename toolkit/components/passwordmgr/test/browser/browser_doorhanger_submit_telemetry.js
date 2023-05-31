@@ -2,12 +2,12 @@
 
 
 
-add_setup(function() {
+add_setup(function () {
   
   
   
   let originalWaitForCondition = TestUtils.waitForCondition;
-  TestUtils.waitForCondition = async function(
+  TestUtils.waitForCondition = async function (
     condition,
     msg,
     interval = 100,
@@ -18,7 +18,7 @@ add_setup(function() {
 
     return originalWaitForCondition(condition, msg, interval, maxTries);
   };
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     TestUtils.waitForCondition = originalWaitForCondition;
   });
 });
@@ -295,7 +295,7 @@ async function test_submit_telemetry(tc) {
           "https://example.com/browser/toolkit/components/" +
           "passwordmgr/test/browser/form_basic.html",
       },
-      async function(browser) {
+      async function (browser) {
         await SimpleTest.promiseFocus(browser.ownerGlobal);
 
         if (userAction.pageChanges) {
@@ -317,7 +317,7 @@ async function test_submit_telemetry(tc) {
 
         info("Submitting form");
         let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
-        await SpecialPowers.spawn(browser, [], async function() {
+        await SpecialPowers.spawn(browser, [], async function () {
           let doc = this.content.document;
           doc.getElementById("form-basic").submit();
         });

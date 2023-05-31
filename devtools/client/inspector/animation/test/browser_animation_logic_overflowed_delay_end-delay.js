@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(URL_ROOT + "doc_overflowed_delay_end_delay.html");
   const { panel } = await openAnimationInspector();
 

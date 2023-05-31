@@ -165,7 +165,7 @@ const EXPECTED_REQUESTS_SUB = [
 const REQUEST_COUNT =
   EXPECTED_REQUESTS_TOP.length + EXPECTED_REQUESTS_SUB.length;
 
-add_task(async function() {
+add_task(async function () {
   
   
   

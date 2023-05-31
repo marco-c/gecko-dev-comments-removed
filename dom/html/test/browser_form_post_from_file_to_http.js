@@ -17,7 +17,9 @@ async function runTest(doNewTab) {
   filePaths.push(testFile.path);
 
   
-  await BrowserTestUtils.withNewTab(fileUriString, async function(fileBrowser) {
+  await BrowserTestUtils.withNewTab(fileUriString, async function (
+    fileBrowser
+  ) {
     
 
     var promiseLoad;

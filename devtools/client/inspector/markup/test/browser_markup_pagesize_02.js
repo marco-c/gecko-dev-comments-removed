@@ -12,7 +12,7 @@ const TEST_URL = URL_ROOT + "doc_markup_pagesize_02.html";
 
 Services.prefs.setIntPref("devtools.markup.pagesize", 5);
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
 
   info("Selecting the UL node");

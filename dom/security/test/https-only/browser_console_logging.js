@@ -79,7 +79,7 @@ const kTestURIExempt = testPathUpgradeable + "file_exempt.jpg";
 const UPGRADE_DISPLAY_CONTENT =
   "security.mixed_content.upgrade_display_content";
 
-add_task(async function() {
+add_task(async function () {
   
   
   requestLongerTimeout(4);

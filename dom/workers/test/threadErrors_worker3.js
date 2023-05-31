@@ -3,6 +3,6 @@
 
 
 
-onmessage = function(event) {};
+onmessage = function (event) {};
 
 throw new Error("Bah!");

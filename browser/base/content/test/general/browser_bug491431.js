@@ -13,15 +13,15 @@ function test() {
   tabA = BrowserTestUtils.addTab(gBrowser, testPage);
   gBrowser.tabContainer.addEventListener(
     "TabClose",
-    function(firstTabCloseEvent) {
+    function (firstTabCloseEvent) {
       ok(!firstTabCloseEvent.detail.adoptedBy, "This was a normal tab close");
 
       
       tabB = BrowserTestUtils.addTab(gBrowser, testPage);
       gBrowser.tabContainer.addEventListener(
         "TabClose",
-        function(secondTabCloseEvent) {
-          executeSoon(function() {
+        function (secondTabCloseEvent) {
+          executeSoon(function () {
             ok(
               secondTabCloseEvent.detail.adoptedBy,
               "This was a tab closed by moving"

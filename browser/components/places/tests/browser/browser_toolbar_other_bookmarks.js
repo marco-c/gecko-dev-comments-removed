@@ -25,7 +25,7 @@ const bookmarksInfo = [
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   
   if (navigator.platform.indexOf("Win") == 0) {
     await SpecialPowers.pushPrefEnv({

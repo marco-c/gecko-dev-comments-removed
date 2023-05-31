@@ -13,7 +13,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const tab = await addTab("data:text/html,Root Node tests");
 

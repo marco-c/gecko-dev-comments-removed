@@ -49,7 +49,7 @@ const FOCUS_FORWARD = focusManager.MOVEFOCUS_FORWARD;
 const FOCUS_BACKWARD = focusManager.MOVEFOCUS_BACKWARD;
 
 const WORD_REGEXP = /\w/;
-const isWordChar = function(str) {
+const isWordChar = function (str) {
   return str && WORD_REGEXP.test(str);
 };
 
@@ -163,7 +163,7 @@ function isKeyIn(key, ...keys) {
 
 
 function editableField(options) {
-  return editableItem(options, function(element, event) {
+  return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
       new InplaceEditor(options, event);
     }
@@ -189,7 +189,7 @@ exports.editableField = editableField;
 function editableItem(options, callback) {
   const trigger = options.trigger || "click";
   const element = options.element;
-  element.addEventListener(trigger, function(evt) {
+  element.addEventListener(trigger, function (evt) {
     if (evt.target.nodeName !== "a") {
       const win = this.ownerDocument.defaultView;
       const selection = win.getSelection();
@@ -204,7 +204,7 @@ function editableItem(options, callback) {
   
   element.addEventListener(
     "keypress",
-    function(evt) {
+    function (evt) {
       if (evt.target.nodeName === "button") {
         return;
       }
@@ -220,9 +220,9 @@ function editableItem(options, callback) {
   
   
   
-  element.addEventListener("mousedown", function(evt) {
+  element.addEventListener("mousedown", function (evt) {
     if (evt.target.nodeName !== "a") {
-      const cleanup = function() {
+      const cleanup = function () {
         element.style.removeProperty("outline-style");
         element.removeEventListener("mouseup", cleanup);
         element.removeEventListener("mouseout", cleanup);

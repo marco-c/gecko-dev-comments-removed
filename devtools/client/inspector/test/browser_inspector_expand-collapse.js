@@ -9,7 +9,7 @@ const TEST_URL =
   "data:text/html;charset=utf-8," +
   "<div id='parent-node'><div id='child-node'></div></div>";
 
-add_task(async function() {
+add_task(async function () {
   
   requestLongerTimeout(2);
 

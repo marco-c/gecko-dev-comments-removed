@@ -30,7 +30,7 @@ const HTTP_SUBDOMAIN_2_EXAMPLE_COM = "http://test2.example.com";
 
 
 async function runSuiteWithContentListener(name, triggerSuiteFunc, expected) {
-  return async function(browser) {
+  return async function (browser) {
     info("Running content suite: " + name);
     await SpecialPowers.spawn(browser, [expected, name], checkExpectedCookies);
     await triggerSuiteFunc();

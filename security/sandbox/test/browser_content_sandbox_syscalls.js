@@ -266,7 +266,7 @@ function areContentSyscallsSandboxed(level) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   if (!gMultiProcessBrowser) {
     ok(false, "e10s is enabled");

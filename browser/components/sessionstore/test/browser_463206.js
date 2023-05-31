@@ -88,7 +88,7 @@ async function test_restore_text_data_subframes(aURL) {
   );
 
   
-  await SpecialPowers.spawn(tab2.linkedBrowser, [], async function() {
+  await SpecialPowers.spawn(tab2.linkedBrowser, [], async function () {
     
     
     

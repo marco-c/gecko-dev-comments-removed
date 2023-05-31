@@ -5,7 +5,7 @@ const DEFAULT_PROCESS_COUNT = Services.prefs
   .getDefaultBranch(null)
   .getIntPref("dom.ipc.processCount");
 
-add_task(async function() {
+add_task(async function () {
   
   
   

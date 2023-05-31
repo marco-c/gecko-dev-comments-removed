@@ -76,7 +76,7 @@ add_task(async function setup() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.bootstrap.unsigned),
     profileDir,
@@ -101,7 +101,7 @@ add_task(async function() {
   clearCache(file);
 });
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.bootstrap.signed),
     profileDir,
@@ -127,7 +127,7 @@ add_task(async function() {
   clearCache(file);
 });
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.bootstrap.badid),
     profileDir,
@@ -153,7 +153,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.bootstrap.signed),
     profileDir,
@@ -204,7 +204,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.nonbootstrap.unsigned),
     profileDir,
@@ -228,7 +228,7 @@ add_task(async function() {
   clearCache(file);
 });
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.nonbootstrap.signed),
     profileDir,
@@ -253,7 +253,7 @@ add_task(async function() {
   clearCache(file);
 });
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.nonbootstrap.badid),
     profileDir,
@@ -278,7 +278,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.nonbootstrap.signed),
     profileDir,
@@ -325,7 +325,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await promiseStartupManager();
   await promiseInstallAllFiles([
     do_get_file(DATA + ADDONS.nonbootstrap.signed),
@@ -350,7 +350,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let stage = profileDir.clone();
   stage.append("staged");
 
@@ -376,7 +376,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let file = await manuallyInstall(
     do_get_file(DATA + ADDONS.bootstrap.preliminary),
     profileDir,
@@ -401,7 +401,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let stage = profileDir.clone();
   stage.append("staged");
 

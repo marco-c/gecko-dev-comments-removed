@@ -23,8 +23,8 @@ const {
 
 
 
-exports.toggleDiffing = function() {
-  return function({ dispatch, getState }) {
+exports.toggleDiffing = function () {
+  return function ({ dispatch, getState }) {
     dispatch({
       type: actions.CHANGE_VIEW,
       newViewState: getState().diffing ? viewState.CENSUS : viewState.DIFFING,
@@ -39,7 +39,7 @@ exports.toggleDiffing = function() {
 
 
 
-const selectSnapshotForDiffing = (exports.selectSnapshotForDiffing = function(
+const selectSnapshotForDiffing = (exports.selectSnapshotForDiffing = function (
   snapshot
 ) {
   assert(
@@ -56,12 +56,12 @@ const selectSnapshotForDiffing = (exports.selectSnapshotForDiffing = function(
 
 
 
-const takeCensusDiff = (exports.takeCensusDiff = function(
+const takeCensusDiff = (exports.takeCensusDiff = function (
   heapWorker,
   first,
   second
 ) {
-  return async function({ dispatch, getState }) {
+  return async function ({ dispatch, getState }) {
     assert(
       snapshotIsDiffable(first),
       `First snapshot must be in a diffable state, found ${first.state}`
@@ -144,8 +144,8 @@ const takeCensusDiff = (exports.takeCensusDiff = function(
 
 
 
-const refreshDiffing = (exports.refreshDiffing = function(heapWorker) {
-  return function({ dispatch, getState }) {
+const refreshDiffing = (exports.refreshDiffing = function (heapWorker) {
+  return function ({ dispatch, getState }) {
     if (getState().diffing.secondSnapshotId === null) {
       return;
     }
@@ -173,8 +173,8 @@ const refreshDiffing = (exports.refreshDiffing = function(heapWorker) {
 
 
 
-exports.selectSnapshotForDiffingAndRefresh = function(heapWorker, snapshot) {
-  return async function({ dispatch, getState }) {
+exports.selectSnapshotForDiffingAndRefresh = function (heapWorker, snapshot) {
+  return async function ({ dispatch, getState }) {
     assert(
       getState().diffing,
       "If we are selecting for diffing, we must be in diffing mode"
@@ -189,7 +189,7 @@ exports.selectSnapshotForDiffingAndRefresh = function(heapWorker, snapshot) {
 
 
 
-exports.expandDiffingCensusNode = function(node) {
+exports.expandDiffingCensusNode = function (node) {
   return {
     type: actions.EXPAND_DIFFING_CENSUS_NODE,
     node,
@@ -201,7 +201,7 @@ exports.expandDiffingCensusNode = function(node) {
 
 
 
-exports.collapseDiffingCensusNode = function(node) {
+exports.collapseDiffingCensusNode = function (node) {
   return {
     type: actions.COLLAPSE_DIFFING_CENSUS_NODE,
     node,
@@ -213,7 +213,7 @@ exports.collapseDiffingCensusNode = function(node) {
 
 
 
-exports.focusDiffingCensusNode = function(node) {
+exports.focusDiffingCensusNode = function (node) {
   return {
     type: actions.FOCUS_DIFFING_CENSUS_NODE,
     node,

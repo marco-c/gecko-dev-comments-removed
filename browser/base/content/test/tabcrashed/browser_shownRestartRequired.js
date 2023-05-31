@@ -33,7 +33,7 @@ function crashTabTestHelper() {
       gBrowser,
       url: PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       
       TabCrashHandler.testBuildIDMismatch = true;
 

@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const ROOT =
     "http://mochi.test:8888/browser/browser/base/content/test/favicons/";
   const URL = ROOT + "discovery.html";

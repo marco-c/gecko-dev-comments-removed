@@ -2,14 +2,14 @@
 
 "use strict";
 
-add_setup(async function() {
+add_setup(async function () {
   
   return SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Start testing tabs.create with cookieStoreId");
 
   let testCases = [
@@ -82,7 +82,7 @@ add_task(async function() {
       permissions: ["tabs", "cookies"],
     },
 
-    background: function() {
+    background: function () {
       function testTab(data, tab) {
         browser.test.assertTrue(data.success, "we want a success");
         browser.test.assertTrue(!!tab, "we have a tab");

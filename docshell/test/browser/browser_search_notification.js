@@ -7,7 +7,7 @@ const { SearchTestUtils } = ChromeUtils.importESModule(
 
 SearchTestUtils.init(this);
 
-add_task(async function() {
+add_task(async function () {
   
   
   

@@ -22,7 +22,7 @@ const EXPECTED_SHEETS = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   const userContextId = 1;
   const { tab } = await openTabInUserContext(TESTCASE_URI, userContextId);

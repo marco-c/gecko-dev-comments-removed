@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
@@ -88,7 +88,7 @@ function checkSumOfVisibleColumns(columnsData, visibleColumns) {
 }
 
 function getWidthFromPref(columnsData, column) {
-  const widthInPref = columnsData.find(function(element) {
+  const widthInPref = columnsData.find(function (element) {
     return element.name === column;
   }).width;
   return widthInPref;

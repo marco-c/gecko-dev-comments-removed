@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let pageURI = NetUtil.newURI("http://www.places.test/page/");
   await PlacesTestUtils.addVisits(pageURI);
   let faviconURI = NetUtil.newURI("http://www.places.test/favicon.ico");

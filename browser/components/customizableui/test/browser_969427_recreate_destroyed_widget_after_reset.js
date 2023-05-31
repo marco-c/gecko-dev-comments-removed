@@ -11,7 +11,7 @@ function getPlacementArea(id) {
 
 
 
-add_task(function() {
+add_task(function () {
   const kWidgetId = "test-recreate-after-reset";
   let spec = {
     id: kWidgetId,

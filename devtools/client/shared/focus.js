@@ -66,7 +66,7 @@ function getFocusableElements(parentEl) {
 }
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   module.exports.focusableSelector = focusableSelector;
   exports.wrapMoveFocus = wrapMoveFocus;
   exports.getFocusableElements = getFocusableElements;

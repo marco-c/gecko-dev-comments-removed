@@ -11,7 +11,7 @@ add_task(async function run_test() {
   
 
   await do_crash(
-    function() {
+    function () {
       
       shouldDelay = true;
 
@@ -41,7 +41,7 @@ add_task(async function run_test() {
 
       crashReporter.saveMemoryReport();
     },
-    function(mdump, extra, extrafile, memoryfile) {
+    function (mdump, extra, extrafile, memoryfile) {
       Assert.ok(memoryfile.exists());
     },
     true

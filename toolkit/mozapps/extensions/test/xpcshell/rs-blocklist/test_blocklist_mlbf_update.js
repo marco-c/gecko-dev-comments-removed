@@ -26,7 +26,7 @@ add_task(async function collapse_multiple_pending_update_requests() {
   
   const originalClientGet = ExtensionBlocklistMLBF._client.get;
   const spyClientGet = (tag, returnValue) => {
-    ExtensionBlocklistMLBF._client.get = async function() {
+    ExtensionBlocklistMLBF._client.get = async function () {
       
       observed.push(tag);
       
@@ -39,7 +39,7 @@ add_task(async function collapse_multiple_pending_update_requests() {
   
   
   const originalFetchMLBF = ExtensionBlocklistMLBF._fetchMLBF;
-  ExtensionBlocklistMLBF._fetchMLBF = async function(record) {
+  ExtensionBlocklistMLBF._fetchMLBF = async function (record) {
     observed.push(`fetchMLBF:${record.tagged}`);
     throw new Error(`Deliberately ignoring call to MLBF:${record.tagged}`);
   };

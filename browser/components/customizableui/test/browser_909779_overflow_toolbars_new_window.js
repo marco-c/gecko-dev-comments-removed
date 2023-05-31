@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   let originalWindowWidth = window.outerWidth;
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
   ok(

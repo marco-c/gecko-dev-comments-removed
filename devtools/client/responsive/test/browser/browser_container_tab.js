@@ -9,7 +9,7 @@ const TEST_URL = "https://example.com/";
 
 addRDMTask(
   null,
-  async function() {
+  async function () {
     
     const tab = await addTab(BROWSER_NEW_TAB_URL, {
       userContextId: 2,

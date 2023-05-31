@@ -13,7 +13,7 @@ const HAR_PATH = ["har", "logs", HAR_FILENAME];
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.netmonitor.har.defaultFileName", "test_filename");
 

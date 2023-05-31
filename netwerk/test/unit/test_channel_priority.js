@@ -73,7 +73,7 @@ function run_test() {
   if (!runningInParent) {
     
     
-    add_test(function() {
+    add_test(function () {
       do_send_remote_message("finished");
       run_next_test();
     });

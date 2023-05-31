@@ -11,7 +11,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/connection just closed/);
 const MAXIMUM_ITEMS = 10;
 
 
-add_task(async function() {
+add_task(async function () {
   const dbg = await initDebugger("doc-remember-expanded-scopes.html");
   invokeInTab("main", "doc-remember-expanded-scopes.html");
   await waitForPaused(dbg);

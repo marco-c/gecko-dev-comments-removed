@@ -11,8 +11,8 @@ const TEST_URL = TEST_ROOT + "204.sjs";
 const BLANK_URL = TEST_ROOT + "blank.html";
 
 
-add_task(async function() {
-  await BrowserTestUtils.withNewTab("about:robots", async function(aBrowser) {
+add_task(async function () {
+  await BrowserTestUtils.withNewTab("about:robots", async function (aBrowser) {
     
     
     let browserPid = await SpecialPowers.spawn(aBrowser, [], () => {

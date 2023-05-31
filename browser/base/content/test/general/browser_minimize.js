@@ -1,8 +1,8 @@
 
 
 
-add_task(async function() {
-  registerCleanupFunction(function() {
+add_task(async function () {
+  registerCleanupFunction(function () {
     window.restore();
   });
   function isActive() {

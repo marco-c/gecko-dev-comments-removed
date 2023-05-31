@@ -14,7 +14,7 @@ const ARIA_LABEL = "some-label";
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" alt=""/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     const acc = findAccessibleChildByID(accDoc, IMG_ID);
     ok(!acc, "Image has no Accessible");
@@ -37,7 +37,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png"/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     const acc = findAccessibleChildByID(accDoc, IMG_ID);
     let tree = {
@@ -65,7 +65,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" alt="${ALT_TEXT}"/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     let acc = findAccessibleChildByID(accDoc, IMG_ID);
     let tree = {
@@ -93,7 +93,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" aria-label="${ARIA_LABEL}" alt=""/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     
     const acc = findAccessibleChildByID(accDoc, IMG_ID);
@@ -121,7 +121,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" alt=""/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     info(`Adding click listener to img id '${IMG_ID}'`);
     const shown = waitForEvent(EVENT_SHOW, IMG_ID);
@@ -146,7 +146,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" role="presentation"/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     const acc = findAccessibleChildByID(accDoc, IMG_ID);
     ok(!acc, "Image has no Accessible");
@@ -175,7 +175,7 @@ addAccessibleTask(
 
 addAccessibleTask(
   `<img id="${IMG_ID}" src="${MOCHITESTS_DIR}/moz.png" hidden/>`,
-  async function(browser, accDoc) {
+  async function (browser, accDoc) {
     
     const acc = findAccessibleChildByID(accDoc, IMG_ID);
     ok(!acc, "Image has no Accessible");

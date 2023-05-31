@@ -9,7 +9,7 @@ Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-adb.js", this);
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref(
     "devtools.remote.adb.extensionURL",
     CHROME_URL_ROOT + "resources/test-adb-extension/adb-extension-#OS#.xpi"

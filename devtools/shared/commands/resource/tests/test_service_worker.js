@@ -6,6 +6,6 @@
 
 
 
-self.onfetch = function(event) {
+self.onfetch = function (event) {
   
 };

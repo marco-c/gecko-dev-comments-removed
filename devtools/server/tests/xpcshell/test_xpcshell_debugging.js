@@ -12,7 +12,7 @@
 
 _profileInitialized = true;
 
-add_task(async function() {
+add_task(async function () {
   const testFile = do_get_file("xpcshell_debugging_script.js");
 
   

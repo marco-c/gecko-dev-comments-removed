@@ -12,7 +12,7 @@ const Curl = curl.Curl;
 const CurlUtils = curl.CurlUtils;
 
 
-add_task(async function() {
+add_task(async function () {
   const request = {
     url: "https://example.com/form/",
     method: "GET",
@@ -85,7 +85,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let request = {
     url: "https://example.com/",
     method: "GET",
@@ -120,7 +120,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const request = {
     url: "https://example.com/form/",
     method: "POST",
@@ -155,7 +155,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const request = {
     url: "https://example.com/form/",
     method: "POST",
@@ -184,7 +184,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const boundary = "----------14808";
   const request = {
     url: "https://example.com/form/",
@@ -239,7 +239,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const boundary = "----------14808";
   const postTextLines = [
     `--${boundary}`,
@@ -266,7 +266,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const boundary = "----------14808";
   const postTextLines = [
     `--${boundary}`,
@@ -294,7 +294,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let request = {
     url: "https://example.com/",
     method: "GET",

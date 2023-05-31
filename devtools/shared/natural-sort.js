@@ -122,7 +122,7 @@ function naturalSort(a = "", b = "", sessionString, insensitive = false) {
 
 
 
-const normalizeChunk = function(str, length) {
+const normalizeChunk = function (str, length) {
   return (
     ((!str.match(startsWithZeroRx) || length == 1) && parseFloat(str)) ||
     str.replace(whitespaceRx, " ").trim() ||

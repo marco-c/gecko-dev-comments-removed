@@ -89,7 +89,7 @@ function checkStateWritten(aSubject, aTopic, aData) {
   process_headers();
 
   
-  do_timeout(2000, function() {
+  do_timeout(2000, function () {
     do_test_finished();
   });
 }

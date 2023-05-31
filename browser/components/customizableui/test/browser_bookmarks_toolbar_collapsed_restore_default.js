@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   let prefName = "browser.toolbars.bookmarks.visibility";
   let toolbar = document.querySelector("#PersonalToolbar");
   for (let state of ["always", "never"]) {

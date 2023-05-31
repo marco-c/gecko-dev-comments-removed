@@ -7,7 +7,7 @@
 
 
 
-add_task(function() {
+add_task(function () {
   const PREFS_LIST = ["installer.pref"];
 
   Services.prefs.setBoolPref("installer.pref", true);

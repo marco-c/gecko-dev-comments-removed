@@ -33,7 +33,7 @@ const tests = [
 ];
 
 
-add_task(async function() {
+add_task(async function () {
   
   const testPromises = tests.map(test => {
     const tabOptions = {

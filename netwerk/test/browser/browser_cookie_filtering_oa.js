@@ -41,8 +41,8 @@ async function test_origin_attributes() {
   
   let t4 = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
-    opening: (function() {
-      return function() {
+    opening: (function () {
+      return function () {
         
         gBrowser.selectedTab = BrowserTestUtils.addTab(
           gBrowser,

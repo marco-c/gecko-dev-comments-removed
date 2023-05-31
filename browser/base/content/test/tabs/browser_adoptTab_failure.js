@@ -8,7 +8,7 @@
 
 function makeAdoptTabFailOnceFor(gBrowser, tab) {
   const original = gBrowser.swapBrowsersAndCloseOther;
-  gBrowser.swapBrowsersAndCloseOther = function(aOurTab, aOtherTab) {
+  gBrowser.swapBrowsersAndCloseOther = function (aOurTab, aOtherTab) {
     if (tab !== aOtherTab) {
       return original.call(gBrowser, aOurTab, aOtherTab);
     }

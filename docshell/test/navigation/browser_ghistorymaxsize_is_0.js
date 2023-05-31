@@ -1,4 +1,4 @@
-add_task(async function() {
+add_task(async function () {
   
   var URL =
     "http://mochi.test:8888/browser/docshell/test/navigation/bug343515_pg1.html";
@@ -10,7 +10,7 @@ add_task(async function() {
   
 
   
-  await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(
+  await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function (
     browser
   ) {
     

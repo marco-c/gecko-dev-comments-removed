@@ -1,6 +1,6 @@
 
 
-onmessage = function() {
+onmessage = function () {
   try {
     importScripts("evilWorker.js");
   } catch (ex) {

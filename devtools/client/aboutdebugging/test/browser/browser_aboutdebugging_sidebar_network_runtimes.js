@@ -9,7 +9,7 @@ const networkLocationsModule = require("resource://devtools/client/aboutdebuggin
 
 
 
-add_task(async function() {
+add_task(async function () {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("devtools.aboutdebugging.network-locations");
   });

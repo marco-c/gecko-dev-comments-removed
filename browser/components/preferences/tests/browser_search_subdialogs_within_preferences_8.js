@@ -5,7 +5,7 @@
 requestLongerTimeout(2);
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.preferences.search", true]],
   });
@@ -14,7 +14,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
@@ -25,7 +25,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
@@ -36,7 +36,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });

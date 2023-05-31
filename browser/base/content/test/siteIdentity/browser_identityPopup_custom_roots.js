@@ -13,7 +13,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 
 add_task(async function test_https() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     let promisePanelOpen = BrowserTestUtils.waitForEvent(
       window,
       "popupshown",
@@ -49,7 +49,7 @@ add_task(async function test_https() {
 
 add_task(async function test_http() {
   
-  await BrowserTestUtils.withNewTab("http://example.com", async function() {
+  await BrowserTestUtils.withNewTab("http://example.com", async function () {
     let promisePanelOpen = BrowserTestUtils.waitForEvent(
       window,
       "popupshown",

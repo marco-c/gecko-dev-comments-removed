@@ -9,7 +9,7 @@ function addPerm(aOrigin, aName) {
   );
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -24,8 +24,8 @@ add_task(async function() {
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank", forceNewProcess: true },
-    async function(aBrowser) {
-      await SpecialPowers.spawn(aBrowser, [], async function() {
+    async function (aBrowser) {
+      await SpecialPowers.spawn(aBrowser, [], async function () {
         
         is(
           Services.perms.testPermissionFromPrincipal(
@@ -88,7 +88,7 @@ add_task(async function() {
         });
 
         
-        await content.SpecialPowers.spawn(iframe, [], async function() {
+        await content.SpecialPowers.spawn(iframe, [], async function () {
           is(
             Services.perms.testPermissionFromPrincipal(
               Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -189,7 +189,7 @@ add_task(async function() {
       addPerm("https://example.com", "newperm4");
       addPerm("https://someotherrandomwebsite.com", "cookie");
 
-      await SpecialPowers.spawn(aBrowser, [], async function() {
+      await SpecialPowers.spawn(aBrowser, [], async function () {
         
         
         is(
@@ -307,7 +307,7 @@ add_task(async function() {
 
         
         
-        await content.SpecialPowers.spawn(iframe, [], async function() {
+        await content.SpecialPowers.spawn(iframe, [], async function () {
           is(
             Services.perms.testPermissionFromPrincipal(
               Services.scriptSecurityManager.createContentPrincipalFromOrigin(

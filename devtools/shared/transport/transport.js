@@ -242,7 +242,7 @@ DebuggerTransport.prototype = {
 
 
 
-  onOutputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
+  onOutputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
     if (!this._outgoingEnabled || this._outgoing.length === 0) {
       return;
     }
@@ -323,7 +323,7 @@ DebuggerTransport.prototype = {
   
 
 
-  onInputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
+  onInputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
     try {
       while (
         stream.available() &&

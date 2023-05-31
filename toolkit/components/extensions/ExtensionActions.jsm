@@ -597,7 +597,7 @@ class BrowserActionBase extends PanelActionBase {
     
     let [r, g, b] = values.badgeBackgroundColor
       .slice(0, 3)
-      .map(function(channel) {
+      .map(function (channel) {
         channel /= 255;
         if (channel <= 0.03928) {
           return channel / 12.92;

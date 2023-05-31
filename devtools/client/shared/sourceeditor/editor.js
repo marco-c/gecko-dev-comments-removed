@@ -748,7 +748,7 @@ Editor.prototype = {
   resetIndentUnit() {
     const cm = editors.get(this);
 
-    const iterFn = function(start, end, callback) {
+    const iterFn = function (start, end, callback) {
       cm.eachLine(start, end, line => {
         return callback(line.text);
       });
@@ -1592,7 +1592,7 @@ Editor.prototype = {
 
 
 CM_MAPPING.forEach(name => {
-  Editor.prototype[name] = function(...args) {
+  Editor.prototype[name] = function (...args) {
     const cm = editors.get(this);
     return cm[name].apply(cm, args);
   };
@@ -1608,7 +1608,7 @@ CM_MAPPING.forEach(name => {
 
 
 
-Editor.accel = function(key, modifiers = {}) {
+Editor.accel = function (key, modifiers = {}) {
   return (
     (modifiers.shift ? "Shift-" : "") +
     (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") +
@@ -1623,7 +1623,7 @@ Editor.accel = function(key, modifiers = {}) {
 
 
 
-Editor.keyFor = function(cmd, opts = { noaccel: false }) {
+Editor.keyFor = function (cmd, opts = { noaccel: false }) {
   const key = L10N.getStr(cmd + ".commandkey");
   return opts.noaccel ? key : Editor.accel(key);
 };

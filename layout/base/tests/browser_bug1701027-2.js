@@ -30,7 +30,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   function getChromeURL(filename) {
     let chromeURL = getRootDirectory(gTestPath) + filename;
     return chromeURL;

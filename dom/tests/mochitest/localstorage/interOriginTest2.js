@@ -45,7 +45,7 @@ function onMessageReceived(event) {
 
     
     default:
-      t.step(function() {
+      t.step(function () {
         assert_true(!event.data.match(failureRegExp), event.data);
       });
       break;

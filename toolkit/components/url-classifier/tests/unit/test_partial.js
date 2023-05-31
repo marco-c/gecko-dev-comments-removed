@@ -15,7 +15,7 @@ DummyCompleter.prototype = {
     this.queries.push(partialHash);
     var fragments = this.fragments;
     var self = this;
-    var doCallback = function() {
+    var doCallback = function () {
       if (self.alwaysFail) {
         cb.completionFinished(Cr.NS_ERROR_FAILURE);
         return;
@@ -116,7 +116,7 @@ function installFailingCompleter(table) {
 }
 
 
-gAssertions.completerQueried = function(data, cb) {
+gAssertions.completerQueried = function (data, cb) {
   var completer = data[0];
   completer.compareQueries(data[1]);
   cb();
@@ -373,9 +373,9 @@ function testWrongTable() {
   doUpdateTest(
     [update],
     assertions,
-    function() {
+    function () {
       
-      do_timeout(3000, function() {
+      do_timeout(3000, function () {
         
         
         
@@ -412,7 +412,7 @@ function setupCachedResults(addUrls, part2) {
   doUpdateTest(
     [update],
     assertions,
-    function() {
+    function () {
       
       do_timeout(3000, part2);
     },
@@ -421,7 +421,7 @@ function setupCachedResults(addUrls, part2) {
 }
 
 function testCachedResults() {
-  setupCachedResults(["foo.com/a"], function(add) {
+  setupCachedResults(["foo.com/a"], function (add) {
     
     
 
@@ -437,7 +437,7 @@ function testCachedResults() {
 }
 
 function testCachedResultsWithSub() {
-  setupCachedResults(["foo.com/a"], function() {
+  setupCachedResults(["foo.com/a"], function () {
     
     var newCompleter = installCompleter("test-phish-simple", [[1, []]], []);
 
@@ -456,7 +456,7 @@ function testCachedResultsWithSub() {
 }
 
 function testCachedResultsWithExpire() {
-  setupCachedResults(["foo.com/a"], function() {
+  setupCachedResults(["foo.com/a"], function () {
     
     var newCompleter = installCompleter("test-phish-simple", [[1, []]], []);
 
@@ -472,7 +472,7 @@ function testCachedResultsWithExpire() {
 
 function testCachedResultsFailure() {
   var existUrls = ["foo.com/a"];
-  setupCachedResults(existUrls, function() {
+  setupCachedResults(existUrls, function () {
     
     
 
@@ -484,11 +484,11 @@ function testCachedResultsFailure() {
       completerQueried: [newCompleter, []],
     };
 
-    checkAssertions(assertions, function() {
+    checkAssertions(assertions, function () {
       
       doErrorUpdate(
         "test-phish-simple,test-malware-simple",
-        function() {
+        function () {
           
           var newCompleter2 = installCompleter(
             "test-phish-simple",
@@ -527,12 +527,12 @@ function testErrorList() {
   
   doStreamUpdate(
     update,
-    function() {
+    function () {
       
       
       doErrorUpdate(
         "test-phish-simple,test-malware-simple",
-        function() {
+        function () {
           
           checkAssertions(assertions, runNextTest);
         },
@@ -568,13 +568,13 @@ function testErrorListIndependent() {
   
   doStreamUpdate(
     update,
-    function() {
+    function () {
       
       
       
       doErrorUpdate(
         "test-phish-simple",
-        function() {
+        function () {
           
           checkAssertions(assertions, runNextTest);
         },

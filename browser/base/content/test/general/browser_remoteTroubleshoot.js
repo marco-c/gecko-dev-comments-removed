@@ -47,7 +47,7 @@ function promiseNewChannelResponse(uri) {
     });
 }
 
-add_task(async function() {
+add_task(async function () {
   
   let got = await promiseNewChannelResponse(TEST_URI_GOOD);
   

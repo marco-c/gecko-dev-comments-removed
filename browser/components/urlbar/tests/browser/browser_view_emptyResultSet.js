@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "foo",
@@ -23,7 +23,7 @@ add_task(async function() {
     priority: 999,
   });
   UrlbarProvidersManager.registerProvider(provider);
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     UrlbarProvidersManager.unregisterProvider(provider);
     await PlacesUtils.history.clear();
   });

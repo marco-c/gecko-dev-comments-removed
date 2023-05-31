@@ -9,7 +9,7 @@ const TOOLBARID = "test-toolbar-added-during-customize-mode";
 
 const kNonPlacedWidgetId = "open-file-button";
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let toolbar = createToolbarWithPlacements(TOOLBARID, []);
   CustomizableUI.addWidgetToArea(kNonPlacedWidgetId, TOOLBARID);

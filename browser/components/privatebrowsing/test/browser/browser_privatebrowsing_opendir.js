@@ -10,7 +10,7 @@ function testOnWindow(options, callback) {
   var win = OpenBrowserWindow(options);
   win.addEventListener(
     "load",
-    function() {
+    function () {
       windowsToClose.push(win);
       callback(win);
     },
@@ -18,8 +18,8 @@ function testOnWindow(options, callback) {
   );
 }
 
-registerCleanupFunction(function() {
-  windowsToClose.forEach(function(win) {
+registerCleanupFunction(function () {
+  windowsToClose.forEach(function (win) {
     win.close();
   });
 });
@@ -43,9 +43,9 @@ function test() {
   setupCleanSlate(window);
 
   
-  testOnWindow(undefined, function(nonPrivateWindow) {
+  testOnWindow(undefined, function (nonPrivateWindow) {
     setupCleanSlate(nonPrivateWindow);
-    testOnWindow({ private: true }, function(privateWindow) {
+    testOnWindow({ private: true }, function (privateWindow) {
       setupCleanSlate(privateWindow);
 
       

@@ -292,7 +292,7 @@ function testURL(
   );
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -335,10 +335,10 @@ add_task(async function() {
   }
 
   
-  await BrowserTestUtils.withNewTab("http://www.example.com/", async function(
+  await BrowserTestUtils.withNewTab("http://www.example.com/", async function (
     browser
   ) {
-    await SpecialPowers.spawn(browser, [testURL.toString()], async function(
+    await SpecialPowers.spawn(browser, [testURL.toString()], async function (
       testURLFn
     ) {
       

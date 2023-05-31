@@ -2,7 +2,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   postMessage({
     event: "XMLHttpRequest",
     status: new XMLHttpRequest() instanceof XMLHttpRequest,

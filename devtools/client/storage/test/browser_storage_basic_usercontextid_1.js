@@ -150,7 +150,7 @@ async function testTables(tests) {
   }
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("dom.security.https_first", false);

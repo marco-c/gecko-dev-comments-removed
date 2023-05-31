@@ -60,7 +60,7 @@ function check_hidden(aExpectedHidden) {
 }
 
 
-add_test(function() {
+add_test(function () {
   check_hidden(true);
   gInstall = gProvider.createInstalls(gInstallProperties)[0];
   gInstall.addTestListener(gTestInstallListener);
@@ -70,7 +70,7 @@ add_test(function() {
 
 
 
-add_test(async function() {
+add_test(async function () {
   let aWindow = await restart_manager(gManagerWindow, null);
   gManagerWindow = aWindow;
   gCategoryUtilities = new CategoryUtilities(gManagerWindow);
@@ -79,13 +79,13 @@ add_test(async function() {
 });
 
 
-add_test(function() {
+add_test(function () {
   gInstall.install();
 });
 
 
 
-add_test(async function() {
+add_test(async function () {
   let aWindow = await restart_manager(gManagerWindow, null);
   gManagerWindow = aWindow;
   gCategoryUtilities = new CategoryUtilities(gManagerWindow);

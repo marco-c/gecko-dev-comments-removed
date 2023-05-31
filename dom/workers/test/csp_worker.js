@@ -2,7 +2,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   if (event.data.do == "eval") {
     var res;
     try {

@@ -1,6 +1,6 @@
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   let migrator = await MigrationUtils.getMigrator("ie");
   
   Assert.ok(await migrator.isSourceAvailable(), "Check migrator source");

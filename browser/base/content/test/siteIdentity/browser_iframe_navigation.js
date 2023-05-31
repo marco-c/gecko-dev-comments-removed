@@ -17,7 +17,7 @@ const INSECURE_TEST_URI = SECURE_TEST_URI.replace("https://", "http://");
 
 
 
-add_task(async function() {
+add_task(async function () {
   let uri = SECURE_TEST_URI + "#blank";
   await BrowserTestUtils.withNewTab(uri, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
@@ -38,7 +38,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let uri = SECURE_TEST_URI + "#insecure";
   await BrowserTestUtils.withNewTab(uri, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
@@ -67,7 +67,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let uri = INSECURE_TEST_URI + "#blank";
   await BrowserTestUtils.withNewTab(uri, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
@@ -88,7 +88,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let uri = INSECURE_TEST_URI + "#secure";
   await BrowserTestUtils.withNewTab(uri, async browser => {
     let identityMode = window.document.getElementById("identity-box").className;

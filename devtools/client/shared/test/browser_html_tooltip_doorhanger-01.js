@@ -20,7 +20,7 @@ loadHelperScript("helper_html_tooltip.js");
 
 let useXulWrapper;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.toolbox.footer.height", 200);
 

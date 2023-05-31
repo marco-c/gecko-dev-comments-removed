@@ -60,7 +60,7 @@ add_task(async function test_updatePing() {
   
   let updatePing;
   await BrowserTestUtils.waitForCondition(
-    async function() {
+    async function () {
       
       
       updatePing = await archiveChecker.promiseFindPing("update", [

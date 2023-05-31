@@ -10,7 +10,7 @@
 
 
 add_task(async function runRTPTestAnimation() {
-  let runTests = async function(data) {
+  let runTests = async function (data) {
     function waitForCondition(aCond, aCallback, aErrorMsg) {
       var tries = 0;
       var interval = content.setInterval(() => {
@@ -59,7 +59,7 @@ add_task(async function runRTPTestAnimation() {
         
         
         
-        var maybeAcceptEverything = function(value) {
+        var maybeAcceptEverything = function (value) {
           if (
             data.options.reduceTimerPrecision &&
             !data.options.resistFingerprinting

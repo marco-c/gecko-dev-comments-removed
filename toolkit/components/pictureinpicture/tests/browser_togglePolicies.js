@@ -99,7 +99,7 @@ add_task(async () => {
         TOGGLE_POLICIES.HIDDEN
       );
 
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         content.history.pushState({}, "2", "otherpage.html");
       });
 
@@ -109,7 +109,7 @@ add_task(async () => {
 
       
       
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         content.history.pushState({}, "Return", "test-page.html");
       });
 

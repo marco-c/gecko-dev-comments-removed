@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["identity.fxaccounts.enabled", false]],
   });

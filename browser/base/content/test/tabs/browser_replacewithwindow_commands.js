@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "https://www.example.com"

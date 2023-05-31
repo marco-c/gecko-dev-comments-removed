@@ -39,7 +39,7 @@ const closeCustomizationUI = async () => {
   );
 };
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   

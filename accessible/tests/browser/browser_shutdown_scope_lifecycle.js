@@ -4,7 +4,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   
   const [a11yInitObserver, a11yInit] = initAccService();
@@ -15,7 +15,7 @@ add_task(async function() {
     return a11yShutdown;
   });
 
-  (function() {
+  (function () {
     let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
       Ci.nsIAccessibilityService
     );

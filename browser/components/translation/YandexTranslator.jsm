@@ -57,7 +57,7 @@ const YANDEX_PERMANENT_ERRORS = [
 
 
 
-var YandexTranslator = function(
+var YandexTranslator = function (
   translationDocument,
   sourceLanguage,
   targetLanguage

@@ -7,7 +7,7 @@
 const kWidgetId = "test-non-removable-widget";
 
 
-add_task(async function() {
+add_task(async function () {
   ok(CustomizableUI.inDefaultState, "Should start in default state");
 
   let button = createDummyXULButton(

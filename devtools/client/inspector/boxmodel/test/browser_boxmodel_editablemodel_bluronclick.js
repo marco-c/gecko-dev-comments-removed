@@ -13,7 +13,7 @@ const TEST_URI = `<style>
   </style>
   <div id="div1"></div>`;
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("devtools.toolbox.footer.height", 500);

@@ -37,9 +37,7 @@ class ExtensionStorageActor extends BaseStorageActor {
 
     
     
-    this.extensionHostURL = this.getExtensionPolicy()
-      .getURL()
-      .slice(0, -1);
+    this.extensionHostURL = this.getExtensionPolicy().getURL().slice(0, -1);
 
     
     

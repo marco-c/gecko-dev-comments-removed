@@ -21,7 +21,7 @@ const SW_TIMEOUT = 4000;
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableServiceWorkerDebugging();
 
   

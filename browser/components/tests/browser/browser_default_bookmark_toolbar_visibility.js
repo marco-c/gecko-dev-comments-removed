@@ -8,7 +8,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.toolbars.bookmarks.visibility");
   });

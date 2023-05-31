@@ -8,11 +8,11 @@ function run_test() {
 
   let testBuffer = [];
 
-  let appendBuffer = function(msg) {
+  let appendBuffer = function (msg) {
     testBuffer.push(JSON.stringify(msg));
   };
 
-  let assertLastMsg = function(refData) {
+  let assertLastMsg = function (refData) {
     
     
     let lastMsg = JSON.parse(testBuffer.pop());

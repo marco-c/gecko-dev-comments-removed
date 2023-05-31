@@ -43,7 +43,7 @@ function do_run_generator(generator) {
 
 
 function do_finish_generator_test(generator) {
-  executeSoon(function() {
+  executeSoon(function () {
     generator.return();
     do_test_finished();
   });

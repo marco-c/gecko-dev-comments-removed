@@ -54,7 +54,7 @@ global.getTargetTabIdForToolbox = toolbox => {
 
 
 
-global.getToolboxEvalOptions = async function(context) {
+global.getToolboxEvalOptions = async function (context) {
   const options = {};
   const toolbox = context.devToolsToolbox;
   const selectedNode = toolbox.selection;

@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
   const tab = win.gBrowser.selectedBrowser;

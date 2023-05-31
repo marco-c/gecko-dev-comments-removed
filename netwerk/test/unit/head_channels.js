@@ -136,7 +136,7 @@ ChannelListener.prototype = {
 
       if (this._flags & CL_SUSPEND) {
         request.suspend();
-        do_timeout(SUSPEND_DELAY, function() {
+        do_timeout(SUSPEND_DELAY, function () {
           request.resume();
         });
       }
@@ -390,7 +390,7 @@ async function asyncStartTLSTestServer(
       aResponse.setHeader("Content-Type", "text/plain");
       let responseBody = "OK!";
       aResponse.bodyOutputStream.write(responseBody, responseBody.length);
-      executeSoon(function() {
+      executeSoon(function () {
         httpServer.stop(resolve);
       });
     });
@@ -405,7 +405,7 @@ async function asyncStartTLSTestServer(
   
   process.run(false, ["sql:" + certDir.path, Services.appinfo.processID], 2);
 
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     process.kill();
   });
 

@@ -7,7 +7,7 @@
 
 importScripts("xpcshellTestHarnessAdaptor.js");
 
-onmessage = function(event) {
+onmessage = function (event) {
   _WORKINGDIR_ = event.data.dir;
   _OS_ = event.data.os;
   

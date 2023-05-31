@@ -10,7 +10,7 @@ const EXTENSION_NAME = "Temporary web extension";
 const EXTENSION_ID = "test-devtools@mozilla.org";
 
 
-add_task(async function() {
+add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 

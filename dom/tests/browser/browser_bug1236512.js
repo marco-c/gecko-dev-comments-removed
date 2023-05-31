@@ -27,7 +27,7 @@ async function waitContentVisibilityChange(aIsHidden, aBrowser) {
   await SpecialPowers.spawn(
     aBrowser.selectedBrowser,
     [aIsHidden],
-    async function(aExpectedResult) {
+    async function (aExpectedResult) {
       let visibilityState = aExpectedResult ? "hidden" : "visible";
       if (
         content.document.hidden === aExpectedResult &&
@@ -62,7 +62,7 @@ async function waitContentVisibilityChange(aIsHidden, aBrowser) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("creating test window");
   let winTest = await BrowserTestUtils.openNewBrowserWindow();
   

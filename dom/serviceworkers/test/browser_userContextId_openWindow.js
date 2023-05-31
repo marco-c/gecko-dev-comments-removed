@@ -13,11 +13,11 @@ let mockAlertsService = {
   showAlert(alert, alertListener) {
     ok(true, "Showing alert");
     
-    setTimeout(function() {
+    setTimeout(function () {
       alertListener.observe(null, "alertshow", alert.cookie);
     }, 100);
     
-    setTimeout(function() {
+    setTimeout(function () {
       alertListener.observe(null, "alertclickcallback", alert.cookie);
     }, 100);
   },
@@ -56,7 +56,7 @@ registerCleanupFunction(() => {
   );
 });
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [

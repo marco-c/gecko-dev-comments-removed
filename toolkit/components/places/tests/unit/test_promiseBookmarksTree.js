@@ -223,7 +223,7 @@ async function test_promiseBookmarksTreeAgainstResult(
   return test_promiseBookmarksTreeForEachNode(node, aOptions, aExcludedGuids);
 }
 
-add_task(async function() {
+add_task(async function () {
   
   await new_bookmark({ parentGuid: PlacesUtils.bookmarks.toolbarGuid });
   await new_folder({

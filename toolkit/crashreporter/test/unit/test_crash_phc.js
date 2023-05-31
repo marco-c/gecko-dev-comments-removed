@@ -25,10 +25,10 @@ add_task(async function run_test() {
   }
 
   await do_crash(
-    function() {
+    function () {
       crashType = CrashTestUtils.CRASH_PHC_USE_AFTER_FREE;
     },
-    function(mdump, extra) {
+    function (mdump, extra) {
       
       check(extra, "FreedPage", 32,  true);
     },
@@ -36,10 +36,10 @@ add_task(async function run_test() {
   );
 
   await do_crash(
-    function() {
+    function () {
       crashType = CrashTestUtils.CRASH_PHC_DOUBLE_FREE;
     },
-    function(mdump, extra) {
+    function (mdump, extra) {
       
       check(extra, "FreedPage", 64,  true);
     },
@@ -47,10 +47,10 @@ add_task(async function run_test() {
   );
 
   do_crash(
-    function() {
+    function () {
       crashType = CrashTestUtils.CRASH_PHC_BOUNDS_VIOLATION;
     },
-    function(mdump, extra) {
+    function (mdump, extra) {
       
       check(extra, "GuardPage", 96,  false);
     },

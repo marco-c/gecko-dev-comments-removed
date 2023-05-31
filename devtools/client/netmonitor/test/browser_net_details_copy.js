@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
@@ -72,7 +72,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
@@ -133,7 +133,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { tab, monitor } = await initNetMonitor(
     JSON_BASIC_URL + "?name=nogrip",
     { requestCount: 1 }
@@ -207,7 +207,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(SIMPLE_UNSORTED_COOKIES_SJS, {
     requestCount: 1,
   });

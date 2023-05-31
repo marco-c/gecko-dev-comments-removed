@@ -11,7 +11,7 @@ function checkValue(aPropertyListObject, aType, aValue) {
   Assert.equal(PropertyListUtils.getObjectType(aPropertyListObject), aType);
   if (aValue !== undefined) {
     
-    let strictEqualityCheck = function(a, b) {
+    let strictEqualityCheck = function (a, b) {
       Assert.equal(typeof a, typeof b);
       Assert.equal(a, b);
     };
@@ -101,7 +101,7 @@ function checkMainPropertyList(aPropertyListRoot) {
 }
 
 function readPropertyList(aFile, aCallback) {
-  PropertyListUtils.read(aFile, function(aPropertyListRoot) {
+  PropertyListUtils.read(aFile, function (aPropertyListRoot) {
     
     
     

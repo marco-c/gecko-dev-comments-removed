@@ -6,12 +6,12 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(
     "chrome://mochitests/content/browser/devtools/server/tests/browser/test-window.xhtml"
   );
 
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const { require } = ChromeUtils.importESModule(
       "resource://devtools/shared/loader/Loader.sys.mjs"
     );

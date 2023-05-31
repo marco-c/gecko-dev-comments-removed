@@ -2179,14 +2179,14 @@ function getPlayableVideo(candidates) {
 
 function getPlayableVideos(candidates) {
   var v = manifestVideo();
-  return candidates.filter(function(x) {
+  return candidates.filter(function (x) {
     return /^video/.test(x.type) && v.canPlayType(x.type);
   });
 }
 
 function getPlayableAudio(candidates) {
   var v = manifestVideo();
-  var resources = candidates.filter(function(x) {
+  var resources = candidates.filter(function (x) {
     return /^audio/.test(x.type) && v.canPlayType(x.type);
   });
   if (resources.length) {
@@ -2216,10 +2216,10 @@ function removeNodeAndSource(n) {
 }
 
 function once(target, name, cb) {
-  var p = new Promise(function(resolve, reject) {
+  var p = new Promise(function (resolve, reject) {
     target.addEventListener(
       name,
-      function() {
+      function () {
         resolve();
       },
       { once: true }
@@ -2237,8 +2237,8 @@ function once(target, name, cb) {
 
 
 function nextEvent(video, eventName) {
-  return new Promise(function(resolve, reject) {
-    let f = function(event) {
+  return new Promise(function (resolve, reject) {
+    let f = function (event) {
       video.removeEventListener(eventName, f);
       resolve(event);
     };
@@ -2319,7 +2319,7 @@ function MediaTestManager() {
   
   
   
-  this.runTests = function(tests, startTest) {
+  this.runTests = function (tests, startTest) {
     this.startTime = new Date();
     SimpleTest.info(
       "Started " +
@@ -2358,7 +2358,7 @@ function MediaTestManager() {
 
   
   
-  this.started = function(token, handler) {
+  this.started = function (token, handler) {
     this.tokens.push(token);
     this.numTestsRunning++;
     this.handlers[token] = handler;
@@ -2392,7 +2392,7 @@ function MediaTestManager() {
   
   
   
-  this.finished = function(token) {
+  this.finished = function (token) {
     var i = this.tokens.indexOf(token);
     if (i != -1) {
       
@@ -2423,7 +2423,7 @@ function MediaTestManager() {
 
   
   
-  this.nextTest = function() {
+  this.nextTest = function () {
     while (
       this.testNum < this.tests.length &&
       this.tokens.length < PARALLEL_TESTS
@@ -2509,7 +2509,7 @@ if ("SimpleTest" in window) {
   SimpleTest.requestFlakyTimeout("untriaged");
 
   
-  SimpleTest.registerTimeoutFunction(async function() {
+  SimpleTest.registerTimeoutFunction(async function () {
     for (const v of document.getElementsByTagName("video")) {
       SimpleTest.info(
         JSON.stringify(await SpecialPowers.wrap(v).mozRequestDebugInfo())

@@ -13,10 +13,10 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticle.html",
-    async function(browser) {
+    async function (browser) {
       let pageShownPromise = BrowserTestUtils.waitForContentEvent(
         browser,
         "AboutReaderContentReady"
@@ -24,7 +24,7 @@ add_task(async function() {
       let readerButton = document.getElementById("reader-mode-button");
       readerButton.click();
       await pageShownPromise;
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         
         let readingTimeElement = content.document.querySelector(
           ".reader-estimated-time"
@@ -45,10 +45,10 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticleShort.html",
-    async function(browser) {
+    async function (browser) {
       let pageShownPromise = BrowserTestUtils.waitForContentEvent(
         browser,
         "AboutReaderContentReady"
@@ -56,7 +56,7 @@ add_task(async function() {
       let readerButton = document.getElementById("reader-mode-button");
       readerButton.click();
       await pageShownPromise;
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         
         let readingTimeElement = content.document.querySelector(
           ".reader-estimated-time"
@@ -75,10 +75,10 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticleMedium.html",
-    async function(browser) {
+    async function (browser) {
       let pageShownPromise = BrowserTestUtils.waitForContentEvent(
         browser,
         "AboutReaderContentReady"
@@ -86,7 +86,7 @@ add_task(async function() {
       let readerButton = document.getElementById("reader-mode-button");
       readerButton.click();
       await pageShownPromise;
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         
         let readingTimeElement = content.document.querySelector(
           ".reader-estimated-time"

@@ -9,7 +9,7 @@ const kAnchorAttribute = "cui-anchorid";
 
 
 
-add_task(async function() {
+add_task(async function () {
   CustomizableUI.addWidgetToArea(
     "history-panelmenu",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
@@ -66,7 +66,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let button = document.getElementById("stop-reload-button");
   ok(

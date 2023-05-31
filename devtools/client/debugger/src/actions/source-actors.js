@@ -3,7 +3,7 @@
 
 
 export function insertSourceActors(sourceActors) {
-  return function({ dispatch }) {
+  return function ({ dispatch }) {
     dispatch({
       type: "INSERT_SOURCE_ACTORS",
       sourceActors,

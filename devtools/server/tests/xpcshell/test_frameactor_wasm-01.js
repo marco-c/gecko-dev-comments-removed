@@ -41,7 +41,7 @@ function evalCode(debuggee) {
   
   debuggee.eval(
     "(" +
-      function() {
+      function () {
         
         
         const m = new WebAssembly.Module(

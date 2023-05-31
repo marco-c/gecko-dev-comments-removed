@@ -8,10 +8,10 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await PlacesUtils.history.clear();
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
     Services.prefs.clearUserPref("browser.urlbar.trimURLs");
   });

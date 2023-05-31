@@ -7,7 +7,7 @@ Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
 
 
 
-add_task(async function() {
+add_task(async function () {
   const EXTENSION_NAME = "Temporary web extension";
   const EXTENSION_ID = "test-devtools@mozilla.org";
 
@@ -38,7 +38,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const PACKAGED_EXTENSION_ID = "packaged-extension@tests";
   const PACKAGED_EXTENSION_NAME = "Packaged extension";
 

@@ -22,7 +22,7 @@ const SLOW_PAGE2 =
 
 
 
-add_task(async function() {
+add_task(async function () {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "http://example.com",
@@ -83,7 +83,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let socket = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
   );
@@ -144,7 +144,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let socket = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket
   );

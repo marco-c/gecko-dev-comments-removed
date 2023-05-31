@@ -6,8 +6,8 @@
 
 const { reloadPageAndLog } = require("damp-test/tests/head");
 
-exports.reloadInspectorAndLog = async function(label, toolbox) {
-  let onReload = async function() {
+exports.reloadInspectorAndLog = async function (label, toolbox) {
+  let onReload = async function () {
     let inspector = toolbox.getPanel("inspector");
     
     await inspector.once("new-root");
@@ -21,7 +21,7 @@ exports.reloadInspectorAndLog = async function(label, toolbox) {
 
 
 
-exports.selectNodeFront = function(inspector, nodeFront) {
+exports.selectNodeFront = function (inspector, nodeFront) {
   let onRuleViewRefreshed = inspector.once("rule-view-refreshed");
   inspector.selection.setNodeFront(nodeFront);
   return onRuleViewRefreshed;

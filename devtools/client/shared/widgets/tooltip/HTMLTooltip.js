@@ -284,7 +284,7 @@ const calculateHorizontalPosition = (
 
 
 
-const getRelativeRect = function(node, relativeTo) {
+const getRelativeRect = function (node, relativeTo) {
   
   
   if (

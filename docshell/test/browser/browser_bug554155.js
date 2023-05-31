@@ -2,7 +2,7 @@ add_task(async function test() {
   await BrowserTestUtils.withNewTab(
     
     { gBrowser, url: "http://example.com" },
-    async function(browser) {
+    async function (browser) {
       let numLocationChanges = 0;
 
       let listener = {
@@ -14,7 +14,7 @@ add_task(async function test() {
 
       gBrowser.addTabsProgressListener(listener);
 
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         
         
         content.history.pushState(null, null, "foo");

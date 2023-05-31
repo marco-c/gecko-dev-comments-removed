@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let prefs = await openPreferencesViaOpenPreferencesAPI("panePrivacy");
   is(prefs.selectedPane, "panePrivacy", "Privacy pane was selected");
   prefs = await openPreferencesViaHash("privacy");
@@ -48,7 +48,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let prefs = await openPreferencesViaOpenPreferencesAPI("general", {
     leaveOpen: true,
   });
@@ -84,7 +84,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   
   if (!AppConstants.MOZ_CRASHREPORTER) {
     return;
@@ -107,7 +107,7 @@ add_task(async function() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function() {
+add_task(async function () {
   
   if (!AppConstants.MOZ_CRASHREPORTER) {
     return;
@@ -144,10 +144,10 @@ function openPreferencesViaHash(aPane) {
 
     newTabBrowser.addEventListener(
       "Initialized",
-      function() {
+      function () {
         newTabBrowser.contentWindow.addEventListener(
           "load",
-          async function() {
+          async function () {
             let win = gBrowser.contentWindow;
             let selectedPane = win.history.state;
             await finalPrefPaneLoaded;

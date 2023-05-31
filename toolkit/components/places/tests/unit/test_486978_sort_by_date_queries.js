@@ -42,7 +42,7 @@ add_task(async function test_initialize() {
 
 
 
-add_task(function() {
+add_task(function () {
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_DATE_QUERY;
   
@@ -70,7 +70,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function () {
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_DATE_QUERY;
   
@@ -98,7 +98,7 @@ add_task(function() {
 
 
 
-add_task(function() {
+add_task(function () {
   var options = hs.getNewQueryOptions();
   options.resultType = options.RESULTS_AS_DATE_SITE_QUERY;
   

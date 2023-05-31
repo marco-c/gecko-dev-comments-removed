@@ -25,7 +25,7 @@ async function installShouldFail(file) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   AddonTestUtils.useRealCertChecks = true;
 
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");

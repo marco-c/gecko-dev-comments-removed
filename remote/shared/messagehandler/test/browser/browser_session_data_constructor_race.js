@@ -9,7 +9,7 @@ const TEST_PAGE = "https://example.com/document-builder.sjs?html=tab";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = BrowserTestUtils.addTab(gBrowser, TEST_PAGE);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   const browsingContext = tab.linkedBrowser.browsingContext;

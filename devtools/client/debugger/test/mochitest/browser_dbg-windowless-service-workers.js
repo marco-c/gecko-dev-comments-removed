@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   info("Subtest #1");
   await pushPref("devtools.debugger.features.windowless-service-workers", true);
   await pushPref("devtools.debugger.threads-visible", true);
@@ -32,7 +32,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   info("Subtest #2");
 
   const toolbox = await openNewTabAndToolbox(
@@ -67,7 +67,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   info("Subtest #3");
 
   const toolbox = await openNewTabAndToolbox(
@@ -114,7 +114,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   info("Subtest #4");
   if (Services.appinfo.fissionAutostart) {
     

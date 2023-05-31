@@ -21,7 +21,7 @@ const T = 100;
 
 const originalIdleDispatch = DeferredTask.prototype._startIdleDispatch;
 function replaceIdleDispatch(handleIdleDispatch) {
-  DeferredTask.prototype._startIdleDispatch = function(callback, timeout) {
+  DeferredTask.prototype._startIdleDispatch = function (callback, timeout) {
     handleIdleDispatch(callback, timeout);
   };
 }
@@ -54,12 +54,12 @@ add_test(function test_arm_delay_respected() {
   let executed1 = false;
   let executed2 = false;
 
-  new DeferredTask(function() {
+  new DeferredTask(function () {
     executed1 = true;
     Assert.ok(!executed2);
   }, 1 * T).arm();
 
-  new DeferredTask(function() {
+  new DeferredTask(function () {
     executed2 = true;
     Assert.ok(executed1);
     run_next_test();
@@ -82,7 +82,7 @@ add_test(function test_arm_delay_notrestarted() {
   do_timeout(2 * T, () => deferredTask.arm());
 
   
-  do_timeout(5 * T, function() {
+  do_timeout(5 * T, function () {
     Assert.ok(executed);
     run_next_test();
   });
@@ -94,7 +94,7 @@ add_test(function test_arm_delay_notrestarted() {
 add_test(function test_arm_coalesced() {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     Assert.ok(!executed);
     executed = true;
     run_next_test();
@@ -111,7 +111,7 @@ add_test(function test_arm_coalesced() {
 add_test(function test_arm_coalesced_nodelay() {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     Assert.ok(!executed);
     executed = true;
     run_next_test();
@@ -127,7 +127,7 @@ add_test(function test_arm_coalesced_nodelay() {
 add_test(function test_arm_recursive() {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     if (!executed) {
       executed = true;
       deferredTask.arm();
@@ -148,7 +148,7 @@ add_test(function test_arm_async() {
   let finishedExecutionAgain = false;
 
   
-  let deferredTask = new DeferredTask(async function() {
+  let deferredTask = new DeferredTask(async function () {
     await promiseTimeout(4 * T);
     if (!finishedExecution) {
       finishedExecution = true;
@@ -161,7 +161,7 @@ add_test(function test_arm_async() {
   
   
   
-  do_timeout(4 * T, function() {
+  do_timeout(4 * T, function () {
     Assert.ok(deferredTask.isRunning);
     Assert.ok(!finishedExecution);
     deferredTask.arm();
@@ -169,19 +169,19 @@ add_test(function test_arm_async() {
 
   
   
-  do_timeout(7 * T, function() {
+  do_timeout(7 * T, function () {
     Assert.ok(!deferredTask.isRunning);
     Assert.ok(finishedExecution);
   });
 
   
-  do_timeout(10 * T, function() {
+  do_timeout(10 * T, function () {
     Assert.ok(deferredTask.isRunning);
     Assert.ok(!finishedExecutionAgain);
   });
 
   
-  do_timeout(13 * T, function() {
+  do_timeout(13 * T, function () {
     Assert.ok(!deferredTask.isRunning);
     Assert.ok(finishedExecutionAgain);
     run_next_test();
@@ -193,7 +193,7 @@ add_test(function test_arm_async() {
 
 add_test(function test_disarm() {
   
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     do_throw("This task should not run.");
   }, 2 * T);
   deferredTask.arm();
@@ -216,16 +216,16 @@ add_test(function test_disarm_delay_restarted() {
   }, 4 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function() {
+  do_timeout(2 * T, function () {
     deferredTask.disarm();
     deferredTask.arm();
   });
 
-  do_timeout(5 * T, function() {
+  do_timeout(5 * T, function () {
     Assert.ok(!executed);
   });
 
-  do_timeout(7 * T, function() {
+  do_timeout(7 * T, function () {
     Assert.ok(executed);
     run_next_test();
   });
@@ -238,21 +238,21 @@ add_test(function test_disarm_delay_restarted() {
 add_test(function test_disarm_async() {
   let finishedExecution = false;
 
-  let deferredTask = new DeferredTask(async function() {
+  let deferredTask = new DeferredTask(async function () {
     deferredTask.arm();
     await promiseTimeout(2 * T);
     finishedExecution = true;
   }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function() {
+  do_timeout(2 * T, function () {
     Assert.ok(deferredTask.isRunning);
     Assert.ok(deferredTask.isArmed);
     Assert.ok(!finishedExecution);
     deferredTask.disarm();
   });
 
-  do_timeout(4 * T, function() {
+  do_timeout(4 * T, function () {
     Assert.ok(!deferredTask.isRunning);
     Assert.ok(!deferredTask.isArmed);
     Assert.ok(finishedExecution);
@@ -267,21 +267,21 @@ add_test(function test_disarm_async() {
 add_test(function test_disarm_immediate_async() {
   let executed = false;
 
-  let deferredTask = new DeferredTask(async function() {
+  let deferredTask = new DeferredTask(async function () {
     Assert.ok(!executed);
     executed = true;
     await promiseTimeout(2 * T);
   }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function() {
+  do_timeout(2 * T, function () {
     Assert.ok(deferredTask.isRunning);
     Assert.ok(!deferredTask.isArmed);
     deferredTask.arm();
     deferredTask.disarm();
   });
 
-  do_timeout(4 * T, function() {
+  do_timeout(4 * T, function () {
     Assert.ok(executed);
     Assert.ok(!deferredTask.isRunning);
     Assert.ok(!deferredTask.isArmed);
@@ -293,7 +293,7 @@ add_test(function test_disarm_immediate_async() {
 
 
 add_test(function test_isArmed_isRunning() {
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     Assert.ok(deferredTask.isRunning);
     Assert.ok(!deferredTask.isArmed);
     deferredTask.arm();
@@ -323,7 +323,7 @@ add_test(function test_idle_without_deadline() {
     do_timeout(timeout || 2 * T, callback);
   });
 
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     Assert.ok(!executed);
     executed = true;
   }, 1 * T);
@@ -356,7 +356,7 @@ add_test(function test_idle_deadline() {
   });
 
   let deferredTask = new DeferredTask(
-    function() {
+    function () {
       Assert.ok(!executed);
       executed = true;
     },
@@ -395,7 +395,7 @@ add_test(function test_finalize() {
     do_timeout(T, callback);
   });
 
-  let deferredTask = new DeferredTask(function() {
+  let deferredTask = new DeferredTask(function () {
     Assert.ok(!timePassed);
     executed = true;
   }, 2 * T);
@@ -408,7 +408,7 @@ add_test(function test_finalize() {
   });
 
   
-  deferredTask.finalize().then(function() {
+  deferredTask.finalize().then(function () {
     finalized = true;
     Assert.ok(executed);
   });
@@ -432,14 +432,14 @@ add_test(function test_finalize_executes_entirely() {
   let executedAgain = false;
   let timePassed = false;
 
-  let deferredTask = new DeferredTask(async function() {
+  let deferredTask = new DeferredTask(async function () {
     
     if (!executed) {
       deferredTask.arm();
       Assert.ok(deferredTask.isArmed);
       Assert.ok(deferredTask.isRunning);
 
-      deferredTask.finalize().then(function() {
+      deferredTask.finalize().then(function () {
         
         Assert.ok(executedAgain);
         Assert.ok(!timePassed);

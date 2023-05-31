@@ -102,13 +102,13 @@ function setup_tests() {
   
   if (prefService.getBoolPref(kShortLivedKeepalivePref)) {
     prefService.setBoolPref(kShortLivedKeepalivePref, false);
-    registerCleanupFunction(function() {
+    registerCleanupFunction(function () {
       prefService.setBoolPref(kShortLivedKeepalivePref, true);
     });
   }
   if (prefService.getBoolPref(kLongLivedKeepalivePref)) {
     prefService.setBoolPref(kLongLivedKeepalivePref, false);
-    registerCleanupFunction(function() {
+    registerCleanupFunction(function () {
       prefService.setBoolPref(kLongLivedKeepalivePref, true);
     });
   }
@@ -136,17 +136,17 @@ function setup_http_server() {
   server.start(-1);
   baseURL = "http://localhost:" + server.identity.primaryPort + "/";
   info("Using baseURL: " + baseURL);
-  server.registerPathHandler("/", function(metadata, response) {
+  server.registerPathHandler("/", function (metadata, response) {
     
     response.processAsync();
 
-    do_timeout((kResponseTimeout + 1) * 1000 , function() {
+    do_timeout((kResponseTimeout + 1) * 1000 , function () {
       response.setStatusLine(metadata.httpVersion, 200, "OK");
       response.write("Hello world");
       response.finish();
     });
   });
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     server.stop(serverStopListener);
   });
 }

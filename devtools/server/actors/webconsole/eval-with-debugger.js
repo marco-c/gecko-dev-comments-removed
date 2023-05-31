@@ -108,7 +108,7 @@ function isObject(value) {
 
 
 
-exports.evalWithDebugger = function(string, options = {}, webConsole) {
+exports.evalWithDebugger = function (string, options = {}, webConsole) {
   if (isCommand(string.trim()) && options.eager) {
     return {
       result: null,

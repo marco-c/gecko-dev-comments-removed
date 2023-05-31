@@ -1,6 +1,6 @@
 
 
-onconnect = function(e) {
+onconnect = function (e) {
   let port = e.ports[0];
 
   let navigatorObj = self.navigator;

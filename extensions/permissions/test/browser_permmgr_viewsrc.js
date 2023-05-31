@@ -1,4 +1,4 @@
-add_task(async function() {
+add_task(async function () {
   
   
   let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -17,7 +17,7 @@ add_task(async function() {
      false,
      true
   );
-  await SpecialPowers.spawn(tab.linkedBrowser, [principal], async function(p) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [principal], async function (p) {
     is(
       Services.perms.testPermissionFromPrincipal(p, "viewsourceTestingPerm"),
       Services.perms.ALLOW_ACTION

@@ -65,7 +65,7 @@ add_task(async function testPrintToStream() {
 
     
     
-    await TestUtils.waitForCondition(async function() {
+    await TestUtils.waitForCondition(async function () {
       let fileStat = await IOUtils.stat(filePath);
       let streamStat = await IOUtils.stat(streamPath);
 

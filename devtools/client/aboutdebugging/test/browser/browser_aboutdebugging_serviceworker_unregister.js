@@ -15,7 +15,7 @@ const SW_URL = URL_ROOT_SSL + "resources/service-workers/empty-sw.js";
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableServiceWorkerDebugging();
 
   const { document, tab, window } = await openAboutDebugging({

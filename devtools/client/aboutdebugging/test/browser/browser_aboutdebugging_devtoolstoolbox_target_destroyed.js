@@ -4,7 +4,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   const targetTab = await addTab("about:home");
 
   const { document, tab, window } = await openAboutDebugging();

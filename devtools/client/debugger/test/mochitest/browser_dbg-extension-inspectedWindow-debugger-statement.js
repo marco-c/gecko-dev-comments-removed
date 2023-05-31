@@ -7,7 +7,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   const extension = await installAndStartExtension();
 
   const dbg = await initDebugger("doc-scripts.html");
@@ -31,7 +31,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const extension = await installAndStartExtension();
 
   

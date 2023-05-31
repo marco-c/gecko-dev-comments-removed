@@ -41,7 +41,7 @@ function check_results_callback(aSequence) {
   }
 
   
-  let expectedData = visits.filter(function(aVisit, aIndex, aArray) {
+  let expectedData = visits.filter(function (aVisit, aIndex, aArray) {
     
     if (aVisit.transType == Ci.nsINavHistoryService.TRANSITION_EMBED) {
       return false;
@@ -50,7 +50,7 @@ function check_results_callback(aSequence) {
     if (!includeHidden && isHidden(aVisit)) {
       
       if (
-        !visits.filter(function(refVisit) {
+        !visits.filter(function (refVisit) {
           return refVisit.uri == aVisit.uri && !isHidden(refVisit);
         }).length
       ) {
@@ -63,7 +63,7 @@ function check_results_callback(aSequence) {
 
   
   let seen = [];
-  expectedData = expectedData.filter(function(aData) {
+  expectedData = expectedData.filter(function (aData) {
     if (seen.includes(aData.uri)) {
       return false;
     }

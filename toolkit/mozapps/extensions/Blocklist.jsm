@@ -1296,7 +1296,7 @@ var gBlocklistLevel = DEFAULT_LEVEL;
 
 
 
-XPCOMUtils.defineLazyGetter(lazy, "gApp", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gApp", function () {
   
   let appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
   try {
@@ -1313,10 +1313,10 @@ XPCOMUtils.defineLazyGetter(lazy, "gApp", function() {
   return appinfo;
 });
 
-XPCOMUtils.defineLazyGetter(lazy, "gAppID", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gAppID", function () {
   return lazy.gApp.ID;
 });
-XPCOMUtils.defineLazyGetter(lazy, "gAppOS", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gAppOS", function () {
   return lazy.gApp.OS;
 });
 

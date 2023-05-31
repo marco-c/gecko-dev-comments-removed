@@ -32,7 +32,7 @@ const EXPECTED_MESSAGES = [
   },
 ];
 
-module.exports = async function() {
+module.exports = async function () {
   await testSetup(COMPLICATED_URL);
 
   

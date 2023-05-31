@@ -26,7 +26,7 @@ const { colorUtils } = require("resource://devtools/shared/css/color.js");
 
 
 
-const createInplaceEditorAndClick = async function(options, doc, textContent) {
+const createInplaceEditorAndClick = async function (options, doc, textContent) {
   const span = (options.element = createSpan(doc));
   if (textContent) {
     span.textContent = textContent;

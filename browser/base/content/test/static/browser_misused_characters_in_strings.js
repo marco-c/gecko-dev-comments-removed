@@ -167,7 +167,7 @@ add_task(async function checkAllTheProperties() {
   }
 });
 
-var checkDTD = async function(aURISpec) {
+var checkDTD = async function (aURISpec) {
   let rawContents = await fetchFile(aURISpec);
   
   

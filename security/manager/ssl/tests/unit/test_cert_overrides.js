@@ -195,7 +195,7 @@ function run_test() {
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
 
   let fakeOCSPResponder = new HttpServer();
-  fakeOCSPResponder.registerPrefixHandler("/", function(request, response) {
+  fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {
     response.setStatusLine(request.httpVersion, 500, "Internal Server Error");
   });
   fakeOCSPResponder.start(8888);
@@ -205,7 +205,7 @@ function run_test() {
   add_combo_tests();
   add_distrust_tests();
 
-  add_test(function() {
+  add_test(function () {
     fakeOCSPResponder.stop(check_telemetry);
   });
 
@@ -270,7 +270,7 @@ function add_simple_tests() {
   
   
   add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
-  add_test(function() {
+  add_test(function () {
     Services.prefs.setStringPref(
       "security.pki.mitm_canary_issuer",
       "CN=Test MITM Root"
@@ -282,7 +282,7 @@ function add_simple_tests() {
     run_next_test();
   });
   add_cert_override_test("mitm.example.com", MOZILLA_PKIX_ERROR_MITM_DETECTED);
-  add_test(function() {
+  add_test(function () {
     Services.prefs.setStringPref(
       "security.pki.mitm_canary_issuer",
       "CN=Other MITM Root"
@@ -298,7 +298,7 @@ function add_simple_tests() {
   add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
   
   
-  add_test(function() {
+  add_test(function () {
     Services.prefs.setBoolPref(
       "security.pki.mitm_canary_issuer.enabled",
       false
@@ -310,7 +310,7 @@ function add_simple_tests() {
     run_next_test();
   });
   add_cert_override_test("mitm.example.com", SEC_ERROR_UNKNOWN_ISSUER);
-  add_test(function() {
+  add_test(function () {
     Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
     run_next_test();
   });
@@ -319,7 +319,7 @@ function add_simple_tests() {
   
   
   
-  add_test(function() {
+  add_test(function () {
     let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
     setCertTrust(rootCert, ",,");
     run_next_test();
@@ -328,7 +328,7 @@ function add_simple_tests() {
     "nsCertTypeCritical.example.com",
     SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION
   );
-  add_test(function() {
+  add_test(function () {
     let rootCert = constructCertFromFile("bad_certs/test-ca.pem");
     setCertTrust(rootCert, "CTu,,");
     run_next_test();
@@ -354,7 +354,7 @@ function add_simple_tests() {
     MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA
   );
   
-  add_test(function() {
+  add_test(function () {
     let certOverrideService = Cc[
       "@mozilla.org/security/certoverride;1"
     ].getService(Ci.nsICertOverrideService);
@@ -373,7 +373,7 @@ function add_simple_tests() {
     PRErrorCodeSuccess
   );
   
-  add_test(function() {
+  add_test(function () {
     let v1Cert = constructCertFromFile("bad_certs/v1Cert.pem");
     setCertTrust(v1Cert, ",,");
     clearSessionCache();
@@ -407,7 +407,7 @@ function add_simple_tests() {
     "bug413909.xn--hxajbheg2az3al.xn--jxalpdlp",
     SEC_ERROR_UNKNOWN_ISSUER
   );
-  add_test(function() {
+  add_test(function () {
     
     
     let certOverrideService = Cc[
@@ -457,7 +457,7 @@ function add_simple_tests() {
     run_next_test();
   });
 
-  add_test(function() {
+  add_test(function () {
     
     let certOverrideService = Cc[
       "@mozilla.org/security/certoverride;1"
@@ -720,14 +720,14 @@ function add_distrust_tests() {
 function add_distrust_test(certFileName, hostName, expectedResult) {
   let certToDistrust = constructCertFromFile(certFileName);
 
-  add_test(function() {
+  add_test(function () {
     
     setCertTrust(certToDistrust, "pu,,");
     clearSessionCache();
     run_next_test();
   });
   add_prevented_cert_override_test(hostName, expectedResult);
-  add_test(function() {
+  add_test(function () {
     setCertTrust(certToDistrust, "u,,");
     run_next_test();
   });

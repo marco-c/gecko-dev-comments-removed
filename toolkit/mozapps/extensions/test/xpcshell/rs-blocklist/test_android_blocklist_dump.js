@@ -105,7 +105,7 @@ function spyOnExtensionBlocklistMLBF(onLoadAttempts, onLoadResult) {
   const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
   
   const originalFetchMLBF = ExtensionBlocklistMLBF._fetchMLBF;
-  ExtensionBlocklistMLBF._fetchMLBF = async function(record) {
+  ExtensionBlocklistMLBF._fetchMLBF = async function (record) {
     onLoadAttempts(record);
     let promise = originalFetchMLBF.apply(this, arguments);
     onLoadResult(promise);

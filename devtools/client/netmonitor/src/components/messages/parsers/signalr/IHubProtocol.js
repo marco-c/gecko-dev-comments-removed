@@ -15,7 +15,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 
 var MessageType;
-(function(_MessageType) {
+(function (_MessageType) {
   
   MessageType[(MessageType.Invocation = 1)] = "Invocation";
   

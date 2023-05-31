@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const AutocompletePopup = require("resource://devtools/client/shared/autocomplete-popup.js");
 
   info("Create an autocompletion popup");

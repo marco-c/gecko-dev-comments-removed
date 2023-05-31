@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, toolbox } = await openInspectorForURL(
     "data:text/html;charset=utf-8,<span>Test search shortcut conflicts</span>"
   );

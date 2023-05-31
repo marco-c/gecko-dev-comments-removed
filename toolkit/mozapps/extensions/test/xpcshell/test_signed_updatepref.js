@@ -48,7 +48,7 @@ add_task(async function setup() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
   await promiseStartupManager();
 
@@ -99,7 +99,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
   await promiseStartupManager();
 

@@ -6,7 +6,7 @@ function openTabInUserContext(userContextId) {
   gBrowser.selectedTab = tab;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

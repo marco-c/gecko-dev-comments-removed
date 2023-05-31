@@ -5,7 +5,7 @@ var reader = new FileReaderSync();
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   var file = event.data.file;
   var encoding = event.data.encoding;
 

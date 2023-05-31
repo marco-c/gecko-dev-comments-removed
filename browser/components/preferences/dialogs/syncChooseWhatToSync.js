@@ -21,7 +21,7 @@ let gSyncChooseWhatToSync = {
     let options = window.arguments[0];
     if (options.disconnectFun) {
       
-      document.addEventListener("dialogextra2", function() {
+      document.addEventListener("dialogextra2", function () {
         options.disconnectFun().then(disconnected => {
           if (disconnected) {
             window.close();

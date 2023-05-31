@@ -15,7 +15,7 @@ function getActorInstance(connID, actorID) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   ActorRegistry.registerModule("resource://test/pre_init_global_actors.js", {
     prefix: "preInitGlobal",
     constructor: "PreInitGlobalActor",

@@ -13,7 +13,7 @@ const DEFAULT_PAGE = "#/runtime/this-firefox";
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   const clientWrapper = await createLocalClientWrapper();

@@ -10,7 +10,7 @@ const PAGE_ON_MAIN = "about:robots";
 
 const TEST_DPPX = 2;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.responsive.viewport.pixelRatio", TEST_DPPX);
 

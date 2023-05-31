@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let newWindow = await openAndLoadWindow();
   let otherToolbox = newWindow.gNavToolbox;
 

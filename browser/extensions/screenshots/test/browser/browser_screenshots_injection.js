@@ -32,7 +32,7 @@ add_task(async function test_inject_srcdoc() {
         return new Promise(resolve => {
           
           
-          content.wrappedJSObject.responseHandler = Cu.exportFunction(function(
+          content.wrappedJSObject.responseHandler = Cu.exportFunction(function (
             arg
           ) {
             resolve(arg);

@@ -225,7 +225,7 @@ function BrowserTabList(connection) {
 
 BrowserTabList.prototype.constructor = BrowserTabList;
 
-BrowserTabList.prototype.destroy = function() {
+BrowserTabList.prototype.destroy = function () {
   this._actorByBrowser.clear();
   this.onListChanged = null;
 };
@@ -240,7 +240,7 @@ BrowserTabList.prototype.destroy = function() {
 
 
 
-BrowserTabList.prototype._getSelectedBrowser = function(window) {
+BrowserTabList.prototype._getSelectedBrowser = function (window) {
   return window.gBrowser ? window.gBrowser.selectedBrowser : null;
 };
 
@@ -248,7 +248,7 @@ BrowserTabList.prototype._getSelectedBrowser = function(window) {
 
 
 
-BrowserTabList.prototype._getBrowsers = function*() {
+BrowserTabList.prototype._getBrowsers = function* () {
   
   for (const win of Services.wm.getEnumerator(
     DevToolsServer.chromeWindowType
@@ -261,7 +261,7 @@ BrowserTabList.prototype._getBrowsers = function*() {
   }
 };
 
-BrowserTabList.prototype._getChildren = function(window) {
+BrowserTabList.prototype._getChildren = function (window) {
   if (!window.gBrowser) {
     return [];
   }
@@ -277,7 +277,7 @@ BrowserTabList.prototype._getChildren = function(window) {
   });
 };
 
-BrowserTabList.prototype.getList = async function() {
+BrowserTabList.prototype.getList = async function () {
   
   
   const initialMapSize = this._actorByBrowser.size;
@@ -310,7 +310,7 @@ BrowserTabList.prototype.getList = async function() {
   return actors;
 };
 
-BrowserTabList.prototype._getActorForBrowser = async function(browser) {
+BrowserTabList.prototype._getActorForBrowser = async function (browser) {
   
   let actor = this._actorByBrowser.get(browser);
   if (actor) {
@@ -331,7 +331,7 @@ BrowserTabList.prototype._getActorForBrowser = async function(browser) {
 
 
 
-BrowserTabList.prototype.getTab = function({ browserId }) {
+BrowserTabList.prototype.getTab = function ({ browserId }) {
   if (typeof browserId == "number") {
     const browsingContext = BrowsingContext.getCurrentTopByBrowserId(browserId);
     if (!browsingContext) {
@@ -384,7 +384,7 @@ Object.defineProperty(BrowserTabList.prototype, "onListChanged", {
 
 
 
-BrowserTabList.prototype._notifyListChanged = function() {
+BrowserTabList.prototype._notifyListChanged = function () {
   if (!this._onListChanged) {
     return;
   }
@@ -398,7 +398,7 @@ BrowserTabList.prototype._notifyListChanged = function() {
 
 
 
-BrowserTabList.prototype._handleActorClose = function(actor, browser) {
+BrowserTabList.prototype._handleActorClose = function (actor, browser) {
   if (this._testing) {
     if (this._actorByBrowser.get(browser) !== actor) {
       throw new Error(
@@ -422,7 +422,7 @@ BrowserTabList.prototype._handleActorClose = function(actor, browser) {
 
 
 
-BrowserTabList.prototype._checkListening = function() {
+BrowserTabList.prototype._checkListening = function () {
   
 
 
@@ -479,7 +479,7 @@ BrowserTabList.prototype._checkListening = function() {
 
 
 
-BrowserTabList.prototype._listenForEventsIf = function(
+BrowserTabList.prototype._listenForEventsIf = function (
   shouldListen,
   guard,
   eventNames,
@@ -501,7 +501,7 @@ BrowserTabList.prototype._listenForEventsIf = function(
 
 
 
-BrowserTabList.prototype._onPageTitleChangedEvent = function(event) {
+BrowserTabList.prototype._onPageTitleChangedEvent = function (event) {
   switch (event.type) {
     case "pagetitlechanged": {
       const browser = event.target;
@@ -515,7 +515,7 @@ BrowserTabList.prototype._onPageTitleChangedEvent = function(event) {
 
 
 BrowserTabList.prototype._onDOMTitleChanged = DevToolsUtils.makeInfallible(
-  function(browser) {
+  function (browser) {
     const actor = this._actorByBrowser.get(browser);
     if (actor) {
       this._notifyListChanged();
@@ -527,7 +527,7 @@ BrowserTabList.prototype._onDOMTitleChanged = DevToolsUtils.makeInfallible(
 
 
 
-BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(
+BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
   event
 ) {
   
@@ -574,7 +574,7 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(
 
 
 
-BrowserTabList.prototype._listenToMediatorIf = function(shouldListen) {
+BrowserTabList.prototype._listenToMediatorIf = function (shouldListen) {
   if (!shouldListen !== !this._listeningToMediator) {
     const op = shouldListen ? "addListener" : "removeListener";
     Services.wm[op](this);
@@ -591,7 +591,7 @@ BrowserTabList.prototype._listenToMediatorIf = function(shouldListen) {
 
 
 
-BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(
+BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function (
   window
 ) {
   const handleLoad = DevToolsUtils.makeInfallible(() => {
@@ -635,7 +635,7 @@ BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(
 },
 "BrowserTabList.prototype.onOpenWindow");
 
-BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function(
+BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function (
   window
 ) {
   if (window instanceof Ci.nsIAppWindow) {
@@ -676,7 +676,7 @@ function BrowserAddonList(connection) {
   this._onListChanged = null;
 }
 
-BrowserAddonList.prototype.getList = async function() {
+BrowserAddonList.prototype.getList = async function () {
   const addons = await lazy.AddonManager.getAllAddons();
   for (const addon of addons) {
     let actor = this._actorByAddonId.get(addon.id);
@@ -709,58 +709,58 @@ Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
 
 
 
-BrowserAddonList.prototype.onDisabled = function(addon) {
+BrowserAddonList.prototype.onDisabled = function (addon) {
   this._onAddonManagerUpdated();
 };
 
 
 
 
-BrowserAddonList.prototype.onEnabled = function(addon) {
+BrowserAddonList.prototype.onEnabled = function (addon) {
   this._onAddonManagerUpdated();
 };
 
 
 
 
-BrowserAddonList.prototype.onInstalled = function(addon) {
+BrowserAddonList.prototype.onInstalled = function (addon) {
   this._onAddonManagerUpdated();
 };
 
 
 
 
-BrowserAddonList.prototype.onOperationCancelled = function(addon) {
+BrowserAddonList.prototype.onOperationCancelled = function (addon) {
   this._onAddonManagerUpdated();
 };
 
 
 
 
-BrowserAddonList.prototype.onUninstalling = function(addon) {
+BrowserAddonList.prototype.onUninstalling = function (addon) {
   this._onAddonManagerUpdated();
 };
 
 
 
 
-BrowserAddonList.prototype.onUninstalled = function(addon) {
+BrowserAddonList.prototype.onUninstalled = function (addon) {
   this._actorByAddonId.delete(addon.id);
   this._onAddonManagerUpdated();
 };
 
-BrowserAddonList.prototype._onAddonManagerUpdated = function(addon) {
+BrowserAddonList.prototype._onAddonManagerUpdated = function (addon) {
   this._notifyListChanged();
   this._adjustListener();
 };
 
-BrowserAddonList.prototype._notifyListChanged = function() {
+BrowserAddonList.prototype._notifyListChanged = function () {
   if (this._onListChanged) {
     this._onListChanged();
   }
 };
 
-BrowserAddonList.prototype._adjustListener = function() {
+BrowserAddonList.prototype._adjustListener = function () {
   if (this._onListChanged) {
     
     

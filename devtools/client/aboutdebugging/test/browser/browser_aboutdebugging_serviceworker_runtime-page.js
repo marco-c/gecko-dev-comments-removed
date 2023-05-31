@@ -21,7 +21,7 @@ const SW_URL = URL_ROOT_SSL + "resources/service-workers/push-sw.js";
 
 
 
-add_task(async function() {
+add_task(async function () {
   prepareCollapsibilitiesTest();
   await enableServiceWorkerDebugging();
   const { document, tab, window } = await openAboutDebugging({

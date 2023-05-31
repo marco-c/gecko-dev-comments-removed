@@ -63,7 +63,7 @@ function declTestWithOptions(name, cfg, fileExt) {
   }
 
   
-  add_task(async function() {
+  add_task(async function () {
     info("Entering test: " + name);
 
     

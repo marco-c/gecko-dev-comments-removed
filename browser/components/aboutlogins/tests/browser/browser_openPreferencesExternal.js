@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",

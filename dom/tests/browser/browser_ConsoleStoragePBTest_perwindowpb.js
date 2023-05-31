@@ -23,7 +23,7 @@ function test() {
     let win = OpenBrowserWindow(aOptions);
     win.addEventListener(
       "load",
-      function() {
+      function () {
         aCallback(win);
       },
       { once: true }
@@ -41,7 +41,7 @@ function test() {
             "storage should" + (storageShouldOccur ? "" : " not") + " occur"
           );
 
-          executeSoon(function() {
+          executeSoon(function () {
             ConsoleAPIStorage.removeLogEventListener(observe);
             aCallback();
           });
@@ -65,7 +65,7 @@ function test() {
   }
 
   function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
+    whenNewWindowLoaded(aOptions, function (aWin) {
       windowsToClose.push(aWin);
       
       
@@ -75,17 +75,17 @@ function test() {
   }
 
   
-  registerCleanupFunction(function() {
-    windowsToClose.forEach(function(aWin) {
+  registerCleanupFunction(function () {
+    windowsToClose.forEach(function (aWin) {
       aWin.close();
     });
   });
 
   
-  testOnWindow({}, function(aWin) {
-    doTest(false, aWin, function() {
+  testOnWindow({}, function (aWin) {
+    doTest(false, aWin, function () {
       
-      testOnWindow({ private: true }, function(aWin) {
+      testOnWindow({ private: true }, function (aWin) {
         doTest(true, aWin, finish);
       });
     });

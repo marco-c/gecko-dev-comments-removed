@@ -249,7 +249,7 @@ function doStreamUpdate(updateText, success, failure, downloadFailure) {
 
 var gAssertions = {
   tableData(expectedTables, cb) {
-    dbservice.getTables(function(tables) {
+    dbservice.getTables(function (tables) {
       
       var parts = tables.split("\n");
       while (parts[parts.length - 1] == "") {
@@ -266,7 +266,7 @@ var gAssertions = {
   checkUrls(urls, expected, cb, useMoz = false) {
     
     urls = urls.slice(0);
-    var doLookup = function() {
+    var doLookup = function () {
       if (urls.length) {
         var tables = useMoz ? mozTables : allTables;
         var fragment = urls.shift();
@@ -277,7 +277,7 @@ var gAssertions = {
         dbservice.lookup(
           principal,
           tables,
-          function(arg) {
+          function (arg) {
             Assert.equal(expected, arg);
             doLookup();
           },
@@ -298,7 +298,7 @@ var gAssertions = {
     dbservice.lookup(
       principal,
       allTables,
-      function(tables) {
+      function (tables) {
         
         var parts = tables.split(",");
         while (parts[parts.length - 1] == "") {
@@ -356,7 +356,7 @@ var gAssertions = {
 
 
 function checkAssertions(assertions, doneCallback) {
-  var checkAssertion = function() {
+  var checkAssertion = function () {
     for (var i in assertions) {
       var data = assertions[i];
       delete assertions[i];
@@ -395,11 +395,11 @@ function readFileToString(aFilename) {
 
 
 function doUpdateTest(updates, assertions, successCallback, errorCallback) {
-  var errorUpdate = function() {
+  var errorUpdate = function () {
     checkAssertions(assertions, errorCallback);
   };
 
-  var runUpdate = function() {
+  var runUpdate = function () {
     if (updates.length) {
       var update = updates.shift();
       doStreamUpdate(update, runUpdate, errorUpdate, null);
@@ -540,7 +540,7 @@ function waitUntilMetaDataSaved(expectedState, expectedChecksum, callback) {
 }
 
 var gUpdateFinishedObserverEnabled = false;
-var gUpdateFinishedObserver = function(aSubject, aTopic, aData) {
+var gUpdateFinishedObserver = function (aSubject, aTopic, aData) {
   info("[" + aTopic + "] " + aData);
   if (aData != "success") {
     updateError(aData);
@@ -567,6 +567,6 @@ function stopThrowingOnUpdateErrors() {
 
 cleanUp();
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   cleanUp();
 });

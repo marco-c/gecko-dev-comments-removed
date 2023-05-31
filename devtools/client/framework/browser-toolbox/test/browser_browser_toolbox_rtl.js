@@ -12,7 +12,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 requestLongerTimeout(4);
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("intl.l10n.pseudo", "bidi");
 
   const ToolboxTask = await initBrowserToolboxTask();

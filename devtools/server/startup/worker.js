@@ -18,7 +18,7 @@
 
 
 let nextId = 0;
-this.rpc = function(method, ...params) {
+this.rpc = function (method, ...params) {
   return new Promise((resolve, reject) => {
     const id = nextId++;
     this.addEventListener("message", function onMessageForRpc(event) {
@@ -54,7 +54,7 @@ const { DevToolsServer } = worker.require(
   "resource://devtools/server/devtools-server.js"
 );
 
-DevToolsServer.createRootActor = function() {
+DevToolsServer.createRootActor = function () {
   throw new Error("Should never get here!");
 };
 
@@ -63,7 +63,7 @@ DevToolsServer.createRootActor = function() {
 
 const connections = new Map();
 
-this.addEventListener("message", async function(event) {
+this.addEventListener("message", async function (event) {
   const packet = JSON.parse(event.data);
   switch (packet.type) {
     case "connect":

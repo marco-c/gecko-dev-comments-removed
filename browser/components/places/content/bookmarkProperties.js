@@ -224,10 +224,10 @@ var BookmarkPropertiesPanel = {
 
 
   async onDialogLoad() {
-    document.addEventListener("dialogaccept", function() {
+    document.addEventListener("dialogaccept", function () {
       BookmarkPropertiesPanel.onDialogAccept();
     });
-    document.addEventListener("dialogcancel", function() {
+    document.addEventListener("dialogcancel", function () {
       BookmarkPropertiesPanel.onDialogCancel();
     });
 
@@ -510,7 +510,7 @@ var BookmarkPropertiesPanel = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   
   
   document.mozSubdialogReady = BookmarkPropertiesPanel.onDialogLoad()

@@ -28,7 +28,7 @@ async function searchAndOpenPopup(value) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   engine = await SearchTestUtils.promiseNewSearchEngine({
@@ -43,7 +43,7 @@ add_setup(async function() {
     ],
   });
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
     await UrlbarTestUtils.formHistory.clear();
   });
@@ -151,7 +151,7 @@ add_task(async function shift_enter_search() {
 
 
 add_task(async function alt_enter_emptypage() {
-  await BrowserTestUtils.withNewTab("about:home", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:home", async function (browser) {
     await searchAndOpenPopup(SEARCH_STRING);
     let oneOffs = oneOffSearchButtons.getSelectableButtons(true);
     
@@ -176,7 +176,7 @@ add_task(async function alt_enter_emptypage() {
 
 
 add_task(async function alt_enter_empty() {
-  await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:robots", async function (browser) {
     await searchAndOpenPopup("");
     let oneOffs = oneOffSearchButtons.getSelectableButtons(true);
     
@@ -210,7 +210,7 @@ add_task(async function alt_enter_empty() {
 
 
 add_task(async function alt_enter_search_remote() {
-  await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:robots", async function (browser) {
     await searchAndOpenPopup(SEARCH_STRING);
     
     EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
@@ -244,7 +244,7 @@ add_task(async function alt_enter_search_remote() {
 
 
 add_task(async function alt_enter_search_local() {
-  await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:robots", async function (browser) {
     await searchAndOpenPopup(SEARCH_STRING);
     
     EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });

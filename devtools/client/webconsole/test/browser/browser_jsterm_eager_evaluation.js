@@ -23,7 +23,7 @@ const EAGER_EVALUATION_PREF = "devtools.webconsole.input.eagerEvaluation";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
@@ -246,7 +246,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm } = hud;
 
@@ -298,7 +298,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref(EAGER_EVALUATION_PREF, false);
   const hud = await openNewTabAndConsole(TEST_URI);
@@ -358,7 +358,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const start_uri = "data:text/html, Start uri";
   const new_uri = "data:text/html, Test console refresh instant value";
   const hud = await openNewTabAndConsole(start_uri);

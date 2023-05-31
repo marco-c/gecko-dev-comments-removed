@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies-samesite.html");
 
   const id1 = getCookieId(

@@ -4,7 +4,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["javascript.options.source_pragmas", false]],

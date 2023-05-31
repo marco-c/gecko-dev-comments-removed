@@ -47,7 +47,7 @@ const REMOTE_SETTINGS_RESULTS = [
 
 let spy;
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.bestMatch.blockingEnabled", true],

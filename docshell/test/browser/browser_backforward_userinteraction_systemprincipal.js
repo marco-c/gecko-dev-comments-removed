@@ -100,7 +100,7 @@ async function runTest(privilegedLoad) {
 
 
 add_task(async function test_urlBar() {
-  await runTest(async function(url) {
+  await runTest(async function (url) {
     info(`Loading ${url} via the URL bar.`);
     let browser = gBrowser.selectedBrowser;
     let loaded = BrowserTestUtils.browserLoaded(browser, false, url);

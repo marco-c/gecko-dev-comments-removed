@@ -12,7 +12,7 @@ const DUMMY_2_URL = "https://example.com/browser/";
 
 addRDMTask(
   null,
-  async function() {
+  async function () {
     await SpecialPowers.pushPrefEnv({
       set: [["browser.navigation.requireUserInteraction", false]],
     });
@@ -52,7 +52,7 @@ addRDMTask(
     await waitForDeviceAndViewportState(ui);
 
     
-    let color = await spawnViewportTask(ui, {}, function() {
+    let color = await spawnViewportTask(ui, {}, function () {
       return content
         .getComputedStyle(content.document.body)
         .getPropertyValue("background-color");
@@ -66,7 +66,7 @@ addRDMTask(
     await closeRDM(tab);
 
     
-    color = await SpecialPowers.spawn(browser, [], async function() {
+    color = await SpecialPowers.spawn(browser, [], async function () {
       return content
         .getComputedStyle(content.document.body)
         .getPropertyValue("background-color");

@@ -3,7 +3,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await setupPlacesDatabase(["migration", "places_v43.sqlite"]);
 
   

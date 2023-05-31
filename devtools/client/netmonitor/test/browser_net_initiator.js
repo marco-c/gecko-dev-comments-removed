@@ -132,7 +132,7 @@ const EXPECTED_REQUESTS = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   
   

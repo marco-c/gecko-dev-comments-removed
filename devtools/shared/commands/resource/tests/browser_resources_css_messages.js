@@ -22,7 +22,7 @@ httpServer.registerPathHandler(`/test_css_messages.html`, (req, res) => {
 
 const TEST_URI = `http://localhost:${httpServer.identity.primaryPort}/test_css_messages.html`;
 
-add_task(async function() {
+add_task(async function () {
   await testWatchingCssMessages();
   await testWatchingCachedCssMessages();
 });
@@ -81,7 +81,7 @@ async function testWatchingCachedCssMessages() {
   
   
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     content.docShell.cssErrorReportingEnabled = true;
   });
 

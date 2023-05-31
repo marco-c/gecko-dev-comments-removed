@@ -14,7 +14,7 @@ Services.scriptloader.loadSubScript(
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("devtools.aboutdebugging.process-debugging", true);
   await pushPref("devtools.aboutdebugging.test-local-process-debugging", true);
 

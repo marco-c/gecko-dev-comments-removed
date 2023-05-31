@@ -201,10 +201,7 @@ add_task(async function test_broken_referrer() {
   
   
   function generateQuarantineGUID() {
-    let str = Services.uuid
-      .generateUUID()
-      .toString()
-      .toUpperCase();
+    let str = Services.uuid.generateUUID().toString().toUpperCase();
     
     return str.substring(1, str.length - 1);
   }

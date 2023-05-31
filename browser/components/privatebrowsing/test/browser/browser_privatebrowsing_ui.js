@@ -18,7 +18,7 @@ function test() {
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
     BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser).then(
-      function() {
+      function () {
         ok(aWindow.gPrivateBrowsingUI, "The gPrivateBrowsingUI object exists");
 
         pbMenuItem = aWindow.document.getElementById("menu_newPrivateWindow");
@@ -55,7 +55,7 @@ function test() {
     Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
       aSubject.addEventListener(
         "load",
-        function() {
+        function () {
           Services.obs.removeObserver(observer, "domwindowopened");
           windowsToClose.push(aSubject);
           aCallback(aSubject);
@@ -70,7 +70,7 @@ function test() {
   }
 
   function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
+    whenNewWindowLoaded(aOptions, function (aWin) {
       windowsToClose.push(aWin);
       
       
@@ -80,18 +80,18 @@ function test() {
   }
 
   
-  registerCleanupFunction(function() {
-    windowsToClose.forEach(function(aWin) {
+  registerCleanupFunction(function () {
+    windowsToClose.forEach(function (aWin) {
       aWin.close();
     });
   });
 
   
-  testOnWindow({}, function(aWin) {
-    doTest(false, aWin, function() {
+  testOnWindow({}, function (aWin) {
+    doTest(false, aWin, function () {
       
       
-      openPrivateBrowsingModeByUI(aWin, function(aPrivateWin) {
+      openPrivateBrowsingModeByUI(aWin, function (aPrivateWin) {
         doTest(true, aPrivateWin, finish);
       });
     });

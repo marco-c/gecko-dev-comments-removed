@@ -307,10 +307,10 @@ function doPageNavigation(params) {
   
   if (eventsToListenFor.length && params.onNavComplete) {
     waitForTrue(
-      function() {
+      function () {
         return gFinalEvent;
       },
-      function() {
+      function () {
         doPageNavigation_complete(
           eventsToListenFor,
           params.onNavComplete,
@@ -378,7 +378,7 @@ function doPageNavigation_complete(
   } else if (gNavType == NAV_URI) {
     
     
-    gUrisNotInBFCache.forEach(function(element, index, array) {
+    gUrisNotInBFCache.forEach(function (element, index, array) {
       if (element == uri) {
         array.splice(index, 1);
       }
@@ -477,7 +477,7 @@ function pageEventListener(
   
   
   if (typeof gExpectedEvents == "undefined" && event.type == "pageshow") {
-    waitForNextPaint(function() {
+    waitForNextPaint(function () {
       gFinalEvent = true;
     });
     return;
@@ -555,7 +555,7 @@ function pageEventListener(
 
   
   if (!gExpectedEvents.length) {
-    waitForNextPaint(function() {
+    waitForNextPaint(function () {
       gFinalEvent = true;
     });
   }
@@ -747,12 +747,12 @@ function getHttpUrl(filename) {
 
 
 var TestWindow = {};
-TestWindow.getWindow = function() {
+TestWindow.getWindow = function () {
   return document.getElementById("content").contentWindow;
 };
-TestWindow.getBrowser = function() {
+TestWindow.getBrowser = function () {
   return document.getElementById("content");
 };
-TestWindow.getDocument = function() {
+TestWindow.getDocument = function () {
   return document.getElementById("content").contentDocument;
 };

@@ -16,7 +16,7 @@ const TEST_URI =
   "https://example.com/browser/devtools/client/webconsole/test/browser/test-console-api.html";
 const STUB_FILE = "pageError.js";
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("javascript.options.asyncstack_capture_debuggee_only", false);
 
   const isStubsUpdate = Services.env.get(STUBS_UPDATE_ENV) == "true";
@@ -73,7 +73,7 @@ async function generatePageErrorStubs() {
   
   
   
-  let handleErrorMessage = function() {};
+  let handleErrorMessage = function () {};
 
   const onErrorMessageAvailable = resources => {
     for (const resource of resources) {
@@ -98,7 +98,7 @@ async function generatePageErrorStubs() {
 
     
     
-    await ContentTask.spawn(gBrowser.selectedBrowser, code, function(subCode) {
+    await ContentTask.spawn(gBrowser.selectedBrowser, code, function (subCode) {
       const script = content.document.createElement("script");
       script.append(content.document.createTextNode(subCode));
       content.document.body.append(script);

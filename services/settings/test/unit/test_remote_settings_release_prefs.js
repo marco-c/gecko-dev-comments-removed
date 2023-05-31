@@ -18,7 +18,7 @@ function clear_state() {
   Services.prefs.clearUserPref("services.settings.preview_enabled");
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   

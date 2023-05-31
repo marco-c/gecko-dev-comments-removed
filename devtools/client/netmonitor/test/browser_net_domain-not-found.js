@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const URL = "https://not-existed.com/";
   const { monitor } = await initNetMonitor(URL, {
     requestCount: 1,

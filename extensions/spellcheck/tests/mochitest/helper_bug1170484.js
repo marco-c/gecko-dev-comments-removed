@@ -2,7 +2,7 @@
 
 
 
-Cu.dispatch(function() {
+Cu.dispatch(function () {
   let chromeWin = Services.ww.activeWindow;
   let contextMenu = chromeWin.document.getElementById("contentAreaContextMenu");
   var suggestion = contextMenu.querySelector(".spell-suggestion");

@@ -15,7 +15,7 @@ async function testScript() {
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(TEST_URL);
 
   

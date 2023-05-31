@@ -6,14 +6,14 @@
 
 
 
-let make_weak_ref = function(obj) {
+let make_weak_ref = function (obj) {
   let m = new WeakMap();
   m.set(obj, {});
   return m;
 };
 
 
-let weak_ref_dead = function(r) {
+let weak_ref_dead = function (r) {
   return !SpecialPowers.nondeterministicGetWeakMapKeys(r).length;
 };
 

@@ -11,7 +11,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 async function testRefresh(url) {
   
-  await BrowserTestUtils.withNewTab(url, async function(browser) {
+  await BrowserTestUtils.withNewTab(url, async function (browser) {
     let pageShownPromise = BrowserTestUtils.waitForContentEvent(
       browser,
       "AboutReaderContentReady"
@@ -40,7 +40,7 @@ async function testRefresh(url) {
   });
 }
 
-add_task(async function() {
+add_task(async function () {
   
   await testRefresh(TEST_PATH + "readerModeArticle.html");
 

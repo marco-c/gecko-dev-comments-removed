@@ -11,7 +11,7 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
 );
 
 function waitForDocshellActivated() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     
     
     

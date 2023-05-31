@@ -25,7 +25,7 @@ var bookmarkData = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let jsonFile = PathUtils.join(
     PathUtils.profileDir,

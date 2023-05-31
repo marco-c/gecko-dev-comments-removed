@@ -20,7 +20,7 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -43,7 +43,7 @@ add_task(async function() {
   );
 
   await withPerfObserver(
-    async function() {
+    async function () {
       let promiseOrigBrowserFocused = TestUtils.waitForCondition(() => {
         return Services.focus.activeWindow == window;
       });

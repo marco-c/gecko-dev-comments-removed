@@ -4,7 +4,7 @@
 
 
 
-onerror = function(event) {
+onerror = function (event) {
   postMessage(event.message);
 };
 
@@ -16,14 +16,14 @@ function recurse() {
 
 function recurse2() {
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
+  xhr.onreadystatechange = function () {
     xhr.open("GET", "nonexistent.file");
   };
   xhr.open("GET", "nonexistent.file");
 }
 
 var messageCount = 0;
-onmessage = function(event) {
+onmessage = function (event) {
   switch (++messageCount) {
     case 2:
       recurse2();

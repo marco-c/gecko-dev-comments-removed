@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor, tab } = await initNetMonitor(PARAMS_URL, {
     requestCount: 1,
   });
@@ -76,7 +76,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(PARAMS_URL, {
     requestCount: 1,
   });

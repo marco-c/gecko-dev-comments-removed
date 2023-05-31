@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab("about:debugging");
 
   const browser = tab.linkedBrowser;

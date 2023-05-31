@@ -18,7 +18,7 @@ const {
 const TEST_URL = `data:text/html;charset=utf-8,<div id="test"></div>`;
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(TEST_URL);
 
   const client = await setupDebuggerClient();
@@ -50,7 +50,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const client = await setupDebuggerClient();
   const mainRoot = client.mainRoot;
 
@@ -70,7 +70,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const client = await setupDebuggerClient();
 
   const mainRoot = client.mainRoot;
@@ -91,7 +91,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const client = await setupDebuggerClient();
 
   const mainRoot = client.mainRoot;

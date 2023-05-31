@@ -27,7 +27,7 @@ var gSeenPings = 0;
 
 
 
-var createSavedPings = async function(aPingInfos) {
+var createSavedPings = async function (aPingInfos) {
   let pingIds = [];
   let now = Date.now();
 
@@ -373,7 +373,7 @@ add_task(async function test_pendingPingsQuota() {
   let expectedPrunedPings = [];
   let expectedNotPrunedPings = [];
 
-  let checkPendingPings = async function() {
+  let checkPendingPings = async function () {
     
     for (let prunedPingId of expectedPrunedPings) {
       await Assert.rejects(

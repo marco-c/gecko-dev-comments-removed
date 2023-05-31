@@ -2,7 +2,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
 
   await PlacesUtils.bookmarks.insertTree({
@@ -22,7 +22,7 @@ add_setup(async function() {
     ],
   });
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await PlacesUtils.bookmarks.eraseEverything();
   });
 });

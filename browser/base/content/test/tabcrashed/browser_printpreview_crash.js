@@ -20,7 +20,7 @@ add_task(async function test() {
   let browser = newTab.linkedBrowser;
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await SpecialPowers.spawn(browser, [], async function () {
     const iframe = content.document.querySelector("iframe");
     const loaded = new Promise(resolve => {
       iframe.addEventListener(
@@ -38,7 +38,7 @@ add_task(async function test() {
   });
 
   
-  await SpecialPowers.spawn(browser, [DOMAIN], async function(domain) {
+  await SpecialPowers.spawn(browser, [DOMAIN], async function (domain) {
     content.document.domain = domain;
   });
 

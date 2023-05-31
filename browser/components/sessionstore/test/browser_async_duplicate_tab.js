@@ -16,7 +16,7 @@ add_task(async function test_duplicate() {
   await TabStateFlusher.flush(browser);
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await SpecialPowers.spawn(browser, [], async function () {
     return new Promise(resolve => {
       docShell.chromeEventHandler.addEventListener(
         "hashchange",
@@ -55,7 +55,7 @@ add_task(async function test_duplicate_remove() {
   await TabStateFlusher.flush(browser);
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await SpecialPowers.spawn(browser, [], async function () {
     return new Promise(resolve => {
       docShell.chromeEventHandler.addEventListener(
         "hashchange",

@@ -25,7 +25,7 @@ const fxaDevices = [
   { id: 4, name: "Homer" }, 
 ];
 
-add_setup(async function() {
+add_setup(async function () {
   await promiseSyncReady();
   await Services.search.init();
   

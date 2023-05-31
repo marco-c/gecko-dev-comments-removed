@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let newTab = BrowserTestUtils.addTab(gBrowser, "http://example.com");
   await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);

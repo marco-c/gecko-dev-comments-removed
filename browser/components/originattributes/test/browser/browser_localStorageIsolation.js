@@ -19,7 +19,7 @@ async function prefOffHttpsFirstMode() {
 
 
 function doTest(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [key], function(contentKey) {
+  return SpecialPowers.spawn(aBrowser, [key], function (contentKey) {
     let value = content.localStorage.getItem(contentKey);
     if (value === null) {
       

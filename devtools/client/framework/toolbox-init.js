@@ -106,7 +106,7 @@ async function initToolbox(url, host) {
     }
 
     
-    commands.descriptorFront.once("descriptor-destroyed", function() {
+    commands.descriptorFront.once("descriptor-destroyed", function () {
       
       if (host.contentDocument) {
         const error = new Error("Debug target was disconnected");

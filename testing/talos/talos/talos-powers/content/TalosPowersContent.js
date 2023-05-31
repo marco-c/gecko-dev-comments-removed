@@ -12,7 +12,7 @@ var TalosPowers;
 var TalosPowersContent;
 var TalosPowersParent;
 
-(function() {
+(function () {
   
   
   
@@ -127,7 +127,7 @@ var TalosPowersParent;
       if (callback) {
         win.addEventListener(
           replyEvent,
-          function(e) {
+          function (e) {
             callback(e.detail);
           },
           { once: true }

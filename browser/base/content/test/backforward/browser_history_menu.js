@@ -51,11 +51,11 @@ async function testBackForwardMenu(useContextMenu) {
   for (let iter = 2; iter <= 4; iter++) {
     
     
-    await SpecialPowers.spawn(gBrowser.selectedBrowser, [iter], async function(
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [iter], async function (
       iterChild
     ) {
       if (iterChild == 4) {
-        let popStatePromise = new Promise(function(resolve) {
+        let popStatePromise = new Promise(function (resolve) {
           content.onpopstate = resolve;
         });
         content.history.back();

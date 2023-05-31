@@ -10,7 +10,7 @@ function isFullscreenSizeMode() {
 }
 
 
-add_task(async function() {
+add_task(async function () {
   CustomizableUI.addWidgetToArea(
     "fullscreen-button",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL

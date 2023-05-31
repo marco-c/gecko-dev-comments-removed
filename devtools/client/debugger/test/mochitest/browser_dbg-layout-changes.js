@@ -13,7 +13,7 @@ requestLongerTimeout(2);
 
 let gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
 
-add_setup(async function() {
+add_setup(async function () {
   
   if (navigator.platform.indexOf("Win") == 0) {
     await SpecialPowers.pushPrefEnv({
@@ -22,7 +22,7 @@ add_setup(async function() {
   }
 });
 
-add_task(async function() {
+add_task(async function () {
   
   const dbg = await initDebugger("doc-iframes.html");
 
@@ -88,7 +88,7 @@ function resizeWindow(dbg, width) {
   win.resizeTo(width, window.screen.availHeight);
 }
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   Services.prefs.setCharPref("devtools.toolbox.host", gDefaultHostType);
   gDefaultHostType = null;
 });

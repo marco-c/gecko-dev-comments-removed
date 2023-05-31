@@ -4,7 +4,7 @@
 
 
 
-this.shot = (function() {
+this.shot = (function () {
   let exports = {}; 
   
 
@@ -531,7 +531,7 @@ this.shot = (function() {
 
     clipNames() {
       const names = Object.getOwnPropertyNames(this._clips);
-      names.sort(function(a, b) {
+      names.sort(function (a, b) {
         return a.sortOrder < b.sortOrder ? 1 : 0;
       });
       return names;

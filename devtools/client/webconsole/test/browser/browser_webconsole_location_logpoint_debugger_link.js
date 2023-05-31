@@ -10,7 +10,7 @@ const TEST_URI =
   "https://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-location-debugger-link-logpoint.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {
@@ -103,7 +103,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   if (!Services.appinfo.browserTabsRemoteAutostart) {
     expectUncaughtException();
   }

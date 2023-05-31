@@ -3,7 +3,7 @@
 
 var fullscreenChangeEnters = 0;
 
-addLoadEvent(function() {
+addLoadEvent(function () {
   info(`Resetting fullscreen enter count.`);
   fullscreenChangeEnters = 0;
 });
@@ -58,7 +58,7 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
 
 function addFullscreenErrorContinuation(callback, inDoc) {
   let doc = inDoc || document;
-  let listener = function(event) {
+  let listener = function (event) {
     doc.removeEventListener("fullscreenerror", listener);
     
     
@@ -72,7 +72,7 @@ function addFullscreenErrorContinuation(callback, inDoc) {
 function waitForLoadAndPaint(win, callback) {
   win.addEventListener(
     "MozAfterPaint",
-    function() {
+    function () {
       
       
       

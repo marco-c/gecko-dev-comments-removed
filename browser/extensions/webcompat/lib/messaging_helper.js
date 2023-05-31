@@ -13,7 +13,7 @@
 
 
 
-const onMessageFromTab = (function() {
+const onMessageFromTab = (function () {
   const handlers = new Set();
 
   browser.runtime.onMessage.addListener((msg, sender) => {
@@ -30,7 +30,7 @@ const onMessageFromTab = (function() {
     });
   });
 
-  return function(handler) {
+  return function (handler) {
     handlers.add(handler);
   };
 })();

@@ -193,7 +193,7 @@ class Observable {
 
 
 var gIgnoreLayoutChanges = false;
-exports.setIgnoreLayoutChanges = function(ignore, syncReflowNode) {
+exports.setIgnoreLayoutChanges = function (ignore, syncReflowNode) {
   if (syncReflowNode) {
     let forceSyncReflow = syncReflowNode.offsetWidth; 
   }

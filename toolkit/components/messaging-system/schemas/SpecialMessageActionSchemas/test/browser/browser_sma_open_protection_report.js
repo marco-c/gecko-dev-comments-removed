@@ -19,7 +19,7 @@ add_task(async function test_OPEN_PROTECTION_REPORT() {
 
     
     
-    await SpecialPowers.spawn(browser, [], async function() {
+    await SpecialPowers.spawn(browser, [], async function () {
       await ContentTaskUtils.waitForCondition(() => {
         let bars = content.document.querySelectorAll(".graph-bar");
         return bars.length;

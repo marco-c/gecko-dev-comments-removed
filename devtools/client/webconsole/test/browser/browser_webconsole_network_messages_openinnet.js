@@ -61,7 +61,7 @@ add_task(async function task() {
   info("console panel open again.");
 
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     
     await new Promise(resolve => content.wrappedJSObject.testXhrGet(resolve));
   });

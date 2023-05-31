@@ -6,7 +6,7 @@
 
 const TESTCASE_URI = TEST_BASE_HTTPS + "longload.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   

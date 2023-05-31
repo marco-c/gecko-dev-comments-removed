@@ -4,7 +4,7 @@
 
 
 
-module.exports = async function(context, commands) {
+module.exports = async function (context, commands) {
   context.log.info("Starting constant value regression test");
   await commands.measure.start("regression-test");
   await commands.measure.stop();

@@ -49,7 +49,7 @@ async function closeDialogs(tab, dialogCount) {
 
     
     
-    await new Promise(function(resolve) {
+    await new Promise(function (resolve) {
       Services.tm.dispatchToMainThread(resolve);
     });
   }
@@ -106,7 +106,7 @@ async function closeTabModals(tab, promptCount) {
 
       
       
-      await new Promise(function(resolve) {
+      await new Promise(function (resolve) {
         Services.tm.dispatchToMainThread(resolve);
       });
     }
@@ -125,7 +125,7 @@ async function closeTabModals(tab, promptCount) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const PROMPTCOUNT = 9;
 
   let unopenedPromptCount = PROMPTCOUNT;

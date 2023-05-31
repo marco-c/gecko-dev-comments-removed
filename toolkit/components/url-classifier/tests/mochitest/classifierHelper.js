@@ -25,8 +25,8 @@ classifierHelper._initsCB = [];
 
 
 
-classifierHelper.waitForInit = function() {
-  return new Promise(function(resolve, reject) {
+classifierHelper.waitForInit = function () {
+  return new Promise(function (resolve, reject) {
     classifierHelper._initsCB.push(resolve);
     gScript.sendAsyncMessage("waitForInit");
   });
@@ -36,7 +36,7 @@ classifierHelper.waitForInit = function() {
 
 
 
-classifierHelper.allowCompletion = async function(lists, url) {
+classifierHelper.allowCompletion = async function (lists, url) {
   for (var list of lists) {
     
     var pref = await SpecialPowers.getParentCharPref(PREFS.PROVIDER_LISTS);
@@ -55,8 +55,8 @@ classifierHelper.allowCompletion = async function(lists, url) {
 
 
 
-classifierHelper.addUrlToDB = function(updateData) {
-  return new Promise(function(resolve, reject) {
+classifierHelper.addUrlToDB = function (updateData) {
+  return new Promise(function (resolve, reject) {
     var testUpdate = "";
     for (var update of updateData) {
       var LISTNAME = update.db;
@@ -90,9 +90,9 @@ classifierHelper.addUrlToDB = function(updateData) {
 
 
 
-classifierHelper.resetDatabase = function() {
+classifierHelper.resetDatabase = function () {
   function removeDatabase() {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       var testUpdate = "";
       for (var update of classifierHelper._updatesToCleanup) {
         testUpdate +=
@@ -110,8 +110,8 @@ classifierHelper.resetDatabase = function() {
     .then(classifierHelper.reloadDatabase);
 };
 
-classifierHelper.reloadDatabase = function() {
-  return new Promise(function(resolve, reject) {
+classifierHelper.reloadDatabase = function () {
+  return new Promise(function (resolve, reject) {
     gScript.addMessageListener("reloadSuccess", function handler() {
       gScript.removeMessageListener("reloadSuccess", handler);
       resolve();
@@ -121,7 +121,7 @@ classifierHelper.reloadDatabase = function() {
   });
 };
 
-classifierHelper._update = function(testUpdate, onsuccess, onerror) {
+classifierHelper._update = function (testUpdate, onsuccess, onerror) {
   
   classifierHelper._updates.push({
     data: testUpdate,
@@ -135,7 +135,7 @@ classifierHelper._update = function(testUpdate, onsuccess, onerror) {
   gScript.sendAsyncMessage("doUpdate", { testUpdate });
 };
 
-classifierHelper._updateSuccess = function() {
+classifierHelper._updateSuccess = function () {
   var update = classifierHelper._updates.shift();
   update.onsuccess();
 
@@ -145,7 +145,7 @@ classifierHelper._updateSuccess = function() {
   }
 };
 
-classifierHelper._updateError = function(errorCode) {
+classifierHelper._updateError = function (errorCode) {
   var update = classifierHelper._updates.shift();
   update.onerror(errorCode);
 
@@ -155,14 +155,14 @@ classifierHelper._updateError = function(errorCode) {
   }
 };
 
-classifierHelper._inited = function() {
-  classifierHelper._initsCB.forEach(function(cb) {
+classifierHelper._inited = function () {
+  classifierHelper._initsCB.forEach(function (cb) {
     cb();
   });
   classifierHelper._initsCB = [];
 };
 
-classifierHelper._setup = function() {
+classifierHelper._setup = function () {
   gScript.addMessageListener("updateSuccess", classifierHelper._updateSuccess);
   gScript.addMessageListener("updateError", classifierHelper._updateError);
   gScript.addMessageListener("safeBrowsingInited", classifierHelper._inited);
@@ -171,7 +171,7 @@ classifierHelper._setup = function() {
   SimpleTest.registerCleanupFunction(classifierHelper._cleanup);
 };
 
-classifierHelper._cleanup = function() {
+classifierHelper._cleanup = function () {
   
   for (var pref in PREFS) {
     SpecialPowers.clearUserPref(pref);

@@ -10,7 +10,7 @@ const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-reopen-closed-tab.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   pushPref("devtools.webconsole.persistlog", false);

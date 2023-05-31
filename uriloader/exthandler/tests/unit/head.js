@@ -41,7 +41,7 @@ let jsonPath = PathUtils.join(PathUtils.profileDir, "handlers.json");
 
 
 
-let unloadHandlerStore = async function() {
+let unloadHandlerStore = async function () {
   
   
   
@@ -55,7 +55,7 @@ let unloadHandlerStore = async function() {
 
 
 
-let deleteHandlerStore = async function() {
+let deleteHandlerStore = async function () {
   await unloadHandlerStore();
 
   await IOUtils.remove(jsonPath, { ignoreAbsent: true });
@@ -66,7 +66,7 @@ let deleteHandlerStore = async function() {
 
 
 
-let copyTestDataToHandlerStore = async function() {
+let copyTestDataToHandlerStore = async function () {
   await unloadHandlerStore();
 
   await IOUtils.copy(do_get_file("handlers.json").path, jsonPath);

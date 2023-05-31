@@ -12,7 +12,7 @@ const re = new RegExp(key + "=([0-9.]+)");
 
 
 function doTest(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [key, re], function(
+  return SpecialPowers.spawn(aBrowser, [key, re], function (
     contentKey,
     contentRe
   ) {

@@ -106,7 +106,7 @@ async function test_save_change(testData) {
         "https://example.com/browser/toolkit/components/" +
         "passwordmgr/test/browser/form_basic.html",
     },
-    async function(browser) {
+    async function (browser) {
       await SimpleTest.promiseFocus(browser.ownerGlobal);
 
       
@@ -119,7 +119,7 @@ async function test_save_change(testData) {
       
       
       let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         let doc = this.content.document;
         doc.getElementById("form-basic").submit();
       });

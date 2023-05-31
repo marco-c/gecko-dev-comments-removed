@@ -97,7 +97,7 @@ add_task(async function testTree() {
     PlacesUtils.tagging.tagURI(url, ["test"]);
   }
 
-  await withSidebarTree("bookmarks", function() {
+  await withSidebarTree("bookmarks", function () {
     
     assertBookmarks("example.com");
     
@@ -122,7 +122,7 @@ add_task(async function testShowInFolder() {
     url: TEST_SIF_URL,
   });
 
-  await withSidebarTree("bookmarks", async function() {
+  await withSidebarTree("bookmarks", async function () {
     await showInFolder(TEST_SIF_TITLE, parentFolder.guid);
   });
 
@@ -137,7 +137,7 @@ add_task(async function testRenameOnQueryResult() {
     url: TEST_SIF_URL,
   });
 
-  await withSidebarTree("bookmarks", async function() {
+  await withSidebarTree("bookmarks", async function () {
     const searchBox = sidebar.contentDocument.getElementById("search-box");
 
     searchBox.value = TEST_SIF_TITLE;

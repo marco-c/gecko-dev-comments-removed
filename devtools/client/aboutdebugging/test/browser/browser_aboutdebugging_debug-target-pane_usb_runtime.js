@@ -14,7 +14,7 @@ const RUNTIME_DEVICE_NAME = "test device name";
 const RUNTIME_APP_NAME = "TestApp";
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
   await checkTargetPanes({ enableLocalTabs: false }, mocks);
 

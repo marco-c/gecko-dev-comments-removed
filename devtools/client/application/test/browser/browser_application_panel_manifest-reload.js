@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableApplicationPanel();
 
   info("Loading a page with no manifest");

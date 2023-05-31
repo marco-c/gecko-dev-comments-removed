@@ -14,7 +14,7 @@ const ZOOM_LEVELS = [0.3, 0.5, 0.9, 1, 1.5, 2, 2.4];
 
 addRDMTask(
   null,
-  async function() {
+  async function () {
     const tab = await addTab(TEST_URL);
     const browser = tab.linkedBrowser;
 
@@ -38,7 +38,7 @@ async function checkWindowOuterSize(ui, zoom_level) {
   return SpecialPowers.spawn(
     ui.getViewportBrowser(),
     [{ width: WIDTH, height: HEIGHT, zoom: zoom_level }],
-    async function({ width, height, zoom }) {
+    async function ({ width, height, zoom }) {
       
       
       
@@ -60,7 +60,7 @@ async function checkWindowScreenSize(ui, zoom_level) {
   return SpecialPowers.spawn(
     ui.getViewportBrowser(),
     [{ width: WIDTH, height: HEIGHT, zoom: zoom_level }],
-    async function({ width, height, zoom }) {
+    async function ({ width, height, zoom }) {
       const { screen } = content;
 
       ok(

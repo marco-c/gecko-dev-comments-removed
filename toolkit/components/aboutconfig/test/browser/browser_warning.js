@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.aboutConfig.showWarning", true]],
   });
@@ -14,7 +14,7 @@ add_task(async function test_showWarningNextTime() {
     { expectWarningPage: false },
   ]) {
     await AboutConfigTest.withNewTab(
-      async function() {
+      async function () {
         if (test.expectWarningPage) {
           this.assertWarningPage(true);
           Assert.ok(

@@ -15,7 +15,7 @@ function run_test() {
 
     
     Assert.ok(
-      Array.prototype.every.call(newGuid, function(chr) {
+      Array.prototype.every.call(newGuid, function (chr) {
         return base64url.includes(chr);
       })
     );
@@ -27,7 +27,7 @@ function run_test() {
     
     
     Assert.ok(
-      guids.every(function(g) {
+      guids.every(function (g) {
         return g != newGuid;
       })
     );

@@ -33,24 +33,24 @@ let redirectHook = "http-on-examine-response";
 var httpServer = null,
   httpServer2 = null;
 
-XPCOMUtils.defineLazyGetter(this, "port1", function() {
+XPCOMUtils.defineLazyGetter(this, "port1", function () {
   return httpServer.identity.primaryPort;
 });
 
-XPCOMUtils.defineLazyGetter(this, "port2", function() {
+XPCOMUtils.defineLazyGetter(this, "port2", function () {
   return httpServer2.identity.primaryPort;
 });
 
 
 
 var baitPath = "/bait";
-XPCOMUtils.defineLazyGetter(this, "baitURI", function() {
+XPCOMUtils.defineLazyGetter(this, "baitURI", function () {
   return "http://localhost:" + port1 + baitPath;
 });
 var baitText = "you got the worm";
 
 var redirectedPath = "/switch";
-XPCOMUtils.defineLazyGetter(this, "redirectedURI", function() {
+XPCOMUtils.defineLazyGetter(this, "redirectedURI", function () {
   return "http://localhost:" + port1 + redirectedPath;
 });
 var redirectedText = "worms are not tasty";
@@ -58,25 +58,25 @@ var redirectedText = "worms are not tasty";
 
 
 var bait2Path = "/bait2";
-XPCOMUtils.defineLazyGetter(this, "bait2URI", function() {
+XPCOMUtils.defineLazyGetter(this, "bait2URI", function () {
   return "http://localhost:" + port1 + bait2Path;
 });
 
-XPCOMUtils.defineLazyGetter(this, "redirected2URI", function() {
+XPCOMUtils.defineLazyGetter(this, "redirected2URI", function () {
   return "http://localhost:" + port2 + redirectedPath;
 });
 
 
 
 var bait3Path = "/bait3";
-XPCOMUtils.defineLazyGetter(this, "bait3URI", function() {
+XPCOMUtils.defineLazyGetter(this, "bait3URI", function () {
   return "http://localhost:" + port1 + bait3Path;
 });
 
 
 
 var bait4Path = "/bait4";
-XPCOMUtils.defineLazyGetter(this, "bait4URI", function() {
+XPCOMUtils.defineLazyGetter(this, "bait4URI", function () {
   return "http://localhost:" + port1 + bait4Path;
 });
 
@@ -162,7 +162,7 @@ function makeAsyncTest(uri, headerValue, nextTask) {
 
   
   
-  var verifier = function(req, buffer) {
+  var verifier = function (req, buffer) {
     if (!(req instanceof Ci.nsIHttpChannel)) {
       do_throw(req + " is not an nsIHttpChannel, catastrophe imminent!");
     }
@@ -174,7 +174,7 @@ function makeAsyncTest(uri, headerValue, nextTask) {
   };
 
   
-  var test = function() {
+  var test = function () {
     var chan = make_channel(uri);
     chan.asyncOpen(new ChannelListener(verifier));
   };
@@ -206,7 +206,7 @@ function runXHRTest(uri, headerValue) {
 }
 
 function done() {
-  httpServer.stop(function() {
+  httpServer.stop(function () {
     httpServer2.stop(do_test_finished);
   });
 }

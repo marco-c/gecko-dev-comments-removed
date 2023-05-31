@@ -15,7 +15,7 @@ const TEST_DATA = [
 ];
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(URL_ROOT + "doc_special_colors.html");
   const { panel } = await openAnimationInspector();
 

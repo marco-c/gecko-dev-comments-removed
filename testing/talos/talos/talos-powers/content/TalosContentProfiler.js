@@ -22,7 +22,7 @@ if (typeof window !== "undefined") {
 
 var TalosContentProfiler;
 
-(function() {
+(function () {
   
   
   

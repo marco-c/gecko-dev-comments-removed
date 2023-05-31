@@ -16,8 +16,8 @@ function logResult(str, passed) {
 window._testResults = {};
 
 
-var verifyZeroRetVal = (function(window) {
-  return function(val, details) {
+var verifyZeroRetVal = (function (window) {
+  return function (val, details) {
     logResult(
       (val === 0 ? "PASS: " : "FAIL: ") +
         "Blocked interval/timeout should have zero return value; " +
@@ -29,8 +29,8 @@ var verifyZeroRetVal = (function(window) {
 })(window);
 
 
-var onevalexecuted = (function(window) {
-  return function(shouldrun, what, data) {
+var onevalexecuted = (function (window) {
+  return function (shouldrun, what, data) {
     window._testResults[what] = "ran";
     window.parent.scriptRan(shouldrun, what, data);
     logResult(
@@ -41,8 +41,8 @@ var onevalexecuted = (function(window) {
 })(window);
 
 
-var onevalblocked = (function(window) {
-  return function(shouldrun, what, data) {
+var onevalblocked = (function (window) {
+  return function (shouldrun, what, data) {
     window._testResults[what] = "blocked";
     window.parent.scriptBlocked(shouldrun, what, data);
     logResult(
@@ -56,7 +56,7 @@ var onevalblocked = (function(window) {
 
 addEventListener(
   "load",
-  function() {
+  function () {
     
     
     {
@@ -96,7 +96,7 @@ addEventListener(
 
       
       if (res != 0) {
-        setTimeout(function() {
+        setTimeout(function () {
           clearInterval(res);
         }, 15);
       }
@@ -216,7 +216,7 @@ addEventListener(
 
       setTimeout(eval, 0, "worked = true");
       setTimeout(
-        function(worked) {
+        function (worked) {
           if (worked) {
             onevalexecuted(
               false,

@@ -7,7 +7,7 @@
 const PARENT_PROCESS_URI = "about:robots";
 const CONTENT_PROCESS_URI = TEST_BASE_HTTPS + "simple.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   

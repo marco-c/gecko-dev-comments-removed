@@ -85,7 +85,7 @@ function assertTelemetryResults(histograms, type, index, method) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -116,7 +116,7 @@ add_setup(async function() {
   });
 
   
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await PlacesUtils.keywords.remove("get");
     Services.telemetry.canRecordExtended = oldCanRecord;
     await PlacesUtils.history.clear();

@@ -86,7 +86,7 @@ var keyValMatches = (key, val) =>
 
 
 
-var testMatch = function(key, val) {
+var testMatch = function (key, val) {
   if (val === null) {
     return;
   } else if (Array.isArray(val)) {
@@ -102,8 +102,8 @@ var testMatch = function(key, val) {
 
 
 
-var testToggles = function(resisting) {
-  suppressed_toggles.forEach(function(key) {
+var testToggles = function (resisting) {
+  suppressed_toggles.forEach(function (key) {
     var exists = keyValMatches(key, 0) || keyValMatches(key, 1);
     if (!toggles_enabled_in_content.includes(key) && !is_chrome_window) {
       ok(!exists, key + " should not exist.");
@@ -123,9 +123,9 @@ var testToggles = function(resisting) {
 
 
 
-var generateHtmlLines = function(resisting) {
+var generateHtmlLines = function (resisting) {
   let fragment = document.createDocumentFragment();
-  expected_values.forEach(function([key, offVal, onVal]) {
+  expected_values.forEach(function ([key, offVal, onVal]) {
     let val = resisting ? onVal : offVal;
     if (val) {
       let div = document.createElementNS(HTML_NS, "div");
@@ -135,7 +135,7 @@ var generateHtmlLines = function(resisting) {
       fragment.appendChild(div);
     }
   });
-  suppressed_toggles.forEach(function(key) {
+  suppressed_toggles.forEach(function (key) {
     let div = document.createElementNS(HTML_NS, "div");
     div.setAttribute("class", "suppress");
     div.setAttribute("id", key);
@@ -148,7 +148,7 @@ var generateHtmlLines = function(resisting) {
 
 
 
-var cssLine = function(query, clazz, id, color) {
+var cssLine = function (query, clazz, id, color) {
   return (
     "@media " +
     query +
@@ -165,7 +165,7 @@ var cssLine = function(query, clazz, id, color) {
 
 
 
-var constructQuery = function(key, val) {
+var constructQuery = function (key, val) {
   return Array.isArray(val)
     ? "(min-" + key + ": " + val[0] + ") and (max-" + key + ": " + val[1] + ")"
     : "(" + key + ": " + val + ")";
@@ -173,7 +173,7 @@ var constructQuery = function(key, val) {
 
 
 
-var mediaQueryCSSLine = function(key, val, color) {
+var mediaQueryCSSLine = function (key, val, color) {
   if (val === null) {
     return "";
   }
@@ -183,7 +183,7 @@ var mediaQueryCSSLine = function(key, val, color) {
 
 
 
-var suppressedMediaQueryCSSLine = function(key, color, suppressed) {
+var suppressedMediaQueryCSSLine = function (key, color, suppressed) {
   let query = "(" + key + ": 0), (" + key + ": 1)";
   return cssLine(query, "suppress", key, color);
 };
@@ -192,14 +192,14 @@ var suppressedMediaQueryCSSLine = function(key, color, suppressed) {
 
 
 
-var generateCSSLines = function(resisting) {
+var generateCSSLines = function (resisting) {
   let lines = ".spoof { background-color: red;}\n";
-  expected_values.forEach(function([key, offVal, onVal]) {
+  expected_values.forEach(function ([key, offVal, onVal]) {
     lines += mediaQueryCSSLine(key, resisting ? onVal : offVal, "green");
   });
   lines +=
     ".suppress { background-color: " + (resisting ? "green" : "red") + ";}\n";
-  suppressed_toggles.forEach(function(key) {
+  suppressed_toggles.forEach(function (key) {
     if (
       !toggles_enabled_in_content.includes(key) &&
       !resisting &&
@@ -221,7 +221,7 @@ var green = "rgb(0, 128, 0)";
 
 
 
-var testCSS = function(resisting) {
+var testCSS = function (resisting) {
   document.getElementById("display").appendChild(generateHtmlLines(resisting));
   document.getElementById("test-css").textContent = generateCSSLines(resisting);
   let cssTestDivs = document.querySelectorAll(".spoof,.suppress");
@@ -234,7 +234,7 @@ var testCSS = function(resisting) {
 
 
 
-var testOSXFontSmoothing = function(resisting) {
+var testOSXFontSmoothing = function (resisting) {
   let div = document.createElementNS(HTML_NS, "div");
   div.style.MozOsxFontSmoothing = "unset";
   document.documentElement.appendChild(div);
@@ -253,8 +253,8 @@ var testOSXFontSmoothing = function(resisting) {
 
 
 
-var sleep = function(timeoutMs) {
-  return new Promise(function(resolve, reject) {
+var sleep = function (timeoutMs) {
+  return new Promise(function (resolve, reject) {
     window.setTimeout(resolve);
   });
 };
@@ -262,7 +262,7 @@ var sleep = function(timeoutMs) {
 
 
 
-var testMediaQueriesInPictureElements = async function(resisting) {
+var testMediaQueriesInPictureElements = async function (resisting) {
   const MATCH = "/tests/layout/style/test/chrome/match.png";
   let container = document.getElementById("pictures");
   let testImages = [];
@@ -304,19 +304,19 @@ var testMediaQueriesInPictureElements = async function(resisting) {
 
 
 
-var pushPref = function(key, value) {
-  return new Promise(function(resolve, reject) {
+var pushPref = function (key, value) {
+  return new Promise(function (resolve, reject) {
     SpecialPowers.pushPrefEnv({ set: [[key, value]] }, resolve);
   });
 };
 
 
 
-var test = async function(isContent) {
+var test = async function (isContent) {
   for (prefValue of [false, true]) {
     await pushPref("privacy.resistFingerprinting", prefValue);
     let resisting = prefValue && isContent;
-    expected_values.forEach(function([key, offVal, onVal]) {
+    expected_values.forEach(function ([key, offVal, onVal]) {
       testMatch(key, resisting ? onVal : offVal);
     });
     testToggles(resisting);

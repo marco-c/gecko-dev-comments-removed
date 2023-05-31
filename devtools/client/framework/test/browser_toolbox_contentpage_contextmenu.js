@@ -9,7 +9,7 @@ const URL = "data:text/html;charset=utf8,<div>test content context menu</div>";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(URL);
 
   info("Test context menu conflict with dom.event.contextmenu.enabled=true");

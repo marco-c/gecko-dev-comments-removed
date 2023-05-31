@@ -55,14 +55,14 @@ function setDefaultPrefs(prefs) {
     originalValues.set(key, value);
   });
 
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     prefs.forEach(([key, value]) => {
       prefValueToSetter(value)(key, originalValues.get(key));
     });
   });
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   setDefaultPrefs([

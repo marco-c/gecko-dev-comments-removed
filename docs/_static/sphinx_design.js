@@ -2,7 +2,7 @@
 
 
 
-(function() {
+(function () {
   "use strict";
 
   var dropdownClassName = "sd-dropdown";

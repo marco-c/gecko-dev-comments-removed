@@ -15,7 +15,7 @@ const RUNTIME_ID_2 = "RUNTIME_ID_2";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
   let { document, tab } = await openAboutDebugging();
 

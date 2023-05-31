@@ -77,7 +77,7 @@ async function verifyRestore(url, sameSiteSetting) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await verifyRestore(TEST_HTTP_URL, Ci.nsICookie.SAMESITE_NONE);
   await verifyRestore(TEST_HTTP_URL, Ci.nsICookie.SAMESITE_LAX);

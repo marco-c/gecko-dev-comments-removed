@@ -393,7 +393,7 @@ async function loadDialog() {
 
   
   
-  setTimeout(function() {
+  setTimeout(function () {
     gDialog.orientation.focus();
   }, 0);
 }

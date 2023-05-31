@@ -80,7 +80,7 @@ function do_run_test() {
 
 if (typeof run_test === "undefined") {
   
-  run_test = function() {
+  run_test = function () {
     do_run_test();
   };
 }

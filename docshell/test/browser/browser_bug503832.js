@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   var pagetitle = "Page Title for Bug 503832";
   var pageurl =
     "http://mochi.test:8888/browser/docshell/test/browser/file_bug503832.html";

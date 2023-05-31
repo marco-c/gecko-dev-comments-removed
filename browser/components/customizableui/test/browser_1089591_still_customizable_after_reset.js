@@ -1,7 +1,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let historyButton = document.getElementById("wrapper-history-panelmenu");
   let devButton = document.getElementById("wrapper-developer-button");

@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("dom.security.https_first", false);
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 

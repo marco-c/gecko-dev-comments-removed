@@ -461,7 +461,7 @@ add_task(async function test_expire_icons() {
   await PlacesUtils.history.clear();
 });
 
-add_setup(async function() {
+add_setup(async function () {
   
   setInterval(3600); 
   

@@ -83,7 +83,7 @@ exports.CSSAtRuleClassNameType = {
 
 
 
-exports.getCSSAtRuleTypeName = function(cssRule) {
+exports.getCSSAtRuleTypeName = function (cssRule) {
   const ruleClassName = ChromeUtils.getClassName(cssRule);
   const atRuleTypeName = exports.CSSAtRuleClassNameType[ruleClassName];
   if (atRuleTypeName) {
@@ -109,7 +109,7 @@ exports.l10n = name => styleInspectorL10N.getStr(name);
 
 
 
-exports.isAuthorStylesheet = function(sheet) {
+exports.isAuthorStylesheet = function (sheet) {
   return sheet.parsingMode === "author";
 };
 
@@ -120,7 +120,7 @@ exports.isAuthorStylesheet = function(sheet) {
 
 
 
-exports.isUserStylesheet = function(sheet) {
+exports.isUserStylesheet = function (sheet) {
   return sheet.parsingMode === "user";
 };
 
@@ -131,7 +131,7 @@ exports.isUserStylesheet = function(sheet) {
 
 
 
-exports.isAgentStylesheet = function(sheet) {
+exports.isAgentStylesheet = function (sheet) {
   return sheet.parsingMode === "agent";
 };
 
@@ -140,7 +140,7 @@ exports.isAgentStylesheet = function(sheet) {
 
 
 
-exports.shortSource = function(sheet) {
+exports.shortSource = function (sheet) {
   if (!sheet) {
     return exports.l10n("rule.sourceInline");
   }
@@ -187,7 +187,7 @@ exports.shortSource = function(sheet) {
 
 
 
-exports.longSource = function(sheet) {
+exports.longSource = function (sheet) {
   if (!sheet) {
     return exports.l10n("rule.sourceInline");
   }
@@ -252,10 +252,7 @@ function prettifyCSS(text, ruleCount) {
   
   const trimmed = text.trim();
   if (trimmed.startsWith("<!--")) {
-    text = trimmed
-      .replace(/^<!--/, "")
-      .replace(/-->$/, "")
-      .trim();
+    text = trimmed.replace(/^<!--/, "").replace(/-->$/, "").trim();
   }
 
   const originalText = text;
@@ -618,7 +615,7 @@ function findNodeAndContainer(node) {
 
 
 
-const findCssSelector = function(ele) {
+const findCssSelector = function (ele) {
   const { node, containingDocOrShadow } = findNodeAndContainer(ele);
   ele = node;
 

@@ -24,7 +24,7 @@ add_task(async function test_tabicon_after_bg_tab_crash() {
       gBrowser,
       url: PAGE_URL,
     },
-    async function(browser) {
+    async function (browser) {
       
       
       

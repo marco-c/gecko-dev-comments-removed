@@ -13,7 +13,7 @@ const WORKER_FILE = "test_worker.js";
 const WORKER_URL = URL_ROOT_SSL + WORKER_FILE;
 const REMOTE_IFRAME_WORKER_URL = URL_ROOT_ORG_SSL + WORKER_FILE;
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);

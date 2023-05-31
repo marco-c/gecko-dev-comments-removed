@@ -11,7 +11,7 @@ const kWidget2Id = "test-890262-widget2";
 setupArea();
 
 
-add_task(function() {
+add_task(function () {
   CustomizableUI.createWidget({
     id: kWidget1Id,
     removable: true,
@@ -31,7 +31,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function () {
   CustomizableUI.createWidget({
     id: kWidget2Id,
     removable: true,

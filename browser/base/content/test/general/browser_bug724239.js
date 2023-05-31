@@ -8,7 +8,7 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
 add_task(async function test_blank() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       
       BrowserTestUtils.loadURIString(browser, "http://example.com");
       await BrowserTestUtils.browserLoaded(browser);
@@ -20,7 +20,7 @@ add_task(async function test_blank() {
 add_task(async function test_newtab() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       
       let stopped = BrowserTestUtils.browserStopped(browser, "about:newtab");
       BrowserTestUtils.loadURIString(browser, "about:newtab");

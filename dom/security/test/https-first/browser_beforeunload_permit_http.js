@@ -33,7 +33,7 @@ const TEST_PATH_HTTP = getRootDirectory(gTestPath).replace(
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.security.https_first", true],
@@ -110,7 +110,7 @@ async function openPage() {
   
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       
       BrowserTestUtils.loadURIString(
         browser,
@@ -122,7 +122,7 @@ async function openPage() {
       let hasInteractedWith = await SpecialPowers.spawn(
         browser,
         [""],
-        function() {
+        function () {
           return content.document.userHasInteracted;
         }
       );
@@ -145,7 +145,7 @@ async function loadPageAndReload(testCase) {
   
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html`
@@ -157,7 +157,7 @@ async function loadPageAndReload(testCase) {
       let hasInteractedWith = await SpecialPowers.spawn(
         browser,
         [""],
-        function() {
+        function () {
           return content.document.userHasInteracted;
         }
       );
@@ -174,7 +174,7 @@ async function loadPagesAndUseBackButton() {
   
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html`
@@ -192,7 +192,7 @@ async function loadPagesAndUseBackButton() {
       let hasInteractedWith = await SpecialPowers.spawn(
         browser,
         [""],
-        function() {
+        function () {
           return content.document.userHasInteracted;
         }
       );

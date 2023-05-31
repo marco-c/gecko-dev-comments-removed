@@ -30,7 +30,7 @@ const appId = "toolkit@mozilla.org";
 
 
 
-add_test(async function() {
+add_test(async function () {
   await promiseWriteInstallRDFForExtension(
     {
       id: "addon9@tests.mozilla.org",
@@ -74,7 +74,7 @@ add_test(async function() {
 
 
 
-add_test(async function() {
+add_test(async function () {
   await promiseWriteInstallRDFForExtension(
     {
       id: "addon11@tests.mozilla.org",

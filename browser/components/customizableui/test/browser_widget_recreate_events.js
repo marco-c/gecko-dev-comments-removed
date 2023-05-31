@@ -40,7 +40,7 @@ function createPanelView() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let viewCache = document.getElementById("appMenu-viewCache");
   let panelView = createPanelView();
   viewCache.appendChild(panelView);

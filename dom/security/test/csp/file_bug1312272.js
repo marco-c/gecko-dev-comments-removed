@@ -1,5 +1,5 @@
 var m = document.getElementById("m");
-m.addEventListener("click", function() {
+m.addEventListener("click", function () {
   
   parent.postMessage("finish", "*");
 });

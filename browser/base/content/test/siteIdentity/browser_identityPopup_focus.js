@@ -17,7 +17,7 @@ async function focusIdentityBox() {
 
 add_task(async function testIdentityPopupFocusClick() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     let shown = BrowserTestUtils.waitForEvent(
       window,
       "popupshown",
@@ -36,7 +36,7 @@ add_task(async function testIdentityPopupFocusClick() {
 
 add_task(async function testIdentityPopupFocusKeyboard() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     await focusIdentityBox();
     let shown = BrowserTestUtils.waitForEvent(
       window,
@@ -57,7 +57,7 @@ add_task(async function testIdentityPopupFocusKeyboard() {
 
 add_task(async function testSiteSecurityTabOrder() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     
     await focusIdentityBox();
     let shown = BrowserTestUtils.waitForEvent(

@@ -86,7 +86,7 @@ async function waitUntilReloadEnabled() {
 
 
 function withNewBlankTab(taskFn) {
-  return BrowserTestUtils.withNewTab("about:blank", async function() {
+  return BrowserTestUtils.withNewTab("about:blank", async function () {
     
     
     
@@ -103,7 +103,7 @@ function removeFirefoxViewButton() {
 
 const BOOKMARKS_COUNT = 100;
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.toolbars.keyboard_navigation", true],
@@ -135,7 +135,7 @@ add_setup(async function() {
 
 add_task(async function testTabStopsNoPageWithHomeButton() {
   AddHomeBesideReload();
-  await withNewBlankTab(async function() {
+  await withNewBlankTab(async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Shift+Tab", "home-button");
     await expectFocusAfterKey("Shift+Tab", "tabs-newtab-button");
@@ -155,7 +155,7 @@ async function doTestTabStopsPageLoaded(aPageActionsVisible) {
   BrowserPageActions.mainButtonNode.style.visibility = aPageActionsVisible
     ? "visible"
     : "";
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     await waitUntilReloadEnabled();
     startFromUrlBar();
     await expectFocusAfterKey(
@@ -192,7 +192,9 @@ add_task(async function testTabStopsPageLoaded() {
 
 
 add_task(async function testTabStopsWithNotification() {
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
+    aBrowser
+  ) {
     let popupShown = BrowserTestUtils.waitForEvent(
       PopupNotifications.panel,
       "popupshown"
@@ -212,7 +214,7 @@ add_task(async function testTabStopsWithNotification() {
 
 
 add_task(async function testTabStopsWithBookmarksToolbar() {
-  await BrowserTestUtils.withNewTab("about:blank", async function() {
+  await BrowserTestUtils.withNewTab("about:blank", async function () {
     CustomizableUI.setToolbarVisibility("PersonalToolbar", true);
     startFromUrlBar();
     await expectFocusAfterKey("Tab", afterUrlBarButton);
@@ -229,7 +231,7 @@ add_task(async function testTabStopsWithBookmarksToolbar() {
 
 
 add_task(async function testTabStopNoButtons() {
-  await withNewBlankTab(async function() {
+  await withNewBlankTab(async function () {
     
     
     CustomizableUI.removeWidgetFromArea("home-button");
@@ -251,7 +253,7 @@ add_task(async function testTabStopNoButtons() {
 
 add_task(async function testArrowsToolbarbuttons() {
   AddOldMenuSideButtons();
-  await BrowserTestUtils.withNewTab("about:blank", async function() {
+  await BrowserTestUtils.withNewTab("about:blank", async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", afterUrlBarButton);
     EventUtils.synthesizeKey("KEY_ArrowLeft");
@@ -284,7 +286,7 @@ add_task(async function testArrowsToolbarbuttons() {
 
 
 add_task(async function testArrowsRoleButton() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "pageActionButton");
     await expectFocusAfterKey("ArrowRight", "star-button-box");
@@ -294,7 +296,7 @@ add_task(async function testArrowsRoleButton() {
 
 
 add_task(async function testArrowsDisabledButtons() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com", async function (
     aBrowser
   ) {
     await waitUntilReloadEnabled();
@@ -329,7 +331,7 @@ add_task(async function testArrowsDisabledButtons() {
 
 add_task(async function testArrowsOverflowButton() {
   AddOldMenuSideButtons();
-  await BrowserTestUtils.withNewTab("about:blank", async function() {
+  await BrowserTestUtils.withNewTab("about:blank", async function () {
     
     CustomizableUI.addWidgetToArea(
       "home-button",
@@ -428,7 +430,7 @@ add_task(async function testArrowsBookmarksOverflowButton() {
   setToolbarVisibility(toolbar, false, true, false);
 });
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   CustomizableUI.reset();
   await PlacesUtils.bookmarks.eraseEverything();
 });
@@ -437,7 +439,7 @@ registerCleanupFunction(async function() {
 
 add_task(async function testPanelCloseRestoresFocus() {
   AddOldMenuSideButtons();
-  await withNewBlankTab(async function() {
+  await withNewBlankTab(async function () {
     
     
     startFromUrlBar();
@@ -462,7 +464,7 @@ add_task(async function testPanelCloseRestoresFocus() {
 
 
 add_task(async function testArrowKeyForTPIconContainerandIdentityBox() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com", async function (
     browser
   ) {
     
@@ -488,7 +490,7 @@ add_task(async function testArrowKeyForTPIconContainerandIdentityBox() {
 add_task(async function testCharacterNavigation() {
   AddHomeBesideReload();
   AddOldMenuSideButtons();
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     await waitUntilReloadEnabled();
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "pageActionButton");
@@ -545,7 +547,7 @@ add_task(async function testTabStopsAfterSearchBarAdded() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.inNavBar", 1]],
   });
-  await withNewBlankTab(async function() {
+  await withNewBlankTab(async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "searchbar", true);
     await expectFocusAfterKey("Tab", afterUrlBarButton);
@@ -568,7 +570,9 @@ add_task(async function testFirefoxViewButtonNavigation() {
   
   
   
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
+    aBrowser
+  ) {
     await SpecialPowers.spawn(aBrowser, [], async () => {
       content.document.querySelector("#camera").focus();
     });
@@ -597,7 +601,9 @@ add_task(async function testFirefoxViewButtonNavigation() {
   
   
   
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
+    aBrowser
+  ) {
     removeFirefoxViewButton();
 
     await SpecialPowers.spawn(aBrowser, [], async () => {

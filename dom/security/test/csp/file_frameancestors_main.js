@@ -1,7 +1,7 @@
 
 
 function setupFrames() {
-  var $ = function(v) {
+  var $ = function (v) {
     return document.getElementById(v);
   };
   var base = {

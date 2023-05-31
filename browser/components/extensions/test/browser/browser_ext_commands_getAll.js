@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   let extension = ExtensionTestUtils.loadExtension({
     files: {
       "_locales/en/messages.json": {
@@ -45,7 +45,7 @@ add_task(async function() {
       },
     },
 
-    background: function() {
+    background: function () {
       browser.test.onMessage.addListener((message, additionalScope) => {
         browser.commands.getAll(commands => {
           let errorMessage = "getAll should return an array of commands";

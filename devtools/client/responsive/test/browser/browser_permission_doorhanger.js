@@ -31,7 +31,7 @@ function waitForGeolocationPrompt(win, browser) {
 
 addRDMTask(
   null,
-  async function() {
+  async function () {
     
     
     await pushPref("dom.security.https_first", false);

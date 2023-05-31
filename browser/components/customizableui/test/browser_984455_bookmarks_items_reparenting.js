@@ -39,7 +39,7 @@ function bookmarksMenuPanelShown() {
 
 
 function checkPlacesContextMenu(aItemWithContextMenu) {
-  return (async function() {
+  return (async function () {
     let contextMenu = document.getElementById("placesContext");
     let newBookmarkItem = document.getElementById("placesContext_new:bookmark");
     info("Waiting for context menu on " + aItemWithContextMenu.id);
@@ -70,7 +70,7 @@ function checkPlacesContextMenu(aItemWithContextMenu) {
 
 
 function checkSpecialContextMenus() {
-  return (async function() {
+  return (async function () {
     let bookmarksMenuButton = document.getElementById(kBookmarksButton);
     let bookmarksMenuPopup = document.getElementById("BMB_bookmarksPopup");
 
@@ -123,7 +123,7 @@ function closePopup(aPopup) {
 
 
 function checkBookmarksItemsChevronContextMenu() {
-  return (async function() {
+  return (async function () {
     let chevronPopup = document.getElementById("PlacesChevronPopup");
     let shownPromise = popupShown(chevronPopup);
     let chevron = document.getElementById("PlacesChevron");

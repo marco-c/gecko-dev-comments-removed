@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   Assert.ok("console" in this);
 
   const tests = [

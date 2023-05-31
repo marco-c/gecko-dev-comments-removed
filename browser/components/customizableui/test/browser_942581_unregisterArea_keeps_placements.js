@@ -10,7 +10,7 @@ const kTestWidgetCount = 3;
 registerCleanupFunction(removeCustomToolbars);
 
 
-add_task(async function() {
+add_task(async function () {
   let widgetIds = [];
   for (let i = 0; i < kTestWidgetCount; i++) {
     let id = kTestWidgetPfx + i;

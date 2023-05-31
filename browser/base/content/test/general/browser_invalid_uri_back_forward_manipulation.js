@@ -33,7 +33,7 @@ add_task(async function checkBackFromInvalidURI() {
       false,
       
       
-      function(e) {
+      function (e) {
         return gBrowser.currentURI.spec == "about:robots";
       }
     );

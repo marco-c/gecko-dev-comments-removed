@@ -162,7 +162,7 @@ function run_test() {
   load_cert("test-int", ",,");
   load_cert("other-test-ca", "CTu,CTu,CTu");
 
-  add_task(async function() {
+  add_task(async function () {
     
     
     
@@ -212,7 +212,7 @@ function run_test() {
   
   add_task(update_blocklist);
 
-  add_task(async function() {
+  add_task(async function () {
     
     
     

@@ -47,7 +47,7 @@ for (let i = 0; i < legacyProps.length; i++) {
 
 
 
-addLoadEvent(function() {
+addLoadEvent(function () {
   
   for (let i = 0; i < legacyProps.length; i++) {
     is(

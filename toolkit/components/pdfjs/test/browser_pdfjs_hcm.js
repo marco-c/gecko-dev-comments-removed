@@ -10,7 +10,7 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 
 async function getFirstLastPixels(browser) {
-  return SpecialPowers.spawn(browser, [], async function() {
+  return SpecialPowers.spawn(browser, [], async function () {
     const { document } = content;
     const canvas = document.querySelector("canvas");
 
@@ -63,7 +63,7 @@ add_task(async function test() {
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       
       await waitForPdfJSCanvas(
         browser,
@@ -86,7 +86,7 @@ add_task(async function test() {
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
-    async function(browser) {
+    async function (browser) {
       
       await waitForPdfJSCanvas(
         browser,

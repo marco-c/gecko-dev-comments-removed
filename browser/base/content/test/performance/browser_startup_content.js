@@ -109,7 +109,7 @@ const forbiddenScripts = {
   ]),
 };
 
-add_task(async function() {
+add_task(async function () {
   SimpleTest.requestCompleteLog();
 
   let tab = await BrowserTestUtils.openNewForegroundTab({
@@ -128,7 +128,7 @@ add_task(async function() {
   
   mm.loadFrameScript(
     "data:text/javascript,(" +
-      function() {
+      function () {
         
         const Cm = Components.manager;
         Cm.QueryInterface(Ci.nsIServiceManager);

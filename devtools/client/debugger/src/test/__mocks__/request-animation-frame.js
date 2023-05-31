@@ -2,7 +2,7 @@
 
 
 
-global.requestAnimationFrame = function(cb) {
+global.requestAnimationFrame = function (cb) {
   cb();
   return null;
 };

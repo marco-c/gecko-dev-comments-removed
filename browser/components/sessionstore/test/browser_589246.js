@@ -33,7 +33,7 @@ var tests = [];
 
 
 function checkOSX34Generator(num) {
-  return function(aPreviousState, aCurState) {
+  return function (aPreviousState, aCurState) {
     
     
     let expectedState = JSON.parse(aPreviousState);
@@ -50,7 +50,7 @@ function checkOSX34Generator(num) {
   };
 }
 function checkNoWindowsGenerator(num) {
-  return function(aPreviousState, aCurState) {
+  return function (aPreviousState, aCurState) {
     is(
       aCurState,
       "[]",
@@ -126,7 +126,7 @@ function runNextTestOrFinish() {
     setupForTest(tests.shift());
   } else {
     
-    ["browser.tabs.warnOnClose", "browser.startup.page"].forEach(function(p) {
+    ["browser.tabs.warnOnClose", "browser.startup.page"].forEach(function (p) {
       if (Services.prefs.prefHasUserValue(p)) {
         Services.prefs.clearUserPref(p);
       }
@@ -183,7 +183,7 @@ function onStateRestored(aSubject, aTopic, aData) {
   );
   newWin.addEventListener(
     "load",
-    function(aEvent) {
+    function (aEvent) {
       promiseBrowserLoaded(newWin.gBrowser.selectedBrowser).then(() => {
         
         if (shouldPinTab) {
@@ -192,7 +192,7 @@ function onStateRestored(aSubject, aTopic, aData) {
 
         newWin.addEventListener(
           "unload",
-          function() {
+          function () {
             onWindowUnloaded();
           },
           { once: true }
@@ -209,7 +209,7 @@ function onStateRestored(aSubject, aTopic, aData) {
 
           newTab.linkedBrowser.addEventListener(
             "load",
-            function() {
+            function () {
               if (shouldCloseTab == "one") {
                 newWin.gBrowser.removeTab(newTab2);
               } else if (shouldCloseTab == "both") {
@@ -261,10 +261,10 @@ function onWindowUnloaded() {
   );
   newWin.addEventListener(
     "load",
-    function(aEvent) {
+    function (aEvent) {
       newWin.gBrowser.selectedBrowser.addEventListener(
         "load",
-        function() {
+        function () {
           
           afterTestCallback(previousClosedWindowData, ss.getClosedWindowData());
           afterTestCleanup(newWin);
@@ -277,7 +277,7 @@ function onWindowUnloaded() {
 }
 
 function afterTestCleanup(aNewWin) {
-  executeSoon(function() {
+  executeSoon(function () {
     BrowserTestUtils.closeWindow(aNewWin).then(() => {
       document.documentElement.setAttribute("windowtype", originalWindowType);
       runNextTestOrFinish();

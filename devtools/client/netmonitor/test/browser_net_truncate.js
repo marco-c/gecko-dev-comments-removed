@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const limit = Services.prefs.getIntPref(
     "devtools.netmonitor.responseBodyLimit"
   );

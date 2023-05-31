@@ -9,7 +9,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   info(
     "Switch to 2 pane inspector to see if the animation only refreshes when visible"
   );

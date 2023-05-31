@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
 });
 
-add_setup(function() {
+add_setup(function () {
   let sandbox = sinon.createSandbox();
 
   

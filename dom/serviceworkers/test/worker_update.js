@@ -1,17 +1,17 @@
 
 
 
-onmessage = function(e) {
+onmessage = function (e) {
   self.registration
     .update()
-    .then(function(v) {
+    .then(function (v) {
       return v instanceof ServiceWorkerRegistration ? "FINISH" : "FAIL";
     })
-    .catch(function(ex) {
+    .catch(function (ex) {
       return "FAIL";
     })
-    .then(function(result) {
-      clients.matchAll().then(function(c) {
+    .then(function (result) {
+      clients.matchAll().then(function (c) {
         if (!c.length) {
           dump(
             "!!!!!!!!!!! WORKER HAS NO CLIENTS TO FINISH TEST !!!!!!!!!!!!\n"

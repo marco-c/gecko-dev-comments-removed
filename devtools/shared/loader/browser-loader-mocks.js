@@ -52,7 +52,7 @@ function setMockedModule(mock, modulePath) {
         
         
         
-        return function() {
+        return function () {
           return target[key].apply(target, arguments);
         };
       }

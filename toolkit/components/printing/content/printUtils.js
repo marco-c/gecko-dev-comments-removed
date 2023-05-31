@@ -521,7 +521,7 @@ var PrintUtils = {
 
       
       
-      const printerName = (function() {
+      const printerName = (function () {
         if (isValidPrinterName(aPrinterName)) {
           return aPrinterName;
         }
@@ -785,7 +785,7 @@ class PrintPreview extends MozElements.BaseControl {
     
     
     
-    browser.addEventListener("DOMWindowClose", function(e) {
+    browser.addEventListener("DOMWindowClose", function (e) {
       if (this.isConnected) {
         this.remove();
       }
@@ -794,7 +794,7 @@ class PrintPreview extends MozElements.BaseControl {
     });
 
     if (this.settingsBrowser) {
-      browser.addEventListener("contextmenu", function(e) {
+      browser.addEventListener("contextmenu", function (e) {
         e.preventDefault();
       });
 

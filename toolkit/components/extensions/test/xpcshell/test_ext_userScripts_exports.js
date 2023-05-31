@@ -251,10 +251,10 @@ add_task(async function test_apiScript_async_method() {
     
     
     const { Promise } = this;
-    Promise.resolve = function() {
+    Promise.resolve = function () {
       throw new Error("Promise.resolve poisoning");
     };
-    this.Promise = function() {
+    this.Promise = function () {
       throw new Error("Promise constructor poisoning");
     };
 

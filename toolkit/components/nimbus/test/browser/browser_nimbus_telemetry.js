@@ -20,7 +20,7 @@ const TELEMETRY_OBJECT = "nimbus_experiment";
 const EXPERIMENT_TYPE = "nimbus";
 const EVENT_FILTER = { category: TELEMETRY_CATEGORY };
 
-add_setup(async function() {
+add_setup(async function () {
   let sandbox = sinon.createSandbox();
   
   

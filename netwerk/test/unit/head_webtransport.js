@@ -6,7 +6,7 @@
 
 
 
-let WebTransportListener = function() {};
+let WebTransportListener = function () {};
 
 WebTransportListener.prototype = {
   onSessionReady(sessionId) {

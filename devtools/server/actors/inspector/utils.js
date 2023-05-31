@@ -70,7 +70,7 @@ const IMAGE_FETCHING_TIMEOUT = 500;
 
 
 
-const getNodeDisplayName = function(rawNode) {
+const getNodeDisplayName = function (rawNode) {
   if (rawNode.nodeName && !rawNode.localName) {
     
     
@@ -281,7 +281,7 @@ function ensureImageLoaded(image, timeout) {
 
 
 
-const imageToImageData = async function(node, maxDim) {
+const imageToImageData = async function (node, maxDim) {
   const { HTMLCanvasElement, HTMLImageElement } = node.ownerGlobal;
 
   const isImg = node instanceof HTMLImageElement;

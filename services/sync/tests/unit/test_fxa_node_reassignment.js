@@ -143,7 +143,7 @@ async function syncAndExpectNodeReassignment(
 
       
       
-      waitForZeroTimer(function() {
+      waitForZeroTimer(function () {
         _("Second sync nextTick.");
         Assert.equal(
           numTokenRequests,

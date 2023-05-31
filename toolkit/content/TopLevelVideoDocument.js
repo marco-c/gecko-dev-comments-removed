@@ -10,7 +10,7 @@
   
   let videoElement = document.getElementsByTagName("video")[0];
 
-  let setFocusToVideoElement = function(e) {
+  let setFocusToVideoElement = function (e) {
     
     
     

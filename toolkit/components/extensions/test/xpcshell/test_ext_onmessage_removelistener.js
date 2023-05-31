@@ -13,7 +13,7 @@ function backgroundScript() {
 
   
   
-  setTimeout(function() {
+  setTimeout(function () {
     browser.test.notifyPass("onmessage_removelistener");
   }, 0);
 }

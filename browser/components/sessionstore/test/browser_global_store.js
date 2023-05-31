@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const key1 = "Unique name 1: " + Date.now();
   const key2 = "Unique name 2: " + Date.now();
   const value1 = "Unique value 1: " + Math.random();

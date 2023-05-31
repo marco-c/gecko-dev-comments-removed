@@ -69,7 +69,7 @@ function MockWindowsRegKey(aWrappedObject) {
 
   
   function makeForwardingFunction(functionName) {
-    return function() {
+    return function () {
       return aWrappedObject[functionName].apply(aWrappedObject, arguments);
     };
   }

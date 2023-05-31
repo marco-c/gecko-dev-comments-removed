@@ -21,7 +21,7 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   gReduceMotionOverride = false;
 
@@ -69,7 +69,7 @@ add_task(async function() {
   info(`newTabButtonRect=${JSON.stringify(newTabButtonRect)}`);
   info(`textBoxRect=${JSON.stringify(textBoxRect)}`);
 
-  let inTabStrip = function(r) {
+  let inTabStrip = function (r) {
     return (
       r.y1 >= tabStripRect.top &&
       r.y2 <= tabStripRect.bottom &&
@@ -80,7 +80,7 @@ add_task(async function() {
 
   const kTabCloseIconWidth = 13;
 
-  let isExpectedChange = function(r) {
+  let isExpectedChange = function (r) {
     
     if (!inTabStrip(r)) {
       return false;
@@ -140,7 +140,7 @@ add_task(async function() {
 
   
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserOpenTab();
       await BrowserTestUtils.waitForEvent(

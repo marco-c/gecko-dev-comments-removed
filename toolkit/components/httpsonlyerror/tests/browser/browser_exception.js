@@ -40,7 +40,7 @@ const INSECURE_ROOT_PATH = ROOT_PATH.replace(
 
 
 
-add_task(async function() {
+add_task(async function () {
   const testCases = ["default", "private", "firstpartyisolation"];
   for (let i = 0; i < testCases.length; i++) {
     
@@ -86,7 +86,7 @@ add_task(async function() {
     );
 
     
-    await SpecialPowers.spawn(browser, [], async function() {
+    await SpecialPowers.spawn(browser, [], async function () {
       let openInsecureButton = content.document.getElementById("openInsecure");
       ok(openInsecureButton != null, "openInsecureButton should exist.");
       openInsecureButton.click();
@@ -95,7 +95,7 @@ add_task(async function() {
     await pageShownPromise;
 
     
-    await SpecialPowers.spawn(browser, [], async function() {
+    await SpecialPowers.spawn(browser, [], async function () {
       let doc = content.document;
       ok(
         !doc.documentURI.startsWith("http://expired.example.com"),
@@ -144,7 +144,7 @@ function setupFileServer() {
       "GET",
       `${SECURE_ROOT_PATH}file_upgrade_insecure_server.sjs?queryresult=${INSECURE_ROOT_PATH}`
     );
-    xhrRequest.onload = function(e) {
+    xhrRequest.onload = function (e) {
       var results = xhrRequest.responseText.split(",");
       resolve(results);
     };

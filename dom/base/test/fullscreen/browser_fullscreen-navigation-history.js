@@ -17,7 +17,7 @@ Services.scriptloader.loadSubScript(
 
 SimpleTest.ignoreAllUncaughtExceptions(true);
 
-add_setup(async function() {
+add_setup(async function () {
   await pushPrefs(
     ["full-screen-api.transition-duration.enter", "0 0"],
     ["full-screen-api.transition-duration.leave", "0 0"],
@@ -57,7 +57,7 @@ function preventBFCache(aBrowsingContext, aPrevent) {
             url:
               "http://mochi.test:8888/browser/dom/base/test/fullscreen/dummy_page.html",
           },
-          async function(browser) {
+          async function (browser) {
             
             await preventBFCache(
               browser.browsingContext,

@@ -197,7 +197,7 @@ function testSortByColAndDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
     checkSort(aPlaceContentTree, expectedSortMode);
 
     
-    ["ascending", "descending"].forEach(function(dir) {
+    ["ascending", "descending"].forEach(function (dir) {
       sortStr =
         "SORT_BY_" + SORT_LOOKUP_TABLE[colId].key + "_" + dir.toUpperCase();
       expectedSortMode = Ci.nsINavHistoryQueryOptions[sortStr];
@@ -218,7 +218,7 @@ function testSortByColAndDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
 
 
 function testSortByDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
-  ["ascending", "descending"].forEach(function(dir) {
+  ["ascending", "descending"].forEach(function (dir) {
     let key = aUnsortFirst ? DEFAULT_SORT_KEY : prevSortKey;
     let sortStr = "SORT_BY_" + key + "_" + dir.toUpperCase();
     let expectedSortMode = Ci.nsINavHistoryQueryOptions[sortStr];
@@ -230,7 +230,7 @@ function testSortByDir(aOrganizerWin, aPlaceContentTree, aUnsortFirst) {
 function test() {
   waitForExplicitFinish();
 
-  openLibrary(function(win) {
+  openLibrary(function (win) {
     let tree = win.document.getElementById("placeContent");
     isnot(tree, null, "sanity check: placeContent tree should exist");
     

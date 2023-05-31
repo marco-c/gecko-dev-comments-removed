@@ -16,7 +16,7 @@ enzyme.configure({ adapter: new Adapter() });
 
 
 const origConsoleError = console.error;
-console.error = function(msg, ...args) {
+console.error = function (msg, ...args) {
   origConsoleError.apply(console, [msg, ...args]);
 
   if (
@@ -173,22 +173,22 @@ const TEST_GLOBAL = {
     Constructor(classId) {
       switch (classId) {
         case "@mozilla.org/referrer-info;1":
-          return function(referrerPolicy, sendReferrer, originalReferrer) {
+          return function (referrerPolicy, sendReferrer, originalReferrer) {
             this.referrerPolicy = referrerPolicy;
             this.sendReferrer = sendReferrer;
             this.originalReferrer = originalReferrer;
           };
       }
-      return function() {};
+      return function () {};
     },
     isSuccessCode: () => true,
   },
   ConsoleAPI: FakeConsoleAPI,
   
   
-  ContentSearchUIController: function() {},
+  ContentSearchUIController: function () {},
   
-  ContentSearchHandoffUIController: function() {},
+  ContentSearchHandoffUIController: function () {},
   Cc: {
     "@mozilla.org/browser/nav-bookmarks-service;1": {
       addObserver() {},
@@ -286,7 +286,7 @@ const TEST_GLOBAL = {
   clearTimeout: window.clearTimeout.bind(window),
   fetch() {},
   
-  Image: function() {}, 
+  Image: function () {}, 
   IOUtils: {
     writeJSON() {
       return Promise.resolve(0);
@@ -380,7 +380,7 @@ const TEST_GLOBAL = {
   },
   FileUtils: {
     
-    File: function() {}, 
+    File: function () {}, 
   },
   Region: {
     home: "US",

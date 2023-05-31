@@ -111,7 +111,7 @@ async function crashBackgroundTabs(tabs) {
   }
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
@@ -134,7 +134,7 @@ add_setup(async function() {
 
 
 add_task(async function test_background_crash_simple() {
-  await setupBackgroundTabs(async function([tab1, tab2]) {
+  await setupBackgroundTabs(async function ([tab1, tab2]) {
     
     await crashBackgroundTabs([tab1, tab2]);
 
@@ -167,7 +167,7 @@ add_task(async function test_background_crash_autosubmit_backlogged() {
     set: [["browser.crashReports.unsubmittedCheck.autoSubmit2", true]],
   });
 
-  await setupBackgroundTabs(async function([tab1, tab2]) {
+  await setupBackgroundTabs(async function ([tab1, tab2]) {
     
     await crashBackgroundTabs([tab1, tab2]);
 
@@ -198,7 +198,7 @@ add_task(async function test_background_crash_autosubmit_backlogged() {
 add_task(async function test_background_crash_multiple() {
   let initialTab = gBrowser.selectedTab;
 
-  await setupBackgroundTabs(async function([tab1, tab2]) {
+  await setupBackgroundTabs(async function ([tab1, tab2]) {
     
     await crashBackgroundTabs([tab1, tab2]);
 
@@ -216,7 +216,7 @@ add_task(async function test_background_crash_multiple() {
     
     await BrowserTestUtils.switchTab(gBrowser, initialTab);
 
-    await setupBackgroundTabs(async function([tab3, tab4]) {
+    await setupBackgroundTabs(async function ([tab3, tab4]) {
       await crashBackgroundTabs([tab3, tab4]);
 
       

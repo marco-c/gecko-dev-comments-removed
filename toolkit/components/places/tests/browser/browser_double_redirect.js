@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await PlacesUtils.history.clear();
 
   const BASE_URL =
@@ -27,7 +27,7 @@ add_task(async function() {
         is(this._notified.length, 4);
         PlacesObservers.removeListener(["page-visited"], this.handleEvents);
 
-        (async function() {
+        (async function () {
           
           let db = await PlacesUtils.promiseDBConnection();
           let rows = await db.execute(
@@ -76,7 +76,7 @@ add_task(async function() {
       gBrowser,
       url: TEST_URI.spec,
     },
-    async function(browser) {
+    async function (browser) {
       
       await BrowserTestUtils.synthesizeMouseAtCenter("#clickme", {}, browser);
 

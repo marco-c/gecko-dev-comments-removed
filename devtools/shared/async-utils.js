@@ -25,8 +25,8 @@
 
 
 exports.listenOnce = function listenOnce(element, event, useCapture) {
-  return new Promise(function(resolve, reject) {
-    const onEvent = function(ev) {
+  return new Promise(function (resolve, reject) {
+    const onEvent = function (ev) {
       element.removeEventListener(event, onEvent, useCapture);
       resolve(ev);
     };
@@ -51,12 +51,12 @@ const SWALLOWED_RET = Symbol("swallowed");
 
 
 
-exports.safeAsyncMethod = function(
+exports.safeAsyncMethod = function (
   asyncFn,
   shouldSwallow,
   retValue = SWALLOWED_RET
 ) {
-  return async function(...args) {
+  return async function (...args) {
     try {
       const ret = await asyncFn(...args);
       return ret;

@@ -7,7 +7,7 @@ function promiseNotificationShown(aWindow, aName) {
     let notificationBox = aWindow.gNotificationBox;
     notificationBox.stack.addEventListener(
       "AlertActive",
-      function() {
+      function () {
         is(
           notificationBox.allNotifications.length,
           1,
@@ -48,7 +48,7 @@ const ADDON_ID = "fake-addon";
 
 
 
-let TestHangReport = function(
+let TestHangReport = function (
   hangType = SLOW_SCRIPT,
   browser = gBrowser.selectedBrowser
 ) {
@@ -100,7 +100,7 @@ TestHangReport.prototype = {
 
 let buttonCount = AppConstants.MOZ_DEV_EDITION ? 2 : 1;
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   const uuidGen = Services.uuid;

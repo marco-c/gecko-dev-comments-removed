@@ -1,7 +1,7 @@
 function test() {
   waitForExplicitFinish();
 
-  (async function() {
+  (async function () {
     let testPage =
       
       "http://example.org/browser/browser/base/content/test/zoom/zoom_test.html";

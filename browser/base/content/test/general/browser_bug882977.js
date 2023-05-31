@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let homepage = "about:preferences";
   await SpecialPowers.pushPrefEnv({
     set: [

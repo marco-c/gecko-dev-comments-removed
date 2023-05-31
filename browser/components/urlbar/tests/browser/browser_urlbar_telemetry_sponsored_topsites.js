@@ -29,7 +29,7 @@ function submitHandler(request, response) {
 
 let spy;
 
-add_setup(async function() {
+add_setup(async function () {
   sandbox = sinon.createSandbox();
   spy = sandbox.spy(
     PartnerLinkAttribution._pingCentre,

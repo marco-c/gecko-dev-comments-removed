@@ -110,8 +110,8 @@ add_task(async function log_message_with_params() {
   );
 
   
-  let ob = function() {};
-  ob.toJSON = function() {
+  let ob = function () {};
+  ob.toJSON = function () {
     return { sneaky: "value" };
   };
   Assert.equal(
@@ -120,8 +120,8 @@ add_task(async function log_message_with_params() {
   );
 
   
-  ob = function() {};
-  ob.toJSON = function() {
+  ob = function () {};
+  ob.toJSON = function () {
     throw new Error("oh noes JSON");
   };
   Assert.equal(
@@ -130,7 +130,7 @@ add_task(async function log_message_with_params() {
   );
 
   
-  ob.toSource = function() {
+  ob.toSource = function () {
     throw new Error("oh noes SOURCE");
   };
   Assert.equal(
@@ -139,7 +139,7 @@ add_task(async function log_message_with_params() {
   );
 
   
-  ob.toString = function() {
+  ob.toString = function () {
     throw new Error("oh noes STRING");
   };
   Assert.equal(
@@ -237,7 +237,7 @@ add_task(async function log_message_with_params() {
   
   let vOf = {
     a: 1,
-    valueOf: function() {
+    valueOf: function () {
       throw new Error("oh noes valueOf");
     },
   };

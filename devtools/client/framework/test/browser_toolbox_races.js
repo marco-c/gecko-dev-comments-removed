@@ -13,7 +13,7 @@ const {
   gDevToolsBrowser,
 } = require("resource://devtools/client/framework/devtools-browser.js");
 
-add_task(async function() {
+add_task(async function () {
   
   
   Services.prefs.clearUserPref("devtools.toolbox.selectedTool");

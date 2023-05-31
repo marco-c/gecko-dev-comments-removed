@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
   const { span } = require("devtools/client/shared/vendor/react-dom-factories");
@@ -164,7 +164,7 @@ define(function(require, exports, module) {
     const { onDOMNodeMouseOver, onDOMNodeMouseOut, onInspectIconClick } = props;
 
     
-    indexes.sort(function(a, b) {
+    indexes.sort(function (a, b) {
       return a - b;
     });
 

@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openTabAndSetupStorage("about:home");
 
   const itemsToOpen = [

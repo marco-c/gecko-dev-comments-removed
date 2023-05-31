@@ -29,7 +29,7 @@ const BROWSER_STATE = {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   silenceWorkerUpdates();

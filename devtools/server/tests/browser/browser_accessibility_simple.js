@@ -16,7 +16,7 @@ function checkAccessibilityState(accessibility, parentAccessibility, expected) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const {
     walker: domWalker,
     target,

@@ -16,7 +16,7 @@ const {
 
 
 
-module.exports = async function() {
+module.exports = async function () {
   let TOTAL_MESSAGES = 100;
   let tab = await testSetup(SIMPLE_URL);
   let messageManager = tab.linkedBrowser.messageManager;

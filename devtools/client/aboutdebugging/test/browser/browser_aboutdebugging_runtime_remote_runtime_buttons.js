@@ -10,7 +10,7 @@ const USB_APP_NAME = "Lorem ipsum";
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const mocks = new Mocks();
   mocks.createUSBRuntime(USB_RUNTIME_ID, {

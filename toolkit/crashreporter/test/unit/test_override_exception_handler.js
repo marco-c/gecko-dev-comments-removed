@@ -2,10 +2,10 @@ add_task(async function run_test() {
   
   
   await do_crash(
-    function() {
+    function () {
       CrashTestUtils.TryOverrideExceptionHandler();
     },
-    function(mdump, extra) {},
+    function (mdump, extra) {},
     true
   );
 });

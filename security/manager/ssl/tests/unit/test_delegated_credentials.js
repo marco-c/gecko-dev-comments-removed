@@ -31,7 +31,7 @@ add_tls_server_setup(
 
 
 
-add_test(function() {
+add_test(function () {
   clearSessionCache();
   Services.prefs.setBoolPref(
     "security.tls.enable_delegated_credentials",
@@ -52,7 +52,7 @@ add_connection_test(
 
 
 
-add_test(function() {
+add_test(function () {
   clearSessionCache();
   Services.prefs.setBoolPref("security.tls.enable_delegated_credentials", true);
   run_next_test();

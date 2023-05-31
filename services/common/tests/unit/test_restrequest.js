@@ -20,7 +20,7 @@ function run_test() {
 
 
 add_test(function test_invalid_uri() {
-  do_check_throws(function() {
+  do_check_throws(function () {
     new RESTRequest("an invalid URI");
   }, Cr.NS_ERROR_MALFORMED_URI);
   run_next_test();
@@ -170,7 +170,7 @@ add_task(async function test_get_utf8() {
   let charsetSuffix = "; charset=UTF-8";
 
   let server = httpd_setup({
-    "/resource": function(req, res) {
+    "/resource": function (req, res) {
       res.setStatusLine(req.httpVersion, 200, "OK");
       res.setHeader(
         "Content-Type",
@@ -238,7 +238,7 @@ add_task(async function test_post_utf8() {
   
   
   let server = httpd_setup({
-    "/echo": function(req, res) {
+    "/echo": function (req, res) {
       res.setStatusLine(req.httpVersion, 200, "OK");
       res.setHeader("Content-Type", req.getHeader("content-type"));
       
@@ -281,7 +281,7 @@ add_task(async function test_charsets() {
   let charsetSuffix = "; charset=us-ascii";
 
   let server = httpd_setup({
-    "/resource": function(req, res) {
+    "/resource": function (req, res) {
       res.setStatusLine(req.httpVersion, 200, "OK");
       res.setHeader(
         "Content-Type",
@@ -712,7 +712,7 @@ add_task(async function test_abort() {
   let request = new RESTRequest(server.baseURI + "/resource");
 
   
-  do_check_throws(function() {
+  do_check_throws(function () {
     request.abort();
   });
 
@@ -720,7 +720,7 @@ add_task(async function test_abort() {
   request.abort();
 
   
-  do_check_throws(function() {
+  do_check_throws(function () {
     request.abort();
   });
 
@@ -738,7 +738,7 @@ add_task(async function test_abort() {
 add_task(async function test_timeout() {
   let server = new HttpServer();
   let server_connection;
-  server._handler.handleResponse = function(connection) {
+  server._handler.handleResponse = function (connection) {
     
     
     

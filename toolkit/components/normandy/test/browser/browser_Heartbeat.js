@@ -82,7 +82,7 @@ function getStars(notice) {
   return notice.buttonContainer.querySelectorAll(".star-x");
 }
 
-add_setup(async function() {
+add_setup(async function () {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   
   await BrowserTestUtils.openNewForegroundTab(
@@ -95,7 +95,7 @@ add_setup(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.gNotificationBox;
 
@@ -174,7 +174,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.gNotificationBox;
   const hb = new Heartbeat(targetWindow, {
@@ -238,7 +238,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const targetWindow = await BrowserTestUtils.openNewBrowserWindow();
 
   const hb = new Heartbeat(targetWindow, {

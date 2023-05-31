@@ -13,7 +13,7 @@ const testServer = createVersionizedHttpTestServer(
 );
 const TEST_URL = testServer.urlFor("index.html");
 
-add_task(async function() {
+add_task(async function () {
   
   
   

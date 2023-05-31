@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.startup.page", 0]],
   });

@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let urlbarTestValue = "Mary had a little lamb";
   let win = OpenBrowserWindow({ private: true });
   registerCleanupFunction(() => BrowserTestUtils.closeWindow(win));

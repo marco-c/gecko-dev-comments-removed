@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Setting browser to RTL locale");
   await SpecialPowers.pushPrefEnv({ set: [["intl.l10n.pseudo", "bidi"]] });
 

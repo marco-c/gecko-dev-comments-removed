@@ -8,7 +8,7 @@ let { ResetProfile } = ChromeUtils.importESModule(
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   let profileDirectory = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let profileName = profileDirectory.leafName;
   let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
@@ -46,7 +46,7 @@ async function test_reset_disabled({ disabled }) {
     gBrowser,
     "about:support"
   );
-  await SpecialPowers.spawn(tab.linkedBrowser, [{ disabled }], async function({
+  await SpecialPowers.spawn(tab.linkedBrowser, [{ disabled }], async function ({
     
     disabled,
   }) {

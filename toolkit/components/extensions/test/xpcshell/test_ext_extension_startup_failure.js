@@ -14,7 +14,7 @@ add_task(async function extension_startup_early_error() {
     },
   });
 
-  extension.initLocale = async function() {
+  extension.initLocale = async function () {
     
     extension.packagingError("dummy error");
   };

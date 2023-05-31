@@ -55,7 +55,7 @@ add_task(async function openDebuggerFromDialog() {
   info("Execute an infinite loop");
   
   
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     content.wrappedJSObject.infiniteLoop();
   }).catch(e => {});
 

@@ -1,4 +1,4 @@
-add_task(async function() {
+add_task(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
@@ -13,86 +13,90 @@ add_task(async function() {
   
   var testPage =
     "data:text/html,<html id='html1'><body id='body1'>First tab ever opened</body></html>";
-  await BrowserTestUtils.withNewTab({ gBrowser, url: testPage }, async function(
-    browser
-  ) {
-    let testDone = {};
-    if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-      
-      testDone.promise = SpecialPowers.spawn(browser, [], async function() {
-        return new Promise(resolve => {
-          let webNavigation = content.docShell.QueryInterface(
-            Ci.nsIWebNavigation
-          );
-          let { legacySHistory } = webNavigation.sessionHistory;
-          
-          let historyListener = {
-            OnContentViewerEvicted() {
-              ok(
-                true,
-                "History listener got called after a content viewer was evicted"
-              );
-              legacySHistory.removeSHistoryListener(historyListener);
-              
-              resolve();
-            },
-            QueryInterface: ChromeUtils.generateQI([
-              "nsISHistoryListener",
-              "nsISupportsWeakReference",
-            ]),
-          };
-          legacySHistory.addSHistoryListener(historyListener);
-          
-          content._testListener = historyListener;
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: testPage },
+    async function (browser) {
+      let testDone = {};
+      if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
+        
+        testDone.promise = SpecialPowers.spawn(browser, [], async function () {
+          return new Promise(resolve => {
+            let webNavigation = content.docShell.QueryInterface(
+              Ci.nsIWebNavigation
+            );
+            let { legacySHistory } = webNavigation.sessionHistory;
+            
+            let historyListener = {
+              OnContentViewerEvicted() {
+                ok(
+                  true,
+                  "History listener got called after a content viewer was evicted"
+                );
+                legacySHistory.removeSHistoryListener(historyListener);
+                
+                resolve();
+              },
+              QueryInterface: ChromeUtils.generateQI([
+                "nsISHistoryListener",
+                "nsISupportsWeakReference",
+              ]),
+            };
+            legacySHistory.addSHistoryListener(historyListener);
+            
+            content._testListener = historyListener;
+          });
         });
-      });
-    } else {
+      } else {
+        
+        testDone.promise = new Promise(resolve => {
+          testDone.resolve = resolve;
+        });
+        let shistory = browser.browsingContext.sessionHistory;
+        
+        let historyListener = {
+          OnContentViewerEvicted() {
+            ok(
+              true,
+              "History listener got called after a content viewer was evicted"
+            );
+            shistory.removeSHistoryListener(historyListener);
+            delete window._testListener;
+            
+            testDone.resolve();
+          },
+          QueryInterface: ChromeUtils.generateQI([
+            "nsISHistoryListener",
+            "nsISupportsWeakReference",
+          ]),
+        };
+        shistory.addSHistoryListener(historyListener);
+        
+        window._testListener = historyListener;
+      }
+
       
-      testDone.promise = new Promise(resolve => {
-        testDone.resolve = resolve;
-      });
-      let shistory = browser.browsingContext.sessionHistory;
+      testPage = `data:text/html,<html id='html1'><body id='body1'>I am a second tab!</body></html>`;
+      let tab2 = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        testPage
+      );
+
       
-      let historyListener = {
-        OnContentViewerEvicted() {
-          ok(
-            true,
-            "History listener got called after a content viewer was evicted"
-          );
-          shistory.removeSHistoryListener(historyListener);
-          delete window._testListener;
-          
-          testDone.resolve();
-        },
-        QueryInterface: ChromeUtils.generateQI([
-          "nsISHistoryListener",
-          "nsISupportsWeakReference",
-        ]),
-      };
-      shistory.addSHistoryListener(historyListener);
       
-      window._testListener = historyListener;
+      
+      
+      
+      for (var i = 0; i < 4; i++) {
+        testPage = `data:text/html,<html id='html1'><body id='body1'>${i}</body></html>`;
+        let pagePromise = BrowserTestUtils.browserLoaded(browser);
+        BrowserTestUtils.loadURIString(browser, testPage);
+        await pagePromise;
+      }
+      
+      await testDone.promise;
+
+      
+      BrowserTestUtils.removeTab(tab2);
     }
-
-    
-    testPage = `data:text/html,<html id='html1'><body id='body1'>I am a second tab!</body></html>`;
-    let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage);
-
-    
-    
-    
-    
-    
-    for (var i = 0; i < 4; i++) {
-      testPage = `data:text/html,<html id='html1'><body id='body1'>${i}</body></html>`;
-      let pagePromise = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.loadURIString(browser, testPage);
-      await pagePromise;
-    }
-    
-    await testDone.promise;
-
-    
-    BrowserTestUtils.removeTab(tab2);
-  });
+  );
 });

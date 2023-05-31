@@ -30,7 +30,7 @@ add_task(async function test_initialize() {
   gOldContentCanRecord = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
-    function() {
+    function () {
       let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
         Ci.nsITelemetry
       );
@@ -42,7 +42,7 @@ add_task(async function test_initialize() {
   info("canRecord for content: " + gOldContentCanRecord);
 });
 
-add_task(async function() {
+add_task(async function () {
   const TESTS = [
     
     {
@@ -207,7 +207,7 @@ add_task(async function() {
       await SpecialPowers.spawn(
         gBrowser.selectedBrowser,
         [{ file, targetElement }],
-        function(opts) {
+        function (opts) {
           let target = content.document.getElementById(opts.targetElement);
           target.src = opts.file;
 
@@ -266,7 +266,7 @@ add_task(async function() {
   }
 });
 
-add_task(async function() {
+add_task(async function () {
   let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
     Ci.nsITelemetry
   );
@@ -275,7 +275,7 @@ add_task(async function() {
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [{ oldCanRecord: gOldContentCanRecord }],
-    async function(arg) {
+    async function (arg) {
       await new Promise(resolve => {
         let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
           Ci.nsITelemetry
@@ -298,7 +298,7 @@ async function grabHistogramsFromContent(names, prev_sentinel = null) {
   );
   let gatheredHistograms;
   return BrowserTestUtils.waitForCondition(
-    function() {
+    function () {
       
       
       let snapshots = telemetry.getSnapshotForHistograms("main", false);
@@ -341,7 +341,7 @@ async function grabHistogramsFromContent(names, prev_sentinel = null) {
     Infinity
   ).then(
     () => gatheredHistograms,
-    function(msg) {
+    function (msg) {
       throw msg;
     }
   );

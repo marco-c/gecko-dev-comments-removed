@@ -4,7 +4,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   await setE10sPrefs();
 
@@ -29,7 +29,7 @@ add_task(async function() {
         <body><div id="div" style="visibility: hidden;"></div></body>
       </html>`,
     },
-    async function(browser) {
+    async function (browser) {
       let onShow = waitForEvent(Ci.nsIAccessibleEvent.EVENT_SHOW, "div");
       await invokeSetStyle(browser, "div", "visibility", "visible");
       let showEvent = await onShow;

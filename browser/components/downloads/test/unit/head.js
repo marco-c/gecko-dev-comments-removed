@@ -41,7 +41,7 @@ async function setDownloadDir() {
   );
   
   await IOUtils.makeDirectory(tmpDir);
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     try {
       await IOUtils.remove(tmpDir, { recursive: true });
     } catch (e) {

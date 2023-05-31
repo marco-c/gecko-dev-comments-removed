@@ -46,7 +46,7 @@ function checkClone(other_listener, aRequest) {
   
   var listener = new ImageListener(
     null,
-    function(foo, bar) {
+    function (foo, bar) {
       do_test_finished();
     } 
   );
@@ -203,16 +203,16 @@ function run_loadImageWithChannel_tests() {
 }
 
 function all_done_callback() {
-  server.stop(function() {
+  server.stop(function () {
     do_test_finished();
   });
 }
 
 function startImageCallback(otherCb) {
-  return function(listener, request) {
+  return function (listener, request) {
     
     do_test_pending();
-    var listener2 = new ImageListener(null, function(foo, bar) {
+    var listener2 = new ImageListener(null, function (foo, bar) {
       do_test_finished();
     });
     var outer = Cc["@mozilla.org/image/tools;1"]

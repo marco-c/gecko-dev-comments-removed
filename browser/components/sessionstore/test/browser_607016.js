@@ -2,7 +2,7 @@
 
 var stateBackup = ss.getBrowserState();
 
-add_task(async function() {
+add_task(async function () {
   
   ignoreAllUncaughtExceptions();
 

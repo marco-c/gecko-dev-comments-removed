@@ -113,7 +113,7 @@ async function testOpenedAndDraggedXPI(aBrowser) {
 }
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     "http://example.com",
     testOpenedAndDraggedXPI

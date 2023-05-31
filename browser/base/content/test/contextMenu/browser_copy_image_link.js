@@ -6,12 +6,12 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const URL_FIREBIRD =
     "http://mochi.test:8888/browser/browser/base/content/test/contextMenu/firebird.png";
 
-  await BrowserTestUtils.withNewTab(URL_FIREBIRD, async function(browser) {
+  await BrowserTestUtils.withNewTab(URL_FIREBIRD, async function (browser) {
     
     let popupShownPromise = BrowserTestUtils.waitForEvent(
       document,

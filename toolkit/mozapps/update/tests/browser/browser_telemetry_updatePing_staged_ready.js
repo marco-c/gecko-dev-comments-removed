@@ -33,7 +33,7 @@ add_task(async function telemetry_updatePing_ready() {
   
   let updatePing;
   await TestUtils.waitForCondition(
-    async function() {
+    async function () {
       
       
       updatePing = await archiveChecker.promiseFindPing("update", [

@@ -134,7 +134,7 @@ add_task(async function testRemoveFrameAfterErrorPage() {
   await runTest(true);
 });
 
-add_task(async function() {
+add_task(async function () {
   
   topFrameRequest.finish();
   subFrameRequest.finish();

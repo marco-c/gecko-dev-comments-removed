@@ -20,7 +20,7 @@ addCertFromFile(certDB, "test_sanctions/symantec-test-ca.pem", "CTu,u,u");
 
 
 
-add_test(function() {
+add_test(function () {
   addCertFromFile(
     certDB,
     "test_sanctions/symantec-intermediate-allowlisted.pem",
@@ -50,7 +50,7 @@ add_connection_test(
 
 
 
-add_test(function() {
+add_test(function () {
   addCertFromFile(
     certDB,
     "test_sanctions/symantec-intermediate-other-crossigned.pem",
@@ -68,7 +68,7 @@ add_connection_test(
 
 
 
-add_task(async function() {
+add_task(async function () {
   addCertFromFile(
     certDB,
     "test_sanctions/apple-ist-ca-8-g1-intermediate.pem",

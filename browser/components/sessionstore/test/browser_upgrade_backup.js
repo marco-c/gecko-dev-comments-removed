@@ -36,7 +36,7 @@ async function getUpgradeBackups() {
   return children.filter(path => path.startsWith(Paths.upgradeBackupPrefix));
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SessionStore.promiseInitialized;
 });
@@ -140,7 +140,7 @@ add_task(async function test_upgrade_backup_removal() {
 
   
   
-  newBackups = newBackups.filter(function(backup) {
+  newBackups = newBackups.filter(function (backup) {
     return !backups.includes(backup);
   });
 

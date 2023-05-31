@@ -7,7 +7,7 @@ const RUNTIME_DEVICE_ID = "1234";
 const RUNTIME_DEVICE_NAME = "A device";
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
 
   const { document, tab } = await openAboutDebugging();

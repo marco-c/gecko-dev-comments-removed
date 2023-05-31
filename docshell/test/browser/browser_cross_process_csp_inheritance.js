@@ -38,7 +38,7 @@ function verifyResult(
   return SpecialPowers.spawn(
     aBrowser,
     [{ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }],
-    async function({ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }) {
+    async function ({ aTestName, aDataURI, aPID, aSamePID, aFissionEnabled }) {
       
       let channel = content.docShell.currentDocumentChannel;
       is(
@@ -79,7 +79,7 @@ function verifyResult(
 }
 
 async function simulateCspInheritanceForNewTab(aTestName, aSamePID) {
-  await BrowserTestUtils.withNewTab(TEST_URI, async function(browser) {
+  await BrowserTestUtils.withNewTab(TEST_URI, async function (browser) {
     
     let currentURI = await getCurrentURI(gBrowser.selectedBrowser);
     is(currentURI, TEST_URI, aTestName + ": correct test uri loaded");

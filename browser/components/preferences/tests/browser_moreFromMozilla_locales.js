@@ -53,7 +53,7 @@ let mockFxA, unmockFxA;
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   let { mock, unmock } = await mockDefaultFxAInstance();
   mockFxA = mock;
   unmockFxA = unmock;

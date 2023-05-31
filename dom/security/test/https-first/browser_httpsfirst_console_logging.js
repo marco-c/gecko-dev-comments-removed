@@ -26,7 +26,7 @@ let tests = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   
   requestLongerTimeout(4);

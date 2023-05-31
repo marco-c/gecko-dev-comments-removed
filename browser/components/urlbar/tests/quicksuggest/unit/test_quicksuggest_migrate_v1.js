@@ -51,7 +51,7 @@ add_task(async function init() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     scenario: "offline",
@@ -73,7 +73,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -101,7 +101,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -130,7 +130,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -161,7 +161,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     scenario: "online",
@@ -183,7 +183,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -211,7 +211,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -239,7 +239,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -270,7 +270,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     scenario: "offline",
@@ -305,7 +305,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -333,7 +333,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -361,7 +361,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -392,7 +392,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     scenario: "online",
@@ -414,7 +414,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -440,7 +440,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {
@@ -470,7 +470,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await doMigrateTest({
     testOverrides: TEST_OVERRIDES,
     initialUserBranch: {

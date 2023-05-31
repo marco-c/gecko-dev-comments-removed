@@ -1,4 +1,4 @@
 
-onactivate = function(e) {
+onactivate = function (e) {
   undefined.doSomething;
 };

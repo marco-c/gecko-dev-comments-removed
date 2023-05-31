@@ -32,7 +32,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
 
@@ -72,7 +72,7 @@ add_task(async function() {
   
   
   await withPerfObserver(
-    async function() {
+    async function () {
       
       
       

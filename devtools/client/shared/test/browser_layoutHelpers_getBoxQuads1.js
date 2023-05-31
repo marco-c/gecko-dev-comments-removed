@@ -8,12 +8,12 @@
 
 const TEST_URI = TEST_URI_ROOT + "doc_layoutHelpers_getBoxQuads1.html";
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(TEST_URI);
 
   info("Running tests");
 
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     
     
     function sendCommand(cmd) {

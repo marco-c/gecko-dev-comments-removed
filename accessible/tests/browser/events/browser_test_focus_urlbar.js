@@ -84,7 +84,7 @@ class TipTestProvider extends UrlbarProvider {
 
 
 async function runTests() {
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await UrlbarTestUtils.promisePopupClose(window);
     await PlacesUtils.history.clear();
   });
@@ -369,7 +369,7 @@ async function runTipTests() {
   let provider = new TipTestProvider(matches);
   UrlbarProvidersManager.registerProvider(provider);
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     UrlbarProvidersManager.unregisterProvider(provider);
   });
 

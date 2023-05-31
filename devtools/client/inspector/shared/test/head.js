@@ -111,7 +111,7 @@ function waitForSuccess(validatorFn, name = "untitled") {
 
 
 
-var getFontFamilyDataURL = async function(font, nodeFront) {
+var getFontFamilyDataURL = async function (font, nodeFront) {
   const fillStyle = getThemeColor("body-color");
 
   const { data } = await nodeFront.getFontFamilyDataURL(font, fillStyle);
@@ -143,7 +143,7 @@ var getFontFamilyDataURL = async function(font, nodeFront) {
 
 
 
-var simulateColorPickerChange = async function(
+var simulateColorPickerChange = async function (
   ruleView,
   colorPicker,
   newRgba,

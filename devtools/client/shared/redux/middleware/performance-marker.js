@@ -37,7 +37,7 @@
 
 
 function createPerformanceMarkerMiddleware(cases) {
-  return function(store) {
+  return function (store) {
     return next => action => {
       const condition = cases[action.type];
       const shouldAddProfileMarker = !!condition;

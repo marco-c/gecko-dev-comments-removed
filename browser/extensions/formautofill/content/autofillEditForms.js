@@ -204,10 +204,7 @@ class EditAddress extends EditAutofillForm {
     let { addressFields } = this._elements.form.dataset;
     return (
       !addressFields ||
-      addressFields
-        .trim()
-        .split(/\s+/)
-        .includes("mailing-address")
+      addressFields.trim().split(/\s+/).includes("mailing-address")
     );
   }
 
@@ -340,7 +337,7 @@ class EditAddress extends EditAutofillForm {
       let containerInputs = [
         ...container.querySelectorAll("input, textarea, select"),
       ];
-      containerInputs.forEach(function(input) {
+      containerInputs.forEach(function (input) {
         input.disabled = false;
         
         

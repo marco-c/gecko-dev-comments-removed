@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
     userContextId: 1,
   });

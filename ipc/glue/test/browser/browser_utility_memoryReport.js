@@ -21,7 +21,7 @@ add_task(async () => {
 
   const performCollection = new Promise((resolve, reject) => {
     
-    let handleReport = function(
+    let handleReport = function (
       aProcess,
       aUnsafePath,
       aKind,

@@ -142,7 +142,7 @@ function setup_http_server() {
 
   var allDummyHttpRequestReceived = false;
   
-  server.registerPathHandler("/", function(metadata, response) {
+  server.registerPathHandler("/", function (metadata, response) {
     var id = metadata.getHeader("X-ID");
     log("Server recived the response id=" + id);
 
@@ -174,7 +174,7 @@ function setup_http_server() {
     }
   });
 
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     server.stop(serverStopListener);
   });
 }

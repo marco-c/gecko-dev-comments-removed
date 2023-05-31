@@ -16,8 +16,8 @@ function logResult(str, passed) {
 }
 
 
-var onevalexecuted = (function(window) {
-  return function(shouldrun, what, data) {
+var onevalexecuted = (function (window) {
+  return function (shouldrun, what, data) {
     window.parent.scriptRan(shouldrun, what, data);
     logResult(
       (shouldrun ? "PASS: " : "FAIL: ") + what + " : " + data,
@@ -27,8 +27,8 @@ var onevalexecuted = (function(window) {
 })(window);
 
 
-var onevalblocked = (function(window) {
-  return function(shouldrun, what, data) {
+var onevalblocked = (function (window) {
+  return function (shouldrun, what, data) {
     window.parent.scriptBlocked(shouldrun, what, data);
     logResult(
       (shouldrun ? "FAIL: " : "PASS: ") + what + " : " + data,
@@ -41,7 +41,7 @@ var onevalblocked = (function(window) {
 
 addEventListener(
   "load",
-  function() {
+  function () {
     
     try {
       setTimeout(
@@ -58,7 +58,7 @@ addEventListener(
 
     
     try {
-      setTimeout(function() {
+      setTimeout(function () {
         onevalexecuted(
           true,
           "setTimeout(function)",

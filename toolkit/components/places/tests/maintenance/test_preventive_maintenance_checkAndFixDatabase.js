@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   Assert.equal(
     PlacesUtils.history.databaseStatus,

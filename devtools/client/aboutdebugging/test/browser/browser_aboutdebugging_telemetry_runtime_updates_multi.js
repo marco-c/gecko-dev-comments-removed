@@ -45,7 +45,7 @@ const RUNTIME_2_EXTRAS = {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const mocks = new Mocks();
   setupTelemetryTest();

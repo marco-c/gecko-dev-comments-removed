@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await testDocumentEventResources();
   await testDocumentEventResourcesWithIgnoreExistingResources();
   await testDomCompleteWithOverloadedConsole();
@@ -226,12 +226,14 @@ async function testIframeNavigation() {
 
   info("Navigate the iframe to another process (if fission is enabled)");
   documentEvents = [];
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [secondPageUrl], function(
-    url
-  ) {
-    const iframe = content.document.querySelector("iframe");
-    iframe.src = url;
-  });
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [secondPageUrl],
+    function (url) {
+      const iframe = content.document.querySelector("iframe");
+      iframe.src = url;
+    }
+  );
 
   
   if (isFissionEnabled() || isEveryFrameTargetEnabled()) {

@@ -38,7 +38,7 @@
 
 
 
-(function(exports) {
+(function (exports) {
   "use strict";
 
   if (exports.require) {
@@ -47,7 +47,7 @@
   }
 
   
-  let require = (function() {
+  let require = (function () {
     
 
 

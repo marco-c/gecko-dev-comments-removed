@@ -9,7 +9,7 @@ const asyncStorage = require("resource://devtools/shared/async-storage.js");
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.netmonitor.features.newEditAndResend", true);
   

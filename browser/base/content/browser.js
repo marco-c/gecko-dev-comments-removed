@@ -1778,7 +1778,7 @@ var gBrowserInit = {
 
     gBrowser.addEventListener(
       "PermissionStateChange",
-      function() {
+      function () {
         gIdentityHandler.refreshIdentityBlock();
         gPermissionPanel.updateSharingIndicator();
       },
@@ -2341,7 +2341,7 @@ var gBrowserInit = {
   
   get uriToLoadPromise() {
     delete this.uriToLoadPromise;
-    return (this.uriToLoadPromise = (function() {
+    return (this.uriToLoadPromise = (function () {
       
       
       
@@ -3977,7 +3977,7 @@ const BrowserSearch = {
         win.BrowserSearch.webSearch();
       } else {
         
-        var observer = function(subject, topic, data) {
+        var observer = function (subject, topic, data) {
           if (subject == win) {
             BrowserSearch.webSearch();
             Services.obs.removeObserver(
@@ -3997,7 +3997,7 @@ const BrowserSearch = {
       return;
     }
 
-    let focusUrlBarIfSearchFieldIsNotActive = function(aSearchBar) {
+    let focusUrlBarIfSearchFieldIsNotActive = function (aSearchBar) {
       if (!aSearchBar || document.activeElement != aSearchBar.textbox) {
         
         gURLBar.searchModeShortcut();
@@ -4296,13 +4296,13 @@ function FillHistoryMenu(aParent) {
   
   if (!aParent.hasStatusListener) {
     
-    aParent.addEventListener("DOMMenuItemActive", function(aEvent) {
+    aParent.addEventListener("DOMMenuItemActive", function (aEvent) {
       
       if (!aEvent.target.hasAttribute("checked")) {
         XULBrowserWindow.setOverLink(aEvent.target.getAttribute("uri"));
       }
     });
-    aParent.addEventListener("DOMMenuItemInactive", function() {
+    aParent.addEventListener("DOMMenuItemInactive", function () {
       XULBrowserWindow.setOverLink("");
     });
 
@@ -5360,7 +5360,7 @@ var XULBrowserWindow = {
     
     
     if (aRequest) {
-      setTimeout(function() {
+      setTimeout(function () {
         XULBrowserWindow.asyncUpdateUI();
       }, 0);
     } else {
@@ -5371,10 +5371,7 @@ var XULBrowserWindow = {
       let uri = aLocationURI;
       try {
         
-        uri = aLocationURI
-          .mutate()
-          .setUserPass("")
-          .finalize();
+        uri = aLocationURI.mutate().setUserPass("").finalize();
       } catch (ex) {
         
       }
@@ -5644,7 +5641,7 @@ var LinkTargetDisplay = {
 
   _showDelayed() {
     this._timer = setTimeout(
-      function(self) {
+      function (self) {
         StatusPanel.update();
         window.removeEventListener("mousemove", self, true);
       },
@@ -5821,7 +5818,7 @@ var CombinedStopReload = {
     
     this.reload.disabled = true;
     this._timer = setTimeout(
-      function(self) {
+      function (self) {
         self._timer = 0;
         self.reload.disabled =
           XULBrowserWindow.reloadCommand.getAttribute("disabled") == "true";
@@ -7148,7 +7145,7 @@ function handleDroppedLink(
     }
   }
 
-  (async function() {
+  (async function () {
     if (
       links.length >=
       Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
@@ -8022,7 +8019,7 @@ function BrowserOpenAddonsMgr(aView, { selectTabByViewId = false } = {}) {
     let emWindow;
     let browserWindow;
 
-    var receivePong = function(aSubject, aTopic, aData) {
+    var receivePong = function (aSubject, aTopic, aData) {
       let browserWin = aSubject.browsingContext.topChromeWindow;
       if (!emWindow || browserWin == window ) {
         if (
@@ -8821,7 +8818,7 @@ var PanicButtonNotifier = {
         PanicButtonNotifier.close();
         removeListeners();
       };
-      popup.addEventListener("popupshown", function() {
+      popup.addEventListener("popupshown", function () {
         PanicButtonNotifier.timer = setTimeout(onTimeout, 3000);
       });
       
@@ -9552,7 +9549,7 @@ var gDialogBox = {
       },
     });
     let closedPromise = new Promise(resolve => {
-      this._closedCallback = function() {
+      this._closedCallback = function () {
         PromptUtils.fireDialogEvent(window, "DOMModalDialogClosed");
         resolve();
       };

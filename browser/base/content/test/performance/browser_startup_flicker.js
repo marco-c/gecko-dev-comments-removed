@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
     .wrappedJSObject;
   await startupRecorder.done;

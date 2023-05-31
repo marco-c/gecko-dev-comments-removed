@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
   let chromeWin = win.open(
     "chrome://browser/content/places/places.xhtml",

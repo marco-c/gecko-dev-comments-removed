@@ -23,7 +23,7 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 
 var stateBackup = ss.getBrowserState();
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -75,7 +75,7 @@ add_task(async function test_unrestored_tabs_listed() {
   };
 
   const tabsForEnsure = new Set();
-  state.windows[0].tabs.forEach(function(tab) {
+  state.windows[0].tabs.forEach(function (tab) {
     tabsForEnsure.add(tab.entries[0].url);
   });
 

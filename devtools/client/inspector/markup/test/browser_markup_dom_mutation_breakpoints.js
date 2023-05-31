@@ -19,7 +19,7 @@ function toggleMutationBreakpoint(inspector) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(
     "data:text/html;charset=utf-8,<h1>foo</h1><span>bar</span>"
   );
@@ -45,7 +45,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("devtools.debugger.dom-mutation-breakpoints-visible", true);
   const { inspector, toolbox } = await openInspectorForURL(
     "data:text/html;charset=utf-8,<h1>foo</h1><span>bar</span>"
@@ -141,7 +141,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("devtools.debugger.dom-mutation-breakpoints-visible", true);
   const { inspector, toolbox } = await openInspectorForURL(
     "data:text/html;charset=utf-8,<h1>foo</h1><span>bar</span>"

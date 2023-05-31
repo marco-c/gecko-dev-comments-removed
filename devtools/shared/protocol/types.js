@@ -50,7 +50,7 @@ exports.registeredTypes = registeredTypes;
 
 
 
-types.getType = function(type) {
+types.getType = function (type) {
   if (!type) {
     return types.Primitive;
   }
@@ -143,7 +143,7 @@ function identityWrite(v) {
 
 
 
-types.addType = function(name, typeObject = {}, options = {}) {
+types.addType = function (name, typeObject = {}, options = {}) {
   if (registeredTypes.has(name)) {
     throw Error("Type '" + name + "' already exists.");
   }
@@ -170,7 +170,7 @@ types.addType = function(name, typeObject = {}, options = {}) {
 
 
 
-types.removeType = function(name) {
+types.removeType = function (name) {
   
   
   const type = registeredTypes.get(name);
@@ -178,7 +178,7 @@ types.removeType = function(name) {
   type.name = "DEFUNCT:" + name;
   type.category = "defunct";
   type.primitive = false;
-  type.read = type.write = function() {
+  type.read = type.write = function () {
     throw new Error("Using defunct type: " + name);
   };
 
@@ -194,7 +194,7 @@ types.removeType = function(name) {
 
 
 
-types.addArrayType = function(subtype) {
+types.addArrayType = function (subtype) {
   subtype = types.getType(subtype);
 
   const name = "array:" + subtype.name;
@@ -230,7 +230,7 @@ types.addArrayType = function(subtype) {
 
 
 
-types.addDictType = function(name, specializations) {
+types.addDictType = function (name, specializations) {
   const specTypes = {};
   for (const prop in specializations) {
     try {
@@ -290,7 +290,7 @@ types.addDictType = function(name, specializations) {
 
 
 
-types.addActorType = function(name) {
+types.addActorType = function (name) {
   
   
   
@@ -375,7 +375,7 @@ types.addActorType = function(name) {
   return type;
 };
 
-types.addPolymorphicType = function(name, subtypes) {
+types.addPolymorphicType = function (name, subtypes) {
   
   for (const subTypeName of subtypes) {
     const subtype = types.getType(subTypeName);
@@ -437,7 +437,7 @@ types.addPolymorphicType = function(name, subtypes) {
     },
   });
 };
-types.addNullableType = function(subtype) {
+types.addNullableType = function (subtype) {
   subtype = types.getType(subtype);
   return types.addType("nullable:" + subtype.name, {
     category: "nullable",
@@ -470,7 +470,7 @@ types.addNullableType = function(subtype) {
 
 
 
-types.addActorDetail = function(name, actorType, detail) {
+types.addActorDetail = function (name, actorType, detail) {
   actorType = types.getType(actorType);
   if (!actorType._actor) {
     throw Error(
@@ -493,7 +493,7 @@ types.Number = types.addType("number");
 types.Boolean = types.addType("boolean");
 types.JSON = types.addType("json");
 
-exports.registerFront = function(cls) {
+exports.registerFront = function (cls) {
   const { typeName } = cls.prototype;
   if (!registeredTypes.has(typeName)) {
     types.addActorType(typeName);

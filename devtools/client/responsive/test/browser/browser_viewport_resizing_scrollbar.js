@@ -48,7 +48,7 @@ const TEST_URL =
   "</head>" +
   '<body><div style="background:orange; width:1000px; height:1000px"></div></body>';
 
-addRDMTask(TEST_URL, async function({ ui, manager }) {
+addRDMTask(TEST_URL, async function ({ ui, manager }) {
   
   await SpecialPowers.pushPrefEnv({
     set: [["layout.testing.overlay-scrollbars.always-visible", true]],

@@ -39,7 +39,7 @@ const UGLY_HTML = FORMATTED_HTML.replace(/[\r\n\s]+/g, "");
 
 const UGLY_INNER_HTML = UGLY_HTML.replace(/<\/*body>/g, "");
 
-add_task(async function() {
+add_task(async function () {
   
   const { inspector } = await openInspectorForURL(
     "data:text/html;charset=utf-8," + encodeURIComponent(UGLY_HTML)

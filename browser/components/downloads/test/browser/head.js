@@ -166,7 +166,7 @@ function promisePanelOpened() {
   return new Promise(resolve => {
     
     let originalOnPopupShown = DownloadsPanel.onPopupShown;
-    DownloadsPanel.onPopupShown = function() {
+    DownloadsPanel.onPopupShown = function () {
       DownloadsPanel.onPopupShown = originalOnPopupShown;
       originalOnPopupShown.apply(this, arguments);
 
@@ -259,7 +259,7 @@ async function setDownloadDir() {
   );
   
   await IOUtils.makeDirectory(tmpDir);
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     try {
       await IOUtils.remove(tmpDir, { recursive: true });
     } catch (e) {
@@ -310,7 +310,7 @@ function startServer() {
     response.finish();
   });
 
-  gHttpServer.registerPathHandler("/interruptible.txt", function(
+  gHttpServer.registerPathHandler("/interruptible.txt", function (
     aRequest,
     aResponse
   ) {
@@ -380,7 +380,7 @@ function openLibrary(aLeftPaneRoot) {
 function promiseDownloadHasProgress(aDownload, progress) {
   return new Promise(resolve => {
     
-    let onchange = function() {
+    let onchange = function () {
       let downloadInProgress =
         !aDownload.stopped && aDownload.progress == progress;
       let downloadFinished =
@@ -437,7 +437,7 @@ async function simulateDropAndCheck(win, dropTarget, urls) {
         }
       },
     };
-    list.addView(view).then(function() {
+    list.addView(view).then(function () {
       EventUtils.synthesizeDrop(dropTarget, dropTarget, dragData, "link", win);
     });
   });

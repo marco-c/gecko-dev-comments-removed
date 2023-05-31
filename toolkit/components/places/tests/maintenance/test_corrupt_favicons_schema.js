@@ -3,7 +3,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await setupPlacesDatabase(["migration", "favicons_v41.sqlite"]);
 
   

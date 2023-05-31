@@ -18,7 +18,7 @@
 
 var Profiler;
 
-(function() {
+(function () {
   var _profiler;
 
   
@@ -151,7 +151,7 @@ var Profiler;
             );
 
             
-            NetUtil.asyncCopy(istream, ostream, function(status) {
+            NetUtil.asyncCopy(istream, ostream, function (status) {
               if (!Components.isSuccessCode(status)) {
                 reject();
                 return;

@@ -7,7 +7,7 @@
 const kTestToolbarId = "test-empty-drag";
 
 
-add_task(async function() {
+add_task(async function () {
   await createToolbarWithPlacements(kTestToolbarId, []);
   await startCustomizing();
   let libraryButton = document.getElementById("library-button");

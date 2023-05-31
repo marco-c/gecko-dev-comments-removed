@@ -28,7 +28,7 @@ add_task(async function test_show_form() {
       gBrowser,
       url: PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       
       
       await TabStateFlusher.flush(browser);
@@ -84,7 +84,7 @@ add_task(async function test_show_form() {
       gBrowser,
       url: PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       await TabStateFlusher.flush(browser);
       
       await BrowserTestUtils.crashFrame(browser);
@@ -131,7 +131,7 @@ add_task(async function test_no_offer() {
       gBrowser,
       url: PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       await TabStateFlusher.flush(browser);
 
       

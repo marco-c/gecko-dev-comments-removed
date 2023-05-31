@@ -17,14 +17,14 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: "https://example.com/",
       forceNewProcess: true,
     },
-    async function(browser) {
+    async function (browser) {
       
       
       

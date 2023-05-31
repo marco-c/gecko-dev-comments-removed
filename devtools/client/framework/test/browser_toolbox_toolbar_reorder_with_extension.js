@@ -23,7 +23,7 @@ const TEST_STARTING_ORDER = [
   EXTENSION,
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.application.enabled", true);
 

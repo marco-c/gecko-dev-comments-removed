@@ -11,12 +11,12 @@ add_task(async function run_test() {
 
   
   await do_triggered_content_crash(
-    function() {
+    function () {
       Cc["@mozilla.org/xpcom/debug;1"]
         .getService(Ci.nsIDebug2)
         .rustPanic("OH NO");
     },
-    function(mdump, extra) {
+    function (mdump, extra) {
       Assert.equal(extra.MozCrashReason, "OH NO");
     }
   );

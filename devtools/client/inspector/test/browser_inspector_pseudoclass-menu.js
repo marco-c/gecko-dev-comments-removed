@@ -15,7 +15,7 @@ const TEST_URI =
 
 const PSEUDOS = PSEUDO_CLASSES.map(pseudo => pseudo.substr(1));
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, highlighterTestFront } = await openInspectorForURL(
     TEST_URI
   );

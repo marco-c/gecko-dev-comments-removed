@@ -12,7 +12,7 @@ add_task(async function test_cpu_microcode_version_annotation() {
     {
       gBrowser,
     },
-    async function(browser) {
+    async function (browser) {
       
       let annotations = await BrowserTestUtils.crashFrame(browser);
 

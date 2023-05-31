@@ -82,7 +82,7 @@ const EXPECTED_REQUESTS = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   
   const { monitor } = await initNetMonitor(SIMPLE_URL, { requestCount: 1 });

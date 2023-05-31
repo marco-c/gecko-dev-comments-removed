@@ -14,7 +14,7 @@ const kWebExtensionButtonID1 = "fake-webextension-button-1";
 const kWebExtensionButtonID2 = "fake-webextension-button-2";
 let gWin = null;
 
-add_setup(async function() {
+add_setup(async function () {
   gWin = await BrowserTestUtils.openNewBrowserWindow();
 
   

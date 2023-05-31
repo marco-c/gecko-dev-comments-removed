@@ -255,7 +255,7 @@ this.storage = class extends ExtensionAPI {
       onChanged: makeOnChangedEventTarget("storage.local.onChanged"),
     };
     for (let method of ["get", "set", "remove", "clear"]) {
-      local[method] = async function(...args) {
+      local[method] = async function (...args) {
         try {
           
           if (!selectedBackend) {
@@ -308,6 +308,24 @@ this.storage = class extends ExtensionAPI {
     return {
       storage: {
         local,
+
+        session: {
+          async get(keys) {
+            return deserialize(
+              await context.childManager.callParentAsyncFunction(
+                "storage.session.get",
+                [serialize(keys)]
+              )
+            );
+          },
+          set(items) {
+            return context.childManager.callParentAsyncFunction(
+              "storage.session.set",
+              [serialize(items)]
+            );
+          },
+          onChanged: makeOnChangedEventTarget("storage.session.onChanged"),
+        },
 
         sync: {
           get(keys) {

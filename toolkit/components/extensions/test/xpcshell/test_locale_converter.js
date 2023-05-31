@@ -117,7 +117,7 @@ add_task(async function testInvalidUUID() {
 
   
   
-  let expectInvalidContextException = function(e) {
+  let expectInvalidContextException = function (e) {
     return e.result === Cr.NS_ERROR_INVALID_ARG && /Invalid context/.test(e);
   };
 

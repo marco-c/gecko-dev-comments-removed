@@ -10,7 +10,7 @@
 
 var gLibrary = null;
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({ set: [["places.history.enabled", false]] });
 

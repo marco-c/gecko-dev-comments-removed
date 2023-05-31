@@ -7,7 +7,7 @@ function test() {
   
   function runTest(aCloseWindow, aCallback) {
     let newWin = OpenBrowserWindow({ private: true });
-    SimpleTest.waitForFocus(function() {
+    SimpleTest.waitForFocus(function () {
       let expectedExiting = true;
       let expectedExited = false;
       let observerExiting = {
@@ -49,12 +49,12 @@ function test() {
   waitForExplicitFinish();
 
   runTest(
-    function(newWin) {
+    function (newWin) {
       
       newWin.document.getElementById("cmd_closeWindow").doCommand();
     },
-    function() {
-      runTest(function(newWin) {
+    function () {
+      runTest(function (newWin) {
         
         newWin.document.getElementById("cmd_close").doCommand();
       }, finish);

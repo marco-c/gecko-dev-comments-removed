@@ -9,7 +9,7 @@ const { RetVal } = protocol;
 
 
 
-add_task(async function() {
+add_task(async function () {
   Assert.throws(() => {
     protocol.generateActorSpec({
       typeName: "invalidArrayResponse",
@@ -35,7 +35,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   Assert.throws(() => {
     protocol.generateActorSpec({
       typeName: "tooManyPlaceholdersResponse",

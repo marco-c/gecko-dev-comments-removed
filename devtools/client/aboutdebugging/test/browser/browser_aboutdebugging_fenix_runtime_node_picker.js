@@ -14,7 +14,7 @@ const ADB_VERSION = "v1.3.37";
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   const clientWrapper = await createLocalClientWrapper();

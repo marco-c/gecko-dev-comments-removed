@@ -41,7 +41,7 @@ const MAX_REQUESTS = 15;
 
 
 
-var BingTranslator = function(
+var BingTranslator = function (
   translationDocument,
   sourceLanguage,
   targetLanguage

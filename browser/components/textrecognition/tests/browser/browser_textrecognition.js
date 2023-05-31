@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   const URL_IMG =
     "http://mochi.test:8888/browser/browser/components/textrecognition/tests/browser/image.png";
 
@@ -12,7 +12,7 @@ add_task(async function() {
 
   clearTelemetry();
 
-  await BrowserTestUtils.withNewTab(URL_IMG, async function(browser) {
+  await BrowserTestUtils.withNewTab(URL_IMG, async function (browser) {
     setClipboardText("");
     is(getTextFromClipboard(), "", "The copied text is empty.");
     ok(

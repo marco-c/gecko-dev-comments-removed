@@ -33,7 +33,7 @@ function recordEvent(aName) {
 
     executeSoon(
       
-      function(tab) {
+      function (tab) {
         gBrowser.removeTab(tab);
         gBrowser.removeTabsProgressListener(progressListener);
         gBrowser.tabContainer.removeEventListener("TabOpen", TabOpen);

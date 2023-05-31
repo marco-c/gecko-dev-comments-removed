@@ -3,7 +3,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   const { front, client } = await initPerfFront();
 
   info("Get the supported features from the perf actor.");

@@ -18,27 +18,27 @@
 
 
 
-window.__defineGetter__("_EU_Ci", function() {
+window.__defineGetter__("_EU_Ci", function () {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Ci : SpecialPowers.Ci;
 });
 
-window.__defineGetter__("_EU_Cc", function() {
+window.__defineGetter__("_EU_Cc", function () {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Cc : SpecialPowers.Cc;
 });
 
-window.__defineGetter__("_EU_Cu", function() {
+window.__defineGetter__("_EU_Cu", function () {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Cu : SpecialPowers.Cu;
 });
 
-window.__defineGetter__("_EU_ChromeUtils", function() {
+window.__defineGetter__("_EU_ChromeUtils", function () {
   var c = Object.getOwnPropertyDescriptor(window, "ChromeUtils");
   return c && c.value && !c.writable ? ChromeUtils : SpecialPowers.ChromeUtils;
 });
 
-window.__defineGetter__("_EU_OS", function() {
+window.__defineGetter__("_EU_OS", function () {
   delete this._EU_OS;
   try {
     this._EU_OS = _EU_ChromeUtils.import(
@@ -889,7 +889,7 @@ function _sendWheelAndPaint(
     
     
     
-    aWindow.waitForAllPaintsFlushed(function() {
+    aWindow.waitForAllPaintsFlushed(function () {
       _sendWheelAndPaint(
         aTarget,
         aOffsetX,
@@ -903,12 +903,12 @@ function _sendWheelAndPaint(
     return;
   }
 
-  var onwheel = function() {
+  var onwheel = function () {
     SpecialPowers.removeSystemEventListener(window, "wheel", onwheel);
 
     
     
-    setTimeout(function() {
+    setTimeout(function () {
       utils.advanceTimeAndRefresh(1000);
 
       if (!aCallback) {
@@ -916,12 +916,12 @@ function _sendWheelAndPaint(
         return;
       }
 
-      var waitForPaints = function() {
+      var waitForPaints = function () {
         SpecialPowers.Services.obs.removeObserver(
           waitForPaints,
           "apz-repaints-flushed"
         );
-        aWindow.waitForAllPaintsFlushed(function() {
+        aWindow.waitForAllPaintsFlushed(function () {
           utils.restoreNormalRefresh();
           aCallback();
         });
@@ -1212,7 +1212,7 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
       button,
       modifierFlags,
       elementOnWidget,
-      function() {
+      function () {
         utils.sendNativeMouseEvent(
           x,
           y,
@@ -1729,7 +1729,7 @@ function _expectEvent(aExpectedTarget, aExpectedEvent, aTestName) {
     aExpectedEvent.charAt(0) == "!"
       ? aExpectedEvent.substring(1)
       : aExpectedEvent;
-  var eventHandler = function(event) {
+  var eventHandler = function (event) {
     var epassed =
       !_gSeenEvent &&
       event.originalTarget == aExpectedTarget &&
@@ -3173,8 +3173,9 @@ async function synthesizePlainDragAndDrop(aParams) {
     let lastSelectionRect = selectionRectList[selectionRectList.length - 1];
     if (logFunc) {
       logFunc(
-        `srcSelection.getRangeAt(0).getClientRects()[${selectionRectList.length -
-          1}]: ${rectToString(lastSelectionRect)}`
+        `srcSelection.getRangeAt(0).getClientRects()[${
+          selectionRectList.length - 1
+        }]: ${rectToString(lastSelectionRect)}`
       );
     }
     

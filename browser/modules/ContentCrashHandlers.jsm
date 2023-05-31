@@ -1091,7 +1091,7 @@ var UnsubmittedCrashHandler = {
         
         
         
-        reportIDs.forEach(function(reportID) {
+        reportIDs.forEach(function (reportID) {
           lazy.CrashSubmit.ignore(reportID);
         });
         if (onAction) {

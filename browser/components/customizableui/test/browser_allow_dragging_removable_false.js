@@ -3,7 +3,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   let forwardButton = document.getElementById("forward-button");
   is(

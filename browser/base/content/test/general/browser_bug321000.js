@@ -35,7 +35,7 @@ function test() {
   
   waitForClipboard(
     kTestString,
-    function() {
+    function () {
       cbHelper.copyString(kTestString);
     },
     next_test,
@@ -77,8 +77,8 @@ function test_paste(aCurrentTest) {
   info("About to focus " + element.id);
   element.addEventListener(
     "focus",
-    function() {
-      executeSoon(function() {
+    function () {
+      executeSoon(function () {
         
         
         info("Pasting into " + element.id);

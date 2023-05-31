@@ -54,7 +54,7 @@
 
 
 
-window.onload = function() {
+window.onload = function () {
   
   
   SimpleTest.waitForExplicitFinish();
@@ -72,15 +72,15 @@ window.onload = function() {
 
     
     
-    content.suspendTimeouts = function() {
+    content.suspendTimeouts = function () {
       SimpleTest.info("test_suspendTimeouts", "calling suspendTimeouts");
       windowUtils.suspendTimeouts();
     };
-    content.resumeTimeouts = function() {
+    content.resumeTimeouts = function () {
       windowUtils.resumeTimeouts();
       SimpleTest.info("test_suspendTimeouts", "resumeTimeouts called");
     };
-    content.info = function(message) {
+    content.info = function (message) {
       SimpleTest.info("suspendTimeouts_content.js", message);
     };
     content.ok = SimpleTest.ok;

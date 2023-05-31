@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 
@@ -320,7 +320,7 @@ define(function(require, exports, module) {
 
 
   function wrapRender(renderMethod) {
-    const wrappedFunction = function(props) {
+    const wrappedFunction = function (props) {
       try {
         return renderMethod.call(this, props);
       } catch (e) {

@@ -11,11 +11,11 @@ const TEST_URL = `data:text/html,<a href="${TAB_URL}" target="_blank">Click me</
   "%20"
 );
 
-addRDMTask(TEST_URL, async function({ ui }) {
+addRDMTask(TEST_URL, async function ({ ui }) {
   
   await waitForFrameLoad(ui, TEST_URL);
   const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
-  await spawnViewportTask(ui, {}, function() {
+  await spawnViewportTask(ui, {}, function () {
     content.document.querySelector("a").click(); 
   });
   const newTab = await newTabPromise;

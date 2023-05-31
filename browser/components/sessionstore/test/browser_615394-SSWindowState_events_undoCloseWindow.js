@@ -79,7 +79,7 @@ function test() {
   }
   Services.ww.registerNotification(firstWindowObserver);
 
-  waitForBrowserState(lameMultiWindowState, function() {
+  waitForBrowserState(lameMultiWindowState, function () {
     
     BrowserTestUtils.closeWindow(newWindow).then(() => {
       
@@ -92,7 +92,7 @@ function test() {
 
       reopenedWindow.addEventListener(
         "load",
-        function() {
+        function () {
           reopenedWindow.gBrowser.tabContainer.addEventListener(
             "SSTabRestored",
             onSSTabRestored

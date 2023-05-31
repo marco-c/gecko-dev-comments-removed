@@ -1,9 +1,9 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/*
- * Test search plugin URLs
- */
+
+
+
+
+
 
 "use strict";
 
@@ -58,23 +58,23 @@ const SEARCH_ENGINE_DETAILS = [
     },
     name: "eBay",
   },
-  // {
-  // TODO: Google is tested in browser_google_behaviors.js - we can't test it here
-  // yet because of bug 1315953.
-  //   alias: "g",
-  //   baseURL: "https://www.google.com/search?q=foo&ie=utf-8&oe=utf-8",
-  //   codes: {
-  //     context: "",
-  //     keyword: "",
-  //     newTab: "",
-  //     submission: "",
-  //   },
-  //   name: "Google",
-  // },
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 ];
 
 function promiseContentSearchReady(browser) {
-  return SpecialPowers.spawn(browser, [], async function(args) {
+  return SpecialPowers.spawn(browser, [], async function (args) {
     SpecialPowers.pushPrefEnv({
       set: [
         [
@@ -99,10 +99,10 @@ add_task(async function test_setup() {
 });
 
 for (let engine of SEARCH_ENGINE_DETAILS) {
-  add_task(async function() {
+  add_task(async function () {
     let previouslySelectedEngine = await Services.search.getDefault();
 
-    registerCleanupFunction(async function() {
+    registerCleanupFunction(async function () {
       await Services.search.setDefault(
         previouslySelectedEngine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
@@ -125,7 +125,7 @@ async function testSearchEngine(engineDetails) {
 
   let base = engineDetails.baseURL;
 
-  // Test search URLs (including purposes).
+  
   let url = engine.getSubmission("foo").uri.spec;
   Assert.equal(
     url,
@@ -139,8 +139,8 @@ async function testSearchEngine(engineDetails) {
       name: "context menu search",
       searchURL: base.replace("{code}", engineDetails.codes.context),
       run() {
-        // Simulate a contextmenu search
-        // FIXME: This is a bit "low-level"...
+        
+        
         BrowserSearch._loadSearch(
           "foo",
           false,
@@ -188,7 +188,7 @@ async function testSearchEngine(engineDetails) {
         await promiseContentSearchReady(browser);
       },
       async run(tab) {
-        await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+        await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
           let input = content.document.querySelector("input[id*=search-]");
           input.focus();
           input.value = "foo";

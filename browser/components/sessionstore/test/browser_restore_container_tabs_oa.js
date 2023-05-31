@@ -34,7 +34,7 @@ function handleEventLocal(aEvent) {
 
 var NUM_DIFF_TAB_MODES = NUM_USER_CONTEXTS + 1; 
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       

@@ -10,7 +10,7 @@ registerCleanupFunction(cleanup);
 
 
 
-add_task(async function() {
+add_task(async function () {
   ok(
     CustomizableUI.inDefaultState,
     "Everything should be in its default state."

@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await test_database_replacement(
     ["migration", "places_v43.sqlite"],
     "places.sqlite",

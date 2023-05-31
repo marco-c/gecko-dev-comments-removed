@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   
   if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
@@ -45,7 +45,7 @@ add_task(async function() {
   const iframeBrowsingContext = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
-    function() {
+    function () {
       const iframe = content.document.querySelector("iframe");
       return iframe.browsingContext;
     }

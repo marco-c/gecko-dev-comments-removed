@@ -261,13 +261,13 @@ CaptureStreamTestHelper2D.prototype = Object.create(
 CaptureStreamTestHelper2D.prototype.constructor = CaptureStreamTestHelper2D;
 
 
-CaptureStreamTestHelper2D.prototype.clear = function(canvas) {
+CaptureStreamTestHelper2D.prototype.clear = function (canvas) {
   var ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
 
-CaptureStreamTestHelper2D.prototype.drawColor = function(
+CaptureStreamTestHelper2D.prototype.drawColor = function (
   canvas,
   color,
   {
@@ -288,7 +288,7 @@ CaptureStreamTestHelper2D.prototype.drawColor = function(
 };
 
 
-CaptureStreamTestHelper2D.prototype.testNotClean = function(canvas) {
+CaptureStreamTestHelper2D.prototype.testNotClean = function (canvas) {
   var ctx = canvas.getContext("2d");
   var error = "OK";
   try {
@@ -314,14 +314,14 @@ CaptureStreamTestHelperWebGL.prototype = Object.create(
 CaptureStreamTestHelperWebGL.prototype.constructor = CaptureStreamTestHelperWebGL;
 
 
-CaptureStreamTestHelperWebGL.prototype.setFragmentColorLocation = function(
+CaptureStreamTestHelperWebGL.prototype.setFragmentColorLocation = function (
   colorLocation
 ) {
   this.colorLocation = colorLocation;
 };
 
 
-CaptureStreamTestHelperWebGL.prototype.clearColor = function(canvas, color) {
+CaptureStreamTestHelperWebGL.prototype.clearColor = function (canvas, color) {
   info("WebGL: clearColor(" + color.name + ")");
   var gl = canvas.getContext("webgl");
   var conv = color.data.map(i => i / 255.0);
@@ -330,7 +330,7 @@ CaptureStreamTestHelperWebGL.prototype.clearColor = function(canvas, color) {
 };
 
 
-CaptureStreamTestHelperWebGL.prototype.drawColor = function(canvas, color) {
+CaptureStreamTestHelperWebGL.prototype.drawColor = function (canvas, color) {
   info("WebGL: drawArrays(" + color.name + ")");
   var gl = canvas.getContext("webgl");
   var conv = color.data.map(i => i / 255.0);

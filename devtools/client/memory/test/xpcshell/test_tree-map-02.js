@@ -7,7 +7,7 @@ const {
   drawText,
 } = require("resource://devtools/client/memory/components/tree-map/draw.js");
 
-add_task(async function() {
+add_task(async function () {
   
   const ctx = {
     fillText: (...args) => fillTextValues.push(args),

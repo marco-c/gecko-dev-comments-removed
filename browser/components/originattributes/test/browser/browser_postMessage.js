@@ -7,7 +7,7 @@ const FPD_TWO = "http://example.org";
 
 const TEST_BASE = "/browser/browser/components/originattributes/test/browser/";
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [

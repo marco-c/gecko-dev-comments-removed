@@ -12,14 +12,14 @@ const STATE = {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await testSwitchToTab("about:mozilla#fooobar", {
     ignoreFragment: "whenComparingAndReplace",
   });
   await testSwitchToTab("about:mozilla?foo=bar", { replaceQueryString: true });
 });
 
-var testSwitchToTab = async function(url, options) {
+var testSwitchToTab = async function (url, options) {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
@@ -44,7 +44,7 @@ var testSwitchToTab = async function(url, options) {
   is(browser.currentURI.spec, url, "correct URL loaded");
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await SpecialPowers.spawn(browser, [], async function () {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory;
     Assert.equal(history && history.count, 3, "three history entries");

@@ -50,7 +50,7 @@ function remoteResolveURI(uri) {
 }
 
 
-var restart = async function() {
+var restart = async function () {
   let browser = gBrowser.selectedBrowser;
   
   if (browser.getAttribute("remote") != "true") {
@@ -71,7 +71,7 @@ var restart = async function() {
 };
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   
@@ -91,7 +91,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   info("Set");
@@ -133,7 +133,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   info("Set");
@@ -196,7 +196,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   info("Set");

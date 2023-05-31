@@ -2,7 +2,7 @@
 
 add_task(async function runRFPandRTPTests() {
   
-  let runTests = async function(data) {
+  let runTests = async function (data) {
     let timerlist = data.list;
     let labelType = data.resistFingerprinting
       ? "ResistFingerprinting"

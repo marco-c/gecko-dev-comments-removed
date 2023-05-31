@@ -1,9 +1,9 @@
 
-add_task(async function() {
+add_task(async function () {
   let tab = BrowserTestUtils.addTab(gBrowser);
   let uri = "data:text/html;charset=utf-8,<html/>";
 
-  let eventPromise = ContentTask.spawn(tab.linkedBrowser, null, function() {
+  let eventPromise = ContentTask.spawn(tab.linkedBrowser, null, function () {
     return new Promise(resolve => {
       addEventListener(
         "DOMDocElementInserted",

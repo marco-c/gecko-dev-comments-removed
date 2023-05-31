@@ -16,7 +16,7 @@
 
 var Profiler;
 
-(function() {
+(function () {
   var _profiler;
 
   

@@ -14,7 +14,7 @@ const {
 
 const TOTAL_MESSAGES = 100;
 
-module.exports = async function() {
+module.exports = async function () {
   let tab = await testSetup(SIMPLE_URL);
 
   

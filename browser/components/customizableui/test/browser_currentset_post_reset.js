@@ -22,7 +22,7 @@ function checkSpacers() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await startCustomizing();
   checkSpacers();
 

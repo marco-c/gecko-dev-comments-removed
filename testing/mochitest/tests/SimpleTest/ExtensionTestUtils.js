@@ -20,7 +20,7 @@ var ExtensionTestUtils = {
   },
 };
 
-ExtensionTestUtils.loadExtension = function(ext) {
+ExtensionTestUtils.loadExtension = function (ext) {
   
   
   var registerCleanup;

@@ -52,7 +52,7 @@ const DATA = [
   },
 ];
 
-add_task(async function() {
+add_task(async function () {
   
   Services.telemetry.clearEvents();
 

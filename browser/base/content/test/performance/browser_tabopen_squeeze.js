@@ -19,7 +19,7 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   gReduceMotionOverride = false;
 
@@ -49,7 +49,7 @@ add_task(async function() {
     .getBoundingClientRect();
 
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       BrowserOpenTab();
       await BrowserTestUtils.waitForEvent(

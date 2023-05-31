@@ -15,7 +15,7 @@ const SJS_URI = URL_ROOT_SSL + "sjs_imported_stylesheet_edit.sjs";
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Call `?setup` on the test sjs");
   await fetch(SJS_URI + "?setup");
 

@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(getDocumentBuilderUrl("example.com", "top-level-com-grid"));
   const { gridInspector } = await openLayoutView();
   const { document: doc } = gridInspector;

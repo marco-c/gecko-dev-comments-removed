@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(IMAGE_CACHE_URL, {
     enableCache: true,
     requestCount: 1,

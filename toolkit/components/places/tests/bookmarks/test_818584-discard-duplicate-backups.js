@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let backupFolder = await PlacesBackups.getBackupFolder();
   let dateObj = new Date();

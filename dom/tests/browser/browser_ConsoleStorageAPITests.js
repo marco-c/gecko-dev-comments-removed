@@ -10,7 +10,7 @@ function tearDown() {
   }
 }
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({ set: [["browser.tabs.max_tabs_undo", 0]] });
 
@@ -28,7 +28,7 @@ add_task(async function() {
   var tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
   var browser = gBrowser.selectedBrowser;
 
-  const windowId = await ContentTask.spawn(browser, null, async function(opt) {
+  const windowId = await ContentTask.spawn(browser, null, async function (opt) {
     let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
       Ci.nsIConsoleAPIStorage
     );
@@ -77,7 +77,7 @@ add_task(async function() {
     return content.windowGlobalChild.innerWindowId;
   });
 
-  await SpecialPowers.spawn(browser, [], function() {
+  await SpecialPowers.spawn(browser, [], function () {
     
     
     content.console.log("adding a new event");
@@ -95,7 +95,7 @@ add_task(async function() {
   
   await SpecialPowers.spawn(browser, [], () => {});
 
-  await SpecialPowers.spawn(browser, [windowId], function(windowId) {
+  await SpecialPowers.spawn(browser, [windowId], function (windowId) {
     var ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
       Ci.nsIConsoleAPIStorage
     );

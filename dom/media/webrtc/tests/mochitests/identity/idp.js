@@ -1,4 +1,4 @@
-(function(global) {
+(function (global) {
   "use strict";
 
   
@@ -6,7 +6,7 @@
   
   var instructions = global.location.hash.replace("#", "").split(":");
   function is(target) {
-    return function(instruction) {
+    return function (instruction) {
       return instruction === target;
     };
   }

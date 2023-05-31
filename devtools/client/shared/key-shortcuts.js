@@ -92,7 +92,7 @@ function KeyShortcuts({ window, target }) {
 
 
 
-KeyShortcuts.parseElectronKey = function(window, str) {
+KeyShortcuts.parseElectronKey = function (window, str) {
   
   
   if (typeof str !== "string") {
@@ -168,7 +168,7 @@ KeyShortcuts.parseElectronKey = function(window, str) {
   return shortcut;
 };
 
-KeyShortcuts.stringify = function(shortcut) {
+KeyShortcuts.stringify = function (shortcut) {
   if (shortcut === null) {
     
     return "";
@@ -200,7 +200,7 @@ KeyShortcuts.stringify = function(shortcut) {
 
 
 
-KeyShortcuts.parseXulKey = function(modifiers, shortcut) {
+KeyShortcuts.parseXulKey = function (modifiers, shortcut) {
   modifiers = modifiers
     .split(",")
     .map(mod => {

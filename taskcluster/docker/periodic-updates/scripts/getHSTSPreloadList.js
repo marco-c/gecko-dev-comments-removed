@@ -500,13 +500,13 @@ async function main(args) {
   insertHosts(hstsStatuses, forcedHosts);
 
   let total = await probeHSTSStatuses(hostsToContact)
-    .then(function(probedStatuses) {
+    .then(function (probedStatuses) {
       return hstsStatuses.concat(probedStatuses);
     })
-    .then(function(statuses) {
+    .then(function (statuses) {
       return statuses.sort(compareHSTSStatus);
     })
-    .then(function(statuses) {
+    .then(function (statuses) {
       for (let status of statuses) {
         
         
@@ -525,9 +525,9 @@ async function main(args) {
       }
       return statuses;
     })
-    .then(function(statuses) {
+    .then(function (statuses) {
       
-      var includedStatuses = statuses.filter(function(status) {
+      var includedStatuses = statuses.filter(function (status) {
         if (status.maxAge < MINIMUM_REQUIRED_MAX_AGE && !status.forceInclude) {
           
           return false;

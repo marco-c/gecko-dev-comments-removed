@@ -26,7 +26,7 @@ function* do_run_test() {
   
   
   
-  executeSoon(function() {
+  executeSoon(function () {
     pm.addFromPrincipal(
       principal,
       permType,
@@ -38,7 +38,7 @@ function* do_run_test() {
   yield;
 
   
-  executeSoon(function() {
+  executeSoon(function () {
     pm.addFromPrincipal(
       principal,
       permType,
@@ -50,13 +50,13 @@ function* do_run_test() {
   yield;
 
   
-  executeSoon(function() {
+  executeSoon(function () {
     pm.removeFromPrincipal(principal, permType);
   });
   yield;
 
   
-  executeSoon(function() {
+  executeSoon(function () {
     pm.removeAll();
   });
   yield;

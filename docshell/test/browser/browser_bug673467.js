@@ -27,7 +27,7 @@ function test() {
       return new Promise(resolve => {
         addEventListener(
           "load",
-          function() {
+          function () {
             
             let iframe = content.document.getElementById("iframe");
             iframe.addEventListener(

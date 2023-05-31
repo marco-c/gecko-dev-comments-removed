@@ -27,7 +27,7 @@ async function checkOpensOnFocus(win = window) {
   });
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await PlacesTestUtils.addVisits([
     {

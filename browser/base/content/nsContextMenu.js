@@ -1546,7 +1546,7 @@ class nsContextMenu {
   
   viewPartialSource() {
     let { browser } = this;
-    let openSelectionFn = function() {
+    let openSelectionFn = function () {
       let tabBrowser = gBrowser;
       const inNewWindow = !Services.prefs.getBoolPref("view_source.tab");
       
@@ -1654,7 +1654,7 @@ class nsContextMenu {
     let referrerInfo = this.contentData.referrerInfo;
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     if (this.onCanvas) {
-      this._canvasToBlobURL(this.targetIdentifier).then(function(blobURL) {
+      this._canvasToBlobURL(this.targetIdentifier).then(function (blobURL) {
         openLinkIn(blobURL, where, {
           referrerInfo,
           triggeringPrincipal: systemPrincipal,
@@ -2038,7 +2038,7 @@ class nsContextMenu {
     let cookieJarSettings = this.contentData.cookieJarSettings;
     if (this.onCanvas) {
       
-      this._canvasToBlobURL(this.targetIdentifier).then(function(blobURL) {
+      this._canvasToBlobURL(this.targetIdentifier).then(function (blobURL) {
         internalSave(
           blobURL,
           null, 

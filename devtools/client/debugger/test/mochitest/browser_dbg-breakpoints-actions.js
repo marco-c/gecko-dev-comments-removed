@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   const dbg = await initDebugger("doc-scripts.html", "simple2.js");
   await selectSource(dbg, "simple2.js");
   await waitForSelectedSource(dbg, "simple2.js");
@@ -21,7 +21,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   const dbg = await initDebugger("doc-scripts.html");
   await selectSource(dbg, "simple1.js");
   await waitForSelectedSource(dbg, "simple1.js");

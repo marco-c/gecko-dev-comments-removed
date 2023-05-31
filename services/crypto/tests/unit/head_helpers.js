@@ -73,6 +73,6 @@ addResourceAlias();
 
 
 
-var _ = function(some, debug, text, to) {
+var _ = function (some, debug, text, to) {
   print(Array.from(arguments).join(" "));
 };

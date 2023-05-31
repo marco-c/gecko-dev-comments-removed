@@ -96,7 +96,7 @@ add_task(async function testStorageIsolationMessage() {
 
 
 function emitStorageIsolationMessage(tab, url) {
-  SpecialPowers.spawn(tab.linkedBrowser, [url], function(innerURL) {
+  SpecialPowers.spawn(tab.linkedBrowser, [url], function (innerURL) {
     content.wrappedJSObject.loadIframe(innerURL);
   });
 }

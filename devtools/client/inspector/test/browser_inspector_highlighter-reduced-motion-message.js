@@ -44,7 +44,7 @@ add_task(async function testMessageHiddenWhenAlreadyDismissed() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Enable ui.prefersReducedMotion");
   await pushPref(REDUCED_MOTION_PREF, 1);
 

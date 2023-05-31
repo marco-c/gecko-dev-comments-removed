@@ -15,7 +15,7 @@ const POOLS_BY_LEVEL = 100;
 
 const ADDITIONAL_POOLS = 5000;
 
-add_task(async function() {
+add_task(async function () {
   DevToolsServer.init();
   DevToolsServer.registerAllActors();
   const conn = DevToolsServer.connectPipe()._serverConnection;

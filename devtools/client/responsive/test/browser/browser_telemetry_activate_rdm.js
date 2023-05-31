@@ -53,7 +53,7 @@ const DATA = [
 
 addRDMTask(
   null,
-  async function() {
+  async function () {
     
     Services.telemetry.clearEvents();
 

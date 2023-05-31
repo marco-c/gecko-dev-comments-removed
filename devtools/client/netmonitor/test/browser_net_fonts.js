@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(FONTS_URL + "?name=fonts", {
     requestCount: 1,
   });

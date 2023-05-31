@@ -57,7 +57,7 @@ const KEY_STATES = [
   ["VK_RETURN", "p1", false], 
 ];
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
   const { searchBox } = inspector;
 

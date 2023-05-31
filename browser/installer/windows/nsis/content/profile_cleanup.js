@@ -2,7 +2,7 @@
 
 
 
-window.attachEvent("onload", function() {
+window.attachEvent("onload", function () {
   
   var direction = external.getTextDirection();
   var profileRefreshForm = document.getElementById("profileRefreshForm");
@@ -20,7 +20,7 @@ window.attachEvent("onload", function() {
   checkboxLabel.innerText = external.getUIString("cleanup_checkbox");
 
   
-  profileRefreshForm.attachEvent("onsubmit", function() {
+  profileRefreshForm.attachEvent("onsubmit", function () {
     var doProfileCleanup = document.getElementById("refreshCheckbox").checked;
     external.gotoInstallPage(doProfileCleanup);
     return false;

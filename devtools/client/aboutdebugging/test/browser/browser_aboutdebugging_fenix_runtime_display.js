@@ -18,7 +18,7 @@ const FENIX_NIGHTLY_ICON_SRC =
 
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
   mocks.createUSBRuntime(RUNTIME_ID, {
     deviceName: DEVICE_NAME,
@@ -72,7 +72,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   const clientWrapper = await createLocalClientWrapper();

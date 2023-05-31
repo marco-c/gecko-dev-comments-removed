@@ -24,7 +24,7 @@ var {
 
 
 
-var openInspector = async function(hostType) {
+var openInspector = async function (hostType) {
   info("Opening the inspector");
 
   const toolbox = await openToolboxForTab(
@@ -52,7 +52,7 @@ var openInspector = async function(hostType) {
 
 
 
-var openInspectorSidebarTab = async function(id) {
+var openInspectorSidebarTab = async function (id) {
   const { toolbox, inspector, highlighterTestFront } = await openInspector();
 
   info("Selecting the " + id + " sidebar");
@@ -237,7 +237,7 @@ function getNodeFront(selector, { walker }) {
 
 
 
-var selectNode = async function(
+var selectNode = async function (
   selector,
   inspector,
   reason = "test",
@@ -402,7 +402,7 @@ function manualDebounce() {
   let calls = [];
 
   function debounce(func, wait, scope) {
-    return function() {
+    return function () {
       const existingCall = calls.find(call => call.func === func);
       if (existingCall) {
         existingCall.args = arguments;
@@ -412,7 +412,7 @@ function manualDebounce() {
     };
   }
 
-  debounce.flush = function() {
+  debounce.flush = function () {
     calls.forEach(({ func, scope, args }) => func.apply(scope, args));
     calls = [];
   };
@@ -521,7 +521,7 @@ async function waitForComputedStyleProperty(
 
 
 
-var focusEditableField = async function(
+var focusEditableField = async function (
   ruleView,
   editable,
   xOffset = 1,
@@ -714,7 +714,7 @@ function getRuleViewLinkTextByIndex(view, index) {
 
 
 
-var focusNewRuleViewProperty = async function(ruleEditor) {
+var focusNewRuleViewProperty = async function (ruleEditor) {
   info("Clicking on a close ruleEditor brace to start editing a new property");
 
   
@@ -746,7 +746,7 @@ var focusNewRuleViewProperty = async function(ruleEditor) {
 
 
 
-var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
+var createNewRuleViewProperty = async function (ruleEditor, inputValue) {
   info("Creating a new property editor");
   const editor = await focusNewRuleViewProperty(ruleEditor);
 
@@ -773,7 +773,7 @@ var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
 
 
 
-var setSearchFilter = async function(view, searchValue) {
+var setSearchFilter = async function (view, searchValue) {
   info('Setting filter text to "' + searchValue + '"');
 
   const searchField = view.searchField;
@@ -869,7 +869,7 @@ async function waitUntilVisitedState(tab, selectors) {
 
 
 function hasMatchingElementInContentPage(selector) {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function (
     innerSelector
   ) {
     return content.document.querySelector(innerSelector) !== null;
@@ -883,7 +883,7 @@ function hasMatchingElementInContentPage(selector) {
 
 
 function getNumberOfMatchingElementsInContentPage(selector) {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function (
     innerSelector
   ) {
     return content.document.querySelectorAll(innerSelector).length;
@@ -901,7 +901,7 @@ function getContentPageElementProperty(selector, propertyName) {
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [selector, propertyName],
-    function(innerSelector, innerPropertyName) {
+    function (innerSelector, innerPropertyName) {
       return content.document.querySelector(innerSelector)[innerPropertyName];
     }
   );
@@ -919,7 +919,7 @@ function setContentPageElementProperty(selector, propertyName, propertyValue) {
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [selector, propertyName, propertyValue],
-    function(innerSelector, innerPropertyName, innerPropertyValue) {
+    function (innerSelector, innerPropertyName, innerPropertyValue) {
       content.document.querySelector(innerSelector)[
         innerPropertyName
       ] = innerPropertyValue;

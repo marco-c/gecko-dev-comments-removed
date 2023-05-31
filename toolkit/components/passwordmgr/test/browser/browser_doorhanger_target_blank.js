@@ -2,7 +2,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await SimpleTest.promiseFocus(window);
 });
 
@@ -29,7 +29,7 @@ add_task(async function test_saveTargetBlank() {
       gBrowser,
       url: "http://mochi.test:8888" + DIRECTORY_PATH + url,
     },
-    async function() {
+    async function () {
       
       
       BrowserTestUtils.removeTab(await submissionTabPromise);

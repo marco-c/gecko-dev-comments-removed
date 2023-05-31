@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await addTab(`data:text/html;charset=utf-8,
                 <style>h1 { color: red; }</style>
                 <h1 id="title">textbox context menu test</h1>`);

@@ -602,7 +602,7 @@ add_task(async function test_download_http_details() {
 
   
   
-  let testDownloadCookie = async function(incognito) {
+  let testDownloadCookie = async function (incognito) {
     let result = await download({ incognito });
     ok(result.ok, `preflight to set cookies with incognito=${incognito}`);
     ok(!received.hasHeader("cookie"), "first request has no cookies");

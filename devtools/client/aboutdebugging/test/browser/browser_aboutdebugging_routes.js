@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Check root route redirects to setup page");
   const { document, tab } = await openAboutDebugging();
   is(document.location.hash, "#/setup");
@@ -17,7 +17,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const mocks = new Mocks();
 
@@ -70,7 +70,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Check an invalid route redirects to root");
   const { document, tab } = await openAboutDebugging();
 

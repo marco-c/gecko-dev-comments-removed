@@ -7,7 +7,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-add_task(async function() {
+add_task(async function () {
   let tab1 = await addTab();
   let tab2 = await addTab();
   let tab3 = await addTab();
@@ -15,8 +15,8 @@ add_task(async function() {
 
   
   
-  await ContentTask.spawn(tab2.linkedBrowser, null, async function() {
-    content.window.addEventListener("beforeunload", function(event) {}, true);
+  await ContentTask.spawn(tab2.linkedBrowser, null, async function () {
+    content.window.addEventListener("beforeunload", function (event) {}, true);
   });
 
   let permitUnloadSpy = sinon.spy(tab2.linkedBrowser, "asyncPermitUnload");

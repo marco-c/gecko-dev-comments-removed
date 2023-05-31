@@ -84,7 +84,7 @@ function run_test() {
 
 
 async function insertLocalRoot({ guid, title }) {
-  await PlacesUtils.withConnectionWrapper("insertLocalRoot", async function(
+  await PlacesUtils.withConnectionWrapper("insertLocalRoot", async function (
     db
   ) {
     let dateAdded = PlacesUtils.toPRTime(new Date());

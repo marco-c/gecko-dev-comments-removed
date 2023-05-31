@@ -3,7 +3,7 @@
 
 "use strict";
 
-add_setup(async function() {
+add_setup(async function () {
   let toolbar = document.getElementById("PersonalToolbar");
   let wasCollapsed = toolbar.collapsed;
 
@@ -15,7 +15,7 @@ add_setup(async function() {
   
   await PlacesUtils.bookmarks.eraseEverything();
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     
     if (wasCollapsed) {
       await promiseSetToolbarVisibility(toolbar, false);

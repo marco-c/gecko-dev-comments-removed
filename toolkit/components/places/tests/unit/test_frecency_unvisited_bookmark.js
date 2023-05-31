@@ -3,7 +3,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const now = new Date();
   const bookmarks = [

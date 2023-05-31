@@ -6,8 +6,8 @@ const { WebVTT } = ChromeUtils.importESModule(
 
 let fakeWindow = {
   
-  VTTCue: function() {},
-  VTTRegion: function() {},
+  VTTCue: function () {},
+  VTTRegion: function () {},
   
 };
 

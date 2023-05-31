@@ -15,7 +15,7 @@ const PAGE = "http://example.com/";
 
 
 
-let forgetTabHelper = async function(forgetFn) {
+let forgetTabHelper = async function (forgetFn) {
   
   
   await pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);
@@ -68,7 +68,7 @@ let forgetTabHelper = async function(forgetFn) {
 
 
 
-let forgetWinHelper = async function(forgetFn) {
+let forgetWinHelper = async function (forgetFn) {
   
   
   await pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);

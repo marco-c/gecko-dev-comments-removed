@@ -17,7 +17,7 @@ var { types } = require("resource://devtools/shared/protocol/types.js");
 
 
 
-var Response = function(template = {}) {
+var Response = function (template = {}) {
   this.template = template;
   if (this.template instanceof RetVal && this.template.isArrayType()) {
     throw Error("Arrays should be wrapped in objects");
@@ -89,10 +89,10 @@ exports.Response = Response;
 
 
 
-var RetVal = function(type) {
+var RetVal = function (type) {
   this._type = type;
   
-  loader.lazyGetter(this, "type", function() {
+  loader.lazyGetter(this, "type", function () {
     return types.getType(type);
   });
 };
@@ -114,6 +114,6 @@ RetVal.prototype = {
 };
 
 
-exports.RetVal = function(type) {
+exports.RetVal = function (type) {
   return new RetVal(type);
 };

@@ -95,7 +95,7 @@ var DebuggerSocket = {};
 
 
 
-DebuggerSocket.connect = async function(settings) {
+DebuggerSocket.connect = async function (settings) {
   
   if (!settings.authenticator) {
     settings.authenticator = new (Authenticators.get().Client)();
@@ -139,7 +139,7 @@ function _validateSettings(settings) {
 
 
 
-var _getTransport = async function(settings) {
+var _getTransport = async function (settings) {
   const { host, port, webSocket } = settings;
 
   if (webSocket) {
@@ -178,7 +178,7 @@ var _getTransport = async function(settings) {
 
 
 
-var _attemptTransport = async function(settings) {
+var _attemptTransport = async function (settings) {
   const { authenticator } = settings;
   
   
@@ -233,7 +233,7 @@ var _attemptTransport = async function(settings) {
 
 
 
-var _attemptConnect = async function({ host, port }) {
+var _attemptConnect = async function ({ host, port }) {
   const s = socketTransportService.createTransport([], host, port, null, null);
 
   
@@ -404,7 +404,7 @@ SocketListener.prototype = {
     }
 
     const self = this;
-    return (async function() {
+    return (async function () {
       const backlog = 4;
       self._socket = self._createSocketInstance();
       if (self.isPortBased) {
@@ -514,7 +514,7 @@ SocketListener.prototype = {
 
   
 
-  onSocketAccepted: DevToolsUtils.makeInfallible(function(
+  onSocketAccepted: DevToolsUtils.makeInfallible(function (
     socket,
     socketTransport
   ) {

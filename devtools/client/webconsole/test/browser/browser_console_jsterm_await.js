@@ -9,7 +9,7 @@
 const TEST_URI =
   "data:text/html;charset=utf-8,<!DOCTYPE html>Top-level await Browser Console test";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
   

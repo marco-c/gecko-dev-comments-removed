@@ -35,7 +35,7 @@ function unlockHandler(request, response) {
   response.setHeader("Location", CANONICAL_SUCCESS_URL);
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   server = new HttpServer();
   server.registerPathHandler("/success", redirectHandler);

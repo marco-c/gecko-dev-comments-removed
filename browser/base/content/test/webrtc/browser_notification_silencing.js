@@ -129,7 +129,7 @@ async function testNotificationSilencing(aBrowser) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   

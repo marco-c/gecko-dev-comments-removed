@@ -126,7 +126,7 @@ this.identity = class extends ExtensionAPI {
   getAPI(context) {
     return {
       identity: {
-        launchWebAuthFlowInParent: function(details, redirectURI) {
+        launchWebAuthFlowInParent: function (details, redirectURI) {
           
           
           return checkRedirected(details.url, redirectURI).catch(

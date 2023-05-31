@@ -5,7 +5,7 @@ const DEFAULT_PROCESS_COUNT = Services.prefs
   .getDefaultBranch(null)
   .getIntPref("dom.ipc.processCount");
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -21,7 +21,7 @@ add_task(async function() {
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
@@ -144,7 +144,7 @@ add_task(async function() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function() {
+add_task(async function () {
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
@@ -177,7 +177,7 @@ add_task(async function() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function() {
+add_task(async function () {
   Services.prefs.setBoolPref("layers.acceleration.disabled", true);
 
   let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {

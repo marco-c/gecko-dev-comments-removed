@@ -27,7 +27,7 @@ async function runTest(aTestActions) {
   let frame_url = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [{ kFormId, kFrameId, kSubmitButtonId, aTestActions }],
-    async function({ kFormId, kFrameId, kSubmitButtonId, aTestActions }) {
+    async function ({ kFormId, kFrameId, kSubmitButtonId, aTestActions }) {
       let form = content.document.getElementById(kFormId);
 
       form.addEventListener(
@@ -73,17 +73,17 @@ async function runTest(aTestActions) {
   );
 }
 
-add_task(async function() {
+add_task(async function () {
   info("Changing action should flush pending submissions");
   await runTest({ setattr: [{ attr: "action", value: "about:blank" }] });
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Changing target should flush pending submissions");
   await runTest({ setattr: [{ attr: "target", value: "_blank" }] });
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Unsetting action should flush pending submissions");
   await runTest({ unsetattr: ["action"] });
 });
@@ -91,7 +91,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Unsetting target should flush pending submissions");
   await runTest({ unsetattr: ["target"] });
 });

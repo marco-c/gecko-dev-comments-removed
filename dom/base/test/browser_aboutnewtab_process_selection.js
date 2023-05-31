@@ -4,7 +4,7 @@ const PRELOADED_STATE = "preloaded";
 
 var ppmm = Services.ppmm;
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -16,7 +16,7 @@ add_task(async function() {
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   
   if (!gMultiProcessBrowser) {
     return;

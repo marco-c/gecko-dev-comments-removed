@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const tab = await addTab(URL_ROOT + "doc_boxmodel_iframe1.html");
   const browser = tab.linkedBrowser;
   const { inspector, boxmodel } = await openLayoutView();

@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   const dbg = await initDebugger("doc-sources.html");
   await waitForSources(dbg, "simple1.js", "simple2.js");

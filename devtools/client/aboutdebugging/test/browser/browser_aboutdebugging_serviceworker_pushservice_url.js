@@ -16,7 +16,7 @@ const FAKE_ENDPOINT = "https://fake/endpoint";
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableServiceWorkerDebugging();
 
   info("Mock the push service");

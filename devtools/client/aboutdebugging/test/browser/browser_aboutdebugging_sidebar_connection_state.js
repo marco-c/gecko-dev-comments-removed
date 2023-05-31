@@ -15,7 +15,7 @@ const CONNECTION_CANCEL_DELAY = 2000;
 
 
 
-add_task(async function() {
+add_task(async function () {
   await setupPreferences();
 
   const mocks = new Mocks();
@@ -104,7 +104,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await setupPreferences();
 
   const mocks = new Mocks();

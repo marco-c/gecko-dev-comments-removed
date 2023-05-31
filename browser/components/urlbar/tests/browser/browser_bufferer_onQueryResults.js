@@ -9,7 +9,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   sandbox = sinon.createSandbox();
   await SearchTestUtils.promiseNewSearchEngine({
     url: getRootDirectory(gTestPath) + "searchSuggestionEngine.xml",

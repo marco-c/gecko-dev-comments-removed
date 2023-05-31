@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const testURL =
     "http://mochi.test:8888/browser/" +
     "browser/components/sessionstore/test/browser_423132_sample.html";

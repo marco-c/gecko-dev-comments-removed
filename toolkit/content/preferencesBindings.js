@@ -6,7 +6,7 @@
 
 
 
-const Preferences = (window.Preferences = (function() {
+const Preferences = (window.Preferences = (function () {
   const { EventEmitter } = ChromeUtils.importESModule(
     "resource://gre/modules/EventEmitter.sys.mjs"
   );

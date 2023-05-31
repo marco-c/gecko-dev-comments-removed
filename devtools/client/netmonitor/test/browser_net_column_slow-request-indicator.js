@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   const SLOW_THRESHOLD = 450;

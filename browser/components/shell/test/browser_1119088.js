@@ -95,7 +95,7 @@ function restoreDefaultBackground() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -120,10 +120,7 @@ add_task(async function() {
       
       
       
-      let uuid = uuidGenerator
-        .generateUUID()
-        .toString()
-        .replace(/\W/g, "");
+      let uuid = uuidGenerator.generateUUID().toString().replace(/\W/g, "");
 
       
       

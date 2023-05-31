@@ -4,16 +4,12 @@
 "use strict";
 
 add_task(async function test_highlighted() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.multiselect", true]],
-  });
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
     },
 
-    background: async function() {
+    background: async function () {
       async function testHighlighted(activeIndex, highlightedIndices) {
         let tabs = await browser.tabs.query({ currentWindow: true });
         for (let { index, active, highlighted } of tabs) {

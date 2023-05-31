@@ -6,10 +6,7 @@ function run_test() {
   Assert.equal(newURI.asciiHost, "xn--kkr.com");
 
   
-  newURI = newURI
-    .mutate()
-    .setSpec("http://%e5%8d%81.com")
-    .finalize();
+  newURI = newURI.mutate().setSpec("http://%e5%8d%81.com").finalize();
   Assert.equal(newURI.asciiHost, "xn--kkr.com");
 
   
@@ -17,97 +14,64 @@ function run_test() {
   
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://%80.com")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://%80.com").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "illegal UTF character"
   );
 
   
-  newURI = newURI
-    .mutate()
-    .setSpec("http://example.com?foo")
-    .finalize();
+  newURI = newURI.mutate().setSpec("http://example.com?foo").finalize();
   Assert.equal(newURI.asciiHost, "example.com");
 
-  newURI = newURI
-    .mutate()
-    .setSpec("http://example.com#foo")
-    .finalize();
+  newURI = newURI.mutate().setSpec("http://example.com#foo").finalize();
   Assert.equal(newURI.asciiHost, "example.com");
 
-  newURI = newURI
-    .mutate()
-    .setSpec("http://example.com:80")
-    .finalize();
+  newURI = newURI.mutate().setSpec("http://example.com:80").finalize();
   Assert.equal(newURI.asciiHost, "example.com");
 
-  newURI = newURI
-    .mutate()
-    .setSpec("http://example.com/foo")
-    .finalize();
+  newURI = newURI.mutate().setSpec("http://example.com/foo").finalize();
   Assert.equal(newURI.asciiHost, "example.com");
 
   
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%3ffoo")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%3ffoo").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
   );
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%23foo")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%23foo").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
   );
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%3bfoo")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%3bfoo").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
   );
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%3a80")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%3a80").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
   );
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%2ffoo")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%2ffoo").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"
   );
   Assert.throws(
     () => {
-      newURI = newURI
-        .mutate()
-        .setSpec("http://example.com%00")
-        .finalize();
+      newURI = newURI.mutate().setSpec("http://example.com%00").finalize();
     },
     /NS_ERROR_MALFORMED_URI/,
     "bad escaped character"

@@ -37,10 +37,7 @@ function getMenuItems(wrapper, selector) {
   const menuButton = wrapper.find(MenuButton);
   
   
-  menuButton
-    .childAt(0)
-    .getDOMNode()
-    .focus();
+  menuButton.childAt(0).getDOMNode().focus();
 
   return menuButton
     .instance()

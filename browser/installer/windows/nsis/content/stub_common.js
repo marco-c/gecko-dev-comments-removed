@@ -2,7 +2,7 @@
 
 
 
-window.attachEvent("onload", function() {
+window.attachEvent("onload", function () {
   if (parseInt(external.getIsHighContrast())) {
     document.body.className += " high-contrast";
   } else {
@@ -17,7 +17,7 @@ window.attachEvent("onload", function() {
   );
 
   
-  document.getElementById("background").attachEvent("ondragstart", function() {
+  document.getElementById("background").attachEvent("ondragstart", function () {
     return false;
   });
 });

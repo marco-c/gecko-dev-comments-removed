@@ -11,7 +11,7 @@ function postMessageToTest(msg) {
 
 addEventListener("install", evt => {
   
-  evt.waitUntil(new Promise(function() {}));
+  evt.waitUntil(new Promise(function () {}));
   postMessageToTest({ type: "INSTALL_EVENT" });
 });
 

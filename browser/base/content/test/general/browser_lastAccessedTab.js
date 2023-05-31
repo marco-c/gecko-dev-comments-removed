@@ -25,7 +25,7 @@ function test() {
   
   SpecialPowers.pushPrefEnv(
     { set: [["privacy.reduceTimerPrecision", false]] },
-    function() {
+    function () {
       originalTab = gBrowser.selectedTab;
       nextStep(step2);
     }

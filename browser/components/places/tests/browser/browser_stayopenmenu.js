@@ -35,7 +35,7 @@ async function testContextmenu(menuitem) {
   return newTab;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   let origBMBlocation = CustomizableUI.getPlacementOfWidget(
     "bookmarks-menu-button"
@@ -82,7 +82,7 @@ add_setup(async function() {
     title: "Test1",
   });
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await PlacesUtils.bookmarks.eraseEverything();
     
     if (!origBMBlocation) {

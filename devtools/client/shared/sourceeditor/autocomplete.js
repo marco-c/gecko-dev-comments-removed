@@ -197,10 +197,7 @@ function insertPopupItem(ed, popupItem) {
     .split("")
     .reverse()
     .join("");
-  const backwardsPreLabel = preLabel
-    .split("")
-    .reverse()
-    .join("");
+  const backwardsPreLabel = preLabel.split("").reverse().join("");
 
   
   

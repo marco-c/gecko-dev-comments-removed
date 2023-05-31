@@ -38,7 +38,7 @@ const {
 
 
 
-var HarBuilder = function(options) {
+var HarBuilder = function (options) {
   this._options = options;
   this._pageMap = [];
 };

@@ -35,7 +35,7 @@ const {
 
 
 
-exports.getSnapshotTitle = function(snapshot) {
+exports.getSnapshotTitle = function (snapshot) {
   if (!snapshot.creationTime) {
     return L10N.getStr("snapshot-title.loading");
   }
@@ -72,7 +72,7 @@ function getCustomDisplaysHelper(pref) {
 
 
 
-exports.getCustomCensusDisplays = function() {
+exports.getCustomCensusDisplays = function () {
   return getCustomDisplaysHelper(CUSTOM_CENSUS_DISPLAY_PREF);
 };
 
@@ -82,7 +82,7 @@ exports.getCustomCensusDisplays = function() {
 
 
 
-exports.getCustomLabelDisplays = function() {
+exports.getCustomLabelDisplays = function () {
   return getCustomDisplaysHelper(CUSTOM_LABEL_DISPLAY_PREF);
 };
 
@@ -92,7 +92,7 @@ exports.getCustomLabelDisplays = function() {
 
 
 
-exports.getCustomTreeMapDisplays = function() {
+exports.getCustomTreeMapDisplays = function () {
   return getCustomDisplaysHelper(CUSTOM_TREE_MAP_DISPLAY_PREF);
 };
 
@@ -104,7 +104,7 @@ exports.getCustomTreeMapDisplays = function() {
 
 
 
-exports.getStatusText = function(state) {
+exports.getStatusText = function (state) {
   assert(state, "Must have a state");
 
   switch (state) {
@@ -180,7 +180,7 @@ exports.getStatusText = function(state) {
 
 
 
-exports.getStatusTextFull = function(state) {
+exports.getStatusTextFull = function (state) {
   assert(!!state, "Must have a state");
 
   switch (state) {
@@ -283,7 +283,7 @@ exports.getSnapshot = function getSnapshot(state, id) {
 
 
 
-exports.findSelectedSnapshot = function(state) {
+exports.findSelectedSnapshot = function (state) {
   const found = state.snapshots.find(s => s.selected);
   return found ? found.id : null;
 };
@@ -329,7 +329,7 @@ exports.createSnapshot = function createSnapshot(state) {
 
 
 
-exports.censusIsUpToDate = function(filter, display, census) {
+exports.censusIsUpToDate = function (filter, display, census) {
   return (
     census &&
     
@@ -345,7 +345,7 @@ exports.censusIsUpToDate = function(filter, display, census) {
 
 
 
-exports.canTakeCensus = function(snapshot) {
+exports.canTakeCensus = function (snapshot) {
   return (
     snapshot.state === states.READ &&
     (!snapshot.census ||
@@ -362,7 +362,7 @@ exports.canTakeCensus = function(snapshot) {
 
 
 
-exports.dominatorTreeIsComputed = function(snapshot) {
+exports.dominatorTreeIsComputed = function (snapshot) {
   return (
     snapshot.dominatorTree &&
     (snapshot.dominatorTree.state === dominatorTreeState.COMPUTED ||
@@ -378,7 +378,7 @@ exports.dominatorTreeIsComputed = function(snapshot) {
 
 
 
-exports.getSavedCensus = function(snapshot) {
+exports.getSavedCensus = function (snapshot) {
   if (snapshot.treeMap && snapshot.treeMap.state === treeMapState.SAVED) {
     return snapshot.treeMap;
   }
@@ -395,7 +395,7 @@ exports.getSavedCensus = function(snapshot) {
 
 
 
-exports.getSnapshotTotals = function(census) {
+exports.getSnapshotTotals = function (census) {
   let bytes = 0;
   let count = 0;
 
@@ -425,7 +425,7 @@ exports.getSnapshotTotals = function(census) {
 
 
 
-exports.openFilePicker = function({ title, filters, defaultName, mode }) {
+exports.openFilePicker = function ({ title, filters, defaultName, mode }) {
   let fpMode;
   if (mode === "save") {
     fpMode = Ci.nsIFilePicker.modeSave;
@@ -463,7 +463,7 @@ exports.openFilePicker = function({ title, filters, defaultName, mode }) {
 
 
 
-exports.formatNumber = function(number, showSign = false) {
+exports.formatNumber = function (number, showSign = false) {
   const rounded = Math.round(number);
   
   if (rounded === 0 || rounded === -0) {
@@ -488,7 +488,7 @@ exports.formatNumber = function(number, showSign = false) {
 
 
 
-exports.formatPercent = function(percent, showSign = false) {
+exports.formatPercent = function (percent, showSign = false) {
   return exports.L10N.getFormatStr(
     "tree-item.percent2",
     exports.formatNumber(percent, showSign)
@@ -507,7 +507,7 @@ exports.formatPercent = function(percent, showSign = false) {
 
 
 
-exports.hslToStyle = function(h, s, l) {
+exports.hslToStyle = function (h, s, l) {
   h = parseInt(h * 360, 10);
   s = parseInt(s * 100, 10);
   l = parseInt(l * 100, 10);
@@ -524,7 +524,7 @@ exports.hslToStyle = function(h, s, l) {
 
 
 
-exports.lerp = function(a, b, t) {
+exports.lerp = function (a, b, t) {
   return a * (1 - t) + b * t;
 };
 
@@ -535,7 +535,7 @@ exports.lerp = function(a, b, t) {
 
 
 
-exports.formatAbbreviatedBytes = function(n) {
+exports.formatAbbreviatedBytes = function (n) {
   if (n < BYTES) {
     return n + "B";
   } else if (n < KILOBYTES) {

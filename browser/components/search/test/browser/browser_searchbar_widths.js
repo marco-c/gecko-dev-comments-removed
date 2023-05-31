@@ -7,7 +7,7 @@
 
 add_task(async function test_searchbar_width_persistence() {
   await gCUITestUtils.addSearchBar();
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     gCUITestUtils.removeSearchBar();
   });
 

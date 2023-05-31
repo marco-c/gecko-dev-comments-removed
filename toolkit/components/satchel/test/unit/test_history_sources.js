@@ -3,7 +3,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   const count = FormHistoryTestUtils.count.bind(FormHistoryTestUtils);
   async function search(fieldname, filters) {

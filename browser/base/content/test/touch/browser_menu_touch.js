@@ -112,7 +112,7 @@ async function openAndCheckCustomizationUIMenu(target) {
 }
 
 
-add_setup(async function() {
+add_setup(async function () {
   let isWindows = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
   await SpecialPowers.pushPrefEnv({
     set: [["apz.test.fails_with_native_injection", isWindows]],
@@ -129,7 +129,7 @@ add_task(async function test_main_menu_touch() {
 
 add_task(async function test_page_action_panel_touch() {
   
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
     
     
     BrowserPageActions.mainButtonNode.style.visibility = "visible";

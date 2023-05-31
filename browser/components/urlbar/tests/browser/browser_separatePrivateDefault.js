@@ -13,7 +13,7 @@ const serverInfo = {
   port: 20709, 
 };
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.search.separatePrivateDefault.ui.enabled", true],

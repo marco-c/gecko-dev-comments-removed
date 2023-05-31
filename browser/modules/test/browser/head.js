@@ -50,8 +50,8 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 
-let typeInSearchField = async function(browser, text, fieldName) {
-  await SpecialPowers.spawn(browser, [[fieldName, text]], async function([
+let typeInSearchField = async function (browser, text, fieldName) {
+  await SpecialPowers.spawn(browser, [[fieldName, text]], async function ([
     contentFieldName,
     contentText,
   ]) {
@@ -153,7 +153,7 @@ function clickSecondaryAction(actionIndex) {
     return removePromise;
   }
 
-  return (async function() {
+  return (async function () {
     
     let dropdownPromise = BrowserTestUtils.waitForEvent(
       popupNotification.menupopup,

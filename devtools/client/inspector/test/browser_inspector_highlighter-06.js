@@ -9,7 +9,7 @@
 
 const TEST_URI = URL_ROOT + "doc_inspector_highlighter_scroll.html";
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URI);
 
   await scrollContentPageNodeIntoView(gBrowser.selectedBrowser, "a");

@@ -1,7 +1,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   await SiteDataTestUtils.clear();
 
   let hosts = await addTestData([

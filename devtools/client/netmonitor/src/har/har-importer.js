@@ -18,7 +18,7 @@ var guid = 0;
 
 
 
-var HarImporter = function(actions) {
+var HarImporter = function (actions) {
   this.actions = actions;
 };
 

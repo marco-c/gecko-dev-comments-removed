@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { ed, win } = await setup();
   const editorDoc = ed.container.contentDocument;
   await promiseWaitForFocus();

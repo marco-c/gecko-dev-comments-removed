@@ -15,7 +15,7 @@ addDebuggerToGlobal(globalThis);
 
 
 
-Debugger.Object.prototype.getProperty = function(name) {
+Debugger.Object.prototype.getProperty = function (name) {
   const desc = this.getOwnPropertyDescriptor(name);
   if (!desc) {
     return undefined;

@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   await promiseStartupManager();

@@ -6,7 +6,7 @@
 const TAB_URL = URL_ROOT + "resources/service-workers/simple.html";
 
 
-add_task(async function() {
+add_task(async function () {
   info("Set a low service worker idle timeout");
   await pushPref("dom.serviceWorkers.idle_timeout", 1000);
   await pushPref("dom.serviceWorkers.idle_extended_timeout", 1000);

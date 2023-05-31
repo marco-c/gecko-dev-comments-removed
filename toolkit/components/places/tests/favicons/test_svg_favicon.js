@@ -1,6 +1,6 @@
 const PAGEURI = NetUtil.newURI("http://deliciousbacon.com/");
 
-add_task(async function() {
+add_task(async function () {
   
   await PlacesTestUtils.addVisits({
     uri: PAGEURI,

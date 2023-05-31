@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let focusPromise = BrowserTestUtils.waitForEvent(gURLBar, "focus");
   document.documentElement.focus();

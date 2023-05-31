@@ -68,13 +68,13 @@ function run_test() {
   Assert.ok(!util.isThirdPartyURI(fileuri1, fileuri1));
   Assert.ok(!util.isThirdPartyURI(fileuri1, fileuri2));
   Assert.ok(util.isThirdPartyURI(uri1, fileuri1));
-  do_check_throws(function() {
+  do_check_throws(function () {
     util.isThirdPartyURI(uri1, null);
   }, NS_ERROR_INVALID_ARG);
-  do_check_throws(function() {
+  do_check_throws(function () {
     util.isThirdPartyURI(null, uri1);
   }, NS_ERROR_INVALID_ARG);
-  do_check_throws(function() {
+  do_check_throws(function () {
     util.isThirdPartyURI(null, null);
   }, NS_ERROR_INVALID_ARG);
 
@@ -84,7 +84,7 @@ function run_test() {
   
   
   
-  do_check_throws(function() {
+  do_check_throws(function () {
     util.isThirdPartyChannel(null);
   }, NS_ERROR_INVALID_ARG);
   Assert.ok(!util.isThirdPartyChannel(channel1));

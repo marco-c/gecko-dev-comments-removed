@@ -9,7 +9,7 @@
 
 
 
-let runWorkerTest = async function(data) {
+let runWorkerTest = async function (data) {
   let expectedPrecision = data.precision;
   await new Promise(resolve => {
     
@@ -30,7 +30,7 @@ let runWorkerTest = async function(data) {
     const expectedResourceEntriesLength = 2;
     const expectedTestAndMarkEntriesLength = 1;
 
-    worker.onmessage = function(e) {
+    worker.onmessage = function (e) {
       if (e.data.type == "result") {
         if (e.data.resultOf == "performance.timeOrigin") {
           ok(

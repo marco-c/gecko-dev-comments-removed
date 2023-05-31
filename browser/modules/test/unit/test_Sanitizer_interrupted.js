@@ -7,7 +7,7 @@ do_get_profile();
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { Sanitizer } = ChromeUtils.importESModule(
     "resource:///modules/Sanitizer.sys.mjs"
   );

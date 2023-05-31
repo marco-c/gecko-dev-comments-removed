@@ -252,7 +252,7 @@ exports.WebConsoleCommandsManager = WebConsoleCommandsManager;
 
 
 
-WebConsoleCommandsManager.register("$", function(owner, selector) {
+WebConsoleCommandsManager.register("$", function (owner, selector) {
   try {
     return owner.window.document.querySelector(selector);
   } catch (err) {
@@ -269,7 +269,7 @@ WebConsoleCommandsManager.register("$", function(owner, selector) {
 
 
 
-WebConsoleCommandsManager.register("$$", function(owner, selector) {
+WebConsoleCommandsManager.register("$$", function (owner, selector) {
   let nodes;
   try {
     nodes = owner.window.document.querySelectorAll(selector);
@@ -310,7 +310,7 @@ WebConsoleCommandsManager.register("$_", {
 
 
 
-WebConsoleCommandsManager.register("$x", function(
+WebConsoleCommandsManager.register("$x", function (
   owner,
   xPath,
   context,
@@ -392,7 +392,7 @@ WebConsoleCommandsManager.register("$0", {
 
 
 
-WebConsoleCommandsManager.register("clear", function(owner) {
+WebConsoleCommandsManager.register("clear", function (owner) {
   owner.helperResult = {
     type: "clearOutput",
   };
@@ -401,7 +401,7 @@ WebConsoleCommandsManager.register("clear", function(owner) {
 
 
 
-WebConsoleCommandsManager.register("clearHistory", function(owner) {
+WebConsoleCommandsManager.register("clearHistory", function (owner) {
   owner.helperResult = {
     type: "clearHistory",
   };
@@ -414,7 +414,7 @@ WebConsoleCommandsManager.register("clearHistory", function(owner) {
 
 
 
-WebConsoleCommandsManager.register("keys", function(owner, object) {
+WebConsoleCommandsManager.register("keys", function (owner, object) {
   
   return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
 });
@@ -426,7 +426,7 @@ WebConsoleCommandsManager.register("keys", function(owner, object) {
 
 
 
-WebConsoleCommandsManager.register("values", function(owner, object) {
+WebConsoleCommandsManager.register("values", function (owner, object) {
   const values = [];
   
   const waived = Cu.waiveXrays(object);
@@ -442,7 +442,7 @@ WebConsoleCommandsManager.register("values", function(owner, object) {
 
 
 
-WebConsoleCommandsManager.register("help", function(owner) {
+WebConsoleCommandsManager.register("help", function (owner) {
   owner.helperResult = { type: "help" };
 });
 
@@ -452,7 +452,7 @@ WebConsoleCommandsManager.register("help", function(owner) {
 
 
 
-WebConsoleCommandsManager.register("inspect", function(
+WebConsoleCommandsManager.register("inspect", function (
   owner,
   object,
   forceExpandInConsole = false
@@ -477,7 +477,7 @@ WebConsoleCommandsManager.register("inspect", function(
 
 
 
-WebConsoleCommandsManager.register("copy", function(owner, value) {
+WebConsoleCommandsManager.register("copy", function (owner, value) {
   let payload;
   try {
     if (Element.isInstance(value)) {
@@ -508,7 +508,7 @@ WebConsoleCommandsManager.register("copy", function(owner, value) {
 
 
 
-WebConsoleCommandsManager.register("screenshot", function(owner, args = {}) {
+WebConsoleCommandsManager.register("screenshot", function (owner, args = {}) {
   owner.helperResult = {
     type: "screenshotOutput",
     args,
@@ -522,7 +522,7 @@ WebConsoleCommandsManager.register("screenshot", function(owner, args = {}) {
 
 
 
-WebConsoleCommandsManager.register("history", function(owner, args = {}) {
+WebConsoleCommandsManager.register("history", function (owner, args = {}) {
   owner.helperResult = {
     type: "historyOutput",
     args,
@@ -537,7 +537,7 @@ WebConsoleCommandsManager.register("history", function(owner, args = {}) {
 
 
 
-WebConsoleCommandsManager.register("block", function(owner, args = {}) {
+WebConsoleCommandsManager.register("block", function (owner, args = {}) {
   if (!args.url) {
     owner.helperResult = {
       type: "error",
@@ -560,7 +560,7 @@ WebConsoleCommandsManager.register("block", function(owner, args = {}) {
 
 
 
-WebConsoleCommandsManager.register("unblock", function(owner, args = {}) {
+WebConsoleCommandsManager.register("unblock", function (owner, args = {}) {
   if (!args.url) {
     owner.helperResult = {
       type: "error",

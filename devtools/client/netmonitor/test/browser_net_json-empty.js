@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { tab, monitor } = await initNetMonitor(
     JSON_EMPTY_URL + "?name=empty",
     { requestCount: 1 }

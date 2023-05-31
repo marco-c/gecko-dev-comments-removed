@@ -28,7 +28,7 @@ async function testVal(win, url) {
   }
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   

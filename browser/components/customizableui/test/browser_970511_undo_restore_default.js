@@ -8,7 +8,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.compactmode.show", true]],
   });
@@ -119,7 +119,7 @@ add_task(async function action_after_reset_hides_undo() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let undoResetButton = document.getElementById(
     "customization-undo-reset-button"
   );
@@ -141,7 +141,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   {
     const supported = TabsInTitlebar.systemSupported;
     is(typeof supported, "boolean");

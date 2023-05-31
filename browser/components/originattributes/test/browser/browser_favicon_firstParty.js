@@ -192,7 +192,7 @@ async function assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue) {
   let tabInfo = await openTabInFirstParty(aURL, aFirstParty);
 
   
-  await SpecialPowers.spawn(tabInfo.browser, [aCookieValue], async function(
+  await SpecialPowers.spawn(tabInfo.browser, [aCookieValue], async function (
     value
   ) {
     content.document.cookie = value + "; SameSite=None; Secure;";
@@ -374,7 +374,7 @@ async function doTestForAllTabsFavicon(
   tabBrowser.removeAttribute("overflow");
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.firstparty.isolate", true]],

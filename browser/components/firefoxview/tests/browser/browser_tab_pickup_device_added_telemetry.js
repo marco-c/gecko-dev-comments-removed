@@ -1,7 +1,7 @@
 
 
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   await clearAllParentTelemetryEvents();
   cleanup_tab_pickup();
 });

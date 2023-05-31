@@ -42,7 +42,7 @@ const GA_PARAMS = `?${new URLSearchParams({
 
 const wcActions = require("resource://devtools/client/webconsole/actions/index.js");
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   
   
   Services.cookies.removeAll();
@@ -98,7 +98,7 @@ async function openNewTabWithIframesAndConsole(tabUrl, iframes) {
   
   
   await addTab(tabUrl);
-  await ContentTask.spawn(gBrowser.selectedBrowser, iframes, async function(
+  await ContentTask.spawn(gBrowser.selectedBrowser, iframes, async function (
     urls
   ) {
     const iframesLoadPromises = urls.map((url, i) => {
@@ -157,7 +157,7 @@ function logAllStoreChanges(hud) {
     );
     info(
       "messages : " +
-        JSON.stringify(debugMessages, function(key, value) {
+        JSON.stringify(debugMessages, function (key, value) {
           if (value && value.getGrip) {
             return value.getGrip();
           }
@@ -1003,7 +1003,7 @@ function overrideOpenLink(fn) {
   const oldOpenWebLinkIn = browserWindow.openWebLinkIn;
 
   const onOpenLink = new Promise(resolve => {
-    const openLinkIn = function(link, where) {
+    const openLinkIn = function (link, where) {
       browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
       browserWindow.openWebLinkIn = oldOpenWebLinkIn;
       resolve({ link, where });
@@ -1015,7 +1015,7 @@ function overrideOpenLink(fn) {
   
   
   let timeoutId;
-  const onTimeout = new Promise(function(resolve) {
+  const onTimeout = new Promise(function (resolve) {
     timeoutId = setTimeout(() => {
       browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
       browserWindow.openWebLinkIn = oldOpenWebLinkIn;
@@ -1527,7 +1527,7 @@ async function selectFrame(dbg, frame) {
 async function pauseDebugger(dbg) {
   info("Waiting for debugger to pause");
   const onPaused = waitForPaused(dbg);
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
     content.wrappedJSObject.firstCall();
   }).catch(() => {});
   await onPaused;
@@ -1956,33 +1956,35 @@ async function getImageSizeFromClipboard() {
   
   
   
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [buffer], async function(
-    _buffer
-  ) {
-    const img = content.document.createElement("img");
-    const loaded = new Promise(r => {
-      img.addEventListener("load", r, { once: true });
-    });
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [buffer],
+    async function (_buffer) {
+      const img = content.document.createElement("img");
+      const loaded = new Promise(r => {
+        img.addEventListener("load", r, { once: true });
+      });
 
-    
-    const url = content.URL.createObjectURL(
-      new Blob([_buffer], { type: "image/png" })
-    );
+      
+      const url = content.URL.createObjectURL(
+        new Blob([_buffer], { type: "image/png" })
+      );
 
-    
-    img.src = url;
-    content.document.documentElement.appendChild(img);
+      
+      img.src = url;
+      content.document.documentElement.appendChild(img);
 
-    info("Waiting for the clipboard image to load in the content page");
-    await loaded;
+      info("Waiting for the clipboard image to load in the content page");
+      await loaded;
 
-    
-    img.remove();
-    content.URL.revokeObjectURL(url);
+      
+      img.remove();
+      content.URL.revokeObjectURL(url);
 
-    return {
-      width: img.width,
-      height: img.height,
-    };
-  });
+      return {
+        width: img.width,
+        height: img.height,
+      };
+    }
+  );
 }

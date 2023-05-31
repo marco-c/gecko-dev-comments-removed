@@ -221,7 +221,7 @@ var test = {
 };
 tests.push(test);
 
-add_task(async function() {
+add_task(async function () {
   
   let jsonFile = PathUtils.join(PathUtils.profileDir, "bookmarks.json");
 

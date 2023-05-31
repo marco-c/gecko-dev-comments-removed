@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let p = new Promise(resolve => {
     function consoleListener() {
       addConsoleStorageListener(this);

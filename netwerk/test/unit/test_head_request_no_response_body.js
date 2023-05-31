@@ -54,12 +54,12 @@ async function stop_server(httpserver) {
   });
 }
 
-add_task(async function() {
+add_task(async function () {
   let httpserver = new HttpServer();
   httpserver.registerPathHandler("/testdir", test_handler);
   httpserver.start(-1);
   const PORT = httpserver.identity.primaryPort;
-  const URI = `http:
+  const URI = `http://localhost:${PORT}/testdir`;
 
   let response;
 

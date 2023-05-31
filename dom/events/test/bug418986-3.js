@@ -1,7 +1,7 @@
 SimpleTest.waitForExplicitFinish();
 
 
-var test = async function(isContent) {
+var test = async function (isContent) {
   await SpecialPowers.contentTransformsReceived(window);
 
   
@@ -19,7 +19,7 @@ var test = async function(isContent) {
   let setup;
 
   
-  let handleEvent = function(event, prefVal) {
+  let handleEvent = function (event, prefVal) {
     let resisting = prefVal && isContent;
     if (resisting) {
       is(
@@ -48,11 +48,11 @@ var test = async function(isContent) {
   
   
   
-  nextTest = function() {
+  nextTest = function () {
     let [eventType, prefVal] = eventDefs[testCounter];
     SpecialPowers.pushPrefEnv(
       { set: [["privacy.resistFingerprinting", prefVal]] },
-      function() {
+      function () {
         
         
         
@@ -68,11 +68,11 @@ var test = async function(isContent) {
         document.getElementById("body").appendChild(div);
         
         
-        window.setTimeout(function() {
+        window.setTimeout(function () {
           div.addEventListener(eventType, event => handleEvent(event, prefVal));
           
           
-          window.setTimeout(function() {
+          window.setTimeout(function () {
             synthesizeMouseAtCenter(div, { type: eventType });
           }, 0);
         }, 0);

@@ -1,7 +1,7 @@
 
 
 
-registerCleanupFunction(async function() {
+registerCleanupFunction(async function () {
   Services.prefs.clearUserPref(TAB_PICKUP_STATE_PREF);
 });
 
@@ -38,7 +38,7 @@ add_task(async function test_tab_pickup_visibility() {
   
   const sandbox = await setup();
 
-  await withFirefoxView({ win: window }, async function(browser) {
+  await withFirefoxView({ win: window }, async function (browser) {
     const { document } = browser.contentWindow;
     let tabPickupContainer = document.querySelector("#tab-pickup-container");
 
@@ -113,7 +113,7 @@ add_task(async function test_tab_pickup_visibility() {
 add_task(async function test_instance_closed() {
   
   const sandbox = await setup({ open: false });
-  await withFirefoxView({ win: window }, async function(browser) {
+  await withFirefoxView({ win: window }, async function (browser) {
     const { document } = browser.contentWindow;
     info(
       "tab-pickup.open pref: " +

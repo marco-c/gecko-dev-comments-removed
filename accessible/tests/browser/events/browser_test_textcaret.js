@@ -7,7 +7,7 @@
 
 
 function caretMoveChecker(target, caretOffset) {
-  return function(event) {
+  return function (event) {
     let cmEvent = event.QueryInterface(nsIAccessibleCaretMoveEvent);
     return (
       cmEvent.accessible == getAccessible(target) &&

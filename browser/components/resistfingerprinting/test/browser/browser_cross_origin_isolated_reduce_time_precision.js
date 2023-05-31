@@ -86,7 +86,7 @@ let processResultsGlobal = (data, successes, failures) => {
 
 
 add_task(async function runRTPTestDOM() {
-  let runTests = async function(data) {
+  let runTests = async function (data) {
     let expectedPrecision = data.precision;
     
     
@@ -112,7 +112,7 @@ add_task(async function runRTPTestDOM() {
     ]);
 
     
-    let resultSwitchisRounded = function(timeStamp) {
+    let resultSwitchisRounded = function (timeStamp) {
       if (timeStamp == 0) {
         return true;
       }
@@ -288,7 +288,7 @@ add_task(async function runRTPTestDOM() {
 
 
 
-let runWorkerTest = async function(data) {
+let runWorkerTest = async function (data) {
   let expectedPrecision = data.precision;
   await new Promise(resolve => {
     
@@ -321,9 +321,9 @@ let runWorkerTest = async function(data) {
             cmd: timeStampCode,
           });
 
-          worker.addEventListener("message", function(e) {
+          worker.addEventListener("message", function (e) {
             
-            let resultSwitchisRounded = function(timeStamp) {
+            let resultSwitchisRounded = function (timeStamp) {
               if (timeStamp == 0) {
                 return true;
               }

@@ -9,35 +9,20 @@ function run_test() {
   Assert.equal(-1, httpURI.port);
 
   
-  httpURI = httpURI
-    .mutate()
-    .setPort(80)
-    .finalize();
+  httpURI = httpURI.mutate().setPort(80).finalize();
   Assert.equal(-1, httpURI.port);
 
   
-  httpURI = httpURI
-    .mutate()
-    .setPort(123)
-    .finalize();
+  httpURI = httpURI.mutate().setPort(123).finalize();
   Assert.equal(123, httpURI.port);
-  httpURI = httpURI
-    .mutate()
-    .setPort(80)
-    .finalize();
+  httpURI = httpURI.mutate().setPort(80).finalize();
   Assert.equal(-1, httpURI.port);
   Assert.ok(!/80/.test(httpURI.spec));
 
   
-  httpURI = httpURI
-    .mutate()
-    .setSpec("http://foo.com:81")
-    .finalize();
+  httpURI = httpURI.mutate().setSpec("http://foo.com:81").finalize();
   Assert.equal(81, httpURI.port);
-  httpURI = httpURI
-    .mutate()
-    .setSpec("http://foo.com:80")
-    .finalize();
+  httpURI = httpURI.mutate().setSpec("http://foo.com:80").finalize();
   Assert.equal(-1, httpURI.port);
   Assert.ok(!/80/.test(httpURI.spec));
 

@@ -20,7 +20,7 @@ const REMOTE_OS = "SOME_OS";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
 
   const usbClient = mocks.createUSBRuntime(REMOTE_RUNTIME_ID, {

@@ -182,7 +182,7 @@ async function runTest(partitioned) {
   await SpecialPowers.popPrefEnv();
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["network.websocket.timeout.open", 20]],

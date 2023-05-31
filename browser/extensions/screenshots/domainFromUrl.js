@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.domainFromUrl = (function() {
+this.domainFromUrl = (function () {
   return function urlDomainForId(location) {
     
     let domain = location.hostname;

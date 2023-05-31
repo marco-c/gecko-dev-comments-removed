@@ -9,7 +9,7 @@ var BLURB_CYCLE_MS = 20000;
 
 var PROGRESS_BAR_INTERVAL_MS = 250;
 
-window.attachEvent("onload", function() {
+window.attachEvent("onload", function () {
   
   var direction = external.getTextDirection();
   document.getElementById("text_column").style.direction = direction;
@@ -26,7 +26,7 @@ window.attachEvent("onload", function() {
   );
 
   
-  setInterval(function() {
+  setInterval(function () {
     var percent = external.getProgressBarPercent();
     var progressBar = document.getElementById("progress_bar");
     progressBar.setAttribute("aria-valuenow", percent);

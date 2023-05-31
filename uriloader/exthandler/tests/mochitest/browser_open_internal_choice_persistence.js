@@ -32,7 +32,7 @@ function waitForAcceptButtonToGetEnabled(doc) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -44,7 +44,7 @@ add_setup(async function() {
   });
 
   
-  const registerRestoreHandler = function(type, ext) {
+  const registerRestoreHandler = function (type, ext) {
     const mimeInfo = gMimeSvc.getFromTypeAndExtension(type, ext);
     const existed = gHandlerSvc.exists(mimeInfo);
     registerCleanupFunction(() => {

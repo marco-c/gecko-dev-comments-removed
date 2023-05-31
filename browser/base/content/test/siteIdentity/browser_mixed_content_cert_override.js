@@ -38,7 +38,7 @@ function checkIdentityPopup(icon) {
   );
 }
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   

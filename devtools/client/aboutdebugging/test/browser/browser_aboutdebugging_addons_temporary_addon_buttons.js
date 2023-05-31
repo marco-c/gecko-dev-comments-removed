@@ -6,7 +6,7 @@
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
 
 
-add_task(async function() {
+add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
@@ -74,7 +74,7 @@ add_task(async function() {
   await removeTab(tab);
 });
 
-add_task(async function() {
+add_task(async function () {
   const PACKAGED_EXTENSION_ID = "packaged-extension@tests";
   const PACKAGED_EXTENSION_NAME = "Packaged extension";
 

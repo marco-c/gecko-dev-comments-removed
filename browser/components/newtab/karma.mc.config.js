@@ -30,7 +30,7 @@ preprocessors[PATHS.testFilesPattern] = [
   "sourcemap", 
 ];
 
-module.exports = function(config) {
+module.exports = function (config) {
   const isTDD = config.tdd;
   const browsers = isTDD ? ["Firefox"] : ["FirefoxHeadless"]; 
   config.set({

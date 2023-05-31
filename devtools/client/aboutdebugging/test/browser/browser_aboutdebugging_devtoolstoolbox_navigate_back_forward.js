@@ -24,7 +24,7 @@ async function waitForUrl(url, toolbox, browserTab, win) {
 }
 
 
-add_task(async function() {
+add_task(async function () {
   const browserTab = await addTab(ORIGINAL_URL);
 
   const { document, tab, window } = await openAboutDebugging();

@@ -12,7 +12,7 @@ const TEST_COM_URI = `${URL_ROOT_COM_SSL}examples/doc_dbg-fission-frame-sources.
 const TEST_ORG_IFRAME_URI = `${URL_ROOT_ORG_SSL}examples/doc_dbg-fission-frame-sources-frame.html`;
 const DATA_URI = "data:text/html,<title>foo</title>";
 
-add_task(async function() {
+add_task(async function () {
   
   
   const dbg = await initDebuggerWithAbsoluteURL(

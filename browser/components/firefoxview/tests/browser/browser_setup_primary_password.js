@@ -15,7 +15,7 @@ function setupMocks() {
   return sandbox;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   registerCleanupFunction(async () => {
     
     TabsSetupFlowManager.resetInternalState();

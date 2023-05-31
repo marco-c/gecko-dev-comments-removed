@@ -24,7 +24,7 @@ function getTooltipContent(doc) {
   return div;
 }
 
-add_task(async function() {
+add_task(async function () {
   const { host, doc } = await createHost("window", TEST_URI);
 
   

@@ -9,7 +9,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.navigation.requireUserInteraction", false]],
   });
@@ -73,7 +73,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let testURL =
     getRootDirectory(gTestPath) + "browser_frame_history_index2.html";
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);
@@ -135,7 +135,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   
   let blankState = JSON.stringify({
     windows: [

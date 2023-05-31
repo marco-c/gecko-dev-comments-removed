@@ -8,7 +8,7 @@ const URL = ROOT + "browser_formdata_xpath_sample.html";
 
 
 
-add_setup(function() {
+add_setup(function () {
   
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
 

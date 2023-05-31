@@ -7,7 +7,7 @@
 const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
 const { MESSAGE_CATEGORY } = require("resource://devtools/shared/constants.js");
 
-module.exports = async function({ targetCommand, targetFront, onAvailable }) {
+module.exports = async function ({ targetCommand, targetFront, onAvailable }) {
   
   
   

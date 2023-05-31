@@ -17,7 +17,7 @@ const TARGET_PAGE = ROOT + "dummy.html";
 
 
 function getToolbarsFromBrowserContent(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [], async function() {
+  return SpecialPowers.spawn(aBrowser, [], async function () {
     
     
 
@@ -196,13 +196,13 @@ function testNonDefaultChromeToolbars(toolbars) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: CONTENT_PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       
       let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
       await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -253,13 +253,13 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: CONTENT_PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       
       let winPromise = BrowserTestUtils.waitForNewWindow();
       await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -292,7 +292,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let defaultWindowPromise = BrowserTestUtils.waitForNewWindow({
     url: TARGET_PAGE,

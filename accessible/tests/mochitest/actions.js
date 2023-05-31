@@ -195,7 +195,7 @@ function checkerOfActionInvoker(aType, aTarget, aActionObj) {
     this.eventTarget = "element";
     
     
-    this.match = function(aEvent) {
+    this.match = function (aEvent) {
       return aEvent.currentTarget == aTarget;
     };
   }

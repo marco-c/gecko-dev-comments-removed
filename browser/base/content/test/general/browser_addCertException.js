@@ -9,7 +9,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await loadBadCertPage("https://expired.example.com");
 

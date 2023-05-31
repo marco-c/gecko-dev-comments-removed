@@ -26,7 +26,7 @@ let tests = [
 
 const kTestURI = testPath + "file_mixed_content_auto_upgrade.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   requestLongerTimeout(4);

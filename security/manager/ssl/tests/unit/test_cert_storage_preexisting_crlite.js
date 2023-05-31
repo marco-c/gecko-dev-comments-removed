@@ -11,7 +11,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   Services.prefs.setIntPref(
     "security.pki.crlite_mode",
     CRLiteModeEnforcePrefValue

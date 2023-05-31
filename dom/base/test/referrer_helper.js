@@ -8,7 +8,7 @@ const GET_RESULT = SJS + "ACTION=get-test-results";
 const RESET_STATE = SJS + "ACTION=resetState";
 
 SimpleTest.waitForExplicitFinish();
-var advance = function() {
+var advance = function () {
   tests.next();
 };
 
@@ -16,7 +16,7 @@ var advance = function() {
 
 
 
-window.addEventListener("message", function(event) {
+window.addEventListener("message", function (event) {
   if (event.data == "childLoadComplete") {
     
     advance();
@@ -31,10 +31,10 @@ function doXHR(aUrl, onSuccess, onFail) {
   
   var xhr = new XMLHttpRequest({ mozSystem: true });
   xhr.responseType = "json";
-  xhr.onload = function() {
+  xhr.onload = function () {
     onSuccess(xhr);
   };
-  xhr.onerror = function() {
+  xhr.onerror = function () {
     onFail(xhr);
   };
   xhr.open("GET", "http" + aUrl, true);
@@ -69,7 +69,7 @@ function checkIndividualResults(aTestname, aExpectedReferrer, aName) {
 }
 
 function resetState() {
-  doXHR(RESET_STATE, advance, function(xhr) {
+  doXHR(RESET_STATE, advance, function (xhr) {
     ok(false, "error in reset state");
     SimpleTest.finish();
   });
@@ -78,7 +78,7 @@ function resetState() {
 
 
 
-var tests = (function*() {
+var tests = (function* () {
   yield SpecialPowers.pushPrefEnv(
     { set: [["network.preload", true]] },
     advance

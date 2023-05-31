@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let HTMLFile = PathUtils.join(PathUtils.profileDir, "bookmarks.html");
   await IOUtils.remove(HTMLFile, { ignoreAbsent: true });

@@ -60,7 +60,7 @@ function promiseOverflowAnimationEnd() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let stopReloadButton = document.getElementById("stop-reload-button");
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);

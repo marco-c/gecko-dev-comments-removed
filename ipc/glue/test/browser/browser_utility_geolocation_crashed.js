@@ -25,7 +25,7 @@ async function getGeolocation() {
   return promise;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   

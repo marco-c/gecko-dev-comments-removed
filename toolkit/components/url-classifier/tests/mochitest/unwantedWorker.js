@@ -1,5 +1,5 @@
 
 
-onmessage = function() {
+onmessage = function () {
   postMessage("loaded bad file");
 };

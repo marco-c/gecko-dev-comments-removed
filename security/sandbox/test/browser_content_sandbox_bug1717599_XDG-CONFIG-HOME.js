@@ -6,6 +6,6 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   ok(true, "Process can run");
 });

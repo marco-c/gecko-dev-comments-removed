@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let tab = await addTab(URL_ROOT + "doc_viewsource.html");
   let toolbox = await gDevTools.showToolboxForTab(tab, {
     toolId: "styleeditor",

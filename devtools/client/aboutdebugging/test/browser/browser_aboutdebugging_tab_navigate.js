@@ -11,7 +11,7 @@ const TAB_2_URL =
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 

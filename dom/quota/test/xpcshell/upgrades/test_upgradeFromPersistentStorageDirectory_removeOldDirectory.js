@@ -86,7 +86,7 @@ async function testSteps() {
 
   info("Getting usage");
 
-  request = getUsage(function() {},  true);
+  request = getUsage(function () {},  true);
   await requestFinished(request);
 
   info("Verifying result");

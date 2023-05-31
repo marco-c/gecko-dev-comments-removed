@@ -8,7 +8,7 @@
 
 const TEST_URI = "http://example.com/";
 
-add_task(async function() {
+add_task(async function () {
   
   let good = true;
   const listener = {

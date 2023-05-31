@@ -15,7 +15,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function() {
+add_task(async function () {
   
   const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
   ok(xdgConfigHome.length > 1, "XDG_CONFIG_HOME is defined");

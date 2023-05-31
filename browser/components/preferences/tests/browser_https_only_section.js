@@ -12,7 +12,7 @@ const HTTPS_ONLY_DISABLED = "disabled";
 add_task(async function httpsOnlyRadioGroupIsWorking() {
   
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     Services.prefs.clearUserPref("dom.security.https_only_mode");
     Services.prefs.clearUserPref("dom.security.https_only_mode_pbm");
   });

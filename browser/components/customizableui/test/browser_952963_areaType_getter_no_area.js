@@ -29,7 +29,7 @@ function checkAreaType(widget) {
 }
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   let toolbarNode = createToolbarWithPlacements(kToolbarName, [

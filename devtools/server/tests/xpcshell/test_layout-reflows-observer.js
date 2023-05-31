@@ -19,7 +19,7 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 LayoutChangesObserver.prototype._setTimeout = cb => cb;
-LayoutChangesObserver.prototype._clearTimeout = function() {};
+LayoutChangesObserver.prototype._clearTimeout = function () {};
 
 
 

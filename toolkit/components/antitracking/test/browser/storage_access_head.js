@@ -18,10 +18,10 @@ async function openPageAndRunCode(
   await SpecialPowers.spawn(
     browser,
     [{ page: embeddedPage, callback: embeddedPageCallback.toString() }],
-    async function(obj) {
+    async function (obj) {
       await new content.Promise(resolve => {
         let ifr = content.document.createElement("iframe");
-        ifr.onload = function() {
+        ifr.onload = function () {
           ifr.contentWindow.postMessage(obj.callback, "*");
         };
 
@@ -62,7 +62,7 @@ async function openPageAndRunCode(
 
 
 function getExpectPopupAndClick(accept) {
-  return function() {
+  return function () {
     let shownPromise = BrowserTestUtils.waitForEvent(
       PopupNotifications.panel,
       "popupshown"

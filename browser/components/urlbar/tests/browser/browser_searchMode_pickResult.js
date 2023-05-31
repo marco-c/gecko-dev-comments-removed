@@ -9,7 +9,7 @@
 
 const BOOKMARK_URL = "http://www.example.com/browser_searchMode_pickResult.js";
 
-add_setup(async function() {
+add_setup(async function () {
   
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.bookmarks.insert({

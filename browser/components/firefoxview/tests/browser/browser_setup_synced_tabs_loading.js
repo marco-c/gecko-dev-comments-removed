@@ -73,7 +73,7 @@ function setupMocks(recentTabs, syncEnabled = true) {
   return sandbox;
 }
 
-add_setup(async function() {
+add_setup(async function () {
   registerCleanupFunction(() => {
     
     TabsSetupFlowManager.resetInternalState();
@@ -82,7 +82,7 @@ add_setup(async function() {
   
   gSync.init();
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     Services.prefs.clearUserPref("services.sync.engine.tabs");
     await tearDown(gSandbox);
   });

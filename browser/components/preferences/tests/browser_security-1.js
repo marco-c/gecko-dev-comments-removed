@@ -12,7 +12,7 @@ let originals = PREFS.map(pref => [pref, Services.prefs.getBoolPref(pref)]);
 let originalMalwareTable = Services.prefs.getCharPref(
   "urlclassifier.malwareTable"
 );
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   originals.forEach(([pref, val]) => Services.prefs.setBoolPref(pref, val));
   Services.prefs.setCharPref(
     "urlclassifier.malwareTable",
@@ -24,15 +24,15 @@ registerCleanupFunction(function() {
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
 });
 
 
-add_task(async function() {
+add_task(async function () {
   async function checkPrefSwitch(val1, val2) {
     Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled", val1);
     Services.prefs.setBoolPref("browser.safebrowsing.malware.enabled", val2);

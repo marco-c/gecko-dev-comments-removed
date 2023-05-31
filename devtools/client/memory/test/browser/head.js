@@ -21,7 +21,7 @@ Services.prefs.setBoolPref("devtools.memory.enabled", true);
 
 
 
-this.openMemoryPanel = async function(tab) {
+this.openMemoryPanel = async function (tab) {
   info("Opening memory panel.");
   const toolbox = await gDevTools.showToolboxForTab(tab, { toolId: "memory" });
   info("Memory panel shown successfully.");
@@ -32,7 +32,7 @@ this.openMemoryPanel = async function(tab) {
 
 
 
-this.closeMemoryPanel = async function(tab) {
+this.closeMemoryPanel = async function (tab) {
   info("Closing memory panel.");
   const toolbox = await gDevTools.getToolboxForTab(tab);
   await toolbox.destroy();
@@ -51,7 +51,7 @@ this.closeMemoryPanel = async function(tab) {
 
 
 function makeMemoryTest(url, generator) {
-  return async function() {
+  return async function () {
     waitForExplicitFinish();
 
     
@@ -237,7 +237,7 @@ function createRAFMock() {
   let queuedFns = [];
   const mock = { timesCalled: 0 };
 
-  mock.nextFrame = function() {
+  mock.nextFrame = function () {
     const thisQueue = queuedFns;
     queuedFns = [];
     for (let i = 0; i < thisQueue.length; i++) {
@@ -245,7 +245,7 @@ function createRAFMock() {
     }
   };
 
-  mock.raf = function(fn) {
+  mock.raf = function (fn) {
     mock.timesCalled++;
     queuedFns.push(fn);
   };

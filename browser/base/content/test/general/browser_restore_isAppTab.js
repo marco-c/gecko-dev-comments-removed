@@ -13,7 +13,7 @@ function isBrowserAppTab(browser) {
 }
 
 
-var restart = async function(browser) {
+var restart = async function (browser) {
   
   if (!browser.isRemoteBrowser) {
     return;

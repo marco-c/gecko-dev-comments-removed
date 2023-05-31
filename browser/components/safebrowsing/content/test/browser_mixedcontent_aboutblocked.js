@@ -5,7 +5,7 @@ const SECURE_CONTAINER_URL =
   "https://example.com/browser/browser/components/safebrowsing/content/test/empty_file.html";
 
 add_task(async function testNormalBrowsing() {
-  await BrowserTestUtils.withNewTab(SECURE_CONTAINER_URL, async function(
+  await BrowserTestUtils.withNewTab(SECURE_CONTAINER_URL, async function (
     browser
   ) {
     
@@ -25,7 +25,7 @@ add_task(async function testNormalBrowsing() {
       );
     });
 
-    await SpecialPowers.spawn(browser, [PHISH_URL], async function(aPhishUrl) {
+    await SpecialPowers.spawn(browser, [PHISH_URL], async function (aPhishUrl) {
       
       let iframe = content.document.createElement("iframe");
       iframe.src = aPhishUrl;

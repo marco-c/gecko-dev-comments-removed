@@ -4,16 +4,12 @@
 "use strict";
 
 add_task(async function test_onHighlighted() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.multiselect", true]],
-  });
-
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
     },
 
-    background: async function() {
+    background: async function () {
       async function expectHighlighted(fn, action) {
         let resolve;
         let promise = new Promise(r => {

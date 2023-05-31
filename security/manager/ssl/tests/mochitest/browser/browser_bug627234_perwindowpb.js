@@ -7,7 +7,7 @@ function whenNewWindowLoaded(aOptions, aCallback) {
   let win = OpenBrowserWindow(aOptions);
   win.addEventListener(
     "load",
-    function() {
+    function () {
       aCallback(win);
     },
     { once: true }
@@ -52,20 +52,20 @@ function test() {
   }
 
   function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
+    whenNewWindowLoaded(aOptions, function (aWin) {
       windowsToClose.push(aWin);
       
       
       
-      executeSoon(function() {
+      executeSoon(function () {
         aCallback(aWin);
       });
     });
   }
 
   
-  registerCleanupFunction(function() {
-    windowsToClose.forEach(function(aWin) {
+  registerCleanupFunction(function () {
+    windowsToClose.forEach(function (aWin) {
       aWin.close();
     });
     uri = Services.io.newURI("http://localhost");
@@ -73,14 +73,14 @@ function test() {
   });
 
   
-  testOnWindow({ private: true }, function(aWin) {
-    doTest(true, aWin, function() {
+  testOnWindow({ private: true }, function (aWin) {
+    doTest(true, aWin, function () {
       
-      testOnWindow({}, function(aWin) {
-        doTest(false, aWin, function() {
+      testOnWindow({}, function (aWin) {
+        doTest(false, aWin, function () {
           
-          testOnWindow({ private: true }, function(aWin) {
-            doTest(true, aWin, function() {
+          testOnWindow({ private: true }, function (aWin) {
+            doTest(true, aWin, function () {
               finish();
             });
           });

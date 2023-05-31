@@ -214,7 +214,7 @@ async function runScenarios(scenarios) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   

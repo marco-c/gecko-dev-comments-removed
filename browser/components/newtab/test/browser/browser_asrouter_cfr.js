@@ -182,7 +182,7 @@ function trigger_cfr_panel(
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   const { _fetchLatestAddonVersion } = CFRPageActions;
   

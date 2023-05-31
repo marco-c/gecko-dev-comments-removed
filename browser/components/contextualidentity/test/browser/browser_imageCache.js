@@ -31,7 +31,7 @@ function fileHandler(metadata, response) {
   response.bodyOutputStream.write(body, body.length);
 }
 
-add_setup(async function() {
+add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

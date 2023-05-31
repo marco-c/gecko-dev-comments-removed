@@ -28,7 +28,7 @@ const ORIGINAL_URL = "webpack:///code_no_race.js";
 const GENERATED_LINE = 84;
 const ORIGINAL_LINE = 11;
 
-add_task(async function() {
+add_task(async function () {
   
   const toolbox = await openNewTabAndToolbox(PAGE_URL, "jsdebugger");
   

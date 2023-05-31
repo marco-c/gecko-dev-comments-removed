@@ -73,7 +73,7 @@ Object.defineProperty(discovery.device, "name", {
   },
 });
 
-add_task(async function() {
+add_task(async function () {
   
   deepEqual(discovery.getRemoteDevicesWithService("devtools"), []);
   deepEqual(discovery.getRemoteDevicesWithService("penguins"), []);

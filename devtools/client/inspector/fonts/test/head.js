@@ -33,7 +33,7 @@ var nodeConstants = require("resource://devtools/shared/dom-node-constants.js");
 
 
 var _selectNode = selectNode;
-selectNode = async function(node, inspector, reason) {
+selectNode = async function (node, inspector, reason) {
   
   
   node = await getNodeFront(node, inspector);
@@ -63,7 +63,7 @@ selectNode = async function(node, inspector, reason) {
 
 
 
-var openFontInspectorForURL = async function(url) {
+var openFontInspectorForURL = async function (url) {
   const tab = await addTab(url);
   const { toolbox, inspector } = await openInspector();
 

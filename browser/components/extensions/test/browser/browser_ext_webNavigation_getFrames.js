@@ -4,7 +4,7 @@
 
 add_task(async function testWebNavigationGetNonExistentTab() {
   let extension = ExtensionTestUtils.loadExtension({
-    background: async function() {
+    background: async function () {
       
       
       await browser.test.assertRejects(
@@ -41,7 +41,7 @@ add_task(async function testWebNavigationGetNonExistentTab() {
 
 add_task(async function testWebNavigationFrames() {
   let extension = ExtensionTestUtils.loadExtension({
-    background: async function() {
+    background: async function () {
       let tabId;
       let collectedDetails = [];
 

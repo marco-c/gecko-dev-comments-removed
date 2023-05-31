@@ -204,14 +204,14 @@ function onAlertLoad() {
     moveWindowToEnd();
   }
 
-  window.addEventListener("XULAlertClose", function() {
+  window.addEventListener("XULAlertClose", function () {
     window.close();
   });
 
   
   if (!gRequireInteraction) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setTimeout(function() {
+      setTimeout(function () {
         window.close();
       }, ALERT_DURATION_IMMEDIATE);
     } else {

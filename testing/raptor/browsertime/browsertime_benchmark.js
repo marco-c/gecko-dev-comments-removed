@@ -4,7 +4,7 @@
 
 
 
-module.exports = async function(context, commands) {
+module.exports = async function (context, commands) {
   context.log.info("Starting a browsertime benchamrk");
   let url = context.options.browsertime.url;
   let page_cycles = context.options.browsertime.page_cycles;

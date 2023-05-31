@@ -19,7 +19,7 @@ import { evaluateExpressions } from "../actions/expressions";
 
 
 export function willNavigate(event) {
-  return async function({
+  return async function ({
     dispatch,
     getState,
     client,
@@ -45,7 +45,7 @@ export function willNavigate(event) {
 
 
 export function navigated() {
-  return async function({ getState, dispatch, panel }) {
+  return async function ({ getState, dispatch, panel }) {
     try {
       
       const threadcx = getThreadContext(getState());

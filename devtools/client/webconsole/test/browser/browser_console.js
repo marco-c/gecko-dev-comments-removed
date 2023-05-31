@@ -18,7 +18,7 @@ const TEST_IMAGE =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/test-image.png";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
   await pushPref("devtools.browserconsole.enableNetworkMonitoring", true);
@@ -126,7 +126,7 @@ async function testMessages() {
 
   
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
-    (async function() {
+    (async function () {
       throw new Error("privileged content process error message");
     })();
   });

@@ -21,14 +21,14 @@ var gTests = [
   },
 ];
 
-add_setup(async function() {
+add_setup(async function () {
   await SearchTestUtils.promiseNewSearchEngine({
     url: getRootDirectory(gTestPath) + "POSTSearchEngine.xml",
     setAsDefault: true,
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   
   
   const setValueFns = [

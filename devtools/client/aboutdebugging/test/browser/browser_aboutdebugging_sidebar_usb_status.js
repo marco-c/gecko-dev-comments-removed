@@ -11,7 +11,7 @@ const {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
 
   await pushPref(

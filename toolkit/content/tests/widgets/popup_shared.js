@@ -267,7 +267,7 @@ function goNextStep() {
 function goNext() {
   
   
-  window.requestAnimationFrame(function() {
+  window.requestAnimationFrame(function () {
     setTimeout(goNextStepSync, 0);
   });
 }

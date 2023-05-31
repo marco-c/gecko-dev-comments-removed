@@ -18,7 +18,7 @@ var EXPORTED_SYMBOLS = ["SyncedTabsDeckView"];
 
 
 
-const SyncedTabsDeckView = function(window, tabListComponent, props) {
+const SyncedTabsDeckView = function (window, tabListComponent, props) {
   this.props = props;
 
   this._window = window;

@@ -6,7 +6,7 @@
 
 const { Front, types } = require("resource://devtools/shared/protocol.js");
 
-module.exports = function({ resource, watcherFront, targetFront }) {
+module.exports = function ({ resource, watcherFront, targetFront }) {
   
   if (resource.frame && !(resource.frame instanceof Front)) {
     

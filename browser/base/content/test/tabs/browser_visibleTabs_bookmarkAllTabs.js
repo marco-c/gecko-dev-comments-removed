@@ -18,7 +18,7 @@ function test() {
   
   testTab2.linkedBrowser.addEventListener(
     "load",
-    function() {
+    function () {
       
       gBrowser.selectedTab = testTab2;
       gBrowser.showOnlyTheseTabs([testTab2]);

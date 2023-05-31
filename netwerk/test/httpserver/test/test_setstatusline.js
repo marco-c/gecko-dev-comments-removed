@@ -7,7 +7,7 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "URL", function() {
+XPCOMUtils.defineLazyGetter(this, "URL", function () {
   return "http://localhost:" + srv.identity.primaryPort;
 });
 
@@ -55,7 +55,7 @@ function checkStatusLine(
 
 
 
-XPCOMUtils.defineLazyGetter(this, "tests", function() {
+XPCOMUtils.defineLazyGetter(this, "tests", function () {
   return [
     new Test(URL + "/no/setstatusline", null, startNoSetStatusLine, stop),
     new Test(URL + "/http1_0", null, startHttp1_0, stop),

@@ -87,7 +87,7 @@ const forbiddenScripts = {
   ]),
 };
 
-add_task(async function() {
+add_task(async function () {
   SimpleTest.requestCompleteLog();
 
   

@@ -56,7 +56,7 @@ addDebuggerToGlobal(global);
 
 
 
-exports.allocationTracker = function({
+exports.allocationTracker = function ({
   watchGlobal,
   watchAllGlobals,
   watchDevToolsGlobals,
@@ -129,7 +129,7 @@ exports.allocationTracker = function({
 
   
   
-  dbg.onNewGlobalObject = function(g) {
+  dbg.onNewGlobalObject = function (g) {
     if (acceptGlobal(g)) {
       dbg.addDebuggee(g);
     }

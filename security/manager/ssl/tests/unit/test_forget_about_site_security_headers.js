@@ -31,7 +31,7 @@ const uri = Services.io.newURI("https://a.pinning.example.com");
 
 
 
-add_task(async function() {
+add_task(async function () {
   sss.processHeader(uri, GOOD_MAX_AGE);
 
   Assert.ok(sss.isSecureURI(uri), "a.pinning.example.com should be HSTS");
@@ -48,7 +48,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   sss.processHeader(uri, GOOD_MAX_AGE);
 
   Assert.ok(
@@ -76,7 +76,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let originAttributesList = [
     {},
     { userContextId: 1 },

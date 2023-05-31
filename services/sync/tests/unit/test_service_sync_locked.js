@@ -15,11 +15,11 @@ add_task(async function run_test() {
     let i = old.info;
     
     
-    old.debug = function(m, p) {
+    old.debug = function (m, p) {
       debug.push(p ? m + ": " + (p.message || p) : m);
       d.call(old, m, p);
     };
-    old.info = function(m, p) {
+    old.info = function (m, p) {
       info.push(p ? m + ": " + (p.message || p) : m);
       i.call(old, m, p);
     };

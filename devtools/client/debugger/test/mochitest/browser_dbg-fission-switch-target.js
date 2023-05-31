@@ -8,7 +8,7 @@
 
 const PARENT_PROCESS_URI = "about:robots";
 
-add_task(async function() {
+add_task(async function () {
   
   const dbg = await initDebuggerWithAbsoluteURL(
     PARENT_PROCESS_URI,

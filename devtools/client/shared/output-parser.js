@@ -352,7 +352,7 @@ OutputParser.prototype = {
     let fontFamilyNameParts = [];
     let previousWasBang = false;
 
-    const colorOK = function() {
+    const colorOK = function () {
       return (
         options.supportsColor ||
         (options.expectFilter &&
@@ -361,7 +361,7 @@ OutputParser.prototype = {
       );
     };
 
-    const angleOK = function(angle) {
+    const angleOK = function (angle) {
       return new angleUtils.CssAngle(angle).valid;
     };
 
@@ -1479,7 +1479,7 @@ OutputParser.prototype = {
       
       
       
-      swatch.addEventListener("click", function(event) {
+      swatch.addEventListener("click", function (event) {
         if (event.shiftKey) {
           event.stopPropagation();
         }

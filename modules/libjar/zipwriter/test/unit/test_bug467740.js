@@ -11,7 +11,7 @@ function run_test() {
   
   var invalidArchives = ["emptyfile.txt", "smallfile.txt", "test.png"];
 
-  invalidArchives.forEach(function(invalidArchive) {
+  invalidArchives.forEach(function (invalidArchive) {
     
     var invalidFile = do_get_file(DATA_DIR + invalidArchive);
 

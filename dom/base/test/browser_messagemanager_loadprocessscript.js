@@ -58,7 +58,7 @@ function initTestScript() {
 }
 var initTestScriptURL = "data:,(" + initTestScript.toString() + ")()";
 
-var checkProcess = async function(mm) {
+var checkProcess = async function (mm) {
   let { target } = await promiseMessage(mm, "ProcessTest:Loaded");
   target.sendAsyncMessage("ProcessTest:Reply");
   await promiseMessage(target, "ProcessTest:Finished");
@@ -76,14 +76,14 @@ function promiseMessage(messageManager, message) {
   });
 }
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processPrelaunch.enabled", false]],
   });
 });
 
-add_task(async function() {
+add_task(async function () {
   
   if (!gMultiProcessBrowser) {
     return;
@@ -121,7 +121,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let checks = [];
   for (let i = 0; i < Services.ppmm.childCount; i++) {
     checks.push(checkProcess(Services.ppmm.getChildAt(i)));
@@ -132,7 +132,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   
   if (!gMultiProcessBrowser) {
     return;

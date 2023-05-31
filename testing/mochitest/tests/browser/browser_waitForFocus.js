@@ -9,7 +9,7 @@ function promiseTabLoadEvent(tab, url) {
 }
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   gURLBar.focus();
@@ -27,7 +27,7 @@ add_task(async function() {
   gURLBar.focus();
 });
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   gURLBar.focus();
@@ -50,7 +50,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let tab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.selectedTab = tab;
 
@@ -81,7 +81,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     gBaseURL + "waitForFocusPage.html"
@@ -102,7 +102,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SidebarUI.show("viewBookmarksSidebar");
 
   gURLBar.focus();

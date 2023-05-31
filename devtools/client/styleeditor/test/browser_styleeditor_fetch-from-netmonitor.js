@@ -9,7 +9,7 @@
 const EMPTY_TEST_URL = TEST_BASE_HTTPS + "doc_empty.html";
 const TEST_URL = TEST_BASE_HTTPS + "doc_fetch_from_netmonitor.html";
 
-add_task(async function() {
+add_task(async function () {
   info("Opening netmonitor");
   
   

@@ -11,7 +11,7 @@ const URL2 = `http://example.com/${PATH}`;
 const URL3 = `http://example.org/${PATH}`;
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   await SpecialPowers.pushPrefEnv({

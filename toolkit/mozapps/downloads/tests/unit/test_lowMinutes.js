@@ -20,7 +20,7 @@ const { DownloadUtils } = ChromeUtils.importESModule(
 
 
 
-var _ = function(some, debug, text, to) {
+var _ = function (some, debug, text, to) {
   print(Array.from(arguments).join(" "));
 };
 
@@ -42,7 +42,7 @@ var expectedTimes = [
 _(expectedTimes.join("\n"));
 
 function run_test() {
-  expectedTimes.forEach(function([time, expectStatus, comment]) {
+  expectedTimes.forEach(function ([time, expectStatus, comment]) {
     _("Running test with time", time);
     _("Test comment:", comment);
     let [status, last] = DownloadUtils.getTimeLeft(time);

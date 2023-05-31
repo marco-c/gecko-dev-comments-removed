@@ -59,12 +59,12 @@ function getTimeoutMultiplier() {
 
 const add_plain_task = add_task.bind(this);
 
-this.add_task = function(taskFn, opts = {}) {
+this.add_task = function (taskFn, opts = {}) {
   const {
     createTab = true, 
   } = opts;
 
-  const fn = async function() {
+  const fn = async function () {
     let client, tab, target;
 
     try {

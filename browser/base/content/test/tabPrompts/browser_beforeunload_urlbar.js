@@ -20,7 +20,7 @@ add_task(async function test_beforeunload_stay_clears_urlbar() {
   });
 
   const TEST_URL = TEST_ROOT + "file_beforeunload_stop.html";
-  await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
+  await BrowserTestUtils.withNewTab(TEST_URL, async function (browser) {
     gURLBar.focus();
     
     const inputValue = "http://example.org/?q=typed";
@@ -69,7 +69,7 @@ add_task(async function test_beforeunload_stay_clears_urlbar() {
 
     
     
-    await SpecialPowers.spawn(browser, [], function() {
+    await SpecialPowers.spawn(browser, [], function () {
       content.window.onbeforeunload = null;
     });
   });

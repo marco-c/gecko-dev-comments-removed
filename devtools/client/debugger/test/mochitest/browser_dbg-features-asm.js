@@ -20,14 +20,14 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   
   
   
   
   const tab = await addTab(EXAMPLE_URL + "doc-asm.html");
-  await SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
     Cu.forceGC();
   });
   const toolbox = await openToolboxForTab(tab, "jsdebugger");

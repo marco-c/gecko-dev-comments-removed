@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -9,7 +9,7 @@ add_task(async function() {
   );
   let browser = tab.linkedBrowser;
 
-  await SpecialPowers.spawn(browser, [], async function(arg) {
+  await SpecialPowers.spawn(browser, [], async function (arg) {
     const trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
       Ci.nsITransferable
     );

@@ -5,7 +5,7 @@
 
 const TEST_URL = `${TEST_BASE_URL}file_blank_but_not_blank.html`;
 
-add_task(async function() {
+add_task(async function () {
   for (let page of gInitialPages) {
     if (page == "about:newtab") {
       
@@ -20,7 +20,7 @@ add_task(async function() {
   }
 });
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -30,7 +30,7 @@ add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   is(gURLBar.value, TEST_URL, "The URL bar should match the URI");
   let browserLoaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  SpecialPowers.spawn(tab.linkedBrowser, [], function() {
+  SpecialPowers.spawn(tab.linkedBrowser, [], function () {
     content.document.querySelector("a").click();
   });
   await browserLoaded;
@@ -39,7 +39,7 @@ add_task(async function() {
     TEST_URL,
     "The URL bar should be the previous active document's URI."
   );
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     
     content.location.reload();
   }).catch(e => {

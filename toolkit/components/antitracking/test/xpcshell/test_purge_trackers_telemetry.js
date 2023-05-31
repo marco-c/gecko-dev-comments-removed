@@ -46,7 +46,7 @@ add_task(async function setup() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
 
   let FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
@@ -147,7 +147,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
 
   

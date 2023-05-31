@@ -251,7 +251,7 @@ module.exports = {
     }
 
     
-    scope.through = scope.through.filter(function(reference) {
+    scope.through = scope.through.filter(function (reference) {
       if (reference.identifier.name != name) {
         return true;
       }

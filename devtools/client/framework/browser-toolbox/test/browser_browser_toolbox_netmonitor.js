@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("browser.safebrowsing.blockedURIs.enabled", false);
   await pushPref("browser.safebrowsing.downloads.enabled", false);

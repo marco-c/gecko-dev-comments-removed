@@ -34,7 +34,7 @@ Services.scriptloader.loadSubScript(
 
 
 
-add_task(async function() {
+add_task(async function () {
   sanityChecks();
 
   

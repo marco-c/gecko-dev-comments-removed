@@ -7,7 +7,7 @@
 
 const TESTCASE_URI = TEST_BASE + "missing.html";
 
-add_task(async function() {
+add_task(async function () {
   const { ui, toolbox, panel } = await openStyleEditorForURL(TESTCASE_URI);
 
   

@@ -39,7 +39,7 @@ const URL = "https://translation.googleapis.com/language/translate/v2";
 
 
 
-var GoogleTranslator = function(
+var GoogleTranslator = function (
   translationDocument,
   sourceLanguage,
   targetLanguage

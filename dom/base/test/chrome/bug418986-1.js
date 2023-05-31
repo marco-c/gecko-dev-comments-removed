@@ -1,6 +1,6 @@
 
 
-var test = function(isContent) {
+var test = function (isContent) {
   SimpleTest.waitForExplicitFinish();
 
   SpecialPowers.pushPrefEnv({
@@ -36,19 +36,19 @@ var test = function(isContent) {
   ];
 
   
-  let checkPair = function(a, b) {
+  let checkPair = function (a, b) {
     
     is(eval(a), eval(b), a + " should be equal to " + b);
   };
 
   
-  let prefVals = (function*() {
+  let prefVals = (function* () {
     yield false;
     yield true;
   })();
 
   
-  let nextTest = function() {
+  let nextTest = function () {
     let { value: prefValue, done } = prefVals.next();
     if (done) {
       SimpleTest.finish();
@@ -56,12 +56,12 @@ var test = function(isContent) {
     }
     SpecialPowers.pushPrefEnv(
       { set: [["privacy.resistFingerprinting", prefValue]] },
-      function() {
+      function () {
         
         
         let resisting = prefValue && isContent;
         
-        pairs.map(function([item, onVal]) {
+        pairs.map(function ([item, onVal]) {
           if (resisting) {
             checkPair("window." + item, onVal);
           } else if (!isContent && !item.startsWith("moz")) {

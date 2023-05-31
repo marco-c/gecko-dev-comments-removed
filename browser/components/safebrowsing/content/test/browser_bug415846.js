@@ -28,10 +28,10 @@ function check_menu_at_page(url, testFn) {
       gBrowser,
       url: "about:blank",
     },
-    async function(browser) {
+    async function (browser) {
       
       
-      let dclPromise = SpecialPowers.spawn(browser, [], async function() {
+      let dclPromise = SpecialPowers.spawn(browser, [], async function () {
         await ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", false);
       });
       BrowserTestUtils.loadURIString(browser, url);
@@ -67,7 +67,7 @@ function check_menu_at_page(url, testFn) {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await check_menu_at_page(NORMAL_PAGE, (reportMenu, errorMenu) => {
     ok(
       !reportMenu.hidden,
@@ -84,7 +84,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await check_menu_at_page(PHISH_PAGE, (reportMenu, errorMenu) => {
     ok(
       reportMenu.hidden,

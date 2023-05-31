@@ -88,7 +88,7 @@ describe("ToolbarPanelHub", () => {
     };
     fakeWindow = {
       
-      DocumentFragment: function() {
+      DocumentFragment: function () {
         return fakeElementById;
       },
       document: fakeDocument,

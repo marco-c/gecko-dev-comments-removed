@@ -12,7 +12,7 @@ var ioService = Services.io;
 
 
 
-XPCOMUtils.defineLazyGetter(this, "uri", function() {
+XPCOMUtils.defineLazyGetter(this, "uri", function () {
   return ioService.newURI(
     "http://localhost:" +
       server.identity.primaryPort +

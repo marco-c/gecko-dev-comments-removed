@@ -5,7 +5,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 function afterSessionStartupInitialization(cb) {
   info("Waiting for session startup initialization");
-  let observer = function() {
+  let observer = function () {
     try {
       info("Session startup initialization observed");
       Services.obs.removeObserver(observer, "sessionstore-state-finalized");

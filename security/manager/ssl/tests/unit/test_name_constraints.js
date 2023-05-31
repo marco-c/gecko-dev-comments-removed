@@ -55,7 +55,7 @@ function checkCertInNameSpace(cert) {
   );
 }
 
-add_task(async function() {
+add_task(async function () {
   
   loadCertWithTrust("ca-example-com-permitted", "CTu,,");
   loadCertWithTrust("int-example-org-permitted", ",,");

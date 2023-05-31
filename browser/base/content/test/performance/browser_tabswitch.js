@@ -22,7 +22,7 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   
@@ -62,7 +62,7 @@ add_task(async function() {
   let inRange = (val, min, max) => min <= val && val <= max;
 
   await withPerfObserver(
-    async function() {
+    async function () {
       let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
       gBrowser.selectedTab = origTab;
       await switchDone;

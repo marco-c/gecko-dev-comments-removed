@@ -15,7 +15,7 @@
 
 
 
-exports.toggleEnableDevToolsPopup = function(doc) {
+exports.toggleEnableDevToolsPopup = function (doc) {
   
   
   const panelWrapper = doc.getElementById("wrapper-enable-devtools-popup");

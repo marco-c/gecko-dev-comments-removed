@@ -13,7 +13,7 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
 
-add_task(async function() {
+add_task(async function () {
   info("Check that the error pages shows up");
 
   await Promise.all([
@@ -35,7 +35,7 @@ add_task(async function() {
   ]);
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Check that the go-back button returns to previous page");
 
   
@@ -66,7 +66,7 @@ add_task(async function() {
     }
 
     if (useFrame) {
-      await SpecialPowers.spawn(bc, [], async function() {
+      await SpecialPowers.spawn(bc, [], async function () {
         let returnButton = content.document.getElementById("goBack");
         is(
           returnButton,
@@ -79,7 +79,7 @@ add_task(async function() {
         gBrowser,
         "about:home"
       );
-      await SpecialPowers.spawn(bc, [], async function() {
+      await SpecialPowers.spawn(bc, [], async function () {
         let returnButton = content.document.getElementById("goBack");
         is(
           returnButton.getAttribute("autofocus"),
@@ -104,7 +104,7 @@ add_task(async function() {
   }
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Check that the go-back button returns to about:home");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, SECURE_PAGE);
@@ -138,7 +138,7 @@ add_task(async function() {
   );
 
   
-  await SpecialPowers.spawn(browser, [], async function() {
+  await SpecialPowers.spawn(browser, [], async function () {
     let returnButton = content.document.getElementById("goBack");
     returnButton.click();
   });
@@ -176,7 +176,7 @@ async function testPageWithURI(uri, message, expect) {
 
   
   let browser = tab.linkedBrowser;
-  await SpecialPowers.spawn(browser, [message, expect], function(
+  await SpecialPowers.spawn(browser, [message, expect], function (
     message,
     expect
   ) {

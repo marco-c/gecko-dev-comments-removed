@@ -12,13 +12,13 @@ const testPathUpgradeable = getRootDirectory(gTestPath).replace(
 
 const kTestURI = testPathUpgradeable + "file_user_gesture.html";
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_only_mode", true]],
   });
 
-  await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
     
     BrowserTestUtils.loadURIString(browser, kTestURI);

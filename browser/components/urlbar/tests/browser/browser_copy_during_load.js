@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const SLOW_PAGE =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content",

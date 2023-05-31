@@ -16,7 +16,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 var readerButton = document.getElementById("reader-mode-button");
 
 add_task(async function test_reader_button() {
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     
     TEST_PREFS.forEach(([name, value]) => {
       Services.prefs.clearUserPref(name);

@@ -58,7 +58,7 @@ const POCKET_ONSAVERECS_PREF = "extensions.pocket.onSaveRecs";
 const POCKET_ONSAVERECS_LOCLES_PREF = "extensions.pocket.onSaveRecs.locales";
 const POCKET_HOME_PREF = "extensions.pocket.showHome";
 
-var pktUI = (function() {
+var pktUI = (function () {
   let _titleToSave = "";
   let _urlToSave = "";
 
@@ -138,7 +138,7 @@ var pktUI = (function() {
 
 
   function showSignUp() {
-    getFirefoxAccountSignedInUser(function(userdata) {
+    getFirefoxAccountSignedInUser(function (userdata) {
       showPanel(
         "about:pocket-signup?" +
           "emailButton=" +
@@ -169,7 +169,7 @@ var pktUI = (function() {
 
 
   function saveAndShowConfirmation() {
-    getFirefoxAccountSignedInUser(function(userdata) {
+    getFirefoxAccountSignedInUser(function (userdata) {
       showPanel(
         "about:pocket-saved?premiumStatus=" +
           (pktApi.isPremiumUser() ? "1" : "0") +
@@ -568,9 +568,7 @@ var pktUI = (function() {
   function closePanel() {
     
     
-    getPanelFrame()
-      ?.closest("panel")
-      ?.hidePopup();
+    getPanelFrame()?.closest("panel")?.hidePopup();
   }
 
   var toolbarPanelFrame;
@@ -631,7 +629,7 @@ var pktUI = (function() {
 })();
 
 
-var pktUIMessaging = (function() {
+var pktUIMessaging = (function () {
   
 
 

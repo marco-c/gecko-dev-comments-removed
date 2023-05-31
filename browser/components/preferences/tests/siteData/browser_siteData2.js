@@ -240,7 +240,7 @@ add_task(async function test_removePartialSites() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let hosts = await addTestData([
     {
       usage: 1024,
@@ -307,7 +307,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let hosts = await addTestData([
     {
       usage: 1024,
@@ -364,7 +364,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let hosts = await addTestData([
     {
       usage: 1024,
@@ -419,7 +419,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let hosts = await addTestData([
     {
       usage: 1024,

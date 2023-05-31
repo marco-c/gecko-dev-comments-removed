@@ -14,7 +14,7 @@ const mode = location.search.slice(1);
 
 
 if (mode !== "no-fetch") {
-  addEventListener("fetch", function(event) {
+  addEventListener("fetch", function (event) {
     if (mode === "reset-fetch") {
       
       return;
@@ -27,10 +27,10 @@ if (mode !== "no-fetch") {
 }
 
 
-addEventListener("install", function(event) {
+addEventListener("install", function (event) {
   event.waitUntil(skipWaiting());
 });
 
-addEventListener("activate", function(event) {
+addEventListener("activate", function (event) {
   event.waitUntil(clients.claim());
 });

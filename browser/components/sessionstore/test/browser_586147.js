@@ -34,7 +34,7 @@ function test() {
   
   tabs[2].hidden = true;
 
-  observeOneRestore(function() {
+  observeOneRestore(function () {
     is(gBrowser.visibleTabs.length, 1, "only restored 1 visible tab");
     let restoredTabs = gBrowser.tabs;
 

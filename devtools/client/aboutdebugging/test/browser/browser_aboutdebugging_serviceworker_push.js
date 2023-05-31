@@ -14,7 +14,7 @@ const TAB_URL = URL_ROOT_SSL + "resources/service-workers/push-sw.html";
 
 
 
-add_task(async function() {
+add_task(async function () {
   await enableServiceWorkerDebugging();
   const { document, tab, window } = await openAboutDebugging({
     enableWorkerUpdates: true,

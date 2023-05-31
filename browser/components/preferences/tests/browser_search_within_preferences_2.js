@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.preferences.search", true]],
   });
@@ -17,7 +17,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneSync", { leaveOpen: true });
 
   let weavePrefsDeck = gBrowser.contentDocument.getElementById(
@@ -93,7 +93,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let l10nId = "language-and-appearance-header";
 
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {

@@ -8,7 +8,7 @@
 
 
 
-exports.preventDefaultAndStopPropagation = function(event) {
+exports.preventDefaultAndStopPropagation = function (event) {
   event.preventDefault();
   event.stopPropagation();
   if (event.nativeEvent) {

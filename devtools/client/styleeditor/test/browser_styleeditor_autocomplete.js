@@ -129,7 +129,7 @@ function getTestCases(cssProperties) {
   ];
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   

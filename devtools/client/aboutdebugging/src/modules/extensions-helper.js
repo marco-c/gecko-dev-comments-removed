@@ -14,7 +14,7 @@ const {
   PREFERENCES,
 } = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
-exports.parseFileUri = function(url) {
+exports.parseFileUri = function (url) {
   
   
   
@@ -25,7 +25,7 @@ exports.parseFileUri = function(url) {
   return url.slice("file://".length);
 };
 
-exports.getExtensionUuid = function(extension) {
+exports.getExtensionUuid = function (extension) {
   const { manifestURL } = extension;
   
   return manifestURL ? /moz-extension:\/\/([^/]*)/.exec(manifestURL)[1] : null;
@@ -48,7 +48,7 @@ exports.getExtensionUuid = function(extension) {
 
 
 
-exports.openTemporaryExtension = function(win, message) {
+exports.openTemporaryExtension = function (win, message) {
   return new Promise(resolve => {
     const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(win, message, Ci.nsIFilePicker.modeOpen);

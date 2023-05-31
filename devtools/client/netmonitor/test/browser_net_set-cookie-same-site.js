@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(SET_COOKIE_SAME_SITE_SJS, {
     requestCount: 1,
   });

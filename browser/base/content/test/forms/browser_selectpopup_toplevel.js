@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let select = document.createElement("select");
   select.appendChild(new Option("abc"));
   select.appendChild(new Option("defg"));

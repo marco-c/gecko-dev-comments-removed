@@ -17,17 +17,17 @@ const {
 
 
 
-loader.lazyGetter(this, "GridDisplaySettings", function() {
+loader.lazyGetter(this, "GridDisplaySettings", function () {
   return createFactory(
     require("resource://devtools/client/inspector/grids/components/GridDisplaySettings.js")
   );
 });
-loader.lazyGetter(this, "GridList", function() {
+loader.lazyGetter(this, "GridList", function () {
   return createFactory(
     require("resource://devtools/client/inspector/grids/components/GridList.js")
   );
 });
-loader.lazyGetter(this, "GridOutline", function() {
+loader.lazyGetter(this, "GridOutline", function () {
   return createFactory(
     require("resource://devtools/client/inspector/grids/components/GridOutline.js")
   );

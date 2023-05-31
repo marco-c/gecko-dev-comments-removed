@@ -30,7 +30,7 @@ const NODES = [
   { action: "end", title: NODE_SIX },
 ];
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, toolbox } = await openInspectorForURL(TEST_URI);
 
   
@@ -108,7 +108,7 @@ function isElementInViewport(window, el) {
   );
 }
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   
   Services.prefs.clearUserPref("devtools.toolbox.host");
 });

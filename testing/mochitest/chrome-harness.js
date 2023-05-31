@@ -179,7 +179,7 @@ function getTestFilePath(path) {
     file = fileHandler.getFileFromURLSpec(parentURI.spec);
   }
   
-  path.split("/").forEach(function(p) {
+  path.split("/").forEach(function (p) {
     if (p == "..") {
       file = file.parent;
     } else if (p != ".") {

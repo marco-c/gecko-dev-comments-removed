@@ -59,7 +59,7 @@ class WorkerRuntimePortEvent extends SimpleEventAPI {
 
   createListenerForAPIRequest(request) {
     const { eventListener } = request;
-    return function(port, ...args) {
+    return function (port, ...args) {
       return eventListener.callListener(args, {
         apiObjectType: Ci.mozIExtensionListenerCallOptions.RUNTIME_PORT,
         apiObjectDescriptor: { portId: port.portId, name: port.name },
@@ -83,7 +83,7 @@ class WorkerMessageEvent extends MessageEvent {
 
   createListenerForAPIRequest(request) {
     const { eventListener } = request;
-    return function(message, sender) {
+    return function (message, sender) {
       return eventListener.callListener([message, sender], {
         eventListenerType:
           Ci.mozIExtensionListenerCallOptions.CALLBACK_SEND_RESPONSE,
@@ -109,7 +109,7 @@ class WorkerPortEvent extends SimpleEventAPI {
     const { eventListener } = request;
     switch (this.name) {
       case "Port.onDisconnect":
-        return function(port) {
+        return function (port) {
           eventListener.callListener([], {
             apiObjectType: Ci.mozIExtensionListenerCallOptions.RUNTIME_PORT,
             apiObjectDescriptor: {
@@ -119,7 +119,7 @@ class WorkerPortEvent extends SimpleEventAPI {
           });
         };
       case "Port.onMessage":
-        return function(message, port) {
+        return function (message, port) {
           eventListener.callListener([message], {
             apiObjectType: Ci.mozIExtensionListenerCallOptions.RUNTIME_PORT,
             apiObjectDescriptor: {
@@ -165,7 +165,7 @@ class WorkerPort extends Port {
   }
 }
 
-defineLazyGetter(WorkerPort.prototype, "api", function() {
+defineLazyGetter(WorkerPort.prototype, "api", function () {
   
   
   
@@ -507,7 +507,7 @@ class WebIDLChildAPIManager extends ChildAPIManager {
     const { eventListener } = request;
     listener =
       listener ??
-      function(...args) {
+      function (...args) {
         
         
         
@@ -703,7 +703,7 @@ class WorkerContextChild extends BaseContext {
   }
 }
 
-defineLazyGetter(WorkerContextChild.prototype, "messenger", function() {
+defineLazyGetter(WorkerContextChild.prototype, "messenger", function () {
   return new WorkerMessenger(this);
 });
 

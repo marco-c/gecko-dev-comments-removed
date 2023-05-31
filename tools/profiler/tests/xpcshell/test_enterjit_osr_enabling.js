@@ -2,7 +2,7 @@ function run_test() {
   Assert.ok(!Services.profiler.IsActive());
 
   
-  (function() {
+  (function () {
     Services.profiler.StartProfiler(100, 10, ["js"]);
     let n = 10000;
     

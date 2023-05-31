@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser,

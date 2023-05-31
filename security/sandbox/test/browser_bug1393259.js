@@ -33,7 +33,7 @@ const kTestFontName = "Fira Sans";
 
 const kPrivateFontSubPath = "/FiraSans-Regular.otf";
 
-add_task(async function() {
+add_task(async function () {
   await new Promise(resolve => waitForFocus(resolve, window));
 
   await BrowserTestUtils.withNewTab(
@@ -41,7 +41,7 @@ add_task(async function() {
       gBrowser,
       url: kPageURL,
     },
-    async function(aBrowser) {
+    async function (aBrowser) {
       function runProcess(aCmd, aArgs, blocking = true) {
         let cmdFile = Cc["@mozilla.org/file/local;1"].createInstance(
           Ci.nsIFile
@@ -108,7 +108,7 @@ add_task(async function() {
       let homeDir = Services.dirsvc.get("Home", Ci.nsIFile);
       let privateFontPath = homeDir.path + kPrivateFontSubPath;
 
-      registerCleanupFunction(function() {
+      registerCleanupFunction(function () {
         unregisterFont(privateFontPath,  false);
         runProcess("/bin/rm", [privateFontPath],  false);
       });
@@ -120,17 +120,21 @@ add_task(async function() {
       unregisterFont(privateFontPath,  false);
 
       
-      let origWidth = await SpecialPowers.spawn(aBrowser, [], async function() {
-        let window = content.window.wrappedJSObject;
-        let contentDiv = window.document.getElementById("content");
-        return contentDiv.offsetWidth;
-      });
+      let origWidth = await SpecialPowers.spawn(
+        aBrowser,
+        [],
+        async function () {
+          let window = content.window.wrappedJSObject;
+          let contentDiv = window.document.getElementById("content");
+          return contentDiv.offsetWidth;
+        }
+      );
 
       
       await registerFont(privateFontPath);
 
       
-      await SpecialPowers.spawn(aBrowser, [], async function() {
+      await SpecialPowers.spawn(aBrowser, [], async function () {
         let window = content.window.wrappedJSObject;
         let contentDiv = window.document.getElementById("content");
         contentDiv.style.fontFamily = "'Fira Sans', monospace";
@@ -139,7 +143,7 @@ add_task(async function() {
       
       
       while (true) {
-        let width = await SpecialPowers.spawn(aBrowser, [], async function() {
+        let width = await SpecialPowers.spawn(aBrowser, [], async function () {
           let window = content.window.wrappedJSObject;
           let contentDiv = window.document.getElementById("content");
           return contentDiv.offsetWidth;
@@ -153,7 +157,7 @@ add_task(async function() {
       }
 
       
-      let fontList = await SpecialPowers.spawn(aBrowser, [], async function() {
+      let fontList = await SpecialPowers.spawn(aBrowser, [], async function () {
         let window = content.window.wrappedJSObject;
         let range = window.document.createRange();
         let contentDiv = window.document.getElementById("content");

@@ -9,7 +9,7 @@
 const TEST_URI =
   "data:text/html;charset=utf-8,<!DOCTYPE html>Test concurrent top-level await expressions returning same value";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.webconsole.input.editor", true);
 

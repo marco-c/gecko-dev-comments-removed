@@ -29,7 +29,7 @@ registerCleanupFunction(() => {
 
 
 
-const openAnimationInspector = async function() {
+const openAnimationInspector = async function () {
   const { inspector, toolbox } = await openInspectorSidebarTab(TAB_NAME);
   await inspector.once("inspector-updated");
   const animationInspector = inspector.getPanel("animationinspector");
@@ -60,7 +60,7 @@ const openAnimationInspector = async function() {
 
 
 
-const closeAnimationInspector = async function() {
+const closeAnimationInspector = async function () {
   return gDevTools.closeToolboxForTab(gBrowser.selectedTab);
 };
 
@@ -68,7 +68,7 @@ const closeAnimationInspector = async function() {
 
 
 
-const enableAnimationFeatures = function() {
+const enableAnimationFeatures = function () {
   return new Promise(resolve => {
     SpecialPowers.pushPrefEnv(
       {
@@ -93,7 +93,7 @@ const enableAnimationFeatures = function() {
 
 
 const _addTab = addTab;
-addTab = async function(url) {
+addTab = async function (url) {
   await enableAnimationFeatures();
   return _addTab(url);
 };
@@ -104,7 +104,7 @@ addTab = async function(url) {
 
 
 
-const removeAnimatedElementsExcept = function(selectors) {
+const removeAnimatedElementsExcept = function (selectors) {
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [selectors],
@@ -137,7 +137,7 @@ const removeAnimatedElementsExcept = function(selectors) {
 
 
 
-const clickOnAnimation = async function(animationInspector, panel, index) {
+const clickOnAnimation = async function (animationInspector, panel, index) {
   info("Click on animation " + index + " in the timeline");
   const animationItemEl = await findAnimationItemByIndex(panel, index);
   const summaryGraphEl = animationItemEl.querySelector(
@@ -155,7 +155,7 @@ const clickOnAnimation = async function(animationInspector, panel, index) {
 
 
 
-const clickOnAnimationByTargetSelector = async function(
+const clickOnAnimationByTargetSelector = async function (
   animationInspector,
   panel,
   selector
@@ -177,7 +177,7 @@ const clickOnAnimationByTargetSelector = async function(
 
 
 
-const clickOnDetailCloseButton = function(panel) {
+const clickOnDetailCloseButton = function (panel) {
   info("Click on close button for animation detail pane");
   const buttonEl = panel.querySelector(".animation-detail-close-button");
   const bounds = buttonEl.getBoundingClientRect();
@@ -193,7 +193,7 @@ const clickOnDetailCloseButton = function(panel) {
 
 
 
-const clickOnPauseResumeButton = function(animationInspector, panel) {
+const clickOnPauseResumeButton = function (animationInspector, panel) {
   info("Click on pause/resume button");
   const buttonEl = panel.querySelector(".pause-resume-button");
   const bounds = buttonEl.getBoundingClientRect();
@@ -209,7 +209,7 @@ const clickOnPauseResumeButton = function(animationInspector, panel) {
 
 
 
-const clickOnRewindButton = function(animationInspector, panel) {
+const clickOnRewindButton = function (animationInspector, panel) {
   info("Click on rewind button");
   const buttonEl = panel.querySelector(".rewind-button");
   const bounds = buttonEl.getBoundingClientRect();
@@ -229,7 +229,7 @@ const clickOnRewindButton = function(animationInspector, panel) {
 
 
 
-const clickOnCurrentTimeScrubberController = function(
+const clickOnCurrentTimeScrubberController = function (
   animationInspector,
   panel,
   mouseDownPosition
@@ -257,7 +257,7 @@ const clickOnCurrentTimeScrubberController = function(
 
 
 
-const clickOnInspectIcon = async function(animationInspector, panel, index) {
+const clickOnInspectIcon = async function (animationInspector, panel, index) {
   info(`Click on an inspect icon in animation target component[${index}]`);
   const animationItemEl = await findAnimationItemByIndex(panel, index);
   const iconEl = animationItemEl.querySelector(
@@ -275,7 +275,7 @@ const clickOnInspectIcon = async function(animationInspector, panel, index) {
 
 
 
-const changePlaybackRateSelector = async function(
+const changePlaybackRateSelector = async function (
   animationInspector,
   panel,
   rate
@@ -310,7 +310,7 @@ const changePlaybackRateSelector = async function(
 
 
 
-const clickOnSummaryGraph = function(
+const clickOnSummaryGraph = function (
   animationInspector,
   panel,
   summaryGraphEl
@@ -338,7 +338,7 @@ const clickOnSummaryGraph = function(
 
 
 
-const clickOnTargetNode = async function(animationInspector, panel, index) {
+const clickOnTargetNode = async function (animationInspector, panel, index) {
   const { inspector } = animationInspector;
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info(`Click on a target node in animation target component[${index}]`);
@@ -364,7 +364,7 @@ const clickOnTargetNode = async function(animationInspector, panel, index) {
 
 
 
-const dragOnCurrentTimeScrubber = async function(
+const dragOnCurrentTimeScrubber = async function (
   animationInspector,
   panel,
   mouseMovePixel,
@@ -417,7 +417,7 @@ const dragOnCurrentTimeScrubber = async function(
 
 
 
-const dragOnCurrentTimeScrubberController = async function(
+const dragOnCurrentTimeScrubberController = async function (
   animationInspector,
   panel,
   mouseDownPosition,
@@ -474,7 +474,7 @@ const dragOnCurrentTimeScrubberController = async function(
 
 
 
-const getDurationAndRate = function(animationInspector, panel, pixels) {
+const getDurationAndRate = function (animationInspector, panel, pixels) {
   const controllerEl = panel.querySelector(".current-time-scrubber-area");
   const bounds = controllerEl.getBoundingClientRect();
   const duration =
@@ -492,7 +492,7 @@ const getDurationAndRate = function(animationInspector, panel, pixels) {
 
 
 
-const mouseOverOnTargetNode = function(animationInspector, panel, index) {
+const mouseOverOnTargetNode = function (animationInspector, panel, index) {
   info(`Mouse over on a target node in animation target component[${index}]`);
   const el = panel.querySelectorAll(".animation-target .objectBox")[index];
   el.scrollIntoView(false);
@@ -508,7 +508,7 @@ const mouseOverOnTargetNode = function(animationInspector, panel, index) {
 
 
 
-const mouseOutOnTargetNode = function(animationInspector, panel, index) {
+const mouseOutOnTargetNode = function (animationInspector, panel, index) {
   info(`Mouse out on a target node in animation target component[${index}]`);
   const el = panel.querySelectorAll(".animation-target .objectBox")[index];
   el.scrollIntoView(false);
@@ -520,7 +520,7 @@ const mouseOutOnTargetNode = function(animationInspector, panel, index) {
 
 
 
-const selectAnimationInspector = async function(inspector) {
+const selectAnimationInspector = async function (inspector) {
   await inspector.toolbox.selectTool("inspector");
   const onDispatched = waitForDispatch(inspector.store, "UPDATE_ANIMATIONS");
   inspector.sidebar.select("animationinspector");
@@ -533,7 +533,7 @@ const selectAnimationInspector = async function(inspector) {
 
 
 
-const sendSpaceKeyEvent = function(animationInspector, element) {
+const sendSpaceKeyEvent = function (animationInspector, element) {
   element.focus();
   EventUtils.sendKey("SPACE", element.ownerGlobal);
 };
@@ -546,7 +546,7 @@ const sendSpaceKeyEvent = function(animationInspector, element) {
 
 
 
-const setClassAttribute = async function(animationInspector, selector, cls) {
+const setClassAttribute = async function (animationInspector, selector, cls) {
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [cls, selector],
@@ -572,7 +572,7 @@ const setClassAttribute = async function(animationInspector, selector, cls) {
 
 
 
-const setEffectTimingAndPlayback = async function(
+const setEffectTimingAndPlayback = async function (
   animationInspector,
   selector,
   effectTiming,
@@ -610,7 +610,7 @@ const setEffectTimingAndPlayback = async function(
 
 
 
-const setSidebarWidth = async function(width, inspector) {
+const setSidebarWidth = async function (width, inspector) {
   const onUpdated = inspector.toolbox.once("inspector-sidebar-resized");
   inspector.splitBox.setState({ width });
   await onUpdated;
@@ -626,7 +626,7 @@ const setSidebarWidth = async function(width, inspector) {
 
 
 
-const setStyle = async function(
+const setStyle = async function (
   animationInspector,
   selector,
   propertyName,
@@ -657,7 +657,7 @@ const setStyle = async function(
 
 
 
-const setStyles = async function(animationInspector, selector, properties) {
+const setStyles = async function (animationInspector, selector, properties) {
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [properties, selector],
@@ -681,7 +681,7 @@ const setStyles = async function(animationInspector, selector, properties) {
 
 
 
-const waitUntilCurrentTimeChangedAt = async function(
+const waitUntilCurrentTimeChangedAt = async function (
   animationInspector,
   currentTime
 ) {
@@ -699,7 +699,10 @@ const waitUntilCurrentTimeChangedAt = async function(
 
 
 
-const waitUntilAnimationsPlayState = async function(animationInspector, state) {
+const waitUntilAnimationsPlayState = async function (
+  animationInspector,
+  state
+) {
   info(`Wait until play state will be change to ${state}`);
   await waitUntil(() =>
     animationInspector.state.animations.every(a => a.state.playState === state)

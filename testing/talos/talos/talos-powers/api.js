@@ -300,7 +300,7 @@ TalosPowersService.prototype = {
       
       
       
-      let pollForFeed = async function() {
+      let pollForFeed = async function () {
         let foundFeed = AboutNewTab.activityStream.store.feeds.get(
           "feeds.system.topsites"
         );
@@ -347,7 +347,7 @@ TalosPowersService.prototype = {
       
       
       
-      let obs = function(subject, topic) {
+      let obs = function (subject, topic) {
         Services.obs.removeObserver(this, topic);
         startupInfo = Services.startup.getStartupInfo();
         mm.sendAsyncMessage(

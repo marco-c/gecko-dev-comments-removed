@@ -148,10 +148,7 @@ class FaviconFeed {
 
     let iconUri = Services.io.newURI(site.image_url);
     
-    iconUri = iconUri
-      .mutate()
-      .setRef("tippytop")
-      .finalize();
+    iconUri = iconUri.mutate().setRef("tippytop").finalize();
     lazy.PlacesUtils.favicons.setAndFetchFaviconForPage(
       Services.io.newURI(url),
       iconUri,

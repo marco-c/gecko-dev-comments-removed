@@ -41,7 +41,7 @@ function contentLength(request, response) {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "tests", function() {
+XPCOMUtils.defineLazyGetter(this, "tests", function () {
   return [
     new Test(
       "http://localhost:" + srv.identity.primaryPort + "/content-length",

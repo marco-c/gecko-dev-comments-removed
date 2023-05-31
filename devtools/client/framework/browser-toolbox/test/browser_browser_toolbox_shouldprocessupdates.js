@@ -11,7 +11,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
 requestLongerTimeout(4);
 
-add_task(async function() {
+add_task(async function () {
   
   
   

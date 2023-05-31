@@ -16,7 +16,7 @@ const {
 const TEST_URL =
   "http://example.com/browser/devtools/client/memory/test/browser/doc_steady_allocation.html";
 
-this.test = makeMemoryTest(TEST_URL, async function({ panel }) {
+this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   
   
   requestLongerTimeout(2);

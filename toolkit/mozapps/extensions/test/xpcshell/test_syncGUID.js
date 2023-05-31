@@ -3,7 +3,7 @@
 
 
 
-this.__defineGetter__("XPIProvider", function() {
+this.__defineGetter__("XPIProvider", function () {
   return ChromeUtils.import(
     "resource://gre/modules/addons/XPIProvider.jsm"
   ).XPIProvider;

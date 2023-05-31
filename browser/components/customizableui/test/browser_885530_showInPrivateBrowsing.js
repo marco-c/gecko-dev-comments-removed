@@ -23,7 +23,7 @@ function assertWidgetExists(aWindow, aExists) {
 
 
 
-add_task(function() {
+add_task(function () {
   let wrapper = CustomizableUI.createWidget({
     id: kWidgetId,
   });
@@ -37,7 +37,7 @@ add_task(function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let plain1 = await openAndLoadWindow();
   let private1 = await openAndLoadWindow({ private: true });
   CustomizableUI.createWidget({
@@ -87,7 +87,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let plain1 = await openAndLoadWindow();
   let private1 = await openAndLoadWindow({ private: true });
 

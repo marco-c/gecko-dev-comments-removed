@@ -9,7 +9,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await gCUITestUtils.openMainMenu();
 
   is(
@@ -29,7 +29,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   await gCUITestUtils.openPanelMultiView(PanelUI.panel, PanelUI.mainView, () =>
     PanelUI.toggle({ type: "command" })
   );

@@ -7,7 +7,7 @@
 
 const TEST_URI = `data:text/html;charset=utf-8,<!DOCTYPE html>Web Console test top-level await when debugger paused`;
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.debugger.features.map-await-expression", true);
 

@@ -24,7 +24,7 @@ function promiseClearHistory() {
   });
 }
 
-add_task(async function() {
+add_task(async function () {
   
 
   const REMEMBER = Date.now(),

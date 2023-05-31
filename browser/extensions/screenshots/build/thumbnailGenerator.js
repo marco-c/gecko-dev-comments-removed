@@ -2,7 +2,7 @@
 
 
 
-this.thumbnailGenerator = (function() {
+this.thumbnailGenerator = (function () {
   let exports = {}; 
   
   
@@ -96,7 +96,7 @@ this.thumbnailGenerator = (function() {
       let srcHeight = imageHeight;
       let destWidth, destHeight;
 
-      thumbnailImage.onload = function() {
+      thumbnailImage.onload = function () {
         destWidth = Math.round(srcWidth * maxResizeScaleFactor);
         destHeight = Math.round(srcHeight * maxResizeScaleFactor);
         if (

@@ -16,7 +16,7 @@ function getColumn(table, column, url) {
   }
 }
 
-add_task(async function() {
+add_task(async function () {
   
   
   const titleChangedPromise = PlacesTestUtils.waitForNotification(

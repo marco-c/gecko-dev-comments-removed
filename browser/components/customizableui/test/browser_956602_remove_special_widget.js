@@ -5,7 +5,7 @@
 "use strict";
 
 
-add_task(async function() {
+add_task(async function () {
   try {
     let navbar = document.getElementById("nav-bar");
     let separatorSelector =

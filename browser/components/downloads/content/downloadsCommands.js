@@ -5,12 +5,12 @@
 
 
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   let downloadCommands = document.getElementById("downloadCommands");
-  downloadCommands.addEventListener("commandupdate", function() {
+  downloadCommands.addEventListener("commandupdate", function () {
     goUpdateDownloadCommands();
   });
-  downloadCommands.addEventListener("command", function(event) {
+  downloadCommands.addEventListener("command", function (event) {
     let { id } = event.target;
     goDoCommand(id);
   });

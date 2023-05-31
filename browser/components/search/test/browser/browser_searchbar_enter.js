@@ -5,12 +5,12 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await gCUITestUtils.addSearchBar();
 
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     gCUITestUtils.removeSearchBar();
   });
 });

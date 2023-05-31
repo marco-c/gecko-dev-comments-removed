@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ctrlTab.sortByRecentlyUsed", true]],
   });
@@ -17,7 +17,7 @@ add_task(async function() {
   for (let node of ctrlTab.previews) {
     node.style.pointerEvents = "none";
   }
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     for (let node of ctrlTab.previews) {
       try {
         node.style.removeProperty("pointer-events");
@@ -130,7 +130,7 @@ add_task(async function() {
     info("test for bug 445768");
     let focusedWindow = document.commandDispatcher.focusedWindow;
     let eventConsumed = true;
-    let detectKeyEvent = function(event) {
+    let detectKeyEvent = function (event) {
       eventConsumed = event.defaultPrevented;
     };
     document.addEventListener("keypress", detectKeyEvent);
@@ -374,7 +374,7 @@ add_task(async function() {
   }
 
   function selectTabs(tabs) {
-    tabs.forEach(function(index) {
+    tabs.forEach(function (index) {
       gBrowser.selectedTab = gBrowser.tabs[index];
     });
   }

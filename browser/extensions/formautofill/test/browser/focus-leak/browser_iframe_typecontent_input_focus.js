@@ -14,7 +14,7 @@ const INNER_HTML_FRAME_URI =
 
 
 
-add_task(async function() {
+add_task(async function () {
   const doc = gBrowser.ownerDocument;
   const linkedBrowser = gBrowser.selectedTab.linkedBrowser;
   const browserContainer = gBrowser.getBrowserContainer(linkedBrowser);

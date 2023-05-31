@@ -109,7 +109,7 @@ async function syncAndExpectNodeReassignment(
 
     
     
-    waitForZeroTimer(function() {
+    waitForZeroTimer(function () {
       _("Second sync nextTick.");
       Assert.equal(getTokenCount, 1);
       Service.startOver().then(() => {
@@ -356,7 +356,7 @@ add_task(async function test_loop_avoidance_storage() {
 
     
     
-    waitForZeroTimer(function() {
+    waitForZeroTimer(function () {
       _("Third sync nextTick.");
       Assert.ok(!getReassigned());
       Assert.equal(getTokenCount, 2);
@@ -493,7 +493,7 @@ add_task(async function test_loop_avoidance_engine() {
 
     
     
-    waitForZeroTimer(function() {
+    waitForZeroTimer(function () {
       _("Third sync nextTick.");
       Assert.ok(!getReassigned());
       Assert.equal(getTokenCount, 2);

@@ -71,7 +71,7 @@ function assertTelemetryResults(histograms, type, index, method) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -143,7 +143,7 @@ add_setup(async function() {
     .callsFake(() => Promise.resolve(Cu.cloneInto([REMOTE_TAB], {})));
 
   
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     sandbox.restore();
     weaveXPCService.ready = oldWeaveServiceReady;
     SyncedTabs._internal = originalSyncedTabsInternal;

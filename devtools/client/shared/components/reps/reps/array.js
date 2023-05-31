@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const { span } = require("devtools/client/shared/vendor/react-dom-factories");
   const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
@@ -34,7 +34,7 @@ define(function(require, exports, module) {
 
     let brackets;
     let items;
-    const needSpace = function(space) {
+    const needSpace = function (space) {
       return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
     };
 

@@ -10,7 +10,7 @@ requestLongerTimeout(2);
 
 loadHelperScript("helper_disable_cache.js");
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("network.http.rcwn.enabled", false);
 

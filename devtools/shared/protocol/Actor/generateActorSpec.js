@@ -14,7 +14,7 @@ var {
 
 
 
-var generateActorSpec = function(actorDesc) {
+var generateActorSpec = function (actorDesc) {
   const actorSpec = {
     typeName: actorDesc.typeName,
     methods: [],

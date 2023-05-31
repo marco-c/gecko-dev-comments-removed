@@ -98,7 +98,7 @@ const TEST_DATA = [
 
 for (const { url, tree, title } of TEST_DATA) {
   
-  add_task(async function() {
+  add_task(async function () {
     info(`Testing: [${title}] in OPEN mode`);
     const { inspector, tab } = await openInspectorForURL(
       url.replace(/#MODE#/g, "open")
@@ -106,7 +106,7 @@ for (const { url, tree, title } of TEST_DATA) {
     await assertMarkupViewAsTree(tree, "test-component", inspector);
     await removeTab(tab);
   });
-  add_task(async function() {
+  add_task(async function () {
     info(`Testing: [${title}] in CLOSED mode`);
     const { inspector, tab } = await openInspectorForURL(
       url.replace(/#MODE#/g, "closed")

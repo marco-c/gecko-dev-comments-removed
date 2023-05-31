@@ -2,13 +2,13 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let firstLocation =
     
     "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
   await BrowserTestUtils.openNewForegroundTab(gBrowser, firstLocation);
 
-  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function () {
     
     content.history.pushState("page2", "page2", "page2");
   });

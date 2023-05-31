@@ -50,7 +50,7 @@ add_task(async function test_content_url_annotation() {
     {
       gBrowser,
     },
-    async function(browser) {
+    async function (browser) {
       ok(browser.isRemoteBrowser, "Should be a remote browser");
 
       

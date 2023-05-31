@@ -12,7 +12,7 @@ var expected_values = [
 ];
 
 
-var mediaQueryCSSLine = function(key, val, color) {
+var mediaQueryCSSLine = function (key, val, color) {
   return (
     "@media (" +
     key +
@@ -31,13 +31,13 @@ var blue = "rgb(0, 0, 255)";
 
 
 
-var pushPref = function(key, value) {
+var pushPref = function (key, value) {
   return SpecialPowers.pushPrefEnv({ set: [[key, value]] });
 };
 
 
 
-var checkColorForPref = async function(setting, testDivs, expectedColor) {
+var checkColorForPref = async function (setting, testDivs, expectedColor) {
   await pushPref("privacy.resistFingerprinting", setting);
   for (let div of testDivs) {
     let color = window.getComputedStyle(div).backgroundColor;
@@ -45,7 +45,7 @@ var checkColorForPref = async function(setting, testDivs, expectedColor) {
   }
 };
 
-var test = async function() {
+var test = async function () {
   
   
   let skipTest = false;

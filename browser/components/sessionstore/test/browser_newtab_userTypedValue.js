@@ -7,7 +7,7 @@ requestLongerTimeout(4);
 
 
 
-add_task(async function() {
+add_task(async function () {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:logo");
   let tabOpenedAndSwitchedTo = BrowserTestUtils.switchTab(

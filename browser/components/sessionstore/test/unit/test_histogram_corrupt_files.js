@@ -23,7 +23,7 @@ const { SessionFile } = ChromeUtils.importESModule(
 
 
 function promise_reset_session(backups = {}) {
-  return (async function() {
+  return (async function () {
     
     Telemetry.getHistogramById(HistogramId).clear();
 

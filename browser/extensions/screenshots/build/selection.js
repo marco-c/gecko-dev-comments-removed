@@ -2,7 +2,7 @@
 
 
 
-this.selection = (function() {
+this.selection = (function () {
   let exports = {};
   class Selection {
     constructor(x1, y1, x2, y2) {

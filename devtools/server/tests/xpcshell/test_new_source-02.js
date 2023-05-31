@@ -34,7 +34,7 @@ function evalCode(debuggee) {
   
   debuggee.eval(
     "(" +
-      function() {
+      function () {
         function stopMe(arg1) {
           debugger;
         }

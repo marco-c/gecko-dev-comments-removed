@@ -56,7 +56,7 @@ requestLongerTimeout(4);
 
 
 
-add_task(async function() {
+add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       

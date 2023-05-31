@@ -47,7 +47,7 @@ function* testSteps() {
       
       transaction.oncomplete = grabEventAndContinueHandler;
     } else if (i == abortedTransactionIndex - 1) {
-      transaction.oncomplete = function(event) {
+      transaction.oncomplete = function (event) {
         ok(
           true,
           "Completed transaction " +
@@ -57,7 +57,7 @@ function* testSteps() {
       };
     } else if (i == abortedTransactionIndex) {
       
-      transaction.onerror = function(event) {
+      transaction.onerror = function (event) {
         ok(
           true,
           "Aborted transaction " +
@@ -80,11 +80,11 @@ function* testSteps() {
       };
       
       
-      executeSoon(function() {
+      executeSoon(function () {
         transaction.abort();
       });
     } else {
-      transaction.oncomplete = function(event) {
+      transaction.oncomplete = function (event) {
         ok(true, "Completed transaction " + ++completedTransactionCount);
       };
     }

@@ -9,7 +9,7 @@
 const TEST_URI =
   "data:text/html;charset=utf-8,<!DOCTYPE html>Web Console test for bug 595350";
 
-add_task(async function() {
+add_task(async function () {
   requestLongerTimeout(3);
   
   
@@ -42,7 +42,7 @@ add_task(async function() {
 
     
     const onMessage = waitForMessageByType(hud, message, ".console-api");
-    await SpecialPowers.spawn(browser, [message], function(msg) {
+    await SpecialPowers.spawn(browser, [message], function (msg) {
       content.console.log(msg);
     });
     await onMessage;

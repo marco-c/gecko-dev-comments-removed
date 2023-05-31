@@ -24,11 +24,11 @@ function test() {
   );
   win2.addEventListener(
     "load",
-    function() {
+    function () {
       
       let browser = BrowserTestUtils.addTab(gBrowser, TEST_URL).linkedBrowser;
 
-      whenBrowserLoaded(browser, function() {
+      whenBrowserLoaded(browser, function () {
         let seenDialog = false;
 
         

@@ -114,7 +114,7 @@ add_task(async function testThenableJob() {
   const p = new Promise(resolve => {
     
     
-    sandbox.then = function(onFulfilled, onRejected) {
+    sandbox.then = function (onFulfilled, onRejected) {
       resolve(10);
     };
   });
@@ -138,7 +138,7 @@ add_task(async function testThenableJobNuked() {
   const sandbox = createSandbox();
 
   let called = false;
-  sandbox.then = function(onFulfilled, onRejected) {
+  sandbox.then = function (onFulfilled, onRejected) {
     called = true;
   };
 

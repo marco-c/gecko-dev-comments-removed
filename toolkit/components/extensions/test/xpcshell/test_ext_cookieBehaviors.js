@@ -195,7 +195,7 @@ add_task(async function test_ext_page_3rdparty_cookies() {
   
   Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
   await UrlClassifierTestUtils.addTestTrackers();
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     UrlClassifierTestUtils.cleanupTestTrackers();
     Services.prefs.clearUserPref("privacy.trackingprotection.enabled");
     Services.cookies.removeAll();

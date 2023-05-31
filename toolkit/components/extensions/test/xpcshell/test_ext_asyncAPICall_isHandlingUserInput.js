@@ -63,7 +63,7 @@ const MODULE_INFO = {
   },
 };
 
-add_setup(async function() {
+add_setup(async function () {
   
   
   Services.prefs.setBoolPref(

@@ -542,7 +542,7 @@ function run_test() {
 function checkIllegalProperties(object, propertyNames) {
   let objectName =
     object instanceof Ci.nsIUpdate ? "nsIUpdate" : "nsIUpdatePatch";
-  propertyNames.forEach(function(name) {
+  propertyNames.forEach(function (name) {
     
     
     let result = 0;

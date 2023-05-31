@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   Services.prefs.clearUserPref(
     "devtools.netmonitor.panes-network-details-width"
   );

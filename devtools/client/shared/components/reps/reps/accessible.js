@@ -4,7 +4,7 @@
 
 "use strict";
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
   const {

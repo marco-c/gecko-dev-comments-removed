@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   clearDebuggerPreferences();
 
   const pending = {
@@ -70,7 +70,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   clearDebuggerPreferences();
 
   const pending = {

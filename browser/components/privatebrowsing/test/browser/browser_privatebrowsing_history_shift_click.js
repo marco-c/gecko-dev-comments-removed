@@ -2,11 +2,11 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await testShiftClickOpensNewWindow("back-button");
 });
 
-add_task(async function() {
+add_task(async function () {
   await testShiftClickOpensNewWindow("forward-button");
 });
 
@@ -22,7 +22,7 @@ async function createPrivateWindow() {
   await SpecialPowers.spawn(
     privateWindow.gBrowser.selectedBrowser,
     [],
-    async function() {
+    async function () {
       content.history.pushState({}, "first item", "first-item.html");
       content.history.pushState({}, "second item", "second-item.html");
       content.history.pushState({}, "third item", "third-item.html");

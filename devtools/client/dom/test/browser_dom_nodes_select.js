@@ -8,7 +8,7 @@ const TEST_PAGE_URL = URL_ROOT + "page_dom_nodes.html";
 
 
 
-add_task(async function() {
+add_task(async function () {
   info("Test DOM panel node highlight started");
 
   const { panel, tab } = await addTestTab(TEST_PAGE_URL);

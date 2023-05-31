@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);

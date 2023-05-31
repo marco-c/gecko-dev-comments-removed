@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
@@ -58,7 +58,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],

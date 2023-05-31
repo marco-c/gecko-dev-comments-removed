@@ -1,5 +1,5 @@
 function whenMainPaneLoadedFinished() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     const topic = "main-pane-loaded";
     Services.obs.addObserver(function observer(aSubject) {
       Services.obs.removeObserver(observer, topic);
@@ -10,7 +10,7 @@ function whenMainPaneLoadedFinished() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {
     ok(true, "fake test to avoid harness complaining");

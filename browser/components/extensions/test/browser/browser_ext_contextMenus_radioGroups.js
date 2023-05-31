@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html"
@@ -15,7 +15,7 @@ add_task(async function() {
       permissions: ["contextMenus"],
     },
 
-    background: function() {
+    background: function () {
       
       browser.contextMenus.onClicked.addListener(info => {
         browser.test.sendMessage("contextmenus-click", info);

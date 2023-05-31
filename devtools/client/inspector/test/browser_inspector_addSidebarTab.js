@@ -11,7 +11,7 @@ const CONTENT_TEXT = "Hello World!";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URI);
 
   const { Component, createFactory } = inspector.React;

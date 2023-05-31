@@ -6,7 +6,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let val;
   
   val = await FilterExpressions.eval("2+2");
@@ -29,7 +29,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let val;
   
   val = await FilterExpressions.eval('"2016-04-22"|date');
@@ -45,7 +45,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let val;
   
   val = await FilterExpressions.eval('["test"]|stableSample(1)');
@@ -69,7 +69,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let val;
   
   Services.prefs.setIntPref("normandy.test.value", 3);

@@ -4,7 +4,7 @@
 
 
 
-module.exports = async function(context, commands) {
+module.exports = async function (context, commands) {
   context.log.info("Starting a first-install test");
   let page_cycles = context.options.browsertime.page_cycles;
 

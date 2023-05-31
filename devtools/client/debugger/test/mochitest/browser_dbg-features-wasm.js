@@ -18,7 +18,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   
   const tab = await addTab(EXAMPLE_URL + "doc-wasm-sourcemaps.html");

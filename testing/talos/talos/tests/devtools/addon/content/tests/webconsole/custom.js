@@ -19,7 +19,7 @@ const {
 
 const TEST_URL = PAGES_BASE_URL + "custom/console/index.html";
 
-module.exports = async function() {
+module.exports = async function () {
   
   const sync = 500,
     stream = 250,

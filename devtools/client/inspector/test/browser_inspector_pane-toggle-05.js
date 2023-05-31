@@ -7,7 +7,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   info(
     "Switch to 2 pane inspector and back to 3 pane to test whether the selected tab is used"
   );
@@ -43,7 +43,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   info("Switch to 3 pane to test whether the selected pane is preserved");
   await pushPref("devtools.inspector.three-pane-enabled", false);
 
@@ -68,7 +68,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   info("Switch to 3 pane to test whether the selected pane is layout view");
   await pushPref("devtools.inspector.three-pane-enabled", false);
 

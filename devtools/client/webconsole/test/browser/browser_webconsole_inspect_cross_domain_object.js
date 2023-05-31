@@ -10,7 +10,7 @@ const TEST_URI =
   "https://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-inspect-cross-domain-objects-top.html";
 
-add_task(async function() {
+add_task(async function () {
   requestLongerTimeout(2);
 
   

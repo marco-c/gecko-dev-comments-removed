@@ -9,7 +9,7 @@ const {
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   
   await new Promise(resolve => {
@@ -26,7 +26,7 @@ add_task(async function() {
       gBrowser,
       url: TEST_PAGE,
     },
-    async function(browser) {
+    async function (browser) {
       let openedPromise = BrowserTestUtils.waitForNewWindow();
       BrowserTestUtils.synthesizeMouse("a", 0, 0, {}, browser);
       let win = await openedPromise;

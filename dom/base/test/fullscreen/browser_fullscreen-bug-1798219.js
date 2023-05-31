@@ -16,7 +16,7 @@ Services.scriptloader.loadSubScript(
 
 SimpleTest.ignoreAllUncaughtExceptions(true);
 
-add_setup(async function() {
+add_setup(async function () {
   await pushPrefs(
     ["full-screen-api.transition-duration.enter", "0 0"],
     ["full-screen-api.transition-duration.leave", "0 0"],
@@ -62,8 +62,8 @@ add_task(async () => {
       gBrowser,
       url: URL,
     },
-    async function(browser) {
-      await SpecialPowers.spawn(browser, [], function() {
+    async function (browser) {
+      await SpecialPowers.spawn(browser, [], function () {
         content.document.querySelector("button").click();
       });
 
@@ -93,11 +93,11 @@ add_task(async () => {
       url:
         "http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-bug-1798219-2.html",
     },
-    async function(browser) {
+    async function (browser) {
       
       
       let promiseWin = BrowserTestUtils.waitForNewWindow();
-      await SpecialPowers.spawn(browser, [], function() {
+      await SpecialPowers.spawn(browser, [], function () {
         content.document.querySelector("button").click();
       });
       let newWindow = await promiseWin;
@@ -105,7 +105,7 @@ add_task(async () => {
       await SpecialPowers.spawn(
         newWindow.gBrowser.selectedTab.linkedBrowser,
         [],
-        function() {
+        function () {
           content.document.querySelector("button").click();
         }
       );

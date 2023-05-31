@@ -52,7 +52,7 @@ function testTree() {
 
 
 
-const testTables = async function() {
+const testTables = async function () {
   const doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
@@ -80,7 +80,7 @@ const testTables = async function() {
   }
 };
 
-add_task(async function() {
+add_task(async function () {
   await openTabAndSetupStorage(
     MAIN_DOMAIN_SECURED + "storage-empty-objectstores.html"
   );

@@ -1,5 +1,5 @@
 var keepPromiseAlive;
-onfetch = function(event) {
+onfetch = function (event) {
   event.waitUntil(
     clients.matchAll().then(clients => {
       clients.forEach(client => {
@@ -10,9 +10,9 @@ onfetch = function(event) {
 
   
   
-  event.respondWith((keepPromiseAlive = new Promise(function(res, rej) {})));
+  event.respondWith((keepPromiseAlive = new Promise(function (res, rej) {})));
 };
 
-addEventListener("activate", function(event) {
+addEventListener("activate", function (event) {
   event.waitUntil(clients.claim());
 });

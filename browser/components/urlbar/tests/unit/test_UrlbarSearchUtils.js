@@ -8,7 +8,7 @@ const { UrlbarSearchUtils } = ChromeUtils.importESModule(
 
 let baconEngineExtension;
 
-add_task(async function() {
+add_task(async function () {
   await UrlbarSearchUtils.init();
   
   

@@ -7,7 +7,7 @@
 const TEST_COM_URI = `${URL_ROOT_COM_SSL}examples/doc_dbg-fission-pause-exceptions.html`;
 
 
-add_task(async function() {
+add_task(async function () {
   
   const dbg = await initDebuggerWithAbsoluteURL(TEST_COM_URI);
 

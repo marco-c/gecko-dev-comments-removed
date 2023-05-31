@@ -7,7 +7,7 @@ function errorHandler() {
   postMessage({ type: "error" });
 }
 
-onmessage = function(event) {
+onmessage = function (event) {
   if (event.data.errors) {
     try {
       
@@ -29,7 +29,7 @@ onmessage = function(event) {
       errors: event.data.errors,
     });
 
-    worker.onmessage = function(e) {
+    worker.onmessage = function (e) {
       postMessage(e.data);
     };
   } else {

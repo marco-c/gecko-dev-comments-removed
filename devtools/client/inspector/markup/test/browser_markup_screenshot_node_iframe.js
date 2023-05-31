@@ -15,7 +15,7 @@ const TEST_URL = `${exampleOrgDocument}?html=
     id="remote"></iframe>`;
 
 
-add_task(async function() {
+add_task(async function () {
   const { inspector, toolbox } = await openInspectorForURL(encodeURI(TEST_URL));
 
   info("Select the red node");

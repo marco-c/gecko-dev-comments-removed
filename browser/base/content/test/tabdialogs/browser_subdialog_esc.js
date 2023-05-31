@@ -18,7 +18,7 @@ const TEST_LOAD_PAGE = WEB_ROOT + "loadDelayedReply.sjs";
 
 add_task(async function test_subdialog_esc_does_not_cancel_load() {
   
-  await BrowserTestUtils.withNewTab("http://example.com", async function(
+  await BrowserTestUtils.withNewTab("http://example.com", async function (
     browser
   ) {
     
@@ -65,7 +65,7 @@ add_task(async function test_subdialog_esc_does_not_cancel_load() {
 
 add_task(async function test_subdialog_esc_on_dropdown_does_not_close_dialog() {
   
-  await BrowserTestUtils.withNewTab("http://example.com", async function(
+  await BrowserTestUtils.withNewTab("http://example.com", async function (
     browser
   ) {
     

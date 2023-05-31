@@ -10,13 +10,13 @@ const { dumpn } = require("resource://devtools/shared/DevToolsUtils.js");
 
 
 
-const listDevices = function() {
+const listDevices = function () {
   dumpn("listDevices");
 
   return this.runCommand("host:devices").then(function onSuccess(data) {
     const lines = data.split("\n");
     const res = [];
-    lines.forEach(function(line) {
+    lines.forEach(function (line) {
       if (!line.length) {
         return;
       }

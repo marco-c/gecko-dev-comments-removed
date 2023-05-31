@@ -2,7 +2,7 @@
 
 
 
-onmessage = function(event) {
+onmessage = function (event) {
   let chromeURL = event.data.replace(
     "test_chromeWorkerJSM.xhtml",
     "WorkerTest_badworker.js"

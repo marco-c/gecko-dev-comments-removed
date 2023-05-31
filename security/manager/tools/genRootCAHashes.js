@@ -140,7 +140,7 @@ function writeRootHashes(fos) {
 
     
     writeString(fos, FP_PREAMBLE);
-    gTrustAnchors.roots.forEach(function(fp) {
+    gTrustAnchors.roots.forEach(function (fp) {
       let fpBytes = atob(fp.sha256Fingerprint);
 
       writeString(fos, "  {\n");
@@ -252,7 +252,7 @@ writeTrustAnchors(trustAnchorsFile);
 
 
 
-gTrustAnchors.roots.sort(function(a, b) {
+gTrustAnchors.roots.sort(function (a, b) {
   
   let aBin = atob(a.sha256Fingerprint);
   let bBin = atob(b.sha256Fingerprint);

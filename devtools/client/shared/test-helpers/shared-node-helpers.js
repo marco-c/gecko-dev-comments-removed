@@ -70,7 +70,7 @@ function setMocksInGlobal() {
     lazyServiceGetter: () => {},
   };
 
-  global.define = function() {};
+  global.define = function () {};
 
   
   
@@ -78,16 +78,16 @@ function setMocksInGlobal() {
     isSystemPrincipal: false,
   };
 
-  global.requestIdleCallback = function() {};
+  global.requestIdleCallback = function () {};
 
-  global.requestAnimationFrame = function(cb) {
+  global.requestAnimationFrame = function (cb) {
     cb();
     return null;
   };
 
   
   let selection;
-  global.getSelection = function() {
+  global.getSelection = function () {
     return {
       toString: () => selection,
       get type() {
@@ -108,7 +108,7 @@ function setMocksInGlobal() {
   
   if (!Array.prototype.flatMap) {
     
-    Array.prototype.flatMap = function(cb) {
+    Array.prototype.flatMap = function (cb) {
       return this.reduce((acc, x, i, arr) => {
         return acc.concat(cb(x, i, arr));
       }, []);

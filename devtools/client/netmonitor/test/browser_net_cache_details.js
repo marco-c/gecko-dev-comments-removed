@@ -6,7 +6,7 @@
 const CACHE_TEST_URL = EXAMPLE_URL + "html_cache-test-page.html";
 
 
-add_task(async function() {
+add_task(async function () {
   const { monitor } = await initNetMonitor(CACHE_TEST_URL, {
     enableCache: true,
     requestCount: 1,

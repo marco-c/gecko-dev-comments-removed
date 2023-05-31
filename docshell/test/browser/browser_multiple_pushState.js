@@ -6,14 +6,14 @@ add_task(async function test_multiple_pushState() {
         
         "http://example.org/browser/docshell/test/browser/file_multiple_pushState.html",
     },
-    async function(browser) {
+    async function (browser) {
       
       const kExpected = "http://example.org/bar/ABC/DEF?key=baz";
 
       let contentLocation = await SpecialPowers.spawn(
         browser,
         [],
-        async function() {
+        async function () {
           return content.document.location.href;
         }
       );

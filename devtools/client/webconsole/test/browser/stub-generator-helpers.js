@@ -352,7 +352,7 @@ function getSerializedPacket(
 
   return JSON.stringify(
     packet,
-    function(key, value) {
+    function (key, value) {
       
       if (value && value._grip) {
         return {

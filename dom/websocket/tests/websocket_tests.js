@@ -1,6 +1,6 @@
 
 function test1() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     try {
       var ws = CreateTestWS(
         "http://mochi.test:8888/tests/dom/websocket/tests/file_websocket"
@@ -18,7 +18,7 @@ function test1() {
 
 
 function test2() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var waitTest2Part1 = true;
     var waitTest2Part2 = true;
 
@@ -39,23 +39,23 @@ function test2() {
       }
     }
 
-    ws1.onopen = function() {
+    ws1.onopen = function () {
       ok(true, "ws1 open in test 2");
       ws2CanConnect = true;
       ws1.close();
     };
 
-    ws1.onclose = function(e) {
+    ws1.onclose = function (e) {
       waitTest2Part1 = false;
       maybeFinished();
     };
 
-    ws2.onopen = function() {
+    ws2.onopen = function () {
       ok(ws2CanConnect, "shouldn't connect yet in test-2!");
       ws2.close();
     };
 
-    ws2.onclose = function(e) {
+    ws2.onclose = function (e) {
       waitTest2Part2 = false;
       maybeFinished();
     };
@@ -64,17 +64,17 @@ function test2() {
 
 
 function test3() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var hasError = false;
     var ws = CreateTestWS("ws://this.websocket.server.probably.does.not.exist");
 
     ws.onopen = shouldNotOpen;
 
-    ws.onerror = function(e) {
+    ws.onerror = function (e) {
       hasError = true;
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       ok(hasError, "rcvd onerror event");
       is(e.code, 1006, "test-3 close code should be 1006 but is:" + e.code);
@@ -85,7 +85,7 @@ function test3() {
 
 
 function test4() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     try {
       var ws = CreateTestWS("file_websocket");
       ok(false, "test-4 failed");
@@ -99,7 +99,7 @@ function test4() {
 
 
 function test5() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     try {
       var ws = CreateTestWS(
         "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
@@ -142,18 +142,18 @@ function test5() {
 
 
 function test6() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-6"
     );
     var counter = 1;
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ws.send(counter);
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       if (counter == 5) {
         is(e.data, "あいうえお", "test-6 counter 5 data ok");
         ws.close();
@@ -164,7 +164,7 @@ function test6() {
       }
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseCleanly(e);
       resolve();
     };
@@ -173,18 +173,18 @@ function test6() {
 
 
 function test7() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://sub2.test2.example.org/tests/dom/websocket/tests/file_websocket",
       "test-7"
     );
     var gotmsg = false;
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ok(true, "test 7 open");
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       ok(true, "test 7 message");
       is(
         e.origin,
@@ -195,7 +195,7 @@ function test7() {
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(gotmsg, "recvd message in test 7 before close");
       shouldCloseCleanly(e);
       resolve();
@@ -206,18 +206,18 @@ function test7() {
 
 
 function test8() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-8"
     );
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       is(ws.protocol, "test-8", "test-8 subprotocol selection");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseCleanly(e);
       
       
@@ -230,7 +230,7 @@ function test8() {
 
 
 function test9() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://test2.example.org/tests/dom/websocket/tests/file_websocket",
       "test-9"
@@ -240,11 +240,11 @@ function test9() {
 
     ws.onopen = shouldNotOpen;
 
-    ws.onerror = function(e) {
+    ws.onerror = function (e) {
       ws._receivedErrorEvent = true;
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(ws._receivedErrorEvent, "Didn't received the error event in test 9.");
       shouldCloseNotCleanly(e);
       resolve();
@@ -256,13 +256,13 @@ function test9() {
 
 
 function test10() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://sub1.test1.example.com/tests/dom/websocket/tests/file_websocket",
       "test-10"
     );
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseCleanly(e);
       resolve();
     };
@@ -274,7 +274,7 @@ function test10() {
       ok(true, "Couldn't send data before connecting!");
     }
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ok(true, "test 10 opened");
       ws.close();
     };
@@ -283,19 +283,19 @@ function test10() {
 
 
 function test11() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-11"
     );
     is(ws.readyState, 0, "create bad readyState in test-11!");
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       is(ws.readyState, 1, "open bad readyState in test-11!");
       ws.send("client data");
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       is(e.data, "server data", "bad received message in test-11!");
       ws.close(1000, "Have a nice day");
 
@@ -304,7 +304,7 @@ function test11() {
       
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.readyState, 3, "onclose bad readyState in test-11!");
       shouldCloseCleanly(e);
       is(e.code, 1000, "test 11 got wrong close code: " + e.code);
@@ -320,13 +320,13 @@ function test11() {
 
 
 function test12() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-12"
     );
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       try {
         
         ws._gotMessage = false;
@@ -340,7 +340,7 @@ function test12() {
       }
     };
 
-    ws.onmessage = function(msg) {
+    ws.onmessage = function (msg) {
       is(
         msg.data,
         "SUCCESS",
@@ -351,7 +351,7 @@ function test12() {
       ws.close(1000, "a\ud800b");
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.readyState, 3, "onclose bad readyState in test-12!");
       ok(ws._gotMessage, "didn't receive message!");
       shouldCloseCleanly(e);
@@ -368,7 +368,7 @@ function test12() {
 
 
 function test13() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     
     
     
@@ -379,11 +379,11 @@ function test13() {
     );
     ws._timesCalledOnError = 0;
 
-    ws.onerror = function() {
+    ws.onerror = function () {
       ws._timesCalledOnError++;
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(ws._timesCalledOnError > 0, "no error events");
       resolve();
     };
@@ -393,20 +393,20 @@ function test13() {
 
 
 function test14() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-14"
     );
 
-    ws.onmessage = function() {
+    ws.onmessage = function () {
       ok(
         false,
         "shouldn't received message after the server sent the close frame"
       );
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseCleanly(e);
       resolve();
     };
@@ -416,7 +416,7 @@ function test14() {
 
 
 function test15() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     
 
 
@@ -426,25 +426,25 @@ function test15() {
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-15"
     );
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
 
     
-    ws.onerror = function() {};
+    ws.onerror = function () {};
   });
 }
 
 
 function test16() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-16"
     );
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ws.close();
       ok(
         !ws.send("client data"),
@@ -452,13 +452,13 @@ function test16() {
       );
     };
 
-    ws.onmessage = function() {
+    ws.onmessage = function () {
       ok(false, "shouldn't send message after calling close()");
     };
 
-    ws.onerror = function() {};
+    ws.onerror = function () {};
 
-    ws.onclose = function() {
+    ws.onclose = function () {
       resolve();
     };
   });
@@ -466,33 +466,33 @@ function test16() {
 
 
 function test17() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var status_test17 = "not started";
 
-    var test17func = function() {
+    var test17func = function () {
       var local_ws = new WebSocket(
         "ws://sub1.test2.example.org/tests/dom/websocket/tests/file_websocket",
         "test-17"
       );
       status_test17 = "started";
 
-      local_ws.onopen = function(e) {
+      local_ws.onopen = function (e) {
         status_test17 = "opened";
         e.target.send("client data");
         forcegc();
       };
 
-      local_ws.onerror = function() {
+      local_ws.onerror = function () {
         ok(false, "onerror called on test " + current_test + "!");
       };
 
-      local_ws.onmessage = function(e) {
+      local_ws.onmessage = function (e) {
         ok(e.data == "server data", "Bad message in test-17");
         status_test17 = "got message";
         forcegc();
       };
 
-      local_ws.onclose = function(e) {
+      local_ws.onclose = function (e) {
         ok(status_test17 == "got message", "Didn't got message in test-17!");
         shouldCloseCleanly(e);
         status_test17 = "closed";
@@ -515,13 +515,13 @@ function test17() {
 
 
 function test18() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket_http_resource.txt"
     );
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
@@ -531,14 +531,14 @@ function test18() {
 
 
 function test19() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-19"
     );
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
@@ -547,18 +547,18 @@ function test19() {
 
 
 function test20() {
-  return new Promise(function(resolve, reject) {
-    var test20func = function() {
+  return new Promise(function (resolve, reject) {
+    var test20func = function () {
       var local_ws = new WebSocket(
         "ws://sub1.test1.example.org/tests/dom/websocket/tests/file_websocket",
         "test-20"
       );
 
-      local_ws.onerror = function() {
+      local_ws.onerror = function () {
         ok(false, "onerror called on test " + current_test + "!");
       };
 
-      local_ws.onclose = function(e) {
+      local_ws.onclose = function (e) {
         ok(true, "test 20 closed despite gc");
         resolve();
       };
@@ -576,26 +576,26 @@ function test20() {
 
 
 function test21() {
-  return new Promise(function(resolve, reject) {
-    var test21func = function() {
+  return new Promise(function (resolve, reject) {
+    var test21func = function () {
       var local_ws = new WebSocket(
         "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
         "test-21"
       );
       var received_message = false;
 
-      local_ws.onopen = function(e) {
+      local_ws.onopen = function (e) {
         e.target.send("client data");
         forcegc();
         e.target.onopen = null;
         forcegc();
       };
 
-      local_ws.onerror = function() {
+      local_ws.onerror = function () {
         ok(false, "onerror called on test " + current_test + "!");
       };
 
-      local_ws.onmessage = function(e) {
+      local_ws.onmessage = function (e) {
         is(e.data, "server data", "Bad message in test-21");
         received_message = true;
         forcegc();
@@ -603,7 +603,7 @@ function test21() {
         forcegc();
       };
 
-      local_ws.onclose = function(e) {
+      local_ws.onclose = function (e) {
         shouldCloseCleanly(e);
         ok(received_message, "close transitioned through onmessage");
         resolve();
@@ -621,7 +621,7 @@ function test21() {
 
 
 function test22() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     const pref_open = "network.websocket.timeout.open";
     SpecialPowers.setIntPref(pref_open, 5);
 
@@ -633,7 +633,7 @@ function test22() {
     ws.onopen = shouldNotOpen;
     ws.onerror = ignoreError;
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
@@ -644,7 +644,7 @@ function test22() {
 
 
 function test23() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     ok("WebSocket" in window, "WebSocket should be available on window object");
     resolve();
   });
@@ -652,25 +652,25 @@ function test23() {
 
 
 function test24() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-does-not-exist"
     );
 
     ws.onopen = shouldNotOpen;
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
 
-    ws.onerror = function() {};
+    ws.onerror = function () {};
   });
 }
 
 
 function test25() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = [];
 
     var ws = CreateTestWS(
@@ -684,7 +684,7 @@ function test25() {
     ws.onerror = ignoreError;
     ws.onopen = shouldNotOpen;
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.protocol, "", "test25 subprotocol selection");
       ok(true, "test 25 protocol array close");
       resolve();
@@ -694,7 +694,7 @@ function test25() {
 
 
 function test26() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = [""];
 
     try {
@@ -714,7 +714,7 @@ function test26() {
 
 
 function test27() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test27", ""];
 
     try {
@@ -733,7 +733,7 @@ function test27() {
 
 
 function test28() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test28"];
 
     var ws = CreateTestWS(
@@ -741,12 +741,12 @@ function test28() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 28 protocol array open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.protocol, "test28", "test28 subprotocol selection");
       ok(true, "test 28 protocol array close");
       resolve();
@@ -756,7 +756,7 @@ function test28() {
 
 
 function test29() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test29a", "test29b"];
 
     var ws = CreateTestWS(
@@ -764,12 +764,12 @@ function test29() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 29 protocol array open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 29 protocol array close");
       resolve();
     };
@@ -779,7 +779,7 @@ function test29() {
 
 
 function test30() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-does-not-exist"];
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
@@ -788,31 +788,31 @@ function test30() {
 
     ws.onopen = shouldNotOpen;
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       resolve();
     };
 
-    ws.onerror = function() {};
+    ws.onerror = function () {};
   });
 }
 
 
 
 function test31() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-does-not-exist", "test31"];
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 31 protocol array open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.protocol, "test31", "test31 subprotocol selection");
       ok(true, "test 31 protocol array close");
       resolve();
@@ -822,7 +822,7 @@ function test31() {
 
 
 function test32() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test32", "test32"];
 
     try {
@@ -841,7 +841,7 @@ function test32() {
 
 
 function test33() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test33"];
 
     var ws = CreateTestWS(
@@ -849,12 +849,12 @@ function test33() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 33 open");
       ws.close(3131); 
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 33 close");
       shouldCloseCleanly(e);
       is(e.code, 3131, "test 33 got wrong close code: " + e.code);
@@ -866,7 +866,7 @@ function test33() {
 
 
 function test34() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-34"];
 
     var ws = CreateTestWS(
@@ -874,12 +874,12 @@ function test34() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 34 open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 34 close");
       ok(e.wasClean, "test 34 closed cleanly");
       is(e.code, 1001, "test 34 custom server code");
@@ -891,18 +891,18 @@ function test34() {
 
 
 function test35() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-35a"
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 35a open");
       ws.close(3500, "my code");
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 35a close");
       ok(e.wasClean, "test 35a closed cleanly");
       var wsb = CreateTestWS(
@@ -910,12 +910,12 @@ function test35() {
         "test-35b"
       );
 
-      wsb.onopen = function(event) {
+      wsb.onopen = function (event) {
         ok(true, "test 35b open");
         wsb.close();
       };
 
-      wsb.onclose = function(event) {
+      wsb.onclose = function (event) {
         ok(true, "test 35b close");
         ok(event.wasClean, "test 35b closed cleanly");
         is(event.code, 3501, "test 35 custom server code");
@@ -928,7 +928,7 @@ function test35() {
 
 
 function test36() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-36"];
 
     var ws = CreateTestWS(
@@ -936,7 +936,7 @@ function test36() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 36 open");
 
       try {
@@ -948,7 +948,7 @@ function test36() {
       }
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 36 close");
       ok(e.wasClean, "test 36 closed cleanly");
       resolve();
@@ -958,7 +958,7 @@ function test36() {
 
 
 function test37() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-37"];
 
     var ws = CreateTestWS(
@@ -966,7 +966,7 @@ function test37() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 37 open");
 
       try {
@@ -984,7 +984,7 @@ function test37() {
       }
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 37 close");
       ok(e.wasClean, "test 37 closed cleanly");
 
@@ -993,7 +993,7 @@ function test37() {
         "test-37b"
       );
 
-      wsb.onopen = function(event) {
+      wsb.onopen = function (event) {
         
         ok(true, "test 37b open");
         try {
@@ -1008,7 +1008,7 @@ function test37() {
         }
       };
 
-      wsb.onclose = function(event) {
+      wsb.onclose = function (event) {
         ok(true, "test 37b close");
         ok(event.wasClean, "test 37b closed cleanly");
 
@@ -1017,12 +1017,12 @@ function test37() {
           "test-37c"
         );
 
-        wsc.onopen = function(eventInner) {
+        wsc.onopen = function (eventInner) {
           ok(true, "test 37c open");
           wsc.close();
         };
 
-        wsc.onclose = function(eventInner) {
+        wsc.onclose = function (eventInner) {
           isnot(
             eventInner.code,
             3101,
@@ -1042,7 +1042,7 @@ function test37() {
 
 
 function test38() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-38"];
 
     var ws = CreateTestWS(
@@ -1050,14 +1050,14 @@ function test38() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 38 open");
       isnot(ws.extensions, undefined, "extensions attribute defined");
       
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 38 close");
       resolve();
     };
@@ -1066,7 +1066,7 @@ function test38() {
 
 
 function test39() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-39"];
 
     var ws = CreateTestWS(
@@ -1075,13 +1075,13 @@ function test39() {
     );
     status_test39 = "started";
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       status_test39 = "opened";
       ok(true, "test 39 open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 39 close");
       is(status_test39, "opened", "test 39 did open");
       resolve();
@@ -1091,7 +1091,7 @@ function test39() {
 
 
 function test40() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-40"];
 
     var ws = CreateTestWS(
@@ -1102,13 +1102,13 @@ function test40() {
     status_test40 = "started";
     ws.onerror = ignoreError;
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       status_test40 = "opened";
       ok(false, "test 40 open");
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 40 close");
       is(status_test40, "started", "test 40 did not open");
       resolve();
@@ -1118,14 +1118,14 @@ function test40() {
 
 
 function test41() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://example.com/tests/dom/websocket/tests/file_websocket",
       "test-41a",
       1
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 41a open");
       is(
         ws.url,
@@ -1135,7 +1135,7 @@ function test41() {
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 41a close");
 
       
@@ -1146,12 +1146,12 @@ function test41() {
         1
       );
 
-      wsb.onopen = function(event) {
+      wsb.onopen = function (event) {
         ok(true, "test 41b open");
         wsb.close();
       };
 
-      wsb.onclose = function(event) {
+      wsb.onclose = function (event) {
         ok(true, "test 41b close");
 
         
@@ -1160,7 +1160,7 @@ function test41() {
           "test-41c"
         );
 
-        wsc.onopen = function() {
+        wsc.onopen = function () {
           ok(true, "test 41c open");
           is(
             wsc.url,
@@ -1170,7 +1170,7 @@ function test41() {
           wsc.close();
         };
 
-        wsc.onclose = function() {
+        wsc.onclose = function () {
           ok(true, "test 41c close");
           resolve();
         };
@@ -1181,7 +1181,7 @@ function test41() {
 
 
 function test42() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     
     
     var ws = CreateTestWS(
@@ -1191,13 +1191,13 @@ function test42() {
     var data = ["U+FFFE \ufffe", "U+FFFF \uffff", "U+10FFFF \udbff\udfff"];
     var index = 0;
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ws.send(data[0]);
       ws.send(data[1]);
       ws.send(data[2]);
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       is(
         e.data,
         data[index],
@@ -1209,7 +1209,7 @@ function test42() {
       }
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       resolve();
     };
   });
@@ -1217,7 +1217,7 @@ function test42() {
 
 
 function test43() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var prots = ["test-43"];
 
     var ws = CreateTestWS(
@@ -1225,7 +1225,7 @@ function test43() {
       prots
     );
 
-    ws.onopen = function(e) {
+    ws.onopen = function (e) {
       ok(true, "test 43 open");
       
       ws.binaryType = "arraybuffer";
@@ -1241,7 +1241,7 @@ function test43() {
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "test 43 close");
       resolve();
     };
@@ -1250,7 +1250,7 @@ function test43() {
 
 
 function test44() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-44"
@@ -1258,7 +1258,7 @@ function test44() {
     is(ws.readyState, 0, "bad readyState in test-44!");
     ws.binaryType = "arraybuffer";
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       is(ws.readyState, 1, "open bad readyState in test-44!");
       var buf = new ArrayBuffer(3);
       
@@ -1269,7 +1269,7 @@ function test44() {
       ws.send(buf);
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       ok(e.data instanceof ArrayBuffer, "Should receive an arraybuffer!");
       var view = new Uint8Array(e.data);
       ok(
@@ -1279,7 +1279,7 @@ function test44() {
       ws.close();
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.readyState, 3, "onclose bad readyState in test-44!");
       shouldCloseCleanly(e);
       resolve();
@@ -1289,7 +1289,7 @@ function test44() {
 
 
 function test45() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     function test45Real(blobFile) {
       var ws = CreateTestWS(
         "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
@@ -1298,27 +1298,27 @@ function test45() {
       is(ws.readyState, 0, "bad readyState in test-45!");
       
 
-      ws.onopen = function() {
+      ws.onopen = function () {
         is(ws.readyState, 1, "open bad readyState in test-45!");
         ws.send(blobFile);
       };
 
       var test45blob;
 
-      ws.onmessage = function(e) {
+      ws.onmessage = function (e) {
         test45blob = e.data;
         ok(test45blob instanceof Blob, "We should be receiving a Blob");
 
         ws.close();
       };
 
-      ws.onclose = function(e) {
+      ws.onclose = function (e) {
         is(ws.readyState, 3, "onclose bad readyState in test-45!");
         shouldCloseCleanly(e);
 
         
         var reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = function (event) {
           is(
             reader.result,
             "flob",
@@ -1326,11 +1326,11 @@ function test45() {
           );
         };
 
-        reader.onerror = function(event) {
+        reader.onerror = function (event) {
           testFailed("Failed to read blob: error code = " + reader.error.code);
         };
 
-        reader.onloadend = function(event) {
+        reader.onloadend = function (event) {
           resolve();
         };
 
@@ -1340,10 +1340,10 @@ function test45() {
 
     SpecialPowers.createFiles(
       [{ name: "testBlobFile", data: "flob" }],
-      function(files) {
+      function (files) {
         test45Real(files[0]);
       },
-      function(msg) {
+      function (msg) {
         testFailed("Failed to create file for test45: " + msg);
         resolve();
       }
@@ -1353,24 +1353,24 @@ function test45() {
 
 
 function test46() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-46"
     );
     is(ws.readyState, 0, "create bad readyState in test-46!");
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       is(ws.readyState, 1, "open bad readyState in test-46!");
       ws.close();
       is(ws.readyState, 2, "close must set readyState to 2 in test-46!");
     };
 
-    ws.onmessage = function(e) {
+    ws.onmessage = function (e) {
       ok(false, "received message after calling close in test-46!");
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       is(ws.readyState, 3, "onclose bad readyState in test-46!");
       shouldCloseCleanly(e);
       resolve();
@@ -1380,7 +1380,7 @@ function test46() {
 
 
 function test47() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var hasError = false;
     var ws = CreateTestWS(
       "ws://another.websocket.server.that.probably.does.not.exist"
@@ -1388,7 +1388,7 @@ function test47() {
 
     ws.onopen = shouldNotOpen;
 
-    ws.onerror = function(e) {
+    ws.onerror = function (e) {
       is(
         ws.readyState,
         3,
@@ -1399,7 +1399,7 @@ function test47() {
       hasError = true;
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       shouldCloseNotCleanly(e);
       ok(hasError, "test-47: should have called onerror before onclose");
       is(
@@ -1430,7 +1430,7 @@ function test47() {
 
 
 function test48() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     const pref_close = "network.websocket.timeout.close";
     SpecialPowers.setIntPref(pref_close, 1);
 
@@ -1439,7 +1439,7 @@ function test48() {
       "test-48"
     );
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ws.close();
 
       var date = new Date();
@@ -1449,7 +1449,7 @@ function test48() {
       } while (curDate - date < 1500);
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(true, "ws close in test 48");
       resolve();
     };
@@ -1459,7 +1459,7 @@ function test48() {
 }
 
 function test49() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var ws = CreateTestWS(
       "ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket",
       "test-49"
@@ -1467,15 +1467,15 @@ function test49() {
     var gotError = 0;
     ok(ws.readyState == 0, "create bad readyState in test-49!");
 
-    ws.onopen = function() {
+    ws.onopen = function () {
       ok(false, "Connection must fail in test-49");
     };
 
-    ws.onerror = function(e) {
+    ws.onerror = function (e) {
       gotError = 1;
     };
 
-    ws.onclose = function(e) {
+    ws.onclose = function (e) {
       ok(gotError, "Should get error in test-49!");
       resolve();
     };

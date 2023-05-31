@@ -16,7 +16,7 @@ const IFRAME_TEST_URI = `https://example.org/document-builder.sjs?html=${encodeU
   `<script>function breakDebugger() {const b=3;\ndebugger;\nconsole.log(b);}</script><iframe src="${IFRAME_TEST_COM_URI}"></iframe><body>`
 )}`;
 
-add_task(async function() {
+add_task(async function () {
   info("Test a debugger statement from the top level document");
 
   
@@ -26,7 +26,7 @@ add_task(async function() {
   const pausedRun = SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
-    function() {
+    function () {
       content.wrappedJSObject.test();
     }
   );
@@ -45,7 +45,7 @@ add_task(async function() {
   );
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Test a debugger statement from an iframe");
 
   
@@ -70,7 +70,7 @@ add_task(async function() {
   );
 });
 
-add_task(async function() {
+add_task(async function () {
   info("Test pausing from two distinct targets");
 
   
@@ -118,7 +118,7 @@ add_task(async function() {
   const pausedTopTarget = SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
-    function() {
+    function () {
       content.wrappedJSObject.breakDebugger();
     }
   );

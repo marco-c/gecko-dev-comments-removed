@@ -1,7 +1,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let destPath = await copyToProfile(
     "formhistory_v3.sqlite",
     "formhistory.sqlite"

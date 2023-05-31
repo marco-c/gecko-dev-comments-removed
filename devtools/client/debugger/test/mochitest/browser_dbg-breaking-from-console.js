@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const url = `${EXAMPLE_URL}doc-script-switching.html`;
   const toolbox = await openNewTabAndToolbox(url, "webconsole");
 

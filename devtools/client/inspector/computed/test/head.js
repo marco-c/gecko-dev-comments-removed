@@ -84,7 +84,7 @@ function getComputedViewPropertyView(view, name) {
 
 
 
-var getComputedViewMatchedRules = async function(view, name) {
+var getComputedViewMatchedRules = async function (view, name) {
   let expander;
   let propertyContent;
   for (const property of view.styleDocument.querySelectorAll(

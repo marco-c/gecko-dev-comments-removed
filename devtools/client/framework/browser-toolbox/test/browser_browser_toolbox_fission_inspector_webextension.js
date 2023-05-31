@@ -19,7 +19,7 @@ requestLongerTimeout(4);
 
 
 
-add_task(async function() {
+add_task(async function () {
   const extension = ExtensionTestUtils.loadExtension({
     
     manifest: {
@@ -42,7 +42,7 @@ add_task(async function() {
             <h1 id="sidebar-extension-h1">Sidebar Extension Test</h1>
           </body>
         </html>`,
-      "sidebar.js": function() {
+      "sidebar.js": function () {
         window.onload = () => {
           
           browser.test.sendMessage("sidebar-ready");

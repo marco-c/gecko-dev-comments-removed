@@ -8,7 +8,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   await pushPref("devtools.netmonitor.features.search", true);
 
   const { tab, monitor } = await initNetMonitor(HTTPS_CUSTOM_GET_URL, {

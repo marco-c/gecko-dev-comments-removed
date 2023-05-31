@@ -11,7 +11,7 @@ const OTHER_RUNTIME_ID = "other-runtime-id";
 const OTHER_RUNTIME_APP_NAME = "OtherApp";
 
 
-add_task(async function() {
+add_task(async function () {
   const mocks = new Mocks();
 
   const { document, tab } = await openAboutDebugging();

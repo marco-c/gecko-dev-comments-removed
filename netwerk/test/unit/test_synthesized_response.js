@@ -2,7 +2,7 @@
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
-XPCOMUtils.defineLazyGetter(this, "URL", function() {
+XPCOMUtils.defineLazyGetter(this, "URL", function () {
   return "http://localhost:" + httpServer.identity.primaryPort;
 });
 
@@ -115,15 +115,15 @@ function handle_remote_response(request, buffer) {
 }
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(chan) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (chan) {
     chan.resetInterception(false);
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
-add_test(function() {
+add_test(function () {
   var chan = make_channel(URL + "/body", NON_REMOTE_BODY);
   chan.asyncOpen(
     new ChannelListener(handle_synthesized_response, null, CL_ALLOW_UNKNOWN_CL)
@@ -132,15 +132,15 @@ add_test(function() {
 
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(chan) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (chan) {
     chan.resetInterception(false);
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
-add_test(function() {
+add_test(function () {
   var chan = make_channel(URL + "/body", NON_REMOTE_BODY_2);
   chan.asyncOpen(
     new ChannelListener(
@@ -152,9 +152,9 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(channel) {
-    do_timeout(100, function() {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (channel) {
+    do_timeout(100, function () {
       var synthesized = Cc[
         "@mozilla.org/io/string-input-stream;1"
       ].createInstance(Ci.nsIStringInputStream);
@@ -168,9 +168,9 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(chan) {
-    do_timeout(100, function() {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (chan) {
+    do_timeout(100, function () {
       chan.resetInterception(false);
     });
   });
@@ -178,8 +178,8 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(intercepted) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (intercepted) {
     var synthesized = Cc[
       "@mozilla.org/io/string-input-stream;1"
     ].createInstance(Ci.nsIStringInputStream);
@@ -201,18 +201,18 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(intercepted) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (intercepted) {
     intercepted.cancelInterception(Cr.NS_BINDING_ABORTED);
   });
   chan.asyncOpen(new ChannelListener(run_next_test, null, CL_EXPECT_FAILURE));
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(chan) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (chan) {
     chan.resetInterception(false);
-    do_timeout(0, function() {
+    do_timeout(0, function () {
       var gotexception = false;
       try {
         chan.cancelInterception();
@@ -226,8 +226,8 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(intercepted) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (intercepted) {
     var synthesized = Cc[
       "@mozilla.org/io/string-input-stream;1"
     ].createInstance(Ci.nsIStringInputStream);
@@ -248,8 +248,8 @@ add_test(function() {
 });
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(intercepted) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (intercepted) {
     var synthesized = Cc[
       "@mozilla.org/io/string-input-stream;1"
     ].createInstance(Ci.nsIStringInputStream);
@@ -274,13 +274,13 @@ add_test(function() {
 
 
 
-add_test(function() {
-  var chan = make_channel(URL + "/body", null, function(chan) {
+add_test(function () {
+  var chan = make_channel(URL + "/body", null, function (chan) {
     throw new Error("boom");
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
-add_test(function() {
+add_test(function () {
   httpServer.stop(run_next_test);
 });

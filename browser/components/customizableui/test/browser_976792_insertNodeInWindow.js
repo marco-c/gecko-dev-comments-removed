@@ -12,7 +12,7 @@ const kTestWidgetPrefix = "test-widget-for-insertNodeInWindow-placements-";
 
 
 
-add_task(async function() {
+add_task(async function () {
   let testWidgetExists = [true, false, false, true];
   let widgetIds = [];
   for (let i = 0; i < testWidgetExists.length; i++) {
@@ -61,7 +61,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -128,7 +128,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -196,7 +196,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -265,7 +265,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   let widgetIds = [];
@@ -361,7 +361,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let widgetIds = [];
   let missingId = 2;
   let nonOverflowableId = 3;
@@ -448,7 +448,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let widgetIds = [];
   let missingId = 1;
   for (let i = 0; i < 5; i++) {
@@ -521,7 +521,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let widgetIds = [];
   let missingId = 3;
   for (let i = 0; i < 5; i++) {

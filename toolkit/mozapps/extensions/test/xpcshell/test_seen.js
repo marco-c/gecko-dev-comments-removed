@@ -23,7 +23,7 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 const XPIS = {};
 
 
-add_task(async function() {
+add_task(async function () {
   await promiseStartupManager();
 
   for (let n of [1, 2]) {
@@ -69,7 +69,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function () {
   let savedStartupScanScopes = Services.prefs.getIntPref(
     "extensions.startupScanScopes"
   );
@@ -120,7 +120,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await manuallyInstall(XPIS[1], profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
@@ -158,7 +158,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await manuallyInstall(XPIS[1], profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
@@ -200,7 +200,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await manuallyInstall(XPIS[1], profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
@@ -240,7 +240,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let path = await manuallyInstall(XPIS[1], profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);

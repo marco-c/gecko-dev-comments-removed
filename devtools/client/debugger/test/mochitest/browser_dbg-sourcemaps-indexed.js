@@ -10,7 +10,7 @@
 requestLongerTimeout(2);
 
 
-add_task(async function() {
+add_task(async function () {
   
   const dbg = await initDebugger(
     "doc-sourcemaps-indexed.html",

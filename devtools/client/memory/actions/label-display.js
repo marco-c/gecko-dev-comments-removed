@@ -13,8 +13,8 @@ const {
 
 
 
-exports.setLabelDisplayAndRefresh = function(heapWorker, display) {
-  return async function({ dispatch, getState }) {
+exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
+  return async function ({ dispatch, getState }) {
     
     dispatch(setLabelDisplay(display));
     await dispatch(refresh(heapWorker));
@@ -26,7 +26,7 @@ exports.setLabelDisplayAndRefresh = function(heapWorker, display) {
 
 
 
-const setLabelDisplay = (exports.setLabelDisplay = function(display) {
+const setLabelDisplay = (exports.setLabelDisplay = function (display) {
   assert(
     typeof display === "object" &&
       display &&

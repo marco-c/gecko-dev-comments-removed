@@ -9,7 +9,7 @@
 const TEST_URI = `data:text/html;charset=utf-8,<!DOCTYPE html>`;
 const PREF_INPUT_AUTOCOMPLETE = "devtools.webconsole.input.autocomplete";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref(PREF_INPUT_AUTOCOMPLETE, true);
   const hud = await openNewTabAndConsole(TEST_URI);

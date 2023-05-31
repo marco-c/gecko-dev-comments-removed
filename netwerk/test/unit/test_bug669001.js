@@ -5,7 +5,7 @@ const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 var httpServer = null;
 var path = "/bug699001";
 
-XPCOMUtils.defineLazyGetter(this, "URI", function() {
+XPCOMUtils.defineLazyGetter(this, "URI", function () {
   return "http://localhost:" + httpServer.identity.primaryPort + path;
 });
 
@@ -104,7 +104,7 @@ function nextTest() {
 
   
   
-  executeSoon(function() {
+  executeSoon(function () {
     chan.asyncOpen(new ChannelListener(checkAndShiftTest, null));
   });
 }

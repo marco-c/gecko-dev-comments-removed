@@ -12,8 +12,8 @@ const {
 
 
 
-exports.setTreeMapAndRefresh = function(heapWorker, display) {
-  return async function({ dispatch, getState }) {
+exports.setTreeMapAndRefresh = function (heapWorker, display) {
+  return async function ({ dispatch, getState }) {
     dispatch(setTreeMap(display));
     await dispatch(refresh(heapWorker));
   };
@@ -25,7 +25,7 @@ exports.setTreeMapAndRefresh = function(heapWorker, display) {
 
 
 
-const setTreeMap = (exports.setTreeMap = function(display) {
+const setTreeMap = (exports.setTreeMap = function (display) {
   assert(
     typeof display === "object" &&
       display &&

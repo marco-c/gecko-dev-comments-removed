@@ -28,7 +28,7 @@ function createMockDevTools() {
 
   for (const method of methods) {
     
-    mock[method] = function(...args) {
+    mock[method] = function (...args) {
       mock.callLog[method].push(args);
     };
     mock.callLog[method] = [];

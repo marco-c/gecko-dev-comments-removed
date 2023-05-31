@@ -13,7 +13,7 @@ const ORIGINAL_URL = "webpack:///code_late_script.js";
 const GENERATED_LINE = 107;
 const ORIGINAL_LINE = 11;
 
-add_task(async function() {
+add_task(async function () {
   
   
   const toolbox = await openNewTabAndToolbox(PAGE_URL, "webconsole");

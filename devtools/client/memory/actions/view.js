@@ -15,8 +15,8 @@ const refresh = require("resource://devtools/client/memory/actions/refresh.js");
 
 
 
-const changeView = (exports.changeView = function(view) {
-  return function({ dispatch, getState }) {
+const changeView = (exports.changeView = function (view) {
+  return function ({ dispatch, getState }) {
     dispatch({
       type: actions.CHANGE_VIEW,
       newViewState: view,
@@ -30,8 +30,8 @@ const changeView = (exports.changeView = function(view) {
 
 
 
-const popView = (exports.popView = function() {
-  return function({ dispatch, getState }) {
+const popView = (exports.popView = function () {
+  return function ({ dispatch, getState }) {
     const { previous } = getState().view;
     assert(previous);
     dispatch({
@@ -48,8 +48,8 @@ const popView = (exports.popView = function() {
 
 
 
-exports.changeViewAndRefresh = function(view, heapWorker) {
-  return async function({ dispatch, getState }) {
+exports.changeViewAndRefresh = function (view, heapWorker) {
+  return async function ({ dispatch, getState }) {
     dispatch(changeView(view));
     await dispatch(refresh.refresh(heapWorker));
   };
@@ -61,8 +61,8 @@ exports.changeViewAndRefresh = function(view, heapWorker) {
 
 
 
-exports.popViewAndRefresh = function(heapWorker) {
-  return async function({ dispatch, getState }) {
+exports.popViewAndRefresh = function (heapWorker) {
+  return async function ({ dispatch, getState }) {
     dispatch(popView());
     await dispatch(refresh.refresh(heapWorker));
   };

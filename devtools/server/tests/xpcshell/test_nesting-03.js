@@ -5,7 +5,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const GLOBAL_NAME = "test-nesting1";
 
   initTestDevToolsServer();

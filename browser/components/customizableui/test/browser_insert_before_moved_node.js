@@ -4,7 +4,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   for (let toolbar of ["nav-bar", "TabsToolbar"]) {
     CustomizableUI.createWidget({
       id: "real-button",

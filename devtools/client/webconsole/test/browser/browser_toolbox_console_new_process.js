@@ -23,7 +23,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
 

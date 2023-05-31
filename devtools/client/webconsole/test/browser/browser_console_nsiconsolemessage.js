@@ -10,7 +10,7 @@ const TEST_URI = `data:text/html;charset=utf8,<!DOCTYPE html>
 <p>hello world<p>
 nsIConsoleMessages ftw!`;
 
-add_task(async function() {
+add_task(async function () {
   
   
   await addTab(TEST_URI);
@@ -30,7 +30,7 @@ add_task(async function() {
   
   let text = "foobarz";
   const onFooBarzMessage = waitForMessageByType(hud, text, ".console-api");
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [text], function(msg) {
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [text], function (msg) {
     content.console.log(msg);
   });
   await onFooBarzMessage;

@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.debugger.end-panel-size", 600);
   
@@ -103,7 +103,7 @@ add_task(async function() {
   );
 });
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.inspector.three-pane-enabled", false);
 

@@ -5,7 +5,7 @@
 
 
 add_task(async function testPBNewTab() {
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     for (let win of windowsToClose) {
       await BrowserTestUtils.closeWindow(win);
     }

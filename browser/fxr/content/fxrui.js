@@ -81,7 +81,7 @@ function setupBrowser() {
     browser.classList.add("browser_instance");
     document.getElementById("eBrowserContainer").appendChild(browser);
 
-    browser.loadUrlWithSystemPrincipal = function(url) {
+    browser.loadUrlWithSystemPrincipal = function (url) {
       this.loadURI(url, { triggeringPrincipal: gSystemPrincipal });
     };
 
@@ -191,7 +191,7 @@ function setupNavButtons() {
 
 function setupUrlBar() {
   
-  urlInput.addEventListener("keypress", async function(e) {
+  urlInput.addEventListener("keypress", async function (e) {
     if (e.key == "Enter") {
       
       
@@ -215,7 +215,7 @@ function setupUrlBar() {
   });
 
   
-  urlInput.addEventListener("focus", function() {
+  urlInput.addEventListener("focus", function () {
     urlInput.select();
   });
 }

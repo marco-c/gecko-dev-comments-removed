@@ -51,7 +51,7 @@ const COUNT_LABEL = L10N.getStr("tree-map.node-count");
 
 
 
-exports.setupDraw = function(report, canvases, dragZoom) {
+exports.setupDraw = function (report, canvases, dragZoom) {
   const getTreemap = configureD3Treemap.bind(null, canvases.main.canvas);
 
   let treemap, nodes;
@@ -79,7 +79,7 @@ exports.setupDraw = function(report, canvases, dragZoom) {
 
 
 
-const configureD3Treemap = (exports.configureD3Treemap = function(canvas) {
+const configureD3Treemap = (exports.configureD3Treemap = function (canvas) {
   const window = canvas.ownerDocument.defaultView;
   const ratio = window.devicePixelRatio;
   const treemap = window.d3.layout
@@ -136,7 +136,7 @@ const configureD3Treemap = (exports.configureD3Treemap = function(canvas) {
 
 
 
-const drawTruncatedName = (exports.drawTruncatedName = function(
+const drawTruncatedName = (exports.drawTruncatedName = function (
   ctx,
   x,
   y,
@@ -169,7 +169,7 @@ const drawTruncatedName = (exports.drawTruncatedName = function(
 
 
 
-const drawText = (exports.drawText = function(
+const drawText = (exports.drawText = function (
   ctx,
   node,
   borderWidth,
@@ -234,7 +234,7 @@ const drawText = (exports.drawText = function(
 
 
 
-const drawBox = (exports.drawBox = function(
+const drawBox = (exports.drawBox = function (
   ctx,
   node,
   borderWidth,
@@ -268,7 +268,7 @@ const drawBox = (exports.drawBox = function(
 
 
 
-const drawTreemap = (exports.drawTreemap = function(
+const drawTreemap = (exports.drawTreemap = function (
   { canvas, ctx },
   nodes,
   dragZoom
@@ -307,7 +307,7 @@ const drawTreemap = (exports.drawTreemap = function(
 
 
 
-const positionZoomedCanvas = function(canvas, dragZoom) {
+const positionZoomedCanvas = function (canvas, dragZoom) {
   const scale = 1 / (1 + dragZoom.zoom);
   const x = -dragZoom.translateX;
   const y = -dragZoom.translateY;

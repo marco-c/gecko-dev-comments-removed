@@ -69,7 +69,7 @@ add_task(async function overrideContext_permissions() {
     
     
     
-    let testGenerator = (async function*() {
+    let testGenerator = (async function* () {
       browser.test.assertEq(
         undefined,
         browser.menus.overrideContext,

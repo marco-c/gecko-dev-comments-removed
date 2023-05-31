@@ -135,8 +135,9 @@ this.tabpaint = class extends ExtensionAPI {
 
     gBrowser.selectedTab = gBrowser.addTab(
       
-      `${target}?${win.performance.now() +
-        win.performance.timing.navigationStart}`,
+      `${target}?${
+        win.performance.now() + win.performance.timing.navigationStart
+      }`,
       {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       }

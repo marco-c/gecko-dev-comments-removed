@@ -7,13 +7,13 @@ let { PluginManager } = ChromeUtils.importESModule(
 
 
 
-add_task(async function() {
+add_task(async function () {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: "about:blank",
     },
-    async function(browser) {
+    async function (browser) {
       
       
       let props = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
@@ -24,7 +24,7 @@ add_task(async function() {
       props.setPropertyAsACString("pluginDumpID", "1234");
       Services.obs.notifyObservers(props, "gmp-plugin-crash");
 
-      await SpecialPowers.spawn(browser, [], async function() {
+      await SpecialPowers.spawn(browser, [], async function () {
         const GMP_CRASH_EVENT = {
           pluginID: 1,
           pluginName: "GlobalTestPlugin",

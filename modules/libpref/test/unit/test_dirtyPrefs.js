@@ -50,7 +50,7 @@ function run_test() {
   defaultBranch.setBoolPref("DirtyTest.existing.bool", true);
   Assert.ok(!ps.dirty);
   
-  do_check_throws(function() {
+  do_check_throws(function () {
     userBranch.setCharPref("DirtyTest.existing.bool", "boo");
   }, Cr.NS_ERROR_UNEXPECTED);
   Assert.ok(!ps.dirty);

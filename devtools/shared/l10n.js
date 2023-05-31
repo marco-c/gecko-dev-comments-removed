@@ -10,7 +10,7 @@ const propertiesMap = {};
 
 
 const numberFormatters = new Map();
-const getNumberFormatter = function(decimals) {
+const getNumberFormatter = function (decimals) {
   let formatter = numberFormatters.get(decimals);
   if (!formatter) {
     

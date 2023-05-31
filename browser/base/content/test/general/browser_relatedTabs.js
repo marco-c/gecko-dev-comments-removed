@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   is(gBrowser.tabs.length, 1, "one tab is open initially");
 
   

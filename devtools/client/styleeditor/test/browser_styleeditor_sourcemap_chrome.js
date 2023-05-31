@@ -10,7 +10,7 @@ const ORIGINAL_NAME = "sourcemaps.scss";
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { ui } = await openStyleEditorForURL(TEST_URI);
   ok(
     findStylesheetByName(ui, GENERATED_NAME),
@@ -25,7 +25,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { ui } = await openStyleEditorForURL(CHROME_TEST_URI);
   ok(
     findStylesheetByName(ui, ORIGINAL_NAME),

@@ -20,7 +20,7 @@ const { CustomizableUI } = ChromeUtils.import(
   "resource:///modules/CustomizableUI.jsm"
 );
 
-XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
+XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function () {
   return ChromeUtils.import(
     "resource://devtools/client/performance-new/shared/background.jsm.js"
   );
@@ -136,7 +136,7 @@ function populatePresets() {
     gLoggingSettings.loggingPreset = preset;
   }
 
-  dropdown.onchange = function() {
+  dropdown.onchange = function () {
     
     
     if (dropdown.value != "custom") {
@@ -426,7 +426,7 @@ function updateLogFile(file) {
 
     if (file.exists()) {
       openLogFileButton.disabled = false;
-      openLogFileButton.onclick = function(e) {
+      openLogFileButton.onclick = function (e) {
         file.reveal();
       };
     }
@@ -669,6 +669,6 @@ async function stopLogging() {
 
 
 
-window.addEventListener("pageshow", function() {
+window.addEventListener("pageshow", function () {
   init();
 });

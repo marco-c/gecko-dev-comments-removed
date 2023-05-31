@@ -9,7 +9,7 @@ const { PromptTestUtils } = ChromeUtils.importESModule(
 
 
 
-add_task(async function({ client }) {
+add_task(async function ({ client }) {
   const { Page } = client;
 
   info("Enable the page domain");

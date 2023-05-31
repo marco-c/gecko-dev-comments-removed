@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let testWindow = await BrowserTestUtils.openNewBrowserWindow();
   
   

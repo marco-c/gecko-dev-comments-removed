@@ -14,7 +14,7 @@ add_task(async function test_removeVisitsByFilter() {
 
   
   
-  let remover = async function(options) {
+  let remover = async function (options) {
     info("Remover with options " + JSON.stringify(options));
     let SAMPLE_SIZE = options.sampleSize;
 

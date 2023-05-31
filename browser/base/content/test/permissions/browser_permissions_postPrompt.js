@@ -10,7 +10,9 @@ const PERMISSIONS_PAGE =
 
 function testPostPrompt(task) {
   let uri = Services.io.newURI(PERMISSIONS_PAGE);
-  return BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(browser) {
+  return BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
+    browser
+  ) {
     let icon = document.getElementById("web-notifications-notification-icon");
     ok(
       !BrowserTestUtils.is_visible(icon),
@@ -68,14 +70,14 @@ add_task(async function testNotificationPermission() {
   
   
 
-  await testPostPrompt(function() {
-    E10SUtils.wrapHandlingUserInput(content, true, function() {
+  await testPostPrompt(function () {
+    E10SUtils.wrapHandlingUserInput(content, true, function () {
       content.document.getElementById("desktop-notification").click();
     });
   });
 
-  await testPostPrompt(function() {
-    E10SUtils.wrapHandlingUserInput(content, true, function() {
+  await testPostPrompt(function () {
+    E10SUtils.wrapHandlingUserInput(content, true, function () {
       content.document.getElementById("push").click();
     });
   });
@@ -85,11 +87,11 @@ add_task(async function testNotificationPermission() {
   
   
 
-  await testPostPrompt(function() {
+  await testPostPrompt(function () {
     content.postMessage("push", "*");
   });
 
-  await testPostPrompt(async function() {
+  await testPostPrompt(async function () {
     let response = await content.Notification.requestPermission();
     is(response, "default", "The request was automatically denied");
   });

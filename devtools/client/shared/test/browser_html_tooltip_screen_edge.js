@@ -21,7 +21,7 @@ const {
 } = require("resource://devtools/client/shared/widgets/tooltip/HTMLTooltip.js");
 loadHelperScript("helper_html_tooltip.js");
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.toolbox.footer.height", 200);
 

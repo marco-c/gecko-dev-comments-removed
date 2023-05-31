@@ -114,10 +114,10 @@ function run_loadImage_tests() {
   function observer() {
     Services.obs.removeObserver(observer, "cacheservice:empty-cache");
     gHits = 0;
-    loadImage(false, function() {
-      loadImage(false, function() {
-        loadImage(true, function() {
-          loadImage(true, function() {
+    loadImage(false, function () {
+      loadImage(false, function () {
+        loadImage(true, function () {
+          loadImage(true, function () {
             Assert.equal(gHits, 2);
             server.stop(do_test_finished);
           });
@@ -153,10 +153,10 @@ function run_test() {
   
   
   
-  setup_chan("/image.png", false, function() {
-    setup_chan("/image.png", false, function() {
-      setup_chan("/image.png", true, function() {
-        setup_chan("/image.png", true, function() {
+  setup_chan("/image.png", false, function () {
+    setup_chan("/image.png", false, function () {
+      setup_chan("/image.png", true, function () {
+        setup_chan("/image.png", true, function () {
           Assert.equal(gHits, 2);
           run_loadImage_tests();
         });

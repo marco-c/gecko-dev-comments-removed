@@ -5,14 +5,14 @@
 
 
 
-add_setup(async function() {
+add_setup(async function () {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   
   
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  registerCleanupFunction(async function() {
+  registerCleanupFunction(async function () {
     await BrowserTestUtils.closeWindow(win);
   });
 });

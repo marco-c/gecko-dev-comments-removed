@@ -6,7 +6,7 @@
 
 
 var WampMessageType;
-(function(wampMessageTypeEnum) {
+(function (wampMessageTypeEnum) {
   wampMessageTypeEnum[(wampMessageTypeEnum.Hello = 1)] = "Hello";
   wampMessageTypeEnum[(wampMessageTypeEnum.Welcome = 2)] = "Welcome";
   wampMessageTypeEnum[(wampMessageTypeEnum.Abort = 3)] = "Abort";

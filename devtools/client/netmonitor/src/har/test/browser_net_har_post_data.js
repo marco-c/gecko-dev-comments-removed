@@ -6,7 +6,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   const { tab, monitor } = await initNetMonitor(
     HAR_EXAMPLE_URL + "html_har_post-data-test-page.html",
     { requestCount: 1 }
@@ -27,7 +27,7 @@ add_task(async function() {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     content.wrappedJSObject.executeTest();
   });
   await wait;

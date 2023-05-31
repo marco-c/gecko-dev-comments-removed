@@ -8,11 +8,11 @@ add_task(async function run_test() {
 
   
   await do_crash(
-    function() {
+    function () {
       crashType = CrashTestUtils.CRASH_EXC_GUARD;
       crashReporter.annotateCrashReport("TestKey", "TestValue");
     },
-    async function(mdump, extra, extraFile) {
+    async function (mdump, extra, extraFile) {
       runMinidumpAnalyzer(mdump);
 
       

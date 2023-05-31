@@ -27,7 +27,7 @@ function test() {
       removeFunc();
 
       
-      executeSoon(function() {
+      executeSoon(function () {
         let tab2;
         let caughtError = false;
         try {

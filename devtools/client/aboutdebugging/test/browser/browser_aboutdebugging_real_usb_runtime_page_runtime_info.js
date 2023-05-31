@@ -11,7 +11,7 @@ Services.scriptloader.loadSubScript(
 
 
 
-add_task(async function() {
+add_task(async function () {
   if (!isAvailable()) {
     ok(true, "Real usb runtime test is not available");
     return;

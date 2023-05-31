@@ -2,11 +2,11 @@
 
 
 function worker_handler(worker) {
-  worker.onerror = function(error) {
+  worker.onerror = function (error) {
     error.preventDefault();
     ok(false, "error " + error.message);
   };
-  worker.onmessage = function(msg) {
+  worker.onmessage = function (msg) {
     
     switch (msg.data.kind) {
       case "is":

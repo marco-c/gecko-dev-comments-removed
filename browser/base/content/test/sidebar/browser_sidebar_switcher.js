@@ -25,7 +25,7 @@ function clickSwitcherButton(querySelector) {
   return switcherPromise;
 }
 
-add_task(async function() {
+add_task(async function () {
   
   if (!document.getElementById("sidebar-box").hidden) {
     ok(

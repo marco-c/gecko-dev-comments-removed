@@ -47,7 +47,7 @@ function waitForTransferComplete() {
 
 
 
-add_task(async function() {
+add_task(async function () {
   let MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
 
@@ -56,7 +56,7 @@ add_task(async function() {
   let destFile = destDir.clone();
 
   MockFilePicker.displayDirectory = destDir;
-  MockFilePicker.showCallback = function(fp) {
+  MockFilePicker.showCallback = function (fp) {
     destFile.append(fp.defaultString);
     MockFilePicker.setFiles([destFile]);
     MockFilePicker.filterIndex = 1; 
@@ -65,7 +65,7 @@ add_task(async function() {
   mockTransferRegisterer.register();
 
   
-  registerCleanupFunction(function() {
+  registerCleanupFunction(function () {
     mockTransferRegisterer.unregister();
     MockFilePicker.cleanup();
     destDir.remove(true);

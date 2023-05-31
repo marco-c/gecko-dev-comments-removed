@@ -13,7 +13,7 @@
 
 
 
-this.AccessibilityUtils = (function() {
+this.AccessibilityUtils = (function () {
   const FORCE_DISABLE_ACCESSIBILITY_PREF = "accessibility.force_disabled";
 
   

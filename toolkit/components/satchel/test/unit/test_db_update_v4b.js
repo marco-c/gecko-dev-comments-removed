@@ -2,7 +2,7 @@
 
 
 
-add_task(async function() {
+add_task(async function () {
   let testnum = 0;
 
   try {

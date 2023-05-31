@@ -32,7 +32,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.inspector.selectedSidebar");
 });
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   
   
   
@@ -53,14 +53,14 @@ registerCleanupFunction(function() {
 
 
 
-var startPicker = async function(toolbox, skipFocus) {
+var startPicker = async function (toolbox, skipFocus) {
   info("Start the element picker");
   toolbox.win.focus();
   await toolbox.nodePicker.start();
   if (!skipFocus) {
     
     
-    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
       content.focus();
     });
   }
@@ -70,7 +70,7 @@ var startPicker = async function(toolbox, skipFocus) {
 
 
 
-var stopPickerWithEscapeKey = async function(toolbox) {
+var stopPickerWithEscapeKey = async function (toolbox) {
   const onPickerStopped = toolbox.nodePicker.once("picker-node-canceled");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, toolbox.win);
   await onPickerStopped;
@@ -80,7 +80,7 @@ var stopPickerWithEscapeKey = async function(toolbox) {
 
 
 
-var startEyeDropper = async function(toolbox) {
+var startEyeDropper = async function (toolbox) {
   info("Start the eye dropper tool");
   toolbox.win.focus();
   await toolbox.getPanel("inspector").showEyeDropper();
@@ -207,7 +207,7 @@ async function getBrowsingContextForNestedFrame(selectorArray = []) {
     browsingContext = await SpecialPowers.spawn(
       browsingContext,
       [selectorArray.shift()],
-      function(selector) {
+      function (selector) {
         const iframe = content.document.querySelector(selector);
         return iframe.browsingContext;
       }
@@ -272,7 +272,7 @@ function clearCurrentNodeSelection(inspector) {
 
 
 
-var clickOnInspectMenuItem = async function(selector) {
+var clickOnInspectMenuItem = async function (selector) {
   info("Showing the contextual menu on node " + selector);
   const contentAreaContextMenu = document.querySelector(
     "#contentAreaContextMenu"
@@ -307,7 +307,7 @@ var clickOnInspectMenuItem = async function(selector) {
 
 
 
-var getFrameDocument = async function(frameSelector, inspector) {
+var getFrameDocument = async function (frameSelector, inspector) {
   const iframe = await getNodeFront(frameSelector, inspector);
   const { nodes } = await inspector.walker.children(iframe);
 
@@ -325,7 +325,7 @@ var getFrameDocument = async function(frameSelector, inspector) {
 
 
 
-var getShadowRoot = async function(hostSelector, inspector) {
+var getShadowRoot = async function (hostSelector, inspector) {
   const hostFront = await getNodeFront(hostSelector, inspector);
   const { nodes } = await inspector.walker.children(hostFront);
 
@@ -345,7 +345,7 @@ var getShadowRoot = async function(hostSelector, inspector) {
 
 
 
-var getNodeFrontInShadowDom = async function(
+var getNodeFrontInShadowDom = async function (
   selector,
   hostSelector,
   inspector
@@ -360,7 +360,7 @@ var getNodeFrontInShadowDom = async function(
   return inspector.walker.querySelector(shadowRoot, selector);
 };
 
-var focusSearchBoxUsingShortcut = async function(panelWin, callback) {
+var focusSearchBoxUsingShortcut = async function (panelWin, callback) {
   info("Focusing search box");
   const searchBox = panelWin.document.getElementById("inspector-searchbox");
   const focused = once(searchBox, "focus");
@@ -397,7 +397,7 @@ function getContainerForNodeFront(nodeFront, { markup }) {
 
 
 
-var getContainerForSelector = async function(
+var getContainerForSelector = async function (
   selector,
   inspector,
   expectFailure = false
@@ -424,7 +424,7 @@ var getContainerForSelector = async function(
 
 
 
-var hoverContainer = async function(selector, inspector) {
+var hoverContainer = async function (selector, inspector) {
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Hovering over the markup-container for node " + selector);
 
@@ -450,7 +450,7 @@ var hoverContainer = async function(selector, inspector) {
 
 
 
-var clickContainer = async function(selector, inspector) {
+var clickContainer = async function (selector, inspector) {
   info("Clicking on the markup-container for node " + selector);
 
   const nodeFront = await getNodeFront(selector, inspector);
@@ -591,7 +591,7 @@ async function poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
 
 
 const getHighlighterHelperFor = type =>
-  async function({ inspector, highlighterTestFront }) {
+  async function ({ inspector, highlighterTestFront }) {
     const front = inspector.inspectorFront;
     const highlighter = await front.getHighlighterByType(type);
 
@@ -671,7 +671,7 @@ const getHighlighterHelperFor = type =>
       },
 
       async waitForElementAttributeSet(id, name) {
-        await poll(async function() {
+        await poll(async function () {
           const value = await highlighterTestFront.getHighlighterNodeAttribute(
             prefix + id,
             name,
@@ -682,7 +682,7 @@ const getHighlighterHelperFor = type =>
       },
 
       async waitForElementAttributeRemoved(id, name) {
-        await poll(async function() {
+        await poll(async function () {
           const value = await highlighterTestFront.getHighlighterNodeAttribute(
             prefix + id,
             name,
@@ -722,7 +722,7 @@ const getHighlighterHelperFor = type =>
         {},
         {
           get: (target, name) =>
-            async function(x = prevX, y = prevY, selector = ":root") {
+            async function (x = prevX, y = prevY, selector = ":root") {
               prevX = x;
               prevY = y;
               await safeSynthesizeMouseEventInContentPage(selector, x, y, {
@@ -866,7 +866,7 @@ function containsFocus(doc, container) {
 
 
 
-var waitForTab = async function() {
+var waitForTab = async function () {
   info("Waiting for a tab to open");
   await once(gBrowser.tabContainer, "TabOpen");
   const tab = gBrowser.selectedTab;
@@ -1372,7 +1372,7 @@ async function deleteNodeWithContextMenu(node, inspector) {
 
 
 function reflowContentPage() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     return new Promise(resolve => {
       content.document.documentElement.offsetWidth;
       content.requestAnimationFrame(resolve);

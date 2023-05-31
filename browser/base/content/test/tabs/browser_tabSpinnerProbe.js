@@ -13,7 +13,7 @@ const MAX_HANG_TIME = 5 * 1000;
 
 
 function sum(aArray) {
-  return aArray.reduce(function(previousValue, currentValue) {
+  return aArray.reduce(function (previousValue, currentValue) {
     return previousValue + currentValue;
   });
 }
@@ -32,7 +32,7 @@ function sum(aArray) {
 
 
 function hangContentProcess(browser, aMs) {
-  return ContentTask.spawn(browser, aMs, function(ms) {
+  return ContentTask.spawn(browser, aMs, function (ms) {
     let then = Date.now();
     while (Date.now() - then < ms) {
       
@@ -82,7 +82,7 @@ async function testProbe(aProbe) {
   );
 }
 
-add_setup(async function() {
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.ipc.processCount", 1],

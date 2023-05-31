@@ -132,7 +132,7 @@ function makeTestURL({ body }) {
   return url.href;
 }
 
-add_task(async function() {
+add_task(async function () {
   const promises = tests
     .map(test => ({
       gBrowser,
@@ -148,7 +148,7 @@ add_task(async function() {
   await Promise.all(promises);
 
   function testObtainingManifest(aTest) {
-    return async function(aBrowser) {
+    return async function (aBrowser) {
       try {
         const manifest = await ManifestObtainer.browserObtainManifest(aBrowser);
         aTest.run(manifest);
@@ -197,7 +197,7 @@ add_task(async () => {
 
 
 
-add_task(async function() {
+add_task(async function () {
   const defaultPath = "/browser/dom/manifest/test/manifestLoader.html";
   const tabURLs = [
     `http://example.com:80${defaultPath}`,
@@ -236,7 +236,7 @@ add_task(async function() {
 
   
   await Promise.all(
-    (function*() {
+    (function* () {
       for (let browser of browsers) {
         yield BrowserTestUtils.browserLoaded(browser);
       }
@@ -245,7 +245,7 @@ add_task(async function() {
   
   
   const results = await Promise.all(
-    (function*() {
+    (function* () {
       for (let browser of randBrowsers(browsers, 50)) {
         yield ManifestObtainer.browserObtainManifest(browser);
       }

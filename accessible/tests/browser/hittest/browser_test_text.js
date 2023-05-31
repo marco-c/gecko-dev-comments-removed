@@ -21,7 +21,7 @@ a
   </div>
 </button>
   `,
-  async function(browser, docAcc) {
+  async function (browser, docAcc) {
     const dpr = await getContentDPR(browser);
     
     

@@ -5,7 +5,7 @@
 "use strict";
 
 
-define(function(require, exports, module) {
+define(function (require, exports, module) {
   
   const Undefined = require("devtools/client/shared/components/reps/reps/undefined");
   const Null = require("devtools/client/shared/components/reps/reps/null");
@@ -87,7 +87,7 @@ define(function(require, exports, module) {
 
 
 
-  const Rep = function(props) {
+  const Rep = function (props) {
     const { object, defaultRep } = props;
     const rep = getRep(
       object,

@@ -14,7 +14,7 @@ const TAB_URL = "data:text/html,<title>TEST_TAB</title>";
 
 
 
-add_task(async function() {
+add_task(async function () {
   setupTelemetryTest();
 
   const { document, tab, window } = await openAboutDebugging();

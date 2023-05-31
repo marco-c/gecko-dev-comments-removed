@@ -80,7 +80,7 @@ function DevToolsClient(transport) {
 }
 
 
-DevToolsClient.socketConnect = function(options) {
+DevToolsClient.socketConnect = function (options) {
   
   return DebuggerSocket.connect(options);
 };
@@ -634,7 +634,7 @@ DevToolsClient.prototype = {
 
 
   purgeRequests(prefix = "") {
-    const reject = function(type, request) {
+    const reject = function (type, request) {
       
       
       let msg;
