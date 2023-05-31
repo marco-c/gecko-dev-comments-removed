@@ -44,13 +44,7 @@ class TicketBlocker : public ShutdownBlocker {
 
  public:
   explicit TicketBlocker(const nsAString& aName)
-      : ShutdownBlocker([this, &aName] {
-          
-          nsString n(aName);
-          n.AppendPrintf(" - %p", this);
-          return n;
-        }()),
-        mPromise(mHolder.Ensure(__func__)) {}
+      : ShutdownBlocker(aName), mPromise(mHolder.Ensure(__func__)) {}
 
   NS_IMETHOD
   BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override {
