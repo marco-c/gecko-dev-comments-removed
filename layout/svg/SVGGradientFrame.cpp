@@ -237,7 +237,7 @@ already_AddRefed<gfxPattern> SVGGradientFrame::GetPaintServerPattern(
     
     
     
-    mSource = aSource->GetContent()->IsText() ? aSource->GetParent() : aSource;
+    mSource = aSource->IsTextFrame() ? aSource->GetParent() : aSource;
   }
 
   AutoTArray<nsIFrame*, 8> stopFrames;

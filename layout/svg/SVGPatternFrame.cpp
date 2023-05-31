@@ -208,6 +208,50 @@ static nsresult GetTargetGeometry(gfxRect* aBBox,
   return NS_OK;
 }
 
+void SVGPatternFrame::PaintChildren(DrawTarget* aDrawTarget,
+                                    SVGPatternFrame* aPatternWithChildren,
+                                    nsIFrame* aSource, float aGraphicOpacity,
+                                    imgDrawingParams& aImgParams) {
+  nsIFrame* firstKid = aPatternWithChildren->mFrames.FirstChild();
+
+  gfxContext ctx(aDrawTarget);
+  gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&ctx);
+
+  if (aGraphicOpacity != 1.0f) {
+    autoGroupForBlend.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                            aGraphicOpacity);
+  }
+
+  
+  
+  
+
+  if (aSource->IsSVGGeometryFrame()) {
+    
+    aPatternWithChildren->mSource = static_cast<SVGGeometryFrame*>(aSource);
+  }
+
+  
+  
+  if (!aPatternWithChildren->HasAnyStateBits(NS_FRAME_DRAWING_AS_PAINTSERVER)) {
+    AutoSetRestorePaintServerState paintServer(aPatternWithChildren);
+    for (nsIFrame* kid = firstKid; kid; kid = kid->GetNextSibling()) {
+      gfxMatrix tm = *(aPatternWithChildren->mCTM);
+
+      
+      ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
+      if (SVGFrame) {
+        SVGFrame->NotifySVGChanged(ISVGDisplayableFrame::TRANSFORM_CHANGED);
+        tm = SVGUtils::GetTransformMatrixInUserSpace(kid) * tm;
+      }
+
+      SVGUtils::PaintFrameWithEffects(kid, ctx, tm, aImgParams);
+    }
+  }
+
+  aPatternWithChildren->mSource = nullptr;
+}
+
 already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
     const DrawTarget* aDrawTarget, Matrix* patternMatrix,
     const Matrix& aContextMatrix, nsIFrame* aSource,
@@ -230,7 +274,6 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
     
     return nullptr;
   }
-  nsIFrame* firstKid = patternWithChildren->mFrames.FirstChild();
 
   const SVGAnimatedViewBox& viewBox = GetViewBox();
 
@@ -335,42 +378,7 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   }
   dt->ClearRect(Rect(0, 0, surfaceSize.width, surfaceSize.height));
 
-  gfxContext ctx(dt);
-  gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&ctx);
-
-  if (aGraphicOpacity != 1.0f) {
-    autoGroupForBlend.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
-                                            aGraphicOpacity);
-  }
-
-  
-  
-  
-
-  if (aSource->IsSVGGeometryFrame()) {
-    
-    patternWithChildren->mSource = static_cast<SVGGeometryFrame*>(aSource);
-  }
-
-  
-  
-  if (!patternWithChildren->HasAnyStateBits(NS_FRAME_DRAWING_AS_PAINTSERVER)) {
-    AutoSetRestorePaintServerState paintServer(patternWithChildren);
-    for (nsIFrame* kid = firstKid; kid; kid = kid->GetNextSibling()) {
-      gfxMatrix tm = *(patternWithChildren->mCTM);
-
-      
-      ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
-      if (SVGFrame) {
-        SVGFrame->NotifySVGChanged(ISVGDisplayableFrame::TRANSFORM_CHANGED);
-        tm = SVGUtils::GetTransformMatrixInUserSpace(kid) * tm;
-      }
-
-      SVGUtils::PaintFrameWithEffects(kid, ctx, tm, aImgParams);
-    }
-  }
-
-  patternWithChildren->mSource = nullptr;
+  PaintChildren(dt, patternWithChildren, aSource, aGraphicOpacity, aImgParams);
 
   
   return dt->GetBackingSurface();
@@ -587,6 +595,9 @@ gfxRect SVGPatternFrame::GetPatternRect(uint16_t aPatternUnits,
     width = SVGUtils::ObjectSpace(aTargetBBox, tmpWidth);
     height = SVGUtils::ObjectSpace(aTargetBBox, tmpHeight);
   } else {
+    if (aTarget->IsTextFrame()) {
+      aTarget = aTarget->GetParent();
+    }
     float scale = MaxExpansion(aTargetCTM);
     x = SVGUtils::UserSpace(aTarget, tmpX) * scale;
     y = SVGUtils::UserSpace(aTarget, tmpY) * scale;
@@ -603,8 +614,11 @@ gfxMatrix SVGPatternFrame::ConstructCTM(const SVGAnimatedViewBox& aViewBox,
                                         const gfxRect& callerBBox,
                                         const Matrix& callerCTM,
                                         nsIFrame* aTarget) {
-  SVGViewportElement* ctx = nullptr;
+  if (aTarget->IsTextFrame()) {
+    aTarget = aTarget->GetParent();
+  }
   nsIContent* targetContent = aTarget->GetContent();
+  SVGViewportElement* ctx = nullptr;
   gfxFloat scaleX, scaleY;
 
   

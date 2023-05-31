@@ -1566,7 +1566,7 @@ SVGPaintServerFrame* SVGObserverUtils::GetAndObservePaintServer(
   
   
   nsIFrame* paintedFrame = aPaintedFrame;
-  if (paintedFrame->GetContent()->IsText()) {
+  if (paintedFrame->IsInSVGTextSubtree()) {
     paintedFrame = paintedFrame->GetParent();
     nsIFrame* grandparent = paintedFrame->GetParent();
     if (grandparent && grandparent->IsSVGTextFrame()) {
