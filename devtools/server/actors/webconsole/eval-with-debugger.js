@@ -118,11 +118,7 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
 
-  const { dbgGlobal, bindSelf, evalGlobal } = getDbgGlobal(
-    options,
-    dbg,
-    webConsole
-  );
+  const { dbgGlobal, bindSelf } = getDbgGlobal(options, dbg, webConsole);
 
   const helpers = WebConsoleCommandsManager.getWebConsoleCommands(
     webConsole,
@@ -162,7 +158,7 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
 
   let noSideEffectDebugger = null;
   if (options.eager) {
-    noSideEffectDebugger = makeSideeffectFreeDebugger(evalGlobal);
+    noSideEffectDebugger = makeSideeffectFreeDebugger();
   }
 
   let result;
@@ -355,9 +351,7 @@ function forceLexicalInitForVariableDeclarationsInThrowingExpression(
 
 
 
-
-
-function makeSideeffectFreeDebugger(maybeEvalGlobal) {
+function makeSideeffectFreeDebugger() {
   
   
   
@@ -366,7 +360,7 @@ function makeSideeffectFreeDebugger(maybeEvalGlobal) {
   
   
   
-  ensureSideEffectFreeNatives(maybeEvalGlobal);
+  ensureSideEffectFreeNatives();
 
   
   
@@ -442,73 +436,18 @@ function makeSideeffectFreeDebugger(maybeEvalGlobal) {
   return dbg;
 }
 
-exports.makeSideeffectFreeDebugger = makeSideeffectFreeDebugger;
-
 
 let gSideEffectFreeNatives; 
 
 
 
 
-
-
-
-function ensureSideEffectFreeNatives(maybeEvalGlobal) {
+function ensureSideEffectFreeNatives() {
   if (gSideEffectFreeNatives) {
     return;
   }
 
-  const { natives: domNatives, idlPureAllowlist } = eagerFunctionAllowlist;
-
-  const instanceFunctionAllowlist = [];
-
-  function collectMethodsAndGetters(obj, methodsAndGetters) {
-    
-    
-    
-
-    if ("methods" in methodsAndGetters) {
-      for (const name of methodsAndGetters.methods) {
-        const func = obj[name];
-        if (func) {
-          instanceFunctionAllowlist.push(func);
-        }
-      }
-    }
-    if ("getters" in methodsAndGetters) {
-      for (const name of methodsAndGetters.getters) {
-        const func = Object.getOwnPropertyDescriptor(obj, name)?.get;
-        if (func) {
-          instanceFunctionAllowlist.push(func);
-        }
-      }
-    }
-  }
-
-  
-  if (
-    maybeEvalGlobal &&
-    typeof Window === "function" &&
-    Window.isInstance(maybeEvalGlobal) &&
-    "Window" in idlPureAllowlist &&
-    "instance" in idlPureAllowlist.Window
-  ) {
-    collectMethodsAndGetters(maybeEvalGlobal, idlPureAllowlist.Window.instance);
-    const maybeLocation = maybeEvalGlobal.location;
-    if (maybeLocation) {
-      collectMethodsAndGetters(
-        maybeLocation,
-        idlPureAllowlist.Location.instance
-      );
-    }
-    const maybeDocument = maybeEvalGlobal.document;
-    if (maybeDocument) {
-      collectMethodsAndGetters(
-        maybeDocument,
-        idlPureAllowlist.Document.instance
-      );
-    }
-  }
+  const { natives: domNatives } = eagerFunctionAllowlist;
 
   const natives = [
     ...eagerEcmaAllowlist.functions,
@@ -517,8 +456,6 @@ function ensureSideEffectFreeNatives(maybeEvalGlobal) {
     
     
     ...domNatives,
-
-    ...instanceFunctionAllowlist,
   ];
 
   const map = new Map();
@@ -635,7 +572,6 @@ function getFrameDbg(options, webConsole) {
 
 
 
-
 function getDbgGlobal(options, dbg, webConsole) {
   let evalGlobal = webConsole.evalGlobal;
 
@@ -654,7 +590,7 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   if (!options.selectedObjectActor) {
-    return { bindSelf: null, dbgGlobal, evalGlobal };
+    return { bindSelf: null, dbgGlobal };
   }
 
   
@@ -665,12 +601,12 @@ function getDbgGlobal(options, dbg, webConsole) {
     webConsole.parentActor.getActorByID(options.selectedObjectActor);
 
   if (!actor) {
-    return { bindSelf: null, dbgGlobal, evalGlobal };
+    return { bindSelf: null, dbgGlobal };
   }
 
   const jsVal = actor instanceof LongStringActor ? actor.str : actor.rawValue();
   if (!isObject(jsVal)) {
-    return { bindSelf: jsVal, dbgGlobal, evalGlobal };
+    return { bindSelf: jsVal, dbgGlobal };
   }
 
   
@@ -678,5 +614,5 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   const bindSelf = dbgGlobal.makeDebuggeeValue(jsVal);
-  return { bindSelf, dbgGlobal, evalGlobal };
+  return { bindSelf, dbgGlobal };
 }
