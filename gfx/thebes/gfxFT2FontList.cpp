@@ -492,7 +492,14 @@ hb_face_t* FT2FontEntry::CreateHBFace() const {
 }
 
 bool FT2FontEntry::HasFontTable(uint32_t aTableTag) {
+  
+  if (mFTFace) {
+    RefPtr<SharedFTFace> face = GetFTFace();
+    return gfxFT2FontEntryBase::FaceHasTable(face, aTableTag);
+  }
+
   {
+    
     AutoReadLock lock(mLock);
     if (mAvailableTables.Count() > 0) {
       return mAvailableTables.Contains(aTableTag);
@@ -530,6 +537,8 @@ bool FT2FontEntry::HasFontTable(uint32_t aTableTag) {
     return mAvailableTables.Contains(aTableTag);
   }
 
+  
+  
   RefPtr<SharedFTFace> face = GetFTFace();
   return gfxFT2FontEntryBase::FaceHasTable(face, aTableTag);
 }
