@@ -11,7 +11,7 @@ use crate::context::{PerThreadTraversalStatistics, StyleContext};
 use crate::context::{ThreadLocalStyleContext, TraversalStatistics};
 use crate::dom::{SendNode, TElement, TNode};
 use crate::parallel;
-use crate::parallel::{DispatchMode, WORK_UNIT_MAX};
+use crate::parallel::{work_unit_max, DispatchMode};
 use crate::scoped_tls::ScopedTLS;
 use crate::traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 use rayon;
@@ -48,7 +48,9 @@ fn report_statistics(stats: &PerThreadTraversalStatistics) {
     gecko_stats.mStylesReused += stats.styles_reused;
 }
 
-
+fn parallelism_threshold() -> usize {
+    static_prefs::pref!("layout.css.stylo-parallelism-threshold") as usize
+}
 
 
 
@@ -100,7 +102,9 @@ where
     
     
     
-    let mut discovered = VecDeque::<SendNode<E::ConcreteNode>>::with_capacity(WORK_UNIT_MAX * 2);
+    let work_unit_max = work_unit_max();
+    let parallelism_threshold = parallelism_threshold();
+    let mut discovered = VecDeque::<SendNode<E::ConcreteNode>>::with_capacity(work_unit_max * 2);
     let mut depth = root.depth();
     let mut nodes_remaining_at_current_depth = 1;
     discovered.push_back(unsafe { SendNode::new(root.as_node()) });
@@ -122,44 +126,47 @@ where
         );
 
         nodes_remaining_at_current_depth -= 1;
-        if nodes_remaining_at_current_depth == 0 {
-            depth += 1;
-            
-            
-            
-            
-            if pool.is_some() && discovered.len() > WORK_UNIT_MAX {
-                let pool = pool.unwrap();
-                let tls = ScopedTLS::<ThreadLocalStyleContext<E>>::new(pool);
-                let root_opaque = root.as_node().opaque();
-                let drain = discovered.drain(..);
-                pool.scope_fifo(|scope| {
-                    
-                    
-                    
-                    
-                    
-                    gecko_profiler_label!(Layout, StyleComputation);
-                    parallel::traverse_nodes(
-                        drain,
-                        DispatchMode::TailCall,
-                         true,
-                        root_opaque,
-                        PerLevelTraversalData {
-                            current_dom_depth: depth,
-                        },
-                        scope,
-                        pool,
-                        traversal,
-                        &tls,
-                    );
-                });
 
-                tls_slots = Some(tls.into_slots());
-                break;
-            }
-            nodes_remaining_at_current_depth = discovered.len();
+        
+        
+        
+        if nodes_remaining_at_current_depth != 0 {
+            continue;
         }
+        depth += 1;
+        if pool.is_some() &&
+            discovered.len() > parallelism_threshold &&
+            parallelism_threshold > 0
+        {
+            let pool = pool.unwrap();
+            let tls = ScopedTLS::<ThreadLocalStyleContext<E>>::new(pool);
+            let root_opaque = root.as_node().opaque();
+            pool.scope_fifo(|scope| {
+                
+                
+                
+                
+                
+                gecko_profiler_label!(Layout, StyleComputation);
+                parallel::traverse_nodes(
+                    discovered.make_contiguous(),
+                    DispatchMode::TailCall,
+                     true,
+                    root_opaque,
+                    PerLevelTraversalData {
+                        current_dom_depth: depth,
+                    },
+                    scope,
+                    pool,
+                    traversal,
+                    &tls,
+                );
+            });
+
+            tls_slots = Some(tls.into_slots());
+            break;
+        }
+        nodes_remaining_at_current_depth = discovered.len();
     }
 
     

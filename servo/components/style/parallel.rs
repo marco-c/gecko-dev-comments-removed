@@ -26,8 +26,6 @@ use crate::context::{StyleContext, ThreadLocalStyleContext};
 use crate::dom::{OpaqueNode, SendNode, TElement};
 use crate::scoped_tls::ScopedTLS;
 use crate::traversal::{DomTraversal, PerLevelTraversalData};
-use arrayvec::ArrayVec;
-use itertools::Itertools;
 use rayon;
 use smallvec::SmallVec;
 
@@ -54,22 +52,9 @@ pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
 pub const STACK_SAFETY_MARGIN_KB: usize = 168;
 
 
-
-
-
-
-
-
-
-
-
-
-
-pub const WORK_UNIT_MAX: usize = 16;
-
-
-
-type WorkUnit<N> = ArrayVec<SendNode<N>, WORK_UNIT_MAX>;
+pub fn work_unit_max() -> usize {
+    static_prefs::pref!("layout.css.stylo-work-unit-size") as usize
+}
 
 
 
@@ -109,7 +94,8 @@ fn top_down_dom<'a, 'scope, E, D>(
     E: TElement + 'scope,
     D: DomTraversal<E>,
 {
-    debug_assert!(nodes.len() <= WORK_UNIT_MAX);
+    let work_unit_max = work_unit_max();
+    debug_assert!(nodes.len() <= work_unit_max);
 
     
     
@@ -173,11 +159,11 @@ fn top_down_dom<'a, 'scope, E, D>(
             
             
             
-            if discovered_child_nodes.len() >= WORK_UNIT_MAX {
+            if discovered_child_nodes.len() >= work_unit_max {
                 let mut traversal_data_copy = traversal_data.clone();
                 traversal_data_copy.current_dom_depth += 1;
                 traverse_nodes(
-                    discovered_child_nodes.drain(..),
+                    &discovered_child_nodes,
                     DispatchMode::NotTailCall,
                     recursion_ok,
                     root,
@@ -187,6 +173,7 @@ fn top_down_dom<'a, 'scope, E, D>(
                     traversal,
                     tls,
                 );
+                discovered_child_nodes.clear();
             }
 
             let node = **n;
@@ -207,7 +194,7 @@ fn top_down_dom<'a, 'scope, E, D>(
     if !discovered_child_nodes.is_empty() {
         traversal_data.current_dom_depth += 1;
         traverse_nodes(
-            discovered_child_nodes.drain(..),
+            &discovered_child_nodes,
             DispatchMode::TailCall,
             recursion_ok,
             root,
@@ -239,8 +226,8 @@ impl DispatchMode {
 
 
 #[inline]
-pub fn traverse_nodes<'a, 'scope, E, D, I>(
-    nodes: I,
+pub fn traverse_nodes<'a, 'scope, E, D>(
+    nodes: &[SendNode<E::ConcreteNode>],
     mode: DispatchMode,
     recursion_ok: bool,
     root: OpaqueNode,
@@ -252,7 +239,6 @@ pub fn traverse_nodes<'a, 'scope, E, D, I>(
 ) where
     E: TElement + 'scope,
     D: DomTraversal<E>,
-    I: ExactSizeIterator<Item = SendNode<E::ConcreteNode>>,
 {
     debug_assert_ne!(nodes.len(), 0);
 
@@ -266,27 +252,35 @@ pub fn traverse_nodes<'a, 'scope, E, D, I>(
     let may_dispatch_tail =
         mode.is_tail_call() && recursion_ok && !pool.current_thread_has_pending_tasks().unwrap();
 
+    let work_unit_max = work_unit_max();
     
     
-    if nodes.len() <= WORK_UNIT_MAX {
-        let work: WorkUnit<E::ConcreteNode> = nodes.collect();
+    if nodes.len() <= work_unit_max {
         if may_dispatch_tail {
-            top_down_dom(&work, root, traversal_data, scope, pool, traversal, tls);
+            top_down_dom(&nodes, root, traversal_data, scope, pool, traversal, tls);
         } else {
+            let work = nodes.to_vec();
             scope.spawn_fifo(move |scope| {
                 gecko_profiler_label!(Layout, StyleComputation);
-                let work = work;
                 top_down_dom(&work, root, traversal_data, scope, pool, traversal, tls);
             });
         }
     } else {
-        for chunk in nodes.chunks(WORK_UNIT_MAX).into_iter() {
-            let nodes: WorkUnit<E::ConcreteNode> = chunk.collect();
+        for chunk in nodes.chunks(work_unit_max) {
+            let work = chunk.to_vec();
             let traversal_data_copy = traversal_data.clone();
             scope.spawn_fifo(move |scope| {
                 gecko_profiler_label!(Layout, StyleComputation);
-                let n = nodes;
-                top_down_dom(&*n, root, traversal_data_copy, scope, pool, traversal, tls)
+                let work = work;
+                top_down_dom(
+                    &work,
+                    root,
+                    traversal_data_copy,
+                    scope,
+                    pool,
+                    traversal,
+                    tls,
+                )
             });
         }
     }
