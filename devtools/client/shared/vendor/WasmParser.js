@@ -13,8 +13,23 @@
 
 
 
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bytesToString = exports.BinaryReader = exports.Int64 = exports.ElementMode = exports.DataMode = exports.BinaryReaderState = exports.NameType = exports.LinkingType = exports.RelocType = exports.Type = exports.TypeKind = exports.ExternalKind = exports.OperatorCodeNames = exports.OperatorCode = exports.SectionCode = void 0;
+exports.bytesToString = exports.BinaryReader = exports.Int64 = exports.TagAttribute = exports.ElementMode = exports.DataMode = exports.BinaryReaderState = exports.NameType = exports.LinkingType = exports.RelocType = exports.RefType = exports.Type = exports.FuncDef = exports.FieldDef = exports.TypeKind = exports.ExternalKind = exports.OperatorCodeNames = exports.OperatorCode = exports.SectionCode = void 0;
 
 var WASM_MAGIC_NUMBER = 0x6d736100;
 var WASM_SUPPORTED_EXPERIMENTAL_VERSION = 0xd;
@@ -34,7 +49,8 @@ var SectionCode;
     SectionCode[SectionCode["Element"] = 9] = "Element";
     SectionCode[SectionCode["Code"] = 10] = "Code";
     SectionCode[SectionCode["Data"] = 11] = "Data";
-    SectionCode[SectionCode["Event"] = 13] = "Event";
+    SectionCode[SectionCode["DataCount"] = 12] = "DataCount";
+    SectionCode[SectionCode["Tag"] = 13] = "Tag";
 })(SectionCode = exports.SectionCode || (exports.SectionCode = {}));
 var OperatorCode;
 (function (OperatorCode) {
@@ -94,8 +110,8 @@ var OperatorCode;
     OperatorCode[OperatorCode["i64_store8"] = 60] = "i64_store8";
     OperatorCode[OperatorCode["i64_store16"] = 61] = "i64_store16";
     OperatorCode[OperatorCode["i64_store32"] = 62] = "i64_store32";
-    OperatorCode[OperatorCode["current_memory"] = 63] = "current_memory";
-    OperatorCode[OperatorCode["grow_memory"] = 64] = "grow_memory";
+    OperatorCode[OperatorCode["memory_size"] = 63] = "memory_size";
+    OperatorCode[OperatorCode["memory_grow"] = 64] = "memory_grow";
     OperatorCode[OperatorCode["i32_const"] = 65] = "i32_const";
     OperatorCode[OperatorCode["i64_const"] = 66] = "i64_const";
     OperatorCode[OperatorCode["f32_const"] = 67] = "f32_const";
@@ -259,9 +275,9 @@ var OperatorCode;
     OperatorCode[OperatorCode["br_on_null"] = 212] = "br_on_null";
     OperatorCode[OperatorCode["ref_eq"] = 213] = "ref_eq";
     OperatorCode[OperatorCode["br_on_non_null"] = 214] = "br_on_non_null";
-    OperatorCode[OperatorCode["atomic_notify"] = 65024] = "atomic_notify";
-    OperatorCode[OperatorCode["i32_atomic_wait"] = 65025] = "i32_atomic_wait";
-    OperatorCode[OperatorCode["i64_atomic_wait"] = 65026] = "i64_atomic_wait";
+    OperatorCode[OperatorCode["memory_atomic_notify"] = 65024] = "memory_atomic_notify";
+    OperatorCode[OperatorCode["memory_atomic_wait32"] = 65025] = "memory_atomic_wait32";
+    OperatorCode[OperatorCode["memory_atomic_wait64"] = 65026] = "memory_atomic_wait64";
     OperatorCode[OperatorCode["atomic_fence"] = 65027] = "atomic_fence";
     OperatorCode[OperatorCode["i32_atomic_load"] = 65040] = "i32_atomic_load";
     OperatorCode[OperatorCode["i64_atomic_load"] = 65041] = "i64_atomic_load";
@@ -571,18 +587,22 @@ var OperatorCode;
     OperatorCode[OperatorCode["struct_set"] = 64262] = "struct_set";
     OperatorCode[OperatorCode["struct_new"] = 64263] = "struct_new";
     OperatorCode[OperatorCode["struct_new_default"] = 64264] = "struct_new_default";
+    OperatorCode[OperatorCode["array_fill"] = 64271] = "array_fill";
     OperatorCode[OperatorCode["array_new_with_rtt"] = 64273] = "array_new_with_rtt";
     OperatorCode[OperatorCode["array_new_default_with_rtt"] = 64274] = "array_new_default_with_rtt";
     OperatorCode[OperatorCode["array_get"] = 64275] = "array_get";
     OperatorCode[OperatorCode["array_get_s"] = 64276] = "array_get_s";
     OperatorCode[OperatorCode["array_get_u"] = 64277] = "array_get_u";
     OperatorCode[OperatorCode["array_set"] = 64278] = "array_set";
-    OperatorCode[OperatorCode["array_len"] = 64279] = "array_len";
+    OperatorCode[OperatorCode["array_len_"] = 64279] = "array_len_";
+    OperatorCode[OperatorCode["array_len"] = 64281] = "array_len";
     OperatorCode[OperatorCode["array_copy"] = 64280] = "array_copy";
-    OperatorCode[OperatorCode["array_init"] = 64281] = "array_init";
-    OperatorCode[OperatorCode["array_init_static"] = 64282] = "array_init_static";
+    OperatorCode[OperatorCode["array_new_fixed"] = 64282] = "array_new_fixed";
     OperatorCode[OperatorCode["array_new"] = 64283] = "array_new";
     OperatorCode[OperatorCode["array_new_default"] = 64284] = "array_new_default";
+    OperatorCode[OperatorCode["array_new_data"] = 64285] = "array_new_data";
+    OperatorCode[OperatorCode["array_init_from_data"] = 64286] = "array_init_from_data";
+    OperatorCode[OperatorCode["array_new_elem"] = 64287] = "array_new_elem";
     OperatorCode[OperatorCode["i31_new"] = 64288] = "i31_new";
     OperatorCode[OperatorCode["i31_get_s"] = 64289] = "i31_get_s";
     OperatorCode[OperatorCode["i31_get_u"] = 64290] = "i31_get_u";
@@ -590,25 +610,40 @@ var OperatorCode;
     OperatorCode[OperatorCode["rtt_sub"] = 64305] = "rtt_sub";
     OperatorCode[OperatorCode["rtt_fresh_sub"] = 64306] = "rtt_fresh_sub";
     OperatorCode[OperatorCode["ref_test"] = 64320] = "ref_test";
-    OperatorCode[OperatorCode["ref_test_static"] = 64324] = "ref_test_static";
     OperatorCode[OperatorCode["ref_cast"] = 64321] = "ref_cast";
-    OperatorCode[OperatorCode["ref_cast_static"] = 64325] = "ref_cast_static";
-    OperatorCode[OperatorCode["br_on_cast"] = 64322] = "br_on_cast";
-    OperatorCode[OperatorCode["br_on_cast_static"] = 64326] = "br_on_cast_static";
-    OperatorCode[OperatorCode["br_on_cast_fail"] = 64323] = "br_on_cast_fail";
-    OperatorCode[OperatorCode["br_on_cast_static_fail"] = 64327] = "br_on_cast_static_fail";
-    OperatorCode[OperatorCode["ref_is_func"] = 64336] = "ref_is_func";
-    OperatorCode[OperatorCode["ref_is_data"] = 64337] = "ref_is_data";
-    OperatorCode[OperatorCode["ref_is_i31"] = 64338] = "ref_is_i31";
-    OperatorCode[OperatorCode["ref_as_func"] = 64344] = "ref_as_func";
-    OperatorCode[OperatorCode["ref_as_data"] = 64345] = "ref_as_data";
-    OperatorCode[OperatorCode["ref_as_i31"] = 64346] = "ref_as_i31";
-    OperatorCode[OperatorCode["br_on_func"] = 64352] = "br_on_func";
-    OperatorCode[OperatorCode["br_on_data"] = 64353] = "br_on_data";
-    OperatorCode[OperatorCode["br_on_i31"] = 64354] = "br_on_i31";
-    OperatorCode[OperatorCode["br_on_non_func"] = 64355] = "br_on_non_func";
-    OperatorCode[OperatorCode["br_on_non_data"] = 64356] = "br_on_non_data";
-    OperatorCode[OperatorCode["br_on_non_i31"] = 64357] = "br_on_non_i31";
+    OperatorCode[OperatorCode["br_on_cast_"] = 64322] = "br_on_cast_";
+    OperatorCode[OperatorCode["br_on_cast_fail_"] = 64323] = "br_on_cast_fail_";
+    OperatorCode[OperatorCode["ref_test_"] = 64324] = "ref_test_";
+    OperatorCode[OperatorCode["ref_cast_"] = 64325] = "ref_cast_";
+    OperatorCode[OperatorCode["br_on_cast__"] = 64326] = "br_on_cast__";
+    OperatorCode[OperatorCode["br_on_cast_fail__"] = 64327] = "br_on_cast_fail__";
+    OperatorCode[OperatorCode["ref_test_null"] = 64328] = "ref_test_null";
+    OperatorCode[OperatorCode["ref_cast_null"] = 64329] = "ref_cast_null";
+    OperatorCode[OperatorCode["br_on_cast_null_"] = 64330] = "br_on_cast_null_";
+    OperatorCode[OperatorCode["br_on_cast_fail_null_"] = 64331] = "br_on_cast_fail_null_";
+    OperatorCode[OperatorCode["ref_cast_nop"] = 64332] = "ref_cast_nop";
+    OperatorCode[OperatorCode["br_on_cast"] = 64334] = "br_on_cast";
+    OperatorCode[OperatorCode["br_on_cast_fail"] = 64335] = "br_on_cast_fail";
+    OperatorCode[OperatorCode["ref_is_func_"] = 64336] = "ref_is_func_";
+    OperatorCode[OperatorCode["ref_is_data_"] = 64337] = "ref_is_data_";
+    OperatorCode[OperatorCode["ref_is_i31_"] = 64338] = "ref_is_i31_";
+    OperatorCode[OperatorCode["ref_is_array_"] = 64339] = "ref_is_array_";
+    OperatorCode[OperatorCode["array_init_data"] = 64340] = "array_init_data";
+    OperatorCode[OperatorCode["array_init_elem"] = 64341] = "array_init_elem";
+    OperatorCode[OperatorCode["ref_as_func_"] = 64344] = "ref_as_func_";
+    OperatorCode[OperatorCode["ref_as_data_"] = 64345] = "ref_as_data_";
+    OperatorCode[OperatorCode["ref_as_i31_"] = 64346] = "ref_as_i31_";
+    OperatorCode[OperatorCode["ref_as_array_"] = 64347] = "ref_as_array_";
+    OperatorCode[OperatorCode["br_on_func_"] = 64352] = "br_on_func_";
+    OperatorCode[OperatorCode["br_on_data_"] = 64353] = "br_on_data_";
+    OperatorCode[OperatorCode["br_on_i31_"] = 64354] = "br_on_i31_";
+    OperatorCode[OperatorCode["br_on_non_func_"] = 64355] = "br_on_non_func_";
+    OperatorCode[OperatorCode["br_on_non_data_"] = 64356] = "br_on_non_data_";
+    OperatorCode[OperatorCode["br_on_non_i31_"] = 64357] = "br_on_non_i31_";
+    OperatorCode[OperatorCode["br_on_array_"] = 64358] = "br_on_array_";
+    OperatorCode[OperatorCode["br_on_non_array_"] = 64359] = "br_on_non_array_";
+    OperatorCode[OperatorCode["extern_internalize"] = 64368] = "extern_internalize";
+    OperatorCode[OperatorCode["extern_externalize"] = 64369] = "extern_externalize";
 })(OperatorCode = exports.OperatorCode || (exports.OperatorCode = {}));
 exports.OperatorCodeNames = [
     "unreachable",
@@ -674,7 +709,7 @@ exports.OperatorCodeNames = [
     "i64.store8",
     "i64.store16",
     "i64.store32",
-    "current_memory",
+    "memory.size",
     "memory.grow",
     "i32.const",
     "i64.const",
@@ -1151,9 +1186,9 @@ exports.OperatorCodeNames = [
     exports.OperatorCodeNames[0xfd00 | i] = s;
 });
 [
-    "atomic.notify",
-    "i32.atomic.wait",
-    "i64.atomic.wait",
+    "memory.atomic.notify",
+    "memory.atomic.wait32",
+    "memory.atomic.wait64",
     "atomic.fence",
     undefined,
     undefined,
@@ -1241,18 +1276,22 @@ exports.OperatorCodeNames[0xfb05] = "struct.get_u";
 exports.OperatorCodeNames[0xfb06] = "struct.set";
 exports.OperatorCodeNames[0xfb07] = "struct.new";
 exports.OperatorCodeNames[0xfb08] = "struct.new_default";
+exports.OperatorCodeNames[0xfb0f] = "array.fill";
 exports.OperatorCodeNames[0xfb11] = "array.new_with_rtt";
 exports.OperatorCodeNames[0xfb12] = "array.new_default_with_rtt";
 exports.OperatorCodeNames[0xfb13] = "array.get";
 exports.OperatorCodeNames[0xfb14] = "array.get_s";
 exports.OperatorCodeNames[0xfb15] = "array.get_u";
 exports.OperatorCodeNames[0xfb16] = "array.set";
-exports.OperatorCodeNames[0xfb17] = "array.len";
+exports.OperatorCodeNames[0xfb17] = "array.len"; 
 exports.OperatorCodeNames[0xfb18] = "array.copy";
-exports.OperatorCodeNames[0xfb19] = "array.init";
-exports.OperatorCodeNames[0xfb1a] = "array.init_static";
+exports.OperatorCodeNames[0xfb19] = "array.len";
+exports.OperatorCodeNames[0xfb1a] = "array.new_fixed";
 exports.OperatorCodeNames[0xfb1b] = "array.new";
 exports.OperatorCodeNames[0xfb1c] = "array.new_default";
+exports.OperatorCodeNames[0xfb1d] = "array.new_data";
+exports.OperatorCodeNames[0xfb1e] = "array.init_from_data";
+exports.OperatorCodeNames[0xfb1f] = "array.new_elem";
 exports.OperatorCodeNames[0xfb20] = "i31.new";
 exports.OperatorCodeNames[0xfb21] = "i31.get_s";
 exports.OperatorCodeNames[0xfb22] = "i31.get_u";
@@ -1267,25 +1306,40 @@ exports.OperatorCodeNames[0xfb44] = "ref.test_static";
 exports.OperatorCodeNames[0xfb45] = "ref.cast_static";
 exports.OperatorCodeNames[0xfb46] = "br_on_cast_static";
 exports.OperatorCodeNames[0xfb47] = "br_on_cast_static_fail";
+exports.OperatorCodeNames[0xfb48] = "ref.test_null";
+exports.OperatorCodeNames[0xfb49] = "ref.cast_null";
+exports.OperatorCodeNames[0xfb4a] = "br_on_cast_null";
+exports.OperatorCodeNames[0xfb4b] = "br_on_cast_fail_null";
+exports.OperatorCodeNames[0xfb4c] = "ref.cast_nop";
+exports.OperatorCodeNames[0xfb4e] = "br_on_cast";
+exports.OperatorCodeNames[0xfb4f] = "br_on_cast_fail";
 exports.OperatorCodeNames[0xfb50] = "ref.is_func";
 exports.OperatorCodeNames[0xfb51] = "ref.is_data";
 exports.OperatorCodeNames[0xfb52] = "ref.is_i31";
+exports.OperatorCodeNames[0xfb53] = "ref.is_array";
+exports.OperatorCodeNames[0xfb54] = "array.init_data";
+exports.OperatorCodeNames[0xfb55] = "array.init_elem";
 exports.OperatorCodeNames[0xfb58] = "ref.as_func";
 exports.OperatorCodeNames[0xfb59] = "ref.as_data";
 exports.OperatorCodeNames[0xfb5a] = "ref.as_i31";
+exports.OperatorCodeNames[0xfb5b] = "ref.as_array";
 exports.OperatorCodeNames[0xfb60] = "br_on_func";
 exports.OperatorCodeNames[0xfb61] = "br_on_data";
 exports.OperatorCodeNames[0xfb62] = "br_on_i31";
 exports.OperatorCodeNames[0xfb63] = "br_on_non_func";
 exports.OperatorCodeNames[0xfb64] = "br_on_non_data";
 exports.OperatorCodeNames[0xfb65] = "br_on_non_i31";
+exports.OperatorCodeNames[0xfb66] = "br_on_array";
+exports.OperatorCodeNames[0xfb67] = "br_on_non_array";
+exports.OperatorCodeNames[0xfb70] = "extern.internalize";
+exports.OperatorCodeNames[0xfb71] = "extern.externalize";
 var ExternalKind;
 (function (ExternalKind) {
     ExternalKind[ExternalKind["Function"] = 0] = "Function";
     ExternalKind[ExternalKind["Table"] = 1] = "Table";
     ExternalKind[ExternalKind["Memory"] = 2] = "Memory";
     ExternalKind[ExternalKind["Global"] = 3] = "Global";
-    ExternalKind[ExternalKind["Event"] = 4] = "Event";
+    ExternalKind[ExternalKind["Tag"] = 4] = "Tag";
 })(ExternalKind = exports.ExternalKind || (exports.ExternalKind = {}));
 var TypeKind;
 (function (TypeKind) {
@@ -1301,50 +1355,85 @@ var TypeKind;
     TypeKind[TypeKind["externref"] = -17] = "externref";
     TypeKind[TypeKind["anyref"] = -18] = "anyref";
     TypeKind[TypeKind["eqref"] = -19] = "eqref";
-    TypeKind[TypeKind["optref"] = -20] = "optref";
+    TypeKind[TypeKind["ref_null"] = -20] = "ref_null";
     TypeKind[TypeKind["ref"] = -21] = "ref";
     TypeKind[TypeKind["i31ref"] = -22] = "i31ref";
-    TypeKind[TypeKind["rtt_d"] = -23] = "rtt_d";
-    TypeKind[TypeKind["rtt"] = -24] = "rtt";
-    TypeKind[TypeKind["dataref"] = -25] = "dataref";
+    TypeKind[TypeKind["nullexternref"] = -23] = "nullexternref";
+    TypeKind[TypeKind["nullfuncref"] = -24] = "nullfuncref";
+    TypeKind[TypeKind["structref"] = -25] = "structref";
+    TypeKind[TypeKind["arrayref"] = -26] = "arrayref";
+    TypeKind[TypeKind["nullref"] = -27] = "nullref";
     TypeKind[TypeKind["func"] = -32] = "func";
     TypeKind[TypeKind["struct"] = -33] = "struct";
     TypeKind[TypeKind["array"] = -34] = "array";
-    TypeKind[TypeKind["func_subtype"] = -35] = "func_subtype";
-    TypeKind[TypeKind["struct_subtype"] = -36] = "struct_subtype";
-    TypeKind[TypeKind["array_subtype"] = -37] = "array_subtype";
+    TypeKind[TypeKind["subtype"] = -48] = "subtype";
+    TypeKind[TypeKind["rec_group"] = -49] = "rec_group";
+    TypeKind[TypeKind["subtype_final"] = -50] = "subtype_final";
     TypeKind[TypeKind["empty_block_type"] = -64] = "empty_block_type";
 })(TypeKind = exports.TypeKind || (exports.TypeKind = {}));
-var Type =  (function () {
-    function Type(kind, index, depth) {
-        if (index === void 0) { index = -1; }
-        if (depth === void 0) { depth = -1; }
-        if (kind < 0 || (kind === 0 && index >= 0)) {
-            
-        }
-        else {
-            throw new Error("invalid type: " + kind + "/" + index + "/" + depth);
-        }
-        this.kind = kind;
-        this.index = index;
-        this.depth = depth;
-        
-        if ((index === -16  && kind === -20 ) ||
-            (index === -17  && kind === -20 ) ||
-            (index === -18  && kind === -20 ) ||
-            (index === -19  && kind === -20 ) ||
-            (index === -22  && kind === -21 ) ||
-            (index === -25  && kind === -21 )) {
-            this.kind = index;
-            this.index = -1;
-        }
+var FieldDef =  (function () {
+    function FieldDef() {
     }
+    return FieldDef;
+}());
+exports.FieldDef = FieldDef;
+var FuncDef =  (function () {
+    function FuncDef() {
+    }
+    return FuncDef;
+}());
+exports.FuncDef = FuncDef;
+var Type = exports.Type =  (function () {
+    function Type(code) {
+        this.code = code;
+    }
+    Object.defineProperty(Type.prototype, "isIndex", {
+        get: function () {
+            return this.code >= 0;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Type.prototype, "kind", {
+        get: function () {
+            return this.code >= 0 ? 0  : this.code;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Type.prototype, "index", {
+        get: function () {
+            return this.code < 0 ? -1 : this.code;
+        },
+        enumerable: false,
+        configurable: true
+    });
     
     Type.funcref = new Type(-16 );
     Type.externref = new Type(-17 );
     return Type;
 }());
-exports.Type = Type;
+var RefType =  (function (_super) {
+    __extends(RefType, _super);
+    function RefType(kind, ref_index) {
+        var _this = this;
+        if (kind != -21  && kind !== -20 ) {
+            throw new Error("Unexpected type kind: ".concat(kind, "}"));
+        }
+        _this = _super.call(this, kind) || this;
+        _this.ref_index = ref_index;
+        return _this;
+    }
+    Object.defineProperty(RefType.prototype, "isNullable", {
+        get: function () {
+            return this.kind == -20 ;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return RefType;
+}(Type));
+exports.RefType = RefType;
 var RelocType;
 (function (RelocType) {
     RelocType[RelocType["FunctionIndex_LEB"] = 0] = "FunctionIndex_LEB";
@@ -1365,12 +1454,15 @@ var NameType;
     NameType[NameType["Module"] = 0] = "Module";
     NameType[NameType["Function"] = 1] = "Function";
     NameType[NameType["Local"] = 2] = "Local";
-    NameType[NameType["Event"] = 3] = "Event";
+    NameType[NameType["Label"] = 3] = "Label";
     NameType[NameType["Type"] = 4] = "Type";
     NameType[NameType["Table"] = 5] = "Table";
     NameType[NameType["Memory"] = 6] = "Memory";
     NameType[NameType["Global"] = 7] = "Global";
+    NameType[NameType["Elem"] = 8] = "Elem";
+    NameType[NameType["Data"] = 9] = "Data";
     NameType[NameType["Field"] = 10] = "Field";
+    NameType[NameType["Tag"] = 11] = "Tag";
 })(NameType = exports.NameType || (exports.NameType = {}));
 var BinaryReaderState;
 (function (BinaryReaderState) {
@@ -1395,7 +1487,7 @@ var BinaryReaderState;
     BinaryReaderState[BinaryReaderState["ELEMENT_SECTION_ENTRY"] = 20] = "ELEMENT_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["LINKING_SECTION_ENTRY"] = 21] = "LINKING_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["START_SECTION_ENTRY"] = 22] = "START_SECTION_ENTRY";
-    BinaryReaderState[BinaryReaderState["EVENT_SECTION_ENTRY"] = 23] = "EVENT_SECTION_ENTRY";
+    BinaryReaderState[BinaryReaderState["TAG_SECTION_ENTRY"] = 23] = "TAG_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["BEGIN_INIT_EXPRESSION_BODY"] = 25] = "BEGIN_INIT_EXPRESSION_BODY";
     BinaryReaderState[BinaryReaderState["INIT_EXPRESSION_OPERATOR"] = 26] = "INIT_EXPRESSION_OPERATOR";
     BinaryReaderState[BinaryReaderState["END_INIT_EXPRESSION_BODY"] = 27] = "END_INIT_EXPRESSION_BODY";
@@ -1418,6 +1510,9 @@ var BinaryReaderState;
     BinaryReaderState[BinaryReaderState["BEGIN_OFFSET_EXPRESSION_BODY"] = 44] = "BEGIN_OFFSET_EXPRESSION_BODY";
     BinaryReaderState[BinaryReaderState["OFFSET_EXPRESSION_OPERATOR"] = 45] = "OFFSET_EXPRESSION_OPERATOR";
     BinaryReaderState[BinaryReaderState["END_OFFSET_EXPRESSION_BODY"] = 46] = "END_OFFSET_EXPRESSION_BODY";
+    BinaryReaderState[BinaryReaderState["BEGIN_REC_GROUP"] = 47] = "BEGIN_REC_GROUP";
+    BinaryReaderState[BinaryReaderState["END_REC_GROUP"] = 48] = "END_REC_GROUP";
+    BinaryReaderState[BinaryReaderState["DATA_COUNT_SECTION_ENTRY"] = 49] = "DATA_COUNT_SECTION_ENTRY";
 })(BinaryReaderState = exports.BinaryReaderState || (exports.BinaryReaderState = {}));
 var DataSegmentType;
 (function (DataSegmentType) {
@@ -1489,6 +1584,10 @@ var DataRange =  (function () {
     };
     return DataRange;
 }());
+var TagAttribute;
+(function (TagAttribute) {
+    TagAttribute[TagAttribute["Exception"] = 0] = "Exception";
+})(TagAttribute = exports.TagAttribute || (exports.TagAttribute = {}));
 var Int64 =  (function () {
     function Int64(data) {
         this._data = data || new Uint8Array(8);
@@ -1577,6 +1676,7 @@ var BinaryReader =  (function () {
         this._functionRange = null;
         this._segmentType = 0;
         this._segmentEntriesLeft = 0;
+        this._recGroupTypesLeft = 0;
     }
     Object.defineProperty(BinaryReader.prototype, "data", {
         get: function () {
@@ -1708,48 +1808,54 @@ var BinaryReader =  (function () {
     
     
     BinaryReader.prototype.readHeapType = function () {
-        var result = 0;
-        var shift = 0;
-        var byte;
-        while (true) {
-            byte = this.readUint8();
-            if (shift === 28) {
-                var signed = (byte << 25) >> 25;
-                return signed * Math.pow(2, 28) + result;
-            }
-            result |= (byte & 0x7f) << shift;
-            shift += 7;
-            if ((byte & 0x80) === 0)
-                break;
+        var lsb = this.readUint8();
+        if (lsb & 0x80) {
+            
+            var tail = this.readVarInt32();
+            return (tail - 1) * 128 + lsb;
         }
-        shift = 32 - shift;
-        return (result << shift) >> shift;
-    };
-    BinaryReader.prototype.readTypeInternal = function (kind) {
-        if (kind === -21  ||
-            kind === -20  ||
-            kind === -24 ) {
-            var index = this.readHeapType();
-            return new Type(kind, index);
+        else {
+            return (lsb << 25) >> 25;
         }
-        if (kind === -23 ) {
-            var index = this.readHeapType();
-            var depth = this.readVarUint32();
-            return new Type(kind, index, depth);
-        }
-        return new Type(kind);
     };
     BinaryReader.prototype.readType = function () {
-        var kind = this.readVarInt7();
-        return this.readTypeInternal(kind);
-    };
-    BinaryReader.prototype.readBlockType = function () {
-        var block_type = this.readHeapType();
-        if (block_type < 0) {
-            return this.readTypeInternal(block_type);
+        var kind = this.readHeapType();
+        if (kind >= 0) {
+            return new Type(kind);
         }
-        var func_index = block_type;
-        return new Type(0 , func_index);
+        switch (kind) {
+            case -20 :
+            case -21 :
+                var index = this.readHeapType();
+                return new RefType(kind, index);
+            case -1 :
+            case -2 :
+            case -3 :
+            case -4 :
+            case -5 :
+            case -6 :
+            case -7 :
+            case -16 :
+            case -17 :
+            case -18 :
+            case -19 :
+            case -22 :
+            case -23 :
+            case -24 :
+            case -25 :
+            case -26 :
+            case -27 :
+            case -32 :
+            case -33 :
+            case -34 :
+            case -48 :
+            case -49 :
+            case -50 :
+            case -64 :
+                return new Type(kind);
+            default:
+                throw new Error("Unknown type kind: ".concat(kind));
+        }
     };
     BinaryReader.prototype.readStringBytes = function () {
         var length = this.readVarUint32();
@@ -1780,7 +1886,7 @@ var BinaryReader =  (function () {
         var paramTypes = new Array(paramCount);
         for (var i = 0; i < paramCount; i++)
             paramTypes[i] = this.readType();
-        var returnCount = this.readVarUint1();
+        var returnCount = this.readVarUint32();
         var returnTypes = new Array(returnCount);
         for (var i = 0; i < returnCount; i++)
             returnTypes[i] = this.readType();
@@ -1790,10 +1896,28 @@ var BinaryReader =  (function () {
             returns: returnTypes,
         };
     };
-    BinaryReader.prototype.readFuncSubtype = function () {
-        var result = this.readFuncType();
-        result.form = -35 ;
-        result.supertype = this.readHeapType();
+    BinaryReader.prototype.readBaseType = function () {
+        var form = this.readVarInt7();
+        switch (form) {
+            case -32 :
+                return this.readFuncType();
+            case -33 :
+                return this.readStructType();
+            case -34 :
+                return this.readArrayType();
+            default:
+                throw new Error("Unknown type kind: ".concat(form));
+        }
+    };
+    BinaryReader.prototype.readSubtype = function (final) {
+        var supertypesCount = this.readVarUint32();
+        var supertypes = new Array(supertypesCount);
+        for (var i = 0; i < supertypesCount; i++) {
+            supertypes[i] = this.readHeapType();
+        }
+        var result = this.readBaseType();
+        result.supertypes = supertypes;
+        result.final = final;
         return result;
     };
     BinaryReader.prototype.readStructType = function () {
@@ -1810,12 +1934,6 @@ var BinaryReader =  (function () {
             mutabilities: fieldMutabilities,
         };
     };
-    BinaryReader.prototype.readStructSubtype = function () {
-        var result = this.readStructType();
-        result.form = -36 ;
-        result.supertype = this.readHeapType();
-        return result;
-    };
     BinaryReader.prototype.readArrayType = function () {
         var elementType = this.readType();
         var mutability = !!this.readVarUint1();
@@ -1824,12 +1942,6 @@ var BinaryReader =  (function () {
             elementType: elementType,
             mutability: mutability,
         };
-    };
-    BinaryReader.prototype.readArraySubtype = function () {
-        var result = this.readArrayType();
-        result.form = -37 ;
-        result.supertype = this.readHeapType();
-        return result;
     };
     BinaryReader.prototype.readResizableLimits = function (maxPresent) {
         var initial = this.readVarUint32();
@@ -1866,7 +1978,7 @@ var BinaryReader =  (function () {
         var mutability = this.readVarUint1();
         return { contentType: contentType, mutability: mutability };
     };
-    BinaryReader.prototype.readEventType = function () {
+    BinaryReader.prototype.readTagType = function () {
         var attribute = this.readVarUint32();
         var typeIndex = this.readVarUint32();
         return {
@@ -1874,36 +1986,72 @@ var BinaryReader =  (function () {
             typeIndex: typeIndex,
         };
     };
+    BinaryReader.prototype.readTypeEntryCommon = function (form) {
+        switch (form) {
+            case -32 :
+                this.result = this.readFuncType();
+                break;
+            case -48 :
+                this.result = this.readSubtype(false);
+                break;
+            case -50 :
+                this.result = this.readSubtype(true);
+                break;
+            case -33 :
+                this.result = this.readStructType();
+                break;
+            case -34 :
+                this.result = this.readArrayType();
+                break;
+            case -1 :
+            case -2 :
+            case -3 :
+            case -4 :
+            case -5 :
+            case -6 :
+            case -7 :
+            case -16 :
+            case -17 :
+            case -18 :
+            case -19 :
+                this.result = {
+                    form: form,
+                };
+                break;
+            default:
+                throw new Error("Unknown type kind: ".concat(form));
+        }
+    };
     BinaryReader.prototype.readTypeEntry = function () {
         if (this._sectionEntriesLeft === 0) {
             this.skipSection();
             return this.read();
         }
+        var form = this.readVarInt7();
+        if (form == -49 ) {
+            this.state = 47 ;
+            this.result = null;
+            this._recGroupTypesLeft = this.readVarUint32();
+        }
+        else {
+            this.state = 11 ;
+            this.readTypeEntryCommon(form);
+            this._sectionEntriesLeft--;
+        }
+        return true;
+    };
+    BinaryReader.prototype.readRecGroupEntry = function () {
+        if (this._recGroupTypesLeft === 0) {
+            this.state = 48 ;
+            this.result = null;
+            this._sectionEntriesLeft--;
+            this._recGroupTypesLeft = -1;
+            return true;
+        }
         this.state = 11 ;
         var form = this.readVarInt7();
-        switch (form) {
-            case -32 :
-                this.result = this.readFuncType();
-                break;
-            case -35 :
-                this.result = this.readFuncSubtype();
-                break;
-            case -33 :
-                this.result = this.readStructType();
-                break;
-            case -36 :
-                this.result = this.readStructSubtype();
-                break;
-            case -34 :
-                this.result = this.readArrayType();
-                break;
-            case -37 :
-                this.result = this.readArraySubtype();
-                break;
-            default:
-                throw new Error("Unknown type kind: " + form);
-        }
-        this._sectionEntriesLeft--;
+        this.readTypeEntryCommon(form);
+        this._recGroupTypesLeft--;
         return true;
     };
     BinaryReader.prototype.readImportEntry = function () {
@@ -1931,7 +2079,7 @@ var BinaryReader =  (function () {
                 type = this.readGlobalType();
                 break;
             case 4 :
-                type = this.readEventType();
+                type = this.readTagType();
                 break;
         }
         this.result = {
@@ -1988,13 +2136,13 @@ var BinaryReader =  (function () {
         this._sectionEntriesLeft--;
         return true;
     };
-    BinaryReader.prototype.readEventEntry = function () {
+    BinaryReader.prototype.readTagEntry = function () {
         if (this._sectionEntriesLeft === 0) {
             this.skipSection();
             return this.read();
         }
         this.state = 23 ;
-        this.result = this.readEventType();
+        this.result = this.readTagType();
         this._sectionEntriesLeft--;
         return true;
     };
@@ -2052,7 +2200,7 @@ var BinaryReader =  (function () {
                 mode = 2 ;
                 break;
             default:
-                throw new Error("Unsupported element segment type " + segmentType);
+                throw new Error("Unsupported element segment type ".concat(segmentType));
         }
         this.state = 33 ;
         this.result = { mode: mode, tableIndex: tableIndex };
@@ -2084,7 +2232,7 @@ var BinaryReader =  (function () {
                 
                 break;
             default:
-                throw new Error("Unsupported element segment type " + this._segmentType);
+                throw new Error("Unsupported element segment type ".concat(this._segmentType));
         }
         this.state = 34 ;
         this.result = { elementType: elementType };
@@ -2120,12 +2268,22 @@ var BinaryReader =  (function () {
                 memoryIndex = this.readVarUint32();
                 break;
             default:
-                throw new Error("Unsupported data segment type " + segmentType);
+                throw new Error("Unsupported data segment type ".concat(segmentType));
         }
         this.state = 36 ;
         this.result = { mode: mode, memoryIndex: memoryIndex };
         this._sectionEntriesLeft--;
         this._segmentType = segmentType;
+        return true;
+    };
+    BinaryReader.prototype.readDataCountEntry = function () {
+        if (this._sectionEntriesLeft === 0) {
+            this.skipSection();
+            return this.read();
+        }
+        this.state = 49 ;
+        this.result = this.readVarUint32();
+        this._sectionEntriesLeft--;
         return true;
     };
     BinaryReader.prototype.readDataEntryBody = function () {
@@ -2190,7 +2348,7 @@ var BinaryReader =  (function () {
                 };
                 break;
             case 1 :
-            case 3 :
+            case 11 :
             case 4 :
             case 5 :
             case 6 :
@@ -2281,7 +2439,7 @@ var BinaryReader =  (function () {
                 index = this.readVarUint32();
                 break;
             default:
-                this.error = new Error("Bad linking type: " + type);
+                this.error = new Error("Bad linking type: ".concat(type));
                 this.state = -1 ;
                 return true;
         }
@@ -2335,7 +2493,7 @@ var BinaryReader =  (function () {
                 addend = this.readVarUint32();
                 break;
             default:
-                this.error = new Error("Bad relocation type: " + type);
+                this.error = new Error("Bad relocation type: ".concat(type));
                 this.state = -1 ;
                 return true;
         }
@@ -2356,23 +2514,25 @@ var BinaryReader =  (function () {
         if (!this._eof && !this.hasBytes(MAX_CODE_OPERATOR_0XFB_SIZE)) {
             return false;
         }
-        var code, brDepth, refType, srcType, fieldIndex;
+        var code, brDepth, refType, srcType, fieldIndex, segmentIndex, len, literal;
         code = this._data[this._pos++] | 0xfb00;
         switch (code) {
+            case 64334 :
+            case 64335 :
+                literal = this.readUint8();
+                brDepth = this.readVarUint32();
+                srcType = this.readHeapType();
+                refType = this.readHeapType();
+                break;
             case 64322 :
             case 64323 :
-            case 64352 :
-            case 64355 :
-            case 64353 :
-            case 64356 :
-            case 64354 :
-            case 64357 :
                 brDepth = this.readVarUint32();
+                refType = this.readHeapType();
                 break;
             case 64326 :
             case 64327 :
                 brDepth = this.readVarUint32();
-                refType = this.readHeapType();
+                refType = this.readVarUint32();
                 break;
             case 64275 :
             case 64276 :
@@ -2390,42 +2550,49 @@ var BinaryReader =  (function () {
             case 64304 :
             case 64305 :
             case 64306 :
-            case 64324 :
-            case 64325 :
-                refType = this.readHeapType();
+                refType = this.readVarUint32();
+                break;
+            case 64282 :
+                refType = this.readVarUint32();
+                len = this.readVarUint32();
                 break;
             case 64280 :
-                refType = this.readHeapType();
-                srcType = this.readHeapType();
+                refType = this.readVarUint32();
+                srcType = this.readVarUint32();
                 break;
             case 64259 :
             case 64260 :
             case 64261 :
             case 64262 :
-                refType = this.readHeapType();
+                refType = this.readVarUint32();
                 fieldIndex = this.readVarUint32();
                 break;
-            case 64281 :
-            case 64282 :
-                refType = this.readHeapType();
-                
-                
-                brDepth = this.readVarUint32();
+            case 64285 :
+            case 64287 :
+            case 64340 :
+            case 64341 :
+                refType = this.readVarUint32();
+                segmentIndex = this.readVarUint32();
                 break;
-            case 64336 :
-            case 64337 :
-            case 64338 :
-            case 64344 :
-            case 64345 :
-            case 64346 :
             case 64320 :
+            case 64328 :
             case 64321 :
+            case 64329 :
+                refType = this.readHeapType();
+                break;
+            case 64324 :
+            case 64325 :
+                refType = this.readVarUint32();
+                break;
+            case 64281 :
+            case 64369 :
+            case 64368 :
             case 64288 :
             case 64289 :
             case 64290 :
                 break;
             default:
-                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
+                this.error = new Error("Unknown operator: 0x".concat(code.toString(16).padStart(4, "0")));
                 this.state = -1 ;
                 return true;
         }
@@ -2443,9 +2610,10 @@ var BinaryReader =  (function () {
             globalIndex: undefined,
             fieldIndex: fieldIndex,
             memoryAddress: undefined,
-            literal: undefined,
-            segmentIndex: undefined,
+            literal: literal,
+            segmentIndex: segmentIndex,
             destinationIndex: undefined,
+            len: len,
             lines: undefined,
             lineIndex: undefined,
         };
@@ -2497,7 +2665,7 @@ var BinaryReader =  (function () {
                 segmentIndex = this.readVarUint32();
                 break;
             default:
-                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
+                this.error = new Error("Unknown operator: 0x".concat(code.toString(16).padStart(4, "0")));
                 this.state = -1 ;
                 return true;
         }
@@ -2519,6 +2687,7 @@ var BinaryReader =  (function () {
             literal: undefined,
             segmentIndex: segmentIndex,
             destinationIndex: destinationIndex,
+            len: undefined,
             lines: undefined,
             lineIndex: undefined,
         };
@@ -2781,7 +2950,7 @@ var BinaryReader =  (function () {
             case 65023 :
                 break;
             default:
-                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
+                this.error = new Error("Unknown operator: 0x".concat(code.toString(16).padStart(4, "0")));
                 this.state = -1 ;
                 return true;
         }
@@ -2802,6 +2971,7 @@ var BinaryReader =  (function () {
             literal: literal,
             segmentIndex: undefined,
             destinationIndex: undefined,
+            len: undefined,
             lines: lines,
             lineIndex: lineIndex,
         };
@@ -2897,7 +3067,7 @@ var BinaryReader =  (function () {
                 break;
             }
             default:
-                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
+                this.error = new Error("Unknown operator: 0x".concat(code.toString(16).padStart(4, "0")));
                 this.state = -1 ;
                 return true;
         }
@@ -2918,6 +3088,7 @@ var BinaryReader =  (function () {
             literal: undefined,
             segmentIndex: undefined,
             destinationIndex: undefined,
+            len: undefined,
             lines: undefined,
             lineIndex: undefined,
         };
@@ -2948,7 +3119,7 @@ var BinaryReader =  (function () {
                 }
                 break;
         }
-        var code, blockType, selectType, refType, brDepth, brTable, relativeDepth, funcIndex, typeIndex, tableIndex, localIndex, globalIndex, eventIndex, memoryAddress, literal, reserved;
+        var code, blockType, selectType, refType, brDepth, brTable, relativeDepth, funcIndex, typeIndex, tableIndex, localIndex, globalIndex, tagIndex, memoryAddress, literal, reserved;
         if (this.state === 26  &&
             this._sectionId === 9  &&
             isExternvalElementSegmentType(this._segmentType)) {
@@ -2977,7 +3148,7 @@ var BinaryReader =  (function () {
                 case 3 :
                 case 4 :
                 case 6 :
-                    blockType = this.readBlockType();
+                    blockType = this.readType();
                     break;
                 case 12 :
                 case 13 :
@@ -3008,7 +3179,7 @@ var BinaryReader =  (function () {
                     break;
                 case 7 :
                 case 8 :
-                    eventIndex = this.readVarInt32();
+                    tagIndex = this.readVarInt32();
                     break;
                 case 208 :
                     refType = this.readHeapType();
@@ -3035,6 +3206,10 @@ var BinaryReader =  (function () {
                 case 37 :
                 case 38 :
                     tableIndex = this.readVarUint32();
+                    break;
+                case 20 :
+                case 21 :
+                    typeIndex = this.readHeapType();
                     break;
                 case 40 :
                 case 41 :
@@ -3247,14 +3422,12 @@ var BinaryReader =  (function () {
                 case 194 :
                 case 195 :
                 case 196 :
-                case 20 :
-                case 21 :
                 case 209 :
                 case 211 :
                 case 213 :
                     break;
                 default:
-                    this.error = new Error("Unknown operator: " + code);
+                    this.error = new Error("Unknown operator: ".concat(code));
                     this.state = -1 ;
                     return true;
             }
@@ -3274,11 +3447,12 @@ var BinaryReader =  (function () {
             localIndex: localIndex,
             globalIndex: globalIndex,
             fieldIndex: undefined,
-            eventIndex: eventIndex,
+            tagIndex: tagIndex,
             memoryAddress: memoryAddress,
             literal: literal,
             segmentIndex: undefined,
             destinationIndex: undefined,
+            len: undefined,
             lines: undefined,
             lineIndex: undefined,
         };
@@ -3388,6 +3562,7 @@ var BinaryReader =  (function () {
                 if (!this.hasSectionPayload())
                     return false;
                 this._sectionEntriesLeft = this.readVarUint32();
+                this._recGroupTypesLeft = -1;
                 return this.readTypeEntry();
             case 2 :
                 if (!this.hasSectionPayload())
@@ -3441,13 +3616,18 @@ var BinaryReader =  (function () {
                     return false;
                 this._sectionEntriesLeft = this.readVarUint32();
                 return this.readDataEntry();
+            case 12 :
+                if (!this.hasVarIntBytes())
+                    return false;
+                this._sectionEntriesLeft = this.readVarUint32();
+                return this.readDataCountEntry();
             case 13 :
                 if (!this.hasVarIntBytes())
                     return false;
                 this._sectionEntriesLeft = this.readVarUint32();
-                return this.readEventEntry();
+                return this.readTagEntry();
             case 0 :
-                var customSectionName = exports.bytesToString(currentSection.name);
+                var customSectionName = (0, exports.bytesToString)(currentSection.name);
                 if (customSectionName === "name") {
                     return this.readNameEntry();
                 }
@@ -3465,7 +3645,7 @@ var BinaryReader =  (function () {
                 }
                 return this.readSectionRawData();
             default:
-                this.error = new Error("Unsupported section: " + this._sectionId);
+                this.error = new Error("Unsupported section: ".concat(this._sectionId));
                 this.state = -1 ;
                 return true;
         }
@@ -3484,7 +3664,7 @@ var BinaryReader =  (function () {
                 var version = this.readUint32();
                 if (version != WASM_SUPPORTED_VERSION &&
                     version != WASM_SUPPORTED_EXPERIMENTAL_VERSION) {
-                    this.error = new Error("Bad version number " + version);
+                    this.error = new Error("Bad version number ".concat(version));
                     this.state = -1 ;
                     return true;
                 }
@@ -3523,6 +3703,13 @@ var BinaryReader =  (function () {
                 this.result = null;
                 return true;
             case 11 :
+                if (this._recGroupTypesLeft >= 0) {
+                    return this.readRecGroupEntry();
+                }
+                return this.readTypeEntry();
+            case 47 :
+                return this.readRecGroupEntry();
+            case 48 :
                 return this.readTypeEntry();
             case 12 :
                 return this.readImportEntry();
@@ -3535,7 +3722,7 @@ var BinaryReader =  (function () {
             case 15 :
                 return this.readMemoryEntry();
             case 23 :
-                return this.readEventEntry();
+                return this.readTagEntry();
             case 16 :
             case 40 :
                 return this.readGlobalEntry();
@@ -3562,6 +3749,8 @@ var BinaryReader =  (function () {
                     return true;
                 }
                 return this.readInitExpressionBody();
+            case 49 :
+                return this.readDataCountEntry();
             case 18 :
             case 38 :
                 return this.readDataEntry();
@@ -3590,7 +3779,7 @@ var BinaryReader =  (function () {
                         this.result = null;
                         return true;
                 }
-                this.error = new Error("Unexpected section type: " + this._sectionId);
+                this.error = new Error("Unexpected section type: ".concat(this._sectionId));
                 this.state = -1 ;
                 return true;
             case 46 :
@@ -3639,7 +3828,7 @@ var BinaryReader =  (function () {
                 this.result = null;
                 return true;
             default:
-                this.error = new Error("Unsupported state: " + this.state);
+                this.error = new Error("Unsupported state: ".concat(this.state));
                 this.state = -1 ;
                 return true;
         }
@@ -3665,7 +3854,7 @@ var BinaryReader =  (function () {
     };
     BinaryReader.prototype.fetchSectionRawData = function () {
         if (this.state !== 3 ) {
-            this.error = new Error("Unsupported state: " + this.state);
+            this.error = new Error("Unsupported state: ".concat(this.state));
             this.state = -1 ;
             return;
         }
