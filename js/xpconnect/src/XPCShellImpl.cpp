@@ -795,8 +795,6 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
 
 
 
-
-
     int ch = fgetc(file);
     if (ch == '#') {
       while ((ch = fgetc(file)) != EOF) {
