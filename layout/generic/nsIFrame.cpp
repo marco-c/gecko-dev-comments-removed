@@ -9527,11 +9527,8 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
           
           
           
-          if (!aOptions.contains(
-                  PeekOffsetOption::
-                      AllowContentInDifferentNativeAnonymousSubtreeRoot) &&
-              aFrame->GetClosestNativeAnonymousSubtreeRoot() !=
-                  nativeAnonymousSubtreeContent) {
+          if (aFrame->GetClosestNativeAnonymousSubtreeRoot() !=
+              nativeAnonymousSubtreeContent) {
             return false;
           }
           return !aOptions.contains(PeekOffsetOption::ForceEditableRegion) ||
