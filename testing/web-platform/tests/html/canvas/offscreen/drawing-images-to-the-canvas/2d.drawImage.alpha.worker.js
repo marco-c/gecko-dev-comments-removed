@@ -3,33 +3,23 @@
 
 
 
-
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("");
-var t_pass = t.done.bind(t);
-var t_fail = t.step_func(function(reason) {
-    throw reason;
-});
-t.step(function() {
+promise_test(async t => {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
-ctx.fillStyle = '#0f0';
-ctx.fillRect(0, 0, 100, 50);
-ctx.globalAlpha = 0;
-fetch('/images/red.png')
-  .then(response => response.blob())
-    .then(blob => {
-      createImageBitmap(blob)
-        .then(bitmap => {
-        ctx.drawImage(bitmap, 0, 0);
-        _assertPixelApprox(canvas, 50,25, 0,255,0,255, 2);
-    });
-});
-t.done();
+  ctx.fillStyle = '#0f0';
+  ctx.fillRect(0, 0, 100, 50);
+  ctx.globalAlpha = 0;
+  const response = await fetch('/images/red.png');
+  const blob = await response.blob();
+  const bitmap = await createImageBitmap(blob);
 
-});
+  ctx.drawImage(bitmap, 0, 0);
+  _assertPixelApprox(canvas, 50,25, 0,255,0,255, 2);
+  t.done();
+}, "");
 done();

@@ -3,32 +3,18 @@
 
 
 
-
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("");
-var t_pass = t.done.bind(t);
-var t_fail = t.step_func(function(reason) {
-    throw reason;
-});
-t.step(function() {
+promise_test(async t => {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
-fetch('/images/broken.png')
-  .then(response => response.blob())
-    .then(blob => {
-      createImageBitmap(blob)
-        .then(bitmap => {
-        ctx.fillStyle = '#0f0';
-        ctx.fillRect(0, 0, 100, 50);
-        ctx.drawImage(bitmap, 0, 0);
-        _assertPixelApprox(canvas, 50,25, 0,255,0,255, 2);
-    });
-});
-t.done();
+  const response = await fetch('/images/broken.png');
+  const blob = await response.blob();
 
-});
+  await promise_rejects_dom(t, 'InvalidStateError', createImageBitmap(blob), 'The source image could not be decoded.');
+  t.done();
+}, "");
 done();
