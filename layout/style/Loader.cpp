@@ -63,7 +63,6 @@
 #include "mozilla/ServoUtils.h"
 #include "mozilla/css/StreamLoader.h"
 #include "mozilla/SharedStyleSheetCache.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "ReferrerInfo.h"
 
@@ -1756,9 +1755,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
 
   
   
-  const bool isWorthCaching =
-      StaticPrefs::layout_css_inline_style_caching_always_enabled() ||
-      aInfo.mContent->IsInShadowTree();
+  const bool isWorthCaching = aInfo.mContent->IsInShadowTree();
   RefPtr<StyleSheet> sheet;
   if (isWorthCaching) {
     sheet = LookupInlineSheetInCache(aBuffer);
@@ -1801,11 +1798,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   if (sheetFromCache) {
     MOZ_ASSERT(sheet->IsComplete());
     completed = Completed::Yes;
-    if (dom::Document* doc = GetDocument()) {
-      
-      
-      doc->PostStyleSheetApplicableStateChangeEvent(*sheet);
-    }
   } else {
     auto data = MakeRefPtr<SheetLoadData>(
         this, aInfo.mTitle, nullptr, sheet, false, aInfo.mContent, isAlternate,
