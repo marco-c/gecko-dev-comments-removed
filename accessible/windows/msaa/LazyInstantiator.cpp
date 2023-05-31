@@ -12,7 +12,6 @@
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/ProcessRuntime.h"
-#include "mozilla/mscom/Registration.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "MsaaRootAccessible.h"
@@ -450,24 +449,15 @@ LazyInstantiator::ResolveDispatch() {
   }
 
   
-  auto typelib = mscom::RegisterTypelib(
-      L"oleacc.dll", mscom::RegistrationFlags::eUseSystemDirectory);
-  if (!typelib) {
+  RefPtr<ITypeInfo> accTypeInfo = MsaaAccessible::GetTI(LOCALE_USER_DEFAULT);
+  if (!accTypeInfo) {
     return E_UNEXPECTED;
   }
 
   
-  RefPtr<ITypeInfo> accTypeInfo;
-  HRESULT hr =
-      typelib->GetTypeInfoForGuid(IID_IAccessible, getter_AddRefs(accTypeInfo));
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  
-  hr = ::CreateStdDispatch(static_cast<IAccessible*>(this),
-                           static_cast<IAccessible*>(this), accTypeInfo,
-                           getter_AddRefs(mStdDispatch));
+  HRESULT hr = ::CreateStdDispatch(static_cast<IAccessible*>(this),
+                                   static_cast<IAccessible*>(this), accTypeInfo,
+                                   getter_AddRefs(mStdDispatch));
   if (FAILED(hr)) {
     return hr;
   }

@@ -54,6 +54,11 @@ class MsaaAccessible : public ia2Accessible,
 
   static MsaaAccessible* GetFrom(Accessible* aAcc);
 
+  
+
+
+  static ITypeInfo* GetTI(LCID lcid);
+
   DECL_IUNKNOWN
 
   
@@ -180,10 +185,6 @@ class MsaaAccessible : public ia2Accessible,
   };
 
  private:
-  
-
-
-  static ITypeInfo* GetTI(LCID lcid);
   static ITypeInfo* gTypeInfo;
 };
 
