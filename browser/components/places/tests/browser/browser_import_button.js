@@ -10,9 +10,9 @@ const kPref = "browser.bookmarks.addedImportButton";
 
 
 add_task(async function test_bookmark_import_button() {
-  let bookmarkCount = PlacesUtils.getChildCountForFolder(
-    PlacesUtils.bookmarks.toolbarGuid
-  );
+  let bookmarkCount = (
+    await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.toolbarGuid)
+  ).childCount;
   Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
 
   ok(
@@ -62,9 +62,9 @@ add_task(async function test_bookmark_import_button() {
 
 
 add_task(async function test_bookmark_import_button_removal() {
-  let bookmarkCount = PlacesUtils.getChildCountForFolder(
-    PlacesUtils.bookmarks.toolbarGuid
-  );
+  let bookmarkCount = (
+    await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.toolbarGuid)
+  ).childCount;
   Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
 
   ok(
@@ -113,9 +113,9 @@ add_task(async function test_bookmark_import_button_removal() {
 
 
 add_task(async function test_bookmark_import_button_removal_cleanup() {
-  let bookmarkCount = PlacesUtils.getChildCountForFolder(
-    PlacesUtils.bookmarks.toolbarGuid
-  );
+  let bookmarkCount = (
+    await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.toolbarGuid)
+  ).childCount;
   Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
 
   ok(
@@ -141,9 +141,9 @@ add_task(async function test_bookmark_import_button_removal_cleanup() {
 
 
 add_task(async function test_bookmark_import_button_errors() {
-  let bookmarkCount = PlacesUtils.getChildCountForFolder(
-    PlacesUtils.bookmarks.toolbarGuid
-  );
+  let bookmarkCount = (
+    await PlacesUtils.bookmarks.fetch(PlacesUtils.bookmarks.toolbarGuid)
+  ).childCount;
   Assert.less(bookmarkCount, 3, "we should start with less than 3 bookmarks");
 
   ok(

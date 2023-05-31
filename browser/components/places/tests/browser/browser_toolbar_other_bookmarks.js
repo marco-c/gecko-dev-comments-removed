@@ -265,14 +265,14 @@ add_task(async function testShowingOtherBookmarksContextMenuItem() {
     "Ensure 'Show Other Bookmarks' isn't shown when Other Bookmarks is empty."
   );
   await PlacesUtils.bookmarks.remove(bookmark);
-  await testIsOtherBookmarksMenuItemShown(false);
+  await testIsOtherBookmarksMenuItemEnabled(false);
 
   info("Add a bookmark to the empty Other Bookmarks folder.");
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
     children: [{ title: "firefox", url: "http://example.com" }],
   });
-  await testIsOtherBookmarksMenuItemShown(true);
+  await testIsOtherBookmarksMenuItemEnabled(true);
 
   info(
     "Ensure that displaying Other Bookmarks is consistent across separate windows."
@@ -308,7 +308,7 @@ add_task(async function testShowingOtherBookmarksContextMenuItem() {
 
 add_task(async function showOtherBookmarksMenuItemPrefDisabled() {
   await setupBookmarksToolbar();
-  await testIsOtherBookmarksMenuItemShown(false);
+  await testIsOtherBookmarksMenuItemEnabled(false);
 });
 
 
@@ -433,7 +433,7 @@ async function testOtherBookmarksCheckedState(expectedCheckedState) {
 
 
 
-async function testIsOtherBookmarksMenuItemShown(expected) {
+async function testIsOtherBookmarksMenuItemEnabled(expected) {
   await openToolbarContextMenu();
 
   let otherBookmarksMenuItem = document.querySelector(
@@ -441,7 +441,7 @@ async function testIsOtherBookmarksMenuItemShown(expected) {
   );
 
   is(
-    !!otherBookmarksMenuItem,
+    !otherBookmarksMenuItem.disabled,
     expected,
     "'Show Other Bookmarks' menu item appearance state is correct."
   );
