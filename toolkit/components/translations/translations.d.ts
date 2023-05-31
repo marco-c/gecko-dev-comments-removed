@@ -268,16 +268,8 @@ interface TranslationsEnginePayload {
 interface LanguageIdEnginePayload {
   wasmBuffer: ArrayBuffer,
   modelBuffer: ArrayBuffer,
-}
-
-
-
-
-
-
-interface LanguageIdEngineMockedPayload {
-  confidence: number,
-  langTag: string,
+  mockedConfidence: null | number,
+  mockedLangTag: null | string,
 }
 
 

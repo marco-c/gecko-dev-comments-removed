@@ -58,6 +58,7 @@ addEventListener("message", handleInitializationMessage);
 
 
 
+
 async function handleInitializationMessage({ data }) {
   if (data.type !== "initialize") {
     throw new Error(
@@ -74,8 +75,13 @@ async function handleInitializationMessage({ data }) {
 
     
     let languageIdEngine;
-    if (isMockedDataPayload(data)) {
-      languageIdEngine = initializeMockedLanguageIdEngine(data);
+    const { mockedLangTag, mockedConfidence } = data;
+    if (mockedLangTag !== null && mockedConfidence !== null) {
+      
+      languageIdEngine = new MockedLanguageIdEngine(
+        mockedLangTag,
+        mockedConfidence
+      );
     } else {
       languageIdEngine = await initializeLanguageIdEngine(data);
     }
@@ -88,19 +94,6 @@ async function handleInitializationMessage({ data }) {
   }
 
   removeEventListener("message", handleInitializationMessage);
-}
-
-
-
-
-
-
-
-
-
-function isMockedDataPayload(data) {
-  let { langTag, confidence } = data;
-  return langTag && confidence;
 }
 
 
@@ -147,25 +140,6 @@ async function initializeLanguageIdEngine(data) {
   }
   const model = await initializeFastTextModel(modelBuffer, wasmBuffer);
   return new LanguageIdEngine(model);
-}
-
-
-
-
-
-
-
-
-
-function initializeMockedLanguageIdEngine(data) {
-  const { langTag, confidence } = data;
-  if (!langTag) {
-    throw new Error('MockedLanguageIdEngine missing "langTag"');
-  }
-  if (!confidence) {
-    throw new Error('MockedLanguageIdEngine missing "confidence"');
-  }
-  return new MockedLanguageIdEngine(langTag, confidence);
 }
 
 
