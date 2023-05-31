@@ -33,11 +33,14 @@ function rewriteChromeUri(uri) {
 }
 
 module.exports = {
+  
   stories: [
-    "../**/*.stories.md",
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
+    
+    "../**/README.*.stories.md",
+    
     `${projectRoot}/toolkit/content/widgets/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
+    
+    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
   ],
   
   
