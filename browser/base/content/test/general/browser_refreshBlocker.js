@@ -23,29 +23,31 @@ const PREF = "accessibility.blockautorefresh";
 
 
 async function attemptFakeRefresh(browser, expectRefresh) {
-  await SpecialPowers.spawn(browser, [expectRefresh], async function (
-    contentExpectRefresh
-  ) {
-    let URI = docShell.QueryInterface(Ci.nsIWebNavigation).currentURI;
-    let refresher = docShell.QueryInterface(Ci.nsIRefreshURI);
-    refresher.refreshURI(URI, null, 0);
+  await SpecialPowers.spawn(
+    browser,
+    [expectRefresh],
+    async function (contentExpectRefresh) {
+      let URI = docShell.QueryInterface(Ci.nsIWebNavigation).currentURI;
+      let refresher = docShell.QueryInterface(Ci.nsIRefreshURI);
+      refresher.refreshURI(URI, null, 0);
 
-    Assert.equal(
-      refresher.refreshPending,
-      contentExpectRefresh,
-      "Got the right refreshPending state"
-    );
+      Assert.equal(
+        refresher.refreshPending,
+        contentExpectRefresh,
+        "Got the right refreshPending state"
+      );
 
-    if (refresher.refreshPending) {
+      if (refresher.refreshPending) {
+        
+        refresher.cancelRefreshURITimers();
+      }
+
       
-      refresher.cancelRefreshURITimers();
+      
+      
+      content.location = URI.spec + "#foo";
     }
-
-    
-    
-    
-    content.location = URI.spec + "#foo";
-  });
+  );
 }
 
 

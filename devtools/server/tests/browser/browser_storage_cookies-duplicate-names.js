@@ -71,9 +71,8 @@ add_task(async function () {
             
             const hostValues = resource.hosts[host];
             data[resourceType].hosts[host].push(...hostValues);
-            data[resourceType].dataByHost[
-              host
-            ] = await resource.getStoreObjects(host, null, { sessionString });
+            data[resourceType].dataByHost[host] =
+              await resource.getStoreObjects(host, null, { sessionString });
           }
         }
       },

@@ -37,12 +37,12 @@ add_task(
       
       Cu.evalInSandbox(
         "var line0 = Error().lineNumber;\n" +
-        "function foo() {\n" + 
-        "  this.a = 1;\n" + 
-        "  // A comment.\n" + 
-        "  this.b = 2;\n" + 
-        "}\n" + 
-        "debugger;\n" + 
+          "function foo() {\n" + 
+          "  this.a = 1;\n" + 
+          "  // A comment.\n" + 
+          "  this.b = 2;\n" + 
+          "}\n" + 
+          "debugger;\n" + 
           "foo();\n", 
         debuggee
       );

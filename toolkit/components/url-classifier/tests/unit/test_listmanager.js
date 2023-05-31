@@ -209,43 +209,43 @@ function run_test() {
   gHttpServ = new HttpServer();
   gHttpServ.registerDirectory("/", do_get_cwd());
 
-  gHttpServ.registerPathHandler("/safebrowsing/update", function (
-    request,
-    response
-  ) {
-    let body = NetUtil.readInputStreamToString(
-      request.bodyInputStream,
-      request.bodyInputStream.available()
-    );
+  gHttpServ.registerPathHandler(
+    "/safebrowsing/update",
+    function (request, response) {
+      let body = NetUtil.readInputStreamToString(
+        request.bodyInputStream,
+        request.bodyInputStream.available()
+      );
 
-    
-    equal(body, gExpectedUpdateRequest);
-
-    
-    response.setHeader(
-      "Content-Type",
-      "application/vnd.google.safebrowsing-update",
-      false
-    );
-    response.setStatusLine(request.httpVersion, 200, "OK");
-    response.bodyOutputStream.write(gUpdateResponse, gUpdateResponse.length);
-
-    gUpdatedCntForTableData++;
-
-    if (gUpdatedCntForTableData !== SERVER_INVOLVED_TEST_CASE_LIST.length) {
       
+      equal(body, gExpectedUpdateRequest);
+
       
-      waitForUpdateSuccess(run_next_test);
-      return;
-    }
+      response.setHeader(
+        "Content-Type",
+        "application/vnd.google.safebrowsing-update",
+        false
+      );
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.bodyOutputStream.write(gUpdateResponse, gUpdateResponse.length);
 
-    if (gIsV4Updated) {
-      run_next_test(); 
-      return;
-    }
+      gUpdatedCntForTableData++;
 
-    info("Waiting for TEST_TABLE_DATA_V4 to be tested ...");
-  });
+      if (gUpdatedCntForTableData !== SERVER_INVOLVED_TEST_CASE_LIST.length) {
+        
+        
+        waitForUpdateSuccess(run_next_test);
+        return;
+      }
+
+      if (gIsV4Updated) {
+        run_next_test(); 
+        return;
+      }
+
+      info("Waiting for TEST_TABLE_DATA_V4 to be tested ...");
+    }
+  );
 
   gHttpServ.start(4444);
 
@@ -253,73 +253,73 @@ function run_test() {
   gHttpServV4 = new HttpServer();
   gHttpServV4.registerDirectory("/", do_get_cwd());
 
-  gHttpServV4.registerPathHandler("/safebrowsing/update", function (
-    request,
-    response
-  ) {
-    
-    equal(request.bodyInputStream.available(), 0);
+  gHttpServV4.registerPathHandler(
+    "/safebrowsing/update",
+    function (request, response) {
+      
+      equal(request.bodyInputStream.available(), 0);
 
-    
-    equal(request.getHeader("X-HTTP-Method-Override"), "POST");
+      
+      equal(request.getHeader("X-HTTP-Method-Override"), "POST");
 
-    
-    equal(request.method, "GET");
+      
+      equal(request.method, "GET");
 
-    
-    equal(request.queryString, gExpectedQueryV4);
-    equal(request.queryString.indexOf("+"), -1);
-    equal(request.queryString.indexOf("/"), -1);
+      
+      equal(request.queryString, gExpectedQueryV4);
+      equal(request.queryString.indexOf("+"), -1);
+      equal(request.queryString.indexOf("/"), -1);
 
-    
-    
-    
-    response.setHeader(
-      "Content-Type",
-      "application/vnd.google.safebrowsing-update",
-      false
-    );
-    response.setStatusLine(request.httpVersion, 200, "OK");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let content =
-      "\x0A\x4A\x08\x02\x20\x02\x2A\x18\x08\x01\x12\x14\x08\x04\x12\x10\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x3A\x06\x73\x74\x61\x00\x74\x65\x42\x22\x0A\x20\x30\x67\xC7\x2C\x5E\x50\x1C\x31\xE3\xFE\xCA\x73\xF0\x47\xDC\x34\x1A\x95\x63\x99\xEC\x70\x5E\x0A\xEE\x9E\xFB\x17\xA1\x55\x35\x78\x12\x08\x08\x08\x10\x80\x94\xEB\xDC\x03";
-
-    response.bodyOutputStream.write(content, content.length);
-
-    if (gIsV4Updated) {
       
       
       
-      waitForUpdateSuccess(run_next_test);
-      return;
-    }
+      response.setHeader(
+        "Content-Type",
+        "application/vnd.google.safebrowsing-update",
+        false
+      );
+      response.setStatusLine(request.httpVersion, 200, "OK");
 
-    waitUntilMetaDataSaved(NEW_CLIENT_STATE, CHECKSUM, () => {
-      gIsV4Updated = true;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let content =
+        "\x0A\x4A\x08\x02\x20\x02\x2A\x18\x08\x01\x12\x14\x08\x04\x12\x10\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x3A\x06\x73\x74\x61\x00\x74\x65\x42\x22\x0A\x20\x30\x67\xC7\x2C\x5E\x50\x1C\x31\xE3\xFE\xCA\x73\xF0\x47\xDC\x34\x1A\x95\x63\x99\xEC\x70\x5E\x0A\xEE\x9E\xFB\x17\xA1\x55\x35\x78\x12\x08\x08\x08\x10\x80\x94\xEB\xDC\x03";
 
-      if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
+      response.bodyOutputStream.write(content, content.length);
+
+      if (gIsV4Updated) {
         
-        run_next_test();
+        
+        
+        waitForUpdateSuccess(run_next_test);
         return;
       }
 
-      info("Wait for all sever-involved tests to be done ...");
-    });
-  });
+      waitUntilMetaDataSaved(NEW_CLIENT_STATE, CHECKSUM, () => {
+        gIsV4Updated = true;
+
+        if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
+          
+          run_next_test();
+          return;
+        }
+
+        info("Wait for all sever-involved tests to be done ...");
+      });
+    }
+  );
 
   gHttpServV4.start(5555);
 

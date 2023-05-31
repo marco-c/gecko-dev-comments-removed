@@ -11,12 +11,10 @@ window.attachEvent("onload", function () {
   checkboxLabel.className += " checkboxLabel-" + direction;
 
   
-  document.getElementById("header").innerText = external.getUIString(
-    "cleanup_header"
-  );
-  document.getElementById("refreshButton").innerText = external.getUIString(
-    "cleanup_button"
-  );
+  document.getElementById("header").innerText =
+    external.getUIString("cleanup_header");
+  document.getElementById("refreshButton").innerText =
+    external.getUIString("cleanup_button");
   checkboxLabel.innerText = external.getUIString("cleanup_checkbox");
 
   

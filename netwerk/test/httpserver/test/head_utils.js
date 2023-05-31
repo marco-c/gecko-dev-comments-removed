@@ -423,8 +423,8 @@ function runRawTests(testArray, done, beforeTestCallback) {
     Ci.nsISocketTransportService
   );
 
-  var currentThread = Cc["@mozilla.org/thread-manager;1"].getService()
-    .currentThread;
+  var currentThread =
+    Cc["@mozilla.org/thread-manager;1"].getService().currentThread;
 
   
   function performNextTest() {

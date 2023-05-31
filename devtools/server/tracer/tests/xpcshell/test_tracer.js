@@ -3,12 +3,8 @@
 
 "use strict";
 
-const {
-  addTracingListener,
-  removeTracingListener,
-  startTracing,
-  stopTracing,
-} = ChromeUtils.import("resource://devtools/server/tracer/tracer.jsm");
+const { addTracingListener, removeTracingListener, startTracing, stopTracing } =
+  ChromeUtils.import("resource://devtools/server/tracer/tracer.jsm");
 
 add_task(async function () {
   

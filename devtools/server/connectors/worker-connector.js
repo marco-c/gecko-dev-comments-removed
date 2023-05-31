@@ -116,9 +116,10 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
           url: absoluteURL,
           
           
-          workerConsoleApiMessagesDispatchedToMainThread: Services.prefs.getBoolPref(
-            "dom.worker.console.dispatch_events_to_main_thread"
-          ),
+          workerConsoleApiMessagesDispatchedToMainThread:
+            Services.prefs.getBoolPref(
+              "dom.worker.console.dispatch_events_to_main_thread"
+            ),
         },
       })
     );

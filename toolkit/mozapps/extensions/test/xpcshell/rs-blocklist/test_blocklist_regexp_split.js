@@ -30,16 +30,14 @@ const BLOCKLIST_DATA = [
   
   
   {
-    guid:
-      "/^((s@t)|(\\{6d9eee6e-c6ee-46de-ab56-ce9080372b3\\})|(c@d\\w.com))$/",
+    guid: "/^((s@t)|(\\{6d9eee6e-c6ee-46de-ab56-ce9080372b3\\})|(c@d\\w.com))$/",
     versionRange: [],
     expectedType: "RegExp",
   },
   
   
   {
-    guid:
-      "/^((u@v)|(\\{6d9fff6e*-c6ee-46de-ab56-ce9080372b3\\})|(c@dee?.com))$/",
+    guid: "/^((u@v)|(\\{6d9fff6e*-c6ee-46de-ab56-ce9080372b3\\})|(c@dee?.com))$/",
     versionRange: [],
     expectedType: "RegExp",
   },
@@ -160,8 +158,7 @@ add_task(async function check_all_properties() {
         versionRange: [],
       },
       {
-        guid:
-          "/^((set@set\\.com)|(anotherset@set\\.com)|(reallyenoughsetsalready@set\\.com))$/",
+        guid: "/^((set@set\\.com)|(anotherset@set\\.com)|(reallyenoughsetsalready@set\\.com))$/",
         creator: "Foo",
         versionRange: [],
       },

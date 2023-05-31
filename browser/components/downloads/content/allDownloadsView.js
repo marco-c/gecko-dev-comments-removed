@@ -240,9 +240,8 @@ function DownloadsPlacesView(
   
   
   if (aSuppressionFlag === DownloadsCommon.SUPPRESS_ALL_DOWNLOADS_OPEN) {
-    DownloadsCommon.getIndicatorData(
-      window
-    ).attentionSuppressed |= aSuppressionFlag;
+    DownloadsCommon.getIndicatorData(window).attentionSuppressed |=
+      aSuppressionFlag;
   }
 
   
@@ -251,9 +250,8 @@ function DownloadsPlacesView(
     () => {
       window.controllers.removeController(this);
       
-      DownloadsCommon.getIndicatorData(
-        window
-      ).attentionSuppressed &= ~aSuppressionFlag;
+      DownloadsCommon.getIndicatorData(window).attentionSuppressed &=
+        ~aSuppressionFlag;
       this._downloadsData.removeView(this);
       this.result = null;
     },
@@ -751,12 +749,11 @@ DownloadsPlacesView.prototype = {
     
     
     
-    contextMenu.querySelector(
-      ".downloadCopyLocationMenuItem"
-    ).hidden = !Array.prototype.some.call(
-      this._richlistbox.selectedItems,
-      el => !!el._shell.download.source?.url
-    );
+    contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden =
+      !Array.prototype.some.call(
+        this._richlistbox.selectedItems,
+        el => !!el._shell.download.source?.url
+      );
 
     let download = element._shell.download;
     if (!download.stopped) {

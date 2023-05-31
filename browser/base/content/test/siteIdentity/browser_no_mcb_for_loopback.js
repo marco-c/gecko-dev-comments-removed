@@ -58,21 +58,27 @@ add_task(async function allowLoopbackMixedContent() {
   const browser = gBrowser.getBrowserForTab(tab);
 
   
-  await SpecialPowers.spawn(browser, [LOOPBACK_PNG_URL], async function (
-    loopbackPNGUrl
-  ) {
-    const doc = content.document;
-    const img = doc.createElement("img");
-    const promiseImgLoaded = ContentTaskUtils.waitForEvent(img, "load", false);
-    img.src = loopbackPNGUrl;
-    Assert.ok(!img.complete, "loopback image not yet loaded");
-    doc.body.appendChild(img);
-    await promiseImgLoaded;
+  await SpecialPowers.spawn(
+    browser,
+    [LOOPBACK_PNG_URL],
+    async function (loopbackPNGUrl) {
+      const doc = content.document;
+      const img = doc.createElement("img");
+      const promiseImgLoaded = ContentTaskUtils.waitForEvent(
+        img,
+        "load",
+        false
+      );
+      img.src = loopbackPNGUrl;
+      Assert.ok(!img.complete, "loopback image not yet loaded");
+      doc.body.appendChild(img);
+      await promiseImgLoaded;
 
-    const cachedImg = doc.createElement("img");
-    cachedImg.src = img.src;
-    Assert.ok(cachedImg.complete, "loopback image loaded from cache");
-  });
+      const cachedImg = doc.createElement("img");
+      cachedImg.src = img.src;
+      Assert.ok(cachedImg.complete, "loopback image loaded from cache");
+    }
+  );
 
   await assertMixedContentBlockingState(browser, {
     activeBlocked: false,

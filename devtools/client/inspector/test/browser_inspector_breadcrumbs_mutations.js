@@ -102,8 +102,7 @@ const TEST_DATA = [
     ],
   },
   {
-    desc:
-      "Moving a child in an element that's not displayed should not refresh",
+    desc: "Moving a child in an element that's not displayed should not refresh",
     setup() {},
     async run({ walker }) {
       
@@ -122,8 +121,7 @@ const TEST_DATA = [
     ],
   },
   {
-    desc:
-      "Moving an undisplayed child in a displayed element should not refresh",
+    desc: "Moving an undisplayed child in a displayed element should not refresh",
     setup() {},
     async run({ walker }) {
       

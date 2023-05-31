@@ -59,9 +59,8 @@ add_task(async function test_context_menu_iframe_fill() {
       );
 
       
-      let firstLoginItem = popupMenu.getElementsByClassName(
-        "context-login-item"
-      )[0];
+      let firstLoginItem =
+        popupMenu.getElementsByClassName("context-login-item")[0];
       Assert.ok(firstLoginItem, "Found the first login item");
 
       await TestUtils.waitForTick();

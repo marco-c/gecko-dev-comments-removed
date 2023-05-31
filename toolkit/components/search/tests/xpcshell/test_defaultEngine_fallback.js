@@ -294,7 +294,8 @@ add_task(
   async function test_default_fallback_remove_default_no_visible_or_general() {
     
     Services.search.restoreDefaultEngines();
-    Services.search.defaultEngine = Services.search.defaultPrivateEngine = appPrivateDefault;
+    Services.search.defaultEngine = Services.search.defaultPrivateEngine =
+      appPrivateDefault;
 
     
     let visibleEngines = await Services.search.getVisibleEngines();

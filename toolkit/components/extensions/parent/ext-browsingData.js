@@ -148,9 +148,10 @@ async function clearQuotaManager(options, dataType) {
       }
 
       for (let item of request.result) {
-        let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-          item.origin
-        );
+        let principal =
+          Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+            item.origin
+          );
 
         
         

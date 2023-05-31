@@ -87,8 +87,8 @@ async function runEditOuterHTMLTest(test, inspector) {
   
   await onUpdated;
 
-  const closeTagLine = inspector.markup.getContainer(pageNodeFront)
-    .closeTagLine;
+  const closeTagLine =
+    inspector.markup.getContainer(pageNodeFront).closeTagLine;
   if (closeTagLine) {
     is(
       closeTagLine.querySelectorAll(".theme-fg-contrast").length,

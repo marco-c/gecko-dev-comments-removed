@@ -131,11 +131,8 @@ class PropertiesView extends Component {
 
 
   scrollSelectedIntoView() {
-    const {
-      targetSearchResult,
-      resetTargetSearchResult,
-      selectPath,
-    } = this.props;
+    const { targetSearchResult, resetTargetSearchResult, selectPath } =
+      this.props;
     if (!targetSearchResult) {
       return;
     }

@@ -267,8 +267,7 @@ gTrustAnchors.roots.sort(function (a, b) {
 });
 
 
-var rootHashesFileOutputStream = FileUtils.openSafeFileOutputStream(
-  rootHashesFile
-);
+var rootHashesFileOutputStream =
+  FileUtils.openSafeFileOutputStream(rootHashesFile);
 writeRootHashes(rootHashesFileOutputStream);
 FileUtils.closeSafeFileOutputStream(rootHashesFileOutputStream);

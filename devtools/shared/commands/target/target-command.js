@@ -58,9 +58,8 @@ class TargetCommand extends EventEmitter {
     
     this.storeId = "target-store";
 
-    this._updateBrowserToolboxScope = this._updateBrowserToolboxScope.bind(
-      this
-    );
+    this._updateBrowserToolboxScope =
+      this._updateBrowserToolboxScope.bind(this);
 
     Services.prefs.addObserver(
       BROWSERTOOLBOX_SCOPE_PREF,
@@ -68,9 +67,8 @@ class TargetCommand extends EventEmitter {
     );
     
     
-    this.onLocalTabRemotenessChange = this.onLocalTabRemotenessChange.bind(
-      this
-    );
+    this.onLocalTabRemotenessChange =
+      this.onLocalTabRemotenessChange.bind(this);
     if (this.descriptorFront.isTabDescriptor) {
       this.descriptorFront.on(
         "remoteness-change",
@@ -1008,17 +1006,16 @@ class TargetCommand extends EventEmitter {
     
     
     
-    const {
-      onResource: onReloaded,
-    } = await this.commands.resourceCommand.waitForNextResource(
-      this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
-      {
-        ignoreExistingResources: true,
-        predicate(resource) {
-          return resource.name == "dom-complete";
-        },
-      }
-    );
+    const { onResource: onReloaded } =
+      await this.commands.resourceCommand.waitForNextResource(
+        this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+        {
+          ignoreExistingResources: true,
+          predicate(resource) {
+            return resource.name == "dom-complete";
+          },
+        }
+      );
 
     await this.descriptorFront.reloadDescriptor({ bypassCache });
 

@@ -224,9 +224,8 @@ function findRcdNode(apzcTree) {
 
 
 function isLayerized(elementId) {
-  var contentTestData = SpecialPowers.getDOMWindowUtils(
-    window
-  ).getContentAPZTestData();
+  var contentTestData =
+    SpecialPowers.getDOMWindowUtils(window).getContentAPZTestData();
   var nonEmptyBucket = getLastNonemptyBucket(contentTestData.paints);
   ok(nonEmptyBucket != null, "expected at least one nonempty paint");
   var seqno = nonEmptyBucket.sequenceNumber;
@@ -246,9 +245,8 @@ function isLayerized(elementId) {
 
 
 function getLastContentDisplayportFor(elementId, expectPainted = true) {
-  var contentTestData = SpecialPowers.getDOMWindowUtils(
-    window
-  ).getContentAPZTestData();
+  var contentTestData =
+    SpecialPowers.getDOMWindowUtils(window).getContentAPZTestData();
   if (contentTestData == undefined) {
     ok(!expectPainted, "expected to have apz test data (1)");
     return null;
@@ -628,9 +626,8 @@ async function waitUntilApzStable() {
 
     
     if (typeof waitUntilApzStable.chromeHelper == "undefined") {
-      waitUntilApzStable.chromeHelper = SpecialPowers.loadChromeScript(
-        parentProcessFlush
-      );
+      waitUntilApzStable.chromeHelper =
+        SpecialPowers.loadChromeScript(parentProcessFlush);
       ApzCleanup.register(() => {
         waitUntilApzStable.chromeHelper.sendAsyncMessage("cleanup", null);
         waitUntilApzStable.chromeHelper.destroy();

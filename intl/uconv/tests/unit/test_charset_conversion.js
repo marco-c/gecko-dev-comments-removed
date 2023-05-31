@@ -47,7 +47,7 @@ const UNICODE_STRINGS = [
   "\u00BD + \u00BE == \u00BD\u00B2 + \u00BC + \u00BE",
 
   "AZaz09 \u007F " + 
-  "\u0080 \u0398 \u03BB \u0725 " + 
+    "\u0080 \u0398 \u03BB \u0725 " + 
     "\u0964 \u0F5F \u20AC \uFFFB", 
 
   

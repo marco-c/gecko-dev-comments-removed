@@ -64,9 +64,8 @@ module.exports = async function () {
   
   
   const waitForInfoMessage = async () => {
-    const infoMessage = webconsole.hud.ui.outputNode.querySelector(
-      ".info.message"
-    );
+    const infoMessage =
+      webconsole.hud.ui.outputNode.querySelector(".info.message");
     if (
       infoMessage &&
       infoMessage.querySelectorAll(".tree").length === WARMUP_INFO_COUNT
@@ -100,9 +99,8 @@ async function logAndWaitForExpandedObjectDirMessage(
   expectedTreeItemCount
 ) {
   const waitForDirMessage = async () => {
-    const dirMessage = webconsole.hud.ui.outputNode.querySelector(
-      ".dir.message"
-    );
+    const dirMessage =
+      webconsole.hud.ui.outputNode.querySelector(".dir.message");
     if (dirMessage) {
       return dirMessage;
     }

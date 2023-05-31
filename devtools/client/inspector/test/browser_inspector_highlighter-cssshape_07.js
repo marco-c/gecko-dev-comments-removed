@@ -146,12 +146,10 @@ async function getBoundingBoxInPx(config) {
   const quads = await getAllAdjustedQuadsForContentPageElement(selector);
   const { width, height } = quads.content[0].bounds;
   const highlightedNode = await getNodeFront(selector, inspector);
-  const highlighterFront = inspector.inspectorFront.getKnownHighlighter(
-    HIGHLIGHTER_TYPE
-  );
-  const computedStyle = await highlightedNode.inspectorFront.pageStyle.getComputed(
-    highlightedNode
-  );
+  const highlighterFront =
+    inspector.inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPE);
+  const computedStyle =
+    await highlightedNode.inspectorFront.pageStyle.getComputed(highlightedNode);
   const paddingTop = parseFloat(computedStyle["padding-top"].value);
   const paddingLeft = parseFloat(computedStyle["padding-left"].value);
   

@@ -130,8 +130,9 @@ async function testMenuBookmarks() {
 }
 
 async function testToolbarBookmarks() {
-  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarGuid)
-    .root;
+  let root = PlacesUtils.getFolderContents(
+    PlacesUtils.bookmarks.toolbarGuid
+  ).root;
 
   
   
@@ -161,8 +162,9 @@ async function testToolbarBookmarks() {
 }
 
 function testUnfiledBookmarks() {
-  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.unfiledGuid)
-    .root;
+  let root = PlacesUtils.getFolderContents(
+    PlacesUtils.bookmarks.unfiledGuid
+  ).root;
   
   Assert.equal(root.childCount, bookmarkData.length + 1);
   for (let i = 1; i < root.childCount; ++i) {

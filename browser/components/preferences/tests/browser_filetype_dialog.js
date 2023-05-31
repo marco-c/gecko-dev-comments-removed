@@ -44,9 +44,8 @@ registerCleanupFunction(function () {
   mailHandlerInfo.preferredApplicationHandler = gOriginalPreferredMailHandler;
   gHandlerService.store(mailHandlerInfo);
 
-  let pdfHandlerInfo = HandlerServiceTestUtils.getHandlerInfo(
-    "application/pdf"
-  );
+  let pdfHandlerInfo =
+    HandlerServiceTestUtils.getHandlerInfo("application/pdf");
   pdfHandlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
   pdfHandlerInfo.preferredApplicationHandler = gOriginalPreferredPDFHandler;
   let handlers = pdfHandlerInfo.possibleApplicationHandlers;
@@ -106,9 +105,8 @@ add_setup(async function () {
   substituteWebHandlers(mailtoHandlerInfo);
 
   
-  let pdfHandlerInfo = HandlerServiceTestUtils.getHandlerInfo(
-    "application/pdf"
-  );
+  let pdfHandlerInfo =
+    HandlerServiceTestUtils.getHandlerInfo("application/pdf");
   
   gOriginalPreferredPDFHandler = pdfHandlerInfo.preferredApplicationHandler;
   let handlers = pdfHandlerInfo.possibleApplicationHandlers;

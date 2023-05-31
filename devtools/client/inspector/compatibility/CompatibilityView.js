@@ -219,10 +219,8 @@ class CompatibilityView {
   }
 
   _onPanelSelected() {
-    const {
-      selectedNode,
-      topLevelTarget,
-    } = this.inspector.store.getState().compatibility;
+    const { selectedNode, topLevelTarget } =
+      this.inspector.store.getState().compatibility;
 
     
     if (

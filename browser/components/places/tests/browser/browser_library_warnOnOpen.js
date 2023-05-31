@@ -65,9 +65,8 @@ add_task(async function test_warnOnOpenFolder() {
 
   
   let promiseLoaded = BrowserTestUtils.promiseAlertDialog("cancel");
-  let bookmarkedNode = gLibrary.PlacesOrganizer._places.selectedNode.getChild(
-    0
-  );
+  let bookmarkedNode =
+    gLibrary.PlacesOrganizer._places.selectedNode.getChild(0);
   mouseEventOnCell(
     gLibrary.PlacesOrganizer._places,
     gLibrary.PlacesOrganizer._places.view.treeIndexForNode(bookmarkedNode),

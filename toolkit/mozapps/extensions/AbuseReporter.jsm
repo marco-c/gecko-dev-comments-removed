@@ -422,10 +422,8 @@ const AbuseReporter = {
     if (dialogWin) {
       
       
-      const {
-        deferredReport,
-        promiseReport,
-      } = dialogWin.arguments[0].wrappedJSObject;
+      const { deferredReport, promiseReport } =
+        dialogWin.arguments[0].wrappedJSObject;
       deferredReport.resolve({ userCancelled: true });
       await promiseReport;
     }

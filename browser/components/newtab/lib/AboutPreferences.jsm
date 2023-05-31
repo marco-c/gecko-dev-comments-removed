@@ -190,8 +190,12 @@ class AboutPreferences {
         shouldHidePref,
         eventSource,
       } = sectionData;
-      const { feed: name, titleString = {}, descString, nestedPrefs = [] } =
-        prefData || {};
+      const {
+        feed: name,
+        titleString = {},
+        descString,
+        nestedPrefs = [],
+      } = prefData || {};
 
       
       if (shouldHidePref) {

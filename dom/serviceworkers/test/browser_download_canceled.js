@@ -109,11 +109,13 @@ async function performCanceledDownload(tab, path) {
   
   info(`wait for the ${path} stream to close.`);
   
-  const why = await SpecialPowers.spawn(tab.linkedBrowser, [path], function (
-    path
-  ) {
-    return content.wrappedJSObject.streamClosed[path].promise;
-  });
+  const why = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [path],
+    function (path) {
+      return content.wrappedJSObject.streamClosed[path].promise;
+    }
+  );
   
   is(why.why, "canceled", "Ensure the stream canceled instead of timing out.");
   

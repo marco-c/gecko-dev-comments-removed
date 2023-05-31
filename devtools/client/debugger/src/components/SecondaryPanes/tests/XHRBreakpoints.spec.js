@@ -162,9 +162,8 @@ describe("XHR Breakpoints", function () {
       onXHRAdded: jest.fn,
       togglePauseOnAny: jest.fn,
     };
-    const xhrBreakpointsComponent = renderXHRBreakpointsComponent(
-      propsOverride
-    );
+    const xhrBreakpointsComponent =
+      renderXHRBreakpointsComponent(propsOverride);
     xhrBreakpointsComponent.find(".xhr-input-url").simulate("focus");
     let xhrInputContainer = xhrBreakpointsComponent.find(
       ".xhr-input-container"
@@ -275,9 +274,8 @@ describe("XHR Breakpoints", function () {
     
     
     availableXHRMethods.forEach(function (method) {
-      const xhrBreakpointsComponent = renderXHRBreakpointsComponent(
-        propsOverride
-      );
+      const xhrBreakpointsComponent =
+        renderXHRBreakpointsComponent(propsOverride);
       xhrBreakpointsComponent.find(".xhr-input-url").simulate("focus");
       const urlValue = `${method.toLowerCase()}URLValue`;
 
@@ -320,14 +318,12 @@ describe("XHR Breakpoints", function () {
         },
       ],
     };
-    const xhrBreakpointsComponent = renderXHRBreakpointsComponent(
-      propsOverride
-    );
+    const xhrBreakpointsComponent =
+      renderXHRBreakpointsComponent(propsOverride);
 
     
-    const existingXHRbreakpoint = xhrBreakpointsComponent.find(
-      ".xhr-container"
-    );
+    const existingXHRbreakpoint =
+      xhrBreakpointsComponent.find(".xhr-container");
     expect(existingXHRbreakpoint).toHaveLength(1);
 
     

@@ -26,10 +26,8 @@ add_task(async function test_profile_feature_nostacksampling() {
 
     
     {
-      const {
-        parentThread,
-        contentThread,
-      } = await stopProfilerNowAndGetThreads(contentPid);
+      const { parentThread, contentThread } =
+        await stopProfilerNowAndGetThreads(contentPid);
       Assert.equal(
         parentThread.samples.data.length,
         0,
@@ -54,10 +52,8 @@ add_task(async function test_profile_feature_nostacksampling() {
 
     
     {
-      const {
-        parentThread,
-        contentThread,
-      } = await waitSamplingAndStopProfilerAndGetThreads(contentPid);
+      const { parentThread, contentThread } =
+        await waitSamplingAndStopProfilerAndGetThreads(contentPid);
       Assert.greater(
         parentThread.samples.data.length,
         0,

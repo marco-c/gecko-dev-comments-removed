@@ -719,7 +719,8 @@ InplaceEditor.prototype = {
 
   _parseCSSValue(value, offset) {
     
-    const reSplitCSS = /(?<url>url\("?[^"\)]+"?\)?)|(?<rgb>rgba?\([^)]*\)?)|(?<hsl>hsla?\([^)]*\)?)|(?<hwb>hwb\([^)]*\)?)|(?<hex>#[\dA-Fa-f]+)|(?<number>-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
+    const reSplitCSS =
+      /(?<url>url\("?[^"\)]+"?\)?)|(?<rgb>rgba?\([^)]*\)?)|(?<hsl>hsla?\([^)]*\)?)|(?<hwb>hwb\([^)]*\)?)|(?<hex>#[\dA-Fa-f]+)|(?<number>-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
     
     let start = 0;
     let m;

@@ -32,17 +32,12 @@ add_task(async function () {
       
       
       const [parentA11yInitObserver, parentA11yInit] = initAccService();
-      const [contentA11yInitObserver, contentA11yInit] = initAccService(
-        browser
-      );
-      let [
-        parentConsumersChangedObserver,
-        parentConsumersChanged,
-      ] = accConsumersChanged();
-      let [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      const [contentA11yInitObserver, contentA11yInit] =
+        initAccService(browser);
+      let [parentConsumersChangedObserver, parentConsumersChanged] =
+        accConsumersChanged();
+      let [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
 
       await Promise.all([
         parentA11yInitObserver,
@@ -94,22 +89,14 @@ add_task(async function () {
           "down in content"
       );
       
-      const [
-        parentA11yShutdownObserver,
-        parentA11yShutdown,
-      ] = shutdownAccService();
-      const [
-        contentA11yShutdownObserver,
-        contentA11yShutdown,
-      ] = shutdownAccService(browser);
-      [
-        parentConsumersChangedObserver,
-        parentConsumersChanged,
-      ] = accConsumersChanged();
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      const [parentA11yShutdownObserver, parentA11yShutdown] =
+        shutdownAccService();
+      const [contentA11yShutdownObserver, contentA11yShutdown] =
+        shutdownAccService(browser);
+      [parentConsumersChangedObserver, parentConsumersChanged] =
+        accConsumersChanged();
+      [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
 
       await Promise.all([
         parentA11yShutdownObserver,

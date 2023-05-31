@@ -179,11 +179,10 @@ try {
 
       
       if (customLoader) {
-        const {
-          releaseDistinctSystemPrincipalLoader,
-        } = ChromeUtils.importESModule(
-          "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
-        );
+        const { releaseDistinctSystemPrincipalLoader } =
+          ChromeUtils.importESModule(
+            "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
+          );
         releaseDistinctSystemPrincipalLoader(chromeGlobal);
       }
     }

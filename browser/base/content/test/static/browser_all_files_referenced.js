@@ -150,12 +150,10 @@ var whitelist = [
   
   
   {
-    file:
-      "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
+    file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
   },
   {
-    file:
-      "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple-cn.svg",
+    file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple-cn.svg",
   },
 
   { file: "resource://gre/greprefs.js" },
@@ -169,48 +167,39 @@ var whitelist = [
 
   
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
     platforms: ["linux", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/intl.properties",
     platforms: ["linux", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/platformKeys.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/platformKeys.properties",
     platforms: ["linux", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/accessible.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/accessible.properties",
     platforms: ["macosx", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/intl.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/intl.properties",
     platforms: ["macosx", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/platformKeys.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/unix/platformKeys.properties",
     platforms: ["macosx", "win"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/accessible.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/accessible.properties",
     platforms: ["linux", "macosx"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/intl.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/intl.properties",
     platforms: ["linux", "macosx"],
   },
   {
-    file:
-      "resource://gre/chrome/en-US/locale/en-US/global-platform/win/platformKeys.properties",
+    file: "resource://gre/chrome/en-US/locale/en-US/global-platform/win/platformKeys.properties",
     platforms: ["linux", "macosx"],
   },
 
@@ -272,8 +261,7 @@ var whitelist = [
 
   
   {
-    file:
-      "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
+    file: "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
   },
   
   {
@@ -282,8 +270,7 @@ var whitelist = [
   },
   
   {
-    file:
-      "resource://gre/localization/en-US/toolkit/about/aboutWindowsMessages.ftl",
+    file: "resource://gre/localization/en-US/toolkit/about/aboutWindowsMessages.ftl",
     platforms: ["linux", "macosx"],
   },
   

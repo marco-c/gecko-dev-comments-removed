@@ -268,16 +268,18 @@ add_task(async function test_context_menu_password_fill() {
           
           
           await assertContextMenuFill(browser, description, null, inputId, 1);
-          await SpecialPowers.spawn(browser, [{ inputId }], async function ({
-            inputId,
-          }) {
-            let passwordField = content.document.getElementById(inputId);
-            Assert.equal(
-              passwordField.value,
-              "password1",
-              "Check upgraded login was actually used"
-            );
-          });
+          await SpecialPowers.spawn(
+            browser,
+            [{ inputId }],
+            async function ({ inputId }) {
+              let passwordField = content.document.getElementById(inputId);
+              Assert.equal(
+                passwordField.value,
+                "password1",
+                "Check upgraded login was actually used"
+              );
+            }
+          );
 
           await closePopup(CONTEXT_MENU);
         }
@@ -436,9 +438,8 @@ add_task(async function test_context_menu_username_login_fill() {
             browser,
             [{ passwordFieldId }],
             async function ({ passwordFieldId }) {
-              let passwordField = content.document.getElementById(
-                passwordFieldId
-              );
+              let passwordField =
+                content.document.getElementById(passwordFieldId);
               if (!passwordField.hasAttribute("expectedFail")) {
                 Assert.equal(
                   passwordField.value,
@@ -504,23 +505,25 @@ async function assertContextMenuFill(
     unchangedSelector += `:not(#${usernameFieldId})`;
   }
 
-  await SpecialPowers.spawn(browser, [{ unchangedSelector }], async function ({
-    unchangedSelector,
-  }) {
-    let unchangedFields = content.document.querySelectorAll(unchangedSelector);
+  await SpecialPowers.spawn(
+    browser,
+    [{ unchangedSelector }],
+    async function ({ unchangedSelector }) {
+      let unchangedFields =
+        content.document.querySelectorAll(unchangedSelector);
 
-    
-    if (unchangedFields.length) {
-      for (let field of unchangedFields) {
-        field.setAttribute("original-value", field.value);
+      
+      if (unchangedFields.length) {
+        for (let field of unchangedFields) {
+          field.setAttribute("original-value", field.value);
+        }
       }
     }
-  });
+  );
 
   
-  let loginItem = popupMenu.getElementsByClassName("context-login-item")[
-    loginIndex
-  ];
+  let loginItem =
+    popupMenu.getElementsByClassName("context-login-item")[loginIndex];
 
   
   let { username, password } = getLoginFromUsername(loginItem.label);

@@ -85,110 +85,111 @@ add_task(async function test() {
         TESTROOT + "file_pdfjs_test.pdf#zoom=100"
       );
 
-      await SpecialPowers.spawn(newTabBrowser, [TESTS], async function (
-        contentTESTS
-      ) {
-        let document = content.document;
+      await SpecialPowers.spawn(
+        newTabBrowser,
+        [TESTS],
+        async function (contentTESTS) {
+          let document = content.document;
 
-        function waitForRender() {
-          return new Promise(resolve => {
-            document.addEventListener(
-              "pagerendered",
-              function onPageRendered(e) {
-                if (e.detail.pageNumber !== 1) {
-                  return;
-                }
+          function waitForRender() {
+            return new Promise(resolve => {
+              document.addEventListener(
+                "pagerendered",
+                function onPageRendered(e) {
+                  if (e.detail.pageNumber !== 1) {
+                    return;
+                  }
 
-                document.removeEventListener(
-                  "pagerendered",
-                  onPageRendered,
-                  true
-                );
-                resolve();
-              },
-              true
-            );
-          });
-        }
-
-        
-        Assert.ok(
-          content.document.querySelector("div#viewer"),
-          "document content has viewer UI"
-        );
-
-        let initialWidth, previousWidth;
-        initialWidth = previousWidth = parseInt(
-          content.getComputedStyle(
-            content.document.querySelector("div.page[data-page-number='1']")
-          ).width
-        );
-
-        for (let subTest of contentTESTS) {
-          
-          var ev;
-          if (subTest.action.selector) {
-            
-            var el = document.querySelector(subTest.action.selector);
-            Assert.ok(
-              el,
-              "Element '" + subTest.action.selector + "' has been found"
-            );
-
-            if (subTest.action.index) {
-              el.selectedIndex = subTest.action.index;
-            }
-
-            
-            ev = new content.Event(subTest.action.event);
-          } else {
-            
-            
-            ev = new content.KeyboardEvent("keydown", {
-              key: subTest.action.event,
-              keyCode: subTest.action.keyCode,
-              ctrlKey: true,
+                  document.removeEventListener(
+                    "pagerendered",
+                    onPageRendered,
+                    true
+                  );
+                  resolve();
+                },
+                true
+              );
             });
-            el = content;
           }
 
-          el.dispatchEvent(ev);
-          await waitForRender();
-
-          var pageZoomScale = content.document.querySelector(
-            "select#scaleSelect"
-          );
-
           
-          var zoomValue =
-            pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
-
-          let pageContainer = content.document.querySelector(
-            "div.page[data-page-number='1']"
-          );
-          let actualWidth = parseInt(
-            content.getComputedStyle(pageContainer).width
+          Assert.ok(
+            content.document.querySelector("div#viewer"),
+            "document content has viewer UI"
           );
 
-          
-          let computedZoomValue =
-            parseInt((actualWidth / initialWidth).toFixed(2) * 100) + "%";
-          Assert.equal(
-            computedZoomValue,
-            zoomValue,
-            "Content has correct zoom"
+          let initialWidth, previousWidth;
+          initialWidth = previousWidth = parseInt(
+            content.getComputedStyle(
+              content.document.querySelector("div.page[data-page-number='1']")
+            ).width
           );
 
-          
-          let zoom = (actualWidth - previousWidth) * subTest.expectedZoom;
-          Assert.ok(zoom > 0, subTest.message);
+          for (let subTest of contentTESTS) {
+            
+            var ev;
+            if (subTest.action.selector) {
+              
+              var el = document.querySelector(subTest.action.selector);
+              Assert.ok(
+                el,
+                "Element '" + subTest.action.selector + "' has been found"
+              );
 
-          previousWidth = actualWidth;
+              if (subTest.action.index) {
+                el.selectedIndex = subTest.action.index;
+              }
+
+              
+              ev = new content.Event(subTest.action.event);
+            } else {
+              
+              
+              ev = new content.KeyboardEvent("keydown", {
+                key: subTest.action.event,
+                keyCode: subTest.action.keyCode,
+                ctrlKey: true,
+              });
+              el = content;
+            }
+
+            el.dispatchEvent(ev);
+            await waitForRender();
+
+            var pageZoomScale =
+              content.document.querySelector("select#scaleSelect");
+
+            
+            var zoomValue =
+              pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
+
+            let pageContainer = content.document.querySelector(
+              "div.page[data-page-number='1']"
+            );
+            let actualWidth = parseInt(
+              content.getComputedStyle(pageContainer).width
+            );
+
+            
+            let computedZoomValue =
+              parseInt((actualWidth / initialWidth).toFixed(2) * 100) + "%";
+            Assert.equal(
+              computedZoomValue,
+              zoomValue,
+              "Content has correct zoom"
+            );
+
+            
+            let zoom = (actualWidth - previousWidth) * subTest.expectedZoom;
+            Assert.ok(zoom > 0, subTest.message);
+
+            previousWidth = actualWidth;
+          }
+
+          var viewer = content.wrappedJSObject.PDFViewerApplication;
+          await viewer.close();
         }
-
-        var viewer = content.wrappedJSObject.PDFViewerApplication;
-        await viewer.close();
-      });
+      );
     }
   );
 });

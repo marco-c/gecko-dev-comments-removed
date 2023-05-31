@@ -4,9 +4,8 @@
 add_task(async function test() {
   let uri = "http://test.com/";
 
-  const promiseTitleChangedNotifications = PlacesTestUtils.waitForNotification(
-    "page-title-changed"
-  );
+  const promiseTitleChangedNotifications =
+    PlacesTestUtils.waitForNotification("page-title-changed");
 
   
   await PlacesTestUtils.addVisits([

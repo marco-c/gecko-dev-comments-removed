@@ -72,9 +72,8 @@ var PrintUtils = {
 
   async checkForSelection(browsingContext) {
     try {
-      let sourceActor = browsingContext.currentWindowGlobal.getActor(
-        "PrintingSelection"
-      );
+      let sourceActor =
+        browsingContext.currentWindowGlobal.getActor("PrintingSelection");
       
       return await sourceActor.sendQuery("PrintingSelection:HasSelection", {});
     } catch (e) {

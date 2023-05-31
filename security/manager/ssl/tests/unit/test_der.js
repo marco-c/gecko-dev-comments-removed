@@ -96,11 +96,7 @@ function run_simple_tests() {
 
   
   let invalidLengthSEQUENCE2 = new DER.DERDecoder([
-    0x30,
-    0x82,
-    0x00,
-    0x01,
-    0x00,
+    0x30, 0x82, 0x00, 0x01, 0x00,
   ]);
   throws(
     () => invalidLengthSEQUENCE2.readTagAndGetContents(DER.SEQUENCE),
@@ -110,11 +106,7 @@ function run_simple_tests() {
 
   
   let unsupportedLengthSEQUENCE = new DER.DERDecoder([
-    0x30,
-    0x83,
-    0x01,
-    0x01,
-    0x01,
+    0x30, 0x83, 0x01, 0x01, 0x01,
   ]);
   throws(
     () => unsupportedLengthSEQUENCE.readTagAndGetContents(DER.SEQUENCE),
@@ -124,11 +116,7 @@ function run_simple_tests() {
 
   
   let unsupportedASN1SEQUENCE = new DER.DERDecoder([
-    0x30,
-    0x80,
-    0x01,
-    0x00,
-    0x00,
+    0x30, 0x80, 0x01, 0x00, 0x00,
   ]);
   throws(
     () => unsupportedASN1SEQUENCE.readTagAndGetContents(DER.SEQUENCE),

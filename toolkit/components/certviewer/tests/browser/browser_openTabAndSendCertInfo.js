@@ -38,9 +38,8 @@ async function checkCertChain(browser) {
       if (!certificateSection) {
         return false;
       }
-      certificateTabs = certificateSection.shadowRoot.querySelectorAll(
-        ".certificate-tab"
-      );
+      certificateTabs =
+        certificateSection.shadowRoot.querySelectorAll(".certificate-tab");
       return certificateTabs.length;
     }, "Found certificate tabs.");
 
@@ -229,44 +228,44 @@ add_task(async function testPreferencesCert() {
   let tabsCount;
 
   info(`Loading ${url}`);
-  await BrowserTestUtils.withNewTab({ gBrowser, url }, async function (
-    browser
-  ) {
-    tabsCount = gBrowser.tabs.length;
-    checkAndClickButton(browser.contentDocument, "viewCertificatesButton");
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url },
+    async function (browser) {
+      tabsCount = gBrowser.tabs.length;
+      checkAndClickButton(browser.contentDocument, "viewCertificatesButton");
 
-    let certDialogLoaded = promiseLoadSubDialog(
-      "chrome://pippki/content/certManager.xhtml"
-    );
-    let dialogWin = await certDialogLoaded;
-    let doc = dialogWin.document;
-    Assert.ok(doc, "doc loaded");
+      let certDialogLoaded = promiseLoadSubDialog(
+        "chrome://pippki/content/certManager.xhtml"
+      );
+      let dialogWin = await certDialogLoaded;
+      let doc = dialogWin.document;
+      Assert.ok(doc, "doc loaded");
 
-    doc.getElementById("certmanagertabs").selectedTab = doc.getElementById(
-      "mine_tab"
-    );
-    let treeView = doc.getElementById("user-tree").view;
-    let selectedCert;
-    
-    for (let i = 0; i < treeView.rowCount; i++) {
-      treeView.selection.select(i);
-      dialogWin.getSelectedCerts();
-      let certs = dialogWin.selected_certs;
-      if (certs && certs[0]) {
-        selectedCert = certs[0];
-        break;
+      doc.getElementById("certmanagertabs").selectedTab =
+        doc.getElementById("mine_tab");
+      let treeView = doc.getElementById("user-tree").view;
+      let selectedCert;
+      
+      for (let i = 0; i < treeView.rowCount; i++) {
+        treeView.selection.select(i);
+        dialogWin.getSelectedCerts();
+        let certs = dialogWin.selected_certs;
+        if (certs && certs[0]) {
+          selectedCert = certs[0];
+          break;
+        }
       }
+      Assert.ok(selectedCert, "A cert should be selected");
+      let viewButton = doc.getElementById("mine_viewButton");
+      Assert.equal(viewButton.disabled, false, "Should enable view button");
+
+      let loaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+      viewButton.click();
+      await loaded;
+
+      checksCertTab(tabsCount);
+      await checkCertChain(gBrowser.selectedBrowser);
     }
-    Assert.ok(selectedCert, "A cert should be selected");
-    let viewButton = doc.getElementById("mine_viewButton");
-    Assert.equal(viewButton.disabled, false, "Should enable view button");
-
-    let loaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
-    viewButton.click();
-    await loaded;
-
-    checksCertTab(tabsCount);
-    await checkCertChain(gBrowser.selectedBrowser);
-  });
+  );
   gBrowser.removeCurrentTab(); 
 });

@@ -151,8 +151,10 @@ async function getTelemetrySums() {
   
   
   return TestUtils.waitForCondition(() => {
-    let histograms = Services.telemetry.getSnapshotForHistograms("main", true)
-      .content;
+    let histograms = Services.telemetry.getSnapshotForHistograms(
+      "main",
+      true
+    ).content;
     
     
     

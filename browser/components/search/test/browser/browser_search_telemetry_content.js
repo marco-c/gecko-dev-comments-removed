@@ -42,9 +42,8 @@ add_task(async function test_context_menu() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let search_hist = TelemetryTestUtils.getAndClearKeyedHistogram(
-    "SEARCH_COUNTS"
-  );
+  let search_hist =
+    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -132,9 +131,8 @@ add_task(async function test_about_newtab() {
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
   Services.fog.testResetFOG();
-  let search_hist = TelemetryTestUtils.getAndClearKeyedHistogram(
-    "SEARCH_COUNTS"
-  );
+  let search_hist =
+    TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,

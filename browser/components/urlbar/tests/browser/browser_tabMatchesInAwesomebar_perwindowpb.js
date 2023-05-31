@@ -53,11 +53,12 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
 
   
   let sessionHistoryCount = await new Promise(resolve => {
-    SessionStore.getSessionHistory(gBrowser.selectedTab, function (
-      sessionHistory
-    ) {
-      resolve(sessionHistory.entries.length);
-    });
+    SessionStore.getSessionHistory(
+      gBrowser.selectedTab,
+      function (sessionHistory) {
+        resolve(sessionHistory.entries.length);
+      }
+    );
   });
 
   ok(

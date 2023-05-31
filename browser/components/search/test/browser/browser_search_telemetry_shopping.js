@@ -9,18 +9,15 @@
 
 "use strict";
 
-const {
-  SearchSERPTelemetry,
-  SearchSERPTelemetryUtils,
-} = ChromeUtils.importESModule(
-  "resource:///modules/SearchSERPTelemetry.sys.mjs"
-);
+const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
+  ChromeUtils.importESModule("resource:///modules/SearchSERPTelemetry.sys.mjs");
 
 
 
 const BASE_TEST_PROVIDER = {
   telemetryId: "example",
-  searchPageRegexp: /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetryAd/,
+  searchPageRegexp:
+    /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetryAd/,
   queryParamName: "s",
   codeParamName: "abc",
   taggedCodes: ["ff"],

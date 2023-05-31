@@ -48,7 +48,8 @@ const COMMON_LIBRARY_DIRS = ["resource://devtools/client/shared/vendor"];
 
 
 
-const browserBasedDirsRegExp = /^resource\:\/\/devtools\/client\/\S*\/components\//;
+const browserBasedDirsRegExp =
+  /^resource\:\/\/devtools\/client\/\S*\/components\//;
 
 
 

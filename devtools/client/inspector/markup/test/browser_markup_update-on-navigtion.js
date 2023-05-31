@@ -14,17 +14,16 @@ add_task(async function () {
   await selectNode("#one", inspector);
 
   const { resourceCommand } = toolbox.commands;
-  const {
-    onResource: willNavigate,
-  } = await resourceCommand.waitForNextResource(
-    resourceCommand.TYPES.DOCUMENT_EVENT,
-    {
-      ignoreExistingResources: true,
-      predicate(resource) {
-        return resource.name == "will-navigate";
-      },
-    }
-  );
+  const { onResource: willNavigate } =
+    await resourceCommand.waitForNextResource(
+      resourceCommand.TYPES.DOCUMENT_EVENT,
+      {
+        ignoreExistingResources: true,
+        predicate(resource) {
+          return resource.name == "will-navigate";
+        },
+      }
+    );
 
   
   
@@ -51,9 +50,8 @@ add_task(async function () {
   }
 
   function assertMarkupViewIsEmpty() {
-    const markupViewFrame = inspector._markupFrame.contentDocument.getElementById(
-      "root"
-    );
+    const markupViewFrame =
+      inspector._markupFrame.contentDocument.getElementById("root");
     is(markupViewFrame.childNodes.length, 0, "The markup-view is unloaded");
   }
 });

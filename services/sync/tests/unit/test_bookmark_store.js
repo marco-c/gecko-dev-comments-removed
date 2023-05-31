@@ -1,14 +1,10 @@
 
 
 
-const {
-  Bookmark,
-  BookmarkFolder,
-  BookmarkQuery,
-  PlacesItem,
-} = ChromeUtils.importESModule(
-  "resource://services-sync/engines/bookmarks.sys.mjs"
-);
+const { Bookmark, BookmarkFolder, BookmarkQuery, PlacesItem } =
+  ChromeUtils.importESModule(
+    "resource://services-sync/engines/bookmarks.sys.mjs"
+  );
 
 
 const { Service } = ChromeUtils.importESModule(

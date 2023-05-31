@@ -702,9 +702,8 @@ var webrtcUI = {
       return;
     }
 
-    let actor = sharingState.browsingContext.currentWindowGlobal.getActor(
-      "WebRTC"
-    );
+    let actor =
+      sharingState.browsingContext.currentWindowGlobal.getActor("WebRTC");
 
     
     

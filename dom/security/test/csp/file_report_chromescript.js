@@ -27,8 +27,9 @@ var openingObserver = {
         
         
         var reportText = "{}";
-        var uploadStream = subject.QueryInterface(Ci.nsIUploadChannel)
-          .uploadStream;
+        var uploadStream = subject.QueryInterface(
+          Ci.nsIUploadChannel
+        ).uploadStream;
 
         if (uploadStream) {
           

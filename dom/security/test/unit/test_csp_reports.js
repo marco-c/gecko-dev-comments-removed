@@ -183,20 +183,23 @@ function run_test() {
     }
   );
 
-  makeTest(2, { "blocked-uri": "http://blocked.test/foo.js" }, false, function (
-    csp
-  ) {
-    
-    csp.shouldLoad(
-      Ci.nsIContentPolicy.TYPE_SCRIPT,
-      null, 
-      NetUtil.newURI("http://blocked.test/foo.js"),
-      null,
-      true,
-      null,
-      false
-    );
-  });
+  makeTest(
+    2,
+    { "blocked-uri": "http://blocked.test/foo.js" },
+    false,
+    function (csp) {
+      
+      csp.shouldLoad(
+        Ci.nsIContentPolicy.TYPE_SCRIPT,
+        null, 
+        NetUtil.newURI("http://blocked.test/foo.js"),
+        null,
+        true,
+        null,
+        false
+      );
+    }
+  );
 
   
   makeTest(

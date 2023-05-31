@@ -115,8 +115,7 @@ add_task(async function () {
         {
           
           
-          name:
-            "Initial bookmark text ('Getting Started' or 'Get Involved') appearing after startup",
+          name: "Initial bookmark text ('Getting Started' or 'Get Involved') appearing after startup",
           condition: r =>
             inRange(r.w, 25, 120) && 
             inRange(r.h, 9, 15) && 

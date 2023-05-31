@@ -6,9 +6,10 @@ function test() {
 
   
   
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "https://www.foo.com"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://www.foo.com"
+    );
   Services.perms.addFromPrincipal(
     principal,
     "persistent-storage",

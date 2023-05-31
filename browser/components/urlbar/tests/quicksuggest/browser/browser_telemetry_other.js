@@ -342,7 +342,8 @@ add_task(async function telemetryEnvironmentOnStartup() {
   
   
   
-  let environmentInitPromise = TelemetryEnvironment.testCleanRestart().onInitialized();
+  let environmentInitPromise =
+    TelemetryEnvironment.testCleanRestart().onInitialized();
 
   
   
@@ -374,7 +375,8 @@ add_task(async function telemetryEnvironmentOnStartup() {
 
   
   
-  environmentInitPromise = TelemetryEnvironment.testCleanRestart().onInitialized();
+  environmentInitPromise =
+    TelemetryEnvironment.testCleanRestart().onInitialized();
 
   await UrlbarPrefs.updateFirefoxSuggestScenario({
     isStartup: true,

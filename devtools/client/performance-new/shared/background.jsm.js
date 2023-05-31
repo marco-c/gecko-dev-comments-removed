@@ -383,13 +383,8 @@ async function captureProfile(pageContext) {
 
 
 function startProfiler(pageContext) {
-  const {
-    entries,
-    interval,
-    features,
-    threads,
-    duration,
-  } = getRecordingSettings(pageContext, Services.profiler.GetFeatures());
+  const { entries, interval, features, threads, duration } =
+    getRecordingSettings(pageContext, Services.profiler.GetFeatures());
 
   
   const { getActiveBrowserID } = lazy.RecordingUtils();

@@ -10,8 +10,8 @@ const BinaryInputStream = CC(
   "setInputStream"
 );
 
-const currentThread = Cc["@mozilla.org/thread-manager;1"].getService()
-  .currentThread;
+const currentThread =
+  Cc["@mozilla.org/thread-manager;1"].getService().currentThread;
 
 
 

@@ -132,9 +132,8 @@ async function initTreeView() {
 
 
 function updateTabListVisibility() {
-  document.getElementById("tabList").hidden = !document.getElementById(
-    "radioRestoreChoose"
-  ).checked;
+  document.getElementById("tabList").hidden =
+    !document.getElementById("radioRestoreChoose").checked;
   initTreeView();
 }
 
@@ -291,9 +290,8 @@ function toggleRowChecked(aIx) {
 
   
   if (document.getElementById("errorCancel")) {
-    document.getElementById("errorTryAgain").disabled = !gTreeData.some(
-      isChecked
-    );
+    document.getElementById("errorTryAgain").disabled =
+      !gTreeData.some(isChecked);
   }
 }
 

@@ -180,8 +180,8 @@ function setPushPermission(allow) {
     
     
     
-    let partitionedPrincipal = SpecialPowers.wrap(document)
-      .partitionedPrincipal;
+    let partitionedPrincipal =
+      SpecialPowers.wrap(document).partitionedPrincipal;
 
     permissions.push({
       type: "desktop-notification",

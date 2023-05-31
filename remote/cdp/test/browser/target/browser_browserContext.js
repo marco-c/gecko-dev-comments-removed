@@ -13,9 +13,8 @@ add_task(async function ({ CDP }) {
   await getDiscoveredTargets(Target);
 
   
-  const {
-    browserContextIds: browserContextIdsBefore,
-  } = await Target.getBrowserContexts();
+  const { browserContextIds: browserContextIdsBefore } =
+    await Target.getBrowserContexts();
 
   is(
     browserContextIdsBefore.length,
@@ -59,9 +58,8 @@ add_task(async function ({ CDP }) {
   await Target.disposeBrowserContext({ browserContextId });
 
   
-  const {
-    browserContextIds: browserContextIdsAfter,
-  } = await Target.getBrowserContexts();
+  const { browserContextIds: browserContextIdsAfter } =
+    await Target.getBrowserContexts();
 
   is(
     browserContextIdsAfter.length,

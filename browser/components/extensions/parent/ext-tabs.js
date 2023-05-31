@@ -602,15 +602,16 @@ this.tabs = class extends ExtensionAPIPersistent {
       
       
       
-      options.triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-        Services.io.newURI(url),
-        {
-          userContextId: options.userContextId,
-          privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(browser)
-            ? 1
-            : 0,
-        }
-      );
+      options.triggeringPrincipal =
+        Services.scriptSecurityManager.createContentPrincipal(
+          Services.io.newURI(url),
+          {
+            userContextId: options.userContextId,
+            privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(browser)
+              ? 1
+              : 0,
+          }
+        );
     }
 
     let tabsApi = {

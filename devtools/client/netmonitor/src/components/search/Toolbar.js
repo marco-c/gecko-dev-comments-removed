@@ -115,12 +115,8 @@ class Toolbar extends Component {
 
 
   renderFilterBox() {
-    const {
-      addSearchQuery,
-      clearSearchResultAndCancel,
-      connector,
-      query,
-    } = this.props;
+    const { addSearchQuery, clearSearchResultAndCancel, connector, query } =
+      this.props;
     return SearchBox({
       keyShortcut: "CmdOrCtrl+Shift+F",
       placeholder: L10N.getStr("netmonitor.search.toolbar.inputPlaceholder"),

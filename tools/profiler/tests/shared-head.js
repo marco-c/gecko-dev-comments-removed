@@ -284,7 +284,8 @@ async function stopNowAndGetProfile() {
   
   Services.profiler.Pause();
 
-  const profileArrayBuffer = await Services.profiler.getProfileDataAsArrayBuffer();
+  const profileArrayBuffer =
+    await Services.profiler.getProfileDataAsArrayBuffer();
   await Services.profiler.StopProfiler();
 
   const profileUint8Array = new Uint8Array(profileArrayBuffer);
@@ -544,7 +545,9 @@ Object.assign(Assert, {
 });
 
 const Expect = {
-  any: () => actual => {} ,
+  any:
+    () =>
+    actual => {} ,
 };
 
 
@@ -555,8 +558,10 @@ const Expect = {
   "objectContainsOnly",
 ].forEach(
   assertChecker =>
-    (Expect[assertChecker] = expected => (actual, ...moreArgs) =>
-      Assert[assertChecker](actual, expected, ...moreArgs))
+    (Expect[assertChecker] =
+      expected =>
+      (actual, ...moreArgs) =>
+        Assert[assertChecker](actual, expected, ...moreArgs))
 );
 
 

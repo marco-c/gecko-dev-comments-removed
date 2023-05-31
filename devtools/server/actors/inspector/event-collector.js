@@ -19,7 +19,8 @@ const {
 } = require("resource://devtools/server/actors/inspector/constants.js");
 
 
-const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
+const JQUERY_LIVE_REGEX =
+  /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
 
 const REACT_EVENT_NAMES = [
   "onAbort",

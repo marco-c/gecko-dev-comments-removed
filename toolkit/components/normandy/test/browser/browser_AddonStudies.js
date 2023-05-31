@@ -7,10 +7,8 @@ const { IndexedDB } = ChromeUtils.importESModule(
 const { NormandyTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NormandyTestUtils.sys.mjs"
 );
-const {
-  addonStudyFactory,
-  branchedAddonStudyFactory,
-} = NormandyTestUtils.factories;
+const { addonStudyFactory, branchedAddonStudyFactory } =
+  NormandyTestUtils.factories;
 
 
 AddonTestUtils.initMochitest(this);

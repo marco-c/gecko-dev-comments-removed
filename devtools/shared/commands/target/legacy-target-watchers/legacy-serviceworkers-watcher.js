@@ -43,9 +43,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     
     
-    this._onRegistrationListChanged = this._onRegistrationListChanged.bind(
-      this
-    );
+    this._onRegistrationListChanged =
+      this._onRegistrationListChanged.bind(this);
     this._onDocumentEvent = this._onDocumentEvent.bind(this);
 
     
@@ -187,9 +186,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
         const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
 
         for (const target of allServiceWorkerTargets) {
-          const isRegisteredBefore = this.targetCommand.isTargetRegistered(
-            target
-          );
+          const isRegisteredBefore =
+            this.targetCommand.isTargetRegistered(target);
           if (shouldDestroy && isRegisteredBefore) {
             
             
@@ -199,9 +197,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
           
           
-          const isRegisteredAfter = this.targetCommand.isTargetRegistered(
-            target
-          );
+          const isRegisteredAfter =
+            this.targetCommand.isTargetRegistered(target);
           const isValidTarget = this._supportWorkerTarget(target);
           if (isValidTarget && !isRegisteredAfter) {
             
@@ -255,9 +252,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   async _updateRegistrations() {
-    const {
-      registrations,
-    } = await this.rootFront.listServiceWorkerRegistrations();
+    const { registrations } =
+      await this.rootFront.listServiceWorkerRegistrations();
 
     this._registrations = registrations;
   }

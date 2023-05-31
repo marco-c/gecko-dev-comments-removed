@@ -32,13 +32,10 @@ add_task(async function () {
       
       
       const [parentA11yInitObserver, parentA11yInit] = initAccService();
-      const [contentA11yInitObserver, contentA11yInit] = initAccService(
-        browser
-      );
-      let [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      const [contentA11yInitObserver, contentA11yInit] =
+        initAccService(browser);
+      let [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
 
       await Promise.all([
         parentA11yInitObserver,
@@ -67,10 +64,8 @@ add_task(async function () {
         "Adding additional reference to accessibility service in content " +
           "process"
       );
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
       await contentConsumersChangedObserver;
       
       await SpecialPowers.spawn(browser, [], () => {
@@ -106,21 +101,15 @@ add_task(async function () {
           "content stays alive"
       );
       let contentCanShutdown = false;
-      const [
-        parentA11yShutdownObserver,
-        parentA11yShutdown,
-      ] = shutdownAccService();
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      const [parentA11yShutdownObserver, parentA11yShutdown] =
+        shutdownAccService();
+      [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
       
       
       
-      const [
-        contentA11yShutdownObserver,
-        contentA11yShutdownPromise,
-      ] = shutdownAccService(browser);
+      const [contentA11yShutdownObserver, contentA11yShutdownPromise] =
+        shutdownAccService(browser);
       const contentA11yShutdown = new Promise((resolve, reject) =>
         contentA11yShutdownPromise.then(flag =>
           contentCanShutdown
@@ -164,10 +153,8 @@ add_task(async function () {
       info("Removing a service in content");
       
       contentCanShutdown = true;
-      [
-        contentConsumersChangedObserver,
-        contentConsumersChanged,
-      ] = accConsumersChanged(browser);
+      [contentConsumersChangedObserver, contentConsumersChanged] =
+        accConsumersChanged(browser);
       await contentConsumersChangedObserver;
       
       

@@ -43,11 +43,13 @@ async function throttleUploadTest(actuallyThrottle) {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  await SpecialPowers.spawn(tab.linkedBrowser, [{ size }], async function (
-    args
-  ) {
-    content.wrappedJSObject.executeTest2(args.size);
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [{ size }],
+    async function (args) {
+      content.wrappedJSObject.executeTest2(args.size);
+    }
+  );
   await wait;
 
   

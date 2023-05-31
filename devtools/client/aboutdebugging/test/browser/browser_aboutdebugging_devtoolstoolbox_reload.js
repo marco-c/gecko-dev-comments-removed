@@ -41,11 +41,8 @@ async function testReloadAboutDevToolsToolbox(toolId) {
   
   
   await pushPref("devtools.toolbox.selectedTool", "options");
-  const {
-    devtoolsBrowser,
-    devtoolsTab,
-    devtoolsWindow,
-  } = await openAboutDevtoolsToolbox(document, tab, window);
+  const { devtoolsBrowser, devtoolsTab, devtoolsWindow } =
+    await openAboutDevtoolsToolbox(document, tab, window);
 
   info(`Select tool: ${toolId}`);
   const toolbox = getToolbox(devtoolsWindow);

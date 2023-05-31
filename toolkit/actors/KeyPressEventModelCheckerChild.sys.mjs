@@ -85,10 +85,8 @@ export class KeyPressEventModelCheckerChild extends JSWindowActorChild {
     
     
     try {
-      let {
-        author,
-        version,
-      } = new tinyMCEObject.plugins.CursorTargetPlugin().getInfo();
+      let { author, version } =
+        new tinyMCEObject.plugins.CursorTargetPlugin().getInfo();
       
       
       

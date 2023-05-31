@@ -12,9 +12,8 @@ window.attachEvent("onload", function () {
   document.body.style.fontFamily = external.getFontName() + ", sans-serif";
 
   
-  document.getElementById("footer").innerText = external.getUIString(
-    "global_footer"
-  );
+  document.getElementById("footer").innerText =
+    external.getUIString("global_footer");
 
   
   document.getElementById("background").attachEvent("ondragstart", function () {

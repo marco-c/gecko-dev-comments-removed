@@ -258,20 +258,20 @@ class InspectorCommand {
       domLoadingPromises.push(nodeFront.waitForFrameLoad());
     }
 
-    const {
-      onResource: onDomInteractiveResource,
-    } = await this.commands.resourceCommand.waitForNextResource(
-      this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
-      {
-        
-        
-        
-        predicate: resource =>
-          resource.name == "dom-interactive" &&
-          resource.targetFront !== nodeFront.targetFront &&
-          resource.targetFront.browsingContextID == nodeFront.browsingContextID,
-      }
-    );
+    const { onResource: onDomInteractiveResource } =
+      await this.commands.resourceCommand.waitForNextResource(
+        this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+        {
+          
+          
+          
+          predicate: resource =>
+            resource.name == "dom-interactive" &&
+            resource.targetFront !== nodeFront.targetFront &&
+            resource.targetFront.browsingContextID ==
+              nodeFront.browsingContextID,
+        }
+      );
     const newTargetResolveValue = Symbol();
     domLoadingPromises.push(
       onDomInteractiveResource.then(() => newTargetResolveValue)

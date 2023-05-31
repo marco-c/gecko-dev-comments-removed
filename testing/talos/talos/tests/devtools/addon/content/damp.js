@@ -163,10 +163,8 @@ Damp.prototype = {
   async addTab(url) {
     
     
-    let tab = (this._win.gBrowser.selectedTab = this._win.gBrowser.addTrustedTab(
-      url,
-      { skipAnimation: true }
-    ));
+    let tab = (this._win.gBrowser.selectedTab =
+      this._win.gBrowser.addTrustedTab(url, { skipAnimation: true }));
     let browser = tab.linkedBrowser;
     await this._awaitBrowserLoaded(browser);
     return tab;

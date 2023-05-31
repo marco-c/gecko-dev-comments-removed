@@ -225,12 +225,10 @@ class StyleRuleActor extends Actor {
 
       const sheet = this._parentSheet;
       const inspectorActor = this.pageStyle.inspector;
-      const resourceId = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-        sheet
-      );
-      const styleSheetIndex = this.pageStyle.styleSheetsManager.getStyleSheetIndex(
-        resourceId
-      );
+      const resourceId =
+        this.pageStyle.styleSheetsManager.getStyleSheetResourceId(sheet);
+      const styleSheetIndex =
+        this.pageStyle.styleSheetsManager.getStyleSheetIndex(resourceId);
       data.source = {
         
         type: sheet.href ? "stylesheet" : "inline",
@@ -308,9 +306,10 @@ class StyleRuleActor extends Actor {
     }
 
     if (this._parentSheet) {
-      form.parentStyleSheet = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-        this._parentSheet
-      );
+      form.parentStyleSheet =
+        this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
+          this._parentSheet
+        );
 
       if (this._parentSheet.ownerRule) {
         
@@ -608,9 +607,10 @@ class StyleRuleActor extends Actor {
       return Promise.resolve(this.authoredText);
     }
 
-    const resourceId = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-      this._parentSheet
-    );
+    const resourceId =
+      this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
+        this._parentSheet
+      );
     const cssText = await this.pageStyle.styleSheetsManager.getText(resourceId);
     const { text } = getRuleText(cssText, this.line, this.column);
 
@@ -649,9 +649,10 @@ class StyleRuleActor extends Actor {
       
       ruleBodyText = await this.getAuthoredCssText(true);
 
-      const resourceId = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-        this._parentSheet
-      );
+      const resourceId =
+        this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
+          this._parentSheet
+        );
       const stylesheetText = await this.pageStyle.styleSheetsManager.getText(
         resourceId
       );
@@ -701,9 +702,10 @@ class StyleRuleActor extends Actor {
       
       this.rawNode.setAttributeDevtools("style", newText);
     } else {
-      const resourceId = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-        this._parentSheet
-      );
+      const resourceId =
+        this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
+          this._parentSheet
+        );
       let cssText = await this.pageStyle.styleSheetsManager.getText(resourceId);
 
       const { offset, text } = getRuleText(cssText, this.line, this.column);
@@ -822,9 +824,10 @@ class StyleRuleActor extends Actor {
         return null;
       }
 
-      const resourceId = this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
-        this._parentSheet
-      );
+      const resourceId =
+        this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
+          this._parentSheet
+        );
       let authoredText = await this.pageStyle.styleSheetsManager.getText(
         resourceId
       );

@@ -308,11 +308,12 @@ function run_test() {
     
     
     
-    test_verify_single_too_many_certs: function _test_verify_single_too_many_certs() {
-      let signedMAR = do_get_file("data/signed_pib.mar");
-      verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], true);
-      verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], false);
-    },
+    test_verify_single_too_many_certs:
+      function _test_verify_single_too_many_certs() {
+        let signedMAR = do_get_file("data/signed_pib.mar");
+        verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], true);
+        verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], false);
+      },
     
     test_verify_single_wrong_cert: function _test_verify_single_wrong_cert() {
       let signedMAR = do_get_file("data/signed_pib.mar");
@@ -325,10 +326,11 @@ function run_test() {
       verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
     },
     
-    test_verify_unsigned_mar_file_fails: function _test_verify_unsigned_mar_file_fails() {
-      let unsignedMAR = do_get_file("data/binary_data.mar");
-      verifyMAR(unsignedMAR, wantFailure, ["mycert", "mycert2", "mycert3"]);
-    },
+    test_verify_unsigned_mar_file_fails:
+      function _test_verify_unsigned_mar_file_fails() {
+        let unsignedMAR = do_get_file("data/binary_data.mar");
+        verifyMAR(unsignedMAR, wantFailure, ["mycert", "mycert2", "mycert3"]);
+      },
     
     
     
@@ -339,15 +341,16 @@ function run_test() {
     },
     
     
-    test_verify_multiple_wrong_order: function _test_verify_multiple_wrong_order() {
-      let signedMAR = do_get_file("data/multiple_signed_pib.mar");
-      verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
-      verifyMAR(signedMAR, wantFailure, ["mycert", "mycert3", "mycert2"]);
-      verifyMAR(signedMAR, wantFailure, ["mycert2", "mycert", "mycert3"]);
-      verifyMAR(signedMAR, wantFailure, ["mycert2", "mycert3", "mycert"]);
-      verifyMAR(signedMAR, wantFailure, ["mycert3", "mycert", "mycert2"]);
-      verifyMAR(signedMAR, wantFailure, ["mycert3", "mycert2", "mycert"]);
-    },
+    test_verify_multiple_wrong_order:
+      function _test_verify_multiple_wrong_order() {
+        let signedMAR = do_get_file("data/multiple_signed_pib.mar");
+        verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
+        verifyMAR(signedMAR, wantFailure, ["mycert", "mycert3", "mycert2"]);
+        verifyMAR(signedMAR, wantFailure, ["mycert2", "mycert", "mycert3"]);
+        verifyMAR(signedMAR, wantFailure, ["mycert2", "mycert3", "mycert"]);
+        verifyMAR(signedMAR, wantFailure, ["mycert3", "mycert", "mycert2"]);
+        verifyMAR(signedMAR, wantFailure, ["mycert3", "mycert2", "mycert"]);
+      },
     
     test_verify_no_pib: function _test_verify_no_pib() {
       let signedMAR = do_get_file("data/signed_no_pib.mar");

@@ -69,9 +69,8 @@ class Mocks {
     
     
     this._thisFirefoxClient = createThisFirefoxClientMock();
-    this._clients[RUNTIMES.THIS_FIREFOX][
-      RUNTIMES.THIS_FIREFOX
-    ] = this._thisFirefoxClient;
+    this._clients[RUNTIMES.THIS_FIREFOX][RUNTIMES.THIS_FIREFOX] =
+      this._thisFirefoxClient;
 
     
     this.enableMocks();
@@ -164,9 +163,8 @@ class Mocks {
     
     let mockUsbClient = runtimeInfo.clientWrapper;
     if (mockUsbClient) {
-      const originalGetDeviceDescription = mockUsbClient.getDeviceDescription.bind(
-        mockUsbClient
-      );
+      const originalGetDeviceDescription =
+        mockUsbClient.getDeviceDescription.bind(mockUsbClient);
       mockUsbClient.getDeviceDescription = async () => {
         const deviceDescription = await originalGetDeviceDescription();
         return {

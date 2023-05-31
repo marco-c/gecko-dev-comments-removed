@@ -317,8 +317,8 @@ add_task(async function () {
   });
 
   
-  let nonOverflowing = CustomizableUI.getCustomizationTarget(navbar)
-    .lastElementChild;
+  let nonOverflowing =
+    CustomizableUI.getCustomizationTarget(navbar).lastElementChild;
   is(
     nonOverflowing.getAttribute("overflows"),
     "false",

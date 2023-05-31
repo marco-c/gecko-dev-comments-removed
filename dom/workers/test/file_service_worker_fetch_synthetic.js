@@ -24,9 +24,8 @@ self.addEventListener("fetch", event => {
         
         
         const requestBodyContents = await event.request.text();
-        const blobContents = extractBlobFromMultipartFormData(
-          requestBodyContents
-        );
+        const blobContents =
+          extractBlobFromMultipartFormData(requestBodyContents);
 
         return new Response(
           `<!DOCTYPE HTML><head><meta charset="utf-8"/></head><body>

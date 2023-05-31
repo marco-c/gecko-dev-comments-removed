@@ -64,9 +64,10 @@ class FxrWebRTCPrompt extends FxrPermissionPromptPrototype {
   allow() {
     let { audioDevices, videoDevices } = this.request;
 
-    let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      this.request.origin
-    );
+    let principal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        this.request.origin
+      );
 
     
     

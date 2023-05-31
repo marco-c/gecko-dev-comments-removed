@@ -47,7 +47,7 @@ var _pacedTestLists = {
   currentColor_color: [
     new AnimTestcasePaced(
       "olive; " + 
-      "currentColor; " + 
+        "currentColor; " + 
         "rgb(206, 150, 206)",
       {
         comp0: "rgb(128, 128, 0)",
@@ -64,7 +64,7 @@ var _pacedTestLists = {
     
     new AnimTestcasePaced(
       "olive; " + 
-      "currentColor; " + 
+        "currentColor; " + 
         "rgb(206, 150, 206)",
       {
         comp0: "rgb(128, 128, 0)",

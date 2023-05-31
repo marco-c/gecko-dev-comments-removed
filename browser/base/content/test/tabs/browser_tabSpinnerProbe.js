@@ -54,8 +54,9 @@ async function testProbe(aProbe) {
 
   
   
-  delayTime += gBrowser.selectedTab.linkedBrowser.getTabBrowser()._getSwitcher()
-    .TAB_SWITCH_TIMEOUT;
+  delayTime += gBrowser.selectedTab.linkedBrowser
+    .getTabBrowser()
+    ._getSwitcher().TAB_SWITCH_TIMEOUT;
 
   
   let origTab = gBrowser.selectedTab;

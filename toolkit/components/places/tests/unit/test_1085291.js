@@ -3,8 +3,9 @@ add_task(async function () {
   
 
   
-  let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.toolbarGuid)
-    .root;
+  let root = PlacesUtils.getFolderContents(
+    PlacesUtils.bookmarks.toolbarGuid
+  ).root;
 
   async function insertAndTest(bmInfo) {
     bmInfo = await PlacesUtils.bookmarks.insert(bmInfo);

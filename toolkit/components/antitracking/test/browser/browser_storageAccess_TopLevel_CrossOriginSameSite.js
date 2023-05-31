@@ -126,9 +126,10 @@ add_task(async function testIntermediatePreferenceWriteCrossOrigin() {
     }
   });
 
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    TEST_DOMAIN_8
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      TEST_DOMAIN_8
+    );
   
   var permission = Services.perms.testPermissionFromPrincipal(
     principal,
@@ -137,9 +138,10 @@ add_task(async function testIntermediatePreferenceWriteCrossOrigin() {
   ok(permission == Services.perms.ALLOW_ACTION);
 
   
-  principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    TEST_DOMAIN_7
-  );
+  principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      TEST_DOMAIN_7
+    );
   
   permission = Services.perms.testPermissionFromPrincipal(
     principal,

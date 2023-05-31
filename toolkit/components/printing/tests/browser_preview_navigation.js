@@ -420,9 +420,8 @@ add_task(async function testTooltips() {
     await helper.startPrint();
 
     let paginationElem = document.querySelector(".printPreviewNavigation");
-    let paginationSheetIndicator = paginationElem.shadowRoot.querySelector(
-      "#sheetIndicator"
-    );
+    let paginationSheetIndicator =
+      paginationElem.shadowRoot.querySelector("#sheetIndicator");
 
     
     await waitForPageStatusUpdate(

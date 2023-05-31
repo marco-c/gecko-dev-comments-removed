@@ -147,9 +147,8 @@ declTest("destroy actor by tab being closed", {
     let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
     let newTabBrowser = newTab.linkedBrowser;
 
-    let parent = newTabBrowser.browsingContext.currentWindowGlobal.getActor(
-      "TestWindow"
-    );
+    let parent =
+      newTabBrowser.browsingContext.currentWindowGlobal.getActor("TestWindow");
     ok(parent, "JSWindowActorParent should have value.");
 
     

@@ -308,14 +308,16 @@ function run_test() {
   
   
   
-  var handler1 = possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
-    0,
-    Ci.nsIHandlerApp
-  );
-  var handler2 = possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
-    1,
-    Ci.nsIHandlerApp
-  );
+  var handler1 =
+    possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
+      0,
+      Ci.nsIHandlerApp
+    );
+  var handler2 =
+    possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
+      1,
+      Ci.nsIHandlerApp
+    );
   var localPossibleHandler, webPossibleHandler, localIndex;
   if (handler1 instanceof Ci.nsILocalHandlerApp) {
     [localPossibleHandler, webPossibleHandler, localIndex] = [
@@ -350,10 +352,11 @@ function run_test() {
   Assert.equal(possibleHandlersInfo.possibleApplicationHandlers.length, 1);
 
   
-  webPossibleHandler = possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
-    0,
-    Ci.nsIWebHandlerApp
-  );
+  webPossibleHandler =
+    possibleHandlersInfo.possibleApplicationHandlers.queryElementAt(
+      0,
+      Ci.nsIWebHandlerApp
+    );
   Assert.equal(webPossibleHandler.name, webHandler.name);
   Assert.ok(webPossibleHandler.equals(webHandler));
 

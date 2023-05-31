@@ -31,52 +31,53 @@ add_task(async function test_active_delay() {
       ["extensions.formautofill.reauth.enabled", false],
     ],
   });
-  await BrowserTestUtils.withNewTab({ gBrowser, url: CC_URL }, async function (
-    browser
-  ) {
-    const focusInput = "#cc-number";
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CC_URL },
+    async function (browser) {
+      const focusInput = "#cc-number";
 
-    
-    
-    await SimpleTest.promiseFocus(browser);
-    const start = performance.now();
-    await runAndWaitForAutocompletePopupOpen(browser, async () => {
-      await focusAndWaitForFieldsIdentified(browser, focusInput);
-    });
-    const firstItem = getDisplayedPopupItems(browser)[0];
-    ok(firstItem.disabled, "Popup should be disbled upon opening.");
-    is(
-      browser.autoCompletePopup.selectedIndex,
-      -1,
-      "No item selected at first"
-    );
+      
+      
+      await SimpleTest.promiseFocus(browser);
+      const start = performance.now();
+      await runAndWaitForAutocompletePopupOpen(browser, async () => {
+        await focusAndWaitForFieldsIdentified(browser, focusInput);
+      });
+      const firstItem = getDisplayedPopupItems(browser)[0];
+      ok(firstItem.disabled, "Popup should be disbled upon opening.");
+      is(
+        browser.autoCompletePopup.selectedIndex,
+        -1,
+        "No item selected at first"
+      );
 
-    
-    
-    firstItem.click();
-    is(
-      browser.autoCompletePopup.selectedIndex,
-      -1,
-      "No item selected after clicking on disabled item"
-    );
+      
+      
+      firstItem.click();
+      is(
+        browser.autoCompletePopup.selectedIndex,
+        -1,
+        "No item selected after clicking on disabled item"
+      );
 
-    
-    await waitForPopupEnabled(browser);
-    const delta = performance.now() - start;
-    info(`Popup was disabled for ${delta} ms`);
-    ok(delta >= 1000, "Popup was disabled for at least 1000 ms");
+      
+      await waitForPopupEnabled(browser);
+      const delta = performance.now() - start;
+      info(`Popup was disabled for ${delta} ms`);
+      ok(delta >= 1000, "Popup was disabled for at least 1000 ms");
 
-    
-    firstItem.click();
-    is(
-      browser.autoCompletePopup.selectedIndex,
-      0,
-      "First item selected after clicking on enabled item"
-    );
+      
+      firstItem.click();
+      is(
+        browser.autoCompletePopup.selectedIndex,
+        0,
+        "First item selected after clicking on enabled item"
+      );
 
-    
-    await closePopup(browser);
-  });
+      
+      await closePopup(browser);
+    }
+  );
 });
 
 add_task(async function test_no_delay() {

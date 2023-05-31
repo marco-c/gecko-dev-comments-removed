@@ -80,13 +80,8 @@ for (let testData of testCases) {
 }
 
 async function test_save_change(testData) {
-  let {
-    oldUsername,
-    username,
-    oldPassword,
-    password,
-    expectOutcome,
-  } = testData;
+  let { oldUsername, username, oldPassword, password, expectOutcome } =
+    testData;
   
   if (oldPassword) {
     await Services.logins.addLoginAsync(

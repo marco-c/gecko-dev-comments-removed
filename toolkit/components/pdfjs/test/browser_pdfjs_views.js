@@ -39,9 +39,8 @@ add_task(async function test() {
 
         
         var sidebar = content.document.querySelector("button#sidebarToggle");
-        var outerContainer = content.document.querySelector(
-          "div#outerContainer"
-        );
+        var outerContainer =
+          content.document.querySelector("div#outerContainer");
 
         sidebar.click();
         Assert.ok(
@@ -65,9 +64,8 @@ add_task(async function test() {
         );
 
         
-        var viewOutlineButton = content.document.querySelector(
-          "button#viewOutline"
-        );
+        var viewOutlineButton =
+          content.document.querySelector("button#viewOutline");
         viewOutlineButton.click();
 
         Assert.equal(

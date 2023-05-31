@@ -17,156 +17,161 @@ async function runTest(doNewTab) {
   filePaths.push(testFile.path);
 
   
-  await BrowserTestUtils.withNewTab(fileUriString, async function (
-    fileBrowser
-  ) {
-    
-
-    var promiseLoad;
-    if (doNewTab) {
-      promiseLoad = BrowserTestUtils.waitForNewTab(
-        gBrowser,
-        TEST_HTTP_POST,
-        true,
-        false
-      );
-    } else {
-      promiseLoad = BrowserTestUtils.browserLoaded(
-        fileBrowser,
-        false,
-        TEST_HTTP_POST
-      );
-    }
-
-    
-    await SpecialPowers.spawn(
-      fileBrowser,
-      [TEST_HTTP_POST, filePaths, doNewTab],
-      (actionUri, filePaths, doNewTab) => {
-        Cu.importGlobalProperties(["File"]);
-
-        let doc = content.document;
-        let form = doc.body.appendChild(doc.createElement("form"));
-        form.action = actionUri;
-        form.method = "POST";
-        form.enctype = "multipart/form-data";
-        if (doNewTab) {
-          form.target = "_blank";
-        }
-
-        let inputText = form.appendChild(doc.createElement("input"));
-        inputText.type = "text";
-        inputText.name = "text";
-        inputText.value = "posted";
-
-        let inputCheckboxOn = form.appendChild(doc.createElement("input"));
-        inputCheckboxOn.type = "checkbox";
-        inputCheckboxOn.name = "checked";
-        inputCheckboxOn.checked = true;
-
-        let inputCheckboxOff = form.appendChild(doc.createElement("input"));
-        inputCheckboxOff.type = "checkbox";
-        inputCheckboxOff.name = "unchecked";
-        inputCheckboxOff.checked = false;
-
-        let inputFile = form.appendChild(doc.createElement("input"));
-        inputFile.type = "file";
-        inputFile.name = "file";
-        let fileList = [];
-        let promises = [];
-        for (let path of filePaths) {
-          promises.push(
-            File.createFromFileName(path).then(file => {
-              fileList.push(file);
-            })
-          );
-        }
-
-        Promise.all(promises).then(() => {
-          inputFile.mozSetFileArray(fileList);
-          form.submit();
-        });
-      }
-    );
-    
-
-    var href;
-    var testBrowser;
-    var newTab;
-    if (doNewTab) {
-      newTab = await promiseLoad;
-      testBrowser = newTab.linkedBrowser;
-      href = testBrowser.currentURI.spec;
-    } else {
-      testBrowser = fileBrowser;
-      href = await promiseLoad;
-    }
-    is(
-      href,
-      TEST_HTTP_POST,
-      "Check that the loaded page is the one to which we posted."
-    );
-
-    let binContentType;
-    if (AppConstants.platform == "macosx") {
-      binContentType = "application/macbinary";
-    } else {
-      binContentType = "application/octet-stream";
-    }
-
-    
-    await SpecialPowers.spawn(testBrowser, [binContentType], binContentType => {
-      let data = JSON.parse(content.document.body.textContent);
-      is(
-        data[0].headers["Content-Disposition"],
-        'form-data; name="text"',
-        "Check text input Content-Disposition"
-      );
-      is(data[0].body, "posted", "Check text input body");
-
-      is(
-        data[1].headers["Content-Disposition"],
-        'form-data; name="checked"',
-        "Check checkbox input Content-Disposition"
-      );
-      is(data[1].body, "on", "Check checkbox input body");
-
+  await BrowserTestUtils.withNewTab(
+    fileUriString,
+    async function (fileBrowser) {
       
 
-      is(
-        data[2].headers["Content-Disposition"],
-        'form-data; name="file"; filename="form_data_file.txt"',
-        "Check text file input Content-Disposition"
-      );
-      is(
-        data[2].headers["Content-Type"],
-        "text/plain",
-        "Check text file input Content-Type"
-      );
-      is(data[2].body, "1234\n", "Check text file input body");
+      var promiseLoad;
+      if (doNewTab) {
+        promiseLoad = BrowserTestUtils.waitForNewTab(
+          gBrowser,
+          TEST_HTTP_POST,
+          true,
+          false
+        );
+      } else {
+        promiseLoad = BrowserTestUtils.browserLoaded(
+          fileBrowser,
+          false,
+          TEST_HTTP_POST
+        );
+      }
 
-      is(
-        data[3].headers["Content-Disposition"],
-        'form-data; name="file"; filename="form_data_file.bin"',
-        "Check binary file input Content-Disposition"
-      );
-      is(
-        data[3].headers["Content-Type"],
-        binContentType,
-        "Check binary file input Content-Type"
-      );
-      is(
-        data[3].body,
-        "\u0001\u0002\u0003\u0004\n",
-        "Check binary file input body"
-      );
-    });
-    
+      
+      await SpecialPowers.spawn(
+        fileBrowser,
+        [TEST_HTTP_POST, filePaths, doNewTab],
+        (actionUri, filePaths, doNewTab) => {
+          Cu.importGlobalProperties(["File"]);
 
-    if (newTab) {
-      BrowserTestUtils.removeTab(newTab);
+          let doc = content.document;
+          let form = doc.body.appendChild(doc.createElement("form"));
+          form.action = actionUri;
+          form.method = "POST";
+          form.enctype = "multipart/form-data";
+          if (doNewTab) {
+            form.target = "_blank";
+          }
+
+          let inputText = form.appendChild(doc.createElement("input"));
+          inputText.type = "text";
+          inputText.name = "text";
+          inputText.value = "posted";
+
+          let inputCheckboxOn = form.appendChild(doc.createElement("input"));
+          inputCheckboxOn.type = "checkbox";
+          inputCheckboxOn.name = "checked";
+          inputCheckboxOn.checked = true;
+
+          let inputCheckboxOff = form.appendChild(doc.createElement("input"));
+          inputCheckboxOff.type = "checkbox";
+          inputCheckboxOff.name = "unchecked";
+          inputCheckboxOff.checked = false;
+
+          let inputFile = form.appendChild(doc.createElement("input"));
+          inputFile.type = "file";
+          inputFile.name = "file";
+          let fileList = [];
+          let promises = [];
+          for (let path of filePaths) {
+            promises.push(
+              File.createFromFileName(path).then(file => {
+                fileList.push(file);
+              })
+            );
+          }
+
+          Promise.all(promises).then(() => {
+            inputFile.mozSetFileArray(fileList);
+            form.submit();
+          });
+        }
+      );
+      
+
+      var href;
+      var testBrowser;
+      var newTab;
+      if (doNewTab) {
+        newTab = await promiseLoad;
+        testBrowser = newTab.linkedBrowser;
+        href = testBrowser.currentURI.spec;
+      } else {
+        testBrowser = fileBrowser;
+        href = await promiseLoad;
+      }
+      is(
+        href,
+        TEST_HTTP_POST,
+        "Check that the loaded page is the one to which we posted."
+      );
+
+      let binContentType;
+      if (AppConstants.platform == "macosx") {
+        binContentType = "application/macbinary";
+      } else {
+        binContentType = "application/octet-stream";
+      }
+
+      
+      await SpecialPowers.spawn(
+        testBrowser,
+        [binContentType],
+        binContentType => {
+          let data = JSON.parse(content.document.body.textContent);
+          is(
+            data[0].headers["Content-Disposition"],
+            'form-data; name="text"',
+            "Check text input Content-Disposition"
+          );
+          is(data[0].body, "posted", "Check text input body");
+
+          is(
+            data[1].headers["Content-Disposition"],
+            'form-data; name="checked"',
+            "Check checkbox input Content-Disposition"
+          );
+          is(data[1].body, "on", "Check checkbox input body");
+
+          
+
+          is(
+            data[2].headers["Content-Disposition"],
+            'form-data; name="file"; filename="form_data_file.txt"',
+            "Check text file input Content-Disposition"
+          );
+          is(
+            data[2].headers["Content-Type"],
+            "text/plain",
+            "Check text file input Content-Type"
+          );
+          is(data[2].body, "1234\n", "Check text file input body");
+
+          is(
+            data[3].headers["Content-Disposition"],
+            'form-data; name="file"; filename="form_data_file.bin"',
+            "Check binary file input Content-Disposition"
+          );
+          is(
+            data[3].headers["Content-Type"],
+            binContentType,
+            "Check binary file input Content-Type"
+          );
+          is(
+            data[3].body,
+            "\u0001\u0002\u0003\u0004\n",
+            "Check binary file input body"
+          );
+        }
+      );
+      
+
+      if (newTab) {
+        BrowserTestUtils.removeTab(newTab);
+      }
     }
-  });
+  );
 }
 
 add_task(async function runWithDocumentChannel() {

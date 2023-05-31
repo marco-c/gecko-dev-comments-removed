@@ -19,9 +19,8 @@ function getColumn(table, column, url) {
 add_task(async function () {
   
   
-  const titleChangedPromise = PlacesTestUtils.waitForNotification(
-    "page-title-changed"
-  );
+  const titleChangedPromise =
+    PlacesTestUtils.waitForNotification("page-title-changed");
 
   const url1 =
     "http://example.com/tests/toolkit/components/places/tests/browser/title1.html";

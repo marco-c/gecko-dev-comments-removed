@@ -159,9 +159,8 @@ async function setupVideoListeners(browser) {
     
     video.addEventListener("playing", async () => {
       info("Got playing event!");
-      let playPauseButton = content.document.querySelector(
-        ".play-pause-button"
-      );
+      let playPauseButton =
+        content.document.querySelector(".play-pause-button");
       ok(
         !playPauseButton.getAttribute("isPaused"),
         "playPauseButton does not have isPaused attribute."
@@ -171,9 +170,8 @@ async function setupVideoListeners(browser) {
     
     video.addEventListener("pause", async () => {
       info("Got pause event!");
-      let playPauseButton = content.document.querySelector(
-        ".play-pause-button"
-      );
+      let playPauseButton =
+        content.document.querySelector(".play-pause-button");
       
       
       

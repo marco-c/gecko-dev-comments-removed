@@ -18,12 +18,10 @@ window.attachEvent("onload", function () {
   
   var label = document.getElementById("label");
   label.innerText = external.getUIString("installing_label");
-  document.getElementById("header").innerText = external.getUIString(
-    "installing_header"
-  );
-  document.getElementById("content").innerText = external.getUIString(
-    "installing_content"
-  );
+  document.getElementById("header").innerText =
+    external.getUIString("installing_header");
+  document.getElementById("content").innerText =
+    external.getUIString("installing_content");
 
   
   setInterval(function () {

@@ -251,9 +251,8 @@ add_task(async function test_api_listener_call_exception() {
     const expectedErrorRegExp = new RegExp(
       `Error: Mock webRequest listener exception`
     );
-    const expectedSourceName = extension.extension.baseURI.resolve(
-      "extpage.js"
-    );
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("extpage.js");
     await page.spawn([], prepareWaitForConsoleMessage);
     await ExtensionTestUtils.fetch(
       "http://example.com",
@@ -278,9 +277,8 @@ add_task(async function test_api_listener_call_exception() {
     );
     
     
-    const expectedSourceName = extension.extension.baseURI.resolve(
-      "extpage.html"
-    );
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("extpage.html");
 
     await page.spawn([], prepareWaitForConsoleMessage);
     notifyStorageSyncListener(extension);
@@ -301,9 +299,8 @@ add_task(async function test_api_listener_call_exception() {
     const expectedErrorRegExp = new RegExp(`uncaught exception: undefined`);
     
     
-    const expectedSourceName = extension.extension.baseURI.resolve(
-      "extpage.html"
-    );
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("extpage.html");
     await page.spawn([], prepareWaitForConsoleMessage);
     ExtensionStorageIDB.notifyListeners(extension.id, {});
     await asyncAssertConsoleMessage({
@@ -331,9 +328,8 @@ add_task(async function test_api_listener_call_exception() {
     
     
     const expectedErrorRegExp = new RegExp(`Error: test-contentscript-error`);
-    const expectedSourceName = extension.extension.baseURI.resolve(
-      "contentscript.js"
-    );
+    const expectedSourceName =
+      extension.extension.baseURI.resolve("contentscript.js");
 
     await contentPage.spawn([], prepareWaitForConsoleMessage);
     notifyStorageSyncListener(extension);

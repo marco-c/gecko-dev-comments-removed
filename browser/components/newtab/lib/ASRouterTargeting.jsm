@@ -477,9 +477,10 @@ async function getAutofillRecords(data) {
   let actor;
   try {
     const win = Services.wm.getMostRecentBrowserWindow();
-    actor = win.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
-      "FormAutofill"
-    );
+    actor =
+      win.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+        "FormAutofill"
+      );
   } catch (error) {
     
     

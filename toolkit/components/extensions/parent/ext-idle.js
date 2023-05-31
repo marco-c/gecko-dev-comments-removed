@@ -96,7 +96,8 @@ this.idle = class extends ExtensionAPIPersistent {
           
           
           if (!extension.persistentBackground) {
-            extension.startupData.idleDetectionInterval = detectionIntervalInSeconds;
+            extension.startupData.idleDetectionInterval =
+              detectionIntervalInSeconds;
             extension.saveStartupData();
           }
         },

@@ -640,9 +640,8 @@ describe("CFRPageActions", () => {
       it("should set the secondary action correctly", async () => {
         await pageAction._cfrUrlbarButtonClick();
         
-        const [
-          secondaryAction,
-        ] = global.PopupNotifications.show.firstCall.args[5];
+        const [secondaryAction] =
+          global.PopupNotifications.show.firstCall.args[5];
 
         assert.deepEqual(secondaryAction.label, {
           value: "Secondary Button",
@@ -1098,9 +1097,8 @@ describe("CFRPageActions", () => {
           fakeRecommendation,
           dispatchStub
         );
-        const recommendation = CFRPageActions.RecommendationMap.get(
-          fakeBrowser
-        );
+        const recommendation =
+          CFRPageActions.RecommendationMap.get(fakeBrowser);
 
         
         assert.equal(recommendation.id, fakeRecommendation.id);

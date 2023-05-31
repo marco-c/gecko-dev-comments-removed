@@ -44,9 +44,8 @@ add_task(async function () {
 
   
   const colorPropertySpan = colorPropertyElement.valueSpan;
-  const colorVariableElement = colorPropertySpan.querySelector(
-    ".ruleview-variable"
-  );
+  const colorVariableElement =
+    colorPropertySpan.querySelector(".ruleview-variable");
 
   
   const backgroundPropertySpan = getRuleViewProperty(
@@ -54,9 +53,8 @@ add_task(async function () {
     "#target",
     "background"
   ).valueSpan;
-  const backgroundUrlElement = backgroundPropertySpan.querySelector(
-    ".theme-link"
-  );
+  const backgroundUrlElement =
+    backgroundPropertySpan.querySelector(".theme-link");
 
   info("Show preview tooltip for CSS variable");
   let previewTooltip = await assertShowPreviewTooltip(

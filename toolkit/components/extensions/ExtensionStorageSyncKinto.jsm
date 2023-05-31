@@ -881,22 +881,23 @@ class ExtensionStorageSyncKinto {
 
   _syncCollection(collection, options) {
     
-    return this._requestWithToken(`Syncing ${collection.name}`, function (
-      token
-    ) {
-      const allOptions = Object.assign(
-        {},
-        {
-          remote: lazy.prefStorageSyncServerURL,
-          headers: {
-            Authorization: "Bearer " + token,
+    return this._requestWithToken(
+      `Syncing ${collection.name}`,
+      function (token) {
+        const allOptions = Object.assign(
+          {},
+          {
+            remote: lazy.prefStorageSyncServerURL,
+            headers: {
+              Authorization: "Bearer " + token,
+            },
           },
-        },
-        options
-      );
+          options
+        );
 
-      return collection.sync(allOptions);
-    });
+        return collection.sync(allOptions);
+      }
+    );
   }
 
   

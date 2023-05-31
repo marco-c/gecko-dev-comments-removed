@@ -311,8 +311,8 @@ workerHelper.createTask(self, "getImmediatelyDominated", request => {
     node.parentId = nodeId;
     
     
-    node.moreChildrenAvailable = !!dominatorTree.getImmediatelyDominated(id)
-      .length;
+    node.moreChildrenAvailable =
+      !!dominatorTree.getImmediatelyDominated(id).length;
     return node;
   });
 

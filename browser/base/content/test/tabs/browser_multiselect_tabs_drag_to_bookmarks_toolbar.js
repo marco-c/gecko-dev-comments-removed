@@ -26,9 +26,8 @@ add_task(async function test() {
   is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
 
   
-  let currentBookmarks = bookmarksToolbar.getElementsByClassName(
-    "bookmark-item"
-  );
+  let currentBookmarks =
+    bookmarksToolbar.getElementsByClassName("bookmark-item");
   let startBookmarksLength = currentBookmarks.length;
 
   

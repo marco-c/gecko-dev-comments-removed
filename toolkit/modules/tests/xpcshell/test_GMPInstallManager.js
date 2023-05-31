@@ -1622,14 +1622,15 @@ function getTestServerForContentSignatureTests() {
     });
     
     
-    promiseHolder.serverPromise = ProductAddonCheckerTestUtils.overrideServiceRequest(
-      overriddenServiceRequest,
-      () => {
-        res.setHeader("content-signature", validContentSignatureHeader);
-        res.write(goodXml);
-        return promiseHolder.installPromise;
-      }
-    );
+    promiseHolder.serverPromise =
+      ProductAddonCheckerTestUtils.overrideServiceRequest(
+        overriddenServiceRequest,
+        () => {
+          res.setHeader("content-signature", validContentSignatureHeader);
+          res.write(goodXml);
+          return promiseHolder.installPromise;
+        }
+      );
   });
 
   const x5uAbortPath = "/x5u_abort.xml";
@@ -1642,14 +1643,15 @@ function getTestServerForContentSignatureTests() {
     });
     
     
-    promiseHolder.serverPromise = ProductAddonCheckerTestUtils.overrideServiceRequest(
-      overriddenServiceRequest,
-      () => {
-        res.setHeader("content-signature", validContentSignatureHeader);
-        res.write(goodXml);
-        return promiseHolder.installPromise;
-      }
-    );
+    promiseHolder.serverPromise =
+      ProductAddonCheckerTestUtils.overrideServiceRequest(
+        overriddenServiceRequest,
+        () => {
+          res.setHeader("content-signature", validContentSignatureHeader);
+          res.write(goodXml);
+          return promiseHolder.installPromise;
+        }
+      );
     setTimeout(() => {
       overriddenServiceRequest.abort();
     }, 100);

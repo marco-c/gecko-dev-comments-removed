@@ -28,11 +28,8 @@ function getThrownMessage(completion) {
 module.exports.getThrownMessage = getThrownMessage;
 
 function logEvent({ threadActor, frame, level, expression, bindings }) {
-  const {
-    sourceActor,
-    line,
-    column,
-  } = threadActor.sourcesManager.getFrameLocation(frame);
+  const { sourceActor, line, column } =
+    threadActor.sourcesManager.getFrameLocation(frame);
   const displayName = formatDisplayName(frame);
 
   

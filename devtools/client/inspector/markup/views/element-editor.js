@@ -520,15 +520,14 @@ ElementEditor.prototype = {
 
     if (this.node.causesOverflow) {
       try {
-        const scrollableAncestor = await this.node.walkerFront.getScrollableAncestorNode(
-          this.node
-        );
+        const scrollableAncestor =
+          await this.node.walkerFront.getScrollableAncestorNode(this.node);
         const markupContainer = scrollableAncestor
           ? this.markup.getContainer(scrollableAncestor)
           : null;
 
-        showOverflowHighlight = !!markupContainer?.editor
-          .highlightingOverflowCausingElements;
+        showOverflowHighlight =
+          !!markupContainer?.editor.highlightingOverflowCausingElements;
       } catch (e) {
         
         
@@ -1074,9 +1073,8 @@ ElementEditor.prototype = {
 
 
   async onScrollableBadgeClick() {
-    this.highlightingOverflowCausingElements = this._scrollableBadge.classList.toggle(
-      "active"
-    );
+    this.highlightingOverflowCausingElements =
+      this._scrollableBadge.classList.toggle("active");
 
     const { nodes } = await this.node.walkerFront.getOverflowCausingElements(
       this.node

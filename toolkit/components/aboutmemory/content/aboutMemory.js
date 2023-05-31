@@ -311,27 +311,29 @@ window.onload = function () {
   });
 
   
-  let fileInput2 = appendHiddenFileInput(header, "fileInput2", function (
-    aElem
-  ) {
-    let file = this.files[0];
-    
-    
-    if (!this.filename1) {
-      this.filename1 = file.mozFullPath;
+  let fileInput2 = appendHiddenFileInput(
+    header,
+    "fileInput2",
+    function (aElem) {
+      let file = this.files[0];
+      
+      
+      if (!this.filename1) {
+        this.filename1 = file.mozFullPath;
 
-      
-      
-      
-      if (!aElem.skipClick) {
-        this.click();
+        
+        
+        
+        if (!aElem.skipClick) {
+          this.click();
+        }
+      } else {
+        let filename1 = this.filename1;
+        delete this.filename1;
+        updateAboutMemoryFromTwoFiles(filename1, file.mozFullPath);
       }
-    } else {
-      let filename1 = this.filename1;
-      delete this.filename1;
-      updateAboutMemoryFromTwoFiles(filename1, file.mozFullPath);
     }
-  });
+  );
 
   const CuDesc = "Measure current memory reports and show.";
   const LdDesc = "Load memory reports from file and show.";

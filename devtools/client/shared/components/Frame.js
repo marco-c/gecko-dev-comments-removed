@@ -121,10 +121,11 @@ class Frame extends Component {
       
       
       
-      this.unsubscribeSourceMapURLService = this.props.sourceMapURLService.subscribeByLocation(
-        location,
-        this._locationChanged
-      );
+      this.unsubscribeSourceMapURLService =
+        this.props.sourceMapURLService.subscribeByLocation(
+          location,
+          this._locationChanged
+        );
     }
   }
 

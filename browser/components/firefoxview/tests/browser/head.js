@@ -79,8 +79,7 @@ const syncedTabsData1 = [
         type: "tab",
         title: "Internet for people, not profits - Mozilla",
         url: "https://www.mozilla.org/",
-        icon:
-          "https://www.mozilla.org/media/img/favicons/mozilla/favicon.d25d81d39065.ico",
+        icon: "https://www.mozilla.org/media/img/favicons/mozilla/favicon.d25d81d39065.ico",
         lastUsed: 1655730486, 
       },
     ],

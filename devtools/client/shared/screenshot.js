@@ -83,13 +83,8 @@ async function captureScreenshot(targetFront, args) {
 
   
   
-  const {
-    rect,
-    windowDpr,
-    windowZoom,
-    messages,
-    error,
-  } = await screenshotContentFront.prepareCapture(args);
+  const { rect, windowDpr, windowZoom, messages, error } =
+    await screenshotContentFront.prepareCapture(args);
 
   if (error) {
     return { error, messages };

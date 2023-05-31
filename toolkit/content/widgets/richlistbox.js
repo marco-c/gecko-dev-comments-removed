@@ -872,7 +872,9 @@
   
 
 
-  MozElements.MozRichlistitem = class MozRichlistitem extends MozElements.BaseText {
+  MozElements.MozRichlistitem = class MozRichlistitem extends (
+    MozElements.BaseText
+  ) {
     constructor() {
       super();
 

@@ -15,11 +15,8 @@ add_task(async function () {
   
   const tab = await addTab("data:text/html,Root Node tests");
 
-  const {
-    client,
-    resourceCommand,
-    targetCommand,
-  } = await initMultiProcessResourceCommand();
+  const { client, resourceCommand, targetCommand } =
+    await initMultiProcessResourceCommand();
 
   const { CONSOLE_MESSAGE, ROOT_NODE } = resourceCommand.TYPES;
 

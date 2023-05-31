@@ -89,8 +89,7 @@ class ConsoleSettings extends Component {
       
       items.push(
         MenuItem({
-          key:
-            "webconsole-console-settings-menu-item-enable-network-monitoring",
+          key: "webconsole-console-settings-menu-item-enable-network-monitoring",
           checked: enableNetworkMonitoring,
           className:
             "menu-item webconsole-console-settings-menu-item-enableNetworkMonitoring",

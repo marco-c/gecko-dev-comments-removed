@@ -7,8 +7,9 @@
 
 
 add_task(async function () {
-  const scale = window.docShell.QueryInterface(Ci.nsIBaseWindow)
-    .devicePixelsPerDesktopPixel;
+  const scale = window.docShell.QueryInterface(
+    Ci.nsIBaseWindow
+  ).devicePixelsPerDesktopPixel;
   let { bounds, rects } = TestRunner._findBoundingBox(["#tabbrowser-tabs"]);
   let tabBar = document.querySelector("#tabbrowser-tabs");
   let tabBarRect = tabBar.getBoundingClientRect();

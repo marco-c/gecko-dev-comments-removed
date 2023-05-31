@@ -281,28 +281,28 @@ function handleRequest(req, res) {
 
     rContent = Buffer.from(
       "0000" +
-      "0100" +
-      "0001" + 
-      "0002" + 
-      "00000000" + 
-      "07636E616D652d61" + 
-      "076578616D706C6503636F6D00" + 
-      "00010001" + 
-      
-      "C00C" + 
-      "0005" + 
-      "0001" + 
-      "00000037" + 
-      "0012" + 
-      "0468657265" + 
-      "076578616D706C6503636F6D00" + 
-      
-      "0468657265" + 
-      "076578616D706C6503636F6D00" + 
-      "0001" + 
-      "0001" + 
-      "00000037" + 
-      "0004" + 
+        "0100" +
+        "0001" + 
+        "0002" + 
+        "00000000" + 
+        "07636E616D652d61" + 
+        "076578616D706C6503636F6D00" + 
+        "00010001" + 
+        
+        "C00C" + 
+        "0005" + 
+        "0001" + 
+        "00000037" + 
+        "0012" + 
+        "0468657265" + 
+        "076578616D706C6503636F6D00" + 
+        
+        "0468657265" + 
+        "076578616D706C6503636F6D00" + 
+        "0001" + 
+        "0001" + 
+        "00000037" + 
+        "0004" + 
         "09080706", 
       "hex"
     );
@@ -972,8 +972,7 @@ function handleRequest(req, res) {
       push = res.push({
         hostname: "foo.example.com:" + serverPort,
         port: serverPort,
-        path:
-          "/dns-pushed-response?dns=AAAAAAABAAAAAAAABHB1c2gHZXhhbXBsZQNvcmcAABwAAQ",
+        path: "/dns-pushed-response?dns=AAAAAAABAAAAAAAABHB1c2gHZXhhbXBsZQNvcmcAABwAAQ",
         method: "GET",
         headers: {
           accept: "application/dns-message",
@@ -1423,8 +1422,7 @@ function handleRequest(req, res) {
     push = res.push({
       hostname: "foo.example.com:" + serverPort,
       port: serverPort,
-      path:
-        "/dns-pushed-response?dns=AAABAAABAAAAAAABCl9lc25pX3B1c2gHZXhhbXBsZQNjb20AABAAAQAAKRAAAAAAAAAIAAgABAABAAA",
+      path: "/dns-pushed-response?dns=AAABAAABAAAAAAABCl9lc25pX3B1c2gHZXhhbXBsZQNjb20AABAAAQAAKRAAAAAAAAAIAAgABAABAAA",
       method: "GET",
       headers: {
         accept: "application/dns-message",

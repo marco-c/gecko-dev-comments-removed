@@ -73,9 +73,8 @@ async function testClearData(clearSiteData, clearCache) {
   
   let [, convertedCacheUnit] = DownloadUtils.convertByteUnits(cacheUsage);
 
-  let clearSiteDataCheckbox = dialogWin.document.getElementById(
-    "clearSiteData"
-  );
+  let clearSiteDataCheckbox =
+    dialogWin.document.getElementById("clearSiteData");
   let clearCacheCheckbox = dialogWin.document.getElementById("clearCache");
   
   

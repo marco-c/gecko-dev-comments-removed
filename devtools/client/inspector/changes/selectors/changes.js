@@ -35,10 +35,8 @@ const {
 
 function getChangesTree(state, filter = {}) {
   
-  const {
-    sourceIds: sourceIdsFilter = [],
-    ruleIds: rulesIdsFilter = [],
-  } = filter;
+  const { sourceIds: sourceIdsFilter = [], ruleIds: rulesIdsFilter = [] } =
+    filter;
   
 
 

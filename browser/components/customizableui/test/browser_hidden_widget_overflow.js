@@ -59,9 +59,8 @@ add_setup(async function () {
   });
 
   
-  let hiddenButtonNode = CustomizableUI.getWidget(kHiddenButtonID).forWindow(
-    gWin
-  ).node;
+  let hiddenButtonNode =
+    CustomizableUI.getWidget(kHiddenButtonID).forWindow(gWin).node;
   hiddenButtonNode.hidden = true;
 
   CustomizableUI.createWidget({
@@ -71,9 +70,8 @@ add_setup(async function () {
   });
 
   
-  let displayNoneButtonNode = CustomizableUI.getWidget(
-    kDisplayNoneButtonID
-  ).forWindow(gWin).node;
+  let displayNoneButtonNode =
+    CustomizableUI.getWidget(kDisplayNoneButtonID).forWindow(gWin).node;
   displayNoneButtonNode.style.display = "none";
 
   registerCleanupFunction(async () => {
@@ -101,9 +99,8 @@ add_task(async function test_hidden_widget_overflow() {
     }
   );
 
-  let hiddenButtonNode = CustomizableUI.getWidget(kHiddenButtonID).forWindow(
-    gWin
-  ).node;
+  let hiddenButtonNode =
+    CustomizableUI.getWidget(kHiddenButtonID).forWindow(gWin).node;
   Assert.ok(
     hiddenButtonNode.hasAttribute("overflowedItem"),
     "Hidden button should be overflowed."

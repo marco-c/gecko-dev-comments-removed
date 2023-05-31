@@ -3,65 +3,69 @@ dir.append("file_dummy.html");
 const uriString = Services.io.newFileURI(dir).spec;
 
 add_task(async function () {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    
-    
-    
-    let prepareToChangeCalled = PromiseUtils.defer();
-    let finishSwitch = PromiseUtils.defer();
-    let oldPrepare = browser.prepareToChangeRemoteness;
-    browser.prepareToChangeRemoteness = async () => {
-      prepareToChangeCalled.resolve();
-      await oldPrepare.call(browser);
-      await finishSwitch.promise;
-    };
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
+      
+      
+      
+      let prepareToChangeCalled = PromiseUtils.defer();
+      let finishSwitch = PromiseUtils.defer();
+      let oldPrepare = browser.prepareToChangeRemoteness;
+      browser.prepareToChangeRemoteness = async () => {
+        prepareToChangeCalled.resolve();
+        await oldPrepare.call(browser);
+        await finishSwitch.promise;
+      };
 
-    
-    
-    
-    
-    
-    
-    info("Beginning process switch into file URI process");
-    let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.loadURIString(browser, uriString);
-    await prepareToChangeCalled.promise;
+      
+      
+      
+      
+      
+      
+      info("Beginning process switch into file URI process");
+      let browserLoaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURIString(browser, uriString);
+      await prepareToChangeCalled.promise;
 
-    
-    
-    
-    info("Creating new tab loaded in file URI process");
-    let fileProcess;
-    let browserParentDestroyed = PromiseUtils.defer();
-    await BrowserTestUtils.withNewTab(uriString, async function (otherBrowser) {
-      let remoteTab = otherBrowser.frameLoader.remoteTab;
-      fileProcess = remoteTab.contentProcessId;
-      info("Loaded test URI in pid: " + fileProcess);
+      
+      
+      
+      info("Creating new tab loaded in file URI process");
+      let fileProcess;
+      let browserParentDestroyed = PromiseUtils.defer();
+      await BrowserTestUtils.withNewTab(
+        uriString,
+        async function (otherBrowser) {
+          let remoteTab = otherBrowser.frameLoader.remoteTab;
+          fileProcess = remoteTab.contentProcessId;
+          info("Loaded test URI in pid: " + fileProcess);
 
-      browserParentDestroyed.resolve(
-        TestUtils.topicObserved(
-          "ipc:browser-destroyed",
-          subject => subject === remoteTab
-        )
+          browserParentDestroyed.resolve(
+            TestUtils.topicObserved(
+              "ipc:browser-destroyed",
+              subject => subject === remoteTab
+            )
+          );
+        }
       );
-    });
-    await browserParentDestroyed.promise;
+      await browserParentDestroyed.promise;
 
-    
-    
-    
-    
-    info("BrowserParent has been destroyed, finishing process switch");
-    finishSwitch.resolve();
-    await browserLoaded;
+      
+      
+      
+      
+      info("BrowserParent has been destroyed, finishing process switch");
+      finishSwitch.resolve();
+      await browserLoaded;
 
-    info("Load complete");
-    is(
-      browser.frameLoader.remoteTab.contentProcessId,
-      fileProcess,
-      "Should have loaded in the same file URI process"
-    );
-  });
+      info("Load complete");
+      is(
+        browser.frameLoader.remoteTab.contentProcessId,
+        fileProcess,
+        "Should have loaded in the same file URI process"
+      );
+    }
+  );
 });

@@ -99,9 +99,8 @@ class ResponsePanel extends Component {
 
     this.toggleRawResponsePayload = this.toggleRawResponsePayload.bind(this);
     this.renderCORSBlockedReason = this.renderCORSBlockedReason.bind(this);
-    this.renderRawResponsePayloadBtn = this.renderRawResponsePayloadBtn.bind(
-      this
-    );
+    this.renderRawResponsePayloadBtn =
+      this.renderRawResponsePayloadBtn.bind(this);
     this.renderJsonHtmlAndSource = this.renderJsonHtmlAndSource.bind(this);
     this.handleJSONResponse = this.handleJSONResponse.bind(this);
   }
@@ -299,9 +298,8 @@ class ResponsePanel extends Component {
       
       
       if (!rawResponsePayloadDisplayed) {
-        xssiStrippedCharsInfoBox = this.renderXssiStrippedCharsInfoBox(
-          strippedChars
-        );
+        xssiStrippedCharsInfoBox =
+          this.renderXssiStrippedCharsInfoBox(strippedChars);
       } else {
         xssiStrippedCharsInfoBox = null;
       }
@@ -414,9 +412,8 @@ class ResponsePanel extends Component {
     const { filterText, rawResponsePayloadDisplayed } = this.state;
 
     
-    const CORSBlockedReasonDetails = this.renderCORSBlockedReason(
-      blockedReason
-    );
+    const CORSBlockedReasonDetails =
+      this.renderCORSBlockedReason(blockedReason);
 
     if (showMessagesView) {
       return MessagesView({ connector });

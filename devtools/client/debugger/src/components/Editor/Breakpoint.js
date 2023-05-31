@@ -57,13 +57,8 @@ class Breakpoint extends PureComponent {
   }
 
   onClick = event => {
-    const {
-      cx,
-      breakpointActions,
-      editorActions,
-      breakpoint,
-      selectedSource,
-    } = this.props;
+    const { cx, breakpointActions, editorActions, breakpoint, selectedSource } =
+      this.props;
 
     
     if ((event.ctrlKey && event.button === 0) || event.button === 2) {

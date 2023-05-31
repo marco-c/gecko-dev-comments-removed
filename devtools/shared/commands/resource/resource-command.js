@@ -559,8 +559,8 @@ class ResourceCommand {
     
     
     
-    const isServerSideTarget = this.targetCommand.targetFront.targetForm
-      .followWindowGlobalLifeCycle;
+    const isServerSideTarget =
+      this.targetCommand.targetFront.targetForm.followWindowGlobalLifeCycle;
     if (isServerSideTarget) {
       
       
@@ -652,9 +652,8 @@ class ResourceCommand {
 
       
       
-      resource.isAlreadyExistingResource = this._processingExistingResources.has(
-        resourceType
-      );
+      resource.isAlreadyExistingResource =
+        this._processingExistingResources.has(resourceType);
 
       
       
@@ -856,12 +855,8 @@ class ResourceCommand {
 
   _notifyWatchers() {
     for (const watcherEntry of this._watchers) {
-      const {
-        onAvailable,
-        onUpdated,
-        onDestroyed,
-        pendingEvents,
-      } = watcherEntry;
+      const { onAvailable, onUpdated, onDestroyed, pendingEvents } =
+        watcherEntry;
       
       
       watcherEntry.pendingEvents = [];
@@ -1141,9 +1136,8 @@ class ResourceCommand {
         this.watcherFront.unwatchResources([resourceType]);
       }
 
-      const shouldRunLegacyListeners = this._shouldRunLegacyListenerEvenWithWatcherSupport(
-        resourceType
-      );
+      const shouldRunLegacyListeners =
+        this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType);
       if (!shouldRunLegacyListeners) {
         return;
       }

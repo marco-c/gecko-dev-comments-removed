@@ -168,7 +168,8 @@ function Editor(config) {
     
     
     
-    specialChars: /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/,
+    specialChars:
+      /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/,
     specialCharPlaceholder: char => {
       
       
@@ -184,9 +185,8 @@ function Editor(config) {
   this.config.extraKeys[Editor.keyFor("jumpToLine")] = () => this.jumpToLine();
   this.config.extraKeys[Editor.keyFor("moveLineUp", { noaccel: true })] = () =>
     this.moveLineUp();
-  this.config.extraKeys[
-    Editor.keyFor("moveLineDown", { noaccel: true })
-  ] = () => this.moveLineDown();
+  this.config.extraKeys[Editor.keyFor("moveLineDown", { noaccel: true })] =
+    () => this.moveLineDown();
   this.config.extraKeys[Editor.keyFor("toggleComment")] = "toggleComment";
 
   

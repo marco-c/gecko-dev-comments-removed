@@ -96,17 +96,16 @@ add_task(async function () {
 
   
   const { resourceCommand } = toolbox.commands;
-  const {
-    onResource: willNavigate,
-  } = await resourceCommand.waitForNextResource(
-    resourceCommand.TYPES.DOCUMENT_EVENT,
-    {
-      ignoreExistingResources: true,
-      predicate(resource) {
-        return resource.name == "will-navigate";
-      },
-    }
-  );
+  const { onResource: willNavigate } =
+    await resourceCommand.waitForNextResource(
+      resourceCommand.TYPES.DOCUMENT_EVENT,
+      {
+        ignoreExistingResources: true,
+        predicate(resource) {
+          return resource.name == "will-navigate";
+        },
+      }
+    );
 
   
   

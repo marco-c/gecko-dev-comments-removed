@@ -7,9 +7,10 @@
 
 
 async function checkPermissionCombinations(combinations) {
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "https://example.com"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.com"
+    );
 
   await BrowserTestUtils.withNewTab(principal.spec, function (browser) {
     let id = "geo";

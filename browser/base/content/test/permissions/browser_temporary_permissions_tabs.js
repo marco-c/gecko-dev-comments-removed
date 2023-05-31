@@ -6,9 +6,8 @@
 
 add_task(async function testTempPermissionOnTabMove() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, origin);
@@ -49,9 +48,8 @@ add_task(async function testTempPermissionOnTabMove() {
 
 add_task(async function testTempPermissionMultipleTabs() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, origin);
@@ -107,9 +105,8 @@ add_task(async function testTempPermissionMultipleTabs() {
 
 add_task(async function testTempPermissionOnTabClose() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   ok(

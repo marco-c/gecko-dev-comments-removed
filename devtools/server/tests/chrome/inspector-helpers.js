@@ -53,8 +53,8 @@ SimpleTest.registerCleanupFunction(function () {
 
 async function attachURL(url) {
   
-  const gBrowser = Services.wm.getMostRecentWindow("navigator:browser")
-    .gBrowser;
+  const gBrowser =
+    Services.wm.getMostRecentWindow("navigator:browser").gBrowser;
 
   
   

@@ -256,9 +256,8 @@ class NetworkEventWatcher {
       );
     if (isParentProcessOnlyBrowserToolbox) {
       
-      const browsingContextID = lazy.NetworkUtils.getChannelBrowsingContextID(
-        channel
-      );
+      const browsingContextID =
+        lazy.NetworkUtils.getChannelBrowsingContextID(channel);
       const browsingContext = BrowsingContext.get(browsingContextID);
       
       

@@ -173,9 +173,8 @@ TESTCASES.forEach(testcase => {
 
       
       
-      testcase.expectedResult[i].input.elementWeakRef = Cu.getWeakReference(
-        input
-      );
+      testcase.expectedResult[i].input.elementWeakRef =
+        Cu.getWeakReference(input);
 
       inputDetailAssertion(
         FormAutofillContent.activeFieldDetail,

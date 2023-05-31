@@ -557,9 +557,8 @@ class BaseContext {
     this.messageManager = contentWindow.docShell.messageManager;
 
     if (this.incognito == null) {
-      this.incognito = lazy.PrivateBrowsingUtils.isContentWindowPrivate(
-        contentWindow
-      );
+      this.incognito =
+        lazy.PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
     }
 
     let wgc = contentWindow.windowGlobalChild;
@@ -2855,12 +2854,8 @@ class EventManager {
     
     
     if (recordStartupData) {
-      const [
-        ,
-        ,
-        ,
-           primeId,
-      ] = EventManager.savePersistentListener(extension, module, event, args);
+      const [, , ,    primeId] =
+        EventManager.savePersistentListener(extension, module, event, args);
       this.remove.set(callback, () => {
         EventManager.clearPersistentListener(
           extension,

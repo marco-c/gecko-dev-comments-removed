@@ -21,11 +21,8 @@ class BlackboxLines extends Component {
   }
 
   componentDidMount() {
-    const {
-      selectedSource,
-      blackboxedRangesForSelectedSource,
-      editor,
-    } = this.props;
+    const { selectedSource, blackboxedRangesForSelectedSource, editor } =
+      this.props;
 
     
     if (!blackboxedRangesForSelectedSource) {
@@ -50,11 +47,8 @@ class BlackboxLines extends Component {
   }
 
   componentDidUpdate() {
-    const {
-      selectedSource,
-      blackboxedRangesForSelectedSource,
-      editor,
-    } = this.props;
+    const { selectedSource, blackboxedRangesForSelectedSource, editor } =
+      this.props;
 
     
     if (!blackboxedRangesForSelectedSource) {

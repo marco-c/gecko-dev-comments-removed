@@ -73,9 +73,8 @@ class TargetConfigurationActor extends Actor {
     super(watcherActor.conn, targetConfigurationSpec);
     this.watcherActor = watcherActor;
 
-    this._onBrowsingContextAttached = this._onBrowsingContextAttached.bind(
-      this
-    );
+    this._onBrowsingContextAttached =
+      this._onBrowsingContextAttached.bind(this);
     
     
     
@@ -184,9 +183,8 @@ class TargetConfigurationActor extends Actor {
   }
 
   _getConfiguration() {
-    const targetConfigurationData = this.watcherActor.getSessionDataForType(
-      TARGET_CONFIGURATION
-    );
+    const targetConfigurationData =
+      this.watcherActor.getSessionDataForType(TARGET_CONFIGURATION);
     if (!targetConfigurationData) {
       return {};
     }
@@ -409,7 +407,8 @@ class TargetConfigurationActor extends Actor {
       flag !== undefined &&
       this._initialTouchEventsOverride === undefined
     ) {
-      this._initialTouchEventsOverride = this._browsingContext.touchEventsOverride;
+      this._initialTouchEventsOverride =
+        this._browsingContext.touchEventsOverride;
     }
 
     if (flag !== undefined) {

@@ -10,9 +10,10 @@
 
 
 function makeChan(uri) {
-  var principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "http://example.com"
-  );
+  var principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "http://example.com"
+    );
   let chan = NetUtil.newChannel({
     uri,
     loadingPrincipal: principal,

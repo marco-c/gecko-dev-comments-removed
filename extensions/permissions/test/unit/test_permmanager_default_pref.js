@@ -2,9 +2,10 @@
 
 
 function run_test() {
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "https://example.org"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.org"
+    );
 
   
   Assert.equal(

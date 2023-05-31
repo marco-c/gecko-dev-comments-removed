@@ -84,10 +84,9 @@ async function testFrameCrash(numTabs) {
   if (numTabs == 1) {
     
     
-    let {
-      subject: windowGlobal,
-    } = await BrowserUtils.promiseObserved("window-global-created", wgp =>
-      wgp.documentURI.spec.startsWith("about:framecrashed")
+    let { subject: windowGlobal } = await BrowserUtils.promiseObserved(
+      "window-global-created",
+      wgp => wgp.documentURI.spec.startsWith("about:framecrashed")
     );
 
     is(

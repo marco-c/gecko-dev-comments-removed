@@ -40,9 +40,10 @@ async function runTest(desc, startsWith) {
 
     
     
-    const triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      TRIGGERING_PAGE
-    );
+    const triggeringPrincipal =
+      Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        TRIGGERING_PAGE
+      );
     let dummyURI = Services.io.newURI(LOADED_RESOURCE);
     let dummyChannel = NetUtil.newChannel({
       uri: dummyURI,

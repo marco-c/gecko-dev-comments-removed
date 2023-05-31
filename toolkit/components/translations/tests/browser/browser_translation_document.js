@@ -169,11 +169,8 @@ add_task(async function test_no_text_trees() {
 });
 
 add_task(async function test_translated_title() {
-  const {
-    cleanup,
-    document,
-    translationsDocument,
-  } = await createDoc( `
+  const { cleanup, document, translationsDocument } =
+    await createDoc( `
     <!DOCTYPE html>
     <html>
     <head>
@@ -811,12 +808,8 @@ ${"      "}
 });
 
 add_task(async function test_mutations() {
-  const {
-    translate,
-    htmlMatches,
-    cleanup,
-    document,
-  } = await createDoc( `
+  const { translate, htmlMatches, cleanup, document } =
+    await createDoc( `
     <div>
       This is a simple translation.
     </div>

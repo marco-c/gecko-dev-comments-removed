@@ -159,9 +159,8 @@ class WebConsoleActor extends Actor {
 
     this.objectGrip = this.objectGrip.bind(this);
     this._onWillNavigate = this._onWillNavigate.bind(this);
-    this._onChangedToplevelDocument = this._onChangedToplevelDocument.bind(
-      this
-    );
+    this._onChangedToplevelDocument =
+      this._onChangedToplevelDocument.bind(this);
     this.onConsoleServiceMessage = this.onConsoleServiceMessage.bind(this);
     this.onConsoleAPICall = this.onConsoleAPICall.bind(this);
     this.onDocumentEvent = this.onDocumentEvent.bind(this);
@@ -588,10 +587,8 @@ class WebConsoleActor extends Actor {
           }
           if (this.global instanceof Ci.nsIDOMWindow) {
             if (!this.consoleFileActivityListener) {
-              this.consoleFileActivityListener = new ConsoleFileActivityListener(
-                this.global,
-                this
-              );
+              this.consoleFileActivityListener =
+                new ConsoleFileActivityListener(this.global, this);
             }
             this.consoleFileActivityListener.startMonitor();
             startedListeners.push(event);
@@ -749,8 +746,8 @@ class WebConsoleActor extends Actor {
 
           
           
-          const winStartTime = this.global?.performance?.timing
-            ?.navigationStart;
+          const winStartTime =
+            this.global?.performance?.timing?.navigationStart;
 
           const cache = this.consoleAPIListener.getCachedMessages(
             !this.parentActor.isRootActor
@@ -1012,9 +1009,8 @@ class WebConsoleActor extends Actor {
           } = exceptionStack[0];
           frame = { source, sourceId, line, column };
 
-          exceptionStack = WebConsoleUtils.removeFramesAboveDebuggerEval(
-            exceptionStack
-          );
+          exceptionStack =
+            WebConsoleUtils.removeFramesAboveDebuggerEval(exceptionStack);
         }
 
         errorMessage = String(error);
@@ -1097,9 +1093,8 @@ class WebConsoleActor extends Actor {
     let resultGrip;
     if (!awaitResult) {
       try {
-        const objectActor = this.parentActor.threadActor.getThreadLifetimeObject(
-          result
-        );
+        const objectActor =
+          this.parentActor.threadActor.getThreadLifetimeObject(result);
         if (objectActor) {
           resultGrip = this.parentActor.threadActor.createValueGrip(result);
         } else {
@@ -1248,7 +1243,8 @@ class WebConsoleActor extends Actor {
       
       
       if (matchProp && !lastNonAlphaIsDot && !isElementAccess) {
-        const colonOnlyCommands = WebConsoleCommandsManager.getColonOnlyCommandNames();
+        const colonOnlyCommands =
+          WebConsoleCommandsManager.getColonOnlyCommandNames();
         for (const name of WebConsoleCommandsManager.getAllCommandNames()) {
           
           if (
@@ -1358,9 +1354,8 @@ class WebConsoleActor extends Actor {
   }
 
   getActorIdForInternalSourceId(id) {
-    const actor = this.parentActor.sourcesManager.getSourceActorByInternalSourceId(
-      id
-    );
+    const actor =
+      this.parentActor.sourcesManager.getSourceActorByInternalSourceId(id);
     return actor ? actor.actorID : null;
   }
 

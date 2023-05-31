@@ -199,9 +199,8 @@ define(function (require, exports, module) {
         const value = entry && entry.value !== undefined ? entry.value : entry;
         
         
-        const type = (value && value.class
-          ? value.class
-          : typeof value
+        const type = (
+          value && value.class ? value.class : typeof value
         ).toLowerCase();
 
         if (filter(type, value, key)) {

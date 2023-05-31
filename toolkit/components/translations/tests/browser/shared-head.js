@@ -295,9 +295,10 @@ async function setupActorTest({
   });
 
   
-  const actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
-    "Translations"
-  );
+  const actor =
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+      "Translations"
+    );
 
   return {
     actor,

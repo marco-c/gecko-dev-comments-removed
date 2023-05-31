@@ -335,9 +335,8 @@ var DownloadsPanel = {
     DownloadsView.richListBox.removeAttribute("force-focus-visible");
 
     
-    DownloadsCommon.getIndicatorData(
-      window
-    ).attentionSuppressed &= ~DownloadsCommon.SUPPRESS_PANEL_OPEN;
+    DownloadsCommon.getIndicatorData(window).attentionSuppressed &=
+      ~DownloadsCommon.SUPPRESS_PANEL_OPEN;
 
     
     DownloadsButton.releaseAnchor();
@@ -729,9 +728,8 @@ var DownloadsView = {
 
   get downloadsHistory() {
     delete this.downloadsHistory;
-    return (this.downloadsHistory = document.getElementById(
-      "downloadsHistory"
-    ));
+    return (this.downloadsHistory =
+      document.getElementById("downloadsHistory"));
   },
 
   
@@ -1032,9 +1030,8 @@ var DownloadsView = {
     
     
     
-    this.contextMenu.querySelector(
-      ".downloadCopyLocationMenuItem"
-    ).hidden = !element._shell.download.source?.url;
+    this.contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden =
+      !element._shell.download.source?.url;
   },
 
   onDownloadDragStart(aEvent) {

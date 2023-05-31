@@ -98,70 +98,72 @@ add_task(async function () {
         "http://example.net/browser/browser/components/originattributes/test/browser/",
     };
 
-    await SpecialPowers.spawn(tab.linkedBrowser, [argObj], async function (
-      arg
-    ) {
-      
-      content.windowUtils.clearSharedStyleSheetCache();
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [argObj],
+      async function (arg) {
+        
+        content.windowUtils.clearSharedStyleSheetCache();
 
-      let videoURL = arg.urlPrefix + "file_thirdPartyChild.video.ogv";
-      let audioURL = arg.urlPrefix + "file_thirdPartyChild.audio.ogg";
-      let URLSuffix = "?r=" + arg.randomSuffix;
+        let videoURL = arg.urlPrefix + "file_thirdPartyChild.video.ogv";
+        let audioURL = arg.urlPrefix + "file_thirdPartyChild.audio.ogg";
+        let URLSuffix = "?r=" + arg.randomSuffix;
 
-      
-      let audio = content.document.createElement("audio");
-      let video = content.document.createElement("video");
-      let audioSource = content.document.createElement("source");
+        
+        let audio = content.document.createElement("audio");
+        let video = content.document.createElement("video");
+        let audioSource = content.document.createElement("source");
 
-      
-      await new content.Promise(resolve => {
-        let audioLoaded = false;
+        
+        await new content.Promise(resolve => {
+          let audioLoaded = false;
 
-        let audioListener = () => {
-          Assert.ok(true, `Audio suspended: ${audioURL + URLSuffix}`);
-          audio.removeEventListener("suspend", audioListener);
+          let audioListener = () => {
+            Assert.ok(true, `Audio suspended: ${audioURL + URLSuffix}`);
+            audio.removeEventListener("suspend", audioListener);
 
-          audioLoaded = true;
-          if (audioLoaded) {
+            audioLoaded = true;
+            if (audioLoaded) {
+              resolve();
+            }
+          };
+
+          Assert.ok(true, `Loading audio: ${audioURL + URLSuffix}`);
+
+          
+          audio.addEventListener("suspend", audioListener);
+
+          
+          audioSource.setAttribute("src", audioURL + URLSuffix);
+          audioSource.setAttribute("type", "audio/ogg");
+
+          audio.appendChild(audioSource);
+          audio.autoplay = true;
+
+          content.document.body.appendChild(audio);
+        });
+
+        
+        await new content.Promise(resolve => {
+          let listener = () => {
+            Assert.ok(true, `Video suspended: ${videoURL + URLSuffix}`);
+            video.removeEventListener("suspend", listener);
             resolve();
-          }
-        };
+          };
 
-        Assert.ok(true, `Loading audio: ${audioURL + URLSuffix}`);
+          Assert.ok(true, `Loading video: ${videoURL + URLSuffix}`);
 
-        
-        audio.addEventListener("suspend", audioListener);
+          
+          video.addEventListener("suspend", listener);
 
-        
-        audioSource.setAttribute("src", audioURL + URLSuffix);
-        audioSource.setAttribute("type", "audio/ogg");
+          
+          video.setAttribute("src", videoURL + URLSuffix);
+          video.setAttribute("type", "video/ogg");
 
-        audio.appendChild(audioSource);
-        audio.autoplay = true;
-
-        content.document.body.appendChild(audio);
-      });
-
-      
-      await new content.Promise(resolve => {
-        let listener = () => {
-          Assert.ok(true, `Video suspended: ${videoURL + URLSuffix}`);
-          video.removeEventListener("suspend", listener);
-          resolve();
-        };
-
-        Assert.ok(true, `Loading video: ${videoURL + URLSuffix}`);
-
-        
-        video.addEventListener("suspend", listener);
-
-        
-        video.setAttribute("src", videoURL + URLSuffix);
-        video.setAttribute("type", "video/ogg");
-
-        content.document.body.appendChild(video);
-      });
-    });
+          content.document.body.appendChild(video);
+        });
+      }
+    );
 
     let maybePartitionedSuffixes = [
       "iframe.html",

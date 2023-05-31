@@ -10,103 +10,111 @@ const TEST_DIALOG_PATH = TEST_ROOT_CHROME + "subdialog.xhtml";
 
 
 add_task(async function test_tabdialogbox_multiple_close_on_nav() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    
-    let dialogBox = gBrowser.getTabDialogBox(browser);
-    let closedPromises = [
-      dialogBox.open(TEST_DIALOG_PATH).closedPromise,
-      dialogBox.open(TEST_DIALOG_PATH).closedPromise,
-    ];
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
+      
+      let dialogBox = gBrowser.getTabDialogBox(browser);
+      let closedPromises = [
+        dialogBox.open(TEST_DIALOG_PATH).closedPromise,
+        dialogBox.open(TEST_DIALOG_PATH).closedPromise,
+      ];
 
-    let dialogs = dialogBox.getTabDialogManager()._dialogs;
+      let dialogs = dialogBox.getTabDialogManager()._dialogs;
 
-    is(dialogs.length, 2, "Dialog manager has two dialogs.");
+      is(dialogs.length, 2, "Dialog manager has two dialogs.");
 
-    info("Waiting for dialogs to open.");
-    await Promise.all(dialogs.map(dialog => dialog._dialogReady));
+      info("Waiting for dialogs to open.");
+      await Promise.all(dialogs.map(dialog => dialog._dialogReady));
 
-    
-    BrowserTestUtils.loadURIString(browser, "https://example.org");
+      
+      BrowserTestUtils.loadURIString(browser, "https://example.org");
 
-    info("Waiting for dialogs to close.");
-    await closedPromises;
+      info("Waiting for dialogs to close.");
+      await closedPromises;
 
-    ok(true, "All open dialogs should close on navigation");
-  });
+      ok(true, "All open dialogs should close on navigation");
+    }
+  );
 });
 
 
 
 
 add_task(async function test_tabdialogbox_close_on_content_nav() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    
-    let dialogBox = gBrowser.getTabDialogBox(browser);
-    let { closedPromise } = dialogBox.open(TEST_DIALOG_PATH);
-
-    let dialog = dialogBox.getTabDialogManager()._topDialog;
-
-    is(
-      dialogBox.getTabDialogManager()._dialogs.length,
-      1,
-      "Dialog manager has one dialog."
-    );
-
-    info("Waiting for dialog to open.");
-    await dialog._dialogReady;
-
-    
-    await ContentTask.spawn(browser, {}, () => {
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
       
-      content.location = "http://example.com/1";
-    });
+      let dialogBox = gBrowser.getTabDialogBox(browser);
+      let { closedPromise } = dialogBox.open(TEST_DIALOG_PATH);
 
-    info("Waiting for dialog to close.");
-    await closedPromise;
-    ok(true, "Dialog should close for same origin navigation by the content.");
+      let dialog = dialogBox.getTabDialogManager()._topDialog;
 
-    
-    closedPromise = dialogBox.open(TEST_DIALOG_PATH, {
-      keepOpenSameOriginNav: true,
-    }).closedPromise;
+      is(
+        dialogBox.getTabDialogManager()._dialogs.length,
+        1,
+        "Dialog manager has one dialog."
+      );
 
-    info("Waiting for dialog to open.");
-    await dialog._dialogReady;
+      info("Waiting for dialog to open.");
+      await dialog._dialogReady;
 
-    SimpleTest.requestFlakyTimeout("Waiting to ensure dialog does not close");
-    let race = Promise.race([
-      closedPromise,
       
-      new Promise(resolve => setTimeout(() => resolve("success"), 1000)),
-    ]);
+      await ContentTask.spawn(browser, {}, () => {
+        
+        content.location = "http://example.com/1";
+      });
 
-    
-    await ContentTask.spawn(browser, {}, () => {
+      info("Waiting for dialog to close.");
+      await closedPromise;
+      ok(
+        true,
+        "Dialog should close for same origin navigation by the content."
+      );
+
       
-      content.location = "http://example.com/test";
-    });
+      closedPromise = dialogBox.open(TEST_DIALOG_PATH, {
+        keepOpenSameOriginNav: true,
+      }).closedPromise;
 
-    is(
-      await race,
-      "success",
-      "Dialog should not close for same origin navigation by the content."
-    );
+      info("Waiting for dialog to open.");
+      await dialog._dialogReady;
 
-    
-    await ContentTask.spawn(browser, {}, () => {
+      SimpleTest.requestFlakyTimeout("Waiting to ensure dialog does not close");
+      let race = Promise.race([
+        closedPromise,
+        
+        new Promise(resolve => setTimeout(() => resolve("success"), 1000)),
+      ]);
+
       
-      content.location = "http://example.org/test2";
-    });
+      await ContentTask.spawn(browser, {}, () => {
+        
+        content.location = "http://example.com/test";
+      });
 
-    info("Waiting for dialog to close");
-    await closedPromise;
+      is(
+        await race,
+        "success",
+        "Dialog should not close for same origin navigation by the content."
+      );
 
-    ok(true, "Dialog should close for cross origin navigation by the content.");
-  });
+      
+      await ContentTask.spawn(browser, {}, () => {
+        
+        content.location = "http://example.org/test2";
+      });
+
+      info("Waiting for dialog to close");
+      await closedPromise;
+
+      ok(
+        true,
+        "Dialog should close for cross origin navigation by the content."
+      );
+    }
+  );
 });
 
 
@@ -114,52 +122,53 @@ add_task(async function test_tabdialogbox_close_on_content_nav() {
 
 
 add_task(async function test_tabdialogbox_hide() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    
-    let dialogBox = gBrowser.getTabDialogBox(browser);
-    let dialogBoxManager = dialogBox.getTabDialogManager();
-    let closedPromises = [
-      dialogBox.open(TEST_DIALOG_PATH).closedPromise,
-      dialogBox.open(TEST_DIALOG_PATH).closedPromise,
-    ];
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
+      
+      let dialogBox = gBrowser.getTabDialogBox(browser);
+      let dialogBoxManager = dialogBox.getTabDialogManager();
+      let closedPromises = [
+        dialogBox.open(TEST_DIALOG_PATH).closedPromise,
+        dialogBox.open(TEST_DIALOG_PATH).closedPromise,
+      ];
 
-    let dialogs = dialogBox.getTabDialogManager()._dialogs;
+      let dialogs = dialogBox.getTabDialogManager()._dialogs;
 
-    is(
-      dialogBox.getTabDialogManager()._dialogs.length,
-      2,
-      "Dialog manager has two dialogs."
-    );
+      is(
+        dialogBox.getTabDialogManager()._dialogs.length,
+        2,
+        "Dialog manager has two dialogs."
+      );
 
-    info("Waiting for dialogs to open.");
-    await Promise.all(dialogs.map(dialog => dialog._dialogReady));
+      info("Waiting for dialogs to open.");
+      await Promise.all(dialogs.map(dialog => dialog._dialogReady));
 
-    ok(
-      !BrowserTestUtils.is_hidden(dialogBoxManager._dialogStack),
-      "Dialog stack is showing"
-    );
+      ok(
+        !BrowserTestUtils.is_hidden(dialogBoxManager._dialogStack),
+        "Dialog stack is showing"
+      );
 
-    dialogBoxManager.hideDialog(browser);
+      dialogBoxManager.hideDialog(browser);
 
-    is(
-      dialogBoxManager._dialogs.length,
-      2,
-      "Dialog manager still has two dialogs."
-    );
+      is(
+        dialogBoxManager._dialogs.length,
+        2,
+        "Dialog manager still has two dialogs."
+      );
 
-    ok(
-      BrowserTestUtils.is_hidden(dialogBoxManager._dialogStack),
-      "Dialog stack is hidden"
-    );
+      ok(
+        BrowserTestUtils.is_hidden(dialogBoxManager._dialogStack),
+        "Dialog stack is hidden"
+      );
 
-    
-    BrowserTestUtils.loadURIString(browser, "https://example.org");
+      
+      BrowserTestUtils.loadURIString(browser, "https://example.org");
 
-    info("Waiting for dialogs to close.");
-    await closedPromises;
+      info("Waiting for dialogs to close.");
+      await closedPromises;
 
-    ok(true, "All open dialogs should still close on navigation");
-  });
+      ok(true, "All open dialogs should still close on navigation");
+    }
+  );
 });

@@ -7,19 +7,20 @@ async function runTest(desc, url, expectedURI) {
     BrowserTestUtils.loadURIString(browser, url);
     await loaded;
 
-    await SpecialPowers.spawn(browser, [desc, expectedURI], async function (
-      desc,
-      expectedURI
-    ) {
-      
-      
-      
-      let loadedURI = content.document.documentURI;
-      if (loadedURI.startsWith("about:neterror")) {
-        loadedURI = content.docShell.failedChannel.URI.spec;
+    await SpecialPowers.spawn(
+      browser,
+      [desc, expectedURI],
+      async function (desc, expectedURI) {
+        
+        
+        
+        let loadedURI = content.document.documentURI;
+        if (loadedURI.startsWith("about:neterror")) {
+          loadedURI = content.docShell.failedChannel.URI.spec;
+        }
+        is(loadedURI, expectedURI, desc);
       }
-      is(loadedURI, expectedURI, desc);
-    });
+    );
   });
 }
 

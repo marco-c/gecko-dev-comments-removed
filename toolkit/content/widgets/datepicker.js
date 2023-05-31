@@ -279,9 +279,8 @@ function DatePicker(context) {
             case " ":
             case "Escape": {
               
-              const isOnMonthPicker = this.context.monthYearView.parentNode.contains(
-                event.target
-              );
+              const isOnMonthPicker =
+                this.context.monthYearView.parentNode.contains(event.target);
 
               if (this.state.isMonthPickerVisible && isOnMonthPicker) {
                 

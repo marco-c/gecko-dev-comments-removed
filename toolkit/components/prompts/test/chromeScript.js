@@ -238,9 +238,8 @@ function getPromptState(ui) {
 
   
   let isEmbedded = !!ui.prompt?.docShell?.chromeEventHandler;
-  let isCommonDialogDoc = getDialogDoc()?.location.href.includes(
-    "commonDialog.xhtml"
-  );
+  let isCommonDialogDoc =
+    getDialogDoc()?.location.href.includes("commonDialog.xhtml");
   state.isSubDialogPrompt = isCommonDialogDoc && isEmbedded;
   state.showCallerOrigin = ui.prompt.args.showCallerOrigin;
 

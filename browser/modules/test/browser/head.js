@@ -51,15 +51,16 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 let typeInSearchField = async function (browser, text, fieldName) {
-  await SpecialPowers.spawn(browser, [[fieldName, text]], async function ([
-    contentFieldName,
-    contentText,
-  ]) {
-    
-    let searchInput = content.document.getElementById(contentFieldName);
-    searchInput.focus();
-    searchInput.value = contentText;
-  });
+  await SpecialPowers.spawn(
+    browser,
+    [[fieldName, text]],
+    async function ([contentFieldName, contentText]) {
+      
+      let searchInput = content.document.getElementById(contentFieldName);
+      searchInput.focus();
+      searchInput.value = contentText;
+    }
+  );
 };
 
 
@@ -166,9 +167,8 @@ function clickSecondaryAction(actionIndex) {
     
     
     
-    let actionMenuItem = popupNotification.querySelectorAll("menuitem")[
-      actionIndex - 1
-    ];
+    let actionMenuItem =
+      popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
     await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
     await removePromise;
   })();

@@ -176,14 +176,15 @@ async function testPageWithURI(uri, message, expect) {
 
   
   let browser = tab.linkedBrowser;
-  await SpecialPowers.spawn(browser, [message, expect], function (
-    message,
-    expect
-  ) {
-    const doc = content.document;
-    let result = doc.documentURI.startsWith("about:httpsonlyerror");
-    is(result, expect, message);
-  });
+  await SpecialPowers.spawn(
+    browser,
+    [message, expect],
+    function (message, expect) {
+      const doc = content.document;
+      let result = doc.documentURI.startsWith("about:httpsonlyerror");
+      is(result, expect, message);
+    }
+  );
 
   
   BrowserTestUtils.removeTab(tab);

@@ -1,9 +1,10 @@
 add_task(async function () {
   
   
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "https://example.com"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.com"
+    );
   Services.perms.addFromPrincipal(
     principal,
     "viewsourceTestingPerm",

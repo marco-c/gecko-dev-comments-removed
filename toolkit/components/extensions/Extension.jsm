@@ -332,9 +332,8 @@ function isMozillaExtension(extension) {
   
   
   
-  const isMozillaLineExtension = addonData.recommendationState?.states?.includes(
-    "line"
-  );
+  const isMozillaLineExtension =
+    addonData.recommendationState?.states?.includes("line");
   const isSigned =
     addonData.signedState > lazy.AddonManager.SIGNEDSTATE_MISSING;
 
@@ -598,12 +597,10 @@ var ExtensionAddonObserver = {
       Services.qms.clearStoragesForPrincipal(principal);
 
       
-      let storagePrincipal = Services.scriptSecurityManager.createContentPrincipal(
-        baseURI,
-        {
+      let storagePrincipal =
+        Services.scriptSecurityManager.createContentPrincipal(baseURI, {
           userContextId: WEBEXT_STORAGE_USER_CONTEXT_ID,
-        }
-      );
+        });
       Services.qms.clearStoragesForPrincipal(storagePrincipal);
 
       lazy.ExtensionStorageIDB.clearMigratedExtensionPref(addon.id);
@@ -1489,10 +1486,8 @@ class ExtensionData {
       AppConstants.platform == "android" &&
       manifest.browser_specific_settings?.gecko_android
     ) {
-      const {
-        strict_min_version,
-        strict_max_version,
-      } = manifest.browser_specific_settings.gecko_android;
+      const { strict_min_version, strict_max_version } =
+        manifest.browser_specific_settings.gecko_android;
 
       if (strict_min_version?.length) {
         manifest.applications.gecko.strict_min_version = strict_min_version;
@@ -2417,11 +2412,10 @@ class ExtensionData {
     
     for (let permission of optional_permissions.permissions) {
       if (permission == NATIVE_MSG_PERM) {
-        result.optionalPermissions[
-          permission
-        ] = bundle.formatStringFromName(getKeyForPermission(permission), [
-          info.appName,
-        ]);
+        result.optionalPermissions[permission] = bundle.formatStringFromName(
+          getKeyForPermission(permission),
+          [info.appName]
+        );
         continue;
       }
       try {

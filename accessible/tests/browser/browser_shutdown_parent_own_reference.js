@@ -32,9 +32,8 @@ add_task(async function () {
       
       
       const [parentA11yInitObserver, parentA11yInit] = initAccService();
-      const [contentA11yInitObserver, contentA11yInit] = initAccService(
-        browser
-      );
+      const [contentA11yInitObserver, contentA11yInit] =
+        initAccService(browser);
 
       await Promise.all([parentA11yInitObserver, contentA11yInitObserver]);
 
@@ -61,10 +60,8 @@ add_task(async function () {
       
       
       
-      const [
-        contentA11yShutdownObserver,
-        contentA11yShutdownPromise,
-      ] = shutdownAccService(browser);
+      const [contentA11yShutdownObserver, contentA11yShutdownPromise] =
+        shutdownAccService(browser);
       await contentA11yShutdownObserver;
       const contentA11yShutdown = new Promise((resolve, reject) =>
         contentA11yShutdownPromise.then(flag =>
@@ -87,10 +84,8 @@ add_task(async function () {
       
       contentCanShutdown = true;
       
-      const [
-        parentA11yShutdownObserver,
-        parentA11yShutdown,
-      ] = shutdownAccService();
+      const [parentA11yShutdownObserver, parentA11yShutdown] =
+        shutdownAccService();
       await parentA11yShutdownObserver;
 
       accService = null;

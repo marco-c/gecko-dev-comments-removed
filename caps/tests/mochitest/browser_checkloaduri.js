@@ -335,49 +335,59 @@ add_task(async function () {
   }
 
   
-  await BrowserTestUtils.withNewTab("http://www.example.com/", async function (
-    browser
-  ) {
-    await SpecialPowers.spawn(browser, [testURL.toString()], async function (
-      testURLFn
-    ) {
-      
-      let testURL = eval("(" + testURLFn + ")");
-      
-      let ssm = Services.scriptSecurityManager;
-      
-      let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
-      
-      let b = new content.Blob(["I am a blob"]);
-      let contentBlobURI = content.URL.createObjectURL(b);
-      let contentPrincipal = content.document.nodePrincipal;
-      
-      testURL(contentPrincipal, contentBlobURI, true, true, true, baseFlags);
-      testURL(
-        contentPrincipal,
-        contentBlobURI,
-        true,
-        true,
-        true,
-        baseFlags | ssm.DISALLOW_INHERIT_PRINCIPAL
-      );
+  await BrowserTestUtils.withNewTab(
+    "http://www.example.com/",
+    async function (browser) {
+      await SpecialPowers.spawn(
+        browser,
+        [testURL.toString()],
+        async function (testURLFn) {
+          
+          let testURL = eval("(" + testURLFn + ")");
+          
+          let ssm = Services.scriptSecurityManager;
+          
+          let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
+          
+          let b = new content.Blob(["I am a blob"]);
+          let contentBlobURI = content.URL.createObjectURL(b);
+          let contentPrincipal = content.document.nodePrincipal;
+          
+          testURL(
+            contentPrincipal,
+            contentBlobURI,
+            true,
+            true,
+            true,
+            baseFlags
+          );
+          testURL(
+            contentPrincipal,
+            contentBlobURI,
+            true,
+            true,
+            true,
+            baseFlags | ssm.DISALLOW_INHERIT_PRINCIPAL
+          );
 
-      testURL(
-        contentPrincipal,
-        "view-source:" + contentBlobURI,
-        false,
-        false,
-        true,
-        baseFlags
+          testURL(
+            contentPrincipal,
+            "view-source:" + contentBlobURI,
+            false,
+            false,
+            true,
+            baseFlags
+          );
+          testURL(
+            contentPrincipal,
+            "view-source:" + contentBlobURI,
+            false,
+            false,
+            true,
+            baseFlags | ssm.DISALLOW_INHERIT_PRINCIPAL
+          );
+        }
       );
-      testURL(
-        contentPrincipal,
-        "view-source:" + contentBlobURI,
-        false,
-        false,
-        true,
-        baseFlags | ssm.DISALLOW_INHERIT_PRINCIPAL
-      );
-    });
-  });
+    }
+  );
 });

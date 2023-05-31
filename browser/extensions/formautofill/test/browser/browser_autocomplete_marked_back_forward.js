@@ -25,41 +25,42 @@ add_task(async function setup_storage() {
 });
 
 add_task(async function test_back_forward() {
-  await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function (
-    browser
-  ) {
-    const { autoCompletePopup } = browser;
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: URL },
+    async function (browser) {
+      const { autoCompletePopup } = browser;
 
-    
-    await openPopupOn(browser, "#street-address");
-    checkPopup(autoCompletePopup);
+      
+      await openPopupOn(browser, "#street-address");
+      checkPopup(autoCompletePopup);
 
-    
-    let loadPromise = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.loadURIString(browser, `${URL}?load=2`);
-    info("expecting browser loaded");
-    await loadPromise;
+      
+      let loadPromise = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURIString(browser, `${URL}?load=2`);
+      info("expecting browser loaded");
+      await loadPromise;
 
-    
-    await openPopupOn(browser, "#street-address");
-    checkPopup(autoCompletePopup);
+      
+      await openPopupOn(browser, "#street-address");
+      checkPopup(autoCompletePopup);
 
-    
-    let stoppedPromise = BrowserTestUtils.browserStopped(browser);
-    browser.goBack();
-    info("expecting browser stopped");
-    await stoppedPromise;
-    await openPopupOn(browser, "#street-address");
-    checkPopup(autoCompletePopup);
+      
+      let stoppedPromise = BrowserTestUtils.browserStopped(browser);
+      browser.goBack();
+      info("expecting browser stopped");
+      await stoppedPromise;
+      await openPopupOn(browser, "#street-address");
+      checkPopup(autoCompletePopup);
 
-    
-    stoppedPromise = BrowserTestUtils.browserStopped(browser);
-    browser.goForward();
-    info("expecting browser stopped");
-    await stoppedPromise;
-    await openPopupOn(browser, "#street-address");
-    checkPopup(autoCompletePopup);
+      
+      stoppedPromise = BrowserTestUtils.browserStopped(browser);
+      browser.goForward();
+      info("expecting browser stopped");
+      await stoppedPromise;
+      await openPopupOn(browser, "#street-address");
+      checkPopup(autoCompletePopup);
 
-    await closePopup(browser);
-  });
+      await closePopup(browser);
+    }
+  );
 });

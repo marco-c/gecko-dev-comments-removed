@@ -233,11 +233,13 @@ if (params.comparePrefs) {
 }
 
 
-TestRunner.logger.addListener("dumpListener", consoleLevel + "", function (
-  msg
-) {
-  dump(msg.info.join(" ") + "\n");
-});
+TestRunner.logger.addListener(
+  "dumpListener",
+  consoleLevel + "",
+  function (msg) {
+    dump(msg.info.join(" ") + "\n");
+  }
+);
 
 var gTestList = [];
 var RunSet = {};
@@ -247,12 +249,14 @@ RunSet.runall = function (e) {
   
   
   if (params.testManifest) {
-    getTestManifest(getTestManifestURL(params.testManifest), params, function (
-      filter
-    ) {
-      gTestList = filterTests(filter, gTestList, params.runOnly);
-      RunSet.runtests();
-    });
+    getTestManifest(
+      getTestManifestURL(params.testManifest),
+      params,
+      function (filter) {
+        gTestList = filterTests(filter, gTestList, params.runOnly);
+        RunSet.runtests();
+      }
+    );
   } else {
     RunSet.runtests();
   }

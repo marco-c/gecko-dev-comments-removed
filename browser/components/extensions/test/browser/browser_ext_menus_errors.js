@@ -17,11 +17,13 @@ add_task(async function test_create_error() {
       },
       
       {
-        message: /Unchecked lastError value: Error: Could not find any MenuItem with id: noCb/,
+        message:
+          /Unchecked lastError value: Error: Could not find any MenuItem with id: noCb/,
       },
       
       {
-        message: /Unchecked lastError value: Error: Could not find any MenuItem with id: cbIgnoreError/,
+        message:
+          /Unchecked lastError value: Error: Could not find any MenuItem with id: cbIgnoreError/,
       },
     ]);
   });

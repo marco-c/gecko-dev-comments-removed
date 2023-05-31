@@ -64,8 +64,8 @@ async function run_testcase(testcase) {
     
     BrowserTestUtils.loadURIString(browser, kSecureURI);
     await BrowserTestUtils.browserLoaded(browser, false, kSecureURI);
-    let secureIdentityMode = window.document.getElementById("identity-box")
-      .className;
+    let secureIdentityMode =
+      window.document.getElementById("identity-box").className;
     is(secureIdentityMode, "verifiedDomain", "identity should be secure now");
 
     
@@ -75,8 +75,8 @@ async function run_testcase(testcase) {
     } else {
       await BrowserTestUtils.waitForErrorPage(browser);
     }
-    let identityModeAgain = window.document.getElementById("identity-box")
-      .classList;
+    let identityModeAgain =
+      window.document.getElementById("identity-box").classList;
     ok(
       identityModeAgain.contains(testcase.expectedIdentityMode),
       `identity should again be ${testcase.expectedIdentityMode}`
@@ -86,8 +86,8 @@ async function run_testcase(testcase) {
   
   
   await BrowserTestUtils.withNewTab(kSecureURI, async browser => {
-    let secureIdentityMode = window.document.getElementById("identity-box")
-      .className;
+    let secureIdentityMode =
+      window.document.getElementById("identity-box").className;
     is(secureIdentityMode, "verifiedDomain", "identity should start as secure");
 
     
@@ -106,8 +106,8 @@ async function run_testcase(testcase) {
     
     browser.webNavigation.goBack();
     await BrowserTestUtils.browserStopped(browser, kSecureURI);
-    let secureIdentityModeAgain = window.document.getElementById("identity-box")
-      .className;
+    let secureIdentityModeAgain =
+      window.document.getElementById("identity-box").className;
     is(
       secureIdentityModeAgain,
       "verifiedDomain",
@@ -121,8 +121,8 @@ async function run_testcase(testcase) {
     } else {
       await BrowserTestUtils.waitForErrorPage(browser);
     }
-    let identityModeAgain = window.document.getElementById("identity-box")
-      .classList;
+    let identityModeAgain =
+      window.document.getElementById("identity-box").classList;
     ok(
       identityModeAgain.contains(testcase.expectedIdentityMode),
       `identity should again be ${testcase.expectedIdentityMode}`

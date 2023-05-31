@@ -84,12 +84,12 @@ function run_test() {
 
 
 async function insertLocalRoot({ guid, title }) {
-  await PlacesUtils.withConnectionWrapper("insertLocalRoot", async function (
-    db
-  ) {
-    let dateAdded = PlacesUtils.toPRTime(new Date());
-    await db.execute(
-      `
+  await PlacesUtils.withConnectionWrapper(
+    "insertLocalRoot",
+    async function (db) {
+      let dateAdded = PlacesUtils.toPRTime(new Date());
+      await db.execute(
+        `
         INSERT INTO moz_bookmarks(guid, type, parent, position, title,
                                   dateAdded, lastModified)
         VALUES(:guid, :type, (SELECT id FROM moz_bookmarks
@@ -98,15 +98,16 @@ async function insertLocalRoot({ guid, title }) {
                 WHERE parent = (SELECT id FROM moz_bookmarks
                                 WHERE guid = :parentGuid)),
                :title, :dateAdded, :dateAdded)`,
-      {
-        guid,
-        type: PlacesUtils.bookmarks.TYPE_FOLDER,
-        parentGuid: PlacesUtils.bookmarks.rootGuid,
-        title,
-        dateAdded,
-      }
-    );
-  });
+        {
+          guid,
+          type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          parentGuid: PlacesUtils.bookmarks.rootGuid,
+          title,
+          dateAdded,
+        }
+      );
+    }
+  );
 }
 
 

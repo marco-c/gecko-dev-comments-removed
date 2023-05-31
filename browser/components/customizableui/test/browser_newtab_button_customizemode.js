@@ -132,9 +132,8 @@ add_task(async function addremove_after_newtab_api() {
 
 
 add_task(async function addremove_before_newtab_api() {
-  let index = CustomizableUI.getWidgetIdsInArea("TabsToolbar").indexOf(
-    "new-tab-button"
-  );
+  let index =
+    CustomizableUI.getWidgetIdsInArea("TabsToolbar").indexOf("new-tab-button");
   CustomizableUI.addWidgetToArea("stop-reload-button", "TabsToolbar", index);
   ok(
     !gBrowser.tabContainer.hasAttribute("hasadjacentnewtabbutton"),

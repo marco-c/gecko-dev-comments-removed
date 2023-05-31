@@ -192,24 +192,25 @@ add_task(async function testTabStopsPageLoaded() {
 
 
 add_task(async function testTabStopsWithNotification() {
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
-    aBrowser
-  ) {
-    let popupShown = BrowserTestUtils.waitForEvent(
-      PopupNotifications.panel,
-      "popupshown"
-    );
-    
-    BrowserTestUtils.synthesizeMouseAtCenter("#geo", {}, aBrowser);
-    await popupShown;
-    startFromUrlBar();
-    
-    
-    await expectFocusAfterKey(
-      "Shift+Tab",
-      "tracking-protection-icon-container"
-    );
-  });
+  await BrowserTestUtils.withNewTab(
+    PERMISSIONS_PAGE,
+    async function (aBrowser) {
+      let popupShown = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popupshown"
+      );
+      
+      BrowserTestUtils.synthesizeMouseAtCenter("#geo", {}, aBrowser);
+      await popupShown;
+      startFromUrlBar();
+      
+      
+      await expectFocusAfterKey(
+        "Shift+Tab",
+        "tracking-protection-icon-container"
+      );
+    }
+  );
 });
 
 
@@ -296,36 +297,37 @@ add_task(async function testArrowsRoleButton() {
 
 
 add_task(async function testArrowsDisabledButtons() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    aBrowser
-  ) {
-    await waitUntilReloadEnabled();
-    startFromUrlBar();
-    await expectFocusAfterKey(
-      "Shift+Tab",
-      "tracking-protection-icon-container"
-    );
-    
-    await expectFocusAfterKey("Shift+Tab", "reload-button");
-    EventUtils.synthesizeKey("KEY_ArrowLeft");
-    is(
-      document.activeElement.id,
-      "reload-button",
-      "ArrowLeft on Reload button when prior buttons disabled does nothing"
-    );
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (aBrowser) {
+      await waitUntilReloadEnabled();
+      startFromUrlBar();
+      await expectFocusAfterKey(
+        "Shift+Tab",
+        "tracking-protection-icon-container"
+      );
+      
+      await expectFocusAfterKey("Shift+Tab", "reload-button");
+      EventUtils.synthesizeKey("KEY_ArrowLeft");
+      is(
+        document.activeElement.id,
+        "reload-button",
+        "ArrowLeft on Reload button when prior buttons disabled does nothing"
+      );
 
-    BrowserTestUtils.loadURIString(aBrowser, "https://example.com/2");
-    await BrowserTestUtils.browserLoaded(aBrowser);
-    await waitUntilReloadEnabled();
-    startFromUrlBar();
-    await expectFocusAfterKey(
-      "Shift+Tab",
-      "tracking-protection-icon-container"
-    );
-    await expectFocusAfterKey("Shift+Tab", "back-button");
-    
-    await expectFocusAfterKey("ArrowRight", "reload-button");
-  });
+      BrowserTestUtils.loadURIString(aBrowser, "https://example.com/2");
+      await BrowserTestUtils.browserLoaded(aBrowser);
+      await waitUntilReloadEnabled();
+      startFromUrlBar();
+      await expectFocusAfterKey(
+        "Shift+Tab",
+        "tracking-protection-icon-container"
+      );
+      await expectFocusAfterKey("Shift+Tab", "back-button");
+      
+      await expectFocusAfterKey("ArrowRight", "reload-button");
+    }
+  );
 });
 
 
@@ -464,26 +466,27 @@ add_task(async function testPanelCloseRestoresFocus() {
 
 
 add_task(async function testArrowKeyForTPIconContainerandIdentityBox() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    
-    gBrowser.updateBrowserSharing(browser, { geo: true });
-    await waitUntilReloadEnabled();
-    startFromUrlBar();
-    await expectFocusAfterKey(
-      "Shift+Tab",
-      "tracking-protection-icon-container"
-    );
-    await expectFocusAfterKey("ArrowRight", "identity-icon-box");
-    await expectFocusAfterKey("ArrowRight", "identity-permission-box");
-    await expectFocusAfterKey("ArrowLeft", "identity-icon-box");
-    await expectFocusAfterKey(
-      "ArrowLeft",
-      "tracking-protection-icon-container"
-    );
-    gBrowser.updateBrowserSharing(browser, { geo: false });
-  });
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
+      
+      gBrowser.updateBrowserSharing(browser, { geo: true });
+      await waitUntilReloadEnabled();
+      startFromUrlBar();
+      await expectFocusAfterKey(
+        "Shift+Tab",
+        "tracking-protection-icon-container"
+      );
+      await expectFocusAfterKey("ArrowRight", "identity-icon-box");
+      await expectFocusAfterKey("ArrowRight", "identity-permission-box");
+      await expectFocusAfterKey("ArrowLeft", "identity-icon-box");
+      await expectFocusAfterKey(
+        "ArrowLeft",
+        "tracking-protection-icon-container"
+      );
+      gBrowser.updateBrowserSharing(browser, { geo: false });
+    }
+  );
 });
 
 
@@ -570,63 +573,65 @@ add_task(async function testFirefoxViewButtonNavigation() {
   
   
   
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
-    aBrowser
-  ) {
-    await SpecialPowers.spawn(aBrowser, [], async () => {
-      content.document.querySelector("#camera").focus();
-    });
+  await BrowserTestUtils.withNewTab(
+    PERMISSIONS_PAGE,
+    async function (aBrowser) {
+      await SpecialPowers.spawn(aBrowser, [], async () => {
+        content.document.querySelector("#camera").focus();
+      });
 
-    await expectFocusAfterKey("Tab", "firefox-view-button");
-    let selectedTab = document.querySelector("tab[selected]");
-    await expectFocusAfterKey("Tab", selectedTab);
-    await expectFocusAfterKey("Tab", "new-tab-button");
-    await expectFocusAfterKey("Shift+Tab", selectedTab);
-    await expectFocusAfterKey("Shift+Tab", "firefox-view-button");
+      await expectFocusAfterKey("Tab", "firefox-view-button");
+      let selectedTab = document.querySelector("tab[selected]");
+      await expectFocusAfterKey("Tab", selectedTab);
+      await expectFocusAfterKey("Tab", "new-tab-button");
+      await expectFocusAfterKey("Shift+Tab", selectedTab);
+      await expectFocusAfterKey("Shift+Tab", "firefox-view-button");
 
-    
-    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-    await SpecialPowers.spawn(aBrowser, [], async () => {
-      let activeElement = content.document.activeElement;
-      let expectedElement = content.document.querySelector("#camera");
-      is(
-        activeElement,
-        expectedElement,
-        "Focus should be returned to the 'camera' button"
-      );
-    });
-  });
+      
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+      await SpecialPowers.spawn(aBrowser, [], async () => {
+        let activeElement = content.document.activeElement;
+        let expectedElement = content.document.querySelector("#camera");
+        is(
+          activeElement,
+          expectedElement,
+          "Focus should be returned to the 'camera' button"
+        );
+      });
+    }
+  );
 
   
   
   
   
-  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function (
-    aBrowser
-  ) {
-    removeFirefoxViewButton();
+  await BrowserTestUtils.withNewTab(
+    PERMISSIONS_PAGE,
+    async function (aBrowser) {
+      removeFirefoxViewButton();
 
-    await SpecialPowers.spawn(aBrowser, [], async () => {
-      content.document.querySelector("#camera").focus();
-    });
+      await SpecialPowers.spawn(aBrowser, [], async () => {
+        content.document.querySelector("#camera").focus();
+      });
 
-    let selectedTab = document.querySelector("tab[selected]");
-    await expectFocusAfterKey("Tab", selectedTab);
-    await expectFocusAfterKey("Tab", "new-tab-button");
-    await expectFocusAfterKey("Shift+Tab", selectedTab);
+      let selectedTab = document.querySelector("tab[selected]");
+      await expectFocusAfterKey("Tab", selectedTab);
+      await expectFocusAfterKey("Tab", "new-tab-button");
+      await expectFocusAfterKey("Shift+Tab", selectedTab);
 
-    
-    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-    await SpecialPowers.spawn(aBrowser, [], async () => {
-      let activeElement = content.document.activeElement;
-      let expectedElement = content.document.querySelector("#camera");
-      is(
-        activeElement,
-        expectedElement,
-        "Focus should be returned to the 'camera' button"
-      );
-    });
-  });
+      
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+      await SpecialPowers.spawn(aBrowser, [], async () => {
+        let activeElement = content.document.activeElement;
+        let expectedElement = content.document.querySelector("#camera");
+        is(
+          activeElement,
+          expectedElement,
+          "Focus should be returned to the 'camera' button"
+        );
+      });
+    }
+  );
 
   
   while (gBrowser.tabs.length > 1) {

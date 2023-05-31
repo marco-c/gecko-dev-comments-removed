@@ -51,9 +51,8 @@ add_task(async function test_legacy_wizard() {
     });
 
     let histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    let legacyHistogram = TelemetryTestUtils.getAndClearHistogram(
-      LEGACY_HISTOGRAM_ID
-    );
+    let legacyHistogram =
+      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
 
     
     
@@ -71,9 +70,8 @@ add_task(async function test_legacy_wizard() {
     }
 
     histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    legacyHistogram = TelemetryTestUtils.getAndClearHistogram(
-      LEGACY_HISTOGRAM_ID
-    );
+    legacyHistogram =
+      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
 
     
     
@@ -90,9 +88,8 @@ add_task(async function test_legacy_wizard() {
     }
 
     histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    legacyHistogram = TelemetryTestUtils.getAndClearHistogram(
-      LEGACY_HISTOGRAM_ID
-    );
+    legacyHistogram =
+      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
 
     
     await showThenCloseMigrationWizardViaEntrypoint(undefined);

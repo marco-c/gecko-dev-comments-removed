@@ -16,52 +16,62 @@ const {
 
 
 
-exports.reset = (resetAccessiblity, supports) => async ({ dispatch }) => {
-  try {
-    const { enabled, canBeDisabled, canBeEnabled } = await resetAccessiblity();
-    dispatch({ enabled, canBeDisabled, canBeEnabled, supports, type: RESET });
-  } catch (error) {
-    dispatch({ type: RESET, error });
-  }
-};
+exports.reset =
+  (resetAccessiblity, supports) =>
+  async ({ dispatch }) => {
+    try {
+      const { enabled, canBeDisabled, canBeEnabled } =
+        await resetAccessiblity();
+      dispatch({ enabled, canBeDisabled, canBeEnabled, supports, type: RESET });
+    } catch (error) {
+      dispatch({ type: RESET, error });
+    }
+  };
 
 
 
 
-exports.updateCanBeDisabled = canBeDisabled => ({ dispatch }) =>
-  dispatch({ canBeDisabled, type: UPDATE_CAN_BE_DISABLED });
+exports.updateCanBeDisabled =
+  canBeDisabled =>
+  ({ dispatch }) =>
+    dispatch({ canBeDisabled, type: UPDATE_CAN_BE_DISABLED });
 
 
 
 
-exports.updateCanBeEnabled = canBeEnabled => ({ dispatch }) =>
-  dispatch({ canBeEnabled, type: UPDATE_CAN_BE_ENABLED });
+exports.updateCanBeEnabled =
+  canBeEnabled =>
+  ({ dispatch }) =>
+    dispatch({ canBeEnabled, type: UPDATE_CAN_BE_ENABLED });
 
-exports.updatePref = (name, value) => ({ dispatch }) => {
-  dispatch({ type: UPDATE_PREF, name, value });
-  Services.prefs.setBoolPref(PREF_KEYS[name], value);
-};
+exports.updatePref =
+  (name, value) =>
+  ({ dispatch }) => {
+    dispatch({ type: UPDATE_PREF, name, value });
+    Services.prefs.setBoolPref(PREF_KEYS[name], value);
+  };
 
 
 
 
-exports.enable = enableAccessibility => async ({ dispatch }) => {
-  try {
-    await enableAccessibility();
-    dispatch({ type: ENABLE });
-  } catch (error) {
-    dispatch({ error, type: ENABLE });
-  }
-};
+exports.enable =
+  enableAccessibility =>
+  async ({ dispatch }) => {
+    try {
+      await enableAccessibility();
+      dispatch({ type: ENABLE });
+    } catch (error) {
+      dispatch({ error, type: ENABLE });
+    }
+  };
 
-exports.updateDisplayTabbingOrder = tabbingOrderDisplayed => async ({
-  dispatch,
-  options: { toggleDisplayTabbingOrder },
-}) => {
-  try {
-    await toggleDisplayTabbingOrder(tabbingOrderDisplayed);
-    dispatch({ tabbingOrderDisplayed, type: UPDATE_DISPLAY_TABBING_ORDER });
-  } catch (error) {
-    dispatch({ error, type: UPDATE_DISPLAY_TABBING_ORDER });
-  }
-};
+exports.updateDisplayTabbingOrder =
+  tabbingOrderDisplayed =>
+  async ({ dispatch, options: { toggleDisplayTabbingOrder } }) => {
+    try {
+      await toggleDisplayTabbingOrder(tabbingOrderDisplayed);
+      dispatch({ tabbingOrderDisplayed, type: UPDATE_DISPLAY_TABBING_ORDER });
+    } catch (error) {
+      dispatch({ error, type: UPDATE_DISPLAY_TABBING_ORDER });
+    }
+  };

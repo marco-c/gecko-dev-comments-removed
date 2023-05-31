@@ -57,7 +57,8 @@ add_task(async function test_Edge_history_past_max_days() {
   
   
   let migrator = new EdgeProfileMigrator();
-  let registryTypedHistoryMigrator = migrator.getHistoryRegistryMigratorForTesting();
+  let registryTypedHistoryMigrator =
+    migrator.getHistoryRegistryMigratorForTesting();
   await new Promise(resolve => {
     registryTypedHistoryMigrator.migrate(resolve);
   });

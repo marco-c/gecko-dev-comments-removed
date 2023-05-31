@@ -525,21 +525,22 @@ this.backgroundPage = class extends ExtensionAPI {
         
         
         
-        const hasActiveStreamFilter = await ExtensionParent.ParentAPIManager.queryStreamFilterSuspendCancel(
-          extension.backgroundContext.childId
-        ).catch(err => {
-          
-          
-          if (
-            extension.backgroundState == BACKGROUND_STATE.STOPPED &&
-            DOMException.isInstance(err) &&
-            err.name === "AbortError"
-          ) {
+        const hasActiveStreamFilter =
+          await ExtensionParent.ParentAPIManager.queryStreamFilterSuspendCancel(
+            extension.backgroundContext.childId
+          ).catch(err => {
+            
+            
+            if (
+              extension.backgroundState == BACKGROUND_STATE.STOPPED &&
+              DOMException.isInstance(err) &&
+              err.name === "AbortError"
+            ) {
+              return false;
+            }
+            Cu.reportError(err);
             return false;
-          }
-          Cu.reportError(err);
-          return false;
-        });
+          });
         if (!disableResetIdleForTest && hasActiveStreamFilter) {
           extension.emit("background-script-reset-idle", {
             reason: "hasActiveStreamFilter",

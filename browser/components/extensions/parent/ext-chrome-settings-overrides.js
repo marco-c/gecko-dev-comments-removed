@@ -300,8 +300,8 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       
       
       
-      let searchStartupPromise = this.processSearchProviderManifestEntry().finally(
-        () => {
+      let searchStartupPromise =
+        this.processSearchProviderManifestEntry().finally(() => {
           if (
             pendingSearchSetupTasks.get(extension.id) === searchStartupPromise
           ) {
@@ -310,8 +310,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
             
             ExtensionParent.apiManager.emit("searchEngineProcessed", extension);
           }
-        }
-      );
+        });
 
       
       pendingSearchSetupTasks.set(extension.id, searchStartupPromise);

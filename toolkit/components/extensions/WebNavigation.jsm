@@ -118,12 +118,8 @@ var WebNavigationManager = {
       
       
       
-      const {
-        createdTabBrowser,
-        url,
-        sourceFrameID,
-        sourceTabBrowser,
-      } = subject.wrappedJSObject;
+      const { createdTabBrowser, url, sourceFrameID, sourceTabBrowser } =
+        subject.wrappedJSObject;
 
       this.fire("onCreatedNavigationTarget", createdTabBrowser, null, {
         sourceTabBrowser,

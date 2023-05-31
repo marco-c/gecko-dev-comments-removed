@@ -106,9 +106,8 @@ add_task(async function () {
 add_task(async function preloaded_state_attribute() {
   
   await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
-  let preloadedTabState = gBrowser.preloadedBrowser.getAttribute(
-    "preloadedState"
-  );
+  let preloadedTabState =
+    gBrowser.preloadedBrowser.getAttribute("preloadedState");
   is(
     preloadedTabState,
     PRELOADED_STATE,

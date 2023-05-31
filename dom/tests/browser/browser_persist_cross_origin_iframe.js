@@ -71,23 +71,24 @@ function checkContents(dir, expected, str) {
 }
 
 async function addFrame(browser, path, selector) {
-  await SpecialPowers.spawn(browser, [path, selector], async function (
-    path,
-    selector
-  ) {
-    let document = content.document;
-    let target = document.querySelector(selector);
-    if (content.HTMLIFrameElement.isInstance(target)) {
-      document = target.contentDocument;
-      target = document.body;
+  await SpecialPowers.spawn(
+    browser,
+    [path, selector],
+    async function (path, selector) {
+      let document = content.document;
+      let target = document.querySelector(selector);
+      if (content.HTMLIFrameElement.isInstance(target)) {
+        document = target.contentDocument;
+        target = document.body;
+      }
+      let element = document.createElement("iframe");
+      element.src = path;
+      await new Promise(resolve => {
+        element.onload = resolve;
+        target.appendChild(element);
+      });
     }
-    let element = document.createElement("iframe");
-    element.src = path;
-    await new Promise(resolve => {
-      element.onload = resolve;
-      target.appendChild(element);
-    });
-  });
+  );
 }
 
 async function handleResult(expected, str) {
@@ -110,87 +111,88 @@ async function handleResult(expected, str) {
 }
 
 add_task(async function () {
-  await BrowserTestUtils.withNewTab(TEST_PATH + "image.html", async function (
-    browser
-  ) {
-    await addFrame(browser, TEST_PATH + "image.html", "body");
-    await addFrame(browser, TEST_PATH2 + "image.html", "body>iframe");
+  await BrowserTestUtils.withNewTab(
+    TEST_PATH + "image.html",
+    async function (browser) {
+      await addFrame(browser, TEST_PATH + "image.html", "body");
+      await addFrame(browser, TEST_PATH2 + "image.html", "body>iframe");
 
-    gTestDir = createTemporarySaveDirectory();
+      gTestDir = createTemporarySaveDirectory();
 
-    MockFilePicker.displayDirectory = gTestDir;
-    MockFilePicker.showCallback = function (fp) {
-      let destFile = gTestDir.clone();
-      destFile.append("first.html");
-      MockFilePicker.setFiles([destFile]);
-      MockFilePicker.filterIndex = 0; 
-    };
+      MockFilePicker.displayDirectory = gTestDir;
+      MockFilePicker.showCallback = function (fp) {
+        let destFile = gTestDir.clone();
+        destFile.append("first.html");
+        MockFilePicker.setFiles([destFile]);
+        MockFilePicker.filterIndex = 0; 
+      };
 
-    let expected = [
-      "first.html",
-      "first_files",
-      "first_files/image.html",
-      "first_files/dummy.png",
-      "first_files/image_data",
-      "first_files/image_data/image.html",
-      "first_files/image_data/image_data",
-      "first_files/image_data/image_data/dummy.png",
-    ];
+      let expected = [
+        "first.html",
+        "first_files",
+        "first_files/image.html",
+        "first_files/dummy.png",
+        "first_files/image_data",
+        "first_files/image_data/image.html",
+        "first_files/image_data/image_data",
+        "first_files/image_data/image_data/dummy.png",
+      ];
 
-    
-    saveBrowser(browser);
-    await handleResult(expected, "Check toplevel: ");
+      
+      saveBrowser(browser);
+      await handleResult(expected, "Check toplevel: ");
 
-    
-    
-    
-    expected = expected.concat([
-      "second.html",
-      "second_files",
-      "second_files/dummy.png",
-      "second_files/image.html",
-      "second_files/image_data",
-      "second_files/image_data/dummy.png",
-    ]);
+      
+      
+      
+      expected = expected.concat([
+        "second.html",
+        "second_files",
+        "second_files/dummy.png",
+        "second_files/image.html",
+        "second_files/image_data",
+        "second_files/image_data/dummy.png",
+      ]);
 
-    MockFilePicker.showCallback = function (fp) {
-      let destFile = gTestDir.clone();
-      destFile.append("second.html");
-      MockFilePicker.setFiles([destFile]);
-      MockFilePicker.filterIndex = 0; 
-    };
+      MockFilePicker.showCallback = function (fp) {
+        let destFile = gTestDir.clone();
+        destFile.append("second.html");
+        MockFilePicker.setFiles([destFile]);
+        MockFilePicker.filterIndex = 0; 
+      };
 
-    
-    
-    
-    saveBrowser(browser, false, browser.browsingContext.children[0]);
-    await handleResult(expected, "Check subframe: ");
+      
+      
+      
+      saveBrowser(browser, false, browser.browsingContext.children[0]);
+      await handleResult(expected, "Check subframe: ");
 
-    
-    
-    
-    expected = expected.concat([
-      "third.html",
-      "third_files",
-      "third_files/dummy.png",
-    ]);
+      
+      
+      
+      expected = expected.concat([
+        "third.html",
+        "third_files",
+        "third_files/dummy.png",
+      ]);
 
-    MockFilePicker.showCallback = function (fp) {
-      let destFile = gTestDir.clone();
-      destFile.append("third.html");
-      MockFilePicker.setFiles([destFile]);
-      MockFilePicker.filterIndex = 0; 
-    };
+      MockFilePicker.showCallback = function (fp) {
+        let destFile = gTestDir.clone();
+        destFile.append("third.html");
+        MockFilePicker.setFiles([destFile]);
+        MockFilePicker.filterIndex = 0; 
+      };
 
-    
-    
-    
-    
-    saveBrowser(
-      browser,
-      false,
-      browser.browsingContext.children[0].children[0]
-    );
-    await handleResult(expected, "Check subframe: ");
-  });
+      
+      
+      
+      
+      saveBrowser(
+        browser,
+        false,
+        browser.browsingContext.children[0].children[0]
+      );
+      await handleResult(expected, "Check subframe: ");
+    }
+  );
 });

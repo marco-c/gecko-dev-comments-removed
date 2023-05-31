@@ -261,9 +261,8 @@ async function test_create_new_streamfilter_while_suspending({
       browser.runtime.onSuspendCanceled.addListener(async () => {
         
         
-        const filter = browser.webRequest.filterResponseData(
-          interceptedRequestId
-        );
+        const filter =
+          browser.webRequest.filterResponseData(interceptedRequestId);
         resolvePendingWebRequest();
         filter.onstop = () => {
           filter.disconnect();

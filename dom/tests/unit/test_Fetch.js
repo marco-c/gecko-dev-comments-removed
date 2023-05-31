@@ -190,17 +190,17 @@ add_test(function test_get50x() {
   serverErrorData.response.statusText = "The server broke";
   serverErrorData.response.body = null;
 
-  server.registerPathHandler(serverErrorData.testPath, function (
-    aRequest,
-    aResponse
-  ) {
-    try {
-      
-      writeDataToResponse(serverErrorData.response, aResponse);
-    } catch (e) {
-      do_report_unexpected_exception(e);
+  server.registerPathHandler(
+    serverErrorData.testPath,
+    function (aRequest, aResponse) {
+      try {
+        
+        writeDataToResponse(serverErrorData.response, aResponse);
+      } catch (e) {
+        do_report_unexpected_exception(e);
+      }
     }
-  });
+  );
 
   
   fetch(getBaseUrl() + serverErrorData.testPath).then(function (response) {

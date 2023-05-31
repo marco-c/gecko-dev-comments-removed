@@ -135,9 +135,8 @@ function TextPropertyEditor(ruleEditor, property) {
   this.getGridlineNames = this.getGridlineNames.bind(this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
-  this._onDraggablePreferenceChanged = this._onDraggablePreferenceChanged.bind(
-    this
-  );
+  this._onDraggablePreferenceChanged =
+    this._onDraggablePreferenceChanged.bind(this);
   this._onEnableChanged = this._onEnableChanged.bind(this);
   this._onEnableClicked = this._onEnableClicked.bind(this);
   this._onExpandClicked = this._onExpandClicked.bind(this);
@@ -424,7 +423,8 @@ TextPropertyEditor.prototype = {
 
   async getGridlineNames() {
     const gridLineNames = { cols: [], rows: [] };
-    const layoutInspector = await this.ruleView.inspector.walker.getLayoutInspector();
+    const layoutInspector =
+      await this.ruleView.inspector.walker.getLayoutInspector();
     const gridFront = await layoutInspector.getCurrentGrid(
       this.ruleView.inspector.selection.nodeFront
     );
@@ -1381,7 +1381,8 @@ TextPropertyEditor.prototype = {
 
   _parseDimension(value) {
     
-    const cssDimensionRegex = /^(?<value>[+-]?(\d*\.)?\d+(e[+-]?\d+)?)(?<unit>(%|[a-zA-Z]+))$/;
+    const cssDimensionRegex =
+      /^(?<value>[+-]?(\d*\.)?\d+(e[+-]?\d+)?)(?<unit>(%|[a-zA-Z]+))$/;
     return value.match(cssDimensionRegex);
   },
 

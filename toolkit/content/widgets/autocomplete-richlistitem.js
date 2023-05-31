@@ -7,7 +7,9 @@
 
 
 {
-  MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem extends MozElements.MozRichlistitem {
+  MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem extends (
+    MozElements.MozRichlistitem
+  ) {
     constructor() {
       super();
 

@@ -27,41 +27,38 @@ async function test_ntp_theme(theme, isBrightText) {
 
   let browser = gBrowser.selectedBrowser;
 
-  let {
-    originalBackground,
-    originalCardBackground,
-    originalColor,
-  } = await SpecialPowers.spawn(browser, [], function () {
-    let doc = content.document;
-    ok(
-      !doc.documentElement.hasAttribute("lwt-newtab"),
-      "New tab page should not have lwt-newtab attribute"
-    );
-    ok(
-      !doc.documentElement.hasAttribute("lwt-newtab-brighttext"),
-      `New tab page should not have lwt-newtab-brighttext attribute`
-    );
+  let { originalBackground, originalCardBackground, originalColor } =
+    await SpecialPowers.spawn(browser, [], function () {
+      let doc = content.document;
+      ok(
+        !doc.documentElement.hasAttribute("lwt-newtab"),
+        "New tab page should not have lwt-newtab attribute"
+      );
+      ok(
+        !doc.documentElement.hasAttribute("lwt-newtab-brighttext"),
+        `New tab page should not have lwt-newtab-brighttext attribute`
+      );
 
-    return {
-      originalBackground: content.getComputedStyle(doc.body).backgroundColor,
-      originalCardBackground: content.getComputedStyle(
-        doc.querySelector(".top-site-outer .tile")
-      ).backgroundColor,
-      originalColor: content.getComputedStyle(
-        doc.querySelector(".outer-wrapper")
-      ).color,
-      
-      
-      
-      
-      
-      
-      
-      originalLinks: content
-        .getComputedStyle(doc.documentElement)
-        .getPropertyValue("--newtab-link-primary-color"),
-    };
-  });
+      return {
+        originalBackground: content.getComputedStyle(doc.body).backgroundColor,
+        originalCardBackground: content.getComputedStyle(
+          doc.querySelector(".top-site-outer .tile")
+        ).backgroundColor,
+        originalColor: content.getComputedStyle(
+          doc.querySelector(".outer-wrapper")
+        ).color,
+        
+        
+        
+        
+        
+        
+        
+        originalLinks: content
+          .getComputedStyle(doc.documentElement)
+          .getPropertyValue("--newtab-link-primary-color"),
+      };
+    });
 
   await extension.startup();
 

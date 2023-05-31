@@ -73,9 +73,9 @@ function selectElementsInPanelview(panelview) {
     presetsEditSettings: getElementById(
       "PanelUI-profiler-content-edit-settings"
     ),
-    presetsMenuList:  (getElementById(
-      "PanelUI-profiler-presets"
-    )),
+    presetsMenuList:  (
+      getElementById("PanelUI-profiler-presets")
+    ),
     header: getElementById("PanelUI-profiler-header"),
     info: getElementById("PanelUI-profiler-info"),
     menupopup: getElementById("PanelUI-profiler-presets-menupopup"),
@@ -235,12 +235,8 @@ function initializeView(state, elements, view) {
 
 
 function addPopupEventHandlers(state, elements, view) {
-  const {
-    changePreset,
-    startProfiler,
-    stopProfiler,
-    captureProfile,
-  } = lazy.Background();
+  const { changePreset, startProfiler, stopProfiler, captureProfile } =
+    lazy.Background();
 
   
 

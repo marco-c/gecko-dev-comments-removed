@@ -224,9 +224,10 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     
     
     const inspectorFront = await this.targetFront.getFront("inspector");
-    const frameNodeFront = await inspectorFront.getNodeActorFromContentDomReference(
-      snapshot.contentDOMReference
-    );
+    const frameNodeFront =
+      await inspectorFront.getNodeActorFromContentDomReference(
+        snapshot.contentDOMReference
+      );
     
     delete snapshot.contentDOMReference;
     delete snapshot.useChildTargetToFetchChildren;
@@ -475,15 +476,13 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
     while (currentElm) {
       
       if (currentElm.useChildTargetToFetchChildren) {
-        const {
-          walker: domWalkerFront,
-        } = await currentElm.targetFront.getFront("inspector");
+        const { walker: domWalkerFront } =
+          await currentElm.targetFront.getFront("inspector");
         const {
           nodes: [childDocumentNodeFront],
         } = await domWalkerFront.children(currentElm);
-        const {
-          accessibleWalkerFront,
-        } = await childDocumentNodeFront.targetFront.getFront("accessibility");
+        const { accessibleWalkerFront } =
+          await childDocumentNodeFront.targetFront.getFront("accessibility");
         
         
         ({ index: currentIndex } = await accessibleWalkerFront.showTabbingOrder(
@@ -557,10 +556,8 @@ class ParentAccessibilityFront extends FrontClassWithSpec(
   }
 
   async initialize() {
-    ({
-      canBeEnabled: this.canBeEnabled,
-      canBeDisabled: this.canBeDisabled,
-    } = await super.bootstrap());
+    ({ canBeEnabled: this.canBeEnabled, canBeDisabled: this.canBeDisabled } =
+      await super.bootstrap());
   }
 
   canBeEnabled(canBeEnabled) {

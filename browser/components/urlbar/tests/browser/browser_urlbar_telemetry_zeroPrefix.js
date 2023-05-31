@@ -27,9 +27,8 @@ add_setup(async function () {
 
 
 add_task(async function engagement() {
-  let dwellHistogram = TelemetryTestUtils.getAndClearHistogram(
-    HISTOGRAM_DWELL_TIME
-  );
+  let dwellHistogram =
+    TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_DWELL_TIME);
 
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await showZeroPrefix();
@@ -66,9 +65,8 @@ add_task(async function engagement() {
 
 
 add_task(async function abandonment() {
-  let dwellHistogram = TelemetryTestUtils.getAndClearHistogram(
-    HISTOGRAM_DWELL_TIME
-  );
+  let dwellHistogram =
+    TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_DWELL_TIME);
 
   
   
@@ -90,9 +88,8 @@ add_task(async function abandonment() {
 
 
 add_task(async function searches() {
-  let dwellHistogram = TelemetryTestUtils.getAndClearHistogram(
-    HISTOGRAM_DWELL_TIME
-  );
+  let dwellHistogram =
+    TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_DWELL_TIME);
 
   info("Show zero prefix");
   await showZeroPrefix();
@@ -146,9 +143,8 @@ add_task(async function searches() {
 
 
 add_task(async function notZeroPrefix_engagement() {
-  let dwellHistogram = TelemetryTestUtils.getAndClearHistogram(
-    HISTOGRAM_DWELL_TIME
-  );
+  let dwellHistogram =
+    TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_DWELL_TIME);
 
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -167,9 +163,8 @@ add_task(async function notZeroPrefix_engagement() {
 
 
 add_task(async function notZeroPrefix_abandonment() {
-  let dwellHistogram = TelemetryTestUtils.getAndClearHistogram(
-    HISTOGRAM_DWELL_TIME
-  );
+  let dwellHistogram =
+    TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_DWELL_TIME);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -263,9 +258,9 @@ async function updateTopSitesAndAwaitChanged() {
   }
 
   info("Updating top sites and awaiting newtab-top-sites-changed");
-  let changedPromise = TestUtils.topicObserved(
-    "newtab-top-sites-changed"
-  ).then(() => info("Observed newtab-top-sites-changed"));
+  let changedPromise = TestUtils.topicObserved("newtab-top-sites-changed").then(
+    () => info("Observed newtab-top-sites-changed")
+  );
   await updateTopSites(sites => sites?.length);
   await changedPromise;
 }

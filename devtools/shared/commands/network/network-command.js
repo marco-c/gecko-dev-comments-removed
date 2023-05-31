@@ -29,9 +29,8 @@ class NetworkCommand {
   async sendHTTPRequest(data) {
     
     
-    const networkContentFront = await this.commands.targetCommand.targetFront.getFront(
-      "networkContent"
-    );
+    const networkContentFront =
+      await this.commands.targetCommand.targetFront.getFront("networkContent");
     const { channelId } = await networkContentFront.sendHTTPRequest(data);
     return { channelId };
   }

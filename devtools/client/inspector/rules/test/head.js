@@ -279,21 +279,22 @@ var addProperty = async function (
     
     
     const expectedAttributeValue = `${CSS.escape(name)}: ${value}`;
-    view.inspector.walker.on("mutations", function onWalkerMutations(
-      mutations
-    ) {
-      
-      
-      const receivedLastMutation = mutations.some(
-        mut =>
-          mut.attributeName === "style" &&
-          mut.newValue.includes(expectedAttributeValue)
-      );
-      if (receivedLastMutation) {
-        view.inspector.walker.off("mutations", onWalkerMutations);
-        r();
+    view.inspector.walker.on(
+      "mutations",
+      function onWalkerMutations(mutations) {
+        
+        
+        const receivedLastMutation = mutations.some(
+          mut =>
+            mut.attributeName === "style" &&
+            mut.newValue.includes(expectedAttributeValue)
+        );
+        if (receivedLastMutation) {
+          view.inspector.walker.off("mutations", onWalkerMutations);
+          r();
+        }
       }
-    });
+    );
   });
 
   info("Adding name " + name);
@@ -625,10 +626,8 @@ async function clickSelectorIcon(view, selectorText, index = 0) {
   
   const selector = icon.dataset.selector;
 
-  const {
-    waitForHighlighterTypeShown,
-    waitForHighlighterTypeHidden,
-  } = getHighlighterTestHelpers(inspector);
+  const { waitForHighlighterTypeShown, waitForHighlighterTypeHidden } =
+    getHighlighterTestHelpers(inspector);
 
   
   

@@ -100,56 +100,58 @@ async function setupEMEKey(browser) {
   let keyInfo = generateKeyInfo(TEST_EME_KEY);
 
   
-  let result = await SpecialPowers.spawn(browser, [keyInfo], async function (
-    aKeyInfo
-  ) {
-    let access = await content.navigator.requestMediaKeySystemAccess(
-      "org.w3.clearkey",
-      [
-        {
-          initDataTypes: [aKeyInfo.initDataType],
-          videoCapabilities: [{ contentType: "video/webm" }],
-          sessionTypes: ["persistent-license"],
-          persistentState: "required",
-        },
-      ]
-    );
-    let mediaKeys = await access.createMediaKeys();
-    let session = mediaKeys.createSession(aKeyInfo.sessionType);
-    let res = {};
+  let result = await SpecialPowers.spawn(
+    browser,
+    [keyInfo],
+    async function (aKeyInfo) {
+      let access = await content.navigator.requestMediaKeySystemAccess(
+        "org.w3.clearkey",
+        [
+          {
+            initDataTypes: [aKeyInfo.initDataType],
+            videoCapabilities: [{ contentType: "video/webm" }],
+            sessionTypes: ["persistent-license"],
+            persistentState: "required",
+          },
+        ]
+      );
+      let mediaKeys = await access.createMediaKeys();
+      let session = mediaKeys.createSession(aKeyInfo.sessionType);
+      let res = {};
 
-    
-    await new Promise(resolve => {
-      session.addEventListener("message", function (event) {
-        session
-          .update(aKeyInfo.keyObj)
-          .then(() => {
-            resolve();
-          })
-          .catch(() => {
-            ok(false, "Update the EME key fail.");
-            resolve();
-          });
+      
+      await new Promise(resolve => {
+        session.addEventListener("message", function (event) {
+          session
+            .update(aKeyInfo.keyObj)
+            .then(() => {
+              resolve();
+            })
+            .catch(() => {
+              ok(false, "Update the EME key fail.");
+              resolve();
+            });
+        });
+
+        session.generateRequest(aKeyInfo.initDataType, aKeyInfo.initData);
       });
 
-      session.generateRequest(aKeyInfo.initDataType, aKeyInfo.initData);
-    });
+      let map = session.keyStatuses;
 
-    let map = session.keyStatuses;
+      is(map.size, 1, "One EME key has been added.");
 
-    is(map.size, 1, "One EME key has been added.");
+      if (map.size === 1) {
+        res.keyId = map.keys().next().value;
+        res.sessionId = session.sessionId;
+      }
 
-    if (map.size === 1) {
-      res.keyId = map.keys().next().value;
-      res.sessionId = session.sessionId;
+      
+      session.close();
+      await session.closed;
+
+      return res;
     }
-
-    
-    session.close();
-    await session.closed;
-
-    return res;
-  });
+  );
 
   
   is(

@@ -227,11 +227,13 @@ async function runTestForCategoryAndState(category, action) {
     );
   }
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [{ apiMessage }], function (
-    args
-  ) {
-    content.postMessage(args.apiMessage, "*");
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [{ apiMessage }],
+    function (args) {
+      content.postMessage(args.apiMessage, "*");
+    }
+  );
   await beforeBlockChannelPromise;
 
   

@@ -3,11 +3,8 @@
 
 "use strict";
 
-const {
-  STATE_IS_SECURE,
-  STATE_IS_BROKEN,
-  STATE_IS_INSECURE,
-} = Ci.nsIWebProgressListener;
+const { STATE_IS_SECURE, STATE_IS_BROKEN, STATE_IS_INSECURE } =
+  Ci.nsIWebProgressListener;
 
 
 const NO_CERT = "https://nocert.example.com:443";

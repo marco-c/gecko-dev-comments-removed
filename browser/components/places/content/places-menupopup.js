@@ -140,9 +140,10 @@ function closingPopupEndsDrag(popup) {
             
             
             
-            var draggingOverChild = PlacesControllerDragHelper.draggingOverChildNode(
-              this._folder.elt
-            );
+            var draggingOverChild =
+              PlacesControllerDragHelper.draggingOverChildNode(
+                this._folder.elt
+              );
             if (draggingOverChild) {
               this._folder.elt = null;
             }

@@ -780,8 +780,9 @@ var gEditItemOverlay = {
 
     let newURI;
     try {
-      newURI = Services.uriFixup.getFixupURIInfo(this._locationField.value)
-        .preferredURI;
+      newURI = Services.uriFixup.getFixupURIInfo(
+        this._locationField.value
+      ).preferredURI;
     } catch (ex) {
       
       return;

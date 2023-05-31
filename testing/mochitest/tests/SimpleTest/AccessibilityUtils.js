@@ -17,12 +17,8 @@ this.AccessibilityUtils = (function () {
   const FORCE_DISABLE_ACCESSIBILITY_PREF = "accessibility.force_disabled";
 
   
-  const {
-    STATE_FOCUSABLE,
-    STATE_INVISIBLE,
-    STATE_LINKED,
-    STATE_UNAVAILABLE,
-  } = Ci.nsIAccessibleStates;
+  const { STATE_FOCUSABLE, STATE_INVISIBLE, STATE_LINKED, STATE_UNAVAILABLE } =
+    Ci.nsIAccessibleStates;
 
   
   const CLICK_ACTION = "click";

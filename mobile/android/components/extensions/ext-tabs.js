@@ -272,10 +272,11 @@ this.tabs = class extends ExtensionAPIPersistent {
           !context.checkLoadURL(url, { dontReportErrors: true }))
       ) {
         
-        principal = Services.scriptSecurityManager.getLoadContextContentPrincipal(
-          Services.io.newURI(url),
-          browser.loadContext
-        );
+        principal =
+          Services.scriptSecurityManager.getLoadContextContentPrincipal(
+            Services.io.newURI(url),
+            browser.loadContext
+          );
       }
       if (isAboutUrl) {
         

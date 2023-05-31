@@ -12,20 +12,21 @@ const re = new RegExp(key + "=([0-9.]+)");
 
 
 function doTest(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [key, re], function (
-    contentKey,
-    contentRe
-  ) {
-    let result = contentRe.exec(content.document.cookie);
-    if (result) {
-      return result[1];
+  return SpecialPowers.spawn(
+    aBrowser,
+    [key, re],
+    function (contentKey, contentRe) {
+      let result = contentRe.exec(content.document.cookie);
+      if (result) {
+        return result[1];
+      }
+      
+      let value = Math.random().toString();
+      content.document.cookie =
+        contentKey + "=" + value + "; SameSite=None; Secure;";
+      return value;
     }
-    
-    let value = Math.random().toString();
-    content.document.cookie =
-      contentKey + "=" + value + "; SameSite=None; Secure;";
-    return value;
-  });
+  );
 }
 
 registerCleanupFunction(() => {

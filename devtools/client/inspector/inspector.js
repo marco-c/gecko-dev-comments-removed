@@ -156,9 +156,8 @@ function Inspector(toolbox, commands) {
   this._panels = new Map();
 
   this._clearSearchResultsLabel = this._clearSearchResultsLabel.bind(this);
-  this._handleRejectionIfNotDestroyed = this._handleRejectionIfNotDestroyed.bind(
-    this
-  );
+  this._handleRejectionIfNotDestroyed =
+    this._handleRejectionIfNotDestroyed.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   this._onTargetSelected = this._onTargetSelected.bind(this);
@@ -944,8 +943,9 @@ Inspector.prototype = {
 
 
   setSidebarSplitBoxState() {
-    const toolboxWidth = this.panelDoc.getElementById("inspector-splitter-box")
-      .clientWidth;
+    const toolboxWidth = this.panelDoc.getElementById(
+      "inspector-splitter-box"
+    ).clientWidth;
 
     
     
@@ -1381,9 +1381,8 @@ Inspector.prototype = {
 
     if (canShowEyeDropper) {
       this.onEyeDropperDone = this.onEyeDropperDone.bind(this);
-      this.onEyeDropperButtonClicked = this.onEyeDropperButtonClicked.bind(
-        this
-      );
+      this.onEyeDropperButtonClicked =
+        this.onEyeDropperButtonClicked.bind(this);
       this.eyeDropperButton = this.panelDoc.getElementById(
         "inspector-eyedropper-toggle"
       );

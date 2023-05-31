@@ -125,13 +125,15 @@ async function testClearedRequests({ tab, monitor, toolbox }) {
     "Doing this, should notify a network request that is destroyed on the server side"
   );
   const onNetworkEvents = waitForNetworkEvents(monitor, 2);
-  await SpecialPowers.spawn(tab.linkedBrowser, [iframeURL], async function (
-    _iframeURL
-  ) {
-    const iframe = content.document.createElement("iframe");
-    iframe.setAttribute("src", _iframeURL);
-    content.document.body.appendChild(iframe);
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [iframeURL],
+    async function (_iframeURL) {
+      const iframe = content.document.createElement("iframe");
+      iframe.setAttribute("src", _iframeURL);
+      content.document.body.appendChild(iframe);
+    }
+  );
   
   
   
@@ -214,9 +216,8 @@ async function reloadAndCopyAllAsHar({
   store.dispatch(Actions.batchEnable(false));
 
   const onNetworkEvent = waitForNetworkEvents(monitor, 1);
-  const {
-    onDomCompleteResource,
-  } = await waitForNextTopLevelDomCompleteResource(toolbox.commands);
+  const { onDomCompleteResource } =
+    await waitForNextTopLevelDomCompleteResource(toolbox.commands);
 
   if (reloadTwice) {
     reloadBrowser();

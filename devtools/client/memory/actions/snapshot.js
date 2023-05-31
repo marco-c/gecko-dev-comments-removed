@@ -553,8 +553,8 @@ exports.refreshSelectedTreeMap = function (heapWorker) {
 
 
 
-const computeDominatorTree = (exports.computeDominatorTree = TaskCache.declareCacheableTask(
-  {
+const computeDominatorTree = (exports.computeDominatorTree =
+  TaskCache.declareCacheableTask({
     getCacheKey(_, id) {
       return id;
     },
@@ -586,8 +586,7 @@ const computeDominatorTree = (exports.computeDominatorTree = TaskCache.declareCa
       });
       return dominatorTreeId;
     },
-  }
-));
+  }));
 
 
 
@@ -598,8 +597,8 @@ const computeDominatorTree = (exports.computeDominatorTree = TaskCache.declareCa
 
 
 
-const fetchDominatorTree = (exports.fetchDominatorTree = TaskCache.declareCacheableTask(
-  {
+const fetchDominatorTree = (exports.fetchDominatorTree =
+  TaskCache.declareCacheableTask({
     getCacheKey(_, id) {
       return id;
     },
@@ -644,8 +643,7 @@ const fetchDominatorTree = (exports.fetchDominatorTree = TaskCache.declareCachea
       dispatch({ type: actions.FETCH_DOMINATOR_TREE_END, id, root });
       return root;
     },
-  }
-));
+  }));
 
 
 
@@ -724,8 +722,8 @@ exports.fetchImmediatelyDominated = TaskCache.declareCacheableTask({
 
 
 
-const computeAndFetchDominatorTree = (exports.computeAndFetchDominatorTree = TaskCache.declareCacheableTask(
-  {
+const computeAndFetchDominatorTree = (exports.computeAndFetchDominatorTree =
+  TaskCache.declareCacheableTask({
     getCacheKey(_, id) {
       return id;
     },
@@ -748,8 +746,7 @@ const computeAndFetchDominatorTree = (exports.computeAndFetchDominatorTree = Tas
 
       return root;
     },
-  }
-));
+  }));
 
 
 

@@ -17,25 +17,31 @@ function AutoCompleteInput(aSearches) {
 AutoCompleteInput.prototype = Object.create(AutoCompleteInputBase.prototype);
 
 add_test(function test_keyNavigation() {
-  doSearch("moz", "mozilla.com", "http://www.mozilla.com", function (
-    aController
-  ) {
-    Assert.equal(aController.input.textValue, "mozilla.com");
-    
-    
-    aController.handleKeyNavigation(0x27 );
-    Assert.equal(aController.input.textValue, "mozilla.com");
-  });
+  doSearch(
+    "moz",
+    "mozilla.com",
+    "http://www.mozilla.com",
+    function (aController) {
+      Assert.equal(aController.input.textValue, "mozilla.com");
+      
+      
+      aController.handleKeyNavigation(0x27 );
+      Assert.equal(aController.input.textValue, "mozilla.com");
+    }
+  );
 });
 
 add_test(function test_handleEnter() {
-  doSearch("moz", "mozilla.com", "http://www.mozilla.com", function (
-    aController
-  ) {
-    Assert.equal(aController.input.textValue, "mozilla.com");
-    aController.handleEnter(false);
-    Assert.equal(aController.input.textValue, "http://www.mozilla.com");
-  });
+  doSearch(
+    "moz",
+    "mozilla.com",
+    "http://www.mozilla.com",
+    function (aController) {
+      Assert.equal(aController.input.textValue, "mozilla.com");
+      aController.handleEnter(false);
+      Assert.equal(aController.input.textValue, "http://www.mozilla.com");
+    }
+  );
 });
 
 function doSearch(

@@ -1635,9 +1635,8 @@ const updatedAddonFluentIds = new Map([
         
         
         
-        let localizedColorwayGroupName = BuiltInThemesHelpers.getLocalizedColorwayGroupName(
-          addon.id
-        );
+        let localizedColorwayGroupName =
+          BuiltInThemesHelpers.getLocalizedColorwayGroupName(addon.id);
         let [colorwayGroupName, intensity] = addonIdPrefix.split("-", 2);
         if (intensity == colorwaySuffix) {
           

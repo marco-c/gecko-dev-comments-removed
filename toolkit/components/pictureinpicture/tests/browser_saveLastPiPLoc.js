@@ -61,12 +61,8 @@ async function doTest() {
         .getService(Ci.nsIScreenManager)
         .screenForRect(1, 1, 1, 1);
 
-      let [
-        defaultX,
-        defaultY,
-        defaultWidth,
-        defaultHeight,
-      ] = getAvailScreenSize(screen);
+      let [defaultX, defaultY, defaultWidth, defaultHeight] =
+        getAvailScreenSize(screen);
 
       
       let rightEdge = defaultX + defaultWidth;

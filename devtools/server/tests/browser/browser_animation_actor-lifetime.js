@@ -67,9 +67,8 @@ add_task(async function () {
         
         
         actorID = String(actorID);
-        const animationActors = DevToolsServer.searchAllConnectionsForActor(
-          actorID
-        );
+        const animationActors =
+          DevToolsServer.searchAllConnectionsForActor(actorID);
         if (!animationActors) {
           return 0;
         }

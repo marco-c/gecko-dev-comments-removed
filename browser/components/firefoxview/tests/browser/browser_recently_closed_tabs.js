@@ -247,9 +247,8 @@ add_task(async function test_max_list_items() {
     const { document } = browser.contentWindow;
 
     
-    document.querySelector(
-      "recently-closed-tabs-list"
-    ).maxTabsLength = mockMaxTabsLength;
+    document.querySelector("recently-closed-tabs-list").maxTabsLength =
+      mockMaxTabsLength;
 
     ok(
       !document

@@ -5,11 +5,8 @@
 
 const TEST_PAGE = "https://example.com/document-builder.sjs?html=tab";
 
-const {
-  assertUpdate,
-  createSessionDataUpdate,
-  getUpdates,
-} = SessionDataUpdateHelpers;
+const { assertUpdate, createSessionDataUpdate, getUpdates } =
+  SessionDataUpdateHelpers;
 
 
 

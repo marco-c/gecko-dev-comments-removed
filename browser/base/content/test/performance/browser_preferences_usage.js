@@ -118,8 +118,8 @@ add_task(async function startup() {
     },
   };
 
-  let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
-    .wrappedJSObject;
+  let startupRecorder =
+    Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject;
   await startupRecorder.done;
 
   ok(startupRecorder.data.prefStats, "startupRecorder has prefStats");
@@ -203,12 +203,11 @@ add_task(async function navigate_around() {
       max: 51,
     };
     
-    knownProblematicPrefs[
-      "dom.ipc.keepProcessesAlive.webIsolated.perOrigin"
-    ] = {
-      min: 100,
-      max: 102,
-    };
+    knownProblematicPrefs["dom.ipc.keepProcessesAlive.webIsolated.perOrigin"] =
+      {
+        min: 100,
+        max: 102,
+      };
     if (AppConstants.platform == "linux") {
       
       

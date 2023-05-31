@@ -158,9 +158,8 @@ async function test(context, commands) {
       throw new Error("No requestsPerSecond values were obtained");
     }
 
-    commands.measure.result[0].browserScripts.pageinfo.imagesPerSecond = average(
-      vals
-    );
+    commands.measure.result[0].browserScripts.pageinfo.imagesPerSecond =
+      average(vals);
 
     
     await commands.wait.byTime(waitTime);

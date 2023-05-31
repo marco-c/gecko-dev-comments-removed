@@ -108,9 +108,8 @@ async function navigateToWithDevToolsOpen(tab, uri, isErrorPage = false) {
   
   
   
-  const onTargetSwitched = toolbox.commands.targetCommand.once(
-    "switched-target"
-  );
+  const onTargetSwitched =
+    toolbox.commands.targetCommand.once("switched-target");
   
   const onNavigate = target.once("navigate");
 

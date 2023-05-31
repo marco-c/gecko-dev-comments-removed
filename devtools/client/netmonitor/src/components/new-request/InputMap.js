@@ -69,9 +69,10 @@ class InputMap extends Component {
         
         
         
-        const targetParentNode = this.listRef.current.childNodes?.[
-          this.listRef.current.childElementCount - 2
-        ];
+        const targetParentNode =
+          this.listRef.current.childNodes?.[
+            this.listRef.current.childElementCount - 2
+          ];
         targetParentNode?.querySelector(`.${target.className}`).focus();
       });
     };

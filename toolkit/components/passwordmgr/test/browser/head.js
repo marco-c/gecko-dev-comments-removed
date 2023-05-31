@@ -200,8 +200,8 @@ async function getFormSubmitResponseResult(
           content.document.readyState == "complete"
         );
       }, `Wait for form submission load (${resultURL})`);
-      let username = content.document.querySelector(usernameSelector)
-        .textContent;
+      let username =
+        content.document.querySelector(usernameSelector).textContent;
       
       
       

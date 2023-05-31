@@ -54,9 +54,8 @@ add_task(async function test_old_modal_ui() {
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
-    "tabmodalprompt"
-  );
+  let promptElements =
+    openedTab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
   is(promptElements.length, 1, "There should be 1 prompt");
   let ourPromptElement = promptElements[0];
   let checkbox = ourPromptElement.querySelector(
@@ -66,9 +65,8 @@ add_task(async function test_old_modal_ui() {
   ok(!checkbox.checked, "Checkbox shouldn't be checked");
   
   checkbox.checked = true;
-  let ourPrompt = openedTab.linkedBrowser.tabModalPromptBox.getPrompt(
-    ourPromptElement
-  );
+  let ourPrompt =
+    openedTab.linkedBrowser.tabModalPromptBox.getPrompt(ourPromptElement);
   ourPrompt.onButtonClick(0);
   
   await new Promise(function (resolve) {

@@ -177,7 +177,8 @@ function checkPayloadInfo(data, reason) {
   let isoDateCheck = arg => {
     
     
-    const isoDateRegEx = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$/;
+    const isoDateRegEx =
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$/;
     return (
       stringCheck(arg) &&
       !Number.isNaN(Date.parse(arg)) &&
@@ -217,7 +218,8 @@ function checkPayloadInfo(data, reason) {
 
   
   if (data.revision != "") {
-    const revisionUrlRegEx = /^http[s]?:\/\/hg.mozilla.org(\/[a-z\S]+)+(\/rev\/[0-9a-z]+)$/g;
+    const revisionUrlRegEx =
+      /^http[s]?:\/\/hg.mozilla.org(\/[a-z\S]+)+(\/rev\/[0-9a-z]+)$/g;
     Assert.ok(revisionUrlRegEx.test(data.revision));
   }
 

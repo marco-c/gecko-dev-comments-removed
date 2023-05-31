@@ -58,10 +58,8 @@ class MDNCompatibility {
     }
 
     
-    const {
-      aliasSummaries,
-      normalSummaries,
-    } = this._classifyCSSCompatSummaries(summaries, browsers);
+    const { aliasSummaries, normalSummaries } =
+      this._classifyCSSCompatSummaries(summaries, browsers);
 
     
     return this._toCSSIssues(normalSummaries.concat(aliasSummaries));
@@ -140,12 +138,14 @@ class MDNCompatibility {
       if (!aliasSummary.aliases.includes(terminal)) {
         aliasSummary.aliases.push(terminal);
       }
-      aliasSummary.unsupportedBrowsers = aliasSummary.unsupportedBrowsers.filter(
-        b => unsupportedBrowsers.includes(b)
-      );
-      aliasSummary.prefixNeededBrowsers = aliasSummary.prefixNeededBrowsers.filter(
-        b => prefixNeededBrowsers.includes(b)
-      );
+      aliasSummary.unsupportedBrowsers =
+        aliasSummary.unsupportedBrowsers.filter(b =>
+          unsupportedBrowsers.includes(b)
+        );
+      aliasSummary.prefixNeededBrowsers =
+        aliasSummary.prefixNeededBrowsers.filter(b =>
+          prefixNeededBrowsers.includes(b)
+        );
       return false;
     });
 

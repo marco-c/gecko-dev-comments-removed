@@ -71,8 +71,8 @@ class KeyframesProgressBar extends PureComponent {
     }
 
     this.simulatedAnimation.currentTime = time;
-    const position = this.simulatedAnimation.effect.getComputedTiming()
-      .progress;
+    const position =
+      this.simulatedAnimation.effect.getComputedTiming().progress;
 
     
     

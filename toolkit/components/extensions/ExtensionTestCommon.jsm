@@ -427,7 +427,8 @@ ExtensionTestCommon = class ExtensionTestCommon {
       
       
       
-      data.useServiceWorker = ExtensionTestCommon.isInBackgroundServiceWorkerTests();
+      data.useServiceWorker =
+        ExtensionTestCommon.isInBackgroundServiceWorkerTests();
     }
 
     

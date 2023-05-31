@@ -80,9 +80,8 @@ function testColorPreviewDisplay(
   spectrum.updateUI();
 
   
-  const linearGradientStr = colorPreviewStyle.getPropertyValue(
-    "background-image"
-  );
+  const linearGradientStr =
+    colorPreviewStyle.getPropertyValue("background-image");
   const colorPreviewValue = extractRgbaOverlayString(linearGradientStr);
 
   is(

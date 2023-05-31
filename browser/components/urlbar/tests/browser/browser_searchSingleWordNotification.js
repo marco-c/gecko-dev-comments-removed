@@ -107,9 +107,8 @@ async function runURLBarSearchTest({
       let notificationBox = aWindow.gBrowser.getNotificationBox(
         aWindow.gBrowser.selectedBrowser
       );
-      let notification = notificationBox.getNotificationWithValue(
-        "keyword-uri-fixup"
-      );
+      let notification =
+        notificationBox.getNotificationWithValue("keyword-uri-fixup");
       
       if (i == setValueFns.length - 1) {
         docLoadPromise = BrowserTestUtils.waitForDocLoadAndStopIt(

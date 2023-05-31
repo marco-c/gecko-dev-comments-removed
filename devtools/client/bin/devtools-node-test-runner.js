@@ -185,7 +185,8 @@ function getTypescriptErrors(out, err, testPath) {
   
   
   
-  const tsErrorRegex = /(?<file>(\w|\/|\.)+)\((?<line>\d+),(?<column>\d+)\): (?<message>error TS\d+\:.*)/;
+  const tsErrorRegex =
+    /(?<file>(\w|\/|\.)+)\((?<line>\d+),(?<column>\d+)\): (?<message>error TS\d+\:.*)/;
   const errors = [];
   for (const line of out.split("\n")) {
     const res = line.match(tsErrorRegex);

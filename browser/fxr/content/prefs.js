@@ -49,17 +49,18 @@ function initClearAllData() {
 
   
   document.getElementById("eClearConfirm").addEventListener("click", () => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, function (
-      aFailedFlags
-    ) {
-      if (aFailedFlags == 0) {
-        eClearTry.textContent = "Data cleared";
-        eClearTry.disabled = true;
-        document.body.appendChild(clearModalContainer());
-      } else {
-        eClearTry.textContent = "Error";
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_ALL,
+      function (aFailedFlags) {
+        if (aFailedFlags == 0) {
+          eClearTry.textContent = "Data cleared";
+          eClearTry.disabled = true;
+          document.body.appendChild(clearModalContainer());
+        } else {
+          eClearTry.textContent = "Error";
+        }
       }
-    });
+    );
   });
 }
 

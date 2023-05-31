@@ -118,7 +118,8 @@ async function waitForConsoleOutputChildListChange(hud, predicate) {
     { childList: true, subtree: true }
   );
 }
-exports.waitForConsoleOutputChildListChange = waitForConsoleOutputChildListChange;
+exports.waitForConsoleOutputChildListChange =
+  waitForConsoleOutputChildListChange;
 
 
 

@@ -135,107 +135,112 @@ add_setup(async function () {
 
 
 add_task(async function testUseTempPermissionsFirstParty() {
-  await BrowserTestUtils.withNewTab(CROSS_SUBFRAME_PAGE, async function (
-    browser
-  ) {
-    SitePermissions.setForPrincipal(
-      principal,
-      "geo",
-      SitePermissions.BLOCK,
-      SitePermissions.SCOPE_TEMPORARY,
-      browser
-    );
+  await BrowserTestUtils.withNewTab(
+    CROSS_SUBFRAME_PAGE,
+    async function (browser) {
+      SitePermissions.setForPrincipal(
+        principal,
+        "geo",
+        SitePermissions.BLOCK,
+        SitePermissions.SCOPE_TEMPORARY,
+        browser
+      );
 
-    await checkGeolocation(browser, "frame", PromptResult.DENY);
+      await checkGeolocation(browser, "frame", PromptResult.DENY);
 
-    SitePermissions.removeFromPrincipal(principal, "geo", browser);
-  });
+      SitePermissions.removeFromPrincipal(principal, "geo", browser);
+    }
+  );
 });
 
 
 
 add_task(async function testUsePersistentPermissionsFirstParty() {
-  await BrowserTestUtils.withNewTab(CROSS_SUBFRAME_PAGE, async function (
-    browser
-  ) {
-    async function checkPermission(aPermission, aExpect) {
-      PermissionTestUtils.add(uri, "geo", aPermission);
-      await checkGeolocation(browser, "frame", aExpect);
+  await BrowserTestUtils.withNewTab(
+    CROSS_SUBFRAME_PAGE,
+    async function (browser) {
+      async function checkPermission(aPermission, aExpect) {
+        PermissionTestUtils.add(uri, "geo", aPermission);
+        await checkGeolocation(browser, "frame", aExpect);
 
-      if (aExpect == PromptResult.PROMPT) {
-        
-        let popuphidden = BrowserTestUtils.waitForEvent(
-          PopupNotifications.panel,
-          "popuphidden"
-        );
+        if (aExpect == PromptResult.PROMPT) {
+          
+          let popuphidden = BrowserTestUtils.waitForEvent(
+            PopupNotifications.panel,
+            "popuphidden"
+          );
 
-        let notification = PopupNotifications.panel.firstElementChild;
-        
-        is(
-          PopupNotifications.getNotification("geolocation").options.name,
-          uri.host,
-          "Use first party's origin"
-        );
+          let notification = PopupNotifications.panel.firstElementChild;
+          
+          is(
+            PopupNotifications.getNotification("geolocation").options.name,
+            uri.host,
+            "Use first party's origin"
+          );
 
-        EventUtils.synthesizeMouseAtCenter(notification.secondaryButton, {});
+          EventUtils.synthesizeMouseAtCenter(notification.secondaryButton, {});
 
-        await popuphidden;
-        SitePermissions.removeFromPrincipal(null, "geo", browser);
+          await popuphidden;
+          SitePermissions.removeFromPrincipal(null, "geo", browser);
+        }
+
+        PermissionTestUtils.remove(uri, "geo");
       }
 
-      PermissionTestUtils.remove(uri, "geo");
+      await checkPermission(Perms.PROMPT_ACTION, PromptResult.PROMPT);
+      await checkPermission(Perms.DENY_ACTION, PromptResult.DENY);
+      await checkPermission(Perms.ALLOW_ACTION, PromptResult.ALLOW);
     }
-
-    await checkPermission(Perms.PROMPT_ACTION, PromptResult.PROMPT);
-    await checkPermission(Perms.DENY_ACTION, PromptResult.DENY);
-    await checkPermission(Perms.ALLOW_ACTION, PromptResult.ALLOW);
-  });
+  );
 });
 
 
 
 add_task(async function testPromptInMaybeUnsafePermissionDelegation() {
-  await BrowserTestUtils.withNewTab(CROSS_SUBFRAME_PAGE, async function (
-    browser
-  ) {
-    
-    PermissionTestUtils.add(uri, "geo", Perms.ALLOW_ACTION);
+  await BrowserTestUtils.withNewTab(
+    CROSS_SUBFRAME_PAGE,
+    async function (browser) {
+      
+      PermissionTestUtils.add(uri, "geo", Perms.ALLOW_ACTION);
 
-    await checkGeolocation(browser, "frameAllowsAll", PromptResult.ALLOW);
+      await checkGeolocation(browser, "frameAllowsAll", PromptResult.ALLOW);
 
-    SitePermissions.removeFromPrincipal(null, "geo", browser);
-    PermissionTestUtils.remove(uri, "geo");
-  });
+      SitePermissions.removeFromPrincipal(null, "geo", browser);
+      PermissionTestUtils.remove(uri, "geo");
+    }
+  );
 });
 
 
 
 
 add_task(async function testPromptChangeLocationUnsafePermissionDelegation() {
-  await BrowserTestUtils.withNewTab(CROSS_SUBFRAME_PAGE, async function (
-    browser
-  ) {
-    
-    PermissionTestUtils.add(uri, "geo", Perms.ALLOW_ACTION);
+  await BrowserTestUtils.withNewTab(
+    CROSS_SUBFRAME_PAGE,
+    async function (browser) {
+      
+      PermissionTestUtils.add(uri, "geo", Perms.ALLOW_ACTION);
 
-    let iframe = await SpecialPowers.spawn(browser, [], () => {
-      return content.document.getElementById("frameAllowsAll").browsingContext;
-    });
+      let iframe = await SpecialPowers.spawn(browser, [], () => {
+        return content.document.getElementById("frameAllowsAll")
+          .browsingContext;
+      });
 
-    let otherURI =
-      "https://test1.example.com/browser/browser/base/content/test/permissions/permissions.html";
-    let loaded = BrowserTestUtils.browserLoaded(browser, true, otherURI);
-    await SpecialPowers.spawn(iframe, [otherURI], async function (_otherURI) {
-      content.location = _otherURI;
-    });
-    await loaded;
+      let otherURI =
+        "https://test1.example.com/browser/browser/base/content/test/permissions/permissions.html";
+      let loaded = BrowserTestUtils.browserLoaded(browser, true, otherURI);
+      await SpecialPowers.spawn(iframe, [otherURI], async function (_otherURI) {
+        content.location = _otherURI;
+      });
+      await loaded;
 
-    await checkGeolocation(browser, "frameAllowsAll", PromptResult.PROMPT);
-    await checkNotificationBothOrigins(uri.host, "test1.example.com");
+      await checkGeolocation(browser, "frameAllowsAll", PromptResult.PROMPT);
+      await checkNotificationBothOrigins(uri.host, "test1.example.com");
 
-    SitePermissions.removeFromPrincipal(null, "geo", browser);
-    PermissionTestUtils.remove(uri, "geo");
-  });
+      SitePermissions.removeFromPrincipal(null, "geo", browser);
+      PermissionTestUtils.remove(uri, "geo");
+    }
+  );
 });
 
 

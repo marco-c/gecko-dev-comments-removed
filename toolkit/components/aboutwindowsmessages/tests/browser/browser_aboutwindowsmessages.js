@@ -14,9 +14,8 @@ async function resizeWindow(windowToResize, width, height) {
 
 add_task(async () => {
   const TEST_LINK = "https://example.com/";
-  let originalBrowserWindow = Services.wm.getMostRecentWindow(
-    "navigator:browser"
-  );
+  let originalBrowserWindow =
+    Services.wm.getMostRecentWindow("navigator:browser");
   let originalBrowser = originalBrowserWindow.gBrowser;
   
   await resizeWindow(originalBrowserWindow, 500, 400);

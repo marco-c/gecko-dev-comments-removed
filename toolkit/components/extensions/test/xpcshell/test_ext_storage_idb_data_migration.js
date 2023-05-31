@@ -36,10 +36,8 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
 
 const { promiseShutdownManager, promiseStartupManager } = AddonTestUtils;
 
-const {
-  IDB_MIGRATED_PREF_BRANCH,
-  IDB_MIGRATE_RESULT_HISTOGRAM,
-} = ExtensionStorageIDB;
+const { IDB_MIGRATED_PREF_BRANCH, IDB_MIGRATE_RESULT_HISTOGRAM } =
+  ExtensionStorageIDB;
 const CATEGORIES = ["success", "failure"];
 const EVENT_CATEGORY = "extensions.data";
 const EVENT_OBJECT = "storageLocal";
@@ -580,10 +578,8 @@ add_task(async function test_storage_local_data_migration_failure() {
   const EXTENSION_ID = "extension-data-migration-failure@mozilla.org";
 
   
-  const {
-    jsonFile,
-    oldStorageFilename,
-  } = await createExtensionJSONFileWithData(EXTENSION_ID, {});
+  const { jsonFile, oldStorageFilename } =
+    await createExtensionJSONFileWithData(EXTENSION_ID, {});
 
   
   

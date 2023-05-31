@@ -343,9 +343,8 @@ this.uicontrol = (function () {
 
         for (let i = 0; i < 2; i++) {
           const move = `translate(${xpos}px, ${ypos}px)`;
-          event.target.getElementsByClassName("eyeball")[
-            i
-          ].style.transform = move;
+          event.target.getElementsByClassName("eyeball")[i].style.transform =
+            move;
         }
       } else {
         

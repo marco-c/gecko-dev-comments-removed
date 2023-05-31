@@ -26,41 +26,35 @@ ruleTester.run("use-static-import", rule, {
   valid: [
     {
       
-      code:
-        'import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";',
+      code: 'import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";',
       filename: "test.sys.mjs",
     },
     {
       
-      code:
-        'if (foo) { const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs") }',
+      code: 'if (foo) { const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs") }',
       filename: "test.sys.mjs",
     },
     {
       
-      code:
-        'function foo() { const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs") }',
+      code: 'function foo() { const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs") }',
       filename: "test.sys.mjs",
     },
     {
       
-      code:
-        'const { f } = ChromeUtils.importESModule("some/module.sys.mjs", { loadInDevToolsLoader : true });',
+      code: 'const { f } = ChromeUtils.importESModule("some/module.sys.mjs", { loadInDevToolsLoader : true });',
       filename: "test.sys.mjs",
     },
     {
       
       
-      code:
-        'const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
+      code: 'const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
       filename: "test.mjs",
     },
   ],
   invalid: [
     {
       
-      code:
-        'const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
+      code: 'const { XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
       errors: callError(),
       filename: "test.sys.mjs",
       output:
@@ -68,8 +62,7 @@ ruleTester.run("use-static-import", rule, {
     },
     {
       
-      code:
-        'const { XPCOMUtils: foo } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
+      code: 'const { XPCOMUtils: foo } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
       errors: callError(),
       filename: "test.sys.mjs",
       output:
@@ -77,8 +70,7 @@ ruleTester.run("use-static-import", rule, {
     },
     {
       
-      code:
-        'const { foo, XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
+      code: 'const { foo, XPCOMUtils } = ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs")',
       errors: callError(),
       filename: "test.sys.mjs",
       output:

@@ -287,10 +287,11 @@ add_task(async function testCookiesSubViewAllowed() {
     TPC_PREF,
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    
-    "http://trackertest.org/"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      
+      "http://trackertest.org/"
+    );
   Services.perms.addFromPrincipal(
     principal,
     "cookie",
@@ -371,16 +372,18 @@ add_task(async function testCookiesSubViewAllowedHeuristic() {
     TPC_PREF,
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    
-    "http://not-tracking.example.com/"
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      
+      "http://not-tracking.example.com/"
+    );
 
   
-  let trackerPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    
-    "http://trackertest.org/"
-  );
+  let trackerPrincipal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      
+      "http://trackertest.org/"
+    );
   Services.perms.addFromPrincipal(
     trackerPrincipal,
     "storageAccessAPI",

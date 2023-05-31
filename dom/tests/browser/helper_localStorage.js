@@ -160,9 +160,8 @@ function triggerAndWaitForLocalStorageFlush() {
 
 
 function clearOriginStorageEnsuringNoPreload(origin) {
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
 
   if (Services.domStorageManager.nextGenLocalStorageEnabled) {
     let request = Services.qms.clearStoragesForPrincipal(
@@ -199,9 +198,8 @@ async function verifyTabPreload(knownTab, expectStorageExists, origin) {
     knownTab.tab.linkedBrowser,
     [origin],
     function (origin) {
-      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        origin
-      );
+      let principal =
+        Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
       if (Services.domStorageManager.nextGenLocalStorageEnabled) {
         return Services.domStorageManager.isPreloaded(principal);
       }

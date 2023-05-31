@@ -1216,28 +1216,26 @@ CopyTest.prototype = {
 
 
 
-  makeSinkWritableByIncrementsAndWaitFor: function makeSinkWritableByIncrementsAndWaitFor(
-    bytes,
-    dataQuantums
-  ) {
-    var self = this;
+  makeSinkWritableByIncrementsAndWaitFor:
+    function makeSinkWritableByIncrementsAndWaitFor(bytes, dataQuantums) {
+      var self = this;
 
-    var desiredAmounts = dataQuantums.map(function (v) {
-      return v.length;
-    });
-    Assert.equal(bytes, sum(desiredAmounts), "bytes/quantums mismatch");
+      var desiredAmounts = dataQuantums.map(function (v) {
+        return v.length;
+      });
+      Assert.equal(bytes, sum(desiredAmounts), "bytes/quantums mismatch");
 
-    function increaseSinkSpaceByIncrementsTask() {
-      
-      self._sink.makeWritableByIncrements(desiredAmounts);
-    }
+      function increaseSinkSpaceByIncrementsTask() {
+        
+        self._sink.makeWritableByIncrements(desiredAmounts);
+      }
 
-    this._waitForHelper(
-      "increaseSinkSpaceByIncrementsTask",
-      dataQuantums,
-      increaseSinkSpaceByIncrementsTask
-    );
-  },
+      this._waitForHelper(
+        "increaseSinkSpaceByIncrementsTask",
+        dataQuantums,
+        increaseSinkSpaceByIncrementsTask
+      );
+    },
 
   
 

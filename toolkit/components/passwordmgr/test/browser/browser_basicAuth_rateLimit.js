@@ -16,70 +16,98 @@ function promiseAuthWindowShown() {
 }
 
 add_task(async function test() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function (
-    browser
-  ) {
-    let cancelDialogLimit = Services.prefs.getIntPref(
-      "prompts.authentication_dialog_abuse_limit"
-    );
+  await BrowserTestUtils.withNewTab(
+    "https://example.com",
+    async function (browser) {
+      let cancelDialogLimit = Services.prefs.getIntPref(
+        "prompts.authentication_dialog_abuse_limit"
+      );
 
-    let authShown = promiseAuthWindowShown();
-    let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.loadURIString(
-      browser,
-      "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs"
-    );
-    await authShown;
-    Assert.ok(true, "Seen dialog number 1");
-    await browserLoaded;
-    Assert.ok(true, "Loaded document number 1");
-
-    
-    
-    
-    
-    
-    for (let i = 1; i < cancelDialogLimit + 2; i++) {
-      if (i < cancelDialogLimit) {
-        authShown = promiseAuthWindowShown();
-      }
-      browserLoaded = BrowserTestUtils.browserLoaded(browser);
-      SpecialPowers.spawn(browser, [], function () {
-        content.document.location.reload();
-      });
-      if (i < cancelDialogLimit) {
-        await authShown;
-        Assert.ok(true, `Seen dialog number ${i + 1}`);
-      }
+      let authShown = promiseAuthWindowShown();
+      let browserLoaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURIString(
+        browser,
+        "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs"
+      );
+      await authShown;
+      Assert.ok(true, "Seen dialog number 1");
       await browserLoaded;
-      Assert.ok(true, `Loaded document number ${i + 1}`);
-    }
+      Assert.ok(true, "Loaded document number 1");
 
-    let reloadButton = document.getElementById("reload-button");
-    await TestUtils.waitForCondition(
-      () => !reloadButton.hasAttribute("disabled")
-    );
-
-    
-    authShown = promiseAuthWindowShown();
-    browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    reloadButton.click();
-    await authShown;
-    Assert.ok(true, "Seen dialog number 1");
-    await browserLoaded;
-    Assert.ok(true, "Loaded document number 1");
-
-    
-    browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.loadURIString(browser, "https://example.com");
-    await browserLoaded;
-
-    
-    for (let i = 1; i < cancelDialogLimit + 2; i++) {
-      if (i < cancelDialogLimit) {
-        authShown = promiseAuthWindowShown();
+      
+      
+      
+      
+      
+      for (let i = 1; i < cancelDialogLimit + 2; i++) {
+        if (i < cancelDialogLimit) {
+          authShown = promiseAuthWindowShown();
+        }
+        browserLoaded = BrowserTestUtils.browserLoaded(browser);
+        SpecialPowers.spawn(browser, [], function () {
+          content.document.location.reload();
+        });
+        if (i < cancelDialogLimit) {
+          await authShown;
+          Assert.ok(true, `Seen dialog number ${i + 1}`);
+        }
+        await browserLoaded;
+        Assert.ok(true, `Loaded document number ${i + 1}`);
       }
 
+      let reloadButton = document.getElementById("reload-button");
+      await TestUtils.waitForCondition(
+        () => !reloadButton.hasAttribute("disabled")
+      );
+
+      
+      authShown = promiseAuthWindowShown();
+      browserLoaded = BrowserTestUtils.browserLoaded(browser);
+      reloadButton.click();
+      await authShown;
+      Assert.ok(true, "Seen dialog number 1");
+      await browserLoaded;
+      Assert.ok(true, "Loaded document number 1");
+
+      
+      browserLoaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.loadURIString(browser, "https://example.com");
+      await browserLoaded;
+
+      
+      for (let i = 1; i < cancelDialogLimit + 2; i++) {
+        if (i < cancelDialogLimit) {
+          authShown = promiseAuthWindowShown();
+        }
+
+        let iframeLoaded = SpecialPowers.spawn(browser, [], async function () {
+          let doc = content.document;
+          let iframe = doc.createElement("iframe");
+          doc.body.appendChild(iframe);
+          let loaded = new Promise(resolve => {
+            iframe.addEventListener(
+              "load",
+              function (e) {
+                resolve();
+              },
+              { once: true }
+            );
+          });
+          iframe.src =
+            "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
+          await loaded;
+        });
+
+        if (i < cancelDialogLimit) {
+          await authShown;
+          Assert.ok(true, `Seen dialog number ${i + 1}`);
+        }
+
+        await iframeLoaded;
+        Assert.ok(true, `Loaded iframe number ${i + 1}`);
+      }
+
+      
       let iframeLoaded = SpecialPowers.spawn(browser, [], async function () {
         let doc = content.document;
         let iframe = doc.createElement("iframe");
@@ -94,52 +122,25 @@ add_task(async function test() {
           );
         });
         iframe.src =
-          "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
+          "https://example.org/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
         await loaded;
       });
 
-      if (i < cancelDialogLimit) {
-        await authShown;
-        Assert.ok(true, `Seen dialog number ${i + 1}`);
-      }
-
       await iframeLoaded;
-      Assert.ok(true, `Loaded iframe number ${i + 1}`);
+      Assert.ok(
+        true,
+        "Loaded a third party iframe without showing the auth dialog"
+      );
+
+      
+      authShown = promiseAuthWindowShown();
+      browserLoaded = BrowserTestUtils.browserLoaded(browser);
+      gURLBar.value =
+        "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
+      gURLBar.focus();
+      EventUtils.synthesizeKey("KEY_Enter");
+      await authShown;
+      await browserLoaded;
     }
-
-    
-    let iframeLoaded = SpecialPowers.spawn(browser, [], async function () {
-      let doc = content.document;
-      let iframe = doc.createElement("iframe");
-      doc.body.appendChild(iframe);
-      let loaded = new Promise(resolve => {
-        iframe.addEventListener(
-          "load",
-          function (e) {
-            resolve();
-          },
-          { once: true }
-        );
-      });
-      iframe.src =
-        "https://example.org/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
-      await loaded;
-    });
-
-    await iframeLoaded;
-    Assert.ok(
-      true,
-      "Loaded a third party iframe without showing the auth dialog"
-    );
-
-    
-    authShown = promiseAuthWindowShown();
-    browserLoaded = BrowserTestUtils.browserLoaded(browser);
-    gURLBar.value =
-      "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
-    gURLBar.focus();
-    EventUtils.synthesizeKey("KEY_Enter");
-    await authShown;
-    await browserLoaded;
-  });
+  );
 });

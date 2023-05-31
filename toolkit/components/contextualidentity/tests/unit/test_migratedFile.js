@@ -72,9 +72,8 @@ add_task(async function migratedFile() {
     tmpPath: TEST_STORE_FILE_PATH + ".tmp",
   });
 
-  let cis = ContextualIdentityService.createNewInstanceForTesting(
-    TEST_STORE_FILE_PATH
-  );
+  let cis =
+    ContextualIdentityService.createNewInstanceForTesting(TEST_STORE_FILE_PATH);
   ok(!!cis, "We have our instance of ContextualIdentityService");
 
   
@@ -104,11 +103,12 @@ add_task(async function migratedFile() {
 
   
 
-  const webextStorageLocalPrivateId = ContextualIdentityService._defaultIdentities
-    .filter(
-      identity => identity.name === "userContextIdInternal.webextStorageLocal"
-    )
-    .pop().userContextId;
+  const webextStorageLocalPrivateId =
+    ContextualIdentityService._defaultIdentities
+      .filter(
+        identity => identity.name === "userContextIdInternal.webextStorageLocal"
+      )
+      .pop().userContextId;
 
   const privWebExtStorageLocal = cis.getPrivateIdentity(
     "userContextIdInternal.webextStorageLocal"

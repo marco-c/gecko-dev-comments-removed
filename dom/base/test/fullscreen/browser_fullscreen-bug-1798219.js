@@ -90,8 +90,7 @@ add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url:
-        "http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-bug-1798219-2.html",
+      url: "http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-bug-1798219-2.html",
     },
     async function (browser) {
       

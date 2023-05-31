@@ -339,9 +339,8 @@ export function getSourcesToRemoveForThread(state, threadActorID) {
       sourcesToRemove.push(state.sources.mutableSources.get(sourceId));
 
       
-      const originalSourceIds = state.sources.mutableOriginalSources.get(
-        sourceId
-      );
+      const originalSourceIds =
+        state.sources.mutableOriginalSources.get(sourceId);
       if (originalSourceIds?.length > 0) {
         for (const originalSourceId of originalSourceIds) {
           sourcesToRemove.push(

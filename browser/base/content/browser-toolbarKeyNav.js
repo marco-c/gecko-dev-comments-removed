@@ -213,9 +213,8 @@ ToolbarKeyboardNavigator = {
         
         
         while (earlierVisibleStopIndex >= 0) {
-          let stopToolbar = allStops[earlierVisibleStopIndex].closest(
-            "toolbar"
-          );
+          let stopToolbar =
+            allStops[earlierVisibleStopIndex].closest("toolbar");
           if (!stopToolbar.collapsed) {
             break;
           }

@@ -183,9 +183,10 @@ var SiteDataManager = {
               
               continue;
             }
-            let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-              item.origin
-            );
+            let principal =
+              Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+                item.origin
+              );
             if (principal.schemeIs("http") || principal.schemeIs("https")) {
               
               
@@ -315,9 +316,10 @@ var SiteDataManager = {
             continue;
           }
 
-          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-            item.origin
-          );
+          let principal =
+            Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+              item.origin
+            );
           if (principal.asciiHost == asciiHost) {
             resolve(true);
             return;
@@ -439,9 +441,10 @@ var SiteDataManager = {
         new Promise(resolve => {
           
           
-          principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-            originNoSuffix
-          );
+          principal =
+            Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+              originNoSuffix
+            );
           let request = this._qms.clearStoragesForPrincipal(
             principal,
             null,

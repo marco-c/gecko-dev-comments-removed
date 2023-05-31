@@ -6,9 +6,8 @@
 
 add_task(async function testTempPermissionOnReload() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   await BrowserTestUtils.withNewTab(origin, async function (browser) {
@@ -120,9 +119,8 @@ add_task(async function testTempPermissionOnReload() {
 
 add_task(async function testTempPermissionOnReloadAllTabs() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   await BrowserTestUtils.withNewTab(origin, async function (browser) {
@@ -174,9 +172,8 @@ add_task(async function testTempPermissionOnReloadAllTabs() {
 
 add_task(async function testTempPermissionOnNavigation() {
   let origin = "https://example.com/";
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    origin
-  );
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
   let id = "geo";
 
   await BrowserTestUtils.withNewTab(origin, async function (browser) {

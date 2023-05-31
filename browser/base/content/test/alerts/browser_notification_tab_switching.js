@@ -35,20 +35,22 @@ add_task(async function test_notificationPreventDefaultAndSwitchTabs() {
 
       
       function promiseNotificationEvent(evt) {
-        return SpecialPowers.spawn(aBrowser, [evt], async function (
-          contentEvt
-        ) {
-          return new Promise(resolve => {
-            let contentNotification = content.wrappedJSObject._notification;
-            contentNotification.addEventListener(
-              contentEvt,
-              function (event) {
-                resolve({ defaultPrevented: event.defaultPrevented });
-              },
-              { once: true }
-            );
-          });
-        });
+        return SpecialPowers.spawn(
+          aBrowser,
+          [evt],
+          async function (contentEvt) {
+            return new Promise(resolve => {
+              let contentNotification = content.wrappedJSObject._notification;
+              contentNotification.addEventListener(
+                contentEvt,
+                function (event) {
+                  resolve({ defaultPrevented: event.defaultPrevented });
+                },
+                { once: true }
+              );
+            });
+          }
+        );
       }
       await openNotification(aBrowser, "showNotification1");
       info("Notification alert showing");

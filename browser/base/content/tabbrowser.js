@@ -56,9 +56,8 @@
       return;
     }
 
-    let identity = ContextualIdentityService.getPublicIdentityFromId(
-      userContextId
-    );
+    let identity =
+      ContextualIdentityService.getPublicIdentityFromId(userContextId);
     if (!identity) {
       replaceContainerClass("color", hbox, "");
       hbox.hidden = true;
@@ -498,10 +497,11 @@
         URILoadingWrapper,
         browser
       );
-      browser.fixupAndLoadURIString = URILoadingWrapper.fixupAndLoadURIString.bind(
-        URILoadingWrapper,
-        browser
-      );
+      browser.fixupAndLoadURIString =
+        URILoadingWrapper.fixupAndLoadURIString.bind(
+          URILoadingWrapper,
+          browser
+        );
 
       let uniqueId = this._generateUniquePanelID();
       let panel = this.getPanel(browser);
@@ -1200,8 +1200,10 @@
 
       this._updateVisibleNotificationBox(newBrowser);
 
-      let oldBrowserPopupsBlocked = oldBrowser.popupBlocker.getBlockedPopupCount();
-      let newBrowserPopupsBlocked = newBrowser.popupBlocker.getBlockedPopupCount();
+      let oldBrowserPopupsBlocked =
+        oldBrowser.popupBlocker.getBlockedPopupCount();
+      let newBrowserPopupsBlocked =
+        newBrowser.popupBlocker.getBlockedPopupCount();
       if (oldBrowserPopupsBlocked != newBrowserPopupsBlocked) {
         newBrowser.popupBlocker.updateBlockedPopupsUI();
       }
@@ -1682,8 +1684,9 @@
         
         if (browser.currentURI.displaySpec) {
           try {
-            title = Services.io.createExposableURI(browser.currentURI)
-              .displaySpec;
+            title = Services.io.createExposableURI(
+              browser.currentURI
+            ).displaySpec;
           } catch (ex) {
             title = browser.currentURI.displaySpec;
           }
@@ -2381,10 +2384,11 @@
         URILoadingWrapper,
         browser
       );
-      browser.fixupAndLoadURIString = URILoadingWrapper.fixupAndLoadURIString.bind(
-        URILoadingWrapper,
-        browser
-      );
+      browser.fixupAndLoadURIString =
+        URILoadingWrapper.fixupAndLoadURIString.bind(
+          URILoadingWrapper,
+          browser
+        );
 
       
       
@@ -2528,11 +2532,10 @@
 
     addWebTab(aURI, params = {}) {
       if (!params.triggeringPrincipal) {
-        params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
-          {
+        params.triggeringPrincipal =
+          Services.scriptSecurityManager.createNullPrincipal({
             userContextId: params.userContextId,
-          }
-        );
+          });
       }
       if (params.triggeringPrincipal.isSystemPrincipal) {
         throw new Error(
@@ -2562,7 +2565,8 @@
 
 
     addTrustedTab(aURI, params = {}) {
-      params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+      params.triggeringPrincipal =
+        Services.scriptSecurityManager.getSystemPrincipal();
       return this.addTab(aURI, params);
     },
 
@@ -2743,9 +2747,8 @@
                 {
                   url: lazyBrowserURI?.spec || "about:blank",
                   title: lazyTabTitle,
-                  triggeringPrincipal_base64: E10SUtils.serializePrincipal(
-                    triggeringPrincipal
-                  ),
+                  triggeringPrincipal_base64:
+                    E10SUtils.serializePrincipal(triggeringPrincipal),
                 },
               ],
               
@@ -3761,15 +3764,13 @@
 
     async runBeforeUnloadForTabs(tabs) {
       try {
-        let {
-          beforeUnloadComplete,
-          tabsWithBeforeUnloadPrompt,
-        } = this._startRemoveTabs(tabs, {
-          animate: false,
-          suppressWarnAboutClosingWindow: false,
-          skipPermitUnload: false,
-          skipRemoves: true,
-        });
+        let { beforeUnloadComplete, tabsWithBeforeUnloadPrompt } =
+          this._startRemoveTabs(tabs, {
+            animate: false,
+            suppressWarnAboutClosingWindow: false,
+            skipPermitUnload: false,
+            skipRemoves: true,
+          });
 
         await beforeUnloadComplete;
 
@@ -3829,16 +3830,13 @@
 
       
       try {
-        let {
-          beforeUnloadComplete,
-          tabsWithBeforeUnloadPrompt,
-          lastToClose,
-        } = this._startRemoveTabs(tabs, {
-          animate,
-          suppressWarnAboutClosingWindow,
-          skipPermitUnload,
-          skipRemoves: false,
-        });
+        let { beforeUnloadComplete, tabsWithBeforeUnloadPrompt, lastToClose } =
+          this._startRemoveTabs(tabs, {
+            animate,
+            suppressWarnAboutClosingWindow,
+            skipPermitUnload,
+            skipRemoves: false,
+          });
 
         
         
@@ -4699,9 +4697,8 @@
       
       
       if (!this._switcher) {
-        aOtherBrowser.docShellIsActive = this.shouldActivateDocShell(
-          ourBrowser
-        );
+        aOtherBrowser.docShellIsActive =
+          this.shouldActivateDocShell(ourBrowser);
       }
 
       
@@ -5600,15 +5597,12 @@
 
         try {
           this._awaitingToggleCaretBrowsingPrompt = true;
-          const [
-            title,
-            message,
-            checkbox,
-          ] = this.tabLocalization.formatValuesSync([
-            "tabbrowser-confirm-caretbrowsing-title",
-            "tabbrowser-confirm-caretbrowsing-message",
-            "tabbrowser-confirm-caretbrowsing-checkbox",
-          ]);
+          const [title, message, checkbox] =
+            this.tabLocalization.formatValuesSync([
+              "tabbrowser-confirm-caretbrowsing-title",
+              "tabbrowser-confirm-caretbrowsing-message",
+              "tabbrowser-confirm-caretbrowsing-checkbox",
+            ]);
           var buttonPressed = promptService.confirmEx(
             window,
             title,
@@ -5840,9 +5834,8 @@
       
 
       let notificationBox = this.getNotificationBox(browser);
-      let notification = notificationBox.getNotificationWithValue(
-        "refresh-blocked"
-      );
+      let notification =
+        notificationBox.getNotificationWithValue("refresh-blocked");
 
       let l10nId = data.sameURI
         ? "refresh-blocked-refresh-label"
@@ -6606,11 +6599,8 @@
         location
       );
 
-      const {
-        STATE_START,
-        STATE_STOP,
-        STATE_IS_NETWORK,
-      } = Ci.nsIWebProgressListener;
+      const { STATE_START, STATE_STOP, STATE_IS_NETWORK } =
+        Ci.nsIWebProgressListener;
 
       
       
@@ -6672,7 +6662,8 @@
                 isURL: true,
               });
 
-              this.mBrowser.browsingContext.nonWebControlledBlankURI = originalLocation;
+              this.mBrowser.browsingContext.nonWebControlledBlankURI =
+                originalLocation;
               if (this.mTab.selected && !gBrowser.userTypedValue) {
                 gURLBar.setURI();
               }
@@ -7123,7 +7114,8 @@
             .getService(Ci.nsIMIMEService)
             .getTypeFromURI(aUri);
           if (mimeType == "application/x-xpinstall") {
-            let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+            let systemPrincipal =
+              Services.scriptSecurityManager.getSystemPrincipal();
             AddonManager.getInstallForURL(aUri.spec, {
               telemetryInfo: { source: "file-url" },
             }).then(install => {
@@ -7481,9 +7473,8 @@ var TabContextMenu = {
 
     
     document.getElementById("context_reloadTab").hidden = multiselectionContext;
-    document.getElementById(
-      "context_reloadSelectedTabs"
-    ).hidden = !multiselectionContext;
+    document.getElementById("context_reloadSelectedTabs").hidden =
+      !multiselectionContext;
 
     
     document.getElementById("context_playTab").hidden = !(
@@ -7550,12 +7541,10 @@ var TabContextMenu = {
     }
 
     
-    document.getElementById(
-      "context_duplicateTab"
-    ).hidden = multiselectionContext;
-    document.getElementById(
-      "context_duplicateTabs"
-    ).hidden = !multiselectionContext;
+    document.getElementById("context_duplicateTab").hidden =
+      multiselectionContext;
+    document.getElementById("context_duplicateTabs").hidden =
+      !multiselectionContext;
 
     
     
@@ -7712,9 +7701,8 @@ var TabContextMenu = {
         
         
         
-        triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
-          { userContextId }
-        );
+        triggeringPrincipal =
+          Services.scriptSecurityManager.createNullPrincipal({ userContextId });
       } else if (triggeringPrincipal.isContentPrincipal) {
         triggeringPrincipal = Services.scriptSecurityManager.principalWithOA(
           triggeringPrincipal,

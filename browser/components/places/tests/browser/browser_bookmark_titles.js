@@ -7,8 +7,7 @@
 var tests = [
   
   {
-    url:
-      "http://example.com/browser/browser/components/places/tests/browser/dummy_page.html",
+    url: "http://example.com/browser/browser/components/places/tests/browser/dummy_page.html",
     title: "Dummy test page",
     isError: false,
   },

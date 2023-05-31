@@ -41,18 +41,16 @@ add_task(async function test_tabdialogbox_tab_switch_focus() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
 
   
-  let dialogTextbox = dialogs[0]._frame.contentDocument.querySelector(
-    "#textbox"
-  );
+  let dialogTextbox =
+    dialogs[0]._frame.contentDocument.querySelector("#textbox");
   is(Services.focus.focusedElement, dialogTextbox, "Dialog textbox is focused");
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
 
   
-  let dialogTextbox2 = dialogs[1]._frame.contentDocument.querySelector(
-    "#textbox"
-  );
+  let dialogTextbox2 =
+    dialogs[1]._frame.contentDocument.querySelector("#textbox");
   is(
     Services.focus.focusedElement,
     dialogTextbox2,
@@ -105,9 +103,8 @@ add_task(async function test_tabdialogbox_multiple_focus() {
     await Promise.all(dialogs.map(dialog => dialog._dialogReady));
 
     
-    let dialogElementA = dialogA._frame.contentDocument.querySelector(
-      "#custom-focus-el"
-    );
+    let dialogElementA =
+      dialogA._frame.contentDocument.querySelector("#custom-focus-el");
     is(
       Services.focus.focusedElement,
       dialogElementA,
@@ -119,9 +116,8 @@ add_task(async function test_tabdialogbox_multiple_focus() {
     await dialogAClose;
 
     
-    let dialogElementB = dialogB._frame.contentDocument.querySelector(
-      "#textbox"
-    );
+    let dialogElementB =
+      dialogB._frame.contentDocument.querySelector("#textbox");
     is(
       Services.focus.focusedElement,
       dialogElementB,
@@ -133,9 +129,8 @@ add_task(async function test_tabdialogbox_multiple_focus() {
     await dialogBClose;
 
     
-    let dialogElementC = dialogC._frame.contentDocument.querySelector(
-      "#custom-focus-el"
-    );
+    let dialogElementC =
+      dialogC._frame.contentDocument.querySelector("#custom-focus-el");
     is(
       Services.focus.focusedElement,
       dialogElementC,

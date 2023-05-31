@@ -84,8 +84,8 @@ class CookiesStorageActor extends BaseStorageActor {
     } else {
       
       
-      originAttributes = this.storageActor.document?.effectiveStoragePrincipal
-        .originAttributes;
+      originAttributes =
+        this.storageActor.document?.effectiveStoragePrincipal.originAttributes;
     }
 
     return originAttributes;

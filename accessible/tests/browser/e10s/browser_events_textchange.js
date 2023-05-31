@@ -42,9 +42,8 @@ async function changeText(browser, id, value, events) {
   );
   
   await invokeContentTask(browser, [id, value], (contentId, contentValue) => {
-    content.document.getElementById(
-      contentId
-    ).firstChild.textContent = contentValue;
+    content.document.getElementById(contentId).firstChild.textContent =
+      contentValue;
   });
   let resolvedEvents = await onEvents;
 

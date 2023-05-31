@@ -344,10 +344,11 @@ var gTests = [
         },
         async function (targetBrowser) {
           let mismatchURI = Services.io.newURI(HTTP_MISMATCH_PATH);
-          let mismatchPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-            mismatchURI,
-            {}
-          );
+          let mismatchPrincipal =
+            Services.scriptSecurityManager.createContentPrincipal(
+              mismatchURI,
+              {}
+            );
 
           
           
@@ -359,10 +360,11 @@ var gTests = [
             }
           );
 
-          let targetPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-            targetURI,
-            {}
-          );
+          let targetPrincipal =
+            Services.scriptSecurityManager.createContentPrincipal(
+              targetURI,
+              {}
+            );
 
           
           
@@ -453,8 +455,7 @@ var gTests = [
     },
   },
   {
-    desc:
-      "WebChannel allows both string and non-string message from whitelisted origin",
+    desc: "WebChannel allows both string and non-string message from whitelisted origin",
     async run() {
       
 
@@ -499,8 +500,7 @@ var gTests = [
     },
   },
   {
-    desc:
-      "WebChannel errors handling the message are delivered back to content",
+    desc: "WebChannel errors handling the message are delivered back to content",
     async run() {
       const ERRNO_UNKNOWN_ERROR = 999; 
 
@@ -539,8 +539,7 @@ var gTests = [
     },
   },
   {
-    desc:
-      "WebChannel errors due to an invalid channel are delivered back to content",
+    desc: "WebChannel errors due to an invalid channel are delivered back to content",
     async run() {
       const ERRNO_NO_SUCH_CHANNEL = 2; 
       

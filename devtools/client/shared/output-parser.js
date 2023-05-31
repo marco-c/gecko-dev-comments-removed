@@ -261,12 +261,8 @@ OutputParser.prototype = {
     const variableNode = this._createNode("span", {}, varText);
 
     
-    const {
-      tokens,
-      functionData,
-      sawComma,
-      sawVariable,
-    } = this._parseMatchingParens(text, tokenStream, options, true);
+    const { tokens, functionData, sawComma, sawVariable } =
+      this._parseMatchingParens(text, tokenStream, options, true);
 
     const result = sawVariable ? "" : functionData.join("");
 
@@ -1711,9 +1707,8 @@ OutputParser.prototype = {
       
       
       
-      const urlParts = /^(url\([ \t\r\n\f]*(["']?))(.*?)(\2[ \t\r\n\f]*\))$/i.exec(
-        match
-      );
+      const urlParts =
+        /^(url\([ \t\r\n\f]*(["']?))(.*?)(\2[ \t\r\n\f]*\))$/i.exec(match);
 
       
       if (!urlParts) {

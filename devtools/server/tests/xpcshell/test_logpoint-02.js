@@ -72,9 +72,9 @@ function evalCode(debuggee) {
   
   Cu.evalInSandbox(
     "debugger;\n" + 
-    "var a = 1;\n" + 
-    "while (a < 10) {\n" + 
-    "  a++;\n" + 
+      "var a = 1;\n" + 
+      "while (a < 10) {\n" + 
+      "  a++;\n" + 
       "}",
     debuggee,
     "1.8",

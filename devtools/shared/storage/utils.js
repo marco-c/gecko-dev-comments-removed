@@ -15,7 +15,8 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/storage/vendor/json5.js"
 );
 
-const MATH_REGEX = /(?:(?:^|[-+_*/])(?:\s*-?\d+(\.\d+)?(?:[eE][+-]?\d+)?\s*))+$/;
+const MATH_REGEX =
+  /(?:(?:^|[-+_*/])(?:\s*-?\d+(\.\d+)?(?:[eE][+-]?\d+)?\s*))+$/;
 
 
 

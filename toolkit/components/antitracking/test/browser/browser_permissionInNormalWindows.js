@@ -22,9 +22,10 @@ AntiTracking.runTest(
 
           
           
-          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-            "http://example.net/"
-          );
+          let principal =
+            Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+              "http://example.net/"
+            );
 
           for (let perm of Services.perms.getAllForPrincipal(principal)) {
             
@@ -61,9 +62,10 @@ AntiTracking.runTest(
       
       if (!SpecialPowers.useRemoteSubframes) {
         let Services = SpecialPowers.Services;
-        let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-          "http://example.net/"
-        );
+        let principal =
+          Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+            "http://example.net/"
+          );
 
         for (let perm of Services.perms.getAllForPrincipal(principal)) {
           

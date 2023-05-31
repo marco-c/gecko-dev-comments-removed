@@ -602,9 +602,8 @@ class NodeActor extends Actor {
 
 
   disableEventListener(eventListenerInfoId) {
-    const nsEventListenerInfo = this._nsIEventListenersInfo.get(
-      eventListenerInfoId
-    );
+    const nsEventListenerInfo =
+      this._nsIEventListenersInfo.get(eventListenerInfoId);
     if (!nsEventListenerInfo) {
       throw new Error("Unkown nsEventListenerInfo");
     }
@@ -617,9 +616,8 @@ class NodeActor extends Actor {
 
 
   enableEventListener(eventListenerInfoId) {
-    const nsEventListenerInfo = this._nsIEventListenersInfo.get(
-      eventListenerInfoId
-    );
+    const nsEventListenerInfo =
+      this._nsIEventListenersInfo.get(eventListenerInfoId);
     if (!nsEventListenerInfo) {
       throw new Error("Unkown nsEventListenerInfo");
     }
