@@ -290,7 +290,7 @@ KeyBinding LocalAccessible::AccessKey() const {
 KeyBinding LocalAccessible::KeyboardShortcut() const { return KeyBinding(); }
 
 uint64_t LocalAccessible::VisibilityState() const {
-  if (IPCAccessibilityActive() && a11y::IsCacheActive()) {
+  if (IPCAccessibilityActive()) {
     
     
     return 0;
@@ -441,7 +441,7 @@ uint64_t LocalAccessible::NativeInteractiveState() const {
   
   
   
-  const bool ignoreVisibility = mDoc->IPCDoc() && a11y::IsCacheActive();
+  const bool ignoreVisibility = mDoc->IPCDoc();
   if (frame && frame->IsFocusable(
                     false,
                     !ignoreVisibility)) {
@@ -901,8 +901,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           }
 
 #if defined(XP_WIN)
-          if (a11y::IsCacheActive() && HasOwnContent() &&
-              mContent->IsMathMLElement()) {
+          if (HasOwnContent() && mContent->IsMathMLElement()) {
             
             
             for (LocalAccessible* acc = this; acc; acc = acc->LocalParent()) {
@@ -986,17 +985,6 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
         }
 #endif  
         case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED: {
-#if defined(XP_WIN)
-          if (!a11y::IsCacheActive()) {
-            
-            
-            
-            
-            
-            ipcDoc->SendEvent(id, aEvent->GetEventType());
-            break;
-          }
-#endif  
           AccTextSelChangeEvent* textSelChangeEvent = downcast_accEvent(aEvent);
           AutoTArray<TextRange, 1> ranges;
           textSelChangeEvent->SelectionRanges(&ranges);
@@ -2509,17 +2497,8 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
       static_cast<uint32_t>((mParent->IsAlert() || mParent->IsInsideAlert())) &
       eInsideAlert;
 
-  if (TableCellAccessible* cell = AsTableCell()) {
-    if (a11y::IsCacheActive()) {
-      CachedTableAccessible::Invalidate(this);
-    } else if (Role() == roles::COLUMNHEADER) {
-      
-      
-      TableAccessible* table = cell->Table();
-      if (table) {
-        table->GetHeaderCache().Clear();
-      }
-    }
+  if (IsTableCell()) {
+    CachedTableAccessible::Invalidate(this);
   }
 }
 
@@ -2527,7 +2506,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
 void LocalAccessible::UnbindFromParent() {
   
   
-  if (a11y::IsCacheActive() && (IsTable() || IsTableCell())) {
+  if (IsTable() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
 
@@ -3090,10 +3069,6 @@ AccGroupInfo* LocalAccessible::GetOrCreateGroupInfo() {
 
 void LocalAccessible::SendCache(uint64_t aCacheDomain,
                                 CacheUpdateType aUpdateType) {
-  if (!a11y::IsCacheActive()) {
-    return;
-  }
-
   if (!IPCAccessibilityActive() || !Document()) {
     return;
   }
@@ -3843,8 +3818,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
   
   
-  if (!IPCAccessibilityActive() || !a11y::IsCacheActive() ||
-      !mOldComputedStyle) {
+  if (!IPCAccessibilityActive() || !mOldComputedStyle) {
     return;
   }
 
@@ -4045,20 +4019,14 @@ void LocalAccessible::StaticAsserts() const {
 }
 
 TableAccessibleBase* LocalAccessible::AsTableBase() {
-  if (a11y::IsCacheActive() && IsTable() && !mContent->IsXULElement()) {
-    
-    
-    
+  if (IsTable() && !mContent->IsXULElement()) {
     return CachedTableAccessible::GetFrom(this);
   }
   return AsTable();
 }
 
 TableCellAccessibleBase* LocalAccessible::AsTableCellBase() {
-  if (a11y::IsCacheActive() && IsTableCell() && !mContent->IsXULElement()) {
-    
-    
-    
+  if (IsTableCell() && !mContent->IsXULElement()) {
     return CachedTableCellAccessible::GetFrom(this);
   }
   return AsTableCell();
