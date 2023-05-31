@@ -3,7 +3,7 @@
 
 
 
-#include "jxl/resizable_parallel_runner.h"
+#include <jxl/resizable_parallel_runner.h>
 
 #include <algorithm>
 #include <atomic>

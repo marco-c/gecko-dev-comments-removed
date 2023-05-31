@@ -5,7 +5,7 @@
 
 #include "lib/jxl/base/profiler.h"
 
-#if PROFILER_ENABLED
+#if JXL_PROFILER_ENABLED
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,11 +20,12 @@
 
 
 #undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "lib/profiler/profiler.cc"
+#define HWY_TARGET_INCLUDE "lib/jxl/base/profiler.cc"
 #include <hwy/foreach_target.h>
 #include <hwy/highway.h>
 
 HWY_BEFORE_NAMESPACE();
+namespace jxl {
 namespace profiler {
 namespace HWY_NAMESPACE {
 
@@ -56,9 +57,11 @@ void StreamCacheLine(const Packet* HWY_RESTRICT from, Packet* HWY_RESTRICT to) {
 
 }  
 }  
+}  
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
+namespace jxl {
 namespace profiler {
 
 HWY_EXPORT(StreamCacheLine);
@@ -530,6 +533,7 @@ ThreadSpecific* Zone::InitThreadSpecific() {
   }
 }
 
+}  
 }  
 
 #endif

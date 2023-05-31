@@ -111,7 +111,10 @@ void PlaneBase::InitializePadding(const size_t sizeof_t, Padding padding) {
 
   for (size_t y = 0; y < ysize_; ++y) {
     uint8_t* JXL_RESTRICT row = static_cast<uint8_t*>(VoidRow(y));
-#if defined(__clang__) && (__clang_major__ <= 6)
+#if defined(__clang__) &&                                           \
+    ((!defined(__apple_build_version__) && __clang_major__ <= 6) || \
+     (defined(__apple_build_version__) &&                           \
+      __apple_build_version__ <= 10001145))
     
     
     

@@ -9,10 +9,10 @@
 
 
 
+#include <jxl/parallel_runner.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include "jxl/parallel_runner.h"
 #include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/status.h"
 #if JXL_COMPILER_MSVC

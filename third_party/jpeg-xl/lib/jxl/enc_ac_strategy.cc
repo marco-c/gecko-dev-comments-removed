@@ -863,26 +863,26 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
     float entropy_mul;
   };
   static const float k8X16mul1 = -0.55;
-  static const float k8X16mul2 = 0.867;
+  static const float k8X16mul2 = 0.865;
   static const float k8X16base = 1.6;
   const float entropy_mul16X8 =
       k8X16mul2 + k8X16mul1 / (butteraugli_target + k8X16base);
   
 
   static const float k16X16mul1 = -0.35;
-  static const float k16X16mul2 = 0.80;
+  static const float k16X16mul2 = 0.798;
   static const float k16X16base = 2.0;
   const float entropy_mul16X16 =
       k16X16mul2 + k16X16mul1 / (butteraugli_target + k16X16base);
   
 
   static const float k32X16mul1 = -0.1;
-  static const float k32X16mul2 = 0.86;
+  static const float k32X16mul2 = 0.854;
   static const float k32X16base = 2.5;
   const float entropy_mul16X32 =
       k32X16mul2 + k32X16mul1 / (butteraugli_target + k32X16base);
 
-  const float entropy_mul32X32 = 0.94;
+  const float entropy_mul32X32 = 0.93;
   const float entropy_mul64X64 = 1.52f;
   
   
@@ -900,7 +900,6 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
       
       {AcStrategy::Type::DCT16X32, 4, 4, 4, entropy_mul16X32},
       {AcStrategy::Type::DCT32X16, 4, 4, 4, entropy_mul16X32},
-      
       
       
       
@@ -923,6 +922,7 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
   
   
   uint8_t priority[64] = {};
+  bool enable_32x32 = cparams.decoding_speed_tier < 4;
   for (auto tx : kTransformsForMerge) {
     if (tx.decoding_speed_tier_max_limit < cparams.decoding_speed_tier) {
       continue;
@@ -961,7 +961,6 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
         if (cy + 3 < rect.ysize() && cx + 3 < rect.xsize()) {
           if (tx.type == AcStrategy::Type::DCT16X32) {
             
-            bool enable_32x32 = cparams.decoding_speed_tier < 4;
             if ((cy | cx) % 4 == 0) {
               FindBestFirstLevelDivisionForSquare(
                   4, enable_32x32, bx, by, cx, cy, config, cmap_factors,
@@ -1016,19 +1015,32 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
       }
     }
   }
-  
-  
   if (cparams.speed_tier >= SpeedTier::kHare) {
     return;
   }
-  for (int ii = 0; ii < 3; ++ii) {
-    for (size_t cy = 1 - (ii == 1); cy + 1 < rect.ysize(); cy += 2) {
-      for (size_t cx = 1 - (ii == 2); cx + 1 < rect.xsize(); cx += 2) {
+  
+  
+  for (size_t cy = 0; cy + 1 < rect.ysize(); ++cy) {
+    for (size_t cx = 0; cx + 1 < rect.xsize(); ++cx) {
+      if ((cy | cx) % 2 != 0) {
         FindBestFirstLevelDivisionForSquare(
             2, true, bx, by, cx, cy, config, cmap_factors, ac_strategy,
             entropy_mul16X8, entropy_mul16X16, entropy_estimate, block,
             scratch_space, quantized);
       }
+    }
+  }
+  
+  size_t step = cparams.speed_tier >= SpeedTier::kTortoise ? 2 : 1;
+  for (size_t cy = 0; cy + 3 < rect.ysize(); cy += step) {
+    for (size_t cx = 0; cx + 3 < rect.xsize(); cx += step) {
+      if ((cy | cx) % 4 == 0) {
+        continue;  
+      }
+      FindBestFirstLevelDivisionForSquare(
+          4, enable_32x32, bx, by, cx, cy, config, cmap_factors, ac_strategy,
+          entropy_mul16X32, entropy_mul32X32, entropy_estimate, block,
+          scratch_space, quantized);
     }
   }
 }

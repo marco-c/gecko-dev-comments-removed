@@ -12,7 +12,8 @@
 #include "sanitizer/common_interface_defs.h"  
 #endif                                        
 
-#include "jxl/thread_parallel_runner.h"
+#include <jxl/thread_parallel_runner.h>
+
 #include "lib/jxl/base/profiler.h"
 
 namespace {

@@ -23,7 +23,10 @@ namespace jpegli {
 
 
 
-int ProcessScan(j_decompress_ptr cinfo);
+int ProcessScan(j_decompress_ptr cinfo, const uint8_t* const data,
+                const size_t len, size_t* pos, size_t* bit_pos);
+
+void PrepareForiMCURow(j_decompress_ptr cinfo);
 
 }  
 

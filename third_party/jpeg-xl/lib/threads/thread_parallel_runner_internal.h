@@ -32,6 +32,8 @@
 #ifndef LIB_THREADS_THREAD_PARALLEL_RUNNER_INTERNAL_H_
 #define LIB_THREADS_THREAD_PARALLEL_RUNNER_INTERNAL_H_
 
+#include <jxl/memory_manager.h>
+#include <jxl/parallel_runner.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -41,9 +43,6 @@
 #include <mutex>               
 #include <thread>              
 #include <vector>
-
-#include "jxl/memory_manager.h"
-#include "jxl/parallel_runner.h"
 
 namespace jpegxl {
 
@@ -64,11 +63,6 @@ class ThreadParallelRunner {
 
   
   ~ThreadParallelRunner();
-
-  
-  
-  
-  size_t NumWorkerThreads() const { return num_worker_threads_; }
 
   
   

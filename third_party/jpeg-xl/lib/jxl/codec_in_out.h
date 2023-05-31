@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "lib/jxl/alpha.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"
@@ -24,7 +23,6 @@
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_bundle.h"
 #include "lib/jxl/luminance.h"
-#include "lib/jxl/size_constraints.h"
 
 namespace jxl {
 
@@ -95,69 +93,6 @@ class CodecInOut {
     }
     SetSize(xsize, ysize);
   }
-
-  
-  bool PremultiplyAlpha() {
-    const auto doPremultiplyAlpha = [](ImageBundle& bundle) {
-      if (!bundle.HasAlpha()) return;
-      if (!bundle.HasColor()) return;
-      auto* color = bundle.color();
-      const auto* alpha = bundle.alpha();
-      JXL_CHECK(color->ysize() == alpha->ysize());
-      JXL_CHECK(color->xsize() == alpha->xsize());
-      for (size_t y = 0; y < color->ysize(); y++) {
-        ::jxl::PremultiplyAlpha(color->PlaneRow(0, y), color->PlaneRow(1, y),
-                                color->PlaneRow(2, y), alpha->Row(y),
-                                color->xsize());
-      }
-    };
-    ExtraChannelInfo* eci = metadata.m.Find(ExtraChannel::kAlpha);
-    if (eci == nullptr || eci->alpha_associated) return false;
-    if (metadata.m.have_preview) {
-      doPremultiplyAlpha(preview_frame);
-    }
-    for (ImageBundle& ib : frames) {
-      doPremultiplyAlpha(ib);
-    }
-    eci->alpha_associated = true;
-    return true;
-  }
-
-  bool UnpremultiplyAlpha() {
-    const auto doUnpremultiplyAlpha = [](ImageBundle& bundle) {
-      if (!bundle.HasAlpha()) return;
-      if (!bundle.HasColor()) return;
-      auto* color = bundle.color();
-      const auto* alpha = bundle.alpha();
-      JXL_CHECK(color->ysize() == alpha->ysize());
-      JXL_CHECK(color->xsize() == alpha->xsize());
-      for (size_t y = 0; y < color->ysize(); y++) {
-        ::jxl::UnpremultiplyAlpha(color->PlaneRow(0, y), color->PlaneRow(1, y),
-                                  color->PlaneRow(2, y), alpha->Row(y),
-                                  color->xsize());
-      }
-    };
-    ExtraChannelInfo* eci = metadata.m.Find(ExtraChannel::kAlpha);
-    if (eci == nullptr || !eci->alpha_associated) return false;
-    if (metadata.m.have_preview) {
-      doUnpremultiplyAlpha(preview_frame);
-    }
-    for (ImageBundle& ib : frames) {
-      doUnpremultiplyAlpha(ib);
-    }
-    eci->alpha_associated = false;
-    return true;
-  }
-
-  
-
-  SizeConstraints constraints;
-
-  
-
-  
-  
-  uint64_t dec_pixels = 0;
 
   
 

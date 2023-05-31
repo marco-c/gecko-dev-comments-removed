@@ -94,12 +94,14 @@ inline JXL_NOINLINE bool Debug(const char* format, ...) {
 
 
 
-#define JXL_DEBUG(enabled, format, ...)                         \
-  do {                                                          \
-    if (enabled) {                                              \
-      ::jxl::Debug(("%s:%d: " format "\n"), __FILE__, __LINE__, \
-                   ##__VA_ARGS__);                              \
-    }                                                           \
+#define JXL_DEBUG_TMP(format, ...) \
+  ::jxl::Debug(("%s:%d: " format "\n"), __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define JXL_DEBUG(enabled, format, ...)     \
+  do {                                      \
+    if (enabled) {                          \
+      JXL_DEBUG_TMP(format, ##__VA_ARGS__); \
+    }                                       \
   } while (0)
 
 

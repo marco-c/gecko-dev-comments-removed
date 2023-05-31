@@ -54,6 +54,10 @@ void jpegli_set_quality(j_compress_ptr cinfo, int quality,
 void jpegli_set_linear_quality(j_compress_ptr cinfo, int scale_factor,
                                boolean force_baseline);
 
+#if JPEG_LIB_VERSION >= 70
+void jpegli_default_qtables(j_compress_ptr cinfo, boolean force_baseline);
+#endif
+
 int jpegli_quality_scaling(int quality);
 
 void jpegli_add_quant_table(j_compress_ptr cinfo, int which_tbl,
@@ -63,6 +67,10 @@ void jpegli_add_quant_table(j_compress_ptr cinfo, int which_tbl,
 void jpegli_simple_progression(j_compress_ptr cinfo);
 
 void jpegli_suppress_tables(j_compress_ptr cinfo, boolean suppress);
+
+#if JPEG_LIB_VERSION >= 70
+void jpegli_calc_jpeg_dimensions(j_compress_ptr cinfo);
+#endif
 
 void jpegli_copy_critical_parameters(j_decompress_ptr srcinfo,
                                      j_compress_ptr dstinfo);
@@ -105,7 +113,11 @@ void jpegli_destroy_compress(j_compress_ptr cinfo);
 
 
 
-void jpegli_set_distance(j_compress_ptr cinfo, float distance);
+
+
+
+void jpegli_set_distance(j_compress_ptr cinfo, float distance,
+                         boolean force_baseline);
 
 
 float jpegli_quality_to_distance(int quality);
@@ -114,6 +126,12 @@ float jpegli_quality_to_distance(int quality);
 
 
 void jpegli_set_xyb_mode(j_compress_ptr cinfo);
+
+
+
+
+
+void jpegli_set_cicp_transfer_function(j_compress_ptr cinfo, int code);
 
 void jpegli_set_input_format(j_compress_ptr cinfo, JpegliDataType data_type,
                              JpegliEndianness endianness);

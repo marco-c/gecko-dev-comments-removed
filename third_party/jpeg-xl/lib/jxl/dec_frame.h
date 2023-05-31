@@ -6,16 +6,15 @@
 #ifndef LIB_JXL_DEC_FRAME_H_
 #define LIB_JXL_DEC_FRAME_H_
 
+#include <jxl/decode.h>
+#include <jxl/types.h>
 #include <stdint.h>
 
-#include "jxl/decode.h"
-#include "jxl/types.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/span.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/blending.h"
-#include "lib/jxl/codec_in_out.h"
 #include "lib/jxl/common.h"
 #include "lib/jxl/dec_bit_reader.h"
 #include "lib/jxl/dec_cache.h"
@@ -50,14 +49,20 @@ class FrameDecoder {
   void SetCoalescing(bool c) { coalescing_ = c; }
 
   
-  
-  
   Status InitFrame(BitReader* JXL_RESTRICT br, ImageBundle* decoded,
-                   bool is_preview, bool output_needed);
+                   bool is_preview);
+
+  
+  
+  Status InitFrameOutput();
 
   struct SectionInfo {
     BitReader* JXL_RESTRICT br;
+    
+    
     size_t id;
+    
+    size_t index;
   };
 
   struct TocEntry {

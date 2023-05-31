@@ -3,8 +3,8 @@
 
 
 
-#ifndef LIB_PROFILER_TSC_TIMER_H_
-#define LIB_PROFILER_TSC_TIMER_H_
+#ifndef LIB_JXL_BASE_TSC_TIMER_H_
+#define LIB_JXL_BASE_TSC_TIMER_H_
 
 
 
@@ -40,6 +40,7 @@
 #include <hwy/base.h>
 #include <hwy/cache_control.h>  
 
+namespace jxl {
 namespace profiler {
 
 
@@ -165,6 +166,7 @@ static HWY_INLINE HWY_MAYBE_UNUSED Ticks TicksAfter() {
   return t;
 }
 
+}  
 }  
 
 #endif  

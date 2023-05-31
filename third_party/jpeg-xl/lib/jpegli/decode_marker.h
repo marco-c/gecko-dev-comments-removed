@@ -24,7 +24,10 @@ namespace jpegli {
 
 
 
-int ProcessMarkers(j_decompress_ptr cinfo);
+int ProcessMarkers(j_decompress_ptr cinfo, const uint8_t* const data,
+                   const size_t len, size_t* pos);
+
+jpeg_marker_parser_method GetMarkerProcessor(j_decompress_ptr cinfo);
 
 }  
 

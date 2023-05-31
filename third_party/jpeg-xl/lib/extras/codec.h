@@ -26,23 +26,29 @@
 
 namespace jxl {
 
+struct SizeConstraints;
+
 
 
 Status SetFromBytes(Span<const uint8_t> bytes,
                     const extras::ColorHints& color_hints, CodecInOut* io,
                     ThreadPool* pool = nullptr,
+                    const SizeConstraints* constraints = nullptr,
                     extras::Codec* orig_codec = nullptr);
 
 JXL_INLINE Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
                                ThreadPool* pool = nullptr,
+                               const SizeConstraints* constraints = nullptr,
                                extras::Codec* orig_codec = nullptr) {
-  return SetFromBytes(bytes, extras::ColorHints(), io, pool, orig_codec);
+  return SetFromBytes(bytes, extras::ColorHints(), io, pool, constraints,
+                      orig_codec);
 }
 
 
 Status SetFromFile(const std::string& pathname,
                    const extras::ColorHints& color_hints, CodecInOut* io,
                    ThreadPool* pool = nullptr,
+                   const SizeConstraints* constraints = nullptr,
                    extras::Codec* orig_codec = nullptr);
 
 

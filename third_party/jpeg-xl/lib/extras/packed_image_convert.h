@@ -9,7 +9,8 @@
 
 
 
-#include "jxl/types.h"
+#include <jxl/types.h>
+
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/codec_in_out.h"

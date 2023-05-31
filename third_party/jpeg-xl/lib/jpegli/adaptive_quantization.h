@@ -16,8 +16,6 @@ namespace jpegli {
 
 void ComputeAdaptiveQuantField(j_compress_ptr cinfo);
 
-float InitialQuantDC(float butteraugli_target);
-
 }  
 
 #endif  
