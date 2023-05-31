@@ -259,7 +259,7 @@ this.test = class extends ExtensionAPI {
               
               v = ChromeUtils.waiveXrays(v);
             }
-            new StructuredCloneHolder(v, globalThis);
+            new StructuredCloneHolder("test.assertEq", null, v, globalThis);
           }
           
           

@@ -5,21 +5,23 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ExtensionStorage"];
+var EXPORTED_SYMBOLS = ["ExtensionStorage", "extensionStorageSession"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+const {
+  ExtensionUtils: { ExtensionError, DefaultWeakMap },
+} = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "ExtensionUtils",
-  "resource://gre/modules/ExtensionUtils.jsm"
-);
 ChromeUtils.defineESModuleGetters(lazy, {
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
+});
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
 });
 
 function isStructuredCloneHolder(value) {
@@ -82,9 +84,15 @@ class SerializeableMap extends Map {
 
 
 
-function serialize(value) {
+
+
+
+
+
+
+function serialize(name, anonymizedName, value) {
   if (value && typeof value === "object" && !isStructuredCloneHolder(value)) {
-    return new StructuredCloneHolder(value);
+    return new StructuredCloneHolder(name, anonymizedName, value);
   }
   return value;
 }
@@ -166,7 +174,7 @@ var ExtensionStorage = {
   sanitize(value, context) {
     let json = context.jsonStringify(value === undefined ? null : value);
     if (json == undefined) {
-      throw new lazy.ExtensionUtils.ExtensionError(
+      throw new ExtensionError(
         "DataCloneError: The object could not be cloned."
       );
     }
@@ -217,8 +225,16 @@ var ExtensionStorage = {
     for (let prop in items) {
       let item = items[prop];
       changes[prop] = {
-        oldValue: serialize(jsonFile.data.get(prop)),
-        newValue: serialize(item),
+        oldValue: serialize(
+          `set/${extensionId}/old/${prop}`,
+          `set/${extensionId}/old/<anonymized>`,
+          jsonFile.data.get(prop)
+        ),
+        newValue: serialize(
+          `set/${extensionId}/new/${prop}`,
+          `set/${extensionId}/new/<anonymized>`,
+          item
+        ),
       };
       jsonFile.data.set(prop, item);
     }
@@ -247,7 +263,13 @@ var ExtensionStorage = {
 
     for (let prop of [].concat(items)) {
       if (jsonFile.data.has(prop)) {
-        changes[prop] = { oldValue: serialize(jsonFile.data.get(prop)) };
+        changes[prop] = {
+          oldValue: serialize(
+            `remove/${extensionId}/${prop}`,
+            `remove/${extensionId}/<anonymized>`,
+            jsonFile.data.get(prop)
+          ),
+        };
         jsonFile.data.delete(prop);
         changed = true;
       }
@@ -280,7 +302,13 @@ var ExtensionStorage = {
 
     for (let [prop, oldValue] of jsonFile.data.entries()) {
       if (shouldNotifyListeners) {
-        changes[prop] = { oldValue: serialize(oldValue) };
+        changes[prop] = {
+          oldValue: serialize(
+            `clear/${extensionId}/${prop}`,
+            `clear/${extensionId}/<anonymized>`,
+            oldValue
+          ),
+        };
       }
 
       jsonFile.data.delete(prop);
@@ -317,17 +345,21 @@ var ExtensionStorage = {
 
   async get(extensionId, keys) {
     let jsonFile = await this.getFile(extensionId);
-    return this._filterProperties(jsonFile.data, keys);
+    return this._filterProperties(extensionId, jsonFile.data, keys);
   },
 
-  async _filterProperties(data, keys) {
+  async _filterProperties(extensionId, data, keys) {
     let result = {};
     if (keys === null) {
       Object.assign(result, data.toJSON());
     } else if (typeof keys == "object" && !Array.isArray(keys)) {
       for (let prop in keys) {
         if (data.has(prop)) {
-          result[prop] = serialize(data.get(prop));
+          result[prop] = serialize(
+            `filterProperties/${extensionId}/${prop}`,
+            `filterProperties/${extensionId}/<anonymized>`,
+            data.get(prop)
+          );
         } else {
           result[prop] = keys[prop];
         }
@@ -335,7 +367,11 @@ var ExtensionStorage = {
     } else {
       for (let prop of [].concat(keys)) {
         if (data.has(prop)) {
-          result[prop] = serialize(data.get(prop));
+          result[prop] = serialize(
+            `filterProperties/${extensionId}/${prop}`,
+            `filterProperties/${extensionId}/<anonymized>`,
+            data.get(prop)
+          );
         }
       }
     }
@@ -405,9 +441,14 @@ var ExtensionStorage = {
       let result = {};
       for (let [key, value] of Object.entries(items)) {
         try {
-          result[key] = new StructuredCloneHolder(value, context.cloneScope);
+          result[key] = new StructuredCloneHolder(
+            `serializeForContext/${context.extension.id}`,
+            null,
+            value,
+            context.cloneScope
+          );
         } catch (e) {
-          throw new lazy.ExtensionUtils.ExtensionError(String(e));
+          throw new ExtensionError(String(e));
         }
       }
       return result;
@@ -450,3 +491,91 @@ XPCOMUtils.defineLazyGetter(ExtensionStorage, "extensionDir", () =>
 );
 
 ExtensionStorage.init();
+
+var extensionStorageSession = {
+  
+  buckets: new DefaultWeakMap(_extension => new Map()),
+
+  
+  listeners: new DefaultWeakMap(_extension => new Set()),
+
+  
+
+
+
+
+  get(extension, items) {
+    let bucket = this.buckets.get(extension);
+
+    let result = {};
+    let keys = [];
+
+    if (!items) {
+      keys = bucket.keys();
+    } else if (typeof items !== "object" || Array.isArray(items)) {
+      keys = [].concat(items);
+    } else {
+      keys = Object.keys(items);
+      result = items;
+    }
+
+    for (let prop of keys) {
+      if (bucket.has(prop)) {
+        result[prop] = bucket.get(prop);
+      }
+    }
+    return result;
+  },
+
+  set(extension, items) {
+    let bucket = this.buckets.get(extension);
+
+    let changes = {};
+    for (let [key, value] of Object.entries(items)) {
+      changes[key] = {
+        oldValue: bucket.get(key),
+        newValue: value,
+      };
+      bucket.set(key, value);
+    }
+    this.notifyListeners(extension, changes);
+  },
+
+  remove(extension, keys) {
+    let bucket = this.buckets.get(extension);
+    let changes = {};
+    for (let k of [].concat(keys)) {
+      if (bucket.has(k)) {
+        changes[k] = { oldValue: bucket.get(k) };
+        bucket.delete(k);
+      }
+    }
+    this.notifyListeners(extension, changes);
+  },
+
+  clear(extension) {
+    let bucket = this.buckets.get(extension);
+    let changes = {};
+    for (let k of bucket.keys()) {
+      changes[k] = { oldValue: bucket.get(k) };
+    }
+    bucket.clear();
+    this.notifyListeners(extension, changes);
+  },
+
+  registerListener(extension, listener) {
+    this.listeners.get(extension).add(listener);
+    return () => {
+      this.listeners.get(extension).delete(listener);
+    };
+  },
+
+  notifyListeners(extension, changes) {
+    if (!Object.keys(changes).length) {
+      return;
+    }
+    for (let listener of this.listeners.get(extension)) {
+      lazy.ExtensionCommon.runSafeSyncWithoutClone(listener, changes);
+    }
+  },
+};
