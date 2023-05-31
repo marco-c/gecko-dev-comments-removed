@@ -1291,10 +1291,6 @@ def compiler(
             flags.append("-stdlib=libc++")
 
         
-        if info.type in ("clang", "clang-cl"):
-            flags.append("-Qunused-arguments")
-
-        
         
         
         
