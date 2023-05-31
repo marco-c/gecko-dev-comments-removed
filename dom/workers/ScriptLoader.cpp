@@ -935,8 +935,16 @@ nsresult WorkerScriptLoader::LoadScript(
     nsCOMPtr<nsIReferrerInfo> referrerInfo;
     uint32_t secFlags;
     if (request->IsModuleRequest()) {
-      referrerInfo =
-          new ReferrerInfo(request->mReferrer, request->ReferrerPolicy());
+      
+      
+      
+      
+      ReferrerPolicy policy =
+          request->ReferrerPolicy() == ReferrerPolicy::_empty
+              ? mWorkerRef->Private()->GetReferrerPolicy()
+              : request->ReferrerPolicy();
+
+      referrerInfo = new ReferrerInfo(request->mReferrer, policy);
       rv = GetModuleSecFlags(
           loadContext->IsTopLevel(), principal, mWorkerScriptType,
           request->mURI, mWorkerRef->Private()->WorkerCredentials(), secFlags);
