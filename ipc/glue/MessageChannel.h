@@ -358,7 +358,7 @@ class MessageChannel : HasResultCodes {
 
  private:
   void SpinInternalEventLoop();
-#endif    
+#endif  
 
  private:
   void PostErrorNotifyTask() MOZ_REQUIRES(*mMonitor);
