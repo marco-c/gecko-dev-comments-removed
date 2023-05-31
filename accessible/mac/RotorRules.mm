@@ -61,16 +61,10 @@ uint16_t RotorRule::Match(Accessible* aAcc) {
         result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
         break;
       default:
-        if (a11y::IsCacheActive()) {
-          
-          
-          
-          
-          nsAutoString name;
-          aAcc->Name(name);
-          if (!CaseInsensitiveFindInReadable(mSearchText, name)) {
-            result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
-          }
+        nsAutoString name;
+        aAcc->Name(name);
+        if (!CaseInsensitiveFindInReadable(mSearchText, name)) {
+          result &= ~nsIAccessibleTraversalRule::FILTER_MATCH;
         }
         break;
     }

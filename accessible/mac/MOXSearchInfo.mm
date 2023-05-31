@@ -19,13 +19,9 @@ using namespace mozilla::a11y;
 @interface MOXSearchInfo ()
 - (NSArray*)getMatchesForRule:(PivotRule&)rule;
 
-- (NSArray<mozAccessible*>*)applyPostFilter:(NSArray<mozAccessible*>*)matches;
-
 - (Accessible*)rootGeckoAccessible;
 
 - (Accessible*)startGeckoAccessible;
-
-- (BOOL)shouldApplyPostFilter;
 @end
 
 @implementation MOXSearchInfo
@@ -78,9 +74,7 @@ using namespace mozilla::a11y;
 }
 
 - (NSArray*)getMatchesForRule:(PivotRule&)rule {
-  
-  
-  int resultLimit = [self shouldApplyPostFilter] ? -1 : mResultLimit;
+  int resultLimit = mResultLimit;
 
   NSMutableArray<mozAccessible*>* matches =
       [[[NSMutableArray alloc] init] autorelease];
@@ -120,100 +114,7 @@ using namespace mozilla::a11y;
     match = mSearchForward ? p.Next(match, rule) : p.Prev(match, rule);
   }
 
-  return [self applyPostFilter:matches];
-}
-
-- (BOOL)shouldApplyPostFilter {
-  
-  
-  
-  
-  
-  return !mozilla::a11y::IsCacheActive() && !!mSearchText &&
-         [mSearchText length] > 0;
-}
-
-- (NSArray<mozAccessible*>*)applyPostFilter:(NSArray<mozAccessible*>*)matches {
-  if (![self shouldApplyPostFilter]) {
-    return matches;
-  }
-
-  NSMutableArray<mozAccessible*>* postMatches =
-      [[[NSMutableArray alloc] init] autorelease];
-
-  nsString searchText;
-  nsCocoaUtils::GetStringForNSString(mSearchText, searchText);
-
-  __block DocAccessibleParent* ipcDoc = nullptr;
-  __block nsTArray<uint64_t> accIds;
-
-  [matches enumerateObjectsUsingBlock:^(mozAccessible* match, NSUInteger idx,
-                                        BOOL* stop) {
-    Accessible* geckoAcc = [match geckoAccessible];
-    if (!geckoAcc) {
-      return;
-    }
-
-    if (geckoAcc->IsLocal()) {
-      AccessibleWrap* acc = static_cast<AccessibleWrap*>(geckoAcc->AsLocal());
-      if (acc->ApplyPostFilter(EWhichPostFilter::eContainsText, searchText)) {
-        if (mozAccessible* nativePostMatch =
-                GetNativeFromGeckoAccessible(acc)) {
-          [postMatches addObject:nativePostMatch];
-          if (mResultLimit > 0 &&
-              [postMatches count] >= static_cast<NSUInteger>(mResultLimit)) {
-            
-            
-            *stop = YES;
-          }
-        }
-      }
-
-      return;
-    }
-
-    RemoteAccessible* proxy = geckoAcc->AsRemote();
-    if (ipcDoc &&
-        ((ipcDoc != proxy->Document()) || (idx + 1 == [matches count]))) {
-      
-      
-      
-      nsTArray<uint64_t> matchIds;
-      MOZ_ASSERT(
-          !mozilla::a11y::IsCacheActive(),
-          "Should call SendApplyPostSearchFilter when cache is enabled!");
-      mozilla::Unused
-          << ipcDoc->GetPlatformExtension()->SendApplyPostSearchFilter(
-                 accIds, mResultLimit, EWhichPostFilter::eContainsText,
-                 searchText, &matchIds);
-      for (size_t i = 0; i < matchIds.Length(); i++) {
-        if (RemoteAccessible* postMatch =
-                ipcDoc->GetAccessible(matchIds.ElementAt(i))) {
-          if (mozAccessible* nativePostMatch =
-                  GetNativeFromGeckoAccessible(postMatch)) {
-            [postMatches addObject:nativePostMatch];
-            if (mResultLimit > 0 &&
-                [postMatches count] >= static_cast<NSUInteger>(mResultLimit)) {
-              
-              
-              *stop = YES;
-              return;
-            }
-          }
-        }
-      }
-
-      ipcDoc = nullptr;
-      accIds.Clear();
-    }
-
-    if (!ipcDoc) {
-      ipcDoc = proxy->Document();
-    }
-    accIds.AppendElement(proxy->ID());
-  }];
-
-  return postMatches;
+  return matches;
 }
 
 - (NSArray*)performSearch {

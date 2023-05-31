@@ -286,16 +286,6 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-bool AccessibleWrap::ApplyPostFilter(const EWhichPostFilter& aSearchKey,
-                                     const nsString& aSearchText) {
-  
-  MOZ_ASSERT(aSearchKey == EWhichPostFilter::eContainsText,
-             "Only search text supported");
-  nsAutoString name;
-  Name(name);
-  return CaseInsensitiveFindInReadable(aSearchText, name);
-}
-
 
 
 
