@@ -59,7 +59,7 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   }
 
   uint64_t GetEmbedderAccessibleID() { return mEmbedderAccessibleID; }
-#endif    
+#endif  
 
   static BrowserBridgeChild* GetFrom(nsFrameLoader* aFrameLoader);
 
@@ -113,7 +113,7 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   
   
   uint64_t mEmbedderAccessibleID = 0;
-#endif    
+#endif  
 };
 
 }  
