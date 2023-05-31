@@ -84,7 +84,11 @@ UINT nsClipboard::GetCustomClipboardFormat() {
 
 
 
-nsClipboard::nsClipboard() : nsBaseClipboard() {
+nsClipboard::nsClipboard()
+    : nsBaseClipboard(mozilla::dom::ClipboardCapabilities(
+          false ,
+          false ,
+          false )) {
   mWindow = nullptr;
 
   

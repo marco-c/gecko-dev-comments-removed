@@ -28,7 +28,6 @@ class nsClipboard : public nsBaseClipboard {
                      int32_t aWhichClipboard) override;
   NS_IMETHOD HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList, int32_t aWhichClipboard,
                                     bool* _retval) override;
-  NS_IMETHOD IsClipboardTypeSupported(int32_t aWhichClipboard, bool* _retval) override;
   NS_IMETHOD EmptyClipboard(int32_t aWhichClipboard) override;
 
   
@@ -58,8 +57,9 @@ class nsClipboard : public nsBaseClipboard {
 
   static mozilla::Maybe<uint32_t> FindIndexOfImageFlavor(const nsTArray<nsCString>& aMIMETypes);
 
-  int32_t mCachedClipboard;
-  int32_t mChangeCount;  
+  int32_t mCachedClipboard = -1;
+  
+  int32_t mChangeCount = 0;
 };
 
 #endif  
