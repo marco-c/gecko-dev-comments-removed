@@ -353,14 +353,31 @@ const receiveReport = async function(uuid, type) {
   }
 }
 
-
-
 const coopHeaders = function (uuid) {
+  
+  
+  
+  let getHeader = (uuid, coop_value, is_report_only) => {
+    const header_name =
+      is_report_only ?
+      "Cross-Origin-Opener-Policy-Report-Only":
+      "Cross-Origin-Opener-Policy";
+    return `|header(${header_name},${coop_value}%3Breport-to="${uuid}")`;
+  }
+
   return {
-    coopSameOriginHeader: `|header(Cross-Origin-Opener-Policy,same-origin%3Breport-to="${uuid}")`,
-    coopSameOriginAllowPopupsHeader: `|header(Cross-Origin-Opener-Policy,same-origin-allow-popups%3Breport-to="${uuid}")`,
-    coopReportOnlySameOriginHeader: `|header(Cross-Origin-Opener-Policy-Report-Only,same-origin%3Breport-to="${uuid}")`,
-    coopReportOnlySameOriginAllowPopupsHeader: `|header(Cross-Origin-Opener-Policy-Report-Only,same-origin-allow-popups%3Breport-to="${uuid}")`
+    coopSameOriginHeader:
+        getHeader(uuid, "same-origin", is_report_only = false),
+    coopSameOriginAllowPopupsHeader:
+        getHeader(uuid, "same-origin-allow-popups", is_report_only = false),
+    coopRestrictPropertiesHeader:
+        getHeader(uuid, "restrict-properties", is_report_only = false),
+    coopReportOnlySameOriginHeader:
+        getHeader(uuid, "same-origin", is_report_only = true),
+    coopReportOnlySameOriginAllowPopupsHeader:
+        getHeader(uuid, "same-origin-allow-popups", is_report_only = true),
+    coopReportOnlyRestrictPropertiesHeader:
+        getHeader(uuid, "restrict-properties", is_report_only = true),
   };
 }
 
