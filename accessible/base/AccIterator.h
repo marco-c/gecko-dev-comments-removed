@@ -312,11 +312,20 @@ class RemoteAccIterator : public AccIterable {
   RemoteAccIterator(const nsTArray<uint64_t>& aIds, DocAccessibleParent* aDoc)
       : mIds(aIds), mDoc(aDoc), mIndex(0) {}
 
+  
+
+
+
+
+  RemoteAccIterator(nsTArray<uint64_t>&& aIds, DocAccessibleParent* aDoc);
+
   virtual ~RemoteAccIterator() = default;
 
   virtual Accessible* Next() override;
 
  private:
+  
+  nsTArray<uint64_t> mOwnedIds;
   const nsTArray<uint64_t>& mIds;
   DocAccessibleParent* mDoc;
   uint32_t mIndex;

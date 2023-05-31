@@ -369,7 +369,7 @@ void DocAccessible::DocType(nsAString& aType) const {
 
 void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc,
                                      uint64_t aNewDomain) {
-  if (!mIPCDoc) {
+  if (!mIPCDoc || !a11y::IsCacheActive()) {
     return;
   }
   uint64_t& domain = mQueuedCacheUpdates.LookupOrInsert(aAcc, 0);
@@ -379,8 +379,8 @@ void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc,
 
 void DocAccessible::QueueCacheUpdateForDependentRelations(
     LocalAccessible* aAcc) {
-  if (!mIPCDoc || !aAcc || !aAcc->Elm() || !aAcc->IsInDocument() ||
-      aAcc->IsDefunct()) {
+  if (!mIPCDoc || !a11y::IsCacheActive() || !aAcc || !aAcc->Elm() ||
+      !aAcc->IsInDocument() || aAcc->IsDefunct()) {
     return;
   }
   nsAutoString ID;
@@ -1493,6 +1493,10 @@ void DocAccessible::ProcessInvalidationList() {
 }
 
 void DocAccessible::ProcessQueuedCacheUpdates() {
+  if (!a11y::IsCacheActive()) {
+    return;
+  }
+
   AUTO_PROFILER_MARKER_TEXT("DocAccessible::ProcessQueuedCacheUpdates", A11Y,
                             {}, ""_ns);
   
@@ -1665,10 +1669,12 @@ void DocAccessible::DoInitialUpdate() {
     DocAccessibleChild* ipcDoc = IPCDoc();
     MOZ_ASSERT(ipcDoc);
     if (ipcDoc) {
-      
-      
-      
-      SendCache(CacheDomain::All, CacheUpdateType::Initial);
+      if (a11y::IsCacheActive()) {
+        
+        
+        
+        SendCache(CacheDomain::All, CacheUpdateType::Initial);
+      }
 
       for (auto idx = 0U; idx < mChildren.Length(); idx++) {
         ipcDoc->InsertIntoIpcTree(this, mChildren.ElementAt(idx), idx, true);
@@ -2560,7 +2566,7 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
   
   
   
-  if (aRoot->IsTable() || aRoot->IsTableCell()) {
+  if (a11y::IsCacheActive() && (aRoot->IsTable() || aRoot->IsTableCell())) {
     CachedTableAccessible::Invalidate(aRoot);
   }
 
