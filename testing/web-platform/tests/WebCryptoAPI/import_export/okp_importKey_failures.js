@@ -133,6 +133,19 @@ function run_test(algorithmNames) {
     });
 
     
+    
+    testVectors.forEach(function(vector) {
+        var name = vector.name;
+        validKeyData.filter((test) => test.format === 'pkcs8' || (test.format === 'jwk' && test.data.d)).forEach(function(test) {
+            allAlgorithmSpecifiersFor(name).forEach(function(algorithm) {
+                [true, false].forEach(function(extractable) {
+                    testError(test.format, algorithm, test.data, name, [], extractable, "SyntaxError", "Empty usages");
+                });
+            });
+        });
+    });
+
+    
     testVectors.forEach(function(vector) {
         var name = vector.name;
         badKeyLengthData.forEach(function(test) {

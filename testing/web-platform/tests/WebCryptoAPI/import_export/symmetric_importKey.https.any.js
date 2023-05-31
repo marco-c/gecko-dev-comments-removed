@@ -42,16 +42,17 @@
 
         rawKeyData.forEach(function(keyData) {
             
-            allValidUsages(vector.legalUsages, []).forEach(function(usages) {
-                
-                vector.extractable.forEach(function(extractable) {
-                    vector.formats.forEach(function(format) {
-                        var data = keyData;
-                        if (format === "jwk") {
-                            data = jwkData(keyData, algorithm);
-                        }
+            vector.extractable.forEach(function(extractable) {
+                vector.formats.forEach(function(format) {
+                    var data = keyData;
+                    if (format === "jwk") {
+                        data = jwkData(keyData, algorithm);
+                    }
+                    
+                    allValidUsages(vector.legalUsages, []).forEach(function(usages) {
                         testFormat(format, algorithm, data, keyData.length * 8, usages, extractable);
                     });
+                    testEmptyUsages(format, algorithm, data, keyData.length * 8, extractable);
                 });
             });
 
@@ -88,6 +89,20 @@
                 assert_unreached("Threw an unexpected error: " + err.toString());
             });
         }, "Good parameters: " + keySize.toString() + " bits " + parameterString(format, keyData, algorithm, extractable, usages));
+    }
+
+    
+    
+    function testEmptyUsages(format, algorithm, keyData, keySize, extractable) {
+        const usages = [];
+        promise_test(function(test) {
+            return subtle.importKey(format, keyData, algorithm, extractable, usages).
+            then(function(key) {
+                assert_unreached("importKey succeeded but should have failed with SyntaxError");
+            }, function(err) {
+                assert_equals(err.name, "SyntaxError", "Should throw correct error, not " + err.name + ": " + err.message);
+            });
+        }, "Empty Usages: " + keySize.toString() + " bits " + parameterString(format, keyData, algorithm, extractable, usages));
     }
 
 
