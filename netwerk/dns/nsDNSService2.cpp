@@ -26,7 +26,6 @@
 #include "prnetdb.h"
 #include "prmon.h"
 #include "prio.h"
-#include "plstr.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsNetAddr.h"
 #include "nsProxyRelease.h"
@@ -1505,6 +1504,11 @@ nsDNSService::GetTrrDomain(nsACString& aTRRDomain) {
     return NS_OK;
   }
   return uri->GetHost(aTRRDomain);
+}
+
+nsresult nsDNSService::GetTRRDomainKey(nsACString& aTRRDomain) {
+  aTRRDomain = TRRService::ProviderKey();
+  return NS_OK;
 }
 
 size_t nsDNSService::SizeOfIncludingThis(
