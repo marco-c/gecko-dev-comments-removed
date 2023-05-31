@@ -4,17 +4,19 @@
 
 "use strict";
 
-const _SUPPORT_STATE = {
-  BROWSER_NOT_FOUND: "BROWSER_NOT_FOUND",
-  DATA_NOT_FOUND: "DATA_NOT_FOUND",
-  SUPPORTED: "SUPPORTED",
-  UNSUPPORTED: "UNSUPPORTED",
-  UNSUPPORTED_PREFIX_NEEDED: "UNSUPPORTED_PREFIX_NEEDED",
-};
+const _SUPPORT_STATE_BROWSER_NOT_FOUND = "BROWSER_NOT_FOUND";
+const _SUPPORT_STATE_SUPPORTED = "SUPPORTED";
+const _SUPPORT_STATE_UNSUPPORTED = "UNSUPPORTED";
+const _SUPPORT_STATE_UNSUPPORTED_PREFIX_NEEDED = "UNSUPPORTED_PREFIX_NEEDED";
 
-const {
-  COMPATIBILITY_ISSUE_TYPE,
-} = require("resource://devtools/shared/constants.js");
+loader.lazyRequireGetter(
+  this,
+  "COMPATIBILITY_ISSUE_TYPE",
+  "resource://devtools/shared/constants.js",
+  true
+);
+
+const PREFIX_REGEX = /^-\w+-/;
 
 
 
@@ -30,9 +32,6 @@ class MDNCompatibility {
 
   constructor(cssPropertiesCompatData) {
     this._cssPropertiesCompatData = cssPropertiesCompatData;
-
-    
-    this._flattenAliases(this._cssPropertiesCompatData);
   }
 
   
@@ -63,24 +62,6 @@ class MDNCompatibility {
 
     
     return this._toCSSIssues(normalSummaries.concat(aliasSummaries));
-  }
-
-  _asFloatVersion(version = false) {
-    if (version === true) {
-      return 0;
-    }
-
-    if (version === false) {
-      return Number.MAX_VALUE;
-    }
-
-    if (version.startsWith("\u2264")) {
-      
-      
-      version = version.substring(1);
-    }
-
-    return parseFloat(version);
   }
 
   
@@ -155,59 +136,6 @@ class MDNCompatibility {
     });
 
     return { aliasSummaries, normalSummaries };
-  }
-
-  _findAliasesFrom(compatTable) {
-    const aliases = [];
-
-    for (const browser in compatTable.support) {
-      let supportStates = compatTable.support[browser] || [];
-      supportStates = Array.isArray(supportStates)
-        ? supportStates
-        : [supportStates];
-
-      for (const { alternative_name: name, prefix } of supportStates) {
-        if (!prefix && !name) {
-          continue;
-        }
-
-        aliases.push({ alternative_name: name, prefix });
-      }
-    }
-
-    return aliases;
-  }
-
-  
-
-
-
-
-  _flattenAliases(compatNode) {
-    for (const term in compatNode) {
-      if (term.startsWith("_")) {
-        
-        continue;
-      }
-
-      const compatTable = this._getCompatTable(compatNode, [term]);
-      if (compatTable) {
-        const aliases = this._findAliasesFrom(compatTable);
-
-        for (const { alternative_name: name, prefix } of aliases) {
-          const alias = name || prefix + term;
-          compatNode[alias] = { _aliasOf: term };
-        }
-
-        if (aliases.length) {
-          
-          compatNode[term]._aliasOf = term;
-        }
-      }
-
-      
-      this._flattenAliases(compatNode[term]);
-    }
   }
 
   _getAlias(compatNode, terms) {
@@ -355,12 +283,12 @@ class MDNCompatibility {
       );
 
       switch (state) {
-        case _SUPPORT_STATE.UNSUPPORTED_PREFIX_NEEDED: {
+        case _SUPPORT_STATE_UNSUPPORTED_PREFIX_NEEDED: {
           prefixNeededBrowsers.push(browser);
           unsupportedBrowsers.push(browser);
           break;
         }
-        case _SUPPORT_STATE.UNSUPPORTED: {
+        case _SUPPORT_STATE_UNSUPPORTED: {
           unsupportedBrowsers.push(browser);
           break;
         }
@@ -400,35 +328,50 @@ class MDNCompatibility {
   }
 
   _getSupportState(compatTable, browser, compatNode, terms) {
-    let supportList = compatTable.support[browser.id];
+    const supportList = compatTable.support[browser.id];
     if (!supportList) {
-      return _SUPPORT_STATE.BROWSER_NOT_FOUND;
+      return _SUPPORT_STATE_BROWSER_NOT_FOUND;
     }
 
-    supportList = Array.isArray(supportList) ? supportList : [supportList];
     const version = parseFloat(browser.version);
-    const terminal = terms[terms.length - 1];
-    const match = terminal.match(/^-\w+-/);
-    const prefix = match ? match[0] : undefined;
-    
-    
-    const isPrefixedData = prefix && !this._getAlias(compatNode, terms);
+    const terminal = terms.at(-1);
+    const prefix = terminal.match(PREFIX_REGEX)?.[0];
 
     let prefixNeeded = false;
     for (const support of supportList) {
-      const { version_added: added, version_removed: removed } = support;
-      const addedVersion = this._asFloatVersion(added === null ? true : added);
-      const removedVersion = this._asFloatVersion(
-        removed === null ? false : removed
-      );
+      const { alternative_name: alternativeName, added, removed } = support;
 
-      if (addedVersion <= version && version < removedVersion) {
-        if (support.alternative_name) {
-          if (support.alternative_name === terminal) {
-            return _SUPPORT_STATE.SUPPORTED;
+      if (
+        
+        (added === true ||
+          
+          
+          added === null ||
+          added === undefined ||
+          
+          added <= version) &&
+        
+        added !== false &&
+        
+        (removed === false ||
+          
+          
+          removed === null ||
+          removed === undefined ||
+          
+          version <= removed)
+      ) {
+        if (alternativeName) {
+          if (alternativeName === terminal) {
+            return _SUPPORT_STATE_SUPPORTED;
           }
-        } else if (isPrefixedData || support.prefix === prefix) {
-          return _SUPPORT_STATE.SUPPORTED;
+        } else if (
+          support.prefix === prefix ||
+          
+          
+          (prefix && !this._getAlias(compatNode, terms))
+        ) {
+          return _SUPPORT_STATE_SUPPORTED;
         }
 
         prefixNeeded = true;
@@ -436,8 +379,8 @@ class MDNCompatibility {
     }
 
     return prefixNeeded
-      ? _SUPPORT_STATE.UNSUPPORTED_PREFIX_NEEDED
-      : _SUPPORT_STATE.UNSUPPORTED;
+      ? _SUPPORT_STATE_UNSUPPORTED_PREFIX_NEEDED
+      : _SUPPORT_STATE_UNSUPPORTED;
   }
 
   _hasIssue({ unsupportedBrowsers, deprecated, experimental, invalid }) {
