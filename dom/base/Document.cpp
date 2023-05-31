@@ -15046,7 +15046,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     }
   }
 
-  aPopover.SetHasPopoverInvoker(false);
+  auto* data = popoverHTMLEl->GetPopoverData();
+  MOZ_ASSERT(data, "Should have popover data");
+  data->SetInvoker(nullptr);
 
   
   if (aFireEvents && !wasHiding) {
