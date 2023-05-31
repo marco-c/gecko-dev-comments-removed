@@ -175,9 +175,9 @@ function addLoadEvent() {}
 
 
 
-var scriptsReady = Promise.all(
+const scriptsReady = Promise.all(
   ["/tests/SimpleTest/SimpleTest.js", "head.js"].map(script => {
-    var el = document.createElement("script");
+    const el = document.createElement("script");
     el.src = script;
     document.head.appendChild(el);
     return new Promise(r => (el.onload = r));
@@ -189,7 +189,12 @@ function createHTML(options) {
 }
 
 async function runTest(testFunction) {
-  await scriptsReady;
+  await Promise.all([
+    scriptsReady,
+    SpecialPowers.pushPrefEnv({
+      set: [["media.navigator.permission.fake", true]],
+    }),
+  ]);
   await runTestWhenReady(async (...args) => {
     await testFunction(...args);
     await noGum();
@@ -202,18 +207,35 @@ async function runTest(testFunction) {
 
 
 
-
 async function noGum() {
-  await pushPrefs(
-    ["media.navigator.permission.disabled", false],
-    ["media.navigator.permission.fake", true]
-  );
   if (!navigator.mediaDevices) {
     
     return;
   }
-  const [device] = await navigator.mediaDevices.enumerateDevices();
-  if (device) {
-    is(device.label, "", "Test must leave no active gUM streams behind.");
-  }
+  const mediaManagerService = Cc[
+    "@mozilla.org/mediaManagerService;1"
+  ].getService(Ci.nsIMediaManagerService);
+
+  const hasCamera = {};
+  const hasMicrophone = {};
+  mediaManagerService.mediaCaptureWindowState(
+    window,
+    hasCamera,
+    hasMicrophone,
+    {},
+    {},
+    {},
+    {},
+    false
+  );
+  is(
+    hasCamera.value,
+    mediaManagerService.STATE_NOCAPTURE,
+    "Test must leave no active camera gUM tracks behind."
+  );
+  is(
+    hasMicrophone.value,
+    mediaManagerService.STATE_NOCAPTURE,
+    "Test must leave no active microphone gUM tracks behind."
+  );
 }
