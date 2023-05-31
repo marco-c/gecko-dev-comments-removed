@@ -358,6 +358,10 @@ typedef enum {
   
 
   MOZ_MACOS_CRASH_INFO_STREAM    = 0x4d7a0001,
+
+  
+
+  MOZ_MACOS_BOOTARGS_STREAM      = 0x4d7a0002,
 } MDStreamType;  
 
 
@@ -1125,16 +1129,6 @@ typedef struct {
   uint8_t data[0];
 } MDRawMacCrashInfoRecord;
 
-typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t thread_id;
-  MDRVA64 rva_of_thread_name;
-} MDRawThreadName;
-
-typedef struct {
-  uint32_t number_of_thread_names;
-  MDRawThreadName thread_names[0];
-} MDRawThreadNamesList;
-
 
 
 
@@ -1156,6 +1150,25 @@ typedef struct {
   uint32_t record_start_size;
   MDLocationDescriptor records[MAC_CRASH_INFOS_MAX];
 } MDRawMacCrashInfo;
+
+
+
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t stream_type; 
+  MDRVA64 bootargs;
+} MDRawMacBootargs;
+
+
+
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t thread_id;
+  MDRVA64 rva_of_thread_name;
+} MDRawThreadName;
+
+typedef struct {
+  uint32_t number_of_thread_names;
+  MDRawThreadName thread_names[0];
+} MDRawThreadNamesList;
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
