@@ -310,6 +310,18 @@ void ScrollAnchorContainer::UserScrolled() {
     return;
   }
   InvalidateAnchor();
+
+  if (!StaticPrefs::
+          layout_css_scroll_anchoring_reset_heuristic_during_animation() &&
+      Frame()->ScrollAnimationState().contains(
+          nsIScrollableFrame::AnimationState::APZInProgress)) {
+    
+    
+    
+    
+    return;
+  }
+
   mHeuristic.Reset();
 }
 
@@ -449,7 +461,9 @@ void ScrollAnchorContainer::Destroy() {
 void ScrollAnchorContainer::ApplyAdjustments() {
   if (!mAnchorNode || mAnchorNodeIsDirty || mDisabled ||
       Frame()->HasPendingScrollRestoration() ||
-      Frame()->IsProcessingScrollEvent() ||
+      (StaticPrefs::
+           layout_css_scroll_anchoring_reset_heuristic_during_animation() &&
+       Frame()->IsProcessingScrollEvent()) ||
       Frame()->ScrollAnimationState().contains(
           nsIScrollableFrame::AnimationState::TriggeredByScript) ||
       Frame()->GetScrollPosition() == nsPoint()) {
