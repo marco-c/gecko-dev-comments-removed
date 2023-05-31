@@ -163,7 +163,7 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
             : nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT;
 
     
-
+    
     if (event ==
         nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT) {
       ContentBlockingNotifier::OnEvent(aChannel, event, true);
