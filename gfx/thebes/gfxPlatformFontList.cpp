@@ -77,7 +77,13 @@ const gfxFontEntry::ScriptRange gfxPlatformFontList::sComplexScriptRanges[] = {
     
     
     
-    {0x0600, 0x06FF, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
+    {0x0600, 0x060B, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
+    
+    {0x060D, 0x061A, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
+    
+    {0x061C, 0x061E, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
+    
+    {0x0620, 0x06FF, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
     {0x0700, 0x074F, 1, {TRUETYPE_TAG('s', 'y', 'r', 'c'), 0, 0}},
     {0x0750, 0x077F, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
     {0x08A0, 0x08FF, 1, {TRUETYPE_TAG('a', 'r', 'a', 'b'), 0, 0}},
