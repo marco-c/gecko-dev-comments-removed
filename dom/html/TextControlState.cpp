@@ -1032,14 +1032,14 @@ nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
     }
 
     if (weakFrame.IsAlive()) {
-      HandleValueChanged();
+      HandleValueChanged(aTextEditor);
     }
   }
 
   return mTextControlState ? mTextControlState->OnEditActionHandled() : NS_OK;
 }
 
-void TextInputListener::HandleValueChanged() {
+void TextInputListener::HandleValueChanged(TextEditor& aTextEditor) {
   
   
   if (mSetValueChanged) {
@@ -1050,7 +1050,8 @@ void TextInputListener::HandleValueChanged() {
     
     
     
-    mTxtCtrlElement->OnValueChanged(ValueChangeKind::UserInteraction);
+    mTxtCtrlElement->OnValueChanged(ValueChangeKind::UserInteraction,
+                                    aTextEditor.IsEmpty(), nullptr);
     if (mTextControlState) {
       mTextControlState->ClearLastInteractiveValue();
     }
@@ -1929,21 +1930,10 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     }
   }
 
-  if (IsPasswordTextControl()) {
-    
-    
-    
-    
-    
-    DebugOnly<bool> disabledUndoRedo = newTextEditor->DisableUndoRedo();
-    NS_WARNING_ASSERTION(disabledUndoRedo,
-                         "Failed to disable undo/redo transaction");
-  } else {
-    DebugOnly<bool> enabledUndoRedo =
-        newTextEditor->EnableUndoRedo(TextControlElement::DEFAULT_UNDO_CAP);
-    NS_WARNING_ASSERTION(enabledUndoRedo,
-                         "Failed to enable undo/redo transaction");
-  }
+  DebugOnly<bool> enabledUndoRedo =
+      newTextEditor->EnableUndoRedo(TextControlElement::DEFAULT_UNDO_CAP);
+  NS_WARNING_ASSERTION(enabledUndoRedo,
+                       "Failed to enable undo/redo transaction");
 
   if (!mEditorInitialized) {
     newTextEditor->PostCreate();
@@ -2711,7 +2701,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
   
   
   if (!wasHandlingSetValue) {
-    handlingSetValue.GetTextControlElement()->OnValueChanged(changeKind);
+    handlingSetValue.GetTextControlElement()->OnValueChanged(
+        changeKind, handlingSetValue.GetSettingValue());
   }
   return true;
 }
@@ -2973,7 +2964,8 @@ bool TextControlState::SetValueWithoutTextEditor(
       
       
       aHandlingSetValue.GetTextControlElement()->OnValueChanged(
-          ValueChangeKind::UserInteraction);
+          ValueChangeKind::UserInteraction,
+          aHandlingSetValue.GetSettingValue());
 
       ClearLastInteractiveValue();
 
@@ -2998,20 +2990,6 @@ bool TextControlState::SetValueWithoutTextEditor(
   }
 
   return true;
-}
-
-bool TextControlState::HasNonEmptyValue() {
-  
-  
-  if (mTextEditor && mBoundFrame && mEditorInitialized &&
-      !(mHandlingState &&
-        mHandlingState->IsHandling(TextControlAction::CommitComposition))) {
-    return !mTextEditor->IsEmpty();
-  }
-
-  nsAutoString value;
-  GetValue(value, true);
-  return !value.IsEmpty();
 }
 
 void TextControlState::InitializeKeyboardEventListeners() {
