@@ -261,8 +261,6 @@ void XPCShellEnvironment::ProcessFile(JSContext* cx, const char* filename,
 
 
 
-
-
     int ch = fgetc(file);
     if (ch == '#') {
       while ((ch = fgetc(file)) != EOF) {
