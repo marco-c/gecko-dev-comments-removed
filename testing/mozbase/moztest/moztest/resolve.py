@@ -836,13 +836,7 @@ class TestResolver(MozbuildObject):
         """
         
         
-        if test["name"].startswith("/_mozilla"):
-            depth = depth + 1
-
-        
-        
-        if test["name"].startswith(("/webdriver", "/_mozilla/webdriver")):
-            depth = depth + 1
+        depth = depth + 1 if test["name"].startswith("/_mozilla") else depth
 
         group = os.path.dirname(test["name"])
         while group.count("/") > depth:
