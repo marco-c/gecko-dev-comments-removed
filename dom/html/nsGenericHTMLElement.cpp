@@ -3457,6 +3457,10 @@ void nsGenericHTMLElement::TogglePopover(const Optional<bool>& aForce,
 
 
 void nsGenericHTMLElement::FocusPopover() {
+  if (RefPtr<Document> doc = GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Frames);
+  }
+
   
   
   RefPtr<Element> control =
