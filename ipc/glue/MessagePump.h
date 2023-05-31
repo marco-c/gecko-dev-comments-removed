@@ -10,8 +10,6 @@
 #include "base/message_pump_default.h"
 #if defined(XP_WIN)
 #  include "base/message_pump_win.h"
-#elif defined(XP_MACOSX)
-#  include "base/message_pump_mac.h"
 #endif
 
 #include "base/time.h"
@@ -93,6 +91,7 @@ class MessagePumpForNonMainThreads final : public MessagePump {
 
 #if defined(XP_WIN)
 
+
 class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
                                              public nsIThreadObserver {
  public:
@@ -100,7 +99,7 @@ class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
   NS_DECL_NSITHREADOBSERVER
 
  public:
-  explicit MessagePumpForNonMainUIThreads(nsISerialEventTarget* aEventTarget)
+  explicit MessagePumpForNonMainUIThreads(nsIEventTarget* aEventTarget)
       : mInWait(false), mWaitLock("mInWait") {}
 
   
@@ -131,39 +130,6 @@ class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
 
   bool mInWait MOZ_GUARDED_BY(mWaitLock);
   mozilla::Mutex mWaitLock;
-};
-#elif defined(XP_MACOSX)
-
-
-class MessagePumpForNonMainUIThreads final
-    : public base::MessagePumpCFRunLoopBase,
-      public nsIThreadObserver {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSITHREADOBSERVER
-
- public:
-  explicit MessagePumpForNonMainUIThreads(nsISerialEventTarget* aEventTarget);
-
-  void DoRun(base::MessagePump::Delegate* aDelegate) override;
-  void Quit() override;
-
-  nsISerialEventTarget* GetXPCOMThread() override { return mEventTarget; }
-
- private:
-  ~MessagePumpForNonMainUIThreads();
-
-  nsISerialEventTarget* mEventTarget;
-
-  
-  
-  
-  CFRunLoopSourceRef quit_source_;
-
-  
-  bool keep_running_;
-
-  DISALLOW_COPY_AND_ASSIGN(MessagePumpForNonMainUIThreads);
 };
 #endif  
 

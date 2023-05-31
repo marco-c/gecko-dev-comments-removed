@@ -383,7 +383,7 @@ TEST(Threads, UnregisteredShutdownTask)
   thread->Shutdown();
 }
 
-#if (defined(XP_WIN) || !defined(DEBUG)) && !defined(XP_MACOSX)
+#if defined(XP_WIN) || !defined(DEBUG)
 TEST(Threads, OptionsIsUiThread)
 {
   
