@@ -152,16 +152,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 
-
-
-
-
-  nsresult UpdateFrecency(int64_t aPlaceId);
-
-  
-
-
-
   nsIStringBundle* GetBundle();
   const mozilla::intl::Collator* GetCollator();
   void GetStringFromName(const char* aName, nsACString& aResult);
