@@ -15,10 +15,10 @@
 namespace mozilla::dom {
 
 
-enum class PopoverState : uint8_t {
+enum class PopoverAttributeState : uint8_t {
   None,
-  Auto,
-  Manual,
+  Auto,    
+  Manual,  
 };
 
 enum class PopoverVisibilityState : uint8_t {
@@ -47,8 +47,10 @@ class PopoverData {
   PopoverData() = default;
   ~PopoverData() = default;
 
-  PopoverState GetPopoverState() const { return mState; }
-  void SetPopoverState(PopoverState aState) { mState = aState; }
+  PopoverAttributeState GetPopoverAttributeState() const { return mState; }
+  void SetPopoverAttributeState(PopoverAttributeState aState) {
+    mState = aState;
+  }
 
   PopoverVisibilityState GetPopoverVisibilityState() const {
     return mVisibilityState;
@@ -77,7 +79,7 @@ class PopoverData {
 
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
-  PopoverState mState = PopoverState::None;
+  PopoverAttributeState mState = PopoverAttributeState::None;
   
   
   
