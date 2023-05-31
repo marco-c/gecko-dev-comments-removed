@@ -1054,11 +1054,6 @@ class nsContentUtils {
   
 
 
-  static bool IsImageInCache(nsIURI* aURI, Document* aDocument);
-
-  
-
-
 
 
 
@@ -3099,6 +3094,8 @@ class nsContentUtils {
   static bool IsImageAvailable(nsIContent*, nsIURI*,
                                nsIPrincipal* aDefaultTriggeringPrincipal,
                                mozilla::CORSMode);
+  static bool IsImageAvailable(nsIURI*, nsIPrincipal* aTriggeringPrincipal,
+                               mozilla::CORSMode, Document*);
 
   
 
