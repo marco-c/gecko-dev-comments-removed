@@ -1,22 +1,17 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = [];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const DEBUG = false;
 function debug(s) {
   dump("-*- NotificationDB component: " + s + "\n");
 }
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
-});
+const NOTIFICATION_STORE_DIR = PathUtils.profileDir;
+const NOTIFICATION_STORE_PATH = PathUtils.join(
+  NOTIFICATION_STORE_DIR,
+  "notificationstore.json"
+);
 
 const kMessages = [
   "Notification:Save",
@@ -24,30 +19,20 @@ const kMessages = [
   "Notification:GetAll",
 ];
 
-
-
-function makeKey(origin, id) {
-  return origin.concat("\t", id);
-}
-
 var NotificationDB = {
-  
+  // Ensure we won't call init() while xpcom-shutdown is performed
   _shutdownInProgress: false,
-
-  
-  _store: null,
-
-  
-  
-  
-  _loadPromise: null,
 
   init() {
     if (this._shutdownInProgress) {
       return;
     }
 
-    this.tasks = []; 
+    this.notifications = Object.create(null);
+    this.byTag = Object.create(null);
+    this.loaded = false;
+
+    this.tasks = []; // read/write operation queue
     this.runningTask = null;
 
     Services.obs.addObserver(this, "xpcom-shutdown");
@@ -78,13 +63,14 @@ var NotificationDB = {
   },
 
   filterNonAppNotifications(notifications) {
+    let result = Object.create(null);
     for (let origin in notifications) {
+      result[origin] = Object.create(null);
       let persistentNotificationCount = 0;
       for (let id in notifications[origin]) {
         if (notifications[origin][id].serviceWorkerRegistrationScope) {
           persistentNotificationCount++;
-        } else {
-          delete notifications[origin][id];
+          result[origin][id] = notifications[origin][id];
         }
       }
       if (persistentNotificationCount == 0) {
@@ -93,84 +79,77 @@ var NotificationDB = {
             "Origin " + origin + " is not linked to an app manifest, deleting."
           );
         }
-        delete notifications[origin];
+        delete result[origin];
       }
     }
 
-    return notifications;
+    return result;
   },
 
-  async maybeMigrateData() {
-    const oldStore = PathUtils.join(
-      Services.dirsvc.get("ProfD", Ci.nsIFile).path,
-      "notificationstore.json"
-    );
-
-    if (!(await IOUtils.exists(oldStore))) {
-      if (DEBUG) {
-        debug("Old store doesn't exist; not migrating data.");
-      }
-      return;
-    }
-
-    let data;
-    try {
-      data = await IOUtils.readUTF8(oldStore);
-    } catch (ex) {
-      
-      if (DEBUG) {
-        debug("Failed to read old store; not migrating data.");
-      }
-      return;
-    } finally {
-      
-      await IOUtils.remove(oldStore);
-    }
-
-    if (data.length) {
-      
-      
-      
-      
-      
-      
-      
-      const notifications = this.filterNonAppNotifications(JSON.parse(data));
-
-      
-      
-      
-      for (const origin in notifications) {
-        for (const id in notifications[origin]) {
-          await this._store.put(
-            makeKey(origin, id),
-            JSON.stringify(notifications[origin][id])
-          );
+  // Attempt to read notification file, if it's not there we will create it.
+  load() {
+    var promise = IOUtils.readUTF8(NOTIFICATION_STORE_PATH);
+    return promise.then(
+      data => {
+        if (data.length) {
+          // Preprocessing phase intends to cleanly separate any migration-related
+          // tasks.
+          this.notifications = this.filterNonAppNotifications(JSON.parse(data));
         }
+
+        // populate the list of notifications by tag
+        if (this.notifications) {
+          for (var origin in this.notifications) {
+            this.byTag[origin] = Object.create(null);
+            for (var id in this.notifications[origin]) {
+              var curNotification = this.notifications[origin][id];
+              if (curNotification.tag) {
+                this.byTag[origin][curNotification.tag] = curNotification;
+              }
+            }
+          }
+        }
+
+        this.loaded = true;
+      },
+
+      // If read failed, we assume we have no notifications to load.
+      reason => {
+        this.loaded = true;
+        return this.createStore();
       }
-    }
-  },
-
-  
-  async load() {
-    
-    const dir = lazy.FileUtils.getDir("ProfD", ["notificationstore"], true);
-    this._store = await lazy.KeyValueService.getOrCreate(
-      dir.path,
-      "notifications"
     );
-
-    
-    
-    await this.maybeMigrateData();
   },
 
-  
+  // Creates the notification directory.
+  createStore() {
+    var promise = IOUtils.makeDirectory(NOTIFICATION_STORE_DIR, {
+      ignoreExisting: true,
+    });
+    return promise.then(this.createFile.bind(this));
+  },
+
+  // Creates the notification file once the directory is created.
+  createFile() {
+    return IOUtils.writeUTF8(NOTIFICATION_STORE_PATH, "", {
+      tmpPath: NOTIFICATION_STORE_PATH + ".tmp",
+    });
+  },
+
+  // Save current notifications to the file.
+  save() {
+    var data = JSON.stringify(this.notifications);
+    return IOUtils.writeUTF8(NOTIFICATION_STORE_PATH, data, {
+      tmpPath: NOTIFICATION_STORE_PATH + ".tmp",
+    });
+  },
+
+  // Helper function: promise will be resolved once file exists and/or is loaded.
   ensureLoaded() {
-    if (!this._loadPromise) {
-      this._loadPromise = this.load();
+    if (!this.loaded) {
+      return this.load();
     }
-    return this._loadPromise;
+    return Promise.resolve();
   },
 
   receiveMessage(message) {
@@ -178,8 +157,8 @@ var NotificationDB = {
       debug("Received message:" + message.name);
     }
 
-    
-    
+    // sendAsyncMessage can fail if the child process exits during a
+    // notification storage operation, so always wrap it in a try/catch.
     function returnMessage(name, data) {
       try {
         message.target.sendAsyncMessage(name, data);
@@ -246,8 +225,8 @@ var NotificationDB = {
     }
   },
 
-  
-  
+  // We need to make sure any read/write operations are atomic,
+  // so use a queue to run each operation sequentially.
   queueTask(operation, data) {
     if (DEBUG) {
       debug("Queueing task: " + operation);
@@ -255,14 +234,18 @@ var NotificationDB = {
 
     var defer = {};
 
-    this.tasks.push({ operation, data, defer });
+    this.tasks.push({
+      operation,
+      data,
+      defer,
+    });
 
     var promise = new Promise(function (resolve, reject) {
       defer.resolve = resolve;
       defer.reject = reject;
     });
 
-    
+    // Only run immediately if we aren't currently running another task.
     if (!this.runningTask) {
       if (DEBUG) {
         debug("Task queue was not running, starting now...");
@@ -283,7 +266,7 @@ var NotificationDB = {
     }
     this.runningTask = this.tasks.shift();
 
-    
+    // Always make sure we are loaded before performing any read/write tasks.
     this.ensureLoaded()
       .then(() => {
         var task = this.runningTask;
@@ -297,9 +280,12 @@ var NotificationDB = {
 
           case "delete":
             return this.taskDelete(task.data);
-        }
 
-        throw new Error(`Unknown task operation: ${task.operation}`);
+          default:
+            return Promise.reject(
+              new Error(`Found a task with unknown operation ${task.operation}`)
+            );
+        }
       })
       .then(payload => {
         if (DEBUG) {
@@ -320,62 +306,80 @@ var NotificationDB = {
       });
   },
 
-  enumerate(origin) {
-    
-    
-    
-    
-    
-    return this._store.enumerate(origin, `${origin}\n`);
-  },
-
-  async taskGetAll(data) {
+  taskGetAll(data) {
     if (DEBUG) {
       debug("Task, getting all");
     }
     var origin = data.origin;
     var notifications = [];
-
-    for (const { value } of await this.enumerate(origin)) {
-      notifications.push(JSON.parse(value));
+    // Grab only the notifications for specified origin.
+    if (this.notifications[origin]) {
+      if (data.tag) {
+        let n;
+        if ((n = this.byTag[origin][data.tag])) {
+          notifications.push(n);
+        }
+      } else {
+        for (var i in this.notifications[origin]) {
+          notifications.push(this.notifications[origin][i]);
+        }
+      }
     }
-
-    if (data.tag) {
-      notifications = notifications.filter(n => n.tag === data.tag);
-    }
-
-    return notifications;
+    return Promise.resolve(notifications);
   },
 
-  async taskSave(data) {
+  taskSave(data) {
     if (DEBUG) {
       debug("Task, saving");
     }
     var origin = data.origin;
     var notification = data.notification;
-
-    
-    
-    if (notification.tag) {
-      for (const { key, value } of await this.enumerate(origin)) {
-        const oldNotification = JSON.parse(value);
-        if (oldNotification.tag === notification.tag) {
-          await this._store.delete(key);
-        }
-      }
+    if (!this.notifications[origin]) {
+      this.notifications[origin] = Object.create(null);
+      this.byTag[origin] = Object.create(null);
     }
 
-    await this._store.put(
-      makeKey(origin, notification.id),
-      JSON.stringify(notification)
-    );
+    // We might have existing notification with this tag,
+    // if so we need to remove it before saving the new one.
+    if (notification.tag) {
+      var oldNotification = this.byTag[origin][notification.tag];
+      if (oldNotification) {
+        delete this.notifications[origin][oldNotification.id];
+      }
+      this.byTag[origin][notification.tag] = notification;
+    }
+
+    this.notifications[origin][notification.id] = notification;
+    return this.save();
   },
 
-  async taskDelete(data) {
+  taskDelete(data) {
     if (DEBUG) {
       debug("Task, deleting");
     }
-    await this._store.delete(makeKey(data.origin, data.id));
+    var origin = data.origin;
+    var id = data.id;
+    if (!this.notifications[origin]) {
+      if (DEBUG) {
+        debug("No notifications found for origin: " + origin);
+      }
+      return Promise.resolve();
+    }
+
+    // Make sure we can find the notification to delete.
+    var oldNotification = this.notifications[origin][id];
+    if (!oldNotification) {
+      if (DEBUG) {
+        debug("No notification found with id: " + id);
+      }
+      return Promise.resolve();
+    }
+
+    if (oldNotification.tag) {
+      delete this.byTag[origin][oldNotification.tag];
+    }
+    delete this.notifications[origin][id];
+    return this.save();
   },
 };
 

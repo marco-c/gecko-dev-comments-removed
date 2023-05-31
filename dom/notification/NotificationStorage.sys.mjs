@@ -1,8 +1,6 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const DEBUG = false;
 function debug(s) {
@@ -21,13 +19,13 @@ const kMessages = [
   kMessageNotificationDeleteKo,
 ];
 
-function NotificationStorage() {
+export function NotificationStorage() {
   this._requests = {};
   this._requestCount = 0;
 
   Services.obs.addObserver(this, "xpcom-shutdown");
 
-  
+  // Register for message listeners.
   this.registerListeners();
 }
 
@@ -211,9 +209,9 @@ NotificationStorage.prototype = {
   },
 
   _returnNotifications(notifications, origin, tag, callback) {
-    
-    
-    
+    // Pass each notification back separately.
+    // The callback is called asynchronously to match the behaviour when
+    // fetching from the database.
     notifications.forEach(function (notification) {
       try {
         Services.tm.dispatchToMainThread(
@@ -248,5 +246,3 @@ NotificationStorage.prototype = {
 
   QueryInterface: ChromeUtils.generateQI(["nsINotificationStorage"]),
 };
-
-var EXPORTED_SYMBOLS = ["NotificationStorage"];
