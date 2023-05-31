@@ -463,8 +463,7 @@ void MediaSource::SetLiveSeekableRange(double aStart, double aEnd,
   
   
   mLiveSeekableRange =
-      Some(media::TimeInterval(media::TimeUnit::FromSeconds(aStart),
-                               media::TimeUnit::FromSeconds(aEnd)));
+      Some(media::TimeRanges(media::TimeRange(aStart, aEnd)));
 }
 
 void MediaSource::ClearLiveSeekableRange(ErrorResult& aRv) {

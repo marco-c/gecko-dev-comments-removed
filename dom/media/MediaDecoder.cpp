@@ -1012,8 +1012,9 @@ MediaDecoder::PositionUpdate MediaDecoder::GetPositionUpdateReason(
   if (mLooping && notSeeking && aCurPos.ToSeconds() < aPrevPos) {
     return PositionUpdate::eSeamlessLoopingSeeking;
   }
-  return aPrevPos != aCurPos.ToSeconds() && notSeeking ? PositionUpdate::ePeriodicUpdate
-                                           : PositionUpdate::eOther;
+  return aPrevPos != aCurPos.ToSeconds() && notSeeking
+             ? PositionUpdate::ePeriodicUpdate
+             : PositionUpdate::eOther;
 }
 
 void MediaDecoder::UpdateLogicalPositionInternal() {
@@ -1022,7 +1023,8 @@ void MediaDecoder::UpdateLogicalPositionInternal() {
 
   TimeUnit currentPosition = CurrentPosition();
   if (mPlayState == PLAY_STATE_ENDED) {
-    currentPosition = std::max(currentPosition, mDuration.match(DurationToTimeUnit()));
+    currentPosition =
+        std::max(currentPosition, mDuration.match(DurationToTimeUnit()));
   }
 
   const PositionUpdate reason =
@@ -1059,10 +1061,8 @@ void MediaDecoder::UpdateLogicalPositionInternal() {
 
 void MediaDecoder::SetLogicalPosition(const TimeUnit& aNewPosition) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mLogicalPosition == aNewPosition.ToSeconds()) {
-    return;
-  }
-  if (std::abs(mLogicalPosition - aNewPosition.ToSeconds()) < 1. / USECS_PER_S) {
+  if (TimeUnit::FromSeconds(mLogicalPosition) == aNewPosition ||
+      mLogicalPosition == aNewPosition.ToSeconds()) {
     return;
   }
   mLogicalPosition = aNewPosition.ToSeconds();
@@ -1084,9 +1084,11 @@ void MediaDecoder::DurationChanged() {
     mDuration.emplace<TimeUnit>(mStateMachineDuration.Ref().ref());
   }
 
-  LOG("New duration to %s", mDuration.match(DurationToTimeUnit()).ToString().get());
+  LOG("New duration: %s",
+      mDuration.match(DurationToTimeUnit()).ToString().get());
   if (oldDuration.is<TimeUnit>() && oldDuration.as<TimeUnit>().IsValid()) {
-    LOG("Duration %s", oldDuration.match(DurationToTimeUnit()).ToString().get());
+    LOG("Old Duration %s",
+        oldDuration.match(DurationToTimeUnit()).ToString().get());
   }
 
   if ((oldDuration.is<double>() || oldDuration.as<TimeUnit>().IsValid())) {
@@ -1096,12 +1098,14 @@ void MediaDecoder::DurationChanged() {
     }
   }
 
-  LOG("Duration changed to %s", mDuration.match(DurationToTimeUnit()).ToString().get());
+  LOG("Duration changed to %s",
+      mDuration.match(DurationToTimeUnit()).ToString().get());
 
   
   
   if (mFiredMetadataLoaded &&
-      (!std::isinf(mDuration.match(DurationToDouble())) || mExplicitDuration.isSome())) {
+      (!std::isinf(mDuration.match(DurationToDouble())) ||
+       mExplicitDuration.isSome())) {
     GetOwner()->DispatchAsyncEvent(u"durationchange"_ns);
   }
 
@@ -1245,29 +1249,84 @@ bool MediaDecoder::IsMediaSeekable() {
   return mMediaSeekable;
 }
 
-media::TimeIntervals MediaDecoder::GetSeekable() {
-  MOZ_ASSERT(NS_IsMainThread());
+namespace {
 
+
+template <typename T>
+constexpr T Zero() {
+  if constexpr (std::is_same<T, double>::value) {
+    return 0.0;
+  } else if constexpr (std::is_same<T, TimeUnit>::value) {
+    return TimeUnit::Zero();
+  }
+  MOZ_RELEASE_ASSERT(false);
+};
+
+
+template <typename T>
+constexpr T Infinity() {
+  if constexpr (std::is_same<T, double>::value) {
+    return std::numeric_limits<double>::infinity();
+  } else if constexpr (std::is_same<T, TimeUnit>::value) {
+    return TimeUnit::FromInfinity();
+  }
+  MOZ_RELEASE_ASSERT(false);
+};
+
+};  
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename IntervalType>
+IntervalType MediaDecoder::GetSeekableImpl() {
+  MOZ_ASSERT(NS_IsMainThread());
   if (std::isnan(GetDuration())) {
     
-    return TimeIntervals();
+    return IntervalType();
   }
 
   
   
   
   if (mMediaSeekableOnlyInBufferedRanges) {
-    return GetBuffered();
+    return IntervalType(GetBuffered());
   }
   if (!IsMediaSeekable()) {
-    return media::TimeIntervals();
+    return IntervalType();
   }
   if (!IsTransportSeekable()) {
-    return GetBuffered();
+    return IntervalType(GetBuffered());
   }
-  return media::TimeIntervals(media::TimeInterval(
-      TimeUnit::Zero(), IsInfinite() ? TimeUnit::FromInfinity()
-                                     : mDuration.match(DurationToTimeUnit()).ToBase(1000000)));
+  
+  
+  typename IntervalType::InnerType duration;
+  if constexpr (std::is_same<typename IntervalType::InnerType, double>::value) {
+    duration = GetDuration();
+  } else {
+    duration = mDuration.as<TimeUnit>();
+  }
+
+  return IntervalType(typename IntervalType::ElemType(
+      Zero<typename IntervalType::InnerType>(),
+      IsInfinite() ? Infinity<typename IntervalType::InnerType>()
+                   : duration));
+}
+
+media::TimeIntervals MediaDecoder::GetSeekable() {
+  return GetSeekableImpl<media::TimeIntervals>();
+}
+
+media::TimeRanges MediaDecoder::GetSeekableTimeRanges() {
+  return GetSeekableImpl<media::TimeRanges>();
 }
 
 void MediaDecoder::SetFragmentEndTime(double aTime) {
