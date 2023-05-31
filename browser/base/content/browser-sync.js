@@ -353,15 +353,6 @@ var gSync = {
     ));
   },
 
-  get syncStrings() {
-    delete this.syncStrings;
-    
-    
-    return (this.syncStrings = Services.strings.createBundle(
-      "chrome://weave/locale/sync.properties"
-    ));
-  },
-
   
   
   get sendTabConfiguredAndLoading() {
@@ -1871,37 +1862,34 @@ var gSync = {
 
 
   updateSyncButtonsTooltip(state) {
-    const status = state.status;
-
     
-    
-    
-    let tooltiptext;
-    if (status == UIState.STATUS_NOT_VERIFIED) {
-      
-      tooltiptext = this.fluentStrings.formatValueSync("account-verify", {
-        email: state.email,
-      });
-    } else if (status == UIState.STATUS_NOT_CONFIGURED) {
-      
-      tooltiptext = this.syncStrings.GetStringFromName(
-        "signInToSync.description"
-      );
-    } else if (status == UIState.STATUS_LOGIN_FAILED) {
-      
-      tooltiptext = this.fluentStrings.formatValueSync("account-reconnect", {
-        email: state.email,
-      });
-    } else {
-      
-      let lastSyncDate = this.formatLastSyncDate(state.lastSync);
-      if (lastSyncDate) {
-        tooltiptext = this.fluentStrings.formatValueSync(
-          "appmenu-fxa-last-sync",
-          { time: lastSyncDate }
-        );
+    let l10nId, l10nArgs;
+    switch (state.status) {
+      case UIState.STATUS_NOT_VERIFIED:
+        
+        l10nId = "account-verify";
+        l10nArgs = { email: state.email };
+        break;
+      case UIState.STATUS_LOGIN_FAILED:
+        
+        l10nId = "account-reconnect";
+        l10nArgs = { email: state.email };
+        break;
+      case UIState.STATUS_NOT_CONFIGURED:
+        
+        break;
+      default: {
+        
+        let lastSyncDate = this.formatLastSyncDate(state.lastSync);
+        if (lastSyncDate) {
+          l10nId = "appmenu-fxa-last-sync";
+          l10nArgs = { time: lastSyncDate };
+        }
       }
     }
+    const tooltiptext = l10nId
+      ? this.fluentStrings.formatValueSync(l10nId, l10nArgs)
+      : null;
 
     let syncNowBtns = [
       "PanelUI-remotetabs-syncnow",
