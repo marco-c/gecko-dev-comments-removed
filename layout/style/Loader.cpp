@@ -1755,7 +1755,9 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
 
   
   
-  const bool isWorthCaching = aInfo.mContent->IsInShadowTree();
+  const bool isWorthCaching =
+      StaticPrefs::layout_css_inline_style_caching_always_enabled() ||
+      aInfo.mContent->IsInShadowTree();
   RefPtr<StyleSheet> sheet;
   if (isWorthCaching) {
     sheet = LookupInlineSheetInCache(aBuffer);
