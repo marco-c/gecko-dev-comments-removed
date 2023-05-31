@@ -830,9 +830,6 @@ class Talos(
             env["MOZ_DEVELOPER_OBJ_DIR"] = self.obj_path
 
         
-        env["STYLO_FORCE_ENABLED"] = "1"
-
-        
         output_timeout = self.config.get("talos_output_timeout", 3600)
         
         run_tests = os.path.join(self.talos_path, "talos", "run_tests.py")

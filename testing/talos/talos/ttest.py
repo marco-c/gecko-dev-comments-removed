@@ -93,13 +93,6 @@ class TTest(object):
             setup.env["MOZ_MAIN_THREAD_IO_LOG"] = mainthread_io
 
         
-        setup.env["STYLO_FORCE_ENABLED"] = "1"
-
-        
-        if browser_config.get("stylothreads", 0) > 0:
-            setup.env["STYLO_THREADS"] = str(browser_config["stylothreads"])
-
-        
         if test_config.get("url", None) is not None:
             test_config["url"] = utils.interpolate(
                 test_config["url"],
