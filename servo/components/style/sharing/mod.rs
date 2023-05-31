@@ -879,6 +879,22 @@ impl<E: TElement> StyleSharingCache<E> {
             if target.local_name() != candidate.element.local_name() {
                 return None;
             }
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if target.is_visited_link() != candidate.element.is_visited_link() {
+                return None;
+            }
+
             Some(data.share_primary_style())
         })
     }
