@@ -690,11 +690,11 @@ static PRBool sftk_self_tests_success = PR_FALSE;
 
 
 
-static void
-sftk_startup_tests(void)
+void
+sftk_startup_tests_with_rerun(PRBool rerun)
 {
     SECStatus rv;
-    const char *libraryName = SOFTOKEN_LIB_NAME;
+    const char *libraryName = rerun ? BLAPI_FIPS_RERUN_FLAG_STRING SOFTOKEN_LIB_NAME : SOFTOKEN_LIB_NAME;
 
     PORT_Assert(!sftk_self_tests_ran);
     PORT_Assert(!sftk_self_tests_success);
@@ -752,13 +752,19 @@ sftk_startup_tests(void)
     sftk_self_tests_success = PR_TRUE;
 }
 
+static void
+sftk_startup_tests(void)
+{
+    sftk_startup_tests_with_rerun(PR_FALSE);
+}
+
 
 
 
 
 
 CK_RV
-sftk_FIPSEntryOK()
+sftk_FIPSEntryOK(PRBool rerun)
 {
 #ifdef NSS_NO_INIT_SUPPORT
     
@@ -771,6 +777,11 @@ sftk_FIPSEntryOK()
         sftk_startup_tests();
     }
 #endif
+    if (rerun) {
+        sftk_self_tests_ran = PR_FALSE;
+        sftk_self_tests_success = PR_FALSE;
+        sftk_startup_tests_with_rerun(PR_TRUE);
+    }
     if (!sftk_self_tests_success) {
         return CKR_DEVICE_ERROR;
     }

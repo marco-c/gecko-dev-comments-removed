@@ -57,7 +57,7 @@ extern unsigned char *CBC_PadBuffer(PLArenaPool *arena, unsigned char *inbuf,
 
 
 
-extern CK_RV sftk_FIPSEntryOK(void);
+extern CK_RV sftk_FIPSEntryOK(PRBool rerun);
 
 
 

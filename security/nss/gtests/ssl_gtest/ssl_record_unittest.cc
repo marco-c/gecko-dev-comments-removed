@@ -460,15 +460,16 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
+
 class ZeroLengthRecordSetup
     : public TlsConnectTestBase,
       public testing::WithParamInterface<
-          std::tuple<SSLProtocolVariant, SSLContentType>> {
+          std::tuple<SSLProtocolVariant, uint16_t, SSLContentType>> {
  public:
   ZeroLengthRecordSetup()
-      : TlsConnectTestBase(std::get<0>(GetParam()), 0),
+      : TlsConnectTestBase(std::get<0>(GetParam()), std::get<1>(GetParam())),
         variant_(std::get<0>(GetParam())),
-        contentType_(std::get<1>(GetParam())){};
+        contentType_(std::get<2>(GetParam())){};
 
   void createZeroLengthRecord(DataBuffer& buffer, unsigned epoch = 0,
                               unsigned seqn = 0) {
@@ -526,35 +527,56 @@ class ZeroLengthRecordSetup
 
 
 TEST_P(ZeroLengthRecordSetup, ZeroLengthRecordRun) {
+  EnsureTlsSetup();
+
+  
   DataBuffer buffer;
   createZeroLengthRecord(buffer);
-
-  EnsureTlsSetup();
-  
   client_->SendDirect(buffer);
   
   server_->StartConnect();
 
-  
-  if (contentType_ != ssl_ct_alert && variant_ == ssl_variant_datagram) {
-    contentType_ = ssl_ct_handshake;
-  }
+  SSLAlertDescription alert = close_notify;
 
-  SSLAlertDescription alert;
-  switch (contentType_) {
-    case ssl_ct_alert:
-    case ssl_ct_change_cipher_spec:
-      alert = illegal_parameter;
+  switch (variant_) {
+    case ssl_variant_datagram:
+      switch (contentType_) {
+        case ssl_ct_alert:
+          
+          alert = illegal_parameter;
+          break;
+        case ssl_ct_ack:
+          if (version_ == SSL_LIBRARY_VERSION_TLS_1_3) {
+            
+            GTEST_SKIP();
+          }
+          
+          
+        case ssl_ct_change_cipher_spec:
+        case ssl_ct_application_data:
+        case ssl_ct_handshake:
+          server_->Handshake();
+          Connect();
+          return;
+      }
       break;
-    case ssl_ct_application_data:
-      alert = unexpected_message;
+    case ssl_variant_stream:
+      switch (contentType_) {
+        case ssl_ct_alert:
+        case ssl_ct_change_cipher_spec:
+          alert = illegal_parameter;
+          break;
+        case ssl_ct_application_data:
+        case ssl_ct_ack:
+          alert = unexpected_message;
+          break;
+        case ssl_ct_handshake:
+          
+          server_->Handshake();
+          Connect();
+          return;
+      }
       break;
-    default:  
-      
-      server_->Handshake();
-      
-      Connect();
-      return;
   }
 
   
@@ -568,23 +590,22 @@ TEST_P(ZeroLengthRecordSetup, ZeroLengthRecordRun) {
 }
 
 
-const SSLProtocolVariant kZeroLengthRecordVariants[] = {ssl_variant_datagram,
-                                                        ssl_variant_stream};
-
-
 const SSLContentType kZeroLengthRecordContentTypes[] = {
     ssl_ct_handshake, ssl_ct_alert, ssl_ct_change_cipher_spec,
-    ssl_ct_application_data};
+    ssl_ct_application_data, ssl_ct_ack};
 
 INSTANTIATE_TEST_SUITE_P(
     ZeroLengthRecordTest, ZeroLengthRecordSetup,
-    testing::Combine(testing::ValuesIn(kZeroLengthRecordVariants),
+    testing::Combine(TlsConnectTestBase::kTlsVariantsAll,
+                     TlsConnectTestBase::kTlsV11Plus,
                      testing::ValuesIn(kZeroLengthRecordContentTypes)),
     [](const testing::TestParamInfo<ZeroLengthRecordSetup::ParamType>& inf) {
       std::string variant =
           (std::get<0>(inf.param) == ssl_variant_stream) ? "Tls" : "Dtls";
+      std::string version = VersionString(std::get<1>(inf.param));
+      std::replace(version.begin(), version.end(), '.', '_');
       std::string contentType;
-      switch (std::get<1>(inf.param)) {
+      switch (std::get<2>(inf.param)) {
         case ssl_ct_handshake:
           contentType = "Handshake";
           break;
@@ -597,10 +618,11 @@ INSTANTIATE_TEST_SUITE_P(
         case ssl_ct_change_cipher_spec:
           contentType = "ChangeCipherSpec";
           break;
-        default:
-          contentType = "InvalidParameter";
+        case ssl_ct_ack:
+          contentType = "Ack";
+          break;
       }
-      return variant + "ZeroLength" + contentType + "Test";
+      return variant + version + "ZeroLength" + contentType + "Test";
     });
 
 

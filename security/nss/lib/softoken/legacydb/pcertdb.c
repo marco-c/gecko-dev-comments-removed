@@ -4277,6 +4277,7 @@ CreateTrust(void)
     if (trust) {
         trustListCount--;
         trustListHead = trust->next;
+        trust->next = NULL;
     }
     PORT_Assert(trustListCount >= 0);
     nsslowcert_UnlockFreeList();
@@ -5160,9 +5161,11 @@ nsslowcert_hasTrust(NSSLOWCERTCertTrust *trust)
     if (trust == NULL) {
         return PR_FALSE;
     }
-    return !((trust->sslFlags & CERTDB_TRUSTED_UNKNOWN) &&
-             (trust->emailFlags & CERTDB_TRUSTED_UNKNOWN) &&
-             (trust->objectSigningFlags & CERTDB_TRUSTED_UNKNOWN));
+    
+
+    return !(((trust->sslFlags & ~(CERTDB_USER | CERTDB_TRUSTED_UNKNOWN)) == 0) &&
+             ((trust->emailFlags & ~(CERTDB_USER | CERTDB_TRUSTED_UNKNOWN)) == 0) &&
+             ((trust->objectSigningFlags & ~(CERTDB_USER | CERTDB_TRUSTED_UNKNOWN)) == 0));
 }
 
 

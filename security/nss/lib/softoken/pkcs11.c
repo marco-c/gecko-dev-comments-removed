@@ -2568,7 +2568,7 @@ sftk_getDefTokName(CK_SLOT_ID slotID)
         default:
             break;
     }
-    sprintf(buf, "NSS Application Token %08x  ", (unsigned int)slotID);
+    snprintf(buf, sizeof(buf), "NSS Application Token %08x  ", (unsigned int)slotID);
     return buf;
 }
 
@@ -2587,9 +2587,9 @@ sftk_getDefSlotName(CK_SLOT_ID slotID)
         default:
             break;
     }
-    sprintf(buf,
-            "NSS Application Slot %08x                                   ",
-            (unsigned int)slotID);
+    snprintf(buf, sizeof(buf),
+             "NSS Application Slot %08x                                   ",
+             (unsigned int)slotID);
     return buf;
 }
 

@@ -139,7 +139,7 @@ MakeSmallKey(int32 num)
 
     rv.data = data_string;
 
-    sprintf(data_string, "%ld", (long)num);
+    snprintf(data_string, sizeof(data_string), "%ld", (long)num);
     rv.size = strlen(data_string);
 
     return (&rv);
@@ -357,7 +357,7 @@ AddOrDelRange(int32 low, int32 high, int action, key_type_enum key_type)
 #endif
 
 #if 0 
-	 
+
 			
 
 			status = (*database->get)(database, key, &tmp_data, 0);

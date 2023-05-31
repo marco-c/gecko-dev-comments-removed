@@ -1414,9 +1414,9 @@ TEST_F(TlsConnectStreamTls13,
   for (size_t i = 0; i < 10; i++) {
     client_->StartConnect();
     
-    PR_ASSERT(SSL_OptionSet(client_->ssl_fd(),
-                            SSL_ENABLE_CH_EXTENSION_PERMUTATION,
-                            PR_TRUE) == SECSuccess);
+    ASSERT_TRUE(SSL_OptionSet(client_->ssl_fd(),
+                              SSL_ENABLE_CH_EXTENSION_PERMUTATION,
+                              PR_TRUE) == SECSuccess);
     
     auto filter = MakeTlsFilter<TlsExtensionOrderCapture>(
         client_, kTlsHandshakeClientHello);
@@ -1437,7 +1437,7 @@ TEST_F(TlsConnectStreamTls13,
       }
     }
   }
-  PR_ASSERT(inequal >= 1);
+  ASSERT_TRUE(inequal >= 1);
 }
 
 

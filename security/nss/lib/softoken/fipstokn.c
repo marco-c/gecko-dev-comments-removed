@@ -529,15 +529,22 @@ FC_Initialize(CK_VOID_PTR pReserved)
 {
     const char *envp;
     CK_RV crv;
+    PRBool rerun;
 
     if ((envp = PR_GetEnv("NSS_ENABLE_AUDIT")) != NULL) {
         sftk_audit_enabled = (atoi(envp) == 1);
     }
 
     
+    
+
+    rerun = sftk_RawArgHasFlag("flags", "forcePost", pReserved);
+
+    
 
 
-    crv = sftk_FIPSEntryOK();
+
+    crv = sftk_FIPSEntryOK(rerun);
     if (crv != CKR_OK) {
         sftk_fatalError = PR_TRUE;
         fc_log_init_error(crv);

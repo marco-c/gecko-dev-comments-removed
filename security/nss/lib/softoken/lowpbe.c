@@ -566,7 +566,7 @@ typedef struct KDFCacheItemStr KDFCacheItem;
 
 
 
-#define KDF2_CACHE_COUNT 3
+#define KDF2_CACHE_COUNT 150
 static struct {
     PZLock *lock;
     struct {

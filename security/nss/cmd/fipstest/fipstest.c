@@ -589,7 +589,7 @@ tdea_mct_test(int mode, unsigned char *key, unsigned int numKeys,
     for (i = 0; i < 400; i++) {
         
         
-        sprintf(buf, "COUNT = %d\n", i);
+        snprintf(buf, sizeof(buf), "COUNT = %d\n", i);
         fputs(buf, resp);
         
         fputs("KEY1 = ", resp);
@@ -1511,7 +1511,7 @@ aes_ecb_mct(char *reqfn)
             }
 
             for (i = 0; i < 100; i++) {
-                sprintf(buf, "COUNT = %d\n", i);
+                snprintf(buf, sizeof(buf), "COUNT = %d\n", i);
                 fputs(buf, aesresp);
                 
                 fputs("KEY = ", aesresp);
@@ -1609,7 +1609,7 @@ aes_ecb_mct(char *reqfn)
             }
 
             for (i = 0; i < 100; i++) {
-                sprintf(buf, "COUNT = %d\n", i);
+                snprintf(buf, sizeof(buf), "COUNT = %d\n", i);
                 fputs(buf, aesresp);
                 
                 fputs("KEY = ", aesresp);
@@ -1808,7 +1808,7 @@ aes_cbc_mct(char *reqfn)
             }
 
             for (i = 0; i < 100; i++) {
-                sprintf(buf, "COUNT = %d\n", i);
+                snprintf(buf, sizeof(buf), "COUNT = %d\n", i);
                 fputs(buf, aesresp);
                 
                 fputs("KEY = ", aesresp);
@@ -1920,7 +1920,7 @@ aes_cbc_mct(char *reqfn)
             }
 
             for (i = 0; i < 100; i++) {
-                sprintf(buf, "COUNT = %d\n", i);
+                snprintf(buf, sizeof(buf), "COUNT = %d\n", i);
                 fputs(buf, aesresp);
                 
                 fputs("KEY = ", aesresp);
@@ -4662,7 +4662,7 @@ sha_mct_test(unsigned int MDLen, unsigned char *seed, FILE *resp)
         
         memcpy(seed, MD_i, MDLen);
 
-        sprintf(buf, "COUNT = %d\n", j);
+        snprintf(buf, sizeof(buf), "COUNT = %d\n", j);
         fputs(buf, resp);
 
         

@@ -2521,18 +2521,18 @@ mp_read_raw(mp_int *mp, char *str, int len)
     mp_zero(mp);
 
     
-    if (ustr[0])
-        SIGN(mp) = NEG;
-    else
-        SIGN(mp) = ZPOS;
-
-    
     for (ix = 1; ix < len; ix++) {
         if ((res = mp_mul_d(mp, 256, mp)) != MP_OKAY)
             return res;
         if ((res = mp_add_d(mp, ustr[ix], mp)) != MP_OKAY)
             return res;
     }
+
+    
+    if (ustr[0])
+        SIGN(mp) = NEG;
+    else
+        SIGN(mp) = ZPOS;
 
     return MP_OKAY;
 

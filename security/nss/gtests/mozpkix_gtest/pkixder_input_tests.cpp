@@ -246,14 +246,13 @@ TEST_F(pkixder_input_tests, ReadWordWithInsufficentData)
   ASSERT_NE(0x1122, readWord1);
 }
 
-TEST_F(pkixder_input_tests, ReadWordWrapAroundPointer)
+static void UNSANITIZED_ReadWordWrapAroundPointer()
+#if defined(__clang__)
+    
+
+    __attribute__((no_sanitize("undefined")))
+#endif
 {
-  
-  
-  
-  
-  
-  
   const uint8_t* der = nullptr;
   --der;
   Input buf;
@@ -261,6 +260,16 @@ TEST_F(pkixder_input_tests, ReadWordWrapAroundPointer)
   Reader input(buf);
   uint16_t b;
   ASSERT_EQ(Result::ERROR_BAD_DER, input.Read(b));
+}
+
+TEST_F(pkixder_input_tests, ReadWordWrapAroundPointer) {
+  
+  
+  
+  
+  
+  
+  UNSANITIZED_ReadWordWrapAroundPointer();
 }
 
 TEST_F(pkixder_input_tests, Skip)
@@ -352,14 +361,13 @@ TEST_F(pkixder_input_tests, Skip_ToInput)
   ASSERT_TRUE(InputsAreEqual(expected, item));
 }
 
-TEST_F(pkixder_input_tests, Skip_WrapAroundPointer)
+static void UNSANITIZED_Skip_WrapAroundPointer()
+#if defined(__clang__)
+    
+
+    __attribute__((no_sanitize("undefined")))
+#endif
 {
-  
-  
-  
-  
-  
-  
   const uint8_t* der = nullptr;
   
   --der;
@@ -367,6 +375,16 @@ TEST_F(pkixder_input_tests, Skip_WrapAroundPointer)
   ASSERT_EQ(Success, buf.Init(der, 0));
   Reader input(buf);
   ASSERT_EQ(Result::ERROR_BAD_DER, input.Skip(1));
+}
+
+TEST_F(pkixder_input_tests, Skip_WrapAroundPointer) {
+  
+  
+  
+  
+  
+  
+  UNSANITIZED_Skip_WrapAroundPointer();
 }
 
 TEST_F(pkixder_input_tests, Skip_ToInputPastEnd)

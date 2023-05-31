@@ -398,6 +398,9 @@ nssCryptokiTrust_GetAttributes(
     NSSSlot *slot;
     nssSession *session;
     CK_BBOOL isToken = PR_FALSE;
+    
+
+
     CK_BBOOL stepUp = PR_FALSE;
     CK_TRUST saTrust = CKT_NSS_TRUST_UNKNOWN;
     CK_TRUST caTrust = CKT_NSS_TRUST_UNKNOWN;

@@ -229,6 +229,10 @@ typedef int __BLAPI_DEPRECATED __attribute__((deprecated));
 #define GCMIV_RANDOM_BIRTHDAY_BITS 64
 
 
+#define BLAPI_FIPS_RERUN_FLAG '\377'        /* 0xff, 255 invalide code for UFT8/ASCII */
+#define BLAPI_FIPS_RERUN_FLAG_STRING "\377" /* The above as a C string */
+
+
 
 
 

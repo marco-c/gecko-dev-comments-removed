@@ -288,10 +288,10 @@ readItem(PRFileDesc *fd, SECItem *item)
     return SECSuccess;
 }
 
-static PRBool blapi_SHVerifyFile(const char *shName, PRBool self);
+static PRBool blapi_SHVerifyFile(const char *shName, PRBool self, PRBool rerun);
 
 static PRBool
-blapi_SHVerify(const char *name, PRFuncPtr addr, PRBool self)
+blapi_SHVerify(const char *name, PRFuncPtr addr, PRBool self, PRBool rerun)
 {
     PRBool result = PR_FALSE; 
 
@@ -300,7 +300,7 @@ blapi_SHVerify(const char *name, PRFuncPtr addr, PRBool self)
     if (!shName) {
         goto loser;
     }
-    result = blapi_SHVerifyFile(shName, self);
+    result = blapi_SHVerifyFile(shName, self, rerun);
 
 loser:
     if (shName != NULL) {
@@ -313,13 +313,23 @@ loser:
 PRBool
 BLAPI_SHVerify(const char *name, PRFuncPtr addr)
 {
-    return blapi_SHVerify(name, addr, PR_FALSE);
+    PRBool rerun = PR_FALSE;
+    if (name && *name == BLAPI_FIPS_RERUN_FLAG) {
+        name++;
+        rerun = PR_TRUE;
+    }
+    return blapi_SHVerify(name, addr, PR_FALSE, rerun);
 }
 
 PRBool
 BLAPI_SHVerifyFile(const char *shName)
 {
-    return blapi_SHVerifyFile(shName, PR_FALSE);
+    PRBool rerun = PR_FALSE;
+    if (shName && *shName == BLAPI_FIPS_RERUN_FLAG) {
+        shName++;
+        rerun = PR_TRUE;
+    }
+    return blapi_SHVerifyFile(shName, PR_FALSE, rerun);
 }
 
 #ifndef NSS_STRICT_INTEGRITY
@@ -392,112 +402,113 @@ blapi_SHVerifyHMACCheck(PRFileDesc *shFD, const SECHashObject *hashObj,
 #ifdef NSS_STRICT_INTEGRITY
     if (!blapi_HashAllowed(hashObj)) {
         return PR_FALSE;
+    }
 #endif
 
-        hash.type = siBuffer;
-        hash.data = hashBuf;
-        hash.len = hashObj->length;
+    hash.type = siBuffer;
+    hash.data = hashBuf;
+    hash.len = hashObj->length;
 
-        
-        hmaccx = HMAC_Create(hashObj, key->data, key->len, PR_TRUE);
-        if (hmaccx == NULL) {
-            return PR_FALSE;
-        }
-        HMAC_Begin(hmaccx);
+    
+    hmaccx = HMAC_Create(hashObj, key->data, key->len, PR_TRUE);
+    if (hmaccx == NULL) {
+        return PR_FALSE;
+    }
+    HMAC_Begin(hmaccx);
 
-        while ((bytesRead = PR_Read(shFD, buf, sizeof(buf))) > 0) {
-            HMAC_Update(hmaccx, buf, bytesRead);
-        }
-        rv = HMAC_Finish(hmaccx, hash.data, &hash.len, hash.len);
+    while ((bytesRead = PR_Read(shFD, buf, sizeof(buf))) > 0) {
+        HMAC_Update(hmaccx, buf, bytesRead);
+    }
+    rv = HMAC_Finish(hmaccx, hash.data, &hash.len, hash.len);
 
-        HMAC_Destroy(hmaccx, PR_TRUE);
+    HMAC_Destroy(hmaccx, PR_TRUE);
 
-        
-        if (rv == SECSuccess) {
-            result = SECITEM_ItemsAreEqual(signature, &hash);
-        }
-        PORT_Memset(hashBuf, 0, sizeof hashBuf);
-        return result;
+    
+    if (rv == SECSuccess) {
+        result = SECITEM_ItemsAreEqual(signature, &hash);
+    }
+    PORT_Memset(hashBuf, 0, sizeof hashBuf);
+    return result;
+}
+
+static PRBool
+blapi_SHVerifyFile(const char *shName, PRBool self, PRBool rerun)
+{
+    char *checkName = NULL;
+    PRFileDesc *checkFD = NULL;
+    PRFileDesc *shFD = NULL;
+    const SECHashObject *hashObj = NULL;
+    SECItem signature = { 0, NULL, 0 };
+    int bytesRead, offset, type;
+    SECStatus rv;
+    SECItem hmacKey = { 0, NULL, 0 };
+#ifdef FREEBL_USE_PRELINK
+    int pid = 0;
+#endif
+    PRBool result = PR_FALSE; 
+
+    NSSSignChkHeader header;
+#ifndef NSS_STRICT_INTEGRITY
+    DSAPublicKey key;
+
+    PORT_Memset(&key, 0, sizeof(key));
+#endif
+
+    
+
+    if (!self && (BL_FIPSEntryOK(PR_FALSE, rerun) != SECSuccess)) {
+        return PR_FALSE;
     }
 
-    static PRBool
-    blapi_SHVerifyFile(const char *shName, PRBool self)
-    {
-        char *checkName = NULL;
-        PRFileDesc *checkFD = NULL;
-        PRFileDesc *shFD = NULL;
-        const SECHashObject *hashObj = NULL;
-        SECItem signature = { 0, NULL, 0 };
-        int bytesRead, offset, type;
-        SECStatus rv;
-        SECItem hmacKey = { 0, NULL, 0 };
-#ifdef FREEBL_USE_PRELINK
-        int pid = 0;
-#endif
-        PRBool result = PR_FALSE; 
+    if (!shName) {
+        goto loser;
+    }
 
-        NSSSignChkHeader header;
-#ifndef NSS_STRICT_INTEGRITY
-        DSAPublicKey key;
+    
+    checkName = mkCheckFileName(shName);
+    if (!checkName) {
+        goto loser;
+    }
 
-        PORT_Memset(&key, 0, sizeof(key));
-#endif
-
-        
-
-        if (!self && (BL_FIPSEntryOK(PR_FALSE) != SECSuccess)) {
-            return PR_FALSE;
-        }
-
-        if (!shName) {
-            goto loser;
-        }
-
-        
-        checkName = mkCheckFileName(shName);
-        if (!checkName) {
-            goto loser;
-        }
-
-        
-        checkFD = PR_Open(checkName, PR_RDONLY, 0);
-        if (checkFD == NULL) {
+    
+    checkFD = PR_Open(checkName, PR_RDONLY, 0);
+    if (checkFD == NULL) {
 #ifdef DEBUG_SHVERIFY
-            fprintf(stderr, "Failed to open the check file %s: (%d, %d)\n",
-                    checkName, (int)PR_GetError(), (int)PR_GetOSError());
+        fprintf(stderr, "Failed to open the check file %s: (%d, %d)\n",
+                checkName, (int)PR_GetError(), (int)PR_GetOSError());
 #endif 
-            goto loser;
-        }
+        goto loser;
+    }
 
-        
-        bytesRead = PR_Read(checkFD, &header, sizeof(header));
-        if (bytesRead != sizeof(header)) {
-            goto loser;
-        }
-        if ((header.magic1 != NSS_SIGN_CHK_MAGIC1) ||
-            (header.magic2 != NSS_SIGN_CHK_MAGIC2)) {
-            goto loser;
-        }
-        
+    
+    bytesRead = PR_Read(checkFD, &header, sizeof(header));
+    if (bytesRead != sizeof(header)) {
+        goto loser;
+    }
+    if ((header.magic1 != NSS_SIGN_CHK_MAGIC1) ||
+        (header.magic2 != NSS_SIGN_CHK_MAGIC2)) {
+        goto loser;
+    }
+    
 
-        if (header.majorVersion > NSS_SIGN_CHK_MAJOR_VERSION) {
-            goto loser;
-        }
-        if (header.minorVersion < NSS_SIGN_CHK_MINOR_VERSION) {
-            goto loser;
-        }
-        type = decodeInt(header.type);
+    if (header.majorVersion > NSS_SIGN_CHK_MAJOR_VERSION) {
+        goto loser;
+    }
+    if (header.minorVersion < NSS_SIGN_CHK_MINOR_VERSION) {
+        goto loser;
+    }
+    type = decodeInt(header.type);
 
-        
-        offset = decodeInt(header.offset);
-        if (PR_Seek(checkFD, offset, PR_SEEK_SET) < 0) {
-            goto loser;
-        }
+    
+    offset = decodeInt(header.offset);
+    if (PR_Seek(checkFD, offset, PR_SEEK_SET) < 0) {
+        goto loser;
+    }
 
-        switch (type) {
-            case CKK_DSA:
+    switch (type) {
+        case CKK_DSA:
 #ifdef NSS_STRICT_INTEGRITY
-                goto loser;
+            goto loser;
 #else
             
             
@@ -525,112 +536,112 @@ blapi_SHVerifyHMACCheck(PRFileDesc *shFD, const SECHashObject *hashObj,
             hashObj = HASH_GetRawHashObject(PQG_GetHashType(&key.params));
             break;
 #endif
-            default:
-                if ((type & NSS_SIGN_CHK_TYPE_FLAGS) != NSS_SIGN_CHK_FLAG_HMAC) {
-                    goto loser;
-                }
-                
-                rv = readItem(checkFD, &hmacKey);
-                if (rv != SECSuccess) {
-                    goto loser;
-                }
-                
-                rv = readItem(checkFD, &signature);
-                if (rv != SECSuccess) {
-                    goto loser;
-                }
-                hashObj = HASH_GetRawHashObject(type & ~NSS_SIGN_CHK_TYPE_FLAGS);
-        }
+        default:
+            if ((type & NSS_SIGN_CHK_TYPE_FLAGS) != NSS_SIGN_CHK_FLAG_HMAC) {
+                goto loser;
+            }
+            
+            rv = readItem(checkFD, &hmacKey);
+            if (rv != SECSuccess) {
+                goto loser;
+            }
+            
+            rv = readItem(checkFD, &signature);
+            if (rv != SECSuccess) {
+                goto loser;
+            }
+            hashObj = HASH_GetRawHashObject(type & ~NSS_SIGN_CHK_TYPE_FLAGS);
+    }
 
-        
-        PR_Close(checkFD);
-        checkFD = NULL;
+    
+    PR_Close(checkFD);
+    checkFD = NULL;
 
-        if (hashObj == NULL) {
-            goto loser;
-        }
+    if (hashObj == NULL) {
+        goto loser;
+    }
 
 
 #ifdef FREEBL_USE_PRELINK
-        shFD = bl_OpenUnPrelink(shName, &pid);
+    shFD = bl_OpenUnPrelink(shName, &pid);
 #else
     shFD = PR_Open(shName, PR_RDONLY, 0);
 #endif
-        if (shFD == NULL) {
+    if (shFD == NULL) {
 #ifdef DEBUG_SHVERIFY
-            fprintf(stderr, "Failed to open the library file %s: (%d, %d)\n",
-                    shName, (int)PR_GetError(), (int)PR_GetOSError());
+        fprintf(stderr, "Failed to open the library file %s: (%d, %d)\n",
+                shName, (int)PR_GetError(), (int)PR_GetOSError());
 #endif 
-            goto loser;
-        }
+        goto loser;
+    }
 
-        switch (type) {
-            case CKK_DSA:
+    switch (type) {
+        case CKK_DSA:
 #ifndef NSS_STRICT_INTEGRITY
-                result = blapi_SHVerifyDSACheck(shFD, hashObj, &key, &signature);
+            result = blapi_SHVerifyDSACheck(shFD, hashObj, &key, &signature);
 #endif
+            break;
+        default:
+            if ((type & NSS_SIGN_CHK_TYPE_FLAGS) != NSS_SIGN_CHK_FLAG_HMAC) {
                 break;
-            default:
-                if ((type & NSS_SIGN_CHK_TYPE_FLAGS) != NSS_SIGN_CHK_FLAG_HMAC) {
-                    break;
-                }
-                result = blapi_SHVerifyHMACCheck(shFD, hashObj, &hmacKey, &signature);
-                break;
-        }
+            }
+            result = blapi_SHVerifyHMACCheck(shFD, hashObj, &hmacKey, &signature);
+            break;
+    }
 
 #ifdef FREEBL_USE_PRELINK
-        bl_CloseUnPrelink(shFD, pid);
+    bl_CloseUnPrelink(shFD, pid);
 #else
     PR_Close(shFD);
 #endif
-        shFD = NULL;
+    shFD = NULL;
 
-    loser:
-        PORT_Memset(&header, 0, sizeof header);
-        if (checkName != NULL) {
-            PORT_Free(checkName);
-        }
-        if (checkFD != NULL) {
-            PR_Close(checkFD);
-        }
-        if (shFD != NULL) {
-            PR_Close(shFD);
-        }
-        if (hmacKey.data != NULL) {
-            SECITEM_ZfreeItem(&hmacKey, PR_FALSE);
-        }
-        if (signature.data != NULL) {
-            SECITEM_ZfreeItem(&signature, PR_FALSE);
-        }
+loser:
+    PORT_Memset(&header, 0, sizeof header);
+    if (checkName != NULL) {
+        PORT_Free(checkName);
+    }
+    if (checkFD != NULL) {
+        PR_Close(checkFD);
+    }
+    if (shFD != NULL) {
+        PR_Close(shFD);
+    }
+    if (hmacKey.data != NULL) {
+        SECITEM_ZfreeItem(&hmacKey, PR_FALSE);
+    }
+    if (signature.data != NULL) {
+        SECITEM_ZfreeItem(&signature, PR_FALSE);
+    }
 #ifndef NSS_STRICT_INTEGRITY
-        if (key.params.prime.data != NULL) {
-            SECITEM_ZfreeItem(&key.params.prime, PR_FALSE);
-        }
-        if (key.params.subPrime.data != NULL) {
-            SECITEM_ZfreeItem(&key.params.subPrime, PR_FALSE);
-        }
-        if (key.params.base.data != NULL) {
-            SECITEM_ZfreeItem(&key.params.base, PR_FALSE);
-        }
-        if (key.publicValue.data != NULL) {
-            SECITEM_ZfreeItem(&key.publicValue, PR_FALSE);
-        }
+    if (key.params.prime.data != NULL) {
+        SECITEM_ZfreeItem(&key.params.prime, PR_FALSE);
+    }
+    if (key.params.subPrime.data != NULL) {
+        SECITEM_ZfreeItem(&key.params.subPrime, PR_FALSE);
+    }
+    if (key.params.base.data != NULL) {
+        SECITEM_ZfreeItem(&key.params.base, PR_FALSE);
+    }
+    if (key.publicValue.data != NULL) {
+        SECITEM_ZfreeItem(&key.publicValue, PR_FALSE);
+    }
 #endif
-        return result;
+    return result;
+}
+
+PRBool
+BLAPI_VerifySelf(const char *name)
+{
+    if (name == NULL) {
+        
+
+
+
+        return PR_TRUE;
     }
-
-    PRBool
-    BLAPI_VerifySelf(const char *name)
-    {
-        if (name == NULL) {
-            
-
-
-
-            return PR_TRUE;
-        }
-        return blapi_SHVerify(name, (PRFuncPtr)decodeInt, PR_TRUE);
-    }
+    return blapi_SHVerify(name, (PRFuncPtr)decodeInt, PR_TRUE, PR_FALSE);
+}
 
 #else 
 
