@@ -30,9 +30,7 @@ const issue = {
   
   property: PropTypes.string.isRequired,
   
-  url: PropTypes.string,
-  
-  specUrl: PropTypes.string,
+  url: PropTypes.string.isRequired,
   
   deprecated: PropTypes.bool.isRequired,
   

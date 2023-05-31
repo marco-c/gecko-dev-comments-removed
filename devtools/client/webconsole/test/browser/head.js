@@ -964,6 +964,86 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 
 
 
+
+
+
+
+
+
+
+
+function simulateLinkClick(element, clickEventProps) {
+  return overrideOpenLink(() => {
+    if (clickEventProps) {
+      
+      element.dispatchEvent(clickEventProps);
+    } else {
+      
+      element.click();
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function overrideOpenLink(fn) {
+  const browserWindow = Services.wm.getMostRecentWindow(
+    gDevTools.chromeWindowType
+  );
+
+  
+  const oldOpenTrustedLinkIn = browserWindow.openTrustedLinkIn;
+  const oldOpenWebLinkIn = browserWindow.openWebLinkIn;
+
+  const onOpenLink = new Promise(resolve => {
+    const openLinkIn = function (link, where) {
+      browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
+      browserWindow.openWebLinkIn = oldOpenWebLinkIn;
+      resolve({ link, where });
+    };
+    browserWindow.openWebLinkIn = browserWindow.openTrustedLinkIn = openLinkIn;
+    fn();
+  });
+
+  
+  
+  let timeoutId;
+  const onTimeout = new Promise(function (resolve) {
+    timeoutId = setTimeout(() => {
+      browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
+      browserWindow.openWebLinkIn = oldOpenWebLinkIn;
+      timeoutId = null;
+      resolve({ link: null, where: null });
+    }, 1000);
+  });
+
+  onOpenLink.then(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+  return Promise.race([onOpenLink, onTimeout]);
+}
+
+
+
+
+
+
+
+
+
+
+
 async function openMessageInNetmonitor(toolbox, hud, url, urlInConsole) {
   
   urlInConsole = urlInConsole || url;
