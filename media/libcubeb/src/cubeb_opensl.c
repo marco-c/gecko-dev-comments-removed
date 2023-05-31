@@ -1182,11 +1182,6 @@ opensl_configure_playback(cubeb_stream * stm, cubeb_stream_params * params)
 
   
   stm->queuebuf_capacity = NBUFS;
-  if (stm->output_enabled) {
-    
-    stm->queuebuf_capacity =
-        1 * stm->output_configured_rate / stm->queuebuf_len;
-  }
   
   stm->queuebuf = (void **)calloc(1, sizeof(void *) * stm->queuebuf_capacity);
   for (uint32_t i = 0; i < stm->queuebuf_capacity; ++i) {
