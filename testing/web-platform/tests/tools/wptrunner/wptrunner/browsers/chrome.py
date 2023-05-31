@@ -6,18 +6,20 @@ from .base import NullBrowser
 from .base import get_timeout_multiplier   
 from .base import cmd_arg
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
-                                           WebDriverRefTestExecutor,  
-                                           WebDriverCrashtestExecutor)  
+from ..executors.executorwebdriver import WebDriverCrashtestExecutor  
 from ..executors.base import WdspecExecutor  
-from ..executors.executorchrome import ChromeDriverPrintRefTestExecutor  
+from ..executors.executorchrome import (  
+    ChromeDriverPrintRefTestExecutor,
+    ChromeDriverRefTestExecutor,
+    ChromeDriverTestharnessExecutor,
+)
 
 
 __wptrunner__ = {"product": "chrome",
                  "check_args": "check_args",
                  "browser": "ChromeBrowser",
-                 "executor": {"testharness": "WebDriverTestharnessExecutor",
-                              "reftest": "WebDriverRefTestExecutor",
+                 "executor": {"testharness": "ChromeDriverTestharnessExecutor",
+                              "reftest": "ChromeDriverRefTestExecutor",
                               "print-reftest": "ChromeDriverPrintRefTestExecutor",
                               "wdspec": "WdspecExecutor",
                               "crashtest": "WebDriverCrashtestExecutor"},
@@ -27,6 +29,7 @@ __wptrunner__ = {"product": "chrome",
                  "env_options": "env_options",
                  "update_properties": "update_properties",
                  "timeout_multiplier": "get_timeout_multiplier",}
+
 
 def check_args(**kwargs):
     require_arg(kwargs, "webdriver_binary")
@@ -40,10 +43,14 @@ def browser_kwargs(logger, test_type, run_info_data, config, **kwargs):
 
 def executor_kwargs(logger, test_type, test_environment, run_info_data,
                     **kwargs):
+    sanitizer_enabled = kwargs.get("sanitizer_enabled")
+    if sanitizer_enabled:
+        test_type = "crashtest"
     executor_kwargs = base_executor_kwargs(test_type, test_environment, run_info_data,
                                            **kwargs)
     executor_kwargs["close_after_done"] = True
     executor_kwargs["supports_eager_pageload"] = False
+    executor_kwargs["sanitizer_enabled"] = sanitizer_enabled
 
     capabilities = {
         "goog:chromeOptions": {

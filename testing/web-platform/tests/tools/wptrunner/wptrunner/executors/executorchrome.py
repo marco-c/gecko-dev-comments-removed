@@ -2,14 +2,67 @@
 
 import os
 import traceback
-
+from typing import Type
 from urllib.parse import urljoin
 
-from .base import get_pages
-from .executorwebdriver import WebDriverProtocol, WebDriverRefTestExecutor, WebDriverRun
+from .base import (
+    CrashtestExecutor,
+    TestharnessExecutor,
+    get_pages,
+)
+from .executorwebdriver import (
+    WebDriverCrashtestExecutor,
+    WebDriverProtocol,
+    WebDriverRefTestExecutor,
+    WebDriverRun,
+    WebDriverTestharnessExecutor,
+)
 from .protocol import PrintProtocolPart
 
 here = os.path.dirname(__file__)
+
+
+def make_sanitizer_mixin(crashtest_executor_cls: Type[CrashtestExecutor]):  
+    class SanitizerMixin:
+        def __new__(cls, logger, browser, **kwargs):
+            
+            
+            
+            
+            
+            
+            
+            
+            if kwargs.get("sanitizer_enabled"):
+                executor = crashtest_executor_cls(logger, browser, **kwargs)
+
+                def convert_from_crashtest_result(test, result):
+                    if issubclass(cls, TestharnessExecutor):
+                        status = result["status"]
+                        if status == "PASS":
+                            status = "OK"
+                        harness_result = test.result_cls(status, result["message"])
+                        
+                        return harness_result, []
+                    
+                    
+                    return cls.convert_result(executor, test, result)
+
+                executor.convert_result = convert_from_crashtest_result
+                return executor
+            return super().__new__(cls)
+    return SanitizerMixin
+
+
+_SanitizerMixin = make_sanitizer_mixin(WebDriverCrashtestExecutor)
+
+
+class ChromeDriverRefTestExecutor(WebDriverRefTestExecutor, _SanitizerMixin):  
+    pass
+
+
+class ChromeDriverTestharnessExecutor(WebDriverTestharnessExecutor, _SanitizerMixin):  
+    pass
 
 
 class ChromeDriverPrintProtocolPart(PrintProtocolPart):
@@ -67,7 +120,7 @@ class ChromeDriverProtocol(WebDriverProtocol):
     implements = WebDriverProtocol.implements + [ChromeDriverPrintProtocolPart]
 
 
-class ChromeDriverPrintRefTestExecutor(WebDriverRefTestExecutor):
+class ChromeDriverPrintRefTestExecutor(ChromeDriverRefTestExecutor):
     protocol_cls = ChromeDriverProtocol
 
     def setup(self, runner):
