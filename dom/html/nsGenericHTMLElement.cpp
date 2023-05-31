@@ -69,6 +69,7 @@
 
 #include "mozilla/InternalMutationEvent.h"
 #include "nsDOMStringMap.h"
+#include "nsDOMString.h"
 
 #include "nsLayoutUtils.h"
 #include "mozAutoDocUpdate.h"
@@ -187,17 +188,21 @@ static const nsAttrValue::EnumTable kDirTable[] = {
 namespace {
 
 enum class PopoverAttributeKeyword : uint8_t { Auto, EmptyString, Manual };
-}  
+
+static const char* kPopoverAttributeValueAuto = "auto";
+static const char* kPopoverAttributeValueEmptyString = "";
+static const char* kPopoverAttributeValueManual = "manual";
 
 static const nsAttrValue::EnumTable kPopoverTable[] = {
-    {"auto", PopoverAttributeKeyword::Auto},
-    {"", PopoverAttributeKeyword::EmptyString},
-    {"manual", PopoverAttributeKeyword::Manual},
+    {kPopoverAttributeValueAuto, PopoverAttributeKeyword::Auto},
+    {kPopoverAttributeValueEmptyString, PopoverAttributeKeyword::EmptyString},
+    {kPopoverAttributeValueManual, PopoverAttributeKeyword::Manual},
     {nullptr, 0}};
 
 
 static const nsAttrValue::EnumTable* kPopoverTableInvalidValueDefault =
     &kPopoverTable[2];
+}  
 
 void nsGenericHTMLElement::AddToNameTable(nsAtom* aName) {
   MOZ_ASSERT(HasName(), "Node doesn't have name?");
@@ -3529,4 +3534,11 @@ bool nsGenericHTMLElement::Translate() const {
     }
   }
   return nsGenericHTMLElementBase::Translate();
+}
+
+void nsGenericHTMLElement::GetPopover(nsString& aPopover) const {
+  GetHTMLEnumAttr(nsGkAtoms::popover, aPopover);
+  if (aPopover.IsEmpty() && !DOMStringIsNull(aPopover)) {
+    aPopover.Assign(NS_ConvertUTF8toUTF16(kPopoverAttributeValueAuto));
+  }
 }
