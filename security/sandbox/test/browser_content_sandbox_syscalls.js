@@ -18,8 +18,11 @@ const ERRNO = {
     if (["Linux", "Android"].includes(os)) {
       
       return 38;
-    } else if (["Darwin", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)) {
+    } else if (
+      ["Darwin", "DragonFly", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)
+    ) {
       
+
 
 
 
