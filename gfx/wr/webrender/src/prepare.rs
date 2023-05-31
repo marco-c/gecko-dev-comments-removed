@@ -33,7 +33,7 @@ use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskPare
 use crate::render_task::{RenderTaskKind, RenderTask};
 use crate::renderer::{GpuBufferBuilder, GpuBufferAddress};
 use crate::segment::{EdgeAaSegmentMask, SegmentBuilder};
-use crate::util::{clamp_to_scale_factor, pack_as_float, MaxRect};
+use crate::util::{clamp_to_scale_factor, pack_as_float};
 use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
 
 
@@ -108,8 +108,8 @@ fn can_use_clip_chain_for_quad_path(
     clip_chain: &ClipChainInstance,
     prim_spatial_node_index: SpatialNodeIndex,
     raster_spatial_node_index: SpatialNodeIndex,
-    _clip_store: &ClipStore,
-    _data_stores: &DataStores,
+    clip_store: &ClipStore,
+    data_stores: &DataStores,
     spatial_tree: &SpatialTree,
 ) -> bool {
     let map_prim_to_surface = spatial_tree.get_relative_transform(
@@ -123,45 +123,41 @@ fn can_use_clip_chain_for_quad_path(
         return false;
     }
 
-    !clip_chain.needs_mask
-
     
     
 
-    
+    if !clip_chain.needs_mask {
+        return true;
+    }
 
+    for i in 0 .. clip_chain.clips_range.count {
+        let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, i);
+        let clip_node = &data_stores.clip[clip_instance.handle];
 
+        
+        if prim_spatial_node_index != clip_node.item.spatial_node_index {
+            return false;
+        }
 
+        match clip_node.item.kind {
+            ClipItemKind::RoundedRectangle { .. } => {
+            }
+            ClipItemKind::Rectangle { mode: ClipMode::ClipOut, .. } => {
+            }
+            ClipItemKind::Rectangle { mode: ClipMode::Clip, .. } => {
+                panic!("bug: xf rect found as mask, not in lcr?");
+            }
+            ClipItemKind::BoxShadow { .. } => {
+                
+                return false;
+            }
+            ClipItemKind::Image { .. } => {
+                panic!("bug: image-masks not expected on rect/quads");
+            }
+        }
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    true
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -2006,7 +2002,7 @@ fn add_composite_prim(
     let composite_prim_address = write_prim_blocks(
         frame_state.frame_gpu_data,
         rect,
-        LayoutRect::max_rect(),
+        rect,
         color,
         segments,
     );
