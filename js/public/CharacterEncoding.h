@@ -341,6 +341,40 @@ extern JS_PUBLIC_API bool StringIsASCII(const char* s);
 
 extern JS_PUBLIC_API bool StringIsASCII(mozilla::Span<const char> s);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API JS::UniqueChars EncodeNarrowToUtf8(JSContext* cx,
+                                                        const char* chars);
+
+
+
+
+
+
+extern JS_PUBLIC_API JS::UniqueChars EncodeWideToUtf8(JSContext* cx,
+                                                      const wchar_t* chars);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JS::UniqueChars EncodeUtf8ToNarrow(JSContext* cx,
+                                                        const char* chars);
+
+
+
+
+
+
+extern JS_PUBLIC_API JS::UniqueWideChars EncodeUtf8ToWide(JSContext* cx,
+                                                          const char* chars);
+
 }  
 
 inline void JS_free(JS::Latin1CharsZ& ptr) { js_free((void*)ptr.get()); }
