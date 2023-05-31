@@ -48,7 +48,10 @@ def save_patch_stack(
 
     
     
-    run_shell("sed -i'' -e '1d' {}/*.patch".format(patch_directory))
+    
+    
+    run_shell("sed -i'.bak' -e '1d' {}/*.patch".format(patch_directory))
+    run_shell("rm {}/*.patch.bak".format(patch_directory))
 
     
     
