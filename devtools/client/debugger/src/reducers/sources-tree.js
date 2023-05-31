@@ -132,17 +132,6 @@ export default function update(state = initialSourcesTreeState(), action) {
       return state;
     }
 
-    case "NAVIGATE":
-      state = initialSourcesTreeState();
-      
-      
-      
-      
-      if (action.mainThread.isWebExtension) {
-        addThread(state, action.mainThread);
-      }
-      return state;
-
     case "INSERT_THREAD":
       state = { ...state };
       addThread(state, action.newThread);
