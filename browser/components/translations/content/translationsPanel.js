@@ -100,24 +100,67 @@ var TranslationsPanel = new (class {
         });
       };
 
+      getter("appMenuButton", "PanelUI-menu-button");
       getter("button", "translations-button");
       getter("buttonLocale", "translations-button-locale");
       getter("buttonCircleArrows", "translations-button-circle-arrows");
-      getter("defaultDescription", "translations-panel-default-description");
-      getter("defaultToMenuList", "translations-panel-default-to");
-      getter("dualFromMenuList", "translations-panel-dual-from");
-      getter("dualToMenuList", "translations-panel-dual-to");
-      getter("dualTranslate", "translations-panel-dual-translate");
+      getter("defaultTranslate", "translations-panel-translate");
       getter("error", "translations-panel-error");
       getter("errorMessage", "translations-panel-error-message");
+      getter("errorMessageHint", "translations-panel-error-message-hint");
+      getter("errorHintAction", "translations-panel-translate-hint-action");
+      getter("fromMenuList", "translations-panel-from");
+      getter("header", "translations-panel-header");
+      getter("langSelection", "translations-panel-lang-selection");
       getter("multiview", "translations-panel-multiview");
-      getter("notNow", "translations-panel-not-now");
-      getter("revisitHeader", "translations-panel-revisit-header");
-      getter("revisitMenuList", "translations-panel-revisit-to");
-      getter("revisitTranslate", "translations-panel-revisit-translate");
+      getter("notNowButton", "translations-panel-not-now");
+      getter("restoreButton", "translations-panel-restore-button");
+      getter("toMenuList", "translations-panel-to");
+      getter("unsupportedHint", "translations-panel-error-unsupported-hint");
     }
 
     return this.#lazyElements;
+  }
+
+  
+
+
+  #lastHintCommand = null;
+
+  
+
+
+
+
+
+
+  #showError({
+    message,
+    hint,
+    actionText: hintCommandText,
+    actionCommand: hintCommand,
+  }) {
+    const { error, errorMessage, errorMessageHint, errorHintAction } =
+      this.elements;
+    error.hidden = false;
+    document.l10n.setAttributes(errorMessage, message);
+
+    if (hint) {
+      errorMessageHint.hidden = false;
+      document.l10n.setAttributes(errorMessageHint, hint);
+    } else {
+      errorMessageHint.hidden = true;
+    }
+
+    if (hintCommand && hintCommandText) {
+      errorHintAction.removeEventListener("command", this.#lastHintCommand);
+      this.#lastHintCommand = hintCommand;
+      errorHintAction.addEventListener("command", hintCommand);
+      errorHintAction.hidden = false;
+      document.l10n.setAttributes(errorHintAction, hintCommandText);
+    } else {
+      errorHintAction.hidden = true;
+    }
   }
 
   
@@ -252,97 +295,107 @@ var TranslationsPanel = new (class {
   
 
 
-  showDualView() {
+
+
+  async #showDefaultView(force = false) {
     const {
-      dualTranslate,
-      dualFromMenuList,
-      dualToMenuList,
+      fromMenuList,
       multiview,
-      defaultToMenuList,
       panel,
+      error,
+      toMenuList,
+      defaultTranslate,
+      langSelection,
     } = this.elements;
 
-    
-    dualFromMenuList.value = "";
-    dualToMenuList.value = defaultToMenuList.value;
-    
-    dualTranslate.disabled = true;
+    if (this.#langListsPhase === "error") {
+      
+      
+      const { restoreButton, notNowButton, header, errorHintAction } =
+        this.elements;
 
-    multiview.showSubView("translations-panel-view-dual");
+      this.#showError({
+        message: "translations-panel-error-load-languages",
+        hint: "translations-panel-error-load-languages-hint",
+        actionText: "translations-panel-error-load-languages-hint-button",
+        actionCommand: () => this.#reloadLangList(),
+      });
+
+      document.l10n.setAttributes(header, "translations-panel-header");
+      defaultTranslate.disabled = true;
+      restoreButton.hidden = true;
+      notNowButton.hidden = false;
+      langSelection.hidden = true;
+      errorHintAction.disabled = false;
+      return;
+    }
+
+    
+    fromMenuList.value = "";
+    error.hidden = true;
+    langSelection.hidden = false;
+
+    
+    const langTags = await this.#fetchDetectedLanguages();
+    if (langTags?.isDocLangTagSupported || force) {
+      
+      const { header, restoreButton, notNowButton } = this.elements;
+      document.l10n.setAttributes(header, "translations-panel-header");
+
+      if (langTags?.isDocLangTagSupported) {
+        fromMenuList.value = langTags?.docLangTag ?? "";
+      } else {
+        fromMenuList.value = "";
+      }
+      toMenuList.value = langTags?.userLangTag ?? "";
+
+      this.onChangeLanguages();
+
+      restoreButton.hidden = true;
+      notNowButton.hidden = false;
+      multiview.setAttribute("mainViewId", "translations-panel-view-default");
+    } else {
+      
+      const { unsupportedHint } = this.elements;
+      multiview.setAttribute(
+        "mainViewId",
+        "translations-panel-view-unsupported-language"
+      );
+      let language;
+      if (langTags?.docLangTag) {
+        const displayNames = new Intl.DisplayNames(undefined, {
+          type: "language",
+          fallback: "none",
+        });
+        language = displayNames.of(langTags.docLangTag);
+      }
+      if (language) {
+        document.l10n.setAttributes(
+          unsupportedHint,
+          "translations-panel-error-unsupported-hint-known",
+          { language }
+        );
+      } else {
+        document.l10n.setAttributes(
+          unsupportedHint,
+          "translations-panel-error-unsupported-hint-unknown"
+        );
+      }
+    }
 
     
     panel.addEventListener(
       "ViewShown",
       () => {
-        dualFromMenuList.focus();
+        if (!fromMenuList.value) {
+          fromMenuList.focus();
+        }
+        if (!toMenuList.value) {
+          toMenuList.focus();
+        }
       },
       { once: true }
     );
-  }
-
-  
-
-
-
-
-  async #showDefaultView() {
-    await this.#ensureLangListsBuilt();
-    const actor = this.#getTranslationsActor();
-
-    const { defaultToMenuList, defaultDescription, multiview } = this.elements;
-
-    multiview.setAttribute("mainViewId", "translations-panel-view-default");
-
-    
-    defaultToMenuList.value = "";
-
-    
-    
-    
-
-    
-    
-    
-    
-
-    
-    const langTags = await actor.getLangTagsForTranslation();
-
-    if (langTags) {
-      const { docLangTag, appLangTag } = langTags;
-      defaultToMenuList.value = appLangTag;
-      this.#docLangTag = docLangTag;
-    } else {
-      
-      
-      
-      this.#docLangTag = "en";
-      this.console.error("No language tags for translation were found.");
-    }
-
-    
-    const displayNames = new Services.intl.DisplayNames(undefined, {
-      type: "language",
-    });
-    document.l10n.setAttributes(
-      defaultDescription,
-      "translations-panel-default-description",
-      {
-        pageLanguage: displayNames.of(this.#docLangTag),
-      }
-    );
-
-    if (!this.#wasPanelShown) {
-      
-      
-      this.#wasPanelShown = true;
-      Services.prefs.setBoolPref("browser.translations.panel.wasShown", true);
-    }
-
-    for (const menuitem of defaultToMenuList.querySelectorAll("menuitem")) {
-      
-      menuitem.disabled = menuitem.value === this.#docLangTag;
-    }
   }
 
   
@@ -482,31 +535,24 @@ var TranslationsPanel = new (class {
 
 
   async #showRevisitView({ fromLanguage, toLanguage }) {
-    const { multiview, revisitHeader, revisitMenuList, revisitTranslate } =
+    const { header, fromMenuList, toMenuList, restoreButton, notNowButton } =
       this.elements;
 
-    await this.#ensureLangListsBuilt();
+    fromMenuList.value = fromLanguage;
+    toMenuList.value = toLanguage;
+    this.onChangeLanguages();
 
-    revisitMenuList.value = "";
-    revisitTranslate.disabled = true;
-    multiview.setAttribute("mainViewId", "translations-panel-view-revisit");
+    restoreButton.hidden = false;
+    notNowButton.hidden = true;
 
     const displayNames = new Services.intl.DisplayNames(undefined, {
       type: "language",
     });
 
-    for (const menuitem of revisitMenuList.querySelectorAll("menuitem")) {
-      menuitem.disabled = menuitem.value === toLanguage;
-    }
-
-    document.l10n.setAttributes(
-      revisitHeader,
-      "translations-panel-revisit-header",
-      {
-        fromLanguage: displayNames.of(fromLanguage),
-        toLanguage: displayNames.of(toLanguage),
-      }
-    );
+    document.l10n.setAttributes(header, "translations-panel-revisit-header", {
+      fromLanguage: displayNames.of(fromLanguage),
+      toLanguage: displayNames.of(toLanguage),
+    });
   }
 
   
@@ -522,13 +568,43 @@ var TranslationsPanel = new (class {
 
 
 
-  onChangeDualLanguages() {
-    const { dualTranslate, dualToMenuList, dualFromMenuList } = this.elements;
-    dualTranslate.disabled =
+  onChangeLanguages() {
+    const { defaultTranslate, toMenuList, fromMenuList } = this.elements;
+    defaultTranslate.disabled =
       
-      dualToMenuList.value === dualFromMenuList.value ||
+      toMenuList.value === fromMenuList.value ||
       
-      !dualFromMenuList.value;
+      !toMenuList.value ||
+      
+      !fromMenuList.value;
+  }
+
+  
+
+
+
+
+
+  async onChangeSourceLanguage(event) {
+    const { panel } = this.elements;
+    panel.addEventListener("popuphidden", async () => {}, { once: true });
+    PanelMultiView.hidePopup(panel);
+
+    await this.#showDefaultView(true /* force this view to be shown */);
+
+    PanelMultiView.openPopup(panel, this.elements.appMenuButton, {
+      position: "bottomright topright",
+      triggeringEvent: event,
+    }).catch(error => this.console.error(error));
+  }
+
+  async #reloadLangList() {
+    try {
+      await this.#ensureLangListsBuilt();
+      await this.#showDefaultView();
+    } catch (error) {
+      this.elements.errorHintAction.disabled = false;
+    }
   }
 
   
@@ -538,6 +614,8 @@ var TranslationsPanel = new (class {
 
   async open(event) {
     const { panel, button } = this.elements;
+
+    await this.#ensureLangListsBuilt();
 
     const { requestedTranslationPair } =
       this.#getTranslationsActor().languageState;
@@ -553,7 +631,12 @@ var TranslationsPanel = new (class {
     }
 
     this.#populateSettingsMenuItems();
-    PanelMultiView.openPopup(panel, button, {
+
+    const targetButton = button.contains(event.target)
+      ? button
+      : this.elements.appMenuButton;
+
+    PanelMultiView.openPopup(panel, targetButton, {
       position: "bottomright topright",
       triggerEvent: event,
     }).catch(error => this.console.error(error));
@@ -584,37 +667,14 @@ var TranslationsPanel = new (class {
   
 
 
-  async onDefaultTranslate() {
-    PanelMultiView.hidePopup(this.elements.panel);
-
-    const actor = this.#getTranslationsActor();
-    const docLangTag = await this.#getDocLangTag();
-    actor.translate(docLangTag, this.elements.defaultToMenuList.value);
-  }
-
-  
-
-
-  async onDualTranslate() {
+  async onTranslate() {
     PanelMultiView.hidePopup(this.elements.panel);
 
     const actor = this.#getTranslationsActor();
     actor.translate(
-      this.elements.dualFromMenuList.value,
-      this.elements.dualToMenuList.value
+      this.elements.fromMenuList.value,
+      this.elements.toMenuList.value
     );
-  }
-
-  
-
-
-
-  async onRevisitTranslate() {
-    PanelMultiView.hidePopup(this.elements.panel);
-
-    const actor = this.#getTranslationsActor();
-    const docLangTag = await this.#getDocLangTag();
-    actor.translate(docLangTag, this.elements.revisitMenuList.value);
   }
 
   onCancel() {
@@ -656,7 +716,7 @@ var TranslationsPanel = new (class {
     this.#updateSettingsMenuLanguageCheckboxStates();
 
     if (toggledOn && !translationsActive) {
-      await this.onDefaultTranslate();
+      await this.onTranslate();
     } else if (!toggledOn && translationsActive) {
       await this.onRestore();
     }
@@ -796,18 +856,18 @@ var TranslationsPanel = new (class {
         switch (error) {
           case null:
             this.elements.error.hidden = true;
-            this.elements.notNow.hidden = false;
             break;
           case "engine-load-failure":
             this.elements.error.hidden = false;
-            this.elements.notNow.hidden = true;
-            document.l10n.setAttributes(
-              this.elements.errorMessage,
-              "translations-panel-error-translating"
-            );
+            this.#showError({
+              message: "translations-panel-error-translating",
+            });
+            const targetButton = button.hidden
+              ? this.elements.appMenuButton
+              : button;
 
             
-            PanelMultiView.openPopup(panel, button, {
+            PanelMultiView.openPopup(panel, targetButton, {
               position: "bottomright topright",
             }).catch(panelError => this.console.error(panelError));
 
