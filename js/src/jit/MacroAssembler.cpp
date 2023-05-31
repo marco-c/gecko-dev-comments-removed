@@ -603,7 +603,10 @@ void MacroAssembler::bumpPointerAllocate(Register result, Register temp,
 
     
     
-    if (runtime()->geckoProfiler().enabled()) {
+    
+    
+    if (traceKind == JS::TraceKind::String ||
+        runtime()->geckoProfiler().enabled()) {
       uint32_t* countAddress = site->nurseryAllocCountAddress();
       CheckedInt<int32_t> counterOffset =
           (CheckedInt<uintptr_t>(uintptr_t(countAddress)) -
