@@ -149,6 +149,18 @@ add_task(async function test_fog_event_works() {
   Assert.equal(1, events.length, "Recorded one event too many.");
 
   
+  let extra5 = {
+    extra3LongerName: false,
+  };
+  Glean.testOnlyIpc.eventWithExtra.record(extra5);
+  events = Glean.testOnlyIpc.eventWithExtra.testGetValue();
+  Assert.equal(2, events.length, "Recorded one event too many.");
+  expectedExtra = {
+    extra3_longer_name: "false",
+  };
+  Assert.deepEqual(expectedExtra, events[1].extra);
+
+  
   
   let extra3 = {
     extra1_nonexistent_extra: "this does not crash",
