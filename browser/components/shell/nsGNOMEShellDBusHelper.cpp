@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:expandtab:shiftwidth=2:tabstop=2:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsGNOMEShellSearchProvider.h"
 
@@ -93,8 +93,8 @@ DBusHandlerResult DBusIntrospect(DBusConnection* aConnection,
 }
 
 int DBusGetIndexFromIDKey(const char* aIDKey) {
-  
-  
+  // ID is NN:URL where NN is index to our current history
+  // result container.
   char tmp[] = {aIDKey[0], aIDKey[1], '\0'};
   return atoi(tmp);
 }
@@ -126,9 +126,9 @@ DBusHandlerResult DBusHandleInitialResultSet(
     ConcatArray(searchTerm, const_cast<const char**>(stringArray));
     aSearchResult->SetSearchTerm(searchTerm.get());
     GetGNOMEShellHistoryService()->QueryHistory(aSearchResult);
-    
-    
-    
+    // DBus reply will be send asynchronously by
+    // nsGNOMEShellHistorySearchResult::SendDBusSearchResultReply()
+    // when GetGNOMEShellHistoryService() has the results.
   }
 
   if (stringArray) {
@@ -159,9 +159,9 @@ DBusHandlerResult DBusHandleSubsearchResultSet(
     ConcatArray(searchTerm, const_cast<const char**>(stringArray));
     aSearchResult->SetSearchTerm(searchTerm.get());
     GetGNOMEShellHistoryService()->QueryHistory(aSearchResult);
-    
-    
-    
+    // DBus reply will be send asynchronously by
+    // nsGNOMEShellHistorySearchResult::SendDBusSearchResultReply()
+    // when GetGNOMEShellHistoryService() has the results.
   }
 
   if (unusedArray) {
@@ -186,12 +186,12 @@ static void appendStringDictionary(DBusMessageIter* aIter, const char* aKey,
   dbus_message_iter_close_container(aIter, &iterDict);
 }
 
-
-
-
-
-
-
+/*
+  "icon-data": a tuple of type (iiibiiay) describing a pixbuf with width,
+              height, rowstride, has-alpha,
+              bits-per-sample, channels,
+              image data
+*/
 static void DBusAppendIcon(GnomeHistoryIcon* aIcon, DBusMessageIter* aIter) {
   DBusMessageIter iterDict, iterVar, iterStruct;
   dbus_message_iter_open_container(aIter, DBUS_TYPE_DICT_ENTRY, nullptr,
@@ -229,19 +229,19 @@ static void DBusAppendIcon(GnomeHistoryIcon* aIcon, DBusMessageIter* aIter) {
   dbus_message_iter_close_container(aIter, &iterDict);
 }
 
+/* Appends history search results to the DBUS reply.
 
+  We can return those fields at GetResultMetas:
 
-
-
-
-
-
-
-
-
-
-
-
+  "id": the result ID
+  "name": the display name for the result
+  "icon": a serialized GIcon (see g_icon_serialize()), or alternatively,
+  "gicon": a textual representation of a GIcon (see g_icon_to_string()),
+           or alternativly,
+  "icon-data": a tuple of type (iiibiiay) describing a pixbuf with width,
+              height, rowstride, has-alpha, bits-per-sample, and image data
+  "description": an optional short description (1-2 lines)
+*/
 static void DBusAppendResultID(
     RefPtr<nsGNOMEShellHistorySearchResult> aSearchResult,
     DBusMessageIter* aIter, const char* aID) {
@@ -274,32 +274,32 @@ static void DBusAppendResultID(
   }
 }
 
-
-
+/* Search the web for: "searchTerm" to the DBUS reply.
+ */
 static void DBusAppendSearchID(DBusMessageIter* aIter, const char* aID) {
-  
+  /* aID contains:
 
+     KEYWORD_SEARCH_STRING:ssssss
 
+     KEYWORD_SEARCH_STRING is a 'special:search' keyword
+     ssssss is a searched term, must be at least one character long
+  */
 
-
-
-
-
-  
-  
+  // aID contains only 'KEYWORD_SEARCH_STRING:' so we're missing searched
+  // string.
   if (strlen(aID) <= KEYWORD_SEARCH_STRING_LEN + 1) {
     return;
   }
 
   appendStringDictionary(aIter, "id", KEYWORD_SEARCH_STRING);
 
-  
+  // Extract ssssss part from aID
   auto searchTerm = nsAutoCStringN<32>(aID + KEYWORD_SEARCH_STRING_LEN + 1);
   nsAutoCString gnomeSearchTitle;
   if (GetGnomeSearchTitle(searchTerm.get(), gnomeSearchTitle)) {
     appendStringDictionary(aIter, "name", gnomeSearchTitle.get());
-    
-    
+    // TODO: When running on flatpak/snap we may need to use
+    // icon like org.mozilla.Firefox or so.
     appendStringDictionary(aIter, "gicon", "firefox");
   }
 }
@@ -344,7 +344,7 @@ DBusHandlerResult DBusHandleResultMetas(
   dbus_message_unref(reply);
 
   return DBUS_HANDLER_RESULT_HANDLED;
-}  
+}  // namespace mozilla
 
 static void ActivateResultID(
     RefPtr<nsGNOMEShellHistorySearchResult> aSearchResult,
@@ -354,9 +354,10 @@ static void ActivateResultID(
 
   if (strncmp(aResultID, KEYWORD_SEARCH_STRING, KEYWORD_SEARCH_STRING_LEN) ==
       0) {
-    const char* urlList[4] = {"unused", "--new-tab", "--search",
+    const char* urlList[3] = {"unused", "--search",
                               aSearchResult->GetSearchTerm().get()};
-    commandLine = ConstructCommandLine(3, (char**)urlList, nullptr, &tmp);
+    commandLine = ConstructCommandLine(std::size(urlList), (char**)urlList,
+                                       nullptr, &tmp);
   } else {
     int keyIndex = atoi(aResultID);
     nsCOMPtr<nsINavHistoryResultNode> child;
@@ -373,7 +374,8 @@ static void ActivateResultID(
     }
 
     const char* urlList[2] = {"unused", uri.get()};
-    commandLine = ConstructCommandLine(2, (char**)urlList, nullptr, &tmp);
+    commandLine = ConstructCommandLine(std::size(urlList), (char**)urlList,
+                                       nullptr, &tmp);
   }
 
   if (commandLine) {
@@ -396,8 +398,8 @@ static void DBusLaunchWithAllResults(
     childCount = MAX_SEARCH_RESULTS_NUM;
   }
 
-  
-  
+  // Allocate space for all found results, "unused", "--search" and
+  // potential search request.
   char** urlList = (char**)moz_xmalloc(sizeof(char*) * (childCount + 3));
   int urlListElements = 0;
 
@@ -420,7 +422,7 @@ static void DBusLaunchWithAllResults(
     urlList[urlListElements++] = strdup(uri.get());
   }
 
-  
+  // When there isn't any uri to open pass search at least.
   if (!childCount) {
     urlList[urlListElements++] = strdup("--search");
     urlList[urlListElements++] = strdup(aSearchResult->GetSearchTerm().get());
