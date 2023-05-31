@@ -210,6 +210,31 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
   }
 
   
+  
+  
+  
+  
+  if (aAppearance == StyleAppearance::Resizer) {
+    nsIFrame* parentFrame = aFrame->GetParent();
+    if (parentFrame && parentFrame->IsScrollFrame()) {
+      
+      
+      
+      
+      
+      
+      parentFrame = parentFrame->GetParent();
+      if (!parentFrame) {
+        return false;
+      }
+      auto parentAppearance =
+          parentFrame->StyleDisplay()->EffectiveAppearance();
+      return parentAppearance == StyleAppearance::None ||
+             IsWidgetStyled(aPresContext, parentFrame, parentAppearance);
+    }
+  }
+
+  
 
 
 
