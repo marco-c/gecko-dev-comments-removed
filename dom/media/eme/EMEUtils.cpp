@@ -70,6 +70,11 @@ bool IsPlayReadyKeySystemAndSupported(const nsAString& aKeySystem) {
   if (!StaticPrefs::media_eme_playready_enabled()) {
     return false;
   }
+  
+  if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
+      StaticPrefs::media_wmf_media_engine_enabled() != 2) {
+    return false;
+  }
   return aKeySystem.EqualsLiteral(kPlayReadyKeySystemName) ||
          aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware);
 }
