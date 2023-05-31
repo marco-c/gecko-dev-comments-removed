@@ -122,6 +122,26 @@ export function findBlackBoxRange(source, blackboxedRanges, lineRange) {
 
 
 
+export function isLineBlackboxed(ranges, line) {
+  if (!ranges) {
+    return false;
+  }
+  
+  
+  if (!ranges.length) {
+    return true;
+  }
+  return !!ranges.find(
+    range => line >= range.start.line && line <= range.end.line
+  );
+}
+
+
+
+
+
+
+
 
 
 

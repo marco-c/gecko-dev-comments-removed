@@ -8,7 +8,7 @@ import { bindActionCreators } from "redux";
 import ReactDOM from "react-dom";
 import { connect } from "../../utils/connect";
 
-import { getLineText } from "./../../utils/source";
+import { getLineText, isLineBlackboxed } from "./../../utils/source";
 import { createLocation } from "./../../utils/location";
 import { features } from "../../utils/prefs";
 import { getIndentation } from "../../utils/indentation";
@@ -483,18 +483,13 @@ class Editor extends PureComponent {
       closeConditionalPanel,
       addBreakpointAtLine,
       continueToHere,
-      toggleBlackBox,
       breakableLines,
+      blackboxedRanges,
     } = this.props;
 
     
     if (isSecondary(ev) || ev.button === 2 || !selectedSource) {
       return;
-    }
-
-    
-    if (this.props.selectedSourceIsBlackBoxed) {
-      toggleBlackBox(cx, selectedSource);
     }
 
     if (conditionalPanelLocation) {
@@ -525,7 +520,13 @@ class Editor extends PureComponent {
       return;
     }
 
-    addBreakpointAtLine(cx, sourceLine, ev.altKey, ev.shiftKey);
+    addBreakpointAtLine(
+      cx,
+      sourceLine,
+      ev.altKey,
+      ev.shiftKey ||
+        isLineBlackboxed(blackboxedRanges[selectedSource.url], sourceLine)
+    );
   };
 
   onGutterContextMenu = event => {
