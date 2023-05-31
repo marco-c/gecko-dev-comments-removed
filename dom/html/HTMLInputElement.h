@@ -217,7 +217,7 @@ class HTMLInputElement final : public TextControlElement,
   void SetLastValueChangeWasInteractive(bool);
 
   
-  nsresult SetValueChanged(bool aValueChanged) override;
+  void SetValueChanged(bool aValueChanged) override;
   bool IsSingleLineTextControl() const override;
   bool IsTextArea() const override;
   bool IsPasswordTextControl() const override;
@@ -242,7 +242,8 @@ class HTMLInputElement final : public TextControlElement,
   void EnablePreview() override;
   bool IsPreviewEnabled() override;
   void InitializeKeyboardEventListeners() override;
-  void OnValueChanged(ValueChangeKind) override;
+  void OnValueChanged(ValueChangeKind, bool aNewValueEmpty,
+                      const nsAString* aKnownNewValue) override;
   void GetValueFromSetRangeText(nsAString& aValue) override;
   MOZ_CAN_RUN_SCRIPT nsresult
   SetValueFromSetRangeText(const nsAString& aValue) override;
@@ -851,7 +852,9 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  bool IsValueEmpty() const;
+  bool IsValueEmpty() const {
+    return State().HasState(ElementState::VALUE_EMPTY);
+  }
 
   
   static mozilla::Maybe<nscolor> ParseSimpleColor(const nsAString& aColor);
@@ -1092,7 +1095,12 @@ class HTMLInputElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT
   nsresult SetDefaultValueAsValue();
 
-  void SetDirectionFromValue(bool aNotify);
+  
+
+
+
+  void SetDirectionFromValue(bool aNotify,
+                             const nsAString* aKnownValue = nullptr);
 
   
 
@@ -1525,6 +1533,8 @@ class HTMLInputElement final : public TextControlElement,
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
   bool mDisabledChanged : 1;
+  
+  
   bool mValueChanged : 1;
   bool mLastValueChangeWasInteractive : 1;
   bool mCheckedChanged : 1;

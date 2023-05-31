@@ -1035,7 +1035,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
   
   
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
-                    ElementState::VALID);
+                    ElementState::VALID | ElementState::VALUE_EMPTY);
   UpdateApzAwareFlag();
 }
 
@@ -1569,17 +1569,6 @@ void HTMLInputElement::GetNonFileValueInternal(nsAString& aValue) const {
       }
       return;
   }
-}
-
-bool HTMLInputElement::IsValueEmpty() const {
-  if (GetValueMode() == VALUE_MODE_VALUE && IsSingleLineTextControl(false)) {
-    return !mInputData.mState->HasNonEmptyValue();
-  }
-
-  nsAutoString value;
-  GetNonFileValueInternal(value);
-
-  return value.IsEmpty();
 }
 
 void HTMLInputElement::ClearFiles(bool aSetValueChanged) {
@@ -2712,7 +2701,7 @@ nsresult HTMLInputElement::SetValueInternal(
           }
         }
         if (mDoneCreating) {
-          OnValueChanged(ValueChangeKind::Internal);
+          OnValueChanged(ValueChangeKind::Internal, value.IsEmpty(), &value);
         }
         
       }
@@ -2725,15 +2714,6 @@ nsresult HTMLInputElement::SetValueInternal(
           colorControlFrame->UpdateColor();
         }
       }
-
-      
-      
-      
-      
-      if (PlaceholderApplies() && HasAttr(nsGkAtoms::placeholder)) {
-        UpdateState(true);
-      }
-
       return NS_OK;
     }
 
@@ -2767,9 +2747,9 @@ nsresult HTMLInputElement::SetValueInternal(
   return NS_OK;
 }
 
-nsresult HTMLInputElement::SetValueChanged(bool aValueChanged) {
+void HTMLInputElement::SetValueChanged(bool aValueChanged) {
   if (mValueChanged == aValueChanged) {
-    return NS_OK;
+    return;
   }
   mValueChanged = aValueChanged;
   UpdateTooLongValidityState();
@@ -2777,7 +2757,6 @@ nsresult HTMLInputElement::SetValueChanged(bool aValueChanged) {
   
   
   UpdateState(true);
-  return NS_OK;
 }
 
 void HTMLInputElement::SetLastValueChangeWasInteractive(bool aWasInteractive) {
@@ -4313,48 +4292,18 @@ void HTMLInputElement::UnbindFromTree(bool aNullParent) {
   UpdateState(false);
 }
 
-namespace {
-class TypeChangeSelectionRangeFlagDeterminer {
- public:
-  using ValueSetterOption = TextControlState::ValueSetterOption;
-  using ValueSetterOptions = TextControlState::ValueSetterOptions;
-
-  
-  
-  TypeChangeSelectionRangeFlagDeterminer(FormControlType aOldType,
-                                         FormControlType aNewType)
-      : mOldType(aOldType), mNewType(aNewType) {}
-
-  
-  ValueSetterOptions GetValueSetterOptions() const {
-    const bool previouslySelectable = DoesSetRangeTextApply(mOldType);
-    const bool nowSelectable = DoesSetRangeTextApply(mNewType);
-    const bool moveCursorToBeginAndSetDirectionForward =
-        !previouslySelectable && nowSelectable;
-    if (moveCursorToBeginAndSetDirectionForward) {
-      return {ValueSetterOption::MoveCursorToBeginSetSelectionDirectionForward};
-    }
-    return {};
-  }
-
- private:
-  
 
 
 
 
-  static bool DoesSetRangeTextApply(FormControlType aType) {
-    return aType == FormControlType::InputText ||
-           aType == FormControlType::InputSearch ||
-           aType == FormControlType::InputUrl ||
-           aType == FormControlType::InputTel ||
-           aType == FormControlType::InputPassword;
-  }
 
-  const FormControlType mOldType;
-  const FormControlType mNewType;
-};
-}  
+static bool SetRangeTextApplies(FormControlType aType) {
+  return aType == FormControlType::InputText ||
+         aType == FormControlType::InputSearch ||
+         aType == FormControlType::InputUrl ||
+         aType == FormControlType::InputTel ||
+         aType == FormControlType::InputPassword;
+}
 
 void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
                                         bool aNotify) {
@@ -4391,13 +4340,12 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
     CancelRangeThumbDrag(false);
   }
 
-  ValueModeType aOldValueMode = GetValueMode();
-  nsAutoString aOldValue;
-
-  if (aOldValueMode == VALUE_MODE_VALUE) {
+  const ValueModeType oldValueMode = GetValueMode();
+  nsAutoString oldValue;
+  if (oldValueMode == VALUE_MODE_VALUE) {
     
     
-    GetValue(aOldValue, CallerType::NonSystem);
+    GetValue(oldValue, CallerType::NonSystem);
   }
 
   TextControlState::SelectionProperties sp;
@@ -4421,44 +4369,61 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   }
 
   
-
-
-
   switch (GetValueMode()) {
     case VALUE_MODE_DEFAULT:
     case VALUE_MODE_DEFAULT_ON:
       
       
       
-      if (aOldValueMode == VALUE_MODE_VALUE && !aOldValue.IsEmpty()) {
-        SetAttr(kNameSpaceID_None, nsGkAtoms::value, aOldValue, true);
+      
+      
+      
+      if (oldValueMode == VALUE_MODE_VALUE && !oldValue.IsEmpty()) {
+        SetAttr(kNameSpaceID_None, nsGkAtoms::value, oldValue, true);
       }
       break;
-    case VALUE_MODE_VALUE:
-      
-      
-      
-      {
+    case VALUE_MODE_VALUE: {
+      ValueSetterOptions options{ValueSetterOption::ByInternalAPI};
+      if (!SetRangeTextApplies(oldType) && SetRangeTextApplies(mType)) {
+        options +=
+            ValueSetterOption::MoveCursorToBeginSetSelectionDirectionForward;
+      }
+      if (oldValueMode != VALUE_MODE_VALUE) {
+        
+        
+        
+        
+        
+        
+        
         nsAutoString value;
-        if (aOldValueMode != VALUE_MODE_VALUE) {
-          GetAttr(kNameSpaceID_None, nsGkAtoms::value, value);
-        } else {
-          value = aOldValue;
-        }
-
-        const TypeChangeSelectionRangeFlagDeterminer flagDeterminer(oldType,
-                                                                    mType);
-        ValueSetterOptions options(flagDeterminer.GetValueSetterOptions());
-        options += ValueSetterOption::ByInternalAPI;
-
-        
-        
-        
+        GetAttr(nsGkAtoms::value, value);
         SetValueInternal(value, options);
+        SetValueChanged(false);
+      } else if (mValueChanged) {
+        
+        
+        
+        
+        
+        
+        SetValueInternal(oldValue, options);
+      } else {
+        
+        
+        
+        SetDefaultValueAsValue();
       }
       break;
+    }
     case VALUE_MODE_FILENAME:
     default:
+      
+      
+      
+      
+      
+      
       
       
       break;
@@ -5731,11 +5696,15 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
   return SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
 }
 
-void HTMLInputElement::SetDirectionFromValue(bool aNotify) {
+void HTMLInputElement::SetDirectionFromValue(bool aNotify,
+                                             const nsAString* aKnownValue) {
   if (IsSingleLineTextControl(true)) {
     nsAutoString value;
-    GetValue(value, CallerType::System);
-    SetDirectionalityFromValue(this, value, aNotify);
+    if (!aKnownValue) {
+      GetValue(value, CallerType::System);
+      aKnownValue = &value;
+    }
+    SetDirectionalityFromValue(this, *aKnownValue, aNotify);
   }
 }
 
@@ -5890,7 +5859,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
 static nsTArray<FileContentData> SaveFileContentData(
     const nsTArray<OwningFileOrDirectory>& aArray) {
   nsTArray<FileContentData> res(aArray.Length());
-  for (auto& it : aArray) {
+  for (const auto& it : aArray) {
     if (it.IsFile()) {
       RefPtr<BlobImpl> impl = it.GetAsFile()->Impl();
       res.AppendElement(std::move(impl));
@@ -5999,17 +5968,17 @@ void HTMLInputElement::DoneCreatingElement() {
 
   
   if (GetValueMode() == VALUE_MODE_VALUE) {
-    nsAutoString aValue;
-    GetValue(aValue, CallerType::System);
+    nsAutoString value;
+    GetValue(value, CallerType::System);
     
     
     
-    SetValueInternal(aValue, ValueSetterOption::ByInternalAPI);
+    SetValueInternal(value, ValueSetterOption::ByInternalAPI);
 
     if (CreatesDateTimeWidget()) {
       
       
-      mFocusedValue = aValue;
+      mFocusedValue = value;
     }
   }
 
@@ -6091,11 +6060,9 @@ ElementState HTMLInputElement::IntrinsicState() const {
     }
   }
 
-  if (mType != FormControlType::InputFile && IsValueEmpty()) {
-    state |= ElementState::VALUE_EMPTY;
-    if (PlaceholderApplies() && HasAttr(nsGkAtoms::placeholder)) {
-      state |= ElementState::PLACEHOLDER_SHOWN;
-    }
+  if (IsValueEmpty() && PlaceholderApplies() &&
+      HasAttr(nsGkAtoms::placeholder)) {
+    state |= ElementState::PLACEHOLDER_SHOWN;
   }
 
   return state;
@@ -6104,7 +6071,7 @@ ElementState HTMLInputElement::IntrinsicState() const {
 static nsTArray<OwningFileOrDirectory> RestoreFileContentData(
     nsPIDOMWindowInner* aWindow, const nsTArray<FileContentData>& aData) {
   nsTArray<OwningFileOrDirectory> res(aData.Length());
-  for (auto& it : aData) {
+  for (const auto& it : aData) {
     if (it.type() == FileContentData::TBlobImpl) {
       if (!it.get_BlobImpl()) {
         
@@ -6780,8 +6747,7 @@ int32_t HTMLInputElement::GetWrapCols() {
 int32_t HTMLInputElement::GetRows() { return DEFAULT_ROWS; }
 
 void HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue) {
-  TextControlState* state = GetEditorState();
-  if (state) {
+  if (GetEditorState()) {
     GetDefaultValue(aValue);
     
     
@@ -6813,18 +6779,26 @@ void HTMLInputElement::InitializeKeyboardEventListeners() {
   }
 }
 
-void HTMLInputElement::OnValueChanged(ValueChangeKind aKind) {
+void HTMLInputElement::OnValueChanged(ValueChangeKind aKind,
+                                      bool aNewValueEmpty,
+                                      const nsAString* aKnownNewValue) {
+  MOZ_ASSERT_IF(aKnownNewValue, aKnownNewValue->IsEmpty() == aNewValueEmpty);
   if (aKind != ValueChangeKind::Internal) {
     mLastValueChangeWasInteractive = aKind == ValueChangeKind::UserInteraction;
+  }
+
+  if (aNewValueEmpty) {
+    AddStates(ElementState::VALUE_EMPTY);
+  } else {
+    RemoveStates(ElementState::VALUE_EMPTY);
   }
 
   UpdateAllValidityStates(true);
 
   if (HasDirAuto()) {
-    SetDirectionFromValue(true);
+    SetDirectionFromValue(true, aKnownNewValue);
   }
 
-  
   
   UpdateState(true);
 }
