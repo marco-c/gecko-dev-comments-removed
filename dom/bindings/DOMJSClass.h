@@ -90,8 +90,8 @@ typedef bool (*DeleteNamedProperty)(JSContext* cx,
 
 
 
-bool IsNonExposedGlobal(JSContext* aCx, JSObject* aGlobal,
-                        uint32_t aNonExposedGlobals);
+bool IsGlobalInExposureSet(JSContext* aCx, JSObject* aGlobal,
+                           uint32_t aGlobalSet);
 
 struct ConstantSpec {
   const char* name;
@@ -120,8 +120,8 @@ static constexpr uint32_t kCount = 9;
 struct PrefableDisablers {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
     if (nonExposedGlobals &&
-        IsNonExposedGlobal(cx, JS::GetNonCCWObjectGlobal(obj),
-                           nonExposedGlobals)) {
+        IsGlobalInExposureSet(cx, JS::GetNonCCWObjectGlobal(obj),
+                              nonExposedGlobals)) {
       return false;
     }
     if (prefIndex != WebIDLPrefIndex::NoPref &&
