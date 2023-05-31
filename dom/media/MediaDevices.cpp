@@ -250,12 +250,16 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
         if (mCanExposeMicrophoneInfo) {
           exposedMicrophoneGroupIds.Insert(device->mRawGroupID);
         }
-        
-        
+        if (!DeviceInformationCanBeExposed()) {
+          dropMics = true;
+        }
         break;
       case MediaDeviceKind::Videoinput:
         if (dropCams) {
           continue;
+        }
+        if (!DeviceInformationCanBeExposed()) {
+          dropCams = true;
         }
         break;
       case MediaDeviceKind::Audiooutput:
@@ -301,6 +305,24 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
   return exposed;
 }
 
+bool MediaDevices::CanExposeInfo(MediaDeviceKind aKind) const {
+  switch (aKind) {
+    case MediaDeviceKind::Audioinput:
+      return mCanExposeMicrophoneInfo;
+    case MediaDeviceKind::Videoinput:
+      return mCanExposeCameraInfo;
+    case MediaDeviceKind::Audiooutput:
+      
+      return true;
+    case MediaDeviceKind::EndGuard_:
+      break;
+      
+      
+  }
+  MOZ_ASSERT_UNREACHABLE("unexpected MediaDeviceKind");
+  return false;
+}
+
 bool MediaDevices::ShouldQueueDeviceChange(
     const MediaDeviceSet& aExposedDevices) const {
   if (!mLastPhysicalDevices) {  
@@ -317,22 +339,6 @@ bool MediaDevices::ShouldQueueDeviceChange(
   
   
   
-  auto CanExposeNonZeroChanges = [this](MediaDeviceKind aKind) {
-    switch (aKind) {
-      case MediaDeviceKind::Audioinput:
-        return mCanExposeMicrophoneInfo;
-      case MediaDeviceKind::Videoinput:
-        return mCanExposeCameraInfo;
-      case MediaDeviceKind::Audiooutput:
-        return true;
-      case MediaDeviceKind::EndGuard_:
-        break;
-        
-        
-    }
-    MOZ_ASSERT_UNREACHABLE("unexpected MediaDeviceKind");
-    return false;
-  };
   while (exposed < exposedEnd && last < lastEnd) {
     
     
@@ -344,7 +350,7 @@ bool MediaDevices::ShouldQueueDeviceChange(
       return true;
     }
     
-    if (CanExposeNonZeroChanges(kind)) {
+    if (CanExposeInfo(kind)) {
       
       
       if ((*exposed)->mRawID != (*last)->mRawID) {
@@ -399,37 +405,16 @@ void MediaDevices::ResumeEnumerateDevices(
 
 void MediaDevices::ResolveEnumerateDevicesPromise(
     Promise* aPromise, const LocalMediaDeviceSet& aDevices) const {
-  nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
-  auto windowId = window->WindowID();
   nsTArray<RefPtr<MediaDeviceInfo>> infos;
-  bool allowLabel =
-      aDevices.Length() == 0 ||
-      MediaManager::Get()->IsActivelyCapturingOrHasAPermission(windowId);
+
   for (const RefPtr<LocalMediaDevice>& device : aDevices) {
-    nsString label;
     MOZ_ASSERT(device->Kind() < MediaDeviceKind::EndGuard_);
-    switch (device->Kind()) {
-      case MediaDeviceKind::Audioinput:
-      case MediaDeviceKind::Videoinput:
-        
-        
-        
-        
-        if (allowLabel || Preferences::GetBool(
-                              "media.navigator.permission.disabled", false)) {
-          label = device->mName;
-        }
-        break;
-      case MediaDeviceKind::Audiooutput:
-        label = device->mName;
-        break;
-      case MediaDeviceKind::EndGuard_:
-        break;
-        
-        
-    }
-    infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(device->mID, device->Kind(),
-                                                    label, device->mGroupID));
+    bool canExposeInfo = CanExposeInfo(device->Kind());
+
+    infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
+        canExposeInfo ? device->mID : u""_ns, device->Kind(),
+        canExposeInfo ? device->mName : u""_ns,
+        canExposeInfo ? device->mGroupID : u""_ns));
   }
   aPromise->MaybeResolve(std::move(infos));
 }
@@ -782,6 +767,10 @@ void MediaDevices::SetOndevicechange(
 void MediaDevices::EventListenerAdded(nsAtom* aType) {
   DOMEventTargetHelper::EventListenerAdded(aType);
   SetupDeviceChangeListener();
+}
+
+bool MediaDevices::DeviceInformationCanBeExposed() const {
+  return mCanExposeCameraInfo || mCanExposeMicrophoneInfo;
 }
 
 JSObject* MediaDevices::WrapObject(JSContext* aCx,
