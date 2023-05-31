@@ -1237,7 +1237,7 @@ async function expandSourceTree(dbg) {
   
   
   for (const rootNode of dbg.win.document.querySelectorAll(
-    ".sources-list > .managed-tree > .tree > .tree-node[data-expandable=true]"
+    ".sources-list > .tree > .tree-node[data-expandable=true]"
   )) {
     await expandAllSourceNodes(dbg, rootNode);
   }

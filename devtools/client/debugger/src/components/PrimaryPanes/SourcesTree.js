@@ -28,13 +28,13 @@ import actions from "../../actions";
 
 import SourcesTreeItem from "./SourcesTreeItem";
 import AccessibleImage from "../shared/AccessibleImage";
-import ManagedTree from "../shared/ManagedTree";
 
 
 import { getRawSourceURL } from "../../utils/source";
 import { createLocation } from "../../utils/location";
 
 const classnames = require("devtools/client/shared/classnames.js");
+const Tree = require("devtools/client/shared/components/Tree");
 
 function shouldAutoExpand(item, mainThreadHost) {
   
@@ -53,7 +53,8 @@ function shouldAutoExpand(item, mainThreadHost) {
 
 
 
-function getDirectoryForSource(treeLocation, rootItems) {
+
+function getSourceItemForTreeLocation(treeLocation, rootItems) {
   
   const { source, sourceActor } = treeLocation;
 
@@ -139,20 +140,23 @@ class SourcesTree extends Component {
           selectedTreeLocation?.source &&
           nextProps.selectedTreeLocation.sourceActor !=
             selectedTreeLocation?.sourceActor) ||
-        !this.state.highlightItems?.length)
+        !this.props.focused)
     ) {
-      let parentDirectory = getDirectoryForSource(
+      const sourceItem = getSourceItemForTreeLocation(
         nextProps.selectedTreeLocation,
         this.props.rootItems
       );
-      
-      
-      const highlightItems = [];
-      while (parentDirectory) {
-        highlightItems.push(parentDirectory);
-        parentDirectory = this.getParent(parentDirectory);
+      if (sourceItem) {
+        
+        const expanded = new Set(this.props.expanded);
+        let parentDirectory = sourceItem;
+        while (parentDirectory) {
+          expanded.add(this.getKey(parentDirectory));
+          parentDirectory = this.getParent(parentDirectory);
+        }
+        this.props.setExpandedState(expanded);
+        this.onFocus(sourceItem);
       }
-      this.setState({ highlightItems });
     }
   }
 
@@ -170,12 +174,45 @@ class SourcesTree extends Component {
     }
   };
 
-  onExpand = (item, expandedState) => {
-    this.props.setExpandedState(expandedState);
+  onExpand = (item, shouldIncludeChildren) => {
+    this.setExpanded(item, true, shouldIncludeChildren);
   };
 
-  onCollapse = (item, expandedState) => {
-    this.props.setExpandedState(expandedState);
+  onCollapse = (item, shouldIncludeChildren) => {
+    this.setExpanded(item, false, shouldIncludeChildren);
+  };
+
+  setExpanded = (item, isExpanded, shouldIncludeChildren) => {
+    const { expanded } = this.props;
+    let changed = false;
+    const expandItem = i => {
+      const key = this.getKey(i);
+      if (isExpanded) {
+        changed |= !expanded.has(key);
+        expanded.add(key);
+      } else {
+        changed |= expanded.has(key);
+        expanded.delete(key);
+      }
+    };
+    expandItem(item);
+
+    if (shouldIncludeChildren) {
+      let parents = [item];
+      while (parents.length) {
+        const children = [];
+        for (const parent of parents) {
+          for (const child of this.getChildren(parent)) {
+            expandItem(child);
+            children.push(child);
+          }
+        }
+        parents = children;
+      }
+    }
+    if (changed) {
+      this.props.setExpandedState(expanded);
+    }
   };
 
   isEmpty() {
@@ -194,7 +231,7 @@ class SourcesTree extends Component {
     return this.props.rootItems;
   };
 
-  getPath = item => {
+  getKey = item => {
     
     
     
@@ -323,7 +360,7 @@ class SourcesTree extends Component {
     );
   }
 
-  renderItem = (item, depth, focused, _, expanded, { setExpanded }) => {
+  renderItem = (item, depth, focused, _, expanded) => {
     const { mainThreadHost, projectRoot } = this.props;
     return (
       <SourcesTreeItem
@@ -335,7 +372,7 @@ class SourcesTree extends Component {
         focusItem={this.onFocus}
         selectSourceItem={this.selectSourceItem}
         projectRoot={projectRoot}
-        setExpanded={setExpanded}
+        setExpanded={this.setExpanded}
         getBlackBoxSourcesGroups={this.getBlackBoxSourcesGroups}
         getParent={this.getParent}
       />
@@ -345,8 +382,6 @@ class SourcesTree extends Component {
   renderTree() {
     const { expanded, focused } = this.props;
 
-    const { highlightItems } = this.state;
-
     const treeProps = {
       autoExpandAll: false,
       autoExpandDepth: 1,
@@ -354,20 +389,22 @@ class SourcesTree extends Component {
       focused,
       getChildren: this.getChildren,
       getParent: this.getParent,
-      getPath: this.getPath,
+      getKey: this.getKey,
       getRoots: this.getRoots,
-      highlightItems,
       itemHeight: 21,
       key: this.isEmpty() ? "empty" : "full",
       onCollapse: this.onCollapse,
       onExpand: this.onExpand,
       onFocus: this.onFocus,
+      isExpanded: item => {
+        return this.props.expanded.has(this.getKey(item));
+      },
       onActivate: this.onActivate,
       renderItem: this.renderItem,
       preventBlur: true,
     };
 
-    return <ManagedTree {...treeProps} />;
+    return <Tree {...treeProps} />;
   }
 
   renderPane(child) {
