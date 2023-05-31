@@ -327,14 +327,6 @@ class Compositor : public TextureSourceProvider {
     mRecordFrames = aWillRecord;
   }
 
-  
-
-
-
-
-
-  already_AddRefed<RecordedFrame> RecordFrame(const TimeStamp& aTimeStamp);
-
  protected:
   
 
