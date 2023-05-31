@@ -47,6 +47,7 @@ public class PanZoomController {
 
   
   public static final int SCROLL_BEHAVIOR_SMOOTH = 0;
+
   
   public static final int SCROLL_BEHAVIOR_AUTO = 1;
 
@@ -94,6 +95,7 @@ public class PanZoomController {
         SCROLLABLE_FLAG_LEFT
       })
   public @interface ScrollableDirections {}
+
   
 
 
@@ -101,6 +103,7 @@ public class PanZoomController {
 
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_NONE = 0;
+
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_TOP = 1 << 0;
   
@@ -115,6 +118,7 @@ public class PanZoomController {
       flag = true,
       value = {OVERSCROLL_FLAG_NONE, OVERSCROLL_FLAG_HORIZONTAL, OVERSCROLL_FLAG_VERTICAL})
   public @interface OverscrollDirections {}
+
   
 
 
@@ -122,6 +126,7 @@ public class PanZoomController {
 
   
   @WrapForJNI public static final int OVERSCROLL_FLAG_NONE = 0;
+
   
   @WrapForJNI public static final int OVERSCROLL_FLAG_HORIZONTAL = 1 << 0;
   
@@ -159,6 +164,7 @@ public class PanZoomController {
     public @InputResult int handledResult() {
       return mHandledResult;
     }
+
     
 
 
@@ -167,6 +173,7 @@ public class PanZoomController {
     public @ScrollableDirections int scrollableDirections() {
       return mScrollableDirections;
     }
+
     
 
 

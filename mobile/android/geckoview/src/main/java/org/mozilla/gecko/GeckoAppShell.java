@@ -536,10 +536,13 @@ public class GeckoAppShell {
 
   
   static final String WAKE_LOCK_CPU = "cpu";
+
   
   static final String WAKE_LOCK_SCREEN = "screen";
+
   
   static final String WAKE_LOCK_AUDIO_PLAYING = "audio-playing";
+
   
   static final String WAKE_LOCK_VIDEO_PLAYING = "video-playing";
 
@@ -547,8 +550,10 @@ public class GeckoAppShell {
 
   
   static final int WAKE_LOCK_STATE_UNLOCKED = 0;
+
   
   static final int WAKE_LOCK_STATE_LOCKED_FOREGROUND = 1;
+
   
   static final int WAKE_LOCK_STATE_LOCKED_BACKGROUND = 2;
 

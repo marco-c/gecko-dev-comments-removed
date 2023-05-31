@@ -243,6 +243,7 @@ public class GeckoSession {
   private SessionMagnifier mMagnifier;
 
   private String mId;
+
    String getId() {
     return mId;
   }
@@ -1842,6 +1843,7 @@ public class GeckoSession {
 
 
   public static final int HEADER_FILTER_CORS_SAFELISTED = 1;
+
   
 
 
@@ -2330,10 +2332,13 @@ public class GeckoSession {
 
   
   public static final int FINDER_FIND_BACKWARDS = 1;
+
   
   public static final int FINDER_FIND_MATCH_CASE = 1 << 1;
+
   
   public static final int FINDER_FIND_WHOLE_WORD = 1 << 2;
+
   
   public static final int FINDER_FIND_LINKS_ONLY = 1 << 3;
 
@@ -2349,8 +2354,10 @@ public class GeckoSession {
 
   
   public static final int FINDER_DISPLAY_HIGHLIGHT_ALL = 1;
+
   
   public static final int FINDER_DISPLAY_DIM_PAGE = 1 << 1;
+
   
   public static final int FINDER_DISPLAY_DRAW_LINK_OUTLINE = 1 << 2;
 
@@ -2359,21 +2366,28 @@ public class GeckoSession {
   public static class FinderResult {
     
     public final boolean found;
+
     
     public final boolean wrapped;
+
     
     public final int current;
+
     
     public final int total;
+
     
     @NonNull public final String searchString;
+
     
 
 
 
     @FinderFindFlags public final int flags;
+
     
     @Nullable public final String linkUri;
+
     
     @Nullable public final RectF clientRect;
 
@@ -3199,12 +3213,16 @@ public class GeckoSession {
       public static final int CONTENT_UNKNOWN = 0;
       public static final int CONTENT_BLOCKED = 1;
       public static final int CONTENT_LOADED = 2;
+
       
       public final boolean isSecure;
+
       
       public final boolean isException;
+
       
       public final @Nullable String origin;
+
       
       public final @NonNull String host;
 
@@ -3217,11 +3235,13 @@ public class GeckoSession {
 
 
       public final @SecurityMode int securityMode;
+
       
 
 
 
       public final @ContentType int mixedModePassive;
+
       
 
 
@@ -3681,34 +3701,45 @@ public class GeckoSession {
   public interface SelectionActionDelegate {
     
     final int FLAG_IS_COLLAPSED = 1 << 0;
+
     
 
 
     final int FLAG_IS_EDITABLE = 1 << 1;
+
     
     final int FLAG_IS_PASSWORD = 1 << 2;
 
     
     final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
+
     
     final String ACTION_CUT = "org.mozilla.geckoview.CUT";
+
     
     final String ACTION_COPY = "org.mozilla.geckoview.COPY";
+
     
     final String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
+
     
     final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
+
     
 
 
 
     final String ACTION_PASTE_AS_PLAIN_TEXT = "org.mozilla.geckoview.PASTE_AS_PLAIN_TEXT";
+
     
     final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
+
     
     final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
+
     
     final String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
+
     
     final String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
 
@@ -3921,17 +3952,20 @@ public class GeckoSession {
 
     
     final int HIDE_REASON_NO_SELECTION = 0;
+
     
 
 
 
     final int HIDE_REASON_INVISIBLE_SELECTION = 1;
+
     
 
 
 
 
     final int HIDE_REASON_ACTIVE_SELECTION = 2;
+
     
 
 
@@ -3968,6 +4002,7 @@ public class GeckoSession {
 
 
       public final @ClipboardPermissionType int type;
+
       
 
 
@@ -4335,6 +4370,7 @@ public class GeckoSession {
 
       
       public final @Nullable String title;
+
        String id;
 
       private BasePrompt(
@@ -4593,12 +4629,16 @@ public class GeckoSession {
         public static class Flags {
           
           public static final int HOST = 1 << 0;
+
           
           public static final int PROXY = 1 << 1;
+
           
           public static final int ONLY_PASSWORD = 1 << 3;
+
           
           public static final int PREVIOUS_FAILED = 1 << 4;
+
           
           public static final int CROSS_ORIGIN_SUB_RESOURCE = 1 << 5;
 
@@ -4613,8 +4653,10 @@ public class GeckoSession {
         public static class Level {
           
           public static final int NONE = 0;
+
           
           public static final int PW_ENCRYPTED = 1;
+
           
           public static final int SECURE = 2;
 
@@ -6247,8 +6289,10 @@ public class GeckoSession {
   public interface TextInputDelegate {
     
     int RESTART_REASON_FOCUS = 0;
+
     
     int RESTART_REASON_BLUR = 1;
+
     
 
 
@@ -6793,14 +6837,19 @@ public class GeckoSession {
 
     
     final int VISIT_TOP_LEVEL = 1 << 0;
+
     
     final int VISIT_REDIRECT_TEMPORARY = 1 << 1;
+
     
     final int VISIT_REDIRECT_PERMANENT = 1 << 2;
+
     
     final int VISIT_REDIRECT_SOURCE = 1 << 3;
+
     
     final int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
+
     
     final int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
 
@@ -7006,6 +7055,7 @@ public class GeckoSession {
 
 
     default void onPrint(@NonNull final GeckoSession session) {}
+
     
 
 
@@ -7050,12 +7100,16 @@ public class GeckoSession {
   public static class GeckoPrintException extends Exception {
     
     public static final int ERROR_PRINT_SETTINGS_SERVICE_NOT_AVAILABLE = -1;
+
     
     public static final int ERROR_UNABLE_TO_CREATE_PRINT_SETTINGS = -2;
+
     
     public static final int ERROR_UNABLE_TO_RETRIEVE_CANONICAL_BROWSING_CONTEXT = -3;
+
     
     public static final int ERROR_NO_ACTIVITY_CONTEXT_DELEGATE = -4;
+
     
     public static final int ERROR_NO_ACTIVITY_CONTEXT = -5;
 

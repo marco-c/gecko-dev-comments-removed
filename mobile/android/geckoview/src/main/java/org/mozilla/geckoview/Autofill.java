@@ -894,6 +894,7 @@ public class Autofill {
 
     @UiThread
     default void onSessionStart(@NonNull final GeckoSession session) {}
+
     
 
 
@@ -906,6 +907,7 @@ public class Autofill {
         @NonNull final GeckoSession session,
         @NonNull final Node node,
         @NonNull final NodeData data) {}
+
     
 
 
@@ -913,6 +915,7 @@ public class Autofill {
 
     @UiThread
     default void onSessionCancel(@NonNull final GeckoSession session) {}
+
     
 
 
@@ -925,6 +928,7 @@ public class Autofill {
         @NonNull final GeckoSession session,
         @NonNull final Node node,
         @NonNull final NodeData data) {}
+
     
 
 
@@ -937,6 +941,7 @@ public class Autofill {
         @NonNull final GeckoSession session,
         @NonNull final Node node,
         @NonNull final NodeData data) {}
+
     
 
 
@@ -949,6 +954,7 @@ public class Autofill {
         @NonNull final GeckoSession session,
         @NonNull final Node node,
         @NonNull final NodeData data) {}
+
     
 
 
@@ -961,6 +967,7 @@ public class Autofill {
         @NonNull final GeckoSession session,
         @NonNull final Node focused,
         @NonNull final NodeData data) {}
+
     
 
 

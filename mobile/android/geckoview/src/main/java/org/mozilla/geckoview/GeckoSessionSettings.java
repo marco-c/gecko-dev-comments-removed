@@ -206,10 +206,13 @@ public final class GeckoSessionSettings implements Parcelable {
   
   
   public static final int DISPLAY_MODE_BROWSER = 0;
+
   
   public static final int DISPLAY_MODE_MINIMAL_UI = 1;
+
   
   public static final int DISPLAY_MODE_STANDALONE = 2;
+
   
   public static final int DISPLAY_MODE_FULLSCREEN = 3;
 
@@ -225,8 +228,10 @@ public final class GeckoSessionSettings implements Parcelable {
   
   
   public static final int USER_AGENT_MODE_MOBILE = 0;
+
   
   public static final int USER_AGENT_MODE_DESKTOP = 1;
+
   
   public static final int USER_AGENT_MODE_VR = 2;
 
@@ -270,6 +275,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
   private static final Key<String> CHROME_URI =
       new Key<String>("chromeUri",  true,  null);
+
   
   private static final Key<Integer> SCREEN_ID =
       new Key<Integer>("screenId",  true,  null);
@@ -277,6 +283,7 @@ public final class GeckoSessionSettings implements Parcelable {
   
   private static final Key<Boolean> USE_TRACKING_PROTECTION =
       new Key<Boolean>("useTrackingProtection");
+
   
   private static final Key<Boolean> USE_PRIVATE_MODE =
       new Key<Boolean>("usePrivateMode",  true,  null);
@@ -318,6 +325,7 @@ public final class GeckoSessionSettings implements Parcelable {
   
   private static final Key<Boolean> ALLOW_JAVASCRIPT =
       new Key<Boolean>("allowJavascript",  false,  null);
+
   
   private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
       new Key<Boolean>("fullAccessibilityTree",  false,  null);

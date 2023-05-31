@@ -51,6 +51,7 @@ public class GeckoJavaSampler {
 
 
   private static final long REPLACEMENT_MAIN_THREAD_ID = 1;
+
   
 
 
@@ -177,20 +178,25 @@ public class GeckoJavaSampler {
 
     
     private final String mMarkerName;
+
     
     private final double mTime;
+
     
 
 
 
     private final long mJavaTime;
+
     
     private final double mEndTime;
+
     
 
 
 
     private final long mEndJavaTime;
+
     
     private @Nullable final String mText;
 

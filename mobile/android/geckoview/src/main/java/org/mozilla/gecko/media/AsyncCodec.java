@@ -39,6 +39,7 @@ public interface AsyncCodec {
   public abstract void stop();
 
   public abstract void flush();
+
   
   public abstract void resumeReceivingInputs();
 

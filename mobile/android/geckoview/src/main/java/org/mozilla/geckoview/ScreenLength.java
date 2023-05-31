@@ -21,6 +21,7 @@ public class ScreenLength {
 
   
   public static final int PIXEL = 0;
+
   
 
 
@@ -29,6 +30,7 @@ public class ScreenLength {
 
 
   public static final int VISUAL_VIEWPORT_WIDTH = 1;
+
   
 
 
@@ -37,11 +39,13 @@ public class ScreenLength {
 
 
   public static final int VISUAL_VIEWPORT_HEIGHT = 2;
+
   
 
 
 
   public static final int DOCUMENT_WIDTH = 3;
+
   
 
 

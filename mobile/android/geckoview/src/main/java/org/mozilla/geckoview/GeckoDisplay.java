@@ -245,6 +245,7 @@ public class GeckoDisplay {
       mSession.onSafeAreaInsetsChanged(top, right, bottom, left);
     }
   }
+
   
 
 

@@ -72,6 +72,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     PLAY_STATE_PAUSED,
     PLAY_STATE_PLAYING
   }
+
   
   
   
@@ -737,6 +738,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     mPlayer.prepare(mMediaSource);
     mIsPlayerInitDone = true;
   }
+
   
   
   
@@ -765,6 +767,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
   public boolean isLiveStream() {
     return !mIsTimelineStatic;
   }
+
   
   
   

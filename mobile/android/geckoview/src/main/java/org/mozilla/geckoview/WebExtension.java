@@ -41,8 +41,10 @@ public class WebExtension {
 
 
   public final @NonNull String location;
+
   
   public final @NonNull String id;
+
   
   public final @WebExtensionFlags long flags;
 
@@ -107,6 +109,7 @@ public class WebExtension {
 
 
     public static final long NONE = 0;
+
     
 
 
@@ -219,6 +222,7 @@ public class WebExtension {
 
 
       public final int sinceUnixTimestamp;
+
       
 
 
@@ -619,14 +623,19 @@ public class WebExtension {
 
 
     @Nullable public final Boolean active;
+
     
     @Nullable public final Boolean autoDiscardable;
+
     
     @Nullable public final Boolean highlighted;
+
     
     @Nullable public final Boolean muted;
+
     
     @Nullable public final Boolean pinned;
+
     
 
 
@@ -668,23 +677,29 @@ public class WebExtension {
 
 
     @Nullable public final Boolean active;
+
     
 
 
 
     @Nullable public final String cookieStoreId;
+
     
 
 
 
 
     @Nullable public final Boolean discarded;
+
     
     @Nullable public final Integer index;
+
     
     @Nullable public final Boolean openInReaderMode;
+
     
     @Nullable public final Boolean pinned;
+
     
 
 
@@ -1095,7 +1110,9 @@ public class WebExtension {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({ENV_TYPE_UNKNOWN, ENV_TYPE_EXTENSION, ENV_TYPE_CONTENT_SCRIPT})
     public @interface EnvType {}
+
      static final int ENV_TYPE_UNKNOWN = 0;
+
     
     public static final int ENV_TYPE_EXTENSION = 1;
 
@@ -1197,6 +1214,7 @@ public class WebExtension {
 
 
     public final @Nullable String title;
+
     
 
 
@@ -1207,6 +1225,7 @@ public class WebExtension {
 
 
     public final @Nullable Image icon;
+
     
 
 
@@ -1221,6 +1240,7 @@ public class WebExtension {
 
 
     public final @Nullable Boolean enabled;
+
     
 
 
@@ -1229,6 +1249,7 @@ public class WebExtension {
 
 
     public final @Nullable String badgeText;
+
     
 
 
@@ -1240,6 +1261,7 @@ public class WebExtension {
 
 
     public final @Nullable Integer badgeBackgroundColor;
+
     
 
 
@@ -1457,6 +1479,7 @@ public class WebExtension {
         final @NonNull WebExtension extension,
         final @Nullable GeckoSession session,
         final @NonNull Action action) {}
+
     
 
 
@@ -1517,24 +1540,34 @@ public class WebExtension {
     public static class ErrorCodes {
       
       public static final int ERROR_NETWORK_FAILURE = -1;
+
       
       public static final int ERROR_INCORRECT_HASH = -2;
+
       
       public static final int ERROR_CORRUPT_FILE = -3;
+
       
       public static final int ERROR_FILE_ACCESS = -4;
+
       
       public static final int ERROR_SIGNEDSTATE_REQUIRED = -5;
+
       
       public static final int ERROR_UNEXPECTED_ADDON_TYPE = -6;
+
       
       public static final int ERROR_UNEXPECTED_ADDON_VERSION = -9;
+
       
       public static final int ERROR_INCORRECT_ID = -7;
+
       
       public static final int ERROR_INVALID_DOMAIN = -8;
+
       
       public static final int ERROR_USER_CANCELED = -100;
+
       
       public static final int ERROR_POSTPONED = -101;
 
@@ -1637,14 +1670,19 @@ public class WebExtension {
 
 
     public static final int UNKNOWN = -1;
+
     
     public static final int MISSING = 0;
+
     
     public static final int PRELIMINARY = 1;
+
     
     public static final int SIGNED = 2;
+
     
     public static final int SYSTEM = 3;
+
     
     public static final int PRIVILEGED = 4;
 
@@ -1671,17 +1709,22 @@ public class WebExtension {
     
     
     public static final int NOT_BLOCKED = 0;
+
     
 
 
 
     public static final int SOFTBLOCKED = 1;
+
     
     public static final int BLOCKED = 2;
+
     
     public static final int OUTDATED = 3;
+
     
     public static final int VULNERABLE_UPDATE_AVAILABLE = 4;
+
     
     public static final int VULNERABLE_NO_UPDATE = 5;
   }
@@ -1728,6 +1771,7 @@ public class WebExtension {
 
 
     public final @NonNull Image icon;
+
     
 
 
@@ -1736,6 +1780,7 @@ public class WebExtension {
 
 
     public final @NonNull String[] permissions;
+
     
 
 
@@ -1744,6 +1789,7 @@ public class WebExtension {
 
 
     public final @NonNull String[] origins;
+
     
 
 
@@ -1752,6 +1798,7 @@ public class WebExtension {
 
 
     public final @Nullable String name;
+
     
 
 
@@ -1761,6 +1808,7 @@ public class WebExtension {
 
 
     public final @Nullable String description;
+
     
 
 
@@ -1769,6 +1817,7 @@ public class WebExtension {
 
 
     public final @NonNull String version;
+
     
 
 
@@ -1777,6 +1826,7 @@ public class WebExtension {
 
 
     public final @Nullable String creatorName;
+
     
 
 
@@ -1785,6 +1835,7 @@ public class WebExtension {
 
 
     public final @Nullable String creatorUrl;
+
     
 
 
@@ -1793,6 +1844,7 @@ public class WebExtension {
 
 
     public final @Nullable String homepageUrl;
+
     
 
 
@@ -1801,6 +1853,7 @@ public class WebExtension {
 
 
     public final @Nullable String optionsPageUrl;
+
     
 
 
@@ -1809,6 +1862,7 @@ public class WebExtension {
 
 
     public final boolean openOptionsPageInTab;
+
     
 
 
@@ -1816,6 +1870,7 @@ public class WebExtension {
 
 
     public final boolean isRecommended;
+
     
 
 
@@ -1823,6 +1878,7 @@ public class WebExtension {
 
 
     public final @BlocklistState int blocklistState;
+
     
 
 

@@ -328,6 +328,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
 
   public static final int BACKEND_SURFACE_VIEW = 1;
+
   
 
 

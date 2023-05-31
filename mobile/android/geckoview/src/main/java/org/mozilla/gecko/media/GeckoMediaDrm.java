@@ -19,6 +19,7 @@ public interface GeckoMediaDrm {
     void onSessionError(byte[] sessionId, String message);
 
     void onSessionBatchedKeyChanged(byte[] sessionId, SessionKeyInfo[] keyInfos);
+
     
     void onRejectPromise(int promiseId, String message);
   }

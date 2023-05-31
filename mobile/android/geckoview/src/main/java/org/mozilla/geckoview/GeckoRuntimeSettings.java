@@ -130,6 +130,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mDebugPause = enabled;
       return this;
     }
+
     
 
 
@@ -1025,8 +1026,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   
   public static final int COLOR_SCHEME_LIGHT = 0;
+
   
   public static final int COLOR_SCHEME_DARK = 1;
+
   
   public static final int COLOR_SCHEME_SYSTEM = -1;
 
@@ -1189,8 +1192,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   
   public static final int ALLOW_ALL = 0;
+
   
   public static final int HTTPS_ONLY_PRIVATE = 1;
+
   
   public static final int HTTPS_ONLY = 2;
 
