@@ -90,6 +90,14 @@ void PrefChanged(const char* aPref, void* aClosure);
 
 EPlatformDisabledState ReadPlatformDisabledState();
 
+
+
+
+
+
+
+inline bool IsCacheActive() { return true; }
+
 }  
 }  
 
