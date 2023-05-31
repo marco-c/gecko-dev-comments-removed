@@ -76,7 +76,6 @@
 #include "vm/StringType.h"    
 #include "vm/Time.h"          
 #include "vm/ToSource.h"      
-#include "vm/Warnings.h"      
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
 #endif
