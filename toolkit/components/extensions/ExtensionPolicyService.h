@@ -61,6 +61,9 @@ class ExtensionPolicyService final : public nsIAddonPolicyService,
   
   static RefPtr<extensions::AtomSet> RestrictedDomains();
 
+  
+  static RefPtr<extensions::AtomSet> QuarantinedDomains();
+
   static already_AddRefed<ExtensionPolicyService> GetInstance() {
     return do_AddRef(&GetSingleton());
   }
@@ -94,6 +97,7 @@ class ExtensionPolicyService final : public nsIAddonPolicyService,
 
   bool UseRemoteExtensions() const;
   bool IsExtensionProcess() const;
+  bool GetQuarantinedDomainsEnabled() const;
 
   nsresult InjectContentScripts(WebExtensionPolicy* aExtension);
 
@@ -120,6 +124,7 @@ class ExtensionPolicyService final : public nsIAddonPolicyService,
       const nsTArray<RefPtr<extensions::WebExtensionContentScript>>& aScripts);
 
   void UpdateRestrictedDomains();
+  void UpdateQuarantinedDomains();
 
   nsRefPtrHashtable<nsPtrHashKey<const nsAtom>, WebExtensionPolicy> mExtensions;
 
