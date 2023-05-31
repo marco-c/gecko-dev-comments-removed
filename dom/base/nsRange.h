@@ -20,6 +20,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/WeakPtr.h"
 
 namespace mozilla {
 class RectCallback;
@@ -35,7 +36,9 @@ class Selection;
 }  
 
 class nsRange final : public mozilla::dom::AbstractRange,
-                      public nsStubMutationObserver {
+                      public nsStubMutationObserver,
+                      
+                      public mozilla::LinkedListElement<nsRange> {
   using ErrorResult = mozilla::ErrorResult;
   using AbstractRange = mozilla::dom::AbstractRange;
   using DocGroup = mozilla::dom::DocGroup;
@@ -87,6 +90,28 @@ class nsRange final : public mozilla::dom::AbstractRange,
   nsrefcnt GetRefCount() const { return mRefCnt; }
 
   nsINode* GetRoot() const { return mRoot; }
+
+  
+
+
+
+  bool IsInAnySelection() const { return !mSelections.IsEmpty(); }
+
+  MOZ_CAN_RUN_SCRIPT void RegisterSelection(
+      mozilla::dom::Selection& aSelection);
+
+  void UnregisterSelection(mozilla::dom::Selection& aSelection);
+
+  
+
+
+  const nsTArray<mozilla::WeakPtr<mozilla::dom::Selection>>& GetSelections()
+      const;
+
+  
+
+
+  bool IsInSelection(const mozilla::dom::Selection& aSelection) const;
 
   
 
@@ -355,6 +380,16 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
 
 
+  void RegisterClosestCommonInclusiveAncestor(nsINode* aNode);
+  
+
+
+  void UnregisterClosestCommonInclusiveAncestor(nsINode* aNode,
+                                                bool aIsUnlinking);
+
+  
+
+
 
 
 
@@ -413,6 +448,13 @@ class nsRange final : public mozilla::dom::AbstractRange,
 #endif  
 
   nsCOMPtr<nsINode> mRoot;
+  
+  
+  
+  nsINode* MOZ_NON_OWNING_REF mRegisteredClosestCommonInclusiveAncestor;
+
+  
+  AutoTArray<mozilla::WeakPtr<mozilla::dom::Selection>, 1> mSelections;
 
   
   

@@ -15,7 +15,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
@@ -27,14 +26,10 @@ class nsRange;
 struct JSContext;
 
 namespace mozilla::dom {
-class Document;
-class Selection;
 class StaticRange;
+class Document;
 
-class AbstractRange : public nsISupports,
-                      public nsWrapperCache,
-                      
-                      public mozilla::LinkedListElement<AbstractRange> {
+class AbstractRange : public nsISupports, public nsWrapperCache {
  protected:
   explicit AbstractRange(nsINode* aNode, bool aIsDynamicRange);
   virtual ~AbstractRange();
@@ -111,27 +106,6 @@ class AbstractRange : public nsISupports,
   inline StaticRange* AsStaticRange();
   inline const StaticRange* AsStaticRange() const;
 
-  
-
-
-
-  bool IsInAnySelection() const { return !mSelections.IsEmpty(); }
-
-  MOZ_CAN_RUN_SCRIPT void RegisterSelection(
-      mozilla::dom::Selection& aSelection);
-
-  void UnregisterSelection(const mozilla::dom::Selection& aSelection);
-
-  
-
-
-  const nsTArray<WeakPtr<Selection>>& GetSelections() const;
-
-  
-
-
-  bool IsInSelection(const mozilla::dom::Selection& aSelection) const;
-
  protected:
   template <typename SPT, typename SRT, typename EPT, typename ERT,
             typename RangeType>
@@ -159,21 +133,6 @@ class AbstractRange : public nsISupports,
                    << (aRange.mIsDynamicRange ? "true" : "false") << " }";
   }
 
-  
-
-
-  void RegisterClosestCommonInclusiveAncestor(nsINode* aNode);
-  
-
-
-  void UnregisterClosestCommonInclusiveAncestor(nsINode* aNode,
-                                                bool aIsUnlinking);
-
-  void UpdateCommonAncestorIfNecessary();
-
-  static void MarkDescendants(const nsINode& aNode);
-  static void UnmarkDescendants(const nsINode& aNode);
-
  private:
   void ClearForReuse();
 
@@ -181,13 +140,6 @@ class AbstractRange : public nsISupports,
   RefPtr<Document> mOwner;
   RangeBoundary mStart;
   RangeBoundary mEnd;
-
-  
-  AutoTArray<WeakPtr<Selection>, 1> mSelections;
-  
-  
-  nsCOMPtr<nsINode> mRegisteredClosestCommonInclusiveAncestor;
-
   
   
   bool mIsPositioned;

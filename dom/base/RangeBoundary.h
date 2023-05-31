@@ -44,30 +44,6 @@ typedef RangeBoundaryBase<nsINode*, nsIContent*> RawRangeBoundary;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class RangeBoundaryIsMutationObserved { No = 0, Yes = 1 };
-
-
-
-
 template <typename ParentType, typename RefType>
 class RangeBoundaryBase {
   template <typename T, typename U>
@@ -86,7 +62,7 @@ class RangeBoundaryBase {
 
  public:
   RangeBoundaryBase(nsINode* aContainer, nsIContent* aRef)
-      : mParent(aContainer), mRef(aRef), mIsMutationObserved(true) {
+      : mParent(aContainer), mRef(aRef) {
     if (mRef) {
       NS_WARNING_ASSERTION(mRef->GetParentNode() == mParent,
                            "Initializing RangeBoundary with invalid value");
@@ -95,107 +71,48 @@ class RangeBoundaryBase {
     }
   }
 
-  RangeBoundaryBase(nsINode* aContainer, uint32_t aOffset,
-                    RangeBoundaryIsMutationObserved aRangeIsMutationObserver =
-                        RangeBoundaryIsMutationObserved::Yes)
-      : mParent(aContainer),
-        mRef(nullptr),
-        mOffset(mozilla::Some(aOffset)),
-        mIsMutationObserved(bool(aRangeIsMutationObserver)) {
-    if (mIsMutationObserved && mParent && mParent->IsContainerNode()) {
+  RangeBoundaryBase(nsINode* aContainer, uint32_t aOffset)
+      : mParent(aContainer), mRef(nullptr), mOffset(mozilla::Some(aOffset)) {
+    if (mParent && mParent->IsContainerNode()) {
       
       if (aOffset == mParent->GetChildCount()) {
         mRef = mParent->GetLastChild();
       } else if (aOffset > 0) {
         mRef = mParent->GetChildAt_Deprecated(aOffset - 1);
       }
+
       NS_WARNING_ASSERTION(mRef || aOffset == 0,
                            "Constructing RangeBoundary with invalid value");
+
+      NS_WARNING_ASSERTION(!mRef || mRef->GetParentNode() == mParent,
+                           "Constructing RangeBoundary with invalid value");
     }
-    NS_WARNING_ASSERTION(!mRef || mRef->GetParentNode() == mParent,
-                         "Constructing RangeBoundary with invalid value");
   }
 
-  RangeBoundaryBase()
-      : mParent(nullptr), mRef(nullptr), mIsMutationObserved(true) {}
+  RangeBoundaryBase() : mParent(nullptr), mRef(nullptr) {}
 
   
   template <typename PT, typename RT>
-  RangeBoundaryBase(const RangeBoundaryBase<PT, RT>& aOther,
-                    RangeBoundaryIsMutationObserved aIsMutationObserved)
-      : mParent(aOther.mParent),
-        mRef(aOther.mRef),
-        mOffset(aOther.mOffset),
-        mIsMutationObserved(bool(aIsMutationObserved)) {}
+  explicit RangeBoundaryBase(const RangeBoundaryBase<PT, RT>& aOther)
+      : mParent(aOther.mParent), mRef(aOther.mRef), mOffset(aOther.mOffset) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-  nsIContent* Ref() const {
-    if (mIsMutationObserved) {
-      return mRef;
-    }
-    MOZ_ASSERT(mParent);
-    MOZ_ASSERT(mOffset);
-
-    
-    
-    
-    if (*mOffset > Container()->Length()) {
-      
-      
-      mRef = nullptr;
-    } else if (*mOffset == Container()->Length()) {
-      mRef = mParent->GetLastChild();
-    } else if (*mOffset) {
-      
-      
-      
-      
-      
-      auto indexOfRefObject = mParent->ComputeIndexOf(mRef);
-      if (indexOfRefObject.isNothing() || *mOffset != *indexOfRefObject + 1) {
-        mRef = mParent->GetChildAt_Deprecated(*mOffset - 1);
-      }
-    } else {
-      mRef = nullptr;
-    }
-    return mRef;
-  }
+  nsIContent* Ref() const { return mRef; }
 
   nsINode* Container() const { return mParent; }
-
-  
-
-
 
   nsIContent* GetChildAtOffset() const {
     if (!mParent || !mParent->IsContainerNode()) {
       return nullptr;
     }
-    nsIContent* const ref = Ref();
-    if (!ref) {
-      if (!mIsMutationObserved && *mOffset != 0) {
-        
-        
-        return nullptr;
-      }
+    if (!mRef) {
       MOZ_ASSERT(*Offset(OffsetFilter::kValidOrInvalidOffsets) == 0,
                  "invalid RangeBoundary");
       return mParent->GetFirstChild();
     }
     MOZ_ASSERT(mParent->GetChildAt_Deprecated(
                    *Offset(OffsetFilter::kValidOrInvalidOffsets)) ==
-               ref->GetNextSibling());
-    return ref->GetNextSibling();
+               mRef->GetNextSibling());
+    return mRef->GetNextSibling();
   }
 
   
@@ -207,13 +124,7 @@ class RangeBoundaryBase {
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
     }
-    nsIContent* const ref = Ref();
-    if (!ref) {
-      if (!mIsMutationObserved && *mOffset != 0) {
-        
-        
-        return nullptr;
-      }
+    if (!mRef) {
       MOZ_ASSERT(*Offset(OffsetFilter::kValidOffsets) == 0,
                  "invalid RangeBoundary");
       nsIContent* firstChild = mParent->GetFirstChild();
@@ -223,11 +134,11 @@ class RangeBoundaryBase {
       }
       return firstChild->GetNextSibling();
     }
-    if (NS_WARN_IF(!ref->GetNextSibling())) {
+    if (NS_WARN_IF(!mRef->GetNextSibling())) {
       
       return nullptr;
     }
-    return ref->GetNextSibling()->GetNextSibling();
+    return mRef->GetNextSibling()->GetNextSibling();
   }
 
   
@@ -239,12 +150,11 @@ class RangeBoundaryBase {
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
     }
-    nsIContent* const ref = Ref();
-    if (NS_WARN_IF(!ref)) {
+    if (NS_WARN_IF(!mRef)) {
       
       return nullptr;
     }
-    return ref;
+    return mRef;
   }
 
   enum class OffsetFilter { kValidOffsets, kValidOrInvalidOffsets };
@@ -260,21 +170,18 @@ class RangeBoundaryBase {
     switch (aOffsetFilter) {
       case OffsetFilter::kValidOffsets: {
         if (IsSetAndValid()) {
-          MOZ_ASSERT_IF(!mIsMutationObserved, mOffset);
-          if (!mOffset && mIsMutationObserved) {
+          if (!mOffset) {
             DetermineOffsetFromReference();
           }
         }
-        return !mIsMutationObserved && *mOffset > Container()->Length()
-                   ? Nothing{}
-                   : mOffset;
+        return mOffset;
       }
       case OffsetFilter::kValidOrInvalidOffsets: {
         if (mOffset.isSome()) {
           return mOffset;
         }
-        MOZ_ASSERT_IF(!mIsMutationObserved, mOffset);
-        if (mParent && mIsMutationObserved) {
+
+        if (mParent) {
           DetermineOffsetFromReference();
           if (mOffset.isSome()) {
             return mOffset;
@@ -300,16 +207,11 @@ class RangeBoundaryBase {
       aStream << " (" << *aRangeBoundary.Container()
               << ", Length()=" << aRangeBoundary.Container()->Length() << ")";
     }
-    if (aRangeBoundary.mIsMutationObserved) {
-      aStream << ", mRef=" << aRangeBoundary.mRef;
-      if (aRangeBoundary.mRef) {
-        aStream << " (" << *aRangeBoundary.mRef << ")";
-      }
+    aStream << ", mRef=" << aRangeBoundary.Ref();
+    if (aRangeBoundary.Ref()) {
+      aStream << " (" << *aRangeBoundary.Ref() << ")";
     }
-
-    aStream << ", mOffset=" << aRangeBoundary.mOffset;
-    aStream << ", mIsMutationObserved="
-            << (aRangeBoundary.mIsMutationObserved ? "true" : "false") << " }";
+    aStream << ", mOffset=" << aRangeBoundary.mOffset << " }";
     return aStream;
   }
 
@@ -318,7 +220,6 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mRef);
     MOZ_ASSERT(mRef->GetParentNode() == mParent);
-    MOZ_ASSERT(mIsMutationObserved);
     MOZ_ASSERT(mOffset.isNothing());
 
     if (mRef->IsBeingRemoved()) {
@@ -336,12 +237,7 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mParent->IsContainerNode(),
                "Range is positioned on a text node!");
-    if (!mIsMutationObserved) {
-      
-      
-      
-      return;
-    }
+
     if (!mRef) {
       MOZ_ASSERT(mOffset.isSome() && mOffset.value() == 0,
                  "Invalidating offset of invalid RangeBoundary?");
@@ -358,7 +254,7 @@ class RangeBoundaryBase {
       return false;
     }
 
-    if (mIsMutationObserved && Ref()) {
+    if (Ref()) {
       
       
       
@@ -373,8 +269,7 @@ class RangeBoundaryBase {
     
     
     
-    return mIsMutationObserved ? !Ref() && mOffset.value() == 0
-                               : mOffset.value() == 0;
+    return !Ref() && mOffset.value() == 0;
   }
 
   bool IsEndOfContainer() const {
@@ -382,25 +277,18 @@ class RangeBoundaryBase {
     
     
     
-    return mIsMutationObserved && Ref()
-               ? !Ref()->GetNextSibling()
-               : mOffset.value() == Container()->Length();
+    return Ref() ? !Ref()->GetNextSibling()
+                 : mOffset.value() == Container()->Length();
   }
 
   
   
   RangeBoundaryBase<nsINode*, nsIContent*> AsRaw() const {
-    return RangeBoundaryBase<nsINode*, nsIContent*>(
-        *this, RangeBoundaryIsMutationObserved(mIsMutationObserved));
+    return RangeBoundaryBase<nsINode*, nsIContent*>(*this);
   }
 
   template <typename A, typename B>
-  RangeBoundaryBase& operator=(const RangeBoundaryBase<A, B>& aOther) = delete;
-
-  template <typename A, typename B>
-  RangeBoundaryBase& CopyFrom(
-      const RangeBoundaryBase<A, B>& aOther,
-      RangeBoundaryIsMutationObserved aIsMutationObserved) {
+  RangeBoundaryBase& operator=(const RangeBoundaryBase<A, B>& aOther) {
     
     
     if (mParent != aOther.mParent) {
@@ -410,7 +298,6 @@ class RangeBoundaryBase {
       mRef = aOther.mRef;
     }
     mOffset = aOther.mOffset;
-    mIsMutationObserved = bool(aIsMutationObserved);
     return *this;
   }
 
@@ -426,12 +313,7 @@ class RangeBoundaryBase {
   template <typename A, typename B>
   bool operator==(const RangeBoundaryBase<A, B>& aOther) const {
     return mParent == aOther.mParent &&
-           (mIsMutationObserved && aOther.mIsMutationObserved && mRef
-                ? mRef == aOther.mRef
-                : Offset(OffsetFilter::kValidOrInvalidOffsets) ==
-                      aOther.Offset(
-                          RangeBoundaryBase<
-                              A, B>::OffsetFilter::kValidOrInvalidOffsets));
+           (mRef ? mRef == aOther.mRef : mOffset == aOther.mOffset);
   }
 
   template <typename A, typename B>
@@ -441,10 +323,9 @@ class RangeBoundaryBase {
 
  private:
   ParentType mParent;
-  mutable RefType mRef;
+  RefType mRef;
 
   mutable mozilla::Maybe<uint32_t> mOffset;
-  bool mIsMutationObserved;
 };
 
 template <typename ParentType, typename RefType>
