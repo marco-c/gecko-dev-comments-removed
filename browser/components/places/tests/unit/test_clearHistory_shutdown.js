@@ -17,7 +17,9 @@ const URIS = [
 
 const FTP_URL = "ftp://localhost/clearHistoryOnShutdown/";
 
-const { Sanitizer } = ChromeUtils.import("resource:///modules/Sanitizer.jsm");
+const { Sanitizer } = ChromeUtils.importESModule(
+  "resource:///modules/Sanitizer.sys.mjs"
+);
 
 
 

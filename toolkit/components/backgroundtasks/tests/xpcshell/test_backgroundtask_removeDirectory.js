@@ -7,8 +7,8 @@
 
 
 
-const { EXIT_CODE } = ChromeUtils.import(
-  "resource://gre/modules/BackgroundTasksManager.jsm"
+const { EXIT_CODE } = ChromeUtils.importESModule(
+  "resource://gre/modules/BackgroundTasksManager.sys.mjs"
 );
 
 const LEAF_NAME = "newCacheFolder";

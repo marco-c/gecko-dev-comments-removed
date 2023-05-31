@@ -282,9 +282,6 @@ var whitelist = [
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
   
-  { file: "resource://gre/modules/LangPackMatcher.sys.mjs" },
-
-  
   { file: "chrome://browser/content/screenshots/cancel.svg" },
   { file: "chrome://browser/content/screenshots/copy.svg" },
   { file: "chrome://browser/content/screenshots/download.svg" },
