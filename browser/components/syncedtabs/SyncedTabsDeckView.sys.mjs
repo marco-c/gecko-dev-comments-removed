@@ -1,24 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-let log = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-).Log.repository.getLogger("Sync.RemoteTabs");
-
-var EXPORTED_SYMBOLS = ["SyncedTabsDeckView"];
-
-
-
-
-
-
-
-
-
-const SyncedTabsDeckView = function (window, tabListComponent, props) {
+/**
+ * SyncedTabsDeckView
+ *
+ * Instances of SyncedTabsDeckView render DOM nodes from a given state.
+ * No state is kept internaly and the DOM will completely
+ * rerender unless the state flags `isUpdatable`, which helps
+ * make small changes without the overhead of a full rerender.
+ */
+export const SyncedTabsDeckView = function (window, tabListComponent, props) {
   this.props = props;
 
   this._window = window;
@@ -62,9 +54,9 @@ SyncedTabsDeckView.prototype = {
   },
 
   update(state) {
-    
-    
-    
+    // Note that we may also want to update elements that are outside of the
+    // deck, so use the document to find the class names rather than our
+    // container.
     for (let panel of state.panels) {
       if (panel.selected) {
         Array.prototype.map.call(

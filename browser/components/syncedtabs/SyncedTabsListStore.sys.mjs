@@ -1,23 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { EventEmitter } from "resource:///modules/syncedtabs/EventEmitter.sys.mjs";
 
-
-
-"use strict";
-
-let { EventEmitter } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/EventEmitter.jsm"
-);
-
-var EXPORTED_SYMBOLS = ["SyncedTabsListStore"];
-
-
-
-
-
-
-
-
-function SyncedTabsListStore(SyncedTabs) {
+/**
+ * SyncedTabsListStore
+ *
+ * Instances of this store encapsulate all of the state associated with a synced tabs list view.
+ * The state includes the clients, their tabs, the row that is currently selected,
+ * and the filtered query.
+ */
+export function SyncedTabsListStore(SyncedTabs) {
   EventEmitter.call(this);
   this._SyncedTabs = SyncedTabs;
   this.data = [];
@@ -28,17 +22,17 @@ function SyncedTabsListStore(SyncedTabs) {
 }
 
 Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
-  
-  
-  
-  
-  
-  
+  // This internal method triggers the "change" event that views
+  // listen for. It denormalizes the state so that it's easier for
+  // the view to deal with. updateType hints to the view what
+  // actually needs to be rerendered or just updated, and can be
+  // empty (to (re)render everything), "searchbox" (to rerender just the tab list),
+  // or "all" (to skip rendering and just update all attributes of existing nodes).
   _change(updateType) {
     let selectedParent = this._selectedRow[0];
     let selectedChild = this._selectedRow[1];
     let rowSelected = false;
-    
+    // clone the data so that consumers can't mutate internal storage
     let data = Cu.cloneInto(this.data, {});
     let tabCount = 0;
 
@@ -69,10 +63,10 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
       }
     });
 
-    
-    
-    
-    
+    // If this were React the view would be smart enough
+    // to not re-render the whole list unless necessary. But it's
+    // not, so updateType is a hint to the view of what actually
+    // needs to be rerendered.
     this.emit("change", {
       clients: data,
       canUpdateAll: updateType === "all",
@@ -82,10 +76,10 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
     });
   },
 
-  
-
-
-
+  /**
+   * Moves the row selection from a child to its parent,
+   * which occurs when the parent of a selected row closes.
+   */
   _selectParentRow() {
     this._selectedRow[1] = -1;
   },
@@ -148,7 +142,7 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
     }
   },
 
-  
+  // Selects a row and makes sure the selection is within bounds
   selectRow(parent, child) {
     let maxParentRow = this.filter ? this._tabCount() : this.data.length;
     let parentRow = parent;
@@ -180,7 +174,7 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
     this._selectedRow = [parentRow, childRow];
     this.inputFocused = false;
     this._change("all");
-    
+    // Record the telemetry event
     let extraOptions = {
       tab_pos: this._selectedRow[1].toString(),
       filter: this.filter,
@@ -210,15 +204,15 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
 
   focusInput() {
     this.inputFocused = true;
-    
-    
+    // A change type of "all" updates rather than rebuilds, which is what we
+    // want here - only the selection/focus has changed.
     this._change("all");
   },
 
   blurInput() {
     this.inputFocused = false;
-    
-    
+    // A change type of "all" updates rather than rebuilds, which is what we
+    // want here - only the selection/focus has changed.
     this._change("all");
   },
 
@@ -228,8 +222,8 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
     return this.getData();
   },
 
-  
-  
+  // Fetches data from the SyncedTabs module and triggers
+  // and update
   getData(filter) {
     let updateType;
     let hasFilter = typeof filter !== "undefined";
@@ -237,18 +231,18 @@ Object.assign(SyncedTabsListStore.prototype, EventEmitter.prototype, {
       this.filter = filter;
       this._selectedRow = [-1, -1];
 
-      
-      
-      
+      // When a filter is specified we tell the view that only the list
+      // needs to be rerendered so that it doesn't disrupt the input
+      // field's focus.
       updateType = "searchbox";
     }
 
-    
+    // return promise for tests
     return this._SyncedTabs
       .getTabClients(this.filter)
       .then(result => {
         if (!hasFilter) {
-          
+          // Only sort clients and tabs if we're rendering the whole list.
           this._SyncedTabs.sortTabClientsByLastUsed(result);
         }
         this.data = result;

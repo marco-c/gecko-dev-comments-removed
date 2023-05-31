@@ -1,48 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { SyncedTabsDeckStore } from "resource:///modules/syncedtabs/SyncedTabsDeckStore.sys.mjs";
+import { SyncedTabsDeckView } from "resource:///modules/syncedtabs/SyncedTabsDeckView.sys.mjs";
+import { SyncedTabsListStore } from "resource:///modules/syncedtabs/SyncedTabsListStore.sys.mjs";
+import { TabListComponent } from "resource:///modules/syncedtabs/TabListComponent.sys.mjs";
+import { TabListView } from "resource:///modules/syncedtabs/TabListView.sys.mjs";
+import { getChromeWindow } from "resource:///modules/syncedtabs/util.sys.mjs";
+import { UIState } from "resource://services-sync/UIState.sys.mjs";
 
+/* SyncedTabsDeckComponent
+ * This component instantiates views and storage objects as well as defines
+ * behaviors that will be passed down to the views. This helps keep the views
+ * isolated and easier to test.
+ */
 
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { SyncedTabsDeckStore } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/SyncedTabsDeckStore.js"
-);
-const { SyncedTabsDeckView } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/SyncedTabsDeckView.js"
-);
-const { SyncedTabsListStore } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/SyncedTabsListStore.js"
-);
-const { TabListComponent } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/TabListComponent.js"
-);
-const { TabListView } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/TabListView.js"
-);
-let { getChromeWindow } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/util.js"
-);
-const { UIState } = ChromeUtils.importESModule(
-  "resource://services-sync/UIState.sys.mjs"
-);
-
-let log = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-).Log.repository.getLogger("Sync.RemoteTabs");
-
-var EXPORTED_SYMBOLS = ["SyncedTabsDeckComponent"];
-
-
-
-
-
-
-
-function SyncedTabsDeckComponent({
+export function SyncedTabsDeckComponent({
   window,
   SyncedTabs,
   deckStore,
@@ -54,7 +28,7 @@ function SyncedTabsDeckComponent({
   this._window = window;
   this._SyncedTabs = SyncedTabs;
   this._DeckView = DeckView || SyncedTabsDeckView;
-  
+  // used to stub during tests
   this._getChromeWindow = getChromeWindowMock || getChromeWindow;
 
   this._deckStore = deckStore || new SyncedTabsDeckStore();
@@ -93,11 +67,11 @@ SyncedTabsDeckComponent.prototype = {
     Services.obs.addObserver(this, this._SyncedTabs.TOPIC_TABS_CHANGED);
     Services.obs.addObserver(this, UIState.ON_UPDATE);
 
-    
+    // Add app locale change support for HTML sidebar
     Services.obs.addObserver(this, "intl:app-locales-changed");
     this.updateDir();
 
-    
+    // Go ahead and trigger sync
     this._SyncedTabs.syncTabs().catch(console.error);
 
     this._deckView = new this._DeckView(this._window, this.tabListComponent, {
@@ -106,12 +80,12 @@ SyncedTabsDeckComponent.prototype = {
     });
 
     this._deckStore.on("change", state => this._deckView.render(state));
-    
-    
+    // Trigger the initial rendering of the deck view
+    // Object.values only in nightly
     this._deckStore.setPanels(
       Object.keys(this.PANELS).map(k => this.PANELS[k])
     );
-    
+    // Set the initial panel to display
     this.updatePanel();
   },
 
@@ -168,7 +142,7 @@ SyncedTabsDeckComponent.prototype = {
   },
 
   updateDir() {
-    
+    // If the HTML document doesn't exist, we can't update the window
     if (!this._window.document) {
       return;
     }
@@ -181,7 +155,7 @@ SyncedTabsDeckComponent.prototype = {
   },
 
   updatePanel() {
-    
+    // return promise for tests
     return this.getPanelStatus()
       .then(panelId => this._deckStore.selectPanel(panelId))
       .catch(console.error);

@@ -1,8 +1,6 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -10,15 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
-let { getChromeWindow } = ChromeUtils.import(
-  "resource:///modules/syncedtabs/util.js"
-);
-
-let log = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-).Log.repository.getLogger("Sync.RemoteTabs");
-
-var EXPORTED_SYMBOLS = ["TabListView"];
+import { getChromeWindow } from "resource:///modules/syncedtabs/util.sys.mjs";
 
 function getContextMenu(window) {
   return getChromeWindow(window).document.getElementById(
@@ -32,15 +22,15 @@ function getTabsFilterContextMenu(window) {
   );
 }
 
-
-
-
-
-
-
-
-
-function TabListView(window, props) {
+/*
+ * TabListView
+ *
+ * Given a state, this object will render the corresponding DOM.
+ * It maintains no state of it's own. It listens for DOM events
+ * and triggers actions that may cause the state to change and
+ * ultimately the view to rerender.
+ */
+export function TabListView(window, props) {
   this.props = props;
 
   this._window = window;
@@ -63,22 +53,22 @@ function TabListView(window, props) {
 
 TabListView.prototype = {
   render(state) {
-    
+    // Don't rerender anything; just update attributes, e.g. selection
     if (state.canUpdateAll) {
       this._update(state);
       return;
     }
-    
+    // Rerender the tab list
     if (state.canUpdateInput) {
       this._updateSearchBox(state);
       this._createList(state);
       return;
     }
-    
+    // Create the world anew
     this._create(state);
   },
 
-  
+  // Create the initial DOM from templates
   _create(state) {
     let wrapper = this._doc.importNode(
       this._tabsContainerTemplate.content,
@@ -136,7 +126,7 @@ TabListView.prototype = {
     }
   },
 
-  
+  // Client rows are hidden when the list is filtered
   _renderFilteredClient(client, filter) {
     client.tabs.forEach((tab, index) => {
       let node = this._renderTab(client, tab, index);
@@ -201,14 +191,14 @@ TabListView.prototype = {
     }
   },
 
-  
+  // These listeners are attached only once, when we initialize the view
   _attachFixedListeners() {
     this.tabsFilter.addEventListener("command", this.onFilter.bind(this));
     this.tabsFilter.addEventListener("focus", this.onFilterFocus.bind(this));
     this.tabsFilter.addEventListener("blur", this.onFilterBlur.bind(this));
   },
 
-  
+  // These listeners have to be re-created every time since we re-create the list
   _attachListListeners() {
     this.list.addEventListener("click", this.onClick.bind(this));
     this.list.addEventListener("mouseup", this.onMouseUp.bind(this));
@@ -222,12 +212,12 @@ TabListView.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Update the element representing an item, ensuring it's in sync with the
+   * underlying data.
+   * @param {client} item - Item to use as a source.
+   * @param {Element} itemNode - Element to update.
+   */
   _updateClient(item, itemNode) {
     itemNode.setAttribute("id", "item-" + item.id);
     this._updateLastSyncTitle(item.lastModified, itemNode);
@@ -249,12 +239,12 @@ TabListView.prototype = {
     itemNode.querySelector(".item-title").textContent = item.name;
   },
 
-  
-
-
-
-
-
+  /**
+   * Update the element representing a tab, ensuring it's in sync with the
+   * underlying data.
+   * @param {tab} item - Item to use as a source.
+   * @param {Element} itemNode - Element to update.
+   */
   _updateTab(item, itemNode, index) {
     itemNode.setAttribute("title", `${item.title}\n${item.url}`);
     itemNode.setAttribute("id", "tab-" + item.client + "-" + index);
@@ -278,7 +268,7 @@ TabListView.prototype = {
 
   onMouseUp(event) {
     if (event.which == 2) {
-      
+      // Middle click
       this.onClick(event);
     }
   },
@@ -296,7 +286,7 @@ TabListView.prototype = {
       }
     }
 
-    
+    // Middle click on a client
     if (itemNode.classList.contains("client")) {
       let where = getChromeWindow(this._window).whereToOpenLink(event);
       if (where != "current") {
@@ -316,10 +306,10 @@ TabListView.prototype = {
     this.props.onSelectRow(position);
   },
 
-  
-
-
-
+  /**
+   * Handle a keydown event on the list box.
+   * @param {Event} event - Triggering event.
+   */
   onKeyDown(event) {
     if (event.keyCode == this._window.KeyEvent.DOM_VK_DOWN) {
       event.preventDefault();
@@ -416,7 +406,7 @@ TabListView.prototype = {
     return null;
   },
 
-  
+  // Set up the custom context menu
   _setupContextMenu() {
     Services.els.addSystemEventListener(
       this._window,
@@ -432,7 +422,7 @@ TabListView.prototype = {
   },
 
   _teardownContextMenu() {
-    
+    // Tear down context menu
     Services.els.removeSystemEventListener(
       this._window,
       "contextmenu",
@@ -593,11 +583,11 @@ TabListView.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Find the parent item element, from a given child element.
+   * @param {Element} node - Child element.
+   * @return {Element} Element for the item, or null if not found.
+   */
   _findParentItemNode(node) {
     while (
       node &&
@@ -636,7 +626,7 @@ TabListView.prototype = {
     let parent = this._findParentBranchNode(itemNode);
     let parentPosition = this._indexOfNode(parent.parentNode, parent);
     let childPosition = -1;
-    
+    // if the node is not a client, find its position within the parent
     if (parent !== itemNode) {
       childPosition = this._indexOfNode(itemNode.parentNode, itemNode);
     }

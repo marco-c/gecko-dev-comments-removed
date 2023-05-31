@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 let log = ChromeUtils.importESModule(
   "resource://gre/modules/Log.sys.mjs"
@@ -18,18 +14,16 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.jsm",
 });
 
-var EXPORTED_SYMBOLS = ["TabListComponent"];
+/**
+ * TabListComponent
+ *
+ * The purpose of this component is to compose the view, state, and actions.
+ * It defines high level actions that act on the state and passes them to the
+ * view for it to trigger during user interaction. It also subscribes the view
+ * to state changes so it can rerender.
+ */
 
-
-
-
-
-
-
-
-
-
-function TabListComponent({
+export function TabListComponent({
   window,
   store,
   View,
@@ -42,7 +36,7 @@ function TabListComponent({
   this._View = View;
   this._clipboardHelper = clipboardHelper;
   this._getChromeWindow = getChromeWindow;
-  
+  // used to trigger Sync from context menu
   this._SyncedTabs = SyncedTabs;
 }
 
@@ -72,7 +66,7 @@ TabListComponent.prototype = {
 
     this._store.on("change", state => this._view.render(state));
     this._view.render({ clients: [] });
-    
+    // get what's already available...
     this._store.getData();
     this._store.focusInput();
   },
