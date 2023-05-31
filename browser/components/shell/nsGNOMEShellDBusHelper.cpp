@@ -1,15 +1,33 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=2:tabstop=2:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "nsGNOMEShellSearchProvider.h"
 
 #include "RemoteUtils.h"
 #include "nsIStringBundle.h"
 #include "nsServiceManagerUtils.h"
+#include "nsPrintfCString.h"
+
+#include <glib.h>
+
+#define DBUS_BUS_NAME_TEMPLATE "org.mozilla.%s.SearchProvider"
+#define DBUS_OBJECT_PATH_TEMPLATE "/org/mozilla/%s/SearchProvider"
+
+const char* GetDBusBusName() {
+  static const char* name = ToNewCString(nsPrintfCString(
+      DBUS_BUS_NAME_TEMPLATE, g_get_prgname()));  
+  return name;
+}
+
+const char* GetDBusObjectPath() {
+  static const char* path = ToNewCString(nsPrintfCString(
+      DBUS_OBJECT_PATH_TEMPLATE, g_get_prgname()));  
+  return path;
+}
 
 static bool GetGnomeSearchTitle(const char* aSearchedTerm,
                                 nsAutoCString& aGnomeSearchTitle) {
@@ -93,8 +111,8 @@ DBusHandlerResult DBusIntrospect(DBusConnection* aConnection,
 }
 
 int DBusGetIndexFromIDKey(const char* aIDKey) {
-  // ID is NN:URL where NN is index to our current history
-  // result container.
+  
+  
   char tmp[] = {aIDKey[0], aIDKey[1], '\0'};
   return atoi(tmp);
 }
@@ -117,7 +135,7 @@ DBusHandlerResult DBusHandleInitialResultSet(
   if (!dbus_message_get_args(aMsg, nullptr, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
                              &stringArray, &elements, DBUS_TYPE_INVALID) ||
       elements == 0) {
-    reply = dbus_message_new_error(aMsg, DBUS_BUS_NAME, "Wrong argument");
+    reply = dbus_message_new_error(aMsg, GetDBusBusName(), "Wrong argument");
     dbus_connection_send(aSearchResult->GetDBusConnection(), reply, nullptr);
     dbus_message_unref(reply);
   } else {
@@ -126,9 +144,9 @@ DBusHandlerResult DBusHandleInitialResultSet(
     ConcatArray(searchTerm, const_cast<const char**>(stringArray));
     aSearchResult->SetSearchTerm(searchTerm.get());
     GetGNOMEShellHistoryService()->QueryHistory(aSearchResult);
-    // DBus reply will be send asynchronously by
-    // nsGNOMEShellHistorySearchResult::SendDBusSearchResultReply()
-    // when GetGNOMEShellHistoryService() has the results.
+    
+    
+    
   }
 
   if (stringArray) {
@@ -150,7 +168,7 @@ DBusHandlerResult DBusHandleSubsearchResultSet(
                              DBUS_TYPE_STRING, &stringArray, &elements,
                              DBUS_TYPE_INVALID) ||
       elements == 0) {
-    reply = dbus_message_new_error(aMsg, DBUS_BUS_NAME, "Wrong argument");
+    reply = dbus_message_new_error(aMsg, GetDBusBusName(), "Wrong argument");
     dbus_connection_send(aSearchResult->GetDBusConnection(), reply, nullptr);
     dbus_message_unref(reply);
   } else {
@@ -159,9 +177,9 @@ DBusHandlerResult DBusHandleSubsearchResultSet(
     ConcatArray(searchTerm, const_cast<const char**>(stringArray));
     aSearchResult->SetSearchTerm(searchTerm.get());
     GetGNOMEShellHistoryService()->QueryHistory(aSearchResult);
-    // DBus reply will be send asynchronously by
-    // nsGNOMEShellHistorySearchResult::SendDBusSearchResultReply()
-    // when GetGNOMEShellHistoryService() has the results.
+    
+    
+    
   }
 
   if (unusedArray) {
@@ -186,12 +204,12 @@ static void appendStringDictionary(DBusMessageIter* aIter, const char* aKey,
   dbus_message_iter_close_container(aIter, &iterDict);
 }
 
-/*
-  "icon-data": a tuple of type (iiibiiay) describing a pixbuf with width,
-              height, rowstride, has-alpha,
-              bits-per-sample, channels,
-              image data
-*/
+
+
+
+
+
+
 static void DBusAppendIcon(GnomeHistoryIcon* aIcon, DBusMessageIter* aIter) {
   DBusMessageIter iterDict, iterVar, iterStruct;
   dbus_message_iter_open_container(aIter, DBUS_TYPE_DICT_ENTRY, nullptr,
@@ -229,19 +247,19 @@ static void DBusAppendIcon(GnomeHistoryIcon* aIcon, DBusMessageIter* aIter) {
   dbus_message_iter_close_container(aIter, &iterDict);
 }
 
-/* Appends history search results to the DBUS reply.
 
-  We can return those fields at GetResultMetas:
 
-  "id": the result ID
-  "name": the display name for the result
-  "icon": a serialized GIcon (see g_icon_serialize()), or alternatively,
-  "gicon": a textual representation of a GIcon (see g_icon_to_string()),
-           or alternativly,
-  "icon-data": a tuple of type (iiibiiay) describing a pixbuf with width,
-              height, rowstride, has-alpha, bits-per-sample, and image data
-  "description": an optional short description (1-2 lines)
-*/
+
+
+
+
+
+
+
+
+
+
+
 static void DBusAppendResultID(
     RefPtr<nsGNOMEShellHistorySearchResult> aSearchResult,
     DBusMessageIter* aIter, const char* aID) {
@@ -274,32 +292,32 @@ static void DBusAppendResultID(
   }
 }
 
-/* Search the web for: "searchTerm" to the DBUS reply.
- */
+
+
 static void DBusAppendSearchID(DBusMessageIter* aIter, const char* aID) {
-  /* aID contains:
+  
 
-     KEYWORD_SEARCH_STRING:ssssss
 
-     KEYWORD_SEARCH_STRING is a 'special:search' keyword
-     ssssss is a searched term, must be at least one character long
-  */
 
-  // aID contains only 'KEYWORD_SEARCH_STRING:' so we're missing searched
-  // string.
+
+
+
+
+  
+  
   if (strlen(aID) <= KEYWORD_SEARCH_STRING_LEN + 1) {
     return;
   }
 
   appendStringDictionary(aIter, "id", KEYWORD_SEARCH_STRING);
 
-  // Extract ssssss part from aID
+  
   auto searchTerm = nsAutoCStringN<32>(aID + KEYWORD_SEARCH_STRING_LEN + 1);
   nsAutoCString gnomeSearchTitle;
   if (GetGnomeSearchTitle(searchTerm.get(), gnomeSearchTitle)) {
     appendStringDictionary(aIter, "name", gnomeSearchTitle.get());
-    // TODO: When running on flatpak/snap we may need to use
-    // icon like org.mozilla.Firefox or so.
+    
+    
     appendStringDictionary(aIter, "gicon", "firefox");
   }
 }
@@ -313,7 +331,7 @@ DBusHandlerResult DBusHandleResultMetas(
   if (!dbus_message_get_args(aMsg, nullptr, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
                              &stringArray, &elements, DBUS_TYPE_INVALID) ||
       elements == 0) {
-    reply = dbus_message_new_error(aMsg, DBUS_BUS_NAME, "Wrong argument");
+    reply = dbus_message_new_error(aMsg, GetDBusBusName(), "Wrong argument");
   } else {
     reply = dbus_message_new_method_return(aMsg);
 
@@ -344,7 +362,7 @@ DBusHandlerResult DBusHandleResultMetas(
   dbus_message_unref(reply);
 
   return DBUS_HANDLER_RESULT_HANDLED;
-}  // namespace mozilla
+}  
 
 static void ActivateResultID(
     RefPtr<nsGNOMEShellHistorySearchResult> aSearchResult,
@@ -398,8 +416,8 @@ static void DBusLaunchWithAllResults(
     childCount = MAX_SEARCH_RESULTS_NUM;
   }
 
-  // Allocate space for all found results, "unused", "--search" and
-  // potential search request.
+  
+  
   char** urlList = (char**)moz_xmalloc(sizeof(char*) * (childCount + 3));
   int urlListElements = 0;
 
@@ -422,7 +440,7 @@ static void DBusLaunchWithAllResults(
     urlList[urlListElements++] = strdup(uri.get());
   }
 
-  // When there isn't any uri to open pass search at least.
+  
   if (!childCount) {
     urlList[urlListElements++] = strdup("--search");
     urlList[urlListElements++] = strdup(aSearchResult->GetSearchTerm().get());
@@ -455,7 +473,7 @@ DBusHandlerResult DBusActivateResult(
                              &elements, DBUS_TYPE_UINT32, &timestamp,
                              DBUS_TYPE_INVALID) ||
       resultID == nullptr) {
-    reply = dbus_message_new_error(aMsg, DBUS_BUS_NAME, "Wrong argument");
+    reply = dbus_message_new_error(aMsg, GetDBusBusName(), "Wrong argument");
   } else {
     reply = dbus_message_new_method_return(aMsg);
     ActivateResultID(aSearchResult, resultID, timestamp);
@@ -479,7 +497,7 @@ DBusHandlerResult DBusLaunchSearch(
                              &stringArray, &elements, DBUS_TYPE_UINT32,
                              &timestamp, DBUS_TYPE_INVALID) ||
       elements == 0) {
-    reply = dbus_message_new_error(aMsg, DBUS_BUS_NAME, "Wrong argument");
+    reply = dbus_message_new_error(aMsg, GetDBusBusName(), "Wrong argument");
   } else {
     reply = dbus_message_new_method_return(aMsg);
     DBusLaunchWithAllResults(aSearchResult, timestamp);
