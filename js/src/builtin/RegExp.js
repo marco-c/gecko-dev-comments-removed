@@ -47,11 +47,6 @@ function $RegExpFlagsGetter() {
   }
 
   
-  if (R.unicodeSets) {
-    result += "v";
-  }
-
-  
   if (R.sticky) {
     result += "y";
   }
@@ -262,7 +257,6 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
     n++;
   }
 }
-
 
 
 

@@ -13,6 +13,7 @@
 
 
 
+
 testPropertyOfStrings({
   regExp: /^\p{RGI_Emoji_Modifier_Sequence}+$/v,
   expression: "\\p{RGI_Emoji_Modifier_Sequence}",
