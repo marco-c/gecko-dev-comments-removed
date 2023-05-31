@@ -49,10 +49,6 @@ const isCacheEnabled = Services.prefs.getBoolPref(
   false
 );
 
-
-
-const isWinNoCache = !isCacheEnabled && AppConstants.platform == "win";
-
 function loadHTMLFromFile(path) {
   
   
