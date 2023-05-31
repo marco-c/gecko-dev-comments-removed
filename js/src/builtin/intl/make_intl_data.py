@@ -6,7 +6,7 @@
 
 
 """ Usage:
-    make_intl_data.py langtags [cldr_core.zip]
+    make_intl_data.py langtags [cldr_common.zip]
     make_intl_data.py tzdata
     make_intl_data.py currency
     make_intl_data.py units
@@ -1432,6 +1432,23 @@ def readSupplementalData(core_file):
 
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        non_default_replacements = [
+            (language, script, region)
+            for (language, script, region) in non_default_replacements
+            if script is None
+            or (language, None, region) not in non_default_replacements
+        ]
+
+        
+        
         if non_default_replacements:
             complex_region_mappings_final[deprecated_region] = (
                 default,
@@ -2052,7 +2069,7 @@ def updateCLDRLangTags(args):
     print("\tCLDR version: %s" % version)
     print("\tDownload url: %s" % url)
     if filename is not None:
-        print("\tLocal CLDR core.zip file: %s" % filename)
+        print("\tLocal CLDR common.zip file: %s" % filename)
     print("\tOutput file: %s" % out)
     print("")
 
@@ -2067,11 +2084,11 @@ def updateCLDRLangTags(args):
 
     print("Processing CLDR data...")
     if filename is not None:
-        print("Always make sure you have the newest CLDR core.zip!")
+        print("Always make sure you have the newest CLDR common.zip!")
         with open(filename, "rb") as cldr_file:
             readFiles(cldr_file)
     else:
-        print("Downloading CLDR core.zip...")
+        print("Downloading CLDR common.zip...")
         with closing(urlopen(url)) as cldr_file:
             cldr_data = io.BytesIO(cldr_file.read())
             readFiles(cldr_data)
@@ -4045,7 +4062,7 @@ if __name__ == "__main__":
     parser_cldr_tags.add_argument(
         "--url",
         metavar="URL",
-        default="https://unicode.org/Public/cldr/<VERSION>/core.zip",
+        default="https://unicode.org/Public/cldr/<VERSION>/cldr-common-<VERSION>.0.zip",
         type=EnsureHttps,
         help="Download url CLDR data (default: %(default)s)",
     )
@@ -4057,7 +4074,7 @@ if __name__ == "__main__":
         help="Output file (default: %(default)s)",
     )
     parser_cldr_tags.add_argument(
-        "file", nargs="?", help="Local cldr-core.zip file, if omitted uses <URL>"
+        "file", nargs="?", help="Local cldr-common.zip file, if omitted uses <URL>"
     )
     parser_cldr_tags.set_defaults(func=updateCLDRLangTags)
 

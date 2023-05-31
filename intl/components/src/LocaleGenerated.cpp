@@ -434,53 +434,82 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
     }
   }
   else if (Region().EqualTo("172")) {
-    if (Language().EqualTo("hy") ||
+    if (Language().EqualTo("axm") ||
+        Language().EqualTo("hy") ||
+        Language().EqualTo("hyw") ||
+        Language().EqualTo("rmi") ||
         (Language().EqualTo("und") && Script().EqualTo("Armn"))) {
       SetRegion("AM");
     }
     else if (Language().EqualTo("az") ||
+             (Language().EqualTo("azb") && Script().EqualTo("Cyrl")) ||
+             (Language().EqualTo("azb") && Script().EqualTo("Latn")) ||
+             Language().EqualTo("bdk") ||
+             (Language().EqualTo("jdt") && Script().EqualTo("Latn")) ||
+             Language().EqualTo("kjj") ||
+             Language().EqualTo("kry") ||
+             (Language().EqualTo("rut") && Script().EqualTo("Latn")) ||
              Language().EqualTo("tkr") ||
              Language().EqualTo("tly") ||
              Language().EqualTo("ttt")) {
       SetRegion("AZ");
     }
-    else if (Language().EqualTo("be")) {
+    else if (Language().EqualTo("be") ||
+             (Language().EqualTo("rml") && Script().EqualTo("Cyrl"))) {
       SetRegion("BY");
     }
     else if (Language().EqualTo("ab") ||
+             Language().EqualTo("bbl") ||
+             Language().EqualTo("bhn") ||
+             Language().EqualTo("jge") ||
              Language().EqualTo("ka") ||
              (Language().EqualTo("ku") && Script().EqualTo("Yezi")) ||
+             Language().EqualTo("oav") ||
              Language().EqualTo("os") ||
+             Language().EqualTo("sva") ||
              (Language().EqualTo("und") && Script().EqualTo("Geor")) ||
              (Language().EqualTo("und") && Script().EqualTo("Yezi")) ||
+             Language().EqualTo("uum") ||
              Language().EqualTo("xmf")) {
       SetRegion("GE");
     }
-    else if (Language().EqualTo("ky")) {
+    else if (Language().EqualTo("dng") ||
+             Language().EqualTo("ky")) {
       SetRegion("KG");
     }
-    else if (Language().EqualTo("kk") ||
+    else if ((Language().EqualTo("ili") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("kk") ||
              (Language().EqualTo("ug") && Script().EqualTo("Cyrl"))) {
       SetRegion("KZ");
     }
     else if (Language().EqualTo("gag")) {
       SetRegion("MD");
     }
-    else if (Language().EqualTo("tg")) {
+    else if (Language().EqualTo("abh") ||
+             (Language().EqualTo("isk") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("paq") ||
+             Language().EqualTo("sgh") ||
+             Language().EqualTo("tg") ||
+             (Language().EqualTo("wbl") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("yai")) {
       SetRegion("TJ");
     }
-    else if (Language().EqualTo("tk")) {
+    else if (Language().EqualTo("chg") ||
+             Language().EqualTo("tk")) {
       SetRegion("TM");
     }
     else if (Language().EqualTo("crh") ||
              Language().EqualTo("got") ||
+             Language().EqualTo("jct") ||
              Language().EqualTo("ji") ||
+             (Language().EqualTo("kdr") && Script().EqualTo("Cyrl")) ||
              Language().EqualTo("rue") ||
              Language().EqualTo("uk") ||
              (Language().EqualTo("und") && Script().EqualTo("Goth"))) {
       SetRegion("UA");
     }
-    else if (Language().EqualTo("kaa") ||
+    else if (Language().EqualTo("auz") ||
+             Language().EqualTo("kaa") ||
              Language().EqualTo("sog") ||
              (Language().EqualTo("und") && Script().EqualTo("Chrs")) ||
              (Language().EqualTo("und") && Script().EqualTo("Sogd")) ||
@@ -494,7 +523,8 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
     }
   }
   else if (Region().EqualTo("200")) {
-    if (Language().EqualTo("sk")) {
+    if (Language().EqualTo("rmc") ||
+        Language().EqualTo("sk")) {
       SetRegion("SK");
     }
     else {
@@ -513,9 +543,16 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
   }
   else if (Region().EqualTo("536") ||
            Region().EqualTo("NT")) {
-    if (Language().EqualTo("akk") ||
+    if (Language().EqualTo("acm") ||
+        Language().EqualTo("akk") ||
+        Language().EqualTo("ayp") ||
+        Language().EqualTo("bjm") ||
         Language().EqualTo("ckb") ||
+        Language().EqualTo("kqd") ||
         (Language().EqualTo("ku") && Script().EqualTo("Arab")) ||
+        Language().EqualTo("mid") ||
+        Language().EqualTo("sdb") ||
+        Language().EqualTo("sdf") ||
         Language().EqualTo("syr") ||
         (Language().EqualTo("und") && Script().EqualTo("Syrc")) ||
         (Language().EqualTo("und") && Script().EqualTo("Xsux"))) {
@@ -530,7 +567,13 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
     if (Language().EqualTo("mh")) {
       SetRegion("MH");
     }
-    else if (Language().EqualTo("pau")) {
+    else if (Language().EqualTo("cal") ||
+             Language().EqualTo("tpv")) {
+      SetRegion("MP");
+    }
+    else if (Language().EqualTo("pau") ||
+             Language().EqualTo("sov") ||
+             Language().EqualTo("tox")) {
       SetRegion("PW");
     }
     else {
@@ -539,17 +582,28 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
   }
   else if (Region().EqualTo("810") ||
            Region().EqualTo("SU")) {
-    if (Language().EqualTo("hy") ||
+    if (Language().EqualTo("axm") ||
+        Language().EqualTo("hy") ||
+        Language().EqualTo("hyw") ||
+        Language().EqualTo("rmi") ||
         (Language().EqualTo("und") && Script().EqualTo("Armn"))) {
       SetRegion("AM");
     }
     else if (Language().EqualTo("az") ||
+             (Language().EqualTo("azb") && Script().EqualTo("Cyrl")) ||
+             (Language().EqualTo("azb") && Script().EqualTo("Latn")) ||
+             Language().EqualTo("bdk") ||
+             (Language().EqualTo("jdt") && Script().EqualTo("Latn")) ||
+             Language().EqualTo("kjj") ||
+             Language().EqualTo("kry") ||
+             (Language().EqualTo("rut") && Script().EqualTo("Latn")) ||
              Language().EqualTo("tkr") ||
              Language().EqualTo("tly") ||
              Language().EqualTo("ttt")) {
       SetRegion("AZ");
     }
-    else if (Language().EqualTo("be")) {
+    else if (Language().EqualTo("be") ||
+             (Language().EqualTo("rml") && Script().EqualTo("Cyrl"))) {
       SetRegion("BY");
     }
     else if (Language().EqualTo("et") ||
@@ -557,47 +611,68 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
       SetRegion("EE");
     }
     else if (Language().EqualTo("ab") ||
+             Language().EqualTo("bbl") ||
+             Language().EqualTo("bhn") ||
+             Language().EqualTo("jge") ||
              Language().EqualTo("ka") ||
              (Language().EqualTo("ku") && Script().EqualTo("Yezi")) ||
+             Language().EqualTo("oav") ||
              Language().EqualTo("os") ||
+             Language().EqualTo("sva") ||
              (Language().EqualTo("und") && Script().EqualTo("Geor")) ||
              (Language().EqualTo("und") && Script().EqualTo("Yezi")) ||
+             Language().EqualTo("uum") ||
              Language().EqualTo("xmf")) {
       SetRegion("GE");
     }
-    else if (Language().EqualTo("ky")) {
+    else if (Language().EqualTo("dng") ||
+             Language().EqualTo("ky")) {
       SetRegion("KG");
     }
-    else if (Language().EqualTo("kk") ||
+    else if ((Language().EqualTo("ili") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("kk") ||
              (Language().EqualTo("ug") && Script().EqualTo("Cyrl"))) {
       SetRegion("KZ");
     }
-    else if (Language().EqualTo("lt") ||
+    else if (Language().EqualTo("kdr") ||
+             Language().EqualTo("lt") ||
+             Language().EqualTo("olt") ||
              Language().EqualTo("sgs")) {
       SetRegion("LT");
     }
-    else if (Language().EqualTo("ltg") ||
+    else if (Language().EqualTo("liv") ||
+             Language().EqualTo("ltg") ||
              Language().EqualTo("lv")) {
       SetRegion("LV");
     }
     else if (Language().EqualTo("gag")) {
       SetRegion("MD");
     }
-    else if (Language().EqualTo("tg")) {
+    else if (Language().EqualTo("abh") ||
+             (Language().EqualTo("isk") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("paq") ||
+             Language().EqualTo("sgh") ||
+             Language().EqualTo("tg") ||
+             (Language().EqualTo("wbl") && Script().EqualTo("Cyrl")) ||
+             Language().EqualTo("yai")) {
       SetRegion("TJ");
     }
-    else if (Language().EqualTo("tk")) {
+    else if (Language().EqualTo("chg") ||
+             Language().EqualTo("tk")) {
       SetRegion("TM");
     }
     else if (Language().EqualTo("crh") ||
              Language().EqualTo("got") ||
+             Language().EqualTo("jct") ||
              Language().EqualTo("ji") ||
+             (Language().EqualTo("kdr") && Script().EqualTo("Cyrl")) ||
              Language().EqualTo("rue") ||
              Language().EqualTo("uk") ||
              (Language().EqualTo("und") && Script().EqualTo("Goth"))) {
       SetRegion("UA");
     }
-    else if (Language().EqualTo("kaa") ||
+    else if (Language().EqualTo("auz") ||
+             Language().EqualTo("kaa") ||
              Language().EqualTo("sog") ||
              (Language().EqualTo("und") && Script().EqualTo("Chrs")) ||
              (Language().EqualTo("und") && Script().EqualTo("Sogd")) ||
@@ -614,7 +689,11 @@ void mozilla::intl::Locale::PerformComplexRegionMappings() {
     if (Language().EqualTo("bs")) {
       SetRegion("BA");
     }
-    else if (Language().EqualTo("hr")) {
+    else if (Language().EqualTo("ckm") ||
+             Language().EqualTo("dlm") ||
+             Language().EqualTo("hr") ||
+             Language().EqualTo("ist") ||
+             Language().EqualTo("ruo")) {
       SetRegion("HR");
     }
     else if (Language().EqualTo("mk")) {
@@ -1057,19 +1136,19 @@ const char* mozilla::intl::Locale::ReplaceUnicodeExtensionType(
     return SearchUnicodeReplacement(types, aliases, type);
   }
   else if (IsUnicodeKey(key, "tz")) {
-    static const char* types[29] = {
-         "aqams"  ,  "cnckg"  ,  "cnhrb"  ,  "cnkhg"  ,   "cuba"  ,  "egypt"  ,
-          "eire"  ,   "est"   ,   "gaza"  ,   "gmt0"  , "hongkong",   "hst"   ,
-        "iceland" ,   "iran"  ,  "israel" , "jamaica" ,  "japan"  ,  "libya"  ,
-          "mst"   ,  "navajo" ,  "poland" , "portugal",   "prc"   ,   "roc"   ,
-          "rok"   ,  "turkey" ,   "uct"   , "usnavajo",   "zulu"  ,
+    static const char* types[30] = {
+         "aqams"  ,  "camtr"  ,  "cnckg"  ,  "cnhrb"  ,  "cnkhg"  ,   "cuba"  ,
+         "egypt"  ,   "eire"  ,   "est"   ,   "gaza"  ,   "gmt0"  , "hongkong",
+          "hst"   , "iceland" ,   "iran"  ,  "israel" , "jamaica" ,  "japan"  ,
+         "libya"  ,   "mst"   ,  "navajo" ,  "poland" , "portugal",   "prc"   ,
+          "roc"   ,   "rok"   ,  "turkey" ,   "uct"   , "usnavajo",   "zulu"  ,
     };
-    static const char* aliases[29] = {
-         "nzakl"  ,  "cnsha"  ,  "cnsha"  ,  "cnurc"  ,  "cuhav"  ,  "egcai"  ,
-         "iedub"  ,  "utcw05" , "gazastrp",   "gmt"   ,  "hkhkg"  ,  "utcw10" ,
-         "isrey"  ,  "irthr"  , "jeruslm" ,  "jmkin"  ,  "jptyo"  ,  "lytip"  ,
-         "utcw07" ,  "usden"  ,  "plwaw"  ,  "ptlis"  ,  "cnsha"  ,  "twtpe"  ,
-         "krsel"  ,  "trist"  ,   "utc"   ,  "usden"  ,   "utc"   ,
+    static const char* aliases[30] = {
+         "nzakl"  ,  "cator"  ,  "cnsha"  ,  "cnsha"  ,  "cnurc"  ,  "cuhav"  ,
+         "egcai"  ,  "iedub"  ,  "utcw05" , "gazastrp",   "gmt"   ,  "hkhkg"  ,
+         "utcw10" ,  "isrey"  ,  "irthr"  , "jeruslm" ,  "jmkin"  ,  "jptyo"  ,
+         "lytip"  ,  "utcw07" ,  "usden"  ,  "plwaw"  ,  "ptlis"  ,  "cnsha"  ,
+         "twtpe"  ,  "krsel"  ,  "trist"  ,   "utc"   ,  "usden"  ,   "utc"   ,
     };
     return SearchUnicodeReplacement(types, aliases, type);
   }
