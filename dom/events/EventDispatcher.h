@@ -169,7 +169,12 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
     }
   }
 
-  void IgnoreCurrentTargetBecauseOfShadowDOMRetargeting();
+  void IgnoreCurrentTargetBecauseOfShadowDOMRetargeting() {
+    mCanHandle = false;
+    mIgnoreBecauseOfShadowDOM = true;
+    SetParentTarget(nullptr, false);
+    mEventTargetAtParent = nullptr;
+  }
 
   
 
