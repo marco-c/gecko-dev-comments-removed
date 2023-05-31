@@ -45,6 +45,10 @@ int32_t HyperTextAccessibleBase::GetChildIndexAtOffset(uint32_t aOffset) const {
   
   const Accessible* thisAcc = Acc();
   uint32_t childCount = thisAcc->ChildCount();
+  
+  
+  
+  offsets.SetCapacity(childCount);
   while (offsets.Length() < childCount) {
     Accessible* child = thisAcc->ChildAt(offsets.Length());
     lastOffset += static_cast<int32_t>(nsAccUtils::TextLength(child));
@@ -102,6 +106,10 @@ int32_t HyperTextAccessibleBase::GetChildOffset(uint32_t aChildIndex,
 
   
   const Accessible* thisAcc = Acc();
+  
+  
+  
+  offsets.SetCapacity(thisAcc->ChildCount());
   uint32_t lastOffset = offsets.IsEmpty() ? 0 : offsets[offsets.Length() - 1];
   while (offsets.Length() < aChildIndex) {
     Accessible* child = thisAcc->ChildAt(offsets.Length());
