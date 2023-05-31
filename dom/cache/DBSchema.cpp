@@ -1363,6 +1363,22 @@ DeleteAllCacheEntries(mozIStorageConnection& aConn, CacheId& aCacheId) {
   auto& deletedSecurityIdList = std::get<1>(result);
   auto& deletedPaddingSize = std::get<2>(result);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsAutoCString query(
       "SELECT "
       "request_body_id, "
@@ -1429,7 +1445,10 @@ DeleteAllCacheEntries(mozIStorageConnection& aConn, CacheId& aCacheId) {
                            MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 3));
 
             MOZ_DIAGNOSTIC_ASSERT(paddingSize >= 0);
-            MOZ_DIAGNOSTIC_ASSERT(paddingSize + deletedPaddingSize <= INT_MAX);
+
+            
+            MOZ_DIAGNOSTIC_ASSERT(INT64_MAX - deletedPaddingSize >=
+                                  paddingSize);
 
             deletedPaddingSize += paddingSize;
           }
