@@ -14,6 +14,179 @@
 
 
 
+const PageAction = Object.freeze({
+  NO_CHANGE: "NO_CHANGE",
+  HIDE_BUTTON: "HIDE_BUTTON",
+  RESTORE_PAGE: "RESTORE_PAGE",
+  TRANSLATE_PAGE: "TRANSLATE_PAGE",
+});
+
+
+
+
+
+
+class CheckboxStateMachine {
+  
+
+
+
+
+  #translationsActive = false;
+
+  
+
+
+
+
+
+  #alwaysTranslateLanguage = false;
+
+  
+
+
+
+
+
+  #neverTranslateLanguage = false;
+
+  
+
+
+
+
+
+  #neverTranslateSite = false;
+
+  
+
+
+
+
+
+  constructor(
+    translationsActive,
+    alwaysTranslateLanguage,
+    neverTranslateLanguage,
+    neverTranslateSite
+  ) {
+    this.#translationsActive = translationsActive;
+    this.#alwaysTranslateLanguage = alwaysTranslateLanguage;
+    this.#neverTranslateLanguage = neverTranslateLanguage;
+    this.#neverTranslateSite = neverTranslateSite;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static #computeState(
+    translationsActive,
+    alwaysTranslateLanguage,
+    neverTranslateLanguage,
+    neverTranslateSite
+  ) {
+    return (
+      (translationsActive << 3) |
+      (alwaysTranslateLanguage << 2) |
+      (neverTranslateLanguage << 1) |
+      neverTranslateSite
+    );
+  }
+
+  
+
+
+
+
+  #state() {
+    return CheckboxStateMachine.#computeState(
+      Number(this.#translationsActive),
+      Number(this.#alwaysTranslateLanguage),
+      Number(this.#neverTranslateLanguage),
+      Number(this.#neverTranslateSite)
+    );
+  }
+
+  
+
+
+
+
+
+  onAlwaysTranslateLanguage() {
+    switch (this.#state()) {
+      case CheckboxStateMachine.#computeState(1, 1, 0, 1):
+      case CheckboxStateMachine.#computeState(1, 1, 0, 0): {
+        return PageAction.RESTORE_PAGE;
+      }
+      case CheckboxStateMachine.#computeState(0, 0, 1, 0):
+      case CheckboxStateMachine.#computeState(0, 0, 0, 0): {
+        return PageAction.TRANSLATE_PAGE;
+      }
+    }
+    return PageAction.NO_CHANGE;
+  }
+
+  
+
+
+
+
+
+  onNeverTranslateLanguage() {
+    switch (this.#state()) {
+      case CheckboxStateMachine.#computeState(1, 1, 0, 1):
+      case CheckboxStateMachine.#computeState(1, 1, 0, 0):
+      case CheckboxStateMachine.#computeState(1, 0, 0, 1):
+      case CheckboxStateMachine.#computeState(1, 0, 0, 0): {
+        return PageAction.RESTORE_PAGE;
+      }
+      case CheckboxStateMachine.#computeState(0, 1, 0, 0):
+      case CheckboxStateMachine.#computeState(0, 0, 0, 0): {
+        return PageAction.HIDE_BUTTON;
+      }
+    }
+    return PageAction.NO_CHANGE;
+  }
+
+  
+
+
+
+
+
+  onNeverTranslateSite() {
+    switch (this.#state()) {
+      case CheckboxStateMachine.#computeState(1, 1, 0, 0):
+      case CheckboxStateMachine.#computeState(1, 0, 1, 0):
+      case CheckboxStateMachine.#computeState(1, 0, 0, 0): {
+        return PageAction.RESTORE_PAGE;
+      }
+      case CheckboxStateMachine.#computeState(0, 1, 0, 0):
+      case CheckboxStateMachine.#computeState(0, 0, 0, 0): {
+        return PageAction.HIDE_BUTTON;
+      }
+      case CheckboxStateMachine.#computeState(0, 1, 0, 1): {
+        return PageAction.TRANSLATE_PAGE;
+      }
+    }
+    return PageAction.NO_CHANGE;
+  }
+}
+
+
+
+
+
 
 
 
@@ -85,21 +258,31 @@ var TranslationsPanel = new (class {
       
 
 
-      const getter = (name, id) => {
+
+      const getter = (name, discriminator) => {
         let element;
         Object.defineProperty(this.#lazyElements, name, {
           get: () => {
             if (!element) {
-              element = document.getElementById(id);
+              if (discriminator[0] === ".") {
+                
+                element = document.querySelector(discriminator);
+              } else {
+                
+                element = document.getElementById(discriminator);
+              }
             }
             if (!element) {
-              throw new Error(`Could not find "${name}" at "#${id}".`);
+              throw new Error(
+                `Could not find "${name}" at "#${discriminator}".`
+              );
             }
             return element;
           },
         });
       };
 
+      
       getter("appMenuButton", "PanelUI-menu-button");
       getter("button", "translations-button");
       getter("buttonLocale", "translations-button-locale");
@@ -117,6 +300,17 @@ var TranslationsPanel = new (class {
       getter("restoreButton", "translations-panel-restore-button");
       getter("toMenuList", "translations-panel-to");
       getter("unsupportedHint", "translations-panel-error-unsupported-hint");
+
+      
+      getter(
+        "alwaysTranslateLanguageMenuItem",
+        ".always-translate-language-menuitem"
+      );
+      getter(
+        "neverTranslateLanguageMenuItem",
+        ".never-translate-language-menuitem"
+      );
+      getter("neverTranslateSiteMenuItem", ".never-translate-site-menuitem");
     }
 
     return this.#lazyElements;
@@ -694,10 +888,64 @@ var TranslationsPanel = new (class {
   
 
 
+
+
+
+
+  createCheckboxStateMachine() {
+    const {
+      alwaysTranslateLanguageMenuItem,
+      neverTranslateLanguageMenuItem,
+      neverTranslateSiteMenuItem,
+    } = this.elements;
+
+    const alwaysTranslateLanguage =
+      alwaysTranslateLanguageMenuItem.getAttribute("checked") === "true";
+    const neverTranslateLanguage =
+      neverTranslateLanguageMenuItem.getAttribute("checked") === "true";
+    const neverTranslateSite =
+      neverTranslateSiteMenuItem.getAttribute("checked") === "true";
+
+    return new CheckboxStateMachine(
+      this.#isTranslationsActive(),
+      alwaysTranslateLanguage,
+      neverTranslateLanguage,
+      neverTranslateSite
+    );
+  }
+
+  
+
+
   openManageLanguages() {
     const window =
       gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
     window.openTrustedLinkIn("about:preferences#general-translations", "tab");
+  }
+
+  
+
+
+
+
+  async #doPageAction(pageAction) {
+    switch (pageAction) {
+      case PageAction.NO_CHANGE: {
+        break;
+      }
+      case PageAction.HIDE_BUTTON: {
+        this.#hideTranslationsButton();
+        break;
+      }
+      case PageAction.RESTORE_PAGE: {
+        await this.onRestore();
+        break;
+      }
+      case PageAction.TRANSLATE_PAGE: {
+        await this.onTranslate();
+        break;
+      }
+    }
   }
 
   
@@ -710,20 +958,11 @@ var TranslationsPanel = new (class {
     if (!docLangTag) {
       throw new Error("Expected to have a document language tag.");
     }
-    const toggledOn =
-      TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
-    const translationsActive = this.#isTranslationsActive();
+    const pageAction =
+      this.createCheckboxStateMachine().onAlwaysTranslateLanguage();
+    TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
     this.#updateSettingsMenuLanguageCheckboxStates();
-
-    if (toggledOn && !translationsActive) {
-      await this.onTranslate();
-    } else if (!toggledOn && translationsActive) {
-      await this.onRestore();
-    }
-
-    
-    
-    
+    await this.#doPageAction(pageAction);
   }
 
   
@@ -736,14 +975,11 @@ var TranslationsPanel = new (class {
     if (!docLangTag) {
       throw new Error("Expected to have a document language tag.");
     }
+    const pageAction =
+      this.createCheckboxStateMachine().onNeverTranslateLanguage();
     TranslationsParent.toggleNeverTranslateLanguagePref(docLangTag);
     this.#updateSettingsMenuLanguageCheckboxStates();
-
-    if (this.#isTranslationsActive()) {
-      await this.onRestore();
-    } else {
-      this.#hideTranslationsButton();
-    }
+    await this.#doPageAction(pageAction);
   }
 
   
@@ -752,14 +988,10 @@ var TranslationsPanel = new (class {
 
 
   async onNeverTranslateSite() {
+    const pageAction = this.createCheckboxStateMachine().onNeverTranslateSite();
     await this.#getTranslationsActor().toggleNeverTranslateSitePermissions();
     this.#updateSettingsMenuSiteCheckboxStates();
-
-    if (this.#isTranslationsActive()) {
-      await this.onRestore();
-    } else {
-      this.#hideTranslationsButton();
-    }
+    await this.#doPageAction(pageAction);
   }
 
   
