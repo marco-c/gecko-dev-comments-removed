@@ -6874,7 +6874,19 @@ EventTarget* HTMLEditor::GetDOMEventTarget() const {
   
   
   MOZ_ASSERT(IsInitialized(), "The HTMLEditor has not been initialized yet");
-  return GetDocument();
+  Document* doc = GetDocument();
+  if (!doc) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
+    return win->GetParentTarget();
+  }
+  return nullptr;
 }
 
 bool HTMLEditor::ShouldReplaceRootElement() const {
