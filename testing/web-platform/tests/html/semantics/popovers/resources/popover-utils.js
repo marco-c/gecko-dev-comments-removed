@@ -18,7 +18,7 @@ async function clickOn(element) {
 async function sendTab() {
   await waitForRender();
   const kTab = '\uE004';
-  await new test_driver.send_keys(document.body,kTab);
+  await new test_driver.send_keys(document.documentElement,kTab);
   await waitForRender();
 }
 
@@ -34,14 +34,14 @@ async function sendTab() {
 
 
 
-async function sendEscape(element) {
+async function sendEscape() {
   await waitForRender();
-  await new test_driver.send_keys(element ? element : document.body,'\uE00C'); 
+  await new test_driver.send_keys(document.documentElement,'\uE00C'); 
   await waitForRender();
 }
 async function sendEnter() {
   await waitForRender();
-  await new test_driver.send_keys(document.body,'\uE007'); 
+  await new test_driver.send_keys(document.documentElement,'\uE007'); 
   await waitForRender();
 }
 function isElementVisible(el) {
