@@ -70,7 +70,8 @@ async function runSelectURL(href, keylist = [], resolve_to_config = false) {
 async function generateURNFromFledgeRawURL(href,
   nested_urls,
   resolve_to_config = false,
-  ad_with_size = false) {
+  ad_with_size = false,
+  requested_size = null) {
   const bidding_token = token();
   const seller_token = token();
 
@@ -106,13 +107,16 @@ async function generateURNFromFledgeRawURL(href,
   
   navigator.joinAdInterestGroup(interestGroup, 3000000);
 
-  const auctionConfig = {
+  let auctionConfig = {
     seller: location.origin,
     interestGroupBuyers: [location.origin],
     decisionLogicUrl: new URL(FLEDGE_DECISION_URL, location.origin),
     auctionSignals: {biddingToken: bidding_token, sellerToken: seller_token},
-    resolveToConfig: resolve_to_config,
+    resolveToConfig: resolve_to_config
   };
+  if (requested_size) {
+    auctionConfig['requestedSize'] = {width: requested_size[0], height: requested_size[1]};
+  }
   return navigator.runAdAuction(auctionConfig);
 }
 
@@ -133,9 +137,9 @@ async function generateURNFromFledgeRawURL(href,
 
 
 
-async function generateURNFromFledge(href, keylist, nested_urls=[], resolve_to_config = false, ad_with_size = false) {
+async function generateURNFromFledge(href, keylist, nested_urls=[], resolve_to_config = false, ad_with_size = false, requested_size = null) {
   const full_url = generateURL(href, keylist);
-  return generateURNFromFledgeRawURL(full_url, nested_urls, resolve_to_config, ad_with_size);
+  return generateURNFromFledgeRawURL(full_url, nested_urls, resolve_to_config, ad_with_size, requested_size);
 }
 
 
@@ -240,23 +244,23 @@ function attachContext(object_constructor, html, headers, origin) {
 
 
 
-async function attachOpaqueContext(generator_api, resolve_to_config, ad_with_size, object_constructor, html, headers, origin) {
+async function attachOpaqueContext(generator_api, resolve_to_config, ad_with_size, requested_size, object_constructor, html, headers, origin) {
   const [uuid, url] = generateRemoteContextURL(headers, origin);
-  const id = await (generator_api == 'fledge' ? generateURNFromFledge(url, [], [], resolve_to_config, ad_with_size) : runSelectURL(url, [], resolve_to_config));
+  const id = await (generator_api == 'fledge' ? generateURNFromFledge(url, [], [], resolve_to_config, ad_with_size, requested_size) : runSelectURL(url, [], resolve_to_config));
   const object = object_constructor(id);
   return buildRemoteContextForObject(object, uuid, html);
 }
 
-function attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size, frame_constructor, html, headers, origin) {
+function attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size, requested_size, frame_constructor, html, headers, origin) {
   generator_api = generator_api.toLowerCase();
   if (generator_api == 'fledge' || generator_api == 'sharedstorage') {
-    return attachOpaqueContext(generator_api, resolve_to_config, ad_with_size, frame_constructor, html, headers, origin);
+    return attachOpaqueContext(generator_api, resolve_to_config, ad_with_size, requested_size, frame_constructor, html, headers, origin);
   } else {
     return attachContext(frame_constructor, html, headers, origin);
   }
 }
 
-function attachFrameContext(element_name, generator_api, resolve_to_config, ad_with_size, html, headers, attributes, origin) {
+function attachFrameContext(element_name, generator_api, resolve_to_config, ad_with_size, requested_size, html, headers, attributes, origin) {
   frame_constructor = (id) => {
     frame = document.createElement(element_name);
     attributes.forEach(attribute => {
@@ -273,10 +277,10 @@ function attachFrameContext(element_name, generator_api, resolve_to_config, ad_w
     document.body.append(frame);
     return frame;
   };
-  return attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size, frame_constructor, html, headers, origin);
+  return attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size, requested_size, frame_constructor, html, headers, origin);
 }
 
-function replaceFrameContext(frame_proxy, {generator_api="", resolve_to_config=false, html="", headers=[], origin=""}={}) {
+function replaceFrameContext(frame_proxy, {generator_api="", resolve_to_config=false, ad_with_size=false, requested_size=null, html="", headers=[], origin=""}={}) {
   frame_constructor = (id) => {
     if (frame_proxy.element.nodeName == "IFRAME") {
       frame_proxy.element.src = id;
@@ -288,7 +292,7 @@ function replaceFrameContext(frame_proxy, {generator_api="", resolve_to_config=f
     }
     return frame_proxy.element;
   };
-  return attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size=false, frame_constructor, html, headers, origin);
+  return attachPotentiallyOpaqueContext(generator_api, resolve_to_config, ad_with_size, requested_size, frame_constructor, html, headers, origin);
 }
 
 
@@ -307,14 +311,16 @@ function replaceFrameContext(frame_proxy, {generator_api="", resolve_to_config=f
 
 
 
-function attachFencedFrameContext({generator_api="", resolve_to_config=false, ad_with_size=false, html = "", headers=[], attributes=[], origin=""}={}) {
-  return attachFrameContext('fencedframe', generator_api, resolve_to_config, ad_with_size, html, headers, attributes, origin);
+
+
+function attachFencedFrameContext({generator_api="", resolve_to_config=false, ad_with_size=false, requested_size=null, html = "", headers=[], attributes=[], origin=""}={}) {
+  return attachFrameContext('fencedframe', generator_api, resolve_to_config, ad_with_size, requested_size, html, headers, attributes, origin);
 }
 
 
 
 function attachIFrameContext({generator_api="", html="", headers=[], attributes=[], origin=""}={}) {
-  return attachFrameContext('iframe', generator_api, resolve_to_config=false, ad_with_size=false, html, headers, attributes, origin);
+  return attachFrameContext('iframe', generator_api, resolve_to_config=false, ad_with_size=false, requested_size=null, html, headers, attributes, origin);
 }
 
 
