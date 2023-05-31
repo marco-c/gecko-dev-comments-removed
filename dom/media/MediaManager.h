@@ -393,8 +393,11 @@ class MediaManager final : public nsIMediaManagerService,
   bool mCamerasMuted = false;
   bool mMicrophonesMuted = false;
 
+ public:
   
   const RefPtr<TaskQueue> mMediaThread;
+
+ private:
   nsCOMPtr<nsIAsyncShutdownBlocker> mShutdownBlocker;
 
   
