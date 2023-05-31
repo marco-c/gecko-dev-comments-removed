@@ -4,6 +4,7 @@
 
 
 
+#include <limits>
 #include <type_traits>
 
 #include "TimeUnits.h"
@@ -36,25 +37,19 @@ TimeUnit TimeUnit::FromSeconds(double aValue, int64_t aBase) {
   
   double inBase = aValue * static_cast<double>(aBase);
   if (std::abs(inBase) >
-      static_cast<double>(std::numeric_limits<int64_t>::max())) {
+          static_cast<double>(std::numeric_limits<int64_t>::max()) ||
+      inBase > std::pow(2, std::numeric_limits<double>::digits) - 1) {
     NS_WARNING(nsPrintfCString("Warning: base %" PRId64
                                " is too high to represent %lfs accurately: "
                                "overflows int64_t",
+                               " is too high to represent %lfs accurately,"
+                               " returning infinity.",
                                aBase, aValue)
                    .get());
     if (inBase > 0) {
       return TimeUnit::FromInfinity();
     }
     return TimeUnit::FromNegativeInfinity();
-  }
-  if (inBase > std::pow(2, std::numeric_limits<double>::digits) - 1) {
-    NS_WARNING(
-        nsPrintfCString("Warning base %" PRId64
-                        " is too high to represent %lfs accurately: greater "
-                        "than the max integer representable in a double.",
-                        aBase, aValue)
-            .get());
-    MOZ_DIAGNOSTIC_ASSERT(false);
   }
   return TimeUnit(static_cast<int64_t>(inBase), aBase);
 }
@@ -426,7 +421,15 @@ int64_t TimeUnit::ToCommonUnit(int64_t aRatio) const {
   double baseFloating = AssertedCast<double>(mBase);
   double ticksFloating = static_cast<double>(mTicks.value());
   double approx = ticksFloating * (ratioFloating / baseFloating);
-  return AssertedCast<int64_t>(approx);
+  
+  
+  if (approx > static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    return std::numeric_limits<int64_t>::max();
+  }
+  if (approx < static_cast<double>(std::numeric_limits<int64_t>::lowest())) {
+    return std::numeric_limits<int64_t>::lowest();
+  }
+  return static_cast<int64_t>(approx);
 }
 
 
