@@ -81,10 +81,6 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   const WritingMode wm = aReflowInput.GetWritingMode();
 
   
-  const nsSize physPageSize = aPresContext->GetPageSize();
-  const LogicalSize pageSize(wm, physPageSize);
-
-  
   
   
   uint32_t numPagesOnThisSheet = 0;
@@ -118,6 +114,14 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
       pageFrame->SetIndexOnSheet(numPagesOnThisSheet);
       numPagesOnThisSheet++;
     }
+
+    
+    
+    
+    
+    
+    const nsSize physPageSize = pageFrame->ComputePageSize();
+    const LogicalSize pageSize(wm, physPageSize);
 
     ReflowInput pageReflowInput(aPresContext, aReflowInput, pageFrame,
                                 pageSize);
