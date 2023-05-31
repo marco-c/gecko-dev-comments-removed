@@ -10,11 +10,9 @@ function waitForAtLeastOneFrame() {
     
     
     
-    
-    
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        setTimeout(resolve, 0);
+        resolve();
       });
     });
   });
