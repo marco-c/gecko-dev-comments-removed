@@ -916,6 +916,10 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   void PreloadLocalStorage();
 
+  mozilla::CSSPoint ScreenEdgeSlop();
+  mozilla::CSSCoord ScreenEdgeSlopX() { return ScreenEdgeSlop().X(); }
+  mozilla::CSSCoord ScreenEdgeSlopY() { return ScreenEdgeSlop().Y(); }
+
   
   mozilla::CSSIntPoint GetScreenXY(mozilla::dom::CallerType aCallerType,
                                    mozilla::ErrorResult& aError);

@@ -177,6 +177,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntSize GetClientSize() override;
   LayoutDeviceIntPoint GetClientOffset() override { return mClientOffset; }
+  LayoutDeviceIntPoint GetScreenEdgeSlop() override;
 
   
   

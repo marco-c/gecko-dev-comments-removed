@@ -136,7 +136,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   
-  inline bool HasActiveDocument();
+  inline bool HasActiveDocument() const;
 
   
   

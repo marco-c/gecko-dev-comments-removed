@@ -953,6 +953,12 @@ class nsIWidget : public nsISupports {
   
 
 
+
+  virtual LayoutDeviceIntPoint GetScreenEdgeSlop() { return {}; }
+
+  
+
+
   virtual LayoutDeviceIntSize GetClientSize() {
     
     
