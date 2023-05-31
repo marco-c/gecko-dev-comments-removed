@@ -12,11 +12,7 @@
 #include "nsThreadUtils.h"
 #include "nsIWeakReferenceUtils.h"
 
-class nsINode;
-
 namespace mozilla::dom {
-
-class Element;
 
 
 enum class PopoverAttributeState : uint8_t {
@@ -70,14 +66,10 @@ class PopoverData {
     mPreviouslyFocusedElement = aPreviouslyFocusedElement;
   }
 
-  RefPtr<Element> GetInvoker() const {
-    return do_QueryReferent(mInvokerElement);
+  bool HasPopoverInvoker() const { return mHasPopoverInvoker; }
+  void SetHasPopoverInvoker(bool aHasPopoverInvoker) {
+    mHasPopoverInvoker = aHasPopoverInvoker;
   }
-  void SetInvoker(Element* aInvokerElement) {
-    mInvokerElement =
-        do_GetWeakReference(static_cast<nsINode*>(aInvokerElement));
-  }
-
   PopoverToggleEventTask* GetToggleEventTask() const { return mTask; }
   void SetToggleEventTask(PopoverToggleEventTask* aTask) { mTask = aTask; }
   void ClearToggleEventTask() { mTask = nullptr; }
@@ -95,10 +87,7 @@ class PopoverData {
 
   
   
-  
-  
-  
-  nsWeakPtr mInvokerElement;
+  bool mHasPopoverInvoker = false;
   bool mIsHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
 };
