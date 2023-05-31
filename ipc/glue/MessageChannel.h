@@ -405,7 +405,7 @@ class MessageChannel : HasResultCodes {
   
   
   
-  bool WaitForSyncNotify(bool aHandleWindowsMessages) MOZ_REQUIRES(*mMonitor);
+  bool WaitForSyncNotify() MOZ_REQUIRES(*mMonitor);
 
   bool WaitResponse(bool aWaitTimedOut);
 
