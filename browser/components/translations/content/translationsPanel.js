@@ -337,6 +337,29 @@ var TranslationsPanel = new (class {
 
 
 
+  async #updateSettingsMenuLanguageCheckboxStates() {
+    const docLangTag = await this.#getDocLangTag();
+
+    const alwaysTranslateLanguage =
+      TranslationsParent.shouldAlwaysTranslateLanguage(docLangTag);
+
+    const { panel } = this.elements;
+    const alwaysTranslateMenuItems = panel.querySelectorAll(
+      ".always-translate-language-menuitem"
+    );
+
+    for (const menuitem of alwaysTranslateMenuItems) {
+      menuitem.setAttribute(
+        "checked",
+        alwaysTranslateLanguage ? "true" : "false"
+      );
+    }
+  }
+
+  
+
+
+
   async #populateSettingsMenuItems() {
     const docLangTag = await this.#getDocLangTag();
     const displayNames = new Services.intl.DisplayNames(undefined, {
@@ -363,6 +386,8 @@ var TranslationsPanel = new (class {
         language: docLangDisplayName,
       });
     }
+
+    await this.#updateSettingsMenuLanguageCheckboxStates();
   }
 
   
@@ -492,6 +517,7 @@ var TranslationsPanel = new (class {
 
 
   openSettingsPopup(button) {
+    this.#updateSettingsMenuLanguageCheckboxStates();
     const popup = button.querySelector("menupopup");
     popup.openPopup(button);
   }
@@ -503,6 +529,17 @@ var TranslationsPanel = new (class {
     const window =
       gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
     window.openTrustedLinkIn("about:preferences#general-translations", "tab");
+  }
+
+  
+
+
+
+
+  async onAlwaysTranslateLanguage() {
+    const docLangTag = await this.#getDocLangTag();
+    TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
+    await this.#updateSettingsMenuLanguageCheckboxStates();
   }
 
   
@@ -520,7 +557,7 @@ var TranslationsPanel = new (class {
 
 
 
-  handleEvent = event => {
+  handleEvent = async event => {
     switch (event.type) {
       case "TranslationsParent:LanguageState":
         const {
