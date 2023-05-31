@@ -1985,6 +1985,39 @@ public:
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void visitHeuristicResult(SourceLocation Loc, const NamedDecl *ND) {
+    if (const TemplateDecl *TD = dyn_cast<TemplateDecl>(ND)) {
+      ND = TD->getTemplatedDecl();
+    }
+    QualType MaybeType;
+    const char *SyntaxKind = nullptr;
+    if (const FunctionDecl *F = dyn_cast<FunctionDecl>(ND)) {
+      MaybeType = F->getType();
+      SyntaxKind = "function";
+    } else if (const FieldDecl *F = dyn_cast<FieldDecl>(ND)) {
+      MaybeType = F->getType();
+      SyntaxKind = "field";
+    } else if (const EnumConstantDecl *E = dyn_cast<EnumConstantDecl>(ND)) {
+      MaybeType = E->getType();
+      SyntaxKind = "enum";
+    }
+    if (SyntaxKind) {
+      std::string Mangled = getMangledName(CurMangleContext, ND);
+      visitIdentifier("use", SyntaxKind, getQualifiedName(ND), Loc, Mangled,
+                      MaybeType, getContext(Loc));
+    }
+  }
+
   bool VisitOverloadExpr(OverloadExpr *E) {
     SourceLocation Loc = E->getExprLoc();
     normalizeLocation(&Loc);
@@ -1993,14 +2026,7 @@ public:
     }
 
     for (auto *Candidate : E->decls()) {
-      if (TemplateDecl *TD = dyn_cast<TemplateDecl>(Candidate)) {
-        Candidate = TD->getTemplatedDecl();
-      }
-      if (FunctionDecl *F = dyn_cast<FunctionDecl>(Candidate)) {
-        std::string Mangled = getMangledName(CurMangleContext, F);
-        visitIdentifier("use", "function", getQualifiedName(F), Loc, Mangled,
-                        F->getType(), getContext(Loc));
-      }
+      visitHeuristicResult(Loc, Candidate);
     }
     return true;
   }
@@ -2014,18 +2040,7 @@ public:
 
     
     for (const NamedDecl *D : Resolver->resolveMemberExpr(E)) {
-      if (const TemplateDecl *TD = dyn_cast<TemplateDecl>(D)) {
-        D = TD->getTemplatedDecl();
-      }
-      if (const FunctionDecl *F = dyn_cast<FunctionDecl>(D)) {
-        std::string Mangled = getMangledName(CurMangleContext, F);
-        visitIdentifier("use", "function", getQualifiedName(F), Loc, Mangled,
-                        F->getType(), getContext(Loc));
-      } else if (const FieldDecl *F = dyn_cast<FieldDecl>(D)) {
-        std::string Mangled = getMangledName(CurMangleContext, F);
-        visitIdentifier("use", "field", getQualifiedName(F), Loc, Mangled,
-                        F->getType(), getContext(Loc));
-      }
+      visitHeuristicResult(Loc, D);
     }
 
     
@@ -2044,11 +2059,7 @@ public:
     }
 
     for (const NamedDecl *D : Resolver->resolveDeclRefExpr(E)) {
-      if (const EnumConstantDecl *E = dyn_cast<EnumConstantDecl>(D)) {
-        std::string Mangled = getMangledName(CurMangleContext, E);
-        visitIdentifier("use", "enum", getQualifiedName(E), Loc, Mangled,
-                        E->getType(), getContext(Loc));
-      }
+      visitHeuristicResult(Loc, D);
     }
     return true;
   }
