@@ -88,6 +88,11 @@ class TimeUnit final {
       : mTicks(aTicks), mBase(USECS_PER_S) {}
 
   
+  static constexpr int64_t MaxTicks() {
+    return std::numeric_limits<int64_t>::max() - 1;
+  }
+
+  
   static TimeUnit FromSeconds(double aValue, int64_t aBase = USECS_PER_S);
   static constexpr TimeUnit FromMicroseconds(int64_t aValue) {
     return TimeUnit(aValue, USECS_PER_S);
