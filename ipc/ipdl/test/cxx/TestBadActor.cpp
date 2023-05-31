@@ -19,7 +19,7 @@ void TestBadActorParent::Main() {
 
 
 
-void TestBadActorParent::HandleFatalError(const char* aErrorMsg) const {
+void TestBadActorParent::HandleFatalError(const char* aErrorMsg) {
   if (!!strcmp(aErrorMsg, "incoming message racing with actor deletion")) {
     fail("wrong fatal error");
   }
