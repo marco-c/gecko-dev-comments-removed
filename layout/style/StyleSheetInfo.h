@@ -26,7 +26,7 @@ struct URLExtraData;
 
 
 struct StyleSheetInfo final {
-  typedef dom::ReferrerPolicy ReferrerPolicy;
+  using ReferrerPolicy = dom::ReferrerPolicy;
 
   StyleSheetInfo(CORSMode aCORSMode, const dom::SRIMetadata& aIntegrity,
                  css::SheetParsingMode aParsingMode);
@@ -49,7 +49,7 @@ struct StyleSheetInfo final {
   nsCOMPtr<nsIURI> mOriginalSheetURI;  
   nsCOMPtr<nsIURI> mBaseURI;           
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  CORSMode mCORSMode;
+  const CORSMode mCORSMode;
   
   
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
@@ -91,7 +91,7 @@ struct StyleSheetInfo final {
   RefPtr<URLExtraData> mURLData;
 
 #ifdef DEBUG
-  bool mPrincipalSet;
+  bool mPrincipalSet = false;
 #endif
 };
 

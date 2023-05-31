@@ -544,7 +544,7 @@ class Loader final {
       CORSMode aCORSMode, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId);
 
-  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&);
+  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*);
 
   
   

@@ -1688,18 +1688,25 @@ void Loader::MarkLoadTreeFailed(SheetLoadData& aLoadData,
   } while (data);
 }
 
-RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(const nsAString& aBuffer) {
+RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
+    const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal) {
   auto result = mInlineSheets.Lookup(aBuffer);
   if (!result) {
     return nullptr;
   }
-  if (result.Data()->HasModifiedRules()) {
+  StyleSheet* sheet = result.Data();
+  if (NS_WARN_IF(sheet->HasModifiedRules())) {
     
     
     result.Remove();
     return nullptr;
   }
-  return result.Data()->Clone(nullptr, nullptr);
+  if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
+    
+    
+    return nullptr;
+  }
+  return sheet->Clone(nullptr, nullptr);
 }
 
 void Loader::MaybeNotifyPreloadUsed(SheetLoadData& aData) {
@@ -1748,11 +1755,23 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   nsIURI* originalURI = nullptr;
 
   MOZ_ASSERT(aInfo.mIntegrity.IsEmpty());
-
   nsIPrincipal* loadingPrincipal = LoaderPrincipal();
   nsIPrincipal* principal = aInfo.mTriggeringPrincipal
                                 ? aInfo.mTriggeringPrincipal.get()
                                 : loadingPrincipal;
+  nsIPrincipal* sheetPrincipal = [&] {
+    
+    
+    
+    
+    
+    
+    if (aInfo.mTriggeringPrincipal) {
+      return BasePrincipal::Cast(aInfo.mTriggeringPrincipal)
+          ->PrincipalToInherit();
+    }
+    return LoaderPrincipal();
+  }();
 
   
   
@@ -1761,7 +1780,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
       aInfo.mContent->IsInShadowTree();
   RefPtr<StyleSheet> sheet;
   if (isWorthCaching) {
-    sheet = LookupInlineSheetInCache(aBuffer);
+    sheet = LookupInlineSheetInCache(aBuffer, sheetPrincipal);
   }
   const bool sheetFromCache = !!sheet;
   if (!sheet) {
@@ -1771,17 +1790,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     nsIReferrerInfo* referrerInfo =
         aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
     sheet->SetReferrerInfo(referrerInfo);
-
-    nsIPrincipal* sheetPrincipal = principal;
-    if (aInfo.mTriggeringPrincipal) {
-      
-      
-      
-      
-      sheetPrincipal =
-          BasePrincipal::Cast(aInfo.mTriggeringPrincipal)->PrincipalToInherit();
-    }
-
     
     sheet->SetPrincipal(sheetPrincipal);
   }
