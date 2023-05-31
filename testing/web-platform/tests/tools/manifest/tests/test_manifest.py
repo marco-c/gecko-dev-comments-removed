@@ -10,15 +10,10 @@ import pytest
 
 from .. import manifest, sourcefile, item, utils
 
-MYPY = False
-if MYPY:
-    
-    from typing import Any
-    from typing import Type
+from typing import Any, Type
 
 
-def SourceFileWithTest(path, hash, cls, **kwargs):
-    
+def SourceFileWithTest(path: str, hash: str, cls: Type[item.ManifestItem], **kwargs: Any) -> sourcefile.SourceFile:
     rel_path_parts = tuple(path.split(os.path.sep))
     s = mock.Mock(rel_path=path,
                   rel_path_parts=rel_path_parts,
@@ -32,8 +27,7 @@ def SourceFileWithTest(path, hash, cls, **kwargs):
     return s  
 
 
-def SourceFileWithTests(path, hash, cls, variants):
-    
+def SourceFileWithTests(path: str, hash: str, cls: Type[item.URLManifestItem], variants: Any) -> sourcefile.SourceFile:
     rel_path_parts = tuple(path.split(os.path.sep))
     s = mock.Mock(rel_path=path,
                   rel_path_parts=rel_path_parts,

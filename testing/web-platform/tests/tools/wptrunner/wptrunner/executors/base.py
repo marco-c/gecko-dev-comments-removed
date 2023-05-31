@@ -245,14 +245,14 @@ class TestExecutor:
     """
     __metaclass__ = ABCMeta
 
-    test_type = None  
+    test_type: ClassVar[str]
     
     
     
     
     
     
-    convert_result = None  
+    convert_result: ClassVar[Callable[..., Any]]
     supports_testdriver = False
     supports_jsshell = False
     
@@ -605,7 +605,7 @@ class RefTestImplementation:
 
 class WdspecExecutor(TestExecutor):
     convert_result = pytest_result_converter
-    protocol_cls = WdspecProtocol  
+    protocol_cls: ClassVar[Type[Protocol]] = WdspecProtocol
 
     def __init__(self, logger, browser, server_config, webdriver_binary,
                  webdriver_args, timeout_multiplier=1, capabilities=None,
@@ -702,7 +702,7 @@ class CallbackHandler:
     WebDriver. Things that are more different to WebDriver may need to create a
     fully custom implementation."""
 
-    unimplemented_exc = (NotImplementedError,)  
+    unimplemented_exc: ClassVar[Tuple[Type[Exception], ...]] = (NotImplementedError,)
 
     def __init__(self, logger, protocol, test_window):
         self.protocol = protocol
