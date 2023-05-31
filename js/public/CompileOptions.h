@@ -123,8 +123,12 @@ class JS_PUBLIC_API TransitiveCompileOptions {
  protected:
   
 
+  
   const char* filename_ = nullptr;
+
+  
   const char* introducerFilename_ = nullptr;
+
   const char16_t* sourceMapURL_ = nullptr;
 
   

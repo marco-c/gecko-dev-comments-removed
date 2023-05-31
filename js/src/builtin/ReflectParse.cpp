@@ -276,7 +276,7 @@ class NodeBuilder {
 
   [[nodiscard]] bool init() {
     if (src) {
-      if (!atomValue(src, &srcval)) {
+      if (!atomValueUtf8(src, &srcval)) {
         return false;
       }
     } else {
@@ -292,10 +292,22 @@ class NodeBuilder {
 
  private:
   [[nodiscard]] bool atomValue(const char* s, MutableHandleValue dst) {
+    MOZ_ASSERT(JS::StringIsASCII(s));
+
     
 
 
     Rooted<JSAtom*> atom(cx, Atomize(cx, s, strlen(s)));
+    if (!atom) {
+      return false;
+    }
+
+    dst.setString(atom);
+    return true;
+  }
+
+  [[nodiscard]] bool atomValueUtf8(const char* s, MutableHandleValue dst) {
+    Rooted<JSAtom*> atom(cx, AtomizeUTF8Chars(cx, s, strlen(s)));
     if (!atom) {
       return false;
     }
@@ -3642,7 +3654,7 @@ static bool reflect_parse(JSContext* cx, uint32_t argc, Value* vp) {
           return false;
         }
 
-        filename = EncodeLatin1(cx, str);
+        filename = StringToNewUTF8CharsZ(cx, *str);
         if (!filename) {
           return false;
         }
