@@ -205,13 +205,6 @@ void GCRuntime::attemptLastDitchGC(JSContext* cx) {
 
 template <AllowGC allowGC>
 bool GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind) {
-  if (allowGC) {
-    if (!gcIfNeededAtAllocation(cx)) {
-      return false;
-    }
-  }
-
-#if defined(JS_GC_ZEAL) || defined(DEBUG)
   MOZ_ASSERT_IF(cx->zone()->isAtomsZone(),
                 kind == AllocKind::ATOM || kind == AllocKind::FAT_INLINE_ATOM ||
                     kind == AllocKind::SYMBOL || kind == AllocKind::JITCODE ||
@@ -219,18 +212,21 @@ bool GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind) {
   MOZ_ASSERT_IF(!cx->zone()->isAtomsZone(),
                 kind != AllocKind::ATOM && kind != AllocKind::FAT_INLINE_ATOM);
   MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
-#endif
 
-  
-  if (allowGC && !cx->suppressGC) {
-    cx->verifyIsSafeToGC();
+  if constexpr (allowGC) {
+    
+    if (!cx->suppressGC) {
+      cx->verifyIsSafeToGC();
+    }
+
+    gcIfNeededAtAllocation(cx);
   }
 
   
   if (js::oom::ShouldFailWithOOM()) {
     
     
-    if (allowGC) {
+    if constexpr (allowGC) {
       ReportOutOfMemory(cx);
     }
     return false;
@@ -239,7 +235,7 @@ bool GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind) {
   return true;
 }
 
-inline bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
+inline void GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
 #ifdef JS_GC_ZEAL
   if (needZealousGC()) {
     runDebugGC();
@@ -251,8 +247,6 @@ inline bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
   if (cx->hasAnyPendingInterrupt()) {
     gcIfRequested();
   }
-
-  return true;
 }
 
 #ifdef DEBUG
