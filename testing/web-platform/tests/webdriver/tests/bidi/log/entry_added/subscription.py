@@ -63,9 +63,10 @@ async def test_subscribe_unsubscribe(bidi_session, new_tab, wait_for_event, log_
     assert len(events) == 0
 
     
-    await bidi_session.browsing_context.navigate(
-        context=new_tab["context"], url=new_tab["url"], wait="complete"
-    )
+    context = new_tab["context"]
+    await bidi_session.browsing_context.navigate(context=context,
+                                                 url='about:blank',
+                                                 wait="complete")
 
     
     expected_text_1 = await create_log(bidi_session, new_tab, log_type, "text_1")
@@ -76,9 +77,10 @@ async def test_subscribe_unsubscribe(bidi_session, new_tab, wait_for_event, log_
 
     
     
-    await bidi_session.browsing_context.navigate(
-        context=new_tab["context"], url=new_tab["url"], wait="complete"
-    )
+    context = new_tab["context"]
+    await bidi_session.browsing_context.navigate(context=context,
+                                                 url='about:blank',
+                                                 wait="complete")
 
     
     await bidi_session.session.subscribe(events=["log.entryAdded"])
