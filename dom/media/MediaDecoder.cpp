@@ -1308,6 +1308,7 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   }
   
   
+  
   typename IntervalType::InnerType duration;
   if constexpr (std::is_same<typename IntervalType::InnerType, double>::value) {
     duration = GetDuration();
@@ -1317,8 +1318,7 @@ IntervalType MediaDecoder::GetSeekableImpl() {
 
   return IntervalType(typename IntervalType::ElemType(
       Zero<typename IntervalType::InnerType>(),
-      IsInfinite() ? Infinity<typename IntervalType::InnerType>()
-                   : duration));
+      IsInfinite() ? Infinity<typename IntervalType::InnerType>() : duration));
 }
 
 media::TimeIntervals MediaDecoder::GetSeekable() {

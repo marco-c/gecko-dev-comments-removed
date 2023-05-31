@@ -129,7 +129,8 @@ TimeRanges* SourceBuffer::GetBuffered(ErrorResult& aRv) {
   
   
   if (rangeChanged) {
-    mBuffered = new TimeRanges(ToSupports(this), intersection.ToMicrosecondResolution());
+    mBuffered = new TimeRanges(ToSupports(this),
+                               intersection.ToMicrosecondResolution());
   }
   
   return mBuffered;

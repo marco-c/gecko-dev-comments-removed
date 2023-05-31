@@ -105,8 +105,8 @@ IntervalType MediaSourceDecoder::GetSeekableImpl() {
       
       
       if constexpr (std::is_same<IntervalType, TimeRanges>::value) {
-        TimeRanges seekableRange =
-            media::TimeRanges(TimeRange(unionRanges.GetStart(), unionRanges.GetEnd()));
+        TimeRanges seekableRange = media::TimeRanges(
+            TimeRange(unionRanges.GetStart(), unionRanges.GetEnd()));
         return seekableRange;
       } else {
         MOZ_RELEASE_ASSERT(false);
