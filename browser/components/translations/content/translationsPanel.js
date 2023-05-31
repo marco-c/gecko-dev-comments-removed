@@ -507,6 +507,28 @@ var TranslationsPanel = new (class {
   
 
 
+  #hideTranslationsButton() {
+    const { button, buttonLocale, buttonCircleArrows } = this.elements;
+    button.hidden = true;
+    buttonLocale.hidden = true;
+    buttonCircleArrows.hidden = true;
+    button.removeAttribute("translationsactive");
+  }
+
+  
+
+
+
+
+  #isTranslationsActive() {
+    const { requestedTranslationPair } =
+      this.#getTranslationsActor().languageState;
+    return requestedTranslationPair !== null;
+  }
+
+  
+
+
   async onDefaultTranslate() {
     PanelMultiView.hidePopup(this.elements.panel);
 
@@ -570,8 +592,20 @@ var TranslationsPanel = new (class {
 
   async onAlwaysTranslateLanguage() {
     const docLangTag = await this.#getDocLangTag();
-    TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
-    await this.#updateSettingsMenuLanguageCheckboxStates();
+    const toggledOn =
+      TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
+    const translationsActive = this.#isTranslationsActive();
+    this.#updateSettingsMenuLanguageCheckboxStates();
+
+    if (toggledOn && !translationsActive) {
+      await this.onDefaultTranslate();
+    } else if (!toggledOn && translationsActive) {
+      await this.onRestore();
+    }
+
+    
+    
+    
   }
 
   
@@ -582,7 +616,13 @@ var TranslationsPanel = new (class {
   async onNeverTranslateLanguage() {
     const docLangTag = await this.#getDocLangTag();
     TranslationsParent.toggleNeverTranslateLanguagePref(docLangTag);
-    await this.#updateSettingsMenuLanguageCheckboxStates();
+    this.#updateSettingsMenuLanguageCheckboxStates();
+
+    if (this.#isTranslationsActive()) {
+      await this.onRestore();
+    } else {
+      this.#hideTranslationsButton();
+    }
   }
 
   
@@ -592,7 +632,13 @@ var TranslationsPanel = new (class {
 
   async onNeverTranslateSite() {
     await this.#getTranslationsActor().toggleNeverTranslateSitePermissions();
-    await this.#updateSettingsMenuSiteCheckboxStates();
+    this.#updateSettingsMenuSiteCheckboxStates();
+
+    if (this.#isTranslationsActive()) {
+      await this.onRestore();
+    } else {
+      this.#hideTranslationsButton();
+    }
   }
 
   
@@ -654,8 +700,7 @@ var TranslationsPanel = new (class {
             buttonCircleArrows.hidden = true;
           }
         } else {
-          button.removeAttribute("translationsactive");
-          button.hidden = true;
+          this.#hideTranslationsButton();
         }
 
         switch (error) {
