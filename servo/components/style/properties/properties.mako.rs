@@ -1198,6 +1198,7 @@ impl CSSWideKeyword {
 
 bitflags! {
     
+    #[derive(Clone, Copy)]
     pub struct PropertyFlags: u16 {
         
         const APPLIES_TO_FIRST_LETTER = 1 << 1;
@@ -1427,7 +1428,7 @@ impl LonghandId {
                 0,
             % endfor
         ];
-        PropertyFlags::from_bits_truncate(FLAGS[self as usize])
+        PropertyFlags::from_bits_retain(FLAGS[self as usize])
     }
 
     
@@ -1602,7 +1603,7 @@ impl ShorthandId {
                 0,
             % endfor
         ];
-        PropertyFlags::from_bits_truncate(FLAGS[self as usize])
+        PropertyFlags::from_bits_retain(FLAGS[self as usize])
     }
 
     
