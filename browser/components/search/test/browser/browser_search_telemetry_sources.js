@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
@@ -20,7 +24,7 @@ const TEST_PROVIDER_INFO = [
   {
     telemetryId: "example",
     searchPageRegexp:
-      /^https:\/\/example.com\/browser\/browser\/components\/search\/test\/browser\/searchTelemetry(?:Ad)?.html/,
+      /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetry(?:Ad)?/,
     queryParamName: "s",
     codeParamName: "abc",
     taggedCodes: ["ff"],
@@ -37,7 +41,7 @@ const TEST_PROVIDER_INFO = [
 
 function getPageUrl(useAdPage = false) {
   let page = useAdPage ? "searchTelemetryAd.html" : "searchTelemetry.html";
-  return `https://example.com/browser/browser/components/search/test/browser/${page}`;
+  return `https://example.org/browser/browser/components/search/test/browser/${page}`;
 }
 
 
@@ -96,7 +100,7 @@ add_setup(async function () {
       search_url: getPageUrl(true),
       search_url_get_params: "s={searchTerms}&abc=ff",
       suggest_url:
-        "https://example.com/browser/browser/components/search/test/browser/searchSuggestionEngine.sjs",
+        "https://example.org/browser/browser/components/search/test/browser/searchSuggestionEngine.sjs",
       suggest_url_get_params: "query={searchTerms}",
     },
     { setAsDefault: true }
@@ -109,7 +113,7 @@ add_setup(async function () {
     Services.prefs.clearUserPref("browser.search.log");
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
-    Services.telemetry.clearScalars();
+    resetTelemetry();
   });
 });
 
