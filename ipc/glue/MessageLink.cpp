@@ -65,6 +65,8 @@ PortLink::PortLink(MessageChannel* aChan, ScopedPort aPort)
   mObserver = new PortObserverThunk(mChan->mMonitor, this);
   mNode->SetPortObserver(mPort, mObserver);
 
+  mChan->mChannelState = ChannelConnected;
+
   
   
   
@@ -130,8 +132,12 @@ void PortLink::SendMessage(UniquePtr<Message> aMessage) {
   }
 }
 
-void PortLink::Close() {
+void PortLink::SendClose() {
   mChan->mMonitor->AssertCurrentThreadOwns();
+
+  
+  mChan->mChannelState = ChannelClosed;
+  mChan->mMonitor->Notify();
 
   if (!mObserver) {
     

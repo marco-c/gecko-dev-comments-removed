@@ -53,11 +53,7 @@ class MessageLink {
   
   
   virtual void SendMessage(mozilla::UniquePtr<Message> msg) = 0;
-
-  
-  
-  
-  virtual void Close() = 0;
+  virtual void SendClose() = 0;
 
   virtual bool IsClosed() const = 0;
 
@@ -80,7 +76,7 @@ class PortLink final : public MessageLink {
   virtual ~PortLink();
 
   void SendMessage(UniquePtr<Message> aMessage) override;
-  void Close() override;
+  void SendClose() override;
 
   bool IsClosed() const override;
 
