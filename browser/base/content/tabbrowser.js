@@ -6445,6 +6445,27 @@
         }
       }
     },
+
+    
+
+
+    _getTriggeringPrincipalFromHistory(aBrowser) {
+      let sessionHistory = aBrowser?.browsingContext?.sessionHistory;
+      if (
+        !sessionHistory ||
+        !sessionHistory.index ||
+        sessionHistory.count == 0
+      ) {
+        return undefined;
+      }
+      let currentEntry = sessionHistory.getEntryAtIndex(sessionHistory.index);
+      let triggeringPrincipal = currentEntry?.triggeringPrincipal;
+      return triggeringPrincipal;
+    },
+
+    clearRelatedTabs() {
+      this._lastRelatedTabMap = new WeakMap();
+    },
   };
 
   
@@ -6908,6 +6929,20 @@
             
             
             this.mBrowser.mIconURL = null;
+          }
+
+          if (!isReload && aWebProgress.isLoadingDocument) {
+            let triggerer = gBrowser._getTriggeringPrincipalFromHistory(
+              this.mBrowser
+            );
+            
+            
+            
+            if (triggerer && triggerer.isSystemPrincipal) {
+              
+              
+              gBrowser.clearRelatedTabs();
+            }
           }
 
           if (
