@@ -5,7 +5,7 @@
 
 "use strict";
 
-runHeuristicsTest(
+add_heuristic_tests(
   [
     {
       description: `An address section is valid when it only contains more than three fields`,

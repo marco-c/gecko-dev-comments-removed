@@ -12,7 +12,7 @@
 
 
 
-runHeuristicsTest(
+add_heuristic_tests(
   [
     {
       description: `One named billing section`,

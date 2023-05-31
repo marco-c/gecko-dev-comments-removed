@@ -33,7 +33,7 @@ const markup2 = `
   </html>
 `;
 
-runHeuristicsTest(
+add_heuristic_tests(
   [
     {
       fixtureData: markup1,

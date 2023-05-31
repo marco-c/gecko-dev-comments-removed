@@ -7,7 +7,7 @@
 
 
 
-runHeuristicsTest(
+add_heuristic_tests(
   [
     {
       fixturePath: "autocomplete_off_on_inputs.html",
@@ -98,5 +98,5 @@ runHeuristicsTest(
       ],
     },
   ],
-  "../../fixtures/"
+  "fixtures/"
 );
