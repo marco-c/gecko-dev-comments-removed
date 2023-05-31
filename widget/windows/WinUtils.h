@@ -472,16 +472,6 @@ class WinUtils {
 
 
 
-
-
-  static bool GetShellItemPath(IShellItem* aItem, nsString& aResultString);
-
-  
-
-
-
-
-
   static LayoutDeviceIntRegion ConvertHRGNToRegion(HRGN aRgn);
 
   
