@@ -4,7 +4,6 @@
 
 import { setBreakpointPositions } from "./breakpointPositions";
 import {
-  assertPendingBreakpoint,
   findPosition,
   makeBreakpointServerLocation,
 } from "../../utils/breakpoint";
@@ -42,10 +41,9 @@ async function findBreakpointPosition(cx, { getState, dispatch }, location) {
 
 
 
-export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
+export function syncPendingBreakpoint(cx, sourceId, pendingBreakpoint) {
   return async thunkArgs => {
     const { getState, client, dispatch } = thunkArgs;
-    assertPendingBreakpoint(pendingBreakpoint);
 
     const source = getSource(getState(), sourceId);
 
@@ -59,16 +57,17 @@ export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
       return null;
     }
 
+    
+    
     const { location, generatedLocation } = pendingBreakpoint;
+    const isPendingBreakpointWithSourceMap =
+      location.sourceUrl != generatedLocation.sourceUrl;
     const sourceGeneratedLocation = createLocation({
       ...generatedLocation,
       source: generatedSource,
     });
 
-    if (
-      source == generatedSource &&
-      location.sourceUrl != generatedLocation.sourceUrl
-    ) {
+    if (source == generatedSource && isPendingBreakpointWithSourceMap) {
       
       
       
@@ -105,7 +104,7 @@ export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
       
       
       
-      if (location.sourceUrl != generatedLocation.sourceUrl) {
+      if (isPendingBreakpointWithSourceMap) {
         dispatch(
           removeBreakpointAtGeneratedLocation(cx, sourceGeneratedLocation)
         );

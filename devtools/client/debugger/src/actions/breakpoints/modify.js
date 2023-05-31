@@ -257,8 +257,8 @@ export function removeBreakpointAtGeneratedLocation(cx, target) {
 
     
     const pending = getPendingBreakpointList(getState());
-    for (const breakpoint of pending) {
-      const { generatedLocation } = breakpoint;
+    for (const pendingBreakpoint of pending) {
+      const { generatedLocation } = pendingBreakpoint;
       if (
         generatedLocation.sourceUrl == target.sourceUrl &&
         comparePosition(generatedLocation, target)
@@ -266,7 +266,7 @@ export function removeBreakpointAtGeneratedLocation(cx, target) {
         dispatch({
           type: "REMOVE_PENDING_BREAKPOINT",
           cx,
-          breakpoint,
+          pendingBreakpoint,
         });
       }
     }

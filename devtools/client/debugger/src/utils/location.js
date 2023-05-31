@@ -4,6 +4,11 @@
 
 import { getSelectedLocation } from "./selected-location";
 
+
+
+
+
+
 export function comparePosition(a, b) {
   return a && b && a.line == b.line && a.column == b.column;
 }
