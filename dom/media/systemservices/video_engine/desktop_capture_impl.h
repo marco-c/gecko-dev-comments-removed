@@ -215,23 +215,27 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   
   const nsCOMPtr<nsISerialEventTarget> mControlThread;
   
-  mozilla::Maybe<VideoCaptureCapability> mRequestedCapability;
+  mozilla::Maybe<VideoCaptureCapability> mRequestedCapability
+      RTC_GUARDED_BY(mControlThreadChecker);
   
   
-  std::unique_ptr<DesktopCapturer> mCapturer;
+  std::unique_ptr<DesktopCapturer> mCapturer
+      RTC_GUARDED_BY(mCaptureThreadChecker);
   
-  nsCOMPtr<nsIThread> mCaptureThread;
+  nsCOMPtr<nsIThread> mCaptureThread RTC_GUARDED_BY(mControlThreadChecker);
+  
+  webrtc::SequenceChecker mControlThreadChecker;
   
   webrtc::SequenceChecker mCaptureThreadChecker;
   
   
-  nsCOMPtr<nsITimer> mCaptureTimer;
+  nsCOMPtr<nsITimer> mCaptureTimer RTC_GUARDED_BY(mCaptureThreadChecker);
   
   
-  mozilla::Maybe<mozilla::TimeDuration> mRequestedCaptureInterval;
+  mozilla::Maybe<mozilla::TimeDuration> mRequestedCaptureInterval
+      RTC_GUARDED_BY(mCaptureThreadChecker);
   
-  
-  webrtc::Timestamp mNextFrameMinimumTime;
+  webrtc::Timestamp mNextFrameMinimumTime RTC_GUARDED_BY(mCaptureThreadChecker);
   
   
   mozilla::DataMutex<std::set<rtc::VideoSinkInterface<VideoFrame>*>> mCallbacks;
