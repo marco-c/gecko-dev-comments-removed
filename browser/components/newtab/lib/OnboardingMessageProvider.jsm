@@ -997,12 +997,6 @@ const BASE_MESSAGES = () => [
     },
     targeting: `!'cookiebanners.service.mode'|preferenceIsUserSet`,
   },
-  
-
-
-
-
-
   {
     id: "CFR_COOKIEBANNER",
     groups: ["cfr"],
@@ -1014,6 +1008,7 @@ const BASE_MESSAGES = () => [
       icon: "chrome://browser/skin/controlcenter/3rdpartycookies.svg",
       icon_class: "cfr-doorhanger-small-icon",
       persistent_doorhanger: true,
+      show_in_private_browsing: true,
       heading_text: {
         string_id: "cfr-cbh-header",
       },

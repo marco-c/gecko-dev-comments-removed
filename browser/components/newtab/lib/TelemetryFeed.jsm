@@ -652,9 +652,11 @@ class TelemetryFeed {
 
 
 
+
   async applyCFRPolicy(ping) {
     if (
-      lazy.UpdateUtils.getUpdateChannel(true) === "release" &&
+      (lazy.UpdateUtils.getUpdateChannel(true) === "release" ||
+        ping.is_private) &&
       !this.isInCFRCohort
     ) {
       ping.message_id = "n/a";
@@ -663,6 +665,7 @@ class TelemetryFeed {
       ping.client_id = await this.telemetryClientId;
     }
     delete ping.action;
+    delete ping.is_private;
     return { ping, pingType: "cfr" };
   }
 
