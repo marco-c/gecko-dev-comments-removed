@@ -134,6 +134,8 @@ pub enum StyleParseErrorKind<'i> {
     
     UnexpectedFunction(CowRcStr<'i>),
     
+    PropertySyntaxField(PropertySyntaxParseError),
+    
     UnexpectedNamespaceRule,
     
     UnexpectedImportRule,
@@ -212,6 +214,31 @@ impl<'i> StyleParseErrorKind<'i> {
             location: value_error.location,
         }
     }
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PropertySyntaxParseError {
+    
+    EmptyInput,
+    
+    ExpectedPipeBetweenComponents,
+    
+    
+    
+    InvalidNameStart,
+    
+    InvalidName,
+    
+    
+    
+    UnclosedDataTypeName,
+    
+    UnexpectedEOF,
+    
+    
+    
+    UnknownDataTypeName,
 }
 
 bitflags! {
