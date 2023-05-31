@@ -79,6 +79,9 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         )
 
     
+    stylelint_rc = config.get("stylelint-rc", ".stylelintrc.js")
+
+    
     cmd_args = (
         [
             binary,
@@ -89,7 +92,7 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
             "json",
             "--allow-empty-input",
             "--config",
-            os.path.join(lintargs["root"], ".stylelintrc.js"),
+            os.path.join(lintargs["root"], stylelint_rc),
         ]
         + extra_args
         + exclude_args
