@@ -38,13 +38,13 @@
     
 
     if (isNodeTest()) {
-      assert = function(condition, message) {
+      assert = function (condition, message) {
         if (!condition) {
           throw new Error(`Assertion failure: ${message}`);
         }
       };
     } else {
-      assert = function() {};
+      assert = function () {};
     }
     var assert$1 = assert;
 
@@ -341,7 +341,7 @@
     	}
 
     	function workerHandler(publicInterface) {
-    	  return function(msg) {
+    	  return function (msg) {
     	    const { id, method, calls } = msg.data;
 
     	    Promise.all(
