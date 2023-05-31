@@ -7,6 +7,10 @@
 
 
 {
+  const { LoginHelper } = ChromeUtils.importESModule(
+    "resource://gre/modules/LoginHelper.sys.mjs"
+  );
+
   MozElements.MozAutocompleteRichlistitem = class MozAutocompleteRichlistitem extends (
     MozElements.MozRichlistitem
   ) {
@@ -685,12 +689,42 @@
   }
 
   class MozAutocompleteLoginRichlistitem extends MozAutocompleteTwoLineRichlistitem {
+    connectedCallback() {
+      super.connectedCallback();
+
+      this.querySelector(".ac-settings-button").addEventListener(
+        "mousedown",
+        event => {
+          event.stopPropagation();
+          const details = JSON.parse(this.getAttribute("ac-label"));
+          LoginHelper.openPasswordManager(window, {
+            loginGuid: details?.guid,
+          });
+        }
+      );
+    }
+
     static get inheritedAttributes() {
       return {
         
         ".line1-label": "text=ac-value",
         
       };
+    }
+
+    static get markup() {
+      return `
+        <div xmlns="http://www.w3.org/1999/xhtml"
+             xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+             class="two-line-wrapper ac-login-item">
+          <xul:image class="ac-site-icon"></xul:image>
+          <div class="labels-wrapper">
+            <div class="label-row line1-label"></div>
+            <div class="label-row line2-label"></div>
+          </div>
+          <button class="ac-settings-button"></button>
+        </div>
+      `;
     }
 
     _adjustAcItem() {
