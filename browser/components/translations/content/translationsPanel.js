@@ -342,16 +342,27 @@ var TranslationsPanel = new (class {
 
     const alwaysTranslateLanguage =
       TranslationsParent.shouldAlwaysTranslateLanguage(docLangTag);
+    const neverTranslateLanguage =
+      TranslationsParent.shouldNeverTranslateLanguage(docLangTag);
 
     const { panel } = this.elements;
     const alwaysTranslateMenuItems = panel.querySelectorAll(
       ".always-translate-language-menuitem"
+    );
+    const neverTranslateMenuItems = panel.querySelectorAll(
+      ".never-translate-language-menuitem"
     );
 
     for (const menuitem of alwaysTranslateMenuItems) {
       menuitem.setAttribute(
         "checked",
         alwaysTranslateLanguage ? "true" : "false"
+      );
+    }
+    for (const menuitem of neverTranslateMenuItems) {
+      menuitem.setAttribute(
+        "checked",
+        neverTranslateLanguage ? "true" : "false"
       );
     }
   }
@@ -545,6 +556,17 @@ var TranslationsPanel = new (class {
   
 
 
+
+
+  async onNeverTranslateLanguage() {
+    const docLangTag = await this.#getDocLangTag();
+    TranslationsParent.toggleNeverTranslateLanguagePref(docLangTag);
+    await this.#updateSettingsMenuLanguageCheckboxStates();
+  }
+
+  
+
+
   async onRestore() {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
@@ -569,7 +591,14 @@ var TranslationsPanel = new (class {
         const { panel, button, buttonLocale, buttonCircleArrows } =
           this.elements;
 
-        if (detectedLanguages) {
+        if (
+          
+          detectedLanguages &&
+          
+          !TranslationsParent.shouldNeverTranslateLanguage(
+            detectedLanguages.docLangTag
+          )
+        ) {
           button.hidden = false;
           if (requestedTranslationPair) {
             
