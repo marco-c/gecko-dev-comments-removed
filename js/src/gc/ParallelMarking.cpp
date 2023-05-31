@@ -83,7 +83,7 @@ bool ParallelMarker::markOneColor(MarkColor color, SliceBudget& sliceBudget) {
     
     
     
-    if (!marker->hasEntries(color) && gc->marker().canDonateWork()) {
+    if (!marker->hasEntriesForCurrentColor() && gc->marker().canDonateWork()) {
       GCMarker::moveWork(marker, &gc->marker());
     }
   }
@@ -150,7 +150,7 @@ ParallelMarkTask::~ParallelMarkTask() {
 }
 
 bool ParallelMarkTask::hasWork() const {
-  return marker->hasEntries(marker->markColor());
+  return marker->hasEntriesForCurrentColor();
 }
 
 void ParallelMarkTask::recordDuration() {

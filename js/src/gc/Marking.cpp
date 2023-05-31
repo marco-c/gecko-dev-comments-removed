@@ -1279,25 +1279,20 @@ bool GCMarker::doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime) {
 
   
 
-  while (!isDrained()) {
-    if (hasBlackEntries() && !markOneColor<opts, MarkColor::Black>(budget)) {
+  if (hasBlackEntries() && !markOneColor<opts, MarkColor::Black>(budget)) {
+    return false;
+  }
+
+  if (hasGrayEntries()) {
+    mozilla::Maybe<gcstats::AutoPhase> ap;
+    if (reportTime) {
+      auto& stats = runtime()->gc.stats();
+      ap.emplace(stats, GrayMarkingPhaseForCurrentPhase(stats));
+    }
+
+    if (!markOneColor<opts, MarkColor::Gray>(budget)) {
       return false;
     }
-
-    if (hasGrayEntries()) {
-      mozilla::Maybe<gcstats::AutoPhase> ap;
-      if (reportTime) {
-        auto& stats = runtime()->gc.stats();
-        ap.emplace(stats, GrayMarkingPhaseForCurrentPhase(stats));
-      }
-
-      if (!markOneColor<opts, MarkColor::Gray>(budget)) {
-        return false;
-      }
-    }
-
-    
-    MOZ_ASSERT(!hasBlackEntries() && !hasGrayEntries());
   }
 
   
@@ -1317,7 +1312,7 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
   AutoSetMarkColor setColor(*this, color);
 
   while (processMarkStackTop<opts>(budget)) {
-    if (!hasEntries(color)) {
+    if (stack.isEmpty()) {
       return true;
     }
   }
@@ -1326,22 +1321,11 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
 }
 
 bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
-  if (markColor() == MarkColor::Black) {
-    return markOneColorInParallel<MarkColor::Black>(budget);
-  }
-
-  return markOneColorInParallel<MarkColor::Gray>(budget);
-}
-
-template <MarkColor color>
-bool GCMarker::markOneColorInParallel(SliceBudget& budget) {
-  AutoSetMarkColor setColor(*this, color);
-
   ParallelMarker::AtomicCount& waitingTaskCount =
       parallelMarker_->waitingTaskCountRef();
 
   while (processMarkStackTop<MarkingOptions::ParallelMarking>(budget)) {
-    if (!hasEntries(color)) {
+    if (stack.isEmpty()) {
       return true;
     }
 
@@ -1394,7 +1378,7 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
 
 
 
-  MOZ_ASSERT(hasEntries(markColor()));
+  MOZ_ASSERT(!stack.isEmpty());
   MOZ_ASSERT_IF(markColor() == MarkColor::Gray, !hasBlackEntries());
 
   JSObject* obj;             
@@ -2270,7 +2254,7 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
         markDelayedChildren(arena, color);
       }
     }
-    while (marker().hasEntries(color)) {
+    while (marker().hasEntriesForCurrentColor()) {
       SliceBudget budget = SliceBudget::unlimited();
       MOZ_ALWAYS_TRUE(
           marker().processMarkStackTop<NormalMarkingOptions>(budget));
