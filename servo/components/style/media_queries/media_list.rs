@@ -103,6 +103,11 @@ impl MediaList {
     }
 
     
+    pub fn is_viewport_dependent(&self) -> bool {
+        self.media_queries.iter().any(|q| q.is_viewport_dependent())
+    }
+
+    
     
     
     
