@@ -23,9 +23,11 @@ if CONFIG["WRAP_STL_INCLUDES"]:
 
 if CONFIG["OS_TARGET"] == "WINNT":
     
-    SOURCES += [
-        "winheap.cpp",
-    ]
+    if CONFIG["MOZ_MEMORY"] or not CONFIG["JS_STANDALONE"]:
+        
+        SOURCES += [
+            "winheap.cpp",
+        ]
 
 UNIFIED_SOURCES += [
     "mozalloc.cpp",
