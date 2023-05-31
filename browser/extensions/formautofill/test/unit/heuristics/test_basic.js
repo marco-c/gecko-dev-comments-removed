@@ -1,16 +1,11 @@
 
 
-
 "use strict";
 
-
-
-
-
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
-      fixturePath: "autocomplete_off_on_form.html",
+      fixturePath: "autocomplete_basic.html",
       expectedResult: [
         {
           default: {
@@ -70,5 +65,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/"
+  "../../fixtures/"
 );

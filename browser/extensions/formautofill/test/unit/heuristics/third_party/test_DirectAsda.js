@@ -2,24 +2,18 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
-      fixturePath: "index.html",
+      fixturePath: "Payment.html",
       expectedResult: [
         {
           default: {
             reason: "fathom",
           },
           fields: [
-            { fieldName: "cc-name" },
             { fieldName: "cc-number" },
-          ],
-        },
-        {
-          fields: [
-            { fieldName: "cc-number", reason: "autocomplete" },
-            { fieldName: "cc-name", reason: "fathom" },
+            { fieldName: "cc-name" },
             { fieldName: "cc-exp-month", reason: "regex-heuristic" },
             { fieldName: "cc-exp-year", reason: "regex-heuristic" },
           ],
@@ -27,5 +21,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/third_party/Lush/"
-);
+  "../../../fixtures/third_party/DirectAsda/"
+)

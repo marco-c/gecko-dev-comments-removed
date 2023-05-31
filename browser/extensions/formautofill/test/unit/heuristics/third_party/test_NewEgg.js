@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "ShippingInfo.html",
@@ -105,5 +105,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/third_party/NewEgg/"
+  "../../../fixtures/third_party/NewEgg/"
 );

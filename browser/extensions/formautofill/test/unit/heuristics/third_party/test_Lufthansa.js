@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "Checkout_Payment.html",
@@ -24,5 +24,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/third_party/Lufthansa/"
+  "../../../fixtures/third_party/Lufthansa/"
 );

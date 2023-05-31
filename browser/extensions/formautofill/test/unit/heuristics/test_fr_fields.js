@@ -5,7 +5,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "heuristics_fr_fields.html",
@@ -23,5 +23,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/"
+  "../../fixtures/"
 );

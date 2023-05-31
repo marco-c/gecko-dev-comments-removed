@@ -2,66 +2,56 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
-      fixturePath: "ShippingAddress.html",
+      fixturePath: "Checkout_ShippingAddress.html",
       expectedResult: [
         {
           default: {
-            reason: "regex-heuristic",
+            reason: "autocomplete",
           },
           fields: [
             { fieldName: "given-name" },
             { fieldName: "family-name" },
-            { fieldName: "organization" },
             { fieldName: "address-line1" },
             { fieldName: "address-line2" },
-            { fieldName: "postal-code" },
-            { fieldName: "address-level2" }, 
             { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
-            { fieldName: "tel-area-code" },
-            { fieldName: "tel-local-prefix" },
-            { fieldName: "tel-local-suffix" },
-            { fieldName: "tel-extension" },
-            { fieldName: "email" },
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
           ],
         },
       ],
     },
     {
-      fixturePath: "Payment.html",
+      fixturePath: "Checkout_Payment.html",
       expectedResult: [
         {
-          invalid: true, 
           default: {
             reason: "regex-heuristic",
           },
           fields: [
-            { fieldName: "cc-exp-month" },
-            { fieldName: "cc-exp-year" },
-            { fieldName: "cc-number" },
+            { fieldName: "cc-type" }, 
+            { fieldName: "cc-number", reason: "fathom" }, 
+            { fieldName: "cc-exp-month" }, 
+            { fieldName: "cc-exp-year" }, 
+            
           ],
         },
         {
           default: {
-            reason: "regex-heuristic",
+            reason: "autocomplete",
           },
           fields: [
             { fieldName: "given-name" },
             { fieldName: "family-name" },
-            { fieldName: "organization" },
             { fieldName: "address-line1" },
             { fieldName: "address-line2" },
-            { fieldName: "postal-code" },
-            { fieldName: "address-level2" }, 
             { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
-            { fieldName: "tel-area-code" },
-            { fieldName: "tel-local-prefix" },
-            { fieldName: "tel-local-suffix" },
-            { fieldName: "tel-extension" },
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
             { fieldName: "email" },
           ],
         },
@@ -73,11 +63,26 @@ add_heuristic_tests(
         {
           invalid: true,
           fields: [
-            { fieldName: "email", reason: "regex-heuristic" },
+            
+            { fieldName: "email", reason: "regex-heuristic"},
+            
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            
+            { fieldName: "email", reason: "regex-heuristic"},
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic"},
           ],
         },
       ],
     },
   ],
-  "fixtures/third_party/OfficeDepot/"
+  "../../../fixtures/third_party/Macys/"
 );

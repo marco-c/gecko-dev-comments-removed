@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "Checkout_Payment_FR.html",
@@ -21,5 +21,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/third_party/Ebay/"
+  "../../../fixtures/third_party/Ebay/"
 )

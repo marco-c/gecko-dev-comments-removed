@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "ShippingAddress.html",
@@ -32,7 +32,7 @@ add_heuristic_tests(
             { fieldName: "tel" },
             { fieldName: "tel-extension" },
             { fieldName: "email" },
-            { fieldName: "email" },
+            { fieldName: "email" },  
           ],
         },
         {
@@ -76,6 +76,70 @@ add_heuristic_tests(
         },
       ],
     },
+    {
+      fixturePath: "PaymentOptions.html",
+      expectedResult: [
+        {
+          default: {
+            reason: "fathom",
+          },
+          fields: [
+            { fieldName: "cc-number" },
+            { fieldName: "cc-name" },
+            
+            { fieldName: "cc-exp-month", reason: "regex-heuristic" },
+            { fieldName: "cc-exp-year", reason: "regex-heuristic" },
+          ],
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            
+            { fieldName: "given-name" },
+            { fieldName: "family-name" },
+            { fieldName: "address-line1" },
+            { fieldName: "address-line2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level1" }, 
+            { fieldName: "postal-code" },
+            { fieldName: "tel" },
+            { fieldName: "tel-extension" },
+          ],
+        },
+        {
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            
+            { fieldName: "given-name" },
+            { fieldName: "family-name" },
+            
+            
+            { fieldName: "address-level1" },
+            { fieldName: "address-level1" },
+            
+            
+            
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            
+            { fieldName: "cc-number", reason: "fathom", },
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic", },
+          ],
+        },
+      ],
+    },
   ],
-  "fixtures/third_party/Sears/"
+  "../../../fixtures/third_party/Sears/"
 );

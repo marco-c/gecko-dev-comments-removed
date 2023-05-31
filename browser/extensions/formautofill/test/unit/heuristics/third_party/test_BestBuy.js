@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_heuristic_tests(
+runHeuristicsTest(
   [
     {
       fixturePath: "Checkout_ShippingAddress.html",
@@ -78,5 +78,5 @@ add_heuristic_tests(
       ],
     },
   ],
-  "fixtures/third_party/BestBuy/"
+  "../../../fixtures/third_party/BestBuy/"
 );
