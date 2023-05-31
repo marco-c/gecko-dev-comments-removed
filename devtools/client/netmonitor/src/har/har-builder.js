@@ -38,9 +38,21 @@ const {
 
 
 
+
+
+
+
+
+
+
+
+
 var HarBuilder = function (options) {
   this._options = options;
   this._pageMap = [];
+
+  
+  this._pageId = options.supportsMultiplePages ? 0 : options.id;
 };
 
 HarBuilder.prototype = {
@@ -77,36 +89,87 @@ HarBuilder.prototype = {
 
   
 
-  buildPage(file) {
+  buildPage(title) {
     const page = {};
 
     
     
     page.startedDateTime = 0;
-    page.id = "page_" + this._options.id;
-    page.title = this._options.title;
+
+    page.title = title;
+    page.id = "page_" + this._pageId;
+
+    
+    
+    this._pageId++;
 
     return page;
   },
 
-  getPage(log, file) {
+  getPageFromTargetTitlesPerURL(log, entry, isNavigationRequest) {
+    if (isNavigationRequest) {
+      
+      
+      if (this._options.targetTitlesPerURL.has(entry.request.url)) {
+        const title = this._options.targetTitlesPerURL.get(entry.request.url);
+        const page = this.buildPage(title);
+        log.pages.push(page);
+        return page;
+      }
+
+      
+      
+      console.error(
+        `No navigation found for request with url: ${entry.request.url}`
+      );
+    }
+
+    
+    
+    const existingPage = log.pages.findLast(
+      ({ startedDateTime }) => startedDateTime <= entry.startedDateTime
+    );
+
+    if (existingPage) {
+      return existingPage;
+    }
+
+    
+    
+    const page = this.buildPage(this._options.initialTargetTitle);
+    log.pages.push(page);
+    return page;
+  },
+
+  getPage(log, entry, isNavigationRequest) {
+    
+    
+    if (this._options.supportsMultiplePages) {
+      return this.getPageFromTargetTitlesPerURL(
+        log,
+        entry,
+        isNavigationRequest
+      );
+    }
+
+    
+    
+    
+    
     const { id } = this._options;
     let page = this._pageMap[id];
     if (page) {
       return page;
     }
 
-    this._pageMap[id] = page = this.buildPage(file);
+    this._pageMap[id] = page = this.buildPage(this._options.title);
     log.pages.push(page);
 
     return page;
   },
 
   async buildEntry(log, file) {
-    const page = this.getPage(log, file);
-
     const entry = {};
-    entry.pageref = page.id;
     entry.startedDateTime = dateToJSON(new Date(file.startedMs));
 
     let { eventTimings } = file;
@@ -153,11 +216,13 @@ HarBuilder.prototype = {
       entry.connection = file.remotePort + "";
     }
 
+    const page = this.getPage(log, entry, file.isNavigationRequest);
     
     if (!page.startedDateTime) {
       page.startedDateTime = entry.startedDateTime;
       page.pageTimings = this.buildPageTimings(page, file);
     }
+    entry.pageref = page.id;
 
     return entry;
   },
