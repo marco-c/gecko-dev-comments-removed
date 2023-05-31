@@ -225,20 +225,6 @@ where
             return false;
         }
 
-        
-        
-        
-        
-        
-        
-        
-        if state_changes.contains(ElementState::VISITED_OR_UNVISITED) {
-            trace!(" > visitedness change, force subtree restyle");
-            
-            
-            self.data.hint.insert(RestyleHint::restyle_subtree());
-        }
-
         let mut classes_removed = SmallVec::<[Atom; 8]>::new();
         let mut classes_added = SmallVec::<[Atom; 8]>::new();
         if snapshot.class_changed() {
