@@ -559,7 +559,8 @@ bool Realm::shouldCaptureStackForThrow() {
 
   
   
-  if (isDebuggee()) {
+  
+  if (isDebuggee() || isUnlimitedStacksCapturingEnabled) {
     return true;
   }
 

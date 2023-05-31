@@ -381,6 +381,14 @@ class JS::Realm : public JS::shadow::Realm {
   
   bool isAsyncStackCapturingEnabled = false;
 
+  
+  
+  
+  
+  
+  
+  bool isUnlimitedStacksCapturingEnabled = false;
+
  private:
   void updateDebuggerObservesFlag(unsigned flag);
 
