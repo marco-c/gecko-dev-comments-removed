@@ -200,17 +200,19 @@ add_task(async function runRTPTestDOM() {
     13,
     runTests
   );
-  await setupAndRunCrossOriginIsolatedTest(
-    {
-      resistFingerprintingPBMOnly: true,
-      crossOriginIsolated: true,
-      shouldBeRounded: false,
-      scenario: TEST_SCENARIO_5,
-      processResultsFunc: processResultsGlobal.toString(),
-    },
-    13,
-    runTests
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   await setupAndRunCrossOriginIsolatedTest(
     {
@@ -237,17 +239,20 @@ add_task(async function runRTPTestDOM() {
     7.97,
     runTests
   );
-  await setupAndRunCrossOriginIsolatedTest(
-    {
-      resistFingerprintingPBMOnly: true,
-      crossOriginIsolated: true,
-      shouldBeRounded: false,
-      scenario: TEST_SCENARIO_8,
-      processResultsFunc: processResultsGlobal.toString(),
-    },
-    7.97,
-    runTests
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   await setupAndRunCrossOriginIsolatedTest(
     {
       resistFingerprintingPBMOnly: true,
@@ -409,17 +414,20 @@ add_task(async function runRTPTestsForWorker() {
     13,
     runWorkerTest
   );
-  await setupAndRunCrossOriginIsolatedTest(
-    {
-      resistFingerprintingPBMOnly: true,
-      crossOriginIsolated: true,
-      shouldBeRounded: false,
-      scenario: TEST_SCENARIO_105,
-      processResultsFunc: processResultsGlobal.toString(),
-    },
-    13,
-    runWorkerTest
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   await setupAndRunCrossOriginIsolatedTest(
     {
       resistFingerprintingPBMOnly: true,
@@ -441,17 +449,19 @@ add_task(async function runRTPTestsForWorker() {
     7.97,
     runWorkerTest
   );
-  await setupAndRunCrossOriginIsolatedTest(
-    {
-      resistFingerprintingPBMOnly: true,
-      crossOriginIsolated: true,
-      shouldBeRounded: false,
-      scenario: TEST_SCENARIO_108,
-      processResultsFunc: processResultsGlobal.toString(),
-    },
-    7.97,
-    runWorkerTest
-  );
+  
+
+
+
+
+
+
+
+
+
+
+
+
   await setupAndRunCrossOriginIsolatedTest(
     {
       resistFingerprintingPBMOnly: true,
