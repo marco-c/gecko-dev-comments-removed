@@ -109,7 +109,7 @@ struct FeatureArgs {
 
 
 struct ScriptedCaller {
-  UniqueChars filename;  
+  UniqueChars filename;
   bool filenameIsURL;
   unsigned line;
 

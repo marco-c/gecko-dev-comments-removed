@@ -36,8 +36,6 @@ static const char* FunctionName(JSContext* cx, JSFunction* fun,
   if (!fun->displayAtom()) {
     return probes::anonymousName;
   }
-  
-  
   *bytes = JS_EncodeStringToLatin1(cx, fun->displayAtom());
   return *bytes ? bytes->get() : probes::nullName;
 }

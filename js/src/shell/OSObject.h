@@ -9,8 +9,6 @@
 #ifndef shell_OSObject_h
 #define shell_OSObject_h
 
-#include <stdio.h>
-
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
@@ -40,58 +38,7 @@ JSString* ResolvePath(JSContext* cx, JS::HandleString filenameStr,
 
 JSObject* FileAsTypedArray(JSContext* cx, JS::HandleString pathnameStr);
 
-
-
-
-
-
-
-JS::UniqueChars GetCWD(JSContext* cx);
-
-
-
-
-
-
-
-
-
-FILE* OpenFile(JSContext* cx, const char* filename, const char* mode);
-
-
-
-
-
-
-
-
-
-
-
-
-bool ReadFile(JSContext* cx, const char* filename, FILE* file, char* buffer,
-              size_t length);
-
-
-
-
-
-
-
-
-
-
-bool FileSize(JSContext* cx, const char* filename, FILE* file, size_t* size);
-
-
-
-
-
-
-
-
-
-JS::UniqueChars SystemErrorMessage(JSContext* cx, int errnum);
+JS::UniqueChars GetCWD();
 
 }  
 }  
