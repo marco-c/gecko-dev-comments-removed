@@ -3027,14 +3027,6 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
   
   
   
-  if (aStrokeOptions &&
-      intBounds.width * intBounds.height >
-          (mViewportSize.width / 2) * (mViewportSize.height / 2)) {
-    return false;
-  }
-  
-  
-  
   Maybe<DeviceColor> color =
       aOptions.mCompositionOp == CompositionOp::OP_CLEAR
           ? Some(DeviceColor(1, 1, 1, 1))
@@ -3219,6 +3211,17 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
       
       
     }
+  }
+
+  
+  
+  
+  
+  
+  if (aStrokeOptions &&
+      intBounds.width * intBounds.height >
+          (mViewportSize.width / 2) * (mViewportSize.height / 2)) {
+    return false;
   }
 
   
