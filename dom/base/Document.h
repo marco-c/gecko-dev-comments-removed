@@ -2335,12 +2335,6 @@ class Document : public nsINode,
   
 
 
-  bool AllowDeprecatedTls();
-  void SetAllowDeprecatedTls(bool aResult);
-
-  
-
-
 
   void SetFailedChannel(nsIChannel* aChannel) { mFailedChannel = aChannel; }
 
