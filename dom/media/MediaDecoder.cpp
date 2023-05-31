@@ -476,6 +476,11 @@ void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
   
   mPendingStatusUpdateForNewlyCreatedStateMachine = true;
 
+  
+  
+  
+  DiscardOngoingSeekIfExists();
+
   discardStateMachine->BeginShutdown()->Then(
       AbstractThread::MainThread(), __func__, [discardStateMachine] {});
 #endif
