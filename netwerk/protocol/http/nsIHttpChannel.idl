@@ -477,7 +477,12 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-    void logBlockedCORSRequest(in AString aMessage, in ACString aCategory);
+
+
+
+    void logBlockedCORSRequest(in AString aMessage,
+                               in ACString aCategory,
+                               in boolean aIsWarning);
 
     void logMimeTypeMismatch(in ACString aMessageName,
                              in boolean aWarning,

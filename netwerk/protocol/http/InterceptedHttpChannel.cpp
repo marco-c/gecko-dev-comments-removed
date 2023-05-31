@@ -621,7 +621,8 @@ InterceptedHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 
 NS_IMETHODIMP
 InterceptedHttpChannel::LogBlockedCORSRequest(const nsAString& aMessage,
-                                              const nsACString& aCategory) {
+                                              const nsACString& aCategory,
+                                              bool aIsWarning) {
   
   return NS_ERROR_NOT_IMPLEMENTED;
 }
