@@ -64,6 +64,13 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
              CFDictionaryRef* result);
 }
 
+static bool IsDarkAppearance(NSAppearance* appearance) {
+  if (@available(macOS 10.14, *)) {
+    return [appearance.name isEqualToString:NSAppearanceNameDarkAqua];
+  }
+  return false;
+}
+
 
 
 
@@ -1096,8 +1103,19 @@ void nsNativeThemeCocoa::DrawMenuIcon(CGContextRef cgContext, const CGRect& aRec
                                                                             : paddingStartX),
                                aRect.origin.y + ceil(paddingY / 2), size.width, size.height);
 
-  NSString* state =
-      aParams.disabled ? @"disabled" : (aParams.insideActiveMenuItem ? @"pressed" : @"normal");
+  NSString* state;
+  if (aParams.disabled) {
+    state = @"disabled";
+  } else if (aParams.insideActiveMenuItem) {
+    state = @"pressed";
+  } else if (IsDarkAppearance(NSAppearance.currentAppearance)) {
+    
+    
+    
+    state = @"pressed";
+  } else {
+    state = @"normal";
+  }
 
   NSString* imageName = GetMenuIconName(aParams);
 
@@ -1149,10 +1167,17 @@ void nsNativeThemeCocoa::DrawMenuSeparator(CGContextRef cgContext, const CGRect&
     separatorRect.size.height = 1;
     separatorRect.size.width -= 42;
     separatorRect.origin.x += 21;
-    
-    
-    
-    CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.0, (231 - 205) / 231.0);
+    if (!IsDarkAppearance(NSAppearance.currentAppearance)) {
+      
+      
+      
+      CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.0, (231 - 205) / 231.0);
+    } else {
+      
+      
+      
+      CGContextSetRGBFillColor(cgContext, 1.0, 1.0, 1.0, 1.0 + ((45 - 81) / 45.0));
+    }
     CGContextFillRect(cgContext, separatorRect);
     return;
   }
