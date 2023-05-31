@@ -82,7 +82,10 @@ async function handleInitializationMessage({ data }) {
     }
 
     let engine;
-    if (enginePayload) {
+    if (enginePayload.isMocked) {
+      
+      engine = new MockedEngine(fromLanguage, toLanguage);
+    } else {
       const { bergamotWasmArrayBuffer, languageModelFiles } = enginePayload;
       const bergamot = await BergamotUtils.initializeWasm(
         bergamotWasmArrayBuffer
@@ -93,9 +96,6 @@ async function handleInitializationMessage({ data }) {
         bergamot,
         languageModelFiles
       );
-    } else {
-      
-      engine = new MockedEngine(fromLanguage, toLanguage);
     }
 
     ChromeUtils.addProfilerMarker(
