@@ -24,7 +24,6 @@ struct JS_PUBLIC_API JSRuntime;
 
 namespace js {
 
-class AutoLockHelperThreadState;
 class OffThreadPromiseRuntimeState;
 
 

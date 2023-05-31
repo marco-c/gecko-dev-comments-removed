@@ -12,7 +12,6 @@
 #include "NamespaceImports.h"
 
 #include "gc/Cell.h"
-#include "gc/GCContext.h"
 #include "gc/StoreBuffer.h"
 #include "js/ComparisonOperators.h"     
 #include "js/experimental/TypedData.h"  
