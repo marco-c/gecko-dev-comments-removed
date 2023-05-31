@@ -203,7 +203,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
  private:
   
   static constexpr uint32_t kMaxDesktopCaptureCpuUsage = 50;
-  void InitOnThread(int aFramerate);
+  void InitOnThread(std::unique_ptr<DesktopCapturer> aCapturer, int aFramerate);
   void ShutdownOnThread();
   
   void OnCaptureResult(DesktopCapturer::Result aResult,
@@ -215,8 +215,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   
   const nsCOMPtr<nsISerialEventTarget> mControlThread;
   
-  VideoCaptureCapability mRequestedCapability;
-  
+  mozilla::Maybe<VideoCaptureCapability> mRequestedCapability;
   
   
   std::unique_ptr<DesktopCapturer> mCapturer;
