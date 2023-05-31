@@ -766,13 +766,19 @@ var TranslationsPanel = new (class {
 
   onChangeLanguages() {
     const { defaultTranslate, toMenuList, fromMenuList } = this.elements;
+    const { requestedTranslationPair } =
+      this.#getTranslationsActor().languageState;
     defaultTranslate.disabled =
       
       toMenuList.value === fromMenuList.value ||
       
       !toMenuList.value ||
       
-      !fromMenuList.value;
+      !fromMenuList.value ||
+      
+      (requestedTranslationPair &&
+        requestedTranslationPair.fromLanguage === fromMenuList.value &&
+        requestedTranslationPair.toLanguage === toMenuList.value);
   }
 
   
