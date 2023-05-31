@@ -234,9 +234,6 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   webrtc::Timestamp mNextFrameMinimumTime;
   
   
-  bool mRunning;
-  
-  
   mozilla::DataMutex<std::set<rtc::VideoSinkInterface<VideoFrame>*>> mCallbacks;
 };
 
