@@ -6,7 +6,13 @@ const AriaUtils = {
 
 
 
+
+
+
   assignAndVerifyRolesByRoleNames: function(roleNames) {
+    if (!Array.isArray(roleNames) || !roleNames.length) {
+      throw `Param roleNames of assignAndVerifyRolesByRoleNames("${roleNames}") should be an array containing at least one role string.`;
+    }
     for (const role of roleNames) {
       promise_test(async t => {
         let el = document.createElement("div");
@@ -19,6 +25,7 @@ const AriaUtils = {
       }, `role: ${role}`);
     }
   },
+
 
   
 
@@ -34,6 +41,9 @@ const AriaUtils = {
 
   verifyRolesBySelector: function(selector) {
     const els = document.querySelectorAll(selector);
+    if (!els.length) {
+      throw `Selector passed in verifyRolesBySelector("${selector}") should match at least one element.`;
+    }
     for (const el of els) {
       let role = el.getAttribute("data-expectedrole");
       let testName = el.getAttribute("data-testname") || role; 
@@ -56,6 +66,52 @@ const AriaUtils = {
       }, `${testName}`);
     }
   },
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  verifyLabelsBySelector: function(selector) {
+    const els = document.querySelectorAll(selector);
+    if (!els.length) {
+      throw `Selector passed in verifyLabelsBySelector("${selector}") should match at least one element.`;
+    }
+    for (const el of els) {
+      let label = el.getAttribute("data-expectedlabel");
+      let testName = el.getAttribute("data-testname") || label; 
+      promise_test(async t => {
+        const expectedLabel = el.getAttribute("data-expectedlabel");
+
+        
+        if (!el.id) {
+          let labelCount = 1;
+          let elID = `labelTest${labelCount}`;
+          while(document.getElementById(elID)) {
+            labelCount++;
+            elID = `labelTest${labelCount}`;
+          }
+          el.id = elID;
+        }
+
+        let computedLabel = await test_driver.get_computed_label(el);
+
+        
+        computedLabel = computedLabel.trim()
+
+        assert_equals(computedLabel, expectedLabel, el.outerHTML);
+      }, `${testName}`);
+    }
+  },
+
 
 };
 
