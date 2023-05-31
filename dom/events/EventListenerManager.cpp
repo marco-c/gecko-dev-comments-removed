@@ -779,41 +779,25 @@ void EventListenerManager::RemoveEventListenerInternal(
   }
 }
 
-bool EventListenerManager::ListenerCanHandle(const Listener* aListener,
-                                             const WidgetEvent* aEvent,
-                                             EventMessage aEventMessage) const
-
-{
+bool EventListenerManager::Listener::MatchesEventMessage(
+    const WidgetEvent* aEvent, EventMessage aEventMessage) const {
   MOZ_ASSERT(aEventMessage == aEvent->mMessage ||
-                 aEventMessage == GetLegacyEventMessage(aEvent->mMessage),
+                 aEventMessage == EventListenerManager::GetLegacyEventMessage(
+                                      aEvent->mMessage),
              "aEvent and aEventMessage should agree, modulo legacyness");
 
-  auto listenerEnabled = [&]() {
-    
-    if (aListener->mListenerType == Listener::eNoListener) {
-      return false;
-    }
-
-    
-    if (!aListener->mEnabled) {
-      return false;
-    }
+  if (MOZ_UNLIKELY(mAllEvents)) {
     return true;
-  };
+  }
 
   
   
   
   
-  if (MOZ_UNLIKELY(aListener->mAllEvents)) {
-    return listenerEnabled();
-  }
   if (aEvent->mMessage == eUnidentifiedEvent) {
-    return aListener->mTypeAtom == aEvent->mSpecifiedEventType &&
-           listenerEnabled();
+    return mTypeAtom == aEvent->mSpecifiedEventType;
   }
-  MOZ_ASSERT(mIsMainThreadELM);
-  return aListener->mEventMessage == aEventMessage && listenerEnabled();
+  return mEventMessage == aEventMessage;
 }
 
 static bool IsDefaultPassiveWhenOnRoot(EventMessage aMessage) {
@@ -1261,8 +1245,8 @@ nsresult EventListenerManager::HandleEventSubType(Listener* aListener,
   return result;
 }
 
-EventMessage EventListenerManager::GetLegacyEventMessage(
-    EventMessage aEventMessage) const {
+ EventMessage EventListenerManager::GetLegacyEventMessage(
+    EventMessage aEventMessage) {
   
   if (aEventMessage == eTransitionEnd) {
     return eWebkitTransitionEnd;
@@ -1342,6 +1326,8 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                                                EventTarget* aCurrentTarget,
                                                nsEventStatus* aEventStatus,
                                                bool aItemInShadowTree) {
+  MOZ_ASSERT_IF(aEvent->mMessage != eUnidentifiedEvent, mIsMainThreadELM);
+
   
   
   if (!aEvent->DefaultPrevented() &&
@@ -1373,69 +1359,81 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
         break;
       }
       Listener* listener = &listenerRef;
+      if (!listener->MatchesEventMessage(aEvent, eventMessage)) {
+        continue;
+      }
+      if (listener->mListenerType == Listener::eNoListener) {
+        
+        continue;
+      }
+      if (!listener->mEnabled) {
+        
+        continue;
+      }
+      hasListener = true;
+      if (!listener->MatchesEventGroup(aEvent)) {
+        continue;
+      }
+      hasListenerForCurrentGroup = true;
+
       
       
-      
-      if (ListenerCanHandle(listener, aEvent, eventMessage)) {
-        hasListener = true;
-        hasListenerForCurrentGroup =
-            hasListenerForCurrentGroup ||
-            listener->mFlags.mInSystemGroup == aEvent->mFlags.mInSystemGroup;
-        if (listener->IsListening(aEvent) &&
-            (aEvent->IsTrusted() || listener->mFlags.mAllowUntrustedEvents)) {
-          if (!*aDOMEvent) {
-            
-            
-            nsCOMPtr<EventTarget> et = aEvent->mOriginalTarget;
-            RefPtr<Event> event =
-                EventDispatcher::CreateEvent(et, aPresContext, aEvent, u""_ns);
-            event.forget(aDOMEvent);
-          }
-          if (*aDOMEvent) {
-            if (!aEvent->mCurrentTarget) {
-              aEvent->mCurrentTarget = aCurrentTarget->GetTargetForDOMEvent();
-              if (!aEvent->mCurrentTarget) {
-                break;
-              }
-            }
-            if (usingLegacyMessage && !legacyAutoOverride) {
-              
-              
-              legacyAutoOverride.emplace(*aDOMEvent, eventMessage);
-            }
-
-            aEvent->mFlags.mInPassiveListener = listener->mFlags.mPassive;
-            Maybe<Listener> listenerHolder;
-            if (listener->mFlags.mOnce) {
-              
-              
-              
-              listenerHolder.emplace(std::move(*listener));
-              listener = listenerHolder.ptr();
-              hasRemovedListener = true;
-            }
-
-            nsCOMPtr<nsPIDOMWindowInner> innerWindow =
-                WindowFromListener(listener, aItemInShadowTree);
-            mozilla::dom::Event* oldWindowEvent = nullptr;
-            if (innerWindow) {
-              oldWindowEvent = innerWindow->SetEvent(*aDOMEvent);
-            }
-
-            nsresult rv =
-                HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
-
-            if (innerWindow) {
-              Unused << innerWindow->SetEvent(oldWindowEvent);
-            }
-
-            if (NS_FAILED(rv)) {
-              aEvent->mFlags.mExceptionWasRaised = true;
-            }
-            aEvent->mFlags.mInPassiveListener = false;
-          }
+      if (!listener->MatchesEventPhase(aEvent) ||
+          !listener->AllowsEventTrustedness(aEvent)) {
+        continue;
+      }
+      if (!*aDOMEvent) {
+        
+        
+        
+        nsCOMPtr<EventTarget> et = aEvent->mOriginalTarget;
+        RefPtr<Event> event =
+            EventDispatcher::CreateEvent(et, aPresContext, aEvent, u""_ns);
+        event.forget(aDOMEvent);
+      }
+      if (!*aDOMEvent) {
+        continue;
+      }
+      if (!aEvent->mCurrentTarget) {
+        aEvent->mCurrentTarget = aCurrentTarget->GetTargetForDOMEvent();
+        if (!aEvent->mCurrentTarget) {
+          break;
         }
       }
+      if (usingLegacyMessage && !legacyAutoOverride) {
+        
+        
+        legacyAutoOverride.emplace(*aDOMEvent, eventMessage);
+      }
+
+      aEvent->mFlags.mInPassiveListener = listener->mFlags.mPassive;
+      Maybe<Listener> listenerHolder;
+      if (listener->mFlags.mOnce) {
+        
+        
+        
+        listenerHolder.emplace(std::move(*listener));
+        listener = listenerHolder.ptr();
+        hasRemovedListener = true;
+      }
+
+      nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+          WindowFromListener(listener, aItemInShadowTree);
+      mozilla::dom::Event* oldWindowEvent = nullptr;
+      if (innerWindow) {
+        oldWindowEvent = innerWindow->SetEvent(*aDOMEvent);
+      }
+
+      nsresult rv = HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
+
+      if (innerWindow) {
+        Unused << innerWindow->SetEvent(oldWindowEvent);
+      }
+
+      if (NS_FAILED(rv)) {
+        aEvent->mFlags.mExceptionWasRaised = true;
+      }
+      aEvent->mFlags.mInPassiveListener = false;
     }
 
     

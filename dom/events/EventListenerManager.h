@@ -8,16 +8,16 @@
 #define mozilla_EventListenerManager_h_
 
 #include "mozilla/BasicEvents.h"
-#include "mozilla/dom/AbortFollower.h"
-#include "mozilla/dom/EventListenerBinding.h"
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/dom/AbortFollower.h"
+#include "mozilla/dom/EventListenerBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
 #include "nsIDOMEventListener.h"
-#include "nsTObserverArray.h"
 #include "nsTArray.h"
+#include "nsTObserverArray.h"
 
 class nsIEventListenerInfo;
 class nsPIDOMWindowInner;
@@ -271,15 +271,23 @@ class EventListenerManager final : public EventListenerManagerBase {
       }
     }
 
-    MOZ_ALWAYS_INLINE bool IsListening(const WidgetEvent* aEvent) const {
-      if (mFlags.mInSystemGroup != aEvent->mFlags.mInSystemGroup) {
-        return false;
-      }
-      
-      
-      
+    MOZ_ALWAYS_INLINE bool MatchesEventMessage(
+        const WidgetEvent* aEvent, EventMessage aEventMessage) const;
+
+    MOZ_ALWAYS_INLINE bool MatchesEventGroup(const WidgetEvent* aEvent) const {
+      return mFlags.mInSystemGroup == aEvent->mFlags.mInSystemGroup;
+    }
+
+    MOZ_ALWAYS_INLINE bool MatchesEventPhase(const WidgetEvent* aEvent) const {
       return ((mFlags.mCapture && aEvent->mFlags.mInCapturePhase) ||
               (!mFlags.mCapture && aEvent->mFlags.mInBubblingPhase));
+    }
+
+    
+    
+    MOZ_ALWAYS_INLINE bool AllowsEventTrustedness(
+        const WidgetEvent* aEvent) const {
+      return aEvent->IsTrusted() || mFlags.mAllowUntrustedEvents;
     }
   };
 
@@ -544,7 +552,7 @@ class EventListenerManager final : public EventListenerManagerBase {
 
 
 
-  EventMessage GetLegacyEventMessage(EventMessage aEventMessage) const;
+  static EventMessage GetLegacyEventMessage(EventMessage aEventMessage);
 
   
 
