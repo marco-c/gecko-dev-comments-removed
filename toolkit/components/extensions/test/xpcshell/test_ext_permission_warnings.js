@@ -12,18 +12,11 @@ const {
   "resource://gre/modules/ExtensionPermissionMessages.sys.mjs"
 );
 
-const EXTENSION_L10N_PATHS =
-  AppConstants.MOZ_APP_NAME == "thunderbird"
-    ? [
-        "messenger/addons.ftl", 
-        "messenger/addonPermissions.ftl", 
-        "branding/brand.ftl",
-      ]
-    : [
-        "toolkit/global/extensions.ftl",
-        "toolkit/global/extensionPermissions.ftl",
-        "branding/brand.ftl",
-      ];
+const EXTENSION_L10N_PATHS = [
+  "toolkit/global/extensions.ftl",
+  "toolkit/global/extensionPermissions.ftl",
+  "branding/brand.ftl",
+];
 
 
 
