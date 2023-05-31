@@ -21,7 +21,6 @@ namespace js {
 
 class Nursery;
 class SliceBudget;
-class TenuringTracer;
 
 namespace gcstats {
 struct Statistics;
@@ -34,6 +33,7 @@ class BackgroundUnmarkTask;
 struct FinalizePhase;
 class FreeSpan;
 class TenuredCell;
+class TenuringTracer;
 
 
 
@@ -377,7 +377,7 @@ class ArenaLists {
   friend class BackgroundUnmarkTask;
   friend class GCRuntime;
   friend class js::Nursery;
-  friend class js::TenuringTracer;
+  friend class TenuringTracer;
 };
 
 } 

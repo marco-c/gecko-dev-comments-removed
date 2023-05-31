@@ -12,6 +12,7 @@
 
 #include <type_traits>
 
+#include "gc/GCContext.h"
 #include "gc/Heap.h"
 #include "gc/TraceKind.h"
 #include "js/GCAnnotations.h"
@@ -32,13 +33,7 @@ extern bool RuntimeFromMainThreadIsHeapMajorCollecting(
 #ifdef DEBUG
 
 
-
 extern bool CurrentThreadIsIonCompiling();
-
-extern bool CurrentThreadIsGCMarking();
-extern bool CurrentThreadIsGCSweeping();
-extern bool CurrentThreadIsGCFinalizing();
-
 #endif
 
 extern void TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc,
