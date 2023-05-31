@@ -48,13 +48,12 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
   uint32_t GetNumPages() const { return mNumPages; }
 
-  float GetPagesPerSheetScale() const { return mPagesPerSheetScale; }
-  uint32_t GetPagesPerSheetNumCols() const { return mPagesPerSheetNumCols; }
-  nsPoint GetPagesPerSheetGridOrigin() const {
-    return mPagesPerSheetGridOrigin;
-  }
-  float GetGridCellWidth() const { return mGridCellWidth; }
-  float GetGridCellHeight() const { return mGridCellHeight; }
+  
+  
+  uint32_t GetGridNumCols() const { return mGridNumCols; }
+  nsPoint GetGridOrigin() const { return mGridOrigin; }
+  nscoord GetGridCellWidth() const { return mGridCellWidth; }
+  nscoord GetGridCellHeight() const { return mGridCellHeight; }
 
  private:
   
@@ -65,11 +64,22 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
   
   
-  void ComputePagesPerSheetOriginAndScale();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void ComputePagesPerSheetGridMetrics(const nsSize& aSheetSize);
 
   
   
   nsSharedPageData* mPD = nullptr;
+
   
   uint32_t mNumPages = 0;
 
@@ -78,22 +88,16 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   
   
-  
-  
-  float mPagesPerSheetScale = 1.0f;
-  
-  
-  
-  
-  
-  uint32_t mPagesPerSheetNumCols = 1;
-
-  nsPoint mPagesPerSheetGridOrigin;
+  uint32_t mGridNumCols = 1;
 
   
   
-  float mGridCellWidth = 1.0f;
-  float mGridCellHeight = 1.0f;
+  nsPoint mGridOrigin;
+
+  
+  
+  nscoord mGridCellWidth = 1;
+  nscoord mGridCellHeight = 1;
 };
 
 }  

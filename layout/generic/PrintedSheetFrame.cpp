@@ -93,7 +93,8 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   const uint32_t desiredPagesPerSheet = mPD->PagesPerSheetInfo()->mNumPages;
 
   if (desiredPagesPerSheet > 1) {
-    ComputePagesPerSheetOriginAndScale();
+    ComputePagesPerSheetGridMetrics(
+        nsSize(aReflowInput.AvailableISize(), aReflowInput.AvailableBSize()));
   }
 
   
@@ -220,29 +221,27 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   FinishAndStoreOverflow(&aReflowOutput);
 }
 
-void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
+void PrintedSheetFrame::ComputePagesPerSheetGridMetrics(
+    const nsSize& aSheetSize) {
   MOZ_ASSERT(mPD->PagesPerSheetInfo()->mNumPages > 1,
              "Unnecessary to call this in a regular 1-page-per-sheet scenario; "
              "the computed values won't ever be used in that case");
 
   
-  const nsSize pageSize = PresContext()->GetPageSize();
-
   
-  
-  nsSize availSpaceOnSheet = pageSize;
+  nsSize availSpaceOnSheet = aSheetSize;
   nsMargin uwm = mPD->mPrintSettings->GetIgnoreUnwriteableMargins()
                      ? nsMargin{}
                      : nsPresContext::CSSTwipsToAppUnits(
                            mPD->mPrintSettings->GetUnwriteableMarginInTwips());
 
+  
+  
   if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
     
     
     
     
-    std::swap(availSpaceOnSheet.width, availSpaceOnSheet.height);
-
     
     
     
@@ -259,73 +258,31 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
 
   availSpaceOnSheet.width -= uwm.LeftRight();
   availSpaceOnSheet.height -= uwm.TopBottom();
-  nsPoint pageGridOrigin(uwm.left, uwm.top);
+
+  if (MOZ_UNLIKELY(availSpaceOnSheet.IsEmpty())) {
+    
+    
+    
+    NS_WARNING("Zero area for pages-per-sheet grid, or zero-sized grid");
+    mGridOrigin = nsPoint(0, 0);
+    mGridNumCols = 1;
+    return;
+  }
 
   
   
   const auto* ppsInfo = mPD->PagesPerSheetInfo();
   uint32_t smallerNumTracks = ppsInfo->mNumPages / ppsInfo->mLargerNumTracks;
-  bool pageSizeIsPortraitLike = pageSize.width > pageSize.height;
+  bool sheetIsPortraitLike = aSheetSize.width < aSheetSize.height;
   auto numCols =
-      pageSizeIsPortraitLike ? smallerNumTracks : ppsInfo->mLargerNumTracks;
+      sheetIsPortraitLike ? smallerNumTracks : ppsInfo->mLargerNumTracks;
   auto numRows =
-      pageSizeIsPortraitLike ? ppsInfo->mLargerNumTracks : smallerNumTracks;
+      sheetIsPortraitLike ? ppsInfo->mLargerNumTracks : smallerNumTracks;
 
-  
-  
-  nsSize pageGridFullSize(numCols * pageSize.width, numRows * pageSize.height);
-
-  if (MOZ_UNLIKELY(availSpaceOnSheet.IsEmpty() || pageGridFullSize.IsEmpty())) {
-    
-    
-    
-    
-    
-    
-    
-    NS_WARNING("Zero area for pages-per-sheet grid, or zero-sized grid");
-    mPagesPerSheetGridOrigin = pageGridOrigin;
-    mPagesPerSheetNumCols = 1;
-    mPagesPerSheetScale = 0.0f;
-    return;
-  }
-
-  
-  float hScale =
-      availSpaceOnSheet.width / static_cast<float>(pageGridFullSize.width);
-  float vScale =
-      availSpaceOnSheet.height / static_cast<float>(pageGridFullSize.height);
-
-  
-  
-  
-  float scale = std::min(hScale, vScale);
-  if (hScale < vScale) {
-    
-    
-    nscoord extraSpace = availSpaceOnSheet.height -
-                         NSToCoordFloor(scale * pageGridFullSize.height);
-    if (MOZ_LIKELY(extraSpace > 0)) {
-      pageGridOrigin.y += extraSpace / 2;
-    }
-  } else if (vScale < hScale) {
-    
-    
-    nscoord extraSpace = availSpaceOnSheet.width -
-                         NSToCoordFloor(scale * pageGridFullSize.width);
-    if (MOZ_LIKELY(extraSpace > 0)) {
-      pageGridOrigin.x += extraSpace / 2;
-    }
-  }
-  
-  
-
-  
-  mPagesPerSheetGridOrigin = pageGridOrigin;
-  mPagesPerSheetNumCols = numCols;
-  mPagesPerSheetScale = scale;
-  mGridCellWidth = float(availSpaceOnSheet.width) / float(numCols);
-  mGridCellHeight = float(availSpaceOnSheet.height) / float(numRows);
+  mGridOrigin = nsPoint(uwm.left, uwm.top);
+  mGridNumCols = numCols;
+  mGridCellWidth = availSpaceOnSheet.width / nscoord(numCols);
+  mGridCellHeight = availSpaceOnSheet.height / nscoord(numRows);
 }
 
 #ifdef DEBUG_FRAME_DUMP
