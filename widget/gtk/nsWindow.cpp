@@ -6446,7 +6446,15 @@ nsAutoCString nsWindow::GetDebugTag() const {
 }
 
 void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
-  GdkPoint topLeft = DevicePixelsToGdkPointRoundDown(mBounds.TopLeft());
+  GdkPoint topLeft = [&] {
+    auto target = mBounds.TopLeft();
+    
+    
+    if (DrawsToCSDTitlebar()) {
+      target += mClientOffset;
+    }
+    return DevicePixelsToGdkPointRoundDown(target);
+  }();
   GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mLastSizeRequest);
 
   LOG("nsWindow::NativeMoveResize move %d resize %d to %d,%d -> %d x %d\n",
@@ -9515,7 +9523,7 @@ void nsWindow::LockNativePointer() {
     return;
   }
 
-  auto waylandDisplay = WaylandDisplayGet();
+  auto* waylandDisplay = WaylandDisplayGet();
 
   auto* pointerConstraints = waylandDisplay->GetPointerConstraints();
   if (!pointerConstraints) {
