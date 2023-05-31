@@ -19,7 +19,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/StaticPrefs_accessibility.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -239,8 +238,7 @@ void SelectionManager::ProcessSelectionChanged(SelData* aSelData) {
 void SelectionManager::SpellCheckRangeChanged(const nsRange& aRange) {
   
   
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-      IPCAccessibilityActive()) {
+  if (a11y::IsCacheActive() && IPCAccessibilityActive()) {
     dom::Document* doc = aRange.GetStartContainer()->OwnerDoc();
     MOZ_ASSERT(doc);
     TextLeafPoint::UpdateCachedSpellingError(doc, aRange);

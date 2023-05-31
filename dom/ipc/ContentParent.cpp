@@ -35,7 +35,6 @@
 #  include "mozilla/a11y/AccessibleWrap.h"
 #  include "mozilla/a11y/Compatibility.h"
 #  include "mozilla/mscom/ActCtxResource.h"
-#  include "mozilla/StaticPrefs_accessibility.h"
 #endif
 #include <map>
 #include <utility>
@@ -2660,7 +2659,7 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   
-  if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  if (!a11y::IsCacheActive()) {
     
     
     auto resourceId = mscom::ActCtxResource::GetAccessibilityResourceId();

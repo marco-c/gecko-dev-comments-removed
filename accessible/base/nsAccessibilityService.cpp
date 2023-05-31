@@ -70,7 +70,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_accessibility.h"
 
 #include "XULAlertAccessible.h"
 #include "XULComboboxAccessible.h"
@@ -500,8 +499,7 @@ void nsAccessibilityService::FireAccessibleEvent(uint32_t aEvent,
 
 void nsAccessibilityService::NotifyOfPossibleBoundsChange(
     mozilla::PresShell* aPresShell, nsIContent* aContent) {
-  if (IPCAccessibilityActive() &&
-      StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  if (IPCAccessibilityActive() && a11y::IsCacheActive()) {
     DocAccessible* document = aPresShell->GetDocAccessible();
     if (document) {
       
@@ -544,15 +542,14 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
         document->ContentInserted(aContent, aContent->GetNextSibling());
       }
     }
-  } else if (accessible && IPCAccessibilityActive() &&
-             StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  } else if (accessible && IPCAccessibilityActive() && a11y::IsCacheActive()) {
     accessible->MaybeQueueCacheUpdateForStyleChanges();
   }
 }
 
 void nsAccessibilityService::NotifyOfResolutionChange(
     mozilla::PresShell* aPresShell, float aResolution) {
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  if (a11y::IsCacheActive()) {
     DocAccessible* document = aPresShell->GetDocAccessible();
     if (document && document->IPCDoc()) {
       AutoTArray<mozilla::a11y::CacheData, 1> data;
@@ -566,7 +563,7 @@ void nsAccessibilityService::NotifyOfResolutionChange(
 
 void nsAccessibilityService::NotifyOfDevPixelRatioChange(
     mozilla::PresShell* aPresShell, int32_t aAppUnitsPerDevPixel) {
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  if (a11y::IsCacheActive()) {
     DocAccessible* document = aPresShell->GetDocAccessible();
     if (document && document->IPCDoc()) {
       AutoTArray<mozilla::a11y::CacheData, 1> data;
@@ -683,7 +680,7 @@ void nsAccessibilityService::TableLayoutGuessMaybeChanged(
   if (DocAccessible* document = GetDocAccessible(aPresShell)) {
     if (LocalAccessible* acc = document->GetAccessible(aContent)) {
       if (LocalAccessible* table = nsAccUtils::TableFor(acc)) {
-        if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+        if (!a11y::IsCacheActive()) {
           
           
           
@@ -1494,8 +1491,7 @@ bool nsAccessibilityService::Init() {
     MOZ_ASSERT(contentChild);
     
     
-    if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-        !contentChild->GetMsaaID()) {
+    if (!a11y::IsCacheActive() && !contentChild->GetMsaaID()) {
       
       
       contentChild->SendGetA11yContentId();
