@@ -37,16 +37,6 @@ ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 0x000D)
 
 
 
-ITEM_VALUE(IgnoreTargetAndReturnCachedValue, 0xFFFD)
-
-
-
-
-
-
-
-
-
 
 ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0xFFFE)
 
