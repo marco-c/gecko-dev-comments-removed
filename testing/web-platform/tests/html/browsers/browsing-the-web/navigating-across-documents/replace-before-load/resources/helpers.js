@@ -25,12 +25,11 @@ window.waitForLoadAllowingIntermediateLoads = (t, iframe, urlRelativeToThisDocum
   });
 };
 
-window.waitForMessage = (t, expected) => {
+window.waitForMessage = () => {
   return new Promise(resolve => {
-    window.addEventListener("message", t.step_func(e => {
-      assert_equals(e.data, expected);
-      resolve();
-    }), { once: true });
+    window.addEventListener("message", e => {
+      resolve(e.data);
+    }, { once: true });
   });
 };
 
@@ -55,13 +54,36 @@ window.checkSentinelIframe = async (t, sentinelIframe) => {
   await waitForLoad(t, sentinelIframe, "/common/blank.html?sentinelstart");
 };
 
-window.insertIframe = (t, url) => {
+window.insertIframe = (t, url, name) => {
   const iframe = document.createElement("iframe");
   iframe.src = url;
+
+  
+  
+  if (name) {
+    iframe.name = name;
+  }
+
   document.body.append(iframe);
 
   
   
   
   return iframe;
+};
+
+
+window.absoluteURL = relativeURL => {
+  return (new URL(relativeURL, location.href)).href;
+};
+
+
+window.codeInjectorURL = code => {
+  return absoluteURL("resources/code-injector.html?pipe=sub(none)&code=" + encodeURIComponent(code));
+};
+
+window.changeURLHost = (url, newHost) => {
+  const urlObj = new URL(url);
+  urlObj.host = newHost;
+  return urlObj.href;
 };
