@@ -57,6 +57,9 @@ if (DEBUG_ALLOCATIONS) {
 const { loader, require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
 
 
@@ -2152,68 +2155,29 @@ function createVersionizedHttpTestServer(testFolderName) {
 
 
 
-
-
-function simulateLinkClick(element, clickEventProps) {
-  return overrideOpenLink(() => {
-    if (clickEventProps) {
-      
-      element.dispatchEvent(clickEventProps);
-    } else {
-      
-      element.click();
-    }
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function overrideOpenLink(fn) {
+function simulateLinkClick(element) {
   const browserWindow = Services.wm.getMostRecentWindow(
     gDevTools.chromeWindowType
   );
 
-  
-  const oldOpenTrustedLinkIn = browserWindow.openTrustedLinkIn;
-  const oldOpenWebLinkIn = browserWindow.openWebLinkIn;
-
   const onOpenLink = new Promise(resolve => {
-    const openLinkIn = function (link, where) {
-      browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
-      browserWindow.openWebLinkIn = oldOpenWebLinkIn;
-      resolve({ link, where });
-    };
-    browserWindow.openWebLinkIn = browserWindow.openTrustedLinkIn = openLinkIn;
-    fn();
+    const openLinkIn = (link, where) => resolve({ link, where });
+    sinon.replace(browserWindow, "openTrustedLinkIn", openLinkIn);
+    sinon.replace(browserWindow, "openWebLinkIn", openLinkIn);
   });
 
+  element.click();
+
   
-  
-  let timeoutId;
   const onTimeout = new Promise(function (resolve) {
-    timeoutId = setTimeout(() => {
-      browserWindow.openTrustedLinkIn = oldOpenTrustedLinkIn;
-      browserWindow.openWebLinkIn = oldOpenWebLinkIn;
-      timeoutId = null;
+    setTimeout(() => {
       resolve({ link: null, where: null });
     }, 1000);
   });
 
-  onOpenLink.then(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  });
-  return Promise.race([onOpenLink, onTimeout]);
+  const raceResult = Promise.race([onOpenLink, onTimeout]);
+  sinon.restore();
+  return raceResult;
 }
 
 
