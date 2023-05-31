@@ -28,14 +28,16 @@ class TaskQueue;
 
 class TabCapturerWebrtc : public webrtc::DesktopCapturer {
  protected:
-  explicit TabCapturerWebrtc(SourceId aSourceId);
+  TabCapturerWebrtc(SourceId aSourceId,
+                    nsCOMPtr<nsISerialEventTarget> aCaptureThread);
   ~TabCapturerWebrtc();
 
  public:
   friend class CaptureFrameRequest;
   friend class TabCapturedHandler;
 
-  static std::unique_ptr<webrtc::DesktopCapturer> Create(SourceId aSourceId);
+  static std::unique_ptr<webrtc::DesktopCapturer> Create(
+      SourceId aSourceId, nsCOMPtr<nsISerialEventTarget> aCaptureThread);
 
   TabCapturerWebrtc(const TabCapturerWebrtc&) = delete;
   TabCapturerWebrtc& operator=(const TabCapturerWebrtc&) = delete;
@@ -70,13 +72,9 @@ class TabCapturerWebrtc : public webrtc::DesktopCapturer {
 
   const uint64_t mBrowserId;
   const RefPtr<TaskQueue> mMainThreadWorker;
+  const RefPtr<TaskQueue> mCallbackWorker;
   webrtc::SequenceChecker mControlChecker;
   webrtc::SequenceChecker mCallbackChecker;
-  
-  
-  
-  
-  RefPtr<TaskQueue> mCallbackWorker;
   
   webrtc::DesktopCapturer::Callback* mCallback
       RTC_GUARDED_BY(mCallbackChecker) = nullptr;
