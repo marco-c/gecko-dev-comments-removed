@@ -2060,8 +2060,6 @@ function SharedArrayBufferSlice(start, end) {
   return newObj;
 }
 
-#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
-
 
 function TypedArrayCreateSameType(exemplar, length) {
   
@@ -2268,5 +2266,3 @@ function TypedArrayToSorted(comparefn) {
   
   return MergeSortTypedArray(O, len, wrappedCompareFn);
 }
-
-#endif
