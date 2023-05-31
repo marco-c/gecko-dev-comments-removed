@@ -542,7 +542,6 @@
       } else {
         tooltipEl.removeAttribute("data-l10n-id");
       }
-      
     }
 
     startUnselectedTabHoverTimer() {

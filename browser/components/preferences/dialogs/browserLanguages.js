@@ -308,7 +308,7 @@ class SortedItemSelectList {
 
 
   disableWithMessageId(messageId) {
-    document.l10n.setAttributes(this.menulist, messageId);
+    this.menulist.setAttribute("data-l10n-id", messageId);
     this.menulist.setAttribute(
       "image",
       "chrome://browser/skin/tabbrowser/tab-connecting.png"
@@ -322,7 +322,7 @@ class SortedItemSelectList {
 
 
   enableWithMessageId(messageId) {
-    document.l10n.setAttributes(this.menulist, messageId);
+    this.menulist.setAttribute("data-l10n-id", messageId);
     this.menulist.removeAttribute("image");
     this.menulist.disabled = this.menulist.itemCount == 0;
     this.button.disabled = !this.menulist.selectedItem;
