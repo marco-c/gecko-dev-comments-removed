@@ -125,12 +125,6 @@ parent:
   async AccessiblesWillMove(uint64_t[] aIDs);
 
 child:
-  
-
-
-
-  async ConstructedInParentProcess();
-
   async __delete__();
 
   
