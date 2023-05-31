@@ -1665,7 +1665,7 @@
 
 
  \
-    MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT) \
+    MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT|JOF_USES_ENV) \
     
 
 
@@ -1728,7 +1728,7 @@
 
 
  \
-    MACRO(FunWithProto, fun_with_proto, NULL, 5, 1, 1, JOF_OBJECT) \
+    MACRO(FunWithProto, fun_with_proto, NULL, 5, 1, 1, JOF_OBJECT|JOF_USES_ENV) \
     
 
 
@@ -1891,7 +1891,7 @@
 
 
  \
-    MACRO(ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM) \
+    MACRO(ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM|JOF_USES_ENV) \
     
 
 
@@ -2783,7 +2783,7 @@
 
 
  \
-    MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC) \
+    MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -2805,7 +2805,7 @@
 
 
  \
-    MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC) \
+    MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -2911,7 +2911,7 @@
 
 
  \
-    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME) \
+    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_USES_ENV) \
     
 
 
@@ -3028,7 +3028,7 @@
 
 
  \
-    MACRO(SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    MACRO(SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -3043,7 +3043,7 @@
 
 
  \
-    MACRO(StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    MACRO(StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC|JOF_USES_ENV) \
     
 
 
@@ -3097,7 +3097,7 @@
 
 
  \
-    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET) \
+    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_USES_ENV) \
     
 
 
@@ -3155,7 +3155,7 @@
 
 
  \
-    MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
+    MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE|JOF_USES_ENV) \
     
 
 
@@ -3166,7 +3166,7 @@
 
 
  \
-    MACRO(PopLexicalEnv, pop_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(PopLexicalEnv, pop_lexical_env, NULL, 1, 0, 0, JOF_BYTE|JOF_USES_ENV) \
     
 
 
@@ -3262,7 +3262,7 @@
 
 
  \
-    MACRO(PushVarEnv, push_var_env, NULL, 5, 0, 0, JOF_SCOPE) \
+    MACRO(PushVarEnv, push_var_env, NULL, 5, 0, 0, JOF_SCOPE|JOF_USES_ENV) \
     
 
 
@@ -3317,7 +3317,7 @@
 
 
  \
-    MACRO(BindVar, bind_var, NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(BindVar, bind_var, NULL, 1, 0, 1, JOF_BYTE|JOF_USES_ENV) \
     
 
 
@@ -3339,7 +3339,7 @@
 
 
  \
-    MACRO(GlobalOrEvalDeclInstantiation, global_or_eval_decl_instantiation, NULL, 5, 0, 0, JOF_GCTHING) \
+    MACRO(GlobalOrEvalDeclInstantiation, global_or_eval_decl_instantiation, NULL, 5, 0, 0, JOF_GCTHING|JOF_USES_ENV) \
     
 
 
@@ -3357,7 +3357,7 @@
 
 
  \
-    MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY) \
+    MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY|JOF_USES_ENV) \
     
 
 

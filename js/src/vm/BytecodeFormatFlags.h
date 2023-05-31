@@ -55,6 +55,7 @@ enum {
   JOF_SPREAD = 1 << 22,      
   JOF_GNAME = 1 << 23,       
   JOF_IC = 1 << 24,          
+  JOF_USES_ENV = 1 << 25,    
 };
 
 #endif 
