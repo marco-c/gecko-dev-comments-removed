@@ -308,36 +308,6 @@ struct nsCSSRendering {
 
 
 
-  static nsIFrame* FindCanvasBackgroundFrame(const nsIFrame* aForFrame,
-                                             nsIFrame* aRootElementFrame) {
-    MOZ_ASSERT(aForFrame->IsCanvasFrame(), "not a canvas frame");
-    if (aRootElementFrame) {
-      return FindBackgroundStyleFrame(aRootElementFrame);
-    }
-
-    
-    
-    
-    return const_cast<nsIFrame*>(aForFrame);
-  }
-
-  static mozilla::ComputedStyle* FindCanvasBackground(
-      nsIFrame* aForFrame, nsIFrame* aRootElementFrame) {
-    return FindCanvasBackgroundFrame(aForFrame, aRootElementFrame)->Style();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
 

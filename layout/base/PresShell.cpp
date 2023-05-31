@@ -5288,15 +5288,6 @@ void AddDisplayItemToBottom(nsDisplayListBuilder* aBuilder,
   aList->AppendToTop(&list);
 }
 
-void PresShell::AddPrintPreviewBackgroundItem(nsDisplayListBuilder* aBuilder,
-                                              nsDisplayList* aList,
-                                              nsIFrame* aFrame,
-                                              const nsRect& aBounds) {
-  nsDisplayItem* item = MakeDisplayItem<nsDisplaySolidColor>(
-      aBuilder, aFrame, aBounds, NS_RGB(115, 115, 115));
-  AddDisplayItemToBottom(aBuilder, aList, item);
-}
-
 static bool AddCanvasBackgroundColor(const nsDisplayList* aList,
                                      nsIFrame* aCanvasFrame, nscolor aColor,
                                      bool aCSSBackgroundColor) {
@@ -5451,33 +5442,28 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
   
   
   
-  nsIFrame* rootStyleFrame = FrameConstructor()->GetRootElementStyleFrame();
-  if (!rootStyleFrame) {
+  nsIFrame* canvas = GetCanvasFrame();
+  if (!canvas) {
     
     
     
     return {GetDefaultBackgroundColorToDraw(), false};
   }
 
-  const ComputedStyle* bgStyle =
-      nsCSSRendering::FindRootFrameBackground(rootStyleFrame);
-  
-  
-  
-  
+  const nsIFrame* bgFrame = nsCSSRendering::FindBackgroundFrame(canvas);
   nscolor color = NS_RGBA(0, 0, 0, 0);
   bool drawBackgroundImage = false;
   bool drawBackgroundColor = false;
-  const nsStyleDisplay* disp = rootStyleFrame->StyleDisplay();
+  const nsStyleDisplay* disp = bgFrame->StyleDisplay();
   StyleAppearance appearance = disp->EffectiveAppearance();
-  if (rootStyleFrame->IsThemed(disp) &&
+  if (bgFrame->IsThemed(disp) &&
       appearance != StyleAppearance::MozWinBorderlessGlass) {
     
     
     
   } else {
     color = nsCSSRendering::DetermineBackgroundColor(
-        mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
+        mPresContext, bgFrame->Style(), canvas, drawBackgroundImage,
         drawBackgroundColor);
   }
   if (!IsTransparentContainerElement()) {
