@@ -124,13 +124,6 @@ async function _commandsFromURL(client, id, type) {
     }
   } else if (type == "process") {
     
-    
-    if (id) {
-      throw new Error(
-        `commandsFromURL, id attribute for process is no longer supported. Only support debugging the parent process.`
-      );
-    }
-    
     DevToolsServer.allowChromeProcess = true;
     commands = await CommandsFactory.forMainProcess({ client });
   } else {
