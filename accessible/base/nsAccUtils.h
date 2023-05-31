@@ -263,6 +263,13 @@ class nsAccUtils {
 
 
 
+  static void DocumentMimeType(Accessible* aDoc, nsAString& aMimeType);
+
+  
+
+
+
+
 
   static const AttrArray* GetARIADefaults(dom::Element* aElement);
   static bool HasARIAAttr(dom::Element* aElement, const nsAtom* aName);

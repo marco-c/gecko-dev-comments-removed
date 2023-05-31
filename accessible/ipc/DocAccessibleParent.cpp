@@ -1204,6 +1204,12 @@ void DocAccessibleParent::URL(nsAString& aURL) const {
   CopyUTF8toUTF16(url, aURL);
 }
 
+void DocAccessibleParent::MimeType(nsAString& aMime) const {
+  if (mCachedFields) {
+    mCachedFields->GetAttribute(nsGkAtoms::headerContentType, aMime);
+  }
+}
+
 Relation DocAccessibleParent::RelationByType(RelationType aType) const {
   
   
