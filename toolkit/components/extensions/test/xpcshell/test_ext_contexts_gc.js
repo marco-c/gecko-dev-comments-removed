@@ -16,7 +16,7 @@ ExtensionTestUtils.mockAppInfo();
 
 
 async function reloadTopContext(contentPage) {
-  await contentPage.spawn(null, async () => {
+  await contentPage.legacySpawn(null, async () => {
     let { TestUtils } = ChromeUtils.importESModule(
       "resource://testing-common/TestUtils.sys.mjs"
     );
@@ -29,7 +29,7 @@ async function reloadTopContext(contentPage) {
 }
 
 async function assertContextReleased(contentPage, description) {
-  await contentPage.spawn(description, async assertionDescription => {
+  await contentPage.legacySpawn(description, async assertionDescription => {
     
     
     let gcCount = 0;
@@ -83,7 +83,7 @@ add_task(async function test_ContentScriptContextChild_in_child_frame() {
   );
   await extension.awaitMessage("contentScriptLoaded");
 
-  await contentPage.spawn(extension.id, async extensionId => {
+  await contentPage.legacySpawn(extension.id, async extensionId => {
     const { ExtensionContent } = ChromeUtils.import(
       "resource://gre/modules/ExtensionContent.jsm"
     );
@@ -135,7 +135,7 @@ add_task(async function test_ContentScriptContextChild_in_toplevel() {
   );
   await extension.awaitMessage("contentScriptLoaded");
 
-  await contentPage.spawn(extension.id, async extensionId => {
+  await contentPage.legacySpawn(extension.id, async extensionId => {
     const { ExtensionContent } = ChromeUtils.import(
       "resource://gre/modules/ExtensionContent.jsm"
     );
@@ -187,7 +187,7 @@ add_task(async function test_ExtensionPageContextChild_in_child_frame() {
   );
   await extension.awaitMessage("extensionPageLoaded");
 
-  await contentPage.spawn(extension.id, async extensionId => {
+  await contentPage.legacySpawn(extension.id, async extensionId => {
     let { ExtensionPageChild } = ChromeUtils.import(
       "resource://gre/modules/ExtensionPageChild.jsm"
     );
@@ -237,7 +237,7 @@ add_task(async function test_ExtensionPageContextChild_in_toplevel() {
   );
   await extension.awaitMessage("extensionPageLoaded");
 
-  await contentPage.spawn(extension.id, async extensionId => {
+  await contentPage.legacySpawn(extension.id, async extensionId => {
     let { ExtensionPageChild } = ChromeUtils.import(
       "resource://gre/modules/ExtensionPageChild.jsm"
     );
@@ -254,7 +254,7 @@ add_task(async function test_ExtensionPageContextChild_in_toplevel() {
   await extension.awaitMessage("extensionPageLoaded");
   
   
-  await contentPage.spawn(null, async () => {
+  await contentPage.spawn([], async () => {
     let start = Date.now();
     
     
