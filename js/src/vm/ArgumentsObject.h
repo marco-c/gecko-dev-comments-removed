@@ -287,8 +287,6 @@ class ArgumentsObject : public NativeObject {
   }
 
   
-
-
   static bool reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj);
 
   
@@ -304,8 +302,6 @@ class ArgumentsObject : public NativeObject {
   }
 
   
-
-
   static bool reifyIterator(JSContext* cx, Handle<ArgumentsObject*> obj);
 
   
@@ -522,6 +518,9 @@ class MappedArgumentsObject : public ArgumentsObject {
   static size_t getCalleeSlotOffset() {
     return getFixedSlotOffset(CALLEE_SLOT);
   }
+
+  
+  static bool reifyCallee(JSContext* cx, Handle<MappedArgumentsObject*> obj);
 
  private:
   static bool obj_enumerate(JSContext* cx, HandleObject obj);
