@@ -111,6 +111,15 @@ MOZ_END_EXTERN_C
 
 
 
+
+
+
+
+#  ifdef __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Winline-new-delete"
+#  endif
+
 #  if defined(XP_MACOSX)
 #    define MOZALLOC_EXPORT_NEW MFBT_API MOZ_ALWAYS_INLINE_EVEN_DEBUG
 #  else
@@ -118,6 +127,9 @@ MOZ_END_EXTERN_C
 #  endif
 
 #  include "mozilla/cxxalloc.h"
+#  ifdef __clang__
+#    pragma clang diagnostic pop
+#  endif
 
 
 
