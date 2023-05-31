@@ -954,7 +954,10 @@ void Performance::QueueEntry(PerformanceEntry* aEntry) {
   }
 }
 
-void Performance::MemoryPressure() { mUserEntries.Clear(); }
+
+
+
+void Performance::MemoryPressure() {}
 
 size_t Performance::SizeOfUserEntries(
     mozilla::MallocSizeOf aMallocSizeOf) const {
