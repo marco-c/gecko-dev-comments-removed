@@ -11,7 +11,6 @@
 
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/NotNull.h"
-#include "mozilla/UniquePtr.h"
 #include "nsITimer.h"
 
 namespace mozilla {
@@ -24,42 +23,23 @@ class sdnAccessible;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class MsaaIdGenerator {
  public:
   uint32_t GetID();
   void ReleaseID(NotNull<MsaaAccessible*> aMsaaAcc);
   void ReleaseID(NotNull<sdnAccessible*> aSdnAcc);
-  bool IsChromeID(uint32_t aID);
-  bool IsIDForThisContentProcess(uint32_t aID);
-  bool IsIDForContentProcess(uint32_t aID,
-                             dom::ContentParentId aIPCContentProcessId);
-  bool IsSameContentProcessFor(uint32_t aFirstID, uint32_t aSecondID);
-
-  uint32_t GetContentProcessIDFor(dom::ContentParentId aIPCContentProcessID);
-  void ReleaseContentProcessIDFor(dom::ContentParentId aIPCContentProcessID);
 
  private:
   bool ReleaseID(uint32_t aID);
-  uint32_t ResolveContentProcessID();
   void ReleasePendingIDs();
 
  private:
-  UniquePtr<IDSet> mIDSet;
+  static constexpr uint32_t kNumFullIDBits = 31UL;
+  IDSet mIDSet{kNumFullIDBits};
   nsTArray<uint32_t> mIDsToRelease;
   nsCOMPtr<nsITimer> mReleaseIDTimer;
+  
+  bool mGetIDCalled = false;
 };
 
 }  

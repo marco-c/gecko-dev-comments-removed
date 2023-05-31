@@ -346,8 +346,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvFlushMemory(const nsString& reason);
 
-  mozilla::ipc::IPCResult RecvActivateA11y(const uint32_t& aMainChromeTid,
-                                           const uint32_t& aMsaaID);
+  mozilla::ipc::IPCResult RecvActivateA11y(const uint32_t& aMainChromeTid);
   mozilla::ipc::IPCResult RecvShutdownA11y();
 
   mozilla::ipc::IPCResult RecvApplicationForeground();
@@ -459,8 +458,6 @@ class ContentChild final : public PContentChild,
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   uint32_t GetChromeMainThreadId() const { return mMainChromeTid; }
-
-  uint32_t GetMsaaID() const { return mMsaaID; }
 #endif
 
   bool IsForBrowser() const { return mIsForBrowser; }
@@ -546,10 +543,6 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvAddDynamicScalars(
       nsTArray<DynamicScalarDefinition>&& aDefs);
-
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-  bool SendGetA11yContentId();
-#endif  
 
   
   
@@ -853,12 +846,6 @@ class ContentChild final : public PContentChild,
 
 
   uint32_t mMainChromeTid;
-
-  
-
-
-
-  uint32_t mMsaaID;
 #endif  
 
   AppInfo mAppInfo;

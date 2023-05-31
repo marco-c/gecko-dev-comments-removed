@@ -6,105 +6,36 @@
 
 #include "MsaaIdGenerator.h"
 
-#include "mozilla/a11y/AccessibleWrap.h"
 #include "mozilla/a11y/MsaaAccessible.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
 #include "nsAccessibilityService.h"
-#include "nsTHashMap.h"
 #include "sdnAccessible.h"
-
-static const uint32_t kNumFullIDBits = 31UL;
-
-
-
-
-
-
-
-
-
-static const uint32_t kNumContentProcessIDBits = 8UL;
-static const uint32_t kNumUniqueIDBits = (31UL - kNumContentProcessIDBits);
-
-static_assert(
-    kNumContentProcessIDBits + kNumUniqueIDBits == 31,
-    "Allocation of Content ID bits and Unique ID bits must sum to 31");
 
 namespace mozilla {
 namespace a11y {
-namespace detail {
-
-typedef nsTHashMap<nsUint64HashKey, uint32_t> ContentParentIdMap;
-
-#pragma pack(push, 1)
-union MsaaID {
-  int32_t mInt32;
-  uint32_t mUInt32;
-  struct {
-    uint32_t mUniqueID : kNumUniqueIDBits;
-    uint32_t mContentProcessID : kNumContentProcessIDBits;
-    uint32_t mSignBit : 1;
-  } mCracked;
-};
-#pragma pack(pop)
-
-static uint32_t BuildMsaaID(const uint32_t aID,
-                            const uint32_t aContentProcessID) {
-  MsaaID id;
-  id.mCracked.mSignBit = 0;
-  id.mCracked.mUniqueID = aID;
-  id.mCracked.mContentProcessID = aContentProcessID;
-  return ~id.mUInt32;
-}
-
-class MsaaIDCracker {
- public:
-  explicit MsaaIDCracker(const uint32_t aMsaaID) { mID.mUInt32 = ~aMsaaID; }
-
-  uint32_t GetContentProcessId() { return mID.mCracked.mContentProcessID; }
-
-  uint32_t GetUniqueId() { return mID.mCracked.mUniqueID; }
-
- private:
-  MsaaID mID;
-};
-
-}  
 
 uint32_t MsaaIdGenerator::GetID() {
-  if (!mIDSet) {
+  if (!mGetIDCalled) {
+    mGetIDCalled = true;
     
-    
-    
-    mIDSet = MakeUnique<IDSet>(a11y::IsCacheActive() ? kNumFullIDBits
-                                                     : kNumUniqueIDBits);
-    if (a11y::IsCacheActive()) {
-      
-      RunOnShutdown([this] {
-        if (mReleaseIDTimer) {
-          mReleaseIDTimer->Cancel();
-          ReleasePendingIDs();
-        }
-      });
-    }
+    RunOnShutdown([this] {
+      if (mReleaseIDTimer) {
+        mReleaseIDTimer->Cancel();
+        ReleasePendingIDs();
+      }
+    });
   }
-  uint32_t id = mIDSet->GetID();
-  if (a11y::IsCacheActive()) {
-    MOZ_ASSERT(id <= ((1UL << kNumFullIDBits) - 1UL));
-    return ~id;
-  }
-  MOZ_ASSERT(id <= ((1UL << kNumUniqueIDBits) - 1UL));
-  return detail::BuildMsaaID(id, ResolveContentProcessID());
+  uint32_t id = mIDSet.GetID();
+  MOZ_ASSERT(id <= ((1UL << kNumFullIDBits) - 1UL));
+  return ~id;
 }
 
 void MsaaIdGenerator::ReleasePendingIDs() {
   for (auto id : mIDsToRelease) {
-    mIDSet->ReleaseID(~id);
+    mIDSet.ReleaseID(~id);
   }
   mIDsToRelease.Clear();
   mReleaseIDTimer = nullptr;
@@ -112,53 +43,35 @@ void MsaaIdGenerator::ReleasePendingIDs() {
 
 bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
   MOZ_ASSERT(aID != MsaaAccessible::kNoID);
-  if (!mIDSet) {
-    
-    
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return false;
-  }
-  if (a11y::IsCacheActive()) {
-    
+  
+  
+  
+  
+  
+  if (nsAccessibilityService::IsShutdown()) {
     
     
     
     
-    if (nsAccessibilityService::IsShutdown()) {
-      
-      
-      
-      
-      mIDSet->ReleaseID(~aID);
-      return true;
-    }
-    const uint32_t kReleaseDelay = 1000;
-    mIDsToRelease.AppendElement(aID);
-    if (mReleaseIDTimer) {
-      mReleaseIDTimer->SetDelay(kReleaseDelay);
-    } else {
-      NS_NewTimerWithCallback(
-          getter_AddRefs(mReleaseIDTimer),
-          
-          
-          [this](nsITimer* aTimer) { ReleasePendingIDs(); }, kReleaseDelay,
-          nsITimer::TYPE_ONE_SHOT, "a11y::MsaaIdGenerator::ReleaseIDDelayed");
-    }
+    mIDSet.ReleaseID(~aID);
     return true;
   }
-  detail::MsaaIDCracker cracked(aID);
-  if (cracked.GetContentProcessId() != ResolveContentProcessID()) {
-    return false;
+  const uint32_t kReleaseDelay = 1000;
+  mIDsToRelease.AppendElement(aID);
+  if (mReleaseIDTimer) {
+    mReleaseIDTimer->SetDelay(kReleaseDelay);
+  } else {
+    NS_NewTimerWithCallback(
+        getter_AddRefs(mReleaseIDTimer),
+        
+        
+        [this](nsITimer* aTimer) { ReleasePendingIDs(); }, kReleaseDelay,
+        nsITimer::TYPE_ONE_SHOT, "a11y::MsaaIdGenerator::ReleaseIDDelayed");
   }
-  mIDSet->ReleaseID(cracked.GetUniqueId());
   return true;
 }
 
 void MsaaIdGenerator::ReleaseID(NotNull<MsaaAccessible*> aMsaaAcc) {
-  
-  
-  
-  
   ReleaseID(aMsaaAcc->GetExistingID());
 }
 
@@ -168,125 +81,6 @@ void MsaaIdGenerator::ReleaseID(NotNull<sdnAccessible*> aSdnAcc) {
     DebugOnly<bool> released = ReleaseID(id.value());
     MOZ_ASSERT(released);
   }
-}
-
-bool MsaaIdGenerator::IsChromeID(uint32_t aID) {
-  if (a11y::IsCacheActive()) {
-    return true;
-  }
-  detail::MsaaIDCracker cracked(aID);
-  return cracked.GetContentProcessId() == 0;
-}
-
-bool MsaaIdGenerator::IsIDForThisContentProcess(uint32_t aID) {
-  MOZ_ASSERT(XRE_IsContentProcess());
-  detail::MsaaIDCracker cracked(aID);
-  return cracked.GetContentProcessId() == ResolveContentProcessID();
-}
-
-bool MsaaIdGenerator::IsIDForContentProcess(
-    uint32_t aID, dom::ContentParentId aIPCContentProcessId) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(!a11y::IsCacheActive());
-  detail::MsaaIDCracker cracked(aID);
-  return cracked.GetContentProcessId() ==
-         GetContentProcessIDFor(aIPCContentProcessId);
-}
-
-bool MsaaIdGenerator::IsSameContentProcessFor(uint32_t aFirstID,
-                                              uint32_t aSecondID) {
-  MOZ_ASSERT(!a11y::IsCacheActive());
-  detail::MsaaIDCracker firstCracked(aFirstID);
-  detail::MsaaIDCracker secondCracked(aSecondID);
-  return firstCracked.GetContentProcessId() ==
-         secondCracked.GetContentProcessId();
-}
-
-uint32_t MsaaIdGenerator::ResolveContentProcessID() {
-  if (XRE_IsParentProcess()) {
-    return 0;
-  }
-
-  dom::ContentChild* contentChild = dom::ContentChild::GetSingleton();
-  uint32_t result = contentChild->GetMsaaID();
-
-  MOZ_ASSERT(result);
-  return result;
-}
-
-
-
-
-
-
-
-
-
-
-static StaticAutoPtr<detail::ContentParentIdMap> sContentParentIdMap;
-
-static const uint32_t kBitsPerByte = 8UL;
-
-static uint64_t sContentProcessIdBitmap[(1UL << kNumContentProcessIDBits) /
-                                        (sizeof(uint64_t) * kBitsPerByte)] = {
-    1ULL};
-static const uint32_t kBitsPerElement =
-    sizeof(sContentProcessIdBitmap[0]) * kBitsPerByte;
-
-uint32_t MsaaIdGenerator::GetContentProcessIDFor(
-    dom::ContentParentId aIPCContentProcessID) {
-  MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
-  if (!sContentParentIdMap) {
-    sContentParentIdMap = new detail::ContentParentIdMap();
-    ClearOnShutdown(&sContentParentIdMap);
-  }
-
-  return sContentParentIdMap->LookupOrInsertWith(aIPCContentProcessID, [] {
-    uint32_t value = 0;
-    uint32_t index = 0;
-    for (; index < ArrayLength(sContentProcessIdBitmap); ++index) {
-      if (sContentProcessIdBitmap[index] == UINT64_MAX) {
-        continue;
-      }
-      uint32_t bitIndex =
-          CountTrailingZeroes64(~sContentProcessIdBitmap[index]);
-      MOZ_ASSERT(!(sContentProcessIdBitmap[index] & (1ULL << bitIndex)));
-      MOZ_ASSERT(bitIndex != 0 || index != 0);
-      sContentProcessIdBitmap[index] |= (1ULL << bitIndex);
-      value = index * kBitsPerElement + bitIndex;
-      break;
-    }
-
-    
-    MOZ_RELEASE_ASSERT(index < ArrayLength(sContentProcessIdBitmap));
-
-    return value;
-  });
-}
-
-void MsaaIdGenerator::ReleaseContentProcessIDFor(
-    dom::ContentParentId aIPCContentProcessID) {
-  MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
-  if (!sContentParentIdMap) {
-    
-    
-    return;
-  }
-
-  Maybe<uint32_t> mapping = sContentParentIdMap->Extract(aIPCContentProcessID);
-  if (!mapping) {
-    
-    
-    return;
-  }
-
-  uint32_t index = mapping.ref() / kBitsPerElement;
-  MOZ_ASSERT(index < ArrayLength(sContentProcessIdBitmap));
-
-  uint64_t mask = 1ULL << (mapping.ref() % kBitsPerElement);
-  MOZ_ASSERT(sContentProcessIdBitmap[index] & mask);
-
-  sContentProcessIdBitmap[index] &= ~mask;
 }
 
 }  

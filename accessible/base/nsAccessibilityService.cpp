@@ -45,7 +45,6 @@
 
 #ifdef XP_WIN
 #  include "mozilla/a11y/Compatibility.h"
-#  include "mozilla/dom/ContentChild.h"
 #  include "mozilla/StaticPtr.h"
 #endif
 
@@ -1486,21 +1485,7 @@ bool nsAccessibilityService::Init() {
   if (XRE_IsParentProcess()) {
     gApplicationAccessible = new ApplicationAccessibleWrap();
   } else {
-#if defined(XP_WIN)
-    dom::ContentChild* contentChild = dom::ContentChild::GetSingleton();
-    MOZ_ASSERT(contentChild);
-    
-    
-    if (!a11y::IsCacheActive() && !contentChild->GetMsaaID()) {
-      
-      
-      contentChild->SendGetA11yContentId();
-    }
-
-    gApplicationAccessible = new ApplicationAccessibleWrap();
-#else
     gApplicationAccessible = new ApplicationAccessible();
-#endif  
   }
 
   NS_ADDREF(gApplicationAccessible);  
