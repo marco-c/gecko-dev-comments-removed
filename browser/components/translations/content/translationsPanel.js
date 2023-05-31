@@ -27,12 +27,7 @@ var TranslationsPanel = new (class {
 
 
 
-  #docLangTag = null;
-
-  
-
-
-  #wasPanelShown = false;
+  detectedLanguages = null;
 
   
 
@@ -146,13 +141,24 @@ var TranslationsPanel = new (class {
 
 
 
-  async #getDocLangTag() {
-    if (!this.#docLangTag) {
-      const { docLangTag } =
-        await this.#getTranslationsActor().getLangTagsForTranslation();
-      this.#docLangTag = docLangTag;
+
+  async #fetchDetectedLanguages() {
+    this.detectedLanguages =
+      await this.#getTranslationsActor().getLangTagsForTranslation();
+    return this.detectedLanguages;
+  }
+
+  
+
+
+
+
+
+  async #getCachedDetectedLanguages() {
+    if (!this.detectedLanguages) {
+      return this.#fetchDetectedLanguages();
     }
-    return this.#docLangTag;
+    return this.detectedLanguages;
   }
 
   
@@ -344,12 +350,8 @@ var TranslationsPanel = new (class {
 
 
   async #updateSettingsMenuLanguageCheckboxStates() {
-    const docLangTag = await this.#getDocLangTag();
-
-    const alwaysTranslateLanguage =
-      TranslationsParent.shouldAlwaysTranslateLanguage(docLangTag);
-    const neverTranslateLanguage =
-      TranslationsParent.shouldNeverTranslateLanguage(docLangTag);
+    const { docLangTag, isDocLangTagSupported } =
+      await this.#getCachedDetectedLanguages();
 
     const { panel } = this.elements;
     const alwaysTranslateMenuItems = panel.querySelectorAll(
@@ -359,17 +361,38 @@ var TranslationsPanel = new (class {
       ".never-translate-language-menuitem"
     );
 
+    if (
+      !docLangTag ||
+      !isDocLangTagSupported ||
+      docLangTag === new Intl.Locale(Services.locale.appLocaleAsBCP47).language
+    ) {
+      for (const menuitem of alwaysTranslateMenuItems) {
+        menuitem.disabled = true;
+      }
+      for (const menuitem of neverTranslateMenuItems) {
+        menuitem.disabled = true;
+      }
+      return;
+    }
+
+    const alwaysTranslateLanguage =
+      TranslationsParent.shouldAlwaysTranslateLanguage(docLangTag);
+    const neverTranslateLanguage =
+      TranslationsParent.shouldNeverTranslateLanguage(docLangTag);
+
     for (const menuitem of alwaysTranslateMenuItems) {
       menuitem.setAttribute(
         "checked",
         alwaysTranslateLanguage ? "true" : "false"
       );
+      menuitem.disabled = false;
     }
     for (const menuitem of neverTranslateMenuItems) {
       menuitem.setAttribute(
         "checked",
         neverTranslateLanguage ? "true" : "false"
       );
+      menuitem.disabled = false;
     }
   }
 
@@ -395,11 +418,7 @@ var TranslationsPanel = new (class {
 
 
   async #populateSettingsMenuItems() {
-    const docLangTag = await this.#getDocLangTag();
-    const displayNames = new Services.intl.DisplayNames(undefined, {
-      type: "language",
-    });
-    const docLangDisplayName = displayNames.of(docLangTag);
+    const { docLangTag } = await this.#getCachedDetectedLanguages();
 
     const { panel } = this.elements;
 
@@ -410,15 +429,45 @@ var TranslationsPanel = new (class {
       ".never-translate-language-menuitem"
     );
 
-    for (const menuitem of alwaysTranslateMenuItems) {
-      document.l10n.setArgs(menuitem, {
-        language: docLangDisplayName,
+    
+    let docLangDisplayName;
+    if (docLangTag) {
+      const displayNames = new Services.intl.DisplayNames(undefined, {
+        type: "language",
+        fallback: "none",
       });
+      
+      docLangDisplayName = displayNames.of(docLangTag);
     }
+
+    for (const menuitem of alwaysTranslateMenuItems) {
+      if (docLangDisplayName) {
+        document.l10n.setAttributes(
+          menuitem,
+          "translations-panel-settings-always-translate-language",
+          { language: docLangDisplayName }
+        );
+      } else {
+        document.l10n.setAttributes(
+          menuitem,
+          "translations-panel-settings-always-translate-unknown-language"
+        );
+      }
+    }
+
     for (const menuitem of neverTranslateMenuItems) {
-      document.l10n.setArgs(menuitem, {
-        language: docLangDisplayName,
-      });
+      if (docLangDisplayName) {
+        document.l10n.setAttributes(
+          menuitem,
+          "translations-panel-settings-never-translate-language",
+          { language: docLangDisplayName }
+        );
+      } else {
+        document.l10n.setAttributes(
+          menuitem,
+          "translations-panel-settings-never-translate-unknown-language"
+        );
+      }
     }
 
     await Promise.all([
@@ -597,7 +646,10 @@ var TranslationsPanel = new (class {
 
 
   async onAlwaysTranslateLanguage() {
-    const docLangTag = await this.#getDocLangTag();
+    const { docLangTag } = await this.#getCachedDetectedLanguages();
+    if (!docLangTag) {
+      throw new Error("Expected to have a document language tag.");
+    }
     const toggledOn =
       TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
     const translationsActive = this.#isTranslationsActive();
@@ -620,7 +672,10 @@ var TranslationsPanel = new (class {
 
 
   async onNeverTranslateLanguage() {
-    const docLangTag = await this.#getDocLangTag();
+    const { docLangTag } = await this.#getCachedDetectedLanguages();
+    if (!docLangTag) {
+      throw new Error("Expected to have a document language tag.");
+    }
     TranslationsParent.toggleNeverTranslateLanguagePref(docLangTag);
     this.#updateSettingsMenuLanguageCheckboxStates();
 
@@ -653,7 +708,11 @@ var TranslationsPanel = new (class {
   async onRestore() {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
-    const docLangTag = await this.#getDocLangTag();
+    const { docLangTag } = await this.#getCachedDetectedLanguages();
+    if (!docLangTag) {
+      throw new Error("Expected to have a document language tag.");
+    }
+
     this.#getTranslationsActor().restorePage(docLangTag);
   }
 
@@ -671,18 +730,43 @@ var TranslationsPanel = new (class {
           error,
           isEngineReady,
         } = event.detail;
+
         const { panel, button, buttonLocale, buttonCircleArrows } =
           this.elements;
 
+        const hasSupportedLanguage =
+          detectedLanguages?.docLangTag &&
+          detectedLanguages?.userLangTag &&
+          detectedLanguages?.isDocLangTagSupported;
+
+        if (detectedLanguages) {
+          
+          
+          TranslationsPanel.detectedLanguages = detectedLanguages;
+        }
+
+        
+
+
+        const shouldNeverTranslate = async () => {
+          return Boolean(
+            TranslationsParent.shouldNeverTranslateLanguage(
+              detectedLanguages?.docLangTag
+            ) ||
+              
+              (await this.#getTranslationsActor().shouldNeverTranslateSite())
+          );
+        };
+
         if (
           
-          detectedLanguages &&
+          requestedTranslationPair ||
           
-          !TranslationsParent.shouldNeverTranslateLanguage(
-            detectedLanguages.docLangTag
-          ) &&
           
-          !(await this.#getTranslationsActor().shouldNeverTranslateSite())
+          
+          error ||
+          
+          (hasSupportedLanguage && !(await shouldNeverTranslate()))
         ) {
           button.hidden = false;
           if (requestedTranslationPair) {
