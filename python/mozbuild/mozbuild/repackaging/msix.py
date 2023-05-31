@@ -487,34 +487,6 @@ def repackage_msix(
     )
 
     
-    
-    
-    
-    brandingUuids = {}
-    lines = open(mozpath.join(branding, "configure.sh")).readlines()
-    
-    
-    
-    
-    if channel in ("official", "unofficial"):
-        
-        lines.reverse()
-    for key in (
-        "MOZ_IGECKOBACKCHANNEL_IID",
-        "MOZ_IHANDLERCONTROL_IID",
-        "MOZ_ASYNCIHANDLERCONTROL_IID",
-    ):
-        for line in lines:
-            if key not in line:
-                continue
-            _, _, uuid = line.partition("=")
-            uuid = uuid.strip()
-            if uuid.startswith(('"', "'")):
-                uuid = uuid[1:-1]
-            brandingUuids[key] = uuid
-            break
-
-    
     output_dir = mozpath.normsep(
         mozpath.join(
             get_state_dir(), "cache", "mach-msix", "msix-temp-{}".format(channel)
@@ -716,7 +688,6 @@ def repackage_msix(
         
         "MOZ_INOTIFICATIONACTIVATION_CLSID": "916f9b5d-b5b2-4d36-b047-03c7a52f81c8",
     }
-    defines.update(brandingUuids)
 
     m.add_preprocess(
         mozpath.join(template, "AppxManifest.xml.in"),
