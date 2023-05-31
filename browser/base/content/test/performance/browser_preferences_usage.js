@@ -188,14 +188,17 @@ add_task(async function navigate_around() {
     "network.loadinfo.skip_type_assertion": {
       
     },
+  };
+
+  if (Services.prefs.getBoolPref("browser.translations.enable")) {
     
     
     
-    "browser.translations.logLevel": {
+    knownProblematicPrefs["browser.translations.logLevel"] = {
       min: 50,
       max: 50,
-    },
-  };
+    };
+  }
 
   if (SpecialPowers.useRemoteSubframes) {
     
