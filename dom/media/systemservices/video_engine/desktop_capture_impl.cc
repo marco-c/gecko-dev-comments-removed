@@ -418,7 +418,8 @@ static std::unique_ptr<DesktopCapturer> CreateDesktopCapturerAndThread(
     }
 
     nsIThreadManager::ThreadCreationOptions threadOptions;
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_MACOSX)
+    
     
     threadOptions.isUiThread = true;
 #endif
@@ -750,11 +751,6 @@ void DesktopCaptureImpl::ShutdownOnThread() {
 
 void DesktopCaptureImpl::CaptureFrameOnThread() {
   RTC_DCHECK_RUN_ON(&mCaptureThreadChecker);
-
-#if defined(WEBRTC_MAC)
-  
-  CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.01, true);
-#endif
 
   auto start = mozilla::TimeStamp::Now();
   mCapturer->CaptureFrame();
