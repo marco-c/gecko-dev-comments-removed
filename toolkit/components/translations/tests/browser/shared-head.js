@@ -300,13 +300,6 @@ async function setupActorTest({
   });
 
   
-  const tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    BLANK_PAGE,
-    true 
-  );
-
-  
   const actor =
     gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
       "Translations"
@@ -316,7 +309,6 @@ async function setupActorTest({
     actor,
     remoteClients,
     cleanup() {
-      BrowserTestUtils.removeTab(tab);
       removeMocks();
       return SpecialPowers.popPrefEnv();
     },
