@@ -177,7 +177,7 @@ add_task(async function page_content_process() {
     "privilegedabout"
   );
 
-  await contentPage.spawn(PAGE_ICON_TEST_URLS, async URLS => {
+  await contentPage.spawn([PAGE_ICON_TEST_URLS], async URLS => {
     
     
     
@@ -218,7 +218,7 @@ add_task(async function page_privileged_about_content_process() {
     "privilegedabout"
   );
 
-  await contentPage.spawn(PAGE_ICON_TEST_URLS, async URLS => {
+  await contentPage.spawn([PAGE_ICON_TEST_URLS], async URLS => {
     
     
     for (let url of URLS) {
@@ -226,7 +226,7 @@ add_task(async function page_privileged_about_content_process() {
       img.src = url;
       let imgPromise = new Promise((resolve, reject) => {
         img.addEventListener("error", e => {
-          Assert.ok(false, "Did not expect an error.");
+          Assert.ok(false, "Did not expect an error. ");
           reject();
         });
         img.addEventListener("load", e => {

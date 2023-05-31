@@ -179,7 +179,7 @@ add_task(async function test_blob_url() {
     "http://example.org/empty"
   );
 
-  let blobUrl = await contentPage.spawn(null, async () => {
+  let blobUrl = await contentPage.spawn([], async () => {
     
     let f = this.content.document.createElement("iframe");
     f.src = "http://foo.com/iframe";
