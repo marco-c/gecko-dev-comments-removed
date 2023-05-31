@@ -1517,13 +1517,6 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     RangeThumb,
     
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Resizerpanel,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Resizer,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarHorizontal,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
@@ -1573,9 +1566,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Statusbar,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Statusbarpanel,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Tab,
