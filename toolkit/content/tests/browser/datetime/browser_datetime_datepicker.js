@@ -222,29 +222,41 @@ add_task(async function test_datepicker_reopen_state() {
 
   helper.click(helper.getElement(BTN_NEXT_MONTH));
 
+  
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
     DATE_FORMAT(new Date(nextMonth))
   );
 
-  EventUtils.synthesizeKey("VK_ESCAPE", {}, window);
+  let closed = helper.promisePickerClosed();
 
-  await helper.promisePickerClosed();
+  EventUtils.synthesizeKey("KEY_Escape", {});
+
+  await closed;
 
   Assert.equal(helper.panel.state, "closed", "Panel should be closed");
 
   
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
     let input = content.document.querySelector("input");
-    function getCalendarButton(input) {
-      const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
-      return shadowRoot.getElementById("calendar-button");
-    }
-    getCalendarButton(input).click();
+    Assert.equal(
+      input.value,
+      "2016-12-15",
+      "The input value remains unchanged after the picker is dismissed"
+    );
   });
 
-  await helper.waitForPickerReady();
+  let ready = helper.waitForPickerReady();
 
+  
+  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey(" ", {});
+
+  await ready;
+
+  Assert.equal(helper.panel.state, "open", "Panel should be opened");
+
+  
   Assert.equal(
     helper.getElement(MONTH_YEAR).textContent,
     DATE_FORMAT(new Date(inputValue))
