@@ -110,12 +110,7 @@ add_task(async function init() {
 
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsResults: [
-      {
-        type: "data",
-        attachment: REMOTE_SETTINGS_RESULTS,
-      },
-    ],
+    remoteSettingsResults: REMOTE_SETTINGS_RESULTS,
   });
 
   Assert.equal(
@@ -641,7 +636,7 @@ add_task(async function block() {
 
 add_task(async function bestMatch() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   

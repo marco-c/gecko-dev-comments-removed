@@ -115,12 +115,7 @@ add_setup(async function test_setup() {
 
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsResults: [
-      {
-        type: "data",
-        attachment: REMOTE_SETTINGS_RESULTS,
-      },
-    ],
+    remoteSettingsResults: REMOTE_SETTINGS_RESULTS,
   });
 });
 

@@ -92,7 +92,7 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 async function setUpTelemetryTest({
-  remoteSettingsResults,
+  remoteSettingsResults = null,
   merinoSuggestions = null,
   config = QuickSuggestTestUtils.DEFAULT_CONFIG,
 }) {
