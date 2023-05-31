@@ -1410,8 +1410,6 @@ function ArrayAt(index) {
 
 SetIsInlinableLargeFunction(ArrayAt);
 
-#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
-
 
 
 function ArrayToReversed() {
@@ -1492,8 +1490,6 @@ function ArrayToSorted(comparefn) {
 
   return sorted;
 }
-
-#endif
 
 
 
