@@ -105,7 +105,7 @@ const backgroundtaskPhases = {
         
         "resource:///modules/backgroundtasks/BackgroundTask_wait.sys.mjs",
 
-        "resource://gre/modules/ConsoleAPIStorage.jsm",
+        "resource://gre/modules/ConsoleAPIStorage.sys.mjs",
         "resource://gre/modules/Timer.sys.mjs",
 
         
