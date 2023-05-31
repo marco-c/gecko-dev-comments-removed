@@ -2,7 +2,7 @@
 
 "use strict";
 
-runHeuristicsTest(
+add_heuristic_tests(
   [
     {
       fixturePath: "multiple_section.html",
@@ -117,5 +117,5 @@ runHeuristicsTest(
       ],
     },
   ],
-  "../../fixtures/"
+  "fixtures/"
 );
