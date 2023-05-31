@@ -2,7 +2,9 @@
 
 
 
-var { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+var { NetUtil } = ChromeUtils.importESModule(
+  "resource://gre/modules/NetUtil.sys.mjs"
+);
 
 
 function do_run_generator(generator) {
