@@ -109,7 +109,6 @@ Maybe<nsITheme::Transparency> ScrollbarDrawingWin::GetScrollbarPartTransparency(
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarVertical:
     case StyleAppearance::Scrollcorner:
-    case StyleAppearance::Statusbar:
       
       
       
