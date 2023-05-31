@@ -22,7 +22,6 @@ const SUGGEST_PREF = "browser.search.suggest.enabled";
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderTabToSearch:
     "resource:///modules/UrlbarProviderTabToSearch.sys.mjs",
-  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -122,14 +121,10 @@ add_setup(async function () {
   });
 
   
-  UrlbarTestUtils.init(this);
-
-  
   registerCleanupFunction(async function () {
     Services.telemetry.canRecordExtended = oldCanRecord;
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
-    UrlbarTestUtils.uninit();
   });
 });
 

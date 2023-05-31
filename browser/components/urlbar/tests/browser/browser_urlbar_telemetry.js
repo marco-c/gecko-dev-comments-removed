@@ -16,7 +16,6 @@ const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 
 ChromeUtils.defineESModuleGetters(this, {
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
-  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
 function searchInAwesomebar(value, win = window) {
@@ -133,16 +132,12 @@ add_setup(async function () {
   });
 
   
-  UrlbarTestUtils.init(this);
-
-  
   registerCleanupFunction(async function () {
     Services.telemetry.canRecordExtended = oldCanRecord;
     Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, suggestionsEnabled);
     await PlacesUtils.history.clear();
     await UrlbarTestUtils.formHistory.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
-    UrlbarTestUtils.uninit();
   });
 });
 

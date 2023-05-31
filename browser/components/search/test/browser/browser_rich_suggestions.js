@@ -2,11 +2,6 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
-  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
-});
-
 const CONFIG_DEFAULT = [
   {
     webExtension: { id: "basic@search.mozilla.org" },
@@ -23,7 +18,6 @@ const CONFIG_DEFAULT = [
 ];
 
 SearchTestUtils.init(this);
-UrlbarTestUtils.init(this);
 
 add_setup(async () => {
   

@@ -16,7 +16,6 @@ const ENGINE_DOMAIN = "example.com";
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderTabToSearch:
     "resource:///modules/UrlbarProviderTabToSearch.sys.mjs",
-  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
 function snapshotHistograms() {
@@ -89,7 +88,6 @@ add_setup(async function () {
     search_url: `https://${ENGINE_DOMAIN}/`,
   });
 
-  UrlbarTestUtils.init(this);
   
   
   UrlbarProviderTabToSearch.enginesShown.regular.clear();
@@ -101,7 +99,6 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     Services.telemetry.canRecordExtended = oldCanRecord;
-    UrlbarTestUtils.uninit();
   });
 });
 
