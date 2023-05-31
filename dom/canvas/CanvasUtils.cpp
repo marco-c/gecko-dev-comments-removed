@@ -56,10 +56,47 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
     return false;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   if (!aDocument->ShouldResistFingerprinting(
-          RFPTarget::CanvasImageExtractionPrompt)) {
+          RFPTarget::CanvasImageExtractionPrompt) &&
+      !aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionBeforeUserInputIsBlocked) &&
+      !aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionFromThirdPartiesIsBlocked)) {
     return true;
   }
+
+  
+  
 
   
   if (!aCx || !aPrincipal) {
@@ -97,20 +134,40 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   }
 
   
-  MOZ_ASSERT(aDocument->GetWindowContext());
-  bool isThirdParty =
-      aDocument->GetWindowContext()
-          ? aDocument->GetWindowContext()->GetIsThirdPartyWindow()
-          : false;
-  if (isThirdParty) {
-    nsAutoString message;
-    message.AppendPrintf("Blocked third party %s from extracting canvas data.",
-                         docURISpec.get());
-    nsContentUtils::ReportToConsoleNonLocalized(
-        message, nsIScriptError::warningFlag, "Security"_ns, aDocument);
-    return false;
+  
+
+  if (aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionFromThirdPartiesIsBlocked)) {
+    MOZ_ASSERT(aDocument->GetWindowContext());
+    bool isThirdParty =
+        aDocument->GetWindowContext()
+            ? aDocument->GetWindowContext()->GetIsThirdPartyWindow()
+            : false;
+    if (isThirdParty) {
+      nsAutoString message;
+      message.AppendPrintf(
+          "Blocked third party %s from extracting canvas data.",
+          docURISpec.get());
+      nsContentUtils::ReportToConsoleNonLocalized(
+          message, nsIScriptError::warningFlag, "Security"_ns, aDocument);
+      return false;
+    }
   }
 
+  
+  
+
+  if (!aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasImageExtractionPrompt) &&
+      !aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionBeforeUserInputIsBlocked)) {
+    return true;
+  }
+
+  
+  
+
+  
   
   nsresult rv;
   nsCOMPtr<nsIPermissionManager> permissionManager =
@@ -134,14 +191,34 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
 
   
   
-
   
-  bool isAutoBlockCanvas =
+  bool hidePermissionDoorhanger = false;
+  if (!aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasImageExtractionPrompt) &&
       StaticPrefs::
           privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
+      aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionBeforeUserInputIsBlocked)) {
+    
+    if (dom::UserActivation::IsHandlingUserInput()) {
+      return true;
+    }
+
+    hidePermissionDoorhanger = true;
+  }
+
+  
+  
+  
+
+  hidePermissionDoorhanger |=
+      StaticPrefs::
+          privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
+      aDocument->ShouldResistFingerprinting(
+          RFPTarget::CanvasExtractionBeforeUserInputIsBlocked) &&
       !dom::UserActivation::IsHandlingUserInput();
 
-  if (isAutoBlockCanvas) {
+  if (hidePermissionDoorhanger) {
     nsAutoString message;
     message.AppendPrintf(
         "Blocked %s from extracting canvas data because no user input was "
@@ -160,6 +237,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   }
 
   
+  
   nsPIDOMWindowOuter* win = aDocument->GetWindow();
   nsAutoCString origin;
   rv = principal->GetOrigin(origin);
@@ -168,13 +246,14 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
   if (XRE_IsContentProcess()) {
     dom::BrowserChild* browserChild = dom::BrowserChild::GetFrom(win);
     if (browserChild) {
-      browserChild->SendShowCanvasPermissionPrompt(origin, isAutoBlockCanvas);
+      browserChild->SendShowCanvasPermissionPrompt(origin,
+                                                   hidePermissionDoorhanger);
     }
   } else {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->NotifyObservers(win,
-                           isAutoBlockCanvas
+                           hidePermissionDoorhanger
                                ? TOPIC_CANVAS_PERMISSIONS_PROMPT_HIDE_DOORHANGER
                                : TOPIC_CANVAS_PERMISSIONS_PROMPT,
                            NS_ConvertUTF8toUTF16(origin).get());

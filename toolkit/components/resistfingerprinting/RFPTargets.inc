@@ -20,16 +20,14 @@ ITEM_VALUE(CSSPrefersReducedMotion, 0x0008)
 
 ITEM_VALUE(CSSPrefersContrast, 0x0009)
 
+
 ITEM_VALUE(CanvasRandomization, 0x000A)
 
 
+
 ITEM_VALUE(CanvasImageExtractionPrompt, 0x000B)
-
-
-
-
-
-
+ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 0x000C)
+ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 0x000D)
 
 
 
