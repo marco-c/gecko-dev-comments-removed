@@ -122,13 +122,7 @@ export function findBlackBoxRange(source, blackboxedRanges, lineRange) {
 
 
 
-
-
-export function isLineBlackboxed(ranges, line, isSourceOnIgnoreList) {
-  if (isSourceOnIgnoreList) {
-    return true;
-  }
-
+export function isLineBlackboxed(ranges, line) {
   if (!ranges) {
     return false;
   }

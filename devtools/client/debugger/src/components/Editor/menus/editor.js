@@ -84,8 +84,7 @@ const blackBoxMenuItem = (
   cx,
   selectedSource,
   blackboxedRanges,
-  editorActions,
-  isSourceOnIgnoreList
+  editorActions
 ) => {
   const isBlackBoxed = !!blackboxedRanges[selectedSource.url];
   return {
@@ -96,7 +95,7 @@ const blackBoxMenuItem = (
     accesskey: isBlackBoxed
       ? L10N.getStr("ignoreContextItem.unignore.accesskey")
       : L10N.getStr("ignoreContextItem.ignore.accesskey"),
-    disabled: isSourceOnIgnoreList || !shouldBlackbox(selectedSource),
+    disabled: !shouldBlackbox(selectedSource),
     click: () => editorActions.toggleBlackBox(cx, selectedSource),
   };
 };
@@ -107,7 +106,6 @@ export const blackBoxLineMenuItem = (
   editorActions,
   editor,
   blackboxedRanges,
-  isSourceOnIgnoreList,
   
   
   
@@ -135,10 +133,9 @@ export const blackBoxLineMenuItem = (
   
   
   
-  
   const shouldDisable =
-    isSourceOnIgnoreList ||
-    !blackboxedRanges[selectedSource.url]?.length ||
+    (blackboxedRanges[selectedSource.url] &&
+      !blackboxedRanges[selectedSource.url].length) ||
     !isSingleLine;
 
   return {
@@ -177,8 +174,7 @@ const blackBoxLinesMenuItem = (
   selectedSource,
   editorActions,
   editor,
-  blackboxedRanges,
-  isSourceOnIgnoreList
+  blackboxedRanges
 ) => {
   const { codeMirror } = editor;
   const from = codeMirror.getCursor("from");
@@ -202,7 +198,7 @@ const blackBoxLinesMenuItem = (
     accesskey: !selectedLinesAreBlackBoxed
       ? L10N.getStr("ignoreContextItem.ignoreLines.accesskey")
       : L10N.getStr("ignoreContextItem.unignoreLines.accesskey"),
-    disabled: isSourceOnIgnoreList,
+    disabled: false,
     click: () => {
       const selectionRange = {
         start: {
@@ -282,7 +278,6 @@ export function editorMenuItems({
   isPaused,
   editorWrappingEnabled,
   editor,
-  isSourceOnIgnoreList,
 }) {
   const items = [];
 
@@ -314,13 +309,7 @@ export function editorMenuItems({
     { type: "separator" },
     showSourceMenuItem(cx, selectedSource, editorActions),
     { type: "separator" },
-    blackBoxMenuItem(
-      cx,
-      selectedSource,
-      blackboxedRanges,
-      editorActions,
-      isSourceOnIgnoreList
-    )
+    blackBoxMenuItem(cx, selectedSource, blackboxedRanges, editorActions)
   );
 
   const startLine = toSourceLine(
@@ -359,8 +348,7 @@ export function editorMenuItems({
         selectedSource,
         editorActions,
         editor,
-        blackboxedRanges,
-        isSourceOnIgnoreList
+        blackboxedRanges
       )
     );
   }
