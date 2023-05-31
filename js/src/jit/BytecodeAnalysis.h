@@ -75,8 +75,7 @@ class BytecodeAnalysis {
 
 
 
-struct IonBytecodeInfo;
-IonBytecodeInfo AnalyzeBytecodeForIon(JSContext* cx, JSScript* script);
+bool ScriptUsesEnvironmentChain(JSScript* script);
 
 }  
 }  

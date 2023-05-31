@@ -54,12 +54,6 @@ class JitScript;
 class JitZone;
 
 
-
-struct IonBytecodeInfo {
-  bool usesEnvironmentChain = false;
-};
-
-
 static constexpr uintptr_t BaselineDisabledScript = 0x1;
 
 static BaselineScript* const BaselineDisabledScriptPtr =
@@ -305,7 +299,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   
   
-  mozilla::Maybe<IonBytecodeInfo> cachedIonBytecodeInfo_;
+  mozilla::Maybe<bool> usesEnvironmentChain_;
 
   
   Offset endOffset_ = 0;
@@ -340,10 +334,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   
 
   Offset endOffset() const { return endOffset_; }
-
-  const IonBytecodeInfo& cachedIonBytecodeInfo() const {
-    return cachedIonBytecodeInfo_.ref();
-  }
 
  public:
   JitScript(JSScript* script, Offset fallbackStubsOffset, Offset endOffset,
@@ -429,9 +419,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
   EnvironmentObject* templateEnvironment() const { return templateEnv_.ref(); }
 
-  bool usesEnvironmentChain() const {
-    return cachedIonBytecodeInfo().usesEnvironmentChain;
-  }
+  bool usesEnvironmentChain() const { return *usesEnvironmentChain_; }
 
   gc::AllocSite* createAllocSite(JSScript* script);
 
