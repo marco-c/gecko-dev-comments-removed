@@ -4,7 +4,6 @@
 
 import {
   getSelectedFrameId,
-  getSource,
   getSettledSourceTextContent,
   isMapScopesEnabled,
   getSelectedFrame,
@@ -166,10 +165,8 @@ export function getMappedScopes(cx, scopes, frame) {
     );
 
     try {
-      const content =
-        getSource(getState(), source.id) &&
-        
-        getSettledSourceTextContent(getState(), frame.location);
+      
+      const content = getSettledSourceTextContent(getState(), frame.location);
 
       return await buildMappedScopes(
         source,

@@ -35,6 +35,8 @@ export async function getGeneratedLocation(location, thunkArgs) {
     return location;
   }
 
+  
+  
   const generatedSource = getSource(getState(), generatedLocation.sourceId);
   if (!generatedSource) {
     throw new Error(
