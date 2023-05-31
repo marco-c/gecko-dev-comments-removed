@@ -2,6 +2,7 @@
 
 
 
+import { debuggerToSourceMapLocation } from "../../location";
 import { locColumn } from "./locColumn";
 import { loadRangeMetadata, findMatchingRange } from "./rangeMetadata";
 
@@ -209,7 +210,9 @@ function batchScopeMappings(originalAstScopes, source, thunkArgs) {
         for (const loc of locs) {
           precalculatedRanges.set(
             buildLocationKey(loc.start),
-            sourceMapLoader.getGeneratedRanges(loc.start)
+            sourceMapLoader.getGeneratedRanges(
+              debuggerToSourceMapLocation(loc.start)
+            )
           );
           precalculatedLocations.set(
             buildLocationKey(loc.start),
@@ -230,7 +233,9 @@ function batchScopeMappings(originalAstScopes, source, thunkArgs) {
 
       if (!precalculatedRanges.has(key)) {
         log("Bad precalculated mapping");
-        return sourceMapLoader.getGeneratedRanges(pos);
+        return sourceMapLoader.getGeneratedRanges(
+          debuggerToSourceMapLocation(pos)
+        );
       }
       return precalculatedRanges.get(key);
     },
