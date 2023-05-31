@@ -56,6 +56,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionDNR: "resource://gre/modules/ExtensionDNR.sys.mjs",
   ExtensionDNRStore: "resource://gre/modules/ExtensionDNRStore.sys.mjs",
   Log: "resource://gre/modules/Log.sys.mjs",
+  permissionToL10nId:
+    "resource://gre/modules/ExtensionPermissionMessages.sys.mjs",
   SITEPERMS_ADDON_TYPE:
     "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
 });
@@ -75,7 +77,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   ExtensionTelemetry: "resource://gre/modules/ExtensionTelemetry.jsm",
   LightweightThemeManager: "resource://gre/modules/LightweightThemeManager.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
-  PluralForm: "resource://gre/modules/PluralForm.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
 });
@@ -84,6 +85,20 @@ XPCOMUtils.defineLazyGetter(lazy, "resourceProtocol", () =>
   Services.io
     .getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler)
+);
+
+XPCOMUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () =>
+    new Localization(
+      [
+        "toolkit/global/extensions.ftl",
+        "toolkit/global/extensionPermissions.ftl",
+        "branding/brand.ftl",
+      ],
+      true
+    )
 );
 
 const { ExtensionCommon } = ChromeUtils.import(
@@ -2185,13 +2200,7 @@ class ExtensionData {
 
 
 
-
-
-
-
-
-
-
+  
 
 
 
@@ -2234,32 +2243,58 @@ class ExtensionData {
 
 
   static formatPermissionStrings(
-    info,
-    bundle,
     {
-      collapseOrigins = false,
-      buildOptionalOrigins = false,
-      getKeyForPermission = perm => `webextPerms.description.${perm}`,
-    } = {}
+      addon,
+      optionalPermissions,
+      permissions,
+      siteOrigin,
+      sitePermissions,
+      type,
+      unsigned,
+    },
+    { collapseOrigins = false, buildOptionalOrigins = false, localization } = {}
   ) {
-    let result = {
+    const l10n = localization ?? lazy.l10n;
+
+    const msgIds = [];
+    const headerArgs = { extension: "<>" };
+    let acceptId = "webext-perms-add";
+    let cancelId = "webext-perms-cancel";
+
+    const result = {
       msgs: [],
       optionalPermissions: {},
       optionalOrigins: {},
+      text: "",
+      listIntro: "",
     };
 
-    const haveAccessKeys = AppConstants.platform !== "android";
+    
+    
+    
+    function setAcceptCancel(acceptId, cancelId) {
+      const haveAccessKeys = AppConstants.platform !== "android";
 
-    let headerKey;
-    result.text = "";
-    result.listIntro = "";
-    result.acceptText = bundle.GetStringFromName("webextPerms.add.label");
-    result.cancelText = bundle.GetStringFromName("webextPerms.cancel.label");
-    if (haveAccessKeys) {
-      result.acceptKey = bundle.GetStringFromName("webextPerms.add.accessKey");
-      result.cancelKey = bundle.GetStringFromName(
-        "webextPerms.cancel.accessKey"
-      );
+      const [accept, cancel] = l10n.formatMessagesSync([
+        { id: acceptId },
+        { id: cancelId },
+      ]);
+
+      for (let { name, value } of accept.attributes) {
+        if (name === "label") {
+          result.acceptText = value;
+        } else if (name === "accesskey" && haveAccessKeys) {
+          result.acceptKey = value;
+        }
+      }
+
+      for (let { name, value } of cancel.attributes) {
+        if (name === "label") {
+          result.cancelText = value;
+        } else if (name === "accesskey" && haveAccessKeys) {
+          result.cancelKey = value;
+        }
+      }
     }
 
     
@@ -2267,252 +2302,230 @@ class ExtensionData {
     
     
     
-    if (info.addon?.type === lazy.SITEPERMS_ADDON_TYPE) {
+    
+    if (addon?.type === lazy.SITEPERMS_ADDON_TYPE) {
       
       
       
-      const host = new URL(info.siteOrigin).hostname;
+      headerArgs.hostname = new URL(siteOrigin).hostname;
 
       
-      result.header = bundle.formatStringFromName(
-        `webextSitePerms.headerWithGatedPerms.${info.sitePermissions[0]}`,
-        [host]
+      const headerId =
+        sitePermissions[0] === "midi-sysex"
+          ? "webext-site-perms-header-with-gated-perms-midi-sysex"
+          : "webext-site-perms-header-with-gated-perms-midi";
+      result.header = l10n.formatValueSync(headerId, headerArgs);
+
+      
+      
+      
+      result.text = l10n.formatValueSync(
+        "webext-site-perms-description-gated-perms-midi"
       );
 
-      
-      
-      
-      result.text = bundle.GetStringFromName(
-        `webextSitePerms.descriptionGatedPerms.midi`
-      );
-
+      setAcceptCancel(acceptId, cancelId);
       return result;
     }
 
     
-    if (info.sitePermissions) {
-      
-      for (let permission of info.sitePermissions) {
-        try {
-          result.msgs.push(
-            bundle.GetStringFromName(
-              `webextSitePerms.description.${permission}`
-            )
-          );
-        } catch (err) {
-          Cu.reportError(
-            `site_permission ${permission} missing readable text property`
-          );
-          
-          
-          
-          
-          result.msgs.push(permission);
+    if (sitePermissions) {
+      for (let permission of sitePermissions) {
+        let permMsg;
+        switch (permission) {
+          case "midi":
+            permMsg = l10n.formatValueSync("webext-site-perms-midi");
+            break;
+          case "midi-sysex":
+            permMsg = l10n.formatValueSync("webext-site-perms-midi-sysex");
+            break;
+          default:
+            Cu.reportError(
+              `site_permission ${permission} missing readable text property`
+            );
+            
+            
+            
+            
+            permMsg = permission;
         }
+        result.msgs.push(permMsg);
       }
 
       
       
-      const host = new URL(info.siteOrigin).hostname;
+      headerArgs.hostname = new URL(siteOrigin).hostname;
 
-      headerKey = info.unsigned
-        ? "webextSitePerms.headerUnsignedWithPerms"
-        : "webextSitePerms.headerWithPerms";
-      result.header = bundle.formatStringFromName(headerKey, ["<>", host]);
-
+      const headerId = unsigned
+        ? "webext-site-perms-header-unsigned-with-perms"
+        : "webext-site-perms-header-with-perms";
+      result.header = l10n.formatValueSync(headerId, headerArgs);
+      setAcceptCancel(acceptId, cancelId);
       return result;
     }
 
-    let perms = info.permissions || { origins: [], permissions: [] };
-    let optional_permissions = info.optionalPermissions || {
-      origins: [],
-      permissions: [],
-    };
+    if (permissions) {
+      
+      let { allUrls, wildcards, sites } =
+        ExtensionData.classifyOriginPermissions(permissions.origins);
 
-    
-    let { allUrls, wildcards, sites } = ExtensionData.classifyOriginPermissions(
-      perms.origins
-    );
+      
+      
+      
+      if (allUrls) {
+        msgIds.push("webext-perms-host-description-all-urls");
+      } else {
+        
+        
+        
+        const addMessages = (set, l10nId, moreL10nId) => {
+          if (collapseOrigins && set.size > 4) {
+            for (let domain of Array.from(set).slice(0, 3)) {
+              msgIds.push({ id: l10nId, args: { domain } });
+            }
+            msgIds.push({
+              id: moreL10nId,
+              args: { domainCount: set.size - 3 },
+            });
+          } else {
+            for (let domain of set) {
+              msgIds.push({ id: l10nId, args: { domain } });
+            }
+          }
+        };
 
-    
-    
-    
-    if (allUrls) {
-      result.msgs.push(
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls")
-      );
-    } else {
+        addMessages(
+          wildcards,
+          "webext-perms-host-description-wildcard",
+          "webext-perms-host-description-too-many-wildcards"
+        );
+        addMessages(
+          sites,
+          "webext-perms-host-description-one-site",
+          "webext-perms-host-description-too-many-sites"
+        );
+      }
+
       
       
       
-      let format = (list, itemKey, moreKey) => {
-        function formatItems(items) {
-          result.msgs.push(
-            ...items.map(item => bundle.formatStringFromName(itemKey, [item]))
-          );
+      
+      const NATIVE_MSG_PERM = "nativeMessaging";
+      const permissionsSorted = permissions.permissions.sort((a, b) => {
+        if (a === NATIVE_MSG_PERM) {
+          return -1;
+        } else if (b === NATIVE_MSG_PERM) {
+          return 1;
         }
-        if (list.length < 5 || !collapseOrigins) {
-          formatItems(list);
+        return a < b ? -1 : 1;
+      });
+      for (let permission of permissionsSorted) {
+        const l10nId = lazy.permissionToL10nId(permission);
+        
+        
+        if (l10nId) {
+          msgIds.push(l10nId);
+        }
+      }
+    }
+
+    if (optionalPermissions) {
+      
+      
+      const opKeys = [];
+      const opL10nIds = [];
+      for (let permission of optionalPermissions.permissions) {
+        const l10nId = lazy.permissionToL10nId(permission);
+        
+        
+        if (l10nId) {
+          opKeys.push(permission);
+          opL10nIds.push(l10nId);
+        }
+      }
+      if (opKeys.length) {
+        const opRes = l10n.formatValuesSync(opL10nIds);
+        for (let i = 0; i < opKeys.length; ++i) {
+          result.optionalPermissions[opKeys[i]] = opRes[i];
+        }
+      }
+
+      const { allUrls, sitesMap, wildcardsMap } =
+        ExtensionData.classifyOriginPermissions(
+          optionalPermissions.origins,
+          true
+        );
+      const ooKeys = [];
+      const ooL10nIds = [];
+      if (allUrls) {
+        ooKeys.push(allUrls);
+        ooL10nIds.push("webext-perms-host-description-all-urls");
+      }
+
+      
+      if (buildOptionalOrigins) {
+        for (let [pattern, domain] of wildcardsMap.entries()) {
+          ooKeys.push(pattern);
+          ooL10nIds.push({
+            id: "webext-perms-host-description-wildcard",
+            args: { domain },
+          });
+        }
+        for (let [pattern, domain] of sitesMap.entries()) {
+          ooKeys.push(pattern);
+          ooL10nIds.push({
+            id: "webext-perms-host-description-one-site",
+            args: { domain },
+          });
+        }
+      }
+
+      if (ooKeys.length) {
+        const res = l10n.formatValuesSync(ooL10nIds);
+        for (let i = 0; i < res.length; ++i) {
+          result.optionalOrigins[ooKeys[i]] = res[i];
+        }
+      }
+    }
+
+    let headerId;
+    switch (type) {
+      case "sideload":
+        headerId = "webext-perms-sideload-header";
+        acceptId = "webext-perms-sideload-enable";
+        cancelId = "webext-perms-sideload-cancel";
+        result.text = l10n.formatValueSync(
+          msgIds.length
+            ? "webext-perms-sideload-text"
+            : "webext-perms-sideload-text-no-perms"
+        );
+        break;
+      case "update":
+        headerId = "webext-perms-update-text";
+        acceptId = "webext-perms-update-accept";
+        break;
+      case "optional":
+        headerId = "webext-perms-optional-perms-header";
+        acceptId = "webext-perms-optional-perms-allow";
+        cancelId = "webext-perms-optional-perms-deny";
+        result.listIntro = l10n.formatValueSync(
+          "webext-perms-optional-perms-list-intro"
+        );
+        break;
+      default:
+        if (msgIds.length) {
+          headerId = unsigned
+            ? "webext-perms-header-unsigned-with-perms"
+            : "webext-perms-header-with-perms";
         } else {
-          formatItems(list.slice(0, 3));
-
-          let remaining = list.length - 3;
-          result.msgs.push(
-            lazy.PluralForm.get(
-              remaining,
-              bundle.GetStringFromName(moreKey)
-            ).replace("#1", remaining)
-          );
+          headerId = unsigned
+            ? "webext-perms-header-unsigned"
+            : "webext-perms-header";
         }
-      };
-
-      format(
-        Array.from(wildcards),
-        "webextPerms.hostDescription.wildcard",
-        "webextPerms.hostDescription.tooManyWildcards"
-      );
-      format(
-        Array.from(sites),
-        "webextPerms.hostDescription.oneSite",
-        "webextPerms.hostDescription.tooManySites"
-      );
     }
 
-    
-    const NATIVE_MSG_PERM = "nativeMessaging";
-    if (perms.permissions.includes(NATIVE_MSG_PERM)) {
-      result.msgs.push(
-        bundle.formatStringFromName(getKeyForPermission(NATIVE_MSG_PERM), [
-          info.appName,
-        ])
-      );
-    }
-
-    
-    
-    
-    let permissionsCopy = perms.permissions.slice(0);
-    for (let permission of permissionsCopy.sort()) {
-      
-      if (permission == NATIVE_MSG_PERM) {
-        continue;
-      }
-      try {
-        result.msgs.push(
-          bundle.GetStringFromName(getKeyForPermission(permission))
-        );
-      } catch (err) {
-        
-        
-      }
-    }
-
-    
-    
-    for (let permission of optional_permissions.permissions) {
-      if (permission == NATIVE_MSG_PERM) {
-        result.optionalPermissions[permission] = bundle.formatStringFromName(
-          getKeyForPermission(permission),
-          [info.appName]
-        );
-        continue;
-      }
-      try {
-        result.optionalPermissions[permission] = bundle.GetStringFromName(
-          getKeyForPermission(permission)
-        );
-      } catch (err) {
-        
-        
-      }
-    }
-
-    let optionalInfo = ExtensionData.classifyOriginPermissions(
-      optional_permissions.origins,
-      true
-    );
-    if (optionalInfo.allUrls) {
-      result.optionalOrigins[optionalInfo.allUrls] = bundle.GetStringFromName(
-        "webextPerms.hostDescription.allUrls"
-      );
-    }
-
-    
-    if (buildOptionalOrigins) {
-      for (let [pattern, originLabel] of optionalInfo.wildcardsMap.entries()) {
-        let key = "webextPerms.hostDescription.wildcard";
-        let str = bundle.formatStringFromName(key, [originLabel]);
-        result.optionalOrigins[pattern] = str;
-      }
-      for (let [pattern, originLabel] of optionalInfo.sitesMap.entries()) {
-        let key = "webextPerms.hostDescription.oneSite";
-        let str = bundle.formatStringFromName(key, [originLabel]);
-        result.optionalOrigins[pattern] = str;
-      }
-    }
-
-    if (info.type == "sideload") {
-      headerKey = "webextPerms.sideloadHeader";
-      let key = !result.msgs.length
-        ? "webextPerms.sideloadTextNoPerms"
-        : "webextPerms.sideloadText2";
-      result.text = bundle.GetStringFromName(key);
-      result.acceptText = bundle.GetStringFromName(
-        "webextPerms.sideloadEnable.label"
-      );
-      result.cancelText = bundle.GetStringFromName(
-        "webextPerms.sideloadCancel.label"
-      );
-      if (haveAccessKeys) {
-        result.acceptKey = bundle.GetStringFromName(
-          "webextPerms.sideloadEnable.accessKey"
-        );
-        result.cancelKey = bundle.GetStringFromName(
-          "webextPerms.sideloadCancel.accessKey"
-        );
-      }
-    } else if (info.type == "update") {
-      headerKey = "webextPerms.updateText2";
-      result.text = "";
-      result.acceptText = bundle.GetStringFromName(
-        "webextPerms.updateAccept.label"
-      );
-      if (haveAccessKeys) {
-        result.acceptKey = bundle.GetStringFromName(
-          "webextPerms.updateAccept.accessKey"
-        );
-      }
-    } else if (info.type == "optional") {
-      headerKey = "webextPerms.optionalPermsHeader";
-      result.text = "";
-      result.listIntro = bundle.GetStringFromName(
-        "webextPerms.optionalPermsListIntro"
-      );
-      result.acceptText = bundle.GetStringFromName(
-        "webextPerms.optionalPermsAllow.label"
-      );
-      result.cancelText = bundle.GetStringFromName(
-        "webextPerms.optionalPermsDeny.label"
-      );
-      if (haveAccessKeys) {
-        result.acceptKey = bundle.GetStringFromName(
-          "webextPerms.optionalPermsAllow.accessKey"
-        );
-        result.cancelKey = bundle.GetStringFromName(
-          "webextPerms.optionalPermsDeny.accessKey"
-        );
-      }
-    } else {
-      headerKey = "webextPerms.header";
-      if (result.msgs.length) {
-        headerKey = info.unsigned
-          ? "webextPerms.headerUnsignedWithPerms"
-          : "webextPerms.headerWithPerms";
-      } else if (info.unsigned) {
-        headerKey = "webextPerms.headerUnsigned";
-      }
-    }
-    result.header = bundle.formatStringFromName(headerKey, ["<>"]);
+    result.header = l10n.formatValueSync(headerId, headerArgs);
+    result.msgs = l10n.formatValuesSync(msgIds);
+    setAcceptCancel(acceptId, cancelId);
     return result;
   }
 }

@@ -4,19 +4,26 @@ let { ExtensionTestCommon } = ChromeUtils.import(
   "resource://testing-common/ExtensionTestCommon.jsm"
 );
 
-let bundle;
-if (AppConstants.MOZ_APP_NAME == "thunderbird") {
-  bundle = Services.strings.createBundle(
-    "chrome://messenger/locale/addons.properties"
-  );
-} else {
-  
-  
-  bundle = Services.strings.createBundle(
-    "chrome://browser/locale/browser.properties"
-  );
-}
-const DUMMY_APP_NAME = "Dummy brandName";
+const { PERMISSION_L10N_ID_OVERRIDES } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionPermissionMessages.sys.mjs"
+);
+
+const EXTENSION_L10N_PATHS =
+  AppConstants.MOZ_APP_NAME == "thunderbird"
+    ? [
+        "messenger/addons.ftl", 
+        "messenger/addonPermissions.ftl", 
+        "branding/brand.ftl",
+      ]
+    : [
+        "toolkit/global/extensions.ftl",
+        "toolkit/global/extensionPermissions.ftl",
+        "branding/brand.ftl",
+      ];
+
+
+
+const l10n = new Localization(EXTENSION_L10N_PATHS, true);
 
 
 const IS_NATIVE_MESSAGING_PRIVILEGED = AppConstants.platform == "android";
@@ -50,18 +57,9 @@ async function getManifestPermissions(extensionData) {
   return result;
 }
 
-function getPermissionWarnings(
-  manifestPermissions,
-  options,
-  stringBundle = bundle
-) {
-  let info = {
-    permissions: manifestPermissions,
-    appName: DUMMY_APP_NAME,
-  };
+function getPermissionWarnings(permissions, options) {
   let { msgs } = ExtensionData.formatPermissionStrings(
-    info,
-    stringBundle,
+    { permissions },
     options
   );
   return msgs;
@@ -80,44 +78,53 @@ async function getPermissionWarningsForUpdate(
 
 
 add_task(async function customized_permission_keys_mapping() {
-  const mockBundle = {
-    
-    GetStringFromName: key => `Fake localized ${key}`,
-    formatStringFromName: (name, params) => "Fake formatted string",
+  const mockLocalization = {
+    formatMessagesSync: args =>
+      args.map(arg => ({
+        value: `Fake localized ${arg.id ?? arg}`,
+        attributes: [],
+      })),
+    formatValueSync: key => `Fake localized ${key}`,
+    formatValuesSync: args =>
+      args.map(arg => `Fake localized ${arg.id ?? arg}`),
   };
 
   
-  const getKeyForPermission = perm => `customWebExtPerms.description.${perm}`;
+  const getKeyForPermission = perm => `custom-webext-perms-description-${perm}`;
 
   const manifest = {
     permissions: ["downloads", "proxy"],
   };
-  const expectedWarnings = manifest.permissions.map(k =>
-    mockBundle.GetStringFromName(getKeyForPermission(k))
+  const expectedWarnings = mockLocalization.formatValuesSync(
+    manifest.permissions.map(getKeyForPermission)
   );
-  const manifestPermissions = await getManifestPermissions({ manifest });
 
-  
-  
-  const warnings = getPermissionWarnings(
-    manifestPermissions,
-    { getKeyForPermission },
-    mockBundle
-  );
-  deepEqual(
-    warnings,
-    expectedWarnings,
-    "Got the expected string from customized permission mapping"
-  );
+  try {
+    for (let perm of manifest.permissions) {
+      PERMISSION_L10N_ID_OVERRIDES.set(perm, getKeyForPermission(perm));
+    }
+    const manifestPermissions = await getManifestPermissions({ manifest });
+
+    
+    
+    const warnings = getPermissionWarnings(manifestPermissions, {
+      localization: mockLocalization,
+    });
+    deepEqual(
+      warnings,
+      expectedWarnings,
+      "Got the expected string from customized permission mapping"
+    );
+  } finally {
+    for (let perm of manifest.permissions) {
+      PERMISSION_L10N_ID_OVERRIDES.delete(perm);
+    }
+  }
 });
 
 
 
 add_task(async function host_permissions() {
-  let { PluralForm } = ChromeUtils.import(
-    "resource://gre/modules/PluralForm.jsm"
-  );
-
   let permissionTestCases = [
     {
       description: "Empty manifest without permissions",
@@ -167,7 +174,7 @@ add_task(async function host_permissions() {
       },
       expectedOrigins: ["<all_urls>"],
       expectedWarnings: [
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+        l10n.formatValueSync("webext-perms-host-description-all-urls"),
       ],
     },
     {
@@ -177,7 +184,7 @@ add_task(async function host_permissions() {
       },
       expectedOrigins: ["file://*/"],
       expectedWarnings: [
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+        l10n.formatValueSync("webext-perms-host-description-all-urls"),
       ],
     },
     {
@@ -187,7 +194,7 @@ add_task(async function host_permissions() {
       },
       expectedOrigins: ["http://*/"],
       expectedWarnings: [
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+        l10n.formatValueSync("webext-perms-host-description-all-urls"),
       ],
     },
     {
@@ -197,7 +204,7 @@ add_task(async function host_permissions() {
       },
       expectedOrigins: ["*://*/"],
       expectedWarnings: [
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+        l10n.formatValueSync("webext-perms-host-description-all-urls"),
       ],
     },
     {
@@ -214,7 +221,7 @@ add_task(async function host_permissions() {
       },
       expectedOrigins: ["https://*/"],
       expectedWarnings: [
-        bundle.GetStringFromName("webextPerms.hostDescription.allUrls"),
+        l10n.formatValueSync("webext-perms-host-description-all-urls"),
       ],
     },
     {
@@ -223,18 +230,21 @@ add_task(async function host_permissions() {
         permissions: ["http://a/", "http://*.b/", "http://c/*"],
       },
       expectedOrigins: ["http://a/", "http://*.b/", "http://c/*"],
-      expectedWarnings: [
+      expectedWarnings: l10n.formatValuesSync([
         
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "b",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "a",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "c",
-        ]),
-      ],
+        {
+          id: "webext-perms-host-description-wildcard",
+          args: { domain: "b" },
+        },
+        {
+          id: "webext-perms-host-description-one-site",
+          args: { domain: "a" },
+        },
+        {
+          id: "webext-perms-host-description-one-site",
+          args: { domain: "c" },
+        },
+      ]),
     },
     {
       description: "many host permission",
@@ -262,34 +272,41 @@ add_task(async function host_permissions() {
         "http://*.3/",
         "http://*.4/",
       ],
-      expectedWarnings: [
+      expectedWarnings: l10n.formatValuesSync([
         
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "1",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "2",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "3",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "4",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "a",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "b",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "c",
-        ]),
-        PluralForm.get(
-          2,
-          bundle.GetStringFromName("webextPerms.hostDescription.tooManySites")
-        ).replace("#1", "2"),
-      ],
+        {
+          id: "webext-perms-host-description-wildcard",
+          args: { domain: "1" },
+        },
+        {
+          id: "webext-perms-host-description-wildcard",
+          args: { domain: "2" },
+        },
+        {
+          id: "webext-perms-host-description-wildcard",
+          args: { domain: "3" },
+        },
+        {
+          id: "webext-perms-host-description-wildcard",
+          args: { domain: "4" },
+        },
+        {
+          id: "webext-perms-host-description-one-site",
+          args: { domain: "a" },
+        },
+        {
+          id: "webext-perms-host-description-one-site",
+          args: { domain: "b" },
+        },
+        {
+          id: "webext-perms-host-description-one-site",
+          args: { domain: "c" },
+        },
+        {
+          id: "webext-perms-host-description-too-many-sites",
+          args: { domainCount: 2 },
+        },
+      ]),
       options: {
         collapseOrigins: true,
       },
@@ -323,38 +340,18 @@ add_task(async function host_permissions() {
         "http://*.4/",
         "http://*.5/",
       ],
-      expectedWarnings: [
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "1",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "2",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "3",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "4",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-          "5",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "a",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "b",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "c",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "d",
-        ]),
-        bundle.formatStringFromName("webextPerms.hostDescription.oneSite", [
-          "e",
-        ]),
-      ],
+      expectedWarnings: l10n.formatValuesSync([
+        { id: "webext-perms-host-description-wildcard", args: { domain: "1" } },
+        { id: "webext-perms-host-description-wildcard", args: { domain: "2" } },
+        { id: "webext-perms-host-description-wildcard", args: { domain: "3" } },
+        { id: "webext-perms-host-description-wildcard", args: { domain: "4" } },
+        { id: "webext-perms-host-description-wildcard", args: { domain: "5" } },
+        { id: "webext-perms-host-description-one-site", args: { domain: "a" } },
+        { id: "webext-perms-host-description-one-site", args: { domain: "b" } },
+        { id: "webext-perms-host-description-one-site", args: { domain: "c" } },
+        { id: "webext-perms-host-description-one-site", args: { domain: "d" } },
+        { id: "webext-perms-host-description-one-site", args: { domain: "e" } },
+      ]),
     },
   ];
   for (let manifest_version of [2, 3]) {
@@ -423,24 +420,18 @@ add_task(async function api_permissions() {
 
   deepEqual(
     getPermissionWarnings(manifestPermissions),
-    [
+    l10n.formatValuesSync([
       
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-        "x",
-      ]),
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-        "tld",
-      ]),
-      bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["x"]),
+      { id: "webext-perms-host-description-wildcard", args: { domain: "x" } },
+      { id: "webext-perms-host-description-wildcard", args: { domain: "tld" } },
+      { id: "webext-perms-host-description-one-site", args: { domain: "x" } },
       
-      bundle.formatStringFromName("webextPerms.description.nativeMessaging", [
-        DUMMY_APP_NAME,
-      ]),
+      "webext-perms-description-nativeMessaging",
       
       
-      bundle.GetStringFromName("webextPerms.description.tabs"),
-      bundle.GetStringFromName("webextPerms.description.webNavigation"),
-    ],
+      "webext-perms-description-tabs",
+      "webext-perms-description-webNavigation",
+    ]),
     "Expected warnings"
   );
 });
@@ -492,14 +483,10 @@ add_task(
 
     deepEqual(
       getPermissionWarnings(manifestPermissions),
-      [
-        bundle.GetStringFromName(
-          "webextPerms.description.declarativeNetRequest"
-        ),
-        bundle.GetStringFromName(
-          "webextPerms.description.declarativeNetRequestFeedback"
-        ),
-      ],
+      l10n.formatValuesSync([
+        "webext-perms-description-declarativeNetRequest",
+        "webext-perms-description-declarativeNetRequestFeedback",
+      ]),
       "Expected warnings"
     );
   }
@@ -553,7 +540,7 @@ add_task(async function privileged_with_mozillaAddons() {
 
   deepEqual(
     getPermissionWarnings(manifestPermissions),
-    [bundle.GetStringFromName("webextPerms.hostDescription.allUrls")],
+    [l10n.formatValueSync("webext-perms-host-description-all-urls")],
     "Expected warnings for privileged add-on with mozillaAddons permission."
   );
 });
@@ -584,7 +571,11 @@ add_task(async function unprivileged_with_mozillaAddons() {
 
   deepEqual(
     getPermissionWarnings(manifestPermissions),
-    [bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["a"])],
+    [
+      l10n.formatValueSync("webext-perms-host-description-one-site", {
+        domain: "a",
+      }),
+    ],
     "Expected warnings for unprivileged add-on with mozillaAddons permission."
   );
 });
@@ -671,14 +662,10 @@ add_task(async function update_change_permissions() {
   );
   deepEqual(
     warnings,
-    [
-      bundle.formatStringFromName("webextPerms.hostDescription.wildcard", [
-        "c",
-      ]),
-      bundle.formatStringFromName("webextPerms.description.proxy", [
-        DUMMY_APP_NAME,
-      ]),
-    ],
+    l10n.formatValuesSync([
+      { id: "webext-perms-host-description-wildcard", args: { domain: "c" } },
+      "webext-perms-description-proxy",
+    ]),
     "Expected permission warnings for new permissions only"
   );
 });
@@ -702,7 +689,11 @@ add_task(async function update_privileged_with_mozillaAddons() {
   );
   deepEqual(
     warnings,
-    [bundle.formatStringFromName("webextPerms.hostDescription.oneSite", ["b"])],
+    [
+      l10n.formatValueSync("webext-perms-host-description-one-site", {
+        domain: "b",
+      }),
+    ],
     "Expected permission warnings for new host only"
   );
 });
