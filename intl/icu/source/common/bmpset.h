@@ -48,14 +48,14 @@ public:
 
 
 
-    const UChar *span(const UChar *s, const UChar *limit, USetSpanCondition spanCondition) const;
+    const char16_t *span(const char16_t *s, const char16_t *limit, USetSpanCondition spanCondition) const;
 
     
 
 
 
 
-    const UChar *spanBack(const UChar *s, const UChar *limit, USetSpanCondition spanCondition) const;
+    const char16_t *spanBack(const char16_t *s, const char16_t *limit, USetSpanCondition spanCondition) const;
 
     
 

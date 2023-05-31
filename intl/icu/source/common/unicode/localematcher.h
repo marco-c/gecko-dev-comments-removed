@@ -198,7 +198,7 @@ public:
 
 
 
-        Result(Result &&src) U_NOEXCEPT;
+        Result(Result &&src) noexcept;
 
         
 
@@ -214,7 +214,7 @@ public:
 
 
 
-        Result &operator=(Result &&src) U_NOEXCEPT;
+        Result &operator=(Result &&src) noexcept;
 
         
 
@@ -313,7 +313,7 @@ public:
 
 
 
-        Builder(Builder &&src) U_NOEXCEPT;
+        Builder(Builder &&src) noexcept;
 
         
 
@@ -329,7 +329,7 @@ public:
 
 
 
-        Builder &operator=(Builder &&src) U_NOEXCEPT;
+        Builder &operator=(Builder &&src) noexcept;
 
         
 
@@ -548,7 +548,7 @@ public:
 
 
 
-    LocaleMatcher(LocaleMatcher &&src) U_NOEXCEPT;
+    LocaleMatcher(LocaleMatcher &&src) noexcept;
 
     
 
@@ -564,7 +564,7 @@ public:
 
 
 
-    LocaleMatcher &operator=(LocaleMatcher &&src) U_NOEXCEPT;
+    LocaleMatcher &operator=(LocaleMatcher &&src) noexcept;
 
     
 

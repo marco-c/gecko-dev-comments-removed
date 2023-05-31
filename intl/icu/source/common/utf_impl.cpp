@@ -213,7 +213,7 @@ utf8_appendCharSafeBody(uint8_t *s, int32_t i, int32_t length, UChar32 c, UBool 
         }
     }
     
-    if(pIsError!=NULL) {
+    if(pIsError!=nullptr) {
         *pIsError=true;
     } else {
         length-=i;

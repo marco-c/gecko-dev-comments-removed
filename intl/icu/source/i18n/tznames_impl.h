@@ -47,17 +47,17 @@ class U_I18N_API ZNStringPool: public UMemory {
 
 
 
-    const UChar *get(const UChar *s, UErrorCode &status);
+    const char16_t *get(const char16_t *s, UErrorCode &status);
 
     
 
 
-    const UChar *get(const UnicodeString &s, UErrorCode &status);
+    const char16_t *get(const UnicodeString &s, UErrorCode &status);
 
     
 
 
-    const UChar *adopt(const UChar *s, UErrorCode &status);
+    const char16_t *adopt(const char16_t *s, UErrorCode &status);
 
     
 
@@ -86,7 +86,7 @@ struct CharacterNode {
     inline const void *getValue(int32_t index) const;
 
     void     *fValues;      
-    UChar    fCharacter;    
+    char16_t fCharacter;    
     uint16_t fFirstChild;   
     uint16_t fNextSibling;  
     UBool    fHasValuesVector;
@@ -98,12 +98,12 @@ struct CharacterNode {
 };
 
 inline UBool CharacterNode::hasValues() const {
-    return (UBool)(fValues != NULL);
+    return (UBool)(fValues != nullptr);
 }
 
 inline int32_t CharacterNode::countValues() const {
     return
-        fValues == NULL ? 0 :
+        fValues == nullptr ? 0 :
         !fHasValuesVector ? 1 :
         ((const UVector *)fValues)->size();
 }
@@ -136,7 +136,7 @@ public:
     virtual ~TextTrieMap();
 
     void put(const UnicodeString &key, void *value, ZNStringPool &sp, UErrorCode &status);
-    void put(const UChar*, void *value, UErrorCode &status);
+    void put(const char16_t*, void *value, UErrorCode &status);
     void search(const UnicodeString &text, int32_t start,
         TextTrieMapSearchResultHandler *handler, UErrorCode& status) const;
     int32_t isEmpty() const;
@@ -152,8 +152,8 @@ private:
     UObjectDeleter  *fValueDeleter;
 
     UBool growNodes();
-    CharacterNode* addChildNode(CharacterNode *parent, UChar c, UErrorCode &status);
-    CharacterNode* getChildNode(CharacterNode *parent, UChar c) const;
+    CharacterNode* addChildNode(CharacterNode *parent, char16_t c, UErrorCode &status);
+    CharacterNode* getChildNode(CharacterNode *parent, char16_t c) const;
 
     void putImpl(const UnicodeString &key, void *value, UErrorCode &status);
     void buildTrie(UErrorCode &status);

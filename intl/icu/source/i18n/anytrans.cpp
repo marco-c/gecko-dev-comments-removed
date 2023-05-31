@@ -29,11 +29,11 @@
 
 
 
-static const UChar TARGET_SEP = 45; 
-static const UChar VARIANT_SEP = 47; 
-static const UChar ANY[] = {0x41,0x6E,0x79,0}; 
-static const UChar NULL_ID[] = {78,117,108,108,0}; 
-static const UChar LATIN_PIVOT[] = {0x2D,0x4C,0x61,0x74,0x6E,0x3B,0x4C,0x61,0x74,0x6E,0x2D,0}; 
+static const char16_t TARGET_SEP = 45; 
+static const char16_t VARIANT_SEP = 47; 
+static const char16_t ANY[] = {0x41,0x6E,0x79,0}; 
+static const char16_t NULL_ID[] = {78,117,108,108,0}; 
+static const char16_t LATIN_PIVOT[] = {0x2D,0x4C,0x61,0x74,0x6E,0x3B,0x4C,0x61,0x74,0x6E,0x2D,0}; 
 
 
 
@@ -187,10 +187,10 @@ AnyTransliterator::AnyTransliterator(const UnicodeString& id,
                                      const UnicodeString& theVariant,
                                      UScriptCode theTargetScript,
                                      UErrorCode& ec) :
-    Transliterator(id, NULL),
+    Transliterator(id, nullptr),
     targetScript(theTargetScript)
 {
-    cache = uhash_openSize(uhash_hashLong, uhash_compareLong, NULL, ANY_TRANS_CACHE_INIT_SIZE, &ec);
+    cache = uhash_openSize(uhash_hashLong, uhash_compareLong, nullptr, ANY_TRANS_CACHE_INIT_SIZE, &ec);
     if (U_FAILURE(ec)) {
         return;
     }
@@ -216,7 +216,7 @@ AnyTransliterator::AnyTransliterator(const AnyTransliterator& o) :
 {
     
     UErrorCode ec = U_ZERO_ERROR;
-    cache = uhash_openSize(uhash_hashLong, uhash_compareLong, NULL, ANY_TRANS_CACHE_INIT_SIZE, &ec);
+    cache = uhash_openSize(uhash_hashLong, uhash_compareLong, nullptr, ANY_TRANS_CACHE_INIT_SIZE, &ec);
     if (U_FAILURE(ec)) {
         return;
     }
@@ -248,7 +248,7 @@ void AnyTransliterator::handleTransliterate(Replaceable& text, UTransPosition& p
         
         Transliterator* t = getTransliterator(it.scriptCode);
 
-        if (t == NULL) {
+        if (t == nullptr) {
             
             
             pos.start = it.limit;
@@ -280,40 +280,40 @@ void AnyTransliterator::handleTransliterate(Replaceable& text, UTransPosition& p
 Transliterator* AnyTransliterator::getTransliterator(UScriptCode source) const {
 
     if (source == targetScript || source == USCRIPT_INVALID_CODE) {
-        return NULL;
+        return nullptr;
     }
 
-    Transliterator* t = NULL;
+    Transliterator* t = nullptr;
     {
-        Mutex m(NULL);
+        Mutex m(nullptr);
         t = (Transliterator*) uhash_iget(cache, (int32_t) source);
     }
-    if (t == NULL) {
+    if (t == nullptr) {
         UErrorCode ec = U_ZERO_ERROR;
         UnicodeString sourceName(uscript_getShortName(source), -1, US_INV);
         UnicodeString id(sourceName);
         id.append(TARGET_SEP).append(target);
 
         t = Transliterator::createInstance(id, UTRANS_FORWARD, ec);
-        if (U_FAILURE(ec) || t == NULL) {
+        if (U_FAILURE(ec) || t == nullptr) {
             delete t;
 
             
             id = sourceName;
             id.append(LATIN_PIVOT, -1).append(target);
             t = Transliterator::createInstance(id, UTRANS_FORWARD, ec);
-            if (U_FAILURE(ec) || t == NULL) {
+            if (U_FAILURE(ec) || t == nullptr) {
                 delete t;
-                t = NULL;
+                t = nullptr;
             }
         }
 
-        if (t != NULL) {
-            Transliterator *rt = NULL;
+        if (t != nullptr) {
+            Transliterator *rt = nullptr;
             {
-                Mutex m(NULL);
+                Mutex m(nullptr);
                 rt = static_cast<Transliterator *> (uhash_iget(cache, (int32_t) source));
-                if (rt == NULL) {
+                if (rt == nullptr) {
                     
                     uhash_iput(cache, (int32_t) source, t, &ec);
                 } else {

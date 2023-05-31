@@ -64,7 +64,7 @@ class UnicodeString;
 
 
 
-class U_COMMON_API UnicodeSetIterator U_FINAL : public UObject {
+class U_COMMON_API UnicodeSetIterator final : public UObject {
     
 
 

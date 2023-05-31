@@ -71,9 +71,9 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
 
 
     void
-    processQuantity(DecimalQuantity &quantity, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
+    processQuantity(DecimalQuantity &quantity, MicroProps &micros, UErrorCode &status) const override;
 
-    const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE;
+    const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const override;
 
   private:
     
@@ -168,12 +168,12 @@ class MixedUnitLongNameHandler : public MicroPropsGenerator, public ModifierStor
 
 
     void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
-                         UErrorCode &status) const U_OVERRIDE;
+                         UErrorCode &status) const override;
 
     
     
     
-    const Modifier *getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE;
+    const Modifier *getModifier(Signum signum, StandardPlural::Form plural) const override;
 
   private:
     
@@ -241,7 +241,7 @@ class LongNameMultiplexer : public MicroPropsGenerator, public UMemory {
     
     
     void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
-                         UErrorCode &status) const U_OVERRIDE;
+                         UErrorCode &status) const override;
 
   private:
     

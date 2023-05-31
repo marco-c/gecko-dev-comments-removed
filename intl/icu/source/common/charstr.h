@@ -59,13 +59,13 @@ public:
 
 
 
-    CharString(CharString &&src) U_NOEXCEPT;
+    CharString(CharString &&src) noexcept;
     
 
 
 
 
-    CharString &operator=(CharString &&src) U_NOEXCEPT;
+    CharString &operator=(CharString &&src) noexcept;
 
     
 
@@ -156,7 +156,7 @@ public:
                           UErrorCode &errorCode);
 
     CharString &appendInvariantChars(const UnicodeString &s, UErrorCode &errorCode);
-    CharString &appendInvariantChars(const UChar* uchars, int32_t ucharsLen, UErrorCode& errorCode);
+    CharString &appendInvariantChars(const char16_t* uchars, int32_t ucharsLen, UErrorCode& errorCode);
 
     
 

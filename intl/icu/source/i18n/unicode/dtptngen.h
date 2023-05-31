@@ -330,7 +330,6 @@ public:
     const UnicodeString& getDateTimeFormat() const;
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -375,7 +374,6 @@ public:
 
     const UnicodeString& getDateTimeFormat(UDateFormatStyle style,
                             UErrorCode& status) const;
-#endif 
 #endif 
 
     

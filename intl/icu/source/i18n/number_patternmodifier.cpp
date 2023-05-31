@@ -60,6 +60,21 @@ bool MutablePatternModifier::needsPlurals() const {
     
 }
 
+AdoptingSignumModifierStore MutablePatternModifier::createImmutableForPlural(StandardPlural::Form plural, UErrorCode& status) {
+    AdoptingSignumModifierStore pm;
+
+    setNumberProperties(SIGNUM_POS, plural);
+    pm.adoptModifier(SIGNUM_POS, createConstantModifier(status));
+    setNumberProperties(SIGNUM_NEG_ZERO, plural);
+    pm.adoptModifier(SIGNUM_NEG_ZERO, createConstantModifier(status));
+    setNumberProperties(SIGNUM_POS_ZERO, plural);
+    pm.adoptModifier(SIGNUM_POS_ZERO, createConstantModifier(status));
+    setNumberProperties(SIGNUM_NEG, plural);
+    pm.adoptModifier(SIGNUM_NEG, createConstantModifier(status));
+
+    return pm;
+}
+
 ImmutablePatternModifier* MutablePatternModifier::createImmutable(UErrorCode& status) {
     
     static const StandardPlural::Form STANDARD_PLURAL_VALUES[] = {
@@ -79,14 +94,7 @@ ImmutablePatternModifier* MutablePatternModifier::createImmutable(UErrorCode& st
     if (needsPlurals()) {
         
         for (StandardPlural::Form plural : STANDARD_PLURAL_VALUES) {
-            setNumberProperties(SIGNUM_POS, plural);
-            pm->adoptModifier(SIGNUM_POS, plural, createConstantModifier(status));
-            setNumberProperties(SIGNUM_NEG_ZERO, plural);
-            pm->adoptModifier(SIGNUM_NEG_ZERO, plural, createConstantModifier(status));
-            setNumberProperties(SIGNUM_POS_ZERO, plural);
-            pm->adoptModifier(SIGNUM_POS_ZERO, plural, createConstantModifier(status));
-            setNumberProperties(SIGNUM_NEG, plural);
-            pm->adoptModifier(SIGNUM_NEG, plural, createConstantModifier(status));
+            pm->adoptSignumModifierStore(plural, createImmutableForPlural(plural, status));
         }
         if (U_FAILURE(status)) {
             delete pm;
@@ -95,14 +103,7 @@ ImmutablePatternModifier* MutablePatternModifier::createImmutable(UErrorCode& st
         return new ImmutablePatternModifier(pm, fRules);  
     } else {
         
-        setNumberProperties(SIGNUM_POS, StandardPlural::Form::COUNT);
-        pm->adoptModifierWithoutPlural(SIGNUM_POS, createConstantModifier(status));
-        setNumberProperties(SIGNUM_NEG_ZERO, StandardPlural::Form::COUNT);
-        pm->adoptModifierWithoutPlural(SIGNUM_NEG_ZERO, createConstantModifier(status));
-        setNumberProperties(SIGNUM_POS_ZERO, StandardPlural::Form::COUNT);
-        pm->adoptModifierWithoutPlural(SIGNUM_POS_ZERO, createConstantModifier(status));
-        setNumberProperties(SIGNUM_NEG, StandardPlural::Form::COUNT);
-        pm->adoptModifierWithoutPlural(SIGNUM_NEG, createConstantModifier(status));
+        pm->adoptSignumModifierStoreNoPlural(createImmutableForPlural(StandardPlural::Form::COUNT, status));
         if (U_FAILURE(status)) {
             delete pm;
             return nullptr;

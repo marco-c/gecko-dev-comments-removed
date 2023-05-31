@@ -261,7 +261,7 @@ public:
 
 
 
-  virtual UClassID getDynamicClassID(void) const override;
+  virtual UClassID getDynamicClassID() const override;
 
   
 
@@ -274,7 +274,7 @@ public:
 
 
 
-  static UClassID U_EXPORT2 getStaticClassID(void);
+  static UClassID U_EXPORT2 getStaticClassID();
 
   
 
@@ -284,24 +284,26 @@ public:
 
   virtual const char * getType() const override;
 
+  
+
+
+
+
+  virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+  
+
+
+
+
+  virtual void setRelatedYear(int32_t year) override;
+
+
 private:
   IndianCalendar() = delete; 
 
   
 protected:
-
-  
-
-
-
-
-
-
-
-
-  virtual UBool inDaylightTime(UErrorCode& status) const override;
-
-
   
 
 

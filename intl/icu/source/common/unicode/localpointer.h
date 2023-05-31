@@ -79,7 +79,7 @@ public:
 
 
 
-    explicit LocalPointerBase(T *p=NULL) : ptr(p) {}
+    explicit LocalPointerBase(T *p=nullptr) : ptr(p) {}
     
 
 
@@ -91,13 +91,13 @@ public:
 
 
 
-    UBool isNull() const { return ptr==NULL; }
+    UBool isNull() const { return ptr==nullptr; }
     
 
 
 
 
-    UBool isValid() const { return ptr!=NULL; }
+    UBool isValid() const { return ptr!=nullptr; }
     
 
 
@@ -140,7 +140,7 @@ public:
 
     T *orphan() {
         T *p=ptr;
-        ptr=NULL;
+        ptr=nullptr;
         return p;
     }
     
@@ -197,7 +197,7 @@ public:
 
 
 
-    explicit LocalPointer(T *p=NULL) : LocalPointerBase<T>(p) {}
+    explicit LocalPointer(T *p=nullptr) : LocalPointerBase<T>(p) {}
     
 
 
@@ -212,7 +212,7 @@ public:
 
 
     LocalPointer(T *p, UErrorCode &errorCode) : LocalPointerBase<T>(p) {
-        if(p==NULL && U_SUCCESS(errorCode)) {
+        if(p==nullptr && U_SUCCESS(errorCode)) {
             errorCode=U_MEMORY_ALLOCATION_ERROR;
         }
     }
@@ -221,8 +221,8 @@ public:
 
 
 
-    LocalPointer(LocalPointer<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
-        src.ptr=NULL;
+    LocalPointer(LocalPointer<T> &&src) noexcept : LocalPointerBase<T>(src.ptr) {
+        src.ptr=nullptr;
     }
 
     
@@ -252,10 +252,10 @@ public:
 
 
 
-    LocalPointer<T> &operator=(LocalPointer<T> &&src) U_NOEXCEPT {
+    LocalPointer<T> &operator=(LocalPointer<T> &&src) noexcept {
         delete LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=src.ptr;
-        src.ptr=NULL;
+        src.ptr=nullptr;
         return *this;
     }
 
@@ -267,7 +267,7 @@ public:
 
 
 
-    LocalPointer<T> &operator=(std::unique_ptr<T> &&p) U_NOEXCEPT {
+    LocalPointer<T> &operator=(std::unique_ptr<T> &&p) noexcept {
         adoptInstead(p.release());
         return *this;
     }
@@ -277,7 +277,7 @@ public:
 
 
 
-    void swap(LocalPointer<T> &other) U_NOEXCEPT {
+    void swap(LocalPointer<T> &other) noexcept {
         T *temp=LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=other.ptr;
         other.ptr=temp;
@@ -288,7 +288,7 @@ public:
 
 
 
-    friend inline void swap(LocalPointer<T> &p1, LocalPointer<T> &p2) U_NOEXCEPT {
+    friend inline void swap(LocalPointer<T> &p1, LocalPointer<T> &p2) noexcept {
         p1.swap(p2);
     }
     
@@ -320,7 +320,7 @@ public:
         if(U_SUCCESS(errorCode)) {
             delete LocalPointerBase<T>::ptr;
             LocalPointerBase<T>::ptr=p;
-            if(p==NULL) {
+            if(p==nullptr) {
                 errorCode=U_MEMORY_ALLOCATION_ERROR;
             }
         } else {
@@ -372,7 +372,7 @@ public:
 
 
 
-    explicit LocalArray(T *p=NULL) : LocalPointerBase<T>(p) {}
+    explicit LocalArray(T *p=nullptr) : LocalPointerBase<T>(p) {}
     
 
 
@@ -387,7 +387,7 @@ public:
 
 
     LocalArray(T *p, UErrorCode &errorCode) : LocalPointerBase<T>(p) {
-        if(p==NULL && U_SUCCESS(errorCode)) {
+        if(p==nullptr && U_SUCCESS(errorCode)) {
             errorCode=U_MEMORY_ALLOCATION_ERROR;
         }
     }
@@ -396,8 +396,8 @@ public:
 
 
 
-    LocalArray(LocalArray<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
-        src.ptr=NULL;
+    LocalArray(LocalArray<T> &&src) noexcept : LocalPointerBase<T>(src.ptr) {
+        src.ptr=nullptr;
     }
 
     
@@ -427,10 +427,10 @@ public:
 
 
 
-    LocalArray<T> &operator=(LocalArray<T> &&src) U_NOEXCEPT {
+    LocalArray<T> &operator=(LocalArray<T> &&src) noexcept {
         delete[] LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=src.ptr;
-        src.ptr=NULL;
+        src.ptr=nullptr;
         return *this;
     }
 
@@ -442,7 +442,7 @@ public:
 
 
 
-    LocalArray<T> &operator=(std::unique_ptr<T[]> &&p) U_NOEXCEPT {
+    LocalArray<T> &operator=(std::unique_ptr<T[]> &&p) noexcept {
         adoptInstead(p.release());
         return *this;
     }
@@ -452,7 +452,7 @@ public:
 
 
 
-    void swap(LocalArray<T> &other) U_NOEXCEPT {
+    void swap(LocalArray<T> &other) noexcept {
         T *temp=LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=other.ptr;
         other.ptr=temp;
@@ -463,7 +463,7 @@ public:
 
 
 
-    friend inline void swap(LocalArray<T> &p1, LocalArray<T> &p2) U_NOEXCEPT {
+    friend inline void swap(LocalArray<T> &p1, LocalArray<T> &p2) noexcept {
         p1.swap(p2);
     }
     
@@ -495,7 +495,7 @@ public:
         if(U_SUCCESS(errorCode)) {
             delete[] LocalPointerBase<T>::ptr;
             LocalPointerBase<T>::ptr=p;
-            if(p==NULL) {
+            if(p==nullptr) {
                 errorCode=U_MEMORY_ALLOCATION_ERROR;
             }
         } else {
@@ -552,19 +552,19 @@ public:
     public: \
         using LocalPointerBase<Type>::operator*; \
         using LocalPointerBase<Type>::operator->; \
-        explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase<Type>(p) {} \
-        LocalPointerClassName(LocalPointerClassName &&src) U_NOEXCEPT \
+        explicit LocalPointerClassName(Type *p=nullptr) : LocalPointerBase<Type>(p) {} \
+        LocalPointerClassName(LocalPointerClassName &&src) noexcept \
                 : LocalPointerBase<Type>(src.ptr) { \
-            src.ptr=NULL; \
+            src.ptr=nullptr; \
         } \
         /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \
         explicit LocalPointerClassName(std::unique_ptr<Type, decltype(&closeFunction)> &&p) \
                 : LocalPointerBase<Type>(p.release()) {} \
-        ~LocalPointerClassName() { if (ptr != NULL) { closeFunction(ptr); } } \
-        LocalPointerClassName &operator=(LocalPointerClassName &&src) U_NOEXCEPT { \
-            if (ptr != NULL) { closeFunction(ptr); } \
+        ~LocalPointerClassName() { if (ptr != nullptr) { closeFunction(ptr); } } \
+        LocalPointerClassName &operator=(LocalPointerClassName &&src) noexcept { \
+            if (ptr != nullptr) { closeFunction(ptr); } \
             LocalPointerBase<Type>::ptr=src.ptr; \
-            src.ptr=NULL; \
+            src.ptr=nullptr; \
             return *this; \
         } \
         /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \
@@ -572,16 +572,16 @@ public:
             adoptInstead(p.release()); \
             return *this; \
         } \
-        void swap(LocalPointerClassName &other) U_NOEXCEPT { \
+        void swap(LocalPointerClassName &other) noexcept { \
             Type *temp=LocalPointerBase<Type>::ptr; \
             LocalPointerBase<Type>::ptr=other.ptr; \
             other.ptr=temp; \
         } \
-        friend inline void swap(LocalPointerClassName &p1, LocalPointerClassName &p2) U_NOEXCEPT { \
+        friend inline void swap(LocalPointerClassName &p1, LocalPointerClassName &p2) noexcept { \
             p1.swap(p2); \
         } \
         void adoptInstead(Type *p) { \
-            if (ptr != NULL) { closeFunction(ptr); } \
+            if (ptr != nullptr) { closeFunction(ptr); } \
             ptr=p; \
         } \
         operator std::unique_ptr<Type, decltype(&closeFunction)> () && { \

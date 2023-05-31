@@ -325,7 +325,7 @@ static int printConverters(const char *pname, const char *lookfor,
                             const char *standardName;
                             UBool isFirst = true;
                             UErrorCode enumError = U_ZERO_ERROR;
-                            while ((standardName = uenum_next(nameEnum, NULL, &enumError))) {
+                            while ((standardName = uenum_next(nameEnum, nullptr, &enumError))) {
                                 
                                 if (!strcmp(standardName, alias)) {
                                     if (!t) {
@@ -427,7 +427,7 @@ getChunkLimit(const UnicodeString &prev, const UnicodeString &s) {
     
     
     
-    static const UChar paraEnds[] = {
+    static const char16_t paraEnds[] = {
         0xd, 0xa, 0x85, 0x2028, 0x2029
     };
     enum {
@@ -445,8 +445,8 @@ getChunkLimit(const UnicodeString &prev, const UnicodeString &s) {
         }
     }
 
-    const UChar *u = s.getBuffer(), *limit = u + s.length();
-    UChar c;
+    const char16_t *u = s.getBuffer(), *limit = u + s.length();
+    char16_t c;
 
     while (u < limit) {
         c = *u++;
@@ -476,13 +476,13 @@ enum {
     CNV_ADDS_FEFF   
 };
 
-static inline UChar
+static inline char16_t
 nibbleToHex(uint8_t n) {
     n &= 0xf;
     return
         n <= 9 ?
-            (UChar)(0x30 + n) :
-            (UChar)((0x61 - 10) + n);
+            (char16_t)(0x30 + n) :
+            (char16_t)((0x61 - 10) + n);
 }
 
 
@@ -506,8 +506,8 @@ cnvSigType(UConverter *cnv) {
 
     if (result == CNV_WITH_FEFF) {
         
-        const UChar a[1] = { 0x61 }; 
-        const UChar *in;
+        const char16_t a[1] = { 0x61 }; 
+        const char16_t *in;
 
         char buffer[20];
         char *out;
@@ -518,10 +518,10 @@ cnvSigType(UConverter *cnv) {
         ucnv_fromUnicode(cnv,
             &out, buffer + sizeof(buffer),
             &in, a + 1,
-            NULL, true, &err);
+            nullptr, true, &err);
         ucnv_resetFromUnicode(cnv);
 
-        if (NULL != ucnv_detectUnicodeSignature(buffer, (int32_t)(out - buffer), NULL, &err) &&
+        if (nullptr != ucnv_detectUnicodeSignature(buffer, (int32_t)(out - buffer), nullptr, &err) &&
             U_SUCCESS(err)
         ) {
             result = CNV_ADDS_FEFF;
@@ -534,7 +534,7 @@ cnvSigType(UConverter *cnv) {
 class ConvertFile {
 public:
     ConvertFile() :
-        buf(NULL), outbuf(NULL), fromoffsets(NULL),
+        buf(nullptr), outbuf(nullptr), fromoffsets(nullptr),
         bufsz(0), signature(0) {}
 
     void
@@ -600,8 +600,8 @@ ConvertFile::convertFile(const char *pname,
 
     uint32_t infoffset = 0, outfoffset = 0;   
 
-    const UChar *unibuf, *unibufbp;
-    UChar *unibufp;
+    const char16_t *unibuf, *unibufbp;
+    char16_t *unibufp;
 
     size_t rd, wr;
 
@@ -650,7 +650,7 @@ ConvertFile::convertFile(const char *pname,
 #if !UCONFIG_NO_TRANSLITERATION
     
 
-    if (translit != NULL && *translit) {
+    if (translit != nullptr && *translit) {
         UParseError parse;
         UnicodeString str(translit), pestr;
 
@@ -669,7 +669,7 @@ ConvertFile::convertFile(const char *pname,
             initMsg(pname);
 
             if (parse.line >= 0) {
-                UChar linebuf[20], offsetbuf[20];
+                char16_t linebuf[20], offsetbuf[20];
                 uprv_itou(linebuf, 20, parse.line, 10, 0);
                 uprv_itou(offsetbuf, 20, parse.offset, 10, 0);
                 u_wmsg(stderr, "cantCreateTranslitParseErr", str.getTerminatedBuffer(),
@@ -770,7 +770,7 @@ ConvertFile::convertFile(const char *pname,
             
             
             ucnv_toUnicode(convfrom, &unibufp, unibuf + bufsz, &cbufp,
-                buf + rd, useOffsets ? fromoffsets : NULL, flush, &err);
+                buf + rd, useOffsets ? fromoffsets : nullptr, flush, &err);
 
             ulen = (int32_t)(unibufp - unibuf);
             u.releaseBuffer(U_SUCCESS(err) ? ulen : 0);
@@ -804,14 +804,14 @@ ConvertFile::convertFile(const char *pname,
                 
                 
                 length =
-                    (int8_t)sprintf(pos, "%d",
+                    (int8_t)snprintf(pos, sizeof(pos), "%d",
                         (int)(infoffset + (cbufp - buf) - errorLength));
 
                 
                 UnicodeString str;
                 for (i = 0; i < errorLength; ++i) {
                     if (i > 0) {
-                        str.append((UChar)uSP);
+                        str.append((char16_t)uSP);
                     }
                     str.append(nibbleToHex((uint8_t)errorBytes[i] >> 4));
                     str.append(nibbleToHex((uint8_t)errorBytes[i]));
@@ -862,7 +862,7 @@ ConvertFile::convertFile(const char *pname,
             
             
             
-            if (t != NULL) {
+            if (t != nullptr) {
                 UnicodeString out;
                 int32_t chunkLimit;
 
@@ -897,7 +897,7 @@ ConvertFile::convertFile(const char *pname,
             
             if (sig > 0) {
                 if (u.charAt(0) != uSig && cnvSigType(convto) == CNV_WITH_FEFF) {
-                    u.insert(0, (UChar)uSig);
+                    u.insert(0, (char16_t)uSig);
 
                     if (useOffsets) {
                         
@@ -929,7 +929,7 @@ ConvertFile::convertFile(const char *pname,
                 ucnv_fromUnicode(convto, &bufp, outbuf + bufsz,
                                  &unibufbp,
                                  unibuf + ulen,
-                                 NULL, (UBool)(flush && fromSawEndOfBytes), &err);
+                                 nullptr, (UBool)(flush && fromSawEndOfBytes), &err);
 
                 
                 
@@ -939,7 +939,7 @@ ConvertFile::convertFile(const char *pname,
                 if (err == U_BUFFER_OVERFLOW_ERROR) {
                     err = U_ZERO_ERROR;
                 } else if (U_FAILURE(err)) {
-                    UChar errorUChars[4];
+                    char16_t errorUChars[4];
                     const char *errtag;
                     char pos[32];
                     UChar32 c;
@@ -985,13 +985,13 @@ ConvertFile::convertFile(const char *pname,
                         errtag = "problemCvtFromUOut";
                     }
 
-                    length = (int8_t)sprintf(pos, "%u", (int)ferroffset);
+                    length = (int8_t)snprintf(pos, sizeof(pos), "%u", (int)ferroffset);
 
                     
                     UnicodeString str;
                     for (i = 0; i < errorLength;) {
                         if (i > 0) {
-                            str.append((UChar)uSP);
+                            str.append((char16_t)uSP);
                         }
                         U16_NEXT(errorUChars, i, errorLength, c);
                         if (c >= 0x100000) {
@@ -1062,7 +1062,7 @@ normal_exit:
 }
 
 static void usage(const char *pname, int ecode) {
-    const UChar *msg;
+    const char16_t *msg;
     int32_t msgLen;
     UErrorCode err = U_ZERO_ERROR;
     FILE *fp = ecode ? stderr : stdout;

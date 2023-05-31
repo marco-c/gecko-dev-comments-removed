@@ -99,7 +99,7 @@ findDirname(const char *path, char *buffer, int32_t bufLen, UErrorCode* status);
 
 
 U_CAPI int32_t U_EXPORT2
-getCurrentYear(void);
+getCurrentYear();
 
 
 

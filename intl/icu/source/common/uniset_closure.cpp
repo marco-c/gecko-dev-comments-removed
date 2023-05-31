@@ -25,9 +25,11 @@
 #include "unicode/locid.h"
 #include "unicode/parsepos.h"
 #include "unicode/uniset.h"
+#include "unicode/utf16.h"
 #include "cmemory.h"
 #include "ruleiter.h"
 #include "ucase.h"
+#include "uprops.h"
 #include "util.h"
 #include "uvector.h"
 
@@ -123,7 +125,7 @@ _set_addRange(USet *set, UChar32 start, UChar32 end) {
 }
 
 static void U_CALLCONV
-_set_addString(USet *set, const UChar *str, int32_t length) {
+_set_addString(USet *set, const char16_t *str, int32_t length) {
     ((UnicodeSet *)set)->add(UnicodeString((UBool)(length<0), str, length));
 }
 
@@ -134,7 +136,7 @@ _set_addString(USet *set, const UChar *str, int32_t length) {
 
 
 static inline void
-addCaseMapping(UnicodeSet &set, int32_t result, const UChar *full, UnicodeString &str) {
+addCaseMapping(UnicodeSet &set, int32_t result, const char16_t *full, UnicodeString &str) {
     if(result >= 0) {
         if(result > UCASE_MAX_STRING_LENGTH) {
             
@@ -149,102 +151,208 @@ addCaseMapping(UnicodeSet &set, int32_t result, const UChar *full, UnicodeString
     
 }
 
+namespace {
+
+
+const UnicodeSet &maybeOnlyCaseSensitive(const UnicodeSet &src, UnicodeSet &subset) {
+    
+    
+    U_ASSERT(subset.contains(0, 0x10ffff));
+    if (src.size() < 30) {
+        return src;
+    }
+    
+    UErrorCode errorCode = U_ZERO_ERROR;
+    const UnicodeSet *sensitive =
+        CharacterProperties::getBinaryPropertySet(UCHAR_CASE_SENSITIVE, errorCode);
+    if (U_FAILURE(errorCode)) {
+        return src;
+    }
+    
+    
+    
+    if (src.getRangeCount() > sensitive->getRangeCount()) {
+        subset.retainAll(*sensitive);
+        subset.retainAll(src);
+    } else {
+        subset.retainAll(src);
+        subset.retainAll(*sensitive);
+    }
+    return subset;
+}
+
+
+
+bool scfString(const UnicodeString &s, UnicodeString &scf) {
+    
+    const char16_t *p = s.getBuffer();
+    int32_t length = s.length();
+    
+    for (int32_t i = 0; i < length;) {
+        UChar32 c;
+        U16_NEXT(p, i, length, c);  
+        UChar32 scfChar = u_foldCase(c, U_FOLD_CASE_DEFAULT);
+        if (scfChar != c) {
+            
+            scf.setTo(p, i - U16_LENGTH(c));
+            
+            for (;;) {
+                scf.append(scfChar);
+                if (i == length) {
+                    return true;
+                }
+                U16_NEXT(p, i, length, c);  
+                scfChar = u_foldCase(c, U_FOLD_CASE_DEFAULT);
+            }
+        }
+    }
+    return false;
+}
+
+}  
+
 UnicodeSet& UnicodeSet::closeOver(int32_t attribute) {
     if (isFrozen() || isBogus()) {
         return *this;
     }
-    if (attribute & (USET_CASE_INSENSITIVE | USET_ADD_CASE_MAPPINGS)) {
-        {
-            UnicodeSet foldSet(*this);
-            UnicodeString str;
-            USetAdder sa = {
-                foldSet.toUSet(),
-                _set_add,
-                _set_addRange,
-                _set_addString,
-                NULL, 
-                NULL 
-            };
-
-            
-            
-            
-            if ((attribute & USET_CASE_INSENSITIVE) && foldSet.hasStrings()) {
-                foldSet.strings->removeAllElements();
-            }
-
-            int32_t n = getRangeCount();
-            UChar32 result;
-            const UChar *full;
-
-            for (int32_t i=0; i<n; ++i) {
-                UChar32 start = getRangeStart(i);
-                UChar32 end   = getRangeEnd(i);
-
-                if (attribute & USET_CASE_INSENSITIVE) {
-                    
-                    for (UChar32 cp=start; cp<=end; ++cp) {
-                        ucase_addCaseClosure(cp, &sa);
-                    }
-                } else {
-                    
-                    
-                    for (UChar32 cp=start; cp<=end; ++cp) {
-                        result = ucase_toFullLower(cp, NULL, NULL, &full, UCASE_LOC_ROOT);
-                        addCaseMapping(foldSet, result, full, str);
-
-                        result = ucase_toFullTitle(cp, NULL, NULL, &full, UCASE_LOC_ROOT);
-                        addCaseMapping(foldSet, result, full, str);
-
-                        result = ucase_toFullUpper(cp, NULL, NULL, &full, UCASE_LOC_ROOT);
-                        addCaseMapping(foldSet, result, full, str);
-
-                        result = ucase_toFullFolding(cp, &full, 0);
-                        addCaseMapping(foldSet, result, full, str);
-                    }
-                }
-            }
-            if (hasStrings()) {
-                if (attribute & USET_CASE_INSENSITIVE) {
-                    for (int32_t j=0; j<strings->size(); ++j) {
-                        str = *(const UnicodeString *) strings->elementAt(j);
-                        str.foldCase();
-                        if(!ucase_addStringCaseClosure(str.getBuffer(), str.length(), &sa)) {
-                            foldSet.add(str); 
-                        }
-                    }
-                } else {
-                    Locale root("");
-#if !UCONFIG_NO_BREAK_ITERATION
-                    UErrorCode status = U_ZERO_ERROR;
-                    BreakIterator *bi = BreakIterator::createWordInstance(root, status);
-                    if (U_SUCCESS(status)) {
-#endif
-                        const UnicodeString *pStr;
-
-                        for (int32_t j=0; j<strings->size(); ++j) {
-                            pStr = (const UnicodeString *) strings->elementAt(j);
-                            (str = *pStr).toLower(root);
-                            foldSet.add(str);
-#if !UCONFIG_NO_BREAK_ITERATION
-                            (str = *pStr).toTitle(bi, root);
-                            foldSet.add(str);
-#endif
-                            (str = *pStr).toUpper(root);
-                            foldSet.add(str);
-                            (str = *pStr).foldCase();
-                            foldSet.add(str);
-                        }
-#if !UCONFIG_NO_BREAK_ITERATION
-                    }
-                    delete bi;
-#endif
-                }
-            }
-            *this = foldSet;
-        }
+    switch (attribute & USET_CASE_MASK) {
+    case 0:
+        break;
+    case USET_CASE_INSENSITIVE:
+        closeOverCaseInsensitive( false);
+        break;
+    case USET_ADD_CASE_MAPPINGS:
+        closeOverAddCaseMappings();
+        break;
+    case USET_SIMPLE_CASE_INSENSITIVE:
+        closeOverCaseInsensitive( true);
+        break;
+    default:
+        
+        break;
     }
     return *this;
+}
+
+void UnicodeSet::closeOverCaseInsensitive(bool simple) {
+    
+    UnicodeSet foldSet(*this);
+    
+    
+    
+    
+    if (!simple && foldSet.hasStrings()) {
+        foldSet.strings->removeAllElements();
+    }
+
+    USetAdder sa = {
+        foldSet.toUSet(),
+        _set_add,
+        _set_addRange,
+        _set_addString,
+        nullptr, 
+        nullptr 
+    };
+
+    UnicodeSet subset(0, 0x10ffff);
+    const UnicodeSet &codePoints = maybeOnlyCaseSensitive(*this, subset);
+
+    
+    int32_t n = codePoints.getRangeCount();
+
+    for (int32_t i=0; i<n; ++i) {
+        UChar32 start = codePoints.getRangeStart(i);
+        UChar32 end   = codePoints.getRangeEnd(i);
+
+        if (simple) {
+            for (UChar32 cp=start; cp<=end; ++cp) {
+                ucase_addSimpleCaseClosure(cp, &sa);
+            }
+        } else {
+            for (UChar32 cp=start; cp<=end; ++cp) {
+                ucase_addCaseClosure(cp, &sa);
+            }
+        }
+    }
+    if (hasStrings()) {
+        UnicodeString str;
+        for (int32_t j=0; j<strings->size(); ++j) {
+            const UnicodeString *pStr = (const UnicodeString *) strings->elementAt(j);
+            if (simple) {
+                if (scfString(*pStr, str)) {
+                    foldSet.remove(*pStr).add(str);
+                }
+            } else {
+                str = *pStr;
+                str.foldCase();
+                if(!ucase_addStringCaseClosure(str.getBuffer(), str.length(), &sa)) {
+                    foldSet.add(str); 
+                }
+            }
+        }
+    }
+    *this = foldSet;
+}
+
+void UnicodeSet::closeOverAddCaseMappings() {
+    
+    UnicodeSet foldSet(*this);
+
+    UnicodeSet subset(0, 0x10ffff);
+    const UnicodeSet &codePoints = maybeOnlyCaseSensitive(*this, subset);
+
+    
+    int32_t n = codePoints.getRangeCount();
+    UChar32 result;
+    const char16_t *full;
+    UnicodeString str;
+
+    for (int32_t i=0; i<n; ++i) {
+        UChar32 start = codePoints.getRangeStart(i);
+        UChar32 end   = codePoints.getRangeEnd(i);
+
+        
+        
+        for (UChar32 cp=start; cp<=end; ++cp) {
+            result = ucase_toFullLower(cp, nullptr, nullptr, &full, UCASE_LOC_ROOT);
+            addCaseMapping(foldSet, result, full, str);
+
+            result = ucase_toFullTitle(cp, nullptr, nullptr, &full, UCASE_LOC_ROOT);
+            addCaseMapping(foldSet, result, full, str);
+
+            result = ucase_toFullUpper(cp, nullptr, nullptr, &full, UCASE_LOC_ROOT);
+            addCaseMapping(foldSet, result, full, str);
+
+            result = ucase_toFullFolding(cp, &full, 0);
+            addCaseMapping(foldSet, result, full, str);
+        }
+    }
+    if (hasStrings()) {
+        Locale root("");
+#if !UCONFIG_NO_BREAK_ITERATION
+        UErrorCode status = U_ZERO_ERROR;
+        BreakIterator *bi = BreakIterator::createWordInstance(root, status);
+        if (U_SUCCESS(status)) {
+#endif
+            for (int32_t j=0; j<strings->size(); ++j) {
+                const UnicodeString *pStr = (const UnicodeString *) strings->elementAt(j);
+                (str = *pStr).toLower(root);
+                foldSet.add(str);
+#if !UCONFIG_NO_BREAK_ITERATION
+                (str = *pStr).toTitle(bi, root);
+                foldSet.add(str);
+#endif
+                (str = *pStr).toUpper(root);
+                foldSet.add(str);
+                (str = *pStr).foldCase();
+                foldSet.add(str);
+            }
+#if !UCONFIG_NO_BREAK_ITERATION
+        }
+        delete bi;
+#endif
+    }
+    *this = foldSet;
 }
 
 U_NAMESPACE_END

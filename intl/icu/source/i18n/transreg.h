@@ -268,7 +268,7 @@ class TransliteratorRegistry : public UMemory {
 
 
 
-    int32_t countAvailableIDs(void) const;
+    int32_t countAvailableIDs() const;
 
     
 
@@ -287,7 +287,7 @@ class TransliteratorRegistry : public UMemory {
 
 
 
-    int32_t countAvailableSources(void) const;
+    int32_t countAvailableSources() const;
 
     
 
@@ -460,7 +460,7 @@ class TransliteratorRegistry : public UMemory {
 
 U_NAMESPACE_END
 
-U_CFUNC UBool utrans_transliterator_cleanup(void);
+U_CFUNC UBool utrans_transliterator_cleanup();
 
 #endif 
 

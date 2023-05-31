@@ -103,7 +103,7 @@ public:
             : trie(d->trie),
               data(d),
               cesIndex(0),
-              skipped(NULL),
+              skipped(nullptr),
               numCpFwd(-1),
               isNumeric(numeric) {}
 
@@ -242,7 +242,7 @@ protected:
 
 
 
-    virtual UChar handleGetTrailSurrogate();
+    virtual char16_t handleGetTrailSurrogate();
 
     
 
@@ -290,7 +290,7 @@ private:
 
     uint32_t nextCE32FromContraction(
             const CollationData *d, uint32_t contractionCE32,
-            const UChar *p, uint32_t ce32, UChar32 c,
+            const char16_t *p, uint32_t ce32, UChar32 c,
             UErrorCode &errorCode);
 
     uint32_t nextCE32FromDiscontiguousContraction(

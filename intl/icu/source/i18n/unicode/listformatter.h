@@ -95,13 +95,13 @@ class U_I18N_API FormattedList : public UMemory, public FormattedValue {
 
 
 
-    FormattedList(FormattedList&& src) U_NOEXCEPT;
+    FormattedList(FormattedList&& src) noexcept;
 
     
 
 
 
-    virtual ~FormattedList() U_OVERRIDE;
+    virtual ~FormattedList() override;
 
     
     FormattedList(const FormattedList&) = delete;
@@ -113,19 +113,19 @@ class U_I18N_API FormattedList : public UMemory, public FormattedValue {
 
 
 
-    FormattedList& operator=(FormattedList&& src) U_NOEXCEPT;
+    FormattedList& operator=(FormattedList&& src) noexcept;
 
     
-    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toString(UErrorCode& status) const override;
 
     
-    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toTempString(UErrorCode& status) const override;
 
     
-    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
+    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const override;
 
     
-    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const override;
 
   private:
     FormattedListData *fData;

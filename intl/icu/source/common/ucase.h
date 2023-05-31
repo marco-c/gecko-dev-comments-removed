@@ -109,6 +109,10 @@ U_CFUNC void U_EXPORT2
 ucase_addCaseClosure(UChar32 c, const USetAdder *sa);
 
 
+U_CFUNC void U_EXPORT2
+ucase_addSimpleCaseClosure(UChar32 c, const USetAdder *sa);
+
+
 
 
 
@@ -142,7 +146,7 @@ private:
     FullCaseFoldingIterator(const FullCaseFoldingIterator &) = delete;  
     FullCaseFoldingIterator &operator=(const FullCaseFoldingIterator &) = delete;  
 
-    const UChar *unfold;
+    const char16_t *unfold;
     int32_t unfoldRows;
     int32_t unfoldRowWidth;
     int32_t unfoldStringWidth;
@@ -159,9 +163,9 @@ private:
 namespace LatinCase {
 
 
-constexpr UChar LIMIT = 0x180;
+constexpr char16_t LIMIT = 0x180;
 
-constexpr UChar LONG_S = 0x17f;
+constexpr char16_t LONG_S = 0x17f;
 
 constexpr int8_t EXC = -0x80;
 

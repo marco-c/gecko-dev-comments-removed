@@ -19,6 +19,7 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#include <utility>
 #include "unicode/unistr.h"
 #include "unicode/localpointer.h"
 
@@ -3009,6 +3010,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPoundPerSquareInch();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createBeaufort(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getBeaufort();
+#endif 
 
     
 

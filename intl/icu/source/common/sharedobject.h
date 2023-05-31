@@ -57,14 +57,14 @@ public:
     SharedObject() :
             softRefCount(0),
             hardRefCount(0),
-            cachePtr(NULL) {}
+            cachePtr(nullptr) {}
 
     
     SharedObject(const SharedObject &other) :
             UObject(other),
             softRefCount(0),
             hardRefCount(0),
-            cachePtr(NULL) {}
+            cachePtr(nullptr) {}
 
     virtual ~SharedObject();
 
@@ -125,7 +125,7 @@ public:
         const T *p = ptr;
         if(p->getRefCount() <= 1) { return const_cast<T *>(p); }
         T *p2 = new T(*p);
-        if(p2 == NULL) { return NULL; }
+        if(p2 == nullptr) { return nullptr; }
         p->removeRef();
         ptr = p2;
         p2->addRef();
@@ -143,9 +143,9 @@ public:
     template<typename T>
     static void copyPtr(const T *src, const T *&dest) {
         if(src != dest) {
-            if(dest != NULL) { dest->removeRef(); }
+            if(dest != nullptr) { dest->removeRef(); }
             dest = src;
-            if(src != NULL) { src->addRef(); }
+            if(src != nullptr) { src->addRef(); }
         }
     }
 
@@ -154,9 +154,9 @@ public:
 
     template<typename T>
     static void clearPtr(const T *&ptr) {
-        if (ptr != NULL) {
+        if (ptr != nullptr) {
             ptr->removeRef();
-            ptr = NULL;
+            ptr = nullptr;
         }
     }
 

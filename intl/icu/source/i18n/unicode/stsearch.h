@@ -132,7 +132,7 @@ U_NAMESPACE_BEGIN
 
 
 
-class U_I18N_API StringSearch U_FINAL : public SearchIterator
+class U_I18N_API StringSearch final : public SearchIterator
 {
 public:
 

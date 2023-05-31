@@ -29,10 +29,10 @@ U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(NameUnicodeTransliterator)
 
-static const UChar OPEN[] = {92,78,126,123,126,0}; 
-static const UChar OPEN_DELIM  = 92;  
-static const UChar CLOSE_DELIM = 125; 
-static const UChar SPACE       = 32;  
+static const char16_t OPEN[] = {92,78,126,123,126,0}; 
+static const char16_t OPEN_DELIM  = 92;  
+static const char16_t CLOSE_DELIM = 125; 
+static const char16_t SPACE       = 32;  
 
 U_CDECL_BEGIN
 
@@ -68,10 +68,10 @@ NameUnicodeTransliterator::NameUnicodeTransliterator(UnicodeFilter* adoptedFilte
     USetAdder sa = {
         (USet *)legalPtr, 
         _set_add,
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr
     };
     uprv_getCharNameCharacters(&sa);
 }
@@ -122,7 +122,7 @@ void NameUnicodeTransliterator::handleTransliterate(Replaceable& text, UTransPos
     
     ++maxLen; 
     char* cbuf = (char*) uprv_malloc(maxLen);
-    if (cbuf == NULL) {
+    if (cbuf == nullptr) {
         offsets.start = offsets.limit;
         return;
     }

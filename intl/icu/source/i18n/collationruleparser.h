@@ -60,13 +60,13 @@ public:
 
 
 
-    static const UChar POS_LEAD = 0xfffe;
+    static const char16_t POS_LEAD = 0xfffe;
     
 
 
 
 
-    static const UChar POS_BASE = 0x2800;
+    static const char16_t POS_BASE = 0x2800;
 
     class U_I18N_API Sink : public UObject {
     public:

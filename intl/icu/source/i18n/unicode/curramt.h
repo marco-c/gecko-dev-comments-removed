@@ -111,7 +111,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    inline const CurrencyUnit& getCurrency() const;
+    const CurrencyUnit& getCurrency() const;
 
     
 
@@ -119,10 +119,6 @@ class U_I18N_API CurrencyAmount: public Measure {
 
     inline const char16_t* getISOCurrency() const;
 };
-
-inline const CurrencyUnit& CurrencyAmount::getCurrency() const {
-    return (const CurrencyUnit&) getUnit();
-}
 
 inline const char16_t* CurrencyAmount::getISOCurrency() const {
     return getCurrency().getISOCurrency();

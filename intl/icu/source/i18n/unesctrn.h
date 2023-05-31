@@ -46,7 +46,7 @@ class UnescapeTransliterator : public Transliterator {
 
 
 
-    UChar* spec; 
+    char16_t* spec; 
 
  public:
 
@@ -62,7 +62,7 @@ class UnescapeTransliterator : public Transliterator {
 
 
     UnescapeTransliterator(const UnicodeString& ID,
-                           const UChar *spec);
+                           const char16_t *spec);
 
     
 

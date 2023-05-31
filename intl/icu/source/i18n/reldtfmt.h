@@ -233,7 +233,7 @@ public:
 
 
 
-    virtual const DateFormatSymbols* getDateFormatSymbols(void) const;
+    virtual const DateFormatSymbols* getDateFormatSymbols() const;
 
     
 
@@ -275,7 +275,7 @@ private:
 
 
 
-    const UChar *getStringForDay(int32_t day, int32_t &len, UErrorCode &status) const;
+    const char16_t *getStringForDay(int32_t day, int32_t &len, UErrorCode &status) const;
 
     
 
@@ -314,7 +314,7 @@ public:
 
 
 
-    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -327,7 +327,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 };
 
 

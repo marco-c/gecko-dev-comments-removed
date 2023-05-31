@@ -282,7 +282,7 @@ class RuleCharacterIterator;
 
 
 
-class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
+class U_COMMON_API UnicodeSet final : public UnicodeFilter {
 private:
     
 
@@ -437,6 +437,8 @@ public:
 
 
 
+
+
     UnicodeSet(const UnicodeString& pattern,
                uint32_t options,
                const SymbolTable* symbols,
@@ -444,6 +446,8 @@ public:
 #endif  
 
     
+
+
 
 
 
@@ -654,6 +658,8 @@ public:
 
 
 
+
+
     UnicodeSet& applyPattern(const UnicodeString& pattern,
                              uint32_t options,
                              const SymbolTable* symbols,
@@ -661,6 +667,8 @@ public:
 #endif  
 
     
+
+
 
 
 
@@ -1413,6 +1421,8 @@ public:
 
 
 
+
+
     UnicodeSet& closeOver(int32_t attribute);
 
     
@@ -1579,6 +1589,9 @@ private:
                       int32_t depth,
                       UErrorCode& ec);
 
+    void closeOverCaseInsensitive(bool simple);
+    void closeOverAddCaseMappings();
+
     
     
     
@@ -1718,7 +1731,7 @@ inline bool UnicodeSet::operator!=(const UnicodeSet& o) const {
 }
 
 inline UBool UnicodeSet::isFrozen() const {
-    return (UBool)(bmpSet!=NULL || stringSpan!=NULL);
+    return (UBool)(bmpSet!=nullptr || stringSpan!=nullptr);
 }
 
 inline UBool UnicodeSet::containsSome(UChar32 start, UChar32 end) const {

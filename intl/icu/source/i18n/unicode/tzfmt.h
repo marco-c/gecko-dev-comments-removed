@@ -537,7 +537,7 @@ public:
 
 
     virtual UnicodeString& format(UTimeZoneFormatStyle style, const TimeZone& tz, UDate date,
-        UnicodeString& name, UTimeZoneFormatTimeType* timeType = NULL) const;
+        UnicodeString& name, UTimeZoneFormatTimeType* timeType = nullptr) const;
 
     
 
@@ -600,7 +600,7 @@ public:
 
 
     virtual TimeZone* parse(UTimeZoneFormatStyle style, const UnicodeString& text, ParsePosition& pos,
-        int32_t parseOptions, UTimeZoneFormatTimeType* timeType = NULL) const;
+        int32_t parseOptions, UTimeZoneFormatTimeType* timeType = nullptr) const;
 
     
 
@@ -618,7 +618,7 @@ public:
 
 
     TimeZone* parse(UTimeZoneFormatStyle style, const UnicodeString& text, ParsePosition& pos,
-        UTimeZoneFormatTimeType* timeType = NULL) const;
+        UTimeZoneFormatTimeType* timeType = nullptr) const;
 
     
 
@@ -856,7 +856,7 @@ private:
 
 
     int32_t parseOffsetISO8601(const UnicodeString& text, ParsePosition& pos, UBool extendedOnly,
-        UBool* hasDigitOffset = NULL) const;
+        UBool* hasDigitOffset = nullptr) const;
 
     
 

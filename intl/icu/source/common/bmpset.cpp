@@ -319,9 +319,9 @@ BMPSet::contains(UChar32 c) const {
 
 
 
-const UChar *
-BMPSet::span(const UChar *s, const UChar *limit, USetSpanCondition spanCondition) const {
-    UChar c, c2;
+const char16_t *
+BMPSet::span(const char16_t *s, const char16_t *limit, USetSpanCondition spanCondition) const {
+    char16_t c, c2;
 
     if(spanCondition) {
         
@@ -408,9 +408,9 @@ BMPSet::span(const UChar *s, const UChar *limit, USetSpanCondition spanCondition
 }
 
 
-const UChar *
-BMPSet::spanBack(const UChar *s, const UChar *limit, USetSpanCondition spanCondition) const {
-    UChar c, c2;
+const char16_t *
+BMPSet::spanBack(const char16_t *s, const char16_t *limit, USetSpanCondition spanCondition) const {
+    char16_t c, c2;
 
     if(spanCondition) {
         

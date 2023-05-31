@@ -55,6 +55,7 @@ class DateIntervalFormat;
 
 namespace number {
 class LocalizedNumberFormatter;
+class SimpleNumberFormatter;
 }
 
 
@@ -1439,7 +1440,7 @@ private:
     int32_t subParse(const UnicodeString& text, int32_t& start, char16_t ch, int32_t count,
                      UBool obeyCount, UBool allowNegative, UBool ambiguousYear[], int32_t& saveHebrewMonth, Calendar& cal,
                      int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType,
-                     int32_t *dayPeriod=NULL) const;
+                     int32_t *dayPeriod=nullptr) const;
 
     void parseInt(const UnicodeString& text,
                   Formattable& number,
@@ -1522,12 +1523,7 @@ private:
     
 
 
-    void initFastNumberFormatters(UErrorCode& status);
-
-    
-
-
-    void freeFastNumberFormatters();
+    void initSimpleNumberFormatter(UErrorCode &status);
 
     
 
@@ -1599,12 +1595,12 @@ private:
 
 
 
-    DateFormatSymbols*  fSymbols;   
+    DateFormatSymbols*  fSymbols = nullptr;   
 
     
 
 
-    TimeZoneFormat* fTimeZoneFormat;
+    TimeZoneFormat* fTimeZoneFormat = nullptr;
 
     
 
@@ -1635,7 +1631,7 @@ private:
         int32_t hash;
         NSOverride *next;
         void free();
-        NSOverride() : snf(NULL), hash(0), next(NULL) {
+        NSOverride() : snf(nullptr), hash(0), next(nullptr) {
         }
         ~NSOverride();
     };
@@ -1644,25 +1640,20 @@ private:
 
 
 
-    const SharedNumberFormat    **fSharedNumberFormatters;
-
-    enum NumberFormatterKey {
-        SMPDTFMT_NF_1x10,
-        SMPDTFMT_NF_2x10,
-        SMPDTFMT_NF_3x10,
-        SMPDTFMT_NF_4x10,
-        SMPDTFMT_NF_2x2,
-        SMPDTFMT_NF_COUNT
-    };
+    const SharedNumberFormat    **fSharedNumberFormatters = nullptr;
 
     
 
 
-    const number::LocalizedNumberFormatter* fFastNumberFormatters[SMPDTFMT_NF_COUNT] = {};
+
+
+
+
+    const number::SimpleNumberFormatter* fSimpleNumberFormatter = nullptr;
 
     UBool fHaveDefaultCentury;
 
-    const BreakIterator* fCapitalizationBrkIter;
+    const BreakIterator* fCapitalizationBrkIter = nullptr;
 };
 
 inline UDate

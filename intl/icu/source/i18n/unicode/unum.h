@@ -25,6 +25,7 @@
 #include "unicode/uformattable.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/ufieldpositer.h"
+#include "unicode/unumberoptions.h"
 
 #if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
@@ -274,55 +275,6 @@ typedef enum UNumberFormatStyle {
 
 
 
-
-
-
-
-
-typedef enum UNumberFormatRoundingMode {
-    UNUM_ROUND_CEILING,
-    UNUM_ROUND_FLOOR,
-    UNUM_ROUND_DOWN,
-    UNUM_ROUND_UP,
-    
-
-
-
-    UNUM_ROUND_HALFEVEN,
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-    UNUM_FOUND_HALFEVEN = UNUM_ROUND_HALFEVEN,
-#endif  
-    UNUM_ROUND_HALFDOWN = UNUM_ROUND_HALFEVEN + 1,
-    UNUM_ROUND_HALFUP,
-    
-
-
-
-    UNUM_ROUND_UNNECESSARY,
-    
-
-
-
-    UNUM_ROUND_HALF_ODD,
-    
-
-
-
-    UNUM_ROUND_HALF_CEILING,
-    
-
-
-
-    UNUM_ROUND_HALF_FLOOR,
-} UNumberFormatRoundingMode;
-
-
-
-
 typedef enum UNumberFormatPadPosition {
     UNUM_PAD_BEFORE_PREFIX,
     UNUM_PAD_AFTER_PREFIX,
@@ -399,24 +351,18 @@ typedef enum UNumberFormatFields {
     UNUM_MEASURE_UNIT_FIELD,
     
     UNUM_COMPACT_FIELD,
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
     UNUM_APPROXIMATELY_SIGN_FIELD,
-#endif 
 
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-#ifndef U_HIDE_DRAFT_API
-    UNUM_FIELD_COUNT = UNUM_COMPACT_FIELD + 2
-#else  
-    UNUM_FIELD_COUNT = UNUM_COMPACT_FIELD + 1
-#endif  
+    UNUM_FIELD_COUNT
 #endif  
 } UNumberFormatFields;
 
@@ -1558,6 +1504,6 @@ unum_setContext(UNumberFormat* fmt, UDisplayContext value, UErrorCode* status);
 U_CAPI UDisplayContext U_EXPORT2
 unum_getContext(const UNumberFormat *fmt, UDisplayContextType type, UErrorCode* status);
 
-#endif
+#endif 
 
 #endif

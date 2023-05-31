@@ -27,26 +27,26 @@
 
 
 U_CAPI int32_t U_EXPORT2
-uprv_itou (UChar * buffer, int32_t capacity,
+uprv_itou (char16_t * buffer, int32_t capacity,
            uint32_t i, uint32_t radix, int32_t minwidth)
 {
     int32_t length = 0;
     int digit;
     int32_t j;
-    UChar temp;
+    char16_t temp;
 
     do{
         digit = (int)(i % radix);
-        buffer[length++]=(UChar)(digit<=9?(0x0030+digit):(0x0030+digit+7));
+        buffer[length++]=(char16_t)(digit<=9?(0x0030+digit):(0x0030+digit+7));
         i=i/radix;
     } while(i && length<capacity);
 
     while (length < minwidth){
-        buffer[length++] = (UChar) 0x0030;
+        buffer[length++] = (char16_t) 0x0030;
     }
     
     if(length<capacity){
-        buffer[length] = (UChar) 0x0000;
+        buffer[length] = (char16_t) 0x0000;
     }
 
     

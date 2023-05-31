@@ -131,17 +131,17 @@ BasicTimeZone::hasEquivalentTransitions(const BasicTimeZone& tz, UDate start, UD
 void
 BasicTimeZone::getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
         AnnualTimeZoneRule*& std, AnnualTimeZoneRule*& dst, UErrorCode& status) const {
-    initial = NULL;
-    std = NULL;
-    dst = NULL;
+    initial = nullptr;
+    std = nullptr;
+    dst = nullptr;
     if (U_FAILURE(status)) {
         return;
     }
     int32_t initialRaw, initialDst;
     UnicodeString initialName;
 
-    AnnualTimeZoneRule *ar1 = NULL;
-    AnnualTimeZoneRule *ar2 = NULL;
+    AnnualTimeZoneRule *ar1 = nullptr;
+    AnnualTimeZoneRule *ar2 = nullptr;
     UnicodeString name;
 
     UBool avail;
@@ -207,12 +207,12 @@ BasicTimeZone::getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
                                 || initialDst != tr.getTo()->getDSTSavings()) {
                             
                             delete ar2;
-                            ar2 = NULL;
+                            ar2 = nullptr;
                         }
                     }
                 }
             }
-            if (ar2 == NULL) {
+            if (ar2 == nullptr) {
                 
                 avail = getPreviousTransition(date, true, tr);
                 if (avail) {
@@ -238,15 +238,15 @@ BasicTimeZone::getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
                         if (!avail || d <= nextTransitionTime) {
                             
                             delete ar2;
-                            ar2 = NULL;
+                            ar2 = nullptr;
                         }
                     }
                 }
             }
-            if (ar2 == NULL) {
+            if (ar2 == nullptr) {
                 
                 delete ar1;
-                ar1 = NULL;
+                ar1 = nullptr;
             } else {
                 
                 ar1->getName(initialName);
@@ -274,7 +274,7 @@ BasicTimeZone::getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
     initial = new InitialTimeZoneRule(initialName, initialRaw, initialDst);
 
     
-    if (ar1 != NULL && ar2 != NULL) {
+    if (ar1 != nullptr && ar2 != nullptr) {
         if (ar1->getDSTSavings() != 0) {
             dst = ar1;
             std = ar2;
@@ -405,7 +405,7 @@ BasicTimeZone::getTimeZoneRulesAfter(UDate start, InitialTimeZoneRule*& initial,
         }
         const TimeArrayTimeZoneRule *tar = dynamic_cast<const TimeArrayTimeZoneRule *>(toRule);
         const AnnualTimeZoneRule *ar;
-        if (tar != NULL) {
+        if (tar != nullptr) {
             
             TimeZoneTransition tzt0;
             t = start;
@@ -472,7 +472,7 @@ BasicTimeZone::getTimeZoneRulesAfter(UDate start, InitialTimeZoneRule*& initial,
                     }
                 }
             }
-        } else if ((ar = dynamic_cast<const AnnualTimeZoneRule *>(toRule)) != NULL) {
+        } else if ((ar = dynamic_cast<const AnnualTimeZoneRule *>(toRule)) != nullptr) {
             ar->getFirstStart(tzt.getFrom()->getRawOffset(), tzt.getFrom()->getDSTSavings(), firstStart);
             if (firstStart == tzt.getTime()) {
                 

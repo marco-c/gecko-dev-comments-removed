@@ -16,17 +16,17 @@
 #include "unicode/dcfmtsym.h"
 #include "unicode/displayoptions.h"
 #include "unicode/fieldpos.h"
-#include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
 #include "unicode/measunit.h"
 #include "unicode/nounit.h"
 #include "unicode/parseerr.h"
 #include "unicode/plurrule.h"
 #include "unicode/ucurr.h"
-#include "unicode/udisplayoptions.h"
 #include "unicode/unum.h"
 #include "unicode/unumberformatter.h"
 #include "unicode/uobject.h"
+#include "unicode/unumberoptions.h"
+#include "unicode/formattednumber.h"
 
 
 
@@ -112,6 +112,7 @@ namespace number {
 
 class UnlocalizedNumberFormatter;
 class LocalizedNumberFormatter;
+class SimpleNumberFormatter;
 class FormattedNumber;
 class Notation;
 class ScientificNotation;
@@ -166,6 +167,8 @@ struct UFormattedNumberImpl;
 class MutablePatternModifier;
 class ImmutablePatternModifier;
 struct DecimalFormatWarehouse;
+struct SimpleMicroProps;
+class AdoptingSignumModifierStore;
 
 
 
@@ -642,7 +645,6 @@ class U_I18N_API Precision : public UMemory {
 
     static IncrementPrecision increment(double roundingIncrement);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -667,7 +669,6 @@ class U_I18N_API Precision : public UMemory {
 
 
     static IncrementPrecision incrementExact(uint64_t mantissa, int16_t magnitude);
-#endif 
 
     
 
@@ -1145,10 +1146,10 @@ class U_I18N_API Scale : public UMemory {
     Scale& operator=(const Scale& other);
 
     
-    Scale(Scale&& src) U_NOEXCEPT;
+    Scale(Scale&& src) noexcept;
 
     
-    Scale& operator=(Scale&& src) U_NOEXCEPT;
+    Scale& operator=(Scale&& src) noexcept;
 
     
     ~Scale();
@@ -1224,10 +1225,10 @@ class U_I18N_API StringProp : public UMemory {
 #ifndef U_HIDE_INTERNAL_API
 
     
-    StringProp(StringProp &&src) U_NOEXCEPT;
+    StringProp(StringProp &&src) noexcept;
 
     
-    StringProp &operator=(StringProp &&src) U_NOEXCEPT;
+    StringProp &operator=(StringProp &&src) noexcept;
 
     
     int16_t length() const {
@@ -1288,10 +1289,10 @@ class U_I18N_API SymbolsWrapper : public UMemory {
     SymbolsWrapper &operator=(const SymbolsWrapper &other);
 
     
-    SymbolsWrapper(SymbolsWrapper&& src) U_NOEXCEPT;
+    SymbolsWrapper(SymbolsWrapper&& src) noexcept;
 
     
-    SymbolsWrapper &operator=(SymbolsWrapper&& src) U_NOEXCEPT;
+    SymbolsWrapper &operator=(SymbolsWrapper&& src) noexcept;
 
     
     ~SymbolsWrapper();
@@ -1436,9 +1437,11 @@ class U_I18N_API Grouper : public UMemory {
     
     friend struct MacroProps;
     friend struct MicroProps;
+    friend struct SimpleMicroProps;
 
     
     friend class NumberFormatterImpl;
+    friend class ::icu::number::SimpleNumberFormatter;
 
     
     friend class ::icu::numparse::impl::NumberParserImpl;
@@ -2415,6 +2418,13 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+#ifndef _MSC_VER
+extern template class NumberFormatterSettings<UnlocalizedNumberFormatter>;
+extern template class NumberFormatterSettings<LocalizedNumberFormatter>;
+#endif
+
+
+
 
 
 
@@ -2465,7 +2475,7 @@ class U_I18N_API UnlocalizedNumberFormatter
 
 
 
-    UnlocalizedNumberFormatter(UnlocalizedNumberFormatter&& src) U_NOEXCEPT;
+    UnlocalizedNumberFormatter(UnlocalizedNumberFormatter&& src) noexcept;
 
     
 
@@ -2478,13 +2488,13 @@ class U_I18N_API UnlocalizedNumberFormatter
 
 
 
-    UnlocalizedNumberFormatter& operator=(UnlocalizedNumberFormatter&& src) U_NOEXCEPT;
+    UnlocalizedNumberFormatter& operator=(UnlocalizedNumberFormatter&& src) noexcept;
 
   private:
     explicit UnlocalizedNumberFormatter(const NumberFormatterSettings<UnlocalizedNumberFormatter>& other);
 
     explicit UnlocalizedNumberFormatter(
-            NumberFormatterSettings<UnlocalizedNumberFormatter>&& src) U_NOEXCEPT;
+            NumberFormatterSettings<UnlocalizedNumberFormatter>&& src) noexcept;
 
     
     friend class NumberFormatterSettings<UnlocalizedNumberFormatter>;
@@ -2611,7 +2621,7 @@ class U_I18N_API LocalizedNumberFormatter
 
 
 
-    LocalizedNumberFormatter(LocalizedNumberFormatter&& src) U_NOEXCEPT;
+    LocalizedNumberFormatter(LocalizedNumberFormatter&& src) noexcept;
 
     
 
@@ -2624,7 +2634,7 @@ class U_I18N_API LocalizedNumberFormatter
 
 
 
-    LocalizedNumberFormatter& operator=(LocalizedNumberFormatter&& src) U_NOEXCEPT;
+    LocalizedNumberFormatter& operator=(LocalizedNumberFormatter&& src) noexcept;
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -2662,7 +2672,7 @@ class U_I18N_API LocalizedNumberFormatter
 
     explicit LocalizedNumberFormatter(const NumberFormatterSettings<LocalizedNumberFormatter>& other);
 
-    explicit LocalizedNumberFormatter(NumberFormatterSettings<LocalizedNumberFormatter>&& src) U_NOEXCEPT;
+    explicit LocalizedNumberFormatter(NumberFormatterSettings<LocalizedNumberFormatter>&& src) noexcept;
 
     LocalizedNumberFormatter(const impl::MacroProps &macros, const Locale &locale);
 
@@ -2691,173 +2701,6 @@ class U_I18N_API LocalizedNumberFormatter
 
 #pragma warning(pop)
 #endif
-
-
-
-
-
-
-
-
-
-class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
-  public:
-
-    
-
-
-
-    FormattedNumber()
-        : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
-
-    
-
-
-
-    FormattedNumber(FormattedNumber&& src) U_NOEXCEPT;
-
-    
-
-
-
-    virtual ~FormattedNumber() U_OVERRIDE;
-
-    
-    FormattedNumber(const FormattedNumber&) = delete;
-
-    
-    FormattedNumber& operator=(const FormattedNumber&) = delete;
-
-    
-
-
-
-    FormattedNumber& operator=(FormattedNumber&& src) U_NOEXCEPT;
-
-    
-    
-
-
-
-
-
-
-    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
-
-    
-    
-    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
-
-    
-    
-
-
-
-
-
-
-    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
-
-    
-    
-    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    template<typename StringClass>
-    inline StringClass toDecimalNumber(UErrorCode& status) const;
-
-	
-
-
-
-
-
-
-
-
-
-
-    MeasureUnit getOutputUnit(UErrorCode& status) const;
-
-#ifndef U_HIDE_DRAFT_API
-
-    
-
-
-
-
-
-
-    UDisplayOptionsNounClass getNounClass(UErrorCode &status) const;
-
-#endif 
-
-#ifndef U_HIDE_INTERNAL_API
-
-    
-
-
-
-    void getDecimalQuantity(impl::DecimalQuantity& output, UErrorCode& status) const;
-
-    
-
-
-
-    void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
-
-#endif  
-
-  private:
-    
-    const impl::UFormattedNumberData *fData;
-
-    
-    UErrorCode fErrorCode;
-
-    
-
-
-
-    explicit FormattedNumber(impl::UFormattedNumberData *results)
-        : fData(results), fErrorCode(U_ZERO_ERROR) {}
-
-    explicit FormattedNumber(UErrorCode errorCode)
-        : fData(nullptr), fErrorCode(errorCode) {}
-
-    void toDecimalNumber(ByteSink& sink, UErrorCode& status) const;
-
-    
-    friend class LocalizedNumberFormatter;
-
-    
-    friend struct impl::UFormattedNumberImpl;
-};
-
-template<typename StringClass>
-StringClass FormattedNumber::toDecimalNumber(UErrorCode& status) const {
-    StringClass result;
-    StringByteSink<StringClass> sink(&result);
-    toDecimalNumber(sink, status);
-    return result;
-}
 
 
 

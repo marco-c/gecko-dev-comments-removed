@@ -261,6 +261,6 @@ Replaceable::char32At(int32_t offset) const {
 
 U_NAMESPACE_END
 
-#endif
+#endif 
 
 #endif

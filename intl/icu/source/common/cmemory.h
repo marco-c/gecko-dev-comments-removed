@@ -192,13 +192,13 @@ public:
 
 
 
-    explicit LocalMemory(T *p=NULL) : LocalPointerBase<T>(p) {}
+    explicit LocalMemory(T *p=nullptr) : LocalPointerBase<T>(p) {}
     
 
 
 
-    LocalMemory(LocalMemory<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
-        src.ptr=NULL;
+    LocalMemory(LocalMemory<T> &&src) noexcept : LocalPointerBase<T>(src.ptr) {
+        src.ptr=nullptr;
     }
     
 
@@ -212,17 +212,17 @@ public:
 
 
 
-    LocalMemory<T> &operator=(LocalMemory<T> &&src) U_NOEXCEPT {
+    LocalMemory<T> &operator=(LocalMemory<T> &&src) noexcept {
         uprv_free(LocalPointerBase<T>::ptr);
         LocalPointerBase<T>::ptr=src.ptr;
-        src.ptr=NULL;
+        src.ptr=nullptr;
         return *this;
     }
     
 
 
 
-    void swap(LocalMemory<T> &other) U_NOEXCEPT {
+    void swap(LocalMemory<T> &other) noexcept {
         T *temp=LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=other.ptr;
         other.ptr=temp;
@@ -232,7 +232,7 @@ public:
 
 
 
-    friend inline void swap(LocalMemory<T> &p1, LocalMemory<T> &p2) U_NOEXCEPT {
+    friend inline void swap(LocalMemory<T> &p1, LocalMemory<T> &p2) noexcept {
         p1.swap(p2);
     }
     
@@ -278,14 +278,14 @@ template<typename T>
 inline T *LocalMemory<T>::allocateInsteadAndReset(int32_t newCapacity) {
     if(newCapacity>0) {
         T *p=(T *)uprv_malloc(newCapacity*sizeof(T));
-        if(p!=NULL) {
+        if(p!=nullptr) {
             uprv_memset(p, 0, newCapacity*sizeof(T));
             uprv_free(LocalPointerBase<T>::ptr);
             LocalPointerBase<T>::ptr=p;
         }
         return p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -294,7 +294,7 @@ template<typename T>
 inline T *LocalMemory<T>::allocateInsteadAndCopy(int32_t newCapacity, int32_t length) {
     if(newCapacity>0) {
         T *p=(T *)uprv_malloc(newCapacity*sizeof(T));
-        if(p!=NULL) {
+        if(p!=nullptr) {
             if(length>0) {
                 if(length>newCapacity) {
                     length=newCapacity;
@@ -306,7 +306,7 @@ inline T *LocalMemory<T>::allocateInsteadAndCopy(int32_t newCapacity, int32_t le
         }
         return p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -332,10 +332,10 @@ template<typename T, int32_t stackCapacity>
 class MaybeStackArray {
 public:
     
-    static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
-    static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new(size_t) noexcept = delete;
+    static void* U_EXPORT2 operator new[](size_t) noexcept = delete;
 #if U_HAVE_PLACEMENT_NEW
-    static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new(size_t, void*) noexcept = delete;
 #endif
 
     
@@ -364,11 +364,11 @@ public:
     
 
 
-    MaybeStackArray(MaybeStackArray<T, stackCapacity> &&src) U_NOEXCEPT;
+    MaybeStackArray(MaybeStackArray<T, stackCapacity> &&src) noexcept;
     
 
 
-    MaybeStackArray<T, stackCapacity> &operator=(MaybeStackArray<T, stackCapacity> &&src) U_NOEXCEPT;
+    MaybeStackArray<T, stackCapacity> &operator=(MaybeStackArray<T, stackCapacity> &&src) noexcept;
     
 
 
@@ -407,7 +407,7 @@ public:
 
 
     void aliasInstead(T *otherArray, int32_t otherCapacity) {
-        if(otherArray!=NULL && otherCapacity>0) {
+        if(otherArray!=nullptr && otherCapacity>0) {
             releaseArray();
             ptr=otherArray;
             capacity=otherCapacity;
@@ -443,7 +443,7 @@ protected:
         if (U_FAILURE(status)) {
             return;
         }
-        if (this->resize(src.capacity, 0) == NULL) {
+        if (this->resize(src.capacity, 0) == nullptr) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return;
         }
@@ -475,7 +475,7 @@ private:
 
 template<typename T, int32_t stackCapacity>
 icu::MaybeStackArray<T, stackCapacity>::MaybeStackArray(
-        MaybeStackArray <T, stackCapacity>&& src) U_NOEXCEPT
+        MaybeStackArray <T, stackCapacity>&& src) noexcept
         : ptr(src.ptr), capacity(src.capacity), needToRelease(src.needToRelease) {
     if (src.ptr == src.stackArray) {
         ptr = stackArray;
@@ -487,7 +487,7 @@ icu::MaybeStackArray<T, stackCapacity>::MaybeStackArray(
 
 template<typename T, int32_t stackCapacity>
 inline MaybeStackArray <T, stackCapacity>&
-MaybeStackArray<T, stackCapacity>::operator=(MaybeStackArray <T, stackCapacity>&& src) U_NOEXCEPT {
+MaybeStackArray<T, stackCapacity>::operator=(MaybeStackArray <T, stackCapacity>&& src) noexcept {
     releaseArray();  
     capacity = src.capacity;
     needToRelease = src.needToRelease;
@@ -508,7 +508,7 @@ inline T *MaybeStackArray<T, stackCapacity>::resize(int32_t newCapacity, int32_t
         ::fprintf(::stderr, "MaybeStackArray (resize) alloc %d * %lu\n", newCapacity, sizeof(T));
 #endif
         T *p=(T *)uprv_malloc(newCapacity*sizeof(T));
-        if(p!=NULL) {
+        if(p!=nullptr) {
             if(length>0) {
                 if(length>capacity) {
                     length=capacity;
@@ -525,7 +525,7 @@ inline T *MaybeStackArray<T, stackCapacity>::resize(int32_t newCapacity, int32_t
         }
         return p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -535,7 +535,7 @@ inline T *MaybeStackArray<T, stackCapacity>::orphanOrClone(int32_t length, int32
     if(needToRelease) {
         p=ptr;
     } else if(length<=0) {
-        return NULL;
+        return nullptr;
     } else {
         if(length>capacity) {
             length=capacity;
@@ -544,8 +544,8 @@ inline T *MaybeStackArray<T, stackCapacity>::orphanOrClone(int32_t length, int32
 #if U_DEBUG && defined(UPRV_MALLOC_COUNT)
       ::fprintf(::stderr,"MaybeStacArray (orphan) alloc %d * %lu\n", length,sizeof(T));
 #endif
-        if(p==NULL) {
-            return NULL;
+        if(p==nullptr) {
+            return nullptr;
         }
         uprv_memcpy(p, ptr, (size_t)length*sizeof(T));
     }
@@ -568,10 +568,10 @@ template<typename H, typename T, int32_t stackCapacity>
 class MaybeStackHeaderAndArray {
 public:
     
-    static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
-    static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new(size_t) noexcept = delete;
+    static void* U_EXPORT2 operator new[](size_t) noexcept = delete;
 #if U_HAVE_PLACEMENT_NEW
-    static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new(size_t, void*) noexcept = delete;
 #endif
 
     
@@ -622,7 +622,7 @@ public:
 
 
     void aliasInstead(H *otherMemory, int32_t otherCapacity) {
-        if(otherMemory!=NULL && otherCapacity>0) {
+        if(otherMemory!=nullptr && otherCapacity>0) {
             releaseMemory();
             ptr=otherMemory;
             capacity=otherCapacity;
@@ -680,7 +680,7 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::resize(int32_t newCapac
       ::fprintf(::stderr,"MaybeStackHeaderAndArray alloc %d + %d * %ul\n", sizeof(H),newCapacity,sizeof(T));
 #endif
         H *p=(H *)uprv_malloc(sizeof(H)+newCapacity*sizeof(T));
-        if(p!=NULL) {
+        if(p!=nullptr) {
             if(length<0) {
                 length=0;
             } else if(length>0) {
@@ -699,7 +699,7 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::resize(int32_t newCapac
         }
         return p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -719,8 +719,8 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::orphanOrClone(int32_t l
       ::fprintf(::stderr,"MaybeStackHeaderAndArray (orphan) alloc %ul + %d * %lu\n", sizeof(H),length,sizeof(T));
 #endif
         p=(H *)uprv_malloc(sizeof(H)+length*sizeof(T));
-        if(p==NULL) {
-            return NULL;
+        if(p==nullptr) {
+            return nullptr;
         }
         uprv_memcpy(p, ptr, sizeof(H)+(size_t)length*sizeof(T));
     }
@@ -768,12 +768,12 @@ public:
     MemoryPool(const MemoryPool&) = delete;
     MemoryPool& operator=(const MemoryPool&) = delete;
 
-    MemoryPool(MemoryPool&& other) U_NOEXCEPT : fCount(other.fCount),
+    MemoryPool(MemoryPool&& other) noexcept : fCount(other.fCount),
                                                 fPool(std::move(other.fPool)) {
         other.fCount = 0;
     }
 
-    MemoryPool& operator=(MemoryPool&& other) U_NOEXCEPT {
+    MemoryPool& operator=(MemoryPool&& other) noexcept {
         
         
         

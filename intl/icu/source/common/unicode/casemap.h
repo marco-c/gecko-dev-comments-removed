@@ -30,7 +30,7 @@ class Edits;
 
 
 
-class U_COMMON_API CaseMap U_FINAL : public UMemory {
+class U_COMMON_API CaseMap final : public UMemory {
 public:
     
 

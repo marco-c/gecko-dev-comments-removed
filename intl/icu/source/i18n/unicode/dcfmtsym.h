@@ -305,7 +305,7 @@ public:
 
 
 
-    void setCurrency(const UChar* currency, UErrorCode& status);
+    void setCurrency(const char16_t* currency, UErrorCode& status);
 #endif  
 
     
@@ -456,6 +456,12 @@ public:
 
 
     inline const char16_t* getCurrencyPattern(void) const;
+
+    
+
+
+
+    inline const char* getNumberingSystemName(void) const;
 #endif  
 
 private:
@@ -500,12 +506,13 @@ private:
 
     char actualLocale[ULOC_FULLNAME_CAPACITY];
     char validLocale[ULOC_FULLNAME_CAPACITY];
-    const char16_t* currPattern;
+    const char16_t* currPattern = nullptr;
 
     UnicodeString currencySpcBeforeSym[UNUM_CURRENCY_SPACING_COUNT];
     UnicodeString currencySpcAfterSym[UNUM_CURRENCY_SPACING_COUNT];
     UBool fIsCustomCurrencySymbol;
     UBool fIsCustomIntlCurrencySymbol;
+    char nsName[kInternalNumSysNameCapacity+1] = {};
 };
 
 
@@ -590,6 +597,10 @@ DecimalFormatSymbols::getLocale() const {
 inline const char16_t*
 DecimalFormatSymbols::getCurrencyPattern() const {
     return currPattern;
+}
+inline const char*
+DecimalFormatSymbols::getNumberingSystemName() const {
+    return nsName;
 }
 #endif 
 

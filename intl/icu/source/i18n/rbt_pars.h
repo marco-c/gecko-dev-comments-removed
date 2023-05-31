@@ -107,14 +107,14 @@ class TransliteratorParser : public UMemory {
 
 
 
-    UChar variableNext;
+    char16_t variableNext;
 
     
 
 
 
 
-    UChar variableLimit;
+    char16_t variableLimit;
 
     
 
@@ -130,7 +130,7 @@ class TransliteratorParser : public UMemory {
 
 
 
-    UChar dotStandIn;
+    char16_t dotStandIn;
 
 public:
 
@@ -272,9 +272,9 @@ private:
 
 
 
-    UChar parseSet(const UnicodeString& rule,
-                   ParsePosition& pos,
-                   UErrorCode& status);
+    char16_t parseSet(const UnicodeString& rule,
+                      ParsePosition& pos,
+                      UErrorCode& status);
 
     
 
@@ -282,14 +282,14 @@ private:
 
 
 
-    UChar generateStandInFor(UnicodeFunctor* adopted, UErrorCode& status);
+    char16_t generateStandInFor(UnicodeFunctor* adopted, UErrorCode& status);
 
     
 
 
 
 
-    UChar getSegmentStandin(int32_t seg, UErrorCode& status);
+    char16_t getSegmentStandin(int32_t seg, UErrorCode& status);
 
     
 
@@ -303,7 +303,7 @@ private:
 
 
 
-    UChar getDotStandIn(UErrorCode& status);
+    char16_t getDotStandIn(UErrorCode& status);
 
     
 

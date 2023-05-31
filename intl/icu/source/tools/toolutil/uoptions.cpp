@@ -33,7 +33,7 @@ u_parseArgs(int argc, char* argv[],
         arg=argv[i];
         if(!stopOptions && *arg=='-' && (c=arg[1])!=0) {
             
-            UOption *option=NULL;
+            UOption *option=nullptr;
             arg+=2;
             if(c=='-') {
                 
@@ -49,7 +49,7 @@ u_parseArgs(int argc, char* argv[],
                             break;
                         }
                     }
-                    if(option==NULL) {
+                    if(option==nullptr) {
                         
                         return -i;
                     }
@@ -67,7 +67,7 @@ u_parseArgs(int argc, char* argv[],
                         }
                     }
 
-                    if(option->optionFn!=NULL && option->optionFn(option->context, option)<0) {
+                    if(option->optionFn!=nullptr && option->optionFn(option->context, option)<0) {
                         
                         option->doesOccur=0;
                         return -i;
@@ -84,7 +84,7 @@ u_parseArgs(int argc, char* argv[],
                             break;
                         }
                     }
-                    if(option==NULL) {
+                    if(option==nullptr) {
                         
                         return -i;
                     }
@@ -109,14 +109,14 @@ u_parseArgs(int argc, char* argv[],
                         }
                     }
 
-                    if(option->optionFn!=NULL && option->optionFn(option->context, option)<0) {
+                    if(option->optionFn!=nullptr && option->optionFn(option->context, option)<0) {
                         
                         option->doesOccur=0;
                         return -i;
                     }
 
                     
-                    option=NULL;
+                    option=nullptr;
                     c=*arg++;
                 } while(c!=0);
             }

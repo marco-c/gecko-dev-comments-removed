@@ -197,14 +197,14 @@ class CompositionBuilder : public Norms::Enumerator {
 public:
     CompositionBuilder(Norms &n) : Norms::Enumerator(n) {}
     
-    void rangeHandler(UChar32 start, UChar32 end, Norm &norm) U_OVERRIDE;
+    void rangeHandler(UChar32 start, UChar32 end, Norm &norm) override;
 };
 
 class Decomposer : public Norms::Enumerator {
 public:
     Decomposer(Norms &n) : Norms::Enumerator(n), didDecompose(false) {}
     
-    void rangeHandler(UChar32 start, UChar32 end, Norm &norm) U_OVERRIDE;
+    void rangeHandler(UChar32 start, UChar32 end, Norm &norm) override;
     UBool didDecompose;
 };
 

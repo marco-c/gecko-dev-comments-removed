@@ -533,7 +533,7 @@ public:
     virtual UnicodeString &
     normalize(const UnicodeString &src,
               UnicodeString &dest,
-              UErrorCode &errorCode) const U_OVERRIDE;
+              UErrorCode &errorCode) const override;
 
     
 
@@ -559,7 +559,7 @@ public:
 
     virtual void
     normalizeUTF8(uint32_t options, StringPiece src, ByteSink &sink,
-                  Edits *edits, UErrorCode &errorCode) const U_OVERRIDE;
+                  Edits *edits, UErrorCode &errorCode) const override;
 
     
 
@@ -578,7 +578,7 @@ public:
     virtual UnicodeString &
     normalizeSecondAndAppend(UnicodeString &first,
                              const UnicodeString &second,
-                             UErrorCode &errorCode) const U_OVERRIDE;
+                             UErrorCode &errorCode) const override;
     
 
 
@@ -596,7 +596,7 @@ public:
     virtual UnicodeString &
     append(UnicodeString &first,
            const UnicodeString &second,
-           UErrorCode &errorCode) const U_OVERRIDE;
+           UErrorCode &errorCode) const override;
 
     
 
@@ -610,7 +610,7 @@ public:
 
 
     virtual UBool
-    getDecomposition(UChar32 c, UnicodeString &decomposition) const U_OVERRIDE;
+    getDecomposition(UChar32 c, UnicodeString &decomposition) const override;
 
     
 
@@ -624,7 +624,7 @@ public:
 
 
     virtual UBool
-    getRawDecomposition(UChar32 c, UnicodeString &decomposition) const U_OVERRIDE;
+    getRawDecomposition(UChar32 c, UnicodeString &decomposition) const override;
 
     
 
@@ -637,7 +637,7 @@ public:
 
 
     virtual UChar32
-    composePair(UChar32 a, UChar32 b) const U_OVERRIDE;
+    composePair(UChar32 a, UChar32 b) const override;
 
     
 
@@ -648,7 +648,7 @@ public:
 
 
     virtual uint8_t
-    getCombiningClass(UChar32 c) const U_OVERRIDE;
+    getCombiningClass(UChar32 c) const override;
 
     
 
@@ -662,7 +662,7 @@ public:
 
 
     virtual UBool
-    isNormalized(const UnicodeString &s, UErrorCode &errorCode) const U_OVERRIDE;
+    isNormalized(const UnicodeString &s, UErrorCode &errorCode) const override;
     
 
 
@@ -683,7 +683,7 @@ public:
 
 
     virtual UBool
-    isNormalizedUTF8(StringPiece s, UErrorCode &errorCode) const U_OVERRIDE;
+    isNormalizedUTF8(StringPiece s, UErrorCode &errorCode) const override;
     
 
 
@@ -696,7 +696,7 @@ public:
 
 
     virtual UNormalizationCheckResult
-    quickCheck(const UnicodeString &s, UErrorCode &errorCode) const U_OVERRIDE;
+    quickCheck(const UnicodeString &s, UErrorCode &errorCode) const override;
     
 
 
@@ -709,7 +709,7 @@ public:
 
 
     virtual int32_t
-    spanQuickCheckYes(const UnicodeString &s, UErrorCode &errorCode) const U_OVERRIDE;
+    spanQuickCheckYes(const UnicodeString &s, UErrorCode &errorCode) const override;
 
     
 
@@ -719,7 +719,7 @@ public:
 
 
 
-    virtual UBool hasBoundaryBefore(UChar32 c) const U_OVERRIDE;
+    virtual UBool hasBoundaryBefore(UChar32 c) const override;
 
     
 
@@ -729,7 +729,7 @@ public:
 
 
 
-    virtual UBool hasBoundaryAfter(UChar32 c) const U_OVERRIDE;
+    virtual UBool hasBoundaryAfter(UChar32 c) const override;
 
     
 
@@ -738,7 +738,7 @@ public:
 
 
 
-    virtual UBool isInert(UChar32 c) const U_OVERRIDE;
+    virtual UBool isInert(UChar32 c) const override;
 private:
     UnicodeString &
     normalize(const UnicodeString &src,

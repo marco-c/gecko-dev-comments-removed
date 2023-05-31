@@ -255,7 +255,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const override;
+  virtual UClassID getDynamicClassID() const override;
 
   
 
@@ -268,7 +268,7 @@ class PersianCalendar : public Calendar {
 
 
 
-  U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+  U_I18N_API static UClassID U_EXPORT2 getStaticClassID();
 
   
 
@@ -278,22 +278,24 @@ class PersianCalendar : public Calendar {
 
   virtual const char * getType() const override;
 
- private:
-  PersianCalendar(); 
+  
 
- protected:
+
+
+
+  virtual int32_t getRelatedYear(UErrorCode &status) const override;
 
   
 
 
 
 
+  virtual void setRelatedYear(int32_t year) override;
 
+ private:
+  PersianCalendar(); 
 
-
-
-  virtual UBool inDaylightTime(UErrorCode& status) const override;
-
+ protected:
   
 
 

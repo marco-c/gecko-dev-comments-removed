@@ -3849,18 +3849,8 @@ u_getPropertyValueEnum(UProperty property,
 
 
 
-
-
-
 U_CAPI UBool U_EXPORT2
 u_isIDStart(UChar32 c);
-
-
-
-
-
-
-
 
 
 

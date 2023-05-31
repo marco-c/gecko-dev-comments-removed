@@ -104,7 +104,7 @@ public:
 
 
 
-    virtual int32_t getCount(void) const;
+    virtual int32_t getCount() const;
 
     
 
@@ -171,7 +171,7 @@ public:
     static UClassID U_EXPORT2 getStaticClassID();
 
     
-    static const UChar PASS_STRING[];
+    static const char16_t PASS_STRING[];
 
 private:
 
@@ -220,9 +220,9 @@ private:
     UnicodeString joinIDs(Transliterator* const transliterators[],
                           int32_t transCount);
 
-    void freeTransliterators(void);
+    void freeTransliterators();
 
-    void computeMaximumContextLength(void);
+    void computeMaximumContextLength();
 };
 
 U_NAMESPACE_END

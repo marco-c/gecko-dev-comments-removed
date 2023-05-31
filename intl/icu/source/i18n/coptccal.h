@@ -154,6 +154,20 @@ public:
 
     const char * getType() const override;
 
+    
+
+
+
+
+    virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+    
+
+
+
+
+    virtual void setRelatedYear(int32_t year) override;
+
 protected:
     
     
@@ -202,7 +216,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -215,7 +229,7 @@ public:
 
 
 
-    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);  
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID();  
 
 #if 0
     

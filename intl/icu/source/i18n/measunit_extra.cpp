@@ -220,7 +220,7 @@ class SimpleUnitIdentifiersSink : public icu::ResourceSink {
                 break;
             }
             int32_t len;
-            const UChar* uTarget = value.getString(len, status);
+            const char16_t* uTarget = value.getString(len, status);
             CharString target;
             target.appendInvariantChars(uTarget, len, status);
             if (U_FAILURE(status)) { return; }
@@ -271,7 +271,7 @@ class CategoriesSink : public icu::ResourceSink {
 
 
 
-    explicit CategoriesSink(const UChar **out, int32_t &outSize, BytesTrieBuilder &trieBuilder)
+    explicit CategoriesSink(const char16_t **out, int32_t &outSize, BytesTrieBuilder &trieBuilder)
         : outQuantitiesArray(out), outSize(outSize), trieBuilder(trieBuilder), outIndex(0) {}
 
     void put(const char * , ResourceValue &value, UBool , UErrorCode &status) override {
@@ -305,7 +305,7 @@ class CategoriesSink : public icu::ResourceSink {
     }
 
   private:
-    const UChar **outQuantitiesArray;
+    const char16_t **outQuantitiesArray;
     int32_t &outSize;
     BytesTrieBuilder &trieBuilder;
 
@@ -331,7 +331,7 @@ char *gSerializedUnitExtrasStemTrie = nullptr;
 
 
 
-const UChar **gCategories = nullptr;
+const char16_t **gCategories = nullptr;
 
 int32_t gCategoriesCount = 0;
 
@@ -362,8 +362,8 @@ void U_CALLCONV initUnitExtras(UErrorCode& status) {
         ures_getByKey(unitsBundle.getAlias(), CATEGORY_TABLE_NAME, nullptr, &status));
     if (U_FAILURE(status)) { return; }
     gCategoriesCount = unitQuantities.getAlias()->fSize;
-    size_t quantitiesMallocSize = sizeof(UChar *) * gCategoriesCount;
-    gCategories = static_cast<const UChar **>(uprv_malloc(quantitiesMallocSize));
+    size_t quantitiesMallocSize = sizeof(char16_t *) * gCategoriesCount;
+    gCategories = static_cast<const char16_t **>(uprv_malloc(quantitiesMallocSize));
     if (gCategories == nullptr) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
@@ -946,7 +946,7 @@ const char *SingleUnitImpl::getSimpleUnitID() const {
     return gSimpleUnits[index];
 }
 
-void SingleUnitImpl::appendNeutralIdentifier(CharString &result, UErrorCode &status) const {
+void SingleUnitImpl::appendNeutralIdentifier(CharString &result, UErrorCode &status) const UPRV_NO_SANITIZE_UNDEFINED {
     int32_t absPower = std::abs(this->dimensionality);
 
     U_ASSERT(absPower > 0); 
@@ -1195,7 +1195,7 @@ UMeasurePrefix MeasureUnit::getPrefix(UErrorCode& status) const {
     return SingleUnitImpl::forMeasureUnit(*this, status).unitPrefix;
 }
 
-MeasureUnit MeasureUnit::withPrefix(UMeasurePrefix prefix, UErrorCode& status) const {
+MeasureUnit MeasureUnit::withPrefix(UMeasurePrefix prefix, UErrorCode& status) const UPRV_NO_SANITIZE_UNDEFINED {
     SingleUnitImpl singleUnit = SingleUnitImpl::forMeasureUnit(*this, status);
     singleUnit.unitPrefix = prefix;
     return singleUnit.build(status);

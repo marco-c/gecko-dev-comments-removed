@@ -16,7 +16,6 @@
 #include "mutex.h"
 #include <float.h>
 #include "gregoimp.h" 
-#include "astro.h" 
 #include "uhash.h"
 
 
@@ -81,6 +80,7 @@ static const int32_t LIMITS[UCAL_FIELD_COUNT][4] = {
     {-1,-1,-1,-1}, 
     {-1,-1,-1,-1}, 
     {-1,-1,-1,-1}, 
+    {        0,        0,       11,       11}, 
 };
 
 static const int32_t INDIAN_ERA_START  = 78;
@@ -294,24 +294,27 @@ void IndianCalendar::handleComputeFields(int32_t julianDay, UErrorCode&  ) {
    internalSet(UCAL_EXTENDED_YEAR, IndianYear);
    internalSet(UCAL_YEAR, IndianYear);
    internalSet(UCAL_MONTH, IndianMonth);
+   internalSet(UCAL_ORDINAL_MONTH, IndianMonth);
    internalSet(UCAL_DAY_OF_MONTH, IndianDayOfMonth);
    internalSet(UCAL_DAY_OF_YEAR, yday + 1); 
 }    
 
-UBool
-IndianCalendar::inDaylightTime(UErrorCode& status) const
+constexpr uint32_t kIndianRelatedYearDiff = 79;
+
+int32_t IndianCalendar::getRelatedYear(UErrorCode &status) const
 {
-    
-    if (U_FAILURE(status) || !getTimeZone().useDaylightTime()) {
-        return false;
+    int32_t year = get(UCAL_EXTENDED_YEAR, status);
+    if (U_FAILURE(status)) {
+        return 0;
     }
-
-    
-    ((IndianCalendar*)this)->complete(status); 
-
-    return (UBool)(U_SUCCESS(status) ? (internalGet(UCAL_DST_OFFSET) != 0) : false);
+    return year + kIndianRelatedYearDiff;
 }
 
+void IndianCalendar::setRelatedYear(int32_t year)
+{
+    
+    set(UCAL_EXTENDED_YEAR, year - kIndianRelatedYearDiff);
+}
 
 
 

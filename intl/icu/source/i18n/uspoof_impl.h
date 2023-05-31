@@ -91,10 +91,10 @@ public:
     bool isIllegalCombiningDotLeadCharacter(UChar32 cp) const;
 
     
-    static UChar32 ScanHex(const UChar *s, int32_t start, int32_t limit, UErrorCode &status);
+    static UChar32 ScanHex(const char16_t *s, int32_t start, int32_t limit, UErrorCode &status);
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
-    virtual UClassID getDynamicClassID(void) const override;
+    static UClassID U_EXPORT2 getStaticClassID();
+    virtual UClassID getDynamicClassID() const override;
 
     
     
@@ -287,7 +287,7 @@ class SpoofData: public UMemory {
     
     int32_t                     *fCFUKeys;
     uint16_t                    *fCFUValues;
-    UChar                       *fCFUStrings;
+    char16_t                    *fCFUStrings;
 
     friend class ConfusabledataBuilder;
 };

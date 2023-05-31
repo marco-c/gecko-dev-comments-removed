@@ -107,7 +107,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -120,7 +120,7 @@ public:
 
 
 
-    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -157,21 +157,6 @@ private:
 
 
     virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
-        
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual int32_t handleComputeMonthStart(int32_t eyear, int32_t month,
-                                            UBool useMonth) const override;
 
     
 

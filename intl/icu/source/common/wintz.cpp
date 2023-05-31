@@ -143,7 +143,7 @@ uprv_detectWindowsTimeZone()
             
             
             
-            int ret = snprintf(gmtOffsetTz, UPRV_LENGTHOF(gmtOffsetTz), "Etc/GMT%+ld", utcOffsetMins / 60);
+            int ret = snprintf(gmtOffsetTz, sizeof(gmtOffsetTz), "Etc/GMT%+ld", utcOffsetMins / 60);
             if (ret > 0 && ret < UPRV_LENGTHOF(gmtOffsetTz)) {
                 return uprv_strdup(gmtOffsetTz);
             }
@@ -295,7 +295,7 @@ uprv_detectWindowsTimeZone()
     int geoId = GetUserGeoID(GEOCLASS_NATION);
     int regionCodeLen = GetGeoInfoW(geoId, GEO_ISO2, regionCodeW, UPRV_LENGTHOF(regionCodeW), 0);
 
-    const UChar *icuTZ16 = nullptr;
+    const char16_t *icuTZ16 = nullptr;
     int32_t tzListLen = 0;
 
     if (regionCodeLen != 0) {

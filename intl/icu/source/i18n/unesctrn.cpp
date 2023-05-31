@@ -26,47 +26,47 @@ U_NAMESPACE_BEGIN
 
 
 
-static const UChar END = 0xFFFF;
+static const char16_t END = 0xFFFF;
 
 
-static const UChar SPEC_Unicode[] = {
+static const char16_t SPEC_Unicode[] = {
     2, 0, 16, 4, 6, 85, 43,
     END
 };
 
 
-static const UChar SPEC_Java[] = {
+static const char16_t SPEC_Java[] = {
     2, 0, 16, 4, 4, 92, 117,
     END
 };
 
 
-static const UChar SPEC_C[] = {
+static const char16_t SPEC_C[] = {
     2, 0, 16, 4, 4, 92, 117,
     2, 0, 16, 8, 8, 92, 85,
     END
 };
 
 
-static const UChar SPEC_XML[] = {
+static const char16_t SPEC_XML[] = {
     3, 1, 16, 1, 6, 38, 35, 120, 59,
     END
 };
 
 
-static const UChar SPEC_XML10[] = {
+static const char16_t SPEC_XML10[] = {
     2, 1, 10, 1, 7, 38, 35, 59,
     END
 };
 
 
-static const UChar SPEC_Perl[] = {
+static const char16_t SPEC_Perl[] = {
     3, 1, 16, 1, 6, 92, 120, 123, 125,
     END
 };
 
 
-static const UChar SPEC_Any[] = {
+static const char16_t SPEC_Any[] = {
     2, 0, 16, 4, 6, 85, 43,                      
     2, 0, 16, 4, 4, 92, 117,                     
     2, 0, 16, 8, 8, 92, 85,                      
@@ -78,15 +78,15 @@ static const UChar SPEC_Any[] = {
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(UnescapeTransliterator)
 
-static UChar* copySpec(const UChar* spec) {
+static char16_t* copySpec(const char16_t* spec) {
     int32_t len = 0;
     while (spec[len] != END) {
         ++len;
     }
     ++len;
-    UChar *result = (UChar *)uprv_malloc(len*sizeof(UChar));
+    char16_t *result = (char16_t *)uprv_malloc(len*sizeof(char16_t));
     
-    if (result != NULL) {
+    if (result != nullptr) {
     	uprv_memcpy(result, spec, (size_t)len*sizeof(result[0]));
     }
     return result;
@@ -143,8 +143,8 @@ void UnescapeTransliterator::registerIDs() {
 
 
 UnescapeTransliterator::UnescapeTransliterator(const UnicodeString& newID,
-                                               const UChar *newSpec) :
-    Transliterator(newID, NULL)
+                                               const char16_t *newSpec) :
+    Transliterator(newID, nullptr)
 {
     this->spec = copySpec(newSpec);
 }
@@ -209,7 +209,7 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
                         break;
                     }
                 }
-                UChar c = text.charAt(s++);
+                char16_t c = text.charAt(s++);
                 if (c != spec[ipat + i]) {
                     match = false;
                     break;
@@ -251,7 +251,7 @@ void UnescapeTransliterator::handleTransliterate(Replaceable& text, UTransPositi
                             match = false;
                             break;
                         }
-                        UChar c = text.charAt(s++);
+                        char16_t c = text.charAt(s++);
                         if (c != spec[ipat + prefixLen + i]) {
                             match = false;
                             break;

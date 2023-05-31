@@ -518,7 +518,7 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  virtual StringEnumeration* getAvailableLocales(void) const;
+  virtual StringEnumeration* getAvailableLocales() const;
 
  protected:
 

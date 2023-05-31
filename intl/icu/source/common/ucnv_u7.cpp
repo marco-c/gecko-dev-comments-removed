@@ -212,8 +212,8 @@ _UTF7ToUnicodeWithOffsets(UConverterToUnicodeArgs *pArgs,
                           UErrorCode *pErrorCode) {
     UConverter *cnv;
     const uint8_t *source, *sourceLimit;
-    UChar *target;
-    const UChar *targetLimit;
+    char16_t *target;
+    const char16_t *targetLimit;
     int32_t *offsets;
 
     uint8_t *bytes;
@@ -280,7 +280,7 @@ directMode:
             } else if(b!=PLUS) {
                 
                 *target++=b;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex++;
                 }
             } else  {
@@ -374,8 +374,8 @@ unicodeMode:
                         ++base64Counter;
                         break;
                     case 2:
-                        *target++=(UChar)((bits<<4)|(base64Value>>2));
-                        if(offsets!=NULL) {
+                        *target++=(char16_t)((bits<<4)|(base64Value>>2));
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex-1;
                         }
@@ -385,8 +385,8 @@ unicodeMode:
                         base64Counter=3;
                         break;
                     case 5:
-                        *target++=(UChar)((bits<<2)|(base64Value>>4));
-                        if(offsets!=NULL) {
+                        *target++=(char16_t)((bits<<2)|(base64Value>>4));
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex-1;
                         }
@@ -396,8 +396,8 @@ unicodeMode:
                         base64Counter=6;
                         break;
                     case 7:
-                        *target++=(UChar)((bits<<6)|base64Value);
-                        if(offsets!=NULL) {
+                        *target++=(char16_t)((bits<<6)|base64Value);
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex;
                         }
@@ -415,7 +415,7 @@ unicodeMode:
                     if(base64Counter==-1) {
                         
                         *target++=PLUS;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex-1;
                         }
                     } else {
@@ -462,12 +462,12 @@ static void U_CALLCONV
 _UTF7FromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
                             UErrorCode *pErrorCode) {
     UConverter *cnv;
-    const UChar *source, *sourceLimit;
+    const char16_t *source, *sourceLimit;
     uint8_t *target, *targetLimit;
     int32_t *offsets;
 
     int32_t length, targetCapacity, sourceIndex;
-    UChar c;
+    char16_t c;
 
     
     const UBool *encodeDirectly;
@@ -511,7 +511,7 @@ directMode:
             if(c<=127 && encodeDirectly[c]) {
                 
                 *target++=(uint8_t)c;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex++;
                 }
             } else if(c==PLUS) {
@@ -519,14 +519,14 @@ directMode:
                 *target++=PLUS;
                 if(target<targetLimit) {
                     *target++=MINUS;
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex;
                         *offsets++=sourceIndex++;
                     }
                     
                     goto directMode;
                 } else {
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex++;
                     }
                     cnv->charErrorBuffer[0]=MINUS;
@@ -538,7 +538,7 @@ directMode:
                 
                 --source;
                 *target++=PLUS;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex;
                 }
                 inDirectMode=false;
@@ -567,7 +567,7 @@ unicodeMode:
                     if(base64Counter!=0) {
                         
                         *target++=toBase64[bits];
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex-1;
                         }
                     }
@@ -575,7 +575,7 @@ unicodeMode:
                         
                         if(target<targetLimit) {
                             *target++=MINUS;
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex-1;
                             }
                         } else {
@@ -601,12 +601,12 @@ unicodeMode:
                         *target++=toBase64[c>>10];
                         if(target<targetLimit) {
                             *target++=toBase64[(c>>4)&0x3f];
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex;
                                 *offsets++=sourceIndex++;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             cnv->charErrorBuffer[0]=toBase64[(c>>4)&0x3f];
@@ -622,13 +622,13 @@ unicodeMode:
                             *target++=toBase64[(c>>8)&0x3f];
                             if(target<targetLimit) {
                                 *target++=toBase64[(c>>2)&0x3f];
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
                             } else {
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
@@ -637,7 +637,7 @@ unicodeMode:
                                 *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             cnv->charErrorBuffer[0]=toBase64[(c>>8)&0x3f];
@@ -654,13 +654,13 @@ unicodeMode:
                             *target++=toBase64[(c>>6)&0x3f];
                             if(target<targetLimit) {
                                 *target++=toBase64[c&0x3f];
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
                             } else {
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
@@ -669,7 +669,7 @@ unicodeMode:
                                 *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             cnv->charErrorBuffer[0]=toBase64[(c>>6)&0x3f];
@@ -699,7 +699,7 @@ unicodeMode:
             if (base64Counter!=0) {
                 if(target<targetLimit) {
                     *target++=toBase64[bits];
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex-1;
                     }
                 } else {
@@ -710,7 +710,7 @@ unicodeMode:
             
             if(target<targetLimit) {
                 *target++=MINUS;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex-1;
                 }
             } else {
@@ -748,27 +748,27 @@ U_CDECL_END
 static const UConverterImpl _UTF7Impl={
     UCNV_UTF7,
 
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 
     _UTF7Open,
-    NULL,
+    nullptr,
     _UTF7Reset,
 
     _UTF7ToUnicodeWithOffsets,
     _UTF7ToUnicodeWithOffsets,
     _UTF7FromUnicodeWithOffsets,
     _UTF7FromUnicodeWithOffsets,
-    NULL,
+    nullptr,
 
-    NULL,
+    nullptr,
     _UTF7GetName,
-    NULL, 
-    NULL,
+    nullptr, 
+    nullptr,
     ucnv_getCompleteUnicodeSet,
 
-    NULL,
-    NULL
+    nullptr,
+    nullptr
 };
 
 static const UConverterStaticData _UTF7StaticData={
@@ -896,8 +896,8 @@ _IMAPToUnicodeWithOffsets(UConverterToUnicodeArgs *pArgs,
                           UErrorCode *pErrorCode) {
     UConverter *cnv;
     const uint8_t *source, *sourceLimit;
-    UChar *target;
-    const UChar *targetLimit;
+    char16_t *target;
+    const char16_t *targetLimit;
     int32_t *offsets;
 
     uint8_t *bytes;
@@ -914,7 +914,7 @@ _IMAPToUnicodeWithOffsets(UConverterToUnicodeArgs *pArgs,
 
     int32_t sourceIndex, nextSourceIndex;
 
-    UChar c;
+    char16_t c;
     uint8_t b;
 
     
@@ -965,7 +965,7 @@ directMode:
             } else if(b!=AMPERSAND) {
                 
                 *target++=b;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex++;
                 }
             } else  {
@@ -1021,7 +1021,7 @@ unicodeMode:
                         ++base64Counter;
                         break;
                     case 2:
-                        c=(UChar)((bits<<4)|(base64Value>>2));
+                        c=(char16_t)((bits<<4)|(base64Value>>2));
                         if(isLegalIMAP(c)) {
                             
                             inDirectMode=true;
@@ -1029,7 +1029,7 @@ unicodeMode:
                             goto endloop;
                         }
                         *target++=c;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex-1;
                         }
@@ -1039,7 +1039,7 @@ unicodeMode:
                         base64Counter=3;
                         break;
                     case 5:
-                        c=(UChar)((bits<<2)|(base64Value>>4));
+                        c=(char16_t)((bits<<2)|(base64Value>>4));
                         if(isLegalIMAP(c)) {
                             
                             inDirectMode=true;
@@ -1047,7 +1047,7 @@ unicodeMode:
                             goto endloop;
                         }
                         *target++=c;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex-1;
                         }
@@ -1057,7 +1057,7 @@ unicodeMode:
                         base64Counter=6;
                         break;
                     case 7:
-                        c=(UChar)((bits<<6)|base64Value);
+                        c=(char16_t)((bits<<6)|base64Value);
                         if(isLegalIMAP(c)) {
                             
                             inDirectMode=true;
@@ -1065,7 +1065,7 @@ unicodeMode:
                             goto endloop;
                         }
                         *target++=c;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex;
                             sourceIndex=nextSourceIndex;
                         }
@@ -1083,7 +1083,7 @@ unicodeMode:
                     if(base64Counter==-1) {
                         
                         *target++=AMPERSAND;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex-1;
                         }
                     } else {
@@ -1163,12 +1163,12 @@ static void U_CALLCONV
 _IMAPFromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
                             UErrorCode *pErrorCode) {
     UConverter *cnv;
-    const UChar *source, *sourceLimit;
+    const char16_t *source, *sourceLimit;
     uint8_t *target, *targetLimit;
     int32_t *offsets;
 
     int32_t length, targetCapacity, sourceIndex;
-    UChar c;
+    char16_t c;
     uint8_t b;
 
     
@@ -1210,7 +1210,7 @@ directMode:
             if(inSetDIMAP(c)) {
                 
                 *target++=(uint8_t)c;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex++;
                 }
             } else if(c==AMPERSAND) {
@@ -1218,14 +1218,14 @@ directMode:
                 *target++=AMPERSAND;
                 if(target<targetLimit) {
                     *target++=MINUS;
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex;
                         *offsets++=sourceIndex++;
                     }
                     
                     goto directMode;
                 } else {
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex++;
                     }
                     cnv->charErrorBuffer[0]=MINUS;
@@ -1237,7 +1237,7 @@ directMode:
                 
                 --source;
                 *target++=AMPERSAND;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex;
                 }
                 inDirectMode=false;
@@ -1266,14 +1266,14 @@ unicodeMode:
                     if(base64Counter!=0) {
                         
                         *target++=TO_BASE64_IMAP(bits);
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex-1;
                         }
                     }
                     
                     if(target<targetLimit) {
                         *target++=MINUS;
-                        if(offsets!=NULL) {
+                        if(offsets!=nullptr) {
                             *offsets++=sourceIndex-1;
                         }
                     } else {
@@ -1300,12 +1300,12 @@ unicodeMode:
                         if(target<targetLimit) {
                             b=(uint8_t)((c>>4)&0x3f);
                             *target++=TO_BASE64_IMAP(b);
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex;
                                 *offsets++=sourceIndex++;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             b=(uint8_t)((c>>4)&0x3f);
@@ -1325,13 +1325,13 @@ unicodeMode:
                             if(target<targetLimit) {
                                 b=(uint8_t)((c>>2)&0x3f);
                                 *target++=TO_BASE64_IMAP(b);
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
                             } else {
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
@@ -1341,7 +1341,7 @@ unicodeMode:
                                 *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             b=(uint8_t)((c>>8)&0x3f);
@@ -1363,13 +1363,13 @@ unicodeMode:
                             if(target<targetLimit) {
                                 b=(uint8_t)(c&0x3f);
                                 *target++=TO_BASE64_IMAP(b);
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
                             } else {
-                                if(offsets!=NULL) {
+                                if(offsets!=nullptr) {
                                     *offsets++=sourceIndex;
                                     *offsets++=sourceIndex++;
                                 }
@@ -1379,7 +1379,7 @@ unicodeMode:
                                 *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
                             }
                         } else {
-                            if(offsets!=NULL) {
+                            if(offsets!=nullptr) {
                                 *offsets++=sourceIndex++;
                             }
                             b=(uint8_t)((c>>6)&0x3f);
@@ -1411,7 +1411,7 @@ unicodeMode:
             if(base64Counter!=0) {
                 if(target<targetLimit) {
                     *target++=TO_BASE64_IMAP(bits);
-                    if(offsets!=NULL) {
+                    if(offsets!=nullptr) {
                         *offsets++=sourceIndex-1;
                     }
                 } else {
@@ -1422,7 +1422,7 @@ unicodeMode:
             
             if(target<targetLimit) {
                 *target++=MINUS;
-                if(offsets!=NULL) {
+                if(offsets!=nullptr) {
                     *offsets++=sourceIndex-1;
                 }
             } else {
@@ -1450,26 +1450,26 @@ U_CDECL_END
 static const UConverterImpl _IMAPImpl={
     UCNV_IMAP_MAILBOX,
 
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 
     _UTF7Open,
-    NULL,
+    nullptr,
     _UTF7Reset,
 
     _IMAPToUnicodeWithOffsets,
     _IMAPToUnicodeWithOffsets,
     _IMAPFromUnicodeWithOffsets,
     _IMAPFromUnicodeWithOffsets,
-    NULL,
+    nullptr,
 
-    NULL,
-    NULL,
-    NULL, 
-    NULL,
+    nullptr,
+    nullptr,
+    nullptr, 
+    nullptr,
     ucnv_getCompleteUnicodeSet,
-    NULL,
-    NULL
+    nullptr,
+    nullptr
 };
 
 static const UConverterStaticData _IMAPStaticData={

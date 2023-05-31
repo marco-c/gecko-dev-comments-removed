@@ -24,6 +24,36 @@ U_NAMESPACE_BEGIN
 
 class U_I18N_API CECalendar : public Calendar {
 
+public:
+
+   
+
+
+
+
+
+
+
+
+
+
+    virtual const char* getTemporalMonthCode(UErrorCode& status) const override;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual void setTemporalMonthCode(const char* code, UErrorCode& status) override;
+
 protected:
     
     
@@ -75,17 +105,6 @@ protected:
 
 
     virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
-
-    
-
-
-
-
-
-
-
-
-    virtual UBool inDaylightTime(UErrorCode&) const override;
 
     
 

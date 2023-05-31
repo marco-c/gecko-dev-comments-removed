@@ -35,7 +35,7 @@ static void _fb_trace(const char *m, const UnicodeString *s, UBool b, int32_t d,
   if(s) {
     s->extract(0,s->length(),buf,2048);
   } else {
-    strcpy(buf,"NULL");
+    strcpy(buf,"nullptr");
   }
   fprintf(stderr,"%s:%d: %s. s='%s'(%p), b=%c, d=%d\n",
           f, l, m, buf, (const void*)s, b?'T':'F',(int)d);
@@ -102,7 +102,7 @@ class UStringSet : public UVector {
   inline UBool add(const UnicodeString& str, UErrorCode &status) {
     if(U_FAILURE(status)) return false;
     UnicodeString *t = new UnicodeString(str);
-    if(t==NULL) {
+    if(t==nullptr) {
       status = U_MEMORY_ALLOCATION_ERROR; return false;
     }
     return adopt(t, status);
@@ -130,7 +130,7 @@ static const int32_t kPARTIAL = (1<<0);
 static const int32_t kMATCH   = (1<<1); 
 static const int32_t kSuppressInReverse = (1<<0);
 static const int32_t kAddToForward = (1<<1);
-static const UChar   kFULLSTOP = 0x002E; 
+static const char16_t kFULLSTOP = 0x002E; 
 
 
 
@@ -191,7 +191,7 @@ public:
     return clone();
   }
   virtual SimpleFilteredSentenceBreakIterator* clone() const override { return new SimpleFilteredSentenceBreakIterator(*this); }
-  virtual UClassID getDynamicClassID(void) const override { return NULL; }
+  virtual UClassID getDynamicClassID() const override { return nullptr; }
   virtual bool operator==(const BreakIterator& o) const override { if(this==&o) return true; return false; }
 
   
@@ -202,20 +202,20 @@ public:
 
   
   virtual UText *getUText(UText *fillIn, UErrorCode &status) const override { return fDelegate->getUText(fillIn,status); }
-  virtual CharacterIterator& getText(void) const override { return fDelegate->getText(); }
+  virtual CharacterIterator& getText() const override { return fDelegate->getText(); }
 
   
-  virtual int32_t first(void) override;
+  virtual int32_t first() override;
   virtual int32_t preceding(int32_t offset) override;
-  virtual int32_t previous(void) override;
+  virtual int32_t previous() override;
   virtual UBool isBoundary(int32_t offset) override;
-  virtual int32_t current(void) const override { return fDelegate->current(); } 
+  virtual int32_t current() const override { return fDelegate->current(); } 
 
-  virtual int32_t next(void) override;
+  virtual int32_t next() override;
 
   virtual int32_t next(int32_t n) override;
   virtual int32_t following(int32_t offset) override;
-  virtual int32_t last(void) override;
+  virtual int32_t last() override;
 
 private:
     
@@ -428,7 +428,7 @@ SimpleFilteredSentenceBreakIterator::next() {
 }
 
 int32_t
-SimpleFilteredSentenceBreakIterator::first(void) {
+SimpleFilteredSentenceBreakIterator::first() {
   
   return fDelegate->first();
 }
@@ -439,7 +439,7 @@ SimpleFilteredSentenceBreakIterator::preceding(int32_t offset) {
 }
 
 int32_t
-SimpleFilteredSentenceBreakIterator::previous(void) {
+SimpleFilteredSentenceBreakIterator::previous() {
   return internalPrev(fDelegate->previous());
 }
 
@@ -473,7 +473,7 @@ SimpleFilteredSentenceBreakIterator::following(int32_t offset) {
 }
 
 int32_t
-SimpleFilteredSentenceBreakIterator::last(void) {
+SimpleFilteredSentenceBreakIterator::last() {
   
   return fDelegate->last();
 }
@@ -516,7 +516,7 @@ SimpleFilteredBreakIteratorBuilder::SimpleFilteredBreakIteratorBuilder(const Loc
 #endif
       return;  
     }
-    LocalUResourceBundlePointer exceptions(ures_getByKeyWithFallback(b.getAlias(), "exceptions", NULL, &subStatus));
+    LocalUResourceBundlePointer exceptions(ures_getByKeyWithFallback(b.getAlias(), "exceptions", nullptr, &subStatus));
     if (U_FAILURE(subStatus) || (subStatus == U_USING_DEFAULT_WARNING) ) {    
       status = subStatus; 
 #if FB_DEBUG
@@ -524,7 +524,7 @@ SimpleFilteredBreakIteratorBuilder::SimpleFilteredBreakIteratorBuilder(const Loc
 #endif
       return;  
     }
-    LocalUResourceBundlePointer breaks(ures_getByKeyWithFallback(exceptions.getAlias(), "SentenceBreak", NULL, &subStatus));
+    LocalUResourceBundlePointer breaks(ures_getByKeyWithFallback(exceptions.getAlias(), "SentenceBreak", nullptr, &subStatus));
 
 #if FB_DEBUG
     {
@@ -590,7 +590,7 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
   LocalPointer<UCharsTrieBuilder> builder(new UCharsTrieBuilder(status), status);
   LocalPointer<UCharsTrieBuilder> builder2(new UCharsTrieBuilder(status), status);
   if(U_FAILURE(status)) {
-    return NULL;
+    return nullptr;
   }
 
   int32_t revCount = 0;
@@ -620,7 +620,7 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
     } else {
       FB_TRACE("build",abbr,false,i);
       status = U_MEMORY_ALLOCATION_ERROR;
-      return NULL;
+      return nullptr;
     }
     partials[n] = 0; 
     n++;
@@ -682,21 +682,21 @@ SimpleFilteredBreakIteratorBuilder::build(BreakIterator* adoptBreakIterator, UEr
       
     }
   }
-  FB_TRACE("AbbrCount",NULL,false, subCount);
+  FB_TRACE("AbbrCount",nullptr,false, subCount);
 
   if(revCount>0) {
     backwardsTrie.adoptInstead(builder->build(USTRINGTRIE_BUILD_FAST, status));
     if(U_FAILURE(status)) {
-      FB_TRACE(u_errorName(status),NULL,false, -1);
-      return NULL;
+      FB_TRACE(u_errorName(status),nullptr,false, -1);
+      return nullptr;
     }
   }
 
   if(fwdCount>0) {
     forwardsPartialTrie.adoptInstead(builder2->build(USTRINGTRIE_BUILD_FAST, status));
     if(U_FAILURE(status)) {
-      FB_TRACE(u_errorName(status),NULL,false, -1);
-      return NULL;
+      FB_TRACE(u_errorName(status),nullptr,false, -1);
+      return nullptr;
     }
   }
 
@@ -714,9 +714,9 @@ FilteredBreakIteratorBuilder::~FilteredBreakIteratorBuilder() {
 
 FilteredBreakIteratorBuilder *
 FilteredBreakIteratorBuilder::createInstance(const Locale& where, UErrorCode& status) {
-  if(U_FAILURE(status)) return NULL;
+  if(U_FAILURE(status)) return nullptr;
   LocalPointer<FilteredBreakIteratorBuilder> ret(new SimpleFilteredBreakIteratorBuilder(where, status), status);
-  return (U_SUCCESS(status))? ret.orphan(): NULL;
+  return (U_SUCCESS(status))? ret.orphan(): nullptr;
 }
 
 FilteredBreakIteratorBuilder *
@@ -726,9 +726,9 @@ FilteredBreakIteratorBuilder::createInstance(UErrorCode &status) {
 
 FilteredBreakIteratorBuilder *
 FilteredBreakIteratorBuilder::createEmptyInstance(UErrorCode& status) {
-  if(U_FAILURE(status)) return NULL;
+  if(U_FAILURE(status)) return nullptr;
   LocalPointer<FilteredBreakIteratorBuilder> ret(new SimpleFilteredBreakIteratorBuilder(status), status);
-  return (U_SUCCESS(status))? ret.orphan(): NULL;
+  return (U_SUCCESS(status))? ret.orphan(): nullptr;
 }
 
 U_NAMESPACE_END

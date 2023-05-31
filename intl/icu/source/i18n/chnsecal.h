@@ -113,6 +113,49 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
   ChineseCalendar(const Locale& aLocale, UErrorCode &success);
 
+  
+
+
+
+
+
+
+  virtual bool inTemporalLeapYear(UErrorCode &status) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual const char* getTemporalMonthCode(UErrorCode &status) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void setTemporalMonthCode(const char* code, UErrorCode& status) override;
+
  protected:
  
    
@@ -152,7 +195,12 @@ class U_I18N_API ChineseCalendar : public Calendar {
   
   
     
-  UBool isLeapYear;
+  
+  
+  
+  
+  
+  UBool hasLeapMonthBetweenWinterSolstices;
   int32_t fEpochYear;   
   const TimeZone* fZoneAstroCalc;   
                                     
@@ -176,6 +224,20 @@ class U_I18N_API ChineseCalendar : public Calendar {
   virtual void roll(EDateFields field, int32_t amount, UErrorCode &status) override;
 
   
+
+
+
+
+  virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+  
+
+
+
+
+  virtual void setRelatedYear(int32_t year) override;
+
+  
   
   
 
@@ -195,7 +257,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
                  int32_t gmonth, UBool setAllFields);
   virtual int32_t newYear(int32_t gyear) const;
   virtual void offsetMonth(int32_t newMoon, int32_t dom, int32_t delta);
-  const TimeZone* getChineseCalZoneAstroCalc(void) const;
+  const TimeZone* getChineseCalZoneAstroCalc() const;
 
   
  public: 
@@ -204,7 +266,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const override;
+  virtual UClassID getDynamicClassID() const override;
 
   
 
@@ -217,7 +279,7 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  static UClassID U_EXPORT2 getStaticClassID(void);
+  static UClassID U_EXPORT2 getStaticClassID();
 
   
 
@@ -227,20 +289,12 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
   virtual const char * getType() const override;
 
+ protected:
+  virtual int32_t internalGetMonth(int32_t defaultValue) const override;
+
+  virtual int32_t internalGetMonth() const override;
 
  protected:
-  
-
-
-
-
-
-
-
-
-  virtual UBool inDaylightTime(UErrorCode& status) const override;
-
-
   
 
 
@@ -266,13 +320,13 @@ class U_I18N_API ChineseCalendar : public Calendar {
 
 
 
-  UDate         internalGetDefaultCenturyStart(void) const;
+  UDate         internalGetDefaultCenturyStart() const;
 
   
 
 
 
-  int32_t          internalGetDefaultCenturyStartYear(void) const;
+  int32_t          internalGetDefaultCenturyStartYear() const;
 
   ChineseCalendar() = delete; 
 };

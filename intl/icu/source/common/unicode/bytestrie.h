@@ -69,7 +69,7 @@ public:
 
 
     BytesTrie(const void *trieBytes)
-            : ownedArray_(NULL), bytes_(static_cast<const uint8_t *>(trieBytes)),
+            : ownedArray_(nullptr), bytes_(static_cast<const uint8_t *>(trieBytes)),
               pos_(bytes_), remainingMatchLength_(-1) {}
 
     
@@ -85,7 +85,7 @@ public:
 
 
     BytesTrie(const BytesTrie &other)
-            : ownedArray_(NULL), bytes_(other.bytes_),
+            : ownedArray_(nullptr), bytes_(other.bytes_),
               pos_(other.pos_), remainingMatchLength_(other.remainingMatchLength_) {}
 
     
@@ -143,7 +143,7 @@ public:
 
 
 
-        State() { bytes=NULL; }
+        State() { bytes=nullptr; }
     private:
         friend class BytesTrie;
 
@@ -177,7 +177,7 @@ public:
 
 
     BytesTrie &resetToState(const State &state) {
-        if(bytes_==state.bytes && bytes_!=NULL) {
+        if(bytes_==state.bytes && bytes_!=nullptr) {
             pos_=state.pos;
             remainingMatchLength_=state.remainingMatchLength;
         }
@@ -262,7 +262,7 @@ public:
     inline UBool hasUniqueValue(int32_t &uniqueValue) const {
         const uint8_t *pos=pos_;
         
-        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
+        return pos!=nullptr && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
     }
 
     
@@ -397,7 +397,7 @@ private:
     BytesTrie &operator=(const BytesTrie &other) = delete;
 
     inline void stop() {
-        pos_=NULL;
+        pos_=nullptr;
     }
 
     

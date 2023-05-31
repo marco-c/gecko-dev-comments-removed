@@ -71,7 +71,7 @@
 #define UFMT_USTRING        {ufmt_ustring, u_printf_ustring_handler}
 
 
-#define UFMT_EMPTY {ufmt_empty, NULL}
+#define UFMT_EMPTY {ufmt_empty, nullptr}
 
 
 
@@ -115,15 +115,15 @@ typedef struct u_printf_spec {
 #define UPRINTF_BUFFER_SIZE 1024
 #define UPRINTF_SYMBOL_BUFFER_SIZE 8
 
-static const UChar gNullStr[] = {0x28, 0x6E, 0x75, 0x6C, 0x6C, 0x29, 0}; 
-static const UChar gSpaceStr[] = {0x20, 0}; 
+static const char16_t gNullStr[] = {0x28, 0x6E, 0x75, 0x6C, 0x6C, 0x29, 0}; 
+static const char16_t gSpaceStr[] = {0x20, 0}; 
 
 
 
 static void
 u_printf_set_sign(UNumberFormat        *format,
                    const u_printf_spec_info     *info,
-                   UChar *prefixBuffer,
+                   char16_t *prefixBuffer,
                    int32_t *prefixBufLen,
                    UErrorCode *status)
 {
@@ -139,7 +139,7 @@ u_printf_set_sign(UNumberFormat        *format,
             unum_setTextAttribute(format, UNUM_POSITIVE_PREFIX, gSpaceStr, 1, status);
         }
         else {
-            UChar plusSymbol[UPRINTF_SYMBOL_BUFFER_SIZE];
+            char16_t plusSymbol[UPRINTF_SYMBOL_BUFFER_SIZE];
             int32_t symbolLen;
 
             symbolLen = unum_getSymbol(format,
@@ -162,7 +162,7 @@ u_printf_set_sign(UNumberFormat        *format,
 static void
 u_printf_reset_sign(UNumberFormat        *format,
                    const u_printf_spec_info     *info,
-                   UChar *prefixBuffer,
+                   char16_t *prefixBuffer,
                    int32_t *prefixBufLen,
                    UErrorCode *status)
 {
@@ -187,7 +187,7 @@ u_printf_simple_percent_handler(const u_printf_stream_handler  *handler,
     (void)formatBundle;
     (void)info;
     (void)args;
-    static const UChar PERCENT[] = { UP_PERCENT };
+    static const char16_t PERCENT[] = { UP_PERCENT };
 
     
     return handler->write(context, PERCENT, 1);
@@ -202,8 +202,8 @@ u_printf_string_handler(const u_printf_stream_handler  *handler,
                         const ufmt_args                *args)
 {
     (void)formatBundle;
-    UChar *s;
-    UChar buffer[UFMT_DEFAULT_BUFFER_SIZE];
+    char16_t *s;
+    char16_t buffer[UFMT_DEFAULT_BUFFER_SIZE];
     int32_t len, written;
     int32_t argSize;
     const char *arg = (const char*)(args[0].ptrValue);
@@ -213,9 +213,9 @@ u_printf_string_handler(const u_printf_stream_handler  *handler,
         argSize = (int32_t)strlen(arg) + 1;
         if (argSize >= MAX_UCHAR_BUFFER_SIZE(buffer)) {
             s = ufmt_defaultCPToUnicode(arg, argSize,
-                    (UChar *)uprv_malloc(MAX_UCHAR_BUFFER_NEEDED(argSize)),
+                    (char16_t *)uprv_malloc(MAX_UCHAR_BUFFER_NEEDED(argSize)),
                     MAX_UCHAR_BUFFER_NEEDED(argSize));
-            if(s == NULL) {
+            if(s == nullptr) {
                 return 0;
             }
         }
@@ -225,7 +225,7 @@ u_printf_string_handler(const u_printf_stream_handler  *handler,
         }
     }
     else {
-        s = (UChar *)gNullStr;
+        s = (char16_t *)gNullStr;
     }
     len = u_strlen(s);
 
@@ -253,7 +253,7 @@ u_printf_char_handler(const u_printf_stream_handler  *handler,
                       const ufmt_args                *args)
 {
     (void)formatBundle;
-    UChar s[U16_MAX_LENGTH+1];
+    char16_t s[U16_MAX_LENGTH+1];
     int32_t len = 1, written;
     unsigned char arg = (unsigned char)(args[0].int64Value);
 
@@ -283,8 +283,8 @@ u_printf_double_handler(const u_printf_stream_handler  *handler,
 {
     double        num         = (double) (args[0].doubleValue);
     UNumberFormat  *format;
-    UChar          result[UPRINTF_BUFFER_SIZE];
-    UChar          prefixBuffer[UPRINTF_BUFFER_SIZE];
+    char16_t       result[UPRINTF_BUFFER_SIZE];
+    char16_t       prefixBuffer[UPRINTF_BUFFER_SIZE];
     int32_t        prefixBufferLen = sizeof(prefixBuffer);
     int32_t        minDecimalDigits;
     int32_t        maxDecimalDigits;
@@ -359,8 +359,8 @@ u_printf_integer_handler(const u_printf_stream_handler  *handler,
 {
     int64_t         num        = args[0].int64Value;
     UNumberFormat   *format;
-    UChar           result[UPRINTF_BUFFER_SIZE];
-    UChar           prefixBuffer[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
+    char16_t        prefixBuffer[UPRINTF_BUFFER_SIZE];
     int32_t         prefixBufferLen = sizeof(prefixBuffer);
     int32_t         minDigits     = -1;
     int32_t         resultLen;
@@ -425,7 +425,7 @@ u_printf_hex_handler(const u_printf_stream_handler  *handler,
 {
     (void)formatBundle;
     int64_t         num        = args[0].int64Value;
-    UChar           result[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
     int32_t         len        = UPRINTF_BUFFER_SIZE;
 
 
@@ -443,7 +443,7 @@ u_printf_hex_handler(const u_printf_stream_handler  *handler,
     
     if(num != 0 && info->fAlt && len < UPRINTF_BUFFER_SIZE - 2) {
         
-        memmove(result + 2, result, len * sizeof(UChar));
+        memmove(result + 2, result, len * sizeof(char16_t));
         result[0] = 0x0030;
         result[1] = info->fSpec;
         len += 2;
@@ -461,7 +461,7 @@ u_printf_octal_handler(const u_printf_stream_handler  *handler,
 {
     (void)formatBundle;
     int64_t         num        = args[0].int64Value;
-    UChar           result[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
     int32_t         len        = UPRINTF_BUFFER_SIZE;
 
 
@@ -479,7 +479,7 @@ u_printf_octal_handler(const u_printf_stream_handler  *handler,
     
     if(info->fAlt && result[0] != 0x0030 && len < UPRINTF_BUFFER_SIZE - 1) {
         
-        memmove(result + 1, result, len * sizeof(UChar));
+        memmove(result + 1, result, len * sizeof(char16_t));
         result[0] = 0x0030;
         len += 1;
     }
@@ -496,7 +496,7 @@ u_printf_uinteger_handler(const u_printf_stream_handler *handler,
 {
     int64_t         num        = args[0].int64Value;
     UNumberFormat   *format;
-    UChar           result[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
     int32_t         minDigits     = -1;
     int32_t         resultLen;
     UErrorCode      status        = U_ZERO_ERROR;
@@ -548,7 +548,7 @@ u_printf_pointer_handler(const u_printf_stream_handler  *handler,
                          const ufmt_args                *args)
 { 
     (void)formatBundle;
-    UChar           result[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
     int32_t         len  = UPRINTF_BUFFER_SIZE;
 
     
@@ -566,16 +566,16 @@ u_printf_scientific_handler(const u_printf_stream_handler  *handler,
 {
     double          num         = (double) (args[0].doubleValue);
     UNumberFormat   *format;
-    UChar           result[UPRINTF_BUFFER_SIZE];
-    UChar           prefixBuffer[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
+    char16_t        prefixBuffer[UPRINTF_BUFFER_SIZE];
     int32_t         prefixBufferLen = sizeof(prefixBuffer);
     int32_t         minDecimalDigits;
     int32_t         maxDecimalDigits;
     UErrorCode      status        = U_ZERO_ERROR;
-    UChar srcExpBuf[UPRINTF_SYMBOL_BUFFER_SIZE];
+    char16_t srcExpBuf[UPRINTF_SYMBOL_BUFFER_SIZE];
     int32_t srcLen, expLen;
     int32_t resultLen;
-    UChar expBuf[UPRINTF_SYMBOL_BUFFER_SIZE];
+    char16_t expBuf[UPRINTF_SYMBOL_BUFFER_SIZE];
 
     prefixBuffer[0] = 0;
 
@@ -599,7 +599,7 @@ u_printf_scientific_handler(const u_printf_stream_handler  *handler,
         &status);
 
     
-    if (info->fSpec == (UChar)0x65 ) {
+    if (info->fSpec == (char16_t)0x65 ) {
         expLen = u_strToLower(expBuf, (int32_t)sizeof(expBuf),
             srcExpBuf, srcLen,
             formatBundle->fLocale,
@@ -625,7 +625,7 @@ u_printf_scientific_handler(const u_printf_stream_handler  *handler,
     
     if(info->fPrecision != -1) {
         
-        if (info->fOrigSpec == (UChar)0x65  || info->fOrigSpec == (UChar)0x45 ) {
+        if (info->fOrigSpec == (char16_t)0x65  || info->fOrigSpec == (char16_t)0x45 ) {
             unum_setAttribute(format, UNUM_FRACTION_DIGITS, info->fPrecision);
         }
         else {
@@ -686,8 +686,8 @@ u_printf_percent_handler(const u_printf_stream_handler  *handler,
 {
     double          num         = (double) (args[0].doubleValue);
     UNumberFormat   *format;
-    UChar           result[UPRINTF_BUFFER_SIZE];
-    UChar           prefixBuffer[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
+    char16_t        prefixBuffer[UPRINTF_BUFFER_SIZE];
     int32_t         prefixBufferLen = sizeof(prefixBuffer);
     int32_t         minDecimalDigits;
     int32_t         maxDecimalDigits;
@@ -761,10 +761,10 @@ u_printf_ustring_handler(const u_printf_stream_handler  *handler,
 {
     (void)formatBundle;
     int32_t len, written;
-    const UChar *arg = (const UChar*)(args[0].ptrValue);
+    const char16_t *arg = (const char16_t*)(args[0].ptrValue);
 
     
-    if (arg == NULL) {
+    if (arg == nullptr) {
         arg = gNullStr;
     }
     len = u_strlen(arg);
@@ -790,7 +790,7 @@ u_printf_uchar_handler(const u_printf_stream_handler  *handler,
 {
     (void)formatBundle;
     int32_t written = 0;
-    UChar arg = (UChar)(args[0].int64Value);
+    char16_t arg = (char16_t)(args[0].int64Value);
 
     
     
@@ -840,7 +840,7 @@ u_printf_scidbl_handler(const u_printf_stream_handler  *handler,
     else {
         format = u_locbund_getNumberFormat(formatBundle, UNUM_DECIMAL);
         
-        if (format == NULL) {
+        if (format == nullptr) {
             return 0;
         }
         maxSigDecimalDigits = unum_getAttribute(format, UNUM_MAX_SIGNIFICANT_DIGITS);
@@ -889,8 +889,8 @@ u_printf_spellout_handler(const u_printf_stream_handler *handler,
 {
     double          num         = (double) (args[0].doubleValue);
     UNumberFormat   *format;
-    UChar           result[UPRINTF_BUFFER_SIZE];
-    UChar           prefixBuffer[UPRINTF_BUFFER_SIZE];
+    char16_t        result[UPRINTF_BUFFER_SIZE];
+    char16_t        prefixBuffer[UPRINTF_BUFFER_SIZE];
     int32_t         prefixBufferLen = sizeof(prefixBuffer);
     int32_t         minDecimalDigits;
     int32_t         maxDecimalDigits;
@@ -1058,15 +1058,15 @@ static const u_printf_info g_u_printf_infos[UPRINTF_NUM_FMT_HANDLERS] = {
             (s) == MOD_LOWERL || \
             (s) == MOD_L
 
-static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *status) {
-    ufmt_args *arglist = NULL;
-    ufmt_type_info *typelist = NULL;
-    UBool *islonglong = NULL;
+static ufmt_args* parseArguments(const char16_t *alias, va_list ap, UErrorCode *status) {
+    ufmt_args *arglist = nullptr;
+    ufmt_type_info *typelist = nullptr;
+    UBool *islonglong = nullptr;
     int32_t size = 0;
     int32_t pos = 0;
-    UChar type;
+    char16_t type;
     uint16_t handlerNum;
-    const UChar *aliasStart = alias;
+    const char16_t *aliasStart = alias;
 
     
     for(;;) {
@@ -1096,10 +1096,10 @@ static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *sta
 
             
             if(*alias != SPEC_DOLLARSIGN) {
-                return NULL;
+                return nullptr;
             }
         } else {
-            return NULL;
+            return nullptr;
         }
 
         if (pos > size) {
@@ -1127,7 +1127,7 @@ static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *sta
         }
 
         *status = U_MEMORY_ALLOCATION_ERROR;
-        return NULL;
+        return nullptr;
     }
 
     
@@ -1206,7 +1206,7 @@ static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *sta
             break;
         default:
             
-            arglist[pos].ptrValue = NULL;
+            arglist[pos].ptrValue = nullptr;
             break;
         }
     }
@@ -1220,7 +1220,7 @@ static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *sta
 
 U_CFUNC int32_t
 u_printf_parse(const u_printf_stream_handler *streamHandler,
-               const UChar     *fmt,
+               const char16_t  *fmt,
                void            *context,
                u_localized_print_string *locStringContext,
                ULocaleBundle   *formatBundle,
@@ -1234,12 +1234,12 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
     u_printf_spec    spec;
     u_printf_spec_info *info = &(spec.fInfo);
 
-    const UChar *alias = fmt;
-    const UChar *backup;
-    const UChar *lastAlias;
-    const UChar *orgAlias = fmt;
+    const char16_t *alias = fmt;
+    const char16_t *backup;
+    const char16_t *lastAlias;
+    const char16_t *orgAlias = fmt;
     
-    ufmt_args *arglist = NULL; 
+    ufmt_args *arglist = nullptr; 
     UErrorCode status = U_ZERO_ERROR;
     if (!locStringContext || locStringContext->available >= 0) {
         
@@ -1345,10 +1345,10 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
 
                 
                 
-                info->fPadChar = (UChar)ufmt_digitvalue(*alias++);
-                info->fPadChar = (UChar)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
-                info->fPadChar = (UChar)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
-                info->fPadChar = (UChar)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
+                info->fPadChar = (char16_t)ufmt_digitvalue(*alias++);
+                info->fPadChar = (char16_t)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
+                info->fPadChar = (char16_t)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
+                info->fPadChar = (char16_t)((info->fPadChar * 16) + ufmt_digitvalue(*alias++));
 
                 
                 alias++;
@@ -1542,7 +1542,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
                     break;
                 default:
                     
-                    args.ptrValue = NULL;
+                    args.ptrValue = nullptr;
                     break;
                 }
             } else { 
@@ -1575,7 +1575,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
                     break;
                 default:
                     
-                    args.ptrValue = NULL;
+                    args.ptrValue = nullptr;
                     break;
                 }
             }
@@ -1596,7 +1596,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
         }
     }
     
-    if (arglist != NULL) {
+    if (arglist != nullptr) {
         uprv_free(arglist);
     }
     

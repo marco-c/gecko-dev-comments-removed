@@ -40,10 +40,10 @@ NFRule::NFRule(const RuleBasedNumberFormat* _rbnf, const UnicodeString &_ruleTex
   , exponent(0)
   , decimalPoint(0)
   , fRuleText(_ruleText)
-  , sub1(NULL)
-  , sub2(NULL)
+  , sub1(nullptr)
+  , sub2(nullptr)
   , formatter(_rbnf)
-  , rulePatternFormat(NULL)
+  , rulePatternFormat(nullptr)
 {
     if (!fRuleText.isEmpty()) {
         parseRuleDescriptor(fRuleText, status);
@@ -54,54 +54,54 @@ NFRule::~NFRule()
 {
     if (sub1 != sub2) {
         delete sub2;
-        sub2 = NULL;
+        sub2 = nullptr;
     }
     delete sub1;
-    sub1 = NULL;
+    sub1 = nullptr;
     delete rulePatternFormat;
-    rulePatternFormat = NULL;
+    rulePatternFormat = nullptr;
 }
 
-static const UChar gLeftBracket = 0x005b;
-static const UChar gRightBracket = 0x005d;
-static const UChar gColon = 0x003a;
-static const UChar gZero = 0x0030;
-static const UChar gNine = 0x0039;
-static const UChar gSpace = 0x0020;
-static const UChar gSlash = 0x002f;
-static const UChar gGreaterThan = 0x003e;
-static const UChar gLessThan = 0x003c;
-static const UChar gComma = 0x002c;
-static const UChar gDot = 0x002e;
-static const UChar gTick = 0x0027;
+static const char16_t gLeftBracket = 0x005b;
+static const char16_t gRightBracket = 0x005d;
+static const char16_t gColon = 0x003a;
+static const char16_t gZero = 0x0030;
+static const char16_t gNine = 0x0039;
+static const char16_t gSpace = 0x0020;
+static const char16_t gSlash = 0x002f;
+static const char16_t gGreaterThan = 0x003e;
+static const char16_t gLessThan = 0x003c;
+static const char16_t gComma = 0x002c;
+static const char16_t gDot = 0x002e;
+static const char16_t gTick = 0x0027;
 
-static const UChar gSemicolon = 0x003b;
-static const UChar gX = 0x0078;
+static const char16_t gSemicolon = 0x003b;
+static const char16_t gX = 0x0078;
 
-static const UChar gMinusX[] =                  {0x2D, 0x78, 0};    
-static const UChar gInf[] =                     {0x49, 0x6E, 0x66, 0}; 
-static const UChar gNaN[] =                     {0x4E, 0x61, 0x4E, 0}; 
+static const char16_t gMinusX[] =                  {0x2D, 0x78, 0};    
+static const char16_t gInf[] =                     {0x49, 0x6E, 0x66, 0}; 
+static const char16_t gNaN[] =                     {0x4E, 0x61, 0x4E, 0}; 
 
-static const UChar gDollarOpenParenthesis[] =   {0x24, 0x28, 0}; 
-static const UChar gClosedParenthesisDollar[] = {0x29, 0x24, 0}; 
+static const char16_t gDollarOpenParenthesis[] =   {0x24, 0x28, 0}; 
+static const char16_t gClosedParenthesisDollar[] = {0x29, 0x24, 0}; 
 
-static const UChar gLessLess[] =                {0x3C, 0x3C, 0};    
-static const UChar gLessPercent[] =             {0x3C, 0x25, 0};    
-static const UChar gLessHash[] =                {0x3C, 0x23, 0};    
-static const UChar gLessZero[] =                {0x3C, 0x30, 0};    
-static const UChar gGreaterGreater[] =          {0x3E, 0x3E, 0};    
-static const UChar gGreaterPercent[] =          {0x3E, 0x25, 0};    
-static const UChar gGreaterHash[] =             {0x3E, 0x23, 0};    
-static const UChar gGreaterZero[] =             {0x3E, 0x30, 0};    
-static const UChar gEqualPercent[] =            {0x3D, 0x25, 0};    
-static const UChar gEqualHash[] =               {0x3D, 0x23, 0};    
-static const UChar gEqualZero[] =               {0x3D, 0x30, 0};    
-static const UChar gGreaterGreaterGreater[] =   {0x3E, 0x3E, 0x3E, 0}; 
+static const char16_t gLessLess[] =                {0x3C, 0x3C, 0};    
+static const char16_t gLessPercent[] =             {0x3C, 0x25, 0};    
+static const char16_t gLessHash[] =                {0x3C, 0x23, 0};    
+static const char16_t gLessZero[] =                {0x3C, 0x30, 0};    
+static const char16_t gGreaterGreater[] =          {0x3E, 0x3E, 0};    
+static const char16_t gGreaterPercent[] =          {0x3E, 0x25, 0};    
+static const char16_t gGreaterHash[] =             {0x3E, 0x23, 0};    
+static const char16_t gGreaterZero[] =             {0x3E, 0x30, 0};    
+static const char16_t gEqualPercent[] =            {0x3D, 0x25, 0};    
+static const char16_t gEqualHash[] =               {0x3D, 0x23, 0};    
+static const char16_t gEqualZero[] =               {0x3D, 0x30, 0};    
+static const char16_t gGreaterGreaterGreater[] =   {0x3E, 0x3E, 0x3E, 0}; 
 
-static const UChar * const RULE_PREFIXES[] = {
+static const char16_t * const RULE_PREFIXES[] = {
     gLessLess, gLessPercent, gLessHash, gLessZero,
     gGreaterGreater, gGreaterPercent,gGreaterHash, gGreaterZero,
-    gEqualPercent, gEqualHash, gEqualZero, NULL
+    gEqualPercent, gEqualHash, gEqualZero, nullptr
 };
 
 void
@@ -144,7 +144,7 @@ NFRule::makeRules(UnicodeString& description,
     else {
         
         
-        NFRule* rule2 = NULL;
+        NFRule* rule2 = nullptr;
         UnicodeString sbuf;
 
         
@@ -217,7 +217,7 @@ NFRule::makeRules(UnicodeString& description,
         
         
         
-        if (rule2 != NULL) {
+        if (rule2 != nullptr) {
             if (rule2->baseValue >= kNoBase) {
                 rules.add(rule2);
             }
@@ -270,8 +270,8 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
         
         
         int descriptorLength = descriptor.length();
-        UChar firstChar = descriptor.charAt(0);
-        UChar lastChar = descriptor.charAt(descriptorLength - 1);
+        char16_t firstChar = descriptor.charAt(0);
+        char16_t lastChar = descriptor.charAt(descriptorLength - 1);
         if (firstChar >= gZero && firstChar <= gNine && lastChar != gX) {
             
             
@@ -279,7 +279,7 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
             
             int64_t val = 0;
             p = 0;
-            UChar c = gSpace;
+            char16_t c = gSpace;
 
             
             
@@ -420,9 +420,9 @@ NFRule::extractSubstitutions(const NFRuleSet* ruleSet,
     }
     fRuleText = ruleText;
     sub1 = extractSubstitution(ruleSet, predecessor, status);
-    if (sub1 == NULL) {
+    if (sub1 == nullptr) {
         
-        sub2 = NULL;
+        sub2 = nullptr;
     }
     else {
         sub2 = extractSubstitution(ruleSet, predecessor, status);
@@ -469,7 +469,7 @@ NFRule::extractSubstitution(const NFRuleSet* ruleSet,
                             const NFRule* predecessor,
                             UErrorCode& status)
 {
-    NFSubstitution* result = NULL;
+    NFSubstitution* result = nullptr;
 
     
     
@@ -479,7 +479,7 @@ NFRule::extractSubstitution(const NFRuleSet* ruleSet,
     
     
     if (subStart == -1) {
-        return NULL;
+        return nullptr;
     }
 
     
@@ -490,7 +490,7 @@ NFRule::extractSubstitution(const NFRuleSet* ruleSet,
         
         
     } else {
-        UChar c = fRuleText.charAt(subStart);
+        char16_t c = fRuleText.charAt(subStart);
         subEnd = fRuleText.indexOf(c, subStart + 1);
         
         if (c == gLessThan && subEnd != -1 && subEnd < fRuleText.length() - 1 && fRuleText.charAt(subEnd+1) == c) {
@@ -506,7 +506,7 @@ NFRule::extractSubstitution(const NFRuleSet* ruleSet,
     
     
     if (subEnd == -1) {
-        return NULL;
+        return nullptr;
     }
 
     
@@ -549,10 +549,10 @@ NFRule::setBaseValue(int64_t newBaseValue, UErrorCode& status)
         
         
         
-        if (sub1 != NULL) {
+        if (sub1 != nullptr) {
             sub1->setDivisor(radix, exponent, status);
         }
-        if (sub2 != NULL) {
+        if (sub2 != nullptr) {
             sub2->setDivisor(radix, exponent, status);
         }
 
@@ -650,7 +650,7 @@ NFRule::operator==(const NFRule& rhs) const
 
 static void util_append64(UnicodeString& result, int64_t n)
 {
-    UChar buffer[256];
+    char16_t buffer[256];
     int32_t len = util64_tou(n, buffer, sizeof(buffer));
     UnicodeString temp(buffer, len);
     result.append(temp);
@@ -690,7 +690,7 @@ NFRule::_appendRuleText(UnicodeString& result) const
     
     
     
-    if (fRuleText.charAt(0) == gSpace && (sub1 == NULL || sub1->getPos() != 0)) {
+    if (fRuleText.charAt(0) == gSpace && (sub1 == nullptr || sub1->getPos() != 0)) {
         result.append(gTick);
     }
 
@@ -700,11 +700,11 @@ NFRule::_appendRuleText(UnicodeString& result) const
     ruleTextCopy.setTo(fRuleText);
 
     UnicodeString temp;
-    if (sub2 != NULL) {
+    if (sub2 != nullptr) {
         sub2->toString(temp);
         ruleTextCopy.insert(sub2->getPos(), temp);
     }
-    if (sub1 != NULL) {
+    if (sub1 != nullptr) {
         sub1->toString(temp);
         ruleTextCopy.insert(sub1->getPos(), temp);
     }
@@ -763,10 +763,10 @@ NFRule::doFormat(int64_t number, UnicodeString& toInsertInto, int32_t pos, int32
         lengthOffset = fRuleText.length() - (toInsertInto.length() - initialLength);
     }
 
-    if (sub2 != NULL) {
+    if (sub2 != nullptr) {
         sub2->doSubstitution(number, toInsertInto, pos - (sub2->getPos() > pluralRuleStart ? lengthOffset : 0), recursionCount, status);
     }
-    if (sub1 != NULL) {
+    if (sub1 != nullptr) {
         sub1->doSubstitution(number, toInsertInto, pos - (sub1->getPos() > pluralRuleStart ? lengthOffset : 0), recursionCount, status);
     }
 }
@@ -817,10 +817,10 @@ NFRule::doFormat(double number, UnicodeString& toInsertInto, int32_t pos, int32_
         lengthOffset = fRuleText.length() - (toInsertInto.length() - initialLength);
     }
 
-    if (sub2 != NULL) {
+    if (sub2 != nullptr) {
         sub2->doSubstitution(number, toInsertInto, pos - (sub2->getPos() > pluralRuleStart ? lengthOffset : 0), recursionCount, status);
     }
-    if (sub1 != NULL) {
+    if (sub1 != nullptr) {
         sub1->doSubstitution(number, toInsertInto, pos - (sub1->getPos() > pluralRuleStart ? lengthOffset : 0), recursionCount, status);
     }
 }
@@ -852,7 +852,7 @@ NFRule::shouldRollBack(int64_t number) const
     
     
     
-    if ((sub1 != NULL && sub1->isModulusSubstitution()) || (sub2 != NULL && sub2->isModulusSubstitution())) {
+    if ((sub1 != nullptr && sub1->isModulusSubstitution()) || (sub2 != nullptr && sub2->isModulusSubstitution())) {
         int64_t re = util64_pow(radix, exponent);
         return (number % re) == 0 && (baseValue % re) != 0;
     }
@@ -887,7 +887,7 @@ NFRule::shouldRollBack(int64_t number) const
 static void dumpUS(FILE* f, const UnicodeString& us) {
   int len = us.length();
   char* buf = (char *)uprv_malloc((len+1)*sizeof(char)); 
-  if (buf != NULL) {
+  if (buf != nullptr) {
 	  us.extract(0, len, buf);
 	  buf[len] = 0;
 	  fprintf(f, "%s", buf);
@@ -908,8 +908,8 @@ NFRule::doParse(const UnicodeString& text,
     ParsePosition pp;
     UnicodeString workText(text);
 
-    int32_t sub1Pos = sub1 != NULL ? sub1->getPos() : fRuleText.length();
-    int32_t sub2Pos = sub2 != NULL ? sub2->getPos() : fRuleText.length();
+    int32_t sub1Pos = sub1 != nullptr ? sub1->getPos() : fRuleText.length();
+    int32_t sub2Pos = sub2 != nullptr ? sub2->getPos() : fRuleText.length();
 
     
     
@@ -1010,7 +1010,7 @@ NFRule::doParse(const UnicodeString& text,
         
         
         
-        if (pp.getIndex() != 0 || sub1 == NULL) {
+        if (pp.getIndex() != 0 || sub1 == nullptr) {
             start = pp.getIndex();
 
             UnicodeString workText2;
@@ -1030,7 +1030,7 @@ NFRule::doParse(const UnicodeString& text,
             
             
             
-            if (pp2.getIndex() != 0 || sub2 == NULL) {
+            if (pp2.getIndex() != 0 || sub2 == nullptr) {
                 if (prefixLength + pp.getIndex() + pp2.getIndex() > highWaterMark) {
                     highWaterMark = prefixLength + pp.getIndex() + pp2.getIndex();
                     result = partialResult;
@@ -1078,7 +1078,7 @@ NFRule::doParse(const UnicodeString& text,
     
     
     
-    if (isFractionRule && highWaterMark > 0 && sub1 == NULL) {
+    if (isFractionRule && highWaterMark > 0 && sub1 == nullptr) {
         result = 1 / result;
     }
 
@@ -1235,7 +1235,7 @@ NFRule::matchToDelimiter(const UnicodeString& text,
         
         
     }
-    else if (sub == NULL) {
+    else if (sub == nullptr) {
         return _baseValue;
     }
     else {
@@ -1309,7 +1309,7 @@ NFRule::prefixLength(const UnicodeString& str, const UnicodeString& prefix, UErr
         
         
         const RuleBasedCollator* collator = formatter->getCollator();
-        if (collator == NULL) {
+        if (collator == nullptr) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return 0;
         }
@@ -1588,7 +1588,7 @@ NFRule::allIgnorable(const UnicodeString& str, UErrorCode& status) const
     
     if (formatter->isLenient()) {
         const RuleBasedCollator* collator = formatter->getCollator();
-        if (collator == NULL) {
+        if (collator == nullptr) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return false;
         }
@@ -1618,10 +1618,10 @@ NFRule::allIgnorable(const UnicodeString& str, UErrorCode& status) const
 
 void
 NFRule::setDecimalFormatSymbols(const DecimalFormatSymbols& newSymbols, UErrorCode& status) {
-    if (sub1 != NULL) {
+    if (sub1 != nullptr) {
         sub1->setDecimalFormatSymbols(newSymbols, status);
     }
-    if (sub2 != NULL) {
+    if (sub2 != nullptr) {
         sub2->setDecimalFormatSymbols(newSymbols, status);
     }
 }

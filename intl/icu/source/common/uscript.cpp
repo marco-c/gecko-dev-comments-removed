@@ -107,14 +107,27 @@ uscript_getCode(const char* nameOrAbbrOrLocale,
     if(U_FAILURE(*err)) {
         return 0;
     }
-    if(nameOrAbbrOrLocale==NULL ||
-            (fillIn == NULL ? capacity != 0 : capacity < 0)) {
+    if(nameOrAbbrOrLocale==nullptr ||
+            (fillIn == nullptr ? capacity != 0 : capacity < 0)) {
         *err = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
     }
 
     triedCode = false;
-    if(uprv_strchr(nameOrAbbrOrLocale, '-')==NULL && uprv_strchr(nameOrAbbrOrLocale, '_')==NULL ){
+    const char* lastSepPtr = uprv_strrchr(nameOrAbbrOrLocale, '-');
+    if (lastSepPtr==nullptr) {
+        lastSepPtr = uprv_strrchr(nameOrAbbrOrLocale, '_');
+    }
+    
+    
+    
+    
+    
+    
+    
+    if (lastSepPtr==nullptr
+            || (lastSepPtr-nameOrAbbrOrLocale == 3 && uprv_strlen(nameOrAbbrOrLocale) > 8)
+            || (lastSepPtr-nameOrAbbrOrLocale == 7 && uprv_strlen(nameOrAbbrOrLocale) == 11) ) {
         
         UScriptCode code = (UScriptCode) u_getPropertyValueEnum(UCHAR_SCRIPT, nameOrAbbrOrLocale);
         if(code!=USCRIPT_INVALID_CODE) {

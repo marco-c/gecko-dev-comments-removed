@@ -159,6 +159,23 @@ class Config(object):
         if "usePoolBundle" in self.filters_json_data:
             self.use_pool_bundle = self.filters_json_data["usePoolBundle"]
 
+        
+        
+        
+        
+        if self.strategy == "subtractive":
+            filters = self.filters_json_data.setdefault("resourceFilters", [])
+            omit_charset_collations = {
+                "categories": [
+                    "coll_tree"
+                ],
+                "rules": [
+                    "-/collations/big5han",
+                    "-/collations/gb2312han"
+                ]
+            }
+            filters.insert(0, omit_charset_collations)
+
     def _parse_filter_file(self, f):
         
         try:

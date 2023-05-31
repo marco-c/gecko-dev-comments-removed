@@ -151,7 +151,7 @@ U_NAMESPACE_BEGIN
 
 
 
-class U_I18N_API DateIntervalInfo U_FINAL : public UObject {
+class U_I18N_API DateIntervalInfo final : public UObject {
 public:
     
 

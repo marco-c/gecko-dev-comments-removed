@@ -61,7 +61,7 @@ private:
 
 
 
-    UText  fText;
+    UText  fText = UTEXT_INITIALIZER;
 
 #ifndef U_HIDE_INTERNAL_API
 public:
@@ -71,32 +71,38 @@ public:
 
 
 
-    RBBIDataWrapper    *fData;
+    RBBIDataWrapper    *fData = nullptr;
+
 private:
+    
+
+
+
+    UErrorCode      fErrorCode = U_ZERO_ERROR;
 
     
 
 
 
-    int32_t         fPosition;
+    int32_t         fPosition = 0;
 
     
 
 
-    int32_t         fRuleStatusIndex;
+    int32_t         fRuleStatusIndex = 0;
 
     
 
 
     class BreakCache;
-    BreakCache         *fBreakCache;
+    BreakCache         *fBreakCache = nullptr;
 
     
 
 
 
     class DictionaryCache;
-    DictionaryCache *fDictionaryCache;
+    DictionaryCache *fDictionaryCache = nullptr;
 
     
 
@@ -105,7 +111,7 @@ private:
 
 
 
-    UStack              *fLanguageBreakEngines;
+    UStack              *fLanguageBreakEngines = nullptr;
 
     
 
@@ -114,43 +120,43 @@ private:
 
 
 
-    UnhandledEngine     *fUnhandledBreakEngine;
+    UnhandledEngine     *fUnhandledBreakEngine = nullptr;
 
     
 
 
 
 
-    uint32_t            fDictionaryCharCount;
+    uint32_t            fDictionaryCharCount = 0;
 
     
 
 
 
 
-    CharacterIterator  *fCharIter;
+    CharacterIterator  *fCharIter = &fSCharIter;
 
     
 
 
 
 
-    StringCharacterIterator fSCharIter;
+    UCharCharacterIterator fSCharIter {u"", 0};
 
     
 
 
-    UBool           fDone;
+    bool           fDone = false;
 
     
 
 
-    int32_t *fLookAheadMatches;
+    int32_t *fLookAheadMatches = nullptr;
 
     
 
 
-    UBool fIsPhraseBreaking;
+    UBool fIsPhraseBreaking = false;
 
     
     
@@ -188,9 +194,18 @@ private:
     
     friend class BreakIterator;
 
+    
+
+
+
+
+
+    RuleBasedBreakIterator(UErrorCode *status);
+
 public:
 
     
+
 
 
 
@@ -289,7 +304,9 @@ public:
 
 
 
-    inline bool operator!=(const BreakIterator& that) const;
+    inline bool operator!=(const BreakIterator& that) const {
+        return !operator==(that);
+    }
 
     
 
@@ -322,7 +339,6 @@ public:
     
 
     
-
 
 
 
@@ -652,12 +668,6 @@ private:
 
 
 
-    void init(UErrorCode &status);
-
-    
-
-
-
 
 
 
@@ -725,16 +735,6 @@ private:
     void dumpTables();
 #endif  
 };
-
-
-
-
-
-
-
-inline bool RuleBasedBreakIterator::operator!=(const BreakIterator& that) const {
-    return !operator==(that);
-}
 
 U_NAMESPACE_END
 

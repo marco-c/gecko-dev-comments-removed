@@ -323,6 +323,16 @@
 #   define UCONFIG_NO_NORMALIZATION 0
 #endif
 
+
+
+
+
+
+
+#ifndef UCONFIG_USE_ML_PHRASE_BREAKING
+#   define UCONFIG_USE_ML_PHRASE_BREAKING 0
+#endif
+
 #if UCONFIG_NO_NORMALIZATION
     
     

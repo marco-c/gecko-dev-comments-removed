@@ -74,7 +74,7 @@ class U_COMMON_API ICUServiceKey : public UObject {
   const UnicodeString _id;
 
  protected:
-  static const UChar PREFIX_DELIMITER;
+  static const char16_t PREFIX_DELIMITER;
 
  public:
 
@@ -830,7 +830,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual void reset(void);
+    virtual void reset();
 
     
 
@@ -838,7 +838,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual UBool isDefault(void) const;
+    virtual UBool isDefault() const;
 
     
 
@@ -895,7 +895,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual void reInitializeFactories(void);
+    virtual void reInitializeFactories();
 
     
 
@@ -918,7 +918,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    virtual void clearCaches(void);
+    virtual void clearCaches();
 
     
 
@@ -955,7 +955,7 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    void clearServiceCache(void);
+    void clearServiceCache();
 
     
 
@@ -972,14 +972,14 @@ class U_COMMON_API ICUService : public ICUNotifier {
 
 
 
-    int32_t getTimestamp(void) const;
+    int32_t getTimestamp() const;
 
     
 
 
 
 
-    int32_t countFactories(void) const;
+    int32_t countFactories() const;
 
 private:
 

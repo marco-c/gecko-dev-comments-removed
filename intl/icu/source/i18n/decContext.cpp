@@ -256,7 +256,7 @@ U_CAPI decContext *  U_EXPORT2 uprv_decContextSetStatusFromString(decContext *co
     return uprv_decContextSetStatus(context, DEC_Underflow);
   if (strcmp(string, DEC_Condition_ZE)==0)
     return context;
-  return NULL;  
+  return nullptr;  
   } 
 
 
@@ -307,7 +307,7 @@ U_CAPI decContext *  U_EXPORT2 uprv_decContextSetStatusFromStringQuiet(decContex
     return uprv_decContextSetStatusQuiet(context, DEC_Underflow);
   if (strcmp(string, DEC_Condition_ZE)==0)
     return context;
-  return NULL;  
+  return nullptr;  
   } 
 
 

@@ -27,7 +27,7 @@ UVector64::UVector64(UErrorCode &status) :
     count(0),
     capacity(0),
     maxCapacity(0),
-    elements(NULL)
+    elements(nullptr)
 {
     _init(DEFAULT_CAPACITY, status);
 }
@@ -111,7 +111,7 @@ void UVector64::insertElementAt(int64_t elem, int32_t index, UErrorCode &status)
     
 }
 
-void UVector64::removeAllElements(void) {
+void UVector64::removeAllElements() {
     count = 0;
 }
 
@@ -147,7 +147,7 @@ UBool UVector64::expandCapacity(int32_t minimumCapacity, UErrorCode &status) {
         return false;
     }
     int64_t* newElems = (int64_t *)uprv_realloc(elements, sizeof(int64_t)*newCap);
-    if (newElems == NULL) {
+    if (newElems == nullptr) {
         
         status = U_MEMORY_ALLOCATION_ERROR;
         return false;
@@ -175,7 +175,7 @@ void UVector64::setMaxCapacity(int32_t limit) {
     
     
     int64_t* newElems = (int64_t *)uprv_realloc(elements, sizeof(int64_t)*maxCapacity);
-    if (newElems == NULL) {
+    if (newElems == nullptr) {
         
         
         return;

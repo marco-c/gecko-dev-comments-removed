@@ -423,17 +423,6 @@ public:
 
     virtual int32_t getActualMaximum(UCalendarDateFields field, UErrorCode& status) const override;
 
-    
-
-
-
-
-
-
-
-
-    virtual UBool inDaylightTime(UErrorCode& status) const override;
-
 public:
 
     

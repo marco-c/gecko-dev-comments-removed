@@ -118,7 +118,7 @@ class UVector32;
 
 
 
-class U_I18N_API CollationElementIterator U_FINAL : public UObject {
+class U_I18N_API CollationElementIterator final : public UObject {
 public: 
 
     

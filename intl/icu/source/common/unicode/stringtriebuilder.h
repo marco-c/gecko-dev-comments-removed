@@ -202,7 +202,7 @@ protected:
         Node(int32_t initialHash) : hash(initialHash), offset(0) {}
         inline int32_t hashCode() const { return hash; }
         
-        static inline int32_t hashCode(const Node *node) { return node==NULL ? 0 : node->hashCode(); }
+        static inline int32_t hashCode(const Node *node) { return node==nullptr ? 0 : node->hashCode(); }
         
         virtual bool operator==(const Node &other) const;
         inline bool operator!=(const Node &other) const { return !operator==(other); }
@@ -347,7 +347,7 @@ protected:
         
         void add(int32_t c, int32_t value) {
             units[length]=(char16_t)c;
-            equal[length]=NULL;
+            equal[length]=nullptr;
             values[length]=value;
             ++length;
             hash=(hash*37u+c)*37u+value;

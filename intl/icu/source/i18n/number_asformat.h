@@ -34,37 +34,37 @@ class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
     
 
 
-    ~LocalizedNumberFormatterAsFormat() U_OVERRIDE;
+    ~LocalizedNumberFormatterAsFormat() override;
 
     
 
 
-    bool operator==(const Format& other) const U_OVERRIDE;
+    bool operator==(const Format& other) const override;
 
     
 
 
-    LocalizedNumberFormatterAsFormat* clone() const U_OVERRIDE;
+    LocalizedNumberFormatterAsFormat* clone() const override;
 
     
 
 
 
     UnicodeString& format(const Formattable& obj, UnicodeString& appendTo, FieldPosition& pos,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
     
 
 
 
     UnicodeString& format(const Formattable& obj, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
     
 
 
     void parseObject(const UnicodeString& source, Formattable& result,
-                     ParsePosition& parse_pos) const U_OVERRIDE;
+                     ParsePosition& parse_pos) const override;
 
     
 
@@ -86,7 +86,7 @@ class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
 
     const LocalizedNumberFormatter& getNumberFormatter() const;
 
-    UClassID getDynamicClassID() const U_OVERRIDE;
+    UClassID getDynamicClassID() const override;
     static UClassID U_EXPORT2 getStaticClassID();
 
   private:

@@ -79,14 +79,22 @@ class NumberFormatterImpl : public UMemory {
 
 
 
-    static int32_t writeNumber(const MicroProps& micros, DecimalQuantity& quantity,
-                               FormattedStringBuilder& string, int32_t index, UErrorCode& status);
+    static int32_t writeNumber(
+        const SimpleMicroProps& micros,
+        DecimalQuantity& quantity,
+        FormattedStringBuilder& string,
+        int32_t index,
+        UErrorCode& status);
 
     
 
 
-    static int32_t writeAffixes(const MicroProps& micros, FormattedStringBuilder& string, int32_t start,
-                                int32_t end, UErrorCode& status);
+    static int32_t writeAffixes(
+        const MicroProps& micros,
+        FormattedStringBuilder& string,
+        int32_t start,
+        int32_t end,
+        UErrorCode& status);
 
   private:
     
@@ -146,12 +154,20 @@ class NumberFormatterImpl : public UMemory {
     macrosToMicroGenerator(const MacroProps &macros, bool safe, UErrorCode &status);
 
     static int32_t
-    writeIntegerDigits(const MicroProps &micros, DecimalQuantity &quantity, FormattedStringBuilder &string,
-                       int32_t index, UErrorCode &status);
+    writeIntegerDigits(
+        const SimpleMicroProps& micros,
+        DecimalQuantity &quantity,
+        FormattedStringBuilder &string,
+        int32_t index,
+        UErrorCode &status);
 
     static int32_t
-    writeFractionDigits(const MicroProps &micros, DecimalQuantity &quantity, FormattedStringBuilder &string,
-                        int32_t index, UErrorCode &status);
+    writeFractionDigits(
+        const SimpleMicroProps& micros,
+        DecimalQuantity &quantity,
+        FormattedStringBuilder &string,
+        int32_t index,
+        UErrorCode &status);
 };
 
 }  

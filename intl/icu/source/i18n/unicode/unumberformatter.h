@@ -9,9 +9,8 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/parseerr.h"
-#include "unicode/ufieldpositer.h"
-#include "unicode/umisc.h"
-#include "unicode/uformattedvalue.h"
+#include "unicode/unumberoptions.h"
+#include "unicode/uformattednumber.h"
 
 
 
@@ -262,107 +261,6 @@ typedef enum UNumberUnitWidth {
 
 
 
-
-
-
-
-
-
-
-typedef enum UNumberGroupingStrategy {
-    
-
-
-
-
-            UNUM_GROUPING_OFF,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-            UNUM_GROUPING_MIN2,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-            UNUM_GROUPING_AUTO,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-            UNUM_GROUPING_ON_ALIGNED,
-
-    
-
-
-
-
-
-            UNUM_GROUPING_THOUSANDS
-
-#ifndef U_HIDE_INTERNAL_API
-    ,
-    
-
-
-
-
-            UNUM_GROUPING_COUNT
-#endif  
-
-} UNumberGroupingStrategy;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 typedef enum UNumberSignDisplay {
     
 
@@ -528,16 +426,6 @@ struct UNumberFormatter;
 
 typedef struct UNumberFormatter UNumberFormatter;
 
-struct UFormattedNumber;
-
-
-
-
-
-
-
-typedef struct UFormattedNumber UFormattedNumber;
-
 
 
 
@@ -583,17 +471,6 @@ U_CAPI UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocaleWithError(
        const UChar* skeleton, int32_t skeletonLen, const char* locale, UParseError* perror, UErrorCode* ec);
 
-
-
-
-
-
-
-
-
-
-U_CAPI UFormattedNumber* U_EXPORT2
-unumf_openResult(UErrorCode* ec);
 
 
 
@@ -667,147 +544,9 @@ unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32
 
 
 
-
-
-
-
-
-
-U_CAPI const UFormattedValue* U_EXPORT2
-unumf_resultAsValue(const UFormattedNumber* uresult, UErrorCode* ec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t bufferCapacity,
-                     UErrorCode* ec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI UBool U_EXPORT2
-unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* ufpos, UErrorCode* ec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI void U_EXPORT2
-unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPositionIterator* ufpositer,
-                                 UErrorCode* ec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-unumf_resultToDecimalNumber(
-       const UFormattedNumber* uresult,
-       char* dest,
-       int32_t destCapacity,
-       UErrorCode* ec);
-
-
-
-
-
-
-
-
 U_CAPI void U_EXPORT2
 unumf_close(UNumberFormatter* uformatter);
 
-
-
-
-
-
-
-
-U_CAPI void U_EXPORT2
-unumf_closeResult(UFormattedNumber* uresult);
 
 
 #if U_SHOW_CPLUSPLUS_API
@@ -829,23 +568,6 @@ U_NAMESPACE_BEGIN
 
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUNumberFormatterPointer, UNumberFormatter, unumf_close);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedNumberPointer, UFormattedNumber, unumf_closeResult);
 
 U_NAMESPACE_END
 #endif 

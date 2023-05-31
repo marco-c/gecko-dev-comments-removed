@@ -458,7 +458,7 @@ protected:
 
 
     SearchIterator(const UnicodeString &text, 
-                         BreakIterator *breakiter = NULL);
+                         BreakIterator *breakiter = nullptr);
 
     
 
@@ -479,7 +479,7 @@ protected:
 
 
 
-    SearchIterator(CharacterIterator &text, BreakIterator *breakiter = NULL);
+    SearchIterator(CharacterIterator &text, BreakIterator *breakiter = nullptr);
 
     
 

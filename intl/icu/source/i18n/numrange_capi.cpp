@@ -83,7 +83,7 @@ const UFormattedNumberRangeData* number::impl::validateUFormattedNumberRange(
 
 U_CAPI UNumberRangeFormatter* U_EXPORT2
 unumrf_openForSkeletonWithCollapseAndIdentityFallback(
-        const UChar* skeleton,
+        const char16_t* skeleton,
         int32_t skeletonLen,
         UNumberRangeCollapse collapse,
         UNumberRangeIdentityFallback identityFallback,
@@ -97,8 +97,9 @@ unumrf_openForSkeletonWithCollapseAndIdentityFallback(
     }
     
     UnicodeString skeletonString(skeletonLen == -1, skeleton, skeletonLen);
+    UParseError tempParseError;
     impl->fFormatter = NumberRangeFormatter::withLocale(locale)
-        .numberFormatterBoth(NumberFormatter::forSkeleton(skeletonString, *perror, *ec))
+        .numberFormatterBoth(NumberFormatter::forSkeleton(skeletonString, (perror == nullptr) ? tempParseError : *perror, *ec))
         .collapse(collapse)
         .identityFallback(identityFallback);
     return impl->exportForC();

@@ -53,8 +53,8 @@ static UOption options[]={
     UOPTION_HELP_H,             
     UOPTION_HELP_QUESTION_MARK, 
     UOPTION_VERBOSE,            
-    { "rules", NULL, NULL, NULL, 'r', UOPT_REQUIRES_ARG, 0 },   
-    { "out",   NULL, NULL, NULL, 'o', UOPT_REQUIRES_ARG, 0 },   
+    { "rules", nullptr, nullptr, nullptr, 'r', UOPT_REQUIRES_ARG, 0 },   
+    { "out",   nullptr, nullptr, nullptr, 'o', UOPT_REQUIRES_ARG, 0 },   
     UOPTION_ICUDATADIR,         
     UOPTION_DESTDIR,            
     UOPTION_COPYRIGHT,          
@@ -131,8 +131,8 @@ int  main(int argc, char **argv) {
     UErrorCode  status = U_ZERO_ERROR;
     const char *ruleFileName;
     const char *outFileName;
-    const char *outDir = NULL;
-    const char *copyright = NULL;
+    const char *outDir = nullptr;
+    const char *copyright = nullptr;
 
     
     
@@ -179,11 +179,11 @@ int  main(int argc, char **argv) {
     char msg[1024];
 
     
-    sprintf(msg, "genbrk writes dummy %s because of UCONFIG_NO_BREAK_ITERATION and/or UCONFIG_NO_FILE_IO, see uconfig.h", outFileName);
+    snprintf(msg, sizeof(msg), "genbrk writes dummy %s because of UCONFIG_NO_BREAK_ITERATION and/or UCONFIG_NO_FILE_IO, see uconfig.h", outFileName);
     fprintf(stderr, "%s\n", msg);
 
     
-    pData = udata_create(outDir, NULL, outFileName, &dummyDataInfo, NULL, &status);
+    pData = udata_create(outDir, nullptr, outFileName, &dummyDataInfo, nullptr, &status);
     udata_writeBlock(pData, msg, strlen(msg));
     udata_finish(pData, &status);
     return (int)status;
@@ -234,7 +234,7 @@ int  main(int argc, char **argv) {
     if (U_FAILURE(status)) {
         exit(status);
     }
-    if(encoding!=NULL ){
+    if(encoding!=nullptr ){
         ruleSourceC  += signatureLength;
         ruleFileSize -= signatureLength;
     }
@@ -254,7 +254,7 @@ int  main(int argc, char **argv) {
     
     
     uint32_t destCap = ucnv_toUChars(conv,
-                       NULL,           
+                       nullptr,           
                        0,              
                        ruleSourceC,
                        ruleFileSize,
@@ -265,7 +265,7 @@ int  main(int argc, char **argv) {
     }
 
     status = U_ZERO_ERROR;
-    UChar *ruleSourceU = new UChar[destCap+1];
+    char16_t *ruleSourceU = new char16_t[destCap+1];
     ucnv_toUChars(conv,
                   ruleSourceU,     
                   destCap+1,
@@ -314,7 +314,7 @@ int  main(int argc, char **argv) {
     
     size_t bytesWritten;
     UNewDataMemory *pData;
-    pData = udata_create(outDir, NULL, outFileName, &(dh.info), copyright, &status);
+    pData = udata_create(outDir, nullptr, outFileName, &(dh.info), copyright, &status);
     if(U_FAILURE(status)) {
         fprintf(stderr, "genbrk: Could not open output file \"%s\", \"%s\"\n", 
                          outFileName, u_errorName(status));

@@ -119,8 +119,8 @@ typedef void *U_CALLCONV UMemAllocFn(const void *context, size_t size);
 
 
 
-typedef void *U_CALLCONV UMemReallocFn(const void *context, void *mem, size_t size);
 
+typedef void *U_CALLCONV UMemReallocFn(const void *context, void *mem, size_t size);
 
 
 

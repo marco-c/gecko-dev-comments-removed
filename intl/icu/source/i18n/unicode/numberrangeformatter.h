@@ -388,6 +388,13 @@ class U_I18N_API NumberRangeFormatterSettings {
 
 
 
+#ifndef _MSC_VER
+extern template class NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>;
+extern template class NumberRangeFormatterSettings<LocalizedNumberRangeFormatter>;
+#endif
+
+
+
 
 
 
@@ -438,7 +445,7 @@ class U_I18N_API UnlocalizedNumberRangeFormatter
 
 
 
-    UnlocalizedNumberRangeFormatter(UnlocalizedNumberRangeFormatter&& src) U_NOEXCEPT;
+    UnlocalizedNumberRangeFormatter(UnlocalizedNumberRangeFormatter&& src) noexcept;
 
     
 
@@ -451,14 +458,14 @@ class U_I18N_API UnlocalizedNumberRangeFormatter
 
 
 
-    UnlocalizedNumberRangeFormatter& operator=(UnlocalizedNumberRangeFormatter&& src) U_NOEXCEPT;
+    UnlocalizedNumberRangeFormatter& operator=(UnlocalizedNumberRangeFormatter&& src) noexcept;
 
   private:
     explicit UnlocalizedNumberRangeFormatter(
             const NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>& other);
 
     explicit UnlocalizedNumberRangeFormatter(
-            NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>&& src) U_NOEXCEPT;
+            NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>&& src) noexcept;
 
     
     friend class NumberRangeFormatterSettings<UnlocalizedNumberRangeFormatter>;
@@ -512,7 +519,7 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
 
 
-    LocalizedNumberRangeFormatter(LocalizedNumberRangeFormatter&& src) U_NOEXCEPT;
+    LocalizedNumberRangeFormatter(LocalizedNumberRangeFormatter&& src) noexcept;
 
     
 
@@ -525,7 +532,7 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
 
 
-    LocalizedNumberRangeFormatter& operator=(LocalizedNumberRangeFormatter&& src) U_NOEXCEPT;
+    LocalizedNumberRangeFormatter& operator=(LocalizedNumberRangeFormatter&& src) noexcept;
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -563,7 +570,7 @@ class U_I18N_API LocalizedNumberRangeFormatter
         const NumberRangeFormatterSettings<LocalizedNumberRangeFormatter>& other);
 
     explicit LocalizedNumberRangeFormatter(
-        NumberRangeFormatterSettings<LocalizedNumberRangeFormatter>&& src) U_NOEXCEPT;
+        NumberRangeFormatterSettings<LocalizedNumberRangeFormatter>&& src) noexcept;
 
     LocalizedNumberRangeFormatter(const impl::RangeMacroProps &macros, const Locale &locale);
 
@@ -595,11 +602,11 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
 
 
-    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toString(UErrorCode& status) const override;
 
     
     
-    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toTempString(UErrorCode& status) const override;
 
     
     
@@ -609,11 +616,11 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
 
 
-    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const U_OVERRIDE;
+    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const override;
 
     
     
-    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const override;
 
     
 
@@ -670,14 +677,14 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
 
 
-    FormattedNumberRange(FormattedNumberRange&& src) U_NOEXCEPT;
+    FormattedNumberRange(FormattedNumberRange&& src) noexcept;
 
     
 
 
 
 
-    FormattedNumberRange& operator=(FormattedNumberRange&& src) U_NOEXCEPT;
+    FormattedNumberRange& operator=(FormattedNumberRange&& src) noexcept;
 
     
 

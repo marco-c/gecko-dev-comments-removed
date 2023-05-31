@@ -58,6 +58,7 @@ static const int32_t kPersianCalendarLimits[UCAL_FIELD_COUNT][4] = {
     {-1,-1,-1,-1}, 
     {-1,-1,-1,-1}, 
     {-1,-1,-1,-1}, 
+    {        0,        0,       11,       11}, 
 };
 
 U_NAMESPACE_BEGIN
@@ -229,21 +230,26 @@ void PersianCalendar::handleComputeFields(int32_t julianDay, UErrorCode &) {
     internalSet(UCAL_YEAR, year);
     internalSet(UCAL_EXTENDED_YEAR, year);
     internalSet(UCAL_MONTH, month);
+    internalSet(UCAL_ORDINAL_MONTH, month);
     internalSet(UCAL_DAY_OF_MONTH, dayOfMonth);
     internalSet(UCAL_DAY_OF_YEAR, dayOfYear);
 }    
 
-UBool
-PersianCalendar::inDaylightTime(UErrorCode& status) const
+constexpr uint32_t kPersianRelatedYearDiff = 622;
+
+int32_t PersianCalendar::getRelatedYear(UErrorCode &status) const
+{
+    int32_t year = get(UCAL_EXTENDED_YEAR, status);
+    if (U_FAILURE(status)) {
+        return 0;
+    }
+    return year + kPersianRelatedYearDiff;
+}
+
+void PersianCalendar::setRelatedYear(int32_t year)
 {
     
-    if (U_FAILURE(status) || !getTimeZone().useDaylightTime()) 
-        return false;
-
-    
-    ((PersianCalendar*)this)->complete(status); 
-
-    return (UBool)(U_SUCCESS(status) ? (internalGet(UCAL_DST_OFFSET) != 0) : false);
+    set(UCAL_EXTENDED_YEAR, year - kPersianRelatedYearDiff);
 }
 
 

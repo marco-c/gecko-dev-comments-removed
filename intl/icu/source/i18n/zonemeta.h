@@ -19,7 +19,7 @@
 U_NAMESPACE_BEGIN
 
 struct OlsonToMetaMappingEntry : public UMemory {
-    const UChar *mzid; 
+    const char16_t *mzid; 
     UDate from;
     UDate to;
 };
@@ -47,12 +47,12 @@ public:
 
 
 
-    static const UChar* U_EXPORT2 getCanonicalCLDRID(const UnicodeString &tzid, UErrorCode& status);
+    static const char16_t* U_EXPORT2 getCanonicalCLDRID(const UnicodeString &tzid, UErrorCode& status);
 
     
 
 
-    static const UChar* U_EXPORT2 getCanonicalCLDRID(const TimeZone& tz);
+    static const char16_t* U_EXPORT2 getCanonicalCLDRID(const TimeZone& tz);
 
     
 
@@ -62,7 +62,7 @@ public:
 
 
 
-    static UnicodeString& U_EXPORT2 getCanonicalCountry(const UnicodeString &tzid, UnicodeString &country, UBool *isPrimary = NULL);
+    static UnicodeString& U_EXPORT2 getCanonicalCountry(const UnicodeString &tzid, UnicodeString &country, UBool *isPrimary = nullptr);
 
     
 
@@ -81,13 +81,13 @@ public:
 
 
 
-    static const UChar* U_EXPORT2 findTimeZoneID(const UnicodeString& tzid);
+    static const char16_t* U_EXPORT2 findTimeZoneID(const UnicodeString& tzid);
 
     
 
 
 
-    static const UChar* U_EXPORT2 findMetaZoneID(const UnicodeString& mzid);
+    static const char16_t* U_EXPORT2 findMetaZoneID(const UnicodeString& mzid);
 
     
 
@@ -102,7 +102,7 @@ public:
 
 
 
-    static const UChar* U_EXPORT2 getShortID(const TimeZone& tz);
+    static const char16_t* U_EXPORT2 getShortID(const TimeZone& tz);
 
     
 
@@ -110,13 +110,13 @@ public:
 
 
 
-    static const UChar* U_EXPORT2 getShortID(const UnicodeString& id);
+    static const char16_t* U_EXPORT2 getShortID(const UnicodeString& id);
 
 private:
     ZoneMeta() = delete; 
     static UVector* createMetazoneMappings(const UnicodeString &tzid);
     static UnicodeString& formatCustomID(uint8_t hour, uint8_t min, uint8_t sec, UBool negative, UnicodeString& id);
-    static const UChar* getShortIDFromCanonical(const UChar* canonicalID);
+    static const char16_t* getShortIDFromCanonical(const char16_t* canonicalID);
 };
 
 U_NAMESPACE_END

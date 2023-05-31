@@ -81,7 +81,7 @@ class Hashtable;
 
 
 
-class U_I18N_API DateFormatSymbols U_FINAL : public UObject  {
+class U_I18N_API DateFormatSymbols final : public UObject  {
 public:
     
 

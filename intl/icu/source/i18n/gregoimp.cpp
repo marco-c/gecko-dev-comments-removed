@@ -37,11 +37,13 @@ int32_t ClockMath::floorDivide(double numerator, int32_t denominator,
     
     
     double quotient = uprv_floor(numerator / denominator);
-    
-    
-    
-    
-    *remainder = (int32_t) (uprv_floor(numerator) - (quotient * denominator));
+    if (remainder != nullptr) {
+      
+      
+      
+      
+      *remainder = (int32_t) (uprv_floor(numerator) - (quotient * denominator));
+    }
     return (int32_t) quotient;
 }
 
@@ -50,16 +52,16 @@ double ClockMath::floorDivide(double dividend, double divisor,
     
     U_ASSERT(divisor > 0);
     double quotient = floorDivide(dividend, divisor);
-    *remainder = dividend - (quotient * divisor);
+    double r = dividend - (quotient * divisor);
     
     
     
-    if (*remainder < 0 || *remainder >= divisor) {
+    if (r < 0 || r >= divisor) {
         
         
         
         double q = quotient;
-        quotient += (*remainder < 0) ? -1 : +1;
+        quotient += (r < 0) ? -1 : +1;
         if (q == quotient) {
             
             
@@ -70,12 +72,15 @@ double ClockMath::floorDivide(double dividend, double divisor,
             
             
             
-            *remainder = 0;
+            r = 0;
         } else {
-            *remainder = dividend - (quotient * divisor);
+            r = dividend - (quotient * divisor);
         }
     }
-    U_ASSERT(0 <= *remainder && *remainder < divisor);
+    U_ASSERT(0 <= r && r < divisor);
+    if (remainder != nullptr) {
+        *remainder = r;
+    }
     return quotient;
 }
 

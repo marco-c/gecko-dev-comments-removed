@@ -461,6 +461,13 @@
 #endif
 
 
+#if defined(__clang__)
+#define UPRV_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#else
+#define UPRV_NO_SANITIZE_UNDEFINED
+#endif
+
+
 
 
 
@@ -507,26 +514,6 @@
 #else
     
 #   define U_CPLUSPLUS_VERSION 1
-#endif
-
-#if (U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390) && defined(__cplusplus) &&(U_CPLUSPLUS_VERSION < 11)
-
-namespace std {
-  typedef decltype(nullptr) nullptr_t;
-};
-#endif
-
-
-
-
-
-
-
-
-#ifdef U_NOEXCEPT
-    
-#else
-#   define U_NOEXCEPT noexcept
 #endif
 
 
@@ -765,12 +752,6 @@ namespace std {
     
 #else
     
-
-
-
-
-
-
 
 
 

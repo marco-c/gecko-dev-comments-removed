@@ -164,12 +164,14 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
         if (i < n - 1) {
             
             
-            int64_t flooredQuantity = static_cast<int64_t>(floor(quantity * (1 + DBL_EPSILON)));
+            int64_t flooredQuantity;
             if (uprv_isNaN(quantity)) {
                 
                 
                 
                 flooredQuantity = 0;
+            } else {
+                flooredQuantity = static_cast<int64_t>(floor(quantity * (1 + DBL_EPSILON)));
             }
             intValues[i] = flooredQuantity;
 

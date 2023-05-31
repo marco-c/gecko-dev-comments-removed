@@ -58,32 +58,32 @@ U_NAMESPACE_BEGIN
 
 
 
-void * U_EXPORT2 UMemory::operator new(size_t size) U_NOEXCEPT {
+void * U_EXPORT2 UMemory::operator new(size_t size) noexcept {
     return uprv_malloc(size);
 }
 
-void U_EXPORT2 UMemory::operator delete(void *p) U_NOEXCEPT {
-    if(p!=NULL) {
+void U_EXPORT2 UMemory::operator delete(void *p) noexcept {
+    if(p!=nullptr) {
         uprv_free(p);
     }
 }
 
-void * U_EXPORT2 UMemory::operator new[](size_t size) U_NOEXCEPT {
+void * U_EXPORT2 UMemory::operator new[](size_t size) noexcept {
     return uprv_malloc(size);
 }
 
-void U_EXPORT2 UMemory::operator delete[](void *p) U_NOEXCEPT {
-    if(p!=NULL) {
+void U_EXPORT2 UMemory::operator delete[](void *p) noexcept {
+    if(p!=nullptr) {
         uprv_free(p);
     }
 }
 
 #if U_HAVE_DEBUG_LOCATION_NEW
-void * U_EXPORT2 UMemory::operator new(size_t size, const char* , int ) U_NOEXCEPT {
+void * U_EXPORT2 UMemory::operator new(size_t size, const char* , int ) noexcept {
     return UMemory::operator new(size);
 }
 
-void U_EXPORT2 UMemory::operator delete(void* p, const char* , int ) U_NOEXCEPT {
+void U_EXPORT2 UMemory::operator delete(void* p, const char* , int ) noexcept {
     UMemory::operator delete(p);
 }
 #endif 
@@ -93,7 +93,7 @@ void U_EXPORT2 UMemory::operator delete(void* p, const char* , int ) U_NOEXCEPT 
 
 UObject::~UObject() {}
 
-UClassID UObject::getDynamicClassID() const { return NULL; }
+UClassID UObject::getDynamicClassID() const { return nullptr; }
 
 U_NAMESPACE_END
 

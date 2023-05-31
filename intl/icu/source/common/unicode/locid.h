@@ -294,7 +294,7 @@ public:
 
 
 
-    Locale(Locale&& other) U_NOEXCEPT;
+    Locale(Locale&& other) noexcept;
 
     
 
@@ -320,7 +320,7 @@ public:
 
 
 
-    Locale& operator=(Locale&& other) U_NOEXCEPT;
+    Locale& operator=(Locale&& other) noexcept;
 
     
 

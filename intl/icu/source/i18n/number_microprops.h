@@ -67,25 +67,32 @@ class IntMeasures : public MaybeStackArray<int64_t, 2> {
     UErrorCode status = U_ZERO_ERROR;
 };
 
+struct SimpleMicroProps : public UMemory {
+    Grouper grouping;
+    bool useCurrency = false;
+    UNumberDecimalSeparatorDisplay decimal = UNUM_DECIMAL_SEPARATOR_AUTO;
+
+    
+    UnicodeString currencyAsDecimal = ICU_Utility::makeBogusString();
+
+    
+    const DecimalFormatSymbols* symbols = nullptr;
+};
+
 
 
 
 
 
 struct MicroProps : public MicroPropsGenerator {
+    SimpleMicroProps simple;
 
     
     RoundingImpl rounder;
-    Grouper grouping;
     Padder padding;
     IntegerWidth integerWidth;
     UNumberSignDisplay sign;
-    UNumberDecimalSeparatorDisplay decimal;
-    bool useCurrency;
     char nsName[9];
-
-    
-    UnicodeString currencyAsDecimal = ICU_Utility::makeBogusString();
 
     
     
@@ -93,7 +100,6 @@ struct MicroProps : public MicroPropsGenerator {
     const char *gender;
 
     
-    const DecimalFormatSymbols* symbols;
 
     
     
@@ -162,7 +168,7 @@ struct MicroProps : public MicroPropsGenerator {
 
 
     void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
-                         UErrorCode &status) const U_OVERRIDE {
+                         UErrorCode &status) const override {
         (void) quantity;
         (void) status;
         if (this == &micros) {

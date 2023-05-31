@@ -91,7 +91,7 @@ public:
 
 
 
-    UChar variablesBase;
+    char16_t variablesBase;
 
     
 

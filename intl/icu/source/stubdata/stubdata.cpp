@@ -19,10 +19,9 @@
 
 
 
-
 #include "stubdata.h"
 
-extern "C" U_EXPORT const ICU_Data_Header U_ICUDATA_ENTRY_POINT = {
+extern "C" U_EXPORT const ICU_Data_Header U_ICUDATA_ENTRY_POINT alignas(16) = {
     32,          
     0xda,        
     0x27,        
@@ -37,22 +36,17 @@ extern "C" U_EXPORT const ICU_Data_Header U_ICUDATA_ENTRY_POINT = {
 #endif
 
         U_CHARSET_FAMILY,
-        sizeof(UChar),   
+        sizeof(char16_t),
         0,               
-        {                
-           0x54, 0x6f, 0x43, 0x50}, 
-           {1, 0, 0, 0},   
-           {0, 0, 0, 0}    
+        {0x54, 0x6f, 0x43, 0x50},   
+        {1, 0, 0, 0},   
+        {0, 0, 0, 0}    
     },
-    {0,0,0,0,0,0,0,0},   
+    { 's', 't', 'u', 'b', 'd', 'a', 't', 'a' },  
     0,                  
     0,                  
     {                   
-
-          0 , 0 , 0, 0  
+        0 , 0           
                         
-
     }
 };
-
-

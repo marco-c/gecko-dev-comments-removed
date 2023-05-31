@@ -870,7 +870,7 @@ public:
 
 
 
-    virtual UBool inDaylightTime(UErrorCode& status) const = 0;
+    virtual UBool inDaylightTime(UErrorCode& status) const;
 
     
 
@@ -1349,6 +1349,66 @@ public:
 
     virtual UBool isWeekend(void) const;
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual bool inTemporalLeapYear(UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual const char* getTemporalMonthCode(UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual void setTemporalMonthCode(const char* temporalMonth, UErrorCode& status);
+
+#endif  
+
 protected:
 
      
@@ -1491,6 +1551,30 @@ protected:
     inline int32_t internalGet(UCalendarDateFields field) const {return fFields[field];}
 #endif  
 
+    
+
+
+
+
+
+
+
+
+    virtual int32_t internalGetMonth() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual int32_t internalGetMonth(int32_t defaultValue) const;
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1568,7 +1652,6 @@ protected:
 
 
     virtual int32_t getLimit(UCalendarDateFields field, ELimitType limitType) const;
-
 
     
 
@@ -1727,6 +1810,9 @@ protected:
 
 
 
+    static const UFieldResolutionTable kMonthPrecedence[];
+
+    
 
 
 
@@ -1749,7 +1835,11 @@ protected:
 
 
 
-    UCalendarDateFields resolveFields(const UFieldResolutionTable *precedenceTable);
+
+
+
+
+    UCalendarDateFields resolveFields(const UFieldResolutionTable *precedenceTable) const;
 #endif  
 
 

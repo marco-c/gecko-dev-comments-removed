@@ -30,15 +30,6 @@ public:
 
 
 
-    enum EEraType {
-        AMETE_MIHRET_ERA,
-        AMETE_ALEM_ERA
-    };
-
-    
-
-
-
     enum EMonths {
         
 
@@ -122,13 +113,13 @@ public:
 
 
 
-    EthiopicCalendar(const Locale& aLocale, UErrorCode& success, EEraType type = AMETE_MIHRET_ERA);
+    EthiopicCalendar(const Locale& aLocale, UErrorCode& success);
 
     
 
 
 
-    EthiopicCalendar(const EthiopicCalendar& other);
+    EthiopicCalendar(const EthiopicCalendar& other) = default;
 
     
 
@@ -155,14 +146,14 @@ public:
 
 
 
-    void setAmeteAlemEra (UBool onOff);
+    virtual int32_t getRelatedYear(UErrorCode &status) const override;
 
     
 
 
 
 
-    UBool isAmeteAlemEra() const;
+    virtual void setRelatedYear(int32_t year) override;
 
 protected:
     
@@ -173,6 +164,11 @@ protected:
 
 
 
+
+
+
+
+
     virtual int32_t handleGetExtendedYear() override;
 
     
@@ -180,12 +176,6 @@ protected:
 
 
     virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
-
-    
-
-
-
-    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     
 
@@ -206,18 +196,6 @@ protected:
 
     virtual int32_t getJDEpochOffset() const override;
 
-private:
-    
-
-
-
-
-
-
-
-
-    EEraType eraType;
-
 public:
     
 
@@ -229,7 +207,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -242,7 +220,7 @@ public:
 
 
 
-    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);  
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID();  
 
 #if 0
 
@@ -264,6 +242,123 @@ public:
 
     int32_t ethiopicToJD(int32_t year, int32_t month, int32_t day);
 #endif
+};
+
+
+
+
+
+class EthiopicAmeteAlemCalendar : public EthiopicCalendar {
+
+public:
+    
+
+
+
+
+
+
+
+
+    EthiopicAmeteAlemCalendar(const Locale& aLocale, UErrorCode& success);
+
+    
+
+
+
+    EthiopicAmeteAlemCalendar(const EthiopicAmeteAlemCalendar& other) = default;
+
+    
+
+
+
+    virtual ~EthiopicAmeteAlemCalendar();
+
+    
+
+
+
+
+    virtual EthiopicAmeteAlemCalendar* clone() const override;
+
+    
+
+
+
+
+    virtual const char * getType() const override;
+
+    
+
+
+
+
+
+
+
+
+
+    virtual UClassID getDynamicClassID() const override;
+
+    
+
+
+
+
+
+
+
+
+
+
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(); 
+
+    
+
+
+
+
+    virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+    
+
+
+
+
+    virtual void setRelatedYear(int32_t year) override;
+
+protected:
+    
+    
+    
+
+    
+
+
+
+
+
+
+
+
+    virtual int32_t handleGetExtendedYear() override;
+
+    
+
+
+
+    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
+
+    
+
+
+
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
+    
+
+
+
+    virtual int32_t defaultCenturyStartYear() const override;
 };
 
 U_NAMESPACE_END

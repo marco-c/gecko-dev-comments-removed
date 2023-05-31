@@ -140,7 +140,7 @@ int32_t PossibleWord::candidates( UText *text, DictionaryMatcher *dict, int32_t 
     int32_t start = (int32_t)utext_getNativeIndex(text);
     if (start != offset) {
         offset = start;
-        count = dict->matches(text, rangeEnd-start, UPRV_LENGTHOF(cuLengths), cuLengths, cpLengths, NULL, &prefix);
+        count = dict->matches(text, rangeEnd-start, UPRV_LENGTHOF(cuLengths), cuLengths, cpLengths, nullptr, &prefix);
         
         if (count <= 0) {
             utext_setNativeIndex(text, start);
@@ -1054,9 +1054,10 @@ foundBest:
 
 static const uint32_t kuint32max = 0xFFFFFFFF;
 CjkBreakEngine::CjkBreakEngine(DictionaryMatcher *adoptDictionary, LanguageType type, UErrorCode &status)
-: DictionaryBreakEngine(), fDictionary(adoptDictionary) {
+: DictionaryBreakEngine(), fDictionary(adoptDictionary), isCj(false) {
     UTRACE_ENTRY(UTRACE_UBRK_CREATE_BREAK_ENGINE);
     UTRACE_DATA1(UTRACE_INFO, "dictbe=%s", "Hani");
+    fMlBreakEngine = nullptr;
     nfkcNorm2 = Normalizer2::getNFKCInstance(status);
     
     fHangulWordSet.applyPattern(UnicodeString(u"[\\uac00-\\ud7a3]"), status);
@@ -1075,9 +1076,18 @@ CjkBreakEngine::CjkBreakEngine(DictionaryMatcher *adoptDictionary, LanguageType 
         }
     } else { 
         UnicodeSet cjSet(UnicodeString(u"[[:Han:][:Hiragana:][:Katakana:]\\u30fc\\uff70\\uff9e\\uff9f]"), status);
+        isCj = true;
         if (U_SUCCESS(status)) {
             setCharacters(cjSet);
+#if UCONFIG_USE_ML_PHRASE_BREAKING
+            fMlBreakEngine = new MlBreakEngine(fDigitOrOpenPunctuationOrAlphabetSet,
+                                               fClosePunctuationSet, status);
+            if (fMlBreakEngine == nullptr) {
+                status = U_MEMORY_ALLOCATION_ERROR;
+            }
+#else
             initJapanesePhraseParameter(status);
+#endif
         }
     }
     UTRACE_EXIT_STATUS(status);
@@ -1085,6 +1095,7 @@ CjkBreakEngine::CjkBreakEngine(DictionaryMatcher *adoptDictionary, LanguageType 
 
 CjkBreakEngine::~CjkBreakEngine(){
     delete fDictionary;
+    delete fMlBreakEngine;
 }
 
 
@@ -1251,7 +1262,15 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
             }
         }
     }
-                
+
+#if UCONFIG_USE_ML_PHRASE_BREAKING
+    
+    if (isPhraseBreaking && isCj) {
+        return fMlBreakEngine->divideUpRange(inText, rangeStart, rangeEnd, foundBreaks, inString,
+                                             inputMap, status);
+    }
+#endif
+
     
     
     UVector32 bestSnlp(numCodePts + 1, status);
@@ -1292,7 +1311,7 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
         int32_t count;
         utext_setNativeIndex(&fu, ix);
         count = fDictionary->matches(&fu, maxWordSize, numCodePts,
-                             NULL, lengths.getBuffer(), values.getBuffer(), NULL);
+                             nullptr, lengths.getBuffer(), values.getBuffer(), nullptr);
                              
                              
 

@@ -803,7 +803,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setGroupingUsed(UBool newValue) U_OVERRIDE;
+    void setGroupingUsed(UBool newValue) override;
 
     
 
@@ -812,7 +812,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setParseIntegerOnly(UBool value) U_OVERRIDE;
+    void setParseIntegerOnly(UBool value) override;
 
     
 
@@ -821,7 +821,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setLenient(UBool enable) U_OVERRIDE;
+    void setLenient(UBool enable) override;
 
     
 
@@ -890,7 +890,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    ~DecimalFormat() U_OVERRIDE;
+    ~DecimalFormat() override;
 
     
 
@@ -899,7 +899,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    DecimalFormat* clone() const U_OVERRIDE;
+    DecimalFormat* clone() const override;
 
     
 
@@ -909,7 +909,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    bool operator==(const Format& other) const U_OVERRIDE;
+    bool operator==(const Format& other) const override;
 
 
     using NumberFormat::format;
@@ -925,7 +925,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UnicodeString& format(double number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
+    UnicodeString& format(double number, UnicodeString& appendTo, FieldPosition& pos) const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -941,7 +941,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(double number, UnicodeString& appendTo, FieldPosition& pos,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 #endif  
 
     
@@ -958,7 +958,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(double number, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
     
 
@@ -971,7 +971,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
+    UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos) const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -987,7 +987,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 #endif  
 
     
@@ -1004,7 +1004,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
     
 
@@ -1017,7 +1017,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPosition& pos) const U_OVERRIDE;
+    UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPosition& pos) const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -1033,7 +1033,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPosition& pos,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 #endif  
 
     
@@ -1050,7 +1050,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(int64_t number, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
     
 
@@ -1069,7 +1069,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(StringPiece number, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const U_OVERRIDE;
+                          UErrorCode& status) const override;
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -1089,7 +1089,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(const number::impl::DecimalQuantity& number, UnicodeString& appendTo,
-                          FieldPositionIterator* posIter, UErrorCode& status) const U_OVERRIDE;
+                          FieldPositionIterator* posIter, UErrorCode& status) const override;
 
     
 
@@ -1107,7 +1107,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     UnicodeString& format(const number::impl::DecimalQuantity& number, UnicodeString& appendTo,
-                          FieldPosition& pos, UErrorCode& status) const U_OVERRIDE;
+                          FieldPosition& pos, UErrorCode& status) const override;
 
 #endif 
 
@@ -1133,7 +1133,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     void parse(const UnicodeString& text, Formattable& result,
-               ParsePosition& parsePosition) const U_OVERRIDE;
+               ParsePosition& parsePosition) const override;
 
     
 
@@ -1154,7 +1154,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const U_OVERRIDE;
+    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const override;
 
     
 
@@ -1399,7 +1399,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual ERoundingMode getRoundingMode(void) const U_OVERRIDE;
+    virtual ERoundingMode getRoundingMode(void) const override;
 
     
 
@@ -1409,7 +1409,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual void setRoundingMode(ERoundingMode roundingMode) U_OVERRIDE;
+    virtual void setRoundingMode(ERoundingMode roundingMode) override;
 
     
 
@@ -1910,7 +1910,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setMaximumIntegerDigits(int32_t newValue) U_OVERRIDE;
+    void setMaximumIntegerDigits(int32_t newValue) override;
 
     
 
@@ -1921,7 +1921,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setMinimumIntegerDigits(int32_t newValue) U_OVERRIDE;
+    void setMinimumIntegerDigits(int32_t newValue) override;
 
     
 
@@ -1932,7 +1932,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setMaximumFractionDigits(int32_t newValue) U_OVERRIDE;
+    void setMaximumFractionDigits(int32_t newValue) override;
 
     
 
@@ -1943,7 +1943,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setMinimumFractionDigits(int32_t newValue) U_OVERRIDE;
+    void setMinimumFractionDigits(int32_t newValue) override;
 
     
 
@@ -2018,7 +2018,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    void setCurrency(const char16_t* theCurrency, UErrorCode& ec) U_OVERRIDE;
+    void setCurrency(const char16_t* theCurrency, UErrorCode& ec) override;
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
     
@@ -2137,7 +2137,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    UClassID getDynamicClassID(void) const U_OVERRIDE;
+    UClassID getDynamicClassID(void) const override;
 
   private:
 

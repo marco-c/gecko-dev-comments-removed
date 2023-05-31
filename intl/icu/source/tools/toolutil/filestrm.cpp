@@ -32,11 +32,11 @@
 U_CAPI FileStream* U_EXPORT2
 T_FileStream_open(const char* filename, const char* mode)
 {
-    if(filename != NULL && *filename != 0 && mode != NULL && *mode != 0) {
+    if(filename != nullptr && *filename != 0 && mode != nullptr && *mode != 0) {
         FILE *file = fopen(filename, mode);
         return (FileStream*)file;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -203,20 +203,20 @@ T_FileStream_error(FileStream* fileStream)
 
 
 U_CAPI FileStream* U_EXPORT2
-T_FileStream_stdin(void)
+T_FileStream_stdin()
 {
     return (FileStream*)stdin;
 }
 
 U_CAPI FileStream* U_EXPORT2
-T_FileStream_stdout(void)
+T_FileStream_stdout()
 {
     return (FileStream*)stdout;
 }
 
 
 U_CAPI FileStream* U_EXPORT2
-T_FileStream_stderr(void)
+T_FileStream_stderr()
 {
     return (FileStream*)stderr;
 }

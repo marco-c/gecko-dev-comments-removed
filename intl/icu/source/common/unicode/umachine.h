@@ -126,28 +126,6 @@
 
 
 
-#ifndef U_OVERRIDE
-#define U_OVERRIDE override
-#endif
-
-
-
-
-
-
-
-
-#if !defined(U_FINAL) || defined(U_IN_DOXYGEN)
-#define U_FINAL final
-#endif
-
-
-
-
-
-
-
-
 
 
 
@@ -356,11 +334,7 @@ typedef int8_t UBool;
 
 
 
-#if (U_PLATFORM == U_PF_AIX) && defined(__cplusplus) &&(U_CPLUSPLUS_VERSION < 11)
-
-# include <uchar.h>
-# define U_CHAR16_IS_TYPEDEF 1
-#elif defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 
 
 # define U_CHAR16_IS_TYPEDEF 1
@@ -408,10 +382,10 @@ typedef int8_t UBool;
     typedef char16_t UChar;
 #elif defined(UCHAR_TYPE)
     typedef UCHAR_TYPE UChar;
-#elif (U_CPLUSPLUS_VERSION >= 11)
-    typedef char16_t UChar;
+#elif U_CPLUSPLUS_VERSION != 0
+    typedef char16_t UChar;  
 #else
-    typedef uint16_t UChar;
+    typedef uint16_t UChar;  
 #endif
 
 

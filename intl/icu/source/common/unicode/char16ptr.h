@@ -39,7 +39,7 @@ U_NAMESPACE_BEGIN
 
 
 
-class U_COMMON_API Char16Ptr U_FINAL {
+class U_COMMON_API Char16Ptr final {
 public:
     
 
@@ -146,7 +146,7 @@ char16_t *Char16Ptr::get() const { return u_.cp; }
 
 
 
-class U_COMMON_API ConstChar16Ptr U_FINAL {
+class U_COMMON_API ConstChar16Ptr final {
 public:
     
 

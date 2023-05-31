@@ -140,7 +140,7 @@ class U_COMMON_API ICU_Utility  {
 
 
 
-    static UBool parseChar(const UnicodeString& id, int32_t& pos, UChar ch);
+    static UBool parseChar(const UnicodeString& id, int32_t& pos, char16_t ch);
 
     
 

@@ -69,7 +69,7 @@ ubidi_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode) {
     }
 
     
-    utrie2_enum(&ubidi_props_singleton.trie, NULL, _enumPropertyStartsRange, sa);
+    utrie2_enum(&ubidi_props_singleton.trie, nullptr, _enumPropertyStartsRange, sa);
 
     
     length=ubidi_props_singleton.indexes[UBIDI_IX_MIRROR_LENGTH];

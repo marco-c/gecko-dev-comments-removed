@@ -50,8 +50,8 @@ class CharsetMatch : public UMemory
     void set(InputText               *input, 
              const CharsetRecognizer *cr, 
              int32_t                  conf, 
-             const char              *csName=NULL, 
-             const char              *lang=NULL);
+             const char              *csName=nullptr,
+             const char              *lang=nullptr);
 
     
 
@@ -62,7 +62,7 @@ class CharsetMatch : public UMemory
 
     int32_t getConfidence()const;
 
-    int32_t getUChars(UChar *buf, int32_t cap, UErrorCode *status) const;
+    int32_t getUChars(char16_t *buf, int32_t cap, UErrorCode *status) const;
 };
 
 U_NAMESPACE_END

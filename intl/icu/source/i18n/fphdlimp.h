@@ -31,7 +31,7 @@ class U_I18N_API FieldPositionHandler: public UMemory {
   virtual ~FieldPositionHandler();
   virtual void addAttribute(int32_t id, int32_t start, int32_t limit) = 0;
   virtual void shiftLast(int32_t delta) = 0;
-  virtual UBool isRecording(void) const = 0;
+  virtual UBool isRecording() const = 0;
 
   void setShift(int32_t delta);
 };
@@ -48,9 +48,9 @@ class FieldPositionOnlyHandler : public FieldPositionHandler {
   FieldPositionOnlyHandler(FieldPosition& pos);
   virtual ~FieldPositionOnlyHandler();
 
-  void addAttribute(int32_t id, int32_t start, int32_t limit) U_OVERRIDE;
-  void shiftLast(int32_t delta) U_OVERRIDE;
-  UBool isRecording(void) const U_OVERRIDE;
+  void addAttribute(int32_t id, int32_t start, int32_t limit) override;
+  void shiftLast(int32_t delta) override;
+  UBool isRecording() const override;
 
   
 
@@ -74,10 +74,10 @@ class U_I18N_API FieldPositionIteratorHandler : public FieldPositionHandler {
   
   
   
-  static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
-  static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+  static void* U_EXPORT2 operator new(size_t) noexcept = delete;
+  static void* U_EXPORT2 operator new[](size_t) noexcept = delete;
 #if U_HAVE_PLACEMENT_NEW
-  static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+  static void* U_EXPORT2 operator new(size_t, void*) noexcept = delete;
 #endif
 
  public:
@@ -86,9 +86,9 @@ class U_I18N_API FieldPositionIteratorHandler : public FieldPositionHandler {
   FieldPositionIteratorHandler(UVector32* vec, UErrorCode& status);
   ~FieldPositionIteratorHandler();
 
-  void addAttribute(int32_t id, int32_t start, int32_t limit) U_OVERRIDE;
-  void shiftLast(int32_t delta) U_OVERRIDE;
-  UBool isRecording(void) const U_OVERRIDE;
+  void addAttribute(int32_t id, int32_t start, int32_t limit) override;
+  void shiftLast(int32_t delta) override;
+  UBool isRecording() const override;
 
   
   inline void getError(UErrorCode& _status) {

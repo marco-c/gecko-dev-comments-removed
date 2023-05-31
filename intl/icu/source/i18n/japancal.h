@@ -70,14 +70,14 @@ public:
 
 
 
-    U_I18N_API static UBool U_EXPORT2 enableTentativeEra(void);
+    U_I18N_API static UBool U_EXPORT2 enableTentativeEra();
 
     
 
 
 
 
-    U_I18N_API static uint32_t U_EXPORT2 getCurrentEra(void); 
+    U_I18N_API static uint32_t U_EXPORT2 getCurrentEra(); 
 
     
 
@@ -143,7 +143,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -156,7 +156,7 @@ public:
 
 
 
-    U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+    U_I18N_API static UClassID U_EXPORT2 getStaticClassID();
 
     
 

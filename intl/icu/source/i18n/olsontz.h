@@ -282,7 +282,7 @@ class U_I18N_API OlsonTimeZone: public BasicTimeZone {
 
 
 
-    const UChar *getCanonicalID() const;
+    const char16_t *getCanonicalID() const;
 
 private:
     
@@ -382,11 +382,11 @@ private:
     
 
 
-    const UChar *canonicalID;
+    const char16_t *canonicalID;
 
     
-    void clearTransitionRules(void);
-    void deleteTransitionRules(void);
+    void clearTransitionRules();
+    void deleteTransitionRules();
     void checkTransitionRules(UErrorCode& status) const;
 
   public:    
@@ -441,7 +441,7 @@ OlsonTimeZone::initialDstOffset() const {
     return typeOffsets[1];
 }
 
-inline const UChar*
+inline const char16_t*
 OlsonTimeZone::getCanonicalID() const {
     return canonicalID;
 }
@@ -449,7 +449,7 @@ OlsonTimeZone::getCanonicalID() const {
 
 U_NAMESPACE_END
 
-#endif 
-#endif 
+#endif
+#endif
 
 

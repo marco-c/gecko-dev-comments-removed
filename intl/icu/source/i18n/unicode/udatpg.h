@@ -526,7 +526,6 @@ udatpg_getDateTimeFormat(const UDateTimePatternGenerator *dtpg,
                          int32_t *pLength);
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -586,7 +585,6 @@ U_CAPI const UChar* U_EXPORT2
 udatpg_getDateTimeFormatForStyle(const UDateTimePatternGenerator *udtpg,
                         UDateFormatStyle style, int32_t *pLength,
                         UErrorCode *pErrorCode);
-#endif 
 #endif 
 
 

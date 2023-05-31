@@ -55,12 +55,18 @@ typedef struct USet USet;
 
 
 
+
+
+
+
+
+
 enum {
     
 
 
 
-    USET_IGNORE_SPACE = 1,  
+    USET_IGNORE_SPACE = 1,
 
     
 
@@ -88,7 +94,7 @@ enum {
 
 
 
-    USET_CASE_INSENSITIVE = 2,  
+    USET_CASE_INSENSITIVE = 2,
 
     
 
@@ -98,7 +104,26 @@ enum {
 
 
 
-    USET_ADD_CASE_MAPPINGS = 4
+
+
+
+    USET_ADD_CASE_MAPPINGS = 4,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+    USET_SIMPLE_CASE_INSENSITIVE = 6
+#endif  
 };
 
 
@@ -303,6 +328,8 @@ uset_openPattern(const UChar* pattern, int32_t patternLength,
 
 
 
+
+
 U_CAPI USet* U_EXPORT2
 uset_openPatternOptions(const UChar* pattern, int32_t patternLength,
                  uint32_t options,
@@ -402,6 +429,9 @@ uset_cloneAsThawed(const USet *set);
 U_CAPI void U_EXPORT2
 uset_set(USet* set,
          UChar32 start, UChar32 end);
+
+
+
 
 
 
@@ -801,6 +831,8 @@ uset_complementAll(USet* set, const USet* complement);
 
 U_CAPI void U_EXPORT2
 uset_clear(USet* set);
+
+
 
 
 

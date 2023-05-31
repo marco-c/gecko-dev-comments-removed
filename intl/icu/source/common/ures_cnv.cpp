@@ -27,7 +27,7 @@
 #include "ustr_cnv.h"
 
 U_CAPI UResourceBundle * U_EXPORT2
-ures_openU(const UChar *myPath, 
+ures_openU(const char16_t *myPath,
            const char *localeID, 
            UErrorCode *status)
 {
@@ -35,17 +35,17 @@ ures_openU(const UChar *myPath,
     int32_t length;
     char *path = pathBuffer;
 
-    if(status==NULL || U_FAILURE(*status)) {
-        return NULL;
+    if(status==nullptr || U_FAILURE(*status)) {
+        return nullptr;
     }
-    if(myPath==NULL) {
-        path = NULL;
+    if(myPath==nullptr) {
+        path = nullptr;
     }
     else {
         length=u_strlen(myPath);
         if(length>=(int32_t)sizeof(pathBuffer)) {
             *status=U_ILLEGAL_ARGUMENT_ERROR;
-            return NULL;
+            return nullptr;
         } else if(uprv_isInvariantUString(myPath, length)) {
             
 
@@ -59,17 +59,17 @@ ures_openU(const UChar *myPath,
             length=ucnv_fromUChars(cnv, path, (int32_t)sizeof(pathBuffer), myPath, length, status);
             u_releaseDefaultConverter(cnv);
             if(U_FAILURE(*status)) {
-                return NULL;
+                return nullptr;
             }
             if(length>=(int32_t)sizeof(pathBuffer)) {
                 
                 *status=U_ILLEGAL_ARGUMENT_ERROR;
-                return NULL;
+                return nullptr;
             }
 #else
             
             *status=U_UNSUPPORTED_ERROR;
-            return NULL;
+            return nullptr;
 #endif
         }
     }

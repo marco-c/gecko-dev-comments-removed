@@ -68,11 +68,11 @@ finit_owner(FILE         *f,
 {
     UErrorCode status = U_ZERO_ERROR;
     UFILE     *result;
-    if(f == NULL) {
+    if(f == nullptr) {
         return 0;
     }
     result = (UFILE*) uprv_malloc(sizeof(UFILE));
-    if(result == NULL) {
+    if(result == nullptr) {
         return 0;
     }
 
@@ -94,7 +94,7 @@ finit_owner(FILE         *f,
 #endif
 
     
-    if(codepage == NULL || *codepage != '\0') {
+    if(codepage == nullptr || *codepage != '\0') {
         result->fConverter = ucnv_open(codepage, &status);
     }
     
@@ -108,7 +108,7 @@ finit_owner(FILE         *f,
 #endif
         
         uprv_free(result);
-        result = NULL;
+        result = nullptr;
     }
 
     return result;
@@ -168,7 +168,7 @@ u_fopen(const char    *filename,
 #endif
 
 U_CAPI UFILE* U_EXPORT2
-u_fopen_u(const UChar   *filename,
+u_fopen_u(const char16_t   *filename,
         const char    *perm,
         const char    *locale,
         const char    *codepage)
@@ -216,20 +216,20 @@ u_fopen_u(const UChar   *filename,
 
 
 U_CAPI UFILE* U_EXPORT2
-u_fstropen(UChar *stringBuf,
+u_fstropen(char16_t *stringBuf,
            int32_t      capacity,
            const char  *locale)
 {
     UFILE *result;
 
     if (capacity < 0) {
-        return NULL;
+        return nullptr;
     }
 
     result = (UFILE*) uprv_malloc(sizeof(UFILE));
     
-    if (result == NULL) {
-        return NULL; 
+    if (result == nullptr) {
+        return nullptr; 
     }
     uprv_memset(result, 0, sizeof(UFILE));
     result->str.fBuffer = stringBuf;
@@ -252,11 +252,11 @@ U_CAPI UBool U_EXPORT2
 u_feof(UFILE  *f)
 {
     UBool endOfBuffer;
-    if (f == NULL) {
+    if (f == nullptr) {
         return true;
     }
     endOfBuffer = (UBool)(f->str.fPos >= f->str.fLimit);
-    if (f->fFile != NULL) {
+    if (f->fFile != nullptr) {
         return endOfBuffer && feof(f->fFile);
     }
     return endOfBuffer;
@@ -339,7 +339,7 @@ U_CAPI const char* U_EXPORT2
 u_fgetcodepage(UFILE        *file)
 {
     UErrorCode     status = U_ZERO_ERROR;
-    const char     *codepage = NULL;
+    const char     *codepage = nullptr;
 
     if (file->fConverter) {
         codepage = ucnv_getName(file->fConverter, &status);

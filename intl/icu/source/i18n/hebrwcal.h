@@ -198,7 +198,7 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID(void) const override;
+    virtual UClassID getDynamicClassID() const override;
 
     
 
@@ -211,7 +211,7 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID(void);
+    static UClassID U_EXPORT2 getStaticClassID();
 
     
 
@@ -272,6 +272,20 @@ public:
 
 
     static UBool isLeapYear(int32_t year) ;
+
+    
+
+
+
+
+    virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+    
+
+
+
+
+    virtual void setRelatedYear(int32_t year) override;
 
  protected:
 
@@ -366,18 +380,6 @@ public:
     virtual void validateField(UCalendarDateFields field, UErrorCode &status) override;
 
  protected:
-
-  
-
-
-
-
-
-
-
-
-  virtual UBool inDaylightTime(UErrorCode& status) const override;
-
   
 
 
@@ -396,6 +398,51 @@ public:
 
 
   virtual int32_t defaultCenturyStartYear() const override;
+
+ public:
+  
+
+
+
+
+
+
+  virtual bool inTemporalLeapYear(UErrorCode& status) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual const char* getTemporalMonthCode(UErrorCode& status) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void setTemporalMonthCode(const char* code, UErrorCode& status ) override;
+
+ protected:
+   virtual int32_t internalGetMonth() const override;
 
  private: 
     

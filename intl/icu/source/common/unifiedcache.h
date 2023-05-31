@@ -203,7 +203,7 @@ class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
            const CacheKey<T>& key,
            const T *&ptr,
            UErrorCode &status) const {
-       get(key, NULL, ptr, status);
+       get(key, nullptr, ptr, status);
    }
 
    
@@ -230,7 +230,7 @@ class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
            return;
        }
        UErrorCode creationStatus = U_ZERO_ERROR;
-       const SharedObject *value = NULL;
+       const SharedObject *value = nullptr;
        _get(key, value, creationContext, creationStatus);
        const T *tvalue = (const T *) value;
        if (U_SUCCESS(creationStatus)) {

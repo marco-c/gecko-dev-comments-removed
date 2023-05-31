@@ -204,20 +204,20 @@ int32_t PropNameData::findPropertyValueNameGroup(int32_t valueMapIndex, int32_t 
 const char *PropNameData::getName(const char *nameGroup, int32_t nameIndex) {
     int32_t numNames=*nameGroup++;
     if(nameIndex<0 || numNames<=nameIndex) {
-        return NULL;
+        return nullptr;
     }
     
     for(; nameIndex>0; --nameIndex) {
         nameGroup=uprv_strchr(nameGroup, 0)+1;
     }
     if(*nameGroup==0) {
-        return NULL;  
+        return nullptr;  
     }
     return nameGroup;
 }
 
 UBool PropNameData::containsName(BytesTrie &trie, const char *name) {
-    if(name==NULL) {
+    if(name==nullptr) {
         return false;
     }
     UStringTrieResult result=USTRINGTRIE_NO_VALUE;
@@ -239,7 +239,7 @@ UBool PropNameData::containsName(BytesTrie &trie, const char *name) {
 const char *PropNameData::getPropertyName(int32_t property, int32_t nameChoice) {
     int32_t valueMapIndex=findProperty(property);
     if(valueMapIndex==0) {
-        return NULL;  
+        return nullptr;  
     }
     return getName(nameGroups+valueMaps[valueMapIndex], nameChoice);
 }
@@ -247,11 +247,11 @@ const char *PropNameData::getPropertyName(int32_t property, int32_t nameChoice) 
 const char *PropNameData::getPropertyValueName(int32_t property, int32_t value, int32_t nameChoice) {
     int32_t valueMapIndex=findProperty(property);
     if(valueMapIndex==0) {
-        return NULL;  
+        return nullptr;  
     }
     int32_t nameGroupOffset=findPropertyValueNameGroup(valueMaps[valueMapIndex+1], value);
     if(nameGroupOffset==0) {
-        return NULL;
+        return nullptr;
     }
     return getName(nameGroups+nameGroupOffset, nameChoice);
 }
@@ -289,7 +289,10 @@ U_NAMESPACE_END
 
 U_CAPI const char* U_EXPORT2
 u_getPropertyName(UProperty property,
-                  UPropertyNameChoice nameChoice) {
+                  UPropertyNameChoice nameChoice) UPRV_NO_SANITIZE_UNDEFINED {
+    
+    
+    
     U_NAMESPACE_USE
     return PropNameData::getPropertyName(property, nameChoice);
 }
@@ -303,7 +306,10 @@ u_getPropertyEnum(const char* alias) {
 U_CAPI const char* U_EXPORT2
 u_getPropertyValueName(UProperty property,
                        int32_t value,
-                       UPropertyNameChoice nameChoice) {
+                       UPropertyNameChoice nameChoice) UPRV_NO_SANITIZE_UNDEFINED {
+    
+    
+    
     U_NAMESPACE_USE
     return PropNameData::getPropertyValueName(property, value, nameChoice);
 }

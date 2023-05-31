@@ -50,7 +50,7 @@ TransliterationRuleData::TransliterationRuleData(const TransliterationRuleData& 
         UnicodeString* value =
             new UnicodeString(*(const UnicodeString*)e->value.pointer);
         
-        if (value == NULL) {
+        if (value == nullptr) {
         	return;
         }
         variableNames.put(*(UnicodeString*)e->key.pointer, value, status);
@@ -66,7 +66,7 @@ TransliterationRuleData::TransliterationRuleData(const TransliterationRuleData& 
         }
         for (i=0; i<variablesLength; ++i) {
             variables[i] = other.variables[i]->clone();
-            if (variables[i] == NULL) {
+            if (variables[i] == nullptr) {
                 status = U_MEMORY_ALLOCATION_ERROR;
                 break;
             }
@@ -78,7 +78,7 @@ TransliterationRuleData::TransliterationRuleData(const TransliterationRuleData& 
             delete variables[n];
         }
         uprv_free(variables);
-        variables = NULL;
+        variables = nullptr;
         return;
     }
 

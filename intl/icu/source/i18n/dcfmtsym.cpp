@@ -59,38 +59,38 @@ static const char gLatn[] =  "latn";
 static const char gSymbols[] = "symbols";
 static const char gNumberElementsLatnSymbols[] = "NumberElements/latn/symbols";
 
-static const UChar INTL_CURRENCY_SYMBOL_STR[] = {0xa4, 0xa4, 0};
+static const char16_t INTL_CURRENCY_SYMBOL_STR[] = {0xa4, 0xa4, 0};
 
 
 
 static const char *gNumberElementKeys[DecimalFormatSymbols::kFormatSymbolCount] = {
     "decimal",
     "group",
-    NULL, 
+    nullptr, 
     "percentSign",
-    NULL, 
-    NULL, 
+    nullptr, 
+    nullptr, 
     "minusSign",
     "plusSign",
-    NULL, 
-    NULL, 
+    nullptr, 
+    nullptr, 
     "currencyDecimal",
     "exponential",
     "perMille",
-    NULL, 
+    nullptr, 
     "infinity",
     "nan",
-    NULL, 
+    nullptr, 
     "currencyGroup",
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
-    NULL, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
     "superscriptingExponent", 
     "approximatelySign" 
 };
@@ -99,7 +99,7 @@ static const char *gNumberElementKeys[DecimalFormatSymbols::kFormatSymbolCount] 
 
 
 DecimalFormatSymbols::DecimalFormatSymbols(UErrorCode& status)
-        : UObject(), locale(), currPattern(NULL) {
+        : UObject(), locale() {
     initialize(locale, status, true);
 }
 
@@ -107,26 +107,26 @@ DecimalFormatSymbols::DecimalFormatSymbols(UErrorCode& status)
 
 
 DecimalFormatSymbols::DecimalFormatSymbols(const Locale& loc, UErrorCode& status)
-        : UObject(), locale(loc), currPattern(NULL) {
+        : UObject(), locale(loc) {
     initialize(locale, status);
 }
 
 DecimalFormatSymbols::DecimalFormatSymbols(const Locale& loc, const NumberingSystem& ns, UErrorCode& status)
-        : UObject(), locale(loc), currPattern(NULL) {
+        : UObject(), locale(loc) {
     initialize(locale, status, false, &ns);
 }
 
 DecimalFormatSymbols::DecimalFormatSymbols()
-        : UObject(), locale(Locale::getRoot()), currPattern(NULL) {
+        : UObject(), locale(Locale::getRoot()) {
     *validLocale = *actualLocale = 0;
     initialize();
 }
 
 DecimalFormatSymbols*
 DecimalFormatSymbols::createWithLastResortData(UErrorCode& status) {
-    if (U_FAILURE(status)) { return NULL; }
+    if (U_FAILURE(status)) { return nullptr; }
     DecimalFormatSymbols* sym = new DecimalFormatSymbols();
-    if (sym == NULL) {
+    if (sym == nullptr) {
         status = U_MEMORY_ALLOCATION_ERROR;
     }
     return sym;
@@ -169,6 +169,7 @@ DecimalFormatSymbols::operator=(const DecimalFormatSymbols& rhs)
         fIsCustomIntlCurrencySymbol = rhs.fIsCustomIntlCurrencySymbol; 
         fCodePointZero = rhs.fCodePointZero;
         currPattern = rhs.currPattern;
+        uprv_strcpy(nsName, rhs.nsName);
     }
     return *this;
 }
@@ -237,7 +238,7 @@ struct DecFmtSymDataSink : public ResourceSink {
         if (U_FAILURE(errorCode)) { return; }
         for (int32_t j = 0; symbolsTable.getKeyAndValue(j, key, value); ++j) {
             for (int32_t i=0; i<DecimalFormatSymbols::kFormatSymbolCount; i++) {
-                if (gNumberElementKeys[i] != NULL && uprv_strcmp(key, gNumberElementKeys[i]) == 0) {
+                if (gNumberElementKeys[i] != nullptr && uprv_strcmp(key, gNumberElementKeys[i]) == 0) {
                     if (!seenSymbol[i]) {
                         seenSymbol[i] = true;
                         dfs.setSymbol(
@@ -383,12 +384,13 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status,
     } else {
         nsName = gLatn;
     }
+    uprv_strcpy(this->nsName, nsName);
 
     
     const char* locStr = loc.getName();
-    LocalUResourceBundlePointer resource(ures_open(NULL, locStr, &status));
+    LocalUResourceBundlePointer resource(ures_open(nullptr, locStr, &status));
     LocalUResourceBundlePointer numberElementsRes(
-        ures_getByKeyWithFallback(resource.getAlias(), gNumberElements, NULL, &status));
+        ures_getByKeyWithFallback(resource.getAlias(), gNumberElements, nullptr, &status));
 
     if (U_FAILURE(status)) {
         if ( useLastResortData ) {
@@ -459,7 +461,7 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status,
 
     
     UErrorCode internalStatus = U_ZERO_ERROR; 
-    UChar curriso[4];
+    char16_t curriso[4];
     UnicodeString tempStr;
     int32_t currisoLength = ucurr_forLocale(locStr, curriso, UPRV_LENGTHOF(curriso), &internalStatus);
     if (U_SUCCESS(internalStatus) && currisoLength == 3) {
@@ -483,44 +485,44 @@ DecimalFormatSymbols::initialize() {
 
 
 
-    fSymbols[kDecimalSeparatorSymbol] = (UChar)0x2e;    
+    fSymbols[kDecimalSeparatorSymbol] = (char16_t)0x2e;    
     fSymbols[kGroupingSeparatorSymbol].remove();        
-    fSymbols[kPatternSeparatorSymbol] = (UChar)0x3b;    
-    fSymbols[kPercentSymbol] = (UChar)0x25;             
-    fSymbols[kZeroDigitSymbol] = (UChar)0x30;           
-    fSymbols[kOneDigitSymbol] = (UChar)0x31;            
-    fSymbols[kTwoDigitSymbol] = (UChar)0x32;            
-    fSymbols[kThreeDigitSymbol] = (UChar)0x33;          
-    fSymbols[kFourDigitSymbol] = (UChar)0x34;           
-    fSymbols[kFiveDigitSymbol] = (UChar)0x35;           
-    fSymbols[kSixDigitSymbol] = (UChar)0x36;            
-    fSymbols[kSevenDigitSymbol] = (UChar)0x37;          
-    fSymbols[kEightDigitSymbol] = (UChar)0x38;          
-    fSymbols[kNineDigitSymbol] = (UChar)0x39;           
-    fSymbols[kDigitSymbol] = (UChar)0x23;               
-    fSymbols[kPlusSignSymbol] = (UChar)0x002b;          
-    fSymbols[kMinusSignSymbol] = (UChar)0x2d;           
-    fSymbols[kCurrencySymbol] = (UChar)0xa4;            
+    fSymbols[kPatternSeparatorSymbol] = (char16_t)0x3b;    
+    fSymbols[kPercentSymbol] = (char16_t)0x25;             
+    fSymbols[kZeroDigitSymbol] = (char16_t)0x30;           
+    fSymbols[kOneDigitSymbol] = (char16_t)0x31;            
+    fSymbols[kTwoDigitSymbol] = (char16_t)0x32;            
+    fSymbols[kThreeDigitSymbol] = (char16_t)0x33;          
+    fSymbols[kFourDigitSymbol] = (char16_t)0x34;           
+    fSymbols[kFiveDigitSymbol] = (char16_t)0x35;           
+    fSymbols[kSixDigitSymbol] = (char16_t)0x36;            
+    fSymbols[kSevenDigitSymbol] = (char16_t)0x37;          
+    fSymbols[kEightDigitSymbol] = (char16_t)0x38;          
+    fSymbols[kNineDigitSymbol] = (char16_t)0x39;           
+    fSymbols[kDigitSymbol] = (char16_t)0x23;               
+    fSymbols[kPlusSignSymbol] = (char16_t)0x002b;          
+    fSymbols[kMinusSignSymbol] = (char16_t)0x2d;           
+    fSymbols[kCurrencySymbol] = (char16_t)0xa4;            
     fSymbols[kIntlCurrencySymbol].setTo(true, INTL_CURRENCY_SYMBOL_STR, 2);
-    fSymbols[kMonetarySeparatorSymbol] = (UChar)0x2e;   
-    fSymbols[kExponentialSymbol] = (UChar)0x45;         
-    fSymbols[kPerMillSymbol] = (UChar)0x2030;           
-    fSymbols[kPadEscapeSymbol] = (UChar)0x2a;           
-    fSymbols[kInfinitySymbol] = (UChar)0x221e;          
-    fSymbols[kNaNSymbol] = (UChar)0xfffd;               
-    fSymbols[kSignificantDigitSymbol] = (UChar)0x0040;  
+    fSymbols[kMonetarySeparatorSymbol] = (char16_t)0x2e;   
+    fSymbols[kExponentialSymbol] = (char16_t)0x45;         
+    fSymbols[kPerMillSymbol] = (char16_t)0x2030;           
+    fSymbols[kPadEscapeSymbol] = (char16_t)0x2a;           
+    fSymbols[kInfinitySymbol] = (char16_t)0x221e;          
+    fSymbols[kNaNSymbol] = (char16_t)0xfffd;               
+    fSymbols[kSignificantDigitSymbol] = (char16_t)0x0040;  
     fSymbols[kMonetaryGroupingSeparatorSymbol].remove(); 
-    fSymbols[kExponentMultiplicationSymbol] = (UChar)0xd7; 
+    fSymbols[kExponentMultiplicationSymbol] = (char16_t)0xd7; 
     fSymbols[kApproximatelySignSymbol] = u'~';          
     fIsCustomCurrencySymbol = false; 
     fIsCustomIntlCurrencySymbol = false;
     fCodePointZero = 0x30;
     U_ASSERT(fCodePointZero == fSymbols[kZeroDigitSymbol].char32At(0));
     currPattern = nullptr;
-
+    nsName[0] = 0;
 }
 
-void DecimalFormatSymbols::setCurrency(const UChar* currency, UErrorCode& status) {
+void DecimalFormatSymbols::setCurrency(const char16_t* currency, UErrorCode& status) {
     
     
     
@@ -543,7 +545,7 @@ void DecimalFormatSymbols::setCurrency(const UChar* currency, UErrorCode& status
     UErrorCode localStatus = U_ZERO_ERROR;
     LocalUResourceBundlePointer rbTop(ures_open(U_ICUDATA_CURR, locale.getName(), &localStatus));
     LocalUResourceBundlePointer rb(
-        ures_getByKeyWithFallback(rbTop.getAlias(), "Currencies", NULL, &localStatus));
+        ures_getByKeyWithFallback(rbTop.getAlias(), "Currencies", nullptr, &localStatus));
     ures_getByKeyWithFallback(rb.getAlias(), cc, rb.getAlias(), &localStatus);
     if(U_SUCCESS(localStatus) && ures_getSize(rb.getAlias())>2) { 
         ures_getByIndex(rb.getAlias(), 2, rb.getAlias(), &localStatus);

@@ -23,7 +23,6 @@
 
 
 
-
 #ifndef __STUBDATA_H__
 #define __STUBDATA_H__
 
@@ -31,7 +30,7 @@
 #include "unicode/udata.h"
 #include "unicode/uversion.h"
 
-typedef struct {
+typedef struct alignas(16) {
     uint16_t headerSize;
     uint8_t magic1, magic2;
     UDataInfo info;
@@ -43,7 +42,7 @@ typedef struct {
 
 
 
-   int   fakeNameAndData[4];       
+   uint64_t fakeNameAndData[2];    
                                    
 } ICU_Data_Header;
 

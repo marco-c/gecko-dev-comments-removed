@@ -44,7 +44,7 @@ class U_I18N_API UsagePrefsHandler : public MicroPropsGenerator, public UMemory 
 
 
     void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
-                         UErrorCode &status) const U_OVERRIDE;
+                         UErrorCode &status) const override;
 
     
 
@@ -111,7 +111,7 @@ class U_I18N_API UnitConversionHandler : public MicroPropsGenerator, public UMem
 
 
     void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
-                         UErrorCode &status) const U_OVERRIDE;
+                         UErrorCode &status) const override;
   private:
     MeasureUnit fOutputUnit;
     LocalPointer<ComplexUnitsConverter> fUnitConverter;

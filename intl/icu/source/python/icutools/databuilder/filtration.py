@@ -274,7 +274,7 @@ def _preprocess_file_filters(requests, config, io):
     for category in all_categories:
         filter_json = default_filter_json
         
-        if "brkitr_lstm" == category:
+        if "brkitr_lstm" == category or "brkitr_adaboost" == category:
             filter_json = "exclude"
         
         if "featureFilters" in json_data and category in json_data["featureFilters"]:

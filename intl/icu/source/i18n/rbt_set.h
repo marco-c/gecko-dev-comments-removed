@@ -92,7 +92,7 @@ public:
 
 
 
-    virtual int32_t getMaximumContextLength(void) const;
+    virtual int32_t getMaximumContextLength() const;
 
     
 

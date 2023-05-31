@@ -46,7 +46,7 @@
 
 
 #ifndef U_NO_THROW
-#define U_NO_THROW U_NOEXCEPT
+#define U_NO_THROW noexcept
 #endif
 
 
@@ -131,14 +131,14 @@ public:
 
 
 
-    static void * U_EXPORT2 operator new(size_t size) U_NOEXCEPT;
+    static void * U_EXPORT2 operator new(size_t size) noexcept;
 
     
 
 
 
 
-    static void * U_EXPORT2 operator new[](size_t size) U_NOEXCEPT;
+    static void * U_EXPORT2 operator new[](size_t size) noexcept;
 
     
 
@@ -148,14 +148,14 @@ public:
 
 
 
-    static void U_EXPORT2 operator delete(void *p) U_NOEXCEPT;
+    static void U_EXPORT2 operator delete(void *p) noexcept;
 
     
 
 
 
 
-    static void U_EXPORT2 operator delete[](void *p) U_NOEXCEPT;
+    static void U_EXPORT2 operator delete[](void *p) noexcept;
 
 #if U_HAVE_PLACEMENT_NEW
     
@@ -163,14 +163,14 @@ public:
 
 
 
-    static inline void * U_EXPORT2 operator new(size_t, void *ptr) U_NOEXCEPT { return ptr; }
+    static inline void * U_EXPORT2 operator new(size_t, void *ptr) noexcept { return ptr; }
 
     
 
 
 
 
-    static inline void U_EXPORT2 operator delete(void *, void *) U_NOEXCEPT {}
+    static inline void U_EXPORT2 operator delete(void *, void *) noexcept {}
 #endif 
 #if U_HAVE_DEBUG_LOCATION_NEW
     
@@ -180,7 +180,7 @@ public:
 
 
  
-    static void * U_EXPORT2 operator new(size_t size, const char* file, int line) U_NOEXCEPT;
+    static void * U_EXPORT2 operator new(size_t size, const char* file, int line) noexcept;
     
 
 
@@ -188,7 +188,7 @@ public:
 
 
  
-    static void U_EXPORT2 operator delete(void* p, const char* file, int line) U_NOEXCEPT;
+    static void U_EXPORT2 operator delete(void* p, const char* file, int line) noexcept;
 #endif 
 #endif 
 

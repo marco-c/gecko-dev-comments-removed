@@ -88,7 +88,7 @@ public:
 
 
 
-    ~CompactDecimalFormat() U_OVERRIDE;
+    ~CompactDecimalFormat() override;
 
     
 
@@ -105,7 +105,7 @@ public:
 
 
 
-    CompactDecimalFormat* clone() const U_OVERRIDE;
+    CompactDecimalFormat* clone() const override;
 
     using DecimalFormat::format;
 
@@ -119,7 +119,7 @@ public:
 
 
     void parse(const UnicodeString& text, Formattable& result,
-               ParsePosition& parsePosition) const U_OVERRIDE;
+               ParsePosition& parsePosition) const override;
 
     
 
@@ -130,7 +130,7 @@ public:
 
 
 
-    void parse(const UnicodeString& text, Formattable& result, UErrorCode& status) const U_OVERRIDE;
+    void parse(const UnicodeString& text, Formattable& result, UErrorCode& status) const override;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -153,7 +153,7 @@ public:
 
 
 
-    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const U_OVERRIDE;
+    CurrencyAmount* parseCurrency(const UnicodeString& text, ParsePosition& pos) const override;
 #endif  
 
     
@@ -180,7 +180,7 @@ public:
 
 
 
-    UClassID getDynamicClassID() const U_OVERRIDE;
+    UClassID getDynamicClassID() const override;
 
   private:
     CompactDecimalFormat(const Locale& inLocale, UNumberCompactStyle style, UErrorCode& status);

@@ -67,7 +67,7 @@ public:
 
 
     UCharsTrie(ConstChar16Ptr trieUChars)
-            : ownedArray_(NULL), uchars_(trieUChars),
+            : ownedArray_(nullptr), uchars_(trieUChars),
               pos_(uchars_), remainingMatchLength_(-1) {}
 
     
@@ -83,7 +83,7 @@ public:
 
 
     UCharsTrie(const UCharsTrie &other)
-            : ownedArray_(NULL), uchars_(other.uchars_),
+            : ownedArray_(nullptr), uchars_(other.uchars_),
               pos_(other.pos_), remainingMatchLength_(other.remainingMatchLength_) {}
 
     
@@ -141,7 +141,7 @@ public:
 
 
 
-        State() { uchars=NULL; }
+        State() { uchars=nullptr; }
     private:
         friend class UCharsTrie;
 
@@ -175,7 +175,7 @@ public:
 
 
     UCharsTrie &resetToState(const State &state) {
-        if(uchars_==state.uchars && uchars_!=NULL) {
+        if(uchars_==state.uchars && uchars_!=nullptr) {
             pos_=state.pos;
             remainingMatchLength_=state.remainingMatchLength;
         }
@@ -275,7 +275,7 @@ public:
     inline UBool hasUniqueValue(int32_t &uniqueValue) const {
         const char16_t *pos=pos_;
         
-        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
+        return pos!=nullptr && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
     }
 
     
@@ -367,7 +367,7 @@ public:
 
     private:
         UBool truncateAndStop() {
-            pos_=NULL;
+            pos_=nullptr;
             value_=-1;  
             return true;
         }
@@ -412,7 +412,7 @@ private:
     UCharsTrie &operator=(const UCharsTrie &other) = delete;
 
     inline void stop() {
-        pos_=NULL;
+        pos_=nullptr;
     }
 
     

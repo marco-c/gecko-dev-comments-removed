@@ -234,7 +234,7 @@ public:
 
 
 
-    virtual UChar tokenChar() const = 0;
+    virtual char16_t tokenChar() const = 0;
     
     
 
@@ -249,8 +249,8 @@ private:
     NFSubstitution &operator=(const NFSubstitution &other) = delete; 
 
 public:
-    static UClassID getStaticClassID(void);
-    virtual UClassID getDynamicClassID(void) const override;
+    static UClassID getStaticClassID();
+    virtual UClassID getDynamicClassID() const override;
 };
 
 U_NAMESPACE_END

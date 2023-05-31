@@ -283,13 +283,13 @@ class U_I18N_API FormattedRelativeDateTime : public UMemory, public FormattedVal
 
 
 
-    FormattedRelativeDateTime(FormattedRelativeDateTime&& src) U_NOEXCEPT;
+    FormattedRelativeDateTime(FormattedRelativeDateTime&& src) noexcept;
 
     
 
 
 
-    virtual ~FormattedRelativeDateTime() U_OVERRIDE;
+    virtual ~FormattedRelativeDateTime() override;
 
     
     FormattedRelativeDateTime(const FormattedRelativeDateTime&) = delete;
@@ -301,19 +301,19 @@ class U_I18N_API FormattedRelativeDateTime : public UMemory, public FormattedVal
 
 
 
-    FormattedRelativeDateTime& operator=(FormattedRelativeDateTime&& src) U_NOEXCEPT;
+    FormattedRelativeDateTime& operator=(FormattedRelativeDateTime&& src) noexcept;
 
     
-    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toString(UErrorCode& status) const override;
 
     
-    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+    UnicodeString toTempString(UErrorCode& status) const override;
 
     
-    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
+    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const override;
 
     
-    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const override;
 
   private:
     FormattedRelativeDateTimeData *fData;

@@ -442,6 +442,33 @@ enum UCalendarDateFields {
 
   UCAL_IS_LEAP_MONTH,
 
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  UCAL_ORDINAL_MONTH,
+#endif 
+
     
 
 #ifndef U_FORCE_HIDE_DEPRECATED_API
@@ -449,7 +476,13 @@ enum UCalendarDateFields {
 
 
 
-    UCAL_FIELD_COUNT,
+#ifdef U_HIDE_DRAFT_API
+    
+    UCAL_FIELD_COUNT = UCAL_IS_LEAP_MONTH + 2,
+#else  
+    UCAL_FIELD_COUNT = UCAL_ORDINAL_MONTH + 1,
+#endif  
+
 #endif  
 
  

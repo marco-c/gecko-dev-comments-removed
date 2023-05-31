@@ -217,7 +217,7 @@ public:
 
 
 
-    virtual int32_t getContextLength(void) const;
+    virtual int32_t getContextLength() const;
 
     
 

@@ -77,7 +77,7 @@ class UnicodeString;
 
 
 
-class U_COMMON_API Edits U_FINAL : public UMemory {
+class U_COMMON_API Edits final : public UMemory {
 public:
     
 
@@ -103,7 +103,7 @@ public:
 
 
 
-    Edits(Edits &&src) U_NOEXCEPT :
+    Edits(Edits &&src) noexcept :
             array(stackArray), capacity(STACK_CAPACITY), length(src.length),
             delta(src.delta), numChanges(src.numChanges),
             errorCode_(src.errorCode_) {
@@ -132,13 +132,13 @@ public:
 
 
 
-    Edits &operator=(Edits &&src) U_NOEXCEPT;
+    Edits &operator=(Edits &&src) noexcept;
 
     
 
 
 
-    void reset() U_NOEXCEPT;
+    void reset() noexcept;
 
     
 
@@ -200,7 +200,7 @@ public:
 
 
 
-    struct U_COMMON_API Iterator U_FINAL : public UMemory {
+    struct U_COMMON_API Iterator final : public UMemory {
         
 
 
@@ -504,9 +504,9 @@ public:
     Edits &mergeAndAppend(const Edits &ab, const Edits &bc, UErrorCode &errorCode);
 
 private:
-    void releaseArray() U_NOEXCEPT;
+    void releaseArray() noexcept;
     Edits &copyArray(const Edits &other);
-    Edits &moveArray(Edits &src) U_NOEXCEPT;
+    Edits &moveArray(Edits &src) noexcept;
 
     void setLastUnit(int32_t last) { array[length - 1] = (uint16_t)last; }
     int32_t lastUnit() const { return length > 0 ? array[length - 1] : 0xffff; }

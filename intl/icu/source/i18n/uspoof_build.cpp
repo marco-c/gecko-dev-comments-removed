@@ -53,16 +53,16 @@ uspoof_openFromSource(const char *confusables,  int32_t confusablesLen,
                       int32_t *errorType, UParseError *pe, UErrorCode *status) {
     uspoof_internalInitStatics(status);
     if (U_FAILURE(*status)) {
-        return NULL;
+        return nullptr;
     }
 #if UCONFIG_NO_REGULAR_EXPRESSIONS 
     *status = U_UNSUPPORTED_ERROR;      
-    return NULL;
+    return nullptr;
 #else
-    if (errorType!=NULL) {
+    if (errorType!=nullptr) {
         *errorType = 0;
     }
-    if (pe != NULL) {
+    if (pe != nullptr) {
         pe->line = 0;
         pe->offset = 0;
         pe->preContext[0] = 0;
@@ -72,26 +72,26 @@ uspoof_openFromSource(const char *confusables,  int32_t confusablesLen,
     
     SpoofData *newSpoofData = new SpoofData(*status);
 
-    if (newSpoofData == NULL) {
+    if (newSpoofData == nullptr) {
         *status = U_MEMORY_ALLOCATION_ERROR;
-        return NULL;
+        return nullptr;
     }
 
     if (U_FAILURE(*status)) {
         delete newSpoofData;
-        return NULL;
+        return nullptr;
     }
     SpoofImpl *This = new SpoofImpl(newSpoofData, *status);
 
-    if (This == NULL) {
+    if (This == nullptr) {
         *status = U_MEMORY_ALLOCATION_ERROR;
         delete newSpoofData; 
-        return NULL;
+        return nullptr;
     }
 
     if (U_FAILURE(*status)) {
         delete This; 
-        return NULL;
+        return nullptr;
     }
 
     
@@ -99,7 +99,7 @@ uspoof_openFromSource(const char *confusables,  int32_t confusablesLen,
     
     if (U_FAILURE(*status)) {
         delete This;
-        This = NULL;
+        This = nullptr;
     }
     return (USpoofChecker *)This;
 #endif 

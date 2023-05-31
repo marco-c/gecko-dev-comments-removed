@@ -72,6 +72,20 @@ class DangiCalendar : public ChineseCalendar {
   
   
 
+  
+
+
+
+
+  virtual int32_t getRelatedYear(UErrorCode &status) const override;
+
+  
+
+
+
+
+  virtual void setRelatedYear(int32_t year) override;
+
  private:
 
   const TimeZone* getDangiCalZoneAstroCalc(UErrorCode &status) const;
@@ -83,7 +97,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  virtual UClassID getDynamicClassID(void) const override;
+  virtual UClassID getDynamicClassID() const override;
 
   
 
@@ -96,7 +110,7 @@ class DangiCalendar : public ChineseCalendar {
 
 
 
-  U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+  U_I18N_API static UClassID U_EXPORT2 getStaticClassID();
 
   
 
