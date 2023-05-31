@@ -17,6 +17,10 @@ const PREF_EM_STRICT_COMPATIBILITY = "extensions.strictCompatibility";
 const PREF_GETADDONS_BYIDS = "extensions.getAddons.get.url";
 const PREF_XPI_SIGNATURES_REQUIRED = "xpinstall.signatures.required";
 
+const PREF_DISABLE_SECURITY =
+  "security.turn_off_all_security_so_that_" +
+  "viruses_can_take_over_this_computer";
+
 
 
 

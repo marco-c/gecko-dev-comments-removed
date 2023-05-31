@@ -1,8 +1,19 @@
 "use strict";
 
+const PREF_DISABLE_SECURITY =
+  "security.turn_off_all_security_so_that_" +
+  "viruses_can_take_over_this_computer";
+
 const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
   "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
 );
+
+
+
+Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref(PREF_DISABLE_SECURITY);
+});
 
 
 Services.policies; 

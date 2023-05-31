@@ -29,7 +29,7 @@ const l10n = new Localization([
   "branding/brand.ftl",
 ]);
 
-l10n.formatValue("webext-perms-sideload-text");
+l10n.formatValue("webext-perms-add");
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();

@@ -79,7 +79,7 @@ async function openAndCloseContentPage(url) {
   
   
   
-  await contentPage.spawn([], () =>
+  await contentPage.spawn(null, () =>
     content.windowUtils.clearSharedStyleSheetCache()
   );
   await contentPage.close();

@@ -34,7 +34,11 @@ AddonTestUtils.createAppInfo(
 );
 AddonTestUtils.overrideCertDB();
 
-Services.prefs.setBoolPref("preferences.force-disable.check.once.policy", true);
+
+
+
+
+do_disable_fast_shutdown();
 
 add_task(async function run_test() {
   _("Test fixtures.");

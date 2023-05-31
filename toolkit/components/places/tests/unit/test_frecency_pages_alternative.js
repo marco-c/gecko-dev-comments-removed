@@ -5,8 +5,6 @@
 
 
 
-Services.prefs.setBoolPref("preferences.force-disable.check.once.policy", true);
-
 const FEATURE_PREF = "places.frecency.pages.alternative.featureGate";
 
 async function restartRecalculator() {

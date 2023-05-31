@@ -9,13 +9,6 @@ const URL_NOT_FOUND = "resource://devtools/this/is/not/here.js";
 
 
 
-Services.prefs.setBoolPref(
-  "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
-  false
-);
-
-
-
 
 add_task(async function test_missing() {
   await DevToolsUtils.fetch(URL_NOT_FOUND).then(

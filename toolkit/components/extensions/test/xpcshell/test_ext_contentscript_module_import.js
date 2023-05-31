@@ -127,7 +127,7 @@ add_task(async function test_normal_import() {
   await extension.awaitMessage("done");
 
   
-  await contentPage.spawn([extension.uuid], async uuid => {
+  await contentPage.spawn(extension.uuid, async uuid => {
     let files = ["main.js", "module1.js", "module2.js"];
 
     for (let file of files) {
@@ -176,7 +176,7 @@ add_task(async function test_import_web_accessible() {
 
   
   
-  await contentPage.spawn([extension.uuid], async uuid => {
+  await contentPage.spawn(extension.uuid, async uuid => {
     let base = `moz-extension://${uuid}`;
 
     await Assert.rejects(
@@ -248,7 +248,7 @@ add_task(async function test_import_web_accessible_after_page() {
   
   
   
-  await contentPage.spawn([extension.uuid], async uuid => {
+  await contentPage.spawn(extension.uuid, async uuid => {
     let base = `moz-extension://${uuid}`;
 
     await Assert.rejects(
