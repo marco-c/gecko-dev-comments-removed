@@ -7,8 +7,12 @@
 #ifndef gc_Tenuring_h
 #define gc_Tenuring_h
 
+#include "mozilla/Maybe.h"
+
 #include "gc/AllocKind.h"
+#include "js/GCAPI.h"
 #include "js/TracingAPI.h"
+#include "util/Text.h"
 
 namespace js {
 
@@ -17,9 +21,59 @@ class Nursery;
 class PlainObject;
 
 namespace gc {
+
 class RelocationOverlay;
 class StringRelocationOverlay;
-}  
+
+template <typename Key>
+struct DeduplicationStringHasher {
+  using Lookup = Key;
+
+  static inline HashNumber hash(const Lookup& lookup) {
+    JS::AutoCheckCannotGC nogc;
+    HashNumber strHash;
+
+    
+    
+    
+    
+    
+    
+
+    if (lookup->asLinear().hasLatin1Chars()) {
+      strHash = mozilla::HashString(lookup->asLinear().latin1Chars(nogc),
+                                    lookup->length());
+    } else {
+      MOZ_ASSERT(lookup->asLinear().hasTwoByteChars());
+      strHash = mozilla::HashString(lookup->asLinear().twoByteChars(nogc),
+                                    lookup->length());
+    }
+
+    return mozilla::HashGeneric(strHash, lookup->zone(), lookup->flags());
+  }
+
+  static MOZ_ALWAYS_INLINE bool match(const Key& key, const Lookup& lookup) {
+    if (!key->sameLengthAndFlags(*lookup) ||
+        key->asTenured().zone() != lookup->zone() ||
+        key->asTenured().getAllocKind() != lookup->getAllocKind()) {
+      return false;
+    }
+
+    JS::AutoCheckCannotGC nogc;
+
+    if (key->asLinear().hasLatin1Chars()) {
+      MOZ_ASSERT(lookup->asLinear().hasLatin1Chars());
+      return EqualChars(key->asLinear().latin1Chars(nogc),
+                        lookup->asLinear().latin1Chars(nogc), lookup->length());
+    } else {
+      MOZ_ASSERT(key->asLinear().hasTwoByteChars());
+      MOZ_ASSERT(lookup->asLinear().hasTwoByteChars());
+      return EqualChars(key->asLinear().twoByteChars(nogc),
+                        lookup->asLinear().twoByteChars(nogc),
+                        lookup->length());
+    }
+  }
+};
 
 class TenuringTracer final : public JSTracer {
   Nursery& nursery_;
@@ -34,6 +88,15 @@ class TenuringTracer final : public JSTracer {
   
   gc::RelocationOverlay* objHead = nullptr;
   gc::StringRelocationOverlay* stringHead = nullptr;
+
+  using StringDeDupSet =
+      HashSet<JSString*, DeduplicationStringHasher<JSString*>,
+              SystemAllocPolicy>;
+
+  
+  
+  
+  mozilla::Maybe<StringDeDupSet> stringDeDupSet;
 
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
   void on##name##Edge(type** thingp, const char* name) override;
@@ -100,6 +163,7 @@ class TenuringTracer final : public JSTracer {
   void traceSlots(JS::Value* vp, JS::Value* end);
 };
 
+}  
 }  
 
 #endif  
