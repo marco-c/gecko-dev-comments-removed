@@ -159,9 +159,17 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
   if (decision != ChannelBlockDecision::Blocked) {
     uint32_t event =
         decision == ChannelBlockDecision::Replaced
-            ? nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT
-            : nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT;
-    ContentBlockingNotifier::OnEvent(aChannel, event, false);
+            ? nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT
+            : nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT;
+
+    
+
+    if (event ==
+        nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT) {
+      ContentBlockingNotifier::OnEvent(aChannel, event, true);
+    } else {
+      ContentBlockingNotifier::OnEvent(aChannel, event, false);
+    }
 
     *aShouldContinue = true;
     return NS_OK;

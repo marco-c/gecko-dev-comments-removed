@@ -295,7 +295,6 @@ class ContentBlockingLog final {
     }
 
     
-
     OriginEntry* entry = mLog.AppendElement();
     if (NS_WARN_IF(!entry || !entry->mData)) {
       return;
