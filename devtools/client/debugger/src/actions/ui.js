@@ -132,6 +132,15 @@ export function togglePaneCollapse(position, paneCollapsed) {
       return;
     }
 
+    
+    if (
+      position === "start" &&
+      paneCollapsed &&
+      getActiveSearch(getState()) === primaryPaneTabs.PROJECT_SEARCH
+    ) {
+      dispatch(closeActiveSearch());
+    }
+
     dispatch({
       type: "TOGGLE_PANE",
       position,
