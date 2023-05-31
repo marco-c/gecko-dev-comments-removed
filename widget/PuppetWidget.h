@@ -57,6 +57,8 @@ class PuppetWidget : public nsBaseWidget,
   typedef nsBaseWidget Base;
 
   
+  static const size_t kMaxDimension;
+
  public:
   explicit PuppetWidget(BrowserChild* aBrowserChild);
 
@@ -87,6 +89,12 @@ class PuppetWidget : public nsBaseWidget,
   virtual void Show(bool aState) override;
 
   virtual bool IsVisible() const override { return mVisible; }
+
+  virtual void ConstrainPosition(bool , int32_t* aX,
+                                 int32_t* aY) override {
+    *aX = kMaxDimension;
+    *aY = kMaxDimension;
+  }
 
   
   virtual void Move(double aX, double aY) override {}

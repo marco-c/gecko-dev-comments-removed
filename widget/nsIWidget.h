@@ -370,7 +370,6 @@ class nsIWidget : public nsISupports {
   typedef mozilla::CSSToScreenScale CSSToScreenScale;
   typedef mozilla::DesktopIntRect DesktopIntRect;
   typedef mozilla::DesktopPoint DesktopPoint;
-  typedef mozilla::DesktopIntPoint DesktopIntPoint;
   typedef mozilla::DesktopRect DesktopRect;
   typedef mozilla::DesktopSize DesktopSize;
   typedef mozilla::CSSPoint CSSPoint;
@@ -699,7 +698,17 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void ConstrainPosition(DesktopIntPoint&) = 0;
+
+
+
+
+
+
+
+
+
+
+  virtual void ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) = 0;
 
   
 
