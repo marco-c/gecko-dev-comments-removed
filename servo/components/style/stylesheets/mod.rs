@@ -556,8 +556,9 @@ impl DeepCloneWithLock for CssRule {
                 ))
             },
             CssRule::Property(ref arc) => {
-                let rule = arc.read_with(guard);
-                CssRule::Property(Arc::new(lock.wrap(rule.clone())))
+                
+                
+                CssRule::Property(arc.clone())
             },
             CssRule::Document(ref arc) => {
                 let rule = arc.read_with(guard);
