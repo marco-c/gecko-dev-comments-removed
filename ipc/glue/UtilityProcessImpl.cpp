@@ -29,25 +29,44 @@ UtilityProcessImpl::~UtilityProcessImpl() = default;
 #if defined(XP_WIN)
 
 void UtilityProcessImpl::LoadLibraryOrCrash(LPCWSTR aLib) {
-  HMODULE module = ::LoadLibraryW(aLib);
-  if (!module) {
-    DWORD err = ::GetLastError();
-    switch (err) {
-      
-      
-      
-      case ERROR_MOD_NOT_FOUND:
-      case ERROR_COMMITMENT_LIMIT:
-        
-        
-        CrashReporter::AnnotateOOMAllocationSize(1);
-        break;
+  
+  
+  
 
-      default:
-        break;
+  const int kMaxRetries = 10;
+  DWORD err;
+
+  for (int i = 0; i < kMaxRetries; i++) {
+    HMODULE module = ::LoadLibraryW(aLib);
+    if (module) {
+      return;
     }
-    MOZ_CRASH_UNSAFE_PRINTF("Unable to preload module: 0x%lx", err);
+
+    err = ::GetLastError();
+
+    if (err != ERROR_NOACCESS && err != ERROR_DLL_INIT_FAILED) {
+      break;
+    }
+
+    PR_Sleep(0);
   }
+
+  switch (err) {
+    
+    
+    
+    case ERROR_MOD_NOT_FOUND:
+    case ERROR_COMMITMENT_LIMIT:
+      
+      
+      CrashReporter::AnnotateOOMAllocationSize(1);
+      break;
+
+    default:
+      break;
+  }
+
+  MOZ_CRASH_UNSAFE_PRINTF("Unable to preload module: 0x%lx", err);
 }
 #endif  
 
