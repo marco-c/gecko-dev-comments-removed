@@ -499,6 +499,16 @@ where
             }
         }
 
+        if matching_context.considered_relative_selector {
+            
+            
+            
+            matching_context
+                .extra_data
+                .cascade_input_flags
+                .insert(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR);
+        }
+
         MatchingResults {
             rule_node,
             flags: matching_context.extra_data.cascade_input_flags,

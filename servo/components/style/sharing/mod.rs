@@ -67,6 +67,7 @@
 use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::StyleBloom;
 use crate::context::{SharedStyleContext, StyleContext};
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::dom::{SendElement, TElement};
 use crate::properties::ComputedValues;
 use crate::rule_tree::StrongRuleNode;
@@ -275,11 +276,13 @@ pub struct StyleSharingCandidate<E: TElement> {
     
     element: E,
     validation_data: ValidationData,
+    considered_relative_selector: bool,
 }
 
 struct FakeCandidate {
     _element: usize,
     _validation_data: ValidationData,
+    _considered_relative_selector: bool,
 }
 
 impl<E: TElement> Deref for StyleSharingCandidate<E> {
@@ -466,13 +469,19 @@ impl<Candidate> SharingCacheBase<Candidate> {
 }
 
 impl<E: TElement> SharingCache<E> {
-    fn insert(&mut self, element: E, validation_data_holder: Option<&mut StyleSharingTarget<E>>) {
+    fn insert(
+        &mut self,
+        element: E,
+        considered_relative_selector: bool,
+        validation_data_holder: Option<&mut StyleSharingTarget<E>>,
+    ) {
         let validation_data = match validation_data_holder {
             Some(v) => v.take_validation_data(),
             None => ValidationData::default(),
         };
         self.entries.insert(StyleSharingCandidate {
             element,
+            considered_relative_selector,
             validation_data,
         });
     }
@@ -618,6 +627,22 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
+        
+        
+        
+        
+        
+        if element.anchors_relative_selector() {
+            debug!("Failing to insert to the cache: may anchor relative selector");
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
         let ui_style = style.style().get_ui();
         if ui_style.specifies_transitions() {
             debug!("Failing to insert to the cache: transitions");
@@ -642,7 +667,15 @@ impl<E: TElement> StyleSharingCache<E> {
             self.clear();
             self.dom_depth = dom_depth;
         }
-        self.cache_mut().insert(*element, validation_data_holder);
+        self.cache_mut().insert(
+            *element,
+            style
+                .style
+                .0
+                .flags
+                .intersects(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR),
+            validation_data_holder,
+        );
     }
 
     
