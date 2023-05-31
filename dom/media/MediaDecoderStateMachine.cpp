@@ -3194,8 +3194,11 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
 void MediaDecoderStateMachine::SeekingState::SeekCompleted() {
   const auto newCurrentTime = CalculateNewCurrentTime();
 
-  if (newCurrentTime == mMaster->Duration() && !mMaster->mIsLiveStream) {
-    
+  if ((newCurrentTime == mMaster->Duration() ||
+       newCurrentTime.EqualsAtLowestResolution(
+           mMaster->Duration().ToBase(USECS_PER_S))) &&
+      !mMaster->mIsLiveStream) {
+    SLOG("Seek completed, seeked to end: %s", newCurrentTime.ToString().get());
     
     
     
