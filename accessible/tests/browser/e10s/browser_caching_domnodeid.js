@@ -19,22 +19,14 @@ addAccessibleTask(
     
     
     
-    if (!isCacheEnabled) {
-      
-      
-      await contentPromise;
-    }
-
     await untilCacheIs(
       () => div.id,
       "foo",
       "ID is correct and updated in cache"
     );
 
-    if (isCacheEnabled) {
-      
-      await contentPromise;
-    }
+    
+    await contentPromise;
   },
   { iframe: true, remoteIframe: true }
 );

@@ -227,9 +227,7 @@ addAccessibleTask(
   async function(browser, accDoc) {
     info("Testing multiline RtL text");
     await testTextNode(accDoc, browser, "p4");
-    if (!isCacheEnabled) {
-      await testTextNode(accDoc, browser, "p5"); 
-    }
+    
     
     await testTextNode(accDoc, browser, "p7");
   },
@@ -291,8 +289,8 @@ addAccessibleTask(
     await testTextNode(accDoc, browser, "p6");
   },
   {
-    topLevel: isCacheEnabled,
-    iframe: isCacheEnabled,
+    topLevel: true,
+    iframe: true,
   }
 );
 
@@ -315,8 +313,8 @@ addAccessibleTask(
     
   },
   {
-    topLevel: isCacheEnabled,
-    iframe: isCacheEnabled,
+    topLevel: true,
+    iframe: true,
   }
 );
 

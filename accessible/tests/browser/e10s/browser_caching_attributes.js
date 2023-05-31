@@ -132,9 +132,9 @@ addAccessibleTask(
   },
   {
     
-    topLevel: !isCacheEnabled,
-    iframe: !isCacheEnabled,
-    remoteIframe: !isCacheEnabled,
+    topLevel: false,
+    iframe: false,
+    remoteIframe: false,
   }
 );
 
@@ -617,7 +617,7 @@ addAccessibleTask(
   async function(browser, docAcc) {
     const noAlt = findAccessibleChildByID(docAcc, "noAlt");
     testAttrs(noAlt, { src: kImgUrl }, true);
-    if (isCacheEnabled && browser.isRemoteBrowser) {
+    if (browser.isRemoteBrowser) {
       
       const alt = findAccessibleChildByID(docAcc, "alt");
       testAbsentAttrs(alt, { src: "" });

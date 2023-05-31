@@ -84,5 +84,5 @@ addAccessibleTask(
     
     testComputedARIARole("iframe", "");
   },
-  { chrome: true, topLevel: isCacheEnabled }
+  { chrome: true, topLevel: true }
 );

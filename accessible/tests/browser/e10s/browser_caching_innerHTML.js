@@ -13,13 +13,6 @@ addAccessibleTask(
 <math id="math"><mfrac><mi>x</mi><mi>y</mi></mfrac></math>
   `,
   async function(browser, docAcc) {
-    if (!isCacheEnabled) {
-      
-      
-      todo(false, "Cache disabled for a cache only test");
-      return;
-    }
-
     const p = findAccessibleChildByID(docAcc, "p");
     let hasHtml;
     try {
@@ -49,7 +42,7 @@ addAccessibleTask(
   },
   {
     topLevel: true,
-    iframe: isCacheEnabled,
-    remoteIframe: isCacheEnabled,
+    iframe: true,
+    remoteIframe: true,
   }
 );

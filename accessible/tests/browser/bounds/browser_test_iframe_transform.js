@@ -48,8 +48,7 @@ function testBoundsWithOffset(browser, iframeDocAcc, id, domElmBounds, offset) {
   
   
   
-  
-  const addTranslationOffset = !gIsRemoteIframe && isCacheEnabled;
+  const addTranslationOffset = !gIsRemoteIframe;
   const expectedX = addTranslationOffset
     ? domElmBounds[0] + offset
     : domElmBounds[0];
@@ -158,8 +157,8 @@ addAccessibleTask(
   {
     chrome: false,
     topLevel: false,
-    iframe: isCacheEnabled ,
-    remoteIframe: isCacheEnabled ,
+    iframe: true,
+    remoteIframe: true,
     iframeAttrs: { style: "width: 0;" },
   }
 );

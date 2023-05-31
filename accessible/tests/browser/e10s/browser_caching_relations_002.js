@@ -115,9 +115,9 @@ addAccessibleTask(
   },
   {
     chrome: false,
-    iframe: isCacheEnabled,
-    remoteIframe: isCacheEnabled,
-    topLevel: isCacheEnabled,
+    iframe: true,
+    remoteIframe: true,
+    topLevel: true,
   }
 );
 
@@ -238,8 +238,8 @@ addAccessibleTask(
 
 
     chrome: false,
-    iframe: isCacheEnabled,
-    remoteIframe: isCacheEnabled,
-    topLevel: isCacheEnabled,
+    iframe: true,
+    remoteIframe: true,
+    topLevel: true,
   }
 );

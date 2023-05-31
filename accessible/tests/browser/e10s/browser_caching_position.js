@@ -188,7 +188,7 @@ addAccessibleTask(
   {
     
     
-    topLevel: isCacheEnabled,
-    iframe: isCacheEnabled,
+    topLevel: true,
+    iframe: true,
   }
 );
