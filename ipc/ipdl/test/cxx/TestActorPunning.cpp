@@ -23,7 +23,7 @@ mozilla::ipc::IPCResult TestActorPunningParent::RecvPun(
 
 
 
-void TestActorPunningParent::HandleFatalError(const char* aErrorMsg) const {
+void TestActorPunningParent::HandleFatalError(const char* aErrorMsg) {
   if (!!strcmp(aErrorMsg, "Error deserializing 'PTestActorPunningSubParent'")) {
     fail("wrong fatal error");
   }

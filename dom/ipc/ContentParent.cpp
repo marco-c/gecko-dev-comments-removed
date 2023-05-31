@@ -1879,17 +1879,18 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
     qms->AbortOperationsForProcess(mChildID);
   }
 
-  
-  
-
-  if (aMethod == CLOSE_CHANNEL) {
+  if (aMethod == CLOSE_CHANNEL || aMethod == CLOSE_CHANNEL_WITH_ERROR) {
     if (!mCalledClose) {
       MaybeLogBlockShutdownDiagnostics(
           this, "ShutDownProcess: Closing channel.", __FILE__, __LINE__);
       
       
       mCalledClose = true;
-      Close();
+      if (aMethod == CLOSE_CHANNEL_WITH_ERROR) {
+        CloseWithError();
+      } else {
+        Close();
+      }
     }
     result = true;
   }
@@ -2074,10 +2075,11 @@ void ContentParent::ProcessingError(Result aCode, const char* aReason) {
   if (MsgDropped == aCode) {
     return;
   }
-#ifndef FUZZING
   
+#ifndef FUZZING
   KillHard(aReason);
 #endif
+  ShutDownProcess(CLOSE_CHANNEL_WITH_ERROR);
 }
 
 void ContentParent::ActorDestroy(ActorDestroyReason why) {
@@ -4515,6 +4517,7 @@ void ContentParent::KillHard(const char* aReason) {
   ProcessHandle otherProcessHandle;
   if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle)) {
     NS_ERROR("Failed to open child process when attempting kill.");
+    ShutDownProcess(CLOSE_CHANNEL_WITH_ERROR);
     return;
   }
 
@@ -4534,6 +4537,10 @@ void ContentParent::KillHard(const char* aReason) {
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
     mSubprocess->SetAlreadyDead();
   }
+
+  
+  
+  ShutDownProcess(CLOSE_CHANNEL_WITH_ERROR);
 
   
   XRE_GetIOMessageLoop()->PostTask(
