@@ -895,11 +895,14 @@ function getTextProperty(view, ruleIndex, declaration) {
 
 
 
+
+
+
 async function checkDeclarationCompatibility(
   view,
   ruleIndex,
   declaration,
-  expected
+  { expected, expectedLearnMoreUrl }
 ) {
   const declarations = await getPropertiesForRuleIndex(view, ruleIndex, true);
   const [[name, value]] = Object.entries(declaration);
@@ -921,6 +924,35 @@ async function checkDeclarationCompatibility(
       ruleIndex,
       declaration
     );
+  }
+
+  if (expectedLearnMoreUrl !== undefined) {
+    
+    const tooltip = view.tooltips.getTooltip("interactiveTooltip");
+    const onTooltipReady = tooltip.once("shown");
+    const { compatibilityIcon } = declarations.get(dec);
+    await view.tooltips.onInteractiveTooltipTargetHover(compatibilityIcon);
+    tooltip.show(compatibilityIcon);
+    await onTooltipReady;
+
+    const learnMoreEl = tooltip.panel.querySelector(".link");
+    if (expectedLearnMoreUrl === null) {
+      ok(!learnMoreEl, `"${dec}" has no "Learn more" link`);
+    } else {
+      ok(learnMoreEl, `"${dec}" has a "Learn more" link`);
+
+      const { link } = await simulateLinkClick(learnMoreEl);
+      is(
+        link,
+        expectedLearnMoreUrl,
+        `Click on ${dec} "Learn more" link navigates user to expected url`
+      );
+    }
+
+    
+    const onTooltipHidden = tooltip.once("hidden");
+    tooltip.hide();
+    await onTooltipHidden;
   }
 }
 
@@ -1077,6 +1109,7 @@ async function checkInteractiveTooltip(view, type, ruleIndex, declaration) {
 
 
 
+
 async function runCSSCompatibilityTests(view, inspector, tests) {
   for (const test of tests) {
     if (test.selector) {
@@ -1091,7 +1124,10 @@ async function runCSSCompatibilityTests(view, inspector, tests) {
           {
             [rule]: rules[rule].value,
           },
-          rules[rule].expected
+          {
+            expected: rules[rule].expected,
+            expectedLearnMoreUrl: rules[rule].expectedLearnMoreUrl,
+          }
         );
       }
     }

@@ -224,12 +224,16 @@ class CssCompatibilityTooltipHelper {
 
 
 
+
+
   getTemplate(data, tooltip) {
     const { doc } = tooltip;
-    const { url, unsupportedBrowsers } = data;
+    const { specUrl, url, unsupportedBrowsers } = data;
 
     this.#currentTooltip = tooltip;
-    this.#currentUrl = `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`;
+    this.#currentUrl = url
+      ? `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`
+      : specUrl;
     const templateNode = this.#createElement(doc, "template");
 
     const tooltipContainer = this.#createElement(doc, "div", [
@@ -243,12 +247,14 @@ class CssCompatibilityTooltipHelper {
     );
     if (browserListContainer) {
       tooltipContainer.appendChild(browserListContainer);
+      this.#renderUnsupportedBrowserList(tooltipContainer, unsupportedBrowsers);
     }
 
-    tooltipContainer.appendChild(this.#getLearnMoreMessage(doc, data));
-    templateNode.content.appendChild(tooltipContainer);
+    if (this.#currentUrl) {
+      tooltipContainer.appendChild(this.#getLearnMoreMessage(doc, data));
+    }
 
-    this.#renderUnsupportedBrowserList(tooltipContainer, unsupportedBrowsers);
+    templateNode.content.appendChild(tooltipContainer);
     return doc.importNode(templateNode.content, true);
   }
 
