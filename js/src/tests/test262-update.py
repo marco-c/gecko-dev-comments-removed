@@ -27,7 +27,6 @@ UNSUPPORTED_FEATURES = set(
         "json-modules",  
         "resizable-arraybuffer",  
         "Temporal",  
-        "regexp-v-flag",  
         "decorators",  
         "regexp-duplicate-named-groups",  
         "symbols-as-weakmap-keys",  

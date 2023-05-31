@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   new RegExp(".", "uv");
 });

@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(/./.unicodeSets, false, "/./.unicodeSets");
 assert.sameValue(/./d.unicodeSets, false, "/./d.unicodeSets");
 assert.sameValue(/./g.unicodeSets, false, "/./g.unicodeSets");
