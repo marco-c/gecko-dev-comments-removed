@@ -2793,7 +2793,8 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mIsThirdPartyContextToTopWindow =
         aParent->IsThirdPartyContextToTopWindow();
     loadInfo.mShouldResistFingerprinting =
-        aParent->GlobalScope()->ShouldResistFingerprinting();
+        aParent->GlobalScope()->ShouldResistFingerprinting(
+            RFPTarget::IsAlwaysEnabledForPrecompute);
     loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevTools = aParent->IsWatchedByDevTools();
   } else {
@@ -2935,7 +2936,8 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mHasStorageAccessPermissionGranted =
           document->HasStorageAccessPermissionGranted();
       loadInfo.mShouldResistFingerprinting =
-          document->ShouldResistFingerprinting();
+          document->ShouldResistFingerprinting(
+              RFPTarget::IsAlwaysEnabledForPrecompute);
 
       
       
@@ -3003,7 +3005,8 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mShouldResistFingerprinting =
           nsContentUtils::ShouldResistFingerprinting_dangerous(
               loadInfo.mLoadingPrincipal,
-              "Unusual situation - we have no document or CookieJarSettings");
+              "Unusual situation - we have no document or CookieJarSettings",
+              RFPTarget::IsAlwaysEnabledForPrecompute);
       MOZ_ASSERT(loadInfo.mCookieJarSettings);
       auto* cookieJarSettings =
           net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings);
