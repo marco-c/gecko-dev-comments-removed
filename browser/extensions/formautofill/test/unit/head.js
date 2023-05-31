@@ -190,8 +190,29 @@ async function initProfileStorage(
   return profileStorage;
 }
 
+function verifySectionAutofillResult(sections, expectedSectionsInfo) {
+  sections.forEach((section, index) => {
+    const expectedSection = expectedSectionsInfo[index];
+
+    const fieldDetails = section.fieldDetails;
+    const expectedFieldDetails = expectedSection.fields;
+
+    info(`verify autofill section[${index}]`);
+
+    fieldDetails.forEach((field, fieldIndex) => {
+      const expeceted = expectedFieldDetails[fieldIndex];
+
+      Assert.equal(
+        expeceted.autofill,
+        field.element.value,
+        `Autofilled value for element(id=${field.element.id}, field name=${field.fieldName}) should be equal`
+      );
+    });
+  });
+}
+
 function verifySectionFieldDetails(sections, expectedSectionsInfo) {
-  sections.map((section, index) => {
+  sections.forEach((section, index) => {
     const expectedSection = expectedSectionsInfo[index];
 
     const fieldDetails = section.fieldDetails;
@@ -228,10 +249,11 @@ function verifySectionFieldDetails(sections, expectedSectionsInfo) {
         ...expectedFieldDetail,
       };
 
-      delete field.elementWeakRef;
-      delete field.confidence;
-      delete field.part;
       const keys = new Set([...Object.keys(field), ...Object.keys(expected)]);
+      ["autofill", "elementWeakRef", "confidence", "part"].forEach(k =>
+        keys.delete(k)
+      );
+
       for (const key of keys) {
         const expectedValue = expected[key];
         const actualValue = field[key];
@@ -291,7 +313,41 @@ function autofillFieldSelector(doc) {
 
 
 
-async function runHeuristicsTest(patterns, fixturePathPrefix) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function runHeuristicsTest(
+  patterns,
+  fixturePathPrefix = "",
+  options = { testAutofill: false }
+) {
   add_setup(async () => {
     ({ FormAutofillHeuristics } = ChromeUtils.importESModule(
       "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs"
@@ -348,6 +404,14 @@ async function runHeuristicsTest(patterns, fixturePathPrefix) {
 
       verifySectionFieldDetails(sections, testPattern.expectedResult);
 
+      if (options.testAutofill) {
+        for (const section of sections) {
+          section.focusedInput = section.fieldDetails[0].element;
+          await section.autofillFields(testPattern.profile);
+        }
+        verifySectionAutofillResult(sections, testPattern.expectedResult);
+      }
+
       if (testPattern.prefs) {
         testPattern.prefs.forEach(pref =>
           Services.prefs.clearUserPref(pref[0])
@@ -355,6 +419,10 @@ async function runHeuristicsTest(patterns, fixturePathPrefix) {
       }
     });
   });
+}
+
+async function runAutofillHeuristicsTest(patterns, fixturePathPrefix = "") {
+  runHeuristicsTest(patterns, fixturePathPrefix, { testAutofill: true });
 }
 
 
