@@ -1,3 +1,5 @@
+
+
 import platform
 import os
 
@@ -13,3 +15,12 @@ settings.register_profile("pypy", settings(deadline=None,
 
 settings.load_profile(os.getenv("HYPOTHESIS_PROFILE",
                                 "default" if impl != "PyPy" else "pypy"))
+
+
+def pytest_ignore_collect(collection_path, path, config):
+    
+    assert collection_path != config.rootpath
+    if (collection_path / "tox.ini").is_file():
+        return True
+
+    return None
