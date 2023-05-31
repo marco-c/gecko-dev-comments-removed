@@ -351,7 +351,6 @@ class nsContextMenu {
     this.initClipboardItems();
     this.initMediaPlayerItems();
     this.initLeaveDOMFullScreenItems();
-    this.initClickToPlayItems();
     this.initPasswordManagerItems();
     this.initViewSourceItems();
     this.initScreenshotItem();
@@ -1126,11 +1125,6 @@ class nsContextMenu {
     }
   }
 
-  initClickToPlayItems() {
-    this.showItem("context-ctp-play", false);
-    this.showItem("context-ctp-hide", false);
-  }
-
   initPasswordManagerItems() {
     let showUseSavedLogin = false;
     let showGenerate = false;
@@ -1161,14 +1155,14 @@ class nsContextMenu {
       
       let fillMenu = document.getElementById("fill-login");
       if (onPasswordLikeField) {
-        fillMenu.setAttribute(
-          "data-l10n-id",
+        document.l10n.setAttributes(
+          fillMenu,
           "main-context-menu-use-saved-password"
         );
       } else {
         
-        fillMenu.setAttribute(
-          "data-l10n-id",
+        document.l10n.setAttributes(
+          fillMenu,
           "main-context-menu-use-saved-login"
         );
       }
@@ -2118,14 +2112,6 @@ class nsContextMenu {
 
   sendMedia() {
     MailIntegration.sendMessage(this.mediaURL, "");
-  }
-
-  playPlugin() {
-    
-  }
-
-  hidePlugin() {
-    
   }
 
   
