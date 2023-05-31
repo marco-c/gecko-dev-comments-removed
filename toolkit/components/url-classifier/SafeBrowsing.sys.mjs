@@ -1,13 +1,11 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["SafeBrowsing"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const PREF_DEBUG_ENABLED = "browser.safebrowsing.debug";
 let loggingEnabled = false;
 
-
+// Log only if browser.safebrowsing.debug is true
 function log(...stuff) {
   if (!loggingEnabled) {
     return;
@@ -22,7 +20,7 @@ function getLists(prefName) {
   log("getLists: " + prefName);
   let pref = Services.prefs.getCharPref(prefName, "");
 
-  
+  // Splitting an empty string returns [''], we really want an empty array.
   if (!pref) {
     return [];
   }
@@ -152,7 +150,7 @@ const FEATURES = [
       "urlclassifier.features.fingerprinting.annotate.whitelistTables",
     ],
     enabled() {
-      
+      // Annotation features are enabled by default.
       return true;
     },
     update() {
@@ -188,7 +186,7 @@ const FEATURES = [
       "urlclassifier.features.cryptomining.annotate.whitelistTables",
     ],
     enabled() {
-      
+      // Annotation features are enabled by default.
       return true;
     },
     update() {
@@ -224,7 +222,7 @@ const FEATURES = [
       "urlclassifier.features.socialtracking.annotate.whitelistTables",
     ],
     enabled() {
-      
+      // Annotation features are enabled by default.
       return true;
     },
     update() {
@@ -285,7 +283,7 @@ const FEATURES = [
       "urlclassifier.features.emailtracking.datacollection.allowlistTables",
     ],
     enabled() {
-      
+      // Data collection features are enabled by default.
       return true;
     },
     update() {
@@ -297,7 +295,7 @@ const FEATURES = [
   },
 ];
 
-var SafeBrowsing = {
+export var SafeBrowsing = {
   init() {
     if (this.initialized) {
       log("Already initialized");
@@ -395,14 +393,14 @@ var SafeBrowsing = {
         throw err;
     }
 
-    
-    
+    // The "Phish" reports are about submitting new phishing URLs to Google so
+    // they don't have an associated list URL
     if (kind != "Phish" && (!info.list || !info.uri)) {
       return null;
     }
 
     let reportUrl = Services.urlFormatter.formatURLPref(pref);
-    
+    // formatURLPref might return "about:blank" if getting the pref fails
     if (reportUrl == "about:blank") {
       reportUrl = null;
     }
@@ -414,7 +412,7 @@ var SafeBrowsing = {
   },
 
   observe(aSubject, aTopic, aData) {
-    
+    // skip nextupdatetime and lastupdatetime
     if (aData.includes("lastupdatetime") || aData.includes("nextupdatetime")) {
       return;
     }
@@ -432,14 +430,14 @@ var SafeBrowsing = {
     log("reading prefs");
 
     let obsoleteLists = [];
-    
+    // Make a copy of the original lists before we re-read the prefs.
     if (this.initialized) {
       obsoleteLists = this.features.map(feature => {
         return feature.list;
       });
     }
 
-    
+    // Allow to disable all feature updates with a single preference for tests.
     let update = Services.prefs.getBoolPref(
       "browser.safebrowsing.update.enabled",
       true
@@ -471,9 +469,9 @@ var SafeBrowsing = {
       this.unregisterTables(obsoleteLists);
     }
 
-    
-    
-    
+    // XXX The listManager backend gets confused if this is called before the
+    // lists are registered. So only call it here when a pref changes, and not
+    // when doing initialization. I expect to refactor this later, so pardon the hack.
     if (this.initialized) {
       this.controlUpdateChecking();
     }
@@ -488,7 +486,7 @@ var SafeBrowsing = {
 
     log("initializing safe browsing URLs, client id", clientID);
 
-    
+    // Get the different providers
     let branch = Services.prefs.getBranch("browser.safebrowsing.provider.");
     let children = branch.getChildList("");
     this.providers = {};
@@ -515,7 +513,7 @@ var SafeBrowsing = {
 
     Object.keys(this.providers).forEach(function(provider) {
       if (provider == "test") {
-        return; 
+        return; // skip
       }
       let updateURL = Services.urlFormatter.formatURLPref(
         "browser.safebrowsing.provider." + provider + ".updateURL"
@@ -526,7 +524,7 @@ var SafeBrowsing = {
       updateURL = updateURL.replace("SAFEBROWSING_ID", clientID);
       gethashURL = gethashURL.replace("SAFEBROWSING_ID", clientID);
 
-      
+      // Disable updates and gethash if the Google API key is missing.
       let googleSafebrowsingKey = Services.urlFormatter
         .formatURL("%GOOGLE_SAFEBROWSING_API_KEY%")
         .trim();
@@ -545,11 +543,11 @@ var SafeBrowsing = {
       log("Provider: " + provider + " updateURL=" + updateURL);
       log("Provider: " + provider + " gethashURL=" + gethashURL);
 
-      
+      // Urls used to update DB
       this.providers[provider].updateURL = updateURL;
       this.providers[provider].gethashURL = gethashURL;
 
-      
+      // Get lists this provider manages
       let lists = getLists(
         "browser.safebrowsing.provider." + provider + ".lists"
       );

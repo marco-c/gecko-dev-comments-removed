@@ -276,8 +276,8 @@ TalosPowersService.prototype = {
       
       
       
-      let { SafeBrowsing } = ChromeUtils.import(
-        "resource://gre/modules/SafeBrowsing.jsm"
+      let { SafeBrowsing } = ChromeUtils.importESModule(
+        "resource://gre/modules/SafeBrowsing.sys.mjs"
       );
 
       

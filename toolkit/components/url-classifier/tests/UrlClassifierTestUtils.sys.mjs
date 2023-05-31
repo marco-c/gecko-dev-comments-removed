@@ -1,7 +1,3 @@
-"use strict";
-
-var EXPORTED_SYMBOLS = ["UrlClassifierTestUtils"];
-
 const ANNOTATION_TABLE_NAME = "mochitest1-track-simple";
 const ANNOTATION_TABLE_PREF = "urlclassifier.trackingAnnotationTable";
 const ANNOTATION_ENTITYLIST_TABLE_NAME = "mochitest1-trackwhite-simple";
@@ -25,16 +21,16 @@ const EMAIL_TRACKING_TABLE_PREF =
 
 let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
-var UrlClassifierTestUtils = {
+export var UrlClassifierTestUtils = {
   addTestTrackers() {
-    
-    let annotationURL1 = "tracking.example.org/"; 
+    // Add some URLs to the tracking databases
+    let annotationURL1 = "tracking.example.org/"; // only for annotations
     let annotationURL2 = "itisatracker.org/";
     let annotationURL3 = "trackertest.org/";
     let annotationURL4 = "another-tracking.example.net/";
     let annotationURL5 = "tlsresumptiontest.example.org/";
     let annotationEntitylistedURL = "itisatrap.org/?resource=example.org";
-    let trackingURL1 = "tracking.example.com/"; 
+    let trackingURL1 = "tracking.example.com/"; // only for TP
     let trackingURL2 = "itisatracker.org/";
     let trackingURL3 = "trackertest.org/";
     let entitylistedURL = "itisatrap.org/?resource=itisatracker.org";
@@ -205,12 +201,12 @@ var UrlClassifierTestUtils = {
     Services.prefs.clearUserPref(ENTITYLIST_TABLE_PREF);
   },
 
-  
-
-
-
-
-
+  /**
+   * Add some entries to a test tracking protection database, and resets
+   * back to the default database after the test ends.
+   *
+   * @return {Promise}
+   */
   useTestDatabase(table) {
     Services.prefs.setCharPref(table.pref, table.name);
 
@@ -251,17 +247,17 @@ var UrlClassifierTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Handle the next "urlclassifier-before-block-channel" event.
+   * @param {Object} options
+   * @param {String} [options.filterOrigin] - Only handle event for channels
+   * with matching origin.
+   * @param {function} [options.onBeforeBlockChannel] - Optional callback for
+   * the event. Called before acting on the channel.
+   * @param {("allow"|"replace")} [options.action] - Whether to allow or replace
+   * the channel.
+   * @returns {Promise} - Resolves once event has been handled.
+   */
   handleBeforeBlockChannel({
     filterOrigin = null,
     onBeforeBlockChannel,

@@ -1,20 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+// COMPLETE_LENGTH and PARTIAL_LENGTH copied from nsUrlClassifierDBService.h,
+// they correspond to the length, in bytes, of a hash prefix and the total
+// hash.
 const COMPLETE_LENGTH = 32;
 const PARTIAL_LENGTH = 4;
 
-
+// Upper limit on the server response minimumWaitDuration
 const MIN_WAIT_DURATION_MAX_VALUE = 24 * 60 * 60 * 1000;
 const PREF_DEBUG_ENABLED = "browser.safebrowsing.debug";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 const lazy = {};
@@ -35,7 +34,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 let loggingEnabled = false;
 
-
+// Log only if browser.safebrowsing.debug is true
 function log(...stuff) {
   if (!loggingEnabled) {
     return;
@@ -46,19 +45,19 @@ function log(...stuff) {
   dump(Services.urlFormatter.trimSensitiveURLs(msg) + "\n");
 }
 
-
-
-
+// Map the HTTP response code to a Telemetry bucket
+// https://developers.google.com/safe-browsing/developers_guide_v2?hl=en
+// eslint-disable-next-line complexity
 function httpStatusToBucket(httpStatus) {
   var statusBucket;
   switch (httpStatus) {
     case 100:
     case 101:
-      
+      // Unexpected 1xx return code
       statusBucket = 0;
       break;
     case 200:
-      
+      // OK - Data is available in the HTTP response body.
       statusBucket = 1;
       break;
     case 201:
@@ -66,11 +65,11 @@ function httpStatusToBucket(httpStatus) {
     case 203:
     case 205:
     case 206:
-      
+      // Unexpected 2xx return code
       statusBucket = 2;
       break;
     case 204:
-      
+      // No Content - There are no full-length hashes with the requested prefix.
       statusBucket = 3;
       break;
     case 300:
@@ -81,12 +80,12 @@ function httpStatusToBucket(httpStatus) {
     case 305:
     case 307:
     case 308:
-      
+      // Unexpected 3xx return code
       statusBucket = 4;
       break;
     case 400:
-      
-      
+      // Bad Request - The HTTP request was not correctly formed.
+      // The client did not provide all required CGI parameters.
       statusBucket = 5;
       break;
     case 401:
@@ -108,46 +107,46 @@ function httpStatusToBucket(httpStatus) {
     case 429:
     case 431:
     case 451:
-      
+      // Unexpected 4xx return code
       statusBucket = 6;
       break;
     case 403:
-      
+      // Forbidden - The client id is invalid.
       statusBucket = 7;
       break;
     case 404:
-      
+      // Not Found
       statusBucket = 8;
       break;
     case 408:
-      
+      // Request Timeout
       statusBucket = 9;
       break;
     case 413:
-      
+      // Request Entity Too Large - Bug 1150334
       statusBucket = 10;
       break;
     case 500:
     case 501:
     case 510:
-      
+      // Unexpected 5xx return code
       statusBucket = 11;
       break;
     case 502:
     case 504:
     case 511:
-      
+      // Local network errors, we'll ignore these.
       statusBucket = 12;
       break;
     case 503:
-      
-      
-      
+      // Service Unavailable - The server cannot handle the request.
+      // Clients MUST follow the backoff behavior specified in the
+      // Request Frequency section.
       statusBucket = 13;
       break;
     case 505:
-      
-      
+      // HTTP Version Not Supported - The server CANNOT handle the requested
+      // protocol major version.
       statusBucket = 14;
       break;
     default:
@@ -170,24 +169,24 @@ FullHashMatch.prototype = {
   cacheDuration: null,
 };
 
-function HashCompleter() {
-  
-  
-  
+export function HashCompleter() {
+  // The current HashCompleterRequest in flight. Once it is started, it is set
+  // to null. It may be used by multiple calls to |complete| in succession to
+  // avoid creating multiple requests to the same gethash URL.
   this._currentRequest = null;
-  
-  
+  // An Array of ongoing gethash requests which is used to find requests for
+  // the same hash prefix.
   this._ongoingRequests = [];
-  
+  // A map of gethashUrls to HashCompleterRequests that haven't yet begun.
   this._pendingRequests = {};
 
-  
+  // A map of gethash URLs to RequestBackoff objects.
   this._backoffs = {};
 
-  
+  // Whether we have been informed of a shutdown by the shutdown event.
   this._shuttingDown = false;
 
-  
+  // A map of gethash URLs to next gethash time in miliseconds
   this._nextGethashTimeMs = {};
 
   Services.obs.addObserver(this, "quit-application");
@@ -206,9 +205,9 @@ HashCompleter.prototype = {
     "nsITimerCallback",
   ]),
 
-  
-  
-  
+  // This is mainly how the HashCompleter interacts with other components.
+  // Even though it only takes one partial hash and callback, subsequent
+  // calls are made into the same HTTP request by using a thread dispatch.
   complete: function HC_complete(
     aPartialHash,
     aGethashUrl,
@@ -219,7 +218,7 @@ HashCompleter.prototype = {
       throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
     }
 
-    
+    // Check ongoing requests before creating a new HashCompleteRequest
     for (let r of this._ongoingRequests) {
       if (r.find(aPartialHash, aGethashUrl, aTableName)) {
         log(
@@ -253,16 +252,16 @@ HashCompleter.prototype = {
     }
 
     if (!this._backoffs[aGethashUrl]) {
-      
-      
+      // Initialize request backoffs separately, since requests are deleted
+      // after they are dispatched.
       var jslib = Cc["@mozilla.org/url-classifier/jslib;1"].getService()
         .wrappedJSObject;
 
-      
+      // Using the V4 backoff algorithm for both V2 and V4. See bug 1273398.
       this._backoffs[aGethashUrl] = new jslib.RequestBackoffV4(
-        10 ,
-        0 ,
-        lazy.gUrlUtil.getProvider(aTableName) 
+        10 /* keep track of max requests */,
+        0 /* don't throttle on successful requests per time period */,
+        lazy.gUrlUtil.getProvider(aTableName) /* used by testcase */
       );
     }
 
@@ -270,16 +269,16 @@ HashCompleter.prototype = {
       this._nextGethashTimeMs[aGethashUrl] = 0;
     }
 
-    
-    
+    // Start off this request. Without dispatching to a thread, every call to
+    // complete makes an individual HTTP request.
     Services.tm.dispatchToMainThread(this);
   },
 
-  
-  
-  
+  // This is called after several calls to |complete|, or after the
+  // currentRequest has finished.  It starts off the HTTP request by making a
+  // |begin| call to the HashCompleterRequest.
   run() {
-    
+    // Clear everything on shutdown
     if (this._shuttingDown) {
       this._currentRequest = null;
       this._pendingRequests = null;
@@ -291,7 +290,7 @@ HashCompleter.prototype = {
       throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
     }
 
-    
+    // If we don't have an in-flight request, make one
     let pendingUrls = Object.keys(this._pendingRequests);
     if (!this._currentRequest && pendingUrls.length) {
       let nextUrl = pendingUrls[0];
@@ -305,14 +304,14 @@ HashCompleter.prototype = {
           this._ongoingRequests.push(this._currentRequest);
         }
       } finally {
-        
+        // If |begin| fails, we should get rid of our request.
         this._currentRequest = null;
       }
     }
   },
 
-  
-  
+  // Pass the server response status to the RequestBackoff for the given
+  // gethashUrl and fetch the next pending request, if there is one.
   finishRequest(aRequest, aStatus) {
     this._ongoingRequests = this._ongoingRequests.filter(v => v != aRequest);
 
@@ -320,7 +319,7 @@ HashCompleter.prototype = {
     Services.tm.dispatchToMainThread(this);
   },
 
-  
+  // Returns true if we can make a request from the given url, false otherwise.
   canMakeRequest(aGethashUrl) {
     return (
       this._backoffs[aGethashUrl].canMakeRequest() &&
@@ -328,9 +327,9 @@ HashCompleter.prototype = {
     );
   },
 
-  
-  
-  
+  // Notifies the RequestBackoff of a new request so we can throttle based on
+  // max requests/time period. This must be called before a channel is opened,
+  // and finishRequest must be called once the response is received.
   noteRequest(aGethashUrl) {
     return this._backoffs[aGethashUrl].noteRequest();
   },
@@ -351,21 +350,21 @@ HashCompleter.prototype = {
 };
 
 function HashCompleterRequest(aCompleter, aGethashUrl) {
-  
+  // HashCompleter object that created this HashCompleterRequest.
   this._completer = aCompleter;
-  
+  // The internal set of hashes and callbacks that this request corresponds to.
   this._requests = [];
-  
+  // nsIChannel that the hash completion query is transmitted over.
   this._channel = null;
-  
+  // Response body of hash completion. Created in onDataAvailable.
   this._response = "";
-  
+  // Whether we have been informed of a shutdown by the quit-application event.
   this._shuttingDown = false;
   this.gethashUrl = aGethashUrl;
 
   this.provider = "";
-  
-  
+  // Multiple partial hashes can be associated with the same tables
+  // so we use a map here.
   this.tableNames = new Map();
 
   this.telemetryProvider = "";
@@ -378,8 +377,8 @@ HashCompleterRequest.prototype = {
     "nsIObserver",
   ]),
 
-  
-  
+  // This is called by the HashCompleter to add a hash and callback to the
+  // HashCompleterRequest. It must be called before calling |begin|.
   add: function HCR_add(aPartialHash, aCallback, aTableName) {
     this._requests.push({
       partialHash: aPartialHash,
@@ -391,7 +390,7 @@ HashCompleterRequest.prototype = {
     if (aTableName) {
       let isTableNameV4 = aTableName.endsWith("-proto");
       if (0 === this.tableNames.size) {
-        
+        // Decide if this request is v4 by the first added partial hash.
         this.isV4 = isTableNameV4;
       } else if (this.isV4 !== isTableNameV4) {
         log(
@@ -403,7 +402,7 @@ HashCompleterRequest.prototype = {
         this.tableNames.set(aTableName);
       }
 
-      
+      // Assuming all tables with the same gethash URL have the same provider
       if (this.provider == "") {
         this.provider = lazy.gUrlUtil.getProvider(aTableName);
       }
@@ -431,7 +430,7 @@ HashCompleterRequest.prototype = {
         if (-1 === p) {
           return;
         }
-        
+        // [tableName];[stateBase64]:[checksumBase64]
         let tableName = line.substring(0, p);
         if (this.tableNames.has(tableName)) {
           let metadata = line.substring(p + 1).split(":");
@@ -444,9 +443,9 @@ HashCompleterRequest.prototype = {
     });
   },
 
-  
-  
-  
+  // This initiates the HTTP request. It can fail due to backoff timings and
+  // will notify all callbacks as necessary. We notify the backoff object on
+  // begin.
   begin: function HCR_begin() {
     if (!this._completer.canMakeRequest(this.gethashUrl)) {
       log("Can't make request to " + this.gethashUrl + "\n");
@@ -456,15 +455,15 @@ HashCompleterRequest.prototype = {
 
     Services.obs.addObserver(this, "quit-application");
 
-    
-    
-    
-    
+    // V4 requires table states to build the request so we need
+    // a async call to retrieve the table states from disk.
+    // Note that |HCR_begin| is fine to be sync because
+    // it doesn't appear in a sync call chain.
     this.fillTableStatesBase64(() => {
       try {
         this.openChannel();
-        
-        
+        // Notify the RequestBackoff if opening the channel succeeded. At this
+        // point, finishRequest must be called.
         this._completer.noteRequest(this.gethashUrl);
       } catch (err) {
         this._completer._ongoingRequests = this._completer._ongoingRequests.filter(
@@ -479,9 +478,9 @@ HashCompleterRequest.prototype = {
   },
 
   notify: function HCR_notify() {
-    
-    
-    
+    // If we haven't gotten onStopRequest, just cancel. This will call us
+    // with onStopRequest since we implement nsIStreamListener on the
+    // channel.
     if (this._channel && this._channel.isPending()) {
       log("cancelling request to " + this.gethashUrl + " (timeout)\n");
       Services.telemetry
@@ -491,9 +490,9 @@ HashCompleterRequest.prototype = {
     }
   },
 
-  
-  
-  
+  // Creates an nsIChannel for the request and fills the body.
+  // Enforce bypassing URL Classifier check because if the request is
+  // blocked, it means SafeBrowsing is malfunction.
   openChannel: function HCR_openChannel() {
     let loadFlags =
       Ci.nsIChannel.INHIBIT_CACHING |
@@ -506,7 +505,7 @@ HashCompleterRequest.prototype = {
     };
 
     if (this.isV4) {
-      
+      // As per spec, we add the request payload to the gethash url.
       this.request.url += "&$req=" + this.buildRequestV4();
     }
 
@@ -518,13 +517,13 @@ HashCompleterRequest.prototype = {
     });
     channel.loadFlags = loadFlags;
     channel.loadInfo.originAttributes = {
-      
-      
+      // The firstPartyDomain value should sync with NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN
+      // defined in nsNetUtil.h.
       firstPartyDomain:
         "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla",
     };
 
-    
+    // Disable keepalive.
     let httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
     httpChannel.setRequestHeader("Connection", "close", false);
 
@@ -537,10 +536,10 @@ HashCompleterRequest.prototype = {
       this.addRequestBody(body);
     }
 
-    
-    
+    // Set a timer that cancels the channel after timeout_ms in case we
+    // don't get a gethash response.
     this.timer_ = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    
+    // Ask the timer to use nsITimerCallback (.notify()) when ready
     let timeout = Services.prefs.getIntPref("urlclassifier.gethash.timeout_ms");
     this.timer_.initWithCallback(this, timeout, this.timer_.TYPE_ONE_SHOT);
     channel.asyncOpen(this);
@@ -548,20 +547,20 @@ HashCompleterRequest.prototype = {
   },
 
   buildRequestV4: function HCR_buildRequestV4() {
-    
+    // Convert the "name to state" mapping to two equal-length arrays.
     let tableNameArray = [];
     let stateArray = [];
     this.tableNames.forEach((state, name) => {
-      
+      // We skip the table which is not associated with a state.
       if (state) {
         tableNameArray.push(name);
         stateArray.push(state);
       }
     });
 
-    
-    
-    
+    // Build the "distinct" prefix array.
+    // The array is sorted to make sure the entries are arbitrary mixed in a
+    // deterministic way
     let prefixSet = new Set();
     this._requests.forEach(r => prefixSet.add(btoa(r.partialHash)));
     let prefixArray = Array.from(prefixSet).sort();
@@ -582,11 +581,11 @@ HashCompleterRequest.prototype = {
     );
   },
 
-  
-  
+  // Returns a string for the request body based on the contents of
+  // this._requests.
   buildRequest: function HCR_buildRequest() {
-    
-    
+    // Sometimes duplicate entries are sent to HashCompleter but we do not need
+    // to propagate these to the server. (bug 633644)
     let prefixes = [];
 
     for (let i = 0; i < this._requests.length; i++) {
@@ -596,7 +595,7 @@ HashCompleterRequest.prototype = {
       }
     }
 
-    
+    // Sort to make sure the entries are arbitrary mixed in a deterministic way
     prefixes.sort();
 
     let body;
@@ -618,7 +617,7 @@ HashCompleterRequest.prototype = {
     return body;
   },
 
-  
+  // Sets the request body of this._channel.
   addRequestBody: function HCR_addRequestBody(aBody) {
     let inputStream = Cc[
       "@mozilla.org/io/string-input-stream;1"
@@ -633,8 +632,8 @@ HashCompleterRequest.prototype = {
     httpChannel.requestMethod = "POST";
   },
 
-  
-  
+  // Parses the response body and eventually adds items to the |response.matches| array
+  // for elements of |this._requests|.
   handleResponse: function HCR_handleResponse() {
     if (this._response == "") {
       return;
@@ -655,8 +654,8 @@ HashCompleterRequest.prototype = {
 
   handleResponseV4: function HCR_handleResponseV4() {
     let callback = {
-      
-      
+      // onCompleteHashFound will be called for each fullhash found in
+      // FullHashResponse.
       onCompleteHashFound: (
         aCompleteHash,
         aTableNames,
@@ -670,7 +669,7 @@ HashCompleterRequest.prototype = {
             ")"
         );
 
-        
+        // Filter table names which we didn't requested.
         let filteredTables = aTableNames.split(",").filter(name => {
           return this.tableNames.get(name);
         });
@@ -689,9 +688,9 @@ HashCompleterRequest.prototype = {
         });
       },
 
-      
-      
-      
+      // onResponseParsed will be called no matter if there is match in
+      // FullHashResponse, the callback is mainly used to pass negative cache
+      // duration and minimum wait duration.
       onResponseParsed: (aMinWaitDuration, aNegCacheDuration) => {
         log(
           "V4 fullhash response parsed callback: " +
@@ -719,8 +718,8 @@ HashCompleterRequest.prototype = {
         this._completer._nextGethashTimeMs[this.gethashUrl] =
           Date.now() + minWaitDuration;
 
-        
-        
+        // A fullhash request may contain more than one prefix, so the negative
+        // cache duration should be set for all the prefixes in the request.
         this._requests.forEach(request => {
           request.response.negCacheDuration = aNegCacheDuration;
         });
@@ -730,13 +729,13 @@ HashCompleterRequest.prototype = {
     lazy.gUrlUtil.parseFindFullHashResponseV4(this._response, callback);
   },
 
-  
-  
+  // This parses a table entry in the response body and calls |handleItem|
+  // for complete hash in the table entry.
   handleTable: function HCR_handleTable(aStart) {
     let body = this._response.substring(aStart);
 
-    
-    
+    // deal with new line indexes as there could be
+    // new line characters in the data parts.
     let newlineIndex = body.indexOf("\n");
     if (newlineIndex == -1) {
       throw errorWithStack();
@@ -772,8 +771,8 @@ HashCompleterRequest.prototype = {
     return aStart + newlineIndex + 1 + dataLength;
   },
 
-  
-  
+  // This adds a complete hash to any entry in |this._requests| that matches
+  // the hash.
   handleItem: function HCR_handleItem(aData) {
     let provider = lazy.gUrlUtil.getProvider(aData.tableName);
     if (provider != this.provider) {
@@ -797,12 +796,12 @@ HashCompleterRequest.prototype = {
     }
   },
 
-  
-  
-  
-  
+  // notifySuccess and notifyFailure are used to alert the callbacks with
+  // results. notifySuccess makes |completion| and |completionFinished| calls
+  // while notifyFailure only makes a |completionFinished| call with the error
+  // code.
   notifySuccess: function HCR_notifySuccess() {
-    
+    // V2 completion handler
     let completionV2 = req => {
       req.response.matches.forEach(m => {
         req.callback.completionV2(m.completeHash, m.tableName, m.chunkId);
@@ -811,7 +810,7 @@ HashCompleterRequest.prototype = {
       req.callback.completionFinished(Cr.NS_OK);
     };
 
-    
+    // V4 completion handler
     let completionV4 = req => {
       let matches = Cc["@mozilla.org/array;1"].createInstance(
         Ci.nsIMutableArray
@@ -861,8 +860,8 @@ HashCompleterRequest.prototype = {
   },
 
   onStartRequest: function HCR_onStartRequest(aRequest) {
-    
-    
+    // At this point no data is available for us and we have no reason to
+    // terminate the connection, so we do nothing until |onStopRequest|.
     this._completer._nextGethashTimeMs[this.gethashUrl] = 0;
 
     if (this.telemetryClockStart > 0) {
@@ -887,8 +886,8 @@ HashCompleterRequest.prototype = {
       throw Components.Exception("", Cr.NS_ERROR_ABORT);
     }
 
-    
-    
+    // Default HTTP status to service unavailable, in case we can't retrieve
+    // the true status from the channel.
     let httpStatus = 503;
     if (Components.isSuccessCode(aStatusCode)) {
       let channel = aRequest.QueryInterface(Ci.nsIHttpChannel);
@@ -927,7 +926,7 @@ HashCompleterRequest.prototype = {
       .getKeyedHistogramById("URLCLASSIFIER_COMPLETE_TIMEOUT2")
       .add(this.telemetryProvider, 0);
 
-    
+    // Notify the RequestBackoff once a response is received.
     this._completer.finishRequest(this, httpStatus);
 
     if (success) {
@@ -965,5 +964,3 @@ function errorWithStack() {
   err.value = Cr.NS_ERROR_FAILURE;
   return err;
 }
-
-var EXPORTED_SYMBOLS = ["HashCompleter"];
