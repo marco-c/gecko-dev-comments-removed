@@ -672,6 +672,7 @@ class nsWindow final : public nsBaseWidget {
   bool mIsTransparent : 1;
   
   bool mHasReceivedSizeAllocate : 1;
+  bool mWidgetCursorLocked : 1;
 
   
 
