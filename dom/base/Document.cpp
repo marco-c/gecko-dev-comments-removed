@@ -15286,6 +15286,15 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
     aRequest.Reject("FullscreenDeniedHTMLDialog");
     return false;
   }
+  
+  
+  if (fullscreenElement && !nsContentUtils::ContentIsHostIncludingDescendantOf(
+                               elem, fullscreenElement)) {
+    
+    
+    aRequest.Reject("FullscreenDeniedNotDescendant");
+    return false;
+  }
   if (!nsContentUtils::IsChromeDoc(this) && !IsInFocusedTab(this)) {
     aRequest.Reject("FullscreenDeniedNotFocusedTab");
     return false;
