@@ -144,6 +144,8 @@ pub enum StyleParseErrorKind<'i> {
     
     UnexpectedCharsetRule,
     
+    UnexpectedIdent(CowRcStr<'i>),
+    
     UnspecifiedError,
     
     UnexpectedTokenWithinNamespace(Token<'i>),
