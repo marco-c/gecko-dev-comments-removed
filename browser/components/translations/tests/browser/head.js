@@ -232,6 +232,7 @@ function isVisible(element) {
 
 
 
+
 function getByL10nId(l10nId, doc = document) {
   const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
   if (elements.length === 0) {
@@ -243,6 +244,21 @@ function getByL10nId(l10nId, doc = document) {
     }
   }
   throw new Error("The element is not visible in the DOM: " + l10nId);
+}
+
+
+
+
+
+
+
+
+function getAllByL10nId(l10nId, doc = document) {
+  const elements = doc.querySelectorAll(`[data-l10n-id="${l10nId}"]`);
+  if (elements.length === 0) {
+    throw new Error("Could not find the element by l10n id: " + l10nId);
+  }
+  return elements;
 }
 
 
