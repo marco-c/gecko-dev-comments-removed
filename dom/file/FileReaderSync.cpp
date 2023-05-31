@@ -92,7 +92,7 @@ void FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
   }
   
   
-  mozilla::Unused << bufferData.release();
+  (void)bufferData.release();
 
   aRetval.set(arrayBuffer);
 }

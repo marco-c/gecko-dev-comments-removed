@@ -304,7 +304,7 @@ MutableBlobStorage::~MutableBlobStorage() {
 
   if (mFD) {
     RefPtr<Runnable> runnable = new CloseFileRunnable(mFD);
-    Unused << DispatchToIOThread(runnable.forget());
+    (void)DispatchToIOThread(runnable.forget());
   }
 
   if (mTaskQueue) {
@@ -349,7 +349,7 @@ void MutableBlobStorage::GetBlobImplWhenReady(
 
     
     
-    Unused << DispatchToIOThread(runnable.forget());
+    (void)DispatchToIOThread(runnable.forget());
     return;
   }
 
@@ -542,7 +542,7 @@ void MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD) {
 
     
     
-    Unused << DispatchToIOThread(runnable.forget());
+    (void)DispatchToIOThread(runnable.forget());
 
     
     mActor->SendOperationFailed();
@@ -582,7 +582,7 @@ void MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD) {
 
     RefPtr<Runnable> runnable =
         new LastRunnable(this, mPendingContentType, mPendingCallback);
-    Unused << DispatchToIOThread(runnable.forget());
+    (void)DispatchToIOThread(runnable.forget());
 
     mPendingCallback = nullptr;
   }
@@ -606,7 +606,7 @@ void MutableBlobStorage::AskForBlob(TemporaryIPCBlobChildCallback* aCallback,
   
   
   RefPtr<Runnable> runnable = new CloseFileRunnable(mFD);
-  Unused << DispatchToIOThread(runnable.forget());
+  (void)DispatchToIOThread(runnable.forget());
 
   mFD = nullptr;
   mActor = nullptr;
