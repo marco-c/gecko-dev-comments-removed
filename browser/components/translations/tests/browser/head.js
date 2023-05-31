@@ -54,9 +54,135 @@ async function assertTranslationsButton(visibleAssertions, message) {
 
 
 
-function navigate(url, message) {
+
+async function openSettingsMenu() {
+  const { button } = await assertTranslationsButton(
+    { button: true },
+    "The button is available."
+  );
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(button, "Opening the popup");
+  });
+
+  const gearIcon = getByL10nId("translations-panel-settings-button");
+  click(gearIcon, "Open the settings menu");
+}
+
+
+
+
+
+
+async function toggleAlwaysTranslateLanguage() {
+  const alwaysTranslateLanguage = getByL10nId(
+    "translations-panel-settings-always-translate-language"
+  );
+  info("Toggle the always-translate-language menuitem");
+  await alwaysTranslateLanguage.doCommand();
+}
+
+
+
+
+
+
+async function toggleNeverTranslateLanguage() {
+  const neverTranslateLanguage = getByL10nId(
+    "translations-panel-settings-never-translate-language"
+  );
+  info("Toggle the never-translate-language menuitem");
+  await neverTranslateLanguage.doCommand();
+}
+
+
+
+
+
+
+async function toggleNeverTranslateSite() {
+  const neverTranslateSite = getByL10nId(
+    "translations-panel-settings-never-translate-site"
+  );
+  info("Toggle the never-translate-site menuitem");
+  await neverTranslateSite.doCommand();
+}
+
+
+
+
+
+
+
+async function assertIsAlwaysTranslateLanguage(langTag, expectChecked) {
+  await assertCheckboxState(
+    "translations-panel-settings-always-translate-language",
+    expectChecked
+  );
+}
+
+
+
+
+
+
+
+async function assertIsNeverTranslateLanguage(langTag, expectChecked) {
+  await assertCheckboxState(
+    "translations-panel-settings-never-translate-language",
+    expectChecked
+  );
+}
+
+
+
+
+
+
+
+async function assertIsNeverTranslateSite(url, expectChecked) {
+  await assertCheckboxState(
+    "translations-panel-settings-never-translate-site",
+    expectChecked
+  );
+}
+
+
+
+
+
+
+
+
+async function assertCheckboxState(dataL10nId, expectChecked) {
+  const menuItems = getAllByL10nId(dataL10nId);
+  for (const menuItem of menuItems) {
+    await TestUtils.waitForCondition(
+      () =>
+        menuItem.getAttribute("checked") === (expectChecked ? "true" : "false"),
+      "Waiting for checkbox state"
+    );
+    is(
+      menuItem.getAttribute("checked"),
+      expectChecked ? "true" : "false",
+      `Should match expected checkbox state for ${dataL10nId}`
+    );
+  }
+}
+
+
+
+
+async function navigate(url, message) {
   info(message);
+
+  
+  
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, BLANK_PAGE);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
   BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 }
 
 
@@ -194,6 +320,8 @@ async function waitForViewShown(callback) {
 
 const ENGLISH_PAGE_URL = TRANSLATIONS_TESTER_EN;
 const SPANISH_PAGE_URL = TRANSLATIONS_TESTER_ES;
+const SPANISH_PAGE_URL_2 = TRANSLATIONS_TESTER_ES_2;
+const SPANISH_PAGE_URL_DOT_ORG = TRANSLATIONS_TESTER_ES_DOT_ORG;
 const LANGUAGE_PAIRS = [
   { fromLang: "es", toLang: "en", isBeta: false },
   { fromLang: "en", toLang: "es", isBeta: false },
