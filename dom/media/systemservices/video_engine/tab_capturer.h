@@ -80,7 +80,7 @@ class TabCapturerWebrtc : public webrtc::DesktopCapturer {
       RTC_GUARDED_BY(mCallbackChecker) = nullptr;
 
   
-  nsRefPtrDeque<CaptureFrameRequest> mRequests;
+  nsRefPtrDeque<CaptureFrameRequest> mRequests RTC_GUARDED_BY(mCallbackChecker);
 };
 
 }  
