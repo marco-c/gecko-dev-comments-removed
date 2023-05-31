@@ -385,7 +385,7 @@ class Accessible {
   
 
 
-  virtual nsStaticAtom* LandmarkRole() const;
+  nsStaticAtom* LandmarkRole() const;
 
   
 
@@ -574,7 +574,7 @@ class Accessible {
 
   bool IsDateTimeField() const { return mType == eHTMLDateTimeFieldType; }
 
-  virtual bool IsSearchbox() const;
+  bool IsSearchbox() const;
 
   virtual bool HasNumericValue() const = 0;
 
