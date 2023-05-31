@@ -81,31 +81,25 @@ results = parser.finish()
 
 pure_output = {
     "Document": {
-        "prototype": {
-            "methods": [
-                "getSelection",
-                "hasStorageAccess",
-            ],
-        },
+        "prototype": [
+            "getSelection",
+            "hasStorageAccess",
+        ],
     },
     "Range": {
-        "prototype": {
-            "methods": [
-                "isPointInRange",
-                "comparePoint",
-                "intersectsNode",
-                
-                
-                
-                "getClientRects",
-                "getBoundingClientRect",
-            ],
-        }
+        "prototype": [
+            "isPointInRange",
+            "comparePoint",
+            "intersectsNode",
+            
+            
+            
+            "getClientRects",
+            "getBoundingClientRect",
+        ],
     },
     "Selection": {
-        "prototype": {
-            "methods": ["getRangeAt", "containsNode"],
-        }
+        "prototype": ["getRangeAt", "containsNode"],
     },
 }
 unsafe_getters_names = []
@@ -118,24 +112,27 @@ for result in results:
         for member in result.members:
             name = member.identifier.name
 
-            if (member.isMethod() or member.isAttr()) and member.affects == "Nothing":
+            if member.isMethod() and member.affects == "Nothing":
                 if (
                     PURE_INTERFACE_ALLOWLIST and not iface in PURE_INTERFACE_ALLOWLIST
                 ) or name.startswith("_"):
                     continue
 
+                if is_global:
+                    raise Exception(
+                        "Global methods and accessors are not supported: " + iface
+                    )
+
                 if iface not in pure_output:
                     pure_output[iface] = {}
 
-                if is_global:
-                    owner_type = "instance"
-                elif member.isStatic():
+                if member.isStatic():
                     owner_type = "static"
                 else:
                     owner_type = "prototype"
 
                 if owner_type not in pure_output[iface]:
-                    pure_output[iface][owner_type] = {}
+                    pure_output[iface][owner_type] = []
 
                 
                 
@@ -143,12 +140,7 @@ for result in results:
                 
                 
                 if member.isMethod():
-                    prop_type = "methods"
-
-                    if prop_type not in pure_output[iface][owner_type]:
-                        pure_output[iface][owner_type][prop_type] = []
-
-                    pure_output[iface][owner_type][prop_type].append(name)
+                    pure_output[iface][owner_type].append(name)
 
             if (
                 not iface in DEPRECATED_INTERFACE__EXCLUDE_LIST
