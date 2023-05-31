@@ -188,9 +188,7 @@ TimeUnit MP3TrackDemuxer::FastSeek(const TimeUnit& aTime) {
   } else if (vbr.IsTOCPresent() && Duration() &&
              *Duration() != TimeUnit::Zero()) {
     
-    const float durationFrac = static_cast<float>(aTime.ToMicroseconds()) /
-                               Duration()->ToMicroseconds();
-    mFrameIndex = FrameIndexFromOffset(vbr.Offset(durationFrac));
+    mFrameIndex = FrameIndexFromOffset(vbr.Offset(aTime, Duration().value()));
   } else if (AverageFrameLength() > 0) {
     mFrameIndex = FrameIndexFromTime(aTime);
   }
