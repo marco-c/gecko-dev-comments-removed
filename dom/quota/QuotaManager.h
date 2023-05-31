@@ -243,6 +243,8 @@ class QuotaManager final : public BackgroundThreadObject {
   Result<FullOriginMetadata, nsresult> LoadFullOriginMetadataWithRestore(
       nsIFile* aDirectory);
 
+  Result<OriginMetadata, nsresult> GetOriginMetadata(nsIFile* aDirectory);
+
   
   
   

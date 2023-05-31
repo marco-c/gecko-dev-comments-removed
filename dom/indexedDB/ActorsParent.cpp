@@ -4887,12 +4887,12 @@ class DeleteFilesRunnable final : public Runnable,
 
 class Maintenance final : public Runnable, public OpenDirectoryListener {
   struct DirectoryInfo final {
-    InitializedOnce<const FullOriginMetadata> mFullOriginMetadata;
+    InitializedOnce<const OriginMetadata> mOriginMetadata;
     InitializedOnce<const nsTArray<nsString>> mDatabasePaths;
     const PersistenceType mPersistenceType;
 
     DirectoryInfo(PersistenceType aPersistenceType,
-                  FullOriginMetadata aFullOriginMetadata,
+                  OriginMetadata aOriginMetadata,
                   nsTArray<nsString>&& aDatabasePaths);
 
     DirectoryInfo(const DirectoryInfo& aOther) = delete;
@@ -5047,15 +5047,15 @@ class Maintenance final : public Runnable, public OpenDirectoryListener {
   void DirectoryLockFailed() override;
 };
 
-Maintenance::DirectoryInfo::DirectoryInfo(
-    PersistenceType aPersistenceType, FullOriginMetadata aFullOriginMetadata,
-    nsTArray<nsString>&& aDatabasePaths)
-    : mFullOriginMetadata(std::move(aFullOriginMetadata)),
+Maintenance::DirectoryInfo::DirectoryInfo(PersistenceType aPersistenceType,
+                                          OriginMetadata aOriginMetadata,
+                                          nsTArray<nsString>&& aDatabasePaths)
+    : mOriginMetadata(std::move(aOriginMetadata)),
       mDatabasePaths(std::move(aDatabasePaths)),
       mPersistenceType(aPersistenceType) {
   MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_INVALID);
-  MOZ_ASSERT(!mFullOriginMetadata->mGroup.IsEmpty());
-  MOZ_ASSERT(!mFullOriginMetadata->mOrigin.IsEmpty());
+  MOZ_ASSERT(!mOriginMetadata->mGroup.IsEmpty());
+  MOZ_ASSERT(!mOriginMetadata->mOrigin.IsEmpty());
 #ifdef DEBUG
   MOZ_ASSERT(!mDatabasePaths->IsEmpty());
   for (const nsAString& databasePath : *mDatabasePaths) {
@@ -13083,6 +13083,12 @@ nsresult Maintenance::DirectoryWork() {
       return NS_ERROR_ABORT;
     }
 
+    
+    
+    if (persistenceType == PERSISTENCE_TYPE_PRIVATE) {
+      continue;
+    }
+
     const bool persistent = persistenceType == PERSISTENCE_TYPE_PERSISTENT;
 
     if (!persistent && initTemporaryStorageFailed) {
@@ -13137,17 +13143,17 @@ nsresult Maintenance::DirectoryWork() {
             case nsIFileKind::ExistsAsDirectory: {
               
               
-              
 
-              QM_TRY_INSPECT(
-                  const auto& metadata,
-                  quotaManager->LoadFullOriginMetadataWithRestore(originDir),
-                  
-                  Ok{});
+              QM_TRY_INSPECT(const auto& metadata,
+                             quotaManager->GetOriginMetadata(originDir),
+                             
+                             Ok{});
 
               
               
-              if (OriginAttributes::IsPrivateBrowsing(metadata.mOrigin)) {
+              
+              
+              if (metadata.mIsPrivate) {
                 return Ok{};
               }
 
@@ -13308,8 +13314,8 @@ nsresult Maintenance::BeginDatabaseMaintenance() {
       if (Helper::IsSafeToRunMaintenance(databasePath)) {
         if (!directoryLock) {
           directoryLock = mDirectoryLock->SpecializeForClient(
-              directoryInfo.mPersistenceType,
-              *directoryInfo.mFullOriginMetadata, Client::IDB);
+              directoryInfo.mPersistenceType, *directoryInfo.mOriginMetadata,
+              Client::IDB);
           MOZ_ASSERT(directoryLock);
         }
 
@@ -13318,7 +13324,7 @@ nsresult Maintenance::BeginDatabaseMaintenance() {
         
         const auto databaseMaintenance = MakeRefPtr<DatabaseMaintenance>(
             this, directoryLock, directoryInfo.mPersistenceType,
-            *directoryInfo.mFullOriginMetadata, databasePath, Nothing{});
+            *directoryInfo.mOriginMetadata, databasePath, Nothing{});
 
         if (!threadPool) {
           threadPool = mQuotaClient->GetOrCreateThreadPool();
