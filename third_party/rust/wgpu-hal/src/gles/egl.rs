@@ -393,7 +393,7 @@ impl AdapterContext {
     pub unsafe fn get_without_egl_lock(&self) -> MutexGuard<glow::Context> {
         self.glow
             .try_lock_for(Duration::from_secs(CONTEXT_LOCK_TIMEOUT_SECS))
-            .expect("Could not lock adapter context. This is most-likely a deadlcok.")
+            .expect("Could not lock adapter context. This is most-likely a deadlock.")
     }
 
     
@@ -405,7 +405,7 @@ impl AdapterContext {
             
             
             .try_lock_for(Duration::from_secs(CONTEXT_LOCK_TIMEOUT_SECS))
-            .expect("Could not lock adapter context. This is most-likely a deadlcok.");
+            .expect("Could not lock adapter context. This is most-likely a deadlock.");
 
         let egl = self.egl.as_ref().map(|egl| {
             egl.make_current();

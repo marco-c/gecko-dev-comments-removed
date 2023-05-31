@@ -691,12 +691,12 @@ impl crate::Instance<super::Api> for super::Instance {
         
         let has_nvidia_dgpu = exposed_adapters.iter().any(|exposed| {
             exposed.info.device_type == wgt::DeviceType::DiscreteGpu
-                && exposed.info.vendor == db::nvidia::VENDOR as usize
+                && exposed.info.vendor == db::nvidia::VENDOR
         });
         if cfg!(target_os = "linux") && has_nvidia_dgpu && self.shared.has_nv_optimus {
             for exposed in exposed_adapters.iter_mut() {
                 if exposed.info.device_type == wgt::DeviceType::IntegratedGpu
-                    && exposed.info.vendor == db::intel::VENDOR as usize
+                    && exposed.info.vendor == db::intel::VENDOR
                 {
                     
                     log::warn!(
