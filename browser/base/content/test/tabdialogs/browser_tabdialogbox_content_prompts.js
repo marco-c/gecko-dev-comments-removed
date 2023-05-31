@@ -52,8 +52,8 @@ add_setup(async function () {
 
 
 add_task(async function test_tabdialog_content_prompts() {
-  
   await BrowserTestUtils.withNewTab(
+    
     "http://example.com",
     async function (browser) {
       info("Open a tab prompt.");

@@ -898,8 +898,8 @@ add_task(async function test_abusereport_open_author_url() {
   let waitForConsole = new Promise(resolve => {
     SimpleTest.monitorConsole(resolve, [
       {
-        
         message:
+          
           /Security Error: Content at moz-nullprincipal:{.*} may not load or link to about:config/,
       },
     ]);

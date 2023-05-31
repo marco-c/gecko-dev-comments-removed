@@ -666,8 +666,8 @@ class PageAction {
         };
 
         primaryActionCallback = async () => {
-          
           primary.action.data.url =
+            
             await CFRPageActions._fetchLatestAddonVersion(content.addon.id);
           this._blockMessage(id);
           this.dispatchUserAction(primary.action);
