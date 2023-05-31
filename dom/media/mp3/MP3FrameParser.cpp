@@ -69,7 +69,11 @@ const ID3Parser::ID3Header& FrameParser::ID3Header() const {
 }
 
 uint32_t FrameParser::TotalID3HeaderSize() const {
-  return mID3Parser.TotalHeadersSize();
+  uint32_t ID3v1Size = 0;
+  if (mID3v1MetadataFound) {
+    ID3v1Size = 128;
+  }
+  return ID3v1Size + mID3Parser.TotalHeadersSize();
 }
 
 const FrameParser::VBRHeader& FrameParser::VBRInfo() const {
@@ -81,8 +85,16 @@ Result<bool, nsresult> FrameParser::Parse(BufferReader* aReader,
   MOZ_ASSERT(aReader && aBytesToSkip);
   *aBytesToSkip = 0;
 
-  if (ID3Parser::IsBufferStartingWithID3Tag(aReader) && !mFirstFrame.Length()) {
+  if (ID3Parser::IsBufferStartingWithID3v1Tag(aReader)) {
     
+    
+    aReader->Read(128);
+    *aBytesToSkip = 128;
+    mID3v1MetadataFound = true;
+    return true;
+  }
+
+  if (ID3Parser::IsBufferStartingWithID3Tag(aReader) && !mFirstFrame.Length()) {
     
     
     const size_t prevReaderOffset = aReader->Offset();
@@ -260,6 +272,10 @@ bool FrameParser::FrameHeader::ParseNext(uint8_t c) {
     }
   }
   return IsValid();
+}
+
+bool FrameParser::ID3v1MetadataFound() const {
+  return mID3v1MetadataFound;
 }
 
 bool FrameParser::FrameHeader::IsValid(int aPos) const {
@@ -539,10 +555,28 @@ static const int FLAGS_END = VERSION_END + FLAGS_LEN;
 static const int SIZE_END = FLAGS_END + SIZE_LEN;
 
 static const uint8_t ID[ID_LEN] = {'I', 'D', '3'};
+static const uint8_t IDv1[ID_LEN] = {'T', 'A', 'G'};
 
 static const uint8_t MIN_MAJOR_VER = 2;
 static const uint8_t MAX_MAJOR_VER = 4;
 }  
+
+bool ID3Parser::IsBufferStartingWithID3v1Tag(BufferReader* aReader) {
+  mozilla::Result<uint32_t, nsresult> res = aReader->PeekU24();
+  if (res.isErr()) {
+    return false;
+  }
+  
+  
+  uint32_t rv = res.unwrap();
+  for (int idx = id3_header::ID_LEN - 1; idx >= 0; idx--) {
+    if ((rv & 0xff) != id3_header::IDv1[idx]) {
+      return false;
+    }
+    rv = rv >> 8;
+  }
+  return true;
+}
 
 
 bool ID3Parser::IsBufferStartingWithID3Tag(BufferReader* aReader) {

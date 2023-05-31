@@ -24,6 +24,7 @@ class ID3Parser {
    public:
     
     static const int SIZE = 10;
+    static const int ID3v1_SIZE = 128;
 
     
     ID3Header();
@@ -82,6 +83,8 @@ class ID3Parser {
 
   
   static bool IsBufferStartingWithID3Tag(BufferReader* aReader);
+  
+  static bool IsBufferStartingWithID3v1Tag(BufferReader* aReader);
 
   
   const ID3Header& Header() const;
@@ -311,6 +314,9 @@ class FrameParser {
   const ID3Parser::ID3Header& ID3Header() const;
 
   
+  bool ID3v1MetadataFound() const;
+
+  
   uint32_t TotalID3HeaderSize() const;
 
   
@@ -353,6 +359,12 @@ class FrameParser {
   Frame mFirstFrame;
   Frame mFrame;
   Frame mPrevFrame;
+  
+  
+  
+  
+  
+  bool mID3v1MetadataFound = false;
 };
 
 }  
