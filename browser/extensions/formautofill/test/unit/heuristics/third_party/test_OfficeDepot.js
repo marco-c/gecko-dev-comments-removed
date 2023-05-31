@@ -18,7 +18,8 @@ runHeuristicsTest(
             { fieldName: "address-line1" },
             { fieldName: "address-line2" },
             { fieldName: "postal-code" },
-            { fieldName: "address-level2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
             { fieldName: "tel-area-code" },
             { fieldName: "tel-local-prefix" },
@@ -33,6 +34,17 @@ runHeuristicsTest(
       fixturePath: "Payment.html",
       expectedResult: [
         {
+          invalid: true, 
+          default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-exp-month" },
+            { fieldName: "cc-exp-year" },
+            { fieldName: "cc-number" },
+          ],
+        },
+        {
           default: {
             reason: "regex-heuristic",
           },
@@ -43,7 +55,8 @@ runHeuristicsTest(
             { fieldName: "address-line1" },
             { fieldName: "address-line2" },
             { fieldName: "postal-code" },
-            { fieldName: "address-level2" },
+            { fieldName: "address-level2" }, 
+            { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
             { fieldName: "tel-area-code" },
             { fieldName: "tel-local-prefix" },
@@ -52,31 +65,16 @@ runHeuristicsTest(
             { fieldName: "email" },
           ],
         },
-        {
-          default: {
-            reason: "regex-heuristic",
-          },
-          fields: [
-            { fieldName: "cc-exp-month" },
-            { fieldName: "cc-exp-year" },
-            
-            
-            { fieldName: "cc-number" },
-          ],
-        },
       ],
     },
     {
       fixturePath: "SignIn.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            
-            { fieldName: "email" }
-          ]
+            { fieldName: "email", reason: "regex-heuristic" },
+          ],
         },
       ],
     },

@@ -46,11 +46,9 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -72,11 +70,9 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "fathom",
-          },
+          invalid: true,  
           fields: [
-            { fieldName: "cc-number" }, 
+            { fieldName: "cc-number", reason: "fathom" }, 
           ],
         },
         {
@@ -118,11 +114,9 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -131,34 +125,40 @@ runHeuristicsTest(
       fixturePath: "SignIn.html",
       expectedResult: [
         {
+          invalid: true,
           fields: [
             { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
         {
-          fields: [
-            
-            { fieldName: "email", reason: "regex-heuristic" },
-          ],
-        },
-        {
-          fields: [
-            { fieldName: "email", reason: "regex-heuristic" },
-          ],
-        },
-        {
-          fields: [
-            { fieldName: "email", reason: "regex-heuristic" },
-            
-          ],
-        },
-        {
+          invalid: true,
           fields: [
             
             { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
         {
+          invalid: true,
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            { fieldName: "email", reason: "regex-heuristic" },
+            
+          ],
+        },
+        {
+          invalid: true,
+          fields: [
+            
+            { fieldName: "email", reason: "regex-heuristic" },
+          ],
+        },
+        {
+          invalid: true,
           fields: [
             { fieldName: "email", reason: "regex-heuristic" },
           ],

@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { FormAutofillHandler } = ChromeUtils.importESModule(
-  "resource://gre/modules/shared/FormAutofillHandler.sys.mjs"
-);
-
 
 
 ({ FormAutofillUtils } = ChromeUtils.importESModule(

@@ -29,6 +29,18 @@ runHeuristicsTest(
       expectedResult: [
         {
           default: {
+            reason: "regex-heuristic",
+          },
+          fields: [
+            { fieldName: "cc-type" }, 
+            { fieldName: "cc-number", reason: "fathom" }, 
+            { fieldName: "cc-exp-month" }, 
+            { fieldName: "cc-exp-year" }, 
+            
+          ],
+        },
+        {
+          default: {
             reason: "autocomplete",
           },
           fields: [
@@ -43,48 +55,30 @@ runHeuristicsTest(
             { fieldName: "email" },
           ],
         },
-        {
-          default: {
-            reason: "regex-heuristic",
-          },
-          fields: [
-            { fieldName: "cc-type" }, 
-            { fieldName: "cc-number", reason: "fathom" }, 
-            { fieldName: "cc-exp-month" }, 
-            { fieldName: "cc-exp-year" }, 
-            
-          ],
-        },
       ],
     },
     {
       fixturePath: "SignIn.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
             
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic"},
             
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
             
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic"},
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic"},
           ],
         },
       ],

@@ -8,42 +8,34 @@ runHeuristicsTest(
       fixturePath: "YourInformation.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "tel"}, 
-            { fieldName: "email" },
+            { fieldName: "tel", reason: "regex-heuristic" },
+            { fieldName: "email", reason: "regex-heuristic" },
             
             
             
           ],
         },
         {
-          default: {
-            reason: "fathom",
-          },
           fields: [
             { fieldName: "cc-type", reason: "regex-heuristic" },
-            { fieldName: "cc-number" },
+            { fieldName: "cc-number", reason: "fathom" },
             { fieldName: "cc-exp", reason: "regex-heuristic" },
             
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "cc-number" }, 
+            { fieldName: "cc-number", reason: "regex-heuristic" }, 
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -52,12 +44,10 @@ runHeuristicsTest(
       fixturePath: "PaymentMethod.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "tel" }, 
-            { fieldName: "email" },
+            { fieldName: "tel", reason: "regex-heuristic" },
+            { fieldName: "email", reason: "regex-heuristic" },
             
             
             
@@ -75,19 +65,16 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "cc-number" }, 
+            { fieldName: "cc-number", reason: "regex-heuristic" }, 
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -97,11 +84,9 @@ runHeuristicsTest(
       expectedResult: [
         {
           
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
       ],

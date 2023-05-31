@@ -8,6 +8,7 @@ runHeuristicsTest(
       fixturePath: "ShippingAddress.html",
       expectedResult: [
         {
+          invalid: true,
           default: {
             reason: "regex-heuristic",
           },
@@ -31,6 +32,7 @@ runHeuristicsTest(
             { fieldName: "tel" },
             { fieldName: "tel-extension" },
             { fieldName: "email" },
+            { fieldName: "email" },  
           ],
         },
         {
@@ -53,6 +55,7 @@ runHeuristicsTest(
           ],
         },
         {
+          invalid: true,
           default: {
             reason: "regex-heuristic",
           },
@@ -62,6 +65,7 @@ runHeuristicsTest(
           ]
         },
         {
+          invalid: true,
           default: {
             reason: "regex-heuristic",
           },
@@ -115,27 +119,23 @@ runHeuristicsTest(
             
             
             { fieldName: "address-level1" },
+            { fieldName: "address-level1" },
             
             
             
           ],
         },
         {
-          default: {
-            reason: "fathom",
-          },
+          invalid: true,
           fields: [
             
-            
-            { fieldName: "cc-number" },
+            { fieldName: "cc-number", reason: "fathom", },
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic", },
           ],
         },
       ],

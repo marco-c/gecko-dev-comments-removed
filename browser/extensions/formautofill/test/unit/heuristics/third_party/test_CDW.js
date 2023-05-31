@@ -20,6 +20,7 @@ runHeuristicsTest(
             { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
             { fieldName: "postal-code" },
+            { fieldName: "postal-code" }, 
             { fieldName: "email" },
             { fieldName: "tel" },
             { fieldName: "tel-extension" },
@@ -43,6 +44,7 @@ runHeuristicsTest(
             { fieldName: "address-level2" }, 
             { fieldName: "address-level1" }, 
             { fieldName: "postal-code" },
+            { fieldName: "postal-code" }, 
           ],
         },
         {

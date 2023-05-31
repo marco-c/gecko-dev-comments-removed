@@ -21,22 +21,16 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" }, 
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            
-            { fieldName: "email" },
-            { fieldName: "tel" },
+            { fieldName: "email", reason: "regex-heuristic" },
+            { fieldName: "tel", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -45,11 +39,9 @@ runHeuristicsTest(
       fixturePath: "Checkout_Payment.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" },
           ],
         },
         {
@@ -66,13 +58,10 @@ runHeuristicsTest(
           ],
         },
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            
-            { fieldName: "email" },
-            { fieldName: "tel" },
+            { fieldName: "email", reason: "regex-heuristic" },
+            { fieldName: "tel", reason: "regex-heuristic" },
           ],
         },
       ],
@@ -81,12 +70,9 @@ runHeuristicsTest(
       fixturePath: "SignIn.html",
       expectedResult: [
         {
-          default: {
-            reason: "regex-heuristic",
-          },
+          invalid: true,
           fields: [
-            
-            { fieldName: "email" },
+            { fieldName: "email", reason: "regex-heuristic" }, 
           ],
         },
       ],
