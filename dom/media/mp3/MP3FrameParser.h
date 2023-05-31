@@ -69,7 +69,7 @@ class ID3Parser {
     bool Update(uint8_t c);
 
     
-    uint8_t mRaw[SIZE];
+    uint8_t mRaw[SIZE] = {};
 
     
     
@@ -78,7 +78,7 @@ class ID3Parser {
 
     
     
-    int mPos;
+    int mPos = 0;
   };
 
   
@@ -188,11 +188,11 @@ class FrameParser {
     bool Update(const uint8_t c);
 
     
-    uint8_t mRaw[SIZE];
+    uint8_t mRaw[SIZE] = {};
 
     
     
-    int mPos;
+    int mPos = 0;
   };
 
   
@@ -283,7 +283,7 @@ class FrameParser {
   class Frame {
    public:
     
-    int32_t Length() const;
+    uint32_t Length() const;
 
     
     const FrameHeader& Header() const;
