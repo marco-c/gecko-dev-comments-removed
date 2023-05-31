@@ -30,10 +30,12 @@
 #include "skia/include/core/SkTextBlob.h"
 
 #include "BorderConsts.h"
+#include "nsCanvasFrame.h"
 #include "nsStyleConsts.h"
 #include "nsPresContext.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsPageSequenceFrame.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsFrameManager.h"
@@ -1132,8 +1134,8 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
                                                   bool aPreferBodyToCanvas)
     -> EffectiveBackgroundColor {
   MOZ_ASSERT(aFrame);
-
-  auto BgColorIfNotTransparent = [](nsIFrame* aFrame) -> Maybe<nscolor> {
+  nsPresContext* pc = aFrame->PresContext();
+  auto BgColorIfNotTransparent = [&](nsIFrame* aFrame) -> Maybe<nscolor> {
     nscolor c =
         aFrame->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
     if (NS_GET_A(c) == 255) {
@@ -1143,7 +1145,7 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
       
       
       
-      const nscolor defaultBg = aFrame->PresContext()->DefaultBackgroundColor();
+      const nscolor defaultBg = pc->DefaultBackgroundColor();
       MOZ_ASSERT(NS_GET_A(defaultBg) == 255, "PreferenceSheet guarantees this");
       return Some(NS_ComposeColors(defaultBg, c));
     }
@@ -1161,8 +1163,20 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
     }
 
     if (frame->IsCanvasFrame()) {
+      if (pc->IsPrintingOrPrintPreview()) {
+        
+        
+        
+        
+        if (auto* ps = pc->PresShell()->GetPageSequenceFrame();
+            ps && ps->GetParent() == frame) {
+          if (auto bg = BgColorIfNotTransparent(ps)) {
+            return {*bg};
+          }
+        }
+      }
       if (aPreferBodyToCanvas) {
-        if (auto* body = frame->PresContext()->Document()->GetBodyElement()) {
+        if (auto* body = pc->Document()->GetBodyElement()) {
           if (nsIFrame* f = body->GetPrimaryFrame()) {
             if (auto bg = BgColorIfNotTransparent(f)) {
               return {*bg};
@@ -1178,7 +1192,7 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
     }
   }
 
-  return {aFrame->PresContext()->DefaultBackgroundColor()};
+  return {pc->DefaultBackgroundColor()};
 }
 
 nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {

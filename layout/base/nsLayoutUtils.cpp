@@ -2848,36 +2848,23 @@ void nsLayoutUtils::AddExtraBackgroundItems(nsDisplayListBuilder* aBuilder,
                                             const nsRect& aCanvasArea,
                                             const nsRegion& aVisibleRegion,
                                             nscolor aBackstop) {
-  LayoutFrameType frameType = aFrame->Type();
-  nsPresContext* presContext = aFrame->PresContext();
-  PresShell* presShell = presContext->PresShell();
-
-  
-  
-  if (frameType == LayoutFrameType::Viewport &&
-      nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
-    nsRect bounds =
-        nsRect(aBuilder->ToReferenceFrame(aFrame), aFrame->GetSize());
-    nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-        aBuilder, aFrame, bounds, bounds);
-    presShell->AddPrintPreviewBackgroundItem(aBuilder, aList, aFrame, bounds);
-  } else if (frameType != LayoutFrameType::Page) {
+  if (aFrame->IsPageFrame()) {
     
     
     
     
     
-
-    
-    
-    
-    nsRect canvasArea = aVisibleRegion.GetBounds();
-    canvasArea.IntersectRect(aCanvasArea, canvasArea);
-    nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-        aBuilder, aFrame, canvasArea, canvasArea);
-    presShell->AddCanvasBackgroundColorItem(aBuilder, aList, aFrame, canvasArea,
-                                            aBackstop);
+    return;
   }
+  
+  
+  
+  nsRect canvasArea = aVisibleRegion.GetBounds();
+  canvasArea.IntersectRect(aCanvasArea, canvasArea);
+  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
+      aBuilder, aFrame, canvasArea, canvasArea);
+  aFrame->PresShell()->AddCanvasBackgroundColorItem(aBuilder, aList, aFrame,
+                                                    canvasArea, aBackstop);
 }
 
 
@@ -8528,12 +8515,6 @@ SurfaceFromElementResult::GetSourceSurface() {
 bool nsLayoutUtils::IsNonWrapperBlock(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   return aFrame->IsBlockFrameOrSubclass() && !aFrame->IsBlockWrapper();
-}
-
-bool nsLayoutUtils::NeedsPrintPreviewBackground(nsPresContext* aPresContext) {
-  return aPresContext->IsRootPaginatedDocument() &&
-         (aPresContext->Type() == nsPresContext::eContext_PrintPreview ||
-          aPresContext->Type() == nsPresContext::eContext_PageLayout);
 }
 
 AutoMaybeDisableFontInflation::AutoMaybeDisableFontInflation(nsIFrame* aFrame) {
