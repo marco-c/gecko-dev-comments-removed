@@ -86,7 +86,6 @@ using EphemeronEdgeTable =
 
 
 
-
 class MarkStack {
  public:
   
@@ -145,8 +144,14 @@ class MarkStack {
     TaggedPtr ptr_;
   };
 
-  explicit MarkStack();
+  MarkStack();
   ~MarkStack();
+
+  explicit MarkStack(const MarkStack& other);
+  MarkStack& operator=(const MarkStack& other);
+
+  MarkStack(MarkStack&& other);
+  MarkStack& operator=(MarkStack&& other);
 
   
   size_t capacity() { return stack().length(); }
@@ -159,13 +164,6 @@ class MarkStack {
 #ifdef JS_GC_ZEAL
   void setMaxCapacity(size_t maxCapacity);
 #endif
-
-  void setMarkColor(MarkColor newColor);
-  MarkColor markColor() const { return markColor_; }
-
-  bool hasBlackEntries() const { return position() > grayPosition_; }
-  bool hasGrayEntries() const { return grayPosition_ > 0 && !isEmpty(); }
-  bool hasEntries(MarkColor color) const;
 
   template <typename T>
   [[nodiscard]] bool push(T* ptr);
@@ -181,19 +179,20 @@ class MarkStack {
   
   [[nodiscard]] bool pushTempRope(JSRope* ptr);
 
-  bool isEmpty() const { return topIndex_ == 0; }
+  bool isEmpty() const { return position() == 0; }
+  bool hasEntries() const { return !isEmpty(); }
 
   Tag peekTag() const;
   TaggedPtr popPtr();
   SlotsOrElementsRange popSlotsOrElementsRange();
 
-  void clear();
+  void clearAndResetCapacity();
+  void clearAndFreeStack();
 
   void poisonUnused();
 
   [[nodiscard]] bool ensureSpace(size_t count);
 
-  bool canDonateWork() const;
   static void moveWork(MarkStack& dst, MarkStack& src);
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -213,11 +212,7 @@ class MarkStack {
   const TaggedPtr& peekPtr() const;
   [[nodiscard]] bool pushTaggedPtr(Tag tag, Cell* ptr);
 
-  size_t basePositionForCurrentColor() const;
-  size_t wordCountForCurrentColor() const;
   bool indexIsEntryBase(size_t index) const;
-
-  void assertGrayPositionValid() const;
 
   
   MainThreadOrGCTaskData<StackVector> stack_;
@@ -225,19 +220,9 @@ class MarkStack {
   
   MainThreadOrGCTaskData<size_t> topIndex_;
 
-  
-  MainThreadOrGCTaskData<size_t> grayPosition_;
-
-  
-  MainThreadOrGCTaskData<gc::MarkColor> markColor_;
-
 #ifdef JS_GC_ZEAL
   
   MainThreadOrGCTaskData<size_t> maxCapacity_{SIZE_MAX};
-#endif
-
-#ifdef DEBUG
-  mutable size_t iteratorCount_ = 0;
 #endif
 };
 
@@ -332,12 +317,15 @@ class alignas(TypicalCacheLineSize) GCMarker {
   bool isParallelMarking() const { return state == ParallelMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
 
-  gc::MarkColor markColor() const { return stack.markColor(); }
+  gc::MarkColor markColor() const { return markColor_; }
 
-  bool isDrained() const { return stack.isEmpty(); }
+  bool isDrained() const { return stack.isEmpty() && otherStack.isEmpty(); }
 
-  bool hasEntries(gc::MarkColor color) const { return stack.hasEntries(color); }
-  bool canDonateWork() const { return stack.canDonateWork(); }
+  bool hasBlackEntries() const { return hasEntries(gc::MarkColor::Black); }
+  bool hasGrayEntries() const { return hasEntries(gc::MarkColor::Gray); }
+  bool hasEntries(gc::MarkColor color) const;
+
+  bool canDonateWork() const;
 
   void start();
   void stop();
@@ -410,11 +398,8 @@ class alignas(TypicalCacheLineSize) GCMarker {
 
 
 
-  void setMarkColor(gc::MarkColor newColor) { stack.setMarkColor(newColor); }
+  void setMarkColor(gc::MarkColor newColor);
   friend class js::gc::AutoSetMarkColor;
-
-  bool hasBlackEntries() const { return stack.hasBlackEntries(); }
-  bool hasGrayEntries() const { return stack.hasGrayEntries(); }
 
   template <typename Tracer>
   void setMarkingStateAndTracer(MarkingState prev, MarkingState next);
@@ -525,6 +510,15 @@ class alignas(TypicalCacheLineSize) GCMarker {
 
   
   gc::MarkStack stack;
+
+  
+  gc::MarkStack otherStack;
+
+  
+  MainThreadOrGCTaskData<bool> haveSwappedStacks;
+
+  
+  MainThreadOrGCTaskData<gc::MarkColor> markColor_;
 
   MainThreadOrGCTaskData<gc::ParallelMarker*> parallelMarker_;
 
