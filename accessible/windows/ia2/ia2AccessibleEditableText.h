@@ -14,7 +14,7 @@
 
 namespace mozilla {
 namespace a11y {
-class HyperTextAccessibleBase;
+class HyperTextAccessibleWrap;
 
 class ia2AccessibleEditableText : public IAccessibleEditableText {
  public:
@@ -50,7 +50,7 @@ class ia2AccessibleEditableText : public IAccessibleEditableText {
        BSTR* attributes);
 
  private:
-  HyperTextAccessibleBase* TextAcc();
+  HyperTextAccessibleWrap* TextAcc();
 };
 
 }  

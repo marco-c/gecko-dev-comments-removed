@@ -1334,8 +1334,11 @@ MsaaAccessible::put_accValue(
   if (accessible) {
     return accessible->put_accValue(kVarChildIdSelf, szValue);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
-  HyperTextAccessibleBase* ht = mAcc->AsHyperTextBase();
+  HyperTextAccessible* ht = LocalAcc()->AsHyperText();
   if (!ht) {
     return E_NOTIMPL;
   }

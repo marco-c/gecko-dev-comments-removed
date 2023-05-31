@@ -6,7 +6,10 @@
 
 
 
-loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
+loadScripts(
+  { name: "text.js", dir: MOCHITESTS_DIR },
+  { name: "attributes.js", dir: MOCHITESTS_DIR }
+);
 
 
 
