@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from aioquic.buffer import Buffer  
 from aioquic.asyncio import QuicConnectionProtocol, serve  
 from aioquic.asyncio.client import connect  
-from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection, ProtocolError  
+from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection, ProtocolError, SettingsError  
 from aioquic.h3.events import H3Event, HeadersReceived, WebTransportStreamDataReceived, DatagramReceived, DataReceived  
 from aioquic.quic.configuration import QuicConfiguration  
 from aioquic.quic.connection import logger as quic_connection_logger  
@@ -66,11 +66,17 @@ class H3ConnectionWithDatagram(H3Connection):
         self._datagram_setting: Optional[H3DatagramSetting] = None
 
     def _validate_settings(self, settings: Dict[int, int]) -> None:
-        super()._validate_settings(settings)
+        
+        
+        
         if settings.get(H3DatagramSetting.RFC) == 1:
             self._datagram_setting = H3DatagramSetting.RFC
         elif settings.get(H3DatagramSetting.DRAFT04) == 1:
             self._datagram_setting = H3DatagramSetting.DRAFT04
+
+        if self._datagram_setting is None:
+            raise SettingsError("HTTP Datagrams support required")
+
 
     def _get_local_settings(self) -> Dict[int, int]:
         settings = super()._get_local_settings()
