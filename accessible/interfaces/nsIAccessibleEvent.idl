@@ -442,18 +442,12 @@ interface nsIAccessibleEvent : nsISupports
 
 
 
-  const unsigned long EVENT_TABLE_STYLING_CHANGED = 0x005C;
+  const unsigned long EVENT_INNER_REORDER = 0x005C;
 
   
 
 
-
-  const unsigned long EVENT_INNER_REORDER = 0x005D;
-
-  
-
-
-  const unsigned long EVENT_LAST_ENTRY = 0x005E;
+  const unsigned long EVENT_LAST_ENTRY = 0x005D;
 
   
 

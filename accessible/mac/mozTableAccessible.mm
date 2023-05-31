@@ -22,8 +22,6 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
-
 @implementation mozColumnContainer
 
 - (id)initWithIndex:(uint32_t)aIndex andParent:(mozAccessible*)aParent {
@@ -116,30 +114,7 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
   return [self isLayoutTablePart] ? NSAccessibilityGroupRole : [super moxRole];
 }
 
-- (void)handleAccessibleEvent:(uint32_t)eventType {
-  if (![self isKindOfClass:[mozTableAccessible class]] &&
-      !a11y::IsCacheActive()) {
-    
-    
-    
-    
-    
-    if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
-        eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED) {
-      
-      [self invalidateLayoutTableCache];
-    }
-  }
-
-  [super handleAccessibleEvent:eventType];
-}
-
 - (BOOL)isLayoutTablePart {
-  
-  
-  
-  
-  
   mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
   if ([parent isKindOfClass:[mozTablePartAccessible class]]) {
     return [(mozTablePartAccessible*)parent isLayoutTablePart];
@@ -149,67 +124,33 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 
   return NO;
 }
-
-- (void)invalidateLayoutTableCache {
-  mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-  if ([parent isKindOfClass:[mozTablePartAccessible class]]) {
-    
-    
-    
-    
-    
-    [(mozTablePartAccessible*)parent invalidateLayoutTableCache];
-  }
-}
 @end
 
 @implementation mozTableAccessible
 
-- (void)invalidateLayoutTableCache {
-  MOZ_ASSERT(!a11y::IsCacheActive(),
-             "If the core cache is enabled we shouldn't be maintaining the "
-             "platform table cache!");
-  mIsLayoutTable = eCachedBoolMiss;
-}
-
 - (BOOL)isLayoutTablePart {
-  if (mIsLayoutTable != eCachedBoolMiss && !a11y::IsCacheActive()) {
-    
-    return mIsLayoutTable == eCachedTrue;
-  }
-
   if (mGeckoAccessible->Role() == roles::TREE_TABLE) {
     
     
     
-    mIsLayoutTable = eCachedFalse;
     return false;
   }
 
-  bool tableGuess;
   
   
   
   
   
   if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
-    tableGuess = acc->AsTable()->IsProbablyLayoutTable();
-  } else {
-    RemoteAccessible* proxy = mGeckoAccessible->AsRemote();
-    tableGuess = proxy->TableIsProbablyForLayout();
+    return acc->AsTable()->IsProbablyLayoutTable();
   }
-
-  mIsLayoutTable = tableGuess ? eCachedTrue : eCachedFalse;
-  return tableGuess;
+  RemoteAccessible* proxy = mGeckoAccessible->AsRemote();
+  return proxy->TableIsProbablyForLayout();
 }
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
-      eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED ||
-      eventType == nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED) {
-    if (!a11y::IsCacheActive()) {
-      [self invalidateLayoutTableCache];
-    }
+      eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED) {
     [self invalidateColumns];
   }
 

@@ -301,7 +301,6 @@ addAccessibleTask(
 
 
 
-
 async function testIsLayout(table, elem, event, change, isLayout) {
   info(
     "Changing " +
@@ -309,12 +308,9 @@ async function testIsLayout(table, elem, event, change, isLayout) {
       ", expecting table change to " +
       (isLayout ? "AXGroup" : "AXTable")
   );
-  const toWait = waitForEvent(
-    event,
-    event == EVENT_TABLE_STYLING_CHANGED ? "table" : elem
-  );
+  const toWait = event ? waitForEvent(event, elem) : null;
   await change();
-  if (event != EVENT_TABLE_STYLING_CHANGED) {
+  if (toWait) {
     await toWait;
   }
   let intendedRole = isLayout ? "AXGroup" : "AXTable";
@@ -483,7 +479,7 @@ addAccessibleTask(
     await testIsLayout(
       table,
       "cellOne",
-      EVENT_TABLE_STYLING_CHANGED,
+      null,
       async () => {
         await SpecialPowers.spawn(browser, [], () => {
           content.document
@@ -499,7 +495,7 @@ addAccessibleTask(
     await testIsLayout(
       table,
       "cellOne",
-      EVENT_TABLE_STYLING_CHANGED,
+      null,
       async () => {
         await SpecialPowers.spawn(browser, [], () => {
           content.document
@@ -515,7 +511,7 @@ addAccessibleTask(
     await testIsLayout(
       table,
       "rowOne",
-      EVENT_TABLE_STYLING_CHANGED,
+      null,
       async () => {
         await SpecialPowers.spawn(browser, [], () => {
           content.document
@@ -531,7 +527,7 @@ addAccessibleTask(
     await testIsLayout(
       table,
       "rowOne",
-      EVENT_TABLE_STYLING_CHANGED,
+      null,
       async () => {
         await SpecialPowers.spawn(browser, [], () => {
           content.document

@@ -49,25 +49,16 @@
 
 - (NSString*)moxRole;
 
-
-- (void)handleAccessibleEvent:(uint32_t)eventType;
-
 - (BOOL)isLayoutTablePart;
-
-- (void)invalidateLayoutTableCache;
 
 @end
 
 @interface mozTableAccessible : mozTablePartAccessible {
   NSMutableArray* mColContainers;
-  uint32_t mIsLayoutTable;
 }
 
 
 - (BOOL)isLayoutTablePart;
-
-
-- (void)invalidateLayoutTableCache;
 
 - (void)invalidateColumns;
 
