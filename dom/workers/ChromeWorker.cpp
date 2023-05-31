@@ -18,7 +18,7 @@ namespace mozilla::dom {
 
 already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
     const GlobalObject& aGlobal, const nsAString& aScriptURL,
-    ErrorResult& aRv) {
+    const WorkerOptions& aOptions, ErrorResult& aRv) {
   
   
   if (xpc::IsInAutomation() &&
@@ -32,7 +32,7 @@ already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
 
   RefPtr<WorkerPrivate> workerPrivate = WorkerPrivate::Constructor(
       cx, aScriptURL, true , WorkerKindDedicated,
-      RequestCredentials::Omit, WorkerType::Classic, u""_ns, VoidCString(),
+      RequestCredentials::Omit, aOptions.mType, aOptions.mName, VoidCString(),
       nullptr , aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
