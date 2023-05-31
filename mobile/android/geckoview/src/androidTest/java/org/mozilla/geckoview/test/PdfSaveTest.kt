@@ -38,7 +38,7 @@ class PdfSaveTest : BaseSessionTest() {
             filename,
             url,
              true,
-             false
+             false,
         )!!
 
         assertThat("Uri", response.uri, equalTo("http://example.com/foobar.pdf"))
