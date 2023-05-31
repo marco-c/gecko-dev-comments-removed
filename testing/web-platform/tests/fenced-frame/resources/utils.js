@@ -1,4 +1,5 @@
 const STORE_URL = '/fenced-frame/resources/key-value-store.py';
+const BEACON_URL = '/fenced-frame/resources/automatic-beacon-store.py';
 const REMOTE_EXECUTOR_URL = '/fenced-frame/resources/remote-context-executor.https.html';
 const FLEDGE_BIDDING_URL = '/fenced-frame/resources/fledge-bidding-logic.js';
 const FLEDGE_BIDDING_WITH_SIZE_URL = '/fenced-frame/resources/fledge-bidding-logic-with-size.js';
@@ -407,6 +408,37 @@ async function nextValueFromServer(key) {
   while (true) {
     
     const { status, value } = await readValueFromServer(key);
+    if (!status) {
+      
+      await new Promise(resolve => setTimeout(resolve, 20));
+      continue;
+    }
+
+    return value;
+  }
+}
+
+
+async function readAutomaticBeaconDataFromServer() {
+  const serverUrl = `${BEACON_URL}`;
+  const response = await fetch(serverUrl);
+  if (!response.ok)
+    throw new Error('An error happened in the server');
+  const value = await response.text();
+
+  
+  if (value === "<Not set>")
+    return { status: false };
+
+  return { status: true, value: value };
+}
+
+
+
+async function nextAutomaticBeacon() {
+  while (true) {
+    
+    const { status, value } = await readAutomaticBeaconDataFromServer();
     if (!status) {
       
       await new Promise(resolve => setTimeout(resolve, 20));
