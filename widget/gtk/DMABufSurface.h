@@ -131,6 +131,7 @@ class DMABufSurface {
   
   
   void GlobalRefCountCreate();
+  void GlobalRefCountDelete();
 
   
   
@@ -153,12 +154,10 @@ class DMABufSurface {
   virtual bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) = 0;
 
   
+  
   void GlobalRefCountImport(int aFd);
   
-  
-  
   int GlobalRefCountExport();
-  void GlobalRefCountDelete();
 
   void ReleaseDMABuf();
 
