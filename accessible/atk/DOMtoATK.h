@@ -6,7 +6,7 @@
 
 #include <glib.h>
 #include <cstdint>
-#include "mozilla/TypedEnumBits.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsCharTraits.h"
 #include "nsString.h"
 
@@ -57,21 +57,6 @@ gchar* Convert(const nsAString& aStr);
 
 void AddBOMs(nsACString& aDest, const nsACString& aSource);
 
-
-
-
-void ConvertTexttoAsterisks(nsAString& aString);
-
-
-
-
-enum class AtkStringConvertFlags : uint32_t {
-  None = 0,
-  ConvertTextToAsterisks = 1 << 0,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AtkStringConvertFlags)
-
 class ATKStringConverterHelper {
  public:
   ATKStringConverterHelper(void)
@@ -115,9 +100,8 @@ class ATKStringConverterHelper {
 
 
 
-template <class Accessible>
-gchar* NewATKString(Accessible* aAccessible, gint aStartOffset, gint aEndOffset,
-                    AtkStringConvertFlags aFlags) {
+inline gchar* NewATKString(HyperTextAccessibleBase* aAccessible,
+                           gint aStartOffset, gint aEndOffset) {
   gint startOffset = aStartOffset, endOffset = aEndOffset;
   ATKStringConverterHelper converter;
   converter.AdjustOffsets(&startOffset, &endOffset,
@@ -130,9 +114,6 @@ gchar* NewATKString(Accessible* aAccessible, gint aStartOffset, gint aEndOffset,
     return g_strdup("");
   }
 
-  if (aFlags & AtkStringConvertFlags::ConvertTextToAsterisks) {
-    ConvertTexttoAsterisks(str);
-  }
   return converter.ConvertAdjusted(str);
 }
 
@@ -140,8 +121,8 @@ gchar* NewATKString(Accessible* aAccessible, gint aStartOffset, gint aEndOffset,
 
 
 
-template <class AccessibleCharAt>
-gunichar ATKCharacter(AccessibleCharAt* aAccessible, gint aOffset) {
+inline gunichar ATKCharacter(HyperTextAccessibleBase* aAccessible,
+                             gint aOffset) {
   
   gunichar character = static_cast<gunichar>(aAccessible->CharAt(aOffset));
 
