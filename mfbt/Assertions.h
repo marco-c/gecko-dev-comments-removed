@@ -38,6 +38,9 @@ MOZ_END_EXTERN_C
 #if defined(MOZ_HAS_MOZGLUE) || defined(MOZILLA_INTERNAL_API)
 static inline void AnnotateMozCrashReason(const char* reason) {
   gMozCrashReason = reason;
+  
+  
+  asm volatile("" ::: "memory");
 }
 #  define MOZ_CRASH_ANNOTATE(...) AnnotateMozCrashReason(__VA_ARGS__)
 #else
@@ -641,4 +644,4 @@ MFBT_API MOZ_NORETURN MOZ_COLD void InvalidArrayIndex_CRASH(size_t aIndex,
 }  
 #endif  
 
-#endif 
+#endif
