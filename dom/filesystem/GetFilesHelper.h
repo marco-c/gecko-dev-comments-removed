@@ -10,7 +10,9 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionTraversalCallback.h"
+#include "nsHashKeys.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 
 class nsIGlobalObject;
@@ -49,10 +51,15 @@ class GetFilesHelperBase {
 
   nsresult ExploreDirectory(const nsAString& aDOMPath, nsIFile* aFile);
 
+  nsresult AddExploredDirectory(nsIFile* aDirectory);
+
+  bool ShouldFollowSymLink(nsIFile* aDirectory);
+
   bool mRecursiveFlag;
 
   
   FallibleTArray<RefPtr<BlobImpl>> mTargetBlobImplArray;
+  nsTHashSet<nsString> mExploredDirectories;
 };
 
 

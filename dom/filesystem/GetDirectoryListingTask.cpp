@@ -317,14 +317,8 @@ nsresult GetDirectoryListingTaskParent::IOWork() {
         !currFile) {
       break;
     }
-    bool isLink, isSpecial, isFile;
-    if (NS_WARN_IF(NS_FAILED(currFile->IsSymlink(&isLink)) ||
-                   NS_FAILED(currFile->IsSpecial(&isSpecial))) ||
-        
-        
-        
-        
-        isLink || isSpecial) {
+    bool isSpecial, isFile;
+    if (NS_WARN_IF(NS_FAILED(currFile->IsSpecial(&isSpecial))) || isSpecial) {
       continue;
     }
     if (NS_WARN_IF(NS_FAILED(currFile->IsFile(&isFile)) ||
