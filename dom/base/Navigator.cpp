@@ -868,7 +868,8 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
   
   
   if (aCallerType != CallerType::System &&
-      nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
+      nsContentUtils::ShouldResistFingerprinting(GetDocShell(),
+                                                 RFPTarget::Unknown)) {
     return 0;
   }
 
