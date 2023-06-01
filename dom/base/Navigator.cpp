@@ -427,7 +427,8 @@ void Navigator::GetOscpu(nsAString& aOSCPU, CallerType aCallerType,
   if (aCallerType != CallerType::System) {
     
     
-    if (nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
+    if (nsContentUtils::ShouldResistFingerprinting(GetDocShell(),
+                                                   RFPTarget::NavigatorOscpu)) {
       aOSCPU.AssignLiteral(SPOOFED_OSCPU);
       return;
     }
@@ -496,7 +497,8 @@ bool Navigator::PdfViewerEnabled() {
   
   
   return !StaticPrefs::pdfjs_disabled() ||
-         nsContentUtils::ShouldResistFingerprinting(GetDocShell());
+         nsContentUtils::ShouldResistFingerprinting(
+                      GetDocShell(), RFPTarget::Unknown);
 }
 
 Permissions* Navigator::GetPermissions(ErrorResult& aRv) {
@@ -575,7 +577,8 @@ void Navigator::GetBuildID(nsAString& aBuildID, CallerType aCallerType,
   if (aCallerType != CallerType::System) {
     
     
-    if (nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
+    if (nsContentUtils::ShouldResistFingerprinting(
+            GetDocShell(), RFPTarget::NavigatorBuildID)) {
       aBuildID.AssignLiteral(LEGACY_BUILD_ID);
       return;
     }
@@ -655,7 +658,7 @@ uint64_t Navigator::HardwareConcurrency() {
 
   return rts->ClampedHardwareConcurrency(
       nsGlobalWindowInner::Cast(mWindow)->ShouldResistFingerprinting(
-          RFPTarget::Unknown));
+          RFPTarget::NavigatorHWConcurrency));
 }
 
 namespace {
@@ -1950,7 +1953,7 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
   if (aUsePrefOverriddenValue) {
     
     
-    if (ShouldResistFingerprinting(aCallerDoc, RFPTarget::Unknown)) {
+    if (ShouldResistFingerprinting(aCallerDoc, RFPTarget::NavigatorPlatform)) {
       aPlatform.AssignLiteral(SPOOFED_PLATFORM);
       return NS_OK;
     }
@@ -1993,7 +1996,8 @@ nsresult Navigator::GetAppVersion(nsAString& aAppVersion, Document* aCallerDoc,
   if (aUsePrefOverriddenValue) {
     
     
-    if (ShouldResistFingerprinting(aCallerDoc, RFPTarget::Unknown)) {
+    if (ShouldResistFingerprinting(aCallerDoc,
+                                   RFPTarget::NavigatorAppVersion)) {
       aAppVersion.AssignLiteral(SPOOFED_APPVERSION);
       return NS_OK;
     }
@@ -2037,7 +2041,7 @@ void Navigator::AppName(nsAString& aAppName, Document* aCallerDoc,
   if (aUsePrefOverriddenValue) {
     
     
-    if (ShouldResistFingerprinting(aCallerDoc, RFPTarget::Unknown)) {
+    if (ShouldResistFingerprinting(aCallerDoc, RFPTarget::NavigatorAppName)) {
       aAppName.AssignLiteral(SPOOFED_APPNAME);
       return;
     }
@@ -2082,7 +2086,8 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   bool shouldResistFingerprinting =
       aShouldResistFingerprinting.isSome()
           ? aShouldResistFingerprinting.value()
-          : ShouldResistFingerprinting(aCallerDoc, RFPTarget::Unknown);
+          : ShouldResistFingerprinting(aCallerDoc,
+                                       RFPTarget::NavigatorUserAgent);
 
   
   
