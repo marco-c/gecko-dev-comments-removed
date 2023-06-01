@@ -495,8 +495,7 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
             
             
             const TimeUnit CROSS_MOOF_CTS_MERGE_THRESHOLD =
-                TimeUnit::FromSeconds(aMvhd.mTimescale / 1000000.,
-                                      aMvhd.mTimescale);
+                TimeUnit::FromMicroseconds(1);
             
             
             if (ctsOrder[0]->mCompositionRange.start > prevCts.mCtsEndTime &&
