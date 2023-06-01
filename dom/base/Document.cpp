@@ -16203,8 +16203,7 @@ bool Document::RecomputeResistFingerprinting() {
   return previous != mShouldResistFingerprinting;
 }
 
-bool Document::ShouldResistFingerprinting(
-    RFPTarget aTarget ) const {
+bool Document::ShouldResistFingerprinting(RFPTarget aTarget) const {
   return mShouldResistFingerprinting && nsRFPService::IsRFPEnabledFor(aTarget);
 }
 

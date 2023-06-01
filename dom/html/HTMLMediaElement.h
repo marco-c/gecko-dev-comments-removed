@@ -353,7 +353,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool HadCrossOriginRedirects();
 
-  bool ShouldResistFingerprinting() const override;
+  bool ShouldResistFingerprinting(RFPTarget aTarget) const override;
 
   
   
