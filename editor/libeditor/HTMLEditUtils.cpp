@@ -2150,17 +2150,10 @@ HTMLEditUtils::ComputePointToPutCaretInElementIfOutside(
 
   
   
-  RefPtr<StaticRange> staticRange =
-      StaticRange::Create(aCurrentPoint.ToRawRangeBoundary(),
-                          aCurrentPoint.ToRawRangeBoundary(), IgnoreErrors());
-  if (MOZ_UNLIKELY(!staticRange)) {
-    NS_WARNING("StaticRange::Create() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-
   bool nodeBefore, nodeAfter;
-  nsresult rv = RangeUtils::CompareNodeToRange(
-      const_cast<Element*>(&aElement), staticRange, &nodeBefore, &nodeAfter);
+  nsresult rv = RangeUtils::CompareNodeToRangeBoundaries(
+      const_cast<Element*>(&aElement), aCurrentPoint.ToRawRangeBoundary(),
+      aCurrentPoint.ToRawRangeBoundary(), &nodeBefore, &nodeAfter);
   if (NS_FAILED(rv)) {
     NS_WARNING("RangeUtils::CompareNodeToRange() failed");
     return Err(rv);
