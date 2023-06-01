@@ -2741,6 +2741,16 @@ class Extension extends ExtensionData {
     this.baseURI = Services.io.newURI(this.baseURL).QueryInterface(Ci.nsIURL);
     this.principal = this.createPrincipal();
 
+    
+    
+    
+    
+    
+    
+    
+    this.ignoreQuarantine =
+      addonData.isPrivileged || !!addonData.recommendationState?.states?.length;
+
     this.views = new Set();
     this._backgroundPageFrameLoader = null;
 
@@ -3065,6 +3075,7 @@ class Extension extends ExtensionData {
       permissions: this.permissions,
       optionalPermissions: this.optionalPermissions,
       isPrivileged: this.isPrivileged,
+      ignoreQuarantine: this.ignoreQuarantine,
       temporarilyInstalled: this.temporarilyInstalled,
     };
   }
@@ -3323,6 +3334,7 @@ class Extension extends ExtensionData {
       mozExtensionHostname: this.uuid,
       baseURL: this.resourceURL,
       isPrivileged: this.isPrivileged,
+      ignoreQuarantine: this.ignoreQuarantine,
       temporarilyInstalled: this.temporarilyInstalled,
       allowedOrigins: new MatchPatternSet([]),
       localizeCallback() {},
@@ -3338,6 +3350,7 @@ class Extension extends ExtensionData {
       mozExtensionHostname: this.uuid,
       baseURL: this.resourceURL,
       isPrivileged: this.isPrivileged,
+      ignoreQuarantine: this.ignoreQuarantine,
     });
     sharedData.set("extensions/pending", pendingExtensions);
 

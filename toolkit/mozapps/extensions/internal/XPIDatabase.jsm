@@ -1121,6 +1121,10 @@ AddonWrapper = class {
     return [];
   }
 
+  
+  
+  
+  
   get isRecommended() {
     return this.recommendationStates.includes("recommended");
   }
