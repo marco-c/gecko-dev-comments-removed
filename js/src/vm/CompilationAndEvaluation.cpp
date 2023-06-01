@@ -207,10 +207,10 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     return false;
   }
 
-  Parser<FullParseHandler, char16_t> parser(
-      &fc, cx->stackLimitForCurrentPrincipal(), options, chars.get(), length,
-       true, compilationState,
-       nullptr);
+  Parser<FullParseHandler, char16_t> parser(&fc, options, chars.get(), length,
+                                             true,
+                                            compilationState,
+                                             nullptr);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

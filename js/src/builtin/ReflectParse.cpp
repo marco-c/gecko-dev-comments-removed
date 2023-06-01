@@ -3745,8 +3745,7 @@ static bool reflect_parse(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   Parser<FullParseHandler, char16_t> parser(
-      &fc, cx->stackLimitForCurrentPrincipal(), options, chars.begin().get(),
-      chars.length(),
+      &fc, options, chars.begin().get(), chars.length(),
        false, compilationState,
        nullptr);
   if (!parser.checkOptions()) {

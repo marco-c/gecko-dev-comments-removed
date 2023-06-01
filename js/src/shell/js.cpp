@@ -5353,10 +5353,10 @@ static bool DumpAST(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
   using namespace js::frontend;
 
   AutoReportFrontendContext fc(cx);
-  Parser<FullParseHandler, Unit> parser(
-      &fc, cx->stackLimitForCurrentPrincipal(), options, units, length,
-       false, compilationState,
-       nullptr);
+  Parser<FullParseHandler, Unit> parser(&fc, options, units, length,
+                                         false,
+                                        compilationState,
+                                         nullptr);
   if (!parser.checkOptions()) {
     return false;
   }
@@ -5726,7 +5726,7 @@ static bool SyntaxParse(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   Parser<frontend::SyntaxParseHandler, char16_t> parser(
-      &fc, cx->stackLimitForCurrentPrincipal(), options, chars, length,
+      &fc, options, chars, length,
        false, compilationState,
        nullptr);
   if (!parser.checkOptions()) {
