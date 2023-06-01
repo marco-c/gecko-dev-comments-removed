@@ -452,6 +452,14 @@ impl Device {
     }
 
     
+    pub fn app_units_per_device_pixel(&self) -> i32 {
+        match self.pres_context() {
+            Some(pc) => pc.mCurAppUnitsPerDevPixel,
+            None => AU_PER_PX,
+        }
+    }
+
+    
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         let pc = match self.pres_context() {
             Some(pc) => pc,

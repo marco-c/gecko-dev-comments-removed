@@ -181,36 +181,39 @@ void nsColumnSetFrame::CreateBorderRenderers(
   StyleBorderStyle ruleStyle;
 
   
-  if (colStyle->mColumnRuleStyle == StyleBorderStyle::Inset)
+  if (colStyle->mColumnRuleStyle == StyleBorderStyle::Inset) {
     ruleStyle = StyleBorderStyle::Ridge;
-  else if (colStyle->mColumnRuleStyle == StyleBorderStyle::Outset)
+  } else if (colStyle->mColumnRuleStyle == StyleBorderStyle::Outset) {
     ruleStyle = StyleBorderStyle::Groove;
-  else
+  } else {
     ruleStyle = colStyle->mColumnRuleStyle;
+  }
 
   nscoord ruleWidth = colStyle->GetColumnRuleWidth();
-  if (!ruleWidth) return;
+  if (!ruleWidth) {
+    return;
+  }
 
   aBorderRenderers.Clear();
   nscolor ruleColor =
       GetVisitedDependentColor(&nsStyleColumn::mColumnRuleColor);
 
-  nsPresContext* presContext = PresContext();
+  nsPresContext* pc = PresContext();
   
   
   
   
   
-  nsStyleBorder border(*presContext->Document());
+  nsStyleBorder border(*pc->Document());
   Sides skipSides;
   if (isVertical) {
-    border.SetBorderWidth(eSideTop, ruleWidth);
+    border.SetBorderWidth(eSideTop, ruleWidth, pc->AppUnitsPerDevPixel());
     border.SetBorderStyle(eSideTop, ruleStyle);
     border.mBorderTopColor = StyleColor::FromColor(ruleColor);
     skipSides |= mozilla::SideBits::eLeftRight;
     skipSides |= mozilla::SideBits::eBottom;
   } else {
-    border.SetBorderWidth(eSideLeft, ruleWidth);
+    border.SetBorderWidth(eSideLeft, ruleWidth, pc->AppUnitsPerDevPixel());
     border.SetBorderStyle(eSideLeft, ruleStyle);
     border.mBorderLeftColor = StyleColor::FromColor(ruleColor);
     skipSides |= mozilla::SideBits::eTopBottom;
@@ -235,7 +238,7 @@ void nsColumnSetFrame::CreateBorderRenderers(
         bool borderIsEmpty = false;
         Maybe<nsCSSBorderRenderer> br =
             nsCSSRendering::CreateBorderRendererWithStyleBorder(
-                presContext, dt, this, aDirtyRect, aLineRect, border, Style(),
+                pc, dt, this, aDirtyRect, aLineRect, border, Style(),
                 &borderIsEmpty, skipSides);
         if (br.isSome()) {
           MOZ_ASSERT(!borderIsEmpty);

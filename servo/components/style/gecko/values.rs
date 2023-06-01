@@ -13,8 +13,6 @@ use crate::gecko_bindings::structs::CounterStylePtr;
 use crate::values::generics::CounterStyle;
 use crate::values::Either;
 use crate::Atom;
-use app_units::Au;
-use std::cmp::max;
 
 
 pub fn convert_absolute_color_to_nscolor(color: &AbsoluteColor) -> u32 {
@@ -36,21 +34,6 @@ pub fn convert_nscolor_to_absolute_color(color: u32) -> AbsoluteColor {
         b as f32 / 255.0,
         a as f32 / 255.0,
     )
-}
-
-
-
-
-#[inline]
-pub fn round_border_to_device_pixels(width: Au, au_per_device_px: Au) -> Au {
-    if width == Au(0) {
-        Au(0)
-    } else {
-        max(
-            au_per_device_px,
-            Au(width.0 / au_per_device_px.0 * au_per_device_px.0),
-        )
-    }
 }
 
 impl CounterStyle {

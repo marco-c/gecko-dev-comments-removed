@@ -189,6 +189,8 @@ static void ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
   nsTArray<int8_t>* columnLinesList =
       FindCellProperty(aFrame, ColumnLinesProperty());
 
+  const auto a2d = aFrame->PresContext()->AppUnitsPerDevPixel();
+
   
   if (rowIndex > 0 && rowLinesList) {
     
@@ -203,7 +205,7 @@ static void ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
                                   static_cast<StyleBorderStyle>(
                                       rowLinesList->ElementAt(listLength - 1)));
     }
-    aStyleBorder.SetBorderWidth(eSideTop, borderWidth);
+    aStyleBorder.SetBorderWidth(eSideTop, borderWidth, a2d);
   }
 
   
@@ -220,7 +222,7 @@ static void ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
           eSideLeft, static_cast<StyleBorderStyle>(
                          columnLinesList->ElementAt(listLength - 1)));
     }
-    aStyleBorder.SetBorderWidth(eSideLeft, borderWidth);
+    aStyleBorder.SetBorderWidth(eSideLeft, borderWidth, a2d);
   }
 }
 
