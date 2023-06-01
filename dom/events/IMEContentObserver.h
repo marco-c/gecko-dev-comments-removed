@@ -183,6 +183,12 @@ class IMEContentObserver final : public nsStubMutationObserver,
   void BeforeEditAction();
   void CancelEditAction();
 
+  
+
+
+
+  void OnTextControlValueChangedDuringNoFrame(const nsAString& aNewValue);
+
   dom::Element* GetObservingElement() const {
     return mIsObserving ? mRootElement.get() : nullptr;
   }
@@ -500,8 +506,12 @@ class IMEContentObserver final : public nsStubMutationObserver,
   EventStateManager* mESM;
 
   const IMENotificationRequests* mIMENotificationRequests;
-  uint32_t mSuppressNotifications;
-  int64_t mPreCharacterDataChangeLength;
+  int64_t mPreCharacterDataChangeLength = -1;
+  uint32_t mSuppressNotifications = 0;
+
+  
+  
+  uint32_t mTextControlValueLength = 0;
 
   
   

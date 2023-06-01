@@ -6,6 +6,8 @@
 
 #include "TextControlState.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/IMEContentObserver.h"
+#include "mozilla/IMEStateManager.h"
 #include "mozilla/TextInputListener.h"
 
 #include "nsCOMPtr.h"
@@ -2948,6 +2950,12 @@ bool TextControlState::SetValueWithoutTextEditor(
       if (mBoundFrame) {
         mBoundFrame->UpdateValueDisplay(true);
       }
+      
+      
+      
+      else if (IMEContentObserver* observer = GetIMEContentObserver()) {
+        observer->OnTextControlValueChangedDuringNoFrame(mValue);
+      }
     }
 
     
@@ -3038,6 +3046,14 @@ void TextControlState::GetPreviewText(nsAString& aValue) {
 
 bool TextControlState::EditorHasComposition() {
   return mTextEditor && mTextEditor->IsIMEComposing();
+}
+
+IMEContentObserver* TextControlState::GetIMEContentObserver() const {
+  if (NS_WARN_IF(!mTextCtrlElement) ||
+      mTextCtrlElement != IMEStateManager::GetFocusedElement()) {
+    return nullptr;
+  }
+  return IMEStateManager::GetActiveContentObserver();
 }
 
 }  

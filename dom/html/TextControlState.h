@@ -29,6 +29,7 @@ namespace mozilla {
 
 class AutoTextControlHandlingState;
 class ErrorResult;
+class IMEContentObserver;
 class TextEditor;
 class TextInputListener;
 class TextInputSelectionController;
@@ -294,7 +295,6 @@ class TextControlState final : public SupportsWeakPtr {
 
 
   bool ValueEquals(const nsAString& aValue) const;
-  bool HasNonEmptyValue();
   
   
   
@@ -492,7 +492,7 @@ class TextControlState final : public SupportsWeakPtr {
 
 
   MOZ_CAN_RUN_SCRIPT bool SetValueWithTextEditor(
-      AutoTextControlHandlingState& aHandlingState);
+      AutoTextControlHandlingState& aHandlingSetValue);
 
   
 
@@ -504,7 +504,9 @@ class TextControlState final : public SupportsWeakPtr {
 
 
   MOZ_CAN_RUN_SCRIPT bool SetValueWithoutTextEditor(
-      AutoTextControlHandlingState& aHandlingState);
+      AutoTextControlHandlingState& aHandlingSetValue);
+
+  IMEContentObserver* GetIMEContentObserver() const;
 
   
   
