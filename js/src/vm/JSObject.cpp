@@ -1376,16 +1376,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   }
 
   
-  if ((aid || bid) && (na || nb)) {
-    if ((aid && !gc::SetOrUpdateUniqueId(cx, a, aid)) ||
-        (bid && !gc::SetOrUpdateUniqueId(cx, b, bid))) {
-      oomUnsafe.crash("Failed to set unique ID after swap");
-    }
-  }
-  MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
-  MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
-
-  
   if (aIsUsedAsPrototype) {
     if (!JSObject::setIsUsedAsPrototype(cx, a)) {
       oomUnsafe.crash("setIsUsedAsPrototype");
@@ -1396,6 +1386,16 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
       oomUnsafe.crash("setIsUsedAsPrototype");
     }
   }
+
+  
+  if ((aid || bid) && (na || nb)) {
+    if ((aid && !gc::SetOrUpdateUniqueId(cx, a, aid)) ||
+        (bid && !gc::SetOrUpdateUniqueId(cx, b, bid))) {
+      oomUnsafe.crash("Failed to set unique ID after swap");
+    }
+  }
+  MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
+  MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
 
   
 
