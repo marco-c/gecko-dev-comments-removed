@@ -26,7 +26,6 @@
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/HelperThreadAPI.h"
-#include "js/Stack.h"  
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
 #include "vm/HelperThreads.h"
@@ -503,7 +502,6 @@ struct MOZ_RAII AutoSetContextRuntime {
 struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
                    public JS::OffThreadToken,
                    public HelperThreadTask {
-  JS::NativeStackLimit stackLimit;
   ParseTaskKind kind;
   JS::OwningCompileOptions options;
 
@@ -651,7 +649,6 @@ struct LargeFirstDelazification final : public DelazifyStrategy {
 
 struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
                       public HelperThreadTask {
-  JS::NativeStackLimit stackLimit;
   
   
   JSRuntime* runtime = nullptr;

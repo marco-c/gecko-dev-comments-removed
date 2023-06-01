@@ -1086,6 +1086,7 @@ template class js::JSONSyntaxParser<char16_t>;
 template <typename CharT>
 static bool IsValidJSONImpl(const CharT* chars, uint32_t len) {
   FrontendContext fc;
+  
 
   JSONSyntaxParser<CharT> parser(&fc, mozilla::Range(chars, len));
   if (!parser.parse()) {
