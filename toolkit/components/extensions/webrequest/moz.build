@@ -5,9 +5,9 @@
 
 
 EXTRA_JS_MODULES += [
-    "SecurityInfo.jsm",
-    "WebRequest.jsm",
-    "WebRequestUpload.jsm",
+    "SecurityInfo.sys.mjs",
+    "WebRequest.sys.mjs",
+    "WebRequestUpload.sys.mjs",
 ]
 
 UNIFIED_SOURCES += [
