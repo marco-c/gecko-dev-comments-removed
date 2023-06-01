@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { ExtensionTestCommon } = ChromeUtils.import(
-  "resource://testing-common/ExtensionTestCommon.jsm"
+const { ExtensionTestCommon } = ChromeUtils.importESModule(
+  "resource://testing-common/ExtensionTestCommon.sys.mjs"
 );
 
 add_task(async function extension_startup_early_error() {

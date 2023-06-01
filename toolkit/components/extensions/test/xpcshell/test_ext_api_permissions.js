@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { Management } = ChromeUtils.import(
-  "resource://gre/modules/Extension.jsm"
+const { Management } = ChromeUtils.importESModule(
+  "resource://gre/modules/Extension.sys.mjs"
 );
 function getNextContext() {
   return new Promise(resolve => {

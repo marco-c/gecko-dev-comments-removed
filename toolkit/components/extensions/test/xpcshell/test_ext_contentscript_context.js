@@ -55,8 +55,8 @@ add_task(async function test_contentscript_context() {
 
   
   await contentPage.legacySpawn(extension.id, async extensionId => {
-    const { ExtensionContent } = ChromeUtils.import(
-      "resource://gre/modules/ExtensionContent.jsm"
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
     );
     this.context = ExtensionContent.getContextByExtensionId(
       extensionId,
@@ -151,8 +151,8 @@ add_task(async function test_contentscript_context_incognito_not_allowed() {
   );
 
   await contentPage.legacySpawn(extension.id, async extensionId => {
-    const { ExtensionContent } = ChromeUtils.import(
-      "resource://gre/modules/ExtensionContent.jsm"
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
     );
     let context = ExtensionContent.getContextByExtensionId(
       extensionId,
@@ -184,8 +184,8 @@ add_task(async function test_contentscript_context_unload_while_in_bfcache() {
 
   
   await contentPage.legacySpawn(extension.id, async extensionId => {
-    const { ExtensionContent } = ChromeUtils.import(
-      "resource://gre/modules/ExtensionContent.jsm"
+    const { ExtensionContent } = ChromeUtils.importESModule(
+      "resource://gre/modules/ExtensionContent.sys.mjs"
     );
     
     this.context = ExtensionContent.getContextByExtensionId(
@@ -318,8 +318,8 @@ add_task(async function test_contentscript_context_valid_during_execution() {
     let context;
     let checkContextIsValid = description => {
       if (!context) {
-        const { ExtensionContent } = ChromeUtils.import(
-          "resource://gre/modules/ExtensionContent.jsm"
+        const { ExtensionContent } = ChromeUtils.importESModule(
+          "resource://gre/modules/ExtensionContent.sys.mjs"
         );
         context = ExtensionContent.getContextByExtensionId(
           extensionId,

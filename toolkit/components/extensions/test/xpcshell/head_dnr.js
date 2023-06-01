@@ -6,8 +6,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  Schemas: "resource://gre/modules/Schemas.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  Schemas: "resource://gre/modules/Schemas.sys.mjs",
 });
 
 function getDNRRule({

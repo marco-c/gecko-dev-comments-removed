@@ -2,12 +2,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionPreferencesManager",
-  "resource://gre/modules/ExtensionPreferencesManager.jsm"
-);
 ChromeUtils.defineESModuleGetters(this, {
+  ExtensionPreferencesManager:
+    "resource://gre/modules/ExtensionPreferencesManager.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
 });
 

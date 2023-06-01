@@ -2064,7 +2064,7 @@ class ThreadActor extends Actor {
     
     if (
       this._parent.sessionContext.type == "browser-element" &&
-      source.url.endsWith("ExtensionContent.jsm")
+      source.url.endsWith("ExtensionContent.sys.mjs")
     ) {
       return false;
     }

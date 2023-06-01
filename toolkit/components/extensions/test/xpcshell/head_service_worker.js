@@ -4,8 +4,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
 });
 
 

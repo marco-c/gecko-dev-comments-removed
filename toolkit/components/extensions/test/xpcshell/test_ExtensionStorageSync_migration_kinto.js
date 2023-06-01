@@ -3,11 +3,11 @@
 "use strict";
 
 
-const { extensionStorageSync: rustImpl } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionStorageSync.jsm"
+const { extensionStorageSync: rustImpl } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionStorageSync.sys.mjs"
 );
-const { extensionStorageSyncKinto: kintoImpl } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionStorageSyncKinto.jsm"
+const { extensionStorageSyncKinto: kintoImpl } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionStorageSyncKinto.sys.mjs"
 );
 
 Services.prefs.setBoolPref("webextensions.storage.sync.kinto", false);

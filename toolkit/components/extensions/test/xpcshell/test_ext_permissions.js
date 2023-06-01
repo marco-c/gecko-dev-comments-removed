@@ -6,8 +6,8 @@ const { AddonManager } = ChromeUtils.import(
 const { permissionToL10nId } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPermissionMessages.sys.mjs"
 );
-const { ExtensionPermissions } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionPermissions.jsm"
+const { ExtensionPermissions } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionPermissions.sys.mjs"
 );
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
@@ -17,11 +17,9 @@ Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionParent",
-  "resource://gre/modules/ExtensionParent.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
+});
 
 const l10n = new Localization([
   "toolkit/global/extensions.ftl",
