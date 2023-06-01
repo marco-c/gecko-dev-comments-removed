@@ -33,7 +33,6 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIScrollableFrame.h"
 #include "nsIMathMLFrame.h"
-#include "nsLayoutUtils.h"
 #include "nsRange.h"
 #include "nsTextFragment.h"
 #include "mozilla/Assertions.h"
@@ -732,25 +731,20 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
   nsIFrame* frame = caret->GetGeometry(&rect);
   if (!frame || rect.IsEmpty()) return LayoutDeviceIntRect();
 
-  PresShell* presShell = mDoc->PresShellPtr();
-  
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  rect = nsLayoutUtils::TransformFrameRectToAncestor(frame, rect, rootFrame);
+  nsPoint offset;
   
   
-  nsPoint viewportOffset = presShell->GetVisualViewportOffset() -
-                           presShell->GetLayoutViewportOffset();
-  rect.MoveBy(-viewportOffset);
+  *aWidget = frame->GetNearestWidget(offset);
+  NS_ENSURE_TRUE(*aWidget, LayoutDeviceIntRect());
+  rect.MoveBy(offset);
+
+  LayoutDeviceIntRect caretRect = LayoutDeviceIntRect::FromUnknownRect(
+      rect.ToOutsidePixels(frame->PresContext()->AppUnitsPerDevPixel()));
   
   
   
-  rect.ScaleRoundOut(presShell->GetResolution());
-  
-  nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
-  rect.MoveBy(rootScreenRect.TopLeft());
-  
-  auto caretRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
-      rect, presShell->GetPresContext()->AppUnitsPerDevPixel());
+  caretRect.MoveBy((*aWidget)->WidgetToScreenOffset() -
+                   (*aWidget)->GetClientOffset());
 
   
   
@@ -769,8 +763,6 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
   if (!charRect.IsEmpty()) {
     caretRect.SetTopEdge(charRect.Y());
   }
-
-  *aWidget = frame->GetNearestWidget();
   return caretRect;
 }
 
