@@ -23,8 +23,9 @@ bool PaintWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
   JS::RealmOptions options;
 
+  
   options.behaviors().setShouldResistFingerprinting(
-      ShouldResistFingerprinting());
+      ShouldResistFingerprinting(RFPTarget::IsAlwaysEnabledForPrecompute));
 
   
   
