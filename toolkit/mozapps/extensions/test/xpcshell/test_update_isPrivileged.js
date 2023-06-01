@@ -2,9 +2,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 AddonTestUtils.usePrivilegedSignatures = id => id === "privileged@ext";
 

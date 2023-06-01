@@ -8,9 +8,11 @@ const { AddonTestUtils } = ChromeUtils.import(
 );
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();

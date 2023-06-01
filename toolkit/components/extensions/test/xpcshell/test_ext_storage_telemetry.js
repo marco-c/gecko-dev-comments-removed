@@ -2,11 +2,11 @@
 
 "use strict";
 
-const { ExtensionStorageIDB } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionStorageIDB.sys.mjs"
+const { ExtensionStorageIDB } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionStorageIDB.jsm"
 );
-const { getTrimmedString } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionTelemetry.sys.mjs"
+const { getTrimmedString } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionTelemetry.jsm"
 );
 const { TelemetryController } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryController.sys.mjs"

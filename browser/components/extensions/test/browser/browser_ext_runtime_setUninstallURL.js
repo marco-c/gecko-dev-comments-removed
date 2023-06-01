@@ -7,8 +7,8 @@
 
 
 
-let { ExtensionTestCommon } = ChromeUtils.importESModule(
-  "resource://testing-common/ExtensionTestCommon.sys.mjs"
+let { ExtensionTestCommon } = ChromeUtils.import(
+  "resource://testing-common/ExtensionTestCommon.jsm"
 );
 
 async function makeAndInstallXPI(id, backgroundScript, loadedURL) {

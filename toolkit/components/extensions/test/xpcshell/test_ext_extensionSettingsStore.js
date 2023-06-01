@@ -2,10 +2,11 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionSettingsStore:
-    "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionSettingsStore",
+  "resource://gre/modules/ExtensionSettingsStore.jsm"
+);
 
 const { createAppInfo, promiseShutdownManager, promiseStartupManager } =
   AddonTestUtils;

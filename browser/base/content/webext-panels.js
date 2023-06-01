@@ -7,12 +7,14 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
-const { ExtensionUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionUtils.sys.mjs"
+const { ExtensionUtils } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionUtils.jsm"
 );
 
 var { promiseEvent } = ExtensionUtils;

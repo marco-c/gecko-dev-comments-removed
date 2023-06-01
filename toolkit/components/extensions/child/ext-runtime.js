@@ -3,9 +3,11 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "WebNavigationFrames",
+  "resource://gre/modules/WebNavigationFrames.jsm"
+);
 
 
 

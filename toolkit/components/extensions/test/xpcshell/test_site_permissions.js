@@ -38,9 +38,11 @@ l10n.formatValue("webext-perms-sideload-text");
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 async function _test_manifest(manifest, expectedError) {
   ExtensionTestUtils.failOnSchemaWarnings(false);

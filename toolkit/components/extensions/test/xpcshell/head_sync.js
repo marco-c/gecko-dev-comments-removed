@@ -6,8 +6,8 @@
 
 
 
-const { ExtensionCommon } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionCommon.sys.mjs"
+const { ExtensionCommon } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionCommon.jsm"
 );
 
 class KintoExtContext extends ExtensionCommon.BaseContext {

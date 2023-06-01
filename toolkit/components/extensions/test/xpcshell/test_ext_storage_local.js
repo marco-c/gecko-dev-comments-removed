@@ -2,9 +2,11 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionStorageIDB: "resource://gre/modules/ExtensionStorageIDB.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionStorageIDB",
+  "resource://gre/modules/ExtensionStorageIDB.jsm"
+);
 
 AddonTestUtils.init(this);
 

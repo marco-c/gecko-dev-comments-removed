@@ -2,9 +2,7 @@
 
 "use strict";
 
-const { SchemaRoot } = ChromeUtils.importESModule(
-  "resource://gre/modules/Schemas.sys.mjs"
-);
+const { SchemaRoot } = ChromeUtils.import("resource://gre/modules/Schemas.jsm");
 
 let { SchemaAPIInterface } = ExtensionCommon;
 

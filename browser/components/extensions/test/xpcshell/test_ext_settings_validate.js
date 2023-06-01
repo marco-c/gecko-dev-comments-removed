@@ -15,9 +15,11 @@ const { AboutNewTab } = ChromeUtils.import(
 );
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 

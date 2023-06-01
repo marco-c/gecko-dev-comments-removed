@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { ExtensionParent } = ChromeUtils.importESModule(
-  "resource://gre/modules/ExtensionParent.sys.mjs"
+const { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
 );
 
 add_task(async function testExtensionDebuggingUtilsCleanup() {

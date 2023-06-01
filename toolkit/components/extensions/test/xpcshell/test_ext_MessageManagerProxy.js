@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { MessageManagerProxy } = ChromeUtils.importESModule(
-  "resource://gre/modules/MessageManagerProxy.sys.mjs"
+const { MessageManagerProxy } = ChromeUtils.import(
+  "resource://gre/modules/MessageManagerProxy.jsm"
 );
 const { PromiseUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PromiseUtils.sys.mjs"

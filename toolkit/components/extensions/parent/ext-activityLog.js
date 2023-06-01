@@ -3,10 +3,16 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  ExtensionActivityLog: "resource://gre/modules/ExtensionActivityLog.sys.mjs",
-  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionCommon",
+  "resource://gre/modules/ExtensionCommon.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionActivityLog",
+  "resource://gre/modules/ExtensionActivityLog.jsm"
+);
 
 this.activityLog = class extends ExtensionAPI {
   getAPI(context) {

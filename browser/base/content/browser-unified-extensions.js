@@ -6,9 +6,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  OriginControls: "resource://gre/modules/ExtensionPermissions.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "OriginControls",
+  "resource://gre/modules/ExtensionPermissions.jsm"
+);
 
 
 
