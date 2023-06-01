@@ -7,10 +7,12 @@
 #ifndef mozilla_dom_PopoverData_h
 #define mozilla_dom_PopoverData_h
 
-#include "nsStringFwd.h"
+#include "Element.h"
+#include "nsINode.h"
 #include "nsIRunnable.h"
-#include "nsThreadUtils.h"
 #include "nsIWeakReferenceUtils.h"
+#include "nsStringFwd.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::dom {
 
@@ -66,10 +68,14 @@ class PopoverData {
     mPreviouslyFocusedElement = aPreviouslyFocusedElement;
   }
 
-  bool HasPopoverInvoker() const { return mHasPopoverInvoker; }
-  void SetHasPopoverInvoker(bool aHasPopoverInvoker) {
-    mHasPopoverInvoker = aHasPopoverInvoker;
+  RefPtr<Element> GetInvoker() const {
+    return do_QueryReferent(mInvokerElement);
   }
+  void SetInvoker(Element* aInvokerElement) {
+    mInvokerElement =
+        do_GetWeakReference(static_cast<nsINode*>(aInvokerElement));
+  }
+
   PopoverToggleEventTask* GetToggleEventTask() const { return mTask; }
   void SetToggleEventTask(PopoverToggleEventTask* aTask) { mTask = aTask; }
   void ClearToggleEventTask() { mTask = nullptr; }
@@ -87,7 +93,10 @@ class PopoverData {
 
   
   
-  bool mHasPopoverInvoker = false;
+  
+  
+  
+  nsWeakPtr mInvokerElement;
   bool mIsHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
 };
