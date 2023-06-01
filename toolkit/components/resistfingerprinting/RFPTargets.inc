@@ -33,6 +33,9 @@ ITEM_VALUE(NavigatorOscpu,              1u << 16)
 ITEM_VALUE(NavigatorPlatform,           1u << 17)
 ITEM_VALUE(NavigatorUserAgent,          1u << 18)
 
+ITEM_VALUE(StreamTrackLabel,            1u << 19)
+ITEM_VALUE(StreamVideoFacingMode,       1u << 20)
+
 
 
 

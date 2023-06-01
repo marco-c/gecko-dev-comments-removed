@@ -2158,9 +2158,8 @@ bool nsContentUtils::ShouldResistFingerprinting(
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(
-    nsIGlobalObject* aGlobalObject,
-    RFPTarget aTarget ) {
+bool nsContentUtils::ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
+                                                RFPTarget aTarget) {
   if (!aGlobalObject) {
     return ShouldResistFingerprinting("Null Object", aTarget);
   }

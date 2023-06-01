@@ -221,8 +221,8 @@ CSSIntPoint MouseEvent::ScreenPoint(CallerType aCallerType) const {
     return {};
   }
 
-  if (aCallerType != CallerType::System &&
-      nsContentUtils::ShouldResistFingerprinting(GetParentObject())) {
+  if (nsContentUtils::ShouldResistFingerprinting(aCallerType, GetParentObject(),
+                                                 RFPTarget::Unknown)) {
     
     
     return Event::GetClientCoords(mPresContext, mEvent, mEvent->mRefPoint,

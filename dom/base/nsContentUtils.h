@@ -356,13 +356,13 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting(
       RFPTarget aTarget = RFPTarget::Unknown);
-  static bool ShouldResistFingerprinting(
-      nsIGlobalObject* aGlobalObject, RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
+                                         RFPTarget aTarget);
   
   
-  static bool ShouldResistFingerprinting(
-      mozilla::dom::CallerType aCallerType, nsIGlobalObject* aGlobalObject,
-      RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(mozilla::dom::CallerType aCallerType,
+                                         nsIGlobalObject* aGlobalObject,
+                                         RFPTarget aTarget);
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell,
                                          RFPTarget aTarget);
   
