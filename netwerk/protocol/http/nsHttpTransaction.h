@@ -244,6 +244,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   bool PrepareSVCBRecordsForRetry(const nsACString& aFailedDomainName,
+                                  const nsACString& aFailedAlpn,
                                   bool& aAllRecordsHaveEchConfig);
   
   void PrepareConnInfoForRetry(nsresult aReason);
@@ -564,7 +565,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsTArray<RefPtr<nsISVCBRecord>> mRecordsForRetry;
   bool mDontRetryWithDirectRoute = false;
   bool mFastFallbackTriggered = false;
-  bool mAllRecordsInH3ExcludedListBefore = false;
   bool mHttp3BackupTimerCreated = false;
   nsCOMPtr<nsITimer> mFastFallbackTimer;
   nsCOMPtr<nsITimer> mHttp3BackupTimer;
