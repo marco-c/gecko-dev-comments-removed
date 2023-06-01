@@ -13,7 +13,6 @@
 #include "frontend/ScriptIndex.h"  
 #include "js/CompileOptions.h"  
 #include "js/SourceText.h"  
-#include "js/Stack.h"       
 #include "js/TypeDecls.h"   
 #include "js/UniquePtr.h"   
 #include "vm/ScopeKind.h"   
@@ -87,13 +86,11 @@ extern JSScript* CompileEvalScript(JSContext* cx,
 
 extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
                                               FrontendContext* fc,
-                                              JS::NativeStackLimit stackLimit,
                                               JS::Handle<JSFunction*> fun);
 
 extern already_AddRefed<CompilationStencil> DelazifyCanonicalScriptedFunction(
-    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
-    ScopeBindingCache* scopeCache, CompilationStencil& context,
-    ScriptIndex scriptIndex);
+    JSContext* cx, FrontendContext* fc, ScopeBindingCache* scopeCache,
+    CompilationStencil& context, ScriptIndex scriptIndex);
 
 
 inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {

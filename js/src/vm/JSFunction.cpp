@@ -1094,8 +1094,7 @@ bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
 
   
   AutoReportFrontendContext fc(cx);
-  if (!frontend::DelazifyCanonicalScriptedFunction(
-          cx, &fc, cx->stackLimitForCurrentPrincipal(), fun)) {
+  if (!frontend::DelazifyCanonicalScriptedFunction(cx, &fc, fun)) {
     
     
     MOZ_ASSERT(fun->baseScript() == lazy);
