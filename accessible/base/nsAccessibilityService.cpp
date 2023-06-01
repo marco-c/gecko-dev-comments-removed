@@ -1347,6 +1347,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         
         newAcc =
             new EnumRoleHyperTextAccessible<roles::GROUPING>(content, document);
+      } else if (content->IsSVGElement(nsGkAtoms::a)) {
+        newAcc = new HTMLLinkAccessible(content, document);
       }
 
     } else if (content->IsMathMLElement()) {
