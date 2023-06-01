@@ -9,6 +9,7 @@
 #ifndef LAYOUT_GENERIC_PRINTEDSHEETFRAME_H_
 #define LAYOUT_GENERIC_PRINTEDSHEETFRAME_H_
 
+#include "mozilla/gfx/Point.h"
 #include "nsContainerFrame.h"
 #include "nsHTMLParts.h"
 
@@ -18,6 +19,8 @@ namespace mozilla {
 
 class PrintedSheetFrame final : public nsContainerFrame {
  public:
+  using IntSize = mozilla::gfx::IntSize;
+
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(PrintedSheetFrame)
 
@@ -70,6 +73,21 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
   nsSize PrecomputeSheetSize(const nsPresContext* aPresContext);
   nsSize GetPrecomputedSheetSize() const { return mPrecomputedSize; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  IntSize GetPrintTargetSizeInPoints(
+      const int32_t aAppUnitsPerPhysicalInch) const;
 
  private:
   

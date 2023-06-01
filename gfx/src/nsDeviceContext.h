@@ -20,6 +20,7 @@
 #include "nscore.h"                   
 #include "mozilla/AppUnits.h"         
 #include "nsFontMetrics.h"            
+#include "mozilla/gfx/Point.h"        
 #include "mozilla/gfx/PrintTarget.h"  
 #include "mozilla/gfx/PrintPromise.h"
 
@@ -48,7 +49,8 @@ class Screen;
 
 class nsDeviceContext final {
  public:
-  typedef mozilla::gfx::PrintTarget PrintTarget;
+  using IntSize = mozilla::gfx::IntSize;
+  using PrintTarget = mozilla::gfx::PrintTarget;
 
   nsDeviceContext();
 
@@ -225,7 +227,15 @@ class nsDeviceContext final {
 
 
 
-  nsresult BeginPage();
+
+
+
+
+
+
+
+
+  nsresult BeginPage(const IntSize& aSizeInPoints);
 
   
 
