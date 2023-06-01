@@ -6,11 +6,6 @@
 
 
 
-#[cfg(feature = "num_traits")]
-extern crate num_traits;
-#[cfg(feature = "serde_serialization")]
-extern crate serde;
-
 mod app_unit;
 
 pub use app_unit::{Au, MIN_AU, MAX_AU, AU_PER_PX};

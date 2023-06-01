@@ -2,21 +2,26 @@
 
 
 
- #[cfg(feature = "num_traits")]
+#[cfg(feature = "num_traits")]
 use num_traits::Zero;
 #[cfg(feature = "serde_serialization")]
-use serde::de::{Deserialize, Deserializer};
-#[cfg(feature = "serde_serialization")]
-use serde::ser::{Serialize, Serializer};
-use std::default::Default;
-use std::fmt;
-use std::i32;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
+use serde::{Serialize, Deserialize, Deserializer};
+
+use std::{fmt, i32, default::Default, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, SubAssign}};
 
 
 pub const AU_PER_PX: i32 = 60;
 
-#[derive(Clone, Copy, Hash, PartialEq, PartialOrd, Eq, Ord)]
+pub const MIN_AU: Au = Au(- ((1 << 30) - 1));
+
+
+
+pub const MAX_AU: Au = Au((1 << 30) - 1);
+
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Hash, PartialEq, PartialOrd, Eq, Ord, Default)]
+#[cfg_attr(feature = "serde_serialization", derive(Serialize))]
 
 
 
@@ -25,24 +30,16 @@ pub const AU_PER_PX: i32 = 60;
 
 pub struct Au(pub i32);
 
- #[cfg(feature = "serde_serialization")]
-impl<'de> Deserialize<'de> for Au {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Au, D::Error> {
-        Ok(Au(try!(i32::deserialize(deserializer))).clamp())
+impl fmt::Debug for Au {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}px", self.to_f64_px())
     }
 }
 
 #[cfg(feature = "serde_serialization")]
-impl Serialize for Au {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.0.serialize(serializer)
-    }
-}
-
-impl Default for Au {
-    #[inline]
-    fn default() -> Au {
-        Au(0)
+impl<'de> Deserialize<'de> for Au {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Au, D::Error> {
+        Ok(Au(i32::deserialize(deserializer)?).clamp())
     }
 }
 
@@ -56,17 +53,6 @@ impl Zero for Au {
     #[inline]
     fn is_zero(&self) -> bool {
         self.0 == 0
-    }
-}
-
-
-
-pub const MAX_AU: Au = Au((1 << 30) - 1);
-pub const MIN_AU: Au = Au(- ((1 << 30) - 1));
-
-impl fmt::Debug for Au {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}px", self.to_f64_px())
     }
 }
 
@@ -167,32 +153,28 @@ impl Neg for Au {
 impl AddAssign for Au {
     #[inline]
     fn add_assign(&mut self, other: Au) {
-        *self = *self + other;
-        self.clamp_self();
+        *self = (*self + other).clamp();
     }
 }
 
 impl SubAssign for Au {
     #[inline]
     fn sub_assign(&mut self, other: Au) {
-        *self = *self - other;
-        self.clamp_self();
+        *self = (*self - other).clamp();
     }
 }
 
 impl MulAssign<i32> for Au {
     #[inline]
     fn mul_assign(&mut self, other: i32) {
-        *self = *self * other;
-        self.clamp_self();
+        *self = (*self * other).clamp();
     }
 }
 
 impl DivAssign<i32> for Au {
     #[inline]
     fn div_assign(&mut self, other: i32) {
-        *self = *self / other;
-        self.clamp_self();
+        *self = (*self / other).clamp();
     }
 }
 
@@ -205,18 +187,7 @@ impl Au {
 
     #[inline]
     fn clamp(self) -> Self {
-        if self.0 > MAX_AU.0 {
-            MAX_AU
-        } else if self.0 < MIN_AU.0 {
-            MIN_AU
-        } else {
-            self
-        }
-    }
-
-    #[inline]
-    fn clamp_self(&mut self) {
-        *self = Au::clamp(*self)
+        Ord::clamp(self, MIN_AU, MAX_AU)
     }
 
     #[inline]
@@ -235,10 +206,7 @@ impl Au {
     #[inline]
     pub fn from_f64_au(float: f64) -> Self {
         
-        
-        Au(float.min(MAX_AU.0 as f64)
-                .max(MIN_AU.0 as f64)
-            as i32)
+        Au(float.clamp(MIN_AU.0 as f64, MAX_AU.0 as f64) as i32)
     }
 
     #[inline]
