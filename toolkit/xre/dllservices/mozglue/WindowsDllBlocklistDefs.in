@@ -264,6 +264,9 @@ ALL_PROCESSES += [
 
     
     DllBlocklistEntry("CylanceMemDef64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("eoppbrowser.dll", (1, 0, 88, 0), BLOCK_WIN7_AND_OLDER),
 ]
 
 ALL_PROCESSES_TESTS += [
