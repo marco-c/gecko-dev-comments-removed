@@ -5868,6 +5868,15 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
       
       
       randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
+    } else if (needRandomizePixels) {
+      
+      
+      
+
+      const IntSize size = readback->GetSize();
+      nsRFPService::RandomizePixels(GetCookieJarSettings(), rawData.mData,
+                                    size.height * size.width * 4,
+                                    SurfaceFormat::A8R8G8B8_UINT32);
     }
 
     JS::AutoCheckCannotGC nogc;
@@ -5878,14 +5887,6 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     if (usePlaceholder) {
       FillPlaceholderCanvas(randomData, len.value(), data);
       break;
-    }
-
-    
-    if (needRandomizePixels) {
-      const IntSize size = readback->GetSize();
-      nsRFPService::RandomizePixels(GetCookieJarSettings(), rawData.mData,
-                                    size.height * size.width * 4,
-                                    SurfaceFormat::A8R8G8B8_UINT32);
     }
 
     uint32_t srcStride = rawData.mStride;
