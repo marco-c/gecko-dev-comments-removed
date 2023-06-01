@@ -108,12 +108,12 @@ ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
 
   
   
-  gc::InitialHeap heap;
+  gc::Heap heap;
   if ((priv.isGCThing() && priv.toGCThing()->isTenured()) ||
       !handler->canNurseryAllocate()) {
-    heap = gc::TenuredHeap;
+    heap = gc::Heap::Tenured;
   } else {
-    heap = gc::DefaultHeap;
+    heap = gc::Heap::Default;
   }
 
   debugCheckNewObject(shape, allocKind, heap);

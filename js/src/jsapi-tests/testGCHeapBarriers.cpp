@@ -108,8 +108,7 @@ template <>
 JS::Uint8Array CreateTenuredGCThing(JSContext* cx) {
   
   
-  JSObject* obj =
-      js::NewUint8ArrayWithLength(cx, 100, gc::InitialHeap::TenuredHeap);
+  JSObject* obj = js::NewUint8ArrayWithLength(cx, 100, gc::Heap::Tenured);
   MOZ_ASSERT(!IsInsideNursery(obj));
   return JS::Uint8Array::fromObject(obj);
 }

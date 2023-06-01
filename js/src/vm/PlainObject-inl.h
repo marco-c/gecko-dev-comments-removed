@@ -28,7 +28,7 @@
     JSContext* cx, JS::Handle<SharedShape*> shape, gc::AllocKind kind,
     NewObjectKind newKind) {
   MOZ_ASSERT(shape->getObjectClass() == &PlainObject::class_);
-  gc::InitialHeap heap = GetInitialHeap(newKind, &PlainObject::class_);
+  gc::Heap heap = GetInitialHeap(newKind, &PlainObject::class_);
 
   MOZ_ASSERT(gc::CanChangeToBackgroundAllocKind(kind, &PlainObject::class_));
   kind = gc::ForegroundToBackgroundAllocKind(kind);

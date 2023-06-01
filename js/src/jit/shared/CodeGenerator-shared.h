@@ -84,8 +84,8 @@ class CodeGeneratorShared : public LElementVisitor {
     return gen->isProfilerInstrumentationEnabled();
   }
 
-  gc::InitialHeap initialStringHeap() const { return gen->initialStringHeap(); }
-  gc::InitialHeap initialBigIntHeap() const { return gen->initialBigIntHeap(); }
+  gc::Heap initialStringHeap() const { return gen->initialStringHeap(); }
+  gc::Heap initialBigIntHeap() const { return gen->initialBigIntHeap(); }
 
  protected:
   

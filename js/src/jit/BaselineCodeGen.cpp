@@ -1291,7 +1291,7 @@ bool BaselineCompilerCodeGen::initEnvironmentChain() {
   
   if (namedLambdaTemplate) {
     TemplateObject templateObject(namedLambdaTemplate);
-    masm.createGCObject(newEnv, temp, templateObject, gc::DefaultHeap, &fail);
+    masm.createGCObject(newEnv, temp, templateObject, gc::Heap::Default, &fail);
 
     
     Address enclosingSlot(newEnv,
@@ -1312,7 +1312,7 @@ bool BaselineCompilerCodeGen::initEnvironmentChain() {
   
   if (callObjectTemplate) {
     TemplateObject templateObject(callObjectTemplate);
-    masm.createGCObject(newEnv, temp, templateObject, gc::DefaultHeap, &fail);
+    masm.createGCObject(newEnv, temp, templateObject, gc::Heap::Default, &fail);
 
     
     Address enclosingSlot(newEnv, CallObject::offsetOfEnclosingEnvironment());

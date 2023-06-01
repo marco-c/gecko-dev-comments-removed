@@ -158,8 +158,8 @@ class AllocSite {
 
   
   
-  InitialHeap initialHeap() const {
-    return state() == State::LongLived ? TenuredHeap : DefaultHeap;
+  Heap initialHeap() const {
+    return state() == State::LongLived ? Heap::Tenured : Heap::Default;
   }
 
   bool hasNurseryAllocations() const {

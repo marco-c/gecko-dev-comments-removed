@@ -462,7 +462,7 @@ inline bool NativeObject::isInWholeCellBuffer() const {
 
 
 inline NativeObject* NativeObject::create(
-    JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
+    JSContext* cx, js::gc::AllocKind kind, js::gc::Heap heap,
     js::Handle<SharedShape*> shape, js::gc::AllocSite* site ) {
   debugCheckNewObject(shape, kind, heap);
 
