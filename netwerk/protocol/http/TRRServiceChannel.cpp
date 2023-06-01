@@ -1180,15 +1180,12 @@ nsresult TRRServiceChannel::SetupReplacementChannel(nsIURI* aNewURI,
     encodedChannel->SetApplyConversion(LoadApplyConversion());
   }
 
-  
-  
   if (mContentTypeHint.IsEmpty()) {
     return NS_OK;
   }
 
   
-  MOZ_ASSERT(mContentTypeHint.Equals("application/dns-message") ||
-             mContentTypeHint.Equals("application/oblivious-dns-message"));
+  MOZ_ASSERT(mContentTypeHint.Equals("application/dns-message"));
 
   
   

@@ -11,7 +11,6 @@
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsWeakReference.h"
-#include "ODoHService.h"
 #include "TRRServiceBase.h"
 #include "nsICaptivePortalService.h"
 #include "nsTHashSet.h"
@@ -109,7 +108,6 @@ class TRRService : public TRRServiceBase,
 
   friend class TRRServiceChild;
   friend class TRRServiceParent;
-  friend class ODoHService;
   static void AddObserver(nsIObserver* aObserver,
                           nsIObserverService* aObserverService = nullptr);
   static bool CheckCaptivePortalIsPassed();
@@ -378,7 +376,6 @@ class TRRService : public TRRServiceBase,
   
   
   bool mConfirmationTriggered{false};
-  RefPtr<ODoHService> mODoHService;
   nsCOMPtr<nsINetworkLinkService> mLinkService;
 };
 
