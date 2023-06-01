@@ -30,7 +30,19 @@ using mozilla::TimeDuration;
 using mozilla::TimeStamp;
 
 using namespace js;
-using namespace gc;
+using namespace js::gc;
+
+
+
+
+
+
+
+
+static InitialHeap MinHeapToTenure(bool allowNurseryAlloc) {
+  static_assert(TenuredHeap > DefaultHeap);
+  return allowNurseryAlloc ? TenuredHeap : DefaultHeap;
+}
 
 void Zone::updateNurseryAllocFlags(const Nursery& nursery) {
   allocNurseryObjects_ = nursery.isEnabled();
@@ -38,6 +50,10 @@ void Zone::updateNurseryAllocFlags(const Nursery& nursery) {
                          !nurseryStringsDisabled;
   allocNurseryBigInts_ = nursery.isEnabled() && nursery.canAllocateBigInts() &&
                          !nurseryBigIntsDisabled;
+
+  minObjectHeapToTenure_ = MinHeapToTenure(allocNurseryObjects());
+  minStringHeapToTenure_ = MinHeapToTenure(allocNurseryStrings());
+  minBigintHeapToTenure_ = MinHeapToTenure(allocNurseryBigInts());
 }
 
 template <JS::TraceKind traceKind, AllowGC allowGC >
@@ -58,7 +74,7 @@ void* gc::CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
     return nullptr;
   }
 
-  if (heap != TenuredHeap && cx->zone()->allocKindInNursery(traceKind)) {
+  if (heap < cx->zone()->minHeapToTenure(traceKind)) {
     if (!site) {
       site = cx->zone()->unknownAllocSite(traceKind);
     }
