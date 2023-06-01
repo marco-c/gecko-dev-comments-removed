@@ -1298,28 +1298,37 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   
   
   
-  if (mMediaSeekableOnlyInBufferedRanges) {
-    return IntervalType(GetBuffered());
-  }
-  if (!IsMediaSeekable()) {
-    return IntervalType();
-  }
-  if (!IsTransportSeekable()) {
-    return IntervalType(GetBuffered());
-  }
-  
-  
-  
   typename IntervalType::InnerType duration;
   if constexpr (std::is_same<typename IntervalType::InnerType, double>::value) {
     duration = GetDuration();
   } else {
     duration = mDuration.as<TimeUnit>();
   }
+  typename IntervalType::ElemType zeroToDuration =
+      typename IntervalType::ElemType(
+          Zero<typename IntervalType::InnerType>(),
+          IsInfinite() ? Infinity<typename IntervalType::InnerType>()
+                       : duration);
+  auto buffered = IntervalType(GetBuffered());
+  
+  
+  auto positiveBuffered = buffered.Intersection(zeroToDuration);
 
-  return IntervalType(typename IntervalType::ElemType(
-      Zero<typename IntervalType::InnerType>(),
-      IsInfinite() ? Infinity<typename IntervalType::InnerType>() : duration));
+  
+  
+  
+  if (mMediaSeekableOnlyInBufferedRanges) {
+    return IntervalType(positiveBuffered);
+  }
+  if (!IsMediaSeekable()) {
+    return IntervalType();
+  }
+  if (!IsTransportSeekable()) {
+    return IntervalType(positiveBuffered);
+  }
+
+  
+  return IntervalType(zeroToDuration);
 }
 
 media::TimeIntervals MediaDecoder::GetSeekable() {
