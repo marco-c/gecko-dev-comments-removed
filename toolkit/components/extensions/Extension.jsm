@@ -323,8 +323,6 @@ function dirname(path) {
 
 
 
-
-
 function isMozillaExtension(extension) {
   const { addonData, id, isPrivileged, startupReason } = extension;
 
