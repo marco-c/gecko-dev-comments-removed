@@ -49,26 +49,20 @@ add_task(async function test_first_download_panel() {
     "Should have recorded that the panel was opened on a download."
   );
 
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.alwaysOpenPanel", false]],
+  });
   
   
-  
-  if (
-    !SpecialPowers.getBoolPref(
-      "browser.download.improvements_to_download_panel"
-    )
-  ) {
-    
-    
-    let originalOnPopupShown = DownloadsPanel.onPopupShown;
-    DownloadsPanel.onPopupShown = function () {
-      originalOnPopupShown.apply(this, arguments);
-      ok(false, "Should not have opened the downloads panel.");
-    };
+  let originalOnPopupShown = DownloadsPanel.onPopupShown;
+  DownloadsPanel.onPopupShown = function () {
+    originalOnPopupShown.apply(this, arguments);
+    ok(false, "Should not have opened the downloads panel.");
+  };
 
-    DownloadsCommon.getData(window)._notifyDownloadEvent("start");
+  DownloadsCommon.getData(window)._notifyDownloadEvent("start");
 
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    DownloadsPanel.onPopupShown = originalOnPopupShown;
-  }
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  DownloadsPanel.onPopupShown = originalOnPopupShown;
 });

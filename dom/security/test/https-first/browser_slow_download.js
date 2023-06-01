@@ -104,11 +104,7 @@ examiner.prototype = {
 
 add_task(async function test_slow_download() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.security.https_first", true],
-      
-      ["browser.download.improvements_to_download_panel", true],
-    ],
+    set: [["dom.security.https_first", true]],
   });
 
   

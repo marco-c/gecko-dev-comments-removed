@@ -129,13 +129,10 @@ add_task(async function test_pdf_saveas_forms() {
 
 
 add_task(async function test_pdf_saveas_customname() {
-  
-  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.helperApps.showOpenOptionForPdfJS", true],
       ["browser.helperApps.showOpenOptionForViewableInternally", true],
-      ["browser.download.improvements_to_download_panel", true],
       ["browser.download.always_ask_before_handling_new_types", false],
       ["browser.download.open_pdf_attachments_inline", true],
     ],

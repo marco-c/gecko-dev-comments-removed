@@ -901,13 +901,7 @@ var DownloadsView = {
         }
       }
       
-      if (
-        !download.stopped &&
-        command.startsWith("downloadsCmd_open") &&
-        Services.prefs.getBoolPref(
-          "browser.download.improvements_to_download_panel"
-        )
-      ) {
+      if (!download.stopped && command.startsWith("downloadsCmd_open")) {
         download.launchWhenSucceeded = !download.launchWhenSucceeded;
         download._launchedFromPanel = download.launchWhenSucceeded;
       }

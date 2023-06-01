@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/StaticPrefs_browser.h"
 #include "nsGNOMERegistry.h"
 #include "nsString.h"
 #include "nsMIMEInfoUnix.h"
@@ -95,9 +94,7 @@ already_AddRefed<nsMIMEInfoBase> nsGNOMERegistry::GetFromType(
 
   mimeInfo->SetDefaultDescription(name);
 
-  mozilla::StaticPrefs::browser_download_improvements_to_download_panel()
-      ? mimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk)
-      : mimeInfo->SetPreferredAction(nsIMIMEInfo::useSystemDefault);
+  mimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk);
   mimeInfo->SetDescription(NS_ConvertUTF8toUTF16(description));
 
   return mimeInfo.forget();
