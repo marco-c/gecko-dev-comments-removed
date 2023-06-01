@@ -35,7 +35,6 @@
 #include "js/HeapAPI.h"               
 #include "js/RegExpFlags.h"           
 #include "js/RootingAPI.h"            
-#include "js/Stack.h"                 
 #include "js/UniquePtr.h"             
 #include "js/Utility.h"    
 #include "vm/JSScript.h"   
@@ -265,7 +264,6 @@ bool ConvertScopeStencil(JSContext* cx, FrontendContext* fc,
 
 
 bool ConvertRegExpData(JSContext* cx, FrontendContext* fc,
-                       JS::NativeStackLimit stackLimit,
                        const SmooshResult& result,
                        CompilationState& compilationState) {
   auto len = result.regexps.len;
@@ -325,7 +323,7 @@ bool ConvertRegExpData(JSContext* cx, FrontendContext* fc,
 
     
 
-    if (!irregexp::CheckPatternSyntax(cx->tempLifoAlloc(), stackLimit, ts,
+    if (!irregexp::CheckPatternSyntax(cx->tempLifoAlloc(), fc->stackLimit(), ts,
                                       range, flags)) {
       return false;
     }
@@ -563,8 +561,8 @@ void ReportSmooshCompileError(JSContext* cx, FrontendContext* fc,
 
 
 bool Smoosh::tryCompileGlobalScriptToExtensibleStencil(
-    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+    JSContext* cx, FrontendContext* fc, CompilationInput& input,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf,
     UniquePtr<ExtensibleCompilationStencil>& stencilOut) {
   
   
@@ -611,7 +609,7 @@ bool Smoosh::tryCompileGlobalScriptToExtensibleStencil(
     return false;
   }
 
-  if (!ConvertRegExpData(cx, fc, stackLimit, result, compilationState)) {
+  if (!ConvertRegExpData(cx, fc, result, compilationState)) {
     return false;
   }
 

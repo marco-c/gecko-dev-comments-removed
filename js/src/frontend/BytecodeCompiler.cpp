@@ -25,7 +25,6 @@
 #include "js/experimental/JSStencil.h"
 #include "js/Modules.h"  
 #include "js/SourceText.h"
-#include "js/Stack.h"  
 #include "js/UniquePtr.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
@@ -181,8 +180,8 @@ class MOZ_STACK_CLASS ScriptCompiler : public SourceAwareCompiler<Unit> {
 
 #ifdef JS_ENABLE_SMOOSH
 [[nodiscard]] static bool TrySmoosh(
-    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+    JSContext* cx, FrontendContext* fc, CompilationInput& input,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf,
     UniquePtr<ExtensibleCompilationStencil>& stencilOut) {
   MOZ_ASSERT(!stencilOut);
 
@@ -191,8 +190,8 @@ class MOZ_STACK_CLASS ScriptCompiler : public SourceAwareCompiler<Unit> {
   }
 
   JSRuntime* rt = cx->runtime();
-  if (!Smoosh::tryCompileGlobalScriptToExtensibleStencil(
-          cx, fc, stackLimit, input, srcBuf, stencilOut)) {
+  if (!Smoosh::tryCompileGlobalScriptToExtensibleStencil(cx, fc, input, srcBuf,
+                                                         stencilOut)) {
     return false;
   }
 
@@ -213,8 +212,8 @@ class MOZ_STACK_CLASS ScriptCompiler : public SourceAwareCompiler<Unit> {
 }
 
 [[nodiscard]] static bool TrySmoosh(
-    JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<char16_t>& srcBuf,
+    JSContext* cx, FrontendContext* fc, CompilationInput& input,
+    JS::SourceText<char16_t>& srcBuf,
     UniquePtr<ExtensibleCompilationStencil>& stencilOut) {
   MOZ_ASSERT(!stencilOut);
   return true;
@@ -238,8 +237,7 @@ template <typename Unit>
 #ifdef JS_ENABLE_SMOOSH
   if (maybeCx) {
     UniquePtr<ExtensibleCompilationStencil> extensibleStencil;
-    if (!TrySmoosh(maybeCx, fc, fc->stackLimit(), input, srcBuf,
-                   extensibleStencil)) {
+    if (!TrySmoosh(maybeCx, fc, input, srcBuf, extensibleStencil)) {
       return false;
     }
     if (extensibleStencil) {

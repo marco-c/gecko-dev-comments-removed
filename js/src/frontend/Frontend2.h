@@ -15,7 +15,6 @@
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
 #include "js/SourceText.h"      
-#include "js/Stack.h"           
 #include "js/UniquePtr.h"       
 #include "vm/JSScript.h"        
 
@@ -40,8 +39,8 @@ struct CompilationState;
 class Smoosh {
  public:
   [[nodiscard]] static bool tryCompileGlobalScriptToExtensibleStencil(
-      JSContext* cx, FrontendContext* fc, JS::NativeStackLimit stackLimit,
-      CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+      JSContext* cx, FrontendContext* fc, CompilationInput& input,
+      JS::SourceText<mozilla::Utf8Unit>& srcBuf,
       UniquePtr<ExtensibleCompilationStencil>& stencilOut);
 };
 
