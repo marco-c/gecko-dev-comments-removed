@@ -6510,6 +6510,18 @@ nsresult nsContentUtils::GetASCIIOrigin(nsIURI* aURI, nsACString& aOrigin) {
       return NS_OK;
     }
 
+    nsAutoCString scheme;
+    uri->GetScheme(scheme);
+    if (
+        
+        !scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https") &&
+        !scheme.EqualsLiteral("file") &&
+        
+        !scheme.EqualsLiteral("moz-extension")) {
+      aOrigin.AssignLiteral("null");
+      return NS_OK;
+    }
+
     return GetASCIIOrigin(uri, aOrigin);
   }
 
