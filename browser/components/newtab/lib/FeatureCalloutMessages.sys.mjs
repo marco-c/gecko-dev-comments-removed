@@ -1,46 +1,45 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-
-
-
+// Eventually, make this a messaging system
+// provider instead of adding these message
+// into OnboardingMessageProvider.jsm
 const FIREFOX_VIEW_PREF = "browser.firefox-view.feature-tour";
 const PDFJS_PREF = "browser.pdfjs.feature-tour";
-
-
+// Empty screens are included as placeholders to ensure step
+// indicator shows the correct number of total steps in the tour
 const EMPTY_SCREEN = { content: {} };
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-
-
-
+// Generate a JEXL targeting string based on the current screen
+// id found in a given Feature Callout tour progress preference
+// and the `complete` property being true
 const matchCurrentScreenTargeting = (prefName, screenId) => {
   const prefVal = `'${prefName}' | preferenceValue`;
-  
+  //regExpMatch() is a JEXL filter expression. Here we check if 'screen' and 'complete' exist in the pref's value (which is stringified JSON), and return their values. Returns null otherwise
   const screenRegEx = '(?<=screen":)"(.*)(?=",)';
   const completeRegEx = '(?<=complete":)(.*)(?=})';
 
   const screenMatch = `${prefVal}  | regExpMatch('${screenRegEx}')`;
   const completeMatch = `${prefVal}  | regExpMatch('${completeRegEx}')`;
-  
+  //We are checking the return of regExpMatch() here. If it's truthy, we grab the matched string and compare it to the desired value
   const screenVal = `(${screenMatch}) ? (${screenMatch}[1] == '${screenId}') : false`;
   const completeVal = `(${completeMatch}) ? (${completeMatch}[1] != "true") : false`;
 
   return `(${screenVal}) && (${completeVal})`;
 };
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * add24HourImpressionJEXLTargeting -
+ * Creates a "hasn't been viewed in > 24 hours"
+ * JEXL string and adds it to each message specified
+ *
+ * @param {array} messageIds - IDs of messages that the targeting string will be added to
+ * @param {string} prefix - The prefix of messageIDs that will used to create the JEXL string
+ * @param {array} messages - The array of messages that will be edited
+ * @returns {array} - The array of messages with the appropriate targeting strings edited
+ */
 function add24HourImpressionJEXLTargeting(
   messageIds,
   prefix,
@@ -50,8 +49,8 @@ function add24HourImpressionJEXLTargeting(
     .filter(message => message.id.startsWith(prefix))
     .map(
       message =>
-        
-        
+        // If the last impression is null or if epoch time
+        // of the impression is < current time - 24hours worth of MS
         `(messageImpressions.${message.id}[messageImpressions.${
           message.id
         } | length - 1] == null || messageImpressions.${
@@ -62,9 +61,9 @@ function add24HourImpressionJEXLTargeting(
     )
     .join(" && ");
 
-  
-  
-  
+  // We're appending the string here instead of using
+  // template strings to avoid a recursion error from
+  // using the 'messages' variable within itself
   return uneditedMessages.map(message => {
     if (messageIds.includes(message.id)) {
       message.targeting += `&& ${noImpressionsIn24HoursString}`;
@@ -74,8 +73,8 @@ function add24HourImpressionJEXLTargeting(
   });
 }
 
-
-
+// Exporting the about:firefoxview messages as a method here
+// acts as a safety guard against mutations of the original objects
 const MESSAGES = () => {
   let messages = [
     {
@@ -147,7 +146,7 @@ const MESSAGES = () => {
         id: "featureCalloutCheck",
       },
       frequency: {
-        
+        // Add the highest possible cap to ensure impressions are recorded while allowing the Spotlight to sync across windows/tabs with Firefox View open
         lifetime: 100,
       },
       targeting: `!inMr2022Holdback && source == "about:firefoxview" &&
@@ -642,10 +641,8 @@ const MESSAGES = () => {
   return messages;
 };
 
-const FeatureCalloutMessages = {
+export const FeatureCalloutMessages = {
   getMessages() {
     return MESSAGES();
   },
 };
-
-const EXPORTED_SYMBOLS = ["FeatureCalloutMessages"];

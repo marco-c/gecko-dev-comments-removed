@@ -1,13 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
-
-
+/**
+ * Note: the schema can be found in
+ * https://searchfox.org/mozilla-central/source/toolkit/components/telemetry/Events.yaml
+ */
 const EXTRAS_FIELD_NAMES = [
   "addon_version",
   "session_id",
@@ -16,7 +14,7 @@ const EXTRAS_FIELD_NAMES = [
   "action_position",
 ];
 
-class UTEventReporting {
+export class UTEventReporting {
   constructor() {
     Services.telemetry.setEventRecordingEnabled("activity_stream", true);
     this.sendUserEvent = this.sendUserEvent.bind(this);
@@ -24,7 +22,7 @@ class UTEventReporting {
   }
 
   _createExtras(data) {
-    
+    // Make a copy of the given data and delete/modify it as needed.
     let utExtras = Object.assign({}, data);
     for (let field of Object.keys(utExtras)) {
       if (EXTRAS_FIELD_NAMES.includes(field)) {
@@ -62,5 +60,3 @@ class UTEventReporting {
     Services.telemetry.setEventRecordingEnabled("activity_stream", false);
   }
 }
-
-const EXPORTED_SYMBOLS = ["UTEventReporting"];

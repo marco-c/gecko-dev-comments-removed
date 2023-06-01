@@ -7,8 +7,8 @@
 
 
 
-const { ASRouterNewTabHook } = ChromeUtils.import(
-  "resource://activity-stream/lib/ASRouterNewTabHook.jsm"
+const { ASRouterNewTabHook } = ChromeUtils.importESModule(
+  "resource://activity-stream/lib/ASRouterNewTabHook.sys.mjs"
 );
 const { ASRouterDefaultConfig } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouterDefaultConfig.jsm"

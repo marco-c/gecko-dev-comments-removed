@@ -1,15 +1,15 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const TIPPYTOP_PATH = "chrome://activity-stream/content/data/content/tippytop/";
 const TIPPYTOP_JSON_PATH =
   "chrome://activity-stream/content/data/content/tippytop/top_sites.json";
 
-
-
-
-function getDomain(url, strip = "www.") {
+/*
+ * Get a domain from a url optionally stripping subdomains.
+ */
+export function getDomain(url, strip = "www.") {
   let domain = "";
   try {
     domain = new URL(url).hostname;
@@ -24,14 +24,14 @@ function getDomain(url, strip = "www.") {
   return domain;
 }
 
-class TippyTopProvider {
+export class TippyTopProvider {
   constructor() {
     this._sitesByDomain = new Map();
     this.initialized = false;
   }
 
   async init() {
-    
+    // Load the Tippy Top sites from the json manifest.
     try {
       for (const site of await (
         await fetch(TIPPYTOP_JSON_PATH, {
@@ -58,5 +58,3 @@ class TippyTopProvider {
     return site;
   }
 }
-
-const EXPORTED_SYMBOLS = ["TippyTopProvider", "getDomain"];

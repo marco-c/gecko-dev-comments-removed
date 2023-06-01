@@ -1,11 +1,9 @@
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const DEFAULT_SITES_MAP = new Map([
-  
+  // This first item is the global list fallback for any unexpected geos
   [
     "",
     "https://www.youtube.com/,https://www.facebook.com/,https://www.wikipedia.org/,https://www.reddit.com/,https://www.amazon.com/,https://twitter.com/",
@@ -44,7 +42,5 @@ const DEFAULT_SITES_MAP = new Map([
   ],
 ]);
 
-const EXPORTED_SYMBOLS = ["DEFAULT_SITES"];
-
-
-const DEFAULT_SITES = Object.freeze(DEFAULT_SITES_MAP);
+// Immutable for export.
+export const DEFAULT_SITES = Object.freeze(DEFAULT_SITES_MAP);

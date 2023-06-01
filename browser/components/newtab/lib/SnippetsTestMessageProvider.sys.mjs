@@ -1,7 +1,6 @@
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const TEST_ICON = "chrome://branding/content/icon64.png";
 const TEST_ICON_16 = "chrome://branding/content/icon16.png";
@@ -675,11 +674,11 @@ const MESSAGES = () => [
   },
 ];
 
-const SnippetsTestMessageProvider = {
+export const SnippetsTestMessageProvider = {
   getMessages() {
     return Promise.resolve(
       MESSAGES()
-        
+        // Ensures we never actually show test except when triggered by debug tools
         .map(message => ({
           ...message,
           targeting: `providerCohorts.snippets_local_testing == "SHOW_TEST"`,
@@ -687,5 +686,3 @@ const SnippetsTestMessageProvider = {
     );
   },
 };
-
-const EXPORTED_SYMBOLS = ["SnippetsTestMessageProvider"];
