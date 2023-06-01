@@ -36,6 +36,13 @@ constexpr NativeStackLimit NativeStackLimitMin = UINTPTR_MAX;
 constexpr NativeStackLimit NativeStackLimitMax = 0;
 #endif
 
+#ifdef __wasi__
+
+
+
+constexpr NativeStackLimit WASINativeStackLimit = 1024;
+#endif  
+
 inline NativeStackLimit GetNativeStackLimit(NativeStackBase base,
                                             NativeStackSize size) {
 #if JS_STACK_GROWTH_DIRECTION > 0

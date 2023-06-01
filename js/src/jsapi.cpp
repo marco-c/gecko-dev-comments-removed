@@ -1471,10 +1471,7 @@ JS_GetExternalStringCallbacks(JSString* str) {
 static void SetNativeStackSize(JSContext* cx, JS::StackKind kind,
                                JS::NativeStackSize stackSize) {
 #ifdef __wasi__
-  
-  
-  
-  cx->nativeStackLimit[kind] = 1024;
+  cx->nativeStackLimit[kind] = JS::WASINativeStackLimit;
 #else   
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = JS::NativeStackLimitMax;

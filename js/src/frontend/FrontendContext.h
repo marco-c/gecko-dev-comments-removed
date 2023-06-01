@@ -13,9 +13,10 @@
 
 #include <stddef.h>  
 
-#include "js/AllocPolicy.h"     
-#include "js/ErrorReport.h"     
-#include "js/Modules.h"         
+#include "js/AllocPolicy.h"  
+#include "js/ErrorReport.h"  
+#include "js/Modules.h"      
+#include "js/Stack.h"  
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
 #include "vm/MallocProvider.h"  
@@ -73,6 +74,8 @@ class FrontendContext {
 
   JS::ImportAssertionVector supportedImportAssertions_;
 
+  JS::NativeStackLimit stackLimit_ = JS::NativeStackLimitMax;
+
  protected:
   
   
@@ -88,6 +91,9 @@ class FrontendContext {
         scriptDataTableHolder_(&js::globalSharedScriptDataTableHolder),
         supportedImportAssertions_() {}
   ~FrontendContext();
+
+  void setStackQuota(JS::NativeStackSize stackSize);
+  JS::NativeStackLimit stackLimit() const { return stackLimit_; }
 
   bool allocateOwnedPool();
 
@@ -105,6 +111,7 @@ class FrontendContext {
 
   FrontendAllocator* getAllocator() { return &alloc_; }
 
+  
   
   
   
