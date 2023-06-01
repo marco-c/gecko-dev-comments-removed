@@ -3604,7 +3604,8 @@ double nsGlobalWindowInner::GetDevicePixelRatio(CallerType aCallerType,
     return 1.0;
   }
 
-  if (nsIGlobalObject::ShouldResistFingerprinting(aCallerType)) {
+  if (nsIGlobalObject::ShouldResistFingerprinting(aCallerType,
+                                                  RFPTarget::Unknown)) {
     
     
     
@@ -7413,7 +7414,8 @@ void nsGlobalWindowInner::InitWasOffline() { mWasOffline = NS_IsOffline(); }
 int16_t nsGlobalWindowInner::Orientation(CallerType aCallerType) {
   
   
-  if (nsIGlobalObject::ShouldResistFingerprinting(aCallerType)) {
+  if (nsIGlobalObject::ShouldResistFingerprinting(
+          aCallerType, RFPTarget::ScreenOrientation)) {
     return 0;
   }
   nsScreen* s = GetScreen(IgnoreErrors());

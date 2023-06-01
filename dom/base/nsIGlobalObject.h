@@ -249,12 +249,11 @@ class nsIGlobalObject : public nsISupports,
 
 
 
-  virtual bool ShouldResistFingerprinting(
-      RFPTarget aTarget = RFPTarget::Unknown) const = 0;
+  virtual bool ShouldResistFingerprinting(RFPTarget aTarget) const = 0;
 
   
   bool ShouldResistFingerprinting(mozilla::dom::CallerType aCallerType,
-                                  RFPTarget aTarget = RFPTarget::Unknown) const;
+                                  RFPTarget aTarget) const;
 
   RTPCallerType GetRTPCallerType() const;
 
