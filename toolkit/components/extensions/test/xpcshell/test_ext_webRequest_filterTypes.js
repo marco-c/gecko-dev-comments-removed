@@ -27,9 +27,9 @@ add_task(async function test_all_webRequest_ResourceTypes() {
           { urls: ["*://example.com/*"], ...msg.filter },
           ["blocking"]
         );
-        // Call an API method implemented in the parent process to
-        // be sure that the webRequest listener has been registered
-        // in the parent process as well.
+        
+        
+        
         await browser.runtime.getBrowserInfo();
         browser.test.sendMessage(`webRequest-listener-registered`);
       });
@@ -38,7 +38,9 @@ add_task(async function test_all_webRequest_ResourceTypes() {
 
   await extension.startup();
 
-  const { Schemas } = ChromeUtils.import("resource://gre/modules/Schemas.jsm");
+  const { Schemas } = ChromeUtils.importESModule(
+    "resource://gre/modules/Schemas.sys.mjs"
+  );
   const webRequestSchema = Schemas.privilegedSchemaJSON
     .get("chrome://extensions/content/schemas/web_request.json")
     .deserialize({});
@@ -58,9 +60,9 @@ add_task(async function test_all_webRequest_ResourceTypes() {
     extension.sendMessage({
       event: "onBeforeRequest",
       filter: {
-        // Verify that the resourceType not supported is going to be ignored
-        // and all the ones supported does not trigger a ChannelWrapper.matches
-        // exception once the listener is being triggered.
+        
+        
+        
         types: [].concat(ResourceType.enum, "not-supported-resource-type"),
       },
     });
