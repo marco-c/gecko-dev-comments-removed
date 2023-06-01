@@ -20,14 +20,18 @@ const compatData = require("@mdn/browser-compat-data");
 const { properties } = compatData.css;
 
 globalThis.loader = { lazyRequireGetter: () => {} };
+globalThis.ChromeUtils = { importESModule: () => ({}) };
+
 
 const MDNCompatibility = require("../../../server/actors/compatibility/lib/MDNCompatibility");
+const { TARGET_BROWSER_ID } = require("../compatibility-user-settings");
 
 const mdnCompatibility = new MDNCompatibility(properties);
 
 
 flattenAliases(mdnCompatibility._cssPropertiesCompatData);
 parseBrowserVersion(mdnCompatibility._cssPropertiesCompatData);
+removeUnusedData(mdnCompatibility._cssPropertiesCompatData);
 exportData(mdnCompatibility._cssPropertiesCompatData, "css-properties.json");
 
 
@@ -131,6 +135,51 @@ function asFloatVersion(version) {
   }
 
   return parseFloat(version);
+}
+
+
+
+
+function removeUnusedData(compatNode) {
+  for (const term in compatNode) {
+    if (term.startsWith("_")) {
+      
+      continue;
+    }
+
+    const compatTable = mdnCompatibility._getCompatTable(compatNode, [term]);
+
+    
+    
+    delete compatTable.source_file;
+    
+    delete compatTable.description;
+
+    if (compatTable?.support) {
+      for (const [browserId, supportItem] of Object.entries(
+        compatTable.support
+      )) {
+        
+        if (!TARGET_BROWSER_ID.includes(browserId)) {
+          delete compatTable.support[browserId];
+          continue;
+        }
+
+        
+        
+        for (const item of supportItem) {
+          delete item.version_added;
+          delete item.version_removed;
+          
+          
+          delete item.notes;
+        }
+      }
+    }
+
+    
+    removeUnusedData(compatNode[term]);
+  }
 }
 
 function exportData(data, fileName) {
