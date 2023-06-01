@@ -4117,9 +4117,6 @@ pref("devtools.remote.adb.extensionURL", "https://ftp.mozilla.org/pub/labs/devto
 
 pref("devtools.inspector.inactive.css.enabled", true);
 
-
-pref("devtools.experiment.f12.shortcut_disabled", false);
-
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 
 

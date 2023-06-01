@@ -205,8 +205,6 @@ loader.lazyRequireGetter(
   true
 );
 
-const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
-
 
 
 
@@ -238,14 +236,6 @@ function Toolbox(commands, selectedTool, hostType, contentWindow, frameId) {
   
   this.commands = commands;
   this._descriptorFront = commands.descriptorFront;
-
-  
-  if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
-    
-    
-    
-    Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
-  }
 
   
   
