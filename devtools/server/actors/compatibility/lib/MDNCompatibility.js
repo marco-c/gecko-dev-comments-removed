@@ -16,6 +16,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  ["getCompatNode", "getCompatTable"],
+  "resource://devtools/shared/compatibility/helpers.js",
+  true
+);
+
 const PREFIX_REGEX = /^-\w+-/;
 
 
@@ -139,107 +146,8 @@ class MDNCompatibility {
   }
 
   _getAlias(compatNode, terms) {
-    const targetNode = this._getCompatNode(compatNode, terms);
+    const targetNode = getCompatNode(compatNode, terms);
     return targetNode ? targetNode._aliasOf : null;
-  }
-
-  _getChildCompatNode(compatNode, term) {
-    term = term.toLowerCase();
-
-    let child = null;
-    for (const field in compatNode) {
-      if (field.toLowerCase() === term) {
-        child = compatNode[field];
-        break;
-      }
-    }
-
-    if (!child) {
-      return null;
-    }
-
-    if (child._aliasOf) {
-      
-      child = compatNode[child._aliasOf];
-    }
-
-    return child;
-  }
-
-  
-
-
-
-
-
-
-
-  _getCompatNode(compatNode, terms) {
-    for (const term of terms) {
-      compatNode = this._getChildCompatNode(compatNode, term);
-      if (!compatNode) {
-        return null;
-      }
-    }
-
-    return compatNode;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _getCompatTable(compatNode, terms) {
-    let targetNode = this._getCompatNode(compatNode, terms);
-
-    if (!targetNode) {
-      return null;
-    }
-
-    if (!targetNode.__compat) {
-      for (const field in targetNode) {
-        
-        
-        
-        
-        if (field.endsWith("_context")) {
-          targetNode = targetNode[field];
-          break;
-        }
-      }
-    }
-
-    return targetNode.__compat;
   }
 
   
@@ -265,7 +173,7 @@ class MDNCompatibility {
 
 
   _getCompatSummary(browsers, database, terms) {
-    const compatTable = this._getCompatTable(database, terms);
+    const compatTable = getCompatTable(database, terms);
 
     if (!compatTable) {
       return { invalid: true, unsupportedBrowsers: [] };

@@ -133,6 +133,28 @@ module.exports = {
         "react/no-deprecated": "off",
       },
     },
+    {
+      
+      files: [
+        "shared/compatibility/constants.js",
+        "shared/compatibility/helpers.js",
+      ],
+      env: {
+        browser: false,
+        "mozilla/privileged": false,
+        "mozilla/specific": false,
+      },
+    },
+    {
+      
+      files: ["shared/compatibility/bin/update.js"],
+      env: {
+        browser: false,
+        node: true,
+        "mozilla/privileged": false,
+        "mozilla/specific": false,
+      },
+    },
   ],
   rules: {
     

@@ -19,20 +19,15 @@
 const compatData = require("@mdn/browser-compat-data");
 const { properties } = compatData.css;
 
-globalThis.loader = { lazyRequireGetter: () => {} };
-globalThis.ChromeUtils = { importESModule: () => ({}) };
+const { TARGET_BROWSER_ID } = require("../constants.js");
+const { getCompatTable } = require("../helpers.js");
 
 
-const MDNCompatibility = require("../../../server/actors/compatibility/lib/MDNCompatibility");
-const { TARGET_BROWSER_ID } = require("../compatibility-user-settings");
 
-const mdnCompatibility = new MDNCompatibility(properties);
-
-
-flattenAliases(mdnCompatibility._cssPropertiesCompatData);
-parseBrowserVersion(mdnCompatibility._cssPropertiesCompatData);
-removeUnusedData(mdnCompatibility._cssPropertiesCompatData);
-exportData(mdnCompatibility._cssPropertiesCompatData, "css-properties.json");
+flattenAliases(properties);
+parseBrowserVersion(properties);
+removeUnusedData(properties);
+exportData(properties, "css-properties.json");
 
 
 
@@ -46,7 +41,7 @@ function flattenAliases(compatNode) {
       continue;
     }
 
-    const compatTable = mdnCompatibility._getCompatTable(compatNode, [term]);
+    const compatTable = getCompatTable(compatNode, [term]);
     if (compatTable) {
       const aliases = findAliasesFrom(compatTable);
 
@@ -94,7 +89,7 @@ function parseBrowserVersion(compatNode) {
       continue;
     }
 
-    const compatTable = mdnCompatibility._getCompatTable(compatNode, [term]);
+    const compatTable = getCompatTable(compatNode, [term]);
     if (compatTable?.support) {
       for (const [browserId, supportItem] of Object.entries(
         compatTable.support
@@ -147,7 +142,7 @@ function removeUnusedData(compatNode) {
       continue;
     }
 
-    const compatTable = mdnCompatibility._getCompatTable(compatNode, [term]);
+    const compatTable = getCompatTable(compatNode, [term]);
 
     
     
