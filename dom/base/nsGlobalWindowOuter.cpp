@@ -2038,6 +2038,7 @@ static nsresult CreateNativeGlobalForInner(
       aDefineSharedArrayBufferConstructor);
 
   
+  
   xpc::InitGlobalObjectOptions(options, principal->IsSystemPrincipal(),
                                aDocument->ShouldResistFingerprinting(
                                    RFPTarget::IsAlwaysEnabledForPrecompute));

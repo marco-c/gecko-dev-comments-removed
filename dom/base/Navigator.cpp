@@ -497,8 +497,8 @@ bool Navigator::PdfViewerEnabled() {
   
   
   return !StaticPrefs::pdfjs_disabled() ||
-         nsContentUtils::ShouldResistFingerprinting(
-                      GetDocShell(), RFPTarget::Unknown);
+         nsContentUtils::ShouldResistFingerprinting(GetDocShell(),
+                                                    RFPTarget::Unknown);
 }
 
 Permissions* Navigator::GetPermissions(ErrorResult& aRv) {
