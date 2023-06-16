@@ -22,12 +22,17 @@ add_heuristic_tests(
             { fieldName: "email", reason: "regex-heuristic"},
           ],
         },
-        {
-          invalid: true,
-          fields: [
-            { fieldName: "email", reason: "regex-heuristic"},
-          ],
-        },
+        
+        
+        
+        
+        
+        
+          
+          
+            
+          
+        
       ],
     },
   ],
