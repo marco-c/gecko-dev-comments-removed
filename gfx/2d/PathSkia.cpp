@@ -7,7 +7,6 @@
 #include "PathSkia.h"
 #include "HelpersSkia.h"
 #include "PathHelpers.h"
-#include "mozilla/UniquePtr.h"
 #include "skia/include/core/SkPathUtils.h"
 #include "skia/src/core/SkGeometry.h"
 
@@ -271,11 +270,4 @@ Maybe<Rect> PathSkia::AsRect() const {
   }
   return Nothing();
 }
-
-bool PathSkia::IsEmpty() const {
-  
-  
-  return mPath.getSegmentMasks() != 0;
-}
-
 }  
