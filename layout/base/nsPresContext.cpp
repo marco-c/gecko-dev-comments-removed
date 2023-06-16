@@ -754,7 +754,8 @@ bool nsPresContext::UpdateFontVisibility() {
   FontVisibility oldValue = mFontVisibility;
 
   
-  if (IsChrome()) {
+  
+  if (Document()->ChromeRulesEnabled()) {
     mFontVisibility = FontVisibility::User;
     return mFontVisibility != oldValue;
   }
