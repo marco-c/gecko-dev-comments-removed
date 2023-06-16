@@ -2684,6 +2684,12 @@ void gfxPlatform::InitWebRenderConfig() {
 
   UpdateForceSubpixelAAWherePossible();
 
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
+  if (StaticPrefs::gfx_webrender_software_opengl_AtStartup()) {
+    gfxVars::SetAllowSoftwareWebRenderOGL(true);
+  }
+#endif
+
 #ifdef XP_WIN
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_DCOMP_PRESENT)) {
     gfxVars::SetUseWebRenderDCompWin(true);
@@ -3709,6 +3715,29 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
   if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     gfxConfig::GetFeature(Feature::D3D11_COMPOSITING)
         .ForceDisable(aStatus, aMessage, aFailureId);
+  }
+#endif
+
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
+  
+  
+  if (swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderOGL() &&
+      gfxConfig::IsEnabled(Feature::OPENGL_COMPOSITING) &&
+      !gfxVars::UseSoftwareWebRender()) {
+    
+    gfxCriticalNote << "Fallback WR to SW-WR + OpenGL";
+    gfxVars::SetUseSoftwareWebRender(true);
+    return true;
+  }
+#endif
+  
+#ifdef MOZ_WIDGET_GTK
+  if (swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderOGL() &&
+      gfxVars::UseSoftwareWebRender()) {
+    
+    gfxCriticalNote << "Fallback SW-WR + OpenGL to SW-WR";
+    gfxVars::SetAllowSoftwareWebRenderOGL(false);
+    return true;
   }
 #endif
 
