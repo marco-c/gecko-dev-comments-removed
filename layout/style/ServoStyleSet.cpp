@@ -1026,9 +1026,6 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
     
     case StyleCssRuleType::Namespace:
       break;
-    case StyleCssRuleType::Viewport:
-      MOZ_ASSERT_UNREACHABLE("Gecko doesn't implement @viewport");
-      break;
     case StyleCssRuleType::Keyframe:
       
       

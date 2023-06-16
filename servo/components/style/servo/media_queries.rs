@@ -18,7 +18,6 @@ use app_units::Au;
 use euclid::default::Size2D as UntypedSize2D;
 use euclid::{Scale, SideOffsets2D, Size2D};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use style_traits::viewport::ViewportConstraints;
 use style_traits::{CSSPixel, DevicePixel};
 
 
@@ -153,11 +152,6 @@ impl Device {
     
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         self.device_pixel_ratio
-    }
-
-    
-    pub fn account_for_viewport_rule(&mut self, constraints: &ViewportConstraints) {
-        self.viewport_size = constraints.size;
     }
 
     

@@ -26,7 +26,6 @@ use euclid::{Scale, SideOffsets2D};
 use servo_arc::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::{cmp, fmt};
-use style_traits::viewport::ViewportConstraints;
 use style_traits::{CSSPixel, DevicePixel};
 
 
@@ -133,12 +132,6 @@ impl Device {
             )
         });
         NonNegativeLength::new(au.to_f32_px())
-    }
-
-    
-    
-    pub fn account_for_viewport_rule(&mut self, _constraints: &ViewportConstraints) {
-        unreachable!("Gecko doesn't support @viewport");
     }
 
     

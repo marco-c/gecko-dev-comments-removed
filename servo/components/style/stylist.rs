@@ -31,7 +31,6 @@ use crate::stylesheets::container_rule::ContainerCondition;
 use crate::stylesheets::import_rule::ImportLayer;
 use crate::stylesheets::keyframes_rule::KeyframesAnimation;
 use crate::stylesheets::layer_rule::{LayerName, LayerOrder};
-use crate::stylesheets::viewport_rule::{self, MaybeNew, ViewportRule};
 #[cfg(feature = "gecko")]
 use crate::stylesheets::{
     CounterStyleRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule, PageRule,
@@ -64,7 +63,6 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::sync::Mutex;
 use std::{mem, ops};
-use style_traits::viewport::ViewportConstraints;
 
 
 #[cfg(feature = "servo")]
@@ -504,9 +502,6 @@ pub struct Stylist {
     device: Device,
 
     
-    viewport_constraints: Option<ViewportConstraints>,
-
-    
     stylesheets: StylistStylesheetSet,
 
     
@@ -609,7 +604,6 @@ impl Stylist {
     #[inline]
     pub fn new(device: Device, quirks_mode: QuirksMode) -> Self {
         Self {
-            viewport_constraints: None,
             device,
             quirks_mode,
             stylesheets: StylistStylesheetSet::new(),
@@ -732,37 +726,6 @@ impl Stylist {
         }
 
         self.num_rebuilds += 1;
-
-        
-        
-        self.viewport_constraints = None;
-        if viewport_rule::enabled() {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let cascaded_rule = ViewportRule {
-                declarations: viewport_rule::Cascade::from_stylesheets(
-                    self.stylesheets.iter(),
-                    guards,
-                    &self.device,
-                )
-                .finish(),
-            };
-
-            self.viewport_constraints =
-                ViewportConstraints::maybe_new(&self.device, &cascaded_rule, self.quirks_mode);
-
-            if let Some(ref constraints) = self.viewport_constraints {
-                self.device.account_for_viewport_rule(constraints);
-            }
-        }
 
         let flusher = self.stylesheets.flush(document_element, snapshots);
 
@@ -1229,29 +1192,7 @@ impl Stylist {
     
     
     
-    pub fn set_device(&mut self, mut device: Device, guards: &StylesheetGuards) -> OriginSet {
-        if viewport_rule::enabled() {
-            let cascaded_rule = {
-                let stylesheets = self.stylesheets.iter();
-
-                ViewportRule {
-                    declarations: viewport_rule::Cascade::from_stylesheets(
-                        stylesheets,
-                        guards,
-                        &device,
-                    )
-                    .finish(),
-                }
-            };
-
-            self.viewport_constraints =
-                ViewportConstraints::maybe_new(&device, &cascaded_rule, self.quirks_mode);
-
-            if let Some(ref constraints) = self.viewport_constraints {
-                device.account_for_viewport_rule(constraints);
-            }
-        }
-
+    pub fn set_device(&mut self, device: Device, guards: &StylesheetGuards) -> OriginSet {
         self.device = device;
         self.media_features_change_changed_style(guards, &self.device)
     }
@@ -1290,12 +1231,6 @@ impl Stylist {
         }
 
         origins
-    }
-
-    
-    
-    pub fn viewport_constraints(&self) -> Option<&ViewportConstraints> {
-        self.viewport_constraints.as_ref()
     }
 
     
@@ -2836,8 +2771,6 @@ impl CascadeData {
                     self.extra_data
                         .add_page(guard, rule, containing_rule_state.layer_id)?;
                 },
-                
-                CssRule::Viewport(..) => {},
                 _ => {
                     handled = false;
                 },
@@ -3080,7 +3013,6 @@ impl CascadeData {
                 CssRule::Keyframes(..) |
                 CssRule::Page(..) |
                 CssRule::Property(..) |
-                CssRule::Viewport(..) |
                 CssRule::Document(..) |
                 CssRule::LayerBlock(..) |
                 CssRule::LayerStatement(..) |
