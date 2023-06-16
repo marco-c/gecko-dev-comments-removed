@@ -28,30 +28,46 @@
 #ifndef DAV1D_SRC_INTRA_EDGE_H
 #define DAV1D_SRC_INTRA_EDGE_H
 
+#include <stdint.h>
+
 enum EdgeFlags {
-    EDGE_I444_TOP_HAS_RIGHT = 1 << 0,
-    EDGE_I422_TOP_HAS_RIGHT = 1 << 1,
-    EDGE_I420_TOP_HAS_RIGHT = 1 << 2,
+    EDGE_I444_TOP_HAS_RIGHT   = 1 << 0,
+    EDGE_I422_TOP_HAS_RIGHT   = 1 << 1,
+    EDGE_I420_TOP_HAS_RIGHT   = 1 << 2,
     EDGE_I444_LEFT_HAS_BOTTOM = 1 << 3,
     EDGE_I422_LEFT_HAS_BOTTOM = 1 << 4,
     EDGE_I420_LEFT_HAS_BOTTOM = 1 << 5,
+    EDGE_ALL_TOP_HAS_RIGHT    = EDGE_I444_TOP_HAS_RIGHT |
+                                EDGE_I422_TOP_HAS_RIGHT |
+                                EDGE_I420_TOP_HAS_RIGHT,
+    EDGE_ALL_LEFT_HAS_BOTTOM  = EDGE_I444_LEFT_HAS_BOTTOM |
+                                EDGE_I422_LEFT_HAS_BOTTOM |
+                                EDGE_I420_LEFT_HAS_BOTTOM,
+    EDGE_ALL_TR_AND_BL        = EDGE_ALL_TOP_HAS_RIGHT |
+                                EDGE_ALL_LEFT_HAS_BOTTOM,
 };
 
-typedef struct EdgeNode EdgeNode;
-struct EdgeNode {
-    enum EdgeFlags o, h[2], v[2];
-};
+#define INTRA_EDGE_SPLIT(n, i) \
+    ((const EdgeNode*)((uintptr_t)(n) + ((const EdgeBranch*)(n))->split_offset[i]))
+
+typedef struct EdgeNode {
+    uint8_t  o, h[2], v[2];
+} EdgeNode;
+
 typedef struct EdgeTip {
     EdgeNode node;
-    enum EdgeFlags split[4];
+    uint8_t  split[3];
 } EdgeTip;
+
 typedef struct EdgeBranch {
     EdgeNode node;
-    enum EdgeFlags tts[3], tbs[3], tls[3], trs[3], h4[4], v4[4];
-    EdgeNode *split[4];
+    uint8_t  h4, v4;
+    uint16_t split_offset[4]; 
 } EdgeBranch;
 
-void dav1d_init_mode_tree(EdgeNode *const root, EdgeTip *const nt,
-                          const int allow_sb128);
+
+EXTERN const EdgeNode *dav1d_intra_edge_tree[2 ];
+
+void dav1d_init_intra_edge_tree(void);
 
 #endif 

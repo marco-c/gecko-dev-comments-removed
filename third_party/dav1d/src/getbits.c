@@ -162,17 +162,3 @@ static unsigned get_bits_subexp_u(GetBits *const c, const unsigned ref,
 int dav1d_get_bits_subexp(GetBits *const c, const int ref, const unsigned n) {
     return (int) get_bits_subexp_u(c, ref + (1 << n), 2 << n) - (1 << n);
 }
-
-void dav1d_bytealign_get_bits(GetBits *c) {
-    
-    
-    
-    
-    
-    
-    
-    assert(c->bits_left <= 7);
-
-    c->bits_left = 0;
-    c->state = 0;
-}

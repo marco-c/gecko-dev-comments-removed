@@ -40,10 +40,10 @@ typedef struct Av1FilterLUT {
 } Av1FilterLUT;
 
 typedef struct Av1RestorationUnit {
+    
     uint8_t  type;
     int8_t filter_h[3];
     int8_t filter_v[3];
-    uint8_t sgr_idx;
     int8_t sgr_weights[2];
 } Av1RestorationUnit;
 

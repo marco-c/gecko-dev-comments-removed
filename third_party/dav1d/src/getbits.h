@@ -49,7 +49,19 @@ unsigned dav1d_get_vlc(GetBits *c);
 int dav1d_get_bits_subexp(GetBits *c, int ref, unsigned n);
 
 
-void dav1d_bytealign_get_bits(GetBits *c);
+static inline void dav1d_bytealign_get_bits(GetBits *c) {
+    
+    
+    
+    
+    
+    
+    
+    assert(c->bits_left <= 7);
+
+    c->bits_left = 0;
+    c->state = 0;
+}
 
 
 static inline unsigned dav1d_get_bits_pos(const GetBits *c) {

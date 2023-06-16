@@ -34,6 +34,10 @@
 #include "common.h"
 #include "headers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 
 
@@ -82,7 +86,12 @@ typedef struct Dav1dPicture {
 
     Dav1dITUTT35 *itut_t35;
 
-    uintptr_t reserved[4]; 
+    
+
+
+    size_t n_itut_t35;
+
+    uintptr_t reserved[3]; 
 
     struct Dav1dRef *frame_hdr_ref; 
     struct Dav1dRef *seq_hdr_ref; 
@@ -140,5 +149,9 @@ typedef struct Dav1dPicAllocator {
 
 
 DAV1D_API void dav1d_picture_unref(Dav1dPicture *p);
+
+#ifdef __cplusplus
+} 
+#endif
 
 #endif 
