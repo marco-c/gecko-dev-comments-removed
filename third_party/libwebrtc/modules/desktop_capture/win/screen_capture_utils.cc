@@ -147,6 +147,11 @@ DesktopRect GetFullscreenRect() {
 }
 
 DesktopVector GetDpiForMonitor(HMONITOR monitor) {
+
+
+
+
+#if 0
   UINT dpi_x, dpi_y;
   
   HRESULT hr = ::GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
@@ -163,6 +168,7 @@ DesktopVector GetDpiForMonitor(HMONITOR monitor) {
     ReleaseDC(nullptr, hdc);
     return dpi;
   }
+#endif
 
   
   return {96, 96};
