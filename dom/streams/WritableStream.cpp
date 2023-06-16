@@ -749,11 +749,13 @@ already_AddRefed<Promise> WritableStreamAddWriteRequest(
 }  
 
 
-void WritableStream::SetUpNative(JSContext* aCx,
-                                 UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
-                                 Maybe<double> aHighWaterMark,
-                                 QueuingStrategySize* aSizeAlgorithm,
-                                 ErrorResult& aRv) {
+
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void WritableStream::SetUpNative(
+    JSContext* aCx, UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
+    Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
+    ErrorResult& aRv) {
   
   double highWaterMark = aHighWaterMark.valueOr(1);
   

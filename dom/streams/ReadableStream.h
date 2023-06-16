@@ -129,7 +129,7 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   
 
   
-  MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> CreateNative(
+  static already_AddRefed<ReadableStream> CreateNative(
       JSContext* aCx, nsIGlobalObject* aGlobal,
       UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
       mozilla::Maybe<double> aHighWaterMark,
@@ -140,14 +140,14 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
  protected:
   
   
-  MOZ_CAN_RUN_SCRIPT void SetUpByteNative(
-      JSContext* aCx, UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
-      mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv);
+  void SetUpByteNative(JSContext* aCx,
+                       UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+                       mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv);
 
  public:
   
   
-  MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> CreateByteNative(
+  static already_AddRefed<ReadableStream> CreateByteNative(
       JSContext* aCx, nsIGlobalObject* aGlobal,
       UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
       mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv);

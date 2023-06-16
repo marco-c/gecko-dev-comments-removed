@@ -1040,11 +1040,15 @@ already_AddRefed<ReadableStream> ReadableStream::CreateByteAbstract(
 
 
 
-already_AddRefed<ReadableStream> ReadableStream::CreateNative(
-    JSContext* aCx, nsIGlobalObject* aGlobal,
-    UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
-    mozilla::Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
-    ErrorResult& aRv) {
+
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<ReadableStream>
+ReadableStream::CreateNative(JSContext* aCx, nsIGlobalObject* aGlobal,
+                             UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+                             mozilla::Maybe<double> aHighWaterMark,
+                             QueuingStrategySize* aSizeAlgorithm,
+                             ErrorResult& aRv) {
   
   double highWaterMark = aHighWaterMark.valueOr(1);
   
@@ -1078,7 +1082,10 @@ already_AddRefed<ReadableStream> ReadableStream::CreateNative(
 }
 
 
-void ReadableStream::SetUpByteNative(
+
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void ReadableStream::SetUpByteNative(
     JSContext* aCx, UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
     mozilla::Maybe<double> aHighWaterMark, ErrorResult& aRv) {
   

@@ -171,15 +171,14 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   
  protected:
   
-  MOZ_CAN_RUN_SCRIPT void SetUpNative(
-      JSContext* aCx, UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
-      Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
-      ErrorResult& aRv);
+  void SetUpNative(JSContext* aCx, UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
+                   Maybe<double> aHighWaterMark,
+                   QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv);
 
  public:
   
   
-  MOZ_CAN_RUN_SCRIPT static already_AddRefed<WritableStream> CreateNative(
+  static already_AddRefed<WritableStream> CreateNative(
       JSContext* aCx, nsIGlobalObject& aGlobal,
       UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
       Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
