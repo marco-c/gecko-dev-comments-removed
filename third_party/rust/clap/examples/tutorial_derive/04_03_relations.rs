@@ -1,41 +1,39 @@
-use clap::{Args, Parser};
+use clap::{ArgGroup, Parser};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
+#[clap(group(
+            ArgGroup::new("vers")
+                .required(true)
+                .args(&["set-ver", "major", "minor", "patch"]),
+        ))]
 struct Cli {
-    #[command(flatten)]
-    vers: Vers,
-
     
-    #[arg(group = "input")]
-    input_file: Option<String>,
-
-    
-    #[arg(long, group = "input")]
-    spec_in: Option<String>,
-
-    #[arg(short, requires = "input")]
-    config: Option<String>,
-}
-
-#[derive(Args)]
-#[group(required = true, multiple = false)]
-struct Vers {
-    
-    #[arg(long, value_name = "VER")]
+    #[clap(long, value_name = "VER")]
     set_ver: Option<String>,
 
     
-    #[arg(long)]
+    #[clap(long)]
     major: bool,
 
     
-    #[arg(long)]
+    #[clap(long)]
     minor: bool,
 
     
-    #[arg(long)]
+    #[clap(long)]
     patch: bool,
+
+    
+    #[clap(group = "input")]
+    input_file: Option<String>,
+
+    
+    #[clap(long, group = "input")]
+    spec_in: Option<String>,
+
+    #[clap(short, requires = "input")]
+    config: Option<String>,
 }
 
 fn main() {
@@ -47,22 +45,21 @@ fn main() {
     let mut patch = 3;
 
     
-    let vers = &cli.vers;
-    let version = if let Some(ver) = vers.set_ver.as_deref() {
+    let version = if let Some(ver) = cli.set_ver.as_deref() {
         ver.to_string()
     } else {
         
-        let (maj, min, pat) = (vers.major, vers.minor, vers.patch);
+        let (maj, min, pat) = (cli.major, cli.minor, cli.patch);
         match (maj, min, pat) {
             (true, _, _) => major += 1,
             (_, true, _) => minor += 1,
             (_, _, true) => patch += 1,
             _ => unreachable!(),
         };
-        format!("{major}.{minor}.{patch}")
+        format!("{}.{}.{}", major, minor, patch)
     };
 
-    println!("Version: {version}");
+    println!("Version: {}", version);
 
     
     if let Some(config) = cli.config.as_deref() {
@@ -70,6 +67,6 @@ fn main() {
             .input_file
             .as_deref()
             .unwrap_or_else(|| cli.spec_in.as_deref().unwrap());
-        println!("Doing work using input {input} and config {config}");
+        println!("Doing work using input {} and config {}", input, config);
     }
 }

@@ -3,20 +3,20 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
     
     name: Option<String>,
 
     
-    #[arg(short, long, value_name = "FILE")]
+    #[clap(short, long, parse(from_os_str), value_name = "FILE")]
     config: Option<PathBuf>,
 
     
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    debug: u8,
+    #[clap(short, long, parse(from_occurrences))]
+    debug: usize,
 
-    #[command(subcommand)]
+    #[clap(subcommand)]
     command: Option<Commands>,
 }
 
@@ -25,7 +25,7 @@ enum Commands {
     
     Test {
         
-        #[arg(short, long)]
+        #[clap(short, long)]
         list: bool,
     },
 }
@@ -35,7 +35,7 @@ fn main() {
 
     
     if let Some(name) = cli.name.as_deref() {
-        println!("Value for name: {name}");
+        println!("Value for name: {}", name);
     }
 
     if let Some(config_path) = cli.config.as_deref() {

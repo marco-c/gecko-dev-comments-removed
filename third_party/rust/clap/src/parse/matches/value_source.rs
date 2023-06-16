@@ -1,0 +1,11 @@
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum ValueSource {
+    
+    DefaultValue,
+    
+    EnvVariable,
+    
+    CommandLine,
+}

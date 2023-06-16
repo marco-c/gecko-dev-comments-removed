@@ -1,40 +1,32 @@
-use std::path::PathBuf;
 
-use clap::{arg, command, value_parser, ArgAction, ArgGroup};
+
+use clap::{arg, command, ArgGroup};
 
 fn main() {
     
-    let matches = command!() 
+    let matches = command!()
         
-        .arg(arg!(--"set-ver" <VER> "set version manually"))
-        .arg(arg!(--major         "auto inc major").action(ArgAction::SetTrue))
-        .arg(arg!(--minor         "auto inc minor").action(ArgAction::SetTrue))
-        .arg(arg!(--patch         "auto inc patch").action(ArgAction::SetTrue))
+        .arg(arg!(--"set-ver" <VER> "set version manually").required(false))
+        .arg(arg!(--major         "auto inc major"))
+        .arg(arg!(--minor         "auto inc minor"))
+        .arg(arg!(--patch         "auto inc patch"))
         
         .group(
             ArgGroup::new("vers")
                 .required(true)
-                .args(["set-ver", "major", "minor", "patch"]),
+                .args(&["set-ver", "major", "minor", "patch"]),
         )
         
         
-        .arg(
-            arg!([INPUT_FILE] "some regular input")
-                .value_parser(value_parser!(PathBuf))
-                .group("input"),
-        )
+        .arg(arg!([INPUT_FILE] "some regular input").group("input"))
         .arg(
             arg!(--"spec-in" <SPEC_IN> "some special input argument")
-                .value_parser(value_parser!(PathBuf))
+                .required(false)
                 .group("input"),
         )
         
         
-        .arg(
-            arg!(config: -c <CONFIG>)
-                .value_parser(value_parser!(PathBuf))
-                .requires("input"),
-        )
+        .arg(arg!(config: -c <CONFIG>).required(false).requires("input"))
         .get_matches();
 
     
@@ -43,14 +35,14 @@ fn main() {
     let mut patch = 3;
 
     
-    let version = if let Some(ver) = matches.get_one::<String>("set-ver") {
-        ver.to_owned()
+    let version = if let Some(ver) = matches.value_of("set-ver") {
+        ver.to_string()
     } else {
         
         let (maj, min, pat) = (
-            matches.get_flag("major"),
-            matches.get_flag("minor"),
-            matches.get_flag("patch"),
+            matches.is_present("major"),
+            matches.is_present("minor"),
+            matches.is_present("patch"),
         );
         match (maj, min, pat) {
             (true, _, _) => major += 1,
@@ -64,15 +56,14 @@ fn main() {
     println!("Version: {}", version);
 
     
-    if matches.contains_id("config") {
+    if matches.is_present("config") {
         let input = matches
-            .get_one::<PathBuf>("INPUT_FILE")
-            .unwrap_or_else(|| matches.get_one::<PathBuf>("spec-in").unwrap())
-            .display();
+            .value_of("INPUT_FILE")
+            .unwrap_or_else(|| matches.value_of("spec-in").unwrap());
         println!(
             "Doing work using input {} and config {}",
             input,
-            matches.get_one::<PathBuf>("config").unwrap().display()
+            matches.value_of("config").unwrap()
         );
     }
 }

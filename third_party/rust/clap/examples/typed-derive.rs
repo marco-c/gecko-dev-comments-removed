@@ -1,47 +1,29 @@
-use clap::builder::TypedValueParser as _;
+
+
 use clap::Parser;
 use std::error::Error;
 
-#[derive(Parser, Debug)] 
-#[command(term_width = 0)] 
+#[derive(Parser, Debug)]
 struct Args {
     
-    #[arg(short = 'O')]
+    #[clap(short = 'O')]
     optimization: Option<usize>,
 
     
-    #[arg(short = 'I', value_name = "DIR", value_hint = clap::ValueHint::DirPath)]
+    #[clap(short = 'I', parse(from_os_str), value_name = "DIR", value_hint = clap::ValueHint::DirPath)]
     include: Option<std::path::PathBuf>,
 
     
-    #[arg(long)]
+    #[clap(long)]
     bind: Option<std::net::IpAddr>,
 
     
-    #[arg(long)]
+    #[clap(long)]
     sleep: Option<humantime::Duration>,
 
     
-    #[arg(short = 'D', value_parser = parse_key_val::<String, i32>)]
+    #[clap(short = 'D', parse(try_from_str = parse_key_val), multiple_occurrences(true))]
     defines: Vec<(String, i32)>,
-
-    
-    #[arg(
-        long,
-        default_value_t = 22,
-        value_parser = clap::builder::PossibleValuesParser::new(["22", "80"])
-            .map(|s| s.parse::<usize>().unwrap()),
-    )]
-    port: usize,
-
-    
-    #[arg(
-        long,
-        default_value_t = foreign_crate::LogLevel::Info,
-        value_parser = clap::builder::PossibleValuesParser::new(["info", "debug", "info", "warn", "error"])
-            .map(|s| s.parse::<foreign_crate::LogLevel>().unwrap()),
-    )]
-    log_level: foreign_crate::LogLevel,
 }
 
 
@@ -54,49 +36,11 @@ where
 {
     let pos = s
         .find('=')
-        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
+        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{}`", s))?;
     Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
-}
-
-mod foreign_crate {
-    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-    pub enum LogLevel {
-        Trace,
-        Debug,
-        Info,
-        Warn,
-        Error,
-    }
-
-    impl std::fmt::Display for LogLevel {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            let s = match self {
-                Self::Trace => "trace",
-                Self::Debug => "debug",
-                Self::Info => "info",
-                Self::Warn => "warn",
-                Self::Error => "error",
-            };
-            s.fmt(f)
-        }
-    }
-    impl std::str::FromStr for LogLevel {
-        type Err = String;
-
-        fn from_str(s: &str) -> Result<Self, Self::Err> {
-            match s {
-                "trace" => Ok(Self::Trace),
-                "debug" => Ok(Self::Debug),
-                "info" => Ok(Self::Info),
-                "warn" => Ok(Self::Warn),
-                "error" => Ok(Self::Error),
-                _ => Err(format!("Unknown log level: {s}")),
-            }
-        }
-    }
 }
 
 fn main() {
     let args = Args::parse();
-    println!("{args:?}");
+    println!("{:?}", args);
 }

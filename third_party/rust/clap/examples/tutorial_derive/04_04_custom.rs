@@ -1,33 +1,32 @@
-use clap::error::ErrorKind;
-use clap::{CommandFactory, Parser};
+use clap::{CommandFactory, ErrorKind, Parser};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
     
-    #[arg(long, value_name = "VER")]
+    #[clap(long, value_name = "VER")]
     set_ver: Option<String>,
 
     
-    #[arg(long)]
+    #[clap(long)]
     major: bool,
 
     
-    #[arg(long)]
+    #[clap(long)]
     minor: bool,
 
     
-    #[arg(long)]
+    #[clap(long)]
     patch: bool,
 
     
     input_file: Option<String>,
 
     
-    #[arg(long)]
+    #[clap(long)]
     spec_in: Option<String>,
 
-    #[arg(short)]
+    #[clap(short)]
     config: Option<String>,
 }
 
@@ -66,13 +65,15 @@ fn main() {
                 .exit();
             }
         };
-        format!("{major}.{minor}.{patch}")
+        format!("{}.{}.{}", major, minor, patch)
     };
 
-    println!("Version: {version}");
+    println!("Version: {}", version);
 
     
     if let Some(config) = cli.config.as_deref() {
+        
+        #[allow(clippy::or_fun_call)]
         let input = cli
             .input_file
             .as_deref()
@@ -86,6 +87,6 @@ fn main() {
                 )
                 .exit()
             });
-        println!("Doing work using input {input} and config {config}");
+        println!("Doing work using input {} and config {}", input, config);
     }
 }

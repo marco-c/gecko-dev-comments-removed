@@ -1,7 +1,0 @@
-
-
-
-#![doc = include_str!("../../examples/pacman.rs")]
-
-
-#![doc = include_str!("../../examples/pacman.md")]

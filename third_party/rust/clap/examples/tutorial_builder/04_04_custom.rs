@@ -1,26 +1,22 @@
-use std::path::PathBuf;
 
-use clap::error::ErrorKind;
-use clap::{arg, command, value_parser, ArgAction};
+
+use clap::{arg, command, ErrorKind};
 
 fn main() {
     
-    let mut cmd = command!() 
+    let mut cmd = command!()
         
-        .arg(arg!(--"set-ver" <VER> "set version manually"))
-        .arg(arg!(--major         "auto inc major").action(ArgAction::SetTrue))
-        .arg(arg!(--minor         "auto inc minor").action(ArgAction::SetTrue))
-        .arg(arg!(--patch         "auto inc patch").action(ArgAction::SetTrue))
-        
-        
-        .arg(arg!([INPUT_FILE] "some regular input").value_parser(value_parser!(PathBuf)))
-        .arg(
-            arg!(--"spec-in" <SPEC_IN> "some special input argument")
-                .value_parser(value_parser!(PathBuf)),
-        )
+        .arg(arg!(--"set-ver" <VER> "set version manually").required(false))
+        .arg(arg!(--major         "auto inc major"))
+        .arg(arg!(--minor         "auto inc minor"))
+        .arg(arg!(--patch         "auto inc patch"))
         
         
-        .arg(arg!(config: -c <CONFIG>).value_parser(value_parser!(PathBuf)));
+        .arg(arg!([INPUT_FILE] "some regular input"))
+        .arg(arg!(--"spec-in" <SPEC_IN> "some special input argument").required(false))
+        
+        
+        .arg(arg!(config: -c <CONFIG>).required(false));
     let matches = cmd.get_matches_mut();
 
     
@@ -29,8 +25,9 @@ fn main() {
     let mut patch = 3;
 
     
-    let version = if let Some(ver) = matches.get_one::<String>("set-ver") {
-        if matches.get_flag("major") || matches.get_flag("minor") || matches.get_flag("patch") {
+    let version = if let Some(ver) = matches.value_of("set-ver") {
+        if matches.is_present("major") || matches.is_present("minor") || matches.is_present("patch")
+        {
             cmd.error(
                 ErrorKind::ArgumentConflict,
                 "Can't do relative and absolute version change",
@@ -41,9 +38,9 @@ fn main() {
     } else {
         
         let (maj, min, pat) = (
-            matches.get_flag("major"),
-            matches.get_flag("minor"),
-            matches.get_flag("patch"),
+            matches.is_present("major"),
+            matches.is_present("minor"),
+            matches.is_present("patch"),
         );
         match (maj, min, pat) {
             (true, false, false) => major += 1,
@@ -63,22 +60,21 @@ fn main() {
     println!("Version: {}", version);
 
     
-    if matches.contains_id("config") {
+    if matches.is_present("config") {
         let input = matches
-            .get_one::<PathBuf>("INPUT_FILE")
-            .or_else(|| matches.get_one::<PathBuf>("spec-in"))
+            .value_of("INPUT_FILE")
+            .or_else(|| matches.value_of("spec-in"))
             .unwrap_or_else(|| {
                 cmd.error(
                     ErrorKind::MissingRequiredArgument,
                     "INPUT_FILE or --spec-in is required when using --config",
                 )
                 .exit()
-            })
-            .display();
+            });
         println!(
             "Doing work using input {} and config {}",
             input,
-            matches.get_one::<PathBuf>("config").unwrap().display()
+            matches.value_of("config").unwrap()
         );
     }
 }

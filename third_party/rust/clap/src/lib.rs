@@ -3,80 +3,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc = include_str!("../examples/demo.rs")]
-
-
-
-
-#![doc = include_str!("../examples/demo.md")]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/clap-rs/clap/master/assets/clap.png")]
+#![cfg_attr(feature = "derive", doc = include_str!("../README.md"))]
+
 #![warn(
     missing_docs,
     missing_debug_implementations,
@@ -93,27 +23,102 @@
 
 #![allow(clippy::if_same_then_else)]
 
-#![allow(clippy::collapsible_else_if)]
+#[cfg(not(feature = "std"))]
+compile_error!("`std` feature is currently required to build `clap`");
 
-pub use clap_builder::*;
+pub use crate::build::Command;
+pub use crate::build::{
+    AppFlags, AppSettings, Arg, ArgFlags, ArgGroup, ArgSettings, PossibleValue, ValueHint,
+};
+pub use crate::error::Error;
+pub use crate::parse::{ArgMatches, Indices, OsValues, ValueSource, Values};
+#[cfg(feature = "color")]
+pub use crate::util::color::ColorChoice;
+#[cfg(not(feature = "color"))]
+#[allow(unused_imports)]
+pub(crate) use crate::util::color::ColorChoice;
+
+pub use crate::derive::{ArgEnum, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
+
+pub use crate::error::{ErrorKind, Result};
+
+#[allow(deprecated)]
+pub use crate::build::App;
+
+#[cfg(feature = "yaml")]
+#[doc(hidden)]
+#[deprecated(
+    since = "3.0.0",
+    note = "Deprecated in Issue #3087, maybe clap::Parser would fit your use case?"
+)]
+#[doc(hidden)]
+pub use yaml_rust::YamlLoader;
+
 #[cfg(feature = "derive")]
 #[doc(hidden)]
 pub use clap_derive::{self, *};
 
-#[cfg(feature = "unstable-doc")]
-pub mod _cookbook;
-#[cfg(feature = "unstable-doc")]
-pub mod _derive;
-#[cfg(feature = "unstable-doc")]
-pub mod _faq;
-#[cfg(feature = "unstable-doc")]
-pub mod _features;
-#[cfg(feature = "unstable-doc")]
-pub mod _tutorial;
 
+#[deprecated(since = "3.0.0", note = "Replaced with `CommandFactory`")]
+pub use CommandFactory as IntoApp;
+
+#[deprecated(since = "3.0.0", note = "Replaced with `Parser`")]
 #[doc(hidden)]
-#[cfg(feature = "derive")]
-pub mod __derive_refs {
+pub use Parser as StructOpt;
+
+#[cfg(any(feature = "derive", feature = "cargo"))]
+#[doc(hidden)]
+pub use lazy_static;
+
+#[macro_use]
+#[allow(missing_docs)]
+mod macros;
+
+mod derive;
+
+#[cfg(feature = "regex")]
+pub use crate::build::RegexRef;
+
+pub mod error;
+
+mod build;
+mod mkeymap;
+mod output;
+mod parse;
+mod util;
+
+const INTERNAL_ERROR_MSG: &str = "Fatal internal error. Please consider filing a bug \
+                                  report at https://github.com/clap-rs/clap/issues";
+const INVALID_UTF8: &str = "unexpected invalid UTF-8 code point";
+
+
+#[deprecated(
+    since = "3.0.0",
+    note = "Replaced with `Command::new` unless you intended the `Subcommand` trait"
+)]
+#[doc(hidden)]
+#[derive(Debug, Copy, Clone)]
+pub struct SubCommand {}
+
+#[allow(deprecated)]
+impl SubCommand {
+    
+    
+    #[deprecated(since = "3.0.0", note = "Replaced with `Command::new`")]
     #[doc(hidden)]
-    pub use once_cell;
+    pub fn with_name<'help>(name: &str) -> App<'help> {
+        Command::new(name)
+    }
+
+    
+    #[cfg(feature = "yaml")]
+    #[deprecated(
+        since = "3.0.0",
+        note = "Deprecated in Issue #3087, maybe clap::Parser would fit your use case?"
+    )]
+    #[doc(hidden)]
+    pub fn from_yaml(yaml: &yaml_rust::Yaml) -> App {
+        #![allow(deprecated)]
+        Command::from_yaml(yaml)
+    }
 }

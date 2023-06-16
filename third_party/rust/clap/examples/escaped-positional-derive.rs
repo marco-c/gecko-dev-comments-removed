@@ -1,15 +1,17 @@
+
+
 use clap::Parser;
 
-#[derive(Parser)] 
-#[command(author, version, about, long_about = None)]
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
-    #[arg(short = 'f')]
+    #[clap(short = 'f')]
     eff: bool,
 
-    #[arg(short = 'p', value_name = "PEAR")]
+    #[clap(short = 'p', value_name = "PEAR")]
     pea: Option<String>,
 
-    #[arg(last = true)]
+    #[clap(last = true)]
     slop: Vec<String>,
 }
 
