@@ -332,7 +332,6 @@ function processCSSRules(container) {
     }
     if (rule.cssRules) {
       processCSSRules(rule); 
-      continue;
     }
     if (!rule.style) {
       continue; 
