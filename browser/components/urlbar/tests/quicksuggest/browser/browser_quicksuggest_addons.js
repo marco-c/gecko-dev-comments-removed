@@ -528,7 +528,7 @@ async function doDismissTest(command) {
   
   let gotItButton = UrlbarTestUtils.getButtonForResultIndex(
     window,
-    "0",
+    0,
     resultIndex
   );
   Assert.ok(gotItButton, "Row should have a 'Got it' button");

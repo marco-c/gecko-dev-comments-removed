@@ -607,6 +607,13 @@ pref("browser.urlbar.suggest.addons", true);
 
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
+
+pref("browser.urlbar.pocket.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.pocket", true);
+
 pref("browser.altClickSave", false);
 
 
