@@ -49,9 +49,10 @@ bool AudioWorkletGlobalScope::WrapGlobalObject(
 
   JS::RealmOptions options;
 
-  
-  options.behaviors().setShouldResistFingerprinting(
-      ShouldResistFingerprinting(RFPTarget::IsAlwaysEnabledForPrecompute));
+  options.creationOptions().setForceUTC(
+      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
+  options.creationOptions().setAlwaysUseFdlibm(
+      ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
 
   
   

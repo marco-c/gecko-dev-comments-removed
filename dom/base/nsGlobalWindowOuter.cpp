@@ -2037,11 +2037,10 @@ static nsresult CreateNativeGlobalForInner(
   creationOptions.setDefineSharedArrayBufferConstructor(
       aDefineSharedArrayBufferConstructor);
 
-  
-  
-  xpc::InitGlobalObjectOptions(options, principal->IsSystemPrincipal(),
-                               aDocument->ShouldResistFingerprinting(
-                                   RFPTarget::IsAlwaysEnabledForPrecompute));
+  xpc::InitGlobalObjectOptions(
+      options, principal->IsSystemPrincipal(),
+      aDocument->ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
+      aDocument->ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
 
   
   bool needComponents = principal->IsSystemPrincipal();

@@ -23,9 +23,10 @@ bool PaintWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
   JS::RealmOptions options;
 
-  
-  options.behaviors().setShouldResistFingerprinting(
-      ShouldResistFingerprinting(RFPTarget::IsAlwaysEnabledForPrecompute));
+  options.creationOptions().setForceUTC(
+      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
+  options.creationOptions().setAlwaysUseFdlibm(
+      ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
 
   
   

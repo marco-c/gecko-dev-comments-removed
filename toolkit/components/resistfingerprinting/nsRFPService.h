@@ -182,8 +182,7 @@ class nsRFPService final : public nsIObserver {
                                                  RTPCallerType aRTPCallerType);
 
   
-  static double ReduceTimePrecisionAsUSecsWrapper(
-      double aTime, bool aShouldResistFingerprinting, JSContext* aCx);
+  static double ReduceTimePrecisionAsUSecsWrapper(double aTime, JSContext* aCx);
 
   
   static double ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
