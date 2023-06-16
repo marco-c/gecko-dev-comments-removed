@@ -6,14 +6,14 @@
 
 #include "base/string16.h"
 
-#if defined(WCHAR_T_IS_UTF16)
+#if defined(XP_WIN)
 
 #  error This file should not be used on 2-byte wchar_t systems
 
 
 
 
-#elif defined(WCHAR_T_IS_UTF32)
+#else
 
 #  include "base/string_util.h"
 
@@ -71,4 +71,4 @@ char16* c16memset(char16* s, char16 c, size_t n) {
 
 template class std::basic_string<char16, base::string16_char_traits>;
 
-#endif  
+#endif
