@@ -245,20 +245,30 @@ class SmartTrace extends Component {
           },
           i
         ) => {
+          
+          const sourceUrl = filename.split(" -> ").pop();
           const generatedLocation = {
-            sourceUrl: filename.split(" -> ").pop(),
-            sourceId,
             line: lineNumber,
             column: columnNumber,
+            source: {
+              
+              id: sourceId,
+              url: sourceUrl,
+              
+              displayURL: getDisplayURL(sourceUrl),
+            },
           };
           let location = generatedLocation;
-
           const originalLocation = originalLocations?.[i];
           if (originalLocation) {
             location = {
-              sourceUrl: originalLocation.url,
               line: originalLocation.line,
               column: originalLocation.column,
+              source: {
+                url: originalLocation.url,
+                
+                displayURL: getDisplayURL(originalLocation.url),
+              },
             };
           }
 
@@ -266,12 +276,11 @@ class SmartTrace extends Component {
             id: "fake-frame-id-" + i,
             displayName: functionName,
             asyncCause,
-            generatedLocation,
             location,
-            source: {
-              url: location.sourceUrl,
-              displayURL: getDisplayURL(location.sourceUrl),
-            },
+            
+            
+            
+            generatedLocation,
           };
         }
       )
@@ -283,8 +292,8 @@ class SmartTrace extends Component {
         const viewSource = onViewSourceInDebugger || onViewSource;
 
         viewSource({
-          id: generatedLocation.sourceId,
-          url: generatedLocation.sourceUrl,
+          id: generatedLocation.source.id,
+          url: generatedLocation.source.url,
           line: generatedLocation.line,
           column: generatedLocation.column,
         });

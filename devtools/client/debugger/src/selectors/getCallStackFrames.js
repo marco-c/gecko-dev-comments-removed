@@ -2,52 +2,56 @@
 
 
 
-import { getSelectedSource } from "./sources";
+import { getShouldSelectOriginalLocation } from "./sources";
 import { getBlackBoxRanges } from "./source-blackbox";
 import { getCurrentThreadFrames } from "./pause";
 import { annotateFrames } from "../utils/pause/frames";
 import { isFrameBlackBoxed } from "../utils/source";
 import { createSelector } from "reselect";
 
-function getLocation(frame, isGeneratedSource) {
-  return isGeneratedSource
-    ? frame.generatedLocation || frame.location
-    : frame.location;
-}
 
-function getSourceForFrame(frame, isGeneratedSource) {
-  return getLocation(frame, isGeneratedSource).source;
-}
 
-function appendSource(frame, selectedSource) {
-  const isGeneratedSource = selectedSource && !selectedSource.isOriginal;
-  return {
-    ...frame,
-    location: getLocation(frame, isGeneratedSource),
-    source: getSourceForFrame(frame, isGeneratedSource),
-  };
+
+
+
+
+
+
+
+
+function hackFrameLocation(frame, shouldSelectOriginalLocation) {
+  if (
+    !shouldSelectOriginalLocation &&
+    frame.generatedLocation &&
+    frame.generatedLocation != frame.location
+  ) {
+    return {
+      ...frame,
+      location: frame.generatedLocation,
+    };
+  }
+  return frame;
 }
 
 export function formatCallStackFrames(
   frames,
-  selectedSource,
+  shouldSelectOriginalLocation,
   blackboxedRanges
 ) {
   if (!frames) {
     return null;
   }
 
-  const formattedFrames = frames
-    .filter(frame => getSourceForFrame(frame))
-    .map(frame => appendSource(frame, selectedSource))
+  const hackedFrames = frames
+    .map(frame => hackFrameLocation(frame, shouldSelectOriginalLocation))
     .filter(frame => !isFrameBlackBoxed(frame, blackboxedRanges));
 
-  return annotateFrames(formattedFrames);
+  return annotateFrames(hackedFrames);
 }
 
 export const getCallStackFrames = createSelector(
   getCurrentThreadFrames,
-  getSelectedSource,
+  getShouldSelectOriginalLocation,
   getBlackBoxRanges,
   formatCallStackFrames
 );

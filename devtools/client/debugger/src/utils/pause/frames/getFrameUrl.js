@@ -3,5 +3,5 @@
 
 
 export function getFrameUrl(frame) {
-  return frame?.source?.url ?? "";
+  return frame.location.source.url ?? "";
 }
