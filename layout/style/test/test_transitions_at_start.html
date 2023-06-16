@@ -1,8 +1,8 @@
 <!doctype html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1380133
+-->
 <head>
   <meta charset=utf-8>
   <title>Test for transition value at start (Bug 1380133)</title>
@@ -29,6 +29,7 @@ const anchor = document.getElementById('anchor');
 const span   = document.getElementById('span');
 
 test(() => {
+  anchor.getBoundingClientRect();
   anchor.classList.add('active');
   assert_equals(getComputedStyle(span).color, 'rgb(255, 0, 0)',
                 'The child of a transitioning element should inherit its'

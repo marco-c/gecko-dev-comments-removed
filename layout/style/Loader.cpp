@@ -21,7 +21,6 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/URLPreloader.h"
 #include "nsIChildChannel.h"
-#include "nsIRunnable.h"
 #include "nsISupportsPriority.h"
 #include "nsITimedChannel.h"
 #include "nsICachingChannel.h"
@@ -269,7 +268,7 @@ static NotNull<const Encoding*> GetFallbackEncoding(
 
 
 
-NS_IMPL_ISUPPORTS(SheetLoadData, nsIRunnable, nsIThreadObserver)
+NS_IMPL_ISUPPORTS(SheetLoadData, nsIThreadObserver)
 
 SheetLoadData::SheetLoadData(css::Loader* aLoader, const nsAString& aTitle,
                              nsIURI* aURI, StyleSheet* aSheet, bool aSyncLoad,
@@ -397,12 +396,6 @@ SheetLoadData::~SheetLoadData() {
   MOZ_RELEASE_ASSERT(mSheetCompleteCalled || mIntentionallyDropped,
                      "Should always call SheetComplete, except when "
                      "dropping the load");
-}
-
-NS_IMETHODIMP
-SheetLoadData::Run() {
-  mLoader->HandleLoadEvent(*this);
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1782,8 +1775,8 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   if (isWorthCaching) {
     sheet = LookupInlineSheetInCache(aBuffer, sheetPrincipal);
   }
-  const bool sheetFromCache = !!sheet;
-  if (!sheet) {
+  const bool isSheetFromCache = !!sheet;
+  if (!isSheetFromCache) {
     sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
                                    SRIMetadata{});
     sheet->SetURIs(sheetURI, originalURI, baseURI);
@@ -1796,32 +1789,26 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
                               isAlternate, aInfo.mIsExplicitlyEnabled);
-
-  if (auto* linkStyle = LinkStyle::FromNodeOrNull(aInfo.mContent)) {
+  if (auto* linkStyle = LinkStyle::FromNode(*aInfo.mContent)) {
     linkStyle->SetStyleSheet(sheet);
   }
-  if (sheet->IsComplete()) {
-    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
-    InsertSheetInTree(*sheet);
-  }
+  MOZ_ASSERT(sheet->IsComplete() == isSheetFromCache);
 
   Completed completed;
-  if (sheetFromCache) {
-    MOZ_ASSERT(sheet->IsComplete());
-    completed = Completed::Yes;
-    if (dom::Document* doc = GetDocument()) {
-      
-      
-      doc->PostStyleSheetApplicableStateChangeEvent(*sheet);
-    }
-  } else {
-    auto data = MakeRefPtr<SheetLoadData>(
-        this, aInfo.mTitle, nullptr, sheet, false, aInfo.mContent, isAlternate,
-        matched, StylePreloadKind::None, aObserver, principal,
-        aInfo.mReferrerInfo);
-    MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
-    data->mLineNumber = aLineNumber;
+  auto data = MakeRefPtr<SheetLoadData>(
+      this, aInfo.mTitle, nullptr, sheet,  false,
+      aInfo.mContent, isAlternate, matched, StylePreloadKind::None, aObserver,
+      principal, aInfo.mReferrerInfo);
+  MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
+  data->mLineNumber = aLineNumber;
 
+  if (isSheetFromCache) {
+    MOZ_ASSERT(sheet->IsComplete());
+    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
+    completed = Completed::Yes;
+    InsertSheetInTree(*sheet);
+    NotifyOfCachedLoad(std::move(data));
+  } else {
     
     
     
@@ -1830,9 +1817,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     NS_ConvertUTF16toUTF8 utf8(aBuffer);
     completed = ParseSheet(utf8, *data, AllowAsyncParse::No);
     if (completed == Completed::Yes) {
-      
-      
-      if (isWorthCaching && sheet->ChildSheets().IsEmpty()) {
+      if (isWorthCaching) {
         mInlineSheets.InsertOrUpdate(aBuffer, std::move(sheet));
       }
     } else {
@@ -1925,10 +1910,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
   if (auto* linkStyle = LinkStyle::FromNodeOrNull(aInfo.mContent)) {
     linkStyle->SetStyleSheet(sheet);
   }
-  if (sheet->IsComplete()) {
-    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
-    InsertSheetInTree(*sheet);
-  }
+  MOZ_ASSERT(sheet->IsComplete() == (state == SheetState::Complete));
 
   
   MOZ_ASSERT(!aInfo.mContent || LinkStyle::FromNode(*aInfo.mContent),
@@ -1944,19 +1926,10 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
 
   if (state == SheetState::Complete) {
     LOG(("  Sheet already complete: 0x%p", sheet.get()));
-    if (aObserver || !mObservers.IsEmpty() || aInfo.mContent) {
-      rv = PostLoadEvent(std::move(data));
-      if (NS_FAILED(rv)) {
-        return Err(rv);
-      }
-    } else {
-      
-      
-      data->mIntentionallyDropped = true;
-    }
-
-    
-    return LoadSheetResult{Completed::No, isAlternate, matched};
+    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
+    InsertSheetInTree(*sheet);
+    NotifyOfCachedLoad(std::move(data));
+    return LoadSheetResult{Completed::Yes, isAlternate, matched};
   }
 
   
@@ -2179,16 +2152,7 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
   MOZ_ASSERT(data->GetRequestingNode() == mDocument);
   if (state == SheetState::Complete) {
     LOG(("  Sheet already complete"));
-    if (aObserver || !mObservers.IsEmpty()) {
-      rv = PostLoadEvent(std::move(data));
-      if (NS_FAILED(rv)) {
-        return Err(rv);
-      }
-    } else {
-      
-      
-      data->mIntentionallyDropped = true;
-    }
+    NotifyOfCachedLoad(std::move(data));
     return sheet;
   }
 
@@ -2202,62 +2166,28 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
   return sheet;
 }
 
-nsresult Loader::PostLoadEvent(RefPtr<SheetLoadData> aLoadData) {
+void Loader::NotifyOfCachedLoad(RefPtr<SheetLoadData> aLoadData) {
   LOG(("css::Loader::PostLoadEvent"));
-  mPostedEvents.AppendElement(aLoadData);
+  MOZ_ASSERT(aLoadData->mSheet->IsComplete(),
+             "Only expected to be used for cached sheets");
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!aLoadData->mLoadFailed, "Why are we marked as failed?");
+  aLoadData->mSheetAlreadyComplete = true;
 
-  nsresult rv;
-  RefPtr<SheetLoadData> runnable(aLoadData);
-  if (mDocument) {
-    rv = mDocument->Dispatch(TaskCategory::Other, runnable.forget());
-  } else if (mDocGroup) {
-    rv = mDocGroup->Dispatch(TaskCategory::Other, runnable.forget());
-  } else {
-    rv = SchedulerGroup::Dispatch(TaskCategory::Other, runnable.forget());
+  
+  if (aLoadData->mURI && aLoadData->BlocksLoadEvent()) {
+    IncrementOngoingLoadCount();
   }
-
-  if (NS_FAILED(rv)) {
-    NS_WARNING("failed to dispatch stylesheet load event");
-    mPostedEvents.RemoveElement(aLoadData);
-  } else {
-    if (aLoadData->BlocksLoadEvent()) {
-      IncrementOngoingLoadCount();
-    }
-
-    
-    aLoadData->mMustNotify = true;
-    aLoadData->mSheetAlreadyComplete = true;
-
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!aLoadData->mLoadFailed, "Why are we marked as failed?");
-    aLoadData->ScheduleLoadEventIfNeeded();
-  }
-
-  return rv;
-}
-
-void Loader::HandleLoadEvent(SheetLoadData& aEvent) {
-  
-  
-  
-  NS_ASSERTION(aEvent.mSheet, "Must have sheet");
-
-  mPostedEvents.RemoveElement(&aEvent);
-  SheetComplete(aEvent, NS_OK);
+  SheetComplete(*aLoadData, NS_OK);
 }
 
 void Loader::Stop() {
   if (mSheets) {
     mSheets->CancelLoadsForLoader(*this);
-  }
-
-  auto arr = std::move(mPostedEvents);
-  for (auto& data : arr) {
-    data->Cancel();
   }
 }
 
@@ -2323,8 +2253,6 @@ size_t Loader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     }
   }
 
-  
-  
   
   
   

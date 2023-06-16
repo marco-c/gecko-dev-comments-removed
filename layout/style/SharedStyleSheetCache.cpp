@@ -92,6 +92,7 @@ void SharedStyleSheetCache::InsertIfNeeded(css::SheetLoadData& aData) {
     LOG("  Inline or constructable style sheet, bailing");
     
     
+    
     return;
   }
 
@@ -156,7 +157,6 @@ void SharedStyleSheetCache::LoadCompletedInternal(
         data->mLoader->InsertSheetInTree(*data->mSheet);
       }
       data->mSheet->SetComplete();
-      data->ScheduleLoadEventIfNeeded();
     } else if (data->mSheet->IsApplicable()) {
       if (dom::Document* doc = data->mLoader->GetDocument()) {
         
@@ -164,7 +164,7 @@ void SharedStyleSheetCache::LoadCompletedInternal(
         doc->PostStyleSheetApplicableStateChangeEvent(*data->mSheet);
       }
     }
-
+    data->ScheduleLoadEventIfNeeded();
     aDatasToNotify.AppendElement(data);
 
     NS_ASSERTION(!data->mParentData || data->mParentData->mPendingChildren != 0,

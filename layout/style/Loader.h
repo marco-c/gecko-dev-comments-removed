@@ -449,8 +449,6 @@ class Loader final {
   
   IsAlternate IsAlternateSheet(const nsAString& aTitle, bool aHasAlternateRel);
 
-  typedef nsTArray<RefPtr<SheetLoadData>> LoadDataArray;
-
   
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -547,15 +545,10 @@ class Loader final {
   RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*);
 
   
-  
-  
-  
-  nsresult PostLoadEvent(RefPtr<SheetLoadData>);
+  void NotifyOfCachedLoad(RefPtr<SheetLoadData>);
 
   
   void StartDeferredLoads();
-
-  void HandleLoadEvent(SheetLoadData&);
 
   
   
@@ -606,10 +599,6 @@ class Loader final {
   nsTHashtable<const SheetLoadDataHashKey> mLoadsPerformed;
 
   RefPtr<SharedStyleSheetCache> mSheets;
-
-  
-  
-  LoadDataArray mPostedEvents;
 
   
   nsTObserverArray<nsCOMPtr<nsICSSLoaderObserver>> mObservers;
