@@ -33,12 +33,15 @@ struct OriginMetadata;
 
 namespace fs {
 
+struct FileId;
 class FileSystemChildMetadata;
 class FileSystemEntryMetadata;
 class FileSystemDirectoryListing;
 class FileSystemEntryPair;
 
 namespace data {
+
+using FileSystemConnection = fs::ResultConnection;
 
 class FileSystemDatabaseManager {
  public:
@@ -69,7 +72,7 @@ class FileSystemDatabaseManager {
 
 
 
-  virtual nsresult UpdateUsage(const EntryId& aEntry) = 0;
+  virtual nsresult UpdateUsage(const FileId& aFileId) = 0;
 
   
 
@@ -159,17 +162,26 @@ class FileSystemDatabaseManager {
   
 
 
+
+
+
+
+  virtual Result<FileId, QMResult> GetFileId(const EntryId& aEntryId) const = 0;
+
+  
+
+
   virtual void Close() = 0;
 
   
 
 
-  virtual nsresult BeginUsageTracking(const EntryId& aEntryId) = 0;
+  virtual nsresult BeginUsageTracking(const FileId& aFileId) = 0;
 
   
 
 
-  virtual nsresult EndUsageTracking(const EntryId& aEntryId) = 0;
+  virtual nsresult EndUsageTracking(const FileId& aFileId) = 0;
 
   virtual ~FileSystemDatabaseManager() = default;
 };

@@ -26,7 +26,11 @@ struct OriginMetadata;
 
 }  
 
-namespace fs::data {
+namespace fs {
+
+struct FileId;
+
+namespace data {
 
 
 
@@ -119,7 +123,7 @@ class FileSystemFileManager {
 
 
 
-  Result<nsCOMPtr<nsIFile>, QMResult> GetFile(const EntryId& aEntryId) const;
+  Result<nsCOMPtr<nsIFile>, QMResult> GetFile(const FileId& aFileId) const;
 
   
 
@@ -127,7 +131,7 @@ class FileSystemFileManager {
 
 
 
-  Result<nsCOMPtr<nsIFile>, QMResult> GetOrCreateFile(const EntryId& aEntryId);
+  Result<nsCOMPtr<nsIFile>, QMResult> GetOrCreateFile(const FileId& aFileId);
 
   
 
@@ -136,7 +140,7 @@ class FileSystemFileManager {
 
 
 
-  Result<Usage, QMResult> RemoveFile(const EntryId& aEntryId);
+  Result<Usage, QMResult> RemoveFile(const FileId& aFileId);
 
   
 
@@ -145,7 +149,7 @@ class FileSystemFileManager {
 
 
   Result<DebugOnly<Usage>, QMResult> RemoveFiles(
-      const nsTArray<EntryId>& aEntryIds, nsTArray<EntryId>& aRemoveFails);
+      const nsTArray<FileId>& aFileIds, nsTArray<FileId>& aRemoveFails);
 
  private:
   explicit FileSystemFileManager(nsCOMPtr<nsIFile>&& aTopDirectory);
@@ -153,6 +157,7 @@ class FileSystemFileManager {
   nsCOMPtr<nsIFile> mTopDirectory;
 };
 
+}  
 }  
 }  
 

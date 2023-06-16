@@ -4,6 +4,7 @@
 
 
 
+#include "FileSystemParentTypes.h"
 #include "FileSystemQuotaClient.h"
 #include "TestHelpers.h"
 #include "datamodel/FileSystemDataManager.h"
@@ -329,7 +330,7 @@ TEST_F(TestFileSystemQuotaClient, WritesToFilesShouldIncreaseUsage) {
 
       
       
-      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(testFileId));
+      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(FileId(testFileId)));
 
       
       TEST_TRY_UNWRAP(usageNow,
@@ -465,7 +466,7 @@ TEST_F(TestFileSystemQuotaClient, RemovingFileShouldDecreaseUsage) {
 
       
       
-      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(testFileId));
+      ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(FileId(testFileId)));
 
       
       TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
