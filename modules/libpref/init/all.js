@@ -183,10 +183,6 @@ pref("browser.helperApps.neverAsk.saveToDisk", "");
 pref("browser.helperApps.neverAsk.openFile", "");
 pref("browser.helperApps.deleteTempFileOnExit", false);
 
-
-
-pref("browser.chrome.image_icons.max_size", 1024);
-
 pref("browser.triple_click_selects_paragraph", true);
 
 
