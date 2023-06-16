@@ -151,7 +151,16 @@ bool HTMLScriptElement::GetScriptType(nsAString& aType) {
   
   
   static const char kASCIIWhitespace[] = "\t\n\f\r ";
+
+  const bool wasEmptyBeforeTrim = type.IsEmpty();
   type.Trim(kASCIIWhitespace);
+
+  
+  
+  
+  if (!wasEmptyBeforeTrim && type.IsEmpty()) {
+    return GetAttr(kNameSpaceID_None, nsGkAtoms::type, aType);
+  }
 
   aType.Assign(type);
   return true;
