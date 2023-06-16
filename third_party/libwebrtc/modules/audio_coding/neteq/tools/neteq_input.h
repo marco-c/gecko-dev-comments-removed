@@ -36,6 +36,13 @@ class NetEqInput {
     int64_t time_ms;
   };
 
+  struct SetMinimumDelayInfo {
+    SetMinimumDelayInfo(int64_t timestamp_ms_in, int delay_ms_in)
+        : timestamp_ms(timestamp_ms_in), delay_ms(delay_ms_in) {}
+    int64_t timestamp_ms;
+    int delay_ms;
+  };
+
   virtual ~NetEqInput() = default;
 
   
@@ -48,14 +55,29 @@ class NetEqInput {
 
   
   
+  virtual absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo()
+      const = 0;
+
+  
+  
   absl::optional<int64_t> NextEventTime() const {
-    const auto a = NextPacketTime();
-    const auto b = NextOutputEventTime();
+    absl::optional<int64_t> next_event_time = NextPacketTime();
+    const auto next_output_time = NextOutputEventTime();
     
-    if (a) {
-      return b ? std::min(*a, *b) : a;
+    if (next_output_time) {
+      next_event_time = next_event_time ? std::min(next_event_time.value(),
+                                                   next_output_time.value())
+                                        : next_output_time;
     }
-    return b ? b : absl::nullopt;
+    const auto next_neteq_minimum_delay = NextSetMinimumDelayInfo();
+    if (next_neteq_minimum_delay) {
+      next_event_time =
+          next_event_time
+              ? std::min(next_event_time.value(),
+                         next_neteq_minimum_delay.value().timestamp_ms)
+              : next_neteq_minimum_delay.value().timestamp_ms;
+    }
+    return next_event_time;
   }
 
   
@@ -68,6 +90,10 @@ class NetEqInput {
   
   
   virtual void AdvanceOutputEvent() = 0;
+
+  
+  
+  virtual void AdvanceSetMinimumDelay() = 0;
 
   
   
@@ -88,8 +114,10 @@ class TimeLimitedNetEqInput : public NetEqInput {
   ~TimeLimitedNetEqInput() override;
   absl::optional<int64_t> NextPacketTime() const override;
   absl::optional<int64_t> NextOutputEventTime() const override;
+  absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo() const override;
   std::unique_ptr<PacketData> PopPacket() override;
   void AdvanceOutputEvent() override;
+  void AdvanceSetMinimumDelay() override;
   bool ended() const override;
   absl::optional<RTPHeader> NextHeader() const override;
 
