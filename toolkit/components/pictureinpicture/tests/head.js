@@ -410,6 +410,28 @@ async function assertSawMouseEvents(
 
 
 
+async function assertSawClickEventOnly(browser) {
+  let mouseEvents = await SpecialPowers.spawn(browser, [], async () => {
+    return this.content.wrappedJSObject.getRecordedEvents();
+  });
+  Assert.deepEqual(
+    mouseEvents,
+    ["click"],
+    "Expected to get the right mouse events."
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -623,9 +645,10 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
       await prepFn(browser);
       await ensureVideosReady(browser);
 
-      for (let [videoID, { canToggle, policy, toggleStyles }] of Object.entries(
-        expectations
-      )) {
+      for (let [
+        videoID,
+        { canToggle, policy, toggleStyles, shouldSeeClickEventAfterToggle },
+      ] of Object.entries(expectations)) {
         await SimpleTest.promiseFocus(browser);
         info(`Testing video with id: ${videoID}`);
 
@@ -634,7 +657,8 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
           videoID,
           canToggle,
           policy,
-          toggleStyles
+          toggleStyles,
+          shouldSeeClickEventAfterToggle
         );
       }
     }
@@ -663,7 +687,8 @@ async function testToggleHelper(
   videoID,
   canToggle,
   policy,
-  toggleStyles
+  toggleStyles,
+  shouldSeeClickEventAfterToggle
 ) {
   let { controls } = await prepareForToggleClick(browser, videoID);
 
@@ -785,7 +810,14 @@ async function testToggleHelper(
 
     
     
-    await assertSawMouseEvents(browser, false);
+    
+    if (shouldSeeClickEventAfterToggle) {
+      await assertSawClickEventOnly(browser);
+    } else {
+      
+      
+      await assertSawMouseEvents(browser, false);
+    }
   } else {
     info(
       "Clicking on toggle, and expecting no Picture-in-Picture window opens"
