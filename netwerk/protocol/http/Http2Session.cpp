@@ -2145,9 +2145,6 @@ nsresult Http2Session::RecvPing(Http2Session* self) {
   if (self->mInputFrameFlags & kFlag_ACK) {
     
     self->mPingSentEpoch = 0;
-    
-    
-    self->mPreviousUsed = false;
   } else {
     
     self->GeneratePing(true);
@@ -4331,7 +4328,6 @@ nsresult Http2Session::PushBack(const char* buf, uint32_t len) {
 
 void Http2Session::SendPing() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("Http2Session::SendPing %p mPreviousUsed=%d", this, mPreviousUsed));
 
   if (mPreviousUsed) {
     
