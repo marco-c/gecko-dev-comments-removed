@@ -1304,7 +1304,7 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
   mChildArgv.push_back(mPidString);
 
   if (!CrashReporter::IsDummy()) {
-#  if defined(XP_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
+#  if defined(XP_LINUX) || defined(OS_BSD) || defined(XP_SOLARIS)
     int childCrashFd, childCrashRemapFd;
     if (NS_WARN_IF(!CrashReporter::CreateNotificationPipeForChild(
             &childCrashFd, &childCrashRemapFd))) {

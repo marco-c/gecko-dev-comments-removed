@@ -67,7 +67,7 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   timestruct.tm_wday = exploded.day_of_week;  
   timestruct.tm_yday = 0;                     
   timestruct.tm_isdst = -1;                   
-#ifndef OS_SOLARIS
+#ifndef XP_SOLARIS
   timestruct.tm_gmtoff = 0;   
   timestruct.tm_zone = NULL;  
 #endif
