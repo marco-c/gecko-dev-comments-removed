@@ -88,6 +88,7 @@ class AudioSinkWrapper : public MediaSink {
 
   bool NeedAudioSink();
   void StartAudioSink(const media::TimeUnit& aStartTime);
+  void ShutDownAudioSink();
   
   
   
