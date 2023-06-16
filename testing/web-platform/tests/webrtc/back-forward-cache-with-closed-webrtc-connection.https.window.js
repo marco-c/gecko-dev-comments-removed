@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+'use strict';
+
+promise_test(async t => {
+  const rcHelper = new RemoteContextHelper();
+
+  
+  const rc1 = await rcHelper.addWindow(
+       null,  { features: 'noopener' });
+  await openThenCloseWebRTC(rc1);
+  
+  await assertBFCacheEligibility(rc1,  true);
+});
