@@ -86,7 +86,7 @@ struct VisitData {
         visitCount(0),
         referrerVisitId(0),
         titleChanged(false),
-        shouldUpdateFrecency(true),
+        isUnrecoverableError(false),
         useFrecencyRedirectBonus(false),
         source(nsINavHistoryService::VISIT_SOURCE_ORGANIC),
         triggeringPlaceId(0),
@@ -114,7 +114,7 @@ struct VisitData {
         visitCount(0),
         referrerVisitId(0),
         titleChanged(false),
-        shouldUpdateFrecency(true),
+        isUnrecoverableError(false),
         useFrecencyRedirectBonus(false),
         source(nsINavHistoryService::VISIT_SOURCE_ORGANIC),
         triggeringPlaceId(0),
@@ -179,7 +179,7 @@ struct VisitData {
   bool titleChanged;
 
   
-  bool shouldUpdateFrecency;
+  bool isUnrecoverableError;
 
   
   
@@ -1064,7 +1064,7 @@ class InsertVisitedURIs final : public Runnable {
     
 
     
-    if (aPlace.shouldUpdateFrecency) {
+    if (!aPlace.isUnrecoverableError) {
       rv = UpdateFrecency(aPlace);
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -1168,7 +1168,7 @@ class InsertVisitedURIs final : public Runnable {
 
 
   nsresult UpdateFrecency(const VisitData& aPlace) {
-    MOZ_ASSERT(aPlace.shouldUpdateFrecency);
+    MOZ_ASSERT(!aPlace.isUnrecoverableError);
     MOZ_ASSERT(aPlace.placeId > 0);
 
     nsresult rv;
@@ -1618,7 +1618,7 @@ nsresult History::InsertPlace(VisitData& aPlace) {
   NS_ENSURE_SUCCESS(rv, rv);
   
   
-  int32_t frecency = aPlace.shouldUpdateFrecency ? aPlace.frecency : 0;
+  int32_t frecency = aPlace.isUnrecoverableError ? 0 : aPlace.frecency;
   rv = stmt->BindInt32ByName("frecency"_ns, frecency);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->BindInt32ByName("hidden"_ns, aPlace.hidden);
@@ -1991,9 +1991,7 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
   place.hidden = GetHiddenState(isRedirect, place.transitionType);
 
   
-  if (aFlags & IHistory::UNRECOVERABLE_ERROR) {
-    place.shouldUpdateFrecency = false;
-  }
+  place.isUnrecoverableError = aFlags & IHistory::UNRECOVERABLE_ERROR;
 
   
   if (reload) {
