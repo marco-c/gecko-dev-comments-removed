@@ -291,16 +291,6 @@ function run_test() {
   
   
 
-
-
-
-  
-  
-
-  
-  
-  
-
   ps.deleteBranch("DefaultPref");
   let pb = ps.getBranch("DefaultPref");
   pb1 = ps.getDefaultBranch("DefaultPref");
