@@ -291,7 +291,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
 
   pref("media.navigator.video.default_width",0);  
   pref("media.navigator.video.default_height",0); 
-  pref("media.peerconnection.video.enabled", true);
   pref("media.navigator.video.max_fs", 12288); 
   pref("media.navigator.video.max_fr", 60);
   pref("media.navigator.video.h264.level", 31); 
