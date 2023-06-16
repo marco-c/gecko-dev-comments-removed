@@ -677,6 +677,15 @@ RtpTransceiver::HeaderExtensionsNegotiated() const {
   return result;
 }
 
+
+
+
+
+
+bool IsMandatoryHeaderExtension(const std::string& uri) {
+  return uri == RtpExtension::kMidUri;
+}
+
 RTCError RtpTransceiver::SetOfferedRtpHeaderExtensions(
     rtc::ArrayView<const RtpHeaderExtensionCapability>
         header_extensions_to_offer) {
@@ -699,17 +708,20 @@ RTCError RtpTransceiver::SetOfferedRtpHeaderExtensions(
     }
 
     
-    
-    
-    
-    if ((entry.uri == RtpExtension::kMidUri ||
-         entry.uri == RtpExtension::kVideoRotationUri) &&
+    if (IsMandatoryHeaderExtension(entry.uri) &&
         entry.direction != RtpTransceiverDirection::kSendRecv) {
       return RTCError(RTCErrorType::INVALID_MODIFICATION,
                       "Attempted to stop a mandatory extension.");
     }
   }
 
+  
+  
+  for (auto& entry : header_extensions_to_offer_) {
+    if (!IsMandatoryHeaderExtension(entry.uri)) {
+      entry.direction = RtpTransceiverDirection::kStopped;
+    }
+  }
   
   for (const auto& entry : header_extensions_to_offer) {
     auto it = std::find_if(
