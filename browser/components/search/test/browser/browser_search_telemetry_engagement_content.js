@@ -325,9 +325,6 @@ add_task(async function test_click_related_search_in_new_tab() {
 
 
 
-
-
-
 add_task(async function test_click_redirect_search_in_newtab() {
   resetTelemetry();
   let url = getSERPUrl("searchTelemetryAd_searchbox_with_content.html");

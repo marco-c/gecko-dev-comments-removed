@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
@@ -24,85 +23,16 @@ const TEST_PROVIDER_INFO = [
     nonAdsLinkRegexps: [
       /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetryAd_nonAdsLink_redirect.html/,
     ],
-    extraAdServersRegexps: [/^https:\/\/example\.com\/ad/],
+    extraAdServersRegexps: [
+      /^https:\/\/example\.com\/ad/,
+      /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetryAd_adsLink_redirect.html/,
+    ],
     components: [
-      {
-        type: SearchSERPTelemetryUtils.COMPONENTS.AD_CAROUSEL,
-        included: {
-          parent: {
-            selector: ".moz-carousel",
-          },
-          children: [
-            {
-              selector: ".moz-carousel-card",
-              countChildren: true,
-            },
-          ],
-          related: {
-            selector: "button",
-          },
-        },
-      },
-      {
-        type: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
-        included: {
-          parent: {
-            selector: ".moz_ad",
-          },
-          children: [
-            {
-              selector: ".multi-col",
-              type: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
-            },
-          ],
-          related: {
-            selector: "button",
-          },
-        },
-        excluded: {
-          parent: {
-            selector: ".rhs",
-          },
-        },
-      },
-      {
-        type: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
-        included: {
-          parent: {
-            selector: "form",
-          },
-          children: [
-            {
-              
-              
-              
-              
-              selector: "textarea",
-            },
-            {
-              selector: "input",
-            },
-          ],
-          related: {
-            selector: "div",
-          },
-        },
-        topDown: true,
-      },
       {
         type: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
         default: true,
       },
     ],
-  },
-];
-
-
-
-const TEST_PROVIDER_INFO_NO_NON_ADS_REGEXP = [
-  {
-    ...TEST_PROVIDER_INFO[0],
-    nonAdsLinkRegexps: [],
   },
 ];
 
@@ -132,8 +62,6 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
   
-  let oldCanRecord = Services.telemetry.canRecordExtended;
-  Services.telemetry.canRecordExtended = true;
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.search.log", true],
@@ -143,268 +71,31 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
-    Services.telemetry.canRecordExtended = oldCanRecord;
     resetTelemetry();
   });
 });
 
-
-
-
-
-
-
-add_task(async function test_click_second_ad_in_component() {
+add_task(async function test_click_non_ads_link_redirected() {
   resetTelemetry();
+
   let url = getSERPUrl("searchTelemetryAd_components_text.html");
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
   await waitForPageWithAdImpressions();
 
-  let pageLoadPromise = BrowserTestUtils.waitForLocationChange(gBrowser);
+  let targetUrl = "https://example.com/hello_world";
+
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    true,
+    targetUrl
+  );
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#deep_ad_sitelink",
+    "#non_ads_link_redirected",
     {},
     tab.linkedBrowser
   );
-  await pageLoadPromise;
 
-  assertImpressionEvents([
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "unknown",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
-        },
-      ],
-    },
-  ]);
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-
-add_task(async function test_click_ads_link_modified() {
-  resetTelemetry();
-
-  let url = getSERPUrl("searchTelemetryAd_components_text.html");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await waitForPageWithAdImpressions();
-
-  let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    let target = content.document.getElementById("deep_ad_sitelink");
-    let href = target.getAttribute("href");
-    target.setAttribute("href", href + "?foo=bar");
-    content.document.getElementById("deep_ad_sitelink").click();
-  });
   await browserLoadedPromise;
-
-  assertImpressionEvents([
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "unknown",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.AD_SITELINK,
-        },
-      ],
-    },
-  ]);
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-add_task(async function test_click_and_submit_incontent_searchbox() {
-  resetTelemetry();
-  let url = getSERPUrl("searchTelemetryAd_searchbox.html");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await waitForPageWithAdImpressions();
-
-  
-  let pageLoadPromise = BrowserTestUtils.waitForLocationChange(gBrowser, url);
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "form input",
-    {},
-    tab.linkedBrowser
-  );
-  EventUtils.synthesizeKey("KEY_Enter");
-  await pageLoadPromise;
-
-  await TestUtils.waitForCondition(() => {
-    return Glean.serp.impression?.testGetValue()?.length == 2;
-  }, "Should have two impressions.");
-
-  assertImpressionEvents([
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "unknown",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
-        },
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.SUBMITTED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
-        },
-      ],
-    },
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "follow_on_from_refine_on_incontent_search",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-    },
-  ]);
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-
-
-
-add_task(async function test_click_autosuggest() {
-  resetTelemetry();
-  let url = getSERPUrl("searchTelemetryAd_searchbox.html");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await waitForPageWithAdImpressions();
-
-  
-  let pageLoadPromise = BrowserTestUtils.waitForLocationChange(gBrowser, url);
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#suggest",
-    {},
-    tab.linkedBrowser
-  );
-  await pageLoadPromise;
-
-  await TestUtils.waitForCondition(() => {
-    return Glean.serp.impression?.testGetValue()?.length == 2;
-  }, "Should have two impressions.");
-
-  assertImpressionEvents([
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "unknown",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.SUBMITTED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.INCONTENT_SEARCHBOX,
-        },
-      ],
-    },
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "follow_on_from_refine_on_incontent_search",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-    },
-  ]);
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-add_task(async function test_click_carousel_expand() {
-  resetTelemetry();
-  let url = getSERPUrl("searchTelemetryAd_components_carousel.html");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await waitForPageWithAdImpressions();
-
-  
-  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
-    content.document.querySelector("button").click();
-  });
-
-  assertImpressionEvents([
-    {
-      impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
-        source: "unknown",
-        is_shopping_page: "false",
-        shopping_tab_displayed: "false",
-      },
-      engagements: [
-        {
-          action: SearchSERPTelemetryUtils.ACTIONS.EXPANDED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.AD_CAROUSEL,
-        },
-      ],
-    },
-  ]);
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-
-
-
-
-
-
-add_task(async function test_click_link_with_special_characters_in_path() {
-  SearchSERPTelemetry.overrideSearchTelemetryForTests(
-    TEST_PROVIDER_INFO_NO_NON_ADS_REGEXP
-  );
-  await waitForIdle();
-
-  resetTelemetry();
-  let url = getSERPUrl("searchTelemetryAd_components_text.html");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-  await waitForPageWithAdImpressions();
-
-  let pageLoadPromise = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "https://example.com/path'?hello_world&foo=bar%27s"
-  );
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#non_ads_link_with_special_characters_in_path",
-    {},
-    tab.linkedBrowser
-  );
-  await pageLoadPromise;
 
   assertImpressionEvents([
     {
@@ -426,8 +117,230 @@ add_task(async function test_click_link_with_special_characters_in_path() {
   ]);
 
   BrowserTestUtils.removeTab(tab);
+});
 
-  
-  SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
-  await waitForIdle();
+
+
+add_task(async function test_click_non_ads_link_redirected_new_tab() {
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryAd_components_text.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  let redirectUrl =
+    getRootDirectory(gTestPath).replace(
+      "chrome://mochitests/content",
+      "https://example.org"
+    ) + "searchTelemetryAd_nonAdsLink_redirect.html";
+  let targetUrl = "https://example.com/hello_world";
+
+  let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, targetUrl, true);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [redirectUrl], urls => {
+    content.document
+      .getElementById(["non_ads_link"])
+      .addEventListener("click", e => {
+        e.preventDefault();
+        content.window.open([urls], "_blank");
+      });
+    content.document.getElementById("non_ads_link").click();
+  });
+  let tab2 = await tabPromise;
+
+  assertImpressionEvents([
+    {
+      impression: {
+        provider: "example",
+        tagged: "true",
+        partner_code: "ff",
+        source: "unknown",
+        is_shopping_page: "false",
+        shopping_tab_displayed: "false",
+      },
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab2);
+});
+
+
+
+add_task(async function test_click_non_ads_link_redirect_non_top_level() {
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryAd_components_text.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  let targetUrl = "https://example.com/hello_world";
+
+  let browserPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    true,
+    targetUrl
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#non_ads_link_redirected_no_top_level",
+    {},
+    tab.linkedBrowser
+  );
+
+  await browserPromise;
+
+  assertImpressionEvents([
+    {
+      impression: {
+        provider: "example",
+        tagged: "true",
+        partner_code: "ff",
+        source: "unknown",
+        is_shopping_page: "false",
+        shopping_tab_displayed: "false",
+      },
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_multiple_redirects_non_ad_link() {
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryAd_components_text.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  let targetUrl = "https://example.com/hello_world";
+
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    true,
+    targetUrl
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#non_ads_link_multiple_redirects",
+    {},
+    tab.linkedBrowser
+  );
+
+  await browserLoadedPromise;
+
+  assertImpressionEvents([
+    {
+      impression: {
+        provider: "example",
+        tagged: "true",
+        partner_code: "ff",
+        source: "unknown",
+        is_shopping_page: "false",
+        shopping_tab_displayed: "false",
+      },
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_click_ad_link_redirected() {
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryAd_components_text.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  let targetUrl = "https://example.com/hello_world";
+
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    true,
+    targetUrl
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#ad_link_redirect",
+    {},
+    tab.linkedBrowser
+  );
+
+  await browserLoadedPromise;
+
+  assertImpressionEvents([
+    {
+      impression: {
+        provider: "example",
+        tagged: "true",
+        partner_code: "ff",
+        source: "unknown",
+        is_shopping_page: "false",
+        shopping_tab_displayed: "false",
+      },
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_click_ad_link_redirected_new_tab() {
+  resetTelemetry();
+
+  let url = getSERPUrl("searchTelemetryAd_components_text.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await waitForPageWithAdImpressions();
+
+  let targetUrl = "https://example.com/hello_world";
+
+  let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, targetUrl, true);
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#ad_link_redirect",
+    { button: 1 },
+    tab.linkedBrowser
+  );
+  let tab2 = await tabPromise;
+
+  assertImpressionEvents([
+    {
+      impression: {
+        provider: "example",
+        tagged: "true",
+        partner_code: "ff",
+        source: "unknown",
+        is_shopping_page: "false",
+        shopping_tab_displayed: "false",
+      },
+      engagements: [
+        {
+          action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
+          target: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+        },
+      ],
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab2);
 });
