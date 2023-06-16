@@ -271,6 +271,9 @@ function getNotificationButton(win, notificationId, button) {
     `appMenu-${notificationId}-notification`
   );
   ok(!notification.hidden, `${notificationId} notification is showing`);
+  if (typeof button === "function") {
+    return button(notification);
+  }
   return notification[button];
 }
 
