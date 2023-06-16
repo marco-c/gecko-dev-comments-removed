@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewStartup"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,10 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
 });
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
 const { debug, warn } = GeckoViewUtils.initLogging("Startup");
 
 var { DelayedInit } = ChromeUtils.import(
@@ -29,7 +20,7 @@ var { DelayedInit } = ChromeUtils.import(
 );
 
 function InitLater(fn, object, name) {
-  return DelayedInit.schedule(fn, object, name, 15000 );
+  return DelayedInit.schedule(fn, object, name, 15000 /* 15s max wait */);
 }
 
 const JSPROCESSACTORS = {
@@ -124,8 +115,8 @@ const JSWINDOWACTORS = {
   },
 };
 
-class GeckoViewStartup {
-  
+export class GeckoViewStartup {
+  /* ----------  nsIObserver  ---------- */
   observe(aSubject, aTopic, aData) {
     debug`observe: ${aTopic}`;
     switch (aTopic) {
@@ -167,7 +158,7 @@ class GeckoViewStartup {
           }
         );
 
-        
+        // Parent process only
         if (
           Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT
         ) {
@@ -250,7 +241,7 @@ class GeckoViewStartup {
           "resource://gre/modules/NotificationDB.sys.mjs"
         );
 
-        
+        // Listen for global EventDispatcher messages
         lazy.EventDispatcher.instance.registerListener(this, [
           "GeckoView:ResetUserPrefs",
           "GeckoView:SetDefaultPrefs",
@@ -264,23 +255,23 @@ class GeckoViewStartup {
         break;
       }
       case "browser-idle-startup-tasks-finished": {
-        
-        
-        
+        // TODO bug 1730026: when an alternative is introduced that runs once,
+        // replace this observer topic with that alternative.
+        // This only needs to happen once during startup.
         Services.obs.removeObserver(this, aTopic);
-        
-        
+        // Notify the start up crash tracker that the browser has successfully
+        // started up so the startup cache isn't rebuilt on next startup.
         Services.startup.trackStartupCrashEnd();
         break;
       }
       case "handlersvc-store-initialized": {
-        
-        
-        
-        
-        
-        
-        
+        // Initialize PdfJs when running in-process and remote. This only
+        // happens once since PdfJs registers global hooks. If the PdfJs
+        // extension is installed the init method below will be overridden
+        // leaving initialization to the extension.
+        // parent only: configure default prefs, set up pref observers, register
+        // pdf content handler, and initializes parent side message manager
+        // shim for privileged api access.
         try {
           lazy.PdfJs.init(this._isNewProfile);
         } catch {}

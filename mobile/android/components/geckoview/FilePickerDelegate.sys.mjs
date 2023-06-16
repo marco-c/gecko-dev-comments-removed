@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["FilePickerDelegate"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,8 +13,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const { debug, warn } = GeckoViewUtils.initLogging("FilePickerDelegate");
 
-class FilePickerDelegate {
-  
+export class FilePickerDelegate {
+  /* ----------  nsIFilePicker  ---------- */
   init(aParent, aTitle, aMode) {
     if (
       aMode === Ci.nsIFilePicker.modeGetFolder ||
@@ -54,8 +49,8 @@ class FilePickerDelegate {
     this._msg.mimeTypes = this._mimeTypes;
     this._msg.capture = this._capture;
     this._prompt.asyncShowPrompt(this._msg, result => {
-      
-      
+      // OK: result
+      // Cancel: !result
       if (!result || !result.files || !result.files.length) {
         aFilePickerShownCallback.done(Ci.nsIFilePicker.returnCancel);
       } else {
@@ -114,7 +109,7 @@ class FilePickerDelegate {
   }
 
   get files() {
-    return this._getEnumerator( false);
+    return this._getEnumerator(/* aDOMFile */ false);
   }
 
   _getDOMFile(aPath) {
@@ -132,7 +127,7 @@ class FilePickerDelegate {
   }
 
   get domFileOrDirectoryEnumerator() {
-    return this._getEnumerator( true);
+    return this._getEnumerator(/* aDOMFile */ true);
   }
 
   get defaultString() {

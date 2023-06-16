@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PromptFactory"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPrompt");
 
-class PromptFactory {
+export class PromptFactory {
   constructor() {
     this.wrappedJSObject = this;
   }
@@ -27,7 +22,7 @@ class PromptFactory {
     switch (aEvent.type) {
       case "mozshowdropdown":
       case "mozshowdropdown-sourcetouch":
-        this._handleSelect(aEvent.composedTarget,  true);
+        this._handleSelect(aEvent.composedTarget, /* aIsDropDown = */ true);
         break;
       case "MozOpenDateTimePicker":
         this._handleDateTime(aEvent.composedTarget);
@@ -54,26 +49,26 @@ class PromptFactory {
       target.readOnly ||
       !target.willValidate
     ) {
-      
-      
+      // target.willValidate is false when any associated fieldset is disabled,
+      // in which case this element is treated as disabled per spec.
       return;
     }
 
     if (className === "HTMLSelectElement") {
       if (!target.isCombobox) {
-        this._handleSelect(target,  false);
+        this._handleSelect(target, /* aIsDropDown = */ false);
         return;
       }
-      
+      // combobox select is handled by mozshowdropdown.
       return;
     }
 
     const type = target.type;
     if (type === "month" || type === "week") {
-      
-      
-      
-      
+      // If there's a shadow root, the MozOpenDateTimePicker event takes care
+      // of this. Right now for these input types there's never a shadow root.
+      // Once we support UA widgets for month/week inputs (see bug 888320), we
+      // can remove this.
       if (!target.openOrClosedShadowRoot) {
         this._handleDateTime(target);
         aEvent.preventDefault();
@@ -126,9 +121,9 @@ class PromptFactory {
 
     const prompt = new lazy.GeckoViewPrompter(win);
 
-    
+    // Something changed the <select> while it was open.
     const deferredUpdate = new lazy.DeferredTask(() => {
-      
+      // Inner contents in choice prompt are updated.
       const [newItems] = this._generateSelectItems(aElement);
       prompt.update({
         type: "choice",
@@ -178,8 +173,8 @@ class PromptFactory {
         if (aIsDropDown) {
           aElement.openInParentProcess = false;
         }
-        
-        
+        // OK: result
+        // Cancel: !result
         if (!result || result.choices === undefined) {
           return;
         }
@@ -202,7 +197,7 @@ class PromptFactory {
               win.HTMLOptionElement.isInstance(elem) &&
               elem.selected !== index >= 0
             ) {
-              
+              // Current selected is not the same as the new selected state.
               dispatchEvents = true;
               elem.selected = !elem.selected;
             }
@@ -231,7 +226,7 @@ class PromptFactory {
 
     const chromeEventHandler = aElement.ownerGlobal.docShell.chromeEventHandler;
     const dismissPrompt = () => prompt.dismiss();
-    
+    // Some controls don't have UA widget (bug 888320)
     {
       const dateTimeBoxElement = aElement.dateTimeBoxElement;
       if (["month", "week"].includes(aElement.type) && !dateTimeBoxElement) {
@@ -260,7 +255,7 @@ class PromptFactory {
         step: aElement.step,
       },
       result => {
-        
+        // Some controls don't have UA widget (bug 888320)
         const dateTimeBoxElement = aElement.dateTimeBoxElement;
         if (["month", "week"].includes(aElement.type) && !dateTimeBoxElement) {
           aElement.removeEventListener("blur", dismissPrompt, {
@@ -276,8 +271,8 @@ class PromptFactory {
           );
         }
 
-        
-        
+        // OK: result
+        // Cancel: !result
         if (
           !result ||
           result.datetime === undefined ||
@@ -292,8 +287,8 @@ class PromptFactory {
   }
 
   _dispatchEvents(aElement) {
-    
-    
+    // Fire both "input" and "change" events for <select> and <input> for
+    // date/time.
     aElement.dispatchEvent(
       new aElement.ownerGlobal.Event("input", { bubbles: true, composed: true })
     );
@@ -326,9 +321,9 @@ class PromptFactory {
     );
   }
 
-  
+  /* ----------  nsIPromptFactory  ---------- */
   getPrompt(aDOMWin, aIID) {
-    
+    // Delegated to login manager here, which in turn calls back into us via nsIPromptService.
     if (aIID.equals(Ci.nsIAuthPrompt2) || aIID.equals(Ci.nsIAuthPrompt)) {
       try {
         const pwmgr = Cc[
@@ -345,22 +340,22 @@ class PromptFactory {
     return p;
   }
 
-  
+  /* ----------  private memebers  ---------- */
 
-  
+  // nsIPromptService methods proxy to our Prompt class
   callProxy(aMethod, aArguments) {
     const prompt = new PromptDelegate(aArguments[0]);
     let promptArgs;
     if (BrowsingContext.isInstance(aArguments[0])) {
-      
-      [, ,   ...promptArgs] = aArguments;
+      // Called by BrowsingContext prompt method, strip modalType.
+      [, , /*browsingContext*/ /*modalType*/ ...promptArgs] = aArguments;
     } else {
-      [,  ...promptArgs] = aArguments;
+      [, /*domWindow*/ ...promptArgs] = aArguments;
     }
     return prompt[aMethod].apply(prompt, promptArgs);
   }
 
-  
+  /* ----------  nsIPromptService  ---------- */
 
   alert() {
     return this.callProxy("alert", arguments);
@@ -444,7 +439,7 @@ class PromptDelegate {
   BUTTON_TYPE_NEUTRAL = 1;
   BUTTON_TYPE_NEGATIVE = 2;
 
-  
+  /* ---------- internal methods ---------- */
 
   _addText(aTitle, aText, aMsg) {
     return Object.assign(aMsg, {
@@ -461,7 +456,7 @@ class PromptDelegate {
     });
   }
 
-  
+  /* ----------  nsIPrompt  ---------- */
 
   alert(aTitle, aText) {
     this.alertCheck(aTitle, aText);
@@ -483,20 +478,20 @@ class PromptDelegate {
   }
 
   confirm(aTitle, aText) {
-    
+    // Button 0 is OK.
     return this.confirmCheck(aTitle, aText);
   }
 
   confirmCheck(aTitle, aText, aCheckMsg, aCheckState) {
-    
+    // Button 0 is OK.
     return (
       this.confirmEx(
         aTitle,
         aText,
         Ci.nsIPrompt.STD_OK_CANCEL_BUTTONS,
-         null,
-         null,
-         null,
+        /* aButton0 */ null,
+        /* aButton1 */ null,
+        /* aButton2 */ null,
         aCheckMsg,
         aCheckState
       ) == 0
@@ -537,19 +532,19 @@ class PromptDelegate {
           btnTitle[this.BUTTON_TYPE_NEGATIVE] = "no";
           break;
         case Ci.nsIPrompt.BUTTON_TITLE_IS_STRING:
-          
+          // We don't know if this is positive/negative/neutral, so save for later.
           savedButtonId.push(i);
           break;
         case Ci.nsIPrompt.BUTTON_TITLE_SAVE:
         case Ci.nsIPrompt.BUTTON_TITLE_DONT_SAVE:
         case Ci.nsIPrompt.BUTTON_TITLE_REVERT:
-        
+        // Not supported; fall-through.
         default:
           break;
       }
     }
 
-    
+    // Put saved buttons into available slots.
     for (let i = 0; i < 3 && savedButtonId.length; i++) {
       if (btnMap[i] === null) {
         btnMap[i] = savedButtonId.shift();
@@ -586,9 +581,9 @@ class PromptDelegate {
         })
       )
     );
-    
-    
-    
+    // OK: result && result.text !== undefined
+    // Cancel: result && result.text === undefined
+    // Error: !result
     if (result && aCheckState) {
       aCheckState.value = !!result.checkValue;
     }
@@ -603,7 +598,7 @@ class PromptDelegate {
     return this._promptUsernameAndPassword(
       aTitle,
       aText,
-       undefined,
+      /* aUsername */ undefined,
       aPassword
     );
   }
@@ -619,9 +614,9 @@ class PromptDelegate {
       },
     };
     const result = this._prompter.showPrompt(this._addText(aTitle, aText, msg));
-    
-    
-    
+    // OK: result && result.password !== undefined
+    // Cancel: result && result.password === undefined
+    // Error: !result
     if (!result || result.password === undefined) {
       return false;
     }
@@ -646,8 +641,8 @@ class PromptDelegate {
         choices,
       })
     );
-    
-    
+    // OK: result
+    // Cancel: !result
     if (!result || result.choices === undefined) {
       return false;
     }
@@ -666,7 +661,7 @@ class PromptDelegate {
       username = aAuthInfo.username;
     }
     return this._addText(
-       null,
+      /* title */ null,
       this._getAuthText(aChannel, aAuthInfo),
       {
         type: "auth",
@@ -697,7 +692,7 @@ class PromptDelegate {
 
     const username = aResult.username || "";
     if (aAuthInfo.flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
-      
+      // Domain is separated from username by a backslash
       var idx = username.indexOf("\\");
       if (idx >= 0) {
         aAuthInfo.domain = username.substring(0, idx);
@@ -713,9 +708,9 @@ class PromptDelegate {
     const result = this._prompter.showPrompt(
       this._getAuthMsg(aChannel, aLevel, aAuthInfo)
     );
-    
-    
-    
+    // OK: result && result.password !== undefined
+    // Cancel: result && result.password === undefined
+    // Error: !result
     return this._fillAuthInfo(aAuthInfo, result);
   }
 
@@ -723,9 +718,9 @@ class PromptDelegate {
     const result = await this._prompter.asyncShowPromptPromise(
       this._getAuthMsg(aChannel, aLevel, aAuthInfo)
     );
-    
-    
-    
+    // OK: result && result.password !== undefined
+    // Cancel: result && result.password === undefined
+    // Error: !result
     return this._fillAuthInfo(aAuthInfo, result);
   }
 
@@ -740,12 +735,12 @@ class PromptDelegate {
     const { displayHost } = authTarget;
     let { realm } = authTarget;
 
-    
+    // Suppress "the site says: $realm" when we synthesized a missing realm.
     if (!aAuthInfo.realm && !isProxy) {
       realm = "";
     }
 
-    
+    // Trim obnoxiously long realms.
     if (realm.length > 50) {
       realm = realm.substring(0, 50) + "\u2026";
     }
@@ -783,8 +778,8 @@ class PromptDelegate {
   }
 
   _getAuthTarget(aChannel, aAuthInfo) {
-    
-    
+    // If our proxy is demanding authentication, don't use the
+    // channel's actual destination.
     if (aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY) {
       if (!(aChannel instanceof Ci.nsIProxiedChannel)) {
         throw new Error("proxy auth needs nsIProxiedChannel");
@@ -793,8 +788,8 @@ class PromptDelegate {
       if (!info) {
         throw new Error("proxy auth needs nsIProxyInfo");
       }
-      
-      
+      // Proxies don't have a scheme, but we'll use "moz-proxy://"
+      // so that it's more obvious what the login is for.
       const idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
         Ci.nsIIDNService
       );
@@ -812,9 +807,9 @@ class PromptDelegate {
 
     const displayHost =
       aChannel.URI.scheme + "://" + aChannel.URI.displayHostPort;
-    
-    
-    
+    // If a HTTP WWW-Authenticate header specified a realm, that value
+    // will be available here. If it wasn't set or wasn't HTTP, we'll use
+    // the formatted hostname instead.
     let realm = aAuthInfo.realm;
     if (!realm) {
       realm = displayHost;

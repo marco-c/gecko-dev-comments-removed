@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["LoginStorageDelegate"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -26,14 +18,14 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 const { debug, warn } = GeckoViewUtils.initLogging("LoginStorageDelegate");
 
-
+// Sync with  LoginSaveOption.Hint in Autocomplete.java.
 const LoginStorageHint = {
   NONE: 0,
   GENERATED: 1 << 0,
   LOW_CONFIDENCE: 1 << 1,
 };
 
-class LoginStorageDelegate {
+export class LoginStorageDelegate {
   _createMessage({ dismissed, autoSavedLoginGuid }, aLogins) {
     let hint = LoginStorageHint.NONE;
     if (dismissed) {
@@ -43,7 +35,7 @@ class LoginStorageDelegate {
       hint |= LoginStorageHint.GENERATED;
     }
     return {
-      
+      // Sync with PromptController
       type: "Autocomplete:Save:Login",
       hint,
       logins: aLogins,
@@ -126,7 +118,7 @@ class LoginStorageDelegate {
   }
 
   promptToChangePasswordWithUsernames(aBrowser, aLogins, aNewLogin) {
-    this.promptToChangePassword(aBrowser, null , aNewLogin);
+    this.promptToChangePassword(aBrowser, null /* oldLogin */, aNewLogin);
   }
 }
 
