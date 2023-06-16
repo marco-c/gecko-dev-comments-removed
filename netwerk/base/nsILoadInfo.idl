@@ -1337,9 +1337,6 @@ interface nsILoadInfo : nsISupports
   attribute AString cspNonce;
 
   
-  attribute AString integrityMetadata;
-
-  
 
 
 

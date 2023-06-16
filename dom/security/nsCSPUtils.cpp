@@ -21,15 +21,11 @@
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
 #include "nsServiceManagerUtils.h"
-#include "nsWhitespaceTokenizer.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/dom/CSPDictionariesBinding.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/StaticPrefs_security.h"
-
-using mozilla::dom::SRIMetadata;
 
 #define DEFAULT_PORT -1
 
@@ -1080,149 +1076,12 @@ nsCSPDirective::~nsCSPDirective() {
   }
 }
 
-
-
-
-static bool IsScriptLikeWithIntegrity(nsContentPolicyType aType) {
-  switch (aType) {
-    case nsIContentPolicy::TYPE_SCRIPT:
-    case nsIContentPolicy::TYPE_INTERNAL_SCRIPT:
-    case nsIContentPolicy::TYPE_INTERNAL_SCRIPT_PRELOAD:
-    case nsIContentPolicy::TYPE_INTERNAL_MODULE:
-    case nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD:
-      return true;
-    default:
-      return false;
-  }
-}
-
-
-
-
-
-static nsTArray<SRIMetadata> ParseSRIMetadata(const nsAString& aMetadata) {
-  
-  
-  nsTArray<SRIMetadata> result;
-
-  NS_ConvertUTF16toUTF8 metadataList(aMetadata);
-  nsAutoCString token;
-
-  
-  nsCWhitespaceTokenizer tokenizer(metadataList);
-  while (tokenizer.hasMoreTokens()) {
-    token = tokenizer.nextToken();
-    
-    
-    SRIMetadata metadata(token);
-    
-    
-    if (metadata.IsMalformed()) {
-      continue;
-    }
-
-    
-    
-    
-    
-    if (metadata.IsAlgorithmSupported()) {
-      result.AppendElement(metadata);
-    }
-  }
-
-  
-  return result;
-}
-
-bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
-                             nsIURI* aUri, const nsAString& aNonce,
+bool nsCSPDirective::permits(nsIURI* aUri, const nsAString& aNonce,
                              bool aWasRedirected, bool aReportOnly,
                              bool aUpgradeInsecure, bool aParserCreated) const {
-  MOZ_ASSERT(equals(aDirective) || isDefaultDirective());
-
   if (CSPUTILSLOGENABLED()) {
     CSPUTILSLOG(
         ("nsCSPDirective::permits, aUri: %s", aUri->GetSpecOrDefault().get()));
-  }
-
-  
-  if (aLoadInfo) {
-    
-    if (IsScriptLikeWithIntegrity(aLoadInfo->InternalContentPolicyType())) {
-      MOZ_ASSERT(aDirective == CSPDirective::SCRIPT_SRC_ELEM_DIRECTIVE);
-
-      
-      
-      nsTArray<nsCSPHashSrc*> integrityExpressions;
-      for (uint32_t i = 0; i < mSrcs.Length(); i++) {
-        if (mSrcs[i]->isHash()) {
-          integrityExpressions.AppendElement(
-              static_cast<nsCSPHashSrc*>(mSrcs[i]));
-        }
-      }
-
-      
-      if (!integrityExpressions.IsEmpty()) {
-        
-        
-        
-        nsAutoString integrityMetadata;
-        aLoadInfo->GetIntegrityMetadata(integrityMetadata);
-        nsTArray<SRIMetadata> integritySources =
-            ParseSRIMetadata(integrityMetadata);
-
-        
-        
-        if (!integritySources.IsEmpty()) {
-          
-          bool bypass = true;
-
-          nsAutoCString sourceAlgorithmUTF8;
-          nsAutoCString sourceHashUTF8;
-          nsAutoString sourceAlgorithm;
-          nsAutoString sourceHash;
-          nsAutoString algorithm;
-          nsAutoString hash;
-
-          
-          for (const SRIMetadata& source : integritySources) {
-            source.GetAlgorithm(&sourceAlgorithmUTF8);
-            sourceAlgorithm = NS_ConvertUTF8toUTF16(sourceAlgorithmUTF8);
-            source.GetHash(0, &sourceHashUTF8);
-            sourceHash = NS_ConvertUTF8toUTF16(sourceHashUTF8);
-
-            
-            
-            
-            
-            
-            bool found = false;
-            for (const nsCSPHashSrc* hashSrc : integrityExpressions) {
-              hashSrc->getAlgorithm(algorithm);
-              hashSrc->getHash(hash);
-
-              
-              
-              if (sourceAlgorithm == algorithm && sourceHash == hash) {
-                found = true;
-                break;
-              }
-            }
-
-            if (!found) {
-              bypass = false;
-              break;
-            }
-          }
-
-          
-          
-          if (bypass) {
-            return true;
-          }
-        }
-      }
-    }
   }
 
   for (uint32_t i = 0; i < mSrcs.Length(); i++) {
@@ -1540,8 +1399,9 @@ nsCSPPolicy::~nsCSPPolicy() {
   }
 }
 
-bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
-                          nsIURI* aUri, bool aWasRedirected, bool aSpecific,
+bool nsCSPPolicy::permits(CSPDirective aDir, nsIURI* aUri,
+                          const nsAString& aNonce, bool aWasRedirected,
+                          bool aSpecific, bool aParserCreated,
                           nsAString& outViolatedDirective) const {
   if (CSPUTILSLOGENABLED()) {
     CSPUTILSLOG(("nsCSPPolicy::permits, aUri: %s, aDir: %d, aSpecific: %s",
@@ -1552,13 +1412,6 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
   NS_ASSERTION(aUri, "permits needs an uri to perform the check!");
   outViolatedDirective.Truncate();
 
-  bool parserCreated = false;
-  nsAutoString nonce;
-  if (aLoadInfo) {
-    parserCreated = aLoadInfo->GetParserCreatedScript();
-    MOZ_ALWAYS_SUCCEEDS(aLoadInfo->GetCspNonce(nonce));
-  }
-
   nsCSPDirective* defaultDir = nullptr;
 
   
@@ -1566,9 +1419,8 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
   
   for (uint32_t i = 0; i < mDirectives.Length(); i++) {
     if (mDirectives[i]->equals(aDir)) {
-      if (!mDirectives[i]->permits(aDir, aLoadInfo, aUri, nonce, aWasRedirected,
-                                   mReportOnly, mUpgradeInsecDir,
-                                   parserCreated)) {
+      if (!mDirectives[i]->permits(aUri, aNonce, aWasRedirected, mReportOnly,
+                                   mUpgradeInsecDir, aParserCreated)) {
         mDirectives[i]->getDirName(outViolatedDirective);
         return false;
       }
@@ -1582,8 +1434,8 @@ bool nsCSPPolicy::permits(CSPDirective aDir, nsILoadInfo* aLoadInfo,
   
   
   if (!aSpecific && defaultDir) {
-    if (!defaultDir->permits(aDir, aLoadInfo, aUri, nonce, aWasRedirected,
-                             mReportOnly, mUpgradeInsecDir, parserCreated)) {
+    if (!defaultDir->permits(aUri, aNonce, aWasRedirected, mReportOnly,
+                             mUpgradeInsecDir, aParserCreated)) {
       defaultDir->getDirName(outViolatedDirective);
       return false;
     }
@@ -1670,9 +1522,8 @@ bool nsCSPPolicy::allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
         return true;
       }
       
-      if (!mDirectives[i]->permits(
-              nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE, nullptr, aURI,
-              u""_ns, aWasRedirected, false, false, false)) {
+      if (!mDirectives[i]->permits(aURI, u""_ns, aWasRedirected, false, false,
+                                   false)) {
         allowsNavigateTo = false;
       }
     }

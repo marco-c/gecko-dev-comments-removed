@@ -915,8 +915,9 @@ function isFrameBlockedByCSP(node) {
   const res = node.ownerDocument.csp.shouldLoad(
     Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
     null, 
-    null, 
     uri,
+    null, 
+    false, 
     null, 
     false 
   );

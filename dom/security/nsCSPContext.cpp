@@ -130,9 +130,10 @@ static void BlockedContentSourceToString(
 NS_IMETHODIMP
 nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                          nsICSPEventListener* aCSPEventListener,
-                         nsILoadInfo* aLoadInfo, nsIURI* aContentLocation,
+                         nsIURI* aContentLocation,
                          nsIURI* aOriginalURIIfRedirect,
-                         bool aSendViolationReports, int16_t* outDecision) {
+                         bool aSendViolationReports, const nsAString& aNonce,
+                         bool aParserCreated, int16_t* outDecision) {
   if (CSPCONTEXTLOGENABLED()) {
     CSPCONTEXTLOG(("nsCSPContext::ShouldLoad, aContentLocation: %s",
                    aContentLocation->GetSpecOrDefault().get()));
@@ -161,10 +162,11 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   bool permitted = permitsInternal(
       dir,
       nullptr,  
-      aCSPEventListener, aLoadInfo, aContentLocation, aOriginalURIIfRedirect,
+      aCSPEventListener, aContentLocation, aOriginalURIIfRedirect, aNonce,
       false,  
       aSendViolationReports,
-      true);  
+      true,  
+      aParserCreated);
 
   *outDecision =
       permitted ? nsIContentPolicy::ACCEPT : nsIContentPolicy::REJECT_SERVER;
@@ -181,17 +183,18 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
 
 bool nsCSPContext::permitsInternal(
     CSPDirective aDir, Element* aTriggeringElement,
-    nsICSPEventListener* aCSPEventListener, nsILoadInfo* aLoadInfo,
-    nsIURI* aContentLocation, nsIURI* aOriginalURIIfRedirect, bool aSpecific,
-    bool aSendViolationReports, bool aSendContentLocationInViolationReports) {
+    nsICSPEventListener* aCSPEventListener, nsIURI* aContentLocation,
+    nsIURI* aOriginalURIIfRedirect, const nsAString& aNonce, bool aSpecific,
+    bool aSendViolationReports, bool aSendContentLocationInViolationReports,
+    bool aParserCreated) {
   EnsureIPCPoliciesRead();
   bool permits = true;
 
   nsAutoString violatedDirective;
   for (uint32_t p = 0; p < mPolicies.Length(); p++) {
-    if (!mPolicies[p]->permits(aDir, aLoadInfo, aContentLocation,
+    if (!mPolicies[p]->permits(aDir, aContentLocation, aNonce,
                                !!aOriginalURIIfRedirect, aSpecific,
-                               violatedDirective)) {
+                               aParserCreated, violatedDirective)) {
       
       
       if (!mPolicies[p]->getReportOnlyFlag()) {
@@ -1687,12 +1690,13 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
         permitsInternal(nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE,
                         nullptr,  
                         nullptr,  
-                        nullptr,  
                         ancestorsArray[a],
                         nullptr,  
+                        u""_ns,   
                         true,     
                         true,     
-                        okToSendAncestor);
+                        okToSendAncestor,
+                        false);  
     if (!permits) {
       *outPermitsAncestry = false;
     }
@@ -1722,12 +1726,13 @@ nsCSPContext::Permits(Element* aTriggeringElement,
     }
   }
 
-  *outPermits = permitsInternal(aDir, aTriggeringElement, aCSPEventListener,
-                                nullptr,  
-                                aURI,
-                                nullptr,  
-                                aSpecific, aSendViolationReports,
-                                true);  
+  *outPermits =
+      permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
+                      nullptr,  
+                      u""_ns,   
+                      aSpecific, aSendViolationReports,
+                      true,    
+                      false);  
 
   if (CSPCONTEXTLOGENABLED()) {
     CSPCONTEXTLOG(("nsCSPContext::Permits, aUri: %s, aDir: %s, isAllowed: %s",
