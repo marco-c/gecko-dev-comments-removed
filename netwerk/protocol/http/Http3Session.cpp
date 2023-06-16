@@ -230,11 +230,18 @@ void Http3Session::Shutdown() {
 
   bool isEchRetry = mError == mozilla::psm::GetXPCOMFromNSSError(
                                   SSL_ERROR_ECH_RETRY_WITH_ECH);
+  bool allowToRetryWithDifferentIPFamily =
+      mBeforeConnectedError &&
+      gHttpHandler->ConnMgr()->AllowToRetryDifferentIPFamilyForHttp3(mConnInfo,
+                                                                     mError);
+  LOG(("Http3Session::Shutdown %p allowToRetryWithDifferentIPFamily=%d", this,
+       allowToRetryWithDifferentIPFamily));
   if ((mBeforeConnectedError ||
        (mError == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR)) &&
       (mError !=
        mozilla::psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_CERT_DOMAIN)) &&
-      !isEchRetry && !mConnInfo->GetWebTransport()) {
+      !isEchRetry && !mConnInfo->GetWebTransport() &&
+      !allowToRetryWithDifferentIPFamily && !mDontExclude) {
     gHttpHandler->ExcludeHttp3(mConnInfo);
   }
 
@@ -249,7 +256,28 @@ void Http3Session::Shutdown() {
         
         stream->Close(mError);
       } else {
-        stream->Close(NS_ERROR_NET_RESET);
+        if (allowToRetryWithDifferentIPFamily && mNetAddr) {
+          NetAddr addr;
+          mNetAddr->GetNetAddr(&addr);
+          gHttpHandler->ConnMgr()->SetRetryDifferentIPFamilyForHttp3(
+              mConnInfo, addr.raw.family);
+          nsHttpTransaction* trans =
+              stream->Transaction()->QueryHttpTransaction();
+          if (trans) {
+            
+            
+            trans->RemoveConnection();
+            Unused << gHttpHandler->InitiateTransaction(trans,
+                                                        trans->Priority());
+          } else {
+            stream->Close(NS_ERROR_NET_RESET);
+          }
+          
+          
+          mDontExclude = true;
+        } else {
+          stream->Close(NS_ERROR_NET_RESET);
+        }
       }
     } else if (!stream->HasStreamId()) {
       if (NS_SUCCEEDED(mError)) {
