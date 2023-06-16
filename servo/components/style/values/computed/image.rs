@@ -80,17 +80,21 @@ impl ToComputedValue for specified::ImageSet {
 
         let mut supported_image = false;
         let mut selected_index = std::usize::MAX;
-        let mut selected_resolution = items[0].resolution.dppx();
+        let mut selected_resolution = 0.0;
 
         for (i, item) in items.iter().enumerate() {
-            
             if item.has_mime_type && !context.device().is_supported_mime_type(&item.mime_type) {
+                
                 continue;
             }
 
             let candidate_resolution = item.resolution.dppx();
+            debug_assert!(candidate_resolution >= 0.0, "Resolutions should be non-negative");
+            if candidate_resolution == 0.0 {
+                
+                continue;
+            }
 
-            
             
             
             
