@@ -76,7 +76,8 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
     } else {
       
       
-      scale = aTransform2d.ScaleFactors();
+      scale = (aTransform2d * gfx::Matrix::Scaling(aXScale, aYScale))
+                  .ScaleFactors();
       
       
       
@@ -152,7 +153,7 @@ StackingContextHelper::StackingContextHelper(
       nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
       mScale = ChooseScale(aContainerFrame, aContainerItem, r,
                            aParentSC.mScale.xScale, aParentSC.mScale.yScale,
-                           mInheritedTransform,
+                           transform2d,
                             true);
     } else {
       mScale = gfx::MatrixScales(1.0f, 1.0f);
