@@ -948,6 +948,12 @@ static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     }
     ++i;
     NEED_NDIGITS(6, year);
+
+    
+    
+    if (year == 0 && dateMul == -1) {
+      return false;
+    }
   } else {
     NEED_NDIGITS(4, year);
   }
