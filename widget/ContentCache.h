@@ -458,6 +458,15 @@ class ContentCacheInParent final : public ContentCache {
   void MaybeNotifyIME(nsIWidget* aWidget, const IMENotification& aNotification);
 
  private:
+  
+  
+  
+  
+  [[nodiscard]] bool WidgetHasComposition() const {
+    return !mHandlingCompositions.IsEmpty() &&
+           !mHandlingCompositions.LastElement().mSentCommitEvent;
+  }
+
   IMENotification mPendingSelectionChange;
   IMENotification mPendingTextChange;
   IMENotification mPendingLayoutChange;
@@ -506,6 +515,15 @@ class ContentCacheInParent final : public ContentCache {
 #endif  
 
   
+  
+  struct HandlingCompositionData {
+    
+    
+    bool mSentCommitEvent = false;
+  };
+  AutoTArray<HandlingCompositionData, 2> mHandlingCompositions;
+
+  
   dom::BrowserParent& MOZ_NON_OWNING_REF mBrowserParent;
   
   
@@ -530,14 +548,7 @@ class ContentCacheInParent final : public ContentCache {
   uint32_t mPendingCommitLength;
   
   
-  uint8_t mPendingCompositionCount;
-  
-  
   uint8_t mPendingCommitCount;
-  
-  
-  
-  bool mWidgetHasComposition;
   
   
   
