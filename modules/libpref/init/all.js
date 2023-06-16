@@ -1978,9 +1978,6 @@ pref("mousewheel.with_win.delta_multiplier_y", 100);
 pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
-pref("profile.manage_only_at_launch", false);
-
-
 
 
 
