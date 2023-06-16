@@ -355,6 +355,10 @@ int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+
+    bool force = (argc > 3) && ((0 == wcscmp(argv[3], L"--force")) ||
+                                (0 == wcscmp(argv[3], L"-force")));
+
     
     
     
@@ -376,7 +380,7 @@ int wmain(int argc, wchar_t** argv) {
     
     
     bool ranRecently = false;
-    if (!CheckIfAppRanRecently(&ranRecently) || !ranRecently) {
+    if (!force && (!CheckIfAppRanRecently(&ranRecently) || !ranRecently)) {
       return SCHED_E_TASK_ATTEMPTED;
     }
 
@@ -399,7 +403,7 @@ int wmain(int argc, wchar_t** argv) {
     DefaultPdfInfo pdfInfo = defaultPdfResult.unwrap();
 
     NotificationActivities activitiesPerformed =
-        MaybeShowNotification(browserInfo, argv[2]);
+        MaybeShowNotification(browserInfo, argv[2], force);
 
     return SendDefaultBrowserPing(browserInfo, pdfInfo, activitiesPerformed);
   } else if (!wcscmp(argv[1], L"set-default-browser-user-choice")) {

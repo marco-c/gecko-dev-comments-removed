@@ -544,7 +544,7 @@ bool FirefoxInstallIsEnglish() { return false; }
 
 
 NotificationActivities MaybeShowNotification(
-    const DefaultBrowserInfo& browserInfo, const wchar_t* aumi) {
+    const DefaultBrowserInfo& browserInfo, const wchar_t* aumi, bool force) {
   
   
   NotificationActivities activitiesPerformed = {NotificationType::Initial,
@@ -564,9 +564,10 @@ NotificationActivities MaybeShowNotification(
   }
 
   bool initialNotificationShown = GetInitialNotificationShown();
-  if (!initialNotificationShown) {
-    if (browserInfo.currentDefaultBrowser == Browser::EdgeWithBlink &&
-        browserInfo.previousDefaultBrowser == Browser::Firefox) {
+  if (!initialNotificationShown || force) {
+    if ((browserInfo.currentDefaultBrowser == Browser::EdgeWithBlink &&
+         browserInfo.previousDefaultBrowser == Browser::Firefox) ||
+        force) {
       return ShowNotification(NotificationType::Initial, aumi);
     }
     return activitiesPerformed;
