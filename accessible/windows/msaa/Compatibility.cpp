@@ -13,7 +13,6 @@
 #include "nsIXULRuntime.h"
 #include "nsPrintfCString.h"
 #include "nsUnicharUtils.h"
-#include "nsWindowsDllInterceptor.h"
 #include "nsWinUtils.h"
 #include "Statistics.h"
 #include "AccessibleWrap.h"
@@ -46,89 +45,6 @@ bool Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
 
 
 
-
-static WindowsDllInterceptor sUser32Interceptor;
-static WindowsDllInterceptor::FuncHookType<decltype(&InSendMessageEx)>
-    sInSendMessageExStub;
-static bool sInSendMessageExHackEnabled = false;
-static PVOID sVectoredExceptionHandler = nullptr;
-
-#if defined(_MSC_VER)
-#  include <intrin.h>
-#  pragma intrinsic(_ReturnAddress)
-#  define RETURN_ADDRESS() _ReturnAddress()
-#elif defined(__GNUC__) || defined(__clang__)
-#  define RETURN_ADDRESS() \
-    __builtin_extract_return_addr(__builtin_return_address(0))
-#endif
-
-static inline bool IsCurrentThreadInBlockingMessageSend(
-    const DWORD aStateBits) {
-  
-  return (aStateBits & (ISMEX_REPLIED | ISMEX_SEND)) == ISMEX_SEND;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-static DWORD WINAPI InSendMessageExHook(LPVOID lpReserved) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  DWORD result = sInSendMessageExStub(lpReserved);
-  if (NS_IsMainThread() && sInSendMessageExHackEnabled &&
-      IsCurrentThreadInBlockingMessageSend(result)) {
-    
-    
-    
-    static const HMODULE comModule = []() -> HMODULE {
-      HMODULE module = LoadLibraryW(L"combase.dll");
-      if (!module) {
-        
-        module = LoadLibraryW(L"ole32.dll");
-      }
-
-      return module;
-    }();
-
-    MOZ_ASSERT(comModule);
-    if (!comModule) {
-      return result;
-    }
-
-    
-    HMODULE callingModule;
-    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                              GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                          reinterpret_cast<LPCWSTR>(RETURN_ADDRESS()),
-                          &callingModule) &&
-        callingModule == comModule) {
-      result = ISMEX_NOTIFY;
-    }
-  }
-  return result;
-}
-
-static LONG CALLBACK
-DetectInSendMessageExCompat(PEXCEPTION_POINTERS aExceptionInfo) {
-  DWORD exceptionCode = aExceptionInfo->ExceptionRecord->ExceptionCode;
-  if (exceptionCode == static_cast<DWORD>(RPC_E_CANTCALLOUT_ININPUTSYNCCALL) &&
-      NS_IsMainThread()) {
-    sInSendMessageExHackEnabled = true;
-    
-    if (RemoveVectoredExceptionHandler(sVectoredExceptionHandler)) {
-      sVectoredExceptionHandler = nullptr;
-    }
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
 
 uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
 
@@ -205,26 +121,6 @@ void Compatibility::Init() {
     
     if (!Preferences::HasUserValue("browser.ctrlTab.disallowForScreenReaders"))
       Preferences::SetBool("browser.ctrlTab.disallowForScreenReaders", true);
-  }
-
-  
-  
-  
-  if ((sConsumers & (~(UIAUTOMATION | NVDA))) && BrowserTabsRemoteAutostart()) {
-    sUser32Interceptor.Init("user32.dll");
-    sInSendMessageExStub.Set(sUser32Interceptor, "InSendMessageEx",
-                             &InSendMessageExHook);
-
-    
-    
-    if (!sVectoredExceptionHandler) {
-      
-      
-      
-      const ULONG firstHandler = FALSE;
-      sVectoredExceptionHandler = AddVectoredExceptionHandler(
-          firstHandler, &DetectInSendMessageExCompat);
-    }
   }
 }
 
