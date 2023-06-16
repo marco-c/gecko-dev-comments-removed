@@ -7,8 +7,8 @@
 #ifndef mozilla_a11y_XULTreeGridAccessible_h__
 #define mozilla_a11y_XULTreeGridAccessible_h__
 
-#include "mozilla/a11y/TableAccessibleBase.h"
-#include "mozilla/a11y/TableCellAccessibleBase.h"
+#include "mozilla/a11y/TableAccessible.h"
+#include "mozilla/a11y/TableCellAccessible.h"
 #include "XULTreeAccessible.h"
 
 namespace mozilla {
@@ -19,8 +19,7 @@ class XULTreeGridCellAccessible;
 
 
 
-class XULTreeGridAccessible : public XULTreeAccessible,
-                              public TableAccessibleBase {
+class XULTreeGridAccessible : public XULTreeAccessible, public TableAccessible {
  public:
   XULTreeGridAccessible(nsIContent* aContent, DocAccessible* aDoc,
                         nsTreeBodyFrame* aTreeFrame)
@@ -57,7 +56,7 @@ class XULTreeGridAccessible : public XULTreeAccessible,
                                   int32_t* aColIdx) override;
 
   
-  virtual TableAccessibleBase* AsTableBase() override { return this; }
+  virtual TableAccessible* AsTable() override { return this; }
   virtual a11y::role NativeRole() const override;
 
  protected:
@@ -115,7 +114,7 @@ class XULTreeGridRowAccessible final : public XULTreeItemAccessibleBase {
 
 
 class XULTreeGridCellAccessible : public LeafAccessible,
-                                  public TableCellAccessibleBase {
+                                  public TableCellAccessible {
  public:
   XULTreeGridCellAccessible(nsIContent* aContent, DocAccessible* aDoc,
                             XULTreeGridRowAccessible* aRowAcc,
@@ -129,7 +128,7 @@ class XULTreeGridCellAccessible : public LeafAccessible,
 
   
   virtual void Shutdown() override;
-  virtual TableCellAccessibleBase* AsTableCellBase() override { return this; }
+  virtual TableCellAccessible* AsTableCell() override { return this; }
   virtual nsRect BoundsInAppUnits() const override;
   virtual nsIntRect BoundsInCSSPixels() const override;
   virtual ENameValueFlag Name(nsString& aName) const override;
@@ -146,7 +145,7 @@ class XULTreeGridCellAccessible : public LeafAccessible,
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
   
-  virtual TableAccessibleBase* Table() const override;
+  virtual TableAccessible* Table() const override;
   virtual uint32_t ColIdx() const override;
   virtual uint32_t RowIdx() const override;
   virtual void ColHeaderCells(nsTArray<Accessible*>* aHeaderCells) override;

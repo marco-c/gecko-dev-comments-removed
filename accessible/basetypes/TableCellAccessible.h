@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_TableCellAccessibleBase_h__
-#define mozilla_a11y_TableCellAccessibleBase_h__
+#ifndef mozilla_a11y_TableCellAccessible_h__
+#define mozilla_a11y_TableCellAccessible_h__
 
 #include "nsTArray.h"
 #include <stdint.h>
@@ -14,17 +14,17 @@ namespace mozilla {
 namespace a11y {
 
 class Accessible;
-class TableAccessibleBase;
+class TableAccessible;
 
 
 
 
-class TableCellAccessibleBase {
+class TableCellAccessible {
  public:
   
 
 
-  virtual TableAccessibleBase* Table() const = 0;
+  virtual TableAccessible* Table() const = 0;
 
   
 

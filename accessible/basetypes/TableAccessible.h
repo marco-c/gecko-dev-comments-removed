@@ -4,8 +4,8 @@
 
 
 
-#ifndef TABLE_ACCESSIBLE_BASE_H
-#define TABLE_ACCESSIBLE_BASE_H
+#ifndef TABLE_ACCESSIBLE_H
+#define TABLE_ACCESSIBLE_H
 
 #include "nsString.h"
 #include "nsTArray.h"
@@ -18,7 +18,7 @@ class Accessible;
 
 
 
-class TableAccessibleBase {
+class TableAccessible {
  public:
   
 
