@@ -6,7 +6,6 @@
 
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
-use crate::values::specified::SVGPathData;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -107,6 +106,7 @@ where
 
 
 
+
 #[derive(
     Animate,
     Clone,
@@ -123,25 +123,55 @@ where
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericOffsetPath<RayFunction> {
-    
-    
-    
-    #[css(function)]
-    Path(SVGPathData),
+pub enum GenericOffsetPathFunction<Shapes, RayFunction> {
     
     
     #[css(function)]
-    Ray(Box<RayFunction>),
+    Ray(RayFunction),
+    
+    Shape(Shapes),
+    
+}
+
+pub use self::GenericOffsetPathFunction as OffsetPathFunction;
+
+
+
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericOffsetPath<Function> {
+    
+    OffsetPath {
+        
+        
+        path: Box<Function>,
+        
+        
+    },
     
     #[animation(error)]
     None,
-    
 }
 
 pub use self::GenericOffsetPath as OffsetPath;
 
-impl<Ray> OffsetPath<Ray> {
+impl<Function> OffsetPath<Function> {
     
     #[inline]
     pub fn none() -> Self {
@@ -149,7 +179,7 @@ impl<Ray> OffsetPath<Ray> {
     }
 }
 
-impl<Ray> ToAnimatedZero for OffsetPath<Ray> {
+impl<Function> ToAnimatedZero for OffsetPath<Function> {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())

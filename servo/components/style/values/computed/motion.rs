@@ -4,9 +4,10 @@
 
 
 
+use crate::values::computed::basic_shape::BasicShape;
 use crate::values::computed::{Angle, LengthPercentage, Position};
 use crate::values::generics::motion::{
-    GenericOffsetPath, GenericOffsetPosition, GenericRayFunction,
+    GenericOffsetPath, GenericOffsetPathFunction, GenericOffsetPosition, GenericRayFunction,
 };
 use crate::Zero;
 
@@ -14,7 +15,10 @@ use crate::Zero;
 pub type RayFunction = GenericRayFunction<Angle, Position>;
 
 
-pub type OffsetPath = GenericOffsetPath<RayFunction>;
+pub type OffsetPathFunction = GenericOffsetPathFunction<BasicShape, RayFunction>;
+
+
+pub type OffsetPath = GenericOffsetPath<OffsetPathFunction>;
 
 
 pub type OffsetPosition = GenericOffsetPosition<LengthPercentage, LengthPercentage>;

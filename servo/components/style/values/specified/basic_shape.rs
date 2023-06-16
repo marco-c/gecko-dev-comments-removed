@@ -237,7 +237,7 @@ impl BasicShape {
     
     
     
-    fn parse<'i, 't>(
+    pub fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         flags: AllowedBasicShapes,
@@ -444,16 +444,6 @@ impl Polygon {
             .into();
 
         Ok(Polygon { fill, coordinates })
-    }
-}
-
-impl Parse for Path {
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_function_matching("path")?;
-        input.parse_nested_block(|i| Self::parse_function_arguments(i, ShapeType::Filled))
     }
 }
 
