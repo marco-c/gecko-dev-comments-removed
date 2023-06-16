@@ -22,6 +22,7 @@
 
 #include "nsIPrincipal.h"
 
+class nsIContent;
 class nsIParser;
 class nsIPrincipal;
 class nsIURI;
@@ -269,6 +270,11 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
   virtual bool GetAsyncState() = 0;
+
+  
+
+
+  virtual nsIContent* GetAsContent() = 0;
 
   
 

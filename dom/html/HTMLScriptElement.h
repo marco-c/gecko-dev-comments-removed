@@ -141,6 +141,9 @@ class HTMLScriptElement final : public nsGenericHTMLElement,
                              JS::Handle<JSObject*> aGivenProto) override;
 
   
+  nsIContent* GetAsContent() override { return this; }
+
+  
   virtual bool HasScriptContent() override;
 };
 

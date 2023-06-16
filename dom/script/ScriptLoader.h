@@ -180,7 +180,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  bool ProcessScriptElement(nsIScriptElement* aElement);
+  bool ProcessScriptElement(nsIScriptElement* aElement,
+                            const nsAutoString& aTypeAttr);
 
   
 

@@ -50,9 +50,6 @@ class SVGScriptElement final : public SVGScriptElementBase,
 
   
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                    const nsAttrValue* aValue, const nsAttrValue* aOldValue,
-                    nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
@@ -75,6 +72,8 @@ class SVGScriptElement final : public SVGScriptElementBase,
   
   
   bool GetAsyncState() override { return false; }
+
+  nsIContent* GetAsContent() override { return this; }
 
   enum { HREF, XLINK_HREF };
   SVGAnimatedString mStringAttributes[2];

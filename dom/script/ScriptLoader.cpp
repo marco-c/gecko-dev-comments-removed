@@ -885,7 +885,8 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
   return aRequest.forget();
 }
 
-bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
+bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement,
+                                        const nsAutoString& aTypeAttr) {
   
   NS_ENSURE_TRUE(mDocument, false);
 
@@ -897,9 +898,6 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
   NS_ASSERTION(!aElement->IsMalformed(), "Executing malformed script");
 
   nsCOMPtr<nsIContent> scriptContent = do_QueryInterface(aElement);
-
-  nsAutoString type;
-  bool hasType = aElement->GetScriptType(type);
 
   ScriptKind scriptKind;
   if (aElement->GetScriptIsModule()) {
@@ -917,28 +915,6 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
 
   
   
-  if (scriptKind == ScriptKind::eClassic) {
-    if (!type.IsEmpty()) {
-      NS_ENSURE_TRUE(nsContentUtils::IsJavascriptMIMEType(type), false);
-    } else if (!hasType) {
-      
-      
-      
-      if (scriptContent->IsHTMLElement()) {
-        nsAutoString language;
-        scriptContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                            nsGkAtoms::language, language);
-        if (!language.IsEmpty()) {
-          if (!nsContentUtils::IsJavaScriptLanguage(language)) {
-            return false;
-          }
-        }
-      }
-    }
-  }
-
-  
-  
   
   
   if (mDocument->ModuleScriptsEnabled() && scriptKind == ScriptKind::eClassic &&
@@ -950,7 +926,8 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
 
   
   if (aElement->GetScriptExternal()) {
-    return ProcessExternalScript(aElement, scriptKind, type, scriptContent);
+    return ProcessExternalScript(aElement, scriptKind, aTypeAttr,
+                                 scriptContent);
   }
 
   return ProcessInlineScript(aElement, scriptKind);
