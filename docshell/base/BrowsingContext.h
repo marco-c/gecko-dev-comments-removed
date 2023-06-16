@@ -264,7 +264,9 @@ struct EmbedderColorSchemes {
   /* If true, this document is embedded within a content document,  either    \
    * loaded in the parent (e.g. about:addons or the devtools toolbox), or in  \
    * a content process. */                                                    \
-  FIELD(EmbeddedInContentDocument, bool)
+  FIELD(EmbeddedInContentDocument, bool)                                      \
+  /* If true, this browsing context is within a hidden embedded document. */  \
+  FIELD(IsUnderHiddenEmbedderElement, bool)
 
 
 
@@ -942,6 +944,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsAppTab() { return GetIsAppTab(); }
   bool HasSiblings() { return GetHasSiblings(); }
 
+  bool IsUnderHiddenEmbedderElement() const {
+    return GetIsUnderHiddenEmbedderElement();
+  }
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -1221,6 +1227,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_HasRestoreData>, bool aNewValue,
               ContentParent* aSource);
 
+  bool CanSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>,
+              const bool& aIsUnderHiddenEmbedderElement,
+              ContentParent* aSource);
+
   bool CanSet(FieldIndex<IDX_EmbeddedInContentDocument>, bool,
               ContentParent* aSource) {
     return CheckOnlyEmbedderCanSet(aSource);
@@ -1247,6 +1257,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_IsInBFCache>);
 
   void DidSet(FieldIndex<IDX_SyntheticDocumentContainer>);
+
+  void DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>, bool aOldValue);
 
   
   

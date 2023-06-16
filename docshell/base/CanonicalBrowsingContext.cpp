@@ -329,6 +329,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetSuspendMediaWhenInactive(GetSuspendMediaWhenInactive());
   txn.SetDisplayMode(GetDisplayMode());
   txn.SetForceDesktopViewport(GetForceDesktopViewport());
+  txn.SetIsUnderHiddenEmbedderElement(GetIsUnderHiddenEmbedderElement());
 
   
   

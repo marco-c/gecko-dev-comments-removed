@@ -1002,22 +1002,8 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   }
 
   if (nsCOMPtr<nsIDocShell> docShell = mPresContext->GetDocShell()) {
-    BrowsingContext* bc = docShell->GetBrowsingContext();
-    bool embedderFrameIsHidden = true;
-    if (Element* embedderElement = bc->GetEmbedderElement()) {
-      if (auto embedderFrame = embedderElement->GetPrimaryFrame()) {
-        embedderFrameIsHidden = !embedderFrame->StyleVisibility()->IsVisible();
-      }
-    }
-
-    if (BrowsingContext* parent = bc->GetParent()) {
-      if (nsCOMPtr<nsIDocShell> parentDocShell = parent->GetDocShell()) {
-        if (PresShell* parentPresShell = parentDocShell->GetPresShell()) {
-          mUnderHiddenEmbedderElement =
-              parentPresShell->IsUnderHiddenEmbedderElement() ||
-              embedderFrameIsHidden;
-        }
-      }
+    if (BrowsingContext* bc = docShell->GetBrowsingContext()) {
+      mUnderHiddenEmbedderElement = bc->IsUnderHiddenEmbedderElement();
     }
   }
 }
@@ -11608,52 +11594,6 @@ void PresShell::NotifyStyleSheetServiceSheetRemoved(StyleSheet* aSheet,
                                                     uint32_t aSheetType) {
   StyleSet()->RemoveStyleSheet(*aSheet);
   mDocument->ApplicableStylesChanged();
-}
-
-void PresShell::SetIsUnderHiddenEmbedderElement(
-    bool aUnderHiddenEmbedderElement) {
-  if (mUnderHiddenEmbedderElement == aUnderHiddenEmbedderElement) {
-    return;
-  }
-
-  mUnderHiddenEmbedderElement = aUnderHiddenEmbedderElement;
-
-  if (nsCOMPtr<nsIDocShell> docShell = mPresContext->GetDocShell()) {
-    BrowsingContext* bc = docShell->GetBrowsingContext();
-
-    
-    for (BrowsingContext* child : bc->Children()) {
-      Element* embedderElement = child->GetEmbedderElement();
-      if (!embedderElement) {
-        
-        
-        
-        
-        
-        
-        continue;
-      }
-
-      bool embedderFrameIsHidden = true;
-      if (auto embedderFrame = embedderElement->GetPrimaryFrame()) {
-        embedderFrameIsHidden = !embedderFrame->StyleVisibility()->IsVisible();
-      }
-
-      if (nsIDocShell* childDocShell = child->GetDocShell()) {
-        PresShell* presShell = childDocShell->GetPresShell();
-        if (!presShell) {
-          continue;
-        }
-        presShell->SetIsUnderHiddenEmbedderElement(
-            aUnderHiddenEmbedderElement || embedderFrameIsHidden);
-      } else {
-        BrowserBridgeChild* bridgeChild =
-            BrowserBridgeChild::GetFrom(embedderElement);
-        bridgeChild->SetIsUnderHiddenEmbedderElement(
-            aUnderHiddenEmbedderElement || embedderFrameIsHidden);
-      }
-    }
-  }
 }
 
 nsIContent* PresShell::EventHandler::GetOverrideClickTarget(
