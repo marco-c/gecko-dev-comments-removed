@@ -28,6 +28,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/widget/nsAutoRollup.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsINamed.h"
@@ -254,14 +255,7 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
     nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
         eMouseLongTap, aPoint * aScale, aModifiers,
          1, aWidget);
-    if (status == nsEventStatus_eConsumeNoDefault) {
-      
-      preventDefaultResult = PreventDefaultResult::ByContent;
-    } else {
-      preventDefaultResult = PreventDefaultResult::No;
-    }
-    APZES_LOG("eMouseLongTap event %s\n",
-              ToString(preventDefaultResult).c_str());
+    APZES_LOG("eMouseLongTap event %s\n", ToString(status).c_str());
 #endif
   }
 
@@ -288,13 +282,12 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   
   
   
-  nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
+  APZCCallbackHelper::DispatchSynthesizedMouseEvent(
       eMouseLongTap, aPoint * aScale, aModifiers,  1, widget);
 
-  PreventDefaultResult preventDefaultResult =
-      (status == nsEventStatus_eConsumeNoDefault)
-          ? PreventDefaultResult::ByContent
-          : PreventDefaultResult::No;
+  
+  
+  PreventDefaultResult preventDefaultResult = PreventDefaultResult::No;
 #else
   PreventDefaultResult preventDefaultResult =
       FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
@@ -318,7 +311,6 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
       preventDefaultResult == PreventDefaultResult::ByContent;
 #endif
   if (eventHandled) {
-    
     
     
     
