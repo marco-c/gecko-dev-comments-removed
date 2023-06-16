@@ -97,9 +97,8 @@ class AudioSinkWrapper : public MediaSink {
   
   
   
-  enum class AudioSinkStartPolicy { SYNC, ASYNC };
-  nsresult CreateAudioSink(const media::TimeUnit& aStartTime,
-                           AudioSinkStartPolicy aPolicy);
+  nsresult SyncCreateAudioSink(const media::TimeUnit& aStartTime);
+  void MaybeAsyncCreateAudioSink();
 
   
   

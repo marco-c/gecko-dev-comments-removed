@@ -181,17 +181,9 @@ void AudioSinkWrapper::OnMuted(bool aMuted) {
       mAudioSink = nullptr;
     }
   } else {
-    if (!NeedAudioSink()) {
-      LOG("%p: AudioSinkWrapper::OnMuted: AudioSink not needed", this);
-      return;
-    }
-    LOG("%p: AudioSinkWrapper unmuted, re-creating an AudioStream.", this);
-    TimeUnit mediaPosition = GetSystemClockPosition(TimeStamp::Now());
-    nsresult rv = CreateAudioSink(mediaPosition, AudioSinkStartPolicy::ASYNC);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "Could not start AudioSink from AudioSinkWrapper when unmuting");
-    }
+    LOG("%p: AudioSinkWrapper unmuted, maybe re-creating an AudioStream.",
+        this);
+    MaybeAsyncCreateAudioSink();
   }
 }
 
@@ -268,7 +260,7 @@ void AudioSinkWrapper::SetPlaying(bool aPlaying) {
     if (!mAudioSink && NeedAudioSink()) {
       LOG("%p: AudioSinkWrapper::SetPlaying : starting an AudioSink", this);
       DropAudioPacketsIfNeeded(switchTime);
-      CreateAudioSink(switchTime, AudioSinkStartPolicy::SYNC);
+      SyncCreateAudioSink(switchTime);
     }
   } else {
     
@@ -308,7 +300,7 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
   if (!NeedAudioSink()) {
     return NS_OK;
   }
-  return CreateAudioSink(aStartTime, AudioSinkStartPolicy::SYNC);
+  return SyncCreateAudioSink(aStartTime);
 }
 
 bool AudioSinkWrapper::NeedAudioSink() {
@@ -324,83 +316,92 @@ void AudioSinkWrapper::StartAudioSink(const TimeUnit& aStartTime) {
       ->Track(mAudioSinkEndedRequest);
 }
 
-nsresult AudioSinkWrapper::CreateAudioSink(const TimeUnit& aStartTime,
-                                           AudioSinkStartPolicy aPolicy) {
-  MOZ_RELEASE_ASSERT(!mAudioSink);
+void AudioSinkWrapper::MaybeAsyncCreateAudioSink() {
+  MOZ_ASSERT(!mAudioSink);
   MOZ_ASSERT(!mAudioSinkEndedRequest.Exists());
 
-  LOG("%p: AudioSinkWrapper::CreateAudioSink (%s)", this,
-      aPolicy == AudioSinkStartPolicy::ASYNC ? "Async" : "Sync");
-
-  if (aPolicy == AudioSinkStartPolicy::ASYNC) {
-    UniquePtr<AudioSink> audioSink = mSinkCreator();
-    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-        "CreateAudioSink (Async part: initialization)",
-        [self = RefPtr<AudioSinkWrapper>(this), audioSink{std::move(audioSink)},
-         this]() mutable {
-          LOG("AudioSink initialization on background thread");
-          
-          
-          
-          
-          
-          nsresult rv = audioSink->InitializeAudioStream(
-              mParams, mAudioDevice, AudioSink::InitializationType::UNMUTING);
-          mOwnerThread->Dispatch(NS_NewRunnableFunction(
-              "CreateAudioSink (Async part: start from MDSM thread)",
-              [self = RefPtr<AudioSinkWrapper>(this),
-               audioSink{std::move(audioSink)}, this, rv]() mutable {
-                LOG("AudioSink async init done, back on MDSM thread");
-                if (NS_FAILED(rv)) {
-                  LOG("Async AudioSink initialization failed");
-                  mEndedPromiseHolder.RejectIfExists(rv, __func__);
-                  return;
-                }
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if (mAudioSink || !NeedAudioSink()) {
-                  LOG("AudioSink initialized async isn't needed, shutting "
-                      "it down.");
-                  audioSink->ShutDown();
-                  return;
-                }
-
-                MOZ_ASSERT(!mAudioSink);
-                TimeUnit switchTime = GetPosition();
-                DropAudioPacketsIfNeeded(switchTime);
-                mAudioSink.swap(audioSink);
-                if (mTreatUnderrunAsSilence) {
-                  mAudioSink->EnableTreatAudioUnderrunAsSilence(
-                      mTreatUnderrunAsSilence);
-                }
-                LOG("AudioSink async, start");
-                StartAudioSink(switchTime);
-              }));
-        }));
-  } else {
-    mAudioSink = mSinkCreator();
-    nsresult rv = mAudioSink->InitializeAudioStream(
-        mParams, mAudioDevice, AudioSink::InitializationType::INITIAL);
-    if (NS_FAILED(rv)) {
-      mEndedPromiseHolder.RejectIfExists(rv, __func__);
-      LOG("Sync AudioSinkWrapper initialization failed");
-      return rv;
-    }
-    if (mTreatUnderrunAsSilence) {
-      mAudioSink->EnableTreatAudioUnderrunAsSilence(mTreatUnderrunAsSilence);
-    }
-    StartAudioSink(aStartTime);
+  if (!NeedAudioSink()) {
+    LOG("%p: AudioSinkWrapper::MaybeAsyncCreateAudioSink: AudioSink not needed",
+        this);
+    return;
   }
+
+  LOG("%p: AudioSinkWrapper::MaybeAsyncCreateAudioSink: AudioSink needed",
+      this);
+  UniquePtr<AudioSink> audioSink = mSinkCreator();
+  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "MaybeAsyncCreateAudioSink (Async part: initialization)",
+      [self = RefPtr<AudioSinkWrapper>(this), audioSink{std::move(audioSink)},
+       this]() mutable {
+        LOG("AudioSink initialization on background thread");
+        
+        
+        
+        
+        
+        nsresult rv = audioSink->InitializeAudioStream(
+            mParams, mAudioDevice, AudioSink::InitializationType::UNMUTING);
+        mOwnerThread->Dispatch(NS_NewRunnableFunction(
+            "MaybeAsyncCreateAudioSink (Async part: start from MDSM thread)",
+            [self = RefPtr<AudioSinkWrapper>(this),
+             audioSink{std::move(audioSink)}, this, rv]() mutable {
+              LOG("AudioSink async init done, back on MDSM thread");
+              if (NS_FAILED(rv)) {
+                LOG("Async AudioSink initialization failed");
+                mEndedPromiseHolder.RejectIfExists(rv, __func__);
+                return;
+              }
+
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              if (mAudioSink || !NeedAudioSink()) {
+                LOG("AudioSink initialized async isn't needed, shutting "
+                    "it down.");
+                audioSink->ShutDown();
+                return;
+              }
+
+              MOZ_ASSERT(!mAudioSink);
+              TimeUnit switchTime = GetPosition();
+              DropAudioPacketsIfNeeded(switchTime);
+              mAudioSink.swap(audioSink);
+              if (mTreatUnderrunAsSilence) {
+                mAudioSink->EnableTreatAudioUnderrunAsSilence(
+                    mTreatUnderrunAsSilence);
+              }
+              LOG("AudioSink async, start");
+              StartAudioSink(switchTime);
+            }));
+      }));
+}
+
+nsresult AudioSinkWrapper::SyncCreateAudioSink(const TimeUnit& aStartTime) {
+  MOZ_ASSERT(!mAudioSink);
+  MOZ_ASSERT(!mAudioSinkEndedRequest.Exists());
+
+  LOG("%p: AudioSinkWrapper::SyncCreateAudioSink", this);
+
+  mAudioSink = mSinkCreator();
+  nsresult rv = mAudioSink->InitializeAudioStream(
+      mParams, mAudioDevice, AudioSink::InitializationType::INITIAL);
+  if (NS_FAILED(rv)) {
+    mEndedPromiseHolder.RejectIfExists(rv, __func__);
+    LOG("Sync AudioSinkWrapper initialization failed");
+    return rv;
+  }
+  if (mTreatUnderrunAsSilence) {
+    mAudioSink->EnableTreatAudioUnderrunAsSilence(mTreatUnderrunAsSilence);
+  }
+  StartAudioSink(aStartTime);
 
   return NS_OK;
 }
