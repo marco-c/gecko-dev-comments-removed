@@ -184,7 +184,9 @@ class ElfRelHackCode_Section : public ElfSection {
     
     
     
-    if (init > 0xffffff && parent.getMachine() == EM_ARM) {
+    
+    if ((init > 0xffffff && parent.getMachine() == EM_ARM) ||
+        (init > 0x07ffffff && parent.getMachine() == EM_AARCH64)) {
       Elf_SymValue* trampoline = symtab->lookup("init_trampoline");
       if (!trampoline) {
         throw std::runtime_error(
@@ -514,6 +516,9 @@ class ElfRelHackCode_Section : public ElfSection {
         case REL(ARM, GOTPC):
         case REL(ARM, REL32):
         case REL(AARCH64, PREL32):
+        case REL(AARCH64,
+                 PREL64):  
+                           
           apply_relocation<pc32_relocation>(the_code, buf, &*r, addr);
           break;
         case REL(ARM, CALL):
