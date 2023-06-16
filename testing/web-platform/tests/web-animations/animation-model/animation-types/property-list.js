@@ -1269,6 +1269,12 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'middle', 'end' ] ] }
     ]
   },
+  'text-autospace': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'auto', 'no-autospace' ] ] }
+    ]
+  },
   'text-decoration-color': {
     
     types: [ 'color' ]
@@ -1332,6 +1338,12 @@ const gCSSProperties2 = {
       element.style.color = 'green';
       return element;
     }
+  },
+  'text-spacing-trim': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'auto', 'space-all' ] ] }
+    ]
   },
   'text-transform': {
     
@@ -1415,6 +1427,12 @@ const gCSSProperties2 = {
     
     types: [
       { type: 'discrete', options: [ [ 'pre', 'nowrap' ] ] }
+    ]
+  },
+  'white-space-collapse': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'collapse', 'preserve' ] ] }
     ]
   },
   'width': {
