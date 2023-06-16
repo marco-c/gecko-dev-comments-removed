@@ -131,4 +131,17 @@ inline void SetObjectISupports(JSObject* obj, void* nsISupportsValue) {
 
 }  
 
+
+
+
+
+namespace mozilla {
+namespace detail {
+template <>
+struct HasFreeLSB<JSObject*> {
+  static constexpr bool value = true;
+};
+}  
+}  
+
 #endif  

@@ -522,4 +522,17 @@ MOZ_ALWAYS_INLINE void LossyCopyLinearStringChars(char* dest, JSLinearString* s,
 [[deprecated]] extern JS_PUBLIC_API bool JS_DeprecatedStringHasLatin1Chars(
     JSString* str);
 
+
+
+
+
+namespace mozilla {
+namespace detail {
+template <>
+struct HasFreeLSB<JSString*> {
+  static constexpr bool value = true;
+};
+}  
+}  
+
 #endif  
