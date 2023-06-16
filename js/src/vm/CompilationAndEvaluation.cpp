@@ -21,7 +21,7 @@
 #include "frontend/BytecodeCompiler.h"     
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
-#include "frontend/Parser.h"       
+#include "frontend/Parser.h"  
 #include "js/CharacterEncoding.h"  
 #include "js/experimental/JSStencil.h"  
 #include "js/friend/ErrorMessages.h"    
@@ -62,7 +62,7 @@ static void ReportSourceTooLongImpl(JS::FrontendContext* fc, ...) {
   va_start(args, fc);
 
   js::ErrorMetadata metadata;
-  metadata.filename = "<unknown>";
+  metadata.filename = JS::ConstUTF8CharsZ("<unknown>");
   metadata.lineNumber = 0;
   metadata.columnNumber = 0;
   metadata.lineLength = 0;
