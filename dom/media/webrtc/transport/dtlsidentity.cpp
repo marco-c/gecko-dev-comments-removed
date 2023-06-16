@@ -232,43 +232,50 @@ RefPtr<DtlsIdentity> DtlsIdentity::Generate() {
     return nullptr;
   }
 
-  UniqueCERTCertificate certificate(CERT_CreateCertificate(
+  
+  
+  
+  
+  
+  UniqueCERTCertificate tbsCertificate(CERT_CreateCertificate(
       serial, subject_name.get(), validity.get(), certreq.get()));
-  if (!certificate) {
+  if (!tbsCertificate) {
     return nullptr;
   }
 
-  PLArenaPool* arena = certificate->arena;
+  PLArenaPool* arena = tbsCertificate->arena;
 
-  rv = SECOID_SetAlgorithmID(arena, &certificate->signature,
+  rv = SECOID_SetAlgorithmID(arena, &tbsCertificate->signature,
                              SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE, nullptr);
   if (rv != SECSuccess) return nullptr;
 
   
-  *(certificate->version.data) = SEC_CERTIFICATE_VERSION_3;
-  certificate->version.len = 1;
+  *(tbsCertificate->version.data) = SEC_CERTIFICATE_VERSION_3;
+  tbsCertificate->version.len = 1;
 
   SECItem innerDER;
   innerDER.len = 0;
   innerDER.data = nullptr;
 
-  if (!SEC_ASN1EncodeItem(arena, &innerDER, certificate.get(),
+  if (!SEC_ASN1EncodeItem(arena, &innerDER, tbsCertificate.get(),
                           SEC_ASN1_GET(CERT_CertificateTemplate))) {
     return nullptr;
   }
 
-  SECItem* signedCert = PORT_ArenaZNew(arena, SECItem);
-  if (!signedCert) {
+  SECItem* certDer = PORT_ArenaZNew(arena, SECItem);
+  if (!certDer) {
     return nullptr;
   }
 
-  rv = SEC_DerSignData(arena, signedCert, innerDER.data, innerDER.len,
+  rv = SEC_DerSignData(arena, certDer, innerDER.data, innerDER.len,
                        private_key.get(),
                        SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE);
   if (rv != SECSuccess) {
     return nullptr;
   }
-  certificate->derCert = *signedCert;
+
+  UniqueCERTCertificate certificate(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), certDer, nullptr, false, true));
 
   return new DtlsIdentity(std::move(private_key), std::move(certificate),
                           ssl_kea_ecdh);
