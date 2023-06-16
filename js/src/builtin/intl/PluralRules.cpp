@@ -89,6 +89,7 @@ const ClassSpec PluralRulesObject::classSpec_ = {
 
 
 
+
 static bool PluralRules(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -367,15 +368,24 @@ static mozilla::intl::PluralRules* GetOrCreatePluralRules(
   return pr;
 }
 
+
+
+
+
+
+
 bool js::intl_SelectPluralRule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 2);
 
+  
   Rooted<PluralRulesObject*> pluralRules(
       cx, &args[0].toObject().as<PluralRulesObject>());
 
+  
   double x = args[1].toNumber();
 
+  
   using PluralRules = mozilla::intl::PluralRules;
   PluralRules* pr = GetOrCreatePluralRules(cx, pluralRules);
   if (!pr) {
@@ -394,6 +404,8 @@ bool js::intl_SelectPluralRule(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setString(str);
   return true;
 }
+
+
 
 
 

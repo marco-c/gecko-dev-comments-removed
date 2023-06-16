@@ -7,6 +7,9 @@
 
 
 
+
+
+
 var pluralRulesInternalProperties = {
   localeData: pluralRulesLocaleData,
   relevantExtensionKeys: [],
@@ -16,6 +19,10 @@ function pluralRulesLocaleData() {
   
   return {};
 }
+
+
+
+
 
 
 
@@ -50,6 +57,16 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
   
   internalProps.minimumIntegerDigits = lazyPluralRulesData.minimumIntegerDigits;
 
+  
+  internalProps.roundingIncrement = lazyPluralRulesData.roundingIncrement;
+
+  
+  internalProps.roundingMode = lazyPluralRulesData.roundingMode;
+
+  
+  internalProps.trailingZeroDisplay = lazyPluralRulesData.trailingZeroDisplay;
+
+  
   if ("minimumFractionDigits" in lazyPluralRulesData) {
     assert(
       "maximumFractionDigits" in lazyPluralRulesData,
@@ -61,6 +78,7 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
       lazyPluralRulesData.maximumFractionDigits;
   }
 
+  
   if ("minimumSignificantDigits" in lazyPluralRulesData) {
     assert(
       "maximumSignificantDigits" in lazyPluralRulesData,
@@ -73,9 +91,6 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
   }
 
   
-  internalProps.roundingIncrement = lazyPluralRulesData.roundingIncrement;
-  internalProps.roundingMode = lazyPluralRulesData.roundingMode;
-  internalProps.trailingZeroDisplay = lazyPluralRulesData.trailingZeroDisplay;
   internalProps.roundingPriority = lazyPluralRulesData.roundingPriority;
 
   
@@ -109,6 +124,8 @@ function getPluralRulesInternals(obj) {
   setInternalProperties(internals, internalProps);
   return internalProps;
 }
+
+
 
 
 
@@ -219,6 +236,8 @@ function InitializePluralRules(pluralRules, locales, options) {
 
 
 
+
+
 function Intl_PluralRules_supportedLocalesOf(locales ) {
   var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
 
@@ -231,6 +250,8 @@ function Intl_PluralRules_supportedLocalesOf(locales ) {
   
   return SupportedLocales(availableLocales, requestedLocales, options);
 }
+
+
 
 
 
@@ -265,6 +286,10 @@ function Intl_PluralRules_select(value) {
   
   return intl_SelectPluralRule(pluralRules, n);
 }
+
+
+
+
 
 
 
@@ -308,6 +333,8 @@ function Intl_PluralRules_selectRange(start, end) {
   
   return intl_SelectPluralRuleRange(pluralRules, x, y);
 }
+
+
 
 
 
@@ -402,6 +429,10 @@ function Intl_PluralRules_resolvedOptions() {
   
   DefineDataProperty(result, "pluralCategories", pluralCategories);
 
+  
+  
+  
+  
   DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
 
   
