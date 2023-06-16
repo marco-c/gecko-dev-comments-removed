@@ -2022,9 +2022,6 @@ pref("layout.scrollbar.side", 0);
 pref("layout.spammy_warnings.enabled", false);
 
 
-pref("plugin.override_internal_types", false);
-
-
 pref("gestures.enable_single_finger_input", true);
 
 pref("dom.use_watchdog", true);
