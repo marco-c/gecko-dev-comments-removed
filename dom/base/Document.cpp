@@ -10434,7 +10434,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
     ScreenIntSize fakeDesktopSize = RoundedToInt(viewportSize * scaleToFit);
     return nsViewportInfo(fakeDesktopSize, scaleToFit,
                           nsViewportInfo::ZoomFlag::AllowZoom,
-                          nsViewportInfo::ZoomBehaviour::Mobile);
+                          nsViewportInfo::ZoomBehaviour::Mobile,
+                          nsViewportInfo::AutoScaleFlag::AutoScale);
   }
 
   
