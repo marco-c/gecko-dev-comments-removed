@@ -581,6 +581,28 @@ class Accessible {
   
 
 
+
+  bool IsGeneric() const {
+    role accRole = Role();
+    return accRole == roles::TEXT || accRole == roles::TEXT_CONTAINER ||
+           accRole == roles::SECTION;
+  }
+
+  
+
+
+  Accessible* GetNonGenericParent() const {
+    for (Accessible* parent = Parent(); parent; parent = parent->Parent()) {
+      if (!parent->IsGeneric()) {
+        return parent;
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
   bool IsLinkValid();
 
   

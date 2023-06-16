@@ -14,8 +14,6 @@
 
 using namespace mozilla::a11y;
 
-static bool IsGenericContainer(role aRole);
-static Accessible* GetRelevantParent(const Accessible* aAcc);
 static role BaseRole(role aRole);
 
 
@@ -37,7 +35,7 @@ class CompoundWidgetSiblingRule : public PivotRule {
 
     
     
-    if (IsGenericContainer(accRole)) {
+    if (aAcc->IsGeneric()) {
       return nsIAccessibleTraversalRule::FILTER_IGNORE;
     }
 
@@ -57,7 +55,7 @@ AccGroupInfo::AccGroupInfo(const Accessible* aItem, role aRole)
 void AccGroupInfo::Update() {
   mParent = nullptr;
 
-  Accessible* parent = GetRelevantParent(mItem);
+  Accessible* parent = mItem->GetNonGenericParent();
   if (!parent) {
     return;
   }
@@ -173,7 +171,7 @@ void AccGroupInfo::Update() {
   if (mRole == roles::OUTLINEITEM) {
     
     
-    Accessible* grandParent = GetRelevantParent(parent);
+    Accessible* grandParent = parent->GetNonGenericParent();
     MOZ_ASSERT(grandParent);
     Pivot pivot{grandParent};
     CompoundWidgetSiblingRule parentSiblingRule{mRole};
@@ -188,7 +186,7 @@ void AccGroupInfo::Update() {
   
   
   if (mRole == roles::LISTITEM || mRole == roles::OUTLINEITEM) {
-    Accessible* grandParent = GetRelevantParent(parent);
+    Accessible* grandParent = parent->GetNonGenericParent();
     if (grandParent && grandParent->Role() == mRole) {
       mParent = grandParent;
     }
@@ -371,23 +369,6 @@ int32_t AccGroupInfo::GetARIAOrDefaultLevel(const Accessible* aAccessible) {
   if (level != 0) return level;
 
   return aAccessible->GetLevel(true);
-}
-
-static bool IsGenericContainer(role aRole) {
-  return aRole == roles::TEXT || aRole == roles::TEXT_CONTAINER ||
-         aRole == roles::SECTION;
-}
-
-static Accessible* GetRelevantParent(const Accessible* aAcc) {
-  MOZ_ASSERT(aAcc);
-
-  
-  
-  Accessible* parent = aAcc->Parent();
-  while (parent && IsGenericContainer(parent->Role())) {
-    parent = parent->Parent();
-  }
-  return parent;
 }
 
 static role BaseRole(role aRole) {
