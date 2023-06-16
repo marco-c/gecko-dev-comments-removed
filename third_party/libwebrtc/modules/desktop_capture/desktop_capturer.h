@@ -107,6 +107,12 @@ class RTC_EXPORT DesktopCapturer {
   
   
   
+  virtual void SetMaxFrameRate(uint32_t max_frame_rate) {}
+
+  
+  
+  
+  
   
   
   
