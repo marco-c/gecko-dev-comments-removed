@@ -13,6 +13,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "js/experimental/TypedData.h"
+#include "nsStreamUtils.h"
 
 namespace mozilla::dom {
 
@@ -456,6 +457,36 @@ void InputToReadableStreamAlgorithms::ErrorPropagation(JSContext* aCx,
   }
 
   MOZ_ASSERT(IsClosed());
+}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
+    NonAsyncInputToReadableStreamAlgorithms, UnderlyingSourceAlgorithmsWrapper)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(NonAsyncInputToReadableStreamAlgorithms,
+                                   UnderlyingSourceAlgorithmsWrapper,
+                                   mAsyncAlgorithms)
+
+already_AddRefed<Promise>
+NonAsyncInputToReadableStreamAlgorithms::PullCallbackImpl(
+    JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
+  if (!mAsyncAlgorithms) {
+    nsCOMPtr<nsIAsyncInputStream> asyncStream;
+
+    
+    
+    
+    nsresult rv = NS_MakeAsyncNonBlockingInputStream(
+        mInput.forget(), getter_AddRefs(asyncStream));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return nullptr;
+    }
+
+    mAsyncAlgorithms = MakeRefPtr<InputToReadableStreamAlgorithms>(
+        aCx, asyncStream, aController.Stream());
+  }
+
+  MOZ_ASSERT(!mInput);
+  return mAsyncAlgorithms->PullCallbackImpl(aCx, aController, aRv);
 }
 
 }  
