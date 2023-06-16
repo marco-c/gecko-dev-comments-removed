@@ -78,7 +78,7 @@ void UtilityAudioDecoderParent::GenericPreloadForSandbox() {
 
 
 void UtilityAudioDecoderParent::WMFPreloadForSandbox() {
-#if defined(MOZ_SANDBOX) && defined(OS_WIN)
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
   
   
 #  if defined(DEBUG)

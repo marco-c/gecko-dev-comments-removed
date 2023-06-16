@@ -37,7 +37,7 @@ class Lock {
     
     
     return base::internal::LockImpl::PriorityInheritanceAvailable();
-#elif defined(OS_WIN)
+#elif defined(XP_WIN)
     
     
     
@@ -47,7 +47,7 @@ class Lock {
 #endif
   }
 
-#if defined(XP_UNIX) || defined(OS_WIN)
+#if defined(XP_UNIX) || defined(XP_WIN)
   
   
   

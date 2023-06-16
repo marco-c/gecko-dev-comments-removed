@@ -76,7 +76,7 @@
 
 
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  define FILE_PATH_USES_DRIVE_LETTERS
 #  define FILE_PATH_USES_WIN_SEPARATORS
 #endif  
@@ -90,7 +90,7 @@ class FilePath {
   
   
   typedef std::string StringType;
-#elif defined(OS_WIN)
+#elif defined(XP_WIN)
   
   
   typedef std::wstring StringType;
@@ -117,7 +117,7 @@ class FilePath {
   FilePath(const FilePath& that) : path_(that.path_) {}
   explicit FilePath(const StringType& path) : path_(path) {}
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   explicit FilePath(const wchar_t* path) : path_(path) {}
 #endif
 
@@ -241,7 +241,7 @@ class FilePath {
 
 #if defined(XP_UNIX)
 #  define FILE_PATH_LITERAL(x) x
-#elif defined(OS_WIN)
+#elif defined(XP_WIN)
 #  define FILE_PATH_LITERAL(x) L##x
 #endif  
 

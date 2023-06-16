@@ -9,7 +9,7 @@
 
 #include "base/basictypes.h"
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  include <windows.h>
 #endif
 
@@ -75,7 +75,7 @@ class WaitableEvent {
   
   bool TimedWait(const TimeDelta& max_time);
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   HANDLE handle() const { return handle_; }
 #endif
 
@@ -121,7 +121,7 @@ class WaitableEvent {
  private:
   friend class WaitableEventWatcher;
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   HANDLE handle_;
 #else
   

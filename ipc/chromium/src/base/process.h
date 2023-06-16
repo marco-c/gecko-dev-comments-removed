@@ -10,7 +10,7 @@
 #include "base/basictypes.h"
 
 #include <sys/types.h>
-#ifdef OS_WIN
+#ifdef XP_WIN
 #  include <windows.h>
 #endif
 
@@ -19,7 +19,7 @@ namespace base {
 
 
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 typedef HANDLE ProcessHandle;
 typedef DWORD ProcessId;
 

@@ -56,7 +56,7 @@ class ThreadLocalStorage {
    private:
     
     bool initialized_;
-#if defined(OS_WIN)
+#if defined(XP_WIN)
     int slot_;
 #elif defined(XP_UNIX)
     pthread_key_t key_;
@@ -65,7 +65,7 @@ class ThreadLocalStorage {
     DISALLOW_COPY_AND_ASSIGN(Slot);
   };
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   
   
   static void ThreadExit();

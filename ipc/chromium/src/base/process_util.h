@@ -12,7 +12,7 @@
 
 #include "base/basictypes.h"
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  include "mozilla/ipc/EnvironmentMap.h"
 #  include <windows.h>
 #  include <tlhelp32.h>
@@ -128,7 +128,7 @@ struct LaunchOptions {
   
   bool wait = false;
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   bool start_hidden = false;
 
   
@@ -188,7 +188,7 @@ struct LaunchOptions {
 #endif    
 };
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 
 
 
@@ -314,7 +314,7 @@ class EnvironmentLog {
  private:
   explicit EnvironmentLog(const char* varname, size_t len);
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   std::wstring fname_;
 #else
   std::string fname_;
@@ -330,7 +330,7 @@ typedef std::tuple<mozilla::ipc::FileDescriptor, int> FdMapping;
 
 }  
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 
 #  undef GetMessage
 #  undef CreateEvent

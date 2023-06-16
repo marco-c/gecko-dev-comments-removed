@@ -32,7 +32,7 @@ class InProcessBrowserTest;
 
 class CommandLine {
  public:
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   
   
   void ParseFromString(const std::wstring& command_line);
@@ -82,7 +82,7 @@ class CommandLine {
   
   std::vector<std::wstring> GetLooseValues() const;
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   
   const std::wstring& command_line_string() const {
     return command_line_string_;
@@ -116,7 +116,7 @@ class CommandLine {
   
   void AppendLooseValue(const std::wstring& value);
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   void AppendLooseValue(const wchar_t* value) {
     AppendLooseValue(std::wstring(value));
   }
@@ -148,7 +148,7 @@ class CommandLine {
   
   
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
   
   std::wstring command_line_string_;
 

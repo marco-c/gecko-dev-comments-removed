@@ -17,7 +17,7 @@
 
 
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  include <windows.h>
 typedef DWORD PlatformThreadId;
 typedef void* PlatformThreadHandle;  

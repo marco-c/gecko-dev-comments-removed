@@ -17,7 +17,7 @@
 #include "mozilla/WeakPtr.h"
 #include "chrome/common/ipc_message.h"
 
-#ifdef OS_WIN
+#ifdef XP_WIN
 #  include <string>
 #endif
 
@@ -38,7 +38,7 @@ class Channel {
   
   
   
-#ifdef OS_WIN
+#ifdef XP_WIN
   typedef std::wstring ChannelId;
 #else
   struct ChannelId {};
@@ -161,7 +161,7 @@ class Channel {
   void StartAcceptingMachPorts(Mode mode);
 #  endif
 
-#elif defined(OS_WIN)
+#elif defined(XP_WIN)
   
   
   

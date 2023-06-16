@@ -8,11 +8,11 @@
 #include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/GeckoArgs.h"
 
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  include "nsExceptionHandler.h"
 #endif
 
-#if defined(OS_WIN) && defined(MOZ_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
 #  include "mozilla/sandboxTarget.h"
 #  include "WMF.h"
 #  include "WMFDecoderModule.h"
@@ -80,7 +80,7 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
     return false;
   }
 
-#if defined(MOZ_SANDBOX) && defined(OS_WIN)
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
   
   
   

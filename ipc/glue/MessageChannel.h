@@ -14,7 +14,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Vector.h"
-#if defined(OS_WIN)
+#if defined(XP_WIN)
 #  include "mozilla/ipc/Neutering.h"
 #endif  
 
@@ -316,7 +316,7 @@ class MessageChannel : HasResultCodes {
   }
 #endif
 
-#ifdef OS_WIN
+#ifdef XP_WIN
   struct MOZ_STACK_CLASS SyncStackFrame {
     explicit SyncStackFrame(MessageChannel* channel);
     ~SyncStackFrame();
@@ -761,7 +761,7 @@ class MessageChannel : HasResultCodes {
   
   CallbackMap mPendingResponses;
 
-#ifdef OS_WIN
+#ifdef XP_WIN
   HANDLE mEvent;
 #endif
 
