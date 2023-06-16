@@ -165,7 +165,14 @@ class AboutWelcomeTelemetry {
       try {
         event_context = JSON.parse(event_context);
       } catch (e) {
-        Glean.messagingSystem.eventContextParseError.add(1);
+        
+        
+        
+        
+        
+        if (event_context.length && event_context.includes("{")) {
+          Glean.messagingSystem.eventContextParseError.add(1);
+        }
       }
     }
 
