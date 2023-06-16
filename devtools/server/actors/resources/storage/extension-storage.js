@@ -13,19 +13,25 @@ const {
 const {
   LongStringActor,
 } = require("resource://devtools/server/actors/string.js");
+
+
+
 loader.lazyGetter(this, "ExtensionParent", () => {
   return ChromeUtils.importESModule(
-    "resource://gre/modules/ExtensionParent.sys.mjs"
+    "resource://gre/modules/ExtensionParent.sys.mjs",
+    { loadInDevToolsLoader: false }
   ).ExtensionParent;
 });
 loader.lazyGetter(this, "ExtensionProcessScript", () => {
   return ChromeUtils.importESModule(
-    "resource://gre/modules/ExtensionProcessScript.sys.mjs"
+    "resource://gre/modules/ExtensionProcessScript.sys.mjs",
+    { loadInDevToolsLoader: false }
   ).ExtensionProcessScript;
 });
 loader.lazyGetter(this, "ExtensionStorageIDB", () => {
   return ChromeUtils.importESModule(
-    "resource://gre/modules/ExtensionStorageIDB.sys.mjs"
+    "resource://gre/modules/ExtensionStorageIDB.sys.mjs",
+    { loadInDevToolsLoader: false }
   ).ExtensionStorageIDB;
 });
 

@@ -5,7 +5,9 @@
 "use strict";
 
 const { AddonManager } = ChromeUtils.importESModule(
-  "resource://gre/modules/AddonManager.sys.mjs"
+  "resource://gre/modules/AddonManager.sys.mjs",
+  
+  { loadInDevToolsLoader: false }
 );
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 

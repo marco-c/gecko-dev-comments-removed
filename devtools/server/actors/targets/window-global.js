@@ -76,8 +76,14 @@ loader.lazyRequireGetter(
   true
 );
 const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  ExtensionContent: EXTENSION_CONTENT_SYS_MJS,
+loader.lazyGetter(lazy, "ExtensionContent", () => {
+  return ChromeUtils.importESModule(EXTENSION_CONTENT_SYS_MJS, {
+    
+    
+    
+    
+    loadInDevToolsLoader: false,
+  }).ExtensionContent;
 });
 
 loader.lazyRequireGetter(
