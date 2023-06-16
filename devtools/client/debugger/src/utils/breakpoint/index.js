@@ -9,9 +9,9 @@ export * from "./breakpointPositions";
 
 
 export function makeBreakpointId(location) {
-  const { source, line, column } = location;
+  const { sourceId, line, column } = location;
   const columnString = column || "";
-  return `${source.id}:${line}:${columnString}`;
+  return `${sourceId}:${line}:${columnString}`;
 }
 
 export function makeBreakpointServerLocationId(breakpointServerLocation) {
