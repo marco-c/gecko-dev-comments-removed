@@ -116,6 +116,9 @@ class MediaDevices final : public DOMEventTargetHelper {
   void ResolveEnumerateDevicesPromise(
       Promise* aPromise, const LocalMediaDeviceSet& aDevices) const;
 
+  
+  bool DeviceInformationCanBeExposed() const;
+
   nsTHashSet<nsString> mExplicitlyGrantedAudioOutputRawIds;
   nsTArray<RefPtr<Promise>> mPendingEnumerateDevicesPromises;
   
