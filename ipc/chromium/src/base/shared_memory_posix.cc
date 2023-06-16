@@ -16,7 +16,7 @@
 #  include "mozilla/Ashmem.h"
 #endif
 
-#ifdef OS_LINUX
+#ifdef XP_LINUX
 #  include "linux_memfd_defs.h"
 #endif
 #ifdef MOZ_WIDGET_GTK
@@ -152,7 +152,7 @@ bool SharedMemory::ReadOnlyCopy(SharedMemory* ro_out) {
 
 
 
-#  if !defined(HAVE_MEMFD_CREATE) && defined(OS_LINUX) && \
+#  if !defined(HAVE_MEMFD_CREATE) && defined(XP_LINUX) && \
       defined(SYS_memfd_create)
 
 
