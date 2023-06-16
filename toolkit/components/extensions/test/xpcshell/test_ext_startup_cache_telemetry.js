@@ -105,11 +105,11 @@ add_task(async function test_startupCache_read_errors() {
   restoreStartupCacheFile();
 });
 
-async function test_startupCache_load_timestamps() {
+add_task(async function test_startupCache_load_timestamps() {
   const { StartupCache } = ExtensionParent;
 
   
-  TelemetryTestUtils.getProcessScalars("parent", false, true);
+  Services.telemetry.getSnapshotForScalars("main", true);
   Services.fog.testResetFOG();
 
   let gleanMetric = Glean.extensions.startupCacheLoadTime.testGetValue();
@@ -152,11 +152,4 @@ async function test_startupCache_load_timestamps() {
     gleanMetric,
     "Expect the glean metric and mirrored scalar to be set to the same value"
   );
-}
-
-add_task(
-  
-  
-  { skip_if: () => AppConstants.platform === "android" },
-  test_startupCache_load_timestamps
-);
+});
