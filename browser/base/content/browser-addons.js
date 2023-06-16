@@ -1222,27 +1222,19 @@ var gUnifiedExtensions = {
 
       
       if (!widget || widget.areaType !== CustomizableUI.TYPE_TOOLBAR) {
-        if (lazy.OriginControls.getAttentionState(policy, window).attention) {
+        if (lazy.OriginControls.getAttention(policy, window)) {
           attention = true;
           break;
         }
       }
     }
-
-    
-    
-    
-    const quarantined = this._shouldShowQuarantinedNotification();
-
-    this.button.toggleAttribute("attention", quarantined || attention);
-    let msgId = attention
-      ? "unified-extensions-button-permissions-needed"
-      : "unified-extensions-button";
-    
-    if (quarantined) {
-      msgId = "unified-extensions-button-quarantined";
-    }
-    this.button.ownerDocument.l10n.setAttributes(this.button, msgId);
+    this.button.toggleAttribute("attention", attention);
+    this.button.ownerDocument.l10n.setAttributes(
+      this.button,
+      attention
+        ? "unified-extensions-button-permissions-needed"
+        : "unified-extensions-button"
+    );
   },
 
   getPopupAnchorID(aBrowser, aWindow) {
@@ -1352,13 +1344,16 @@ var gUnifiedExtensions = {
       list.appendChild(item);
     }
 
+    const isQuarantinedDomain = this.getActivePolicies().some(
+      policy =>
+        lazy.OriginControls.getState(policy, window.gBrowser.selectedTab)
+          .quarantined
+    );
     const container = panelview.querySelector(
       "#unified-extensions-messages-container"
     );
-    const shouldShowQuarantinedNotification =
-      this._shouldShowQuarantinedNotification();
 
-    if (shouldShowQuarantinedNotification) {
+    if (isQuarantinedDomain) {
       if (!this._messageBarQuarantinedDomain) {
         this._messageBarQuarantinedDomain = this._makeMessageBar({
           titleFluentId: "unified-extensions-mb-quarantined-domain-title",
@@ -1375,7 +1370,7 @@ var gUnifiedExtensions = {
 
       container.appendChild(this._messageBarQuarantinedDomain);
     } else if (
-      !shouldShowQuarantinedNotification &&
+      !isQuarantinedDomain &&
       this._messageBarQuarantinedDomain &&
       container.contains(this._messageBarQuarantinedDomain)
     ) {
@@ -1910,20 +1905,5 @@ var gUnifiedExtensions = {
     }
 
     return messageBar;
-  },
-
-  _shouldShowQuarantinedNotification() {
-    const { currentURI, selectedTab } = window.gBrowser;
-    
-    
-    
-    
-    return (
-      WebExtensionPolicy.isQuarantinedURI(currentURI) &&
-      this.hasExtensionsInPanel() &&
-      this.getActivePolicies().some(
-        policy => lazy.OriginControls.getState(policy, selectedTab).quarantined
-      )
-    );
   },
 };
