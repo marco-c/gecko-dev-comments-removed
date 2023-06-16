@@ -893,12 +893,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "OfflineAudioContext", insecureContext: true },
   
-  {
-    name: "OfflineResourceList",
-    insecureContext: false,
-    disabled: isEarlyBetaOrEarlier,
-  },
-  
   { name: "OffscreenCanvas", insecureContext: true },
   
   { name: "OffscreenCanvasRenderingContext2D", insecureContext: true },
