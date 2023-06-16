@@ -2273,10 +2273,6 @@ pref("screenshots.browser.component.enabled", false);
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
-pref("browser.chrome.errorReporter.infoURL",
-     "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/nightly-error-collection");
-
-
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
 pref("app.normandy.dev_mode", false);
 pref("app.normandy.enabled", true);
