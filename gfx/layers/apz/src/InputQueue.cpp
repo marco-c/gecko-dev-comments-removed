@@ -881,7 +881,11 @@ void InputQueue::ConfirmDragBlock(
   InputBlockState* inputBlock = FindBlockForId(aInputBlockId, &firstInput);
   if (inputBlock && inputBlock->AsDragBlock()) {
     DragBlockState* block = inputBlock->AsDragBlock();
-    block->SetDragMetrics(aDragMetrics);
+
+    
+    
+    
+    block->SetDragMetrics(aDragMetrics, aTargetApzc->GetScrollableRect());
     success = block->SetConfirmedTargetApzc(
         aTargetApzc, InputBlockState::TargetConfirmationState::eConfirmed,
         firstInput,

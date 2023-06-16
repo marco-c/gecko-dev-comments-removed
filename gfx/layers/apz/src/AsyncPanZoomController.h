@@ -370,7 +370,8 @@ class AsyncPanZoomController {
 
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
                                 const AsyncDragMetrics& aDragMetrics,
-                                OuterCSSCoord aInitialThumbPos);
+                                OuterCSSCoord aInitialThumbPos,
+                                const CSSRect& aInitialScrollableRect);
 
   
 
@@ -1251,6 +1252,11 @@ class AsyncPanZoomController {
   LayoutDeviceToLayerScale GetCumulativeResolution() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mScrollMetadata.GetMetrics().GetCumulativeResolution();
+  }
+
+  CSSRect GetScrollableRect() const {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    return mScrollMetadata.GetMetrics().GetScrollableRect();
   }
 
   
