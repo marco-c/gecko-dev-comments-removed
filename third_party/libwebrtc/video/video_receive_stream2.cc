@@ -441,29 +441,6 @@ void VideoReceiveStream2::Stop() {
   transport_adapter_.Disable();
 }
 
-void VideoReceiveStream2::SetRtpExtensions(
-    std::vector<RtpExtension> extensions) {
-  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  rtp_video_stream_receiver_.SetRtpExtensions(extensions);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const_cast<std::vector<RtpExtension>&>(config_.rtp.extensions) =
-      std::move(extensions);
-}
-
-RtpHeaderExtensionMap VideoReceiveStream2::GetRtpExtensionMap() const {
-  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  return rtp_video_stream_receiver_.GetRtpExtensions();
-}
-
 void VideoReceiveStream2::SetRtcpMode(RtcpMode mode) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   

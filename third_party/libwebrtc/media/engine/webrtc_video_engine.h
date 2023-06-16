@@ -459,6 +459,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     std::vector<webrtc::RtpSource> GetSources();
 
     
+    
     webrtc::RtpParameters GetRtpParameters() const;
 
     

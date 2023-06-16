@@ -177,11 +177,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
 
   
-  
-  void SetRtpExtensions(const std::vector<RtpExtension>& extensions);
-  const RtpHeaderExtensionMap& GetRtpExtensions() const;
-
-  
   void UpdateRtt(int64_t max_rtt_ms);
 
   
@@ -331,8 +326,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   RemoteNtpTimeEstimator ntp_estimator_;
 
-  RtpHeaderExtensionMap rtp_header_extensions_
-      RTC_GUARDED_BY(packet_sequence_checker_);
   
   
   FieldTrialOptional<int> forced_playout_delay_max_ms_;
