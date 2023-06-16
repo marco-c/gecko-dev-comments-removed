@@ -756,6 +756,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   
   bool mNeedsRemoteTextureSync = true;
+  size_t mLastFlushes = 0;
 
   
 
