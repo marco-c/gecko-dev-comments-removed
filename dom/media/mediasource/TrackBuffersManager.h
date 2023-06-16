@@ -108,8 +108,8 @@ class TrackBuffersManager final
   
   
   
-  EvictDataResult EvictData(const media::TimeUnit& aPlaybackTime,
-                            int64_t aSize);
+  EvictDataResult EvictData(const media::TimeUnit& aPlaybackTime, int64_t aSize,
+                            TrackType aType);
 
   
   void ChangeType(const MediaContainerType& aType);
@@ -131,7 +131,13 @@ class TrackBuffersManager final
   
   void Detach();
 
-  int64_t EvictionThreshold() const;
+  
+  
+  
+  
+  
+  int64_t EvictionThreshold(
+      TrackInfo::TrackType aType = TrackInfo::TrackType::kUndefinedTrack) const;
 
   
   MediaInfo GetMetadata() const;

@@ -699,7 +699,10 @@ already_AddRefed<MediaByteBuffer> SourceBuffer::PrepareAppend(
   
   Result evicted = mTrackBuffersManager->EvictData(
       TimeUnit::FromSeconds(mMediaSource->GetDecoder()->GetCurrentTime()),
-      aLength);
+      aLength,
+      mType.ExtendedType().Type().HasAudioMajorType()
+          ? TrackInfo::TrackType::kAudioTrack
+          : TrackInfo::TrackType::kVideoTrack);
 
   
   if (evicted == Result::BUFFER_FULL) {
