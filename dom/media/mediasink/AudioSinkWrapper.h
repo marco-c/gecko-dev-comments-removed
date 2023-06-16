@@ -35,12 +35,7 @@ class AudioSinkWrapper : public MediaSink {
       : mOwnerThread(aOwnerThread),
         mSinkCreator(std::move(aFunc)),
         mAudioDevice(std::move(aAudioDevice)),
-        mIsStarted(false),
         mParams(aVolume, aPlaybackRate, aPreservesPitch),
-        
-        
-        mPlayDuration(media::TimeUnit::Invalid()),
-        mAudioEnded(true),
         mAudioQueue(aAudioQueue) {}
 
   RefPtr<EndedPromise> OnEnded(TrackType aType) override;
@@ -122,14 +117,22 @@ class AudioSinkWrapper : public MediaSink {
   
   RefPtr<EndedPromise> mEndedPromise;
   MozPromiseHolder<EndedPromise> mEndedPromiseHolder;
-
-  bool mIsStarted;
+  
+  bool mIsStarted = false;
   PlaybackParams mParams;
+  
+  
+  
+  
+  
+  
+  TimeStamp mClockStartTime;
+  
+  
+  
+  media::TimeUnit mPositionAtClockStart = media::TimeUnit::Invalid();
 
-  TimeStamp mPlayStartTime;
-  media::TimeUnit mPlayDuration;
-
-  bool mAudioEnded;
+  bool mAudioEnded = true;
   MozPromiseRequestHolder<EndedPromise> mAudioSinkEndedPromise;
   MediaQueue<AudioData>& mAudioQueue;
 

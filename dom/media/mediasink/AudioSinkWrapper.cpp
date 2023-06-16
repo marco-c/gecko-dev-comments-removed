@@ -53,18 +53,19 @@ TimeUnit AudioSinkWrapper::GetEndTime(TrackType aType) const {
       return GetSystemClockPosition(TimeStamp::Now());
     }
 
-    return mPlayDuration;
+    return mPositionAtClockStart;
   }
   return TimeUnit::Zero();
 }
 
 TimeUnit AudioSinkWrapper::GetSystemClockPosition(TimeStamp aNow) const {
   AssertOwnerThread();
-  MOZ_ASSERT(!mPlayStartTime.IsNull());
+  MOZ_ASSERT(!mClockStartTime.IsNull());
   
-  double delta = (aNow - mPlayStartTime).ToSeconds();
+  double delta = (aNow - mClockStartTime).ToSeconds();
   
-  return mPlayDuration + TimeUnit::FromSeconds(delta * mParams.mPlaybackRate);
+  return mPositionAtClockStart +
+         TimeUnit::FromSeconds(delta * mParams.mPlaybackRate);
 }
 
 bool AudioSinkWrapper::IsMuted() const {
@@ -92,7 +93,7 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
     pos = mAudioSink->GetPosition();
     LOGV("%p: Getting position from the Audio Sink %lf", this, pos.ToSeconds());
     mLastClockSource = ClockSource::AudioStream;
-  } else if (!mPlayStartTime.IsNull()) {
+  } else if (!mClockStartTime.IsNull()) {
     
     
     pos = GetSystemClockPosition(t);
@@ -116,7 +117,7 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
     mLastClockSource = ClockSource::SystemClock;
   } else {
     
-    pos = mPlayDuration;
+    pos = mPositionAtClockStart;
     LOGV("%p: Getting static position, not playing %lf", this, pos.ToSeconds());
     mLastClockSource = ClockSource::Paused;
   }
@@ -174,8 +175,8 @@ void AudioSinkWrapper::OnMuted(bool aMuted) {
       LOG("AudioSinkWrapper muted, shutting down AudioStream.");
       mAudioSinkEndedPromise.DisconnectIfExists();
       if (IsPlaying()) {
-        mPlayDuration = mAudioSink->GetPosition();
-        mPlayStartTime = TimeStamp::Now();
+        mPositionAtClockStart = mAudioSink->GetPosition();
+        mClockStartTime = TimeStamp::Now();
       }
       Maybe<MozPromiseHolder<MediaSink::EndedPromise>> rv =
           mAudioSink->Shutdown(ShutdownCause::Muting);
@@ -235,11 +236,11 @@ void AudioSinkWrapper::SetPlaybackRate(double aPlaybackRate) {
     
     
     mAudioSink->SetPlaybackRate(aPlaybackRate);
-  } else if (!mPlayStartTime.IsNull()) {
+  } else if (!mClockStartTime.IsNull()) {
     
     TimeStamp now = TimeStamp::Now();
-    mPlayDuration = GetSystemClockPosition(now);
-    mPlayStartTime = now;
+    mPositionAtClockStart = GetSystemClockPosition(now);
+    mClockStartTime = now;
   }
   
   
@@ -278,14 +279,14 @@ void AudioSinkWrapper::SetPlaying(bool aPlaying) {
   }
 
   if (aPlaying) {
-    MOZ_ASSERT(mPlayStartTime.IsNull());
-    mPlayStartTime = TimeStamp::Now();
+    MOZ_ASSERT(mClockStartTime.IsNull());
+    mClockStartTime = TimeStamp::Now();
   } else {
     
-    mPlayDuration = GetPosition();
+    mPositionAtClockStart = GetPosition();
     
     
-    mPlayStartTime = TimeStamp();
+    mClockStartTime = TimeStamp();
   }
 }
 
@@ -301,8 +302,8 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
   MOZ_ASSERT(!mIsStarted, "playback already started.");
 
   mIsStarted = true;
-  mPlayDuration = aStartTime;
-  mPlayStartTime = TimeStamp::Now();
+  mPositionAtClockStart = aStartTime;
+  mClockStartTime = TimeStamp::Now();
   mAudioEnded = IsAudioSourceEnded(aInfo);
 
   if (mAudioEnded) {
@@ -376,7 +377,7 @@ nsresult AudioSinkWrapper::StartAudioSink(const TimeUnit& aStartTime,
                 
                 
                 if (mAudioSink || IsMuted() || !mIsStarted ||
-                    mPlayStartTime.IsNull()) {
+                    mClockStartTime.IsNull()) {
                   LOG("AudioSink initialized async isn't needed, shutting "
                       "it down.");
                   DebugOnly<Maybe<MozPromiseHolder<EndedPromise>>> rv =
@@ -458,16 +459,17 @@ bool AudioSinkWrapper::IsStarted() const {
 
 bool AudioSinkWrapper::IsPlaying() const {
   AssertOwnerThread();
-  return IsStarted() && !mPlayStartTime.IsNull();
+  return IsStarted() && !mClockStartTime.IsNull();
 }
 
 void AudioSinkWrapper::OnAudioEnded() {
   AssertOwnerThread();
   LOG("%p: AudioSinkWrapper::OnAudioEnded", this);
   mAudioSinkEndedPromise.Complete();
-  mPlayDuration = GetPosition();
-  if (!mPlayStartTime.IsNull()) {
-    mPlayStartTime = TimeStamp::Now();
+  mPositionAtClockStart = GetPosition();
+  if (!mClockStartTime.IsNull()) {  
+    
+    mClockStartTime = TimeStamp::Now();
   }
   mAudioEnded = true;
 }
