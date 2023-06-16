@@ -29,10 +29,6 @@ class xpcAccessibleGeneric;
 class DocAccessiblePlatformExtParent;
 #endif
 
-#ifdef ANDROID
-class SessionAccessibility;
-#endif
-
 
 
 
@@ -347,10 +343,6 @@ class DocAccessibleParent : public RemoteAccessible,
   static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
-
-#ifdef ANDROID
-  RefPtr<SessionAccessibility> mSessionAccessibility;
-#endif
 
  private:
   ~DocAccessibleParent();

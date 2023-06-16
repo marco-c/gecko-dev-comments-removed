@@ -110,10 +110,34 @@ class SessionAccessibility final
   jni::NativeWeakPtr<widget::GeckoViewSupport> mWindow;  
   java::SessionAccessibility::NativeProvider::GlobalRef mSessionAccessibility;
 
+  class IDMappingEntry {
+   public:
+    explicit IDMappingEntry(Accessible* aAccessible);
+
+    IDMappingEntry& operator=(Accessible* aAccessible);
+
+    operator Accessible*() const;
+
+   private:
+    
+    
+    
+    
+    
+    RefPtr<nsISupports> mDoc;
+    
+    
+    
+    uint64_t mInternalID;
+
+    static const uintptr_t IS_REMOTE = 0x1;
+  };
+
   
 
 
-  nsTHashMap<nsUint32HashKey, Accessible*> mIDToAccessibleMap;
+  nsBaseHashtable<nsUint32HashKey, IDMappingEntry, Accessible*>
+      mIDToAccessibleMap;
 };
 
 }  
