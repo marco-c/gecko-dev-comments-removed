@@ -35,13 +35,6 @@ struct CubebDestroyPolicy {
   }
 };
 
-enum class ShutdownCause {
-  
-  Regular,
-  
-  Muting
-};
-
 class AudioStream;
 class FrameHistory;
 class AudioConfig;
@@ -252,8 +245,7 @@ class AudioStream final {
   nsresult Init(AudioDeviceInfo* aSinkInfo);
 
   
-  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
-      ShutdownCause = ShutdownCause::Regular);
+  void ShutDown();
 
   
   
@@ -262,7 +254,7 @@ class AudioStream final {
   void SetStreamName(const nsAString& aStreamName);
 
   
-  nsresult Start(MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise);
+  RefPtr<MediaSink::EndedPromise> Start();
 
   
   void Pause();

@@ -93,7 +93,7 @@ AudioSink::~AudioSink() {
   
   
   if (mAudioStream) {
-    mAudioStream->Shutdown();
+    mAudioStream->ShutDown();
   }
 }
 
@@ -128,7 +128,7 @@ nsresult AudioSink::InitializeAudioStream(
       new AudioStream(*this, mOutputRate, mOutputChannels, channelMap);
   nsresult rv = mAudioStream->Init(aAudioDevice);
   if (NS_FAILED(rv)) {
-    mAudioStream->Shutdown();
+    mAudioStream->ShutDown();
     mAudioStream = nullptr;
     return rv;
   }
@@ -142,9 +142,8 @@ nsresult AudioSink::InitializeAudioStream(
   return NS_OK;
 }
 
-nsresult AudioSink::Start(
-    const media::TimeUnit& aStartTime,
-    MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise) {
+RefPtr<MediaSink::EndedPromise> AudioSink::Start(
+    const media::TimeUnit& aStartTime) {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
   mAudioQueueListener = mAudioQueue.PushEvent().Connect(
@@ -160,7 +159,7 @@ nsresult AudioSink::Start(
   
   NotifyAudioNeeded();
 
-  return mAudioStream->Start(aEndedPromise);
+  return mAudioStream->Start();
 }
 
 TimeUnit AudioSink::GetPosition() {
@@ -279,8 +278,7 @@ void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
   }
 }
 
-Maybe<MozPromiseHolder<MediaSink::EndedPromise>> AudioSink::Shutdown(
-    ShutdownCause aShutdownCause) {
+void AudioSink::ShutDown() {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
   mAudioQueueListener.DisconnectIfExists();
@@ -290,15 +288,11 @@ Maybe<MozPromiseHolder<MediaSink::EndedPromise>> AudioSink::Shutdown(
   Maybe<MozPromiseHolder<MediaSink::EndedPromise>> rv;
 
   if (mAudioStream) {
-    rv = mAudioStream->Shutdown(aShutdownCause);
+    mAudioStream->ShutDown();
     mAudioStream = nullptr;
-    if (aShutdownCause == ShutdownCause::Muting) {
-      ReenqueueUnplayedAudioDataIfNeeded();
-    }
+    ReenqueueUnplayedAudioDataIfNeeded();
   }
   mProcessedQueueFinished = true;
-
-  return rv;
 }
 
 void AudioSink::SetVolume(double aVolume) {

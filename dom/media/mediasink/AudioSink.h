@@ -52,8 +52,7 @@ class AudioSink : private AudioStream::DataSource {
                                  InitializationType aInitializationType);
 
   
-  nsresult Start(const media::TimeUnit& aStartTime,
-                 MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise);
+  RefPtr<MediaSink::EndedPromise> Start(const media::TimeUnit& aStartTime);
 
   
 
@@ -70,9 +69,7 @@ class AudioSink : private AudioStream::DataSource {
   media::TimeUnit UnplayedDuration() const;
 
   
-  
-  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
-      ShutdownCause aShutdownCause = ShutdownCause::Regular);
+  void ShutDown();
 
   void SetVolume(double aVolume);
   void SetStreamName(const nsAString& aStreamName);
@@ -93,6 +90,8 @@ class AudioSink : private AudioStream::DataSource {
   void UpdateStartTime(const media::TimeUnit& aStartTime) {
     mStartTime = aStartTime;
   }
+
+  void EnableTreatAudioUnderrunAsSilence(bool aEnabled);
 
  private:
   
@@ -175,6 +174,10 @@ class AudioSink : private AudioStream::DataSource {
   Atomic<bool> mProcessedQueueFinished;
   MediaQueue<AudioData>& mAudioQueue;
   const float mProcessedQueueThresholdMS;
+
+  
+  
+  bool mTreatUnderrunAsSilence = false;
 };
 
 }  
