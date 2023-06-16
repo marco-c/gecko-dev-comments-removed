@@ -10,7 +10,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
-  Preferences: "resource://gre/modules/Preferences.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.sys.mjs",
 
@@ -101,7 +100,7 @@ class _ToolbarPanelHub {
     
     
     let newValue = !event.target.checked;
-    lazy.Preferences.set(WHATSNEW_ENABLED_PREF, newValue);
+    Services.prefs.setBoolPref(WHATSNEW_ENABLED_PREF, newValue);
 
     this.sendUserEventTelemetry(
       event.target.ownerGlobal,
@@ -191,7 +190,7 @@ class _ToolbarPanelHub {
   
   async renderMessages(win, doc, containerId, options = {}) {
     
-    let value = lazy.Preferences.get(WHATSNEW_ENABLED_PREF);
+    let value = Services.prefs.getBoolPref(WHATSNEW_ENABLED_PREF);
     let checkbox = win.document.getElementById("panelMenu-toggleWhatsNew");
 
     checkbox.checked = value;
