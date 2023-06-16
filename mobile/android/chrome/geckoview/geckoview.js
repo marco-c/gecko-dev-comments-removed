@@ -547,10 +547,6 @@ function createBrowser() {
 
   
   
-  browser.setAttribute("initiallyactive", "false");
-
-  
-  
   
   browser.setAttribute(
     "style",
