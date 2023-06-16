@@ -390,6 +390,8 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
   nsCOMPtr<nsIInputStream> mAlternativeBody;
   nsMainThreadPtrHandle<nsICacheInfoChannel> mCacheInfoChannel;
   bool mCloned;
+  
+  
   bool mSerializeAsLazy{true};
 
  public:
