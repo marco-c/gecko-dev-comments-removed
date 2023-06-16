@@ -25,8 +25,14 @@ const RECORDS_WITH_STASHES_AND_MLBF = [MLBF_RECORD, OLDEST_STASH, NEWEST_STASH];
 const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
 
 function assertTelemetryScalars(expectedScalars) {
+  
+  if (IS_ANDROID_BUILD) {
+    info(
+      `Skip assertions on collected samples for ${expectedScalars} on android builds`
+    );
+    return;
+  }
   let scalars = TelemetryTestUtils.getProcessScalars("parent");
-
   for (const scalarName of Object.keys(expectedScalars || {})) {
     equal(
       scalars[scalarName],
@@ -41,6 +47,12 @@ function toUTC(time) {
 }
 
 add_task(async function setup() {
+  if (!IS_ANDROID_BUILD) {
+    
+    do_get_profile();
+    
+    Services.fog.initializeFOG();
+  }
   await TelemetryController.testSetup();
   await promiseStartupManager();
 
@@ -50,9 +62,15 @@ add_task(async function setup() {
 });
 
 add_task(async function test_initialization() {
+  resetBlocklistTelemetry();
   ExtensionBlocklistMLBF.ensureInitialized();
+
+  Assert.equal(undefined, testGetValue(Glean.blocklist.mlbfSource));
+  Assert.equal(undefined, testGetValue(Glean.blocklist.mlbfGenerationTime));
+  Assert.equal(undefined, testGetValue(Glean.blocklist.mlbfStashTimeOldest));
+  Assert.equal(undefined, testGetValue(Glean.blocklist.mlbfStashTimeNewest));
+
   assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
     
     
     "blocklist.lastModified_rs_addons_mlbf": undefined,
@@ -65,12 +83,18 @@ add_task(async function test_initialization() {
 
 
 add_task(async function test_without_mlbf() {
+  resetBlocklistTelemetry();
   
   
   
   await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [{}] });
+  Assert.equal("unknown", testGetValue(Glean.blocklist.mlbfSource));
+
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfGenerationTime).getTime());
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeOldest).getTime());
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeNewest).getTime());
+
   assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_source": "unknown",
     "blocklist.mlbf_generation_time": "Missing Date",
     "blocklist.mlbf_stash_time_oldest": "Missing Date",
@@ -80,6 +104,7 @@ add_task(async function test_without_mlbf() {
 
 
 add_task(async function test_common_good_case_with_stashes() {
+  resetBlocklistTelemetry();
   
   
   await ExtensionBlocklistMLBF._client.db.saveAttachment(
@@ -89,8 +114,20 @@ add_task(async function test_common_good_case_with_stashes() {
   await AddonTestUtils.loadBlocklistRawData({
     extensionsMLBF: RECORDS_WITH_STASHES_AND_MLBF,
   });
+  Assert.equal("cache_match", testGetValue(Glean.blocklist.mlbfSource));
+  Assert.equal(
+    MLBF_RECORD.generation_time,
+    testGetValue(Glean.blocklist.mlbfGenerationTime).getTime()
+  );
+  Assert.equal(
+    OLDEST_STASH.stash_time,
+    testGetValue(Glean.blocklist.mlbfStashTimeOldest).getTime()
+  );
+  Assert.equal(
+    NEWEST_STASH.stash_time,
+    testGetValue(Glean.blocklist.mlbfStashTimeNewest).getTime()
+  );
   assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_source": "cache_match",
     "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
     "blocklist.mlbf_stash_time_oldest": toUTC(OLDEST_STASH.stash_time),
@@ -102,9 +139,19 @@ add_task(async function test_common_good_case_with_stashes() {
 
 
 add_task(async function test_without_stashes() {
+  resetBlocklistTelemetry();
   await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [MLBF_RECORD] });
+
+  Assert.equal("cache_match", testGetValue(Glean.blocklist.mlbfSource));
+  Assert.equal(
+    MLBF_RECORD.generation_time,
+    testGetValue(Glean.blocklist.mlbfGenerationTime).getTime()
+  );
+
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeOldest).getTime());
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeNewest).getTime());
+
   assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_source": "cache_match",
     "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
     "blocklist.mlbf_stash_time_oldest": "Missing Date",
@@ -115,6 +162,7 @@ add_task(async function test_without_stashes() {
 
 
 add_task(async function test_without_collection_but_cache() {
+  resetBlocklistTelemetry();
   await AddonTestUtils.loadBlocklistRawData({
     
     
@@ -122,41 +170,19 @@ add_task(async function test_without_collection_but_cache() {
     
     extensionsMLBF: [{ last_modified: Date.now() }],
   });
+  Assert.equal("cache_fallback", testGetValue(Glean.blocklist.mlbfSource));
+  Assert.equal(
+    MLBF_RECORD.generation_time,
+    testGetValue(Glean.blocklist.mlbfGenerationTime).getTime()
+  );
+
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeOldest).getTime());
+  Assert.equal(0, testGetValue(Glean.blocklist.mlbfStashTimeNewest).getTime());
+
   assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_source": "cache_fallback",
     "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
     "blocklist.mlbf_stash_time_oldest": "Missing Date",
     "blocklist.mlbf_stash_time_newest": "Missing Date",
-  });
-});
-
-
-
-add_task(async function test_toggle_preferences() {
-  
-  
-  Services.prefs.setBoolPref("extensions.blocklist.enabled", false);
-  
-  assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
-    "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
-  });
-
-  
-  Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
-  assertTelemetryScalars({
-    "blocklist.mlbf_enabled": true,
-    "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
-  });
-
-  
-  
-  
-  Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
-  enable_blocklist_v2_instead_of_useMLBF();
-  assertTelemetryScalars({
-    "blocklist.mlbf_enabled": false,
-    "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
   });
 });
