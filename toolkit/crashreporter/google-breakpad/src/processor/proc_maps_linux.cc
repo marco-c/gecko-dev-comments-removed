@@ -15,7 +15,7 @@
 #include "common/using_std_string.h"
 #include "processor/logging.h"
 
-#if defined(OS_ANDROID) && !defined(__LP64__)
+#if defined(ANDROID) && !defined(__LP64__)
 
 
 

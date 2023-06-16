@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PublicKeyCredential.h"
@@ -12,7 +12,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Preferences.h"
 
-#ifdef OS_WIN
+#ifdef XP_WIN
 #  include "WinWebAuthnManager.h"
 #endif
 
@@ -79,7 +79,7 @@ void PublicKeyCredential::SetResponse(RefPtr<AuthenticatorResponse> aResponse) {
   mResponse = aResponse;
 }
 
-/* static */
+
 already_AddRefed<Promise>
 PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
     GlobalObject& aGlobal, ErrorResult& aError) {
@@ -89,11 +89,11 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
     return nullptr;
   }
 
-// https://w3c.github.io/webauthn/#isUserVerifyingPlatformAuthenticatorAvailable
-//
-// If on latest windows, call system APIs, otherwise return false, as we don't
-// have other UVPAAs available at this time.
-#ifdef OS_WIN
+
+
+
+
+#ifdef XP_WIN
 
   if (WinWebAuthnManager::IsUserVerifyingPlatformAuthenticatorAvailable()) {
     promise->MaybeResolve(true);
@@ -119,7 +119,7 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
   return promise.forget();
 }
 
-/* static */
+
 already_AddRefed<Promise>
 PublicKeyCredential::IsExternalCTAP2SecurityKeySupported(GlobalObject& aGlobal,
                                                          ErrorResult& aError) {
@@ -129,7 +129,7 @@ PublicKeyCredential::IsExternalCTAP2SecurityKeySupported(GlobalObject& aGlobal,
     return nullptr;
   }
 
-#ifdef OS_WIN
+#ifdef XP_WIN
   if (WinWebAuthnManager::AreWebAuthNApisAvailable()) {
     promise->MaybeResolve(true);
   } else {
@@ -160,4 +160,4 @@ void PublicKeyCredential::SetClientExtensionResultHmacSecret(
   mClientExtensionOutputs.mHmacCreateSecret.Value() = aHmacCreateSecret;
 }
 
-}  // namespace mozilla::dom
+}  
