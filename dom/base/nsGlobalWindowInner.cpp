@@ -1662,6 +1662,10 @@ mozilla::dom::StorageManager* nsGlobalWindowInner::GetStorageManager() {
   return Navigator()->Storage();
 }
 
+
+
+bool nsGlobalWindowInner::IsEligibleForMessaging() { return IsFullyActive(); }
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   

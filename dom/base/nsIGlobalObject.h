@@ -274,6 +274,14 @@ class nsIGlobalObject : public nsISupports,
 
   virtual mozilla::dom::StorageManager* GetStorageManager() { return nullptr; }
 
+  
+
+
+
+
+
+  virtual bool IsEligibleForMessaging() { return false; };
+
  protected:
   virtual ~nsIGlobalObject();
 

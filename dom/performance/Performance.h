@@ -36,7 +36,7 @@ class PerformanceService;
 class PerformanceStorage;
 class PerformanceTiming;
 class PerformanceEventTiming;
-class WorkerPrivate;
+class WorkerGlobalScope;
 class EventCounts;
 
 
@@ -52,7 +52,7 @@ class Performance : public DOMEventTargetHelper {
       nsDOMNavigationTiming* aDOMTiming, nsITimedChannel* aChannel);
 
   static already_AddRefed<Performance> CreateForWorker(
-      WorkerPrivate* aWorkerPrivate);
+      WorkerGlobalScope* aGlobalScope);
 
   
   static already_AddRefed<Performance> Get(JSContext* aCx,
