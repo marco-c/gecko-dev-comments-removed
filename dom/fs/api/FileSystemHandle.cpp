@@ -167,16 +167,15 @@ already_AddRefed<Promise> FileSystemHandle::Move(const fs::EntryId& aParentId,
     return nullptr;
   }
 
-  fs::Name name(aName);
+  fs::FileSystemChildMetadata newMetadata;
+  newMetadata.parentId() = aParentId;
+  newMetadata.childName() = aName;
   if (!aParentId.IsEmpty()) {
-    fs::FileSystemChildMetadata newMetadata;
-    newMetadata.parentId() = aParentId;
-    newMetadata.childName() = aName;
-    mRequestHandler->MoveEntry(mManager, this, mMetadata, newMetadata, promise,
+    mRequestHandler->MoveEntry(mManager, this, &mMetadata, newMetadata, promise,
                                aError);
   } else {
-    mRequestHandler->RenameEntry(mManager, this, mMetadata, name, promise,
-                                 aError);
+    mRequestHandler->RenameEntry(mManager, this, &mMetadata,
+                                 newMetadata.childName(), promise, aError);
   }
   if (aError.Failed()) {
     return nullptr;
@@ -185,13 +184,13 @@ already_AddRefed<Promise> FileSystemHandle::Move(const fs::EntryId& aParentId,
   
   
   promise->AddCallbacksWithCycleCollectedArgs(
-      [name](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
-             FileSystemHandle* aHandle) {
+      [newMetadata](JSContext* aCx, JS::Handle<JS::Value> aValue,
+                    ErrorResult& aRv, FileSystemHandle* aHandle) {
         
         LOG(("Changing FileSystemHandle name from %s to %s",
              NS_ConvertUTF16toUTF8(aHandle->mMetadata.entryName()).get(),
-             NS_ConvertUTF16toUTF8(name).get()));
-        aHandle->mMetadata.entryName() = name;
+             NS_ConvertUTF16toUTF8(newMetadata.childName()).get()));
+        aHandle->mMetadata.entryName() = newMetadata.childName();
       },
       [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
          FileSystemHandle* aHandle) {

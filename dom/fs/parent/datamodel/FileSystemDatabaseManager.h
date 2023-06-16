@@ -133,8 +133,7 @@ class FileSystemDatabaseManager {
 
 
 
-
-  virtual Result<bool, QMResult> RenameEntry(
+  virtual Result<EntryId, QMResult> RenameEntry(
       const FileSystemEntryMetadata& aHandle, const Name& aNewName) = 0;
 
   
@@ -144,8 +143,7 @@ class FileSystemDatabaseManager {
 
 
 
-
-  virtual Result<bool, QMResult> MoveEntry(
+  virtual Result<EntryId, QMResult> MoveEntry(
       const FileSystemEntryMetadata& aHandle,
       const FileSystemChildMetadata& aNewDesignation) = 0;
 
