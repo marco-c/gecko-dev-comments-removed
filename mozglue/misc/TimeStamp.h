@@ -369,6 +369,20 @@ typedef BaseTimeDuration<TimeDurationValueCalculator> TimeDuration;
 
 
 
+#if defined(XP_WIN)
+
+
+static_assert(sizeof(TimeStampValue) > 8);
+#endif
+
+
+
+
+
+
+
+
+
 class TimeStamp {
  public:
   

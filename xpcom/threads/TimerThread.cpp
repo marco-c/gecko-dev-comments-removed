@@ -29,13 +29,6 @@ using namespace mozilla;
 
 
 
-#if defined(XP_WIN) && defined(DEBUG)
-#  define HACK_OUTPUT_FOR_BUG_1829983
-#endif
-
-
-
-
 #ifdef TIMERS_RUNTIME_STATS
 
 
@@ -684,31 +677,13 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
-#ifdef HACK_OUTPUT_FOR_BUG_1829983
-  const bool assertCondition =
-      bundleWakeup - mTimers[0].Timeout() <=
-      ComputeAcceptableFiringDelay(mTimers[0].Delay(), minTimerDelay,
-                                   maxTimerDelay);
-  if (!assertCondition) {
-    printf_stderr("*** Special TimerThread debug output ***\n");
-    const int64_t tDMin = minTimerDelay.GetValue();
-    const int64_t tDMax = maxTimerDelay.GetValue();
-    printf_stderr("%16llx / %16llx\n", tDMin, tDMax);
-    const size_t l = mTimers.Length();
-    for (size_t i = 0; i < l; ++i) {
-      const Entry& e = mTimers[i];
-      const TimeStamp tS = e.Timeout();
-      const TimeStampValue tSV = tS.GetValue();
-      const TimeDuration d = e.Delay();
-      printf_stderr("[%5zu] %16llx / %16llx / %d / %d / %16llx\n", i, tSV.GTC(),
-                    tSV.QPC(), (int)tSV.IsNull(), (int)tSV.HasQPC(),
-                    d.GetValue());
-    }
-  }
-#endif
+#if !defined(XP_WIN)
+  
+  
   MOZ_ASSERT(bundleWakeup - mTimers[0].Timeout() <=
              ComputeAcceptableFiringDelay(mTimers[0].Delay(), minTimerDelay,
                                           maxTimerDelay));
+#endif
 
   return bundleWakeup;
 }
