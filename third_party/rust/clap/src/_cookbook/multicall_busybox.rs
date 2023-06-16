@@ -1,0 +1,7 @@
+
+
+
+#![doc = include_str!("../../examples/multicall-busybox.rs")]
+
+
+#![doc = include_str!("../../examples/multicall-busybox.md")]

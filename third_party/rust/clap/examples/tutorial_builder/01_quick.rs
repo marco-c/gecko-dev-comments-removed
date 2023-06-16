@@ -1,10 +1,9 @@
+use std::path::PathBuf;
 
-
-use clap::{arg, command, Command};
-use std::path::Path;
+use clap::{arg, command, value_parser, ArgAction, Command};
 
 fn main() {
-    let matches = command!()
+    let matches = command!() 
         .arg(arg!([name] "Optional name to operate on"))
         .arg(
             arg!(
@@ -12,8 +11,7 @@ fn main() {
             )
             
             .required(false)
-            
-            .allow_invalid_utf8(true),
+            .value_parser(value_parser!(PathBuf)),
         )
         .arg(arg!(
             -d --debug ... "Turn debugging information on"
@@ -21,23 +19,25 @@ fn main() {
         .subcommand(
             Command::new("test")
                 .about("does testing things")
-                .arg(arg!(-l --list "lists test values")),
+                .arg(arg!(-l --list "lists test values").action(ArgAction::SetTrue)),
         )
         .get_matches();
 
     
-    if let Some(name) = matches.value_of("name") {
+    if let Some(name) = matches.get_one::<String>("name") {
         println!("Value for name: {}", name);
     }
 
-    if let Some(raw_config) = matches.value_of_os("config") {
-        let config_path = Path::new(raw_config);
+    if let Some(config_path) = matches.get_one::<PathBuf>("config") {
         println!("Value for config: {}", config_path.display());
     }
 
     
     
-    match matches.occurrences_of("debug") {
+    match matches
+        .get_one::<u8>("debug")
+        .expect("Count's are defaulted")
+    {
         0 => println!("Debug mode is off"),
         1 => println!("Debug mode is kind of on"),
         2 => println!("Debug mode is on"),
@@ -48,7 +48,7 @@ fn main() {
     
     if let Some(matches) = matches.subcommand_matches("test") {
         
-        if matches.is_present("list") {
+        if matches.get_flag("list") {
             
             println!("Printing testing lists...");
         } else {

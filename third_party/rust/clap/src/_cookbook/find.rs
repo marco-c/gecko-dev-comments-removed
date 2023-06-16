@@ -1,0 +1,7 @@
+
+
+
+#![doc = include_str!("../../examples/find.rs")]
+
+
+#![doc = include_str!("../../examples/find.md")]

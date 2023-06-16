@@ -1,18 +1,22 @@
+use clap::{arg, builder::PossibleValue, command, value_parser, ValueEnum};
 
-
-use clap::{arg, command, ArgEnum, PossibleValue};
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Mode {
     Fast,
     Slow,
 }
 
-impl Mode {
-    pub fn possible_values() -> impl Iterator<Item = PossibleValue<'static>> {
-        Mode::value_variants()
-            .iter()
-            .filter_map(ArgEnum::to_possible_value)
+
+impl ValueEnum for Mode {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Mode::Fast, Mode::Slow]
+    }
+
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        Some(match self {
+            Mode::Fast => PossibleValue::new("fast").help("Run swiftly"),
+            Mode::Slow => PossibleValue::new("slow").help("Crawl slowly but steadily"),
+        })
     }
 }
 
@@ -34,22 +38,22 @@ impl std::str::FromStr for Mode {
                 return Ok(*variant);
             }
         }
-        Err(format!("Invalid variant: {}", s))
+        Err(format!("invalid variant: {}", s))
     }
 }
 
 fn main() {
-    let matches = command!()
+    let matches = command!() 
         .arg(
             arg!(<MODE>)
                 .help("What mode to run the program in")
-                .possible_values(Mode::possible_values()),
+                .value_parser(value_parser!(Mode)),
         )
         .get_matches();
 
     
     match matches
-        .value_of_t("MODE")
+        .get_one::<Mode>("MODE")
         .expect("'MODE' is required and parsing will fail if its missing")
     {
         Mode::Fast => {

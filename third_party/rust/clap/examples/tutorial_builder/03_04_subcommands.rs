@@ -1,9 +1,7 @@
-
-
 use clap::{arg, command, Command};
 
 fn main() {
-    let matches = command!()
+    let matches = command!() 
         .propagate_version(true)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -17,7 +15,7 @@ fn main() {
     match matches.subcommand() {
         Some(("add", sub_matches)) => println!(
             "'myapp add' was used, name is: {:?}",
-            sub_matches.value_of("NAME")
+            sub_matches.get_one::<String>("NAME")
         ),
         _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
     }

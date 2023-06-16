@@ -1,5 +1,3 @@
-
-
 use clap::Command;
 
 fn main() {

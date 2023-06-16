@@ -1,17 +1,15 @@
-
-
 use clap::Parser;
 
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 struct Args {
     
-    #[clap(short, long)]
+    #[arg(short, long)]
     name: String,
 
     
-    #[clap(short, long, default_value_t = 1)]
+    #[arg(short, long, default_value_t = 1)]
     count: u8,
 }
 

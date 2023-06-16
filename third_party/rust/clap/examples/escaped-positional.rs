@@ -1,26 +1,32 @@
-
-
-use clap::{arg, command};
+use clap::{arg, command, value_parser, ArgAction};
 
 fn main() {
-    let matches = command!()
-        .arg(arg!(eff: -f))
-        .arg(arg!(pea: -p <PEAR>).required(false))
+    let matches = command!() 
+        .arg(arg!(eff: -f).action(ArgAction::SetTrue))
+        .arg(arg!(pea: -p <PEAR>).value_parser(value_parser!(String)))
         .arg(
-            arg!(slop: [SLOP]).multiple_occurrences(true).last(true), 
+            
+            arg!(slop: [SLOP])
+                .num_args(1..)
+                .last(true)
+                .value_parser(value_parser!(String)),
         )
         .get_matches();
 
     
-    println!("-f used: {:?}", matches.is_present("eff")); 
-    println!("-p's value: {:?}", matches.value_of("pea")); 
+
+    
+    println!("-f used: {:?}", matches.get_flag("eff"));
+    
+    println!("-p's value: {:?}", matches.get_one::<String>("pea"));
+    
     println!(
         "'slops' values: {:?}",
         matches
-            .values_of("slop")
+            .get_many::<String>("slop")
             .map(|vals| vals.collect::<Vec<_>>())
             .unwrap_or_default()
-    ); 
+    );
 
     
 }
