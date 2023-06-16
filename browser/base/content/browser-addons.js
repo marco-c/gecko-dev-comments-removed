@@ -1222,7 +1222,13 @@ var gUnifiedExtensions = {
 
       
       if (!widget || widget.areaType !== CustomizableUI.TYPE_TOOLBAR) {
-        if (lazy.OriginControls.getAttention(policy, window)) {
+        const { attention: att, quarantined } =
+          lazy.OriginControls.getAttentionState(policy, window);
+        
+        
+        
+        
+        if (att && !quarantined) {
           attention = true;
           break;
         }
