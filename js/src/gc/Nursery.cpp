@@ -410,9 +410,7 @@ void js::Nursery::disableBigInts() {
 }
 
 void js::Nursery::updateAllZoneAllocFlags() {
-  
-  
-  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+  for (AllZonesIter zone(gc); !zone.done(); zone.next()) {
     updateAllocFlagsForZone(zone);
   }
 }
