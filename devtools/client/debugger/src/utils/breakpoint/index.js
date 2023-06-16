@@ -27,15 +27,6 @@ export function makeBreakpointServerLocationId(breakpointServerLocation) {
 
 
 
-export function makeBreakpointServerOptions(options) {
-  return { logValue: options.logValue, condition: options.condition };
-}
-
-
-
-
-
-
 
 
 export function makeBreakpointServerLocation(state, location) {

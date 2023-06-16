@@ -4,9 +4,6 @@
 "use strict";
 
 const asyncStoreHelper = require("resource://devtools/client/shared/async-store-helper.js");
-const {
-  makeBreakpointServerOptions,
-} = require("resource://devtools/client/debugger/src/utils/breakpoint/index.js");
 const { validateBreakpointLocation } = ChromeUtils.import(
   "resource://devtools/shared/validate-breakpoint.jsm"
 );
@@ -42,10 +39,7 @@ exports.getThreadOptions = async function () {
     ),
     
     observeAsmJS: true,
-    breakpoints: createServerBreakpoints(
-      sanitizeBreakpoints(await asyncStore.pendingBreakpoints)
-    ),
-    xhrBreakpoints: createServerXHRBreakpoints(await asyncStore.xhrBreakpoints),
+    breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     
     
     
@@ -54,37 +48,6 @@ exports.getThreadOptions = async function () {
       ((await asyncStore.eventListenerBreakpoints) || {}).active || [],
   };
 };
-
-function makeServerBreakpointFromPendingBreakpoint(pendingBreakpoint) {
-  const { options, location } = pendingBreakpoint;
-
-  return {
-    location: {
-      sourceUrl: location.sourceUrl,
-      line: location.line,
-      column: location.column,
-    },
-    options: makeBreakpointServerOptions(options),
-  };
-}
-
-function createServerXHRBreakpoints(xhrBreakpoints) {
-  return xhrBreakpoints
-    .filter(breakpoint => !breakpoint.disabled)
-    .map(({ path, method }) => ({ path, method }));
-}
-
-function createServerBreakpoints(pendingBreakpoints) {
-  const serverBreakpoints = {};
-  for (const key in pendingBreakpoints) {
-    const breakpoint = pendingBreakpoints[key];
-    if (!breakpoint.disabled) {
-      serverBreakpoints[key] =
-        makeServerBreakpointFromPendingBreakpoint(breakpoint);
-    }
-  }
-  return serverBreakpoints;
-}
 
 
 

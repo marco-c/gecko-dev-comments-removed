@@ -1054,27 +1054,10 @@ async function addBreakpoint(dbg, source, line, column, options) {
 
 
 
-
-
-
 async function addBreakpointViaGutter(dbg, line) {
   info(`Add breakpoint via the editor on line ${line}`);
-  const onAdded = waitForDispatch(dbg.store, "SET_BREAKPOINT");
   await clickGutter(dbg, line);
-  return onAdded;
-}
-
-
-
-
-
-
-
-async function removeBreakpointViaGutter(dbg, line) {
-  info(`Remove breakpoint via the editor on line ${line}`);
-  const onRemoved = waitForDispatch(dbg.store, "REMOVE_BREAKPOINT");
-  await clickGutter(dbg, line);
-  return onRemoved;
+  return waitForDispatch(dbg.store, "SET_BREAKPOINT");
 }
 
 function disableBreakpoint(dbg, source, line, column) {
