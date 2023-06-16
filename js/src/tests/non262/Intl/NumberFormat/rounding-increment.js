@@ -85,6 +85,19 @@
     
     
   };
+  let nf = new Intl.NumberFormat("en", options);
+  assertEq(nf.resolvedOptions().minimumFractionDigits, 0);
+  assertEq(nf.resolvedOptions().maximumFractionDigits, 0);
+}
+
+
+
+{
+  let options = {
+    roundingIncrement: 10,
+    
+    maximumFractionDigits: 1,
+  };
   assertThrowsInstanceOf(() => new Intl.NumberFormat("en", options), RangeError);
 }
 

@@ -175,6 +175,7 @@ function UnwrapNumberFormat(nf) {
 
 
 
+
 function SetNumberFormatDigitOptions(
   lazyData,
   options,
@@ -203,6 +204,7 @@ function SetNumberFormatDigitOptions(
 
 #ifdef NIGHTLY_BUILD
   
+
   var roundingPriority = GetOption(
     options,
     "roundingPriority",
@@ -210,8 +212,78 @@ function SetNumberFormatDigitOptions(
     ["auto", "morePrecision", "lessPrecision"],
     "auto"
   );
+
+  var roundingIncrement = GetNumberOption(
+    options,
+    "roundingIncrement",
+    1,
+    5000,
+    1
+  );
+  switch (roundingIncrement) {
+    case 1:
+    case 2:
+    case 5:
+    case 10:
+    case 20:
+    case 25:
+    case 50:
+    case 100:
+    case 200:
+    case 250:
+    case 500:
+    case 1000:
+    case 2000:
+    case 2500:
+    case 5000:
+      break;
+    default:
+      ThrowRangeError(
+        JSMSG_INVALID_OPTION_VALUE,
+        "roundingIncrement",
+        roundingIncrement
+      );
+  }
+
+  var roundingMode = GetOption(
+    options,
+    "roundingMode",
+    "string",
+    [
+      "ceil",
+      "floor",
+      "expand",
+      "trunc",
+      "halfCeil",
+      "halfFloor",
+      "halfExpand",
+      "halfTrunc",
+      "halfEven",
+    ],
+    "halfExpand"
+  );
+
+  var trailingZeroDisplay = GetOption(
+    options,
+    "trailingZeroDisplay",
+    "string",
+    ["auto", "stripIfInteger"],
+    "auto"
+  );
+
+  if (roundingIncrement !== 1) {
+    mxfdDefault = mnfdDefault;
+  }
+
+  lazyData.roundingIncrement = roundingIncrement;
+  lazyData.roundingMode = roundingMode;
+  lazyData.trailingZeroDisplay = trailingZeroDisplay;
 #else
   var roundingPriority = "auto";
+
+  lazyData.roundingIncrement = 1;
+  lazyData.roundingMode = "halfExpand";
+  lazyData.trailingZeroDisplay = "auto";
 #endif
 
   const hasSignificantDigits = mnsd !== undefined || mxsd !== undefined;
@@ -310,7 +382,36 @@ function SetNumberFormatDigitOptions(
     lazyData.minimumSignificantDigits = 1;
     lazyData.maximumSignificantDigits = 2;
   }
+
+#ifdef NIGHTLY_BUILD
+  if (roundingIncrement !== 1) {
+    
+    if (lazyData.roundingPriority !== "auto") {
+      ThrowTypeError(
+        JSMSG_INVALID_NUMBER_OPTION,
+        "roundingIncrement",
+        "roundingPriority"
+      );
+    }
+    if (hasOwn("minimumSignificantDigits", lazyData)) {
+      ThrowTypeError(
+        JSMSG_INVALID_NUMBER_OPTION,
+        "roundingIncrement",
+        "minimumSignificantDigits"
+      );
+    }
+
+    
+    if (
+      lazyData.minimumFractionDigits !==
+      lazyData.maximumFractionDigits
+    ) {
+      ThrowRangeError(JSMSG_UNEQUAL_FRACTION_DIGITS);
+    }
+  }
+#endif
 }
+
 
 
 
@@ -681,84 +782,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     notation
   );
 
-#ifdef NIGHTLY_BUILD
-  
-  var roundingIncrement = GetNumberOption(
-    options,
-    "roundingIncrement",
-    1,
-    5000,
-    1
-  );
-  switch (roundingIncrement) {
-    case 1:
-    case 2:
-    case 5:
-    case 10:
-    case 20:
-    case 25:
-    case 50:
-    case 100:
-    case 200:
-    case 250:
-    case 500:
-    case 1000:
-    case 2000:
-    case 2500:
-    case 5000:
-      break;
-    default:
-      ThrowRangeError(
-        JSMSG_INVALID_OPTION_VALUE,
-        "roundingIncrement",
-        roundingIncrement
-      );
-  }
-  lazyNumberFormatData.roundingIncrement = roundingIncrement;
-
-  if (roundingIncrement !== 1) {
-    
-    if (lazyNumberFormatData.roundingPriority !== "auto") {
-      ThrowTypeError(
-        JSMSG_INVALID_NUMBER_OPTION,
-        "roundingIncrement",
-        "roundingPriority"
-      );
-    }
-    if (hasOwn("minimumSignificantDigits", lazyNumberFormatData)) {
-      ThrowTypeError(
-        JSMSG_INVALID_NUMBER_OPTION,
-        "roundingIncrement",
-        "minimumSignificantDigits"
-      );
-    }
-
-    
-    if (
-      lazyNumberFormatData.minimumFractionDigits !==
-      lazyNumberFormatData.maximumFractionDigits
-    ) {
-      ThrowRangeError(JSMSG_UNEQUAL_FRACTION_DIGITS);
-    }
-  }
-#else
-  lazyNumberFormatData.roundingIncrement = 1;
-#endif
-
-#ifdef NIGHTLY_BUILD
-  
-  var trailingZeroDisplay = GetOption(
-    options,
-    "trailingZeroDisplay",
-    "string",
-    ["auto", "stripIfInteger"],
-    "auto"
-  );
-  lazyNumberFormatData.trailingZeroDisplay = trailingZeroDisplay;
-#else
-  lazyNumberFormatData.trailingZeroDisplay = "auto";
-#endif
-
   
   var compactDisplay = GetOption(
     options,
@@ -818,30 +841,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     "auto"
   );
   lazyNumberFormatData.signDisplay = signDisplay;
-
-#ifdef NIGHTLY_BUILD
-  
-  var roundingMode = GetOption(
-    options,
-    "roundingMode",
-    "string",
-    [
-      "ceil",
-      "floor",
-      "expand",
-      "trunc",
-      "halfCeil",
-      "halfFloor",
-      "halfExpand",
-      "halfTrunc",
-      "halfEven",
-    ],
-    "halfExpand"
-  );
-  lazyNumberFormatData.roundingMode = roundingMode;
-#else
-  lazyNumberFormatData.roundingMode = "halfExpand";
-#endif
 
   
   
