@@ -186,7 +186,7 @@ var PointerlockFsWarning = {
     }
     if (newState != "hidden") {
       if (currentState != "hidden") {
-        this._element.setAttribute(newState, true);
+        this._element.setAttribute(newState, "");
       } else {
         
         
@@ -197,7 +197,7 @@ var PointerlockFsWarning = {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (this._element) {
-              this._element.setAttribute(newState, true);
+              this._element.setAttribute(newState, "");
             }
           });
         });
