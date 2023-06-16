@@ -19,8 +19,32 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
   return videocapturemodule::VideoCaptureImpl::Create(deviceUniqueIdUTF8);
 }
 
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
+    VideoCaptureOptions* options,
+    const char* deviceUniqueIdUTF8) {
+
+
+#if !defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
+  return nullptr;
+#else
+  return videocapturemodule::VideoCaptureImpl::Create(options,
+                                                      deviceUniqueIdUTF8);
+#endif
+}
+
 VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo() {
   return videocapturemodule::VideoCaptureImpl::CreateDeviceInfo();
+}
+
+VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
+    VideoCaptureOptions* options) {
+
+
+#if !defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
+  return nullptr;
+#else
+  return videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(options);
+#endif
 }
 
 }  
