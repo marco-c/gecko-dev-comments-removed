@@ -1940,7 +1940,7 @@ void* wasm::MaybeGetBuiltinThunk(JSFunction* f, const FuncType& funcType) {
   
   
   if (math_use_fdlibm_for_sin_cos_tan() ||
-      f->realm()->behaviors().shouldResistFingerprinting()) {
+      f->realm()->creationOptions().alwaysUseFdlibm()) {
     TypedNative typedNative(f->jitInfo()->inlinableNative, *abiType,
                             TypedNative::FdlibmImpl::Yes);
     auto p =

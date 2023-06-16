@@ -259,6 +259,23 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  
+  
+  bool forceUTC() const { return forceUTC_; }
+  RealmCreationOptions& setForceUTC(bool flag) {
+    forceUTC_ = flag;
+    return *this;
+  }
+
+  
+  
+  
+  bool alwaysUseFdlibm() const { return alwaysUseFdlibm_; }
+  RealmCreationOptions& setAlwaysUseFdlibm(bool flag) {
+    alwaysUseFdlibm_ = flag;
+    return *this;
+  }
+
   uint64_t profilerRealmID() const { return profilerRealmID_; }
   RealmCreationOptions& setProfilerRealmID(uint64_t id) {
     profilerRealmID_ = id;
@@ -295,6 +312,8 @@ class JS_PUBLIC_API RealmCreationOptions {
 #endif
   bool secureContext_ = false;
   bool freezeBuiltins_ = false;
+  bool forceUTC_ = false;
+  bool alwaysUseFdlibm_ = false;
 };
 
 
@@ -316,14 +335,6 @@ class JS_PUBLIC_API RealmBehaviors {
   bool clampAndJitterTime() const { return clampAndJitterTime_; }
   RealmBehaviors& setClampAndJitterTime(bool flag) {
     clampAndJitterTime_ = flag;
-    return *this;
-  }
-
-  bool shouldResistFingerprinting() const {
-    return shouldResistFingerprinting_;
-  }
-  RealmBehaviors& setShouldResistFingerprinting(bool flag) {
-    shouldResistFingerprinting_ = flag;
     return *this;
   }
 
@@ -362,7 +373,6 @@ class JS_PUBLIC_API RealmBehaviors {
  private:
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;
-  bool shouldResistFingerprinting_ = false;
   bool isNonLive_ = false;
 };
 

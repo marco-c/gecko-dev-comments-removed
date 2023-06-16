@@ -154,7 +154,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool forceStrictMode_ = false;
 
   
-  bool shouldResistFingerprinting_ = false;
+  bool alwaysUseFdlibm_ = false;
 
   
   bool sourcePragmas_ = true;
@@ -268,9 +268,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   
   bool mutedErrors() const { return mutedErrors_; }
-  bool shouldResistFingerprinting() const {
-    return shouldResistFingerprinting_;
-  }
+  bool alwaysUseFdlibm() const { return alwaysUseFdlibm_; }
   bool forceFullParse() const {
     return eagerDelazificationIsOneOf<
         DelazificationOption::ParseEverythingEagerly>();
@@ -315,7 +313,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(sourceMapURL_);
     PrintFields_(mutedErrors_);
     PrintFields_(forceStrictMode_);
-    PrintFields_(shouldResistFingerprinting_);
+    PrintFields_(alwaysUseFdlibm_);
     PrintFields_(sourcePragmas_);
     PrintFields_(skipFilenameValidation_);
     PrintFields_(hideScriptFromDebugger_);

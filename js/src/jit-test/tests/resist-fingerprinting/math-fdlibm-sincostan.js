@@ -1,4 +1,4 @@
-let g = newGlobal({shouldResistFingerprinting: true});
+let g = newGlobal({alwaysUseFdlibm: true});
 
 
 

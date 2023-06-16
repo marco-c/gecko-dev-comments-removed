@@ -115,23 +115,23 @@ class DateTimeInfo {
  public:
   
   
-  enum class ShouldRFP { No, Yes };
+  enum class ForceUTC { No, Yes };
 
  private:
   static ExclusiveData<DateTimeInfo>* instance;
-  static ExclusiveData<DateTimeInfo>* instanceRFP;
+  static ExclusiveData<DateTimeInfo>* instanceUTC;
 
   friend class ExclusiveData<DateTimeInfo>;
 
   friend bool InitDateTimeState();
   friend void FinishDateTimeState();
 
-  explicit DateTimeInfo(bool shouldResistFingerprinting);
+  explicit DateTimeInfo(bool forceUTC);
   ~DateTimeInfo();
 
-  static auto acquireLockWithValidTimeZone(ShouldRFP shouldRFP) {
+  static auto acquireLockWithValidTimeZone(ForceUTC forceUTC) {
     auto guard =
-        shouldRFP == ShouldRFP::Yes ? instanceRFP->lock() : instance->lock();
+        forceUTC == ForceUTC::Yes ? instanceUTC->lock() : instance->lock();
     if (guard->timeZoneStatus_ != TimeZoneStatus::Valid) {
       guard->updateTimeZone();
     }
@@ -139,7 +139,7 @@ class DateTimeInfo {
   }
 
  public:
-  static ShouldRFP shouldRFP(JS::Realm* realm);
+  static ForceUTC forceUTC(JS::Realm* realm);
 
   
   
@@ -151,9 +151,9 @@ class DateTimeInfo {
 
 
 
-  static int32_t getDSTOffsetMilliseconds(ShouldRFP shouldRFP,
+  static int32_t getDSTOffsetMilliseconds(ForceUTC forceUTC,
                                           int64_t utcMilliseconds) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
   }
 
@@ -162,8 +162,8 @@ class DateTimeInfo {
 
 
 
-  static int32_t utcToLocalStandardOffsetSeconds(ShouldRFP shouldRFP) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+  static int32_t utcToLocalStandardOffsetSeconds(ForceUTC forceUTC) {
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->utcToLocalStandardOffsetSeconds_;
   }
 
@@ -174,10 +174,9 @@ class DateTimeInfo {
 
 
 
-  static int32_t getOffsetMilliseconds(ShouldRFP shouldRFP,
-                                       int64_t milliseconds,
+  static int32_t getOffsetMilliseconds(ForceUTC forceUTC, int64_t milliseconds,
                                        TimeZoneOffset offset) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalGetOffsetMilliseconds(milliseconds, offset);
   }
 
@@ -187,10 +186,10 @@ class DateTimeInfo {
 
 
 
-  static bool timeZoneDisplayName(ShouldRFP shouldRFP, char16_t* buf,
+  static bool timeZoneDisplayName(ForceUTC forceUTC, char16_t* buf,
                                   size_t buflen, int64_t utcMilliseconds,
                                   const char* locale) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds,
                                               locale);
   }
@@ -200,8 +199,8 @@ class DateTimeInfo {
 
 
   template <typename B>
-  static mozilla::intl::ICUResult timeZoneId(ShouldRFP shouldRFP, B& buffer) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+  static mozilla::intl::ICUResult timeZoneId(ForceUTC forceUTC, B& buffer) {
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->timeZone()->GetId(buffer);
   }
 
@@ -209,8 +208,8 @@ class DateTimeInfo {
 
 
   static mozilla::Result<int32_t, mozilla::intl::ICUError> getRawOffsetMs(
-      ShouldRFP shouldRFP) {
-    auto guard = acquireLockWithValidTimeZone(shouldRFP);
+      ForceUTC forceUTC) {
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->timeZone()->GetRawOffsetMs();
   }
 #else
@@ -218,8 +217,8 @@ class DateTimeInfo {
 
 
 
-  static int32_t localTZA(ShouldRFP shouldRFP) {
-    return utcToLocalStandardOffsetSeconds(shouldRFP) * msPerSecond;
+  static int32_t localTZA(ForceUTC forceUTC) {
+    return utcToLocalStandardOffsetSeconds(forceUTC) * msPerSecond;
   }
 #endif 
 
@@ -235,7 +234,7 @@ class DateTimeInfo {
     {
       
       
-      auto guard = instanceRFP->lock();
+      auto guard = instanceUTC->lock();
       guard->internalResetTimeZone(mode);
     }
   }
@@ -255,7 +254,7 @@ class DateTimeInfo {
     void sanityCheck();
   };
 
-  bool shouldResistFingerprinting_;
+  bool forceUTC_;
 
   enum class TimeZoneStatus : uint8_t { Valid, NeedsUpdate, UpdateIfChanged };
 
