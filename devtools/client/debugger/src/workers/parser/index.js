@@ -32,7 +32,7 @@ export class ParserDispatcher extends WorkerDispatcher {
 
   mapExpression = this.task("mapExpression");
 
-  clear = this.task("clearState");
+  clearSources = this.task("clearSources");
 
   
 

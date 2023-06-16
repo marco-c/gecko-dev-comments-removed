@@ -10,7 +10,7 @@ export function addTarget(targetFront) {
 }
 
 export function removeTarget(targetFront) {
-  return ({ getState, dispatch }) => {
+  return ({ getState, dispatch, parserWorker }) => {
     const threadActorID = targetFront.targetForm.threadActor;
 
     
@@ -30,6 +30,8 @@ export function removeTarget(targetFront) {
       actors,
       sources,
     });
+
+    parserWorker.clearSources(sources.map(source => source.id));
   };
 }
 
