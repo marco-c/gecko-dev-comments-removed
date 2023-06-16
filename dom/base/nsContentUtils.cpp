@@ -2152,8 +2152,7 @@ bool nsContentUtils::IsCallerChromeOrElementTransformGettersEnabled(
 
 
 
-bool nsContentUtils::ShouldResistFingerprinting(
-    RFPTarget aTarget ) {
+bool nsContentUtils::ShouldResistFingerprinting(RFPTarget aTarget) {
   return nsRFPService::IsRFPEnabledFor(aTarget);
 }
 
