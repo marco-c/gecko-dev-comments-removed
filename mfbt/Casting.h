@@ -198,32 +198,6 @@ inline To ReleaseAssertedCast(const From aFrom) {
   return static_cast<To>(aFrom);
 }
 
-namespace detail {
-
-template <typename From>
-class LazyAssertedCastT final {
-  const From mVal;
-
- public:
-  explicit LazyAssertedCastT(const From val) : mVal(val) {}
-
-  template <typename To>
-  operator To() const {
-    return AssertedCast<To>(mVal);
-  }
-};
-
-}  
-
-
-
-
-
-template <typename From>
-inline auto LazyAssertedCast(const From val) {
-  return detail::LazyAssertedCastT<From>(val);
-}
-
 }  
 
 #endif 

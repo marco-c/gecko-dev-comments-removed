@@ -85,10 +85,26 @@ inline void* calloc(const ForbidNarrowing<size_t> n,
 
 
 
+namespace detail {
+
+template <typename From>
+class AutoAssertCastT final {
+  const From mVal;
+
+ public:
+  explicit AutoAssertCastT(const From val) : mVal(val) {}
+
+  template <typename To>
+  operator To() const {
+    return AssertedCast<To>(mVal);
+  }
+};
+
+}  
 
 template <typename From>
 inline auto AutoAssertCast(const From val) {
-  return LazyAssertedCast(val);
+  return detail::AutoAssertCastT<From>(val);
 }
 
 const char* GetEnumName(GLenum val, const char* defaultRet = "<unknown>");
