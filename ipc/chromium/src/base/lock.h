@@ -10,7 +10,6 @@
 #include "base/basictypes.h"
 #include "base/lock_impl.h"
 #include "base/platform_thread.h"
-#include "build/build_config.h"
 
 
 class Lock {
