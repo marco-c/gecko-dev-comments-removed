@@ -258,19 +258,21 @@ ScriptLoader::~ScriptLoader() {
 void ScriptLoader::SetGlobalObject(nsIGlobalObject* aGlobalObject) {
   if (!aGlobalObject) {
     
+    CancelAndClearScriptLoadRequests();
     return;
   }
 
   MOZ_ASSERT(!HasPendingRequests());
 
-  if (mModuleLoader) {
-    MOZ_ASSERT(mModuleLoader->GetGlobalObject() == aGlobalObject);
-    return;
+  if (!mModuleLoader) {
+    
+    
+    mModuleLoader = new ModuleLoader(this, aGlobalObject, ModuleLoader::Normal);
   }
 
-  
-  
-  mModuleLoader = new ModuleLoader(this, aGlobalObject, ModuleLoader::Normal);
+  MOZ_ASSERT(mModuleLoader->GetGlobalObject() == aGlobalObject);
+  MOZ_ASSERT(aGlobalObject->GetModuleLoader(dom::danger::GetJSContext()) ==
+             mModuleLoader);
 }
 
 void ScriptLoader::RegisterContentScriptModuleLoader(ModuleLoader* aLoader) {
@@ -1438,6 +1440,10 @@ void ScriptLoader::CancelAndClearScriptLoadRequests() {
   mNonAsyncExternalScriptInsertedRequests.CancelRequestsAndClear();
   mXSLTRequests.CancelRequestsAndClear();
   mOffThreadCompilingRequests.CancelRequestsAndClear();
+
+  if (mModuleLoader) {
+    mModuleLoader->CancelAndClearDynamicImports();
+  }
 
   for (ModuleLoader* loader : mWebExtModuleLoaders) {
     loader->CancelAndClearDynamicImports();
