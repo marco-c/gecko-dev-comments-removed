@@ -833,6 +833,12 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
       return Err("SendPWebGLConstructor failed");
     }
 
+    
+    
+    if (mRemoteTextureOwnerId.isSome()) {
+      mRemoteTextureOwnerId = Nothing();
+    }
+
     if (!outOfProcess->SendInitialize(initDesc, &notLost.info)) {
       return Err("WebGL actor Initialize failed");
     }

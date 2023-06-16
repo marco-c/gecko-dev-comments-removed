@@ -55,10 +55,18 @@ void RemoteTextureOwnerClient::UnregisterTextureOwner(
 }
 
 void RemoteTextureOwnerClient::UnregisterAllTextureOwners() {
-  if (!mOwnerIds.empty()) {
-    RemoteTextureMap::Get()->UnregisterTextureOwners(mOwnerIds, mForPid);
-    mOwnerIds.clear();
+  if (mOwnerIds.empty()) {
+    return;
   }
+  RemoteTextureMap::Get()->UnregisterTextureOwners(mOwnerIds, mForPid);
+  mOwnerIds.clear();
+}
+
+void RemoteTextureOwnerClient::NotifyContextLost() {
+  if (mOwnerIds.empty()) {
+    return;
+  }
+  RemoteTextureMap::Get()->NotifyContextLost(mOwnerIds, mForPid);
 }
 
 void RemoteTextureOwnerClient::PushTexture(
@@ -174,6 +182,12 @@ void RemoteTextureMap::PushTexture(
     if (!owner) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return;
+    }
+
+    if (owner->mIsContextLost &&
+        !(aTextureHost->GetFlags() & TextureFlags::DUMMY_TEXTURE)) {
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      gfxCriticalNoteOnce << "Texture pushed during context lost";
     }
 
     const auto key = std::pair(aForPid, aOwnerId);
@@ -482,6 +496,24 @@ void RemoteTextureMap::UnregisterTextureOwners(
   }
 }
 
+void RemoteTextureMap::NotifyContextLost(
+    const std::unordered_set<RemoteTextureOwnerId,
+                             RemoteTextureOwnerId::HashFn>& aOwnerIds,
+    const base::ProcessId aForPid) {
+  MonitorAutoLock lock(mMonitor);
+
+  for (auto id : aOwnerIds) {
+    const auto key = std::pair(aForPid, id);
+    auto it = mTextureOwners.find(key);
+    if (it == mTextureOwners.end()) {
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      continue;
+    }
+    it->second->mIsContextLost = true;
+  }
+  mMonitor.Notify();
+}
+
 
 RefPtr<TextureHost> RemoteTextureMap::CreateRemoteTexture(
     TextureData* aTextureData, TextureFlags aTextureFlags) {
@@ -701,7 +733,7 @@ wr::MaybeExternalImageId RemoteTextureMap::GetExternalImageIdOfRemoteTexture(
     
     
     remoteTexture = owner->mLatestRenderedTextureHost;
-    if (!it->second->mReadyCheckSuppressed) {
+    if (!it->second->mReadyCheckSuppressed || !owner->mIsContextLost) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       gfxCriticalNoteOnce << "remote texture for rendering does not exist id:"
                           << uint64_t(aTextureId);
@@ -861,9 +893,9 @@ bool RemoteTextureMap::CheckRemoteTextureReady(
   MonitorAutoLock lock(mMonitor);
 
   auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
-  if (!owner) {
+  if (!owner || owner->mIsContextLost) {
     
-    return true;
+    return false;
   }
 
   const auto key = std::pair(aInfo.mForPid, aInfo.mTextureId);
@@ -899,7 +931,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
   MonitorAutoLock lock(mMonitor);
 
   auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
-  if (!owner) {
+  if (!owner || owner->mIsContextLost) {
     
     return false;
   }
@@ -935,7 +967,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
     if (!remoteTexture) {
       auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
       
-      if (!owner) {
+      if (!owner || owner->mIsContextLost) {
         
         return false;
       }
