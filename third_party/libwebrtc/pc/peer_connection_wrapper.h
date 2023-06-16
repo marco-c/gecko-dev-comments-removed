@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/data_channel_interface.h"
 #include "api/function_view.h"
 #include "api/jsep.h"
@@ -169,7 +170,8 @@ class PeerConnectionWrapper {
   
   
   rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
-      const std::string& label);
+      const std::string& label,
+      const absl::optional<DataChannelInit>& config = absl::nullopt);
 
   
   PeerConnectionInterface::SignalingState signaling_state();
