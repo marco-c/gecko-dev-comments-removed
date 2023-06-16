@@ -542,20 +542,23 @@ void RTCRtpReceiver::SetJitterBufferTarget(
   
   
   
-  if (!aTargetMs.IsNull() &&
-      (aTargetMs.Value() < 0.0 || aTargetMs.Value() > 4000.0)) {
-    aError.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("jitterBufferTarget");
-    return;
-  }
+  if (mPipeline && mPipeline->mConduit) {
+    if (!aTargetMs.IsNull() &&
+        (aTargetMs.Value() < 0.0 || aTargetMs.Value() > 4000.0)) {
+      aError.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("jitterBufferTarget");
+      return;
+    }
 
-  mJitterBufferTarget.reset();
+    mJitterBufferTarget.reset();
 
-  if (!aTargetMs.IsNull()) {
-    mJitterBufferTarget = Some(aTargetMs.Value());
+    if (!aTargetMs.IsNull()) {
+      mJitterBufferTarget = Some(aTargetMs.Value());
+    }
+    
+    
+    mPipeline->mConduit->SetJitterBufferTarget(
+        mJitterBufferTarget.valueOr(0.0));
   }
-  
-  
-  mPipeline->mConduit->SetJitterBufferTarget(mJitterBufferTarget.valueOr(0.0));
 }
 
 void RTCRtpReceiver::GetContributingSources(
