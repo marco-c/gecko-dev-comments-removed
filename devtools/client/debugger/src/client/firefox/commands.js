@@ -3,7 +3,10 @@
 
 
 import { createFrame } from "./create";
-import { makeBreakpointServerLocationId } from "../../utils/breakpoint";
+import {
+  makeBreakpointServerLocationId,
+  makeBreakpointServerOptions,
+} from "../../utils/breakpoint";
 
 import Reps from "devtools/client/shared/components/reps/index";
 
@@ -239,15 +242,7 @@ async function setBreakpoint(location, options) {
   }
   breakpoints[makeBreakpointServerLocationId(location)] = { location, options };
 
-  
-  
-  
-  
-  
-  const serverOptions = {
-    condition: options.condition,
-    logValue: options.logValue,
-  };
+  const serverOptions = makeBreakpointServerOptions(options);
   const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (!hasWatcherSupport) {
     
