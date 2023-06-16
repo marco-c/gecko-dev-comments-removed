@@ -54,6 +54,7 @@ struct BitstreamThresholds {
 };
 
 
+
 class VideoCodecTestFixture {
  public:
   class EncodedFrameChecker {
