@@ -168,6 +168,47 @@ void nsCocoaWindow::DestroyNativeWindow() {
 
   if (!mWindow) return;
 
+  
+  mTransitionsPending = std::queue<TransitionType>();
+
+  
+  bool (^inNativeFullscreen)(void) = ^{
+    return ((mWindow.styleMask & NSFullScreenWindowMask) == NSFullScreenWindowMask);
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool haveRequestedFullscreenExit = false;
+  NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+  while (!mInProcessTransitions && (inNativeFullscreen() || WeAreInNativeTransition()) &&
+         [localRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]]) {
+    
+    
+
+    
+    
+    
+    if (!haveRequestedFullscreenExit && inNativeFullscreen() && CanStartNativeTransition()) {
+      [mWindow toggleFullScreen:nil];
+      haveRequestedFullscreenExit = true;
+    }
+  }
+
   [mWindow releaseJSObjects];
   
   
@@ -175,6 +216,12 @@ void nsCocoaWindow::DestroyNativeWindow() {
   [mWindow close];
   mWindow = nil;
   [mDelegate autorelease];
+
+  
+  
+  
+  
+  EndOurNativeTransition();
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -1625,6 +1672,7 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
 
 void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   mHasStartedNativeFullscreen = false;
+  EndOurNativeTransition();
   DispatchOcclusionEvent();
   HandleUpdateFullscreenOnResize();
   FinishCurrentTransitionIfMatching(aFullscreen ? TransitionType::Fullscreen
@@ -1633,6 +1681,7 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
 void nsCocoaWindow::CocoaWindowDidFailFullscreen(bool aAttemptedFullscreen) {
   mHasStartedNativeFullscreen = false;
+  EndOurNativeTransition();
   DispatchOcclusionEvent();
 
   
@@ -1751,6 +1800,17 @@ void nsCocoaWindow::ProcessTransitions() {
       case TransitionType::Fullscreen: {
         if (!mInFullScreenMode) {
           
+          
+          
+          
+          NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+          while (mWindow && !CanStartNativeTransition() &&
+                 [localRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]]) {
+            
+            
+          }
+
+          
           [mWindow toggleFullScreen:nil];
           continue;
         }
@@ -1776,6 +1836,17 @@ void nsCocoaWindow::ProcessTransitions() {
       case TransitionType::Windowed: {
         if (mInFullScreenMode) {
           if (mInNativeFullScreenMode) {
+            
+            
+            
+            
+            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+            while (mWindow && !CanStartNativeTransition() &&
+                   [localRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]]) {
+              
+              
+            }
+
             
             [mWindow toggleFullScreen:nil];
             continue;
@@ -1890,6 +1961,32 @@ bool nsCocoaWindow::HandleUpdateFullscreenOnResize() {
   UpdateFullscreenState(toFullscreen, true);
 
   return true;
+}
+
+ mozilla::StaticDataMutex<nsCocoaWindow*> nsCocoaWindow::sWindowInNativeTransition(
+    nullptr);
+
+bool nsCocoaWindow::CanStartNativeTransition() {
+  auto window = sWindowInNativeTransition.Lock();
+  if (*window == nullptr) {
+    
+    
+    *window = this;
+    return true;
+  }
+  return false;
+}
+
+bool nsCocoaWindow::WeAreInNativeTransition() {
+  auto window = sWindowInNativeTransition.Lock();
+  return (*window == this);
+}
+
+void nsCocoaWindow::EndOurNativeTransition() {
+  auto window = sWindowInNativeTransition.Lock();
+  if (*window == this) {
+    *window = nullptr;
+  }
 }
 
 
