@@ -47,7 +47,6 @@ class MediaSink {
   
   
   
-  
   virtual RefPtr<EndedPromise> OnEnded(TrackType aType) = 0;
 
   
