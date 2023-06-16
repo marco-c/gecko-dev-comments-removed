@@ -17,28 +17,15 @@
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_VQSORT_INL_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_VQSORT_INL_H_
 
-#ifndef VQSORT_PRINT
-#define VQSORT_PRINT 0
-#endif
-
-
-
-#ifndef VQSORT_SECURE_RNG
-#define VQSORT_SECURE_RNG 0
-#endif
-
-#if VQSORT_SECURE_RNG
-#include "third_party/absl/random/random.h"
-#endif
-
 #include <stdio.h>  
 #include <string.h>  
 
+#include "hwy/base.h"
 #include "hwy/cache_control.h"        
 #include "hwy/contrib/sort/vqsort.h"  
 
-#if HWY_IS_MSAN
-#include <sanitizer/msan_interface.h>
+#ifndef VQSORT_PRINT
+#define VQSORT_PRINT 0
 #endif
 
 #endif  
@@ -68,16 +55,6 @@ namespace detail {
 
 using Constants = hwy::SortConstants;
 
-
-
-HWY_INLINE void UnpoisonIfMemorySanitizer(void* p, size_t bytes) {
-#if HWY_IS_MSAN
-  __msan_unpoison(p, bytes);
-#else
-  (void)p;
-  (void)bytes;
-#endif
-}
 
 template <class D>
 HWY_INLINE void MaybePrintVector(D d, const char* label, Vec<D> v,
@@ -148,60 +125,363 @@ void HeapSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes) {
 
 
 
-template <class D, class Traits, typename T>
-HWY_INLINE void BaseCase(D d, Traits st, T* HWY_RESTRICT keys,
-                         T* HWY_RESTRICT keys_end, size_t num,
+template <class Traits, typename T>
+HWY_INLINE void Sort2To2(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
+                         T* HWY_RESTRICT ) {
+  constexpr size_t kLPK = st.LanesPerKey();
+  const size_t num_keys = num_lanes / kLPK;
+  HWY_DASSERT(num_keys == 2);
+  HWY_ASSUME(num_keys == 2);
+
+  
+  const CappedTag<T, kLPK> d;
+  using V = Vec<decltype(d)>;
+
+  V v0 = LoadU(d, keys + 0x0 * kLPK);
+  V v1 = LoadU(d, keys + 0x1 * kLPK);
+
+  Sort2(d, st, v0, v1);
+
+  StoreU(v0, d, keys + 0x0 * kLPK);
+  StoreU(v1, d, keys + 0x1 * kLPK);
+}
+
+template <class Traits, typename T>
+HWY_INLINE void Sort3To4(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
                          T* HWY_RESTRICT buf) {
-  const size_t N = Lanes(d);
-  using V = decltype(Zero(d));
+  constexpr size_t kLPK = st.LanesPerKey();
+  const size_t num_keys = num_lanes / kLPK;
+  HWY_DASSERT(3 <= num_keys && num_keys <= 4);
+  HWY_ASSUME(num_keys >= 3);
+  HWY_ASSUME(num_keys <= 4);  
 
   
-  if (HWY_UNLIKELY(num <= 1)) return;
-
-  
-  
-  const size_t num_pow2 = size_t{1}
-                          << (32 - Num0BitsAboveMS1Bit_Nonzero32(
-                                       static_cast<uint32_t>(num - 1)));
-  HWY_DASSERT(num <= num_pow2 && num_pow2 <= Constants::BaseCaseNum(N));
-  const size_t cols =
-      HWY_MAX(st.LanesPerKey(), num_pow2 >> Constants::kMaxRowsLog2);
-  HWY_DASSERT(cols <= N);
+  const CappedTag<T, kLPK> d;
+  using V = Vec<decltype(d)>;
 
   
   
+  Store(st.LastValue(d), d, buf);
+
   
   
+  T* in_out3 = num_keys == 3 ? buf : keys + 0x3 * kLPK;
+
+  V v0 = LoadU(d, keys + 0x0 * kLPK);
+  V v1 = LoadU(d, keys + 0x1 * kLPK);
+  V v2 = LoadU(d, keys + 0x2 * kLPK);
+  V v3 = LoadU(d, in_out3);
+
+  Sort4(d, st, v0, v1, v2, v3);
+
+  StoreU(v0, d, keys + 0x0 * kLPK);
+  StoreU(v1, d, keys + 0x1 * kLPK);
+  StoreU(v2, d, keys + 0x2 * kLPK);
+  StoreU(v3, d, in_out3);
+}
+
+#if HWY_MEM_OPS_MIGHT_FAULT
+
+template <size_t kRows, size_t kLanesPerRow, class D, class Traits,
+          typename T = TFromD<D>>
+HWY_INLINE void CopyHalfToPaddedBuf(D d, Traits st, T* HWY_RESTRICT keys,
+                                    size_t num_lanes, T* HWY_RESTRICT buf) {
+  constexpr size_t kMinLanes = kRows / 2 * kLanesPerRow;
   
   
-  const size_t N_sn = Lanes(CappedTag<T, Constants::kMaxCols>());
-  if (HWY_LIKELY(keys + N_sn * Constants::kMaxRows <= keys_end)) {
-    SortingNetwork(st, keys, N_sn);
-    return;
+  const CappedTag<T, kMinLanes> dmax;
+  const size_t Nmax = Lanes(dmax);
+  HWY_DASSERT(Nmax < num_lanes);
+  HWY_ASSUME(Nmax <= kMinLanes);
+
+  
+  const Vec<decltype(dmax)> kPadding = st.LastValue(dmax);
+
+  
+  size_t i = num_lanes & ~(Nmax - 1);
+  HWY_ASSUME(i != 0);  
+  do {
+    Store(kPadding, dmax, buf + i);
+    i += Nmax;
+    
+  } while (i < (kRows - 1) * kLanesPerRow + Lanes(d));
+
+  
+  ptrdiff_t end = static_cast<ptrdiff_t>(num_lanes);
+  do {
+    end -= static_cast<ptrdiff_t>(Nmax);
+    StoreU(LoadU(dmax, keys + end), dmax, buf + end);
+  } while (end > static_cast<ptrdiff_t>(kRows / 2 * kLanesPerRow));
+}
+
+#endif  
+
+template <size_t kKeysPerRow, class Traits, typename T>
+HWY_NOINLINE void Sort8Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
+                            T* HWY_RESTRICT buf) {
+  
+  
+  static_assert(kKeysPerRow <= 4, "");
+
+  constexpr size_t kLPK = st.LanesPerKey();
+
+  
+  constexpr size_t kRows = 8;
+  constexpr size_t kLanesPerRow = kKeysPerRow * kLPK;
+  constexpr size_t kMinLanes = kRows / 2 * kLanesPerRow;
+  HWY_DASSERT(kMinLanes < num_lanes && num_lanes <= kRows * kLanesPerRow);
+
+  const CappedTag<T, kLanesPerRow> d;
+  using V = Vec<decltype(d)>;
+  V v4, v5, v6, v7;
+
+  
+  
+  V v0 = LoadU(d, keys + 0x0 * kLanesPerRow);
+  V v1 = LoadU(d, keys + 0x1 * kLanesPerRow);
+  V v2 = LoadU(d, keys + 0x2 * kLanesPerRow);
+  V v3 = LoadU(d, keys + 0x3 * kLanesPerRow);
+#if HWY_MEM_OPS_MIGHT_FAULT
+  CopyHalfToPaddedBuf<kRows, kLanesPerRow>(d, st, keys, num_lanes, buf);
+  v4 = LoadU(d, buf + 0x4 * kLanesPerRow);
+  v5 = LoadU(d, buf + 0x5 * kLanesPerRow);
+  v6 = LoadU(d, buf + 0x6 * kLanesPerRow);
+  v7 = LoadU(d, buf + 0x7 * kLanesPerRow);
+#endif  
+#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+  (void)buf;
+  const V vnum_lanes = Set(d, static_cast<T>(num_lanes));
+  
+  const V kIota = Iota(d, static_cast<T>(kMinLanes));
+  const V k1 = Set(d, static_cast<T>(kLanesPerRow));
+  const V k2 = Add(k1, k1);
+
+  using M = Mask<decltype(d)>;
+  const M m4 = Gt(vnum_lanes, kIota);
+  const M m5 = Gt(vnum_lanes, Add(kIota, k1));
+  const M m6 = Gt(vnum_lanes, Add(kIota, k2));
+  const M m7 = Gt(vnum_lanes, Add(kIota, Add(k2, k1)));
+
+  const V kPadding = st.LastValue(d);  
+  v4 = MaskedLoadOr(kPadding, m4, d, keys + 0x4 * kLanesPerRow);
+  v5 = MaskedLoadOr(kPadding, m5, d, keys + 0x5 * kLanesPerRow);
+  v6 = MaskedLoadOr(kPadding, m6, d, keys + 0x6 * kLanesPerRow);
+  v7 = MaskedLoadOr(kPadding, m7, d, keys + 0x7 * kLanesPerRow);
+#endif  
+
+  Sort8(d, st, v0, v1, v2, v3, v4, v5, v6, v7);
+
+  
+  Merge8x2<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7);
+  Merge8x4<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7);
+
+  StoreU(v0, d, keys + 0x0 * kLanesPerRow);
+  StoreU(v1, d, keys + 0x1 * kLanesPerRow);
+  StoreU(v2, d, keys + 0x2 * kLanesPerRow);
+  StoreU(v3, d, keys + 0x3 * kLanesPerRow);
+
+#if HWY_MEM_OPS_MIGHT_FAULT
+  
+  StoreU(v4, d, buf + 0x4 * kLanesPerRow);
+  StoreU(v5, d, buf + 0x5 * kLanesPerRow);
+  StoreU(v6, d, buf + 0x6 * kLanesPerRow);
+  StoreU(v7, d, buf + 0x7 * kLanesPerRow);
+
+  const ScalableTag<T> dmax;
+  const size_t Nmax = Lanes(dmax);
+
+  
+  
+  size_t i = kMinLanes;
+  HWY_UNROLL(1)
+  for (; i + Nmax <= num_lanes; i += Nmax) {
+    StoreU(LoadU(dmax, buf + i), dmax, keys + i);
   }
 
   
-  size_t i;
-  for (i = 0; i + N <= num; i += N) {
-    Store(LoadU(d, keys + i), d, buf + i);
-  }
-  SafeCopyN(num - i, d, keys + i, buf + i);
-  i = num;
+  const size_t remaining = num_lanes - i;
+  HWY_ASSUME(remaining < 256);  
+  SafeCopyN(remaining, dmax, buf + i, keys + i);
+#endif  
+#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+  BlendedStore(v4, m4, d, keys + 0x4 * kLanesPerRow);
+  BlendedStore(v5, m5, d, keys + 0x5 * kLanesPerRow);
+  BlendedStore(v6, m6, d, keys + 0x6 * kLanesPerRow);
+  BlendedStore(v7, m7, d, keys + 0x7 * kLanesPerRow);
+#endif  
+}
+
+template <size_t kKeysPerRow, class Traits, typename T>
+HWY_NOINLINE void Sort16Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
+                             T* HWY_RESTRICT buf) {
+  static_assert(kKeysPerRow <= SortConstants::kMaxCols, "");
+
+  constexpr size_t kLPK = st.LanesPerKey();
 
   
-  const V kPadding = st.LastValue(d);
+  constexpr size_t kRows = 16;
+  constexpr size_t kLanesPerRow = kKeysPerRow * kLPK;
+  constexpr size_t kMinLanes = kRows / 2 * kLanesPerRow;
+  HWY_DASSERT(kMinLanes < num_lanes && num_lanes <= kRows * kLanesPerRow);
+
+  const CappedTag<T, kLanesPerRow> d;
+  using V = Vec<decltype(d)>;
+  V v8, v9, va, vb, vc, vd, ve, vf;
+
   
   
-  for (; i < (cols * Constants::kMaxRows + N); i += N) {
-    StoreU(kPadding, d, buf + i);
+  V v0 = LoadU(d, keys + 0x0 * kLanesPerRow);
+  V v1 = LoadU(d, keys + 0x1 * kLanesPerRow);
+  V v2 = LoadU(d, keys + 0x2 * kLanesPerRow);
+  V v3 = LoadU(d, keys + 0x3 * kLanesPerRow);
+  V v4 = LoadU(d, keys + 0x4 * kLanesPerRow);
+  V v5 = LoadU(d, keys + 0x5 * kLanesPerRow);
+  V v6 = LoadU(d, keys + 0x6 * kLanesPerRow);
+  V v7 = LoadU(d, keys + 0x7 * kLanesPerRow);
+#if HWY_MEM_OPS_MIGHT_FAULT
+  CopyHalfToPaddedBuf<kRows, kLanesPerRow>(d, st, keys, num_lanes, buf);
+  v8 = LoadU(d, buf + 0x8 * kLanesPerRow);
+  v9 = LoadU(d, buf + 0x9 * kLanesPerRow);
+  va = LoadU(d, buf + 0xa * kLanesPerRow);
+  vb = LoadU(d, buf + 0xb * kLanesPerRow);
+  vc = LoadU(d, buf + 0xc * kLanesPerRow);
+  vd = LoadU(d, buf + 0xd * kLanesPerRow);
+  ve = LoadU(d, buf + 0xe * kLanesPerRow);
+  vf = LoadU(d, buf + 0xf * kLanesPerRow);
+#endif  
+#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+  (void)buf;
+  const V vnum_lanes = Set(d, static_cast<T>(num_lanes));
+  
+  const V kIota = Iota(d, static_cast<T>(kMinLanes));
+  const V k1 = Set(d, static_cast<T>(kLanesPerRow));
+  const V k2 = Add(k1, k1);
+  const V k4 = Add(k2, k2);
+  const V k8 = Add(k4, k4);
+
+  using M = Mask<decltype(d)>;
+  const M m8 = Gt(vnum_lanes, kIota);
+  const M m9 = Gt(vnum_lanes, Add(kIota, k1));
+  const M ma = Gt(vnum_lanes, Add(kIota, k2));
+  const M mb = Gt(vnum_lanes, Add(kIota, Sub(k4, k1)));
+  const M mc = Gt(vnum_lanes, Add(kIota, k4));
+  const M md = Gt(vnum_lanes, Add(kIota, Add(k4, k1)));
+  const M me = Gt(vnum_lanes, Add(kIota, Add(k4, k2)));
+  const M mf = Gt(vnum_lanes, Add(kIota, Sub(k8, k1)));
+
+  const V kPadding = st.LastValue(d);  
+  v8 = MaskedLoadOr(kPadding, m8, d, keys + 0x8 * kLanesPerRow);
+  v9 = MaskedLoadOr(kPadding, m9, d, keys + 0x9 * kLanesPerRow);
+  va = MaskedLoadOr(kPadding, ma, d, keys + 0xa * kLanesPerRow);
+  vb = MaskedLoadOr(kPadding, mb, d, keys + 0xb * kLanesPerRow);
+  vc = MaskedLoadOr(kPadding, mc, d, keys + 0xc * kLanesPerRow);
+  vd = MaskedLoadOr(kPadding, md, d, keys + 0xd * kLanesPerRow);
+  ve = MaskedLoadOr(kPadding, me, d, keys + 0xe * kLanesPerRow);
+  vf = MaskedLoadOr(kPadding, mf, d, keys + 0xf * kLanesPerRow);
+#endif  
+
+  Sort16(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb, vc, vd, ve, vf);
+
+  
+  Merge16x2<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb,
+                         vc, vd, ve, vf);
+  Merge16x4<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb,
+                         vc, vd, ve, vf);
+  Merge16x8<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb,
+                         vc, vd, ve, vf);
+#if !HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD
+  Merge16x16<kKeysPerRow>(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb,
+                          vc, vd, ve, vf);
+#endif
+
+  StoreU(v0, d, keys + 0x0 * kLanesPerRow);
+  StoreU(v1, d, keys + 0x1 * kLanesPerRow);
+  StoreU(v2, d, keys + 0x2 * kLanesPerRow);
+  StoreU(v3, d, keys + 0x3 * kLanesPerRow);
+  StoreU(v4, d, keys + 0x4 * kLanesPerRow);
+  StoreU(v5, d, keys + 0x5 * kLanesPerRow);
+  StoreU(v6, d, keys + 0x6 * kLanesPerRow);
+  StoreU(v7, d, keys + 0x7 * kLanesPerRow);
+
+#if HWY_MEM_OPS_MIGHT_FAULT
+  
+  StoreU(v8, d, buf + 0x8 * kLanesPerRow);
+  StoreU(v9, d, buf + 0x9 * kLanesPerRow);
+  StoreU(va, d, buf + 0xa * kLanesPerRow);
+  StoreU(vb, d, buf + 0xb * kLanesPerRow);
+  StoreU(vc, d, buf + 0xc * kLanesPerRow);
+  StoreU(vd, d, buf + 0xd * kLanesPerRow);
+  StoreU(ve, d, buf + 0xe * kLanesPerRow);
+  StoreU(vf, d, buf + 0xf * kLanesPerRow);
+
+  const ScalableTag<T> dmax;
+  const size_t Nmax = Lanes(dmax);
+
+  
+  
+  size_t i = kMinLanes;
+  HWY_UNROLL(1)
+  for (; i + Nmax <= num_lanes; i += Nmax) {
+    StoreU(LoadU(dmax, buf + i), dmax, keys + i);
   }
 
-  SortingNetwork(st, buf, cols);
+  
+  const size_t remaining = num_lanes - i;
+  HWY_ASSUME(remaining < 256);  
+  SafeCopyN(remaining, dmax, buf + i, keys + i);
+#endif  
+#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+  BlendedStore(v8, m8, d, keys + 0x8 * kLanesPerRow);
+  BlendedStore(v9, m9, d, keys + 0x9 * kLanesPerRow);
+  BlendedStore(va, ma, d, keys + 0xa * kLanesPerRow);
+  BlendedStore(vb, mb, d, keys + 0xb * kLanesPerRow);
+  BlendedStore(vc, mc, d, keys + 0xc * kLanesPerRow);
+  BlendedStore(vd, md, d, keys + 0xd * kLanesPerRow);
+  BlendedStore(ve, me, d, keys + 0xe * kLanesPerRow);
+  BlendedStore(vf, mf, d, keys + 0xf * kLanesPerRow);
+#endif  
+}
 
-  for (i = 0; i + N <= num; i += N) {
-    StoreU(Load(d, buf + i), d, keys + i);
-  }
-  SafeCopyN(num - i, d, buf + i, keys + i);
+
+
+
+
+
+
+
+
+template <class D, class Traits, typename T>
+HWY_NOINLINE void BaseCase(D d, Traits st, T* HWY_RESTRICT keys,
+                           size_t num_lanes, T* buf) {
+  constexpr size_t kLPK = st.LanesPerKey();
+  HWY_DASSERT(num_lanes <= Constants::BaseCaseNumLanes<kLPK>(Lanes(d)));
+  const size_t num_keys = num_lanes / kLPK;
+
+  
+  
+  if (HWY_UNLIKELY(num_keys <= 1)) return;
+
+  const size_t ceil_log2 =
+      32 - Num0BitsAboveMS1Bit_Nonzero32(static_cast<uint32_t>(num_keys - 1));
+
+  
+  constexpr size_t kMaxKeysPerVector = MaxLanes(d) / kLPK;
+
+  using FuncPtr = decltype(&Sort2To2<Traits, T>);
+  const FuncPtr funcs[9] = {
+     nullptr,  
+     &Sort2To2<Traits, T>,
+     &Sort3To4<Traits, T>,
+     &Sort8Rows<1, Traits, T>,  
+     kMaxKeysPerVector >= 2 ? &Sort8Rows<2, Traits, T> : nullptr,
+     kMaxKeysPerVector >= 4 ? &Sort8Rows<4, Traits, T> : nullptr,
+     kMaxKeysPerVector >= 4 ? &Sort16Rows<4, Traits, T> : nullptr,
+     kMaxKeysPerVector >= 8 ? &Sort16Rows<8, Traits, T> : nullptr,
+#if !HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD
+     kMaxKeysPerVector >= 16 ? &Sort16Rows<16, Traits, T> : nullptr,
+#endif
+  };
+  funcs[ceil_log2](st, keys, num_lanes, buf);
 }
 
 
@@ -243,7 +523,7 @@ HWY_INLINE size_t PartitionToMultipleOfUnroll(D d, Traits st,
   }
 
   
-  UnpoisonIfMemorySanitizer(buf, bufR * sizeof(T));
+  detail::MaybeUnpoison(buf, bufR);
 
   
   
@@ -259,8 +539,7 @@ HWY_INLINE size_t PartitionToMultipleOfUnroll(D d, Traits st,
 
 template <class V>
 V OrXor(const V o, const V x1, const V x2) {
-  
-  return Or(o, Xor(x1, x2));
+  return Or(o, Xor(x1, x2));  
 }
 
 
@@ -683,7 +962,7 @@ HWY_INLINE bool PartitionIfTwoKeys(D d, Traits st, const Vec<D> pivot,
 template <class D, class Traits, typename T>
 HWY_INLINE bool PartitionIfTwoSamples(D d, Traits st, T* HWY_RESTRICT keys,
                                       size_t num, T* HWY_RESTRICT samples) {
-  constexpr size_t kSampleLanes = 3 * 64 / sizeof(T);
+  constexpr size_t kSampleLanes = Constants::SampleLanes<T>();
   constexpr size_t N1 = st.LanesPerKey();
   const Vec<D> valueL = st.SetKey(d, samples);
   const Vec<D> valueR = st.SetKey(d, samples + kSampleLanes - N1);
@@ -723,42 +1002,18 @@ HWY_INLINE V MedianOf3(Traits st, V v0, V v1, V v2) {
   return v1;
 }
 
-#if VQSORT_SECURE_RNG
-using Generator = absl::BitGen;
-#else
 
-#pragma pack(push, 1)
-class Generator {
- public:
-  Generator(const void* heap, size_t num) {
-    Sorter::Fill24Bytes(heap, num, &a_);
-    k_ = 1;  
-  }
-
-  explicit Generator(uint64_t seed) {
-    a_ = b_ = w_ = seed;
-    k_ = 1;
-  }
-
-  uint64_t operator()() {
-    const uint64_t b = b_;
-    w_ += k_;
-    const uint64_t next = a_ ^ w_;
-    a_ = (b + (b << 3)) ^ (b >> 11);
-    const uint64_t rot = (b << 24) | (b >> 40);
-    b_ = rot + next;
-    return next;
-  }
-
- private:
-  uint64_t a_;
-  uint64_t b_;
-  uint64_t w_;
-  uint64_t k_;  
-};
-#pragma pack(pop)
-
-#endif  
+HWY_INLINE uint64_t RandomBits(uint64_t* HWY_RESTRICT state) {
+  const uint64_t a = state[0];
+  const uint64_t b = state[1];
+  const uint64_t w = state[2] + 1;
+  const uint64_t next = a ^ w;
+  state[0] = (b + (b << 3)) ^ (b >> 11);
+  const uint64_t rot = (b << 24) | (b >> 40);
+  state[1] = rot + next;
+  state[2] = w;
+  return next;
+}
 
 
 
@@ -771,7 +1026,7 @@ HWY_INLINE size_t RandomChunkIndex(const uint32_t num_chunks, uint32_t bits) {
 
 template <class D, class Traits, typename T>
 HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
-                            T* HWY_RESTRICT buf, Generator& rng) {
+                            T* HWY_RESTRICT buf, uint64_t* HWY_RESTRICT state) {
   using V = decltype(Zero(d));
   const size_t N = Lanes(d);
 
@@ -780,7 +1035,7 @@ HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
 
   
   
-  HWY_DASSERT(num >= 2 * kLanesPerChunk);
+  HWY_DASSERT(num >= Constants::SampleLanes<T>());
   const size_t misalign =
       (reinterpret_cast<uintptr_t>(keys) / sizeof(T)) & (kLanesPerChunk - 1);
   if (misalign != 0) {
@@ -790,11 +1045,11 @@ HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
   }
 
   
-  uint64_t* bits64 = reinterpret_cast<uint64_t*>(buf);
-  for (size_t i = 0; i < 5; ++i) {
-    bits64[i] = rng();
+  uint32_t bits[6];
+  for (size_t i = 0; i < 6; i += 2) {
+    const uint64_t bits64 = RandomBits(state);
+    CopyBytes<8>(&bits64, bits + i);
   }
-  const uint32_t* bits = reinterpret_cast<const uint32_t*>(buf);
 
   const size_t num_chunks64 = num / kLanesPerChunk;
   
@@ -807,9 +1062,6 @@ HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
   const size_t offset3 = RandomChunkIndex(num_chunks, bits[3]) * kLanesPerChunk;
   const size_t offset4 = RandomChunkIndex(num_chunks, bits[4]) * kLanesPerChunk;
   const size_t offset5 = RandomChunkIndex(num_chunks, bits[5]) * kLanesPerChunk;
-  const size_t offset6 = RandomChunkIndex(num_chunks, bits[6]) * kLanesPerChunk;
-  const size_t offset7 = RandomChunkIndex(num_chunks, bits[7]) * kLanesPerChunk;
-  const size_t offset8 = RandomChunkIndex(num_chunks, bits[8]) * kLanesPerChunk;
   for (size_t i = 0; i < kLanesPerChunk; i += N) {
     const V v0 = Load(d, keys + offset0 + i);
     const V v1 = Load(d, keys + offset1 + i);
@@ -822,12 +1074,6 @@ HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
     const V v5 = Load(d, keys + offset5 + i);
     const V medians1 = MedianOf3(st, v3, v4, v5);
     Store(medians1, d, buf + i + kLanesPerChunk);
-
-    const V v6 = Load(d, keys + offset6 + i);
-    const V v7 = Load(d, keys + offset7 + i);
-    const V v8 = Load(d, keys + offset8 + i);
-    const V medians2 = MedianOf3(st, v6, v7, v8);
-    Store(medians2, d, buf + i + kLanesPerChunk * 2);
   }
 }
 
@@ -835,47 +1081,33 @@ HWY_INLINE void DrawSamples(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
 template <class D, class Traits>
 HWY_INLINE bool UnsortedSampleEqual(D d, Traits st,
                                     const TFromD<D>* HWY_RESTRICT samples) {
-  constexpr size_t kSampleLanes = 3 * 64 / sizeof(TFromD<D>);
+  constexpr size_t kSampleLanes = Constants::SampleLanes<TFromD<D>>();
   const size_t N = Lanes(d);
+  
+  HWY_DASSERT(N < kSampleLanes);
   using V = Vec<D>;
 
   const V first = st.SetKey(d, samples);
   
   V diff = Zero(d);
-  size_t i = 0;
-  for (; i + N <= kSampleLanes; i += N) {
+  for (size_t i = 0; i < kSampleLanes; i += N) {
     const V v = Load(d, samples + i);
     diff = OrXor(diff, first, v);
   }
-  
-  const V v = Load(d, samples + i);
-  const auto valid = FirstN(d, kSampleLanes - i);
-  diff = IfThenElse(valid, OrXor(diff, first, v), diff);
 
   return st.NoKeyDifference(d, diff);
 }
 
 template <class D, class Traits, typename T>
 HWY_INLINE void SortSamples(D d, Traits st, T* HWY_RESTRICT buf) {
+  const size_t N = Lanes(d);
+  constexpr size_t kSampleLanes = Constants::SampleLanes<T>();
   
-  constexpr size_t kSampleLanes = 3 * 64 / sizeof(T);
-  const CappedTag<T, 16 / sizeof(T)> d128;
-  const size_t N128 = Lanes(d128);
-  constexpr size_t kCols = HWY_MIN(16 / sizeof(T), Constants::kMaxCols);
-  constexpr size_t kBytes = kCols * Constants::kMaxRows * sizeof(T);
-  static_assert(192 <= kBytes, "");
-  
-  const auto kPadding = st.LastValue(d128);
-  
-  
-  for (size_t i = kSampleLanes; i <= kBytes / sizeof(T); i += N128) {
-    StoreU(kPadding, d128, buf + i);
-  }
+  HWY_DASSERT(Constants::BaseCaseNumLanes<st.LanesPerKey()>(N) >= kSampleLanes);
 
-  SortingNetwork(st, buf, kCols);
+  BaseCase(d, st, buf, kSampleLanes, buf + kSampleLanes);
 
   if (VQSORT_PRINT >= 2) {
-    const size_t N = Lanes(d);
     fprintf(stderr, "Samples:\n");
     for (size_t i = 0; i < kSampleLanes; i += N) {
       MaybePrintVector(d, "", Load(d, buf + i), 0, N);
@@ -906,9 +1138,10 @@ HWY_INLINE const char* PivotResultString(PivotResult result) {
   return "unknown";
 }
 
+
 template <class Traits, typename T>
 HWY_INLINE size_t PivotRank(Traits st, const T* HWY_RESTRICT samples) {
-  constexpr size_t kSampleLanes = 3 * 64 / sizeof(T);
+  constexpr size_t kSampleLanes = Constants::SampleLanes<T>();
   constexpr size_t N1 = st.LanesPerKey();
 
   constexpr size_t kRankMid = kSampleLanes / 2;
@@ -950,7 +1183,7 @@ HWY_INLINE Vec<D> ChoosePivotByRank(D d, Traits st,
             static_cast<double>(GetLane(pivot)));
   }
   
-  constexpr size_t kSampleLanes = 3 * 64 / sizeof(T);
+  constexpr size_t kSampleLanes = Constants::SampleLanes<T>();
   constexpr size_t N1 = st.LanesPerKey();
   const Vec<D> last = st.SetKey(d, samples + kSampleLanes - N1);
   const bool all_neq = AllTrue(d, st.NotEqualKeys(d, pivot, last));
@@ -1287,17 +1520,17 @@ HWY_NOINLINE void PrintMinMax(D d, Traits st, const T* HWY_RESTRICT keys,
   }
 }
 
-
-
 template <class D, class Traits, typename T>
 HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
-                          T* HWY_RESTRICT keys_end, const size_t num,
-                          T* HWY_RESTRICT buf, Generator& rng,
+                          const size_t num, T* HWY_RESTRICT buf,
+                          uint64_t* HWY_RESTRICT state,
                           const size_t remaining_levels) {
   HWY_DASSERT(num != 0);
 
-  if (HWY_UNLIKELY(num <= Constants::BaseCaseNum(Lanes(d)))) {
-    BaseCase(d, st, keys, keys_end, num, buf);
+  const size_t N = Lanes(d);
+  constexpr size_t kLPK = st.LanesPerKey();
+  if (HWY_UNLIKELY(num <= Constants::BaseCaseNumLanes<kLPK>(N))) {
+    BaseCase(d, st, keys, num, buf);
     return;
   }
 
@@ -1308,7 +1541,7 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
     PrintMinMax(d, st, keys, num, buf);
   }
 
-  DrawSamples(d, st, keys, num, buf, rng);
+  DrawSamples(d, st, keys, num, buf, state);
 
   Vec<D> pivot;
   PivotResult result = PivotResult::kNormal;
@@ -1374,23 +1607,32 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
   
   HWY_DASSERT(bound != 0);
   
-  HWY_DASSERT(bound != num);
+  
+  
+  HWY_DASSERT(bound != num || result == PivotResult::kWasLast);
 
   if (HWY_LIKELY(result != PivotResult::kIsFirst)) {
-    Recurse(d, st, keys, keys_end, bound, buf, rng, remaining_levels - 1);
+    Recurse(d, st, keys, bound, buf, state, remaining_levels - 1);
   }
   if (HWY_LIKELY(result != PivotResult::kWasLast)) {
-    Recurse(d, st, keys + bound, keys_end, num - bound, buf, rng,
-            remaining_levels - 1);
+    Recurse(d, st, keys + bound, num - bound, buf, state, remaining_levels - 1);
   }
 }
 
 
 template <class D, class Traits, typename T>
 HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
-                                   size_t num) {
+                                   size_t num, T* HWY_RESTRICT buf) {
   const size_t N = Lanes(d);
-  const size_t base_case_num = Constants::BaseCaseNum(N);
+  constexpr size_t kLPK = st.LanesPerKey();
+  const size_t base_case_num = Constants::BaseCaseNumLanes<kLPK>(N);
+
+  
+  
+  if (HWY_UNLIKELY(num <= base_case_num)) {
+    BaseCase(d, st, keys, num, buf);
+    return true;
+  }
 
   
   
@@ -1413,8 +1655,6 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
   }
 
   
-
-  
   
 
   return false;  
@@ -1422,6 +1662,41 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
 
 #endif  
 }  
+
+
+
+
+template <class D, class Traits, typename T>
+void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
+          T* HWY_RESTRICT buf) {
+  if (VQSORT_PRINT >= 1) {
+    fprintf(stderr, "=============== Sort num %zu\n", num);
+  }
+
+#if VQSORT_ENABLED || HWY_IDE
+  if (detail::HandleSpecialCases(d, st, keys, num, buf)) return;
+
+#if HWY_MAX_BYTES > 64
+  
+  if (HWY_UNLIKELY(Lanes(d) > 64 / sizeof(T))) {
+    return Sort(CappedTag<T, 64 / sizeof(T)>(), st, keys, num, buf);
+  }
+#endif  
+
+  uint64_t* HWY_RESTRICT state = GetGeneratorState();
+  
+  
+  const size_t max_levels = 50;
+  detail::Recurse(d, st, keys, num, buf, state, max_levels);
+#else   
+  (void)d;
+  (void)buf;
+  if (VQSORT_PRINT >= 1) {
+    fprintf(stderr, "WARNING: using slow HeapSort because vqsort disabled\n");
+  }
+  return detail::HeapSort(st, keys, num);
+#endif  
+}
 
 
 
@@ -1435,45 +1710,10 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
 
 
 template <class D, class Traits, typename T>
-void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
-          T* HWY_RESTRICT buf) {
-  if (VQSORT_PRINT >= 1) {
-    fprintf(stderr, "=============== Sort num %zu\n", num);
-  }
-
-#if VQSORT_ENABLED || HWY_IDE
-#if !HWY_HAVE_SCALABLE
-  
-  
-  
-  
-  HWY_ALIGN T storage[SortConstants::BufNum<T>(HWY_LANES(T))] = {};
-  static_assert(sizeof(storage) <= 8192, "Unexpectedly large, check size");
-  buf = storage;
-#endif  
-
-  if (detail::HandleSpecialCases(d, st, keys, num)) return;
-
-#if HWY_MAX_BYTES > 64
-  
-  if (HWY_UNLIKELY(Lanes(d) > 64 / sizeof(T))) {
-    return Sort(CappedTag<T, 64 / sizeof(T)>(), st, keys, num, buf);
-  }
-#endif  
-
-  detail::Generator rng(keys, num);
-
-  
-  const size_t max_levels = 2 * hwy::CeilLog2(num) + 4;
-  detail::Recurse(d, st, keys, keys + num, num, buf, rng, max_levels);
-#else
-  (void)d;
-  (void)buf;
-  if (VQSORT_PRINT >= 1) {
-    fprintf(stderr, "WARNING: using slow HeapSort because vqsort disabled\n");
-  }
-  return detail::HeapSort(st, keys, num);
-#endif  
+HWY_API void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num) {
+  constexpr size_t kLPK = st.LanesPerKey();
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  return Sort(d, st, keys, num, buf);
 }
 
 

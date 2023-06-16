@@ -70,8 +70,14 @@
 
 
 
+
+
 #if defined(__apple_build_version__) || __clang_major__ >= 999
-#if __has_warning("-Wbitwise-instead-of-logical")
+#if __has_attribute(nouwtable)  
+#define HWY_COMPILER_CLANG 1600
+#elif __has_warning("-Warray-parameter")
+#define HWY_COMPILER_CLANG 1500
+#elif __has_warning("-Wbitwise-instead-of-logical")
 #define HWY_COMPILER_CLANG 1400
 #elif __has_warning("-Wreserved-identifier")
 #define HWY_COMPILER_CLANG 1300
@@ -96,11 +102,15 @@
 #else  
 #define HWY_COMPILER_CLANG 600
 #endif  
-#else   
+#define HWY_COMPILER3_CLANG (HWY_COMPILER_CLANG * 100)
+#else  
 #define HWY_COMPILER_CLANG (__clang_major__ * 100 + __clang_minor__)
+#define HWY_COMPILER3_CLANG \
+  (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
 #endif
 #else  
 #define HWY_COMPILER_CLANG 0
+#define HWY_COMPILER3_CLANG 0
 #endif
 
 #if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG
@@ -134,6 +144,12 @@
 #define HWY_HAS_ATTRIBUTE(name) 0
 #endif
 
+#ifdef __has_cpp_attribute
+#define HWY_HAS_CPP_ATTRIBUTE(name) __has_cpp_attribute(name)
+#else
+#define HWY_HAS_CPP_ATTRIBUTE(name) 0
+#endif
+
 #ifdef __has_feature
 #define HWY_HAS_FEATURE(name) __has_feature(name)
 #else
@@ -165,11 +181,12 @@
 #define HWY_ARCH_X86 0
 #endif
 
-#if defined(__powerpc64__) || defined(_M_PPC)
+#if defined(__powerpc64__) || defined(_M_PPC) || defined(__powerpc__)
 #define HWY_ARCH_PPC 1
 #else
 #define HWY_ARCH_PPC 0
 #endif
+
 
 #if defined(__ARM_ARCH_ISA_A64) || defined(__aarch64__) || defined(_M_ARM64)
 #define HWY_ARCH_ARM_A64 1
@@ -230,6 +247,35 @@
 #define HWY_OS_LINUX 1
 #else
 #define HWY_OS_LINUX 0
+#endif
+
+
+
+
+#if HWY_COMPILER_MSVC
+#if HWY_ARCH_PPC && defined(_XBOX_VER) && _XBOX_VER >= 200
+
+#define HWY_IS_LITTLE_ENDIAN 0
+#define HWY_IS_BIG_ENDIAN 1
+#else
+
+#define HWY_IS_LITTLE_ENDIAN 1
+#define HWY_IS_BIG_ENDIAN 0
+#endif  
+#elif defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define HWY_IS_LITTLE_ENDIAN 1
+#define HWY_IS_BIG_ENDIAN 0
+#elif defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define HWY_IS_LITTLE_ENDIAN 0
+#define HWY_IS_BIG_ENDIAN 1
+#else
+#error "Unable to detect endianness or unsupported byte order"
+#endif
+
+#if (HWY_IS_LITTLE_ENDIAN + HWY_IS_BIG_ENDIAN) != 1
+#error "Must only detect one byte order"
 #endif
 
 #endif  

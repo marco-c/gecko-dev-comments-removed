@@ -15,28 +15,12 @@
 
 #include "hwy/contrib/sort/vqsort.h"
 
-#include <string.h>  
+#include <time.h>
 
-#undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort.cc"
-#include "hwy/foreach_target.h"  
+#include <cstdint>
 
-
+#include "hwy/base.h"
 #include "hwy/contrib/sort/shared-inl.h"
-
-
-
-#ifndef VQSORT_STACK
-#if HWY_ARCH_X86 || HWY_ARCH_WASM
-#define VQSORT_STACK 1
-#else
-#define VQSORT_STACK 0
-#endif
-#endif  
-
-#if !VQSORT_STACK
-#include "hwy/aligned_allocator.h"
-#endif
 
 
 
@@ -84,9 +68,7 @@
 
 #endif  
 
-#if !VQSORT_SECURE_RNG
 
-#include <time.h>
 #if VQSORT_SECURE_SEED == 1
 #include <sys/random.h>
 #elif VQSORT_SECURE_SEED == 2
@@ -96,67 +78,20 @@
 #include <wincrypt.h>
 #endif  
 
-#endif  
-
-HWY_BEFORE_NAMESPACE();
-namespace hwy {
-namespace HWY_NAMESPACE {
-
-size_t VectorSize() { return Lanes(ScalableTag<uint8_t, 3>()); }
-bool HaveFloat64() { return HWY_HAVE_FLOAT64; }
-
-
-}  
-}  
-HWY_AFTER_NAMESPACE();
-
-#if HWY_ONCE
 namespace hwy {
 namespace {
-HWY_EXPORT(VectorSize);
-HWY_EXPORT(HaveFloat64);
 
-}  
-
-Sorter::Sorter() {
-#if VQSORT_STACK
-  ptr_ = nullptr;  
-#else
-  
-  
-  
-  const size_t vector_size = HWY_DYNAMIC_DISPATCH(VectorSize)();
-  const size_t max_bytes =
-      HWY_MAX(HWY_MAX(SortConstants::BufBytes<uint16_t>(vector_size),
-                      SortConstants::BufBytes<uint32_t>(vector_size)),
-              SortConstants::BufBytes<uint64_t>(vector_size));
-  ptr_ = hwy::AllocateAlignedBytes(max_bytes, nullptr, nullptr);
-
-  
-  memset(ptr_, 0, max_bytes);
-#endif
-}
-
-void Sorter::Delete() {
-#if !VQSORT_STACK
-  FreeAlignedBytes(ptr_, nullptr, nullptr);
-  ptr_ = nullptr;
-#endif
-}
-
-#if !VQSORT_SECURE_RNG
-
-void Sorter::Fill24Bytes(const void* seed_heap, size_t seed_num, void* bytes) {
+void Fill16Bytes(void* bytes) {
 #if VQSORT_SECURE_SEED == 1
   
-  const ssize_t ret = getrandom(bytes, 24, 0);
-  if (ret == 24) return;
+  const ssize_t ret = getrandom(bytes, 16, 0);
+  if (ret == 16) return;
 #elif VQSORT_SECURE_SEED == 2
   HCRYPTPROV hProvider{};
   if (CryptAcquireContextA(&hProvider, nullptr, nullptr, PROV_RSA_FULL,
                            CRYPT_VERIFYCONTEXT)) {
     const BOOL ok =
-        CryptGenRandom(hProvider, 24, reinterpret_cast<BYTE*>(bytes));
+        CryptGenRandom(hProvider, 16, reinterpret_cast<BYTE*>(bytes));
     CryptReleaseContext(hProvider, 0);
     if (ok) return;
   }
@@ -166,19 +101,24 @@ void Sorter::Fill24Bytes(const void* seed_heap, size_t seed_num, void* bytes) {
   
   uint64_t* words = reinterpret_cast<uint64_t*>(bytes);
   uint64_t** seed_stack = &words;
-  void (*seed_code)(const void*, size_t, void*) = &Fill24Bytes;
+  void (*seed_code)(void*) = &Fill16Bytes;
   const uintptr_t bits_stack = reinterpret_cast<uintptr_t>(seed_stack);
-  const uintptr_t bits_heap = reinterpret_cast<uintptr_t>(seed_heap);
   const uintptr_t bits_code = reinterpret_cast<uintptr_t>(seed_code);
   const uint64_t bits_time = static_cast<uint64_t>(clock());
-  words[0] = bits_stack ^ bits_time ^ seed_num;
-  words[1] = bits_heap ^ bits_time ^ seed_num;
-  words[2] = bits_code ^ bits_time ^ seed_num;
+  words[0] = bits_stack ^ bits_time ^ 0xFEDCBA98;  
+  words[1] = bits_code ^ bits_time ^ 0x01234567;   
 }
 
-#endif  
+}  
 
-bool Sorter::HaveFloat64() { return HWY_DYNAMIC_DISPATCH(HaveFloat64)(); }
+uint64_t* GetGeneratorState() {
+  thread_local uint64_t state[3] = {0};
+  
+  if (HWY_UNLIKELY(state[2] == 0)) {
+    Fill16Bytes(state);
+    state[2] = 1;
+  }
+  return state;
+}
 
 }  
-#endif  

@@ -130,7 +130,7 @@ struct Key128 : public KeyAny128 {
   
   using KeyType = hwy::uint128_t;
 
-  std::string KeyString() const { return "U128"; }
+  const char* KeyString() const { return "U128"; }
 
   template <class D>
   HWY_INLINE Mask<D> EqualKeys(D d, Vec<D> a, Vec<D> b) const {
@@ -152,6 +152,20 @@ struct Key128 : public KeyAny128 {
 
   HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
     return a[0] == b[0] && a[1] == b[1];
+  }
+
+  
+  
+  template <class Order, class D>
+  HWY_INLINE HWY_MAYBE_UNUSED Vec<D> CompareTop(D d, Vec<D> a, Vec<D> b) const {
+    const Mask<D> eqHL = Eq(a, b);
+    const Vec<D> ltHL = VecFromMask(d, Order().CompareLanes(a, b));
+#if HWY_TARGET <= HWY_AVX2  
+    const Vec<D> ltLX = ShiftLeftLanes<1>(ltHL);
+    return OrAnd(ltHL, VecFromMask(d, eqHL), ltLX);
+#else
+    return IfThenElse(eqHL, DupEven(ltHL), ltHL);
+#endif
   }
 };
 
@@ -271,7 +285,7 @@ struct KeyValue128 : public KeyAny128 {
   
   using KeyType = K64V64;
 
-  std::string KeyString() const { return "KV128"; }
+  const char* KeyString() const { return "KV128"; }
 
   template <class D>
   HWY_INLINE Mask<D> EqualKeys(D d, Vec<D> a, Vec<D> b) const {
@@ -295,6 +309,15 @@ struct KeyValue128 : public KeyAny128 {
 
   HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
     return a[1] == b[1];
+  }
+
+  
+  
+  template <class Order, class D>
+  HWY_INLINE HWY_MAYBE_UNUSED Vec<D> CompareTop(D d, Vec<D> a, Vec<D> b) const {
+    
+    
+    return VecFromMask(d, Order().CompareLanes(a, b));
   }
 };
 
@@ -391,41 +414,42 @@ struct OrderDescendingKV128 : public KeyValue128 {
 };
 
 
-template <class Base>
-class Traits128 : public Base {
-  
-#if HWY_TARGET <= HWY_AVX2 || HWY_TARGET == HWY_SVE_256
-  
-  
-  template <class D>
-  HWY_INLINE HWY_MAYBE_UNUSED Vec<D> CompareTop(D d, Vec<D> a, Vec<D> b) const {
-    const Base* base = static_cast<const Base*>(this);
-    const Mask<D> eqHL = Eq(a, b);
-    const Vec<D> ltHL = VecFromMask(d, base->CompareLanes(a, b));
-#if HWY_TARGET == HWY_SVE_256
-    return IfThenElse(eqHL, DupEven(ltHL), ltHL);
-#else
-    const Vec<D> ltLX = ShiftLeftLanes<1>(ltHL);
-    return OrAnd(ltHL, VecFromMask(d, eqHL), ltLX);
-#endif
-  }
 
-  
-  
-  
-  template <class V>
-  HWY_INLINE V ReplicateTop4x(V v) const {
-#if HWY_TARGET == HWY_SVE_256
-    return svdup_lane_u64(v, 3);
-#elif HWY_TARGET <= HWY_AVX3
-    return V{_mm512_permutex_epi64(v.raw, _MM_SHUFFLE(3, 3, 3, 3))};
-#else  
-    return V{_mm256_permute4x64_epi64(v.raw, _MM_SHUFFLE(3, 3, 3, 3))};
-#endif
-  }
+
+
+#if HWY_TARGET <= HWY_AVX3
+template <class V, HWY_IF_V_SIZE_V(V, 64)>
+HWY_INLINE V ReplicateTop4x(V v) {
+  return V{_mm512_permutex_epi64(v.raw, _MM_SHUFFLE(3, 3, 3, 3))};
+}
 #endif  
 
- public:
+#if HWY_TARGET <= HWY_AVX2
+
+template <class V, HWY_IF_V_SIZE_V(V, 32)>
+HWY_INLINE V ReplicateTop4x(V v) {
+  return V{_mm256_permute4x64_epi64(v.raw, _MM_SHUFFLE(3, 3, 3, 3))};
+}
+
+#else  
+
+template <class V>
+HWY_INLINE V ReplicateTop4x(V v) {
+#if HWY_TARGET == HWY_SVE_256
+  return svdup_lane_u64(v, 3);
+#else
+    alignas(64) static constexpr uint64_t kIndices[8] = {3, 3, 3, 3,
+                                                         7, 7, 7, 7};
+    const ScalableTag<uint64_t> d;
+    return TableLookupLanes(v, SetTableIndices(d, kIndices));
+#endif
+}
+
+#endif  
+
+
+template <class Base>
+struct Traits128 : public Base {
   template <class D>
   HWY_INLINE Vec<D> FirstOfLanes(D d, Vec<D> v,
                                  TFromD<D>* HWY_RESTRICT buf) const {
@@ -467,35 +491,23 @@ class Traits128 : public Base {
   HWY_INLINE Vec<D> SortPairsDistance1(D d, Vec<D> v) const {
     const Base* base = static_cast<const Base*>(this);
     Vec<D> swapped = base->ReverseKeys2(d, v);
-
-#if HWY_TARGET <= HWY_AVX2 || HWY_TARGET == HWY_SVE_256
-    const Vec<D> select = ReplicateTop4x(CompareTop(d, v, swapped));
-    return IfVecThenElse(select, swapped, v);
-#else
-    Sort2(d, v, swapped);
-    return base->OddEvenKeys(swapped, v);
-#endif
+    const Vec<D> cmpHx = base->template CompareTop<Base>(d, v, swapped);
+    return IfVecThenElse(ReplicateTop4x(cmpHx), swapped, v);
   }
 
+  
   
   template <class D>
   HWY_INLINE Vec<D> SortPairsReverse4(D d, Vec<D> v) const {
     const Base* base = static_cast<const Base*>(this);
     Vec<D> swapped = base->ReverseKeys4(d, v);
 
-    
-#if HWY_TARGET <= HWY_AVX3
-    const Vec512<uint64_t> outHx = CompareTop(d, v, swapped);
+    const Vec<D> cmpHx = base->template CompareTop<Base>(d, v, swapped);
     
     
     alignas(64) uint64_t kIndices[8] = {7, 7, 5, 5, 5, 5, 7, 7};
-    const Vec512<uint64_t> select =
-        TableLookupLanes(outHx, SetTableIndices(d, kIndices));
+    const Vec<D> select = TableLookupLanes(cmpHx, SetTableIndices(d, kIndices));
     return IfVecThenElse(select, swapped, v);
-#else
-    Sort2(d, v, swapped);
-    return base->OddEvenPairs(d, swapped, v);
-#endif
   }
 
   

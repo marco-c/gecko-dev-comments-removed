@@ -18,17 +18,12 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <cmath>  
 #include <string>
 
-#include "hwy/aligned_allocator.h"
-#include "hwy/base.h"
 #include "hwy/highway.h"
-#include "hwy/highway_export.h"
 #include "hwy/print.h"
 
 namespace hwy {
@@ -72,19 +67,6 @@ static HWY_INLINE uint32_t Random32(RandomState* rng) {
 }
 
 static HWY_INLINE uint64_t Random64(RandomState* rng) { return (*rng)(); }
-
-
-
-
-
-template <class T>
-inline void PreventElision(T&& output) {
-#if HWY_COMPILER_MSVC
-  (void)output;
-#else   
-  asm volatile("" : "+r"(output) : : "memory");
-#endif  
-}
 
 HWY_TEST_DLLEXPORT bool BytesEqual(const void* p1, const void* p2,
                                    const size_t size, size_t* pos = nullptr);

@@ -704,14 +704,11 @@ Status DefaultEncoderHeuristics::LossyFrameHeuristics(
     PassesEncoderState* enc_state, ModularFrameEncoder* modular_frame_encoder,
     const ImageBundle* original_pixels, Image3F* opsin,
     const JxlCmsInterface& cms, ThreadPool* pool, AuxOut* aux_out) {
-  PROFILER_ZONE("JxlLossyFrameHeuristics uninstrumented");
-
   CompressParams& cparams = enc_state->cparams;
   PassesSharedState& shared = enc_state->shared;
 
   
   if (shared.frame_header.flags & FrameHeader::kNoise) {
-    PROFILER_ZONE("enc GetNoiseParam");
     if (cparams.photon_noise_iso == 0) {
       
       
@@ -904,6 +901,7 @@ Status DefaultEncoderHeuristics::LossyFrameHeuristics(
     
     
     AdjustQuantField(enc_state->shared.ac_strategy, r,
+                     cparams.butteraugli_distance,
                      &enc_state->initial_quant_field);
     quantizer.SetQuantFieldRect(enc_state->initial_quant_field, r,
                                 &enc_state->shared.raw_quant_field);

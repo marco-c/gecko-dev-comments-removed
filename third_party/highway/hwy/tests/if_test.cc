@@ -13,11 +13,6 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "hwy/aligned_allocator.h"
-
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/if_test.cc"
 #include "hwy/foreach_target.h"  
@@ -40,6 +35,7 @@ struct TestIfThenElse {
     auto in2 = AllocateAligned<T>(N);
     auto bool_lanes = AllocateAligned<TI>(N);
     auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(in1 && in2 && bool_lanes && expected);
 
     
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
@@ -87,6 +83,7 @@ struct TestIfVecThenElse {
     auto in2 = AllocateAligned<T>(N);
     auto vec_lanes = AllocateAligned<TU>(N);
     auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(in1 && in2 && vec_lanes && expected);
 
     
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {

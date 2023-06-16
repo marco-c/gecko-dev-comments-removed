@@ -18,15 +18,13 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
-#include <inttypes.h>
-#include <stddef.h>
+#include <inttypes.h>  
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>    
 
 #include <algorithm>  
 #include <array>
-#include <atomic>
 #include <chrono>  
 #include <limits>
 #include <numeric>  
@@ -327,24 +325,6 @@ namespace platform {
 namespace {
 
 
-template <class T>
-inline void PreventElision(T&& output) {
-#if HWY_COMPILER_MSVC == 0
-  
-  
-  
-  asm volatile("" : "+r"(output) : : "memory");
-#else
-  
-  
-  
-  
-  static std::atomic<T> dummy(T{});
-  dummy.store(output, std::memory_order_relaxed);
-#endif
-}
-
-
 
 
 
@@ -577,7 +557,7 @@ size_t NumSkip(const Func func, const uint8_t* arg, const InputVec& unique,
     double rel_mad;
     const timer::Ticks total = SampleUntilStable(
         p.target_rel_mad, &rel_mad, p,
-        [func, arg, input]() { platform::PreventElision(func(arg, input)); });
+        [func, arg, input]() { PreventElision(func(arg, input)); });
     min_duration = HWY_MIN(min_duration, total - timer_resolution);
   }
 
@@ -665,7 +645,7 @@ timer::Ticks TotalDuration(const Func func, const uint8_t* arg,
   const timer::Ticks duration =
       SampleUntilStable(p.target_rel_mad, &rel_mad, p, [func, arg, inputs]() {
         for (const FuncInput input : *inputs) {
-          platform::PreventElision(func(arg, input));
+          PreventElision(func(arg, input));
         }
       });
   *max_rel_mad = HWY_MAX(*max_rel_mad, rel_mad);
@@ -685,7 +665,7 @@ timer::Ticks Overhead(const uint8_t* arg, const InputVec* inputs,
   
   return SampleUntilStable(0.0, &rel_mad, p, [arg, inputs]() {
     for (const FuncInput input : *inputs) {
-      platform::PreventElision(EmptyFunc(arg, input));
+      PreventElision(EmptyFunc(arg, input));
     }
   });
 }

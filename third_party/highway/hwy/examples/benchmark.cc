@@ -16,10 +16,9 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
-#include <inttypes.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <inttypes.h>  
 #include <stdio.h>
+#include <stdlib.h>  
 
 #include <cmath>  
 #include <memory>
@@ -144,7 +143,10 @@ class BenchmarkDot : public TwoArray {
     sum0 = Add(sum0, sum1);
     sum2 = Add(sum2, sum3);
     sum0 = Add(sum0, sum2);
-    dot_ = GetLane(SumOfLanes(d, sum0));
+    
+    dot_ = ReduceSum(d, sum0);
+    
+    
     return static_cast<FuncOutput>(dot_);
   }
   void Verify(size_t num_items) {

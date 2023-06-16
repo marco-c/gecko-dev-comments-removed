@@ -167,8 +167,8 @@ struct Result {
 
 
 
-HWY_DLLEXPORT size_t Measure(const Func func, const uint8_t* arg,
-                             const FuncInput* inputs, const size_t num_inputs,
+HWY_DLLEXPORT size_t Measure(Func func, const uint8_t* arg,
+                             const FuncInput* inputs, size_t num_inputs,
                              Result* results, const Params& p = Params());
 
 

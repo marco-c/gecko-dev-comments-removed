@@ -25,6 +25,7 @@
 
 
 #include "hwy/contrib/sort/algo-inl.h"
+#include "hwy/contrib/sort/vqsort.h"
 #include "hwy/contrib/sort/result-inl.h"
 #include "hwy/contrib/sort/sorting_networks-inl.h"  
 #include "hwy/contrib/sort/traits-inl.h"
@@ -35,6 +36,8 @@
 
 
 #define SORT_100M 0
+
+#define SORT_BENCH_BASE_AND_PARTITION 0
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
@@ -48,10 +51,13 @@ using detail::OrderAscending;
 using detail::OrderDescending;
 using detail::SharedTraits;
 
-#if VQSORT_ENABLED || HWY_IDE
+#if VQSORT_ENABLED
 using detail::OrderAscending128;
 using detail::OrderAscendingKV128;
 using detail::Traits128;
+#endif
+
+#if (VQSORT_ENABLED && SORT_BENCH_BASE_AND_PARTITION) || HWY_IDE
 
 template <class Traits>
 HWY_NOINLINE void BenchPartition() {
@@ -62,16 +68,17 @@ HWY_NOINLINE void BenchPartition() {
   const Dist dist = Dist::kUniform8;
   double sum = 0.0;
 
-  detail::Generator rng(&sum, 123);  
+  constexpr size_t kLPK = st.LanesPerKey();
+  HWY_ALIGN LaneType
+      buf[SortConstants::BufBytes<LaneType>(HWY_MAX_BYTES, kLPK) /
+          sizeof(LaneType)];
+  uint64_t* HWY_RESTRICT state = GetGeneratorState();
 
   const size_t max_log2 = AdjustedLog2Reps(20);
   for (size_t log2 = max_log2; log2 < max_log2 + 1; ++log2) {
     const size_t num_lanes = 1ull << log2;
-    const size_t num_keys = num_lanes / st.LanesPerKey();
+    const size_t num_keys = num_lanes / kLPK;
     auto aligned = hwy::AllocateAligned<LaneType>(num_lanes);
-    auto buf = hwy::AllocateAligned<LaneType>(
-        HWY_MAX(hwy::SortConstants::PartitionBufNum(Lanes(d)),
-                hwy::SortConstants::PivotBufNum(sizeof(LaneType), Lanes(d))));
 
     std::vector<double> seconds;
     const size_t num_reps = (1ull << (14 - log2 / 2)) * 30;
@@ -81,12 +88,12 @@ HWY_NOINLINE void BenchPartition() {
       
       
       
-      detail::DrawSamples(d, st, aligned.get(), num_lanes, buf.get(), rng);
-      detail::SortSamples(d, st, buf.get());
-      auto pivot = detail::ChoosePivotByRank(d, st, buf.get());
+      detail::DrawSamples(d, st, aligned.get(), num_lanes, buf, state);
+      detail::SortSamples(d, st, buf);
+      auto pivot = detail::ChoosePivotByRank(d, st, buf);
 
       const Timestamp t0;
-      detail::Partition(d, st, aligned.get(), num_lanes - 1, pivot, buf.get());
+      detail::Partition(d, st, aligned.get(), num_lanes - 1, pivot, buf);
       seconds.push_back(SecondsSince(t0));
       
       sum += static_cast<double>(aligned.get()[num_lanes / 2]);
@@ -127,8 +134,9 @@ HWY_NOINLINE void BenchBase(std::vector<Result>& results) {
   const Dist dist = Dist::kUniform32;
 
   const size_t N = Lanes(d);
-  const size_t num_lanes = SortConstants::BaseCaseNum(N);
-  const size_t num_keys = num_lanes / st.LanesPerKey();
+  constexpr size_t kLPK = st.LanesPerKey();
+  const size_t num_lanes = SortConstants::BaseCaseNumLanes<kLPK>(N);
+  const size_t num_keys = num_lanes / kLPK;
   auto keys = hwy::AllocateAligned<LaneType>(num_lanes);
   auto buf = hwy::AllocateAligned<LaneType>(num_lanes + N);
 
@@ -172,9 +180,6 @@ HWY_NOINLINE void BenchAllBase() {
   }
 }
 
-#else
-void BenchAllPartition() {}
-void BenchAllBase() {}
 #endif  
 
 std::vector<Algo> AlgoForBench() {
@@ -199,15 +204,19 @@ std::vector<Algo> AlgoForBench() {
         Algo::kVXSort,
 #endif
 
+#if HAVE_INTEL && HWY_TARGET <= HWY_AVX3
+        Algo::kIntel,
+#endif
+
 #if !HAVE_PARALLEL_IPS4O
 #if !SORT_100M
         
         
-        Algo::kStd, Algo::kHeap,
+        Algo::kStd,
 #endif
 
         Algo::kVQSort,  
-#endif
+#endif                  
   };
 }
 
@@ -256,33 +265,79 @@ HWY_NOINLINE void BenchSort(size_t num_keys) {
   }    
 }
 
+enum class BenchmarkModes {
+  kDefault,
+  k1M,
+  kAllSmall,
+  kSmallPow2,
+  kPow4,
+  kPow10
+};
+
+std::vector<size_t> SizesToBenchmark(BenchmarkModes mode) {
+  std::vector<size_t> sizes;
+  switch (mode) {
+    default:
+    case BenchmarkModes::kDefault:
+#if HAVE_PARALLEL_IPS4O || SORT_100M
+      sizes.push_back(100 * 1000 * size_t{1000});
+#else
+      sizes.push_back(100);
+      sizes.push_back(100 * 1000);
+#endif
+      break;
+    case BenchmarkModes::k1M:
+      sizes.push_back(1000 * 1000);
+      break;
+
+    case BenchmarkModes::kAllSmall:
+      sizes.reserve(128);
+      for (size_t i = 1; i <= 128; ++i) {
+        sizes.push_back(i);
+      }
+      break;
+    case BenchmarkModes::kSmallPow2:
+      for (size_t size = 2; size <= 128; size *= 2) {
+        sizes.push_back(size);
+      }
+      break;
+    case BenchmarkModes::kPow4:
+      for (size_t size = 4; size <= 256 * 1024; size *= 4) {
+        sizes.push_back(size);
+      }
+      break;
+    case BenchmarkModes::kPow10:
+      for (size_t size = 10; size <= 100 * 1000; size *= 10) {
+        sizes.push_back(size);
+      }
+      break;
+  }
+  return sizes;
+}
+
 HWY_NOINLINE void BenchAllSort() {
   
-  if (HWY_TARGET == HWY_SSSE3 || HWY_TARGET == HWY_SSE4) {
+  
+  if (HWY_SSE4 <= HWY_TARGET && HWY_TARGET <= HWY_SSE2) {
     return;
   }
-
-  constexpr size_t K = 1000;
-  constexpr size_t M = K * K;
-  (void)K;
-  (void)M;
-  for (size_t num_keys : {
-#if HAVE_PARALLEL_IPS4O || SORT_100M
-         100 * M,
-#else
-        1 * M,
+#if HAVE_INTEL
+  if (HWY_TARGET > HWY_AVX3) return;
 #endif
-       }) {
+
+  for (size_t num_keys : SizesToBenchmark(BenchmarkModes::kSmallPow2)) {
+#if !HAVE_INTEL
     BenchSort<TraitsLane<OrderAscending<float>>>(num_keys);
+#endif
     
     
-    BenchSort<TraitsLane<OrderDescending<int32_t>>>(num_keys);
+    BenchSort<TraitsLane<OtherOrder<int32_t>>>(num_keys);
     BenchSort<TraitsLane<OrderAscending<int64_t>>>(num_keys);
     
     
     
 
-#if !HAVE_VXSORT && VQSORT_ENABLED
+#if !HAVE_VXSORT && !HAVE_INTEL && VQSORT_ENABLED
     BenchSort<Traits128<OrderAscending128>>(num_keys);
     BenchSort<Traits128<OrderAscendingKV128>>(num_keys);
 #endif
@@ -301,8 +356,10 @@ namespace hwy {
 int64_t first_sort_target = 0;  
 namespace {
 HWY_BEFORE_TEST(BenchSort);
+#if SORT_BENCH_BASE_AND_PARTITION
 HWY_EXPORT_AND_TEST_P(BenchSort, BenchAllPartition);
 HWY_EXPORT_AND_TEST_P(BenchSort, BenchAllBase);
+#endif
 HWY_EXPORT_AND_TEST_P(BenchSort, BenchAllSort);
 }  
 }  

@@ -54,6 +54,7 @@ static constexpr uint8_t kMarkerSequence[] = {0xe6, 0xe8, 0xe7,
                                               0xe6, 0xe7, 0xe8};
 static constexpr size_t kMarkerSequenceLen = ARRAY_SIZE(kMarkerSequence);
 
+
 static constexpr jpeg_scan_info kScript1[] = {
     {1, {0}, 0, 63, 0, 0},
     {1, {1}, 0, 63, 0, 0},
@@ -61,19 +62,140 @@ static constexpr jpeg_scan_info kScript1[] = {
 };
 
 static constexpr jpeg_scan_info kScript2[] = {
+    {2, {1, 2}, 0, 63, 0, 0},
+    {1, {0}, 0, 63, 0, 0},
+};
+
+
+
+static constexpr jpeg_scan_info kScript3[] = {
+    
     {3, {0, 1, 2}, 0, 0, 0, 0},
+    
     {1, {0}, 1, 63, 0, 0},
     {1, {1}, 1, 63, 0, 0},
     {1, {2}, 1, 63, 0, 0},
 };
-static constexpr jpeg_scan_info kScript3[] = {
-    {1, {0}, 0, 0, 0, 0},  {1, {1}, 0, 0, 0, 0},  {1, {2}, 0, 0, 0, 0},
-    {1, {0}, 1, 63, 0, 0}, {1, {1}, 1, 63, 0, 0}, {1, {2}, 1, 63, 0, 0},
-};
 static constexpr jpeg_scan_info kScript4[] = {
-    {3, {0, 1, 2}, 0, 0, 0, 0}, {1, {0}, 1, 63, 0, 1}, {1, {1}, 1, 63, 0, 1},
-    {1, {2}, 1, 63, 0, 1},      {1, {0}, 1, 63, 1, 0}, {1, {1}, 1, 63, 1, 0},
+    
+    {1, {0}, 0, 0, 0, 0},
+    {1, {1}, 0, 0, 0, 0},
+    {1, {2}, 0, 0, 0, 0},
+    
+    {1, {0}, 1, 63, 0, 0},
+    {1, {1}, 1, 63, 0, 0},
+    {1, {2}, 1, 63, 0, 0},
+};
+static constexpr jpeg_scan_info kScript5[] = {
+    
+    {2, {1, 2}, 0, 0, 0, 0},
+    {1, {0}, 0, 0, 0, 0},
+    
+    {1, {0}, 1, 63, 0, 1},
+    {1, {1}, 1, 63, 0, 1},
+    {1, {2}, 1, 63, 0, 1},
+    
+    {1, {0}, 1, 63, 1, 0},
+    {1, {1}, 1, 63, 1, 0},
     {1, {2}, 1, 63, 1, 0},
+};
+static constexpr jpeg_scan_info kScript6[] = {
+    
+    {3, {0, 1, 2}, 0, 0, 0, 2},
+    
+    {3, {0, 1, 2}, 0, 0, 2, 1},
+    {3, {0, 1, 2}, 0, 0, 1, 0},
+    
+    {1, {0}, 1, 63, 0, 0},
+    {1, {1}, 1, 63, 0, 0},
+    {1, {2}, 1, 63, 0, 0},
+};
+
+static constexpr jpeg_scan_info kScript7[] = {
+    
+    {1, {0}, 0, 0, 0, 2},
+    {1, {1}, 0, 0, 0, 2},
+    {1, {2}, 0, 0, 0, 2},
+    
+    {1, {0}, 0, 0, 2, 1},
+    {1, {1}, 0, 0, 2, 1},
+    {1, {2}, 0, 0, 2, 1},
+    
+    {1, {0}, 0, 0, 1, 0},
+    {1, {1}, 0, 0, 1, 0},
+    {1, {2}, 0, 0, 1, 0},
+    
+    {1, {0}, 1, 63, 0, 0},
+    {1, {1}, 1, 63, 0, 0},
+    {1, {2}, 1, 63, 0, 0},
+};
+
+static constexpr jpeg_scan_info kScript8[] = {
+    
+    {2, {1, 2}, 0, 0, 0, 2},
+    {1, {0}, 0, 0, 0, 2},
+    
+    {2, {0, 2}, 0, 0, 2, 1},
+    {1, {1}, 0, 0, 2, 1},
+    
+    {2, {1, 2}, 0, 0, 1, 0},
+    {1, {0}, 0, 0, 1, 0},
+    
+    {1, {0}, 1, 63, 0, 0},
+    {1, {1}, 1, 63, 0, 0},
+    {1, {2}, 1, 63, 0, 0},
+};
+
+static constexpr jpeg_scan_info kScript9[] = {
+    
+    {3, {0, 1, 2}, 0, 0, 0, 0},
+    
+    
+    {1, {0}, 1, 6, 0, 1},
+    {1, {0}, 7, 63, 0, 1},
+    
+    {1, {0}, 1, 63, 1, 0},
+    
+    
+    {1, {1}, 1, 63, 0, 1},
+    
+    {1, {1}, 1, 6, 1, 0},
+    {1, {1}, 7, 63, 1, 0},
+    
+    
+    {1, {2}, 1, 6, 0, 1},
+    {1, {2}, 7, 63, 0, 1},
+    
+    {1, {2}, 1, 16, 1, 0},
+    {1, {2}, 17, 63, 1, 0},
+};
+
+static constexpr jpeg_scan_info kScript10[] = {
+    
+    {3, {0, 1, 2}, 0, 0, 0, 0},
+    
+    
+    {1, {0}, 1, 16, 0, 1},
+    {1, {1}, 1, 16, 0, 1},
+    {1, {2}, 1, 16, 0, 1},
+    
+    {1, {0}, 1, 8, 1, 0},
+    {1, {0}, 9, 16, 1, 0},
+    {1, {1}, 1, 8, 1, 0},
+    {1, {1}, 9, 16, 1, 0},
+    {1, {2}, 1, 8, 1, 0},
+    {1, {2}, 9, 16, 1, 0},
+    
+    {1, {0}, 17, 63, 0, 1},
+    {1, {1}, 17, 63, 0, 1},
+    {1, {2}, 17, 63, 0, 1},
+    
+    {1, {0}, 17, 28, 1, 0},
+    {1, {0}, 29, 63, 1, 0},
+    {1, {1}, 17, 28, 1, 0},
+    {1, {1}, 29, 63, 1, 0},
+    {1, {2}, 17, 28, 1, 0},
+    {1, {2}, 29, 63, 1, 0},
 };
 
 struct ScanScript {
@@ -82,10 +204,11 @@ struct ScanScript {
 };
 
 static constexpr ScanScript kTestScript[] = {
-    {ARRAY_SIZE(kScript1), kScript1},
-    {ARRAY_SIZE(kScript2), kScript2},
-    {ARRAY_SIZE(kScript3), kScript3},
-    {ARRAY_SIZE(kScript4), kScript4},
+    {ARRAY_SIZE(kScript1), kScript1}, {ARRAY_SIZE(kScript2), kScript2},
+    {ARRAY_SIZE(kScript3), kScript3}, {ARRAY_SIZE(kScript4), kScript4},
+    {ARRAY_SIZE(kScript5), kScript5}, {ARRAY_SIZE(kScript6), kScript6},
+    {ARRAY_SIZE(kScript7), kScript7}, {ARRAY_SIZE(kScript8), kScript8},
+    {ARRAY_SIZE(kScript9), kScript9}, {ARRAY_SIZE(kScript10), kScript10},
 };
 static constexpr int kNumTestScripts = ARRAY_SIZE(kTestScript);
 

@@ -13,6 +13,8 @@
 
 
 
+#include <stdio.h>
+
 #include <algorithm>  
 #include <vector>
 
@@ -24,7 +26,7 @@
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/algo/find_test.cc"
 #include "hwy/foreach_target.h"  
-
+#include "hwy/highway.h"
 #include "hwy/contrib/algo/find-inl.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -101,6 +103,7 @@ struct TestFind {
     
     AlignedFreeUniquePtr<T[]> storage =
         AllocateAligned<T>(HWY_MAX(1, misalign + count));
+    HWY_ASSERT(storage);
     T* in = storage.get() + misalign;
     for (size_t i = 0; i < count; ++i) {
       in[i] = Random<T>(rng);
@@ -148,6 +151,7 @@ struct TestFindIf {
     
     AlignedFreeUniquePtr<T[]> storage =
         AllocateAligned<T>(HWY_MAX(1, misalign + count));
+    HWY_ASSERT(storage);
     T* in = storage.get() + misalign;
     for (size_t i = 0; i < count; ++i) {
       in[i] = Random<T>(rng);

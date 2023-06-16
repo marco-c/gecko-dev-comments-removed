@@ -27,11 +27,10 @@ HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 
-void SortF32Desc(float* HWY_RESTRICT keys, size_t num,
-                 float* HWY_RESTRICT buf) {
+void SortF32Desc(float* HWY_RESTRICT keys, size_t num) {
   SortTag<float> d;
   detail::SharedTraits<detail::TraitsLane<detail::OrderDescending<float>>> st;
-  Sort(d, st, keys, num, buf);
+  Sort(d, st, keys, num);
 }
 
 
@@ -45,9 +44,8 @@ namespace {
 HWY_EXPORT(SortF32Desc);
 }  
 
-void Sorter::operator()(float* HWY_RESTRICT keys, size_t n,
-                        SortDescending) const {
-  HWY_DYNAMIC_DISPATCH(SortF32Desc)(keys, n, Get<float>());
+void VQSort(float* HWY_RESTRICT keys, size_t n, SortDescending) {
+  HWY_DYNAMIC_DISPATCH(SortF32Desc)(keys, n);
 }
 
 }  

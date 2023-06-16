@@ -18,17 +18,21 @@
 
 
 
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include "hwy/detect_compiler_arch.h"
 #include "hwy/highway_export.h"
 
+
+#if ((HWY_ARCH_X86 && !defined(HWY_NO_LIBCXX)) || HWY_COMPILER_MSVC) && !HWY_IDE
+#include <atomic>
+#endif
+
+
 #if HWY_COMPILER_MSVC
 #include <string.h>  
-#endif
-#if HWY_ARCH_X86
-#include <atomic>
 #endif
 
 
@@ -156,7 +160,7 @@
 
 
 
-#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume)
+#if HWY_HAS_CPP_ATTRIBUTE(assume)
 #define HWY_ASSUME(expr) [[assume(expr)]]
 #elif HWY_COMPILER_MSVC || HWY_COMPILER_ICC
 #define HWY_ASSUME(expr) __assume(expr)
@@ -175,7 +179,7 @@
 
 
 
-#if HWY_ARCH_X86
+#if HWY_ARCH_X86 && !defined(HWY_NO_LIBCXX)
 #define HWY_FENCE std::atomic_thread_fence(std::memory_order_acq_rel)
 #else
 
@@ -249,7 +253,8 @@ namespace hwy {
 
 #if HWY_ARCH_X86
 static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 64;  
-#elif HWY_ARCH_RVV && defined(__riscv_vector)
+#elif HWY_ARCH_RVV && defined(__riscv_v_intrinsic) && \
+    __riscv_v_intrinsic >= 11000
 
 static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 4096;
 #else
@@ -264,7 +269,8 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 
 #if HWY_ARCH_X86
 #define HWY_ALIGN_MAX alignas(64)
-#elif HWY_ARCH_RVV && defined(__riscv_vector)
+#elif HWY_ARCH_RVV && defined(__riscv_v_intrinsic) && \
+    __riscv_v_intrinsic >= 11000
 #define HWY_ALIGN_MAX alignas(8)  // only elements need be aligned
 #else
 #define HWY_ALIGN_MAX alignas(16)
@@ -397,35 +403,63 @@ HWY_API constexpr bool IsSame() {
   return IsSameT<T, U>::value;
 }
 
+template <bool Condition, typename Then, typename Else>
+struct IfT {
+  using type = Then;
+};
+
+template <class Then, class Else>
+struct IfT<false, Then, Else> {
+  using type = Else;
+};
+
+template <bool Condition, typename Then, typename Else>
+using If = typename IfT<Condition, Then, Else>::type;
 
 
 
 
 
 
-#define HWY_IF_LE128(T, N) hwy::EnableIf<N * sizeof(T) <= 16>* = nullptr
-#define HWY_IF_LE64(T, N) hwy::EnableIf<N * sizeof(T) <= 8>* = nullptr
-#define HWY_IF_LE32(T, N) hwy::EnableIf<N * sizeof(T) <= 4>* = nullptr
-#define HWY_IF_GE32(T, N) hwy::EnableIf<N * sizeof(T) >= 4>* = nullptr
-#define HWY_IF_GE64(T, N) hwy::EnableIf<N * sizeof(T) >= 8>* = nullptr
-#define HWY_IF_GE128(T, N) hwy::EnableIf<N * sizeof(T) >= 16>* = nullptr
-#define HWY_IF_GT128(T, N) hwy::EnableIf<(N * sizeof(T) > 16)>* = nullptr
+#define HWY_IF_V_SIZE(T, kN, bytes) \
+  hwy::EnableIf<kN * sizeof(T) == bytes>* = nullptr
+#define HWY_IF_V_SIZE_LE(T, kN, bytes) \
+  hwy::EnableIf<kN * sizeof(T) <= bytes>* = nullptr
+#define HWY_IF_V_SIZE_GT(T, kN, bytes) \
+  hwy::EnableIf<(kN * sizeof(T) > bytes)>* = nullptr
+
+#define HWY_IF_LANES(kN, lanes) hwy::EnableIf<(kN == lanes)>* = nullptr
+#define HWY_IF_LANES_LE(kN, lanes) hwy::EnableIf<(kN <= lanes)>* = nullptr
+#define HWY_IF_LANES_GT(kN, lanes) hwy::EnableIf<(kN > lanes)>* = nullptr
 
 #define HWY_IF_UNSIGNED(T) hwy::EnableIf<!IsSigned<T>()>* = nullptr
-#define HWY_IF_SIGNED(T) \
-  hwy::EnableIf<IsSigned<T>() && !IsFloat<T>()>* = nullptr
+#define HWY_IF_SIGNED(T)                                                   \
+  hwy::EnableIf<IsSigned<T>() && !IsFloat<T>() && !IsSpecialFloat<T>()>* = \
+      nullptr
 #define HWY_IF_FLOAT(T) hwy::EnableIf<hwy::IsFloat<T>()>* = nullptr
 #define HWY_IF_NOT_FLOAT(T) hwy::EnableIf<!hwy::IsFloat<T>()>* = nullptr
+#define HWY_IF_SPECIAL_FLOAT(T) \
+  hwy::EnableIf<hwy::IsSpecialFloat<T>()>* = nullptr
+#define HWY_IF_NOT_SPECIAL_FLOAT(T) \
+  hwy::EnableIf<!hwy::IsSpecialFloat<T>()>* = nullptr
+#define HWY_IF_NOT_FLOAT_NOR_SPECIAL(T) \
+  hwy::EnableIf<!hwy::IsFloat<T>() && !hwy::IsSpecialFloat<T>()>* = nullptr
 
-#define HWY_IF_LANE_SIZE(T, bytes) \
-  hwy::EnableIf<sizeof(T) == (bytes)>* = nullptr
-#define HWY_IF_NOT_LANE_SIZE(T, bytes) \
+#define HWY_IF_T_SIZE(T, bytes) hwy::EnableIf<sizeof(T) == (bytes)>* = nullptr
+#define HWY_IF_NOT_T_SIZE(T, bytes) \
   hwy::EnableIf<sizeof(T) != (bytes)>* = nullptr
 
 
 
-#define HWY_IF_LANE_SIZE_ONE_OF(T, bit_array) \
+#define HWY_IF_T_SIZE_ONE_OF(T, bit_array) \
   hwy::EnableIf<((size_t{1} << sizeof(T)) & (bit_array)) != 0>* = nullptr
+
+
+
+#define HWY_IF_UI32(T) \
+  hwy::EnableIf<IsSame<T, uint32_t>() || IsSame<T, int32_t>()>* = nullptr
+#define HWY_IF_UI64(T) \
+  hwy::EnableIf<IsSame<T, uint64_t>() || IsSame<T, int64_t>()>* = nullptr
 
 #define HWY_IF_LANES_PER_BLOCK(T, N, LANES) \
   hwy::EnableIf<HWY_MIN(sizeof(T) * N, 16) / sizeof(T) == (LANES)>* = nullptr
@@ -445,6 +479,18 @@ struct RemoveConstT<const T> {
 
 template <class T>
 using RemoveConst = typename RemoveConstT<T>::type;
+
+template <class T>
+struct RemoveRefT {
+  using type = T;
+};
+template <class T>
+struct RemoveRefT<T&> {
+  using type = T;
+};
+
+template <class T>
+using RemoveRef = typename RemoveRefT<T>::type;
 
 
 
@@ -636,6 +682,12 @@ HWY_API constexpr bool IsFloat() {
   
   
   return IsSame<T, float>() || IsSame<T, double>();
+}
+
+
+template <typename T>
+HWY_API constexpr bool IsSpecialFloat() {
+  return IsSame<T, float16_t>() || IsSame<T, bfloat16_t>();
 }
 
 template <typename T>
@@ -990,6 +1042,24 @@ HWY_API bfloat16_t BF16FromF32(float f) {
 
 HWY_DLLEXPORT HWY_NORETURN void HWY_FORMAT(3, 4)
     Abort(const char* file, int line, const char* format, ...);
+
+
+template <class T>
+HWY_API void PreventElision(T&& output) {
+#if HWY_COMPILER_MSVC
+  
+  
+  
+  
+  static std::atomic<RemoveRef<T>> dummy;
+  dummy.store(output, std::memory_order_relaxed);
+#else
+  
+  
+  
+  asm volatile("" : "+r"(output) : : "memory");
+#endif
+}
 
 }  
 

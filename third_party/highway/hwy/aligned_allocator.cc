@@ -28,7 +28,7 @@
 namespace hwy {
 namespace {
 
-#if HWY_ARCH_RVV && defined(__riscv_vector)
+#if HWY_ARCH_RVV && defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000
 
 
 constexpr size_t kAlignment = HWY_MAX(HWY_ALIGNMENT, 4096);

@@ -15,177 +15,76 @@
 
 #include <stdio.h>
 
-#include <algorithm>
+#include <vector>
 
 #include "hwy/base.h"
 
 
 
-void PrintMergeNetwork16x2() {
-  for (int i = 8; i < 16; ++i) {
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i, i);
+void PrintMergeNetwork(int rows, int cols) {
+  printf("\n%d x %d:\n", rows, cols);
+  
+  HWY_ASSERT(rows != 0 && (rows & (rows - 1)) == 0);
+  HWY_ASSERT(cols != 0 && (cols & (cols - 1)) == 0);
+  HWY_ASSERT(rows >= 4);
+  HWY_ASSERT(cols >= 2);   
+  HWY_ASSERT(cols <= 16);  
+
+  
+  
+  int group_size = rows;
+  int num_groups = 1;
+  for (; group_size >= 2; group_size /= 2, num_groups *= 2) {
+    
+    
+    
+    std::vector<int> all_vi;
+    for (int group = 0; group < num_groups; ++group) {
+      for (int i = 0; i < group_size / 2; ++i) {
+        all_vi.push_back(group * group_size + i);
+      }
+    }
+    for (int vi : all_vi) {
+      const int vr = vi ^ (group_size - 1);
+      printf("v%x = st.ReverseKeys%d(d, v%x);\n", vr, cols, vr);
+    }
+    for (int vi : all_vi) {
+      const int vr = vi ^ (group_size - 1);
+      printf("st.Sort2(d, v%x, v%x);\n", vi, vr);
+    }
+    printf("\n");
   }
-  for (int i = 0; i < 8; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 15 - i);
+
+  
+  if (cols > 2) {
+    for (int i = 0; i < rows; ++i) {
+      printf("v%x = st.SortPairsReverse%d(d, v%x);\n", i, cols, i);
+    }
+    printf("\n");
   }
-  for (int i = 0; i < 4; ++i) {
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i + 4, i + 4);
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i + 12, i + 12);
+  if (cols >= 16) {
+    for (int i = 0; i < rows; ++i) {
+      printf("v%x = st.SortPairsDistance4(d, v%x);\n", i, i);
+    }
+    printf("\n");
   }
-  for (int i = 0; i < 4; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 7 - i);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 8, 15 - i);
+  if (cols >= 8) {
+    for (int i = 0; i < rows; ++i) {
+      printf("v%x = st.SortPairsDistance2(d, v%x);\n", i, i);
+    }
+    printf("\n");
   }
-  for (int i = 0; i < 16; i += 4) {
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i + 2, i + 2);
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i + 3, i + 3);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 3);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 1, i + 2);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("v%x = st.SwapAdjacent(d, v%x);\n", i + 1, i + 1);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 1);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance1<kOrder>(d, v%x);\n", i, i);
+  for (int i = 0; i < rows; ++i) {
+    printf("v%x = st.SortPairsDistance1(d, v%x);\n", i, i);
   }
   printf("\n");
-}
-
-void PrintMergeNetwork16x4() {
-  printf("\n");
-
-  for (int i = 8; i < 16; ++i) {
-    printf("v%x = st.Reverse4(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 8; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 15 - i);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("v%x = st.Reverse4(d, v%x);\n", i + 4, i + 4);
-    printf("v%x = st.Reverse4(d, v%x);\n", i + 12, i + 12);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 7 - i);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 8, 15 - i);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("v%x = st.Reverse4(d, v%x);\n", i + 2, i + 2);
-    printf("v%x = st.Reverse4(d, v%x);\n", i + 3, i + 3);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 3);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 1, i + 2);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("v%x = st.Reverse4(d, v%x);\n", i + 1, i + 1);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 1);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsReverse4(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance1<kOrder>(d, v%x);\n", i, i);
-  }
-}
-
-void PrintMergeNetwork16x8() {
-  printf("\n");
-
-  for (int i = 8; i < 16; ++i) {
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 8; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 15 - i);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i + 4, i + 4);
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i + 12, i + 12);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 7 - i);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 8, 15 - i);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i + 2, i + 2);
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i + 3, i + 3);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 3);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 1, i + 2);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("v%x = st.ReverseKeys8(d, v%x);\n", i + 1, i + 1);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 1);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsReverse8(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance2<kOrder>(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance1<kOrder>(d, v%x);\n", i, i);
-  }
-}
-
-void PrintMergeNetwork16x16() {
-  printf("\n");
-
-  for (int i = 8; i < 16; ++i) {
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 8; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 15 - i);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i + 4, i + 4);
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i + 12, i + 12);
-  }
-  for (int i = 0; i < 4; ++i) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, 7 - i);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 8, 15 - i);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i + 2, i + 2);
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i + 3, i + 3);
-  }
-  for (int i = 0; i < 16; i += 4) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 3);
-    printf("st.Sort2(d, v%x, v%x);\n", i + 1, i + 2);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("v%x = st.ReverseKeys16(d, v%x);\n", i + 1, i + 1);
-  }
-  for (int i = 0; i < 16; i += 2) {
-    printf("st.Sort2(d, v%x, v%x);\n", i, i + 1);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsReverse16<kOrder>(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance4<kOrder>(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance2<kOrder>(d, v%x);\n", i, i);
-  }
-  for (int i = 0; i < 16; ++i) {
-    printf("v%x = st.SortPairsDistance1<kOrder>(d, v%x);\n", i, i);
-  }
 }
 
 int main(int argc, char** argv) {
-  PrintMergeNetwork16x2();
-  PrintMergeNetwork16x4();
-  PrintMergeNetwork16x8();
-  PrintMergeNetwork16x16();
+  PrintMergeNetwork(8, 2);
+  PrintMergeNetwork(8, 4);
+  PrintMergeNetwork(16, 4);
+  PrintMergeNetwork(16, 8);
+  PrintMergeNetwork(16, 16);
   return 0;
 }

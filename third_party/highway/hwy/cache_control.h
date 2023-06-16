@@ -16,9 +16,6 @@
 #ifndef HIGHWAY_HWY_CACHE_CONTROL_H_
 #define HIGHWAY_HWY_CACHE_CONTROL_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "hwy/base.h"
 
 
@@ -31,13 +28,8 @@
 
 #if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL) && !HWY_COMPILER_MSVC
 #include <emmintrin.h>  
+#include <xmmintrin.h>  
 #endif
-
-
-
-
-#pragma push_macro("LoadFence")
-#undef LoadFence
 
 namespace hwy {
 
@@ -54,12 +46,21 @@ namespace hwy {
 
 
 
+#pragma push_macro("LoadFence")
+#undef LoadFence
+
+
+
+
 
 HWY_INLINE HWY_ATTR_CACHE void LoadFence() {
 #if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_lfence();
 #endif
 }
+
+
+#pragma pop_macro("LoadFence")
 
 
 
@@ -103,8 +104,5 @@ HWY_INLINE HWY_ATTR_CACHE void Pause() {
 }
 
 }  
-
-
-#pragma pop_macro("LoadFence")
 
 #endif  

@@ -26,8 +26,10 @@ namespace hwy {
 
 
 struct SortConstants {
-
-
+  
+  
+  
+  
 #if HWY_COMPILER_MSVC || HWY_IS_DEBUG_BUILD
   static constexpr size_t kMaxCols = 8;  
 #else
@@ -38,12 +40,14 @@ struct SortConstants {
   
   
   
-  
-  static constexpr size_t kMaxRowsLog2 = 4;
-  static constexpr size_t kMaxRows = size_t{1} << kMaxRowsLog2;
+  static constexpr size_t kMaxRows = 16;
 
-  static constexpr HWY_INLINE size_t BaseCaseNum(size_t N) {
-    return kMaxRows * HWY_MIN(N, kMaxCols);
+  
+  template <size_t kLPK>
+  static constexpr HWY_INLINE size_t BaseCaseNumLanes(size_t N) {
+    
+    
+    return (((N / kLPK) >= 4) ? kMaxRows : 8) * HWY_MIN(N, kMaxCols);
   }
 
   
@@ -52,6 +56,19 @@ struct SortConstants {
   
   
   static constexpr size_t kPartitionUnroll = 4;
+
+  
+  
+  
+  
+  static constexpr HWY_INLINE size_t LanesPerChunk(size_t sizeof_t) {
+    return 64 / sizeof_t;
+  }
+
+  template <typename T>
+  static constexpr HWY_INLINE size_t SampleLanes() {
+    return 2 * LanesPerChunk(sizeof(T));  
+  }
 
   static constexpr HWY_INLINE size_t PartitionBufNum(size_t N) {
     
@@ -63,30 +80,33 @@ struct SortConstants {
   }
 
   
-  
-  
-  
-  static constexpr HWY_INLINE size_t LanesPerChunk(size_t sizeof_t) {
-    return 64 / sizeof_t;
-  }
-
-  static constexpr HWY_INLINE size_t PivotBufNum(size_t sizeof_t, size_t N) {
-    
-    return (3 + 1) * LanesPerChunk(sizeof_t) + 2 * N;
-  }
-
-  template <typename T>
+  template <typename T, size_t kLPK>
   static constexpr HWY_INLINE size_t BufNum(size_t N) {
     
-    return HWY_MAX(BaseCaseNum(N) + 2 * N,
-                   HWY_MAX(PartitionBufNum(N), PivotBufNum(sizeof(T), N)));
+    
+    return HWY_MAX(SampleLanes<T>() + BaseCaseNumLanes<kLPK>(N) + N,
+                   PartitionBufNum(N));
   }
 
-  template <typename T>
+  
+  template <typename T, size_t kLPK>
   static constexpr HWY_INLINE size_t BufBytes(size_t vector_size) {
-    return sizeof(T) * BufNum<T>(vector_size / sizeof(T));
+    return BufNum<T, kLPK>(vector_size / sizeof(T)) * sizeof(T);
+  }
+
+  
+  template <size_t kLPK>
+  static constexpr HWY_INLINE size_t MaxBufBytes(size_t vector_size) {
+    
+    return kLPK == 2 ? BufBytes<uint64_t, 2>(vector_size)
+                     : HWY_MAX((BufBytes<uint16_t, 1>(vector_size)),
+                               HWY_MAX((BufBytes<uint32_t, 1>(vector_size)),
+                                       (BufBytes<uint64_t, 1>(vector_size))));
   }
 };
+
+static_assert(SortConstants::MaxBufBytes<1>(64) <= 1280, "Unexpectedly high");
+static_assert(SortConstants::MaxBufBytes<2>(64) <= 1280, "Unexpectedly high");
 
 }  
 

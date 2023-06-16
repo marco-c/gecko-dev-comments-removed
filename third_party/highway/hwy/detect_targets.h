@@ -62,13 +62,19 @@
 
 
 
+#define HWY_AVX3_ZEN4 (1LL << 6)  // see HWY_WANT_AVX3_ZEN4 below
+
+
+
+
 #define HWY_AVX3_DL (1LL << 7)  // see HWY_WANT_AVX3_DL below
-#define HWY_AVX3 (1LL << 8)
-#define HWY_AVX2 (1LL << 9)
+#define HWY_AVX3 (1LL << 8)     // HWY_AVX2 plus AVX-512F/BW/CD/DQ/VL
+#define HWY_AVX2 (1LL << 9)     // HWY_SSE4 plus BMI2 + F16 + FMA
 
-#define HWY_SSE4 (1LL << 11)
-#define HWY_SSSE3 (1LL << 12)
+#define HWY_SSE4 (1LL << 11)   // SSE4.2 plus AES + CLMUL
+#define HWY_SSSE3 (1LL << 12)  // S-SSE3
 
+#define HWY_SSE2 (1LL << 14)
 
 
 
@@ -81,8 +87,8 @@
 #define HWY_SVE_256 (1LL << 25)   // specialized target (e.g. Arm V1)
 #define HWY_SVE2 (1LL << 26)
 #define HWY_SVE (1LL << 27)
-#define HWY_NEON (1LL << 28)  // On A64, includes/requires AES
-
+#define HWY_NEON (1LL << 28)  // Implies support for AES
+#define HWY_NEON_WITHOUT_AES (1LL << 29)
 #define HWY_HIGHEST_TARGET_BIT_ARM 29
 
 
@@ -96,8 +102,9 @@
 
 
 
-
-#define HWY_PPC8 (1LL << 49)  // v2.07 or 3
+#define HWY_PPC10 (1LL << 47)  // v3.1
+#define HWY_PPC9 (1LL << 48)   // v3.0
+#define HWY_PPC8 (1LL << 49)   // v2.07
 
 #define HWY_HIGHEST_TARGET_BIT_PPC 51
 
@@ -128,40 +135,105 @@
 
 
 
-#ifndef HWY_BROKEN_TARGETS
 
 
 
 #if HWY_ARCH_X86 && (HWY_COMPILER_CLANG != 0 && HWY_COMPILER_CLANG < 700)
-#define HWY_BROKEN_TARGETS (HWY_SSE4 | HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL)
+
+#define HWY_BROKEN_CLANG6 \
+  (HWY_SSE4 | HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL | HWY_AVX3_ZEN4)
 
 
 #if !defined(HWY_COMPILE_ONLY_SCALAR)
 #pragma message("x86 Clang <= 6: define HWY_COMPILE_ONLY_SCALAR or upgrade.")
 #endif
 
-
-#elif HWY_ARCH_X86_32
-#define HWY_BROKEN_TARGETS (HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL)
-
-
-#elif HWY_COMPILER_MSVC != 0
-#define HWY_BROKEN_TARGETS (HWY_AVX3 | HWY_AVX3_DL)
-
-
-#elif HWY_ARCH_ARM_V7 &&          \
-    (defined(__ARM_BIG_ENDIAN) || \
-     (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN))
-#define HWY_BROKEN_TARGETS (HWY_NEON)
-
-
-#elif (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1100) || \
-    (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000)
-#define HWY_BROKEN_TARGETS (HWY_SVE | HWY_SVE2 | HWY_SVE_256 | HWY_SVE2_128)
-
 #else
-#define HWY_BROKEN_TARGETS 0
+#define HWY_BROKEN_CLANG6 0
 #endif
+
+
+#if HWY_ARCH_X86_32
+#define HWY_BROKEN_32BIT (HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL | HWY_AVX3_ZEN4)
+#else
+#define HWY_BROKEN_32BIT 0
+#endif
+
+
+#if HWY_COMPILER_MSVC != 0
+#define HWY_BROKEN_MSVC (HWY_AVX3 | HWY_AVX3_DL | HWY_AVX3_ZEN4)
+#else
+#define HWY_BROKEN_MSVC 0
+#endif
+
+
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 801)
+#define HWY_BROKEN_AVX3_DL_ZEN4 (HWY_AVX3_DL | HWY_AVX3_ZEN4)
+#else
+#define HWY_BROKEN_AVX3_DL_ZEN4 0
+#endif
+
+
+#if HWY_ARCH_ARM_V7 && HWY_IS_BIG_ENDIAN
+#define HWY_BROKEN_ARM7_BIG_ENDIAN (HWY_NEON | HWY_NEON_WITHOUT_AES)
+#else
+#define HWY_BROKEN_ARM7_BIG_ENDIAN 0
+#endif
+
+
+
+
+#if HWY_ARCH_ARM_V7 && (__ARM_ARCH_PROFILE == 'A') && \
+    !defined(__ARM_VFPV4__) &&                        \
+    !((__ARM_NEON_FP & 0x2 ) && (__ARM_FEATURE_FMA == 1))
+#define HWY_BROKEN_ARM7_WITHOUT_VFP4 (HWY_NEON | HWY_NEON_WITHOUT_AES)
+#else
+#define HWY_BROKEN_ARM7_WITHOUT_VFP4 0
+#endif
+
+
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1100) || \
+    (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000)
+#define HWY_BROKEN_SVE (HWY_SVE | HWY_SVE2 | HWY_SVE_256 | HWY_SVE2_128)
+#else
+#define HWY_BROKEN_SVE 0
+#endif
+
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1100)
+
+
+#define HWY_BROKEN_PPC10 (HWY_PPC10)
+#elif HWY_ARCH_PPC && HWY_IS_BIG_ENDIAN &&                                    \
+    ((HWY_COMPILER3_CLANG && HWY_COMPILER3_CLANG < 160001) ||                 \
+     (HWY_COMPILER_GCC_ACTUAL >= 1200 && HWY_COMPILER_GCC_ACTUAL <= 1203) ||  \
+     (HWY_COMPILER_GCC_ACTUAL >= 1300 && HWY_COMPILER_GCC_ACTUAL <= 1301))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define HWY_BROKEN_PPC10 (HWY_PPC10)
+#else
+#define HWY_BROKEN_PPC10 0
+#endif
+
+
+#ifndef HWY_BROKEN_TARGETS
+
+#define HWY_BROKEN_TARGETS                                  \
+  (HWY_BROKEN_CLANG6 | HWY_BROKEN_32BIT | HWY_BROKEN_MSVC | \
+   HWY_BROKEN_AVX3_DL_ZEN4 | HWY_BROKEN_ARM7_BIG_ENDIAN |   \
+   HWY_BROKEN_ARM7_WITHOUT_VFP4 | HWY_BROKEN_SVE | HWY_BROKEN_PPC10)
 
 #endif  
 
@@ -210,10 +282,25 @@
 #endif
 
 
-#if HWY_ARCH_PPC && defined(__VSX__) && 0
+#if HWY_ARCH_PPC && HWY_COMPILER_GCC && defined(__ALTIVEC__) && \
+    defined(__VSX__) && defined(__POWER8_VECTOR__) &&           \
+    (defined(__CRYPTO__) || defined(HWY_DISABLE_PPC8_CRYPTO))
 #define HWY_BASELINE_PPC8 HWY_PPC8
 #else
 #define HWY_BASELINE_PPC8 0
+#endif
+
+#if HWY_BASELINE_PPC8 != 0 && defined(__POWER9_VECTOR__)
+#define HWY_BASELINE_PPC9 HWY_PPC9
+#else
+#define HWY_BASELINE_PPC9 0
+#endif
+
+#if HWY_BASELINE_PPC9 != 0 && \
+    (defined(_ARCH_PWR10) || defined(__POWER10_VECTOR__))
+#define HWY_BASELINE_PPC10 HWY_PPC10
+#else
+#define HWY_BASELINE_PPC10 0
 #endif
 
 #define HWY_BASELINE_SVE2 0
@@ -250,13 +337,29 @@
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #undef HWY_BASELINE_NEON
-#define HWY_BASELINE_NEON HWY_NEON
+#if defined(__ARM_FEATURE_AES)
+#define HWY_BASELINE_NEON (HWY_NEON | HWY_NEON_WITHOUT_AES)
+#else
+#define HWY_BASELINE_NEON (HWY_NEON_WITHOUT_AES)
+#endif
 #endif
 
 #endif  
 
 
 #if HWY_COMPILER_MSVC
+
+#if HWY_ARCH_X86_32
+#if _M_IX86_FP >= 2
+#define HWY_CHECK_SSE2 1
+#else
+#define HWY_CHECK_SSE2 0
+#endif
+#elif HWY_ARCH_X86_64
+#define HWY_CHECK_SSE2 1
+#else
+#define HWY_CHECK_SSE2 0
+#endif
 
 
 
@@ -275,6 +378,12 @@
 #define HWY_CHECK_F16C 1
 
 #else  
+
+#if defined(__SSE2__)
+#define HWY_CHECK_SSE2 1
+#else
+#define HWY_CHECK_SSE2 0
+#endif
 
 #if defined(__SSSE3__)
 #define HWY_CHECK_SSSE3 1
@@ -309,6 +418,12 @@
 
 #endif  
 
+#if HWY_ARCH_X86 && (HWY_WANT_SSE2 || HWY_CHECK_SSE2)
+#define HWY_BASELINE_SSE2 HWY_SSE2
+#else
+#define HWY_BASELINE_SSE2 0
+#endif
+
 #if HWY_ARCH_X86 && (HWY_WANT_SSSE3 || HWY_CHECK_SSSE3)
 #define HWY_BASELINE_SSSE3 HWY_SSSE3
 #else
@@ -337,16 +452,26 @@
 #endif
 
 
-#if HWY_BASELINE_AVX3 != 0 && defined(__AVXVNNI__) && defined(__VAES__) && \
-    defined(__VPCLMULQDQ__) && defined(__AVX512VBMI__) &&                  \
-    defined(__AVX512VBMI2__) && defined(__AVX512VPOPCNTDQ__) &&            \
+#if HWY_BASELINE_AVX3 != 0 && defined(__AVX512VNNI__) && defined(__VAES__) && \
+    defined(__VPCLMULQDQ__) && defined(__AVX512VBMI__) &&                     \
+    defined(__AVX512VBMI2__) && defined(__AVX512VPOPCNTDQ__) &&               \
     defined(__AVX512BITALG__)
 #define HWY_BASELINE_AVX3_DL HWY_AVX3_DL
 #else
 #define HWY_BASELINE_AVX3_DL 0
 #endif
 
-#if HWY_ARCH_RVV && defined(__riscv_vector)
+
+
+
+#if defined(HWY_WANT_AVX3_ZEN4) && HWY_BASELINE_AVX3_DL != 0
+#define HWY_BASELINE_AVX3_ZEN4 HWY_AVX3_ZEN4
+#else
+#define HWY_BASELINE_AVX3_ZEN4 0
+#endif
+
+
+#if HWY_ARCH_RVV && defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000
 #define HWY_BASELINE_RVV HWY_RVV
 #else
 #define HWY_BASELINE_RVV 0
@@ -354,11 +479,13 @@
 
 
 #ifndef HWY_BASELINE_TARGETS
-#define HWY_BASELINE_TARGETS                                     \
-  (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 | \
-   HWY_BASELINE_SVE2 | HWY_BASELINE_SVE | HWY_BASELINE_NEON |    \
-   HWY_BASELINE_SSSE3 | HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 |  \
-   HWY_BASELINE_AVX3 | HWY_BASELINE_AVX3_DL | HWY_BASELINE_RVV)
+#define HWY_BASELINE_TARGETS                                           \
+  (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 |       \
+   HWY_BASELINE_PPC9 | HWY_BASELINE_PPC10 | HWY_BASELINE_SVE2 |        \
+   HWY_BASELINE_SVE | HWY_BASELINE_NEON | HWY_BASELINE_SSE2 |          \
+   HWY_BASELINE_SSSE3 | HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 |        \
+   HWY_BASELINE_AVX3 | HWY_BASELINE_AVX3_DL | HWY_BASELINE_AVX3_ZEN4 | \
+   HWY_BASELINE_RVV)
 #endif  
 
 
@@ -393,7 +520,8 @@
 #define HWY_HAVE_RUNTIME_DISPATCH 1
 
 
-#elif HWY_ARCH_ARM && HWY_COMPILER_GCC_ACTUAL && HWY_OS_LINUX && !defined(TOOLCHAIN_MISS_SYS_AUXV_H)
+#elif (HWY_ARCH_ARM || HWY_ARCH_PPC) && HWY_COMPILER_GCC_ACTUAL && \
+    HWY_OS_LINUX && !defined(TOOLCHAIN_MISS_SYS_AUXV_H)
 #define HWY_HAVE_RUNTIME_DISPATCH 1
 #else
 #define HWY_HAVE_RUNTIME_DISPATCH 0
@@ -402,40 +530,56 @@
 
 
 
-#if defined(HWY_WANT_AVX3_DL) || (HWY_BASELINE & HWY_AVX3_DL)
-#define HWY_ATTAINABLE_AVX3_DL HWY_AVX3_DL
+#if defined(HWY_WANT_AVX3_DL) || (HWY_BASELINE_TARGETS & HWY_AVX3_DL)
+#define HWY_ATTAINABLE_AVX3_DL (HWY_AVX3_DL)
 #else
 #define HWY_ATTAINABLE_AVX3_DL 0
 #endif
 
+#if HWY_ARCH_ARM_A64 && HWY_HAVE_RUNTIME_DISPATCH
+#define HWY_ATTAINABLE_NEON (HWY_NEON | HWY_NEON_WITHOUT_AES)
+#elif HWY_ARCH_ARM  
+#define HWY_ATTAINABLE_NEON (HWY_BASELINE_NEON)
+#else
+#define HWY_ATTAINABLE_NEON 0
+#endif
+
 #if HWY_ARCH_ARM_A64 && (HWY_HAVE_RUNTIME_DISPATCH || \
                          (HWY_ENABLED_BASELINE & (HWY_SVE | HWY_SVE_256)))
-#define HWY_ATTAINABLE_SVE HWY_ENABLED(HWY_SVE | HWY_SVE_256)
+#define HWY_ATTAINABLE_SVE (HWY_SVE | HWY_SVE_256)
 #else
 #define HWY_ATTAINABLE_SVE 0
 #endif
 
 #if HWY_ARCH_ARM_A64 && (HWY_HAVE_RUNTIME_DISPATCH || \
                          (HWY_ENABLED_BASELINE & (HWY_SVE2 | HWY_SVE2_128)))
-#define HWY_ATTAINABLE_SVE2 HWY_ENABLED(HWY_SVE2 | HWY_SVE2_128)
+#define HWY_ATTAINABLE_SVE2 (HWY_SVE2 | HWY_SVE2_128)
 #else
 #define HWY_ATTAINABLE_SVE2 0
+#endif
+
+#if HWY_ARCH_PPC && !HWY_DISABLE_PPC8_CRYPTO
+#define HWY_ATTAINABLE_PPC (HWY_PPC8 | HWY_PPC9 | HWY_PPC10)
+#else
+#define HWY_ATTAINABLE_PPC 0
 #endif
 
 
 
 #if HWY_ARCH_X86
 #define HWY_ATTAINABLE_TARGETS                                        \
-  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_SSSE3 | HWY_SSE4 | HWY_AVX2 | \
-              HWY_AVX3 | HWY_ATTAINABLE_AVX3_DL)
-#elif HWY_ARCH_ARM && HWY_HAVE_RUNTIME_DISPATCH
-#define HWY_ATTAINABLE_TARGETS                                      \
-  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_NEON | HWY_ATTAINABLE_SVE | \
+  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_SSE2 | HWY_SSSE3 | HWY_SSE4 | \
+              HWY_AVX2 | HWY_AVX3 | HWY_ATTAINABLE_AVX3_DL | HWY_AVX3_ZEN4)
+#elif HWY_ARCH_ARM
+#define HWY_ATTAINABLE_TARGETS                                                 \
+  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_ATTAINABLE_NEON | HWY_ATTAINABLE_SVE | \
               HWY_ATTAINABLE_SVE2)
-#else
+#elif HWY_ARCH_PPC
 #define HWY_ATTAINABLE_TARGETS \
-  (HWY_ENABLED_BASELINE | HWY_ATTAINABLE_SVE | HWY_ATTAINABLE_SVE2)
-#endif
+  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_ATTAINABLE_PPC)
+#else
+#define HWY_ATTAINABLE_TARGETS (HWY_ENABLED_BASELINE)
+#endif  
 
 
 #if defined(HWY_COMPILE_ONLY_EMU128) && !HWY_BROKEN_EMU128

@@ -54,7 +54,6 @@ TEST(ThreadParallelRunnerTest, TestPool) {
 
 
 TEST(ThreadParallelRunnerTest, TestSmallAssignments) {
-  
   const int kMaxThreads = 8;
   for (int num_threads = 1; num_threads <= kMaxThreads; ++num_threads) {
     ThreadPoolForTests pool(num_threads);

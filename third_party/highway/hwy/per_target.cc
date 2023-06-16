@@ -23,15 +23,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
-
-
-
-
-#if HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE_256
-size_t GetVectorBytes() { return detail::AllHardwareLanes(hwy::SizeTag<1>()); }
-#else
 size_t GetVectorBytes() { return Lanes(ScalableTag<uint8_t>()); }
-#endif
 
 }  
 

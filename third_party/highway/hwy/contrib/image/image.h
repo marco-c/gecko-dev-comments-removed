@@ -18,15 +18,12 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <utility>  
 
 #include "hwy/aligned_allocator.h"
 #include "hwy/base.h"
-#include "hwy/highway_export.h"
 
 namespace hwy {
 
@@ -38,7 +35,7 @@ struct HWY_CONTRIB_DLLEXPORT ImageBase {
 
   
   
-  static size_t BytesPerRow(const size_t xsize, const size_t sizeof_t);
+  static size_t BytesPerRow(size_t xsize, size_t sizeof_t);
 
   
   ImageBase()
