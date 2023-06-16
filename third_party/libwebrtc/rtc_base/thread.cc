@@ -736,13 +736,10 @@ void Thread::BlockingCall(rtc::FunctionView<void()> functor) {
     return;
   }
 
-  AssertBlockingIsAllowedOnCurrentThread();
-
-  Thread* current_thread = Thread::Current();
-
 #if RTC_DCHECK_IS_ON
-  if (current_thread) {
+  if (Thread* current_thread = Thread::Current()) {
     RTC_DCHECK_RUN_ON(current_thread);
+    RTC_DCHECK(current_thread->blocking_calls_allowed_);
     current_thread->blocking_call_count_++;
     RTC_DCHECK(current_thread->IsInvokeToThreadAllowed(this));
     ThreadManager::Instance()->RegisterSendAndCheckForCycles(current_thread,
@@ -750,54 +747,10 @@ void Thread::BlockingCall(rtc::FunctionView<void()> functor) {
   }
 #endif
 
-  
-  
-  std::unique_ptr<rtc::Event> done_event;
-  if (!current_thread)
-    done_event.reset(new rtc::Event());
-
-  bool ready = false;
-  absl::Cleanup cleanup = [this, &ready, current_thread,
-                           done = done_event.get()] {
-    if (current_thread) {
-      {
-        MutexLock lock(&mutex_);
-        ready = true;
-      }
-      current_thread->socketserver()->WakeUp();
-    } else {
-      done->Set();
-    }
-  };
+  Event done;
+  absl::Cleanup cleanup = [&done] { done.Set(); };
   PostTask([functor, cleanup = std::move(cleanup)] { functor(); });
-  if (current_thread) {
-    bool waited = false;
-    mutex_.Lock();
-    while (!ready) {
-      mutex_.Unlock();
-      current_thread->socketserver()->Wait(SocketServer::kForever, false);
-      waited = true;
-      mutex_.Lock();
-    }
-    mutex_.Unlock();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (waited) {
-      current_thread->socketserver()->WakeUp();
-    }
-  } else {
-    done_event->Wait(rtc::Event::kForever);
-  }
+  done.Wait(Event::kForever);
 }
 
 
