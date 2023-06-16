@@ -558,7 +558,18 @@ nsGlobalWindowInner* WindowGlobalOrNull(JSObject* aObj);
 
 
 
-nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj, JSContext* aCx);
+JSObject* SandboxPrototypeOrNull(JSContext* aCx, JSObject* aObj);
+
+
+
+
+
+
+inline nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj,
+                                                JSContext* aCx) {
+  JSObject* proto = SandboxPrototypeOrNull(aCx, aObj);
+  return proto ? WindowOrNull(proto) : nullptr;
+}
 
 
 
