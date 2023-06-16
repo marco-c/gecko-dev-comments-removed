@@ -42,6 +42,9 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"web-platform-tests.*backlog",  
     r"-ccov",
     r"-profiling-",  
+    r"-32-.*-webgpu",  
+    r"-asan-.*-webgpu",
+    r"-tsan-.*-webgpu",
     
     
     r"-shippable(?!.*(awsy|browsertime|marionette-headless|mochitest-devtools-chrome-fis|raptor|talos|web-platform-tests-wdspec-headless|mochitest-plain-headless))",  
