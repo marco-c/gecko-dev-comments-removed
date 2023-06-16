@@ -1081,8 +1081,7 @@ auto nsNativeThemeGTK::IsWidgetNonNative(nsIFrame* aFrame,
   }
 
   
-  if (NS_WARN_IF(!Theme::ThemeSupportsWidget(aFrame->PresContext(), aFrame,
-                                             aAppearance))) {
+  if (!Theme::ThemeSupportsWidget(aFrame->PresContext(), aFrame, aAppearance)) {
     return NonNative::No;
   }
 
