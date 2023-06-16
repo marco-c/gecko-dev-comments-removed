@@ -1719,9 +1719,6 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 
 
 
-pref("pdfjs.firstRun", true);
-
-
 pref("pdfjs.previousHandler.preferredAction", 0);
 pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
