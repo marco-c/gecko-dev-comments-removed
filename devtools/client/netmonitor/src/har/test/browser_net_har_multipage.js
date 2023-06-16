@@ -10,11 +10,13 @@ const MULTIPAGE_PAGE_URL = HAR_EXAMPLE_URL + "html_har_multipage_page.html";
 
 
 add_task(async function () {
-  await testHARWithNavigation({ enableMultipage: false });
-  await testHARWithNavigation({ enableMultipage: true });
+  await testHARWithNavigation({ enableMultipage: false, filter: false });
+  await testHARWithNavigation({ enableMultipage: true, filter: false });
+  await testHARWithNavigation({ enableMultipage: false, filter: true });
+  await testHARWithNavigation({ enableMultipage: true, filter: true });
 });
 
-async function testHARWithNavigation({ enableMultipage }) {
+async function testHARWithNavigation({ enableMultipage, filter }) {
   await pushPref("devtools.netmonitor.persistlog", true);
   await pushPref("devtools.netmonitor.har.multiple-pages", enableMultipage);
 
@@ -29,7 +31,7 @@ async function testHARWithNavigation({ enableMultipage }) {
   const { HarMenuUtils } = windowRequire(
     "devtools/client/netmonitor/src/har/har-menu-utils"
   );
-  const { getSortedRequests } = windowRequire(
+  const { getDisplayedRequests } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
   );
 
@@ -76,9 +78,14 @@ async function testHARWithNavigation({ enableMultipage }) {
   );
   await onNetworkEvents;
 
+  if (filter) {
+    info("Start filtering requests");
+    store.dispatch(Actions.setRequestFilterText("?request"));
+  }
+
   
   const jsonString = await HarMenuUtils.copyAllAsHar(
-    getSortedRequests(store.getState()),
+    getDisplayedRequests(store.getState()),
     connector
   );
   const har = JSON.parse(jsonString);
@@ -92,14 +99,19 @@ async function testHARWithNavigation({ enableMultipage }) {
     is(har.log.pages.length, 1, "There must be one page");
   }
 
-  
-  
-  
-  
-  
-  
-  
-  is(har.log.entries.length, 9, "There must be 9 requests");
+  if (!filter) {
+    
+    
+    
+    
+    
+    
+    
+    is(har.log.entries.length, 9, "There must be 9 requests");
+  } else {
+    
+    is(har.log.entries.length, 6, "There must be 6 requests");
+  }
 
   if (enableMultipage) {
     
@@ -108,10 +120,18 @@ async function testHARWithNavigation({ enableMultipage }) {
     assertPageRequests(har.log.entries, 0, 2, har.log.pages[0].id);
 
     assertPageDetails(har.log.pages[1], "page_1", "HAR Multipage test page");
-    assertPageRequests(har.log.entries, 3, 3, har.log.pages[1].id);
+    if (filter) {
+      
+    } else {
+      assertPageRequests(har.log.entries, 3, 3, har.log.pages[1].id);
+    }
 
     assertPageDetails(har.log.pages[2], "page_2", "HAR Multipage test page");
-    assertPageRequests(har.log.entries, 4, 8, har.log.pages[2].id);
+    if (filter) {
+      assertPageRequests(har.log.entries, 3, 5, har.log.pages[2].id);
+    } else {
+      assertPageRequests(har.log.entries, 4, 8, har.log.pages[2].id);
+    }
   } else {
     is(har.log.pages[0].id, "page_1");
     
