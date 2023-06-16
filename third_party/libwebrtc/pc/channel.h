@@ -85,7 +85,8 @@ class BaseChannel : public ChannelInterface,
   BaseChannel(rtc::Thread* worker_thread,
               rtc::Thread* network_thread,
               rtc::Thread* signaling_thread,
-              std::unique_ptr<MediaChannel> media_channel,
+              std::unique_ptr<MediaChannel> media_send_channel_impl,
+              std::unique_ptr<MediaChannel> media_receive_channel_impl,
               absl::string_view mid,
               bool srtp_required,
               webrtc::CryptoOptions crypto_options,
@@ -158,8 +159,6 @@ class BaseChannel : public ChannelInterface,
   
   void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
 
-  MediaChannel* media_channel() override { return media_channel_.get(); }
-
   VideoMediaSendChannelInterface* video_media_send_channel() override {
     RTC_CHECK(false) << "Attempt to fetch video channel from non-video";
     return nullptr;
@@ -203,7 +202,7 @@ class BaseChannel : public ChannelInterface,
   }
 
   bool network_initialized() RTC_RUN_ON(network_thread()) {
-    return media_channel_->HasNetworkInterface();
+    return media_send_channel()->HasNetworkInterface();
   }
 
   bool enabled() const RTC_RUN_ON(worker_thread()) { return enabled_; }
@@ -304,6 +303,12 @@ class BaseChannel : public ChannelInterface,
   
   std::string ToString() const;
 
+  
+  
+  
+  const std::unique_ptr<MediaChannel> media_send_channel_impl_;
+  const std::unique_ptr<MediaChannel> media_receive_channel_impl_;
+
  private:
   bool ConnectToRtpTransport_n() RTC_RUN_ON(network_thread());
   void DisconnectFromRtpTransport_n() RTC_RUN_ON(network_thread());
@@ -333,9 +338,6 @@ class BaseChannel : public ChannelInterface,
   
   const webrtc::RtpExtension::Filter extensions_filter_;
 
-  
-  
-  const std::unique_ptr<MediaChannel> media_channel_;
   
   
   
@@ -370,7 +372,8 @@ class VoiceChannel : public BaseChannel {
   VoiceChannel(rtc::Thread* worker_thread,
                rtc::Thread* network_thread,
                rtc::Thread* signaling_thread,
-               std::unique_ptr<VoiceMediaChannel> channel,
+               std::unique_ptr<VoiceMediaChannel> send_channel_impl,
+               std::unique_ptr<VoiceMediaChannel> receive_channel_impl,
                absl::string_view mid,
                bool srtp_required,
                webrtc::CryptoOptions crypto_options,
@@ -431,7 +434,8 @@ class VideoChannel : public BaseChannel {
   VideoChannel(rtc::Thread* worker_thread,
                rtc::Thread* network_thread,
                rtc::Thread* signaling_thread,
-               std::unique_ptr<VideoMediaChannel> media_channel,
+               std::unique_ptr<VideoMediaChannel> media_send_channel_impl,
+               std::unique_ptr<VideoMediaChannel> media_receive_channel_impl,
                absl::string_view mid,
                bool srtp_required,
                webrtc::CryptoOptions crypto_options,
