@@ -9,6 +9,8 @@ const TEST_URI =
   "test/browser/test-console-custom-formatters-errors.html";
 
 add_task(async function () {
+  
+  await pushPref("devtools.custom-formatters", true);
   await pushPref("devtools.custom-formatters.enabled", true);
 
   
