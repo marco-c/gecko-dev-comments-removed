@@ -4436,6 +4436,7 @@ enum struct ShouldNotProcessUpdatesReason {
   DevToolsLaunching,
   NotAnUpdatingTask,
   OtherInstanceRunning,
+  FirstStartup
 };
 
 const char* ShouldNotProcessUpdatesReasonAsString(
@@ -4454,6 +4455,14 @@ const char* ShouldNotProcessUpdatesReasonAsString(
 
 Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
     nsXREDirProvider& aDirProvider) {
+  
+  
+  
+  if (ARG_FOUND == CheckArgExists("first-startup")) {
+    NS_WARNING("ShouldNotProcessUpdates(): FirstStartup");
+    return Some(ShouldNotProcessUpdatesReason::FirstStartup);
+  }
+
   
   
 
