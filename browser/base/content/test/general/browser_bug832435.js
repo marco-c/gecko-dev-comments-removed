@@ -2,7 +2,17 @@
 
 
 
-function test() {
+"use strict";
+
+ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
+  const { UrlbarTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/UrlbarTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
+
+add_task(async function test() {
   waitForExplicitFinish();
   ok(true, "Starting up");
 
@@ -23,4 +33,4 @@ function test() {
   );
   gURLBar.inputField.value = "javascript: var foo = '11111111'; ";
   gURLBar.focus();
-}
+});
