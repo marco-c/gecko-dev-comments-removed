@@ -1,7 +1,6 @@
 
 
 
-
 {
     let ins = wasmEvalText(`(module
                              (type $p (struct (field f64) (field (mut i32))))
@@ -10,11 +9,10 @@
                               (struct.new $p (f64.const 1.5) (i32.const 33))))`).exports;
 
     let p = ins.mkp();
-    assertEq(p[0], 1.5);
-    assertEq(p[1], 33);
-    assertEq(p[2], undefined);
+    assertEq(wasmGcReadField(p, 0), 1.5);
+    assertEq(wasmGcReadField(p, 1), 33);
+    assertErrorMessage(() => wasmGcReadField(p, 2), WebAssembly.RuntimeError, /index out of bounds/);
 }
-
 
 
 {
@@ -25,11 +23,8 @@
                               (struct.new $p (f64.const 1.5))))`).exports;
 
     let p = ins.mkp();
-    assertErrorMessage(() => p[0] = 5.7,
-                       Error,
-                       /setting immutable field/);
+    assertErrorMessage(() => p[0] = 5.7, TypeError, /can't modify/);
 }
-
 
 
 {
@@ -50,7 +45,6 @@
 }
 
 
-
 {
     let ins = wasmEvalText(`(module
                              (type $q (struct (field (mut f64))))
@@ -63,21 +57,15 @@
                               (struct.new $p (ref.null $q) (ref.null eq))))`).exports;
     let q = ins.mkq();
     assertEq(typeof q, "object");
-    assertEq(q[0], 1.5);
+    assertEq(wasmGcReadField(q, 0), 1.5);
 
     let p = ins.mkp();
     assertEq(typeof p, "object");
-    assertEq(p[0], null);
+    assertEq(wasmGcReadField(p, 0), null);
 
-    assertErrorMessage(() => { p[0] = q },
-                       Error,
-                       /setting immutable field/);
-
-    assertErrorMessage(() => { p[1] = q },
-                       Error,
-                       /setting immutable field/);
+    assertErrorMessage(() => { p[0] = q }, TypeError, /can't modify/);
+    assertErrorMessage(() => { p[1] = q }, TypeError, /can't modify/);
 }
-
 
 
 
@@ -89,13 +77,10 @@
 
     let p = ins.mkp();
     assertEq(typeof p, "object");
-    assertEq(p[0], 0x1234567887654321n)
+    assertEq(wasmGcReadField(p, 0), 0x1234567887654321n)
 
-    assertErrorMessage(() => { p[0] = 0 },
-                       Error,
-                       /setting immutable field/);
+    assertErrorMessage(() => { p[0] = 0 }, TypeError, /can't modify/);
 }
-
 
 
 

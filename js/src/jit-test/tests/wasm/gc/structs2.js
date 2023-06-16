@@ -61,7 +61,7 @@
     
     
     
-    assertEq(obj8[0] + BigInt(obj8[31]), 0x12ACn); 
+    assertEq(wasmGcReadField(obj8, 0) + BigInt(wasmGcReadField(obj8, 31)), 0x12ACn); 
 }
 
 
@@ -97,7 +97,7 @@
      )`;
     let exports = wasmEvalText(txt).exports;
     let obj16 = exports.build16(0x4321n, 0x7865);
-    assertEq(obj16[0] + BigInt(obj16[23]), 0xBB86n); 
+    assertEq(wasmGcReadField(obj16, 0) + BigInt(wasmGcReadField(obj16, 23)), 0xBB86n); 
 }
 
 
@@ -122,14 +122,14 @@
     let exports = wasmEvalText(txt).exports;
     let theObject = exports.create();
     exports.writeField8x8_3(theObject, 0x77);
-    assertEq(theObject[0], 0x55);
-    assertEq(theObject[1], 0x55);
-    assertEq(theObject[2], 0x55);
-    assertEq(theObject[3], 0x77);
-    assertEq(theObject[4], 0x55);
-    assertEq(theObject[5], 0x55);
-    assertEq(theObject[6], 0x55);
-    assertEq(theObject[7], 0x55);
+    assertEq(wasmGcReadField(theObject, 0), 0x55);
+    assertEq(wasmGcReadField(theObject, 1), 0x55);
+    assertEq(wasmGcReadField(theObject, 2), 0x55);
+    assertEq(wasmGcReadField(theObject, 3), 0x77);
+    assertEq(wasmGcReadField(theObject, 4), 0x55);
+    assertEq(wasmGcReadField(theObject, 5), 0x55);
+    assertEq(wasmGcReadField(theObject, 6), 0x55);
+    assertEq(wasmGcReadField(theObject, 7), 0x55);
 }
 
 
@@ -154,14 +154,14 @@
     let exports = wasmEvalText(txt).exports;
     let theObject = exports.create();
     exports.writeField16x8_3(theObject, 0x7766);
-    assertEq(theObject[0], 0x5555);
-    assertEq(theObject[1], 0x5555);
-    assertEq(theObject[2], 0x5555);
-    assertEq(theObject[3], 0x7766);
-    assertEq(theObject[4], 0x5555);
-    assertEq(theObject[5], 0x5555);
-    assertEq(theObject[6], 0x5555);
-    assertEq(theObject[7], 0x5555);
+    assertEq(wasmGcReadField(theObject, 0), 0x5555);
+    assertEq(wasmGcReadField(theObject, 1), 0x5555);
+    assertEq(wasmGcReadField(theObject, 2), 0x5555);
+    assertEq(wasmGcReadField(theObject, 3), 0x7766);
+    assertEq(wasmGcReadField(theObject, 4), 0x5555);
+    assertEq(wasmGcReadField(theObject, 5), 0x5555);
+    assertEq(wasmGcReadField(theObject, 6), 0x5555);
+    assertEq(wasmGcReadField(theObject, 7), 0x5555);
 }
 
 

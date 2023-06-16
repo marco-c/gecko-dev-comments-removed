@@ -1,6 +1,9 @@
 
 
 
+
+
+
 load(libdir + "wasm.js");
 
 function monitorLocalValues(wast, lib, expected) {
