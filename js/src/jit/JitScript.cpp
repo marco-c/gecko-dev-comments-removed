@@ -705,6 +705,7 @@ JitScript* ICScript::outerJitScript() {
 
 
 
+
 HashNumber ICScript::hash() {
   HashNumber h = 0;
   for (size_t i = 0; i < numICEntries(); i++) {
@@ -725,6 +726,7 @@ HashNumber ICScript::hash() {
     
     MOZ_ASSERT(stub->isFallback());
     h = mozilla::AddToHash(h, stub->enteredCount() == 0);
+    h = mozilla::AddToHash(h, stub->toFallbackStub()->state().hasFailures());
   }
 
   return h;

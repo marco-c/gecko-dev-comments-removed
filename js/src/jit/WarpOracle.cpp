@@ -799,6 +799,17 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   
+  if (fallbackStub->state().hasFailures()) {
+    [[maybe_unused]] unsigned line, column;
+    LineNumberAndColumn(script_, loc, &line, &column);
+
+    JitSpew(JitSpew_WarpTranspiler, "Failed to attach for JSOp::%s @ %s:%u:%u",
+            CodeName(loc.getOp()), script_->filename(), line, column);
+    return Ok();
+  }
+
+  
+  
   
   
   bool firstStubHandlesAllCases = true;
