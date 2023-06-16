@@ -1,6 +1,5 @@
 #![deny(renamed_and_removed_lints)]
 #![deny(safe_packed_borrows)] 
-#![allow(unaligned_references)]
 
 
 

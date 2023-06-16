@@ -1,5 +1,3 @@
-#![forbid(unaligned_references)]
-
 
 
 #[repr(packed)]

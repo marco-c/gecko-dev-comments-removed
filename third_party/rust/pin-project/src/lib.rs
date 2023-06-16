@@ -66,6 +66,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![no_std]
 #![doc(test(
     no_crate_inject,
@@ -84,6 +105,7 @@
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
     
+    clippy::as_ptr_cast_mut,
     clippy::default_union_representation,
     clippy::trailing_empty_array,
     clippy::transmute_undefined_repr,

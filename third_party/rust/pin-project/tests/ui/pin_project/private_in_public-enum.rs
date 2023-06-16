@@ -1,6 +1,6 @@
 
 
-#![allow(private_in_public)]
+#![allow(private_in_public, dead_code)]
 
 pub enum PublicEnum {
     V(PrivateEnum), 
