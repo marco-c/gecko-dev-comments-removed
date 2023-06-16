@@ -568,19 +568,6 @@ pref("ui.-moz-autofill-background", "rgba(255, 249, 145, .5)");
 
 pref("accessibility.force_disabled", 0);
 
-#ifdef XP_WIN
-  
-  
-  
-  
-  
-  pref("accessibility.delay_plugins", false);
-  pref("accessibility.delay_plugin_time", 10000);
-
-  
-  pref("accessibility.handler.enabled", true);
-#endif
-
 pref("focusmanager.testmode", false);
 
 
