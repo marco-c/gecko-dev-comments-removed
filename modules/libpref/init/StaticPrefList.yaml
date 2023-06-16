@@ -5636,11 +5636,6 @@
 # Prefs starting with "gfx."
 #---------------------------------------------------------------------------
 
-- name: gfx.allow-texture-direct-mapping
-  type: bool
-  value: true
-  mirror: once
-
 # Allow 24-bit colour when the hardware supports it.
 - name: gfx.android.rgb16.force
   type: bool
@@ -12524,6 +12519,12 @@
 - name: network.http.http3.version_negotiation.enabled
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+# When a Http/3 connection failed, whether to retry with a different IP address.
+- name: network.http.http3.retry_different_ip_family
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 # When true, a http request will be upgraded to https when HTTPS RR is
