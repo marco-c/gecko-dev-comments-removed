@@ -715,12 +715,10 @@ function GetOption(options, property, type, values, fallback) {
 function GetStringOrBooleanOption(
   options,
   property,
-  values,
-  trueValue,
-  falsyValue,
+  stringValues,
   fallback
 ) {
-  assert(IsObject(values), "GetStringOrBooleanOption");
+  assert(IsObject(stringValues), "GetStringOrBooleanOption");
 
   
   var value = options[property];
@@ -732,20 +730,20 @@ function GetStringOrBooleanOption(
 
   
   if (value === true) {
-    return trueValue;
+    return true;
   }
 
   
   if (!value) {
-    return falsyValue;
+    return false;
   }
 
   
   value = ToString(value);
 
   
-  if (callFunction(std_Array_indexOf, values, value) === -1) {
-    return fallback;
+  if (callFunction(std_Array_indexOf, stringValues, value) === -1) {
+    ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, property, `"${value}"`);
   }
 
   
