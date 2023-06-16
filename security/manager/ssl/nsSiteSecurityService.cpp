@@ -220,9 +220,37 @@ nsresult nsSiteSecurityService::GetHost(nsIURI* aURI, nsACString& aResult) {
   return NS_OK;
 }
 
-static void SetStorageKey(const nsACString& hostname,
-                          const OriginAttributes& aOriginAttributes,
-                           nsAutoCString& storageKey) {
+static void NormalizePartitionKey(nsString& partitionKey) {
+  
+  
+  
+  
+  
+  Tokenizer16 tokenizer(partitionKey, nullptr, u".-_");
+  if (!tokenizer.CheckChar(u'(')) {
+    return;
+  }
+  nsString scheme;
+  if (!(tokenizer.ReadWord(scheme))) {
+    return;
+  }
+  if (!tokenizer.CheckChar(u',')) {
+    return;
+  }
+  nsString host;
+  if (!tokenizer.ReadWord(host)) {
+    return;
+  }
+  partitionKey.Assign(u"(https,");
+  partitionKey.Append(host);
+  partitionKey.Append(u")");
+}
+
+
+
+static void GetOldStorageKey(const nsACString& hostname,
+                             const OriginAttributes& aOriginAttributes,
+                              nsAutoCString& storageKey) {
   storageKey = hostname;
 
   
@@ -233,6 +261,21 @@ static void SetStorageKey(const nsACString& hostname,
   originAttributesNoUserContext.CreateSuffix(originAttributesSuffix);
   storageKey.Append(originAttributesSuffix);
   storageKey.Append(kHSTSKeySuffix);
+}
+
+static void GetStorageKey(const nsACString& hostname,
+                          const OriginAttributes& aOriginAttributes,
+                           nsAutoCString& storageKey) {
+  storageKey = hostname;
+
+  
+  OriginAttributes originAttributesNoUserContext = aOriginAttributes;
+  originAttributesNoUserContext.mUserContextId =
+      nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+  NormalizePartitionKey(originAttributesNoUserContext.mPartitionKey);
+  nsAutoCString originAttributesSuffix;
+  originAttributesNoUserContext.CreateSuffix(originAttributesSuffix);
+  storageKey.Append(originAttributesSuffix);
 }
 
 
@@ -275,10 +318,9 @@ nsresult nsSiteSecurityService::SetHSTSState(
   mozilla::DataStorageType storageType = isPrivate
                                              ? mozilla::DataStorage_Private
                                              : mozilla::DataStorage_Persistent;
-  nsAutoCString storageKey;
-  SetStorageKey(hostname, aOriginAttributes, storageKey);
   SSSLOG(("SSS: storing HSTS site entry for %s", hostname.get()));
-  nsCString value = mSiteStateStorage->Get(storageKey, storageType);
+  nsCString value;
+  GetWithMigration(hostname, aOriginAttributes, storageType, value);
   SiteHSTSState curSiteState(hostname, aOriginAttributes, value);
   
   
@@ -287,7 +329,8 @@ nsresult nsSiteSecurityService::SetHSTSState(
       curSiteState.mHSTSIncludeSubdomains != siteState.mHSTSIncludeSubdomains ||
       AbsoluteDifference(curSiteState.mHSTSExpireTime,
                          siteState.mHSTSExpireTime) > sOneDayInMilliseconds) {
-    nsresult rv = mSiteStateStorage->Put(storageKey, stateString, storageType);
+    nsresult rv =
+        PutWithMigration(hostname, aOriginAttributes, storageType, stateString);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -306,20 +349,18 @@ nsresult nsSiteSecurityService::MarkHostAsNotHSTS(
   mozilla::DataStorageType storageType = isPrivate
                                              ? mozilla::DataStorage_Private
                                              : mozilla::DataStorage_Persistent;
-  nsAutoCString storageKey;
-  SetStorageKey(aHost, aOriginAttributes, storageKey);
-
   if (GetPreloadStatus(aHost)) {
     SSSLOG(("SSS: storing knockout entry for %s", aHost.get()));
     SiteHSTSState siteState(aHost, aOriginAttributes, 0,
                             SecurityPropertyKnockout, false);
     nsAutoCString stateString;
     siteState.ToString(stateString);
-    nsresult rv = mSiteStateStorage->Put(storageKey, stateString, storageType);
+    nsresult rv =
+        PutWithMigration(aHost, aOriginAttributes, storageType, stateString);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     SSSLOG(("SSS: removing entry for %s", aHost.get()));
-    mSiteStateStorage->Remove(storageKey, storageType);
+    RemoveWithMigration(aHost, aOriginAttributes, storageType);
   }
 
   return NS_OK;
@@ -370,29 +411,34 @@ nsresult nsSiteSecurityService::ResetStateInternal(
     return rv;
   }
 
+  OriginAttributes normalizedOriginAttributes(aOriginAttributes);
+  NormalizePartitionKey(normalizedOriginAttributes.mPartitionKey);
+
   if (aScope == ResetStateBy::ExactDomain) {
-    ResetStateForExactDomain(hostname, aOriginAttributes);
+    ResetStateForExactDomain(hostname, normalizedOriginAttributes);
     return NS_OK;
   }
 
   nsTArray<DataStorageItem> items;
   mSiteStateStorage->GetAll(&items);
   for (const auto& item : items) {
-    if (!StringEndsWith(item.key, kHSTSKeySuffix)) {
-      
+    static const nsLiteralCString kHPKPKeySuffix = ":HPKP"_ns;
+    if (StringEndsWith(item.key, kHPKPKeySuffix)) {
+      mSiteStateStorage->Remove(item.key, DataStorage_Persistent);
       continue;
     }
-    nsCString origin(
-        StringHead(item.key, item.key.Length() - kHSTSKeySuffix.Length()));
+    size_t suffixLength =
+        StringEndsWith(item.key, kHSTSKeySuffix) ? kHSTSKeySuffix.Length() : 0;
+    nsCString origin(StringHead(item.key, item.key.Length() - suffixLength));
     nsAutoCString itemHostname;
     OriginAttributes itemOriginAttributes;
     if (!itemOriginAttributes.PopulateFromOrigin(origin, itemHostname)) {
-      return NS_ERROR_FAILURE;
+      continue;
     }
     bool hasRootDomain = false;
     nsresult rv = net::HasRootDomain(itemHostname, hostname, &hasRootDomain);
     if (NS_FAILED(rv)) {
-      return rv;
+      continue;
     }
     if (hasRootDomain) {
       ResetStateForExactDomain(itemHostname, itemOriginAttributes);
@@ -413,13 +459,11 @@ nsresult nsSiteSecurityService::ResetStateInternal(
 
 void nsSiteSecurityService::ResetStateForExactDomain(
     const nsCString& aHostname, const OriginAttributes& aOriginAttributes) {
-  nsAutoCString storageKey;
-  SetStorageKey(aHostname, aOriginAttributes, storageKey);
   bool isPrivate = aOriginAttributes.mPrivateBrowsingId > 0;
   mozilla::DataStorageType storageType = isPrivate
                                              ? mozilla::DataStorage_Private
                                              : mozilla::DataStorage_Persistent;
-  mSiteStateStorage->Remove(storageKey, storageType);
+  RemoveWithMigration(aHostname, aOriginAttributes, storageType);
 }
 
 bool nsSiteSecurityService::HostIsIPAddress(const nsCString& hostname) {
@@ -694,6 +738,70 @@ bool nsSiteSecurityService::GetPreloadStatus(const nsACString& aHost,
   return found;
 }
 
+void nsSiteSecurityService::GetWithMigration(
+    const nsACString& aHostname, const OriginAttributes& aOriginAttributes,
+    DataStorageType aDataStorageType, nsCString& aValue) {
+  
+  nsAutoCString storageKey;
+  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  aValue = mSiteStateStorage->Get(storageKey, aDataStorageType);
+  if (!aValue.IsEmpty()) {
+    return;
+  }
+  
+  if (aDataStorageType != DataStorage_Persistent) {
+    return;
+  }
+  nsAutoCString oldStorageKey;
+  GetOldStorageKey(aHostname, aOriginAttributes, oldStorageKey);
+  aValue = mSiteStateStorage->Get(oldStorageKey, DataStorage_Persistent);
+  if (aValue.IsEmpty()) {
+    return;
+  }
+  
+  
+  mSiteStateStorage->Remove(oldStorageKey, DataStorage_Persistent);
+  nsresult rv =
+      mSiteStateStorage->Put(storageKey, aValue, DataStorage_Persistent);
+  
+  
+  
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  (void)rv;
+}
+
+nsresult nsSiteSecurityService::PutWithMigration(
+    const nsACString& aHostname, const OriginAttributes& aOriginAttributes,
+    DataStorageType aDataStorageType, const nsCString& aStateString) {
+  
+  if (aDataStorageType == DataStorage_Persistent) {
+    
+    
+    nsAutoCString oldStorageKey;
+    GetOldStorageKey(aHostname, aOriginAttributes, oldStorageKey);
+    mSiteStateStorage->Remove(oldStorageKey, DataStorage_Persistent);
+  }
+
+  nsAutoCString storageKey;
+  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  return mSiteStateStorage->Put(storageKey, aStateString, aDataStorageType);
+}
+
+void nsSiteSecurityService::RemoveWithMigration(
+    const nsACString& aHostname, const OriginAttributes& aOriginAttributes,
+    DataStorageType aDataStorageType) {
+  
+  if (aDataStorageType == DataStorage_Persistent) {
+    nsAutoCString oldStorageKey;
+    GetOldStorageKey(aHostname, aOriginAttributes, oldStorageKey);
+    mSiteStateStorage->Remove(oldStorageKey, DataStorage_Persistent);
+  }
+
+  nsAutoCString storageKey;
+  GetStorageKey(aHostname, aOriginAttributes, storageKey);
+  mSiteStateStorage->Remove(storageKey, aDataStorageType);
+}
+
 
 
 
@@ -713,10 +821,9 @@ bool nsSiteSecurityService::HostHasHSTSEntry(
   mozilla::DataStorageType storageType = isPrivate
                                              ? mozilla::DataStorage_Private
                                              : mozilla::DataStorage_Persistent;
-  nsAutoCString storageKey;
   SSSLOG(("Seeking HSTS entry for %s", aHost.get()));
-  SetStorageKey(aHost, aOriginAttributes, storageKey);
-  nsCString value = mSiteStateStorage->Get(storageKey, storageType);
+  nsCString value;
+  GetWithMigration(aHost, aOriginAttributes, storageType, value);
   SiteHSTSState siteState(aHost, aOriginAttributes, value);
   if (siteState.mHSTSState != SecurityPropertyUnset) {
     SSSLOG(("Found HSTS entry for %s", aHost.get()));
@@ -734,6 +841,8 @@ bool nsSiteSecurityService::HostHasHSTSEntry(
       SSSLOG(("Entry %s is expired - checking for preload state", aHost.get()));
       if (!GetPreloadStatus(aHost)) {
         SSSLOG(("No static preload - removing expired entry"));
+        nsAutoCString storageKey;
+        GetStorageKey(aHost, aOriginAttributes, storageKey);
         mSiteStateStorage->Remove(storageKey, storageType);
       }
     }
