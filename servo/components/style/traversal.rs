@@ -26,7 +26,7 @@ pub type UndisplayedStyleCache =
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct PerLevelTraversalData {
     
     

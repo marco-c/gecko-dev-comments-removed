@@ -27,7 +27,7 @@ use crate::dom::{OpaqueNode, SendNode, TElement};
 use crate::scoped_tls::ScopedTLS;
 use crate::traversal::{DomTraversal, PerLevelTraversalData};
 use rayon;
-use smallvec::SmallVec;
+use std::collections::VecDeque;
 
 
 pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
@@ -48,13 +48,7 @@ pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
 
 
 
-
 pub const STACK_SAFETY_MARGIN_KB: usize = 168;
-
-
-pub fn work_unit_max() -> usize {
-    static_prefs::pref!("layout.css.stylo-work-unit-size") as usize
-}
 
 
 
@@ -68,220 +62,129 @@ where
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline(always)]
-#[allow(unsafe_code)]
-fn top_down_dom<'a, 'scope, E, D>(
-    nodes: &'a [SendNode<E::ConcreteNode>],
-    root: OpaqueNode,
-    mut traversal_data: PerLevelTraversalData,
+fn distribute_one_chunk<'a, 'scope, E, D>(
+    items: VecDeque<SendNode<E::ConcreteNode>>,
+    traversal_root: OpaqueNode,
+    work_unit_max: usize,
+    traversal_data: PerLevelTraversalData,
     scope: &'a rayon::ScopeFifo<'scope>,
-    pool: &'scope rayon::ThreadPool,
     traversal: &'scope D,
     tls: &'scope ScopedTLS<'scope, ThreadLocalStyleContext<E>>,
 ) where
     E: TElement + 'scope,
     D: DomTraversal<E>,
 {
-    let work_unit_max = work_unit_max();
-    debug_assert!(nodes.len() <= work_unit_max);
-
-    
-    
-    let recursion_ok;
-
-    
-    
-    
-    
-    let mut discovered_child_nodes = SmallVec::<[SendNode<E::ConcreteNode>; 128]>::new();
-    {
-        
-        
-        let mut tlc = tls.ensure(|slot: &mut Option<ThreadLocalStyleContext<E>>| {
-            create_thread_local_context(slot)
-        });
-
-        
-        recursion_ok = !tlc.stack_limit_checker.limit_exceeded();
-
+    scope.spawn_fifo(move |scope| {
+        gecko_profiler_label!(Layout, StyleComputation);
+        let mut tlc = tls.ensure(create_thread_local_context);
         let mut context = StyleContext {
             shared: traversal.shared_context(),
             thread_local: &mut *tlc,
         };
-
-        for n in nodes {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if discovered_child_nodes.len() >= work_unit_max {
-                let mut traversal_data_copy = traversal_data.clone();
-                traversal_data_copy.current_dom_depth += 1;
-                traverse_nodes(
-                    &discovered_child_nodes,
-                    DispatchMode::NotTailCall,
-                    recursion_ok,
-                    root,
-                    traversal_data_copy,
-                    scope,
-                    pool,
-                    traversal,
-                    tls,
-                );
-                discovered_child_nodes.clear();
-            }
-
-            let node = **n;
-            let mut children_to_process = 0isize;
-            traversal.process_preorder(&traversal_data, &mut context, node, |n| {
-                children_to_process += 1;
-                let send_n = unsafe { SendNode::new(n) };
-                discovered_child_nodes.push(send_n);
-            });
-
-            traversal.handle_postorder_traversal(&mut context, root, node, children_to_process);
-        }
-    }
-
-    
-    
-    
-    if !discovered_child_nodes.is_empty() {
-        traversal_data.current_dom_depth += 1;
-        traverse_nodes(
-            &discovered_child_nodes,
-            DispatchMode::TailCall,
-            recursion_ok,
-            root,
+        style_trees(
+            &mut context,
+            items,
+            traversal_root,
+            work_unit_max,
+            static_prefs::pref!("layout.css.stylo-local-work-queue.in-worker") as usize,
             traversal_data,
-            scope,
-            pool,
+            Some(scope),
             traversal,
-            tls,
+            Some(tls),
         );
-    }
+    })
 }
 
 
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum DispatchMode {
-    
-    TailCall,
-    
-    NotTailCall,
-}
-
-impl DispatchMode {
-    fn is_tail_call(&self) -> bool {
-        matches!(*self, DispatchMode::TailCall)
-    }
-}
-
-
-
-#[inline]
-pub fn traverse_nodes<'a, 'scope, E, D>(
-    nodes: &[SendNode<E::ConcreteNode>],
-    mode: DispatchMode,
-    recursion_ok: bool,
-    root: OpaqueNode,
+fn distribute_work<'a, 'scope, E, D>(
+    mut items: VecDeque<SendNode<E::ConcreteNode>>,
+    traversal_root: OpaqueNode,
+    work_unit_max: usize,
     traversal_data: PerLevelTraversalData,
     scope: &'a rayon::ScopeFifo<'scope>,
-    pool: &'scope rayon::ThreadPool,
     traversal: &'scope D,
     tls: &'scope ScopedTLS<'scope, ThreadLocalStyleContext<E>>,
 ) where
     E: TElement + 'scope,
     D: DomTraversal<E>,
 {
-    debug_assert_ne!(nodes.len(), 0);
+    while items.len() > work_unit_max {
+        let rest = items.split_off(work_unit_max);
+        distribute_one_chunk(
+            items,
+            traversal_root,
+            work_unit_max,
+            traversal_data,
+            scope,
+            traversal,
+            tls,
+        );
+        items = rest;
+    }
+    distribute_one_chunk(
+        items,
+        traversal_root,
+        work_unit_max,
+        traversal_data,
+        scope,
+        traversal,
+        tls,
+    );
+}
 
-    
-    
-    
-    
-    
-    
-    
-    let may_dispatch_tail =
-        mode.is_tail_call() && recursion_ok && !pool.current_thread_has_pending_tasks().unwrap();
 
-    let work_unit_max = work_unit_max();
-    
-    
-    if nodes.len() <= work_unit_max {
-        if may_dispatch_tail {
-            top_down_dom(&nodes, root, traversal_data, scope, pool, traversal, tls);
-        } else {
-            let work = nodes.to_vec();
-            scope.spawn_fifo(move |scope| {
-                gecko_profiler_label!(Layout, StyleComputation);
-                top_down_dom(&work, root, traversal_data, scope, pool, traversal, tls);
-            });
+#[inline]
+pub fn style_trees<'a, 'scope, E, D>(
+    context: &mut StyleContext<E>,
+    mut discovered: VecDeque<SendNode<E::ConcreteNode>>,
+    traversal_root: OpaqueNode,
+    work_unit_max: usize,
+    local_queue_size: usize,
+    mut traversal_data: PerLevelTraversalData,
+    scope: Option<&'a rayon::ScopeFifo<'scope>>,
+    traversal: &'scope D,
+    tls: Option<&'scope ScopedTLS<'scope, ThreadLocalStyleContext<E>>>,
+) where
+    E: TElement + 'scope,
+    D: DomTraversal<E>,
+{
+    let mut nodes_remaining_at_current_depth = discovered.len();
+    while let Some(node) = discovered.pop_front() {
+        let mut children_to_process = 0isize;
+        traversal.process_preorder(&traversal_data, context, *node, |n| {
+            children_to_process += 1;
+            discovered.push_back(unsafe { SendNode::new(n) });
+        });
+
+        traversal.handle_postorder_traversal(context, traversal_root, *node, children_to_process);
+
+        nodes_remaining_at_current_depth -= 1;
+
+        
+        
+        
+        let discovered_children = discovered.len() - nodes_remaining_at_current_depth;
+        if discovered_children >= work_unit_max &&
+            discovered.len() >= local_queue_size + work_unit_max &&
+            scope.is_some()
+        {
+            let kept_work = std::cmp::max(nodes_remaining_at_current_depth, local_queue_size);
+            let mut traversal_data_copy = traversal_data.clone();
+            traversal_data_copy.current_dom_depth += 1;
+            distribute_work(
+                discovered.split_off(kept_work),
+                traversal_root,
+                work_unit_max,
+                traversal_data_copy,
+                scope.unwrap(),
+                traversal,
+                tls.unwrap(),
+            );
         }
-    } else {
-        for chunk in nodes.chunks(work_unit_max) {
-            let work = chunk.to_vec();
-            let traversal_data_copy = traversal_data.clone();
-            scope.spawn_fifo(move |scope| {
-                gecko_profiler_label!(Layout, StyleComputation);
-                let work = work;
-                top_down_dom(
-                    &work,
-                    root,
-                    traversal_data_copy,
-                    scope,
-                    pool,
-                    traversal,
-                    tls,
-                )
-            });
+
+        if nodes_remaining_at_current_depth == 0 {
+            traversal_data.current_dom_depth += 1;
+            nodes_remaining_at_current_depth = discovered.len();
         }
     }
 }

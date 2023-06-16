@@ -7,6 +7,7 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
+use crate::global_style_data::STYLO_MAX_THREADS;
 use rayon;
 use std::cell::{Ref, RefCell, RefMut};
 use std::ops::DerefMut;
@@ -20,7 +21,7 @@ use std::ops::DerefMut;
 
 pub struct ScopedTLS<'scope, T: Send> {
     pool: &'scope rayon::ThreadPool,
-    slots: Box<[RefCell<Option<T>>]>,
+    slots: [RefCell<Option<T>>; STYLO_MAX_THREADS],
 }
 
 
@@ -30,16 +31,11 @@ unsafe impl<'scope, T: Send> Sync for ScopedTLS<'scope, T> {}
 impl<'scope, T: Send> ScopedTLS<'scope, T> {
     
     
-    pub fn new(p: &'scope rayon::ThreadPool) -> Self {
-        let count = p.current_num_threads();
-        let mut v = Vec::with_capacity(count);
-        for _ in 0..count {
-            v.push(RefCell::new(None));
-        }
-
+    pub fn new(pool: &'scope rayon::ThreadPool) -> Self {
+        debug_assert!(pool.current_num_threads() <= STYLO_MAX_THREADS);
         ScopedTLS {
-            pool: p,
-            slots: v.into_boxed_slice(),
+            pool,
+            slots: Default::default(),
         }
     }
 
@@ -72,7 +68,8 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
     }
 
     
-    pub fn into_slots(self) -> Box<[RefCell<Option<T>>]> {
-        self.slots
+    
+    pub fn slots(&mut self) -> &mut [RefCell<Option<T>>] {
+        &mut self.slots
     }
 }
