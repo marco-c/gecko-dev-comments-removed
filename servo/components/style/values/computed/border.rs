@@ -20,6 +20,9 @@ use app_units::Au;
 pub use crate::values::specified::border::BorderImageRepeat;
 
 
+pub type LineWidth = Au;
+
+
 pub type BorderSideWidth = Au;
 
 
