@@ -120,6 +120,9 @@ def test_environment(
         env[envVar] = os.path.pathsep.join([path for path in envValue if path])
 
     
+    env["MOZ_DEVELOPER_REPO_DIR"] = mozinfo.info.get("topsrcdir")
+
+    
     env["GNOME_DISABLE_CRASH_DIALOG"] = "1"
     env["XRE_NO_WINDOWS_CRASH_DIALOG"] = "1"
 
