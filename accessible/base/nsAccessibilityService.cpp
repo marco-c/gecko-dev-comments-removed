@@ -115,11 +115,15 @@ static LocalAccessible* MaybeCreateSpecificARIAAccessible(
       return nullptr;
     }
     
-    if (aContext->Role() != roles::ROW) {
+    const Accessible* parent = aContext;
+    if (parent->IsGeneric()) {
+      parent = parent->GetNonGenericParent();
+    }
+    if (!parent || parent->Role() != roles::ROW) {
       return nullptr;
     }
     
-    Accessible* parent = aContext->GetNonGenericParent();
+    parent = parent->GetNonGenericParent();
     if (!parent) {
       return nullptr;
     }
