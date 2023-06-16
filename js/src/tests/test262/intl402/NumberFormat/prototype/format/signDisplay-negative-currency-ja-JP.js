@@ -8,7 +8,6 @@
 
 
 
-
 const nf = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "USD", currencySign: "accounting", signDisplay: "negative" });
 assert.sameValue(nf.format(-987), "($987.00)");
 assert.sameValue(nf.format(-0.0001), "$0.00");

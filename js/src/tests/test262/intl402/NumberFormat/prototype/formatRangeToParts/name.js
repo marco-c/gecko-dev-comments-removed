@@ -6,7 +6,6 @@
 
 
 
-
 verifyProperty(Intl.NumberFormat.prototype.formatRangeToParts, 'name', {
   value: 'formatRangeToParts',
   enumerable: false,

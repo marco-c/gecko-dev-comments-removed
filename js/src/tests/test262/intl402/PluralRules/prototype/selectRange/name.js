@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Intl.PluralRules.prototype.selectRange, 'name', {
   value: 'selectRange',
   enumerable: false,

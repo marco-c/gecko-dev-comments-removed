@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.NumberFormat.prototype.formatRangeToParts,
   'function',

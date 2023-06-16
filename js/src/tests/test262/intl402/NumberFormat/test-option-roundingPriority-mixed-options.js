@@ -8,7 +8,6 @@
 
 
 
-
 const locales = [new Intl.NumberFormat().resolvedOptions().locale, 'ar', 'de', 'th', 'ja'];
 
 const numberingSystems = ['arab', 'latn', 'thai', 'hanidec'];

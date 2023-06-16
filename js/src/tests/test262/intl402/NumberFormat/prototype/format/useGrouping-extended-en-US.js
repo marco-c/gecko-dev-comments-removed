@@ -9,7 +9,6 @@
 
 
 
-
 var nf;
 
 nf = new Intl.NumberFormat('en-US', {useGrouping: 'always'});

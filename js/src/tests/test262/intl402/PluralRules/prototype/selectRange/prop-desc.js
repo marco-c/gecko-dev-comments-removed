@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.PluralRules.prototype.selectRange,
   'function',

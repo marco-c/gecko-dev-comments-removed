@@ -13,7 +13,6 @@
 
 
 
-
 var actual = new Intl.NumberFormat().resolvedOptions();
 
 var actual2 = new Intl.NumberFormat().resolvedOptions();

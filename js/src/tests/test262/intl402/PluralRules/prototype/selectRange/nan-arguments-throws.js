@@ -14,7 +14,6 @@
 
 
 
-
 const pr = new Intl.PluralRules();
 
 assert.throws(RangeError, () => { pr.selectRange(NaN, 100) }, "NaN/Number");

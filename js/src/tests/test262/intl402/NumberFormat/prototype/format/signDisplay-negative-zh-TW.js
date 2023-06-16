@@ -8,7 +8,6 @@
 
 
 
-
 const nf = new Intl.NumberFormat("zh-TW", {signDisplay: "negative"});
 assert.sameValue(nf.format(-Infinity), "-∞", "-Infinity");
 assert.sameValue(nf.format(-987), "-987", "-987");

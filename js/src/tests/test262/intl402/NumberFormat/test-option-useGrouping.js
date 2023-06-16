@@ -13,7 +13,6 @@
 
 
 
-
 function resolveUseGrouping(option) {
   return new Intl.NumberFormat(undefined, { useGrouping: option }).resolvedOptions().useGrouping;
 }

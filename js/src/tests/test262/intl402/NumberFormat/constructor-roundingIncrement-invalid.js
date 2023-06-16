@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   new Intl.NumberFormat([], {roundingIncrement: 0});
 }, '0');

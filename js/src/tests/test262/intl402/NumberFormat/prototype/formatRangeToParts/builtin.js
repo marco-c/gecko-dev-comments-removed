@@ -11,7 +11,6 @@
 
 
 
-
 const formatRangeToParts = Intl.NumberFormat.prototype.formatRangeToParts;
 
 assert.sameValue(Object.prototype.toString.call(formatRangeToParts), "[object Function]",

@@ -6,7 +6,6 @@
 
 
 
-
 assert.throws(RangeError, function() {
   new Intl.NumberFormat([], {trailingZeroDisplay: ''});
 }, 'empty string');

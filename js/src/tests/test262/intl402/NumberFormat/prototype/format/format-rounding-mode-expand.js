@@ -8,7 +8,6 @@
 
 
 
-
 var locales = [
   new Intl.NumberFormat().resolvedOptions().locale, 'ar', 'de', 'th', 'ja'
 ];

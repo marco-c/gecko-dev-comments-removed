@@ -6,7 +6,6 @@
 
 
 
-
 verifyProperty(Intl.NumberFormat.prototype.formatRange, 'name', {
   value: 'formatRange',
   enumerable: false,

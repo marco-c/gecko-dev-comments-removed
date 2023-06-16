@@ -7,7 +7,6 @@
 
 
 
-
 var options;
 
 options = new Intl.NumberFormat([], {}).resolvedOptions();

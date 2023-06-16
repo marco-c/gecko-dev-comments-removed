@@ -8,7 +8,6 @@
 
 
 
-
 assert.throws(Test262Error, function() {
   new Intl.NumberFormat('en', {
     get roundingPriority() {
