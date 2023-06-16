@@ -20,6 +20,9 @@ double ComputeDistanceP(const ImageF& distmap, const ButteraugliParams& params,
 double ComputeDistance2(const ImageBundle& ib1, const ImageBundle& ib2,
                         const JxlCmsInterface& cms);
 
+double ComputePSNR(const ImageBundle& ib1, const ImageBundle& ib2,
+                   const JxlCmsInterface& cms);
+
 }  
 
 #endif  
