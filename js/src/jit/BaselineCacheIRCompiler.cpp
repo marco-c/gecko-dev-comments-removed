@@ -2123,6 +2123,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
   
   
   
+  
 
   uint32_t numActive = 0;
   Maybe<uint32_t> foldableFieldOffset;
@@ -2131,9 +2132,11 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
 
   auto addShape = [&shapeList, cx](uintptr_t rawShape) -> bool {
     Shape* shape = reinterpret_cast<Shape*>(rawShape);
-    if (cx->compartment() != shape->compartment()) {
+    
+    if (shape->realm() != cx->realm()) {
       return false;
     }
+
     if (!shapeList.append(PrivateGCThingValue(shape))) {
       cx->recoverFromOutOfMemory();
       return false;
@@ -2240,6 +2243,10 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
               cx->recoverFromOutOfMemory();
               return false;
             }
+
+            MOZ_ASSERT(
+                reinterpret_cast<Shape*>(shapeList[i].toGCThing())->realm() ==
+                shapeObj->realm());
           }
 
           writer.guardMultipleShapes(objId, shapeObj);
@@ -2334,6 +2341,23 @@ static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
             stubInfo->getStubField<JSObject*>(stub, stubShapesOffset);
         foldedShapes = &shapeList->as<ListObject>();
         MOZ_ASSERT(foldedShapes->compartment() == shape->compartment());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(reinterpret_cast<Shape*>(foldedShapes->get(0).toGCThing())
+                       ->realm() == foldedShapes->realm());
+        if (foldedShapes->realm() != shape->realm()) {
+          return false;
+        }
+
         break;
       }
       default: {
