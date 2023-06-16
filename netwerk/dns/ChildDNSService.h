@@ -60,8 +60,6 @@ class ChildDNSService final : public DNSServiceBase, public nsPIDNSService {
       nsIDNSListener* aListener, nsresult aReason,
       const OriginAttributes& aOriginAttributes);
 
-  bool mODoHActivated = false;
-
   
   nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<DNSRequestSender>>>
       mPendingRequests;
