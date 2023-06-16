@@ -64,7 +64,6 @@ pref("extensions.webextensions.remote", true);
 
 pref("extensions.langpacks.signatures.required", true);
 pref("xpinstall.signatures.required", true);
-pref("xpinstall.signatures.devInfoURL", "https://wiki.mozilla.org/Addons/Extension_Signing");
 
 
 pref("browser.dictionaries.download.url", "https://addons.mozilla.org/%LOCALE%/firefox/language-tools/");
