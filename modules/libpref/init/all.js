@@ -587,8 +587,6 @@ pref("accessibility.force_disabled", 0);
 
 pref("focusmanager.testmode", false);
 
-pref("accessibility.usetexttospeech", "");
-
 
 pref("accessibility.typeaheadfind", true);
 
