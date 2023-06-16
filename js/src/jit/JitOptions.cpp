@@ -281,6 +281,10 @@ DefaultJitOptions::DefaultJitOptions() {
 #endif
 
   
+  
+  SET_DEFAULT(writeProtectCode, true);
+
+  
   SET_DEFAULT(supportsUnalignedAccesses, false);
 
   
