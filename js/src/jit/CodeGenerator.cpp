@@ -12492,34 +12492,29 @@ void CodeGenerator::visitArrayPush(LArrayPush* lir) {
 
   
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), elementsTemp);
-  masm.load32(Address(elementsTemp, ObjectElements::offsetOfLength()), length);
+
+  Address initLengthAddr(elementsTemp,
+                         ObjectElements::offsetOfInitializedLength());
+  Address lengthAddr(elementsTemp, ObjectElements::offsetOfLength());
+  Address capacityAddr(elementsTemp, ObjectElements::offsetOfCapacity());
+
+  
+  masm.load32(lengthAddr, length);
+  bailoutCmp32(Assembler::NotEqual, initLengthAddr, length, lir->snapshot());
 
   
   
-
-  
-  bailoutCmp32(Assembler::AboveOrEqual, length, Imm32(INT32_MAX),
-               lir->snapshot());
-
-  
-  Address initLength(elementsTemp, ObjectElements::offsetOfInitializedLength());
-  masm.branch32(Assembler::NotEqual, initLength, length, ool->entry());
-
-  
-  Address capacity(elementsTemp, ObjectElements::offsetOfCapacity());
-  masm.spectreBoundsCheck32(length, capacity, spectreTemp, ool->entry());
+  masm.spectreBoundsCheck32(length, capacityAddr, spectreTemp, ool->entry());
+  masm.bind(ool->rejoin());
 
   
   masm.storeValue(value, BaseObjectElementIndex(elementsTemp, length));
 
-  masm.add32(Imm32(1), length);
-
   
+  masm.add32(Imm32(1), length);
   masm.store32(length, Address(elementsTemp, ObjectElements::offsetOfLength()));
   masm.store32(length, Address(elementsTemp,
                                ObjectElements::offsetOfInitializedLength()));
-
-  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::visitOutOfLineArrayPush(OutOfLineArrayPush* ool) {
@@ -12527,40 +12522,28 @@ void CodeGenerator::visitOutOfLineArrayPush(OutOfLineArrayPush* ool) {
 
   Register object = ToRegister(ins->object());
   Register temp = ToRegister(ins->temp0());
-  Register output = ToRegister(ins->output());
-  ValueOperand value = ToValue(ins, LArrayPush::ValueIndex);
 
-  
-  
   LiveRegisterSet liveRegs = liveVolatileRegs(ins);
   liveRegs.takeUnchecked(temp);
-  liveRegs.takeUnchecked(output);
+  liveRegs.addUnchecked(ToRegister(ins->output()));
+  liveRegs.addUnchecked(ToValue(ins, LArrayPush::ValueIndex));
 
   masm.PushRegsInMask(liveRegs);
-
-  masm.Push(value);
-  masm.moveStackPtrTo(output);
 
   masm.setupAlignedABICall();
   masm.loadJSContext(temp);
   masm.passABIArg(temp);
   masm.passABIArg(object);
-  masm.passABIArg(output);
 
-  using Fn = bool (*)(JSContext*, ArrayObject*, Value*);
-  masm.callWithABI<Fn, jit::ArrayPushDensePure>();
+  using Fn = bool (*)(JSContext*, NativeObject* obj);
+  masm.callWithABI<Fn, NativeObject::addDenseElementPure>();
   masm.storeCallPointerResult(temp);
 
-  masm.freeStack(sizeof(Value));  
-
-  MOZ_ASSERT(!liveRegs.has(temp));
   masm.PopRegsInMask(liveRegs);
-
   bailoutIfFalseBool(temp, ins->snapshot());
 
   
-  masm.loadPtr(Address(object, NativeObject::offsetOfElements()), output);
-  masm.load32(Address(output, ObjectElements::offsetOfLength()), output);
+  masm.loadPtr(Address(object, NativeObject::offsetOfElements()), temp);
 
   masm.jump(ool->rejoin());
 }

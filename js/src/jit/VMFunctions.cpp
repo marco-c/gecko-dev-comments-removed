@@ -642,27 +642,6 @@ template bool StringsCompare<ComparisonKind::LessThan>(JSContext* cx,
 template bool StringsCompare<ComparisonKind::GreaterThanOrEqual>(
     JSContext* cx, HandleString lhs, HandleString rhs, bool* res);
 
-bool ArrayPushDensePure(JSContext* cx, ArrayObject* arr, Value* v) {
-  AutoUnsafeCallWithABI unsafe;
-
-  
-  
-  MOZ_ASSERT(arr->isExtensible());
-  MOZ_ASSERT(arr->lengthIsWritable());
-  MOZ_ASSERT(!arr->isIndexed());
-
-  
-  
-  uint32_t index = arr->length();
-  MOZ_ASSERT(index < uint32_t(INT32_MAX));
-
-  DenseElementResult result = arr->setOrExtendDenseElements(cx, index, v, 1);
-  if (result == DenseElementResult::Failure) {
-    cx->recoverFromOutOfMemory();
-  }
-  return result == DenseElementResult::Success;
-}
-
 JSString* ArrayJoin(JSContext* cx, HandleObject array, HandleString sep) {
   JS::RootedValueArray<3> argv(cx);
   argv[0].setUndefined();
