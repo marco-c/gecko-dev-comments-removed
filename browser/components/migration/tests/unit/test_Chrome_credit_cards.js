@@ -1,9 +1,9 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
+/* global structuredClone */
 
 const PROFILE = {
   id: "Default",
@@ -13,19 +13,19 @@ const PROFILE = {
 const PAYMENT_METHODS = [
   {
     name_on_card: "Name Name",
-    card_number: "4532962432748929", 
+    card_number: "4532962432748929", // Visa
     expiration_month: 3,
     expiration_year: 2027,
   },
   {
     name_on_card: "Name Name Name",
-    card_number: "5359908373796416", 
+    card_number: "5359908373796416", // Mastercard
     expiration_month: 5,
     expiration_year: 2028,
   },
   {
     name_on_card: "Name",
-    card_number: "346624461807588", 
+    card_number: "346624461807588", // AMEX
     expiration_month: 4,
     expiration_year: 2026,
   },
@@ -84,6 +84,14 @@ add_task(async function setup_fakePaths() {
 });
 
 add_task(async function test_credit_cards() {
+  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
+    todo_check_true(
+      OSKeyStoreTestUtils.canTestOSKeyStoreLogin(),
+      "Cannot test OS key store login on official builds."
+    );
+    return;
+  }
+
   let loginCrypto;
   let profilePathSegments;
 
@@ -127,7 +135,7 @@ add_task(async function test_credit_cards() {
     ignoreExisting: true,
   });
 
-  
+  // Copy Web Data database into Default profile
   const sourcePathWebData = do_get_file(
     "AppData/Local/Google/Chrome/User Data/Default/Web Data"
   ).path;
@@ -186,8 +194,8 @@ add_task(async function test_credit_cards() {
     ),
     "Should be able to disable migrating payment methods"
   );
-  
-  
+  // Clear the cached resources now so that a re-check for payment methods
+  // will look again.
   delete migrator._resourcesByProfile[PROFILE.id];
 
   Services.prefs.setBoolPref(
