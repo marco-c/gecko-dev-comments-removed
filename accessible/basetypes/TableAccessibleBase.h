@@ -158,26 +158,6 @@ class TableAccessibleBase {
   
 
 
-  virtual void SelectCol(uint32_t aColIdx) {}
-
-  
-
-
-  virtual void SelectRow(uint32_t aRowIdx) {}
-
-  
-
-
-  virtual void UnselectCol(uint32_t aColIdx) {}
-
-  
-
-
-  virtual void UnselectRow(uint32_t aRowIdx) {}
-
-  
-
-
   virtual bool IsProbablyLayoutTable() { return false; }
 
   

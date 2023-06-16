@@ -44,25 +44,10 @@ class ARIAGridAccessible : public HyperTextAccessibleWrap,
   virtual void SelectedCellIndices(nsTArray<uint32_t>* aCells) override;
   virtual void SelectedColIndices(nsTArray<uint32_t>* aCols) override;
   virtual void SelectedRowIndices(nsTArray<uint32_t>* aRows) override;
-  virtual void SelectCol(uint32_t aColIdx) override;
-  virtual void SelectRow(uint32_t aRowIdx) override;
-  virtual void UnselectCol(uint32_t aColIdx) override;
-  virtual void UnselectRow(uint32_t aRowIdx) override;
   virtual LocalAccessible* AsAccessible() override { return this; }
 
  protected:
   virtual ~ARIAGridAccessible() {}
-
-  
-
-
-
-
-
-
-
-  nsresult SetARIASelected(LocalAccessible* aAccessible, bool aIsSelected,
-                           bool aNotify = true);
 };
 
 

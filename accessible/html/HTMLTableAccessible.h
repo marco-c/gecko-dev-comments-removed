@@ -16,8 +16,6 @@ class nsTableWrapperFrame;
 
 namespace mozilla {
 
-enum class TableSelectionMode : uint32_t;
-
 namespace a11y {
 
 
@@ -154,10 +152,6 @@ class HTMLTableAccessible : public HyperTextAccessibleWrap,
   virtual void SelectedCellIndices(nsTArray<uint32_t>* aCells) override;
   virtual void SelectedColIndices(nsTArray<uint32_t>* aCols) override;
   virtual void SelectedRowIndices(nsTArray<uint32_t>* aRows) override;
-  virtual void SelectCol(uint32_t aColIdx) override;
-  virtual void SelectRow(uint32_t aRowIdx) override;
-  virtual void UnselectCol(uint32_t aColIdx) override;
-  virtual void UnselectRow(uint32_t aRowIdx) override;
   virtual LocalAccessible* AsAccessible() override { return this; }
 
   
@@ -182,29 +176,6 @@ class HTMLTableAccessible : public HyperTextAccessibleWrap,
                                    uint64_t aOldState) override;
 
   
-
-  
-
-
-
-
-
-
-  nsresult AddRowOrColumnToSelection(int32_t aIndex,
-                                     TableSelectionMode aTarget);
-
-  
-
-
-
-
-
-
-
-
-  nsresult RemoveRowsOrColumnsFromSelection(int32_t aIndex,
-                                            TableSelectionMode aTarget,
-                                            bool aIsOuter);
 
 #ifdef SHOW_LAYOUT_HEURISTIC
   nsString mLayoutHeuristic;
