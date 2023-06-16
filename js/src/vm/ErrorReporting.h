@@ -11,9 +11,10 @@
 
 #include "jsfriendapi.h"  
 
-#include "js/ErrorReport.h"  
-#include "js/UniquePtr.h"    
-#include "js/Utility.h"      
+#include "js/CharacterEncoding.h"  
+#include "js/ErrorReport.h"        
+#include "js/UniquePtr.h"          
+#include "js/Utility.h"            
 
 namespace js {
 
@@ -31,7 +32,7 @@ using JSAllocator = JSContext;
 
 struct ErrorMetadata {
   
-  const char* filename;
+  JS::ConstUTF8CharsZ filename;
 
   
   
