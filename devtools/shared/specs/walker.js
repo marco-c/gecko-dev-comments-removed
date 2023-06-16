@@ -87,6 +87,10 @@ const walkerSpec = generateActorSpec({
       type: "overflow-change",
       nodes: Arg(0, "array:domnode"),
     },
+    "container-type-change": {
+      type: "container-type-change",
+      nodes: Arg(0, "array:domnode"),
+    },
     
     
     

@@ -537,6 +537,7 @@ class WalkerActor extends Actor {
   _onReflows(reflows) {
     
     
+    const containerTypeChanges = [];
     const displayTypeChanges = [];
     const scrollableStateChanges = [];
 
@@ -573,6 +574,12 @@ class WalkerActor extends Actor {
           currentOverflowCausingElementsMap
         );
       }
+
+      const containerType = actor.containerType;
+      if (containerType !== actor.currentContainerType) {
+        containerTypeChanges.push(actor);
+        actor.currentContainerType = containerType;
+      }
     }
 
     
@@ -599,6 +606,10 @@ class WalkerActor extends Actor {
 
     if (scrollableStateChanges.length) {
       this.emit("scrollable-change", scrollableStateChanges);
+    }
+
+    if (containerTypeChanges.length) {
+      this.emit("container-type-change", containerTypeChanges);
     }
   }
 
