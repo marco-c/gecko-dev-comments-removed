@@ -3652,10 +3652,6 @@ pref("reader.color_scheme.values", "[\"light\",\"dark\",\"sepia\",\"auto\"]");
 pref("reader.font_type", "sans-serif");
 
 
-
-pref("reader.has_used_toolbar", false);
-
-
 pref("reader.toolbar.vertical", true);
 
 #if !defined(ANDROID)
