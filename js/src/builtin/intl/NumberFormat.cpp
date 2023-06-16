@@ -973,45 +973,29 @@ static bool IsNonDecimalNumber(JSLinearString* str) {
                                : IsNonDecimalNumber(str->twoByteRange(nogc));
 }
 
+
+
+
+
+
 static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value) {
+  
   if (!ToPrimitive(cx, JSTYPE_NUMBER, value)) {
     return false;
   }
 
   
-  
-  
-  constexpr int32_t maximumExponent = 999'999'999;
-
-  
-  
-  constexpr int32_t maximumPositiveExponent = 9'999'999;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  constexpr size_t maximumBigIntLength = 33219277.626945525 / BigInt::DigitBits;
-
-  if (!value.isString()) {
-    if (!ToNumeric(cx, value)) {
-      return false;
-    }
-
-    if (value.isBigInt() &&
-        value.toBigInt()->digitLength() > maximumBigIntLength) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_EXPONENT_TOO_LARGE);
-      return false;
-    }
-
+  if (value.isBigInt()) {
     return true;
   }
 
+  
+  if (!value.isString()) {
+    
+    return ToNumber(cx, value);
+  }
+
+  
   JSLinearString* str = value.toString()->ensureLinear(cx);
   if (!str) {
     return false;
@@ -1020,11 +1004,24 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value) {
   
   double number = LinearStringToNumber(str);
 
-  bool exponentTooLarge = false;
+  
   if (std::isnan(number)) {
     
     value.setNaN();
-  } else if (IsNonDecimalNumber(str)) {
+    return true;
+  }
+
+  
+  if (number == 0.0 || std::isinf(number)) {
+    
+
+    
+    value.setDouble(number);
+    return true;
+  }
+
+  
+  if (IsNonDecimalNumber(str)) {
     
     
 
@@ -1044,41 +1041,9 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value) {
       JS_TRY_VAR_OR_RETURN_FALSE(cx, bi, StringToBigInt(cx, rooted));
       MOZ_ASSERT(bi);
 
-      if (bi->digitLength() > maximumBigIntLength) {
-        exponentTooLarge = true;
-      } else {
-        value.setBigInt(bi);
-      }
-    }
-  } else {
-    JS::AutoCheckCannotGC nogc;
-    if (auto decimal = intl::DecimalNumber::from(str, nogc)) {
-      if (decimal->isZero()) {
-        
-        MOZ_ASSERT(number == 0);
-
-        value.setDouble(number);
-      } else if (decimal->exponentTooLarge() ||
-                 std::abs(decimal->exponent()) >= maximumExponent ||
-                 decimal->exponent() > maximumPositiveExponent) {
-        exponentTooLarge = true;
-      }
-    } else {
-      
-      MOZ_ASSERT(std::isinf(number));
-      MOZ_ASSERT(StringFindPattern(str, cx->names().Infinity, 0) >= 0);
-
-      value.setDouble(number);
+      value.setBigInt(bi);
     }
   }
-
-  if (exponentTooLarge) {
-    
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_EXPONENT_TOO_LARGE);
-    return false;
-  }
-
   return true;
 }
 
