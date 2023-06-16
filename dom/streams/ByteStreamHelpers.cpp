@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/dom/BodyStream.h"
 #include "mozilla/dom/ByteStreamHelpers.h"
 #include "mozilla/dom/ReadableByteStreamController.h"
 #include "js/ArrayBuffer.h"
