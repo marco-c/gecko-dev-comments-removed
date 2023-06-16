@@ -5,15 +5,19 @@
 
 
 use crate::values::animated::ToAnimatedZero;
-use crate::values::generics::position::GenericPosition;
+use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::specified::SVGPathData;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
 
 
 
 
 #[allow(missing_docs)]
 #[derive(
+    Animate,
     Clone,
+    ComputeSquaredDistance,
     Copy,
     Debug,
     Deserialize,
@@ -36,14 +40,6 @@ pub enum RaySize {
     Sides,
 }
 
-impl RaySize {
-    
-    #[inline]
-    pub fn is_default(&self) -> bool {
-        *self == RaySize::ClosestSide
-    }
-}
-
 
 
 
@@ -58,25 +54,54 @@ impl RaySize {
     Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
-    ToCss,
     ToResolvedValue,
     ToShmem,
 )]
 #[repr(C)]
-pub struct RayFunction<Angle> {
+pub struct GenericRayFunction<Angle, Position> {
     
     
     pub angle: Angle,
     
     
-    #[animation(constant)]
-    #[css(skip_if = "RaySize::is_default")]
     pub size: RaySize,
     
     
     #[animation(constant)]
-    #[css(represents_keyword)]
     pub contain: bool,
+    
+    pub position: GenericPositionOrAuto<Position>,
+}
+
+pub use self::GenericRayFunction as RayFunction;
+
+impl<Angle, Position> ToCss for RayFunction<Angle, Position>
+where
+    Angle: ToCss,
+    Position: ToCss,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.angle.to_css(dest)?;
+
+        if !matches!(self.size, RaySize::ClosestSide) {
+            dest.write_char(' ')?;
+            self.size.to_css(dest)?;
+        }
+
+        if self.contain {
+            dest.write_str(" contain")?;
+        }
+
+        if !matches!(self.position, GenericPositionOrAuto::Auto) {
+            dest.write_str(" at ")?;
+            self.position.to_css(dest)?;
+        }
+
+        Ok(())
+    }
 }
 
 
@@ -98,15 +123,16 @@ pub struct RayFunction<Angle> {
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericOffsetPath<Angle> {
+pub enum GenericOffsetPath<RayFunction> {
     
     
     
     #[css(function)]
     Path(SVGPathData),
     
+    
     #[css(function)]
-    Ray(RayFunction<Angle>),
+    Ray(Box<RayFunction>),
     
     #[animation(error)]
     None,
@@ -115,7 +141,7 @@ pub enum GenericOffsetPath<Angle> {
 
 pub use self::GenericOffsetPath as OffsetPath;
 
-impl<Angle> OffsetPath<Angle> {
+impl<Ray> OffsetPath<Ray> {
     
     #[inline]
     pub fn none() -> Self {
@@ -123,7 +149,7 @@ impl<Angle> OffsetPath<Angle> {
     }
 }
 
-impl<Angle> ToAnimatedZero for OffsetPath<Angle> {
+impl<Ray> ToAnimatedZero for OffsetPath<Ray> {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())

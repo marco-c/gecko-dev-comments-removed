@@ -101,6 +101,12 @@ impl<Pos> PositionOrAuto<Pos> {
     pub fn auto() -> Self {
         PositionOrAuto::Auto
     }
+
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(self, PositionOrAuto::Auto)
+    }
 }
 
 
