@@ -3318,14 +3318,6 @@ pref("extensions.webextensions.userScripts.enabled", true);
 pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
 
 
-pref("extensions.webextensions.enablePerformanceCounters", true);
-
-
-
-
-pref("extensions.webextensions.performanceCountersMaxAge", 5000);
-
-
 pref("extensions.htmlaboutaddons.inline-options.enabled", true);
 
 pref("extensions.htmlaboutaddons.recommendations.enabled", true);
