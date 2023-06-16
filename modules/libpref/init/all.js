@@ -215,11 +215,6 @@ pref("media.omt_data_delivery.enabled", true);
 pref("media.throttle-factor", 2);
 
 
-
-
-pref("media.throttle-regardless-of-download-rate", false);
-
-
 pref("media.volume_scale", "1.0");
 
 
