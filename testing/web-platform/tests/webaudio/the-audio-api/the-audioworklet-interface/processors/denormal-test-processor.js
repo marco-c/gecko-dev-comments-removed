@@ -1,0 +1,12 @@
+class DenormalTestProcessor extends AudioWorkletProcessor {
+  process() {
+    
+    
+    this.port.postMessage({
+      result: Number.MIN_VALUE !== 0.0
+    });
+    return false;
+  }
+}
+
+registerProcessor('denormal-test', DenormalTestProcessor);
