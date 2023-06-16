@@ -4,6 +4,9 @@
 
 
 
+#include <cstdint>
+#include <cmath>
+#include <inttypes.h>
 #include <limits>
 #include <type_traits>
 
@@ -14,6 +17,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsDebug.h"
 #include "nsPrintfCString.h"
 #include "nsStringFwd.h"
 
@@ -37,16 +41,26 @@ TimeUnit TimeUnit::FromSeconds(double aValue, int64_t aBase) {
   
   double inBase = aValue * static_cast<double>(aBase);
   if (std::abs(inBase) >
-          static_cast<double>(std::numeric_limits<int64_t>::max()) ||
-      inBase > std::pow(2, std::numeric_limits<double>::digits) - 1) {
-    NS_WARNING(nsPrintfCString("Warning: base %" PRId64
-                               " is too high to represent %lfs accurately.",
-                               aBase, aValue)
-                   .get());
+      static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    NS_WARNING(
+        nsPrintfCString("Warning: base %" PRId64
+                        " is too high to represent %lfs, returning Infinity.",
+                        aBase, aValue)
+            .get());
     if (inBase > 0) {
       return TimeUnit::FromInfinity();
     }
     return TimeUnit::FromNegativeInfinity();
+  }
+
+  
+  
+  
+  if (inBase > std::pow(2, std::numeric_limits<double>::digits) - 1) {
+    NS_WARNING(nsPrintfCString("Warning: base %" PRId64
+                               " is too high to represent %lfs accurately.",
+                               aBase, aValue)
+                   .get());
   }
   return TimeUnit(static_cast<int64_t>(inBase), aBase);
 }
