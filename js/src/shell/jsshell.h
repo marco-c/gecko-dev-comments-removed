@@ -19,6 +19,7 @@
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
 #include "threading/Thread.h"
+#include "util/CompleteFile.h"  
 #include "vm/GeckoProfiler.h"
 #include "vm/Monitor.h"
 
@@ -252,10 +253,26 @@ struct ShellContext {
   JS::PersistentRooted<FunctionVector> finalizationRegistryCleanupCallbacks;
 };
 
+
+
+
+
+struct JSAndShellContext {
+  JSContext* cx;
+  JSObject* glob;
+  UniquePtr<ShellContext> shellCx;
+  mozilla::Maybe<js::FileContents> selfHostedXDRBuffer;
+  RCFile rcStdout;
+  RCFile rcStderr;
+};
+
 extern ShellContext* GetShellContext(JSContext* cx);
 
 [[nodiscard]] extern bool PrintStackTrace(JSContext* cx,
                                           JS::Handle<JSObject*> stackObj);
+
+mozilla::Variant<JSAndShellContext, int> ShellMain(int argc, char** argv,
+                                                   bool retainContext);
 
 } 
 } 
