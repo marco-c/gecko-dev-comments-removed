@@ -1325,7 +1325,132 @@ static nsresult PinCurrentAppToTaskbarWin7(bool aCheckOnly,
   return NS_ERROR_FAILURE;
 }
 
+static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
+  
+  
+  
+  
+  
+  wchar_t exePath[MAXPATHLEN] = {};
+  wchar_t pbExePath[MAXPATHLEN] = {};
+
+  if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
+    return false;
+  }
+
+  wcscpy_s(pbExePath, MAXPATHLEN, exePath);
+  if (!PathRemoveFileSpecW(pbExePath)) {
+    return false;
+  }
+  if (!PathAppendW(pbExePath, L"private_browsing.exe")) {
+    return false;
+  }
+
+  wchar_t folderChars[MAX_PATH] = {};
+  HRESULT hr = SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
+                                SHGFP_TYPE_CURRENT, folderChars);
+  if (NS_WARN_IF(FAILED(hr))) {
+    return false;
+  }
+
+  nsAutoString folder;
+  folder.Assign(folderChars);
+  if (NS_WARN_IF(folder.IsEmpty())) {
+    return false;
+  }
+  if (folder[folder.Length() - 1] != '\\') {
+    folder.AppendLiteral("\\");
+  }
+  folder.AppendLiteral(
+      "Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+  nsAutoString pattern;
+  pattern.Assign(folder);
+  pattern.AppendLiteral("\\*.lnk");
+
+  WIN32_FIND_DATAW findData = {};
+  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
+  if (hFindFile == INVALID_HANDLE_VALUE) {
+    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    return false;
+  }
+  
+  
+
+  
+  bool isPinned = false;
+  do {
+    nsAutoString fileName;
+    fileName.Assign(folder);
+    fileName.AppendLiteral("\\");
+    fileName.Append(findData.cFileName);
+
+    
+    RefPtr<IShellLinkW> link;
+    HRESULT hr =
+        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLinkW, getter_AddRefs(link));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    
+    RefPtr<IPersistFile> persist;
+    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    hr = persist->Load(fileName.get(), STGM_READ);
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    
+    static_assert(MAXPATHLEN == MAX_PATH);
+    wchar_t storedExePath[MAX_PATH] = {};
+    
+    hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
+    if (FAILED(hr) || hr == S_FALSE) {
+      continue;
+    }
+    
+    
+    
+    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
+        wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
+      RefPtr<IPropertyStore> propStore;
+      hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      PROPVARIANT pv;
+      hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      wchar_t storedAUMID[MAX_PATH];
+      hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+      PropVariantClear(&pv);
+      if (NS_WARN_IF(FAILED(hr))) {
+        continue;
+      }
+
+      if (aumid.Equals(storedAUMID)) {
+        isPinned = true;
+        break;
+      }
+    }
+  } while (FindNextFileW(hFindFile, &findData));
+
+  FindClose(hFindFile);
+
+  return isPinned;
+}
+
 static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
+                                            const nsAString& aAppUserModelId,
                                             nsAutoString aShortcutPath) {
   
   
@@ -1386,8 +1511,12 @@ static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
   }
 
   if (!aCheckOnly) {
-    hr =
-        pinnedList->vtbl->Modify(pinnedList, nullptr, path.get(), PLMC_INT_MAX);
+    bool isPinned = false;
+    isPinned = IsCurrentAppPinnedToTaskbarSync(aAppUserModelId);
+    if (!isPinned) {
+      hr = pinnedList->vtbl->Modify(pinnedList, nullptr, path.get(),
+                                    PLMC_INT_MAX);
+    }
   }
 
   pinnedList->vtbl->Release(pinnedList);
@@ -1459,7 +1588,8 @@ static nsresult PinCurrentAppToTaskbarImpl(
   }
 
   if (IsWin10OrLater()) {
-    return PinCurrentAppToTaskbarWin10(aCheckOnly, shortcutPath);
+    return PinCurrentAppToTaskbarWin10(aCheckOnly, aAppUserModelId,
+                                       shortcutPath);
   } else {
     return PinCurrentAppToTaskbarWin7(aCheckOnly, shortcutPath);
   }
@@ -1596,130 +1726,6 @@ nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
 
   return PinCurrentAppToTaskbarAsyncImpl(
        true, aPrivateBrowsing, aCx, aPromise);
-}
-
-static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
-  
-  
-  
-  
-  
-  wchar_t exePath[MAXPATHLEN] = {};
-  wchar_t pbExePath[MAXPATHLEN] = {};
-
-  if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
-    return false;
-  }
-
-  wcscpy_s(pbExePath, MAXPATHLEN, exePath);
-  if (!PathRemoveFileSpecW(pbExePath)) {
-    return false;
-  }
-  if (!PathAppendW(pbExePath, L"private_browsing.exe")) {
-    return false;
-  }
-
-  wchar_t folderChars[MAX_PATH] = {};
-  HRESULT hr = SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
-                                SHGFP_TYPE_CURRENT, folderChars);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return false;
-  }
-
-  nsAutoString folder;
-  folder.Assign(folderChars);
-  if (NS_WARN_IF(folder.IsEmpty())) {
-    return false;
-  }
-  if (folder[folder.Length() - 1] != '\\') {
-    folder.AppendLiteral("\\");
-  }
-  folder.AppendLiteral(
-      "Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
-  nsAutoString pattern;
-  pattern.Assign(folder);
-  pattern.AppendLiteral("\\*.lnk");
-
-  WIN32_FIND_DATAW findData = {};
-  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
-  if (hFindFile == INVALID_HANDLE_VALUE) {
-    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
-    return false;
-  }
-  
-  
-
-  
-  bool isPinned = false;
-  do {
-    nsAutoString fileName;
-    fileName.Assign(folder);
-    fileName.AppendLiteral("\\");
-    fileName.Append(findData.cFileName);
-
-    
-    RefPtr<IShellLinkW> link;
-    HRESULT hr =
-        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                         IID_IShellLinkW, getter_AddRefs(link));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    
-    RefPtr<IPersistFile> persist;
-    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    hr = persist->Load(fileName.get(), STGM_READ);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    
-    static_assert(MAXPATHLEN == MAX_PATH);
-    wchar_t storedExePath[MAX_PATH] = {};
-    
-    hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
-    if (FAILED(hr) || hr == S_FALSE) {
-      continue;
-    }
-    
-    
-    
-    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
-        wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
-      RefPtr<IPropertyStore> propStore;
-      hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      PROPVARIANT pv;
-      hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      wchar_t storedAUMID[MAX_PATH];
-      hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
-      PropVariantClear(&pv);
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      if (aumid.Equals(storedAUMID)) {
-        isPinned = true;
-        break;
-      }
-    }
-  } while (FindNextFileW(hFindFile, &findData));
-
-  FindClose(hFindFile);
-
-  return isPinned;
 }
 
 NS_IMETHODIMP
