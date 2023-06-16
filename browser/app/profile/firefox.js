@@ -933,9 +933,6 @@ pref("dom.disable_window_move_resize",            false);
 
 pref("dom.disable_window_flip",                   true);
 
-
-pref("privacy.popups.policy",               1);
-pref("privacy.popups.usecustom",            true);
 pref("privacy.popups.showBrowserMessage",   true);
 
 pref("privacy.item.cookies",                false);
