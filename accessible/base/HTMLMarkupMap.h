@@ -351,28 +351,9 @@ MARKUPMAP(sup, New_HyperText, roles::SUPERSCRIPT)
 MARKUPMAP(
     table,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      if (!aElement->GetPrimaryFrame() ||
-          aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableType) {
-        return new ARIAGridAccessible(aElement, aContext->Document());
-      }
-
-      
-      for (nsIContent* child = aElement->GetFirstChild(); child;
-           child = child->GetNextSibling()) {
-        if (child->IsAnyOfHTMLElements(nsGkAtoms::thead, nsGkAtoms::tfoot,
-                                       nsGkAtoms::tbody, nsGkAtoms::tr)) {
-          
-          
-          nsIFrame* childFrame = child->GetPrimaryFrame();
-          if (childFrame && (!childFrame->IsTableRowGroupFrame() &&
-                             !childFrame->IsTableRowFrame())) {
-            return new ARIAGridAccessible(aElement, aContext->Document());
-          }
-        }
-      }
-      return nullptr;
+      return new HTMLTableAccessible(aElement, aContext->Document());
     },
-    0)
+    roles::TABLE)
 
 MARKUPMAP(time, New_HyperText, 0, Attr(xmlroles, time),
           AttrFromDOM(datetime, datetime))
@@ -382,24 +363,14 @@ MARKUPMAP(tbody, nullptr, roles::GROUPING)
 MARKUPMAP(
     td,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      if (aContext->IsTableRow() &&
-          aContext->GetContent() == aElement->GetParent()) {
-        
-        
-        
-        
-        
-        if (!aContext->IsHTMLTableRow() || !aElement->GetPrimaryFrame() ||
-            aElement->GetPrimaryFrame()->AccessibleType() !=
-                eHTMLTableCellType) {
-          return new ARIAGridCellAccessible(aElement, aContext->Document());
-        }
-        if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::scope)) {
-          return new HTMLTableHeaderCellAccessible(aElement,
-                                                   aContext->Document());
-        }
+      if (!aContext->IsHTMLTableRow()) {
+        return nullptr;
       }
-      return nullptr;
+      if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::scope)) {
+        return new HTMLTableHeaderCellAccessible(aElement,
+                                                 aContext->Document());
+      }
+      return new HTMLTableCellAccessible(aElement, aContext->Document());
     },
     0)
 
@@ -408,22 +379,10 @@ MARKUPMAP(tfoot, nullptr, roles::GROUPING)
 MARKUPMAP(
     th,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      if (aContext->IsTableRow() &&
-          aContext->GetContent() == aElement->GetParent()) {
-        
-        
-        
-        
-        
-        if (!aContext->IsHTMLTableRow() || !aElement->GetPrimaryFrame() ||
-            aElement->GetPrimaryFrame()->AccessibleType() !=
-                eHTMLTableCellType) {
-          return new ARIAGridCellAccessible(aElement, aContext->Document());
-        }
-        return new HTMLTableHeaderCellAccessible(aElement,
-                                                 aContext->Document());
+      if (!aContext->IsHTMLTableRow()) {
+        return nullptr;
       }
-      return nullptr;
+      return new HTMLTableHeaderCellAccessible(aElement, aContext->Document());
     },
     0)
 
@@ -432,37 +391,21 @@ MARKUPMAP(thead, nullptr, roles::GROUPING)
 MARKUPMAP(
     tr,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      
-      
-      
-      
-      
-      LocalAccessible* table = aContext->IsTable() ? aContext : nullptr;
-      if (!table && aContext->LocalParent() &&
-          aContext->LocalParent()->IsTable()) {
-        table = aContext->LocalParent();
+      if (aContext->IsTableRow()) {
+        
+        return nullptr;
       }
-      if (table) {
-        nsIContent* parentContent = aElement->GetParent();
-        nsIFrame* parentFrame = parentContent->GetPrimaryFrame();
-        if (!parentFrame || !parentFrame->IsTableWrapperFrame()) {
-          parentContent = parentContent->GetParent();
-          
-          
-          parentFrame =
-              parentContent ? parentContent->GetPrimaryFrame() : nullptr;
-          if (table->GetContent() == parentContent &&
-              ((!parentFrame || !parentFrame->IsTableWrapperFrame()) ||
-               !aElement->GetPrimaryFrame() ||
-               aElement->GetPrimaryFrame()->AccessibleType() !=
-                   eHTMLTableRowType)) {
-            return new ARIARowAccessible(aElement, aContext->Document());
-          }
-        }
+      
+      
+      
+      
+      if (aContext->IsTable() ||
+          (aContext->LocalParent() && aContext->LocalParent()->IsTable())) {
+        return new HTMLTableRowAccessible(aElement, aContext->Document());
       }
       return nullptr;
     },
-    0)
+    roles::ROW)
 
 MARKUPMAP(
     ul,

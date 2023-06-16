@@ -5,11 +5,12 @@
 
 #include "HTMLTableAccessible.h"
 
+#include <stdint.h>
 #include "mozilla/DebugOnly.h"
 
 #include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
 #include "AccAttributes.h"
+#include "ARIAMap.h"
 #include "CacheConstants.h"
 #include "DocAccessible.h"
 #include "LocalAccessible-inl.h"
@@ -17,18 +18,29 @@
 #include "Relation.h"
 #include "Role.h"
 #include "States.h"
-#include "TreeWalker.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/a11y/TableAccessibleBase.h"
+#include "mozilla/a11y/TableCellAccessibleBase.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLTableElement.h"
+#include "mozilla/dom/NameSpaceConstants.h"
+#include "nsCaseTreatment.h"
+#include "nsColor.h"
+#include "nsCOMPtr.h"
+#include "nsCoreUtils.h"
+#include "nsDebug.h"
 #include "nsIHTMLCollection.h"
-#include "mozilla/dom/Document.h"
 #include "nsITableCellLayout.h"
 #include "nsFrameSelection.h"
 #include "nsError.h"
-#include "nsArrayUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsNameSpaceManager.h"
+#include "nsGkAtoms.h"
+#include "nsLiteralString.h"
+#include "nsMargin.h"
+#include "nsQueryFrame.h"
+#include "nsSize.h"
+#include "nsStringFwd.h"
 #include "nsTableCellFrame.h"
 #include "nsTableWrapperFrame.h"
 
@@ -51,6 +63,10 @@ HTMLTableCellAccessible::HTMLTableCellAccessible(nsIContent* aContent,
 
 
 role HTMLTableCellAccessible::NativeRole() const {
+  
+  
+  
+  
   if (mContent->IsMathMLElement(nsGkAtoms::mtd_)) {
     return roles::MATHML_CELL;
   }
@@ -79,19 +95,20 @@ already_AddRefed<AccAttributes> HTMLTableCellAccessible::NativeAttributes() {
       HyperTextAccessibleWrap::NativeAttributes();
 
   
-  TableAccessible* table = Table();
-  if (!table) {
-    return attributes.forget();
+  
+  
+  
+  if (!IPCAccessibilityActive()) {
+    if (const TableCellAccessibleBase* cell = AsTableCellBase()) {
+      TableAccessibleBase* table = cell->Table();
+      const uint32_t row = cell->RowIdx();
+      const uint32_t col = cell->ColIdx();
+      const int32_t cellIdx = table->CellIndexAt(row, col);
+      if (cellIdx != -1) {
+        attributes->SetAttribute(nsGkAtoms::tableCellIndex, cellIdx);
+      }
+    }
   }
-
-  int32_t rowIdx = -1, colIdx = -1;
-  nsresult rv = GetCellIndexes(rowIdx, colIdx);
-  if (NS_FAILED(rv)) {
-    return attributes.forget();
-  }
-
-  attributes->SetAttribute(nsGkAtoms::tableCellIndex,
-                           table->CellIndexAt(rowIdx, colIdx));
 
   
 
@@ -124,11 +141,6 @@ already_AddRefed<AccAttributes> HTMLTableCellAccessible::NativeAttributes() {
     attributes->SetAttribute(nsGkAtoms::axis, std::move(axisText));
   }
 
-#ifdef DEBUG
-  RefPtr<nsAtom> cppClass = NS_Atomize(u"cppclass"_ns);
-  attributes->SetAttributeStringCopy(cppClass, u"HTMLTableCellAccessible"_ns);
-#endif
-
   return attributes.forget();
 }
 
@@ -144,20 +156,20 @@ void HTMLTableCellAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
       aAttribute == nsGkAtoms::scope) {
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED,
                            this);
-    if (TableAccessible* table = Table()) {
+    if (HTMLTableAccessible* table = Table()) {
       
       
       
-      mDoc->QueueCacheUpdate(table->AsAccessible(), CacheDomain::Table);
+      mDoc->QueueCacheUpdate(table, CacheDomain::Table);
     }
     mDoc->QueueCacheUpdate(this, CacheDomain::Table);
   } else if (aAttribute == nsGkAtoms::rowspan ||
              aAttribute == nsGkAtoms::colspan) {
-    if (TableAccessible* table = Table()) {
+    if (HTMLTableAccessible* table = Table()) {
       
       
       
-      mDoc->QueueCacheUpdate(table->AsAccessible(), CacheDomain::Table);
+      mDoc->QueueCacheUpdate(table, CacheDomain::Table);
     }
     mDoc->QueueCacheUpdate(this, CacheDomain::Table);
   }
@@ -166,39 +178,30 @@ void HTMLTableCellAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
 
 
-TableAccessible* HTMLTableCellAccessible::Table() const {
+HTMLTableAccessible* HTMLTableCellAccessible::Table() const {
   LocalAccessible* parent = const_cast<HTMLTableCellAccessible*>(this);
   while ((parent = parent->LocalParent())) {
-    if (parent->IsTable()) {
-      return parent->AsTable();
+    if (parent->IsHTMLTable()) {
+      return HTMLTableAccessible::GetFrom(parent);
     }
   }
 
   return nullptr;
 }
 
-uint32_t HTMLTableCellAccessible::ColIdx() const {
-  nsTableCellFrame* cellFrame = GetCellFrame();
-  NS_ENSURE_TRUE(cellFrame, 0);
-  return cellFrame->ColIndex();
-}
-
-uint32_t HTMLTableCellAccessible::RowIdx() const {
-  nsTableCellFrame* cellFrame = GetCellFrame();
-  NS_ENSURE_TRUE(cellFrame, 0);
-  return cellFrame->RowIndex();
-}
-
 uint32_t HTMLTableCellAccessible::ColExtent() const {
   int32_t rowIdx = -1, colIdx = -1;
   if (NS_FAILED(GetCellIndexes(rowIdx, colIdx))) {
-    return 0;
+    
+    
+    return 1;
   }
 
-  TableAccessible* table = Table();
-  NS_ASSERTION(table, "cell not in a table!");
-  if (!table) {
-    return 0;
+  HTMLTableAccessible* table = Table();
+  if (NS_WARN_IF(!table)) {
+    
+    
+    return 1;
   }
 
   return table->ColExtentAt(rowIdx, colIdx);
@@ -207,80 +210,25 @@ uint32_t HTMLTableCellAccessible::ColExtent() const {
 uint32_t HTMLTableCellAccessible::RowExtent() const {
   int32_t rowIdx = -1, colIdx = -1;
   if (NS_FAILED(GetCellIndexes(rowIdx, colIdx))) {
-    return 0;
+    
+    
+    return 1;
   }
 
-  TableAccessible* table = Table();
-  NS_ASSERTION(table, "cell not in atable!");
-  if (!table) {
-    return 0;
+  HTMLTableAccessible* table = Table();
+  if (NS_WARN_IF(!table)) {
+    
+    
+    return 1;
   }
 
   return table->RowExtentAt(rowIdx, colIdx);
-}
-
-void HTMLTableCellAccessible::ColHeaderCells(nsTArray<Accessible*>* aCells) {
-  IDRefsIterator itr(mDoc, mContent, nsGkAtoms::headers);
-  while (LocalAccessible* cell = itr.Next()) {
-    a11y::role cellRole = cell->Role();
-    if (cellRole == roles::COLUMNHEADER) {
-      aCells->AppendElement(cell);
-    } else if (cellRole != roles::ROWHEADER) {
-      
-      
-      TableCellAccessible* tableCell = cell->AsTableCell();
-      if (tableCell && tableCell->ColIdx() == ColIdx()) {
-        aCells->AppendElement(cell);
-      }
-    }
-  }
-
-  if (aCells->IsEmpty()) {
-    TableCellAccessible::ColHeaderCells(aCells);
-  }
-}
-
-void HTMLTableCellAccessible::RowHeaderCells(nsTArray<Accessible*>* aCells) {
-  IDRefsIterator itr(mDoc, mContent, nsGkAtoms::headers);
-  while (LocalAccessible* cell = itr.Next()) {
-    a11y::role cellRole = cell->Role();
-    if (cellRole == roles::ROWHEADER) {
-      aCells->AppendElement(cell);
-    } else if (cellRole != roles::COLUMNHEADER) {
-      
-      
-      TableCellAccessible* tableCell = cell->AsTableCell();
-      if (tableCell && tableCell->RowIdx() == RowIdx()) {
-        aCells->AppendElement(cell);
-      }
-    }
-  }
-
-  if (aCells->IsEmpty()) {
-    TableCellAccessible::RowHeaderCells(aCells);
-  }
-}
-
-bool HTMLTableCellAccessible::Selected() {
-  int32_t rowIdx = -1, colIdx = -1;
-  if (NS_FAILED(GetCellIndexes(rowIdx, colIdx))) {
-    return false;
-  }
-
-  TableAccessible* table = Table();
-  NS_ENSURE_TRUE(table, false);
-
-  return table->IsCellSelected(rowIdx, colIdx);
 }
 
 
 
 
 nsITableCellLayout* HTMLTableCellAccessible::GetCellLayout() const {
-  return do_QueryFrame(mContent->GetPrimaryFrame());
-}
-
-nsTableCellFrame* HTMLTableCellAccessible::GetCellFrame() const {
   return do_QueryFrame(mContent->GetPrimaryFrame());
 }
 
@@ -304,21 +252,73 @@ HTMLTableHeaderCellAccessible::HTMLTableHeaderCellAccessible(
 
 
 role HTMLTableHeaderCellAccessible::NativeRole() const {
-  return GetHeaderCellRole(this);
-}
-
-
-
-
-
-role HTMLTableRowAccessible::NativeRole() const {
-  if (mContent->IsMathMLElement(nsGkAtoms::mtr_)) {
-    return roles::MATHML_TABLE_ROW;
-  } else if (mContent->IsMathMLElement(nsGkAtoms::mlabeledtr_)) {
-    return roles::MATHML_LABELED_ROW;
+  dom::Element* el = Elm();
+  if (!el) {
+    return roles::NOTHING;
   }
-  return roles::ROW;
+
+  
+  static mozilla::dom::Element::AttrValuesArray scopeValues[] = {
+      nsGkAtoms::col, nsGkAtoms::colgroup, nsGkAtoms::row, nsGkAtoms::rowgroup,
+      nullptr};
+  int32_t valueIdx = el->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::scope,
+                                         scopeValues, eCaseMatters);
+
+  switch (valueIdx) {
+    case 0:
+    case 1:
+      return roles::COLUMNHEADER;
+    case 2:
+    case 3:
+      return roles::ROWHEADER;
+  }
+
+  dom::Element* nextEl = el->GetNextElementSibling();
+  dom::Element* prevEl = el->GetPreviousElementSibling();
+  
+  if (!nextEl && !prevEl) {
+    return roles::COLUMNHEADER;
+  }
+  const bool nextIsHeader = nextEl && nsCoreUtils::IsHTMLTableHeader(nextEl);
+  const bool prevIsHeader = prevEl && nsCoreUtils::IsHTMLTableHeader(prevEl);
+  
+  if (prevIsHeader && nextIsHeader) {
+    return roles::COLUMNHEADER;
+  }
+  
+  
+  if (nextIsHeader && prevEl && !prevEl->GetPreviousElementSibling()) {
+    return roles::COLUMNHEADER;
+  }
+  if (prevIsHeader && nextEl && !nextEl->GetNextElementSibling()) {
+    return roles::COLUMNHEADER;
+  }
+  
+  if ((nextEl && !nextIsHeader) || (prevEl && !prevIsHeader)) {
+    return roles::ROWHEADER;
+  }
+  
+  if (RowExtent() > 1) {
+    
+    if (prevIsHeader &&
+        (!prevEl->GetPreviousElementSibling() ||
+         nsCoreUtils::IsHTMLTableHeader(prevEl->GetPreviousElementSibling()))) {
+      return roles::COLUMNHEADER;
+    }
+    if (nextIsHeader &&
+        (!nextEl->GetNextElementSibling() ||
+         nsCoreUtils::IsHTMLTableHeader(nextEl->GetNextElementSibling()))) {
+      return roles::COLUMNHEADER;
+    }
+    return roles::ROWHEADER;
+  }
+  
+  return roles::COLUMNHEADER;
 }
+
+
+
+
 
 
 ENameValueFlag HTMLTableRowAccessible::NativeName(nsString& aName) const {
@@ -346,13 +346,6 @@ bool HTMLTableAccessible::InsertChildAt(uint32_t aIndex,
   
   return HyperTextAccessible::InsertChildAt(
       aChild->IsHTMLCaption() ? 0 : aIndex, aChild);
-}
-
-role HTMLTableAccessible::NativeRole() const {
-  if (mContent->IsMathMLElement(nsGkAtoms::mtable_)) {
-    return roles::MATHML_TABLE;
-  }
-  return roles::TABLE;
 }
 
 uint64_t HTMLTableAccessible::NativeState() const {
@@ -450,14 +443,6 @@ LocalAccessible* HTMLTableAccessible::Caption() const {
              : nullptr;
 }
 
-void HTMLTableAccessible::Summary(nsString& aSummary) {
-  dom::HTMLTableElement* table = dom::HTMLTableElement::FromNode(mContent);
-
-  if (table) {
-    table->GetSummary(aSummary);
-  }
-}
-
 uint32_t HTMLTableAccessible::ColCount() const {
   nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
   return tableFrame ? tableFrame->GetColCount() : 0;
@@ -468,283 +453,258 @@ uint32_t HTMLTableAccessible::RowCount() {
   return tableFrame ? tableFrame->GetRowCount() : 0;
 }
 
-uint32_t HTMLTableAccessible::SelectedCellCount() {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return 0;
-  }
-
-  uint32_t count = 0, rowCount = RowCount(), colCount = ColCount();
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-      nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(rowIdx, colIdx);
-      if (!cellFrame || !cellFrame->IsSelected()) {
-        continue;
-      }
-
-      uint32_t startRow = cellFrame->RowIndex();
-      uint32_t startCol = cellFrame->ColIndex();
-      if (startRow == rowIdx && startCol == colIdx) {
-        count++;
-      }
-    }
-  }
-
-  return count;
-}
-
-uint32_t HTMLTableAccessible::SelectedColCount() {
-  uint32_t count = 0, colCount = ColCount();
-
-  for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-    if (IsColSelected(colIdx)) {
-      count++;
-    }
-  }
-
-  return count;
-}
-
-uint32_t HTMLTableAccessible::SelectedRowCount() {
-  uint32_t count = 0, rowCount = RowCount();
-
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    if (IsRowSelected(rowIdx)) {
-      count++;
-    }
-  }
-
-  return count;
-}
-
-void HTMLTableAccessible::SelectedCells(nsTArray<Accessible*>* aCells) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return;
-  }
-
-  uint32_t rowCount = RowCount(), colCount = ColCount();
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-      nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(rowIdx, colIdx);
-      if (!cellFrame || !cellFrame->IsSelected()) {
-        continue;
-      }
-
-      uint32_t startRow = cellFrame->RowIndex();
-      uint32_t startCol = cellFrame->ColIndex();
-      if (startRow != rowIdx || startCol != colIdx) {
-        continue;
-      }
-
-      LocalAccessible* cell = mDoc->GetAccessible(cellFrame->GetContent());
-      aCells->AppendElement(cell);
-    }
-  }
-}
-
-void HTMLTableAccessible::SelectedCellIndices(nsTArray<uint32_t>* aCells) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return;
-  }
-
-  uint32_t rowCount = RowCount(), colCount = ColCount();
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-      nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(rowIdx, colIdx);
-      if (!cellFrame || !cellFrame->IsSelected()) {
-        continue;
-      }
-
-      uint32_t startCol = cellFrame->ColIndex();
-      uint32_t startRow = cellFrame->RowIndex();
-      if (startRow == rowIdx && startCol == colIdx) {
-        aCells->AppendElement(CellIndexAt(rowIdx, colIdx));
-      }
-    }
-  }
-}
-
-void HTMLTableAccessible::SelectedColIndices(nsTArray<uint32_t>* aCols) {
-  uint32_t colCount = ColCount();
-  for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-    if (IsColSelected(colIdx)) {
-      aCols->AppendElement(colIdx);
-    }
-  }
-}
-
-void HTMLTableAccessible::SelectedRowIndices(nsTArray<uint32_t>* aRows) {
-  uint32_t rowCount = RowCount();
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    if (IsRowSelected(rowIdx)) {
-      aRows->AppendElement(rowIdx);
-    }
-  }
-}
-
-LocalAccessible* HTMLTableAccessible::CellAt(uint32_t aRowIdx,
-                                             uint32_t aColIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return nullptr;
-  }
-
-  nsIContent* cellContent = tableFrame->GetCellAt(aRowIdx, aColIdx);
-  LocalAccessible* cell = mDoc->GetAccessible(cellContent);
-
-  
-  
-  
-  
-  if (cell && cell->IsTableRow()) {
-    return CellInRowAt(cell, aColIdx);
-  }
-
-  
-  
-  return cell == this ? nullptr : cell;
-}
-
-int32_t HTMLTableAccessible::CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return -1;
-  }
-
-  int32_t cellIndex = tableFrame->GetIndexByRowAndColumn(aRowIdx, aColIdx);
-  if (cellIndex == -1) {
-    
-    
-    
-    
-    nsIContent* cellContent = tableFrame->GetCellAt(aRowIdx, aColIdx);
-    LocalAccessible* cell = mDoc->GetAccessible(cellContent);
-    if (cell && cell->IsTableRow()) {
-      return TableAccessible::CellIndexAt(aRowIdx, aColIdx);
-    }
-  }
-
-  return cellIndex;
-}
-
-int32_t HTMLTableAccessible::ColIndexAt(uint32_t aCellIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return -1;
-  }
-
-  int32_t rowIdx = -1, colIdx = -1;
-  tableFrame->GetRowAndColumnByIndex(aCellIdx, &rowIdx, &colIdx);
-
-  if (colIdx == -1) {
-    
-    
-    
-    return TableAccessible::ColIndexAt(aCellIdx);
-  }
-
-  return colIdx;
-}
-
-int32_t HTMLTableAccessible::RowIndexAt(uint32_t aCellIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (!tableFrame) {
-    return -1;
-  }
-
-  int32_t rowIdx = -1, colIdx = -1;
-  tableFrame->GetRowAndColumnByIndex(aCellIdx, &rowIdx, &colIdx);
-
-  if (rowIdx == -1) {
-    
-    
-    
-    return TableAccessible::RowIndexAt(aCellIdx);
-  }
-
-  return rowIdx;
-}
-
-void HTMLTableAccessible::RowAndColIndicesAt(uint32_t aCellIdx,
-                                             int32_t* aRowIdx,
-                                             int32_t* aColIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
-  if (tableFrame) {
-    tableFrame->GetRowAndColumnByIndex(aCellIdx, aRowIdx, aColIdx);
-    if (*aRowIdx == -1 || *aColIdx == -1) {
-      
-      
-      
-      TableAccessible::RowAndColIndicesAt(aCellIdx, aRowIdx, aColIdx);
-    }
-  }
-}
-
 uint32_t HTMLTableAccessible::ColExtentAt(uint32_t aRowIdx, uint32_t aColIdx) {
   nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
   if (!tableFrame) {
-    return 0;
+    return 1;
   }
 
-  uint32_t colExtent = tableFrame->GetEffectiveColSpanAt(aRowIdx, aColIdx);
-  if (colExtent == 0) {
-    nsIContent* cellContent = tableFrame->GetCellAt(aRowIdx, aColIdx);
-    LocalAccessible* cell = mDoc->GetAccessible(cellContent);
-    if (cell && cell->IsTableRow()) {
-      return TableAccessible::ColExtentAt(aRowIdx, aColIdx);
-    }
-  }
-
-  return colExtent;
+  return tableFrame->GetEffectiveColSpanAt(aRowIdx, aColIdx);
 }
 
 uint32_t HTMLTableAccessible::RowExtentAt(uint32_t aRowIdx, uint32_t aColIdx) {
   nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
   if (!tableFrame) {
-    return 0;
+    return 1;
   }
 
   return tableFrame->GetEffectiveRowSpanAt(aRowIdx, aColIdx);
 }
 
-bool HTMLTableAccessible::IsColSelected(uint32_t aColIdx) {
-  bool isSelected = false;
+bool HTMLTableAccessible::IsProbablyLayoutTable() {
+  
 
-  uint32_t rowCount = RowCount();
-  for (uint32_t rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    isSelected = IsCellSelected(rowIdx, aColIdx);
-    if (!isSelected) {
-      return false;
+  
+  
+  
+
+  
+  
+  
+  
+#ifdef SHOW_LAYOUT_HEURISTIC
+#  define RETURN_LAYOUT_ANSWER(isLayout, heuristic)                         \
+    {                                                                       \
+      mLayoutHeuristic = isLayout                                           \
+                             ? nsLiteralString(u"layout table: " heuristic) \
+                             : nsLiteralString(u"data table: " heuristic);  \
+      return isLayout;                                                      \
+    }
+#else
+#  define RETURN_LAYOUT_ANSWER(isLayout, heuristic) \
+    { return isLayout; }
+#endif
+
+  MOZ_ASSERT(!IsDefunct(), "Table accessible should not be defunct");
+
+  
+  if (Document()->State() & states::EDITABLE) {
+    RETURN_LAYOUT_ANSWER(false, "In editable document");
+  }
+
+  
+  
+  if (HasARIARole()) {
+    RETURN_LAYOUT_ANSWER(false, "Has role attribute");
+  }
+
+  dom::Element* el = Elm();
+  if (el->IsMathMLElement(nsGkAtoms::mtable_)) {
+    RETURN_LAYOUT_ANSWER(false, "MathML matrix");
+  }
+
+  MOZ_ASSERT(el->IsHTMLElement(nsGkAtoms::table),
+             "Table should not be built by CSS display:table style");
+
+  
+  if (el->AttrValueIs(kNameSpaceID_None, nsGkAtoms::datatable, u"0"_ns,
+                      eCaseMatters)) {
+    RETURN_LAYOUT_ANSWER(true, "Has datatable = 0 attribute, it's for layout");
+  }
+
+  
+  if (el->Element::HasNonEmptyAttr(nsGkAtoms::summary)) {
+    RETURN_LAYOUT_ANSWER(false, "Has summary -- legitimate table structures");
+  }
+
+  
+  LocalAccessible* caption = LocalFirstChild();
+  if (caption && caption->IsHTMLCaption() && caption->HasChildren()) {
+    RETURN_LAYOUT_ANSWER(false,
+                         "Not empty caption -- legitimate table structures");
+  }
+
+  for (nsIContent* childElm = el->GetFirstChild(); childElm;
+       childElm = childElm->GetNextSibling()) {
+    if (!childElm->IsHTMLElement()) continue;
+
+    if (childElm->IsAnyOfHTMLElements(nsGkAtoms::col, nsGkAtoms::colgroup,
+                                      nsGkAtoms::tfoot, nsGkAtoms::thead)) {
+      RETURN_LAYOUT_ANSWER(
+          false,
+          "Has col, colgroup, tfoot or thead -- legitimate table structures");
+    }
+
+    if (childElm->IsHTMLElement(nsGkAtoms::tbody)) {
+      for (nsIContent* rowElm = childElm->GetFirstChild(); rowElm;
+           rowElm = rowElm->GetNextSibling()) {
+        if (rowElm->IsHTMLElement(nsGkAtoms::tr)) {
+          if (LocalAccessible* row = Document()->GetAccessible(rowElm)) {
+            if (const nsRoleMapEntry* roleMapEntry = row->ARIARoleMap()) {
+              if (roleMapEntry->role != roles::ROW) {
+                RETURN_LAYOUT_ANSWER(true, "Repurposed tr with different role");
+              }
+            }
+          }
+
+          for (nsIContent* cellElm = rowElm->GetFirstChild(); cellElm;
+               cellElm = cellElm->GetNextSibling()) {
+            if (cellElm->IsHTMLElement()) {
+              if (cellElm->NodeInfo()->Equals(nsGkAtoms::th)) {
+                RETURN_LAYOUT_ANSWER(false,
+                                     "Has th -- legitimate table structures");
+              }
+
+              if (cellElm->AsElement()->HasAttr(kNameSpaceID_None,
+                                                nsGkAtoms::headers) ||
+                  cellElm->AsElement()->HasAttr(kNameSpaceID_None,
+                                                nsGkAtoms::scope) ||
+                  cellElm->AsElement()->HasAttr(kNameSpaceID_None,
+                                                nsGkAtoms::abbr)) {
+                RETURN_LAYOUT_ANSWER(false,
+                                     "Has headers, scope, or abbr attribute -- "
+                                     "legitimate table structures");
+              }
+
+              if (LocalAccessible* cell = Document()->GetAccessible(cellElm)) {
+                if (const nsRoleMapEntry* roleMapEntry = cell->ARIARoleMap()) {
+                  if (roleMapEntry->role != roles::CELL &&
+                      roleMapEntry->role != roles::COLUMNHEADER &&
+                      roleMapEntry->role != roles::ROWHEADER &&
+                      roleMapEntry->role != roles::GRID_CELL) {
+                    RETURN_LAYOUT_ANSWER(true,
+                                         "Repurposed cell with different role");
+                  }
+                }
+                if (cell->ChildCount() == 1 &&
+                    cell->LocalFirstChild()->IsAbbreviation()) {
+                  RETURN_LAYOUT_ANSWER(
+                      false, "has abbr -- legitimate table structures");
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
-  return isSelected;
-}
-
-bool HTMLTableAccessible::IsRowSelected(uint32_t aRowIdx) {
-  bool isSelected = false;
-
-  uint32_t colCount = ColCount();
-  for (uint32_t colIdx = 0; colIdx < colCount; colIdx++) {
-    isSelected = IsCellSelected(aRowIdx, colIdx);
-    if (!isSelected) {
-      return false;
-    }
+  
+  nsCOMPtr<nsIHTMLCollection> nestedTables =
+      el->GetElementsByTagName(u"table"_ns);
+  if (nestedTables->Length() > 0) {
+    RETURN_LAYOUT_ANSWER(true, "Has a nested table within it");
   }
 
-  return isSelected;
-}
+  
+  auto colCount = ColCount();
+  if (colCount <= 1) {
+    RETURN_LAYOUT_ANSWER(true, "Has only 1 column");
+  }
+  auto rowCount = RowCount();
+  if (rowCount <= 1) {
+    RETURN_LAYOUT_ANSWER(true, "Has only 1 row");
+  }
 
-bool HTMLTableAccessible::IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) {
-  nsTableWrapperFrame* tableFrame = GetTableWrapperFrame();
+  
+  if (colCount >= 5) {
+    RETURN_LAYOUT_ANSWER(false, ">=5 columns");
+  }
+
+  
+  
+  
+  
+  nsTableWrapperFrame* tableFrame = do_QueryFrame(el->GetPrimaryFrame());
   if (!tableFrame) {
-    return false;
+    RETURN_LAYOUT_ANSWER(false, "table with no frame!");
   }
 
-  nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(aRowIdx, aColIdx);
-  return cellFrame ? cellFrame->IsSelected() : false;
+  nsIFrame* cellFrame = tableFrame->GetCellFrameAt(0, 0);
+  if (!cellFrame) {
+    RETURN_LAYOUT_ANSWER(false, "table's first cell has no frame!");
+  }
+
+  nsMargin border = cellFrame->StyleBorder()->GetComputedBorder();
+  if (border.top && border.bottom && border.left && border.right) {
+    RETURN_LAYOUT_ANSWER(false, "Has nonzero border-width on table cell");
+  }
+
+  
+  
+
+  
+  
+  auto childCount = ChildCount();
+  nscolor rowColor = 0;
+  nscolor prevRowColor;
+  for (auto childIdx = 0U; childIdx < childCount; childIdx++) {
+    LocalAccessible* child = LocalChildAt(childIdx);
+    if (child->IsHTMLTableRow()) {
+      prevRowColor = rowColor;
+      nsIFrame* rowFrame = child->GetFrame();
+      MOZ_ASSERT(rowFrame, "Table hierarchy got screwed up");
+      if (!rowFrame) {
+        RETURN_LAYOUT_ANSWER(false, "Unexpected table hierarchy");
+      }
+
+      rowColor = rowFrame->StyleBackground()->BackgroundColor(rowFrame);
+
+      if (childIdx > 0 && prevRowColor != rowColor) {
+        RETURN_LAYOUT_ANSWER(false,
+                             "2 styles of row background color, non-bordered");
+      }
+    }
+  }
+
+  
+  const uint32_t kMaxLayoutRows = 20;
+  if (rowCount > kMaxLayoutRows) {  
+    RETURN_LAYOUT_ANSWER(false, ">= kMaxLayoutRows (20) and non-bordered");
+  }
+
+  
+  nsIFrame* documentFrame = Document()->GetFrame();
+  nsSize documentSize = documentFrame->GetSize();
+  if (documentSize.width > 0) {
+    nsSize tableSize = GetFrame()->GetSize();
+    int32_t percentageOfDocWidth = (100 * tableSize.width) / documentSize.width;
+    if (percentageOfDocWidth > 95) {
+      
+      
+      RETURN_LAYOUT_ANSWER(
+          true, "<= 4 columns, table width is 95% of document width");
+    }
+  }
+
+  
+  if (rowCount * colCount <= 10) {
+    RETURN_LAYOUT_ANSWER(true, "2-4 columns, 10 cells or less, non-bordered");
+  }
+
+  static const nsLiteralString tags[] = {u"embed"_ns, u"object"_ns,
+                                         u"iframe"_ns};
+  for (const auto& tag : tags) {
+    nsCOMPtr<nsIHTMLCollection> descendants = el->GetElementsByTagName(tag);
+    if (descendants->Length() > 0) {
+      RETURN_LAYOUT_ANSWER(true,
+                           "Has no borders, and has iframe, object or embed, "
+                           "typical of advertisements");
+    }
+  }
+
+  RETURN_LAYOUT_ANSWER(false,
+                       "No layout factor strong enough, so will guess data");
 }
 
 

@@ -401,12 +401,6 @@ role ARIAGridCellAccessible::NativeRole() const {
   if (r != role::NOTHING) {
     return r;
   }
-
-  
-  if (GetContent() && GetContent()->IsHTMLElement(nsGkAtoms::th)) {
-    return GetHeaderCellRole(this);
-  }
-
   return role::CELL;
 }
 

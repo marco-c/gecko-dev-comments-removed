@@ -61,6 +61,7 @@
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
 #include "nsTreeUtils.h"
+#include "mozilla/a11y/AccTypes.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/EventTarget.h"
@@ -1626,56 +1627,14 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       newAcc = new HTMLSpinnerAccessible(aContent, document);
       break;
     case eHTMLTableType:
-      if (aContent->IsHTMLElement(nsGkAtoms::table)) {
-        newAcc = new HTMLTableAccessible(aContent, document);
-      } else {
-        newAcc = new HyperTextAccessibleWrap(aContent, document);
-      }
-      break;
     case eHTMLTableCellType:
       
       
-      
-      
-      
-      if (aContext->IsHTMLTableRow() || aContext->IsHTMLTable()) {
-        newAcc = new HTMLTableCellAccessible(aContent, document);
-      } else {
-        newAcc = new HyperTextAccessibleWrap(aContent, document);
-      }
+      newAcc = new HyperTextAccessibleWrap(aContent, document);
       break;
-
-    case eHTMLTableRowType: {
+    case eHTMLTableRowType:
       
-      
-      LocalAccessible* table = aContext->IsTable() ? aContext : nullptr;
-      if (!table && aContext->LocalParent() &&
-          aContext->LocalParent()->IsTable()) {
-        table = aContext->LocalParent();
-      }
-
-      if (table) {
-        nsIContent* parentContent =
-            aContent->GetParentOrShadowHostNode()->AsContent();
-        nsIFrame* parentFrame = nullptr;
-        if (parentContent) {
-          parentFrame = parentContent->GetPrimaryFrame();
-          if (!parentFrame || !parentFrame->IsTableWrapperFrame()) {
-            parentContent =
-                parentContent->GetParentOrShadowHostNode()->AsContent();
-            if (parentContent) {
-              parentFrame = parentContent->GetPrimaryFrame();
-            }
-          }
-        }
-
-        if (parentFrame && parentFrame->IsTableWrapperFrame() &&
-            table->GetContent() == parentContent) {
-          newAcc = new HTMLTableRowAccessible(aContent, document);
-        }
-      }
       break;
-    }
     case eHTMLTextFieldType:
       newAcc = new HTMLTextFieldAccessible(aContent, document);
       break;
