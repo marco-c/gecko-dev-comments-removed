@@ -75,11 +75,18 @@ nsresult FetchStreamReader::Create(JSContext* aCx, nsIGlobalObject* aGlobal,
     RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
         workerPrivate, "FetchStreamReader", [streamReader]() {
           MOZ_ASSERT(streamReader);
-          MOZ_ASSERT(streamReader->mWorkerRef);
 
-          streamReader->CloseAndRelease(
-              streamReader->mWorkerRef->Private()->GetJSContext(),
-              NS_ERROR_DOM_INVALID_STATE_ERR);
+          
+          
+          
+          
+          if (streamReader->mWorkerRef) {
+            streamReader->CloseAndRelease(
+                streamReader->mWorkerRef->Private()->GetJSContext(),
+                NS_ERROR_DOM_INVALID_STATE_ERR);
+          } else {
+            MOZ_DIAGNOSTIC_ASSERT(streamReader->mAsyncWaitWorkerRef);
+          }
         });
 
     if (NS_WARN_IF(!workerRef)) {
