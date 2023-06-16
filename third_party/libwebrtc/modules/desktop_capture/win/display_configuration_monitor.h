@@ -11,7 +11,9 @@
 #ifndef MODULES_DESKTOP_CAPTURE_WIN_DISPLAY_CONFIGURATION_MONITOR_H_
 #define MODULES_DESKTOP_CAPTURE_WIN_DISPLAY_CONFIGURATION_MONITOR_H_
 
+#include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_geometry.h"
+#include "rtc_base/containers/flat_map.h"
 
 namespace webrtc {
 
@@ -23,13 +25,26 @@ class DisplayConfigurationMonitor {
   
   
   
-  bool IsChanged();
+  
+  bool IsChanged(DesktopCapturer::SourceId source_id);
 
   
   void Reset();
 
  private:
+  DesktopVector GetDpiForSourceId(DesktopCapturer::SourceId source_id);
+
+  
   DesktopRect rect_;
+
+  
+  
+  
+  flat_map<DesktopCapturer::SourceId, DesktopVector> source_dpis_;
+
+  
+  
+  
   bool initialized_ = false;
 };
 

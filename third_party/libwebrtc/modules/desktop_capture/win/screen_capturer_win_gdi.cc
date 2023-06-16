@@ -160,7 +160,7 @@ void ScreenCapturerWinGdi::PrepareCaptureResources() {
   }
 
   
-  if (display_configuration_monitor_.IsChanged()) {
+  if (display_configuration_monitor_.IsChanged(kFullDesktopScreenId)) {
     if (desktop_dc_) {
       ReleaseDC(NULL, desktop_dc_);
       desktop_dc_ = nullptr;

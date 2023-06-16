@@ -113,7 +113,7 @@ class RTC_EXPORT DxgiDuplicatorController {
 
   
   
-  DesktopVector dpi();
+  DesktopVector system_dpi();
 
   
   
@@ -243,7 +243,7 @@ class RTC_EXPORT DxgiDuplicatorController {
   
   int identity_ RTC_GUARDED_BY(mutex_) = 0;
   DesktopRect desktop_rect_ RTC_GUARDED_BY(mutex_);
-  DesktopVector dpi_ RTC_GUARDED_BY(mutex_);
+  DesktopVector system_dpi_ RTC_GUARDED_BY(mutex_);
   std::vector<DxgiAdapterDuplicator> duplicators_ RTC_GUARDED_BY(mutex_);
   D3dInfo d3d_info_ RTC_GUARDED_BY(mutex_);
   DisplayConfigurationMonitor display_configuration_monitor_

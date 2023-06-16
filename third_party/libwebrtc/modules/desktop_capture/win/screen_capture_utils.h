@@ -56,6 +56,10 @@ DesktopRect GetMonitorRect(HMONITOR monitor);
 
 
 
+DesktopVector GetDpiForMonitor(HMONITOR monitor);
+
+
+
 
 
 bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
