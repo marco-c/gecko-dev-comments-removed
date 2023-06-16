@@ -222,9 +222,11 @@ void InspectorUtils::GetChildrenForNode(nsINode& aNode,
 }
 
 
-void InspectorUtils::GetCSSStyleRules(
-    GlobalObject& aGlobalObject, Element& aElement, const nsAString& aPseudo,
-    bool aIncludeVisitedStyle, nsTArray<RefPtr<BindingStyleRule>>& aResult) {
+void InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
+                                      Element& aElement,
+                                      const nsAString& aPseudo,
+                                      bool aIncludeVisitedStyle,
+                                      nsTArray<RefPtr<CSSStyleRule>>& aResult) {
   Maybe<PseudoStyleType> type = nsCSSPseudoElements::GetPseudoType(
       aPseudo, CSSEnabledState::ForAllContent);
   if (!type) {
@@ -364,13 +366,12 @@ bool InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal,
 
 
 uint32_t InspectorUtils::GetSelectorCount(GlobalObject& aGlobal,
-                                          BindingStyleRule& aRule) {
+                                          CSSStyleRule& aRule) {
   return aRule.GetSelectorCount();
 }
 
 
-void InspectorUtils::GetSelectorText(GlobalObject& aGlobal,
-                                     BindingStyleRule& aRule,
+void InspectorUtils::GetSelectorText(GlobalObject& aGlobal, CSSStyleRule& aRule,
                                      uint32_t aSelectorIndex, nsACString& aText,
                                      ErrorResult& aRv) {
   aRv = aRule.GetSelectorText(aSelectorIndex, aText);
@@ -378,7 +379,7 @@ void InspectorUtils::GetSelectorText(GlobalObject& aGlobal,
 
 
 uint64_t InspectorUtils::GetSpecificity(GlobalObject& aGlobal,
-                                        BindingStyleRule& aRule,
+                                        CSSStyleRule& aRule,
                                         uint32_t aSelectorIndex,
                                         ErrorResult& aRv) {
   uint64_t s;
@@ -388,7 +389,7 @@ uint64_t InspectorUtils::GetSpecificity(GlobalObject& aGlobal,
 
 
 bool InspectorUtils::SelectorMatchesElement(
-    GlobalObject& aGlobalObject, Element& aElement, BindingStyleRule& aRule,
+    GlobalObject& aGlobalObject, Element& aElement, CSSStyleRule& aRule,
     uint32_t aSelectorIndex, const nsAString& aPseudo,
     bool aRelevantLinkVisited, ErrorResult& aRv) {
   bool result = false;

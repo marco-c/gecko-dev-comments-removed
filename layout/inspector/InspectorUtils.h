@@ -18,7 +18,6 @@ class nsINodeList;
 class nsRange;
 
 namespace mozilla {
-class BindingStyleRule;
 class StyleSheet;
 namespace css {
 class Rule;
@@ -31,8 +30,8 @@ class InspectorFontFace;
 }  
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
+class CSSStyleRule;
 
 
 
@@ -45,7 +44,7 @@ class InspectorUtils {
   static void GetCSSStyleRules(GlobalObject& aGlobal, Element& aElement,
                                const nsAString& aPseudo,
                                bool aIncludeVisitedStyle,
-                               nsTArray<RefPtr<BindingStyleRule>>& aResult);
+                               nsTArray<RefPtr<CSSStyleRule>>& aResult);
 
   
 
@@ -82,19 +81,18 @@ class InspectorUtils {
   
   
   
-  static uint32_t GetSelectorCount(GlobalObject& aGlobal,
-                                   BindingStyleRule& aRule);
+  static uint32_t GetSelectorCount(GlobalObject& aGlobal, CSSStyleRule& aRule);
 
   
-  static void GetSelectorText(GlobalObject& aGlobal, BindingStyleRule& aRule,
+  static void GetSelectorText(GlobalObject& aGlobal, CSSStyleRule& aRule,
                               uint32_t aSelectorIndex, nsACString& aText,
                               ErrorResult& aRv);
-  static uint64_t GetSpecificity(GlobalObject& aGlobal, BindingStyleRule& aRule,
+  static uint64_t GetSpecificity(GlobalObject& aGlobal, CSSStyleRule& aRule,
                                  uint32_t aSelectorIndex, ErrorResult& aRv);
   
   
   static bool SelectorMatchesElement(GlobalObject& aGlobal, Element& aElement,
-                                     BindingStyleRule& aRule,
+                                     CSSStyleRule& aRule,
                                      uint32_t aSelectorIndex,
                                      const nsAString& aPseudo,
                                      bool aRelevantLinkVisited,
@@ -267,7 +265,6 @@ class InspectorUtils {
                                   const nsAString& aNamespaceURI);
 };
 
-}  
 }  
 
 #endif  
