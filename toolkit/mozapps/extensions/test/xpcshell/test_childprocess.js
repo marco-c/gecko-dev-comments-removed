@@ -4,12 +4,17 @@
 
 
 
+
+
+
+
+const { updateAppInfo } = ChromeUtils.importESModule(
+  "resource://testing-common/AppInfo.sys.mjs"
+);
+
 function run_test() {
-  
-  
-  Cu.unload("resource://gre/modules/AddonManager.jsm");
-  createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
-  gAppInfo.processType = Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+  updateAppInfo();
+  Services.appinfo.processType = Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
   try {
     ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
     do_throw("AddonManager should have refused to load");
