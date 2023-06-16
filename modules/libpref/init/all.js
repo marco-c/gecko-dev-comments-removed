@@ -2525,7 +2525,6 @@ pref("font.size.monospace.x-math", 13);
 #ifdef XP_MACOSX
   
   pref("browser.drag_out_of_frame_style", 1);
-  pref("ui.key.saveLink.shift", false); 
 
   
   
