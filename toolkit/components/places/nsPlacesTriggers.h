@@ -261,6 +261,7 @@
 
 
 
+
 #  define CREATE_REMOVEOPENPAGE_CLEANUP_TRIGGER                            \
     nsLiteralCString(                                                      \
         "CREATE TEMPORARY TRIGGER moz_openpages_temp_afterupdate_trigger " \
@@ -310,8 +311,9 @@
         "SELECT store_last_inserted_id('moz_bookmarks', NEW.id); "             \
         "SELECT note_sync_change() WHERE NEW.syncChangeCounter > 0; "          \
         "UPDATE moz_places "                                                   \
-        "SET frecency = 1 WHERE frecency = -1 AND NOT " IS_PLACE_QUERY         \
-        ";"                                                                    \
+        "SET frecency = (CASE WHEN " IS_PLACE_QUERY                            \
+        "                THEN 0 ELSE 1 END) "                                  \
+        "WHERE frecency = -1 AND id = NEW.fk;"                                 \
         "UPDATE moz_places "                                                   \
         "SET foreign_count = foreign_count + 1 "                               \
         ",   hidden = " IS_PLACE_QUERY                                         \

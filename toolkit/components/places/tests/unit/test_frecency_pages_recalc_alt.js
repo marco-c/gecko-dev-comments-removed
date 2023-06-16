@@ -4,6 +4,16 @@
 
 
 add_task(async function test() {
+  
+  
+  let subject = {};
+  PlacesFrecencyRecalculator.observe(
+    subject,
+    "test-alternative-frecency-init",
+    ""
+  );
+  await subject.promise;
+
   info("test recalc_alt_frecency is set to 1 when a visit is added");
   const now = new Date();
   const URL = "https://mozilla.org/test/";
@@ -31,7 +41,9 @@ add_task(async function test() {
       visitDate: new Date(new Date().setDate(now.getDate() - 30)),
     },
   ]);
-  Assert.equal(await getRecalc(URL), 1);
+  
+  
+  Assert.equal(await getRecalc(URL), 0);
   Assert.greater(await getFrecency(URL), 0);
 
   info("Remove just one visit (otherwise the page would be orphaned).");
@@ -73,4 +85,13 @@ add_task(async function test() {
   await PlacesUtils.bookmarks.remove(bm);
   Assert.equal(await getRecalc(URL2), 1);
   await setRecalc(URL2, 0);
+
+  const URL3 = "https://test3.moz.org/";
+  const URL4 = "https://test4.moz.org/";
+  info("Insert multiple pages now");
+  await PlacesTestUtils.addVisits([URL3, URL4]);
+  Assert.equal(await getRecalc(URL3), 0);
+  Assert.greater(await getFrecency(URL3), 0);
+  Assert.equal(await getRecalc(URL4), 0);
+  Assert.greater(await getFrecency(URL4), 0);
 });

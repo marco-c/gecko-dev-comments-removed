@@ -21,8 +21,9 @@ function check_results_callback(aSequence) {
   let includeHidden = aSequence[0];
   let maxResults = aSequence[1];
   let sortingMode = aSequence[2];
-  print(
-    "\nTESTING: includeHidden(" +
+  info(" - - - ");
+  info(
+    "TESTING: includeHidden(" +
       includeHidden +
       ")," +
       " maxResults(" +
@@ -218,7 +219,6 @@ add_task(async function test_add_visits_to_database() {
     
     
     Ci.nsINavHistoryService.TRANSITION_FRAMED_LINK,
-    
     
     
     

@@ -842,9 +842,6 @@ class InsertVisitedURIs final : public Runnable {
     
     nsresult rv = InnerRun();
 
-    if (mSuccessfulUpdatedCount > 0) {
-      NS_DispatchToMainThread(new NotifyRankingChanged());
-    }
     if (!!mCallback) {
       NS_DispatchToMainThread(
           new NotifyCompletion(mCallback, mSuccessfulUpdatedCount));
@@ -874,9 +871,28 @@ class InsertVisitedURIs final : public Runnable {
     if (shouldChunkNotifications) {
       notificationChunk.SetCapacity(NOTIFY_VISITS_CHUNK_SIZE);
     }
+
+    
+    
+    
+    
+    bool shouldUpdateFrecency = false;
+
     for (nsTArray<VisitData>::size_type i = 0; i < mPlaces.Length(); i++) {
       VisitData& place = mPlaces.ElementAt(i);
 
+      if (i == 0) {
+        
+        
+        
+        shouldUpdateFrecency = !place.isUnrecoverableError;
+      } else if (shouldUpdateFrecency &&
+                 (!place.spec.Equals(mPlaces.ElementAt(i - 1).spec))) {
+        
+        
+        
+        shouldUpdateFrecency = false;
+      }
       
       
       bool typed = place.typed;
@@ -958,6 +974,18 @@ class InsertVisitedURIs final : public Runnable {
       
       
       mSuccessfulUpdatedCount++;
+    }
+
+    if (shouldUpdateFrecency) {
+      VisitData& place = mPlaces.ElementAt(0);
+      if (NS_SUCCEEDED(UpdateFrecency(
+              place.placeId,
+              place.useFrecencyRedirectBonus && mPlaces.Length() == 1))) {
+        
+        
+        
+        NS_DispatchToMainThread(new NotifyRankingChanged());
+      }
     }
 
     {
@@ -1050,15 +1078,6 @@ class InsertVisitedURIs final : public Runnable {
 
     rv = AddVisit(aPlace);
     NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-
-    
-    if (!aPlace.isUnrecoverableError) {
-      rv = UpdateFrecency(aPlace);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
 
     return NS_OK;
   }
@@ -1158,10 +1177,7 @@ class InsertVisitedURIs final : public Runnable {
 
 
 
-  nsresult UpdateFrecency(const VisitData& aPlace) {
-    MOZ_ASSERT(!aPlace.isUnrecoverableError);
-    MOZ_ASSERT(aPlace.placeId > 0);
-
+  nsresult UpdateFrecency(const int64_t aPlaceId, bool aIsRedirect) {
     nsresult rv;
     {  
       nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(
@@ -1171,10 +1187,9 @@ class InsertVisitedURIs final : public Runnable {
       NS_ENSURE_STATE(stmt);
       mozStorageStatementScoper scoper(stmt);
 
-      rv = stmt->BindInt64ByName("page_id"_ns, aPlace.placeId);
+      rv = stmt->BindInt64ByName("page_id"_ns, aPlaceId);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv =
-          stmt->BindInt32ByName("redirect"_ns, aPlace.useFrecencyRedirectBonus);
+      rv = stmt->BindInt32ByName("redirect"_ns, aIsRedirect);
       NS_ENSURE_SUCCESS(rv, rv);
 
       rv = stmt->Execute();
@@ -1190,10 +1205,9 @@ class InsertVisitedURIs final : public Runnable {
           "WHERE id = :page_id");
       NS_ENSURE_STATE(stmt);
       mozStorageStatementScoper scoper(stmt);
-      rv = stmt->BindInt64ByName("page_id"_ns, aPlace.placeId);
+      rv = stmt->BindInt64ByName("page_id"_ns, aPlaceId);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv =
-          stmt->BindInt32ByName("redirect"_ns, aPlace.useFrecencyRedirectBonus);
+      rv = stmt->BindInt32ByName("redirect"_ns, aIsRedirect);
       NS_ENSURE_SUCCESS(rv, rv);
       rv = stmt->Execute();
       NS_ENSURE_SUCCESS(rv, rv);
