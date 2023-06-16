@@ -65,6 +65,7 @@ MALLOC_DECL(malloc_good_size, size_t, size_t)
 #  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
 
 
+
 MALLOC_DECL(jemalloc_stats_internal, void, jemalloc_stats_t*,
             jemalloc_bin_stats_t*)
 
@@ -94,7 +95,10 @@ MALLOC_DECL(jemalloc_stats_num_bins, size_t)
 
 
 
+
+
 MALLOC_DECL(jemalloc_purge_freed_pages, void)
+
 
 
 

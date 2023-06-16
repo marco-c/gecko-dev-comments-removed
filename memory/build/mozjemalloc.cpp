@@ -1087,7 +1087,9 @@ struct arena_t {
   arena_id_t mId;
 
   
-  Mutex mLock MOZ_UNANNOTATED;
+  
+  
+  MaybeMutex mLock MOZ_UNANNOTATED;
 
   arena_stats_t mStats;
 
@@ -1274,6 +1276,7 @@ struct ArenaTreeTrait {
 class ArenaCollection {
  public:
   bool Init() {
+    mMainThreadId = GetThreadId();
     mArenas.Init();
     mPrivateArenas.Init();
     arena_params_t params;
@@ -1332,6 +1335,11 @@ class ArenaCollection {
 
   Mutex mLock MOZ_UNANNOTATED;
 
+  bool IsOnMainThread() const { return mMainThreadId == GetThreadId(); }
+
+  
+  void SetMainThread() { mMainThreadId = GetThreadId(); }
+
  private:
   inline arena_t* GetByIdInternal(arena_id_t aArenaId, bool aIsPrivate);
 
@@ -1340,6 +1348,7 @@ class ArenaCollection {
   Tree mArenas;
   Tree mPrivateArenas;
   Atomic<int32_t> mDefaultMaxDirtyPageModifier;
+  ThreadId mMainThreadId;
 };
 
 static ArenaCollection gArenas;
@@ -3213,7 +3222,7 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
     }
     MOZ_ASSERT(!mRandomizeSmallAllocations || mPRNG);
 
-    MutexAutoLock lock(mLock);
+    MaybeMutexAutoLock lock(mLock);
     run = bin->mCurrentRun;
     if (MOZ_UNLIKELY(!run || run->mNumFree == 0)) {
       run = bin->mCurrentRun = GetNonFullBinRun(bin);
@@ -3249,7 +3258,7 @@ void* arena_t::MallocLarge(size_t aSize, bool aZero) {
   aSize = PAGE_CEILING(aSize);
 
   {
-    MutexAutoLock lock(mLock);
+    MaybeMutexAutoLock lock(mLock);
     ret = AllocRun(aSize, true, aZero);
     if (!ret) {
       return nullptr;
@@ -3287,7 +3296,7 @@ void* arena_t::PallocLarge(size_t aAlignment, size_t aSize, size_t aAllocSize) {
   MOZ_ASSERT((aAlignment & gPageSizeMask) == 0);
 
   {
-    MutexAutoLock lock(mLock);
+    MaybeMutexAutoLock lock(mLock);
     ret = AllocRun(aAllocSize, true, false);
     if (!ret) {
       return nullptr;
@@ -3743,7 +3752,7 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
   arena_chunk_t* chunk_dealloc_delay = nullptr;
 
   {
-    MutexAutoLock lock(arena->mLock);
+    MaybeMutexAutoLock lock(arena->mLock);
     arena_chunk_map_t* mapelm = &chunk->map[pageind];
     MOZ_RELEASE_ASSERT((mapelm->bits & CHUNK_MAP_DECOMMITTED) == 0,
                        "Freeing in decommitted page.");
@@ -3782,7 +3791,7 @@ void arena_t::RallocShrinkLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
 
   
   
-  MutexAutoLock lock(mLock);
+  MaybeMutexAutoLock lock(mLock);
   TrimRunTail(aChunk, (arena_run_t*)aPtr, aOldSize, aSize, true);
   mStats.allocated_large -= aOldSize - aSize;
 }
@@ -3793,7 +3802,7 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
   size_t pageind = (uintptr_t(aPtr) - uintptr_t(aChunk)) >> gPageSize2Pow;
   size_t npages = aOldSize >> gPageSize2Pow;
 
-  MutexAutoLock lock(mLock);
+  MaybeMutexAutoLock lock(mLock);
   MOZ_DIAGNOSTIC_ASSERT(aOldSize ==
                         (aChunk->map[pageind].bits & ~gPageSizeMask));
 
@@ -3892,8 +3901,6 @@ void arena_t::operator delete(void* aPtr) {
 arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   unsigned i;
 
-  MOZ_RELEASE_ASSERT(mLock.Init());
-
   memset(&mLink, 0, sizeof(mLink));
   memset(&mStats, 0, sizeof(arena_stats_t));
   mId = 0;
@@ -3906,9 +3913,10 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
   mSpare = nullptr;
 
   mRandomizeSmallAllocations = opt_randomize_small;
+  MaybeMutex::DoLock doLock = MaybeMutex::MUST_LOCK;
   if (aParams) {
-    uint32_t flags = aParams->mFlags & ARENA_FLAG_RANDOMIZE_SMALL_MASK;
-    switch (flags) {
+    uint32_t randFlags = aParams->mFlags & ARENA_FLAG_RANDOMIZE_SMALL_MASK;
+    switch (randFlags) {
       case ARENA_FLAG_RANDOMIZE_SMALL_ENABLED:
         mRandomizeSmallAllocations = true;
         break;
@@ -3920,12 +3928,30 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
         break;
     }
 
+    uint32_t threadFlags = aParams->mFlags & ARENA_FLAG_THREAD_MASK;
+    if (threadFlags == ARENA_FLAG_THREAD_MAIN_THREAD_ONLY) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(gArenas.IsOnMainThread());
+      doLock = MaybeMutex::AVOID_LOCK_UNSAFE;
+    }
+
     mMaxDirtyIncreaseOverride = aParams->mMaxDirtyIncreaseOverride;
     mMaxDirtyDecreaseOverride = aParams->mMaxDirtyDecreaseOverride;
   } else {
     mMaxDirtyIncreaseOverride = 0;
     mMaxDirtyDecreaseOverride = 0;
   }
+
+  MOZ_RELEASE_ASSERT(mLock.Init(doLock));
 
   mPRNG = nullptr;
 
@@ -3961,7 +3987,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
 
 arena_t::~arena_t() {
   size_t i;
-  MutexAutoLock lock(mLock);
+  MaybeMutexAutoLock lock(mLock);
   MOZ_RELEASE_ASSERT(!mLink.Left() && !mLink.Right(),
                      "Arena is still registered");
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
@@ -4683,8 +4709,16 @@ inline void MozJemalloc::jemalloc_stats_internal(
   }
 
   gArenas.mLock.Lock();
+
+  
+  MOZ_ASSERT(gArenas.IsOnMainThread());
+
   
   for (auto arena : gArenas.iter()) {
+    
+    
+    MOZ_ASSERT(arena->mLock.SafeOnThisThread());
+
     size_t arena_mapped, arena_allocated, arena_committed, arena_dirty, j,
         arena_unused, arena_headers;
 
@@ -4692,7 +4726,7 @@ inline void MozJemalloc::jemalloc_stats_internal(
     arena_unused = 0;
 
     {
-      MutexAutoLock lock(arena->mLock);
+      MaybeMutexAutoLock lock(arena->mLock);
 
       arena_mapped = arena->mStats.mapped;
 
@@ -4804,7 +4838,7 @@ static void hard_purge_chunk(arena_chunk_t* aChunk) {
 
 
 void arena_t::HardPurge() {
-  MutexAutoLock lock(mLock);
+  MaybeMutexAutoLock lock(mLock);
 
   while (!mChunksMAdvised.isEmpty()) {
     arena_chunk_t* chunk = mChunksMAdvised.popFront();
@@ -4816,6 +4850,7 @@ template <>
 inline void MozJemalloc::jemalloc_purge_freed_pages() {
   if (malloc_initialized) {
     MutexAutoLock lock(gArenas.mLock);
+    MOZ_ASSERT(gArenas.IsOnMainThread());
     for (auto arena : gArenas.iter()) {
       arena->HardPurge();
     }
@@ -4835,8 +4870,9 @@ template <>
 inline void MozJemalloc::jemalloc_free_dirty_pages(void) {
   if (malloc_initialized) {
     MutexAutoLock lock(gArenas.mLock);
+    MOZ_ASSERT(gArenas.IsOnMainThread());
     for (auto arena : gArenas.iter()) {
-      MutexAutoLock arena_lock(arena->mLock);
+      MaybeMutexAutoLock arena_lock(arena->mLock);
       arena->Purge(1);
     }
   }
@@ -4902,13 +4938,23 @@ inline void MozJemalloc::moz_set_max_dirty_page_modifier(int32_t aModifier) {
 
 
 
+
+
+
+
+
+static pthread_t gForkingThread;
+
 FORK_HOOK
 void _malloc_prefork(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   gArenas.mLock.Lock();
+  gForkingThread = pthread_self();
 
   for (auto arena : gArenas.iter()) {
-    arena->mLock.Lock();
+    if (arena->mLock.LockIsEnabled()) {
+      arena->mLock.Lock();
+    }
   }
 
   base_mtx.Lock();
@@ -4924,7 +4970,9 @@ void _malloc_postfork_parent(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   base_mtx.Unlock();
 
   for (auto arena : gArenas.iter()) {
-    arena->mLock.Unlock();
+    if (arena->mLock.LockIsEnabled()) {
+      arena->mLock.Unlock();
+    }
   }
 
   gArenas.mLock.Unlock();
@@ -4938,9 +4986,10 @@ void _malloc_postfork_child(void) {
   base_mtx.Init();
 
   for (auto arena : gArenas.iter()) {
-    arena->mLock.Init();
+    arena->mLock.Reinit(gForkingThread);
   }
 
+  gArenas.SetMainThread();
   gArenas.mLock.Init();
 }
 #endif  
