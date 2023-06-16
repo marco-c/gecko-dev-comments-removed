@@ -160,7 +160,7 @@ function test_speculative_connect() {
 
   ios
     .QueryInterface(Ci.nsISpeculativeConnect)
-    .speculativeConnect(URI, principal, null);
+    .speculativeConnect(URI, principal, null, false);
 }
 
 

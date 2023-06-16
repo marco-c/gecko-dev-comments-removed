@@ -28,13 +28,11 @@ interface nsISpeculativeConnect : nsISupports
 
 
 
+
     void speculativeConnect(in nsIURI aURI,
                             in nsIPrincipal aPrincipal,
-                            in nsIInterfaceRequestor aCallbacks);
-
-    void speculativeAnonymousConnect(in nsIURI aURI,
-                                     in nsIPrincipal aPrincipal,
-                                     in nsIInterfaceRequestor aCallbacks);
+                            in nsIInterfaceRequestor aCallbacks,
+                            in boolean aAnonymous);
 };
 
 
