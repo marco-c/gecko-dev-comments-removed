@@ -356,7 +356,6 @@ const AVAILABLE_INJECTIONS = [
     bug: "1724764",
     contentScripts: {
       matches: [
-        "*://*.amextravel.com/*", 
         "*://*.edupage.org/*", 
       ],
       js: [
@@ -692,20 +691,6 @@ const AVAILABLE_INJECTIONS = [
     },
   },
   {
-    id: "bug1803976",
-    platform: "desktop",
-    domain: "www.youtube.com",
-    bug: "1803976",
-    contentScripts: {
-      matches: ["*://www.youtube.com/*"],
-      js: [
-        {
-          file: "injections/js/bug1803976-www.youtube.com-performance-now-precision.js",
-        },
-      ],
-    },
-  },
-  {
     id: "bug1448747",
     platform: "android",
     domain: "FastClick breakage",
@@ -721,7 +706,6 @@ const AVAILABLE_INJECTIONS = [
         "*://bathpublishing.com/*", 
         "*://dylantalkstone.com/*", 
         "*://renewd.com.au/*", 
-        "*://gofreeconcepts.de/*", 
         "*://*.lamudi.co.id/*", 
         "*://*.thehawksmoor.com/*", 
         "*://weaversofireland.com/*", 
@@ -746,7 +730,6 @@ const AVAILABLE_INJECTIONS = [
     contentScripts: {
       matches: [
         "*://*.chatiw.com/*", 
-        "*://*.marksandspencer.com/*", 
         "*://*.wellcare.com/*", 
       ],
       js: [
@@ -808,20 +791,6 @@ const AVAILABLE_INJECTIONS = [
       js: [
         {
           file: "injections/js/bug1819678-free4talk.com-window-chrome-shim.js",
-        },
-      ],
-    },
-  },
-  {
-    id: "bug1827678-85474",
-    platform: "desktop",
-    domain: "elal.com",
-    bug: "1827678",
-    contentScripts: {
-      matches: ["*://*.elal.com/*"],
-      css: [
-        {
-          file: "injections/css/bug1819678-elal.com-unsupported-banner.css",
         },
       ],
     },
@@ -1010,6 +979,65 @@ const AVAILABLE_INJECTIONS = [
           file: "injections/js/bug1831007-nintendo-window-OnetrustActiveGroups.js",
         },
       ],
+    },
+  },
+  {
+    id: "bug1836157",
+    platform: "android",
+    domain: "thai-masszazs.net",
+    bug: "1836157",
+    contentScripts: {
+      matches: ["*://www.thai-masszazs.net/en/*"],
+      js: [
+        {
+          file: "injections/js/bug1836157-thai-masszazs-niceScroll-disable.js",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1836103",
+    platform: "all",
+    domain: "autostar-novoross.ru",
+    bug: "1836103",
+    contentScripts: {
+      matches: ["*://autostar-novoross.ru/*"],
+      css: [
+        {
+          file: "injections/css/bug1836103-autostar-novoross.ru-make-map-taller.css",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1836105",
+    platform: "all",
+    domain: "cnn.com",
+    bug: "1836105",
+    contentScripts: {
+      matches: ["*://*.cnn.com/*"],
+      css: [
+        {
+          file: "injections/css/bug1836105-cnn.com-fix-blank-pages-when-printing.css",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1836177",
+    platform: "desktop",
+    domain: "clalit.co.il",
+    bug: "1836177",
+    contentScripts: {
+      matches: [
+        "*://e-services.clalit.co.il/OnlineWeb/General/InfoFullLogin.aspx*",
+      ],
+      css: [
+        {
+          file: "injections/css/bug1836177-clalit.co.il-hide-number-input-spinners.css",
+        },
+      ],
+      allFrames: true,
     },
   },
 ];
