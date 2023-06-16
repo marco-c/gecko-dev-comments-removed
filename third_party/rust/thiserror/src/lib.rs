@@ -228,6 +228,7 @@
 
 
 
+#![doc(html_root_url = "https://docs.rs/thiserror/1.0.40")]
 #![allow(
     
     clippy::doc_markdown,
