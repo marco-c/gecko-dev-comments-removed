@@ -2211,9 +2211,9 @@ bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification,
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(
-    CallerType aCallerType, nsIGlobalObject* aGlobalObject,
-    RFPTarget aTarget ) {
+bool nsContentUtils::ShouldResistFingerprinting(CallerType aCallerType,
+                                                nsIGlobalObject* aGlobalObject,
+                                                RFPTarget aTarget) {
   if (aCallerType == CallerType::System) {
     return false;
   }
@@ -2322,7 +2322,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
 
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     nsIURI* aURI, const mozilla::OriginAttributes& aOriginAttributes,
-    const char* aJustification, RFPTarget aTarget ) {
+    const char* aJustification, RFPTarget aTarget) {
   
   
   if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
@@ -2393,8 +2393,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo,
 
 
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
-    nsIPrincipal* aPrincipal, const char* aJustification,
-    RFPTarget aTarget ) {
+    nsIPrincipal* aPrincipal, const char* aJustification, RFPTarget aTarget) {
   if (!aPrincipal) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* "
