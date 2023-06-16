@@ -15,7 +15,7 @@ add_task(async function noAutofillWhenCaretNotAtEnd() {
   ]);
 
   
-  gURLBar.inputField.value = "xample";
+  gURLBar.value = "xample";
 
   
   gURLBar.selectionStart = 0;
