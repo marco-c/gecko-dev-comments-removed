@@ -35,6 +35,7 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   
   
+  
   void ClaimPageFrameFromPrevInFlow();
 
   
@@ -58,6 +59,8 @@ class PrintedSheetFrame final : public nsContainerFrame {
   nscoord GetGridCellWidth() const { return mGridCellWidth; }
   nscoord GetGridCellHeight() const { return mGridCellHeight; }
 
+  nsSize ComputeSheetSize(const nsPresContext* aPresContext);
+
   
 
 
@@ -71,8 +74,7 @@ class PrintedSheetFrame final : public nsContainerFrame {
 
 
 
-  nsSize PrecomputeSheetSize(const nsPresContext* aPresContext);
-  nsSize GetPrecomputedSheetSize() const { return mPrecomputedSize; }
+  nsSize GetSizeForChildren() const { return mSizeForChildren; }
 
   
 
@@ -110,7 +112,8 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   void ComputePagesPerSheetGridMetrics(const nsSize& aSheetSize);
 
-  nsSize mPrecomputedSize;
+  
+  nsSize mSizeForChildren;
 
   
   
