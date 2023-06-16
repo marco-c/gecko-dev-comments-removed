@@ -60,6 +60,10 @@
 #include "sslexp.h"
 #include "sslproto.h"
 
+#if defined(__arm__)
+#  include "mozilla/arm.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::psm;
 using namespace mozilla::ipc;
@@ -1461,31 +1465,33 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
-#if defined(__arm__) && not defined(__ARM_FEATURE_CRYPTO)
-  unsigned int enabledCiphers = 0;
-  std::vector<uint16_t> ciphers(SSL_GetNumImplementedCiphers());
+#if defined(__arm__)
+  if (!mozilla::supports_arm_aes()) {
+    unsigned int enabledCiphers = 0;
+    std::vector<uint16_t> ciphers(SSL_GetNumImplementedCiphers());
 
-  
-  
-  
-  if (SSL_CipherSuiteOrderGet(fd, ciphers.data(), &enabledCiphers) !=
-      SECSuccess) {
-    return NS_ERROR_FAILURE;
-  }
+    
+    
+    
+    if (SSL_CipherSuiteOrderGet(fd, ciphers.data(), &enabledCiphers) !=
+        SECSuccess) {
+      return NS_ERROR_FAILURE;
+    }
 
-  
-  
-  
-  
-  
-  if (enabledCiphers > 1) {
-    if (ciphers[0] != TLS_CHACHA20_POLY1305_SHA256 &&
-        ciphers[1] == TLS_CHACHA20_POLY1305_SHA256) {
-      std::swap(ciphers[0], ciphers[1]);
+    
+    
+    
+    
+    
+    if (enabledCiphers > 1) {
+      if (ciphers[0] != TLS_CHACHA20_POLY1305_SHA256 &&
+          ciphers[1] == TLS_CHACHA20_POLY1305_SHA256) {
+        std::swap(ciphers[0], ciphers[1]);
 
-      if (SSL_CipherSuiteOrderSet(fd, ciphers.data(), enabledCiphers) !=
-          SECSuccess) {
-        return NS_ERROR_FAILURE;
+        if (SSL_CipherSuiteOrderSet(fd, ciphers.data(), enabledCiphers) !=
+            SECSuccess) {
+          return NS_ERROR_FAILURE;
+        }
       }
     }
   }
