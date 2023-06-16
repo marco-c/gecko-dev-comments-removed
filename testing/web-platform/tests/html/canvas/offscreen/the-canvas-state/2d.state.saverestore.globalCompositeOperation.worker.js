@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.globalCompositeOperation;
+  ctx.save();
+  ctx.globalCompositeOperation = "copy";
+  ctx.restore();
+  _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
 
-var old = ctx.globalCompositeOperation;
-ctx.save();
-ctx.globalCompositeOperation = "copy";
-ctx.restore();
-_assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
-
-
-ctx.globalCompositeOperation = "copy";
-old = ctx.globalCompositeOperation;
-    
-    
-ctx.save();
-_assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.globalCompositeOperation = "copy";
+  old = ctx.globalCompositeOperation;
+      
+      
+  ctx.save();
+  _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
+  ctx.restore();
+  t.done();
 });
 done();

@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.miterLimit;
+  ctx.save();
+  ctx.miterLimit = 0.5;
+  ctx.restore();
+  _assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
 
-var old = ctx.miterLimit;
-ctx.save();
-ctx.miterLimit = 0.5;
-ctx.restore();
-_assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
-
-
-ctx.miterLimit = 0.5;
-old = ctx.miterLimit;
-    
-    
-ctx.save();
-_assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.miterLimit = 0.5;
+  old = ctx.miterLimit;
+      
+      
+  ctx.save();
+  _assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
+  ctx.restore();
+  t.done();
 });
 done();

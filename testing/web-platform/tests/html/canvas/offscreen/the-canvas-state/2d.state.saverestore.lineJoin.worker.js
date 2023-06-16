@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.lineJoin;
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.restore();
+  _assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
 
-var old = ctx.lineJoin;
-ctx.save();
-ctx.lineJoin = "round";
-ctx.restore();
-_assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
-
-
-ctx.lineJoin = "round";
-old = ctx.lineJoin;
-    
-    
-ctx.save();
-_assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.lineJoin = "round";
+  old = ctx.lineJoin;
+      
+      
+  ctx.save();
+  _assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
+  ctx.restore();
+  t.done();
 });
 done();

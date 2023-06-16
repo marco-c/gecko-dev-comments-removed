@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.globalAlpha;
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.restore();
+  _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
 
-var old = ctx.globalAlpha;
-ctx.save();
-ctx.globalAlpha = 0.5;
-ctx.restore();
-_assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
-
-
-ctx.globalAlpha = 0.5;
-old = ctx.globalAlpha;
-    
-    
-ctx.save();
-_assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.globalAlpha = 0.5;
+  old = ctx.globalAlpha;
+      
+      
+  ctx.save();
+  _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
+  ctx.restore();
+  t.done();
 });
 done();

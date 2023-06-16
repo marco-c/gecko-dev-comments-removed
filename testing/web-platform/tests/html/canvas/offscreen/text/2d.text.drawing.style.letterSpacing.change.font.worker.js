@@ -13,30 +13,29 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
-_assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
-_assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
+  _assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
+  _assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
+  
+  var width_normal = ctx.measureText('Hello World').width;
 
-var width_normal = ctx.measureText('Hello World').width;
+  ctx.letterSpacing = '1em';
+  _assertSame(ctx.letterSpacing, '1em', "ctx.letterSpacing", "'1em'");
+  
+  
+  var width_with_spacing = ctx.measureText('Hello World').width;
+  _assertSame(width_with_spacing, width_normal + 110, "width_with_spacing", "width_normal + 110");
 
-ctx.letterSpacing = '1em';
-_assertSame(ctx.letterSpacing, '1em', "ctx.letterSpacing", "'1em'");
-
-
-var width_with_spacing = ctx.measureText('Hello World').width;
-_assertSame(width_with_spacing, width_normal + 110, "width_with_spacing", "width_normal + 110");
-
-
-
-ctx.font = '20px serif';
-width_with_spacing = ctx.measureText('Hello World').width;
-
-ctx.letterSpacing = '0em';
-width_normal = ctx.measureText('Hello World').width;
-_assertSame(width_with_spacing, width_normal + 220, "width_with_spacing", "width_normal + 220");
-t.done();
-
+  
+  
+  ctx.font = '20px serif';
+  width_with_spacing = ctx.measureText('Hello World').width;
+  
+  ctx.letterSpacing = '0em';
+  width_normal = ctx.measureText('Hello World').width;
+  _assertSame(width_with_spacing, width_normal + 220, "width_with_spacing", "width_normal + 220");
+  t.done();
 });
 done();

@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.lineCap;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.restore();
+  _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
 
-var old = ctx.lineCap;
-ctx.save();
-ctx.lineCap = "round";
-ctx.restore();
-_assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
-
-
-ctx.lineCap = "round";
-old = ctx.lineCap;
-    
-    
-ctx.save();
-_assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.lineCap = "round";
+  old = ctx.lineCap;
+      
+      
+  ctx.save();
+  _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
+  ctx.restore();
+  t.done();
 });
 done();

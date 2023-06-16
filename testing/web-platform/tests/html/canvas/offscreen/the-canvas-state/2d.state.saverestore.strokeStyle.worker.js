@@ -13,25 +13,24 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
+  
+  var old = ctx.strokeStyle;
+  ctx.save();
+  ctx.strokeStyle = "#ff0000";
+  ctx.restore();
+  _assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
 
-var old = ctx.strokeStyle;
-ctx.save();
-ctx.strokeStyle = "#ff0000";
-ctx.restore();
-_assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
-
-
-ctx.strokeStyle = "#ff0000";
-old = ctx.strokeStyle;
-    
-    
-ctx.save();
-_assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
-ctx.restore();
-t.done();
-
+  
+  ctx.strokeStyle = "#ff0000";
+  old = ctx.strokeStyle;
+      
+      
+  ctx.save();
+  _assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
+  ctx.restore();
+  t.done();
 });
 done();

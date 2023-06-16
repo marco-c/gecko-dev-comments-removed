@@ -13,37 +13,36 @@ var t_fail = t.step_func(function(reason) {
 });
 t.step(function() {
 
-var canvas = new OffscreenCanvas(100, 50);
-var ctx = canvas.getContext('2d');
+  var canvas = new OffscreenCanvas(100, 50);
+  var ctx = canvas.getContext('2d');
 
-_assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
-_assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
-var width_normal = ctx.measureText('Hello World, again').width;
-
-function test_word_spacing(value, difference_spacing, epsilon) {
-  ctx.wordSpacing = value;
   _assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
-  _assertSame(ctx.wordSpacing, value, "ctx.wordSpacing", "value");
-  width_with_word_spacing = ctx.measureText('Hello World, again').width;
-  assert_approx_equals(width_with_word_spacing, width_normal + difference_spacing, epsilon, "word spacing doesn't work.");
-}
+  _assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
+  var width_normal = ctx.measureText('Hello World, again').width;
 
+  function test_word_spacing(value, difference_spacing, epsilon) {
+    ctx.wordSpacing = value;
+    _assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
+    _assertSame(ctx.wordSpacing, value, "ctx.wordSpacing", "value");
+    width_with_word_spacing = ctx.measureText('Hello World, again').width;
+    assert_approx_equals(width_with_word_spacing, width_normal + difference_spacing, epsilon, "word spacing doesn't work.");
+  }
 
+  
+  
+  
+  
+  
+  test_cases = [['3px', 6, 0.1],
+                ['5px', 10, 0.1],
+                ['-2px', -4, 0.1],
+                ['1in', 192, 0.1],
+                ['-0.1cm', -7.57, 0.2],
+                ['-0.6mm', -4.54, 0.2]]
 
-
-
-
-test_cases = [['3px', 6, 0.1],
-              ['5px', 10, 0.1],
-              ['-2px', -4, 0.1],
-              ['1in', 192, 0.1],
-              ['-0.1cm', -7.57, 0.2],
-              ['-0.6mm', -4.54, 0.2]]
-
-for (const test_case of test_cases) {
-  test_word_spacing(test_case[0], test_case[1], test_case[2]);
-}
-t.done();
-
+  for (const test_case of test_cases) {
+    test_word_spacing(test_case[0], test_case[1], test_case[2]);
+  }
+  t.done();
 });
 done();
