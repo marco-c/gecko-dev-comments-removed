@@ -662,9 +662,20 @@ async function runActualTest(uri, testFunction, expectedResults, extraData) {
         );
       }
 
+      
+      
+      
+      
+      let filterExtraData = function (x) {
+        let banned_keys = ["noopener", "await_uri"];
+        return Object.fromEntries(
+          Object.entries(x).filter(([k, v]) => !banned_keys.includes(k))
+        );
+      };
+
       let result = await SpecialPowers.spawn(
         browser,
-        [IFRAME_DOMAIN, CROSS_ORIGIN_DOMAIN, extraData],
+        [IFRAME_DOMAIN, CROSS_ORIGIN_DOMAIN, filterExtraData(extraData)],
         async function (iframe_domain_, cross_origin_domain_, extraData_) {
           return content.wrappedJSObject.runTheTest(
             iframe_domain_,
