@@ -10,6 +10,8 @@
 
 #import <XCTest/XCTest.h>
 
+#include <stdlib.h>
+
 #if defined(WEBRTC_IOS)
 #import "sdk/objc/native/api/audio_device_module.h"
 #endif
@@ -126,6 +128,7 @@ static const NSUInteger kFullDuplexTimeInSec = 10;
 static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 @interface RTCAudioDeviceModuleTests : XCTestCase {
+  bool _testEnabled;
   rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceModule;
   MockAudioTransport mock;
 }
@@ -142,6 +145,17 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 - (void)setUp {
   [super setUp];
+#if defined(WEBRTC_IOS) && TARGET_OS_SIMULATOR
+  
+  
+  _testEnabled = false;
+  if (::getenv("WEBRTC_IOS_RUN_AUDIO_TESTS") != nullptr) {
+    _testEnabled = true;
+  }
+#else
+  _testEnabled = true;
+#endif
+
   audioDeviceModule = webrtc::CreateAudioDeviceModule();
   XCTAssertEqual(0, audioDeviceModule->Init());
   XCTAssertEqual(0, audioDeviceModule->GetPlayoutAudioParameters(&playoutParameters));
@@ -192,10 +206,12 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 #pragma mark - Tests
 
 - (void)testConstructDestruct {
+  XCTSkipIf(!_testEnabled);
   
 }
 
 - (void)testInitTerminate {
+  XCTSkipIf(!_testEnabled);
   
   XCTAssertTrue(audioDeviceModule->Initialized());
   XCTAssertEqual(0, audioDeviceModule->Terminate());
@@ -205,6 +221,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartStopPlayout {
+  XCTSkipIf(!_testEnabled);
   [self startPlayout];
   [self stopPlayout];
   [self startPlayout];
@@ -214,6 +231,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartStopRecording {
+  XCTSkipIf(!_testEnabled);
   [self startRecording];
   [self stopRecording];
   [self startRecording];
@@ -224,6 +242,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStopPlayoutRequiresInitToRestart {
+  XCTSkipIf(!_testEnabled);
   XCTAssertEqual(0, audioDeviceModule->InitPlayout());
   XCTAssertEqual(0, audioDeviceModule->StartPlayout());
   XCTAssertEqual(0, audioDeviceModule->StopPlayout());
@@ -236,6 +255,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartPlayoutOnTwoInstances {
+  XCTSkipIf(!_testEnabled);
   
   
   rtc::scoped_refptr<webrtc::AudioDeviceModule> secondAudioDeviceModule =
@@ -319,7 +339,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartPlayoutVerifyCallbacks {
-
+  XCTSkipIf(!_testEnabled);
   XCTestExpectation *playoutExpectation = [self expectationWithDescription:@"NeedMorePlayoutData"];
   __block int num_callbacks = 0;
   mock.expectNeedMorePlayData(^int32_t(const size_t nSamples,
@@ -352,6 +372,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartRecordingVerifyCallbacks {
+  XCTSkipIf(!_testEnabled);
   XCTestExpectation *recordExpectation =
   [self expectationWithDescription:@"RecordedDataIsAvailable"];
   __block int num_callbacks = 0;
@@ -390,6 +411,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testStartPlayoutAndRecordingVerifyCallbacks {
+  XCTSkipIf(!_testEnabled);
   XCTestExpectation *playoutExpectation = [self expectationWithDescription:@"NeedMorePlayoutData"];
   __block NSUInteger callbackCount = 0;
 
@@ -453,6 +475,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testRunPlayoutWithFileAsSource {
+  XCTSkipIf(!_testEnabled);
   XCTAssertEqual(1u, playoutParameters.channels());
 
   
@@ -488,6 +511,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 }
 
 - (void)testDevices {
+  XCTSkipIf(!_testEnabled);
   
   XCTAssertEqual(1, audioDeviceModule->PlayoutDevices());
   XCTAssertEqual(1, audioDeviceModule->RecordingDevices());
@@ -507,6 +531,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 
 - (void)testRunPlayoutAndRecordingInFullDuplex {
+  XCTSkipIf(!_testEnabled);
   XCTAssertEqual(recordParameters.channels(), playoutParameters.channels());
   XCTAssertEqual(recordParameters.sample_rate(), playoutParameters.sample_rate());
 
