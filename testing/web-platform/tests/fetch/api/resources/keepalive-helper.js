@@ -6,14 +6,30 @@
 
 
 
-function getKeepAliveIframeUrl(token, method, sendOnPagehide = false) {
+
+
+
+
+
+
+
+function getKeepAliveIframeUrl(token, method, {
+  frameOrigin = 'DEFAULT',
+  requestOrigin = '',
+  sendOn = 'load',
+  mode = 'cors',
+  disallowOrigin = false
+} = {}) {
   const https = location.protocol.startsWith('https');
-  const frameOrigin =
-      get_host_info()[https ? 'HTTPS_NOTSAMESITE_ORIGIN' : 'HTTP_NOTSAMESITE_ORIGIN'];
+  frameOrigin = frameOrigin === 'DEFAULT' ?
+      get_host_info()[https ? 'HTTPS_NOTSAMESITE_ORIGIN' : 'HTTP_NOTSAMESITE_ORIGIN'] :
+      frameOrigin;
   return `${frameOrigin}/fetch/api/resources/keepalive-iframe.html?` +
       `token=${token}&` +
       `method=${method}&` +
-      `sendOnPagehide=${sendOnPagehide}`;
+      `sendOn=${sendOn}&` +
+      `mode=${mode}&` + (disallowOrigin ? `disallowOrigin=1&` : ``) +
+      `origin=${requestOrigin}`;
 }
 
 
