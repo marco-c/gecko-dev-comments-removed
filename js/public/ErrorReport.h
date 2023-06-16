@@ -112,7 +112,7 @@ class JSErrorBase {
 
  public:
   
-  const char* filename;
+  JS::ConstUTF8CharsZ filename;
 
   
   unsigned sourceId;
