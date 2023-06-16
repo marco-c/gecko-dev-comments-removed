@@ -95,11 +95,6 @@ class nsUserIdleServiceDaily : public nsIObserver,
   
 
 
-  bool mShutdownInProgress;
-
-  
-
-
 
   PRTime mExpectedTriggerTime;
 
@@ -139,6 +134,9 @@ class nsUserIdleService : public nsIUserIdleServiceInternal {
 
 
   virtual bool PollIdleTime(uint32_t* aIdleTime);
+
+ public:
+  void SetDisabledForShutdown();
 
  private:
   
