@@ -307,7 +307,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
 
   static JSObject* ReadFullySerializableObjects(
-      JSContext* aCx, JSStructuredCloneReader* aReader, uint32_t aTag);
+      JSContext* aCx, JSStructuredCloneReader* aReader, uint32_t aTag,
+      bool aIsForIndexedDB);
 
   static bool WriteFullySerializableObjects(JSContext* aCx,
                                             JSStructuredCloneWriter* aWriter,
