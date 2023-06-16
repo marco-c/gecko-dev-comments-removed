@@ -107,7 +107,7 @@ struct UpdateServerThreadArgs {
 #  define stat64 stat
 #endif
 
-#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && defined(MAR_NSS)
 #  include "nss.h"
 #  include "prerror.h"
 #endif
@@ -2892,9 +2892,7 @@ int NS_main(int argc, NS_tchar** argv) {
   if (!isDMGInstall) {
     
 
-#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
-    
-    
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && defined(MAR_NSS)
     
     
     if (NSS_NoDB_Init(nullptr) != SECSuccess) {
