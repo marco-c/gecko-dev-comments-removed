@@ -208,17 +208,6 @@ class MotionPathUtils final {
 
 
 
-
-
-
-
-
-  static StyleSVGPathData NormalizeSVGPathData(const StyleSVGPathData& aPath);
-
-  
-
-
-
   static already_AddRefed<gfx::Path> BuildPath(const StyleSVGPathData& aPath,
                                                gfx::PathBuilder* aPathBuilder);
 

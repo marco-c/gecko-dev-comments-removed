@@ -77,7 +77,10 @@ struct AnimationValue {
   const mozilla::StyleRotate& GetRotateProperty() const;
 
   
-  const mozilla::StyleOffsetPath& GetOffsetPathProperty() const;
+  
+  
+  
+  void GetOffsetPathProperty(StyleOffsetPath& aOffsetPath) const;
   const mozilla::LengthPercentage& GetOffsetDistanceProperty() const;
   const mozilla::StyleOffsetRotate& GetOffsetRotateProperty() const;
   const mozilla::StylePositionOrAuto& GetOffsetAnchorProperty() const;

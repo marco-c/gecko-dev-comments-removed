@@ -20,9 +20,11 @@
 #include "mozilla/layers/APZSampler.h"        
 #include "mozilla/layers/CompositorThread.h"  
 #include "mozilla/LayerAnimationInfo.h"       
+#include "mozilla/Maybe.h"                    
 #include "mozilla/MotionPathUtils.h"          
 #include "mozilla/ServoBindings.h"  
 #include "mozilla/StyleAnimationValue.h"  
+#include "nsCSSPropertyID.h"              
 #include "nsDeviceContext.h"              
 #include "nsDisplayList.h"                
 
@@ -498,8 +500,8 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
                    "Fixed offset-path should have base style");
         MOZ_ASSERT(HasTransformLikeAnimations(aAnimations));
 
-        AnimationValue value{currData->mBaseStyle};
-        const StyleOffsetPath& offsetPath = value.GetOffsetPathProperty();
+        const StyleOffsetPath& offsetPath =
+            animation.baseStyle().get_StyleOffsetPath();
         
         if (offsetPath.IsOffsetPath() &&
             offsetPath.AsOffsetPath().path->IsShape() &&
@@ -618,7 +620,7 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
   const StyleRotate* rotate = nullptr;
   const StyleScale* scale = nullptr;
   const StyleTransform* transform = nullptr;
-  const StyleOffsetPath* path = nullptr;
+  Maybe<StyleOffsetPath> path;
   const StyleLengthPercentage* distance = nullptr;
   const StyleOffsetRotate* offsetRotate = nullptr;
   const StylePositionOrAuto* anchor = nullptr;
@@ -646,7 +648,8 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
         break;
       case eCSSProperty_offset_path:
         MOZ_ASSERT(!path);
-        path = Servo_AnimationValue_GetOffsetPath(value);
+        path.emplace(StyleOffsetPath::None());
+        Servo_AnimationValue_GetOffsetPath(value, path.ptr());
         break;
       case eCSSProperty_offset_distance:
         MOZ_ASSERT(!distance);
@@ -671,7 +674,7 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
 
   TransformReferenceBox refBox(nullptr, aTransformData.bounds());
   Maybe<ResolvedMotionPathData> motion = MotionPathUtils::ResolveMotionPath(
-      path, distance, offsetRotate, anchor, position,
+      path.ptrOr(nullptr), distance, offsetRotate, anchor, position,
       aTransformData.motionPathData(), refBox, aCachedMotionPath);
 
   
