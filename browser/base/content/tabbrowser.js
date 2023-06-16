@@ -4211,14 +4211,6 @@
       
       browser.removeAttribute("primary");
 
-      
-      for (let tab of this.tabs) {
-        if ("owner" in tab && tab.owner == aTab) {
-          
-          tab.owner = null;
-        }
-      }
-
       return true;
     },
 
