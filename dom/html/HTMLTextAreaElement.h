@@ -60,7 +60,9 @@ class HTMLTextAreaElement final : public TextControlElement,
 
   
   void SaveState() override;
-  bool RestoreState(PresState* aState) override;
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool RestoreState(PresState*) override;
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -125,9 +127,9 @@ class HTMLTextAreaElement final : public TextControlElement,
 
   void DoneAddingChildren(bool aHaveNotified) override;
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult CopyInnerTo(Element* aDest);
 
   
@@ -247,8 +249,7 @@ class HTMLTextAreaElement final : public TextControlElement,
 
 
   bool ValueEquals(const nsAString& aValue) const;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetValue(const nsAString& aValue,
-                                            ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT void SetValue(const nsAString&, ErrorResult&);
 
   uint32_t GetTextLength();
 
