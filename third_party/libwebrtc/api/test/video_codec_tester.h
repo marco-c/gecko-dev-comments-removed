@@ -106,25 +106,25 @@ class VideoCodecTester {
   
   
   virtual std::unique_ptr<VideoCodecStats> RunDecodeTest(
-      std::unique_ptr<CodedVideoSource> video_source,
-      std::unique_ptr<Decoder> decoder,
+      CodedVideoSource* video_source,
+      Decoder* decoder,
       const DecoderSettings& decoder_settings) = 0;
 
   
   
   
   virtual std::unique_ptr<VideoCodecStats> RunEncodeTest(
-      std::unique_ptr<RawVideoSource> video_source,
-      std::unique_ptr<Encoder> encoder,
+      RawVideoSource* video_source,
+      Encoder* encoder,
       const EncoderSettings& encoder_settings) = 0;
 
   
   
   
   virtual std::unique_ptr<VideoCodecStats> RunEncodeDecodeTest(
-      std::unique_ptr<RawVideoSource> video_source,
-      std::unique_ptr<Encoder> encoder,
-      std::unique_ptr<Decoder> decoder,
+      RawVideoSource* video_source,
+      Encoder* encoder,
+      Decoder* decoder,
       const EncoderSettings& encoder_settings,
       const DecoderSettings& decoder_settings) = 0;
 };
