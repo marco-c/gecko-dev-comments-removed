@@ -428,19 +428,8 @@ void StructuredCloneHolder::ReadFromBuffer(
 
 static bool CheckExposedGlobals(JSContext* aCx, nsIGlobalObject* aGlobal,
                                 uint16_t aExposedGlobals) {
-  JSObject* global = aGlobal->GetGlobalJSObject();
-
-  
-  
-  
-  
-  
-  JSObject* proto = xpc::SandboxPrototypeOrNull(aCx, global);
-  if (proto) {
-    global = proto;
-  }
-
-  if (!IsGlobalInExposureSet(aCx, global, aExposedGlobals)) {
+  if (!IsGlobalInExposureSet(aCx, aGlobal->GetGlobalJSObject(),
+                             aExposedGlobals)) {
     ErrorResult error;
     error.ThrowDataCloneError("Interface is not exposed.");
     MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
