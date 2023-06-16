@@ -295,10 +295,6 @@ var whitelist = [
   { file: "chrome://browser/content/firefoxview/fxview-tab-list.css" },
   { file: "chrome://browser/content/firefoxview/fxview-tab-list.mjs" },
   { file: "chrome://browser/content/firefoxview/fxview-tab-row.css" },
-
-  
-  
-  { file: "resource://gre/modules/NetUtil.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {

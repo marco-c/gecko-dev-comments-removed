@@ -1,6 +1,6 @@
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const {NetUtil} = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
 ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
 const {TestUtils} = ChromeUtils.importESModule("resource://testing-common/TestUtils.sys.mjs");
 
