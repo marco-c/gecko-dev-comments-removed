@@ -171,7 +171,6 @@ auto WebrtcGlobalStatsHistory::InitHistory(const nsAString& aPcId,
   if (WebrtcGlobalStatsHistory::Get().MaybeGet(aPcId)) {
     return;
   }
-
   WebrtcGlobalStatsHistory::Get().GetOrInsertNew(aPcId, nsString(aPcId),
                                                  aIsLongTermStatsDisabled);
 };
@@ -206,8 +205,6 @@ auto WebrtcGlobalStatsHistory::Record(UniquePtr<RTCStatsReportInternal> aReport)
     if (!latest || latest->report->mTimestamp < aReport->mTimestamp) {
       entry->mReports.insertBack(Entry::MakeReportElement(std::move(aReport)));
     }
-  } else {
-    WebrtcGlobalStatsHistory::GetOrCreateHistory(std::move(aReport));
   }
   
   if (closed) {
@@ -250,7 +247,18 @@ auto WebrtcGlobalStatsHistory::CloseHistory(const nsAString& aPcId) -> void {
 
 auto WebrtcGlobalStatsHistory::Clear() -> void {
   MOZ_ASSERT(XRE_IsParentProcess());
-  WebrtcGlobalStatsHistory::Get().Clear();
+  WebrtcGlobalStatsHistory::Get().RemoveIf([](auto& aIter) {
+    
+    if (aIter.Data()->mIsClosed) {
+      return true;
+    }
+    
+    aIter.Data()->mReports.clear();
+    
+    
+    
+    return false;
+  });
 }
 
 auto WebrtcGlobalStatsHistory::PcIds() -> dom::Sequence<nsString> {
@@ -270,21 +278,5 @@ auto WebrtcGlobalStatsHistory::GetHistory(const nsAString& aPcId)
   const auto pcid = NS_ConvertUTF16toUTF8(aPcId);
 
   return WebrtcGlobalStatsHistory::Get().MaybeGet(aPcId);
-}
-
-auto WebrtcGlobalStatsHistory::GetOrCreateHistory(
-    UniquePtr<RTCStatsReportInternal> aReport) -> RefPtr<Entry> {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  return WebrtcGlobalStatsHistory::Get().LookupOrInsertWith(
-      aReport->mPcid, [&]() {
-        auto entry = MakeRefPtr<Entry>(nsString(aReport->mPcid), false);
-        
-        entry->mSdp.extendBack(Entry::MakeSdpElementsSince(
-            std::move(aReport->mSdpHistory), Nothing()));
-        
-        entry->mReports.insertBack(
-            Entry::MakeReportElement(std::move(aReport)));
-        return entry;
-      });
 }
 }  
