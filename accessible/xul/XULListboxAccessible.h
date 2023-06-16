@@ -7,8 +7,7 @@
 #define mozilla_a11y_XULListboxAccessible_h__
 
 #include "BaseAccessibles.h"
-#include "TableAccessible.h"
-#include "TableCellAccessible.h"
+#include "mozilla/a11y/TableAccessibleBase.h"
 #include "XULMenuAccessible.h"
 #include "XULSelectControlAccessible.h"
 
@@ -51,7 +50,7 @@ class XULColumnItemAccessible : public LeafAccessible {
 
 
 class XULListboxAccessible : public XULSelectControlAccessible,
-                             public TableAccessible {
+                             public TableAccessibleBase {
  public:
   XULListboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -73,7 +72,7 @@ class XULListboxAccessible : public XULSelectControlAccessible,
   virtual LocalAccessible* AsAccessible() override { return this; }
 
   
-  virtual TableAccessible* AsTable() override { return this; }
+  virtual TableAccessibleBase* AsTableBase() override { return this; }
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
 
