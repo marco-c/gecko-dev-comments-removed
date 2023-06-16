@@ -1610,7 +1610,8 @@ bool nsGlobalWindowInner::IsBlackForCC(bool aTracingNeeded) {
 
 
 
-bool nsGlobalWindowInner::ShouldResistFingerprinting(RFPTarget aTarget) const {
+bool nsGlobalWindowInner::ShouldResistFingerprinting(
+    RFPTarget aTarget ) const {
   if (mDoc) {
     return mDoc->ShouldResistFingerprinting(aTarget);
   }
@@ -4974,8 +4975,8 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   if (mDoc) {
     cookieJarSettings = mDoc->CookieJarSettings();
   } else {
-    cookieJarSettings = net::CookieJarSettings::GetBlockingAll(
-        ShouldResistFingerprinting(RFPTarget::IsAlwaysEnabledForPrecompute));
+    cookieJarSettings =
+        net::CookieJarSettings::GetBlockingAll(ShouldResistFingerprinting());
   }
 
   
@@ -6884,7 +6885,7 @@ void nsGlobalWindowInner::GetGamepads(nsTArray<RefPtr<Gamepad>>& aGamepads) {
 
   
   
-  if (ShouldResistFingerprinting(RFPTarget::Gamepad)) {
+  if (ShouldResistFingerprinting()) {
     return;
   }
 

@@ -2240,8 +2240,8 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell,
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
-                                                RFPTarget aTarget) {
+bool nsContentUtils::ShouldResistFingerprinting(
+    nsIChannel* aChannel, RFPTarget aTarget ) {
   if (!aChannel) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
@@ -2364,8 +2364,8 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo,
-                                                RFPTarget aTarget) {
+bool nsContentUtils::ShouldResistFingerprinting(
+    nsILoadInfo* aLoadInfo, RFPTarget aTarget ) {
   MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() !=
                  ExtContentPolicy::TYPE_DOCUMENT &&
              aLoadInfo->GetExternalContentPolicyType() !=
