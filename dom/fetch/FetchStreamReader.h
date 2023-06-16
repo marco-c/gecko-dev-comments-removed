@@ -77,6 +77,15 @@ class FetchStreamReader final : public nsIOutputStreamCallback {
   nsCOMPtr<nsIAsyncOutputStream> mPipeOut;
 
   RefPtr<StrongWorkerRef> mWorkerRef;
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
 
   RefPtr<ReadableStreamDefaultReader> mReader;
