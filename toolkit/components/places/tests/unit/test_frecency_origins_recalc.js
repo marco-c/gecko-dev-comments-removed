@@ -11,7 +11,8 @@ add_task(async function test() {
   
   
   const now = new Date();
-  const url = "https://mozilla.org/test/";
+  const host = "mozilla.org";
+  const url = `https://${host}/test/`;
   await PlacesTestUtils.addVisits([
     {
       url,
@@ -22,41 +23,93 @@ add_task(async function test() {
       visitDate: new Date(new Date().setDate(now.getDate() - 30)),
     },
   ]);
-  
-  let db = await PlacesUtils.promiseDBConnection();
   Assert.equal(
-    (
-      await db.execute(`SELECT recalc_frecency FROM moz_origins`)
-    )[0].getResultByIndex(0),
+    await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
+      host,
+    }),
     0,
     "Should have been calculated already"
   );
   Assert.equal(
-    (
-      await db.execute(`SELECT recalc_alt_frecency FROM moz_origins`)
-    )[0].getResultByIndex(0),
+    await PlacesTestUtils.getDatabaseValue(
+      "moz_origins",
+      "recalc_alt_frecency",
+      {
+        host,
+      }
+    ),
     1,
-    "Should not have been calculated"
+    "Should have been calculated already"
   );
-
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+  let alt_frecency = await PlacesTestUtils.getDatabaseValue(
+    "moz_origins",
+    "alt_frecency",
+    { host }
+  );
+  let frecency = await PlacesTestUtils.getDatabaseValue(
+    "moz_origins",
+    "frecency",
+    { host }
+  );
   
   await PlacesUtils.history.removeVisitsByFilter({
     beginDate: new Date(now.valueOf() - 10000),
     endDate: new Date(now.valueOf() + 10000),
   });
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   Assert.equal(
-    (
-      await db.execute(`SELECT recalc_frecency FROM moz_origins`)
-    )[0].getResultByIndex(0),
+    await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
+      host,
+    }),
     0,
-    "Should have been calculated already"
+    "Should have been calculated"
+  );
+  Assert.greater(
+    frecency,
+    await PlacesTestUtils.getDatabaseValue("moz_origins", "frecency", {
+      host,
+    }),
+    "frecency should have decreased"
   );
   Assert.equal(
-    (
-      await db.execute(`SELECT recalc_alt_frecency FROM moz_origins`)
-    )[0].getResultByIndex(0),
-    1,
-    "Should not have been calculated yet"
+    await PlacesTestUtils.getDatabaseValue(
+      "moz_origins",
+      "recalc_alt_frecency",
+      { host }
+    ),
+    0,
+    "Should have been calculated"
   );
+  Assert.greater(
+    alt_frecency,
+    await PlacesTestUtils.getDatabaseValue("moz_origins", "alt_frecency", {
+      host,
+    }),
+    "alternative frecency should have decreased"
+  );
+
   
+  const url2 = `https://${host}/second/`;
+  await PlacesTestUtils.addVisits(url2);
+  
+  await PlacesUtils.history.remove(url);
+  
+  
+  Assert.equal(
+    await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
+      host,
+    }),
+    0,
+    "Should have been recalculated"
+  );
+  Assert.equal(
+    await PlacesTestUtils.getDatabaseValue(
+      "moz_origins",
+      "recalc_alt_frecency",
+      { host }
+    ),
+    1,
+    "Should request recalculation"
+  );
 });

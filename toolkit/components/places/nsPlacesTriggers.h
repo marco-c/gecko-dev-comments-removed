@@ -139,38 +139,43 @@
 )
 
 
-#  define CREATE_PLACES_AFTERDELETE_TRIGGER                         \
-    nsLiteralCString(                                               \
-        "CREATE TEMP TRIGGER moz_places_afterdelete_trigger "       \
-        "AFTER DELETE ON moz_places FOR EACH ROW "                  \
-        "BEGIN "                                                    \
-        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "  \
-        "frecency_delta) "                                          \
-        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), " \
-        "-MAX(OLD.frecency, 0)) "                                   \
-        "ON CONFLICT(prefix, host) DO UPDATE "                      \
-        "SET frecency_delta = frecency_delta - OLD.frecency "       \
-        "WHERE OLD.frecency > 0; "                                  \
+#  define CREATE_PLACES_AFTERDELETE_TRIGGER                                    \
+    nsLiteralCString(                                                          \
+        "CREATE TEMP TRIGGER moz_places_afterdelete_trigger "                  \
+        "AFTER DELETE ON moz_places FOR EACH ROW "                             \
+        "BEGIN "                                                               \
+        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "             \
+        "frecency_delta) "                                                     \
+        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), "            \
+        "-MAX(OLD.frecency, 0)) "                                              \
+        "ON CONFLICT(prefix, host) DO UPDATE "                                 \
+        "SET frecency_delta = frecency_delta - OLD.frecency "                  \
+        "WHERE OLD.frecency > 0; "                                             \
+        "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \
+        "WHERE id = OLD.origin_id; "                                           \
         "END ")
 
 
 
 
-#  define CREATE_PLACES_AFTERDELETE_WPREVIEWS_TRIGGER                   \
-    nsLiteralCString(                                                   \
-        "CREATE TEMP TRIGGER moz_places_afterdelete_wpreviews_trigger " \
-        "AFTER DELETE ON moz_places FOR EACH ROW "                      \
-        "BEGIN "                                                        \
-        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "      \
-        "frecency_delta) "                                              \
-        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), "     \
-        "-MAX(OLD.frecency, 0)) "                                       \
-        "ON CONFLICT(prefix, host) DO UPDATE "                          \
-        "SET frecency_delta = frecency_delta - OLD.frecency "           \
-        "WHERE OLD.frecency > 0; "                                      \
-        "INSERT OR IGNORE INTO moz_previews_tombstones VALUES "         \
-        "(md5hex(OLD.url));"                                            \
+#  define CREATE_PLACES_AFTERDELETE_WPREVIEWS_TRIGGER                          \
+    nsLiteralCString(                                                          \
+        "CREATE TEMP TRIGGER moz_places_afterdelete_wpreviews_trigger "        \
+        "AFTER DELETE ON moz_places FOR EACH ROW "                             \
+        "BEGIN "                                                               \
+        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "             \
+        "frecency_delta) "                                                     \
+        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), "            \
+        "-MAX(OLD.frecency, 0)) "                                              \
+        "ON CONFLICT(prefix, host) DO UPDATE "                                 \
+        "SET frecency_delta = frecency_delta - OLD.frecency "                  \
+        "WHERE OLD.frecency > 0; "                                             \
+        "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \
+        "WHERE id = OLD.origin_id; "                                           \
+        "INSERT OR IGNORE INTO moz_previews_tombstones VALUES "                \
+        "(md5hex(OLD.url));"                                                   \
         "END ")
+
 
 
 
@@ -203,6 +208,7 @@
     "); " \
   "END" \
 )
+
 
 
 
