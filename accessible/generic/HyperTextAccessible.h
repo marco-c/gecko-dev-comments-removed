@@ -78,7 +78,10 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  LocalAccessible* LinkAt(uint32_t aIndex) { return EmbeddedChildAt(aIndex); }
+  LocalAccessible* LinkAt(uint32_t aIndex) {
+    Accessible* child = EmbeddedChildAt(aIndex);
+    return child ? child->AsLocal() : nullptr;
+  }
 
   
   

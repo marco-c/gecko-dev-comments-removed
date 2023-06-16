@@ -348,7 +348,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual LocalAccessible* EmbeddedChildAt(uint32_t aIndex) override;
+  virtual Accessible* EmbeddedChildAt(uint32_t aIndex) override;
 
   virtual int32_t IndexOfEmbeddedChild(Accessible* aChild) override;
 
