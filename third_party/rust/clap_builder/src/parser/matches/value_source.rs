@@ -1,0 +1,17 @@
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[non_exhaustive]
+pub enum ValueSource {
+    
+    DefaultValue,
+    
+    EnvVariable,
+    
+    CommandLine,
+}
+
+impl ValueSource {
+    pub(crate) fn is_explicit(self) -> bool {
+        self != Self::DefaultValue
+    }
+}

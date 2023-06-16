@@ -1,0 +1,7 @@
+
+
+
+#![doc = include_str!("../../examples/multicall-hostname.rs")]
+
+
+#![doc = include_str!("../../examples/multicall-hostname.md")]

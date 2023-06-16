@@ -1,20 +1,19 @@
-
-
 use clap::{arg, command};
 
 fn main() {
-    let matches = command!()
+    let matches = command!() 
         .arg(
             arg!(<MODE>)
                 .help("What mode to run the program in")
-                .possible_values(["fast", "slow"]),
+                .value_parser(["fast", "slow"]),
         )
         .get_matches();
 
     
     match matches
-        .value_of("MODE")
+        .get_one::<String>("MODE")
         .expect("'MODE' is required and parsing will fail if its missing")
+        .as_str()
     {
         "fast" => {
             println!("Hare");
