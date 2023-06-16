@@ -89,7 +89,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
       nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
       nsICookieJarSettings* aCookieJarSettings,
       const nsACString& aReferrerPolicy, const nsACString& aCSPHeader,
-      uint64_t aBrowsingContextID);
+      uint64_t aBrowsingContextID, nsIInterfaceRequestor* aCallbacks);
 
   
   
@@ -133,7 +133,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
                        nsContentPolicyType aContentPolicyType,
                        nsIReferrerInfo* aReferrerInfo,
                        nsICookieJarSettings* aCookieJarSettings,
-                       uint64_t aBrowsingContextID);
+                       uint64_t aBrowsingContextID,
+                       nsIInterfaceRequestor* aCallbacks);
   void PriorizeAsPreload();
   void SetLinkHeader(const LinkHeader& aLinkHeader);
 
