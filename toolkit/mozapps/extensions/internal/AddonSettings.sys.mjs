@@ -1,17 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AddonSettings"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
@@ -25,10 +18,10 @@ const PREF_UPDATE_REQUIREBUILTINCERTS = "extensions.update.requireBuiltInCerts";
 const PREF_INSTALL_REQUIREBUILTINCERTS =
   "extensions.install.requireBuiltInCerts";
 
-var AddonSettings = {};
+export var AddonSettings = {};
 
-
-
+// Make a non-changable property that can't be manipulated from other
+// code in the app.
 function makeConstant(name, value) {
   Object.defineProperty(AddonSettings, name, {
     configurable: false,
@@ -56,11 +49,11 @@ if (AppConstants.MOZ_REQUIRE_SIGNING && !Cu.isInAutomation) {
   );
 }
 
-
-
-
-
-
+/**
+ * Require the use of certs shipped with Firefox for
+ * addon install and update, if the distribution does
+ * not require addon signing and is not ESR.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   AddonSettings,
   "INSTALL_REQUIREBUILTINCERTS",
@@ -77,7 +70,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
     !AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")
 );
 
-
+// Whether or not we're running in GeckoView embedded in an Android app
 if (Cu.isInAutomation) {
   XPCOMUtils.defineLazyPreferenceGetter(
     AddonSettings,
@@ -89,26 +82,26 @@ if (Cu.isInAutomation) {
   makeConstant("IS_EMBEDDED", AppConstants.platform === "android");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * AddonSettings.EXPERIMENTS_ENABLED
+ *
+ * Experimental APIs are always available to privileged signed addons.
+ * This constant makes an optional preference available to enable experimental
+ * APIs for developement purposes.
+ *
+ * Two features are toggled with this preference:
+ *
+ *   1. The ability to load an extension that contains an experimental
+ *      API but is not privileged.
+ *   2. The ability to load an unsigned extension that gains privilege
+ *      if it is temporarily loaded (e.g. via about:debugging).
+ *
+ * MOZ_REQUIRE_SIGNING is set to zero in unbranded builds, we also
+ * ensure nightly, dev-ed and our test infrastructure have access to
+ * the preference.
+ *
+ * Official releases ignore this preference.
+ */
 if (
   !AppConstants.MOZ_REQUIRE_SIGNING ||
   AppConstants.NIGHTLY_BUILD ||
@@ -131,8 +124,8 @@ if (AppConstants.MOZ_DEV_EDITION) {
   makeConstant("DEFAULT_THEME_ID", "default-theme@mozilla.org");
 }
 
-
-
+// SCOPES_SIDELOAD is a bitflag for what scopes we will load new extensions from when we scan the directories.
+// If a build allows sideloading, or we're in automation, we'll also allow use of the preference.
 if (AppConstants.MOZ_ALLOW_ADDON_SIDELOAD || Cu.isInAutomation) {
   XPCOMUtils.defineLazyPreferenceGetter(
     AddonSettings,

@@ -1,15 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AddonUpdateChecker"];
+/**
+ * The AddonUpdateChecker is responsible for retrieving the update information
+ * from an add-on's remote update manifest.
+ */
 
 const TIMEOUT = 60 * 1000;
 const TOOLKIT_ID = "toolkit@mozilla.org";
@@ -41,39 +37,38 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/addons/AddonSettings.jsm"
 );
 
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+
 const LOGGER_ID = "addons.update-checker";
 
-
-
+// Create a new logger for use by the Addons Update Checker
+// (Requires AddonManager.jsm)
 var logger = Log.repository.getLogger(LOGGER_ID);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sanitizes the update URL in an update item, as returned by
+ * parseRDFManifest and parseJSONManifest. Ensures that:
+ *
+ * - The URL is secure, or secured by a strong enough hash.
+ * - The security principal of the update manifest has permission to
+ *   load the URL.
+ *
+ * @param aUpdate
+ *        The update item to sanitize.
+ * @param aRequest
+ *        The XMLHttpRequest used to load the manifest.
+ * @param aHashPattern
+ *        The regular expression used to validate the update hash.
+ * @param aHashString
+ *        The human-readable string specifying which hash functions
+ *        are accepted.
+ */
 function sanitizeUpdateURL(aUpdate, aRequest, aHashPattern, aHashString) {
   if (aUpdate.updateURL) {
     let scriptSecurity = Services.scriptSecurityManager;
     let principal = scriptSecurity.getChannelURIPrincipal(aRequest.channel);
     try {
-      
+      // This logs an error on failure, so no need to log it a second time
       scriptSecurity.checkLoadURIStrWithPrincipal(
         principal,
         aUpdate.updateURL,
@@ -99,18 +94,18 @@ function sanitizeUpdateURL(aUpdate, aRequest, aHashPattern, aHashString) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Parses an JSON update manifest into an array of update objects.
+ *
+ * @param  aId
+ *         The ID of the add-on being checked for updates
+ * @param  aRequest
+ *         The XMLHttpRequest that has retrieved the update manifest
+ * @param  aManifestData
+ *         The pre-parsed manifest, as a JSON object tree
+ * @return an array of update objects
+ * @throws if the update manifest is invalid in any way
+ */
 function parseJSONManifest(aId, aRequest, aManifestData) {
   let TYPE_CHECK = {
     array: val => Array.isArray(val),
@@ -153,20 +148,20 @@ function parseJSONManifest(aId, aRequest, aManifestData) {
     );
   }
 
-  
+  // The set of add-ons this manifest has updates for
   let addons = getRequiredProperty(manifest, "addons", "object");
 
-  
+  // The entry for this particular add-on
   let addon = getProperty(addons, aId, "object");
 
-  
-  
+  // A missing entry doesn't count as a failure, just as no avialable update
+  // information
   if (!addon) {
     logger.warn("Update manifest did not contain an entry for " + aId);
     return [];
   }
 
-  
+  // The list of available updates
   let updates = getProperty(addon, "updates", "array", []);
 
   let results = [];
@@ -180,8 +175,8 @@ function parseJSONManifest(aId, aRequest, aManifestData) {
       gecko: {},
     });
 
-    
-    
+    // "gecko" is currently the only supported application entry. If
+    // it's missing, skip this update.
     if (!("gecko" in applications)) {
       logger.debug(
         "gecko not in application entry, skipping update of ${addon}"
@@ -227,19 +222,19 @@ function parseJSONManifest(aId, aRequest, aManifestData) {
       appEntry.maxVersion = getProperty(app, "advisory_max_version", "string");
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Add an app entry for the current API ID, too, so that it overrides any
+    // existing app-specific entries, which would take priority over the toolkit
+    // entry.
+    //
+    // Note: This currently only has any effect on legacy extensions (mainly
+    // those used in tests), since WebExtensions cannot yet specify app-specific
+    // compatibility ranges.
     result.targetApplications.push(
       Object.assign({}, appEntry, { id: Services.appinfo.ID })
     );
 
-    
-    
+    // The JSON update protocol requires an SHA-2 hash. RDF still
+    // supports SHA-1, for compatibility reasons.
     sanitizeUpdateURL(result, aRequest, /^sha(256|512):/, "sha256 or sha512");
 
     results.push(result);
@@ -247,17 +242,17 @@ function parseJSONManifest(aId, aRequest, aManifestData) {
   return results;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Starts downloading an update manifest and then passes it to an appropriate
+ * parser to convert to an array of update objects
+ *
+ * @param  aId
+ *         The ID of the add-on being checked for updates
+ * @param  aUrl
+ *         The URL of the update manifest
+ * @param  aObserver
+ *         An observer to pass results to
+ */
 function UpdateParser(aId, aUrl, aObserver) {
   this.id = aId;
   this.observer = aObserver;
@@ -272,7 +267,7 @@ function UpdateParser(aId, aUrl, aObserver) {
         !lazy.AddonSettings.UPDATE_REQUIREBUILTINCERTS
       );
     this.request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-    
+    // Prevent the request from writing to cache.
     this.request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
     this.request.overrideMimeType("text/plain");
     this.request.timeout = TIMEOUT;
@@ -291,9 +286,9 @@ UpdateParser.prototype = {
   request: null,
   url: null,
 
-  
-
-
+  /**
+   * Called when the manifest has been successfully loaded.
+   */
   onLoad() {
     let request = this.request;
     this.request = null;
@@ -354,9 +349,9 @@ UpdateParser.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Called when the request times out
+   */
   onTimeout() {
     this.request = null;
     this._doneAt = new Error("Timed out");
@@ -364,9 +359,9 @@ UpdateParser.prototype = {
     this.notifyError(lazy.AddonManager.ERROR_TIMEOUT);
   },
 
-  
-
-
+  /**
+   * Called when the manifest failed to load.
+   */
   onError() {
     if (!Components.isSuccessCode(this.request.status)) {
       logger.warn("Request failed: " + this.url + " - " + this.request.status);
@@ -395,9 +390,9 @@ UpdateParser.prototype = {
     this.notifyError(lazy.AddonManager.ERROR_DOWNLOAD_ERROR);
   },
 
-  
-
-
+  /**
+   * Helper method to notify the observer that an error occurred.
+   */
   notifyError(aStatus) {
     if ("onUpdateCheckError" in this.observer) {
       try {
@@ -408,9 +403,9 @@ UpdateParser.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Called to cancel an in-progress update check.
+   */
   cancel() {
     if (!this.request) {
       logger.error("Trying to cancel already-complete request", this._doneAt);
@@ -423,21 +418,21 @@ UpdateParser.prototype = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Tests if an update matches a version of the application or platform
+ *
+ * @param  aUpdate
+ *         The available update
+ * @param  aAppVersion
+ *         The application version to use
+ * @param  aPlatformVersion
+ *         The platform version to use
+ * @param  aIgnoreMaxVersion
+ *         Ignore maxVersion when testing if an update matches. Optional.
+ * @param  aIgnoreStrictCompat
+ *         Ignore strictCompatibility when testing if an update matches. Optional.
+ * @return true if the update is compatible with the application/platform
+ */
 function matchesVersions(
   aUpdate,
   aAppVersion,
@@ -468,28 +463,28 @@ function matchesVersions(
   return result;
 }
 
-var AddonUpdateChecker = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export var AddonUpdateChecker = {
+  /**
+   * Retrieves the best matching compatibility update for the application from
+   * a list of available update objects.
+   *
+   * @param  aUpdates
+   *         An array of update objects
+   * @param  aVersion
+   *         The version of the add-on to get new compatibility information for
+   * @param  aIgnoreCompatibility
+   *         An optional parameter to get the first compatibility update that
+   *         is compatible with any version of the application or toolkit
+   * @param  aAppVersion
+   *         The version of the application or null to use the current version
+   * @param  aPlatformVersion
+   *         The version of the platform or null to use the current version
+   * @param  aIgnoreMaxVersion
+   *         Ignore maxVersion when testing if an update matches. Optional.
+   * @param  aIgnoreStrictCompat
+   *         Ignore strictCompatibility when testing if an update matches. Optional.
+   * @return an update object if one matches or null if not
+   */
   getCompatibilityUpdate(
     aUpdates,
     aVersion,
@@ -531,23 +526,23 @@ var AddonUpdateChecker = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously returns the newest available update from a list of update objects.
+   *
+   * @param  aUpdates
+   *         An array of update objects
+   * @param  aAddon
+   *         The add-on that is being updated.
+   * @param  aAppVersion
+   *         The version of the application or null to use the current version
+   * @param  aPlatformVersion
+   *         The version of the platform or null to use the current version
+   * @param  aIgnoreMaxVersion
+   *         When determining compatible updates, ignore maxVersion. Optional.
+   * @param  aIgnoreStrictCompat
+   *         When determining compatible updates, ignore strictCompatibility. Optional.
+   * @return an update object if one matches or null if not
+   */
   async getNewestCompatibleUpdate(
     aUpdates,
     aAddon,
@@ -572,7 +567,7 @@ var AddonUpdateChecker = {
         continue;
       }
       if (Services.vc.compare(newestVersion, update.version) >= 0) {
-        
+        // Update older than add-on version or older than previous result.
         continue;
       }
       if (
@@ -608,10 +603,10 @@ var AddonUpdateChecker = {
       blocked &&
       (!newest || Services.vc.compare(blocked.version, newestVersion) >= 0)
     ) {
-      
-      
-      
-      
+      // If |newest| has a higher version than |blocked|, then the add-on would
+      // not be considered for installation. But if |blocked| would otherwise
+      // be eligible for installation, then report to telemetry that installation
+      // has been blocked because of the blocklist.
       lazy.Blocklist.recordAddonBlockChangeTelemetry(
         {
           id: aAddon.id,
@@ -624,18 +619,18 @@ var AddonUpdateChecker = {
     return newest;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Starts an update check.
+   *
+   * @param  aId
+   *         The ID of the add-on being checked for updates
+   * @param  aUrl
+   *         The URL of the add-on's update manifest
+   * @param  aObserver
+   *         An observer to notify of results
+   * @return UpdateParser so that the caller can use UpdateParser.cancel() to shut
+   *         down in-progress update requests
+   */
   checkForUpdates(aId, aUrl, aObserver) {
     return new UpdateParser(aId, aUrl, aObserver);
   },

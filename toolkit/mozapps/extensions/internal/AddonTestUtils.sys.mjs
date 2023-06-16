@@ -1,32 +1,23 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["AddonTestUtils", "MockAsyncShutdown"];
+/* eslint "mozilla/no-aArgs": 1 */
+/* eslint "no-unused-vars": [2, {"args": "none", "varsIgnorePattern": "^(Cc|Ci|Cr|Cu|EXPORTED_SYMBOLS)$"}] */
+/* eslint "semi": [2, "always"] */
+/* eslint "valid-jsdoc": [2, {requireReturn: false}] */
 
 const CERTDB_CONTRACTID = "@mozilla.org/security/x509certdb;1";
 
 const { AddonManager, AddonManagerPrivate } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
-const { AsyncShutdown } = ChromeUtils.importESModule(
-  "resource://gre/modules/AsyncShutdown.sys.mjs"
-);
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
+import { AsyncShutdown } from "resource://gre/modules/AsyncShutdown.sys.mjs";
+import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
+
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { EventEmitter } = ChromeUtils.importESModule(
-  "resource://gre/modules/EventEmitter.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 
 const lazy = {};
 
@@ -111,13 +102,13 @@ class MockBarrier {
   }
 }
 
-
-
-var MockAsyncShutdown = {
+// Mock out AddonManager's reference to the AsyncShutdown module so we can shut
+// down AddonManager from the test
+export var MockAsyncShutdown = {
   profileBeforeChange: new MockBarrier("profileBeforeChange"),
   profileChangeTeardown: new MockBarrier("profileChangeTeardown"),
   quitApplicationGranted: new MockBarrier("quitApplicationGranted"),
-  
+  // We can use the real Barrier
   Barrier: AsyncShutdown.Barrier,
 };
 
@@ -203,7 +194,7 @@ class AddonsList {
   }
 }
 
-var AddonTestUtils = {
+export var AddonTestUtils = {
   addonIntegrationService: null,
   addonsList: null,
   appInfo: null,
@@ -228,7 +219,7 @@ var AddonTestUtils = {
     }
     this.testScope = testScope;
 
-    
+    // Get the profile directory for tests to use.
     this.profileDir = testScope.do_get_profile();
 
     this.profileExtensions = this.profileDir.clone();
@@ -237,13 +228,13 @@ var AddonTestUtils = {
     this.addonStartup = this.profileDir.clone();
     this.addonStartup.append("addonStartup.json.lz4");
 
-    
+    // Register a temporary directory for the tests.
     this.tempDir = this.profileDir.clone();
     this.tempDir.append("temp");
     this.tempDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
     this.registerDirectory("TmpD", this.tempDir);
 
-    
+    // Create a replacement app directory for the tests.
     const appDirForAddons = this.profileDir.clone();
     appDirForAddons.append("appdir-addons");
     appDirForAddons.create(
@@ -252,27 +243,27 @@ var AddonTestUtils = {
     );
     this.registerDirectory("XREAddonAppDir", appDirForAddons);
 
-    
+    // Enable more extensive EM logging.
     if (enableLogging) {
       Services.prefs.setBoolPref("extensions.logging.enabled", true);
     }
 
-    
+    // By default only load extensions from the profile install location
     Services.prefs.setIntPref(
       "extensions.enabledScopes",
       AddonManager.SCOPE_PROFILE
     );
 
-    
+    // By default don't disable add-ons from any scope
     Services.prefs.setIntPref("extensions.autoDisableScopes", 0);
 
-    
+    // And scan for changes at startup
     Services.prefs.setIntPref("extensions.startupScanScopes", 15);
 
-    
+    // By default, don't cache add-ons in AddonRepository.jsm
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
-    
+    // Point update checks to the local machine for fast failures
     Services.prefs.setCharPref(
       "extensions.update.url",
       "http://127.0.0.1/updateURL"
@@ -286,13 +277,13 @@ var AddonTestUtils = {
       "data:,#remote-settings-dummy/v1"
     );
 
-    
+    // By default ignore bundled add-ons
     Services.prefs.setBoolPref("extensions.installDistroAddons", false);
 
-    
+    // Ensure signature checks are enabled by default
     Services.prefs.setBoolPref("xpinstall.signatures.required", true);
 
-    
+    // Make sure that a given path does not exist
     function pathShouldntExist(file) {
       if (file.exists()) {
         throw new Error(
@@ -302,9 +293,9 @@ var AddonTestUtils = {
     }
 
     testScope.registerCleanupFunction(() => {
-      
-      
-      
+      // Force a GC to ensure that anything holding a ref to temp file releases it.
+      // XXX This shouldn't be needed here, since cleanupTempXPIs() does a GC if
+      // something fails; see bug 1761255
       this.info(`Force a GC`);
       Cu.forceGC();
 
@@ -312,8 +303,8 @@ var AddonTestUtils = {
 
       let ignoreEntries = new Set();
       {
-        
-        
+        // FileTestUtils lazily creates a directory to hold the temporary files
+        // it creates. If that directory exists, ignore it.
         let { value } = Object.getOwnPropertyDescriptor(
           lazy.FileTestUtils,
           "_globalTemporaryDirectory"
@@ -323,7 +314,7 @@ var AddonTestUtils = {
         }
       }
 
-      
+      // Check that the temporary directory is empty
       var entries = [];
       for (let { leafName } of this.iterDirectory(this.tempDir)) {
         if (!ignoreEntries.has(leafName)) {
@@ -342,16 +333,16 @@ var AddonTestUtils = {
         testScope.info(`Got exception removing addon app dir: ${ex}`);
       }
 
-      
+      // ensure no leftover files in the system addon upgrade location
       let featuresDir = this.profileDir.clone();
       featuresDir.append("features");
-      
+      // upgrade directories will be in UUID folders under features/
       for (let dir of this.iterDirectory(featuresDir)) {
         dir.append("stage");
         pathShouldntExist(dir);
       }
 
-      
+      // ensure no leftover files in the user addon location
       let testDir = this.profileDir.clone();
       testDir.append("extensions");
       testDir.append("trash");
@@ -382,7 +373,7 @@ var AddonTestUtils = {
     );
 
     testScope.registerCleanupFunction(() => {
-      
+      // Defer testScope cleanup until the last cleanup function has run.
       testScope.registerCleanupFunction(() => {
         this.testScope = null;
       });
@@ -395,14 +386,14 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Iterates over the entries in a given directory.
+   *
+   * Fails silently if the given directory does not exist.
+   *
+   * @param {nsIFile} dir
+   *        Directory to iterate.
+   */
   *iterDirectory(dir) {
     let dirEnum;
     try {
@@ -422,23 +413,23 @@ var AddonTestUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a new HttpServer for testing, and begins listening on the
+   * specified port. Automatically shuts down the server when the test
+   * unit ends.
+   *
+   * @param {object} [options = {}]
+   *        The options object.
+   * @param {integer} [options.port = -1]
+   *        The port to listen on. If omitted, listen on a random
+   *        port. The latter is the preferred behavior.
+   * @param {sequence<string>?} [options.hosts = null]
+   *        A set of hosts to accept connections to. Support for this is
+   *        implemented using a proxy filter.
+   *
+   * @returns {HttpServer}
+   *        The HTTP server instance.
+   */
   createHttpServer(...args) {
     lazy.XPCShellContentUtils.ensureInitialized(this.testScope);
     return lazy.XPCShellContentUtils.createHttpServer(...args);
@@ -449,7 +440,7 @@ var AddonTestUtils = {
   },
 
   info(msg) {
-    
+    // info() for mochitests, do_print for xpcshell.
     let print = this.testScope.info || this.testScope.do_print;
     print(msg);
   },
@@ -466,8 +457,8 @@ var AddonTestUtils = {
           if (didGC) {
             Cu.reportError(`Failed to remove ${file.path}: ${e}`);
           } else {
-            
-            
+            // Bug 1606684 - Sometimes XPI files are still in use by a process
+            // after the test has been finished. Force a GC once and try again.
             this.info(`Force a GC`);
             Cu.forceGC();
             didGC = true;
@@ -531,8 +522,8 @@ var AddonTestUtils = {
       }
       return manifest.applications.gecko.id;
     } catch (e) {
-      
-      
+      // IDs for WebExtensions are extracted from the certificate when
+      // not present in the manifest, so just generate a random one.
       return Services.uuid.generateUUID().number;
     }
   },
@@ -544,7 +535,7 @@ var AddonTestUtils = {
         !this.useRealCertChecks &&
         callback.wrappedJSObject
       ) {
-        
+        // Bypassing XPConnect allows us to create a fake x509 certificate from JS
         callback = callback.wrappedJSObject;
 
         try {
@@ -571,7 +562,7 @@ var AddonTestUtils = {
             }
           }
           if (this.certSignatureDate) {
-            
+            // addon.signedDate is derived from this, used by the blocklist.
             fakeCert.validity = {
               notBefore: this.certSignatureDate * 1000,
             };
@@ -579,9 +570,9 @@ var AddonTestUtils = {
 
           return [callback, Cr.NS_OK, fakeCert];
         } catch (e) {
-          
+          // If there is any error then just pass along the original results
         } finally {
-          
+          // Make sure to close the open zip file or it will be locked.
           if (file.isFile()) {
             Services.obs.notifyObservers(
               file,
@@ -611,7 +602,7 @@ var AddonTestUtils = {
       },
 
       openSignedAppFileAsync(root, file, callback) {
-        
+        // First try calling the real cert DB
         this._genuine.openSignedAppFileAsync(
           root,
           file,
@@ -628,29 +619,29 @@ var AddonTestUtils = {
       QueryInterface: ChromeUtils.generateQI(["nsIX509CertDB"]),
     };
 
-    
-    
+    // Unregister the real database. This only works because the add-ons manager
+    // hasn't started up and grabbed the certificate database yet.
     lazy.MockRegistrar.register(CERTDB_CONTRACTID, FakeCertDB);
 
-    
+    // Initialize the mock service.
     Cc[CERTDB_CONTRACTID].getService();
     FakeCertDB.init();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Load the data from the specified files into the *real* blocklist providers.
+   * Loads using loadBlocklistRawData, which will treat this as an update.
+   *
+   * @param {nsIFile} dir
+   *        The directory in which the files live.
+   * @param {string} prefix
+   *        a prefix for the files which ought to be loaded.
+   *        This method will suffix -extensions.json
+   *        to the prefix it is given, and attempt to load it.
+   *        If it exists, its data will be dumped into
+   *        the respective store, and the update handler
+   *        will be called.
+   */
   async loadBlocklistData(dir, prefix) {
     let loadedData = {};
     let fileSuffix = "extensions";
@@ -666,14 +657,14 @@ var AddonTestUtils = {
     return this.loadBlocklistRawData(loadedData);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Load the following data into the *real* blocklist providers.
+   * Fires update methods as would happen if this data came from
+   * an actual blocklist update, etc.
+   *
+   * @param {object} data
+   *        The data to load.
+   */
   async loadBlocklistRawData(data) {
     const { BlocklistPrivate } = ChromeUtils.import(
       "resource://gre/modules/Blocklist.jsm"
@@ -711,33 +702,33 @@ var AddonTestUtils = {
       await db.importChanges({}, collectionTimestamp, newData, {
         clear: true,
       });
-      
-      
+      // We manually call _onUpdate... which is evil, but at the moment kinto doesn't have
+      // a better abstraction unless you want to mock your own http server to do the update.
       await blocklistObj._onUpdate();
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Starts up the add-on manager as if it was started by the application.
+   *
+   * @param {Object} params
+   *        The new params are in an object and new code should use that.
+   * @param {boolean} params.earlyStartup
+   *        Notifies early startup phase. default is true
+   * @param {boolean} params.lateStartup
+   *        Notifies late startup phase which ensures addons are started or
+   *        listeners are primed. default is true
+   * @param {boolean} params.newVersion
+   *        If provided, the application version is changed to this string
+   *        before the AddonManager is started.
+   */
   async promiseStartupManager(params) {
     if (this.addonIntegrationService) {
       throw new Error(
         "Attempting to startup manager that was already started."
       );
     }
-    
+    // Support old arguments
     if (typeof params != "object") {
       params = {
         newVersion: arguments[0],
@@ -752,9 +743,9 @@ var AddonTestUtils = {
       this.appInfo.platformVersion = newVersion;
     }
 
-    
-    
-    
+    // AddonListeners are removed when the addonManager is shutdown,
+    // ensure the Extension observer is added.  We call uninit in
+    // promiseShutdown to allow re-initialization.
     lazy.ExtensionAddonObserver.init();
 
     const { XPIInternal, XPIProvider } = ChromeUtils.import(
@@ -773,7 +764,7 @@ var AddonTestUtils = {
         try {
           this.testScope.do_throw(e);
         } catch (e) {
-          
+          // Le sigh.
         }
       }
     };
@@ -788,10 +779,10 @@ var AddonTestUtils = {
 
     await Promise.all(XPIProvider.startupPromises);
 
-    
+    // Load the add-ons list as it was after extension registration
     await this.loadAddonsList(true);
 
-    
+    // Wait for all add-ons to finish starting up before resolving.
     await Promise.all(
       Array.from(
         XPIProvider.activeAddons.values(),
@@ -826,16 +817,16 @@ var AddonTestUtils = {
       "resource://gre/modules/addons/XPIDatabase.jsm"
     );
 
-    
+    // Ensure some startup observers in XPIProvider are released.
     Services.obs.notifyObservers(null, "test-load-xpi-database");
 
     Services.obs.notifyObservers(null, "quit-application-granted");
     await MockAsyncShutdown.quitApplicationGranted.trigger();
 
-    
-    
-    
-    
+    // If XPIDatabase.asyncLoadDB() has been called before, then _dbPromise is
+    // a promise, potentially still pending. Wait for it to settle before
+    // triggering profileBeforeChange, because the latter can trigger errors in
+    // the pending asyncLoadDB() by an indirect call to XPIDatabase.shutdown().
     await XPIDatabase._dbPromise;
 
     await MockAsyncShutdown.profileBeforeChange.trigger();
@@ -845,28 +836,28 @@ var AddonTestUtils = {
 
     this.addonIntegrationService = null;
 
-    
+    // Load the add-ons list as it was after application shutdown
     await this.loadAddonsList();
 
-    
-    
+    // Flush the jar cache entries for each bootstrapped XPI so that
+    // we don't run into file locking issues on Windows.
     for (let file of this.addonsList.xpis) {
       Services.obs.notifyObservers(file, "flush-cache-entry");
     }
 
-    
+    // Clear L10nRegistry entries so restaring the AOM will work correctly with locales.
     if (clearL10nRegistry) {
       L10nRegistry.getInstance().clearSources();
     }
 
-    
+    // Clear any crash report annotations
     this.appInfo.annotations = {};
 
-    
-    
+    // Force the XPIProvider provider to reload to better
+    // simulate real-world usage.
 
-    
-    
+    // This would be cleaner if I could get it as the rejection reason from
+    // the AddonManagerInternal.shutdown() promise
     let shutdownError = XPIDatabase._saveError;
 
     AddonManagerPrivate.unregisterProvider(XPIProvider);
@@ -885,37 +876,37 @@ var AddonTestUtils = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously restart the AddonManager.  If newVersion is provided,
+   * simulate an application upgrade (or downgrade) where the version
+   * is changed to newVersion when re-started.
+   *
+   * @param {Object} params
+   *        The new params are in an object and new code should use that.
+   *        See promiseStartupManager for param details.
+   */
   async promiseRestartManager(params) {
     await this.promiseShutdownManager({ clearOverrides: false });
     await this.promiseStartupManager(params);
   },
 
-  
-
-
-
-
-
+  /**
+   * If promiseStartupManager is called with earlyStartup: false, then
+   * use this to notify early startup.
+   *
+   * @returns {Promise} resolves when notification is complete
+   */
   notifyEarlyStartup() {
     return lazy.ExtensionTestCommon.notifyEarlyStartup();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * If promiseStartupManager is called with lateStartup: false, then
+   * use this to notify late startup.  You should also call early startup
+   * if necessary.
+   *
+   * @returns {Promise} resolves when notification is complete
+   */
   notifyLateStartup() {
     return lazy.ExtensionTestCommon.notifyLateStartup();
   },
@@ -932,17 +923,17 @@ var AddonTestUtils = {
     this.addonsList = new AddonsList(this.addonStartup);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Writes the given data to a file in the given zip file.
+   *
+   * @param {string|nsIFile} zipFile
+   *        The zip file to write to.
+   * @param {Object} files
+   *        An object containing filenames and the data to write to the
+   *        corresponding paths in the zip file.
+   * @param {integer} [flags = 0]
+   *        Additional flags to open the file with.
+   */
   writeFilesToZip(zipFile, files, flags = 0) {
     if (typeof zipFile == "string") {
       zipFile = nsFile(zipFile);
@@ -966,8 +957,8 @@ var AddonTestUtils = {
 
       let stream = ArrayBufferInputStream(data, 0, data.byteLength);
 
-      
-      
+      // Note these files are being created in the XPI archive with date
+      // 1 << 49, which is a valid time for ZipWriter.
       zipW.addEntryStream(
         path,
         Math.pow(2, 49),
@@ -995,7 +986,7 @@ var AddonTestUtils = {
       path = path.split("/");
       let leafName = path.pop();
 
-      
+      // Create parent directories, if necessary.
       let dirPath = dir;
       for (let subDir of path) {
         dirPath = PathUtils.join(dirPath, subDir);
@@ -1040,59 +1031,59 @@ var AddonTestUtils = {
     return file;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Creates an XPI file for some manifest data in the temporary directory and
+   * returns the nsIFile for it. The file will be deleted when the test completes.
+   *
+   * @param {object} files
+   *          The object holding data about the add-on
+   * @return {nsIFile} A file pointing to the created XPI file
+   */
   createTempXPIFile(files) {
     let file = this.allocTempXPIFile();
     this.writeFilesToZip(file.path, files);
     return file;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Creates an XPI file for some WebExtension data in the temporary directory and
+   * returns the nsIFile for it. The file will be deleted when the test completes.
+   *
+   * @param {Object} data
+   *        The object holding data about the add-on, as expected by
+   *        |ExtensionTestCommon.generateXPI|.
+   * @return {nsIFile} A file pointing to the created XPI file
+   */
   createTempWebExtensionFile(data) {
     let file = lazy.ExtensionTestCommon.generateXPI(data);
     this.tempXPIs.push(file);
     return file;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Creates an XPI with the given files and installs it.
+   *
+   * @param {object} files
+   *        A files object as would be passed to {@see #createTempXPI}.
+   * @returns {Promise}
+   *        A promise which resolves when the add-on is installed.
+   */
   promiseInstallXPI(files) {
     return this.promiseInstallFile(this.createTempXPIFile(files));
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates an extension proxy file.
+   * See: https://developer.mozilla.org/en-US/Add-ons/Setting_up_extension_development_environment#Firefox_extension_proxy_file
+   *
+   * @param {nsIFile} dir
+   *        The directory to add the proxy file to.
+   * @param {nsIFile} addon
+   *        An nsIFile for the add-on file that this is a proxy file for.
+   * @param {string} id
+   *        A string to use for the add-on ID.
+   * @returns {Promise} Resolves when the file has been created.
+   */
   promiseWriteProxyFileToDir(dir, addon, id) {
     let files = {
       [id]: addon.path,
@@ -1101,24 +1092,24 @@ var AddonTestUtils = {
     return this.promiseWriteFilesToDir(dir.path, files);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Manually installs an XPI file into an install location by either copying the
+   * XPI there or extracting it depending on whether unpacking is being tested
+   * or not.
+   *
+   * @param {nsIFile} xpiFile
+   *        The XPI file to install.
+   * @param {nsIFile} [installLocation = this.profileExtensions]
+   *        The install location (an nsIFile) to install into.
+   * @param {string} [id]
+   *        The ID to install as.
+   * @param {boolean} [unpacked = this.testUnpacked]
+   *        If true, install as an unpacked directory, rather than a
+   *        packed XPI.
+   * @returns {nsIFile}
+   *        A file pointing to the installed location of the XPI file or
+   *        unpacked directory.
+   */
   async manuallyInstall(
     xpiFile,
     installLocation = this.profileExtensions,
@@ -1169,23 +1160,23 @@ var AddonTestUtils = {
     return target;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Manually uninstalls an add-on by removing its files from the install
+   * location.
+   *
+   * @param {nsIFile} installLocation
+   *        The nsIFile of the install location to remove from.
+   * @param {string} id
+   *        The ID of the add-on to remove.
+   * @param {boolean} [unpacked = this.testUnpacked]
+   *        If true, uninstall an unpacked directory, rather than a
+   *        packed XPI.
+   */
   manuallyUninstall(installLocation, id, unpacked = this.testUnpacked) {
     let file = this.getFileForAddon(installLocation, id, unpacked);
 
-    
-    
+    // In reality because the app is restarted a flush isn't necessary for XPIs
+    // removed outside the app, but for testing we must flush manually.
     if (file.isFile()) {
       Services.obs.notifyObservers(file, "flush-cache-entry");
     }
@@ -1193,21 +1184,21 @@ var AddonTestUtils = {
     file.remove(true);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets the nsIFile for where an add-on is installed. It may point to a file or
+   * a directory depending on whether add-ons are being installed unpacked or not.
+   *
+   * @param {nsIFile} dir
+   *         The nsIFile for the install location
+   * @param {string} id
+   *        The ID of the add-on
+   * @param {boolean} [unpacked = this.testUnpacked]
+   *        If true, return the path to an unpacked directory, rather than a
+   *        packed XPI.
+   * @returns {nsIFile}
+   *        A file pointing to the XPI file or unpacked directory where
+   *        the add-on should be installed.
+   */
   getFileForAddon(dir, id, unpacked = this.testUnpacked) {
     dir = dir.clone();
     if (unpacked) {
@@ -1218,15 +1209,15 @@ var AddonTestUtils = {
     return dir;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Sets the last modified time of the extension, usually to trigger an update
+   * of its metadata.
+   *
+   * @param {nsIFile} ext A file pointing to either the packed extension or its unpacked directory.
+   * @param {number} time The time to which we set the lastModifiedTime of the extension
+   *
+   * @deprecated Please use promiseSetExtensionModifiedTime instead
+   */
   setExtensionModifiedTime(ext, time) {
     ext.lastModifiedTime = time;
     if (ext.isDirectory()) {
@@ -1275,30 +1266,30 @@ var AddonTestUtils = {
     try {
       Services.dirsvc.undefine(key);
     } catch (e) {
-      
-      
+      // This throws if the key is not already registered, but that
+      // doesn't matter.
       if (e.result != Cr.NS_ERROR_FAILURE) {
         throw e;
       }
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a promise that resolves when the given add-on event is fired. The
+   * resolved value is an array of arguments passed for the event.
+   *
+   * @param {string} event
+   *        The name of the AddonListener event handler method for which
+   *        an event is expected.
+   * @param {function} checkFn [optional]
+   *        A function to check if this is the right event. Should return true
+   *        for the event that it wants, false otherwise. Will be passed
+   *        all the relevant arguments.
+   *        If not passed, any event will do to resolve the promise.
+   * @returns {Promise<Array>}
+   *        Resolves to an array containing the event handler's
+   *        arguments the first time it is called.
+   */
   promiseAddonEvent(event, checkFn) {
     return new Promise(resolve => {
       let listener = {
@@ -1328,15 +1319,15 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * A helper method to install AddonInstall and wait for completion.
+   *
+   * @param {AddonInstall} install
+   *        The add-on to install.
+   * @returns {Promise<AddonInstall>}
+   *        Resolves when the install completes, either successfully or
+   *        in failure.
+   */
   promiseCompleteInstall(install) {
     let listener;
     return new Promise(resolve => {
@@ -1347,11 +1338,11 @@ var AddonTestUtils = {
         onInstallFailed: resolve,
         onInstallCancelled: resolve,
         onInstallEnded() {
-          
-          
-          
-          
-          
+          // onInstallEnded is called right when an add-on has been installed.
+          // install() may still be pending, e.g. for updates, and be awaiting
+          // the completion of the update, part of which is the removal of the
+          // temporary XPI file of the downloaded update. To avoid intermittent
+          // test failures due to lingering temporary files, await install().
           resolve(installPromise);
         },
         onInstallPostponed: resolve,
@@ -1365,20 +1356,20 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A helper method to install a file.
+   *
+   * @param {nsIFile} file
+   *        The file to install
+   * @param {boolean} [ignoreIncompatible = false]
+   *        Optional parameter to ignore add-ons that are incompatible
+   *        with the application
+   * @param {Object} [installTelemetryInfo = undefined]
+   *        Optional parameter to set the install telemetry info for the
+   *        installed addon
+   * @returns {Promise}
+   *        Resolves when the install has completed.
+   */
   async promiseInstallFile(
     file,
     ignoreIncompatible = false,
@@ -1407,17 +1398,17 @@ var AddonTestUtils = {
     return install;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A helper method to install an array of files.
+   *
+   * @param {Iterable<nsIFile>} files
+   *        The files to install
+   * @param {boolean} [ignoreIncompatible = false]
+   *        Optional parameter to ignore add-ons that are incompatible
+   *        with the application
+   * @returns {Promise}
+   *        Resolves when the installs have completed.
+   */
   promiseInstallAllFiles(files, ignoreIncompatible = false) {
     return Promise.all(
       Array.from(files, file =>
@@ -1430,32 +1421,32 @@ var AddonTestUtils = {
     return Promise.all(Array.from(installs, this.promiseCompleteInstall));
   },
 
-  
-
-
-
-
-
+  /**
+   * @property {number} updateReason
+   *        The default update reason for {@see promiseFindAddonUpdates}
+   *        calls. May be overwritten by tests which primarily check for
+   *        updates with a particular reason.
+   */
   updateReason: AddonManager.UPDATE_WHEN_PERIODIC_UPDATE,
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a promise that will be resolved when an add-on update check is
+   * complete. The value resolved will be an AddonInstall if a new version was
+   * found.
+   *
+   * @param {object} addon The add-on to find updates for.
+   * @param {integer} reason The type of update to find.
+   * @param {Array} args Additional args to pass to `checkUpdates` after
+   *                     the update reason.
+   * @return {Promise<object>} an object containing information about the update.
+   */
   promiseFindAddonUpdates(
     addon,
     reason = AddonTestUtils.updateReason,
     ...args
   ) {
-    
-    
+    // Retrieve the test assertion helper from the testScope
+    // (which is `equal` in xpcshell-test and `is` in mochitest)
     let equal = this.testScope.equal || this.testScope.is;
     return new Promise((resolve, reject) => {
       let result = {};
@@ -1509,20 +1500,20 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Monitors console output for the duration of a task, and returns a promise
+   * which resolves to a tuple containing a list of all console messages
+   * generated during the task's execution, and the result of the task itself.
+   *
+   * @param {function} task
+   *        The task to run while monitoring console output. May be
+   *        an async function, or an ordinary function which returns a promose.
+   * @return {Promise<[Array<nsIConsoleMessage>, *]>}
+   *        Resolves to an object containing a `messages` property, with
+   *        the array of console messages emitted during the execution
+   *        of the task, and a `result` property, containing the task's
+   *        return value.
+   */
   async promiseConsoleOutput(task) {
     const DONE = "=== xpcshell test console listener done ===";
 
@@ -1552,39 +1543,39 @@ var AddonTestUtils = {
     }
   },
 
-  
+  /**
+   * An object describing an expected or forbidden console message. Each
+   * property in the object corresponds to a property with the same name
+   * in a console message. If the value in the pattern object is a
+   * regular expression, it must match the value of the corresponding
+   * console message property. If it is any other value, it must be
+   * strictly equal to the correspondng console message property.
+   *
+   * @typedef {object} ConsoleMessagePattern
+   */
 
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Checks the list of messages returned from `promiseConsoleOutput`
+   * against the given set of expected messages.
+   *
+   * This is roughly equivalent to the expected and forbidden message
+   * matching functionality of SimpleTest.monitorConsole.
+   *
+   * @param {Array<object>} messages
+   *        The array of console messages to match.
+   * @param {object} options
+   *        Options describing how to perform the match.
+   * @param {Array<ConsoleMessagePattern>} [options.expected = []]
+   *        An array of messages which must appear in `messages`. The
+   *        matching messages in the `messages` array must appear in the
+   *        same order as the patterns in the `expected` array.
+   * @param {Array<ConsoleMessagePattern>} [options.forbidden = []]
+   *        An array of messages which must not appear in the `messages`
+   *        array.
+   * @param {bool} [options.forbidUnexpected = false]
+   *        If true, the `messages` array must not contain any messages
+   *        which are not matched by the given `expected` patterns.
+   */
   checkMessages(
     messages,
     { expected = [], forbidden = [], forbidUnexpected = false }
@@ -1637,18 +1628,18 @@ var AddonTestUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Asserts that the expected installTelemetryInfo properties are available
+   * on the AddonWrapper or AddonInstall objects.
+   *
+   * @param {AddonWrapper|AddonInstall} addonOrInstall
+   *        The addon or addonInstall object to check.
+   * @param {Object} expectedInstallInfo
+   *        The expected installTelemetryInfo properties
+   *        (every property can be a primitive value or a regular expression).
+   * @param {string} [msg]
+   *        Optional assertion message suffix.
+   */
   checkInstallInfo(addonOrInstall, expectedInstallInfo, msg = undefined) {
     const installInfo = addonOrInstall.installTelemetryInfo;
     const { Assert } = this.testScope;
@@ -1659,7 +1650,7 @@ var AddonTestUtils = {
       const actual = installInfo[key];
       let expected = expectedInstallInfo[key];
 
-      
+      // Assert the property value using a regular expression.
       if (expected && typeof expected.test == "function") {
         Assert.ok(
           expected.test(actual),
@@ -1675,15 +1666,15 @@ var AddonTestUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Helper to wait for a webextension to completely start
+   *
+   * @param {string} [id]
+   *        An optional extension id to look for.
+   *
+   * @returns {Promise<Extension>}
+   *           A promise that resolves with the extension, once it is started.
+   */
   promiseWebExtensionStartup(id) {
     return new Promise(resolve => {
       lazy.Management.on("ready", function listener(event, extension) {
@@ -1695,27 +1686,27 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Wait until an extension with a search provider has been loaded.
+   * This should be called after the extension has started, but before shutdown.
+   *
+   * @param {object} extension
+   *        The return value of ExtensionTestUtils.loadExtension.
+   *        For browser tests, see mochitest/tests/SimpleTest/ExtensionTestUtils.js
+   *        For xpcshell tests, see toolkit/components/extensions/ExtensionXPCShellUtils.jsm
+   * @param {object} [options]
+   *        Optional options.
+   * @param {boolean} [options.expectPending = false]
+   *        Whether to expect the search provider to still be starting up.
+   */
   async waitForSearchProviderStartup(
     extension,
     { expectPending = false } = {}
   ) {
-    
+    // In xpcshell tests, equal/ok are defined in the global scope.
     let { equal, ok } = this.testScope;
     if (!equal || !ok) {
-      
+      // In mochitests, these are available via Assert.sys.mjs.
       let { Assert } = this.testScope;
       equal = Assert.equal.bind(Assert);
       ok = Assert.ok.bind(Assert);
@@ -1728,7 +1719,7 @@ var AddonTestUtils = {
     );
     ok(extension.id, "Extension ID of search provider should be set");
 
-    
+    // The map of promises from browser/components/extensions/parent/ext-chrome-settings-overrides.js
     let { pendingSearchSetupTasks } = lazy.Management.global;
     let searchStartupPromise = pendingSearchSetupTasks.get(extension.id);
     if (expectPending) {
@@ -1740,20 +1731,20 @@ var AddonTestUtils = {
     return searchStartupPromise;
   },
 
-  
-
-
-
+  /**
+   * Initializes the URLPreloader, which is required in order to load
+   * built_in_addons.json.
+   */
   initializeURLPreloader() {
     lazy.aomStartup.initializeURLPreloader();
   },
 
-  
-
-
-
-
-
+  /**
+   * Override chrome URL for specifying allowed built-in add-ons.
+   *
+   * @param {object} data - An object specifying which add-on IDs are permitted
+   *                        to load, for instance: { "system": ["id1", "..."] }
+   */
   async overrideBuiltIns(data) {
     this.initializeURLPreloader();
 
@@ -1772,12 +1763,12 @@ var AddonTestUtils = {
     ]);
   },
 
-  
+  // AMTelemetry events helpers.
 
-  
-
-
-
+  /**
+   * Formerly this function re-routed telemetry events. Now it just ensures
+   * that there are no unexamined events after the test file is exiting.
+   */
   hookAMTelemetryEvents() {
     this.testScope.registerCleanupFunction(() => {
       this.testScope.Assert.deepEqual(
@@ -1788,22 +1779,22 @@ var AddonTestUtils = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Retrive any AMTelemetry event collected and clears _all_ telemetry events.
+   *
+   * @returns {Array<Object>}
+   *          The array of the collected telemetry data.
+   */
   getAMTelemetryEvents() {
-    
+    // This duplicates some logic from TelemetryTestUtils.
     let snapshots = Services.telemetry.snapshotEvents(
       Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-       true
+      /* clear = */ true
     );
     let events = (snapshots.parent ?? [])
       .filter(entry => entry[1] == "addonsManager")
       .map(entry => ({
-        
+        // The callers don't expect the timestamp or the category.
         method: entry[2],
         object: entry[3],
         value: entry[4],

@@ -1,18 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { Preferences } from "resource://gre/modules/Preferences.sys.mjs";
+import { Log } from "resource://gre/modules/Log.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -101,25 +93,25 @@ RemoteMediator.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
 };
 
-function InstallTrigger() {}
+export function InstallTrigger() {}
 
 InstallTrigger.prototype = {
-  
-  
-  
-  
-  
-  
-  
+  // We've declared ourselves as providing the nsIDOMGlobalPropertyInitializer
+  // interface.  This means that when the InstallTrigger property is gotten from
+  // the window that will createInstance this object and then call init(),
+  // passing the window were bound to.  It will then automatically create the
+  // WebIDL wrapper (InstallTriggerImpl) for this object.  This indirection is
+  // necessary because webidl does not (yet) support statics (bug 863952). See
+  // bug 926712 and then bug 1442360 for more details about this implementation.
   init(window) {
     this._window = window;
     this._principal = window.document.nodePrincipal;
     this._url = window.document.documentURIObject;
 
     this._mediator = new RemoteMediator(window);
-    
-    
-    
+    // If we can't set up IPC (e.g., because this is a top-level window or
+    // something), then don't expose InstallTrigger.  The Window code handles
+    // that, if we throw an exception here.
   },
 
   enabled() {
@@ -178,7 +170,7 @@ InstallTrigger.prototype = {
     if (item.IconURL) {
       iconUrl = this._resolveURL(item.IconURL);
       if (!this._checkLoadURIFromScript(iconUrl)) {
-        iconUrl = null; 
+        iconUrl = null; // If page can't load the icon, just ignore it
       }
     }
 
@@ -190,10 +182,10 @@ InstallTrigger.prototype = {
           url = this._url.spec;
           host = this._url.host;
         } else if (this._url?.schemeIs("blob")) {
-          
-          
-          
-          
+          // For a blob url, we keep the blob url as the sourceURL and
+          // we pick the related sourceHost from either the principal
+          // or the precursorPrincipal (if the principal is a null principal
+          // and the precursor one is defined).
           url = this._url.spec;
           host =
             this._principal.isNullPrincipal &&
@@ -207,14 +199,14 @@ InstallTrigger.prototype = {
           url = this._principal.precursorPrincipal.exposableSpec;
           host = this._principal.precursorPrincipal.host;
         } else {
-          
+          // Fallback to this._url as last resort.
           url = this._url.spec;
           host = this._url.host;
         }
       } catch (err) {
         Cu.reportError(err);
       }
-      
+      // Fallback to an empty string if url and host are still undefined.
       return {
         sourceURL: url || "",
         sourceHost: host || "",
@@ -277,5 +269,3 @@ InstallTrigger.prototype = {
   contractID: "@mozilla.org/addons/installtrigger;1",
   QueryInterface: ChromeUtils.generateQI(["nsIDOMGlobalPropertyInitializer"]),
 };
-
-var EXPORTED_SYMBOLS = ["InstallTrigger"];
