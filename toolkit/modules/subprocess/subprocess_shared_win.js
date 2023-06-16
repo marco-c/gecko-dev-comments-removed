@@ -5,12 +5,6 @@
 
 "use strict";
 
-if (typeof Components !== "undefined") {
-  
-  Cc["@mozilla.org/net/osfileconstantsservice;1"]
-    .getService(Ci.nsIOSFileConstantsService)
-    .init();
-}
 
 
 
@@ -20,10 +14,12 @@ if (typeof Components !== "undefined") {
 
 
 
-
-const LIBC = OS.Constants.libc;
-
-const Win = OS.Constants.Win;
+const Win = {
+  FILE_ATTRIBUTE_NORMAL: 0x00000080,
+  GENERIC_WRITE: 0x40000000,
+  INVALID_HANDLE_VALUE: -1,
+  OPEN_EXISTING: 0x00000003,
+};
 
 const LIBC_CHOICES = ["kernel32.dll"];
 

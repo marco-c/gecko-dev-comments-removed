@@ -5,12 +5,6 @@
 
 "use strict";
 
-if (typeof Components !== "undefined") {
-  
-  Cc["@mozilla.org/net/osfileconstantsservice;1"]
-    .getService(Ci.nsIOSFileConstantsService)
-    .init();
-}
 
 
 
@@ -20,8 +14,64 @@ if (typeof Components !== "undefined") {
 
 
 
+const LIBC = {
+  get EAGAIN() {
+    const os = Services.appinfo.OS;
 
-var LIBC = OS.Constants.libc;
+    if (["Linux", "Android"].includes(os)) {
+      
+      return 11;
+    } else if (
+      ["Darwin", "DragonFly", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)
+    ) {
+      
+
+
+
+
+
+
+      return 35;
+    }
+    throw new Error("Unsupported OS");
+  },
+
+  EINTR: 4,
+
+  F_SETFD: 2,
+  F_SETFL: 4,
+
+  FD_CLOEXEC: 1,
+
+  get O_NONBLOCK() {
+    const os = Services.appinfo.OS;
+
+    if (["Linux", "Android"].includes(os)) {
+      
+      return 0o4000;
+    } else if (
+      ["Darwin", "DragonFly", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)
+    ) {
+      
+
+
+
+
+
+
+      return 4;
+    }
+    throw new Error("Unsupported OS");
+  },
+
+  POLLIN: 0x01,
+  POLLOUT: 0x04,
+  POLLERR: 0x08,
+  POLLHUP: 0x10,
+  POLLNVAL: 0x20,
+
+  WNOHANG: 1,
+};
 
 const LIBC_CHOICES = ["libc.so", "libSystem.B.dylib", "a.out"];
 
