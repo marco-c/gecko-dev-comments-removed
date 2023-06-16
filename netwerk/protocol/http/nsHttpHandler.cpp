@@ -301,25 +301,6 @@ static const char* gCallbackPrefs[] = {
     nullptr,
 };
 
-static void GetFirefoxVersionForUserAgent(nsACString& aVersion) {
-  
-  
-  
-  
-  
-  
-  uint32_t forceVersion =
-      mozilla::StaticPrefs::network_http_useragent_forceVersion();
-  if (forceVersion == 0) {
-    
-    aVersion.AssignLiteral(MOZILLA_UAVERSION);
-  } else {
-    
-    aVersion.AppendInt(forceVersion);
-    aVersion.AppendLiteral(".0");
-  }
-}
-
 nsresult nsHttpHandler::Init() {
   nsresult rv;
 
@@ -391,11 +372,7 @@ nsresult nsHttpHandler::Init() {
   Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTP3_ENABLED,
                        StaticPrefs::network_http_http3_enable());
 
-  nsAutoCString uaVersion;
-  GetFirefoxVersionForUserAgent(uaVersion);
-
-  mCompatFirefox.AssignLiteral("Firefox/");
-  mCompatFirefox.Append(uaVersion);
+  mCompatFirefox.AssignLiteral("Firefox/" MOZILLA_UAVERSION);
 
   nsCOMPtr<nsIXULAppInfo> appInfo =
       do_GetService("@mozilla.org/xre/app-info;1");
@@ -420,7 +397,7 @@ nsresult nsHttpHandler::Init() {
   if (forceVersion && (isFirefox || mCompatFirefoxEnabled)) {
     mMisc.Append(nsPrintfCString("%u.0", forceVersion));
   } else {
-    mMisc.Append(uaVersion);
+    mMisc.AppendLiteral(MOZILLA_UAVERSION);
   }
 
   
@@ -437,7 +414,7 @@ nsresult nsHttpHandler::Init() {
   mRequestContextService = RequestContextService::GetOrCreate();
 
 #if defined(ANDROID)
-  mProductSub.Assign(uaVersion);
+  mProductSub.AssignLiteral(MOZILLA_UAVERSION);
 #else
   mProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
 #endif
