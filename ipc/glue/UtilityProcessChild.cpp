@@ -117,8 +117,7 @@ bool UtilityProcessChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   
   
   if (mSandbox == SandboxingKind::GENERIC_UTILITY) {
-    JS::DisableJitBackend();
-    if (!JS_Init()) {
+    if (!JS_FrontendOnlyInit()) {
       return false;
     }
 #if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
@@ -144,7 +143,7 @@ bool UtilityProcessChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
         StaticMutexAutoLock lock(sUtilityProcessChildMutex);
         sUtilityProcessChild = nullptr;
         if (sandboxKind == SandboxingKind::GENERIC_UTILITY) {
-          JS_ShutDown();
+          JS_FrontendOnlyShutDown();
         }
       },
       ShutdownPhase::XPCOMShutdownFinal);
