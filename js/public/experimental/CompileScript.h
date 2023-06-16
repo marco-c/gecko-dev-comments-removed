@@ -37,6 +37,13 @@ JS_PUBLIC_API void SetNativeStackQuota(JS::FrontendContext* fc,
                                        JS::NativeStackSize stackSize);
 
 
+JS_PUBLIC_API bool HadFrontendErrors(JS::FrontendContext* fc);
+
+
+
+JS_PUBLIC_API void ClearFrontendErrors(JS::FrontendContext* fc);
+
+
 
 
 
