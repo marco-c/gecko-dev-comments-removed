@@ -2172,7 +2172,10 @@ void APZCTreeManager::SetupScrollbarDrag(
   
   
   
-  dragBlock->SetInitialThumbPos(thumbData.mThumbStart);
+  
+  
+  
+  dragBlock->SetInitialState(thumbData.mThumbStart, aApzc->GetScrollableRect());
 
   
   
