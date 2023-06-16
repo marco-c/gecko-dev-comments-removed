@@ -3561,9 +3561,6 @@ pref("browser.safebrowsing.provider.mozilla.lists.content", "moz-full");
 
 pref("urlclassifier.blockedTable", "moztest-block-simple,mozplugin-block-digest256");
 
-
-pref("dom.wakelock.enabled", false);
-
 #ifdef XP_MACOSX
   #if !defined(RELEASE_OR_BETA) || defined(DEBUG)
     
