@@ -46,10 +46,13 @@ nsresult nsHttpHeaderArray::SetHeader(
       "Net original headers can only be set using SetHeader_internal().");
 
   nsEntry* entry = nullptr;
-  int32_t index = LookupEntry(header, &entry);
+  int32_t index;
+
+  index = LookupEntry(header, &entry);
 
   
-  if (value.IsEmpty() && header != nsHttp::X_Frame_Options) {
+  
+  if (value.IsEmpty()) {
     if (!merge && entry) {
       if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
         MOZ_ASSERT(variety == eVarietyResponse);

@@ -29,12 +29,7 @@ class FramingChecker {
                                 bool& outIsFrameCheckingSkipped);
 
  protected:
-  struct XFOHeader {
-    bool ALLOWALL = false;
-    bool SAMEORIGIN = false;
-    bool DENY = false;
-    bool INVALID = false;
-  };
+  enum XFOHeader { eDENY, eSAMEORIGIN };
 
   
 
@@ -46,6 +41,9 @@ class FramingChecker {
 
   static void ReportError(const char* aMessageTag, nsIHttpChannel* aChannel,
                           nsIURI* aURI, const nsAString& aPolicy);
+
+  static bool CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
+                                         const nsAString& aPolicy);
 };
 
 #endif 
