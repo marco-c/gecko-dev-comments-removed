@@ -13,8 +13,7 @@ const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
 
-const logsdir = FileUtils.getDir("ProfD", ["weave", "logs"]);
-logsdir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+const logsdir = FileUtils.getDir("ProfD", ["weave", "logs"], true);
 
 
 

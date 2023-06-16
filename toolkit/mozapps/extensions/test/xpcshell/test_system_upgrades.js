@@ -13,11 +13,11 @@ AddonTestUtils.createAppInfo(
 BootstrapMonitor.init();
 
 
-const systemDefaults = FileUtils.getDir("ProfD", [
-  "app-system-defaults",
-  "features",
-]);
-systemDefaults.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+const systemDefaults = FileUtils.getDir(
+  "ProfD",
+  ["app-system-defaults", "features"],
+  true
+);
 registerDirectory("XREAppFeat", systemDefaults);
 
 AddonTestUtils.usePrivilegedSignatures = id => "system";

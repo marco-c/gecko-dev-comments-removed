@@ -10,8 +10,7 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "0");
 
 add_task(async function test_app_addons() {
   
-  var distroDir = FileUtils.getDir("ProfD", ["sysfeatures"]);
-  distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+  var distroDir = FileUtils.getDir("ProfD", ["sysfeatures"], true);
   let xpi = await getSystemAddonXPI(1, "1.0");
   xpi.copyTo(distroDir, "system1@tests.mozilla.org.xpi");
 

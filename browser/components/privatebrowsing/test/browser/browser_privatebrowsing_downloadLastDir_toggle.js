@@ -4,7 +4,7 @@
 
 
 add_task(async function test_downloads_last_dir_toggle() {
-  let tmpDir = FileUtils.getDir("TmpD", []);
+  let tmpDir = FileUtils.getDir("TmpD", [], true);
   let dir1 = newDirectory();
 
   registerCleanupFunction(function () {
