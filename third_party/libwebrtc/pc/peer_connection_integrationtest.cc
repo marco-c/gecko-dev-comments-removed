@@ -2434,7 +2434,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
 
   
   
-  EXPECT_EQ(first_report->timestamp_us(), second_report->timestamp_us());
+  EXPECT_EQ(first_report->timestamp(), second_report->timestamp());
 }
 
 TEST_P(PeerConnectionIntegrationTestWithFakeClock,
@@ -2478,7 +2478,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
 
   
   
-  EXPECT_EQ(first_report->timestamp_us(), second_report->timestamp_us());
+  EXPECT_EQ(first_report->timestamp(), second_report->timestamp());
 }
 
 #endif  
