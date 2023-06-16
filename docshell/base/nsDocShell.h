@@ -710,6 +710,13 @@ class nsDocShell final : public nsDocLoader,
   nsresult ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
                           nsACString& aNewHash, uint32_t aLoadType);
 
+  
+  
+  
+  uint32_t GetLoadTypeForFormSubmission(
+      mozilla::dom::BrowsingContext* aTargetBC,
+      nsDocShellLoadState* aLoadState);
+
  private:
   
   
