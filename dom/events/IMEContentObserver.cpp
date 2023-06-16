@@ -1073,10 +1073,7 @@ bool IMEContentObserver::IsNextNodeOfLastAddedNode(nsINode* aParent,
   
   
   if (aParent == mLastAddedContainer) {
-    if (NS_WARN_IF(mLastAddedContent->GetNextSibling() != aChild)) {
-      return false;
-    }
-    return true;
+    return !NS_WARN_IF(mLastAddedContent->GetNextSibling() != aChild);
   }
 
   
@@ -1088,10 +1085,7 @@ bool IMEContentObserver::IsNextNodeOfLastAddedNode(nsINode* aParent,
   
   
   if (mLastAddedContainer == aParent->GetParent()) {
-    if (NS_WARN_IF(aChild->GetPreviousSibling())) {
-      return false;
-    }
-    return true;
+    return !NS_WARN_IF(aChild->GetPreviousSibling());
   }
 
   
