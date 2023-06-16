@@ -2060,8 +2060,13 @@ EncodedImage VideoStreamEncoder::AugmentEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info) {
   EncodedImage image_copy(encoded_image);
-  const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
-  frame_encode_metadata_writer_.FillTimingInfo(spatial_idx, &image_copy);
+  
+  
+  
+  
+  int stream_idx = encoded_image.SpatialIndex().value_or(
+      encoded_image.SimulcastIndex().value_or(0));
+  frame_encode_metadata_writer_.FillTimingInfo(stream_idx, &image_copy);
   frame_encode_metadata_writer_.UpdateBitstream(codec_specific_info,
                                                 &image_copy);
   VideoCodecType codec_type = codec_specific_info
@@ -2069,12 +2074,12 @@ EncodedImage VideoStreamEncoder::AugmentEncodedImage(
                                   : VideoCodecType::kVideoCodecGeneric;
   if (image_copy.qp_ < 0 && qp_parsing_allowed_) {
     
-    image_copy.qp_ = qp_parser_
-                         .Parse(codec_type, spatial_idx, image_copy.data(),
-                                image_copy.size())
-                         .value_or(-1);
+    image_copy.qp_ =
+        qp_parser_
+            .Parse(codec_type, stream_idx, image_copy.data(), image_copy.size())
+            .value_or(-1);
   }
-  RTC_LOG(LS_VERBOSE) << __func__ << " spatial_idx " << spatial_idx << " qp "
+  RTC_LOG(LS_VERBOSE) << __func__ << " stream_idx " << stream_idx << " qp "
                       << image_copy.qp_;
   image_copy.SetAtTargetQuality(codec_type == kVideoCodecVP8 &&
                                 image_copy.qp_ <= kVp8SteadyStateQpThreshold);
@@ -2093,7 +2098,7 @@ EncodedImage VideoStreamEncoder::AugmentEncodedImage(
   
   
   RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
-      &image_copy.content_type_, static_cast<uint8_t>(spatial_idx + 1)));
+      &image_copy.content_type_, static_cast<uint8_t>(stream_idx + 1)));
 
   return image_copy;
 }
@@ -2104,9 +2109,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
 
-  
-
-  const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
+  const size_t simulcast_index = encoded_image.SimulcastIndex().value_or(0);
   const VideoCodecType codec_type = codec_specific_info
                                         ? codec_specific_info->codecType
                                         : VideoCodecType::kVideoCodecGeneric;
@@ -2118,13 +2121,13 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   unsigned int image_width = image_copy._encodedWidth;
   unsigned int image_height = image_copy._encodedHeight;
   encoder_queue_.PostTask([this, codec_type, image_width, image_height,
-                           spatial_idx,
+                           simulcast_index,
                            at_target_quality = image_copy.IsAtTargetQuality()] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
 
     
     if (frame_cadence_adapter_)
-      frame_cadence_adapter_->UpdateLayerQualityConvergence(spatial_idx,
+      frame_cadence_adapter_->UpdateLayerQualityConvergence(simulcast_index,
                                                             at_target_quality);
 
     

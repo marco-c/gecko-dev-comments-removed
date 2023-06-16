@@ -89,7 +89,35 @@ class RTC_EXPORT EncodedImage {
 
   int64_t NtpTimeMs() const { return ntp_time_ms_; }
 
-  absl::optional<int> SpatialIndex() const { return spatial_index_; }
+  
+  
+  absl::optional<int> SimulcastIndex() const {
+    
+    
+    
+    
+    
+    
+    return simulcast_index_.has_value() ? simulcast_index_ : spatial_index_;
+  }
+  void SetSimulcastIndex(absl::optional<int> simulcast_index) {
+    RTC_DCHECK_GE(simulcast_index.value_or(0), 0);
+    RTC_DCHECK_LT(simulcast_index.value_or(0), kMaxSimulcastStreams);
+    simulcast_index_ = simulcast_index;
+  }
+
+  
+  
+  
+  absl::optional<int> SpatialIndex() const {
+    
+    
+    
+    
+    
+    
+    return spatial_index_.has_value() ? spatial_index_ : simulcast_index_;
+  }
   void SetSpatialIndex(absl::optional<int> spatial_index) {
     RTC_DCHECK_GE(spatial_index.value_or(0), 0);
     RTC_DCHECK_LT(spatial_index.value_or(0), kMaxSpatialLayers);
@@ -204,6 +232,7 @@ class RTC_EXPORT EncodedImage {
   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
   size_t size_ = 0;  
   uint32_t timestamp_rtp_ = 0;
+  absl::optional<int> simulcast_index_;
   absl::optional<int> spatial_index_;
   absl::optional<int> temporal_index_;
   std::map<int, size_t> spatial_layer_frame_size_bytes_;
