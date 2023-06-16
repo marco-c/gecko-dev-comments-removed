@@ -11,6 +11,7 @@
 #include "HTMLEditHelpers.h"  
 #include "WSRunObject.h"      
 
+#include "mozilla/IntegerRange.h"       
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/dom/Document.h"       
 #include "mozilla/dom/HTMLBRElement.h"  
@@ -126,10 +127,10 @@ bool AutoRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
 }
 
 void AutoRangeArray::EnsureOnlyEditableRanges(const Element& aEditingHost) {
-  for (size_t i = mRanges.Length(); i > 0; i--) {
-    const OwningNonNull<nsRange>& range = mRanges[i - 1];
+  for (const size_t index : Reversed(IntegerRange(mRanges.Length()))) {
+    const OwningNonNull<nsRange>& range = mRanges[index];
     if (!AutoRangeArray::IsEditableRange(range, aEditingHost)) {
-      mRanges.RemoveElementAt(i - 1);
+      mRanges.RemoveElementAt(index);
       continue;
     }
     
@@ -139,7 +140,7 @@ void AutoRangeArray::EnsureOnlyEditableRanges(const Element& aEditingHost) {
             ? nsIContent::FromNode(range->GetStartContainer())
             : nsIContent::FromNode(range->GetEndContainer());
     if (anchorContent && HTMLEditUtils::ContentIsInert(*anchorContent)) {
-      mRanges.RemoveElementAt(i - 1);
+      mRanges.RemoveElementAt(index);
       continue;
     }
     
@@ -174,8 +175,7 @@ void AutoRangeArray::EnsureRangesInTextNode(const Text& aTextNode) {
     
     return aTextNode.TextDataLength();
   };
-  for (uint32_t i : IntegerRange(mRanges.Length())) {
-    const OwningNonNull<nsRange>& range = mRanges[i];
+  for (const OwningNonNull<nsRange>& range : mRanges) {
     if (MOZ_LIKELY(range->GetStartContainer() == &aTextNode &&
                    range->GetEndContainer() == &aTextNode)) {
       continue;
@@ -192,7 +192,7 @@ void AutoRangeArray::EnsureRangesInTextNode(const Text& aTextNode) {
     
     
     
-    for (uint32_t i : Reversed(IntegerRange(mRanges.Length() - 1u))) {
+    for (const size_t i : Reversed(IntegerRange(mRanges.Length() - 1u))) {
       MOZ_ASSERT(mRanges[i]->EndOffset() < mRanges[i + 1]->StartOffset());
       
       
@@ -431,7 +431,7 @@ AutoRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
   }
 
   bool changed = false;
-  for (auto& range : mRanges) {
+  for (const OwningNonNull<nsRange>& range : mRanges) {
     MOZ_ASSERT(!range->IsInAnySelection(),
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
@@ -805,7 +805,7 @@ void AutoRangeArray::ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
   
 
   bool removeSomeRanges = false;
-  for (OwningNonNull<nsRange>& range : mRanges) {
+  for (const OwningNonNull<nsRange>& range : mRanges) {
     
     if (MOZ_UNLIKELY(!range->IsPositioned())) {
       removeSomeRanges = true;
@@ -841,7 +841,7 @@ void AutoRangeArray::ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
     }
   }
   if (removeSomeRanges) {
-    for (size_t i : Reversed(IntegerRange(mRanges.Length()))) {
+    for (const size_t i : Reversed(IntegerRange(mRanges.Length()))) {
       if (!mRanges[i]->IsPositioned()) {
         mRanges.RemoveElementAt(i);
       }
@@ -966,7 +966,7 @@ AutoRangeArray::SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
 
   
   Maybe<size_t> anchorFocusRangeIndex;
-  for (size_t index : IntegerRange(rangeItemArray.Length())) {
+  for (const size_t index : IntegerRange(rangeItemArray.Length())) {
     rangeItemArray[index] = new RangeItem();
     rangeItemArray[index]->StoreRange(*mRanges[index]);
     aHTMLEditor.RangeUpdaterRef().RegisterRangeItem(*rangeItemArray[index]);
@@ -979,7 +979,7 @@ AutoRangeArray::SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
   mAnchorFocusRange = nullptr;
   
   nsresult rv = NS_OK;
-  for (OwningNonNull<RangeItem>& item : Reversed(rangeItemArray)) {
+  for (const OwningNonNull<RangeItem>& item : Reversed(rangeItemArray)) {
     
     Result<EditorDOMPoint, nsresult> splitParentsResult =
         aHTMLEditor.SplitParentInlineElementsAtRangeBoundaries(
@@ -995,7 +995,7 @@ AutoRangeArray::SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
     }
   }
   
-  for (size_t index : IntegerRange(rangeItemArray.Length())) {
+  for (const size_t index : IntegerRange(rangeItemArray.Length())) {
     aHTMLEditor.RangeUpdaterRef().DropRangeItem(rangeItemArray[index]);
     RefPtr<nsRange> range = rangeItemArray[index]->GetRange();
     if (range && range->IsPositioned()) {
@@ -1048,7 +1048,8 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
       aOutArrayOfContents.AppendElements(std::move(arrayOfTopChildren));
     }
     if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
-      for (size_t i : Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+      for (const size_t i :
+           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
         if (!EditorUtils::IsEditableContent(aOutArrayOfContents[i],
                                             EditorUtils::EditorType::HTML)) {
           aOutArrayOfContents.RemoveElementAt(i);
@@ -1067,20 +1068,22 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
       if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
         options += CollectChildrenOption::IgnoreNonEditableChildren;
       }
-      for (int32_t i = aOutArrayOfContents.Length() - 1; i >= 0; i--) {
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[i];
+      for (const size_t index :
+           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
         if (HTMLEditUtils::IsListItem(content)) {
-          aOutArrayOfContents.RemoveElementAt(i);
-          HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, i,
+          aOutArrayOfContents.RemoveElementAt(index);
+          HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
                                          options);
         }
       }
       
-      for (int32_t i = aOutArrayOfContents.Length() - 1; i >= 0; i--) {
-        if (Text* text = aOutArrayOfContents[i]->GetAsText()) {
+      for (const size_t index :
+           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+        if (const Text* text = aOutArrayOfContents[index]->GetAsText()) {
           
           if (!HTMLEditUtils::IsVisibleTextNode(*text)) {
-            aOutArrayOfContents.RemoveElementAt(i);
+            aOutArrayOfContents.RemoveElementAt(index);
           }
         }
       }
@@ -1090,16 +1093,17 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
       
       CollectChildrenOptions options = {
           CollectChildrenOption::CollectTableChildren};
-      for (size_t i = aOutArrayOfContents.Length(); i > 0; i--) {
+      for (const size_t index :
+           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
         
         
         
         
         
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[i - 1];
+        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
         if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
-          aOutArrayOfContents.RemoveElementAt(i - 1);
-          HTMLEditUtils::CollectChildren(content, aOutArrayOfContents, i - 1,
+          aOutArrayOfContents.RemoveElementAt(index);
+          HTMLEditUtils::CollectChildren(content, aOutArrayOfContents, index,
                                          options);
         }
       }
@@ -1142,11 +1146,12 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
       if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
         options += CollectChildrenOption::IgnoreNonEditableChildren;
       }
-      for (int32_t i = aOutArrayOfContents.Length() - 1; i >= 0; i--) {
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[i];
+      for (const size_t index :
+           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
         if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
-          aOutArrayOfContents.RemoveElementAt(i);
-          HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, i,
+          aOutArrayOfContents.RemoveElementAt(index);
+          HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
                                          options);
         }
       }
@@ -1163,11 +1168,12 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
     if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
       options += CollectChildrenOption::IgnoreNonEditableChildren;
     }
-    for (int32_t i = aOutArrayOfContents.Length() - 1; i >= 0; i--) {
-      OwningNonNull<nsIContent> content = aOutArrayOfContents[i];
+    for (const size_t index :
+         Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+      OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
       if (content->IsHTMLElement(nsGkAtoms::div)) {
-        aOutArrayOfContents.RemoveElementAt(i);
-        HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, i,
+        aOutArrayOfContents.RemoveElementAt(index);
+        HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
                                        options);
       }
     }
@@ -1182,7 +1188,7 @@ Element* AutoRangeArray::GetClosestAncestorAnyListElementOfRange() const {
     if (MOZ_UNLIKELY(!commonAncestorNode)) {
       continue;
     }
-    for (Element* element :
+    for (Element* const element :
          commonAncestorNode->InclusiveAncestorsOfType<Element>()) {
       if (HTMLEditUtils::IsAnyListElement(element)) {
         return element;
