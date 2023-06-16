@@ -803,9 +803,8 @@ class Raptor(
                 gecko_results.extend(
                     ["--gecko-profile-threads", self.gecko_profile_threads]
                 )
-        else:
-            if self.extra_profiler_run:
-                gecko_results.append("--extra-profiler-run")
+        elif self.extra_profiler_run:
+            gecko_results.append("--extra-profiler-run")
         return gecko_results
 
     def query_abs_dirs(self):
@@ -985,12 +984,12 @@ class Raptor(
         elif self.app == "safari" and not self.run_local:
             binary_path = "/Applications/Safari.app/Contents/MacOS/Safari"
             kw_options["binary"] = binary_path
-        else:  
-            if not self.run_local:
-                
-                
-                
-                kw_options["binary"] = self.chromium_dist_path or ""
+        
+        elif not self.run_local:
+            
+            
+            
+            kw_options["binary"] = self.chromium_dist_path or ""
 
         
         if "test" in self.config:

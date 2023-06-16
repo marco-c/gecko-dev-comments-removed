@@ -2,5 +2,3 @@
 
 
 
-
-from .android import WebExtensionAndroid
