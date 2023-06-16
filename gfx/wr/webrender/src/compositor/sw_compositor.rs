@@ -133,6 +133,8 @@ pub struct SwSurface {
     tiles: Vec<SwTile>,
     
     external_image: Option<ExternalImageId>,
+    
+    composite_surface: Option<SWGLCompositeSurfaceInfo>,
 }
 
 impl SwSurface {
@@ -142,6 +144,7 @@ impl SwSurface {
             is_opaque,
             tiles: Vec::new(),
             external_image: None,
+            composite_surface: None,
         }
     }
 
@@ -721,11 +724,6 @@ pub struct SwCompositor {
     
     
     late_surfaces: Vec<FrameSurface>,
-    
-    
-    
-    
-    composite_surfaces: HashMap<ExternalImageId, SWGLCompositeSurfaceInfo>,
     cur_tile: NativeTileId,
     
     max_tile_size: DeviceIntSize,
@@ -767,7 +765,6 @@ impl SwCompositor {
             surfaces: HashMap::new(),
             frame_surfaces: Vec::new(),
             late_surfaces: Vec::new(),
-            composite_surfaces: HashMap::new(),
             cur_tile: NativeTileId {
                 surface_id: NativeSurfaceId(0),
                 x: 0,
@@ -970,9 +967,9 @@ impl SwCompositor {
     ) {
         if let Some(ref composite_thread) = self.composite_thread {
             if let Some((src_rect, dst_rect, flip_x, flip_y)) = tile.composite_rects(surface, transform, clip_rect) {
-                let source = if let Some(ref external_image) = surface.external_image {
+                let source = if surface.external_image.is_some() {
                     
-                    match self.composite_surfaces.get(external_image) {
+                    match surface.composite_surface {
                         Some(ref info) => match info.yuv_planes {
                             0 => match self.gl.lock_texture(info.textures[0]) {
                                 Some(texture) => SwCompositeSource::BGRA(texture),
@@ -1039,11 +1036,10 @@ impl SwCompositor {
                 let mut tile = &mut surface.tiles[0];
                 if self.compositor.lock_composite_surface(device, self.gl.into(), external_image, &mut info) {
                     tile.valid_rect = DeviceIntRect::from_size(info.size);
-                    if let Some(_) = self.composite_surfaces.insert(external_image, info) {
-                        panic!("Composite surface locked by multiple surfaces");
-                    }
+                    surface.composite_surface = Some(info);
                 } else {
                     tile.valid_rect = DeviceIntRect::zero();
+                    surface.composite_surface = None;
                 }
             }
         }
@@ -1051,10 +1047,16 @@ impl SwCompositor {
 
     
     fn unlock_composite_surfaces(&mut self, device: &mut Device) {
-        for &external_image in self.composite_surfaces.keys() {
-            self.compositor.unlock_composite_surface(device, self.gl.into(), external_image);
+        for &(ref id, _, _, _) in self.frame_surfaces.iter().chain(self.late_surfaces.iter()) {
+            if let Some(surface) = self.surfaces.get_mut(id) {
+                if let Some(external_image) = surface.external_image {
+                    if surface.composite_surface.is_some() {
+                        self.compositor.unlock_composite_surface(device, self.gl.into(), external_image);
+                        surface.composite_surface = None;
+                    }
+                }
+            }
         }
-        self.composite_surfaces.clear();
     }
 
     
@@ -1447,7 +1449,7 @@ impl Compositor for SwCompositor {
 
         
         self.frame_surfaces
-            .retain(|&(_, _, ref clip_rect, _)| !clip_rect.is_empty());
+            .retain(|&(_, _, clip_rect, _)| !clip_rect.is_empty());
 
         if let Some(ref composite_thread) = self.composite_thread {
             
