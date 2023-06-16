@@ -218,6 +218,10 @@ DesktopCaptureMetadata DesktopAndCursorComposer::GetMetadata() {
 }
 #endif  
 
+void DesktopAndCursorComposer::OnFrameCaptureStart() {
+  callback_->OnFrameCaptureStart();
+}
+
 void DesktopAndCursorComposer::OnCaptureResult(
     DesktopCapturer::Result result,
     std::unique_ptr<DesktopFrame> frame) {

@@ -59,6 +59,9 @@ class RTC_EXPORT DesktopCapturer {
   class Callback {
    public:
     
+    virtual void OnFrameCaptureStart() {}
+
+    
     
     virtual void OnCaptureResult(Result result,
                                  std::unique_ptr<DesktopFrame> frame) = 0;
