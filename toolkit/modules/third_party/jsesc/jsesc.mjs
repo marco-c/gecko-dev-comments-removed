@@ -1,49 +1,48 @@
+/*
+DO NOT TOUCH THIS FILE DIRECTLY. See the README for instructions.
 
+Copyright Mathias Bynens <https://mathiasbynens.be/>
 
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
 
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
+var global = {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["jsesc"];
-
+/*! https://mths.be/jsesc v1.0.0 by @mathias */
 ;(function(root) {
 
-	
+	// Detect free variables `exports`
 	var freeExports = typeof exports == 'object' && exports;
 
-	
+	// Detect free variable `module`
 	var freeModule = typeof module == 'object' && module &&
 		module.exports == freeExports && module;
 
-	
-	
+	// Detect free variable `global`, from Node.js or Browserified code,
+	// and use it as `root`
 	var freeGlobal = typeof global == 'object' && global;
 	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
 		root = freeGlobal;
 	}
 
-	
+	/*--------------------------------------------------------------------------*/
 
 	var object = {};
 	var hasOwnProperty = object.hasOwnProperty;
@@ -79,7 +78,7 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 		return toString.call(value) == '[object Array]';
 	};
 	var isObject = function(value) {
-		
+		// This is a very simple check, but it’s good enough for what we need.
 		return toString.call(value) == '[object Object]';
 	};
 	var isString = function(value) {
@@ -87,16 +86,16 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 			toString.call(value) == '[object String]';
 	};
 	var isFunction = function(value) {
-		
-		
-		
+		// In a perfect world, the `typeof` check would be sufficient. However,
+		// in Chrome 1–12, `typeof /x/ == 'object'`, and in IE 6–8
+		// `typeof alert == 'object'` and similar for other host objects.
 		return typeof value == 'function' ||
 			toString.call(value) == '[object Function]';
 	};
 
-	
+	/*--------------------------------------------------------------------------*/
 
-	
+	// https://mathiasbynens.be/notes/javascript-escapes#single
 	var singleEscapes = {
 		'"': '\\"',
 		'\'': '\\\'',
@@ -106,8 +105,8 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 		'\n': '\\n',
 		'\r': '\\r',
 		'\t': '\\t'
-		
-		
+		// `\v` is omitted intentionally, because in IE < 9, '\v' == 'v'.
+		// '\v': '\\x0B'
 	};
 	var regexSingleEscape = /["'\\\b\f\n\r\t]/;
 
@@ -115,7 +114,7 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 	var regexWhitelist = /[ !#-&\(-\[\]-~]/;
 
 	var jsesc = function(argument, options) {
-		
+		// Handle options
 		var defaults = {
 			'escapeEverything': false,
 			'quotes': 'single',
@@ -169,13 +168,13 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 					(compact ? '' : oldIndent) + ']';
 			} else if (!isObject(argument)) {
 				if (json) {
-					
-					
-					
+					// For some values (e.g. `undefined`, `function` objects),
+					// `JSON.stringify(value)` returns `undefined` (which isn’t valid
+					// JSON) instead of `'null'`.
 					return JSON.stringify(argument) || 'null';
 				}
 				return String(argument);
-			} else { 
+			} else { // it’s an object
 				result = [];
 				options.wrap = true;
 				oldIndent = options.__indent__;
@@ -199,7 +198,7 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 		}
 
 		var string = argument;
-		
+		// Loop over each code unit in the string and escape it
 		var index = -1;
 		var length = string.length;
 		var first;
@@ -210,13 +209,13 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 			var character = string.charAt(index);
 			if (options.es6) {
 				first = string.charCodeAt(index);
-				if ( 
-					first >= 0xD800 && first <= 0xDBFF && 
-					length > index + 1 
+				if ( // check if it’s the start of a surrogate pair
+					first >= 0xD800 && first <= 0xDBFF && // high surrogate
+					length > index + 1 // there is a next code unit
 				) {
 					second = string.charCodeAt(index + 1);
-					if (second >= 0xDC00 && second <= 0xDFFF) { 
-						
+					if (second >= 0xDC00 && second <= 0xDFFF) { // low surrogate
+						// https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
 						codePoint = (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
 						var hexadecimal = codePoint.toString(16);
 						if (!options.lowercaseHex) {
@@ -230,8 +229,8 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 			}
 			if (!options.escapeEverything) {
 				if (regexWhitelist.test(character)) {
-					
-					
+					// It’s a printable ASCII character that is not `"`, `'` or `\`,
+					// so don’t escape it.
 					result += character;
 					continue;
 				}
@@ -253,7 +252,7 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 				continue;
 			}
 			if (regexSingleEscape.test(character)) {
-				
+				// no need for a `hasOwnProperty` check here
 				result += singleEscapes[character];
 				continue;
 			}
@@ -276,10 +275,10 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 
 	jsesc.version = '1.0.0';
 
-	
+	/*--------------------------------------------------------------------------*/
 
-	
-	
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
 	if (
 		typeof define == 'function' &&
 		typeof define.amd == 'object' &&
@@ -289,13 +288,15 @@ var EXPORTED_SYMBOLS = ["jsesc"];
 			return jsesc;
 		});
 	}	else if (freeExports && !freeExports.nodeType) {
-		if (freeModule) { 
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
 			freeModule.exports = jsesc;
-		} else { 
+		} else { // in Narwhal or RingoJS v0.7.0-
 			freeExports.jsesc = jsesc;
 		}
-	} else { 
+	} else { // in Rhino or a web browser
 		root.jsesc = jsesc;
 	}
 
-}(this));
+}(global));
+
+export var jsesc = global.jsesc;
