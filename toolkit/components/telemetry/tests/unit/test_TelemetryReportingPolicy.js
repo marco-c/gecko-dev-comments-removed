@@ -27,8 +27,10 @@ function fakeShowPolicyTimeout(set, clear) {
 }
 
 function fakeResetAcceptedPolicy() {
-  Preferences.reset(TelemetryUtils.Preferences.AcceptedPolicyDate);
-  Preferences.reset(TelemetryUtils.Preferences.AcceptedPolicyVersion);
+  Services.prefs.clearUserPref(TelemetryUtils.Preferences.AcceptedPolicyDate);
+  Services.prefs.clearUserPref(
+    TelemetryUtils.Preferences.AcceptedPolicyVersion
+  );
 }
 
 function setMinimumPolicyVersion(aNewPolicyVersion) {
@@ -40,13 +42,13 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
     CHANNEL_NAME;
 
   
-  if (Preferences.get(CHANNEL_DEPENDENT_PREF, undefined)) {
-    Preferences.set(CHANNEL_DEPENDENT_PREF, aNewPolicyVersion);
+  if (Services.prefs.getIntPref(CHANNEL_DEPENDENT_PREF, undefined)) {
+    Services.prefs.setIntPref(CHANNEL_DEPENDENT_PREF, aNewPolicyVersion);
     return;
   }
 
   
-  Preferences.set(
+  Services.prefs.setIntPref(
     TelemetryUtils.Preferences.MinimumPolicyVersion,
     aNewPolicyVersion
   );
@@ -88,7 +90,7 @@ add_task(
     const FIRST_RUN_TIMEOUT_MSEC = 60 * 1000; 
     const OTHER_RUNS_TIMEOUT_MSEC = 10 * 1000; 
 
-    Preferences.reset(TelemetryUtils.Preferences.FirstRun);
+    Services.prefs.clearUserPref(TelemetryUtils.Preferences.FirstRun);
 
     let startupTimeout = 0;
     fakeShowPolicyTimeout(
@@ -124,7 +126,10 @@ add_task(async function test_prefs() {
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(!TelemetryReportingPolicy.testIsUserNotified());
   Assert.equal(
-    Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null),
+    Services.prefs.getStringPref(
+      TelemetryUtils.Preferences.AcceptedPolicyDate,
+      null
+    ),
     0,
     "Invalid dates should not make the policy accepted."
   );
@@ -133,7 +138,10 @@ add_task(async function test_prefs() {
   now = fakeNow(2012, 11, 18);
   TelemetryReportingPolicy.testInfobarShown();
   Assert.equal(
-    Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, null),
+    Services.prefs.getStringPref(
+      TelemetryUtils.Preferences.AcceptedPolicyDate,
+      null
+    ),
     now.getTime(),
     "A valid date must correctly be saved."
   );
@@ -145,14 +153,20 @@ add_task(async function test_prefs() {
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.DataSubmissionEnabled, false);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.DataSubmissionEnabled,
+    false
+  );
   Assert.ok(
     !TelemetryReportingPolicy.canUpload(),
     "We must not be able to upload if data submission is disabled."
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.DataSubmissionEnabled, true);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.DataSubmissionEnabled,
+    true
+  );
   Assert.ok(
     TelemetryReportingPolicy.canUpload(),
     "We must be able to upload if data submission is enabled and the policy was accepted."
@@ -160,7 +174,10 @@ add_task(async function test_prefs() {
 
   
   let newMinimum =
-    Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) + 1;
+    Services.prefs.getIntPref(
+      TelemetryUtils.Preferences.CurrentPolicyVersion,
+      1
+    ) + 1;
   setMinimumPolicyVersion(newMinimum);
   Assert.ok(
     !TelemetryReportingPolicy.testIsUserNotified(),
@@ -168,7 +185,10 @@ add_task(async function test_prefs() {
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.CurrentPolicyVersion, newMinimum);
+  Services.prefs.setIntPref(
+    TelemetryUtils.Preferences.CurrentPolicyVersion,
+    newMinimum
+  );
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(
     TelemetryReportingPolicy.testIsUserNotified(),
@@ -180,19 +200,23 @@ add_task(async function test_prefs() {
   );
 
   
-  let defaultPrefs = new Preferences({ defaultBranch: true });
-  defaultPrefs.set("app.update.channel", TEST_CHANNEL);
+  Services.prefs
+    .getDefaultBranch("")
+    .setStringPref("app.update.channel", TEST_CHANNEL);
 
   
   newMinimum++;
-  Preferences.set(PREF_MINIMUM_CHANNEL_POLICY_VERSION, newMinimum);
+  Services.prefs.setIntPref(PREF_MINIMUM_CHANNEL_POLICY_VERSION, newMinimum);
   Assert.ok(
     !TelemetryReportingPolicy.testIsUserNotified(),
     "Increasing the minimum policy version should invalidate the policy."
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.CurrentPolicyVersion, newMinimum);
+  Services.prefs.setIntPref(
+    TelemetryUtils.Preferences.CurrentPolicyVersion,
+    newMinimum
+  );
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(
     TelemetryReportingPolicy.testIsUserNotified(),
@@ -215,13 +239,26 @@ add_task(async function test_migratePrefs() {
 
   
   for (let name in DEPRECATED_FHR_PREFS) {
-    Preferences.set(name, DEPRECATED_FHR_PREFS[name]);
+    switch (typeof DEPRECATED_FHR_PREFS[name]) {
+      case "string":
+        Services.prefs.setStringPref(name, DEPRECATED_FHR_PREFS[name]);
+        break;
+      case "number":
+        Services.prefs.setIntPref(name, DEPRECATED_FHR_PREFS[name]);
+        break;
+      case "boolean":
+        Services.prefs.setBoolPref(name, DEPRECATED_FHR_PREFS[name]);
+        break;
+    }
   }
   
   TelemetryReportingPolicy.reset();
   
   for (let name in DEPRECATED_FHR_PREFS) {
-    Assert.ok(!Preferences.has(name), name + " should have been removed.");
+    Assert.ok(
+      !Services.prefs.prefHasUserValue(name),
+      name + " should have been removed."
+    );
   }
 });
 
@@ -236,7 +273,7 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
   );
 
   
-  Preferences.set(
+  Services.prefs.setIntPref(
     TelemetryUtils.Preferences.AcceptedPolicyVersion,
     TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION
   );
@@ -256,16 +293,28 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
   
   
   let newVersion =
-    Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) + 1;
-  Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion, newVersion);
+    Services.prefs.getIntPref(
+      TelemetryUtils.Preferences.CurrentPolicyVersion,
+      1
+    ) + 1;
+  Services.prefs.setIntPref(
+    TelemetryUtils.Preferences.AcceptedPolicyVersion,
+    newVersion
+  );
   Assert.ok(
     TelemetryReportingPolicy.testIsUserNotified(),
     "A future version of the policy should pass."
   );
 
   newVersion =
-    Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion, 1) - 1;
-  Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion, newVersion);
+    Services.prefs.getIntPref(
+      TelemetryUtils.Preferences.CurrentPolicyVersion,
+      1
+    ) - 1;
+  Services.prefs.setIntPref(
+    TelemetryUtils.Preferences.AcceptedPolicyVersion,
+    newVersion
+  );
   Assert.ok(
     !TelemetryReportingPolicy.testIsUserNotified(),
     "A previous version of the policy should fail."
@@ -276,7 +325,7 @@ add_task(async function test_canSend() {
   const TEST_PING_TYPE = "test-ping";
 
   PingServer.start();
-  Preferences.set(
+  Services.prefs.setStringPref(
     TelemetryUtils.Preferences.Server,
     "http://localhost:" + PingServer.port
   );

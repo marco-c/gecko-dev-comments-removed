@@ -2,9 +2,6 @@
 
 
 
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 const { TelemetryArchive } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryArchive.sys.mjs"
 );
@@ -156,7 +153,7 @@ add_task(async function test_subsessionsChaining() {
   const PREFS_TO_WATCH = new Map([
     [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_VALUE }],
   ]);
-  Preferences.reset(PREF_TEST);
+  Services.prefs.clearUserPref(PREF_TEST);
 
   
   
@@ -210,7 +207,7 @@ add_task(async function test_subsessionsChaining() {
   await TelemetryController.testReset();
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
-  Preferences.set(PREF_TEST, 1);
+  Services.prefs.setIntPref(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
 
   
@@ -235,7 +232,7 @@ add_task(async function test_subsessionsChaining() {
   
   
   moveClockForward(30);
-  Preferences.set(PREF_TEST, 0);
+  Services.prefs.setIntPref(PREF_TEST, 0);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
 
   
@@ -247,7 +244,7 @@ add_task(async function test_subsessionsChaining() {
   await TelemetryController.testReset();
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
-  Preferences.set(PREF_TEST, 1);
+  Services.prefs.setIntPref(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
 
   
@@ -268,7 +265,7 @@ add_task(async function test_subsessionsChaining() {
 
   
   moveClockForward(30);
-  Preferences.set(PREF_TEST, 0);
+  Services.prefs.setIntPref(PREF_TEST, 0);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
 
   

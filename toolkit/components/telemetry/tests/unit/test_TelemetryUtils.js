@@ -1,9 +1,6 @@
 
 
 
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 const { TelemetryUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryUtils.sys.mjs"
 );
@@ -12,10 +9,20 @@ const { UpdateUtils } = ChromeUtils.importESModule(
 );
 
 add_task(async function testUpdateChannelOverride() {
-  if (Preferences.has(TelemetryUtils.Preferences.OverrideUpdateChannel)) {
+  if (
+    Services.prefs.prefHasDefaultValue(
+      TelemetryUtils.Preferences.OverrideUpdateChannel
+    ) ||
+    Services.prefs.prefHasUserValue(
+      TelemetryUtils.Preferences.OverrideUpdateChannel
+    )
+  ) {
     
     
-    Preferences.set(TelemetryUtils.Preferences.OverrideUpdateChannel, "");
+    Services.prefs.setStringPref(
+      TelemetryUtils.Preferences.OverrideUpdateChannel,
+      ""
+    );
   }
 
   
@@ -27,7 +34,7 @@ add_task(async function testUpdateChannelOverride() {
 
   
   const OVERRIDE_TEST_CHANNEL = "nightly-test";
-  Preferences.set(
+  Services.prefs.setStringPref(
     TelemetryUtils.Preferences.OverrideUpdateChannel,
     OVERRIDE_TEST_CHANNEL
   );

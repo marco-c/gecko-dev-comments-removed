@@ -40,12 +40,15 @@ add_setup(async function setup() {
   do_get_profile(true);
   
   await setEmptyPrefWatchlist();
-  Preferences.set(TelemetryUtils.Preferences.HealthPingEnabled, true);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.HealthPingEnabled,
+    true
+  );
 
   await TelemetryController.testSetup();
   PingServer.start();
   TelemetrySend.setServer("http://localhost:" + PingServer.port);
-  Preferences.set(
+  Services.prefs.setStringPref(
     TelemetryUtils.Preferences.Server,
     "http://localhost:" + PingServer.port
   );

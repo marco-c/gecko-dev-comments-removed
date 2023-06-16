@@ -98,11 +98,14 @@ add_task(async function setup() {
 
 async function checkDefaultSearch(privateOn, reInitSearchService) {
   
-  Preferences.set(
+  Services.prefs.setBoolPref(
     "browser.search.separatePrivateDefault.ui.enabled",
     privateOn
   );
-  Preferences.set("browser.search.separatePrivateDefault", privateOn);
+  Services.prefs.setBoolPref(
+    "browser.search.separatePrivateDefault",
+    privateOn
+  );
 
   let data;
   if (privateOn) {
@@ -325,7 +328,7 @@ add_task(async function test_defaultSearchEngine() {
   const PREFS_TO_WATCH = new Map([
     [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_STATE }],
   ]);
-  Preferences.reset(PREF_TEST);
+  Services.prefs.clearUserPref(PREF_TEST);
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
@@ -335,7 +338,7 @@ add_task(async function test_defaultSearchEngine() {
     deferred.resolve
   );
   
-  Preferences.set(PREF_TEST, 1);
+  Services.prefs.setIntPref(PREF_TEST, 1);
   await deferred.promise;
   TelemetryEnvironment.unregisterChangeListener("testSearchEngine_pref");
 

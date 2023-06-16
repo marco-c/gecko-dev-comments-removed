@@ -249,8 +249,8 @@ add_task(async function test_prefWatchPolicies() {
     ],
   ]);
 
-  Preferences.set(PREF_TEST_4, expectedValue);
-  Preferences.set(PREF_TEST_5, expectedValue);
+  Services.prefs.setStringPref(PREF_TEST_4, expectedValue);
+  Services.prefs.setStringPref(PREF_TEST_5, expectedValue);
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
@@ -277,9 +277,9 @@ add_task(async function test_prefWatchPolicies() {
   let oldEnvironmentData = TelemetryEnvironment.currentEnvironment;
 
   
-  Preferences.set(PREF_TEST_1, expectedValue);
-  Preferences.set(PREF_TEST_2, false);
-  Preferences.set(PREF_TEST_5, unexpectedValue);
+  Services.prefs.setStringPref(PREF_TEST_1, expectedValue);
+  Services.prefs.setBoolPref(PREF_TEST_2, false);
+  Services.prefs.setStringPref(PREF_TEST_5, unexpectedValue);
   let eventEnvironmentData = await deferred.promise;
 
   
@@ -317,7 +317,7 @@ add_task(async function test_prefWatch_prefReset() {
   ]);
 
   
-  Preferences.set(PREF_TEST, false);
+  Services.prefs.setBoolPref(PREF_TEST, false);
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
@@ -333,7 +333,7 @@ add_task(async function test_prefWatch_prefReset() {
   );
 
   
-  Preferences.reset(PREF_TEST);
+  Services.prefs.clearUserPref(PREF_TEST);
   await deferred.promise;
 
   Assert.strictEqual(
@@ -939,7 +939,7 @@ add_task(
     const PREFS_TO_WATCH = new Map([
       [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_STATE }],
     ]);
-    Preferences.reset(PREF_TEST);
+    Services.prefs.clearUserPref(PREF_TEST);
 
     
     await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
@@ -949,7 +949,7 @@ add_task(
       deferred.resolve
     );
     
-    Preferences.set(PREF_TEST, 1);
+    Services.prefs.setIntPref(PREF_TEST, 1);
     await deferred.promise;
     TelemetryEnvironment.unregisterChangeListener("testDefaultBrowser_pref");
 
@@ -1300,7 +1300,10 @@ add_task(
       
 
       
-      Preferences.set("services.sync.username", "c00lperson123@example.com");
+      Services.prefs.setStringPref(
+        "services.sync.username",
+        "c00lperson123@example.com"
+      );
       let calledFxa = false;
       cache._getFxaSignedInUser = () => {
         calledFxa = true;
@@ -1318,7 +1321,7 @@ add_task(
       });
 
       
-      Preferences.reset("services.sync.username");
+      Services.prefs.clearUserPref("services.sync.username");
       
       cache._getFxaSignedInUser = async () => {
         return {};
@@ -1345,7 +1348,7 @@ add_task(
       equal(cache.currentEnvironment.services, null);
     } finally {
       cache._getFxaSignedInUser = oldGetFxaSignedInUser;
-      Preferences.reset("services.sync.username");
+      Services.prefs.clearUserPref("services.sync.username");
     }
   }
 );
@@ -1386,7 +1389,7 @@ add_task(async function test_environmentShutdown() {
   const PREFS_TO_WATCH = new Map([
     [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_STATE }],
   ]);
-  Preferences.reset(PREF_TEST);
+  Services.prefs.clearUserPref(PREF_TEST);
 
   
   await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
@@ -1400,7 +1403,7 @@ add_task(async function test_environmentShutdown() {
   TelemetryEnvironment.shutdown();
 
   
-  Preferences.set(PREF_TEST, 1);
+  Services.prefs.setIntPref(PREF_TEST, 1);
 
   
   TelemetryEnvironment.unregisterChangeListener(

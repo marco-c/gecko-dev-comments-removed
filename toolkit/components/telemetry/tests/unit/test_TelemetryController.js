@@ -26,9 +26,6 @@ const { TelemetryArchive } = ChromeUtils.importESModule(
 const { TelemetryUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryUtils.sys.mjs"
 );
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 const { ContentTaskUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ContentTaskUtils.sys.mjs"
 );
@@ -165,7 +162,7 @@ add_task(async function test_simplePing() {
   
   
   
-  Preferences.set(
+  Services.prefs.setStringPref(
     TelemetryUtils.Preferences.Server,
     "http://localhost:" + PingServer.port
   );
@@ -179,7 +176,10 @@ add_task(async function test_simplePing() {
 
 add_task(async function test_disableDataUpload() {
   const OPTIN_PROBE = "telemetry.data_upload_optin";
-  const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
+  const isUnified = Services.prefs.getBoolPref(
+    TelemetryUtils.Preferences.Unified,
+    false
+  );
   if (!isUnified) {
     
     return;
@@ -212,7 +212,10 @@ add_task(async function test_disableDataUpload() {
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.FhrUploadEnabled,
+    false
+  );
 
   
   await disableObserved;
@@ -229,7 +232,7 @@ add_task(async function test_disableDataUpload() {
   );
 
   
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   
   await ContentTaskUtils.waitForCondition(() => {
@@ -260,7 +263,10 @@ add_task(async function test_disableDataUpload() {
   TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.FhrUploadEnabled,
+    false
+  );
   
   await TelemetryController.testPromiseDeletionRequestPingSubmitted();
 
@@ -284,7 +290,7 @@ add_task(async function test_disableDataUpload() {
   PingServer.start();
   
   
-  Preferences.set(
+  Services.prefs.setStringPref(
     TelemetryUtils.Preferences.Server,
     "http://localhost:" + PingServer.port
   );
@@ -295,7 +301,7 @@ add_task(async function test_disableDataUpload() {
   await TelemetryController.testReset();
 
   
-  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   
   await sendPing(true, false);
@@ -336,7 +342,7 @@ add_task(async function test_disableDataUpload() {
 add_task(async function test_pingHasClientId() {
   
   
-  Preferences.reset(TelemetryUtils.Preferences.CachedClientId);
+  Services.prefs.clearUserPref(TelemetryUtils.Preferences.CachedClientId);
   await TelemetryController.testShutdown();
   await ClientID._reset();
   await TelemetryStorage.testClearPendingPings();
@@ -394,7 +400,7 @@ add_task(async function test_pingHasClientId() {
 
   
   
-  Preferences.reset(TelemetryUtils.Preferences.CachedClientId);
+  Services.prefs.clearUserPref(TelemetryUtils.Preferences.CachedClientId);
   await TelemetryController.testShutdown();
   await TelemetryStorage.testClearPendingPings();
   await TelemetryController.testReset();
@@ -446,11 +452,14 @@ add_task(async function test_archivePings() {
   
   
   
-  const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
+  const isUnified = Services.prefs.getBoolPref(
+    TelemetryUtils.Preferences.Unified,
+    false
+  );
   const uploadPref = isUnified
     ? TelemetryUtils.Preferences.FhrUploadEnabled
     : TelemetryUtils.Preferences.TelemetryEnabled;
-  Preferences.set(uploadPref, false);
+  Services.prefs.setBoolPref(uploadPref, false);
 
   
   if (isUnified) {
@@ -475,7 +484,7 @@ add_task(async function test_archivePings() {
   
   now = new Date(2010, 10, 18, 12, 0, 0);
   fakeNow(now);
-  Preferences.set(TelemetryUtils.Preferences.ArchiveEnabled, false);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.ArchiveEnabled, false);
   pingId = await sendPing(true, true);
   let promise = TelemetryArchive.promiseArchivedPingById(pingId);
   Assert.ok(
@@ -484,8 +493,8 @@ add_task(async function test_archivePings() {
   );
 
   
-  Preferences.set(uploadPref, true);
-  Preferences.set(TelemetryUtils.Preferences.ArchiveEnabled, true);
+  Services.prefs.setBoolPref(uploadPref, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.ArchiveEnabled, true);
 
   now = new Date(2014, 6, 18, 22, 0, 0);
   fakeNow(now);
@@ -618,7 +627,7 @@ add_task(async function test_telemetryCleanFHRDatabase() {
     PathUtils.join(profileDir, CUSTOM_DB_NAME + "-wal"),
     PathUtils.join(profileDir, CUSTOM_DB_NAME + "-shm"),
   ];
-  Preferences.set(FHR_DBNAME_PREF, CUSTOM_DB_NAME);
+  Services.prefs.setStringPref(FHR_DBNAME_PREF, CUSTOM_DB_NAME);
 
   
   for (let dbFilePath of CUSTOM_DB_PATHS) {
@@ -644,7 +653,7 @@ add_task(async function test_telemetryCleanFHRDatabase() {
   await TelemetryStorage.removeFHRDatabase();
 
   
-  Preferences.reset(FHR_DBNAME_PREF);
+  Services.prefs.clearUserPref(FHR_DBNAME_PREF);
 
   const DEFAULT_DB_PATHS = [
     PathUtils.join(profileDir, DEFAULT_DB_NAME),
@@ -704,8 +713,8 @@ add_task(async function test_sendNewProfile() {
     "session-state.json"
   );
   await IOUtils.remove(stateFilePath);
-  Preferences.set(PREF_NEWPROFILE_DELAY, 1);
-  Preferences.set(PREF_NEWPROFILE_ENABLED, true);
+  Services.prefs.setIntPref(PREF_NEWPROFILE_DELAY, 1);
+  Services.prefs.setBoolPref(PREF_NEWPROFILE_ENABLED, true);
 
   
   let nextReq = PingServer.promiseNextRequest();
@@ -733,7 +742,7 @@ add_task(async function test_sendNewProfile() {
   
   await resetTest();
   await IOUtils.remove(stateFilePath);
-  Preferences.reset(PREF_NEWPROFILE_DELAY);
+  Services.prefs.clearUserPref(PREF_NEWPROFILE_DELAY);
 
   nextReq = PingServer.promiseNextRequest();
   await TelemetryController.testReset();
@@ -786,7 +795,7 @@ add_task(async function test_sendNewProfile() {
   await TelemetryController.testShutdown();
 
   
-  Preferences.reset(PREF_NEWPROFILE_ENABLED);
+  Services.prefs.clearUserPref(PREF_NEWPROFILE_ENABLED);
   PingServer.resetPingHandler();
 });
 
