@@ -54,7 +54,8 @@ MARKUPMAP(
     },
     0)
 
-MARKUPMAP(code, New_HyperText, roles::CODE)
+
+
 
 MARKUPMAP(dd, New_HTMLDtOrDd<HyperTextAccessibleWrap>, roles::DEFINITION)
 
