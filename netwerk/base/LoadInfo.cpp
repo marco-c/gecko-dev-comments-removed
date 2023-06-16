@@ -423,23 +423,11 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   
-  
+  bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
   bool shouldResistFingerprinting =
       nsContentUtils::ShouldResistFingerprinting_dangerous(
           aURI, mOriginAttributes,
           "We are creating CookieJarSettings, so we can't have one already.");
-  RefPtr<BrowsingContext> opener = aBrowsingContext->GetOpener();
-  if (!shouldResistFingerprinting && opener &&
-      opener->GetCurrentWindowContext()) {
-    shouldResistFingerprinting =
-        opener->GetCurrentWindowContext()->ShouldResistFingerprinting();
-  }
-
-  const bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
-
-  
-  
-  
   mCookieJarSettings = CookieJarSettings::Create(
       isPrivate ? CookieJarSettings::ePrivate : CookieJarSettings::eRegular,
       shouldResistFingerprinting);
