@@ -214,14 +214,11 @@ class ExternalRunnableWrapper final : public WorkerRunnable {
   }
 
   nsresult Cancel() override {
-    
-    nsresult rv = WorkerRunnable::Cancel();
-    NS_ENSURE_SUCCESS(rv, rv);
-
     nsCOMPtr<nsIDiscardableRunnable> doomed =
         do_QueryInterface(mWrappedRunnable);
-    MOZ_ASSERT(doomed);  
-    doomed->OnDiscard();
+    if (doomed) {
+      doomed->OnDiscard();
+    }
     return NS_OK;
   }
 };
@@ -1738,13 +1735,6 @@ already_AddRefed<WorkerRunnable> WorkerPrivate::MaybeWrapAsWorkerRunnable(
       WorkerRunnable::FromRunnable(runnable);
   if (workerRunnable) {
     return workerRunnable.forget();
-  }
-
-  nsCOMPtr<nsIDiscardableRunnable> maybe = do_QueryInterface(runnable);
-  if (!maybe) {
-    MOZ_CRASH(
-        "All runnables destined for a worker thread must be "
-        "nsIDiscardableRunnable!");
   }
 
   workerRunnable = new ExternalRunnableWrapper(this, runnable);
@@ -3268,6 +3258,9 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
         
         
         if (!mControlQueue.IsEmpty()) {
+          LOG(WorkerLog(),
+              ("WorkerPrivate::DoRunLoop [%p] dropping control runnables",
+               this));
           WorkerControlRunnable* runnable = nullptr;
           while (mControlQueue.Pop(runnable)) {
             runnable->Cancel();

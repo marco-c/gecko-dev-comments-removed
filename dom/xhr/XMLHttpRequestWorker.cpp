@@ -401,14 +401,7 @@ class LoadStartDetectionRunnable final : public Runnable,
       return true;
     }
 
-    nsresult Cancel() override {
-      
-      nsresult rv = MainThreadProxyRunnable::Cancel();
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      return Run();
-    }
+    nsresult Cancel() override { return Run(); }
   };
 
  public:

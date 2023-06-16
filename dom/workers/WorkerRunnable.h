@@ -15,7 +15,6 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerStatus.h"
 #include "nsCOMPtr.h"
-#include "nsICancelableRunnable.h"
 #include "nsIRunnable.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
@@ -37,7 +36,7 @@ class WorkerPrivate;
 
 
 
-class WorkerRunnable : public nsIRunnable, public nsICancelableRunnable {
+class WorkerRunnable : public nsIRunnable {
  public:
   enum TargetAndBusyBehavior {
     
@@ -62,10 +61,6 @@ class WorkerRunnable : public nsIRunnable, public nsICancelableRunnable {
   
   TargetAndBusyBehavior mBehavior;
 
-  
-  
-  Atomic<uint32_t> mCanceled;
-
  private:
   
   
@@ -75,22 +70,11 @@ class WorkerRunnable : public nsIRunnable, public nsICancelableRunnable {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  
-  
-  
-  
-  
-  
-  
-  nsresult Cancel() override;
+  virtual nsresult Cancel();
 
   
   
   bool Dispatch();
-
-  
-  
-  virtual bool IsCanceled() const { return mCanceled != 0; }
 
   
   
@@ -113,7 +97,6 @@ class WorkerRunnable : public nsIRunnable, public nsICancelableRunnable {
 #else
       : mWorkerPrivate(aWorkerPrivate),
         mBehavior(aBehavior),
-        mCanceled(0),
         mCallingCancelWithinRun(false) {
   }
 #endif

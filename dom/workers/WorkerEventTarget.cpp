@@ -58,16 +58,14 @@ class WrappedControlRunnable final : public WorkerControlRunnable {
     
     
     if (!cr) {
-      WorkerControlRunnable::Cancel();
-      return NS_OK;
+      return Run();
     }
 
     
     
     
     
-    Unused << cr->Cancel();
-    return WorkerRunnable::Cancel();
+    return cr->Cancel();
   }
 };
 
@@ -115,6 +113,9 @@ WorkerEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   }
 
   if (mBehavior == Behavior::Hybrid) {
+    LOGV(("WorkerEventTarget::Dispatch [%p] Dispatch as normal runnable(%p)",
+          this, runnable.get()));
+
     RefPtr<WorkerRunnable> r =
         mWorkerPrivate->MaybeWrapAsWorkerRunnable(runnable.forget());
     if (r->Dispatch()) {

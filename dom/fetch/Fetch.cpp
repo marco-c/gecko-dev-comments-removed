@@ -900,16 +900,7 @@ class WorkerFetchResponseEndRunnable final : public MainThreadWorkerRunnable,
     return true;
   }
 
-  nsresult Cancel() override {
-    
-    nsresult rv = WorkerRunnable::Cancel();
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    Run();
-    return NS_OK;
-  }
+  nsresult Cancel() override { return Run(); }
 };
 
 class WorkerFetchResponseEndControlRunnable final
