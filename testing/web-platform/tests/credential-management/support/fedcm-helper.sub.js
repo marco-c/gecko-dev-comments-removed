@@ -29,7 +29,7 @@ export function set_alt_fedcm_cookie() {
 
 
 
-export function default_request_options(manifest_filename) {
+export function request_options_with_mediation_required(manifest_filename) {
   if (manifest_filename === undefined) {
     manifest_filename = "manifest.py";
   }
@@ -40,15 +40,16 @@ credential-management/support/fedcm/${manifest_filename}`;
       providers: [{
         configURL: manifest_path,
         clientId: '1',
-        nonce: '2',
-      }]
+        nonce: '2'
+      }],
+      mediation: 'required'
     }
   };
 }
 
 
 
-export function default_alt_request_options(manifest_filename) {
+export function alt_request_options_with_mediation_required(manifest_filename) {
   if (manifest_filename === undefined) {
     manifest_filename = "manifest.py";
   }
@@ -59,19 +60,20 @@ credential-management/support/fedcm/${manifest_filename}`;
       providers: [{
         configURL: manifest_path,
         clientId: '1',
-        nonce: '2',
-      }]
+        nonce: '2'
+      }],
+      mediation: 'required'
     }
   };
 }
 
 
 
-export function request_options_with_auto_reauthn(manifest_filename) {
-  let options = default_request_options(manifest_filename);
+export function request_options_with_mediation_optional(manifest_filename) {
+  let options = alt_request_options_with_mediation_required(manifest_filename);
   
   options.identity.providers[0].clientId = '123';
-  options.identity.autoReauthn = true;
+  options.identity.mediation = 'optional';
 
   return options;
 }
