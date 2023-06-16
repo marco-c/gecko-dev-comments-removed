@@ -81,11 +81,11 @@ class DllServicesBase : public Authenticode {
   
 #if defined(DEBUG)
   UniquePtr<wchar_t[]> GetBinaryOrgName(
-      const wchar_t* aFilePath,
+      const wchar_t* aFilePath, bool* aHasNestedMicrosoftSignature = nullptr,
       AuthenticodeFlags aFlags = AuthenticodeFlags::Default) override
 #else
   UniquePtr<wchar_t[]> GetBinaryOrgName(
-      const wchar_t* aFilePath,
+      const wchar_t* aFilePath, bool* aHasNestedMicrosoftSignature = nullptr,
       AuthenticodeFlags aFlags = AuthenticodeFlags::Default) final
 #endif  
   {
@@ -93,7 +93,8 @@ class DllServicesBase : public Authenticode {
       return nullptr;
     }
 
-    return mAuthenticode->GetBinaryOrgName(aFilePath, aFlags);
+    return mAuthenticode->GetBinaryOrgName(
+        aFilePath, aHasNestedMicrosoftSignature, aFlags);
   }
 
   virtual void DisableFull() { DllBlocklist_SetFullDllServices(nullptr); }
@@ -186,12 +187,13 @@ class DllServices : public detail::DllServicesBase {
 
 #  if defined(DEBUG)
   UniquePtr<wchar_t[]> GetBinaryOrgName(
-      const wchar_t* aFilePath,
+      const wchar_t* aFilePath, bool* aHasNestedMicrosoftSignature = nullptr,
       AuthenticodeFlags aFlags = AuthenticodeFlags::Default) final {
     
     
     MOZ_ASSERT(!NS_IsMainThread());
-    return detail::DllServicesBase::GetBinaryOrgName(aFilePath, aFlags);
+    return detail::DllServicesBase::GetBinaryOrgName(
+        aFilePath, aHasNestedMicrosoftSignature, aFlags);
   }
 #  endif  
 
