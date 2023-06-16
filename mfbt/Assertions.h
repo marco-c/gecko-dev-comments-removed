@@ -644,4 +644,31 @@ MFBT_API MOZ_NORETURN MOZ_COLD void InvalidArrayIndex_CRASH(size_t aIndex,
 }  
 #endif  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef __cplusplus
+namespace mozilla {
+template <typename T>
+static inline T MakeCompilerAssumeUnreachableFakeValue() {
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE();
+}
+}  
+#endif  
+
 #endif
