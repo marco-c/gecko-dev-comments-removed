@@ -411,6 +411,12 @@ pref("browser.urlbar.suggest.calculator",           false);
   pref("browser.urlbar.trending.featureGate", true);
 #endif
 
+#if defined(NIGHTLY_BUILD)
+  
+  pref("browser.urlbar.richSuggestions.featureGate", true);
+  pref("browser.search.param.search_rich_suggestions", "fen");
+#endif
+
 
 pref("browser.urlbar.weather.featureGate", false);
 
