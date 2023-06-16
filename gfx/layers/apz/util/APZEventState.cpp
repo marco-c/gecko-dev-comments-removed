@@ -295,8 +295,12 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   mContentReceivedInputBlockCallback(
       aInputBlockId, preventDefaultResult != PreventDefaultResult::No);
 
-  const bool eventHandled =
-#ifdef MOZ_WIDGET_ANDROID
+  const bool contextmenuOpen =
+#ifdef XP_WIN
+      
+      
+      false;
+#elif defined(MOZ_WIDGET_ANDROID)
       
       
       
@@ -307,10 +311,9 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
 
 
 
-
-      preventDefaultResult == PreventDefaultResult::ByContent;
+      preventDefaultResult == PreventDefaultResult::No;
 #endif
-  if (eventHandled) {
+  if (contextmenuOpen) {
     
     
     
