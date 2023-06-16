@@ -102,6 +102,7 @@
 #endif
 
 #ifdef MOZ_PHC
+#include "mozmemory.h"
 #include "replace_malloc_bridge.h"
 #endif
 
@@ -467,9 +468,14 @@ static void GetPHCAddrInfo(siginfo_t* siginfo,
 
 bool ExceptionHandler::HandleSignal(int , siginfo_t* info, void* uc) {
   mozilla::phc::AddrInfo* addr_info = nullptr;
+
 #ifdef MOZ_PHC
-  addr_info = &mozilla::phc::gAddrInfo;
-  GetPHCAddrInfo(info, addr_info);
+  if (!jemalloc_is_working()) {
+    
+    
+    addr_info = &mozilla::phc::gAddrInfo;
+    GetPHCAddrInfo(info, addr_info);
+  }
 #endif
 
   if (filter_ && !filter_(callback_context_)) {

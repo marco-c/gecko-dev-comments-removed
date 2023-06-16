@@ -112,6 +112,12 @@ MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
 
 
 MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
+
+
+
+
+
+MALLOC_DECL(jemalloc_is_working, bool)
 #  endif
 
 #  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_BASE
