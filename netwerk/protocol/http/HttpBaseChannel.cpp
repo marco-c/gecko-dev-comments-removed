@@ -2429,6 +2429,7 @@ nsresult HttpBaseChannel::ProcessCrossOriginEmbedderPolicyHeader() {
   
   if (mLoadInfo->GetExternalContentPolicyType() ==
           ExtContentPolicy::TYPE_SUBDOCUMENT &&
+      !nsHttpChannel::IsRedirectStatus(mResponseHead->Status()) &&
       mLoadInfo->GetLoadingEmbedderPolicy() !=
           nsILoadInfo::EMBEDDER_POLICY_NULL &&
       resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP &&
