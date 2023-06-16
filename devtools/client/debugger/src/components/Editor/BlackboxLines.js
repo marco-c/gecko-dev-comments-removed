@@ -2,26 +2,19 @@
 
 
 
-import { connect } from "../../utils/connect";
 import PropTypes from "prop-types";
 import { Component } from "react";
 import { toEditorLine, fromEditorLine } from "../../utils/editor";
 import { isLineBlackboxed } from "../../utils/source";
-import {
-  getBlackBoxRanges,
-  getSelectedSource,
-  isSourceMapIgnoreListEnabled,
-  isSourceOnSourceMapIgnoreList,
-} from "../../selectors";
 import { isWasm } from "../../utils/wasm";
 
 
 class BlackboxLines extends Component {
   static get propTypes() {
     return {
-      editor: PropTypes.object,
-      selectedSource: PropTypes.object,
-      blackboxedRangesForSelectedSource: PropTypes.object,
+      editor: PropTypes.object.isRequired,
+      selectedSource: PropTypes.object.isRequired,
+      blackboxedRangesForSelectedSource: PropTypes.array,
       isSourceOnIgnoreList: PropTypes.bool,
     };
   }
@@ -32,11 +25,6 @@ class BlackboxLines extends Component {
 
     if (this.props.isSourceOnIgnoreList) {
       this.setAllBlackboxLines(editor);
-      return;
-    }
-
-    
-    if (!blackboxedRangesForSelectedSource) {
       return;
     }
 
@@ -147,17 +135,4 @@ class BlackboxLines extends Component {
   }
 }
 
-const mapStateToProps = state => {
-  const selectedSource = getSelectedSource(state);
-  return {
-    selectedSource,
-    blackboxedRangesForSelectedSource: selectedSource
-      ? getBlackBoxRanges(state)[selectedSource.url]
-      : undefined,
-    isSourceOnIgnoreList:
-      isSourceMapIgnoreListEnabled(state) &&
-      isSourceOnSourceMapIgnoreList(state, selectedSource),
-  };
-};
-
-export default connect(mapStateToProps)(BlackboxLines);
+export default BlackboxLines;
