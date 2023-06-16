@@ -68,6 +68,17 @@ add_task(async function send_dismiss_event_telemetry() {
     await SpecialPowers.popPrefEnv();
   });
 
+  
+  let pingContents = [];
+  let onSubmit = () => {
+    pingContents.push({
+      messageId: Glean.messagingSystem.messageId.testGetValue(),
+      event: Glean.messagingSystem.event.testGetValue(),
+    });
+    GleanPings.messagingSystem.testBeforeNextSubmit(onSubmit);
+  };
+  GleanPings.messagingSystem.testBeforeNextSubmit(onSubmit);
+
   const messageId = "MULTISTAGE_SPOTLIGHT_MESSAGE";
   let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === messageId
@@ -79,30 +90,9 @@ add_task(async function send_dismiss_event_telemetry() {
     .value({ sendStructuredIngestionPing: () => {} });
   let spy = sandbox.spy(AboutWelcomeTelemetry.prototype, "sendTelemetry");
   
-  let pingSubmitted = false;
   await showAndWaitForDialog({ message, browser }, async win => {
     await waitForClick("button.dismiss-button", win);
     await win.close();
-    
-    
-    
-    
-    
-    
-    GleanPings.messagingSystem.testBeforeNextSubmit(() => {
-      pingSubmitted = true;
-
-      Assert.equal(
-        messageId,
-        Glean.messagingSystem.messageId.testGetValue(),
-        "Glean was given the correct message_id"
-      );
-      Assert.equal(
-        "DISMISS",
-        Glean.messagingSystem.event.testGetValue(),
-        "Glean was given the correct event"
-      );
-    });
   });
 
   Assert.equal(
@@ -117,8 +107,20 @@ add_task(async function send_dismiss_event_telemetry() {
     "A dismiss event is called with a top level event field with value 'DISMISS'"
   );
 
-  Assert.ok(pingSubmitted, "The Glean ping was submitted.");
+  Assert.greater(
+    pingContents.length,
+    0,
+    "Glean 'messaging-system' pings were submitted."
+  );
+  Assert.ok(
+    pingContents.some(ping => {
+      return ping.messageId === messageId && ping.event === "DISMISS";
+    }),
+    "A Glean 'messaging-system' ping was sent for the correct message+event."
+  );
 
+  
+  GleanPings.messagingSystem.testBeforeNextSubmit(() => {});
   sandbox.restore();
 });
 
