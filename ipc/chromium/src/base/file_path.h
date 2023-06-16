@@ -90,11 +90,11 @@ class FilePath {
   
   
   typedef std::string StringType;
-#elif defined(XP_WIN)
+#else
   
   
   typedef std::wstring StringType;
-#endif  
+#endif
 
   typedef StringType::value_type CharType;
 
@@ -241,8 +241,8 @@ class FilePath {
 
 #if defined(XP_UNIX)
 #  define FILE_PATH_LITERAL(x) x
-#elif defined(XP_WIN)
+#else
 #  define FILE_PATH_LITERAL(x) L##x
-#endif  
+#endif
 
 #endif  

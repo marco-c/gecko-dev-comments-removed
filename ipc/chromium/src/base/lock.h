@@ -36,22 +36,18 @@ class Lock {
     
     
     return base::internal::LockImpl::PriorityInheritanceAvailable();
-#elif defined(XP_WIN)
+#else
     
     
     
     return true;
-#else
-#  error Unsupported platform
 #endif
   }
 
-#if defined(XP_UNIX) || defined(XP_WIN)
   
   
   
   friend class ConditionVariable;
-#endif
 
  private:
   

@@ -160,12 +160,12 @@ class Channel {
   void StartAcceptingMachPorts(Mode mode);
 #  endif
 
-#elif defined(XP_WIN)
+#else
   
   
   
   void StartAcceptingHandles(Mode mode);
-#endif  
+#endif
 
   
   

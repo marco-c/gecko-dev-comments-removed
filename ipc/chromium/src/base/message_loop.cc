@@ -276,7 +276,7 @@ MessageLoop::MessageLoop(Type type, nsISerialEventTarget* aEventTarget)
     DCHECK(type_ == TYPE_UI);
     pump_ = new base::MessagePumpForUI();
   }
-#elif defined(XP_UNIX)
+#else
   if (type_ == TYPE_UI) {
 #  if defined(XP_DARWIN)
     pump_ = base::MessagePumpMac::Create();
@@ -289,7 +289,7 @@ MessageLoop::MessageLoop(Type type, nsISerialEventTarget* aEventTarget)
   } else {
     pump_ = new base::MessagePumpDefault();
   }
-#endif    
+#endif
 
   
   
@@ -707,7 +707,7 @@ bool MessageLoopForIO::WaitForIOCompletion(DWORD timeout, IOHandler* filter) {
   return pump_io()->WaitForIOCompletion(timeout, filter);
 }
 
-#elif defined(XP_UNIX)
+#else
 
 bool MessageLoopForIO::WatchFileDescriptor(int fd, bool persistent, Mode mode,
                                            FileDescriptorWatcher* controller,

@@ -182,7 +182,7 @@ class SharedMemory {
   
   
   bool external_section_ = false;
-#elif defined(XP_UNIX) && !defined(ANDROID)
+#elif !defined(ANDROID)
   mozilla::UniqueFileHandle frozen_file_;
   bool is_memfd_ = false;
 #endif
