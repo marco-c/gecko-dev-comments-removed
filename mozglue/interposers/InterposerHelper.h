@@ -24,6 +24,14 @@ static inline T dlsym_wrapper(void* aHandle, const char* aName) {
 #endif  
 }
 
+static inline void* dlopen_wrapper(const char* aPath, int flags) {
+#ifdef MOZ_LINKER
+  return __wrap_dlopen(aPath, flags);
+#else
+  return dlopen(aPath, flags);
+#endif  
+}
+
 template <typename T>
 static T get_real_symbol(const char* aName, T aReplacementSymbol) {
   
@@ -41,7 +49,7 @@ static T get_real_symbol(const char* aName, T aReplacementSymbol) {
     
     
     
-    void* handle = dlopen("libc.so", RTLD_LAZY);
+    void* handle = dlopen_wrapper("libc.so", RTLD_LAZY);
 
     if (handle) {
       real_symbol = dlsym_wrapper<T>(handle, aName);
