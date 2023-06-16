@@ -47,6 +47,7 @@ class MediaSink {
   
   
   
+  
   virtual RefPtr<EndedPromise> OnEnded(TrackType aType) = 0;
 
   
@@ -130,6 +131,8 @@ class MediaSink {
   virtual void SetSecondaryVideoContainer(VideoFrameContainer* aSecondary) {}
 
   virtual void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) {}
+
+  virtual void EnableTreatAudioUnderrunAsSilence(bool aEnabled) {}
 
  protected:
   virtual ~MediaSink() = default;
