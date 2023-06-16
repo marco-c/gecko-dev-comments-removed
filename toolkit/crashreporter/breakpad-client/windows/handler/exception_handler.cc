@@ -909,12 +909,12 @@ static void GetPHCAddrInfo(EXCEPTION_POINTERS* exinfo,
 #endif
 
 ExceptionHandler::MinidumpResult ExceptionHandler::WriteMinidumpWithException(
-    DWORD requesting_thread_id,
-    EXCEPTION_POINTERS* exinfo,
+    DWORD requesting_thread_id, EXCEPTION_POINTERS* exinfo,
     MDRawAssertionInfo* assertion) {
-    mozilla::phc::AddrInfo addr_info;
+  mozilla::phc::AddrInfo* addr_info = nullptr;
 #ifdef MOZ_PHC
-    GetPHCAddrInfo(exinfo, &addr_info);
+  addr_info = &mozilla::phc::gAddrInfo;
+  GetPHCAddrInfo(exinfo, addr_info);
 #endif
 
   
@@ -949,7 +949,7 @@ ExceptionHandler::MinidumpResult ExceptionHandler::WriteMinidumpWithException(
     
     
     success = callback_(dump_path_c_, next_minidump_id_c_, callback_context_,
-                        exinfo, assertion, &addr_info, success);
+                        exinfo, assertion, addr_info, success);
   }
 
   return success ? MinidumpResult::Success : MinidumpResult::Failure;

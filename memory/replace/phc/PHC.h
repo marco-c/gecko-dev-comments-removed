@@ -96,6 +96,9 @@ class AddrInfo {
         mFreeStack() {}
 };
 
+
+extern AddrInfo gAddrInfo;
+
 }  
 }  
 
