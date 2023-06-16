@@ -114,7 +114,6 @@
 
 
 
-
 #ifndef js_Result_h
 #define js_Result_h
 
@@ -131,19 +130,6 @@
   do {                                                             \
     auto tmpResult_ = (expr);                                      \
     if (tmpResult_.isErr()) return (cx)->resultToBool(tmpResult_); \
-  } while (0)
-
-
-
-
-
-#define JS_TRY_OR_RETURN_NULL(cx, expr)                 \
-  do {                                                  \
-    auto tmpResult_ = (expr);                           \
-    if (tmpResult_.isErr()) {                           \
-      MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
-      return nullptr;                                   \
-    }                                                   \
   } while (0)
 
 #define JS_TRY_VAR_OR_RETURN_FALSE(cx, target, expr)               \
