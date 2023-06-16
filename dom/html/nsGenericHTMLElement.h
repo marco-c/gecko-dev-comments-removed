@@ -1216,6 +1216,8 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
   virtual void SaveState() {}
 
+  nsresult SubmitDirnameDir(mozilla::dom::FormData* aFormData);
+
   
   mozilla::dom::HTMLFormElement* mForm;
 
