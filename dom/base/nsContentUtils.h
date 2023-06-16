@@ -394,8 +394,8 @@ class nsContentUtils {
 
 
 
-  static bool ShouldResistFingerprinting(
-      const char* aJustification, RFPTarget aTarget = RFPTarget::Unknown);
+  static bool ShouldResistFingerprinting(const char* aJustification,
+                                         RFPTarget aTarget);
 
   
   
