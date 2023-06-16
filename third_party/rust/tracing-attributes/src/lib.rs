@@ -52,7 +52,6 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/tracing-attributes/0.1.23")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/tokio-rs/tracing/master/assets/logo-type.png",
     issue_tracker_base_url = "https://github.com/tokio-rs/tracing/issues/"
@@ -64,7 +63,6 @@
     rust_2018_idioms,
     unreachable_pub,
     bad_style,
-    const_err,
     dead_code,
     improper_ctypes,
     non_shorthand_field_patterns,
@@ -84,12 +82,25 @@
 extern crate proc_macro;
 
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::{Attribute, ItemFn, Signature, Visibility};
 
 mod attr;
 mod expand;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -583,6 +594,13 @@ fn instrument_precise(
 ) -> Result<proc_macro::TokenStream, syn::Error> {
     let input = syn::parse::<ItemFn>(item)?;
     let instrumented_function_name = input.sig.ident.to_string();
+
+    if input.sig.constness.is_some() {
+        return Ok(quote! {
+            compile_error!("the `#[instrument]` attribute may not be used with `const fn`s")
+        }
+        .into());
+    }
 
     
     
