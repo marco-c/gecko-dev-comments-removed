@@ -225,8 +225,6 @@ pref("media.play-stand-alone", true);
   pref("media.wmf.dxva.enabled", true);
   pref("media.wmf.play-stand-alone", true);
 #endif
-pref("media.gmp.decoder.aac", 0);
-pref("media.gmp.decoder.h264", 0);
 
 
 
