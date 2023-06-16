@@ -8,7 +8,7 @@
 
 
 
-#include "video/rtp_video_stream_receiver_frame_transformer_delegate.h"
+#include "modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.h"
 
 #include <cstdio>
 #include <memory>
@@ -154,24 +154,23 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
   
   
   EXPECT_CALL(*mock_frame_transformer, Transform)
-      .WillOnce(
-          [&](std::unique_ptr<TransformableFrameInterface>
-                  transformable_frame) {
-            auto frame =
-                absl::WrapUnique(static_cast<TransformableVideoFrameInterface*>(
-                    transformable_frame.release()));
-            ASSERT_TRUE(frame);
-            auto metadata = frame->GetMetadata();
-            EXPECT_EQ(metadata.GetWidth(), 1280u);
-            EXPECT_EQ(metadata.GetHeight(), 720u);
-            EXPECT_EQ(metadata.GetFrameId(), 10);
-            EXPECT_EQ(metadata.GetTemporalIndex(), 3);
-            EXPECT_EQ(metadata.GetSpatialIndex(), 2);
-            EXPECT_THAT(metadata.GetFrameDependencies(), ElementsAre(5));
-            EXPECT_THAT(metadata.GetDecodeTargetIndications(),
-                        ElementsAre(DecodeTargetIndication::kSwitch));
-            EXPECT_EQ(metadata.GetCsrcs(), csrcs);
-          });
+      .WillOnce([&](std::unique_ptr<TransformableFrameInterface>
+                        transformable_frame) {
+        auto frame =
+            absl::WrapUnique(static_cast<TransformableVideoFrameInterface*>(
+                transformable_frame.release()));
+        ASSERT_TRUE(frame);
+        auto metadata = frame->GetMetadata();
+        EXPECT_EQ(metadata.GetWidth(), 1280u);
+        EXPECT_EQ(metadata.GetHeight(), 720u);
+        EXPECT_EQ(metadata.GetFrameId(), 10);
+        EXPECT_EQ(metadata.GetTemporalIndex(), 3);
+        EXPECT_EQ(metadata.GetSpatialIndex(), 2);
+        EXPECT_THAT(metadata.GetFrameDependencies(), ElementsAre(5));
+        EXPECT_THAT(metadata.GetDecodeTargetIndications(),
+                    ElementsAre(DecodeTargetIndication::kSwitch));
+        EXPECT_EQ(metadata.GetCsrcs(), csrcs);
+      });
   
   delegate->TransformFrame(CreateRtpFrameObject(video_header, csrcs));
 }
