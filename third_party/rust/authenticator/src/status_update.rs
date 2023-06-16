@@ -1,4 +1,4 @@
-use super::{u2ftypes, Pin};
+use super::Pin;
 use crate::ctap2::commands::get_info::AuthenticatorInfo;
 use serde::{Deserialize, Serialize as DeriveSer, Serializer};
 use std::sync::mpsc::Sender;
@@ -56,29 +56,14 @@ pub enum StatusPinUv {
 #[derive(Debug)]
 pub enum StatusUpdate {
     
-    DeviceAvailable { dev_info: u2ftypes::U2FDeviceInfo },
-    
-    DeviceUnavailable { dev_info: u2ftypes::U2FDeviceInfo },
-    
     PresenceRequired,
-    
-    Success { dev_info: u2ftypes::U2FDeviceInfo },
     
     
     PinUvError(StatusPinUv),
     
     SelectDeviceNotice,
     
-    
-    DeviceSelected(u2ftypes::U2FDeviceInfo),
-    
-    InteractiveManagement(
-        (
-            Sender<InteractiveRequest>,
-            u2ftypes::U2FDeviceInfo,
-            Option<AuthenticatorInfo>,
-        ),
-    ),
+    InteractiveManagement((Sender<InteractiveRequest>, Option<AuthenticatorInfo>)),
 }
 
 pub(crate) fn send_status(status: &Sender<StatusUpdate>, msg: StatusUpdate) {

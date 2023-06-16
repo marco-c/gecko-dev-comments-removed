@@ -1,25 +1,30 @@
 use super::{CryptoError, DER_OID_P256_BYTES};
 use nss_gk_api::p11::{
     PK11Origin, PK11_CreateContextBySymKey, PK11_Decrypt, PK11_DigestFinal, PK11_DigestOp,
-    PK11_Encrypt, PK11_GenerateKeyPairWithOpFlags, PK11_GenerateRandom, PK11_HashBuf,
-    PK11_ImportSymKey, PK11_PubDeriveWithKDF, PrivateKey, PublicKey,
+    PK11_Encrypt, PK11_ExportDERPrivateKeyInfo, PK11_GenerateKeyPairWithOpFlags,
+    PK11_GenerateRandom, PK11_HashBuf, PK11_ImportDERPrivateKeyInfoAndReturnKey, PK11_ImportSymKey,
+    PK11_PubDeriveWithKDF, PK11_SignWithMechanism, PrivateKey, PublicKey,
     SECKEY_DecodeDERSubjectPublicKeyInfo, SECKEY_ExtractPublicKey, SECOidTag, Slot,
-    SubjectPublicKeyInfo, AES_BLOCK_SIZE, PK11_ATTR_SESSION, SHA256_LENGTH,
+    SubjectPublicKeyInfo, AES_BLOCK_SIZE, PK11_ATTR_EXTRACTABLE, PK11_ATTR_INSENSITIVE,
+    PK11_ATTR_SESSION, SHA256_LENGTH,
 };
-use nss_gk_api::{IntoResult, SECItem, SECItemBorrowed, PR_FALSE};
+use nss_gk_api::{IntoResult, SECItem, SECItemBorrowed, ScopedSECItem, PR_FALSE};
 use pkcs11_bindings::{
     CKA_DERIVE, CKA_ENCRYPT, CKA_SIGN, CKD_NULL, CKF_DERIVE, CKM_AES_CBC, CKM_ECDH1_DERIVE,
-    CKM_EC_KEY_PAIR_GEN, CKM_SHA256_HMAC, CKM_SHA512_HMAC,
+    CKM_ECDSA_SHA256, CKM_EC_KEY_PAIR_GEN, CKM_SHA256_HMAC, CKM_SHA512_HMAC,
 };
 use std::convert::TryFrom;
 use std::os::raw::{c_int, c_uint};
 use std::ptr;
 
+const DER_TAG_INTEGER: u8 = 0x02;
+const DER_TAG_SEQUENCE: u8 = 0x30;
+
 #[cfg(test)]
 use super::DER_OID_EC_PUBLIC_KEY_BYTES;
 
 #[cfg(test)]
-use nss_gk_api::p11::PK11_ImportDERPrivateKeyInfoAndReturnKey;
+use nss_gk_api::p11::PK11_VerifyWithMechanism;
 
 impl From<nss_gk_api::Error> for CryptoError {
     fn from(e: nss_gk_api::Error) -> Self {
@@ -28,6 +33,118 @@ impl From<nss_gk_api::Error> for CryptoError {
 }
 
 pub type Result<T> = std::result::Result<T, CryptoError>;
+
+
+
+
+
+fn encode_der_p256_sig(r: &[u8], s: &[u8]) -> Result<Vec<u8>> {
+    if r.len() != 32 || s.len() != 32 {
+        return Err(CryptoError::MalformedInput);
+    }
+    
+    
+    
+    let mut out = Vec::with_capacity(72);
+    out.push(DER_TAG_SEQUENCE);
+    out.push(0xaa); 
+
+    let encode_u256 = |out: &mut Vec<u8>, r: &[u8]| {
+        
+        let mut r = r;
+        while r.len() > 1 && r[0] == 0 {
+            r = &r[1..];
+        }
+        out.push(DER_TAG_INTEGER);
+        if r[0] & 0x80 != 0 {
+            
+            out.push((r.len() + 1) as u8);
+            out.push(0x00);
+        } else {
+            out.push(r.len() as u8);
+        }
+        out.extend_from_slice(r);
+    };
+
+    encode_u256(&mut out, r);
+    encode_u256(&mut out, s);
+
+    
+    out[1] = (out.len() - 2) as u8;
+
+    Ok(out)
+}
+
+
+
+#[cfg(test)]
+fn der_expect_tag_with_short_len(tag: u8, z: &[u8]) -> Result<(&[u8], &[u8])> {
+    if z.is_empty() {
+        return Err(CryptoError::MalformedInput);
+    }
+    let (h, z) = z.split_at(1);
+    if h[0] != tag || z.is_empty() {
+        return Err(CryptoError::MalformedInput);
+    }
+    let (h, z) = z.split_at(1);
+    if h[0] >= 0x80 || h[0] as usize > z.len() {
+        return Err(CryptoError::MalformedInput);
+    }
+    Ok(z.split_at(h[0] as usize))
+}
+
+
+
+
+
+
+
+
+#[cfg(test)]
+fn decode_der_p256_sig(z: &[u8]) -> Result<Vec<u8>> {
+    
+    let (z, rest) = der_expect_tag_with_short_len(DER_TAG_SEQUENCE, z)?;
+
+    
+    if !rest.is_empty() {
+        return Err(CryptoError::MalformedInput);
+    }
+
+    let read_u256 = |z| -> Result<(&[u8], &[u8])> {
+        let (r, z) = der_expect_tag_with_short_len(DER_TAG_INTEGER, z)?;
+        
+        if r.is_empty() || r.len() > 33 {
+            return Err(CryptoError::MalformedInput);
+        }
+        
+        if r.len() == 33 && r[0] != 0 {
+            return Err(CryptoError::MalformedInput);
+        }
+        
+        if r.len() == 33 {
+            Ok((&r[1..], z))
+        } else {
+            Ok((r, z))
+        }
+    };
+
+    let (r, z) = read_u256(z)?;
+    let (s, z) = read_u256(z)?;
+
+    
+    if !z.is_empty() {
+        return Err(CryptoError::MalformedInput);
+    }
+
+    
+    let mut out = vec![0u8; 64];
+    {
+        let (r_out, s_out) = out.split_at_mut(32);
+        r_out[32 - r.len()..].copy_from_slice(r);
+        s_out[32 - s.len()..].copy_from_slice(s);
+    }
+    Ok(out)
+}
 
 fn nss_public_key_from_der_spki(spki: &[u8]) -> Result<PublicKey> {
     
@@ -65,15 +182,7 @@ fn ecdh_nss_raw(client_private: PrivateKey, peer_public: PublicKey) -> Result<Ve
     Ok(ecdh_x_coord_bytes.to_vec())
 }
 
-
-
-
-
-pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
-    nss_gk_api::init();
-
-    let peer_public = nss_public_key_from_der_spki(peer_spki)?;
-
+fn generate_p256_nss() -> Result<(PrivateKey, PublicKey)> {
     
     
     
@@ -88,7 +197,7 @@ pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     
     
     
-    let (client_private, client_public) = unsafe {
+    unsafe {
         let client_private =
             
             
@@ -97,7 +206,7 @@ pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
                 CKM_EC_KEY_PAIR_GEN,
                 oid_ptr.cast(),
                 &mut client_public_ptr,
-                PK11_ATTR_SESSION,
+                PK11_ATTR_EXTRACTABLE | PK11_ATTR_INSENSITIVE | PK11_ATTR_SESSION,
                 CKF_DERIVE,
                 CKF_DERIVE,
                 ptr::null_mut(),
@@ -106,8 +215,74 @@ pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
 
         let client_public = PublicKey::from_ptr(client_public_ptr)?;
 
-        (client_private, client_public)
+        Ok((client_private, client_public))
+    }
+}
+
+
+pub fn gen_p256() -> Result<(Vec<u8>, Vec<u8>)> {
+    nss_gk_api::init();
+
+    let (client_private, client_public) = generate_p256_nss()?;
+
+    let pkcs8_priv = unsafe {
+        let pkcs8_priv_item: ScopedSECItem =
+            PK11_ExportDERPrivateKeyInfo(*client_private, ptr::null_mut()).into_result()?;
+        pkcs8_priv_item.into_vec()
     };
+
+    let sec1_pub = client_public.key_data()?;
+
+    Ok((pkcs8_priv, sec1_pub))
+}
+
+pub fn ecdsa_p256_sha256_sign_raw(private: &[u8], data: &[u8]) -> Result<Vec<u8>> {
+    nss_gk_api::init();
+
+    let slot = Slot::internal()?;
+
+    let imported_private: PrivateKey = unsafe {
+        let mut imported_private_ptr = ptr::null_mut();
+        PK11_ImportDERPrivateKeyInfoAndReturnKey(
+            *slot,
+            SECItemBorrowed::wrap(private).as_mut(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            PR_FALSE,
+            PR_FALSE,
+            255, 
+            &mut imported_private_ptr,
+            ptr::null_mut(),
+        );
+        imported_private_ptr.into_result()?
+    };
+
+    let signature_buf = vec![0; 64];
+    unsafe {
+        PK11_SignWithMechanism(
+            *imported_private,
+            CKM_ECDSA_SHA256,
+            ptr::null_mut(),
+            SECItemBorrowed::wrap(&signature_buf).as_mut(),
+            SECItemBorrowed::wrap(data).as_mut(),
+        )
+        .into_result()?;
+    }
+
+    let (r, s) = signature_buf.split_at(32);
+    encode_der_p256_sig(r, s)
+}
+
+
+
+
+
+pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+    nss_gk_api::init();
+
+    let peer_public = nss_public_key_from_der_spki(peer_spki)?;
+
+    let (client_private, client_public) = generate_p256_nss()?;
 
     let shared_point = ecdh_nss_raw(client_private, peer_public)?;
 
@@ -300,6 +475,8 @@ pub fn sha256(data: &[u8]) -> Result<Vec<u8>> {
 }
 
 pub fn random_bytes(count: usize) -> Result<Vec<u8>> {
+    nss_gk_api::init();
+
     let count_cint: c_int = match c_int::try_from(count) {
         Ok(c) => c,
         _ => return Err(CryptoError::LibraryFailure),
@@ -394,4 +571,28 @@ pub fn test_ecdh_p256_raw(
     let shared_point = ecdh_nss_raw(client_private, peer_public)?;
 
     Ok(shared_point)
+}
+
+#[cfg(test)]
+pub fn test_ecdsa_p256_sha256_verify_raw(
+    public: &[u8],
+    signature: &[u8],
+    data: &[u8],
+) -> Result<()> {
+    nss_gk_api::init();
+
+    let signature = decode_der_p256_sig(signature)?;
+    let public = nss_public_key_from_der_spki(public)?;
+    unsafe {
+        PK11_VerifyWithMechanism(
+            *public,
+            CKM_ECDSA_SHA256,
+            ptr::null_mut(),
+            SECItemBorrowed::wrap(&signature).as_mut(),
+            SECItemBorrowed::wrap(data).as_mut(),
+            ptr::null_mut(),
+        )
+        .into_result()?
+    }
+    Ok(())
 }
