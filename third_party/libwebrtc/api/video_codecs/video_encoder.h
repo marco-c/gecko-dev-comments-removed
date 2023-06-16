@@ -420,7 +420,7 @@ class RTC_EXPORT VideoEncoder {
   
   
   
-  virtual EncoderInfo GetEncoderInfo() const;
+  virtual EncoderInfo GetEncoderInfo() const = 0;
 };
 }  
 #endif  

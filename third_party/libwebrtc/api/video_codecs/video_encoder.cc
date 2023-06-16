@@ -337,9 +337,4 @@ void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}
 void VideoEncoder::OnLossNotification(
     const LossNotification& loss_notification) {}
 
-
-VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
-  return EncoderInfo();
-}
-
 }  
