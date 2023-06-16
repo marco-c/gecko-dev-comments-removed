@@ -36,7 +36,9 @@ add_task(async function () {
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
 
   info("Execute :screenshot");
-  const file = FileUtils.getFile("TmpD", ["TestScreenshotFile.png"]);
+  const file = new FileUtils.File(
+    PathUtils.join(PathUtils.tempDir, "TestScreenshotFile.png")
+  );
   
   
   const command = `:screenshot ${file.path} --dpr 1`;
