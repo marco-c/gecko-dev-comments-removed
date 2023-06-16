@@ -35,14 +35,9 @@ class SVGElement;
 class SVGLength {
  public:
   SVGLength()
-      : mValue(0.0f),
-        mUnit(dom::SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN)  
-                                                               
-  {}
+      : mValue(0.0f), mUnit(dom::SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN) {}
 
-  SVGLength(float aValue, uint8_t aUnit) : mValue(aValue), mUnit(aUnit) {
-    NS_ASSERTION(IsValid(), "Constructed an invalid length");
-  }
+  SVGLength(float aValue, uint8_t aUnit) : mValue(aValue), mUnit(aUnit) {}
 
   bool operator==(const SVGLength& rhs) const {
     return mValue == rhs.mValue && mUnit == rhs.mUnit;
@@ -60,28 +55,22 @@ class SVGLength {
 
 
 
+
+
+
+
   float GetValueInCurrentUnits() const { return mValue; }
 
   uint8_t GetUnit() const { return mUnit; }
 
   void SetValueInCurrentUnits(float aValue) {
+    NS_ASSERTION(std::isfinite(aValue), "Set invalid SVGLength");
     mValue = aValue;
-    NS_ASSERTION(IsValid(), "Set invalid SVGLength");
   }
 
   void SetValueAndUnit(float aValue, uint8_t aUnit) {
     mValue = aValue;
     mUnit = aUnit;
-
-    
-    
-    
-    
-    
-    
-    
-
-    NS_ASSERTION(IsValidUnitType(mUnit), "Set invalid SVGLength");
   }
 
   
@@ -131,12 +120,6 @@ class SVGLength {
                                 uint8_t aUnitType, uint8_t aAxis);
 
  private:
-#ifdef DEBUG
-  bool IsValid() const {
-    return std::isfinite(mValue) && IsValidUnitType(mUnit);
-  }
-#endif
-
   float mValue;
   uint8_t mUnit;
 };
