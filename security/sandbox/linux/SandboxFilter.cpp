@@ -1825,6 +1825,16 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case SYS_SHUTDOWN:
         return Some(Allow());
 
+#ifdef MOZ_ENABLE_V4L2
+      case SYS_SOCKET:
+        
+        
+        
+        
+        
+        return Some(Error(EACCES));
+#endif
+
       default:
         return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
     }
@@ -1843,6 +1853,11 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         static constexpr unsigned long kDmaBufType =
             static_cast<unsigned long>('b') << _IOC_TYPESHIFT;
+#ifdef MOZ_ENABLE_V4L2
+        
+        static constexpr unsigned long kVideoType =
+            static_cast<unsigned long>('V') << _IOC_TYPESHIFT;
+#endif
         
         
         
@@ -1852,6 +1867,9 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         return If(shifted_type == kDrmType, Allow())
             .ElseIf(shifted_type == kDmaBufType, Allow())
+#ifdef MOZ_ENABLE_V4L2
+            .ElseIf(shifted_type == kVideoType, Allow())
+#endif
             
             .ElseIf(shifted_type == kFbDevType, Error(ENOTTY))
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));

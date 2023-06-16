@@ -44,6 +44,12 @@
 #  include <glib.h>
 #endif
 
+#ifdef MOZ_ENABLE_V4L2
+#  include <linux/videodev2.h>
+#  include <sys/ioctl.h>
+#  include <fcntl.h>
+#endif  
+
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
@@ -832,6 +838,59 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   return policy;
 }
 
+#ifdef MOZ_ENABLE_V4L2
+static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
+  
+  
+  
+  DIR* dir = opendir("/dev");
+  if (!dir) {
+    SANDBOX_LOG("Couldn't list /dev");
+    return;
+  }
+
+  struct dirent* dir_entry;
+  while ((dir_entry = readdir(dir))) {
+    if (strncmp(dir_entry->d_name, "video", 5)) {
+      
+      continue;
+    }
+
+    nsCString path = "/dev/"_ns;
+    path += nsDependentCString(dir_entry->d_name);
+
+    int fd = open(path.get(), O_RDWR | O_NONBLOCK, 0);
+    if (fd < 0) {
+      
+      SANDBOX_LOG("Couldn't open video device %s", path.get());
+      continue;
+    }
+
+    
+    struct v4l2_capability cap;
+    int result = ioctl(fd, VIDIOC_QUERYCAP, &cap);
+    if (result < 0) {
+      
+      SANDBOX_LOG("Couldn't query capabilities of video device %s", path.get());
+      close(fd);
+      continue;
+    }
+
+    if ((cap.device_caps & V4L2_CAP_VIDEO_M2M) ||
+        (cap.device_caps & V4L2_CAP_VIDEO_M2M_MPLANE)) {
+      
+      policy->AddPath(rdwr, path.get());
+    }
+
+    close(fd);
+  }
+  closedir(dir);
+
+  
+  policy->AddPath(rdonly, "/dev");
+}
+#endif  
+
  UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   auto policy = MakeUnique<SandboxBroker::Policy>();
@@ -893,6 +952,10 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   
   AddLdconfigPaths(policy.get());
   AddLdLibraryEnvPaths(policy.get());
+
+#ifdef MOZ_ENABLE_V4L2
+  AddV4l2Dependencies(policy.get());
+#endif  
 
   if (policy->IsEmpty()) {
     policy = nullptr;
