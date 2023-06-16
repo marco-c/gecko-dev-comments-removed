@@ -14,7 +14,6 @@
 
 
 
-
 testExtendedCharacterClass({
   regExp: /^[[0-9]--[0-9]]+$/v,
   expression: "[[0-9]--[0-9]]",
