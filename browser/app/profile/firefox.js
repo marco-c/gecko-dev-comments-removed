@@ -114,11 +114,11 @@ pref("app.update.link.updateManualWhatsNew", "update-manual-whats-new");
 
 
 
-pref("app.update.download.promptMaxAttempts", 2);
+pref("app.update.download.maxAttempts", 2);
 
 
 
-pref("app.update.elevation.promptMaxAttempts", 2);
+pref("app.update.elevate.maxAttempts", 2);
 
 #ifdef NIGHTLY_BUILD
   
