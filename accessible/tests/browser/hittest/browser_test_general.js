@@ -302,6 +302,14 @@ addAccessibleTask(
       generic, 
       invisible.firstChild 
     );
+
+    await testOffsetAtPoint(
+      findAccessibleChildByID(docAcc, "invisible", [Ci.nsIAccessibleText]),
+      1,
+      1,
+      COORDTYPE_PARENT_RELATIVE,
+      0
+    );
   },
   { chrome: false, iframe: true, remoteIframe: true }
 );

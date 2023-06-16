@@ -292,6 +292,17 @@ int32_t HyperTextAccessibleBase::OffsetAtPoint(int32_t aX, int32_t aY,
       nsAccUtils::ConvertToScreenCoords(aX, aY, aCoordType, thisAcc);
   if (!thisAcc->Bounds().Contains(coords.x, coords.y)) {
     
+    
+    
+    LayoutDeviceIntPoint p(aX, aY);
+    if (aCoordType != nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE) {
+      p = nsAccUtils::ConvertToScreenCoords(aX, aY, aCoordType, thisAcc);
+    }
+    Accessible* hittestMatch = nsAccUtils::DocumentFor(thisAcc)->ChildAtPoint(
+        p.x, p.y, Accessible::EWhichChildAtPoint::DeepestChild);
+    if (thisAcc == hittestMatch->Parent()) {
+      return 0;
+    }
     return -1;
   }
 
