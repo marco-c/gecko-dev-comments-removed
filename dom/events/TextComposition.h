@@ -51,6 +51,8 @@ class TextComposition final {
   TextComposition(nsPresContext* aPresContext, nsINode* aNode,
                   BrowserParent* aBrowserParent,
                   WidgetCompositionEvent* aCompositionEvent);
+  TextComposition() = delete;
+  TextComposition(const TextComposition& aOther) = delete;
 
   bool Destroyed() const { return !mPresContext; }
   nsPresContext* GetPresContext() const { return mPresContext; }
@@ -91,6 +93,10 @@ class TextComposition final {
   
   
   bool IsSynthesizedForTests() const { return mIsSynthesizedForTests; }
+
+  
+  
+  uint32_t Id() const { return mCompositionId; }
 
   const widget::NativeIMEContext& GetNativeIMEContext() const {
     return mNativeContext;
@@ -324,6 +330,11 @@ class TextComposition final {
   nsString mString;
 
   
+  
+  
+  const uint32_t mCompositionId = 0;
+
+  
   uint32_t mCompositionStartOffset;
   
   
@@ -386,26 +397,6 @@ class TextComposition final {
   
   
   bool mWasCompositionStringEmpty;
-
-  
-  TextComposition()
-      : mPresContext(nullptr),
-        mNativeContext(nullptr),
-        mCompositionStartOffset(0),
-        mTargetClauseOffsetInComposition(0),
-        mCompositionStartOffsetInTextNode(UINT32_MAX),
-        mCompositionLengthInTextNode(UINT32_MAX),
-        mIsSynthesizedForTests(false),
-        mIsComposing(false),
-        mIsEditorHandlingEvent(false),
-        mIsRequestingCommit(false),
-        mIsRequestingCancel(false),
-        mRequestedToCommitOrCancel(false),
-        mHasReceivedCommitEvent(false),
-        mWasNativeCompositionEndEventDiscarded(false),
-        mAllowControlCharacters(false),
-        mWasCompositionStringEmpty(true) {}
-  TextComposition(const TextComposition& aOther);
 
   
 
