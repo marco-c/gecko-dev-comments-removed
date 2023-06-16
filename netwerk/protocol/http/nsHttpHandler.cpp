@@ -2216,26 +2216,6 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   if (!mHandlerActive) return NS_OK;
 
   MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
-  if (mDebugObservations && obsService) {
-    
-    
-
-    
-    nsPrintfCString debugURL("%s%s", aURI->GetSpecOrDefault().get(),
-                             anonymous ? "anonymous" : "use-credentials");
-    obsService->NotifyObservers(nullptr, "speculative-connect-request",
-                                NS_ConvertUTF8toUTF16(debugURL).get());
-    for (auto* cp :
-         dom::ContentParent::AllProcesses(dom::ContentParent::eLive)) {
-      PNeckoParent* neckoParent =
-          SingleManagedOrNull(cp->ManagedPNeckoParent());
-      if (!neckoParent) {
-        continue;
-      }
-      Unused << neckoParent->SendSpeculativeConnectRequest();
-    }
-  }
 
   nsISiteSecurityService* sss = gHttpHandler->GetSSService();
   bool isStsHost = false;
@@ -2302,6 +2282,30 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   if (originAttributes.mPrivateBrowsingId > 0) {
     ci->SetPrivate(true);
   }
+
+  if (mDebugObservations) {
+    
+    
+
+    nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
+    if (obsService) {
+      
+      
+      nsPrintfCString debugHashKey("%s", ci->HashKey().get());
+      obsService->NotifyObservers(nullptr, "speculative-connect-request",
+                                  NS_ConvertUTF8toUTF16(debugHashKey).get());
+      for (auto* cp :
+           dom::ContentParent::AllProcesses(dom::ContentParent::eLive)) {
+        PNeckoParent* neckoParent =
+            SingleManagedOrNull(cp->ManagedPNeckoParent());
+        if (!neckoParent) {
+          continue;
+        }
+        Unused << neckoParent->SendSpeculativeConnectRequest();
+      }
+    }
+  }
+
   return SpeculativeConnect(ci, aCallbacks);
 }
 

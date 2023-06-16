@@ -2,18 +2,10 @@
 
 
 
-Services.prefs.setBoolPref("network.early-hints.enabled", true);
-Services.prefs.setBoolPref("network.early-hints.preconnect.enabled", true);
 Services.prefs.setBoolPref("network.http.debug-observations", true);
-Services.prefs.setIntPref("network.early-hints.preconnect.max_connections", 10);
 
 registerCleanupFunction(function () {
-  Services.prefs.clearUserPref("network.early-hints.enabled");
-  Services.prefs.clearUserPref("network.early-hints.preconnect.enabled");
   Services.prefs.clearUserPref("network.http.debug-observations");
-  Services.prefs.clearUserPref(
-    "network.early-hints.preconnect.max_connections"
-  );
 });
 
 
@@ -23,8 +15,9 @@ registerCleanupFunction(function () {
 
 
 
-async function test_hint_preconnect(href, crossOrigin) {
-  let requestUrl = `https://example.com/browser/netwerk/test/browser/early_hint_preconnect_html.sjs?href=${href}&crossOrigin=${crossOrigin}`;
+
+add_task(async function test_link_preconnect() {
+  let requestUrl = `https://example.com/browser/netwerk/test/browser/file_link_header.sjs`;
 
   let observed = "";
   let observer = {
@@ -48,6 +41,9 @@ async function test_hint_preconnect(href, crossOrigin) {
   );
 
   
+  
+
+  
   let hostPortRegex = /\[.*\](.*?)\^/;
   let hostPortMatch = hostPortRegex.exec(observed);
   let hostPort = hostPortMatch ? hostPortMatch[1] : "";
@@ -55,17 +51,7 @@ async function test_hint_preconnect(href, crossOrigin) {
   let partitionKeyRegex = /\^partitionKey=(.*)$/;
   let partitionKeyMatch = partitionKeyRegex.exec(observed);
   let partitionKey = partitionKeyMatch ? partitionKeyMatch[1] : "";
-  
-  
-  let anonymousFlag = observed[2];
 
-  Assert.equal(anonymousFlag, crossOrigin === "use-credentials" ? "." : "A");
   Assert.equal(hostPort, "localhost:443");
   Assert.equal(partitionKey, "%28https%2Cexample.com%29");
-}
-
-add_task(async function test_103_preconnect() {
-  await test_hint_preconnect("https://localhost", "use-credentials");
-  await test_hint_preconnect("https://localhost", "");
-  await test_hint_preconnect("https://localhost", "anonymous");
 });
