@@ -2742,36 +2742,31 @@ bool ParseMediaDescription(
           message, cricket::MEDIA_TYPE_AUDIO, mline_index, protocol,
           payload_types, pos, &content_name, &bundle_only,
           &section_msid_signaling, &transport, candidates, error);
-    } else if (media_type == kMediaTypeData) {
-      if (cricket::IsDtlsSctp(protocol)) {
-        
-        
-        
-        
-        
-        
-        auto data_desc = std::make_unique<SctpDataContentDescription>();
-        
-        
-        data_desc->set_max_message_size(kDefaultSctpMaxMessageSize);
-        int p;
-        if (rtc::FromString(fields[3], &p)) {
-          data_desc->set_port(p);
-        } else if (fields[3] == kDefaultSctpmapProtocol) {
-          data_desc->set_use_sctpmap(false);
-        }
-        if (!ParseContent(message, cricket::MEDIA_TYPE_DATA, mline_index,
-                          protocol, payload_types, pos, &content_name,
-                          &bundle_only, &section_msid_signaling,
-                          data_desc.get(), &transport, candidates, error)) {
-          return false;
-        }
-        data_desc->set_protocol(protocol);
-        content = std::move(data_desc);
-      } else {
-        return ParseFailed(*mline, "Unsupported protocol for media type",
-                           error);
+    } else if (media_type == kMediaTypeData && cricket::IsDtlsSctp(protocol)) {
+      
+      
+      
+      
+      
+      
+      auto data_desc = std::make_unique<SctpDataContentDescription>();
+      
+      
+      data_desc->set_max_message_size(kDefaultSctpMaxMessageSize);
+      int p;
+      if (rtc::FromString(fields[3], &p)) {
+        data_desc->set_port(p);
+      } else if (fields[3] == kDefaultSctpmapProtocol) {
+        data_desc->set_use_sctpmap(false);
       }
+      if (!ParseContent(message, cricket::MEDIA_TYPE_DATA, mline_index,
+                        protocol, payload_types, pos, &content_name,
+                        &bundle_only, &section_msid_signaling, data_desc.get(),
+                        &transport, candidates, error)) {
+        return false;
+      }
+      data_desc->set_protocol(protocol);
+      content = std::move(data_desc);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported media type: " << *mline;
       auto unsupported_desc =
