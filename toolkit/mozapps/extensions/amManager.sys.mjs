@@ -1,18 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * This component serves as integration between the platform and AddonManager.
+ * It is responsible for initializing and shutting down the AddonManager as well
+ * as passing new installs from webpages to the AddonManager.
+ */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const lazy = {};
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -27,7 +24,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
+// The old XPInstall error codes
 const EXECUTION_ERROR = -203;
 const CANT_READ_ARCHIVE = -207;
 const USER_CANCELLED = -210;
@@ -47,7 +44,8 @@ const MSG_ADDON_EVENT_REQ = "WebAPIAddonEventRequest";
 const MSG_ADDON_EVENT = "WebAPIAddonEvent";
 
 var AddonManager, AddonManagerPrivate;
-function amManager() {
+
+export function amManager() {
   ({ AddonManager, AddonManagerPrivate } = ChromeUtils.import(
     "resource://gre/modules/AddonManager.jsm"
   ));
@@ -64,7 +62,7 @@ function amManager() {
 
   AddonManager.webAPI.setEventHandler(this.sendEvent);
 
-  
+  // Needed so receiveMessage can be called directly by JS callers
   this.wrappedJSObject = this;
 }
 
@@ -87,12 +85,12 @@ amManager.prototype = {
 
     const { mimetype, triggeringPrincipal, hash, icon, name, uri } = aPayload;
 
-    
-    
-    
-    
-    
-    
+    // NOTE: consider removing this call to isInstallAllowed from here, later it is going to be called
+    // again from inside AddonManager.installAddonFromWebpage as part of the block/allow logic.
+    //
+    // The sole purpose of the call here seems to be "clearing the optional InstallTrigger callback",
+    // which seems to be actually wrong if we are still proceeding to call getInstallForURL and the same
+    // logic used to block the install flow using the exact same method call later on.
     if (!AddonManager.isInstallAllowed(mimetype, triggeringPrincipal)) {
       aCallback = null;
       retval = false;
@@ -171,8 +169,8 @@ amManager.prototype = {
     AddonManagerPrivate.backgroundUpdateTimerHandler();
   },
 
-  
-  
+  // Maps message manager instances for content processes to the associated
+  // AddonListener instances.
   addonListeners: new Map(),
 
   _addAddonListener(target) {
@@ -204,12 +202,12 @@ amManager.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * messageManager callback function.
+   *
+   * Listens to requests from child processes for InstallTrigger
+   * activity, and sends back callbacks.
+   */
   receiveMessage(aMessage) {
     let payload = aMessage.data;
 
@@ -331,7 +329,7 @@ amManager.prototype = {
 const BLOCKLIST_JSM = "resource://gre/modules/Blocklist.jsm";
 ChromeUtils.defineModuleGetter(lazy, "Blocklist", BLOCKLIST_JSM);
 
-function BlocklistService() {
+export function BlocklistService() {
   this.wrappedJSObject = this;
 }
 
@@ -359,6 +357,3 @@ BlocklistService.prototype = {
     "nsITimerCallback",
   ]),
 };
-
-
-var EXPORTED_SYMBOLS = ["amManager", "BlocklistService"];
