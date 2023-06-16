@@ -3602,7 +3602,9 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           do_QueryFrame(ComputeScrollTargetAndMayAdjustWheelEvent(
               mCurrentTarget, wheelEvent,
               COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR));
-      if (scrollTarget) {
+      
+      
+      if (scrollTarget && !WheelTransaction::HandledByApz()) {
         scrollTarget->ScrollSnap();
       }
     } break;

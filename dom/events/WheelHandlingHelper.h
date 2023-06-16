@@ -131,6 +131,7 @@ class WheelTransaction {
 
 
   static nsIFrame* GetEventTargetFrame() { return sEventTargetFrame; }
+  static bool HandledByApz() { return sHandledByApz; }
   static void EndTransaction();
   
 
@@ -192,6 +193,10 @@ class WheelTransaction {
 
 
   static AutoWeakFrame sEventTargetFrame;
+  
+
+
+  static bool sHandledByApz;
   static uint32_t sTime;        
   static uint32_t sMouseMoved;  
   static nsITimer* sTimer;
