@@ -100,6 +100,21 @@ impl QuirksMode {
 }
 
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RelativeSelectorMatchingState {
+    
+    None,
+    
+    
+    
+    
+    Considered,
+    
+    
+    ConsideredAnchor,
+}
+
+
 
 
 pub struct MatchingContext<'a, Impl>
@@ -146,7 +161,7 @@ where
 
     
     current_relative_selector_anchor: Option<OpaqueElement>,
-    pub considered_relative_selector: bool,
+    pub considered_relative_selector: RelativeSelectorMatchingState,
 
     quirks_mode: QuirksMode,
     needs_selector_flags: NeedsSelectorFlags,
@@ -200,7 +215,7 @@ where
             pseudo_element_matching_fn: None,
             extra_data: Default::default(),
             current_relative_selector_anchor: None,
-            considered_relative_selector: false,
+            considered_relative_selector: RelativeSelectorMatchingState::None,
             _impl: ::std::marker::PhantomData,
         }
     }
@@ -329,12 +344,14 @@ where
     where
         F: FnOnce(&mut Self) -> R,
     {
-        
-        let original_relative_selector_anchor = self.current_relative_selector_anchor.take();
+        debug_assert!(
+            self.current_relative_selector_anchor.is_none(),
+            "Nesting should've been rejected at parse time"
+        );
         self.current_relative_selector_anchor = Some(anchor);
+        self.considered_relative_selector = RelativeSelectorMatchingState::Considered;
         let result = self.nest(f);
-        self.current_relative_selector_anchor = original_relative_selector_anchor;
-        self.considered_relative_selector = true;
+        self.current_relative_selector_anchor = None;
         result
     }
 

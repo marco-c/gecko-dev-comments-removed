@@ -632,7 +632,11 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
-        if element.anchors_relative_selector() {
+        if style
+            .style
+            .0
+            .flags
+            .intersects(ComputedValueFlags::ANCHORS_RELATIVE_SELECTOR) {
             debug!("Failing to insert to the cache: may anchor relative selector");
             return;
         }

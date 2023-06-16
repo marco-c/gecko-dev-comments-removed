@@ -16,7 +16,7 @@ use crate::rule_tree::StrongRuleNode;
 use crate::selector_parser::{PseudoElement, SelectorImpl};
 use crate::stylist::RuleInclusion;
 use log::Level::Trace;
-use selectors::matching::{MatchingContext, NeedsSelectorFlags};
+use selectors::matching::{MatchingContext, NeedsSelectorFlags, RelativeSelectorMatchingState};
 use selectors::matching::{MatchingMode, VisitedHandlingMode};
 use servo_arc::Arc;
 
@@ -503,16 +503,24 @@ where
                 }
             }
         }
-
-        if matching_context.considered_relative_selector {
-            
-            
-            
-            matching_context
-                .extra_data
-                .cascade_input_flags
-                .insert(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR);
-        }
+        
+        
+        
+        match matching_context.considered_relative_selector {
+            RelativeSelectorMatchingState::None => (),
+            RelativeSelectorMatchingState::Considered => {
+                matching_context
+                    .extra_data
+                    .cascade_input_flags
+                    .insert(ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR);
+            },
+            RelativeSelectorMatchingState::ConsideredAnchor => {
+                matching_context.extra_data.cascade_input_flags.insert(
+                    ComputedValueFlags::ANCHORS_RELATIVE_SELECTOR |
+                        ComputedValueFlags::CONSIDERED_RELATIVE_SELECTOR,
+                );
+            },
+        };
 
         MatchingResults {
             rule_node,

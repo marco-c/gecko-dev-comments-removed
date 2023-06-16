@@ -900,10 +900,6 @@ pub trait TElement:
         &self,
         display: &Display,
     ) -> euclid::default::Size2D<Option<app_units::Au>>;
-
-    
-    
-    fn anchors_relative_selector(&self) -> bool;
 }
 
 
