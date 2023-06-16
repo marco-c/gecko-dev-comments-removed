@@ -188,6 +188,11 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   MFCDM_REJECT_IF(!mFactory, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
 
   MFCDMCapabilitiesIPDL capabilities;
+  capabilities.keySystem() = mKeySystem;
+  
+  
+  capabilities.persistentState() = KeySystemConfig::Requirement::Required;
+  capabilities.distinctiveID() = KeySystemConfig::Requirement::Required;
 
   
   
@@ -264,12 +269,6 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
       KeySystemConfig::SessionType::Temporary);
   capabilities.sessionTypes().AppendElement(
       KeySystemConfig::SessionType::PersistentLicense);
-  
-  
-  capabilities.persistentState() = KeySystemConfig::Requirement::Required;
-  capabilities.distinctiveID() = KeySystemConfig::Requirement::Required;
-
-  capabilities.keySystem() = mKeySystem;
 
   aResolver(std::move(capabilities));
   return IPC_OK();
