@@ -207,27 +207,11 @@ std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(
       original->GetData().data(), original->GetData().size());
   EncodedImage encoded_image;
   encoded_image.SetEncodedData(encoded_image_buffer);
-  RTPVideoHeader new_header;
-  absl::optional<VideoCodecType> new_codec_type;
-  
-  
-  if (original->GetDirection() ==
-      TransformableFrameInterface::Direction::kSender) {
-    
-    auto original_as_sender =
-        static_cast<TransformableVideoSenderFrame*>(original);
-    new_header = original_as_sender->GetHeader();
-    new_codec_type = original_as_sender->GetCodecType();
-  } else {
-    
-    new_header.video_type_header.emplace<RTPVideoHeaderVP8>();
-    new_codec_type = kVideoCodecVP8;
-    
-    
-  }
+  RTPVideoHeader new_header =
+      RTPVideoHeader::FromMetadata(original->GetMetadata());
   
   return std::make_unique<TransformableVideoSenderFrame>(
-      encoded_image, new_header, original->GetPayloadType(), new_codec_type,
+      encoded_image, new_header, original->GetPayloadType(), new_header.codec,
       original->GetTimestamp(),
       absl::nullopt,  
       original->GetSsrc(), original->GetMetadata().GetCsrcs());
