@@ -21,8 +21,6 @@ export function createLocation({
   
   line = 0,
   column,
-
-  sourceUrl = "",
 }) {
   return {
     source,
@@ -31,9 +29,6 @@ export function createLocation({
 
     line,
     column,
-
-    
-    sourceUrl,
   };
 }
 
@@ -47,11 +42,6 @@ export function debuggerToSourceMapLocation(location) {
     sourceId: location.source.id,
     line: location.line,
     column: location.column,
-
-    
-    
-    
-    sourceUrl: location.sourceUrl,
   };
 }
 
@@ -124,9 +114,5 @@ export function sourceMapToDebuggerLocation(state, location) {
   return createLocation({
     ...location,
     source,
-
-    
-    
-    sourceUrl: source.url,
   });
 }
