@@ -4,6 +4,7 @@
 )]
 #![deny(rust_2021_compatibility)]
 #![allow(
+    clippy::let_underscore_untyped,
     clippy::let_unit_value,
     clippy::missing_panics_doc,
     clippy::missing_safety_doc,
@@ -740,7 +741,6 @@ pub mod issue57 {
 
 
 pub mod issue68 {
-    #[rustversion::since(1.40)] 
     #[async_trait::async_trait]
     pub trait Example {
         async fn method(&self) {
@@ -1582,5 +1582,24 @@ pub mod issue236 {
         async fn f() -> Ready<()> {
             future::ready(())
         }
+    }
+}
+
+
+pub mod issue238 {
+    #![deny(single_use_lifetimes)]
+
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait Trait {
+        async fn f();
+    }
+
+    pub struct Struct;
+
+    #[async_trait]
+    impl Trait for &Struct {
+        async fn f() {}
     }
 }
