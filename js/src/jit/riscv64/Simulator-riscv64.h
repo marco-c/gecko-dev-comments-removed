@@ -999,6 +999,7 @@ class Simulator {
   void CheckBreakpoints();
 
   JS::ProfilingFrameIterator::RegisterState registerState();
+  void HandleWasmTrap();
 
   
   

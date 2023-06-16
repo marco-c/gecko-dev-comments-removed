@@ -24,6 +24,9 @@ class AssemblerRISCVZicsr : public AssemblerRiscvBase {
   void csrrci(Register rd, ControlStatusReg csr, uint8_t imm5);
 
   
+  void illegal_trap(uint8_t code);
+
+  
   void rdinstret(Register rd) { csrrs(rd, csr_instret, zero_reg); }
   void rdinstreth(Register rd) { csrrs(rd, csr_instreth, zero_reg); }
   void rdcycle(Register rd) { csrrs(rd, csr_cycle, zero_reg); }
