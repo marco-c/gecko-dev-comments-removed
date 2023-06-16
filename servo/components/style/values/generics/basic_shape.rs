@@ -112,8 +112,6 @@ pub enum GenericClipPath<BasicShape, U> {
     None,
     #[animation(error)]
     Url(U),
-    #[css(function)]
-    Path(Path),
     Shape(
         Box<BasicShape>,
         #[css(skip_if = "is_default")] ShapeGeometryBox,
@@ -154,7 +152,9 @@ pub enum GenericShapeOutside<BasicShape, I> {
 
 pub use self::GenericShapeOutside as ShapeOutside;
 
-#[allow(missing_docs)]
+
+
+
 #[derive(
     Animate,
     Clone,
@@ -171,22 +171,32 @@ pub use self::GenericShapeOutside as ShapeOutside;
 )]
 #[repr(C, u8)]
 pub enum GenericBasicShape<H, V, LengthPercentage, NonNegativeLengthPercentage> {
+    
     Inset(
         #[css(field_bound)]
         #[shmem(field_bound)]
         InsetRect<LengthPercentage, NonNegativeLengthPercentage>,
     ),
+    
     Circle(
         #[css(field_bound)]
         #[shmem(field_bound)]
         Circle<H, V, NonNegativeLengthPercentage>,
     ),
+    
     Ellipse(
         #[css(field_bound)]
         #[shmem(field_bound)]
         Ellipse<H, V, NonNegativeLengthPercentage>,
     ),
+    
     Polygon(GenericPolygon<LengthPercentage>),
+    
+    Path(Path),
+    
+    
+    
+    
 }
 
 pub use self::GenericBasicShape as BasicShape;
@@ -380,7 +390,7 @@ pub enum FillRule {
     ToResolvedValue,
     ToShmem,
 )]
-#[css(comma)]
+#[css(comma, function = "path")]
 #[repr(C)]
 pub struct Path {
     

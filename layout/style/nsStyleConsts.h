@@ -93,14 +93,6 @@ bool operator>(const StyleDisplay&, const StyleDisplay&) = delete;
 bool operator>=(const StyleDisplay&, const StyleDisplay&) = delete;
 
 
-enum class StyleBasicShapeType : uint8_t {
-  Polygon,
-  Circle,
-  Ellipse,
-  Inset,
-};
-
-
 enum class StyleBoxAlign : uint8_t {
   Stretch,
   Start,
