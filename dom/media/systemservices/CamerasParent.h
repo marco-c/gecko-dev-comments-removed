@@ -50,31 +50,16 @@ class DeliverFrameRunnable;
 
 class CamerasParent final : public PCamerasParent,
                             private webrtc::VideoInputFeedBack {
- public:
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
-  using CameraAccessRequestPromise =
-      MozPromise<nsresult, nsresult,  false>;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
       CamerasParent, mPBackgroundEventTarget)
 
+ public:
   class VideoEngineArray;
   friend DeliverFrameRunnable;
 
   static already_AddRefed<CamerasParent> Create();
-
-  
-
-
-
-
-
-
-
-
-
-
-  static RefPtr<CameraAccessRequestPromise> RequestCameraAccess();
 
   
   mozilla::ipc::IPCResult RecvPCamerasConstructor();

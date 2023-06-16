@@ -10,11 +10,9 @@
 #include "MediaEngine.h"
 #include "VideoFrameUtils.h"
 #include "mozilla/media/MediaUtils.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "modules/video_capture/video_capture_factory.h"
-#include "modules/video_capture/video_capture_options.h"
 #include <memory>
 #include <functional>
 
@@ -68,12 +66,7 @@ class VideoEngine {
   static int SetAndroidObjects();
 #endif
   
-
-
-
-
-  int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
-                             webrtc::VideoCaptureOptions* aOptions = nullptr);
+  int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8);
 
   int ReleaseVideoCapture(const int32_t aId);
 
@@ -89,12 +82,8 @@ class VideoEngine {
 
 
 
-
-
-
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
-  GetOrCreateVideoCaptureDeviceInfo(
-      webrtc::VideoCaptureOptions* aOptions = nullptr);
+  GetOrCreateVideoCaptureDeviceInfo();
 
   class CaptureEntry {
    public:
