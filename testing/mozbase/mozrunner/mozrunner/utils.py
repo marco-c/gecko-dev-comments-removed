@@ -121,6 +121,7 @@ def test_environment(
 
     
     env["MOZ_DEVELOPER_REPO_DIR"] = mozinfo.info.get("topsrcdir")
+    env["MOZ_DEVELOPER_OBJ_DIR"] = mozinfo.info.get("topobjdir")
 
     
     env["GNOME_DISABLE_CRASH_DIALOG"] = "1"
