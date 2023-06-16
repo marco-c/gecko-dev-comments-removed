@@ -34,7 +34,7 @@ const ProcessHandle kInvalidProcessHandle = INVALID_HANDLE_VALUE;
 
 
 const ProcessId kInvalidProcessId = kuint32max;
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
 
 typedef pid_t ProcessHandle;
 typedef pid_t ProcessId;

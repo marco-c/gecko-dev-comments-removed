@@ -85,7 +85,7 @@
 
 class FilePath {
  public:
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
   
   
   
@@ -239,7 +239,7 @@ class FilePath {
 };
 
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
 #  define FILE_PATH_LITERAL(x) x
 #elif defined(OS_WIN)
 #  define FILE_PATH_LITERAL(x) L##x

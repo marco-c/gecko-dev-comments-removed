@@ -282,7 +282,7 @@ class WindowsProcessLauncher : public BaseProcessLauncher {
 typedef WindowsProcessLauncher ProcessLauncher;
 #endif  
 
-#ifdef OS_POSIX
+#ifdef XP_UNIX
 class PosixProcessLauncher : public BaseProcessLauncher {
  public:
   PosixProcessLauncher(GeckoChildProcessHost* aHost,
@@ -557,7 +557,7 @@ mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
       MOZ_CRASH("GetModuleFileNameW failed (FIXME)");
     }
     exePath = FilePath::FromWStringHack(exePathBuf);
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
     exePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
 #else
 #  error Sorry; target OS not supported yet.
@@ -1192,7 +1192,7 @@ Result<Ok, LaunchError> LinuxProcessLauncher::DoSetup() {
 }
 #endif  
 
-#ifdef OS_POSIX
+#ifdef XP_UNIX
 Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
   Result<Ok, LaunchError> aError = BaseProcessLauncher::DoSetup();
   if (aError.isErr()) {
@@ -1357,7 +1357,7 @@ RefPtr<ProcessHandlePromise> AndroidProcessLauncher::DoLaunch() {
 }
 #endif  
 
-#ifdef OS_POSIX
+#ifdef XP_UNIX
 RefPtr<ProcessHandlePromise> PosixProcessLauncher::DoLaunch() {
   ProcessHandle handle = 0;
   Result<Ok, LaunchError> aError =

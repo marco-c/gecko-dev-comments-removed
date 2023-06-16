@@ -18,7 +18,7 @@
 
 #include "build/build_config.h"
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
 
 #  include <errno.h>
 

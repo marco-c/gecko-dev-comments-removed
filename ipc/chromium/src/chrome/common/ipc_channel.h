@@ -141,7 +141,7 @@ class Channel {
   
   bool IsClosed() const;
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
   
   
   

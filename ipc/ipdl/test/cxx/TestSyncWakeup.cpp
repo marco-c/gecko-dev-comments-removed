@@ -1,4 +1,4 @@
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
 #  include <unistd.h>  
 #endif
 
@@ -35,7 +35,7 @@ mozilla::ipc::IPCResult TestSyncWakeupParent::RecvSync1() {
     
     
     
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
   
   
   
@@ -49,7 +49,7 @@ mozilla::ipc::IPCResult TestSyncWakeupParent::RecvSync1() {
 mozilla::ipc::IPCResult TestSyncWakeupParent::RecvSync2() {
   if (!SendNote2()) fail("sending Note2()");
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
   
   sleep(5);
   puts(" (sleeping for 5 seconds. sorry!)");

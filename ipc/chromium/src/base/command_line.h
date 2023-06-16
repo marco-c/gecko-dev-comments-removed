@@ -36,7 +36,7 @@ class CommandLine {
   
   
   void ParseFromString(const std::wstring& command_line);
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
   
   CommandLine(int argc, const char* const* argv);
   explicit CommandLine(const std::vector<std::string>& argv);
@@ -87,7 +87,7 @@ class CommandLine {
   const std::wstring& command_line_string() const {
     return command_line_string_;
   }
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
   
   const std::vector<std::string>& argv() const { return argv_; }
 #endif
@@ -158,7 +158,7 @@ class CommandLine {
   
   typedef std::wstring StringType;
 
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
   
   std::vector<std::string> argv_;
 

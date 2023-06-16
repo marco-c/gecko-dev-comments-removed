@@ -15,7 +15,7 @@
 #else
 #  include <time.h>
 #endif
-#if defined(ANDROID) || defined(OS_POSIX)
+#if defined(ANDROID) || defined(XP_UNIX)
 #  include <unistd.h>
 #endif
 
@@ -176,7 +176,7 @@ TimeTicks TimeTicks::Now() {
   
   
 
-#elif defined(OS_OPENBSD) || defined(OS_POSIX) &&                   \
+#elif defined(OS_OPENBSD) || defined(XP_UNIX) &&                   \
                                  defined(_POSIX_MONOTONIC_CLOCK) && \
                                  _POSIX_MONOTONIC_CLOCK >= 0
 

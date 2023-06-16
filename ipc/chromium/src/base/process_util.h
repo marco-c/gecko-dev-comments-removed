@@ -105,7 +105,7 @@ void CloseProcessHandle(ProcessHandle process);
 
 ProcessId GetProcId(ProcessHandle process);
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
 
 
 
@@ -141,7 +141,7 @@ struct LaunchOptions {
 
   std::vector<HANDLE> handles_to_inherit;
 #endif
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
   environment_map env_map;
 
   
@@ -204,7 +204,7 @@ Result<Ok, LaunchError> LaunchApp(const std::wstring& cmdline,
                                   const LaunchOptions& options,
                                   ProcessHandle* process_handle);
 
-#elif defined(OS_POSIX)
+#elif defined(XP_UNIX)
 
 
 
@@ -280,7 +280,7 @@ Result<Ok, LaunchError> LaunchApp(const CommandLine& cl, const LaunchOptions&,
 
 bool KillProcess(ProcessHandle process, int exit_code);
 
-#ifdef OS_POSIX
+#ifdef XP_UNIX
 
 
 

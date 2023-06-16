@@ -25,7 +25,7 @@ class PickleIterator;
 #  pragma warning(disable : 4800)
 #endif
 
-#if !defined(OS_POSIX)
+#if !defined(XP_UNIX)
 
 
 
@@ -120,7 +120,7 @@ struct ParamTraits<uint8_t> {
   }
 };
 
-#if !defined(OS_POSIX)
+#if !defined(XP_UNIX)
 
 template <>
 struct ParamTraits<base::FileDescriptor> {

@@ -9,7 +9,7 @@
 
 #include "build/build_config.h"
 
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
 #  include <sys/types.h>
 #  include <semaphore.h>
 #endif
@@ -149,7 +149,7 @@ class SharedMemory {
   
   static void* FindFreeAddressSpace(size_t size);
 
-#ifdef OS_POSIX
+#ifdef XP_UNIX
   
   
   
@@ -165,7 +165,7 @@ class SharedMemory {
   
   
   struct MappingDeleter {
-#ifdef OS_POSIX
+#ifdef XP_UNIX
     
     
     
@@ -184,7 +184,7 @@ class SharedMemory {
   
   
   bool external_section_ = false;
-#elif defined(OS_POSIX) && !defined(ANDROID)
+#elif defined(XP_UNIX) && !defined(ANDROID)
   mozilla::UniqueFileHandle frozen_file_;
   bool is_memfd_ = false;
 #endif

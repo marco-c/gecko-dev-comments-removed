@@ -33,7 +33,7 @@ class Lock {
   
   
   static bool HandlesMultipleThreadPriorities() {
-#if defined(OS_POSIX)
+#if defined(XP_UNIX)
     
     
     return base::internal::LockImpl::PriorityInheritanceAvailable();
@@ -47,7 +47,7 @@ class Lock {
 #endif
   }
 
-#if defined(OS_POSIX) || defined(OS_WIN)
+#if defined(XP_UNIX) || defined(OS_WIN)
   
   
   
