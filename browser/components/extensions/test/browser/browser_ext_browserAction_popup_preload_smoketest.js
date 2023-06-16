@@ -8,8 +8,8 @@
 
 requestLongerTimeout(4);
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { AddonTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 
 async function installTestAddon(addonId, unpacked = false) {

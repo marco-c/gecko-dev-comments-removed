@@ -2,11 +2,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AbuseReporter",
-  "resource://gre/modules/AbuseReporter.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  AbuseReporter: "resource://gre/modules/AbuseReporter.sys.mjs",
+});
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,

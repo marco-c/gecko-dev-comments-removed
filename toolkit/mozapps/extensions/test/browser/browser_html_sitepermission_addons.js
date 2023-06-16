@@ -1,8 +1,8 @@
 
 
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { AddonTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const { SITEPERMS_ADDON_PROVIDER_PREF, SITEPERMS_ADDON_TYPE } =
   ChromeUtils.importESModule(

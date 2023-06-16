@@ -8,11 +8,10 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "LightweightThemeManager",
-  "resource://gre/modules/LightweightThemeManager.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  LightweightThemeManager:
+    "resource://gre/modules/LightweightThemeManager.sys.mjs",
+});
 
 const onUpdatedEmitter = new EventEmitter();
 

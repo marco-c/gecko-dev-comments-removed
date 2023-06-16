@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { AddonTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const { XPCShellContentUtils } = ChromeUtils.importESModule(
   "resource://testing-common/XPCShellContentUtils.sys.mjs"

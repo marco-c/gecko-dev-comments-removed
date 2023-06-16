@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { AddonTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 const { ExtensionPermissions } = ChromeUtils.importESModule(

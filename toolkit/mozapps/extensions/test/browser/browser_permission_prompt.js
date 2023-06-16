@@ -5,8 +5,8 @@
 
 
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { AddonTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const ADDON_ID = "addon1@test.mozilla.org";
 const CUSTOM_THEME_ID = "theme1@test.mozilla.org";

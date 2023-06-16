@@ -11,8 +11,8 @@
 
 
 
-const { AbuseReporter } = ChromeUtils.import(
-  "resource://gre/modules/AbuseReporter.jsm"
+const { AbuseReporter } = ChromeUtils.importESModule(
+  "resource://gre/modules/AbuseReporter.sys.mjs"
 );
 
 
