@@ -3987,8 +3987,6 @@ pref("devtools.dump.emit", false);
 
 pref("devtools.discovery.log", false);
 
-pref("devtools.remote.wifi.scan", true);
-
 
 pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
 
