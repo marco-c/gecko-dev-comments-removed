@@ -12,7 +12,6 @@
 
 #include "mozilla/StaticPrefs_print.h"
 #include "nsCSSFrameConstructor.h"
-#include "nsPageContentFrame.h"
 #include "nsPageFrame.h"
 #include "nsPageSequenceFrame.h"
 
@@ -65,19 +64,6 @@ static bool TagIfSkippedByCustomRange(nsPageFrame* aPageFrame, int32_t aPageNum,
 
 void PrintedSheetFrame::ClaimPageFrameFromPrevInFlow() {
   MoveOverflowToChildList();
-  if (!GetPrevContinuation()) {
-    
-    
-    
-    
-    
-    
-    auto* firstChild = PrincipalChildList().FirstChild();
-    MOZ_ASSERT(firstChild && firstChild->IsPageFrame(),
-               "PrintedSheetFrame only has nsPageFrame children");
-    auto* pageFrame = static_cast<nsPageFrame*>(firstChild);
-    pageFrame->PageContentFrame()->EnsurePageName();
-  }
 }
 
 void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
@@ -97,31 +83,14 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  
-  
-  
-  mSizeForChildren =
-      nsSize(aReflowInput.AvailableISize(), aReflowInput.AvailableBSize());
-  if (mPD->PagesPerSheetInfo()->mNumPages == 1) {
-    auto* firstChild = PrincipalChildList().FirstChild();
-    MOZ_ASSERT(firstChild && firstChild->IsPageFrame(),
-               "PrintedSheetFrame only has nsPageFrame children");
-    if (static_cast<nsPageFrame*>(firstChild)
-            ->GetPageOrientationRotation(mPD) != 0.0) {
-      std::swap(mSizeForChildren.width, mSizeForChildren.height);
-    }
-  }
-
-  
-  
-  
   uint32_t numPagesOnThisSheet = 0;
 
   
   const uint32_t desiredPagesPerSheet = mPD->PagesPerSheetInfo()->mNumPages;
 
   if (desiredPagesPerSheet > 1) {
-    ComputePagesPerSheetGridMetrics(mSizeForChildren);
+    ComputePagesPerSheetGridMetrics(
+        nsSize(aReflowInput.AvailableISize(), aReflowInput.AvailableBSize()));
   }
 
   
@@ -256,62 +225,13 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   FinishAndStoreOverflow(&aReflowOutput);
 }
 
-nsSize PrintedSheetFrame::ComputeSheetSize(const nsPresContext* aPresContext) {
-  
-  
-  nsSize sheetSize = aPresContext->GetPageSize();
-
-  
-  if (sheetSize.width == sheetSize.height) {
-    return sheetSize;
+nsSize PrintedSheetFrame::PrecomputeSheetSize(
+    const nsPresContext* aPresContext) {
+  mPrecomputedSize = aPresContext->GetPageSize();
+  if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    std::swap(mPrecomputedSize.width, mPrecomputedSize.height);
   }
-
-  if (!StaticPrefs::layout_css_page_orientation_enabled()) {
-    if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
-      std::swap(sheetSize.width, sheetSize.height);
-    }
-    return sheetSize;
-  }
-
-  auto* firstChild = PrincipalChildList().FirstChild();
-  MOZ_ASSERT(firstChild->IsPageFrame(),
-             "PrintedSheetFrame only has nsPageFrame children");
-  auto* sheetsFirstPageFrame = static_cast<nsPageFrame*>(firstChild);
-
-  nsSize pageSize = sheetsFirstPageFrame->ComputePageSize();
-  const bool pageIsRotated =
-      sheetsFirstPageFrame->GetPageOrientationRotation(mPD) != 0.0;
-
-  if (pageIsRotated && pageSize.width == pageSize.height) {
-    
-    std::swap(sheetSize.width, sheetSize.height);
-    return sheetSize;
-  }
-
-  
-  
-  
-  
-  
-
-  if (pageIsRotated) {
-    
-    std::swap(pageSize.width, pageSize.height);
-  }
-
-  const bool pageIsPortrait = pageSize.width < pageSize.height;
-  const bool sheetIsPortrait = sheetSize.width < sheetSize.height;
-
-  
-  
-  
-  
-  if ((sheetIsPortrait != pageIsPortrait) !=
-      mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
-    std::swap(sheetSize.width, sheetSize.height);
-  }
-
-  return sheetSize;
+  return mPrecomputedSize;
 }
 
 void PrintedSheetFrame::ComputePagesPerSheetGridMetrics(
@@ -376,16 +296,6 @@ void PrintedSheetFrame::ComputePagesPerSheetGridMetrics(
   mGridNumCols = numCols;
   mGridCellWidth = availSpaceOnSheet.width / nscoord(numCols);
   mGridCellHeight = availSpaceOnSheet.height / nscoord(numRows);
-}
-
-gfx::IntSize PrintedSheetFrame::GetPrintTargetSizeInPoints(
-    const int32_t aAppUnitsPerPhysicalInch) const {
-  const auto size = GetSize();
-  MOZ_ASSERT(size.width > 0 && size.height > 0);
-  const float pointsPerAppUnit =
-      POINTS_PER_INCH_FLOAT / float(aAppUnitsPerPhysicalInch);
-  return IntSize::Ceil(float(size.width) * pointsPerAppUnit,
-                       float(size.height) * pointsPerAppUnit);
 }
 
 #ifdef DEBUG_FRAME_DUMP
