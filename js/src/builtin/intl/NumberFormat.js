@@ -669,21 +669,18 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
   
   var currency = GetOption(options, "currency", "string", undefined, undefined);
 
-  
-  
-  
-  
-  
-  if (currency !== undefined && !IsWellFormedCurrencyCode(currency)) {
-    ThrowRangeError(JSMSG_INVALID_CURRENCY_CODE, currency);
+  if (currency === undefined) {
+    if (style === "currency") {
+      ThrowTypeError(JSMSG_UNDEFINED_CURRENCY);
+    }
+  } else {
+    if (!IsWellFormedCurrencyCode(currency)) {
+      ThrowRangeError(JSMSG_INVALID_CURRENCY_CODE, currency);
+    }
   }
 
   var cDigits;
   if (style === "currency") {
-    if (currency === undefined) {
-      ThrowTypeError(JSMSG_UNDEFINED_CURRENCY);
-    }
-
     
     currency = toASCIIUpperCase(currency);
     lazyNumberFormatData.currency = currency;
