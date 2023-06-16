@@ -4656,6 +4656,12 @@ Toolbox.prototype = {
         
         
         setTimeout(() => {
+          if (resource.targetFront.isDestroyed()) {
+            
+            
+            return;
+          }
+
           this._updateFrames({
             frameData: {
               id: resource.targetFront.actorID,
