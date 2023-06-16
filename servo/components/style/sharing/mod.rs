@@ -877,10 +877,21 @@ impl<E: TElement> StyleSharingCache<E> {
             
             
             
-            if target.namespace() != candidate.element.namespace() {
+            if target.namespace() != candidate.element.namespace() ||
+                target.local_name() != candidate.element.local_name()
+            {
                 return None;
             }
-            if target.local_name() != candidate.element.local_name() {
+            
+            
+            
+            if data
+                .styles
+                .primary()
+                .flags
+                .intersects(ComputedValueFlags::USES_CONTAINER_UNITS) &&
+                candidate.element.traversal_parent() != target.traversal_parent()
+            {
                 return None;
             }
             
