@@ -10,6 +10,7 @@
 #include "nsDebug.h"
 #include "nsMathUtils.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/SVGAnimatedLength.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 
 namespace mozilla {
@@ -87,9 +88,12 @@ class SVGLength {
 
 
 
-  float GetValueInUserUnits(const dom::SVGElement* aElement,
-                            uint8_t aAxis) const {
-    return mValue * GetUserUnitsPerUnit(aElement, aAxis);
+
+  float GetValueInPixels(const dom::SVGElement* aElement, uint8_t aAxis) const {
+    return mValue *
+           GetPixelsPerUnit(
+               dom::SVGElementMetrics(const_cast<dom::SVGElement*>(aElement)),
+               aAxis);
   }
 
   
@@ -105,10 +109,19 @@ class SVGLength {
     return mUnit == dom::SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE;
   }
 
+  float GetPixelsPerUnit(const dom::UserSpaceMetrics& aMetrics,
+                         uint8_t aAxis) const {
+    return GetPixelsPerUnit(aMetrics, mUnit, aAxis);
+  }
+
   static bool IsValidUnitType(uint16_t aUnitType) {
     return aUnitType > dom::SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN &&
            aUnitType <= dom::SVGLength_Binding::SVG_LENGTHTYPE_PC;
   }
+
+  static bool IsAbsoluteUnit(uint8_t aUnit);
+
+  static float GetAbsUnitsPerAbsUnit(uint8_t aUnits, uint8_t aPerUnit);
 
   static void GetUnitString(nsAString& aUnit, uint16_t aUnitType);
 
@@ -117,12 +130,8 @@ class SVGLength {
   
 
 
-
-
-
-
-  float GetUserUnitsPerUnit(const dom::SVGElement* aElement,
-                            uint8_t aAxis) const;
+  static float GetPixelsPerUnit(const dom::UserSpaceMetrics& aMetrics,
+                                uint8_t aUnitType, uint8_t aAxis);
 
  private:
 #ifdef DEBUG
@@ -130,24 +139,6 @@ class SVGLength {
     return std::isfinite(mValue) && IsValidUnitType(mUnit);
   }
 #endif
-
-  
-
-
-
-  static float GetUserUnitsPerInch() { return 96.0; }
-
-  
-
-
-
-
-
-
-
-
-  static float GetUserUnitsPerPercent(const dom::SVGElement* aElement,
-                                      uint8_t aAxis);
 
   float mValue;
   uint8_t mUnit;
