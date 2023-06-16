@@ -73,6 +73,9 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
   }
 
   
+  internalProps.roundingIncrement = lazyPluralRulesData.roundingIncrement;
+  internalProps.roundingMode = lazyPluralRulesData.roundingMode;
+  internalProps.trailingZeroDisplay = lazyPluralRulesData.trailingZeroDisplay;
   internalProps.roundingPriority = lazyPluralRulesData.roundingPriority;
 
   
@@ -125,6 +128,16 @@ function InitializePluralRules(pluralRules, locales, options) {
     "InitializePluralRules called with non-PluralRules"
   );
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -365,6 +378,16 @@ function Intl_PluralRules_resolvedOptions() {
       internals.maximumSignificantDigits
     );
   }
+
+#ifdef NIGHTLY_BUILD
+  DefineDataProperty(result, "roundingMode", internals.roundingMode);
+  DefineDataProperty(result, "roundingIncrement", internals.roundingIncrement);
+  DefineDataProperty(
+    result,
+    "trailingZeroDisplay",
+    internals.trailingZeroDisplay
+  );
+#endif
 
   
   var internalsPluralCategories = internals.pluralCategories;
