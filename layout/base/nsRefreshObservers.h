@@ -43,6 +43,21 @@ class nsARefreshObserver {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   MOZ_CAN_RUN_SCRIPT virtual void WillRefresh(mozilla::TimeStamp aTime) = 0;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  int32_t mRegistrationCount = 0;
+
+  
+  virtual ~nsARefreshObserver() {
+    MOZ_ASSERT(mRegistrationCount == 0,
+               "Refresh observer AddRefreshObserver/RemoveRefreshObserver "
+               "calls should have balanced out to zero");
+  }
+#endif  
 };
 
 
