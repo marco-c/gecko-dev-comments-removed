@@ -297,15 +297,6 @@ var whitelist = [
   { file: "chrome://browser/content/firefoxview/fxview-tab-row.css" },
 
   
-  {
-    file: "chrome://browser/content/firefoxview/fxview-category-navigation.mjs",
-  },
-  {
-    file: "chrome://browser/content/firefoxview/fxview-category-navigation.css",
-  },
-  { file: "chrome://browser/content/firefoxview/fxview-category-button.css" },
-
-  
   
   { file: "resource://gre/modules/NetUtil.sys.mjs" },
 ];
