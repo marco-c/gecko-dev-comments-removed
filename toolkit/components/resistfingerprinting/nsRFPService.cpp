@@ -85,15 +85,9 @@ using namespace mozilla;
 static mozilla::LazyLogModule gResistFingerprintingLog(
     "nsResistFingerprinting");
 
-#define RESIST_FINGERPRINTING_PREF "privacy.resistFingerprinting"
-#define RESIST_FINGERPRINTING_PBMODE_PREF "privacy.resistFingerprinting.pbmode"
-#define RESIST_FINGERPRINTINGPROTECTION_PREF "privacy.fingerprintingProtection"
-#define RESIST_FINGERPRINTINGPROTECTION_PBMODE_PREF \
-  "privacy.fingerprintingProtection.pbmode"
 #define RESIST_FINGERPRINTINGPROTECTION_OVERRIDE_PREF \
   "privacy.fingerprintingProtection.overrides"
 #define RFP_TIMER_UNCONDITIONAL_VALUE 20
-#define PROFILE_INITIALIZED_TOPIC "profile-initial-state"
 #define LAST_PB_SESSION_EXITED_TOPIC "last-pb-context-exited"
 
 static constexpr uint32_t kVideoFramesPerSec = 30;
@@ -139,10 +133,6 @@ nsRFPService* nsRFPService::GetOrCreate() {
 }
 
 static const char* gCallbackPrefs[] = {
-    RESIST_FINGERPRINTING_PREF,
-    RESIST_FINGERPRINTING_PBMODE_PREF,
-    RESIST_FINGERPRINTINGPROTECTION_PREF,
-    RESIST_FINGERPRINTINGPROTECTION_PBMODE_PREF,
     RESIST_FINGERPRINTINGPROTECTION_OVERRIDE_PREF,
     nullptr,
 };
@@ -166,21 +156,14 @@ nsresult nsRFPService::Init() {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-#if defined(XP_WIN)
-  rv = obs->AddObserver(this, PROFILE_INITIALIZED_TOPIC, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-#endif
-
   Preferences::RegisterCallbacks(nsRFPService::PrefChanged, gCallbackPrefs,
                                  this);
-  
-  const char* tzValue = PR_GetEnv("TZ");
-  if (tzValue != nullptr) {
-    mInitialTZValue = nsCString(tzValue);
-  }
+
+  JS::SetReduceMicrosecondTimePrecisionCallback(
+      nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
 
   
-  UpdateRFPPref();
+  
   UpdateFPPOverrideList();
 
   return rv;
@@ -207,71 +190,6 @@ bool nsRFPService::IsRFPEnabledFor(RFPTarget aTarget) {
   }
 
   return false;
-}
-
-
-
-void nsRFPService::UpdateRFPPref() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  bool resistFingerprinting = nsContentUtils::ShouldResistFingerprinting();
-
-  JS::SetReduceMicrosecondTimePrecisionCallback(
-      nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
-
-  
-  
-  
-  if (!StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC()) {
-    return;
-  }
-
-  if (resistFingerprinting) {
-    PR_SetEnv("TZ=UTC");
-  } else if (sInitialized) {
-    
-    
-    if (!mInitialTZValue.IsEmpty()) {
-      nsAutoCString tzValue = "TZ="_ns + mInitialTZValue;
-      static char* tz = nullptr;
-
-      
-      
-      if (tz != nullptr) {
-        free(tz);
-      }
-      
-      
-      tz = ToNewCString(tzValue, mozilla::fallible);
-      if (tz != nullptr) {
-        PR_SetEnv(tz);
-      }
-    } else {
-#if defined(XP_WIN)
-      
-      
-      PR_SetEnv("TZ=");
-#else
-      
-      
-      PR_SetEnv("TZ=:/etc/localtime");
-#endif
-    }
-  }
-
-  
-  
-  if (resistFingerprinting || sInitialized) {
-    
-    
-#if defined(XP_WIN)
-    _tzset();
-#else
-    tzset();
-#endif
-
-    nsJSUtils::ResetTimeZone();
-  }
 }
 
 void nsRFPService::UpdateFPPOverrideList() {
@@ -362,18 +280,6 @@ void nsRFPService::PrefChanged(const char* aPref) {
 
   if (pref.EqualsLiteral(RESIST_FINGERPRINTINGPROTECTION_OVERRIDE_PREF)) {
     UpdateFPPOverrideList();
-  } else {
-    UpdateRFPPref();
-
-#if defined(XP_WIN)
-    if (StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC() &&
-        !XRE_IsE10sParentProcess()) {
-      
-      
-      
-      _tzset();
-    }
-#endif
   }
 }
 
@@ -383,25 +289,6 @@ nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
   if (strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic) == 0) {
     StartShutdown();
   }
-#if defined(XP_WIN)
-  else if (!strcmp(PROFILE_INITIALIZED_TOPIC, aTopic)) {
-    
-    
-    
-    if (XRE_IsParentProcess() && !XRE_IsE10sParentProcess()) {
-      
-      
-      
-      _tzset();
-    }
-
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
-
-    nsresult rv = obs->RemoveObserver(this, PROFILE_INITIALIZED_TOPIC);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-#endif
 
   if (strcmp(LAST_PB_SESSION_EXITED_TOPIC, aTopic) == 0) {
     
