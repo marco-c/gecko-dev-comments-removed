@@ -644,7 +644,7 @@ const PanelUI = {
       
       let l10nId = node.getAttribute("appmenu-data-l10n-id");
       if (l10nId) {
-        button.setAttribute("data-l10n-id", l10nId);
+        document.l10n.setAttributes(button, l10nId);
       }
 
       if (node.id) {
