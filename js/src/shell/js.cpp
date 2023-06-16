@@ -4701,6 +4701,19 @@ static bool SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
+  if (opt == JSJITCOMPILER_WRITE_PROTECT_CODE) {
+    uint32_t writeProtect;
+    MOZ_ALWAYS_TRUE(JS_GetGlobalJitCompilerOption(
+        cx, JSJITCOMPILER_WRITE_PROTECT_CODE, &writeProtect));
+    if (bool(number) != writeProtect) {
+      JS_ReportErrorASCII(cx, "Can't change code write protection at runtime");
+      return false;
+    }
+    return true;
+  }
+
+  
+  
   
   
   
