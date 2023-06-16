@@ -560,7 +560,7 @@ class WorkerPrivate final
   
   
   
-  nsIEventTarget* MainThreadEventTargetForMessaging();
+  nsISerialEventTarget* MainThreadEventTargetForMessaging();
 
   nsresult DispatchToMainThreadForMessaging(
       nsIRunnable* aRunnable, uint32_t aFlags = NS_DISPATCH_NORMAL);
@@ -569,7 +569,7 @@ class WorkerPrivate final
       already_AddRefed<nsIRunnable> aRunnable,
       uint32_t aFlags = NS_DISPATCH_NORMAL);
 
-  nsIEventTarget* MainThreadEventTarget();
+  nsISerialEventTarget* MainThreadEventTarget();
 
   nsresult DispatchToMainThread(nsIRunnable* aRunnable,
                                 uint32_t aFlags = NS_DISPATCH_NORMAL);

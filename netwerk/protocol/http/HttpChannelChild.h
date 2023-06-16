@@ -298,7 +298,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   void CleanupBackgroundChannel();
 
   
-  nsCOMPtr<nsIEventTarget> mODATarget MOZ_GUARDED_BY(mEventTargetMutex);
+  nsCOMPtr<nsISerialEventTarget> mODATarget MOZ_GUARDED_BY(mEventTargetMutex);
   
   Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
 

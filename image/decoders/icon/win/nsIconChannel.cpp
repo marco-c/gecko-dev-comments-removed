@@ -843,7 +843,7 @@ nsresult nsIconChannel::StartAsyncOpen() {
 
   
   
-  nsCOMPtr<nsIEventTarget> listenerTarget =
+  nsCOMPtr<nsISerialEventTarget> listenerTarget =
       nsContentUtils::GetEventTargetByLoadInfo(mLoadInfo,
                                                mozilla::TaskCategory::Other);
   if (!listenerTarget) {

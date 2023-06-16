@@ -77,7 +77,7 @@ class BaseWebSocketChannel : public nsIWebSocketChannel,
   virtual void GetEffectiveURL(nsAString& aEffectiveURL) const = 0;
   virtual bool IsEncrypted() const = 0;
 
-  already_AddRefed<nsIEventTarget> GetTargetThread();
+  already_AddRefed<nsISerialEventTarget> GetTargetThread();
   bool IsOnTargetThread();
 
   class ListenerAndContextContainer final {
@@ -107,7 +107,7 @@ class BaseWebSocketChannel : public nsIWebSocketChannel,
   
   
   
-  DataMutex<nsCOMPtr<nsIEventTarget>> mTargetThread{
+  DataMutex<nsCOMPtr<nsISerialEventTarget>> mTargetThread{
       "BaseWebSocketChannel::EventTargetMutex"};
 
   nsCString mProtocol;

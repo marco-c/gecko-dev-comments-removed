@@ -70,7 +70,6 @@
 #include "nsIURIWithSpecialOrigin.h"
 #include "nsIViewSourceChannel.h"
 #include "nsInterfaceRequestorAgg.h"
-#include "plstr.h"
 #include "nsINestedURI.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
@@ -858,7 +857,7 @@ nsresult NS_NewInputStreamPump(
     nsIInputStreamPump** aResult, already_AddRefed<nsIInputStream> aStream,
     uint32_t aSegsize , uint32_t aSegcount ,
     bool aCloseWhenDone ,
-    nsIEventTarget* aMainThreadTarget ) {
+    nsISerialEventTarget* aMainThreadTarget ) {
   nsCOMPtr<nsIInputStream> stream = std::move(aStream);
 
   nsresult rv;

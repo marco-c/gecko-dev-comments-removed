@@ -85,7 +85,7 @@ class DecodePool final : public nsIObserver {
 
 
 
-  already_AddRefed<nsIEventTarget> GetIOEventTarget();
+  already_AddRefed<nsISerialEventTarget> GetIOEventTarget();
 
  private:
   friend class DecodePoolWorker;

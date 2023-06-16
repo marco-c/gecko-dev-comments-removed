@@ -15,7 +15,7 @@
 
 #ifdef DEBUG
 #  include "MainThreadUtils.h"
-#  include "nsIEventTarget.h"
+#  include "nsISerialEventTarget.h"
 #endif
 
 class nsIInputStream;
@@ -49,7 +49,7 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   static nsresult Create(nsInputStreamPump** result, nsIInputStream* stream,
                          uint32_t segsize = 0, uint32_t segcount = 0,
                          bool closeWhenDone = false,
-                         nsIEventTarget* mainThreadTarget = nullptr);
+                         nsISerialEventTarget* mainThreadTarget = nullptr);
 
   using PeekSegmentFun = void (*)(void*, const uint8_t*, uint32_t);
   
@@ -94,8 +94,9 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   
   
   nsCOMPtr<nsIStreamListener> mListener MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mTargetThread MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mLabeledMainThreadTarget MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsISerialEventTarget> mTargetThread MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsISerialEventTarget> mLabeledMainThreadTarget
+      MOZ_GUARDED_BY(mMutex);
   nsCOMPtr<nsIInputStream> mStream MOZ_GUARDED_BY(mMutex);
   
   
