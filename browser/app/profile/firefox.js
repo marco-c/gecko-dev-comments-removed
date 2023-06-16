@@ -1368,17 +1368,6 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   pref("security.sandbox.content.tempDirSuffix", "");
 #endif
 
-
-
-
-
-
-
-
-#ifdef XP_MACOSX
-  pref("dom.ipc.plugins.nativeCursorSupport", true);
-#endif
-
 #ifdef XP_WIN
   pref("browser.taskbar.previews.enable", false);
   pref("browser.taskbar.previews.max", 20);

@@ -286,7 +286,6 @@ pref("browser.ui.selection.distance", 250);
 
 
 pref("plugin.disable", true);
-pref("dom.ipc.plugins.enabled", false);
 
 
 
