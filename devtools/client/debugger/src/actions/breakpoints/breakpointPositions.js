@@ -79,7 +79,6 @@ function convertToList(results, source) {
           line: Number(line),
           column,
           source,
-          sourceUrl: source.url,
         })
       );
     }
@@ -213,7 +212,6 @@ function generatedSourceActorKey(state, sourceId) {
     : [];
   return [sourceId, ...actors].join(":");
 }
-
 
 
 
