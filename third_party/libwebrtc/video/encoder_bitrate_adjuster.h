@@ -47,7 +47,11 @@ class EncoderBitrateAdjuster {
   void OnEncoderInfo(const VideoEncoder::EncoderInfo& encoder_info);
 
   
-  void OnEncodedFrame(DataSize size, int spatial_index, int temporal_index);
+  
+  
+  
+  
+  void OnEncodedFrame(DataSize size, int stream_index, int temporal_index);
 
   void Reset();
 
@@ -55,6 +59,7 @@ class EncoderBitrateAdjuster {
   const bool utilize_bandwidth_headroom_;
 
   VideoEncoder::RateControlParameters current_rate_control_parameters_;
+  
   
   
   absl::InlinedVector<uint8_t, kMaxTemporalStreams>

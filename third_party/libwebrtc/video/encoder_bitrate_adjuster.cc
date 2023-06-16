@@ -48,6 +48,11 @@ EncoderBitrateAdjuster::EncoderBitrateAdjuster(const VideoCodec& codec_settings)
                                       .BitrateAdjusterCanUseNetworkHeadroom()),
       frames_since_layout_change_(0),
       min_bitrates_bps_{} {
+  
+  
+  
+  
+  
   if (codec_settings.codecType == VideoCodecType::kVideoCodecVP9) {
     for (size_t si = 0; si < codec_settings.VP9().numberOfSpatialLayers; ++si) {
       if (codec_settings.spatialLayers[si].active) {
@@ -110,6 +115,7 @@ VideoBitrateAllocation EncoderBitrateAdjuster::AdjustRateAllocation(
     layer_info.target_rate =
         DataRate::BitsPerSec(rates.bitrate.GetSpatialLayerSum(si));
 
+    
     
     if (frames_since_layout_change_ < kMinFramesSinceLayoutChange) {
       layer_info.link_utilization_factor = kDefaultUtilizationFactor;
@@ -221,15 +227,13 @@ VideoBitrateAllocation EncoderBitrateAdjuster::AdjustRateAllocation(
     }
 
     if (layer_info.target_rate > DataRate::Zero()) {
-      RTC_LOG(LS_VERBOSE) << "Utilization factors for spatial index " << si
-                          << ": link = " << layer_info.link_utilization_factor
-                          << ", media = " << layer_info.media_utilization_factor
-                          << ", wanted overshoot = "
-                          << layer_info.WantedOvershoot().bps()
-                          << " bps, available headroom = "
-                          << available_headroom.bps()
-                          << " bps, total utilization factor = "
-                          << utilization_factor;
+      RTC_LOG(LS_VERBOSE)
+          << "Utilization factors for simulcast/spatial index " << si
+          << ": link = " << layer_info.link_utilization_factor
+          << ", media = " << layer_info.media_utilization_factor
+          << ", wanted overshoot = " << layer_info.WantedOvershoot().bps()
+          << " bps, available headroom = " << available_headroom.bps()
+          << " bps, total utilization factor = " << utilization_factor;
     }
 
     
@@ -314,11 +318,11 @@ void EncoderBitrateAdjuster::OnEncoderInfo(
 }
 
 void EncoderBitrateAdjuster::OnEncodedFrame(DataSize size,
-                                            int spatial_index,
+                                            int stream_index,
                                             int temporal_index) {
   ++frames_since_layout_change_;
   
-  auto& detector = overshoot_detectors_[spatial_index][temporal_index];
+  auto& detector = overshoot_detectors_[stream_index][temporal_index];
   if (detector) {
     detector->OnEncodedFrame(size.bytes(), rtc::TimeMillis());
   }
