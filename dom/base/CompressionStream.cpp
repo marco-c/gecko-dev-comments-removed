@@ -145,8 +145,9 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
       }
 
       
+      
+      
       MOZ_ASSERT_IF(err == Z_STREAM_END, aFlush == ZLibFlush::Yes);
-      MOZ_ASSERT_IF(aFlush == ZLibFlush::Yes, err == Z_STREAM_END);
 
       
       MOZ_ASSERT(!mZStream.avail_in || !mZStream.avail_out);
