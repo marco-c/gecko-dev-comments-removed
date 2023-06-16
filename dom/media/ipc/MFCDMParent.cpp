@@ -171,7 +171,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   MFCDMCapabilitiesIPDL capabilities;
 
   
-
+  
   static nsTArray<KeySystemConfig::EMECodecString> kVideoCodecs({
       KeySystemConfig::EME_CODEC_H264,
       KeySystemConfig::EME_CODEC_VP8,

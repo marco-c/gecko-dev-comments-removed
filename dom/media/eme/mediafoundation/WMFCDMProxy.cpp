@@ -76,10 +76,12 @@ void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
 
   mCDM = MakeRefPtr<WMFCDMImpl>(mKeySystem);
   mProxyCallback = new WMFCDMProxyCallback(this);
-  WMFCDMImpl::InitParams params{
-      nsString(aOrigin),        mConfig.mInitDataTypes,
-      mPersistentStateRequired, mDistinctiveIdentifierRequired,
-      false ,   mProxyCallback};
+  WMFCDMImpl::InitParams params{nsString(aOrigin),
+                                mConfig.mInitDataTypes,
+                                mPersistentStateRequired,
+                                mDistinctiveIdentifierRequired,
+                                false ,
+                                mProxyCallback};
   mCDM->Init(params)->Then(
       mMainThread, __func__,
       [self = RefPtr{this}, this, aPromiseId](const bool) {
