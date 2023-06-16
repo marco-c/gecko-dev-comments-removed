@@ -1,0 +1,9 @@
+
+
+
+
+assertThrowsInstanceOf(() => "abc".isWellFormed(), TypeError)
+assertThrowsInstanceOf(() => "abc".toWellFormed(), TypeError)
+
+if (typeof reportCompare === "function")
+  reportCompare(0, 0);
