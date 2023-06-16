@@ -530,6 +530,15 @@ class nsContentUtils {
 
 
 
+
+
+  static nsINode* GetCommonAncestorUnderInteractiveContent(nsINode* aNode1,
+                                                           nsINode* aNode2);
+
+  
+
+
+
   static mozilla::dom::BrowserParent* GetCommonBrowserParentAncestor(
       mozilla::dom::BrowserParent* aBrowserParent1,
       mozilla::dom::BrowserParent* aBrowserParent2);
