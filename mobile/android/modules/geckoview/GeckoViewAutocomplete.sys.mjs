@@ -1,24 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = [
-  "GeckoViewAutocomplete",
-  "LoginEntry",
-  "CreditCard",
-  "Address",
-  "SelectOption",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -35,7 +20,7 @@ XPCOMUtils.defineLazyGetter(lazy, "LoginInfo", () =>
   )
 );
 
-class LoginEntry {
+export class LoginEntry {
   constructor({
     origin,
     formActionOrigin,
@@ -54,9 +39,9 @@ class LoginEntry {
     this.username = username ?? "";
     this.password = password ?? "";
 
-    
+    // Metadata.
     this.guid = guid ?? null;
-    
+    // TODO: Not supported by GV.
     this.timeCreated = timeCreated ?? null;
     this.timeLastUsed = timeLastUsed ?? null;
     this.timePasswordChanged = timePasswordChanged ?? null;
@@ -72,7 +57,7 @@ class LoginEntry {
       this.password
     );
 
-    
+    // Metadata.
     info.QueryInterface(Ci.nsILoginMetaInfo);
     info.guid = this.guid;
     info.timeCreated = this.timeCreated;
@@ -98,7 +83,7 @@ class LoginEntry {
     entry.username = aInfo.username;
     entry.password = aInfo.password;
 
-    
+    // Metadata.
     aInfo.QueryInterface(Ci.nsILoginMetaInfo);
     entry.guid = aInfo.guid;
     entry.timeCreated = aInfo.timeCreated;
@@ -110,7 +95,7 @@ class LoginEntry {
   }
 }
 
-class Address {
+export class Address {
   constructor({
     name,
     givenName,
@@ -146,9 +131,9 @@ class Address {
     this.tel = tel ?? "";
     this.email = email ?? "";
 
-    
+    // Metadata.
     this.guid = guid ?? null;
-    
+    // TODO: Not supported by GV.
     this.timeCreated = timeCreated ?? null;
     this.timeLastUsed = timeLastUsed ?? null;
     this.timeLastModified = timeLastModified ?? null;
@@ -216,7 +201,7 @@ class Address {
   }
 }
 
-class CreditCard {
+export class CreditCard {
   constructor({
     name,
     number,
@@ -236,9 +221,9 @@ class CreditCard {
     this.expYear = expYear ?? "";
     this.type = type ?? "";
 
-    
+    // Metadata.
     this.guid = guid ?? null;
-    
+    // TODO: Not supported by GV.
     this.timeCreated = timeCreated ?? null;
     this.timeLastUsed = timeLastUsed ?? null;
     this.timeLastModified = timeLastModified ?? null;
@@ -291,8 +276,8 @@ class CreditCard {
   }
 }
 
-class SelectOption {
-  
+export class SelectOption {
+  // Sync with Autocomplete.SelectOption.Hint in Autocomplete.java.
   static Hint = {
     NONE: 0,
     GENERATED: 1 << 0,
@@ -307,26 +292,26 @@ class SelectOption {
   }
 }
 
-
+// Sync with Autocomplete.UsedField in Autocomplete.java.
 const UsedField = { PASSWORD: 1 };
 
-const GeckoViewAutocomplete = {
-  
+export const GeckoViewAutocomplete = {
+  /** current opened prompt */
   _prompt: null,
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Delegates login entry fetching for the given domain to the attached
+   * LoginStorage GeckoView delegate.
+   *
+   * @param aDomain
+   *        The domain string to fetch login entries for. If null, all logins
+   *        will be fetched.
+   * @return {Promise}
+   *         Resolves with an array of login objects or null.
+   *         Rejected if no delegate is attached.
+   *         Login object string properties:
+   *         { guid, origin, formActionOrigin, httpRealm, username, password }
+   */
   fetchLogins(aDomain = null) {
     debug`fetchLogins for ${aDomain ?? "All domains"}`;
 
@@ -336,16 +321,16 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Delegates credit card entry fetching to the attached LoginStorage
+   * GeckoView delegate.
+   *
+   * @return {Promise}
+   *         Resolves with an array of credit card objects or null.
+   *         Rejected if no delegate is attached.
+   *         Login object string properties:
+   *         { guid, name, number, expMonth, expYear, type }
+   */
   fetchCreditCards() {
     debug`fetchCreditCards`;
 
@@ -354,18 +339,18 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Delegates address entry fetching to the attached LoginStorage
+   * GeckoView delegate.
+   *
+   * @return {Promise}
+   *         Resolves with an array of address objects or null.
+   *         Rejected if no delegate is attached.
+   *         Login object string properties:
+   *         { guid, name, givenName, additionalName, familyName,
+   *           organization, streetAddress, addressLevel1, addressLevel2,
+   *           addressLevel3, postalCode, country, tel, email }
+   */
   fetchAddresses() {
     debug`fetchAddresses`;
 
@@ -374,12 +359,12 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Delegates credit card entry saving to the attached LoginStorage GeckoView delegate.
+   * Call this when a new or modified credit card entry has been submitted.
+   *
+   * @param aCreditCard The {CreditCard} to be saved.
+   */
   onCreditCardSave(aCreditCard) {
     debug`onCreditCardSave ${aCreditCard}`;
 
@@ -389,12 +374,12 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
+  /**
+   * Delegates address entry saving to the attached LoginStorage GeckoView delegate.
+   * Call this when a new or modified address entry has been submitted.
+   *
+   * @param aAddress The {Address} to be saved.
+   */
   onAddressSave(aAddress) {
     debug`onAddressSave ${aAddress}`;
 
@@ -404,13 +389,13 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Delegates login entry saving to the attached LoginStorage GeckoView delegate.
+   * Call this when a new login entry or a new password for an existing login
+   * entry has been submitted.
+   *
+   * @param aLogin The {LoginEntry} to be saved.
+   */
   onLoginSave(aLogin) {
     debug`onLoginSave ${aLogin}`;
 
@@ -420,14 +405,14 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Delegates login entry password usage to the attached LoginStorage GeckoView
+   * delegate.
+   * Call this when the password of an existing login entry, as returned by
+   * fetchLogins, has been used for autofill.
+   *
+   * @param aLogin The {LoginEntry} whose password was used.
+   */
   onLoginPasswordUsed(aLogin) {
     debug`onLoginUsed ${aLogin}`;
 
@@ -440,14 +425,14 @@ const GeckoViewAutocomplete = {
 
   _numActiveSelections: 0,
 
-  
-
-
-
-
-
-
-
+  /**
+   * Delegates login entry selection.
+   * Call this when there are multiple login entry option for a form to delegate
+   * the selection.
+   *
+   * @param aBrowser The browser instance the triggered the selection.
+   * @param aOptions The list of {SelectOption} depicting viable options.
+   */
   onLoginSelect(aBrowser, aOptions) {
     debug`onLoginSelect ${aOptions}`;
 
@@ -481,14 +466,14 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Delegates credit card entry selection.
+   * Call this when there are multiple credit card entry option for a form to delegate
+   * the selection.
+   *
+   * @param aBrowser The browser instance the triggered the selection.
+   * @param aOptions The list of {SelectOption} depicting viable options.
+   */
   onCreditCardSelect(aBrowser, aOptions) {
     debug`onCreditCardSelect ${aOptions}`;
 
@@ -522,14 +507,14 @@ const GeckoViewAutocomplete = {
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Delegates address entry selection.
+   * Call this when there are multiple address entry option for a form to delegate
+   * the selection.
+   *
+   * @param aBrowser The browser instance the triggered the selection.
+   * @param aOptions The list of {SelectOption} depicting viable options.
+   */
   onAddressSelect(aBrowser, aOptions) {
     debug`onAddressSelect ${aOptions}`;
 
@@ -578,14 +563,14 @@ const GeckoViewAutocomplete = {
     let insecureHint = SelectOption.Hint.NONE;
     let loginStyle = null;
 
-    
+    // TODO: Replace this string with more robust mechanics.
     let selectionType = null;
     const selectOptions = [];
 
     for (const option of options) {
       switch (option.style) {
         case "insecureWarning": {
-          
+          // We depend on the insecure warning to be the first option.
           insecureHint = SelectOption.Hint.INSECURE_FORM;
           break;
         }
@@ -603,7 +588,7 @@ const GeckoViewAutocomplete = {
           break;
         }
         case "login":
-        
+        // Fallthrough.
         case "loginWithOrigin": {
           selectionType = "login";
           loginStyle = option.style;
@@ -689,7 +674,7 @@ const GeckoViewAutocomplete = {
       );
     }
 
-    
+    // prompt is closed now.
     this._prompt = null;
 
     --this._numActiveSelections;
