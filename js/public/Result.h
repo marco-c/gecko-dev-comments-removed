@@ -124,16 +124,6 @@
 
 
 
-#define JS_TRY_BOOL_TO_RESULT(cx, expr)       \
-  do {                                        \
-    bool ok_ = (expr);                        \
-    if (!ok_) return (cx)->boolToResult(ok_); \
-  } while (0)
-
-
-
-
-
 
 
 
