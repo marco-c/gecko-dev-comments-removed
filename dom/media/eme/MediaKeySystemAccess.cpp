@@ -171,27 +171,15 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems() {
 #endif
   };
   for (const auto& name : keySystemNames) {
-    KeySystemConfig config;
-    if (KeySystemConfig::GetConfig(name, config)) {
-      if (IsClearkeyKeySystem(name) &&
-          StaticPrefs::media_clearkey_test_key_systems_enabled()) {
-        
-        
-        KeySystemConfig clearkeyWithProtectionQuery{config};
-        clearkeyWithProtectionQuery.mKeySystem.AssignLiteral(
-            kClearKeyWithProtectionQueryKeySystemName);
-        keySystemConfigs.AppendElement(std::move(clearkeyWithProtectionQuery));
-      }
-      keySystemConfigs.AppendElement(std::move(config));
-    }
+    Unused << KeySystemConfig::CreateKeySystemConfigs(name, keySystemConfigs);
   }
-
   return keySystemConfigs;
 }
 
 static bool GetKeySystemConfig(const nsAString& aKeySystem,
                                KeySystemConfig& aOutKeySystemConfig) {
   for (auto&& config : GetSupportedKeySystems()) {
+    
     if (config.mKeySystem.Equals(aKeySystem)) {
       aOutKeySystemConfig = std::move(config);
       return true;
