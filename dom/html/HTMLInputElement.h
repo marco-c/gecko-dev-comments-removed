@@ -730,6 +730,13 @@ class HTMLInputElement final : public TextControlElement,
     SetHTMLAttr(nsGkAtoms::usemap, aValue, aRv);
   }
 
+  void GetDirName(nsAString& aValue) {
+    GetHTMLAttr(nsGkAtoms::dirname, aValue);
+  }
+  void SetDirName(const nsAString& aValue, ErrorResult& aRv) {
+    SetHTMLAttr(nsGkAtoms::dirname, aValue, aRv);
+  }
+
   nsIControllers* GetControllers(ErrorResult& aRv);
   
   nsresult GetControllers(nsIControllers** aResult);
