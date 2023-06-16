@@ -714,21 +714,6 @@ var DebuggerObjectSupport = {
     while (obj) {
       yield obj;
       try {
-        
-        const unwrapped = DevToolsUtils.unwrap(obj);
-        if (unwrapped === undefined) {
-          
-          return;
-        }
-
-        if (unwrapped.isProxy) {
-          
-          
-          
-          
-          
-          obj = unwrapped.proxyTarget;
-        }
         obj = obj.proto;
       } catch (error) {
         
