@@ -46,6 +46,9 @@ class GeckoInstance(object):
         
         "browser.topsites.contile.enabled": False,
         
+        
+        "browser.translations.enable": False,
+        
         "browser.uitour.pinnedTabUrl": "http://%(server)s/uitour-dummy/pinnedTab",
         "browser.uitour.url": "http://%(server)s/uitour-dummy/tour",
         
