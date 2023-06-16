@@ -12,25 +12,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-pref("toolkit.browser.cacheRatioWidth", 2000);
-pref("toolkit.browser.cacheRatioHeight", 3000);
-
-
-
-pref("toolkit.browser.contentViewExpire", 3000);
-
 pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
 
 
