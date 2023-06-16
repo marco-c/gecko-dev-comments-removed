@@ -139,7 +139,7 @@ enum MaybeTailCall : bool { TailCall, NonTailCall };
 
 
 struct VMFunctionData {
-#if defined(DEBUG) || defined(JS_JITSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_ION_PERF)
   
   
   const char* name_;
@@ -234,7 +234,7 @@ struct VMFunctionData {
     return ((argumentPassedInFloatRegs >> explicitArg) & 1) == 1;
   }
 
-#if defined(DEBUG) || defined(JS_JITSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_ION_PERF)
   const char* name() const { return name_; }
 #endif
 
@@ -309,7 +309,7 @@ struct VMFunctionData {
                            uint8_t extraValuesToPop = 0,
                            MaybeTailCall expectTailCall = NonTailCall)
       :
-#if defined(DEBUG) || defined(JS_JITSPEW)
+#if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_ION_PERF)
         name_(name),
 #endif
         argumentRootTypes(argRootTypes),
