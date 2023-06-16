@@ -19,6 +19,7 @@
 #ifdef _MSC_VER
 #include <stdlib.h>  
 #endif
+#include "src/dsp/cpu.h"
 #include "src/webp/types.h"
 
 
@@ -64,7 +65,7 @@ extern "C" {
 #define BITS 56
 #elif defined(__arm__) || defined(_M_ARM)      
 #define BITS 24
-#elif defined(__aarch64__)                     
+#elif WEBP_AARCH64                             
 #define BITS 56
 #elif defined(__mips__)                        
 #define BITS 24

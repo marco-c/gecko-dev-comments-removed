@@ -25,7 +25,7 @@
 
 
 
-#if defined(__APPLE__) && defined(__aarch64__) && \
+#if defined(__APPLE__) && WEBP_AARCH64 && \
     defined(__apple_build_version__) && (__apple_build_version__< 6020037)
 #define USE_VTBLQ
 #endif

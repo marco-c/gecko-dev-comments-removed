@@ -440,6 +440,7 @@ static int DoSharpArgbToYuv(const uint8_t* r_ptr, const uint8_t* g_ptr,
 
 
 
+extern VP8CPUInfo SharpYuvGetCPUInfo;
 SHARPYUV_EXTERN void SharpYuvInit(VP8CPUInfo cpu_info_func);
 void SharpYuvInit(VP8CPUInfo cpu_info_func) {
   static volatile VP8CPUInfo sharpyuv_last_cpuinfo_used =

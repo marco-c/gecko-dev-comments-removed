@@ -21,7 +21,7 @@
 
 
 
-#if LOCAL_CLANG_PREREQ(3,8) || LOCAL_GCC_PREREQ(4,9) || defined(__aarch64__)
+#if LOCAL_CLANG_PREREQ(3, 8) || LOCAL_GCC_PREREQ(4, 9) || WEBP_AARCH64
 #define WEBP_USE_INTRINSICS
 #endif
 
@@ -46,7 +46,7 @@
 
 
 
-#if !(LOCAL_CLANG_PREREQ(3,8) || LOCAL_GCC_PREREQ(4,8) || defined(__aarch64__))
+#if !(LOCAL_CLANG_PREREQ(3, 8) || LOCAL_GCC_PREREQ(4, 8) || WEBP_AARCH64)
 #define WORK_AROUND_GCC
 #endif
 

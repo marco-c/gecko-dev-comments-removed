@@ -29,7 +29,7 @@ static void SetResidualCoeffs_NEON(const int16_t* const coeffs,
   const uint8x16_t eob = vcombine_u8(vqmovn_u16(eob_0), vqmovn_u16(eob_1));
   const uint8x16_t masked = vandq_u8(eob, vld1q_u8(position));
 
-#ifdef __aarch64__
+#if WEBP_AARCH64
   res->last = vmaxvq_u8(masked) - 1;
 #else
   const uint8x8_t eob_8x8 = vmax_u8(vget_low_u8(masked), vget_high_u8(masked));

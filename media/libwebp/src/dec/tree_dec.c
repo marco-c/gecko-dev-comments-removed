@@ -12,10 +12,11 @@
 
 
 #include "src/dec/vp8i_dec.h"
+#include "src/dsp/cpu.h"
 #include "src/utils/bit_reader_inl_utils.h"
 
 #if !defined(USE_GENERIC_TREE)
-#if !defined(__arm__) && !defined(_M_ARM) && !defined(__aarch64__)
+#if !defined(__arm__) && !defined(_M_ARM) && !WEBP_AARCH64
 
 #define USE_GENERIC_TREE 1   // ALTERNATE_CODE
 #else
