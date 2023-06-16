@@ -25,6 +25,7 @@
 #include "ErrorList.h"
 #include "Units.h"
 #include "js/Id.h"
+#include "js/RegExpFlags.h"
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
@@ -2566,10 +2567,11 @@ class nsContentUtils {
 
 
 
-  static mozilla::Maybe<bool> IsPatternMatching(nsAString& aValue,
-                                                nsAString& aPattern,
-                                                const Document* aDocument,
-                                                bool aHasMultiple = false);
+
+  static mozilla::Maybe<bool> IsPatternMatching(
+      const nsAString& aValue, nsString&& aPattern, const Document* aDocument,
+      bool aHasMultiple = false,
+      JS::RegExpFlags aFlags = JS::RegExpFlag::UnicodeSets);
 
   
 

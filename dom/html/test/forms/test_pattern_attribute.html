@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=345512
+-->
 <head>
   <title>Test for Bug 345512</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -217,7 +217,7 @@ function checkPatternValidity(element)
   element.value = "01/01/2010"
   checkInvalidPattern(element);
 
-  element.pattern = "[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z_+])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9}";
+  element.pattern = "[0-9a-zA-Z]([\\-.\\w]*[0-9a-zA-Z_+])*@([0-9a-zA-Z][\\-\\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9}";
   element.value = "foo@bar.com";
   checkValidPattern(element);
 

@@ -213,7 +213,7 @@ class AccessibleCaretManager {
   MOZ_CAN_RUN_SCRIPT void SetSelectionDragState(bool aState) const;
 
   
-  bool IsPhoneNumber(nsAString& aCandidate) const;
+  bool IsPhoneNumber(const nsAString& aCandidate) const;
 
   
   
