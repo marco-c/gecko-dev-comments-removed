@@ -106,6 +106,10 @@ class nsAccUtils {
   static Accessible* TableFor(Accessible* aRow);
   static LocalAccessible* TableFor(LocalAccessible* aRow);
 
+  static const LocalAccessible* TableFor(const LocalAccessible* aAcc) {
+    return TableFor(const_cast<LocalAccessible*>(aAcc));
+  }
+
   
 
 

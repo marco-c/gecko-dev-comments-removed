@@ -475,20 +475,19 @@ class Accessible {
 
   bool IsDoc() const { return HasGenericType(eDocument); }
 
-  
+  bool IsTableRow() const { return HasGenericType(eTableRow); }
 
+  bool IsTableCell() const {
+    
+    
+    
+    
+    
+    
+    return mGenericTypes & eTableCell;
+  }
 
-
-
-
-
-
-
-  bool IsTableRow() const { return mGenericTypes & eTableRow; }
-
-  bool IsTableCell() const { return mGenericTypes & eTableCell; }
-
-  bool IsTable() const { return mGenericTypes & eTable; }
+  bool IsTable() const { return HasGenericType(eTable); }
 
   bool IsHyperText() const { return HasGenericType(eHyperText); }
 

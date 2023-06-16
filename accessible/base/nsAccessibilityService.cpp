@@ -29,6 +29,7 @@
 #include "nsDOMTokenList.h"
 #include "nsCRT.h"
 #include "nsEventShell.h"
+#include "nsGkAtoms.h"
 #include "nsIFrameInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTextFormatter.h"
@@ -69,6 +70,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 
 #include "XULAlertAccessible.h"
@@ -100,37 +102,36 @@ using namespace mozilla::dom;
 
 
 
-static bool IsARIATablePart(const nsRoleMapEntry* aRoleMapEntry) {
-  return aRoleMapEntry &&
-         (aRoleMapEntry->accTypes & (eTableCell | eTableRow | eTable));
-}
 
-
-
-
-
-static LocalAccessible* CreateARIATablePartAcc(
+static LocalAccessible* MaybeCreateSpecificARIAAccessible(
     const nsRoleMapEntry* aRoleMapEntry, const LocalAccessible* aContext,
     nsIContent* aContent, DocAccessible* aDocument) {
-  
-  
-  if ((aRoleMapEntry->accTypes & eTableCell)) {
-    if (aContext->IsTableRow()) {
+  if (aRoleMapEntry && aRoleMapEntry->accTypes & eTableCell) {
+    if (aContent->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th) &&
+        aContext->IsHTMLTableRow()) {
+      
+      
+      
+      return nullptr;
+    }
+    
+    if (aContext->Role() != roles::ROW) {
+      return nullptr;
+    }
+    
+    Accessible* parent = aContext->GetNonGenericParent();
+    if (!parent) {
+      return nullptr;
+    }
+    if (!parent->IsTable() && parent->Role() == roles::GROUPING) {
+      parent = parent->GetNonGenericParent();
+      if (!parent) {
+        return nullptr;
+      }
+    }
+    if (parent->IsTable()) {
       return new ARIAGridCellAccessible(aContent, aDocument);
     }
-  } else if (aRoleMapEntry->IsOfType(eTableRow)) {
-    if (aContext->IsTable() ||
-        
-        
-        
-        
-        ((aContext->Role() == roles::GROUPING ||
-          (aContext->IsGenericHyperText() && !aContext->ARIARoleMap())) &&
-         aContext->LocalParent() && aContext->LocalParent()->IsTable())) {
-      return new ARIARowAccessible(aContent, aDocument);
-    }
-  } else if (aRoleMapEntry->IsOfType(eTable)) {
-    return new ARIAGridAccessible(aContent, aDocument);
   }
   return nullptr;
 }
@@ -1090,28 +1091,25 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
     
     
-    const MarkupMapInfo* markupMap = GetMarkupMapInfoFor(content);
-    RefPtr<LocalAccessible> newAcc;
-    if (markupMap && markupMap->new_func) {
-      newAcc = markupMap->new_func(content->AsElement(), aContext);
+    const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
+    RefPtr<LocalAccessible> newAcc = MaybeCreateSpecificARIAAccessible(
+        roleMapEntry, aContext, content, document);
+    const MarkupMapInfo* markupMap = nullptr;
+    if (!newAcc) {
+      markupMap = GetMarkupMapInfoFor(content);
+      if (markupMap && markupMap->new_func) {
+        newAcc = markupMap->new_func(content->AsElement(), aContext);
+      }
     }
 
     
     
-    const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
     const bool hasNonPresentationalARIARole =
         roleMapEntry && !roleMapEntry->Is(nsGkAtoms::presentation) &&
         !roleMapEntry->Is(nsGkAtoms::none);
     if (!newAcc && (hasNonPresentationalARIARole ||
                     AttributesMustBeAccessible(content, document))) {
-      
-      
-      if (IsARIATablePart(roleMapEntry)) {
-        newAcc =
-            CreateARIATablePartAcc(roleMapEntry, aContext, content, document);
-      } else {
-        newAcc = new HyperTextAccessibleWrap(content, document);
-      }
+      newAcc = new HyperTextAccessibleWrap(content, document);
     }
 
     
@@ -1246,14 +1244,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   }
 
   if (!newAcc && content->IsHTMLElement()) {  
-    const bool isARIATablePart = IsARIATablePart(roleMapEntry);
+    
+    
+    if (frame->AccessibleType() != eOuterDocType) {
+      newAcc = MaybeCreateSpecificARIAAccessible(roleMapEntry, aContext,
+                                                 content, document);
+    }
 
-    if (!isARIATablePart || frame->AccessibleType() == eHTMLTableCellType ||
-        frame->AccessibleType() == eHTMLTableRowType ||
-        frame->AccessibleType() == eHTMLTableType ||
-        
-        
-        frame->AccessibleType() == eOuterDocType) {
+    if (!newAcc) {
       
       
       const MarkupMapInfo* markupMap =
@@ -1264,15 +1262,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
       if (!newAcc) {  
         newAcc = CreateAccessibleByFrameType(frame, content, aContext);
-      }
-    }
-
-    
-    
-    if (isARIATablePart && (!newAcc || newAcc->IsGenericHyperText())) {
-      if (LocalAccessible* tablePartAcc = CreateARIATablePartAcc(
-              roleMapEntry, aContext, content, document)) {
-        newAcc = tablePartAcc;
       }
     }
 

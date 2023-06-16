@@ -427,15 +427,11 @@ addAccessibleTask(
 </div>
   `,
   async function (browser, docAcc) {
-    
-    
-    const table = findAccessibleChildByID(docAcc, "table");
-    let queryOk = false;
-    try {
-      table.QueryInterface(nsIAccessibleTable);
-      queryOk = true;
-    } catch (e) {}
-    todo(queryOk, "Got nsIAccessibleTable");
+    const table = findAccessibleChildByID(docAcc, "table", [
+      nsIAccessibleTable,
+    ]);
+    is(table.rowCount, 1, "table rowCount correct");
+    is(table.columnCount, 1, "table columnCount correct");
   },
   {
     chrome: true,
