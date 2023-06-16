@@ -3,15 +3,12 @@
 
 
 use std::borrow::{Borrow, Cow};
-use std::cmp;
-use std::fmt;
-use std::hash;
-use std::marker::PhantomData;
-use std::mem;
-use std::ops::Deref;
 use std::rc::Rc;
-use std::slice;
-use std::str;
+use std::{cmp, fmt, hash, marker, mem, ops, slice, str, ptr};
+
+
+
+
 
 
 
@@ -20,20 +17,10 @@ use std::str;
 
 
 pub struct CowRcStr<'a> {
-    
-    
-    
-    ptr: &'static (),
-
-    
-    
-    
-    
-    
-    
+    ptr: ptr::NonNull<()>,
     borrowed_len_or_max: usize,
 
-    phantom: PhantomData<Result<&'a str, Rc<String>>>,
+    phantom: marker::PhantomData<Result<&'a str, Rc<String>>>,
 }
 
 fn _static_assert_same_size<'a>() {
@@ -57,9 +44,9 @@ impl<'a> From<&'a str> for CowRcStr<'a> {
         let len = s.len();
         assert!(len < usize::MAX);
         CowRcStr {
-            ptr: unsafe { &*(s.as_ptr() as *const ()) },
+            ptr: unsafe { ptr::NonNull::new_unchecked(s.as_ptr() as *mut ()) },
             borrowed_len_or_max: len,
-            phantom: PhantomData,
+            phantom: marker::PhantomData,
         }
     }
 }
@@ -74,22 +61,22 @@ impl<'a> From<String> for CowRcStr<'a> {
 impl<'a> CowRcStr<'a> {
     #[inline]
     fn from_rc(s: Rc<String>) -> Self {
-        let ptr = unsafe { &*(Rc::into_raw(s) as *const ()) };
+        let ptr = unsafe { ptr::NonNull::new_unchecked(Rc::into_raw(s) as *mut ()) };
         CowRcStr {
-            ptr: ptr,
+            ptr,
             borrowed_len_or_max: usize::MAX,
-            phantom: PhantomData,
+            phantom: marker::PhantomData,
         }
     }
 
     #[inline]
     fn unpack(&self) -> Result<&'a str, *const String> {
         if self.borrowed_len_or_max == usize::MAX {
-            Err(self.ptr as *const () as *const String)
+            Err(self.ptr.as_ptr() as *const String)
         } else {
             unsafe {
                 Ok(str::from_utf8_unchecked(slice::from_raw_parts(
-                    self.ptr as *const () as *const u8,
+                    self.ptr.as_ptr() as *const u8,
                     self.borrowed_len_or_max,
                 )))
             }
@@ -121,7 +108,7 @@ impl<'a> Drop for CowRcStr<'a> {
     }
 }
 
-impl<'a> Deref for CowRcStr<'a> {
+impl<'a> ops::Deref for CowRcStr<'a> {
     type Target = str;
 
     #[inline]
