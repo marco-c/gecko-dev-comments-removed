@@ -29,19 +29,13 @@ struct MOZ_STACK_CLASS ScopedLogExtraInfo {
  public:
   template <size_t N>
   ScopedLogExtraInfo(const char (&aTag)[N], const nsACString& aExtraInfo)
-      : mTag{aTag}, mCurrentValue{aExtraInfo} {
-    
-    
-    
-    
-    MOZ_ASSERT(XRE_IsParentProcess());
-
+      : mTag{aTag}, mPreviousValue(nullptr), mCurrentValue{aExtraInfo} {
     AddInfo();
   }
 
   ~ScopedLogExtraInfo();
 
-  ScopedLogExtraInfo(ScopedLogExtraInfo&& aOther);
+  ScopedLogExtraInfo(ScopedLogExtraInfo&& aOther) noexcept;
   ScopedLogExtraInfo& operator=(ScopedLogExtraInfo&& aOther) = delete;
 
   ScopedLogExtraInfo(const ScopedLogExtraInfo&) = delete;

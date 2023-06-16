@@ -280,6 +280,8 @@ nsresult nsLayoutStatics::Initialize() {
   
   ReportingHeader::Initialize();
 
+  InitializeScopedLogExtraInfo();
+
   if (XRE_IsParentProcess()) {
     InitializeQuotaManager();
     InitializeLocalStorage();
