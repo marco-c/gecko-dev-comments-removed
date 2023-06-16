@@ -127,7 +127,7 @@ void SincResampler::InitializeCPUSpecificFeatures() {
   convolve_proc_ = Convolve_NEON;
 #elif defined(WEBRTC_ARCH_X86_FAMILY)
   
-  if (GetCPUInfo(kAVX2))
+  if (GetCPUInfo(kAVX2) && GetCPUInfo(kFMA3))
     convolve_proc_ = Convolve_AVX2;
   else if (GetCPUInfo(kSSE2))
     convolve_proc_ = Convolve_SSE;

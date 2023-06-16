@@ -16,7 +16,7 @@
 namespace webrtc {
 
 
-typedef enum { kSSE2, kSSE3, kAVX2 } CPUFeature;
+typedef enum { kSSE2, kSSE3, kAVX2, kFMA3 } CPUFeature;
 
 
 enum {
