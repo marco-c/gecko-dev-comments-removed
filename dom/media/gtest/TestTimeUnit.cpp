@@ -191,6 +191,7 @@ TEST(TimeUnit, Comparisons)
   EXPECT_GT(n, o);
 
   
+  
   TimeUnit leftBound(74332508253360, 44100);
   TimeUnit rightBound(74332508297392, 44100);
   TimeUnit fuzz(250000, 1000000);
@@ -200,6 +201,12 @@ TEST(TimeUnit, Comparisons)
   EXPECT_GT(time, leftBound - fuzz);
   EXPECT_GE(rightBound + fuzz, time);
   EXPECT_LT(time, rightBound + fuzz);
+
+  TimeUnit zero = TimeUnit::Zero();  
+  TimeUnit datenow(
+      151737439364679,
+      90000);  
+  EXPECT_NE(zero, datenow);
 }
 
 TEST(TimeUnit, InfinityMath)
