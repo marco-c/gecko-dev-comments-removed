@@ -48,10 +48,7 @@ class FrameGeneratorInterface {
   
   virtual void ChangeResolution(size_t width, size_t height) = 0;
 
-  virtual Resolution GetResolution() const {
-    
-    return {.width = 0, .height = 0};
-  }
+  virtual Resolution GetResolution() const = 0;
 };
 
 }  
