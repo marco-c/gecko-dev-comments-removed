@@ -9,7 +9,6 @@
 #include "File.h"
 #include "MemoryBlobImpl.h"
 #include "mozilla/dom/BlobBinding.h"
-#include "mozilla/dom/BodyStream.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -298,6 +297,10 @@ already_AddRefed<Promise> Blob::ConsumeBody(
                               MutableBlobStorage::eOnlyInMemory, aRv);
 }
 
+
+
+
+
 already_AddRefed<ReadableStream> Blob::Stream(JSContext* aCx,
                                               ErrorResult& aRv) const {
   nsCOMPtr<nsIInputStream> stream;
@@ -311,15 +314,25 @@ already_AddRefed<ReadableStream> Blob::Stream(JSContext* aCx,
     return nullptr;
   }
 
-  RefPtr<BodyStreamHolder> holder = new BodyStreamHolder();
+  auto algorithms =
+      MakeRefPtr<NonAsyncInputToReadableStreamAlgorithms>(*stream);
 
-  BodyStream::Create(aCx, holder, mGlobal, stream, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ReadableStream> body = ReadableStream::CreateByteNative(
+      aCx, mGlobal, *algorithms, Nothing(), aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
-  RefPtr<ReadableStream> rStream = holder->GetReadableStreamBody();
-  return rStream.forget();
+  return body.forget();
 }
 
 }  
