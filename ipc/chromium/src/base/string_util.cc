@@ -623,7 +623,7 @@ void SplitString(const std::string& str, char s, std::vector<std::string>* r) {
 
 
 
-#if !defined(ARCH_CPU_64_BITS)
+#if !defined(HAVE_64BIT_BUILD)
 bool StringToInt(const std::string& input, int* output) {
   COMPILE_ASSERT(sizeof(int) == sizeof(long), cannot_strtol_to_int);
   return StringToNumber<StringToLongTraits>(input,
