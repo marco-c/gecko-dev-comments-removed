@@ -58,9 +58,6 @@ class RTC_EXPORT RTCStats {
  public:
   RTCStats(const std::string& id, Timestamp timestamp)
       : id_(id), timestamp_(timestamp) {}
-  ABSL_DEPRECATED("Use constructor with Timestamp instead")
-  RTCStats(std::string id, int64_t timestamp_us)
-      : RTCStats(std::move(id), Timestamp::Micros(timestamp_us)) {}
 
   virtual ~RTCStats() {}
 
@@ -68,8 +65,6 @@ class RTC_EXPORT RTCStats {
 
   const std::string& id() const { return id_; }
   
-  ABSL_DEPRECATED("Use .timestamp().us() instead")
-  int64_t timestamp_us() const { return timestamp_.us(); }
   Timestamp timestamp() const { return timestamp_; }
 
   
