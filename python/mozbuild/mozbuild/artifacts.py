@@ -841,6 +841,7 @@ class ThunderbirdMixin(object):
     
     esr_candidate_trees = [
         "releases/comm-esr102",
+        "releases/comm-esr115",
     ]
 
 
