@@ -251,49 +251,49 @@ add_task(async function resultMenu_showLessFrequently() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.addons.featureGate", true],
-      ["browser.urlbar.addons.minKeywordLength", 0],
+      ["browser.urlbar.addons.showLessFrequentlyCount", 0],
     ],
   });
 
   const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-    addonsKeywordsMinimumLengthCap: 3,
+    addonsShowLessFrequentlyCap: 3,
   });
 
   
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLengthCap"), 3);
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLength"), 0);
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 0);
+  Assert.equal(UrlbarPrefs.get("addonsShowLessFrequentlyCap"), 3);
+  Assert.equal(UrlbarPrefs.get("addons.showLessFrequentlyCount"), 0);
 
   await doShowLessFrequently({
-    input: "12",
+    input: "aaa b",
     expected: {
       isSuggestionShown: true,
       isMenuItemShown: true,
     },
   });
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 1);
+  Assert.equal(UrlbarPrefs.get("addons.showLessFrequentlyCount"), 1);
 
   await doShowLessFrequently({
-    input: "12",
+    input: "aaa b",
     expected: {
       isSuggestionShown: true,
       isMenuItemShown: true,
     },
   });
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 2);
+  Assert.equal(UrlbarPrefs.get("addons.showLessFrequentlyCount"), 2);
 
   await doShowLessFrequently({
-    input: "12",
+    input: "aaa b",
     expected: {
       isSuggestionShown: true,
       isMenuItemShown: true,
     },
   });
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 3);
+  Assert.equal(UrlbarPrefs.get("addons.showLessFrequentlyCount"), 3);
 
   await doShowLessFrequently({
-    input: "12",
+    input: "aaa b",
     expected: {
+      
       
       
       isSuggestionShown: false,
@@ -301,58 +301,7 @@ add_task(async function resultMenu_showLessFrequently() {
   });
 
   await doShowLessFrequently({
-    input: "123",
-    expected: {
-      
-      
-      
-      isSuggestionShown: true,
-      isMenuItemShown: false,
-    },
-  });
-
-  await cleanUpNimbus();
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function resultMenu_showLessFrequentlyWithNimbusMinimumLength() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.addons.featureGate", true],
-      ["browser.urlbar.addons.minKeywordLength", 0],
-    ],
-  });
-
-  const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-    addonsKeywordsMinimumLengthCap: 3,
-    addonsKeywordsMinimumLength: 2,
-  });
-
-  
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLengthCap"), 3);
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLength"), 2);
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 0);
-
-  await doShowLessFrequently({
-    input: "12",
-    expected: {
-      isSuggestionShown: true,
-      isMenuItemShown: true,
-    },
-  });
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 3);
-
-  await doShowLessFrequently({
-    input: "12",
-    expected: {
-      
-      
-      isSuggestionShown: false,
-    },
-  });
-
-  await doShowLessFrequently({
-    input: "123",
+    input: "aaa bb",
     expected: {
       
       
@@ -524,16 +473,6 @@ async function doDismissTest(command) {
     set: [["browser.urlbar.addons.featureGate", true]],
   });
 
-  const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-    addonsKeywordsMinimumLengthCap: 0,
-    addonsKeywordsMinimumLength: 0,
-  });
-
-  
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLengthCap"), 0);
-  Assert.equal(UrlbarPrefs.get("addonsKeywordsMinimumLength"), 0);
-  Assert.equal(UrlbarPrefs.get("addons.minKeywordLength"), 0);
-
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "123",
@@ -616,7 +555,6 @@ async function doDismissTest(command) {
 
   await UrlbarTestUtils.promisePopupClose(window);
 
-  await cleanUpNimbus();
   await SpecialPowers.popPrefEnv();
   UrlbarPrefs.clear("suggest.addons");
 }

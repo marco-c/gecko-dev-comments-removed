@@ -39,7 +39,7 @@ const REMOTE_SETTINGS_RESULTS = [
         icon: "https://example.com/first-addon.svg",
         title: "First Addon",
         rating: "4.7",
-        keywords: ["first", "1st"],
+        keywords: ["first", "1st", "two words", "a b c"],
         description: "Description for the First Addon",
         number_of_ratings: 1256,
         is_top_pick: true,
@@ -250,6 +250,22 @@ add_task(async function hideIfAlreadyInstalled() {
 add_task(async function remoteSettings() {
   const testCases = [
     {
+      input: "f",
+      expected: null,
+    },
+    {
+      input: "fi",
+      expected: null,
+    },
+    {
+      input: "fir",
+      expected: null,
+    },
+    {
+      input: "firs",
+      expected: null,
+    },
+    {
       input: "first",
       expected: makeExpectedResult({
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
@@ -259,6 +275,110 @@ add_task(async function remoteSettings() {
     },
     {
       input: "1st",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "t",
+      expected: null,
+    },
+    {
+      input: "tw",
+      expected: null,
+    },
+    {
+      input: "two",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two ",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two w",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two wo",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two wor",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two word",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "two words",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "a",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "a ",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "a b",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "a b ",
+      expected: makeExpectedResult({
+        suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
+        source: "remote-settings",
+        isTopPick: true,
+      }),
+    },
+    {
+      input: "a b c",
       expected: makeExpectedResult({
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
@@ -297,16 +417,10 @@ add_task(async function remoteSettings() {
         isTopPick: true,
       }),
     },
-    {
-      
-      input: "not rs",
-      expected: makeExpectedResult({
-        suggestion: MERINO_SUGGESTIONS[0],
-        source: "merino",
-        isTopPick: true,
-      }),
-    },
   ];
+
+  
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
 
   for (const { input, expected } of testCases) {
     await check_results({
@@ -314,9 +428,11 @@ add_task(async function remoteSettings() {
         providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
-      matches: [expected],
+      matches: expected ? [expected] : [],
     });
   }
+
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
 });
 
 add_task(async function merinoIsTopPick() {
@@ -356,6 +472,226 @@ add_task(async function merinoIsTopPick() {
     ],
   });
 });
+
+
+add_task(async function showLessFrequently_rs() {
+  await doShowLessFrequentlyTest({
+    rs: {
+      show_less_frequently_cap: 3,
+    },
+    tests: [
+      {
+        showLessFrequentlyCount: 0,
+        canShowLessFrequently: true,
+        searches: {
+          f: false,
+          fi: false,
+          fir: false,
+          firs: false,
+          first: true,
+          t: false,
+          tw: false,
+          two: true,
+          "two ": true,
+          "two w": true,
+          "two wo": true,
+          "two wor": true,
+          "two word": true,
+          "two words": true,
+          a: true,
+          "a ": true,
+          "a b": true,
+          "a b ": true,
+          "a b c": true,
+        },
+      },
+      {
+        showLessFrequentlyCount: 1,
+        canShowLessFrequently: true,
+        searches: {
+          first: false,
+          two: false,
+          a: false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 2,
+        canShowLessFrequently: true,
+        searches: {
+          "two ": false,
+          "a ": false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 3,
+        canShowLessFrequently: false,
+        searches: {
+          "two w": false,
+          "a b": false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 3,
+        canShowLessFrequently: false,
+        searches: {},
+      },
+    ],
+  });
+});
+
+
+
+add_task(async function showLessFrequently_nimbus() {
+  await doShowLessFrequentlyTest({
+    nimbus: {
+      addonsShowLessFrequentlyCap: 3,
+    },
+    rs: {
+      show_less_frequently_cap: 10,
+    },
+    tests: [
+      {
+        showLessFrequentlyCount: 0,
+        canShowLessFrequently: true,
+        searches: {
+          a: true,
+          "a ": true,
+          "a b": true,
+          "a b ": true,
+          "a b c": true,
+        },
+      },
+      {
+        showLessFrequentlyCount: 1,
+        canShowLessFrequently: true,
+        searches: {
+          a: false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 2,
+        canShowLessFrequently: true,
+        searches: {
+          "a ": false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 3,
+        canShowLessFrequently: false,
+        searches: {
+          "a b": false,
+        },
+      },
+      {
+        showLessFrequentlyCount: 3,
+        canShowLessFrequently: false,
+        searches: {},
+      },
+    ],
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doShowLessFrequentlyTest({ tests, rs = {}, nimbus = {} }) {
+  
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+
+  
+  let suggestion = REMOTE_SETTINGS_RESULTS[0].attachment[0];
+
+  let addonSuggestions = QuickSuggest.getFeature("AddonSuggestions");
+
+  
+  let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
+  await QuickSuggestTestUtils.withConfig({
+    config: rs,
+    callback: async () => {
+      let cumulativeSearches = {};
+
+      for (let {
+        showLessFrequentlyCount,
+        canShowLessFrequently,
+        searches,
+      } of tests) {
+        Assert.equal(
+          addonSuggestions.showLessFrequentlyCount,
+          showLessFrequentlyCount,
+          "showLessFrequentlyCount should be correct initially"
+        );
+        Assert.equal(
+          UrlbarPrefs.get("addons.showLessFrequentlyCount"),
+          showLessFrequentlyCount,
+          "Pref should be correct initially"
+        );
+        Assert.equal(
+          addonSuggestions.canShowLessFrequently,
+          canShowLessFrequently,
+          "canShowLessFrequently should be correct initially"
+        );
+
+        
+        cumulativeSearches = {
+          ...cumulativeSearches,
+          ...searches,
+        };
+
+        for (let [searchString, isExpected] of Object.entries(
+          cumulativeSearches
+        )) {
+          await check_results({
+            context: createContext(searchString, {
+              providers: [UrlbarProviderQuickSuggest.name],
+              isPrivate: false,
+            }),
+            matches: !isExpected
+              ? []
+              : [
+                  makeExpectedResult({
+                    suggestion,
+                    source: "remote-settings",
+                    isTopPick: true,
+                  }),
+                ],
+          });
+        }
+
+        addonSuggestions.incrementShowLessFrequentlyCount();
+      }
+    },
+  });
+
+  await cleanUpNimbus();
+  UrlbarPrefs.clear("addons.showLessFrequentlyCount");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+}
 
 function makeExpectedResult({ suggestion, source, isTopPick }) {
   let rating;
