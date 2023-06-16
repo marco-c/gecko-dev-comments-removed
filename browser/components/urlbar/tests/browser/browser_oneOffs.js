@@ -450,12 +450,14 @@ add_task(async function allOneOffsHiddenExceptCurrentEngine() {
   );
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.hiddenOneOffs", engines.map(e => e.name).join(",")],
       ...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => [
         `browser.urlbar.${m.pref}`,
         false,
       ]),
     ],
+  });
+  engines.forEach(e => {
+    e.hideOneOffButton = e.name !== defaultEngine.name;
   });
 
   let typedValue = "foo";
@@ -475,6 +477,9 @@ add_task(async function allOneOffsHiddenExceptCurrentEngine() {
   assertState(0, -1);
   await hidePopup();
   await SpecialPowers.popPrefEnv();
+  engines.forEach(e => {
+    e.hideOneOffButton = false;
+  });
 });
 
 
@@ -718,12 +723,14 @@ add_task(async function avoidWillHideRace() {
   );
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.hiddenOneOffs", engines.map(e => e.name).join(",")],
       ...UrlbarUtils.LOCAL_SEARCH_MODES.map(m => [
         `browser.urlbar.${m.pref}`,
         false,
       ]),
     ],
+  });
+  engines.forEach(e => {
+    e.hideOneOffButton = true;
   });
   Assert.ok(
     !oneOffSearchButtons._engineInfo,
@@ -776,6 +783,9 @@ add_task(async function avoidWillHideRace() {
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
   await SpecialPowers.popPrefEnv();
+  engines.forEach(e => {
+    e.hideOneOffButton = false;
+  });
 });
 
 
@@ -872,8 +882,9 @@ add_task(async function allLocalShortcutsHidden() {
 
 add_task(async function localShortcutsShownWhenEnginesHidden() {
   let engines = await Services.search.getVisibleEngines();
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.hiddenOneOffs", engines.map(e => e.name).join(",")]],
+
+  engines.forEach(e => {
+    e.hideOneOffButton = true;
   });
 
   let rebuildPromise = BrowserTestUtils.waitForEvent(
@@ -906,7 +917,9 @@ add_task(async function localShortcutsShownWhenEnginesHidden() {
   );
 
   await hidePopup();
-  await SpecialPowers.popPrefEnv();
+  engines.forEach(e => {
+    e.hideOneOffButton = false;
+  });
 });
 
 

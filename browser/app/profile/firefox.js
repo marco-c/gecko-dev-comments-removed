@@ -685,9 +685,6 @@ pref("browser.search.openintab", false);
 pref("browser.search.context.loadInBackground", false);
 
 
-pref("browser.search.hiddenOneOffs", "");
-
-
 pref("browser.search.widget.inNavBar", false);
 
 
