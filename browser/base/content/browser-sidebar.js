@@ -108,8 +108,8 @@ var SidebarUI = {
     this._switcherTarget = document.getElementById("sidebar-switcher-target");
     this._switcherArrow = document.getElementById("sidebar-switcher-arrow");
 
-    this._switcherTarget.addEventListener("command", event => {
-      this.toggleSwitcherPanel(event);
+    this._switcherTarget.addEventListener("command", () => {
+      this.toggleSwitcherPanel();
     });
     this._switcherTarget.addEventListener("keydown", event => {
       this.handleKeydown(event);
@@ -203,14 +203,14 @@ var SidebarUI = {
   
 
 
-  toggleSwitcherPanel(event) {
+  toggleSwitcherPanel() {
     if (
       this._switcherPanel.state == "open" ||
       this._switcherPanel.state == "showing"
     ) {
       this.hideSwitcherPanel();
     } else if (this._switcherPanel.state == "closed") {
-      this.showSwitcherPanel(event);
+      this.showSwitcherPanel();
     }
   },
 
@@ -222,7 +222,7 @@ var SidebarUI = {
     switch (event.key) {
       case "Enter":
       case " ": {
-        this.toggleSwitcherPanel(event);
+        this.toggleSwitcherPanel();
         event.stopPropagation();
         event.preventDefault();
         break;
@@ -240,8 +240,7 @@ var SidebarUI = {
     this._switcherPanel.hidePopup();
   },
 
-  showSwitcherPanel(event) {
-    this._ensureShortcutsShown();
+  showSwitcherPanel() {
     this._switcherPanel.addEventListener(
       "popuphiding",
       () => {
@@ -258,48 +257,22 @@ var SidebarUI = {
         : gNavigatorBundle.getString("sidebar.moveToRight");
     this._reversePositionButton.setAttribute("label", label);
 
-    this._switcherPanel.hidden = false;
-
     
-    PanelMultiView.openPopup(this._switcherPanel, this._switcherTarget, {
-      position: "bottomleft topleft",
-      triggerEvent: event,
-    }).catch(console.error);
+    this._switcherPanel.hidden = false;
+    this._switcherPanel.openPopup(this._switcherTarget);
 
     this._switcherTarget.classList.add("active");
     this._switcherTarget.setAttribute("aria-expanded", true);
   },
 
-  updateShortcut({ button, key }) {
-    
-    
-    if (!this._addedShortcuts) {
+  updateShortcut({ keyId }) {
+    let menuitem = this._switcherPanel.querySelector(`[key="${keyId}"]`);
+    if (!menuitem) {
+      
+      
       return;
     }
-    if (key) {
-      let keyId = key.getAttribute("id");
-      button = this._switcherPanel.querySelector(`[key="${keyId}"]`);
-    } else if (button) {
-      let keyId = button.getAttribute("key");
-      key = document.getElementById(keyId);
-    }
-    if (!button || !key) {
-      return;
-    }
-    button.setAttribute("shortcut", ShortcutUtils.prettifyShortcut(key));
-  },
-
-  _addedShortcuts: false,
-  _ensureShortcutsShown() {
-    if (this._addedShortcuts) {
-      return;
-    }
-    this._addedShortcuts = true;
-    for (let button of this._switcherPanel.querySelectorAll(
-      "toolbarbutton[key]"
-    )) {
-      this.updateShortcut({ button });
-    }
+    menuitem.removeAttribute("acceltext");
   },
 
   

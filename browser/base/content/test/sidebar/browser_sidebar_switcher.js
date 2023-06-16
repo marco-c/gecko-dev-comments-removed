@@ -37,7 +37,7 @@ async function waitForSwitcherPopupShown() {
 
 
 
-function toggleSwitcherButton(querySelector = null, key = null) {
+function pickSwitcherMenuitem(querySelector = null) {
   let sidebarPopup = document.querySelector("#sidebarMenu-popup");
   let hideSwitcherPanelPromise = Promise.all([
     BrowserTestUtils.waitForEvent(window, "SidebarFocused"),
@@ -45,8 +45,8 @@ function toggleSwitcherButton(querySelector = null, key = null) {
   ]);
   if (querySelector) {
     document.querySelector(querySelector).click();
-  } else if (key) {
-    EventUtils.synthesizeKey(key, {});
+  } else {
+    EventUtils.synthesizeKey("KEY_Enter", {});
   }
   return hideSwitcherPanelPromise;
 }
@@ -109,50 +109,42 @@ async function testSidebarMenuKeyToggle(key, sidebarTitle) {
 
   info("Testing keyboard navigation between sidebar menu popup controls");
 
-  Assert.ok(
-    document.getElementById("sidebar-switcher-bookmarks").matches(":focus"),
-    "The 1st sidebar menu item (Bookmarks toolbarbutton) is focused"
-  );
-  Assert.equal(
-    document.getElementById("sidebar-switcher-bookmarks"),
-    document.commandDispatcher.focusedElement,
-    "The 1st sidebar menu item (Bookmarks toolbarbutton) is focused"
+  let arrowDown = async (menuitemId, msg) => {
+    let menuItemActive = BrowserTestUtils.waitForEvent(
+      SidebarUI._switcherPanel,
+      "DOMMenuItemActive"
+    );
+    EventUtils.synthesizeKey("KEY_ArrowDown", {});
+    await menuItemActive;
+    Assert.ok(
+      document.getElementById(menuitemId).hasAttribute("_moz-menuactive"),
+      msg
+    );
+  };
+
+  
+  await arrowDown(
+    "sidebar-switcher-bookmarks",
+    "The 1st sidebar menu item (Bookmarks) is active"
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
-  EventUtils.synthesizeKey("KEY_ArrowDown", {});
-  EventUtils.synthesizeKey("KEY_ArrowUp", {});
-
-  Assert.ok(
-    document.getElementById("sidebar-switcher-history").matches(":focus"),
-    "The 2nd sidebar menu item (History toolbarbutton) is focused"
-  );
-  Assert.equal(
-    document.getElementById("sidebar-switcher-history"),
-    document.commandDispatcher.focusedElement,
-    "The 2nd sidebar menu item (History toolbarbutton) is focused"
+  await arrowDown(
+    "sidebar-switcher-history",
+    "The 2nd sidebar menu item (History) is active"
   );
 
   if (sidebarTitle === "Tabs") {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {});
-
-    Assert.ok(
-      document.getElementById("sidebar-switcher-tabs").matches(":focus"),
-      "The 3rd sidebar menu item (Synced Tabs toolbarbutton) is focused"
-    );
-    Assert.equal(
-      document.getElementById("sidebar-switcher-tabs"),
-      document.commandDispatcher.focusedElement,
-      "The 3rd sidebar menu item (Synced Tabs toolbarbutton) is focused"
+    await arrowDown(
+      "sidebar-switcher-tabs",
+      "The 3rd sidebar menu item (Synced Tabs) is active"
     );
   }
 
   
-  await toggleSwitcherButton( null, key);
-  await SidebarUI.show(
-    `view${sidebarTitle}Sidebar`
-  ); 
+  let sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+  await pickSwitcherMenuitem( null);
+  await sidebarShown;
 
   info("Testing keyboard navigation when a sidebar menu popup is closed");
 
@@ -165,7 +157,7 @@ async function testSidebarMenuKeyToggle(key, sidebarTitle) {
   Assert.equal(
     SidebarUI._box.getAttribute("sidebarcommand"),
     `view${sidebarTitle}Sidebar` ,
-    `${sidebarTitle} sidebar loaded with "${key}" key`
+    `${sidebarTitle} sidebar loaded`
   );
   Assert.equal(
     SidebarUI.currentID,
@@ -272,7 +264,7 @@ add_task(async function mouse() {
   await SidebarUI.show("viewBookmarksSidebar");
 
   await showSwitcherPanelPromise();
-  await toggleSwitcherButton("#sidebar-switcher-history");
+  await pickSwitcherMenuitem("#sidebar-switcher-history");
   Assert.equal(
     sidebar.getAttribute("sidebarcommand"),
     "viewHistorySidebar",
@@ -280,7 +272,7 @@ add_task(async function mouse() {
   );
 
   await showSwitcherPanelPromise();
-  await toggleSwitcherButton("#sidebar-switcher-tabs");
+  await pickSwitcherMenuitem("#sidebar-switcher-tabs");
   Assert.equal(
     sidebar.getAttribute("sidebarcommand"),
     "viewTabsSidebar",
@@ -288,7 +280,7 @@ add_task(async function mouse() {
   );
 
   await showSwitcherPanelPromise();
-  await toggleSwitcherButton("#sidebar-switcher-bookmarks");
+  await pickSwitcherMenuitem("#sidebar-switcher-bookmarks");
   Assert.equal(
     sidebar.getAttribute("sidebarcommand"),
     "viewBookmarksSidebar",
