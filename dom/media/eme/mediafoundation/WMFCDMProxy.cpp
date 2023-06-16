@@ -82,7 +82,6 @@ void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
       mConfig.mInitDataTypes,
       mPersistentStateRequired,
       mDistinctiveIdentifierRequired,
-      false ,
       mProxyCallback,
       GenerateMFCDMMediaCapabilities(mConfig.mAudioCapabilities),
       GenerateMFCDMMediaCapabilities(mConfig.mVideoCapabilities)};
