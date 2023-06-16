@@ -67,7 +67,7 @@ DynamicBlocklistWriter::DynamicBlocklistWriter(
     const uint32_t nameSize = name.Length() * sizeof(char16_t);
 
     mArray[i].mMaxVersion = DllBlockInfo::ALL_VERSIONS;
-    mArray[i].mFlags = DllBlockInfo::Flags::FLAGS_DEFAULT;
+    mArray[i].mFlags = DllBlockInfoFlags::FLAGS_DEFAULT;
 
     
     
