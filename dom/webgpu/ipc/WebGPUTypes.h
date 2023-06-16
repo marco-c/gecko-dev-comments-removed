@@ -11,21 +11,34 @@
 #include "nsString.h"
 #include "mozilla/dom/BindingDeclarations.h"
 
+namespace mozilla::dom {
+enum class GPUErrorFilter : uint8_t;
+}  
+
 namespace mozilla::webgpu {
 
 using RawId = uint64_t;
 using BufferAddress = uint64_t;
 
-struct ScopedError {
-  
-  
-  bool operationError = false;
-
-  
-  
-  nsCString validationMessage;
+struct ErrorScope {
+  dom::GPUErrorFilter filter;
+  Maybe<nsCString> firstMessage;
 };
-using MaybeScopedError = Maybe<ScopedError>;
+
+enum class PopErrorScopeResultType : uint8_t {
+  NoError,
+  ThrowOperationError,
+  ValidationError,
+  OutOfMemory,
+  InternalError,
+  DeviceLost,
+  _LAST = DeviceLost,
+};
+
+struct PopErrorScopeResult {
+  PopErrorScopeResultType resultType;
+  nsCString message;
+};
 
 enum class WebGPUCompilationMessageType { Error, Warning, Info };
 
