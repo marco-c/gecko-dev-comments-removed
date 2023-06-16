@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-
-
 class RtpVideoLayersAllocationExtension {
  public:
   using value_type = VideoLayersAllocation;

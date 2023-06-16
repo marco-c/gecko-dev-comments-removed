@@ -58,9 +58,6 @@ bool AllocationIsValid(const VideoLayersAllocation& allocation) {
       max_rtp_stream_idx = spatial_layer.rtp_stream_index;
     }
     if (allocation.resolution_and_frame_rate_is_valid) {
-      
-      
-      
       if (spatial_layer.width <= 0) {
         return false;
       }
