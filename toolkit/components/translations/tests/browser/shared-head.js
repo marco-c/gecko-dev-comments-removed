@@ -381,6 +381,7 @@ async function loadTestPage({
   prefs,
   permissionsUrls = [],
 }) {
+  Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -438,6 +439,7 @@ async function loadTestPage({
 
     cleanup() {
       removeMocks();
+      Services.fog.testResetFOG();
       BrowserTestUtils.removeTab(tab);
       return Promise.all([
         SpecialPowers.popPrefEnv(),
@@ -880,4 +882,71 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
 
     await SpecialPowers.popPrefEnv();
   };
+}
+
+
+
+
+class TestTranslationsTelemetry {
+  
+
+
+
+
+
+
+
+
+
+
+
+  static async assertEvent(
+    name,
+    event,
+    { expectedLength, allValuePredicates = [], finalValuePredicates = [] }
+  ) {
+    
+    
+    await Services.fog.testFlushAllChildren();
+    const values = event.testGetValue() ?? [];
+    const length = values.length;
+
+    is(
+      length,
+      expectedLength,
+      `Telemetry event ${name} should have length ${expectedLength}`
+    );
+
+    if (allValuePredicates.length !== 0) {
+      is(
+        length > 0,
+        true,
+        `Telemetry event ${name} should contain values if allPredicates are specified`
+      );
+      for (const value of values) {
+        for (const predicate of allValuePredicates) {
+          is(
+            predicate(value),
+            true,
+            `Telemetry event ${name} allPredicate { ${predicate.toString()} } should pass for each value`
+          );
+        }
+      }
+    }
+
+    if (finalValuePredicates.length !== 0) {
+      is(
+        length > 0,
+        true,
+        `Telemetry event ${name} should contain values if finalPredicates are specified`
+      );
+      for (const predicate of finalValuePredicates) {
+        is(
+          predicate(values[length - 1]),
+          true,
+          `Telemetry event ${name} finalPredicate { ${predicate.toString()} } should pass for final value`
+        );
+      }
+    }
+  }
 }
