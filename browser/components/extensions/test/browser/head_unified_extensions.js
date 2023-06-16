@@ -13,6 +13,7 @@
 
 
 
+
 const getListView = (win = window) => {
   const { panel } = win.gUnifiedExtensions;
   ok(panel, "expected panel to be created");
@@ -188,4 +189,11 @@ const promiseSetToolbarVisibility = (toolbar, visible) => {
   );
   setToolbarVisibility(toolbar, visible, undefined, false);
   return visibilityChanged;
+};
+
+const getMessageBars = (win = window) => {
+  const { panel } = win.gUnifiedExtensions;
+  return panel.querySelectorAll(
+    "#unified-extensions-messages-container > message-bar"
+  );
 };
