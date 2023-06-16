@@ -1792,10 +1792,7 @@ bool WebRtcVideoChannel::MaybeCreateDefaultReceiveStream(
     
     absl::optional<uint32_t> current_default_ssrc = GetUnsignaledSsrc();
     if (current_default_ssrc) {
-      
-      
-      ReCreateDefaulReceiveStream(*current_default_ssrc,
-                                  packet.Ssrc());
+      FindReceiveStream(*current_default_ssrc)->UpdateRtxSsrc(packet.Ssrc());
     } else {
       
       
@@ -1822,9 +1819,6 @@ bool WebRtcVideoChannel::MaybeCreateDefaultReceiveStream(
       }
     }
   }
-
-  
-  
   
   ReCreateDefaulReceiveStream(packet.Ssrc(), absl::nullopt);
   last_unsignalled_ssrc_creation_time_ms_ = rtc::TimeMillis();
@@ -3354,6 +3348,11 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetLocalSsrc(uint32_t ssrc) {
   call_->OnLocalSsrcUpdated(stream(), ssrc);
   if (flexfec_stream_)
     call_->OnLocalSsrcUpdated(*flexfec_stream_, ssrc);
+}
+
+void WebRtcVideoChannel::WebRtcVideoReceiveStream::UpdateRtxSsrc(
+    uint32_t ssrc) {
+  stream_->UpdateRtxSsrc(ssrc);
 }
 
 WebRtcVideoChannel::VideoCodecSettings::VideoCodecSettings()

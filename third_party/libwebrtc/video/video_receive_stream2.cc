@@ -256,7 +256,7 @@ VideoReceiveStream2::VideoReceiveStream2(
       max_wait_for_keyframe_, max_wait_for_frame_, std::move(scheduler),
       call_->trials());
 
-  if (rtx_ssrc()) {
+  if (!config_.rtp.rtx_associated_payload_types.empty()) {
     rtx_receive_stream_ = std::make_unique<RtxReceiveStream>(
         &rtp_video_stream_receiver_,
         std::move(config_.rtp.rtx_associated_payload_types), remote_ssrc(),
@@ -279,6 +279,7 @@ void VideoReceiveStream2::RegisterWithTransport(
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   RTC_DCHECK(!media_receiver_);
   RTC_DCHECK(!rtx_receiver_);
+  receiver_controller_ = receiver_controller;
 
   
   media_receiver_ = receiver_controller->CreateReceiver(
@@ -294,6 +295,7 @@ void VideoReceiveStream2::UnregisterFromTransport() {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   media_receiver_.reset();
   rtx_receiver_.reset();
+  receiver_controller_ = nullptr;
 }
 
 const std::string& VideoReceiveStream2::sync_group() const {
@@ -509,14 +511,7 @@ void VideoReceiveStream2::SetRtcpXr(Config::Rtp::RtcpXr rtcp_xr) {
 void VideoReceiveStream2::SetAssociatedPayloadTypes(
     std::map<int, int> associated_payload_types) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-
-  
-  
-  
-  
-  
-  
-  if (!rtx_ssrc())
+  if (!rtx_receive_stream_)
     return;
 
   rtx_receive_stream_->SetAssociatedPayloadTypes(
@@ -1083,6 +1078,16 @@ void VideoReceiveStream2::GenerateKeyFrame() {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   RequestKeyFrame(clock_->CurrentTime());
   keyframe_generation_requested_ = true;
+}
+
+void VideoReceiveStream2::UpdateRtxSsrc(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+  RTC_DCHECK(rtx_receive_stream_);
+
+  rtx_receiver_.reset();
+  updated_rtx_ssrc_ = ssrc;
+  rtx_receiver_ = receiver_controller_->CreateReceiver(
+      rtx_ssrc(), rtx_receive_stream_.get());
 }
 
 }  
