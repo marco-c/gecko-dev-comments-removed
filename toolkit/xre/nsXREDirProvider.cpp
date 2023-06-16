@@ -327,13 +327,29 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
 
   nsCOMPtr<nsIFile> file;
 
-  if (!strcmp(aProperty, NS_APP_USER_PROFILE_LOCAL_50_DIR)) {
+  if (!strcmp(aProperty, NS_APP_USER_PROFILE_LOCAL_50_DIR) ||
+      !strcmp(aProperty, NS_APP_PROFILE_LOCAL_DIR_STARTUP)) {
     if (mProfileLocalDir) {
       rv = mProfileLocalDir->Clone(getter_AddRefs(file));
+    } else {
+      
+      
+      
+      NS_WARNING_ASSERTION(!XRE_IsParentProcess(),
+                           "tried to get profile in parent too early");
+      return NS_ERROR_FAILURE;
     }
-  } else if (!strcmp(aProperty, NS_APP_USER_PROFILE_50_DIR)) {
+  } else if (!strcmp(aProperty, NS_APP_USER_PROFILE_50_DIR) ||
+             !strcmp(aProperty, NS_APP_PROFILE_DIR_STARTUP)) {
     if (mProfileDir) {
       rv = mProfileDir->Clone(getter_AddRefs(file));
+    } else {
+      
+      
+      
+      NS_WARNING_ASSERTION(!XRE_IsParentProcess(),
+                           "tried to get profile in parent too early");
+      return NS_ERROR_FAILURE;
     }
   } else if (!strcmp(aProperty, NS_GRE_DIR)) {
     
@@ -388,14 +404,6 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     rv = GetUserProfilesLocalDir(getter_AddRefs(file));
   } else if (!strcmp(aProperty, XRE_EXECUTABLE_FILE)) {
     rv = XRE_GetBinaryPath(getter_AddRefs(file));
-  } else if (!strcmp(aProperty, NS_APP_PROFILE_DIR_STARTUP)) {
-    if (mProfileDir) {
-      rv = mProfileDir->Clone(getter_AddRefs(file));
-    }
-  } else if (!strcmp(aProperty, NS_APP_PROFILE_LOCAL_DIR_STARTUP)) {
-    if (mProfileLocalDir) {
-      rv = mProfileLocalDir->Clone(getter_AddRefs(file));
-    }
   }
 #if defined(XP_UNIX) || defined(XP_MACOSX)
   else if (!strcmp(aProperty, XRE_SYS_LOCAL_EXTENSION_PARENT_DIR)) {
@@ -470,6 +478,11 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     rv = file->AppendNative(nsLiteralCString(PREF_OVERRIDE_DIRNAME));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = EnsureDirectoryExists(file);
+  } else {
+    
+    
+    
+    return NS_ERROR_FAILURE;
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
