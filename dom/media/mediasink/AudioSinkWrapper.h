@@ -25,33 +25,15 @@ class MediaQueue;
 
 class AudioSinkWrapper : public MediaSink {
   using PlaybackParams = AudioSink::PlaybackParams;
-
-  
-  class Creator {
-   public:
-    virtual ~Creator() = default;
-    virtual AudioSink* Create() = 0;
-  };
-
-  
-  template <typename Function>
-  class CreatorImpl : public Creator {
-   public:
-    explicit CreatorImpl(const Function& aFunc) : mFunction(aFunc) {}
-    AudioSink* Create() override { return mFunction(); }
-
-   private:
-    Function mFunction;
-  };
+  using SinkCreator = std::function<AudioSink*()>;
 
  public:
-  template <typename Function>
   AudioSinkWrapper(AbstractThread* aOwnerThread,
-                   MediaQueue<AudioData>& aAudioQueue, const Function& aFunc,
+                   MediaQueue<AudioData>& aAudioQueue, SinkCreator aFunc,
                    double aVolume, double aPlaybackRate, bool aPreservesPitch,
                    RefPtr<AudioDeviceInfo> aAudioDevice)
       : mOwnerThread(aOwnerThread),
-        mCreator(new CreatorImpl<Function>(aFunc)),
+        mSinkCreator(std::move(aFunc)),
         mAudioDevice(std::move(aAudioDevice)),
         mIsStarted(false),
         mParams(aVolume, aPlaybackRate, aPreservesPitch),
@@ -132,7 +114,7 @@ class AudioSinkWrapper : public MediaSink {
   bool IsAudioSourceEnded(const MediaInfo& aInfo) const;
 
   const RefPtr<AbstractThread> mOwnerThread;
-  UniquePtr<Creator> mCreator;
+  SinkCreator mSinkCreator;
   UniquePtr<AudioSink> mAudioSink;
   
   
