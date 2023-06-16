@@ -255,8 +255,6 @@ class AudioStream final {
   Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
       ShutdownCause = ShutdownCause::Regular);
 
-  void Reset();
-
   
   
   void SetVolume(double aVolume);
