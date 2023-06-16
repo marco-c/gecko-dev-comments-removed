@@ -31,6 +31,9 @@ add_setup(async () => {
       ["browser.urlbar.trending.featureGate", true],
       ["browser.urlbar.trending.requireSearchMode", false],
       ["browser.urlbar.eventTelemetry.enabled", true],
+      
+      
+      ["browser.urlbar.tipShownCount.searchTip_persist", 999],
     ],
   });
 
