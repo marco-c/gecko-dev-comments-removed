@@ -3786,7 +3786,8 @@ class PacingFactorObserver : public test::SendTest {
       }
       
       send_config->rtp.extensions.emplace_back(
-          RtpExtension::kTransportSequenceNumberUri, unique_id_generator());
+          RtpExtension::kTransportSequenceNumberUri,
+          unique_id_generator.GenerateNumber());
     }
 
     

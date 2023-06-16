@@ -44,7 +44,9 @@ class UniqueNumberGenerator {
   
   
   TIntegral GenerateNumber();
-  TIntegral operator()() { return GenerateNumber(); }
+
+  
+  TIntegral Generate() { return GenerateNumber(); }
 
   
   
@@ -74,7 +76,9 @@ class UniqueRandomIdGenerator {
   
   
   uint32_t GenerateId();
-  uint32_t operator()() { return GenerateId(); }
+
+  
+  uint32_t Generate() { return GenerateId(); }
 
   
   
@@ -100,7 +104,8 @@ class UniqueStringGenerator {
   ~UniqueStringGenerator();
 
   std::string GenerateString();
-  std::string operator()() { return GenerateString(); }
+  
+  std::string Generate() { return GenerateString(); }
 
   
   
