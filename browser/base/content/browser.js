@@ -8160,6 +8160,23 @@ function AddKeywordForSearchField() {
 
 
 
+function restoreLastClosedTabOrWindowOrSession() {
+  let lastActionTaken = SessionStore.popLastClosedAction();
+
+  if (!lastActionTaken && SessionStore.canRestoreLastSession) {
+    SessionStore.restoreLastSession();
+  } else if (lastActionTaken?.type == SessionStore.LAST_ACTION_CLOSED_TAB) {
+    this.undoCloseTab();
+  } else if (lastActionTaken?.type == SessionStore.LAST_ACTION_CLOSED_WINDOW) {
+    this.undoCloseWindow();
+  }
+}
+
+
+
+
+
+
 
 function undoCloseTab(aIndex) {
   
@@ -8169,19 +8186,6 @@ function undoCloseTab(aIndex) {
   }
 
   let closedTabCount = SessionStore.getLastClosedTabCount(window);
-
-  
-  
-  if (!closedTabCount) {
-    
-    
-    
-    if (SessionStore.canRestoreLastSession) {
-      SessionStore.restoreLastSession();
-    }
-    return null;
-  }
-
   let tab = null;
   
   let tabsToRemove =
