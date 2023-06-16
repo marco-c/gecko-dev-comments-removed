@@ -58,3 +58,24 @@ FilePathResult GenerateUUIDStr() {
   
   return std::wstring(guidBuf + 1, guidBuf + 37);
 }
+
+FilePathResult GetRelativeBinaryPath(const wchar_t* suffix) {
+  
+  
+  HRESULT hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+
+  mozilla::UniquePtr<wchar_t[]> thisBinaryPath = mozilla::GetFullBinaryPath();
+  if (!PathRemoveFileSpecW(thisBinaryPath.get())) {
+    LOG_ERROR(hr);
+    return FilePathResult(mozilla::WindowsError::FromHResult(hr));
+  }
+
+  wchar_t relativePath[MAX_PATH] = L"";
+
+  if (!PathCombineW(relativePath, thisBinaryPath.get(), suffix)) {
+    LOG_ERROR(hr);
+    return FilePathResult(mozilla::WindowsError::FromHResult(hr));
+  }
+
+  return std::wstring(relativePath);
+}
