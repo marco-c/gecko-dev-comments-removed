@@ -202,9 +202,6 @@ function SetNumberFormatDigitOptions(
   
   lazyData.minimumIntegerDigits = mnid;
 
-#ifdef NIGHTLY_BUILD
-  
-
   var roundingPriority = GetOption(
     options,
     "roundingPriority",
@@ -278,13 +275,6 @@ function SetNumberFormatDigitOptions(
   lazyData.roundingIncrement = roundingIncrement;
   lazyData.roundingMode = roundingMode;
   lazyData.trailingZeroDisplay = trailingZeroDisplay;
-#else
-  var roundingPriority = "auto";
-
-  lazyData.roundingIncrement = 1;
-  lazyData.roundingMode = "halfExpand";
-  lazyData.trailingZeroDisplay = "auto";
-#endif
 
   const hasSignificantDigits = mnsd !== undefined || mxsd !== undefined;
   const hasFractionDigits = mnfd !== undefined || mxfd !== undefined;
@@ -383,7 +373,6 @@ function SetNumberFormatDigitOptions(
     lazyData.maximumSignificantDigits = 2;
   }
 
-#ifdef NIGHTLY_BUILD
   if (roundingIncrement !== 1) {
     
     if (lazyData.roundingPriority !== "auto") {
@@ -409,7 +398,6 @@ function SetNumberFormatDigitOptions(
       ThrowRangeError(JSMSG_UNEQUAL_FRACTION_DIGITS);
     }
   }
-#endif
 }
 
 
@@ -560,8 +548,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     "InitializeNumberFormat called with non-NumberFormat"
   );
 
-  
-  
   
   
   
@@ -795,7 +781,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
   }
 
   
-#ifdef NIGHTLY_BUILD
   var defaultUseGrouping = notation !== "compact" ? "auto" : "min2";
   var useGrouping = GetStringOrBooleanOption(
     options,
@@ -817,15 +802,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     useGrouping === false,
     `invalid 'useGrouping' value: ${useGrouping}`
   );
-#else
-  var useGrouping = GetOption(
-    options,
-    "useGrouping",
-    "boolean",
-    undefined,
-    true
-  );
-#endif
   lazyNumberFormatData.useGrouping = useGrouping;
 
   
@@ -833,11 +809,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     options,
     "signDisplay",
     "string",
-#ifdef NIGHTLY_BUILD
     ["auto", "never", "always", "exceptZero", "negative"],
-#else
-    ["auto", "never", "always", "exceptZero"],
-#endif
     "auto"
   );
   lazyNumberFormatData.signDisplay = signDisplay;
@@ -948,12 +920,7 @@ function createNumberFormatFormat(nf) {
       "InitializeNumberFormat called with non-NumberFormat"
     );
 
-#ifdef NIGHTLY_BUILD
     var x = value;
-#else
-    
-    var x = ToNumeric(value);
-#endif
 
     
     return intl_FormatNumber(nf, x,  false);
@@ -1011,12 +978,7 @@ function Intl_NumberFormat_formatToParts(value) {
     );
   }
 
-#ifdef NIGHTLY_BUILD
   var x = value;
-#else
-  
-  var x = ToNumeric(value);
-#endif
 
   
   return intl_FormatNumber(nf, x,  true);
@@ -1205,7 +1167,6 @@ function Intl_NumberFormat_resolvedOptions() {
 
   DefineDataProperty(result, "signDisplay", internals.signDisplay);
 
-#ifdef NIGHTLY_BUILD
   DefineDataProperty(result, "roundingMode", internals.roundingMode);
   DefineDataProperty(result, "roundingIncrement", internals.roundingIncrement);
   DefineDataProperty(
@@ -1214,7 +1175,6 @@ function Intl_NumberFormat_resolvedOptions() {
     internals.trailingZeroDisplay
   );
   DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
-#endif
 
   
   return result;
