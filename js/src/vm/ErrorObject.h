@@ -115,9 +115,13 @@ class ErrorObject : public NativeObject {
     return val.isString() ? val.toString() : nullptr;
   }
 
+  
+
+
+
   mozilla::Maybe<Value> getCause() const {
     const auto& value = getReservedSlot(CAUSE_SLOT);
-    if (value.isMagic(JS_ERROR_WITHOUT_CAUSE)) {
+    if (value.isMagic(JS_ERROR_WITHOUT_CAUSE) || value.isPrivateGCThing()) {
       return mozilla::Nothing();
     }
     return mozilla::Some(value);
