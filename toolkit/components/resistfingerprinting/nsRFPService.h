@@ -63,6 +63,8 @@
 
 struct JSContext;
 
+class nsIChannel;
+
 namespace mozilla {
 class WidgetKeyboardEvent;
 namespace dom {
@@ -263,8 +265,7 @@ class nsRFPService final : public nsIObserver {
 
   
   
-  static Maybe<nsTArray<uint8_t>> GenerateKey(nsIURI* aTopLevelURI,
-                                              bool aIsPrivate);
+  static Maybe<nsTArray<uint8_t>> GenerateKey(nsIChannel* aChannel);
 
   
   

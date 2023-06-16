@@ -890,8 +890,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
 
   
   
-  auto RFPRandomKey =
-      nsRFPService::GenerateKey(uri, NS_UsePrivateBrowsing(aChannel));
+  auto RFPRandomKey = nsRFPService::GenerateKey(aChannel);
   if (RFPRandomKey) {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetFingerprintingRandomizationKey(RFPRandomKey.ref());
