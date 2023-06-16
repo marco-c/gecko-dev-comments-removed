@@ -10,6 +10,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/StaticMutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsBaseWidget.h"
 #include "nsPIWidgetCocoa.h"
@@ -485,6 +486,17 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   NSWindowAnimationBehavior mWindowAnimationBehavior;
 
  private:
+  
+  
+  static mozilla::StaticDataMutex<nsCocoaWindow*> sWindowInNativeTransition;
+
+  
+  
+  
+  bool CanStartNativeTransition();
+  bool WeAreInNativeTransition();
+  void EndOurNativeTransition();
+
   
   bool mWasShown;
 };
