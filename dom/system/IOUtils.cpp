@@ -2682,14 +2682,22 @@ JSString* IOUtils::JsBuffer::IntoString(JSContext* aCx, JsBuffer aBuffer) {
     return JS_NewLatin1String(aCx, std::move(asLatin1), aBuffer.mLength);
   }
 
+  const char* ptr = aBuffer.mBuffer.get();
+  size_t length = aBuffer.mLength;
+
+  
+  if (length >= 3 && Substring(ptr, 3) == "\xEF\xBB\xBF"_ns) {
+    ptr += 3;
+    length -= 3;
+  }
+
   
   
   
   
   
   
-  return JS_NewStringCopyUTF8N(
-      aCx, JS::UTF8Chars(aBuffer.mBuffer.get(), aBuffer.mLength));
+  return JS_NewStringCopyUTF8N(aCx, JS::UTF8Chars(ptr, length));
 }
 
 
