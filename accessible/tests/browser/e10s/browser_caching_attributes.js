@@ -617,11 +617,8 @@ addAccessibleTask(
   async function (browser, docAcc) {
     const noAlt = findAccessibleChildByID(docAcc, "noAlt");
     testAttrs(noAlt, { src: kImgUrl }, true);
-    if (browser.isRemoteBrowser) {
-      
-      const alt = findAccessibleChildByID(docAcc, "alt");
-      testAbsentAttrs(alt, { src: "" });
-    }
+    const alt = findAccessibleChildByID(docAcc, "alt");
+    testAttrs(alt, { src: kImgUrl }, true);
 
     const mutate = findAccessibleChildByID(docAcc, "mutate");
     testAbsentAttrs(mutate, { src: "" });

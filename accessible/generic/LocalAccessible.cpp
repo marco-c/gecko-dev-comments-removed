@@ -3163,18 +3163,13 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (IsImage()) {
       
       
-      
       MOZ_ASSERT(mContent, "Image must have mContent");
-      nsAutoString name;
-      Name(name);
-      if (name.IsEmpty()) {
-        nsString src;
-        mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::src, src);
-        if (!src.IsEmpty()) {
-          fields->SetAttribute(nsGkAtoms::src, std::move(src));
-        } else if (aUpdateType == CacheUpdateType::Update) {
-          fields->SetAttribute(nsGkAtoms::src, DeleteEntry());
-        }
+      nsString src;
+      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::src, src);
+      if (!src.IsEmpty()) {
+        fields->SetAttribute(nsGkAtoms::src, std::move(src));
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(nsGkAtoms::src, DeleteEntry());
       }
     }
   }
