@@ -16,7 +16,7 @@
 #  include "mozilla/UniquePtrExtensions.h"
 #  include "chrome/common/mach_ipc_mac.h"
 #endif
-#if defined(XP_DARWIN) || defined(OS_NETBSD)
+#if defined(XP_DARWIN) || defined(XP_NETBSD)
 #  include <sched.h>
 #endif
 #include <stddef.h>
@@ -692,7 +692,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
           
           
           break;
-#if defined(XP_DARWIN) || defined(OS_NETBSD)
+#if defined(XP_DARWIN) || defined(XP_NETBSD)
           
           
           

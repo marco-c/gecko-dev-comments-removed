@@ -127,7 +127,8 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
 #elif defined(XP_DARWIN)
   static const rlim_t kSystemDefaultMaxFds = 256;
   static const char kFDDir[] = "/dev/fd";
-#elif defined(OS_BSD)
+#elif defined(__DragonFly__) || defined(XP_FREEBSD) || defined(XP_NETBSD) || \
+    defined(XP_OPENBSD)
   
   static const rlim_t kSystemDefaultMaxFds = 1024;
   

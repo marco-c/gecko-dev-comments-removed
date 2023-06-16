@@ -176,7 +176,7 @@ TimeTicks TimeTicks::Now() {
   
   
 
-#elif defined(OS_OPENBSD) || defined(XP_UNIX) &&                   \
+#elif defined(XP_OPENBSD) || defined(XP_UNIX) &&                    \
                                  defined(_POSIX_MONOTONIC_CLOCK) && \
                                  _POSIX_MONOTONIC_CLOCK >= 0
 
