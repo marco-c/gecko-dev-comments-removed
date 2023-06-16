@@ -8,6 +8,7 @@
 
 #include "BrowserParent.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/EventForwards.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessibleParent.h"
@@ -46,6 +47,7 @@
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layout/RemoteLayerTreeOwner.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/NativeKeyBindingsType.h"
@@ -181,7 +183,79 @@ BrowserParent* BrowserParent::sLastMouseRemoteTarget = nullptr;
 
 #define NOTIFY_FLAG_SHIFT 16
 
-namespace mozilla::dom {
+namespace mozilla {
+
+
+
+
+
+class RequestingAccessKeyEventData {
+ public:
+  RequestingAccessKeyEventData() = delete;
+
+  static void OnBrowserParentCreated() {
+    MOZ_ASSERT(sBrowserParentCount <= INT32_MAX);
+    sBrowserParentCount++;
+  }
+  static void OnBrowserParentDestroyed() {
+    MOZ_ASSERT(sBrowserParentCount > 0);
+    sBrowserParentCount--;
+    
+    
+    if (!sBrowserParentCount) {
+      Clear();
+    }
+  }
+
+  static void Set(const WidgetKeyboardEvent& aKeyPressEvent) {
+    MOZ_ASSERT(aKeyPressEvent.mMessage == eKeyPress);
+    MOZ_ASSERT(sBrowserParentCount > 0);
+    sData =
+        Some(Data{aKeyPressEvent.mAlternativeCharCodes, aKeyPressEvent.mKeyCode,
+                  aKeyPressEvent.mCharCode, aKeyPressEvent.mKeyNameIndex,
+                  aKeyPressEvent.mCodeNameIndex, aKeyPressEvent.mKeyValue,
+                  aKeyPressEvent.mModifiers});
+  }
+
+  static void Clear() { sData.reset(); }
+
+  [[nodiscard]] static bool Equals(const WidgetKeyboardEvent& aKeyPressEvent) {
+    MOZ_ASSERT(sBrowserParentCount > 0);
+    return sData.isSome() && sData->Equals(aKeyPressEvent);
+  }
+
+  [[nodiscard]] static bool IsSet() {
+    MOZ_ASSERT(sBrowserParentCount > 0);
+    return sData.isSome();
+  }
+
+ private:
+  struct Data {
+    [[nodiscard]] bool Equals(const WidgetKeyboardEvent& aKeyPressEvent) {
+      return mKeyCode == aKeyPressEvent.mKeyCode &&
+             mCharCode == aKeyPressEvent.mCharCode &&
+             mKeyNameIndex == aKeyPressEvent.mKeyNameIndex &&
+             mCodeNameIndex == aKeyPressEvent.mCodeNameIndex &&
+             mKeyValue == aKeyPressEvent.mKeyValue &&
+             mModifiers == aKeyPressEvent.mModifiers &&
+             mAlternativeCharCodes == aKeyPressEvent.mAlternativeCharCodes;
+    }
+
+    CopyableTArray<AlternativeCharCode> mAlternativeCharCodes;
+    uint32_t mKeyCode;
+    uint32_t mCharCode;
+    KeyNameIndex mKeyNameIndex;
+    CodeNameIndex mCodeNameIndex;
+    nsString mKeyValue;
+    Modifiers mModifiers;
+  };
+  static Maybe<Data> sData;
+  static int32_t sBrowserParentCount;
+};
+int32_t RequestingAccessKeyEventData::sBrowserParentCount = 0;
+Maybe<RequestingAccessKeyEventData::Data> RequestingAccessKeyEventData::sData;
+
+namespace dom {
 
 BrowserParent::LayerToBrowserParentTable*
     BrowserParent::sLayerToBrowserParentTable = nullptr;
@@ -238,6 +312,9 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mLockedNativePointer(false),
       mShowingTooltip(false) {
   MOZ_ASSERT(aManager);
+
+  RequestingAccessKeyEventData::OnBrowserParentCreated();
+
   
   
   mIsReadyToHandleInputEvents = !ContentParent::IsInputEventQueueSupported();
@@ -259,7 +336,9 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   }
 }
 
-BrowserParent::~BrowserParent() = default;
+BrowserParent::~BrowserParent() {
+  RequestingAccessKeyEventData::OnBrowserParentDestroyed();
+}
 
 
 BrowserParent* BrowserParent::GetFocused() { return sFocus; }
@@ -1100,6 +1179,7 @@ void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
     
     
     WidgetKeyboardEvent localEvent(aEvent);
+    RequestingAccessKeyEventData::Set(localEvent);
     Unused << SendHandleAccessKey(localEvent, aCharCodes);
   }
 }
@@ -2718,11 +2798,27 @@ mozilla::ipc::IPCResult BrowserParent::RecvAccessKeyNotHandled(
   
   
   
-  
-  
-  
 
-  MOZ_ASSERT(aEvent.mMessage == eKeyPress);
+  if (MOZ_UNLIKELY(aEvent.mMessage != eKeyPress || !aEvent.IsTrusted())) {
+    return IPC_FAIL(this, "Called with unexpected event");
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!RequestingAccessKeyEventData::IsSet())) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(!RequestingAccessKeyEventData::Equals(aEvent))) {
+    return IPC_OK();
+  }
+
+  RequestingAccessKeyEventData::Clear();
+
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.MarkAsHandledInRemoteProcess();
   localEvent.mMessage = eAccessKeyNotFound;
@@ -4010,4 +4106,5 @@ mozilla::ipc::IPCResult BrowserParent::RecvShowDynamicToolbar() {
   return IPC_OK();
 }
 
+}  
 }  
