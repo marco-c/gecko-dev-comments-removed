@@ -9,7 +9,7 @@
 
 #include "build/build_config.h"
 
-#if defined(COMPILER_MSVC)
+#if defined(_MSC_VER)
 
 
 
@@ -72,7 +72,7 @@
 
 
 #undef WARN_UNUSED_RESULT
-#if defined(COMPILER_GCC) || defined(__clang__)
+#if defined(__GNUC__) || defined(__clang__)
 #  define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else
 #  define WARN_UNUSED_RESULT
