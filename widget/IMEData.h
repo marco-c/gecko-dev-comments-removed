@@ -371,9 +371,6 @@ struct NativeIMEContext final {
   
   uintptr_t mRawNativeIMEContext;
   
-  
-  
-  
   uint64_t mOriginProcessID;
 
   NativeIMEContext() : mRawNativeIMEContext(0), mOriginProcessID(0) {
@@ -387,12 +384,7 @@ struct NativeIMEContext final {
 
   bool IsValid() const {
     return mRawNativeIMEContext &&
-           mOriginProcessID != static_cast<uint64_t>(-1);
-  }
-
-  bool IsOriginatedInParentProcess() const {
-    return mOriginProcessID != 0 &&
-           mOriginProcessID != static_cast<uint64_t>(-1);
+           mOriginProcessID != static_cast<uintptr_t>(-1);
   }
 
   void Init(nsIWidget* aWidget);

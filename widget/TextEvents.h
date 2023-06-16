@@ -885,11 +885,6 @@ class WidgetCompositionEvent : public WidgetGUIEvent {
   
   EventMessage mOriginalMessage;
 
-  
-  
-  
-  uint32_t mCompositionId = 0;
-
   void AssignCompositionEventData(const WidgetCompositionEvent& aEvent,
                                   bool aCopyTargets) {
     AssignGUIEventData(aEvent, aCopyTargets);

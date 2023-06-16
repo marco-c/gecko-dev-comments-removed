@@ -2404,7 +2404,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyIMEPositionChange(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvOnEventNeedingAckHandled(
-    const EventMessage& aMessage, const uint32_t& aCompositionId) {
+    const EventMessage& aMessage) {
   
   
   
@@ -2414,7 +2414,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnEventNeedingAckHandled(
   
   
   RefPtr<BrowserParent> kungFuDeathGrip(this);
-  mContentCache.OnEventNeedingAckHandled(widget, aMessage, aCompositionId);
+  mContentCache.OnEventNeedingAckHandled(widget, aMessage);
   return IPC_OK();
 }
 
@@ -3057,18 +3057,10 @@ bool BrowserParent::HandleQueryContentEvent(WidgetQueryContentEvent& aEvent) {
   return true;
 }
 
-bool BrowserParent::SendCompositionEvent(WidgetCompositionEvent& aEvent,
-                                         uint32_t aCompositionId) {
+bool BrowserParent::SendCompositionEvent(WidgetCompositionEvent& aEvent) {
   if (mIsDestroyed) {
     return false;
   }
-
-  
-  
-  
-  
-  MOZ_ASSERT(aCompositionId != 0);
-  aEvent.mCompositionId = aCompositionId;
 
   if (!mContentCache.OnCompositionEvent(aEvent)) {
     return true;
@@ -3223,8 +3215,7 @@ void BrowserParent::UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent) {
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvRequestIMEToCommitComposition(
-    const bool& aCancel, const uint32_t& aCompositionId, bool* aIsCommitted,
-    nsString* aCommittedString) {
+    const bool& aCancel, bool* aIsCommitted, nsString* aCommittedString) {
   nsCOMPtr<nsIWidget> widget = GetTextInputHandlingWidget();
   if (!widget) {
     *aIsCommitted = false;
@@ -3232,7 +3223,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvRequestIMEToCommitComposition(
   }
 
   *aIsCommitted = mContentCache.RequestIMEToCommitComposition(
-      widget, aCancel, aCompositionId, *aCommittedString);
+      widget, aCancel, *aCommittedString);
   return IPC_OK();
 }
 

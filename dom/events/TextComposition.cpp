@@ -45,26 +45,6 @@ namespace mozilla {
 
 #define IDEOGRAPHIC_SPACE (u"\x3000"_ns)
 
-static uint32_t GetOrCreateCompositionId(WidgetCompositionEvent* aEvent) {
-  
-  if (XRE_IsParentProcess()) {
-    static uint32_t sNextCompositionId = 1u;
-    if (MOZ_UNLIKELY(sNextCompositionId == UINT32_MAX)) {
-      sNextCompositionId = 1u;
-    }
-    
-    
-    
-    return sNextCompositionId++;
-  }
-  
-  
-  
-  
-  
-  return aEvent->mCompositionId;
-}
-
 
 
 
@@ -78,7 +58,6 @@ TextComposition::TextComposition(nsPresContext* aPresContext, nsINode* aNode,
       mNode(aNode),
       mBrowserParent(aBrowserParent),
       mNativeContext(aCompositionEvent->mNativeIMEContext),
-      mCompositionId(GetOrCreateCompositionId(aCompositionEvent)),
       mCompositionStartOffset(0),
       mTargetClauseOffsetInComposition(0),
       mCompositionStartOffsetInTextNode(UINT32_MAX),
@@ -265,8 +244,8 @@ void TextComposition::OnCompositionEventDiscarded(
              "Shouldn't be called with untrusted event");
 
   if (mBrowserParent) {
-    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent,
-                                                   mCompositionId);
+    
+    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent);
   }
 
   
@@ -364,8 +343,7 @@ void TextComposition::DispatchCompositionEvent(
   
   
   if (mBrowserParent) {
-    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent,
-                                                   mCompositionId);
+    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent);
     aCompositionEvent->StopPropagation();
     if (aCompositionEvent->CausesDOMTextEvent()) {
       mLastData = aCompositionEvent->mData;
@@ -666,7 +644,6 @@ void TextComposition::DispatchCompositionEventRunnable(
 }
 
 nsresult TextComposition::RequestToCommit(nsIWidget* aWidget, bool aDiscard) {
-  MOZ_ASSERT(this == IMEStateManager::GetTextCompositionFor(aWidget));
   
   
   
@@ -909,11 +886,11 @@ RawRangeBoundary TextComposition::LastIMESelectionEndRef() const {
 
 
 TextComposition::CompositionEventDispatcher::CompositionEventDispatcher(
-    TextComposition* aTextComposition, nsINode* aEventTarget,
+    TextComposition* aComposition, nsINode* aEventTarget,
     EventMessage aEventMessage, const nsAString& aData,
     bool aIsSynthesizedEvent)
     : Runnable("TextComposition::CompositionEventDispatcher"),
-      mTextComposition(aTextComposition),
+      mTextComposition(aComposition),
       mEventTarget(aEventTarget),
       mData(aData),
       mEventMessage(aEventMessage),

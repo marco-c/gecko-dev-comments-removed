@@ -40,8 +40,8 @@ class BrowserParent;
 
 class ContentCache {
  public:
-  using RectArray = CopyableTArray<LayoutDeviceIntRect>;
-  using IMENotification = widget::IMENotification;
+  typedef CopyableTArray<LayoutDeviceIntRect> RectArray;
+  typedef widget::IMENotification IMENotification;
 
   ContentCache() = default;
 
@@ -109,12 +109,12 @@ class ContentCache {
       mRect.SetEmpty();
     }
     bool HasRects() const {
-      for (const auto& rect : mAnchorCharRects) {
+      for (auto& rect : mAnchorCharRects) {
         if (!rect.IsEmpty()) {
           return true;
         }
       }
-      for (const auto& rect : mFocusCharRects) {
+      for (auto& rect : mFocusCharRects) {
         if (!rect.IsEmpty()) {
           return true;
         }
@@ -192,7 +192,7 @@ class ContentCache {
   LayoutDeviceIntRect mFirstCharRect;
 
   struct Caret final {
-    uint32_t mOffset = 0u;
+    uint32_t mOffset;
     LayoutDeviceIntRect mRect;
 
     explicit Caret(uint32_t aOffset, LayoutDeviceIntRect aCaretRect)
@@ -215,7 +215,6 @@ class ContentCache {
     }
 
    private:
-    
     Caret() = default;
 
     friend struct IPC::ParamTraits<ContentCache::Caret>;
@@ -224,7 +223,7 @@ class ContentCache {
   Maybe<Caret> mCaret;
 
   struct TextRectArray final {
-    uint32_t mStart = 0u;
+    uint32_t mStart;
     RectArray mRects;
 
     explicit TextRectArray(uint32_t aStartOffset) : mStart(aStartOffset) {}
@@ -289,7 +288,6 @@ class ContentCache {
     }
 
    private:
-    
     TextRectArray() = default;
 
     friend struct IPC::ParamTraits<ContentCache::TextRectArray>;
@@ -375,7 +373,6 @@ class ContentCacheInChild final : public ContentCache {
 
 class ContentCacheInParent final : public ContentCache {
  public:
-  ContentCacheInParent() = delete;
   explicit ContentCacheInParent(dom::BrowserParent& aBrowserParent);
 
   
@@ -429,13 +426,9 @@ class ContentCacheInParent final : public ContentCache {
 
 
 
-  void OnEventNeedingAckHandled(nsIWidget* aWidget, EventMessage aMessage,
-                                uint32_t aCompositionId);
+  void OnEventNeedingAckHandled(nsIWidget* aWidget, EventMessage aMessage);
 
   
-
-
-
 
 
 
@@ -450,7 +443,6 @@ class ContentCacheInParent final : public ContentCache {
 
 
   bool RequestIMEToCommitComposition(nsIWidget* aWidget, bool aCancel,
-                                     uint32_t aCompositionId,
                                      nsAString& aCommittedString);
 
   
@@ -461,54 +453,6 @@ class ContentCacheInParent final : public ContentCache {
   void MaybeNotifyIME(nsIWidget* aWidget, const IMENotification& aNotification);
 
  private:
-  struct HandlingCompositionData;
-
-  
-  
-  
-  
-  [[nodiscard]] bool WidgetHasComposition() const {
-    return !mHandlingCompositions.IsEmpty() &&
-           !mHandlingCompositions.LastElement().mSentCommitEvent;
-  }
-
-  
-  
-  [[nodiscard]] bool HasPendingCommit() const {
-    for (const HandlingCompositionData& data : mHandlingCompositions) {
-      if (data.mSentCommitEvent) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  
-  
-  
-  [[nodiscard]] uint32_t PendingEventsNeedingAck() const {
-    uint32_t ret = mPendingSetSelectionEventNeedingAck;
-    for (const HandlingCompositionData& data : mHandlingCompositions) {
-      ret += data.mPendingEventsNeedingAck;
-    }
-    return ret;
-  }
-
-  [[nodiscard]] HandlingCompositionData* GetHandlingCompositionData(
-      uint32_t aCompositionId) {
-    for (HandlingCompositionData& data : mHandlingCompositions) {
-      if (data.mCompositionId == aCompositionId) {
-        return &data;
-      }
-    }
-    return nullptr;
-  }
-  [[nodiscard]] const HandlingCompositionData* GetHandlingCompositionData(
-      uint32_t aCompositionId) const {
-    return const_cast<ContentCacheInParent*>(this)->GetHandlingCompositionData(
-        aCompositionId);
-  }
-
   IMENotification mPendingSelectionChange;
   IMENotification mPendingTextChange;
   IMENotification mPendingLayoutChange;
@@ -521,11 +465,9 @@ class ContentCacheInParent final : public ContentCache {
   
   enum class RequestIMEToCommitCompositionResult : uint8_t {
     eToOldCompositionReceived,
-    eToUnknownCompositionReceived,
     eToCommittedCompositionReceived,
     eReceivedAfterBrowserParentBlur,
     eReceivedButNoTextComposition,
-    eReceivedButForDifferentTextComposition,
     eHandledAsynchronously,
     eHandledSynchronously,
   };
@@ -535,9 +477,6 @@ class ContentCacheInParent final : public ContentCache {
       case RequestIMEToCommitCompositionResult::eToOldCompositionReceived:
         return "Commit request is not handled because it's for "
                "older composition";
-      case RequestIMEToCommitCompositionResult::eToUnknownCompositionReceived:
-        return "Commit request is not handled because it's for "
-               "unknown composition";
       case RequestIMEToCommitCompositionResult::eToCommittedCompositionReceived:
         return "Commit request is not handled because BrowserParent has "
                "already "
@@ -547,16 +486,12 @@ class ContentCacheInParent final : public ContentCache {
                "because BrowserParent has already lost focus";
       case RequestIMEToCommitCompositionResult::eReceivedButNoTextComposition:
         return "Commit request is not handled because there is no "
-               "TextComposition instance";
-      case RequestIMEToCommitCompositionResult::
-          eReceivedButForDifferentTextComposition:
-        return "Commit request is handled with stored composition string "
-               "because new TextComposition is active";
+               "TextCompsition instance";
       case RequestIMEToCommitCompositionResult::eHandledAsynchronously:
         return "Commit request is handled but IME doesn't commit current "
                "composition synchronously";
       case RequestIMEToCommitCompositionResult::eHandledSynchronously:
-        return "Commit request is handled synchronously";
+        return "Commit reqeust is handled synchronously";
       default:
         return "Unknown reason";
     }
@@ -566,37 +501,21 @@ class ContentCacheInParent final : public ContentCache {
 #endif  
 
   
-  
-  struct HandlingCompositionData {
-    
-    nsString mCompositionString;
-    
-    uint32_t mCompositionId;
-    
-    
-    uint32_t mPendingEventsNeedingAck = 0u;
-    
-    
-    bool mSentCommitEvent = false;
-
-    explicit HandlingCompositionData(uint32_t aCompositionId)
-        : mCompositionId(aCompositionId) {}
-  };
-  AutoTArray<HandlingCompositionData, 2> mHandlingCompositions;
-
-  
   dom::BrowserParent& MOZ_NON_OWNING_REF mBrowserParent;
+  
+  
+  nsString mCompositionString;
   
   
   
   nsAString* mCommitStringByRequest;
   
   
+  
+  uint32_t mPendingEventsNeedingAck;
+  
+  
   Maybe<uint32_t> mCompositionStartInChild;
-  
-  
-  
-  uint32_t mPendingSetSelectionEventNeedingAck = 0u;
   
   
   
@@ -606,8 +525,20 @@ class ContentCacheInParent final : public ContentCache {
   uint32_t mPendingCommitLength;
   
   
+  uint8_t mPendingCompositionCount;
+  
+  
+  uint8_t mPendingCommitCount;
+  
+  
+  
+  bool mWidgetHasComposition;
+  
+  
   
   bool mIsChildIgnoringCompositionEvents;
+
+  ContentCacheInParent() = delete;
 
   
 

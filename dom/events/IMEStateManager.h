@@ -37,12 +37,12 @@ class Selection;
 
 
 class IMEStateManager {
-  using BrowserParent = dom::BrowserParent;
-  using IMEMessage = widget::IMEMessage;
-  using IMENotification = widget::IMENotification;
-  using IMEState = widget::IMEState;
-  using InputContext = widget::InputContext;
-  using InputContextAction = widget::InputContextAction;
+  typedef dom::BrowserParent BrowserParent;
+  typedef widget::IMEMessage IMEMessage;
+  typedef widget::IMENotification IMENotification;
+  typedef widget::IMEState IMEState;
+  typedef widget::InputContext InputContext;
+  typedef widget::InputContextAction InputContextAction;
 
  public:
   static void Init();
@@ -277,12 +277,13 @@ class IMEStateManager {
   
 
 
-  static TextComposition* GetTextCompositionFor(nsIWidget* aWidget);
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
+      nsIWidget* aWidget);
 
   
 
 
-  static TextComposition* GetTextCompositionFor(
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
       const WidgetCompositionEvent* aCompositionEvent);
 
   
@@ -290,7 +291,8 @@ class IMEStateManager {
 
 
 
-  static TextComposition* GetTextCompositionFor(nsPresContext* aPresContext);
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
+      nsPresContext* aPresContext);
 
   
 
