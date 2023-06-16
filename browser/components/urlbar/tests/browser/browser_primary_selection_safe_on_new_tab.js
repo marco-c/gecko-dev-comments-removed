@@ -24,8 +24,11 @@ add_task(async function () {
 
   
   gURLBar.select();
-  Assert.equal(gURLBar.selectionStart, 0);
-  Assert.equal(gURLBar.selectionEnd, gURLBar.value.length);
+  Assert.equal(gURLBar.inputField.selectionStart, 0);
+  Assert.equal(
+    gURLBar.inputField.selectionEnd,
+    gURLBar.inputField.value.length
+  );
 
   if (supportsPrimary) {
     clipboardHelper.copyStringToClipboard(
