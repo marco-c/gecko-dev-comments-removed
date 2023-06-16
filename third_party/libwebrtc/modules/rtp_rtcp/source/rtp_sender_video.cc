@@ -71,7 +71,6 @@ bool MinimizeDescriptor(RTPVideoHeader* video_header) {
     vp8->nonReference = non_reference;
     return true;
   }
-  
   return false;
 }
 
@@ -634,7 +633,6 @@ bool RTPSenderVideo::SendVideo(
     MinimizeDescriptor(&video_header);
   }
 
-  
   rtc::Buffer encrypted_video_payload;
   if (frame_encryptor_ != nullptr) {
     const size_t max_ciphertext_size =
