@@ -310,7 +310,12 @@ class Repository(object):
         if process.returncode != 0:
             for line in process.stderr or []:
                 print(line)
-            raise subprocess.CalledProcessError("Failed to push-to-try")
+            raise subprocess.CalledProcessError(
+                returncode=process.returncode,
+                cmd=cmd,
+                output="Failed to push-to-try",
+                stderr=process.stderr,
+            )
 
 
 class HgRepository(Repository):
@@ -737,6 +742,7 @@ class GitRepository(Repository):
                     cmd,
                     {
                         "stdout": subprocess.PIPE,
+                        "stderr": subprocess.STDOUT,
                         "cwd": self.path,
                         "universal_newlines": True,
                         "bufsize": 1,
