@@ -90,6 +90,7 @@ enum class BandwidthLimitedCause {
   kLossLimitedBweDecreasing = 1,
   kDelayBasedLimited = 2,
   kDelayBasedLimitedDelayIncreased = 3,
+  kRttBasedBackOffHighRtt = 4
 };
 
 
