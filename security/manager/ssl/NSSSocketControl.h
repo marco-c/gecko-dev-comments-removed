@@ -231,8 +231,19 @@ class NSSSocketControl final : public CommonSocketControl {
     MOZ_LOG(
         gPIPNSSLog, mozilla::LogLevel::Debug,
         ("[%p] setting pending select client auth certificate", (void*)mFd));
-    mPendingSelectClientAuthCertificate =
-        std::move(selectClientAuthCertificate);
+    
+    
+    
+    
+    
+    
+    
+    if (!mClaimed) {
+      SetCanceled(PR_CONNECT_RESET_ERROR);
+    } else {
+      mPendingSelectClientAuthCertificate =
+          std::move(selectClientAuthCertificate);
+    }
   }
 
   void MaybeDispatchSelectClientAuthCertificate() {
