@@ -326,7 +326,10 @@ parent:
 
 
 
-    [Nested=inside_cpow] sync RequestIMEToCommitComposition(bool cancel)
+
+
+    [Nested=inside_cpow] sync RequestIMEToCommitComposition(bool cancel,
+                                                            uint32_t aCompositionId)
       returns (bool isCommitted, nsString committedString);
 
     
@@ -336,7 +339,11 @@ parent:
 
 
 
-    [Nested=inside_cpow] async OnEventNeedingAckHandled(EventMessage message);
+
+
+
+    [Nested=inside_cpow] async OnEventNeedingAckHandled(EventMessage message,
+                                                        uint32_t compositionId);
 
     
 

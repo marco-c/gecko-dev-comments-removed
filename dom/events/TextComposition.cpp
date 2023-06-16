@@ -45,6 +45,26 @@ namespace mozilla {
 
 #define IDEOGRAPHIC_SPACE (u"\x3000"_ns)
 
+static uint32_t GetOrCreateCompositionId(WidgetCompositionEvent* aEvent) {
+  
+  if (XRE_IsParentProcess()) {
+    static uint32_t sNextCompositionId = 1u;
+    if (MOZ_UNLIKELY(sNextCompositionId == UINT32_MAX)) {
+      sNextCompositionId = 1u;
+    }
+    
+    
+    
+    return sNextCompositionId++;
+  }
+  
+  
+  
+  
+  
+  return aEvent->mCompositionId;
+}
+
 
 
 
@@ -58,6 +78,7 @@ TextComposition::TextComposition(nsPresContext* aPresContext, nsINode* aNode,
       mNode(aNode),
       mBrowserParent(aBrowserParent),
       mNativeContext(aCompositionEvent->mNativeIMEContext),
+      mCompositionId(GetOrCreateCompositionId(aCompositionEvent)),
       mCompositionStartOffset(0),
       mTargetClauseOffsetInComposition(0),
       mCompositionStartOffsetInTextNode(UINT32_MAX),
@@ -244,8 +265,8 @@ void TextComposition::OnCompositionEventDiscarded(
              "Shouldn't be called with untrusted event");
 
   if (mBrowserParent) {
-    
-    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent);
+    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent,
+                                                   mCompositionId);
   }
 
   
@@ -343,7 +364,8 @@ void TextComposition::DispatchCompositionEvent(
   
   
   if (mBrowserParent) {
-    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent);
+    Unused << mBrowserParent->SendCompositionEvent(*aCompositionEvent,
+                                                   mCompositionId);
     aCompositionEvent->StopPropagation();
     if (aCompositionEvent->CausesDOMTextEvent()) {
       mLastData = aCompositionEvent->mData;
@@ -644,6 +666,7 @@ void TextComposition::DispatchCompositionEventRunnable(
 }
 
 nsresult TextComposition::RequestToCommit(nsIWidget* aWidget, bool aDiscard) {
+  MOZ_ASSERT(this == IMEStateManager::GetTextCompositionFor(aWidget));
   
   
   

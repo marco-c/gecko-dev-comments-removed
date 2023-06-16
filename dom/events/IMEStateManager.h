@@ -277,13 +277,12 @@ class IMEStateManager {
   
 
 
-  static already_AddRefed<TextComposition> GetTextCompositionFor(
-      nsIWidget* aWidget);
+  static TextComposition* GetTextCompositionFor(nsIWidget* aWidget);
 
   
 
 
-  static already_AddRefed<TextComposition> GetTextCompositionFor(
+  static TextComposition* GetTextCompositionFor(
       const WidgetCompositionEvent* aCompositionEvent);
 
   
@@ -291,8 +290,7 @@ class IMEStateManager {
 
 
 
-  static already_AddRefed<TextComposition> GetTextCompositionFor(
-      nsPresContext* aPresContext);
+  static TextComposition* GetTextCompositionFor(nsPresContext* aPresContext);
 
   
 

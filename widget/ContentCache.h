@@ -426,7 +426,8 @@ class ContentCacheInParent final : public ContentCache {
 
 
 
-  void OnEventNeedingAckHandled(nsIWidget* aWidget, EventMessage aMessage);
+  void OnEventNeedingAckHandled(nsIWidget* aWidget, EventMessage aMessage,
+                                uint32_t aCompositionId);
 
   
 
@@ -442,7 +443,11 @@ class ContentCacheInParent final : public ContentCache {
 
 
 
+
+
+
   bool RequestIMEToCommitComposition(nsIWidget* aWidget, bool aCancel,
+                                     uint32_t aCompositionId,
                                      nsAString& aCommittedString);
 
   
