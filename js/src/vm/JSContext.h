@@ -1135,4 +1135,64 @@ class MOZ_RAII AutoUnsafeCallWithABI {
   MOZ_ASSERT_IF(cx, !cx->isHelperThreadContext() && \
                         js::CurrentThreadCanAccessRuntime(cx->runtime()))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define JS_TRY_OR_RETURN_FALSE(cx, expr)                           \
+  do {                                                             \
+    auto tmpResult_ = (expr);                                      \
+    if (tmpResult_.isErr()) return (cx)->resultToBool(tmpResult_); \
+  } while (0)
+
+#define JS_TRY_VAR_OR_RETURN_FALSE(cx, target, expr)               \
+  do {                                                             \
+    auto tmpResult_ = (expr);                                      \
+    if (tmpResult_.isErr()) return (cx)->resultToBool(tmpResult_); \
+    (target) = tmpResult_.unwrap();                                \
+  } while (0)
+
+#define JS_TRY_VAR_OR_RETURN_NULL(cx, target, expr)     \
+  do {                                                  \
+    auto tmpResult_ = (expr);                           \
+    if (tmpResult_.isErr()) {                           \
+      MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
+      return nullptr;                                   \
+    }                                                   \
+    (target) = tmpResult_.unwrap();                     \
+  } while (0)
+
 #endif
