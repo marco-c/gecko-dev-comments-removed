@@ -29,7 +29,6 @@
 #include "api/neteq/neteq_factory.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
-#include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
@@ -47,7 +46,6 @@ class AcmReceiver {
   struct Config {
     explicit Config(
         rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr);
-    explicit Config(const AudioCodingModule::Config& acm_config);
     Config(const Config&);
     ~Config();
 
@@ -59,9 +57,6 @@ class AcmReceiver {
 
   
   explicit AcmReceiver(const Config& config);
-  
-  
-  explicit AcmReceiver(const AudioCodingModule::Config& acm_config);
 
   
   ~AcmReceiver();

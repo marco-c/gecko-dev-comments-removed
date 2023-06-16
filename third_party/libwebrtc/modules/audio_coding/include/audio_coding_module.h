@@ -64,11 +64,11 @@ class AudioCodingModule {
   AudioCodingModule() {}
 
  public:
+  
   struct Config {
-    explicit Config(
-        rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr);
-    Config(const Config&);
-    ~Config();
+    Config() = default;
+    Config(const Config&) = default;
+    ~Config() = default;
 
     NetEq::Config neteq_config;
     Clock* clock;
@@ -76,12 +76,11 @@ class AudioCodingModule {
     NetEqFactory* neteq_factory = nullptr;
   };
 
+  static std::unique_ptr<AudioCodingModule> Create();
+  
+  
   static AudioCodingModule* Create(const Config& config);
   virtual ~AudioCodingModule() = default;
-
-  
-  
-  
 
   
   
@@ -155,86 +154,6 @@ class AudioCodingModule {
   
   
   
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t InitializeReceiver() = 0;
-
-  
-  virtual void SetReceiveCodecs(
-      const std::map<int, SdpAudioFormat>& codecs) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t IncomingPacket(const uint8_t* incoming_payload,
-                                 size_t payload_len_bytes,
-                                 const RTPHeader& rtp_header) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
-                                  AudioFrame* audio_frame,
-                                  bool* muted) = 0;
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t GetNetworkStatistics(
-      NetworkStatistics* network_statistics) = 0;
 
   virtual ANAStats GetANAStats() const = 0;
 

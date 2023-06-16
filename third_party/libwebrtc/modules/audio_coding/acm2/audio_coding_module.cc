@@ -16,7 +16,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
-#include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_remixing.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/include/module_common_types.h"
@@ -41,7 +40,7 @@ constexpr int32_t kMaxInputSampleRateHz = 192000;
 
 class AudioCodingModuleImpl final : public AudioCodingModule {
  public:
-  explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
+  explicit AudioCodingModuleImpl();
   ~AudioCodingModuleImpl() override;
 
   
@@ -68,28 +67,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   
   
   
-
-  
-  int InitializeReceiver() override;
-
-  void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
-
-  
-  int IncomingPacket(const uint8_t* incoming_payload,
-                     const size_t payload_length,
-                     const RTPHeader& rtp_info) override;
-
-  
-  
-  int PlayoutData10Ms(int desired_freq_hz,
-                      AudioFrame* audio_frame,
-                      bool* muted) override;
-
-  
-  
-  
-
-  int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
   ANAStats GetANAStats() const override;
 
@@ -134,8 +111,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
              absl::optional<int64_t> absolute_capture_timestamp_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
 
-  int InitializeReceiverSafe() RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
-
   bool HaveValidEncoder(absl::string_view caller_name) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
 
@@ -163,7 +138,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   uint32_t expected_codec_ts_ RTC_GUARDED_BY(acm_mutex_);
   uint32_t expected_in_ts_ RTC_GUARDED_BY(acm_mutex_);
   acm2::ACMResampler resampler_ RTC_GUARDED_BY(acm_mutex_);
-  acm2::AcmReceiver receiver_;  
   ChangeLogger bitrate_logger_ RTC_GUARDED_BY(acm_mutex_);
 
   
@@ -171,8 +145,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   
   uint8_t previous_pltype_ RTC_GUARDED_BY(acm_mutex_);
-
-  bool receiver_initialized_ RTC_GUARDED_BY(acm_mutex_);
 
   AudioFrame preprocess_frame_ RTC_GUARDED_BY(acm_mutex_);
   bool first_10ms_data_ RTC_GUARDED_BY(acm_mutex_);
@@ -206,23 +178,17 @@ void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
   }
 }
 
-AudioCodingModuleImpl::AudioCodingModuleImpl(
-    const AudioCodingModule::Config& config)
+AudioCodingModuleImpl::AudioCodingModuleImpl()
     : expected_codec_ts_(0xD87F3F9F),
       expected_in_ts_(0xD87F3F9F),
-      receiver_(config),
       bitrate_logger_("WebRTC.Audio.TargetBitrateInKbps"),
       encoder_stack_(nullptr),
       previous_pltype_(255),
-      receiver_initialized_(false),
       first_10ms_data_(false),
       first_frame_(true),
       packetization_callback_(NULL),
       codec_histogram_bins_log_(),
       number_of_consecutive_empty_packets_(0) {
-  if (InitializeReceiverSafe() < 0) {
-    RTC_LOG(LS_ERROR) << "Cannot initialize receiver";
-  }
   RTC_LOG(LS_INFO) << "Created";
 }
 
@@ -532,64 +498,6 @@ int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
 
 
 
-int AudioCodingModuleImpl::InitializeReceiver() {
-  MutexLock lock(&acm_mutex_);
-  return InitializeReceiverSafe();
-}
-
-
-int AudioCodingModuleImpl::InitializeReceiverSafe() {
-  
-  
-  
-  if (receiver_initialized_)
-    receiver_.RemoveAllCodecs();
-  receiver_.FlushBuffers();
-
-  receiver_initialized_ = true;
-  return 0;
-}
-
-void AudioCodingModuleImpl::SetReceiveCodecs(
-    const std::map<int, SdpAudioFormat>& codecs) {
-  MutexLock lock(&acm_mutex_);
-  receiver_.SetCodecs(codecs);
-}
-
-
-int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
-                                          const size_t payload_length,
-                                          const RTPHeader& rtp_header) {
-  RTC_DCHECK_EQ(payload_length == 0, incoming_payload == nullptr);
-  return receiver_.InsertPacket(
-      rtp_header,
-      rtc::ArrayView<const uint8_t>(incoming_payload, payload_length));
-}
-
-
-
-int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
-                                           AudioFrame* audio_frame,
-                                           bool* muted) {
-  
-  if (receiver_.GetAudio(desired_freq_hz, audio_frame, muted) != 0) {
-    RTC_LOG(LS_ERROR) << "PlayoutData failed, RecOut Failed";
-    return -1;
-  }
-  return 0;
-}
-
-
-
-
-
-
-
-int AudioCodingModuleImpl::GetNetworkStatistics(NetworkStatistics* statistics) {
-  receiver_.GetNetworkStatistics(statistics);
-  return 0;
-}
-
 bool AudioCodingModuleImpl::HaveValidEncoder(
     absl::string_view caller_name) const {
   if (!encoder_stack_) {
@@ -617,21 +525,12 @@ int AudioCodingModuleImpl::GetTargetBitrate() const {
 
 }  
 
-AudioCodingModule::Config::Config(
-    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
-    : neteq_config(),
-      clock(Clock::GetRealTimeClockRaw()),
-      decoder_factory(decoder_factory) {
-  
-  
-  neteq_config.enable_post_decode_vad = true;
+std::unique_ptr<AudioCodingModule> AudioCodingModule::Create() {
+  return std::make_unique<AudioCodingModuleImpl>();
 }
 
-AudioCodingModule::Config::Config(const Config&) = default;
-AudioCodingModule::Config::~Config() = default;
-
 AudioCodingModule* AudioCodingModule::Create(const Config& config) {
-  return new AudioCodingModuleImpl(config);
+  return new AudioCodingModuleImpl();
 }
 
 }  
