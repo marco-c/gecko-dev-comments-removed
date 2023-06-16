@@ -36,6 +36,7 @@ struct ResolvedMotionPathData {
 
 struct RayReferenceData {
   
+  
   CSSPoint mInitialPosition;
   
   CSSRect mContainingBlockRect;
@@ -181,8 +182,8 @@ class MotionPathUtils final {
   static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const OffsetPathData& aPath, const LengthPercentage& aDistance,
       const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
-      const CSSPoint& aTransformOrigin, TransformReferenceBox&,
-      const CSSPoint& aAnchorPointAdjustment);
+      const StyleOffsetPosition& aPosition, const CSSPoint& aTransformOrigin,
+      TransformReferenceBox&, const CSSPoint& aAnchorPointAdjustment);
 
   
 

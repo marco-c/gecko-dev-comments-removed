@@ -34,6 +34,11 @@ struct ShapeUtils final {
   
   
   
+  static nsPoint ComputePosition(const StylePosition&, const nsRect&);
+
+  
+  
+  
   static nsPoint ComputeCircleOrEllipseCenter(const StyleBasicShape&,
                                               const nsRect& aRefBox);
 

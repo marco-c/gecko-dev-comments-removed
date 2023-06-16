@@ -9461,6 +9461,33 @@ bool nsLayoutUtils::IsInvisibleBreak(nsINode* aNode,
   return lineNonEmpty;
 }
 
+
+nsRect nsLayoutUtils::ComputeSVGViewBox(SVGViewportElement* aElement) {
+  if (!aElement) {
+    return {};
+  }
+
+  if (aElement->HasViewBox()) {
+    
+    
+    
+    
+    
+    
+    const SVGViewBox& value = aElement->GetAnimatedViewBox()->GetAnimValue();
+    return nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
+                  nsPresContext::CSSPixelsToAppUnits(value.y),
+                  nsPresContext::CSSPixelsToAppUnits(value.width),
+                  nsPresContext::CSSPixelsToAppUnits(value.height));
+  }
+
+  
+  
+  svgFloatSize viewportSize = aElement->GetViewportSize();
+  return nsRect(0, 0, nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
+                nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
+}
+
 static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
                                       StyleGeometryBox aGeometryBox) {
   MOZ_ASSERT(aFrame->GetContent()->IsSVGElement());
@@ -9486,28 +9513,7 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
         
         break;
       }
-
-      if (viewportElement->HasViewBox()) {
-        
-        
-        
-        
-        
-        
-        const SVGViewBox& value =
-            viewportElement->GetAnimatedViewBox()->GetAnimValue();
-        r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
-                   nsPresContext::CSSPixelsToAppUnits(value.y),
-                   nsPresContext::CSSPixelsToAppUnits(value.width),
-                   nsPresContext::CSSPixelsToAppUnits(value.height));
-      } else {
-        
-        
-        svgFloatSize viewportSize = viewportElement->GetViewportSize();
-        r = nsRect(0, 0, nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
-                   nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
-      }
-
+      r = nsLayoutUtils::ComputeSVGViewBox(viewportElement);
       break;
     }
     case StyleGeometryBox::NoBox:
@@ -9533,8 +9539,9 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
   return r;
 }
 
-static nsRect ComputeHTMLReferenceRect(nsIFrame* aFrame,
-                                       StyleGeometryBox aGeometryBox) {
+
+nsRect nsLayoutUtils::ComputeHTMLReferenceRect(const nsIFrame* aFrame,
+                                               StyleGeometryBox aGeometryBox) {
   nsRect r;
 
   

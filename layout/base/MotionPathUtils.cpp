@@ -8,10 +8,12 @@
 
 #include "gfxPlatform.h"
 #include "mozilla/dom/SVGPathData.h"
+#include "mozilla/dom/SVGViewportElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ShapeUtils.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleTransformMatrix.h"
@@ -22,26 +24,48 @@ namespace mozilla {
 
 using nsStyleTransformMatrix::TransformReferenceBox;
 
-RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
+
+
+
+
+static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
+                                                 nsRect& aOutputRect) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    MOZ_ASSERT(aFrame->GetContent()->IsSVGElement());
+    auto* viewportElement =
+        dom::SVGElement::FromNode(aFrame->GetContent())->GetCtx();
+    aOutputRect = nsLayoutUtils::ComputeSVGViewBox(viewportElement);
+    return viewportElement ? viewportElement->GetPrimaryFrame() : nullptr;
+  }
+
+  const nsIFrame* containingBlock = aFrame->GetContainingBlock();
   
-  const nsIFrame* container = aFrame->GetContainingBlock();
-  if (!container) {
+  
+  
+  
+  
+  constexpr StyleGeometryBox styleCoordBox = StyleGeometryBox::BorderBox;
+  aOutputRect =
+      nsLayoutUtils::ComputeHTMLReferenceRect(containingBlock, styleCoordBox);
+  return containingBlock;
+}
+
+RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
+  nsRect coordBox;
+  const nsIFrame* containingBlock = GetOffsetPathReferenceBox(aFrame, coordBox);
+  if (!containingBlock) {
     
     
     return;
   }
 
+  mContainingBlockRect = CSSRect::FromAppUnits(coordBox);
+
   
   
-  
-  
-  
-  
-  mInitialPosition = CSSPoint::FromAppUnits(aFrame->GetOffsetTo(container));
-  
-  
-  mContainingBlockRect =
-      CSSRect::FromAppUnits(container->GetRectRelativeToSelf());
+  mInitialPosition =
+      CSSPoint::FromAppUnits(aFrame->GetOffsetTo(containingBlock));
+
   
   
   
@@ -115,29 +139,62 @@ static CSSCoord ComputeSides(const CSSPoint& aInitialPosition,
   return b / cost;
 }
 
+
+
+static CSSPoint ComputeRayOrigin(const StylePositionOrAuto& aAtPosition,
+                                 const StyleOffsetPosition& aOffsetPosition,
+                                 const RayReferenceData& aData) {
+  const nsRect& coordBox = CSSPixel::ToAppUnits(aData.mContainingBlockRect);
+
+  if (aAtPosition.IsPosition()) {
+    
+    
+    return CSSPoint::FromAppUnits(
+        ShapeUtils::ComputePosition(aAtPosition.AsPosition(), coordBox));
+  }
+
+  MOZ_ASSERT(aAtPosition.IsAuto(), "\"at <position>\" should be omitted");
+
+  
+  
+  if (aOffsetPosition.IsPosition()) {
+    return CSSPoint::FromAppUnits(
+        ShapeUtils::ComputePosition(aOffsetPosition.AsPosition(), coordBox));
+  }
+
+  if (aOffsetPosition.IsNormal()) {
+    
+    
+    static const StylePosition center = StylePosition::FromPercentage(0.5);
+    return CSSPoint::FromAppUnits(
+        ShapeUtils::ComputePosition(center, coordBox));
+  }
+
+  MOZ_ASSERT(aOffsetPosition.IsAuto());
+  return aData.mInitialPosition;
+}
+
 static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
                                      const StyleAngle& aAngle,
-                                     const RayReferenceData& aRayData) {
+                                     const CSSPoint& aOrigin,
+                                     const CSSRect& aContainingBlock) {
   if (aRaySizeType == StyleRaySize::Sides) {
     
-    if (!aRayData.mContainingBlockRect.Contains(aRayData.mInitialPosition)) {
+    if (!aContainingBlock.Contains(aOrigin)) {
       return 0.0;
     }
 
-    return ComputeSides(aRayData.mInitialPosition,
-                        aRayData.mContainingBlockRect.Size(), aAngle);
+    return ComputeSides(aOrigin, aContainingBlock.Size(), aAngle);
   }
 
   
   
   
   
-  CSSCoord left = std::abs(aRayData.mInitialPosition.x);
-  CSSCoord right = std::abs(aRayData.mContainingBlockRect.width -
-                            aRayData.mInitialPosition.x);
-  CSSCoord top = std::abs(aRayData.mInitialPosition.y);
-  CSSCoord bottom = std::abs(aRayData.mContainingBlockRect.height -
-                             aRayData.mInitialPosition.y);
+  CSSCoord left = std::abs(aOrigin.x);
+  CSSCoord right = std::abs(aContainingBlock.width - aOrigin.x);
+  CSSCoord top = std::abs(aOrigin.y);
+  CSSCoord bottom = std::abs(aContainingBlock.height - aOrigin.y);
 
   switch (aRaySizeType) {
     case StyleRaySize::ClosestSide:
@@ -210,8 +267,8 @@ CSSPoint MotionPathUtils::ComputeAnchorPointAdjustment(const nsIFrame& aFrame) {
 Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     const OffsetPathData& aPath, const LengthPercentage& aDistance,
     const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
-    const CSSPoint& aTransformOrigin, TransformReferenceBox& aRefBox,
-    const CSSPoint& aAnchorPointAdjustment) {
+    const StyleOffsetPosition& aPosition, const CSSPoint& aTransformOrigin,
+    TransformReferenceBox& aRefBox, const CSSPoint& aAnchorPointAdjustment) {
   if (aPath.IsNone()) {
     return Nothing();
   }
@@ -256,17 +313,29 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     const auto& ray = aPath.AsRay();
     MOZ_ASSERT(ray.mRay);
 
-    CSSCoord pathLength =
-        ComputeRayPathLength(ray.mRay->size, ray.mRay->angle, ray.mData);
-    CSSCoord usedDistance = ComputeRayUsedDistance(
+    const CSSPoint origin =
+        ComputeRayOrigin(ray.mRay->position, aPosition, ray.mData);
+    const CSSCoord pathLength =
+        ComputeRayPathLength(ray.mRay->size, ray.mRay->angle, origin,
+                             ray.mData.mContainingBlockRect);
+    const CSSCoord usedDistance = ComputeRayUsedDistance(
         *ray.mRay, aDistance, pathLength, ray.mData.mBorderBoxSize);
 
     
     directionAngle =
         StyleAngle{ray.mRay->angle.ToDegrees() - 90.0f}.ToRadians();
 
-    point.x = usedDistance * cos(directionAngle);
-    point.y = usedDistance * sin(directionAngle);
+    
+    
+    const gfx::Point vectorToOrigin =
+        (origin - ray.mData.mInitialPosition).ToUnknownPoint();
+    
+    
+    
+    point =
+        vectorToOrigin +
+        gfx::Point(usedDistance * static_cast<gfx::Float>(cos(directionAngle)),
+                   usedDistance * static_cast<gfx::Float>(sin(directionAngle)));
   } else {
     MOZ_ASSERT_UNREACHABLE("Unsupported offset-path value");
     return Nothing();
@@ -339,10 +408,10 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
       display->mTransformOrigin.horizontal, display->mTransformOrigin.vertical,
       aRefBox);
 
-  return ResolveMotionPath(GenerateOffsetPathData(aFrame),
-                           display->mOffsetDistance, display->mOffsetRotate,
-                           display->mOffsetAnchor, transformOrigin, aRefBox,
-                           ComputeAnchorPointAdjustment(*aFrame));
+  return ResolveMotionPath(
+      GenerateOffsetPathData(aFrame), display->mOffsetDistance,
+      display->mOffsetRotate, display->mOffsetAnchor, display->mOffsetPosition,
+      transformOrigin, aRefBox, ComputeAnchorPointAdjustment(*aFrame));
 }
 
 static OffsetPathData GenerateOffsetPathData(
@@ -384,12 +453,15 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
   auto zeroOffsetDistance = LengthPercentage::Zero();
   auto autoOffsetRotate = StyleOffsetRotate{true, StyleAngle::Zero()};
   auto autoOffsetAnchor = StylePositionOrAuto::Auto();
+  auto autoOffsetPosition = StyleOffsetPosition::Auto();
   return ResolveMotionPath(
       GenerateOffsetPathData(*aPath, aMotionPathData->rayReferenceData(),
                              aCachedMotionPath),
       aDistance ? *aDistance : zeroOffsetDistance,
       aRotate ? *aRotate : autoOffsetRotate,
-      aAnchor ? *aAnchor : autoOffsetAnchor, aMotionPathData->origin(), aRefBox,
+      aAnchor ? *aAnchor : autoOffsetAnchor,
+      
+      autoOffsetPosition, aMotionPathData->origin(), aRefBox,
       aMotionPathData->anchorAdjustment());
 }
 
