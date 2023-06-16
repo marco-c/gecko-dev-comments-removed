@@ -10,11 +10,10 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
 
+const DistinctDevToolsServer = getDistinctDevToolsServer();
 ExtensionTestUtils.init(this);
 
-
-
-add_task(async function setup() {
+add_setup(async () => {
   Services.prefs.setBoolPref("extensions.blocklist.enabled", false);
   await startupAddonsManager();
 });
@@ -44,10 +43,10 @@ async function sendRequest(transport, request) {
 
 
 add_task(async function test_webext_run_apis() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
+  DistinctDevToolsServer.init();
+  DistinctDevToolsServer.registerAllActors();
 
-  const transport = DevToolsServer.connectPipe();
+  const transport = DistinctDevToolsServer.connectPipe();
 
   
   
