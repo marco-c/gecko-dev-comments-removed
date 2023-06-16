@@ -180,11 +180,14 @@ add_task(async function run_sync_on_tab_change_test() {
   let testPrefDelay = 20000;
 
   
-  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", testPrefDelay);
+  Svc.PrefBranch.setIntPref(
+    "syncedTabs.syncDelayAfterTabChange",
+    testPrefDelay
+  );
   
   
-  Svc.Prefs.set("clients.devices.desktop", 1);
-  Svc.Prefs.set("clients.devices.mobile", 1);
+  Svc.PrefBranch.setIntPref("clients.devices.desktop", 1);
+  Svc.PrefBranch.setIntPref("clients.devices.mobile", 1);
   scheduler.updateClientMode();
   Assert.equal(scheduler.numClients, 2);
 
@@ -272,7 +275,7 @@ add_task(async function run_sync_on_tab_change_test() {
   await tracker.clearChangedIDs();
   clearQuickWriteTimer(tracker);
 
-  Svc.Prefs.set(
+  Svc.PrefBranch.setCharPref(
     "engine.tabs.filteredSchemes",
     
     "resource|chrome|file|blob|moz-extension"
@@ -296,8 +299,8 @@ add_task(async function run_sync_on_tab_change_test() {
   await tracker.clearChangedIDs();
   clearQuickWriteTimer(tracker);
   
-  Svc.Prefs.set("clients.devices.desktop", 1);
-  Svc.Prefs.set("clients.devices.mobile", 0);
+  Svc.PrefBranch.setIntPref("clients.devices.desktop", 1);
+  Svc.PrefBranch.setIntPref("clients.devices.mobile", 0);
   scheduler.updateClientMode();
   Assert.equal(scheduler.numClients, 1);
 
@@ -316,13 +319,15 @@ add_task(async function run_sync_on_tab_change_test() {
   );
 
   _("Changing the pref adjusts the sync schedule");
-  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", 10000); 
-  let delayPref = Svc.Prefs.get("syncedTabs.syncDelayAfterTabChange");
+  Svc.PrefBranch.setIntPref("syncedTabs.syncDelayAfterTabChange", 10000); 
+  let delayPref = Svc.PrefBranch.getIntPref(
+    "syncedTabs.syncDelayAfterTabChange"
+  );
   let evttype = "TabOpen";
   Assert.equal(delayPref, 10000); 
   
-  Svc.Prefs.set("clients.devices.desktop", 1);
-  Svc.Prefs.set("clients.devices.mobile", 1);
+  Svc.PrefBranch.setIntPref("clients.devices.desktop", 1);
+  Svc.PrefBranch.setIntPref("clients.devices.mobile", 1);
   scheduler.updateClientMode();
   Assert.equal(scheduler.numClients, 2);
   clearQuickWriteTimer(tracker);
@@ -341,7 +346,7 @@ add_task(async function run_sync_on_tab_change_test() {
 
   _("We should not have a sync scheduled if pref is at 0");
 
-  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", 0);
+  Svc.PrefBranch.setIntPref("syncedTabs.syncDelayAfterTabChange", 0);
   
   await tracker.clearChangedIDs();
   clearQuickWriteTimer(tracker);
@@ -360,5 +365,7 @@ add_task(async function run_sync_on_tab_change_test() {
   Assert.ok(!tracker.tabsQuickWriteTimer);
 
   scheduler.setDefaults();
-  Svc.Prefs.resetBranch("");
+  for (const pref of Svc.PrefBranch.getChildList("")) {
+    Svc.PrefBranch.clearUserPref(pref);
+  }
 });

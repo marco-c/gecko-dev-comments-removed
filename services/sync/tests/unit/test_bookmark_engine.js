@@ -54,7 +54,9 @@ async function fetchAllRecordIds() {
 async function cleanupEngine(engine) {
   await engine.resetClient();
   await engine._store.wipe();
-  Svc.Prefs.resetBranch("");
+  for (const pref of Svc.PrefBranch.getChildList("")) {
+    Svc.PrefBranch.clearUserPref(pref);
+  }
   Service.recordManager.clearCache();
   
 }

@@ -52,5 +52,7 @@ add_task(async function test_findCluster() {
   
   Assert.strictEqual(cluster, endpoint + "/");
 
-  Svc.Prefs.resetBranch("");
+  for (const pref of Svc.PrefBranch.getChildList("")) {
+    Svc.PrefBranch.clearUserPref(pref);
+  }
 });
