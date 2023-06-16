@@ -2364,8 +2364,8 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(
-    nsILoadInfo* aLoadInfo, RFPTarget aTarget ) {
+bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo,
+                                                RFPTarget aTarget) {
   MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() !=
                  ExtContentPolicy::TYPE_DOCUMENT &&
              aLoadInfo->GetExternalContentPolicyType() !=
