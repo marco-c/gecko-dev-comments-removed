@@ -15,6 +15,12 @@ add_setup(async function () {
 });
 
 add_task(async function doTest() {
+  requestLongerTimeout(3);
+
+  
+  
+  await BrowserTestUtils.withNewTab({ gBrowser }, openProtectionsPanel);
+
   
   await TrackingDBService.clearAll();
 

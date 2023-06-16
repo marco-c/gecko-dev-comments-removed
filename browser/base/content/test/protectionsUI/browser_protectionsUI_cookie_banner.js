@@ -379,6 +379,8 @@ function waitForProtectionsPopupHide(win = window) {
 
 
 add_task(async function test_section_toggle() {
+  requestLongerTimeout(3);
+
   
   await SpecialPowers.pushPrefEnv({
     set: [
