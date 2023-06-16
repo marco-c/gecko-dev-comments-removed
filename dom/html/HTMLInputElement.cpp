@@ -5698,14 +5698,23 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
 
 void HTMLInputElement::SetDirectionFromValue(bool aNotify,
                                              const nsAString* aKnownValue) {
-  if (IsSingleLineTextControl(true)) {
-    nsAutoString value;
-    if (!aKnownValue) {
-      GetValue(value, CallerType::System);
-      aKnownValue = &value;
-    }
-    SetDirectionalityFromValue(this, *aKnownValue, aNotify);
+  
+  
+  
+  if (!IsSingleLineTextControl(true)) {
+    return;
   }
+  nsAutoString value;
+  if (!aKnownValue) {
+    
+    
+    
+    
+    
+    GetValueInternal(value, CallerType::System);
+    aKnownValue = &value;
+  }
+  SetDirectionalityFromValue(this, *aKnownValue, aNotify);
 }
 
 NS_IMETHODIMP
