@@ -2205,7 +2205,7 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mOffsetDistance(LengthPercentage::Zero()),
       mOffsetRotate{true, StyleAngle{0.0}},
       mOffsetAnchor(StylePositionOrAuto::Auto()),
-      mOffsetPosition(StylePositionOrAuto::Auto()),
+      mOffsetPosition(StyleOffsetPosition::Auto()),
       mTransformOrigin{LengthPercentage::FromPercentage(0.5),
                        LengthPercentage::FromPercentage(0.5),
                        {0.}},
@@ -2315,23 +2315,16 @@ static inline nsChangeHint CompareTransformValues(
 
 static inline nsChangeHint CompareMotionValues(
     const nsStyleDisplay& aDisplay, const nsStyleDisplay& aNewDisplay) {
-  if (aDisplay.mOffsetPath == aNewDisplay.mOffsetPath &&
-      aDisplay.mOffsetPosition == aNewDisplay.mOffsetPosition) {
+  if (aDisplay.mOffsetPath == aNewDisplay.mOffsetPath) {
     if (aDisplay.mOffsetDistance == aNewDisplay.mOffsetDistance &&
         aDisplay.mOffsetRotate == aNewDisplay.mOffsetRotate &&
-        aDisplay.mOffsetAnchor == aNewDisplay.mOffsetAnchor) {
+        aDisplay.mOffsetAnchor == aNewDisplay.mOffsetAnchor &&
+        aDisplay.mOffsetPosition == aNewDisplay.mOffsetPosition) {
       return nsChangeHint(0);
     }
 
     
-    if (!aDisplay.IsStackingContext()) {
-      return nsChangeHint_NeutralChange;
-    }
-
-    
-    if (aDisplay.mOffsetPath.IsNone() &&
-        aDisplay.mOffsetAnchor == aNewDisplay.mOffsetAnchor) {
-      
+    if (aDisplay.mOffsetPath.IsNone()) {
       return nsChangeHint_NeutralChange;
     }
   }
@@ -2341,7 +2334,7 @@ static inline nsChangeHint CompareMotionValues(
   
   
   nsChangeHint result = nsChangeHint_UpdateTransformLayer;
-  if (aDisplay.IsStackingContext() && aNewDisplay.IsStackingContext()) {
+  if (!aDisplay.mOffsetPath.IsNone() && !aNewDisplay.mOffsetPath.IsNone()) {
     result |= nsChangeHint_UpdatePostTransformOverflow;
   } else {
     result |= nsChangeHint_UpdateOverflow;

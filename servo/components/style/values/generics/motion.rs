@@ -4,6 +4,7 @@
 
 
 
+use crate::values::generics::position::GenericPosition;
 use crate::values::specified::SVGPathData;
 
 
@@ -121,5 +122,53 @@ impl<Angle> OffsetPath<Angle> {
     #[inline]
     pub fn none() -> Self {
         OffsetPath::None
+    }
+}
+
+
+
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericOffsetPosition<H, V> {
+    
+    Normal,
+    
+    Auto,
+    
+    
+    Position(
+        #[css(field_bound)]
+        #[parse(field_bound)]
+        GenericPosition<H, V>,
+    ),
+}
+
+pub use self::GenericOffsetPosition as OffsetPosition;
+
+impl<H, V> OffsetPosition<H, V> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        Self::Auto
     }
 }
