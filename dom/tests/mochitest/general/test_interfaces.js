@@ -1489,12 +1489,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "alert", insecureContext: true },
   
-  {
-    name: "applicationCache",
-    insecureContext: false,
-    disabled: isEarlyBetaOrEarlier,
-  },
-  
   { name: "atob", insecureContext: true },
   
   { name: "blur", insecureContext: true },
