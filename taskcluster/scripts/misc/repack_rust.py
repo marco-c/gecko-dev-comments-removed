@@ -247,9 +247,21 @@ def fetch_std(manifest, targets):
     stds = []
     for target in targets:
         stds.append(fetch_package(manifest, "rust-std", target))
-        
-        if target != "i686-unknown-linux-musl":
-            stds.append(fetch_package(manifest, "rust-analysis", target))
+        analysis = fetch_optional(manifest, "rust-analysis", target)
+        if analysis:
+            stds.append(analysis)
+        else:
+            log(f"Missing rust-analysis for {target}")
+            
+            
+            if target in (
+                "x86_64-unknown-linux-gnu",
+                "x86_64-apple-darwin",
+                "x86_64-pc-windows-msvc",
+                "thumbv7neon-linux-androideabi",
+            ):
+                raise AssertionError
+
     return stds
 
 
