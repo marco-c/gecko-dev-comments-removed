@@ -278,6 +278,15 @@ async function reorderingTranslator(message) {
 
 
 
+function getTranslationsParent() {
+  return gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
+    "Translations"
+  );
+}
+
+
+
+
 async function setupActorTest({
   languagePairs,
   prefs,
@@ -306,14 +315,8 @@ async function setupActorTest({
     true 
   );
 
-  
-  const actor =
-    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
-      "Translations"
-    );
-
   return {
-    actor,
+    actor: getTranslationsParent(),
     remoteClients,
     cleanup() {
       BrowserTestUtils.removeTab(tab);
