@@ -2358,9 +2358,6 @@ pref("identity.fxaccounts.toolbar.accessed", false);
 pref("identity.fxaccounts.toolbar.defaultVisible", false);
 
 
-pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com/");
-
-
 pref("corroborator.enabled", true);
 
 
