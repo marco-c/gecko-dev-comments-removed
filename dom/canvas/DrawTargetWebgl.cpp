@@ -3006,9 +3006,10 @@ enum class AAStrokeMode {
 
 
 
-static inline AAStrokeMode SupportsAAStroke(
-    const Pattern& aPattern, const DrawOptions& aOptions,
-    const StrokeOptions& aStrokeOptions) {
+static inline AAStrokeMode SupportsAAStroke(const Pattern& aPattern,
+                                            const DrawOptions& aOptions,
+                                            const StrokeOptions& aStrokeOptions,
+                                            bool aAllowStrokeAlpha) {
   if (aStrokeOptions.mDashPattern) {
     return AAStrokeMode::Unsupported;
   }
@@ -3018,8 +3019,9 @@ static inline AAStrokeMode SupportsAAStroke(
     case CompositionOp::OP_OVER:
       if (aPattern.GetType() == PatternType::COLOR) {
         return static_cast<const ColorPattern&>(aPattern).mColor.a *
-                           aOptions.mAlpha <
-                       1.0f
+                               aOptions.mAlpha <
+                           1.0f &&
+                       !aAllowStrokeAlpha
                    ? AAStrokeMode::Mask
                    : AAStrokeMode::Geometry;
       }
@@ -3116,8 +3118,8 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
 
 bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
-    const StrokeOptions* aStrokeOptions, const ShadowOptions* aShadow,
-    bool aCacheable) {
+    const StrokeOptions* aStrokeOptions, bool aAllowStrokeAlpha,
+    const ShadowOptions* aShadow, bool aCacheable) {
   
   
   const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
@@ -3242,8 +3244,8 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
           mRasterizationTruncates, outputBuffer, outputBufferCapacity);
     } else {
       if (mPathAAStroke &&
-          SupportsAAStroke(aPattern, aOptions, *aStrokeOptions) !=
-              AAStrokeMode::Unsupported) {
+          SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
+                           aAllowStrokeAlpha) != AAStrokeMode::Unsupported) {
         auto scaleFactors = currentTransform.ScaleFactors();
         if (scaleFactors.AreScalesSame()) {
           strokeVB = GenerateStrokeVertexBuffer(
@@ -3321,8 +3323,9 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
         } else {
           AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
         }
-        if (strokeVB && SupportsAAStroke(aPattern, aOptions, *aStrokeOptions) ==
-                            AAStrokeMode::Mask) {
+        if (strokeVB &&
+            SupportsAAStroke(aPattern, aOptions, *aStrokeOptions,
+                             aAllowStrokeAlpha) == AAStrokeMode::Mask) {
           
           if (RefPtr<TextureHandle> handle =
                   DrawStrokeMask(vertexRange, intBounds.Size())) {
@@ -3446,12 +3449,13 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
 
 void DrawTargetWebgl::DrawPath(const Path* aPath, const Pattern& aPattern,
                                const DrawOptions& aOptions,
-                               const StrokeOptions* aStrokeOptions) {
+                               const StrokeOptions* aStrokeOptions,
+                               bool aAllowStrokeAlpha) {
   
   
   if (ShouldAccelPath(aOptions, aStrokeOptions) &&
-      mSharedContext->DrawPathAccel(aPath, aPattern, aOptions,
-                                    aStrokeOptions)) {
+      mSharedContext->DrawPathAccel(aPath, aPattern, aOptions, aStrokeOptions,
+                                    aAllowStrokeAlpha)) {
     return;
   }
 
@@ -3546,7 +3550,7 @@ void DrawTargetWebgl::DrawShadow(const Path* aPath, const Pattern& aPattern,
   
   if (ShouldAccelPath(aOptions, aStrokeOptions) &&
       mSharedContext->DrawPathAccel(aPath, aPattern, aOptions, aStrokeOptions,
-                                    &aShadow)) {
+                                    false, &aShadow)) {
     return;
   }
 
@@ -3569,8 +3573,8 @@ void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
     AutoRestoreTransform restore(this);
     SetTransform(Matrix());
-    if (mSharedContext->DrawPathAccel(path, pattern, options, nullptr, &aShadow,
-                                      false)) {
+    if (mSharedContext->DrawPathAccel(path, pattern, options, nullptr, false,
+                                      &aShadow, false)) {
       DrawRect(Rect(aSurface->GetRect()) + aDest, pattern, options);
       return;
     }
@@ -3602,7 +3606,7 @@ void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
     SkPath skiaPath;
     skiaPath.addRect(RectToSkRect(aRect));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
-    DrawPath(path, aPattern, aOptions, &aStrokeOptions);
+    DrawPath(path, aPattern, aOptions, &aStrokeOptions, true);
   }
 }
 
@@ -3695,7 +3699,7 @@ void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
     skiaPath.moveTo(PointToSkPoint(aStart));
     skiaPath.lineTo(PointToSkPoint(aEnd));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
-    DrawPath(path, aPattern, aOptions, &aStrokeOptions);
+    DrawPath(path, aPattern, aOptions, &aStrokeOptions, true);
   }
 }
 
@@ -3716,6 +3720,7 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
   
   
   int numVerbs = skiaPath.countVerbs();
+  bool allowStrokeAlpha = false;
   if (numVerbs >= 2 && numVerbs <= 3) {
     uint8_t verbs[3];
     skiaPath.getVerbs(verbs, numVerbs);
@@ -3732,10 +3737,11 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
         return;
       }
       
+      allowStrokeAlpha = true;
     }
   }
 
-  DrawPath(aPath, aPattern, aOptions, &aStrokeOptions);
+  DrawPath(aPath, aPattern, aOptions, &aStrokeOptions, allowStrokeAlpha);
 }
 
 bool DrawTargetWebgl::ShouldUseSubpixelAA(ScaledFont* aFont,
