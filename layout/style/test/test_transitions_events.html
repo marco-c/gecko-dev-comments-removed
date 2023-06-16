@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=531585
+-->
 <head>
   <title>Test for Bug 531585 (transitionend event)</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -78,6 +78,9 @@ var did_finish_five = false;
 var did_finish_six = false;
 var got_before = false;
 var got_after = false;
+
+// Flush layout to guarantee consistent transitions.
+document.body.getBoundingClientRect();
 
 document.documentElement.addEventListener("transitionend",
   function(event) {

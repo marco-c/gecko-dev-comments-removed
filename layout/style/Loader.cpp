@@ -268,7 +268,7 @@ static NotNull<const Encoding*> GetFallbackEncoding(
 
 
 
-NS_IMPL_ISUPPORTS(SheetLoadData, nsIThreadObserver)
+NS_IMPL_ISUPPORTS(SheetLoadData, nsISupports)
 
 SheetLoadData::SheetLoadData(css::Loader* aLoader, const nsAString& aTitle,
                              nsIURI* aURI, StyleSheet* aSheet, bool aSyncLoad,
@@ -398,28 +398,6 @@ SheetLoadData::~SheetLoadData() {
                      "dropping the load");
 }
 
-NS_IMETHODIMP
-SheetLoadData::OnDispatchedEvent() { return NS_OK; }
-
-NS_IMETHODIMP
-SheetLoadData::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
-  
-  
-  
-  FireLoadEvent(aThread);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SheetLoadData::AfterProcessNextEvent(nsIThreadInternal* aThread,
-                                     bool aEventWasProcessed) {
-  
-  
-  
-  FireLoadEvent(aThread);
-  return NS_OK;
-}
-
 RefPtr<StyleSheet> SheetLoadData::ValueForCache() const {
   
   
@@ -438,28 +416,6 @@ void SheetLoadData::PrioritizeAsPreload(nsIChannel* aChannel) {
 
 void SheetLoadData::PrioritizeAsPreload() { PrioritizeAsPreload(Channel()); }
 
-void SheetLoadData::FireLoadEvent(nsIThreadInternal* aThread) {
-  
-  
-  RefPtr<SheetLoadData> kungFuDeathGrip(this);
-  aThread->RemoveObserver(this);
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINode> node = std::move(mOwningNodeBeforeLoadEvent);
-  MOZ_ASSERT(node, "How did that happen???");
-
-  nsContentUtils::DispatchTrustedEvent(node->OwnerDoc(), node,
-                                       mLoadFailed ? u"error"_ns : u"load"_ns,
-                                       CanBubble::eNo, Cancelable::eNo);
-
-  MOZ_ASSERT(BlocksLoadEvent());
-  mLoader->UnblockOnload(true);
-}
-
 void SheetLoadData::StartPendingLoad() {
   mLoader->LoadSheet(*this, Loader::SheetState::NeedsParser, 0,
                      Loader::PendingLoad::Yes);
@@ -471,12 +427,11 @@ void SheetLoadData::ScheduleLoadEventIfNeeded() {
   }
 
   MOZ_ASSERT(BlocksLoadEvent(), "The rel=preload load event happens elsewhere");
-
-  nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  nsCOMPtr<nsIThreadInternal> internalThread = do_QueryInterface(thread);
-  if (NS_SUCCEEDED(internalThread->AddObserver(this))) {
-    mLoader->BlockOnload();
-  }
+  nsCOMPtr<nsINode> node = std::move(mOwningNodeBeforeLoadEvent);
+  auto* dispatcher = new LoadBlockingAsyncEventDispatcher(
+      node, mLoadFailed ? u"error"_ns : u"load"_ns, CanBubble::eNo,
+      ChromeOnlyDispatch::eNo);
+  dispatcher->PostDOMEvent();
 }
 
 nsINode* SheetLoadData::GetRequestingNode() const {
