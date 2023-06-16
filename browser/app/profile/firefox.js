@@ -104,10 +104,6 @@ pref("app.update.log.file", false);
 pref("app.update.backgroundMaxErrors", 10);
 
 
-pref("app.update.link.updateAvailableWhatsNew", "update-available-whats-new");
-pref("app.update.link.updateManualWhatsNew", "update-manual-whats-new");
-
-
 
 pref("app.update.download.maxAttempts", 2);
 
