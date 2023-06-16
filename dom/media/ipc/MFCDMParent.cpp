@@ -134,38 +134,57 @@ HRESULT MFCDMParent::LoadFactory() {
 
 
 
-static bool FactorySupports(
-    ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
-    const nsString& aKeySystem,
-    const KeySystemConfig::EMECodecString& aVideoCodec,
-    const KeySystemConfig::EMECodecString& aAudioCodec =
-        KeySystemConfig::EMECodecString(""),
-    const nsString& aAdditionalFeature = nsString(u"")) {
+static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
+                            const nsString& aKeySystem,
+                            const KeySystemConfig::EMECodecString& aVideoCodec,
+                            const KeySystemConfig::EMECodecString& aAudioCodec =
+                                KeySystemConfig::EMECodecString(""),
+                            const nsString& aAdditionalFeatures = nsString(u""),
+                            bool aIsHWSecure = false) {
   
-  nsString mimeType(u"video/mp4;codecs=\"");
+  nsString contentType(u"video/mp4;codecs=\"");
   MOZ_ASSERT(!aVideoCodec.IsEmpty());
-  mimeType.AppendASCII(aVideoCodec);
+  contentType.AppendASCII(aVideoCodec);
   if (!aAudioCodec.IsEmpty()) {
-    mimeType.AppendLiteral(u",");
-    mimeType.AppendASCII(aAudioCodec);
+    contentType.AppendLiteral(u",");
+    contentType.AppendASCII(aAudioCodec);
   }
   
   
-  mimeType.AppendLiteral(
+  contentType.AppendLiteral(
       u"\";features=\"decode-bpp=8,"
       "decode-res-x=1920,decode-res-y=1080,"
       "decode-bitrate=10000000,decode-fps=30,");
-  if (!aAdditionalFeature.IsEmpty()) {
-    MOZ_ASSERT(aAdditionalFeature.Last() == u',');
-    mimeType.Append(aAdditionalFeature);
+  if (!aAdditionalFeatures.IsEmpty()) {
+    contentType.Append(aAdditionalFeatures);
+  }
+  if (aIsHWSecure) {
+    contentType.AppendLiteral(u"encryption-robustness=HW_SECURE_ALL");
+  } else {
+    contentType.AppendLiteral(u"encryption-robustness=SW_SECURE_DECODE");
   }
   
-  mimeType.AppendLiteral(u"encryption-robustness=SW_SECURE_DECODE\"");
-  return aFactory->IsTypeSupported(aKeySystem.get(), mimeType.get());
+  contentType.AppendLiteral(u"\"");
+  bool rv = aFactory->IsTypeSupported(aKeySystem.get(), contentType.get());
+  MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)", rv,
+                    NS_ConvertUTF16toUTF8(aKeySystem).get(),
+                    NS_ConvertUTF16toUTF8(contentType).get());
+  
+  
+  return rv;
+}
+
+static nsString GetRobustnessStringForKeySystem(const nsString& aKeySystem,
+                                                const bool aIsHWSecure) {
+  if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
+    return aIsHWSecure ? nsString(u"3000") : nsString(u"2000");
+  }
+  
+  return nsString(u"");
 }
 
 mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
-    GetCapabilitiesResolver&& aResolver) {
+    const bool aIsHWSecure, GetCapabilitiesResolver&& aResolver) {
   MFCDM_REJECT_IF(!mFactory, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
 
   MFCDMCapabilitiesIPDL capabilities;
@@ -182,10 +201,14 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
   for (auto& codec : kVideoCodecs) {
-    if (FactorySupports(mFactory, mKeySystem, codec)) {
+    if (FactorySupports(mFactory, mKeySystem, codec,
+                        KeySystemConfig::EMECodecString(""), nsString(u""),
+                        aIsHWSecure)) {
       MFCDMMediaCapability* c =
           capabilities.videoCapabilities().AppendElement();
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
+      c->robustness() =
+          GetRobustnessStringForKeySystem(mKeySystem, aIsHWSecure);
       MFCDM_PARENT_LOG("%s: +video:%s", __func__, codec.get());
       supportedVideoCodecs.AppendElement(codec);
     }
@@ -220,9 +243,9 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   for (auto& scheme : kSchemes) {
     bool ok = true;
     for (auto& codec : supportedVideoCodecs) {
-      ok &= FactorySupports(mFactory, mKeySystem, codec,
-                            KeySystemConfig::EMECodecString(""),
-                            scheme.second );
+      ok &= FactorySupports(
+          mFactory, mKeySystem, codec, KeySystemConfig::EMECodecString(""),
+          scheme.second , aIsHWSecure);
       if (!ok) {
         break;
       }

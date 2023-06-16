@@ -75,9 +75,12 @@ bool WMFCDMImpl::GetCapabilities(KeySystemConfig& aConfig) {
   nsCOMPtr<nsISerialEventTarget> backgroundTaskQueue;
   NS_CreateBackgroundTaskQueue(__func__, getter_AddRefs(backgroundTaskQueue));
 
+  
+  
   bool ok = false;
   media::Await(
-      backgroundTaskQueue.forget(), mCDM->GetCapabilities(),
+      backgroundTaskQueue.forget(),
+      mCDM->GetCapabilities(false ),
       [&ok, &aConfig](const MFCDMCapabilitiesIPDL& capabilities) {
         EME_LOG("capabilities: keySystem=%s",
                 NS_ConvertUTF16toUTF8(capabilities.keySystem()).get());
