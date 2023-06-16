@@ -223,18 +223,6 @@ void WebrtcAudioConduit::OnControlConfigChange() {
   }
 
   if (auto filteredExtensions = FilterExtensions(
-          LocalDirection::kRecv, mControl.mLocalRecvRtpExtensions);
-      filteredExtensions != mRecvStreamConfig.rtp.extensions) {
-    mRecvStreamConfig.rtp.extensions = std::move(filteredExtensions);
-    
-    recvStreamRecreationNeeded = true;
-    
-    
-    
-    
-  }
-
-  if (auto filteredExtensions = FilterExtensions(
           LocalDirection::kSend, mControl.mLocalSendRtpExtensions);
       filteredExtensions != mSendStreamConfig.rtp.extensions) {
     
