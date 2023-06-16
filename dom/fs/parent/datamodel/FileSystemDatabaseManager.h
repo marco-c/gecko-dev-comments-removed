@@ -162,6 +162,18 @@ class FileSystemDatabaseManager {
   
 
 
+  virtual Result<EntryId, QMResult> GetEntryId(
+      const FileSystemChildMetadata& aHandle) const = 0;
+
+  
+
+
+
+  virtual nsresult EnsureFileId(const EntryId& aEntryId) = 0;
+
+  
+
+
 
 
 
