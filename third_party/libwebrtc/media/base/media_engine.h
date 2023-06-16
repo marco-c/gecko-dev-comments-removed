@@ -24,6 +24,7 @@
 #include "call/audio_state.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
+#include "media/base/media_channel_impl.h"
 #include "media/base/media_config.h"
 #include "media/base/video_common.h"
 #include "rtc_base/system/file_wrapper.h"
@@ -100,10 +101,25 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   virtual VoiceMediaChannel* CreateMediaChannel(
+      MediaChannel::Role role,
       webrtc::Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const webrtc::CryptoOptions& crypto_options) = 0;
+      const webrtc::CryptoOptions& crypto_options) {
+    
+    
+    RTC_CHECK_NOTREACHED();
+  }
+
+  
+  [[deprecated("Use version with role parameter")]] virtual VoiceMediaChannel*
+  CreateMediaChannel(webrtc::Call* call,
+                     const MediaConfig& config,
+                     const AudioOptions& options,
+                     const webrtc::CryptoOptions& crypto_options) {
+    return CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
+                              crypto_options);
+  }
 
   virtual const std::vector<AudioCodec>& send_codecs() const = 0;
   virtual const std::vector<AudioCodec>& recv_codecs() const = 0;
@@ -132,12 +148,31 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   virtual VideoMediaChannel* CreateMediaChannel(
+      MediaChannel::Role role,
       webrtc::Call* call,
       const MediaConfig& config,
       const VideoOptions& options,
       const webrtc::CryptoOptions& crypto_options,
-      webrtc::VideoBitrateAllocatorFactory*
-          video_bitrate_allocator_factory) = 0;
+      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
+    
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
+  
+  
+  
+  [[deprecated("Please specify the role")]] virtual VideoMediaChannel*
+  CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options,
+      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
+    return CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
+                              crypto_options, video_bitrate_allocator_factory);
+  }
 
   
   virtual std::vector<VideoCodec> send_codecs() const = 0;

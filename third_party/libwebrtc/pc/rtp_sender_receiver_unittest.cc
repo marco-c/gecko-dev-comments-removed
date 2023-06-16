@@ -119,11 +119,13 @@ class RtpSenderReceiverTest
     
     
     media_engine_->voice().CreateMediaChannel(
-        &fake_call_, cricket::MediaConfig(), cricket::AudioOptions(),
-        webrtc::CryptoOptions());
+        cricket::MediaChannel::Role::kBoth, &fake_call_, cricket::MediaConfig(),
+        cricket::AudioOptions(), webrtc::CryptoOptions());
     media_engine_->video().CreateMediaChannel(
-        &fake_call_, cricket::MediaConfig(), cricket::VideoOptions(),
-        webrtc::CryptoOptions(), video_bitrate_allocator_factory_.get());
+        cricket::MediaChannel::Role::kBoth, &fake_call_, cricket::MediaConfig(),
+        cricket::VideoOptions(), webrtc::CryptoOptions(),
+        video_bitrate_allocator_factory_.get());
+    
 
     voice_media_channel_ = absl::WrapUnique(media_engine_->GetVoiceChannel(0));
     video_media_channel_ = absl::WrapUnique(media_engine_->GetVideoChannel(0));

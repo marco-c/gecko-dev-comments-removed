@@ -69,6 +69,7 @@ class VideoFrame;
 namespace cricket {
 
 class AudioSource;
+class MediaChannel;  
 class VideoCapturer;
 struct RtpHeader;
 struct VideoFormat;
@@ -208,6 +209,17 @@ class MediaBaseChannelInterface {
   
   virtual void SetExtmapAllowMixed(bool extmap_allow_mixed) = 0;
   virtual bool ExtmapAllowMixed() const = 0;
+
+  
+  virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
+
+  
+  
+  virtual bool HasNetworkInterface() const = 0;
+
+  
+  
+  virtual MediaChannel* ImplForTesting() = 0;
 };
 
 class MediaSendChannelInterface
@@ -259,14 +271,9 @@ class MediaReceiveChannelInterface
  public:
   virtual ~MediaReceiveChannelInterface() = default;
 
-  virtual VideoMediaReceiveChannelInterface* AsVideoReceiveChannel() {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
-  virtual VoiceMediaReceiveChannelInterface* AsVoiceReceiveChannel() {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
+  virtual VideoMediaReceiveChannelInterface* AsVideoReceiveChannel() = 0;
+  virtual VoiceMediaReceiveChannelInterface* AsVoiceReceiveChannel() = 0;
+
   
   
   
@@ -280,6 +287,9 @@ class MediaReceiveChannelInterface
   virtual void ResetUnsignaledRecvStream() = 0;
   
   virtual absl::optional<uint32_t> GetUnsignaledSsrc() const = 0;
+  
+  virtual bool SetLocalSsrc(const StreamParams& sp) = 0;
+
   
   
   
