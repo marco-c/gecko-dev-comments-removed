@@ -1074,7 +1074,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
   
   
-  mozilla::IOInterposerInit ioInterposerGuard;
+  mozilla::AutoIOInterposer ioInterposerGuard;
+  ioInterposerGuard.Init();
 
   XRE_InitCommandLine(argc, argv);
 

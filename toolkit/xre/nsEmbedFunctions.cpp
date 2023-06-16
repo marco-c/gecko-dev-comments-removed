@@ -546,7 +546,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     
     
 
-    Maybe<IOInterposerInit> ioInterposerGuard;
+    AutoIOInterposer ioInterposerGuard;
 
     
     MessageLoop uiMessageLoop(uiLoopType);
@@ -558,7 +558,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
           break;
 
         case GeckoProcessType_Content:
-          ioInterposerGuard.emplace();
+          ioInterposerGuard.Init();
           process = MakeUnique<ContentProcess>(parentPID, messageChannelId);
           break;
 
@@ -589,7 +589,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
           break;
 
         case GeckoProcessType_Socket:
-          ioInterposerGuard.emplace();
+          ioInterposerGuard.Init();
           process =
               MakeUnique<net::SocketProcessImpl>(parentPID, messageChannelId);
           break;
