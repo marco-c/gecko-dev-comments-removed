@@ -62,8 +62,8 @@ add_task(async function test_timestamp_fixup() {
 
   if (AppConstants.platform != "android") {
     Services.fog.initializeFOG();
-    Services.fog.testResetFOG();
   }
+  Services.fog.testResetFOG();
 
   
   
@@ -72,13 +72,6 @@ add_task(async function test_timestamp_fixup() {
     now
   );
   Assert.equal(conn.schemaVersion, 12);
-
-  
-  
-  if (AppConstants.platform == "android") {
-    conn.close();
-    return;
-  }
 
   Assert.equal(
     await Glean.networking.cookieTimestampFixedCount.creationTime.testGetValue(),
