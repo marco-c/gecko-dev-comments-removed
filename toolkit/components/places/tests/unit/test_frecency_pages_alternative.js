@@ -315,9 +315,19 @@ add_task(
     
     
 
+    
+    await PlacesUtils.bookmarks.insert({
+      url: "https://visitedbookmark.moz.org",
+      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    });
+
     await PlacesTestUtils.addVisits([
       {
         url: "https://low.moz.org",
+        transition: PlacesUtils.history.TRANSITIONS.FRAMED_LINK,
+      },
+      {
+        url: "https://visitedbookmark.moz.org",
         transition: PlacesUtils.history.TRANSITIONS.FRAMED_LINK,
       },
       {
@@ -348,5 +358,7 @@ add_task(
     Assert.greater(unvisitedBm, base);
     let manyVisits = await getFrecency("https://manyvisits.moz.org/");
     Assert.greater(manyVisits, unvisitedBm);
+    let visitedBm = await getFrecency("https://visitedbookmark.moz.org/");
+    Assert.greater(visitedBm, base);
   }
 );
