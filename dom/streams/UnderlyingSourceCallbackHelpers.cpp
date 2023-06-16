@@ -7,6 +7,7 @@
 #include "StreamUtils.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
+#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -16,6 +17,8 @@
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom {
+
+using namespace streams_abstract;
 
 
 NS_IMPL_CYCLE_COLLECTION(UnderlyingSourceAlgorithmsBase)
@@ -238,7 +241,8 @@ already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(
   return do_AddRef(mPullPromise);
 }
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 InputToReadableStreamAlgorithms::OnInputStreamReady(
     nsIAsyncInputStream* aStream) {
   MOZ_DIAGNOSTIC_ASSERT(aStream);
@@ -276,7 +280,7 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
                         Promise::PromiseState::Pending);
 
   ErrorResult errorResult;
-  EnqueueChunkWithSizeIntoStream(cx, mStream, size, errorResult);
+  PullFromInputStream(cx, size, errorResult);
   errorResult.WouldReportJSException();
   if (errorResult.Failed()) {
     ErrorPropagation(cx, mStream, errorResult.StealNSResult());
@@ -290,11 +294,22 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
   
   
   
-  
   MOZ_DIAGNOSTIC_ASSERT(mPullPromise);
   if (mPullPromise) {
     mPullPromise->MaybeResolveWithUndefined();
     mPullPromise = nullptr;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mInput);
+  if (mInput) {
+    
+    
+    rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
+                           mOwningEventTarget);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      ErrorPropagation(cx, mStream, errorResult.StealNSResult());
+      return NS_OK;
+    }
   }
 
   return NS_OK;
@@ -349,27 +364,50 @@ void InputToReadableStreamAlgorithms::WriteIntoReadRequestBuffer(
 
 
 
-void InputToReadableStreamAlgorithms::EnqueueChunkWithSizeIntoStream(
-    JSContext* aCx, ReadableStream* aStream, uint64_t aAvailableData,
-    ErrorResult& aRv) {
+void InputToReadableStreamAlgorithms::PullFromInputStream(JSContext* aCx,
+                                                          uint64_t aAvailable,
+                                                          ErrorResult& aRv) {
   
   
-  
-  uint32_t ableToRead =
-      std::min(static_cast<uint64_t>(256 * 1024 * 1024), aAvailableData);
+  MOZ_ASSERT(mStream->Controller()->IsByte());
 
   
-  aRv.MightThrowJSException();
-  JS::Rooted<JSObject*> chunk(aCx, JS_NewUint8Array(aCx, ableToRead));
-  if (!chunk) {
-    aRv.StealExceptionFromJSContext(aCx);
+  
+  uint64_t desiredSize = aAvailable;
+
+  
+  
+  JS::Rooted<JSObject*> byobView(aCx);
+  mStream->GetCurrentBYOBRequestView(aCx, &byobView, aRv);
+  if (aRv.Failed()) {
     return;
   }
+  if (byobView) {
+    desiredSize = JS_GetArrayBufferViewByteLength(byobView);
+  }
 
-  {
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t pullSize = std::min(static_cast<uint64_t>(256 * 1024 * 1024),
+                               std::min(aAvailable, desiredSize));
+
+  
+  
+  
+  
+  
+
+  
+  if (byobView) {
+    
     uint32_t bytesWritten = 0;
-
-    WriteIntoReadRequestBuffer(aCx, aStream, chunk, ableToRead, &bytesWritten,
+    WriteIntoReadRequestBuffer(aCx, mStream, byobView, pullSize, &bytesWritten,
                                aRv);
     if (aRv.Failed()) {
       return;
@@ -378,24 +416,45 @@ void InputToReadableStreamAlgorithms::EnqueueChunkWithSizeIntoStream(
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT((ableToRead - bytesWritten) == 0);
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(pullSize == bytesWritten);
+    ReadableByteStreamControllerRespond(
+        aCx, MOZ_KnownLive(mStream->Controller()->AsByte()), bytesWritten, aRv);
   }
-
-  MOZ_ASSERT(aStream->Controller()->IsByte());
-  JS::Rooted<JS::Value> chunkValue(aCx);
-  chunkValue.setObject(*chunk);
-  aStream->EnqueueNative(aCx, chunkValue, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
   
-  
-  nsresult rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
-                                  mOwningEventTarget);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.Throw(rv);
-    return;
+  else {
+    
+    
+    UniquePtr<uint8_t> buffer(static_cast<uint8_t*>(JS_malloc(aCx, pullSize)));
+    if (!buffer) {
+      aRv.ThrowTypeError("Out of memory");
+      return;
+    }
+
+    uint32_t bytesWritten = 0;
+    nsresult rv = mInput->Read((char*)buffer.get(), pullSize, &bytesWritten);
+    if (!bytesWritten) {
+      rv = NS_BASE_STREAM_CLOSED;
+    }
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
+      return;
+    }
+
+    MOZ_DIAGNOSTIC_ASSERT(pullSize == bytesWritten);
+    JS::Rooted<JSObject*> view(
+        aCx, nsJSUtils::MoveBufferAsUint8Array(aCx, bytesWritten, buffer));
+    if (!view) {
+      JS_ClearPendingException(aCx);
+      aRv.ThrowTypeError("Out of memory");
+      return;
+    }
+
+    
+    
+    ReadableByteStreamControllerEnqueue(
+        aCx, MOZ_KnownLive(mStream->Controller()->AsByte()), view, aRv);
   }
 }
 

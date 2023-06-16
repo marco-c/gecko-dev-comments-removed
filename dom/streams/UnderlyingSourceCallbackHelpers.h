@@ -240,9 +240,12 @@ class InputToReadableStreamAlgorithms final
                                   uint32_t aLength, uint32_t* aByteWritten,
                                   ErrorResult& aRv);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void EnqueueChunkWithSizeIntoStream(
-      JSContext* aCx, ReadableStream* aStream, uint64_t aAvailableData,
-      ErrorResult& aRv);
+  
+  
+  MOZ_CAN_RUN_SCRIPT void PullFromInputStream(JSContext* aCx,
+                                              uint64_t aAvailable,
+                                              ErrorResult& aRv);
+
   void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
                         nsresult aError);
 
@@ -258,7 +261,9 @@ class InputToReadableStreamAlgorithms final
   RefPtr<Promise> mPullPromise;
 
   RefPtr<InputStreamHolder> mInput;
-  RefPtr<ReadableStream> mStream;
+
+  
+  MOZ_KNOWN_LIVE RefPtr<ReadableStream> mStream;
 };
 
 class NonAsyncInputToReadableStreamAlgorithms

@@ -29,6 +29,7 @@
 #include "mozilla/dom/ReadRequest.h"
 #include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableStreamBYOBReader.h"
+#include "mozilla/dom/ReadableStreamBYOBRequest.h"
 #include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamController.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
@@ -1248,7 +1249,7 @@ void ReadableStream::EnqueueNative(JSContext* aCx, JS::Handle<JS::Value> aChunk,
     MOZ_ASSERT(JS_GetArrayBufferViewByteOffset(chunk) ==
                JS_GetArrayBufferViewByteOffset(byobView));
     
-    MOZ_ASSERT(JS_GetArrayBufferViewByteLength(chunk) ==
+    MOZ_ASSERT(JS_GetArrayBufferViewByteLength(chunk) <=
                JS_GetArrayBufferViewByteLength(byobView));
     
     
@@ -1265,6 +1266,29 @@ void ReadableStream::EnqueueNative(JSContext* aCx, JS::Handle<JS::Value> aChunk,
   
   
   ReadableByteStreamControllerEnqueue(aCx, controller, chunk, aRv);
+}
+
+
+void ReadableStream::GetCurrentBYOBRequestView(
+    JSContext* aCx, JS::MutableHandle<JSObject*> aView, ErrorResult& aRv) {
+  aView.set(nullptr);
+
+  
+  
+  MOZ_ASSERT(mController->IsByte());
+
+  
+  
+  RefPtr<ReadableStreamBYOBRequest> byobRequest =
+      mController->AsByte()->GetByobRequest(aCx, aRv);
+
+  
+  if (!byobRequest || aRv.Failed()) {
+    return;
+  }
+
+  
+  byobRequest->GetView(aCx, aView);
 }
 
 
