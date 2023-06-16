@@ -33,7 +33,10 @@ void AssertRoundTrips(const nsHttpResponseHead& aHead) {
     
     nsHttpResponseHead copied;
     copied = aHead;
-    ASSERT_EQ(aHead, copied);
+    
+    
+    
+    ASSERT_EQ(copied, aHead);
   }
 }
 
