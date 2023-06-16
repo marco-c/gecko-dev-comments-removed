@@ -82,6 +82,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.GeckoDisplay.SurfaceInfo;
+import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt;
 
 public class GeckoSession {
   private static final String LOGTAG = "GeckoSession";
@@ -4533,6 +4534,80 @@ public class GeckoSession {
     }
 
     
+    public final class IdentityCredential {
+      
+
+
+
+      public static class ProviderSelectorPrompt extends BasePrompt {
+        
+        public final @NonNull Provider[] providers;
+
+        
+
+
+
+
+
+
+        protected ProviderSelectorPrompt(
+            @NonNull final String id,
+            @NonNull final Provider[] providers,
+            @NonNull final Observer observer) {
+          super(id, null, observer);
+          this.providers = providers;
+        }
+
+        
+
+
+
+
+
+
+
+        @UiThread
+        public @NonNull PromptResponse confirm(final int providerIndex) {
+          ensureResult().putInt("providerIndex", providerIndex);
+          return super.confirm();
+        }
+
+        
+        public static class Provider {
+          
+          public final @Nullable String icon;
+
+          
+          public final @NonNull String name;
+
+          
+          public final int id;
+
+          
+
+
+
+
+
+
+          public Provider(final int id, final @NonNull String name, final @Nullable String icon) {
+            this.id = id;
+            this.icon = icon;
+            this.name = name;
+          }
+
+          
+          static @NonNull Provider fromBundle(final @NonNull GeckoBundle bundle) {
+            final int id = bundle.getInt("providerIndex");
+            final String icon = bundle.getString("icon");
+            final String name = bundle.getString("name");
+            return new Provider(id, name, icon);
+          }
+        }
+      }
+    }
+
+    
 
 
 
@@ -5574,6 +5649,21 @@ public class GeckoSession {
     default @Nullable GeckoResult<PromptResponse> onLoginSelect(
         @NonNull final GeckoSession session,
         @NonNull final AutocompleteRequest<Autocomplete.LoginSelectOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onSelectIdentityCredentialProvider(
+        @NonNull final GeckoSession session, @NonNull final ProviderSelectorPrompt prompt) {
       return null;
     }
 
