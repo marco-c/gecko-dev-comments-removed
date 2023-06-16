@@ -2950,11 +2950,13 @@ bool TextControlState::SetValueWithoutTextEditor(
       if (mBoundFrame) {
         mBoundFrame->UpdateValueDisplay(true);
       }
+
       
       
       
-      else if (IMEContentObserver* observer = GetIMEContentObserver()) {
-        observer->OnTextControlValueChangedDuringNoFrame(mValue);
+      
+      if (IMEContentObserver* observer = GetIMEContentObserver()) {
+        observer->OnTextControlValueChangedWhileNotObservable(mValue);
       }
     }
 
