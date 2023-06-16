@@ -151,7 +151,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       getState()
     );
     if (keepContext) {
-      if (shouldSelectOriginalLocation != isOriginalId(location.sourceId)) {
+      if (shouldSelectOriginalLocation != isOriginalId(location.source.id)) {
         
         
         location = await getRelatedMapLocation(location, thunkArgs);
@@ -164,7 +164,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
         source = location.source;
       }
     } else {
-      shouldSelectOriginalLocation = isOriginalId(location.sourceId);
+      shouldSelectOriginalLocation = isOriginalId(location.source.id);
     }
 
     let sourceActor = location.sourceActor;
