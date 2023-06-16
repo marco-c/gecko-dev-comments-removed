@@ -1,10 +1,12 @@
 #![warn(
     clippy::semicolon_if_nothing_returned,
-    missing_copy_implementations,
     
-    missing_debug_implementations,
+    
+    
+    
     missing_docs,
     rust_2018_idioms,
+    rustdoc::missing_crate_level_docs,
     trivial_casts,
     trivial_numeric_casts,
     unused_extern_crates,
@@ -14,7 +16,6 @@
 )]
 #![doc(test(attr(forbid(unsafe_code))))]
 #![doc(test(attr(deny(
-    missing_copy_implementations,
     missing_debug_implementations,
     trivial_casts,
     trivial_numeric_casts,
@@ -25,7 +26,7 @@
 #![doc(test(attr(warn(rust_2018_idioms))))]
 
 #![doc(test(no_crate_inject))]
-#![doc(html_root_url = "https://docs.rs/serde_with/1.14.0")]
+#![doc(html_root_url = "https://docs.rs/serde_with/3.0.0/")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(
     
@@ -35,6 +36,8 @@
     clippy::only_used_in_recursion,
     
     clippy::derive_partial_eq_without_eq,
+    
+    clippy::explicit_auto_deref
 )]
 #![no_std]
 
@@ -261,21 +264,61 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
 extern crate alloc;
 #[doc(hidden)]
+pub extern crate core;
+#[doc(hidden)]
 pub extern crate serde;
+#[cfg(feature = "std")]
 extern crate std;
 
 #[cfg(feature = "base64")]
 #[cfg_attr(docsrs, doc(cfg(feature = "base64")))]
 pub mod base64;
+#[cfg(feature = "chrono_0_4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "chrono_0_4")))]
+pub mod chrono_0_4;
+
 #[cfg(feature = "chrono")]
 #[cfg_attr(docsrs, doc(cfg(feature = "chrono")))]
-pub mod chrono;
+pub mod chrono {
+    pub use chrono_0_4::*;
+}
+#[cfg(feature = "alloc")]
 mod content;
 pub mod de;
+#[cfg(feature = "alloc")]
 mod duplicate_key_impls;
+#[cfg(feature = "alloc")]
 mod enum_map;
+#[cfg(feature = "std")]
 mod flatten_maybe;
 pub mod formats;
 #[cfg(feature = "hex")]
@@ -284,13 +327,17 @@ pub mod hex;
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
+#[cfg(feature = "alloc")]
+mod key_value_map;
 pub mod rust;
 pub mod ser;
+#[cfg(feature = "std")]
 mod serde_conv;
 #[cfg(feature = "time_0_3")]
 #[cfg_attr(docsrs, doc(cfg(feature = "time_0_3")))]
 pub mod time_0_3;
 mod utils;
+#[cfg(feature = "std")]
 #[doc(hidden)]
 pub mod with_prefix;
 
@@ -334,12 +381,71 @@ generate_guide! {
     }
 }
 
+pub(crate) mod prelude {
+    #![allow(unused_imports)]
+
+    pub(crate) use crate::utils::duration::{DurationSigned, Sign};
+    pub use crate::{de::*, ser::*, *};
+    #[cfg(all(feature = "alloc", target_has_atomic = "ptr"))]
+    pub use alloc::sync::{Arc, Weak as ArcWeak};
+    #[cfg(feature = "alloc")]
+    pub use alloc::{
+        borrow::{Cow, ToOwned},
+        boxed::Box,
+        collections::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque},
+        rc::{Rc, Weak as RcWeak},
+        string::{String, ToString},
+        vec::Vec,
+    };
+    pub use core::{
+        cell::{Cell, RefCell},
+        convert::{TryFrom, TryInto},
+        fmt::{self, Display},
+        hash::{BuildHasher, Hash},
+        marker::PhantomData,
+        option::Option,
+        result::Result,
+        str::FromStr,
+        time::Duration,
+    };
+    pub use serde::{
+        de::{
+            Deserialize, DeserializeOwned, DeserializeSeed, Deserializer, EnumAccess,
+            Error as DeError, Expected, IgnoredAny, IntoDeserializer, MapAccess, SeqAccess,
+            Unexpected, VariantAccess, Visitor,
+        },
+        forward_to_deserialize_any,
+        ser::{
+            Error as SerError, Impossible, Serialize, SerializeMap, SerializeSeq, SerializeStruct,
+            SerializeStructVariant, SerializeTuple, SerializeTupleStruct, SerializeTupleVariant,
+            Serializer,
+        },
+    };
+    #[cfg(feature = "std")]
+    pub use std::{
+        collections::{HashMap, HashSet},
+        sync::{Mutex, RwLock},
+        time::SystemTime,
+    };
+}
+
+
+
+
+#[doc(hidden)]
+pub mod __private__ {
+    pub use crate::prelude::*;
+}
+
+#[cfg(feature = "alloc")]
 #[doc(inline)]
-pub use crate::{
-    de::DeserializeAs, enum_map::EnumMap, rust::StringWithSeparator, ser::SerializeAs,
-};
+pub use crate::enum_map::EnumMap;
+#[cfg(feature = "alloc")]
+#[doc(inline)]
+pub use crate::key_value_map::KeyValueMap;
+#[doc(inline)]
+pub use crate::{de::DeserializeAs, ser::SerializeAs};
 use core::marker::PhantomData;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "macros")]
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
@@ -347,32 +453,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use serde_with_macros::*;
 
 
-pub trait Separator {
-    
-    fn separator() -> &'static str;
-}
-
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct SpaceSeparator;
-
-impl Separator for SpaceSeparator {
-    #[inline]
-    fn separator() -> &'static str {
-        " "
-    }
-}
-
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct CommaSeparator;
-
-impl Separator for CommaSeparator {
-    #[inline]
-    fn separator() -> &'static str {
-        ","
-    }
-}
 
 
 
@@ -414,44 +494,15 @@ impl Separator for CommaSeparator {
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+
+
 pub struct As<T: ?Sized>(PhantomData<T>);
 
-impl<T: ?Sized> As<T> {
-    
-    
-    
-    
-    
-    pub fn serialize<S, I>(value: &I, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        T: SerializeAs<I>,
-        I: ?Sized,
-    {
-        T::serialize_as(value, serializer)
-    }
-
-    
-    
-    
-    
-    
-    pub fn deserialize<'de, D, I>(deserializer: D) -> Result<I, D::Error>
-    where
-        T: DeserializeAs<'de, I>,
-        D: Deserializer<'de>,
-    {
-        T::deserialize_as(deserializer)
-    }
-}
 
 
 
 
 
-
-#[derive(Copy, Clone, Debug, Default)]
 pub struct Same;
 
 
@@ -500,9 +551,6 @@ pub struct Same;
 
 
 
-
-
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DisplayFromStr;
 
 
@@ -544,9 +592,6 @@ pub struct DisplayFromStr;
 
 
 
-
-
-#[derive(Copy, Clone, Debug, Default)]
 pub struct NoneAsEmptyString;
 
 
@@ -635,9 +680,7 @@ pub struct NoneAsEmptyString;
 
 
 
-
-
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct DefaultOnError<T = Same>(PhantomData<T>);
 
 
@@ -693,9 +736,6 @@ pub struct DefaultOnError<T = Same>(PhantomData<T>);
 
 
 
-
-
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DefaultOnNull<T = Same>(PhantomData<T>);
 
 
@@ -744,7 +784,7 @@ pub struct DefaultOnNull<T = Same>(PhantomData<T>);
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct BytesOrString;
 
 
@@ -884,7 +924,9 @@ pub struct BytesOrString;
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+
+
+
 pub struct DurationSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1013,7 +1055,9 @@ pub struct DurationSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+
+
+
 pub struct DurationSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1022,7 +1066,6 @@ pub struct DurationSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationMilliSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1031,7 +1074,6 @@ pub struct DurationMilliSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationMilliSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1040,7 +1082,6 @@ pub struct DurationMilliSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationMicroSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1049,7 +1090,6 @@ pub struct DurationMicroSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationMicroSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1058,7 +1098,6 @@ pub struct DurationMicroSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationNanoSeconds<
     FORMAT: formats::Format = u64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1067,7 +1106,6 @@ pub struct DurationNanoSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct DurationNanoSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1215,7 +1253,12 @@ pub struct DurationNanoSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+
+
+
+
+
+
 pub struct TimestampSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1352,7 +1395,11 @@ pub struct TimestampSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+
+
+
+
+
 pub struct TimestampSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1361,7 +1408,6 @@ pub struct TimestampSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampMilliSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1370,7 +1416,6 @@ pub struct TimestampMilliSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampMilliSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1379,7 +1424,6 @@ pub struct TimestampMilliSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampMicroSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1388,7 +1432,6 @@ pub struct TimestampMicroSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampMicroSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1397,7 +1440,6 @@ pub struct TimestampMicroSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampNanoSeconds<
     FORMAT: formats::Format = i64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1406,7 +1448,6 @@ pub struct TimestampNanoSeconds<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TimestampNanoSecondsWithFrac<
     FORMAT: formats::Format = f64,
     STRICTNESS: formats::Strictness = formats::Strict,
@@ -1579,7 +1620,6 @@ pub struct TimestampNanoSecondsWithFrac<
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct Bytes;
 
 
@@ -1639,7 +1679,7 @@ pub struct Bytes;
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct OneOrMany<T, FORMAT: formats::Format = formats::PreferOne>(PhantomData<(T, FORMAT)>);
 
 
@@ -1700,7 +1740,7 @@ pub struct OneOrMany<T, FORMAT: formats::Format = formats::PreferOne>(PhantomDat
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct PickFirst<T>(PhantomData<T>);
 
 
@@ -1783,7 +1823,6 @@ pub struct PickFirst<T>(PhantomData<T>);
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct FromInto<T>(PhantomData<T>);
 
 
@@ -1874,7 +1913,6 @@ pub struct FromInto<T>(PhantomData<T>);
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct TryFromInto<T>(PhantomData<T>);
 
 
@@ -1943,7 +1981,7 @@ pub struct TryFromInto<T>(PhantomData<T>);
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct BorrowCow;
 
 
@@ -1980,8 +2018,7 @@ pub struct BorrowCow;
 
 
 
-
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg(feature = "alloc")]
 pub struct VecSkipError<T>(PhantomData<T>);
 
 
@@ -2030,5 +2067,273 @@ pub struct VecSkipError<T>(PhantomData<T>);
 
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct BoolFromInt<S: formats::Strictness = formats::Strict>(PhantomData<S>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct StringWithSeparator<Sep, T>(PhantomData<(Sep, T)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Map<K, V>(PhantomData<(K, V)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Seq<V>(PhantomData<V>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub struct MapPreventDuplicates<K, V>(PhantomData<(K, V)>);
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub struct MapFirstKeyWins<K, V>(PhantomData<(K, V)>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub struct SetPreventDuplicates<T>(PhantomData<T>);
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
+pub struct SetLastValueWins<T>(PhantomData<T>);

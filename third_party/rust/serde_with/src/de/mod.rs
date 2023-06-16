@@ -7,10 +7,11 @@
 
 
 
-mod const_arrays;
+#[cfg(feature = "alloc")]
+mod duplicates;
 mod impls;
 
-use super::*;
+use crate::prelude::*;
 
 
 
@@ -114,7 +115,6 @@ pub trait DeserializeAs<'de, T>: Sized {
 }
 
 
-#[derive(Debug)]
 pub struct DeserializeAsWrap<T, U> {
     value: T,
     marker: PhantomData<U>,
@@ -139,5 +139,20 @@ where
             value,
             marker: PhantomData,
         })
+    }
+}
+
+impl<T: ?Sized> As<T> {
+    
+    
+    
+    
+    
+    pub fn deserialize<'de, D, I>(deserializer: D) -> Result<I, D::Error>
+    where
+        T: DeserializeAs<'de, I>,
+        D: Deserializer<'de>,
+    {
+        T::deserialize_as(deserializer)
     }
 }

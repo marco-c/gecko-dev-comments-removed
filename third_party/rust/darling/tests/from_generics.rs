@@ -49,7 +49,7 @@ fn expand_some() {
     assert!(rec.generics.where_clause.is_none());
 
     
-    assert!(rec.generics.params[0].as_lifetime_def().is_some());
+    assert!(rec.generics.params[0].as_lifetime_param().is_some());
 
     let mut ty_param_iter = rec.generics.type_params();
 

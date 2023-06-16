@@ -7,11 +7,11 @@
 
 
 
-mod const_arrays;
-#[macro_use]
+#[cfg(feature = "alloc")]
+mod duplicates;
 mod impls;
 
-use super::*;
+use crate::prelude::*;
 
 
 
@@ -112,7 +112,6 @@ pub trait SerializeAs<T: ?Sized> {
 }
 
 
-#[derive(Debug)]
 pub struct SerializeAsWrap<'a, T: ?Sized, U: ?Sized> {
     value: &'a T,
     marker: PhantomData<U>,
@@ -154,5 +153,21 @@ where
 {
     fn from(value: &'a T) -> Self {
         Self::new(value)
+    }
+}
+
+impl<T: ?Sized> As<T> {
+    
+    
+    
+    
+    
+    pub fn serialize<S, I>(value: &I, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: SerializeAs<I>,
+        I: ?Sized,
+    {
+        T::serialize_as(value, serializer)
     }
 }

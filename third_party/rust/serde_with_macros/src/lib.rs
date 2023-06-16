@@ -2,10 +2,10 @@
 #![warn(
     clippy::semicolon_if_nothing_returned,
     missing_copy_implementations,
-    
     missing_debug_implementations,
     missing_docs,
     rust_2018_idioms,
+    rustdoc::missing_crate_level_docs,
     trivial_casts,
     trivial_numeric_casts,
     unused_extern_crates,
@@ -26,11 +26,13 @@
 #![doc(test(attr(warn(rust_2018_idioms))))]
 
 #![doc(test(no_crate_inject))]
-#![doc(html_root_url = "https://docs.rs/serde_with_macros/1.5.2")]
+#![doc(html_root_url = "https://docs.rs/serde_with_macros/3.0.0/")]
 
 #![allow(renamed_and_removed_lints)]
 
 #![allow(clippy::unknown_clippy_lints)]
+
+#![cfg(not(tarpaulin_include))]
 
 
 
@@ -42,19 +44,25 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
+mod apply;
 mod utils;
 
 use crate::utils::{split_with_de_lifetime, DeriveOptions, IteratorExt as _};
-use darling::util::Override;
-use darling::{Error as DarlingError, FromField, FromMeta};
+use darling::{
+    ast::NestedMeta,
+    util::{Flag, Override},
+    Error as DarlingError, FromField, FromMeta,
+};
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::punctuated::Pair;
-use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, AttributeArgs, DeriveInput, Error, Field, Fields,
-    GenericArgument, ItemEnum, ItemStruct, Meta, NestedMeta, Path, PathArguments, ReturnType, Type,
+    parse::Parser,
+    parse_macro_input, parse_quote,
+    punctuated::{Pair, Punctuated},
+    spanned::Spanned,
+    DeriveInput, Error, Field, Fields, GenericArgument, ItemEnum, ItemStruct, Meta, Path,
+    PathArguments, ReturnType, Token, Type,
 };
 
 
@@ -174,16 +182,38 @@ where
         input.attrs.push(consume_serde_as_attribute);
         Ok(quote!(#input))
     } else if let Ok(mut input) = syn::parse::<ItemEnum>(input) {
-        let errors: Vec<DarlingError> = input
+        
+        let mut errors: Vec<DarlingError> = input
             .variants
-            .iter_mut()
-            .map(|variant| apply_on_fields(&mut variant.fields, function))
-            
-            .filter_map(|res| match res {
-                Err(e) => Some(e),
-                Ok(()) => None,
+            .iter()
+            .flat_map(|variant| {
+                variant.attrs.iter().filter_map(|attr| {
+                    if attr.path().is_ident("serde_as") {
+                        Some(
+                            DarlingError::custom(
+                                "serde_as attribute is not allowed on enum variants",
+                            )
+                            .with_span(&attr),
+                        )
+                    } else {
+                        None
+                    }
+                })
             })
             .collect();
+        
+        errors.extend(
+            input
+                .variants
+                .iter_mut()
+                .map(|variant| apply_on_fields(&mut variant.fields, function))
+                
+                .filter_map(|res| match res {
+                    Err(e) => Some(e),
+                    Ok(()) => None,
+                }),
+        );
+
         if errors.is_empty() {
             input.attrs.push(consume_serde_as_attribute);
             Ok(quote!(#input))
@@ -197,6 +227,8 @@ where
         .with_span(&Span::call_site()))
     }
 }
+
+
 
 
 
@@ -297,52 +329,47 @@ pub fn skip_serializing_none(_args: TokenStream, input: TokenStream) -> TokenStr
 
 
 fn skip_serializing_none_add_attr_to_field(field: &mut Field) -> Result<(), String> {
-    if let Type::Path(path) = &field.ty {
-        if is_std_option(&path.path) {
-            let has_skip_serializing_if =
-                field_has_attribute(field, "serde", "skip_serializing_if");
+    if is_std_option(&field.ty) {
+        let has_skip_serializing_if = field_has_attribute(field, "serde", "skip_serializing_if");
 
-            
-            let mut has_always_attr = false;
-            field.attrs.retain(|attr| {
-                let has_attr = attr.path.is_ident("serialize_always");
-                has_always_attr |= has_attr;
-                !has_attr
-            });
+        
+        let mut has_always_attr = false;
+        field.attrs.retain(|attr| {
+            let has_attr = attr.path().is_ident("serialize_always");
+            has_always_attr |= has_attr;
+            !has_attr
+        });
 
-            
-            if has_always_attr && has_skip_serializing_if {
-                let mut msg = r#"The attributes `serialize_always` and `serde(skip_serializing_if = "...")` cannot be used on the same field"#.to_string();
-                if let Some(ident) = &field.ident {
-                    msg += ": `";
-                    msg += &ident.to_string();
-                    msg += "`";
-                }
-                msg += ".";
-                return Err(msg);
+        
+        if has_always_attr && has_skip_serializing_if {
+            let mut msg = r#"The attributes `serialize_always` and `serde(skip_serializing_if = "...")` cannot be used on the same field"#.to_string();
+            if let Some(ident) = &field.ident {
+                msg += ": `";
+                msg += &ident.to_string();
+                msg += "`";
             }
+            msg += ".";
+            return Err(msg);
+        }
 
-            
-            if has_skip_serializing_if || has_always_attr {
-                return Ok(());
-            }
+        
+        if has_skip_serializing_if || has_always_attr {
+            return Ok(());
+        }
 
-            
-            let attr = parse_quote!(
-                #[serde(skip_serializing_if = "Option::is_none")]
-            );
-            field.attrs.push(attr);
-        } else {
-            
-            let has_attr = field
-                .attrs
-                .iter()
-                .any(|attr| attr.path.is_ident("serialize_always"));
-            if has_attr {
-                return Err(
-                    "`serialize_always` may only be used on fields of type `Option`.".into(),
-                );
-            }
+        
+        let attr = parse_quote!(
+            #[serde(skip_serializing_if = "Option::is_none")]
+        );
+        field.attrs.push(attr);
+    } else {
+        
+        let has_attr = field
+            .attrs
+            .iter()
+            .any(|attr| attr.path().is_ident("serialize_always"));
+        if has_attr {
+            return Err("`serialize_always` may only be used on fields of type `Option`.".into());
         }
     }
     Ok(())
@@ -355,12 +382,39 @@ fn skip_serializing_none_add_attr_to_field(field: &mut Field) -> Result<(), Stri
 
 
 
-fn is_std_option(path: &Path) -> bool {
-    (path.leading_colon.is_none() && path.segments.len() == 1 && path.segments[0].ident == "Option")
-        || (path.segments.len() == 3
-            && (path.segments[0].ident == "std" || path.segments[0].ident == "core")
-            && path.segments[1].ident == "option"
-            && path.segments[2].ident == "Option")
+fn is_std_option(type_: &Type) -> bool {
+    match type_ {
+        Type::Array(_)
+        | Type::BareFn(_)
+        | Type::ImplTrait(_)
+        | Type::Infer(_)
+        | Type::Macro(_)
+        | Type::Never(_)
+        | Type::Ptr(_)
+        | Type::Reference(_)
+        | Type::Slice(_)
+        | Type::TraitObject(_)
+        | Type::Tuple(_)
+        | Type::Verbatim(_) => false,
+
+        Type::Group(syn::TypeGroup { elem, .. })
+        | Type::Paren(syn::TypeParen { elem, .. })
+        | Type::Path(syn::TypePath {
+            qself: Some(syn::QSelf { ty: elem, .. }),
+            ..
+        }) => is_std_option(elem),
+
+        Type::Path(syn::TypePath { qself: None, path }) => {
+            (path.leading_colon.is_none()
+                && path.segments.len() == 1
+                && path.segments[0].ident == "Option")
+                || (path.segments.len() == 3
+                    && (path.segments[0].ident == "std" || path.segments[0].ident == "core")
+                    && path.segments[1].ident == "option"
+                    && path.segments[2].ident == "Option")
+        }
+        _ => false,
+    }
 }
 
 
@@ -374,16 +428,32 @@ fn is_std_option(path: &Path) -> bool {
 
 fn field_has_attribute(field: &Field, namespace: &str, name: &str) -> bool {
     for attr in &field.attrs {
-        if attr.path.is_ident(namespace) {
+        if attr.path().is_ident(namespace) {
             
-            if let Ok(Meta::List(expr)) = attr.parse_meta() {
-                for expr in expr.nested {
-                    if let NestedMeta::Meta(Meta::NameValue(expr)) = expr {
-                        if let Some(ident) = expr.path.get_ident() {
-                            if *ident == name {
-                                return true;
+            if let Meta::List(expr) = &attr.meta {
+                let nested = match Punctuated::<Meta, Token![,]>::parse_terminated
+                    .parse2(expr.tokens.clone())
+                {
+                    Ok(nested) => nested,
+                    Err(_) => continue,
+                };
+                for expr in nested {
+                    match expr {
+                        Meta::NameValue(expr) => {
+                            if let Some(ident) = expr.path.get_ident() {
+                                if *ident == name {
+                                    return true;
+                                }
                             }
                         }
+                        Meta::Path(expr) => {
+                            if let Some(ident) = expr.get_ident() {
+                                if *ident == name {
+                                    return true;
+                                }
+                            }
+                        }
+                        _ => (),
                     }
                 }
             }
@@ -480,41 +550,82 @@ fn field_has_attribute(field: &Field, namespace: &str, name: &str) -> bool {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[proc_macro_attribute]
 pub fn serde_as(args: TokenStream, input: TokenStream) -> TokenStream {
-    #[derive(FromMeta, Debug)]
+    #[derive(FromMeta)]
     struct SerdeContainerOptions {
-        #[darling(rename = "crate", default)]
-        alt_crate_path: Option<String>,
+        #[darling(rename = "crate")]
+        alt_crate_path: Option<Path>,
     }
 
-    let args: AttributeArgs = parse_macro_input!(args);
-    let container_options = match SerdeContainerOptions::from_list(&args) {
-        Ok(v) => v,
-        Err(e) => {
-            return TokenStream::from(e.write_errors());
+    match NestedMeta::parse_meta_list(args.into()) {
+        Ok(list) => {
+            let container_options = match SerdeContainerOptions::from_list(&list) {
+                Ok(v) => v,
+                Err(e) => {
+                    return TokenStream::from(e.write_errors());
+                }
+            };
+
+            let serde_with_crate_path = container_options
+                .alt_crate_path
+                .unwrap_or_else(|| syn::parse_quote!(::serde_with));
+
+            
+            let res = match apply_function_to_struct_and_enum_fields_darling(
+                input,
+                &serde_with_crate_path,
+                |field| serde_as_add_attr_to_field(field, &serde_with_crate_path),
+            ) {
+                Ok(res) => res,
+                Err(err) => err.write_errors(),
+            };
+            TokenStream::from(res)
         }
-    };
-
-    let serde_with_crate_path = container_options
-        .alt_crate_path
-        .as_deref()
-        .unwrap_or("::serde_with");
-    let serde_with_crate_path = match syn::parse_str(serde_with_crate_path) {
-        Ok(path) => path,
-        Err(err) => return TokenStream::from(DarlingError::from(err).write_errors()),
-    };
-
-    
-    let res = match apply_function_to_struct_and_enum_fields_darling(
-        input,
-        &serde_with_crate_path,
-        |field| serde_as_add_attr_to_field(field, &serde_with_crate_path),
-    ) {
-        Ok(res) => res,
-        Err(err) => err.write_errors(),
-    };
-    TokenStream::from(res)
+        Err(e) => TokenStream::from(DarlingError::from(e).write_errors()),
+    }
 }
 
 
@@ -522,15 +633,13 @@ fn serde_as_add_attr_to_field(
     field: &mut Field,
     serde_with_crate_path: &Path,
 ) -> Result<(), DarlingError> {
-    #[derive(FromField, Debug)]
+    #[derive(FromField)]
     #[darling(attributes(serde_as))]
     struct SerdeAsOptions {
-        #[darling(rename = "as", default)]
         r#as: Option<Type>,
-        #[darling(default)]
         deserialize_as: Option<Type>,
-        #[darling(default)]
         serialize_as: Option<Type>,
+        no_default: Flag,
     }
 
     impl SerdeAsOptions {
@@ -539,18 +648,15 @@ fn serde_as_add_attr_to_field(
         }
     }
 
-    #[derive(FromField, Debug)]
+    #[derive(FromField)]
     #[darling(attributes(serde), allow_unknown_fields)]
     struct SerdeOptions {
-        #[darling(default)]
         with: Option<String>,
-        #[darling(default)]
         deserialize_with: Option<String>,
-        #[darling(default)]
         serialize_with: Option<String>,
 
-        #[darling(default)]
         borrow: Option<Override<String>>,
+        default: Option<Override<String>>,
     }
 
     impl SerdeOptions {
@@ -560,11 +666,62 @@ fn serde_as_add_attr_to_field(
     }
 
     
-    if !field
-        .attrs
-        .iter()
-        .any(|attr| attr.path.is_ident("serde_as"))
-    {
+    fn emit_borrow_annotation(serde_options: &SerdeOptions, as_type: &Type, field: &mut Field) {
+        let type_borrowcow = &syn::parse_quote!(BorrowCow);
+        
+        if serde_options.borrow.is_none() && has_type_embedded(as_type, type_borrowcow) {
+            let attr_borrow = parse_quote!(#[serde(borrow)]);
+            field.attrs.push(attr_borrow);
+        }
+    }
+
+    
+    fn emit_default_annotation(
+        serde_as_options: &SerdeAsOptions,
+        serde_options: &SerdeOptions,
+        as_type: &Type,
+        field: &mut Field,
+    ) {
+        if !serde_as_options.no_default.is_present()
+            && serde_options.default.is_none()
+            && is_std_option(as_type)
+            && is_std_option(&field.ty)
+        {
+            let attr_borrow = parse_quote!(#[serde(default)]);
+            field.attrs.push(attr_borrow);
+        }
+    }
+
+    
+    
+    
+    let mut has_serde_as = false;
+    field.attrs.iter_mut().for_each(|attr| {
+        if attr.path().is_ident("serde_as") {
+            
+            
+            has_serde_as = true;
+
+            if let Meta::List(metalist) = &mut attr.meta {
+                metalist.tokens = std::mem::take(&mut metalist.tokens)
+                    .into_iter()
+                    .map(|token| {
+                        use proc_macro2::{Ident, TokenTree};
+
+                        
+                        match token {
+                            TokenTree::Ident(ident) if ident == "as" => {
+                                TokenTree::Ident(Ident::new_raw("as", ident.span()))
+                            }
+                            _ => token,
+                        }
+                    })
+                    .collect();
+            }
+        }
+    });
+    
+    if !has_serde_as {
         return Ok(());
     }
     let serde_as_options = SerdeAsOptions::from_field(field)?;
@@ -591,27 +748,20 @@ fn serde_as_add_attr_to_field(
     }
 
     let type_same = &syn::parse_quote!(#serde_with_crate_path::Same);
-    let type_borrowcow = &syn::parse_quote!(BorrowCow);
-    if let Some(type_) = serde_as_options.r#as {
-        
-        if serde_options.borrow.is_none() && has_type_embedded(&type_, type_borrowcow) {
-            let attr_borrow = parse_quote!(#[serde(borrow)]);
-            field.attrs.push(attr_borrow);
-        }
+    if let Some(type_) = &serde_as_options.r#as {
+        emit_borrow_annotation(&serde_options, type_, field);
+        emit_default_annotation(&serde_as_options, &serde_options, type_, field);
 
-        let replacement_type = replace_infer_type_with_type(type_, type_same);
+        let replacement_type = replace_infer_type_with_type(type_.clone(), type_same);
         let attr_inner_tokens = quote!(#serde_with_crate_path::As::<#replacement_type>).to_string();
         let attr = parse_quote!(#[serde(with = #attr_inner_tokens)]);
         field.attrs.push(attr);
     }
-    if let Some(type_) = serde_as_options.deserialize_as {
-        
-        if serde_options.borrow.is_none() && has_type_embedded(&type_, type_borrowcow) {
-            let attr_borrow = parse_quote!(#[serde(borrow)]);
-            field.attrs.push(attr_borrow);
-        }
+    if let Some(type_) = &serde_as_options.deserialize_as {
+        emit_borrow_annotation(&serde_options, type_, field);
+        emit_default_annotation(&serde_as_options, &serde_options, type_, field);
 
-        let replacement_type = replace_infer_type_with_type(type_, type_same);
+        let replacement_type = replace_infer_type_with_type(type_.clone(), type_same);
         let attr_inner_tokens =
             quote!(#serde_with_crate_path::As::<#replacement_type>::deserialize).to_string();
         let attr = parse_quote!(#[serde(deserialize_with = #attr_inner_tokens)]);
@@ -664,6 +814,7 @@ fn replace_infer_type_with_type(to_replace: Type, replacement: &Type) -> Type {
                                 .args
                                 .into_iter()
                                 .map(|generic_argument| match generic_argument {
+                                    
                                     
                                     GenericArgument::Type(type_) => GenericArgument::Type(
                                         replace_infer_type_with_type(type_, replacement),
@@ -722,6 +873,7 @@ fn replace_infer_type_with_type(to_replace: Type, replacement: &Type) -> Type {
         }
 
         
+        
         type_ => type_,
     }
 }
@@ -753,6 +905,7 @@ fn has_type_embedded(type_: &Type, embedded_type: &syn::Ident) -> bool {
                                 .args
                                 .iter()
                                 .any(|generic_argument| match generic_argument {
+                                    
                                     
                                     GenericArgument::Type(type_) => {
                                         has_type_embedded(type_, embedded_type)
@@ -787,9 +940,13 @@ fn has_type_embedded(type_: &Type, embedded_type: &syn::Ident) -> bool {
         }),
 
         
+        
         _type_ => false,
     }
 }
+
+
+
 
 
 
@@ -871,52 +1028,60 @@ pub fn derive_deserialize_fromstr(item: TokenStream) -> TokenStream {
 fn deserialize_fromstr(mut input: DeriveInput, serde_with_crate_path: Path) -> TokenStream2 {
     let ident = input.ident;
     let where_clause = &mut input.generics.make_where_clause().predicates;
-    where_clause.push(parse_quote!(Self: ::std::str::FromStr));
+    where_clause.push(parse_quote!(Self: #serde_with_crate_path::__private__::FromStr));
     where_clause.push(parse_quote!(
-        <Self as ::std::str::FromStr>::Err: ::std::fmt::Display
+        <Self as #serde_with_crate_path::__private__::FromStr>::Err: #serde_with_crate_path::__private__::Display
     ));
     let (de_impl_generics, ty_generics, where_clause) = split_with_de_lifetime(&input.generics);
     quote! {
         #[automatically_derived]
         impl #de_impl_generics #serde_with_crate_path::serde::Deserialize<'de> for #ident #ty_generics #where_clause {
-            fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+            fn deserialize<__D>(deserializer: __D) -> #serde_with_crate_path::__private__::Result<Self, __D::Error>
             where
-                D: #serde_with_crate_path::serde::Deserializer<'de>,
+                __D: #serde_with_crate_path::serde::Deserializer<'de>,
             {
-                struct Helper<S>(::std::marker::PhantomData<S>);
+                struct Helper<__S>(#serde_with_crate_path::__private__::PhantomData<__S>);
 
-                impl<'de, S> #serde_with_crate_path::serde::de::Visitor<'de> for Helper<S>
+                impl<'de, __S> #serde_with_crate_path::serde::de::Visitor<'de> for Helper<__S>
                 where
-                    S: ::std::str::FromStr,
-                    <S as ::std::str::FromStr>::Err: ::std::fmt::Display,
+                    __S: #serde_with_crate_path::__private__::FromStr,
+                    <__S as #serde_with_crate_path::__private__::FromStr>::Err: #serde_with_crate_path::__private__::Display,
                 {
-                    type Value = S;
+                    type Value = __S;
 
-                    fn expecting(&self, formatter: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                        ::std::write!(formatter, "string")
+                    fn expecting(&self, formatter: &mut #serde_with_crate_path::core::fmt::Formatter<'_>) -> #serde_with_crate_path::core::fmt::Result {
+                        #serde_with_crate_path::__private__::Display::fmt("a string", formatter)
                     }
 
-                    fn visit_str<E>(self, value: &str) -> ::std::result::Result<Self::Value, E>
+                    fn visit_str<__E>(
+                        self,
+                        value: &str
+                    ) -> #serde_with_crate_path::__private__::Result<Self::Value, __E>
                     where
-                        E: #serde_with_crate_path::serde::de::Error,
+                        __E: #serde_with_crate_path::serde::de::Error,
                     {
                         value.parse::<Self::Value>().map_err(#serde_with_crate_path::serde::de::Error::custom)
                     }
 
-                    fn visit_bytes<E>(self, value: &[u8]) -> ::std::result::Result<Self::Value, E>
+                    fn visit_bytes<__E>(
+                        self,
+                        value: &[u8]
+                    ) -> #serde_with_crate_path::__private__::Result<Self::Value, __E>
                     where
-                        E: #serde_with_crate_path::serde::de::Error,
+                        __E: #serde_with_crate_path::serde::de::Error,
                     {
-                        let utf8 = ::std::str::from_utf8(value).map_err(#serde_with_crate_path::serde::de::Error::custom)?;
+                        let utf8 = #serde_with_crate_path::core::str::from_utf8(value).map_err(#serde_with_crate_path::serde::de::Error::custom)?;
                         self.visit_str(utf8)
                     }
                 }
 
-                deserializer.deserialize_str(Helper(::std::marker::PhantomData))
+                deserializer.deserialize_str(Helper(#serde_with_crate_path::__private__::PhantomData))
             }
         }
     }
 }
+
+
 
 
 
@@ -986,14 +1151,17 @@ fn serialize_display(mut input: DeriveInput, serde_with_crate_path: Path) -> Tok
         .generics
         .make_where_clause()
         .predicates
-        .push(parse_quote!(Self: ::std::fmt::Display));
+        .push(parse_quote!(Self: #serde_with_crate_path::__private__::Display));
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     quote! {
         #[automatically_derived]
         impl #impl_generics #serde_with_crate_path::serde::Serialize for #ident #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+            fn serialize<__S>(
+                &self,
+                serializer: __S
+            ) -> #serde_with_crate_path::__private__::Result<__S::Ok, __S::Error>
             where
-                S: #serde_with_crate_path::serde::Serializer,
+                __S: #serde_with_crate_path::serde::Serializer,
             {
                 serializer.collect_str(&self)
             }
@@ -1010,7 +1178,141 @@ fn serialize_display(mut input: DeriveInput, serde_with_crate_path: Path) -> Tok
 
 
 
-#[proc_macro_derive(__private_consume_serde_as_attributes, attributes(serde_as))]
+
+
+
+#[proc_macro_derive(
+    __private_consume_serde_as_attributes,
+    attributes(serde_as, serde_with)
+)]
 pub fn __private_consume_serde_as_attributes(_: TokenStream) -> TokenStream {
     TokenStream::new()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[proc_macro_attribute]
+pub fn apply(args: TokenStream, input: TokenStream) -> TokenStream {
+    apply::apply(args, input)
 }

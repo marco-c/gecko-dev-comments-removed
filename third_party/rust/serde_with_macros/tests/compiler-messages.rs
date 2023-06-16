@@ -1,0 +1,9 @@
+#[cfg_attr(tarpaulin, ignore)]
+
+#[rustversion::attr(beta, ignore)]
+#[rustversion::attr(nightly, ignore)]
+#[test]
+fn compile_test() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/compile-fail/*.rs");
+}

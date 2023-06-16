@@ -21,7 +21,7 @@ fn non_meta_attribute_gets_own_error() {
 
     let errors: darling::Error = Bar::from_derive_input(&di).unwrap_err().flatten();
     
-    assert_eq!(3, errors.len());
+    assert_eq!(1, errors.len());
     
     assert!(errors
         .into_iter()
@@ -41,7 +41,7 @@ fn non_meta_attribute_does_not_block_others() {
 
     let errors: darling::Error = Bar::from_derive_input(&di).unwrap_err().flatten();
     
-    assert_eq!(2, errors.len());
+    assert_eq!(1, errors.len());
     
     assert!(errors
         .into_iter()

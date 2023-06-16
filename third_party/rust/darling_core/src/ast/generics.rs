@@ -14,7 +14,7 @@ use crate::{FromGenericParam, FromGenerics, FromTypeParam, Result};
 pub trait GenericParamExt {
     
     type TypeParam;
-    type LifetimeDef;
+    type LifetimeParam;
     type ConstParam;
 
     
@@ -23,7 +23,7 @@ pub trait GenericParamExt {
     }
 
     
-    fn as_lifetime_def(&self) -> Option<&Self::LifetimeDef> {
+    fn as_lifetime_param(&self) -> Option<&Self::LifetimeParam> {
         None
     }
 
@@ -35,7 +35,7 @@ pub trait GenericParamExt {
 
 impl GenericParamExt for syn::GenericParam {
     type TypeParam = syn::TypeParam;
-    type LifetimeDef = syn::LifetimeDef;
+    type LifetimeParam = syn::LifetimeParam;
     type ConstParam = syn::ConstParam;
 
     fn as_type_param(&self) -> Option<&Self::TypeParam> {
@@ -46,7 +46,7 @@ impl GenericParamExt for syn::GenericParam {
         }
     }
 
-    fn as_lifetime_def(&self) -> Option<&Self::LifetimeDef> {
+    fn as_lifetime_param(&self) -> Option<&Self::LifetimeParam> {
         if let syn::GenericParam::Lifetime(ref val) = *self {
             Some(val)
         } else {
@@ -65,7 +65,7 @@ impl GenericParamExt for syn::GenericParam {
 
 impl GenericParamExt for syn::TypeParam {
     type TypeParam = syn::TypeParam;
-    type LifetimeDef = ();
+    type LifetimeParam = ();
     type ConstParam = ();
 
     fn as_type_param(&self) -> Option<&Self::TypeParam> {
@@ -75,7 +75,7 @@ impl GenericParamExt for syn::TypeParam {
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GenericParam<T = syn::TypeParam, L = syn::LifetimeDef, C = syn::ConstParam> {
+pub enum GenericParam<T = syn::TypeParam, L = syn::LifetimeParam, C = syn::ConstParam> {
     Type(T),
     Lifetime(L),
     Const(C),
@@ -103,7 +103,7 @@ impl<T: FromTypeParam> FromGenericParam for GenericParam<T> {
 
 impl<T, L, C> GenericParamExt for GenericParam<T, L, C> {
     type TypeParam = T;
-    type LifetimeDef = L;
+    type LifetimeParam = L;
     type ConstParam = C;
 
     fn as_type_param(&self) -> Option<&T> {
@@ -114,7 +114,7 @@ impl<T, L, C> GenericParamExt for GenericParam<T, L, C> {
         }
     }
 
-    fn as_lifetime_def(&self) -> Option<&L> {
+    fn as_lifetime_param(&self) -> Option<&L> {
         if let GenericParam::Lifetime(ref val) = *self {
             Some(val)
         } else {

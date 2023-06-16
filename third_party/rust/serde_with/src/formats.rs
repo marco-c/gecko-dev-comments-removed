@@ -1,6 +1,7 @@
 
 
-use alloc::string::String;
+#[allow(unused_imports)]
+use crate::prelude::*;
 
 
 
@@ -21,8 +22,7 @@ macro_rules! create_format {
     ($(#[$attr:meta] $t:ident)*) => {
         $(
             #[$attr]
-            #[derive(Copy, Clone, Debug, Default)]
-            pub struct $t;
+                        pub struct $t;
             impl_format!(#[$attr] $t);
         )*
     };
@@ -44,6 +44,10 @@ impl_format!(
     i64
     /// Serialize into a u64
     u64
+    /// Serialize into an i128
+    i128
+    /// Serialize into a u128
+    u128
 
     /// Serialize into a f32
     f32
@@ -52,16 +56,12 @@ impl_format!(
 
     /// Serialize into a bool
     bool
-
+);
+#[cfg(feature = "alloc")]
+impl_format!(
     /// Serialize into a String
     String
 );
-serde::serde_if_integer128!(impl_format!(
-    /// Serialize into an i128
-    i128
-    /// Serialize into a u128
-    u128
-););
 
 create_format!(
     /// Use uppercase characters
@@ -86,11 +86,55 @@ create_format!(
 pub trait Strictness {}
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct Strict;
 impl Strictness for Strict {}
 
 
-#[derive(Copy, Clone, Debug, Default)]
 pub struct Flexible;
 impl Strictness for Flexible {}
+
+
+pub trait Separator {
+    
+    fn separator() -> &'static str;
+}
+
+
+pub struct SpaceSeparator;
+
+impl Separator for SpaceSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        " "
+    }
+}
+
+
+pub struct CommaSeparator;
+
+impl Separator for CommaSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        ","
+    }
+}
+
+
+pub struct SemicolonSeparator;
+
+impl Separator for SemicolonSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        ";"
+    }
+}
+
+
+pub struct ColonSeparator;
+
+impl Separator for ColonSeparator {
+    #[inline]
+    fn separator() -> &'static str {
+        ":"
+    }
+}

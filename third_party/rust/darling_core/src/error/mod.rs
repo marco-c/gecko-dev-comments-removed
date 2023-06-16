@@ -13,8 +13,10 @@ use std::iter::{self, Iterator};
 use std::string::ToString;
 use std::vec;
 use syn::spanned::Spanned;
-use syn::{Lit, LitStr, Path};
+use syn::{Expr, Lit, LitStr, Path};
 
+#[cfg(feature = "diagnostics")]
+mod child;
 mod kind;
 
 use crate::util::path_to_string;
@@ -62,6 +64,9 @@ pub struct Error {
     locations: Vec<String>,
     
     span: Option<Span>,
+    
+    #[cfg(feature = "diagnostics")]
+    children: Vec<child::ChildDiagnostic>,
 }
 
 
@@ -71,6 +76,8 @@ impl Error {
             kind,
             locations: Vec::new(),
             span: None,
+            #[cfg(feature = "diagnostics")]
+            children: vec![],
         }
     }
 
@@ -142,6 +149,53 @@ impl Error {
         Error::new(ErrorKind::UnexpectedType(ty.into()))
     }
 
+    pub fn unexpected_expr_type(expr: &Expr) -> Self {
+        Error::unexpected_type(match *expr {
+            Expr::Array(_) => "array",
+            Expr::Assign(_) => "assign",
+            Expr::Async(_) => "async",
+            Expr::Await(_) => "await",
+            Expr::Binary(_) => "binary",
+            Expr::Block(_) => "block",
+            Expr::Break(_) => "break",
+            Expr::Call(_) => "call",
+            Expr::Cast(_) => "cast",
+            Expr::Closure(_) => "closure",
+            Expr::Const(_) => "const",
+            Expr::Continue(_) => "continue",
+            Expr::Field(_) => "field",
+            Expr::ForLoop(_) => "for_loop",
+            Expr::Group(_) => "group",
+            Expr::If(_) => "if",
+            Expr::Index(_) => "index",
+            Expr::Infer(_) => "infer",
+            Expr::Let(_) => "let",
+            Expr::Lit(_) => "lit",
+            Expr::Loop(_) => "loop",
+            Expr::Macro(_) => "macro",
+            Expr::Match(_) => "match",
+            Expr::MethodCall(_) => "method_call",
+            Expr::Paren(_) => "paren",
+            Expr::Path(_) => "path",
+            Expr::Range(_) => "range",
+            Expr::Reference(_) => "reference",
+            Expr::Repeat(_) => "repeat",
+            Expr::Return(_) => "return",
+            Expr::Struct(_) => "struct",
+            Expr::Try(_) => "try",
+            Expr::TryBlock(_) => "try_block",
+            Expr::Tuple(_) => "tuple",
+            Expr::Unary(_) => "unary",
+            Expr::Unsafe(_) => "unsafe",
+            Expr::Verbatim(_) => "verbatim",
+            Expr::While(_) => "while",
+            Expr::Yield(_) => "yield",
+            
+            _ => "unknown",
+        })
+        .with_span(expr)
+    }
+
     
     
     
@@ -181,6 +235,8 @@ impl Error {
             Lit::Float(_) => "float",
             Lit::Bool(_) => "bool",
             Lit::Verbatim(_) => "verbatim",
+            
+            _ => "unknown",
         })
         .with_span(lit)
     }
@@ -276,18 +332,36 @@ impl Error {
     }
 
     
+    
+    
+    
+    
     pub fn flatten(self) -> Self {
         Error::multiple(self.into_vec())
     }
 
     fn into_vec(self) -> Vec<Self> {
         if let ErrorKind::Multiple(errors) = self.kind {
-            let mut flat = Vec::new();
-            for error in errors {
-                flat.extend(error.prepend_at(self.locations.clone()).into_vec());
-            }
+            let locations = self.locations;
 
-            flat
+            #[cfg(feature = "diagnostics")]
+            let children = self.children;
+
+            errors
+                .into_iter()
+                .flat_map(|error| {
+                    
+                    #[allow(unused_mut)]
+                    let mut error = error.prepend_at(locations.clone());
+
+                    
+                    
+                    #[cfg(feature = "diagnostics")]
+                    error.children.extend(children.iter().cloned());
+
+                    error.into_vec()
+                })
+                .collect()
         } else {
             vec![self]
         }
@@ -371,13 +445,17 @@ impl Error {
         
         
         
-        match self.kind {
+        let diagnostic = match self.kind {
             ErrorKind::UnknownField(euf) => euf.into_diagnostic(self.span),
             _ => match self.span {
                 Some(span) => span.unwrap().error(self.kind.to_string()),
                 None => Diagnostic::new(Level::Error, self.to_string()),
             },
-        }
+        };
+
+        self.children
+            .into_iter()
+            .fold(diagnostic, |out, child| child.append_to(out))
     }
 
     
@@ -417,6 +495,76 @@ impl Error {
             })
         }
     }
+}
+
+#[cfg(feature = "diagnostics")]
+macro_rules! add_child {
+    ($unspanned:ident, $spanned:ident, $level:ident) => {
+        #[doc = concat!("Add a child ", stringify!($unspanned), " message to this error.")]
+        #[doc = "# Example"]
+        #[doc = "```rust"]
+        #[doc = "# use darling_core::Error;"]
+        #[doc = concat!(r#"Error::custom("Example")."#, stringify!($unspanned), r#"("message content");"#)]
+        #[doc = "```"]
+        pub fn $unspanned<T: fmt::Display>(mut self, message: T) -> Self {
+            self.children.push(child::ChildDiagnostic::new(
+                child::Level::$level,
+                None,
+                message.to_string(),
+            ));
+            self
+        }
+
+        #[doc = concat!("Add a child ", stringify!($unspanned), " message to this error with its own span.")]
+        #[doc = "# Example"]
+        #[doc = "```rust"]
+        #[doc = "# use darling_core::Error;"]
+        #[doc = "# let item_to_span = proc_macro2::Span::call_site();"]
+        #[doc = concat!(r#"Error::custom("Example")."#, stringify!($spanned), r#"(&item_to_span, "message content");"#)]
+        #[doc = "```"]
+        pub fn $spanned<S: Spanned, T: fmt::Display>(mut self, span: &S, message: T) -> Self {
+            self.children.push(child::ChildDiagnostic::new(
+                child::Level::$level,
+                Some(span.span()),
+                message.to_string(),
+            ));
+            self
+        }
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "diagnostics")]
+impl Error {
+    add_child!(error, span_error, Error);
+    add_child!(warning, span_warning, Warning);
+    add_child!(note, span_note, Note);
+    add_child!(help, span_help, Help);
 }
 
 impl StdError for Error {

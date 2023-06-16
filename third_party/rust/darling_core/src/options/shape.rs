@@ -3,8 +3,9 @@
 
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{parse_quote, Meta, NestedMeta};
+use syn::{parse_quote, Meta};
 
+use crate::ast::NestedMeta;
 use crate::{Error, FromMeta, Result};
 
 
@@ -225,7 +226,7 @@ mod tests {
     
     fn pm(tokens: TokenStream) -> ::std::result::Result<syn::Meta, String> {
         let attribute: syn::Attribute = parse_quote!(#[#tokens]);
-        attribute.parse_meta().map_err(|_| "Unable to parse".into())
+        Ok(attribute.meta)
     }
 
     fn fm<T: FromMeta>(tokens: TokenStream) -> T {

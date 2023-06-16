@@ -149,6 +149,14 @@
 
 
 
+#![allow(
+    clippy::default_trait_access,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::needless_pass_by_value
+)]
+
 #[cfg(all(
     not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
     feature = "proc-macro"
@@ -182,6 +190,7 @@ use proc_macro2::{Span, TokenStream, TokenTree};
 pub mod macros;
 
 
+#[allow(clippy::manual_non_exhaustive)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum AddBounds {
     
@@ -238,7 +247,7 @@ fn fetch_generics<'a>(set: &[bool], generics: &'a Generics) -> Vec<&'a Ident> {
     for (&seen, param) in set.iter().zip(generics.params.iter()) {
         if seen {
             if let GenericParam::Type(tparam) = param {
-                tys.push(&tparam.ident)
+                tys.push(&tparam.ident);
             }
         }
     }
@@ -250,7 +259,7 @@ fn sanitize_ident(s: &str) -> Ident {
     let mut res = String::with_capacity(s.len());
     for mut c in s.chars() {
         if !UnicodeXID::is_xid_continue(c) {
-            c = '_'
+            c = '_';
         }
         
         if res.ends_with('_') && c == '_' {
@@ -473,7 +482,7 @@ fn get_ty_params(field: &Field, generics: &Generics) -> Vec<bool> {
             for r in &mut self.result {
                 *r = true;
             }
-            visit::visit_type_macro(self, x)
+            visit::visit_type_macro(self, x);
         }
     }
 
@@ -657,7 +666,7 @@ impl<'a> VariantInfo<'a> {
                         func(field, i).to_tokens(t);
                         quote!(,).to_tokens(t);
                     }
-                })
+                });
             }
             Fields::Named(FieldsNamed { named, .. }) => {
                 token::Brace::default().surround(&mut t, |t| {
@@ -667,7 +676,7 @@ impl<'a> VariantInfo<'a> {
                         func(field, i).to_tokens(t);
                         quote!(,).to_tokens(t);
                     }
-                })
+                });
             }
         }
         t
@@ -808,6 +817,71 @@ impl<'a> VariantInfo<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn drain_filter<F>(&mut self, mut f: F) -> Self
+    where
+        F: FnMut(&BindingInfo<'_>) -> bool,
+    {
+        let mut other = VariantInfo {
+            prefix: self.prefix,
+            bindings: vec![],
+            ast: self.ast,
+            generics: self.generics,
+            original_length: self.original_length,
+        };
+
+        let (other_bindings, self_bindings) = self.bindings.drain(..).partition(&mut f);
+        other.bindings = other_bindings;
+        self.bindings = self_bindings;
+
+        other
+    }
+
+    
+    
+    
+    
+    
     pub fn remove_binding(&mut self, idx: usize) -> &mut Self {
         self.bindings.remove(idx);
         self
@@ -848,7 +922,7 @@ impl<'a> VariantInfo<'a> {
         F: FnMut(&BindingInfo<'_>) -> BindStyle,
     {
         for binding in &mut self.bindings {
-            binding.style = f(&binding);
+            binding.style = f(binding);
         }
         self
     }
@@ -981,21 +1055,12 @@ impl<'a> Structure<'a> {
                 })
                 .collect::<Vec<_>>(),
             Data::Struct(data) => {
-                
-                
-                
-                
-                
-                struct UnsafeMakeSync(Option<(token::Eq, Expr)>);
-                unsafe impl Sync for UnsafeMakeSync {}
-                static NONE_DISCRIMINANT: UnsafeMakeSync = UnsafeMakeSync(None);
-
                 vec![VariantInfo::new(
                     VariantAst {
                         attrs: &ast.attrs,
                         ident: &ast.ident,
                         fields: &data.fields,
-                        discriminant: &NONE_DISCRIMINANT.0,
+                        discriminant: &None,
                     },
                     None,
                     &ast.generics,
@@ -1273,6 +1338,75 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn drain_filter<F>(&mut self, mut f: F) -> Self
+    where
+        F: FnMut(&BindingInfo<'_>) -> bool,
+    {
+        Self {
+            variants: self
+                .variants
+                .iter_mut()
+                .map(|variant| variant.drain_filter(&mut f))
+                .collect(),
+            omitted_variants: self.omitted_variants,
+            underscore_const: self.underscore_const,
+            ast: self.ast,
+            extra_impl: self.extra_impl.clone(),
+            extra_predicates: self.extra_predicates.clone(),
+            add_bounds: self.add_bounds,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn add_where_predicate(&mut self, pred: WherePredicate) -> &mut Self {
         self.extra_predicates.push(pred);
         self
@@ -1366,6 +1500,69 @@ impl<'a> Structure<'a> {
             self.omitted_variants = true;
         }
         self
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn drain_filter_variants<F>(&mut self, mut f: F) -> Self
+    where
+        F: FnMut(&VariantInfo<'_>) -> bool,
+    {
+        let mut other = Self {
+            variants: vec![],
+            omitted_variants: self.omitted_variants,
+            underscore_const: self.underscore_const,
+            ast: self.ast,
+            extra_impl: self.extra_impl.clone(),
+            extra_predicates: self.extra_predicates.clone(),
+            add_bounds: self.add_bounds,
+        };
+
+        let (other_variants, self_variants) = self.variants.drain(..).partition(&mut f);
+        other.variants = other_variants;
+        self.variants = self_variants;
+
+        other
     }
 
     

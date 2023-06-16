@@ -1,8 +1,8 @@
+use core::iter::Iterator;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::ToTokens;
-use std::iter::Iterator;
 use syn::{parse_quote, Error, Generics, Path, TypeGenerics};
 
 
@@ -25,7 +25,7 @@ pub(crate) trait IteratorExt {
 impl<I> IteratorExt for I where I: Iterator<Item = Result<(), Error>> + Sized {}
 
 
-#[derive(FromDeriveInput, Debug)]
+#[derive(FromDeriveInput)]
 #[darling(attributes(serde_with))]
 pub(crate) struct DeriveOptions {
     
