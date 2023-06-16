@@ -467,6 +467,17 @@ class ContentCacheInParent final : public ContentCache {
            !mHandlingCompositions.LastElement().mSentCommitEvent;
   }
 
+  
+  
+  [[nodiscard]] bool HasPendingCommit() const {
+    for (const HandlingCompositionData& data : mHandlingCompositions) {
+      if (data.mSentCommitEvent) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   IMENotification mPendingSelectionChange;
   IMENotification mPendingTextChange;
   IMENotification mPendingLayoutChange;
@@ -546,9 +557,6 @@ class ContentCacheInParent final : public ContentCache {
   
   
   uint32_t mPendingCommitLength;
-  
-  
-  uint8_t mPendingCommitCount;
   
   
   
