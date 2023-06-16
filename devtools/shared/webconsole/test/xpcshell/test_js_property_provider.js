@@ -72,6 +72,19 @@ function run_test() {
     };
   `;
 
+  const testProxies = `
+    var testSelfPrototypeProxy = new Proxy({
+      hello: 1
+    }, {
+      getPrototypeOf: () => testProxy
+    });
+    var testArrayPrototypeProxy = new Proxy({
+      world: 2
+    }, {
+      getPrototypeOf: () => Array.prototype
+    })
+  `;
+
   const sandbox = Cu.Sandbox("http://example.com");
   const dbg = new Debugger();
   const dbgObject = dbg.addDebuggee(sandbox);
@@ -91,6 +104,7 @@ function run_test() {
   Cu.evalInSandbox(testLet, sandbox);
   Cu.evalInSandbox(testGenerators, sandbox);
   Cu.evalInSandbox(testGetters, sandbox);
+  Cu.evalInSandbox(testProxies, sandbox);
 
   info("Running tests with dbgObject");
   runChecks(dbgObject, null, sandbox);
@@ -678,6 +692,19 @@ function runChecks(dbgObject, environment, sandbox) {
   
   results = propertyProvider(`debugger.`);
   Assert.ok(results === null, "Does not complete a debugger keyword");
+
+  
+  
+  test_has_no_results(propertyProvider(`testArrayPrototypeProxy.filte`));
+  results = propertyProvider(`testArrayPrototypeProxy.`);
+  
+  test_has_result(results, `world`);
+  
+  test_has_result(results, `hasOwnProperty`);
+
+  results = propertyProvider(`testSelfPrototypeProxy.`);
+  test_has_result(results, `hello`);
+  test_has_result(results, `hasOwnProperty`);
 }
 
 
