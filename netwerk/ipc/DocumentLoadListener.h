@@ -110,7 +110,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
         mStreamFilterEndpoints;
     uint32_t mRedirectFlags;
     uint32_t mLoadFlags;
-    nsTArray<EarlyHintConnectArgs> mEarlyHints;
     uint32_t mEarlyHintLinkType;
     RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise::Private>
         mPromise;
@@ -279,6 +278,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   base::ProcessId OtherPid() const;
 
   [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter();
+
+  
+  
+  void CancelEarlyHintPreloads();
+
+  
+  
+  void RegisterEarlyHintLinksAndGetConnectArgs(
+      dom::ContentParentId aCpId, nsTArray<EarlyHintConnectArgs>& aOutLinks);
 
   
   

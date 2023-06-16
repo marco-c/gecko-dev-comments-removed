@@ -8,6 +8,7 @@
 #define mozilla_net_EarlyHintRegistrar_h__
 
 #include "mozilla/RefCounted.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "nsRefPtrHashtable.h"
 #include "mozilla/AlreadyAddRefed.h"
 
@@ -50,7 +51,8 @@ class EarlyHintRegistrar final : public RefCounted<EarlyHintRegistrar> {
 
 
 
-  bool LinkParentChannel(uint64_t aEarlyHintPreloaderId,
+  bool LinkParentChannel(dom::ContentParentId aCpId,
+                         uint64_t aEarlyHintPreloaderId,
                          nsIParentChannel* aParent);
 
   
@@ -58,7 +60,7 @@ class EarlyHintRegistrar final : public RefCounted<EarlyHintRegistrar> {
 
 
 
-  void DeleteEntry(uint64_t aEarlyHintPreloaderId);
+  void DeleteEntry(dom::ContentParentId aCpId, uint64_t aEarlyHintPreloaderId);
 
   
 

@@ -5,6 +5,7 @@
 #ifndef mozilla_net_EarlyHintPreloader_h
 #define mozilla_net_EarlyHintPreloader_h
 
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PreloadHashKey.h"
 #include "NeckoCommon.h"
@@ -45,7 +46,7 @@ class OngoingEarlyHints final {
 
   
   void RegisterLinksAndGetConnectArgs(
-      nsTArray<EarlyHintConnectArgs>& aOutLinks);
+      dom::ContentParentId aCpId, nsTArray<EarlyHintConnectArgs>& aOutLinks);
 
  private:
   ~OngoingEarlyHints() = default;
@@ -91,7 +92,12 @@ class EarlyHintPreloader final : public nsIStreamListener,
 
   
   
-  bool Register(EarlyHintConnectArgs& aOut);
+  bool Register(dom::ContentParentId aCpId, EarlyHintConnectArgs& aOut);
+
+  
+  
+  
+  bool IsFromContentParent(dom::ContentParentId aCpId) const;
 
   
   
@@ -133,6 +139,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIChannel> mRedirectChannel;
 
+  dom::ContentParentId mCpId;
   EarlyHintConnectArgs mConnectArgs;
 
   
