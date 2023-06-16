@@ -49,6 +49,8 @@ class EncodedVideoFrameProducer {
 
   EncodedVideoFrameProducer& SetRtpTimestamp(uint32_t value);
 
+  EncodedVideoFrameProducer& SetCaptureTimeIdentifier(Timestamp value);
+
   
   
   
@@ -58,6 +60,7 @@ class EncodedVideoFrameProducer {
   VideoEncoder& encoder_;
 
   uint32_t rtp_timestamp_ = 1000;
+  Timestamp capture_time_identifier_ = Timestamp::Micros(1000);
   int num_input_frames_ = 1;
   int framerate_fps_ = 30;
   RenderResolution resolution_ = {320, 180};
@@ -96,5 +99,10 @@ inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetRtpTimestamp(
   return *this;
 }
 
+inline EncodedVideoFrameProducer&
+EncodedVideoFrameProducer::SetCaptureTimeIdentifier(Timestamp value) {
+  capture_time_identifier_ = value;
+  return *this;
+}
 }  
 #endif  

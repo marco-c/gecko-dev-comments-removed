@@ -1501,6 +1501,11 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
   incoming_frame.set_timestamp(
       kMsToRtpTimestamp * static_cast<uint32_t>(incoming_frame.ntp_time_ms()));
 
+  
+  
+  incoming_frame.set_capture_time_identifier(
+      video_frame.capture_time_identifier());
+
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     
     RTC_LOG(LS_WARNING) << "Same/old NTP timestamp ("
@@ -1962,6 +1967,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     out_frame.set_video_frame_buffer(cropped_buffer);
     out_frame.set_update_rect(update_rect);
     out_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
+    out_frame.set_capture_time_identifier(
+        video_frame.capture_time_identifier());
     
     
     
