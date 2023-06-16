@@ -290,6 +290,36 @@ class HTMLEditUtils final {
   
 
 
+
+  template <typename EditorDOMPointType>
+  static EditorDOMPoint GetInsertionPointInInclusiveAncestor(
+      nsAtom& aTagName, const EditorDOMPointType& aPoint,
+      const Element* aAncestorLimit = nullptr) {
+    if (MOZ_UNLIKELY(!aPoint.IsInContentNode())) {
+      return EditorDOMPoint();
+    }
+    Element* lastChild = nullptr;
+    for (Element* containerElement :
+         aPoint.template ContainerAs<nsIContent>()
+             ->template InclusiveAncestorsOfType<Element>()) {
+      if (!HTMLEditUtils::IsSimplyEditableNode(*containerElement)) {
+        return EditorDOMPoint();
+      }
+      if (HTMLEditUtils::CanNodeContain(*containerElement, aTagName)) {
+        return lastChild ? EditorDOMPoint(lastChild)
+                         : aPoint.template To<EditorDOMPoint>();
+      }
+      if (containerElement == aAncestorLimit) {
+        return EditorDOMPoint();
+      }
+      lastChild = containerElement;
+    }
+    return EditorDOMPoint();
+  }
+
+  
+
+
   static bool IsContainerNode(const nsIContent& aContent) {
     nsHTMLTag tagEnum;
     

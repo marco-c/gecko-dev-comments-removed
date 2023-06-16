@@ -5350,6 +5350,7 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
     }
   }
 
+  
   Result<EditorDOMPoint, nsresult> splitAtBRElementsResult =
       MaybeSplitElementsAtEveryBRElement(arrayOfContents,
                                          EditSubAction::eIndent);
@@ -5375,6 +5376,17 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
       return NS_ERROR_FAILURE;
     }
 
+    
+    if (NS_WARN_IF(!HTMLEditUtils::GetInsertionPointInInclusiveAncestor(
+                        *nsGkAtoms::blockquote, pointToInsertBlockquoteElement,
+                        &aEditingHost)
+                        .IsSet())) {
+      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    }
+
+    
+    
+    
     
     Result<CreateElementResult, nsresult> createNewBlockquoteElementResult =
         InsertElementWithSplittingAncestorsWithTransaction(
@@ -5455,6 +5467,11 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
     
     if (!EditorUtils::IsEditableContent(content, EditorType::HTML) ||
         !HTMLEditUtils::IsRemovableNode(content)) {
+      continue;
+    }
+
+    
+    if (MOZ_UNLIKELY(!content->IsInclusiveDescendantOf(&aEditingHost))) {
       continue;
     }
 
@@ -9257,37 +9274,22 @@ HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
 
   
   
-  if (aStartOfDeepestRightNode.GetContainer() != &aEditingHost &&
-      !EditorUtils::IsDescendantOf(*aStartOfDeepestRightNode.GetContainer(),
-                                   aEditingHost)) {
-    NS_WARNING("aStartOfDeepestRightNode was not in editing host");
+  if (NS_WARN_IF(
+          !aStartOfDeepestRightNode.GetContainer()->IsInclusiveDescendantOf(
+              &aEditingHost))) {
     return Err(NS_ERROR_INVALID_ARG);
   }
 
   
-  EditorDOMPoint pointToInsert(aStartOfDeepestRightNode);
-  for (; pointToInsert.IsSet();
-       pointToInsert.Set(pointToInsert.GetContainer())) {
-    
-    
-    if (pointToInsert.GetChild() == &aEditingHost) {
-      NS_WARNING(
-          "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() reached "
-          "editing host");
-      return Err(NS_ERROR_FAILURE);
-    }
-
-    if (HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(), aTag)) {
-      
-      break;
-    }
+  const EditorDOMPoint pointToInsert =
+      HTMLEditUtils::GetInsertionPointInInclusiveAncestor(
+          aTag, aStartOfDeepestRightNode, &aEditingHost);
+  if (MOZ_UNLIKELY(!pointToInsert.IsSet())) {
+    NS_WARNING(
+        "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() reached "
+        "editing host");
+    return Err(NS_ERROR_FAILURE);
   }
-
-  
-  if (NS_WARN_IF(!pointToInsert.IsSet())) {
-    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-  }
-
   
   
   
