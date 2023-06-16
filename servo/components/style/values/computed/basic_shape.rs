@@ -8,35 +8,30 @@
 
 
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage};
+use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage, Position};
 use crate::values::generics::basic_shape as generic;
 
 
 pub use crate::values::generics::basic_shape::FillRule;
 
 
-pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;
+pub type ClipPath = generic::GenericClipPath<BasicShape, ComputedUrl>;
 
 
-pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
+pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 
-pub type BasicShape = generic::GenericBasicShape<
-    LengthPercentage,
-    LengthPercentage,
-    LengthPercentage,
-    NonNegativeLengthPercentage,
->;
+pub type BasicShape =
+    generic::GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type InsetRect = generic::InsetRect<LengthPercentage, NonNegativeLengthPercentage>;
 
 
-pub type Circle = generic::Circle<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
+pub type Circle = generic::Circle<Position, NonNegativeLengthPercentage>;
 
 
-pub type Ellipse =
-    generic::Ellipse<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
+pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
 
 
 pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
