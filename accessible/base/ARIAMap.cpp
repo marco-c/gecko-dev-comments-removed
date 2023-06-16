@@ -39,6 +39,8 @@ static const uint32_t kGenericAccType = 0;
 
 
 
+
+
 static const nsRoleMapEntry sWAIRoleMaps[] = {
     
   { 
@@ -739,6 +741,16 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
   { 
     nsGkAtoms::heading,
     roles::HEADING,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType,
+    kNoReqStates
+  },
+  { 
+    nsGkAtoms::image,
+    roles::GRAPHIC,
     kUseMapRole,
     eNoValue,
     eNoAction,
