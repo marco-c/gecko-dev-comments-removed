@@ -27,8 +27,6 @@ export function createLocation({
   return {
     source,
     sourceActor,
-    
-    sourceId: source.id,
     sourceActorId: sourceActor?.id,
 
     line,
