@@ -4,4 +4,3 @@
 
 
 from .android import WebExtensionAndroid
-from .desktop import WebExtensionDesktopChrome, WebExtensionFirefox
