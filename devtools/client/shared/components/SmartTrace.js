@@ -304,6 +304,8 @@ class SmartTrace extends Component {
       disableFrameTruncate: true,
       disableContextMenu: true,
       frameworkGroupingOn: true,
+      
+      shouldDisplayOriginalLocation: true,
       displayFullUrl: !this.state || !this.state.originalLocations,
       panel: "webconsole",
     });
