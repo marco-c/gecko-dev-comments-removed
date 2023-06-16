@@ -486,8 +486,24 @@ nsAccessibilityService::Observe(nsISupports* aSubject, const char* aTopic,
 void nsAccessibilityService::NotifyOfAnchorJumpTo(nsIContent* aTargetNode) {
   Document* documentNode = aTargetNode->GetUncomposedDoc();
   if (documentNode) {
+    
+    
     DocAccessible* document = GetDocAccessible(documentNode);
-    if (document) document->SetAnchorJump(aTargetNode);
+    const Accessible* focusedAcc = FocusedAccessible();
+    if (focusedAcc && focusedAcc == document) {
+      LocalAccessible* targetAcc = document->GetAccessible(aTargetNode);
+      if (targetAcc) {
+        nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START,
+                                targetAcc);
+        document->SetAnchorJump(nullptr);
+      } else {
+        
+        
+        document->SetAnchorJump(aTargetNode);
+      }
+    } else if (document) {
+      document->SetAnchorJump(aTargetNode);
+    }
   }
 }
 
