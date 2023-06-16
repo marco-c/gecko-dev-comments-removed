@@ -88,12 +88,7 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
 
   
   
-  nsCOMPtr<nsISupports> genericData(do_QueryInterface(data, &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(genericData, NS_ERROR_FAILURE);
-
-  
-  rv = trans->SetTransferData(kTextMime, genericData);
+  rv = trans->SetTransferData(kTextMime, ToSupports(data));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
