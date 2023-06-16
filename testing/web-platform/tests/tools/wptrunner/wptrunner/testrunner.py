@@ -700,6 +700,7 @@ class TestRunnerManager(threading.Thread):
 
         self.test_count += 1
         is_unexpected = expected != status and status not in known_intermittent
+        is_pass_or_expected = status in ["OK", "PASS"] or (not is_unexpected)
 
         if is_unexpected or subtest_unexpected:
             self.unexpected_tests.add(test.id)
@@ -709,7 +710,7 @@ class TestRunnerManager(threading.Thread):
         
         
         is_unexpected_pass = ((is_unexpected or subtest_unexpected) and
-                              status in ["OK", "PASS"] and subtest_all_pass_or_expected)
+                              is_pass_or_expected and subtest_all_pass_or_expected)
         if is_unexpected_pass:
             self.unexpected_pass_tests.add(test.id)
 
