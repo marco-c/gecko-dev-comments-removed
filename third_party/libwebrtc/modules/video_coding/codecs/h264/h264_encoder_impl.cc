@@ -56,18 +56,29 @@ enum H264EncoderImplEvent {
   kH264EncoderEventMax = 16,
 };
 
-int NumberOfThreads(int width, int height, int number_of_cores) {
+int NumberOfThreads(absl::optional<int> encoder_thread_limit,
+                    int width,
+                    int height,
+                    int number_of_cores) {
   
   
   
   
   
   
-  
-  
-  
-  
-  
+  if (encoder_thread_limit.has_value()) {
+    int limit = encoder_thread_limit.value();
+    RTC_DCHECK_GE(limit, 1);
+    if (width * height >= 1920 * 1080 && number_of_cores > 8) {
+      return std::min(limit, 8);  
+    } else if (width * height > 1280 * 960 && number_of_cores >= 6) {
+      return std::min(limit, 3);  
+    } else if (width * height > 640 * 480 && number_of_cores >= 3) {
+      return std::min(limit, 2);  
+    } else {
+      return 1;  
+    }
+  }
   
   
   return 1;
@@ -223,8 +234,9 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   configurations_.resize(number_of_streams);
   tl0sync_limit_.resize(number_of_streams);
 
-  number_of_cores_ = settings.number_of_cores;
   max_payload_size_ = settings.max_payload_size;
+  number_of_cores_ = settings.number_of_cores;
+  encoder_thread_limit_ = settings.encoder_thread_limit;
   codec_ = *inst;
 
   
@@ -626,8 +638,9 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams(size_t i) const {
   
   
   
-  encoder_params.iMultipleThreadIdc = NumberOfThreads(
-      encoder_params.iPicWidth, encoder_params.iPicHeight, number_of_cores_);
+  encoder_params.iMultipleThreadIdc =
+      NumberOfThreads(encoder_thread_limit_, encoder_params.iPicWidth,
+                      encoder_params.iPicHeight, number_of_cores_);
   
   encoder_params.sSpatialLayers[0].iVideoWidth = encoder_params.iPicWidth;
   encoder_params.sSpatialLayers[0].iVideoHeight = encoder_params.iPicHeight;
