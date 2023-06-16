@@ -279,28 +279,33 @@ void ExecutableAllocator::poisonCode(JSRuntime* rt,
   }
 #endif
 
-  for (size_t i = 0; i < ranges.length(); i++) {
-    ExecutablePool* pool = ranges[i].pool;
-    if (pool->m_refCount == 1) {
+  {
+    AutoMarkJitCodeWritableForThread writable;
+
+    for (size_t i = 0; i < ranges.length(); i++) {
+      ExecutablePool* pool = ranges[i].pool;
+      if (pool->m_refCount == 1) {
+        
+        
+        continue;
+      }
+
+      MOZ_ASSERT(pool->m_refCount > 1);
+
       
       
-      continue;
+      if (!pool->isMarked()) {
+        reprotectPool(rt, pool, ProtectionSetting::Writable,
+                      MustFlushICache::No);
+        pool->mark();
+      }
+
+      
+      
+      
+      memset(ranges[i].start, JS_SWEPT_CODE_PATTERN, ranges[i].size);
+      MOZ_MAKE_MEM_NOACCESS(ranges[i].start, ranges[i].size);
     }
-
-    MOZ_ASSERT(pool->m_refCount > 1);
-
-    
-    
-    if (!pool->isMarked()) {
-      reprotectPool(rt, pool, ProtectionSetting::Writable, MustFlushICache::No);
-      pool->mark();
-    }
-
-    
-    
-    
-    memset(ranges[i].start, JS_SWEPT_CODE_PATTERN, ranges[i].size);
-    MOZ_MAKE_MEM_NOACCESS(ranges[i].start, ranges[i].size);
   }
 
   

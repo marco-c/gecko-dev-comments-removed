@@ -282,7 +282,12 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
+  
+#ifdef JS_USE_APPLE_FAST_WX
+  SET_DEFAULT(writeProtectCode, false);
+#else
   SET_DEFAULT(writeProtectCode, true);
+#endif
 
   
   SET_DEFAULT(supportsUnalignedAccesses, false);
@@ -415,10 +420,9 @@ void DefaultJitOptions::resetNormalIonWarmUpThreshold() {
 }
 
 void DefaultJitOptions::maybeSetWriteProtectCode(bool val) {
+#ifdef JS_USE_APPLE_FAST_WX
   
-  
-#if defined(XP_MACOSX) && defined(__aarch64__)
-  MOZ_ASSERT(writeProtectCode);
+  MOZ_ASSERT(!writeProtectCode);
 #else
   writeProtectCode = val;
 #endif
