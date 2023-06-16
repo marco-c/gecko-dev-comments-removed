@@ -231,8 +231,7 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   if (!AllowNewWrapper(this, obj)) {
-    obj.set(NewDeadProxyObject(cx, IsCallableFlag(obj->isCallable()),
-                               IsConstructorFlag(obj->isConstructor())));
+    obj.set(NewDeadProxyObject(cx, obj));
     return !!obj;
   }
 
