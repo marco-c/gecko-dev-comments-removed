@@ -280,6 +280,9 @@ pref("browser.shell.setDefaultPDFHandler", true);
 
 
 pref("browser.shell.setDefaultPDFHandler.onlyReplaceBrowsers", true);
+
+
+pref("browser.shell.defaultBrowserAgent.thanksURL", "https://www.mozilla.org/%LOCALE%/firefox/set-as-default/thanks/");
 #endif
 
 
