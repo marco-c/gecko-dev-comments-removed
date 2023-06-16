@@ -449,106 +449,123 @@ add_task(function test_coordinates() {
   );
 });
 
-add_task(function test_isNodeReferenceKnown() {
-  const { browser, nodeCache, childEl, iframeEl, videoEl } = setupTest();
-
-  
-  ok(!element.isNodeReferenceKnown(browser.browsingContext, "foo", nodeCache));
-
-  
-  const videoElRef = nodeCache.getOrCreateNodeReference(videoEl);
-  ok(
-    element.isNodeReferenceKnown(browser.browsingContext, videoElRef, nodeCache)
-  );
-
-  
-  const browser2 = Services.appShell.createWindowlessBrowser(false);
-  ok(
-    !element.isNodeReferenceKnown(
-      browser2.browsingContext,
-      videoElRef,
-      nodeCache
-    )
-  );
-
-  
-  const childElRef = nodeCache.getOrCreateNodeReference(childEl);
-  const childBrowsingContext = iframeEl.contentWindow.browsingContext;
-  ok(element.isNodeReferenceKnown(childBrowsingContext, childElRef, nodeCache));
-
-  const iframeEl2 = browser2.document.createElement("iframe");
-  browser2.document.body.appendChild(iframeEl2);
-  const childBrowsingContext2 = iframeEl2.contentWindow.browsingContext;
-  ok(
-    !element.isNodeReferenceKnown(childBrowsingContext2, childElRef, nodeCache)
-  );
-});
-
-add_task(function test_getKnownElement() {
+add_task(async function test_getKnownElement() {
   const { browser, nodeCache, shadowRoot, videoEl } = setupTest();
+  const seenNodes = new Set();
 
   
   Assert.throws(() => {
-    element.getKnownElement(browser.browsingContext, "foo", nodeCache);
+    element.getKnownElement(
+      browser.browsingContext,
+      "foo",
+      nodeCache,
+      seenNodes
+    );
   }, /NoSuchElementError/);
 
   
-  const shadowRootRef = nodeCache.getOrCreateNodeReference(shadowRoot);
+  const seenNodeIds = new Map();
+  const shadowRootRef = nodeCache.getOrCreateNodeReference(
+    shadowRoot,
+    seenNodeIds
+  );
+  seenNodes.add(shadowRootRef);
+
   Assert.throws(() => {
-    element.getKnownElement(browser.browsingContext, shadowRootRef, nodeCache);
+    element.getKnownElement(
+      browser.browsingContext,
+      shadowRootRef,
+      nodeCache,
+      seenNodes
+    );
   }, /NoSuchElementError/);
 
-  
   let detachedEl = browser.document.createElement("div");
-  const detachedElRef = nodeCache.getOrCreateNodeReference(detachedEl);
+  const detachedElRef = nodeCache.getOrCreateNodeReference(
+    detachedEl,
+    seenNodeIds
+  );
+  seenNodes.add(detachedElRef);
 
   
   Assert.throws(() => {
-    element.getKnownElement(browser.browsingContext, detachedElRef, nodeCache);
+    element.getKnownElement(
+      browser.browsingContext,
+      detachedElRef,
+      nodeCache,
+      seenNodes
+    );
   }, /StaleElementReferenceError/);
 
   
   detachedEl = null;
-  MemoryReporter.minimizeMemoryUsage(() => {
-    Assert.throws(() => {
-      element.getKnownElement(
-        browser.browsingContext,
-        detachedElRef,
-        nodeCache
-      );
-    }, /StaleElementReferenceError/);
-  });
+
+  await new Promise(resolve => MemoryReporter.minimizeMemoryUsage(resolve));
+  Assert.throws(() => {
+    element.getKnownElement(
+      browser.browsingContext,
+      detachedElRef,
+      nodeCache,
+      seenNodes
+    );
+  }, /StaleElementReferenceError/);
 
   
-  const videoElRef = nodeCache.getOrCreateNodeReference(videoEl);
+  const videoElRef = nodeCache.getOrCreateNodeReference(videoEl, seenNodeIds);
+  seenNodes.add(videoElRef);
+
   equal(
-    element.getKnownElement(browser.browsingContext, videoElRef, nodeCache),
+    element.getKnownElement(
+      browser.browsingContext,
+      videoElRef,
+      nodeCache,
+      seenNodes
+    ),
     videoEl
   );
 });
 
-add_task(function test_getKnownShadowRoot() {
+add_task(async function test_getKnownShadowRoot() {
   const { browser, nodeCache, shadowRoot, videoEl } = setupTest();
+  const seenNodeIds = new Map();
+  const seenNodes = new Set();
 
-  const videoElRef = nodeCache.getOrCreateNodeReference(videoEl);
+  const videoElRef = nodeCache.getOrCreateNodeReference(videoEl, seenNodeIds);
+  seenNodes.add(videoElRef);
 
   
   Assert.throws(() => {
-    element.getKnownShadowRoot(browser.browsingContext, "foo", nodeCache);
+    element.getKnownShadowRoot(
+      browser.browsingContext,
+      "foo",
+      nodeCache,
+      seenNodes
+    );
   }, /NoSuchShadowRootError/);
 
   
   Assert.throws(() => {
-    element.getKnownShadowRoot(browser.browsingContext, videoElRef, nodeCache);
+    element.getKnownShadowRoot(
+      browser.browsingContext,
+      videoElRef,
+      nodeCache,
+      seenNodes
+    );
   }, /NoSuchShadowRootError/);
 
   
-  const shadowRootRef = nodeCache.getOrCreateNodeReference(shadowRoot);
+  const shadowRootRef = nodeCache.getOrCreateNodeReference(
+    shadowRoot,
+    seenNodeIds
+  );
+  seenNodes.add(shadowRootRef);
+
   equal(
     element.getKnownShadowRoot(
       browser.browsingContext,
       shadowRootRef,
-      nodeCache
+      nodeCache,
+      seenNodes
     ),
     shadowRoot
   );
@@ -558,30 +575,35 @@ add_task(function test_getKnownShadowRoot() {
   let detachedShadowRoot = el.attachShadow({ mode: "open" });
   detachedShadowRoot.innerHTML = "<input></input>";
 
-  const detachedShadowRootRef =
-    nodeCache.getOrCreateNodeReference(detachedShadowRoot);
+  const detachedShadowRootRef = nodeCache.getOrCreateNodeReference(
+    detachedShadowRoot,
+    seenNodeIds
+  );
+  seenNodes.add(detachedShadowRootRef);
 
   
   Assert.throws(() => {
     element.getKnownShadowRoot(
       browser.browsingContext,
       detachedShadowRootRef,
-      nodeCache
+      nodeCache,
+      seenNodes
     );
   }, /DetachedShadowRootError/);
 
   
   el = null;
   detachedShadowRoot = null;
-  MemoryReporter.minimizeMemoryUsage(() => {
-    Assert.throws(() => {
-      element.getKnownShadowRoot(
-        browser.browsingContext,
-        detachedShadowRootRef,
-        nodeCache
-      );
-    }, /DetachedShadowRootError/);
-  });
+
+  await new Promise(resolve => MemoryReporter.minimizeMemoryUsage(resolve));
+  Assert.throws(() => {
+    element.getKnownShadowRoot(
+      browser.browsingContext,
+      detachedShadowRootRef,
+      nodeCache,
+      seenNodes
+    );
+  }, /DetachedShadowRootError/);
 });
 
 add_task(function test_isDetached() {
