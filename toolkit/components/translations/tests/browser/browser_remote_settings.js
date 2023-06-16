@@ -13,7 +13,7 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 );
 
 
-const firefoxFullVersion = AppConstants.MOZ_APP_VERSION;
+const firefoxFullVersion = AppConstants.MOZ_APP_VERSION_DISPLAY;
 
 
 const firefoxMajorVersion = firefoxFullVersion.match(/\d+/);
@@ -77,8 +77,8 @@ add_task(async function test_filter_current_firefox_version() {
       filter_expression: ``,
     },
     {
-      name: `env.version <= ${firefoxMajorVersion}`,
-      filter_expression: `env.version|versionCompare('${firefoxMajorVersion}') <= 0`,
+      name: `env.version == ${firefoxFullVersion}`,
+      filter_expression: `env.version|versionCompare('${firefoxFullVersion}') == 0`,
     },
     {
       name: `env.version > ${firefoxAlphaZeroVersion}`,
