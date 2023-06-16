@@ -704,11 +704,7 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
   const PopoverAttributeState oldState = GetPopoverAttributeState();
 
   if (newState != oldState) {
-    if (newState == PopoverAttributeState::None) {
-      ClearPopoverData();
-    } else {
-      EnsurePopoverData().SetPopoverAttributeState(newState);
-    }
+    EnsurePopoverData().SetPopoverAttributeState(newState);
 
     HidePopoverInternal( true,
                          true, IgnoreErrors());
@@ -717,6 +713,12 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
     
     if (newState == GetPopoverAttributeState()) {
       if (newState == PopoverAttributeState::None) {
+        
+        
+        
+        
+        OwnerDoc()->RemovePopoverFromTopLayer(*this);
+
         ClearPopoverData();
         RemoveStates(ElementState::POPOVER_OPEN);
       } else {
