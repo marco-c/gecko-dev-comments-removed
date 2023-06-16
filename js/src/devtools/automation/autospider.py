@@ -550,18 +550,27 @@ if "all" in args.skip_tests.split(","):
 
 
 
+
+
+
+
+
+worker_max = multiprocessing.cpu_count()
+jstest_workers = worker_max
+jittest_workers = worker_max
 if platform.system() == "Windows":
-    env["JITTEST_EXTRA_ARGS"] = "-j1 " + env.get("JITTEST_EXTRA_ARGS", "")
-
-
-
-
-
-if platform.system() == "Windows":
-    worker_count = min(multiprocessing.cpu_count(), 16)
-    env["JSTESTS_EXTRA_ARGS"] = "-j{} ".format(worker_count) + env.get(
+    jstest_workers = min(worker_max, 16)
+    env["JSTESTS_EXTRA_ARGS"] = "-j{} ".format(jstest_workers) + env.get(
         "JSTESTS_EXTRA_ARGS", ""
     )
+    jittest_workers = min(worker_max, 8)
+    env["JITTEST_EXTRA_ARGS"] = "-j{} ".format(jittest_workers) + env.get(
+        "JITTEST_EXTRA_ARGS", ""
+    )
+print(
+    f"using {jstest_workers}/{worker_max} workers for jstests, "
+    f"{jittest_workers}/{worker_max} for jittest"
+)
 
 if use_minidump:
     
