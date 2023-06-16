@@ -108,9 +108,6 @@ pref("browser.cache.disk_cache_ssl",        true);
 pref("browser.cache.frecency_half_life_hours", 6);
 
 
-pref("browser.cache.offline.capacity",         512000);
-
-
 pref("browser.download.forbid_open_with", false);
 
 
