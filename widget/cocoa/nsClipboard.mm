@@ -332,24 +332,26 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable, int32_t aWhi
 
   
   
-  if (mCachedClipboard == aWhichClipboard && mChangeCount == [cocoaPasteboard changeCount]) {
-    if (mTransferable) {
-      for (uint32_t i = 0; i < flavors.Length(); i++) {
-        nsCString& flavorStr = flavors[i];
+  if (mCachedClipboard == aWhichClipboard) {
+    const auto& clipboardCache = mCaches[aWhichClipboard];
+    MOZ_ASSERT(clipboardCache);
+    if (mChangeCount == [cocoaPasteboard changeCount]) {
+      if (nsITransferable* cachedTrans = clipboardCache->GetTransferable()) {
+        for (uint32_t i = 0; i < flavors.Length(); i++) {
+          nsCString& flavorStr = flavors[i];
 
-        nsCOMPtr<nsISupports> dataSupports;
-        rv = mTransferable->GetTransferData(flavorStr.get(), getter_AddRefs(dataSupports));
-        if (NS_SUCCEEDED(rv)) {
-          aTransferable->SetTransferData(flavorStr.get(), dataSupports);
-          return NS_OK;  
+          nsCOMPtr<nsISupports> dataSupports;
+          rv = cachedTrans->GetTransferData(flavorStr.get(), getter_AddRefs(dataSupports));
+          if (NS_SUCCEEDED(rv)) {
+            aTransferable->SetTransferData(flavorStr.get(), dataSupports);
+            return NS_OK;  
+          }
         }
       }
+    } else {
+      
+      clipboardCache->Clear();
     }
-  } else {
-    
-    mEmptyingForSetData = true;
-    EmptyClipboard(aWhichClipboard);
-    mEmptyingForSetData = false;
   }
 
   
@@ -382,13 +384,15 @@ nsClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList, int3
   NSPasteboard* cocoaPasteboard = GetPasteboard(aWhichClipboard);
   MOZ_ASSERT(cocoaPasteboard);
   if (mCachedClipboard == aWhichClipboard) {
+    const auto& clipboardCache = mCaches[mCachedClipboard];
+    MOZ_ASSERT(clipboardCache);
     if (mChangeCount != [cocoaPasteboard changeCount]) {
       
-      ClearClipboardCache();
-    } else if (mTransferable) {
+      clipboardCache->Clear();
+    } else if (nsITransferable* cachedTrans = clipboardCache->GetTransferable()) {
       
       nsTArray<nsCString> flavors;
-      nsresult rv = mTransferable->FlavorsTransferableCanImport(flavors);
+      nsresult rv = cachedTrans->FlavorsTransferableCanImport(flavors);
       if (NS_SUCCEEDED(rv)) {
         if (CLIPBOARD_LOG_ENABLED()) {
           CLIPBOARD_LOG("    Cached transferable types (nums %zu)\n", flavors.Length());
@@ -775,7 +779,10 @@ nsClipboard::EmptyClipboard(int32_t aWhichClipboard) {
   if (!mEmptyingForSetData) {
     if (NSPasteboard* cocoaPasteboard = GetPasteboard(aWhichClipboard)) {
       [cocoaPasteboard clearContents];
-      mChangeCount = [cocoaPasteboard changeCount];
+      if (mCachedClipboard == aWhichClipboard) {
+        mCachedClipboard = -1;
+        mChangeCount = 0;
+      }
     }
   }
 

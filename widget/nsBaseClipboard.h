@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/PContent.h"
 #include "mozilla/Logging.h"
+#include "mozilla/UniquePtr.h"
 #include "nsIClipboard.h"
 #include "nsITransferable.h"
 #include "nsCOMPtr.h"
@@ -128,11 +129,35 @@ class nsBaseClipboard : public ClipboardSetDataHelper {
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) = 0;
 
-  void ClearClipboardCache();
+  class ClipboardCache final {
+   public:
+    ~ClipboardCache() {
+      
+      Clear();
+    }
 
+    
+
+
+
+    void Clear();
+    void Update(nsITransferable* aTransferable,
+                nsIClipboardOwner* aClipboardOwner) {
+      
+      Clear();
+      mTransferable = aTransferable;
+      mClipboardOwner = aClipboardOwner;
+    }
+    nsITransferable* GetTransferable() const { return mTransferable; }
+    nsIClipboardOwner* GetClipboardOwner() const { return mClipboardOwner; }
+
+   private:
+    nsCOMPtr<nsITransferable> mTransferable;
+    nsCOMPtr<nsIClipboardOwner> mClipboardOwner;
+  };
+
+  mozilla::UniquePtr<ClipboardCache> mCaches[nsIClipboard::kClipboardTypeCount];
   bool mEmptyingForSetData = false;
-  nsCOMPtr<nsIClipboardOwner> mClipboardOwner;
-  nsCOMPtr<nsITransferable> mTransferable;
 
  private:
   const mozilla::dom::ClipboardCapabilities mClipboardCaps;
