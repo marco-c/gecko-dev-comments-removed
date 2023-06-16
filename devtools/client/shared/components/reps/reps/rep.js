@@ -137,16 +137,11 @@ define(function (require, exports, module) {
   
   
   
-  
   if (typeof Services == "object" && Services?.prefs) {
-    const customFormattersExperimentallyEnabled = Services.prefs.getBoolPref(
-      "devtools.custom-formatters",
+    const useCustomFormatters = Services.prefs.getBoolPref(
+      "devtools.custom-formatters.enabled",
       false
     );
-
-    const useCustomFormatters =
-      customFormattersExperimentallyEnabled &&
-      Services.prefs.getBoolPref("devtools.custom-formatters.enabled", false);
 
     if (useCustomFormatters) {
       const CustomFormatter = require("devtools/client/shared/components/reps/reps/custom-formatter");
