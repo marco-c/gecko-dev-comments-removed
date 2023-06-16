@@ -372,19 +372,15 @@ void LogMessage::OutputToDebug(const LogLineRef& log_line) {
   
   
   
-  CFStringRef key = CFStringCreateWithCString(
-      kCFAllocatorDefault, "logToStdErr", kCFStringEncodingUTF8);
   CFStringRef domain = CFBundleGetIdentifier(CFBundleGetMainBundle());
-  if (key != nullptr && domain != nullptr) {
+  if (domain != nullptr) {
     Boolean exists_and_is_valid;
     Boolean should_log =
-        CFPreferencesGetAppBooleanValue(key, domain, &exists_and_is_valid);
+        CFPreferencesGetAppBooleanValue(CFSTR("logToStdErr"), domain,
+                                        &exists_and_is_valid);
     
     
     log_to_stderr = exists_and_is_valid && should_log;
-  }
-  if (key != nullptr) {
-    CFRelease(key);
   }
 #endif  
 
