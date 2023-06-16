@@ -1064,12 +1064,17 @@ var TranslationsPanel = new (class {
     this.#getTranslationsActor().restorePage(docLangTag);
   }
 
+  handleEventId = 0;
+
   
 
 
 
 
   handleEvent = async event => {
+    
+    const handleEventId = ++this.handleEventId;
+
     switch (event.type) {
       case "TranslationsParent:LanguageState":
         const {
@@ -1118,6 +1123,10 @@ var TranslationsPanel = new (class {
           
           (hasSupportedLanguage && !(await shouldNeverTranslate()))
         ) {
+          if (handleEventId !== this.handleEventId) {
+            
+            return;
+          }
           button.hidden = false;
           if (requestedTranslationPair) {
             
@@ -1140,6 +1149,10 @@ var TranslationsPanel = new (class {
             buttonCircleArrows.hidden = true;
           }
         } else {
+          if (handleEventId !== this.handleEventId) {
+            
+            return;
+          }
           this.#hideTranslationsButton();
         }
 
