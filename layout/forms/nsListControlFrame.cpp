@@ -664,7 +664,7 @@ void nsListControlFrame::SetInitialChildList(ChildListID aListID,
                                              nsFrameList&& aChildList) {
   if (aListID == FrameChildListID::Principal) {
     
-    mIsAllContentHere = mContent->IsDoneAddingChildren();
+    mIsAllContentHere = Select().IsDoneAddingChildren();
     if (!mIsAllContentHere) {
       mIsAllFramesHere = false;
       mHasBeenInitialized = false;
@@ -813,7 +813,7 @@ nsListControlFrame::AddOption(int32_t aIndex) {
 #endif
 
   if (!mIsAllContentHere) {
-    mIsAllContentHere = mContent->IsDoneAddingChildren();
+    mIsAllContentHere = Select().IsDoneAddingChildren();
     if (!mIsAllContentHere) {
       mIsAllFramesHere = false;
       mHasBeenInitialized = false;

@@ -453,19 +453,6 @@ class nsIContent : public nsINode {
 
 
 
-
-
-
-  virtual bool IsDoneAddingChildren() { return true; }
-
-  
-
-
-
-
-
-
-
   static inline bool RequiresDoneCreatingElement(int32_t aNamespace,
                                                  nsAtom* aName) {
     if (aNamespace == kNameSpaceID_XHTML &&
