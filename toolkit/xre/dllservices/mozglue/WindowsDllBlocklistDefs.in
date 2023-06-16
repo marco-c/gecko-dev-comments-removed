@@ -347,6 +347,9 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("kisfdpro64.dll", (2023, 5, 31, 209)),
+
+    
+    DllBlocklistEntry("dghmpg64.dll", (2023, 5, 31, 1367)),
 ]
 
 CHILD_PROCESSES += [
