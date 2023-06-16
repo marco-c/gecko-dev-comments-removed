@@ -1801,10 +1801,6 @@ pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 
 
 
-pref("media.gmp.trial-create.enabled", true);
-
-
-
 
 
 
