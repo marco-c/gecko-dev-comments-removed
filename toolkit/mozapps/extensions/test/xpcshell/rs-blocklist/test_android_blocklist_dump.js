@@ -5,28 +5,11 @@
 
 
 
-const IS_USING_BLOCKLIST_V3 = AppConstants.NIGHTLY_BUILD;
-
-
-
-
-
-
 const blockedAddon = {
   id: "{6f62927a-e380-401a-8c9e-c485b7d87f0d}",
   version: "9.2.0",
   signedDate: new Date(1588098908496), 
   signedState: AddonManager.SIGNEDSTATE_SIGNED,
-};
-
-
-
-const blockedAddonV3only = {
-  id: "{011f65f0-7143-470a-83ca-20ec4297f3f4}",
-  version: "1.0",
-  
-  
-  
 };
 
 
@@ -40,31 +23,6 @@ const nonBlockedAddon = {
 };
 
 add_task(
-  { skip_if: () => IS_USING_BLOCKLIST_V3 },
-  async function verify_blocklistv2_dump_first_run() {
-    createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
-
-    Assert.equal(
-      await Blocklist.getAddonBlocklistState(blockedAddon),
-      Ci.nsIBlocklistService.STATE_BLOCKED,
-      "A add-on that is known to be on the v2 blocklist should be blocked"
-    );
-    Assert.equal(
-      await Blocklist.getAddonBlocklistState(blockedAddonV3only),
-      Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-      "An add-on that is not part of the v2 blocklist should not be blocked"
-    );
-
-    Assert.equal(
-      await Blocklist.getAddonBlocklistState(nonBlockedAddon),
-      Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-      "A known non-blocked add-on should not be blocked"
-    );
-  }
-);
-
-add_task(
-  { skip_if: () => !IS_USING_BLOCKLIST_V3 },
   async function verify_a_known_blocked_add_on_is_not_detected_as_blocked_at_first_run() {
     const MLBF_LOAD_RESULTS = [];
     const MLBF_LOAD_ATTEMPTS = [];
@@ -87,6 +45,12 @@ add_task(
 
     MLBF_LOAD_ATTEMPTS.length = 0;
     MLBF_LOAD_RESULTS.length = 0;
+
+    Assert.equal(
+      await Blocklist.getAddonBlocklistState(nonBlockedAddon),
+      Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+      "A known non-blocked add-on should not be blocked"
+    );
 
     Assert.equal(
       await Blocklist.getAddonBlocklistState(blockedAddon),

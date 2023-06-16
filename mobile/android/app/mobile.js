@@ -153,12 +153,6 @@ pref("xpinstall.whitelist.add", "https://addons.mozilla.org");
 pref("extensions.langpacks.signatures.required", true);
 pref("xpinstall.signatures.required", true);
 
-#ifndef NIGHTLY_BUILD
-
-    pref("extensions.blocklist.useMLBF", false);
-#endif
-
-
 
 
 pref("extensions.manifestV2.actionsPopupURLRestricted", true);
