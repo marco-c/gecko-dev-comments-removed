@@ -2167,6 +2167,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
 
 
 
+
 inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
                                  nsAutoCString& url, bool isExemptDomain) {
   nsAutoCString list;
@@ -2200,8 +2201,27 @@ inline bool CookieJarSettingsSaysShouldResistFingerprinting(
   return cookieJarSettings->GetShouldResistFingerprinting();
 }
 
+inline bool SchemeSaysShouldNotResistFingerprinting(nsIURI* aURI) {
+  return aURI->SchemeIs("chrome") || aURI->SchemeIs("resource") ||
+         aURI->SchemeIs("view-source") || aURI->SchemeIs("moz-extension") ||
+         (aURI->SchemeIs("about") && !NS_IsContentAccessibleAboutURI(aURI));
+}
+
+inline bool SchemeSaysShouldNotResistFingerprinting(nsIPrincipal* aPrincipal) {
+  nsCOMPtr<nsIURI> prinURI;
+  Unused << aPrincipal->GetURI(getter_AddRefs(prinURI));
+
+  return aPrincipal->SchemeIs("chrome") || aPrincipal->SchemeIs("resource") ||
+         aPrincipal->SchemeIs("view-source") ||
+         aPrincipal->SchemeIs("moz-extension") ||
+         (prinURI->SchemeIs("about") &&
+          !NS_IsContentAccessibleAboutURI(prinURI));
+}
+
 const char* kExemptedDomainsPrefName =
     "privacy.resistFingerprinting.exemptedDomains";
+
+
 
 
 bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification,
@@ -2340,9 +2360,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   
-  if (aURI->SchemeIs("about") || aURI->SchemeIs("chrome") ||
-      aURI->SchemeIs("resource") || aURI->SchemeIs("view-source") ||
-      aURI->SchemeIs("moz-extension")) {
+  if (SchemeSaysShouldNotResistFingerprinting(aURI)) {
     return false;
   }
 
@@ -2424,8 +2442,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   
-  if (aPrincipal->SchemeIs("about") || aPrincipal->SchemeIs("chrome") ||
-      aPrincipal->SchemeIs("resource") || aPrincipal->SchemeIs("view-source")) {
+  if (SchemeSaysShouldNotResistFingerprinting(aPrincipal)) {
     return false;
   }
 
@@ -2453,7 +2470,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   
   
   nsCOMPtr<nsIURI> uri;
-  nsresult rv;
   if (isExemptDomain && StaticPrefs::privacy_firstparty_isolate() &&
       !originAttributes.mFirstPartyDomain.IsEmpty()) {
     rv = NS_NewURI(getter_AddRefs(uri),
@@ -2473,6 +2489,8 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
   return !isExemptDomain;
 }
+
+
 
 
 void nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
