@@ -25,7 +25,7 @@ ConditionVariable::ConditionVariable(Lock* user_lock)
   
   
 #if !defined(XP_DARWIN) && !defined(OS_NACL) && \
-    !(defined(OS_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
+    !(defined(ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
   pthread_condattr_t attrs;
   rv = pthread_condattr_init(&attrs);
   DCHECK_EQ(0, rv);
@@ -95,7 +95,7 @@ void ConditionVariable::TimedWait(const base::TimeDelta& max_time) {
   absolute_time.tv_nsec %= base::Time::kNanosecondsPerSecond;
   DCHECK_GE(absolute_time.tv_sec, now.tv_sec);  
 
-#  if defined(OS_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC)
+#  if defined(ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC)
   int rv = pthread_cond_timedwait_monotonic_np(&condition_, user_mutex_,
                                                &absolute_time);
 #  else
