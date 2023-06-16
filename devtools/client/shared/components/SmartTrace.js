@@ -22,7 +22,7 @@ const Frames = createFactory(
     .Frames
 );
 const {
-  annotateFrames,
+  annotateFramesWithLibrary,
 } = require("resource://devtools/client/debugger/src/utils/pause/frames/annotateFrames.js");
 const {
   getDisplayURL,
@@ -232,59 +232,59 @@ class SmartTrace extends Component {
     const { onViewSourceInDebugger, onViewSource, stacktrace } = this.props;
     const { originalLocations } = this.state;
 
-    const frames = annotateFrames(
-      stacktrace.map(
-        (
-          {
-            filename,
-            sourceId,
-            lineNumber,
-            columnNumber,
-            functionName,
-            asyncCause,
+    const frames = stacktrace.map(
+      (
+        {
+          filename,
+          sourceId,
+          lineNumber,
+          columnNumber,
+          functionName,
+          asyncCause,
+        },
+        i
+      ) => {
+        
+        const sourceUrl = filename.split(" -> ").pop();
+        const generatedLocation = {
+          line: lineNumber,
+          column: columnNumber,
+          source: {
+            
+            id: sourceId,
+            url: sourceUrl,
+            
+            displayURL: getDisplayURL(sourceUrl),
           },
-          i
-        ) => {
-          
-          const sourceUrl = filename.split(" -> ").pop();
-          const generatedLocation = {
-            line: lineNumber,
-            column: columnNumber,
+        };
+        let location = generatedLocation;
+        const originalLocation = originalLocations?.[i];
+        if (originalLocation) {
+          location = {
+            line: originalLocation.line,
+            column: originalLocation.column,
             source: {
+              url: originalLocation.url,
               
-              id: sourceId,
-              url: sourceUrl,
-              
-              displayURL: getDisplayURL(sourceUrl),
+              displayURL: getDisplayURL(originalLocation.url),
             },
           };
-          let location = generatedLocation;
-          const originalLocation = originalLocations?.[i];
-          if (originalLocation) {
-            location = {
-              line: originalLocation.line,
-              column: originalLocation.column,
-              source: {
-                url: originalLocation.url,
-                
-                displayURL: getDisplayURL(originalLocation.url),
-              },
-            };
-          }
-
-          return {
-            id: "fake-frame-id-" + i,
-            displayName: functionName,
-            asyncCause,
-            location,
-            
-            
-            
-            generatedLocation,
-          };
         }
-      )
+
+        
+        return {
+          id: "fake-frame-id-" + i,
+          displayName: functionName,
+          asyncCause,
+          location,
+          
+          
+          
+          generatedLocation,
+        };
+      }
     );
+    annotateFramesWithLibrary(frames);
 
     return Frames({
       frames,

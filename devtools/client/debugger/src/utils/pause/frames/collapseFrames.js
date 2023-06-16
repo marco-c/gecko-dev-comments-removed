@@ -2,12 +2,9 @@
 
 
 
-
-import { getFrameUrl } from "./getFrameUrl";
-
 function collapseLastFrames(frames) {
   const index = frames.findIndex(frame =>
-    getFrameUrl(frame).match(/webpack\/bootstrap/i)
+    frame.location.source.url?.match(/webpack\/bootstrap/i)
   );
 
   if (index == -1) {

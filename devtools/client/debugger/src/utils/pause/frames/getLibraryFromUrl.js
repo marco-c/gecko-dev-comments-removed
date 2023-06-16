@@ -2,8 +2,6 @@
 
 
 
-import { getFrameUrl } from "./getFrameUrl";
-
 const libraryMap = [
   {
     label: "Backbone",
@@ -106,9 +104,7 @@ const libraryMap = [
 ];
 
 export function getLibraryFromUrl(frame, callStack = []) {
-  
-  
-  const frameUrl = getFrameUrl(frame);
+  const frameUrl = frame.location.source.url;
 
   
   let match = libraryMap.find(o => o.pattern.test(frameUrl));
@@ -127,7 +123,7 @@ export function getLibraryFromUrl(frame, callStack = []) {
   );
   if (match) {
     const contextMatch = callStack.some(f => {
-      const url = getFrameUrl(f);
+      const url = f.location.source.url;
       if (!url) {
         return false;
       }
