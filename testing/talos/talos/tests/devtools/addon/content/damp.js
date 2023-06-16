@@ -390,8 +390,9 @@ Damp.prototype = {
   },
 
   exception(e) {
-    this.error(e);
-    dump(e.stack + "\n");
+    const str =
+      "Exception: " + (e?.message || e) + "\n" + (e?.stack || "No stack");
+    this.error(str);
   },
 
   
