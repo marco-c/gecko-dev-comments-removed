@@ -3175,9 +3175,6 @@ pref("browser.region.network.scan", false);
 pref("browser.region.timeout", 5000);
 pref("browser.region.update.enabled", true);
 
-
-pref("device.storage.enabled", false);
-
 pref("browser.meta_refresh_when_inactive.disabled", false);
 
 
