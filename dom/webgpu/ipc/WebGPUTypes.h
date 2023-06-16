@@ -47,9 +47,9 @@ struct WebGPUCompilationMessage {
 
 class StringHelper {
  public:
-  explicit StringHelper(const dom::Optional<nsString>& aWide) {
-    if (aWide.WasPassed()) {
-      mNarrow = Some(NS_ConvertUTF16toUTF8(aWide.Value()));
+  explicit StringHelper(const nsString& aWide) {
+    if (!aWide.IsEmpty()) {
+      mNarrow = Some(NS_ConvertUTF16toUTF8(aWide));
     }
   }
 
