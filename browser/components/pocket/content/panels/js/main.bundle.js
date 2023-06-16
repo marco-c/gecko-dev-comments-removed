@@ -791,10 +791,6 @@ function Saved(props) {
   }, setRemovedStatusState] = (0,react.useState)({});
   const [savedStory, setSavedStoryState] = (0,react.useState)();
   const [articleInfoAttempted, setArticleInfoAttempted] = (0,react.useState)();
-  const [{
-    similarRecs,
-    similarRecsModel
-  }, setSimilarRecsState] = (0,react.useState)({});
   const utmParams = `utm_source=${utmSource}${utmCampaign && utmContent ? `&utm_campaign=${utmCampaign}&utm_content=${utmContent}` : ``}`;
 
   function removeItem(event) {
@@ -858,19 +854,6 @@ function Saved(props) {
     });
     messages.addMessageListener("PKT_getArticleInfoAttempted", function (resp) {
       setArticleInfoAttempted(true);
-    });
-    messages.addMessageListener("PKT_renderItemRecs", function (resp) {
-      const {
-        data
-      } = resp; 
-      
-      
-
-      const model = data?.recommendations?.[0]?.experiment || "";
-      setSimilarRecsState({
-        similarRecs: data?.recommendations?.map(rec => rec.item),
-        similarRecsModel: model
-      });
     }); 
 
     messages.sendMessage("PKT_show_saved");
@@ -917,14 +900,7 @@ function Saved(props) {
   }), articleInfoAttempted && react.createElement(TagPicker_TagPicker, {
     tags: [],
     itemUrl: itemUrl
-  }), articleInfoAttempted && similarRecs?.length && locale?.startsWith("en") && react.createElement(react.Fragment, null, react.createElement("hr", null), react.createElement("h3", {
-    className: "header_medium"
-  }, "Similar Stories"), react.createElement(ArticleList_ArticleList, {
-    articles: similarRecs,
-    source: "on_save_recs",
-    model: similarRecsModel,
-    utmParams: utmParams
-  }))), savedStatus === "loading" && react.createElement("h3", {
+  })), savedStatus === "loading" && react.createElement("h3", {
     className: "header_large",
     "data-l10n-id": "pocket-panel-saved-saving-tags"
   }), removedStatus === "removing" && react.createElement("h3", {
