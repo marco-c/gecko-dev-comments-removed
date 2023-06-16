@@ -274,33 +274,40 @@ class StyleRuleActor extends Actor {
     
     
     for (const ancestorRule of this.ancestorRules) {
-      const ruleClassName = ChromeUtils.getClassName(ancestorRule.rawRule);
+      const rawRule = ancestorRule.rawRule;
+      const ruleClassName = ChromeUtils.getClassName(rawRule);
       const type = SharedCssLogic.CSSAtRuleClassNameType[ruleClassName];
-      if (
-        ruleClassName === "CSSMediaRule" &&
-        ancestorRule.rawRule.media?.length
-      ) {
+
+      if (ruleClassName === "CSSMediaRule" && rawRule.media?.length) {
         form.ancestorData.push({
           type,
-          value: Array.from(ancestorRule.rawRule.media).join(", "),
+          value: Array.from(rawRule.media).join(", "),
         });
       } else if (ruleClassName === "CSSLayerBlockRule") {
         form.ancestorData.push({
           type,
-          value: ancestorRule.rawRule.name,
+          value: rawRule.name,
         });
       } else if (ruleClassName === "CSSContainerRule") {
         form.ancestorData.push({
           type,
           
           
-          containerName: ancestorRule.rawRule.containerName,
-          containerQuery: ancestorRule.rawRule.containerQuery,
+          containerName: rawRule.containerName,
+          containerQuery: rawRule.containerQuery,
         });
       } else if (ruleClassName === "CSSSupportsRule") {
         form.ancestorData.push({
           type,
-          conditionText: ancestorRule.rawRule.conditionText,
+          conditionText: rawRule.conditionText,
+        });
+      } else if (rawRule.selectorText) {
+        
+        
+        
+        form.ancestorData.push({
+          type,
+          selectorText: rawRule.selectorText,
         });
       }
     }
