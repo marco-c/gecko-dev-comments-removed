@@ -40,8 +40,6 @@ module.exports = {
     
     `${projectRoot}/toolkit/content/widgets/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
     
-    `${projectRoot}/browser/components/aboutlogins/content/components/**/*.stories.mjs`,
-    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
   ],
   
