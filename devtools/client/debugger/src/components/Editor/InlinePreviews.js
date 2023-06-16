@@ -36,7 +36,7 @@ class InlinePreviews extends Component {
     
     if (
       !selectedFrame ||
-      selectedFrame.location.source.id !== selectedSource.id ||
+      selectedFrame.location.sourceId !== selectedSource.id ||
       !hasPreviews(previews)
     ) {
       return null;
