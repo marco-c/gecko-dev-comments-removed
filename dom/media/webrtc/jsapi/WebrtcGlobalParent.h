@@ -19,6 +19,7 @@ class WebrtcGlobalParent : public PWebrtcGlobalParent {
   friend class WebrtcContentParents;
 
   bool mShutdown;
+  nsTHashSet<nsString> mPcids;
 
   MOZ_IMPLICIT WebrtcGlobalParent();
 
@@ -27,7 +28,17 @@ class WebrtcGlobalParent : public PWebrtcGlobalParent {
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
   virtual mozilla::ipc::IPCResult Recv__delete__() override;
-
+  
+  
+  virtual mozilla::ipc::IPCResult RecvPeerConnectionCreated(
+      const nsAString& aPcId, const bool& aIsLongTermStatsDisabled) override;
+  
+  
+  virtual mozilla::ipc::IPCResult RecvPeerConnectionDestroyed(
+      const nsAString& aPcid) override;
+  
+  virtual mozilla::ipc::IPCResult RecvPeerConnectionFinalStats(
+      const RTCStatsReportInternal& aFinalStats) override;
   virtual ~WebrtcGlobalParent();
 
  public:
