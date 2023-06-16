@@ -945,9 +945,18 @@ nsresult WorkerScriptLoader::LoadScript(
               : request->ReferrerPolicy();
 
       referrerInfo = new ReferrerInfo(request->mReferrer, policy);
-      rv = GetModuleSecFlags(
-          loadContext->IsTopLevel(), principal, mWorkerScriptType,
-          request->mURI, mWorkerRef->Private()->WorkerCredentials(), secFlags);
+
+      
+      
+      
+      RequestCredentials credentials =
+          mWorkerRef->Private()->WorkerType() == WorkerType::Classic
+              ? RequestCredentials::Same_origin
+              : mWorkerRef->Private()->WorkerCredentials();
+
+      rv = GetModuleSecFlags(loadContext->IsTopLevel(), principal,
+                             mWorkerScriptType, request->mURI, credentials,
+                             secFlags);
     } else {
       referrerInfo = ReferrerInfo::CreateForFetch(principal, nullptr);
       if (parentWorker && !loadContext->IsTopLevel()) {
