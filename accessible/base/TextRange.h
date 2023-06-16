@@ -98,17 +98,6 @@ class TextRange final {
 
 
 
-  void EmbeddedChildren(nsTArray<Accessible*>* aChildren) const;
-
-  
-
-
-  void Text(nsAString& aText) const;
-
-  
-
-
-
   bool Crop(Accessible* aContainer);
 
   
@@ -152,16 +141,6 @@ class TextRange final {
 
   void Set(Accessible* aRoot, Accessible* aStartContainer, int32_t aStartOffset,
            Accessible* aEndContainer, int32_t aEndOffset);
-
-  
-
-
-
-
-
-
-  bool TextInternal(nsAString& aText, Accessible* aCurrent,
-                    uint32_t aStartIntlOffset) const;
 
   
 

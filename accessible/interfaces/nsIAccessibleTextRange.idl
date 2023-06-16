@@ -29,11 +29,6 @@ interface nsIAccessibleTextRange : nsISupports
   
 
 
-  readonly attribute nsIArray embeddedChildren;
-
-  
-
-
   boolean compare(in nsIAccessibleTextRange aOtherRange);
 
   
@@ -55,18 +50,8 @@ interface nsIAccessibleTextRange : nsISupports
   
 
 
-  readonly attribute AString text;
-
-  
-
-
   boolean crop(in nsIAccessible aContainer);
 
   const unsigned long AlignToTop = 0;
   const unsigned long AlignToBottom = 1;
-
-  
-
-
-  void scrollIntoView(in unsigned long aHow);
 };

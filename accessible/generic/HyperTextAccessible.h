@@ -173,29 +173,7 @@ class HyperTextAccessible : public AccessibleWrap,
   void ScrollSubstringToPoint(int32_t aStartOffset, int32_t aEndOffset,
                               uint32_t aCoordinateType, int32_t aX, int32_t aY);
 
-  
-
-
-
-  void EnclosingRange(TextRange& aRange) const;
-
   virtual void SelectionRanges(nsTArray<TextRange>* aRanges) const override;
-
-  
-
-
-
-  void VisibleRanges(nsTArray<TextRange>* aRanges) const;
-
-  
-
-
-  void RangeByChild(LocalAccessible* aChild, TextRange& aRange) const;
-
-  
-
-
-  void RangeAtPoint(int32_t aX, int32_t aY, TextRange& aRange) const;
 
   
   
