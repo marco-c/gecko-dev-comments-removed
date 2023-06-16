@@ -119,7 +119,7 @@ float SVGLength::GetValueInSpecifiedUnit(uint8_t aUnit,
   
   
 
-  auto userSpaceMetrics = SVGElementMetrics(const_cast<SVGElement*>(aElement));
+  SVGElementMetrics userSpaceMetrics(aElement);
 
   float userUnitsPerCurrentUnit = GetPixelsPerUnit(userSpaceMetrics, aAxis);
   float userUnitsPerNewUnit =

@@ -222,8 +222,6 @@ class SVGUtils final {
 
 
 
-  static float UserSpace(SVGElement* aSVGElement,
-                         const SVGAnimatedLength* aLength);
   static float UserSpace(nsIFrame* aNonSVGContext,
                          const SVGAnimatedLength* aLength);
   static float UserSpace(const dom::UserSpaceMetrics& aMetrics,
