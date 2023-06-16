@@ -1669,8 +1669,6 @@ pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=adm");
 
 
-pref("trailhead.firstrun.newtab.triplets", "");
-
 pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.screens", "");
