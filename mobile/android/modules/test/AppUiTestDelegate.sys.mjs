@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["AppUiTestDelegate"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -92,13 +88,13 @@ class Delegate {
       const listener = ev => {
         const { browsingContext, internalURL } = ev.detail;
 
-        
-        
+        // Sometimes we arrive here without an internalURL. If that's the
+        // case, just keep waiting until we get one.
         if (!internalURL || internalURL == "about:blank") {
           return;
         }
 
-        
+        // Ignore subframes
         if (browsingContext !== browsingContext.top) {
           return;
         }
@@ -111,4 +107,4 @@ class Delegate {
   }
 }
 
-var AppUiTestDelegate = new Delegate();
+export var AppUiTestDelegate = new Delegate();

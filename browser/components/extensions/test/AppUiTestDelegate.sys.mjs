@@ -1,22 +1,14 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-"use strict";
-
-const { Assert } = ChromeUtils.importESModule(
-  "resource://testing-common/Assert.sys.mjs"
-);
-const { BrowserTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/BrowserTestUtils.sys.mjs"
-);
+import { Assert } from "resource://testing-common/Assert.sys.mjs";
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
 });
-
-var EXPORTED_SYMBOLS = ["AppUiTestDelegate", "AppUiTestInternals"];
 
 async function promiseAnimationFrame(window) {
   await new Promise(resolve => window.requestAnimationFrame(resolve));
@@ -31,19 +23,19 @@ function makeWidgetId(id) {
 }
 
 async function getPageActionButtonId(window, extensionId) {
-  
-  
-  
-  
-  
-  
+  // This would normally be set automatically on navigation, and cleared
+  // when the user types a value into the URL bar, to show and hide page
+  // identity info and icons such as page action buttons.
+  //
+  // Unfortunately, that doesn't happen automatically in browser chrome
+  // tests.
   window.gURLBar.setPageProxyState("valid");
 
   let { gIdentityHandler } = window.gBrowser.ownerGlobal;
-  
-  
-  
-  
+  // If the current tab is blank and the previously selected tab was an internal
+  // page, the urlbar will now be showing the internal identity box due to the
+  // setPageProxyState call above.  The page action button is hidden in that
+  // case, so make sure we're not showing the internal identity box.
   gIdentityHandler._identityBox.classList.remove("chromeUI");
 
   await promiseAnimationFrame(window);
@@ -206,9 +198,9 @@ async function removeTab(tab) {
   BrowserTestUtils.removeTab(tab);
 }
 
-
-
-var AppUiTestInternals = {
+// These metods are exported so that they can be used in head.js but are
+// *not* part of the AppUiTestDelegate API.
+export var AppUiTestInternals = {
   awaitBrowserLoaded,
   getBrowserActionWidget,
   getBrowserActionWidgetId,
@@ -221,9 +213,9 @@ var AppUiTestInternals = {
   showBrowserAction,
 };
 
-
-
-var AppUiTestDelegate = {
+// These methods are part of the TestDelegate API and need to be compatible
+// with the `mobile` AppUiTestDelegate counterpart.
+export var AppUiTestDelegate = {
   awaitExtensionPanel,
   clickBrowserAction,
   clickPageAction,
