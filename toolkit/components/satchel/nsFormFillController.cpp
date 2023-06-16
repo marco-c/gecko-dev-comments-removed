@@ -697,8 +697,7 @@ NS_IMETHODIMP
 nsFormFillController::StartSearch(const nsAString& aSearchString,
                                   const nsAString& aSearchParam,
                                   nsIAutoCompleteResult* aPreviousResult,
-                                  nsIAutoCompleteObserver* aListener,
-                                  nsIPropertyBag2* aOptions) {
+                                  nsIAutoCompleteObserver* aListener) {
   MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch for %p", mFocusedInput));
 
   nsresult rv;
@@ -745,7 +744,7 @@ nsFormFillController::StartSearch(const nsAString& aSearchString,
 
     formAutoComplete->AutoCompleteSearchAsync(aSearchParam, aSearchString,
                                               mFocusedInput, aPreviousResult,
-                                              datalistResult, this, aOptions);
+                                              datalistResult, this);
     mLastFormAutoComplete = formAutoComplete;
   }
 
@@ -869,8 +868,9 @@ nsFormFillController::HandleEvent(Event* aEvent) {
 
   mInvalidatePreviousResult = false;
 
-  nsCOMPtr<nsPIDOMWindowInner> inner =
-      do_QueryInterface(target->GetOwnerGlobal());
+  nsIGlobalObject* global = target->GetOwnerGlobal();
+  NS_ENSURE_STATE(global);
+  nsPIDOMWindowInner* inner = global->AsInnerWindow();
   NS_ENSURE_STATE(inner);
 
   if (!inner->GetBrowsingContext()->IsContent()) {
