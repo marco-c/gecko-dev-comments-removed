@@ -151,7 +151,7 @@ class Channel {
   
   void CloseClientFileDescriptor();
 
-#  if defined(OS_MACOSX)
+#  if defined(XP_DARWIN)
   
   void SetOtherMachTask(task_t task);
 
@@ -195,7 +195,7 @@ class Channel {
   RefPtr<ChannelImpl> channel_impl_;
 
   enum {
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
     
     
     

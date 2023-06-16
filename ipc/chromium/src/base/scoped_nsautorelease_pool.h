@@ -9,7 +9,7 @@
 
 #include "base/basictypes.h"
 
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
 #  if defined(__OBJC__)
 @class NSAutoreleasePool;
 #  else   
@@ -29,7 +29,7 @@ namespace base {
 
 class ScopedNSAutoreleasePool {
  public:
-#if !defined(OS_MACOSX)
+#if !defined(XP_DARWIN)
   ScopedNSAutoreleasePool() {}
   void Recycle() {}
 #else   

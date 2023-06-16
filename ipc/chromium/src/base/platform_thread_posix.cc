@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <sched.h>
 
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
 #  include <mach/mach.h>
 #elif defined(OS_NETBSD)
 #  include <lwp.h>
@@ -18,7 +18,7 @@
 #  include <sys/prctl.h>
 #endif
 
-#if !defined(OS_MACOSX)
+#if !defined(XP_DARWIN)
 #  include <unistd.h>
 #endif
 
@@ -28,7 +28,7 @@
 
 #include "nsThreadUtils.h"
 
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
 namespace base {
 void InitThreading();
 }  
@@ -45,7 +45,7 @@ static void* ThreadFunc(void* closure) {
 PlatformThreadId PlatformThread::CurrentId() {
   
   
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
   mach_port_t port = mach_thread_self();
   mach_port_deallocate(mach_task_self(), port);
   return port;
@@ -80,7 +80,7 @@ void PlatformThread::Sleep(int duration_ms) {
     sleep_time = remaining;
 }
 
-#ifndef OS_MACOSX
+#ifndef XP_DARWIN
 
 
 
@@ -103,7 +103,7 @@ namespace {
 bool CreateThread(size_t stack_size, bool joinable,
                   PlatformThread::Delegate* delegate,
                   PlatformThreadHandle* thread_handle) {
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
   base::InitThreading();
 #endif  
 

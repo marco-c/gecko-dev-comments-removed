@@ -61,14 +61,14 @@ namespace base {
 
 
 
-#if !defined(OS_MACOSX) && !defined(XP_WIN)
+#if !defined(XP_DARWIN) && !defined(XP_WIN)
 std::string SysWideToUTF8(const std::wstring& wide) {
   
   return GhettoStringConvert<std::wstring, std::string>(wide);
 }
 #endif
 
-#if !defined(OS_MACOSX) && !defined(XP_WIN)
+#if !defined(XP_DARWIN) && !defined(XP_WIN)
 std::wstring SysUTF8ToWide(const StringPiece& utf8) {
   
   return GhettoStringConvert<StringPiece, std::wstring>(utf8);

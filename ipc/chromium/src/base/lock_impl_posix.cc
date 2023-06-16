@@ -72,7 +72,7 @@ void LockImpl::Unlock() {
 
 
 bool LockImpl::PriorityInheritanceAvailable() {
-#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && defined(OS_MACOSX)
+#if PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && defined(XP_DARWIN)
   return true;
 #else
   

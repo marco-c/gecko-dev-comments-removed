@@ -1217,7 +1217,7 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
     }
     mLaunchOptions->env_map["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
-#  elif OS_MACOSX  
+#  elif XP_DARWIN  
     
     
     

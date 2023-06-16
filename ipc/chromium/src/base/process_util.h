@@ -20,7 +20,7 @@
 #  include <dirent.h>
 #  include <limits.h>
 #  include <sys/types.h>
-#elif defined(OS_MACOSX)
+#elif defined(XP_DARWIN)
 #  include <mach/mach.h>
 #endif
 
@@ -49,7 +49,7 @@ class FileDescriptor;
 }  
 #endif
 
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
 struct kinfo_proc;
 #endif
 
@@ -174,7 +174,7 @@ struct LaunchOptions {
   mozilla::UniquePtr<ForkDelegate> fork_delegate = nullptr;
 #endif
 
-#ifdef OS_MACOSX
+#ifdef XP_DARWIN
   
   
   

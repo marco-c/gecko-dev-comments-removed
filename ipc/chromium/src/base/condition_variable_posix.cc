@@ -24,7 +24,7 @@ ConditionVariable::ConditionVariable(Lock* user_lock)
   
   
   
-#if !defined(OS_MACOSX) && !defined(OS_NACL) && \
+#if !defined(XP_DARWIN) && !defined(OS_NACL) && \
     !(defined(OS_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
   pthread_condattr_t attrs;
   rv = pthread_condattr_init(&attrs);
@@ -39,7 +39,7 @@ ConditionVariable::ConditionVariable(Lock* user_lock)
 }
 
 ConditionVariable::~ConditionVariable() {
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
   
   
   {
@@ -69,7 +69,7 @@ void ConditionVariable::TimedWait(const base::TimeDelta& max_time) {
   relative_time.tv_nsec = (usecs % base::Time::kMicrosecondsPerSecond) *
                           base::Time::kNanosecondsPerMicrosecond;
 
-#if defined(OS_MACOSX)
+#if defined(XP_DARWIN)
   int rv = pthread_cond_timedwait_relative_np(&condition_, user_mutex_,
                                               &relative_time);
 #else

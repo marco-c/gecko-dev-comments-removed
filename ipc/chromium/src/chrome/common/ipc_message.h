@@ -306,7 +306,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   void SetAttachedFileHandles(nsTArray<mozilla::UniqueFileHandle> handles);
 
-#if defined(OS_MACOSX) || defined(OS_IOS)
+#if defined(XP_DARWIN)
   void set_fd_cookie(uint32_t cookie) { header()->cookie = cookie; }
   uint32_t fd_cookie() const { return header()->cookie; }
 #endif
@@ -325,7 +325,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   void SetAttachedPorts(nsTArray<mozilla::ipc::ScopedPort> ports);
 
-#if defined(OS_MACOSX) || defined(OS_IOS)
+#if defined(XP_DARWIN)
   bool WriteMachSendRight(mozilla::UniqueMachSendRight port);
 
   
@@ -339,7 +339,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   uint32_t num_relayed_attachments() const {
 #if defined(XP_WIN)
     return num_handles();
-#elif defined(OS_MACOSX) || defined(OS_IOS)
+#elif defined(XP_DARWIN)
     return num_send_rights();
 #else
     return 0;
@@ -356,7 +356,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   friend class SyncMessage;
   friend class mozilla::ipc::MiniTransceiver;
 
-#if !defined(OS_MACOSX) && !defined(OS_IOS) && !defined(FUZZING_SNAPSHOT)
+#if !defined(XP_DARWIN) && !defined(FUZZING_SNAPSHOT)
  protected:
 #endif
 
@@ -365,7 +365,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     msgid_t type;          
     HeaderFlags flags;     
     uint32_t num_handles;  
-#if defined(OS_MACOSX) || defined(OS_IOS)
+#if defined(XP_DARWIN)
     uint32_t cookie;  
     uint32_t num_send_rights;  
                                
@@ -393,7 +393,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   mutable nsTArray<mozilla::ipc::ScopedPort> attached_ports_;
 
-#if defined(OS_MACOSX) || defined(OS_IOS)
+#if defined(XP_DARWIN)
   
   
   
