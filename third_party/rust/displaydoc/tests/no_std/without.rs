@@ -22,7 +22,7 @@ use displaydoc::Display;
 
 struct FakeType;
 
-static_assertions::assert_impl_all!(label; FakeType, core::fmt::Display);
+static_assertions::assert_impl_all!(FakeType: core::fmt::Display);
 
 #[cfg(feature = "std")]
 fn main() {}
