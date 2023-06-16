@@ -17,7 +17,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
-#include "mozilla/PerformanceCounter.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskDispatcher.h"
 #include "mozilla/TimeStamp.h"
@@ -68,10 +67,8 @@ class PerformanceCounterState {
 
   class Snapshot {
    public:
-    Snapshot(uint32_t aOldEventLoopDepth, PerformanceCounter* aCounter,
-             bool aOldIsIdleRunnable)
+    Snapshot(uint32_t aOldEventLoopDepth, bool aOldIsIdleRunnable)
         : mOldEventLoopDepth(aOldEventLoopDepth),
-          mOldPerformanceCounter(aCounter),
           mOldIsIdleRunnable(aOldIsIdleRunnable) {}
 
     Snapshot(const Snapshot&) = default;
@@ -81,8 +78,6 @@ class PerformanceCounterState {
     friend class PerformanceCounterState;
 
     const uint32_t mOldEventLoopDepth;
-    
-    RefPtr<PerformanceCounter> mOldPerformanceCounter;
     const bool mOldIsIdleRunnable;
   };
 
@@ -92,8 +87,7 @@ class PerformanceCounterState {
   
   
   
-  Snapshot RunnableWillRun(PerformanceCounter* Counter, TimeStamp aNow,
-                           bool aIsIdleRunnable);
+  Snapshot RunnableWillRun(TimeStamp aNow, bool aIsIdleRunnable);
 
   
   
@@ -145,12 +139,6 @@ class PerformanceCounterState {
   
   TimeStamp mLastLongTaskEnd;
   TimeStamp mLastLongNonIdleTaskEnd;
-
-  
-  
-  
-  
-  RefPtr<PerformanceCounter> mCurrentPerformanceCounter;
 };
 }  
 
@@ -231,15 +219,6 @@ class nsThread : public nsIThreadInternal,
   mozilla::SynchronizedEventQueue* EventQueue() { return mEvents.get(); }
 
   bool ShuttingDown() const { return mShutdownContext != nullptr; }
-
-  static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
-                                     mozilla::EventQueuePriority aPriority);
-
-  virtual mozilla::PerformanceCounter* GetPerformanceCounter(
-      nsIRunnable* aEvent) const;
-
-  static mozilla::PerformanceCounter* GetPerformanceCounterBase(
-      nsIRunnable* aEvent);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

@@ -7,7 +7,6 @@
 #include "TimeoutManager.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/Logging.h"
-#include "mozilla/PerformanceCounter.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -317,17 +316,6 @@ TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
   return result;
 }
 
-PerformanceCounter* TimeoutManager::GetPerformanceCounter() {
-  Document* doc = mWindow.GetDocument();
-  if (doc) {
-    dom::DocGroup* docGroup = doc->GetDocGroup();
-    if (docGroup) {
-      return docGroup->GetPerformanceCounter();
-    }
-  }
-  return nullptr;
-}
-
 void TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
                                      Timeout* aTimeout) {
   TimeoutBudgetManager& budgetManager = TimeoutBudgetManager::Get();
@@ -339,22 +327,11 @@ void TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
     TimeDuration duration = budgetManager.RecordExecution(now, aRunningTimeout);
 
     UpdateBudget(now, duration);
-
-    
-    
-    PerformanceCounter* counter = GetPerformanceCounter();
-    if (counter) {
-      counter->IncrementExecutionDuration(duration.ToMicroseconds());
-    }
   }
 
   if (aTimeout) {
     
     budgetManager.StartRecording(now);
-    PerformanceCounter* counter = GetPerformanceCounter();
-    if (counter) {
-      counter->IncrementDispatchCounter(DispatchCategory(TaskCategory::Timer));
-    }
   } else {
     
     budgetManager.StopRecording();
