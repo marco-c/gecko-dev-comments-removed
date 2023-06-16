@@ -125,7 +125,8 @@ add_task(async function () {
     );
     
     ok(
-      workerDescriptorFront.name.includes(".js"),
+      workerDescriptorFront.name.includes(".js") ||
+        workerDescriptorFront.name.includes(".mjs"),
       `worker descriptor front holds the worker file name (${workerDescriptorFront.name})`
     );
     is(
