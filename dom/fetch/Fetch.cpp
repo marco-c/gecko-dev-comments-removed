@@ -1174,6 +1174,15 @@ nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
   return NS_ERROR_FAILURE;
 }
 
+NS_IMPL_CYCLE_COLLECTION(FetchBodyBase, mReadableStreamBody)
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(FetchBodyBase)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(FetchBodyBase)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FetchBodyBase)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
 template <class Derived>
 FetchBody<Derived>::FetchBody(nsIGlobalObject* aOwner)
     : mOwner(aOwner), mBodyUsed(false) {
@@ -1438,8 +1447,7 @@ template <class Derived>
 already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
                                                              ErrorResult& aRv) {
   if (mReadableStreamBody) {
-    RefPtr<ReadableStream> body(mReadableStreamBody);
-    return body.forget();
+    return do_AddRef(mReadableStreamBody);
   }
 
   nsCOMPtr<nsIInputStream> inputStream;
@@ -1449,15 +1457,21 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
     return nullptr;
   }
 
-  BodyStream::Create(aCx, this, DerivedClass()->GetParentObject(), inputStream,
-                     aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  
+  
+  
+  
+  
+  
+  
+  auto algorithms =
+      MakeRefPtr<NonAsyncInputToReadableStreamAlgorithms>(*inputStream);
+  RefPtr<ReadableStream> body = ReadableStream::CreateByteNative(
+      aCx, DerivedClass()->GetParentObject(), *algorithms, Nothing(), aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
-
-  MOZ_ASSERT(mReadableStreamBody);
-
-  RefPtr<ReadableStream> body(mReadableStreamBody);
+  mReadableStreamBody = body;
 
   
   if (BodyUsed()) {
