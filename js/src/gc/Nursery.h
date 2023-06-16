@@ -313,15 +313,12 @@ class alignas(TypicalCacheLineSize) Nursery {
     return pretenuringNursery.addressOfAllocatedSites();
   }
 
-  void requestMinorGC(JS::GCReason reason) const;
+  void requestMinorGC(JS::GCReason reason);
 
   bool minorGCRequested() const {
     return minorGCTriggerReason_ != JS::GCReason::NO_REASON;
   }
   JS::GCReason minorGCTriggerReason() const { return minorGCTriggerReason_; }
-  void clearMinorGCRequest() {
-    minorGCTriggerReason_ = JS::GCReason::NO_REASON;
-  }
 
   bool shouldCollect() const;
   bool isNearlyFull() const;
@@ -422,7 +419,8 @@ class alignas(TypicalCacheLineSize) Nursery {
   
   
   
-  mutable JS::GCReason minorGCTriggerReason_;
+  JS::GCReason minorGCTriggerReason_;
+  uintptr_t prevPosition_;
 
   
 

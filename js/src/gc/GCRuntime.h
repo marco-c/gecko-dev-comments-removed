@@ -668,7 +668,7 @@ class GCRuntime {
                        const AutoLockGC& lock);
 
   
-  void gcIfNeededAtAllocation(JSContext* cx);
+  static void gcIfNeededAtAllocation(JSContext* cx);
   static void* refillFreeList(JSContext* cx, AllocKind thingKind);
   void attemptLastDitchGC(JSContext* cx);
 #ifdef DEBUG
