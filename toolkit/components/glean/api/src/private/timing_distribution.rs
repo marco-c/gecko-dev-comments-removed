@@ -68,18 +68,6 @@ impl TimingDistributionMetric {
         }
     }
 
-    pub(crate) fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>) {
-        match self {
-            TimingDistributionMetric::Parent { inner, .. } => {
-                inner.accumulate_raw_samples_nanos(samples);
-            }
-            TimingDistributionMetric::Child(_) => {
-                
-                log::error!("Can't record samples for a timing distribution from a child metric");
-            }
-        }
-    }
-
     
     
     
@@ -327,6 +315,61 @@ impl TimingDistribution for TimingDistributionMetric {
                         GIFFT_TimingDistributionCancel(c.metric_id.0, id.id);
                     }
                 }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate_samples(&self, samples: Vec<i64>) {
+        match self {
+            TimingDistributionMetric::Parent { id: _id, inner } => {
+                inner.accumulate_samples(samples)
+            }
+            TimingDistributionMetric::Child(_c) => {
+                
+                log::error!("Can't record samples for a timing distribution from a child metric");
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>) {
+        match self {
+            TimingDistributionMetric::Parent { id: _id, inner } => {
+                inner.accumulate_raw_samples_nanos(samples)
+            }
+            TimingDistributionMetric::Child(_c) => {
+                
+                log::error!("Can't record samples for a timing distribution from a child metric");
             }
         }
     }

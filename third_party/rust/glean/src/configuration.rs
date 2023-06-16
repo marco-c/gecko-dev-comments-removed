@@ -38,6 +38,8 @@ pub struct Configuration {
     pub trim_data_to_registered_pings: bool,
     
     pub log_level: Option<LevelFilter>,
+    
+    pub rate_limit: Option<glean_core::PingRateLimit>,
 }
 
 
@@ -75,6 +77,9 @@ pub struct Builder {
     
     
     pub log_level: Option<LevelFilter>,
+    
+    
+    pub rate_limit: Option<glean_core::PingRateLimit>,
 }
 
 impl Builder {
@@ -95,6 +100,7 @@ impl Builder {
             use_core_mps: false,
             trim_data_to_registered_pings: false,
             log_level: None,
+            rate_limit: None,
         }
     }
 
@@ -111,6 +117,7 @@ impl Builder {
             use_core_mps: self.use_core_mps,
             trim_data_to_registered_pings: self.trim_data_to_registered_pings,
             log_level: self.log_level,
+            rate_limit: self.rate_limit,
         }
     }
 

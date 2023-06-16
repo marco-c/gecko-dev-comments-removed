@@ -5,7 +5,9 @@
 use std::io::Read;
 use std::sync::{Arc, Barrier, Mutex};
 use std::thread::{self, ThreadId};
+use std::time::{Duration, Instant};
 
+use crossbeam_channel::RecvTimeoutError;
 use flate2::read::GzDecoder;
 use serde_json::Value as JsonValue;
 
@@ -43,18 +45,10 @@ fn send_a_ping() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -133,18 +127,9 @@ fn test_experiments_recording_before_glean_inits() {
     set_experiment_inactive("experiment_preinit_disabled".to_string());
 
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -194,18 +179,10 @@ fn sending_of_foreground_background_pings() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -277,18 +254,10 @@ fn sending_of_startup_baseline_ping() {
     
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -337,18 +306,10 @@ fn no_dirty_baseline_on_clean_shutdowns() {
     
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -368,18 +329,9 @@ fn initialize_must_not_crash_if_data_dir_is_messed_up() {
     let file_path = tmpdirname.to_path_buf().join("notadir");
     std::fs::write(file_path.clone(), "test").expect("The test Glean dir file must be created");
 
-    let cfg = Configuration {
-        data_path: file_path,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: None,
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, file_path, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .build();
 
     test_reset_glean(cfg, ClientInfoMetrics::unknown(), false);
 
@@ -415,18 +367,9 @@ fn queued_recorded_metrics_correctly_record_during_init() {
 
     
     
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: None,
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .build();
     let _t = new_glean(Some(cfg), false);
 
     
@@ -442,18 +385,9 @@ fn initializing_twice_is_a_noop() {
     let tmpname = dir.path().to_path_buf();
 
     test_reset_glean(
-        Configuration {
-            data_path: tmpname.clone(),
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
         true,
     );
@@ -463,18 +397,9 @@ fn initializing_twice_is_a_noop() {
     
 
     crate::initialize(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
     );
 
@@ -492,18 +417,9 @@ fn dont_handle_events_when_uninitialized() {
     let tmpname = dir.path().to_path_buf();
 
     test_reset_glean(
-        Configuration {
-            data_path: tmpname.clone(),
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
         true,
     );
@@ -557,18 +473,9 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
         ..ClientInfoMetrics::unknown()
     };
     test_reset_glean(
-        Configuration {
-            data_path: tmpname.clone(),
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         client_info,
         true,
     );
@@ -580,18 +487,9 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
         ..ClientInfoMetrics::unknown()
     };
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         client_info,
         true,
     );
@@ -644,18 +542,10 @@ fn ping_collection_must_happen_after_concurrently_scheduled_metrics_recordings()
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         true,
     );
@@ -726,18 +616,9 @@ fn core_metrics_should_be_cleared_and_restored_when_disabling_and_enabling_uploa
 
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
         true,
     );
@@ -789,36 +670,19 @@ fn sending_deletion_ping_if_disabled_outside_of_run() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname.clone(),
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: None,
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
     
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: false,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(false, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -856,36 +720,19 @@ fn no_sending_of_deletion_ping_if_unchanged_outside_of_run() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname.clone(),
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: None,
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
     
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -931,18 +778,9 @@ fn test_sending_of_startup_baseline_ping_with_application_lifetime_metric() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
     test_reset_glean(
-        Configuration {
-            data_path: tmpname.clone(),
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: None,
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname.clone(), GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .build(),
         ClientInfoMetrics::unknown(),
         true,
     );
@@ -964,18 +802,10 @@ fn test_sending_of_startup_baseline_ping_with_application_lifetime_metric() {
 
     
     test_reset_glean(
-        Configuration {
-            data_path: tmpname,
-            application_id: GLOBAL_APPLICATION_ID.into(),
-            upload_enabled: true,
-            max_events: None,
-            delay_ping_lifetime_io: false,
-            server_endpoint: Some("invalid-test-host".into()),
-            uploader: Some(Box::new(FakeUploader { sender: s })),
-            use_core_mps: false,
-            trim_data_to_registered_pings: false,
-            log_level: None,
-        },
+        ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+            .with_server_endpoint("invalid-test-host")
+            .with_uploader(FakeUploader { sender: s })
+            .build(),
         ClientInfoMetrics::unknown(),
         false,
     );
@@ -1023,18 +853,10 @@ fn setting_debug_view_tag_before_initialization_should_not_crash() {
     set_debug_view_tag("valid-tag");
 
     
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1082,18 +904,10 @@ fn setting_source_tags_before_initialization_should_not_crash() {
     set_source_tags(vec!["valid-tag1".to_string(), "valid-tag2".to_string()]);
 
     
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1140,18 +954,10 @@ fn setting_source_tags_after_initialization_should_not_crash() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1212,18 +1018,10 @@ fn flipping_upload_enabled_respects_order_of_events() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     
     let sample_ping = PingType::new("sample-ping-1", true, false, vec![]);
@@ -1281,18 +1079,10 @@ fn registering_pings_before_init_must_work() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1332,18 +1122,10 @@ fn test_a_ping_before_submission() {
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().to_path_buf();
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader { sender: s })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader { sender: s })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1458,21 +1240,13 @@ fn signaling_done() {
     
     let call_count = Arc::new(Mutex::default());
 
-    let cfg = Configuration {
-        data_path: tmpname,
-        application_id: GLOBAL_APPLICATION_ID.into(),
-        upload_enabled: true,
-        max_events: None,
-        delay_ping_lifetime_io: false,
-        server_endpoint: Some("invalid-test-host".into()),
-        uploader: Some(Box::new(FakeUploader {
+    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader {
             barrier: Arc::clone(&barrier),
             counter: Arc::clone(&call_count),
-        })),
-        use_core_mps: false,
-        trim_data_to_registered_pings: false,
-        log_level: None,
-    };
+        })
+        .build();
 
     let _t = new_glean(Some(cfg), true);
 
@@ -1501,4 +1275,85 @@ fn signaling_done() {
     for &count in map.values() {
         assert_eq!(1, count, "each thread should call upload only once");
     }
+}
+
+#[test]
+fn configure_ping_throttling() {
+    let _lock = lock_test();
+
+    let (s, r) = crossbeam_channel::bounded::<String>(1);
+
+    
+    
+    #[derive(Debug)]
+    pub struct FakeUploader {
+        sender: crossbeam_channel::Sender<String>,
+        done: Arc<std::sync::atomic::AtomicBool>,
+    }
+    impl net::PingUploader for FakeUploader {
+        fn upload(
+            &self,
+            url: String,
+            _body: Vec<u8>,
+            _headers: Vec<(String, String)>,
+        ) -> net::UploadResult {
+            if self.done.load(std::sync::atomic::Ordering::SeqCst) {
+                
+                return net::UploadResult::http_status(200);
+            }
+            self.sender.send(url).unwrap();
+            net::UploadResult::http_status(200)
+        }
+    }
+
+    
+    let dir = tempfile::tempdir().unwrap();
+    let tmpname = dir.path().to_path_buf();
+
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let mut cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
+        .with_server_endpoint("invalid-test-host")
+        .with_uploader(FakeUploader {
+            sender: s,
+            done: Arc::clone(&done),
+        })
+        .build();
+    let pings_per_interval = 10;
+    cfg.rate_limit = Some(glean_core::PingRateLimit {
+        seconds_per_interval: 1,
+        pings_per_interval,
+    });
+
+    let _t = new_glean(Some(cfg), true);
+
+    
+    const PING_NAME: &str = "test-ping";
+    let custom_ping = private::PingType::new(PING_NAME, true, true, vec![]);
+
+    
+    for _ in 0..pings_per_interval {
+        custom_ping.submit(None);
+
+        
+        let url = r.recv().unwrap();
+        assert!(url.contains(PING_NAME));
+    }
+
+    
+    custom_ping.submit(None);
+
+    
+    let now = Instant::now();
+    assert_eq!(
+        r.recv_deadline(now + Duration::from_millis(250)),
+        Err(RecvTimeoutError::Timeout)
+    );
+
+    
+    
+    
+    done.store(true, std::sync::atomic::Ordering::SeqCst);
+    
+    
+    
 }

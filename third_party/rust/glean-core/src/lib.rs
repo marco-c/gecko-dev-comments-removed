@@ -128,6 +128,17 @@ pub struct InternalConfiguration {
     pub trim_data_to_registered_pings: bool,
     
     pub log_level: Option<LevelFilter>,
+    
+    pub rate_limit: Option<PingRateLimit>,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct PingRateLimit {
+    
+    pub seconds_per_interval: u64,
+    
+    pub pings_per_interval: u32,
 }
 
 
@@ -272,6 +283,11 @@ pub fn glean_initialize(
     callbacks: Box<dyn OnGleanEvents>,
 ) {
     initialize_inner(cfg, client_info, callbacks);
+}
+
+
+pub fn glean_shutdown() {
+    shutdown();
 }
 
 

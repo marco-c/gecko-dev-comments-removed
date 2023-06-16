@@ -33,7 +33,7 @@ add_task(function test_fog_metrics_disabled_remotely() {
   Assert.equal(str1, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 
   
-  Services.fog.setMetricsFeatureConfig("{}");
+  Services.fog.testResetFOG();
 });
 
 add_task(function test_fog_multiple_metrics_disabled_remotely() {
@@ -80,8 +80,7 @@ add_task(function test_fog_multiple_metrics_disabled_remotely() {
   Assert.equal(qty1, Glean.testOnly.meaningOfLife.testGetValue("test-ping"));
 
   
-  
-  Services.fog.setMetricsFeatureConfig("{}");
+  Services.fog.testResetFOG();
 
   
   
@@ -119,16 +118,7 @@ add_task(function test_fog_metrics_feature_config_api_handles_null_values() {
   
   
   Glean.testOnly.cheesyString.set(str2);
-  Assert.equal(str2, Glean.testOnly.cheesyString.testGetValue("test-ping"));
-
-  
-  Services.fog.setMetricsFeatureConfig(JSON.stringify(feature_config));
-
-  
-  
-  
-  Glean.testOnly.cheesyString.set(str1);
-  Assert.equal(str2, Glean.testOnly.cheesyString.testGetValue("test-ping"));
+  Assert.equal(str1, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 
   
   
@@ -138,7 +128,7 @@ add_task(function test_fog_metrics_feature_config_api_handles_null_values() {
   
   const str3 = "another cheesy string v3";
   Glean.testOnly.cheesyString.set(str3);
-  Assert.equal(str3, Glean.testOnly.cheesyString.testGetValue("test-ping"));
+  Assert.equal(str1, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 });
 
 add_task(function test_fog_metrics_disabled_reset_fog_behavior() {
@@ -170,5 +160,5 @@ add_task(function test_fog_metrics_disabled_reset_fog_behavior() {
   Assert.equal(str2, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 
   
-  Services.fog.setMetricsFeatureConfig("{}");
+  Services.fog.testResetFOG();
 });

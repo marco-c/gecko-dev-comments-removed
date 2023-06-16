@@ -14,9 +14,9 @@ use crate::CommonMetricData;
 use crate::Glean;
 
 
-const MAX_LIST_LENGTH: usize = 20;
+const MAX_LIST_LENGTH: usize = 100;
 
-const MAX_STRING_LENGTH: usize = 50;
+const MAX_STRING_LENGTH: usize = 100;
 
 
 

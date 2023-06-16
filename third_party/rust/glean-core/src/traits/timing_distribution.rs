@@ -53,6 +53,41 @@ pub trait TimingDistribution {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn accumulate_samples(&self, samples: Vec<i64>);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn test_get_value<'a, S: Into<Option<&'a str>>>(
         &self,
         ping_name: S,

@@ -816,7 +816,7 @@ fn test_setting_log_pings() {
 }
 
 #[test]
-fn test_set_metrics_disabled() {
+fn test_set_remote_metric_configuration() {
     let (glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
         category: "category".to_string(),
@@ -883,11 +883,17 @@ fn test_set_metrics_disabled() {
     );
 
     
-    metrics_enabled_config = json!({}).to_string();
+    metrics_enabled_config = json!(
+        {
+            "category.string_metric": true,
+        }
+    )
+    .to_string();
     glean.set_metrics_enabled_config(
         MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
     );
 
+    
     
     metric.set_sync(&glean, "VALUE_AFTER_REENABLED");
     assert_eq!(
@@ -899,7 +905,38 @@ fn test_set_metrics_disabled() {
         .get("label1")
         .set_sync(&glean, "VALUE_AFTER_REENABLED");
     assert_eq!(
-        "VALUE_AFTER_REENABLED",
+        "TEST_VALUE",
+        another_metric
+            .get("label1")
+            .get_value(&glean, "baseline")
+            .unwrap(),
+        "Should not set if metric config entry unchanged"
+    );
+
+    
+    
+    
+    metrics_enabled_config = json!(
+        {
+            "category.labeled_string_metric": true,
+        }
+    )
+    .to_string();
+    glean.set_metrics_enabled_config(
+        MetricsEnabledConfig::try_from(metrics_enabled_config).unwrap(),
+    );
+
+    
+    
+    metric.set_sync(&glean, "FINAL VALUE");
+    assert_eq!(
+        "FINAL VALUE",
+        metric.get_value(&glean, "baseline").unwrap(),
+        "Should set when still enabled"
+    );
+    another_metric.get("label1").set_sync(&glean, "FINAL VALUE");
+    assert_eq!(
+        "FINAL VALUE",
         another_metric
             .get("label1")
             .get_value(&glean, "baseline")
