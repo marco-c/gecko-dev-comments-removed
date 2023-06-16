@@ -133,6 +133,9 @@ class AudioSinkWrapper : public MediaSink {
   
   
   media::TimeUnit mPositionAtClockStart = media::TimeUnit::Invalid();
+  
+  
+  media::TimeUnit mLastPacketEndTime;
 
   bool mAudioEnded = true;
   MozPromiseRequestHolder<EndedPromise> mAudioSinkEndedRequest;
