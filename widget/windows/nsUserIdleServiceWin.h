@@ -9,6 +9,7 @@
 #define nsUserIdleServiceWin_h__
 
 #include "nsUserIdleService.h"
+#include "mozilla/AppShutdown.h"
 
 
 
@@ -28,6 +29,11 @@ class nsUserIdleServiceWin : public nsUserIdleService {
     RefPtr<nsUserIdleServiceWin> idleService =
         nsUserIdleService::GetInstance().downcast<nsUserIdleServiceWin>();
     if (!idleService) {
+      
+      if (mozilla::AppShutdown::IsInOrBeyond(
+              mozilla::ShutdownPhase::AppShutdownConfirmed)) {
+        return nullptr;
+      }
       idleService = new nsUserIdleServiceWin();
     }
 

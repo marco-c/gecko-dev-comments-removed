@@ -350,10 +350,6 @@ nsUserIdleService* gIdleService;
 }  
 
 already_AddRefed<nsUserIdleService> nsUserIdleService::GetInstance() {
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    return nullptr;
-  }
   RefPtr<nsUserIdleService> instance(gIdleService);
   return instance.forget();
 }
