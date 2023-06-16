@@ -38,7 +38,7 @@ add_task(function losslessDecode() {
   gURLBar.setValueFromResult({ result });
   
   Assert.equal(
-    gURLBar.value,
+    gURLBar.inputField.value,
     urlNoScheme,
     "The string displayed in the textbox should not be escaped"
   );
@@ -71,7 +71,7 @@ add_task(async function actionURILosslessDecode() {
   );
 
   Assert.equal(
-    gURLBar.value,
+    gURLBar.inputField.value,
     urlNoScheme,
     "The string displayed in the textbox should not be escaped"
   );
