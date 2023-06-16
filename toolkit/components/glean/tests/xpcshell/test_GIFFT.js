@@ -380,126 +380,141 @@ add_task(function test_gifft_rate() {
   );
 });
 
-add_task(function test_gifft_numeric_limits() {
-  
-  
+add_task(
+  {
+    
+    skip_if: () => AppConstants.platform == "android",
+  },
+  function test_gifft_numeric_limits() {
+    
+    
 
-  
-  Services.fog.testResetFOG();
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getSnapshotForScalars("main", true );
-  Services.telemetry.getSnapshotForKeyedScalars("main", true );
+    
+    Services.fog.testResetFOG();
+    Services.telemetry.getSnapshotForHistograms("main", true );
+    Services.telemetry.getSnapshotForScalars("main", true );
+    Services.telemetry.getSnapshotForKeyedScalars(
+      "main",
+      true 
+    );
 
-  
-  
-  Glean.testOnlyIpc.aCounter.add(-20);
-  
-  
-  Assert.throws(
-    () => Glean.testOnlyIpc.aCounter.testGetValue(),
-    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
-    "Can't get the value when you're error'd"
-  );
-  Assert.equal(undefined, scalarValue("telemetry.test.mirror_for_counter"));
-  
-  Services.fog.testResetFOG();
+    
+    
+    Glean.testOnlyIpc.aCounter.add(-20);
+    
+    
+    Assert.throws(
+      () => Glean.testOnlyIpc.aCounter.testGetValue(),
+      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      "Can't get the value when you're error'd"
+    );
+    Assert.equal(undefined, scalarValue("telemetry.test.mirror_for_counter"));
+    
+    Services.fog.testResetFOG();
 
-  
-  
-  Glean.testOnlyIpc.aCounter.add(Math.pow(2, 31) - 1);
-  Glean.testOnlyIpc.aCounter.add(1);
-  Glean.testOnlyIpc.aCounter.add(Math.pow(2, 31) - 1);
-  Glean.testOnlyIpc.aCounter.add(2);
-  
-  
-  Assert.equal(Math.pow(2, 31) - 1, Glean.testOnlyIpc.aCounter.testGetValue());
-  
-  Assert.equal(1, scalarValue("telemetry.test.mirror_for_counter"));
+    
+    
+    Glean.testOnlyIpc.aCounter.add(Math.pow(2, 31) - 1);
+    Glean.testOnlyIpc.aCounter.add(1);
+    Glean.testOnlyIpc.aCounter.add(Math.pow(2, 31) - 1);
+    Glean.testOnlyIpc.aCounter.add(2);
+    
+    
+    Assert.equal(
+      Math.pow(2, 31) - 1,
+      Glean.testOnlyIpc.aCounter.testGetValue()
+    );
+    
+    Assert.equal(1, scalarValue("telemetry.test.mirror_for_counter"));
 
-  
-  
-  Glean.testOnly.meaningOfLife.set(-42);
-  
-  Assert.throws(
-    () => Glean.testOnly.meaningOfLife.testGetValue(),
-    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
-    "Can't get the value when you're error'd"
-  );
-  
-  Assert.equal(undefined, scalarValue("telemetry.test.mirror_for_quantity"));
-  
-  Services.fog.testResetFOG();
+    
+    
+    Glean.testOnly.meaningOfLife.set(-42);
+    
+    Assert.throws(
+      () => Glean.testOnly.meaningOfLife.testGetValue(),
+      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      "Can't get the value when you're error'd"
+    );
+    
+    Assert.equal(undefined, scalarValue("telemetry.test.mirror_for_quantity"));
+    
+    Services.fog.testResetFOG();
 
-  
-  
-  Glean.testOnly.meaningOfLife.set(Math.pow(2, 32));
-  Assert.equal(Math.pow(2, 32), Glean.testOnly.meaningOfLife.testGetValue());
-  Assert.equal(
-    Math.pow(2, 32) - 1,
-    scalarValue("telemetry.test.mirror_for_quantity")
-  );
+    
+    
+    Glean.testOnly.meaningOfLife.set(Math.pow(2, 32));
+    Assert.equal(Math.pow(2, 32), Glean.testOnly.meaningOfLife.testGetValue());
+    Assert.equal(
+      Math.pow(2, 32) - 1,
+      scalarValue("telemetry.test.mirror_for_quantity")
+    );
 
-  
-  
-  Glean.testOnlyIpc.irate.addToNumerator(-22);
-  Glean.testOnlyIpc.irate.addToDenominator(7);
-  Assert.throws(
-    () => Glean.testOnlyIpc.irate.testGetValue(),
-    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
-    "Can't get the value when you're error'd"
-  );
-  Assert.deepEqual(
-    { denominator: 7 },
-    keyedScalarValue("telemetry.test.mirror_for_rate")
-  );
-  
-  Services.fog.testResetFOG();
-  
-  Services.telemetry.getSnapshotForKeyedScalars("main", true );
+    
+    
+    Glean.testOnlyIpc.irate.addToNumerator(-22);
+    Glean.testOnlyIpc.irate.addToDenominator(7);
+    Assert.throws(
+      () => Glean.testOnlyIpc.irate.testGetValue(),
+      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      "Can't get the value when you're error'd"
+    );
+    Assert.deepEqual(
+      { denominator: 7 },
+      keyedScalarValue("telemetry.test.mirror_for_rate")
+    );
+    
+    Services.fog.testResetFOG();
+    
+    Services.telemetry.getSnapshotForKeyedScalars(
+      "main",
+      true 
+    );
 
-  
-  Glean.testOnlyIpc.irate.addToNumerator(22);
-  Glean.testOnlyIpc.irate.addToDenominator(-7);
-  Assert.throws(
-    () => Glean.testOnlyIpc.irate.testGetValue(),
-    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
-    "Can't get the value when you're error'd"
-  );
-  Assert.deepEqual(
-    { numerator: 22 },
-    keyedScalarValue("telemetry.test.mirror_for_rate")
-  );
+    
+    Glean.testOnlyIpc.irate.addToNumerator(22);
+    Glean.testOnlyIpc.irate.addToDenominator(-7);
+    Assert.throws(
+      () => Glean.testOnlyIpc.irate.testGetValue(),
+      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      "Can't get the value when you're error'd"
+    );
+    Assert.deepEqual(
+      { numerator: 22 },
+      keyedScalarValue("telemetry.test.mirror_for_rate")
+    );
 
-  
-  
-  
+    
+    
+    
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Glean.testOnlyIpc.aTimingDist.testAccumulateRawMillis(Math.pow(2, 31) + 1);
-  Glean.testOnlyIpc.aTimingDist.testAccumulateRawMillis(Math.pow(2, 32) + 1);
-  Assert.throws(
-    () => Glean.testOnlyIpc.aTimingDist.testGetValue(),
-    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
-    "Can't get the value when you're error'd"
-  );
-  let snapshot = Telemetry.getHistogramById(
-    "TELEMETRY_TEST_EXPONENTIAL"
-  ).snapshot();
-  Assert.equal(
-    snapshot.values["2147483646"],
-    2,
-    "samples > i32::max should end up in the top bucket"
-  );
-});
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Glean.testOnlyIpc.aTimingDist.testAccumulateRawMillis(Math.pow(2, 31) + 1);
+    Glean.testOnlyIpc.aTimingDist.testAccumulateRawMillis(Math.pow(2, 32) + 1);
+    Assert.throws(
+      () => Glean.testOnlyIpc.aTimingDist.testGetValue(),
+      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      "Can't get the value when you're error'd"
+    );
+    let snapshot = Telemetry.getHistogramById(
+      "TELEMETRY_TEST_EXPONENTIAL"
+    ).snapshot();
+    Assert.equal(
+      snapshot.values["2147483646"],
+      2,
+      "samples > i32::max should end up in the top bucket"
+    );
+  }
+);
 
 add_task(function test_gifft_url() {
   const value = "https://www.example.com";

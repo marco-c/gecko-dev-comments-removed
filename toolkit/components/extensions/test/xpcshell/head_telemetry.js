@@ -21,6 +21,13 @@ Services.prefs.setBoolPref(
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
 
+
+
+
+
+
+const IS_ANDROID_BUILD = AppConstants.platform === "android";
+
 const WEBEXT_EVENTPAGE_RUNNING_TIME_MS = "WEBEXT_EVENTPAGE_RUNNING_TIME_MS";
 const WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID =
   "WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID";
@@ -186,6 +193,10 @@ function setupTelemetryForTests() {
 }
 
 function resetTelemetryData() {
+  if (IS_ANDROID_BUILD) {
+    info("Skip testResetFOG on android builds");
+    return;
+  }
   Services.fog.testResetFOG();
 
   
@@ -310,7 +321,12 @@ function assertDNRTelemetryMetricsNoSamples(metrics, msg) {
   assertDNRTelemetryMetricsDefined(metrics);
   for (const metricDetails of metrics) {
     const { metric, label } = metricDetails;
-
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds (${msg})`
+      );
+      return;
+    }
     const gleanData = label
       ? Glean.extensionsApisDnr[metric][label].testGetValue()
       : Glean.extensionsApisDnr[metric].testGetValue();
@@ -336,7 +352,12 @@ function assertDNRTelemetryMetricsGetValueEq(metrics, msg) {
   assertDNRTelemetryMetricsDefined(metrics);
   for (const metricDetails of metrics) {
     const { metric, label, expectedGetValue } = metricDetails;
-
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds`
+      );
+      return;
+    }
     const gleanData = label
       ? Glean.extensionsApisDnr[metric][label].testGetValue()
       : Glean.extensionsApisDnr[metric].testGetValue();
@@ -374,7 +395,12 @@ function assertDNRTelemetryMetricsSamplesCount(metrics, msg) {
 
   for (const metricDetails of metrics) {
     const { metric, expectedSamplesCount } = metricDetails;
-
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds`
+      );
+      return;
+    }
     const gleanData = Glean.extensionsApisDnr[metric].testGetValue();
     Assert.notEqual(
       gleanData,
