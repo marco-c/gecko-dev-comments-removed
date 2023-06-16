@@ -25,7 +25,6 @@
 #include "gc/Allocator.h"             
 #include "gc/Tracer.h"                
 #include "js/AllocPolicy.h"           
-#include "js/CharacterEncoding.h"     
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCVector.h"              
@@ -1053,7 +1052,7 @@ void JSONSyntaxParseHandler<CharT>::reportError(const char* msg,
                                                 const char* columnString) {
   ErrorMetadata metadata;
   metadata.isMuted = false;
-  metadata.filename = JS::ConstUTF8CharsZ("");
+  metadata.filename = "";
   metadata.lineNumber = 0;
   metadata.columnNumber = 0;
 

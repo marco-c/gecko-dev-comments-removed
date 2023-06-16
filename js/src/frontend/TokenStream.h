@@ -204,7 +204,6 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/Token.h"
 #include "frontend/TokenKind.h"
-#include "js/CharacterEncoding.h"  
 #include "js/CompileOptions.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"             
@@ -574,7 +573,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   StrictModeGetter* const strictModeGetter_;
 
   
-  JS::ConstUTF8CharsZ filename_;
+  const char* const filename_;
 
   
 
@@ -1021,7 +1020,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   const JS::ReadOnlyCompileOptions& options() const { return options_; }
 
-  JS::ConstUTF8CharsZ getFilename() const { return filename_; }
+  const char* getFilename() const { return filename_; }
 };
 
 constexpr char16_t CodeUnitValue(char16_t unit) { return unit; }

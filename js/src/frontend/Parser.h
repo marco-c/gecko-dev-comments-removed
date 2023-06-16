@@ -183,7 +183,6 @@
 #include "frontend/SharedContext.h"
 #include "frontend/SyntaxParseHandler.h"
 #include "frontend/TokenStream.h"
-#include "js/CharacterEncoding.h"     
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
 
@@ -327,7 +326,7 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
 
   bool checkOptions();
 
-  JS::ConstUTF8CharsZ getFilename() const { return anyChars.getFilename(); }
+  const char* getFilename() const { return anyChars.getFilename(); }
   TokenPos pos() const { return anyChars.currentToken().pos; }
 
   
