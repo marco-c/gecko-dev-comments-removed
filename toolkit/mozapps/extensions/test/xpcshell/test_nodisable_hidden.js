@@ -5,7 +5,8 @@
 
 
 
-const distroDir = FileUtils.getDir("ProfD", ["sysfeatures"], true);
+const distroDir = FileUtils.getDir("ProfD", ["sysfeatures"]);
+distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 registerDirectory("XREAppFeat", distroDir);
 
 const NORMAL_ID = "normal@tests.mozilla.org";

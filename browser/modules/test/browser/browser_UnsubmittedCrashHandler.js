@@ -26,11 +26,7 @@ const SERVER_URL =
 function getPendingCrashReportDir() {
   
   
-  return FileUtils.getDir(
-    "ProfD",
-    ["UAppData", "Crash Reports", "pending"],
-    false
-  );
+  return FileUtils.getDir("ProfD", ["UAppData", "Crash Reports", "pending"]);
 }
 
 

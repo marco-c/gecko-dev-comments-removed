@@ -142,7 +142,7 @@ class TestNoWindowUpdateRestart(MarionetteTestCase):
         
         update_status_path = self.marionette.execute_script(
             """
-            let statusFile = FileUtils.getDir("UpdRootD", ["updates", "0"], true);
+            let statusFile = FileUtils.getDir("UpdRootD", ["updates", "0"]);
             statusFile.append("update.status");
             return statusFile.path;
         """
