@@ -235,6 +235,9 @@ class RemoteTextureMap {
     RemoteTextureId mLatestTextureId = {0};
     CompositableTextureHostRef mLatestTextureHost;
     CompositableTextureHostRef mLatestRenderedTextureHost;
+    
+    
+    std::deque<CompositableTextureHostRef> mReleasingRenderedTextureHosts;
     std::stack<UniquePtr<TextureData>> mRecycledTextures;
     std::queue<std::shared_ptr<gl::SharedSurface>> mRecycledSharedSurfaces;
   };

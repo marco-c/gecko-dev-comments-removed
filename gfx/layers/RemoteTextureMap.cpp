@@ -213,6 +213,12 @@ void RemoteTextureMap::PushTexture(
     mMonitor.Notify();
 
     
+    
+    if (!owner->mReleasingRenderedTextureHosts.empty()) {
+      owner->mReleasingRenderedTextureHosts.clear();
+    }
+
+    
     while (!owner->mUsingTextureDataHolders.empty()) {
       auto& front = owner->mUsingTextureDataHolders.front();
       
@@ -361,8 +367,7 @@ void RemoteTextureMap::KeepTextureDataAliveForTextureHostIfNecessary(
 void RemoteTextureMap::UnregisterTextureOwner(
     const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid) {
   UniquePtr<TextureOwner> releasingOwner;  
-  std::vector<RefPtr<TextureHost>>
-      releasingTextures;  
+  RefPtr<TextureHost> releasingTexture;    
   std::vector<std::function<void(const RemoteTextureInfo&)>>
       renderingReadyCallbacks;  
   {
@@ -377,13 +382,19 @@ void RemoteTextureMap::UnregisterTextureOwner(
 
     if (it->second->mLatestTextureHost) {
       
-      releasingTextures.emplace_back(it->second->mLatestTextureHost);
+      releasingTexture = it->second->mLatestTextureHost;
       it->second->mLatestTextureHost = nullptr;
     }
 
+    
+    
+    
+    
+    
+    if (!it->second->mReleasingRenderedTextureHosts.empty()) {
+      it->second->mReleasingRenderedTextureHosts.clear();
+    }
     if (it->second->mLatestRenderedTextureHost) {
-      
-      releasingTextures.emplace_back(it->second->mLatestRenderedTextureHost);
       it->second->mLatestRenderedTextureHost = nullptr;
     }
 
@@ -436,9 +447,15 @@ void RemoteTextureMap::UnregisterTextureOwners(
         it->second->mLatestTextureHost = nullptr;
       }
 
+      
+      
+      
+      
+      
+      if (!it->second->mReleasingRenderedTextureHosts.empty()) {
+        it->second->mReleasingRenderedTextureHosts.clear();
+      }
       if (it->second->mLatestRenderedTextureHost) {
-        
-        releasingTextures.emplace_back(it->second->mLatestRenderedTextureHost);
         it->second->mLatestRenderedTextureHost = nullptr;
       }
 
@@ -691,6 +708,11 @@ wr::MaybeExternalImageId RemoteTextureMap::GetExternalImageIdOfRemoteTexture(
     }
   } else {
     
+    if (owner->mLatestRenderedTextureHost) {
+      owner->mReleasingRenderedTextureHosts.push_back(
+          owner->mLatestRenderedTextureHost);
+      owner->mLatestRenderedTextureHost = nullptr;
+    }
     owner->mLatestRenderedTextureHost = remoteTexture;
   }
 
