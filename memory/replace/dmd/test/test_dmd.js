@@ -13,12 +13,20 @@ const { FileUtils } = ChromeUtils.importESModule(
 
 var gPythonName = Services.env.get("PYTHON");
 
+const gCwd = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+
+function getRelativeFile(...components) {
+  return new FileUtils.File(PathUtils.join(gCwd.path, ...components));
+}
+
 
 
 function getExecutable(aFilename) {
-  let file = FileUtils.getFile("CurProcD", [aFilename]);
+  let file = new FileUtils.File(
+    PathUtils.join(Services.dirsvc.get("CurProcD", Ci.nsIFile).path, aFilename)
+  );
   if (!file.exists()) {
-    file = FileUtils.getFile("CurWorkD", []);
+    file = gCwd.clone();
     while (file.path.includes("xpcshell")) {
       file = file.parent;
     }
@@ -33,7 +41,7 @@ var gDmdTestFile = getExecutable("SmokeDMD" + (gIsWindows ? ".exe" : ""));
 
 var gDmdScriptFile = getExecutable("dmd.py");
 
-var gScanTestFile = FileUtils.getFile("CurWorkD", ["scan-test.py"]);
+var gScanTestFile = getRelativeFile("scan-test.py");
 
 function readFile(aFile) {
   let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
@@ -68,8 +76,8 @@ function runProcess(aExeFile, aArgs) {
 function test(aPrefix, aArgs) {
   
   
-  let expectedFile = FileUtils.getFile("CurWorkD", [aPrefix + "-expected.txt"]);
-  let actualFile = FileUtils.getFile("CurWorkD", [aPrefix + "-actual.txt"]);
+  let expectedFile = getRelativeFile(`${aPrefix}-expected.txt`);
+  let actualFile = getRelativeFile(`${aPrefix}-actual.txt`);
 
   
 
@@ -140,7 +148,7 @@ function run_test() {
 
   function test2(aTestName, aMode) {
     let name = "complete-" + aTestName + "-" + aMode;
-    jsonFile = FileUtils.getFile("CurWorkD", [name + ".json"]);
+    jsonFile = getRelativeFile(`${name}.json`);
     test(name, [jsonFile.path]);
     jsonFile.remove(true);
   }
@@ -160,7 +168,7 @@ function run_test() {
   test2("partial", "live");
 
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["basic-scan.json"]);
+  jsonFile = getRelativeFile("basic-scan.json");
   ok(scanTest(jsonFile.path), "Basic scan test");
 
   let is64Bit = Services.appinfo.is64Bit;
@@ -185,7 +193,7 @@ function run_test() {
   
   
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["script-max-frames.json"]);
+  jsonFile = getRelativeFile("script-max-frames.json");
   test("script-max-frames-8", [jsonFile.path]); 
   test("script-max-frames-3", [
     "--max-frames=3",
@@ -197,7 +205,7 @@ function run_test() {
   
   
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["script-sort-by.json.gz"]);
+  jsonFile = getRelativeFile("script-sort-by.json.gz");
   test("script-sort-by-usable", ["--sort-by=usable", jsonFile.path]);
   test("script-sort-by-req", [
     "--sort-by=req",
@@ -209,16 +217,16 @@ function run_test() {
 
   
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["script-ignore-alloc-fns.json"]);
+  jsonFile = getRelativeFile("script-ignore-alloc-fns.json");
   test("script-ignore-alloc-fns", ["--ignore-alloc-fns", jsonFile.path]);
 
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["script-diff-live1.json"]);
-  jsonFile2 = FileUtils.getFile("CurWorkD", ["script-diff-live2.json"]);
+  jsonFile = getRelativeFile("script-diff-live1.json");
+  jsonFile2 = getRelativeFile("script-diff-live2.json");
   test("script-diff-live", [jsonFile.path, jsonFile2.path]);
 
   
-  jsonFile = FileUtils.getFile("CurWorkD", ["script-diff-dark-matter1.json"]);
-  jsonFile2 = FileUtils.getFile("CurWorkD", ["script-diff-dark-matter2.json"]);
+  jsonFile = getRelativeFile("script-diff-dark-matter1.json");
+  jsonFile2 = getRelativeFile("script-diff-dark-matter2.json");
   test("script-diff-dark-matter", [jsonFile.path, jsonFile2.path]);
 }
