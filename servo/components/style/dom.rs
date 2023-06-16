@@ -19,7 +19,7 @@ use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylist::CascadeData;
 use crate::values::computed::Display;
 use crate::values::AtomIdent;
-use crate::{LocalName, Namespace, WeakAtom};
+use crate::WeakAtom;
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 use dom::ElementState;
 use selectors::matching::{QuirksMode, VisitedHandlingMode};
@@ -511,9 +511,6 @@ pub trait TElement:
 
     
     fn state(&self) -> ElementState;
-
-    
-    fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
 
     
     fn has_part_attr(&self) -> bool;
