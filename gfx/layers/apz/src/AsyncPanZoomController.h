@@ -565,6 +565,9 @@ class AsyncPanZoomController {
   bool CanScrollDownwards() const;
 
   
+  bool CanOverscrollUpwards() const;
+
+  
 
 
 

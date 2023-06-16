@@ -54,7 +54,8 @@ struct APZHandledResult {
   
   
   APZHandledResult(APZHandledPlace aPlace,
-                   const AsyncPanZoomController* aTarget);
+                   const AsyncPanZoomController* aTarget,
+                   bool aPopulateDirectionsForUnhandled = false);
   APZHandledResult(APZHandledPlace aPlace, SideBits aScrollableDirections,
                    ScrollDirections aOverscrollDirections)
       : mPlace(aPlace),

@@ -108,10 +108,27 @@ void APZEventResult::UpdateHandledResult(
   }
 
   if (aTarget && !aTarget->IsRootContent()) {
-    auto [result, rootApzc] =
+    
+    
+    
+    bool mayTriggerPullToRefresh =
+        aBlock.GetOverscrollHandoffChain()->ScrollingUpWillTriggerPullToRefresh(
+            aTarget);
+    if (mayTriggerPullToRefresh) {
+      
+      
+      
+      
+      mHandledResult = (aDispatchToContent)
+                           ? Nothing()
+                           : Some(APZHandledResult{APZHandledPlace::Unhandled,
+                                                   aTarget, true});
+    }
+
+    auto [mayMoveDynamicToolbar, rootApzc] =
         aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
             aTarget);
-    if (result) {
+    if (mayMoveDynamicToolbar) {
       MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
       
       
@@ -339,11 +356,16 @@ APZEventResult APZInputBridge::ReceiveInputEvent(
 }
 
 APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
-                                   const AsyncPanZoomController* aTarget)
+                                   const AsyncPanZoomController* aTarget,
+                                   bool aPopulateDirectionsForUnhandled)
     : mPlace(aPlace) {
   MOZ_ASSERT(aTarget);
   switch (aPlace) {
     case APZHandledPlace::Unhandled:
+      if (aPopulateDirectionsForUnhandled) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
+      }
       break;
     case APZHandledPlace::HandledByContent:
       if (aTarget) {
