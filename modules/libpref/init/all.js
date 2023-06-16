@@ -3744,12 +3744,6 @@ pref("dom.payments.request.supportedRegions", "US,CA");
   pref("toolkit.telemetry.overrideUpdateChannel", "nightly-asan");
 #endif
 
-#ifdef RELEASE_OR_BETA
-  pref("toolkit.aboutPerformance.showInternals", false);
-#else
-  pref("toolkit.aboutPerformance.showInternals", true);
-#endif
-
 
 pref("toolkit.aboutProcesses.showAllSubframes", false);
 
