@@ -37,7 +37,8 @@ Services.prefs.setIntPref(
 
 
 
-const distroDir = FileUtils.getDir("ProfD", ["sysfeatures"], true);
+const distroDir = FileUtils.getDir("ProfD", ["sysfeatures"]);
+distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 registerDirectory("XREAppFeat", distroDir);
 
 function getInstallLocation({
