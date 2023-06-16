@@ -339,6 +339,30 @@ impl ThreadPool {
         
         unsafe { broadcast::spawn_broadcast_in(op, &self.registry) }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn yield_now(&self) -> Option<Yield> {
+        let curr = self.registry.current_thread()?;
+        Some(curr.yield_now())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn yield_local(&self) -> Option<Yield> {
+        let curr = self.registry.current_thread()?;
+        Some(curr.yield_local())
+    }
 }
 
 impl Drop for ThreadPool {
@@ -399,4 +423,49 @@ pub fn current_thread_has_pending_tasks() -> Option<bool> {
         let curr = WorkerThread::current().as_ref()?;
         Some(!curr.local_deque_is_empty())
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn yield_now() -> Option<Yield> {
+    unsafe {
+        let thread = WorkerThread::current().as_ref()?;
+        Some(thread.yield_now())
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+pub fn yield_local() -> Option<Yield> {
+    unsafe {
+        let thread = WorkerThread::current().as_ref()?;
+        Some(thread.yield_local())
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Yield {
+    
+    Executed,
+    
+    Idle,
 }

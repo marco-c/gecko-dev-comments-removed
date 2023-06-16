@@ -44,6 +44,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
@@ -85,6 +102,7 @@ pub use self::spawn::{spawn, spawn_fifo};
 pub use self::thread_pool::current_thread_has_pending_tasks;
 pub use self::thread_pool::current_thread_index;
 pub use self::thread_pool::ThreadPool;
+pub use self::thread_pool::{yield_local, yield_now, Yield};
 
 use self::registry::{CustomSpawn, DefaultSpawn, ThreadSpawn};
 
@@ -706,6 +724,10 @@ impl Configuration {
 impl ThreadPoolBuildError {
     fn new(kind: ErrorKind) -> ThreadPoolBuildError {
         ThreadPoolBuildError { kind }
+    }
+
+    fn is_unsupported(&self) -> bool {
+        matches!(&self.kind, ErrorKind::IOError(e) if e.kind() == io::ErrorKind::Unsupported)
     }
 }
 

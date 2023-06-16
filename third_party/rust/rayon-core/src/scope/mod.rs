@@ -615,7 +615,7 @@ impl<'scope> ScopeFifo<'scope> {
                 
                 unsafe { worker.push(fifo.push(job_ref)) };
             }
-            None => self.base.registry.inject(&[job_ref]),
+            None => self.base.registry.inject(job_ref),
         }
     }
 

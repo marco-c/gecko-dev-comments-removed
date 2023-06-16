@@ -30,7 +30,6 @@ pub(super) trait Job {
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(super) struct JobRef {
     pointer: *const (),
     execute_fn: unsafe fn(*const ()),
@@ -51,6 +50,13 @@ impl JobRef {
             pointer: data as *const (),
             execute_fn: <T as Job>::execute,
         }
+    }
+
+    
+    
+    #[inline]
+    pub(super) fn id(&self) -> impl Eq {
+        (self.pointer, self.execute_fn)
     }
 
     #[inline]

@@ -40,10 +40,12 @@ fn overflow_code() -> Option<i32> {
 }
 
 #[test]
+#[cfg_attr(not(any(unix, windows)), ignore)]
 fn stack_overflow_crash() {
     
     
     let status = run_ignored("run_with_small_stack");
+    assert!(!status.success());
     #[cfg(any(unix, windows))]
     assert_eq!(status.code(), overflow_code());
     #[cfg(target_os = "linux")]
