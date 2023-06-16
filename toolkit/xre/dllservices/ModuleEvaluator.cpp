@@ -160,10 +160,6 @@ Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
   
   
   if (aModuleRecord.mVendorInfo.isSome() &&
-      aModuleRecord.mVendorInfo.ref().mHasNestedMicrosoftSignature) {
-    return Some(ModuleTrustFlags::MicrosoftWindowsSignature);
-  }
-  if (aModuleRecord.mVendorInfo.isSome() &&
       aModuleRecord.mVendorInfo.ref().mSource ==
           VendorInfo::Source::Signature) {
     const nsString& signedBy = aModuleRecord.mVendorInfo.ref().mVendor;
