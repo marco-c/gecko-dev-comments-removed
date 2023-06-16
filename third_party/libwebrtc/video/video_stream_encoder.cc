@@ -2434,8 +2434,13 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
   stream_resource_manager_.OnEncodeCompleted(encoded_image, time_sent_us,
                                              encode_duration_us, frame_size);
   if (bitrate_adjuster_) {
-    bitrate_adjuster_->OnEncodedFrame(
-        frame_size, encoded_image.SpatialIndex().value_or(0), temporal_index);
+    
+    
+    
+    
+    int stream_index = encoded_image.SpatialIndex().value_or(
+        encoded_image.SimulcastIndex().value_or(0));
+    bitrate_adjuster_->OnEncodedFrame(frame_size, stream_index, temporal_index);
   }
 }
 

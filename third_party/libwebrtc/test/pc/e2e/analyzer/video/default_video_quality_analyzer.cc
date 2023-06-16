@@ -347,10 +347,15 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
   used_encoder.last_frame_id = frame_id;
   used_encoder.switched_on_at = now;
   used_encoder.switched_from_at = now;
+  
+  
+  
+  
+  size_t stream_index = encoded_image.SpatialIndex().value_or(
+      encoded_image.SimulcastIndex().value_or(0));
   frame_in_flight.OnFrameEncoded(
       now, encoded_image._frameType, DataSize::Bytes(encoded_image.size()),
-      stats.target_encode_bitrate, encoded_image.SpatialIndex().value_or(0),
-      stats.qp, used_encoder);
+      stats.target_encode_bitrate, stream_index, stats.qp, used_encoder);
 
   if (options_.report_infra_metrics) {
     analyzer_stats_.on_frame_encoded_processing_time_ms.AddSample(

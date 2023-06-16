@@ -91,15 +91,7 @@ class RTC_EXPORT EncodedImage {
 
   
   
-  absl::optional<int> SimulcastIndex() const {
-    
-    
-    
-    
-    
-    
-    return simulcast_index_.has_value() ? simulcast_index_ : spatial_index_;
-  }
+  absl::optional<int> SimulcastIndex() const { return simulcast_index_; }
   void SetSimulcastIndex(absl::optional<int> simulcast_index) {
     RTC_DCHECK_GE(simulcast_index.value_or(0), 0);
     RTC_DCHECK_LT(simulcast_index.value_or(0), kMaxSimulcastStreams);
@@ -109,15 +101,7 @@ class RTC_EXPORT EncodedImage {
   
   
   
-  absl::optional<int> SpatialIndex() const {
-    
-    
-    
-    
-    
-    
-    return spatial_index_.has_value() ? spatial_index_ : simulcast_index_;
-  }
+  absl::optional<int> SpatialIndex() const { return spatial_index_; }
   void SetSpatialIndex(absl::optional<int> spatial_index) {
     RTC_DCHECK_GE(spatial_index.value_or(0), 0);
     RTC_DCHECK_LT(spatial_index.value_or(0), kMaxSpatialLayers);

@@ -9476,7 +9476,7 @@ TEST(VideoStreamEncoderFrameCadenceTest, UpdatesQualityConvergence) {
         
         
         encoded_image.qp_ = kVp8SteadyStateQpThreshold +
-                            (encoded_image.SpatialIndex() == 0 ? 0 : 1);
+                            (encoded_image.SimulcastIndex() == 0 ? 0 : 1);
         CodecSpecificInfo codec_specific;
         codec_specific.codecType = kVideoCodecVP8;
         return codec_specific;

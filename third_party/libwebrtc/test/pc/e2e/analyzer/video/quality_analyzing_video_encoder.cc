@@ -279,8 +279,14 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
 
     discard = ShouldDiscard(frame_id, encoded_image);
     if (!discard) {
-      target_encode_bitrate = bitrate_allocation_.GetSpatialLayerSum(
-          encoded_image.SpatialIndex().value_or(0));
+      
+      
+      
+      
+      size_t stream_index = encoded_image.SpatialIndex().value_or(
+          encoded_image.SimulcastIndex().value_or(0));
+      target_encode_bitrate =
+          bitrate_allocation_.GetSpatialLayerSum(stream_index);
     }
     codec_name =
         std::string(CodecTypeToPayloadString(codec_settings_.codecType)) + "_" +
@@ -326,7 +332,12 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
   if (!emulated_sfu_config)
     return false;
 
-  int cur_spatial_index = encoded_image.SpatialIndex().value_or(0);
+  
+  
+  
+  
+  int cur_stream_index = encoded_image.SpatialIndex().value_or(
+      encoded_image.SimulcastIndex().value_or(0));
   int cur_temporal_index = encoded_image.TemporalIndex().value_or(0);
 
   if (emulated_sfu_config->target_temporal_index &&
@@ -338,12 +349,12 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
       case SimulcastMode::kSimulcast:
         
         
-        return cur_spatial_index != *emulated_sfu_config->target_layer_index;
+        return cur_stream_index != *emulated_sfu_config->target_layer_index;
       case SimulcastMode::kSVC:
         
         
         
-        return cur_spatial_index > *emulated_sfu_config->target_layer_index;
+        return cur_stream_index > *emulated_sfu_config->target_layer_index;
       case SimulcastMode::kKSVC:
         
         
@@ -353,8 +364,8 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
         
         if (encoded_image._frameType == VideoFrameType::kVideoFrameKey ||
             cur_temporal_index == 0)
-          return cur_spatial_index > *emulated_sfu_config->target_layer_index;
-        return cur_spatial_index != *emulated_sfu_config->target_layer_index;
+          return cur_stream_index > *emulated_sfu_config->target_layer_index;
+        return cur_stream_index != *emulated_sfu_config->target_layer_index;
       case SimulcastMode::kNormal:
         RTC_DCHECK_NOTREACHED() << "Analyzing encoder is in kNormal mode, but "
                                    "target_layer_index is set";

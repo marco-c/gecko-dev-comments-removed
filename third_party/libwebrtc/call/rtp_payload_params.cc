@@ -202,15 +202,8 @@ RTPVideoHeader RtpPayloadParams::GetRtpVideoHeader(
   if (codec_specific_info) {
     PopulateRtpWithCodecSpecifics(*codec_specific_info, image.SpatialIndex(),
                                   &rtp_video_header);
-    
-    
-    
-    
-    if (codec_specific_info->codecType != kVideoCodecVP9 &&
-        codec_specific_info->codecType != kVideoCodecAV1) {
-      rtp_video_header.simulcastIdx = image.SimulcastIndex().value_or(0);
-    }
   }
+  rtp_video_header.simulcastIdx = image.SimulcastIndex().value_or(0);
   rtp_video_header.frame_type = image._frameType;
   rtp_video_header.rotation = image.rotation_;
   rtp_video_header.content_type = image.content_type_;

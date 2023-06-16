@@ -88,7 +88,7 @@ class FrameInFlight {
                       VideoFrameType frame_type,
                       DataSize encoded_image_size,
                       uint32_t target_encode_bitrate,
-                      int spatial_layer,
+                      int stream_index,
                       int qp,
                       StreamCodecInfo used_encoder);
 
@@ -157,7 +157,7 @@ class FrameInFlight {
   uint32_t target_encode_bitrate_ = 0;
   
   
-  std::map<int, SamplesStatsCounter> spatial_layers_qp_;
+  std::map<int, SamplesStatsCounter> stream_layers_qp_;
   
   absl::optional<StreamCodecInfo> used_encoder_ = absl::nullopt;
   
