@@ -26,6 +26,7 @@ namespace frontend {
 struct CompilationAtomCache;
 struct CompilationStencil;
 struct ScopeStencilRef;
+struct FakeStencilGlobalScope;
 struct CompilationStencilMerger;
 
 
@@ -81,6 +82,10 @@ struct GenericAtom {
   
   GenericAtom(const CompilationStencil& context, TaggedParserAtomIndex index);
   GenericAtom(ScopeStencilRef& scope, TaggedParserAtomIndex index);
+  GenericAtom(const FakeStencilGlobalScope& scope, TaggedParserAtomIndex index)
+    : ref((JSAtom*) nullptr) {
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE();
+  }
 
   
   
@@ -105,6 +110,10 @@ struct BindingHasher<TaggedParserAtomIndex> {
     GenericAtom other;
 
     Lookup(ScopeStencilRef& scope_ref, const GenericAtom& other);
+    Lookup(const FakeStencilGlobalScope& scope_ref, const GenericAtom& other)
+        : keyStencil(*(const CompilationStencil*) nullptr), other(other) {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE();
+    }
   };
 
   static HashNumber hash(const Lookup& aLookup) { return aLookup.other.hash; }
@@ -177,18 +186,22 @@ class ScopeBindingCache {
   
   virtual bool canCacheFor(Scope* ptr);
   virtual bool canCacheFor(ScopeStencilRef ref);
+  virtual bool canCacheFor(const FakeStencilGlobalScope& ref);
 
   
   
   virtual BindingMap<JSAtom*>* createCacheFor(Scope* ptr);
   virtual BindingMap<TaggedParserAtomIndex>* createCacheFor(
       ScopeStencilRef ref);
+  virtual BindingMap<TaggedParserAtomIndex>* createCacheFor(const FakeStencilGlobalScope& ref);
 
   
   
   
   virtual BindingMap<JSAtom*>* lookupScope(Scope* ptr, CacheGeneration gen);
   virtual BindingMap<TaggedParserAtomIndex>* lookupScope(ScopeStencilRef ref,
+                                                         CacheGeneration gen);
+  virtual BindingMap<TaggedParserAtomIndex>* lookupScope(const FakeStencilGlobalScope& ref,
                                                          CacheGeneration gen);
 };
 
@@ -202,6 +215,7 @@ class NoScopeBindingCache final : public ScopeBindingCache {
 
   bool canCacheFor(Scope* ptr) override;
   bool canCacheFor(ScopeStencilRef ref) override;
+  bool canCacheFor(const FakeStencilGlobalScope& ref) override;
 };
 
 
@@ -233,10 +247,16 @@ class MOZ_STACK_CLASS StencilScopeBindingCache final
   CacheGeneration getCurrentGeneration() const override { return 1; }
 
   bool canCacheFor(ScopeStencilRef ref) override;
+  bool canCacheFor(const FakeStencilGlobalScope& ref) override;
+
   BindingMap<TaggedParserAtomIndex>* createCacheFor(
       ScopeStencilRef ref) override;
+  BindingMap<TaggedParserAtomIndex>* createCacheFor(
+      const FakeStencilGlobalScope& ref) override;
+
   BindingMap<TaggedParserAtomIndex>* lookupScope(ScopeStencilRef ref,
                                                  CacheGeneration gen) override;
+  BindingMap<TaggedParserAtomIndex>* lookupScope(const FakeStencilGlobalScope& ref, CacheGeneration gen) override;
 };
 
 

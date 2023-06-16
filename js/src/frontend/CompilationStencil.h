@@ -65,6 +65,12 @@ struct InputName;
 class ScopeBindingCache;
 
 
+
+
+
+struct FakeStencilGlobalScope {};
+
+
 struct ScopeStencilRef {
   const CompilationStencil& context_;
   const ScopeIndex scopeIndex_;
@@ -80,12 +86,16 @@ struct ScopeStencilRef {
 
 
 class InputScope {
-  using InputScopeStorage = mozilla::Variant<Scope*, ScopeStencilRef>;
+  using InputScopeStorage =
+      mozilla::Variant<Scope*, ScopeStencilRef, FakeStencilGlobalScope>;
   InputScopeStorage scope_;
 
  public:
   
   explicit InputScope(Scope* ptr) : scope_(ptr) {}
+
+  
+  explicit InputScope(FakeStencilGlobalScope global) : scope_(global) {}
 
   
   
@@ -125,19 +135,24 @@ class InputScope {
   bool isNull() const {
     return scope_.match(
         [](const Scope* ptr) { return !ptr; },
-        [](const ScopeStencilRef& ref) { return !ref.scopeIndex_.isValid(); });
+        [](const ScopeStencilRef& ref) { return !ref.scopeIndex_.isValid(); },
+        [](const FakeStencilGlobalScope&) { return false; });
   }
 
   ScopeKind kind() const {
     return scope_.match(
         [](const Scope* ptr) { return ptr->kind(); },
-        [](const ScopeStencilRef& ref) { return ref.scope().kind(); });
+        [](const ScopeStencilRef& ref) { return ref.scope().kind(); },
+        [](const FakeStencilGlobalScope&) { return ScopeKind::Global; });
   };
   bool hasEnvironment() const {
-    return scope_.match([](const Scope* ptr) { return ptr->hasEnvironment(); },
-                        [](const ScopeStencilRef& ref) {
-                          return ref.scope().hasEnvironment();
-                        });
+    return scope_.match(
+        [](const Scope* ptr) { return ptr->hasEnvironment(); },
+        [](const ScopeStencilRef& ref) { return ref.scope().hasEnvironment(); },
+        [](const FakeStencilGlobalScope&) {
+          
+          return true;
+        });
   };
   inline InputScope enclosing() const;
   bool hasOnChain(ScopeKind kind) const {
@@ -150,13 +165,18 @@ class InputScope {
             if (scope.kind() == kind) {
               return true;
             }
+            if (scope.kind() == ScopeKind::Module &&
+                kind == ScopeKind::Global) {
+              return true;
+            }
             if (!scope.hasEnclosing()) {
               break;
             }
             new (&it) ScopeStencilRef{ref.context_, scope.enclosing()};
           }
           return false;
-        });
+        },
+        [=](const FakeStencilGlobalScope&) { return kind == ScopeKind::Global; });
   }
   uint32_t environmentChainLength() const {
     return scope_.match(
@@ -170,16 +190,32 @@ class InputScope {
                 scope.kind() != ScopeKind::NonSyntactic) {
               length++;
             }
+            if (scope.kind() == ScopeKind::Module) {
+              
+              
+              
+              
+              MOZ_ASSERT(!scope.hasEnclosing());
+              length += js::ModuleScope::EnclosingEnvironmentChainLength;
+            }
             if (!scope.hasEnclosing()) {
               break;
             }
             new (&it) ScopeStencilRef{ref.context_, scope.enclosing()};
           }
           return length;
+        },
+        [=](const FakeStencilGlobalScope&) {
+          
+          
+          
+          
+          
+          return uint32_t(js::ModuleScope::EnclosingEnvironmentChainLength);
         });
   }
   void trace(JSTracer* trc);
-  bool isStencil() const { return scope_.is<ScopeStencilRef>(); };
+  bool isStencil() const { return !scope_.is<Scope*>(); };
 
   
   
@@ -357,6 +393,10 @@ struct InputName {
   InputName(BaseScript*, JSAtom* ptr) : variant_(ptr) {}
   InputName(const ScriptStencilRef& script, TaggedParserAtomIndex index)
       : variant_(NameStencilRef{script.context_, index}) {}
+
+  
+  InputName(const FakeStencilGlobalScope&, TaggedParserAtomIndex)
+      : variant_(static_cast<JSAtom*>(nullptr)) {}
 
   
   
@@ -1782,8 +1822,15 @@ InputScope InputScope::enclosing() const {
         if (ref.scope().hasEnclosing()) {
           return InputScope(ref.context_, ref.scope().enclosing());
         }
+        
+        
+        
+        if (ref.scope().kind() == ScopeKind::Module) {
+          return InputScope(FakeStencilGlobalScope{});
+        }
         return InputScope(nullptr);
-      });
+      },
+      [](const FakeStencilGlobalScope&) { return InputScope(nullptr); });
 }
 
 FunctionFlags InputScope::functionFlags() const {
@@ -1797,6 +1844,9 @@ FunctionFlags InputScope::functionFlags() const {
         ScriptIndex scriptIndex = ref.scope().functionIndex();
         ScriptStencil& data = ref.context_.scriptData[scriptIndex];
         return data.functionFlags;
+      },
+      [](const FakeStencilGlobalScope&) -> FunctionFlags {
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("No functionFlags on global.");
       });
 }
 
@@ -1811,6 +1861,9 @@ ImmutableScriptFlags InputScope::immutableFlags() const {
         ScriptIndex scriptIndex = ref.scope().functionIndex();
         ScriptStencilExtra& extra = ref.context_.scriptExtra[scriptIndex];
         return extra.immutableFlags;
+      },
+      [](const FakeStencilGlobalScope&) -> ImmutableScriptFlags {
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("No immutableFlags on global.");
       });
 }
 
@@ -1825,6 +1878,10 @@ MemberInitializers InputScope::getMemberInitializers() const {
         ScriptIndex scriptIndex = ref.scope().functionIndex();
         ScriptStencilExtra& extra = ref.context_.scriptExtra[scriptIndex];
         return extra.memberInitializers();
+      },
+      [](const FakeStencilGlobalScope&) -> MemberInitializers {
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+            "No getMemberInitializers on global.");
       });
 }
 
