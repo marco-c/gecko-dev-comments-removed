@@ -36,6 +36,7 @@ class WindowGlobalParent;
 }  
 
 namespace net {
+class EarlyHintPreloader;
 class LoadInfoArgs;
 class LoadInfo;
 }  
@@ -268,6 +269,7 @@ class LoadInfo final : public nsILoadInfo {
   
   
   friend class ::nsDocShell;
+  friend class mozilla::net::EarlyHintPreloader;
   void UpdateBrowsingContextID(uint64_t aBrowsingContextID) {
     mBrowsingContextID = aBrowsingContextID;
   }
