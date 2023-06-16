@@ -918,7 +918,7 @@ function do_test(testcases, testFn) {
         }
 
         handler.activeSection.fieldDetails.forEach(field => {
-          let element = field.element;
+          let element = field.elementWeakRef.get();
           if (!testcase.profileData[field.fieldName]) {
             
             
