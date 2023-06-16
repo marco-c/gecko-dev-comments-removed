@@ -11,8 +11,8 @@
 
 
 
-var { CanonicalJSON } = ChromeUtils.import(
-  "resource://gre/modules/CanonicalJSON.jsm"
+var { CanonicalJSON } = ChromeUtils.importESModule(
+  "resource://gre/modules/CanonicalJSON.sys.mjs"
 );
 var { Log } = ChromeUtils.importESModule("resource://gre/modules/Log.sys.mjs");
 

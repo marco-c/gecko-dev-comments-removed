@@ -1,24 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["CanonicalJSON"];
-
-var CanonicalJSON = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+export var CanonicalJSON = {
+  /**
+   * Return the canonical JSON form of the passed source, sorting all the object
+   * keys recursively. Note that this method will cause an infinite loop if
+   * cycles exist in the source (bug 1265357).
+   *
+   * @param source
+   *        The elements to be serialized.
+   *
+   * The output will have all unicode chars escaped with the unicode codepoint
+   * as lowercase hexadecimal.
+   *
+   * @usage
+   *        CanonicalJSON.stringify(listOfRecords);
+   **/
   stringify: function stringify(source, jsescFn) {
     if (typeof jsescFn != "function") {
       const { jsesc } = ChromeUtils.importESModule(
@@ -39,20 +37,20 @@ var CanonicalJSON = {
       }
     }
 
-    
+    // Leverage jsesc library, mainly for unicode escaping.
     const toJSON = input => jsescFn(input, { lowercaseHex: true, json: true });
 
     if (typeof source !== "object" || source === null) {
       return toJSON(source);
     }
 
-    
+    // Dealing with objects, ordering keys.
     const sortedKeys = Object.keys(source).sort();
     const lastIndex = sortedKeys.length - 1;
     return (
       sortedKeys.reduce((serial, key, index) => {
         const value = source[key];
-        
+        // JSON.stringify drops keys with an undefined value.
         if (typeof value === "undefined") {
           return serial;
         }
