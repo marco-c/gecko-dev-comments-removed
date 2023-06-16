@@ -89,6 +89,8 @@ class VideoCodecTester {
     virtual ~Encoder() = default;
 
     virtual void Encode(const VideoFrame& frame, EncodeCallback callback) = 0;
+
+    virtual void Flush() = 0;
   };
 
   
@@ -100,6 +102,8 @@ class VideoCodecTester {
     virtual ~Decoder() = default;
 
     virtual void Decode(const EncodedImage& frame, DecodeCallback callback) = 0;
+
+    virtual void Flush() = 0;
   };
 
   
