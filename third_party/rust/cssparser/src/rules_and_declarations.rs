@@ -4,7 +4,9 @@
 
 
 
-use super::{BasicParseError, BasicParseErrorKind, Delimiter, Delimiters, ParseError, Parser, Token};
+use super::{
+    BasicParseError, BasicParseErrorKind, Delimiter, Delimiters, ParseError, Parser, Token,
+};
 use crate::cow_rc_str::CowRcStr;
 use crate::parser::{parse_nested_block, parse_until_after, parse_until_before, ParserState};
 
@@ -240,7 +242,6 @@ impl<'i, 't, 'a, P, I, E> RuleBodyParser<'i, 't, 'a, P, I, E> {
 }
 
 
-
 impl<'i, 't, 'a, I, P, E: 'i> Iterator for RuleBodyParser<'i, 't, 'a, P, I, E>
 where
     P: RuleBodyItemParser<'i, I, E>,
@@ -252,47 +253,51 @@ where
             self.input.skip_whitespace();
             let start = self.input.state();
             match self.input.next_including_whitespace_and_comments().ok()? {
+                Token::CloseCurlyBracket |
+                Token::WhiteSpace(..) |
+                Token::Semicolon |
                 Token::Comment(..) => continue,
-                Token::Semicolon if self.parser.parse_declarations() => continue,
-                Token::Ident(ref name) if self.parser.parse_declarations() => {
-                    let name = name.clone();
-                    let parse_qualified = self.parser.parse_qualified();
-                    let delimiters = if parse_qualified {
-                        Delimiter::Semicolon | Delimiter::CurlyBracketBlock
-                    } else {
-                        Delimiter::Semicolon
-                    };
-                    let mut result = {
-                        let parser = &mut self.parser;
-                        parse_until_after(self.input, delimiters, |input| {
-                            input.expect_colon()?;
-                            parser.parse_value(name, input)
-                        })
-                    };
-
-                    if result.is_err() && parse_qualified {
-                        self.input.reset(&start);
-                        result =
-                            parse_qualified_rule(&start, self.input, &mut *self.parser, delimiters);
-                    }
-
-                    return Some(result.map_err(|e| (e, self.input.slice_from(start.position()))));
-                }
                 Token::AtKeyword(ref name) => {
                     let name = name.clone();
                     return Some(parse_at_rule(&start, name, self.input, &mut *self.parser));
                 }
-                token => {
-                    let result = if self.parser.parse_qualified() {
+                
+                
+                
+                Token::Ident(ref name) if self.parser.parse_declarations() => {
+                    let name = name.clone();
+                    let result = {
+                        let parser = &mut self.parser;
+                        parse_until_after(self.input, Delimiter::Semicolon, |input| {
+                            input.expect_colon()?;
+                            parser.parse_value(name, input)
+                        })
+                    };
+                    if result.is_err() && self.parser.parse_qualified() {
                         self.input.reset(&start);
                         
                         
-                        parse_qualified_rule(
+                        if let Ok(qual) = parse_qualified_rule(
                             &start,
                             self.input,
                             &mut *self.parser,
-                            Delimiter::CurlyBracketBlock,
-                        )
+                            Delimiter::Semicolon | Delimiter::CurlyBracketBlock,
+                        ) {
+                            return Some(Ok(qual))
+                        }
+                    }
+
+                    return Some(result.map_err(|e| (e, self.input.slice_from(start.position()))));
+                }
+                token => {
+                    let result = if self.parser.parse_qualified() {
+                        self.input.reset(&start);
+                        let delimiters = if self.parser.parse_declarations() {
+                            Delimiter::Semicolon | Delimiter::CurlyBracketBlock
+                        } else {
+                            Delimiter::CurlyBracketBlock
+                        };
+                        parse_qualified_rule(&start, self.input, &mut *self.parser, delimiters)
                     } else {
                         let token = token.clone();
                         self.input.parse_until_after(Delimiter::Semicolon, |_| {
