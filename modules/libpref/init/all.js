@@ -2713,10 +2713,6 @@ pref("font.size.monospace.x-math", 13);
   
   pref("ui.panel.default_level_parent", true);
 
-  
-  
-  pref("browser.download.forward_oma_android_download_manager", false);
-
 #endif // ANDROID
 
 #if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
