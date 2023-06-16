@@ -4,20 +4,45 @@
 
 
 
-
-
-var _HTTPD_JS_PATH = __LOCATION__.parent;
-_HTTPD_JS_PATH.append("httpd.js");
-load(_HTTPD_JS_PATH.path);
-
-
-var linDEBUG = true;
+const {
+  dumpn,
+  LineData,
+  HttpServer,
+  nsHttpHeaders,
+  overrideBinaryStreamsForTests,
+  WriteThroughCopier,
+} = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 var { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
+);
+
+const CC = Components.Constructor;
+
+const ScriptableInputStream = CC(
+  "@mozilla.org/scriptableinputstream;1",
+  "nsIScriptableInputStream",
+  "init"
+);
+const FileInputStream = CC(
+  "@mozilla.org/network/file-input-stream;1",
+  "nsIFileInputStream",
+  "init"
+);
+
+
+var BinaryInputStream = CC(
+  "@mozilla.org/binaryinputstream;1",
+  "nsIBinaryInputStream",
+  "setInputStream"
+);
+var BinaryOutputStream = CC(
+  "@mozilla.org/binaryoutputstream;1",
+  "nsIBinaryOutputStream",
+  "setOutputStream"
 );
 
 
@@ -27,7 +52,7 @@ var { NetUtil } = ChromeUtils.importESModule(
 
 
 function createServer() {
-  return new nsHttpServer();
+  return new HttpServer();
 }
 
 

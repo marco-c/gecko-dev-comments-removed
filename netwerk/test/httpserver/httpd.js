@@ -11,6 +11,7 @@
 
 
 var EXPORTED_SYMBOLS = [
+  "dumpn",
   "HTTP_400",
   "HTTP_401",
   "HTTP_402",
@@ -36,7 +37,11 @@ var EXPORTED_SYMBOLS = [
   "HTTP_505",
   "HttpError",
   "HttpServer",
+  "LineData",
   "NodeServer",
+  "nsHttpHeaders",
+  "overrideBinaryStreamsForTests",
+  "WriteThroughCopier",
 ];
 
 const CC = Components.Constructor;
@@ -195,9 +200,6 @@ function dumpStack() {
 }
 
 
-var gThreadManager = null;
-
-
 
 
 
@@ -253,6 +255,16 @@ var BinaryOutputStream = CC(
   "nsIBinaryOutputStream",
   "setOutputStream"
 );
+
+function overrideBinaryStreamsForTests(
+  inputStream,
+  outputStream,
+  responseSegmentSize
+) {
+  BinaryInputStream = inputStream;
+  BinaryOutputStream = outputStream;
+  Response.SEGMENT_SIZE = responseSegmentSize;
+}
 
 
 
@@ -367,10 +379,6 @@ function printObj(o, showMembers) {
 
 
 function nsHttpServer() {
-  if (!gThreadManager) {
-    gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService();
-  }
-
   
   this._port = undefined;
 
@@ -457,7 +465,7 @@ nsHttpServer.prototype = {
       
       
       
-      input.asyncWait(reader, 0, 0, gThreadManager.mainThread);
+      input.asyncWait(reader, 0, 0, Services.tm.mainThread);
     } catch (e) {
       
       
@@ -504,7 +512,7 @@ nsHttpServer.prototype = {
           self._notifyStopped();
         },
       };
-      gThreadManager.currentThread.dispatch(
+      Services.tm.currentThread.dispatch(
         stopEvent,
         Ci.nsIThread.DISPATCH_NORMAL
       );
@@ -1489,9 +1497,9 @@ RequestReader.prototype = {
       "*** onInputStreamReady(input=" +
         input +
         ") on thread " +
-        gThreadManager.currentThread +
+        Services.tm.currentThread +
         " (main is " +
-        gThreadManager.mainThread +
+        Services.tm.mainThread +
         ")"
     );
     dumpn("*** this._state == " + this._state);
@@ -1547,7 +1555,7 @@ RequestReader.prototype = {
     }
 
     if (this._state != READER_FINISHED) {
-      input.asyncWait(this, 0, 0, gThreadManager.currentThread);
+      input.asyncWait(this, 0, 0, Services.tm.currentThread);
     }
   },
 
@@ -3020,7 +3028,7 @@ ServerHandler.prototype = {
       }
 
       let writeMore = function () {
-        gThreadManager.currentThread.dispatch(
+        Services.tm.currentThread.dispatch(
           writeData,
           Ci.nsIThread.DISPATCH_NORMAL
         );
@@ -4279,7 +4287,7 @@ Response.prototype = {
       
       
       
-      gThreadManager.currentThread.dispatch(
+      Services.tm.currentThread.dispatch(
         {
           run() {
             dumpn("*** canceling copy asynchronously...");
@@ -5019,7 +5027,7 @@ WriteThroughCopier.prototype = {
       },
     };
 
-    gThreadManager.currentThread.dispatch(event, Ci.nsIThread.DISPATCH_NORMAL);
+    Services.tm.currentThread.dispatch(event, Ci.nsIThread.DISPATCH_NORMAL);
   },
 
   
@@ -5031,7 +5039,7 @@ WriteThroughCopier.prototype = {
       this,
       0,
       Response.SEGMENT_SIZE,
-      gThreadManager.mainThread
+      Services.tm.mainThread
     );
   },
 
@@ -5049,7 +5057,7 @@ WriteThroughCopier.prototype = {
       this,
       0,
       pendingData[0].length,
-      gThreadManager.mainThread
+      Services.tm.mainThread
     );
   },
 
@@ -5071,7 +5079,7 @@ WriteThroughCopier.prototype = {
       this,
       Ci.nsIAsyncOutputStream.WAIT_CLOSURE_ONLY,
       0,
-      gThreadManager.mainThread
+      Services.tm.mainThread
     );
   },
 
@@ -5636,7 +5644,7 @@ function server(port, basePath) {
   srv.identity.setPrimary("http", "localhost", port);
   srv.start(port);
 
-  var thread = gThreadManager.currentThread;
+  var thread = Services.tm.currentThread;
   while (!srv.isStopped()) {
     thread.processNextEvent(true);
   }

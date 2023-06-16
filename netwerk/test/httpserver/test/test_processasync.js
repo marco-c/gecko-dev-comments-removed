@@ -255,7 +255,7 @@ function handleAsyncOrdering(request, response) {
     
     
     
-    gThreadManager.dispatchToMainThread(writeData);
+    Services.tm.dispatchToMainThread(writeData);
   }
   step();
   response.processAsync();

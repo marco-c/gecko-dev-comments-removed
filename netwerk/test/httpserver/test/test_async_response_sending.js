@@ -16,8 +16,6 @@
 
 
 
-gThreadManager = Cc["@mozilla.org/thread-manager;1"].createInstance();
-
 function run_test() {
   do_test_pending();
   tests.push(function testsComplete(_) {
@@ -387,14 +385,19 @@ function note(m) {
 
 
 
-
-var BinaryInputStream = function BIS(stream) {
+BinaryInputStream = function BIS(stream) {
   return stream;
 };
-var BinaryOutputStream = function BOS(stream) {
+BinaryOutputStream = function BOS(stream) {
   return stream;
 };
 Response.SEGMENT_SIZE = SEGMENT.length;
+
+overrideBinaryStreamsForTests(
+  BinaryInputStream,
+  BinaryOutputStream,
+  SEGMENT.length
+);
 
 
 
@@ -1535,7 +1538,7 @@ CopyTest.prototype = {
       outputWrittenWatcher,
       0,
       1,
-      gThreadManager.currentThread
+      Services.tm.currentThread
     );
     this._waitingForData = true;
   },
@@ -1598,7 +1601,7 @@ CopyTest.prototype = {
         }
       },
     };
-    gThreadManager.dispatchToMainThread(event);
+    Services.tm.dispatchToMainThread(event);
   },
 
   

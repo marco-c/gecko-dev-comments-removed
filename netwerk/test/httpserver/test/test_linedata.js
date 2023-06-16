@@ -6,6 +6,9 @@
 
 
 
+const CR = 0x0d;
+const LF = 0x0a;
+
 function run_test() {
   var data = new LineData();
   data.appendBytes(["a".charCodeAt(0), CR]);
