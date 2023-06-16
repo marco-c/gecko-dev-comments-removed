@@ -196,7 +196,7 @@ add_task(async function navigate_around() {
     
     knownProblematicPrefs["browser.translations.logLevel"] = {
       min: 50,
-      max: 150,
+      max: 50,
     };
   }
 

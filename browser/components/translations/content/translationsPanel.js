@@ -388,7 +388,7 @@ var TranslationsPanel = new (class {
 
   async #fetchDetectedLanguages() {
     this.detectedLanguages =
-      await this.#getTranslationsActor().getDetectedLanguages();
+      await this.#getTranslationsActor().getLangTagsForTranslation();
     return this.detectedLanguages;
   }
 
@@ -923,8 +923,7 @@ var TranslationsPanel = new (class {
     const actor = this.#getTranslationsActor();
     actor.translate(
       this.elements.fromMenuList.value,
-      this.elements.toMenuList.value,
-      false 
+      this.elements.toMenuList.value
     );
   }
 
@@ -1065,17 +1064,12 @@ var TranslationsPanel = new (class {
     this.#getTranslationsActor().restorePage(docLangTag);
   }
 
-  handleEventId = 0;
-
   
 
 
 
 
   handleEvent = async event => {
-    
-    const handleEventId = ++this.handleEventId;
-
     switch (event.type) {
       case "TranslationsParent:LanguageState":
         const {
@@ -1124,10 +1118,6 @@ var TranslationsPanel = new (class {
           
           (hasSupportedLanguage && !(await shouldNeverTranslate()))
         ) {
-          if (handleEventId !== this.handleEventId) {
-            
-            return;
-          }
           button.hidden = false;
           if (requestedTranslationPair) {
             
@@ -1150,10 +1140,6 @@ var TranslationsPanel = new (class {
             buttonCircleArrows.hidden = true;
           }
         } else {
-          if (handleEventId !== this.handleEventId) {
-            
-            return;
-          }
           this.#hideTranslationsButton();
         }
 
