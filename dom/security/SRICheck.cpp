@@ -94,11 +94,7 @@ nsresult SRICheck::IntegrityMetadata(const nsAString& aMetadataList,
   NS_ENSURE_ARG_POINTER(aReporter);
   MOZ_ASSERT(outMetadata->IsEmpty());  
 
-  
   NS_ConvertUTF16toUTF8 metadataList(aMetadataList);
-  if (metadataList.Length() > SRICheck::MAX_METADATA_LENGTH) {
-    metadataList.Truncate(SRICheck::MAX_METADATA_LENGTH);
-  }
   SRILOG(("SRICheck::IntegrityMetadata, metadataList=%s", metadataList.get()));
 
   
@@ -106,8 +102,7 @@ nsresult SRICheck::IntegrityMetadata(const nsAString& aMetadataList,
   
   nsCWhitespaceTokenizer tokenizer(metadataList);
   nsAutoCString token;
-  for (uint32_t i = 0;
-       tokenizer.hasMoreTokens() && i < SRICheck::MAX_METADATA_TOKENS; ++i) {
+  while (tokenizer.hasMoreTokens()) {
     token = tokenizer.nextToken();
 
     SRIMetadata metadata(token);

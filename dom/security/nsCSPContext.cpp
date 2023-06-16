@@ -158,19 +158,13 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
     return NS_OK;
   }
 
-  nsAutoString cspNonce;
-  if (aLoadInfo) {
-    MOZ_ALWAYS_SUCCEEDS(aLoadInfo->GetCspNonce(cspNonce));
-  }
-
   bool permitted = permitsInternal(
       dir,
       nullptr,  
-      aCSPEventListener, aContentLocation, aOriginalURIIfRedirect, cspNonce,
+      aCSPEventListener, aLoadInfo, aContentLocation, aOriginalURIIfRedirect,
       false,  
       aSendViolationReports,
-      true,  
-      aLoadInfo ? aLoadInfo->GetParserCreatedScript() : false);
+      true);  
 
   *outDecision =
       permitted ? nsIContentPolicy::ACCEPT : nsIContentPolicy::REJECT_SERVER;
@@ -187,18 +181,17 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
 
 bool nsCSPContext::permitsInternal(
     CSPDirective aDir, Element* aTriggeringElement,
-    nsICSPEventListener* aCSPEventListener, nsIURI* aContentLocation,
-    nsIURI* aOriginalURIIfRedirect, const nsAString& aNonce, bool aSpecific,
-    bool aSendViolationReports, bool aSendContentLocationInViolationReports,
-    bool aParserCreated) {
+    nsICSPEventListener* aCSPEventListener, nsILoadInfo* aLoadInfo,
+    nsIURI* aContentLocation, nsIURI* aOriginalURIIfRedirect, bool aSpecific,
+    bool aSendViolationReports, bool aSendContentLocationInViolationReports) {
   EnsureIPCPoliciesRead();
   bool permits = true;
 
   nsAutoString violatedDirective;
   for (uint32_t p = 0; p < mPolicies.Length(); p++) {
-    if (!mPolicies[p]->permits(aDir, aContentLocation, aNonce,
+    if (!mPolicies[p]->permits(aDir, aLoadInfo, aContentLocation,
                                !!aOriginalURIIfRedirect, aSpecific,
-                               aParserCreated, violatedDirective)) {
+                               violatedDirective)) {
       
       
       if (!mPolicies[p]->getReportOnlyFlag()) {
@@ -1694,13 +1687,12 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
         permitsInternal(nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE,
                         nullptr,  
                         nullptr,  
+                        nullptr,  
                         ancestorsArray[a],
                         nullptr,  
-                        u""_ns,   
                         true,     
                         true,     
-                        okToSendAncestor,
-                        false);  
+                        okToSendAncestor);
     if (!permits) {
       *outPermitsAncestry = false;
     }
@@ -1730,13 +1722,12 @@ nsCSPContext::Permits(Element* aTriggeringElement,
     }
   }
 
-  *outPermits =
-      permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
-                      nullptr,  
-                      u""_ns,   
-                      aSpecific, aSendViolationReports,
-                      true,    
-                      false);  
+  *outPermits = permitsInternal(aDir, aTriggeringElement, aCSPEventListener,
+                                nullptr,  
+                                aURI,
+                                nullptr,  
+                                aSpecific, aSendViolationReports,
+                                true);  
 
   if (CSPCONTEXTLOGENABLED()) {
     CSPCONTEXTLOG(("nsCSPContext::Permits, aUri: %s, aDir: %s, isAllowed: %s",

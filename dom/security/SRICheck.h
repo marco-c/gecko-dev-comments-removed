@@ -21,9 +21,6 @@ class SRIMetadata;
 
 class SRICheck final {
  public:
-  static const uint32_t MAX_METADATA_LENGTH = 24 * 1024;
-  static const uint32_t MAX_METADATA_TOKENS = 512;
-
   
 
 
