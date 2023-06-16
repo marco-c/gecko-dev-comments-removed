@@ -25,7 +25,7 @@ JITFLAGS = {
             "--no-sse3",
             "--no-threads",
         ],
-        ["--baseline-eager", "--write-protect-code=off"],
+        ["--baseline-eager"],
         ["--no-blinterp", "--no-baseline", "--no-ion", "--more-compartments"],
         ["--blinterp-eager"],
     ],
@@ -38,12 +38,12 @@ JITFLAGS = {
             "--ion-offthread-compile=off",  
             "--more-compartments",
         ],
-        ["--baseline-eager", "--write-protect-code=off"],
+        ["--baseline-eager"],
         ["--no-blinterp", "--no-baseline", "--no-ion", "--more-compartments"],
     ],
     
     "ion": [
-        ["--baseline-eager", "--write-protect-code=off"],
+        ["--baseline-eager"],
         ["--ion-eager", "--ion-offthread-compile=off", "--more-compartments"],
     ],
     
@@ -54,7 +54,7 @@ JITFLAGS = {
             "--ion-offthread-compile=off",  
             "--more-compartments",
         ],
-        ["--baseline-eager", "--write-protect-code=off"],
+        ["--baseline-eager"],
     ],
     
     
