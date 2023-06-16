@@ -357,11 +357,6 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
-  if (PR_GetEnv("MOZ_DISABLE_OOP_TABS") ||
-      Preferences::GetBool("dom.ipc.tabs.disabled", false)) {
-    return false;
-  }
-
   
   
   if (XRE_IsContentProcess()) {

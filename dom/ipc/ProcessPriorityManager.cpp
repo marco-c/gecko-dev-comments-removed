@@ -362,8 +362,7 @@ void ProcessPriorityManagerImpl::PrefChangedCallback(const char* aPref,
 
 
 bool ProcessPriorityManagerImpl::PrefsEnabled() {
-  return StaticPrefs::dom_ipc_processPriorityManager_enabled() &&
-         !StaticPrefs::dom_ipc_tabs_disabled();
+  return StaticPrefs::dom_ipc_processPriorityManager_enabled();
 }
 
 
@@ -400,7 +399,6 @@ void ProcessPriorityManagerImpl::StaticInit() {
     sPrefListenersRegistered = true;
     Preferences::RegisterCallback(PrefChangedCallback,
                                   "dom.ipc.processPriorityManager.enabled");
-    Preferences::RegisterCallback(PrefChangedCallback, "dom.ipc.tabs.disabled");
   }
 
   sInitialized = true;
