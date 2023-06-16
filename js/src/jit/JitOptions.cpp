@@ -281,6 +281,10 @@ DefaultJitOptions::DefaultJitOptions() {
 #endif
 
   
+  
+  SET_DEFAULT(writeProtectCode, true);
+
+  
   SET_DEFAULT(supportsUnalignedAccesses, false);
 
   
@@ -408,6 +412,16 @@ void DefaultJitOptions::setNormalIonWarmUpThreshold(uint32_t warmUpThreshold) {
 void DefaultJitOptions::resetNormalIonWarmUpThreshold() {
   jit::DefaultJitOptions defaultValues;
   setNormalIonWarmUpThreshold(defaultValues.normalIonWarmUpThreshold);
+}
+
+void DefaultJitOptions::maybeSetWriteProtectCode(bool val) {
+  
+  
+#if defined(XP_MACOSX) && defined(__aarch64__)
+  MOZ_ASSERT(writeProtectCode);
+#else
+  writeProtectCode = val;
+#endif
 }
 
 }  
