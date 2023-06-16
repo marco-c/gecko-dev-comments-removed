@@ -25,20 +25,6 @@ pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
 
 pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
 
-impl ContainIntrinsicSize {
-    
-    pub fn add_auto_if_needed(&self) -> Option<Self> {
-        use crate::Zero;
-        
-        
-        Some(match *self {
-            Self::None => Self::AutoLength(Zero::zero()),
-            Self::Length(ref l) => Self::AutoLength(*l),
-            Self::AutoLength(..) => return None,
-        })
-    }
-}
-
 
 pub type LineClamp = GenericLineClamp<Integer>;
 
