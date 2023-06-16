@@ -369,6 +369,8 @@ static void CancelOffThreadIonCompileLocked(const CompilationSelector& selector,
     return;
   }
 
+  MOZ_ASSERT(GetSelectorRuntime(selector)->jitRuntime() != nullptr);
+
   
   GlobalHelperThreadState::IonCompileTaskVector& worklist =
       HelperThreadState().ionWorklist(lock);
