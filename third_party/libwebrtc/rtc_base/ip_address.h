@@ -174,7 +174,7 @@ bool IPIsSharedNetwork(const IPAddress& ip);
 
 
 RTC_EXPORT bool IPIsPrivate(const IPAddress& ip);
-bool IPIsUnspec(const IPAddress& ip);
+RTC_EXPORT bool IPIsUnspec(const IPAddress& ip);
 size_t HashIP(const IPAddress& ip);
 
 
