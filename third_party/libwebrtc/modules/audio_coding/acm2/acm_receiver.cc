@@ -50,7 +50,7 @@ std::unique_ptr<NetEq> CreateNetEq(
 
 AcmReceiver::Config::Config(
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
-    : clock(*Clock::GetRealTimeClock()), decoder_factory(decoder_factory) {
+    : clock(*Clock::GetRealTimeClockRaw()), decoder_factory(decoder_factory) {
   
   
   neteq_config.enable_post_decode_vad = true;
