@@ -38,10 +38,6 @@ class ClipboardSetDataHelper : public nsIClipboard {
   ClipboardSetDataHelper() = default;
 
   
-  
-  
-  
-  
   NS_IMETHOD SetData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
                      int32_t aWhichClipboard) override;
   NS_IMETHOD AsyncSetData(int32_t aWhichClipboard,
@@ -108,7 +104,7 @@ class nsBaseClipboard : public ClipboardSetDataHelper {
 
   
   NS_IMETHOD SetData(nsITransferable* aTransferable, nsIClipboardOwner* anOwner,
-                     int32_t aWhichClipboard) override;
+                     int32_t aWhichClipboard) override final;
   NS_IMETHOD GetData(nsITransferable* aTransferable,
                      int32_t aWhichClipboard) override;
   NS_IMETHOD EmptyClipboard(int32_t aWhichClipboard) override;
