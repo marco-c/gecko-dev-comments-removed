@@ -303,7 +303,7 @@ var TranslationsPanel = new (class {
       getter("header", "translations-panel-header");
       getter("langSelection", "translations-panel-lang-selection");
       getter("multiview", "translations-panel-multiview");
-      getter("notNowButton", "translations-panel-not-now");
+      getter("cancelButton", "translations-panel-cancel");
       getter("restoreButton", "translations-panel-restore-button");
       getter("toMenuList", "translations-panel-to");
       getter("unsupportedHint", "translations-panel-error-unsupported-hint");
@@ -497,6 +497,71 @@ var TranslationsPanel = new (class {
 
 
 
+  #updateViewFromTranslationStatus() {
+    const {
+      defaultTranslate,
+      toMenuList,
+      fromMenuList,
+      header,
+      cancelButton,
+      restoreButton,
+    } = this.elements;
+    const { requestedTranslationPair, isEngineReady } =
+      this.#getTranslationsActor().languageState;
+
+    if (
+      requestedTranslationPair &&
+      !isEngineReady &&
+      toMenuList.value === requestedTranslationPair.toLanguage &&
+      fromMenuList.value === requestedTranslationPair.fromLanguage
+    ) {
+      
+      document.l10n.setAttributes(
+        defaultTranslate,
+        "translations-panel-translate-button-loading"
+      );
+      defaultTranslate.disabled = true;
+      cancelButton.hidden = false;
+      restoreButton.hidden = true;
+    } else {
+      document.l10n.setAttributes(
+        defaultTranslate,
+        "translations-panel-translate-button"
+      );
+      defaultTranslate.disabled =
+        
+        toMenuList.value === fromMenuList.value ||
+        
+        !toMenuList.value ||
+        
+        !fromMenuList.value ||
+        
+        (requestedTranslationPair &&
+          requestedTranslationPair.fromLanguage === fromMenuList.value &&
+          requestedTranslationPair.toLanguage === toMenuList.value);
+    }
+
+    if (requestedTranslationPair && isEngineReady) {
+      const { fromLanguage, toLanguage } = requestedTranslationPair;
+      const displayNames = new Services.intl.DisplayNames(undefined, {
+        type: "language",
+      });
+      cancelButton.hidden = true;
+      restoreButton.hidden = false;
+
+      document.l10n.setAttributes(header, "translations-panel-revisit-header", {
+        fromLanguage: displayNames.of(fromLanguage),
+        toLanguage: displayNames.of(toLanguage),
+      });
+    } else {
+      document.l10n.setAttributes(header, "translations-panel-header");
+    }
+  }
+
+  
+
+
+
 
   async #showDefaultView(force = false) {
     const {
@@ -509,11 +574,12 @@ var TranslationsPanel = new (class {
       langSelection,
     } = this.elements;
 
+    this.#updateViewFromTranslationStatus();
+
     if (this.#langListsPhase === "error") {
       
       
-      const { restoreButton, notNowButton, header, errorHintAction } =
-        this.elements;
+      const { restoreButton, cancelButton, errorHintAction } = this.elements;
 
       this.#showError({
         message: "translations-panel-error-load-languages",
@@ -522,10 +588,9 @@ var TranslationsPanel = new (class {
         actionCommand: () => this.#reloadLangList(),
       });
 
-      document.l10n.setAttributes(header, "translations-panel-header");
       defaultTranslate.disabled = true;
       restoreButton.hidden = true;
-      notNowButton.hidden = false;
+      cancelButton.hidden = false;
       langSelection.hidden = true;
       errorHintAction.disabled = false;
       return;
@@ -540,8 +605,7 @@ var TranslationsPanel = new (class {
     const langTags = await this.#fetchDetectedLanguages();
     if (langTags?.isDocLangTagSupported || force) {
       
-      const { header, restoreButton, notNowButton } = this.elements;
-      document.l10n.setAttributes(header, "translations-panel-header");
+      const { restoreButton, cancelButton } = this.elements;
 
       if (langTags?.isDocLangTagSupported) {
         fromMenuList.value = langTags?.docLangTag ?? "";
@@ -553,7 +617,7 @@ var TranslationsPanel = new (class {
       this.onChangeLanguages();
 
       restoreButton.hidden = true;
-      notNowButton.hidden = false;
+      cancelButton.hidden = false;
       multiview.setAttribute("mainViewId", "translations-panel-view-default");
     } else {
       
@@ -736,24 +800,11 @@ var TranslationsPanel = new (class {
 
 
   async #showRevisitView({ fromLanguage, toLanguage }) {
-    const { header, fromMenuList, toMenuList, restoreButton, notNowButton } =
-      this.elements;
+    const { fromMenuList, toMenuList } = this.elements;
 
     fromMenuList.value = fromLanguage;
     toMenuList.value = toLanguage;
     this.onChangeLanguages();
-
-    restoreButton.hidden = false;
-    notNowButton.hidden = true;
-
-    const displayNames = new Services.intl.DisplayNames(undefined, {
-      type: "language",
-    });
-
-    document.l10n.setAttributes(header, "translations-panel-revisit-header", {
-      fromLanguage: displayNames.of(fromLanguage),
-      toLanguage: displayNames.of(toLanguage),
-    });
   }
 
   
@@ -768,22 +819,8 @@ var TranslationsPanel = new (class {
   
 
 
-
   onChangeLanguages() {
-    const { defaultTranslate, toMenuList, fromMenuList } = this.elements;
-    const { requestedTranslationPair } =
-      this.#getTranslationsActor().languageState;
-    defaultTranslate.disabled =
-      
-      toMenuList.value === fromMenuList.value ||
-      
-      !toMenuList.value ||
-      
-      !fromMenuList.value ||
-      
-      (requestedTranslationPair &&
-        requestedTranslationPair.fromLanguage === fromMenuList.value &&
-        requestedTranslationPair.toLanguage === toMenuList.value);
+    this.#updateViewFromTranslationStatus();
   }
 
   
@@ -1055,6 +1092,8 @@ var TranslationsPanel = new (class {
           
           TranslationsPanel.detectedLanguages = detectedLanguages;
         }
+
+        this.#updateViewFromTranslationStatus();
 
         
 
