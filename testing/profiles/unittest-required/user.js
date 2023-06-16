@@ -51,9 +51,6 @@ user_pref("browser.startup.page", 0);
 
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 
-
-user_pref("browser.tabs.disableBackgroundZombification", true);
-
 user_pref("browser.tabs.remote.autostart", false);
 
 user_pref("browser.translation.bing.authURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
