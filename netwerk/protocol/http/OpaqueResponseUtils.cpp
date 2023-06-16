@@ -37,6 +37,21 @@ static bool IsOpaqueSafeListedMIMEType(const nsACString& aContentType) {
   return nsContentUtils::IsJavascriptMIMEType(typeString);
 }
 
+
+
+enum class OpaqueResponseMediaException { NoExceptions, AllowSome, AllowAll };
+
+static OpaqueResponseMediaException ConfiguredMediaExceptionsStrategy() {
+  uint32_t pref = StaticPrefs::
+      browser_opaqueResponseBlocking_mediaExceptionsStrategy_DoNotUseDirectly();
+  if (NS_WARN_IF(pref > static_cast<uint32_t>(
+                            OpaqueResponseMediaException::AllowAll))) {
+    return OpaqueResponseMediaException::AllowAll;
+  }
+
+  return static_cast<OpaqueResponseMediaException>(pref);
+}
+
 static bool IsOpaqueSafeListedSpecBreakingMIMEType(
     const nsACString& aContentType, bool aNoSniff) {
   
@@ -53,13 +68,22 @@ static bool IsOpaqueSafeListedSpecBreakingMIMEType(
     return true;
   }
 
-  
-  
-  
-  if (aContentType.EqualsLiteral(AUDIO_MP3) ||
-      aContentType.EqualsLiteral(AUDIO_AAC) ||
-      aContentType.EqualsLiteral(AUDIO_AACP)) {
-    return true;
+  switch (ConfiguredMediaExceptionsStrategy()) {
+    case OpaqueResponseMediaException::NoExceptions:
+      break;
+    case OpaqueResponseMediaException::AllowSome:
+      if (aContentType.EqualsLiteral(AUDIO_MP3) ||
+          aContentType.EqualsLiteral(AUDIO_AAC) ||
+          aContentType.EqualsLiteral(AUDIO_AACP)) {
+        return true;
+      }
+      break;
+    case OpaqueResponseMediaException::AllowAll:
+      if (StringBeginsWith(aContentType, "audio/"_ns) ||
+          StringBeginsWith(aContentType, "video/"_ns)) {
+        return true;
+      }
+      break;
   }
 
   return false;
