@@ -71,7 +71,6 @@ user_pref("browser.urlbar.speculativeConnect.enabled", false);
 
 
 user_pref("browser.urlbar.suggest.searches", false);
-user_pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 
 user_pref("browser.fixup.domainsuffixwhitelist.test", true);
 user_pref("browser.warnOnQuit", false);
