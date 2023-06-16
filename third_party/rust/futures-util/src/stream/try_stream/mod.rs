@@ -15,6 +15,7 @@ use crate::stream::{Inspect, Map};
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use core::pin::Pin;
+
 use futures_core::{
     future::{Future, TryFuture},
     stream::TryStream,
@@ -87,6 +88,14 @@ pub use self::try_filter_map::TryFilterMap;
 mod try_flatten;
 #[allow(unreachable_pub)] 
 pub use self::try_flatten::TryFlatten;
+
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+mod try_flatten_unordered;
+#[cfg(not(futures_no_atomic_cas))]
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::try_flatten_unordered::TryFlattenUnordered;
 
 mod try_collect;
 #[allow(unreachable_pub)] 
@@ -709,6 +718,63 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
     {
         assert_stream::<Result<T, Self::Error>, _>(TryFilterMap::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(futures_no_atomic_cas))]
+    #[cfg(feature = "alloc")]
+    fn try_flatten_unordered(self, limit: impl Into<Option<usize>>) -> TryFlattenUnordered<Self>
+    where
+        Self::Ok: TryStream + Unpin,
+        <Self::Ok as TryStream>::Error: From<Self::Error>,
+        Self: Sized,
+    {
+        assert_stream::<Result<<Self::Ok as TryStream>::Ok, <Self::Ok as TryStream>::Error>, _>(
+            TryFlattenUnordered::new(self, limit),
+        )
     }
 
     

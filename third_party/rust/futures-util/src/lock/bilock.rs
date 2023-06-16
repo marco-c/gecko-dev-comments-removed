@@ -3,11 +3,11 @@
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use core::cell::UnsafeCell;
-use core::fmt;
 use core::ops::{Deref, DerefMut};
 use core::pin::Pin;
-use core::sync::atomic::AtomicUsize;
+use core::sync::atomic::AtomicPtr;
 use core::sync::atomic::Ordering::SeqCst;
+use core::{fmt, ptr};
 #[cfg(feature = "bilock")]
 use futures_core::future::Future;
 use futures_core::task::{Context, Poll, Waker};
@@ -41,7 +41,7 @@ pub struct BiLock<T> {
 
 #[derive(Debug)]
 struct Inner<T> {
-    state: AtomicUsize,
+    state: AtomicPtr<Waker>,
     value: Option<UnsafeCell<T>>,
 }
 
@@ -61,7 +61,10 @@ impl<T> BiLock<T> {
     
     
     pub fn new(t: T) -> (Self, Self) {
-        let arc = Arc::new(Inner { state: AtomicUsize::new(0), value: Some(UnsafeCell::new(t)) });
+        let arc = Arc::new(Inner {
+            state: AtomicPtr::new(ptr::null_mut()),
+            value: Some(UnsafeCell::new(t)),
+        });
 
         (Self { arc: arc.clone() }, Self { arc })
     }
@@ -87,7 +90,8 @@ impl<T> BiLock<T> {
     pub fn poll_lock(&self, cx: &mut Context<'_>) -> Poll<BiLockGuard<'_, T>> {
         let mut waker = None;
         loop {
-            match self.arc.state.swap(1, SeqCst) {
+            let n = self.arc.state.swap(invalid_ptr(1), SeqCst);
+            match n as usize {
                 
                 0 => return Poll::Ready(BiLockGuard { bilock: self }),
 
@@ -96,8 +100,8 @@ impl<T> BiLock<T> {
 
                 
                 
-                n => unsafe {
-                    let mut prev = Box::from_raw(n as *mut Waker);
+                _ => unsafe {
+                    let mut prev = Box::from_raw(n);
                     *prev = cx.waker().clone();
                     waker = Some(prev);
                 },
@@ -105,9 +109,9 @@ impl<T> BiLock<T> {
 
             
             let me: Box<Waker> = waker.take().unwrap_or_else(|| Box::new(cx.waker().clone()));
-            let me = Box::into_raw(me) as usize;
+            let me = Box::into_raw(me);
 
-            match self.arc.state.compare_exchange(1, me, SeqCst, SeqCst) {
+            match self.arc.state.compare_exchange(invalid_ptr(1), me, SeqCst, SeqCst) {
                 
                 
                 Ok(_) => return Poll::Pending,
@@ -115,8 +119,8 @@ impl<T> BiLock<T> {
                 
                 
                 
-                Err(0) => unsafe {
-                    waker = Some(Box::from_raw(me as *mut Waker));
+                Err(n) if n.is_null() => unsafe {
+                    waker = Some(Box::from_raw(me));
                 },
 
                 
@@ -125,7 +129,7 @@ impl<T> BiLock<T> {
                 
                 
                 
-                Err(n) => panic!("invalid state: {}", n),
+                Err(n) => panic!("invalid state: {}", n as usize),
             }
         }
     }
@@ -164,7 +168,8 @@ impl<T> BiLock<T> {
     }
 
     fn unlock(&self) {
-        match self.arc.state.swap(0, SeqCst) {
+        let n = self.arc.state.swap(ptr::null_mut(), SeqCst);
+        match n as usize {
             
             
             0 => panic!("invalid unlocked state"),
@@ -174,8 +179,8 @@ impl<T> BiLock<T> {
 
             
             
-            n => unsafe {
-                Box::from_raw(n as *mut Waker).wake();
+            _ => unsafe {
+                Box::from_raw(n).wake();
             },
         }
     }
@@ -189,7 +194,7 @@ impl<T: Unpin> Inner<T> {
 
 impl<T> Drop for Inner<T> {
     fn drop(&mut self) {
-        assert_eq!(self.state.load(SeqCst), 0);
+        assert!(self.state.load(SeqCst).is_null());
     }
 }
 
@@ -276,4 +281,13 @@ impl<'a, T> Future for BiLockAcquire<'a, T> {
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.bilock.poll_lock(cx)
     }
+}
+
+
+#[allow(clippy::useless_transmute)]
+#[inline]
+fn invalid_ptr<T>(addr: usize) -> *mut T {
+    
+    
+    unsafe { core::mem::transmute(addr) }
 }

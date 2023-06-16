@@ -271,7 +271,12 @@ impl AtomicWaker {
             WAITING => {
                 unsafe {
                     
-                    *self.waker.get() = Some(waker.clone());
+
+                    
+                    match &*self.waker.get() {
+                        Some(old_waker) if old_waker.will_wake(waker) => (),
+                        _ => *self.waker.get() = Some(waker.clone()),
+                    }
 
                     
                     

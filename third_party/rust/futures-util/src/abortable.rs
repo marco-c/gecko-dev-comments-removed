@@ -78,6 +78,17 @@ pub struct AbortRegistration {
     pub(crate) inner: Arc<AbortInner>,
 }
 
+impl AbortRegistration {
+    
+    
+    
+    
+    
+    pub fn handle(&self) -> AbortHandle {
+        AbortHandle { inner: self.inner.clone() }
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct AbortHandle {
@@ -181,5 +192,18 @@ impl AbortHandle {
     pub fn abort(&self) {
         self.inner.aborted.store(true, Ordering::Relaxed);
         self.inner.waker.wake();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_aborted(&self) -> bool {
+        self.inner.aborted.load(Ordering::Relaxed)
     }
 }

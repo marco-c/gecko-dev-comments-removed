@@ -199,7 +199,7 @@ pub use self::buffered::Buffered;
 
 #[cfg(not(futures_no_atomic_cas))]
 #[cfg(feature = "alloc")]
-mod flatten_unordered;
+pub(crate) mod flatten_unordered;
 
 #[cfg(not(futures_no_atomic_cas))]
 #[cfg(feature = "alloc")]
@@ -807,6 +807,13 @@ pub trait StreamExt: Stream {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[cfg(not(futures_no_atomic_cas))]
     #[cfg(feature = "alloc")]
     fn flatten_unordered(self, limit: impl Into<Option<usize>>) -> FlattenUnordered<Self>
@@ -814,7 +821,7 @@ pub trait StreamExt: Stream {
         Self::Item: Stream + Unpin,
         Self: Sized,
     {
-        FlattenUnordered::new(self, limit.into())
+        assert_stream::<<Self::Item as Stream>::Item, _>(FlattenUnordered::new(self, limit.into()))
     }
 
     
@@ -901,7 +908,7 @@ pub trait StreamExt: Stream {
         F: FnMut(Self::Item) -> U,
         Self: Sized,
     {
-        FlatMapUnordered::new(self, limit.into(), f)
+        assert_stream::<U::Item, _>(FlatMapUnordered::new(self, limit.into(), f))
     }
 
     
