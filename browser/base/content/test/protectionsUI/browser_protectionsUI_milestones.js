@@ -16,6 +16,10 @@ add_setup(async function () {
 
 add_task(async function doTest() {
   
+  
+  await BrowserTestUtils.withNewTab({ gBrowser }, openProtectionsPanel);
+
+  
   await TrackingDBService.clearAll();
 
   let milestones = JSON.parse(
