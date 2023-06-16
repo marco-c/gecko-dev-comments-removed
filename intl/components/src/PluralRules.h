@@ -6,7 +6,6 @@
 #define intl_components_PluralRules_h_
 
 #include <string_view>
-#include <type_traits>
 #include <utility>
 
 #include "mozilla/intl/ICUError.h"
@@ -128,6 +127,12 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
       options.mSignificantDigits.emplace(mSignificantDigits.ref());
     }
 
+    options.mStripTrailingZero = mStripTrailingZero;
+
+    options.mRoundingIncrement = mRoundingIncrement;
+
+    options.mRoundingMode = NumberFormatOptions::RoundingMode(mRoundingMode);
+
     options.mRoundingPriority =
         NumberFormatOptions::RoundingPriority(mRoundingPriority);
 
@@ -154,6 +159,12 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
     if (mSignificantDigits.isSome()) {
       options.mSignificantDigits.emplace(mSignificantDigits.ref());
     }
+
+    options.mStripTrailingZero = mStripTrailingZero;
+
+    options.mRoundingIncrement = mRoundingIncrement;
+
+    options.mRoundingMode = NumberFormatOptions::RoundingMode(mRoundingMode);
 
     options.mRoundingPriority =
         NumberFormatOptions::RoundingPriority(mRoundingPriority);
@@ -196,24 +207,25 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
 
 
 
-  enum class RoundingPriority {
-    Auto,
-    MorePrecision,
-    LessPrecision,
-  } mRoundingPriority = RoundingPriority::Auto;
+  bool mStripTrailingZero = false;
 
   
-  static_assert(std::is_same_v<
-                std::underlying_type_t<RoundingPriority>,
-                std::underlying_type_t<NumberFormatOptions::RoundingPriority>>);
-  static_assert(RoundingPriority::Auto ==
-                RoundingPriority(NumberFormatOptions::RoundingPriority::Auto));
-  static_assert(
-      RoundingPriority::LessPrecision ==
-      RoundingPriority(NumberFormatOptions::RoundingPriority::LessPrecision));
-  static_assert(
-      RoundingPriority::MorePrecision ==
-      RoundingPriority(NumberFormatOptions::RoundingPriority::MorePrecision));
+
+
+  uint32_t mRoundingIncrement = 1;
+
+  
+
+
+  using RoundingMode = NumberFormatOptions::RoundingMode;
+  RoundingMode mRoundingMode = RoundingMode::HalfExpand;
+
+  
+
+
+
+  using RoundingPriority = NumberFormatOptions::RoundingPriority;
+  RoundingPriority mRoundingPriority = RoundingPriority::Auto;
 };
 
 }  
