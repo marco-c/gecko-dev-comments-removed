@@ -1226,7 +1226,8 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(mOwner->EventTargetFor(TaskCategory::Other)->IsOnCurrentThread());
 
-  if (mBodyUsed) {
+  MOZ_DIAGNOSTIC_ASSERT(!BodyUsed(), "Consuming already used body?");
+  if (BodyUsed()) {
     return;
   }
 
@@ -1235,7 +1236,7 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   
   
   if (mReadableStreamBody) {
-    if (mReadableStreamBody->GetBodyStreamHolder()) {
+    if (mReadableStreamBody->MaybeGetInputStreamIfUnread()) {
       LockStream(aCx, mReadableStreamBody, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
@@ -1526,7 +1527,7 @@ void FetchBody<Derived>::MaybeTeeReadableStreamBody(
   
   
   
-  if (mReadableStreamBody->GetBodyStreamHolder()) {
+  if (mReadableStreamBody->MaybeGetInputStreamIfUnread()) {
     *aBodyOut = nullptr;
     return;
   }

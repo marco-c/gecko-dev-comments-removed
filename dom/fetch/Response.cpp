@@ -292,14 +292,9 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
 
       
       
-      if (BodyStreamHolder* underlyingSource =
-              readableStream.GetBodyStreamHolder()) {
-        aRv = BodyStream::RetrieveInputStream(underlyingSource,
-                                              getter_AddRefs(bodyStream));
-
-        if (NS_WARN_IF(aRv.Failed())) {
-          return nullptr;
-        }
+      if (nsIInputStream* underlyingSource =
+              readableStream.MaybeGetInputStreamIfUnread()) {
+        bodyStream = underlyingSource;
       } else {
         
         

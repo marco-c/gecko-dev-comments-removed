@@ -59,7 +59,7 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
   virtual void ReleaseObjects() {}
 
   
-  virtual BodyStreamHolder* GetBodyStreamHolder() { return nullptr; }
+  virtual nsIInputStream* MaybeGetInputStreamIfUnread() { return nullptr; }
 
   
   
@@ -283,6 +283,11 @@ class NonAsyncInputToReadableStreamAlgorithms
     if (nsCOMPtr<nsIInputStream> input = mInput.forget()) {
       input->Close();
     }
+  }
+
+  nsIInputStream* MaybeGetInputStreamIfUnread() override {
+    MOZ_ASSERT(mInput, "Should be only called on non-disturbed streams");
+    return mInput;
   }
 
  private:
