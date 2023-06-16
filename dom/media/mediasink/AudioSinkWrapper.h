@@ -86,6 +86,7 @@ class AudioSinkWrapper : public MediaSink {
     MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   }
 
+  bool NeedAudioSink();
   
   
   
