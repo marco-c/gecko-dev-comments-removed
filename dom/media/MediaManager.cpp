@@ -185,9 +185,11 @@ using dom::Sequence;
 using dom::UserActivation;
 using dom::WindowGlobalChild;
 using ConstDeviceSetPromise = MediaManager::ConstDeviceSetPromise;
+using DeviceSetPromise = MediaManager::DeviceSetPromise;
 using LocalDevicePromise = MediaManager::LocalDevicePromise;
 using LocalDeviceSetPromise = MediaManager::LocalDeviceSetPromise;
 using LocalMediaDeviceSetRefCnt = MediaManager::LocalMediaDeviceSetRefCnt;
+using MediaDeviceSetRefCnt = MediaManager::MediaDeviceSetRefCnt;
 using media::NewRunnableFrom;
 using media::NewTaskFrom;
 using media::Refcountable;
@@ -1796,12 +1798,36 @@ void MediaManager::GuessVideoDeviceGroupIDs(MediaDeviceSet& aDevices,
   }
 }
 
+namespace {
 
 
 
 
 
-RefPtr<MediaManager::DeviceSetPromise> MediaManager::EnumerateRawDevices(
+
+
+
+class DeviceSetPromiseHolderWithFallback
+    : public MozPromiseHolder<DeviceSetPromise> {
+ public:
+  DeviceSetPromiseHolderWithFallback() = default;
+  DeviceSetPromiseHolderWithFallback(DeviceSetPromiseHolderWithFallback&&) =
+      default;
+  ~DeviceSetPromiseHolderWithFallback() {
+    if (!IsEmpty()) {
+      Resolve(new MediaDeviceSetRefCnt(), __func__);
+    }
+  }
+};
+
+}  
+
+
+
+
+
+
+RefPtr<DeviceSetPromise> MediaManager::EnumerateRawDevices(
     MediaSourceEnum aVideoInputType, MediaSourceEnum aAudioInputType,
     EnumerationFlags aFlags) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1813,13 +1839,11 @@ RefPtr<MediaManager::DeviceSetPromise> MediaManager::EnumerateRawDevices(
       static_cast<uint8_t>(aVideoInputType),
       static_cast<uint8_t>(aAudioInputType));
 
-  MozPromiseHolder<DeviceSetPromise> holder;
+  DeviceSetPromiseHolderWithFallback holder;
   RefPtr<DeviceSetPromise> promise = holder.Ensure(__func__);
   if (sHasMainThreadShutdown) {
     
     
-    
-    holder.Resolve(new MediaDeviceSetRefCnt(), __func__);
     return promise;
   }
 
