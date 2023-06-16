@@ -56,7 +56,7 @@ class InsertTextTransaction final : public EditTransactionBase {
   
 
 
-  void GetData(nsString& aResult);
+  const nsString& GetData() const { return mStringToInsert; }
 
   template <typename EditorDOMPointType>
   EditorDOMPointType SuggestPointToPutCaret() const {
@@ -73,7 +73,7 @@ class InsertTextTransaction final : public EditTransactionBase {
   virtual ~InsertTextTransaction() = default;
 
   
-  bool IsSequentialInsert(InsertTextTransaction& aOtherTrasaction);
+  bool IsSequentialInsert(InsertTextTransaction& aOtherTransaction) const;
 
   
   RefPtr<dom::Text> mTextNode;
