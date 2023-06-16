@@ -894,13 +894,6 @@ pref("dom.forms.selectSearch", false);
 pref("dom.cycle_collector.incremental", true);
 
 
-
-
-
-
-pref("privacy.popups.disable_from_plugins", 3);
-
-
 pref("privacy.resistFingerprinting.exemptedDomains", "*.example.invalid");
 
 
