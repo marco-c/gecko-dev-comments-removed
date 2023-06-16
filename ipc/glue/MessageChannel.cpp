@@ -2107,29 +2107,33 @@ class GoodbyeMessage : public IPC::Message {
   }
 };
 
-void MessageChannel::CloseWithError() {
-  AssertWorkerThread();
+void MessageChannel::InduceConnectionError() {
+  MonitorAutoLock lock(*mMonitor);
 
   
-  
-  ReleasableMonitorAutoLock lock(*mMonitor);
-
   switch (mChannelState) {
-    case ChannelError:
+    case ChannelConnected:
       
-      NotifyMaybeChannelError(lock);
-      return;
-    case ChannelClosed:
       
+      
+      
+      
+      
+      
+      mLink->Close();
+      OnChannelErrorFromLink();
       return;
+
+    case ChannelClosing:
+      
+      
+      mChannelState = ChannelError;
+      return;
+
     default:
       
-      
-      MOZ_ASSERT(mChannelState == ChannelConnected ||
-                 mChannelState == ChannelClosing);
-      mLink->Close();
-      mChannelState = ChannelError;
-      NotifyMaybeChannelError(lock);
+      MOZ_ASSERT(mChannelState == ChannelClosed ||
+                 mChannelState == ChannelError);
       return;
   }
 }

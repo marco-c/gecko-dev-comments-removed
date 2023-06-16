@@ -846,18 +846,11 @@ class ContentParent final : public PContentParent,
     SEND_SHUTDOWN_MESSAGE,
     
     CLOSE_CHANNEL,
-    
-    CLOSE_CHANNEL_WITH_ERROR,
   };
 
   void MaybeAsyncSendShutDownMessage();
 
   
-
-
-
-
-
 
 
 

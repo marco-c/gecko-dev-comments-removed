@@ -199,7 +199,17 @@ class MessageChannel : HasResultCodes {
 
   
   
-  void CloseWithError() MOZ_EXCLUDES(*mMonitor);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void InduceConnectionError() MOZ_EXCLUDES(*mMonitor);
 
   void SetAbortOnError(bool abort) MOZ_EXCLUDES(*mMonitor) {
     MonitorAutoLock lock(*mMonitor);
