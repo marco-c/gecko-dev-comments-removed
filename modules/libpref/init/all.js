@@ -2036,9 +2036,6 @@ pref("dom.global_stop_script", true);
 pref("input_event_queue.supported", true);
 
 
-pref("plugins.navigator.hidden_ctp_plugin", "");
-
-
 pref("plugin.default.state", 2);
 
 
