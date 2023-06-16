@@ -21,6 +21,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ExtensionPolicyService.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Result.h"
 #include "mozilla/ScopeExit.h"
@@ -54,6 +55,7 @@
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/WorkerStatus.h"
 #include "mozilla/dom/WebTaskScheduler.h"
 #include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/dom/WindowContext.h"
@@ -63,6 +65,7 @@
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/ThreadEventQueue.h"
+#include "mozilla/ThreadSafety.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/WorkerTimelineMarker.h"
@@ -83,6 +86,7 @@
 #include "nsQueryObject.h"
 #include "nsRFPService.h"
 #include "nsSandboxFlags.h"
+#include "nsThreadUtils.h"
 #include "nsUTF8Utils.h"
 
 #include "RuntimeService.h"
@@ -3186,10 +3190,61 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
   InitializeGCTimers();
 
+  bool checkFinalGCCC =
+      StaticPrefs::dom_workers_GCCC_on_potentially_last_event();
+
+  bool debuggerRunnablesPending = false;
+  bool normalRunnablesPending = false;
+  auto noRunnablesPendingAndKeepAlive =
+      [&debuggerRunnablesPending, &normalRunnablesPending, &thread, this]()
+          MOZ_REQUIRES(mMutex) {
+            
+            debuggerRunnablesPending = !mDebuggerQueue.IsEmpty();
+            normalRunnablesPending = NS_HasPendingEvents(thread);
+
+            bool anyRunnablesPending = !mControlQueue.IsEmpty() ||
+                                       debuggerRunnablesPending ||
+                                       normalRunnablesPending;
+            bool keepWorkerAlive = mStatus == Running || HasActiveWorkerRefs();
+
+            return (!anyRunnablesPending && keepWorkerAlive);
+          };
+
   for (;;) {
     WorkerStatus currentStatus;
-    bool debuggerRunnablesPending = false;
-    bool normalRunnablesPending = false;
+
+    if (checkFinalGCCC) {
+      
+      
+      
+      
+      
+      
+      
+      bool mayNeedFinalGCCC = false;
+      {
+        MutexAutoLock lock(mMutex);
+
+        currentStatus = mStatus;
+        mayNeedFinalGCCC =
+            (mStatus >= Canceling && HasActiveWorkerRefs() &&
+             !debuggerRunnablesPending && !normalRunnablesPending &&
+             data->mPerformedShutdownAfterLastContentTaskExecuted);
+      }
+      if (mayNeedFinalGCCC) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        
+        
+        data->mIsPotentiallyLastGCCCRunning = true;
+#endif
+        
+        GarbageCollectInternal(aCx, true ,
+                               true );
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        data->mIsPotentiallyLastGCCCRunning = false;
+#endif
+      }
+    }
 
     {
       MutexAutoLock lock(mMutex);
@@ -3198,16 +3253,18 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
           ("WorkerPrivate::DoRunLoop [%p] mStatus %u before getting events"
            " to run",
            this, (uint8_t)mStatus));
+      if (checkFinalGCCC && currentStatus != mStatus) {
+        
+        
+        continue;
+      }
 
       
       
       
       
       
-      while (mControlQueue.IsEmpty() &&
-             !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
-             !(normalRunnablesPending = NS_HasPendingEvents(thread)) &&
-             !(mStatus != Running && !HasActiveWorkerRefs())) {
+      while (noRunnablesPendingAndKeepAlive()) {
         
         
         
@@ -3219,7 +3276,9 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
       auto result = ProcessAllControlRunnablesLocked();
       if (result != ProcessAllControlRunnablesResult::Nothing) {
-        continue;
+        
+        
+        (void)noRunnablesPendingAndKeepAlive();
       }
 
       currentStatus = mStatus;
