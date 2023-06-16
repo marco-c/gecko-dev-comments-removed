@@ -1858,6 +1858,12 @@ pref("browser.translation.engine", "Google");
 
 
 
+#if defined(EARLY_BETA_OR_EARLIER)
+pref("browser.translations.enable", true);
+#endif
+
+
+
 pref("toolkit.telemetry.archive.enabled", true);
 
 pref("toolkit.telemetry.shutdownPingSender.enabled", true);
