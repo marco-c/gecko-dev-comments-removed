@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Specified types for CSS values that are related to motion path.
 
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::motion::OffsetRotate as ComputedOffsetRotate;
@@ -15,17 +15,58 @@ use crate::Zero;
 use cssparser::Parser;
 use style_traits::{ParseError, StyleParseErrorKind};
 
-
+/// The specified value of ray() function.
 pub type RayFunction = generics::GenericRayFunction<Angle, Position>;
 
-
+/// The specified value of <offset-path>.
 pub type OffsetPathFunction = generics::GenericOffsetPathFunction<BasicShape, RayFunction>;
 
-
+/// The specified value of `offset-path`.
 pub type OffsetPath = generics::GenericOffsetPath<OffsetPathFunction>;
 
-
+/// The specified value of `offset-position`.
 pub type OffsetPosition = generics::GenericOffsetPosition<HorizontalPosition, VerticalPosition>;
+
+/// The <coord-box> value, which defines the box that the <offset-path> sizes into.
+/// https://drafts.fxtf.org/motion-1/#valdef-offset-path-coord-box
+///
+/// <coord-box> = content-box | padding-box | border-box | fill-box | stroke-box | view-box
+/// https://drafts.csswg.org/css-box-4/#typedef-coord-box
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum CoordBox {
+    ContentBox,
+    PaddingBox,
+    BorderBox,
+    FillBox,
+    StrokeBox,
+    ViewBox,
+}
+
+impl CoordBox {
+    /// Returns true if it is default value, border-box.
+    #[inline]
+    pub fn is_default(&self) -> bool {
+        matches!(*self, Self::BorderBox)
+    }
+}
 
 impl Parse for RayFunction {
     fn parse<'i, 't>(
@@ -42,7 +83,7 @@ impl Parse for RayFunction {
 }
 
 impl RayFunction {
-    
+    /// Parse the inner arguments of a `ray` function.
     fn parse_function_arguments<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -93,7 +134,7 @@ impl RayFunction {
 
         Ok(RayFunction {
             angle: angle.unwrap(),
-            
+            // If no <ray-size> is specified it defaults to closest-side.
             size: size.unwrap_or(generics::RaySize::ClosestSide),
             contain,
             position: position.unwrap_or(PositionOrAuto::auto()),
@@ -110,8 +151,8 @@ impl Parse for OffsetPathFunction {
             AllowedBasicShapes, DefaultPosition, ShapeType,
         };
 
-        
-        
+        // <offset-path> = <ray()> | <url> | <basic-shape>
+        // https://drafts.fxtf.org/motion-1/#typedef-offset-path
 
         if static_prefs::pref!("layout.css.motion-path-ray.enabled") {
             if let Ok(ray) = input.try_parse(|i| RayFunction::parse(context, i)) {
@@ -141,34 +182,62 @@ impl Parse for OffsetPath {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
+        // Parse none.
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(OffsetPath::none());
         }
 
-        Ok(OffsetPath::OffsetPath {
-            path: Box::new(OffsetPathFunction::parse(context, input)?),
-        })
+        let mut path = None;
+        let mut coord_box = None;
+        loop {
+            if path.is_none() {
+                path = input
+                    .try_parse(|i| OffsetPathFunction::parse(context, i))
+                    .ok();
+            }
+
+            if static_prefs::pref!("layout.css.motion-path-coord-box.enabled")
+                && coord_box.is_none()
+            {
+                coord_box = input.try_parse(CoordBox::parse).ok();
+                if coord_box.is_some() {
+                    continue;
+                }
+            }
+            break;
+        }
+
+        if let Some(p) = path {
+            return Ok(OffsetPath::OffsetPath {
+                path: Box::new(p),
+                coord_box: coord_box.unwrap_or(CoordBox::BorderBox),
+            });
+        }
+
+        match coord_box {
+            Some(c) => Ok(OffsetPath::CoordBox(c)),
+            None => Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+        }
     }
 }
 
-
+/// The direction of offset-rotate.
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
 )]
 #[repr(u8)]
 pub enum OffsetRotateDirection {
-    
+    /// Unspecified direction keyword.
     #[css(skip)]
     None,
-    
+    /// 0deg offset (face forward).
     Auto,
-    
+    /// 180deg offset (face backward).
     Reverse,
 }
 
 impl OffsetRotateDirection {
-    
+    /// Returns true if it is none (i.e. the keyword is not specified).
     #[inline]
     fn is_none(&self) -> bool {
         *self == OffsetRotateDirection::None
@@ -180,26 +249,26 @@ fn direction_specified_and_angle_is_zero(direction: &OffsetRotateDirection, angl
     !direction.is_none() && angle.is_zero()
 }
 
-
-
-
-
+/// The specified offset-rotate.
+/// The syntax is: "[ auto | reverse ] || <angle>"
+///
+/// https://drafts.fxtf.org/motion-1/#offset-rotate-property
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct OffsetRotate {
-    
+    /// [auto | reverse].
     #[css(skip_if = "OffsetRotateDirection::is_none")]
     direction: OffsetRotateDirection,
-    
-    
-    
-    
-    
+    /// <angle>.
+    /// If direction is None, this is a fixed angle which indicates a
+    /// constant clockwise rotation transformation applied to it by this
+    /// specified rotation angle. Otherwise, the angle will be added to
+    /// the angle of the direction in layout.
     #[css(contextual_skip_if = "direction_specified_and_angle_is_zero")]
     angle: Angle,
 }
 
 impl OffsetRotate {
-    
+    /// Returns the initial value, auto.
     #[inline]
     pub fn auto() -> Self {
         OffsetRotate {
@@ -208,7 +277,7 @@ impl OffsetRotate {
         }
     }
 
-    
+    /// Returns true if self is auto 0deg.
     #[inline]
     pub fn is_auto(&self) -> bool {
         self.direction == OffsetRotateDirection::Auto && self.angle.is_zero()
@@ -224,8 +293,8 @@ impl Parse for OffsetRotate {
         let mut direction = input.try_parse(OffsetRotateDirection::parse);
         let angle = input.try_parse(|i| Angle::parse(context, i));
         if direction.is_err() {
-            
-            
+            // The direction and angle could be any order, so give it a change to parse
+            // direction again.
             direction = input.try_parse(OffsetRotateDirection::parse);
         }
 
@@ -250,8 +319,8 @@ impl ToComputedValue for OffsetRotate {
         ComputedOffsetRotate {
             auto: !self.direction.is_none(),
             angle: if self.direction == OffsetRotateDirection::Reverse {
-                
-                
+                // The computed value should always convert "reverse" into "auto".
+                // e.g. "reverse calc(20deg + 10deg)" => "auto 210deg"
                 self.angle.to_computed_value(context) + ComputedAngle::from_degrees(180.0)
             } else {
                 self.angle.to_computed_value(context)
