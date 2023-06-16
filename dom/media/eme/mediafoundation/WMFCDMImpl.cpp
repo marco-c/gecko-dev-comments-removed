@@ -79,32 +79,36 @@ bool WMFCDMImpl::GetCapabilities(nsTArray<KeySystemConfig>& aOutConfigs) {
   NS_CreateBackgroundTaskQueue(__func__, getter_AddRefs(backgroundTaskQueue));
 
   
-  
   bool ok = false;
-  media::Await(
-      backgroundTaskQueue.forget(),
-      mCDM->GetCapabilities(false ),
-      [&ok, &aOutConfigs](const MFCDMCapabilitiesIPDL& capabilities) {
-        EME_LOG("capabilities: keySystem=%s",
-                NS_ConvertUTF16toUTF8(capabilities.keySystem()).get());
-        for (const auto& v : capabilities.videoCapabilities()) {
-          EME_LOG("capabilities: video=%s",
-                  NS_ConvertUTF16toUTF8(v.contentType()).get());
-        }
-        for (const auto& a : capabilities.audioCapabilities()) {
-          EME_LOG("capabilities: audio=%s",
-                  NS_ConvertUTF16toUTF8(a.contentType()).get());
-        }
-        for (const auto& v : capabilities.encryptionSchemes()) {
-          EME_LOG("capabilities: encryptionScheme=%s", EncryptionSchemeStr(v));
-        }
-        KeySystemConfig* config = aOutConfigs.AppendElement();
-        MFCDMCapabilitiesIPDLToKeySystemConfig(capabilities, *config);
-        ok = true;
-      },
-      [](nsresult rv) {
-        EME_LOG("Fail to get key system capabilities. rv=%x", rv);
-      });
+  static const bool sIsHwSecure[2] = {false, true};
+  for (const auto& isHWSecure : sIsHwSecure) {
+    media::Await(
+        do_AddRef(backgroundTaskQueue), mCDM->GetCapabilities(isHWSecure),
+        [&ok, &aOutConfigs,
+         isHWSecure](const MFCDMCapabilitiesIPDL& capabilities) {
+          EME_LOG("capabilities for hw-secure=%d", isHWSecure);
+          EME_LOG("capabilities: keySystem=%s",
+                  NS_ConvertUTF16toUTF8(capabilities.keySystem()).get());
+          for (const auto& v : capabilities.videoCapabilities()) {
+            EME_LOG("capabilities: video=%s",
+                    NS_ConvertUTF16toUTF8(v.contentType()).get());
+          }
+          for (const auto& a : capabilities.audioCapabilities()) {
+            EME_LOG("capabilities: audio=%s",
+                    NS_ConvertUTF16toUTF8(a.contentType()).get());
+          }
+          for (const auto& v : capabilities.encryptionSchemes()) {
+            EME_LOG("capabilities: encryptionScheme=%s",
+                    EncryptionSchemeStr(v));
+          }
+          KeySystemConfig* config = aOutConfigs.AppendElement();
+          MFCDMCapabilitiesIPDLToKeySystemConfig(capabilities, *config);
+          ok = true;
+        },
+        [](nsresult rv) {
+          EME_LOG("Fail to get key system capabilities. rv=%x", rv);
+        });
+  }
   return ok;
 }
 
