@@ -1651,6 +1651,12 @@ void TrackBuffersManager::OnAudioDemuxCompleted(
     RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples) {
   mTaskQueueCapability->AssertOnCurrentThread();
   MSE_DEBUG("%zu audio samples demuxed", aSamples->GetSamples().Length());
+  
+  
+  
+  for (const auto& sample : aSamples->GetSamples()) {
+    sample->mOriginalPresentationWindow = Nothing();
+  }
   mAudioTracks.mDemuxRequest.Complete();
   mAudioTracks.mQueuedSamples.AppendElements(aSamples->GetSamples());
   CompleteCodedFrameProcessing();
