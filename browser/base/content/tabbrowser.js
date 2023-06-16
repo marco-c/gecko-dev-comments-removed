@@ -1191,11 +1191,6 @@
         newBrowser.docShellIsActive = !document.hidden;
       }
 
-      if (gURLBar) {
-        oldBrowser._urlbarSelectionStart = gURLBar.selectionStart;
-        oldBrowser._urlbarSelectionEnd = gURLBar.selectionEnd;
-      }
-
       this._selectedBrowser = newBrowser;
       this._selectedTab = newTab;
       this.showTab(newTab);
@@ -1418,10 +1413,6 @@
 
       oldBrowser._urlbarFocused = gURLBar && gURLBar.focused;
 
-      if (this._asyncTabSwitching) {
-        newBrowser._userTypedValueAtBeforeTabSwitch = newBrowser.userTypedValue;
-      }
-
       if (this.isFindBarInitialized(oldTab)) {
         let findBar = this.getCachedFindBar(oldTab);
         oldTab._findBarFocused =
@@ -1480,6 +1471,14 @@
       
       
       if (newBrowser._urlbarFocused && gURLBar) {
+        
+        
+        
+        
+        if (gURLBar.focused && newBrowser.userTypedValue) {
+          return;
+        }
+
         let selectURL = () => {
           if (this._asyncTabSwitching) {
             
@@ -1496,38 +1495,15 @@
             gURLBar.inputField.addEventListener(
               "SetURI",
               () => {
+                if (currentActiveElement === document.activeElement) {
+                  gURLBar.select();
+                }
                 delete newBrowser._awaitingSetURI;
-
-                
-                
-                
-                
-                let userTypedValueAtBeforeTabSwitch =
-                  newBrowser._userTypedValueAtBeforeTabSwitch;
-                delete newBrowser._userTypedValueAtBeforeTabSwitch;
-                if (
-                  newBrowser.userTypedValue &&
-                  newBrowser.userTypedValue != userTypedValueAtBeforeTabSwitch
-                ) {
-                  return;
-                }
-
-                if (currentActiveElement != document.activeElement) {
-                  return;
-                }
-
-                gURLBar.setSelectionRange(
-                  newBrowser._urlbarSelectionStart,
-                  newBrowser._urlbarSelectionEnd
-                );
               },
               { once: true }
             );
           } else {
-            gURLBar.setSelectionRange(
-              newBrowser._urlbarSelectionStart,
-              newBrowser._urlbarSelectionEnd
-            );
+            gURLBar.select();
           }
         };
 
