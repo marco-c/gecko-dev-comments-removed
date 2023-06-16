@@ -18,6 +18,7 @@
 namespace cricket {
 
 enum class IceSwitchReason {
+  UNKNOWN,
   REMOTE_CANDIDATE_GENERATION_CHANGE,
   NETWORK_PREFERENCE_CHANGE,
   NEW_CONNECTION_FROM_LOCAL_CANDIDATE,
@@ -31,6 +32,8 @@ enum class IceSwitchReason {
   
   
   ICE_CONTROLLER_RECHECK,
+  
+  APPLICATION_REQUESTED,
 };
 
 RTC_EXPORT std::string IceSwitchReasonToString(IceSwitchReason reason);
