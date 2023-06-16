@@ -2189,6 +2189,12 @@ async function closePreviewAtPos(dbg, line, column) {
   InspectorUtils.removePseudoClassLock(tokenEl, ":hover");
 
   const gutterEl = await getEditorLineGutter(dbg, line);
+
+  
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(tokenEl, { type: "mousemove" }, dbg.win);
   EventUtils.synthesizeMouseAtCenter(gutterEl, { type: "mousemove" }, dbg.win);
   await waitUntil(() => findElement(dbg, "previewPopup") == null);
 }
