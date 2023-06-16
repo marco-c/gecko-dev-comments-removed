@@ -1717,7 +1717,6 @@ pref("pdfjs.handleOctetStream", true);
 
 pref("sidebar.position_start", true);
 
-pref("security.identitypopup.recordEventTelemetry", true);
 pref("security.protectionspopup.recordEventTelemetry", true);
 pref("security.app_menu.recordEventTelemetry", true);
 
