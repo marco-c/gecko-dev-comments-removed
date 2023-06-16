@@ -876,19 +876,6 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
     return NS_OK;
   }
 
-  nsIPrincipal* principal = NodePrincipal();
-  if (!principal) {
-    *aCancelSubmit = true;
-    return NS_OK;
-  }
-  bool formIsHTTPS = principal->SchemeIs("https");
-  if (principal->IsSystemPrincipal() || principal->GetIsExpandedPrincipal()) {
-    formIsHTTPS = OwnerDoc()->GetDocumentURI()->SchemeIs("https");
-  }
-  if (!formIsHTTPS) {
-    return NS_OK;
-  }
-
   if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aActionURL)) {
     return NS_OK;
   }
@@ -905,6 +892,22 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
   if (!window) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  if (nsCOMPtr<nsPIDOMWindowInner> innerWindow = OwnerDoc()->GetInnerWindow()) {
+    if (!innerWindow->IsSecureContext()) {
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
+  if (window->GetDocumentURI()->SchemeIs("file")) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   if (!docShell) {
     return NS_ERROR_FAILURE;
