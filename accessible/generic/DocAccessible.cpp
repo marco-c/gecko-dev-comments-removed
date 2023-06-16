@@ -2373,19 +2373,43 @@ void DocAccessible::PutChildrenBack(
     int32_t idxInParent = -1;
     LocalAccessible* origContainer =
         AccessibleOrTrueContainer(content->GetFlattenedTreeParentNode());
-    if (origContainer) {
-      TreeWalker walker(origContainer);
-      if (walker.Seek(content)) {
-        LocalAccessible* prevChild = walker.Prev();
-        if (prevChild) {
-          idxInParent = prevChild->IndexInParent() + 1;
-          MOZ_DIAGNOSTIC_ASSERT(origContainer == prevChild->LocalParent(),
-                                "Broken tree");
-          origContainer = prevChild->LocalParent();
-        } else {
-          idxInParent = 0;
-        }
+    
+    
+    if (!origContainer) {
+      continue;
+    }
+
+    
+    
+    
+    bool origContainerHasOutOfDocAncestor = false;
+    LocalAccessible* ancestor = origContainer;
+    while (ancestor) {
+      if (ancestor->IsDoc()) {
+        break;
       }
+      if (!ancestor->IsInDocument()) {
+        origContainerHasOutOfDocAncestor = true;
+        break;
+      }
+      ancestor = ancestor->LocalParent();
+    }
+    if (origContainerHasOutOfDocAncestor) {
+      continue;
+    }
+
+    TreeWalker walker(origContainer);
+    if (!walker.Seek(content)) {
+      continue;
+    }
+    LocalAccessible* prevChild = walker.Prev();
+    if (prevChild) {
+      idxInParent = prevChild->IndexInParent() + 1;
+      MOZ_DIAGNOSTIC_ASSERT(origContainer == prevChild->LocalParent(),
+                            "Broken tree");
+      origContainer = prevChild->LocalParent();
+    } else {
+      idxInParent = 0;
     }
 
     
@@ -2397,8 +2421,13 @@ void DocAccessible::PutChildrenBack(
     
     
     if (origContainer != owner || child->IndexInParent() != idxInParent) {
-      DebugOnly<bool> moved = MoveChild(child, origContainer, idxInParent);
-      MOZ_ASSERT(moved, "Failed to put child back.");
+      
+      
+      
+      if (origContainer->IsAcceptableChild(child->GetContent())) {
+        DebugOnly<bool> moved = MoveChild(child, origContainer, idxInParent);
+        MOZ_ASSERT(moved, "Failed to put child back.");
+      }
     } else {
       MOZ_ASSERT(!child->LocalPrevSibling() ||
                      !child->LocalPrevSibling()->IsRelocated(),
@@ -2564,19 +2593,24 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
     CachedTableAccessible::Invalidate(aRoot);
   }
 
+  
+  
   nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(aRoot);
-  uint32_t count = aRoot->ContentChildCount();
-  for (uint32_t idx = 0; idx < count; idx++) {
+  if (owned) {
+    PutChildrenBack(owned, 0);
+    MOZ_ASSERT(owned->IsEmpty(),
+               "Owned Accessibles should be cleared after PutChildrenBack.");
+    mARIAOwnsHash.Remove(aRoot);
+    owned = nullptr;
+  }
+
+  const uint32_t count = aRoot->ContentChildCount();
+  for (uint32_t idx = 0; idx < count; ++idx) {
     LocalAccessible* child = aRoot->ContentChildAt(idx);
 
-    if (child->IsRelocated()) {
-      MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
-      owned->RemoveElement(child);
-      if (owned->Length() == 0) {
-        mARIAOwnsHash.Remove(aRoot);
-        owned = nullptr;
-      }
-    }
+    MOZ_ASSERT(!child->IsRelocated(),
+               "No children should be relocated here. They should all have "
+               "been relocated by PutChildrenBack.");
 
     
     

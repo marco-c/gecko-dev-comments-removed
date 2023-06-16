@@ -230,7 +230,20 @@ uint32_t DocAccessibleParent::AddSubtree(
 }
 
 void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
-  uint64_t id = aAcc->ID();
+  
+  
+  
+  
+  if (!aAcc->IsOuterDoc()) {
+    
+    
+    auto children{std::move(aAcc->mChildren)};
+    for (RemoteAccessible* child : children) {
+      ShutdownOrPrepareForMove(child);
+    }
+  }
+
+  const uint64_t id = aAcc->ID();
   if (!mMovingIDs.Contains(id)) {
     
     aAcc->Shutdown();
@@ -248,18 +261,6 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
   }
   aAcc->SetParent(nullptr);
   mMovingIDs.EnsureRemoved(id);
-  if (aAcc->IsOuterDoc()) {
-    
-    
-    return;
-  }
-  
-  for (RemoteAccessible* child : aAcc->mChildren) {
-    ShutdownOrPrepareForMove(child);
-  }
-  
-  
-  aAcc->mChildren.Clear();
 }
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvHideEvent(
