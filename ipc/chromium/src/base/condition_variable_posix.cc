@@ -24,7 +24,7 @@ ConditionVariable::ConditionVariable(Lock* user_lock)
   
   
   
-#if !defined(XP_DARWIN) && !defined(OS_NACL) && \
+#if !defined(XP_DARWIN) && \
     !(defined(ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
   pthread_condattr_t attrs;
   rv = pthread_condattr_init(&attrs);
@@ -75,18 +75,10 @@ void ConditionVariable::TimedWait(const base::TimeDelta& max_time) {
 #else
   
   struct timespec absolute_time;
-#  if defined(OS_NACL)
-  
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  absolute_time.tv_sec = now.tv_sec;
-  absolute_time.tv_nsec = now.tv_usec * base::Time::kNanosecondsPerMicrosecond;
-#  else
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   absolute_time.tv_sec = now.tv_sec;
   absolute_time.tv_nsec = now.tv_nsec;
-#  endif
 
   absolute_time.tv_sec += relative_time.tv_sec;
   absolute_time.tv_nsec += relative_time.tv_nsec;

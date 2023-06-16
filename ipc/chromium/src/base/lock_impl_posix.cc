@@ -22,7 +22,7 @@ namespace internal {
 
 
 
-#if defined(OS_NACL) || defined(ANDROID)
+#if defined(ANDROID)
 #  define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
 #else
 #  define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
