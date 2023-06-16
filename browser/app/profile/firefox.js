@@ -2074,18 +2074,12 @@ pref("privacy.userContext.extension", "");
 
 pref("privacy.userContext.newTabContainerOnLeftClick.enabled", false);
 
-#if defined(NIGHTLY_BUILD) || defined(XP_WIN) || defined(XP_MACOSX)
-
 
 
 pref("privacy.webrtc.allowSilencingNotifications", true);
 
 pref("privacy.webrtc.legacyGlobalIndicator", false);
 pref("privacy.webrtc.hideGlobalIndicator", false);
-#else
-pref("privacy.webrtc.allowSilencingNotifications", false);
-pref("privacy.webrtc.legacyGlobalIndicator", true);
-#endif
 
 
 
