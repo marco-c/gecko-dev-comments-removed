@@ -40,16 +40,19 @@ const {
 
 
 
+
+
+
+
+
+
+
 var HarBuilder = function (options) {
-  this._connector = options.connector;
-  this._id = options.id;
-  this._includeResponseBodies = options.includeResponseBodies;
-  this._items = options.items;
+  this._options = options;
+  this._pageMap = [];
+
   
   this._pageId = options.supportsMultiplePages ? 0 : options.id;
-  this._pageMap = [];
-  this._supportsMultiplePages = options.supportsMultiplePages;
-  this._title = this._connector.currentTarget.title;
 };
 
 HarBuilder.prototype = {
@@ -67,16 +70,13 @@ HarBuilder.prototype = {
     this.promises = [];
 
     
-    const harLog = buildHarLog(appInfo);
+    const log = buildHarLog(appInfo);
 
     
-    this.buildPages(harLog.log);
-
-    
-    for (const request of this._items) {
-      const entry = await this.buildEntry(harLog.log, request);
+    for (const file of this._options.items) {
+      const entry = await this.buildEntry(log.log, file);
       if (entry) {
-        harLog.log.entries.push(entry);
+        log.log.entries.push(entry);
       }
     }
 
@@ -84,59 +84,20 @@ HarBuilder.prototype = {
     
     await Promise.all(this.promises);
 
-    return harLog;
+    return log;
   },
 
   
 
-  buildPages(log) {
-    if (this._supportsMultiplePages) {
-      this.buildPagesFromTargetTitles(log);
-    } else {
-      const firstRequest = this._items[0];
-      const page = this.buildPage(this._title, firstRequest);
-      log.pages.push(page);
-      this._pageMap[this._id] = page;
-    }
-  },
-
-  buildPagesFromTargetTitles(log) {
-    
-    const { initialTargetTitle, navigationRequests, targetTitlesPerURL } =
-      this._connector.getHarData();
-    const firstNavigationRequest = navigationRequests[0];
-    const firstRequest = this._items[0];
-
-    if (
-      !firstNavigationRequest ||
-      firstRequest.resourceId !== firstNavigationRequest.resourceId
-    ) {
-      
-      
-      const initialPage = this.buildPage(initialTargetTitle, firstRequest);
-      log.pages.push(initialPage);
-    }
-
-    for (const request of navigationRequests) {
-      if (targetTitlesPerURL.has(request.url)) {
-        const title = targetTitlesPerURL.get(request.url);
-        const page = this.buildPage(title, request);
-        log.pages.push(page);
-      } else {
-        console.warn(
-          `Could not find any page corresponding to a navigation to ${request.url}`
-        );
-      }
-    }
-  },
-
-  buildPage(title, networkEvent) {
+  buildPage(title) {
     const page = {};
 
-    page.id = "page_" + this._pageId;
-    page.pageTimings = this.buildPageTimings(page, networkEvent);
-    page.startedDateTime = dateToHarString(new Date(networkEvent.startedMs));
+    
+    
+    page.startedDateTime = 0;
+
     page.title = title;
+    page.id = "page_" + this._pageId;
 
     
     
@@ -145,39 +106,87 @@ HarBuilder.prototype = {
     return page;
   },
 
-  getPage(log, entry) {
+  getPageFromTargetTitlesPerURL(log, entry, isNavigationRequest) {
+    if (isNavigationRequest) {
+      
+      
+      if (this._options.targetTitlesPerURL.has(entry.request.url)) {
+        const title = this._options.targetTitlesPerURL.get(entry.request.url);
+        const page = this.buildPage(title);
+        log.pages.push(page);
+        return page;
+      }
+
+      
+      
+      console.error(
+        `No navigation found for request with url: ${entry.request.url}`
+      );
+    }
+
+    
+    
     const existingPage = log.pages.findLast(
       ({ startedDateTime }) => startedDateTime <= entry.startedDateTime
     );
 
-    if (!existingPage) {
-      throw new Error(
-        "Could not find a page for request: " + entry.request.url
+    if (existingPage) {
+      return existingPage;
+    }
+
+    
+    
+    const page = this.buildPage(this._options.initialTargetTitle);
+    log.pages.push(page);
+    return page;
+  },
+
+  getPage(log, entry, isNavigationRequest) {
+    
+    
+    if (this._options.supportsMultiplePages) {
+      return this.getPageFromTargetTitlesPerURL(
+        log,
+        entry,
+        isNavigationRequest
       );
     }
 
-    return existingPage;
+    
+    
+    
+    
+    const { id } = this._options;
+    let page = this._pageMap[id];
+    if (page) {
+      return page;
+    }
+
+    this._pageMap[id] = page = this.buildPage(this._options.title);
+    log.pages.push(page);
+
+    return page;
   },
 
-  async buildEntry(log, networkEvent) {
+  async buildEntry(log, file) {
     const entry = {};
-    entry.startedDateTime = dateToHarString(new Date(networkEvent.startedMs));
+    entry.startedDateTime = dateToJSON(new Date(file.startedMs));
 
-    let { eventTimings, id } = networkEvent;
+    let { eventTimings } = file;
     try {
-      if (!eventTimings && this._connector.requestData) {
-        eventTimings = await this._connector.requestData(id, "eventTimings");
+      if (!eventTimings && this._options.requestData) {
+        eventTimings = await this._options.requestData(file.id, "eventTimings");
       }
 
-      entry.request = await this.buildRequest(networkEvent);
-      entry.response = await this.buildResponse(networkEvent);
-      entry.cache = await this.buildCache(networkEvent);
+      entry.request = await this.buildRequest(file);
+      entry.response = await this.buildResponse(file);
+      entry.cache = await this.buildCache(file);
     } catch (e) {
       
       
       
       
-      console.warn("HAR builder failed on", networkEvent.url, e, e.stack);
+      console.warn("HAR builder failed on", file.url, e, e.stack);
       return null;
     }
     entry.timings = eventTimings ? eventTimings.timings : {};
@@ -197,70 +206,78 @@ HarBuilder.prototype = {
 
     
     
-    entry._securityState = networkEvent.securityState;
+    entry._securityState = file.securityState;
 
-    if (networkEvent.remoteAddress) {
-      entry.serverIPAddress = networkEvent.remoteAddress;
+    if (file.remoteAddress) {
+      entry.serverIPAddress = file.remoteAddress;
     }
 
-    if (networkEvent.remotePort) {
-      entry.connection = networkEvent.remotePort + "";
+    if (file.remotePort) {
+      entry.connection = file.remotePort + "";
     }
 
-    const page = this.getPage(log, entry);
+    const page = this.getPage(log, entry, file.isNavigationRequest);
+    
+    if (!page.startedDateTime) {
+      page.startedDateTime = entry.startedDateTime;
+      page.pageTimings = this.buildPageTimings(page, file);
+    }
     entry.pageref = page.id;
 
     return entry;
   },
 
-  buildPageTimings(page, networkEvent) {
+  buildPageTimings(page, file) {
     
     const timings = {
       onContentLoad: -1,
       onLoad: -1,
     };
 
-    
-    
-    if (this._connector.getTimingMarker) {
-      timings.onContentLoad = this._connector.getTimingMarker(
+    const { getTimingMarker } = this._options;
+    if (getTimingMarker) {
+      timings.onContentLoad = getTimingMarker(
         "firstDocumentDOMContentLoadedTimestamp"
       );
-      timings.onLoad = this._connector.getTimingMarker(
-        "firstDocumentLoadTimestamp"
-      );
+      timings.onLoad = getTimingMarker("firstDocumentLoadTimestamp");
     }
 
     return timings;
   },
 
-  async buildRequest(networkEvent) {
+  async buildRequest(file) {
     
     
     
 
-    let { id, requestHeaders } = networkEvent;
-    if (!requestHeaders && this._connector.requestData) {
-      requestHeaders = await this._connector.requestData(id, "requestHeaders");
+    let { requestHeaders } = file;
+    if (!requestHeaders && this._options.requestData) {
+      requestHeaders = await this._options.requestData(
+        file.id,
+        "requestHeaders"
+      );
     }
 
-    let { requestCookies } = networkEvent;
-    if (!requestCookies && this._connector.requestData) {
-      requestCookies = await this._connector.requestData(id, "requestCookies");
+    let { requestCookies } = file;
+    if (!requestCookies && this._options.requestData) {
+      requestCookies = await this._options.requestData(
+        file.id,
+        "requestCookies"
+      );
     }
 
     const request = {
       bodySize: 0,
     };
-    request.method = networkEvent.method;
-    request.url = networkEvent.url;
-    request.httpVersion = networkEvent.httpVersion || "";
+    request.method = file.method;
+    request.url = file.url;
+    request.httpVersion = file.httpVersion || "";
     request.headers = this.buildHeaders(requestHeaders);
-    request.headers = this.appendHeadersPostData(request.headers, networkEvent);
+    request.headers = this.appendHeadersPostData(request.headers, file);
     request.cookies = this.buildCookies(requestCookies);
-    request.queryString = parseQueryString(getUrlQuery(networkEvent.url)) || [];
+    request.queryString = parseQueryString(getUrlQuery(file.url)) || [];
     request.headersSize = requestHeaders.headersSize;
-    request.postData = await this.buildPostData(networkEvent);
+    request.postData = await this.buildPostData(file);
 
     if (request.postData?.text) {
       request.bodySize = request.postData.text.length;
@@ -283,12 +300,12 @@ HarBuilder.prototype = {
     return this.buildNameValuePairs(input.headers);
   },
 
-  appendHeadersPostData(input = [], networkEvent) {
-    if (!networkEvent.requestPostData) {
+  appendHeadersPostData(input = [], file) {
+    if (!file.requestPostData) {
       return input;
     }
 
-    this.fetchData(networkEvent.requestPostData.postData.text).then(value => {
+    this.fetchData(file.requestPostData.postData.text).then(value => {
       const multipartHeaders = CurlUtils.getHeadersFromMultipartText(value);
       for (const header of multipartHeaders) {
         input.push(header);
@@ -328,16 +345,17 @@ HarBuilder.prototype = {
     return result;
   },
 
-  async buildPostData(networkEvent) {
+  async buildPostData(file) {
     
     
     
-    let { id, requestHeaders, requestPostData } = networkEvent;
+    let { requestPostData } = file;
+    let { requestHeaders } = file;
     let requestHeadersFromUploadStream;
 
-    if (!requestPostData && this._connector.requestData) {
-      requestPostData = await this._connector.requestData(
-        id,
+    if (!requestPostData && this._options.requestData) {
+      requestPostData = await this._options.requestData(
+        file.id,
         "requestPostData"
       );
       requestHeadersFromUploadStream = requestPostData.uploadHeaders;
@@ -347,8 +365,11 @@ HarBuilder.prototype = {
       return undefined;
     }
 
-    if (!requestHeaders && this._connector.requestData) {
-      requestHeaders = await this._connector.requestData(id, "requestHeaders");
+    if (!requestHeaders && this._options.requestData) {
+      requestHeaders = await this._options.requestData(
+        file.id,
+        "requestHeaders"
+      );
     }
 
     const postData = {
@@ -375,7 +396,7 @@ HarBuilder.prototype = {
         requestHeaders,
         requestHeadersFromUploadStream,
         requestPostData,
-        this._connector.getLongString
+        this._options.getString
       );
 
       formDataSections.forEach(section => {
@@ -389,22 +410,23 @@ HarBuilder.prototype = {
     return postData;
   },
 
-  async buildResponse(networkEvent) {
+  async buildResponse(file) {
     
     
     
 
-    let { id, responseCookies, responseHeaders } = networkEvent;
-    if (!responseHeaders && this._connector.requestData) {
-      responseHeaders = await this._connector.requestData(
-        id,
+    let { responseHeaders } = file;
+    if (!responseHeaders && this._options.requestData) {
+      responseHeaders = await this._options.requestData(
+        file.id,
         "responseHeaders"
       );
     }
 
-    if (!responseCookies && this._connector.requestData) {
-      responseCookies = await this._connector.requestData(
-        id,
+    let { responseCookies } = file;
+    if (!responseCookies && this._options.requestData) {
+      responseCookies = await this._options.requestData(
+        file.id,
         "responseCookies"
       );
     }
@@ -414,15 +436,15 @@ HarBuilder.prototype = {
     };
 
     
-    if (networkEvent.status) {
-      response.status = parseInt(networkEvent.status, 10);
+    if (file.status) {
+      response.status = parseInt(file.status, 10);
     }
-    response.statusText = networkEvent.statusText || "";
-    response.httpVersion = networkEvent.httpVersion || "";
+    response.statusText = file.statusText || "";
+    response.httpVersion = file.httpVersion || "";
 
     response.headers = this.buildHeaders(responseHeaders);
     response.cookies = this.buildCookies(responseCookies);
-    response.content = await this.buildContent(networkEvent);
+    response.content = await this.buildContent(file);
 
     const headers = responseHeaders ? responseHeaders.headers : null;
     const headersSize = responseHeaders ? responseHeaders.headersSize : -1;
@@ -433,28 +455,28 @@ HarBuilder.prototype = {
     
     
     
-    if (typeof networkEvent.transferredSize != "number") {
+    if (typeof file.transferredSize != "number") {
       response.bodySize = response.status == 304 ? 0 : -1;
     } else {
-      response.bodySize = networkEvent.transferredSize;
+      response.bodySize = file.transferredSize;
     }
 
     return response;
   },
 
-  async buildContent(networkEvent) {
+  async buildContent(file) {
     const content = {
-      mimeType: networkEvent.mimeType,
+      mimeType: file.mimeType,
       size: -1,
     };
 
     
     
     
-    let { responseContent } = networkEvent;
-    if (!responseContent && this._connector.requestData) {
-      responseContent = await this._connector.requestData(
-        networkEvent.id,
+    let { responseContent } = file;
+    if (!responseContent && this._options.requestData) {
+      responseContent = await this._options.requestData(
+        file.id,
         "responseContent"
       );
     }
@@ -463,7 +485,7 @@ HarBuilder.prototype = {
       content.encoding = responseContent.content.encoding;
     }
 
-    const includeBodies = this._includeResponseBodies;
+    const includeBodies = this._options.includeResponseBodies;
     const contentDiscarded = responseContent
       ? responseContent.contentDiscarded
       : false;
@@ -485,26 +507,24 @@ HarBuilder.prototype = {
     return content;
   },
 
-  async buildCache(networkEvent) {
+  async buildCache(file) {
     const cache = {};
 
     
-    if (networkEvent.status != "304") {
+    if (file.status != "304") {
       return cache;
     }
 
-    if (networkEvent.responseCacheAvailable && this._connector.requestData) {
-      const responseCache = await this._connector.requestData(
-        networkEvent.id,
+    if (file.responseCacheAvailable && this._options.requestData) {
+      const responseCache = await this._options.requestData(
+        file.id,
         "responseCache"
       );
       if (responseCache.cache) {
         cache.afterRequest = this.buildCacheEntry(responseCache.cache);
       }
-    } else if (networkEvent.responseCache?.cache) {
-      cache.afterRequest = this.buildCacheEntry(
-        networkEvent.responseCache.cache
-      );
+    } else if (file.responseCache?.cache) {
+      cache.afterRequest = this.buildCacheEntry(file.responseCache.cache);
     } else {
       cache.afterRequest = null;
     }
@@ -543,7 +563,7 @@ HarBuilder.prototype = {
   
 
   fetchData(string) {
-    const promise = this._connector.getLongString(string).then(value => {
+    const promise = this._options.getString(string).then(value => {
       return value;
     });
 
@@ -612,7 +632,7 @@ function findValue(arr, name) {
 
 
 
-function dateToHarString(date) {
+function dateToJSON(date) {
   function f(n, c) {
     if (!c) {
       c = 2;

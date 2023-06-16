@@ -7,7 +7,6 @@
 const {
   L10N,
 } = require("resource://devtools/client/netmonitor/src/utils/l10n.js");
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 loader.lazyRequireGetter(
   this,
@@ -28,16 +27,8 @@ var HarMenuUtils = {
   
 
 
-  async copyAllAsHar(requests, connector) {
-    const har = await HarExporter.copy(
-      this.getDefaultHarOptions(requests, connector)
-    );
-
-    
-    
-    HarMenuUtils.emitForTests("copy-all-as-har-done", har);
-
-    return har;
+  copyAllAsHar(requests, connector) {
+    return HarExporter.copy(this.getDefaultHarOptions(requests, connector));
   },
 
   
@@ -111,8 +102,6 @@ function readFile(file) {
     });
   });
 }
-
-EventEmitter.decorate(HarMenuUtils);
 
 
 exports.HarMenuUtils = HarMenuUtils;
