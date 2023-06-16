@@ -429,6 +429,16 @@ async function loadTestPage({
       );
     },
 
+    
+
+
+    async rejectDownloads(count) {
+      await remoteClients.translationsWasm.rejectPendingDownloads(1);
+      await remoteClients.translationModels.rejectPendingDownloads(
+        FILES_PER_LANGUAGE_PAIR * count
+      );
+    },
+
     async resolveLanguageIdDownloads() {
       await remoteClients.translationsWasm.resolvePendingDownloads(1);
       await remoteClients.languageIdModels.resolvePendingDownloads(1);
@@ -895,6 +905,25 @@ class TestTranslationsTelemetry {
 
 
 
+  static async assertCounter(name, counter, expectedCount) {
+    
+    
+    await Services.fog.testFlushAllChildren();
+    const count = counter.testGetValue() ?? 0;
+    is(
+      count,
+      expectedCount,
+      `Telemetry counter ${name} should have expected count`
+    );
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -948,5 +977,35 @@ class TestTranslationsTelemetry {
         );
       }
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  static async assertRate(
+    name,
+    rate,
+    { expectedNumerator, expectedDenominator }
+  ) {
+    
+    
+    await Services.fog.testFlushAllChildren();
+    const { numerator = 0, denominator = 0 } = rate.testGetValue() ?? {};
+    is(
+      numerator,
+      expectedNumerator,
+      `Telemetry rate ${name} should have expected numerator`
+    );
+    is(
+      denominator,
+      expectedDenominator,
+      `Telemetry rate ${name} should have expected denominator`
+    );
   }
 }
