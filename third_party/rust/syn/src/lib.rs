@@ -249,8 +249,7 @@
 
 
 
-
-#![doc(html_root_url = "https://docs.rs/syn/1.0.107")]
+#![doc(html_root_url = "https://docs.rs/syn/2.0.18")]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(non_camel_case_types)]
 #![allow(
@@ -260,6 +259,7 @@
     clippy::cast_possible_wrap,
     clippy::cast_ptr_alignment,
     clippy::default_trait_access,
+    clippy::derivable_impls,
     clippy::doc_markdown,
     clippy::expl_impl_clone_on_copy,
     clippy::explicit_auto_deref,
@@ -267,7 +267,10 @@
     clippy::inherent_to_string,
     clippy::items_after_statements,
     clippy::large_enum_variant,
+    clippy::let_underscore_untyped, 
     clippy::manual_assert,
+    clippy::manual_let_else,
+    clippy::match_like_matches_macro,
     clippy::match_on_vec_items,
     clippy::match_same_arms,
     clippy::match_wildcard_for_single_variants, 
@@ -278,6 +281,7 @@
     clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::never_loop,
+    clippy::range_plus_one,
     clippy::redundant_else,
     clippy::return_self_not_must_use,
     clippy::similar_names,
@@ -285,20 +289,15 @@
     clippy::too_many_arguments,
     clippy::too_many_lines,
     clippy::trivially_copy_pass_by_ref,
+    clippy::uninlined_format_args,
+    clippy::unnecessary_box_returns,
     clippy::unnecessary_unwrap,
     clippy::used_underscore_binding,
-    clippy::wildcard_imports
+    clippy::wildcard_imports,
 )]
 
-#[cfg(all(
-    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-    feature = "proc-macro"
-))]
+#[cfg(feature = "proc-macro")]
 extern crate proc_macro;
-extern crate proc_macro2;
-
-#[cfg(feature = "printing")]
-extern crate quote;
 
 #[macro_use]
 mod macros;
@@ -310,68 +309,83 @@ mod group;
 #[macro_use]
 pub mod token;
 
-mod ident;
-pub use crate::ident::Ident;
-
 #[cfg(any(feature = "full", feature = "derive"))]
 mod attr;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use crate::attr::{
-    AttrStyle, Attribute, AttributeArgs, Meta, MetaList, MetaNameValue, NestedMeta,
-};
+pub use crate::attr::{AttrStyle, Attribute, Meta, MetaList, MetaNameValue};
 
 mod bigint;
+
+#[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
+pub mod buffer;
+
+mod custom_keyword;
+
+mod custom_punctuation;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod data;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use crate::data::{
-    Field, Fields, FieldsNamed, FieldsUnnamed, Variant, VisCrate, VisPublic, VisRestricted,
-    Visibility,
-};
+pub use crate::data::{Field, Fields, FieldsNamed, FieldsUnnamed, Variant};
+
+#[cfg(any(feature = "full", feature = "derive"))]
+mod derive;
+#[cfg(feature = "derive")]
+pub use crate::derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
+
+mod drops;
+
+mod error;
+pub use crate::error::{Error, Result};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod expr;
 #[cfg(feature = "full")]
-pub use crate::expr::{
-    Arm, FieldValue, GenericMethodArgument, Label, MethodTurbofish, RangeLimits,
-};
+pub use crate::expr::{Arm, FieldValue, Label, RangeLimits};
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::expr::{
-    Expr, ExprArray, ExprAssign, ExprAssignOp, ExprAsync, ExprAwait, ExprBinary, ExprBlock,
-    ExprBox, ExprBreak, ExprCall, ExprCast, ExprClosure, ExprContinue, ExprField, ExprForLoop,
-    ExprGroup, ExprIf, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall,
+    Expr, ExprArray, ExprAssign, ExprAsync, ExprAwait, ExprBinary, ExprBlock, ExprBreak, ExprCall,
+    ExprCast, ExprClosure, ExprConst, ExprContinue, ExprField, ExprForLoop, ExprGroup, ExprIf,
+    ExprIndex, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall,
     ExprParen, ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprStruct, ExprTry,
-    ExprTryBlock, ExprTuple, ExprType, ExprUnary, ExprUnsafe, ExprWhile, ExprYield, Index, Member,
+    ExprTryBlock, ExprTuple, ExprUnary, ExprUnsafe, ExprWhile, ExprYield, Index, Member,
 };
+
+#[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
+pub mod ext;
+
+#[cfg(feature = "full")]
+mod file;
+#[cfg(feature = "full")]
+pub use crate::file::File;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod generics;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::generics::{
-    BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeDef, PredicateEq,
-    PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound,
-    WhereClause, WherePredicate,
+    BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeParam, PredicateLifetime,
+    PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound, WhereClause,
+    WherePredicate,
 };
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 pub use crate::generics::{ImplGenerics, Turbofish, TypeGenerics};
+
+mod ident;
+pub use crate::ident::Ident;
 
 #[cfg(feature = "full")]
 mod item;
 #[cfg(feature = "full")]
 pub use crate::item::{
     FnArg, ForeignItem, ForeignItemFn, ForeignItemMacro, ForeignItemStatic, ForeignItemType,
-    ImplItem, ImplItemConst, ImplItemMacro, ImplItemMethod, ImplItemType, Item, ItemConst,
-    ItemEnum, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl, ItemMacro, ItemMacro2, ItemMod,
+    ImplItem, ImplItemConst, ImplItemFn, ImplItemMacro, ImplItemType, ImplRestriction, Item,
+    ItemConst, ItemEnum, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl, ItemMacro, ItemMod,
     ItemStatic, ItemStruct, ItemTrait, ItemTraitAlias, ItemType, ItemUnion, ItemUse, Receiver,
-    Signature, TraitItem, TraitItemConst, TraitItemMacro, TraitItemMethod, TraitItemType, UseGlob,
-    UseGroup, UseName, UsePath, UseRename, UseTree,
+    Signature, StaticMutability, TraitItem, TraitItemConst, TraitItemFn, TraitItemMacro,
+    TraitItemType, UseGlob, UseGroup, UseName, UsePath, UseRename, UseTree, Variadic,
 };
-
-#[cfg(feature = "full")]
-mod file;
-#[cfg(feature = "full")]
-pub use crate::file::File;
 
 mod lifetime;
 pub use crate::lifetime::Lifetime;
@@ -381,79 +395,96 @@ pub use crate::lit::{
     Lit, LitBool, LitByte, LitByteStr, LitChar, LitFloat, LitInt, LitStr, StrStyle,
 };
 
+#[cfg(feature = "parsing")]
+mod lookahead;
+
 #[cfg(any(feature = "full", feature = "derive"))]
 mod mac;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::mac::{Macro, MacroDelimiter};
 
-#[cfg(any(feature = "full", feature = "derive"))]
-mod derive;
-#[cfg(feature = "derive")]
-pub use crate::derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
+#[cfg(all(feature = "parsing", any(feature = "full", feature = "derive")))]
+#[cfg_attr(
+    doc_cfg,
+    doc(cfg(all(feature = "parsing", any(feature = "full", feature = "derive"))))
+)]
+pub mod meta;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod op;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::op::{BinOp, UnOp};
 
-#[cfg(feature = "full")]
-mod stmt;
-#[cfg(feature = "full")]
-pub use crate::stmt::{Block, Local, Stmt};
+#[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
+pub mod parse;
 
-#[cfg(any(feature = "full", feature = "derive"))]
-mod ty;
-#[cfg(any(feature = "full", feature = "derive"))]
-pub use crate::ty::{
-    Abi, BareFnArg, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup, TypeImplTrait, TypeInfer,
-    TypeMacro, TypeNever, TypeParen, TypePath, TypePtr, TypeReference, TypeSlice, TypeTraitObject,
-    TypeTuple, Variadic,
-};
+#[cfg(all(feature = "parsing", feature = "proc-macro"))]
+mod parse_macro_input;
+
+#[cfg(all(feature = "parsing", feature = "printing"))]
+mod parse_quote;
 
 #[cfg(feature = "full")]
 mod pat;
 #[cfg(feature = "full")]
+pub use crate::expr::{
+    ExprConst as PatConst, ExprLit as PatLit, ExprMacro as PatMacro, ExprPath as PatPath,
+    ExprRange as PatRange,
+};
+#[cfg(feature = "full")]
 pub use crate::pat::{
-    FieldPat, Pat, PatBox, PatIdent, PatLit, PatMacro, PatOr, PatPath, PatRange, PatReference,
-    PatRest, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, PatWild,
+    FieldPat, Pat, PatIdent, PatOr, PatParen, PatReference, PatRest, PatSlice, PatStruct, PatTuple,
+    PatTupleStruct, PatType, PatWild,
 };
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod path;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::path::{
-    AngleBracketedGenericArguments, Binding, Constraint, GenericArgument,
+    AngleBracketedGenericArguments, AssocConst, AssocType, Constraint, GenericArgument,
     ParenthesizedGenericArguments, Path, PathArguments, PathSegment, QSelf,
 };
 
-#[cfg(feature = "parsing")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
-pub mod buffer;
-mod drops;
-#[cfg(feature = "parsing")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
-pub mod ext;
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
+mod print;
+
 pub mod punctuated;
-#[cfg(all(any(feature = "full", feature = "derive"), feature = "extra-traits"))]
-mod tt;
 
+#[cfg(any(feature = "full", feature = "derive"))]
+mod restriction;
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use crate::restriction::{FieldMutability, VisRestricted, Visibility};
 
-#[cfg(feature = "parsing")]
-#[doc(hidden)]
-pub mod parse_quote;
+mod sealed;
 
-
-#[cfg(all(
-    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-    feature = "parsing",
-    feature = "proc-macro"
-))]
-#[doc(hidden)]
-pub mod parse_macro_input;
+mod span;
 
 #[cfg(all(feature = "parsing", feature = "printing"))]
 #[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
 pub mod spanned;
+
+#[cfg(feature = "full")]
+mod stmt;
+#[cfg(feature = "full")]
+pub use crate::stmt::{Block, Local, LocalInit, Stmt, StmtMacro};
+
+mod thread;
+
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "extra-traits"))]
+mod tt;
+
+#[cfg(any(feature = "full", feature = "derive"))]
+mod ty;
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use crate::ty::{
+    Abi, BareFnArg, BareVariadic, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup,
+    TypeImplTrait, TypeInfer, TypeMacro, TypeNever, TypeParen, TypePath, TypePtr, TypeReference,
+    TypeSlice, TypeTraitObject, TypeTuple,
+};
+
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "parsing"))]
+mod verbatim;
 
 #[cfg(all(feature = "parsing", feature = "full"))]
 mod whitespace;
@@ -461,6 +492,89 @@ mod whitespace;
 mod gen {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "fold")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fold")))]
+    #[rustfmt::skip]
+    pub mod fold;
+
     
     
     
@@ -669,104 +783,18 @@ mod gen {
     
     
     
-    
-    
-    
     #[cfg(feature = "visit-mut")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "visit-mut")))]
     #[rustfmt::skip]
     pub mod visit_mut;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "fold")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "fold")))]
-    #[rustfmt::skip]
-    pub mod fold;
-
     #[cfg(feature = "clone-impls")]
     #[rustfmt::skip]
     mod clone;
+
+    #[cfg(feature = "extra-traits")]
+    #[rustfmt::skip]
+    mod debug;
 
     #[cfg(feature = "extra-traits")]
     #[rustfmt::skip]
@@ -775,10 +803,6 @@ mod gen {
     #[cfg(feature = "extra-traits")]
     #[rustfmt::skip]
     mod hash;
-
-    #[cfg(feature = "extra-traits")]
-    #[rustfmt::skip]
-    mod debug;
 
     #[cfg(any(feature = "full", feature = "derive"))]
     #[path = "../gen_helper.rs"]
@@ -791,32 +815,6 @@ pub use crate::gen::*;
 #[path = "export.rs"]
 pub mod __private;
 
-mod custom_keyword;
-mod custom_punctuation;
-mod sealed;
-mod span;
-mod thread;
-
-#[cfg(feature = "parsing")]
-mod lookahead;
-
-#[cfg(feature = "parsing")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
-pub mod parse;
-
-#[cfg(feature = "full")]
-mod reserved;
-
-#[cfg(all(any(feature = "full", feature = "derive"), feature = "parsing"))]
-mod verbatim;
-
-#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
-mod print;
-
-
-
-mod error;
-pub use crate::error::{Error, Result};
 
 
 
@@ -855,21 +853,11 @@ pub use crate::error::{Error, Result};
 
 
 
-
-
-
-
-#[cfg(all(
-    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-    feature = "parsing",
-    feature = "proc-macro"
-))]
+#[cfg(all(feature = "parsing", feature = "proc-macro"))]
 #[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "proc-macro"))))]
 pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
     parse::Parser::parse(T::parse, tokens)
 }
-
-
 
 
 
@@ -910,16 +898,11 @@ pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
 
 
 
-
-
 #[cfg(feature = "parsing")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
     parse::Parser::parse_str(T::parse, s)
 }
-
-
-
 
 
 

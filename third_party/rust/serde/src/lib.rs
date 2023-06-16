@@ -90,7 +90,10 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.152")]
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde/1.0.163")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -127,6 +130,7 @@
         derive_partial_eq_without_eq,
         enum_glob_use,
         explicit_auto_deref,
+        let_underscore_untyped,
         map_err_ignore,
         new_without_default,
         result_unit_err,
@@ -215,13 +219,23 @@ mod lib {
     #[cfg(feature = "std")]
     pub use std::collections::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque};
 
+    #[cfg(all(not(no_core_cstr), not(feature = "std")))]
+    pub use core::ffi::CStr;
+    #[cfg(feature = "std")]
+    pub use std::ffi::CStr;
+
+    #[cfg(all(not(no_core_cstr), feature = "alloc", not(feature = "std")))]
+    pub use alloc::ffi::CString;
+    #[cfg(feature = "std")]
+    pub use std::ffi::CString;
+
     #[cfg(feature = "std")]
     pub use std::{error, net};
 
     #[cfg(feature = "std")]
     pub use std::collections::{HashMap, HashSet};
     #[cfg(feature = "std")]
-    pub use std::ffi::{CStr, CString, OsStr, OsString};
+    pub use std::ffi::{OsStr, OsString};
     #[cfg(feature = "std")]
     pub use std::hash::{BuildHasher, Hash};
     #[cfg(feature = "std")]
@@ -324,9 +338,10 @@ mod std_error;
 #[allow(unused_imports)]
 #[macro_use]
 extern crate serde_derive;
+
+
 #[cfg(feature = "serde_derive")]
-#[doc(hidden)]
-pub use serde_derive::*;
+pub use serde_derive::{Deserialize, Serialize};
 
 #[cfg(all(not(no_serde_derive), any(feature = "std", feature = "alloc")))]
 mod actually_private {

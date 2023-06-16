@@ -107,6 +107,8 @@ TOLERATED_DUPES = {
     
     
     "time": 2,
+    
+    "syn": 2,
 }
 
 

@@ -81,7 +81,18 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/quote/1.0.23")]
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/quote/1.0.28")]
 #![allow(
     clippy::doc_markdown,
     clippy::missing_errors_doc,
@@ -91,10 +102,7 @@
     clippy::wrong_self_convention,
 )]
 
-#[cfg(all(
-    not(all(target_arch = "wasm32", target_os = "unknown")),
-    feature = "proc-macro"
-))]
+#[cfg(feature = "proc-macro")]
 extern crate proc_macro;
 
 mod ext;
@@ -619,14 +627,14 @@ macro_rules! quote_spanned {
 #[macro_export]
 macro_rules! quote_spanned {
     ($span:expr=>) => {{
-        let _: $crate::__private::Span = $span;
+        let _: $crate::__private::Span = $crate::__private::get_span($span).__into_span();
         $crate::__private::TokenStream::new()
     }};
 
     
     ($span:expr=> $tt:tt) => {{
         let mut _s = $crate::__private::TokenStream::new();
-        let _span: $crate::__private::Span = $span;
+        let _span: $crate::__private::Span = $crate::__private::get_span($span).__into_span();
         $crate::quote_token_spanned!{$tt _s _span}
         _s
     }};
@@ -634,13 +642,13 @@ macro_rules! quote_spanned {
     
     ($span:expr=> # $var:ident) => {{
         let mut _s = $crate::__private::TokenStream::new();
-        let _: $crate::__private::Span = $span;
+        let _: $crate::__private::Span = $crate::__private::get_span($span).__into_span();
         $crate::ToTokens::to_tokens(&$var, &mut _s);
         _s
     }};
     ($span:expr=> $tt1:tt $tt2:tt) => {{
         let mut _s = $crate::__private::TokenStream::new();
-        let _span: $crate::__private::Span = $span;
+        let _span: $crate::__private::Span = $crate::__private::get_span($span).__into_span();
         $crate::quote_token_spanned!{$tt1 _s _span}
         $crate::quote_token_spanned!{$tt2 _s _span}
         _s
@@ -649,7 +657,7 @@ macro_rules! quote_spanned {
     
     ($span:expr=> $($tt:tt)*) => {{
         let mut _s = $crate::__private::TokenStream::new();
-        let _span: $crate::__private::Span = $span;
+        let _span: $crate::__private::Span = $crate::__private::get_span($span).__into_span();
         $crate::quote_each_token_spanned!{_s _span $($tt)*}
         _s
     }};

@@ -26,7 +26,6 @@ use std::fmt::{self, Debug};
 use std::hash::{Hash, Hasher};
 #[cfg(any(feature = "full", feature = "derive"))]
 use std::iter;
-use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
 use std::option;
 use std::slice;
@@ -51,17 +50,7 @@ pub struct Punctuated<T, P> {
 
 impl<T, P> Punctuated<T, P> {
     
-    #[cfg(not(syn_no_const_vec_new))]
     pub const fn new() -> Self {
-        Punctuated {
-            inner: Vec::new(),
-            last: None,
-        }
-    }
-
-    
-    #[cfg(syn_no_const_vec_new)]
-    pub fn new() -> Self {
         Punctuated {
             inner: Vec::new(),
             last: None,
@@ -200,6 +189,18 @@ impl<T, P> Punctuated<T, P> {
 
     
     
+    pub fn pop_punct(&mut self) -> Option<P> {
+        if self.last.is_some() {
+            None
+        } else {
+            let (t, p) = self.inner.pop()?;
+            self.last = Some(Box::new(t));
+            Some(p)
+        }
+    }
+
+    
+    
     pub fn trailing_punct(&self) -> bool {
         self.last.is_none() && !self.is_empty()
     }
@@ -260,9 +261,6 @@ impl<T, P> Punctuated<T, P> {
     
     
     
-    
-    
-    
     #[cfg(feature = "parsing")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     pub fn parse_terminated(input: ParseStream) -> Result<Self>
@@ -273,9 +271,6 @@ impl<T, P> Punctuated<T, P> {
         Self::parse_terminated_with(input, T::parse)
     }
 
-    
-    
-    
     
     
     
@@ -318,9 +313,6 @@ impl<T, P> Punctuated<T, P> {
     
     
     
-    
-    
-    
     #[cfg(feature = "parsing")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     pub fn parse_separated_nonempty(input: ParseStream) -> Result<Self>
@@ -331,9 +323,6 @@ impl<T, P> Punctuated<T, P> {
         Self::parse_separated_nonempty_with(input, T::parse)
     }
 
-    
-    
-    
     
     
     
@@ -459,29 +448,37 @@ where
 impl<T, P> FromIterator<Pair<T, P>> for Punctuated<T, P> {
     fn from_iter<I: IntoIterator<Item = Pair<T, P>>>(i: I) -> Self {
         let mut ret = Punctuated::new();
-        ret.extend(i);
+        do_extend(&mut ret, i.into_iter());
         ret
     }
 }
 
-impl<T, P> Extend<Pair<T, P>> for Punctuated<T, P> {
+impl<T, P> Extend<Pair<T, P>> for Punctuated<T, P>
+where
+    P: Default,
+{
     fn extend<I: IntoIterator<Item = Pair<T, P>>>(&mut self, i: I) {
-        assert!(
-            self.empty_or_trailing(),
-            "Punctuated::extend: Punctuated is not empty or does not have a trailing punctuation",
-        );
+        if !self.empty_or_trailing() {
+            self.push_punct(P::default());
+        }
+        do_extend(self, i.into_iter());
+    }
+}
 
-        let mut nomore = false;
-        for pair in i {
-            if nomore {
-                panic!("Punctuated extended with items after a Pair::End");
-            }
-            match pair {
-                Pair::Punctuated(a, b) => self.inner.push((a, b)),
-                Pair::End(a) => {
-                    self.last = Some(Box::new(a));
-                    nomore = true;
-                }
+fn do_extend<T, P, I>(punctuated: &mut Punctuated<T, P>, i: I)
+where
+    I: Iterator<Item = Pair<T, P>>,
+{
+    let mut nomore = false;
+    for pair in i {
+        if nomore {
+            panic!("Punctuated extended with items after a Pair::End");
+        }
+        match pair {
+            Pair::Punctuated(a, b) => punctuated.inner.push((a, b)),
+            Pair::End(a) => {
+                punctuated.last = Some(Box::new(a));
+                nomore = true;
             }
         }
     }
@@ -719,16 +716,11 @@ where
 
 
 pub struct Iter<'a, T: 'a> {
-    
-    
-    
-    inner: Box<NoDrop<dyn IterTrait<'a, T, Item = &'a T> + 'a>>,
+    inner: Box<NoDrop<dyn IterTrait<'a, T> + 'a>>,
 }
 
-trait IterTrait<'a, T: 'a>:
-    DoubleEndedIterator<Item = &'a T> + ExactSizeIterator<Item = &'a T>
-{
-    fn clone_box(&self) -> Box<NoDrop<dyn IterTrait<'a, T, Item = &'a T> + 'a>>;
+trait IterTrait<'a, T: 'a>: Iterator<Item = &'a T> + DoubleEndedIterator + ExactSizeIterator {
+    fn clone_box(&self) -> Box<NoDrop<dyn IterTrait<'a, T> + 'a>>;
 }
 
 struct PrivateIter<'a, T: 'a, P: 'a> {
@@ -827,7 +819,7 @@ where
         + TrivialDrop
         + 'a,
 {
-    fn clone_box(&self) -> Box<NoDrop<dyn IterTrait<'a, T, Item = &'a T> + 'a>> {
+    fn clone_box(&self) -> Box<NoDrop<dyn IterTrait<'a, T> + 'a>> {
         Box::new(NoDrop::new(self.clone()))
     }
 }
@@ -1010,6 +1002,21 @@ impl<T, P> Pair<T, P> {
 
 #[cfg(feature = "clone-impls")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "clone-impls")))]
+impl<T, P> Pair<&T, &P> {
+    pub fn cloned(self) -> Pair<T, P>
+    where
+        T: Clone,
+        P: Clone,
+    {
+        match self {
+            Pair::Punctuated(t, p) => Pair::Punctuated(t.clone(), p.clone()),
+            Pair::End(t) => Pair::End(t.clone()),
+        }
+    }
+}
+
+#[cfg(feature = "clone-impls")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "clone-impls")))]
 impl<T, P> Clone for Pair<T, P>
 where
     T: Clone,
@@ -1021,6 +1028,15 @@ where
             Pair::End(t) => Pair::End(t.clone()),
         }
     }
+}
+
+#[cfg(feature = "clone-impls")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "clone-impls")))]
+impl<T, P> Copy for Pair<T, P>
+where
+    T: Copy,
+    P: Copy,
+{
 }
 
 impl<T, P> Index<usize> for Punctuated<T, P> {

@@ -179,20 +179,13 @@
 
 
 
-
-
-
-
 #[path = "discouraged.rs"]
 pub mod discouraged;
 
 use crate::buffer::{Cursor, TokenBuffer};
 use crate::error;
 use crate::lookahead;
-#[cfg(all(
-    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-    feature = "proc-macro"
-))]
+#[cfg(feature = "proc-macro")]
 use crate::proc_macro;
 use crate::punctuated::Punctuated;
 use crate::token::Token;
@@ -696,10 +689,63 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    pub fn parse_terminated<T, P: Parse>(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse_terminated<T, P>(
         &self,
         parser: fn(ParseStream) -> Result<T>,
-    ) -> Result<Punctuated<T, P>> {
+        separator: P,
+    ) -> Result<Punctuated<T, P::Token>>
+    where
+        P: Peek,
+        P::Token: Parse,
+    {
+        let _ = separator;
         Punctuated::parse_terminated_with(self, parser)
     }
 
@@ -1101,10 +1147,8 @@ impl Parse for TokenTree {
 impl Parse for Group {
     fn parse(input: ParseStream) -> Result<Self> {
         input.step(|cursor| {
-            for delim in &[Delimiter::Parenthesis, Delimiter::Brace, Delimiter::Bracket] {
-                if let Some((inside, span, rest)) = cursor.group(*delim) {
-                    let mut group = Group::new(*delim, inside.token_stream());
-                    group.set_span(span);
+            if let Some((group, rest)) = cursor.any_group_token() {
+                if group.delimiter() != Delimiter::None {
                     return Ok((group, rest));
                 }
             }
@@ -1138,8 +1182,6 @@ impl Parse for Literal {
 
 
 
-
-
 pub trait Parser: Sized {
     type Output;
 
@@ -1153,13 +1195,8 @@ pub trait Parser: Sized {
     
     
     
-    
-    
-    
-    #[cfg(all(
-        not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-        feature = "proc-macro"
-    ))]
+    #[cfg(feature = "proc-macro")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "proc-macro")))]
     fn parse(self, tokens: proc_macro::TokenStream) -> Result<Self::Output> {
         self.parse2(proc_macro2::TokenStream::from(tokens))
     }
@@ -1183,13 +1220,6 @@ pub trait Parser: Sized {
     fn __parse_scoped(self, scope: Span, tokens: TokenStream) -> Result<Self::Output> {
         let _ = scope;
         self.parse2(tokens)
-    }
-
-    
-    #[doc(hidden)]
-    #[cfg(any(feature = "full", feature = "derive"))]
-    fn __parse_stream(self, input: ParseStream) -> Result<Self::Output> {
-        input.parse().and_then(|tokens| self.parse2(tokens))
     }
 }
 
@@ -1232,21 +1262,11 @@ where
             Ok(node)
         }
     }
-
-    #[cfg(any(feature = "full", feature = "derive"))]
-    fn __parse_stream(self, input: ParseStream) -> Result<Self::Output> {
-        self(input)
-    }
 }
 
 #[cfg(any(feature = "full", feature = "derive"))]
 pub(crate) fn parse_scoped<F: Parser>(f: F, scope: Span, tokens: TokenStream) -> Result<F::Output> {
     f.__parse_scoped(scope, tokens)
-}
-
-#[cfg(any(feature = "full", feature = "derive"))]
-pub(crate) fn parse_stream<F: Parser>(f: F, input: ParseStream) -> Result<F::Output> {
-    f.__parse_stream(input)
 }
 
 

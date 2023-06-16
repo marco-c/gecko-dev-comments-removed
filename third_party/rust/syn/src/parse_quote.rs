@@ -64,12 +64,11 @@
 
 
 
-
 #[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
 #[macro_export]
 macro_rules! parse_quote {
     ($($tt:tt)*) => {
-        $crate::parse_quote::parse($crate::__private::quote::quote!($($tt)*))
+        $crate::__private::parse_quote($crate::__private::quote::quote!($($tt)*))
     };
 }
 
@@ -101,7 +100,7 @@ macro_rules! parse_quote {
 #[macro_export]
 macro_rules! parse_quote_spanned {
     ($span:expr=> $($tt:tt)*) => {
-        $crate::parse_quote::parse($crate::__private::quote::quote_spanned!($span=> $($tt)*))
+        $crate::__private::parse_quote($crate::__private::quote::quote_spanned!($span=> $($tt)*))
     };
 }
 
@@ -121,8 +120,6 @@ pub fn parse<T: ParseQuote>(token_stream: TokenStream) -> T {
     }
 }
 
-
-#[doc(hidden)]
 pub trait ParseQuote: Sized {
     fn parse(input: ParseStream) -> Result<Self>;
 }
@@ -140,7 +137,7 @@ use crate::punctuated::Punctuated;
 #[cfg(any(feature = "full", feature = "derive"))]
 use crate::{attr, Attribute};
 #[cfg(feature = "full")]
-use crate::{Block, Stmt};
+use crate::{Block, Pat, Stmt};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 impl ParseQuote for Attribute {
@@ -150,6 +147,20 @@ impl ParseQuote for Attribute {
         } else {
             attr::parsing::single_parse_outer(input)
         }
+    }
+}
+
+#[cfg(feature = "full")]
+impl ParseQuote for Pat {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Pat::parse_multi_with_leading_vert(input)
+    }
+}
+
+#[cfg(feature = "full")]
+impl ParseQuote for Box<Pat> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        <Pat as ParseQuote>::parse(input).map(Box::new)
     }
 }
 

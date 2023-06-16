@@ -267,7 +267,6 @@ fn check_variant_skip_attrs(cx: &Ctxt, cont: &Container) {
 
 
 
-
 fn check_internal_tag_field_name_conflict(cx: &Ctxt, cont: &Container) {
     let variants = match &cont.data {
         Data::Enum(variants) => variants,

@@ -79,11 +79,6 @@ fn main() {
     }
 
     
-    if minor < 31 {
-        println!("cargo:rustc-cfg=no_serde_derive");
-    }
-
-    
     
     
     
@@ -92,6 +87,11 @@ fn main() {
         println!("cargo:rustc-cfg=no_num_nonzero_signed");
         println!("cargo:rustc-cfg=no_systemtime_checked_add");
         println!("cargo:rustc-cfg=no_relaxed_trait_bounds");
+    }
+
+    
+    if minor < 56 {
+        println!("cargo:rustc-cfg=no_serde_derive");
     }
 
     
@@ -113,6 +113,12 @@ fn main() {
         if minor < 34 || !has_atomic32 {
             println!("cargo:rustc-cfg=no_std_atomic");
         }
+    }
+
+    
+    
+    if minor < 64 {
+        println!("cargo:rustc-cfg=no_core_cstr");
     }
 }
 

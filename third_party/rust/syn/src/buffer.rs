@@ -5,14 +5,8 @@
 
 
 
-
-
-#[cfg(all(
-    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-    feature = "proc-macro"
-))]
-use crate::proc_macro as pm;
 use crate::Lifetime;
+use proc_macro2::extra::DelimSpan;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::cmp::Ordering;
 use std::marker::PhantomData;
@@ -29,8 +23,6 @@ enum Entry {
     
     End(isize),
 }
-
-
 
 
 
@@ -63,14 +55,9 @@ impl TokenBuffer {
 
     
     
-    
-    
-    
-    #[cfg(all(
-        not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
-        feature = "proc-macro"
-    ))]
-    pub fn new(stream: pm::TokenStream) -> Self {
+    #[cfg(feature = "proc-macro")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "proc-macro")))]
+    pub fn new(stream: proc_macro::TokenStream) -> Self {
         Self::new2(stream.into())
     }
 
@@ -92,11 +79,6 @@ impl TokenBuffer {
         unsafe { Cursor::create(ptr, ptr.add(self.entries.len() - 1)) }
     }
 }
-
-
-
-
-
 
 
 
@@ -199,7 +181,7 @@ impl<'a> Cursor<'a> {
 
     
     
-    pub fn group(mut self, delim: Delimiter) -> Option<(Cursor<'a>, Span, Cursor<'a>)> {
+    pub fn group(mut self, delim: Delimiter) -> Option<(Cursor<'a>, DelimSpan, Cursor<'a>)> {
         
         
         
@@ -209,11 +191,35 @@ impl<'a> Cursor<'a> {
 
         if let Entry::Group(group, end_offset) = self.entry() {
             if group.delimiter() == delim {
+                let span = group.delim_span();
                 let end_of_group = unsafe { self.ptr.add(*end_offset) };
                 let inside_of_group = unsafe { Cursor::create(self.ptr.add(1), end_of_group) };
                 let after_group = unsafe { Cursor::create(end_of_group, self.scope) };
-                return Some((inside_of_group, group.span(), after_group));
+                return Some((inside_of_group, span, after_group));
             }
+        }
+
+        None
+    }
+
+    pub(crate) fn any_group(self) -> Option<(Cursor<'a>, Delimiter, DelimSpan, Cursor<'a>)> {
+        if let Entry::Group(group, end_offset) = self.entry() {
+            let delimiter = group.delimiter();
+            let span = group.delim_span();
+            let end_of_group = unsafe { self.ptr.add(*end_offset) };
+            let inside_of_group = unsafe { Cursor::create(self.ptr.add(1), end_of_group) };
+            let after_group = unsafe { Cursor::create(end_of_group, self.scope) };
+            return Some((inside_of_group, delimiter, span, after_group));
+        }
+
+        None
+    }
+
+    pub(crate) fn any_group_token(self) -> Option<(Group, Cursor<'a>)> {
+        if let Entry::Group(group, end_offset) = self.entry() {
+            let end_of_group = unsafe { self.ptr.add(*end_offset) };
+            let after_group = unsafe { Cursor::create(end_of_group, self.scope) };
+            return Some((group.clone(), after_group));
         }
 
         None
@@ -315,6 +321,33 @@ impl<'a> Cursor<'a> {
 
     
     
+    #[cfg(any(feature = "full", feature = "derive"))]
+    pub(crate) fn prev_span(mut self) -> Span {
+        if start_of_buffer(self) < self.ptr {
+            self.ptr = unsafe { self.ptr.offset(-1) };
+            if let Entry::End(_) = self.entry() {
+                
+                let mut depth = 1;
+                loop {
+                    self.ptr = unsafe { self.ptr.offset(-1) };
+                    match self.entry() {
+                        Entry::Group(group, _) => {
+                            depth -= 1;
+                            if depth == 0 {
+                                return group.span();
+                            }
+                        }
+                        Entry::End(_) => depth += 1,
+                        Entry::Literal(_) | Entry::Ident(_) | Entry::Punct(_) => {}
+                    }
+                }
+            }
+        }
+        self.span()
+    }
+
+    
+    
     
     
     pub(crate) fn skip(self) -> Option<Cursor<'a>> {
@@ -368,11 +401,13 @@ pub(crate) fn same_scope(a: Cursor, b: Cursor) -> bool {
 }
 
 pub(crate) fn same_buffer(a: Cursor, b: Cursor) -> bool {
+    start_of_buffer(a) == start_of_buffer(b)
+}
+
+fn start_of_buffer(cursor: Cursor) -> *const Entry {
     unsafe {
-        match (&*a.scope, &*b.scope) {
-            (Entry::End(a_offset), Entry::End(b_offset)) => {
-                a.scope.offset(*a_offset) == b.scope.offset(*b_offset)
-            }
+        match &*cursor.scope {
+            Entry::End(offset) => cursor.scope.offset(*offset),
             _ => unreachable!(),
         }
     }
