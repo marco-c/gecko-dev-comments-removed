@@ -1606,9 +1606,6 @@ pref("network.proxy.enable_wpad_over_dhcp", true);
 
 pref("network.stricttransportsecurity.preloadlist", true);
 
-
-pref("network.mdns.use_js_fallback", false);
-
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
 
