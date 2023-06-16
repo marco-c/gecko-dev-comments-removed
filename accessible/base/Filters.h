@@ -29,16 +29,6 @@ typedef uint32_t (*FilterFuncPtr)(LocalAccessible*);
 
 uint32_t GetSelected(LocalAccessible* aAccessible);
 uint32_t GetSelectable(LocalAccessible* aAccessible);
-
-
-
-
-uint32_t GetRow(LocalAccessible* aAccessible);
-
-
-
-
-uint32_t GetCell(LocalAccessible* aAccessible);
 }  
 }  
 }  
