@@ -3,7 +3,7 @@
 
 
 import { createSelector } from "reselect";
-import { shallowEqual } from "../utils/shallow-equal";
+import { shallowEqual, arrayShallowEqual } from "../utils/shallow-equal";
 
 import { getSelectedSource, getSourceActorsForSource } from "./";
 
@@ -28,7 +28,12 @@ export const getSelectedSourceExceptions = createSelector(
   },
   
   
-  { equalityCheck: shallowEqual, resultEqualityCheck: shallowEqual }
+  {
+    memoizeOptions: {
+      equalityCheck: shallowEqual,
+      resultEqualityCheck: arrayShallowEqual,
+    },
+  }
 );
 
 function getSelectedSourceActors(state) {

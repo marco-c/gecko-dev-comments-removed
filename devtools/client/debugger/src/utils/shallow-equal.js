@@ -2,17 +2,36 @@
 
 
 
+
+
+
+
+
+
+
+
+
 export function shallowEqual(value, other) {
-  return (
-    value === other ||
-    (Array.isArray(value) &&
-      Array.isArray(other) &&
-      arrayShallowEqual(value, other)) ||
-    (isObject(value) && isObject(other) && objectShallowEqual(value, other))
-  );
+  if (value === other) {
+    return true;
+  }
+
+  if (Array.isArray(value) && Array.isArray(other)) {
+    return arrayShallowEqual(value, other);
+  }
+
+  if (isObject(value) && isObject(other)) {
+    return objectShallowEqual(value, other);
+  }
+
+  return false;
 }
 
 export function arrayShallowEqual(value, other) {
+  
+  if (value === other) {
+    return true;
+  }
   return value.length === other.length && value.every((k, i) => k === other[i]);
 }
 
