@@ -475,7 +475,9 @@ class CssLogic {
         return true;
       }
     } while (
-      (element = element.parentNode) &&
+      
+      
+      (element = element.flattenedTreeParentNode) &&
       element.nodeType === nodeConstants.ELEMENT_NODE
     );
 
@@ -595,7 +597,9 @@ class CssLogic {
 
       distance--;
     } while (
-      (element = element.parentNode) &&
+      
+      
+      (element = element.flattenedTreeParentNode) &&
       element.nodeType === nodeConstants.ELEMENT_NODE
     );
   }
