@@ -3313,8 +3313,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     if (aParent) {
       
       
-      aParent->AppendChildTo(static_cast<nsIContent*>(clone.get()), false,
-                             aError);
+      aParent->AppendChildTo(static_cast<nsIContent*>(clone.get()),
+                              true, aError);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
