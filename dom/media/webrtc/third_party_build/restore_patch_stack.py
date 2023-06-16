@@ -8,25 +8,13 @@ import shutil
 import sys
 
 from fetch_github_repo import fetch_repo
-from run_operations import run_git, run_hg, run_shell
+from run_operations import get_last_line, run_git, run_hg, run_shell
 
 
 
 
 
 
-
-
-def get_last_line(file_path):
-    
-    with open(file_path, "rb") as f:
-        try:  
-            f.seek(-2, os.SEEK_END)
-            while f.read(1) != b"\n":
-                f.seek(-2, os.SEEK_CUR)
-        except OSError:
-            f.seek(0)
-        return f.readline().decode().strip()
 
 
 def restore_patch_stack(
