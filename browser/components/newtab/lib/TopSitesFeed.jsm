@@ -107,6 +107,9 @@ const NIMBUS_VARIABLE_ADDITIONAL_TILES =
 const NIMBUS_VARIABLE_CONTILE_SOV_ENABLED = "topSitesContileSovEnabled";
 
 
+const NIMBUS_VARIABLE_CONTILE_MAX_NUM_SPONSORED = "topSitesContileMaxSponsored";
+
+
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
 const SEARCH_FILTERS = [
   "google",
@@ -249,6 +252,17 @@ class ContileIntegration {
     return false;
   }
 
+  
+
+
+  _getMaxNumFromContile() {
+    return (
+      lazy.NimbusFeatures.pocketNewtab.getVariable(
+        NIMBUS_VARIABLE_CONTILE_MAX_NUM_SPONSORED
+      ) ?? CONTILE_MAX_NUM_SPONSORED
+    );
+  }
+
   async _fetchSites() {
     if (
       !lazy.NimbusFeatures.newtab.getVariable(
@@ -301,18 +315,20 @@ class ContileIntegration {
           NIMBUS_VARIABLE_ADDITIONAL_TILES
         );
 
+        const maxNumFromContile = this._getMaxNumFromContile();
+
         let { tiles } = body;
         if (
           useAdditionalTiles !== undefined &&
           !useAdditionalTiles &&
-          tiles.length > CONTILE_MAX_NUM_SPONSORED
+          tiles.length > maxNumFromContile
         ) {
-          tiles.length = CONTILE_MAX_NUM_SPONSORED;
+          tiles.length = maxNumFromContile;
         }
         tiles = this._filterBlockedSponsors(tiles);
-        if (tiles.length > CONTILE_MAX_NUM_SPONSORED) {
+        if (tiles.length > maxNumFromContile) {
           lazy.log.info("Remove unused links from Contile");
-          tiles.length = CONTILE_MAX_NUM_SPONSORED;
+          tiles.length = maxNumFromContile;
         }
         this._sites = tiles;
         Services.prefs.setStringPref(
@@ -1142,6 +1158,14 @@ class TopSitesFeed {
         link.pos = allocation.position - 1;
       }
       sponsored.push(link);
+    }
+    
+    if (
+      lazy.NimbusFeatures.pocketNewtab.getVariable(
+        NIMBUS_VARIABLE_CONTILE_MAX_NUM_SPONSORED
+      )
+    ) {
+      return sponsored.concat(sponsoredLinks[SPONSORED_TILE_PARTNER_AMP]);
     }
 
     return sponsored;
