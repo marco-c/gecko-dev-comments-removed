@@ -533,6 +533,32 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
+    fn adjust_for_contain_intrinsic_size(&mut self) {
+        let content_visibility = self.style.get_box().clone_content_visibility();
+        if content_visibility != ContentVisibility::Auto {
+            return;
+        }
+
+        let pos = self.style.get_position();
+        let new_width = pos.clone_contain_intrinsic_width().add_auto_if_needed();
+        let new_height = pos.clone_contain_intrinsic_height().add_auto_if_needed();
+        if new_width.is_none() && new_height.is_none() {
+            return;
+        }
+
+        let pos = self.style.mutate_position();
+        if let Some(width) = new_width {
+            pos.set_contain_intrinsic_width(width);
+        }
+        if let Some(height) = new_height {
+            pos.set_contain_intrinsic_height(height);
+        }
+    }
+
+    
+    
+    
+    
     
     #[cfg(feature = "gecko")]
     fn adjust_for_prohibited_display_contents<E>(&mut self, element: Option<E>)
@@ -948,6 +974,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         self.adjust_for_position();
         self.adjust_for_overflow();
         self.adjust_for_contain();
+        self.adjust_for_contain_intrinsic_size();
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_table_text_align();
