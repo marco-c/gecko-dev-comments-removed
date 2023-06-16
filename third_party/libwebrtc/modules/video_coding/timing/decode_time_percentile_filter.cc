@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing/codec_timer.h"
+#include "modules/video_coding/timing/decode_time_percentile_filter.h"
 
 #include <cstdint>
 
@@ -25,10 +25,12 @@ const int64_t kTimeLimitMs = 10000;
 
 }  
 
-CodecTimer::CodecTimer() : ignored_sample_count_(0), filter_(kPercentile) {}
-CodecTimer::~CodecTimer() = default;
+DecodeTimePercentileFilter::DecodeTimePercentileFilter()
+    : ignored_sample_count_(0), filter_(kPercentile) {}
+DecodeTimePercentileFilter::~DecodeTimePercentileFilter() = default;
 
-void CodecTimer::AddTiming(int64_t decode_time_ms, int64_t now_ms) {
+void DecodeTimePercentileFilter::AddTiming(int64_t decode_time_ms,
+                                           int64_t now_ms) {
   
   if (ignored_sample_count_ < kIgnoredSampleCount) {
     ++ignored_sample_count_;
@@ -48,11 +50,12 @@ void CodecTimer::AddTiming(int64_t decode_time_ms, int64_t now_ms) {
 }
 
 
-int64_t CodecTimer::RequiredDecodeTimeMs() const {
+int64_t DecodeTimePercentileFilter::RequiredDecodeTimeMs() const {
   return filter_.GetPercentileValue();
 }
 
-CodecTimer::Sample::Sample(int64_t decode_time_ms, int64_t sample_time_ms)
+DecodeTimePercentileFilter::Sample::Sample(int64_t decode_time_ms,
+                                           int64_t sample_time_ms)
     : decode_time_ms(decode_time_ms), sample_time_ms(sample_time_ms) {}
 
 }  

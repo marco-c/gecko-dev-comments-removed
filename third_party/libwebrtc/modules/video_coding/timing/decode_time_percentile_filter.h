@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_TIMING_CODEC_TIMER_H_
-#define MODULES_VIDEO_CODING_TIMING_CODEC_TIMER_H_
+#ifndef MODULES_VIDEO_CODING_TIMING_DECODE_TIME_PERCENTILE_FILTER_H_
+#define MODULES_VIDEO_CODING_TIMING_DECODE_TIME_PERCENTILE_FILTER_H_
 
 #include <queue>
 
@@ -17,10 +17,14 @@
 
 namespace webrtc {
 
-class CodecTimer {
+
+
+
+
+class DecodeTimePercentileFilter {
  public:
-  CodecTimer();
-  ~CodecTimer();
+  DecodeTimePercentileFilter();
+  ~DecodeTimePercentileFilter();
 
   
   void AddTiming(int64_t new_decode_time_ms, int64_t now_ms);
