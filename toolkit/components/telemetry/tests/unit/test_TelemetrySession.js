@@ -1970,6 +1970,8 @@ add_task(async function test_schedulerEnvironmentReschedules() {
   await TelemetryController.testReset();
   await TelemetryController.testShutdown();
   await TelemetryStorage.testClearPendingPings();
+  
+  TelemetryScheduler.testReset();
   PingServer.clearRequests();
 
   
@@ -1995,14 +1997,20 @@ add_task(async function test_schedulerEnvironmentReschedules() {
   Preferences.set(PREF_TEST, 1);
 
   
-  await PingServer.promiseNextPing();
+  let ping = await PingServer.promiseNextPing();
+  Assert.equal(ping.type, "main", `Expected 'main' ping on ${ping.id}`);
+  Assert.equal(
+    ping.payload.info.reason,
+    "environment-change",
+    `Expected 'environment-change' reason on ${ping.id}`
+  );
 
   
   PingServer.registerPingHandler((req, res) => {
     const receivedPing = decodeRequestPayload(req);
     Assert.ok(
       false,
-      `No ping should be received in this test (got ${receivedPing.id}).`
+      `No ping should be received in this test (got ${receivedPing.id} type: ${receivedPing.type} reason: ${receivedPing.payload.info.reason}).`
     );
   });
 
@@ -2341,5 +2349,9 @@ add_task(async function test_changeThrottling() {
 });
 
 add_task(async function stopServer() {
+  
+  
+  
+  await TelemetryController.testShutdown();
   await PingServer.stop();
 });
