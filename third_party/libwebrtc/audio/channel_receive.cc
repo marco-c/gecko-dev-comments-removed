@@ -742,7 +742,7 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   UpdatePlayoutTimestamp(true, rtc::TimeMillis());
 
   
-  rtp_rtcp_->IncomingRtcpPacket(data, length);
+  rtp_rtcp_->IncomingRtcpPacket(rtc::MakeArrayView(data, length));
 
   int64_t rtt = 0;
   rtp_rtcp_->RTT(remote_ssrc_, &rtt, nullptr, nullptr,

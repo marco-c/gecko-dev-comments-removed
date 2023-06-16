@@ -210,7 +210,7 @@ void AudioIngress::ReceivedRTCPPacket(
   }
 
   
-  rtp_rtcp_->IncomingRtcpPacket(rtcp_packet.data(), rtcp_packet.size());
+  rtp_rtcp_->IncomingRtcpPacket(rtcp_packet);
 
   int64_t rtt = 0;
   if (rtp_rtcp_->RTT(remote_ssrc_, &rtt, nullptr, nullptr, nullptr) != 0) {
