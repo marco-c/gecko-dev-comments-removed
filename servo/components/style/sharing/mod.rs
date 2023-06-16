@@ -884,14 +884,8 @@ impl<E: TElement> StyleSharingCache<E> {
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            if target.is_visited_link() != candidate.element.is_visited_link() {
+            debug_assert_eq!(target.is_link(), candidate.element.is_link(), "Linkness mismatch");
+            if target.is_link() {
                 return None;
             }
 
