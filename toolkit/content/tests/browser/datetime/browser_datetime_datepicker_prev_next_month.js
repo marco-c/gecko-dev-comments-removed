@@ -343,10 +343,18 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
   });
 
   
-  EventUtils.synthesizeKey("KEY_Backspace", {});
-
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+  
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     const input = content.document.querySelector("input");
+
+    const EventUtils = ContentTaskUtils.getEventUtils(content);
+    EventUtils.synthesizeKey("KEY_Backspace", {}, content);
+
+    await ContentTaskUtils.waitForMutationCondition(
+      input,
+      { attributeFilter: ["value"] },
+      () => input.value == ""
+    );
 
     Assert.ok(
       !input.value,
