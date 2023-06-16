@@ -36,7 +36,8 @@ class AudioSinkWrapper : public MediaSink {
         mSinkCreator(std::move(aFunc)),
         mAudioDevice(std::move(aAudioDevice)),
         mParams(aVolume, aPlaybackRate, aPreservesPitch),
-        mAudioQueue(aAudioQueue) {}
+        mAudioQueue(aAudioQueue),
+        mRetrySinkTime(TimeStamp::Now()) {}
 
   RefPtr<EndedPromise> OnEnded(TrackType aType) override;
   media::TimeUnit GetEndTime(TrackType aType) const override;
@@ -87,7 +88,8 @@ class AudioSinkWrapper : public MediaSink {
   }
 
   bool NeedAudioSink();
-  void StartAudioSink(const media::TimeUnit& aStartTime);
+  void StartAudioSink(UniquePtr<AudioSink> aAudioSink,
+                      const media::TimeUnit& aStartTime);
   void ShutDownAudioSink();
   
   
@@ -100,6 +102,7 @@ class AudioSinkWrapper : public MediaSink {
   
   nsresult SyncCreateAudioSink(const media::TimeUnit& aStartTime);
   void MaybeAsyncCreateAudioSink();
+  void ScheduleRetrySink();
 
   
   
@@ -141,6 +144,15 @@ class AudioSinkWrapper : public MediaSink {
   MozPromiseRequestHolder<EndedPromise> mAudioSinkEndedRequest;
   MediaQueue<AudioData>& mAudioQueue;
 
+  
+  
+  
+  
+  
+  
+  TimeStamp mRetrySinkTime;
+  
+  uint32_t mAsyncCreateCount = 0;
   
   
   bool mTreatUnderrunAsSilence = false;
