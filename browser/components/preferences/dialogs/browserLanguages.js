@@ -7,12 +7,8 @@
 
 let { LangPackMatcher } = window.top;
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AddonManager",
-  "resource://gre/modules/AddonManager.jsm"
-);
 ChromeUtils.defineESModuleGetters(this, {
+  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonRepository: "resource://gre/modules/addons/AddonRepository.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
 });

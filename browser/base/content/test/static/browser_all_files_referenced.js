@@ -299,9 +299,6 @@ var whitelist = [
   
   
   { file: "resource://gre/modules/NetUtil.sys.mjs" },
-
-  
-  { file: "resource://gre/modules/AddonManager.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {

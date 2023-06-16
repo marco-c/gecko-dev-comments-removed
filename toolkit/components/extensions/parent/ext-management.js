@@ -11,11 +11,9 @@ XPCOMUtils.defineLazyGetter(this, "strBundle", function () {
     "chrome://global/locale/extensions.properties"
   );
 });
-ChromeUtils.defineModuleGetter(
-  this,
-  "AddonManager",
-  "resource://gre/modules/AddonManager.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+});
 
 
 
