@@ -87,6 +87,8 @@ class AudioSinkWrapper : public MediaSink {
   }
 
   bool NeedAudioSink();
+  void StartAudioSink(const media::TimeUnit& aStartTime);
+  
   
   
   
@@ -96,8 +98,8 @@ class AudioSinkWrapper : public MediaSink {
   
   
   enum class AudioSinkStartPolicy { SYNC, ASYNC };
-  nsresult StartAudioSink(const media::TimeUnit& aStartTime,
-                          AudioSinkStartPolicy aPolicy);
+  nsresult CreateAudioSink(const media::TimeUnit& aStartTime,
+                           AudioSinkStartPolicy aPolicy);
 
   
   
