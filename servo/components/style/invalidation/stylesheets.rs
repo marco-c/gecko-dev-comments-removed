@@ -548,12 +548,16 @@ impl StylesheetInvalidationSet {
                 
                 
             },
+            LayerStatement(..) => {
+                
+                
+                return self.invalidate_fully();
+            },
             CounterStyle(..) |
             Page(..) |
             Property(..) |
             FontFeatureValues(..) |
             FontPaletteValues(..) |
-            LayerStatement(..) |
             FontFace(..) |
             Keyframes(..) |
             Container(..) |
