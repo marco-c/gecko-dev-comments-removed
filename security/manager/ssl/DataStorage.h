@@ -14,15 +14,14 @@
 #include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
 #include "nsTHashMap.h"
+#include "nsIDataStorage.h"
+#include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 
-class psm_DataStorageTest;
-
 namespace mozilla {
-class DataStorageMemoryReporter;
 class TaskQueue;
 
 
@@ -77,77 +76,56 @@ class TaskQueue;
 
 
 
-
-
-
-
-
-
-enum DataStorageType {
-  DataStorage_Persistent,
-  DataStorage_Temporary,
-  DataStorage_Private
-};
-
-struct DataStorageItem final {
-  nsCString key;
-  nsCString value;
-  DataStorageType type;
-};
-
-enum class DataStorageClass {
-#define DATA_STORAGE(_) _,
-#include "mozilla/DataStorageList.h"
-#undef DATA_STORAGE
-};
-
-class DataStorage : public nsIObserver {
+class DataStorageManager final : public nsIDataStorageManager {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIDATASTORAGEMANAGER
+
+ private:
+  ~DataStorageManager() = default;
+
+  bool mAlternateServicesCreated = false;
+  bool mClientAuthRememberListCreated = false;
+  bool mSiteSecurityServiceStateCreated = false;
+};
+
+class DataStorageItem final : public nsIDataStorageItem {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIDATASTORAGEITEM
+
+  DataStorageItem(const nsACString& aKey, const nsACString& aValue,
+                  nsIDataStorage::DataType aType)
+      : key(aKey), value(aValue), type(aType) {}
+
+ private:
+  ~DataStorageItem() = default;
+
+  nsAutoCString key;
+  nsAutoCString value;
+  nsIDataStorage::DataType type;
+};
+
+class DataStorage final : public nsIDataStorage,
+                          public nsIMemoryReporter,
+                          public nsIObserver {
+  MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
+
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIDATASTORAGE
+  NS_DECL_NSIMEMORYREPORTER
   NS_DECL_NSIOBSERVER
 
-  
-  
-  static already_AddRefed<DataStorage> Get(DataStorageClass aFilename);
-
+  explicit DataStorage(const nsString& aFilename);
   
   nsresult Init();
 
-  
-  
-  
-  
-  
-  nsCString Get(const nsCString& aKey, DataStorageType aType);
-  
-  
-  nsresult Put(const nsCString& aKey, const nsCString& aValue,
-               DataStorageType aType);
-  
-  void Remove(const nsCString& aKey, DataStorageType aType);
-  
-  nsresult Clear();
-
-  
-  void GetAll(nsTArray<DataStorageItem>* aItems);
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
-
-  
-  bool IsReady();
+ private:
+  ~DataStorage() = default;
 
   void ArmTimer(const MutexAutoLock& aProofOfLock);
   void ShutdownTimer();
-
- private:
-  explicit DataStorage(const nsString& aFilename);
-  virtual ~DataStorage() = default;
-
-  static already_AddRefed<DataStorage> GetFromRawFileName(
-      const nsString& aFilename);
-
-  friend class ::psm_DataStorageTest;
-  friend class mozilla::DataStorageMemoryReporter;
 
   class Writer;
   class Reader;
@@ -176,23 +154,24 @@ class DataStorage : public nsIObserver {
   nsresult AsyncWriteData(const MutexAutoLock& aProofOfLock);
   nsresult AsyncReadData(const MutexAutoLock& aProofOfLock);
 
-  static nsresult ValidateKeyAndValue(const nsCString& aKey,
-                                      const nsCString& aValue);
+  static nsresult ValidateKeyAndValue(const nsACString& aKey,
+                                      const nsACString& aValue);
   static void TimerCallback(nsITimer* aTimer, void* aClosure);
   void NotifyObservers(const char* aTopic);
 
-  bool GetInternal(const nsCString& aKey, Entry* aEntry, DataStorageType aType,
+  bool GetInternal(const nsACString& aKey, Entry* aEntry,
+                   nsIDataStorage::DataType aType,
                    const MutexAutoLock& aProofOfLock);
-  nsresult PutInternal(const nsCString& aKey, Entry& aEntry,
-                       DataStorageType aType,
+  nsresult PutInternal(const nsACString& aKey, Entry& aEntry,
+                       nsIDataStorage::DataType aType,
                        const MutexAutoLock& aProofOfLock);
-  void MaybeEvictOneEntry(DataStorageType aType,
+  void MaybeEvictOneEntry(nsIDataStorage::DataType aType,
                           const MutexAutoLock& aProofOfLock);
-  DataStorageTable& GetTableForType(DataStorageType aType,
+  DataStorageTable& GetTableForType(nsIDataStorage::DataType aType,
                                     const MutexAutoLock& aProofOfLock);
 
-  void ReadAllFromTable(DataStorageType aType,
-                        nsTArray<DataStorageItem>* aItems,
+  void ReadAllFromTable(nsIDataStorage::DataType aType,
+                        nsTArray<RefPtr<nsIDataStorageItem>>& aItems,
                         const MutexAutoLock& aProofOfLock);
 
   Mutex mMutex;  
