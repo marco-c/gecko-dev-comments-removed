@@ -344,9 +344,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
-  { name: "VideoColorSpace", insecureContext: true , nightly: true},
+  { name: "VideoColorSpace", insecureContext: true, nightly: true },
   
-  { name: "VideoFrame", insecureContext: true , nightly: true},
+  { name: "VideoFrame", insecureContext: true, nightly: true },
   
   { name: "WebGL2RenderingContext", insecureContext: true },
   
