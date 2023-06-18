@@ -1935,11 +1935,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  void MoveAllChildren(nsINode& aContainer,
-                       const EditorRawDOMPoint& aPointToInsert,
-                       ErrorResult& aError);
+  [[nodiscard]] nsresult MoveAllChildren(
+      nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -1957,11 +1954,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  void MoveChildrenBetween(nsIContent& aFirstChild, nsIContent& aLastChild,
-                           const EditorRawDOMPoint& aPointToInsert,
-                           ErrorResult& aError);
+  [[nodiscard]] nsresult MoveChildrenBetween(
+      nsIContent& aFirstChild, nsIContent& aLastChild,
+      const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -1973,11 +1968,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  void MovePreviousSiblings(nsIContent& aChild,
-                            const EditorRawDOMPoint& aPointToInsert,
-                            ErrorResult& aError);
+  [[nodiscard]] nsresult MovePreviousSiblings(
+      nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -1988,11 +1980,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  void MoveInclusiveNextSiblings(nsIContent& aChild,
-                                 const EditorRawDOMPoint& aPointToInsert,
-                                 ErrorResult& aError);
+  [[nodiscard]] nsresult MoveInclusiveNextSiblings(
+      nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
 
