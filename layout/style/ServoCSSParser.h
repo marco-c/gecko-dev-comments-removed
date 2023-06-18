@@ -131,10 +131,12 @@ class ServoCSSParser {
 
 
 
+
   static bool ParseFontShorthandForMatching(
       const nsACString& aValue, URLExtraData* aUrl, StyleFontFamilyList& aList,
       StyleFontStyle& aStyle, StyleFontStretch& aStretch,
-      StyleFontWeight& aWeight, float* aSize = nullptr);
+      StyleFontWeight& aWeight, float* aSize = nullptr,
+      bool* aSmallCaps = nullptr);
 
   
 
