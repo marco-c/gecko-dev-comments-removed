@@ -47,8 +47,9 @@ quota::OriginMetadata GetTestQuotaOriginMetadata() {
 class TestFileSystemQuotaClient
     : public quota::test::QuotaManagerDependencyFixture {
  public:
+  static const int sPage = 64 * 512;
   
-  static const int sExceedsPreallocation = 32 * 1024;
+  static const int sExceedsPreallocation = sPage;
 
  protected:
   void SetUp() override { ASSERT_NO_FATAL_FAILURE(InitializeFixture()); }
@@ -113,7 +114,7 @@ class TestFileSystemQuotaClient
 
   static void CreateNewEmptyFile(
       data::FileSystemDatabaseManager* const aDatabaseManager,
-      const FileSystemChildMetadata& aFileSlot, EntryId& aFileId) {
+      const FileSystemChildMetadata& aFileSlot, EntryId& aEntryId) {
     
     Result<EntryId, QMResult> existingTestFile =
         aDatabaseManager->GetOrCreateFile(aFileSlot, sContentType,
@@ -123,19 +124,21 @@ class TestFileSystemQuotaClient
                 ToNSResult(existingTestFile.unwrapErr()));
 
     
-    TEST_TRY_UNWRAP(aFileId, aDatabaseManager->GetOrCreateFile(
-                                 aFileSlot, sContentType,  true));
+    TEST_TRY_UNWRAP(aEntryId, aDatabaseManager->GetOrCreateFile(
+                                  aFileSlot, sContentType,  true));
   }
 
   static void WriteDataToFile(
       data::FileSystemDatabaseManager* const aDatabaseManager,
-      const EntryId& aFileId, const nsCString& aData) {
+      const EntryId& aEntryId, const nsCString& aData) {
+    ASSERT_NSEQ(NS_OK, aDatabaseManager->EnsureFileId(aEntryId));
+
     ContentType type;
     TimeStamp lastModMilliS = 0;
     Path path;
     nsCOMPtr<nsIFile> fileObj;
 
-    ASSERT_NSEQ(NS_OK, aDatabaseManager->GetFile(aFileId, type, lastModMilliS,
+    ASSERT_NSEQ(NS_OK, aDatabaseManager->GetFile(aEntryId, type, lastModMilliS,
                                                  path, fileObj));
 
     uint32_t written = 0;
@@ -243,7 +246,7 @@ TEST_F(TestFileSystemQuotaClient, CheckUsageBeforeAnyFilesOnDisk) {
       
       
       
-      const auto expectedUse = initialDbUsage + BytesOfName(GetTestFileName());
+      const auto expectedUse = initialDbUsage + 2 * sPage;
 
       TEST_TRY_UNWRAP(usageNow, quotaClient->GetUsageForOrigin(
                                     quota::PERSISTENCE_TYPE_DEFAULT,
@@ -317,7 +320,6 @@ TEST_F(TestFileSystemQuotaClient, WritesToFilesShouldIncreaseUsage) {
 
       
       const nsCString& testData = GetTestData();
-      const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
       ASSERT_NO_FATAL_FAILURE(WriteDataToFile(dbm, testFileId, testData));
 
@@ -331,6 +333,8 @@ TEST_F(TestFileSystemQuotaClient, WritesToFilesShouldIncreaseUsage) {
       
       
       ASSERT_NSEQ(NS_OK, dbm->UpdateUsage(FileId(testFileId)));
+
+      const auto expectedTotalUsage = testFileDbUsage + testData.Length();
 
       
       TEST_TRY_UNWRAP(usageNow,
@@ -427,6 +431,9 @@ TEST_F(TestFileSystemQuotaClient, TrackedFilesOnInitOriginShouldCauseRescan) {
 
     PerformOnIOThread(std::move(fileCreation),
                       rdm->MutableDatabaseManagerPtr());
+
+    ASSERT_NSEQ(NS_OK,
+                rdm->MutableDatabaseManagerPtr()->EnsureFileId(*testFileId));
 
     
     ASSERT_NSEQ(NS_OK, rdm->LockExclusive(*testFileId));
