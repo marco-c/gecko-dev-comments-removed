@@ -61,7 +61,6 @@ user_pref("layout.testing.overlay-scrollbars.always-visible", true);
 
 user_pref("layout.image.eager_broken_image_icon", true);
 user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");
-user_pref("media.openUnsupportedTypeWithExternalApp", false);
 
 
 
