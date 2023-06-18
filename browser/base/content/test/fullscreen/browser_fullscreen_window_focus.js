@@ -29,10 +29,23 @@ async function testWindowFocus(isPopup, iframeID) {
   info("Entering full-screen");
   await changeFullscreen(tab.linkedBrowser, true);
 
-  await testExpectFullScreenExit(tab.linkedBrowser, true, async () => {
-    info("Calling window.focus()");
-    await jsWindowFocus(tab.linkedBrowser, iframeID);
-  });
+  await testExpectFullScreenExit(
+    tab.linkedBrowser,
+    true,
+    async () => {
+      info("Calling window.focus()");
+      await jsWindowFocus(tab.linkedBrowser, iframeID);
+    },
+    () => {
+      
+      
+      
+      
+      
+      info("Calling switchTab()");
+      BrowserTestUtils.switchTab(gBrowser, tab);
+    }
+  );
 
   
   if (isPopup) {
@@ -56,15 +69,28 @@ async function testWindowElementFocus(isPopup) {
   info("Entering full-screen");
   await changeFullscreen(tab.linkedBrowser, true);
 
-  await testExpectFullScreenExit(tab.linkedBrowser, false, async () => {
-    info("Calling element.focus() on popup");
-    await ContentTask.spawn(tab.linkedBrowser, {}, async args => {
-      await content.wrappedJSObject.sendMessage(
-        content.wrappedJSObject.openedWindow,
-        "elementfocus"
-      );
-    });
-  });
+  await testExpectFullScreenExit(
+    tab.linkedBrowser,
+    false,
+    async () => {
+      info("Calling element.focus() on popup");
+      await ContentTask.spawn(tab.linkedBrowser, {}, async args => {
+        await content.wrappedJSObject.sendMessage(
+          content.wrappedJSObject.openedWindow,
+          "elementfocus"
+        );
+      });
+    },
+    () => {
+      
+      
+      
+      
+      
+      info("Calling switchTab()");
+      BrowserTestUtils.switchTab(gBrowser, tab);
+    }
+  );
 
   
   await changeFullscreen(tab.linkedBrowser, false);
