@@ -3687,8 +3687,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
 #ifdef XP_WIN
   
   
-  if (StaticPrefs::gfx_webrender_fallback_software_d3d11_AtStartup() &&
-      swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
+  if (swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
       gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING) &&
       !gfxVars::UseSoftwareWebRender()) {
     
@@ -3697,8 +3696,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
     return true;
   }
 
-  if (StaticPrefs::gfx_webrender_fallback_software_d3d11_AtStartup() &&
-      swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
+  if (swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
       gfxVars::UseSoftwareWebRender()) {
     
     gfxCriticalNote << "Fallback SW-WR + D3D11 to SW-WR";
