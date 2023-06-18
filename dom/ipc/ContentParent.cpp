@@ -248,6 +248,7 @@
 #include "nsThreadUtils.h"
 #include "nsWidgetsCID.h"
 #include "nsWindowWatcher.h"
+#include "prenv.h"
 #include "prio.h"
 #include "private/pprio.h"
 #include "xpcpublic.h"
@@ -1764,10 +1765,15 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
   
   MarkAsDead();
   SignalImpendingShutdownToContentJS();
-  StartForceKillTimer();
 
   if (aSendShutDown) {
     MaybeAsyncSendShutDownMessage();
+  } else {
+    
+    
+    
+    
+    StartSendShutdownTimer();
   }
 }
 
@@ -1795,11 +1801,19 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
     mThreadsafeHandle->mShutdownStarted = true;
   }
 
-  
-  
-  GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod<ShutDownMethod>(
-      "dom::ContentParent::ShutDownProcess", this,
-      &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
+  if (mSendShutdownTimer) {
+    mSendShutdownTimer->Cancel();
+    mSendShutdownTimer = nullptr;
+  }
+
+  if (!mSentShutdownMessage) {
+    
+    
+    GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod<ShutDownMethod>(
+        "dom::ContentParent::ShutDownProcess", this,
+        &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
+    mSentShutdownMessage = true;
+  }
 }
 
 void MaybeLogBlockShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
@@ -1835,6 +1849,8 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
         
         SetInputPriorityEventEnabled(false);
         
+        SignalImpendingShutdownToContentJS();
+        
         
         Unused << SendShutdownConfirmedHP();
         
@@ -1845,11 +1861,7 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
           mShutdownPending = true;
           
           
-          
-          if (!mForceKillTimer) {
-            SignalImpendingShutdownToContentJS();
-            StartForceKillTimer();
-          }
+          StartForceKillTimer();
           result = true;
         } else {
           MaybeLogBlockShutdownDiagnostics(
@@ -2079,6 +2091,10 @@ void ContentParent::ProcessingError(Result aCode, const char* aReason) {
 }
 
 void ContentParent::ActorDestroy(ActorDestroyReason why) {
+  if (mSendShutdownTimer) {
+    mSendShutdownTimer->Cancel();
+    mSendShutdownTimer = nullptr;
+  }
   if (mForceKillTimer) {
     mForceKillTimer->Cancel();
     mForceKillTimer = nullptr;
@@ -2422,12 +2438,27 @@ void ContentParent::RemoveKeepAlive() {
   MaybeBeginShutDown();
 }
 
+void ContentParent::StartSendShutdownTimer() {
+  if (mSendShutdownTimer || !CanSend()) {
+    return;
+  }
+
+  uint32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
+  if (timeoutSecs > 0) {
+    NS_NewTimerWithFuncCallback(getter_AddRefs(mSendShutdownTimer),
+                                ContentParent::SendShutdownTimerCallback, this,
+                                timeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT,
+                                "dom::ContentParent::StartSendShutdownTimer");
+    MOZ_ASSERT(mSendShutdownTimer);
+  }
+}
+
 void ContentParent::StartForceKillTimer() {
   if (mForceKillTimer || !CanSend()) {
     return;
   }
 
-  int32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
+  uint32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
   if (timeoutSecs > 0) {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mForceKillTimer),
                                 ContentParent::ForceKillTimerCallback, this,
@@ -2901,6 +2932,9 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
 }
 
 ContentParent::~ContentParent() {
+  if (mSendShutdownTimer) {
+    mSendShutdownTimer->Cancel();
+  }
   if (mForceKillTimer) {
     mForceKillTimer->Cancel();
   }
@@ -4430,6 +4464,13 @@ bool ContentParent::DeallocPRemoteSpellcheckEngineParent(
 }
 
 
+void ContentParent::SendShutdownTimerCallback(nsITimer* aTimer,
+                                              void* aClosure) {
+  auto* self = static_cast<ContentParent*>(aClosure);
+  self->MaybeAsyncSendShutDownMessage();
+}
+
+
 void ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   
   
@@ -4437,7 +4478,7 @@ void ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
     return;
   }
 
-  auto self = static_cast<ContentParent*>(aClosure);
+  auto* self = static_cast<ContentParent*>(aClosure);
   self->KillHard("ShutDownKill");
 }
 
@@ -4494,7 +4535,14 @@ void ContentParent::KillHard(const char* aReason) {
     return;
   }
   mCalledKillHard = true;
-  mForceKillTimer = nullptr;
+  if (mSendShutdownTimer) {
+    mSendShutdownTimer->Cancel();
+    mSendShutdownTimer = nullptr;
+  }
+  if (mForceKillTimer) {
+    mForceKillTimer->Cancel();
+    mForceKillTimer = nullptr;
+  }
 
   RemoveShutdownBlockers();
   nsCString reason = nsDependentCString(aReason);

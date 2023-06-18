@@ -863,6 +863,9 @@ class ContentParent final : public PContentParent,
   void ShutDownMessageManager();
 
   
+  void StartSendShutdownTimer();
+
+  
   void StartForceKillTimer();
 
   
@@ -873,6 +876,7 @@ class ContentParent final : public PContentParent,
   void EnsurePermissionsByKey(const nsACString& aKey,
                               const nsACString& aOrigin);
 
+  static void SendShutdownTimerCallback(nsITimer* aTimer, void* aClosure);
   static void ForceKillTimerCallback(nsITimer* aTimer, void* aClosure);
 
   bool CanOpenBrowser(const IPCTabContext& aContext);
@@ -1492,6 +1496,12 @@ class ContentParent final : public PContentParent,
   
   
   int32_t mJSPluginID;
+
+  
+  
+  
+  nsCOMPtr<nsITimer> mSendShutdownTimer;
+  bool mSentShutdownMessage = false;
 
   
   
