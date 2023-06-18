@@ -415,6 +415,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   std::pair<nsPoint, nsRect> ComputeScrollData(LocalAccessible* aAcc);
 
+  
+
+
+  bool IsAccessibleBeingMoved(LocalAccessible* aAcc) {
+    return mMovedAccessibles.Contains(aAcc);
+  }
+
  protected:
   virtual ~DocAccessible();
 
@@ -534,13 +541,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   void ProcessQueuedCacheUpdates();
-
-  
-
-
-  bool IsAccessibleBeingMoved(LocalAccessible* aAcc) {
-    return mMovedAccessibles.Contains(aAcc);
-  }
 
   
 

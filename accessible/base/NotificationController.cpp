@@ -141,6 +141,13 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 
     
     
+    if (mDocument &&
+        mDocument->IsAccessibleBeingMoved(aEvent->GetAccessible())) {
+      return false;
+    }
+
+    
+    
     
     
     if (aEvent->GetAccessible()->HideEventTarget()) {
