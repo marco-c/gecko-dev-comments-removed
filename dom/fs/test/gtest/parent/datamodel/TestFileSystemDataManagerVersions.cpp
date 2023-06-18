@@ -40,6 +40,53 @@ namespace mozilla::dom::fs::test {
 using data::FileSystemDatabaseManagerVersion001;
 using data::FileSystemFileManager;
 
+class TestFileSystemDatabaseManagerVersionsBase
+    : public quota::test::QuotaManagerDependencyFixture {
+ public:
+  void SetUp() override { ASSERT_NO_FATAL_FAILURE(InitializeFixture()); }
+
+  void TearDown() override {
+    ASSERT_NO_FATAL_FAILURE(ClearStoragesForOrigin(GetTestOriginMetadata()));
+    ASSERT_NO_FATAL_FAILURE(ShutdownFixture());
+  }
+};
+
+class TestFileSystemDatabaseManagerVersions
+    : public TestFileSystemDatabaseManagerVersionsBase,
+      public ::testing::WithParamInterface<DatabaseVersion> {
+ public:
+  static void AssertEntryIdMoved(const EntryId& aOriginal,
+                                 const EntryId& aMoved) {
+    switch (sVersion) {
+      case 1: {
+        ASSERT_EQ(aOriginal, aMoved);
+        break;
+      }
+      default: {
+        ASSERT_FALSE(false)
+        << "Unknown database version";
+      }
+    }
+  }
+
+  static void AssertEntryIdCollision(const EntryId& aOriginal,
+                                     const EntryId& aMoved) {
+    switch (sVersion) {
+      case 1: {
+        
+        ASSERT_NE(aOriginal, aMoved);
+        break;
+      }
+      default: {
+        ASSERT_FALSE(false)
+        << "Unknown database version";
+      }
+    }
+  }
+
+  static DatabaseVersion sVersion;
+};
+
 
 
 class MockFileSystemDataManager final : public data::FileSystemDataManager {
@@ -64,7 +111,8 @@ class MockFileSystemDataManager final : public data::FileSystemDataManager {
   }
 };
 
-static void MakeDatabaseManagerVersion001(
+static void MakeDatabaseManagerVersions(
+    const DatabaseVersion aVersion,
     RefPtr<MockFileSystemDataManager>& aDataManager,
     FileSystemDatabaseManagerVersion001*& aDatabaseManager) {
   TEST_TRY_UNWRAP(auto storageService,
@@ -82,10 +130,12 @@ static void MakeDatabaseManagerVersion001(
 
   const Origin& testOrigin = GetTestOrigin();
 
-  TEST_TRY_UNWRAP(
-      DatabaseVersion version,
-      SchemaVersion001::InitializeConnection(connection, testOrigin));
-  ASSERT_EQ(1, version);
+  if (1 == aVersion) {
+    TEST_TRY_UNWRAP(
+        TestFileSystemDatabaseManagerVersions::sVersion,
+        SchemaVersion001::InitializeConnection(connection, testOrigin));
+  }
+  ASSERT_NE(0, TestFileSystemDatabaseManagerVersions::sVersion);
 
   TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
@@ -110,41 +160,27 @@ static void MakeDatabaseManagerVersion001(
       originMetadata, WrapMovingNotNull(streamTransportService),
       WrapMovingNotNull(ioTaskQueue));
 
-  aDatabaseManager = new FileSystemDatabaseManagerVersion001(
-      aDataManager, std::move(connection), fmRes.unwrap(), rootId);
+  if (1 == aVersion) {
+    aDatabaseManager = new FileSystemDatabaseManagerVersion001(
+        aDataManager, std::move(connection), fmRes.unwrap(), rootId);
+  }
 
   aDataManager->SetDatabaseManager(aDatabaseManager);
 }
 
-class TestFileSystemDatabaseManagerVersions
-    : public quota::test::QuotaManagerDependencyFixture {
- public:
-  void SetUp() override { ASSERT_NO_FATAL_FAILURE(InitializeFixture()); }
+DatabaseVersion TestFileSystemDatabaseManagerVersions::sVersion = 0;
 
-  void TearDown() override {
-    ASSERT_NO_FATAL_FAILURE(ClearStoragesForOrigin(GetTestOriginMetadata()));
-    ASSERT_NO_FATAL_FAILURE(ShutdownFixture());
-  }
-
-  static void AssertEntryIdMoved(const EntryId& aOriginal,
-                                 const EntryId& aMoved) {
-    ASSERT_EQ(aOriginal, aMoved);
-  }
-
-  static void AssertEntryIdCollision(const EntryId& aOriginal,
-                                     const EntryId& aMoved) {
-    ASSERT_NE(aOriginal, aMoved);
-  }
-};
-
-TEST_F(TestFileSystemDatabaseManagerVersions,
+TEST_P(TestFileSystemDatabaseManagerVersions,
        smokeTestCreateRemoveDirectories) {
-  auto ioTask = []() {
+  const DatabaseVersion version = GetParam();
+
+  auto ioTask = [version]() {
     nsresult rv = NS_OK;
     
     RefPtr<MockFileSystemDataManager> dataManager;
     FileSystemDatabaseManagerVersion001* dm = nullptr;
-    ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(dataManager, dm));
+    ASSERT_NO_FATAL_FAILURE(
+        MakeDatabaseManagerVersions(version, dataManager, dm));
     ASSERT_TRUE(dm);
     
     auto autoClose = MakeScopeExit([dm] { dm->Close(); });
@@ -225,13 +261,16 @@ TEST_F(TestFileSystemDatabaseManagerVersions,
   PerformOnIOThread(std::move(ioTask));
 }
 
-TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateRemoveFiles) {
-  auto ioTask = []() {
+TEST_P(TestFileSystemDatabaseManagerVersions, smokeTestCreateRemoveFiles) {
+  const DatabaseVersion version = GetParam();
+
+  auto ioTask = [version]() {
     nsresult rv = NS_OK;
     
     RefPtr<MockFileSystemDataManager> datamanager;
     FileSystemDatabaseManagerVersion001* dm = nullptr;
-    ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, dm));
+    ASSERT_NO_FATAL_FAILURE(
+        MakeDatabaseManagerVersions(version, datamanager, dm));
 
     TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
@@ -360,12 +399,15 @@ TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateRemoveFiles) {
   PerformOnIOThread(std::move(ioTask));
 }
 
-TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateMoveDirectories) {
-  auto ioTask = []() {
+TEST_P(TestFileSystemDatabaseManagerVersions, smokeTestCreateMoveDirectories) {
+  const DatabaseVersion version = GetParam();
+
+  auto ioTask = [version]() {
     
     RefPtr<MockFileSystemDataManager> datamanager;
     FileSystemDatabaseManagerVersion001* dm = nullptr;
-    ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, dm));
+    ASSERT_NO_FATAL_FAILURE(
+        MakeDatabaseManagerVersions(version, datamanager, dm));
     auto closeAtExit = MakeScopeExit([&dm]() { dm->Close(); });
 
     TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
@@ -625,13 +667,16 @@ TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateMoveDirectories) {
     }
 
     {
-      ASSERT_NO_FATAL_FAILURE(
-          AssertEntryIdMoved(testFile, subSubFile.entryId()));
-
-      TEST_TRY_UNWRAP(Path entryPath,
-                      dm->Resolve({rootId, subSubFile.entryId()}));
-      ASSERT_EQ(1u, entryPath.Length());
-      ASSERT_STREQ(testFileMeta.childName(), entryPath[0]);
+      if (1 == sVersion) {
+        ASSERT_EQ(testFile, subSubFile.entryId());
+        TEST_TRY_UNWRAP(Path entryPath,
+                        dm->Resolve({rootId, subSubFile.entryId()}));
+        ASSERT_EQ(1u, entryPath.Length());
+        ASSERT_STREQ(testFileMeta.childName(), entryPath[0]);
+      } else {
+        ASSERT_FALSE(true)
+        << "Unknown database version";
+      }
     }
 
     {
@@ -798,14 +843,19 @@ TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateMoveDirectories) {
       ASSERT_NSEQ(NS_ERROR_DOM_NOT_FOUND_ERR, rv);
 
       
-      TEST_TRY_UNWRAP(EntryId handle,
-                      dm->GetOrCreateFile(newFileMeta,  false));
-      ASSERT_EQ(handle, newFile);
+      if (1 == sVersion) {
+        TEST_TRY_UNWRAP(EntryId handle,
+                        dm->GetOrCreateFile(newFileMeta,  false));
+        ASSERT_EQ(handle, newFile);
 
-      TEST_TRY_UNWRAP(
-          handle, dm->GetOrCreateDirectory({rootId, testFileMeta.childName()},
-                                            false));
-      ASSERT_EQ(handle, firstChildDescendant);
+        TEST_TRY_UNWRAP(
+            handle, dm->GetOrCreateDirectory({rootId, testFileMeta.childName()},
+                                              false));
+        ASSERT_EQ(handle, firstChildDescendant);
+      } else {
+        ASSERT_FALSE(false)
+        << "Unknown database version";
+      }
     }
 
     {
@@ -955,5 +1005,9 @@ TEST_F(TestFileSystemDatabaseManagerVersions, smokeTestCreateMoveDirectories) {
 
   PerformOnIOThread(std::move(ioTask));
 }
+
+INSTANTIATE_TEST_SUITE_P(TestDatabaseManagerVersions,
+                         TestFileSystemDatabaseManagerVersions,
+                         testing::Values(1));
 
 }  
