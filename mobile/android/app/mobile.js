@@ -310,8 +310,6 @@ pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,mozte
 pref("browser.dom.window.dump.enabled", true);
 pref("devtools.console.stdout.chrome", true);
 
-pref("media.realtime_decoder.enabled", true);
-
 pref("full-screen-api.enabled", true);
 
 
@@ -320,15 +318,6 @@ pref("network.tickle-wifi.enabled", true);
 
 
 pref("network.manage-offline-status", true);
-
-
-pref("media.plugins.enabled", true);
-
-
-
-
-
-pref("media.stagefright.omxcodec.flags", 0);
 
 
 pref("browser.urlbar.trimURLs", true);
@@ -405,8 +394,6 @@ pref("dom.push.debug", false);
 pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
 
 pref("dom.audiochannel.mediaControl", true);
-
-pref("media.openUnsupportedTypeWithExternalApp", true);
 
 
 pref("media.navigator.permission.device", true);
