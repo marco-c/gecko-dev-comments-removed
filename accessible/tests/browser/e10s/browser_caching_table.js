@@ -576,3 +576,15 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );
+
+
+
+
+addAccessibleTask(
+  `<table id="table" role="gridcell">`,
+  async function (browser, docAcc) {
+    const table = findAccessibleChildByID(docAcc, "table");
+    ok(table, "Retrieved table Accessible");
+  },
+  { chrome: true, topLevel: true }
+);
