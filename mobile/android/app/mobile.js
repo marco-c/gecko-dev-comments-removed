@@ -184,20 +184,6 @@ pref("browser.link.open_newwindow", 3);
 pref("browser.link.open_newwindow.restriction", 0);
 
 
-pref("privacy.item.cache", true);
-pref("privacy.item.cookies", true);
-pref("privacy.item.offlineApps", true);
-pref("privacy.item.history", true);
-pref("privacy.item.searchHistory", true);
-pref("privacy.item.formdata", true);
-pref("privacy.item.downloads", true);
-pref("privacy.item.passwords", true);
-pref("privacy.item.sessions", true);
-pref("privacy.item.geolocation", true);
-pref("privacy.item.siteSettings", true);
-pref("privacy.item.syncAccount", true);
-
-
 
 
 
