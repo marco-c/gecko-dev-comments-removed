@@ -384,7 +384,7 @@ add_task(async function test_passwordsNotAvailable() {
     MigrationUtils.resourceTypes.PASSWORDS
   );
   Assert.ok(migrator.exists, "The migrator has to exist");
-  let logins = await Services.logins.getAllLogins();
+  let logins = Services.logins.getAllLogins();
   Assert.equal(
     logins.length,
     0,
@@ -397,7 +397,7 @@ add_task(async function test_passwordsNotAvailable() {
     
     
     await migrator._migrateURIs(uris);
-    logins = await Services.logins.getAllLogins();
+    logins = Services.logins.getAllLogins();
     Assert.equal(
       logins.length,
       0,
@@ -414,9 +414,9 @@ add_task(async function test_passwordsAvailable() {
   let crypto = new OSCrypto();
   let hashes = []; 
 
-  registerCleanupFunction(async () => {
+  registerCleanupFunction(() => {
     Services.logins.removeAllUserFacingLogins();
-    logins = await Services.logins.getAllLogins();
+    logins = Services.logins.getAllLogins();
     Assert.equal(logins.length, 0, "There are no logins after the cleanup");
     
     removeAllValues(Storage2Key, hashes);
@@ -435,7 +435,7 @@ add_task(async function test_passwordsAvailable() {
     MigrationUtils.resourceTypes.PASSWORDS
   );
   Assert.ok(migrator.exists, "The migrator has to exist");
-  let logins = await Services.logins.getAllLogins();
+  let logins = Services.logins.getAllLogins();
   Assert.equal(
     logins.length,
     0,
@@ -459,7 +459,7 @@ add_task(async function test_passwordsAvailable() {
     hashes.push(website.hash);
 
     await migrator._migrateURIs(uris);
-    logins = await Services.logins.getAllLogins();
+    logins = Services.logins.getAllLogins();
     
     
     loginCount += website.logins.length;
