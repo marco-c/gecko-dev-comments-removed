@@ -2632,7 +2632,8 @@ void CanvasRenderingContext2D::ParseSpacing(const nsACString& aSpacing,
   
   nsAutoCString normalized(aSpacing);
   normalized.CompressWhitespace(true, true);
-  if (normalized.Equals("normal", nsCaseInsensitiveCStringComparator)) {
+  ToLowerCase(normalized);
+  if (normalized.EqualsLiteral("normal")) {
     return;
   }
   float value;
