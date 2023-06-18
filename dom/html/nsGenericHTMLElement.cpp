@@ -3381,6 +3381,14 @@ void nsGenericHTMLElement::ShowPopoverInternal(
   RefPtr<Document> document = OwnerDoc();
   MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
+  bool wasShowingOrHiding = GetPopoverData()->IsShowingOrHiding();
+  GetPopoverData()->SetIsShowingOrHiding(true);
+  auto cleanupShowingFlag = MakeScopeExit([&]() {
+    if (auto* popoverData = GetPopoverData()) {
+      popoverData->SetIsShowingOrHiding(wasShowingOrHiding);
+    }
+  });
+
   
   if (FireToggleEvent(PopoverVisibilityState::Hidden,
                       PopoverVisibilityState::Showing, u"beforetoggle"_ns)) {
@@ -3397,7 +3405,8 @@ void nsGenericHTMLElement::ShowPopoverInternal(
     if (!ancestor) {
       ancestor = document;
     }
-    document->HideAllPopoversUntil(*ancestor, false, true);
+    document->HideAllPopoversUntil(*ancestor, false,
+                                    !wasShowingOrHiding);
 
     
     
