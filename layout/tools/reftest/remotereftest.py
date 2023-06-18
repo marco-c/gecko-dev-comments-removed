@@ -336,6 +336,7 @@ class RemoteReftest(RefTest):
         )
         profileDir = profile.profile
         prefs = {}
+        prefs["app.update.url.android"] = ""
         prefs["reftest.remote"] = True
         prefs["datareporting.policy.dataSubmissionPolicyBypassAcceptance"] = True
         

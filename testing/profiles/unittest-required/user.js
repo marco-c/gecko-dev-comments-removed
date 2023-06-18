@@ -12,6 +12,7 @@ user_pref("app.normandy.api_url", "");
 
 user_pref("app.support.baseURL", "http://{server}/support-dummy/");
 user_pref("app.update.staging.enabled", false);
+user_pref("app.update.url.android", "");
 
 
 
@@ -159,6 +160,7 @@ user_pref("media.hls.server.url", "http://{server}/tests/dom/media/test/hls");
 user_pref("media.libavcodec.allow-obsolete", true);
 user_pref("media.memory_cache_max_size", 32);
 user_pref("media.memory_caches_combined_limit_kb", 256);
+user_pref("media.openUnsupportedTypeWithExternalApp", false);
 user_pref("media.preload.auto", 3); 
 user_pref("media.preload.default", 2); 
 user_pref("media.preload.default.cellular", 2); 

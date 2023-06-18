@@ -17,12 +17,21 @@ pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
 pref("toolkit.zoomManager.zoomValues", ".2,.3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2,2.4,3,4");
 
 
+
+pref("browser.viewport.defaultZoom", -1);
+
+
 pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
 pref("ui.scrollbarFadeDuration", 0);
 
+pref("browser.cache.memory_limit", 5120); 
+
 
 pref("image.cache.size", 1048576); 
+
+
+pref("browser.cache.offline.capacity", 5120); 
 
 
 pref("network.protocol-handler.warn-external.tel", false);
@@ -47,16 +56,28 @@ pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  16384);
 
 
+pref("network.predictor.max-db-size", 2097152); 
+pref("network.predictor.preserve", 50); 
+
+
+pref("network.mdns.use_js_fallback", false);
+
+
 pref("network.cookie.cookieBehavior.pbmode", 4);
+
+
+pref("browser.display.remotetabs.timeout", 10);
 
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 pref("browser.sessionhistory.max_entries", 50);
 pref("browser.sessionhistory.contentViewerTimeout", 360);
+pref("browser.sessionhistory.bfcacheIgnoreMemoryPressure", false);
 
 
 pref("browser.sessionstore.resume_from_crash", true);
 pref("browser.sessionstore.interval", 10000); 
+pref("browser.sessionstore.backupInterval", 120000); 
 pref("browser.sessionstore.max_tabs_undo", 10);
 pref("browser.sessionstore.max_resumed_crashes", 2);
 pref("browser.sessionstore.privacy_level", 0); 
@@ -78,6 +99,9 @@ pref("browser.helperApps.deleteTempFileOnExit", false);
 
 
 pref("signon.firefoxRelay.feature", "not available");
+pref("signon.rememberSignons", true);
+pref("signon.expireMasterPassword", false);
+pref("signon.debug", false);
 
 
 pref("formhelper.autozoom", true);
@@ -104,9 +128,15 @@ pref("extensions.manifestV2.actionsPopupURLRestricted", true);
 pref("extensions.autoDisableScopes", 15);
 
 pref("extensions.enabledScopes", 5);
+pref("extensions.autoupdate.enabled", true);
+pref("extensions.autoupdate.interval", 86400);
 pref("extensions.update.enabled", true);
 pref("extensions.update.interval", 86400);
+pref("extensions.dss.enabled", false);
+pref("extensions.ignoreMTimeChanges", false);
 pref("extensions.logging.enabled", false);
+pref("extensions.hideInstallButton", true);
+pref("extensions.hideUpdateButton", false);
 pref("extensions.strictCompatibility", false);
 pref("extensions.minCompatibleAppVersion", "11.0");
 
@@ -119,6 +149,10 @@ pref("extensions.getAddons.search.browseURL", "https://addons.mozilla.org/%LOCAL
 pref("extensions.getAddons.browseAddons", "https://addons.mozilla.org/%LOCALE%/android/collections/4757633/mob/?page=1&collection_sort=-popularity");
 pref("extensions.getAddons.get.url", "https://services.addons.mozilla.org/api/v4/addons/search/?guid=%IDS%&lang=%LOCALE%");
 pref("extensions.getAddons.langpacks.url", "https://services.addons.mozilla.org/api/v4/addons/language-tools/?app=android&type=language&appversion=%VERSION%");
+
+
+pref("extensions.getLocales.get.url", "");
+pref("extensions.compatability.locales.buildid", "0");
 
 
 pref("extensions.installDistroAddons", false);
@@ -153,9 +187,13 @@ pref("browser.search.update", false);
 
 
 pref("browser.search.suggest.enabled", false);
+pref("browser.search.suggest.prompted", false);
 
 
 pref("browser.search.noCurrentEngine", true);
+
+
+pref("browser.casting.enabled", true);
 
 
 pref("chrome.override_package.global", "browser");
@@ -166,9 +204,29 @@ pref("chrome.override_package.passwordmgr", "browser");
 pref("dom.disable_window_move_resize", true);
 
 
+
+pref("browser.link.open_external", 3);
 pref("browser.link.open_newwindow", 3);
 
 pref("browser.link.open_newwindow.restriction", 0);
+
+
+
+pref("browser.image_blocking", 1);
+
+
+pref("privacy.item.cache", true);
+pref("privacy.item.cookies", true);
+pref("privacy.item.offlineApps", true);
+pref("privacy.item.history", true);
+pref("privacy.item.searchHistory", true);
+pref("privacy.item.formdata", true);
+pref("privacy.item.downloads", true);
+pref("privacy.item.passwords", true);
+pref("privacy.item.sessions", true);
+pref("privacy.item.geolocation", true);
+pref("privacy.item.siteSettings", true);
+pref("privacy.item.syncAccount", true);
 
 
 
@@ -189,6 +247,10 @@ pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
 
 
+
+pref("browser.ui.selection.distance", 250);
+
+
 pref("plugin.disable", true);
 
 
@@ -196,7 +258,19 @@ pref("plugin.disable", true);
 pref("breakpad.reportURL", "https://crash-stats.mozilla.org/report/index/");
 
 pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
-#if MOZ_UPDATE_CHANNEL == beta
+pref("app.supportURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/mobile-help");
+pref("app.faqURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/faq");
+
+
+
+pref("app.feedbackURL", "https://input.mozilla.org/feedback/android/%VERSION%/%CHANNEL%/?utm_source=feedback-prompt");
+
+pref("app.privacyURL", "https://www.mozilla.org/privacy/firefox/");
+pref("app.creditsURL", "https://www.mozilla.org/credits/");
+pref("app.channelURL", "https://www.mozilla.org/%LOCALE%/firefox/channel/");
+#if MOZ_UPDATE_CHANNEL == aurora
+  pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%/auroranotes/");
+#elif MOZ_UPDATE_CHANNEL == beta
   pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%beta/releasenotes/");
 #else
   pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%/releasenotes/");
@@ -211,6 +285,16 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 pref("app.update.timerFirstInterval", 30000); 
 pref("app.update.timerMinimumDelay", 30); 
+
+
+
+pref("app.update.autodownload", "wifi");
+pref("app.update.url.android", "https://aus5.mozilla.org/update/4/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/%MOZ_VERSION%/update.xml");
+
+#ifdef MOZ_UPDATER
+  
+  pref("app.update.channel", "@MOZ_UPDATE_CHANNEL@");
+#endif
 
 pref("layers.async-video.enabled", true);
 
@@ -292,7 +376,21 @@ pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,mozte
 pref("browser.dom.window.dump.enabled", true);
 pref("devtools.console.stdout.chrome", true);
 
+
+pref("device.camera.enabled", true);
+pref("media.realtime_decoder.enabled", true);
+
 pref("full-screen-api.enabled", true);
+
+
+pref("accessibility.accessfu.activate", 2);
+pref("accessibility.accessfu.quicknav_modes", "Link,Heading,FormElement,Landmark,ListItem");
+
+pref("accessibility.accessfu.quicknav_index", 0);
+
+pref("accessibility.accessfu.utterance", 1);
+
+pref("accessibility.accessfu.skip_empty_images", true);
 
 
 
@@ -300,6 +398,18 @@ pref("network.tickle-wifi.enabled", true);
 
 
 pref("network.manage-offline-status", true);
+
+
+pref("media.plugins.enabled", true);
+
+
+
+
+
+pref("media.stagefright.omxcodec.flags", 0);
+
+
+pref("browser.urlbar.autocomplete.enabled", true);
 
 
 pref("browser.urlbar.trimURLs", true);
@@ -313,12 +423,18 @@ pref("dom.phonenumber.substringmatching.VE", 7);
 pref("gfx.canvas.azure.backends", "skia");
 
 
+pref("browser.ui.linkify.phone", false);
+
+
 
 
 pref("home.sync.updateMode", 0);
 
 
 pref("home.sync.checkIntervalSecs", 3600);
+
+
+pref("device.storage.enabled", true);
 
 
 pref("dom.meta-viewport.enabled", true);
@@ -376,6 +492,8 @@ pref("dom.push.debug", false);
 pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
 
 pref("dom.audiochannel.mediaControl", true);
+
+pref("media.openUnsupportedTypeWithExternalApp", true);
 
 
 pref("media.navigator.permission.device", true);
