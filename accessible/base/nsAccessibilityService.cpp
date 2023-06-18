@@ -1247,26 +1247,24 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     }
   }
 
+  
+  
+  if (!newAcc && frame->AccessibleType() != eOuterDocType) {
+    newAcc = MaybeCreateSpecificARIAAccessible(roleMapEntry, aContext, content,
+                                               document);
+  }
+
   if (!newAcc && content->IsHTMLElement()) {  
     
     
-    if (frame->AccessibleType() != eOuterDocType) {
-      newAcc = MaybeCreateSpecificARIAAccessible(roleMapEntry, aContext,
-                                                 content, document);
+    const MarkupMapInfo* markupMap =
+        mHTMLMarkupMap.Get(content->NodeInfo()->NameAtom());
+    if (markupMap && markupMap->new_func) {
+      newAcc = markupMap->new_func(content->AsElement(), aContext);
     }
 
-    if (!newAcc) {
-      
-      
-      const MarkupMapInfo* markupMap =
-          mHTMLMarkupMap.Get(content->NodeInfo()->NameAtom());
-      if (markupMap && markupMap->new_func) {
-        newAcc = markupMap->new_func(content->AsElement(), aContext);
-      }
-
-      if (!newAcc) {  
-        newAcc = CreateAccessibleByFrameType(frame, content, aContext);
-      }
+    if (!newAcc) {  
+      newAcc = CreateAccessibleByFrameType(frame, content, aContext);
     }
 
     
