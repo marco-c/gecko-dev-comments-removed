@@ -273,3 +273,15 @@ void nsFilePickerProxy::ActorDestroy(ActorDestroyReason aWhy) {
     mCallback = nullptr;
   }
 }
+
+nsresult nsFilePickerProxy::ResolveSpecialDirectory(
+    const nsAString& aSpecialDirectory) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  
+  
+  
+  
+  
+  
+  return NS_OK;
+}
