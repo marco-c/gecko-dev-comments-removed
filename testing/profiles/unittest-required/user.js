@@ -12,7 +12,6 @@ user_pref("app.normandy.api_url", "");
 
 user_pref("app.support.baseURL", "http://{server}/support-dummy/");
 user_pref("app.update.staging.enabled", false);
-user_pref("app.update.url.android", "");
 
 
 
