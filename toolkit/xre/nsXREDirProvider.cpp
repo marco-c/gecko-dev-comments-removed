@@ -341,15 +341,9 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     }
   } else if (!strcmp(aProperty, NS_APP_USER_PROFILE_50_DIR) ||
              !strcmp(aProperty, NS_APP_PROFILE_DIR_STARTUP)) {
-    if (mProfileDir) {
-      rv = mProfileDir->Clone(getter_AddRefs(file));
-    } else {
-      
-      
-      
-      NS_WARNING_ASSERTION(!XRE_IsParentProcess(),
-                           "tried to get profile in parent too early");
-      return NS_ERROR_FAILURE;
+    rv = GetProfileStartupDir(getter_AddRefs(file));
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   } else if (!strcmp(aProperty, NS_GRE_DIR)) {
     
@@ -463,18 +457,30 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
   else if (!strcmp(aProperty, NS_APP_USER_CHROME_DIR)) {
     
     
+    
+    
+    
     rv = GetProfileStartupDir(getter_AddRefs(file));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
     rv = file->AppendNative("chrome"_ns);
   } else if (!strcmp(aProperty, NS_APP_PREFS_50_DIR)) {
     rv = GetProfileDir(getter_AddRefs(file));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   } else if (!strcmp(aProperty, NS_APP_PREFS_50_FILE)) {
     rv = GetProfileDir(getter_AddRefs(file));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
     rv = file->AppendNative("prefs.js"_ns);
   } else if (!strcmp(aProperty, NS_APP_PREFS_OVERRIDE_DIR)) {
     rv = GetProfileDir(getter_AddRefs(file));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
     rv = file->AppendNative(nsLiteralCString(PREF_OVERRIDE_DIRNAME));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = EnsureDirectoryExists(file);
@@ -1159,18 +1165,32 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
 }
 
 nsresult nsXREDirProvider::GetProfileStartupDir(nsIFile** aResult) {
-  NS_ENSURE_TRUE(mProfileDir, NS_ERROR_FAILURE);
-  return mProfileDir->Clone(aResult);
+  if (mProfileDir) {
+    return mProfileDir->Clone(aResult);
+  }
+
+  
+  
+  
+  NS_WARNING_ASSERTION(!XRE_IsParentProcess(),
+                       "tried to get profile in parent too early");
+  return NS_ERROR_FAILURE;
 }
 
 nsresult nsXREDirProvider::GetProfileDir(nsIFile** aResult) {
   if (!mProfileDir) {
     nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                          getter_AddRefs(mProfileDir));
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_TRUE(mProfileDir, NS_ERROR_FAILURE);
+    
+    
+    if (NS_FAILED(rv)) {
+      MOZ_ASSERT(!mProfileDir,
+                 "Directory provider failed but returned a value");
+      mProfileDir = nullptr;
+    }
   }
-  return mProfileDir->Clone(aResult);
+  
+  return GetProfileStartupDir(aResult);
 }
 
 NS_IMETHODIMP
