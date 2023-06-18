@@ -30,6 +30,11 @@ using nsStyleTransformMatrix::TransformReferenceBox;
 
 static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
                                                  nsRect& aOutputRect) {
+  const StyleOffsetPath& offsetPath = aFrame->StyleDisplay()->mOffsetPath;
+  if (offsetPath.IsNone()) {
+    return nullptr;
+  }
+
   if (aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     MOZ_ASSERT(aFrame->GetContent()->IsSVGElement());
     auto* viewportElement =
@@ -39,14 +44,11 @@ static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
   }
 
   const nsIFrame* containingBlock = aFrame->GetContainingBlock();
-  
-  
-  
-  
-  
-  constexpr StyleGeometryBox styleCoordBox = StyleGeometryBox::BorderBox;
-  aOutputRect =
-      nsLayoutUtils::ComputeHTMLReferenceRect(containingBlock, styleCoordBox);
+  const StyleCoordBox coordBox = offsetPath.IsCoordBox()
+                                     ? offsetPath.AsCoordBox()
+                                     : offsetPath.AsOffsetPath().coord_box;
+  aOutputRect = nsLayoutUtils::ComputeHTMLReferenceRect(
+      containingBlock, nsLayoutUtils::CoordBoxToGeometryBox(coordBox));
   return containingBlock;
 }
 
@@ -85,9 +87,12 @@ RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
 
 
 
-static CSSCoord ComputeSides(const CSSPoint& aInitialPosition,
-                             const CSSSize& aContainerSize,
+
+
+static CSSCoord ComputeSides(const CSSPoint& aOrigin,
+                             const CSSRect& aContainingBlock,
                              const StyleAngle& aAngle) {
+  const CSSPoint& topLeft = aContainingBlock.TopLeft();
   
   
   
@@ -110,14 +115,15 @@ static CSSCoord ComputeSides(const CSSPoint& aInitialPosition,
   
   
   
-  double theta = aAngle.ToRadians();
+  
+  const double theta = aAngle.ToRadians();
   double sint = std::sin(theta);
   double cost = std::cos(theta);
 
-  double b = cost >= 0 ? aInitialPosition.y.value
-                       : aContainerSize.height - aInitialPosition.y.value;
-  double bPrime = sint >= 0 ? aContainerSize.width - aInitialPosition.x.value
-                            : aInitialPosition.x.value;
+  const double b = cost >= 0 ? aOrigin.y.value - topLeft.y
+                             : aContainingBlock.YMost() - aOrigin.y.value;
+  const double bPrime = sint >= 0 ? aContainingBlock.XMost() - aOrigin.x.value
+                                  : aOrigin.x.value - topLeft.x;
   sint = std::fabs(sint);
   cost = std::fabs(cost);
 
@@ -184,17 +190,18 @@ static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
       return 0.0;
     }
 
-    return ComputeSides(aOrigin, aContainingBlock.Size(), aAngle);
+    return ComputeSides(aOrigin, aContainingBlock, aAngle);
   }
 
   
   
   
   
-  CSSCoord left = std::abs(aOrigin.x);
-  CSSCoord right = std::abs(aContainingBlock.width - aOrigin.x);
-  CSSCoord top = std::abs(aOrigin.y);
-  CSSCoord bottom = std::abs(aContainingBlock.height - aOrigin.y);
+  const CSSPoint& topLeft = aContainingBlock.TopLeft();
+  const CSSCoord left = std::abs(aOrigin.x - topLeft.x);
+  const CSSCoord right = std::abs(aContainingBlock.XMost() - aOrigin.x);
+  const CSSCoord top = std::abs(aOrigin.y - topLeft.y);
+  const CSSCoord bottom = std::abs(aContainingBlock.YMost() - aOrigin.y);
 
   switch (aRaySizeType) {
     case StyleRaySize::ClosestSide:
@@ -216,7 +223,7 @@ static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
       }
       return sqrt(h.value * h.value + v.value * v.value);
     }
-    default:
+    case StyleRaySize::Sides:
       MOZ_ASSERT_UNREACHABLE("Unsupported ray size");
   }
 
