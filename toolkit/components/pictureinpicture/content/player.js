@@ -115,10 +115,6 @@ function setTimestamp(timeString) {
   Player.setTimestamp(timeString);
 }
 
-function setVolume(volume) {
-  Player.setVolume(volume);
-}
-
 
 
 
@@ -240,19 +236,6 @@ let Player = {
       this.handleScrubbingDone(event);
     });
 
-    this.audioScrubber.addEventListener("input", event => {
-      this.audioScrubbing = true;
-      this.handleAudioScrubbing(event.target.value);
-    });
-    this.audioScrubber.addEventListener("change", event => {
-      this.audioScrubbing = false;
-    });
-    this.audioScrubber.addEventListener("pointerdown", event => {
-      if (this.isMuted) {
-        this.audioScrubber.max = 1;
-      }
-    });
-
     for (let radio of document.querySelectorAll(
       'input[type=radio][name="cc-size"]'
     )) {
@@ -276,9 +259,6 @@ let Player = {
     if (Services.prefs.getBoolPref(AUDIO_TOGGLE_ENABLED_PREF, false)) {
       const audioButton = document.getElementById("audio");
       audioButton.hidden = false;
-
-      const audioScrubber = document.getElementById("audio-scrubber");
-      audioScrubber.hidden = false;
     }
 
     if (Services.prefs.getBoolPref(CAPTIONS_ENABLED_PREF, false)) {
@@ -510,7 +490,6 @@ let Player = {
     
     
     
-    
     if (this.preventNextInputEvent) {
       this.preventNextInputEvent = false;
       return;
@@ -543,36 +522,6 @@ let Player = {
     this.scrubbing = false;
   },
 
-  
-
-
-
-
-
-  handleAudioScrubbing(volume) {
-    
-    
-    
-    
-    if (this.preventNextInputEvent) {
-      this.preventNextInputEvent = false;
-      return;
-    }
-
-    if (this.isMuted) {
-      this.isMuted = false;
-      this.actor.sendAsyncMessage("PictureInPicture:Unmute");
-    }
-
-    if (volume == 0) {
-      this.actor.sendAsyncMessage("PictureInPicture:Mute");
-    }
-
-    this.actor.sendAsyncMessage("PictureInPicture:SetVolume", {
-      volume,
-    });
-  },
-
   getScrubberPositionFromEvent(event) {
     return event.target.value;
   },
@@ -598,14 +547,6 @@ let Player = {
   setTimestamp(timestamp) {
     this.timestamp.textContent = timestamp;
     this.timestamp.hidden = timestamp === undefined;
-  },
-
-  setVolume(volume) {
-    if (volume < Number.EPSILON) {
-      this.actor.sendAsyncMessage("PictureInPicture:Mute");
-    }
-
-    this.audioScrubber.value = volume;
   },
 
   closePipWindow(closeData) {
@@ -636,7 +577,11 @@ let Player = {
   onClick(event) {
     switch (event.target.id) {
       case "audio": {
-        this.toggleMute();
+        if (this.isMuted) {
+          this.actor.sendAsyncMessage("PictureInPicture:Unmute");
+        } else {
+          this.actor.sendAsyncMessage("PictureInPicture:Mute");
+        }
         break;
       }
 
@@ -772,20 +717,6 @@ let Player = {
     }
   },
 
-  
-
-
-  toggleMute() {
-    if (this.isMuted) {
-      
-      this.audioScrubber.max = 1;
-      this.handleAudioScrubbing(this.lastVolume ?? 1);
-    } else {
-      this.lastVolume = this.audioScrubber.value;
-      this.actor.sendAsyncMessage("PictureInPicture:Mute");
-    }
-  },
-
   resizeToVideo(rect) {
     if (this.isFullscreen) {
       
@@ -836,29 +767,13 @@ let Player = {
     
     
     if (
-      event.target.id === "audio-scrubber" &&
-      event.keyCode === window.KeyEvent.DOM_VK_RIGHT
-    ) {
-      eventKeys.keyCode = window.KeyEvent.DOM_VK_UP;
-    } else if (
-      event.target.id === "audio-scrubber" &&
-      event.keyCode === window.KeyEvent.DOM_VK_LEFT
-    ) {
-      eventKeys.keyCode = window.KeyEvent.DOM_VK_DOWN;
-    }
-
-    
-    
-    
-    if (
-      event.target.id === "audio-scrubber" ||
-      (event.target.id === "scrubber" &&
-        [
-          window.KeyEvent.DOM_VK_LEFT,
-          window.KeyEvent.DOM_VK_RIGHT,
-          window.KeyEvent.DOM_VK_UP,
-          window.KeyEvent.DOM_VK_DOWN,
-        ].includes(event.keyCode))
+      event.target.id === "scrubber" &&
+      [
+        window.KeyEvent.DOM_VK_LEFT,
+        window.KeyEvent.DOM_VK_RIGHT,
+        window.KeyEvent.DOM_VK_UP,
+        window.KeyEvent.DOM_VK_DOWN,
+      ].includes(event.keyCode)
     ) {
       this.preventNextInputEvent = true;
     }
@@ -1160,11 +1075,6 @@ let Player = {
     return (this.scrubber = document.getElementById("scrubber"));
   },
 
-  get audioScrubber() {
-    delete this.audioScrubber;
-    return (this.audioScrubber = document.getElementById("audio-scrubber"));
-  },
-
   get timestamp() {
     delete this.timestamp;
     return (this.timestamp = document.getElementById("timestamp"));
@@ -1233,11 +1143,6 @@ let Player = {
 
   set isMuted(isMuted) {
     this._isMuted = isMuted;
-    if (!isMuted) {
-      this.audioScrubber.max = 1;
-    } else if (!this.audioScrubbing) {
-      this.audioScrubber.max = 0;
-    }
     this.controls.classList.toggle("muted", isMuted);
     let strId = isMuted
       ? `pictureinpicture-unmute-btn`
