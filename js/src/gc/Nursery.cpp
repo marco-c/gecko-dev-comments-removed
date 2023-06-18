@@ -382,7 +382,10 @@ void js::Nursery::disable() {
   position_ = 0;
   gc->storeBuffer().disable();
 
-  updateAllZoneAllocFlags();
+  if (gc->wasInitialized()) {
+    
+    updateAllZoneAllocFlags();
+  }
 }
 
 void js::Nursery::enableStrings() {
@@ -410,7 +413,9 @@ void js::Nursery::disableBigInts() {
 }
 
 void js::Nursery::updateAllZoneAllocFlags() {
-  for (AllZonesIter zone(gc); !zone.done(); zone.next()) {
+  
+  
+  for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
     updateAllocFlagsForZone(zone);
   }
 }
