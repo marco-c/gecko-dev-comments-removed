@@ -843,6 +843,17 @@ async function promiseFullscreenEntered(window, asyncFn) {
   await BrowserTestUtils.waitForCondition(() => {
     return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
   });
+
+  if (AppConstants.platform == "macosx") {
+    
+    
+    
+    
+    
+    
+    dump(`BJW promiseFullscreenEntered: waiting for 2 second timeout.\n`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
 }
 
 
