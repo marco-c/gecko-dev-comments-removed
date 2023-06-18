@@ -317,16 +317,6 @@ pref("media.realtime_decoder.enabled", true);
 pref("full-screen-api.enabled", true);
 
 
-pref("accessibility.accessfu.activate", 2);
-pref("accessibility.accessfu.quicknav_modes", "Link,Heading,FormElement,Landmark,ListItem");
-
-pref("accessibility.accessfu.quicknav_index", 0);
-
-pref("accessibility.accessfu.utterance", 1);
-
-pref("accessibility.accessfu.skip_empty_images", true);
-
-
 
 pref("network.tickle-wifi.enabled", true);
 
