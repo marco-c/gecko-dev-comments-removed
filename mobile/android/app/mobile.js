@@ -17,21 +17,12 @@ pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
 pref("toolkit.zoomManager.zoomValues", ".2,.3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2,2.4,3,4");
 
 
-
-pref("browser.viewport.defaultZoom", -1);
-
-
 pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
 pref("ui.scrollbarFadeDuration", 0);
 
-pref("browser.cache.memory_limit", 5120); 
-
 
 pref("image.cache.size", 1048576); 
-
-
-pref("browser.cache.offline.capacity", 5120); 
 
 
 pref("network.protocol-handler.warn-external.tel", false);
@@ -66,18 +57,13 @@ pref("network.mdns.use_js_fallback", false);
 pref("network.cookie.cookieBehavior.pbmode", 4);
 
 
-pref("browser.display.remotetabs.timeout", 10);
-
-
 pref("browser.sessionhistory.max_total_viewers", -1);
 pref("browser.sessionhistory.max_entries", 50);
 pref("browser.sessionhistory.contentViewerTimeout", 360);
-pref("browser.sessionhistory.bfcacheIgnoreMemoryPressure", false);
 
 
 pref("browser.sessionstore.resume_from_crash", true);
 pref("browser.sessionstore.interval", 10000); 
-pref("browser.sessionstore.backupInterval", 120000); 
 pref("browser.sessionstore.max_tabs_undo", 10);
 pref("browser.sessionstore.max_resumed_crashes", 2);
 pref("browser.sessionstore.privacy_level", 0); 
@@ -187,13 +173,9 @@ pref("browser.search.update", false);
 
 
 pref("browser.search.suggest.enabled", false);
-pref("browser.search.suggest.prompted", false);
 
 
 pref("browser.search.noCurrentEngine", true);
-
-
-pref("browser.casting.enabled", true);
 
 
 pref("chrome.override_package.global", "browser");
@@ -204,15 +186,9 @@ pref("chrome.override_package.passwordmgr", "browser");
 pref("dom.disable_window_move_resize", true);
 
 
-
-pref("browser.link.open_external", 3);
 pref("browser.link.open_newwindow", 3);
 
 pref("browser.link.open_newwindow.restriction", 0);
-
-
-
-pref("browser.image_blocking", 1);
 
 
 pref("privacy.item.cache", true);
@@ -245,10 +221,6 @@ pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-deb
 
 pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
-
-
-
-pref("browser.ui.selection.distance", 250);
 
 
 pref("plugin.disable", true);
@@ -409,9 +381,6 @@ pref("media.plugins.enabled", true);
 pref("media.stagefright.omxcodec.flags", 0);
 
 
-pref("browser.urlbar.autocomplete.enabled", true);
-
-
 pref("browser.urlbar.trimURLs", true);
 
 
@@ -421,9 +390,6 @@ pref("dom.phonenumber.substringmatching.CO", 10);
 pref("dom.phonenumber.substringmatching.VE", 7);
 
 pref("gfx.canvas.azure.backends", "skia");
-
-
-pref("browser.ui.linkify.phone", false);
 
 
 
