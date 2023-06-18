@@ -93,7 +93,8 @@ class FileSystemDatabaseManager {
 
 
   virtual Result<EntryId, QMResult> GetOrCreateFile(
-      const FileSystemChildMetadata& aHandle, bool aCreate) = 0;
+      const FileSystemChildMetadata& aHandle, const ContentType& aType,
+      bool aCreate) = 0;
 
   
 
