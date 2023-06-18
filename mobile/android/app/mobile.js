@@ -310,8 +310,6 @@ pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,mozte
 pref("browser.dom.window.dump.enabled", true);
 pref("devtools.console.stdout.chrome", true);
 
-
-pref("device.camera.enabled", true);
 pref("media.realtime_decoder.enabled", true);
 
 pref("full-screen-api.enabled", true);
@@ -350,9 +348,6 @@ pref("home.sync.updateMode", 0);
 
 
 pref("home.sync.checkIntervalSecs", 3600);
-
-
-pref("device.storage.enabled", true);
 
 
 pref("dom.meta-viewport.enabled", true);
