@@ -243,6 +243,8 @@ enum DriverVendor : uint8_t {
   SoftwareMesaAll,
   
   MesaNonIntelNvidiaAtiAll,
+  
+  MesaVM,
 
   Max
 };
