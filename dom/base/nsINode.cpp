@@ -63,6 +63,7 @@
 #include "nsDOMCID.h"
 #include "nsDOMCSSAttrDeclaration.h"
 #include "nsError.h"
+#include "nsExpirationTracker.h"
 #include "nsDOMMutationObserver.h"
 #include "nsDOMString.h"
 #include "nsDOMTokenList.h"
@@ -2984,22 +2985,92 @@ uint32_t nsINode::Length() const {
   }
 }
 
+namespace {
+class SelectorCacheKey {
+ public:
+  explicit SelectorCacheKey(const nsACString& aString) : mKey(aString) {
+    MOZ_COUNT_CTOR(SelectorCacheKey);
+  }
+
+  nsCString mKey;
+  nsExpirationState mState;
+
+  nsExpirationState* GetExpirationState() { return &mState; }
+
+  MOZ_COUNTED_DTOR(SelectorCacheKey)
+};
+
+class SelectorCache final : public nsExpirationTracker<SelectorCacheKey, 4> {
+ public:
+  using SelectorList = UniquePtr<StyleSelectorList>;
+  using Table = nsTHashMap<nsCStringHashKey, SelectorList>;
+
+  SelectorCache()
+      : nsExpirationTracker<SelectorCacheKey, 4>(
+            1000, "SelectorCache", GetMainThreadSerialEventTarget()) {}
+
+  void NotifyExpired(SelectorCacheKey* aSelector) final {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(aSelector);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RemoveObject(aSelector);
+    mTable.Remove(aSelector->mKey);
+    delete aSelector;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  StyleSelectorList* GetListOrInsertFrom(const nsACString& aSelector,
+                                         F&& aFrom) {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mTable.LookupOrInsertWith(aSelector, std::forward<F>(aFrom)).get();
+  }
+
+  ~SelectorCache() { AgeAllGenerations(); }
+
+ private:
+  Table mTable;
+};
+
+SelectorCache& GetSelectorCache(bool aChromeRulesEnabled) {
+  static StaticAutoPtr<SelectorCache> sSelectorCache;
+  static StaticAutoPtr<SelectorCache> sChromeSelectorCache;
+  auto& cache = aChromeRulesEnabled ? sChromeSelectorCache : sSelectorCache;
+  if (!cache) {
+    cache = new SelectorCache();
+    ClearOnShutdown(&cache);
+  }
+  return *cache;
+}
+}  
+
 const StyleSelectorList* nsINode::ParseSelectorList(
     const nsACString& aSelectorString, ErrorResult& aRv) {
   Document* doc = OwnerDoc();
+  const bool chromeRulesEnabled = doc->ChromeRulesEnabled();
 
-  Document::SelectorCache& cache = doc->GetSelectorCache();
+  SelectorCache& cache = GetSelectorCache(chromeRulesEnabled);
   StyleSelectorList* list = cache.GetListOrInsertFrom(aSelectorString, [&] {
     
     
-    
-    
-    
-    
-    
-    
     return WrapUnique(
-        Servo_SelectorList_Parse(&aSelectorString, doc->ChromeRulesEnabled()));
+        Servo_SelectorList_Parse(&aSelectorString, chromeRulesEnabled));
   });
 
   if (!list) {

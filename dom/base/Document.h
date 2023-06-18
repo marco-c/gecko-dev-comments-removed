@@ -64,7 +64,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
 #include "nsDebug.h"
-#include "nsExpirationTracker.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
 #include "nsIChannel.h"
@@ -210,7 +209,6 @@ enum class StyleCursorKind : uint8_t;
 class SVGContextPaint;
 enum class ColorScheme : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
-struct StyleSelectorList;
 struct StyleUseCounters;
 template <typename>
 class OwningNonNull;
@@ -1627,59 +1625,7 @@ class Document : public nsINode,
 
   void MaybeEditingStateChanged();
 
- private:
-  class SelectorCacheKey {
-   public:
-    explicit SelectorCacheKey(const nsACString& aString) : mKey(aString) {
-      MOZ_COUNT_CTOR(SelectorCacheKey);
-    }
-
-    nsCString mKey;
-    nsExpirationState mState;
-
-    nsExpirationState* GetExpirationState() { return &mState; }
-
-    MOZ_COUNTED_DTOR(SelectorCacheKey)
-  };
-
-  class SelectorCacheKeyDeleter;
-
  public:
-  class SelectorCache final : public nsExpirationTracker<SelectorCacheKey, 4> {
-   public:
-    using SelectorList = UniquePtr<StyleSelectorList>;
-    using Table = nsTHashMap<nsCStringHashKey, SelectorList>;
-
-    explicit SelectorCache(nsIEventTarget* aEventTarget);
-    void NotifyExpired(SelectorCacheKey*) final;
-
-    
-    
-    
-    
-    
-    
-    
-    template <typename F>
-    StyleSelectorList* GetListOrInsertFrom(const nsACString& aSelector,
-                                           F&& aFrom) {
-      MOZ_ASSERT(NS_IsMainThread());
-      return mTable.LookupOrInsertWith(aSelector, std::forward<F>(aFrom)).get();
-    }
-
-    ~SelectorCache();
-
-   private:
-    Table mTable;
-  };
-
-  SelectorCache& GetSelectorCache() {
-    if (!mSelectorCache) {
-      mSelectorCache =
-          MakeUnique<SelectorCache>(EventTargetFor(TaskCategory::Other));
-    }
-    return *mSelectorCache;
-  }
   
   
   Element* GetHtmlElement() const;
@@ -4442,8 +4388,6 @@ class Document : public nsINode,
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
 
   
-  
-  UniquePtr<SelectorCache> mSelectorCache;
   UniquePtr<ServoStyleSet> mStyleSet;
 
  protected:
@@ -5606,4 +5550,4 @@ inline nsISupports* ToSupports(mozilla::dom::Document* aDoc) {
   return static_cast<nsINode*>(aDoc);
 }
 
-#endif
+#endif 

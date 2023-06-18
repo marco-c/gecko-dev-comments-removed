@@ -17,11 +17,10 @@
 #include "mozilla/mozalloc.h"  
 #include "GeckoProfiler.h"
 #include "gfx2DGlue.h"
+#include "gfxUtils.h"
 #include "nsAppRunner.h"
 
-namespace mozilla {
-
-namespace layers {
+namespace mozilla::layers {
 
 class CompositorRecordedFrame final : public RecordedFrame {
  public:
@@ -55,14 +54,12 @@ class CompositorRecordedFrame final : public RecordedFrame {
 
 Compositor::Compositor(widget::CompositorWidget* aWidget)
     : mWidget(aWidget),
-      mIsDestroyed(false)
+      mIsDestroyed(false),
 #if defined(MOZ_WIDGET_ANDROID)
       
       
-      ,
-      mClearColor(ToDeviceColor(sRGBColor::OpaqueWhite()))
+      mClearColor(gfx::ToDeviceColor(gfx::sRGBColor::OpaqueWhite()))
 #else
-      ,
       mClearColor(gfx::DeviceColor())
 #endif
 {
@@ -237,5 +234,4 @@ bool Compositor::ShouldRecordFrames() const {
   return profiler_feature_active(ProfilerFeature::Screenshots) || mRecordFrames;
 }
 
-}  
 }  

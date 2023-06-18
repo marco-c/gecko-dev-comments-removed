@@ -1268,32 +1268,6 @@ void DOMStyleSheetSetList::EnsureFresh() {
   }
 }
 
-
-Document::SelectorCache::SelectorCache(nsIEventTarget* aEventTarget)
-    : nsExpirationTracker<SelectorCacheKey, 4>(1000, "Document::SelectorCache",
-                                               aEventTarget) {}
-
-Document::SelectorCache::~SelectorCache() { AgeAllGenerations(); }
-
-void Document::SelectorCache::NotifyExpired(SelectorCacheKey* aSelector) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aSelector);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RemoveObject(aSelector);
-  mTable.Remove(aSelector->mKey);
-  delete aSelector;
-}
-
 Document::PendingFrameStaticClone::~PendingFrameStaticClone() = default;
 
 
