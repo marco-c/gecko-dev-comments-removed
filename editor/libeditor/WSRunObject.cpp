@@ -2388,9 +2388,13 @@ Result<CaretPoint, nsresult> WhiteSpaceVisibilityKeeper::
     
     
     
+    
+    
+    
     MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode() &&
                       rangeToDelete.EndRef().IsEndOfContainer(),
-                  rangeToDelete.EndRef() == replaceRangeDataAtEnd.StartRef() ||
+                  replaceRangeDataAtEnd.StartRef().EqualsOrIsBefore(
+                      rangeToDelete.EndRef()) ||
                       replaceRangeDataAtEnd.StartRef().IsStartOfContainer());
     MOZ_ASSERT(rangeToDelete.StartRef().EqualsOrIsBefore(
         replaceRangeDataAtEnd.StartRef()));
