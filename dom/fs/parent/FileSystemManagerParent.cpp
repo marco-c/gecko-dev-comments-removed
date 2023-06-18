@@ -102,10 +102,9 @@ IPCResult FileSystemManagerParent::RecvGetFileHandle(
     aResolver(response);
   };
 
-  const ContentType& type = VoidCString();  
   QM_TRY_UNWRAP(fs::EntryId entryId,
                 mDataManager->MutableDatabaseManagerPtr()->GetOrCreateFile(
-                    aRequest.handle(), type, aRequest.create()),
+                    aRequest.handle(), aRequest.create()),
                 IPC_OK(), reportError);
   MOZ_ASSERT(!entryId.IsEmpty());
 
