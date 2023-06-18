@@ -29,7 +29,7 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
     Services.logins.addLoginAsync(aLoginInfo),
     aExpectedError
   );
-  LoginTestUtils.checkLogins([]);
+  await LoginTestUtils.checkLogins([]);
 
   
   let testLogin = TestData.formLogin({ origin: "http://modify.example.com" });
@@ -58,7 +58,7 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
   );
 
   
-  LoginTestUtils.checkLogins([testLogin]);
+  await LoginTestUtils.checkLogins([testLogin]);
   Services.logins.removeLogin(testLogin);
 }
 
@@ -93,7 +93,7 @@ function compareAttributes(objectA, objectB, attributes) {
 add_task(async function test_addLogin_removeLogin() {
   
   await Services.logins.addLogins(TestData.loginList());
-  LoginTestUtils.checkLogins(TestData.loginList());
+  await LoginTestUtils.checkLogins(TestData.loginList());
 
   
   for (let loginInfo of TestData.loginList()) {
@@ -108,7 +108,7 @@ add_task(async function test_addLogin_removeLogin() {
     Services.logins.removeLogin(loginInfo);
   }
 
-  LoginTestUtils.checkLogins([]);
+  await LoginTestUtils.checkLogins([]);
 });
 
 add_task(async function add_login_works_with_empty_array() {
@@ -292,7 +292,7 @@ add_task(async function test_removeAllUserFacingLogins() {
   await Services.logins.addLogins(TestData.loginList());
 
   Services.logins.removeAllUserFacingLogins();
-  LoginTestUtils.checkLogins([]);
+  await LoginTestUtils.checkLogins([]);
 
   
   Services.logins.removeAllUserFacingLogins();
@@ -322,7 +322,7 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
   Services.logins.modifyLogin(loginInfo, updatedLoginInfo);
 
   
-  LoginTestUtils.checkLogins([updatedLoginInfo]);
+  await LoginTestUtils.checkLogins([updatedLoginInfo]);
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
     /No matching logins/
@@ -330,18 +330,18 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
 
   
   Services.logins.modifyLogin(updatedLoginInfo, differentLoginInfo);
-  LoginTestUtils.checkLogins([differentLoginInfo]);
+  await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
   await Services.logins.addLoginAsync(loginInfo);
-  LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
+  await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
     /already exists/
   );
-  LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
+  await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();
 });
@@ -388,7 +388,7 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
   );
 
   
-  LoginTestUtils.checkLogins([updatedLoginInfo]);
+  await LoginTestUtils.checkLogins([updatedLoginInfo]);
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
     /No matching logins/
@@ -411,18 +411,18 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
 
   
   Services.logins.modifyLogin(updatedLoginInfo, differentLoginProperties);
-  LoginTestUtils.checkLogins([differentLoginInfo]);
+  await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
   await Services.logins.addLoginAsync(loginInfo);
-  LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
+  await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
   Assert.throws(
     () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
     /already exists/
   );
-  LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
+  await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();
 });
@@ -579,10 +579,10 @@ add_task(async function test_addLogin_badDates() {
       Services.logins.addLoginAsync(loginInfo),
       /invalid date properties/
     );
-    Assert.equal(Services.logins.getAllLogins().length, 0);
+    Assert.equal((await Services.logins.getAllLogins()).length, 0);
   }
 
-  LoginTestUtils.checkLogins([]);
+  await LoginTestUtils.checkLogins([]);
 });
 
 
