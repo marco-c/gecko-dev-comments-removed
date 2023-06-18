@@ -124,10 +124,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   DWORD mDisplayWidth = 0;
   DWORD mDisplayHeight = 0;
 
-  
-  
-  bool mIsEnableDcompMode = false;
-
   float mPlaybackRate = 1.0;
 
   
