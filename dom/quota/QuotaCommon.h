@@ -458,6 +458,8 @@ class NotNull;
     [](const char*, const char*) { MOZ_CRASH("Should never be reached."); }
 #endif
 
+#define QM_NO_CLEANUP [](const auto&) {}
+
 
 
 
@@ -551,6 +553,21 @@ class NotNull;
     return QM_HANDLE_CUSTOM_RET_VAL(func, expr, tryTempError, customRetVal); \
   }
 
+#define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP_AND_PREDICATE(                    \
+    tryResult, expr, customRetVal, cleanup, predicate)                       \
+  auto tryResult = (expr);                                                   \
+  static_assert(std::is_empty_v<typename decltype(tryResult)::ok_type>);     \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                     \
+    auto tryTempError = tryResult.unwrapErr();                               \
+    if (predicate()) {                                                       \
+      mozilla::dom::quota::QM_HANDLE_ERROR(                                  \
+          expr, tryTempError, mozilla::dom::quota::Severity::Error);         \
+    }                                                                        \
+    cleanup(tryTempError);                                                   \
+    constexpr const auto& func MOZ_MAYBE_UNUSED = __func__;                  \
+    return QM_HANDLE_CUSTOM_RET_VAL(func, expr, tryTempError, customRetVal); \
+  }
+
 
 
 
@@ -558,15 +575,18 @@ class NotNull;
 
 #define QM_TRY_META(...)                                                       \
   {                                                                            \
-    MOZ_ARG_6(                                                                 \
-        , ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__),      \
-        QM_TRY_CUSTOM_RET_VAL(__VA_ARGS__), QM_TRY_PROPAGATE_ERR(__VA_ARGS__), \
-        QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))            \
+    MOZ_ARG_7(, ##__VA_ARGS__,                                                 \
+              QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP_AND_PREDICATE(__VA_ARGS__),   \
+              QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__),                 \
+              QM_TRY_CUSTOM_RET_VAL(__VA_ARGS__),                              \
+              QM_TRY_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__), \
+              QM_MISSING_ARGS(__VA_ARGS__))                                    \
   }
 
 
 
 #define QM_TRY_GLUE(...) QM_TRY_META(MOZ_UNIQUE_VAR(tryResult), ##__VA_ARGS__)
+
 
 
 
