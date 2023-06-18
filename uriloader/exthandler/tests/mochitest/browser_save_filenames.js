@@ -158,9 +158,9 @@ add_setup(async function () {
 
   
   
-  let saveFilenamesPage = FileUtils.getFile(
-    "CurWorkD",
-    "/browser/uriloader/exthandler/tests/mochitest/save_filenames.html".split(
+  let saveFilenamesPage = await IOUtils.getFile(
+    Services.dirsvc.get("CurWorkD", Ci.nsIFile).path,
+    ..."browser/uriloader/exthandler/tests/mochitest/save_filenames.html".split(
       "/"
     )
   );
