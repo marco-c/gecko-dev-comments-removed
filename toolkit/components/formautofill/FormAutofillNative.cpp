@@ -401,6 +401,8 @@ const Rule kCreditCardRules[] = {
      
      "|posiadacz.*karty"
      
+     "|nombre.*(titular|tarjeta)"
+     
      "|cc-?name"
      "|card-?name"
      "|cardholder-?name"
@@ -409,7 +411,6 @@ const Rule kCreditCardRules[] = {
      "|card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card"
      "|(?:card|cc).?name|cc.?full.?name"
      "|(?:card|cc).?owner"
-     "|nombre.*tarjeta"                 
      "|nom.*carte"                      
      "|nome.*cart"                      
      "|名前"                            
@@ -429,6 +430,8 @@ const Rule kCreditCardRules[] = {
      "|(numero|número|numéro).*(carte)"
      
      "|numer.*karty"
+     
+     "|(número|numero).*tarjeta"
      
      "|cc-?number"
      "|cc-?num"
