@@ -3247,7 +3247,11 @@ pref("alerts.showFavicons", false);
 
 #ifdef XP_MACOSX
   
-  pref("full-screen-api.macos-native-full-screen", false);
+  #ifdef NIGHTLY_BUILD
+    pref("full-screen-api.macos-native-full-screen", true);
+  #else
+    pref("full-screen-api.macos-native-full-screen", false);
+  #endif
 #endif
 
 #ifndef MOZ_WIDGET_GTK
