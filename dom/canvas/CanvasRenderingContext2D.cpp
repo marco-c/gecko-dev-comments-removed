@@ -2459,7 +2459,12 @@ static already_AddRefed<const ComputedStyle> GetFontStyleForServo(
 
   
   
+  
   Servo_SerializeFontValueForCanvas(declarations, &aOutUsedFont);
+  if (aOutUsedFont.IsEmpty()) {
+    return nullptr;
+  }
+
   return sc.forget();
 }
 
