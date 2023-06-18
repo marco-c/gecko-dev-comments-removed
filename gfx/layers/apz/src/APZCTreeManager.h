@@ -34,6 +34,7 @@
 #include "mozilla/UniquePtr.h"       
 #include "nsCOMPtr.h"                
 #include "nsTArray.h"
+#include "OvershootDetector.h"
 
 namespace mozilla {
 class MultiTouchInput;
@@ -1038,6 +1039,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   std::unordered_map<LayersId, UniquePtr<APZTestData>, LayersId::HashFn>
       mTestData;
   mutable mozilla::Mutex mTestDataLock;
+
+  
+  
+  OvershootDetector mOvershootDetector;
 
   
   float mDPI;
