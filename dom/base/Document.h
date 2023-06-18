@@ -2937,6 +2937,12 @@ class Document : public nsINode,
     return mTemplateContentsOwner.get();
   }
 
+  bool IsTemplateContentsOwner() const {
+    
+    
+    return mTemplateContentsOwner == this;
+  }
+
   
 
 
