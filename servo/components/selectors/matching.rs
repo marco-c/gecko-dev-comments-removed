@@ -859,9 +859,7 @@ where
                         .nest(|context| matches_complex_selector(selector.iter(), element, context))
                 })
         },
-        
-        
-        Component::ParentSelector => false,
+        Component::ParentSelector |
         Component::Scope => match context.shared.scope_element {
             Some(ref scope_element) => element.opaque() == *scope_element,
             None => element.is_root(),
