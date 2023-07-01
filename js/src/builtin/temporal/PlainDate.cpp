@@ -31,6 +31,7 @@
 #include "builtin/temporal/Temporal.h"
 #include "builtin/temporal/TemporalFields.h"
 #include "builtin/temporal/TemporalParser.h"
+#include "builtin/temporal/TemporalRoundingMode.h"
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "builtin/temporal/TimeZone.h"
@@ -499,6 +500,14 @@ static Wrapped<PlainDateObject*> ToTemporalDate(
 
   
   return CreateTemporalDate(cx, result, calendar);
+}
+
+
+
+
+static Wrapped<PlainDateObject*> ToTemporalDate(JSContext* cx,
+                                                Handle<Value> item) {
+  return ::ToTemporalDate(cx, item, nullptr);
 }
 
 
@@ -1151,6 +1160,123 @@ bool js::temporal::DifferenceISODate(JSContext* cx, const PlainDate& start,
 
   
   *result = CreateDateDurationRecord(0, 0, weeks, days);
+  return true;
+}
+
+
+
+
+static bool DifferenceTemporalPlainDate(JSContext* cx,
+                                        TemporalDifference operation,
+                                        const CallArgs& args) {
+  Rooted<PlainDateObject*> temporalDate(
+      cx, &args.thisv().toObject().as<PlainDateObject>());
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+
+  
+  auto wrappedOther = ::ToTemporalDate(cx, args.get(0));
+  if (!wrappedOther) {
+    return false;
+  }
+  Rooted<Wrapped<PlainDateObject*>> other(cx, wrappedOther);
+
+  Rooted<JSObject*> otherCalendar(cx, wrappedOther.unwrap().calendar());
+  if (!cx->compartment()->wrap(cx, &otherCalendar)) {
+    return false;
+  }
+
+  
+  if (!CalendarEqualsOrThrow(cx, calendar, otherCalendar)) {
+    return false;
+  }
+
+  
+  DifferenceSettings settings;
+  Duration duration;
+  if (args.hasDefined(1)) {
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    Rooted<PlainObject*> resolvedOptions(cx,
+                                         NewPlainObjectWithProto(cx, nullptr));
+    if (!resolvedOptions) {
+      return false;
+    }
+
+    
+    if (!CopyDataProperties(cx, resolvedOptions, options)) {
+      return false;
+    }
+
+    
+    if (!GetDifferenceSettings(cx, operation, resolvedOptions,
+                               TemporalUnitGroup::Date, TemporalUnit::Day,
+                               TemporalUnit::Day, &settings)) {
+      return false;
+    }
+
+    
+    Rooted<Value> largestUnitValue(
+        cx, StringValue(TemporalUnitToString(cx, settings.largestUnit)));
+    if (!DefineDataProperty(cx, resolvedOptions, cx->names().largestUnit,
+                            largestUnitValue)) {
+      return false;
+    }
+
+    
+    Duration result;
+    if (!CalendarDateUntil(cx, calendar, temporalDate, other, resolvedOptions,
+                           &result)) {
+      return false;
+    }
+    duration = result.date();
+  } else {
+    
+    settings = {
+        TemporalUnit::Day,
+        TemporalUnit::Day,
+        TemporalRoundingMode::Trunc,
+        Increment{1},
+    };
+
+    
+    Duration result;
+    if (!CalendarDateUntil(cx, calendar, temporalDate, other,
+                           settings.largestUnit, &result)) {
+      return false;
+    }
+    duration = result.date();
+  }
+
+  
+  if (settings.smallestUnit != TemporalUnit::Day ||
+      settings.roundingIncrement != Increment{1}) {
+    
+    if (!temporal::RoundDuration(cx, duration.date(),
+                                 settings.roundingIncrement,
+                                 settings.smallestUnit, settings.roundingMode,
+                                 temporalDate, &duration)) {
+      return false;
+    }
+  }
+
+  
+  if (operation == TemporalDifference::Since) {
+    duration = duration.negate();
+  }
+
+  auto* obj = CreateTemporalDuration(cx, duration.date());
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
   return true;
 }
 
@@ -1971,6 +2097,40 @@ static bool PlainDate_withCalendar(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainDate_until(JSContext* cx, const CallArgs& args) {
+  
+  return DifferenceTemporalPlainDate(cx, TemporalDifference::Until, args);
+}
+
+
+
+
+static bool PlainDate_until(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_until>(cx, args);
+}
+
+
+
+
+static bool PlainDate_since(JSContext* cx, const CallArgs& args) {
+  
+  return DifferenceTemporalPlainDate(cx, TemporalDifference::Since, args);
+}
+
+
+
+
+static bool PlainDate_since(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_since>(cx, args);
+}
+
+
+
+
 static bool PlainDate_equals(JSContext* cx, const CallArgs& args) {
   auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   auto date = ToPlainDate(temporalDate);
@@ -2255,6 +2415,8 @@ static const JSFunctionSpec PlainDate_prototype_methods[] = {
     JS_FN("subtract", PlainDate_subtract, 1, 0),
     JS_FN("with", PlainDate_with, 1, 0),
     JS_FN("withCalendar", PlainDate_withCalendar, 1, 0),
+    JS_FN("until", PlainDate_until, 1, 0),
+    JS_FN("since", PlainDate_since, 1, 0),
     JS_FN("equals", PlainDate_equals, 1, 0),
     JS_FN("toZonedDateTime", PlainDate_toZonedDateTime, 1, 0),
     JS_FN("toString", PlainDate_toString, 0, 0),
