@@ -530,8 +530,8 @@ class alignas(TypicalCacheLineSize) Nursery {
   
   
   
-  typedef HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>
-      ForwardedBufferMap;
+  using ForwardedBufferMap =
+      HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>;
   ForwardedBufferMap forwardedBuffers;
 
   
