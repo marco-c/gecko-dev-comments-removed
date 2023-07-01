@@ -94,6 +94,32 @@ inline PlainDateTime ToPlainDateTime(const PlainDateTimeObject* dateTime) {
   return {ToPlainDate(dateTime), ToPlainTime(dateTime)};
 }
 
+#ifdef DEBUG
+
+
+
+
+bool IsValidISODateTime(const PlainDateTime& dateTime);
+#endif
+
+
+
+
+
+bool ISODateTimeWithinLimits(const PlainDateTime& dateTime);
+
+
+
+
+
+bool ISODateTimeWithinLimits(const PlainDate& date);
+
+
+
+
+
+bool ISODateTimeWithinLimits(double year, double month, double day);
+
 } 
 
 #endif 

@@ -55,6 +55,29 @@ inline PlainDate ToPlainDate(const PlainDateObject* date) {
   return {date->isoYear(), date->isoMonth(), date->isoDay()};
 }
 
+#ifdef DEBUG
+
+
+
+bool IsValidISODate(const PlainDate& date);
+
+
+
+
+bool IsValidISODate(double year, double month, double day);
+#endif
+
+
+
+
+bool ThrowIfInvalidISODate(JSContext* cx, const PlainDate& date);
+
+
+
+
+bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
+                           double day);
+
 } 
 
 #endif 

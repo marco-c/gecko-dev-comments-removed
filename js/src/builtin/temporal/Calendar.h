@@ -38,6 +38,21 @@ class CalendarObject : public NativeObject {
 
 
 
+int32_t ISODaysInYear(int32_t year);
+
+
+
+
+int32_t ISODaysInMonth(int32_t year, int32_t month);
+
+
+
+
+int32_t ISODaysInMonth(double year, int32_t month);
+
+
+
+
 
 JSString* CalendarToString(JSContext* cx, JS::Handle<JSObject*> calendar);
 
