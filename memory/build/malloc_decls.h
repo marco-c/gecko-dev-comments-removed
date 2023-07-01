@@ -74,6 +74,10 @@ MALLOC_DECL(jemalloc_stats_num_bins, size_t)
 
 
 
+MALLOC_DECL(jemalloc_set_main_thread, void)
+
+
+
 
 
 
