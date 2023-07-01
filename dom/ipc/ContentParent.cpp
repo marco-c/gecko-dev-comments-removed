@@ -69,6 +69,7 @@
 #include "mozilla/ProcessHangMonitorIPC.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/RecursiveMutex.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/Components.h"
@@ -84,6 +85,7 @@
 #include "mozilla/TaskController.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryIPC.h"
+#include "mozilla/ThreadSafety.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WebBrowserPersistDocumentParent.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
@@ -780,7 +782,7 @@ bool ContentParent::IsMaxProcessCountReached(
 
 
 
-void ContentParent::ReleaseCachedProcesses() {
+void ContentParent::ReleaseCachedProcesses() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("ReleaseCachedProcesses:"));
   if (!sBrowserContentParents) {
@@ -796,11 +798,14 @@ void ContentParent::ReleaseCachedProcesses() {
 #endif
   
   
+  
+  
   nsTArray<ContentParent*> toRelease;
   for (const auto& contentParents : sBrowserContentParents->Values()) {
     
     
     for (auto* cp : *contentParents) {
+      cp->ThreadsafeHandleMutex().Lock();
       if (cp->ManagedPBrowserParent().Count() == 0 &&
           !cp->HasActiveWorkerOrJSPlugin() &&
           cp->mRemoteType == DEFAULT_REMOTE_TYPE) {
@@ -810,6 +815,7 @@ void ContentParent::ReleaseCachedProcesses() {
                 ("  Skipping %p (%s), count %d, HasActiveWorkerOrJSPlugin %d",
                  cp, cp->mRemoteType.get(), cp->ManagedPBrowserParent().Count(),
                  cp->HasActiveWorkerOrJSPlugin()));
+        cp->ThreadsafeHandleMutex().Unlock();
       }
     }
   }
@@ -819,9 +825,11 @@ void ContentParent::ReleaseCachedProcesses() {
             ("  Shutdown %p (%s)", cp, cp->mRemoteType.get()));
     PreallocatedProcessManager::Erase(cp);
     
-    cp->ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
-    
     cp->MarkAsDead();
+    
+    cp->ThreadsafeHandleMutex().Unlock();
+    
+    cp->ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
     
     
     cp->ShutDownMessageManager();
@@ -994,7 +1002,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     
     preallocated->mRemoteType.Assign(aRemoteType);
     {
-      MutexAutoLock lock(preallocated->mThreadsafeHandle->mMutex);
+      RecursiveMutexAutoLock lock(preallocated->mThreadsafeHandle->mMutex);
       preallocated->mThreadsafeHandle->mRemoteType = preallocated->mRemoteType;
     }
     preallocated->mRemoteTypeIsolationPrincipal =
@@ -1709,6 +1717,10 @@ bool ContentParent::CheckTabDestroyWillKeepAlive(
          ShouldKeepProcessAlive();
 }
 
+RecursiveMutex& ContentParent::ThreadsafeHandleMutex() {
+  return mThreadsafeHandle->mMutex;
+}
+
 void ContentParent::NotifyTabWillDestroy() {
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -1742,6 +1754,13 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
   
   
   
+  
+  
+  RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
+
+  
+  
+  
   if (CheckTabDestroyWillKeepAlive(aExpectedBrowserCount) ||
       TryToRecycleE10SOnly()) {
     return;
@@ -1756,7 +1775,7 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
   SignalImpendingShutdownToContentJS();
 
   if (aSendShutDown) {
-    MaybeAsyncSendShutDownMessage();
+    AsyncSendShutDownMessage();
   } else {
     
     
@@ -1766,43 +1785,17 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
   }
 }
 
-void ContentParent::MaybeAsyncSendShutDownMessage() {
+void ContentParent::AsyncSendShutDownMessage() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("MaybeAsyncSendShutDownMessage %p", this));
+          ("AsyncSendShutDownMessage %p", this));
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sRecycledE10SProcess != this);
 
-#ifdef DEBUG
   
-  bool shouldKeepProcessAlive = ShouldKeepProcessAlive();
-#endif
-
-  {
-    MutexAutoLock lock(mThreadsafeHandle->mMutex);
-    MOZ_ASSERT_IF(!mThreadsafeHandle->mRemoteWorkerActorCount,
-                  !shouldKeepProcessAlive);
-
-    if (mThreadsafeHandle->mRemoteWorkerActorCount) {
-      return;
-    }
-
-    MOZ_ASSERT(!mThreadsafeHandle->mShutdownStarted);
-    mThreadsafeHandle->mShutdownStarted = true;
-  }
-
-  if (mSendShutdownTimer) {
-    mSendShutdownTimer->Cancel();
-    mSendShutdownTimer = nullptr;
-  }
-
-  if (!mSentShutdownMessage) {
-    
-    
-    GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod<ShutDownMethod>(
-        "dom::ContentParent::ShutDownProcess", this,
-        &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
-    mSentShutdownMessage = true;
-  }
+  
+  GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod<ShutDownMethod>(
+      "dom::ContentParent::ShutDownProcess", this,
+      &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
 }
 
 void MaybeLogBlockShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
@@ -2027,6 +2020,14 @@ void ContentParent::MarkAsDead() {
           ("Marking ContentProcess %p as dead", this));
   MOZ_DIAGNOSTIC_ASSERT(!sInProcessSelector);
   RemoveFromList();
+
+  
+  {
+    
+    RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
+
+    mThreadsafeHandle->mShutdownStarted = true;
+  }
 
   
   PreallocatedProcessManager::Erase(this);
@@ -2325,7 +2326,8 @@ bool ContentParent::HasActiveWorkerOrJSPlugin() {
 
   
   {
-    MutexAutoLock lock(mThreadsafeHandle->mMutex);
+    
+    RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
     if (mThreadsafeHandle->mRemoteWorkerActorCount) {
       return true;
     }
@@ -4448,7 +4450,7 @@ bool ContentParent::DeallocPRemoteSpellcheckEngineParent(
 void ContentParent::SendShutdownTimerCallback(nsITimer* aTimer,
                                               void* aClosure) {
   auto* self = static_cast<ContentParent*>(aClosure);
-  self->MaybeAsyncSendShutDownMessage();
+  self->AsyncSendShutDownMessage();
 }
 
 
@@ -7292,7 +7294,7 @@ void ContentParent::UnregisterRemoveWorkerActor() {
   MOZ_ASSERT(NS_IsMainThread());
 
   {
-    MutexAutoLock lock(mThreadsafeHandle->mMutex);
+    RecursiveMutexAutoLock lock(mThreadsafeHandle->mMutex);
     if (--mThreadsafeHandle->mRemoteWorkerActorCount) {
       return;
     }
@@ -8223,14 +8225,15 @@ IPCResult ContentParent::RecvSignalFuzzingReady() {
 #endif
 
 nsCString ThreadsafeContentParentHandle::GetRemoteType() {
-  MutexAutoLock lock(mMutex);
+  RecursiveMutexAutoLock lock(mMutex);
   return mRemoteType;
 }
 
 bool ThreadsafeContentParentHandle::MaybeRegisterRemoteWorkerActor(
     MoveOnlyFunction<bool(uint32_t, bool)> aCallback) {
-  MutexAutoLock lock(mMutex);
+  RecursiveMutexAutoLock lock(mMutex);
   if (aCallback(mRemoteWorkerActorCount, mShutdownStarted)) {
+    
     ++mRemoteWorkerActorCount;
     return true;
   }

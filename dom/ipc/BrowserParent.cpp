@@ -56,6 +56,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProcessHangMonitor.h"
+#include "mozilla/RecursiveMutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEventDispatcher.h"
@@ -695,7 +696,15 @@ void BrowserParent::Deactivated() {
   ProcessPriorityManager::BrowserPriorityChanged(this,  false);
 }
 
-void BrowserParent::DestroyInternal() {
+void BrowserParent::Destroy() {
+  
+  
+  mBrowserDOMWindow = nullptr;
+
+  if (mIsDestroyed) {
+    return;
+  }
+
   Deactivated();
 
   RemoveWindowListeners();
@@ -709,31 +718,25 @@ void BrowserParent::DestroyInternal() {
   }
 #endif
 
-  
-  
-  
-  Unused << SendDestroy();
-}
+  {
+    
+    
+    
+    RecursiveMutexAutoLock lock(Manager()->ThreadsafeHandleMutex());
 
-void BrowserParent::Destroy() {
-  
-  
-  mBrowserDOMWindow = nullptr;
+    
+    
+    
+    Manager()->NotifyTabWillDestroy();
 
-  if (mIsDestroyed) {
-    return;
+    
+    
+    
+    (void)SendDestroy();
+    mIsDestroyed = true;
+
+    Manager()->NotifyTabDestroying();
   }
-
-  
-  
-  
-  Manager()->NotifyTabWillDestroy();
-
-  DestroyInternal();
-
-  mIsDestroyed = true;
-
-  Manager()->NotifyTabDestroying();
 
   
   
