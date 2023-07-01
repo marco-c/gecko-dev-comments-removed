@@ -572,7 +572,7 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
 }
 
 already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePageContentStyle(
-    const nsAtom* aPageName) {
+    const nsAtom* aPageName, const StylePagePseudoClassFlags& aPseudo) {
   
   
   
@@ -581,9 +581,11 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePageContentStyle(
     aPageName = nullptr;
   }
   
+  
+  const bool useCache = !aPageName && !aPseudo;
   RefPtr<ComputedStyle>& cache =
       mNonInheritingComputedStyles[nsCSSAnonBoxes::NonInheriting::pageContent];
-  if (!aPageName && cache) {
+  if (useCache && cache) {
     RefPtr<ComputedStyle> retval = cache;
     return retval.forget();
   }
@@ -591,12 +593,11 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePageContentStyle(
   UpdateStylistIfNeeded();
 
   RefPtr<ComputedStyle> computedValues =
-      Servo_ComputedValues_GetForPageContent(mRawData.get(), aPageName,
-                                             StylePagePseudoClassFlags::NONE)
+      Servo_ComputedValues_GetForPageContent(mRawData.get(), aPageName, aPseudo)
           .Consume();
   MOZ_ASSERT(computedValues);
 
-  if (!aPageName) {
+  if (useCache) {
     cache = computedValues;
   }
   return computedValues.forget();
@@ -686,7 +687,8 @@ StyleSheet* ServoStyleSet::SheetAt(Origin aOrigin, size_t aIndex) const {
 ServoStyleSet::FirstPageSizeAndOrientation
 ServoStyleSet::GetFirstPageSizeAndOrientation(const nsAtom* aFirstPageName) {
   FirstPageSizeAndOrientation retval;
-  const RefPtr<ComputedStyle> style = ResolvePageContentStyle(aFirstPageName);
+  const RefPtr<ComputedStyle> style =
+      ResolvePageContentStyle(aFirstPageName, StylePagePseudoClassFlags::FIRST);
   const StylePageSize& pageSize = style->StylePage()->mSize;
 
   if (pageSize.IsSize()) {

@@ -35,6 +35,7 @@ enum class StyleRuleChangeKind : uint32_t;
 
 template <typename Integer, typename Number, typename LinearStops>
 struct StyleTimingFunction;
+struct StylePagePseudoClassFlags;
 struct StylePiecewiseLinearFunction;
 using StyleComputedTimingFunction =
     StyleTimingFunction<int32_t, float, StylePiecewiseLinearFunction>;
@@ -255,8 +256,9 @@ class ServoStyleSet {
 
   
   
+  
   already_AddRefed<ComputedStyle> ResolvePageContentStyle(
-      const nsAtom* aPageName);
+      const nsAtom* aPageName, const StylePagePseudoClassFlags& aPseudo);
 
   already_AddRefed<ComputedStyle> ResolveXULTreePseudoStyle(
       dom::Element* aParentElement, nsCSSAnonBoxPseudoStaticAtom* aPseudoTag,
