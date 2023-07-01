@@ -2337,7 +2337,7 @@ static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
                 "complicated, and this is a conservative behavior to avoid "
                 "exempting something that shouldn't be. It also presents a "
                 "uniform behavior for something that's very browser-related.",
-                RFPTarget::Unknown)) {
+                RFPTarget::RoundWindowSize)) {
           
 
 
