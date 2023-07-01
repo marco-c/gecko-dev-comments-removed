@@ -2560,14 +2560,6 @@ void nsHTMLScrollFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
       aParams.IsSmooth() && nsLayoutUtils::IsSmoothScrollingEnabled();
   if (!mAsyncScroll) {
     if (isSmoothScroll && canHandoffToApz) {
-      
-      
-      
-      MOZ_ASSERT(aParams.mTriggeredByScript == ScrollTriggeredByScript::No);
-      if (snapTargetIds) {
-        MOZ_ASSERT(snapTargetIds->mIdsOnX.IsEmpty());
-        MOZ_ASSERT(snapTargetIds->mIdsOnY.IsEmpty());
-      }
       ApzSmoothScrollTo(mDestination, ScrollMode::Smooth, aParams.mOrigin,
                         aParams.mTriggeredByScript, std::move(snapTargetIds));
       return;

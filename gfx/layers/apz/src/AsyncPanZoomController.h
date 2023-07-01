@@ -1583,7 +1583,8 @@ class AsyncPanZoomController {
 
   
   
-  void SmoothScrollTo(const CSSPoint& aDestination,
+  void SmoothScrollTo(CSSSnapTarget&& aDestination,
+                      ScrollTriggeredByScript aTriggeredByScript,
                       const ScrollOrigin& aOrigin);
 
   
