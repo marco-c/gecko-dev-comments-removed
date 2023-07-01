@@ -744,7 +744,8 @@ class StyleRuleActor extends Actor {
     }
 
     this.authoredText = newText;
-    this.pageStyle.refreshObservedRules();
+    await this.updateAncestorRulesAuthoredText();
+    this.pageStyle.refreshObservedRules(this.ancestorRules);
 
     
     
@@ -754,6 +755,18 @@ class StyleRuleActor extends Actor {
     
     
     return this;
+  }
+
+  
+
+
+
+  async updateAncestorRulesAuthoredText() {
+    const promises = [];
+    for (const ancestorRule of this.ancestorRules) {
+      promises.push(ancestorRule.getAuthoredCssText(true));
+    }
+    await Promise.all(promises);
   }
 
   
@@ -778,7 +791,6 @@ class StyleRuleActor extends Actor {
     
     
     
-
     let document;
     if (this.rawNode) {
       document = this.rawNode.ownerDocument;
@@ -806,7 +818,7 @@ class StyleRuleActor extends Actor {
       }
     }
 
-    this.pageStyle.refreshObservedRules();
+    this.pageStyle.refreshObservedRules(this.ancestorRules);
 
     
     
@@ -890,6 +902,8 @@ class StyleRuleActor extends Actor {
         }
       }
     }
+
+    await this.updateAncestorRulesAuthoredText();
 
     return this._getRuleFromIndex(parentStyleSheet);
   }
@@ -1128,8 +1142,12 @@ class StyleRuleActor extends Actor {
 
 
 
-  refresh() {
+
+
+
+  maybeRefresh(forceRefresh) {
     let hasChanged = false;
+
     const el = this.pageStyle.selectedElement;
     const style = CssLogic.getComputedStyle(el);
 
@@ -1143,7 +1161,7 @@ class StyleRuleActor extends Actor {
       }
     }
 
-    if (hasChanged) {
+    if (hasChanged || forceRefresh) {
       
       
       

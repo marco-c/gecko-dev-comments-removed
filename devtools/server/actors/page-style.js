@@ -1115,9 +1115,14 @@ class PageStyleActor extends Actor {
 
 
 
-  refreshObservedRules() {
+
+
+
+
+  refreshObservedRules(rulesToForceRefresh) {
     for (const rule of this._observedRules) {
-      rule.refresh();
+      const force = rulesToForceRefresh && rulesToForceRefresh.includes(rule);
+      rule.maybeRefresh(force);
     }
   }
 
