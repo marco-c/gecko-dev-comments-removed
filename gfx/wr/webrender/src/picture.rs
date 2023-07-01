@@ -3268,10 +3268,6 @@ impl TileCacheInstance {
 
                     
                     
-
-                    
-                    
-                    debug_assert_eq!(sub_slice_index, 0);
                     let sub_slice = &mut self.sub_slices[sub_slice_index];
 
                     let mut surface_info = Vec::new();
