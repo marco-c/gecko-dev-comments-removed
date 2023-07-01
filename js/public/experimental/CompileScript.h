@@ -11,6 +11,7 @@
 #define js_experimental_CompileScript_h
 
 #include "jspubtd.h"
+#include "js/ErrorReport.h"  
 #include "js/experimental/JSStencil.h"
 #include "js/GCAnnotations.h"
 #include "js/Modules.h"
@@ -41,7 +42,39 @@ JS_PUBLIC_API bool HadFrontendErrors(JS::FrontendContext* fc);
 
 
 
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API const JSErrorReport* GetFrontendErrorReport(
+    JS::FrontendContext* fc);
+
+
+JS_PUBLIC_API bool HadFrontendOverRecursed(JS::FrontendContext* fc);
+
+
+JS_PUBLIC_API bool HadFrontendOutOfMemory(JS::FrontendContext* fc);
+
+
+JS_PUBLIC_API bool HadFrontendAllocationOverflow(JS::FrontendContext* fc);
+
+
+
 JS_PUBLIC_API void ClearFrontendErrors(JS::FrontendContext* fc);
+
+
+JS_PUBLIC_API size_t GetFrontendWarningCount(JS::FrontendContext* fc);
+
+
+
+
+JS_PUBLIC_API const JSErrorReport* GetFrontendWarningAt(JS::FrontendContext* fc,
+                                                        size_t index);
 
 
 
