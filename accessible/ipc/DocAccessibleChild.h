@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_DocAccessibleChildBase_h
-#define mozilla_a11y_DocAccessibleChildBase_h
+#ifndef mozilla_a11y_DocAccessibleChild_h
+#define mozilla_a11y_DocAccessibleChild_h
 
 #include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/a11y/PDocAccessibleChild.h"
@@ -18,13 +18,18 @@ namespace a11y {
 class LocalAccessible;
 class AccShowEvent;
 
-class DocAccessibleChildBase : public PDocAccessibleChild {
+
+
+
+
+class DocAccessibleChild : public PDocAccessibleChild {
  public:
-  explicit DocAccessibleChildBase(DocAccessible* aDoc) : mDoc(aDoc) {
-    MOZ_COUNT_CTOR(DocAccessibleChildBase);
+  DocAccessibleChild(DocAccessible* aDoc, IProtocol* aManager) : mDoc(aDoc) {
+    MOZ_COUNT_CTOR(DocAccessibleChild);
+    SetManager(aManager);
   }
 
-  ~DocAccessibleChildBase() {
+  ~DocAccessibleChild() {
     
     
     MOZ_ASSERT(!mDoc);
@@ -32,7 +37,7 @@ class DocAccessibleChildBase : public PDocAccessibleChild {
       mDoc->SetIPCDoc(nullptr);
     }
 
-    MOZ_COUNT_DTOR(DocAccessibleChildBase);
+    MOZ_COUNT_DTOR(DocAccessibleChild);
   }
 
   virtual void Shutdown() {

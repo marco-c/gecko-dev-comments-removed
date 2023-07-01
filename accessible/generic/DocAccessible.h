@@ -613,7 +613,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void SetIPCDoc(DocAccessibleChild* aIPCDoc);
 
-  friend class DocAccessibleChildBase;
+  friend class DocAccessibleChild;
 
   
 
