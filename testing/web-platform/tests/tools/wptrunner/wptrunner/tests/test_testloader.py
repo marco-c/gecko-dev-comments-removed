@@ -132,6 +132,72 @@ def test_filter_unicode():
         TestFilter(manifest_path=f.name, test_manifests=tests)
 
 
+def test_tag_filter():
+    
+    class Tagged:
+        def __init__(self, tags):
+            self.tags = set(tags)
+
+    
+    filter = TagFilter({}, {})
+    assert filter(Tagged({}))
+    assert filter(Tagged({'a'}))
+    assert filter(Tagged({'a', 'b'}))
+
+    
+    filter = TagFilter({'a'}, {})
+    assert not filter(Tagged({}))  
+    assert filter(Tagged({'a'}))
+    assert not filter(Tagged({'b'}))
+    assert filter(Tagged({'a', 'b'}))
+
+    
+    filter = TagFilter({'a', 'b'}, {})
+    assert not filter(Tagged({}))
+    assert filter(Tagged({'a'}))
+    assert filter(Tagged({'a', 'b'}))
+    assert filter(Tagged({'b'}))
+    assert not filter(Tagged({'c'}))
+
+    
+    filter = TagFilter({}, {'a'})
+    assert filter(Tagged({}))  
+    assert not filter(Tagged({'a'}))
+    assert not filter(Tagged({'a', 'b'}))
+    assert filter(Tagged({'b'}))
+
+    
+    filter = TagFilter({}, {'a', 'b'})
+    assert filter(Tagged({}))
+    assert not filter(Tagged({'a'}))
+    assert not filter(Tagged({'b'}))
+    assert filter(Tagged({'c'}))
+
+    
+    filter = TagFilter({'a'}, {'b'})
+    assert not filter(Tagged({}))
+    assert filter(Tagged({'a'}))
+    assert not filter(Tagged({'b'}))
+    assert not filter(Tagged({'a', 'b'}))  
+
+    
+    filter = TagFilter({'a'}, {'a'})
+    assert not filter(Tagged({}))
+    assert not filter(Tagged({'a'}))
+    assert not filter(Tagged({'a', 'b'}))  
+    assert not filter(Tagged({'b'}))
+    filter = TagFilter({'a', 'b'}, {'a'})
+    assert not filter(Tagged({}))
+    assert not filter(Tagged({'a'}))
+    assert not filter(Tagged({'a', 'b'}))
+    assert filter(Tagged({'b'}))
+    filter = TagFilter({'a'}, {'a', 'b'})
+    assert not filter(Tagged({}))
+    assert not filter(Tagged({'a'}))
+    assert not filter(Tagged({'a', 'b'}))  
+    assert not filter(Tagged({'b'}))
+
+
 def test_loader_filter_tags():
     manifest_json = {
         "items": {
@@ -145,7 +211,17 @@ def test_loader_filter_tags():
                         "uvwxyz987654",
                         [None, {}],
                     ],
-                }
+                },
+                "b": {
+                    "baz.html": [  
+                        "quertyuiop@!",
+                        [None, {}],
+                    ],
+                    "quux.html": [
+                        "asdfghjkl_-'",
+                        [None, {}],
+                    ],
+                },
             }
         },
         "url_base": "/",
@@ -162,9 +238,15 @@ def test_loader_filter_tags():
         with open(os.path.join(a_path, "bar.html.ini"), "w") as f:
             f.write("tags: [test-include]\n")
 
+        b_path = os.path.join(metadata_path, "b")
+        os.makedirs(b_path)
+        with open(os.path.join(b_path, "baz.html.ini"), "w") as f:
+            f.write("tags: [test-include, test-exclude]\n")
+
+
         
         loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None)
-        assert len(loader.tests["testharness"]) == 2
+        assert len(loader.tests["testharness"]) == 4
 
         
         loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
@@ -172,6 +254,35 @@ def test_loader_filter_tags():
         assert len(loader.tests["testharness"]) == 1
         assert loader.tests["testharness"][0].id == "/a/bar.html"
         assert loader.tests["testharness"][0].tags == {"dir:a", "test-include"}
+        assert loader.tests["testharness"][1].id == "/b/baz.html"
+        assert loader.tests["testharness"][1].tags == {"dir:b", "test-include"}
+
+        
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
+                            test_filters=[TagFilter({}, {"test-exclude"})])
+        assert len(loader.tests["testharness"]) == 3
+        assert all(test.id != "/b/baz.html" for test in loader.tests["testharness"])
+
+        
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
+                            test_filters=[TagFilter({"test-include"}, {"test-exclude"})])
+        assert len(loader.tests["testharness"]) == 1
+        assert loader.tests["testharness"][0].id == "/a/bar.html"
+        assert loader.tests["testharness"][0].tags == {"dir:a", "test-include"}
+
+        
+
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
+                            test_filters=[TagFilter({"test-include"}, {"test-include"})])
+        assert (len(loader.tests["testharness"] == 0))
+
+        loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
+                            test_filters=[
+                                TagFilter({"test-include", "test-exclude"}, {"test-include"})
+                            ])
+        assert len(loader.tests["testharness"]) == 1
+        assert loader.tests["testharness"][0].id == "/b/baz.html"
+        assert loader.tests["testharness"][0].tags == {"dir:b", "test-include", "test-exclude"}
 
 
 def test_chunk_hash(manifest):
