@@ -971,10 +971,21 @@ bool nsDocShell::MaybeHandleSubframeHistory(
       
       
       
-      bool inOnLoadHandler = false;
-      GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-      if (inOnLoadHandler) {
-        aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
+      if (aLoadState->IsFormSubmission()) {
+#ifdef DEBUG
+        if (!mEODForCurrentDocument) {
+          const MaybeDiscarded<BrowsingContext>& targetBC =
+              aLoadState->TargetBrowsingContext();
+          MOZ_ASSERT_IF(GetBrowsingContext() == targetBC.get(),
+                        aLoadState->LoadType() == LOAD_NORMAL_REPLACE);
+        }
+#endif
+      } else {
+        bool inOnLoadHandler = false;
+        GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+        if (inOnLoadHandler) {
+          aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
+        }
       }
     }
     return false;
@@ -8561,7 +8572,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       
       
       loadState->SetPrincipalIsExplicit(true);
-      loadState->SetLoadType(LOAD_LINK);
+      loadState->SetLoadType(aLoadState->LoadType());
       loadState->SetForceAllowDataURI(aLoadState->HasInternalLoadFlags(
           INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI));
 
@@ -8613,6 +8624,11 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
   }
 
   aLoadState->SetTargetBrowsingContext(targetContext);
+  if (aLoadState->IsFormSubmission()) {
+    aLoadState->SetLoadType(
+        GetLoadTypeForFormSubmission(targetContext, aLoadState));
+  }
+
   
   
   
@@ -9226,6 +9242,20 @@ static bool NavigationShouldTakeFocus(nsDocShell* aDocShell,
   return !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
 }
 
+uint32_t nsDocShell::GetLoadTypeForFormSubmission(
+    BrowsingContext* aTargetBC, nsDocShellLoadState* aLoadState) {
+  MOZ_ASSERT(aLoadState->IsFormSubmission());
+
+  
+  
+  
+  
+  
+  return GetBrowsingContext() == aTargetBC && !mEODForCurrentDocument
+             ? LOAD_NORMAL_REPLACE
+             : LOAD_LINK;
+}
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   Maybe<uint32_t> aCacheKey) {
   MOZ_ASSERT(aLoadState, "need a load state!");
@@ -9265,6 +9295,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     return PerformRetargeting(aLoadState);
   }
 
+  
+  
   if (aLoadState->TargetBrowsingContext().IsNull()) {
     aLoadState->SetTargetBrowsingContext(GetBrowsingContext());
   }
@@ -13084,11 +13116,24 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
     CopyUTF8toUTF16(type, typeHint);
   }
 
-  
-  
-  bool inOnLoadHandler = false;
-  GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-  uint32_t loadType = inOnLoadHandler ? LOAD_NORMAL_REPLACE : LOAD_LINK;
+  uint32_t loadType = LOAD_LINK;
+  if (aLoadState->IsFormSubmission()) {
+    if (aLoadState->Target().IsEmpty()) {
+      
+      
+      
+      
+      loadType = GetLoadTypeForFormSubmission(GetBrowsingContext(), aLoadState);
+    }
+  } else {
+    
+    
+    bool inOnLoadHandler = false;
+    GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+    if (inOnLoadHandler) {
+      loadType = LOAD_NORMAL_REPLACE;
+    }
+  }
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       elementCanHaveNoopener ? new ReferrerInfo(*aContent->AsElement())
