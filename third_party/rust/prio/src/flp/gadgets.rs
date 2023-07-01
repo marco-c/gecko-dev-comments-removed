@@ -3,7 +3,7 @@
 
 
 use crate::fft::{discrete_fourier_transform, discrete_fourier_transform_inv_finish};
-use crate::field::FieldElement;
+use crate::field::FftFriendlyFieldElement;
 use crate::flp::{gadget_poly_len, wire_poly_len, FlpError, Gadget};
 use crate::polynomial::{poly_deg, poly_eval, poly_mul};
 
@@ -21,7 +21,7 @@ const FFT_THRESHOLD: usize = 60;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Mul<F: FieldElement> {
+pub struct Mul<F: FftFriendlyFieldElement> {
     
     n: usize,
     
@@ -30,7 +30,7 @@ pub struct Mul<F: FieldElement> {
     num_calls: usize,
 }
 
-impl<F: FieldElement> Mul<F> {
+impl<F: FftFriendlyFieldElement> Mul<F> {
     
     
     pub fn new(num_calls: usize) -> Self {
@@ -72,7 +72,7 @@ impl<F: FieldElement> Mul<F> {
     }
 }
 
-impl<F: FieldElement> Gadget<F> for Mul<F> {
+impl<F: FftFriendlyFieldElement> Gadget<F> for Mul<F> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
         gadget_call_check(self, inp.len())?;
         Ok(inp[0] * inp[1])
@@ -108,7 +108,7 @@ impl<F: FieldElement> Gadget<F> for Mul<F> {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct PolyEval<F: FieldElement> {
+pub struct PolyEval<F: FftFriendlyFieldElement> {
     poly: Vec<F>,
     
     n: usize,
@@ -118,7 +118,7 @@ pub struct PolyEval<F: FieldElement> {
     num_calls: usize,
 }
 
-impl<F: FieldElement> PolyEval<F> {
+impl<F: FftFriendlyFieldElement> PolyEval<F> {
     
     
     pub fn new(poly: Vec<F>, num_calls: usize) -> Self {
@@ -133,7 +133,7 @@ impl<F: FieldElement> PolyEval<F> {
     }
 }
 
-impl<F: FieldElement> PolyEval<F> {
+impl<F: FftFriendlyFieldElement> PolyEval<F> {
     
     fn call_poly_direct(&mut self, outp: &mut [F], inp: &[Vec<F>]) -> Result<(), FlpError> {
         outp[0] = self.poly[0];
@@ -181,7 +181,7 @@ impl<F: FieldElement> PolyEval<F> {
     }
 }
 
-impl<F: FieldElement> Gadget<F> for PolyEval<F> {
+impl<F: FftFriendlyFieldElement> Gadget<F> for PolyEval<F> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
         gadget_call_check(self, inp.len())?;
         Ok(poly_eval(&self.poly, inp[0]))
@@ -220,7 +220,7 @@ impl<F: FieldElement> Gadget<F> for PolyEval<F> {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BlindPolyEval<F: FieldElement> {
+pub struct BlindPolyEval<F: FftFriendlyFieldElement> {
     poly: Vec<F>,
     
     n: usize,
@@ -230,7 +230,7 @@ pub struct BlindPolyEval<F: FieldElement> {
     num_calls: usize,
 }
 
-impl<F: FieldElement> BlindPolyEval<F> {
+impl<F: FftFriendlyFieldElement> BlindPolyEval<F> {
     
     pub fn new(poly: Vec<F>, num_calls: usize) -> Self {
         let n = gadget_poly_fft_mem_len(poly_deg(&poly) + 1, num_calls);
@@ -294,7 +294,7 @@ impl<F: FieldElement> BlindPolyEval<F> {
     }
 }
 
-impl<F: FieldElement> Gadget<F> for BlindPolyEval<F> {
+impl<F: FftFriendlyFieldElement> Gadget<F> for BlindPolyEval<F> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
         gadget_call_check(self, inp.len())?;
         Ok(inp[1] * poly_eval(&self.poly, inp[0]))
@@ -332,7 +332,7 @@ impl<F: FieldElement> Gadget<F> for BlindPolyEval<F> {
 }
 
 
-pub trait ParallelSumGadget<F: FieldElement, G>: Gadget<F> + Debug {
+pub trait ParallelSumGadget<F: FftFriendlyFieldElement, G>: Gadget<F> + Debug {
     
     fn new(inner: G, chunks: usize) -> Self;
 }
@@ -340,13 +340,15 @@ pub trait ParallelSumGadget<F: FieldElement, G>: Gadget<F> + Debug {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ParallelSum<F: FieldElement, G: Gadget<F>> {
+pub struct ParallelSum<F: FftFriendlyFieldElement, G: Gadget<F>> {
     inner: G,
     chunks: usize,
     phantom: PhantomData<F>,
 }
 
-impl<F: FieldElement, G: 'static + Gadget<F>> ParallelSumGadget<F, G> for ParallelSum<F, G> {
+impl<F: FftFriendlyFieldElement, G: 'static + Gadget<F>> ParallelSumGadget<F, G>
+    for ParallelSum<F, G>
+{
     fn new(inner: G, chunks: usize) -> Self {
         Self {
             inner,
@@ -356,7 +358,7 @@ impl<F: FieldElement, G: 'static + Gadget<F>> ParallelSumGadget<F, G> for Parall
     }
 }
 
-impl<F: FieldElement, G: 'static + Gadget<F>> Gadget<F> for ParallelSum<F, G> {
+impl<F: FftFriendlyFieldElement, G: 'static + Gadget<F>> Gadget<F> for ParallelSum<F, G> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
         gadget_call_check(self, inp.len())?;
         let mut outp = F::zero();
@@ -408,14 +410,14 @@ impl<F: FieldElement, G: 'static + Gadget<F>> Gadget<F> for ParallelSum<F, G> {
 #[cfg(feature = "multithreaded")]
 #[cfg_attr(docsrs, doc(cfg(feature = "multithreaded")))]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ParallelSumMultithreaded<F: FieldElement, G: Gadget<F>> {
+pub struct ParallelSumMultithreaded<F: FftFriendlyFieldElement, G: Gadget<F>> {
     serial_sum: ParallelSum<F, G>,
 }
 
 #[cfg(feature = "multithreaded")]
 impl<F, G> ParallelSumGadget<F, G> for ParallelSumMultithreaded<F, G>
 where
-    F: FieldElement + Sync + Send,
+    F: FftFriendlyFieldElement + Sync + Send,
     G: 'static + Gadget<F> + Clone + Sync + Send,
 {
     fn new(inner: G, chunks: usize) -> Self {
@@ -441,7 +443,7 @@ impl<F, G> ParallelSumFoldState<F, G> {
     fn new(gadget: &G, length: usize) -> ParallelSumFoldState<F, G>
     where
         G: Clone,
-        F: FieldElement,
+        F: FftFriendlyFieldElement,
     {
         ParallelSumFoldState {
             inner: gadget.clone(),
@@ -454,7 +456,7 @@ impl<F, G> ParallelSumFoldState<F, G> {
 #[cfg(feature = "multithreaded")]
 impl<F, G> Gadget<F> for ParallelSumMultithreaded<F, G>
 where
-    F: FieldElement + Sync + Send,
+    F: FftFriendlyFieldElement + Sync + Send,
     G: 'static + Gadget<F> + Clone + Sync + Send,
 {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
@@ -522,7 +524,7 @@ where
 }
 
 
-fn gadget_call_check<F: FieldElement, G: Gadget<F>>(
+fn gadget_call_check<F: FftFriendlyFieldElement, G: Gadget<F>>(
     gadget: &G,
     in_len: usize,
 ) -> Result<(), FlpError> {
@@ -542,7 +544,7 @@ fn gadget_call_check<F: FieldElement, G: Gadget<F>>(
 }
 
 
-fn gadget_call_poly_check<F: FieldElement, G: Gadget<F>>(
+fn gadget_call_poly_check<F: FftFriendlyFieldElement, G: Gadget<F>>(
     gadget: &G,
     outp: &[F],
     inp: &[Vec<F>],
@@ -581,7 +583,9 @@ fn gadget_poly_fft_mem_len(degree: usize, num_calls: usize) -> usize {
 mod tests {
     use super::*;
 
-    use crate::field::{random_vector, Field96 as TestField};
+    #[cfg(feature = "multithreaded")]
+    use crate::field::FieldElement;
+    use crate::field::{random_vector, Field64 as TestField};
     use crate::prng::Prng;
 
     #[test]
@@ -687,7 +691,7 @@ mod tests {
 
     
     
-    fn gadget_test<F: FieldElement, G: Gadget<F>>(g: &mut G, num_calls: usize) {
+    fn gadget_test<F: FftFriendlyFieldElement, G: Gadget<F>>(g: &mut G, num_calls: usize) {
         let wire_poly_len = (1 + num_calls).next_power_of_two();
         let mut prng = Prng::new().unwrap();
         let mut inp = vec![F::zero(); g.arity()];
