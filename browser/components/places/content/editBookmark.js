@@ -52,9 +52,8 @@ var gEditItemOverlay = {
     
     
     
-    let itemId = node ? node.itemId : -1;
     let itemGuid = node ? PlacesUtils.getConcreteItemGuid(node) : null;
-    let isItem = itemId != -1;
+    let isItem = !!itemGuid;
     let isFolderShortcut =
       isItem &&
       node.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT;
@@ -78,16 +77,15 @@ var gEditItemOverlay = {
     let parentGuid = null;
 
     if (node && isItem) {
-      if (
-        !node.parent ||
-        (node.parent.itemId > 0 && !node.parent.bookmarkGuid)
-      ) {
+      if (!node.parent) {
         throw new Error(
           "Cannot use an incomplete node to initialize the edit bookmark panel"
         );
       }
       let parent = node.parent;
       isParentReadOnly = !PlacesUtils.nodeIsFolder(parent);
+      
+      
       parentGuid = parent.bookmarkGuid;
     }
 
@@ -95,7 +93,6 @@ var gEditItemOverlay = {
     let onPanelReady = aInitInfo.onPanelReady;
 
     return (this._paneInfo = {
-      itemId,
       itemGuid,
       parentGuid,
       isItem,
@@ -121,15 +118,20 @@ var gEditItemOverlay = {
   },
 
   
-  get itemId() {
+
+
+
+
+
+  get concreteGuid() {
     if (
       !this.initialized ||
       this._paneInfo.isTag ||
       this._paneInfo.bulkTagging
     ) {
-      return -1;
+      return null;
     }
-    return this._paneInfo.itemId;
+    return this._paneInfo.itemGuid;
   },
 
   get uri() {

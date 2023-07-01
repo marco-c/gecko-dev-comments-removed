@@ -435,6 +435,11 @@ var PlacesOrganizer = {
     if (!ContentArea.currentViewOptions.showDetailsPane) {
       return;
     }
+    
+    
+    
+    
+    
     let view = PlacesUIUtils.getViewForNode(document.activeElement);
     if (view) {
       let selectedNodes = view.selectedNode
@@ -727,30 +732,17 @@ var PlacesOrganizer = {
 
     
     
-    if (gEditItemOverlay.itemId != -1) {
-      var focusedElement = document.commandDispatcher.focusedElement;
-      if (
-        (HTMLInputElement.isInstance(focusedElement) ||
-          HTMLTextAreaElement.isInstance(focusedElement)) &&
-        /^editBMPanel.*/.test(focusedElement.parentNode.parentNode.id)
-      ) {
-        focusedElement.blur();
-      }
-
-      
-      
-      if (selectedNode) {
-        let concreteGuid = PlacesUtils.getConcreteItemGuid(selectedNode);
-        var nodeIsSame =
-          gEditItemOverlay.itemId == selectedNode.itemId ||
-          gEditItemOverlay._paneInfo.itemGuid == concreteGuid ||
-          (selectedNode.itemId == -1 &&
-            gEditItemOverlay.uri &&
-            gEditItemOverlay.uri == selectedNode.uri);
-        if (nodeIsSame && !infoBox.hidden && !gEditItemOverlay.multiEdit) {
-          return;
-        }
-      }
+    if (
+      selectedNode &&
+      !gEditItemOverlay.multiEdit &&
+      ((gEditItemOverlay.concreteGuid &&
+        gEditItemOverlay.concreteGuid ==
+          PlacesUtils.getConcreteItemGuid(selectedNode)) ||
+        (!selectedNode.bookmarkGuid &&
+          gEditItemOverlay.uri &&
+          gEditItemOverlay.uri == selectedNode.uri))
+    ) {
+      return;
     }
 
     
