@@ -730,6 +730,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "IDBVersionChangeEvent", insecureContext: true },
   
+  { name: "IdentityCredential", nightly: true, desktop: true },
+  
   { name: "IIRFilterNode", insecureContext: true },
   
   { name: "Image", insecureContext: true },
