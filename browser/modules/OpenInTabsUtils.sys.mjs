@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["OpenInTabsUtils"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -19,14 +13,14 @@ XPCOMUtils.defineLazyGetter(lazy, "l10n", () => {
   );
 });
 
-
-
-
-
-const OpenInTabsUtils = {
-  
-
-
+/**
+ * Utility functions that can be used when opening multiple tabs, that can be
+ * called without any tabbrowser instance.
+ */
+export const OpenInTabsUtils = {
+  /**
+   * Gives the user a chance to cancel loading lots of tabs at once.
+   */
   confirmOpenInTabs(numTabsToOpen, aWindow) {
     const WARN_ON_OPEN_PREF = "browser.tabs.warnOnOpen";
     const MAX_OPNE_PREF = "browser.tabs.maxOpenBeforeWarn";
@@ -37,7 +31,7 @@ const OpenInTabsUtils = {
       return true;
     }
 
-    
+    // default to true: if it were false, we wouldn't get this far
     let warnOnOpen = { value: true };
 
     const [title, message, button, checkbox] = lazy.l10n.formatMessagesSync([
@@ -64,7 +58,7 @@ const OpenInTabsUtils = {
     );
 
     let reallyOpen = buttonPressed == 0;
-    
+    // don't set the pref unless they press OK and it's false
     if (reallyOpen && !warnOnOpen.value) {
       Services.prefs.setBoolPref(WARN_ON_OPEN_PREF, false);
     }
@@ -72,9 +66,9 @@ const OpenInTabsUtils = {
     return reallyOpen;
   },
 
-  
-
-
+  /*
+   * Async version of confirmOpenInTabs.
+   */
   promiseConfirmOpenInTabs(numTabsToOpen, aWindow) {
     return new Promise(resolve => {
       Services.tm.dispatchToMainThread(() => {

@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["Discovery"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -21,7 +16,7 @@ const RECOMMENDATION_ENABLED = "browser.discovery.enabled";
 const TELEMETRY_ENABLED = "datareporting.healthreport.uploadEnabled";
 const TAAR_COOKIE_NAME = "taarId";
 
-const Discovery = {
+export const Discovery = {
   set enabled(val) {
     val = !!val;
     if (val && !lazy.gTelemetryEnabled) {
@@ -84,7 +79,7 @@ const DiscoveryInternal = {
   },
 
   getContextualIDs() {
-    
+    // There is never a zero id, this is just for use in update.
     let IDs = [0];
     if (lazy.gContainersEnabled) {
       lazy.ContextualIdentityService.getPublicIdentities().forEach(identity => {
@@ -110,17 +105,17 @@ const DiscoveryInternal = {
     }
 
     if (Discovery.enabled) {
-      
-      
-      
-      
+      // If the client id is not cached, wait for the notification that it is
+      // cached.  This will happen shortly after startup in TelemetryController.sys.mjs.
+      // When that happens, we'll get a pref notification for the cached id,
+      // which will call update again.
       if (!lazy.gCachedClientID) {
         return;
       }
       let id = await lazy.ClientID.getClientIdHash();
       for (let site of this.sites) {
-        
-        
+        // This cookie gets tied down as much as possible.  Specifically,
+        // SameSite, Secure, HttpOnly and non-PrivateBrowsing.
         for (let userContextId of this.getContextualIDs()) {
           let originAttributes = { privateBrowsingId: 0 };
           if (userContextId > 0) {
@@ -141,9 +136,9 @@ const DiscoveryInternal = {
             "/",
             TAAR_COOKIE_NAME,
             id,
-            true, 
-            true, 
-            true, 
+            true, // secure
+            true, // httpOnly
+            true, // session
             Date.now(),
             originAttributes,
             Ci.nsICookie.SAMESITE_LAX,

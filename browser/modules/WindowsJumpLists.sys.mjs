@@ -1,16 +1,14 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-
+// Stop updating jumplists after some idle time.
 const IDLE_TIMEOUT_SECONDS = 5 * 60;
 
-
+// Prefs
 const PREF_TASKBAR_BRANCH = "browser.taskbar.lists.";
 const PREF_TASKBAR_ENABLED = "enabled";
 const PREF_TASKBAR_ITEMCOUNT = "maxListItemCount";
@@ -19,23 +17,21 @@ const PREF_TASKBAR_RECENT = "recent.enabled";
 const PREF_TASKBAR_TASKS = "tasks.enabled";
 const PREF_TASKBAR_REFRESH = "refreshInSeconds";
 
-
+// Hash keys for pendingStatements.
 const LIST_TYPE = {
   FREQUENT: 0,
   RECENT: 1,
 };
 
-
-
-
-
-var EXPORTED_SYMBOLS = ["WinTaskbarJumpList"];
+/**
+ * Exports
+ */
 
 const lazy = {};
 
-
-
-
+/**
+ * Smart getters
+ */
 
 XPCOMUtils.defineLazyGetter(lazy, "_prefs", function () {
   return Services.prefs.getBranch(PREF_TASKBAR_BRANCH);
@@ -65,29 +61,29 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
-
-
-
+/**
+ * Global functions
+ */
 
 function _getString(name) {
   return lazy._stringBundle.GetStringFromName(name);
 }
 
-
+// Task list configuration data object.
 
 var tasksCfg = [
-  
-
-
-
-
-
-
-
-
-
-
-  
+  /**
+   * Task configuration options: title, description, args, iconIndex, open, close.
+   *
+   * title       - Task title displayed in the list. (strings in the table are temp fillers.)
+   * description - Tooltip description on the list item.
+   * args        - Command line args to invoke the task.
+   * iconIndex   - Optional win icon index into the main application for the
+   *               list item.
+   * open        - Boolean indicates if the command should be visible after the browser opens.
+   * close       - Boolean indicates if the command should be visible after the browser closes.
+   */
+  // Open new tab
   {
     get title() {
       return _getString("taskbar.tasks.newTab.label");
@@ -96,14 +92,14 @@ var tasksCfg = [
       return _getString("taskbar.tasks.newTab.description");
     },
     args: "-new-tab about:blank",
-    iconIndex: 3, 
+    iconIndex: 3, // New window icon
     open: true,
-    close: true, 
-    
-    
+    close: true, // The jump list already has an app launch icon, but
+    // we don't always update the list on shutdown.
+    // Thus true for consistency.
   },
 
-  
+  // Open new window
   {
     get title() {
       return _getString("taskbar.tasks.newWindow.label");
@@ -112,14 +108,14 @@ var tasksCfg = [
       return _getString("taskbar.tasks.newWindow.description");
     },
     args: "-browser",
-    iconIndex: 2, 
+    iconIndex: 2, // New tab icon
     open: true,
-    close: true, 
-    
+    close: true, // No point, but we don't always update the list on
+    // shutdown. Thus true for consistency.
   },
 ];
 
-
+// Open new private window
 let privateWindowTask = {
   get title() {
     return _getString("taskbar.tasks.newPrivateWindow.label");
@@ -128,13 +124,13 @@ let privateWindowTask = {
     return _getString("taskbar.tasks.newPrivateWindow.description");
   },
   args: "-private-window",
-  iconIndex: 4, 
+  iconIndex: 4, // Private browsing mode icon
   open: true,
-  close: true, 
-  
+  close: true, // No point, but we don't always update the list on
+  // shutdown. Thus true for consistency.
 };
 
-
+// Implementation
 
 var Builder = class {
   constructor(builder) {
@@ -142,8 +138,8 @@ var Builder = class {
     this._tasks = null;
     this._pendingStatements = {};
     this._shuttingDown = false;
-    
-    
+    // These are ultimately controlled by prefs, so we disable
+    // everything until is read from there
     this._showTasks = false;
     this._showFrequent = false;
     this._showRecent = false;
@@ -165,15 +161,15 @@ var Builder = class {
     delete this._builder;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * List building
+   *
+   * @note Async builders must add their mozIStoragePendingStatement to
+   *       _pendingStatements object, using a different LIST_TYPE entry for
+   *       each statement. Once finished they must remove it and call
+   *       commitBuild().  When there will be no more _pendingStatements,
+   *       commitBuild() will commit for real.
+   */
 
   _hasPendingStatements() {
     return !!Object.keys(this._pendingStatements).length;
@@ -184,9 +180,9 @@ var Builder = class {
       (this._showFrequent || this._showRecent) &&
       this._hasPendingStatements()
     ) {
-      
-      
-      
+      // We were requested to update the list while another update was in
+      // progress, this could happen at shutdown, idle or privatebrowsing.
+      // Abort the current list building.
       for (let listType in this._pendingStatements) {
         this._pendingStatements[listType].cancel();
         delete this._pendingStatements[listType];
@@ -194,9 +190,9 @@ var Builder = class {
       this._builder.abortListBuild();
     }
 
-    
+    // anything to build?
     if (!this._showFrequent && !this._showRecent && !this._showTasks) {
-      
+      // don't leave the last list hanging on the taskbar.
       this._deleteActiveJumpList();
       return;
     }
@@ -207,7 +203,7 @@ var Builder = class {
       this._buildTasks();
     }
 
-    
+    // Space for frequent items takes priority over recent.
     if (this._showFrequent) {
       this._buildFrequent();
     }
@@ -219,15 +215,15 @@ var Builder = class {
     this._commitBuild();
   }
 
-  
-
-
+  /**
+   * Taskbar api wrappers
+   */
 
   async _startBuild() {
     this._builder.abortListBuild();
     let URIsToRemove = await this._builder.initListBuild();
     if (URIsToRemove.length) {
-      
+      // Prior to building, delete removed items from history.
       this._clearHistory(URIsToRemove);
     }
   }
@@ -285,14 +281,14 @@ var Builder = class {
   }
 
   _buildFrequent() {
-    
-    
-    
-    
+    // Windows supports default frequent and recent lists,
+    // but those depend on internal windows visit tracking
+    // which we don't populate. So we build our own custom
+    // frequent and recent lists using our nav history data.
 
     var items = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    
-    
+    // track frequent items so that we don't add them to
+    // the recent list.
     this._frequentHashList = [];
 
     this._pendingStatements[LIST_TYPE.FREQUENT] = this._getHistoryResults(
@@ -301,7 +297,7 @@ var Builder = class {
       function (aResult) {
         if (!aResult) {
           delete this._pendingStatements[LIST_TYPE.FREQUENT];
-          
+          // The are no more results, build the list.
           this._buildCustom(_getString("taskbar.frequent.label"), items);
           this._commitBuild();
           return;
@@ -325,8 +321,8 @@ var Builder = class {
 
   _buildRecent() {
     var items = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-    
-    
+    // Frequent items will be skipped, so we select a double amount of
+    // entries and stop fetching results at _maxItemCount.
     var count = 0;
 
     this._pendingStatements[LIST_TYPE.RECENT] = this._getHistoryResults(
@@ -334,7 +330,7 @@ var Builder = class {
       this._maxItemCount * 2,
       function (aResult) {
         if (!aResult) {
-          
+          // The are no more results, build the list.
           this._buildCustom(_getString("taskbar.recent.label"), items);
           delete this._pendingStatements[LIST_TYPE.RECENT];
           this._commitBuild();
@@ -345,7 +341,7 @@ var Builder = class {
           return;
         }
 
-        
+        // Do not add items to recent that have already been added to frequent.
         if (
           this._frequentHashList &&
           this._frequentHashList.includes(aResult.uri)
@@ -373,9 +369,9 @@ var Builder = class {
     this._builder.deleteActiveList();
   }
 
-  
-
-
+  /**
+   * Jump list item creation helpers
+   */
 
   _getHandlerAppItem(name, description, args, iconIndex, faviconPageUri) {
     var file = Services.dirsvc.get("XREExeF", Ci.nsIFile);
@@ -384,7 +380,7 @@ var Builder = class {
       "@mozilla.org/uriloader/local-handler-app;1"
     ].createInstance(Ci.nsILocalHandlerApp);
     handlerApp.executable = file;
-    
+    // handlers default to the leaf name if a name is not specified
     if (name && name.length) {
       handlerApp.name = name;
     }
@@ -400,9 +396,9 @@ var Builder = class {
     return item;
   }
 
-  
-
-
+  /**
+   * Nav history helpers
+   */
 
   _getHistoryResults(aSortingMode, aLimit, aCallback, aScope) {
     var options = lazy.PlacesUtils.history.getNewQueryOptions();
@@ -410,7 +406,7 @@ var Builder = class {
     options.sortingMode = aSortingMode;
     var query = lazy.PlacesUtils.history.getNewQuery();
 
-    
+    // Return the pending statement to the caller, to allow cancelation.
     return lazy.PlacesUtils.history.asyncExecuteLegacyQuery(query, options, {
       handleResult(aResultSet) {
         for (let row; (row = aResultSet.getNextRow()); ) {
@@ -440,7 +436,7 @@ var Builder = class {
     let URIsToRemove = uriSpecsToRemove
       .map(spec => {
         try {
-          
+          // in case we get a bad uri
           return Services.io.newURI(spec);
         } catch (e) {
           return null;
@@ -454,20 +450,20 @@ var Builder = class {
   }
 };
 
-var WinTaskbarJumpList = {
-  
-  
+export var WinTaskbarJumpList = {
+  // We build two separate jump lists -- one for the regular Firefox icon
+  // and one for the Private Browsing icon
   _builder: null,
   _pbBuilder: null,
   _builtPb: false,
   _shuttingDown: false,
 
-  
-
-
+  /**
+   * Startup, shutdown, and update
+   */
 
   startup: function WTBJL_startup() {
-    
+    // exit if this isn't win7 or higher.
     if (!this._initTaskbar()) {
       return;
     }
@@ -475,34 +471,34 @@ var WinTaskbarJumpList = {
     if (lazy.PrivateBrowsingUtils.enabled) {
       tasksCfg.push(privateWindowTask);
     }
-    
+    // Store our task list config data
     this._builder._tasks = tasksCfg;
     this._pbBuilder._tasks = tasksCfg;
 
-    
+    // retrieve taskbar related prefs.
     this._refreshPrefs();
 
-    
+    // observer for private browsing and our prefs branch
     this._initObs();
 
-    
+    // jump list refresh timer
     this._updateTimer();
   },
 
   update: function WTBJL_update() {
-    
+    // are we disabled via prefs? don't do anything!
     if (!this._enabled) {
       return;
     }
 
-    
-    
+    // we only need to do this once, but we do it here
+    // to avoid main thread io on startup
     if (!this._builtPb) {
       this._pbBuilder.buildList();
       this._builtPb = true;
     }
 
-    
+    // do what we came here to do, update the taskbar jumplist
     this._builder.buildList();
   },
 
@@ -513,9 +509,9 @@ var WinTaskbarJumpList = {
     this._free();
   },
 
-  
-
-
+  /**
+   * Prefs utilities
+   */
 
   _refreshPrefs: function WTBJL__refreshPrefs() {
     this._enabled = lazy._prefs.getBoolPref(PREF_TASKBAR_ENABLED);
@@ -526,15 +522,15 @@ var WinTaskbarJumpList = {
       lazy._prefs.getBoolPref(PREF_TASKBAR_RECENT),
       lazy._prefs.getIntPref(PREF_TASKBAR_ITEMCOUNT)
     );
-    
-    
-    
+    // showTasks is the only relevant pref for the Private Browsing Jump List
+    // the others are are related to frequent/recent entries, which are
+    // explicitly disabled for it
     this._pbBuilder.refreshPrefs(showTasks, false, false, 0);
   },
 
-  
-
-
+  /**
+   * Init and shutdown utilities
+   */
 
   _initTaskbar: function WTBJL__initTaskbar() {
     var builder = lazy._taskbarService.createJumpListBuilder(false);
@@ -550,9 +546,9 @@ var WinTaskbarJumpList = {
   },
 
   _initObs: function WTBJL__initObs() {
-    
-    
-    
+    // If the browser is closed while in private browsing mode, the "exit"
+    // notification is fired on quit-application-granted.
+    // History cleanup can happen at profile-change-teardown.
     Services.obs.addObserver(this, "profile-before-change");
     Services.obs.addObserver(this, "browser:purge-session-history");
     lazy._prefs.addObserver("", this);
@@ -622,7 +618,7 @@ var WinTaskbarJumpList = {
   name: "WinTaskbarJumpList",
 
   notify: function WTBJL_notify(aTimer) {
-    
+    // Add idle observer on the first notification so it doesn't hit startup.
     this._updateIdleObserver();
     Services.tm.idleDispatchToMainThread(() => {
       this.update();

@@ -3,15 +3,11 @@
 
 
 
-"use strict";
 
 
 
 
 
-
-
-var EXPORTED_SYMBOLS = ["TabUnloader"];
 
 const lazy = {};
 
@@ -166,7 +162,7 @@ let DefaultTabUnloaderMethods = {
 
 
 
-var TabUnloader = {
+export var TabUnloader = {
   
 
 
