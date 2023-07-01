@@ -244,6 +244,12 @@ interface nsITelemetry : nsISupports
 
 
 
+  readonly attribute boolean areUntrustedModuleLoadEventsReady;
+
+  
+
+
+
 
 
 

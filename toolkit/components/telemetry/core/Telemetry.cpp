@@ -85,7 +85,6 @@
 #include "nsXPCOMCIDInternal.h"
 #include "other/CombinedStacks.h"
 #include "other/TelemetryIOInterposeObserver.h"
-#include "plstr.h"
 #include "TelemetryCommon.h"
 #include "TelemetryEvent.h"
 #include "TelemetryHistogram.h"
@@ -659,6 +658,16 @@ TelemetryImpl::GetUntrustedModuleLoadEvents(uint32_t aFlags, JSContext* cx,
                                             Promise** aPromise) {
 #if defined(XP_WIN)
   return Telemetry::GetUntrustedModuleLoadEvents(aFlags, cx, aPromise);
+#else
+  return NS_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+NS_IMETHODIMP
+TelemetryImpl::GetAreUntrustedModuleLoadEventsReady(bool* ret) {
+#if defined(XP_WIN)
+  *ret = DllServices::Get()->IsReadyForBackgroundProcessing();
+  return NS_OK;
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
 #endif

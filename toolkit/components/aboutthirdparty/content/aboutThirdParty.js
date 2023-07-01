@@ -52,6 +52,21 @@ function moduleCompareForDisplay(a, b) {
 async function fetchData() {
   let data = null;
   try {
+    
+    const sleep = delayInMs =>
+      new Promise(resolve => setTimeout(resolve, delayInMs));
+    let loadEventsReady = Services.telemetry.areUntrustedModuleLoadEventsReady;
+    let numberOfAttempts = 0;
+    
+    
+    
+    const MAX_ATTEMPTS = 30;
+    while (!loadEventsReady && numberOfAttempts < MAX_ATTEMPTS) {
+      await sleep(1000);
+      numberOfAttempts++;
+      loadEventsReady = Services.telemetry.areUntrustedModuleLoadEventsReady;
+    }
+
     data = await Services.telemetry.getUntrustedModuleLoadEvents(
       Services.telemetry.INCLUDE_OLD_LOADEVENTS |
         Services.telemetry.KEEP_LOADEVENTS_NEW |
