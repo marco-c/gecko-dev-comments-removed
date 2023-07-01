@@ -135,6 +135,13 @@ bool ToTemporalTime(JSContext* cx, JS::Handle<JS::Value> item,
 
 
 
+
+bool AddTime(JSContext* cx, const PlainTime& time, const Duration& duration,
+             PlainTime* result, double* daysResult);
+
+
+
+
 TimeDuration DifferenceTime(const PlainTime& time1, const PlainTime& time2);
 
 struct TimeRecord final {

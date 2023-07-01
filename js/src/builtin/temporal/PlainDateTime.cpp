@@ -20,6 +20,7 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Calendar.h"
+#include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainMonthDay.h"
 #include "builtin/temporal/PlainTime.h"
@@ -788,6 +789,54 @@ static int32_t CompareISODateTime(const PlainDateTime& one,
 
 
 
+
+static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
+                        Handle<JSObject*> calendar, const Duration& duration,
+                        Handle<JSObject*> options, PlainDateTime* result) {
+  MOZ_ASSERT(IsValidDuration(duration));
+
+  
+  MOZ_ASSERT(IsValidISODateTime(dateTime));
+  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+
+  
+  PlainTime timeResult;
+  double daysResult;
+  if (!AddTime(cx, dateTime.time, duration, &timeResult, &daysResult)) {
+    return false;
+  }
+
+  
+  Rooted<PlainDateObject*> datePart(
+      cx, CreateTemporalDate(cx, dateTime.date, calendar));
+  if (!datePart) {
+    return false;
+  }
+
+  
+  Rooted<DurationObject*> dateDuration(
+      cx, CreateTemporalDuration(cx, {duration.years, duration.months,
+                                      duration.weeks, daysResult}));
+  if (!dateDuration) {
+    return false;
+  }
+
+  
+  PlainDate addedDate;
+  if (!CalendarDateAdd(cx, calendar, datePart, dateDuration, options,
+                       &addedDate)) {
+    return false;
+  }
+
+  
+  *result = {addedDate, timeResult};
+  return true;
+}
+
+
+
+
+
 static PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
                                       Increment increment, TemporalUnit unit,
                                       TemporalRoundingMode roundingMode) {
@@ -809,6 +858,62 @@ static PlainDateTime RoundISODateTime(const PlainDateTime& dateTime,
 
   
   return {balanceResult, roundedTime.time};
+}
+
+enum class PlainDateTimeDuration { Add, Subtract };
+
+
+
+
+
+static bool AddDurationToOrSubtractDurationFromPlainDateTime(
+    JSContext* cx, PlainDateTimeDuration operation, const CallArgs& args) {
+  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
+  auto dateTime = ToPlainDateTime(temporalDateTime);
+  Rooted<JSObject*> calendar(cx, temporalDateTime->calendar());
+
+  
+
+  
+  Duration duration;
+  if (!ToTemporalDurationRecord(cx, args.get(0), &duration)) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    const char* name =
+        operation == PlainDateTimeDuration::Add ? "add" : "subtract";
+    options = RequireObjectArg(cx, "options", name, args[1]);
+  } else {
+    options = NewPlainObjectWithProto(cx, nullptr);
+  }
+  if (!options) {
+    return false;
+  }
+
+  
+  if (operation == PlainDateTimeDuration::Subtract) {
+    duration = duration.negate();
+  }
+
+  PlainDateTime result;
+  if (!AddDateTime(cx, dateTime, calendar, duration, options, &result)) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(IsValidISODateTime(result));
+
+  
+  auto* obj = CreateTemporalDateTime(cx, result, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
 }
 
 
@@ -1625,6 +1730,45 @@ static bool PlainDateTime_withCalendar(JSContext* cx, unsigned argc,
 
 
 
+static bool PlainDateTime_add(JSContext* cx, const CallArgs& args) {
+  
+  return AddDurationToOrSubtractDurationFromPlainDateTime(
+      cx, PlainDateTimeDuration::Add, args);
+}
+
+
+
+
+static bool PlainDateTime_add(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_add>(cx, args);
+}
+
+
+
+
+
+static bool PlainDateTime_subtract(JSContext* cx, const CallArgs& args) {
+  
+  return AddDurationToOrSubtractDurationFromPlainDateTime(
+      cx, PlainDateTimeDuration::Subtract, args);
+}
+
+
+
+
+
+static bool PlainDateTime_subtract(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_subtract>(cx,
+                                                                       args);
+}
+
+
+
+
 static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
   auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
   auto dateTime = ToPlainDateTime(temporalDateTime);
@@ -2162,6 +2306,8 @@ static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
     JS_FN("withPlainTime", PlainDateTime_withPlainTime, 0, 0),
     JS_FN("withPlainDate", PlainDateTime_withPlainDate, 1, 0),
     JS_FN("withCalendar", PlainDateTime_withCalendar, 1, 0),
+    JS_FN("add", PlainDateTime_add, 1, 0),
+    JS_FN("subtract", PlainDateTime_subtract, 1, 0),
     JS_FN("round", PlainDateTime_round, 1, 0),
     JS_FN("equals", PlainDateTime_equals, 1, 0),
     JS_FN("toString", PlainDateTime_toString, 0, 0),
