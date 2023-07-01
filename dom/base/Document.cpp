@@ -16164,26 +16164,17 @@ void Document::SendPageUseCounters() {
 bool Document::RecomputeResistFingerprinting() {
   const bool previous = mShouldResistFingerprinting;
 
-  RefPtr<BrowsingContext> opener =
-      GetBrowsingContext() ? GetBrowsingContext()->GetOpener() : nullptr;
-  
-  
-  
-  
-  
-  
-  auto shouldInheritFrom = [this](Document* aDoc) {
-    return aDoc && (this->NodePrincipal()->Equals(aDoc->NodePrincipal()) ||
-                    this->NodePrincipal()->GetIsNullPrincipal());
-  };
-
-  if (shouldInheritFrom(mParentDocument)) {
-    mShouldResistFingerprinting = mParentDocument->ShouldResistFingerprinting(
-        RFPTarget::IsAlwaysEnabledForPrecompute);
-  } else if (opener && shouldInheritFrom(opener->GetDocument())) {
-    mShouldResistFingerprinting =
-        opener->GetDocument()->ShouldResistFingerprinting(
-            RFPTarget::IsAlwaysEnabledForPrecompute);
+  if (mParentDocument &&
+      (NodePrincipal()->Equals(mParentDocument->NodePrincipal()) ||
+       NodePrincipal()->GetIsNullPrincipal())) {
+    
+    
+    
+    
+    
+    mShouldResistFingerprinting = !nsContentUtils::IsChromeDoc(this) &&
+                                  mParentDocument->ShouldResistFingerprinting(
+                                      RFPTarget::IsAlwaysEnabledForPrecompute);
   } else {
     mShouldResistFingerprinting =
         !nsContentUtils::IsChromeDoc(this) &&
