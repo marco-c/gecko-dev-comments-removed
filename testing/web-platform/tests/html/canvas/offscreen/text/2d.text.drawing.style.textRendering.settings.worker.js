@@ -19,34 +19,59 @@ t.step(function() {
   
   _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
 
+  ctx.textRendering = "optimizeSpeed";
+  _assertSame(ctx.textRendering, "optimizeSpeed", "ctx.textRendering", "\"optimizeSpeed\"");
+
+  ctx.textRendering = "optimizeLegibility";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "geometricPrecision";
+  _assertSame(ctx.textRendering, "geometricPrecision", "ctx.textRendering", "\"geometricPrecision\"");
+
   ctx.textRendering = "auto";
   _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
 
-  ctx.textRendering = "optimizespeed";
-  _assertSame(ctx.textRendering, "optimizeSpeed", "ctx.textRendering", "\"optimizeSpeed\"");
-
-  ctx.textRendering = "optimizelegibility";
-  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
-
-  ctx.textRendering = "geometricprecision";
-  _assertSame(ctx.textRendering, "geometricPrecision", "ctx.textRendering", "\"geometricPrecision\"");
-
   
-  ctx.textRendering = "aUto";
+  ctx.textRendering = "OPtimizeSpeed";
   _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
 
-  ctx.textRendering = "OPtimizeSpeed";
-  _assertSame(ctx.textRendering, "optimizeSpeed", "ctx.textRendering", "\"optimizeSpeed\"");
-
   ctx.textRendering = "OPtimizELEgibility";
-  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
 
   ctx.textRendering = "GeometricPrecision";
-  _assertSame(ctx.textRendering, "geometricPrecision", "ctx.textRendering", "\"geometricPrecision\"");
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
+
+  ctx.textRendering = "optimizespeed";
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
+
+  ctx.textRendering = "optimizelegibility";
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
+
+  ctx.textRendering = "geometricprecision";
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
+
+  ctx.textRendering = "optimizeLegibility";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "AUTO";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "Auto";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
 
   
   ctx.textRendering = "abcd";
-  _assertSame(ctx.textRendering, "geometricPrecision", "ctx.textRendering", "\"geometricPrecision\"");
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "normal";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "";
+  _assertSame(ctx.textRendering, "optimizeLegibility", "ctx.textRendering", "\"optimizeLegibility\"");
+
+  ctx.textRendering = "auto";
+  _assertSame(ctx.textRendering, "auto", "ctx.textRendering", "\"auto\"");
+
   t.done();
 });
 done();
