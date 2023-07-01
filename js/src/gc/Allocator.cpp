@@ -76,19 +76,13 @@ void* gc::CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
       site = cx->zone()->unknownAllocSite(traceKind);
     }
 
-    void* obj = TryNewNurseryCell<traceKind, allowGC>(cx, thingSize, site);
-    if (obj) {
-      return obj;
+    void* ptr = cx->nursery().tryAllocateCell(site, thingSize, traceKind);
+    if (MOZ_LIKELY(ptr)) {
+      return ptr;
     }
 
-    
-    
-    
-    
-    
-    if (!allowGC) {
-      return nullptr;
-    }
+    return RetryNurseryAlloc<allowGC>(cx, traceKind, allocKind, thingSize,
+                                      site);
   }
 
   return TryNewTenuredCell<allowGC>(cx, allocKind, thingSize);
@@ -108,36 +102,52 @@ INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::BigInt, CanGC)
 
 
 
-template <JS::TraceKind kind, AllowGC allowGC>
+template <AllowGC allowGC>
 
-void* CellAllocator::TryNewNurseryCell(JSContext* cx, size_t thingSize,
-                                       AllocSite* site) {
+MOZ_NEVER_INLINE void* CellAllocator::RetryNurseryAlloc(JSContext* cx,
+                                                        JS::TraceKind traceKind,
+                                                        AllocKind allocKind,
+                                                        size_t thingSize,
+                                                        AllocSite* site) {
   MOZ_ASSERT(cx->isNurseryAllocAllowed());
   MOZ_ASSERT(cx->zone() == site->zone());
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
-  MOZ_ASSERT(cx->zone()->allocKindInNursery(kind));
+  MOZ_ASSERT(cx->zone()->allocKindInNursery(traceKind));
 
   Nursery& nursery = cx->nursery();
-  void* ptr = nursery.allocateCell(site, thingSize, kind);
-  if (ptr) {
+  if (nursery.handleAllocationFailure()) {
+    void* ptr = nursery.tryAllocateCell(site, thingSize, traceKind);
+    MOZ_ASSERT(ptr);
     return ptr;
   }
 
-  if constexpr (allowGC) {
-    if (!cx->suppressGC) {
-      JS::GCReason reason = nursery.minorGCRequested()
-                                ? nursery.minorGCTriggerReason()
-                                : JS::GCReason::OUT_OF_NURSERY;
-      cx->runtime()->gc.minorGC(reason);
+  
+  
+  
+  
+  
+  if constexpr (!allowGC) {
+    return nullptr;
+  }
 
-      
-      if (cx->zone()->allocKindInNursery(kind)) {
-        return cx->nursery().allocateCell(site, thingSize, kind);
+  if (!cx->suppressGC) {
+    JS::GCReason reason = JS::GCReason::OUT_OF_NURSERY;
+    if (nursery.minorGCRequested()) {
+      reason = nursery.minorGCTriggerReason();
+    }
+    cx->runtime()->gc.minorGC(reason);
+
+    
+    if (cx->zone()->allocKindInNursery(traceKind)) {
+      void* ptr = cx->nursery().allocateCell(site, thingSize, traceKind);
+      if (ptr) {
+        return ptr;
       }
     }
   }
 
-  return nullptr;
+  
+  return TryNewTenuredCell<allowGC>(cx, allocKind, thingSize);
 }
 
 template <AllowGC allowGC >
