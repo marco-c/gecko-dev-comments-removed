@@ -141,6 +141,16 @@ class FileSystemFileManager {
 
 
 
+  Result<nsCOMPtr<nsIFile>, QMResult> CreateFileFrom(
+      const FileId& aDestinationFileId, const FileId& aSourceFileId);
+
+  
+
+
+
+
+
+
   Result<Usage, QMResult> RemoveFile(const FileId& aFileId);
 
   
