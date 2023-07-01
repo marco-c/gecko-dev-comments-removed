@@ -10,15 +10,12 @@ import {
   getSelectedSource,
   getSelectedScopeMappings,
   getSelectedFrameBindings,
-  getCurrentThread,
   getIsPaused,
   isMapScopesEnabled,
 } from "../selectors";
 import { PROMISE } from "./utils/middleware/promise";
 import { wrapExpression } from "../utils/expressions";
 import { features } from "../utils/prefs";
-
-
 
 
 
@@ -34,19 +31,21 @@ export function addExpression(cx, input) {
 
     const expressionError = await parserWorker.hasSyntaxError(input);
 
-    const expression = getExpression(getState(), input);
-    if (expression) {
-      return dispatch(evaluateExpression(cx, expression));
+    
+    let expression = getExpression(getState(), input);
+    if (!expression) {
+      
+      
+      dispatch({ type: "ADD_EXPRESSION", input, expressionError });
+
+      expression = getExpression(getState(), input);
+      
+      if (!expression) {
+        return null;
+      }
     }
 
-    dispatch({ type: "ADD_EXPRESSION", cx, input, expressionError });
-
-    const newExpression = getExpression(getState(), input);
-    if (newExpression) {
-      return dispatch(evaluateExpression(cx, newExpression));
-    }
-
-    return null;
+    return dispatch(evaluateExpression(cx, expression));
   };
 }
 
@@ -70,7 +69,7 @@ export function clearExpressionError() {
 }
 
 export function updateExpression(cx, input, expression) {
-  return async ({ dispatch, getState, parserWorker }) => {
+  return async ({ dispatch, parserWorker }) => {
     if (!input) {
       return;
     }
@@ -78,17 +77,14 @@ export function updateExpression(cx, input, expression) {
     const expressionError = await parserWorker.hasSyntaxError(input);
     dispatch({
       type: "UPDATE_EXPRESSION",
-      cx,
       expression,
       input: expressionError ? expression.input : input,
       expressionError,
     });
 
-    dispatch(evaluateExpressions(cx));
+    await dispatch(evaluateExpressions(cx));
   };
 }
-
-
 
 
 
@@ -96,14 +92,11 @@ export function updateExpression(cx, input, expression) {
 
 
 export function deleteExpression(expression) {
-  return ({ dispatch }) => {
-    dispatch({
-      type: "DELETE_EXPRESSION",
-      input: expression.input,
-    });
+  return {
+    type: "DELETE_EXPRESSION",
+    input: expression.input,
   };
 }
-
 
 
 
@@ -124,12 +117,12 @@ export function evaluateExpressions(cx) {
 }
 
 function evaluateExpression(cx, expression) {
-  return async function ({ dispatch, getState, client }) {
+  return async function (thunkArgs) {
     if (!expression.input) {
       console.warn("Expressions should not be empty");
       return null;
     }
-
+    const { dispatch, getState, client } = thunkArgs;
     let { input } = expression;
     const frame = getSelectedFrame(getState(), cx.thread);
 
@@ -141,7 +134,11 @@ function evaluateExpression(cx, expression) {
         frame.location.source.isOriginal &&
         selectedSource.isOriginal
       ) {
-        const mapResult = await dispatch(getMappedExpression(input));
+        const mapResult = await getMappedExpression(
+          input,
+          cx.thread,
+          thunkArgs
+        );
         if (mapResult) {
           input = mapResult.expression;
         }
@@ -166,30 +163,28 @@ function evaluateExpression(cx, expression) {
 
 
 
-export function getMappedExpression(expression) {
-  return async function ({ dispatch, getState, parserWorker }) {
-    const thread = getCurrentThread(getState());
-    const mappings = getSelectedScopeMappings(getState(), thread);
-    const bindings = getSelectedFrameBindings(getState(), thread);
+export function getMappedExpression(expression, thread, thunkArgs) {
+  const { getState, parserWorker } = thunkArgs;
+  const mappings = getSelectedScopeMappings(getState(), thread);
+  const bindings = getSelectedFrameBindings(getState(), thread);
 
-    
-    
-    
-    
-    
-    
-    
-    const shouldMapScopes = isMapScopesEnabled(getState()) && mappings;
-    if (!shouldMapScopes && !expression.match(/(await|=)/)) {
-      return null;
-    }
+  
+  
+  
+  
+  
+  
+  
+  const shouldMapScopes = isMapScopesEnabled(getState()) && mappings;
+  if (!shouldMapScopes && !expression.match(/(await|=)/)) {
+    return null;
+  }
 
-    return parserWorker.mapExpression(
-      expression,
-      mappings,
-      bindings || [],
-      features.mapExpressionBindings && getIsPaused(getState(), thread),
-      features.mapAwaitExpression
-    );
-  };
+  return parserWorker.mapExpression(
+    expression,
+    mappings,
+    bindings || [],
+    features.mapExpressionBindings && getIsPaused(getState(), thread),
+    features.mapAwaitExpression
+  );
 }
