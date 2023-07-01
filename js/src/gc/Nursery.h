@@ -123,7 +123,11 @@ class alignas(TypicalCacheLineSize) Nursery {
   
   
   void* tryAllocateCell(gc::AllocSite* site, size_t size, JS::TraceKind kind);
-  [[nodiscard]] bool handleAllocationFailure();
+
+  
+  
+  
+  [[nodiscard]] JS::GCReason handleAllocationFailure();
 
   static size_t nurseryCellHeaderSize() {
     return sizeof(gc::NurseryCellHeader);
@@ -572,9 +576,6 @@ class alignas(TypicalCacheLineSize) Nursery {
   
   
   void* tryAllocate(size_t size);
-
-  
-  
 
   [[nodiscard]] bool moveToNextChunk();
 
