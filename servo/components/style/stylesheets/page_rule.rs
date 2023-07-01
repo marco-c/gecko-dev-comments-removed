@@ -146,7 +146,7 @@ impl PageSelector {
     
     
     #[inline]
-    pub fn matches(&self, name: &CustomIdent, flags: &PagePseudoClassFlags) -> bool {
+    pub fn matches(&self, name: &CustomIdent, flags: PagePseudoClassFlags) -> bool {
         self.ident_matches(name) && self.flags_match(flags)
     }
 
@@ -158,7 +158,7 @@ impl PageSelector {
     
     
     
-    pub fn flags_match(&self, flags: &PagePseudoClassFlags) -> bool {
+    pub fn flags_match(&self, flags: PagePseudoClassFlags) -> bool {
         self.pseudos.iter().all(|pc| flags.contains_class(pc))
     }
 
@@ -172,7 +172,7 @@ impl PageSelector {
     
     
     
-    pub fn match_specificity(&self, flags: &PagePseudoClassFlags) -> Option<u32> {
+    pub fn match_specificity(&self, flags: PagePseudoClassFlags) -> Option<u32> {
         let mut g: usize = 0;
         let mut h: usize = 0;
         for pc in self.pseudos.iter() {
@@ -298,7 +298,7 @@ impl PageRule {
     
     
     
-    pub fn match_specificity(&self, flags: &PagePseudoClassFlags) -> Option<u32> {
+    pub fn match_specificity(&self, flags: PagePseudoClassFlags) -> Option<u32> {
         let mut specificity = None;
         for s in self.selectors.0.iter().map(|s| s.match_specificity(flags)) {
             specificity = s.max(specificity);
