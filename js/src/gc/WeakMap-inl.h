@@ -24,9 +24,8 @@
 #include "gc/StableCellHasher-inl.h"
 
 namespace js {
-namespace gc {
 
-namespace detail {
+namespace gc::detail {
 
 
 
@@ -66,8 +65,7 @@ static inline JSObject* GetDelegate(const T& key) {
 template <>
 inline JSObject* GetDelegate(gc::Cell* const&) = delete;
 
-} 
-} 
+}  
 
 
 
@@ -408,6 +406,6 @@ bool WeakMap<K, V>::checkMarking() const {
 }
 #endif
 
-} 
+}  
 
 #endif 

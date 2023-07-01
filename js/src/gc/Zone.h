@@ -644,10 +644,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
 }  
 
-namespace js {
-namespace gc {
+namespace js::gc {
 const char* StateName(JS::Zone::GCState state);
-}  
 }  
 
 #endif  

@@ -36,8 +36,7 @@
 
 #endif  
 
-namespace js {
-namespace gc {
+namespace js::gc {
 
 
 
@@ -1046,5 +1045,4 @@ void UnprotectPages(void* region, size_t length) {
   ProtectMemory(region, length, PageAccess::ReadWrite);
 }
 
-}  
 }  

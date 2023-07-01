@@ -52,17 +52,11 @@ class MOZ_RAII FakeRooted : public RootedOperations<T, FakeRooted<T>> {
 
 }  
 
-namespace JS {
-
-namespace detail {
-
+namespace JS::detail {
 template <typename T>
 struct DefineComparisonOps<js::FakeRooted<T>> : std::true_type {
   static const T& get(const js::FakeRooted<T>& v) { return v.get(); }
 };
-
-}  
-
 }  
 
 namespace js {
@@ -96,17 +90,11 @@ class FakeMutableHandle
 
 }  
 
-namespace JS {
-
-namespace detail {
-
+namespace JS::detail {
 template <typename T>
 struct DefineComparisonOps<js::FakeMutableHandle<T>> : std::true_type {
   static const T& get(const js::FakeMutableHandle<T>& v) { return v.get(); }
 };
-
-}  
-
 }  
 
 namespace js {

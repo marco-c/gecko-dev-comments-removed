@@ -181,8 +181,7 @@ void js::gc::StoreBuffer::MonoTypeBuffer<T>::trace(TenuringTracer& mover) {
   }
 }
 
-namespace js {
-namespace gc {
+namespace js::gc {
 template void StoreBuffer::MonoTypeBuffer<StoreBuffer::ValueEdge>::trace(
     TenuringTracer&);
 template void StoreBuffer::MonoTypeBuffer<StoreBuffer::SlotsEdge>::trace(
@@ -190,7 +189,6 @@ template void StoreBuffer::MonoTypeBuffer<StoreBuffer::SlotsEdge>::trace(
 template struct StoreBuffer::MonoTypeBuffer<StoreBuffer::StringPtrEdge>;
 template struct StoreBuffer::MonoTypeBuffer<StoreBuffer::BigIntPtrEdge>;
 template struct StoreBuffer::MonoTypeBuffer<StoreBuffer::ObjectPtrEdge>;
-}  
 }  
 
 void js::gc::StoreBuffer::SlotsEdge::trace(TenuringTracer& mover) const {

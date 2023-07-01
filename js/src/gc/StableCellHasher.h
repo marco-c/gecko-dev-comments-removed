@@ -10,11 +10,9 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 
-namespace js {
 
 
-
-namespace gc {
+namespace js::gc {
 
 struct Cell;
 
@@ -40,7 +38,6 @@ void RemoveUniqueId(Cell* cell);
 
 bool SetOrUpdateUniqueId(JSContext* cx, Cell* cell, uint64_t uid);
 
-}  
 }  
 
 #endif  

@@ -30,8 +30,7 @@ namespace JS {
 enum class GCReason;
 }  
 
-namespace js {
-namespace gc {
+namespace js::gc {
 
 class GCRuntime;
 class PretenuringNursery;
@@ -342,7 +341,6 @@ class PretenuringNursery {
   void updateAllocCounts(AllocSite* site);
 };
 
-}  
 }  
 
 #endif 
