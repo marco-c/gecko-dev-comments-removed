@@ -40,6 +40,7 @@ const RESOURCE_TYPES_WITH_QUANTITIES = [
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.FORMDATA,
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PAYMENT_METHODS,
+  MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.EXTENSIONS,
 ];
 
 
@@ -133,11 +134,19 @@ async function waitForMigrationWizardDialogTab() {
 
 
 
+
+
+
+
+
+
 async function waitForTestMigration(
   availableResourceTypes,
   expectedResourceTypes,
   expectedProfile,
-  errorResourceTypes = []
+  errorResourceTypes = [],
+  totalExtensions = 1,
+  matchedExtensions = 1
 ) {
   let sandbox = sinon.createSandbox();
   let sourceHistogram = TelemetryTestUtils.getAndClearHistogram(
@@ -210,7 +219,33 @@ async function waitForTestMigration(
 
         for (let resourceType of expectedResourceTypes) {
           let shouldError = errorResourceTypes.includes(resourceType);
-          aProgressCallback(resourceType, !shouldError);
+          if (
+            resourceType == MigrationUtils.resourceTypes.EXTENSIONS &&
+            !shouldError
+          ) {
+            let progressValue;
+            if (totalExtensions == matchedExtensions) {
+              progressValue = MigrationWizardConstants.PROGRESS_VALUE.SUCCESS;
+            } else if (
+              totalExtensions > matchedExtensions &&
+              matchedExtensions
+            ) {
+              progressValue = MigrationWizardConstants.PROGRESS_VALUE.INFO;
+            } else {
+              Assert.ok(
+                false,
+                "Total and matched extensions should be greater than 0 on success." +
+                  `Total: ${totalExtensions}, Matched: ${matchedExtensions}`
+              );
+            }
+            aProgressCallback(resourceType, !shouldError, {
+              totalExtensions: Array(totalExtensions),
+              importedExtensions: Array(matchedExtensions),
+              progressValue,
+            });
+          } else {
+            aProgressCallback(resourceType, !shouldError);
+          }
         }
 
         let usageHistogramSnapshot =
@@ -388,6 +423,13 @@ function assertQuantitiesShown(wizard, expectedResourceTypes) {
             "Form history",
             `Found expected form data string: ${successText}`
           );
+        } else if (
+          progressGroup.dataset.resourceType ==
+          MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.EXTENSIONS
+        ) {
+          
+          
+          Assert.stringMatches(successText, "1 extension");
         } else {
           Assert.notEqual(
             successText.indexOf(EXPECTED_QUANTITY),
