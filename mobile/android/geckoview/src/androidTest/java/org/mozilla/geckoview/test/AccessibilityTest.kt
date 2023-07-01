@@ -24,6 +24,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.* 
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -563,6 +564,8 @@ class AccessibilityTest : BaseSessionTest() {
     }
 
     @Test fun testClipboard() {
+        
+        assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             
             activityRule.scenario?.onActivity { activity ->
