@@ -1033,15 +1033,13 @@ fn ValidatePathTypes(typesArray: &[BYTE], mut count: INT) -> bool {
         
         count -= 1;
         if (count == 0) {
-            
-            
-            return (true);
+            TraceTag!((tagMILWarning, "Path ended after start-path"));
+            return (false);
         }
 
         if ((types[1] & PathPointTypePathTypeMask) == PathPointTypeStart) {
-            
-            
-            return (true);
+            TraceTag!((tagMILWarning, "Can't have a start followed by a start!"));
+            return (false);
         }
 
         
