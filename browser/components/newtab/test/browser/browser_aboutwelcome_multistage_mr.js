@@ -610,6 +610,31 @@ add_task(async function test_aboutwelcome_embedded_migration() {
   );
 
   
+  
+  await SpecialPowers.spawn(browser, [], async () => {
+    const { MigrationWizardConstants } = ChromeUtils.importESModule(
+      "chrome://browser/content/migration/migration-wizard-constants.mjs"
+    );
+
+    let migrationWizardReady = ContentTaskUtils.waitForEvent(
+      content,
+      "MigrationWizard:Ready"
+    );
+
+    content.history.back();
+    await migrationWizardReady;
+
+    let wizard = content.document.querySelector("migration-wizard");
+    let shadow = wizard.openOrClosedShadowRoot;
+    let deck = shadow.querySelector("#wizard-deck");
+
+    Assert.equal(
+      deck.getAttribute("selected-view"),
+      `page-${MigrationWizardConstants.PAGES.SELECTION}`
+    );
+  });
+
+  
   await SpecialPowers.popPrefEnv(); 
   await SpecialPowers.popPrefEnv(); 
   await cleanup();
