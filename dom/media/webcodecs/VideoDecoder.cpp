@@ -147,8 +147,21 @@ static nsTArray<nsCString> GuessMIMETypes(const VideoDecoderConfig& aConfig) {
   return types;
 }
 
+static bool IsOnLinux() {
+#if defined(XP_LINUX) && !defined(ANDROID)
+  return true;
+#else
+  return false;
+#endif
+}
+
 
 static bool CanDecode(const VideoDecoderConfig& aConfig) {
+  
+  
+  if (!IsOnLinux()) {
+    return false;
+  }
   
   
   
