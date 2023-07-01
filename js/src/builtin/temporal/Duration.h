@@ -71,6 +71,30 @@ inline Duration ToDuration(const DurationObject* duration) {
   };
 }
 
+
+
+
+
+int32_t DurationSign(const Duration& duration);
+
+
+
+
+
+bool IsValidDuration(const Duration& duration);
+
+
+
+
+
+bool ThrowIfInvalidDuration(JSContext* cx, const Duration& duration);
+
+
+
+
+
+DurationObject* CreateTemporalDuration(JSContext* cx, const Duration& duration);
+
 } 
 
 #endif 
