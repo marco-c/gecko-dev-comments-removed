@@ -616,6 +616,16 @@ class GCPtr : public WriteBarriered<T> {
   }
 #endif
 
+  
+
+
+
+
+
+
+  GCPtr(GCPtr<T>&&) = delete;
+  GCPtr<T>& operator=(GCPtr<T>&&) = delete;
+
   void init(const T& v) {
     AssertTargetIsNotGray(v);
     this->value = v;
@@ -636,16 +646,6 @@ class GCPtr : public WriteBarriered<T> {
     this->value = v;
     this->post(tmp, this->value);
   }
-
-  
-
-
-
-
-
-
-  GCPtr(GCPtr<T>&&) = delete;
-  GCPtr<T>& operator=(GCPtr<T>&&) = delete;
 };
 
 }  

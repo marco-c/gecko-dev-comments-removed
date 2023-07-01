@@ -120,8 +120,6 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
   
   MainThreadOrGCTaskData<mozilla::TimeDuration> duration_;
 
-  explicit GCParallelTask(const GCParallelTask&) = delete;
-
  protected:
   
   mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire> cancel_;
@@ -140,6 +138,8 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
         use(other.use),
         state_(other.state_),
         cancel_(false) {}
+
+  explicit GCParallelTask(const GCParallelTask&) = delete;
 
   
   
