@@ -347,7 +347,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
 
     
     
-    for (auto phase : BackgroundFinalizePhases) {
+    for (const auto& phase : BackgroundFinalizePhases) {
       for (auto kind : phase.kinds) {
         backgroundFinalize(gcx, zone, kind, &emptyArenas);
       }
