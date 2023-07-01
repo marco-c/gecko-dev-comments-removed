@@ -7,7 +7,6 @@
 
 
 
-use crate::color::mix::ColorInterpolationMethod;
 use crate::custom_properties::SpecifiedValue;
 use crate::parser::{Parse, ParserContext};
 use crate::stylesheets::CorsMode;
@@ -34,11 +33,6 @@ use std::cmp::Ordering;
 use std::fmt::{self, Write};
 use style_traits::{CssType, CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
-
-#[inline]
-fn gradient_color_interpolation_method_enabled() -> bool {
-    static_prefs::pref!("layout.css.gradient-color-interpolation-method.enabled")
-}
 
 
 
@@ -669,7 +663,6 @@ impl Gradient {
 
                 generic::Gradient::Linear {
                     direction,
-                    color_interpolation_method: ColorInterpolationMethod::srgb(),
                     items,
                     repeating: false,
                     compat_mode: GradientCompatMode::Modern,
@@ -698,7 +691,6 @@ impl Gradient {
                 generic::Gradient::Radial {
                     shape,
                     position,
-                    color_interpolation_method: ColorInterpolationMethod::srgb(),
                     items,
                     repeating: false,
                     compat_mode: GradientCompatMode::Modern,
@@ -811,20 +803,6 @@ impl Gradient {
     }
 
     
-    fn try_parse_color_interpolation_method<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Option<ColorInterpolationMethod> {
-        if gradient_color_interpolation_method_enabled() {
-            input
-                .try_parse(|i| ColorInterpolationMethod::parse(context, i))
-                .ok()
-        } else {
-            None
-        }
-    }
-
-    
     
     fn parse_linear<'i, 't>(
         context: &ParserContext,
@@ -832,39 +810,23 @@ impl Gradient {
         repeating: bool,
         mut compat_mode: GradientCompatMode,
     ) -> Result<Self, ParseError<'i>> {
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
-
-        let direction = input
-            .try_parse(|p| LineDirection::parse(context, p, &mut compat_mode))
-            .ok();
-
-        if color_interpolation_method.is_none() && direction.is_some() {
-            color_interpolation_method = Self::try_parse_color_interpolation_method(context, input);
-        }
-
-        
-        if color_interpolation_method.is_some() || direction.is_some() {
+        let direction = if let Ok(d) =
+            input.try_parse(|i| LineDirection::parse(context, i, &mut compat_mode))
+        {
             input.expect_comma()?;
-        }
-
+            d
+        } else {
+            match compat_mode {
+                GradientCompatMode::Modern => {
+                    LineDirection::Vertical(VerticalPositionKeyword::Bottom)
+                },
+                _ => LineDirection::Vertical(VerticalPositionKeyword::Top),
+            }
+        };
         let items = Gradient::parse_stops(context, input)?;
-
-        let color_interpolation_method = color_interpolation_method.unwrap_or_else(|| {
-            
-            
-            
-            ColorInterpolationMethod::srgb()
-        });
-
-        let direction = direction.unwrap_or(match compat_mode {
-            GradientCompatMode::Modern => LineDirection::Vertical(VerticalPositionKeyword::Bottom),
-            _ => LineDirection::Vertical(VerticalPositionKeyword::Top),
-        });
 
         Ok(Gradient::Linear {
             direction,
-            color_interpolation_method,
             items,
             repeating,
             compat_mode,
@@ -878,9 +840,6 @@ impl Gradient {
         repeating: bool,
         compat_mode: GradientCompatMode,
     ) -> Result<Self, ParseError<'i>> {
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
-
         let (shape, position) = match compat_mode {
             GradientCompatMode::Modern => {
                 let shape = input.try_parse(|i| EndingShape::parse(context, i, compat_mode));
@@ -902,12 +861,7 @@ impl Gradient {
             },
         };
 
-        if shape.is_ok() || position.is_some() || color_interpolation_method.is_some() {
-            if color_interpolation_method.is_none() {
-                color_interpolation_method =
-                    Self::try_parse_color_interpolation_method(context, input);
-            }
-
+        if shape.is_ok() || position.is_some() {
             input.expect_comma()?;
         }
 
@@ -919,32 +873,19 @@ impl Gradient {
 
         let items = Gradient::parse_stops(context, input)?;
 
-        let color_interpolation_method = color_interpolation_method.unwrap_or_else(|| {
-            
-            
-            
-            ColorInterpolationMethod::srgb()
-        });
-
         Ok(Gradient::Radial {
             shape,
             position,
-            color_interpolation_method,
             items,
             repeating,
             compat_mode,
         })
     }
-
-    
     fn parse_conic<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         repeating: bool,
     ) -> Result<Self, ParseError<'i>> {
-        let mut color_interpolation_method =
-            Self::try_parse_color_interpolation_method(context, input);
-
         let angle = input.try_parse(|i| {
             i.expect_ident_matching("from")?;
             
@@ -955,20 +896,12 @@ impl Gradient {
             i.expect_ident_matching("at")?;
             Position::parse(context, i)
         });
-
         if angle.is_ok() || position.is_ok() {
-            if color_interpolation_method.is_none() {
-                color_interpolation_method =
-                    Self::try_parse_color_interpolation_method(context, input);
-            }
-
             input.expect_comma()?;
         }
 
         let angle = angle.unwrap_or(Angle::zero());
-
         let position = position.unwrap_or(Position::center());
-
         let items = generic::GradientItem::parse_comma_separated(
             context,
             input,
@@ -979,17 +912,9 @@ impl Gradient {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        let color_interpolation_method = color_interpolation_method.unwrap_or_else(|| {
-            
-            
-            
-            ColorInterpolationMethod::srgb()
-        });
-
         Ok(Gradient::Conic {
             angle,
             position,
-            color_interpolation_method,
             items,
             repeating,
         })
