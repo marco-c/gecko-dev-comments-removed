@@ -291,16 +291,6 @@ class TabBase {
 
 
 
-  get autoDiscardable() {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
   get browser() {
     throw new Error("Not implemented");
   }
@@ -558,13 +548,10 @@ class TabBase {
 
 
 
-
-
   matches(queryInfo) {
     const PROPS = [
       "active",
       "audible",
-      "autoDiscardable",
       "discarded",
       "hidden",
       "highlighted",
@@ -650,7 +637,6 @@ class TabBase {
       height: this.height,
       lastAccessed: this.lastAccessed,
       audible: this.audible,
-      autoDiscardable: this.autoDiscardable,
       mutedInfo: this.mutedInfo,
       isArticle: this.isArticle,
       isInReaderMode: this.isInReaderMode,
