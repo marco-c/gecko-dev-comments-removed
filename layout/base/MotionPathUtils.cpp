@@ -370,6 +370,26 @@ static inline bool IsClosedPath(const StyleSVGPathData& aPathData) {
 }
 
 
+
+static already_AddRefed<gfx::Path> BuildSimpleInsetPath(
+    const StyleBorderRadius& aBorderRadius, const nsRect& aCoordBox,
+    gfx::PathBuilder* aPathBuilder) {
+  if (!aPathBuilder) {
+    return nullptr;
+  }
+
+  const nsRect insetRect = ShapeUtils::ComputeInsetRect(
+      StyleRect<LengthPercentage>::WithAllSides(LengthPercentage::Zero()),
+      aCoordBox);
+  nscoord radii[8];
+  const bool hasRadii = nsIFrame::ComputeBorderRadii(
+      aBorderRadius, aCoordBox.Size(), insetRect.Size(), Sides(), radii);
+  return ShapeUtils::BuildInsetPath(insetRect, hasRadii ? radii : nullptr,
+                                    aCoordBox, AppUnitsPerCSSPixel(),
+                                    aPathBuilder);
+}
+
+
 static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const StyleOffsetPath& offsetPath = aFrame->StyleDisplay()->mOffsetPath;
   if (offsetPath.IsNone()) {
@@ -417,18 +437,16 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   nsPoint currentPosition = aFrame->GetOffsetTo(containingFrame);
   RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
-  
-  
-  
-  const StyleBasicShape& shape =
-      disp->mOffsetPath.AsOffsetPath().path->AsShape();
-  RefPtr<gfx::Path> path = MotionPathUtils::BuildPath(
-      shape, disp->mOffsetPosition, coordBox, currentPosition, builder);
-  if (!path) {
-    return OffsetPathData::None();
-  }
-
-  return OffsetPathData::Shape(path.forget(), std::move(currentPosition), true);
+  RefPtr<gfx::Path> path =
+      disp->mOffsetPath.IsCoordBox()
+          ? BuildSimpleInsetPath(containingFrame->StyleBorder()->mBorderRadius,
+                                 coordBox, builder)
+          : MotionPathUtils::BuildPath(
+                disp->mOffsetPath.AsOffsetPath().path->AsShape(),
+                disp->mOffsetPosition, coordBox, currentPosition, builder);
+  return path ? OffsetPathData::Shape(path.forget(), std::move(currentPosition),
+                                      true)
+              : OffsetPathData::None();
 }
 
 

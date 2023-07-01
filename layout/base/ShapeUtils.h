@@ -77,6 +77,8 @@ struct ShapeUtils final {
   
   
   static nsRect ComputeInsetRect(const StyleBasicShape&, const nsRect& aRefBox);
+  static nsRect ComputeInsetRect(const StyleRect<LengthPercentage>& aStyleRect,
+                                 const nsRect& aRefBox);
 
   
   
@@ -125,6 +127,20 @@ struct ShapeUtils final {
   
   
   static already_AddRefed<gfx::Path> BuildInsetPath(const StyleBasicShape&,
+                                                    const nsRect& aRefBox,
+                                                    nscoord aAppUnitsPerPixel,
+                                                    gfx::PathBuilder*);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<gfx::Path> BuildInsetPath(const nsRect& aInsetRect,
+                                                    const nscoord aRadii[8],
                                                     const nsRect& aRefBox,
                                                     nscoord aAppUnitsPerPixel,
                                                     gfx::PathBuilder*);
