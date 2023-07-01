@@ -2361,13 +2361,9 @@ static Rect TransformGfxRectToAncestor(
   }
   const nsIFrame* ancestor = aOutAncestor ? *aOutAncestor : aAncestor.mFrame;
   float factor = ancestor->PresContext()->AppUnitsPerDevPixel();
-  
-  
-  
-  const auto boundsAppUnits = Rect::MaxIntRect();
   Rect maxBounds =
-      Rect(boundsAppUnits.x / factor, boundsAppUnits.y / factor,
-           boundsAppUnits.width / factor, boundsAppUnits.height / factor);
+      Rect(float(nscoord_MIN) / factor * 0.5, float(nscoord_MIN) / factor * 0.5,
+           float(nscoord_MAX) / factor, float(nscoord_MAX) / factor);
   return ctm.TransformAndClipBounds(aRect, maxBounds);
 }
 
