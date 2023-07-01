@@ -4,6 +4,7 @@
 
 import inspect
 import re
+import sys
 import types
 from dis import Bytecode
 from functools import wraps
@@ -21,6 +22,30 @@ from . import (
     TrivialDependsFunction,
 )
 from .help import HelpFormatter
+
+
+def code_replace(code, co_filename, co_name, co_firstlineno):
+    if sys.version_info < (3, 8):
+        codetype_args = [
+            code.co_argcount,
+            code.co_kwonlyargcount,
+            code.co_nlocals,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            code.co_varnames,
+            co_filename,
+            co_name,
+            co_firstlineno,
+            code.co_lnotab,
+        ]
+        return types.CodeType(*codetype_args)
+    else:
+        return code.replace(
+            co_filename=co_filename, co_name=co_name, co_firstlineno=co_firstlineno
+        )
 
 
 class LintSandbox(ConfigureSandbox):
@@ -68,12 +93,12 @@ class LintSandbox(ConfigureSandbox):
             funcname = obj.__name__
             filename = obj.__code__.co_filename
             firstline = obj.__code__.co_firstlineno
-            line += firstline
+            line += firstline - 1
         elif inspect.isframe(obj):
             funcname = obj.f_code.co_name
             filename = obj.f_code.co_filename
             firstline = obj.f_code.co_firstlineno
-            line = obj.f_lineno
+            line = obj.f_lineno - 1
         else:
             
             
@@ -81,36 +106,14 @@ class LintSandbox(ConfigureSandbox):
 
         
         
-        
 
-        offset = line - firstline
-        
-        
-        
-        
-        
-        co_lnotab = bytes([0, 127] * (offset // 127) + [0, offset % 127])
-        code = thrower.__code__
-        codetype_args = [
-            code.co_argcount,
-            code.co_kwonlyargcount,
-            code.co_nlocals,
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts,
-            code.co_names,
-            code.co_varnames,
-            filename,
-            funcname,
-            firstline,
-            co_lnotab,
-        ]
-        if hasattr(code, "co_posonlyargcount"):
-            
-            codetype_args.insert(1, code.co_posonlyargcount)
+        code = code_replace(
+            thrower.__code__,
+            co_filename=filename,
+            co_name=funcname,
+            co_firstlineno=line,
+        )
 
-        code = types.CodeType(*codetype_args)
         thrower = types.FunctionType(
             code,
             thrower.__globals__,
