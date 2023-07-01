@@ -32,7 +32,6 @@ pref("network.protocol-handler.warn-external.vnd.youtube", false);
 
 
 pref("network.http.keep-alive.timeout", 109);
-pref("network.http.max-persistent-connections-per-server", 6);
 pref("network.http.max-persistent-connections-per-proxy", 20);
 
 
@@ -43,14 +42,12 @@ pref("network.http.http2.default-hpack-buffer", 4096);
 pref("network.http.http3.default-qpack-table-size", 0);
 
 
-pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  16384);
 
 
 pref("network.cookie.cookieBehavior.pbmode", 4);
 
 
-pref("browser.sessionhistory.max_total_viewers", -1);
 pref("browser.sessionhistory.max_entries", 50);
 pref("browser.sessionhistory.contentViewerTimeout", 360);
 
@@ -74,16 +71,10 @@ pref("browser.download.folderList", 1);
 pref("browser.download.manager.addToRecentDocs", true);
 
 
-pref("browser.helperApps.deleteTempFileOnExit", false);
-
-
 pref("signon.firefoxRelay.feature", "not available");
 
 
 pref("formhelper.autozoom", true);
-
-
-pref("browser.formfill.enable", true);
 
 
 pref("layout.spellcheckDefault", 0);
@@ -141,9 +132,7 @@ pref("accessibility.typeaheadfind", false);
 pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.flashBar", 1);
 pref("accessibility.typeaheadfind.linksonly", false);
-pref("accessibility.typeaheadfind.casesensitive", 0);
 pref("accessibility.browsewithcaret_shortcut.enabled", false);
-pref("findbar.matchdiacritics", 0);
 
 
 pref("browser.xul.error_pages.expert_bad_cert", false);
@@ -304,9 +293,6 @@ pref("full-screen-api.enabled", true);
 pref("network.tickle-wifi.enabled", true);
 
 
-pref("network.manage-offline-status", true);
-
-
 pref("browser.urlbar.trimURLs", true);
 
 
@@ -314,8 +300,6 @@ pref("browser.urlbar.trimURLs", true);
 pref("dom.phonenumber.substringmatching.BR", 8);
 pref("dom.phonenumber.substringmatching.CO", 10);
 pref("dom.phonenumber.substringmatching.VE", 7);
-
-pref("gfx.canvas.azure.backends", "skia");
 
 
 
@@ -388,7 +372,3 @@ pref("media.navigator.permission.device", true);
 
 pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 pref("extensions.systemAddon.update.enabled", true);
-
-
-pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
-pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
