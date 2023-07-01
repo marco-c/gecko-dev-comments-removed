@@ -277,8 +277,7 @@ nsresult ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   owner->DownloadProgressed();
 
   nsCOMPtr<nsIThreadRetargetableRequest> retarget;
-  if (Preferences::GetBool("media.omt_data_delivery.enabled", false) &&
-      (retarget = do_QueryInterface(aRequest))) {
+  if ((retarget = do_QueryInterface(aRequest))) {
     
     
     

@@ -199,10 +199,6 @@ pref("mathml.scale_stretchy_operators.enabled", true);
 
 
 
-pref("media.omt_data_delivery.enabled", true);
-
-
-
 
 
 
