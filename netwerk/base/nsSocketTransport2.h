@@ -307,9 +307,6 @@ class nsSocketTransport final : public nsASocketHandler,
   Atomic<bool> mInputClosed{true};
   Atomic<bool> mOutputClosed{true};
 
-  nsCOMPtr<nsISupports> mInputCopyContext;
-  nsCOMPtr<nsISupports> mOutputCopyContext;
-
   
   
   
