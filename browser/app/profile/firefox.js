@@ -2060,6 +2060,11 @@ pref("privacy.webrtc.sharedTabWarning", false);
 pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 
 
+#ifdef NIGHTLY_BUILD
+pref("privacy.fingerprintingProtection.pbmode", true);
+#endif
+
+
 pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 
