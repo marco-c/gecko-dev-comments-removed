@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Temporal.PlainYearMonth.prototype.getCalendar, "name", {
+  value: "getCalendar",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

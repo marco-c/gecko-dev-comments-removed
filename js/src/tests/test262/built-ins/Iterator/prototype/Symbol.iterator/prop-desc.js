@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const IteratorPrototype = Object.getPrototypeOf(
+  Object.getPrototypeOf([][Symbol.iterator]())
+);
+
+verifyProperty(IteratorPrototype, Symbol.iterator, {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

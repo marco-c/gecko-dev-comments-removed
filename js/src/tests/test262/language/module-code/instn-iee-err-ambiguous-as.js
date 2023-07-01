@@ -37,4 +37,6 @@
 
 
 
+$DONOTEVALUATE();
+
 export { x as y } from './instn-iee-err-ambiguous_FIXTURE.js';

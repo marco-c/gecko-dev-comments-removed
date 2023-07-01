@@ -16,7 +16,29 @@ assert.throws(TypeError, () => inst.toZonedDateTime());
 
 assert.throws(TypeError, () => inst.toZonedDateTime("UTC"));
 
-var fakeGregorian = { toString() { return "gregory"; }};
+var fakeGregorian = {
+  dateAdd() {},
+  dateFromFields() {},
+  dateUntil() {},
+  day() {},
+  dayOfWeek() {},
+  dayOfYear() {},
+  daysInMonth() {},
+  daysInWeek() {},
+  daysInYear() {},
+  fields() {},
+  id: "gregory",
+  inLeapYear() {},
+  mergeFields() {},
+  month() {},
+  monthCode() {},
+  monthDayFromFields() {},
+  monthsInYear() {},
+  weekOfYear() {},
+  year() {},
+  yearMonthFromFields() {},
+  yearOfWeek() {},
+};
 
 
 var timeZone = Temporal.TimeZone.from("UTC");

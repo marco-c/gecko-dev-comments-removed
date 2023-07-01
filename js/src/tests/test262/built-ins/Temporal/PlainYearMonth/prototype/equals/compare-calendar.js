@@ -15,9 +15,12 @@ class CustomCalendar extends Temporal.Calendar {
     super("iso8601");
     this._id = id;
   }
-  toString() {
+  get id() {
     actual.push(this._id);
     return this._id;
+  }
+  toString() {
+    TemporalHelpers.assertUnreachable("should not call toString");
   }
 }
 

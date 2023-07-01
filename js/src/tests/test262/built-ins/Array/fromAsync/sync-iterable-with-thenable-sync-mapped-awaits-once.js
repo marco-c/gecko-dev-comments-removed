@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  const expectedValue = {};
+  let awaitCounter = 0;
+  const inputThenable = {
+    then (resolve, reject) {
+      awaitCounter++;
+      resolve(expectedValue);
+    },
+  };
+  const input = [ inputThenable ].values();
+  await Array.fromAsync(input, v => v);
+  assert.sameValue(awaitCounter, 1);
+});

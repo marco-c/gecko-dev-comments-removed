@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  const expectedValue = {};
+  const expected = [ expectedValue ];
+  const inputThenable = {
+    then (resolve, reject) {
+      resolve(expectedValue);
+    },
+  };
+  const input = [ inputThenable ].values();
+  const output = await Array.fromAsync(input);
+  assert.compareArray(output, expected);
+});

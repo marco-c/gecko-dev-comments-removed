@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iterator = (function* () {})();
+
+let { value, done } = iterator.next();
+assert.sameValue(value, undefined);
+assert.sameValue(done, true);
+
+const initialValue = {};
+let result = iterator.reduce(() => {}, initialValue);
+assert.sameValue(result, initialValue);
+
+reportCompare(0, 0);

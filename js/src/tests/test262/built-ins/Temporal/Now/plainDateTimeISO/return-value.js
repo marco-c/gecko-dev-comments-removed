@@ -7,6 +7,8 @@
 
 
 const timeZone = {
+  id: 'Etc/Test',
+  getPossibleInstantsFor() { return []; },
   getOffsetNanosecondsFor(instant) {
     return -Number(instant.epochNanoseconds % 86400000000000n);
   }

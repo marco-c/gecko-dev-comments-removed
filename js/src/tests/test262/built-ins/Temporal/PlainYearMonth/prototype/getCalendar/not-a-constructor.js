@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainYearMonth.prototype.getCalendar();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainYearMonth.prototype.getCalendar), false,
+  "isConstructor(Temporal.PlainYearMonth.prototype.getCalendar)");
+
+reportCompare(0, 0);

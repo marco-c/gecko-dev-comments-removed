@@ -17,6 +17,5 @@ const timeZone = "2021-08-19T17:30:45.123456789+01:46[+01:45:30.987654321]";
 
 
 instance.until({ year: 2020, month: 5, day: 2, timeZone });
-instance.until({ year: 2020, month: 5, day: 2, timeZone: { timeZone } });
 
 reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Map.groupBy, "length", {
+  value: 2,
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

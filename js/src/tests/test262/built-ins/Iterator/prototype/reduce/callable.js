@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+Iterator.prototype.reduce.call(g(), () => {}, 0);
+
+let iter = g();
+iter.reduce(() => {}, 0);
+
+reportCompare(0, 0);

@@ -10,7 +10,6 @@
 
 
 const expected = [
-  "calendar",
   "isoHour",
   "isoMicrosecond",
   "isoMillisecond",

@@ -20,7 +20,7 @@ function test(isoString, components) {
   assert.sameValue(datetime.millisecond, ms);
   assert.sameValue(datetime.microsecond, µs);
   assert.sameValue(datetime.nanosecond, ns);
-  assert.sameValue(datetime.calendar.id, cid);
+  assert.sameValue(datetime.calendarId, cid);
 }
 function generateTest(dateTimeString, zoneString) {
   var components = [

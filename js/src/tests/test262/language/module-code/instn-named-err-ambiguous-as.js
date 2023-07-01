@@ -42,4 +42,6 @@
 
 
 
+$DONOTEVALUATE();
+
 import { x as y } from './instn-named-err-ambiguous_FIXTURE.js';

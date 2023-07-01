@@ -31,6 +31,8 @@
 
 
 
+
+
 var C = class {
   static #$() {}
   static #_() {}
@@ -42,14 +44,14 @@ var C = class {
   static #await() {}
 
   static {
-    var C = @#$
-    @#_
-    @#\u{6F}
-    @#\u2118
-    @#ZW_\u200C_NJ
-    @#ZW_\u200D_J
-    @#yield
-    @#await class {}
+    var C = @C.#$
+    @C.#_
+    @C.#\u{6F}
+    @C.#\u2118
+    @C.#ZW_\u200C_NJ
+    @C.#ZW_\u200D_J
+    @C.#yield
+    @C.#await class {}
   }
 };
 

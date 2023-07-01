@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator, 'from', {
+  value: Iterator.from,
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert((function* () {})().map(() => 0) instanceof Iterator, 'function*(){}().map(() => 0) must return an Iterator');
+
+reportCompare(0, 0);

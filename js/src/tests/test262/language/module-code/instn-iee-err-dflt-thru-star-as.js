@@ -25,4 +25,6 @@
 
 
 
+$DONOTEVALUATE();
+
 export { default as x } from './instn-iee-err-dflt-thru-star-int_FIXTURE.js';

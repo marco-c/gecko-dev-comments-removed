@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+let iter = g();
+assert.sameValue(typeof iter.some(() => {}), 'boolean');
+
+reportCompare(0, 0);

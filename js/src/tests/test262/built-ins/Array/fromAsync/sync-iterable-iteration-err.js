@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  function *generateInput () {
+    throw new Test262Error;
+  }
+  const input = generateInput();
+  const outputPromise = Array.fromAsync(input);
+  await assert.throwsAsync(Test262Error, () => outputPromise);
+});

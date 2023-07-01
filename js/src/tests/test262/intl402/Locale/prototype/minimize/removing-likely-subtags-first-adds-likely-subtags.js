@@ -27,12 +27,12 @@ var testDataMinimal = {
     "und-AT": "de-AT",
 
     
-    "aae-Latn-IT": "aae-Latn-IT",
+    "aae-Latn-IT": "aae",
     "aae-Thai-CO": "aae-Thai-CO",
 
     
     
-    "und-CW": "pap-CW",
+    "und-CW": "pap",
     "und-US": "en",
     "zh-Hant": "zh-TW",
     "zh-Hani": "zh-Hani",

@@ -14,6 +14,7 @@
 
 
 
+
 var toString = Object.prototype.toString;
 
 delete Symbol.prototype[Symbol.toStringTag];
@@ -26,7 +27,7 @@ var strIter = ''[Symbol.iterator]();
 var strIterProto = Object.getPrototypeOf(strIter);
 assert.sameValue(toString.call(strIter), '[object String Iterator]');
 delete strIterProto[Symbol.toStringTag];
-assert.sameValue(toString.call(strIter), '[object Object]');
+assert.sameValue(toString.call(strIter), '[object Iterator]');
 
 var arrIter = [][Symbol.iterator]();
 var arrIterProto = Object.getPrototypeOf(arrIter)

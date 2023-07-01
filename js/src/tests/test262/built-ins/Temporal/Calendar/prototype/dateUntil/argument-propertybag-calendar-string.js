@@ -10,6 +10,13 @@
 
 
 const instance = new Temporal.Calendar("iso8601");
+Object.defineProperty(instance, "dateFromFields", {
+  configurable: true,
+  enumerable: false,
+  get() {
+    TemporalHelpers.assertUnreachable("dateFromFields should not be looked up on receiver");
+  },
+});
 
 const calendar = "iso8601";
 

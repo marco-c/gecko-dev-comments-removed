@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+  Iterator.prototype.reduce.call({ next: 0 }, () => {}, 0);
+});
+
+reportCompare(0, 0);

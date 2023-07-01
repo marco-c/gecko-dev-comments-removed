@@ -55,7 +55,8 @@ assert.throws(RangeError, () =>
   oneNsDuration.round({
     relativeTo: zdt,
     smallestUnit: "days",
-  })
+  }),
+  "RangeError when days < 0 and sign = 1"
 );
 
 
@@ -75,7 +76,8 @@ assert.throws(RangeError, () =>
   negOneNsDuration.round({
     relativeTo: zdt,
     smallestUnit: "days",
-  })
+  }),
+  "RangeError when days > 0 and sign = -1"
 );
 
 
@@ -98,7 +100,8 @@ assert.throws(RangeError, () =>
   negOneNsDuration.round({
     relativeTo: zdt,
     smallestUnit: "days",
-  })
+  }),
+  "RangeError when nanoseconds > 0 and sign = -1"
 );
 
 reportCompare(0, 0);

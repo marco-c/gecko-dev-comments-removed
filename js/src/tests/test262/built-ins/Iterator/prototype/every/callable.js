@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+Iterator.prototype.every.call(g(), () => {});
+
+let iter = g();
+iter.every(() => {});
+
+reportCompare(0, 0);

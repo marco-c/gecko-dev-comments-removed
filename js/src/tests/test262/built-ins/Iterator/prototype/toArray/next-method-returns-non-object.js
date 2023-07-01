@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class NonObjectIterator extends Iterator {
+  next() {
+    return null;
+  }
+}
+
+let iterator = new NonObjectIterator();
+
+assert.throws(TypeError, function () {
+  iterator.toArray();
+});
+
+reportCompare(0, 0);

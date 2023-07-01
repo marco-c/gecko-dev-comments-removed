@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Now.timeZoneId(),
+  "string",
+  "Temporal.Now.timeZoneId() returns a string"
+);
+
+reportCompare(0, 0);

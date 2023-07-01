@@ -89,7 +89,27 @@ actual.splice(0);
 const expectedOpsForPlainRelativeTo = expected.concat([
   
   "get options.relativeTo.calendar",
-  "has options.relativeTo.calendar.calendar",
+  "has options.relativeTo.calendar.dateAdd",
+  "has options.relativeTo.calendar.dateFromFields",
+  "has options.relativeTo.calendar.dateUntil",
+  "has options.relativeTo.calendar.day",
+  "has options.relativeTo.calendar.dayOfWeek",
+  "has options.relativeTo.calendar.dayOfYear",
+  "has options.relativeTo.calendar.daysInMonth",
+  "has options.relativeTo.calendar.daysInWeek",
+  "has options.relativeTo.calendar.daysInYear",
+  "has options.relativeTo.calendar.fields",
+  "has options.relativeTo.calendar.id",
+  "has options.relativeTo.calendar.inLeapYear",
+  "has options.relativeTo.calendar.mergeFields",
+  "has options.relativeTo.calendar.month",
+  "has options.relativeTo.calendar.monthCode",
+  "has options.relativeTo.calendar.monthDayFromFields",
+  "has options.relativeTo.calendar.monthsInYear",
+  "has options.relativeTo.calendar.weekOfYear",
+  "has options.relativeTo.calendar.year",
+  "has options.relativeTo.calendar.yearMonthFromFields",
+  "has options.relativeTo.calendar.yearOfWeek",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
   "get options.relativeTo.day",
@@ -152,10 +172,54 @@ Temporal.Duration.compare(
 assert.compareArray(actual, expectedOpsForPlainRelativeTo, "order of operations with PlainDate relativeTo and no calendar units");
 actual.splice(0); 
 
+
+
+const expectedOpsForPlainDayBalancing = expectedOpsForPlainRelativeTo.concat(
+  [
+    
+    "get options.relativeTo.calendar.dateAdd",   
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    
+    "get options.relativeTo.calendar.dateAdd",   
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+  ]
+);
+Temporal.Duration.compare(
+  createDurationPropertyBagObserver("one", 1, 1, 1),
+  createDurationPropertyBagObserver("two", 1, 1, 1, 1),
+  createOptionsObserver(plainRelativeTo)
+);
+assert.compareArray(actual, expectedOpsForPlainDayBalancing, "order of operations with PlainDate relativeTo and calendar units");
+actual.splice(0); 
+
 const expectedOpsForZonedRelativeTo = expected.concat([
   
   "get options.relativeTo.calendar",
-  "has options.relativeTo.calendar.calendar",
+  "has options.relativeTo.calendar.dateAdd",
+  "has options.relativeTo.calendar.dateFromFields",
+  "has options.relativeTo.calendar.dateUntil",
+  "has options.relativeTo.calendar.day",
+  "has options.relativeTo.calendar.dayOfWeek",
+  "has options.relativeTo.calendar.dayOfYear",
+  "has options.relativeTo.calendar.daysInMonth",
+  "has options.relativeTo.calendar.daysInWeek",
+  "has options.relativeTo.calendar.daysInYear",
+  "has options.relativeTo.calendar.fields",
+  "has options.relativeTo.calendar.id",
+  "has options.relativeTo.calendar.inLeapYear",
+  "has options.relativeTo.calendar.mergeFields",
+  "has options.relativeTo.calendar.month",
+  "has options.relativeTo.calendar.monthCode",
+  "has options.relativeTo.calendar.monthDayFromFields",
+  "has options.relativeTo.calendar.monthsInYear",
+  "has options.relativeTo.calendar.weekOfYear",
+  "has options.relativeTo.calendar.year",
+  "has options.relativeTo.calendar.yearMonthFromFields",
+  "has options.relativeTo.calendar.yearOfWeek",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
   "get options.relativeTo.day",
@@ -194,36 +258,41 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "call options.relativeTo.year.valueOf",
   "get options.relativeTo.calendar.dateFromFields",
   "call options.relativeTo.calendar.dateFromFields",
-  "has options.relativeTo.timeZone.timeZone",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",
-  "call options.relativeTo.timeZone.getPossibleInstantsFor",
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",
-  "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",
-  "call options.relativeTo.timeZone.getPossibleInstantsFor",
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",
-  "call options.relativeTo.calendar.dateAdd",
+  "has options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "has options.relativeTo.timeZone.getPossibleInstantsFor",
+  "has options.relativeTo.timeZone.id",
   "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
 ]);
+
+const expectedOpsForCalculateOffsetShift = [
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "get options.relativeTo.calendar.dateAdd",
+  "call options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "get options.relativeTo.calendar.dateAdd",
+  "call options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+];
 
 const zonedRelativeTo = TemporalHelpers.propertyBagObserver(actual, {
   year: 2001,
@@ -247,27 +316,60 @@ Temporal.Duration.compare(
   createDurationPropertyBagObserver("two", 0, 0, 0, 6),
   createOptionsObserver(zonedRelativeTo)
 );
-assert.compareArray(actual, expectedOpsForZonedRelativeTo, "order of operations with ZonedDateTime relativeTo and no calendar units");
+assert.compareArray(
+  actual,
+  expectedOpsForZonedRelativeTo.concat(expectedOpsForCalculateOffsetShift),
+  "order of operations with ZonedDateTime relativeTo and no calendar units except days"
+);
+actual.splice(0); 
+
+
+Temporal.Duration.compare(
+  createDurationPropertyBagObserver("one", 0, 0, 0, 0, 7),
+  createDurationPropertyBagObserver("two", 0, 0, 0, 0, 6),
+  createOptionsObserver(zonedRelativeTo)
+);
+assert.compareArray(
+  actual,
+  expectedOpsForZonedRelativeTo.concat([
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  ]),
+  "order of operations with ZonedDateTime relativeTo and only time units"
+);
 actual.splice(0); 
 
 
 
-const expectedOpsForDayBalancing = expectedOpsForZonedRelativeTo.concat([
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",   
-  "call options.relativeTo.calendar.dateAdd",  
-  "call options.relativeTo.calendar.dateAdd",  
-  "call options.relativeTo.calendar.dateAdd",  
-  
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",   
-  "call options.relativeTo.calendar.dateAdd",  
-  "call options.relativeTo.calendar.dateAdd",  
-  "call options.relativeTo.calendar.dateAdd",  
-]);
+const expectedOpsForDayBalancing = expectedOpsForZonedRelativeTo.concat(
+  expectedOpsForCalculateOffsetShift,
+  [
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "get options.relativeTo.calendar.dateAdd",   
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+    "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+    "get options.relativeTo.calendar.dateAdd",   
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+    "call options.relativeTo.calendar.dateAdd",  
+  ]
+);
 Temporal.Duration.compare(
   createDurationPropertyBagObserver("one", 1, 1, 1),
   createDurationPropertyBagObserver("two", 1, 1, 1, 1),

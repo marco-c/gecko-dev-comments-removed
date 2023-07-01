@@ -8,10 +8,10 @@
 
 
 
-const instance = new Temporal.ZonedDateTime(0n, "UTC"); 
+const instance = new Temporal.ZonedDateTime(0n, "UTC");
 
 const timeZone = 'uTc';
 const result = instance.withTimeZone(timeZone);
-assert.sameValue(result.timeZone.id, 'UTC', `Time zone created from string "${timeZone}"`);
+assert.sameValue(result.timeZoneId, 'UTC', `Time zone created from string "${timeZone}"`);
 
 reportCompare(0, 0);

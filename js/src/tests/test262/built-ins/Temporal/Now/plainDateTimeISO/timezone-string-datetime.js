@@ -10,7 +10,6 @@
 
 let timeZone = "2021-08-19T17:30";
 assert.throws(RangeError, () => Temporal.Now.plainDateTimeISO(timeZone), "bare date-time string is not a time zone");
-assert.throws(RangeError, () => Temporal.Now.plainDateTimeISO({ timeZone }), "bare date-time string is not a time zone");
 
 
 
@@ -31,7 +30,6 @@ assert.throws(RangeError, () => Temporal.Now.plainDateTimeISO({ timeZone }), "ba
   "2021-08-19T1730-0700[UTC]",
 ].forEach((timeZone) => {
   Temporal.Now.plainDateTimeISO(timeZone);
-  Temporal.Now.plainDateTimeISO({ timeZone });
 });
 
 reportCompare(0, 0);

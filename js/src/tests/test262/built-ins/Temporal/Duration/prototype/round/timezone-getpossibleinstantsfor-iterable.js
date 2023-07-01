@@ -37,7 +37,6 @@ const expected = [
   "2000-01-01T00:00:00", 
   "2001-02-09T00:00:00", 
   "2001-02-10T00:00:00", 
-  "2001-02-01T00:00:00", 
 ];
 
 TemporalHelpers.checkTimeZonePossibleInstantsIterable((timeZone) => {

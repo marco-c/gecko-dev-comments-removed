@@ -1413,6 +1413,8 @@ var $MAX_ITERATIONS = 100000;
 
 
 
+const ASCII_IDENTIFIER = /^[$_a-zA-Z][$_a-zA-Z0-9]*$/u;
+
 function formatPropertyName(propertyKey, objectName = "") {
   switch (typeof propertyKey) {
     case "symbol":
@@ -1423,13 +1425,20 @@ function formatPropertyName(propertyKey, objectName = "") {
       } else {
         return `${objectName}[Symbol('${propertyKey.description}')]`
       }
-    case "number":
-      return `${objectName}[${propertyKey}]`;
+    case "string":
+      if (propertyKey !== String(Number(propertyKey))) {
+        if (ASCII_IDENTIFIER.test(propertyKey)) {
+          return objectName ? `${objectName}.${propertyKey}` : propertyKey;
+        }
+        return `${objectName}['${propertyKey.replace(/'/g, "\\'")}']`
+      }
+      
     default:
       
-      return objectName ? `${objectName}.${propertyKey}` : propertyKey;
+      return `${objectName}[${propertyKey}]`;
   }
 }
+
 const SKIP_SYMBOL = Symbol("Skip");
 
 var TemporalHelpers = {
@@ -1529,7 +1538,11 @@ var TemporalHelpers = {
     assert(expected instanceof Temporal.PlainDateTime, `${description} expected value should be a Temporal.PlainDateTime`);
     assert(actual instanceof Temporal.PlainDateTime, `${description} instanceof`);
     assert(actual.equals(expected), `${description} equals method`);
-    assert.sameValue(actual.calendar, expected.calendar, `${description} calendar same value`);
+    assert.sameValue(
+      actual.getISOFields().calendar,
+      expected.getISOFields().calendar,
+      `${description} calendar same value`
+    );
   },
 
   
@@ -1605,7 +1618,11 @@ var TemporalHelpers = {
     assert(actual instanceof Temporal.ZonedDateTime, `${description} instanceof`);
     assert(actual.equals(expected), `${description} equals method`);
     assert.sameValue(actual.timeZone, expected.timeZone, `${description} time zone same value`);
-    assert.sameValue(actual.calendar, expected.calendar, `${description} calendar same value`);
+    assert.sameValue(
+      actual.getISOFields().calendar,
+      expected.getISOFields().calendar,
+      `${description} calendar same value`
+    );
   },
 
   
@@ -2238,6 +2255,20 @@ var TemporalHelpers = {
         super("iso8601");
       }
 
+      dateFromFields(...args) {
+        return super.dateFromFields(...args).withCalendar(this);
+      }
+
+      monthDayFromFields(...args) {
+        const { isoYear, isoMonth, isoDay } = super.monthDayFromFields(...args).getISOFields();
+        return new Temporal.PlainMonthDay(isoMonth, isoDay, this, isoYear);
+      }
+
+      yearMonthFromFields(...args) {
+        const { isoYear, isoMonth, isoDay } = super.yearMonthFromFields(...args).getISOFields();
+        return new Temporal.PlainYearMonth(isoYear, isoMonth, this, isoDay);
+      }
+
       toString() {
         return "fast-path-check";
       }
@@ -2458,13 +2489,17 @@ var TemporalHelpers = {
         return "dateadd-plain-date-instance";
       }
 
+      dateFromFields(...args) {
+        return super.dateFromFields(...args).withCalendar(this);
+      }
+
       dateAdd(date, duration, options) {
         this.dateAddCallCount++;
         assert(date instanceof Temporal.PlainDate, "dateAdd() should be called with a PlainDate instance");
         if (this.dateAddCallCount === 1 && this.specificPlainDate) {
           assert.sameValue(date, this.specificPlainDate, `dateAdd() should be called first with the specific PlainDate instance ${this.specificPlainDate}`);
         }
-        return super.dateAdd(date, duration, options);
+        return super.dateAdd(date, duration, options).withCalendar(this);
       }
     }
     return new CalendarDateAddPlainDateInstance();
@@ -2844,6 +2879,34 @@ var TemporalHelpers = {
 
 
   calendarObserver(calls, objectName, methodOverrides = {}) {
+    function removeExtraHasPropertyChecks(objectName, calls) {
+      
+      
+      
+      
+      assert.sameValue(calls.pop(), `has ${objectName}.yearOfWeek`);
+      assert.sameValue(calls.pop(), `has ${objectName}.yearMonthFromFields`);
+      assert.sameValue(calls.pop(), `has ${objectName}.year`);
+      assert.sameValue(calls.pop(), `has ${objectName}.weekOfYear`);
+      assert.sameValue(calls.pop(), `has ${objectName}.monthsInYear`);
+      assert.sameValue(calls.pop(), `has ${objectName}.monthDayFromFields`);
+      assert.sameValue(calls.pop(), `has ${objectName}.monthCode`);
+      assert.sameValue(calls.pop(), `has ${objectName}.month`);
+      assert.sameValue(calls.pop(), `has ${objectName}.mergeFields`);
+      assert.sameValue(calls.pop(), `has ${objectName}.inLeapYear`);
+      assert.sameValue(calls.pop(), `has ${objectName}.id`);
+      assert.sameValue(calls.pop(), `has ${objectName}.fields`);
+      assert.sameValue(calls.pop(), `has ${objectName}.daysInYear`);
+      assert.sameValue(calls.pop(), `has ${objectName}.daysInWeek`);
+      assert.sameValue(calls.pop(), `has ${objectName}.daysInMonth`);
+      assert.sameValue(calls.pop(), `has ${objectName}.dayOfYear`);
+      assert.sameValue(calls.pop(), `has ${objectName}.dayOfWeek`);
+      assert.sameValue(calls.pop(), `has ${objectName}.day`);
+      assert.sameValue(calls.pop(), `has ${objectName}.dateUntil`);
+      assert.sameValue(calls.pop(), `has ${objectName}.dateFromFields`);
+      assert.sameValue(calls.pop(), `has ${objectName}.dateAdd`);
+    }
+
     const iso8601 = new Temporal.Calendar("iso8601");
     const trackingMethods = {
       dateFromFields(...args) {
@@ -2856,8 +2919,7 @@ var TemporalHelpers = {
         
         const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
         const result = new Temporal.PlainDate(isoYear, isoMonth, isoDay, this);
-        
-        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        removeExtraHasPropertyChecks(objectName, calls);
         return result;
       },
       yearMonthFromFields(...args) {
@@ -2870,8 +2932,7 @@ var TemporalHelpers = {
         
         const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
         const result = new Temporal.PlainYearMonth(isoYear, isoMonth, this, isoDay);
-        
-        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        removeExtraHasPropertyChecks(objectName, calls);
         return result;
       },
       monthDayFromFields(...args) {
@@ -2884,8 +2945,7 @@ var TemporalHelpers = {
         
         const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
         const result = new Temporal.PlainMonthDay(isoMonth, isoDay, this, isoYear);
-        
-        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        removeExtraHasPropertyChecks(objectName, calls);
         return result;
       },
       dateAdd(...args) {
@@ -2897,13 +2957,33 @@ var TemporalHelpers = {
         const originalResult = iso8601.dateAdd(...args);
         const {isoYear, isoMonth, isoDay} = originalResult.getISOFields();
         const result = new Temporal.PlainDate(isoYear, isoMonth, isoDay, this);
-        
-        assert.sameValue(calls.pop(), `has ${objectName}.calendar`);
+        removeExtraHasPropertyChecks(objectName, calls);
         return result;
-      }
+      },
+      id: "iso8601",
     };
     
-    ["toString", "dateUntil", "era", "eraYear", "year", "month", "monthCode", "day", "daysInMonth", "fields", "mergeFields"].forEach((methodName) => {
+    [
+      "dateUntil",
+      "day",
+      "dayOfWeek",
+      "dayOfYear",
+      "daysInMonth",
+      "daysInWeek",
+      "daysInYear",
+      "era",
+      "eraYear",
+      "fields",
+      "inLeapYear",
+      "mergeFields",
+      "month",
+      "monthCode",
+      "monthsInYear",
+      "toString",
+      "weekOfYear",
+      "year",
+      "yearOfWeek",
+    ].forEach((methodName) => {
       trackingMethods[methodName] = function (...args) {
         calls.push(`call ${formatPropertyName(methodName, objectName)}`);
         if (methodName in methodOverrides) {
@@ -3177,6 +3257,10 @@ var TemporalHelpers = {
         return null;
       }
 
+      get id() {
+        return "Custom/Spring_Fall";
+      }
+
       toString() {
         return "Custom/Spring_Fall";
       }
@@ -3197,7 +3281,9 @@ var TemporalHelpers = {
 
   timeZoneObserver(calls, objectName, methodOverrides = {}) {
     const utc = new Temporal.TimeZone("UTC");
-    const trackingMethods = {};
+    const trackingMethods = {
+      id: "UTC",
+    };
     
     ["getOffsetNanosecondsFor", "getPossibleInstantsFor", "toString"].forEach((methodName) => {
       trackingMethods[methodName] = function (...args) {

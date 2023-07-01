@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ThrowingIterator {
+  get next() {
+    throw new Test262Error();
+  }
+}
+
+let iterator = new ThrowingIterator();
+
+assert.throws(Test262Error, function () {
+  Iterator.from(iterator);
+});
+
+reportCompare(0, 0);

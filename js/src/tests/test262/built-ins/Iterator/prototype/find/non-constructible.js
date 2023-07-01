@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+let iter = g();
+
+assert.throws(TypeError, () => {
+  new iter.find();
+});
+
+assert.throws(TypeError, () => {
+  new iter.find(() => {});
+});
+
+assert.throws(TypeError, () => {
+  new Iterator.prototype.find(() => {});
+});
+
+assert.throws(TypeError, () => {
+  new class extends Iterator {}.find(() => {});
+});
+
+reportCompare(0, 0);

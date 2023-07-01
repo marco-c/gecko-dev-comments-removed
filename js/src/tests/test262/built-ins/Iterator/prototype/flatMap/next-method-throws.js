@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ThrowingIterator extends Iterator {
+  next() {
+    throw new Test262Error();
+  }
+}
+
+let iterator = new ThrowingIterator().flatMap(x => [x]);
+
+assert.throws(Test262Error, function () {
+  iterator.next();
+});
+
+reportCompare(0, 0);

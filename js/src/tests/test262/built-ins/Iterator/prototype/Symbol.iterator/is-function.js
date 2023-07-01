@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+const IteratorPrototype = Object.getPrototypeOf(
+  Object.getPrototypeOf([][Symbol.iterator]())
+);
+
+assert.sameValue(typeof IteratorPrototype[Symbol.iterator], 'function');
+
+reportCompare(0, 0);

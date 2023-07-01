@@ -15,12 +15,11 @@
 
 const plainDate = new Temporal.PlainDate(2000, 5, 2);
 const plainDateTime = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321);
-const plainTime = new Temporal.PlainTime(12, 34, 56, 987, 654, 321);
 const plainMonthDay = new Temporal.PlainMonthDay(5, 2);
 const plainYearMonth = new Temporal.PlainYearMonth(2000, 5);
 const zonedDateTime = new Temporal.ZonedDateTime(1_000_000_000_000_000_000n, "UTC");
 
-[plainDate, plainDateTime, plainTime, plainMonthDay, plainYearMonth, zonedDateTime].forEach((arg) => {
+[plainDate, plainDateTime, plainMonthDay, plainYearMonth, zonedDateTime].forEach((arg) => {
   const actual = [];
   const expected = [];
 
@@ -34,7 +33,7 @@ const zonedDateTime = new Temporal.ZonedDateTime(1_000_000_000_000_000_000n, "UT
   });
 
   const result = Temporal.Calendar.from(arg);
-  assert.sameValue(result, calendar, "Temporal object coerced to calendar");
+  assert.sameValue(result.id, calendar, "Temporal object coerced to calendar");
 
   assert.compareArray(actual, expected, "calendar getter not called");
 });

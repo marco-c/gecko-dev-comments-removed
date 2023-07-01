@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Iterator.prototype.reduce), Function.prototype);
+
+reportCompare(0, 0);

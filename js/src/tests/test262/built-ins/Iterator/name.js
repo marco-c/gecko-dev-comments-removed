@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator, 'name', {
+  value: 'Iterator',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

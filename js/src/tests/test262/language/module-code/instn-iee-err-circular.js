@@ -26,4 +26,6 @@
 
 
 
+$DONOTEVALUATE();
+
 export { x } from './instn-iee-err-circular_FIXTURE.js';

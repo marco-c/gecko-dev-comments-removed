@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+
+Iterator.from(g());
+Iterator.from.call(null, g());
+
+reportCompare(0, 0);

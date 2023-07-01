@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let nonCallable = {};
+let iterator = (function* () {
+  yield 1;
+})();
+
+assert.throws(TypeError, function () {
+  iterator.find(nonCallable);
+});
+
+reportCompare(0, 0);

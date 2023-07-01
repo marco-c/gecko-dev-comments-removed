@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+function* g() {}
+let iter = g();
+assert.sameValue(
+  iter.forEach(() => {}),
+  undefined
+);
+assert.sameValue(
+  iter.forEach(() => 0),
+  undefined
+);
+
+reportCompare(0, 0);

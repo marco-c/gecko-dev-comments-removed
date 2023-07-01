@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iter = Iterator.prototype.flatMap.call({ next: 0 }, () => []);
+
+assert.throws(TypeError, function () {
+  iter.next();
+});
+
+reportCompare(0, 0);

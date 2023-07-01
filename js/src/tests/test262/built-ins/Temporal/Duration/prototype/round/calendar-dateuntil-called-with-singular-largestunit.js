@@ -85,7 +85,6 @@
 
 
 
-
 const durations = [
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
   [0, 1, 0, 0, 0, 0, 0, 0, 0, 86399_999_999_999],
@@ -106,7 +105,7 @@ TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
     duration.round({ largestUnit, roundingIncrement: 2, roundingMode: 'ceil', relativeTo });
   },
   {
-    years: ["year", "day", "month", "day"],
+    years: ["year", "day", "day", "month"],
     months: ["month", "day", "day"],
     weeks: ["week", "day", "day"],
     days: ["day", "day", "day"],

@@ -8,12 +8,36 @@
 
 
 
+
 let calls;
 const customCalendar = {
-  toString() {
+  get id() {
     ++calls;
     return "custom";
-  }
+  },
+  toString() {
+    TemporalHelpers.assertUnreachable('toString should not be called');
+  },
+  dateAdd() {},
+  dateFromFields() {},
+  dateUntil() {},
+  day() {},
+  dayOfWeek() {},
+  dayOfYear() {},
+  daysInMonth() {},
+  daysInWeek() {},
+  daysInYear() {},
+  fields() {},
+  inLeapYear() {},
+  mergeFields() {},
+  month() {},
+  monthCode() {},
+  monthDayFromFields() {},
+  monthsInYear() {},
+  weekOfYear() {},
+  year() {},
+  yearMonthFromFields() {},
+  yearOfWeek() {},
 };
 const date = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321, customCalendar);
 [
@@ -25,8 +49,8 @@ const date = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 654, 321, c
 ].forEach(([calendarName, expectedResult, expectedCalls]) => {
   calls = 0;
   const result = date.toString({ calendarName });
-  assert.sameValue(result, expectedResult, `toString output for calendarName = ${calendarName}`);
-  assert.sameValue(calls, expectedCalls, `calls to toString for calendarName = ${calendarName}`);
+  assert.sameValue(result, expectedResult, `id for calendarName = ${calendarName}`);
+  assert.sameValue(calls, expectedCalls, `calls to id getter for calendarName = ${calendarName}`);
 });
 
 reportCompare(0, 0);

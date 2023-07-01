@@ -33,29 +33,4 @@ assert.sameValue(date.toLocaleString("en-US", { hour: "numeric" }), "11/18/1976"
 assert.sameValue(date.toLocaleString("en-US", { minute: "numeric" }), "11/18/1976");
 assert.sameValue(date.toLocaleString("en-US", { second: "numeric" }), "11/18/1976");
 
-
-var d = Temporal.PlainDate.from({
-  era: "showa",
-  eraYear: 51,
-  month: 11,
-  day: 18,
-  calendar: "japanese"
-});
-var result = d.toLocaleString("en-US-u-ca-japanese");
-assert(result === "11/18/51" || result === "11/18/51 S");
-
-
-var d = Temporal.PlainDate.from("1976-11-18");
-var result = d.toLocaleString("en-US-u-ca-japanese");
-assert(result === "11/18/51" || result === "11/18/51 S");
-
-
-var d = Temporal.PlainDate.from({
-  year: 1976,
-  month: 11,
-  day: 18,
-  calendar: "gregory"
-});
-assert.throws(RangeError, () => d.toLocaleString("en-US-u-ca-japanese"));
-
 reportCompare(0, 0);

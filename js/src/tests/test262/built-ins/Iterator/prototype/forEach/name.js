@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype.forEach, 'name', {
+  value: 'forEach',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype.flatMap, 'name', {
+  value: 'flatMap',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

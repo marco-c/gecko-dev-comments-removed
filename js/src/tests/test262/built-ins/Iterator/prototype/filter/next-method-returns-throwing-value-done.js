@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ThrowingIterator extends Iterator {
+  next() {
+    return {
+      done: true,
+      get value() {
+        throw new Test262Error();
+      },
+    };
+  }
+  return() {
+    throw new Error();
+  }
+}
+
+let iterator = new ThrowingIterator().filter(() => true);
+iterator.next();
+
+reportCompare(0, 0);

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator.prototype, Symbol.toStringTag, {
+  value: 'Iterator',
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

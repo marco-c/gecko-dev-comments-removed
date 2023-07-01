@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iterator = (function* () {})();
+
+assert.throws(Test262Error, () => {
+  iterator.take({
+    valueOf: function () {
+      throw new Test262Error();
+    },
+  });
+});
+
+reportCompare(0, 0);

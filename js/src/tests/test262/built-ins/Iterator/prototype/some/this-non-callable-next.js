@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+  Iterator.prototype.some.call({ next: 0 }, () => true);
+});
+
+reportCompare(0, 0);

@@ -19,6 +19,7 @@
   );
 
   const badTimeZone = {
+    id: "Etc/Bad",
     getPossibleInstantsFor() { return []; },
     getOffsetNanosecondsFor: notCallable,
   };

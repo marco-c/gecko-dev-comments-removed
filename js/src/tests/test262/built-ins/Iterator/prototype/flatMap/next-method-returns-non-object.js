@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+class NonObjectIterator extends Iterator {
+  next() {
+    return null;
+  }
+}
+
+let iterator = new NonObjectIterator().flatMap(x => [x]);
+
+assert.throws(TypeError, function () {
+  iterator.next();
+});
+
+reportCompare(0, 0);

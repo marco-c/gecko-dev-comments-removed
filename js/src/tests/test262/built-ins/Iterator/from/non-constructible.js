@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+
+assert.throws(TypeError, () => {
+  new Iterator.from();
+});
+
+assert.throws(TypeError, () => {
+  new Iterator.from(g());
+});
+
+assert.throws(TypeError, () => {
+  new class extends Iterator {}.from(g());
+});
+
+reportCompare(0, 0);

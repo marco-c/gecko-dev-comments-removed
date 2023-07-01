@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Iterator, 'prototype', {
+  value: Iterator.prototype,
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

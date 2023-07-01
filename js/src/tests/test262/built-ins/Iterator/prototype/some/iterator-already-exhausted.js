@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iterator = (function* () {})();
+
+let { value, done } = iterator.next();
+assert.sameValue(value, undefined);
+assert.sameValue(done, true);
+
+let result = iterator.some(() => true);
+assert.sameValue(result, false);
+
+result = iterator.some(() => false);
+assert.sameValue(result, false);
+
+reportCompare(0, 0);

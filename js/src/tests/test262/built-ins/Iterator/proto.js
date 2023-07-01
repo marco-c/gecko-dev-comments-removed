@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Iterator),
+  Function.prototype,
+  'Object.getPrototypeOf(Iterator) must return the value of Function.prototype'
+);
+
+reportCompare(0, 0);

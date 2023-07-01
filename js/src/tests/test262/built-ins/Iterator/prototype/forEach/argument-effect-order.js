@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let effects = [];
+
+assert.throws(TypeError, function () {
+  Iterator.prototype.forEach.call(
+    {
+      get next() {
+        effects.push('get next');
+        return function () {
+          return { done: true, value: undefined };
+        };
+      },
+    },
+    null
+  );
+});
+
+assert.compareArray(effects, []);
+
+reportCompare(0, 0);

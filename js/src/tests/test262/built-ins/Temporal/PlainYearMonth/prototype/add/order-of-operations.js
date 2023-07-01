@@ -52,12 +52,12 @@ const expected = [
   
   "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
+  "get this.calendar.dateAdd",
   
   "ownKeys options",
   "getOwnPropertyDescriptor options.overflow",
   "get options.overflow",
   
-  "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
   
   "get options.overflow",
