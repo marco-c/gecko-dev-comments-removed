@@ -88,7 +88,8 @@ static void SetupCapitalization(const char16_t* aWord, uint32_t aLength,
         break;
       case GeneralCategory::Other_Punctuation:
         
-        if (ch != '\'') {
+
+        if (ch != '\'' && ch != 0x00B7) {
           capitalizeNextChar = true;
         }
         break;
