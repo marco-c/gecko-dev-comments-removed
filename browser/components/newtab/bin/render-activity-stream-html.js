@@ -6,11 +6,15 @@
 const fs = require("fs");
 const { mkdir } = require("shelljs");
 const path = require("path");
-
-
+const meow = require("meow");
+const chalk = require("chalk");
 
 const DEFAULT_OPTIONS = {
+  
+  
+  
   addonPath: "..",
+  
   baseUrl: "resource://activity-stream/",
 };
 
@@ -101,7 +105,7 @@ function templateHTML(options) {
 function writeFiles(destPath, filesMap, options) {
   for (const [file, templater] of filesMap) {
     fs.writeFileSync(path.join(destPath, file), templater({ options }));
-    console.log("\x1b[32m", `✓ ${file}`, "\x1b[0m");
+    console.log(chalk.green(`✓ ${file}`));
   }
 }
 
@@ -123,18 +127,44 @@ const STATIC_FILES = new Map([
 
 
 function main() {
-  
-  
-  
-  
-  const args = require("minimist")(process.argv.slice(2), {
-    alias: {
-      addonPath: "a",
-      baseUrl: "b",
-    },
-  });
+  const cli = meow(
+    `
+    Usage
+      $ node ./bin/render-activity-stream-html.js [options]
 
-  const options = Object.assign({ debug: false }, DEFAULT_OPTIONS, args || {});
+    Options
+      -a PATH, --addon-path PATH   Path to the parent of the target directory.
+                                   default: "${DEFAULT_OPTIONS.addonPath}"
+      -b URL, --base-url URL       Base URL for assets.
+                                   default: "${DEFAULT_OPTIONS.baseUrl}"
+      --help                       Show this help message.
+`,
+    {
+      description: false,
+      
+      
+      
+      
+      pkg: {
+        name: "render-activity-stream-html",
+        version: "0.0.0",
+      },
+      flags: {
+        addonPath: {
+          type: "string",
+          alias: "a",
+          default: DEFAULT_OPTIONS.addonPath,
+        },
+        baseUrl: {
+          type: "string",
+          alias: "b",
+          default: DEFAULT_OPTIONS.baseUrl,
+        },
+      },
+    }
+  );
+
+  const options = Object.assign({ debug: false }, cli.flags || {});
   const addonPath = path.resolve(__dirname, options.addonPath);
   const prerenderedPath = path.join(addonPath, "prerendered");
   console.log(`Writing prerendered files to ${prerenderedPath}:`);
