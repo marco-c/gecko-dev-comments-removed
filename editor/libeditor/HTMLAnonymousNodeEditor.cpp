@@ -60,14 +60,10 @@ static int32_t GetCSSFloatValue(nsComputedDOMStyle* aComputedStyle,
 
   
   nsAutoCString value;
-  nsresult rv = aComputedStyle->GetPropertyValue(aProperty, value);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("nsComputedDOMStyle::GetPropertyValue() failed");
-    return 0;
-  }
-
+  aComputedStyle->GetPropertyValue(aProperty, value);
   
   
+  nsresult rv = NS_OK;
   int32_t val = value.ToInteger(&rv);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsAString::ToInteger() failed");
   return NS_SUCCEEDED(rv) ? val : 0;
