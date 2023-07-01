@@ -6593,22 +6593,25 @@ void MacroAssembler::touchFrameValues(Register numStackValues,
                 "Frame increment is too large");
 
   moveStackPtrTo(scratch2);
+
   mov(numStackValues, scratch1);
   lshiftPtr(Imm32(3), scratch1);
-  subPtr(scratch1, scratch2);
   {
-    moveStackPtrTo(scratch1);
-    subPtr(Imm32(FRAME_TOUCH_INCREMENT), scratch1);
-
+    
+    
+    
     Label touchFrameLoop;
     Label touchFrameLoopEnd;
     bind(&touchFrameLoop);
-    branchPtr(Assembler::Below, scratch1, scratch2, &touchFrameLoopEnd);
-    store32(Imm32(0), Address(scratch1, 0));
-    subPtr(Imm32(FRAME_TOUCH_INCREMENT), scratch1);
+    branchSub32(Assembler::Signed, Imm32(FRAME_TOUCH_INCREMENT), scratch1,
+                &touchFrameLoopEnd);
+    subFromStackPtr(Imm32(FRAME_TOUCH_INCREMENT));
+    store32(Imm32(0), Address(getStackPointer(), 0));
     jump(&touchFrameLoop);
     bind(&touchFrameLoopEnd);
   }
+
+  moveToStackPtr(scratch2);
 }
 
 namespace js {
