@@ -32,8 +32,7 @@ class nsIEventTarget;
 class nsISerialEventTarget;
 class nsIThread;
 
-namespace mozilla {
-namespace storage {
+namespace mozilla::storage {
 
 class Connection final : public mozIStorageConnection,
                          public nsIInterfaceRequestor {
@@ -85,7 +84,8 @@ class Connection final : public mozIStorageConnection,
 
   Connection(Service* aService, int aFlags,
              ConnectionOperation aSupportedOperations,
-             bool aInterruptible = false, bool aIgnoreLockingMode = false);
+             const nsCString& aTelemetryFilename, bool aInterruptible = false,
+             bool aIgnoreLockingMode = false);
 
   
 
@@ -108,8 +108,7 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  nsresult initialize(nsIFileURL* aFileURL,
-                      const nsACString& aTelemetryFilename);
+  nsresult initialize(nsIFileURL* aFileURL);
 
   
 
@@ -186,7 +185,7 @@ class Connection final : public mozIStorageConnection,
   
 
 
-  nsresult internalClose(sqlite3* aDBConn);
+  nsresult internalClose(sqlite3* aNativeconnection);
 
   
 
@@ -547,7 +546,6 @@ class CallbackComplete final : public Runnable {
   RefPtr<mozIStorageCompletionCallback> mCallback;
 };
 
-}  
 }  
 
 
