@@ -23,19 +23,59 @@ mod ascii;
 mod data_type;
 
 
-#[derive(Debug, Clone, MallocSizeOf)]
-pub struct Descriptor {
-    components: Box<[Component]>,
-    css: String,
-}
+#[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
+pub struct Descriptor(#[ignore_malloc_size_of = "arc"] crate::ArcSlice<Component>);
 
 impl Descriptor {
     
-    fn universal(css: &str) -> Self {
-        Self {
-            components: Default::default(),
-            css: String::from(css),
+    pub fn is_universal(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    
+    
+    pub fn from_str(css: &str) -> Result<Self, ParseError> {
+        
+        let input = ascii::trim_ascii_whitespace(css);
+
+        
+        if input.is_empty() {
+            return Err(ParseError::EmptyInput);
         }
+
+        
+        
+        if input.len() == 1 && input.as_bytes()[0] == b'*' {
+            return Ok(Self::default());
+        }
+
+        
+        
+        
+        
+        
+        
+        let mut components = vec![];
+        {
+            let mut parser = Parser::new(input, &mut components);
+            
+            parser.parse()?;
+        }
+        Ok(Self(crate::ArcSlice::from_iter(components.into_iter())))
+    }
+}
+
+
+#[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
+pub struct ParsedDescriptor {
+    descriptor: Descriptor,
+    css: String
+}
+
+impl ParsedDescriptor {
+    
+    pub fn descriptor(&self) -> &Descriptor {
+        &self.descriptor
     }
 
     
@@ -44,13 +84,7 @@ impl Descriptor {
     }
 }
 
-impl PartialEq for Descriptor {
-    fn eq(&self, other: &Self) -> bool {
-        self.components == other.components
-    }
-}
-
-impl Parse for Descriptor {
+impl Parse for ParsedDescriptor {
     
     fn parse<'i, 't>(
         _context: &ParserContext,
@@ -58,14 +92,17 @@ impl Parse for Descriptor {
     ) -> Result<Self, StyleParseError<'i>> {
         
         let input = parser.expect_string()?;
-        match parse_descriptor(input) {
-            Ok(syntax) => Ok(syntax),
+        match Descriptor::from_str(input.as_ref()) {
+            Ok(descriptor) => Ok(Self {
+                descriptor,
+                css: input.as_ref().to_owned(),
+            }),
             Err(err) => Err(parser.new_custom_error(StyleParseErrorKind::PropertySyntaxField(err))),
         }
     }
 }
 
-impl ToCss for Descriptor {
+impl ToCss for ParsedDescriptor {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -140,41 +177,6 @@ impl ComponentName {
     fn is_pre_multiplied(&self) -> bool {
         self.unpremultiply().is_some()
     }
-}
-
-
-#[inline]
-fn parse_descriptor(css: &str) -> Result<Descriptor, ParseError> {
-    
-    let input = ascii::trim_ascii_whitespace(css);
-
-    
-    if input.is_empty() {
-        return Err(ParseError::EmptyInput);
-    }
-
-    
-    
-    if input.len() == 1 && input.as_bytes()[0] == b'*' {
-        return Ok(Descriptor::universal(css));
-    }
-
-    
-    
-    
-    
-    
-    
-    let mut components = vec![];
-    {
-        let mut parser = Parser::new(input, &mut components);
-        
-        parser.parse()?;
-    }
-    Ok(Descriptor {
-        components: components.into_boxed_slice(),
-        css: String::from(css),
-    })
 }
 
 struct Parser<'a> {

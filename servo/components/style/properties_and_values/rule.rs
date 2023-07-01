@@ -9,10 +9,11 @@
 use crate::custom_properties::{Name as CustomPropertyName, SpecifiedValue};
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
-use crate::properties_and_values::syntax::Descriptor as SyntaxDescriptor;
+use crate::properties_and_values::syntax::{Descriptor, ParsedDescriptor};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::str::CssStringWriter;
 use crate::values::serialize_atom_name;
+use super::registry::PropertyRegistration;
 use cssparser::{
     AtRuleParser, CowRcStr, DeclarationParser, ParseErrorKind, Parser, QualifiedRuleParser,
     RuleBodyItemParser, RuleBodyParser, SourceLocation,
@@ -165,13 +166,23 @@ macro_rules! property_descriptors {
 #[cfg(feature = "gecko")]
 property_descriptors! {
     /// <https://drafts.css-houdini.org/css-properties-values-api-1/#the-syntax-descriptor>
-    "syntax" syntax: SyntaxDescriptor,
+    "syntax" syntax: ParsedDescriptor,
 
     /// <https://drafts.css-houdini.org/css-properties-values-api-1/#inherits-descriptor>
     "inherits" inherits: Inherits,
 
     /// <https://drafts.css-houdini.org/css-properties-values-api-1/#initial-value-descriptor>
     "initial-value" initial_value: InitialValue,
+}
+
+
+#[allow(missing_docs)]
+pub enum ToRegistrationError {
+    MissingSyntax,
+    MissingInherits,
+    NoInitialValue,
+    InvalidInitialValue,
+    InitialValueNotComputationallyIndependent,
 }
 
 impl PropertyRuleData {
@@ -186,6 +197,65 @@ impl PropertyRuleData {
             } else {
                 0
             }
+    }
+
+    
+    pub fn validate_syntax(syntax: &Descriptor, initial_value: Option<&InitialValue>) -> Result<(), ToRegistrationError> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if !syntax.is_universal() {
+            if initial_value.is_none() {
+                return Err(ToRegistrationError::NoInitialValue);
+            }
+            
+            
+            
+        }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn to_valid_registration(&self) -> Result<PropertyRegistration, ToRegistrationError> {
+        use self::ToRegistrationError::*;
+
+        
+        
+        
+        
+        let Some(ref syntax) = self.syntax else { return Err(MissingSyntax) };
+
+        
+        
+        
+        
+        let Some(ref inherits) = self.inherits else { return Err(MissingInherits) };
+
+        Self::validate_syntax(syntax.descriptor(), self.initial_value.as_ref())?;
+
+        Ok(PropertyRegistration {
+            syntax: syntax.descriptor().clone(),
+            inherits: *inherits == Inherits::True,
+            initial_value: self.initial_value.clone(),
+        })
     }
 }
 
@@ -210,7 +280,7 @@ impl ToShmem for PropertyRuleData {
 
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PropertyRuleName(pub Arc<CustomPropertyName>);
+pub struct PropertyRuleName(pub CustomPropertyName);
 
 impl ToCss for PropertyRuleName {
     fn to_css<W: Write>(&self, dest: &mut CssWriter<W>) -> fmt::Result {

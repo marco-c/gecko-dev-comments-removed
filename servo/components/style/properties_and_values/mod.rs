@@ -7,4 +7,5 @@
 
 
 pub mod rule;
+pub mod registry;
 pub mod syntax;
