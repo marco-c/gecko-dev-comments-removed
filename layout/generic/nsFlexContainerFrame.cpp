@@ -395,22 +395,17 @@ class nsFlexContainerFrame::FlexItem final {
   nscoord ResolvedAscent(bool aUseFirstBaseline) const {
     
     
-    
-    
-    
-    
-    
-    if (mAscent != ReflowOutput::ASK_FOR_BASELINE) {
-      return mAscent;
+    nscoord& ascent = aUseFirstBaseline ? mAscent : mAscentForLast;
+    if (ascent != ReflowOutput::ASK_FOR_BASELINE) {
+      return ascent;
     }
 
     
-    bool found =
-        aUseFirstBaseline
-            ? nsLayoutUtils::GetFirstLineBaseline(mWM, mFrame, &mAscent)
-            : nsLayoutUtils::GetLastLineBaseline(mWM, mFrame, &mAscent);
+    bool found = aUseFirstBaseline
+                     ? nsLayoutUtils::GetFirstLineBaseline(mWM, mFrame, &ascent)
+                     : nsLayoutUtils::GetLastLineBaseline(mWM, mFrame, &ascent);
     if (found) {
-      return mAscent;
+      return ascent;
     }
 
     
@@ -420,16 +415,16 @@ class nsFlexContainerFrame::FlexItem final {
             mWM, baselineGroup, BaselineExportContext::Other)) {
       
       
-      mAscent = baselineGroup == BaselineSharingGroup::First
-                    ? *baseline
-                    : mFrame->BSize(mWM) - *baseline;
-      return mAscent;
+      ascent = baselineGroup == BaselineSharingGroup::First
+                   ? *baseline
+                   : mFrame->BSize(mWM) - *baseline;
+      return ascent;
     }
 
     
-    mAscent = Baseline::SynthesizeBOffsetFromBorderBox(
+    ascent = Baseline::SynthesizeBOffsetFromBorderBox(
         mFrame, mWM, BaselineSharingGroup::First);
-    return mAscent;
+    return ascent;
   }
 
   
@@ -875,7 +870,11 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
+  
+  
+  
   mutable nscoord mAscent = ReflowOutput::ASK_FOR_BASELINE;
+  mutable nscoord mAscentForLast = ReflowOutput::ASK_FOR_BASELINE;
 
   
   
@@ -951,6 +950,15 @@ class nsFlexContainerFrame::FlexLine final {
 
   FlexItem& LastItem() { return mItems.LastElement(); }
   const FlexItem& LastItem() const { return mItems.LastElement(); }
+
+  
+  
+  const FlexItem& StartmostItem(const FlexboxAxisTracker& aAxisTracker) const {
+    return aAxisTracker.IsMainAxisReversed() ? LastItem() : FirstItem();
+  }
+  const FlexItem& EndmostItem(const FlexboxAxisTracker& aAxisTracker) const {
+    return aAxisTracker.IsMainAxisReversed() ? FirstItem() : LastItem();
+  }
 
   bool IsEmpty() const { return mItems.IsEmpty(); }
 
@@ -1069,6 +1077,17 @@ class nsFlexContainerFrame::FlexLine final {
   
   const nscoord mMainGapSize;
 };
+
+
+
+const FlexLine& StartmostLine(const nsTArray<FlexLine>& aLines,
+                              const FlexboxAxisTracker& aAxisTracker) {
+  return aAxisTracker.IsCrossAxisReversed() ? aLines.LastElement() : aLines[0];
+}
+const FlexLine& EndmostLine(const nsTArray<FlexLine>& aLines,
+                            const FlexboxAxisTracker& aAxisTracker) {
+  return aAxisTracker.IsCrossAxisReversed() ? aLines[0] : aLines.LastElement();
+}
 
 
 
@@ -5113,15 +5132,21 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
   
   
   
-  if (nscoord firstLineBaselineOffset = flr.mLines[0].FirstBaselineOffset();
-      firstLineBaselineOffset == nscoord_MIN) {
+  
+  
+  
+  
+  
+  const FlexLine* lineForFirstBaseline = nullptr;
+  const FlexLine* lineForLastBaseline = nullptr;
+  if (aAxisTracker.IsRowOriented()) {
+    lineForFirstBaseline = &StartmostLine(flr.mLines, aAxisTracker);
+    lineForLastBaseline = &EndmostLine(flr.mLines, aAxisTracker);
+  } else {
     
     
     flr.mAscent = nscoord_MIN;
-  } else {
-    flr.mAscent = ComputePhysicalAscentFromFlexRelativeAscent(
-        crossAxisPosnTracker.Position() + firstLineBaselineOffset,
-        flr.mContentBoxCrossSize, aReflowInput, aAxisTracker);
+    flr.mAscentForLast = nscoord_MIN;
   }
 
   const auto justifyContent =
@@ -5148,6 +5173,52 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
     
     line.PositionItemsInCrossAxis(crossAxisPosnTracker.Position(),
                                   aAxisTracker);
+
+    
+    
+    if (lineForFirstBaseline && lineForFirstBaseline == &line) {
+      const nscoord firstBaselineOffset =
+          lineForFirstBaseline->FirstBaselineOffset();
+      if (firstBaselineOffset == nscoord_MIN) {
+        
+        
+        flr.mAscent = nscoord_MIN;
+      } else {
+        
+        
+        
+        MOZ_ASSERT(aAxisTracker.IsRowOriented(),
+                   "This makes sense only if we are row-oriented!");
+        flr.mAscent = ComputePhysicalAscentFromFlexRelativeAscent(
+            crossAxisPosnTracker.Position() + firstBaselineOffset,
+            flr.mContentBoxCrossSize, aReflowInput, aAxisTracker);
+      }
+    }
+
+    if (lineForLastBaseline && lineForLastBaseline == &line) {
+      const nscoord lastBaselineOffset =
+          lineForLastBaseline->LastBaselineOffset();
+      if (lastBaselineOffset == nscoord_MIN) {
+        
+        
+        
+        flr.mAscentForLast = nscoord_MIN;
+      } else {
+        
+        
+        
+        MOZ_ASSERT(aAxisTracker.IsRowOriented(),
+                   "This makes sense only if we are row-oriented!");
+        flr.mAscentForLast =
+            PhysicalCoordFromFlexRelativeCoord(
+                crossAxisPosnTracker.Position() + line.LineCrossSize() -
+                    lastBaselineOffset,
+                flr.mContentBoxCrossSize,
+                aAxisTracker.CrossAxisPhysicalEndSide()) +
+            aReflowInput.ComputedPhysicalBorderPadding().bottom;
+      }
+    }
+
     crossAxisPosnTracker.TraverseLine(line);
     crossAxisPosnTracker.TraversePackingSpace();
 
@@ -5234,8 +5305,6 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   const LogicalPoint containerContentBoxOrigin(
       flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
 
-  
-  
   const FlexItem* firstItem =
       aFlr.mLines[0].IsEmpty() ? nullptr : &aFlr.mLines[0].FirstItem();
 
@@ -5454,14 +5523,6 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
           *propValue = item.PhysicalMargin();
         }
       }
-
-      
-      
-      
-      
-      if (&item == firstItem && aFlr.mAscent == nscoord_MIN) {
-        aFlr.mAscent = framePos.B(flexWM) + item.ResolvedAscent(true);
-      }
     }
 
     
@@ -5578,33 +5639,6 @@ void nsFlexContainerFrame::PopulateReflowOutput(
     desiredSizeInFlexWM.BSize(flexWM) = effectiveContentBSizeWithBStartBP;
   }
 
-  if (aFlr.mAscent == nscoord_MIN) {
-    
-    
-    
-    
-    NS_WARNING_ASSERTION(
-        HidesContentForLayout() || aFlr.mLines[0].IsEmpty(),
-        "Have flex items but didn't get an ascent - that's odd (or there are "
-        "just gigantic sizes involved)");
-    
-    
-    
-    
-    
-    aFlr.mAscent = desiredSizeInFlexWM.BSize(flexWM);
-  }
-
-  if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
-    
-    
-    aReflowOutput.SetBlockStartAscent(ReflowOutput::ASK_FOR_BASELINE);
-  } else {
-    
-    
-    aReflowOutput.SetBlockStartAscent(aFlr.mAscent);
-  }
-
   
   
   
@@ -5651,14 +5685,82 @@ void nsFlexContainerFrame::PopulateReflowOutput(
   }
 
   
-  mBaselineFromLastReflow = aFlr.mAscent;
-  mLastBaselineFromLastReflow = aFlr.mLines.LastElement().LastBaselineOffset();
-  if (mLastBaselineFromLastReflow == nscoord_MIN) {
-    
-    
-    mLastBaselineFromLastReflow =
-        desiredSizeInFlexWM.BSize(flexWM) - aFlr.mAscent;
+  
+  
+  
+  if (const FlexLine& line = StartmostLine(aFlr.mLines, aAxisTracker);
+      aFlr.mAscent == nscoord_MIN && !line.IsEmpty()) {
+    const FlexItem& item = line.StartmostItem(aAxisTracker);
+    aFlr.mAscent = item.Frame()
+                       ->GetLogicalPosition(
+                           flexWM, desiredSizeInFlexWM.GetPhysicalSize(flexWM))
+                       .B(flexWM) +
+                   item.ResolvedAscent(true);
   }
+
+  
+  
+  
+  if (const FlexLine& line = EndmostLine(aFlr.mLines, aAxisTracker);
+      aFlr.mAscentForLast == nscoord_MIN && !line.IsEmpty()) {
+    const FlexItem& item = line.EndmostItem(aAxisTracker);
+    const nscoord lastAscent =
+        item.Frame()
+            ->GetLogicalPosition(flexWM,
+                                 desiredSizeInFlexWM.GetPhysicalSize(flexWM))
+            .B(flexWM) +
+        item.ResolvedAscent(false);
+
+    aFlr.mAscentForLast = desiredSizeInFlexWM.BSize(flexWM) - lastAscent;
+  }
+
+  if (aFlr.mAscent == nscoord_MIN) {
+    
+    
+    
+    
+    NS_WARNING_ASSERTION(
+        HidesContentForLayout() || aFlr.mLines[0].IsEmpty(),
+        "Have flex items but didn't get an ascent - that's odd (or there are "
+        "just gigantic sizes involved)");
+    
+    
+    
+    
+    
+    aFlr.mAscent = effectiveContentBSizeWithBStartBP;
+  }
+
+  if (aFlr.mAscentForLast == nscoord_MIN) {
+    
+    
+    
+    
+    NS_WARNING_ASSERTION(
+        HidesContentForLayout() || aFlr.mLines[0].IsEmpty(),
+        "Have flex items but didn't get an ascent - that's odd (or there are "
+        "just gigantic sizes involved)");
+    
+    
+    
+    
+    
+    aFlr.mAscentForLast = blockEndContainerBP;
+  }
+
+  if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
+    
+    
+    aReflowOutput.SetBlockStartAscent(ReflowOutput::ASK_FOR_BASELINE);
+  } else {
+    
+    
+    aReflowOutput.SetBlockStartAscent(aFlr.mAscent);
+  }
+
+  
+  mBaselineFromLastReflow = aFlr.mAscent;
+  mLastBaselineFromLastReflow = aFlr.mAscentForLast;
 
   
   aReflowOutput.SetSize(flexWM, desiredSizeInFlexWM);

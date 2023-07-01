@@ -327,7 +327,21 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
     
     
+    
+    
+    
+    
     nscoord mAscent = NS_UNCONSTRAINEDSIZE;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    nscoord mAscentForLast = NS_UNCONSTRAINEDSIZE;
   };
   FlexLayoutResult DoFlexLayout(
       const ReflowInput& aReflowInput,
@@ -521,6 +535,14 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
+
+
+
+
+
+
+
+
   void PopulateReflowOutput(
       ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
       nsReflowStatus& aStatus, const mozilla::LogicalSize& aContentBoxSize,
@@ -530,12 +552,6 @@ class nsFlexContainerFrame final : public nsContainerFrame,
       const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr);
 
   
-
-
-
-
-
-
 
 
 
