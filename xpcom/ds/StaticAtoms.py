@@ -2430,6 +2430,8 @@ STATIC_ATOMS = [
     Atom("onaddsourcebuffer", "onaddsourcebuffer"),
     Atom("onremovesourcebuffer", "onremovesourcebuffer"),
     
+    Atom("ondequeue", "ondequeue"),
+    
     Atom("about", "about"),
     Atom("ID", "ID"),
     Atom("nodeID", "nodeID"),
