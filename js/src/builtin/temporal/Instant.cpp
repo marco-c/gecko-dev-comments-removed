@@ -30,6 +30,7 @@
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/TemporalUnit.h"
+#include "builtin/temporal/TimeZone.h"
 #include "builtin/temporal/Wrapped.h"
 #include "builtin/temporal/ZonedDateTime.h"
 #include "gc/Allocator.h"
@@ -1010,6 +1011,114 @@ static bool Instant_valueOf(JSContext* cx, unsigned argc, Value* vp) {
   return false;
 }
 
+
+
+
+static bool Instant_toZonedDateTime(JSContext* cx, const CallArgs& args) {
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
+
+  
+  Rooted<JSObject*> item(
+      cx, RequireObjectArg(cx, "item", "toZonedDateTime", args.get(0)));
+  if (!item) {
+    return false;
+  }
+
+  
+  Rooted<Value> calendarLike(cx);
+  if (!GetProperty(cx, item, item, cx->names().calendar, &calendarLike)) {
+    return false;
+  }
+
+  
+  if (calendarLike.isUndefined()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_MISSING_PROPERTY, "calendar");
+    return false;
+  }
+
+  
+  Rooted<JSObject*> calendar(cx, ToTemporalCalendar(cx, calendarLike));
+  if (!calendar) {
+    return false;
+  }
+
+  
+  Rooted<Value> timeZoneLike(cx);
+  if (!GetProperty(cx, item, item, cx->names().timeZone, &timeZoneLike)) {
+    return false;
+  }
+
+  
+  if (timeZoneLike.isUndefined()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_MISSING_PROPERTY, "timeZone");
+    return false;
+  }
+
+  
+  Rooted<JSObject*> timeZone(cx, ToTemporalTimeZone(cx, timeZoneLike));
+  if (!timeZone) {
+    return false;
+  }
+
+  
+  auto* result = CreateTemporalZonedDateTime(cx, instant, timeZone, calendar);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool Instant_toZonedDateTime(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_toZonedDateTime>(cx, args);
+}
+
+
+
+
+static bool Instant_toZonedDateTimeISO(JSContext* cx, const CallArgs& args) {
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
+
+  
+  Rooted<JSObject*> timeZone(cx, ToTemporalTimeZone(cx, args.get(0)));
+  if (!timeZone) {
+    return false;
+  }
+
+  
+  Rooted<CalendarObject*> calendar(cx, GetISO8601Calendar(cx));
+  if (!calendar) {
+    return false;
+  }
+
+  
+  auto* result = CreateTemporalZonedDateTime(cx, instant, timeZone, calendar);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool Instant_toZonedDateTimeISO(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_toZonedDateTimeISO>(cx, args);
+}
+
 const JSClass InstantObject::class_ = {
     "Temporal.Instant",
     JSCLASS_HAS_RESERVED_SLOTS(InstantObject::SLOT_COUNT) |
@@ -1033,6 +1142,8 @@ static const JSFunctionSpec Instant_methods[] = {
 static const JSFunctionSpec Instant_prototype_methods[] = {
     JS_FN("equals", Instant_equals, 1, 0),
     JS_FN("valueOf", Instant_valueOf, 0, 0),
+    JS_FN("toZonedDateTime", Instant_toZonedDateTime, 1, 0),
+    JS_FN("toZonedDateTimeISO", Instant_toZonedDateTimeISO, 1, 0),
     JS_FS_END,
 };
 
