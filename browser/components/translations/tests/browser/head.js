@@ -55,7 +55,11 @@ async function assertTranslationsButton(visibleAssertions, message) {
 
 
 
-async function openSettingsMenu() {
+
+
+async function openTranslationsSettingsMenuViaTranslationsButton() {
+  await closeTranslationsPanelIfOpen();
+
   const { button } = await assertTranslationsButton(
     { button: true },
     "The button is available."
@@ -67,6 +71,43 @@ async function openSettingsMenu() {
 
   const gearIcon = getByL10nId("translations-panel-settings-button");
   click(gearIcon, "Open the settings menu");
+}
+
+
+
+
+
+
+
+async function openTranslationsSettingsMenuViaAppMenu() {
+  await openTranslationsPanelViaAppMenu();
+  const gearIcon = getByL10nId("translations-panel-settings-button");
+  click(gearIcon, "Open the settings menu");
+}
+
+
+
+
+
+
+
+async function openTranslationsPanelViaAppMenu() {
+  await closeTranslationsPanelIfOpen();
+  const appMenuButton = getById("PanelUI-menu-button");
+  click(appMenuButton, "Opening the app-menu button");
+  await BrowserTestUtils.waitForEvent(window.PanelUI.mainView, "ViewShown");
+
+  const translateSiteButton = getById("appMenu-translate-button");
+
+  is(
+    translateSiteButton.disabled,
+    false,
+    "The app-menu translate button should be enabled"
+  );
+
+  await waitForTranslationsPopupEvent("popupshown", () => {
+    click(translateSiteButton);
+  });
 }
 
 
@@ -174,6 +215,12 @@ async function assertCheckboxState(dataL10nId, expectChecked) {
 
 
 async function navigate(url, message) {
+  
+  
+  
+  
+  await closeTranslationsPanelIfOpen();
+
   info(message);
 
   
