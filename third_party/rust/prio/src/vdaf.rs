@@ -5,21 +5,21 @@
 
 
 
-use crate::codec::{CodecError, Decode, Encode, ParameterizedDecode};
-use crate::field::{FieldElement, FieldError};
-use crate::flp::FlpError;
-use crate::prng::PrngError;
-use crate::vdaf::prg::Seed;
+#[cfg(feature = "experimental")]
+use crate::idpf::IdpfError;
+use crate::{
+    codec::{CodecError, Decode, Encode, ParameterizedDecode},
+    field::{encode_fieldvec, merge_vector, FieldElement, FieldError},
+    flp::FlpError,
+    prng::PrngError,
+    vdaf::prg::Seed,
+};
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::io::Cursor;
+use std::{fmt::Debug, io::Cursor};
 
 
 
-const VERSION: &[u8] = b"vdaf-03";
-
-const DST_LEN: usize = VERSION.len() + 4;
+pub(crate) const VERSION: u8 = 5;
 
 
 #[derive(Debug, thiserror::Error)]
@@ -47,19 +47,24 @@ pub enum VdafError {
     
     #[error("getrandom: {0}")]
     GetRandom(#[from] getrandom::Error),
+
+    
+    #[cfg(feature = "experimental")]
+    #[error("idpf error: {0}")]
+    Idpf(#[from] IdpfError),
 }
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Share<F, const L: usize> {
+pub enum Share<F, const SEED_SIZE: usize> {
     
     Leader(Vec<F>),
 
     
-    Helper(Seed<L>),
+    Helper(Seed<SEED_SIZE>),
 }
 
-impl<F: Clone, const L: usize> Share<F, L> {
+impl<F: Clone, const SEED_SIZE: usize> Share<F, SEED_SIZE> {
     
     
     #[cfg(feature = "prio2")]
@@ -73,16 +78,16 @@ impl<F: Clone, const L: usize> Share<F, L> {
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum ShareDecodingParameter<const L: usize> {
+pub(crate) enum ShareDecodingParameter<const SEED_SIZE: usize> {
     Leader(usize),
     Helper,
 }
 
-impl<F: FieldElement, const L: usize> ParameterizedDecode<ShareDecodingParameter<L>>
-    for Share<F, L>
+impl<F: FieldElement, const SEED_SIZE: usize> ParameterizedDecode<ShareDecodingParameter<SEED_SIZE>>
+    for Share<F, SEED_SIZE>
 {
     fn decode_with_param(
-        decoding_parameter: &ShareDecodingParameter<L>,
+        decoding_parameter: &ShareDecodingParameter<SEED_SIZE>,
         bytes: &mut Cursor<&[u8]>,
     ) -> Result<Self, CodecError> {
         match decoding_parameter {
@@ -101,7 +106,7 @@ impl<F: FieldElement, const L: usize> ParameterizedDecode<ShareDecodingParameter
     }
 }
 
-impl<F: FieldElement, const L: usize> Encode for Share<F, L> {
+impl<F: FieldElement, const SEED_SIZE: usize> Encode for Share<F, SEED_SIZE> {
     fn encode(&self, bytes: &mut Vec<u8>) {
         match self {
             Share::Leader(share_data) => {
@@ -114,18 +119,22 @@ impl<F: FieldElement, const L: usize> Encode for Share<F, L> {
             }
         }
     }
+
+    fn encoded_len(&self) -> Option<usize> {
+        match self {
+            Share::Leader(share_data) => {
+                
+                Some(share_data.len() * F::ENCODED_SIZE)
+            }
+            Share::Helper(share_seed) => share_seed.encoded_len(),
+        }
+    }
 }
 
 
 
 
-
-
-
-pub trait Vdaf: Clone + Debug
-where
-    for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
-{
+pub trait Vdaf: Clone + Debug {
     
     const ID: u32;
 
@@ -140,40 +149,51 @@ where
     type AggregationParam: Clone + Debug + Decode + Encode;
 
     
-    type PublicShare: Clone + Debug + for<'a> ParameterizedDecode<&'a Self> + Encode;
+    type PublicShare: Clone + Debug + ParameterizedDecode<Self> + Encode;
 
     
     type InputShare: Clone + Debug + for<'a> ParameterizedDecode<(&'a Self, usize)> + Encode;
 
     
-    type OutputShare: Clone + Debug;
+    type OutputShare: Clone
+        + Debug
+        + for<'a> ParameterizedDecode<(&'a Self, &'a Self::AggregationParam)>
+        + Encode;
 
     
-    type AggregateShare: Aggregatable<OutputShare = Self::OutputShare> + for<'a> TryFrom<&'a [u8]>;
+    type AggregateShare: Aggregatable<OutputShare = Self::OutputShare>
+        + for<'a> ParameterizedDecode<(&'a Self, &'a Self::AggregationParam)>
+        + Encode;
 
     
     
     fn num_aggregators(&self) -> usize;
+
+    
+    
+    fn custom(usage: u16) -> [u8; 8] {
+        let mut custom = [0_u8; 8];
+        custom[0] = VERSION;
+        custom[1] = 0; 
+        custom[2..6].copy_from_slice(&(Self::ID).to_be_bytes());
+        custom[6..8].copy_from_slice(&usage.to_be_bytes());
+        custom
+    }
 }
 
 
-pub trait Client: Vdaf
-where
-    for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
-{
+pub trait Client<const NONCE_SIZE: usize>: Vdaf {
     
     
     fn shard(
         &self,
         measurement: &Self::Measurement,
+        nonce: &[u8; NONCE_SIZE],
     ) -> Result<(Self::PublicShare, Vec<Self::InputShare>), VdafError>;
 }
 
 
-pub trait Aggregator<const L: usize>: Vdaf
-where
-    for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
-{
+pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vdaf {
     
     type PrepareState: Clone + Debug;
 
@@ -187,6 +207,7 @@ where
     
     
     
+    
     type PrepareMessage: Clone + Debug + ParameterizedDecode<Self::PrepareState> + Encode;
 
     
@@ -194,10 +215,10 @@ where
     
     fn prepare_init(
         &self,
-        verify_key: &[u8; L],
+        verify_key: &[u8; VERIFY_KEY_SIZE],
         agg_id: usize,
         agg_param: &Self::AggregationParam,
-        nonce: &[u8],
+        nonce: &[u8; NONCE_SIZE],
         public_share: &Self::PublicShare,
         input_share: &Self::InputShare,
     ) -> Result<(Self::PrepareState, Self::PrepareShare), VdafError>;
@@ -219,7 +240,7 @@ where
         &self,
         state: Self::PrepareState,
         input: Self::PrepareMessage,
-    ) -> Result<PrepareTransition<Self, L>, VdafError>;
+    ) -> Result<PrepareTransition<Self, VERIFY_KEY_SIZE, NONCE_SIZE>, VdafError>;
 
     
     fn aggregate<M: IntoIterator<Item = Self::OutputShare>>(
@@ -230,10 +251,7 @@ where
 }
 
 
-pub trait Collector: Vdaf
-where
-    for<'a> &'a Self::AggregateShare: Into<Vec<u8>>,
-{
+pub trait Collector: Vdaf {
     
     fn unshard<M: IntoIterator<Item = Self::AggregateShare>>(
         &self,
@@ -244,11 +262,12 @@ where
 }
 
 
-#[derive(Debug)]
-pub enum PrepareTransition<V: Aggregator<L>, const L: usize>
-where
-    for<'a> &'a V::AggregateShare: Into<Vec<u8>>,
-{
+#[derive(Clone, Debug)]
+pub enum PrepareTransition<
+    V: Aggregator<VERIFY_KEY_SIZE, NONCE_SIZE>,
+    const VERIFY_KEY_SIZE: usize,
+    const NONCE_SIZE: usize,
+> {
     
     Continue(V::PrepareState, V::PrepareShare),
 
@@ -285,19 +304,16 @@ impl<F> From<Vec<F>> for OutputShare<F> {
     }
 }
 
-impl<F: FieldElement> TryFrom<&[u8]> for OutputShare<F> {
-    type Error = FieldError;
+impl<F: FieldElement> Encode for OutputShare<F> {
+    fn encode(&self, bytes: &mut Vec<u8>) {
+        encode_fieldvec(&self.0, bytes)
+    }
 
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        fieldvec_try_from_bytes(bytes)
+    fn encoded_len(&self) -> Option<usize> {
+        Some(F::ENCODED_SIZE * self.0.len())
     }
 }
 
-impl<F: FieldElement> From<&OutputShare<F>> for Vec<u8> {
-    fn from(output_share: &OutputShare<F>) -> Self {
-        fieldvec_to_vec(&output_share.0)
-    }
-}
 
 
 
@@ -305,7 +321,7 @@ impl<F: FieldElement> From<&OutputShare<F>> for Vec<u8> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AggregateShare<F>(Vec<F>);
 
-impl<F> AsRef<[F]> for AggregateShare<F> {
+impl<F: FieldElement> AsRef<[F]> for AggregateShare<F> {
     fn as_ref(&self) -> &[F] {
         &self.0
     }
@@ -314,12 +330,6 @@ impl<F> AsRef<[F]> for AggregateShare<F> {
 impl<F> From<OutputShare<F>> for AggregateShare<F> {
     fn from(other: OutputShare<F>) -> Self {
         Self(other.0)
-    }
-}
-
-impl<F> From<Vec<F>> for AggregateShare<F> {
-    fn from(other: Vec<F>) -> Self {
-        Self(other)
     }
 }
 
@@ -339,91 +349,73 @@ impl<F: FieldElement> Aggregatable for AggregateShare<F> {
 
 impl<F: FieldElement> AggregateShare<F> {
     fn sum(&mut self, other: &[F]) -> Result<(), VdafError> {
-        if self.0.len() != other.len() {
-            return Err(VdafError::Uncategorized(format!(
-                "cannot sum shares of different lengths (left = {}, right = {}",
-                self.0.len(),
-                other.len()
-            )));
-        }
-
-        for (x, y) in self.0.iter_mut().zip(other) {
-            *x += *y;
-        }
-
-        Ok(())
+        merge_vector(&mut self.0, other).map_err(Into::into)
     }
 }
 
-impl<F: FieldElement> TryFrom<&[u8]> for AggregateShare<F> {
-    type Error = FieldError;
-
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        fieldvec_try_from_bytes(bytes)
+impl<F: FieldElement> Encode for AggregateShare<F> {
+    fn encode(&self, bytes: &mut Vec<u8>) {
+        encode_fieldvec(&self.0, bytes)
     }
-}
 
-impl<F: FieldElement> From<&AggregateShare<F>> for Vec<u8> {
-    fn from(aggregate_share: &AggregateShare<F>) -> Self {
-        fieldvec_to_vec(&aggregate_share.0)
+    fn encoded_len(&self) -> Option<usize> {
+        Some(F::ENCODED_SIZE * self.0.len())
     }
-}
-
-
-
-#[inline(always)]
-fn fieldvec_try_from_bytes<F: FieldElement, T: From<Vec<F>>>(
-    bytes: &[u8],
-) -> Result<T, FieldError> {
-    F::byte_slice_into_vec(bytes).map(T::from)
-}
-
-
-
-#[inline(always)]
-fn fieldvec_to_vec<F: FieldElement, T: AsRef<[F]>>(val: T) -> Vec<u8> {
-    F::slice_into_byte_vec(val.as_ref())
 }
 
 #[cfg(test)]
-pub(crate) fn run_vdaf<V, M, const L: usize>(
+pub(crate) fn run_vdaf<V, M, const SEED_SIZE: usize>(
     vdaf: &V,
     agg_param: &V::AggregationParam,
     measurements: M,
 ) -> Result<V::AggregateResult, VdafError>
 where
-    V: Client + Aggregator<L> + Collector,
-    for<'a> &'a V::AggregateShare: Into<Vec<u8>>,
+    V: Client<16> + Aggregator<SEED_SIZE, 16> + Collector,
     M: IntoIterator<Item = V::Measurement>,
 {
     use rand::prelude::*;
-    let mut verify_key = [0; L];
-    thread_rng().fill(&mut verify_key[..]);
-
-    
-    
-    let nonce = b"this is a nonce";
+    let mut rng = thread_rng();
+    let mut verify_key = [0; SEED_SIZE];
+    rng.fill(&mut verify_key[..]);
 
     let mut agg_shares: Vec<Option<V::AggregateShare>> = vec![None; vdaf.num_aggregators()];
     let mut num_measurements: usize = 0;
     for measurement in measurements.into_iter() {
         num_measurements += 1;
-        let (public_share, input_shares) = vdaf.shard(&measurement)?;
+        let nonce = rng.gen();
+        let (public_share, input_shares) = vdaf.shard(&measurement, &nonce)?;
         let out_shares = run_vdaf_prepare(
             vdaf,
             &verify_key,
             agg_param,
-            nonce,
+            &nonce,
             public_share,
             input_shares,
         )?;
         for (out_share, agg_share) in out_shares.into_iter().zip(agg_shares.iter_mut()) {
+            
+            let encoded_out_share = out_share.get_encoded();
+            let round_trip_out_share =
+                V::OutputShare::get_decoded_with_param(&(vdaf, agg_param), &encoded_out_share)
+                    .unwrap();
+            assert_eq!(round_trip_out_share.get_encoded(), encoded_out_share);
+
+            let this_agg_share = V::AggregateShare::from(out_share);
             if let Some(ref mut inner) = agg_share {
-                inner.merge(&out_share.into())?;
+                inner.merge(&this_agg_share)?;
             } else {
-                *agg_share = Some(out_share.into());
+                *agg_share = Some(this_agg_share);
             }
         }
+    }
+
+    for agg_share in agg_shares.iter() {
+        
+        let encoded_agg_share = agg_share.as_ref().unwrap().get_encoded();
+        let round_trip_agg_share =
+            V::AggregateShare::get_decoded_with_param(&(vdaf, agg_param), &encoded_agg_share)
+                .unwrap();
+        assert_eq!(round_trip_agg_share.get_encoded(), encoded_agg_share);
     }
 
     let res = vdaf.unshard(
@@ -435,17 +427,16 @@ where
 }
 
 #[cfg(test)]
-pub(crate) fn run_vdaf_prepare<V, M, const L: usize>(
+pub(crate) fn run_vdaf_prepare<V, M, const SEED_SIZE: usize>(
     vdaf: &V,
-    verify_key: &[u8; L],
+    verify_key: &[u8; SEED_SIZE],
     agg_param: &V::AggregationParam,
-    nonce: &[u8],
+    nonce: &[u8; 16],
     public_share: V::PublicShare,
     input_shares: M,
 ) -> Result<Vec<V::OutputShare>, VdafError>
 where
-    V: Client + Aggregator<L> + Collector,
-    for<'a> &'a V::AggregateShare: Into<Vec<u8>>,
+    V: Client<16> + Aggregator<SEED_SIZE, 16> + Collector,
     M: IntoIterator<Item = V::InputShare>,
 {
     let input_shares = input_shares
@@ -514,45 +505,34 @@ where
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{AggregateShare, OutputShare};
-    use crate::field::{Field128, Field64, FieldElement};
-    use itertools::iterate;
-    use std::convert::TryFrom;
-    use std::fmt::Debug;
+fn fieldvec_roundtrip_test<F, V, T>(vdaf: &V, agg_param: &V::AggregationParam, length: usize)
+where
+    F: FieldElement,
+    V: Vdaf,
+    T: Encode,
+    for<'a> T: ParameterizedDecode<(&'a V, &'a V::AggregationParam)>,
+{
+    
+    let g = F::one() + F::one();
+    let vec: Vec<F> = itertools::iterate(F::one(), |&v| g * v)
+        .take(length)
+        .collect();
 
-    fn fieldvec_roundtrip_test<F, T>()
-    where
-        F: FieldElement,
-        for<'a> T: Debug + PartialEq + From<Vec<F>> + TryFrom<&'a [u8]>,
-        for<'a> <T as TryFrom<&'a [u8]>>::Error: Debug,
-        for<'a> Vec<u8>: From<&'a T>,
-    {
-        
-        let g = F::generator();
-        let want_value = T::from(iterate(F::one(), |&v| g * v).take(10).collect());
+    
+    let mut bytes = Vec::with_capacity(vec.len() * F::ENCODED_SIZE);
+    encode_fieldvec(&vec, &mut bytes);
 
-        
-        let buf: Vec<u8> = (&want_value).into();
-        let got_value = T::try_from(&buf).unwrap();
+    
+    let value = T::get_decoded_with_param(&(vdaf, agg_param), &bytes).unwrap();
 
-        assert_eq!(want_value, got_value);
-    }
+    
+    let encoded = value.get_encoded();
 
-    #[test]
-    fn roundtrip_output_share() {
-        fieldvec_roundtrip_test::<Field64, OutputShare<Field64>>();
-        fieldvec_roundtrip_test::<Field128, OutputShare<Field128>>();
-    }
-
-    #[test]
-    fn roundtrip_aggregate_share() {
-        fieldvec_roundtrip_test::<Field64, AggregateShare<Field64>>();
-        fieldvec_roundtrip_test::<Field128, AggregateShare<Field128>>();
-    }
+    assert_eq!(encoded, bytes);
 }
 
-#[cfg(feature = "crypto-dependencies")]
+#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "experimental")))]
 pub mod poplar1;
 pub mod prg;
 #[cfg(feature = "prio2")]

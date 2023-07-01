@@ -25,10 +25,23 @@ pub struct PrgAes128Alt {
 impl Prg<16> for PrgAes128Alt {
     type SeedStream = SeedStreamAes128Alt;
 
-    fn init(seed_bytes: &[u8; 16]) -> Self {
+    fn init(seed_bytes: &[u8; 16], custom: &[u8]) -> Self {
         let mut my_seed_bytes = *seed_bytes;
         let ctx = unsafe { dapStartCmac(my_seed_bytes.as_mut_ptr()) };
         assert!(!ctx.is_null());
+        
+        
+        
+        
+        
+        let custom_len = u16::try_from(custom.len()).expect("customization string is too long");
+        let custom_len = custom_len.to_be_bytes();
+        unsafe {
+            dapUpdateCmac(ctx, custom_len.as_ptr(), 2);
+        }
+        unsafe {
+            dapUpdateCmac(ctx, custom.as_ptr(), custom.len() as u32);
+        }
 
         Self { nss_context: ctx }
     }
