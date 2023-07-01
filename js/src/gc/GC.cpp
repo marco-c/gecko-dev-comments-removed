@@ -1331,6 +1331,11 @@ void GCRuntime::assertNoMarkingWork() const {
 }
 #endif
 
+static size_t GetGCParallelThreadCount() {
+  AutoLockHelperThreadState lock;
+  return HelperThreadState().getGCParallelThreadCount(lock);
+}
+
 bool GCRuntime::updateMarkersVector() {
   MOZ_ASSERT(helperThreadCount >= 1,
              "There must always be at least one mark task");
@@ -1339,8 +1344,8 @@ bool GCRuntime::updateMarkersVector() {
 
   
   
-  size_t targetCount = std::min(markingWorkerCount(),
-                                HelperThreadState().getGCParallelThreadCount());
+  size_t targetCount =
+      std::min(markingWorkerCount(), GetGCParallelThreadCount());
 
   if (markers.length() > targetCount) {
     return markers.resize(targetCount);
