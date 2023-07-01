@@ -154,6 +154,13 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
     evalOptions.lineNumber = options.lineNumber;
   }
 
+  
+  
+  
+  if (options.disableBreaks) {
+    evalOptions.hideFromDebugger = true;
+  }
+
   updateConsoleInputEvaluation(dbg, webConsole);
 
   let noSideEffectDebugger = null;

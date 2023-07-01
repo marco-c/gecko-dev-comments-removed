@@ -41,6 +41,9 @@ class ScriptCommand {
 
 
 
+
+
+
   async execute(expression, options = {}) {
     const {
       selectedObjectActor,
@@ -103,6 +106,7 @@ class ScriptCommand {
           selectedNodeActor,
           selectedObjectActor,
           url: options.url,
+          disableBreaks: options.disableBreaks,
         })
         .then(packet => {
           resultID = packet.resultID;

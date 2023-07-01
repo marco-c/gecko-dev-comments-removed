@@ -23,6 +23,7 @@ function storeAsGlobal(actor) {
 
     const res = await commands.scriptCommand.execute(evalString, {
       selectedObjectActor: actor,
+      disableBreaks: true,
     });
 
     
@@ -48,6 +49,7 @@ function copyMessageObject(actor, variableText) {
       
       const res = await commands.scriptCommand.execute("copy(_self)", {
         selectedObjectActor: actor,
+        disableBreaks: true,
       });
 
       clipboardHelper.copyString(res.helperResult.value);

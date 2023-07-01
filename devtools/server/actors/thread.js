@@ -303,10 +303,14 @@ class ThreadActor extends Actor {
     return this.dbg.getNewestFrame();
   }
 
-  get skipBreakpointsOption() {
+  get shouldSkipAnyBreakpoint() {
     return (
+      
+      
       this._options.skipBreakpoints ||
-      (this.insideClientEvaluation && this.insideClientEvaluation.eager)
+      
+      
+      this.insideClientEvaluation?.disableBreaks
     );
   }
 
@@ -735,7 +739,7 @@ class ThreadActor extends Actor {
   }
 
   _onOpeningRequest(subject) {
-    if (this.skipBreakpointsOption) {
+    if (this.shouldSkipAnyBreakpoint) {
       return;
     }
 
@@ -865,7 +869,7 @@ class ThreadActor extends Actor {
   }
 
   _pauseAndRespondEventBreakpoint(frame, eventBreakpoint) {
-    if (this.skipBreakpointsOption) {
+    if (this.shouldSkipAnyBreakpoint) {
       return undefined;
     }
 
@@ -1832,15 +1836,16 @@ class ThreadActor extends Actor {
       throw new Error("Unexpected mutation breakpoint type");
     }
 
+    if (this.shouldSkipAnyBreakpoint) {
+      return undefined;
+    }
+
     const frame = this.dbg.getNewestFrame();
     if (!frame) {
       return undefined;
     }
 
-    if (
-      this.skipBreakpointsOption ||
-      this.sourcesManager.isFrameBlackBoxed(frame)
-    ) {
+    if (this.sourcesManager.isFrameBlackBoxed(frame)) {
       return undefined;
     }
 
@@ -1891,8 +1896,8 @@ class ThreadActor extends Actor {
     
     
     if (
+      this.shouldSkipAnyBreakpoint ||
       !this.hasMoved(frame, "debuggerStatement") ||
-      this.skipBreakpointsOption ||
       this.sourcesManager.isFrameBlackBoxed(frame) ||
       this.atBreakpointLocation(frame)
     ) {
@@ -1934,6 +1939,15 @@ class ThreadActor extends Actor {
       return undefined;
     }
 
+    
+    
+    if (
+      this.shouldSkipAnyBreakpoint &&
+      !this.insideClientEvaluation?.reportExceptionsWhenBreaksAreDisabled
+    ) {
+      return undefined;
+    }
+
     let willBeCaught = false;
     for (let frame = youngestFrame; frame != null; frame = frame.older) {
       if (frame.script.isInCatchScope(frame.offset)) {
@@ -1966,10 +1980,7 @@ class ThreadActor extends Actor {
       return undefined;
     }
 
-    if (
-      this.skipBreakpointsOption ||
-      this.sourcesManager.isFrameBlackBoxed(youngestFrame)
-    ) {
+    if (this.sourcesManager.isFrameBlackBoxed(youngestFrame)) {
       return undefined;
     }
 
@@ -2258,7 +2269,7 @@ class ThreadActor extends Actor {
       pauseOnExceptions: this._options.pauseOnExceptions,
       ignoreCaughtExceptions: this._options.ignoreCaughtExceptions,
       logEventBreakpoints: this._options.logEventBreakpoints,
-      skipBreakpoints: this.skipBreakpointsOption,
+      skipBreakpoints: this.shouldSkipAnyBreakpoint,
       breakpoints: this.breakpointActorMap.listKeys(),
     };
   }

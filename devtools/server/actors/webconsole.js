@@ -929,17 +929,27 @@ class WebConsoleActor extends Actor {
       eager: request.eager,
       bindings: request.bindings,
       lineNumber: request.lineNumber,
+      
+      
+      
+      
+      disableBreaks: !!request.disableBreaks,
     };
 
     const { mapped } = request;
 
     
     
+    
+    
     this.parentActor.threadActor.insideClientEvaluation = evalOptions;
 
-    const evalInfo = evalWithDebugger(input, evalOptions, this);
-
-    this.parentActor.threadActor.insideClientEvaluation = null;
+    let evalInfo;
+    try {
+      evalInfo = evalWithDebugger(input, evalOptions, this);
+    } finally {
+      this.parentActor.threadActor.insideClientEvaluation = null;
+    }
 
     return new Promise((resolve, reject) => {
       

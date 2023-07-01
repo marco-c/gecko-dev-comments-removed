@@ -127,6 +127,8 @@ function evaluateExpression(expression, from = "input") {
           webConsoleUI.hud.commands.targetCommand.store.getState()
         ),
         mapped,
+        
+        disableBreaks: false,
       })
       .then(onSettled, onSettled);
 
@@ -423,6 +425,7 @@ function terminalInputChanged(expression, force = false) {
       ),
       mapped,
       eager: true,
+      disableBreaks: true,
     });
 
     return dispatch({

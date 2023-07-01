@@ -144,14 +144,14 @@ class BreakpointActor {
 
   
   hit(frame) {
+    if (this.threadActor.shouldSkipAnyBreakpoint) {
+      return undefined;
+    }
+
     
     
     const location = this.threadActor.sourcesManager.getFrameLocation(frame);
-
-    if (
-      this.threadActor.sourcesManager.isFrameBlackBoxed(frame) ||
-      this.threadActor.skipBreakpointsOption
-    ) {
+    if (this.threadActor.sourcesManager.isFrameBlackBoxed(frame)) {
       return undefined;
     }
 
