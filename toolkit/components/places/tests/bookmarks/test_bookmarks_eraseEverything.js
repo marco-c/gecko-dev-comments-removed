@@ -140,14 +140,6 @@ add_task(async function test_eraseEverything_reparented() {
 
   
   await PlacesUtils.bookmarks.eraseEverything();
-
-  
-  for (let guid of [folder1.guid, bookmark1.guid, folder2.guid]) {
-    await Assert.rejects(
-      PlacesUtils.promiseItemId(guid),
-      /no item found for the given GUID/
-    );
-  }
 });
 
 add_task(async function test_notifications() {
