@@ -514,6 +514,14 @@ class nsFlexContainerFrame::FlexItem final {
 
   bool HasAnyAutoMargin() const { return mHasAnyAutoMargin; }
 
+  BaselineSharingGroup ItemBaselineSharingGroup() const {
+    MOZ_ASSERT(mAlignSelf._0 == StyleAlignFlags::BASELINE ||
+                   mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE,
+               "mBaselineSharingGroup only gets a meaningful value "
+               "for baseline-aligned items");
+    return mBaselineSharingGroup;
+  }
+
   
   
   bool IsStrut() const { return mIsStrut; }
@@ -913,6 +921,10 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   bool mHasAnyAutoMargin = false;
+
+  
+  
+  BaselineSharingGroup mBaselineSharingGroup = BaselineSharingGroup::First;
 
   
   
@@ -2167,18 +2179,43 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   }
 #endif  
 
-  
-  
-  
-  
-  
-  
-  
-  if (!IsBlockAxisCrossAxis()) {
-    if (mAlignSelf._0 == StyleAlignFlags::BASELINE) {
-      mAlignSelf = {StyleAlignFlags::FLEX_START};
-    } else if (mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE) {
-      mAlignSelf = {StyleAlignFlags::FLEX_END};
+  if (mAlignSelf._0 == StyleAlignFlags::BASELINE ||
+      mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE) {
+    
+    const bool usingItemFirstBaseline =
+        (mAlignSelf._0 == StyleAlignFlags::BASELINE);
+    if (IsBlockAxisCrossAxis()) {
+      
+      
+      
+
+      
+      
+      
+      mBaselineSharingGroup = usingItemFirstBaseline
+                                  ? BaselineSharingGroup::First
+                                  : BaselineSharingGroup::Last;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (usingItemFirstBaseline) {
+        mAlignSelf = {StyleAlignFlags::FLEX_START};
+      } else {
+        mAlignSelf = {StyleAlignFlags::FLEX_END};
+      }
     }
   }
 }
@@ -3613,10 +3650,16 @@ SingleLineCrossAxisPositionTracker::SingleLineCrossAxisPositionTracker(
 
 void FlexLine::ComputeCrossSizeAndBaseline(
     const FlexboxAxisTracker& aAxisTracker) {
+  
+  
+  
+  
+  
   nscoord crossStartToFurthestFirstBaseline = nscoord_MIN;
   nscoord crossEndToFurthestFirstBaseline = nscoord_MIN;
   nscoord crossStartToFurthestLastBaseline = nscoord_MIN;
   nscoord crossEndToFurthestLastBaseline = nscoord_MIN;
+
   nscoord largestOuterCrossSize = 0;
   for (const FlexItem& item : Items()) {
     nscoord curOuterCrossSize = item.OuterCrossSize();
@@ -3624,9 +3667,8 @@ void FlexLine::ComputeCrossSizeAndBaseline(
     if ((item.AlignSelf()._0 == StyleAlignFlags::BASELINE ||
          item.AlignSelf()._0 == StyleAlignFlags::LAST_BASELINE) &&
         item.NumAutoMarginsInCrossAxis() == 0) {
-      const bool useFirst = (item.AlignSelf()._0 == StyleAlignFlags::BASELINE);
-      
-      
+      const bool usingItemFirstBaseline =
+          (item.AlignSelf()._0 == StyleAlignFlags::BASELINE);
 
       
       
@@ -3655,13 +3697,13 @@ void FlexLine::ComputeCrossSizeAndBaseline(
       
 
       nscoord crossStartToBaseline = item.BaselineOffsetFromOuterCrossEdge(
-          aAxisTracker.CrossAxisPhysicalStartSide(), useFirst);
+          aAxisTracker.CrossAxisPhysicalStartSide(), usingItemFirstBaseline);
       nscoord crossEndToBaseline = curOuterCrossSize - crossStartToBaseline;
 
       
       
       
-      if (useFirst) {
+      if (item.ItemBaselineSharingGroup() == BaselineSharingGroup::First) {
         crossStartToFurthestFirstBaseline =
             std::max(crossStartToFurthestFirstBaseline, crossStartToBaseline);
         crossEndToFurthestFirstBaseline =
@@ -3832,37 +3874,48 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     mPosition += (aLine.LineCrossSize() - aItem.OuterCrossSize()) / 2;
   } else if (alignSelf == StyleAlignFlags::BASELINE ||
              alignSelf == StyleAlignFlags::LAST_BASELINE) {
-    const bool useFirst = (alignSelf == StyleAlignFlags::BASELINE);
+    const bool usingItemFirstBaseline =
+        (alignSelf == StyleAlignFlags::BASELINE);
 
     
     
     
-    const mozilla::Side baselineAlignStartSide =
-        useFirst ? aAxisTracker.CrossAxisPhysicalStartSide()
-                 : aAxisTracker.CrossAxisPhysicalEndSide();
+    const bool isFirstBaselineSharingGroup =
+        aItem.ItemBaselineSharingGroup() == BaselineSharingGroup::First;
+    const mozilla::Side alignSide =
+        isFirstBaselineSharingGroup ? aAxisTracker.CrossAxisPhysicalStartSide()
+                                    : aAxisTracker.CrossAxisPhysicalEndSide();
 
+    
+    
+    
     nscoord itemBaselineOffset = aItem.BaselineOffsetFromOuterCrossEdge(
-        baselineAlignStartSide, useFirst);
+        alignSide, usingItemFirstBaseline);
 
-    nscoord lineBaselineOffset =
-        useFirst ? aLine.FirstBaselineOffset() : aLine.LastBaselineOffset();
+    
+    
+    nscoord lineBaselineOffset = isFirstBaselineSharingGroup
+                                     ? aLine.FirstBaselineOffset()
+                                     : aLine.LastBaselineOffset();
 
     NS_ASSERTION(lineBaselineOffset >= itemBaselineOffset,
                  "failed at finding largest baseline offset");
 
     
     
-    nscoord baselineDiff = lineBaselineOffset - itemBaselineOffset;
+    
+    nscoord itemOffsetFromLineEdge = lineBaselineOffset - itemBaselineOffset;
 
-    if (useFirst) {
+    if (isFirstBaselineSharingGroup) {
       
       
-      mPosition += baselineDiff;
+      mPosition += itemOffsetFromLineEdge;
     } else {
+      
       
       mPosition += aLine.LineCrossSize() - aItem.OuterCrossSize();
       
-      mPosition -= baselineDiff;
+      mPosition -= itemOffsetFromLineEdge;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("Unexpected align-self value");
