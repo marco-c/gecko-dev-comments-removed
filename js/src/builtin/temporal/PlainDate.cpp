@@ -274,6 +274,31 @@ PlainDateObject* js::temporal::CreateTemporalDate(JSContext* cx,
 
 
 
+Wrapped<PlainDateObject*> js::temporal::ToTemporalDate(JSContext* cx,
+                                                       Handle<JSObject*> item) {
+  MOZ_CRASH("NYI");
+}
+
+
+
+
+bool js::temporal::ToTemporalDate(JSContext* cx, Handle<Value> item,
+                                  PlainDate* result) {
+  MOZ_CRASH("NYI");
+}
+
+
+
+
+bool js::temporal::ToTemporalDate(JSContext* cx, Handle<Value> item,
+                                  PlainDate* result,
+                                  MutableHandle<JSObject*> calendar) {
+  MOZ_CRASH("NYI");
+}
+
+
+
+
 static bool PlainDateConstructor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 

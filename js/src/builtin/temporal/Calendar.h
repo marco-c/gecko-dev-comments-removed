@@ -36,6 +36,9 @@ class CalendarObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
+struct PlainDate;
+struct PlainDateTime;
+
 
 
 
@@ -50,6 +53,26 @@ int32_t ISODaysInMonth(int32_t year, int32_t month);
 
 
 int32_t ISODaysInMonth(double year, int32_t month);
+
+
+
+
+int32_t ToISODayOfYear(const PlainDate& date);
+
+
+
+
+int32_t MakeDay(const PlainDate& date);
+
+
+
+
+int64_t MakeDate(const PlainDateTime& dateTime);
+
+
+
+
+int64_t MakeDate(int32_t year, int32_t month, int32_t day);
 
 
 
@@ -73,6 +96,97 @@ JSObject* ToTemporalCalendarWithISODefault(
 
 JSObject* GetTemporalCalendarWithISODefault(JSContext* cx,
                                             JS::Handle<JSObject*> item);
+
+
+
+
+bool CalendarYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                  JS::Handle<JS::Value> dateLike,
+                  JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarMonth(JSContext* cx, JS::Handle<JSObject*> calendar,
+                   JS::Handle<JS::Value> dateLike,
+                   JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarMonthCode(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<JS::Value> dateLike,
+                       JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDay(JSContext* cx, JS::Handle<JSObject*> calendar,
+                 JS::Handle<JS::Value> dateLike,
+                 JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDayOfWeek(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<JS::Value> dateLike,
+                       JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDayOfYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<JS::Value> dateLike,
+                       JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarWeekOfYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                        JS::Handle<JS::Value> dateLike,
+                        JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarYearOfWeek(JSContext* cx, JS::Handle<JSObject*> calendar,
+                        JS::Handle<JS::Value> dateLike,
+                        JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDaysInWeek(JSContext* cx, JS::Handle<JSObject*> calendar,
+                        JS::Handle<JS::Value> dateLike,
+                        JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDaysInMonth(JSContext* cx, JS::Handle<JSObject*> calendar,
+                         JS::Handle<JS::Value> dateLike,
+                         JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarDaysInYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                        JS::Handle<JS::Value> dateLike,
+                        JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarMonthsInYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                          JS::Handle<JS::Value> dateLike,
+                          JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CalendarInLeapYear(JSContext* cx, JS::Handle<JSObject*> calendar,
+                        JS::Handle<JS::Value> dateLike,
+                        JS::MutableHandle<JS::Value> result);
 
 
 

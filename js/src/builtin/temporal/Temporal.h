@@ -16,7 +16,8 @@
 
 namespace js {
 struct ClassSpec;
-}
+class PropertyName;
+}  
 
 namespace js::temporal {
 
@@ -39,6 +40,20 @@ bool ToPositiveIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
 
 bool ToIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
                              const char* name, double* result);
+
+
+
+
+bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
+               JS::Handle<PropertyName*> name,
+               JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
+                      JS::Handle<PropertyName*> name,
+                      JS::MutableHandle<JS::Value> result);
 
 } 
 
