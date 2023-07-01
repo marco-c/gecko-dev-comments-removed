@@ -93,6 +93,41 @@ class TimeZone final {
 
   Result<int32_t, ICUError> GetUTCOffsetMs(int64_t aLocalMilliseconds);
 
+  enum class LocalOption {
+    
+
+
+    Former,
+
+    
+
+
+    Latter,
+  };
+
+  
+
+
+
+
+
+  Result<int32_t, ICUError> GetUTCOffsetMs(int64_t aLocalMilliseconds,
+                                           LocalOption aSkippedTime,
+                                           LocalOption aRepeatedTime);
+
+  
+
+
+
+  Result<Maybe<int64_t>, ICUError> GetPreviousTransition(
+      int64_t aUTCMilliseconds);
+
+  
+
+
+
+  Result<Maybe<int64_t>, ICUError> GetNextTransition(int64_t aUTCMilliseconds);
+
   enum class DaylightSavings : bool { No, Yes };
 
   
