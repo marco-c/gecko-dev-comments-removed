@@ -16,9 +16,14 @@ add_task(async function test_about_translations_dropdowns() {
     runInPage: async ({ dataForContent: languagePairs, selectors }) => {
       const { document } = content;
 
-      await ContentTaskUtils.waitForCondition(() => {
-        return document.body.hasAttribute("ready");
-      }, "Waiting for the document to be ready.");
+      await ContentTaskUtils.waitForCondition(
+        () => {
+          return document.body.hasAttribute("ready");
+        },
+        "Waiting for the document to be ready.",
+        100,
+        200
+      );
 
       
 

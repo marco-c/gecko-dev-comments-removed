@@ -17,9 +17,14 @@ add_task(async function test_about_translations_debounce() {
       
       Cu.waiveXrays(window).DEBOUNCE_DELAY = 5;
 
-      await ContentTaskUtils.waitForCondition(() => {
-        return document.body.hasAttribute("ready");
-      }, "Waiting for the document to be ready.");
+      await ContentTaskUtils.waitForCondition(
+        () => {
+          return document.body.hasAttribute("ready");
+        },
+        "Waiting for the document to be ready.",
+        100,
+        200
+      );
 
       
       const fromSelect = document.querySelector(selectors.fromLanguageSelect);
@@ -38,7 +43,9 @@ add_task(async function test_about_translations_debounce() {
         try {
           await ContentTaskUtils.waitForCondition(
             () => translation === translationResult.innerText,
-            `Waiting for: "${translation}"`
+            `Waiting for: "${translation}"`,
+            100,
+            200
           );
         } catch (error) {
           
