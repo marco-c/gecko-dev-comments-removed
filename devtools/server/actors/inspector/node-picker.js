@@ -129,7 +129,7 @@ class NodePicker {
   _isEventAllowed({ view }) {
     
     
-    if (this._targetActor.window instanceof Ci.nsIDOMChromeWindow) {
+    if (this._targetActor.window.isChromeWindow) {
       return true;
     }
 
