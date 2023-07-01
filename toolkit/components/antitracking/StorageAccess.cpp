@@ -15,6 +15,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsICookiePermission.h"
@@ -133,8 +134,10 @@ static StorageAccess InternalStorageAllowedCheck(
   
   
   
-  if ((aURI && aURI->SchemeIs("about")) ||
-      (documentURI && documentURI->SchemeIs("about")) ||
+  if ((aURI && aURI->SchemeIs("about") &&
+       !NS_IsContentAccessibleAboutURI(aURI)) ||
+      (documentURI && documentURI->SchemeIs("about") &&
+       !NS_IsContentAccessibleAboutURI(documentURI)) ||
       aPrincipal->SchemeIs("about")) {
     return access;
   }
