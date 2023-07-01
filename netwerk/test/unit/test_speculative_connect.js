@@ -54,13 +54,15 @@ var localIPLiterals = localIPv4Literals.concat(localIPv6Literals);
 
 
 var testList = [
-  test_speculative_connect,
+  test_localhost_http_speculative_connect,
+  test_localhost_https_speculative_connect,
   test_hostnames_resolving_to_local_addresses,
   test_proxies_with_local_addresses,
 ];
 
 var testDescription = [
-  "Expect pass with localhost",
+  "Expect pass with localhost, http",
+  "Expect pass with localhost, https",
   "Expect failure with resolved local IPs",
   "Expect failure for proxies with local IPs",
 ];
@@ -150,11 +152,29 @@ TestFailedStreamCallback.prototype = {
 
 
 
-function test_speculative_connect() {
+function test_localhost_http_speculative_connect() {
   serv = new TestServer();
   var ssm = Services.scriptSecurityManager;
   var URI = ios.newURI(
     "http://localhost:" + serv.listener.port + "/just/a/test"
+  );
+  var principal = ssm.createContentPrincipal(URI, {});
+
+  ios
+    .QueryInterface(Ci.nsISpeculativeConnect)
+    .speculativeConnect(URI, principal, null, false);
+}
+
+
+
+
+
+
+function test_localhost_https_speculative_connect() {
+  serv = new TestServer();
+  var ssm = Services.scriptSecurityManager;
+  var URI = ios.newURI(
+    "https://localhost:" + serv.listener.port + "/just/a/test"
   );
   var principal = ssm.createContentPrincipal(URI, {});
 
