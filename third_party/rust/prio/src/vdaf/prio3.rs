@@ -27,23 +27,19 @@
 
 
 
-#[cfg(feature = "crypto-dependencies")]
 use super::prg::PrgSha3;
 use crate::codec::{CodecError, Decode, Encode, ParameterizedDecode};
 use crate::field::{decode_fieldvec, FftFriendlyFieldElement, FieldElement};
-#[cfg(feature = "crypto-dependencies")]
 use crate::field::{Field128, Field64};
 #[cfg(feature = "multithreaded")]
 use crate::flp::gadgets::ParallelSumMultithreaded;
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
+#[cfg(feature = "experimental")]
 use crate::flp::gadgets::PolyEval;
-#[cfg(feature = "crypto-dependencies")]
 use crate::flp::gadgets::{BlindPolyEval, ParallelSum};
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
+#[cfg(feature = "experimental")]
 use crate::flp::types::fixedpoint_l2::{
     compatible_float::CompatibleFloat, FixedPointBoundedL2VecSum,
 };
-#[cfg(feature = "crypto-dependencies")]
 use crate::flp::types::{Average, Count, Histogram, Sum, SumVec};
 use crate::flp::Type;
 use crate::prng::Prng;
@@ -52,7 +48,7 @@ use crate::vdaf::{
     Aggregatable, AggregateShare, Aggregator, Client, Collector, OutputShare, PrepareTransition,
     Share, ShareDecodingParameter, Vdaf, VdafError,
 };
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
+#[cfg(feature = "experimental")]
 use fixed::traits::Fixed;
 use std::convert::TryFrom;
 use std::fmt::Debug;
@@ -69,10 +65,8 @@ const DST_JOINT_RAND_SEED: u16 = 6;
 const DST_JOINT_RAND_PART: u16 = 7;
 
 
-#[cfg(feature = "crypto-dependencies")]
 pub type Prio3Count = Prio3<Count<Field64>, PrgSha3, 16>;
 
-#[cfg(feature = "crypto-dependencies")]
 impl Prio3Count {
     
     pub fn new_count(num_aggregators: u8) -> Result<Self, VdafError> {
@@ -82,11 +76,9 @@ impl Prio3Count {
 
 
 
-#[cfg(feature = "crypto-dependencies")]
 pub type Prio3SumVec =
     Prio3<SumVec<Field128, ParallelSum<Field128, BlindPolyEval<Field128>>>, PrgSha3, 16>;
 
-#[cfg(feature = "crypto-dependencies")]
 impl Prio3SumVec {
     
     
@@ -100,7 +92,6 @@ impl Prio3SumVec {
 
 
 #[cfg(feature = "multithreaded")]
-#[cfg(feature = "crypto-dependencies")]
 #[cfg_attr(docsrs, doc(cfg(feature = "multithreaded")))]
 pub type Prio3SumVecMultithreaded = Prio3<
     SumVec<Field128, ParallelSumMultithreaded<Field128, BlindPolyEval<Field128>>>,
@@ -109,8 +100,6 @@ pub type Prio3SumVecMultithreaded = Prio3<
 >;
 
 #[cfg(feature = "multithreaded")]
-#[cfg(feature = "crypto-dependencies")]
-#[cfg_attr(docsrs, doc(cfg(feature = "multithreaded")))]
 impl Prio3SumVecMultithreaded {
     
     
@@ -126,10 +115,8 @@ impl Prio3SumVecMultithreaded {
 
 
 
-#[cfg(feature = "crypto-dependencies")]
 pub type Prio3Sum = Prio3<Sum<Field128>, PrgSha3, 16>;
 
-#[cfg(feature = "crypto-dependencies")]
 impl Prio3Sum {
     
     
@@ -156,7 +143,7 @@ impl Prio3Sum {
 
 
 
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
+#[cfg(feature = "experimental")]
 #[cfg_attr(docsrs, doc(cfg(feature = "experimental")))]
 pub type Prio3FixedPointBoundedL2VecSum<Fx> = Prio3<
     FixedPointBoundedL2VecSum<
@@ -169,8 +156,7 @@ pub type Prio3FixedPointBoundedL2VecSum<Fx> = Prio3<
     16,
 >;
 
-#[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
-#[cfg_attr(docsrs, doc(cfg(feature = "experimental")))]
+#[cfg(feature = "experimental")]
 impl<Fx: Fixed + CompatibleFloat<Field128>> Prio3FixedPointBoundedL2VecSum<Fx> {
     
     
@@ -186,13 +172,11 @@ impl<Fx: Fixed + CompatibleFloat<Field128>> Prio3FixedPointBoundedL2VecSum<Fx> {
 
 
 
-#[cfg(all(
-    feature = "crypto-dependencies",
-    feature = "experimental",
-    feature = "multithreaded"
-))]
-#[cfg_attr(docsrs, doc(cfg(feature = "experimental")))]
-#[cfg_attr(docsrs, doc(cfg(feature = "multithreaded")))]
+#[cfg(all(feature = "experimental", feature = "multithreaded"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(feature = "experimental", feature = "multithreaded")))
+)]
 pub type Prio3FixedPointBoundedL2VecSumMultithreaded<Fx> = Prio3<
     FixedPointBoundedL2VecSum<
         Fx,
@@ -204,13 +188,7 @@ pub type Prio3FixedPointBoundedL2VecSumMultithreaded<Fx> = Prio3<
     16,
 >;
 
-#[cfg(all(
-    feature = "crypto-dependencies",
-    feature = "experimental",
-    feature = "multithreaded"
-))]
-#[cfg_attr(docsrs, doc(cfg(feature = "experimental")))]
-#[cfg_attr(docsrs, doc(cfg(feature = "multithreaded")))]
+#[cfg(all(feature = "experimental", feature = "multithreaded"))]
 impl<Fx: Fixed + CompatibleFloat<Field128>> Prio3FixedPointBoundedL2VecSumMultithreaded<Fx> {
     
     
@@ -225,10 +203,8 @@ impl<Fx: Fixed + CompatibleFloat<Field128>> Prio3FixedPointBoundedL2VecSumMultit
 
 
 
-#[cfg(feature = "crypto-dependencies")]
 pub type Prio3Histogram = Prio3<Histogram<Field128>, PrgSha3, 16>;
 
-#[cfg(feature = "crypto-dependencies")]
 impl Prio3Histogram {
     
     
@@ -241,10 +217,8 @@ impl Prio3Histogram {
 
 
 
-#[cfg(feature = "crypto-dependencies")]
 pub type Prio3Average = Prio3<Average<Field128>, PrgSha3, 16>;
 
-#[cfg(feature = "crypto-dependencies")]
 impl Prio3Average {
     
     
@@ -559,6 +533,7 @@ where
     
     
     #[cfg(feature = "test-util")]
+    #[doc(hidden)]
     #[allow(clippy::type_complexity)]
     pub fn test_vec_shard<const N: usize>(
         &self,
