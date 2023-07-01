@@ -73,6 +73,8 @@ inline Duration ToDuration(const DurationObject* duration) {
   };
 }
 
+enum class TemporalUnit;
+
 
 
 
@@ -115,6 +117,20 @@ bool ToTemporalDuration(JSContext* cx, JS::Handle<JS::Value> item,
 bool ToTemporalDurationRecord(JSContext* cx,
                               JS::Handle<JS::Value> temporalDurationLike,
                               Duration* result);
+
+
+
+
+
+bool BalanceDuration(JSContext* cx, const Duration& duration,
+                     TemporalUnit largestUnit, TimeDuration* result);
+
+
+
+
+
+bool BalanceDuration(JSContext* cx, const Instant& nanoseconds,
+                     TemporalUnit largestUnit, TimeDuration* result);
 
 } 
 
