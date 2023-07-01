@@ -168,6 +168,11 @@ class TestWifiMonitor : public ::testing::Test {
     mWifiMonitor = MakeRefPtr<nsWifiMonitor>(MakeUnique<MockWifiScanner>());
     EXPECT_TRUE(!mWifiMonitor->IsPolling());
 
+    
+    mObs->NotifyObservers(
+        nullptr, NS_NETWORK_LINK_TYPE_TOPIC,
+        NS_ConvertUTF8toUTF16(NS_NETWORK_LINK_TYPE_ETHERNET).get());
+
     mWifiListener = new MockWifiListener();
     LOGI(("monitor: %p | scanner: %p | listener: %p", mWifiMonitor.get(),
           mWifiMonitor->mWifiScanner.get(), mWifiListener.get()));
@@ -365,7 +370,7 @@ class TestWifiMonitor : public ::testing::Test {
     
     
     const LinkTypeMobility kLinkTypeTopicDatas[] = {
-        {NS_NETWORK_LINK_TYPE_UNKNOWN, false },
+        {NS_NETWORK_LINK_TYPE_UNKNOWN, true },
         {NS_NETWORK_LINK_TYPE_ETHERNET, false},
         {NS_NETWORK_LINK_TYPE_USB, false},
         {NS_NETWORK_LINK_TYPE_WIFI, false},
