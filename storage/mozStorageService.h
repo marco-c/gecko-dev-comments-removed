@@ -24,8 +24,7 @@ namespace mozilla::intl {
 class Collator;
 }
 
-namespace mozilla {
-namespace storage {
+namespace mozilla::storage {
 
 class Connection;
 class Service : public mozIStorageService,
@@ -179,7 +178,6 @@ class Service : public mozIStorageService,
   mozilla::intl::Collator::Sensitivity mLastSensitivity;
 };
 
-}  
 }  
 
 #endif 
