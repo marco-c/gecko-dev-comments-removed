@@ -572,19 +572,10 @@ struct DOMIfaceAndProtoJSClass {
   
   DOMObjectType mType;  
 
-  
-  
-  
-  bool wantsInterfaceHasInstance;
-
   const prototypes::ID mPrototypeID;  
   const uint32_t mDepth;
 
   const NativePropertyHooks* mNativeHooks;
-
-  
-  
-  const char* mFunToString;
 
   ProtoGetter mGetParentProto;
 
@@ -594,6 +585,25 @@ struct DOMIfaceAndProtoJSClass {
   }
 
   const JSClass* ToJSClass() const { return &mBase; }
+};
+
+
+struct DOMIfaceJSClass : public DOMIfaceAndProtoJSClass {
+  
+  
+  
+  bool wantsInterfaceHasInstance;
+
+  
+  
+  const char* mFunToString;
+
+  static const DOMIfaceJSClass* FromJSClass(const JSClass* base) {
+    const DOMIfaceAndProtoJSClass* clazz =
+        DOMIfaceAndProtoJSClass::FromJSClass(base);
+    MOZ_ASSERT(clazz->mType == eInterface || clazz->mType == eNamespace);
+    return static_cast<const DOMIfaceJSClass*>(clazz);
+  }
 };
 
 class ProtoAndIfaceCache;
