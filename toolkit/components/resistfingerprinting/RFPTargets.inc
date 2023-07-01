@@ -86,6 +86,9 @@ ITEM_VALUE(CSSInvertedColors,           1llu << 55)
 ITEM_VALUE(CSSVideoDynamicRange,        1llu << 56)
 ITEM_VALUE(CSSPointerCapabilities,      1llu << 57)
 
+ITEM_VALUE(WebGLRenderCapability,       1llu << 58)
+ITEM_VALUE(WebGLRenderInfo,             1llu << 59)
+
 
 
 
