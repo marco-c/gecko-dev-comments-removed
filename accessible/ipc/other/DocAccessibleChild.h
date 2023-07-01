@@ -12,8 +12,6 @@
 namespace mozilla {
 namespace a11y {
 
-class LocalAccessible;
-
 
 
 
@@ -29,22 +27,6 @@ class DocAccessibleChild : public DocAccessibleChildBase {
   ~DocAccessibleChild() {
     MOZ_COUNT_DTOR_INHERITED(DocAccessibleChild, DocAccessibleChildBase);
   }
-
-  virtual mozilla::ipc::IPCResult RecvRestoreFocus() override;
-
-  virtual mozilla::ipc::IPCResult RecvScrollToPoint(const uint64_t& aID,
-                                                    const uint32_t& aScrollType,
-                                                    const int32_t& aX,
-                                                    const int32_t& aY) override;
-
-  virtual mozilla::ipc::IPCResult RecvAnnounce(
-      const uint64_t& aID, const nsAString& aAnnouncement,
-      const uint16_t& aPriority) override;
-
-  virtual mozilla::ipc::IPCResult RecvScrollSubstringToPoint(
-      const uint64_t& aID, const int32_t& aStartOffset,
-      const int32_t& aEndOffset, const uint32_t& aCoordinateType,
-      const int32_t& aX, const int32_t& aY) override;
 };
 
 }  
