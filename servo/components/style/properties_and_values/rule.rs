@@ -15,8 +15,8 @@ use crate::str::CssStringWriter;
 use crate::values::serialize_atom_name;
 use super::registry::PropertyRegistration;
 use cssparser::{
-    AtRuleParser, CowRcStr, DeclarationParser, ParseErrorKind, Parser, QualifiedRuleParser,
-    RuleBodyItemParser, RuleBodyParser, SourceLocation,
+    AtRuleParser, CowRcStr, DeclarationParser, ParseErrorKind, Parser, ParserInput,
+    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
 };
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use selectors::parser::SelectorParseErrorKind;
@@ -200,31 +200,39 @@ impl PropertyRuleData {
     }
 
     
-    pub fn validate_syntax(syntax: &Descriptor, initial_value: Option<&InitialValue>) -> Result<(), ToRegistrationError> {
+    
+    pub fn validate_initial_value(syntax: &Descriptor, initial_value: Option<&InitialValue>) -> Result<(), ToRegistrationError> {
+        use crate::properties::CSSWideKeyword;
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if !syntax.is_universal() {
-            if initial_value.is_none() {
-                return Err(ToRegistrationError::NoInitialValue);
-            }
-            
-            
-            
+        if syntax.is_universal() && initial_value.is_none() {
+            return Ok(())
         }
+
+        
+        
+
+        
+        let Some(initial) = initial_value else { return Err(ToRegistrationError::NoInitialValue) };
+
+        let mut input = ParserInput::new(initial.css_text());
+        let mut input = Parser::new(&mut input);
+        input.skip_whitespace();
+
+        
+        
+        
+
+        
+        
+        
+        
+        
+        if input.try_parse(CSSWideKeyword::parse).is_ok() {
+            return Err(ToRegistrationError::InitialValueNotComputationallyIndependent);
+        }
+
         Ok(())
     }
 
@@ -249,7 +257,7 @@ impl PropertyRuleData {
         
         let Some(ref inherits) = self.inherits else { return Err(MissingInherits) };
 
-        Self::validate_syntax(syntax.descriptor(), self.initial_value.as_ref())?;
+        Self::validate_initial_value(syntax.descriptor(), self.initial_value.as_ref())?;
 
         Ok(PropertyRegistration {
             syntax: syntax.descriptor().clone(),

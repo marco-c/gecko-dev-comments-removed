@@ -382,6 +382,11 @@ impl VariableValue {
             references_environment: false,
         }
     }
+
+    
+    pub fn css_text(&self) -> &str {
+        &self.css
+    }
 }
 
 
