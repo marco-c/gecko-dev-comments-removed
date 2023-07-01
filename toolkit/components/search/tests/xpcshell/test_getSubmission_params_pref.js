@@ -6,6 +6,10 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const defaultBranch = Services.prefs.getDefaultBranch(
   SearchUtils.BROWSER_SEARCH_PREF
 );
@@ -19,10 +23,16 @@ add_task(async function setup() {
 
 add_task(async function test_pref_initial_value() {
   defaultBranch.setCharPref("param.code", "good&id=unique");
-  Services.prefs.setCharPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "param.code",
-    "bad"
-  );
+
+  
+  
+  
+  if (!AppConstants.NIGHTLY_BUILD) {
+    Services.prefs.setCharPref(
+      SearchUtils.BROWSER_SEARCH_PREF + "param.code",
+      "bad"
+    );
+  }
 
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
