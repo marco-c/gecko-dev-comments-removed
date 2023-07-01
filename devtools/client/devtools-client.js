@@ -195,13 +195,7 @@ DevToolsClient.prototype = {
 
 
 
-
-
-
-
-
-
-  request(packet, onResponse) {
+  request(packet) {
     if (!this.mainRoot) {
       throw Error("Have not yet received a hello packet from the server.");
     }
@@ -209,15 +203,6 @@ DevToolsClient.prototype = {
     if (!packet.to) {
       throw Error("'" + type + "' request packet has no destination.");
     }
-
-    
-    
-    const safeOnResponse = response => {
-      if (!onResponse) {
-        return response;
-      }
-      return onResponse(response) || response;
-    };
 
     if (this._transportClosed) {
       const msg =
@@ -228,8 +213,7 @@ DevToolsClient.prototype = {
         packet.to +
         "' " +
         "can't be sent as the connection is closed.";
-      const resp = { error: "connectionClosed", message: msg };
-      return Promise.reject(safeOnResponse(resp));
+      return Promise.reject({ error: "connectionClosed", message: msg });
     }
 
     const request = new Request(packet);
@@ -241,7 +225,6 @@ DevToolsClient.prototype = {
     const promise = new Promise((resolve, reject) => {
       function listenerJson(resp) {
         removeRequestListeners();
-        resp = safeOnResponse(resp);
         if (resp.error) {
           reject(resp);
         } else {
@@ -250,7 +233,7 @@ DevToolsClient.prototype = {
       }
       function listenerBulk(resp) {
         removeRequestListeners();
-        resolve(safeOnResponse(resp));
+        resolve(resp);
       }
 
       const removeRequestListeners = () => {
