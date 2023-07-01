@@ -27,16 +27,20 @@ function areArraysEqual(a1, a2) {
 
 function areMetadataEqual(metadata1, metadata2, type) {
   return metadata1.synchronizationSource === metadata2.synchronizationSource &&
-         metadata1.payloadType == metadata2.payloadType &&
-         areArraysEqual(metadata1.contributingSources, metadata2.contributingSources) &&
-         metadata1.frameId === metadata2.frameId &&
-         areArraysEqual(metadata1.dependencies, metadata2.dependencies) &&
-         metadata1.spatialIndex === metadata2.spatialIndex &&
-         metadata1.temporalIndex === metadata2.temporalIndex &&
-         
-         type == "key"
-           ? metadata1.width === metadata2.width && metadata1.height === metadata2.height
-           : true;
+          metadata1.payloadType == metadata2.payloadType &&
+          areArraysEqual(
+              metadata1.contributingSources, metadata2.contributingSources) &&
+          metadata1.absCaptureTime == metadata2.absCaptureTime &&
+          metadata1.frameId === metadata2.frameId &&
+          areArraysEqual(metadata1.dependencies, metadata2.dependencies) &&
+          metadata1.spatialIndex === metadata2.spatialIndex &&
+          metadata1.temporalIndex === metadata2.temporalIndex &&
+          
+          
+          type == 'key' ?
+      metadata1.width === metadata2.width &&
+          metadata1.height === metadata2.height :
+      true;
 }
 
 function areFrameInfosEqual(frame1, frame2) {
@@ -55,10 +59,8 @@ function containsVideoMetadata(metadata) {
          metadata.dependencies !== undefined;
 }
 
-function enableGFD(sdp) {
-  const GFD_V00_EXTENSION =
-      'http://www.webrtc.org/experiments/rtp-hdrext/generic-frame-descriptor-00';
-  if (sdp.indexOf(GFD_V00_EXTENSION) !== -1)
+function enableExtension(sdp, extension) {
+  if (sdp.indexOf(extension) !== -1)
     return sdp;
 
   const extensionIds = sdp.trim().split('\n')
@@ -67,22 +69,29 @@ function enableGFD(sdp) {
     .map(line => line.split(' ')[0].substr(9))
     .map(id => parseInt(id, 10))
     .sort((a, b) => a - b);
-  for (let newId = 1; newId <= 14; newId++) {
+  for (let newId = 1; newId <= 15; newId++) {
     if (!extensionIds.includes(newId)) {
-      return sdp += 'a=extmap:' + newId + ' ' + GFD_V00_EXTENSION + '\r\n';
+      return sdp += 'a=extmap:' + newId + ' ' + extension + '\r\n';
     }
   }
   if (sdp.indexOf('a=extmap-allow-mixed') !== -1) { 
     const newId = extensionIds[extensionIds.length - 1] + 1;
-    return sdp += 'a=extmap:' + newId + ' ' + GFD_V00_EXTENSION + '\r\n';
+    return sdp += 'a=extmap:' + newId + ' ' + extension + '\r\n';
   }
-  throw 'Could not find free extension id to use for ' + GFD_V00_EXTENSION;
+  throw 'Could not find free extension id to use for ' + extension;
 }
+
+const GFD_V00_EXTENSION =
+    'http://www.webrtc.org/experiments/rtp-hdrext/generic-frame-descriptor-00';
+const ABS_V00_EXTENSION =
+    'http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time';
 
 async function exchangeOfferAnswer(pc1, pc2) {
   const offer = await pc1.createOffer();
   
-  const sdpGFD = enableGFD(offer.sdp);
+  
+  const sdpABS = enableExtension(offer.sdp, ABS_V00_EXTENSION);
+  const sdpGFD = enableExtension(sdpABS, GFD_V00_EXTENSION);
   await pc1.setLocalDescription({type: offer.type, sdp: sdpGFD});
   
   
@@ -98,7 +107,8 @@ async function exchangeOfferAnswer(pc1, pc2) {
 async function exchangeOfferAnswerReverse(pc1, pc2) {
   const offer = await pc2.createOffer({offerToReceiveAudio: true, offerToReceiveVideo: true});
   
-  const sdpGFD = enableGFD(offer.sdp);
+  const sdpABS = enableExtension(offer.sdp, ABS_V00_EXTENSION);
+  const sdpGFD = enableExtension(sdpABS, GFD_V00_EXTENSION);
   
   
   
