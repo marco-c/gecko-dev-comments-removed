@@ -36,8 +36,9 @@ add_task(async function test_popup_keynav() {
     });
     let win = await windowPromise;
     let hamburgerButton = win.document.getElementById("PanelUI-menu-button");
-    forceFocus(hamburgerButton);
-    await expectFocusAfterKey("Tab", win.gBrowser.selectedBrowser, false, win);
+    await focusAndActivateElement(hamburgerButton, () =>
+      expectFocusAfterKey("Tab", win.gBrowser.selectedBrowser, false, win)
+    );
     
     EventUtils.synthesizeKey("KEY_Tab", {}, win);
     

@@ -10,10 +10,16 @@
 
 
 
-function forceFocus(aElem) {
-  aElem.setAttribute("tabindex", "-1");
-  aElem.focus();
-  aElem.removeAttribute("tabindex");
+
+
+async function focusAndActivateElement(elem, activateMethod) {
+  elem.setAttribute("tabindex", "-1");
+  elem.focus();
+  try {
+    await activateMethod(elem);
+  } finally {
+    elem.removeAttribute("tabindex");
+  }
 }
 
 async function expectFocusAfterKey(
