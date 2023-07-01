@@ -139,10 +139,6 @@ class SVGAnimatedLength {
   float GetAnimValInSpecifiedUnits() const { return mAnimVal; }
   float GetBaseValInSpecifiedUnits() const { return mBaseVal; }
 
-  float GetBaseValue(const SVGViewportElement* aCtx) const {
-    return mBaseVal * GetPixelsPerUnit(aCtx, mSpecifiedUnitType);
-  }
-
   bool HasBaseVal() const { return mIsBaseSet; }
   
   
