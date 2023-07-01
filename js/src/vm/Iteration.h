@@ -579,6 +579,14 @@ struct NativeIterator : public NativeIteratorListNode {
     return indicesState() == NativeIteratorIndices::AvailableOnRequest;
   }
 
+  
+  bool mayHavePrototypeProperties() {
+    
+    
+    
+    return !hasValidIndices() && !indicesAvailableOnRequest();
+  }
+
   void disableIndices() {
     
     
@@ -696,6 +704,8 @@ RegExpStringIteratorObject* NewRegExpStringIterator(JSContext* cx);
                                        MutableHandleIdVector props);
 
 PropertyIteratorObject* LookupInIteratorCache(JSContext* cx, HandleObject obj);
+PropertyIteratorObject* LookupInShapeIteratorCache(JSContext* cx,
+                                                   HandleObject obj);
 
 PropertyIteratorObject* GetIterator(JSContext* cx, HandleObject obj);
 PropertyIteratorObject* GetIteratorWithIndices(JSContext* cx, HandleObject obj);
