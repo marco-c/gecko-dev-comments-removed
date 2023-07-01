@@ -58,6 +58,8 @@ class Rule : public nsISupports, public nsWrapperCache {
   
   virtual bool IsCCLeaf() const MOZ_MUST_OVERRIDE;
 
+  virtual bool IsGroupRule() const { return false; }
+
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
 #endif
