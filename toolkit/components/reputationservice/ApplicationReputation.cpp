@@ -228,10 +228,11 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".definition",  
     ".desktop",     
     
-    ".dex",         
-    ".dht",         
-    ".dhtm",        
-    ".dhtml",       
+    ".dex",    
+    ".dht",    
+    ".dhtm",   
+    ".dhtml",  
+    
     ".diskcopy42",  
     ".dll",         
     ".dmg",         

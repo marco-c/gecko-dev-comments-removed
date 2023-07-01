@@ -70,6 +70,7 @@ static const char* const kTestFileExtensions[] = {
     ".dht",            
     ".dhtm",           
     ".dhtml",          
+    ".diagcab",        
     ".diskcopy42",     
     ".dll",            
     ".dmg",            
