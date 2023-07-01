@@ -718,8 +718,7 @@ void ImageDocument::UpdateTitleAndCharset() {
 }
 
 bool ImageDocument::IsSiteSpecific() {
-  
-  return !ShouldResistFingerprinting(RFPTarget::IsAlwaysEnabledForPrecompute) &&
+  return !ShouldResistFingerprinting(RFPTarget::SiteSpecificZoom) &&
          mozilla::Preferences::GetBool("browser.zoom.siteSpecific", false);
 }
 
