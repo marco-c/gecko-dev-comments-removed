@@ -689,6 +689,9 @@ class PageStyleActor extends Actor {
       case "::first-line":
       case "::selection":
         return true;
+      
+      case "::highlight":
+        return false;
       case "::marker":
         return this._nodeIsListItem(node);
       case "::backdrop":
