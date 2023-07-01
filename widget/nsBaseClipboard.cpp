@@ -5,6 +5,7 @@
 
 #include "nsBaseClipboard.h"
 
+#include "mozilla/StaticPrefs_widget.h"
 #include "nsIClipboardOwner.h"
 #include "nsError.h"
 #include "nsXPCOM.h"
@@ -206,23 +207,58 @@ NS_IMETHODIMP nsBaseClipboard::SetData(nsITransferable* aTransferable,
 
 
 
-
 NS_IMETHODIMP nsBaseClipboard::GetData(nsITransferable* aTransferable,
                                        int32_t aWhichClipboard) {
-  NS_ASSERTION(aTransferable, "clipboard given a null transferable");
+  CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
-  CLIPBOARD_LOG("%s", __FUNCTION__);
-
-  if (!nsIClipboard::IsClipboardTypeSupported(kSelectionClipboard) &&
-      !nsIClipboard::IsClipboardTypeSupported(kFindClipboard) &&
-      aWhichClipboard != kGlobalClipboard) {
+  if (!aTransferable) {
+    NS_ASSERTION(false, "clipboard given a null transferable");
     return NS_ERROR_FAILURE;
   }
 
-  if (aTransferable)
-    return GetNativeClipboardData(aTransferable, aWhichClipboard);
+  
+  
+  if (kSelectionCache == aWhichClipboard ||
+      !nsIClipboard::IsClipboardTypeSupported(aWhichClipboard)) {
+    CLIPBOARD_LOG("%s: clipboard %d is not supported.", __FUNCTION__,
+                  aWhichClipboard);
+    return NS_ERROR_FAILURE;
+  }
 
-  return NS_ERROR_FAILURE;
+  if (mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
+    
+    
+    
+    if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
+      MOZ_ASSERT(clipboardCache->GetTransferable());
+
+      
+      
+      nsTArray<nsCString> flavors;
+      nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
+      if (NS_FAILED(rv)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      for (const auto& flavor : flavors) {
+        nsCOMPtr<nsISupports> dataSupports;
+        rv = clipboardCache->GetTransferable()->GetTransferData(
+            flavor.get(), getter_AddRefs(dataSupports));
+        if (NS_SUCCEEDED(rv)) {
+          CLIPBOARD_LOG("%s: getting %s from cache.", __FUNCTION__,
+                        flavor.get());
+          aTransferable->SetTransferData(flavor.get(), dataSupports);
+          
+          return NS_OK;
+        }
+      }
+    }
+
+    
+    
+  }
+
+  return GetNativeClipboardData(aTransferable, aWhichClipboard);
 }
 
 RefPtr<GenericPromise> nsBaseClipboard::AsyncGetData(
@@ -299,6 +335,32 @@ nsBaseClipboard::IsClipboardTypeSupported(int32_t aWhichClipboard,
       *aRetval = false;
       return NS_OK;
   }
+}
+
+nsBaseClipboard::ClipboardCache* nsBaseClipboard::GetClipboardCacheIfValid(
+    int32_t aClipboardType) {
+  MOZ_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
+
+  const mozilla::UniquePtr<ClipboardCache>& cache = mCaches[aClipboardType];
+  MOZ_ASSERT(cache);
+
+  if (!cache->GetTransferable()) {
+    MOZ_ASSERT(cache->GetSequenceNumber() == -1);
+    return nullptr;
+  }
+
+  auto changeCountOrError = GetNativeClipboardSequenceNumber(aClipboardType);
+  if (changeCountOrError.isErr()) {
+    return nullptr;
+  }
+
+  if (changeCountOrError.unwrap() != cache->GetSequenceNumber()) {
+    
+    cache->Clear();
+    return nullptr;
+  }
+
+  return cache.get();
 }
 
 void nsBaseClipboard::ClipboardCache::Clear() {
