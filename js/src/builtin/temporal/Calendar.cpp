@@ -1876,6 +1876,22 @@ static bool CalendarConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool Calendar_from(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  auto* obj = ToTemporalCalendar(cx, args.get(0));
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
 static bool Calendar_id(JSContext* cx, const CallArgs& args) {
   auto* calendar = &args.thisv().toObject().as<CalendarObject>();
 
@@ -2535,6 +2551,7 @@ const JSClass CalendarObject::class_ = {
 const JSClass& CalendarObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec Calendar_methods[] = {
+    JS_FN("from", Calendar_from, 1, 0),
     JS_FS_END,
 };
 
