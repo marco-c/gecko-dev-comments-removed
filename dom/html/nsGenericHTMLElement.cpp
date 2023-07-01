@@ -2266,7 +2266,20 @@ void nsGenericHTMLElement::Click(CallerType aCallerType) {
 
   RefPtr<nsPresContext> context;
   if (doc) {
-    context = doc->GetPresContext();
+    PresShell* presShell = doc->GetPresShell();
+    if (!presShell) {
+      
+      
+      
+      
+      
+      
+      doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
+      presShell = doc->GetPresShell();
+    }
+    if (presShell) {
+      context = presShell->GetPresContext();
+    }
   }
 
   SetHandlingClick();
