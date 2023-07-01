@@ -50,7 +50,7 @@ addAccessibleTask(
 
     info("Testing same origin (in-process) iframe");
     
-    let src = "http://example.com/initial.html";
+    let src = "https://example.com/initial.html";
     let loaded = waitForEvent(
       EVENT_DOCUMENT_LOAD_COMPLETE,
       evt => evt.accessible.parent.parent == docAcc
@@ -65,7 +65,7 @@ addAccessibleTask(
 
     info("Testing different origin (out-of-process) iframe");
     
-    src = "http://example.net/initial.html";
+    src = "https://example.net/initial.html";
     loaded = waitForEvent(
       EVENT_DOCUMENT_LOAD_COMPLETE,
       evt => evt.accessible.parent.parent == docAcc
