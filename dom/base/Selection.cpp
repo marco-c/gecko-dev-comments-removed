@@ -2167,6 +2167,10 @@ void Selection::AddRangeAndSelectFramesAndNotifyListenersInternal(
   if (aRange.IsInAnySelection()) {
     if (aRange.IsInSelection(*this)) {
       
+      
+      if (mSelectionType == SelectionType::eNormal) {
+        SetInterlinePosition(InterlinePosition::StartOfNextLine);
+      }
       return;
     }
     if (mSelectionType != SelectionType::eNormal &&
