@@ -115,6 +115,8 @@
 
 namespace js {
 
+class Nursery;
+
 
 
 template <typename T, typename Enable = void>
@@ -1005,7 +1007,7 @@ class RootingContext {
   js::GeckoProfilerThread geckoProfiler_;
 
  public:
-  RootingContext();
+  explicit RootingContext(js::Nursery* nursery);
 
   void traceStackRoots(JSTracer* trc);
 
@@ -1018,16 +1020,26 @@ class RootingContext {
 
   js::GeckoProfilerThread& geckoProfiler() { return geckoProfiler_; }
 
+  JS::Zone* zoneUnchecked() const { return zone_; }
+
+  js::Nursery& nursery() const {
+    MOZ_ASSERT(nursery_);
+    return *nursery_;
+  }
+
  protected:
   
   
   
 
   
-  Realm* realm_;
+  js::Nursery* nursery_;
 
   
   Zone* zone_;
+
+  
+  Realm* realm_;
 
  public:
   

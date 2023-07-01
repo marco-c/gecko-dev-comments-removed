@@ -163,6 +163,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   bool init(js::ContextKind kind);
 
+  static JSContext* from(JS::RootingContext* rcx) {
+    return static_cast<JSContext*>(rcx);
+  }
+
  private:
   js::UnprotectedData<JSRuntime*> runtime_;
   js::WriteOnceData<js::ContextKind> kind_;
@@ -340,12 +344,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   JS::Zone* zone() const {
     MOZ_ASSERT_IF(!realm() && zone_, inAtomsZone());
     MOZ_ASSERT_IF(realm(), js::GetRealmZone(realm()) == zone_);
-    return zoneRaw();
+    return zoneUnchecked();
   }
-
-  
-  
-  JS::Zone* zoneRaw() const { return zone_; }
 
   
   static size_t offsetOfZone() { return offsetof(JSContext, zone_); }
@@ -745,7 +745,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
       jsbytecode** pc = nullptr,
       AllowCrossRealm allowCrossRealm = AllowCrossRealm::DontAllow) const;
 
-  inline js::Nursery& nursery();
   inline void minorGC(JS::GCReason reason);
 
  public:
