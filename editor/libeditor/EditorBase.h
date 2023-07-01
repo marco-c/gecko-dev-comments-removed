@@ -1687,6 +1687,8 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<InsertTextResult, nsresult>
   InsertTextWithTransaction(Document& aDocument,
                             const nsAString& aStringToInsert,
@@ -1963,18 +1965,6 @@ class EditorBase : public nsIEditor,
 
 
   virtual bool IsActiveInDOMWindow() const;
-
-  
-
-
-
-
-
-
-
-  template <typename EditorDOMPointType>
-  EditorDOMPointType FindBetterInsertionPoint(
-      const EditorDOMPointType& aPoint) const;
 
   
 

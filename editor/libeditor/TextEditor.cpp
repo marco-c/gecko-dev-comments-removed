@@ -74,6 +74,11 @@ using namespace dom;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
+template EditorDOMPoint TextEditor::FindBetterInsertionPoint(
+    const EditorDOMPoint& aPoint) const;
+template EditorRawDOMPoint TextEditor::FindBetterInsertionPoint(
+    const EditorRawDOMPoint& aPoint) const;
+
 TextEditor::TextEditor() : EditorBase(EditorBase::EditorType::Text) {
   
   static_assert(
@@ -789,6 +794,61 @@ nsresult TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::RemoveAttributeWithTransaction() failed");
   return EditorBase::ToGenericNSResult(rv);
+}
+
+template <typename EditorDOMPointType>
+EditorDOMPointType TextEditor::FindBetterInsertionPoint(
+    const EditorDOMPointType& aPoint) const {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!aPoint.IsInContentNode()))) {
+    return aPoint;
+  }
+
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
+  Element* const anonymousDivElement = GetRoot();
+  if (aPoint.GetContainer() == anonymousDivElement) {
+    
+    
+    
+    if (aPoint.IsStartOfContainer()) {
+      if (aPoint.GetContainer()->HasChildren() &&
+          aPoint.GetContainer()->GetFirstChild()->IsText()) {
+        return EditorDOMPointType(aPoint.GetContainer()->GetFirstChild(), 0u);
+      }
+    }
+    
+    
+    
+    else {
+      nsIContent* child = aPoint.GetContainer()->GetLastChild();
+      while (child) {
+        if (child->IsText()) {
+          return EditorDOMPointType::AtEndOf(*child);
+        }
+        child = child->GetPreviousSibling();
+      }
+    }
+  }
+
+  
+  
+  
+  if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
+          *aPoint.template ContainerAs<nsIContent>()) &&
+      aPoint.IsStartOfContainer()) {
+    nsIContent* previousSibling = aPoint.GetContainer()->GetPreviousSibling();
+    if (previousSibling && previousSibling->IsText()) {
+      return EditorDOMPointType::AtEndOf(*previousSibling);
+    }
+
+    nsINode* parentOfContainer = aPoint.GetContainerParent();
+    if (parentOfContainer && parentOfContainer == anonymousDivElement) {
+      return EditorDOMPointType(parentOfContainer,
+                                aPoint.template ContainerAs<nsIContent>(), 0u);
+    }
+  }
+
+  return aPoint;
 }
 
 

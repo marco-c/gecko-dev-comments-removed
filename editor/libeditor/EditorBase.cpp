@@ -163,11 +163,6 @@ template EditorRawDOMPoint EditorBase::GetFirstSelectionStartPoint() const;
 template EditorDOMPoint EditorBase::GetFirstSelectionEndPoint() const;
 template EditorRawDOMPoint EditorBase::GetFirstSelectionEndPoint() const;
 
-template EditorDOMPoint EditorBase::FindBetterInsertionPoint(
-    const EditorDOMPoint& aPoint) const;
-template EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(
-    const EditorRawDOMPoint& aPoint) const;
-
 template EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
     const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
     const EditorDOMPoint& aPointAtCaret);
@@ -2996,85 +2991,6 @@ nsresult EditorBase::ScrollSelectionFocusIntoView() const {
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
-template <typename EditorDOMPointType>
-EditorDOMPointType EditorBase::FindBetterInsertionPoint(
-    const EditorDOMPointType& aPoint) const {
-  if (MOZ_UNLIKELY(NS_WARN_IF(!aPoint.IsInContentNode()))) {
-    return aPoint;
-  }
-
-  MOZ_ASSERT(aPoint.IsSetAndValid());
-
-  if (aPoint.IsInTextNode()) {
-    
-    return aPoint;
-  }
-
-  if (!IsInPlaintextMode()) {
-    
-    
-    
-    
-    return aPoint;
-  }
-
-  RefPtr<Element> rootElement = GetRoot();
-  if (aPoint.GetContainer() == rootElement) {
-    
-    
-    
-    if (aPoint.IsStartOfContainer() && aPoint.GetContainer()->HasChildren() &&
-        aPoint.GetContainer()->GetFirstChild()->IsText()) {
-      return EditorDOMPointType(aPoint.GetContainer()->GetFirstChild(), 0u);
-    }
-
-    
-    
-    
-    
-    if (!aPoint.IsStartOfContainer()) {
-      if (IsHTMLEditor()) {
-        
-        
-        nsIContent* child = aPoint.GetPreviousSiblingOfChild();
-        if (child && child->IsText()) {
-          return EditorDOMPointType::AtEndOf(*child);
-        }
-      } else {
-        
-        
-        nsIContent* child = aPoint.GetContainer()->GetLastChild();
-        while (child) {
-          if (child->IsText()) {
-            return EditorDOMPointType::AtEndOf(*child);
-          }
-          child = child->GetPreviousSibling();
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
-          *aPoint.template ContainerAs<nsIContent>()) &&
-      aPoint.IsStartOfContainer()) {
-    nsIContent* previousSibling = aPoint.GetContainer()->GetPreviousSibling();
-    if (previousSibling && previousSibling->IsText()) {
-      return EditorDOMPointType::AtEndOf(*previousSibling);
-    }
-
-    nsINode* parentOfContainer = aPoint.GetContainerParent();
-    if (parentOfContainer && parentOfContainer == rootElement) {
-      return EditorDOMPointType(parentOfContainer,
-                                aPoint.template ContainerAs<nsIContent>(), 0u);
-    }
-  }
-
-  return aPoint;
-}
-
 Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
     Document& aDocument, const nsAString& aStringToInsert,
     const EditorDOMPoint& aPointToInsert) {
@@ -3091,20 +3007,13 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
   
   
   
-  EditorDOMPoint pointToInsert = FindBetterInsertionPoint(aPointToInsert);
-
-  
-  if (!pointToInsert.IsInTextNode()) {
-    nsIContent* child = nullptr;
-    if (!pointToInsert.IsStartOfContainer() &&
-        (child = pointToInsert.GetPreviousSiblingOfChild()) &&
-        child->IsText()) {
-      pointToInsert.Set(child, child->Length());
-    } else if (!pointToInsert.IsEndOfContainer() &&
-               (child = pointToInsert.GetChild()) && child->IsText()) {
-      pointToInsert.Set(child, 0);
+  EditorDOMPoint pointToInsert = [&]() {
+    if (IsTextEditor()) {
+      return AsTextEditor()->FindBetterInsertionPoint(aPointToInsert);
     }
-  }
+    return aPointToInsert
+        .GetPointInTextNodeIfPointingAroundTextNode<EditorDOMPoint>();
+  }();
 
   if (ShouldHandleIMEComposition()) {
     if (!pointToInsert.IsInTextNode()) {
@@ -5533,6 +5442,10 @@ nsresult EditorBase::InitializeSelection(
   
   
   if (mComposition && mComposition->IsMovingToNewTextNode()) {
+    MOZ_DIAGNOSTIC_ASSERT(IsTextEditor());
+    if (NS_WARN_IF(!IsTextEditor())) {
+      return NS_ERROR_UNEXPECTED;
+    }
     
     
     const nsRange* firstRange = SelectionRef().GetRangeAt(0);
@@ -5541,7 +5454,7 @@ nsresult EditorBase::InitializeSelection(
     }
     EditorRawDOMPoint atStartOfFirstRange(firstRange->StartRef());
     EditorRawDOMPoint betterInsertionPoint =
-        FindBetterInsertionPoint(atStartOfFirstRange);
+        AsTextEditor()->FindBetterInsertionPoint(atStartOfFirstRange);
     RefPtr<Text> textNode = betterInsertionPoint.GetContainerAs<Text>();
     MOZ_ASSERT(textNode,
                "There must be text node if composition string is not empty");

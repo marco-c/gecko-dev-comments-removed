@@ -285,6 +285,18 @@ class TextEditor final : public EditorBase,
   
 
 
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  EditorDOMPointType FindBetterInsertionPoint(
+      const EditorDOMPointType& aPoint) const;
+
+  
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertLineBreakAsSubAction();
 
   
@@ -586,6 +598,7 @@ class TextEditor final : public EditorBase,
 
   int32_t mMaxTextLength = -1;
 
+  friend class AutoRangeArray;  
   friend class DeleteNodeTransaction;
   friend class EditorBase;
   friend class InsertNodeTransaction;
