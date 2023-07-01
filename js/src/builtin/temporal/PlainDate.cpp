@@ -1754,6 +1754,103 @@ static bool PlainDate_getISOFields(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainDate_add(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainDateObject*> temporalDate(
+      cx, &args.thisv().toObject().as<PlainDateObject>());
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+  Rooted<Wrapped<DurationObject*>> duration(
+      cx, ToTemporalDuration(cx, args.get(0)));
+  if (!duration) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    options = RequireObjectArg(cx, "options", "add", args[1]);
+  } else {
+    options = NewPlainObjectWithProto(cx, nullptr);
+  }
+  if (!options) {
+    return false;
+  }
+
+  
+  auto result = CalendarDateAdd(cx, calendar, temporalDate, duration, options);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool PlainDate_add(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_add>(cx, args);
+}
+
+
+
+
+static bool PlainDate_subtract(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainDateObject*> temporalDate(
+      cx, &args.thisv().toObject().as<PlainDateObject>());
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+  Duration duration;
+  if (!ToTemporalDuration(cx, args.get(0), &duration)) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    options = RequireObjectArg(cx, "options", "subtract", args[1]);
+  } else {
+    options = NewPlainObjectWithProto(cx, nullptr);
+  }
+  if (!options) {
+    return false;
+  }
+
+  
+  Rooted<DurationObject*> negatedDuration(
+      cx, CreateTemporalDuration(cx, duration.negate()));
+  if (!negatedDuration) {
+    return false;
+  }
+
+  
+  auto result =
+      CalendarDateAdd(cx, calendar, temporalDate, negatedDuration, options);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool PlainDate_subtract(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_subtract>(cx, args);
+}
+
+
+
+
 static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   Rooted<PlainDateObject*> temporalDate(
       cx, &args.thisv().toObject().as<PlainDateObject>());
@@ -2031,6 +2128,8 @@ static const JSFunctionSpec PlainDate_prototype_methods[] = {
     JS_FN("toPlainYearMonth", PlainDate_toPlainYearMonth, 0, 0),
     JS_FN("toPlainDateTime", PlainDate_toPlainDateTime, 0, 0),
     JS_FN("getISOFields", PlainDate_getISOFields, 0, 0),
+    JS_FN("add", PlainDate_add, 1, 0),
+    JS_FN("subtract", PlainDate_subtract, 1, 0),
     JS_FN("with", PlainDate_with, 1, 0),
     JS_FN("withCalendar", PlainDate_withCalendar, 1, 0),
     JS_FN("equals", PlainDate_equals, 1, 0),
