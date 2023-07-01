@@ -321,7 +321,12 @@ void ReadableStreamDefaultControllerEnqueue(
             aCx, "ReadableStreamDefaultController.enqueue")) {
       JS::Rooted<JS::Value> errorValue(aCx);
 
-      JS_GetPendingException(aCx, &errorValue);
+      if (!JS_GetPendingException(aCx, &errorValue)) {
+        
+        aRv.StealExceptionFromJSContext(aCx);
+        return;
+      }
+      JS_ClearPendingException(aCx);
 
       
       ReadableStreamDefaultControllerError(aCx, aController, errorValue, aRv);
