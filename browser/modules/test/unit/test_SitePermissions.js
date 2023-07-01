@@ -37,6 +37,7 @@ add_task(async function testPermissionsListing() {
     "storage-access",
     "xr",
     "3rdPartyStorage",
+    "3rdPartyFrameStorage",
   ];
   if (RESIST_FINGERPRINTING_ENABLED) {
     
@@ -230,6 +231,7 @@ add_task(async function testExactHostMatch() {
     "shortcuts",
     "storage-access",
     "3rdPartyStorage",
+    "3rdPartyFrameStorage",
   ];
 
   let permissions = SitePermissions.listPermissions();
