@@ -547,20 +547,6 @@ class VirtualenvMixin(object):
 
             self._ensure_python_exe(venv_python_bin.parent)
 
-            
-            
-            
-            
-            
-            
-            
-            if self._is_windows() and sys.version_info[:2] == (3, 6):
-                this_venv = Path(sys.executable).parent.parent
-                this_venv_config = this_venv / "pyvenv.cfg"
-                if this_venv_config.exists():
-                    new_venv_config = Path(venv_path) / "pyvenv.cfg"
-                    shutil.copyfile(str(this_venv_config), str(new_venv_config))
-
             self.run_command(
                 [
                     str(venv_python_bin),
