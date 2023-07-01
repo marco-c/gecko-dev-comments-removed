@@ -186,7 +186,7 @@ async function assertBreakablePositions(
     
     if (!columns.length) {
       
-      const lineElement = await getTokenFromPosition(dbg, { line, ch: -1 });
+      const lineElement = await getTokenFromPosition(dbg, { line });
       const columnMarkers = lineElement.querySelectorAll(".column-breakpoint");
       is(
         columnMarkers.length,
@@ -232,7 +232,7 @@ async function assertBreakablePositions(
       );
     }
 
-    const tokenElement = await getTokenFromPosition(dbg, { line, ch: -1 });
+    const tokenElement = await getTokenFromPosition(dbg, { line });
     const lineElement = tokenElement.closest(".CodeMirror-line");
     
     const columnMarkers = [

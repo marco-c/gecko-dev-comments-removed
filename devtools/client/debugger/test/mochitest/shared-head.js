@@ -2072,19 +2072,22 @@ function getCoordsFromPosition(cm, { line, ch }) {
   return cm.charCoords({ line: ~~line, ch: ~~ch });
 }
 
-async function getTokenFromPosition(dbg, { line, ch }) {
-  info(`Get token at ${line}, ${ch}`);
+async function getTokenFromPosition(dbg, { line, column = 0 }) {
+  info(`Get token at ${line}:${column}`);
   const cm = getCM(dbg);
-  cm.scrollIntoView({ line: line - 1, ch }, 0);
+
+  
+  
+  const cmPosition = { line: line - 1, ch: column - 1 };
+
+  cm.scrollIntoView(cmPosition, 0);
 
   
   
   
   await waitForScrolling(cm);
 
-  const coords = getCoordsFromPosition(cm, { line: line - 1, ch });
-
-  const { left, top } = coords;
+  const { left, top } = getCoordsFromPosition(cm, cmPosition);
 
   
   
@@ -2181,8 +2184,7 @@ async function hoverAtPos(dbg, pos) {
 }
 
 async function closePreviewAtPos(dbg, line, column) {
-  const pos = { line, ch: column - 1 };
-  const tokenEl = await getTokenFromPosition(dbg, pos);
+  const tokenEl = await getTokenFromPosition(dbg, { line, column });
 
   if (!tokenEl) {
     return;
@@ -2220,7 +2222,7 @@ function tryHovering(dbg, line, column, elementName) {
         reject("failed to preview");
       }
 
-      hoverAtPos(dbg, { line, ch: column - 1 });
+      hoverAtPos(dbg, { line, column });
     }, 1000);
   });
 }
