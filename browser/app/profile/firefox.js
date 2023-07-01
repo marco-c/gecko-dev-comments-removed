@@ -1874,6 +1874,7 @@ pref("privacy.trackingprotection.cryptomining.enabled", true);
 pref("browser.contentblocking.database.enabled", true);
 
 pref("dom.storage_access.enabled", true);
+pref("dom.storage_access.frame_only", true);
 
 
 #ifdef NIGHTLY_BUILD
