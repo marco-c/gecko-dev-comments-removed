@@ -30,7 +30,7 @@ const PageAction = Object.freeze({
 
 
 
-class CheckboxStateMachine {
+class CheckboxPageAction {
   
 
 
@@ -112,7 +112,7 @@ class CheckboxStateMachine {
 
 
   #state() {
-    return CheckboxStateMachine.#computeState(
+    return CheckboxPageAction.#computeState(
       Number(this.#translationsActive),
       Number(this.#alwaysTranslateLanguage),
       Number(this.#neverTranslateLanguage),
@@ -126,16 +126,14 @@ class CheckboxStateMachine {
 
 
 
-  onAlwaysTranslateLanguage() {
+  alwaysTranslateLanguage() {
     switch (this.#state()) {
-      case CheckboxStateMachine.#computeState(1, 1, 0, 1):
-      case CheckboxStateMachine.#computeState(1, 1, 0, 0): {
+      case CheckboxPageAction.#computeState(1, 1, 0, 1):
+      case CheckboxPageAction.#computeState(1, 1, 0, 0):
         return PageAction.RESTORE_PAGE;
-      }
-      case CheckboxStateMachine.#computeState(0, 0, 1, 0):
-      case CheckboxStateMachine.#computeState(0, 0, 0, 0): {
+      case CheckboxPageAction.#computeState(0, 0, 1, 0):
+      case CheckboxPageAction.#computeState(0, 0, 0, 0):
         return PageAction.TRANSLATE_PAGE;
-      }
     }
     return PageAction.NO_CHANGE;
   }
@@ -146,14 +144,13 @@ class CheckboxStateMachine {
 
 
 
-  onNeverTranslateLanguage() {
+  neverTranslateLanguage() {
     switch (this.#state()) {
-      case CheckboxStateMachine.#computeState(1, 1, 0, 1):
-      case CheckboxStateMachine.#computeState(1, 1, 0, 0):
-      case CheckboxStateMachine.#computeState(1, 0, 0, 1):
-      case CheckboxStateMachine.#computeState(1, 0, 0, 0): {
+      case CheckboxPageAction.#computeState(1, 1, 0, 1):
+      case CheckboxPageAction.#computeState(1, 1, 0, 0):
+      case CheckboxPageAction.#computeState(1, 0, 0, 1):
+      case CheckboxPageAction.#computeState(1, 0, 0, 0):
         return PageAction.RESTORE_PAGE;
-      }
     }
     return PageAction.NO_CHANGE;
   }
@@ -164,16 +161,14 @@ class CheckboxStateMachine {
 
 
 
-  onNeverTranslateSite() {
+  neverTranslateSite() {
     switch (this.#state()) {
-      case CheckboxStateMachine.#computeState(1, 1, 0, 0):
-      case CheckboxStateMachine.#computeState(1, 0, 1, 0):
-      case CheckboxStateMachine.#computeState(1, 0, 0, 0): {
+      case CheckboxPageAction.#computeState(1, 1, 0, 0):
+      case CheckboxPageAction.#computeState(1, 0, 1, 0):
+      case CheckboxPageAction.#computeState(1, 0, 0, 0):
         return PageAction.RESTORE_PAGE;
-      }
-      case CheckboxStateMachine.#computeState(0, 1, 0, 1): {
+      case CheckboxPageAction.#computeState(0, 1, 0, 1):
         return PageAction.TRANSLATE_PAGE;
-      }
     }
     return PageAction.NO_CHANGE;
   }
@@ -955,7 +950,7 @@ var TranslationsPanel = new (class {
 
 
 
-  createCheckboxStateMachine() {
+  getCheckboxPageActionFor() {
     const {
       alwaysTranslateLanguageMenuItem,
       neverTranslateLanguageMenuItem,
@@ -969,7 +964,7 @@ var TranslationsPanel = new (class {
     const neverTranslateSite =
       neverTranslateSiteMenuItem.getAttribute("checked") === "true";
 
-    return new CheckboxStateMachine(
+    return new CheckboxPageAction(
       this.#isTranslationsActive(),
       alwaysTranslateLanguage,
       neverTranslateLanguage,
@@ -1018,7 +1013,7 @@ var TranslationsPanel = new (class {
       throw new Error("Expected to have a document language tag.");
     }
     const pageAction =
-      this.createCheckboxStateMachine().onAlwaysTranslateLanguage();
+      this.getCheckboxPageActionFor().alwaysTranslateLanguage();
     TranslationsParent.toggleAlwaysTranslateLanguagePref(docLangTag);
     this.#updateSettingsMenuLanguageCheckboxStates();
     await this.#doPageAction(pageAction);
@@ -1034,8 +1029,7 @@ var TranslationsPanel = new (class {
     if (!docLangTag) {
       throw new Error("Expected to have a document language tag.");
     }
-    const pageAction =
-      this.createCheckboxStateMachine().onNeverTranslateLanguage();
+    const pageAction = this.getCheckboxPageActionFor().neverTranslateLanguage();
     TranslationsParent.toggleNeverTranslateLanguagePref(docLangTag);
     this.#updateSettingsMenuLanguageCheckboxStates();
     await this.#doPageAction(pageAction);
@@ -1047,7 +1041,7 @@ var TranslationsPanel = new (class {
 
 
   async onNeverTranslateSite() {
-    const pageAction = this.createCheckboxStateMachine().onNeverTranslateSite();
+    const pageAction = this.getCheckboxPageActionFor().neverTranslateSite();
     await this.#getTranslationsActor().toggleNeverTranslateSitePermissions();
     this.#updateSettingsMenuSiteCheckboxStates();
     await this.#doPageAction(pageAction);
