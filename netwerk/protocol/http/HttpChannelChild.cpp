@@ -107,11 +107,11 @@ HttpChannelChild::HttpChannelChild()
 HttpChannelChild::~HttpChannelChild() {
   LOG(("Destroying HttpChannelChild @%p\n", this));
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   if (mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy && mAsyncOpenSucceeded &&
       !mSuccesfullyRedirected && !LoadOnStopRequestCalled()) {
     bool emptyBgChildQueue, nullBgChild;
