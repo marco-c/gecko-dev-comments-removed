@@ -687,8 +687,7 @@ bool GCRuntime::addEdgesForMarkQueue() {
   
   
   JS::Zone* prevZone = nullptr;
-  for (size_t i = 0; i < testMarkQueue.length(); i++) {
-    Value val = testMarkQueue[i].get();
+  for (Value val : testMarkQueue) {
     if (!val.isObject()) {
       continue;
     }
