@@ -42,6 +42,8 @@ class CalendarObject : public NativeObject {
 struct PlainDate;
 struct PlainDateTime;
 class PlainDateObject;
+class PlainMonthDayObject;
+class PlainYearMonthObject;
 enum class CalendarOption;
 
 
@@ -235,6 +237,34 @@ Wrapped<PlainDateObject*> CalendarDateFromFields(JSContext* cx,
                                                  JS::Handle<JSObject*> calendar,
                                                  JS::Handle<JSObject*> fields,
                                                  JS::Handle<JSObject*> options);
+
+
+
+
+Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
+    JSContext* cx, JS::Handle<JSObject*> calendar,
+    JS::Handle<JSObject*> fields);
+
+
+
+
+Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
+    JSContext* cx, JS::Handle<JSObject*> calendar, JS::Handle<JSObject*> fields,
+    JS::Handle<JSObject*> options);
+
+
+
+
+Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
+    JSContext* cx, JS::Handle<JSObject*> calendar,
+    JS::Handle<JSObject*> fields);
+
+
+
+
+Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
+    JSContext* cx, JS::Handle<JSObject*> calendar, JS::Handle<JSObject*> fields,
+    JS::Handle<JSObject*> options);
 
 
 
