@@ -578,7 +578,7 @@ bool Smoosh::tryCompileGlobalScriptToExtensibleStencil(
 
   if (result.error.data) {
     ErrorMetadata metadata;
-    metadata.filename = "<unknown>";
+    metadata.filename = JS::ConstUTF8CharsZ("<unknown>");
     metadata.lineNumber = 1;
     metadata.columnNumber = 0;
     metadata.isMuted = false;
