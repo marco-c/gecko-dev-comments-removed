@@ -97,7 +97,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   
   
-  void Start(bool aCallConnect = true);
+  void Start();
 
   
   

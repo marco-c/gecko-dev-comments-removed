@@ -35,16 +35,6 @@ class Channel {
  public:
   
   
-  
-  
-#ifdef XP_WIN
-  typedef std::wstring ChannelId;
-#else
-  struct ChannelId {};
-#endif
-
-  
-  
   using ChannelHandle = mozilla::UniqueFileHandle;
 
   
@@ -103,9 +93,6 @@ class Channel {
   
   
   
-  Channel(const ChannelId& channel_id, Mode mode, Listener* listener);
-
-  
   Channel(ChannelHandle pipe, Mode mode, Listener* listener);
 
   ~Channel();
@@ -140,17 +127,7 @@ class Channel {
   
   bool IsClosed() const;
 
-#if defined(XP_UNIX)
-  
-  
-  
-  
-  void GetClientFileDescriptorMapping(int* src_fd, int* dest_fd) const;
-
-  
-  void CloseClientFileDescriptor();
-
-#  if defined(XP_DARWIN)
+#if defined(XP_DARWIN)
   
   void SetOtherMachTask(task_t task);
 
@@ -158,31 +135,23 @@ class Channel {
   
   
   void StartAcceptingMachPorts(Mode mode);
-#  endif
-
-#else
+#elif defined(XP_WIN)
   
   
   
   void StartAcceptingHandles(Mode mode);
 #endif
 
-  
-  
-  
-  
-  static ChannelId GenerateVerifiedChannelID();
-
-  
-  
-  
-  static ChannelId ChannelIDForCurrentProcess();
-
 #if defined(MOZ_WIDGET_ANDROID)
   
   
   static void SetClientChannelFd(int fd);
 #endif  
+
+  
+  
+  
+  static ChannelHandle::ElementType GetClientChannelHandle();
 
   
   
