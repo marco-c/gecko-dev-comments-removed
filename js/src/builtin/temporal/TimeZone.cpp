@@ -33,6 +33,8 @@
 #include "builtin/temporal/Instant.h"
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalTypes.h"
+#include "builtin/temporal/TemporalUnit.h"
+#include "builtin/temporal/Wrapped.h"
 #include "builtin/temporal/ZonedDateTime.h"
 #include "gc/Allocator.h"
 #include "gc/AllocKind.h"
@@ -255,6 +257,37 @@ JSString* js::temporal::TimeZoneToString(JSContext* cx,
 
   Rooted<Value> timeZoneValue(cx, ObjectValue(*timeZone));
   return JS::ToString(cx, timeZoneValue);
+}
+
+
+
+
+static bool GetNamedTimeZoneOffsetNanoseconds(JSContext* cx,
+                                              Handle<TimeZoneObject*> timeZone,
+                                              const Instant& epochInstant,
+                                              int64_t* offset) {
+  MOZ_ASSERT(timeZone->offsetNanoseconds().isUndefined());
+
+  
+  int64_t millis = epochInstant.floorToMilliseconds();
+
+  auto* tz = GetOrCreateIntlTimeZone(cx, timeZone);
+  if (!tz) {
+    return false;
+  }
+
+  auto result = tz->GetOffsetMs(millis);
+  if (result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return false;
+  }
+
+  
+  
+
+  int64_t nanoPerMs = 1'000'000;
+  *offset = result.unwrap() * nanoPerMs;
+  return true;
 }
 
 
@@ -665,6 +698,159 @@ JSObject* js::temporal::ToTemporalTimeZone(JSContext* cx,
 
 
 
+static bool BuiltinGetOffsetNanosecondsFor(JSContext* cx,
+                                           Handle<TimeZoneObject*> timeZone,
+                                           const Instant& instant,
+                                           int64_t* offsetNanoseconds) {
+  
+
+  
+  if (timeZone->offsetNanoseconds().isNumber()) {
+    double offset = timeZone->offsetNanoseconds().toNumber();
+    MOZ_ASSERT(IsInteger(offset));
+    MOZ_ASSERT(std::abs(offset) < ToNanoseconds(TemporalUnit::Day));
+
+    *offsetNanoseconds = int64_t(offset);
+    return true;
+  }
+  MOZ_ASSERT(timeZone->offsetNanoseconds().isUndefined());
+
+  
+  int64_t offset;
+  if (!GetNamedTimeZoneOffsetNanoseconds(cx, timeZone, instant, &offset)) {
+    return false;
+  }
+  MOZ_ASSERT(std::abs(offset) < ToNanoseconds(TemporalUnit::Day));
+
+  *offsetNanoseconds = offset;
+  return true;
+}
+
+
+
+
+static bool GetOffsetNanosecondsFor(JSContext* cx, Handle<JSObject*> timeZone,
+                                    Handle<Wrapped<InstantObject*>> instant,
+                                    Handle<Value> getOffsetNanosecondsFor,
+                                    int64_t* offsetNanoseconds) {
+  
+
+  
+  Rooted<Value> instantVal(cx, ObjectValue(*instant));
+  Rooted<Value> rval(cx);
+  if (!Call(cx, getOffsetNanosecondsFor, timeZone, instantVal, &rval)) {
+    return false;
+  }
+
+  
+  if (!rval.isNumber()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, rval,
+                     nullptr, "not a number");
+    return false;
+  }
+
+  
+  double num = rval.toNumber();
+  if (!IsInteger(num) || std::abs(num) >= ToNanoseconds(TemporalUnit::Day)) {
+    ToCStringBuf cbuf;
+    const char* numStr = NumberToCString(&cbuf, num);
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_TIMEZONE_NANOS_RANGE, numStr);
+    return false;
+  }
+
+  
+  *offsetNanoseconds = int64_t(num);
+  return true;
+}
+
+static bool TimeZone_getOffsetNanosecondsFor(JSContext* cx, unsigned argc,
+                                             Value* vp);
+
+
+
+
+bool js::temporal::GetOffsetNanosecondsFor(
+    JSContext* cx, Handle<JSObject*> timeZone,
+    Handle<Wrapped<InstantObject*>> instant, int64_t* offsetNanoseconds) {
+  
+  Rooted<Value> getOffsetNanosecondsFor(cx);
+  if (!GetMethodForCall(cx, timeZone, cx->names().getOffsetNanosecondsFor,
+                        &getOffsetNanosecondsFor)) {
+    return false;
+  }
+
+  
+  if (timeZone->is<TimeZoneObject>() &&
+      IsNativeFunction(getOffsetNanosecondsFor,
+                       TimeZone_getOffsetNanosecondsFor)) {
+    auto* unwrapped = instant.unwrap(cx);
+    if (!unwrapped) {
+      return false;
+    }
+
+    return BuiltinGetOffsetNanosecondsFor(cx, timeZone.as<TimeZoneObject>(),
+                                          ToInstant(unwrapped),
+                                          offsetNanoseconds);
+  }
+
+  
+  return ::GetOffsetNanosecondsFor(cx, timeZone, instant,
+                                   getOffsetNanosecondsFor, offsetNanoseconds);
+}
+
+
+
+
+bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
+                                           Handle<JSObject*> timeZone,
+                                           const Instant& instant,
+                                           int64_t* offsetNanoseconds) {
+  
+  Rooted<Value> getOffsetNanosecondsFor(cx);
+  if (!GetMethodForCall(cx, timeZone, cx->names().getOffsetNanosecondsFor,
+                        &getOffsetNanosecondsFor)) {
+    return false;
+  }
+
+  
+  if (timeZone->is<TimeZoneObject>() &&
+      IsNativeFunction(getOffsetNanosecondsFor,
+                       TimeZone_getOffsetNanosecondsFor)) {
+    return BuiltinGetOffsetNanosecondsFor(cx, timeZone.as<TimeZoneObject>(),
+                                          instant, offsetNanoseconds);
+  }
+
+  
+  Rooted<InstantObject*> obj(cx, CreateTemporalInstant(cx, instant));
+  if (!obj) {
+    return false;
+  }
+  return ::GetOffsetNanosecondsFor(cx, timeZone, obj, getOffsetNanosecondsFor,
+                                   offsetNanoseconds);
+}
+
+
+
+
+JSString* js::temporal::GetOffsetStringFor(
+    JSContext* cx, Handle<JSObject*> timeZone,
+    Handle<Wrapped<InstantObject*>> instant) {
+  
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  
+  return FormatTimeZoneOffsetString(cx, offsetNanoseconds);
+}
+
+
+
+
 
 
 
@@ -765,6 +951,76 @@ static bool TimeZone_from(JSContext* cx, unsigned argc, Value* vp) {
 
   args.rval().setObject(*timeZone);
   return true;
+}
+
+
+
+
+static bool TimeZone_getOffsetNanosecondsFor(JSContext* cx,
+                                             const CallArgs& args) {
+  Rooted<TimeZoneObject*> timeZone(
+      cx, &args.thisv().toObject().as<TimeZoneObject>());
+
+  
+  Instant instant;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &instant)) {
+    return false;
+  }
+
+  
+  int64_t offset;
+  if (!BuiltinGetOffsetNanosecondsFor(cx, timeZone, instant, &offset)) {
+    return false;
+  }
+
+  args.rval().setNumber(offset);
+  return true;
+}
+
+
+
+
+static bool TimeZone_getOffsetNanosecondsFor(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTimeZone, TimeZone_getOffsetNanosecondsFor>(
+      cx, args);
+}
+
+
+
+
+static bool TimeZone_getOffsetStringFor(JSContext* cx, const CallArgs& args) {
+  Rooted<TimeZoneObject*> timeZone(
+      cx, &args.thisv().toObject().as<TimeZoneObject>());
+
+  
+  Rooted<Wrapped<InstantObject*>> instant(cx,
+                                          ToTemporalInstant(cx, args.get(0)));
+  if (!instant) {
+    return false;
+  }
+
+  
+  JSString* str = GetOffsetStringFor(cx, timeZone, instant);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
+
+
+
+static bool TimeZone_getOffsetStringFor(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTimeZone, TimeZone_getOffsetStringFor>(cx,
+                                                                       args);
 }
 
 
@@ -977,6 +1233,8 @@ static const JSFunctionSpec TimeZone_methods[] = {
 };
 
 static const JSFunctionSpec TimeZone_prototype_methods[] = {
+    JS_FN("getOffsetNanosecondsFor", TimeZone_getOffsetNanosecondsFor, 1, 0),
+    JS_FN("getOffsetStringFor", TimeZone_getOffsetStringFor, 1, 0),
     JS_FN("getNextTransition", TimeZone_getNextTransition, 1, 0),
     JS_FN("getPreviousTransition", TimeZone_getPreviousTransition, 1, 0),
     JS_FN("toString", TimeZone_toString, 0, 0),
