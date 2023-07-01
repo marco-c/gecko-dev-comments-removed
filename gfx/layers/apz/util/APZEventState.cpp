@@ -289,16 +289,10 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
   
   APZCCallbackHelper::DispatchSynthesizedMouseEvent(
       eMouseLongTap, aPoint * aScale, aModifiers,  1, widget);
-
-  
-  
-  PreventDefaultResult preventDefaultResult = PreventDefaultResult::No;
 #else
   PreventDefaultResult preventDefaultResult =
       FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
 #endif
-  mContentReceivedInputBlockCallback(
-      aInputBlockId, preventDefaultResult != PreventDefaultResult::No);
 
   const bool contextmenuOpen =
 #ifdef XP_WIN
@@ -318,6 +312,10 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
 
       preventDefaultResult == PreventDefaultResult::No;
 #endif
+
+
+  mContentReceivedInputBlockCallback(aInputBlockId, contextmenuOpen);
+
   if (contextmenuOpen) {
     
     

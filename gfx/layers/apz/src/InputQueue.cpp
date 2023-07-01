@@ -1110,6 +1110,7 @@ bool InputQueue::ProcessQueue() {
   bool processQueueAgain = false;
   if (CanDiscardBlock(mActiveTouchBlock)) {
     const bool forLongTap = mActiveTouchBlock->ForLongTap();
+    const bool wasDefaultPrevented = mActiveTouchBlock->IsDefaultPrevented();
     INPQ_LOG("discarding a touch block %p id %" PRIu64 "\n",
              mActiveTouchBlock.get(), mActiveTouchBlock->GetBlockId());
     mActiveTouchBlock = nullptr;
@@ -1120,6 +1121,13 @@ bool InputQueue::ProcessQueue() {
                mPrevActiveTouchBlock->GetBlockId());
 
       mPrevActiveTouchBlock->SetLongTapProcessed();
+      if (wasDefaultPrevented && !mPrevActiveTouchBlock->IsDefaultPrevented()) {
+        
+        
+        
+        mPrevActiveTouchBlock->ResetContentResponseTimerExpired();
+        mPrevActiveTouchBlock->SetContentResponse(true);
+      }
       mActiveTouchBlock = mPrevActiveTouchBlock;
       mPrevActiveTouchBlock = nullptr;
       processQueueAgain = true;
