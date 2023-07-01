@@ -31,6 +31,7 @@ UNSUPPORTED_FEATURES = set(
         "symbols-as-weakmap-keys",  
         "arraybuffer-transfer",  
         "json-parse-with-source",  
+        "iterator-helpers",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
@@ -39,7 +40,7 @@ FEATURE_CHECK_NEEDED = {
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
-    "array-grouping": "!Array.prototype.group",  
+    "array-grouping": "!Object.groupBy",  
     "change-array-by-copy": "!Array.prototype.with",  
     "Array.fromAsync": "!Array.fromAsync",  
     "String.prototype.isWellFormed": "!String.prototype.isWellFormed",
