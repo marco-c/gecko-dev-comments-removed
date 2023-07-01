@@ -34,26 +34,6 @@ struct ResolvedMotionPathData {
   gfx::Point mShift;
 };
 
-struct RayReferenceData {
-  
-  
-  CSSPoint mInitialPosition;
-  
-  CSSRect mContainingBlockRect;
-  
-  
-  CSSSize mBorderBoxSize;
-
-  RayReferenceData() = default;
-  explicit RayReferenceData(const nsIFrame* aFrame);
-
-  bool operator==(const RayReferenceData& aOther) const {
-    return mInitialPosition == aOther.mInitialPosition &&
-           mContainingBlockRect == aOther.mContainingBlockRect &&
-           mBorderBoxSize == aOther.mBorderBoxSize;
-  }
-};
-
 
 
 struct OffsetPathData {
@@ -70,7 +50,13 @@ struct OffsetPathData {
 
   struct RayData {
     const StyleRayFunction* mRay;
-    RayReferenceData mData;
+    
+    nsRect mCoordBox;
+    
+    
+    nsPoint mCurrentPosition;
+    
+    CSSCoord mContainReferenceLength;
   };
 
   Type mType;
@@ -86,13 +72,16 @@ struct OffsetPathData {
     return OffsetPathData(std::move(aGfxPath),
                           !path.empty() && path.rbegin()->IsClosePath());
   }
-  static OffsetPathData Ray(const StyleRayFunction& aRay,
-                            const RayReferenceData& aData) {
-    return OffsetPathData(&aRay, aData);
+  static OffsetPathData Ray(const StyleRayFunction& aRay, nsRect&& aCoordBox,
+                            nsPoint&& aPosition,
+                            CSSCoord&& aContainReferenceLength) {
+    return OffsetPathData(&aRay, std::move(aCoordBox), std::move(aPosition),
+                          std::move(aContainReferenceLength));
   }
   static OffsetPathData Ray(const StyleRayFunction& aRay,
-                            RayReferenceData&& aData) {
-    return OffsetPathData(&aRay, std::move(aData));
+                            const nsRect& aCoordBox, const nsPoint& aPosition,
+                            const CSSCoord& aContainReferenceLength) {
+    return OffsetPathData(&aRay, aCoordBox, aPosition, aContainReferenceLength);
   }
 
   bool IsNone() const { return mType == Type::None; }
@@ -152,10 +141,16 @@ struct OffsetPathData {
   OffsetPathData() : mType(Type::None) {}
   OffsetPathData(already_AddRefed<gfx::Path>&& aPath, bool aIsClosed)
       : mType(Type::Shape), mShape{std::move(aPath), aIsClosed} {}
-  OffsetPathData(const StyleRayFunction* aRay, RayReferenceData&& aRef)
-      : mType(Type::Ray), mRay{aRay, std::move(aRef)} {}
-  OffsetPathData(const StyleRayFunction* aRay, const RayReferenceData& aRef)
-      : mType(Type::Ray), mRay{aRay, aRef} {}
+  OffsetPathData(const StyleRayFunction* aRay, nsRect&& aCoordBox,
+                 nsPoint&& aPosition, CSSCoord&& aContainReferenceLength)
+      : mType(Type::Ray),
+        mRay{aRay, std::move(aCoordBox), std::move(aPosition),
+             std::move(aContainReferenceLength)} {}
+  OffsetPathData(const StyleRayFunction* aRay, const nsRect& aCoordBox,
+                 const nsPoint& aPosition,
+                 const CSSCoord& aContainReferenceLength)
+      : mType(Type::Ray),
+        mRay{aRay, aCoordBox, aPosition, aContainReferenceLength} {}
   OffsetPathData& operator=(const OffsetPathData&) = delete;
   OffsetPathData& operator=(OffsetPathData&&) = delete;
 };
@@ -168,12 +163,29 @@ class MotionPathUtils final {
 
  public:
   
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   static CSSPoint ComputeAnchorPointAdjustment(const nsIFrame& aFrame);
+
+  
+
+
+
+
+
+  static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
+                                                   nsRect& aOutputRect);
+
+  
+
+
+
+  static CSSCoord GetRayContainReferenceSize(nsIFrame* aFrame);
 
   
 

@@ -25,11 +25,28 @@ namespace mozilla {
 using nsStyleTransformMatrix::TransformReferenceBox;
 
 
+CSSPoint MotionPathUtils::ComputeAnchorPointAdjustment(const nsIFrame& aFrame) {
+  if (!aFrame.HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    return {};
+  }
+
+  auto transformBox = aFrame.StyleDisplay()->mTransformBox;
+  if (transformBox == StyleGeometryBox::ViewBox ||
+      transformBox == StyleGeometryBox::BorderBox) {
+    return {};
+  }
+
+  if (aFrame.IsFrameOfType(nsIFrame::eSVGContainer)) {
+    nsRect boxRect = nsLayoutUtils::ComputeGeometryBox(
+        const_cast<nsIFrame*>(&aFrame), StyleGeometryBox::FillBox);
+    return CSSPoint::FromAppUnits(boxRect.TopLeft());
+  }
+  return CSSPoint::FromAppUnits(aFrame.GetPosition());
+}
 
 
-
-static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
-                                                 nsRect& aOutputRect) {
+const nsIFrame* MotionPathUtils::GetOffsetPathReferenceBox(
+    const nsIFrame* aFrame, nsRect& aOutputRect) {
   const StyleOffsetPath& offsetPath = aFrame->StyleDisplay()->mOffsetPath;
   if (offsetPath.IsNone()) {
     return nullptr;
@@ -52,22 +69,8 @@ static const nsIFrame* GetOffsetPathReferenceBox(const nsIFrame* aFrame,
   return containingBlock;
 }
 
-RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
-  nsRect coordBox;
-  const nsIFrame* containingBlock = GetOffsetPathReferenceBox(aFrame, coordBox);
-  if (!containingBlock) {
-    
-    
-    return;
-  }
 
-  mContainingBlockRect = CSSRect::FromAppUnits(coordBox);
-
-  
-  
-  mInitialPosition =
-      CSSPoint::FromAppUnits(aFrame->GetOffsetTo(containingBlock));
-
+CSSCoord MotionPathUtils::GetRayContainReferenceSize(nsIFrame* aFrame) {
   
   
   
@@ -76,12 +79,13 @@ RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
   
   
   
-  mBorderBoxSize = CSSSize::FromAppUnits(
-      nsLayoutUtils::ComputeGeometryBox(const_cast<nsIFrame*>(aFrame),
+  CSSSize size = CSSSize::FromAppUnits(
+      nsLayoutUtils::ComputeGeometryBox(aFrame,
                                         
                                         
                                         StyleGeometryBox::StrokeBox)
           .Size());
+  return std::max(size.width, size.height);
 }
 
 
@@ -149,14 +153,13 @@ static CSSCoord ComputeSides(const CSSPoint& aOrigin,
 
 static CSSPoint ComputeRayOrigin(const StylePositionOrAuto& aAtPosition,
                                  const StyleOffsetPosition& aOffsetPosition,
-                                 const RayReferenceData& aData) {
-  const nsRect& coordBox = CSSPixel::ToAppUnits(aData.mContainingBlockRect);
-
+                                 const nsRect& aCoordBox,
+                                 const nsPoint& aCurrentPosition) {
   if (aAtPosition.IsPosition()) {
     
     
     return CSSPoint::FromAppUnits(
-        ShapeUtils::ComputePosition(aAtPosition.AsPosition(), coordBox));
+        ShapeUtils::ComputePosition(aAtPosition.AsPosition(), aCoordBox));
   }
 
   MOZ_ASSERT(aAtPosition.IsAuto(), "\"at <position>\" should be omitted");
@@ -165,7 +168,7 @@ static CSSPoint ComputeRayOrigin(const StylePositionOrAuto& aAtPosition,
   
   if (aOffsetPosition.IsPosition()) {
     return CSSPoint::FromAppUnits(
-        ShapeUtils::ComputePosition(aOffsetPosition.AsPosition(), coordBox));
+        ShapeUtils::ComputePosition(aOffsetPosition.AsPosition(), aCoordBox));
   }
 
   if (aOffsetPosition.IsNormal()) {
@@ -173,11 +176,11 @@ static CSSPoint ComputeRayOrigin(const StylePositionOrAuto& aAtPosition,
     
     static const StylePosition center = StylePosition::FromPercentage(0.5);
     return CSSPoint::FromAppUnits(
-        ShapeUtils::ComputePosition(center, coordBox));
+        ShapeUtils::ComputePosition(center, aCoordBox));
   }
 
   MOZ_ASSERT(aOffsetPosition.IsAuto());
-  return aData.mInitialPosition;
+  return CSSPoint::FromAppUnits(aCurrentPosition);
 }
 
 static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
@@ -230,10 +233,9 @@ static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
   return 0.0;
 }
 
-static CSSCoord ComputeRayUsedDistance(const StyleRayFunction& aRay,
-                                       const LengthPercentage& aDistance,
-                                       const CSSCoord& aPathLength,
-                                       const CSSSize& aBorderBoxSize) {
+static CSSCoord ComputeRayUsedDistance(
+    const StyleRayFunction& aRay, const LengthPercentage& aDistance,
+    const CSSCoord& aPathLength, const CSSCoord& aRayContainReferenceLength) {
   CSSCoord usedDistance = aDistance.ResolveToCSSPixels(aPathLength);
   if (!aRay.contain) {
     return usedDistance;
@@ -244,30 +246,8 @@ static CSSCoord ComputeRayUsedDistance(const StyleRayFunction& aRay,
   
   
   
-  return std::max(
-      usedDistance -
-          std::max(aBorderBoxSize.width, aBorderBoxSize.height) / 2.0f,
-      0.0f);
-}
-
-
-CSSPoint MotionPathUtils::ComputeAnchorPointAdjustment(const nsIFrame& aFrame) {
-  if (!aFrame.HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    return {};
-  }
-
-  auto transformBox = aFrame.StyleDisplay()->mTransformBox;
-  if (transformBox == StyleGeometryBox::ViewBox ||
-      transformBox == StyleGeometryBox::BorderBox) {
-    return {};
-  }
-
-  if (aFrame.IsFrameOfType(nsIFrame::eSVGContainer)) {
-    nsRect boxRect = nsLayoutUtils::ComputeGeometryBox(
-        const_cast<nsIFrame*>(&aFrame), StyleGeometryBox::FillBox);
-    return CSSPoint::FromAppUnits(boxRect.TopLeft());
-  }
-  return CSSPoint::FromAppUnits(aFrame.GetPosition());
+  return std::max((usedDistance - aRayContainReferenceLength / 2.0f).value,
+                  0.0f);
 }
 
 
@@ -320,13 +300,13 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     const auto& ray = aPath.AsRay();
     MOZ_ASSERT(ray.mRay);
 
-    const CSSPoint origin =
-        ComputeRayOrigin(ray.mRay->position, aPosition, ray.mData);
+    const CSSPoint origin = ComputeRayOrigin(
+        ray.mRay->position, aPosition, ray.mCoordBox, ray.mCurrentPosition);
     const CSSCoord pathLength =
         ComputeRayPathLength(ray.mRay->size, ray.mRay->angle, origin,
-                             ray.mData.mContainingBlockRect);
+                             CSSRect::FromAppUnits(ray.mCoordBox));
     const CSSCoord usedDistance = ComputeRayUsedDistance(
-        *ray.mRay, aDistance, pathLength, ray.mData.mBorderBoxSize);
+        *ray.mRay, aDistance, pathLength, ray.mContainReferenceLength);
 
     
     directionAngle =
@@ -335,7 +315,8 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     
     
     const gfx::Point vectorToOrigin =
-        (origin - ray.mData.mInitialPosition).ToUnknownPoint();
+        (origin - CSSPoint::FromAppUnits(ray.mCurrentPosition))
+            .ToUnknownPoint();
     
     
     
@@ -393,7 +374,16 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
 
   const auto& function = offsetPath.AsOffsetPath().path;
   if (function->IsRay()) {
-    return OffsetPathData::Ray(function->AsRay(), RayReferenceData(aFrame));
+    nsRect coordBox;
+    const nsIFrame* containingBlockFrame =
+        MotionPathUtils::GetOffsetPathReferenceBox(aFrame, coordBox);
+    return !containingBlockFrame
+               ? OffsetPathData::None()
+               : OffsetPathData::Ray(
+                     function->AsRay(), std::move(coordBox),
+                     aFrame->GetOffsetTo(containingBlockFrame),
+                     MotionPathUtils::GetRayContainReferenceSize(
+                         const_cast<nsIFrame*>(aFrame)));
   }
 
   MOZ_ASSERT(function->IsShape());
@@ -432,7 +422,8 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
 
 static OffsetPathData GenerateOffsetPathData(
     const StyleOffsetPath& aOffsetPath,
-    const RayReferenceData& aRayReferenceData, gfx::Path* aCachedMotionPath) {
+    const layers::MotionPathData& aMotionPathData,
+    gfx::Path* aCachedMotionPath) {
   if (aOffsetPath.IsNone()) {
     return OffsetPathData::None();
   }
@@ -444,7 +435,12 @@ static OffsetPathData GenerateOffsetPathData(
 
   const auto& function = aOffsetPath.AsOffsetPath().path;
   if (function->IsRay()) {
-    return OffsetPathData::Ray(function->AsRay(), aRayReferenceData);
+    return aMotionPathData.coordBox().IsEmpty()
+               ? OffsetPathData::None()
+               : OffsetPathData::Ray(
+                     function->AsRay(), aMotionPathData.coordBox(),
+                     aMotionPathData.currentPosition(),
+                     aMotionPathData.rayContainReferenceLength());
   }
 
   MOZ_ASSERT(function->IsShape());
@@ -484,8 +480,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
   auto autoOffsetAnchor = StylePositionOrAuto::Auto();
   auto autoOffsetPosition = StyleOffsetPosition::Auto();
   return ResolveMotionPath(
-      GenerateOffsetPathData(*aPath, aMotionPathData->rayReferenceData(),
-                             aCachedMotionPath),
+      GenerateOffsetPathData(*aPath, *aMotionPathData, aCachedMotionPath),
       aDistance ? *aDistance : zeroOffsetDistance,
       aRotate ? *aRotate : autoOffsetRotate,
       aAnchor ? *aAnchor : autoOffsetAnchor,

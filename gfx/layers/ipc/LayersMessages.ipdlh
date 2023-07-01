@@ -31,6 +31,7 @@ using mozilla::ScreenRotation from "mozilla/WidgetUtils.h";
 using nsCSSPropertyID from "nsCSSPropertyID.h";
 using mozilla::hal::ScreenOrientation from "mozilla/HalIPCUtils.h";
 using struct mozilla::layers::TextureInfo from "mozilla/layers/CompositorTypes.h";
+using mozilla::CSSCoord from "Units.h";
 using mozilla::CSSPoint from "Units.h";
 using mozilla::CSSRect from "Units.h";
 using mozilla::gfx::IntSize from "mozilla/gfx/2D.h";
@@ -64,7 +65,6 @@ using mozilla::layers::RemoteTextureId from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::RemoteTextureOwnerId from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::TransactionId from "mozilla/layers/LayersTypes.h";
 using mozilla::LengthPercentage from "mozilla/ServoStyleConsts.h";
-using mozilla::RayReferenceData from "mozilla/MotionPathUtils.h";
 using mozilla::StyleOffsetPath from "mozilla/ServoStyleConsts.h";
 using mozilla::StyleOffsetRotate from "mozilla/ServoStyleConsts.h";
 using mozilla::StylePositionOrAuto from "mozilla/ServoStyleConsts.h";
@@ -126,7 +126,13 @@ struct AnimationSegment {
   CSSPoint origin;
   
   CSSPoint anchorAdjustment;
-  RayReferenceData rayReferenceData;
+  
+  nsRect coordBox;
+  
+  
+  nsPoint currentPosition;
+  
+  CSSCoord rayContainReferenceLength;
 };
 
 [Comparable] struct PartialPrerenderData {

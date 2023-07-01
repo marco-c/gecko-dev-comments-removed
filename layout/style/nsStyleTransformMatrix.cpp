@@ -530,7 +530,7 @@ static void ProcessScale(Matrix4x4& aMatrix, const StyleScale& aScale) {
 
 Matrix4x4 ReadTransforms(const StyleTranslate& aTranslate,
                          const StyleRotate& aRotate, const StyleScale& aScale,
-                         const Maybe<ResolvedMotionPathData>& aMotion,
+                         const ResolvedMotionPathData* aMotion,
                          const StyleTransform& aTransform,
                          TransformReferenceBox& aRefBox,
                          float aAppUnitsPerMatrixUnit) {
@@ -540,7 +540,7 @@ Matrix4x4 ReadTransforms(const StyleTranslate& aTranslate,
   ProcessRotate(result, aRotate);
   ProcessScale(result, aScale);
 
-  if (aMotion.isSome()) {
+  if (aMotion) {
     
     
     
