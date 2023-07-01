@@ -1508,7 +1508,7 @@ var gBrowserInit = {
     );
 
     
-    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
+    if (ChromeUtils.shouldResistFingerprinting("RoundWindowSize")) {
       
       
       document.documentElement.setAttribute("sizemode", "normal");
