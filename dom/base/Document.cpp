@@ -15382,17 +15382,9 @@ void Document::RequestFullscreenInContentProcess(
   PendingFullscreenChangeList::Add(std::move(aRequest));
   
   
-  Dispatch(
-      TaskCategory::Other,
-      NS_NewRunnableFunction(
-          "Document::RequestFullscreenInContentProcess", [self = RefPtr{this}] {
-            if (!self->HasPendingFullscreenRequests()) {
-              return;
-            }
-            nsContentUtils::DispatchEventOnlyToChrome(
-                self, ToSupports(self), u"MozDOMFullscreen:Request"_ns,
-                CanBubble::eYes, Cancelable::eNo,  nullptr);
-          }));
+  nsContentUtils::DispatchEventOnlyToChrome(
+      this, ToSupports(this), u"MozDOMFullscreen:Request"_ns, CanBubble::eYes,
+      Cancelable::eNo,  nullptr);
 }
 
 void Document::RequestFullscreenInParentProcess(
