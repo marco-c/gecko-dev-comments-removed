@@ -2603,7 +2603,6 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
-  
   ScopedGfxFeatureReporter reporter("WR", prefEnabled || envvarEnabled);
   if (!XRE_IsParentProcess()) {
     
