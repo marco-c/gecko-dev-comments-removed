@@ -1,8 +1,6 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["DistributionCustomizer"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC =
   "distribution-customization-complete";
@@ -10,26 +8,25 @@ const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC =
 const PREF_CACHED_FILE_EXISTENCE = "distribution.iniFile.exists.value";
 const PREF_CACHED_FILE_APPVERSION = "distribution.iniFile.exists.appversion";
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
-function DistributionCustomizer() {}
+export function DistributionCustomizer() {}
 
 DistributionCustomizer.prototype = {
-  
-  
+  // These prefixes must only contain characters
+  // allowed by PlacesUtils.isValidGuid
   BOOKMARK_GUID_PREFIX: "DstB-",
   FOLDER_GUID_PREFIX: "DstF-",
 
   get _iniFile() {
-    
-    
+    // For parallel xpcshell testing purposes allow loading the distribution.ini
+    // file from the profile folder through an hidden pref.
     let loadFromProfile = Services.prefs.getBoolPref(
       "distribution.testing.loadFromProfile",
       false
@@ -82,13 +79,13 @@ DistributionCustomizer.prototype = {
       }
     } catch (e) {
       if (e.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
-        
-        
-        
-        
+        // We probably had cached the file existence as true,
+        // but it no longer exists. We could set the new cache
+        // value here, but let's just invalidate the cache and
+        // let it be cached by a single code path on the next check.
         Services.prefs.clearUserPref(PREF_CACHED_FILE_EXISTENCE);
       } else {
-        
+        // Unable to parse INI.
         console.error("Unable to parse distribution.ini");
       }
     }
@@ -208,8 +205,8 @@ DistributionCustomizer.prototype = {
           break;
 
         case "livemark":
-          
-          
+          // Livemarks are no more supported, instead of a livemark we'll insert
+          // a bookmark pointing to the site uri, if available.
           if (!item.siteLink) {
             break;
           }
@@ -324,8 +321,8 @@ DistributionCustomizer.prototype = {
 
     let sections = enumToObject(this._ini.getSections());
 
-    
-    
+    // The global section, and several of its fields, is required
+    // (we also check here to be consistent with applyPrefDefaults below)
     if (!sections.Global) {
       return;
     }
@@ -358,7 +355,7 @@ DistributionCustomizer.prototype = {
     let profileAge = await ProfileAge();
     let resetDate = await profileAge.reset;
 
-    
+    // If the profile has been reset, don't recreate bookmarks.
     if (!resetDate) {
       if (sections.BookmarksMenu) {
         await this._parseBookmarksSection(
@@ -385,7 +382,7 @@ DistributionCustomizer.prototype = {
 
     let sections = enumToObject(this._ini.getSections());
 
-    
+    // The global section, and several of its fields, is required
     if (!sections.Global) {
       return this._checkCustomizationComplete();
     }
@@ -395,14 +392,14 @@ DistributionCustomizer.prototype = {
     }
     let distroID = this._ini.getString("Global", "id");
     if (!globalPrefs.about && !distroID.startsWith("mozilla-")) {
-      
+      // About is required unless it is a mozilla distro.
       return this._checkCustomizationComplete();
     }
 
     let defaults = Services.prefs.getDefaultBranch(null);
 
-    
-    
+    // Global really contains info we set as prefs.  They're only
+    // separate because they are "special" (read: required)
 
     defaults.setStringPref("distribution.id", distroID);
 
@@ -431,10 +428,10 @@ DistributionCustomizer.prototype = {
       }
       defaults.setStringPref("distribution.about", partnerAbout);
     } catch (e) {
-      
+      /* ignore bad prefs due to bug 895473 and move on */
     }
 
-    
+    /* order of precedence is locale->language->default */
 
     let preferences = new Map();
 
@@ -453,8 +450,8 @@ DistributionCustomizer.prototype = {
         if (value) {
           preferences.set(key, value);
         } else {
-          
-          
+          // If something was set by Preferences, but it's empty in language,
+          // it should be removed.
           preferences.delete(key);
         }
       }
@@ -466,8 +463,8 @@ DistributionCustomizer.prototype = {
         if (value) {
           preferences.set(key, value);
         } else {
-          
-          
+          // If something was set by Preferences, but it's empty in locale,
+          // it should be removed.
           preferences.delete(key);
         }
       }
@@ -494,14 +491,14 @@ DistributionCustomizer.prototype = {
           }
         }
       } catch (e) {
-        
+        /* ignore bad prefs and move on */
       }
     }
 
     if (this._ini.getString("Global", "id") == "yandex") {
-      
-      
-      
+      // All yandex distributions have the same distribution ID,
+      // so we're using an internal preference to name them correctly.
+      // This is needed for search to work properly.
       try {
         defaults.setStringPref(
           "distribution.id",
@@ -510,7 +507,7 @@ DistributionCustomizer.prototype = {
             .replace("firefox", "yandex")
         );
       } catch (e) {
-        
+        // Just use the default distribution ID.
       }
     }
 
@@ -540,8 +537,8 @@ DistributionCustomizer.prototype = {
         if (value) {
           localizablePreferences.set(key, value);
         } else {
-          
-          
+          // If something was set by Preferences, but it's empty in language,
+          // it should be removed.
           localizablePreferences.delete(key);
         }
       }
@@ -558,8 +555,8 @@ DistributionCustomizer.prototype = {
         if (value) {
           localizablePreferences.set(key, value);
         } else {
-          
-          
+          // If something was set by Preferences, but it's empty in locale,
+          // it should be removed.
           localizablePreferences.delete(key);
         }
       }
@@ -577,7 +574,7 @@ DistributionCustomizer.prototype = {
           localizedStr
         );
       } catch (e) {
-        
+        /* ignore bad prefs and move on */
       }
     }
 
@@ -630,9 +627,9 @@ function parseValue(value) {
   try {
     value = JSON.parse(value);
   } catch (e) {
-    
-    
-    
+    // JSON.parse catches numbers and booleans.
+    // Anything else, we assume is a string.
+    // Remove the quotes that aren't needed anymore.
     value = value.replace(/^"/, "");
     value = value.replace(/"$/, "");
   }
