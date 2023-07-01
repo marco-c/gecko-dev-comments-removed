@@ -203,7 +203,15 @@ def new_label(label, tasks):
     For instance, we try to backfill chunk #3, however, a previous push does not contain such
     chunk, thus, we try to reuse another task/label.
     """
+    logger.info(f"Extracting new label for {label}")
+
+    if "-" not in label:
+        raise Exception(
+            f"Expected '-' was not found in label {label}, cannot extract new label."
+        )
+
     begining_label, ending = label.rsplit("-", 1)
+
     if ending.isdigit():
         
         if begining_label in tasks:
