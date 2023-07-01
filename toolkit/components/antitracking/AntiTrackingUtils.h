@@ -49,6 +49,14 @@ class AntiTrackingUtils final {
   static bool CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
                                          nsACString& aKey);
 
+  static void CreateStorageFramePermissionKey(const nsACString& aTrackingSite,
+                                              nsACString& aPermissionKey);
+
+  
+  
+  static bool CreateStorageFramePermissionKey(nsIPrincipal* aPrincipal,
+                                              nsACString& aKey);
+
   
   
   

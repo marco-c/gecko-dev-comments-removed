@@ -3,8 +3,9 @@ const TEST_FQDN_1_URI = Services.io.newURI("http://test1.example.com");
 const TEST_FQDN_2_URI = Services.io.newURI("http://test2.example.com");
 const TEST_OTHER_URI = Services.io.newURI("http://example.net");
 const TEST_PERMISSION = "3rdPartyStorage^https://example.org";
+const TEST_FRAME_PERMISSION = "3rdPartyFrameStorage^https://example.org";
 
-add_task(async function do_test() {
+async function do_test(permission) {
   let pm = Services.perms;
 
   let principal = Services.scriptSecurityManager.createContentPrincipal(
@@ -24,75 +25,69 @@ add_task(async function do_test() {
   );
 
   
-  pm.addFromPrincipal(principal, TEST_PERMISSION, pm.ALLOW_ACTION);
+  pm.addFromPrincipal(principal, permission, pm.ALLOW_ACTION);
 
   
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal, permission)
   );
 
   
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(subdomain1Principal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(subdomain1Principal, permission)
   );
 
   
   Assert.equal(
     Ci.nsIPermissionManager.UNKNOWN_ACTION,
-    pm.testPermissionFromPrincipal(otherPrincipal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(otherPrincipal, permission)
   );
 
   
-  pm.removeFromPrincipal(principal, TEST_PERMISSION);
+  pm.removeFromPrincipal(principal, permission);
   Assert.equal(
-    pm.testPermissionFromPrincipal(principal, TEST_PERMISSION),
+    pm.testPermissionFromPrincipal(principal, permission),
     Ci.nsIPermissionManager.UNKNOWN_ACTION
   );
   Assert.equal(
-    pm.testPermissionFromPrincipal(subdomain1Principal, TEST_PERMISSION),
+    pm.testPermissionFromPrincipal(subdomain1Principal, permission),
     Ci.nsIPermissionManager.UNKNOWN_ACTION
   );
 
   
-  pm.addFromPrincipal(subdomain1Principal, TEST_PERMISSION, pm.ALLOW_ACTION);
+  pm.addFromPrincipal(subdomain1Principal, permission, pm.ALLOW_ACTION);
 
   
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal, permission)
   );
 
   
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(subdomain1Principal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(subdomain1Principal, permission)
   );
 
   
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(subdomain2Principal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(subdomain2Principal, permission)
   );
 
   
   Assert.equal(
     Ci.nsIPermissionManager.UNKNOWN_ACTION,
-    pm.testPermissionFromPrincipal(otherPrincipal, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(otherPrincipal, permission)
   );
 
   
-  let sitePerms = pm.getAllForPrincipal(principal, TEST_PERMISSION);
-  let subdomain1Perms = pm.getAllForPrincipal(
-    subdomain1Principal,
-    TEST_PERMISSION
-  );
-  let subdomain2Perms = pm.getAllForPrincipal(
-    subdomain2Principal,
-    TEST_PERMISSION
-  );
-  let otherSitePerms = pm.getAllForPrincipal(otherPrincipal, TEST_PERMISSION);
+  let sitePerms = pm.getAllForPrincipal(principal, permission);
+  let subdomain1Perms = pm.getAllForPrincipal(subdomain1Principal, permission);
+  let subdomain2Perms = pm.getAllForPrincipal(subdomain2Principal, permission);
+  let otherSitePerms = pm.getAllForPrincipal(otherPrincipal, permission);
 
   Assert.equal(sitePerms.length, 1);
   Assert.equal(subdomain1Perms.length, 1);
@@ -100,17 +95,25 @@ add_task(async function do_test() {
   Assert.equal(otherSitePerms.length, 0);
 
   
-  pm.removeFromPrincipal(subdomain1Principal, TEST_PERMISSION);
+  pm.removeFromPrincipal(subdomain1Principal, permission);
   Assert.equal(
-    pm.testPermissionFromPrincipal(principal, TEST_PERMISSION),
+    pm.testPermissionFromPrincipal(principal, permission),
     Ci.nsIPermissionManager.UNKNOWN_ACTION
   );
   Assert.equal(
-    pm.testPermissionFromPrincipal(subdomain1Principal, TEST_PERMISSION),
+    pm.testPermissionFromPrincipal(subdomain1Principal, permission),
     Ci.nsIPermissionManager.UNKNOWN_ACTION
   );
   Assert.equal(
-    pm.testPermissionFromPrincipal(subdomain2Principal, TEST_PERMISSION),
+    pm.testPermissionFromPrincipal(subdomain2Principal, permission),
     Ci.nsIPermissionManager.UNKNOWN_ACTION
   );
+}
+
+add_task(async function do3rdPartyStorageTest() {
+  do_test(TEST_PERMISSION);
+});
+
+add_task(async function do3rdPartyFrameStorageTest() {
+  do_test(TEST_FRAME_PERMISSION);
 });
