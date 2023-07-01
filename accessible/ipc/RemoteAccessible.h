@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_RemoteAccessibleBase_h
-#define mozilla_a11y_RemoteAccessibleBase_h
+#ifndef mozilla_a11y_RemoteAccessible_h
+#define mozilla_a11y_RemoteAccessible_h
 
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/CacheConstants.h"
@@ -30,14 +30,16 @@ enum class RelationType;
 
 
 
-template <class Derived>
-class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
+class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
  public:
-  virtual ~RemoteAccessibleBase() { MOZ_ASSERT(!mWrapper); }
+  virtual ~RemoteAccessible() {
+    MOZ_ASSERT(!mWrapper);
+    MOZ_COUNT_DTOR(RemoteAccessible);
+  }
 
   virtual bool IsRemote() const override { return true; }
 
-  void AddChildAt(uint32_t aIdx, Derived* aChild) {
+  void AddChildAt(uint32_t aIdx, RemoteAccessible* aChild) {
     mChildren.InsertElementAt(aIdx, aChild);
     if (IsHyperText()) {
       InvalidateCachedHyperTextOffsets();
@@ -45,16 +47,16 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   }
 
   virtual uint32_t ChildCount() const override { return mChildren.Length(); }
-  Derived* RemoteChildAt(uint32_t aIdx) const {
+  RemoteAccessible* RemoteChildAt(uint32_t aIdx) const {
     return mChildren.SafeElementAt(aIdx);
   }
-  Derived* RemoteFirstChild() const {
+  RemoteAccessible* RemoteFirstChild() const {
     return mChildren.Length() ? mChildren[0] : nullptr;
   }
-  Derived* RemoteLastChild() const {
+  RemoteAccessible* RemoteLastChild() const {
     return mChildren.Length() ? mChildren[mChildren.Length() - 1] : nullptr;
   }
-  Derived* RemotePrevSibling() const {
+  RemoteAccessible* RemotePrevSibling() const {
     if (IsDoc()) {
       
       
@@ -67,7 +69,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
     }
     return idx > 0 ? RemoteParent()->mChildren[idx - 1] : nullptr;
   }
-  Derived* RemoteNextSibling() const {
+  RemoteAccessible* RemoteNextSibling() const {
     if (IsDoc()) {
       
       
@@ -103,11 +105,12 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   
   virtual int32_t IndexInParent() const override {
-    Derived* parent = RemoteParent();
+    RemoteAccessible* parent = RemoteParent();
     if (!parent) {
       return -1;
     }
-    return parent->mChildren.IndexOf(static_cast<const Derived*>(this));
+    return parent->mChildren.IndexOf(
+        static_cast<const RemoteAccessible*>(this));
   }
   virtual uint32_t EmbeddedChildCount() override;
   virtual int32_t IndexOfEmbeddedChild(Accessible* aChild) override;
@@ -121,7 +124,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   
 
 
-  void RemoveChild(Derived* aChild) {
+  void RemoveChild(RemoteAccessible* aChild) {
     mChildren.RemoveElement(aChild);
     if (IsHyperText()) {
       InvalidateCachedHyperTextOffsets();
@@ -131,7 +134,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   
 
 
-  Derived* RemoteParent() const;
+  RemoteAccessible* RemoteParent() const;
 
   LocalAccessible* OuterDocOfRemoteBrowser() const;
 
@@ -285,43 +288,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   DocAccessibleParent* AsDoc() const { return IsDoc() ? mDoc : nullptr; }
 
-  void ApplyCache(CacheUpdateType aUpdateType, AccAttributes* aFields) {
-    const nsTArray<bool> relUpdatesNeeded = PreProcessRelations(aFields);
-    if (auto maybeViewportCache =
-            aFields->GetAttribute<nsTArray<uint64_t>>(nsGkAtoms::viewport)) {
-      
-      
-      
-      MOZ_ASSERT(IsDoc(),
-                 "Fetched the viewport cache from a non-doc accessible?");
-      AsDoc()->mOnScreenAccessibles.Clear();
-      for (auto id : *maybeViewportCache) {
-        AsDoc()->mOnScreenAccessibles.Insert(id);
-      }
-    }
-
-    if (aUpdateType == CacheUpdateType::Initial) {
-      mCachedFields = aFields;
-    } else {
-      if (!mCachedFields) {
-        
-        
-        
-        
-        mCachedFields = new AccAttributes();
-      }
-      mCachedFields->Update(aFields);
-    }
-
-    if (IsTextLeaf()) {
-      Derived* parent = RemoteParent();
-      if (parent && parent->IsHyperText()) {
-        parent->InvalidateCachedHyperTextOffsets();
-      }
-    }
-
-    PostProcessRelations(relUpdatesNeeded);
-  }
+  void ApplyCache(CacheUpdateType aUpdateType, AccAttributes* aFields);
 
   void UpdateStateCache(uint64_t aState, bool aEnabled) {
     if (aState & kRemoteCalculatedStates) {
@@ -430,18 +397,20 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf);
 
  protected:
-  RemoteAccessibleBase(uint64_t aID, Derived* aParent,
-                       DocAccessibleParent* aDoc, role aRole, AccType aType,
-                       AccGenericType aGenericTypes, uint8_t aRoleMapEntryIndex)
+  RemoteAccessible(uint64_t aID, RemoteAccessible* aParent,
+                   DocAccessibleParent* aDoc, role aRole, AccType aType,
+                   AccGenericType aGenericTypes, uint8_t aRoleMapEntryIndex)
       : Accessible(aType, aGenericTypes, aRoleMapEntryIndex),
         mParent(aParent->ID()),
         mDoc(aDoc),
         mWrapper(0),
         mID(aID),
         mCachedFields(nullptr),
-        mRole(aRole) {}
+        mRole(aRole) {
+    MOZ_COUNT_CTOR(RemoteAccessible);
+  }
 
-  explicit RemoteAccessibleBase(DocAccessibleParent* aThisAsDoc)
+  explicit RemoteAccessible(DocAccessibleParent* aThisAsDoc)
       : Accessible(),
         mParent(kNoParent),
         mDoc(aThisAsDoc),
@@ -450,10 +419,11 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
         mCachedFields(nullptr),
         mRole(roles::DOCUMENT) {
     mGenericTypes = eDocument | eHyperText;
+    MOZ_COUNT_CTOR(RemoteAccessible);
   }
 
  protected:
-  void SetParent(Derived* aParent);
+  void SetParent(RemoteAccessible* aParent);
   Maybe<nsRect> RetrieveCachedBounds() const;
   bool ApplyTransform(nsRect& aCumulativeBounds) const;
   bool ApplyScrollOffset(nsRect& aBounds) const;
@@ -499,16 +469,10 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   virtual nsTArray<int32_t>& GetCachedHyperTextOffsets() override;
 
-  
-  
-  template <class>
-  friend class RemoteAccessibleBase;
-
  private:
   uintptr_t mParent;
   static const uintptr_t kNoParent = UINTPTR_MAX;
 
-  friend Derived;
   friend DocAccessibleParent;
   friend TextLeafPoint;
   friend HyperTextAccessibleBase;
@@ -518,7 +482,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   friend class sdnAccessible;
 #endif
 
-  nsTArray<Derived*> mChildren;
+  nsTArray<RemoteAccessible*> mChildren;
   DocAccessibleParent* mDoc;
   uintptr_t mWrapper;
   uint64_t mID;
@@ -533,7 +497,12 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   role mRole : 27;
 };
 
-extern template class RemoteAccessibleBase<RemoteAccessible>;
+
+
+
+inline RemoteAccessible* Accessible::AsRemote() {
+  return IsRemote() ? static_cast<RemoteAccessible*>(this) : nullptr;
+}
 
 }  
 }  
