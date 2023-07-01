@@ -4317,14 +4317,6 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
     const nsAString& aRawText, float aX, float aY,
     const Optional<double>& aMaxWidth, TextDrawOperation aOp,
     ErrorResult& aError) {
-  
-  
-  
-  
-  
-  const double kHangingBaselineDefault = 0.8;      
-  const double kIdeographicBaselineDefault = 0.5;  
-
   gfxFontGroup* currentFontStyle = GetCurrentFontStyle();
   if (NS_WARN_IF(!currentFontStyle)) {
     aError = NS_ERROR_FAILURE;
@@ -4514,12 +4506,20 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   float offsetX = anchorX * totalWidth;
   processor.mPt.x -= offsetX;
 
+  gfx::ShapedTextFlags runOrientation =
+      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
+  nsFontMetrics::FontOrientation fontOrientation =
+      (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+       runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT)
+          ? nsFontMetrics::eVertical
+          : nsFontMetrics::eHorizontal;
+
   
   gfxFloat baselineAnchor;
 
   switch (state.textBaseline) {
     case CanvasTextBaseline::Hanging:
-      baselineAnchor = fontMetrics.emAscent * kHangingBaselineDefault;
+      baselineAnchor = font->GetBaselines(fontOrientation).mHanging;
       break;
     case CanvasTextBaseline::Top:
       baselineAnchor = fontMetrics.emAscent;
@@ -4528,10 +4528,10 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
       baselineAnchor = (fontMetrics.emAscent - fontMetrics.emDescent) * .5f;
       break;
     case CanvasTextBaseline::Alphabetic:
-      baselineAnchor = 0;
+      baselineAnchor = font->GetBaselines(fontOrientation).mAlphabetic;
       break;
     case CanvasTextBaseline::Ideographic:
-      baselineAnchor = -fontMetrics.emDescent * kIdeographicBaselineDefault;
+      baselineAnchor = font->GetBaselines(fontOrientation).mIdeographic;
       break;
     case CanvasTextBaseline::Bottom:
       baselineAnchor = -fontMetrics.emDescent;
@@ -4542,11 +4542,8 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
 
   
   
-  gfx::ShapedTextFlags runOrientation =
-      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
   if (runOrientation != gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL) {
-    if (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
-        runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT) {
+    if (fontOrientation == nsFontMetrics::eVertical) {
       
       
       baselineAnchor -= (fontMetrics.emAscent - fontMetrics.emDescent) * .5f;
@@ -4567,10 +4564,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
         -processor.mBoundingBox.Y() - baselineAnchor;
     double actualBoundingBoxDescent =
         processor.mBoundingBox.YMost() + baselineAnchor;
-    double hangingBaseline =
-        fontMetrics.emAscent * kHangingBaselineDefault - baselineAnchor;
-    double ideographicBaseline =
-        -fontMetrics.emDescent * kIdeographicBaselineDefault - baselineAnchor;
+    auto baselines = font->GetBaselines(fontOrientation);
     return new TextMetrics(
         totalWidth, actualBoundingBoxLeft, actualBoundingBoxRight,
         fontMetrics.maxAscent - baselineAnchor,   
@@ -4578,9 +4572,9 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
         actualBoundingBoxAscent, actualBoundingBoxDescent,
         fontMetrics.emAscent - baselineAnchor,    
         -fontMetrics.emDescent - baselineAnchor,  
-        hangingBaseline,
-        -baselineAnchor,  
-        ideographicBaseline);
+        baselines.mHanging - baselineAnchor,
+        baselines.mAlphabetic - baselineAnchor,
+        baselines.mIdeographic - baselineAnchor);
   }
 
   

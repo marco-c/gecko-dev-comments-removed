@@ -1624,6 +1624,13 @@ class gfxFont {
     return *mVerticalMetrics;
   }
 
+  struct Baselines {
+    gfxFloat mAlphabetic;
+    gfxFloat mHanging;
+    gfxFloat mIdeographic;
+  };
+  Baselines GetBaselines(Orientation aOrientation);
+
   
 
 
