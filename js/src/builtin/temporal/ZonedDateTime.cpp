@@ -20,6 +20,12 @@
 
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/Instant.h"
+#include "builtin/temporal/PlainDate.h"
+#include "builtin/temporal/PlainDateTime.h"
+#include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalRoundingMode.h"
+#include "builtin/temporal/TemporalTypes.h"
+#include "builtin/temporal/TemporalUnit.h"
 #include "builtin/temporal/TimeZone.h"
 #include "ds/IdValuePair.h"
 #include "gc/AllocKind.h"
@@ -58,6 +64,10 @@
 
 using namespace js;
 using namespace js::temporal;
+
+static inline bool IsZonedDateTime(Handle<Value> v) {
+  return v.isObject() && v.toObject().is<ZonedDateTimeObject>();
+}
 
 
 
@@ -133,6 +143,114 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
 
 
 
+
+static JSString* TemporalZonedDateTimeToString(
+    JSContext* cx, Handle<ZonedDateTimeObject*> zonedDateTime,
+    Precision precision, CalendarOption showCalendar,
+    TimeZoneNameOption showTimeZone, ShowOffsetOption showOffset,
+    Increment increment = Increment{1},
+    TemporalUnit unit = TemporalUnit::Nanosecond,
+    TemporalRoundingMode roundingMode = TemporalRoundingMode::Trunc) {
+  JSStringBuilder result(cx);
+
+  
+
+  
+  Instant ns;
+  if (!RoundTemporalInstant(cx, ToInstant(zonedDateTime), increment, unit,
+                            roundingMode, &ns)) {
+    return nullptr;
+  }
+
+  
+  Rooted<JSObject*> timeZone(cx, zonedDateTime->timeZone());
+
+  
+  Rooted<InstantObject*> instant(cx, CreateTemporalInstant(cx, ns));
+  if (!instant) {
+    return nullptr;
+  }
+
+  
+  Rooted<CalendarObject*> isoCalendar(cx, GetISO8601Calendar(cx));
+  if (!isoCalendar) {
+    return nullptr;
+  }
+
+  
+  PlainDateTime temporalDateTime;
+  if (!js::temporal::GetPlainDateTimeFor(cx, timeZone, instant,
+                                         &temporalDateTime)) {
+    return nullptr;
+  }
+
+  
+  JSString* dateTimeString = TemporalDateTimeToString(
+      cx, temporalDateTime, isoCalendar, precision, CalendarOption::Never);
+  if (!dateTimeString) {
+    return nullptr;
+  }
+  if (!result.append(dateTimeString)) {
+    return nullptr;
+  }
+
+  
+  if (showOffset != ShowOffsetOption::Never) {
+    
+    int64_t offsetNs;
+    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNs)) {
+      return nullptr;
+    }
+    MOZ_ASSERT(std::abs(offsetNs) < ToNanoseconds(TemporalUnit::Day));
+
+    
+    JSString* offsetString = FormatISOTimeZoneOffsetString(cx, offsetNs);
+    if (!offsetString) {
+      return nullptr;
+    }
+    if (!result.append(offsetString)) {
+      return nullptr;
+    }
+  }
+
+  
+  if (showTimeZone != TimeZoneNameOption::Never) {
+    if (!result.append('[')) {
+      return nullptr;
+    }
+
+    if (showTimeZone == TimeZoneNameOption::Critical) {
+      if (!result.append('!')) {
+        return nullptr;
+      }
+    }
+
+    JSString* timeZoneString = TimeZoneToString(cx, timeZone);
+    if (!timeZoneString) {
+      return nullptr;
+    }
+    if (!result.append(timeZoneString)) {
+      return nullptr;
+    }
+
+    if (!result.append(']')) {
+      return nullptr;
+    }
+  }
+
+  
+  Rooted<JSObject*> calendar(cx, zonedDateTime->calendar());
+  if (!MaybeFormatCalendarAnnotation(cx, result, calendar, showCalendar)) {
+    return nullptr;
+  }
+
+  
+  return result.finishString();
+}
+
+
+
+
 static bool ZonedDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -178,6 +296,161 @@ static bool ZonedDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+
+static bool ZonedDateTime_toString(JSContext* cx, const CallArgs& args) {
+  Rooted<ZonedDateTimeObject*> zonedDateTime(
+      cx, &args.thisv().toObject().as<ZonedDateTimeObject>());
+
+  SecondsStringPrecision precision = {Precision::Auto(),
+                                      TemporalUnit::Nanosecond, Increment{1}};
+  auto roundingMode = TemporalRoundingMode::Trunc;
+  auto showCalendar = CalendarOption::Auto;
+  auto showTimeZone = TimeZoneNameOption::Auto;
+  auto showOffset = ShowOffsetOption::Auto;
+  if (args.hasDefined(0)) {
+    
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", "toString", args[0]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!ToCalendarNameOption(cx, options, &showCalendar)) {
+      return false;
+    }
+
+    
+    auto digits = Precision::Auto();
+    if (!ToFractionalSecondDigits(cx, options, &digits)) {
+      return false;
+    }
+
+    
+    if (!ToShowOffsetOption(cx, options, &showOffset)) {
+      return false;
+    }
+
+    
+    if (!ToTemporalRoundingMode(cx, options, &roundingMode)) {
+      return false;
+    }
+
+    
+    auto smallestUnit = TemporalUnit::Auto;
+    if (!GetTemporalUnit(cx, options, TemporalUnitKey::SmallestUnit,
+                         TemporalUnitGroup::Time, &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (smallestUnit == TemporalUnit::Hour) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_INVALID_UNIT_OPTION, "hour",
+                                "smallestUnit");
+      return false;
+    }
+
+    
+    if (!ToTimeZoneNameOption(cx, options, &showTimeZone)) {
+      return false;
+    }
+
+    
+    precision = ToSecondsStringPrecision(smallestUnit, digits);
+  }
+
+  
+  JSString* str = TemporalZonedDateTimeToString(
+      cx, zonedDateTime, precision.precision, showCalendar, showTimeZone,
+      showOffset, precision.increment, precision.unit, roundingMode);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
+
+
+
+static bool ZonedDateTime_toString(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_toString>(cx,
+                                                                       args);
+}
+
+
+
+
+static bool ZonedDateTime_toLocaleString(JSContext* cx, const CallArgs& args) {
+  Rooted<ZonedDateTimeObject*> zonedDateTime(
+      cx, &args.thisv().toObject().as<ZonedDateTimeObject>());
+
+  
+  JSString* str = TemporalZonedDateTimeToString(
+      cx, zonedDateTime, Precision::Auto(), CalendarOption::Auto,
+      TimeZoneNameOption::Auto, ShowOffsetOption::Auto);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
+
+
+
+static bool ZonedDateTime_toLocaleString(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_toLocaleString>(
+      cx, args);
+}
+
+
+
+
+static bool ZonedDateTime_toJSON(JSContext* cx, const CallArgs& args) {
+  Rooted<ZonedDateTimeObject*> zonedDateTime(
+      cx, &args.thisv().toObject().as<ZonedDateTimeObject>());
+
+  
+  JSString* str = TemporalZonedDateTimeToString(
+      cx, zonedDateTime, Precision::Auto(), CalendarOption::Auto,
+      TimeZoneNameOption::Auto, ShowOffsetOption::Auto);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
+
+
+
+static bool ZonedDateTime_toJSON(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsZonedDateTime, ZonedDateTime_toJSON>(cx, args);
+}
+
+
+
+
+static bool ZonedDateTime_valueOf(JSContext* cx, unsigned argc, Value* vp) {
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
+                            "ZonedDateTime", "primitive type");
+  return false;
+}
+
 const JSClass ZonedDateTimeObject::class_ = {
     "Temporal.ZonedDateTime",
     JSCLASS_HAS_RESERVED_SLOTS(ZonedDateTimeObject::SLOT_COUNT) |
@@ -193,6 +466,10 @@ static const JSFunctionSpec ZonedDateTime_methods[] = {
 };
 
 static const JSFunctionSpec ZonedDateTime_prototype_methods[] = {
+    JS_FN("toString", ZonedDateTime_toString, 0, 0),
+    JS_FN("toLocaleString", ZonedDateTime_toLocaleString, 0, 0),
+    JS_FN("toJSON", ZonedDateTime_toJSON, 0, 0),
+    JS_FN("valueOf", ZonedDateTime_valueOf, 0, 0),
     JS_FS_END,
 };
 
