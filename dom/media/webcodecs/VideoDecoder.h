@@ -27,7 +27,9 @@ class nsIGlobalObject;
 
 namespace mozilla {
 
+class MediaData;
 class TrackInfo;
+class VideoInfo;
 
 namespace dom {
 
@@ -57,6 +59,19 @@ struct ConfigureMessage final {
   const nsCString mTitle;  
   MozPromiseRequestHolder<DecoderAgent::ConfigurePromise> mRequest;
   UniquePtr<VideoDecoderConfig> mConfig;
+};
+
+struct DecodeMessage final {
+  using Id = size_t;
+
+  
+  
+  struct ChunkData;
+  DecodeMessage(Id aId, UniquePtr<ChunkData>&& aData);
+  const nsCString mTitle;  
+  MozPromiseRequestHolder<DecoderAgent::DecodePromise> mRequest;
+  const Id mId;  
+  UniquePtr<ChunkData> mData;
 };
 
 class VideoDecoder final : public DOMEventTargetHelper {
@@ -91,7 +106,7 @@ class VideoDecoder final : public DOMEventTargetHelper {
   MOZ_CAN_RUN_SCRIPT void Configure(const VideoDecoderConfig& aConfig,
                                     ErrorResult& aRv);
 
-  void Decode(EncodedVideoChunk& chunk, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Decode(EncodedVideoChunk& aChunk, ErrorResult& aRv);
 
   already_AddRefed<Promise> Flush(ErrorResult& aRv);
 
@@ -111,13 +126,25 @@ class VideoDecoder final : public DOMEventTargetHelper {
   MOZ_CAN_RUN_SCRIPT Result<Ok, nsresult> Close(const nsresult& aResult);
 
   MOZ_CAN_RUN_SCRIPT void ReportError(const nsresult& aResult);
+  MOZ_CAN_RUN_SCRIPT void OutputVideoFrames(
+      nsTArray<RefPtr<MediaData>>&& aData);
+
+  class OutputRunnable;
+  void ScheduleOutputVideoFrames(nsTArray<RefPtr<MediaData>>&& aData,
+                                 const nsACString& aLabel);
+
+  void ScheduleClose(const nsresult& aResult);
 
   MOZ_CAN_RUN_SCRIPT void ProcessControlMessageQueue();
   void CancelPendingControlMessages();
 
+  using ControlMessage = Variant<ConfigureMessage, DecodeMessage>;
   enum class MessageProcessedResult { NotProcessed, Processed };
+
   MOZ_CAN_RUN_SCRIPT MessageProcessedResult
-  ProcessConfigureMessage(ConfigureMessage& aMessage);
+  ProcessConfigureMessage(ControlMessage& aMessage);
+
+  MessageProcessedResult ProcessDecodeMessage(ControlMessage& aMessage);
 
   
   bool CreateDecoderAgent(UniquePtr<VideoDecoderConfig>&& aConfig,
@@ -129,16 +156,19 @@ class VideoDecoder final : public DOMEventTargetHelper {
   RefPtr<VideoFrameOutputCallback> mOutputCallback;
 
   CodecState mState;
+  bool mKeyChunkRequired;
 
   bool mMessageQueueBlocked;
-  std::queue<ConfigureMessage> mControlMessageQueue;
-  Maybe<ConfigureMessage> mProcessingMessage;
+  std::queue<ControlMessage> mControlMessageQueue;
+  Maybe<ControlMessage> mProcessingMessage;
 
   
   
   
   RefPtr<DecoderAgent> mAgent;
   UniquePtr<VideoDecoderConfig> mActiveConfig;
+  uint32_t mDecodeQueueSize;
+  DecodeMessage::Id mDecodeMessageCounter;
 
   
   
