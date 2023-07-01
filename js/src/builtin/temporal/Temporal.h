@@ -171,6 +171,13 @@ bool ToTemporalRoundingMode(JSContext* cx, JS::Handle<JSObject*> options,
 
 
 
+JS::BigInt* RoundNumberToIncrement(JSContext* cx, JS::Handle<JS::BigInt*> x,
+                                   int64_t increment,
+                                   TemporalRoundingMode roundingMode);
+
+
+
+
 bool RoundNumberToIncrement(JSContext* cx, const Instant& x, int64_t increment,
                             TemporalRoundingMode roundingMode, Instant* result);
 
@@ -186,6 +193,13 @@ bool RoundNumberToIncrement(JSContext* cx, int64_t numerator, TemporalUnit unit,
 
 bool RoundNumberToIncrement(JSContext* cx, JS::Handle<JS::BigInt*> numerator,
                             TemporalUnit unit, Increment increment,
+                            TemporalRoundingMode roundingMode, double* result);
+
+
+
+
+bool RoundNumberToIncrement(JSContext* cx, int64_t numerator,
+                            int64_t denominator, Increment increment,
                             TemporalRoundingMode roundingMode, double* result);
 
 
