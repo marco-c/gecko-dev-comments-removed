@@ -260,11 +260,13 @@ class MouseScrollHandler {
     
     void TrustedScrollSettingsDriver();
 
+#ifndef EARLY_BETA_OR_EARLIER
     
     
     
     
     bool IsOverridingSystemScrollSpeedAllowed();
+#endif
 
     int32_t GetScrollAmount(bool aForVertical) const {
       MOZ_ASSERT(mInitialized, "SystemSettings must be initialized");
@@ -280,7 +282,9 @@ class MouseScrollHandler {
     
     
     static int32_t DefaultScrollLines() { return 3; }
+#ifndef EARLY_BETA_OR_EARLIER
     static int32_t DefaultScrollChars() { return 3; }
+#endif
 
    private:
     bool mInitialized;

@@ -803,6 +803,7 @@ bool MouseScrollHandler::LastEventInfo::InitWheelEvent(
     
     
     aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
+#ifndef EARLY_BETA_OR_EARLIER
   } else if (!MouseScrollHandler::sInstance->mSystemSettings
                   .IsOverridingSystemScrollSpeedAllowed()) {
     
@@ -827,6 +828,7 @@ bool MouseScrollHandler::LastEventInfo::InitWheelEvent(
         aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
       }
     }
+#endif
   }
 
   MOZ_LOG(
@@ -1002,11 +1004,13 @@ void MouseScrollHandler::SystemSettings::TrustedScrollSettingsDriver() {
   
 }
 
+#ifndef EARLY_BETA_OR_EARLIER
 bool MouseScrollHandler::SystemSettings::
     IsOverridingSystemScrollSpeedAllowed() {
   return mScrollLines == DefaultScrollLines() &&
          mScrollChars == DefaultScrollChars();
 }
+#endif
 
 
 
