@@ -637,6 +637,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         
     }
 
+    let attrModifiedObserver;
     function AttrModifiedListener() {
         LogInfo("AttrModifiedListener fired");
         
@@ -651,8 +652,9 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         removeEventListener("MozAfterPaint", AfterPaintListener, false);
         removeEventListener("Reftest:MozAfterPaintFromChild", FromChildAfterPaintListener, false);
         CheckForLivenessOfContentRootElement();
-        if (contentRootElement) {
-            contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener);
+        if (attrModifiedObserver) {
+            attrModifiedObserver.disconnect();
+            attrModifiedObserver = null;
         }
         gTimeoutHook = null;
         
@@ -899,8 +901,10 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     
     
     CheckForLivenessOfContentRootElement();
-    if (contentRootElement) {
-      contentRootElement.addEventListener("DOMAttrModified", AttrModifiedListener);
+    if (contentRootElement?.hasAttribute("class")) {
+      attrModifiedObserver =
+        new contentRootElement.ownerDocument.defaultView.MutationObserver(AttrModifiedListener);
+      attrModifiedObserver.observe(contentRootElement, {attributes: true});
     }
     gTimeoutHook = RemoveListeners;
 
