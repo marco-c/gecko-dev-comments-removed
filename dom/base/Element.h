@@ -93,7 +93,6 @@ class nsIPrincipal;
 class nsIScreen;
 class nsIScrollableFrame;
 class nsIURI;
-class nsMappedAttributes;
 class nsPresContext;
 class nsWindowSizes;
 struct JSContext;
@@ -105,6 +104,7 @@ class nsGetterAddRefs;
 
 namespace mozilla {
 class DeclarationBlock;
+class MappedDeclarationsBuilder;
 class ErrorResult;
 class OOMReporter;
 class SMILAttr;
@@ -143,6 +143,8 @@ typedef nsTHashMap<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>
     IntersectionObserverList;
 }  
 }  
+
+using nsMapRuleToAttributesFunc = void (*)(mozilla::MappedDeclarationsBuilder&);
 
 
 extern "C" bool Servo_Element_IsDisplayContents(const mozilla::dom::Element*);
@@ -387,11 +389,15 @@ class Element : public FragmentOrElement {
   
 
 
-  const nsMappedAttributes* GetMappedAttributes() const {
-    return mAttrs.GetMapped();
+  StyleLockedDeclarationBlock* GetMappedAttributeStyle() const {
+    return mAttrs.GetMappedDeclarationBlock();
   }
 
-  void ClearMappedServoStyle() { mAttrs.ClearMappedServoStyle(); }
+  bool IsPendingMappedAttributeEvaluation() const {
+    return mAttrs.IsPendingMappedAttributeEvaluation();
+  }
+
+  void SetMappedDeclarationBlock(already_AddRefed<StyleLockedDeclarationBlock>);
 
   
 
@@ -459,11 +465,13 @@ class Element : public FragmentOrElement {
   
 
 
-
-
-
-
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const;
+
+  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  void UnbindFromTree(bool aNullParent = true) override;
+
+  virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction() const;
+  static void MapNoAttributesInto(mozilla::MappedDeclarationsBuilder&);
 
   
 
@@ -805,10 +813,6 @@ class Element : public FragmentOrElement {
   }
 
   void UpdateEditableState(bool aNotify) override;
-
-  nsresult BindToTree(BindContext&, nsINode& aParent) override;
-
-  void UnbindFromTree(bool aNullParent = true) override;
 
   
 
@@ -1892,27 +1896,6 @@ class Element : public FragmentOrElement {
                               const nsAString& aValue,
                               nsIPrincipal* aMaybeScriptedPrincipal,
                               nsAttrValue& aResult);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool SetAndSwapMappedAttribute(nsAtom* aName, nsAttrValue& aValue,
-                                         bool* aValueWasSet, nsresult* aRetval);
 
   
 

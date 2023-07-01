@@ -8,11 +8,11 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
-#include "nsMappedAttributeElement.h"
 #include "nsNameSpaceManager.h"  
 #include "nsIFormControl.h"
 #include "nsGkAtoms.h"
 #include "nsContentCreatorFunctions.h"
+#include "nsStyledElement.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/DOMRect.h"
@@ -26,6 +26,8 @@ class nsIFrame;
 class nsILayoutHistoryState;
 class nsIURI;
 struct nsSize;
+
+enum nsCSSPropertyID : int32_t;
 
 namespace mozilla {
 class EditorBase;
@@ -41,7 +43,7 @@ class HTMLFormElement;
 }  
 }  
 
-using nsGenericHTMLElementBase = nsMappedAttributeElement;
+using nsGenericHTMLElementBase = nsStyledElement;
 
 
 
@@ -495,17 +497,13 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes,
-                                      mozilla::MappedDeclarations&);
+  static void MapCommonAttributesInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
 
-
-
-
   static void MapCommonAttributesIntoExceptHidden(
-      const nsMappedAttributes* aAttributes, mozilla::MappedDeclarations&);
+      mozilla::MappedDeclarationsBuilder&);
 
   static const MappedAttributeEntry sCommonAttributeMap[];
   static const MappedAttributeEntry sImageMarginSizeAttributeMap[];
@@ -519,12 +517,25 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
+  static void MapImageAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
+
+  
 
 
 
-  static void MapImageAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                         mozilla::MappedDeclarations&);
+  static void MapDivAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
 
+  
+
+
+
+  static void MapVAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
+
+  
+
+
+
+  static void MapImageBorderAttributeInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
@@ -532,39 +543,21 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-
-  static void MapDivAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                       mozilla::MappedDeclarations&);
+  static void MapImageMarginAttributeInto(mozilla::MappedDeclarationsBuilder&);
 
   
 
 
 
-
-
-
-
-  static void MapVAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                     mozilla::MappedDeclarations&);
+  static void MapDimensionAttributeInto(mozilla::MappedDeclarationsBuilder&,
+                                        nsCSSPropertyID, const nsAttrValue&);
 
   
 
 
-
-
-
-
-  static void MapImageBorderAttributeInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::MappedDeclarations&);
-  
-
-
-
-
-
-
-  static void MapImageMarginAttributeInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::MappedDeclarations&);
+  static void DoMapAspectRatio(const nsAttrValue& aWidth,
+                               const nsAttrValue& aHeight,
+                               mozilla::MappedDeclarationsBuilder&);
 
   
   enum class MapAspectRatio { No, Yes };
@@ -572,18 +565,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   
 
 
-  static void MapImageSizeAttributesInto(const nsMappedAttributes*,
-                                         mozilla::MappedDeclarations&,
+  static void MapImageSizeAttributesInto(mozilla::MappedDeclarationsBuilder&,
                                          MapAspectRatio = MapAspectRatio::No);
-  
-
-
-
-
-
-
-  static void MapPictureSourceSizeAttributesInto(const nsMappedAttributes*,
-                                                 mozilla::MappedDeclarations&);
 
   
 
@@ -594,8 +577,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  static void MapAspectRatioInto(const nsMappedAttributes*,
-                                 mozilla::MappedDeclarations&);
+  static void MapAspectRatioInto(mozilla::MappedDeclarationsBuilder&);
 
   
 
@@ -604,57 +586,33 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  static void MapWidthAttributeInto(const nsMappedAttributes* aAttributes,
-                                    mozilla::MappedDeclarations&);
+  static void MapWidthAttributeInto(mozilla::MappedDeclarationsBuilder&);
+
   
 
 
 
-
-
-
-  static void MapHeightAttributeInto(const nsMappedAttributes* aAttributes,
-                                     mozilla::MappedDeclarations&);
+  static void MapHeightAttributeInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
 
-
-
-
-
-  static void MapBackgroundInto(const nsMappedAttributes* aAttributes,
-                                mozilla::MappedDeclarations&);
+  static void MapBackgroundInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
 
-
-
-
-
-  static void MapBGColorInto(const nsMappedAttributes* aAttributes,
-                             mozilla::MappedDeclarations&);
+  static void MapBGColorInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
 
-
-
-
-
-  static void MapBackgroundAttributesInto(const nsMappedAttributes* aAttributes,
-                                          mozilla::MappedDeclarations&);
+  static void MapBackgroundAttributesInto(mozilla::MappedDeclarationsBuilder&);
   
 
 
 
-
-
-
-
-  static void MapScrollingAttributeInto(const nsMappedAttributes* aAttributes,
-                                        mozilla::MappedDeclarations&);
+  static void MapScrollingAttributeInto(mozilla::MappedDeclarationsBuilder&);
 
   
   

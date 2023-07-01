@@ -271,7 +271,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   
   
-  const nsMappedAttributes* GetMappedAttributesFromSource() const;
+  const StyleLockedDeclarationBlock* GetMappedAttributesFromSource() const;
 
  protected:
   virtual ~HTMLImageElement();
@@ -380,8 +380,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
  private:
   bool SourceElementMatches(Element* aSourceElement);
 
-  static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                    MappedDeclarations&);
+  static void MapAttributesIntoRule(MappedDeclarationsBuilder&);
   
 
 

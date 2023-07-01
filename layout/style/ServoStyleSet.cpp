@@ -321,14 +321,6 @@ const ServoElementSnapshotTable& ServoStyleSet::Snapshots() {
   return GetPresContext()->RestyleManager()->Snapshots();
 }
 
-void ServoStyleSet::ResolveMappedAttrDeclarationBlocks() {
-  if (AttributeStyles* attrStyles = mDocument->GetAttributeStyles()) {
-    attrStyles->CalculateMappedServoDeclarations();
-  }
-
-  mDocument->ResolveScheduledSVGPresAttrs();
-}
-
 void ServoStyleSet::PreTraverseSync() {
   
   
@@ -341,7 +333,7 @@ void ServoStyleSet::PreTraverseSync() {
   
   mDocument->FlushUserFontSet();
 
-  ResolveMappedAttrDeclarationBlocks();
+  mDocument->ResolveScheduledPresAttrs();
 
   LookAndFeel::NativeInit();
 

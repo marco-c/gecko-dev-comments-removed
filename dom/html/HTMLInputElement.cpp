@@ -53,7 +53,6 @@
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 #include "nsPresContext.h"
-#include "nsMappedAttributes.h"
 #include "nsIFormControl.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLDataListElement.h"
@@ -75,7 +74,7 @@
 
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/MappedDeclarations.h"
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
@@ -4469,19 +4468,17 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
     RecomputeDirectionality(this, aNotify);
   }
 
-  if (oldType == FormControlType::InputImage) {
-    
-    
-    CancelImageRequests(aNotify);
-
-    
-    mAttrs.UpdateMappedAttrRuleMapper(*this);
-  } else if (mType == FormControlType::InputImage) {
-    if (aNotify) {
+  if (oldType == FormControlType::InputImage ||
+      mType == FormControlType::InputImage) {
+    if (oldType == FormControlType::InputImage) {
+      
+      
+      CancelImageRequests(aNotify);
+    } else if (aNotify) {
       
       
       nsAutoString src;
-      if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
+      if (GetAttr(nsGkAtoms::src, src)) {
         
         
         mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
@@ -4490,9 +4487,13 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
                   mSrcTriggeringPrincipal);
       }
     }
-
     
-    mAttrs.UpdateMappedAttrRuleMapper(*this);
+    if (mAttrs.HasAttrs() && !mAttrs.IsPendingMappedAttributeEvaluation()) {
+      mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
+      if (auto* doc = GetComposedDoc()) {
+        doc->ScheduleForPresAttrEvaluation(this);
+      }
+    }
   }
 
   if (mType == FormControlType::InputPassword && IsInComposedDoc()) {
@@ -5248,19 +5249,17 @@ bool HTMLInputElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 }
 
 void HTMLInputElement::ImageInputMapAttributesIntoRule(
-    const nsMappedAttributes* aAttributes, MappedDeclarations& aDecls) {
+    MappedDeclarationsBuilder& aBuilder) {
   nsGenericHTMLFormControlElementWithState::MapImageBorderAttributeInto(
-      aAttributes, aDecls);
+      aBuilder);
   nsGenericHTMLFormControlElementWithState::MapImageMarginAttributeInto(
-      aAttributes, aDecls);
+      aBuilder);
   nsGenericHTMLFormControlElementWithState::MapImageSizeAttributesInto(
-      aAttributes, aDecls, MapAspectRatio::Yes);
+      aBuilder, MapAspectRatio::Yes);
   
   nsGenericHTMLFormControlElementWithState::MapImageAlignAttributeInto(
-      aAttributes, aDecls);
-
-  nsGenericHTMLFormControlElementWithState::MapCommonAttributesInto(aAttributes,
-                                                                    aDecls);
+      aBuilder);
+  nsGenericHTMLFormControlElementWithState::MapCommonAttributesInto(aBuilder);
 }
 
 nsChangeHint HTMLInputElement::GetAttributeChangeHint(const nsAtom* aAttribute,

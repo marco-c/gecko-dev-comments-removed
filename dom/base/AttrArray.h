@@ -22,12 +22,10 @@
 #include "nsAttrValue.h"
 #include "nsCaseTreatment.h"
 
-class nsMappedAttributes;
-class nsMappedAttributeElement;
-
 namespace mozilla {
 class AttributeStyles;
-}
+struct StyleLockedDeclarationBlock;
+}  
 
 class AttrArray {
   using BorrowedAttrInfo = mozilla::dom::BorrowedAttrInfo;
@@ -36,11 +34,9 @@ class AttrArray {
   AttrArray() = default;
   ~AttrArray() = default;
 
-  bool HasAttrs() const { return NonMappedAttrCount() || MappedAttrCount(); }
+  bool HasAttrs() const { return !!AttrCount(); }
 
-  uint32_t AttrCount() const {
-    return NonMappedAttrCount() + MappedAttrCount();
-  }
+  uint32_t AttrCount() const { return mImpl ? mImpl->mAttrCount : 0; }
 
   const nsAttrValue* GetAttr(const nsAtom* aLocalName,
                              int32_t aNamespaceID = kNameSpaceID_None) const;
@@ -63,6 +59,20 @@ class AttrArray {
 
   
   
+  
+  void SetMappedDeclarationBlock(
+      already_AddRefed<mozilla::StyleLockedDeclarationBlock>);
+
+  bool IsPendingMappedAttributeEvaluation() const {
+    return mImpl && mImpl->mMappedAttributeBits & 1;
+  }
+
+  mozilla::StyleLockedDeclarationBlock* GetMappedDeclarationBlock() const {
+    return mImpl ? mImpl->GetMappedDeclarationBlock() : nullptr;
+  }
+
+  
+  
   nsresult RemoveAttrAt(uint32_t aPos, nsAttrValue& aValue);
 
   
@@ -78,34 +88,27 @@ class AttrArray {
   int32_t IndexOfAttr(const nsAtom* aLocalName,
                       int32_t aNamespaceID = kNameSpaceID_None) const;
 
-  
-  
-  
-  
-  nsresult SetAndSwapMappedAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                                nsMappedAttributeElement* aContent,
-                                bool* aHadValue);
-
-  
-  
-  
-  nsresult UpdateMappedAttrRuleMapper(nsMappedAttributeElement& aElement) {
-    if (!mImpl || !mImpl->mMappedAttrs) {
-      return NS_OK;
-    }
-    return DoUpdateMappedAttrRuleMapper(aElement);
-  }
-
   void Compact();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-  bool HasMappedAttrs() const { return !!GetMapped(); }
-  const nsMappedAttributes* GetMapped() const {
-    return mImpl ? mImpl->mMappedAttrs : nullptr;
+
+  
+  
+  bool MarkAsPendingPresAttributeEvaluation() {
+    
+    
+    if (MOZ_UNLIKELY(!mImpl) && !GrowBy(1)) {
+      return false;
+    }
+    InfallibleMarkAsPendingPresAttributeEvaluation();
+    return true;
   }
 
   
-  nsresult ForceMapped(nsMappedAttributeElement* aContent);
+  void InfallibleMarkAsPendingPresAttributeEvaluation() {
+    MOZ_ASSERT(mImpl);
+    mImpl->mMappedAttributeBits |= 1;
+  }
 
   
   
@@ -158,8 +161,6 @@ class AttrArray {
     return val && val->Equals(aValue, aCaseSensitive);
   }
 
-  nsresult SetMappedAttributeStyles(mozilla::AttributeStyles* aNewStyles);
-
   struct InternalAttr {
     nsAttrName mName;
     nsAttrValue mValue;
@@ -169,20 +170,6 @@ class AttrArray {
   AttrArray& operator=(const AttrArray& aOther) = delete;
 
  private:
-  uint32_t NonMappedAttrCount() const { return mImpl ? mImpl->mAttrCount : 0; }
-
-  uint32_t MappedAttrCount() const {
-    return mImpl && mImpl->mMappedAttrs ? DoGetMappedAttrCount() : 0;
-  }
-
-  uint32_t DoGetMappedAttrCount() const;
-
-  
-  nsMappedAttributes* ModifiableMapped(nsMappedAttributeElement* aContent,
-                                       bool aWillAddAttr,
-                                       int32_t aAttrCount = 1);
-  nsresult MakeMappedUnique(nsMappedAttributes* aAttributes);
-
   bool GrowBy(uint32_t aGrowSize);
 
   
@@ -195,30 +182,22 @@ class AttrArray {
   template <typename Name>
   nsresult AddNewAttribute(Name*, nsAttrValue&);
 
-  
-
-
-  nsresult DoUpdateMappedAttrRuleMapper(nsMappedAttributeElement& aElement);
-
-#ifdef _MSC_VER
-
-
-#  pragma warning(push)
-#  pragma warning(disable : 4200)
-#endif
   class Impl {
    public:
     constexpr static size_t AllocationSizeForAttributes(uint32_t aAttrCount) {
       return sizeof(Impl) + aAttrCount * sizeof(InternalAttr);
     }
 
-    auto NonMappedAttrs() const {
+    mozilla::StyleLockedDeclarationBlock* GetMappedDeclarationBlock() const {
+      return reinterpret_cast<mozilla::StyleLockedDeclarationBlock*>(
+          mMappedAttributeBits & ~uintptr_t(1));
+    }
+
+    auto Attrs() const {
       return mozilla::Span<const InternalAttr>{mBuffer, mAttrCount};
     }
 
-    auto NonMappedAttrs() {
-      return mozilla::Span<InternalAttr>{mBuffer, mAttrCount};
-    }
+    auto Attrs() { return mozilla::Span<InternalAttr>{mBuffer, mAttrCount}; }
 
     Impl(const Impl&) = delete;
     Impl(Impl&&) = delete;
@@ -228,22 +207,24 @@ class AttrArray {
     uint32_t mCapacity;  
 
     
-    nsMappedAttributes* mMappedAttrs;
+    
+    
+    
+    
+    
+    
+    uintptr_t mMappedAttributeBits = 0;
 
     
     InternalAttr mBuffer[0];
   };
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
 
-  mozilla::Span<InternalAttr> NonMappedAttrs() {
-    return mImpl ? mImpl->NonMappedAttrs() : mozilla::Span<InternalAttr>();
+  mozilla::Span<InternalAttr> Attrs() {
+    return mImpl ? mImpl->Attrs() : mozilla::Span<InternalAttr>();
   }
 
-  mozilla::Span<const InternalAttr> NonMappedAttrs() const {
-    return mImpl ? mImpl->NonMappedAttrs()
-                 : mozilla::Span<const InternalAttr>();
+  mozilla::Span<const InternalAttr> Attrs() const {
+    return mImpl ? mImpl->Attrs() : mozilla::Span<const InternalAttr>();
   }
 
   mozilla::UniquePtr<Impl> mImpl;
