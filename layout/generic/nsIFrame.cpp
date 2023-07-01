@@ -1388,8 +1388,7 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   const StyleOffsetPath& newPath = StyleDisplay()->mOffsetPath;
   if (!oldPath || *oldPath != newPath) {
     
-    if (newPath.IsOffsetPath() && newPath.AsOffsetPath().path->IsShape() &&
-        newPath.AsOffsetPath().path->AsShape().IsPath()) {
+    if (newPath.IsPath()) {
       
       
       
@@ -1398,8 +1397,8 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
           gfxPlatform::GetPlatform()
               ->ScreenReferenceDrawTarget()
               ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
-      RefPtr<gfx::Path> path = MotionPathUtils::BuildPath(
-          newPath.AsOffsetPath().path->AsShape().AsPath().path, builder);
+      RefPtr<gfx::Path> path =
+          MotionPathUtils::BuildPath(newPath.AsSVGPathData(), builder);
       if (path) {
         
         

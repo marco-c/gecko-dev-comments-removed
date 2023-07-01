@@ -367,28 +367,24 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   }
 
   
-  if (offsetPath.IsCoordBox()) {
-    return OffsetPathData::None();
-  }
-
-  const auto& function = offsetPath.AsOffsetPath().path;
-  if (function->IsRay()) {
+  if (offsetPath.IsRay()) {
     nsRect coordBox;
     const nsIFrame* containingBlockFrame =
         MotionPathUtils::GetOffsetPathReferenceBox(aFrame, coordBox);
     return !containingBlockFrame
                ? OffsetPathData::None()
                : OffsetPathData::Ray(
-                     function->AsRay(), std::move(coordBox),
+                     offsetPath.AsRay(), std::move(coordBox),
                      aFrame->GetOffsetTo(containingBlockFrame),
                      MotionPathUtils::GetRayContainReferenceSize(
                          const_cast<nsIFrame*>(aFrame)));
   }
 
-  MOZ_ASSERT(function->IsShape());
-  const StyleBasicShape& shape = function->AsShape();
-  if (shape.IsPath()) {
-    const StyleSVGPathData& pathData = shape.AsPath().path;
+  
+  
+  
+  if (offsetPath.IsPath()) {
+    const StyleSVGPathData& pathData = offsetPath.AsSVGPathData();
     RefPtr<gfx::Path> gfxPath =
         aFrame->GetProperty(nsIFrame::OffsetPathCache());
     MOZ_ASSERT(gfxPath || pathData._0.IsEmpty(),
@@ -396,6 +392,8 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
     return OffsetPathData::Shape(pathData, gfxPath.forget());
   }
 
+  
+  MOZ_ASSERT(offsetPath.IsBasicShapeOrCoordBox());
   
   return OffsetPathData::None();
 }
@@ -428,24 +426,18 @@ static OffsetPathData GenerateOffsetPathData(
   }
 
   
-  if (aOffsetPath.IsCoordBox()) {
-    return OffsetPathData::None();
-  }
-
-  const auto& function = aOffsetPath.AsOffsetPath().path;
-  if (function->IsRay()) {
+  if (aOffsetPath.IsRay()) {
     return aMotionPathData.coordBox().IsEmpty()
                ? OffsetPathData::None()
                : OffsetPathData::Ray(
-                     function->AsRay(), aMotionPathData.coordBox(),
+                     aOffsetPath.AsRay(), aMotionPathData.coordBox(),
                      aMotionPathData.currentPosition(),
                      aMotionPathData.rayContainReferenceLength());
   }
 
-  MOZ_ASSERT(function->IsShape());
-  const StyleBasicShape& shape = function->AsShape();
-  if (shape.IsPath()) {
-    const StyleSVGPathData& pathData = shape.AsPath().path;
+  
+  if (aOffsetPath.IsPath()) {
+    const StyleSVGPathData& pathData = aOffsetPath.AsSVGPathData();
     
     
     RefPtr<gfx::Path> path = aCachedMotionPath;
@@ -457,6 +449,8 @@ static OffsetPathData GenerateOffsetPathData(
     return OffsetPathData::Shape(pathData, path.forget());
   }
 
+  
+  MOZ_ASSERT(aOffsetPath.IsBasicShapeOrCoordBox());
   
   return OffsetPathData::None();
 }
