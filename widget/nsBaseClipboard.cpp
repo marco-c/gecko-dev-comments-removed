@@ -212,15 +212,6 @@ NS_IMETHODIMP nsBaseClipboard::GetData(nsITransferable* aTransferable,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  if (kSelectionCache == aWhichClipboard ||
-      !nsIClipboard::IsClipboardTypeSupported(aWhichClipboard)) {
-    CLIPBOARD_LOG("%s: clipboard %d is not supported.", __FUNCTION__,
-                  aWhichClipboard);
-    return NS_ERROR_FAILURE;
-  }
-
   if (mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
     
     
@@ -303,16 +294,6 @@ nsBaseClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList,
   }
 
   *aOutResult = false;
-
-  
-  
-  if (kSelectionCache == aWhichClipboard ||
-      !nsIClipboard::IsClipboardTypeSupported(aWhichClipboard)) {
-    CLIPBOARD_LOG("%s: clipboard %d is not supported.", __FUNCTION__,
-                  aWhichClipboard);
-    
-    return NS_OK;
-  }
 
   if (mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
     if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
