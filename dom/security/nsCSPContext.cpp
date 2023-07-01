@@ -1134,11 +1134,62 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
   return NS_OK;
 }
 
+bool nsCSPContext::ShouldThrottleReport(
+    const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit) {
+  
+  const uint32_t kLimitCount =
+      StaticPrefs::security_csp_reporting_limit_count();
+  const uint32_t kTimeSpanSeconds =
+      StaticPrefs::security_csp_reporting_limit_timespan();
+
+  
+  if (kLimitCount == 0 || kTimeSpanSeconds == 0) {
+    return false;
+  }
+
+  TimeDuration throttleSpan = TimeDuration::FromSeconds(kTimeSpanSeconds);
+  if (mSendReportLimitSpanStart.IsNull() ||
+      ((TimeStamp::Now() - mSendReportLimitSpanStart) > throttleSpan)) {
+    
+    mSendReportLimitSpanStart = TimeStamp::Now();
+    mSendReportLimitCount = 1;
+    
+    
+    mWarnedAboutTooManyReports = false;
+    return false;
+  }
+
+  if (mSendReportLimitCount < kLimitCount) {
+    mSendReportLimitCount++;
+    return false;
+  }
+
+  
+  if (!mWarnedAboutTooManyReports) {
+    logToConsole("tooManyReports", {}, aViolationEventInit.mSourceFile,
+                 aViolationEventInit.mSample, aViolationEventInit.mLineNumber,
+                 aViolationEventInit.mColumnNumber, nsIScriptError::errorFlag);
+    mWarnedAboutTooManyReports = true;
+  }
+  return true;
+}
+
 nsresult nsCSPContext::SendReports(
     const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
     uint32_t aViolatedPolicyIndex) {
   EnsureIPCPoliciesRead();
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
+
+  nsTArray<nsString> reportURIs;
+  mPolicies[aViolatedPolicyIndex]->getReportURIs(reportURIs);
+  
+  if (reportURIs.IsEmpty()) {
+    return NS_OK;
+  }
+
+  if (ShouldThrottleReport(aViolationEventInit)) {
+    return NS_OK;
+  }
 
   dom::CSPReport report;
 
@@ -1198,10 +1249,6 @@ nsresult nsCSPContext::SendReports(
   }
 
   
-
-  nsTArray<nsString> reportURIs;
-  mPolicies[aViolatedPolicyIndex]->getReportURIs(reportURIs);
-
   nsCOMPtr<Document> doc = do_QueryReferent(mLoadingContext);
   nsCOMPtr<nsIURI> reportURI;
   nsCOMPtr<nsIChannel> reportChannel;
