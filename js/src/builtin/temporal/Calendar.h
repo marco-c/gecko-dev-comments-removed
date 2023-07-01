@@ -43,6 +43,7 @@ class CalendarObject : public NativeObject {
 struct Duration;
 struct PlainDate;
 struct PlainDateTime;
+class DurationObject;
 class PlainDateObject;
 class PlainMonthDayObject;
 class PlainYearMonthObject;
@@ -134,6 +135,48 @@ bool CalendarFields(
 JSObject* CalendarMergeFields(JSContext* cx, JS::Handle<JSObject*> calendar,
                               JS::Handle<PlainObject*> fields,
                               JS::Handle<PlainObject*> additionalFields);
+
+
+
+
+Wrapped<PlainDateObject*> CalendarDateAdd(
+    JSContext* cx, JS::Handle<JSObject*> calendar,
+    JS::Handle<Wrapped<PlainDateObject*>> date,
+    JS::Handle<Wrapped<DurationObject*>> duration,
+    JS::Handle<JS::Value> dateAdd);
+
+
+
+
+Wrapped<PlainDateObject*> CalendarDateAdd(
+    JSContext* cx, JS::Handle<JSObject*> calendar,
+    JS::Handle<Wrapped<PlainDateObject*>> date,
+    JS::Handle<Wrapped<DurationObject*>> duration,
+    JS::Handle<JSObject*> options);
+
+
+
+
+bool CalendarDateAdd(JSContext* cx, JS::Handle<JSObject*> calendar,
+                     JS::Handle<PlainDateObject*> date,
+                     JS::Handle<Wrapped<DurationObject*>> duration,
+                     JS::Handle<JSObject*> options, PlainDate* result);
+
+
+
+
+bool CalendarDateAdd(JSContext* cx, JS::Handle<JSObject*> calendar,
+                     JS::Handle<PlainDateObject*> date,
+                     JS::Handle<Wrapped<DurationObject*>> duration,
+                     PlainDate* result);
+
+
+
+
+bool CalendarDateAdd(JSContext* cx, JS::Handle<JSObject*> calendar,
+                     JS::Handle<Wrapped<PlainDateObject*>> date,
+                     JS::Handle<Wrapped<DurationObject*>> duration,
+                     JS::Handle<JS::Value> dateAdd, PlainDate* result);
 
 
 
