@@ -261,6 +261,11 @@ void FocusManager::DispatchFocusEvent(DocAccessible* aDocument,
                      AccEvent::eCoalesceOfSameType);
     aDocument->FireDelayedEvent(event);
     mLastFocus = aTarget;
+    if (mActiveItem != aTarget) {
+      
+      
+      mActiveItem = nullptr;
+    }
 
 #ifdef A11Y_LOG
     if (logging::IsEnabled(logging::eFocus)) logging::FocusDispatched(aTarget);
