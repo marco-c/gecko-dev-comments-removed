@@ -5,47 +5,46 @@
 
 
 
-ITEM_VALUE(TouchEvents,                 1u << 0)
-ITEM_VALUE(PointerEvents,               1u << 1)
-ITEM_VALUE(KeyboardEvents,              1u << 2)
-ITEM_VALUE(ScreenOrientation,           1u << 3)
+ITEM_VALUE(TouchEvents,                 1llu << 0)
+ITEM_VALUE(PointerEvents,               1llu << 1)
+ITEM_VALUE(KeyboardEvents,              1llu << 2)
+ITEM_VALUE(ScreenOrientation,           1llu << 3)
 
-ITEM_VALUE(SpeechSynthesis,             1u << 4)
+ITEM_VALUE(SpeechSynthesis,             1llu << 4)
 
-ITEM_VALUE(CSSPrefersColorScheme,       1u << 5)
+ITEM_VALUE(CSSPrefersColorScheme,       1llu << 5)
 
-ITEM_VALUE(CSSPrefersReducedMotion,     1u << 6)
+ITEM_VALUE(CSSPrefersReducedMotion,     1llu << 6)
 
-ITEM_VALUE(CSSPrefersContrast,          1u << 7)
+ITEM_VALUE(CSSPrefersContrast,          1llu << 7)
 
-ITEM_VALUE(CanvasRandomization,         1u << 8)
+ITEM_VALUE(CanvasRandomization,         1llu << 8)
 
 
-ITEM_VALUE(CanvasImageExtractionPrompt, 1u << 9)
-ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 1u << 10)
-ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 1u << 11)
+ITEM_VALUE(CanvasImageExtractionPrompt, 1llu << 9)
+ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 1llu << 10)
+ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 1llu << 11)
 
-ITEM_VALUE(NavigatorAppName,            1u << 12)
-ITEM_VALUE(NavigatorAppVersion,         1u << 13)
-ITEM_VALUE(NavigatorBuildID,            1u << 14)
-ITEM_VALUE(NavigatorHWConcurrency,      1u << 15)
-ITEM_VALUE(NavigatorOscpu,              1u << 16)
-ITEM_VALUE(NavigatorPlatform,           1u << 17)
-ITEM_VALUE(NavigatorUserAgent,          1u << 18)
+ITEM_VALUE(NavigatorAppName,            1llu << 12)
+ITEM_VALUE(NavigatorAppVersion,         1llu << 13)
+ITEM_VALUE(NavigatorBuildID,            1llu << 14)
+ITEM_VALUE(NavigatorHWConcurrency,      1llu << 15)
+ITEM_VALUE(NavigatorOscpu,              1llu << 16)
+ITEM_VALUE(NavigatorPlatform,           1llu << 17)
+ITEM_VALUE(NavigatorUserAgent,          1llu << 18)
 
-ITEM_VALUE(StreamTrackLabel,            1u << 19)
-ITEM_VALUE(StreamVideoFacingMode,       1u << 20)
-ITEM_VALUE(JSDateTimeUTC,               1u << 21)
-ITEM_VALUE(JSMathFdlibm,                1u << 22)
-ITEM_VALUE(Gamepad,                     1u << 23)
-ITEM_VALUE(HttpUserAgent,               1u << 24)
-ITEM_VALUE(WindowOuterSize,             1u << 25)
-ITEM_VALUE(WindowScreenXY,              1u << 26)
-ITEM_VALUE(WindowInnerScreenXY,         1u << 27)
-ITEM_VALUE(ScreenPixelDepth,            1u << 28)
-ITEM_VALUE(ScreenRect,                  1u << 29)
-ITEM_VALUE(ScreenAvailRect,             1u << 30)
-
+ITEM_VALUE(StreamTrackLabel,            1llu << 19)
+ITEM_VALUE(StreamVideoFacingMode,       1llu << 20)
+ITEM_VALUE(JSDateTimeUTC,               1llu << 21)
+ITEM_VALUE(JSMathFdlibm,                1llu << 22)
+ITEM_VALUE(Gamepad,                     1llu << 23)
+ITEM_VALUE(HttpUserAgent,               1llu << 24)
+ITEM_VALUE(WindowOuterSize,             1llu << 25)
+ITEM_VALUE(WindowScreenXY,              1llu << 26)
+ITEM_VALUE(WindowInnerScreenXY,         1llu << 27)
+ITEM_VALUE(ScreenPixelDepth,            1llu << 28)
+ITEM_VALUE(ScreenRect,                  1llu << 29)
+ITEM_VALUE(ScreenAvailRect,             1llu << 30)
 
 
 
@@ -66,4 +65,4 @@ ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0)
 
 
 
-ITEM_VALUE(Unknown, 0xffffffff)
+ITEM_VALUE(Unknown, 0xffffffff'ffffffff)
