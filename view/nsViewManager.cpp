@@ -49,8 +49,6 @@ using namespace mozilla::layers;
 
 #undef DEBUG_MOUSE_LOCATION
 
-
-StaticAutoPtr<nsTArray<nsViewManager*>> nsViewManager::gViewManagers;
 uint32_t nsViewManager::gLastUserEventTime = 0;
 
 nsViewManager::nsViewManager()
@@ -60,14 +58,7 @@ nsViewManager::nsViewManager()
       mRefreshDisableCount(0),
       mPainting(false),
       mRecursiveRefreshPending(false),
-      mHasPendingWidgetGeometryChanges(false) {
-  if (gViewManagers == nullptr) {
-    
-    gViewManagers = new nsTArray<nsViewManager*>;
-  }
-
-  gViewManagers->AppendElement(this);
-}
+      mHasPendingWidgetGeometryChanges(false) {}
 
 nsViewManager::~nsViewManager() {
   if (mRootView) {
@@ -77,22 +68,6 @@ nsViewManager::~nsViewManager() {
   }
 
   mRootViewManager = nullptr;
-
-  NS_ASSERTION(gViewManagers != nullptr, "About to use null gViewManagers");
-
-#ifdef DEBUG
-  bool removed =
-#endif
-      gViewManagers->RemoveElement(this);
-  NS_ASSERTION(
-      removed,
-      "Viewmanager instance was not in the global list of viewmanagers");
-
-  if (gViewManagers->IsEmpty()) {
-    
-    
-    gViewManagers = nullptr;
-  }
 
   MOZ_RELEASE_ASSERT(!mPresShell,
                      "Releasing nsViewManager without having called Destroy on "
@@ -960,22 +935,33 @@ void nsViewManager::UpdateWidgetGeometry() {
   }
 }
 
+ void nsViewManager::CollectVMsForWillPaint(
+    nsView* aView, nsViewManager* aParentVM,
+    nsTArray<RefPtr<nsViewManager>>& aVMs) {
+  nsViewManager* vm = aView->GetViewManager();
+  if (vm != aParentVM) {
+    aVMs.AppendElement(vm);
+  }
+
+  for (nsView* child = aView->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    CollectVMsForWillPaint(child, vm, aVMs);
+  }
+}
+
 void nsViewManager::CallWillPaintOnObservers() {
   MOZ_ASSERT(IsRootVM(), "Must be root VM for this to be called!");
 
-  if (NS_WARN_IF(!gViewManagers)) {
+  if (!mRootView) {
     return;
   }
 
-  uint32_t index;
-  for (index = 0; index < gViewManagers->Length(); index++) {
-    nsViewManager* vm = gViewManagers->ElementAt(index);
-    if (vm->RootViewManager() == this) {
-      
-      if (vm->mRootView && vm->mRootView->IsEffectivelyVisible()) {
-        if (RefPtr<PresShell> presShell = vm->GetPresShell()) {
-          presShell->WillPaint();
-        }
+  AutoTArray<RefPtr<nsViewManager>, 2> VMs;
+  CollectVMsForWillPaint(mRootView, nullptr, VMs);
+  for (const auto& vm : VMs) {
+    if (vm->GetRootView() && vm->GetRootView()->IsEffectivelyVisible()) {
+      if (RefPtr<PresShell> presShell = vm->GetPresShell()) {
+        presShell->WillPaint();
       }
     }
   }
