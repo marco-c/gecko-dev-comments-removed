@@ -129,7 +129,7 @@ bool js::temporal::InterpretISODateTimeOffset(
       offsetOption == TemporalOffset::Use) {
     
     auto epochNanoseconds = GetUTCEpochNanoseconds(dateTime);
-    auto offsetNs = Instant::fromNanoseconds(offsetNanoseconds);
+    auto offsetNs = InstantSpan::fromNanoseconds(offsetNanoseconds);
 
     
     epochNanoseconds = epochNanoseconds - offsetNs;
@@ -773,22 +773,23 @@ void NanosecondsAndDays::trace(JSTracer* trc) {
 
 
 bool js::temporal::NanosecondsToDays(
-    JSContext* cx, const Instant& nanoseconds,
+    JSContext* cx, const InstantSpan& nanoseconds,
     Handle<Wrapped<ZonedDateTimeObject*>> relativeTo,
     MutableHandle<NanosecondsAndDays> result) {
-  MOZ_ASSERT(IsValidInstantDifference(nanoseconds));
+  MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
   
-  auto dayLengthNs = Instant::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
+  auto dayLengthNs =
+      InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
 
   
-  if (nanoseconds == Instant{}) {
-    result.initialize(int64_t(0), Instant{}, dayLengthNs);
+  if (nanoseconds == InstantSpan{}) {
+    result.initialize(int64_t(0), InstantSpan{}, dayLengthNs);
     return true;
   }
 
   
-  int32_t sign = nanoseconds < Instant{} ? -1 : 1;
+  int32_t sign = nanoseconds < InstantSpan{} ? -1 : 1;
 
   
 
@@ -884,7 +885,7 @@ bool js::temporal::NanosecondsToDays(
 
   
   auto ns = endNs - intermediateNs;
-  MOZ_ASSERT(IsValidInstantDifference(ns));
+  MOZ_ASSERT(IsValidInstantSpan(ns));
 
   
   
@@ -908,7 +909,7 @@ bool js::temporal::NanosecondsToDays(
 
     
     dayLengthNs = oneDayFartherNs - intermediateNs;
-    MOZ_ASSERT(IsValidInstantDifference(dayLengthNs));
+    MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
     
     
@@ -941,10 +942,10 @@ bool js::temporal::NanosecondsToDays(
 
     
     auto diff = ns - dayLengthNs;
-    MOZ_ASSERT(IsValidInstantDifference(diff));
+    MOZ_ASSERT(IsValidInstantSpan(diff));
     MOZ_ASSERT(diff == (endNs - oneDayFartherNs));
 
-    if (diff == Instant{} || ((diff < Instant{}) == (sign < 0))) {
+    if (diff == InstantSpan{} || ((diff < InstantSpan{}) == (sign < 0))) {
       
       ns = diff;
 
@@ -1006,8 +1007,8 @@ bool js::temporal::NanosecondsToDays(
     }
   }
 
-  MOZ_ASSERT(IsValidInstantDifference(dayLengthNs));
-  MOZ_ASSERT(IsValidInstantDifference(ns));
+  MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
+  MOZ_ASSERT(IsValidInstantSpan(ns));
 
   
   
@@ -1020,14 +1021,14 @@ bool js::temporal::NanosecondsToDays(
 
   
   if (sign < 0) {
-    if (ns > Instant{}) {
+    if (ns > InstantSpan{}) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_ZONED_DATE_TIME_INCORRECT_SIGN,
                                 "nanoseconds");
       return false;
     }
   } else {
-    MOZ_ASSERT(ns >= Instant{});
+    MOZ_ASSERT(ns >= InstantSpan{});
   }
 
   
@@ -1127,7 +1128,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
 
   
   auto timeRemainder = ns2 - intermediateNs;
-  MOZ_ASSERT(IsValidInstantDifference(timeRemainder));
+  MOZ_ASSERT(IsValidInstantSpan(timeRemainder));
 
   
   Rooted<ZonedDateTimeObject*> intermediate(
@@ -1252,9 +1253,10 @@ static bool TimeZoneEqualsOrThrow(JSContext* cx, Handle<JSObject*> one,
 static bool RoundISODateTime(JSContext* cx, const PlainDateTime& dateTime,
                              Increment increment, TemporalUnit unit,
                              TemporalRoundingMode roundingMode,
-                             const Instant& dayLength, PlainDateTime* result) {
-  MOZ_ASSERT(IsValidInstantDifference(dayLength));
-  MOZ_ASSERT(dayLength > (Instant{}));
+                             const InstantSpan& dayLength,
+                             PlainDateTime* result) {
+  MOZ_ASSERT(IsValidInstantSpan(dayLength));
+  MOZ_ASSERT(dayLength > (InstantSpan{}));
 
   const auto& [date, time] = dateTime;
 
@@ -2264,7 +2266,7 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
 
   
   auto diffNs = tomorrowInstant - todayInstant;
-  MOZ_ASSERT(IsValidInstantDifference(diffNs));
+  MOZ_ASSERT(IsValidInstantSpan(diffNs));
 
   
   constexpr int32_t secPerHour = 60 * 60;
@@ -3054,10 +3056,10 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
 
   
   auto dayLengthNs = endNs - startNs;
-  MOZ_ASSERT(IsValidInstantDifference(dayLengthNs));
+  MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
   
-  if (dayLengthNs <= Instant{}) {
+  if (dayLengthNs <= InstantSpan{}) {
     JS_ReportErrorNumberASCII(
         cx, GetErrorMessage, nullptr,
         JSMSG_TEMPORAL_ZONED_DATE_TIME_NON_POSITIVE_DAY_LENGTH);

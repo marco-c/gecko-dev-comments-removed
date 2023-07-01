@@ -72,12 +72,12 @@ bool IsValidEpochInstant(const Instant& instant);
 
 
 
-bool IsValidInstantDifference(const Instant& ns);
+bool IsValidInstantSpan(const InstantSpan& span);
 
 
 
 
-bool IsValidInstantDifference(const JS::BigInt* ns);
+bool IsValidInstantSpan(const JS::BigInt* nanoseconds);
 
 
 
@@ -89,7 +89,7 @@ Instant ToInstant(const JS::BigInt* epochNanoseconds);
 
 
 
-Instant ToInstantDifference(const JS::BigInt* epochNanoseconds);
+InstantSpan ToInstantSpan(const JS::BigInt* nanoseconds);
 
 
 
@@ -99,8 +99,7 @@ JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
 
 
 
-
-JS::BigInt* ToEpochDifferenceNanoseconds(JSContext* cx, const Instant& instant);
+JS::BigInt* ToEpochNanoseconds(JSContext* cx, const InstantSpan& instant);
 
 
 

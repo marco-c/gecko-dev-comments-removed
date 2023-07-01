@@ -133,7 +133,7 @@ bool BalanceDuration(JSContext* cx, const Duration& duration,
 
 
 
-bool BalanceDuration(JSContext* cx, const Instant& nanoseconds,
+bool BalanceDuration(JSContext* cx, const InstantSpan& nanoseconds,
                      TemporalUnit largestUnit, TimeDuration* result);
 
 
