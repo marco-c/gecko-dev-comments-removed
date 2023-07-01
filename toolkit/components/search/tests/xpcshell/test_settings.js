@@ -16,10 +16,6 @@ var settingsTemplate;
 
 
 add_task(async function setup() {
-  Services.prefs
-    .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF + "param.")
-    .setCharPref("test", "expected");
-
   await SearchTestUtils.useTestEngines("data1");
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
@@ -479,7 +475,7 @@ add_task(async function test_settings_write() {
       
       
       for (let urls of engine._urls) {
-        urls.params = urls.params.filter(p => !p.purpose && !p.mozparam);
+        urls.params = urls.params.filter(p => !p.purpose);
         
         if ("resultDomain" in urls) {
           delete urls.resultDomain;

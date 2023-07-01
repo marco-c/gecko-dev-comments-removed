@@ -52,11 +52,6 @@ add_task(async function test_listJSONlocale() {
 
 
 add_task(async function test_listJSONlocaleSwitch() {
-  let defaultBranch = Services.prefs.getDefaultBranch(
-    SearchUtils.BROWSER_SEARCH_PREF
-  );
-  defaultBranch.setCharPref("param.code", "good&id=unique");
-
   await promiseSetLocale("fr");
 
   Assert.ok(Services.search.isInitialized, "search initialized");
