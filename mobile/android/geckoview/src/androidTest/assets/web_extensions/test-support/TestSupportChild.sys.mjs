@@ -1,14 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.sys.mjs";
 
-
-
-const { GeckoViewActorChild } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewActorChild.sys.mjs"
-);
-
-const EXPORTED_SYMBOLS = ["TestSupportChild"];
-
-class TestSupportChild extends GeckoViewActorChild {
+export class TestSupportChild extends GeckoViewActorChild {
   receiveMessage(aMsg) {
     debug`receiveMessage: ${aMsg.name}`;
 
@@ -34,7 +30,7 @@ class TestSupportChild extends GeckoViewActorChild {
           const utils = window.windowUtils;
 
           function waitForPaints() {
-            
+            // Wait until paint suppression has ended
             if (utils.paintingSuppressed) {
               dump`waiting for paint suppression to end...`;
               window.setTimeout(waitForPaints, 0);
@@ -80,4 +76,5 @@ class TestSupportChild extends GeckoViewActorChild {
     return null;
   }
 }
+
 const { debug } = TestSupportChild.initLogging("GeckoViewTestSupport");
