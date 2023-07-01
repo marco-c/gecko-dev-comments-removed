@@ -15,6 +15,9 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_image.h"
+#include "mozilla/PresShell.h"
+#include "nsRefreshDriver.h"
+#include "nsView.h"
 
 namespace mozilla {
 namespace layers {
@@ -448,6 +451,25 @@ void SharedSurfacesAnimation::HoldSurfaceForRecycling(
   aEntry.mPendingRelease.AppendElement(aSurface);
 }
 
+
+
+
+
+static nsIWidgetListener* GetPaintWidgetListener(nsIWidget* aWidget) {
+  if (auto* attached = aWidget->GetAttachedWidgetListener()) {
+    if (attached->GetView() &&
+        attached->GetView()->IsPrimaryFramePaintSuppressed()) {
+      if (auto* previouslyAttached =
+              aWidget->GetPreviouslyAttachedWidgetListener()) {
+        return previouslyAttached;
+      }
+    }
+    return attached;
+  }
+
+  return aWidget->GetWidgetListener();
+}
+
 nsresult SharedSurfacesAnimation::SetCurrentFrame(
     SourceSurfaceSharedData* aSurface, const gfx::IntRect& aDirtyRect) {
   MOZ_ASSERT(aSurface);
@@ -471,6 +493,21 @@ nsresult SharedSurfacesAnimation::SetCurrentFrame(
             entry.mManager->LayerManager()->GetCompositorBridgeChild()) {
       if (cbc->IsPaused()) {
         continue;
+      }
+    }
+
+    
+    
+    if (auto* widget = entry.mManager->LayerManager()->GetWidget()) {
+      nsIWidgetListener* wl = GetPaintWidgetListener(widget);
+      
+      
+      if (wl && wl->GetView() && wl->GetPresShell()) {
+        if (auto* rd = wl->GetPresShell()->GetRefreshDriver()) {
+          if (rd->IsThrottled()) {
+            continue;
+          }
+        }
       }
     }
 
