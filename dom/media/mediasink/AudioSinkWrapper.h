@@ -54,6 +54,8 @@ class AudioSinkWrapper : public MediaSink {
   void SetPlaybackRate(double aPlaybackRate) override;
   void SetPreservesPitch(bool aPreservesPitch) override;
   void SetPlaying(bool aPlaying) override;
+  RefPtr<GenericPromise> SetAudioDevice(
+      RefPtr<AudioDeviceInfo> aDevice) override;
 
   double PlaybackRate() const override;
 
@@ -62,8 +64,6 @@ class AudioSinkWrapper : public MediaSink {
   void Stop() override;
   bool IsStarted() const override;
   bool IsPlaying() const override;
-
-  const AudioDeviceInfo* AudioDevice() const override { return mAudioDevice; }
 
   void Shutdown() override;
 
@@ -104,8 +104,13 @@ class AudioSinkWrapper : public MediaSink {
   
   
   
+  
+  
+  
+  
   nsresult SyncCreateAudioSink(const media::TimeUnit& aStartTime);
-  void MaybeAsyncCreateAudioSink();
+  RefPtr<GenericPromise> MaybeAsyncCreateAudioSink(
+      RefPtr<AudioDeviceInfo> aDevice);
   void ScheduleRetrySink();
 
   
@@ -124,7 +129,7 @@ class AudioSinkWrapper : public MediaSink {
   UniquePtr<AudioSink> mAudioSink;
   
   
-  const RefPtr<AudioDeviceInfo> mAudioDevice;
+  RefPtr<AudioDeviceInfo> mAudioDevice;
   
   RefPtr<EndedPromise> mEndedPromise;
   MozPromiseHolder<EndedPromise> mEndedPromiseHolder;
