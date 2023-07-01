@@ -701,59 +701,6 @@ add_test(function test_getKeyForScope() {
   });
 });
 
-add_task(async function test_getKeyForScope_kb_migration() {
-  let fxa = new MockFxAccounts();
-  let user = getTestUser("eusebius");
-
-  user.verified = true;
-  
-  user.kA = "e0245ab7f10e483470388e0a28f0a03379a3b417174fb2b42feab158b4ac2dbd";
-  user.kB = "eaf9570b7219a4187d3d6bf3cec2770c2e0719b7cc0dfbb38243d6f1881675e9";
-
-  await fxa.setSignedInUser(user);
-  await fxa.keys.getKeyForScope(SCOPE_OLD_SYNC);
-  let newUser = await fxa._internal.getUserAccountData();
-  Assert.equal(newUser.kA, null);
-  Assert.equal(newUser.kB, null);
-  Assert.deepEqual(newUser.scopedKeys, {
-    "https://identity.mozilla.com/apps/oldsync": {
-      kid: "1234567890123-IqQv4onc7VcVE1kTQkyyOw",
-      k: "DW_ll5GwX6SJ5GPqJVAuMUP2t6kDqhUulc2cbt26xbTcaKGQl-9l29FHAQ7kUiJETma4s9fIpEHrt909zgFang",
-      kty: "oct",
-    },
-  });
-  
-  Assert.equal(
-    newUser.kSync,
-    "0d6fe59791b05fa489e463ea25502e3143f6b7a903aa152e95cd9c6eddbac5b4" +
-      "dc68a19097ef65dbd147010ee45222444e66b8b3d7c8a441ebb7dd3dce015a9e"
-  );
-  Assert.equal(newUser.kXCS, "22a42fe289dced5715135913424cb23b");
-});
-
-add_task(async function test_getKeyForScope_scopedKeys_migration() {
-  let fxa = new MockFxAccounts();
-  let user = getTestUser("eusebius");
-
-  user.verified = true;
-  
-  user.kSync = MOCK_ACCOUNT_KEYS.kSync;
-  user.kXCS = MOCK_ACCOUNT_KEYS.kXCS;
-  Assert.equal(user.scopedKeys, null);
-
-  await fxa.setSignedInUser(user);
-  await fxa.keys.getKeyForScope(SCOPE_OLD_SYNC);
-  let newUser = await fxa._internal.getUserAccountData();
-  Assert.equal(newUser.kA, null);
-  Assert.equal(newUser.kB, null);
-  
-  const expectedScopedKeys = { ...MOCK_ACCOUNT_KEYS.scopedKeys };
-  Assert.deepEqual(newUser.scopedKeys, expectedScopedKeys);
-  
-  Assert.equal(newUser.kSync, user.kSync);
-  Assert.equal(newUser.kXCS, user.kXCS);
-});
-
 add_task(
   async function test_getKeyForScope_scopedKeys_migration_removes_deprecated_high_level_keys() {
     let fxa = new MockFxAccounts();
@@ -900,19 +847,60 @@ add_task(async function test_getKeyForScope_oldsync() {
         keyRotationTimestamp: 1510726317123,
       },
     });
+
+  
+  client.accountKeys = async () => {
+    return {
+      wrapKB: CommonUtils.hexToBytes(
+        "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f"
+      ),
+    };
+  };
+
+  
   let user = {
     ...getTestUser("eusebius"),
     uid: "aeaa1725c7a24ff983c6295725d5fc9b",
-    kB: "eaf9570b7219a4187d3d6bf3cec2770c2e0719b7cc0dfbb38243d6f1881675e9",
+    keyFetchToken:
+      "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+    unwrapBKey:
+      "6ea660be9c89ec355397f89afb282ea0bf21095760c8c5009bbcc894155bbe2a",
+    sessionToken: "mock session token, used in metadata request",
     verified: true,
   };
   await fxa.setSignedInUser(user);
+
+  
   const key = await fxa.keys.getKeyForScope(SCOPE_OLD_SYNC);
+
+  
+  
+  
+  
+  
+  
   Assert.deepEqual(key, {
     scope: SCOPE_OLD_SYNC,
-    kid: "1510726317123-IqQv4onc7VcVE1kTQkyyOw",
-    k: "DW_ll5GwX6SJ5GPqJVAuMUP2t6kDqhUulc2cbt26xbTcaKGQl-9l29FHAQ7kUiJETma4s9fIpEHrt909zgFang",
+    kid: "1510726317123-BAik7hEOdpGnPZnPBSdaTg",
+    k: "fwM5VZu0Spf5XcFRZYX2zk6MrqZP7zvovCBcvuKwgYMif3hz98FHmIVa3qjKjrW0J244Zj-P5oWaOcQbvypmpw",
     kty: "oct",
+  });
+});
+
+add_task(async function test_getScopedKeys_cached_key() {
+  let fxa = new MockFxAccounts();
+  let user = {
+    ...getTestUser("eusebius"),
+    uid: "aeaa1725c7a24ff983c6295725d5fc9b",
+    verified: true,
+    ...MOCK_ACCOUNT_KEYS,
+  };
+
+  await fxa.setSignedInUser(user);
+  let key = await fxa.keys.getKeyForScope(SCOPE_OLD_SYNC);
+  Assert.deepEqual(key, {
+    scope: SCOPE_OLD_SYNC,
+    ...MOCK_ACCOUNT_KEYS.scopedKeys[SCOPE_OLD_SYNC],
   });
 });
 
