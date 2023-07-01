@@ -104,6 +104,8 @@ class MediaSink {
 
   
   
+  
+  
   virtual nsresult Start(const media::TimeUnit& aStartTime,
                          const MediaInfo& aInfo) = 0;
 
