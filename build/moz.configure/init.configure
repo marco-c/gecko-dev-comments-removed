@@ -811,8 +811,8 @@ def target_variables(target):
         os_arch = target.kernel
 
     return namespace(
-        OS_TARGET=os_target,
-        OS_ARCH=os_arch,
+        OS_TARGET=str(os_target),
+        OS_ARCH=str(os_arch),
         INTEL_ARCHITECTURE=target.cpu in ("x86", "x86_64") or None,
     )
 
@@ -1176,6 +1176,7 @@ set_config("MOZ_APP_VERSION", milestone.app_version)
 set_config("MOZ_APP_VERSION_DISPLAY", milestone.app_version_display)
 add_old_configure_assignment("MOZ_APP_VERSION", milestone.app_version)
 
+add_old_configure_assignment("NIGHTLY_BUILD", milestone.is_nightly)
 
 
 
