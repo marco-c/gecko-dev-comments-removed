@@ -689,7 +689,7 @@ static int PreLoopInitialize(VP8Encoder* const enc) {
   }
   if (!ok) {
     VP8EncFreeBitWriters(enc);  
-    WebPEncodingSetError(enc->pic_, VP8_ENC_ERROR_OUT_OF_MEMORY);
+    return WebPEncodingSetError(enc->pic_, VP8_ENC_ERROR_OUT_OF_MEMORY);
   }
   return ok;
 }
@@ -719,6 +719,7 @@ static int PostLoopFinalize(VP8EncIterator* const it, int ok) {
   } else {
     
     VP8EncFreeBitWriters(enc);
+    return WebPEncodingSetError(enc->pic_, VP8_ENC_ERROR_OUT_OF_MEMORY);
   }
   return ok;
 }
@@ -754,6 +755,11 @@ int VP8EncLoop(VP8Encoder* const enc) {
     
     if (!VP8Decimate(&it, &info, rd_opt) || dont_use_skip) {
       CodeResiduals(it.bw_, &it, &info);
+      if (it.bw_->error_) {
+        
+        ok = 0;
+        break;
+      }
     } else {   
       ResetAfterSkip(&it);
     }

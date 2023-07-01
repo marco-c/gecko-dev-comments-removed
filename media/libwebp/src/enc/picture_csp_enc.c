@@ -535,7 +535,9 @@ static int ImportYUVAFromRGBA(const uint8_t* r_ptr,
     WebPInitConvertARGBToYUV();
     InitGammaTables();
 
-    if (tmp_rgb == NULL) return 0;  
+    if (tmp_rgb == NULL) {
+      return WebPEncodingSetError(picture, VP8_ENC_ERROR_OUT_OF_MEMORY);
+    }
 
     
     for (y = 0; y < (height >> 1); ++y) {

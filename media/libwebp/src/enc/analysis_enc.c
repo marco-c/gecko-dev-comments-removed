@@ -474,6 +474,10 @@ int VP8EncAnalyze(VP8Encoder* const enc) {
   } else {   
     ResetAllMBInfo(enc);
   }
+  if (!ok) {
+    return WebPEncodingSetError(enc->pic_,
+                                VP8_ENC_ERROR_OUT_OF_MEMORY);  
+  }
   return ok;
 }
 
