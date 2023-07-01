@@ -159,6 +159,12 @@ class TextEditor final : public EditorBase,
 
 
 
+  void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
+
+  
+
+
+
 
 
 

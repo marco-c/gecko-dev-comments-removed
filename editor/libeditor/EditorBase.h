@@ -441,14 +441,6 @@ class EditorBase : public nsIEditor,
   
 
 
-
-
-
-  void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
-
-  
-
-
   uint32_t Flags() const { return mFlags; }
 
   MOZ_CAN_RUN_SCRIPT nsresult AddFlags(uint32_t aFlags) {
@@ -515,10 +507,6 @@ class EditorBase : public nsIEditor,
 
   bool IsMailEditor() const {
     return (mFlags & nsIEditor::eEditorMailMask) != 0;
-  }
-
-  bool IsWrapHackEnabled() const {
-    return (mFlags & nsIEditor::eEditorEnableWrapHackMask) != 0;
   }
 
   bool IsInteractionAllowed() const {
@@ -2866,7 +2854,7 @@ class EditorBase : public nsIEditor,
   
   int32_t mPlaceholderBatch;
 
-  int32_t mWrapColumn;
+  int32_t mWrapColumn = 0;
   int32_t mNewlineHandling;
   int32_t mCaretStyle;
 

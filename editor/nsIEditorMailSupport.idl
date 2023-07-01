@@ -45,4 +45,13 @@ interface nsIEditorMailSupport : nsISupports
 
   [can_run_script]
   void insertTextWithQuotations(in AString aStringToInsert);
+
+  
+
+
+
+
+
+  [setter_can_run_script]
+  attribute long wrapWidth;
 };

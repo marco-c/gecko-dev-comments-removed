@@ -604,14 +604,6 @@ interface nsIEditor  : nsISupports
 
 
 
-
-
-  attribute long wrapWidth;
-
-  
-
-
-
   attribute long newlineHandling;
 
   
