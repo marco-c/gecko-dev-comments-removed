@@ -78,7 +78,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         target_content = target_content[:1] + content_to_add + target_content[1:]
 
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_front()
         cursor0_x, cursor0_y = sel.cursor_location()
         first_caret0_x, first_caret0_y = sel.first_caret_location()
@@ -86,7 +86,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         first_caret1_x, first_caret1_y = sel.first_caret_location()
 
         
-        el.tap(cursor0_x, cursor0_y)
+        self.actions.move(el, cursor0_x, cursor0_y).click().perform()
 
         
         self.actions.flick(
@@ -107,9 +107,9 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         target_content = sel.content + content_to_add
 
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_front()
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
 
         
         src_x, src_y = sel.first_caret_location()
@@ -130,17 +130,17 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         target_content = content_to_add + sel.content
 
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_front()
         dest_x, dest_y = sel.first_caret_location()
 
         
         
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
         sel.move_cursor_by_offset(1, backward=True)
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
         src_x, src_y = sel.first_caret_location()
 
         
@@ -156,7 +156,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         content_to_add = "!"
         non_target_content = content_to_add + sel.content + string.ascii_letters
 
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
 
         
@@ -188,9 +188,9 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_front()
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
         x, y = sel.first_caret_location()
 
         
@@ -213,10 +213,10 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
         sel.move_cursor_by_offset(1, backward=True)
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
         x, y = sel.first_caret_location()
 
         
@@ -236,11 +236,11 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         before_image_1 = self.marionette.find_element(By.ID, "before-image-1")
-        before_image_1.tap()
+        self.actions.click(element=before_image_1).perform()
 
         
         sel.move_cursor_to_front()
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
         src_x, src_y = sel.first_caret_location()
         dest_x, dest_y = el.rect["width"], el.rect["height"]
 
@@ -264,7 +264,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
 
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_front()
         dest_x, dest_y = sel.first_caret_location()
 
@@ -272,10 +272,10 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         el.send_keys(content_to_add_2)
 
         
-        el.tap()
+        self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
         sel.move_cursor_by_offset(1, backward=True)
-        el.tap(*sel.cursor_location())
+        self.actions.move(el, *sel.cursor_location()).click().perform()
         src_x, src_y = sel.first_caret_location()
 
         
