@@ -47,6 +47,13 @@ ITEM_VALUE(ScreenRect,                  1llu << 29)
 ITEM_VALUE(ScreenAvailRect,             1llu << 30)
 
 
+ITEM_VALUE(VideoElementMozFrames,       1llu << 31)
+
+ITEM_VALUE(VideoElementMozFrameDelay,   1llu << 32)
+
+ITEM_VALUE(VideoElementPlaybackQuality, 1llu << 33)
+
+
 
 
 
