@@ -86,9 +86,7 @@ class Channel {
   
   
   
-  
-  
-  Channel(ChannelHandle pipe, Mode mode, Listener* listener);
+  Channel(ChannelHandle pipe, Mode mode);
 
   ~Channel();
 
@@ -97,13 +95,13 @@ class Channel {
   
   
   
-  bool Connect();
+  
+  
+  
+  bool Connect(Listener* listener);
 
   
   void Close();
-
-  
-  Listener* set_listener(Listener* listener);
 
   
   

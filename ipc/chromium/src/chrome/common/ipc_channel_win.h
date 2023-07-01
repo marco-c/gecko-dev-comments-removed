@@ -34,17 +34,10 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   using ChannelHandle = Channel::ChannelHandle;
 
   
-  ChannelImpl(ChannelHandle pipe, Mode mode, Listener* listener);
-  bool Connect() MOZ_EXCLUDES(SendMutex());
+  ChannelImpl(ChannelHandle pipe, Mode mode);
+  bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex());
   void Close() MOZ_EXCLUDES(SendMutex());
   void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(SendMutex());
-  Listener* set_listener(Listener* listener) {
-    IOThread().AssertOnCurrentThread();
-    chan_cap_.NoteOnIOThread();
-    Listener* old = listener_;
-    listener_ = listener;
-    return old;
-  }
   
   bool Send(mozilla::UniquePtr<Message> message) MOZ_EXCLUDES(SendMutex());
 
@@ -71,8 +64,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
     }
   }
 
-  void Init(Mode mode, Listener* listener)
-      MOZ_REQUIRES(SendMutex(), IOThread());
+  void Init(Mode mode) MOZ_REQUIRES(SendMutex(), IOThread());
 
   void OutputQueuePush(mozilla::UniquePtr<Message> msg)
       MOZ_REQUIRES(SendMutex());
