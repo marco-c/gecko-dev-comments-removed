@@ -116,7 +116,6 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
   
   nsCString mIPv4OnlyDomains;
   nsCString mForceResolve;
-  bool mDisableIPv6 = false;
   bool mBlockDotOnion = false;
   bool mNotifyResolution = false;
   bool mOfflineLocalhost = false;

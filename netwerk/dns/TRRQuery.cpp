@@ -130,7 +130,8 @@ nsresult TRRQuery::DispatchLookup(TRR* pushedTRR) {
   
   
   nsTArray<RefPtr<TRR>> requestsToSend;
-  if ((mRecord->af == AF_UNSPEC || mRecord->af == AF_INET6)) {
+  if ((mRecord->af == AF_UNSPEC || mRecord->af == AF_INET6) &&
+      !StaticPrefs::network_dns_disableIPv6()) {
     PrepareQuery(TRRTYPE_AAAA, requestsToSend);
   }
   if (mRecord->af == AF_UNSPEC || mRecord->af == AF_INET) {

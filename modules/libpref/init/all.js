@@ -1388,9 +1388,6 @@ pref("network.IDN.extra_blocked_chars", "");
 pref("network.dns.ipv4OnlyDomains", "");
 
 
-pref("network.dns.disableIPv6", false);
-
-
 pref("network.dnsCacheEntries", 400);
 
 
