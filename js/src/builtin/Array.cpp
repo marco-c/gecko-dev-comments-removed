@@ -42,6 +42,7 @@
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/Shape.h"
+#include "vm/StringType.h"
 #include "vm/ToSource.h"  
 #include "vm/TypedArrayObject.h"
 #include "vm/WellKnownAtom.h"  
@@ -5244,6 +5245,19 @@ ArrayObject* js::NewDenseUnallocatedArray(
 
 ArrayObject* js::NewDenseCopiedArray(
     JSContext* cx, uint32_t length, const Value* values,
+    NewObjectKind newKind ) {
+  ArrayObject* arr = NewArray<UINT32_MAX>(cx, length, newKind);
+  if (!arr) {
+    return nullptr;
+  }
+
+  arr->initDenseElements(values, length);
+  return arr;
+}
+
+
+ArrayObject* js::NewDenseCopiedArray(
+    JSContext* cx, uint32_t length, JSLinearString** values,
     NewObjectKind newKind ) {
   ArrayObject* arr = NewArray<UINT32_MAX>(cx, length, newKind);
   if (!arr) {

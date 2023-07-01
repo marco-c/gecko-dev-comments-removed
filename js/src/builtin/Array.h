@@ -72,6 +72,12 @@ extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
 
 
 
+extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
+                                        JSLinearString** values,
+                                        NewObjectKind newKind = GenericObject);
+
+
+
 extern ArrayObject* NewDenseCopiedArrayWithProto(JSContext* cx, uint32_t length,
                                                  const Value* values,
                                                  HandleObject proto);
