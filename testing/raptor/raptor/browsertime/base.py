@@ -224,43 +224,43 @@ class Browsertime(Perftest):
                 browsertime_path,
                 "browsertime_benchmark.js",
             )
-        else:
+        elif (
+            test.get("name", "") == "browsertime"
+        ):  
             
-            if test.get("name", "") == "browsertime":
-                
-                
-                browsertime_script = None
-                for option in self.browsertime_user_args:
-                    arg, val = option.split("=", 1)
-                    if arg in ("test_script", "url"):
-                        browsertime_script = val
-                if browsertime_script is None:
-                    raise Exception(
-                        "You must provide a path to the test script or the url like so: "
-                        "`--browsertime-arg test_script=PATH/TO/SCRIPT`, or "
-                        "`--browsertime-arg url=https://www.sitespeed.io`"
-                    )
-
-                
-                if browsertime_script == "pageload":
-                    browsertime_script = os.path.join(
-                        browsertime_path, "browsertime_pageload.js"
-                    )
-                elif browsertime_script == "interactive":
-                    browsertime_script = os.path.join(
-                        browsertime_path, "browsertime_interactive.js"
-                    )
-
-            elif test.get("interactive", False):
-                browsertime_script = os.path.join(
-                    browsertime_path,
-                    "browsertime_interactive.js",
+            
+            browsertime_script = None
+            for option in self.browsertime_user_args:
+                arg, val = option.split("=", 1)
+                if arg in ("test_script", "url"):
+                    browsertime_script = val
+            if browsertime_script is None:
+                raise Exception(
+                    "You must provide a path to the test script or the url like so: "
+                    "`--browsertime-arg test_script=PATH/TO/SCRIPT`, or "
+                    "`--browsertime-arg url=https://www.sitespeed.io`"
                 )
-            else:
+
+            
+            if browsertime_script == "pageload":
                 browsertime_script = os.path.join(
-                    browsertime_path,
-                    test.get("test_script", "browsertime_pageload.js"),
+                    browsertime_path, "browsertime_pageload.js"
                 )
+            elif browsertime_script == "interactive":
+                browsertime_script = os.path.join(
+                    browsertime_path, "browsertime_interactive.js"
+                )
+
+        elif test.get("interactive", False):
+            browsertime_script = os.path.join(
+                browsertime_path,
+                "browsertime_interactive.js",
+            )
+        else:
+            browsertime_script = os.path.join(
+                browsertime_path,
+                test.get("test_script", "browsertime_pageload.js"),
+            )
 
         page_cycle_delay = "1000"
         if self.config["live_sites"]:
@@ -720,7 +720,6 @@ class Browsertime(Perftest):
             LOG.info("Failed during the extra profiler run: " + str(e))
 
     def run_test(self, test, timeout):
-        global BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT
 
         self.run_test_setup(test)
         
