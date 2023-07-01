@@ -1117,17 +1117,17 @@ class TopSitesFeed {
 
     const sampleInput = `${lazy.contextId}-${this._contile.sov.name}`;
     let sponsored = [];
-
+    let chosenPartners = [];
     for (const allocation of this._contile.sov.allocations) {
       let link = null;
-      let chosenPartner = null;
+      let assignedPartner = null;
       const ratios = allocation.allocation.map(alloc => alloc.percentage);
       if (ratios.length) {
         const index = await lazy.Sampling.ratioSample(sampleInput, ratios);
-        chosenPartner = allocation.allocation[index].partner;
+        assignedPartner = allocation.allocation[index].partner;
         
         
-        link = sponsoredLinks[chosenPartner]?.shift();
+        link = sponsoredLinks[assignedPartner]?.shift();
       }
 
       if (!link) {
@@ -1136,7 +1136,7 @@ class TopSitesFeed {
         
         for (const partner of SPONSORED_TILE_PARTNERS) {
           if (
-            partner === chosenPartner ||
+            partner === assignedPartner ||
             sponsoredLinks[partner].length === 0
           ) {
             continue;
@@ -1147,6 +1147,11 @@ class TopSitesFeed {
 
         if (!link) {
           
+          if (chosenPartners.length) {
+            Glean.newtab.sovAllocation.set(
+              chosenPartners.map(entry => JSON.stringify(entry))
+            );
+          }
           return sponsored;
         }
       }
@@ -1158,7 +1163,20 @@ class TopSitesFeed {
         link.pos = allocation.position - 1;
       }
       sponsored.push(link);
+
+      chosenPartners.push({
+        pos: allocation.position,
+        assigned: assignedPartner, 
+        chosen: link.partner,
+      });
     }
+    
+    if (chosenPartners.length) {
+      Glean.newtab.sovAllocation.set(
+        chosenPartners.map(entry => JSON.stringify(entry))
+      );
+    }
+
     
     if (
       lazy.NimbusFeatures.pocketNewtab.getVariable(
