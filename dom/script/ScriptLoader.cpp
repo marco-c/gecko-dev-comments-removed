@@ -983,6 +983,17 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     return false;
   }
 
+  
+  
+  
+  
+  if (request && request->IsModuleRequest() &&
+      mModuleLoader->HasImportMapRegistered()) {
+    DebugOnly<bool> removed = mModuleLoader->RemoveFetchedModule(request->mURI);
+    MOZ_ASSERT(removed);
+    request = nullptr;
+  }
+
   if (request) {
     
 
