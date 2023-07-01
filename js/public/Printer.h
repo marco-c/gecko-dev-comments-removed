@@ -51,7 +51,7 @@ class JS_PUBLIC_API GenericPrinter {
   virtual void reportOutOfMemory();
 
   
-  virtual bool hadOutOfMemory() const;
+  virtual bool hadOutOfMemory() const { return hadOOM_; }
 };
 
 
@@ -98,8 +98,11 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
 
   void checkInvariants() const;
 
-  const char* string() const { return base; }
-  const char* stringEnd() const { return base + offset; }
+  const char* string() const {
+    MOZ_ASSERT(!hadOutOfMemory());
+    return base;
+  }
+  const char* stringEnd() const { return string() + offset; }
   JS::UniqueChars release();
 
   
