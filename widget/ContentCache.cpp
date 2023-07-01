@@ -21,6 +21,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "nsExceptionHandler.h"
 #include "nsIWidget.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 
@@ -1448,26 +1449,37 @@ void ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
     size_t numberOfOutdatedCompositions = 1u;
     for (auto& data : mHandlingCompositions) {
       if (&data == handlingCompositionData) {
-#if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
-        if (NS_WARN_IF(data.mPendingEventsNeedingAck != 1u)) {
-          nsPrintfCString info(
-              "\nThere is not only the pending verify notifications (%" PRIu32
-              " pending events) but the handling composition is being removed "
-              "by receiving %s\n\n",
-              data.mPendingEventsNeedingAck, ToChar(aMessage));
-          AppendEventMessageLog(info);
-          CrashReporter::AppendAppNotesToCrashReport(info);
-          MOZ_DIAGNOSTIC_ASSERT(false,
-                                "There is not only the pending event message "
-                                "but ending the handling composition");
+        if (
+            
+            
+            
+            
+            
+            !data.mSentCommitEvent &&
+            
+            
+            
+            
+            data.mPendingEventsNeedingAck >= 1u) {
+          MOZ_LOG(
+              sContentCacheLog, LogLevel::Debug,
+              ("    NOTE: BrowserParent has %" PRIu32
+               " pending composition messages for the handling composition, "
+               "but before they are handled in the remote process, the active "
+               "composition is commited by a request.  "
+               "OnEventNeedingAckHandled() calls for them will be ignored",
+               data.mPendingEventsNeedingAck));
         }
-#endif  
         break;
       }
-      NS_WARNING_ASSERTION(
-          !data.mPendingEventsNeedingAck,
-          "Should've already received all handled notifications for the "
-          "older compositions");
+      if (MOZ_UNLIKELY(data.mPendingEventsNeedingAck)) {
+        MOZ_LOG(sContentCacheLog, LogLevel::Warning,
+                ("    BrowserParent has %" PRIu32
+                 " pending composition messages for an older composition than "
+                 "the handling composition, but it'll be removed because newer "
+                 "composition gets comitted in the remote process",
+                 data.mPendingEventsNeedingAck));
+      }
       numberOfOutdatedCompositions++;
     }
     mHandlingCompositions.RemoveElementsAt(0u, numberOfOutdatedCompositions);
