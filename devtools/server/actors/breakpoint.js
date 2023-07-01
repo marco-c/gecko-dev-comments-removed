@@ -118,7 +118,28 @@ class BreakpointActor {
 
 
   checkCondition(frame, condition) {
-    const completion = frame.eval(condition, { hideFromDebugger: true });
+    
+    
+    this.threadActor.insideClientEvaluation = {
+      disableBreaks: true,
+      reportExceptionsWhenBreaksAreDisabled: true,
+    };
+    let completion;
+
+    
+    const hadToEnablePauseOnException =
+      !this.threadActor.isPauseOnExceptionsEnabled();
+    try {
+      if (hadToEnablePauseOnException) {
+        this.threadActor.setPauseOnExceptions(true);
+      }
+      completion = frame.eval(condition, { hideFromDebugger: true });
+    } finally {
+      this.threadActor.insideClientEvaluation = null;
+      if (hadToEnablePauseOnException) {
+        this.threadActor.setPauseOnExceptions(false);
+      }
+    }
     if (completion) {
       if (completion.throw) {
         
@@ -182,11 +203,6 @@ class BreakpointActor {
       }
 
       if (message) {
-        
-        if (!this.threadActor._options.pauseOnExceptions) {
-          return undefined;
-        }
-
         reason.type = "breakpointConditionThrown";
         reason.message = message;
       }

@@ -818,7 +818,7 @@ class ThreadActor extends Actor {
       this.setActiveEventBreakpoints(options.eventBreakpoints);
     }
 
-    this.maybePauseOnExceptions();
+    this.setPauseOnExceptions(this._options.pauseOnExceptions);
   }
 
   _eventBreakpointListener(notification) {
@@ -1065,7 +1065,12 @@ class ThreadActor extends Actor {
     
     const { type } = this._priorPause.why;
 
-    if (type == newType) {
+    
+    
+    if (
+      type == newType ||
+      (type == "breakpointConditionThrown" && newType == "breakpoint")
+    ) {
       return true;
     }
 
@@ -1339,12 +1344,22 @@ class ThreadActor extends Actor {
   
 
 
-  maybePauseOnExceptions() {
-    if (this._options.pauseOnExceptions) {
+
+
+
+
+
+
+  setPauseOnExceptions(doPause) {
+    if (doPause) {
       this.dbg.onExceptionUnwind = this._onExceptionUnwind;
     } else {
       this.dbg.onExceptionUnwind = undefined;
     }
+  }
+
+  isPauseOnExceptionsEnabled() {
+    return this.dbg.onExceptionUnwind == this._onExceptionUnwind;
   }
 
   

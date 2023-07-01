@@ -28,16 +28,8 @@ add_task(
     const packet2 = await resumeAndWaitForPause(threadFront);
 
     
-    Assert.equal(packet2.why.type, "exception");
-    Assert.equal(packet2.frame.where.line, 1);
-
-    
-    await stepOver(threadFront);
-    const packet3 = await stepOver(threadFront);
-
-    
-    Assert.equal(packet3.why.type, "breakpointConditionThrown");
-    Assert.equal(packet3.frame.where.line, 3);
+    Assert.equal(packet2.why.type, "breakpointConditionThrown");
+    Assert.equal(packet2.frame.where.line, 3);
 
     
     await threadFront.removeBreakpoint(location);

@@ -8,9 +8,8 @@
 
 
 
-
 add_task(
-  threadFrontTest(async ({ threadFront, debuggee }) => {
+  threadFrontTest(async ({ threadFront, debuggee, commands }) => {
     await threadFront.setBreakpoint(
       { sourceUrl: "conditional_breakpoint-04.js", line: 3 },
       { condition: "throw new Error()" }
@@ -25,8 +24,12 @@ add_task(
     Assert.equal(packet.why.type, "debuggerStatement");
 
     const pausedPacket = await resumeAndWaitForPause(threadFront);
-    Assert.equal(pausedPacket.frame.where.line, 4);
-    Assert.equal(pausedPacket.why.type, "debuggerStatement");
+    Assert.equal(pausedPacket.frame.where.line, 3);
+    Assert.equal(pausedPacket.why.type, "breakpointConditionThrown");
+
+    const secondPausedPacket = await resumeAndWaitForPause(threadFront);
+    Assert.equal(secondPausedPacket.frame.where.line, 4);
+    Assert.equal(secondPausedPacket.why.type, "debuggerStatement");
 
     
     await threadFront.removeBreakpoint({
