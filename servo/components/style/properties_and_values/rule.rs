@@ -216,6 +216,12 @@ impl PropertyRuleData {
         
         let Some(initial) = initial_value else { return Err(ToRegistrationError::NoInitialValue) };
 
+        
+        
+        if initial.has_references() {
+            return Err(ToRegistrationError::InitialValueNotComputationallyIndependent);
+        }
+
         let mut input = ParserInput::new(initial.css_text());
         let mut input = Parser::new(&mut input);
         input.skip_whitespace();

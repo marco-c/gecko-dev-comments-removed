@@ -387,6 +387,12 @@ impl VariableValue {
     pub fn css_text(&self) -> &str {
         &self.css
     }
+
+    
+    
+    pub fn has_references(&self) -> bool {
+        self.references_environment || !self.references.is_empty()
+    }
 }
 
 
