@@ -3,13 +3,7 @@
 
 
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ProcessHangMonitor"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 
 
@@ -51,7 +45,7 @@ function elideMiddleOfString(str, threshold) {
 
 
 
-var ProcessHangMonitor = {
+export var ProcessHangMonitor = {
   
 
 
