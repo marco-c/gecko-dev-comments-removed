@@ -16,13 +16,12 @@ import { fetchFrames } from "./fetchFrames";
 import { recordEvent } from "../../utils/telemetry";
 import assert from "../../utils/assert";
 
-export function selectThread(cx, thread) {
+export function selectThread(thread) {
   return async ({ dispatch, getState, client }) => {
     if (getCurrentThread(getState()) === thread) {
       return;
     }
-
-    dispatch({ cx, type: "SELECT_THREAD", thread });
+    dispatch({ type: "SELECT_THREAD", thread });
 
     
     const threadcx = getThreadContext(getState());
