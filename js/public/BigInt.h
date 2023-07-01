@@ -68,8 +68,8 @@ struct NumberToBigIntConverter<bool> {
   }
 };
 
-extern JS_PUBLIC_API bool BigIntIsInt64(BigInt* bi, int64_t* result);
-extern JS_PUBLIC_API bool BigIntIsUint64(BigInt* bi, uint64_t* result);
+extern JS_PUBLIC_API bool BigIntIsInt64(const BigInt* bi, int64_t* result);
+extern JS_PUBLIC_API bool BigIntIsUint64(const BigInt* bi, uint64_t* result);
 
 template <typename T, typename = void>
 struct BigIntToNumberChecker;
@@ -83,7 +83,7 @@ struct BigIntToNumberChecker<
         std::numeric_limits<SignedIntT>::max() <= Int64Limits::max()>> {
   using TypeLimits = std::numeric_limits<SignedIntT>;
 
-  static bool fits(BigInt* bi, SignedIntT* result) {
+  static bool fits(const BigInt* bi, SignedIntT* result) {
     int64_t innerResult;
     if (!BigIntIsInt64(bi, &innerResult)) {
       return false;
@@ -102,7 +102,7 @@ struct BigIntToNumberChecker<
     std::enable_if_t<
         std::is_integral_v<UnsignedIntT> && std::is_unsigned_v<UnsignedIntT> &&
         std::numeric_limits<UnsignedIntT>::max() <= Uint64Limits::max()>> {
-  static bool fits(BigInt* bi, UnsignedIntT* result) {
+  static bool fits(const BigInt* bi, UnsignedIntT* result) {
     uint64_t innerResult;
     if (!BigIntIsUint64(bi, &innerResult)) {
       return false;
@@ -179,12 +179,12 @@ extern JS_PUBLIC_API BigInt* ToBigInt(JSContext* cx, Handle<Value> val);
 
 
 
-extern JS_PUBLIC_API int64_t ToBigInt64(BigInt* bi);
+extern JS_PUBLIC_API int64_t ToBigInt64(const BigInt* bi);
 
 
 
 
-extern JS_PUBLIC_API uint64_t ToBigUint64(BigInt* bi);
+extern JS_PUBLIC_API uint64_t ToBigUint64(const BigInt* bi);
 
 
 
@@ -192,12 +192,12 @@ extern JS_PUBLIC_API uint64_t ToBigUint64(BigInt* bi);
 
 
 
-extern JS_PUBLIC_API double BigIntToNumber(BigInt* bi);
+extern JS_PUBLIC_API double BigIntToNumber(const BigInt* bi);
 
 
 
 
-extern JS_PUBLIC_API bool BigIntIsNegative(BigInt* bi);
+extern JS_PUBLIC_API bool BigIntIsNegative(const BigInt* bi);
 
 
 
@@ -205,14 +205,14 @@ extern JS_PUBLIC_API bool BigIntIsNegative(BigInt* bi);
 
 
 template <typename NumericT>
-static inline bool BigIntFits(BigInt* bi, NumericT* out) {
+static inline bool BigIntFits(const BigInt* bi, NumericT* out) {
   return detail::BigIntToNumberChecker<NumericT>::fits(bi, out);
 }
 
 
 
 
-extern JS_PUBLIC_API bool BigIntFitsNumber(BigInt* bi, double* out);
+extern JS_PUBLIC_API bool BigIntFitsNumber(const BigInt* bi, double* out);
 
 
 
