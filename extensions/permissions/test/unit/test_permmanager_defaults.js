@@ -4,6 +4,7 @@
 
 const TEST_ORIGIN = NetUtil.newURI("http://example.org");
 const TEST_ORIGIN_HTTPS = NetUtil.newURI("https://example.org");
+const TEST_ORIGIN_NOTUPDATED = NetUtil.newURI("https://example.net");
 const TEST_ORIGIN_2 = NetUtil.newURI("http://example.com");
 const TEST_ORIGIN_3 = NetUtil.newURI("https://example2.com:8080");
 const TEST_PERMISSION = "test-permission";
@@ -17,6 +18,10 @@ function promiseTimeout(delay) {
 add_task(async function do_test() {
   
   do_get_profile();
+
+  
+  let since = Number(Date.now());
+  await promiseTimeout(20);
 
   
   let file = do_get_tempdir();
@@ -39,6 +44,9 @@ add_task(async function do_test() {
   );
   conv.writeString(
     "host\t" + TEST_PERMISSION + "\t1\t" + TEST_ORIGIN_2.host + "\n"
+  );
+  conv.writeString(
+    "host\t" + TEST_PERMISSION + "\t1\t" + TEST_ORIGIN_NOTUPDATED.host + "\n"
   );
   conv.writeString(
     "origin\t" + TEST_PERMISSION + "\t1\t" + TEST_ORIGIN_3.spec + "\n"
@@ -75,6 +83,11 @@ add_task(async function do_test() {
     TEST_ORIGIN_HTTPS,
     {}
   );
+  let principalNotUpdated =
+    Services.scriptSecurityManager.createContentPrincipal(
+      TEST_ORIGIN_NOTUPDATED,
+      {}
+    );
   let principal2 = Services.scriptSecurityManager.createContentPrincipal(
     TEST_ORIGIN_2,
     {}
@@ -121,6 +134,10 @@ add_task(async function do_test() {
   );
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION)
   );
   Assert.equal(
@@ -158,11 +175,35 @@ add_task(async function do_test() {
   await checkCapabilityViaDB(null);
 
   
+  pm.removeAllSince(since);
+
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal3, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
+  );
+
+  
   pm.removeAll();
 
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
   );
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
@@ -227,6 +268,10 @@ add_task(async function do_test() {
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
   );
   
   Assert.equal(
@@ -344,6 +389,10 @@ add_task(async function do_test() {
   );
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
+  );
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION)
   );
 
@@ -360,7 +409,8 @@ add_task(async function do_test() {
   );
   await promiseTimeout(20);
 
-  let since = Number(Date.now());
+  
+  since = Number(Date.now());
   await promiseTimeout(20);
 
   
@@ -384,7 +434,11 @@ add_task(async function do_test() {
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
   );
-
+  
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principalNotUpdated, TEST_PERMISSION)
+  );
   
   Assert.equal(
     Ci.nsIPermissionManager.DENY_ACTION,
