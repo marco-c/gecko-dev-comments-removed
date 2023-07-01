@@ -190,11 +190,6 @@ class LoadBlockingAsyncEventDispatcher final : public AsyncEventDispatcher {
     }
   }
 
-  
-  
-  
-  using AsyncEventDispatcher::RunDOMEventWhenSafe;
-
   LoadBlockingAsyncEventDispatcher(nsINode* aEventNode, dom::Event* aEvent)
       : AsyncEventDispatcher(aEventNode, aEvent),
         mBlockedDoc(aEventNode->OwnerDoc()) {
