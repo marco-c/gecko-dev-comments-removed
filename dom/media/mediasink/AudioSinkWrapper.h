@@ -54,8 +54,6 @@ class AudioSinkWrapper : public MediaSink {
   void SetPlaybackRate(double aPlaybackRate) override;
   void SetPreservesPitch(bool aPreservesPitch) override;
   void SetPlaying(bool aPlaying) override;
-  RefPtr<GenericPromise> SetAudioDevice(
-      RefPtr<AudioDeviceInfo> aDevice) override;
 
   double PlaybackRate() const override;
 
@@ -64,6 +62,8 @@ class AudioSinkWrapper : public MediaSink {
   void Stop() override;
   bool IsStarted() const override;
   bool IsPlaying() const override;
+
+  const AudioDeviceInfo* AudioDevice() const override { return mAudioDevice; }
 
   void Shutdown() override;
 
@@ -82,7 +82,7 @@ class AudioSinkWrapper : public MediaSink {
     
     Paused
   } mLastClockSource = ClockSource::Paused;
-  static already_AddRefed<TaskQueue> CreateAsyncInitTaskQueue();
+  static already_AddRefed<nsISerialEventTarget> CreateAsyncInitTaskQueue();
   bool IsMuted() const;
   void OnMuted(bool aMuted);
   virtual ~AudioSinkWrapper();
@@ -104,13 +104,8 @@ class AudioSinkWrapper : public MediaSink {
   
   
   
-  
-  
-  
-  
   nsresult SyncCreateAudioSink(const media::TimeUnit& aStartTime);
-  RefPtr<GenericPromise> MaybeAsyncCreateAudioSink(
-      RefPtr<AudioDeviceInfo> aDevice);
+  void MaybeAsyncCreateAudioSink();
   void ScheduleRetrySink();
 
   
@@ -124,12 +119,12 @@ class AudioSinkWrapper : public MediaSink {
   bool IsAudioSourceEnded(const MediaInfo& aInfo) const;
 
   const RefPtr<AbstractThread> mOwnerThread;
-  const RefPtr<TaskQueue> mAsyncInitTaskQueue;
+  const nsCOMPtr<nsISerialEventTarget> mAsyncInitTaskQueue;
   SinkCreator mSinkCreator;
   UniquePtr<AudioSink> mAudioSink;
   
   
-  RefPtr<AudioDeviceInfo> mAudioDevice;
+  const RefPtr<AudioDeviceInfo> mAudioDevice;
   
   RefPtr<EndedPromise> mEndedPromise;
   MozPromiseHolder<EndedPromise> mEndedPromiseHolder;

@@ -4430,14 +4430,43 @@ RefPtr<GenericPromise> MediaDecoderStateMachine::InvokeSetSink(
 }
 
 RefPtr<GenericPromise> MediaDecoderStateMachine::SetSink(
-    RefPtr<AudioDeviceInfo> aDevice) {
+    const RefPtr<AudioDeviceInfo>& aDevice) {
   MOZ_ASSERT(OnTaskQueue());
   if (mIsMediaSinkSuspended) {
     
-    return GenericPromise::CreateAndResolve(true, __func__);
+    return GenericPromise::CreateAndResolve(false, __func__);
   }
 
-  return mMediaSink->SetAudioDevice(std::move(aDevice));
+  if (mOutputCaptureState != MediaDecoder::OutputCaptureState::None) {
+    
+    return GenericPromise::CreateAndReject(NS_ERROR_ABORT, __func__);
+  }
+
+  if (mSinkDevice.Ref() != aDevice) {
+    
+    return GenericPromise::CreateAndResolve(IsPlaying(), __func__);
+  }
+
+  if (mMediaSink->AudioDevice() == aDevice) {
+    
+    return GenericPromise::CreateAndResolve(IsPlaying(), __func__);
+  }
+
+  const bool wasPlaying = IsPlaying();
+
+  
+  StopMediaSink();
+  mMediaSink->Shutdown();
+  
+  mMediaSink = CreateMediaSink();
+  
+  if (wasPlaying) {
+    nsresult rv = StartMediaSink();
+    if (NS_FAILED(rv)) {
+      return GenericPromise::CreateAndReject(NS_ERROR_ABORT, __func__);
+    }
+  }
+  return GenericPromise::CreateAndResolve(wasPlaying, __func__);
 }
 
 void MediaDecoderStateMachine::InvokeSuspendMediaSink() {
