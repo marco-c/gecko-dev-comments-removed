@@ -118,7 +118,7 @@ class Browsertime(Perftest):
 
         if test.get("type") == "benchmark":
             
-            self.benchmark = Benchmark(self.config, test)
+            self.benchmark = Benchmark(self.config, test, debug_mode=self.debug_mode)
             test["test_url"] = test["test_url"].replace("<host>", self.benchmark.host)
             test["test_url"] = test["test_url"].replace("<port>", self.benchmark.port)
 
@@ -176,6 +176,10 @@ class Browsertime(Perftest):
         if self.playback is not None:
             self.playback.stop()
             self.playback = None
+
+        
+        if self.benchmark:
+            self.benchmark.stop_http_server()
 
     def check_for_crashes(self):
         super(Browsertime, self).check_for_crashes()
