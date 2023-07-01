@@ -355,6 +355,12 @@ bool CalendarEquals(JSContext* cx, JS::Handle<JSObject*> one,
 
 
 
+bool CalendarEqualsOrThrow(JSContext* cx, JS::Handle<JSObject*> one,
+                           JS::Handle<JSObject*> two);
+
+
+
+
 JSObject* ConsolidateCalendars(JSContext* cx, JS::Handle<JSObject*> one,
                                JS::Handle<JSObject*> two);
 
