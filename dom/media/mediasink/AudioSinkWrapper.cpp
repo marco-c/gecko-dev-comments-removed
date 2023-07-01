@@ -356,7 +356,10 @@ void AudioSinkWrapper::MaybeAsyncCreateAudioSink() {
       this);
   ++mAsyncCreateCount;
   UniquePtr<AudioSink> audioSink = mSinkCreator();
-  mAsyncInitTaskQueue->Dispatch(NS_NewRunnableFunction(
+  using Promise =
+      MozPromise<UniquePtr<AudioSink>, nsresult,  true>;
+  InvokeAsync(
+      mAsyncInitTaskQueue,
       "MaybeAsyncCreateAudioSink (Async part: initialization)",
       [self = RefPtr<AudioSinkWrapper>(this), audioSink{std::move(audioSink)},
        this]() mutable {
@@ -368,54 +371,60 @@ void AudioSinkWrapper::MaybeAsyncCreateAudioSink() {
         
         nsresult rv = audioSink->InitializeAudioStream(
             mParams, mAudioDevice, AudioSink::InitializationType::UNMUTING);
-        mOwnerThread->Dispatch(NS_NewRunnableFunction(
-            "MaybeAsyncCreateAudioSink (Async part: start from MDSM thread)",
-            [self = RefPtr<AudioSinkWrapper>(this),
-             audioSink{std::move(audioSink)}, this, rv]() mutable {
-              LOG("AudioSink async init done, back on MDSM thread");
-              ScopeExit decr([&] { --mAsyncCreateCount; });
+        if (NS_FAILED(rv)) {
+          LOG("Async AudioSink initialization failed");
+          return Promise::CreateAndReject(rv, __func__);
+        }
+        return Promise::CreateAndResolve(std::move(audioSink), __func__);
+      })
+      ->Then(mOwnerThread,
+             "MaybeAsyncCreateAudioSink (Async part: start from MDSM thread)",
+             [self = RefPtr<AudioSinkWrapper>(this),
+              this](Promise::ResolveOrRejectValue&& aValue) mutable {
+               LOG("AudioSink async init done, back on MDSM thread");
+               ScopeExit decr([&] { --mAsyncCreateCount; });
 
-              if (NS_FAILED(rv)) {
-                LOG("Async AudioSink initialization failed");
-                if (mAudioDevice) {
-                  
-                  ScheduleRetrySink();
-                  return;
-                }
-                
-                mEndedPromiseHolder.RejectIfExists(rv, __func__);
-                return;
-              }
+               if (aValue.IsReject()) {
+                 if (mAudioDevice) {
+                   
+                   ScheduleRetrySink();
+                   return;
+                 }
+                 
+                 mEndedPromiseHolder.RejectIfExists(aValue.RejectValue(),
+                                                    __func__);
+                 return;
+               }
 
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              if (mAudioSink || !NeedAudioSink()) {
-                LOG("AudioSink initialized async isn't needed, shutting "
-                    "it down.");
-                audioSink->ShutDown();
-                return;
-              }
+               UniquePtr audioSink = std::move(aValue.ResolveValue());
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               if (mAudioSink || !NeedAudioSink()) {
+                 LOG("AudioSink initialized async isn't needed, shutting "
+                     "it down.");
+                 audioSink->ShutDown();
+                 return;
+               }
 
-              MOZ_ASSERT(!mAudioSink);
-              TimeUnit switchTime = GetPosition();
-              DropAudioPacketsIfNeeded(switchTime);
-              if (mTreatUnderrunAsSilence) {
-                audioSink->EnableTreatAudioUnderrunAsSilence(
-                    mTreatUnderrunAsSilence);
-              }
-              LOG("AudioSink async, start");
-              StartAudioSink(std::move(audioSink), switchTime);
-            }));
-      }));
+               MOZ_ASSERT(!mAudioSink);
+               TimeUnit switchTime = GetPosition();
+               DropAudioPacketsIfNeeded(switchTime);
+               if (mTreatUnderrunAsSilence) {
+                 audioSink->EnableTreatAudioUnderrunAsSilence(
+                     mTreatUnderrunAsSilence);
+               }
+               LOG("AudioSink async, start");
+               StartAudioSink(std::move(audioSink), switchTime);
+             });
 }
 
 nsresult AudioSinkWrapper::SyncCreateAudioSink(const TimeUnit& aStartTime) {
