@@ -38,6 +38,10 @@ async function updateFrameLocation(frame, thunkArgs) {
     return Promise.resolve(frame);
   }
   const location = await getOriginalLocation(frame.location, thunkArgs, true);
+  
+  if (location == frame.location) {
+    return frame;
+  }
   return {
     ...frame,
     location,
