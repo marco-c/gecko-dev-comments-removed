@@ -89,6 +89,22 @@ CSSCoord MotionPathUtils::GetRayContainReferenceSize(nsIFrame* aFrame) {
 }
 
 
+nsTArray<nscoord> MotionPathUtils::ComputeBorderRadii(
+    const StyleBorderRadius& aBorderRadius, const nsRect& aCoordBox) {
+  const nsRect insetRect = ShapeUtils::ComputeInsetRect(
+      StyleRect<LengthPercentage>::WithAllSides(LengthPercentage::Zero()),
+      aCoordBox);
+  nsTArray<nscoord> result(8);
+  result.SetLength(8);
+  if (!nsIFrame::ComputeBorderRadii(aBorderRadius, aCoordBox.Size(),
+                                    insetRect.Size(), Sides(),
+                                    result.Elements())) {
+    result.Clear();
+  }
+  return result;
+}
+
+
 
 
 
@@ -471,6 +487,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
 
 static OffsetPathData GenerateOffsetPathData(
     const StyleOffsetPath& aOffsetPath,
+    const StyleOffsetPosition& aOffsetPosition,
     const layers::MotionPathData& aMotionPathData,
     gfx::Path* aCachedMotionPath) {
   if (aOffsetPath.IsNone()) {
@@ -487,6 +504,7 @@ static OffsetPathData GenerateOffsetPathData(
                      aMotionPathData.rayContainReferenceLength());
   }
 
+  
   
   if (aOffsetPath.IsPath()) {
     const StyleSVGPathData& pathData = aOffsetPath.AsSVGPathData();
@@ -505,8 +523,37 @@ static OffsetPathData GenerateOffsetPathData(
 
   
   MOZ_ASSERT(aOffsetPath.IsBasicShapeOrCoordBox());
-  
-  return OffsetPathData::None();
+
+  const nsRect& coordBox = aMotionPathData.coordBox();
+  if (coordBox.IsEmpty()) {
+    return OffsetPathData::None();
+  }
+
+  RefPtr<gfx::PathBuilder> builder =
+      MotionPathUtils::GetCompositorPathBuilder();
+  if (!builder) {
+    return OffsetPathData::None();
+  }
+
+  RefPtr<gfx::Path> path;
+  if (aOffsetPath.IsCoordBox()) {
+    const nsRect insetRect = ShapeUtils::ComputeInsetRect(
+        StyleRect<LengthPercentage>::WithAllSides(LengthPercentage::Zero()),
+        coordBox);
+    const nsTArray<nscoord>& radii = aMotionPathData.coordBoxInsetRadii();
+    path = ShapeUtils::BuildInsetPath(
+        insetRect, radii.IsEmpty() ? nullptr : radii.Elements(), coordBox,
+        AppUnitsPerCSSPixel(), builder);
+  } else {
+    path = MotionPathUtils::BuildPath(
+        aOffsetPath.AsOffsetPath().path->AsShape(), aOffsetPosition, coordBox,
+        aMotionPathData.currentPosition(), builder);
+  }
+
+  return path ? OffsetPathData::Shape(
+                    path.forget(), nsPoint(aMotionPathData.currentPosition()),
+                    true)
+              : OffsetPathData::None();
 }
 
 
@@ -527,7 +574,9 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
   auto autoOffsetAnchor = StylePositionOrAuto::Auto();
   auto autoOffsetPosition = StyleOffsetPosition::Auto();
   return ResolveMotionPath(
-      GenerateOffsetPathData(*aPath, *aMotionPathData, aCachedMotionPath),
+      GenerateOffsetPathData(*aPath,
+                             aPosition ? *aPosition : autoOffsetPosition,
+                             *aMotionPathData, aCachedMotionPath),
       aDistance ? *aDistance : zeroOffsetDistance,
       aRotate ? *aRotate : autoOffsetRotate,
       aAnchor ? *aAnchor : autoOffsetAnchor,

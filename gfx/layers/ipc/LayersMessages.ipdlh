@@ -133,6 +133,9 @@ struct AnimationSegment {
   nsPoint currentPosition;
   
   CSSCoord rayContainReferenceLength;
+  
+  
+  nscoord[] coordBoxInsetRadii;
 };
 
 [Comparable] struct PartialPrerenderData {

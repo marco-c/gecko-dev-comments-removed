@@ -195,6 +195,15 @@ class MotionPathUtils final {
 
 
 
+
+
+  static nsTArray<nscoord> ComputeBorderRadii(
+      const StyleBorderRadius& aBorderRadius, const nsRect& aCoordBox);
+
+  
+
+
+
   static Maybe<ResolvedMotionPathData> ResolveMotionPath(
       const OffsetPathData& aPath, const LengthPercentage& aDistance,
       const StyleOffsetRotate& aRotate, const StylePositionOrAuto& aAnchor,
