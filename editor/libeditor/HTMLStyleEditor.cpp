@@ -244,7 +244,7 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
   }
 
   
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     return NS_OK;
   }
 
@@ -3313,7 +3313,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
   }
 
   
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     return NS_OK;
   }
 

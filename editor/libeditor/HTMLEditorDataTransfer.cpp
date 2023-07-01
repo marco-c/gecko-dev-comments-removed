@@ -1410,7 +1410,7 @@ void HTMLEditor::HTMLTransferablePreparer::AddDataFlavorsInBestOrder(
   
   
   
-  if (!mHTMLEditor.IsInPlaintextMode()) {
+  if (!mHTMLEditor.IsPlaintextMailComposer()) {
     DebugOnly<nsresult> rvIgnored =
         aTransferable.AddDataFlavor(kNativeHTMLMime);
     NS_WARNING_ASSERTION(
@@ -2141,7 +2141,7 @@ nsresult HTMLEditor::InsertFromDataTransfer(
   const bool hasPrivateHTMLFlavor =
       types->Contains(NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext));
 
-  const bool isPlaintextEditor = IsInPlaintextMode();
+  const bool isPlaintextEditor = IsPlaintextMailComposer();
   const SafeToInsertData safeToInsertData =
       IsSafeToInsertData(aSourcePrincipal);
 
@@ -2607,7 +2607,7 @@ bool HTMLEditor::CanPaste(int32_t aClipboardType) const {
   }
 
   
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     AutoTArray<nsCString, ArrayLength(textEditorFlavors)> flavors;
     flavors.AppendElements<const char*>(Span<const char*>(textEditorFlavors));
     bool haveFlavors;
@@ -2643,7 +2643,7 @@ bool HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable) {
   
   const char** flavors;
   size_t length;
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     flavors = textEditorFlavors;
     length = ArrayLength(textEditorFlavors);
   } else {
@@ -2680,7 +2680,7 @@ nsresult HTMLEditor::HandlePasteAsQuotation(
     return rv;
   }
 
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     nsresult rv = PasteAsPlaintextQuotation(aClipboardType);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::PasteAsPlaintextQuotation() failed");
@@ -3053,7 +3053,7 @@ nsresult HTMLEditor::InsertTextWithQuotationsInternal(
 
 nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
                                        nsINode** aNodeInserted) {
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     AutoEditActionDataSetter editActionData(*this, EditAction::eInsertText);
     MOZ_ASSERT(!aQuotedText.IsVoid());
     editActionData.SetData(aQuotedText);
@@ -3333,7 +3333,7 @@ NS_IMETHODIMP HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
                                                  bool aInsertHTML,
                                                  nsINode** aNodeInserted) {
   
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     NS_ASSERTION(
         !aInsertHTML,
         "InsertAsCitedQuotation: trying to insert html into plaintext editor");
@@ -3379,7 +3379,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
     const nsAString& aQuotedText, const nsAString& aCitation, bool aInsertHTML,
     nsINode** aNodeInserted) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(!IsInPlaintextMode());
+  MOZ_ASSERT(!IsPlaintextMailComposer());
 
   {
     Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();

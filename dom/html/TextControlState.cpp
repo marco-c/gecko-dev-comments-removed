@@ -1721,17 +1721,17 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   PresShell* presShell = presContext->GetPresShell();
 
   
-  uint32_t editorFlags = nsIEditor::eEditorPlaintextMask;
+
+  
+  
+  uint32_t editorFlags = nsIEditor::eEditorSkipSpellCheck;
+
   if (IsSingleLineTextControl()) {
     editorFlags |= nsIEditor::eEditorSingleLineMask;
   }
   if (IsPasswordTextControl()) {
     editorFlags |= nsIEditor::eEditorPasswordMask;
   }
-
-  
-  
-  editorFlags |= nsIEditor::eEditorSkipSpellCheck;
 
   bool shouldInitializeEditor = false;
   RefPtr<TextEditor> newTextEditor;  

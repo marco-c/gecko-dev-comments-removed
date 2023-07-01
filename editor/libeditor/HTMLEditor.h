@@ -741,6 +741,18 @@ class HTMLEditor final : public EditorBase,
     return (mFlags & nsIEditor::eEditorEnableWrapHackMask) != 0;
   }
 
+  
+
+
+
+
+  bool IsPlaintextMailComposer() const {
+    const bool isPlaintextMode =
+        (mFlags & nsIEditor::eEditorPlaintextMask) != 0;
+    MOZ_ASSERT_IF(IsTextEditor(), isPlaintextMode);
+    return isPlaintextMode;
+  }
+
  protected:  
   
 

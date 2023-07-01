@@ -164,7 +164,7 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
     }
   }
 
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     
     
     nsresult rv = EnsurePaddingBRElementInMultilineEditor();
@@ -1258,7 +1258,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     
     
     
-    if (!isWhiteSpaceCollapsible || IsInPlaintextMode()) {
+    if (!isWhiteSpaceCollapsible || IsPlaintextMailComposer()) {
       while (pos != -1 &&
              pos < AssertedCast<int32_t>(aInsertionString.Length())) {
         int32_t oldPos = pos;
@@ -2169,7 +2169,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
 
   
   RefPtr<Element> brElement;
-  if (IsInPlaintextMode()) {
+  if (IsPlaintextMailComposer()) {
     Result<CreateElementResult, nsresult> insertBRElementResult =
         InsertBRElement(WithTransaction::Yes, aPointToBreak);
     if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
@@ -9492,7 +9492,7 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
 Element* HTMLEditor::GetMostDistantAncestorMailCiteElement(
     const nsINode& aNode) const {
   Element* mailCiteElement = nullptr;
-  const bool isPlaintextEditor = IsInPlaintextMode();
+  const bool isPlaintextEditor = IsPlaintextMailComposer();
   for (Element* element : aNode.InclusiveAncestorsOfType<Element>()) {
     if ((isPlaintextEditor && element->IsHTMLElement(nsGkAtoms::pre)) ||
         HTMLEditUtils::IsMailCite(*element)) {

@@ -558,7 +558,9 @@ bool EditorBase::GetDesiredSpellCheckState() {
     return false;
   }
 
-  if (!IsInPlaintextMode()) {
+  
+  
+  if (IsHTMLEditor() && !AsHTMLEditor()->IsPlaintextMailComposer()) {
     
     
     
@@ -644,7 +646,8 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
 
   
   
-  MOZ_ASSERT_IF(IsTextEditor(), !!(aFlags & nsIEditor::eEditorPlaintextMask));
+  
+  MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorPlaintextMask));
   
   
   
@@ -3551,7 +3554,7 @@ nsresult EditorBase::GetEndChildNode(const Selection& aSelection,
 
 nsresult EditorBase::EnsurePaddingBRElementInMultilineEditor() {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(IsInPlaintextMode());
+  MOZ_ASSERT(IsTextEditor() || AsHTMLEditor()->IsPlaintextMailComposer());
   MOZ_ASSERT(!IsSingleLineEditor());
 
   Element* anonymousDivOrBodyElement = GetRoot();
