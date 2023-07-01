@@ -32,7 +32,8 @@ add_task(async function test_getExtensionList_function() {
     {
       id: "fake-extension-2",
       name: "Fake Extension 2",
-      description: "It is the description of fake extension 2.",
+      
+      description: null,
     },
     "Second extension should match expectations."
   );
