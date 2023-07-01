@@ -32,6 +32,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIPrincipal.h"
 #include "mozilla/LoadInfo.h"
+#include "mozilla/Maybe.h"
 
 using JS::SourceText;
 using namespace JS::loader;
@@ -112,7 +113,7 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   
   
   nsresult rv = GetScriptLoader()->StartLoadInternal(
-      aRequest, securityFlags, 0, Nothing() );
+      aRequest, securityFlags, Nothing() );
   NS_ENSURE_SUCCESS(rv, rv);
 
   

@@ -89,7 +89,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
       nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
       nsICookieJarSettings* aCookieJarSettings,
       const nsACString& aReferrerPolicy, const nsACString& aCSPHeader,
-      uint64_t aBrowsingContextID, nsIInterfaceRequestor* aCallbacks);
+      uint64_t aBrowsingContextID, nsIInterfaceRequestor* aCallbacks,
+      bool aIsModulepreload);
 
   
   
@@ -121,11 +122,10 @@ class EarlyHintPreloader final : public nsIStreamListener,
   static Maybe<PreloadHashKey> GenerateHashKey(ASDestination aAs, nsIURI* aURI,
                                                nsIPrincipal* aPrincipal,
                                                CORSMode corsMode,
-                                               const nsAString& aType);
+                                               bool aIsModulepreload);
 
   static nsSecurityFlags ComputeSecurityFlags(CORSMode aCORSMode,
-                                              ASDestination aAs,
-                                              bool aIsModule);
+                                              ASDestination aAs);
 
   
   nsresult OpenChannel(nsIURI* aURI, nsIPrincipal* aPrincipal,

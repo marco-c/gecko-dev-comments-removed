@@ -369,6 +369,11 @@ class ScriptLoadRequest
   
   
   RefPtr<LoadContextBase> mLoadContext;
+
+  
+  
+  
+  uint64_t mEarlyHintPreloaderId;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {

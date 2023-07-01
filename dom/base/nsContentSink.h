@@ -142,6 +142,11 @@ class nsContentSink : public nsICSSLoaderObserver,
                    const nsAString& aReferrerPolicy,
                    uint64_t aEarlyHintPreloaderId);
 
+  void PreloadModule(const nsAString& aHref, const nsAString& aAs,
+                     const nsAString& aMedia, const nsAString& aIntegrity,
+                     const nsAString& aCORS, const nsAString& aReferrerPolicy,
+                     uint64_t aEarlyHintPreloaderId);
+
   
   
   void PrefetchDNS(const nsAString& aHref);
