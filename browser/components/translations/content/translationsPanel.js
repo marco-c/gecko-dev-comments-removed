@@ -1145,7 +1145,9 @@ var TranslationsPanel = new (class {
           
           error ||
           
-          (hasSupportedLanguage && !(await shouldNeverTranslate()))
+          (hasSupportedLanguage &&
+            !(await shouldNeverTranslate()) &&
+            (await TranslationsParent.getIsTranslationsEngineSupported()))
         ) {
           if (handleEventId !== this.handleEventId) {
             
