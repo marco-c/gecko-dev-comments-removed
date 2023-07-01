@@ -11,6 +11,7 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
 
+#include "gc/GCProbes.h"
 #include "gc/Heap.h"
 #include "gc/MallocedBlockCache.h"
 #include "gc/Pretenuring.h"
@@ -122,7 +123,36 @@ class alignas(TypicalCacheLineSize) Nursery {
 
   
   
-  void* tryAllocateCell(gc::AllocSite* site, size_t size, JS::TraceKind kind);
+  void* tryAllocateCell(gc::AllocSite* site, size_t size, JS::TraceKind kind) {
+    
+    
+    
+    MOZ_ASSERT(size % gc::CellAlignBytes == 0);
+    MOZ_ASSERT(size_t(kind) < gc::NurseryTraceKinds);
+    MOZ_ASSERT_IF(kind == JS::TraceKind::String, canAllocateStrings());
+    MOZ_ASSERT_IF(kind == JS::TraceKind::BigInt, canAllocateBigInts());
+
+    void* ptr = tryAllocate(sizeof(gc::NurseryCellHeader) + size);
+    if (MOZ_UNLIKELY(!ptr)) {
+      return nullptr;
+    }
+
+    new (ptr) gc::NurseryCellHeader(site, kind);
+
+    void* cell =
+        reinterpret_cast<void*>(uintptr_t(ptr) + sizeof(gc::NurseryCellHeader));
+
+    
+    
+    uint32_t allocCount = site->incAllocCount();
+    if (allocCount == 1) {
+      pretenuringNursery.insertIntoAllocatedList(site);
+    }
+    MOZ_ASSERT_IF(site->isNormal(), site->isInAllocatedList());
+
+    gc::gcprobes::NurseryAlloc(cell, kind);
+    return cell;
+  }
 
   
   
@@ -554,7 +584,7 @@ class alignas(TypicalCacheLineSize) Nursery {
   [[nodiscard]] bool allocateNextChunk(unsigned chunkno,
                                        AutoLockGCBgAlloc& lock);
 
-  MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
+  uintptr_t currentEnd() const { return currentEnd_; }
 
   uintptr_t position() const { return position_; }
 
@@ -575,7 +605,26 @@ class alignas(TypicalCacheLineSize) Nursery {
 
   
   
-  void* tryAllocate(size_t size);
+  void* tryAllocate(size_t size) {
+    MOZ_ASSERT(isEnabled());
+    MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
+    MOZ_ASSERT_IF(currentChunk_ == currentStartChunk_,
+                  position() >= currentStartPosition_);
+    MOZ_ASSERT(size % gc::CellAlignBytes == 0);
+    MOZ_ASSERT(position() % gc::CellAlignBytes == 0);
+
+    if (MOZ_UNLIKELY(currentEnd() < position() + size)) {
+      return nullptr;
+    }
+
+    void* ptr = reinterpret_cast<void*>(position());
+    position_ = position() + size;
+
+    DebugOnlyPoison(ptr, JS_ALLOCATED_NURSERY_PATTERN, size,
+                    MemCheckKind::MakeUndefined);
+
+    return ptr;
+  }
 
   [[nodiscard]] bool moveToNextChunk();
 
