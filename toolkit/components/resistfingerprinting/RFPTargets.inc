@@ -57,6 +57,7 @@ ITEM_VALUE(ReduceTimerPrecision,        1llu << 34)
 
 ITEM_VALUE(WidgetEvents,                1llu << 35)
 ITEM_VALUE(MediaDevices,                1llu << 36)
+ITEM_VALUE(MediaCapabilities,           1llu << 37)
 
 
 
