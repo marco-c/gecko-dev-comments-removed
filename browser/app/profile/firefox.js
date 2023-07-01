@@ -2514,8 +2514,6 @@ pref("devtools.application.enabled", true);
 
 
 
-pref("devtools.custom-formatters", false);
-
 
 pref("devtools.custom-formatters.enabled", false);
 
