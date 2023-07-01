@@ -177,6 +177,7 @@ export var BrowserUIUtils = {
   
 
 
+
   async openNewBrowserWindow() {
     var telemetryObj = {};
     TelemetryStopwatch.start("FX_NEW_WINDOW_MS", telemetryObj);
