@@ -7907,12 +7907,23 @@ bool nsHTMLScrollFrame::SmoothScrollVisual(
 }
 
 bool nsHTMLScrollFrame::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
-  
-  
-  
-  if (aBehavior == dom::ScrollBehavior::Instant ||
-      !nsLayoutUtils::IsSmoothScrollingEnabled()) {
+  if (aBehavior == dom::ScrollBehavior::Instant) {
     return false;
+  }
+
+  
+  
+  
+  
+  
+  if (!GetContent()->IsXULElement(nsGkAtoms::scrollbox)) {
+    if (!nsLayoutUtils::IsSmoothScrollingEnabled()) {
+      return false;
+    }
+  } else {
+    if (!StaticPrefs::toolkit_scrollbox_smoothScroll()) {
+      return false;
+    }
   }
 
   if (aBehavior == dom::ScrollBehavior::Smooth) {

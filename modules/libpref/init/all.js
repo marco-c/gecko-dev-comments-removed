@@ -588,7 +588,6 @@ pref("gfx.use_text_smoothing_setting", false);
 
 pref("toolkit.autocomplete.richBoundaryCutoff", 200);
 
-pref("toolkit.scrollbox.smoothScroll", true);
 pref("toolkit.scrollbox.scrollIncrement", 20);
 pref("toolkit.scrollbox.clickToScroll.scrollDelay", 150);
 
