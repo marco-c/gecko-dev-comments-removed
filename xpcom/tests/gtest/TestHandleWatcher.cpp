@@ -51,7 +51,7 @@ using HandleWatcher = mozilla::HandleWatcher;
   
   MOZ_Crash(file, static_cast<int>(line),
             MOZ_CrashPrintf("%s gave nsresult %s(%" PRIX32 ")", expr,
-                            mozilla::GetStaticErrorName(res), res));
+                            mozilla::GetStaticErrorName(res), uint32_t(res)));
 }
 
 

@@ -26,7 +26,6 @@
 #include <netioapi.h>
 #include <netlistmgr.h>
 #include <iprtrmib.h>
-#include "plstr.h"
 #include "mozilla/Logging.h"
 #include "nsComponentManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -259,7 +258,8 @@ void nsNotifyAddrListener::calculateNetworkId(void) {
       mNetworkId.Truncate();
     }
     Telemetry::Accumulate(Telemetry::NETWORK_ID2, 0);
-    LOG(("calculateNetworkId: no network ID Base64Encode error %X", rv));
+    LOG(("calculateNetworkId: no network ID Base64Encode error %X",
+         uint32_t(rv)));
     return;
   }
 
