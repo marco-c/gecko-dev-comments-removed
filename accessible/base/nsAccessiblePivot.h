@@ -36,10 +36,6 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
 
   LocalAccessible* Position() { return mPosition; }
 
-  int32_t StartOffset() { return mStartOffset; }
-
-  int32_t EndOffset() { return mEndOffset; }
-
  private:
   ~nsAccessiblePivot();
   nsAccessiblePivot() = delete;
@@ -50,10 +46,8 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
 
 
 
-  bool NotifyOfPivotChange(LocalAccessible* aOldAccessible, int32_t aOldStart,
-                           int32_t aOldEnd, PivotMoveReason aReason,
-                           TextBoundaryType aBoundaryType,
-                           bool aIsFromUserInput);
+  bool NotifyOfPivotChange(LocalAccessible* aOldPosition,
+                           PivotMoveReason aReason, bool aIsFromUserInput);
 
   
 
@@ -120,16 +114,6 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
 
 
   RefPtr<LocalAccessible> mPosition;
-
-  
-
-
-  int32_t mStartOffset;
-
-  
-
-
-  int32_t mEndOffset;
 
   
 

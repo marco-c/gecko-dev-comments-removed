@@ -54,14 +54,6 @@ class Pivot final {
   Accessible* Last(PivotRule& aRule);
 
   
-  Accessible* NextText(Accessible* aAnchor, int32_t* aStartOffset,
-                       int32_t* aEndOffset, int32_t aBoundaryType);
-
-  
-  Accessible* PrevText(Accessible* aAnchor, int32_t* aStartOffset,
-                       int32_t* aEndOffset, int32_t aBoundaryType);
-
-  
   
   Accessible* AtPoint(int32_t aX, int32_t aY, PivotRule& aRule);
 
@@ -76,9 +68,6 @@ class Pivot final {
   
   Accessible* SearchBackward(Accessible* aAnchor, PivotRule& aRule,
                              bool aSearchCurrent);
-
-  
-  Accessible* SearchForText(Accessible* aAnchor, bool aBackward);
 
   Accessible* mRoot;
 };
