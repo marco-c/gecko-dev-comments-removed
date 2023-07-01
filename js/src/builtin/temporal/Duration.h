@@ -73,6 +73,8 @@ inline Duration ToDuration(const DurationObject* duration) {
   };
 }
 
+class Increment;
+enum class TemporalRoundingMode;
 enum class TemporalUnit;
 
 
@@ -131,6 +133,15 @@ bool BalanceDuration(JSContext* cx, const Duration& duration,
 
 bool BalanceDuration(JSContext* cx, const Instant& nanoseconds,
                      TemporalUnit largestUnit, TimeDuration* result);
+
+
+
+
+
+
+bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
+                   TemporalUnit unit, TemporalRoundingMode roundingMode,
+                   Duration* result);
 
 } 
 
