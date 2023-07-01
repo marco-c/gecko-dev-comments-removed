@@ -7,9 +7,12 @@
 #ifndef builtin_temporal_TimeZone_h
 #define builtin_temporal_TimeZone_h
 
+#include <stddef.h>
 #include <stdint.h>
 
+#include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/Value.h"
 #include "vm/NativeObject.h"
 
 struct JSClassOps;
@@ -33,6 +36,27 @@ class TimeZoneObject : public NativeObject {
 
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
+
+
+
+
+
+bool IsValidTimeZoneName(JSContext* cx, JS::Handle<JSString*> timeZone,
+                         JS::MutableHandle<JSAtom*> validatedTimeZone);
+
+
+
+
+JSString* CanonicalizeTimeZoneName(JSContext* cx,
+                                   JS::Handle<JSLinearString*> timeZone);
+
+
+
+
+
+
+JSString* ValidateAndCanonicalizeTimeZoneName(JSContext* cx,
+                                              JS::Handle<JSString*> timeZone);
 
 } 
 

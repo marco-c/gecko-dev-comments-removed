@@ -6,22 +6,198 @@
 
 #include "builtin/temporal/TimeZone.h"
 
+#include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/intl/TimeZone.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Range.h"
+#include "mozilla/Result.h"
+#include "mozilla/Span.h"
+#include "mozilla/UniquePtr.h"
 
+#include <cmath>
+#include <cstdlib>
+#include <initializer_list>
+#include <utility>
+
+#include "jsnum.h"
 #include "jspubtd.h"
 #include "jstypes.h"
 #include "NamespaceImports.h"
 
+#include "builtin/Array.h"
+#include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/FormatBuffer.h"
+#include "builtin/intl/SharedIntlData.h"
+#include "gc/Allocator.h"
 #include "gc/AllocKind.h"
+#include "gc/Barrier.h"
 #include "gc/GCContext.h"
+#include "js/AllocPolicy.h"
+#include "js/CallArgs.h"
+#include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
+#include "js/Conversions.h"
+#include "js/Date.h"
+#include "js/ErrorReport.h"
+#include "js/ForOfIterator.h"
+#include "js/friend/ErrorMessages.h"
+#include "js/Printer.h"
+#include "js/PropertyDescriptor.h"
 #include "js/PropertySpec.h"
+#include "js/RootingAPI.h"
+#include "js/StableStringChars.h"
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
+#include "threading/ProtectedData.h"
+#include "vm/ArrayObject.h"
+#include "vm/BytecodeUtil.h"
+#include "vm/Compartment.h"
+#include "vm/DateTime.h"
 #include "vm/GlobalObject.h"
+#include "vm/Interpreter.h"
+#include "vm/JSAtomState.h"
+#include "vm/JSContext.h"
+#include "vm/JSObject.h"
 #include "vm/PlainObject.h"
+#include "vm/Runtime.h"
+#include "vm/StringType.h"
+
+#include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
+#include "vm/ObjectOperations-inl.h"
 
 using namespace js;
 using namespace js::temporal;
+
+
+
+
+
+bool js::temporal::IsValidTimeZoneName(
+    JSContext* cx, Handle<JSString*> timeZone,
+    MutableHandle<JSAtom*> validatedTimeZone) {
+  intl::SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
+
+  if (!sharedIntlData.validateTimeZoneName(cx, timeZone, validatedTimeZone)) {
+    return false;
+  }
+
+  if (validatedTimeZone) {
+    cx->markAtom(validatedTimeZone);
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+JSString* js::temporal::CanonicalizeTimeZoneName(
+    JSContext* cx, Handle<JSLinearString*> timeZone) {
+  
+#ifdef DEBUG
+  MOZ_ASSERT(!StringEqualsLiteral(timeZone, "Etc/Unknown"),
+             "Invalid time zone");
+
+  Rooted<JSAtom*> checkTimeZone(cx);
+  if (!IsValidTimeZoneName(cx, timeZone, &checkTimeZone)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(EqualStrings(timeZone, checkTimeZone),
+             "Time zone name not normalized");
+#endif
+
+  
+  Rooted<JSLinearString*> ianaTimeZone(cx);
+  do {
+    intl::SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
+
+    
+    
+    Rooted<JSAtom*> canonicalTimeZone(cx);
+    if (!sharedIntlData.tryCanonicalizeTimeZoneConsistentWithIANA(
+            cx, timeZone, &canonicalTimeZone)) {
+      return nullptr;
+    }
+
+    if (canonicalTimeZone) {
+      cx->markAtom(canonicalTimeZone);
+      ianaTimeZone = canonicalTimeZone;
+      break;
+    }
+
+    JS::AutoStableStringChars stableChars(cx);
+    if (!stableChars.initTwoByte(cx, timeZone)) {
+      return nullptr;
+    }
+
+    intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+    auto result = mozilla::intl::TimeZone::GetCanonicalTimeZoneID(
+        stableChars.twoByteRange(), buffer);
+    if (result.isErr()) {
+      intl::ReportInternalError(cx, result.unwrapErr());
+      return nullptr;
+    }
+
+    ianaTimeZone = buffer.toString(cx);
+    if (!ianaTimeZone) {
+      return nullptr;
+    }
+  } while (false);
+
+#ifdef DEBUG
+  MOZ_ASSERT(!StringEqualsLiteral(ianaTimeZone, "Etc/Unknown"),
+             "Invalid canonical time zone");
+
+  if (!IsValidTimeZoneName(cx, ianaTimeZone, &checkTimeZone)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(EqualStrings(ianaTimeZone, checkTimeZone),
+             "Unsupported canonical time zone");
+#endif
+
+  
+  if (StringEqualsLiteral(ianaTimeZone, "Etc/UTC") ||
+      StringEqualsLiteral(ianaTimeZone, "Etc/GMT")) {
+    return cx->names().UTC;
+  }
+
+  
+  
+  MOZ_ASSERT(!StringEqualsLiteral(ianaTimeZone, "GMT"));
+
+  
+  return ianaTimeZone;
+}
+
+
+
+
+
+
+JSString* js::temporal::ValidateAndCanonicalizeTimeZoneName(
+    JSContext* cx, Handle<JSString*> timeZone) {
+  Rooted<JSAtom*> validatedTimeZone(cx);
+  if (!IsValidTimeZoneName(cx, timeZone, &validatedTimeZone)) {
+    return nullptr;
+  }
+
+  if (!validatedTimeZone) {
+    if (auto chars = QuoteString(cx, timeZone)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_TEMPORAL_TIMEZONE_INVALID_IDENTIFIER,
+                               chars.get());
+    }
+    return nullptr;
+  }
+
+  return CanonicalizeTimeZoneName(cx, validatedTimeZone);
+}
 
 static bool TimeZoneConstructor(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_CRASH("NYI");
