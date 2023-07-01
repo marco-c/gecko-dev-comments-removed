@@ -1376,6 +1376,85 @@ static bool PlainDateTime_with(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainDateTime_withPlainTime(JSContext* cx, const CallArgs& args) {
+  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
+  auto date = ToPlainDate(temporalDateTime);
+  Rooted<JSObject*> calendar(cx, temporalDateTime->calendar());
+
+  
+  PlainTime time = {};
+  if (args.hasDefined(0)) {
+    if (!ToTemporalTime(cx, args[0], &time)) {
+      return false;
+    }
+  }
+
+  
+  auto* obj = CreateTemporalDateTime(cx, {date, time}, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainDateTime_withPlainTime(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_withPlainTime>(
+      cx, args);
+}
+
+
+
+
+static bool PlainDateTime_withPlainDate(JSContext* cx, const CallArgs& args) {
+  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
+  auto time = ToPlainTime(temporalDateTime);
+  Rooted<JSObject*> calendar(cx, temporalDateTime->calendar());
+
+  
+  PlainDate date;
+  Rooted<JSObject*> dateCalendar(cx);
+  if (!ToTemporalDate(cx, args.get(0), &date, &dateCalendar)) {
+    return false;
+  }
+
+  
+  calendar = ConsolidateCalendars(cx, calendar, dateCalendar);
+  if (!calendar) {
+    return false;
+  }
+
+  
+  auto* obj = CreateTemporalDateTime(cx, {date, time}, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainDateTime_withPlainDate(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_withPlainDate>(
+      cx, args);
+}
+
+
+
+
 static bool PlainDateTime_withCalendar(JSContext* cx, const CallArgs& args) {
   auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
   auto dateTime = ToPlainDateTime(temporalDateTime);
@@ -1709,6 +1788,8 @@ static const JSFunctionSpec PlainDateTime_methods[] = {
 
 static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
     JS_FN("with", PlainDateTime_with, 1, 0),
+    JS_FN("withPlainTime", PlainDateTime_withPlainTime, 0, 0),
+    JS_FN("withPlainDate", PlainDateTime_withPlainDate, 1, 0),
     JS_FN("withCalendar", PlainDateTime_withCalendar, 1, 0),
     JS_FN("equals", PlainDateTime_equals, 1, 0),
     JS_FN("valueOf", PlainDateTime_valueOf, 0, 0),
