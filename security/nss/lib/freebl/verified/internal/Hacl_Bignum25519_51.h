@@ -21,8 +21,9 @@
 
 
 
-#ifndef __Hacl_Bignum25519_51_H
-#define __Hacl_Bignum25519_51_H
+
+#ifndef __internal_Hacl_Bignum25519_51_H
+#define __internal_Hacl_Bignum25519_51_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -33,6 +34,7 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
+#include "internal/Hacl_Krmllib.h"
 #include "Hacl_Krmllib.h"
 
 static inline void
@@ -674,5 +676,5 @@ Hacl_Impl_Curve25519_Field51_cswap2(uint64_t bit, uint64_t *p1, uint64_t *p2)
 }
 #endif
 
-#define __Hacl_Bignum25519_51_H_DEFINED
+#define __internal_Hacl_Bignum25519_51_H_DEFINED
 #endif

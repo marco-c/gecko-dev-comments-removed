@@ -21,11 +21,13 @@
 
 
 
+
 #include "Hacl_Chacha20Poly1305_128.h"
 
 #include "internal/Hacl_Poly1305_128.h"
 #include "internal/Hacl_Krmllib.h"
 #include "libintvector.h"
+
 static inline void
 poly1305_padded_128(Lib_IntVector_Intrinsics_vec128 *ctx, uint32_t len, uint8_t *text)
 {
@@ -1127,6 +1129,22 @@ poly1305_do_128(
     Hacl_Poly1305_128_poly1305_finish(out, k, ctx);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 Hacl_Chacha20Poly1305_128_aead_encrypt(
     uint8_t *k,
@@ -1144,6 +1162,27 @@ Hacl_Chacha20Poly1305_128_aead_encrypt(
     uint8_t *key = tmp;
     poly1305_do_128(key, aadlen, aad, mlen, cipher, mac);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 uint32_t
 Hacl_Chacha20Poly1305_128_aead_decrypt(

@@ -5,12 +5,19 @@
 #define __KRML_TARGET_H
 
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <assert.h>
 
-#include "krml/internal/callconv.h"
+
+
+
+#ifdef __GNUC__
+#define inline __inline__
+#endif
 
 
 
@@ -46,6 +53,10 @@
 #define KRML_HOST_FREE free
 #endif
 
+#ifndef KRML_HOST_IGNORE
+#define KRML_HOST_IGNORE(x) (void)(x)
+#endif
+
 #ifndef KRML_PRE_ALIGN
 #ifdef _MSC_VER
 #define KRML_PRE_ALIGN(X) __declspec(align(X))
@@ -62,16 +73,29 @@
 #endif
 #endif
 
+
+
+
 #ifndef KRML_ALIGNED_MALLOC
-#ifdef _MSC_VER
+#ifdef __MINGW32__
+#include <_mingw.h>
+#endif
+#if (defined(_MSC_VER) || (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #define KRML_ALIGNED_MALLOC(X, Y) _aligned_malloc(Y, X)
 #else
 #define KRML_ALIGNED_MALLOC(X, Y) aligned_alloc(X, Y)
 #endif
 #endif
 
+
+
+
+
 #ifndef KRML_ALIGNED_FREE
-#ifdef _MSC_VER
+#ifdef __MINGW32__
+#include <_mingw.h>
+#endif
+#if (defined(_MSC_VER) || (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #define KRML_ALIGNED_FREE(X) _aligned_free(X)
 #else
 #define KRML_ALIGNED_FREE(X) free(X)
@@ -84,7 +108,7 @@
 
 
 inline static int32_t
-krml_time()
+krml_time(void)
 {
     return (int32_t)time(NULL);
 }
@@ -105,7 +129,6 @@ krml_time()
 #define KRML_EABORT(t, msg)                                                     \
     (KRML_HOST_PRINTF("KaRaMeL abort at %s:%d\n%s\n", __FILE__, __LINE__, msg), \
      KRML_HOST_EXIT(255), *((t *)KRML_HOST_MALLOC(sizeof(t))))
-
 
 
 

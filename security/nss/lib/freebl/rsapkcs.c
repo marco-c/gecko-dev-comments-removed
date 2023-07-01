@@ -235,6 +235,7 @@ rsa_FormatOneBlock(unsigned modulusLen,
     return block;
 }
 
+
 static SECStatus
 rsa_FormatBlock(SECItem *result,
                 unsigned modulusLen,
@@ -250,7 +251,7 @@ rsa_FormatBlock(SECItem *result,
 
 
 
-            if (data->len > (modulusLen - (3 + RSA_BLOCK_MIN_PAD_LEN))) {
+            if (modulusLen < (3 + RSA_BLOCK_MIN_PAD_LEN) || data->len > (modulusLen - (3 + RSA_BLOCK_MIN_PAD_LEN))) {
                 return SECFailure;
             }
             result->data = rsa_FormatOneBlock(modulusLen, blockType, data);

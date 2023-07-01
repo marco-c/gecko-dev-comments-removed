@@ -21,6 +21,7 @@
 
 
 
+
 #ifndef __Hacl_Chacha20Poly1305_32_H
 #define __Hacl_Chacha20Poly1305_32_H
 
@@ -34,8 +35,23 @@ extern "C" {
 #include "krml/internal/target.h"
 
 #include "Hacl_Poly1305_32.h"
-#include "Hacl_Krmllib.h"
 #include "Hacl_Chacha20.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void
 Hacl_Chacha20Poly1305_32_aead_encrypt(
@@ -47,6 +63,27 @@ Hacl_Chacha20Poly1305_32_aead_encrypt(
     uint8_t *m,
     uint8_t *cipher,
     uint8_t *mac);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 uint32_t
 Hacl_Chacha20Poly1305_32_aead_decrypt(

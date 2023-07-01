@@ -21,6 +21,7 @@
 
 
 
+
 #include "Hacl_Chacha20Poly1305_32.h"
 
 #include "internal/Hacl_Krmllib.h"
@@ -542,6 +543,22 @@ poly1305_do_32(
     Hacl_Poly1305_32_poly1305_finish(out, k, ctx);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 Hacl_Chacha20Poly1305_32_aead_encrypt(
     uint8_t *k,
@@ -559,6 +576,27 @@ Hacl_Chacha20Poly1305_32_aead_encrypt(
     uint8_t *key = tmp;
     poly1305_do_32(key, aadlen, aad, mlen, cipher, mac);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 uint32_t
 Hacl_Chacha20Poly1305_32_aead_decrypt(

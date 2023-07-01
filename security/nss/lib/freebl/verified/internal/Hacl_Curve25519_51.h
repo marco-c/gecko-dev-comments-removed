@@ -21,6 +21,7 @@
 
 
 
+
 #ifndef __internal_Hacl_Curve25519_51_H
 #define __internal_Hacl_Curve25519_51_H
 
@@ -34,6 +35,7 @@ extern "C" {
 #include "krml/internal/target.h"
 
 #include "internal/Hacl_Krmllib.h"
+#include "internal/Hacl_Bignum25519_51.h"
 #include "../Hacl_Curve25519_51.h"
 
 void

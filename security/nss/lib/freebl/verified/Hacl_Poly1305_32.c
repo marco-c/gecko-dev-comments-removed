@@ -21,9 +21,8 @@
 
 
 
-#include "Hacl_Poly1305_32.h"
 
-#include "internal/Hacl_Krmllib.h"
+#include "Hacl_Poly1305_32.h"
 
 void
 Hacl_Poly1305_32_poly1305_init(uint64_t *ctx, uint8_t *key)

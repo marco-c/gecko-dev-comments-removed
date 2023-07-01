@@ -77,7 +77,7 @@
 #define le64toh(x) (x)
 
 
-#elif (defined(_WIN32) || defined(_WIN64)) && \
+#elif (defined(_WIN32) || defined(_WIN64) || defined(__EMSCRIPTEN__)) && \
     (defined(__GNUC__) || defined(__clang__))
 
 #define htobe16(x) __builtin_bswap16(x)
@@ -96,7 +96,8 @@
 #define le64toh(x) (x)
 
 
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+
+#elif (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(_AIX)
 
 
 

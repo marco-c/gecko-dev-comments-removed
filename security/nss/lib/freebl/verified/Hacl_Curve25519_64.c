@@ -21,12 +21,14 @@
 
 
 
+
 #include "Hacl_Curve25519_64.h"
 
 #include "internal/Vale.h"
 #include "internal/Hacl_Krmllib.h"
 #include "config.h"
 #include "curve25519-inline.h"
+
 static inline void
 add_scalar0(uint64_t *out, uint64_t *f1, uint64_t f2)
 {
@@ -341,6 +343,13 @@ encode_point(uint8_t *o, uint64_t *i)
                     store64_le(o + i0 * (uint32_t)8U, u64s[i0]););
 }
 
+
+
+
+
+
+
+
 void
 Hacl_Curve25519_64_scalarmult(uint8_t *out, uint8_t *priv, uint8_t *pub)
 {
@@ -372,6 +381,14 @@ Hacl_Curve25519_64_scalarmult(uint8_t *out, uint8_t *priv, uint8_t *pub)
     encode_point(out, init);
 }
 
+
+
+
+
+
+
+
+
 void
 Hacl_Curve25519_64_secret_to_public(uint8_t *pub, uint8_t *priv)
 {
@@ -383,6 +400,13 @@ Hacl_Curve25519_64_secret_to_public(uint8_t *pub, uint8_t *priv)
     }
     Hacl_Curve25519_64_scalarmult(pub, priv, basepoint);
 }
+
+
+
+
+
+
+
 
 bool
 Hacl_Curve25519_64_ecdh(uint8_t *out, uint8_t *priv, uint8_t *pub)
