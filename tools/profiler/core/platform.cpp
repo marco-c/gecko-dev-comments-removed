@@ -2704,7 +2704,8 @@ struct PreRecordedMetaInformation {
 
 
 
-static PreRecordedMetaInformation PreRecordMetaInformation() {
+static PreRecordedMetaInformation PreRecordMetaInformation(
+    bool aShutdown = false) {
   MOZ_ASSERT(!PSAutoLock::IsLockedOnCurrentThread());
 
   PreRecordedMetaInformation info = {};  
@@ -2719,7 +2720,8 @@ static PreRecordedMetaInformation PreRecordMetaInformation() {
     return info;
   }
 
-  info.mAsyncStacks = Preferences::GetBool("javascript.options.asyncstack");
+  info.mAsyncStacks =
+      !aShutdown && Preferences::GetBool("javascript.options.asyncstack");
 
   nsresult res;
 
@@ -5331,7 +5333,8 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
   }
   invoke_profiler_state_change_callbacks(ProfilingState::ShuttingDown);
 
-  const auto preRecordedMetaInformation = PreRecordMetaInformation();
+  const auto preRecordedMetaInformation =
+      PreRecordMetaInformation( true);
 
   ProfilerParent::ProfilerWillStopIfStarted();
 
