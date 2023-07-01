@@ -18,8 +18,9 @@
 #include "nsProxyRelease.h"
 
 namespace mozilla {
+class LoadBlockingAsyncEventDispatcher;
 class StyleSheet;
-}
+}  
 class nsICSSLoaderObserver;
 class nsINode;
 class nsIPrincipal;
@@ -79,7 +80,7 @@ class SheetLoadData final
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 
-  void ScheduleLoadEventIfNeeded();
+  already_AddRefed<LoadBlockingAsyncEventDispatcher> PrepareLoadEventIfNeeded();
 
   NotNull<const Encoding*> DetermineNonBOMEncoding(const nsACString& aSegment,
                                                    nsIChannel*) const;
@@ -155,6 +156,7 @@ class SheetLoadData final
   
   bool mIsCancelled : 1;
 
+  
   
   
   
