@@ -40,12 +40,14 @@ class CalendarObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
+struct Duration;
 struct PlainDate;
 struct PlainDateTime;
 class PlainDateObject;
 class PlainMonthDayObject;
 class PlainYearMonthObject;
 enum class CalendarOption;
+enum class TemporalUnit;
 
 
 
@@ -132,6 +134,40 @@ bool CalendarFields(
 JSObject* CalendarMergeFields(JSContext* cx, JS::Handle<JSObject*> calendar,
                               JS::Handle<PlainObject*> fields,
                               JS::Handle<PlainObject*> additionalFields);
+
+
+
+
+bool CalendarDateUntil(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<Wrapped<PlainDateObject*>> one,
+                       JS::Handle<Wrapped<PlainDateObject*>> two,
+                       JS::Handle<JSObject*> options,
+                       JS::Handle<JS::Value> dateUntil, Duration* result);
+
+
+
+
+bool CalendarDateUntil(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<Wrapped<PlainDateObject*>> one,
+                       JS::Handle<Wrapped<PlainDateObject*>> two,
+                       TemporalUnit largestUnit,
+                       JS::Handle<JS::Value> dateUntil, Duration* result);
+
+
+
+
+bool CalendarDateUntil(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<Wrapped<PlainDateObject*>> one,
+                       JS::Handle<Wrapped<PlainDateObject*>> two,
+                       JS::Handle<JSObject*> options, Duration* result);
+
+
+
+
+bool CalendarDateUntil(JSContext* cx, JS::Handle<JSObject*> calendar,
+                       JS::Handle<Wrapped<PlainDateObject*>> one,
+                       JS::Handle<Wrapped<PlainDateObject*>> two,
+                       TemporalUnit largestUnit, Duration* result);
 
 
 

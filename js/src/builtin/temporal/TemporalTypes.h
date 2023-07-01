@@ -389,6 +389,19 @@ struct Duration final {
   }
 };
 
+
+
+
+
+struct DateDuration final {
+  double years = 0;
+  double months = 0;
+  double weeks = 0;
+  double days = 0;
+
+  Duration toDuration() { return {years, months, weeks, days}; }
+};
+
 } 
 
 #endif 
