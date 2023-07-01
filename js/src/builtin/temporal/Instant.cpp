@@ -484,6 +484,25 @@ static bool ParseTemporalInstant(JSContext* cx, Handle<JSString*> isoString,
 
 
 
+static int32_t CompareEpochNanoseconds(const Instant& epochNanosecondsOne,
+                                       const Instant& epochNanosecondsTwo) {
+  
+  if (epochNanosecondsOne > epochNanosecondsTwo) {
+    return 1;
+  }
+
+  
+  if (epochNanosecondsOne < epochNanosecondsTwo) {
+    return -1;
+  }
+
+  
+  return 0;
+}
+
+
+
+
 InstantObject* js::temporal::CreateTemporalInstant(JSContext* cx,
                                                    const Instant& instant) {
   
@@ -670,6 +689,26 @@ static bool InstantConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool Instant_from(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Instant epochInstant;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &epochInstant)) {
+    return false;
+  }
+
+  auto* result = CreateTemporalInstant(cx, epochInstant);
+  if (!result) {
+    return false;
+  }
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
 static bool Instant_fromEpochSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -821,6 +860,29 @@ static bool Instant_fromEpochNanoseconds(JSContext* cx, unsigned argc,
 
 
 
+static bool Instant_compare(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Instant one;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &one)) {
+    return false;
+  }
+
+  
+  Instant two;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(1), &two)) {
+    return false;
+  }
+
+  
+  args.rval().setInt32(CompareEpochNanoseconds(one, two));
+  return true;
+}
+
+
+
+
 static bool Instant_epochSeconds(JSContext* cx, const CallArgs& args) {
   
   auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
@@ -916,6 +978,32 @@ static bool Instant_epochNanoseconds(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool Instant_equals(JSContext* cx, const CallArgs& args) {
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
+
+  
+  Instant other;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &other)) {
+    return false;
+  }
+
+  
+  args.rval().setBoolean(instant == other);
+  return true;
+}
+
+
+
+
+static bool Instant_equals(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_equals>(cx, args);
+}
+
+
+
+
 static bool Instant_valueOf(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
                             "Instant", "primitive type");
@@ -933,14 +1021,17 @@ const JSClass InstantObject::class_ = {
 const JSClass& InstantObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec Instant_methods[] = {
+    JS_FN("from", Instant_from, 1, 0),
     JS_FN("fromEpochSeconds", Instant_fromEpochSeconds, 1, 0),
     JS_FN("fromEpochMilliseconds", Instant_fromEpochMilliseconds, 1, 0),
     JS_FN("fromEpochMicroseconds", Instant_fromEpochMicroseconds, 1, 0),
     JS_FN("fromEpochNanoseconds", Instant_fromEpochNanoseconds, 1, 0),
+    JS_FN("compare", Instant_compare, 2, 0),
     JS_FS_END,
 };
 
 static const JSFunctionSpec Instant_prototype_methods[] = {
+    JS_FN("equals", Instant_equals, 1, 0),
     JS_FN("valueOf", Instant_valueOf, 0, 0),
     JS_FS_END,
 };
