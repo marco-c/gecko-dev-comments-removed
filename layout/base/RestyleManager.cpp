@@ -3462,15 +3462,11 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
 
 
 
-
 static inline bool AttributeChangeRequiresSubtreeRestyle(
     const Element& aElement, nsAtom* aAttr) {
-  if (aAttr == nsGkAtoms::cellpadding) {
-    return aElement.IsHTMLElement(nsGkAtoms::table);
-  }
-  
-  
   if (aAttr == nsGkAtoms::exportparts) {
+    
+    
     return !!aElement.GetShadowRoot();
   }
   return aAttr == nsGkAtoms::lang;
