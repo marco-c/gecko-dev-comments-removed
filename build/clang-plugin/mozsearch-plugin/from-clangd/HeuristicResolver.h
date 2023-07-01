@@ -16,6 +16,7 @@ namespace clang {
 
 class ASTContext;
 class CallExpr;
+class CXXBasePath;
 class CXXDependentScopeMemberExpr;
 class DeclarationName;
 class DependentScopeDeclRefExpr;
@@ -94,6 +95,25 @@ private:
   
   const Type *resolveExprToType(const Expr *E) const;
   std::vector<const NamedDecl *> resolveExprToDecls(const Expr *E) const;
+
+  
+  
+  
+  CXXRecordDecl *resolveTypeToRecordDecl(const Type *T) const;
+
+  
+  
+  
+  
+  
+  
+  
+  std::vector<const NamedDecl *> lookupDependentName(
+      CXXRecordDecl *RD, DeclarationName Name,
+      llvm::function_ref<bool(const NamedDecl *ND)> Filter) const;
+  bool findOrdinaryMemberInDependentClasses(const CXXBaseSpecifier *Specifier,
+                                            CXXBasePath &Path,
+                                            DeclarationName Name) const;
 };
 
 } 
