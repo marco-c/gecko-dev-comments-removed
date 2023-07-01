@@ -453,26 +453,27 @@ RemoteAccessible* RemoteAccessible::DoFuzzyHittesting() {
   
   
   
-  RemoteAccessible* maybeTextLeaf = clippedContainer;
-  while (maybeTextLeaf) {
+  RemoteAccessible* container = clippedContainer;
+  while (container) {
+    RemoteAccessible* textLeaf = nullptr;
     bool continueSearch = false;
-    childCount = maybeTextLeaf->ChildCount();
+    childCount = container->ChildCount();
     for (uint32_t i = 0; i < childCount; i++) {
-      RemoteAccessible* child = maybeTextLeaf->RemoteChildAt(i);
+      RemoteAccessible* child = container->RemoteChildAt(i);
       if (child->Role() == roles::TEXT_CONTAINER) {
-        maybeTextLeaf = child;
+        container = child;
         continueSearch = true;
         break;
       }
       if (child->IsTextLeaf()) {
-        maybeTextLeaf = child;
+        textLeaf = child;
         
         
         
       }
     }
-    if (maybeTextLeaf && maybeTextLeaf->IsTextLeaf()) {
-      return maybeTextLeaf;
+    if (textLeaf) {
+      return textLeaf;
     }
     if (!continueSearch) {
       
