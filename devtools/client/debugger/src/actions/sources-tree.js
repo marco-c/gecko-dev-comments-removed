@@ -2,10 +2,42 @@
 
 
 
+import { getMainThread } from "../selectors";
+
 export function setExpandedState(expanded) {
   return { type: "SET_EXPANDED_STATE", expanded };
 }
 
 export function focusItem(item) {
   return { type: "SET_FOCUSED_SOURCE_ITEM", item };
+}
+
+export function setProjectDirectoryRoot(newRootItemUniquePath, newName) {
+  return ({ dispatch, getState }) => {
+    
+    
+    
+    
+    
+    const mainThread = getMainThread(getState());
+    if (mainThread && newRootItemUniquePath.startsWith(mainThread.actor)) {
+      newRootItemUniquePath = newRootItemUniquePath.replace(
+        mainThread.actor,
+        "top-level"
+      );
+    }
+    dispatch({
+      type: "SET_PROJECT_DIRECTORY_ROOT",
+      uniquePath: newRootItemUniquePath,
+      name: newName,
+    });
+  };
+}
+
+export function clearProjectDirectoryRoot() {
+  return {
+    type: "SET_PROJECT_DIRECTORY_ROOT",
+    uniquePath: "",
+    name: "",
+  };
 }
