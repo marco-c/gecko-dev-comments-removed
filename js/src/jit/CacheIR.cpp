@@ -11285,7 +11285,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
 
   
   ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags);
+      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId, flags);
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
   writer.guardClass(calleeObjId, GuardClassKind::BoundFunction);
 
@@ -11297,7 +11297,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
     
     
     ValOperandId newTargetValId =
-        writer.loadArgumentFixedSlot(ArgumentKind::NewTarget, argc_, flags);
+        writer.loadArgumentDynamicSlot(ArgumentKind::NewTarget, argcId, flags);
     ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
     writer.guardObjectIdentity(newTargetObjId, calleeObjId);
   }
