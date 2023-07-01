@@ -365,40 +365,6 @@ bool InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal,
 }
 
 
-uint32_t InspectorUtils::GetSelectorCount(GlobalObject& aGlobal,
-                                          CSSStyleRule& aRule) {
-  return aRule.GetSelectorCount();
-}
-
-
-void InspectorUtils::GetSelectorText(GlobalObject& aGlobal, CSSStyleRule& aRule,
-                                     uint32_t aSelectorIndex, nsACString& aText,
-                                     ErrorResult& aRv) {
-  aRv = aRule.GetSelectorText(aSelectorIndex, aText);
-}
-
-
-uint64_t InspectorUtils::GetSpecificity(GlobalObject& aGlobal,
-                                        CSSStyleRule& aRule,
-                                        uint32_t aSelectorIndex,
-                                        ErrorResult& aRv) {
-  uint64_t s;
-  aRv = aRule.GetSpecificity(aSelectorIndex, &s);
-  return s;
-}
-
-
-bool InspectorUtils::SelectorMatchesElement(
-    GlobalObject& aGlobalObject, Element& aElement, CSSStyleRule& aRule,
-    uint32_t aSelectorIndex, const nsAString& aPseudo,
-    bool aRelevantLinkVisited, ErrorResult& aRv) {
-  bool result = false;
-  aRv = aRule.SelectorMatchesElement(&aElement, aSelectorIndex, aPseudo,
-                                     aRelevantLinkVisited, &result);
-  return result;
-}
-
-
 bool InspectorUtils::IsInheritedProperty(GlobalObject& aGlobalObject,
                                          const nsACString& aPropertyName) {
   return Servo_Property_IsInherited(&aPropertyName);

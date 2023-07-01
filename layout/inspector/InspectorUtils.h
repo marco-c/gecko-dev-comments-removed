@@ -78,29 +78,6 @@ class InspectorUtils {
   
   
   
-  
-  
-  
-  static uint32_t GetSelectorCount(GlobalObject& aGlobal, CSSStyleRule& aRule);
-
-  
-  static void GetSelectorText(GlobalObject& aGlobal, CSSStyleRule& aRule,
-                              uint32_t aSelectorIndex, nsACString& aText,
-                              ErrorResult& aRv);
-  static uint64_t GetSpecificity(GlobalObject& aGlobal, CSSStyleRule& aRule,
-                                 uint32_t aSelectorIndex, ErrorResult& aRv);
-  
-  
-  static bool SelectorMatchesElement(GlobalObject& aGlobal, Element& aElement,
-                                     CSSStyleRule& aRule,
-                                     uint32_t aSelectorIndex,
-                                     const nsAString& aPseudo,
-                                     bool aRelevantLinkVisited,
-                                     ErrorResult& aRv);
-
-  
-  
-  
   static bool IsInheritedProperty(GlobalObject& aGlobal,
                                   const nsACString& aPropertyName);
 
