@@ -140,10 +140,8 @@ bool js::temporal::IsValidEpochNanoseconds(const BigInt* epochNanoseconds) {
 }
 
 static bool IsValidEpochMicroseconds(const BigInt* epochMicroseconds) {
-  
-
   int64_t i;
-  if (!BigInt::isInt64(const_cast<BigInt*>(epochMicroseconds), &i)) {
+  if (!BigInt::isInt64(epochMicroseconds, &i)) {
     return false;
   }
 
@@ -1301,10 +1299,8 @@ static bool Instant_fromEpochMicroseconds(JSContext* cx, unsigned argc,
     return false;
   }
 
-  
   int64_t i;
-  MOZ_ALWAYS_TRUE(
-      BigInt::isInt64(const_cast<BigInt*>(epochMicroseconds.get()), &i));
+  MOZ_ALWAYS_TRUE(BigInt::isInt64(epochMicroseconds, &i));
 
   
   auto* result = CreateTemporalInstant(cx, Instant::fromMicroseconds(i));
