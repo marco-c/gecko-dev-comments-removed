@@ -435,7 +435,19 @@ class nsTArray_base {
   
   template <typename ActualAlloc>
   typename ActualAlloc::ResultTypeProxy EnsureCapacity(size_type aCapacity,
-                                                       size_type aElemSize);
+                                                       size_type aElemSize) {
+    
+    if (aCapacity <= mHdr->mCapacity) {
+      return ActualAlloc::SuccessResult();
+    }
+    return EnsureCapacityImpl<ActualAlloc>(aCapacity, aElemSize);
+  }
+
+  
+  
+  template <typename ActualAlloc>
+  typename ActualAlloc::ResultTypeProxy EnsureCapacityImpl(size_type aCapacity,
+                                                           size_type aElemSize);
 
   
   

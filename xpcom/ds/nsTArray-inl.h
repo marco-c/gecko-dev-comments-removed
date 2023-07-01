@@ -151,12 +151,10 @@ nsTArray_base<Alloc, RelocationStrategy>::ExtendCapacity(size_type aLength,
 template <class Alloc, class RelocationStrategy>
 template <typename ActualAlloc>
 typename ActualAlloc::ResultTypeProxy
-nsTArray_base<Alloc, RelocationStrategy>::EnsureCapacity(size_type aCapacity,
-                                                         size_type aElemSize) {
-  
-  if (aCapacity <= mHdr->mCapacity) {
-    return ActualAlloc::SuccessResult();
-  }
+nsTArray_base<Alloc, RelocationStrategy>::EnsureCapacityImpl(
+    size_type aCapacity, size_type aElemSize) {
+  MOZ_ASSERT(aCapacity > mHdr->mCapacity,
+             "Should have been checked by caller (EnsureCapacity)");
 
   
   
