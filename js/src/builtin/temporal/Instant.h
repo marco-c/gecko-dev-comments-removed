@@ -97,6 +97,11 @@ JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
 
 JS::BigInt* ToEpochDifferenceNanoseconds(JSContext* cx, const Instant& instant);
 
+
+
+
+InstantObject* CreateTemporalInstant(JSContext* cx, const Instant& instant);
+
 } 
 
 #endif 
