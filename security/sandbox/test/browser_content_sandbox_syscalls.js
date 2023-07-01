@@ -9,33 +9,10 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const ERRNO = {
-  EACCES: 13,
-  EINVAL: 22,
-  get ENOSYS() {
-    const os = Services.appinfo.OS;
-
-    if (["Linux", "Android"].includes(os)) {
-      
-      return 38;
-    } else if (
-      ["Darwin", "DragonFly", "FreeBSD", "OpenBSD", "NetBSD"].includes(os)
-    ) {
-      
+const lazy = {};
 
 
-
-
-
-
-      return 78;
-    } else if (os === "WINNT") {
-      
-      return 40;
-    }
-    throw new Error("Unsupported OS");
-  },
-};
+XPCOMUtils.defineLazyGetter(lazy, "LIBC", () => ChromeUtils.getLibcConstants());
 
 
 
@@ -165,20 +142,6 @@ function callFaccessat2(args) {
   }
   libc.close();
   return rv;
-}
-
-
-function openWriteCreateFlags() {
-  Assert.ok(isMac() || isLinux());
-  if (isMac()) {
-    let O_WRONLY = 0x001;
-    let O_CREAT = 0x200;
-    return O_WRONLY | O_CREAT;
-  }
-  
-  let O_WRONLY = 0x01;
-  let O_CREAT = 0x40;
-  return O_WRONLY | O_CREAT;
 }
 
 
@@ -324,7 +287,7 @@ add_task(async function () {
   if (isLinux() || isMac()) {
     
     let path = fileInHomeDir().path;
-    let flags = openWriteCreateFlags();
+    let flags = lazy.LIBC.O_CREAT | lazy.LIBC.O_WRONLY;
     let fd = await SpecialPowers.spawn(
       browser,
       [{ lib, path, flags }],
@@ -339,7 +302,7 @@ add_task(async function () {
     
     
     let path = fileInTempDir().path;
-    let flags = openWriteCreateFlags();
+    let flags = lazy.LIBC.O_CREAT | lazy.LIBC.O_WRONLY;
     let fd = await SpecialPowers.spawn(
       browser,
       [{ lib, path, flags }],
@@ -390,13 +353,11 @@ add_task(async function () {
 
   if (isLinux()) {
     
-    const AT_EACCESS = 512;
-    const PR_CAPBSET_READ = 23;
 
     
-    let option = PR_CAPBSET_READ;
+    let option = lazy.LIBC.PR_CAPBSET_READ;
     let rv = await SpecialPowers.spawn(browser, [{ lib, option }], callPrctl);
-    ok(rv === ERRNO.EINVAL, "prctl(PR_CAPBSET_READ) is blocked");
+    ok(rv === lazy.LIBC.EINVAL, "prctl(PR_CAPBSET_READ) is blocked");
 
     const kernelVersion = await getKernelVersion();
     const glibcVersion = getGlibcVersion();
@@ -412,15 +373,18 @@ add_task(async function () {
         [{ lib, dirfd, path, mode, flag: 0x01 }],
         callFaccessat2
       );
-      ok(rv === ERRNO.ENOSYS, "faccessat2 (flag=0x01) was blocked with ENOSYS");
+      ok(
+        rv === lazy.LIBC.ENOSYS,
+        "faccessat2 (flag=0x01) was blocked with ENOSYS"
+      );
 
       rv = await SpecialPowers.spawn(
         browser,
-        [{ lib, dirfd, path, mode, flag: AT_EACCESS }],
+        [{ lib, dirfd, path, mode, flag: lazy.LIBC.AT_EACCESS }],
         callFaccessat2
       );
       ok(
-        rv === ERRNO.EACCES,
+        rv === lazy.LIBC.EACCES,
         "faccessat2 (flag=0x200) was allowed, errno=EACCES"
       );
     } else {

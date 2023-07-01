@@ -5,12 +5,6 @@
 
 "use strict";
 
-if (typeof Components !== "undefined") {
-  
-  Cc["@mozilla.org/net/osfileconstantsservice;1"]
-    .getService(Ci.nsIOSFileConstantsService)
-    .init();
-}
 
 
 
@@ -19,11 +13,6 @@ if (typeof Components !== "undefined") {
 
 
 
-
-
-const LIBC = OS.Constants.libc;
-
-const Win = OS.Constants.Win;
 
 const LIBC_CHOICES = ["kernel32.dll"];
 
@@ -99,7 +88,12 @@ Object.assign(win32, {
   ERROR_BROKEN_PIPE: 109,
   ERROR_INSUFFICIENT_BUFFER: 122,
 
+  FILE_ATTRIBUTE_NORMAL: 0x00000080,
   FILE_FLAG_OVERLAPPED: 0x40000000,
+
+  GENERIC_WRITE: 0x40000000,
+
+  OPEN_EXISTING: 0x00000007,
 
   PIPE_TYPE_BYTE: 0x00,
 
@@ -450,7 +444,7 @@ win32.Handle = function (handle) {
 
 win32.createPipe = function (secAttr, readFlags = 0, writeFlags = 0, size = 0) {
   readFlags |= win32.PIPE_ACCESS_INBOUND;
-  writeFlags |= Win.FILE_ATTRIBUTE_NORMAL;
+  writeFlags |= win32.FILE_ATTRIBUTE_NORMAL;
 
   if (size == 0) {
     size = 4096;
@@ -471,7 +465,7 @@ win32.createPipe = function (secAttr, readFlags = 0, writeFlags = 0, size = 0) {
   );
 
   let isInvalid = handle =>
-    String(handle) == String(win32.HANDLE(Win.INVALID_HANDLE_VALUE));
+    String(handle) == String(win32.INVALID_HANDLE_VALUE);
 
   if (isInvalid(readHandle)) {
     return [];
@@ -479,10 +473,10 @@ win32.createPipe = function (secAttr, readFlags = 0, writeFlags = 0, size = 0) {
 
   let writeHandle = libc.CreateFileW(
     pipeName,
-    Win.GENERIC_WRITE,
+    win32.GENERIC_WRITE,
     0,
     secAttr.address(),
-    Win.OPEN_EXISTING,
+    win32.OPEN_EXISTING,
     writeFlags,
     null
   );
