@@ -272,6 +272,9 @@ class StyleRuleActor extends Actor {
     };
 
     
+    let computeDesugaredSelector = false;
+
+    
     
     for (const ancestorRule of this.ancestorRules) {
       const rawRule = ancestorRule.rawRule;
@@ -309,6 +312,7 @@ class StyleRuleActor extends Actor {
           type,
           selectorText: rawRule.selectorText,
         });
+        computeDesugaredSelector = true;
       }
     }
 
@@ -361,6 +365,17 @@ class StyleRuleActor extends Actor {
     switch (this.type) {
       case CSSRule.STYLE_RULE:
         form.selectors = CssLogic.getSelectors(this.rawRule);
+        if (computeDesugaredSelector) {
+          
+          
+          
+          
+          
+          
+          
+          
+          form.desugaredSelectors = CssLogic.getSelectors(this.rawRule, true);
+        }
         form.cssText = this.rawStyle.cssText || "";
         break;
       case ELEMENT_STYLE:

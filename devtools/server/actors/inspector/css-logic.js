@@ -653,9 +653,10 @@ CssLogic.getShortName = function (element) {
 
 
 
-CssLogic.getSelectors = function (domRule) {
+
+
+CssLogic.getSelectors = function (domRule, desugared = false) {
   if (domRule.type !== CSSRule.STYLE_RULE) {
-    
     
     return [];
   }
@@ -664,7 +665,7 @@ CssLogic.getSelectors = function (domRule) {
 
   const len = domRule.selectorCount;
   for (let i = 0; i < len; i++) {
-    selectors.push(domRule.selectorTextAt(i));
+    selectors.push(domRule.selectorTextAt(i, desugared));
   }
   return selectors;
 };
