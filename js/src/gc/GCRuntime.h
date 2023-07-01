@@ -600,12 +600,6 @@ class GCRuntime {
   void releaseArena(Arena* arena, const AutoLockGC& lock);
 
   
-  template <JS::TraceKind kind, AllowGC allowGC>
-  static void* tryNewNurseryCell(JSContext* cx, size_t thingSize,
-                                 AllocSite* site);
-  template <AllowGC allowGC>
-  static void* tryNewTenuredThing(JSContext* cx, AllocKind kind,
-                                  size_t thingSize);
   static void* refillFreeListInGC(Zone* zone, AllocKind thingKind);
 
   
@@ -631,6 +625,11 @@ class GCRuntime {
 
   void updateAllocationRates();
 
+  
+  static void* refillFreeList(JSContext* cx, AllocKind thingKind);
+  void attemptLastDitchGC(JSContext* cx);
+
+  
 #ifdef DEBUG
   const GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>& getTestMarkQueue()
       const;
@@ -665,14 +664,6 @@ class GCRuntime {
   Arena* allocateArena(TenuredChunk* chunk, Zone* zone, AllocKind kind,
                        ShouldCheckThresholds checkThresholds,
                        const AutoLockGC& lock);
-
-  
-  static void gcIfNeededAtAllocation(JSContext* cx);
-  static void* refillFreeList(JSContext* cx, AllocKind thingKind);
-  void attemptLastDitchGC(JSContext* cx);
-#ifdef DEBUG
-  static void checkIncrementalZoneState(JSContext* cx, void* ptr);
-#endif
 
   
 

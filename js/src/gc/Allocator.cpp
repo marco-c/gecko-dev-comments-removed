@@ -76,8 +76,7 @@ void* gc::CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
       site = cx->zone()->unknownAllocSite(traceKind);
     }
 
-    void* obj =
-        GCRuntime::tryNewNurseryCell<traceKind, allowGC>(cx, thingSize, site);
+    void* obj = TryNewNurseryCell<traceKind, allowGC>(cx, thingSize, site);
     if (obj) {
       return obj;
     }
@@ -92,7 +91,7 @@ void* gc::CellAllocator::AllocNurseryOrTenuredCell(JSContext* cx,
     }
   }
 
-  return GCRuntime::tryNewTenuredThing<allowGC>(cx, allocKind, thingSize);
+  return TryNewTenuredCell<allowGC>(cx, allocKind, thingSize);
 }
 
 #define INSTANTIATE_ALLOC_NURSERY_CELL(traceKind, allowGc)          \
@@ -109,10 +108,10 @@ INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::BigInt, CanGC)
 
 
 
-
 template <JS::TraceKind kind, AllowGC allowGC>
-void* GCRuntime::tryNewNurseryCell(JSContext* cx, size_t thingSize,
-                                   AllocSite* site) {
+
+void* CellAllocator::TryNewNurseryCell(JSContext* cx, size_t thingSize,
+                                       AllocSite* site) {
   MOZ_ASSERT(cx->isNurseryAllocAllowed());
   MOZ_ASSERT(cx->zone() == site->zone());
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
@@ -151,7 +150,7 @@ void* gc::CellAllocator::AllocTenuredCell(JSContext* cx, gc::AllocKind kind,
     return nullptr;
   }
 
-  return GCRuntime::tryNewTenuredThing<allowGC>(cx, kind, size);
+  return TryNewTenuredCell<allowGC>(cx, kind, size);
 }
 template void* gc::CellAllocator::AllocTenuredCell<NoGC>(JSContext*, AllocKind,
                                                          size_t);
@@ -160,10 +159,14 @@ template void* gc::CellAllocator::AllocTenuredCell<CanGC>(JSContext*, AllocKind,
 
 template <AllowGC allowGC>
 
-void* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
-                                    size_t thingSize) {
+void* CellAllocator::TryNewTenuredCell(JSContext* cx, AllocKind kind,
+                                       size_t thingSize) {
   if constexpr (allowGC) {
-    gcIfNeededAtAllocation(cx);
+    
+    
+    if (cx->hasPendingInterrupt(InterruptReason::MajorGC)) {
+      cx->runtime()->gc.gcIfRequested();
+    }
   }
 
   
@@ -173,12 +176,12 @@ void* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
     
     
     
-    ptr = refillFreeList(cx, kind);
+    ptr = GCRuntime::refillFreeList(cx, kind);
 
     if (MOZ_UNLIKELY(!ptr)) {
       if constexpr (allowGC) {
         cx->runtime()->gc.attemptLastDitchGC(cx);
-        ptr = tryNewTenuredThing<NoGC>(cx, kind, thingSize);
+        ptr = TryNewTenuredCell<NoGC>(cx, kind, thingSize);
         if (ptr) {
           return ptr;
         }
@@ -190,7 +193,7 @@ void* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
   }
 
 #ifdef DEBUG
-  checkIncrementalZoneState(cx, ptr);
+  CheckIncrementalZoneState(cx, ptr);
 #endif
 
   gcprobes::TenuredAlloc(ptr, kind);
@@ -281,17 +284,9 @@ template bool CellAllocator::PreAllocChecks<CanGC>(JSContext* cx,
                                                    AllocKind kind);
 #endif  
 
-
-inline void GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
-  
-  
-  if (cx->hasPendingInterrupt(InterruptReason::MajorGC)) {
-    cx->runtime()->gc.gcIfRequested();
-  }
-}
-
 #ifdef DEBUG
-void GCRuntime::checkIncrementalZoneState(JSContext* cx, void* ptr) {
+
+void CellAllocator::CheckIncrementalZoneState(JSContext* cx, void* ptr) {
   MOZ_ASSERT(ptr);
   TenuredCell* cell = reinterpret_cast<TenuredCell*>(ptr);
   TenuredChunkBase* chunk = detail::GetCellChunkBase(cell);
