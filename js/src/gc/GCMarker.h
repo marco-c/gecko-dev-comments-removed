@@ -177,7 +177,7 @@ class MarkStack {
 
   
   
-  [[nodiscard]] bool pushTempRope(JSRope* ptr);
+  [[nodiscard]] bool pushTempRope(JSRope* rope);
 
   bool isEmpty() const { return position() == 0; }
   bool hasEntries() const { return !isEmpty(); }
@@ -477,7 +477,7 @@ class alignas(TypicalCacheLineSize) GCMarker {
   inline void repush(JSObject* obj);
 
   template <typename T>
-  void markImplicitEdgesHelper(T oldThing);
+  void markImplicitEdgesHelper(T markedThing);
 
   
   

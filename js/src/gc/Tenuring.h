@@ -123,11 +123,11 @@ class TenuringTracer final : public JSTracer {
   void traverse(JS::Value* thingp);
 
   
-  void traceObject(JSObject* src);
+  void traceObject(JSObject* obj);
   void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t end);
   void traceSlots(JS::Value* vp, uint32_t nslots);
-  void traceString(JSString* src);
-  void traceBigInt(JS::BigInt* src);
+  void traceString(JSString* str);
+  void traceBigInt(JS::BigInt* bi);
 
  private:
   

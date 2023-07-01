@@ -397,7 +397,7 @@ inline bool IsTracerKind(JSTracer* trc, JS::TracerKind kind) {
 
 
 extern JS_PUBLIC_API void UnsafeTraceManuallyBarrieredEdge(JSTracer* trc,
-                                                           JSObject** edgep,
+                                                           JSObject** thingp,
                                                            const char* name);
 
 namespace gc {

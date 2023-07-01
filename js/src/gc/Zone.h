@@ -429,7 +429,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void sweepAfterMinorGC(JSTracer* trc);
   void sweepUniqueIds();
-  void sweepCompartments(JS::GCContext* gcx, bool keepAtleastOne, bool lastGC);
+  void sweepCompartments(JS::GCContext* gcx, bool keepAtleastOne,
+                         bool destroyingRuntime);
 
   
   
