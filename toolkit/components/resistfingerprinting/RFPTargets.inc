@@ -56,6 +56,7 @@ ITEM_VALUE(VideoElementPlaybackQuality, 1llu << 33)
 ITEM_VALUE(ReduceTimerPrecision,        1llu << 34)
 
 ITEM_VALUE(WidgetEvents,                1llu << 35)
+ITEM_VALUE(MediaDevices,                1llu << 36)
 
 
 
