@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 const SPOOFED_HW_CONCURRENCY = 2;
@@ -46,7 +42,7 @@ const allSpoofed = {
   hardwareConcurrency: SPOOFED_HW_CONCURRENCY,
 };
 
-const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_hwconcurrency_iframer.html?mode=iframe`;
+const uri = `https://${FRAMER_DOMAIN}/browser/browser/components/resistfingerprinting/test/browser/file_hwconcurrency_iframer.html?mode=popup`;
 
 requestLongerTimeout(2);
 
@@ -63,16 +59,8 @@ expectedResults = structuredClone(allNotSpoofed);
 add_task(testA.bind(null, uri, testHWConcurrency, expectedResults));
 
 
-expectedResults = structuredClone(allNotSpoofed);
-add_task(testB.bind(null, uri, testHWConcurrency, expectedResults));
-
-
 expectedResults = structuredClone(allSpoofed);
 add_task(testC.bind(null, uri, testHWConcurrency, expectedResults));
-
-
-expectedResults = structuredClone(allSpoofed);
-add_task(testD.bind(null, uri, testHWConcurrency, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
@@ -80,12 +68,4 @@ add_task(testE.bind(null, uri, testHWConcurrency, expectedResults));
 
 
 expectedResults = structuredClone(allSpoofed);
-add_task(testF.bind(null, uri, testHWConcurrency, expectedResults));
-
-
-expectedResults = structuredClone(allSpoofed);
 add_task(testG.bind(null, uri, testHWConcurrency, expectedResults));
-
-
-expectedResults = structuredClone(allSpoofed);
-add_task(testH.bind(null, uri, testHWConcurrency, expectedResults));
