@@ -525,6 +525,9 @@ void AudioSink::NotifyAudioNeeded() {
       
       
       
+      SINK_LOG("Sample time %" PRId64 " > frames parsed %" PRId64,
+               sampleTime.value(), mFramesParsed);
+
       missingFrames = std::min<int64_t>(
           std::min<int64_t>(INT32_MAX, missingFrames.value()),
           SampleToFrame(mProcessedSPSCQueue->AvailableWrite()));
