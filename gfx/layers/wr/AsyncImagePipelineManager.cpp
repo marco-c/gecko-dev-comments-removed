@@ -54,8 +54,10 @@ AsyncImagePipelineManager::AsyncImagePipelineManager(
       mWillGenerateFrame(false),
       mDestroyed(false),
 #ifdef XP_WIN
-      mUseWebRenderDCompVideoOverlayWin(
-          gfx::gfxVars::UseWebRenderDCompVideoOverlayWin()),
+      mUseWebRenderDCompVideoHwOverlayWin(
+          gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin()),
+      mUseWebRenderDCompVideoSwOverlayWin(
+          gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin()),
 #endif
       mRenderSubmittedUpdatesLock("SubmittedUpdatesLock"),
       mLastCompletedFrameId(0) {
@@ -345,11 +347,17 @@ void AsyncImagePipelineManager::ApplyAsyncImagesOfImageBridge(
   
   
   
-  bool isChanged = mUseWebRenderDCompVideoOverlayWin !=
-                   gfx::gfxVars::UseWebRenderDCompVideoOverlayWin();
+  
+  bool isChanged = (mUseWebRenderDCompVideoHwOverlayWin !=
+                    gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin()) ||
+                   (mUseWebRenderDCompVideoSwOverlayWin !=
+                    gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin());
+
   if (isChanged) {
-    mUseWebRenderDCompVideoOverlayWin =
-        gfx::gfxVars::UseWebRenderDCompVideoOverlayWin();
+    mUseWebRenderDCompVideoHwOverlayWin =
+        gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin();
+    mUseWebRenderDCompVideoSwOverlayWin =
+        gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin();
   }
 #endif
 

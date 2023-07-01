@@ -86,6 +86,8 @@ D3D11ShareHandleImage::MaybeCreateNV12ImageAndSetData(
     return nullptr;
   }
 
+  client->AddFlags(TextureFlags::SOFTWARE_DECODED_VIDEO);
+
   
   
   RefPtr<ID3D11Texture2D> texture = image->GetTexture();
