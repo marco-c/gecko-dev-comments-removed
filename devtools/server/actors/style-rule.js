@@ -173,22 +173,39 @@ class StyleRuleActor extends Actor {
     
     
     data.ancestors = this.ancestorRules.map(rule => {
-      return {
+      const ancestorData = {
         id: rule.actorID,
-        
-        
-        type: rule.rawRule.type,
-        
-        typeName: SharedCssLogic.getCSSAtRuleTypeName(rule.rawRule),
-        
-        conditionText: rule.rawRule.conditionText,
-        
-        name: rule.rawRule.name,
-        
-        keyText: rule.rawRule.keyText,
         
         ruleIndex: rule._ruleIndex,
       };
+
+      
+      const typeName = SharedCssLogic.getCSSAtRuleTypeName(rule.rawRule);
+      if (typeName) {
+        ancestorData.typeName = typeName;
+      }
+
+      
+      if (rule.rawRule.conditionText !== undefined) {
+        ancestorData.conditionText = rule.rawRule.conditionText;
+      }
+
+      
+      if (rule.rawRule.name !== undefined) {
+        ancestorData.name = rule.rawRule.name;
+      }
+
+      
+      if (rule.rawRule.keyText !== undefined) {
+        ancestorData.keyText = rule.rawRule.keyText;
+      }
+
+      
+      if (rule.rawRule.selectorText !== undefined) {
+        ancestorData.selectorText = rule.rawRule.selectorText;
+      }
+
+      return ancestorData;
     });
 
     

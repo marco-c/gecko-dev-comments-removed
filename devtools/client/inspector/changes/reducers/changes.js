@@ -74,11 +74,15 @@ function createRule(ruleData, rules) {
         
         
         if (!rule.selectors || !rule.selectors.length) {
-          rule.selectors = [
-            `${rule.typeName} ${
-              rule.conditionText || rule.name || rule.keyText
-            }`,
-          ];
+          
+          let selector = rule.typeName ? rule.typeName + " " : "";
+          selector +=
+            rule.conditionText ||
+            rule.name ||
+            rule.keyText ||
+            rule.selectorText;
+
+          rule.selectors = [selector];
         }
 
         return rule.id;
