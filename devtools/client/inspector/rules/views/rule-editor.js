@@ -290,9 +290,11 @@ RuleEditor.prototype = {
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
       let selector = "";
+      let desugaredSelector = "";
       if (this.rule.domRule.selectors) {
         
         selector = this.rule.domRule.selectors.join(", ");
+        desugaredSelector = this.rule.domRule.desugaredSelectors?.join(", ");
         
         
       }
@@ -303,7 +305,8 @@ RuleEditor.prototype = {
         class:
           "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
           (isHighlighted ? " highlighted" : ""),
-        "data-selector": selector,
+        
+        "data-computed-selector": desugaredSelector,
         title: l10n("rule.selectorHighlighter.tooltip"),
       });
     }

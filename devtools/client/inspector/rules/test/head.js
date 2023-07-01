@@ -624,7 +624,7 @@ async function clickSelectorIcon(view, selectorText, index = 0) {
   
   
   
-  const selector = icon.dataset.selector;
+  const selector = icon.dataset.computedSelector;
 
   const { waitForHighlighterTypeShown, waitForHighlighterTypeHidden } =
     getHighlighterTestHelpers(inspector);
@@ -646,6 +646,7 @@ async function clickSelectorIcon(view, selectorText, index = 0) {
   const waitedForShown = options?.selector !== selector;
 
   info(`Click the icon for selector: ${selectorText}`);
+  icon.scrollIntoView();
   EventUtils.synthesizeMouseAtCenter(icon, {}, view.styleWindow);
 
   

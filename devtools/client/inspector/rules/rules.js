@@ -414,7 +414,7 @@ CssRuleView.prototype = {
     
     if (target.classList.contains("js-toggle-selector-highlighter")) {
       event.stopPropagation();
-      let selector = target.dataset.selector;
+      let selector = target.dataset.computedSelector;
       
       
       
@@ -432,8 +432,7 @@ CssRuleView.prototype = {
           }
 
           
-          
-          target.dataset.selector = selector;
+          target.dataset.computedSelector = selector;
         } finally {
           
         }
@@ -483,7 +482,7 @@ CssRuleView.prototype = {
             return;
           }
 
-          const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
+          const query = `.js-toggle-selector-highlighter[data-computed-selector='${selector}']`;
           for (const node of this.styleDocument.querySelectorAll(query)) {
             node.classList.toggle(
               "highlighted",
