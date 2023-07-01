@@ -53,6 +53,8 @@ ITEM_VALUE(VideoElementMozFrameDelay,   1llu << 32)
 
 ITEM_VALUE(VideoElementPlaybackQuality, 1llu << 33)
 
+ITEM_VALUE(ReduceTimerPrecision,        1llu << 34)
+
 
 
 
