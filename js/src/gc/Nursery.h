@@ -439,8 +439,9 @@ class alignas(TypicalCacheLineSize) Nursery {
   mozilla::TimeDuration timeInChunkAlloc_;
 
   
-  bool enableProfiling_;
-  bool profileWorkers_;
+  bool enableProfiling_ = false;
+  bool profileWorkers_ = false;
+
   mozilla::TimeDuration profileThreshold_;
 
   
