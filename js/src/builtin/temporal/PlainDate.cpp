@@ -24,7 +24,9 @@
 
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/PlainDateTime.h"
+#include "builtin/temporal/PlainMonthDay.h"
 #include "builtin/temporal/PlainTime.h"
+#include "builtin/temporal/PlainYearMonth.h"
 #include "builtin/temporal/Temporal.h"
 #include "builtin/temporal/TemporalFields.h"
 #include "builtin/temporal/TemporalParser.h"
@@ -857,6 +859,132 @@ static bool PlainDate_from(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainDate_toPlainYearMonth(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainDateObject*> temporalDate(
+      cx, &args.thisv().toObject().as<PlainDateObject>());
+
+  
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+  JS::RootedVector<PropertyKey> fieldNames(cx);
+  if (!CalendarFields(cx, calendar,
+                      {CalendarField::MonthCode, CalendarField::Year},
+                      &fieldNames)) {
+    return false;
+  }
+
+  
+  Rooted<PlainObject*> fields(
+      cx, PrepareTemporalFields(cx, temporalDate, fieldNames));
+  if (!fields) {
+    return false;
+  }
+
+  
+  auto obj = CalendarYearMonthFromFields(cx, calendar, fields);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainDate_toPlainYearMonth(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_toPlainYearMonth>(cx,
+                                                                       args);
+}
+
+
+
+
+static bool PlainDate_toPlainMonthDay(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainDateObject*> temporalDate(
+      cx, &args.thisv().toObject().as<PlainDateObject>());
+
+  
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+  JS::RootedVector<PropertyKey> fieldNames(cx);
+  if (!CalendarFields(cx, calendar,
+                      {CalendarField::Day, CalendarField::MonthCode},
+                      &fieldNames)) {
+    return false;
+  }
+
+  
+  Rooted<PlainObject*> fields(
+      cx, PrepareTemporalFields(cx, temporalDate, fieldNames));
+  if (!fields) {
+    return false;
+  }
+
+  
+  auto obj = CalendarMonthDayFromFields(cx, calendar, fields);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainDate_toPlainMonthDay(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_toPlainMonthDay>(cx, args);
+}
+
+
+
+
+static bool PlainDate_toPlainDateTime(JSContext* cx, const CallArgs& args) {
+  auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
+  Rooted<JSObject*> calendar(cx, temporalDate->calendar());
+
+  
+  PlainDateTime dateTime = {ToPlainDate(temporalDate), {}};
+
+  
+  if (args.hasDefined(0)) {
+    if (!ToTemporalTime(cx, args[0], &dateTime.time)) {
+      return false;
+    }
+  }
+
+  
+  auto* obj = CreateTemporalDateTime(cx, dateTime, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainDate_toPlainDateTime(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDate, PlainDate_toPlainDateTime>(cx, args);
+}
+
+
+
+
 static bool PlainDate_getISOFields(JSContext* cx, const CallArgs& args) {
   auto* temporalDate = &args.thisv().toObject().as<PlainDateObject>();
   auto date = ToPlainDate(temporalDate);
@@ -1026,6 +1154,9 @@ static const JSFunctionSpec PlainDate_methods[] = {
 };
 
 static const JSFunctionSpec PlainDate_prototype_methods[] = {
+    JS_FN("toPlainMonthDay", PlainDate_toPlainMonthDay, 0, 0),
+    JS_FN("toPlainYearMonth", PlainDate_toPlainYearMonth, 0, 0),
+    JS_FN("toPlainDateTime", PlainDate_toPlainDateTime, 0, 0),
     JS_FN("getISOFields", PlainDate_getISOFields, 0, 0),
     JS_FN("toString", PlainDate_toString, 0, 0),
     JS_FN("toLocaleString", PlainDate_toLocaleString, 0, 0),
