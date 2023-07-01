@@ -152,7 +152,7 @@ impl StylesheetInvalidationSet {
 
         let quirks_mode = device.quirks_mode();
         for rule in stylesheet.effective_rules(device, guard) {
-            self.collect_invalidations_for_rule(rule, guard, device, quirks_mode);
+            self.collect_invalidations_for_rule(rule, guard, device, quirks_mode,  false);
             if self.fully_invalid {
                 break;
             }
@@ -529,8 +529,6 @@ impl StylesheetInvalidationSet {
     ) where
         S: StylesheetInDocument,
     {
-        use crate::stylesheets::CssRule::*;
-
         debug!("StylesheetInvalidationSet::rule_changed");
         if self.fully_invalid {
             return;
@@ -541,54 +539,29 @@ impl StylesheetInvalidationSet {
             return; 
         }
 
+        
+        
+        
+        
         let is_generic_change = change_kind == RuleChangeKind::Generic;
+        self.collect_invalidations_for_rule(rule, guard, device, quirks_mode, is_generic_change);
+        if self.fully_invalid {
+            return;
+        }
 
-        match *rule {
-            Namespace(..) => {
-                
-                
-            },
-            LayerStatement(..) => {
-                
-                
-                return self.invalidate_fully();
-            },
-            CounterStyle(..) |
-            Page(..) |
-            Property(..) |
-            FontFeatureValues(..) |
-            FontPaletteValues(..) |
-            FontFace(..) |
-            Keyframes(..) |
-            Container(..) |
-            Style(..) => {
-                if is_generic_change {
-                    
-                    
-                    
-                    
-                    
-                    return self.invalidate_fully();
-                }
+        if !is_generic_change &&
+            !EffectiveRules::is_effective(guard, device, quirks_mode, rule)
+        {
+            return;
+        }
 
-                self.collect_invalidations_for_rule(rule, guard, device, quirks_mode)
-            },
-            Document(..) | Import(..) | Media(..) | Supports(..) | LayerBlock(..) => {
-                if !is_generic_change &&
-                    !EffectiveRules::is_effective(guard, device, quirks_mode, rule)
-                {
-                    return;
-                }
-
-                let rules =
-                    EffectiveRulesIterator::effective_children(device, quirks_mode, guard, rule);
-                for rule in rules {
-                    self.collect_invalidations_for_rule(rule, guard, device, quirks_mode);
-                    if self.fully_invalid {
-                        break;
-                    }
-                }
-            },
+        let rules =
+            EffectiveRulesIterator::effective_children(device, quirks_mode, guard, rule);
+        for rule in rules {
+            self.collect_invalidations_for_rule(rule, guard, device, quirks_mode,  false);
+            if self.fully_invalid {
+                break;
+            }
         }
     }
 
@@ -599,13 +572,23 @@ impl StylesheetInvalidationSet {
         guard: &SharedRwLockReadGuard,
         device: &Device,
         quirks_mode: QuirksMode,
+        is_generic_change: bool,
     ) {
         use crate::stylesheets::CssRule::*;
         debug!("StylesheetInvalidationSet::collect_invalidations_for_rule");
-        debug_assert!(!self.fully_invalid, "Not worth to be here!");
+        debug_assert!(!self.fully_invalid, "Not worth being here!");
 
         match *rule {
             Style(ref lock) => {
+                if is_generic_change {
+                    
+                    
+                    
+                    
+                    
+                    return self.invalidate_fully();
+                }
+
                 let style_rule = lock.read_with(guard);
                 for selector in &style_rule.selectors.0 {
                     self.collect_invalidations(selector, quirks_mode);
@@ -614,41 +597,48 @@ impl StylesheetInvalidationSet {
                     }
                 }
             },
-            Document(..) | Namespace(..) | Import(..) | Media(..) | Supports(..) |
-            Container(..) | LayerStatement(..) | LayerBlock(..) => {
+            Namespace(..) => {
                 
+                
+            },
+            LayerStatement(..) => {
+                
+                
+                return self.invalidate_fully();
+            },
+            Document(..) | Import(..) | Media(..) | Supports(..) |
+            Container(..)  | LayerBlock(..) => {
                 
             },
             FontFace(..) => {
                 
                 
+            },
+            Page(..) => {
+                
                 
             },
             Keyframes(ref lock) => {
+                if is_generic_change {
+                    return self.invalidate_fully();
+                }
                 let keyframes_rule = lock.read_with(guard);
                 if device.animation_name_may_be_referenced(&keyframes_rule.name) {
                     debug!(
                         " > Found @keyframes rule potentially referenced \
                          from the page, marking the whole tree invalid."
                     );
-                    self.fully_invalid = true;
+                    self.invalidate_fully();
                 } else {
-                    
                     
                 }
             },
             CounterStyle(..) |
-            Page(..) |
             Property(..) |
             FontFeatureValues(..) |
             FontPaletteValues(..) => {
                 debug!(" > Found unsupported rule, marking the whole subtree invalid.");
-
-                
-                
-                
-                
-                self.fully_invalid = true;
+                self.invalidate_fully();
             },
         }
     }
