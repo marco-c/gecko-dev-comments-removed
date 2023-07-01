@@ -399,6 +399,14 @@ interface nsIPrincipal : nsISupports
 
 
 
+    [infallible]
+    boolean isContentAccessibleAboutURI();
+
+    
+
+
+
+
 
     [infallible]
     boolean isSameOrigin(in nsIURI otherURI);
