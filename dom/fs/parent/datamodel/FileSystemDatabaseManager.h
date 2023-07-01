@@ -182,6 +182,14 @@ class FileSystemDatabaseManager {
 
 
 
+  virtual Result<FileId, QMResult> EnsureTemporaryFileId(
+      const EntryId& aEntryId) = 0;
+
+  
+
+
+
+
 
 
 
