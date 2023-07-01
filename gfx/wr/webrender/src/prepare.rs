@@ -125,6 +125,10 @@ fn can_use_clip_chain_for_quad_path(
         }
 
         match clip_node.item.kind {
+            ClipItemKind::Rectangle { mode: ClipMode::ClipOut, .. } |
+            ClipItemKind::RoundedRectangle { mode: ClipMode::ClipOut, .. } => {
+                return false;
+            }
             ClipItemKind::RoundedRectangle { .. } | ClipItemKind::Rectangle { .. } => {}
             ClipItemKind::BoxShadow { .. } => {
                 
