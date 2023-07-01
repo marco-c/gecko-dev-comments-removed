@@ -30,6 +30,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/SharedIntlData.h"
+#include "builtin/temporal/Instant.h"
 #include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/ZonedDateTime.h"
@@ -76,6 +77,39 @@ using namespace js::temporal;
 
 static inline bool IsTimeZone(Handle<Value> v) {
   return v.isObject() && v.toObject().is<TimeZoneObject>();
+}
+
+static mozilla::UniquePtr<mozilla::intl::TimeZone> CreateIntlTimeZone(
+    JSContext* cx, JSString* identifier) {
+  JS::AutoStableStringChars stableChars(cx);
+  if (!stableChars.initTwoByte(cx, identifier)) {
+    return nullptr;
+  }
+
+  auto result = mozilla::intl::TimeZone::TryCreate(
+      mozilla::Some(stableChars.twoByteRange()));
+  if (result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+  return result.unwrap();
+}
+
+static mozilla::intl::TimeZone* GetOrCreateIntlTimeZone(
+    JSContext* cx, Handle<TimeZoneObject*> timeZone) {
+  
+  if (auto* tz = timeZone->getTimeZone()) {
+    return tz;
+  }
+
+  auto* tz = CreateIntlTimeZone(cx, timeZone->identifier()).release();
+  if (!tz) {
+    return nullptr;
+  }
+  timeZone->setTimeZone(tz);
+
+  intl::AddICUCellMemory(timeZone, TimeZoneObject::EstimatedMemoryUse);
+  return tz;
 }
 
 
@@ -221,6 +255,93 @@ JSString* js::temporal::TimeZoneToString(JSContext* cx,
 
   Rooted<Value> timeZoneValue(cx, ObjectValue(*timeZone));
   return JS::ToString(cx, timeZoneValue);
+}
+
+
+
+
+static bool GetNamedTimeZoneNextTransition(JSContext* cx,
+                                           Handle<TimeZoneObject*> timeZone,
+                                           const Instant& epochInstant,
+                                           mozilla::Maybe<Instant>* result) {
+  MOZ_ASSERT(timeZone->offsetNanoseconds().isUndefined());
+
+  
+  
+  
+  
+  
+  
+  int64_t millis = epochInstant.floorToMilliseconds();
+
+  auto* tz = GetOrCreateIntlTimeZone(cx, timeZone);
+  if (!tz) {
+    return false;
+  }
+
+  auto next = tz->GetNextTransition(millis);
+  if (next.isErr()) {
+    intl::ReportInternalError(cx, next.unwrapErr());
+    return false;
+  }
+
+  auto transition = next.unwrap();
+  if (!transition) {
+    *result = mozilla::Nothing();
+    return true;
+  }
+
+  auto transitionInstant = Instant::fromMilliseconds(*transition);
+  if (!IsValidEpochInstant(transitionInstant)) {
+    *result = mozilla::Nothing();
+    return true;
+  }
+
+  *result = mozilla::Some(transitionInstant);
+  return true;
+}
+
+
+
+
+static bool GetNamedTimeZonePreviousTransition(
+    JSContext* cx, Handle<TimeZoneObject*> timeZone,
+    const Instant& epochInstant, mozilla::Maybe<Instant>* result) {
+  MOZ_ASSERT(timeZone->offsetNanoseconds().isUndefined());
+
+  
+  
+  
+  
+  
+  
+  int64_t millis = epochInstant.ceilToMilliseconds();
+
+  auto* tz = GetOrCreateIntlTimeZone(cx, timeZone);
+  if (!tz) {
+    return false;
+  }
+
+  auto previous = tz->GetPreviousTransition(millis);
+  if (previous.isErr()) {
+    intl::ReportInternalError(cx, previous.unwrapErr());
+    return false;
+  }
+
+  auto transition = previous.unwrap();
+  if (!transition) {
+    *result = mozilla::Nothing();
+    return true;
+  }
+
+  auto transitionInstant = Instant::fromMilliseconds(*transition);
+  if (!IsValidEpochInstant(transitionInstant)) {
+    *result = mozilla::Nothing();
+    return true;
+  }
+
+  *result = mozilla::Some(transitionInstant);
+  return true;
 }
 
 
@@ -649,6 +770,112 @@ static bool TimeZone_from(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool TimeZone_getNextTransition(JSContext* cx, const CallArgs& args) {
+  Rooted<TimeZoneObject*> timeZone(
+      cx, &args.thisv().toObject().as<TimeZoneObject>());
+
+  
+  Instant startingPoint;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &startingPoint)) {
+    return false;
+  }
+
+  
+  if (!timeZone->offsetNanoseconds().isUndefined()) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  mozilla::Maybe<Instant> transition;
+  if (!GetNamedTimeZoneNextTransition(cx, timeZone, startingPoint,
+                                      &transition)) {
+    return false;
+  }
+
+  
+  if (!transition) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  auto* instant = CreateTemporalInstant(cx, *transition);
+  if (!instant) {
+    return false;
+  }
+
+  args.rval().setObject(*instant);
+  return true;
+}
+
+
+
+
+static bool TimeZone_getNextTransition(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTimeZone, TimeZone_getNextTransition>(cx, args);
+}
+
+
+
+
+static bool TimeZone_getPreviousTransition(JSContext* cx,
+                                           const CallArgs& args) {
+  Rooted<TimeZoneObject*> timeZone(
+      cx, &args.thisv().toObject().as<TimeZoneObject>());
+
+  
+  Instant startingPoint;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &startingPoint)) {
+    return false;
+  }
+
+  
+  if (!timeZone->offsetNanoseconds().isUndefined()) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  mozilla::Maybe<Instant> transition;
+  if (!GetNamedTimeZonePreviousTransition(cx, timeZone, startingPoint,
+                                          &transition)) {
+    return false;
+  }
+
+  
+  if (!transition) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
+  auto* instant = CreateTemporalInstant(cx, *transition);
+  if (!instant) {
+    return false;
+  }
+
+  args.rval().setObject(*instant);
+  return true;
+}
+
+
+
+
+static bool TimeZone_getPreviousTransition(JSContext* cx, unsigned argc,
+                                           Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTimeZone, TimeZone_getPreviousTransition>(cx,
+                                                                          args);
+}
+
+
+
+
 static bool TimeZone_toString(JSContext* cx, const CallArgs& args) {
   auto* timeZone = &args.thisv().toObject().as<TimeZoneObject>();
 
@@ -713,6 +940,11 @@ static bool TimeZone_id(JSContext* cx, unsigned argc, Value* vp) {
 
 void js::temporal::TimeZoneObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   MOZ_ASSERT(gcx->onMainThread());
+
+  if (auto* timeZone = obj->as<TimeZoneObject>().getTimeZone()) {
+    intl::RemoveICUCellMemory(gcx, obj, TimeZoneObject::EstimatedMemoryUse);
+    delete timeZone;
+  }
 }
 
 const JSClassOps TimeZoneObject::classOps_ = {
@@ -745,6 +977,8 @@ static const JSFunctionSpec TimeZone_methods[] = {
 };
 
 static const JSFunctionSpec TimeZone_prototype_methods[] = {
+    JS_FN("getNextTransition", TimeZone_getNextTransition, 1, 0),
+    JS_FN("getPreviousTransition", TimeZone_getPreviousTransition, 1, 0),
     JS_FN("toString", TimeZone_toString, 0, 0),
     JS_FN("toJSON", TimeZone_toJSON, 0, 0),
     JS_FS_END,
