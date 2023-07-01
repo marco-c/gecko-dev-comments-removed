@@ -3504,8 +3504,8 @@ double nsGlobalWindowInner::GetDevicePixelRatio(CallerType aCallerType,
     return 1.0;
   }
 
-  if (nsIGlobalObject::ShouldResistFingerprinting(aCallerType,
-                                                  RFPTarget::Unknown)) {
+  if (nsIGlobalObject::ShouldResistFingerprinting(
+          aCallerType, RFPTarget::WindowDevicePixelRatio)) {
     
     
     
