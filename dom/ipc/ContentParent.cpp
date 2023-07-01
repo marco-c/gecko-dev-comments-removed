@@ -28,10 +28,6 @@
 #include "GMPServiceParent.h"
 #include "HandlerServiceParent.h"
 #include "IHistory.h"
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-#  include "mozilla/a11y/AccessibleWrap.h"
-#  include "mozilla/a11y/Compatibility.h"
-#endif
 #include <map>
 #include <utility>
 
@@ -1684,14 +1680,7 @@ void ContentParent::Init() {
   
   
   if (GetAccService()) {
-#  if defined(XP_WIN)
-    
-    if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
-      Unused << SendActivateA11y();
-    }
-#  else
     Unused << SendActivateA11y();
-#  endif
   }
 #endif  
 
@@ -4078,15 +4067,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     if (*aData == '1') {
       
       
-#  if defined(XP_WIN)
-      
-      
-      if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
-        Unused << SendActivateA11y();
-      }
-#  else
       Unused << SendActivateA11y();
-#  endif
     } else {
       
       
