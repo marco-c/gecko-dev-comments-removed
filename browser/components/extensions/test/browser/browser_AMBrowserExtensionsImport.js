@@ -10,6 +10,10 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 
+
+
+
+
 AddonTestUtils.initMochitest(this);
 
 const TEST_SERVER = AddonTestUtils.createHttpServer();
