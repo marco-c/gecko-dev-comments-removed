@@ -83,6 +83,7 @@ import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.GeckoDisplay.SurfaceInfo;
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt;
+import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt;
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt;
 
 public class GeckoSession {
@@ -4727,6 +4728,71 @@ public class GeckoSession {
           }
         }
       }
+
+      
+
+
+
+
+      public static class PrivacyPolicyPrompt extends BasePrompt {
+        
+        public final @NonNull String privacyPolicyUrl;
+
+        
+        public final @NonNull String termsOfServiceUrl;
+
+        
+        public final @NonNull String providerDomain;
+
+        
+        public final @NonNull String host;
+
+        
+        public final @Nullable String icon;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        protected PrivacyPolicyPrompt(
+            @NonNull final String id,
+            @NonNull final String privacyPolicyUrl,
+            @NonNull final String termsOfServiceUrl,
+            @NonNull final String providerDomain,
+            @NonNull final String host,
+            @Nullable final String icon,
+            @NonNull final Observer observer) {
+          super(id, null, observer);
+          this.privacyPolicyUrl = privacyPolicyUrl;
+          this.termsOfServiceUrl = termsOfServiceUrl;
+          this.providerDomain = providerDomain;
+          this.host = host;
+          this.icon = icon;
+        }
+
+        
+
+
+
+
+
+
+
+        @UiThread
+        public @NonNull PromptResponse confirm(final boolean accept) {
+          ensureResult().putBoolean("accept", accept);
+          return super.confirm();
+        }
+      }
     }
 
     
@@ -5801,6 +5867,20 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<PromptResponse> onSelectIdentityCredentialAccount(
         @NonNull final GeckoSession session, @NonNull final AccountSelectorPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onShowPrivacyPolicyIdentityCredential(
+        @NonNull final GeckoSession session, @NonNull final PrivacyPolicyPrompt prompt) {
       return null;
     }
 
