@@ -387,7 +387,9 @@ class Element : public FragmentOrElement {
   
 
 
-  const nsMappedAttributes* GetMappedAttributes() const;
+  const nsMappedAttributes* GetMappedAttributes() const {
+    return mAttrs.GetMapped();
+  }
 
   void ClearMappedServoStyle() { mAttrs.ClearMappedServoStyle(); }
 

@@ -18,10 +18,9 @@
 #include "nsCSSPropertyID.h"
 #include "nsString.h"
 
-class nsHTMLCSSStyleSheet;
-
 namespace mozilla {
 
+class AttributeStyles;
 namespace css {
 class Declaration;
 class Rule;
@@ -124,22 +123,22 @@ class DeclarationBlock final {
     return mContainer.mOwningRule;
   }
 
-  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet) {
-    MOZ_ASSERT(!mContainer.mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
+  void SetAttributeStyles(AttributeStyles* aAttributeStyles) {
+    MOZ_ASSERT(!mContainer.mAttributeStyles || !aAttributeStyles,
                "should never overwrite one sheet with another");
-    mContainer.mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
-    if (aHTMLCSSStyleSheet) {
+    mContainer.mAttributeStyles = aAttributeStyles;
+    if (aAttributeStyles) {
       mContainer.mRaw |= uintptr_t(1);
     }
   }
 
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const {
+  AttributeStyles* GetAttributeStyles() const {
     if (!(mContainer.mRaw & 0x1)) {
       return nullptr;
     }
     auto c = mContainer;
     c.mRaw &= ~uintptr_t(1);
-    return c.mHTMLCSSStyleSheet;
+    return c.mAttributeStyles;
   }
 
   bool IsReadOnly() const;
@@ -212,8 +211,6 @@ class DeclarationBlock final {
     
     
 
-    
-
     uintptr_t mRaw;
 
     
@@ -221,7 +218,7 @@ class DeclarationBlock final {
 
     
     
-    nsHTMLCSSStyleSheet* mHTMLCSSStyleSheet;
+    AttributeStyles* mAttributeStyles;
   } mContainer;
 
   RefPtr<StyleLockedDeclarationBlock> mRaw;

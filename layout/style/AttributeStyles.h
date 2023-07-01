@@ -1,0 +1,101 @@
+
+
+
+
+
+
+
+
+
+
+
+#ifndef mozilla_AttributeStyles_h_
+#define mozilla_AttributeStyles_h_
+
+#include "nsColor.h"
+#include "nsCOMPtr.h"
+#include "nsAtom.h"
+#include "PLDHashTable.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/MemoryReporting.h"
+#include "nsTHashMap.h"
+#include "nsString.h"
+
+struct MiscContainer;
+class nsMappedAttributes;
+namespace mozilla {
+struct StyleLockedDeclarationBlock;
+namespace dom {
+class Document;
+}  
+
+class AttributeStyles final {
+ public:
+  explicit AttributeStyles(dom::Document* aDocument);
+  void SetOwningDocument(dom::Document* aDocument);
+
+  NS_INLINE_DECL_REFCOUNTING(AttributeStyles)
+
+  size_t DOMSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
+  void Reset();
+  nsresult SetLinkColor(nscolor aColor);
+  nsresult SetActiveLinkColor(nscolor aColor);
+  nsresult SetVisitedLinkColor(nscolor aColor);
+
+  const StyleLockedDeclarationBlock* GetServoUnvisitedLinkDecl() const {
+    return mServoUnvisitedLinkDecl;
+  }
+  const StyleLockedDeclarationBlock* GetServoVisitedLinkDecl() const {
+    return mServoVisitedLinkDecl;
+  }
+  const StyleLockedDeclarationBlock* GetServoActiveLinkDecl() const {
+    return mServoActiveLinkDecl;
+  }
+
+  
+  already_AddRefed<nsMappedAttributes> UniqueMappedAttributes(
+      nsMappedAttributes* aMapped);
+  void DropMappedAttributes(nsMappedAttributes* aMapped);
+  
+  
+  void CalculateMappedServoDeclarations();
+
+  void CacheStyleAttr(const nsAString& aSerialized, MiscContainer* aValue) {
+    mCachedStyleAttrs.InsertOrUpdate(aSerialized, aValue);
+  }
+  void EvictStyleAttr(const nsAString& aSerialized, MiscContainer* aValue) {
+    NS_ASSERTION(LookupStyleAttr(aSerialized) == aValue,
+                 "Cached value doesn't match?");
+    mCachedStyleAttrs.Remove(aSerialized);
+  }
+  MiscContainer* LookupStyleAttr(const nsAString& aSerialized) {
+    return mCachedStyleAttrs.Get(aSerialized);
+  }
+
+  AttributeStyles(const AttributeStyles& aCopy) = delete;
+  AttributeStyles& operator=(const AttributeStyles& aCopy) = delete;
+
+ private:
+  ~AttributeStyles();
+
+  
+  nsresult ImplLinkColorSetter(RefPtr<StyleLockedDeclarationBlock>& aDecl,
+                               nscolor aColor);
+
+  dom::Document* mDocument;
+  RefPtr<StyleLockedDeclarationBlock> mServoUnvisitedLinkDecl;
+  RefPtr<StyleLockedDeclarationBlock> mServoVisitedLinkDecl;
+  RefPtr<StyleLockedDeclarationBlock> mServoActiveLinkDecl;
+
+  PLDHashTable mMappedAttrTable;
+  nsTHashMap<nsStringHashKey, MiscContainer*> mCachedStyleAttrs;
+  
+  
+  
+  bool mMappedAttrsDirty = false;
+};
+
+}  
+
+#endif

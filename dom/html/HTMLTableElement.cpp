@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/HTMLTableElement.h"
+#include "mozilla/AttributeStyles.h"
 #include "mozilla/MappedDeclarations.h"
 #include "nsAttrValueInlines.h"
-#include "nsHTMLStyleSheet.h"
 #include "nsMappedAttributes.h"
 #include "nsWrapperCacheInlines.h"
 #include "mozilla/dom/Document.h"
@@ -955,36 +955,38 @@ void HTMLTableElement::BuildInheritedAttributes() {
                "potential leak, plus waste of work");
   MOZ_ASSERT(NS_IsMainThread());
   Document* document = GetComposedDoc();
-  nsHTMLStyleSheet* sheet =
-      document ? document->GetAttributeStyleSheet() : nullptr;
-  RefPtr<nsMappedAttributes> newAttrs;
-  if (sheet) {
-    const nsAttrValue* value = mAttrs.GetAttr(nsGkAtoms::cellpadding);
-    if (value) {
-      RefPtr<nsMappedAttributes> modifiableMapped =
-          new nsMappedAttributes(sheet, MapInheritedTableAttributesIntoRule);
-
-      if (modifiableMapped) {
-        nsAttrValue val(*value);
-        bool oldValueSet;
-        modifiableMapped->SetAndSwapAttr(nsGkAtoms::cellpadding, val,
-                                         &oldValueSet);
-      }
-      newAttrs = sheet->UniqueMappedAttributes(modifiableMapped);
-      NS_ASSERTION(newAttrs, "out of memory, but handling gracefully");
-
-      if (newAttrs != modifiableMapped) {
-        
-        
-        
-        
-        
-        modifiableMapped->DropStyleSheetReference();
-      }
-    }
-    mTableInheritedAttributes = newAttrs;
-    NS_IF_ADDREF(mTableInheritedAttributes);
+  if (!document) {
+    return;
   }
+  AttributeStyles* attrStyles = document->GetAttributeStyles();
+  if (!attrStyles) {
+    return;
+  }
+  RefPtr<nsMappedAttributes> newAttrs;
+  if (const nsAttrValue* value = mAttrs.GetAttr(nsGkAtoms::cellpadding)) {
+    RefPtr<nsMappedAttributes> modifiableMapped =
+        new nsMappedAttributes(attrStyles, MapInheritedTableAttributesIntoRule);
+
+    if (modifiableMapped) {
+      nsAttrValue val(*value);
+      bool oldValueSet;
+      modifiableMapped->SetAndSwapAttr(nsGkAtoms::cellpadding, val,
+                                       &oldValueSet);
+    }
+    newAttrs = attrStyles->UniqueMappedAttributes(modifiableMapped);
+    NS_ASSERTION(newAttrs, "out of memory, but handling gracefully");
+
+    if (newAttrs != modifiableMapped) {
+      
+      
+      
+      
+      
+      modifiableMapped->DropAttributeStylesReference();
+    }
+  }
+  mTableInheritedAttributes = newAttrs;
+  NS_IF_ADDREF(mTableInheritedAttributes);
 }
 
 void HTMLTableElement::ReleaseInheritedAttributes() {

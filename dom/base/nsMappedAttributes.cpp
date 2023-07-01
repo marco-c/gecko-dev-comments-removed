@@ -11,7 +11,7 @@
 
 #include "nsMappedAttributes.h"
 #include "mozilla/Assertions.h"
-#include "nsHTMLStyleSheet.h"
+#include "mozilla/AttributeStyles.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MappedDeclarations.h"
@@ -36,10 +36,10 @@ void nsMappedAttributes::Shutdown() {
   sCachedMappedAttributeAllocations = nullptr;
 }
 
-nsMappedAttributes::nsMappedAttributes(nsHTMLStyleSheet* aSheet,
+nsMappedAttributes::nsMappedAttributes(AttributeStyles* aAttrStyles,
                                        nsMapRuleToAttributesFunc aMapRuleFunc)
     : mAttrCount(0),
-      mSheet(aSheet),
+      mAttrStyles(aAttrStyles),
       mRuleMapper(aMapRuleFunc),
       mServoStyle(nullptr) {
   MOZ_ASSERT(mRefCnt == 0);  
@@ -47,7 +47,7 @@ nsMappedAttributes::nsMappedAttributes(nsHTMLStyleSheet* aSheet,
 
 nsMappedAttributes::nsMappedAttributes(const nsMappedAttributes& aCopy)
     : mAttrCount(aCopy.mAttrCount),
-      mSheet(aCopy.mSheet),
+      mAttrStyles(aCopy.mAttrStyles),
       mRuleMapper(aCopy.mRuleMapper),
       
       
@@ -62,8 +62,8 @@ nsMappedAttributes::nsMappedAttributes(const nsMappedAttributes& aCopy)
 }
 
 nsMappedAttributes::~nsMappedAttributes() {
-  if (mSheet) {
-    mSheet->DropMappedAttributes(this);
+  if (mAttrStyles) {
+    mAttrStyles->DropMappedAttributes(this);
   }
 
   for (InternalAttr& attr : Attrs()) {
@@ -199,11 +199,11 @@ PLDHashNumber nsMappedAttributes::HashValue() const {
   return hash;
 }
 
-void nsMappedAttributes::SetStyleSheet(nsHTMLStyleSheet* aSheet) {
-  MOZ_ASSERT(!mSheet,
+void nsMappedAttributes::SetAttributeStyles(AttributeStyles* aAttrStyles) {
+  MOZ_ASSERT(!mAttrStyles,
              "Should either drop the sheet reference manually, "
              "or drop the mapped attributes");
-  mSheet = aSheet;  
+  mAttrStyles = aAttrStyles;  
 }
 
 void nsMappedAttributes::RemoveAttrAt(uint32_t aPos, nsAttrValue& aValue) {
@@ -217,14 +217,8 @@ void nsMappedAttributes::RemoveAttrAt(uint32_t aPos, nsAttrValue& aValue) {
 const nsAttrName* nsMappedAttributes::GetExistingAttrNameFromQName(
     const nsAString& aName) const {
   for (const InternalAttr& attr : Attrs()) {
-    if (attr.mName.IsAtom()) {
-      if (attr.mName.Atom()->Equals(aName)) {
-        return &attr.mName;
-      }
-    } else {
-      if (attr.mName.NodeInfo()->QualifiedNameEquals(aName)) {
-        return &attr.mName;
-      }
+    if (attr.mName.Atom()->Equals(aName)) {
+      return &attr.mName;
     }
   }
 

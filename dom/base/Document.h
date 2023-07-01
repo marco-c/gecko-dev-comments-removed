@@ -143,9 +143,7 @@ class nsFrameLoader;
 class nsFrameLoaderOwner;
 class nsGenericHTMLElement;
 class nsGlobalWindowInner;
-class nsHTMLCSSStyleSheet;
 class nsHTMLDocument;
-class nsHTMLStyleSheet;
 class nsHtml5TreeOpExecutor;
 class nsIAppWindow;
 class nsIAsyncVerifyRedirectCallback;
@@ -188,6 +186,7 @@ struct nsFont;
 
 namespace mozilla {
 class AbstractThread;
+class AttributeStyles;
 class StyleSheet;
 class EditorBase;
 class EditorCommand;
@@ -1733,15 +1732,7 @@ class Document : public nsINode,
 
 
 
-  nsHTMLStyleSheet* GetAttributeStyleSheet() const { return mAttrStyleSheet; }
-
-  
-
-
-
-  nsHTMLCSSStyleSheet* GetInlineStyleSheet() const {
-    return mStyleAttrStyleSheet;
-  }
+  AttributeStyles* GetAttributeStyles() const { return mAttributeStyles.get(); }
 
   virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject);
 
@@ -4487,8 +4478,10 @@ class Document : public nsINode,
   nsNodeInfoManager* mNodeInfoManager;
   RefPtr<css::Loader> mCSSLoader;
   RefPtr<css::ImageLoader> mStyleImageLoader;
-  RefPtr<nsHTMLStyleSheet> mAttrStyleSheet;
-  RefPtr<nsHTMLCSSStyleSheet> mStyleAttrStyleSheet;
+
+  
+  
+  RefPtr<AttributeStyles> mAttributeStyles;
 
   
   RefPtr<dom::ImageTracker> mImageTracker;

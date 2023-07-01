@@ -1282,10 +1282,6 @@ void SVGElement::UpdateContentDeclarationBlock() {
   mContentDeclarationBlock = mappedAttrParser.TakeDeclarationBlock();
 }
 
-const DeclarationBlock* SVGElement::GetContentDeclarationBlock() const {
-  return mContentDeclarationBlock;
-}
-
 
 
 

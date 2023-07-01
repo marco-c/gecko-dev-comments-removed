@@ -22,12 +22,12 @@
 #include "nsAttrValue.h"
 #include "nsCaseTreatment.h"
 
-class nsINode;
-class nsIContent;
 class nsMappedAttributes;
-class nsHTMLStyleSheet;
-class nsRuleWalker;
 class nsMappedAttributeElement;
+
+namespace mozilla {
+class AttributeStyles;
+}
 
 class AttrArray {
   using BorrowedAttrInfo = mozilla::dom::BorrowedAttrInfo;
@@ -84,13 +84,7 @@ class AttrArray {
   
   nsresult SetAndSwapMappedAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                 nsMappedAttributeElement* aContent,
-                                nsHTMLStyleSheet* aSheet, bool* aHadValue);
-  nsresult SetMappedAttrStyleSheet(nsHTMLStyleSheet* aSheet) {
-    if (!mImpl || !mImpl->mMappedAttrs) {
-      return NS_OK;
-    }
-    return DoSetMappedAttrStyleSheet(aSheet);
-  }
+                                bool* aHadValue);
 
   
   
@@ -105,12 +99,13 @@ class AttrArray {
   void Compact();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-  bool HasMappedAttrs() const { return MappedAttrCount(); }
-  const nsMappedAttributes* GetMapped() const;
+  bool HasMappedAttrs() const { return !!GetMapped(); }
+  const nsMappedAttributes* GetMapped() const {
+    return mImpl ? mImpl->mMappedAttrs : nullptr;
+  }
 
   
-  nsresult ForceMapped(nsMappedAttributeElement* aContent,
-                       mozilla::dom::Document* aDocument);
+  nsresult ForceMapped(nsMappedAttributeElement* aContent);
 
   
   
@@ -163,15 +158,17 @@ class AttrArray {
     return val && val->Equals(aValue, aCaseSensitive);
   }
 
+  nsresult SetMappedAttributeStyles(mozilla::AttributeStyles* aNewStyles);
+
   struct InternalAttr {
     nsAttrName mName;
     nsAttrValue mValue;
   };
 
- private:
   AttrArray(const AttrArray& aOther) = delete;
   AttrArray& operator=(const AttrArray& aOther) = delete;
 
+ private:
   uint32_t NonMappedAttrCount() const { return mImpl ? mImpl->mAttrCount : 0; }
 
   uint32_t MappedAttrCount() const {
@@ -181,10 +178,9 @@ class AttrArray {
   uint32_t DoGetMappedAttrCount() const;
 
   
-  nsMappedAttributes* GetModifiableMapped(nsMappedAttributeElement* aContent,
-                                          nsHTMLStyleSheet* aSheet,
-                                          bool aWillAddAttr,
-                                          int32_t aAttrCount = 1);
+  nsMappedAttributes* ModifiableMapped(nsMappedAttributeElement* aContent,
+                                       bool aWillAddAttr,
+                                       int32_t aAttrCount = 1);
   nsresult MakeMappedUnique(nsMappedAttributes* aAttributes);
 
   bool GrowBy(uint32_t aGrowSize);
@@ -198,11 +194,6 @@ class AttrArray {
   
   template <typename Name>
   nsresult AddNewAttribute(Name*, nsAttrValue&);
-
-  
-
-
-  nsresult DoSetMappedAttrStyleSheet(nsHTMLStyleSheet* aSheet);
 
   
 
