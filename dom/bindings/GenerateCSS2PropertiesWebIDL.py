@@ -30,18 +30,9 @@ def generate(output, idlFilename, dataFile):
         if "Style" not in p.rules:
             continue
 
-        if p.type() == "alias":
-            if p.pref == propsData[p.prop_id].pref:
-                
-                continue
-
-            propId = p.prop_id
-        else:
-            propId = p.id
         
         
         extendedAttrs = [
-            "BindingTemplate=(CSS2Property, eCSSProperty_%s)" % propId,
             "CEReactions",
             "Throws",
             "SetterNeedsSubjectPrincipal=NonSystem",
@@ -55,47 +46,36 @@ def generate(output, idlFilename, dataFile):
             else:
                 extendedAttrs.append('Pref="%s"' % p.pref)
 
-        def add_extra_accessors(p):
-            prop = p.method
+        prop = p.method
 
-            
-            
-            if prop.startswith("Webkit"):
-                extendedAttrs.append('BindingAlias="%s"' % prop)
+        
+        
+        if prop.startswith("Webkit"):
+            extendedAttrs.append('BindingAlias="%s"' % prop)
 
-            
-            
-            if not prop.startswith("Moz"):
-                prop = prop[0].lower() + prop[1:]
+        
+        
+        if not prop.startswith("Moz"):
+            prop = prop[0].lower() + prop[1:]
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if prop != p.name:
-                extendedAttrs.append('BindingAlias="%s"' % p.name)
-
-            return prop
-
-        prop = add_extra_accessors(p)
-
-        if p.type() != "alias":
-            for a in p.aliases:
-                if p.pref == propsData[a].pref:
-                    newProp = add_extra_accessors(propsData[a])
-                    extendedAttrs.append('BindingAlias="%s"' % newProp)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if prop != p.name:
+            extendedAttrs.append('BindingAlias="%s"' % p.name)
 
         props += generateLine(prop, extendedAttrs)
 
