@@ -412,6 +412,13 @@ function prettifyCSS(text, ruleCount) {
     return token;
   };
 
+  
+  
+  const tabPrefs = getTabPrefs();
+  const baseIndentString = tabPrefs.indentWithTabs
+    ? TAB_CHARS
+    : SPACE_CHARS.repeat(tabPrefs.indentUnit);
+
   while (true) {
     
     startIndex = undefined;
@@ -437,20 +444,16 @@ function prettifyCSS(text, ruleCount) {
       }
     }
 
-    
-    
-    const tabPrefs = getTabPrefs();
-
     if (isCloseBrace) {
       
       
       indentLevel = Math.max(0, indentLevel - 1);
+      indent = baseIndentString.repeat(indentLevel);
 
+      
       if (tabPrefs.indentWithTabs) {
-        indent = TAB_CHARS.repeat(indentLevel);
         indentOffset = 4 * indentLevel;
       } else {
-        indent = SPACE_CHARS.repeat(indentLevel);
         indentOffset = 1 * indentLevel;
       }
       result = result + indent + "}";
@@ -466,11 +469,14 @@ function prettifyCSS(text, ruleCount) {
         columnOffset++;
       }
       result += "{";
+      indentLevel++;
+      indent = baseIndentString.repeat(indentLevel);
+      indentOffset = indent.length;
+
+      
       if (tabPrefs.indentWithTabs) {
-        indent = TAB_CHARS.repeat(++indentLevel);
         indentOffset = 4 * indentLevel;
       } else {
-        indent = SPACE_CHARS.repeat(++indentLevel);
         indentOffset = 1 * indentLevel;
       }
     }
