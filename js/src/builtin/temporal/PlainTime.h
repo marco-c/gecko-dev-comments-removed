@@ -121,6 +121,16 @@ bool ThrowIfInvalidTime(JSContext* cx, double hour, double minute,
 
 PlainTimeObject* CreateTemporalTime(JSContext* cx, const PlainTime& time);
 
+struct BalancedTime final {
+  int32_t days = 0;
+  PlainTime time;
+};
+
+
+
+
+BalancedTime BalanceTime(const PlainTime& time, int64_t nanoseconds);
+
 } 
 
 #endif 

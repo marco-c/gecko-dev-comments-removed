@@ -70,7 +70,9 @@ class TimeZoneObject : public NativeObject {
 };
 
 struct Instant;
+struct PlainDateTime;
 class InstantObject;
+class PlainDateTimeObject;
 
 
 
@@ -111,6 +113,27 @@ JSObject* ToTemporalTimeZone(JSContext* cx,
 
 
 TimeZoneObject* ToTemporalTimeZone(JSContext* cx, JS::Handle<JSString*> string);
+
+
+
+
+PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
+                                         JS::Handle<JSObject*> timeZone,
+                                         const Instant& instant,
+                                         JS::Handle<JSObject*> calendar);
+
+
+
+
+bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+                         JS::Handle<InstantObject*> instant,
+                         PlainDateTime* result);
+
+
+
+
+bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+                         const Instant& instant, PlainDateTime* result);
 
 
 
