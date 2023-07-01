@@ -109,7 +109,6 @@ nsresult MediaDecoderStateMachineBase::Init(MediaDecoder* aDecoder) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   mMetadataManager.Connect(mReader->TimedMetadataEvent(), OwnerThread());
-  mReader->SetCanonicalDuration(&mDuration);
 
   return NS_OK;
 }
@@ -119,6 +118,7 @@ void MediaDecoderStateMachineBase::InitializationTask(MediaDecoder* aDecoder) {
 
   
   mBuffered.Connect(mReader->CanonicalBuffered());
+  mReader->SetCanonicalDuration(mDuration);
 
   
   mWatchManager.Watch(mBuffered,
