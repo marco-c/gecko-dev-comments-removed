@@ -416,6 +416,63 @@ PlainTimeObject* js::temporal::CreateTemporalTime(JSContext* cx,
 
 
 
+
+static TimeDuration CreateTimeDurationRecord(double days, int32_t hours,
+                                             int32_t minutes, int32_t seconds,
+                                             int32_t milliseconds,
+                                             int32_t microseconds,
+                                             int32_t nanoseconds) {
+  
+  MOZ_ASSERT(IsValidDuration({0, 0, 0, days, double(hours), double(minutes),
+                              double(seconds), double(microseconds),
+                              double(nanoseconds)}));
+
+  
+  return {
+      days,
+      double(hours),
+      double(minutes),
+      double(seconds),
+      double(milliseconds),
+      double(microseconds),
+      double(nanoseconds),
+  };
+}
+
+
+
+
+
+static int32_t DurationSign(int32_t hours, int32_t minutes, int32_t seconds,
+                            int32_t milliseconds, int32_t microseconds,
+                            int32_t nanoseconds) {
+  
+  if (hours) {
+    return hours > 0 ? 1 : -1;
+  }
+  if (minutes) {
+    return minutes > 0 ? 1 : -1;
+  }
+  if (seconds) {
+    return seconds > 0 ? 1 : -1;
+  }
+  if (milliseconds) {
+    return milliseconds > 0 ? 1 : -1;
+  }
+  if (microseconds) {
+    return microseconds > 0 ? 1 : -1;
+  }
+  if (nanoseconds) {
+    return nanoseconds > 0 ? 1 : -1;
+  }
+
+  
+  return 0;
+}
+
+
+
+
 template <typename IntT>
 static BalancedTime BalanceTime(IntT hour, IntT minute, IntT second,
                                 IntT millisecond, IntT microsecond,
@@ -467,6 +524,23 @@ static BalancedTime BalanceTime(IntT hour, IntT minute, IntT second,
 
 
 
+static BalancedTime BalanceTime(int32_t hour, int32_t minute, int32_t second,
+                                int32_t millisecond, int32_t microsecond,
+                                int32_t nanosecond) {
+  MOZ_ASSERT(-24 < hour && hour < 2 * 24);
+  MOZ_ASSERT(-60 < minute && minute < 2 * 60);
+  MOZ_ASSERT(-60 < second && second < 2 * 60);
+  MOZ_ASSERT(-1000 < millisecond && millisecond < 2 * 1000);
+  MOZ_ASSERT(-1000 < microsecond && microsecond < 2 * 1000);
+  MOZ_ASSERT(-1000 < nanosecond && nanosecond < 2 * 1000);
+
+  return BalanceTime<int32_t>(hour, minute, second, millisecond, microsecond,
+                              nanosecond);
+}
+
+
+
+
 BalancedTime js::temporal::BalanceTime(const PlainTime& time,
                                        int64_t nanoseconds) {
   MOZ_ASSERT(IsValidTime(time));
@@ -475,6 +549,51 @@ BalancedTime js::temporal::BalanceTime(const PlainTime& time,
   return ::BalanceTime<int64_t>(time.hour, time.minute, time.second,
                                 time.millisecond, time.microsecond,
                                 time.nanosecond + nanoseconds);
+}
+
+
+
+
+TimeDuration js::temporal::DifferenceTime(const PlainTime& time1,
+                                          const PlainTime& time2) {
+  MOZ_ASSERT(IsValidTime(time1));
+  MOZ_ASSERT(IsValidTime(time2));
+
+  
+  int32_t hours = time2.hour - time1.hour;
+
+  
+  int32_t minutes = time2.minute - time1.minute;
+
+  
+  int32_t seconds = time2.second - time1.second;
+
+  
+  int32_t milliseconds = time2.millisecond - time1.millisecond;
+
+  
+  int32_t microseconds = time2.microsecond - time1.microsecond;
+
+  
+  int32_t nanoseconds = time2.nanosecond - time1.nanosecond;
+
+  
+  int32_t sign = ::DurationSign(hours, minutes, seconds, milliseconds,
+                                microseconds, nanoseconds);
+
+  
+  auto balanced = ::BalanceTime(hours * sign, minutes * sign, seconds * sign,
+                                milliseconds * sign, microseconds * sign,
+                                nanoseconds * sign);
+
+  
+  MOZ_ASSERT(balanced.days == 0);
+
+  
+  return CreateTimeDurationRecord(
+      0, balanced.time.hour * sign, balanced.time.minute * sign,
+      balanced.time.second * sign, balanced.time.millisecond * sign,
+      balanced.time.microsecond * sign, balanced.time.nanosecond * sign);
 }
 
 
@@ -647,6 +766,224 @@ static JSString* TemporalTimeToString(JSContext* cx, const PlainTime& time,
 
   
   return result.finishString();
+}
+
+
+
+
+
+static int64_t TotalDurationNanoseconds(const Duration& duration) {
+  
+  
+  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(std::abs(duration.hours) <= 24);
+  MOZ_ASSERT(std::abs(duration.minutes) <= 60);
+  MOZ_ASSERT(std::abs(duration.seconds) <= 60);
+  MOZ_ASSERT(std::abs(duration.milliseconds) <= 1000);
+  MOZ_ASSERT(std::abs(duration.microseconds) <= 1000);
+  MOZ_ASSERT(std::abs(duration.nanoseconds) <= 1000);
+
+  
+  MOZ_ASSERT(duration.days == 0);
+
+  
+  auto hours = int64_t(duration.hours);
+
+  
+  auto minutes = int64_t(duration.minutes) + hours * 60;
+
+  
+  auto seconds = int64_t(duration.seconds) + minutes * 60;
+
+  
+  auto milliseconds = int64_t(duration.milliseconds) + seconds * 1000;
+
+  
+  auto microseconds = int64_t(duration.microseconds) + milliseconds * 1000;
+
+  
+  return int64_t(duration.nanoseconds) + microseconds * 1000;
+}
+
+
+
+
+
+static Duration BalanceTimeDuration(const Duration& duration,
+                                    TemporalUnit largestUnit) {
+  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(largestUnit > TemporalUnit::Day);
+
+  
+  MOZ_ASSERT(duration.years == 0);
+  MOZ_ASSERT(duration.months == 0);
+  MOZ_ASSERT(duration.weeks == 0);
+  MOZ_ASSERT(duration.days == 0);
+
+  
+
+  
+  int64_t nanoseconds = TotalDurationNanoseconds(duration);
+  MOZ_ASSERT(std::abs(nanoseconds) <= ToNanoseconds(TemporalUnit::Day));
+
+  
+
+  
+  int64_t hours = 0;
+  int64_t minutes = 0;
+  int64_t seconds = 0;
+  int64_t milliseconds = 0;
+  int64_t microseconds = 0;
+
+  
+  int32_t sign = nanoseconds < 0 ? -1 : +1;
+
+  
+  nanoseconds = std::abs(nanoseconds);
+
+  
+  switch (largestUnit) {
+    case TemporalUnit::Auto:
+    case TemporalUnit::Year:
+    case TemporalUnit::Month:
+    case TemporalUnit::Week:
+    case TemporalUnit::Day:
+      MOZ_CRASH("Unexpected temporal unit");
+
+    case TemporalUnit::Hour: {
+      
+
+      
+      microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      
+      milliseconds = microseconds / 1000;
+
+      
+      microseconds = microseconds % 1000;
+
+      
+      seconds = milliseconds / 1000;
+
+      
+      milliseconds = milliseconds % 1000;
+
+      
+      minutes = seconds / 60;
+
+      
+      seconds = seconds % 60;
+
+      
+      hours = minutes / 60;
+
+      
+      minutes = minutes % 60;
+
+      break;
+    }
+    case TemporalUnit::Minute: {
+      
+
+      
+      microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      
+      milliseconds = microseconds / 1000;
+
+      
+      microseconds = microseconds % 1000;
+
+      
+      seconds = milliseconds / 1000;
+
+      
+      milliseconds = milliseconds % 1000;
+
+      
+      minutes = seconds / 60;
+
+      
+      seconds = seconds % 60;
+
+      break;
+    }
+    case TemporalUnit::Second: {
+      
+
+      
+      microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      
+      milliseconds = microseconds / 1000;
+
+      
+      microseconds = microseconds % 1000;
+
+      
+      seconds = milliseconds / 1000;
+
+      
+      milliseconds = milliseconds % 1000;
+
+      break;
+    }
+    case TemporalUnit::Millisecond: {
+      
+
+      
+      microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      
+      milliseconds = microseconds / 1000;
+
+      
+      microseconds = microseconds % 1000;
+
+      break;
+    }
+    case TemporalUnit::Microsecond: {
+      
+
+      
+      microseconds = nanoseconds / 1000;
+
+      
+      nanoseconds = nanoseconds % 1000;
+
+      break;
+    }
+    case TemporalUnit::Nanosecond: {
+      
+      break;
+    }
+  }
+
+  
+  return {
+      0,
+      0,
+      0,
+      0,
+      double(hours * sign),
+      double(minutes * sign),
+      double(seconds * sign),
+      double(milliseconds * sign),
+      double(microseconds * sign),
+      double(nanoseconds * sign),
+  };
 }
 
 
@@ -1093,6 +1430,89 @@ static PlainTime AddTime(const PlainTime& time, const Duration& duration) {
   return balanced.time;
 }
 
+
+
+
+static bool DifferenceTemporalPlainTime(JSContext* cx,
+                                        TemporalDifference operation,
+                                        const CallArgs& args) {
+  auto temporalTime =
+      ToPlainTime(&args.thisv().toObject().as<PlainTimeObject>());
+
+  
+
+  
+  PlainTime other;
+  if (!ToTemporalTime(cx, args.get(0), &other)) {
+    return false;
+  }
+
+  
+  DifferenceSettings settings;
+  if (args.hasDefined(1)) {
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    Rooted<PlainObject*> resolvedOptions(cx,
+                                         NewPlainObjectWithProto(cx, nullptr));
+    if (!resolvedOptions) {
+      return false;
+    }
+
+    
+    if (!CopyDataProperties(cx, resolvedOptions, options)) {
+      return false;
+    }
+
+    
+    if (!GetDifferenceSettings(
+            cx, operation, resolvedOptions, TemporalUnitGroup::Time,
+            TemporalUnit::Nanosecond, TemporalUnit::Hour, &settings)) {
+      return false;
+    }
+  } else {
+    
+    settings = {
+        TemporalUnit::Nanosecond,
+        TemporalUnit::Hour,
+        TemporalRoundingMode::Trunc,
+        Increment{1},
+    };
+  }
+
+  
+  auto diff = DifferenceTime(temporalTime, other);
+
+  
+  Duration roundedDuration;
+  if (!RoundDuration(cx, diff.toDuration().time(), settings.roundingIncrement,
+                     settings.smallestUnit, settings.roundingMode,
+                     &roundedDuration)) {
+    return false;
+  }
+
+  
+  auto balancedDuration =
+      BalanceTimeDuration(roundedDuration, settings.largestUnit);
+
+  
+  if (operation == TemporalDifference::Since) {
+    balancedDuration = balancedDuration.negate();
+  }
+
+  auto* result = CreateTemporalDuration(cx, balancedDuration);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
 enum class PlainTimeDuration { Add, Subtract };
 
 
@@ -1531,6 +1951,40 @@ static bool PlainTime_with(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainTime_until(JSContext* cx, const CallArgs& args) {
+  
+  return DifferenceTemporalPlainTime(cx, TemporalDifference::Until, args);
+}
+
+
+
+
+static bool PlainTime_until(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainTime, PlainTime_until>(cx, args);
+}
+
+
+
+
+static bool PlainTime_since(JSContext* cx, const CallArgs& args) {
+  
+  return DifferenceTemporalPlainTime(cx, TemporalDifference::Since, args);
+}
+
+
+
+
+static bool PlainTime_since(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainTime, PlainTime_since>(cx, args);
+}
+
+
+
+
 static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
   auto* temporalTime = &args.thisv().toObject().as<PlainTimeObject>();
   auto time = ToPlainTime(temporalTime);
@@ -1909,6 +2363,8 @@ static const JSFunctionSpec PlainTime_prototype_methods[] = {
     JS_FN("add", PlainTime_add, 1, 0),
     JS_FN("subtract", PlainTime_subtract, 1, 0),
     JS_FN("with", PlainTime_with, 1, 0),
+    JS_FN("until", PlainTime_until, 1, 0),
+    JS_FN("since", PlainTime_since, 1, 0),
     JS_FN("round", PlainTime_round, 1, 0),
     JS_FN("equals", PlainTime_equals, 1, 0),
     JS_FN("toPlainDateTime", PlainTime_toPlainDateTime, 1, 0),
