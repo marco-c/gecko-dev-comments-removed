@@ -8,14 +8,6 @@
 #define nscore_h___
 
 
-
-
-
-#ifndef _XPCOM_CONFIG_H_
-#  include "xpcom-config.h"  
-#endif
-
-
 #if !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
 #  include "mozilla/mozalloc.h"
 #endif
