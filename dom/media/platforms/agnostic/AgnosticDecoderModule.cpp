@@ -87,18 +87,7 @@ static bool IsAvailableInUtility(DecoderType type) {
     case DecoderType::Opus:
       return StaticPrefs::media_utility_opus_enabled();
     case DecoderType::Vorbis:
-#if defined(__MINGW32__)
-      
-      
-      
-      
-      
-      
-      
-      return false;
-#else
       return StaticPrefs::media_utility_vorbis_enabled();
-#endif
     case DecoderType::Wave:
       return StaticPrefs::media_utility_wav_enabled();
     case DecoderType::Theora:  
