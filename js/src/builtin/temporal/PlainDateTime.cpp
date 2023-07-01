@@ -23,7 +23,12 @@
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainTime.h"
 #include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalFields.h"
+#include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalTypes.h"
+#include "builtin/temporal/TimeZone.h"
+#include "builtin/temporal/Wrapped.h"
+#include "builtin/temporal/ZonedDateTime.h"
 #include "ds/IdValuePair.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
@@ -401,6 +406,243 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
 
 
 
+bool js::temporal::InterpretTemporalDateTimeFields(JSContext* cx,
+                                                   Handle<JSObject*> calendar,
+                                                   Handle<PlainObject*> fields,
+                                                   Handle<JSObject*> options,
+                                                   PlainDateTime* result) {
+  
+  TimeRecord timeResult;
+  if (!ToTemporalTimeRecord(cx, fields, &timeResult)) {
+    return false;
+  }
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+  if (!ToTemporalOverflow(cx, options, &overflow)) {
+    return false;
+  }
+
+  
+  auto temporalDate =
+      js::temporal::CalendarDateFromFields(cx, calendar, fields, options);
+  if (!temporalDate) {
+    return false;
+  }
+  auto date = ToPlainDate(&temporalDate.unwrap());
+
+  
+  PlainTime time;
+  if (!RegulateTime(cx, timeResult, overflow, &time)) {
+    return false;
+  }
+
+  
+  *result = {date, time};
+  return true;
+}
+
+
+
+
+bool js::temporal::InterpretTemporalDateTimeFields(JSContext* cx,
+                                                   Handle<JSObject*> calendar,
+                                                   Handle<PlainObject*> fields,
+                                                   PlainDateTime* result) {
+  
+  TimeRecord timeResult;
+  if (!ToTemporalTimeRecord(cx, fields, &timeResult)) {
+    return false;
+  }
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+
+  
+  auto temporalDate = CalendarDateFromFields(cx, calendar, fields);
+  if (!temporalDate) {
+    return false;
+  }
+  auto date = ToPlainDate(&temporalDate.unwrap());
+
+  
+  PlainTime time;
+  if (!RegulateTime(cx, timeResult, overflow, &time)) {
+    return false;
+  }
+
+  
+  *result = {date, time};
+  return true;
+}
+
+
+
+
+static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
+    JSContext* cx, Handle<Value> item, Handle<JSObject*> maybeOptions) {
+  
+
+  
+  Rooted<JSObject*> calendar(cx);
+  PlainDateTime result;
+  if (item.isObject()) {
+    Rooted<JSObject*> itemObj(cx, &item.toObject());
+
+    
+    if (itemObj->canUnwrapAs<PlainDateTimeObject>()) {
+      return itemObj;
+    }
+
+    
+    if (auto* zonedDateTime = itemObj->maybeUnwrapIf<ZonedDateTimeObject>()) {
+      auto epochInstant = ToInstant(zonedDateTime);
+      Rooted<JSObject*> timeZone(cx, zonedDateTime->timeZone());
+      Rooted<JSObject*> calendar(cx, zonedDateTime->calendar());
+
+      if (!cx->compartment()->wrap(cx, &timeZone)) {
+        return nullptr;
+      }
+      if (!cx->compartment()->wrap(cx, &calendar)) {
+        return nullptr;
+      }
+
+      
+      if (maybeOptions) {
+        TemporalOverflow ignored;
+        if (!ToTemporalOverflow(cx, maybeOptions, &ignored)) {
+          return nullptr;
+        }
+      }
+
+      
+      return GetPlainDateTimeFor(cx, timeZone, epochInstant, calendar);
+    }
+
+    
+    if (auto* date = itemObj->maybeUnwrapIf<PlainDateObject>()) {
+      PlainDateTime dateTime = {ToPlainDate(date), {}};
+      Rooted<JSObject*> calendar(cx, date->calendar());
+      if (!cx->compartment()->wrap(cx, &calendar)) {
+        return nullptr;
+      }
+
+      
+      if (maybeOptions) {
+        TemporalOverflow ignored;
+        if (!ToTemporalOverflow(cx, maybeOptions, &ignored)) {
+          return nullptr;
+        }
+      }
+
+      
+      return CreateTemporalDateTime(cx, dateTime, calendar);
+    }
+
+    
+    calendar = GetTemporalCalendarWithISODefault(cx, itemObj);
+    if (!calendar) {
+      return nullptr;
+    }
+
+    
+    JS::RootedVector<PropertyKey> fieldNames(cx);
+    if (!CalendarFields(cx, calendar,
+                        {CalendarField::Day, CalendarField::Hour,
+                         CalendarField::Microsecond, CalendarField::Millisecond,
+                         CalendarField::Minute, CalendarField::Month,
+                         CalendarField::MonthCode, CalendarField::Nanosecond,
+                         CalendarField::Second, CalendarField::Year},
+                        &fieldNames)) {
+      return nullptr;
+    }
+
+    
+    Rooted<PlainObject*> fields(cx,
+                                PrepareTemporalFields(cx, itemObj, fieldNames));
+    if (!fields) {
+      return nullptr;
+    }
+
+    
+    if (maybeOptions) {
+      if (!InterpretTemporalDateTimeFields(cx, calendar, fields, maybeOptions,
+                                           &result)) {
+        return nullptr;
+      }
+    } else {
+      if (!InterpretTemporalDateTimeFields(cx, calendar, fields, &result)) {
+        return nullptr;
+      }
+    }
+  } else {
+    
+    if (maybeOptions) {
+      TemporalOverflow ignored;
+      if (!ToTemporalOverflow(cx, maybeOptions, &ignored)) {
+        return nullptr;
+      }
+    }
+
+    
+    Rooted<JSString*> string(cx, JS::ToString(cx, item));
+    if (!string) {
+      return nullptr;
+    }
+
+    
+    Rooted<JSString*> calendarString(cx);
+    if (!ParseTemporalDateTimeString(cx, string, &result, &calendarString)) {
+      return nullptr;
+    }
+
+    
+    MOZ_ASSERT(IsValidISODate(result.date));
+
+    
+    MOZ_ASSERT(IsValidTime(result.time));
+
+    
+    Rooted<Value> calendarValue(cx);
+    if (calendarString) {
+      calendarValue.setString(calendarString);
+    }
+
+    calendar = ToTemporalCalendarWithISODefault(cx, calendarValue);
+    if (!calendar) {
+      return nullptr;
+    }
+  }
+
+  
+  return CreateTemporalDateTime(cx, result, calendar);
+}
+
+
+
+
+Wrapped<PlainDateTimeObject*> js::temporal::ToTemporalDateTime(
+    JSContext* cx, Handle<Value> item) {
+  return ::ToTemporalDateTime(cx, item, nullptr);
+}
+
+
+
+
+bool js::temporal::ToTemporalDateTime(JSContext* cx, Handle<Value> item,
+                                      PlainDateTime* result) {
+  auto obj = ::ToTemporalDateTime(cx, item, nullptr);
+  if (!obj) {
+    return false;
+  }
+
+  *result = ToPlainDateTime(&obj.unwrap());
+  return true;
+}
+
+
+
+
 
 
 static bool PlainDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
@@ -493,6 +735,61 @@ static bool PlainDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setObject(*temporalDateTime);
+  return true;
+}
+
+
+
+
+static bool PlainDateTime_from(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    options = RequireObjectArg(cx, "options", "from", args[1]);
+    if (!options) {
+      return false;
+    }
+  }
+
+  
+  if (args.get(0).isObject()) {
+    JSObject* item = &args[0].toObject();
+    if (auto* temporalDateTime = item->maybeUnwrapIf<PlainDateTimeObject>()) {
+      auto dateTime = ToPlainDateTime(temporalDateTime);
+
+      Rooted<JSObject*> calendar(cx, temporalDateTime->calendar());
+      if (!cx->compartment()->wrap(cx, &calendar)) {
+        return false;
+      }
+
+      if (options) {
+        
+        TemporalOverflow ignored;
+        if (!ToTemporalOverflow(cx, options, &ignored)) {
+          return false;
+        }
+      }
+
+      
+      auto* result = CreateTemporalDateTime(cx, dateTime, calendar);
+      if (!result) {
+        return false;
+      }
+
+      args.rval().setObject(*result);
+      return true;
+    }
+  }
+
+  
+  auto result = ToTemporalDateTime(cx, args.get(0), options);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
   return true;
 }
 
@@ -609,6 +906,7 @@ const JSClass PlainDateTimeObject::class_ = {
 const JSClass& PlainDateTimeObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec PlainDateTime_methods[] = {
+    JS_FN("from", PlainDateTime_from, 1, 0),
     JS_FS_END,
 };
 
