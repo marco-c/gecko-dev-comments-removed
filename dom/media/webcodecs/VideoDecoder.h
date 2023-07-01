@@ -7,24 +7,35 @@
 #ifndef mozilla_dom_VideoDecoder_h
 #define mozilla_dom_VideoDecoder_h
 
+#include <queue>
+
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/DecoderAgent.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
 
 namespace mozilla {
+
+class TrackInfo;
+
 namespace dom {
 
 class EncodedVideoChunk;
 class EventHandlerNonNull;
 class GlobalObject;
 class Promise;
+class ThreadSafeWorkerRef;
 class VideoFrameOutputCallback;
 class WebCodecsErrorCallback;
 enum class CodecState : uint8_t;
@@ -32,9 +43,21 @@ struct VideoDecoderConfig;
 struct VideoDecoderInit;
 
 }  
+
+namespace media {
+class ShutdownBlockingTicket;
+}
+
 }  
 
 namespace mozilla::dom {
+
+struct ConfigureMessage final {
+  explicit ConfigureMessage(UniquePtr<VideoDecoderConfig>&& aConfig);
+  const nsCString mTitle;  
+  MozPromiseRequestHolder<DecoderAgent::ConfigurePromise> mRequest;
+  UniquePtr<VideoDecoderConfig> mConfig;
+};
 
 class VideoDecoder final : public DOMEventTargetHelper {
  public:
@@ -65,7 +88,8 @@ class VideoDecoder final : public DOMEventTargetHelper {
 
   void SetOndequeue(EventHandlerNonNull* arg);
 
-  void Configure(const VideoDecoderConfig& config, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Configure(const VideoDecoderConfig& aConfig,
+                                    ErrorResult& aRv);
 
   void Decode(EncodedVideoChunk& chunk, ErrorResult& aRv);
 
@@ -88,11 +112,58 @@ class VideoDecoder final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT void ReportError(const nsresult& aResult);
 
+  MOZ_CAN_RUN_SCRIPT void ProcessControlMessageQueue();
+  void CancelPendingControlMessages();
+
+  enum class MessageProcessedResult { NotProcessed, Processed };
+  MOZ_CAN_RUN_SCRIPT MessageProcessedResult
+  ProcessConfigureMessage(ConfigureMessage& aMessage);
+
+  
+  bool CreateDecoderAgent(UniquePtr<VideoDecoderConfig>&& aConfig,
+                          UniquePtr<TrackInfo>&& aInfo);
+  void DestroyDecoderAgentIfAny();
+
   
   RefPtr<WebCodecsErrorCallback> mErrorCallback;
   RefPtr<VideoFrameOutputCallback> mOutputCallback;
 
   CodecState mState;
+
+  bool mMessageQueueBlocked;
+  std::queue<ConfigureMessage> mControlMessageQueue;
+  Maybe<ConfigureMessage> mProcessingMessage;
+
+  
+  
+  
+  RefPtr<DecoderAgent> mAgent;
+  UniquePtr<VideoDecoderConfig> mActiveConfig;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
 };
 
 }  
