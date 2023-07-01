@@ -350,7 +350,7 @@ FileSystemWritableFileStream::Create(
 
             auto autoClose = MakeScopeExit([stream] {
               stream->mCloseHandler->Close();
-              stream->mActor->SendClose();
+              stream->mActor->SendClose( true);
             });
 
             
@@ -463,7 +463,7 @@ bool FileSystemWritableFileStream::IsClosed() const {
   return mCloseHandler->IsClosed();
 }
 
-RefPtr<BoolPromise> FileSystemWritableFileStream::BeginClose() {
+RefPtr<BoolPromise> FileSystemWritableFileStream::BeginClose(bool aAbort) {
   using ClosePromise = PFileSystemWritableFileStreamChild::ClosePromise;
   if (mCloseHandler->TestAndSetClosing()) {
     Finish()
@@ -478,13 +478,13 @@ RefPtr<BoolPromise> FileSystemWritableFileStream::BeginClose() {
                  return self->mTaskQueue->BeginShutdown();
                })
         ->Then(GetCurrentSerialEventTarget(), __func__,
-               [self = RefPtr(this)](
+               [aAbort, self = RefPtr(this)](
                    const ShutdownPromise::ResolveOrRejectValue& ) {
                  if (!self->mActor) {
                    return ClosePromise::CreateAndResolve(void_t(), __func__);
                  }
 
-                 return self->mActor->SendClose();
+                 return self->mActor->SendClose(aAbort);
                })
         ->Then(GetCurrentSerialEventTarget(), __func__,
                [self = RefPtr(this)](
@@ -939,17 +939,17 @@ WritableFileStreamUnderlyingSinkAlgorithms::CloseCallbackImpl(
     return promise.forget();
   }
 
-  mStream->BeginClose()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [promise](const BoolPromise::ResolveOrRejectValue& aValue) {
-        
-        if (aValue.IsResolve()) {
-          promise->MaybeResolveWithUndefined();
-          return;
-        }
-        promise->MaybeRejectWithAbortError(
-            "Internal error closing file stream");
-      });
+  mStream->BeginClose( false)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [promise](const BoolPromise::ResolveOrRejectValue& aValue) {
+               
+               if (aValue.IsResolve()) {
+                 promise->MaybeResolveWithUndefined();
+                 return;
+               }
+               promise->MaybeRejectWithAbortError(
+                   "Internal error closing file stream");
+             });
 
   return promise.forget();
 }
@@ -964,7 +964,29 @@ WritableFileStreamUnderlyingSinkAlgorithms::AbortCallbackImpl(
   
   
 
-  return CloseCallbackImpl(aCx, aRv);
+  RefPtr<Promise> promise = Promise::Create(mStream->GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (!mStream->IsOpen()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
+
+  mStream->BeginClose( true)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [promise](const BoolPromise::ResolveOrRejectValue& aValue) {
+               
+               if (aValue.IsResolve()) {
+                 promise->MaybeResolveWithUndefined();
+                 return;
+               }
+               promise->MaybeRejectWithAbortError(
+                   "Internal error closing file stream");
+             });
+
+  return promise.forget();
 }
 
 void WritableFileStreamUnderlyingSinkAlgorithms::ReleaseObjects() {
