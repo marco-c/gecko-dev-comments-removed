@@ -237,8 +237,6 @@ def config_status(config, execute=True):
             return [normalize(o) for o in obj]
         return obj
 
-    sanitized_config = normalize(sanitized_config)
-
     
     
     
@@ -248,6 +246,7 @@ def config_status(config, execute=True):
                 """\
             #!%(python)s
             # coding=utf-8
+            from mozbuild.configure.constants import *
         """
             )
             % {"python": config["PYTHON3"]}
@@ -272,6 +271,7 @@ def config_status(config, execute=True):
             )
 
     partial_config = PartialConfigEnvironment(config["TOPOBJDIR"])
+    sanitized_config = normalize(sanitized_config)
     partial_config.write_vars(sanitized_config)
 
     
