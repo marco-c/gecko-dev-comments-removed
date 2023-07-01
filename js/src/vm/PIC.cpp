@@ -111,6 +111,38 @@ bool js::ForOfPIC::Chain::initialize(JSContext* cx) {
   return true;
 }
 
+bool js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, bool* optimized) {
+  MOZ_ASSERT(optimized);
+
+  *optimized = false;
+
+  if (!initialized_) {
+    
+    if (!initialize(cx)) {
+      return false;
+    }
+  } else if (!disabled_ && !isArrayStateStillSane()) {
+    
+    reset(cx);
+
+    if (!initialize(cx)) {
+      return false;
+    }
+  }
+  MOZ_ASSERT(initialized_);
+
+  
+  if (disabled_) {
+    return true;
+  }
+
+  
+  MOZ_ASSERT(isArrayStateStillSane());
+
+  *optimized = true;
+  return true;
+}
+
 bool js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx,
                                            Handle<ArrayObject*> array,
                                            bool* optimized) {
@@ -123,7 +155,6 @@ bool js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx,
     if (!initialize(cx)) {
       return false;
     }
-
   } else if (!disabled_ && !isArrayStateStillSane()) {
     
     reset(cx);
