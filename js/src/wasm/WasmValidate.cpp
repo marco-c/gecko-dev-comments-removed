@@ -1749,9 +1749,17 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
       const TypeDef* superTypeDef = nullptr;
 
       
+      bool finalTypeFlag = true;
+
+      
       
       if (env->gcEnabled() && d.peekByte(&form) &&
-          form == (uint8_t)TypeCode::SubType) {
+          (form == (uint8_t)TypeCode::SubNoFinalType ||
+           form == (uint8_t)TypeCode::SubFinalType)) {
+        if (form == (uint8_t)TypeCode::SubNoFinalType) {
+          finalTypeFlag = false;
+        }
+
         
         d.uncheckedReadFixedU8();
 
@@ -1817,6 +1825,7 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
           return d.fail("expected type form");
       }
 
+      typeDef->setFinal(finalTypeFlag);
       if (superTypeDef) {
         
         if (superTypeDef->subTypingDepth() >= MaxSubTypingDepth) {
