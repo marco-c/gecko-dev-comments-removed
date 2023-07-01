@@ -103,7 +103,6 @@ class InputBlockState : public RefCounted<InputBlockState> {
 
  private:
   RefPtr<AsyncPanZoomController> mTargetApzc;
-  TargetConfirmationState mTargetConfirmed;
   bool mRequiresTargetConfirmation;
   const uint64_t mBlockId;
 
@@ -115,6 +114,7 @@ class InputBlockState : public RefCounted<InputBlockState> {
   RefPtr<AsyncPanZoomController> mScrolledApzc;
 
  protected:
+  TargetConfirmationState mTargetConfirmed;
   RefPtr<const OverscrollHandoffChain> mOverscrollHandoffChain;
 
   
@@ -178,6 +178,11 @@ class CancelableBlockState : public InputBlockState {
   virtual const char* Type() = 0;
 
   bool ShouldDropEvents() const override;
+
+  void ResetContentResponseTimerExpired() {
+    mContentResponseTimerExpired = false;
+    mContentResponded = false;
+  }
 
  private:
   bool mPreventDefault;
@@ -489,6 +494,13 @@ class TouchBlockState : public CancelableBlockState {
   bool UpdateSlopState(const MultiTouchInput& aInput,
                        bool aApzcCanConsumeEvents);
   bool IsInSlop() const;
+  bool ForLongTap() const { return mForLongTap; }
+  void SetForLongTap() { mForLongTap = true; }
+  bool WasLongTapProcessed() const { return mLongTapWasProcessed; }
+  void SetLongTapProcessed() {
+    MOZ_ASSERT(!mForLongTap);
+    mLongTapWasProcessed = true;
+  }
 
   
 
@@ -507,6 +519,7 @@ class TouchBlockState : public CancelableBlockState {
   bool MustStayActive() override;
   const char* Type() override;
   TimeDuration GetTimeSinceBlockStart() const;
+  bool IsTargetOriginallyConfirmed() const;
 
  private:
   nsTArray<TouchBehaviorFlags> mAllowedTouchBehaviors;
@@ -514,10 +527,22 @@ class TouchBlockState : public CancelableBlockState {
   bool mDuringFastFling;
   bool mSingleTapOccurred;
   bool mInSlop;
+  
+  
+  
+  
+  
+  bool mForLongTap;
+  bool mLongTapWasProcessed;
   ScreenIntPoint mSlopOrigin;
   
   TouchCounter& mTouchCounter;
   TimeStamp mStartTime;
+  
+  
+  
+  
+  TargetConfirmationState mOriginalTargetConfirmedState;
 };
 
 

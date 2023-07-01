@@ -255,6 +255,12 @@ class InputQueue {
   RefPtr<KeyboardBlockState> mActiveKeyboardBlock;
 
   
+  
+  
+  
+  RefPtr<TouchBlockState> mPrevActiveTouchBlock;
+
+  
   RefPtr<AsyncPanZoomController> mLastActiveApzc;
 
   

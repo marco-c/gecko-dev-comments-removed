@@ -6,6 +6,8 @@
 
 #include "InputQueue.h"
 
+#include <inttypes.h>
+
 #include "AsyncPanZoomController.h"
 
 #include "GestureEventListener.h"
@@ -157,7 +159,12 @@ APZEventResult InputQueue::ReceiveTouchInput(
     
     MOZ_ASSERT(aTouchBehaviors.isNothing());
 
-    block = mActiveTouchBlock.get();
+    
+    
+    
+    block = mActiveTouchBlock && mActiveTouchBlock->ForLongTap()
+                ? mPrevActiveTouchBlock.get()
+                : mActiveTouchBlock.get();
     if (!block) {
       NS_WARNING(
           "Received a non-start touch event while no touch blocks active!");
@@ -189,11 +196,35 @@ APZEventResult InputQueue::ReceiveTouchInput(
     result.SetStatusForFastFling(*block, aFlags, consumableFlags, target);
   } else {  
     bool consumable = consumableFlags.IsConsumable();
+    const bool wasInSlop = block->IsInSlop();
     if (block->UpdateSlopState(aEvent, consumable)) {
       INPQ_LOG("dropping event due to block %p being in %sslop\n", block.get(),
                consumable ? "" : "mini-");
       result.SetStatusAsConsumeNoDefault();
     } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (wasInSlop && block->WasLongTapProcessed() &&
+          !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
+        INPQ_LOG(
+            "bailing out from in-stop state in block %p after a long-tap "
+            "happened\n",
+            block.get());
+        block->ResetContentResponseTimerExpired();
+        ScheduleMainThreadTimeout(aTarget, block);
+      }
       result.SetStatusForTouchEvent(*block, aFlags, consumableFlags, target);
     }
   }
@@ -616,13 +647,18 @@ TouchBlockState* InputQueue::StartNewTouchBlockForLongTap(
   TouchBlockState* newBlock = new TouchBlockState(
       aTarget, TargetConfirmationFlags{true}, mTouchCounter);
 
+  TouchBlockState* currentBlock = GetCurrentTouchBlock();
   
   
   
   
-  MOZ_ASSERT(GetCurrentTouchBlock());
-  newBlock->CopyPropertiesFrom(*GetCurrentTouchBlock());
+  MOZ_ASSERT(currentBlock);
+  newBlock->CopyPropertiesFrom(*currentBlock);
+  newBlock->SetForLongTap();
 
+  
+  
+  mPrevActiveTouchBlock = currentBlock;
   mActiveTouchBlock = newBlock;
   return newBlock;
 }
@@ -749,6 +785,9 @@ InputBlockState* InputQueue::FindBlockForId(uint64_t aInputBlockId,
   InputBlockState* block = nullptr;
   if (mActiveTouchBlock && mActiveTouchBlock->GetBlockId() == aInputBlockId) {
     block = mActiveTouchBlock.get();
+  } else if (mPrevActiveTouchBlock &&
+             mPrevActiveTouchBlock->GetBlockId() == aInputBlockId) {
+    block = mPrevActiveTouchBlock.get();
   } else if (mActiveWheelBlock &&
              mActiveWheelBlock->GetBlockId() == aInputBlockId) {
     block = mActiveWheelBlock.get();
@@ -841,6 +880,8 @@ void InputQueue::ContentReceivedInputBlock(uint64_t aInputBlockId,
     success = block->SetContentResponse(aPreventDefault);
   } else if (inputBlock) {
     NS_WARNING("input block is not a cancelable block");
+  } else {
+    INPQ_LOG("couldn't find block=%" PRIu64 "\n", aInputBlockId);
   }
   if (success) {
     ProcessQueue();
@@ -1033,7 +1074,20 @@ void InputQueue::ProcessQueue() {
   }
 
   if (CanDiscardBlock(mActiveTouchBlock)) {
+    const bool forLongTap = mActiveTouchBlock->ForLongTap();
+    INPQ_LOG("discarding a touch block %p id %" PRIu64 "\n",
+             mActiveTouchBlock.get(), mActiveTouchBlock->GetBlockId());
     mActiveTouchBlock = nullptr;
+    MOZ_ASSERT_IF(forLongTap, mPrevActiveTouchBlock);
+    if (forLongTap) {
+      INPQ_LOG("switching back to the original touch block %p id %" PRIu64 "\n",
+               mPrevActiveTouchBlock.get(),
+               mPrevActiveTouchBlock->GetBlockId());
+
+      mPrevActiveTouchBlock->SetLongTapProcessed();
+      mActiveTouchBlock = mPrevActiveTouchBlock;
+      mPrevActiveTouchBlock = nullptr;
+    }
   }
   if (CanDiscardBlock(mActiveWheelBlock)) {
     mActiveWheelBlock = nullptr;
@@ -1086,6 +1140,7 @@ void InputQueue::Clear() {
 
   mQueuedInputs.Clear();
   mActiveTouchBlock = nullptr;
+  mPrevActiveTouchBlock = nullptr;
   mActiveWheelBlock = nullptr;
   mActiveDragBlock = nullptr;
   mActivePanGestureBlock = nullptr;

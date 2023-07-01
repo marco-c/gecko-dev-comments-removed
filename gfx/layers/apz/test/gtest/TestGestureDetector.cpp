@@ -4,6 +4,9 @@
 
 
 
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
 #include "APZCBasicTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
@@ -480,7 +483,9 @@ class APZCLongPressTester : public APZCGestureDetectorTester {
   void DoLongPressPreventDefaultTest(uint32_t aBehavior) {
     MakeApzcUnzoomable();
 
-    EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(0);
+    
+    
+    EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
 
     int touchX = 10, touchStartY = 10, touchEndY = 50;
 
