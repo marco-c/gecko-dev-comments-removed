@@ -15,6 +15,14 @@ class JSLinearString;
 
 namespace js::temporal {
 
+struct PlainDateTime;
+
+
+
+
+bool ParseTemporalInstantString(JSContext* cx, JS::Handle<JSString*> str,
+                                PlainDateTime* result, int64_t* offset);
+
 
 
 

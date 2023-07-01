@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "builtin/temporal/TemporalTypes.h"
+#include "builtin/temporal/Wrapped.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "vm/NativeObject.h"
@@ -100,7 +101,25 @@ JS::BigInt* ToEpochDifferenceNanoseconds(JSContext* cx, const Instant& instant);
 
 
 
+Wrapped<InstantObject*> ToTemporalInstant(JSContext* cx,
+                                          JS::Handle<JS::Value> item);
+
+
+
+
+bool ToTemporalInstantEpochInstant(JSContext* cx, JS::Handle<JS::Value> item,
+                                   Instant* result);
+
+
+
+
 InstantObject* CreateTemporalInstant(JSContext* cx, const Instant& instant);
+
+
+
+
+
+Instant GetUTCEpochNanoseconds(const PlainDateTime& dateTime);
 
 } 
 
