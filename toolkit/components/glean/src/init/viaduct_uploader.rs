@@ -6,6 +6,10 @@ use glean::net::{PingUploader, UploadResult};
 use url::Url;
 use viaduct::{Error::*, Request};
 
+extern "C" {
+    fn FOG_TooLateToSend() -> bool;
+}
+
 
 #[derive(Debug)]
 pub(crate) struct ViaductUploader;
@@ -23,6 +27,11 @@ impl PingUploader for ViaductUploader {
         log::trace!("FOG Ping Uploader uploading to {}", url);
         let url_clone = url.clone();
         let result: std::result::Result<UploadResult, viaduct::Error> = (move || {
+            
+            if unsafe { FOG_TooLateToSend() } {
+                log::trace!("Attempted to send ping too late into shutdown.");
+                return Ok(UploadResult::done());
+            }
             let debug_tagged = headers.iter().any(|(name, _)| name == "X-Debug-ID");
             let localhost_port = static_prefs::pref!("telemetry.fog.test.localhost_port");
             if localhost_port < 0
