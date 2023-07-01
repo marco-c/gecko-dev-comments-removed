@@ -2165,7 +2165,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIGlobalObject* aGlobalObject,
 
 
 
-
 inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
                                  nsAutoCString& url, bool isExemptDomain) {
   nsAutoCString list;
@@ -2199,28 +2198,8 @@ inline bool CookieJarSettingsSaysShouldResistFingerprinting(
   return cookieJarSettings->GetShouldResistFingerprinting();
 }
 
-inline bool SchemeSaysShouldNotResistFingerprinting(nsIURI* aURI) {
-  return aURI->SchemeIs("chrome") || aURI->SchemeIs("resource") ||
-         aURI->SchemeIs("view-source") || aURI->SchemeIs("moz-extension") ||
-         (aURI->SchemeIs("about") && !NS_IsContentAccessibleAboutURI(aURI));
-}
-
-inline bool SchemeSaysShouldNotResistFingerprinting(nsIPrincipal* aPrincipal) {
-  if (aPrincipal->SchemeIs("chrome") || aPrincipal->SchemeIs("resource") ||
-      aPrincipal->SchemeIs("view-source") ||
-      aPrincipal->SchemeIs("moz-extension")) {
-    return true;
-  }
-
-  bool isSpecialAboutURI;
-  Unused << aPrincipal->IsContentAccessibleAboutURI(&isSpecialAboutURI);
-  return isSpecialAboutURI;
-}
-
 const char* kExemptedDomainsPrefName =
     "privacy.resistFingerprinting.exemptedDomains";
-
-
 
 
 bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification,
@@ -2359,7 +2338,9 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   
-  if (SchemeSaysShouldNotResistFingerprinting(aURI)) {
+  if (aURI->SchemeIs("about") || aURI->SchemeIs("chrome") ||
+      aURI->SchemeIs("resource") || aURI->SchemeIs("view-source") ||
+      aURI->SchemeIs("moz-extension")) {
     return false;
   }
 
@@ -2442,7 +2423,8 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   
-  if (SchemeSaysShouldNotResistFingerprinting(aPrincipal)) {
+  if (aPrincipal->SchemeIs("about") || aPrincipal->SchemeIs("chrome") ||
+      aPrincipal->SchemeIs("resource") || aPrincipal->SchemeIs("view-source")) {
     return false;
   }
 
@@ -2470,18 +2452,18 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   
   
   nsCOMPtr<nsIURI> uri;
+  nsresult rv;
   if (isExemptDomain && StaticPrefs::privacy_firstparty_isolate() &&
       !originAttributes.mFirstPartyDomain.IsEmpty()) {
-    nsresult rv =
-        NS_NewURI(getter_AddRefs(uri),
-                  u"https://"_ns + originAttributes.mFirstPartyDomain);
+    rv = NS_NewURI(getter_AddRefs(uri),
+                   u"https://"_ns + originAttributes.mFirstPartyDomain);
     if (!NS_FAILED(rv)) {
       isExemptDomain =
           nsContentUtils::IsURIInPrefList(uri, kExemptedDomainsPrefName);
     }
   } else if (isExemptDomain && !originAttributes.mPartitionKey.IsEmpty()) {
-    nsresult rv = NS_NewURI(getter_AddRefs(uri),
-                            u"https://"_ns + originAttributes.mPartitionKey);
+    rv = NS_NewURI(getter_AddRefs(uri),
+                   u"https://"_ns + originAttributes.mPartitionKey);
     if (!NS_FAILED(rv)) {
       isExemptDomain =
           nsContentUtils::IsURIInPrefList(uri, kExemptedDomainsPrefName);
@@ -2490,8 +2472,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
   return !isExemptDomain;
 }
-
-
 
 
 void nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
