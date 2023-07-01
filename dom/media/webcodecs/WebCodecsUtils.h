@@ -15,7 +15,16 @@
 #include "mozilla/Span.h"
 #include "mozilla/dom/UnionTypes.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+
+namespace gfx {
+enum class ColorRange : uint8_t;
+enum class ColorSpace2 : uint8_t;
+enum class TransferFunction : uint8_t;
+enum class YUVColorSpace : uint8_t;
+}  
+
+namespace dom {
 
 
 
@@ -41,6 +50,25 @@ CloneBuffer(
     JSContext* aCx,
     const OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer);
 
+
+
+
+
+
+enum class VideoColorPrimaries : uint8_t;
+enum class VideoMatrixCoefficients : uint8_t;
+enum class VideoTransferCharacteristics : uint8_t;
+
+gfx::ColorRange ToColorRange(bool aIsFullRange);
+
+gfx::YUVColorSpace ToColorSpace(VideoMatrixCoefficients aMatrix);
+
+gfx::TransferFunction ToTransferFunction(
+    VideoTransferCharacteristics aTransfer);
+
+gfx::ColorSpace2 ToPrimaries(VideoColorPrimaries aPrimaries);
+
+}  
 }  
 
 #endif  
