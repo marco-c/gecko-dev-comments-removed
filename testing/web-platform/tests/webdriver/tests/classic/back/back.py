@@ -33,9 +33,6 @@ def test_no_browsing_history(session):
     assert_success(response)
 
 
-
-
-@pytest.mark.capabilities({"acceptInsecureCerts": True})
 @pytest.mark.parametrize("protocol,parameters", [
     ("http", ""),
     ("https", ""),

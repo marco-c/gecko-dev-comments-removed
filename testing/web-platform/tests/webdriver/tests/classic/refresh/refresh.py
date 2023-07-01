@@ -39,9 +39,6 @@ def test_no_browsing_context(session, closed_frame, inline):
     assert session.find.css("#foo", all=False)
 
 
-
-
-@pytest.mark.capabilities({"acceptInsecureCerts": True})
 @pytest.mark.parametrize("protocol,parameters", [
     ("http", ""),
     ("https", ""),

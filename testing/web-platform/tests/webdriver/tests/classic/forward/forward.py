@@ -61,9 +61,6 @@ def test_no_browsing_history(session, inline):
     assert element.property("id") == "foo"
 
 
-
-
-@pytest.mark.capabilities({"acceptInsecureCerts": True})
 @pytest.mark.parametrize("protocol,parameters", [
     ("http", ""),
     ("https", ""),
