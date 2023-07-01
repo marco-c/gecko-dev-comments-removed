@@ -148,8 +148,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
           
           module: "browserAction",
           event: "onClicked",
-          
-          
+          inputHandling: true,
           extensionApi: this,
         }).api(),
 
