@@ -16,6 +16,7 @@
 
 namespace js {
 struct ClassSpec;
+class PlainObject;
 class PropertyName;
 }  
 
@@ -62,6 +63,19 @@ bool GetMethod(JSContext* cx, JS::Handle<JSObject*> object,
 bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
                       JS::Handle<PropertyName*> name,
                       JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool CopyDataProperties(JSContext* cx, JS::Handle<PlainObject*> target,
+                        JS::Handle<JSObject*> source);
+
+
+
+
+bool CopyDataPropertiesIgnoreUndefined(JSContext* cx,
+                                       JS::Handle<PlainObject*> target,
+                                       JS::Handle<JSObject*> source);
 
 } 
 
