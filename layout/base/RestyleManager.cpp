@@ -3492,9 +3492,6 @@ void RestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
     restyleHint |= RestyleHint::RESTYLE_STYLE_ATTRIBUTE;
   } else if (AttributeChangeRequiresSubtreeRestyle(*aElement, aAttribute)) {
     restyleHint |= RestyleHint::RestyleSubtree();
-  } else if (aElement->IsAttributeMapped(aAttribute)) {
-    
-    restyleHint |= RestyleHint::RESTYLE_SELF;
   } else if (aElement->IsInShadowTree() && aAttribute == nsGkAtoms::part) {
     
     

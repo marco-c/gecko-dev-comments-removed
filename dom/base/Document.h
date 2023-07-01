@@ -1380,24 +1380,24 @@ class Document : public nsINode,
   void NotifyLayerManagerRecreated();
 
   
+  
+  
+  
+  
+  void ScheduleForPresAttrEvaluation(Element* aElement);
 
+  
+  
+  void UnscheduleForPresAttrEvaluation(Element* aElement);
 
-
-
-
-
-  void ScheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
-    mLazySVGPresElements.Insert(aSVG);
+  
+  
+  void ResolveScheduledPresAttrs() {
+    if (mLazyPresElements.IsEmpty()) {
+      return;
+    }
+    DoResolveScheduledPresAttrs();
   }
-
-  
-  
-  void UnscheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
-    mLazySVGPresElements.Remove(aSVG);
-  }
-
-  
-  void ResolveScheduledSVGPresAttrs();
 
   Maybe<ClientInfo> GetClientInfo() const;
   Maybe<ClientState> GetClientState() const;
@@ -1563,6 +1563,8 @@ class Document : public nsINode,
   void PostUnblockOnloadEvent();
 
   void DoUnblockOnload();
+
+  void DoResolveScheduledPresAttrs();
 
   void RetrieveRelevantHeaders(nsIChannel* aChannel);
 
@@ -5259,8 +5261,7 @@ class Document : public nsINode,
 
   
   
-  
-  nsTHashSet<SVGElement*> mLazySVGPresElements;
+  nsTHashSet<Element*> mLazyPresElements;
 
   nsTHashSet<RefPtr<nsAtom>> mLanguagesUsed;
 

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
-
-
+<!--
+-->
 <head>
   <title>Test HTML serializer with entities</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -228,7 +228,7 @@ function testHtmlSerializer_1 () {
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly | de.OutputRaw);
   encoder.setNode(node);
   out = encoder.encodeToString();
-  expected = '<hr id="shortattr6" noshade="noshade">';
+  expected = '<hr noshade="noshade" id="shortattr6">';
   is(out, expected, "test short attr #6");
 
   node = document.getElementById('shortattr7');
@@ -282,7 +282,7 @@ addLoadEvent(testHtmlSerializer_1);
 </ol>
 
 
-
+<!-- test for some short attr -->
 <div id="shortattr">
    <input id="shortattr1" checked="" value="" disabled="" ismap="" readonly="" foo="">
    <ol id="shortattr2" compact=""><li></li></ol>

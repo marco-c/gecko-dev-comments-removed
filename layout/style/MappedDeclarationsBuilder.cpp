@@ -1,0 +1,42 @@
+
+
+
+
+
+
+#include "MappedDeclarationsBuilder.h"
+
+#include "nsAttrValue.h"
+#include "nsAttrValueInlines.h"
+#include "mozilla/dom/Document.h"
+#include "nsPresContext.h"
+
+namespace mozilla {
+
+void MappedDeclarationsBuilder::SetIdentAtomValue(nsCSSPropertyID aId,
+                                                  nsAtom* aValue) {
+  Servo_DeclarationBlock_SetIdentStringValue(&EnsureDecls(), aId, aValue);
+  if (aId == eCSSProperty__x_lang) {
+    
+    
+    
+    
+    
+    
+    mDocument.ForceCacheLang(aValue);
+  }
+}
+
+void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {
+  if (aValue.Type() != nsAttrValue::eURL) {
+    return;
+  }
+  nsAutoString str;
+  aValue.ToString(str);
+  nsAutoCString utf8;
+  CopyUTF16toUTF8(str, utf8);
+  Servo_DeclarationBlock_SetBackgroundImage(
+      &EnsureDecls(), &utf8, mDocument.DefaultStyleAttrURLData());
+}
+
+}  
