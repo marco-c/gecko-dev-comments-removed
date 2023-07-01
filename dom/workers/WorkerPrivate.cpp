@@ -3388,12 +3388,16 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
       if (debuggerRunnablesPending) {
         WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
-        MOZ_ASSERT(globalScope);
-
         
         
-        JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
-        JS_MaybeGC(aCx);
+        
+        
+        if (globalScope) {
+          
+          
+          JSAutoRealm ar(aCx, globalScope->GetGlobalJSObject());
+          JS_MaybeGC(aCx);
+        }
       }
     } else if (normalRunnablesPending) {
       
