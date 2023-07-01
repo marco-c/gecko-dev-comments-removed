@@ -25,6 +25,7 @@
 
 namespace mozilla::ipc {
 
+class GeckoChildProcessHost;
 class NodeController;
 
 
@@ -73,7 +74,8 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   NodeChannel(const NodeName& aName, UniquePtr<IPC::Channel> aChannel,
               Listener* aListener,
-              base::ProcessId aPid = base::kInvalidProcessId);
+              base::ProcessId aPid = base::kInvalidProcessId,
+              GeckoChildProcessHost* aChildProcessHost = nullptr);
 
   
   
@@ -167,7 +169,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 #endif
 
   
-  WeakPtr<IPC::Channel::Listener> mExistingListener;
+  WeakPtr<mozilla::ipc::GeckoChildProcessHost> mChildProcessHost;
 };
 
 }  

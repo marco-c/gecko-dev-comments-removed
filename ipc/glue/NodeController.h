@@ -21,6 +21,8 @@
 
 namespace mozilla::ipc {
 
+class GeckoChildProcessHost;
+
 class NodeController final : public mojo::core::ports::NodeDelegate,
                              public NodeChannel::Listener {
   using NodeName = mojo::core::ports::NodeName;
@@ -90,7 +92,8 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   
   
   std::tuple<ScopedPort, RefPtr<NodeChannel>> InviteChildProcess(
-      UniquePtr<IPC::Channel> aChannel);
+      UniquePtr<IPC::Channel> aChannel,
+      GeckoChildProcessHost* aChildProcessHost);
 
   
   static void InitBrokerProcess();

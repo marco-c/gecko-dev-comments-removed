@@ -75,7 +75,6 @@ class SocketProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   void OnChannelConnected(base::ProcessId peer_pid) override;
-  void OnChannelError() override;
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
@@ -87,7 +86,6 @@ class SocketProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   void OnChannelConnectedTask();
-  void OnChannelErrorTask();
 
   
   void InitAfterConnect(bool aSucceeded);

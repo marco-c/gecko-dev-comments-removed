@@ -41,7 +41,7 @@ class Channel {
   
   
   
-  class Listener : public mozilla::SupportsWeakPtr {
+  class Listener {
    public:
     virtual ~Listener() = default;
 
@@ -55,11 +55,6 @@ class Channel {
     
     
     virtual void OnChannelError() {}
-
-    
-    
-    virtual void GetQueuedMessages(
-        std::queue<mozilla::UniquePtr<Message>>& queue) {}
   };
 
   enum Mode { MODE_SERVER, MODE_CLIENT };

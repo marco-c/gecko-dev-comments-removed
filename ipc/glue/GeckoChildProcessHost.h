@@ -59,7 +59,7 @@ namespace ipc {
 typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
     ProcessHandlePromise;
 
-class GeckoChildProcessHost : public IPC::Channel::Listener,
+class GeckoChildProcessHost : public SupportsWeakPtr,
                               public LinkedListElement<GeckoChildProcessHost> {
  protected:
   typedef mozilla::Monitor Monitor;
@@ -116,11 +116,7 @@ class GeckoChildProcessHost : public IPC::Channel::Listener,
   bool SyncLaunch(StringVector aExtraOpts = StringVector(),
                   int32_t timeoutMs = 0);
 
-  virtual void OnChannelConnected(base::ProcessId peer_pid) override;
-  virtual void OnMessageReceived(UniquePtr<IPC::Message> aMsg) override;
-  virtual void OnChannelError() override;
-  virtual void GetQueuedMessages(
-      std::queue<UniquePtr<IPC::Message>>& queue) override;
+  virtual void OnChannelConnected(base::ProcessId peer_pid);
 
   
   
@@ -211,7 +207,7 @@ class GeckoChildProcessHost : public IPC::Channel::Listener,
   friend class WindowsProcessLauncher;
 
  protected:
-  ~GeckoChildProcessHost();
+  virtual ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
   bool mIsFileContent;
   Monitor mMonitor;
@@ -299,15 +295,6 @@ class GeckoChildProcessHost : public IPC::Channel::Listener,
 
   
   void RemoveFromProcessList();
-
-  
-  
-  
-  
-  
-  
-  
-  std::queue<UniquePtr<IPC::Message>> mQueue;
 
   
   nsCString mTmpDirName;

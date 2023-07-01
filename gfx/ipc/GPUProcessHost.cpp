@@ -104,22 +104,6 @@ void GPUProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   NS_DispatchToMainThread(runnable);
 }
 
-void GPUProcessHost::OnChannelError() {
-  MOZ_ASSERT(!NS_IsMainThread());
-
-  GeckoChildProcessHost::OnChannelError();
-
-  
-  
-  RefPtr<Runnable> runnable;
-  {
-    MonitorAutoLock lock(mMonitor);
-    runnable =
-        mTaskFactory.NewRunnableMethod(&GPUProcessHost::OnChannelErrorTask);
-  }
-  NS_DispatchToMainThread(runnable);
-}
-
 void GPUProcessHost::OnChannelConnectedTask() {
   if (mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(true);

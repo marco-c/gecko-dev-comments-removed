@@ -875,7 +875,7 @@ void GeckoChildProcessHost::InitializeChannel(
   
   
   mozilla::UniquePtr<IPC::Channel> channel(new IPC::Channel(
-      std::move(aServerHandle), IPC::Channel::MODE_SERVER, this));
+      std::move(aServerHandle), IPC::Channel::MODE_SERVER, nullptr));
 #if defined(XP_WIN)
   channel->StartAcceptingHandles(IPC::Channel::MODE_SERVER);
 #elif defined(XP_DARWIN)
@@ -884,7 +884,7 @@ void GeckoChildProcessHost::InitializeChannel(
 
   mNodeController = NodeController::GetSingleton();
   std::tie(mInitialPort, mNodeChannel) =
-      mNodeController->InviteChildProcess(std::move(channel));
+      mNodeController->InviteChildProcess(std::move(channel), this);
 
   MonitorAutoLock lock(mMonitor);
   mProcessState = CHANNEL_INITIALIZED;
@@ -1674,36 +1674,9 @@ void GeckoChildProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   lock.Notify();
 }
 
-void GeckoChildProcessHost::OnMessageReceived(UniquePtr<IPC::Message> aMsg) {
-  
-  
-  mQueue.push(std::move(aMsg));
-}
-
-void GeckoChildProcessHost::OnChannelError() {
-  
-  
-  
-  
-  MonitorAutoLock lock(mMonitor);
-  if (mProcessState < PROCESS_CONNECTED) {
-    mProcessState = PROCESS_ERROR;
-    lock.Notify();
-  }
-  
-}
-
 RefPtr<ProcessHandlePromise> GeckoChildProcessHost::WhenProcessHandleReady() {
   MOZ_ASSERT(mHandlePromise != nullptr);
   return mHandlePromise;
-}
-
-void GeckoChildProcessHost::GetQueuedMessages(
-    std::queue<UniquePtr<IPC::Message>>& queue) {
-  
-  DCHECK(MessageLoopForIO::current());
-  swap(queue, mQueue);
-  
 }
 
 #ifdef MOZ_WIDGET_ANDROID

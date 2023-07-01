@@ -101,7 +101,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   void OnChannelConnected(base::ProcessId peer_pid) override;
-  void OnChannelError() override;
 
   void SetListener(Listener* aListener);
 
