@@ -548,26 +548,10 @@ def clobber(command_context, what, full=False):
                 "-delete",
             ]
         ret = subprocess.call(cmd, cwd=command_context.topsrcdir)
-
-        
-        
-        
         shutil.rmtree(
             mozpath.join(command_context.topobjdir, "_virtualenvs"),
             ignore_errors=True,
         )
-        from mach.util import get_virtualenv_base_dir
-
-        virtualenv_dir = Path(get_virtualenv_base_dir(command_context.topsrcdir))
-
-        for specific_venv in virtualenv_dir.iterdir():
-            if specific_venv.name == "mach":
-                
-                
-                
-                pass
-            else:
-                shutil.rmtree(specific_venv, ignore_errors=True)
 
     if "gradle" in what:
         shutil.rmtree(
