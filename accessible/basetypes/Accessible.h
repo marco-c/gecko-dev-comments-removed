@@ -603,6 +603,17 @@ class Accessible {
   
 
 
+  bool IsNonInteractive() const {
+    if (IsGeneric()) {
+      return true;
+    }
+    const role accRole = Role();
+    return accRole == role::LANDMARK || accRole == role::REGION;
+  }
+
+  
+
+
   bool IsLinkValid();
 
   
