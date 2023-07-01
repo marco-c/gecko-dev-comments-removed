@@ -189,6 +189,13 @@ class FileSystemDatabaseManager {
   
 
 
+
+  virtual nsresult MergeFileId(const EntryId& aEntryId, const FileId& aFileId,
+                               bool aAbort) = 0;
+
+  
+
+
   virtual void Close() = 0;
 
   

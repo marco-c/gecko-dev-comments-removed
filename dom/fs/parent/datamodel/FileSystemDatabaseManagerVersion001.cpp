@@ -1155,6 +1155,13 @@ nsresult FileSystemDatabaseManagerVersion001::EndUsageTracking(
   return NS_OK;
 }
 
+nsresult FileSystemDatabaseManagerVersion001::MergeFileId(
+    const EntryId& , const FileId& ,
+    bool ) {
+  
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 nsresult FileSystemDatabaseManagerVersion001::RemoveFileId(
     const FileId& ) {
   return NS_OK;
