@@ -135,11 +135,8 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         dest_x, dest_y = sel.first_caret_location()
 
         
-        
-        
         self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
-        sel.move_cursor_by_offset(1, backward=True)
         self.actions.move(el, *sel.cursor_location()).click().perform()
         src_x, src_y = sel.first_caret_location()
 
@@ -215,7 +212,6 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
-        sel.move_cursor_by_offset(1, backward=True)
         self.actions.move(el, *sel.cursor_location()).click().perform()
         x, y = sel.first_caret_location()
 
@@ -274,7 +270,6 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         self.actions.click(element=el).perform()
         sel.move_cursor_to_end()
-        sel.move_cursor_by_offset(1, backward=True)
         self.actions.move(el, *sel.cursor_location()).click().perform()
         src_x, src_y = sel.first_caret_location()
 
