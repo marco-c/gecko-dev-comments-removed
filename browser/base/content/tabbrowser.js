@@ -1374,6 +1374,14 @@
         if (!gMultiProcessBrowser) {
           this._adjustFocusBeforeTabSwitch(oldTab, newTab);
           this._adjustFocusAfterTabSwitch(newTab);
+        }
+
+        
+        
+        
+        
+        
+        if (aForceUpdate || !gMultiProcessBrowser) {
           gURLBar.afterTabSwitchFocusChange();
         }
       }
