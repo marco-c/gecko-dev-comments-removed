@@ -83,7 +83,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   bool EnqueueHelloMessage() MOZ_REQUIRES(SendMutex(), IOThread());
   void CloseLocked() MOZ_REQUIRES(SendMutex(), IOThread());
 
-  bool ProcessConnection() MOZ_REQUIRES(SendMutex(), IOThread());
   bool ProcessIncomingMessages(MessageLoopForIO::IOContext* context,
                                DWORD bytes_read, bool was_pending)
       MOZ_REQUIRES(IOThread());
@@ -151,13 +150,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   mozilla::UniquePtr<Message> incoming_message_ MOZ_GUARDED_BY(IOThread());
 
   
-  
-  
-  nsCOMPtr<nsITimer> connect_timeout_ MOZ_GUARDED_BY(IOThread());
-
-  
-  
-  
   bool waiting_connect_ MOZ_GUARDED_BY(chan_cap_) = true;
 
   
@@ -168,16 +160,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   int32_t other_pid_ MOZ_GUARDED_BY(chan_cap_) = -1;
-
-  
-  
-  
-  
-  int32_t shared_secret_ MOZ_GUARDED_BY(IOThread()) = 0;
-
-  
-  
-  bool waiting_for_shared_secret_ MOZ_GUARDED_BY(IOThread()) = false;
 
   
   

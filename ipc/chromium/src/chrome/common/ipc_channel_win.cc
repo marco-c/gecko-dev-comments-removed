@@ -54,8 +54,6 @@ Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
     return;
   }
 
-  shared_secret_ = 0;
-  waiting_for_shared_secret_ = false;
   pipe_ = pipe.release();
   EnqueueHelloMessage();
 }
@@ -98,11 +96,6 @@ void Channel::ChannelImpl::Close() {
 
 void Channel::ChannelImpl::CloseLocked() {
   chan_cap_.NoteExclusiveAccess();
-
-  if (connect_timeout_) {
-    connect_timeout_->Cancel();
-    connect_timeout_ = nullptr;
-  }
 
   
   
@@ -178,12 +171,7 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
   auto m = mozilla::MakeUnique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
 
   
-  
-  int32_t secret = waiting_for_shared_secret_ ? 0 : shared_secret_;
-
-  
-  if (!m->WriteInt(GetCurrentProcessId()) ||
-      (secret && !m->WriteUInt32(secret))) {
+  if (!m->WriteInt(GetCurrentProcessId())) {
     CloseHandle(pipe_);
     pipe_ = INVALID_HANDLE_VALUE;
     return false;
@@ -201,88 +189,21 @@ bool Channel::ChannelImpl::Connect() {
   if (pipe_ == INVALID_HANDLE_VALUE) return false;
 
   MessageLoopForIO::current()->RegisterIOHandler(pipe_, this);
-
-  
-  if (mode_ == MODE_SERVER) {
-    DCHECK(!input_state_.is_pending);
-    if (!ProcessConnection()) {
-      return false;
-    }
-  } else {
-    waiting_connect_ = false;
-  }
-
-  if (!input_state_.is_pending) {
-    
-    
-    
-    
-    IOThread().Dispatch(
-        mozilla::NewRunnableMethod<MessageLoopForIO::IOContext*, DWORD, DWORD>(
-            "ContinueConnect", this, &ChannelImpl::OnIOCompleted,
-            &input_state_.context, 0, 0));
-  }
-
-  if (!waiting_connect_) {
-    DCHECK(!output_state_.is_pending);
-    ProcessOutgoingMessages(NULL, 0, false);
-  }
-  return true;
-}
-
-bool Channel::ChannelImpl::ProcessConnection() {
-  chan_cap_.NoteExclusiveAccess();
+  waiting_connect_ = false;
 
   DCHECK(!input_state_.is_pending);
 
   
-  if (INVALID_HANDLE_VALUE == pipe_) return false;
+  
+  
+  
+  IOThread().Dispatch(
+      mozilla::NewRunnableMethod<MessageLoopForIO::IOContext*, DWORD, DWORD>(
+          "ContinueConnect", this, &ChannelImpl::OnIOCompleted,
+          &input_state_.context, 0, 0));
 
-  BOOL ok = ConnectNamedPipe(pipe_, &input_state_.context.overlapped);
-
-  DWORD err = GetLastError();
-  if (ok) {
-    
-    
-    NOTREACHED();
-    return false;
-  }
-
-  switch (err) {
-    case ERROR_IO_PENDING: {
-      static bool kExtendedTimeout =
-#ifdef DEBUG
-          true;
-#else
-          !!PR_GetEnv("MOZ_RUN_GTEST");
-#endif
-      input_state_.is_pending = this;
-      NS_NewTimerWithCallback(
-          getter_AddRefs(connect_timeout_),
-          [self = RefPtr{this}](nsITimer* timer) {
-            CHROMIUM_LOG(ERROR) << "ConnectNamedPipe timed out!";
-            self->IOThread().AssertOnCurrentThread();
-            self->Close();
-            self->listener_->OnChannelError();
-          },
-          kExtendedTimeout ? 60000 : 10000, nsITimer::TYPE_ONE_SHOT,
-          "ChannelImpl::ProcessConnection", IOThread().GetEventTarget());
-    } break;
-    case ERROR_PIPE_CONNECTED:
-      waiting_connect_ = false;
-      if (connect_timeout_) {
-        connect_timeout_->Cancel();
-        connect_timeout_ = nullptr;
-      }
-      break;
-    case ERROR_NO_DATA:
-      
-      return false;
-    default:
-      NOTREACHED();
-      return false;
-  }
-
+  DCHECK(!output_state_.is_pending);
+  ProcessOutgoingMessages(NULL, 0, false);
   return true;
 }
 
@@ -427,13 +348,6 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         MessageIterator it = MessageIterator(m);
         int32_t other_pid = it.NextInt();
         SetOtherPid(other_pid);
-        if (waiting_for_shared_secret_ && (it.NextInt() != shared_secret_)) {
-          NOTREACHED();
-          
-          
-          return false;
-        }
-        waiting_for_shared_secret_ = false;
 
         listener_->OnChannelConnected(other_pid);
       } else {
@@ -552,26 +466,10 @@ void Channel::ChannelImpl::OnIOCompleted(MessageLoopForIO::IOContext* context,
   bool ok;
   if (context == &input_state_.context) {
     was_pending = input_state_.is_pending.forget();
-    bool was_waiting_connect = waiting_connect_;
-    if (was_waiting_connect) {
-      mozilla::MutexAutoLock lock(SendMutex());
-      if (!ProcessConnection()) {
-        return;
-      }
-      
-      if (!output_queue_.IsEmpty() && !output_state_.is_pending) {
-        ProcessOutgoingMessages(NULL, 0, false);
-      }
-      if (input_state_.is_pending) {
-        return;
-      }
-      
-    }
     
     DCHECK(!processing_incoming_);
     processing_incoming_ = true;
-    ok = ProcessIncomingMessages(context, bytes_transfered,
-                                 was_pending && !was_waiting_connect);
+    ok = ProcessIncomingMessages(context, bytes_transfered, was_pending);
     processing_incoming_ = false;
   } else {
     mozilla::MutexAutoLock lock(SendMutex());
