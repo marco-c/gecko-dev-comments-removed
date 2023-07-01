@@ -1821,7 +1821,7 @@ pref("browser.translation.neverForLanguages", "");
 
 
 
-#if defined(EARLY_BETA_OR_EARLIER)
+#ifdef NIGHTLY_BUILD
 pref("browser.translations.enable", true);
 #endif
 
