@@ -10,6 +10,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/layers/InputAPZContext.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
@@ -328,6 +329,10 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
             }
           }
         } else {
+          
+          
+          
+          layers::InputAPZContext::SetDropped();
           return false;
         }
       }
