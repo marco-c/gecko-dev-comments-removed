@@ -859,6 +859,71 @@ bool js::temporal::AddInstant(JSContext* cx, const Instant& instant,
 
 
 
+
+bool js::temporal::DifferenceInstant(JSContext* cx, const Instant& ns1,
+                                     const Instant& ns2,
+                                     Increment roundingIncrement,
+                                     TemporalUnit smallestUnit,
+                                     TemporalUnit largestUnit,
+                                     TemporalRoundingMode roundingMode,
+                                     Duration* result) {
+  MOZ_ASSERT(IsValidEpochInstant(ns1));
+  MOZ_ASSERT(IsValidEpochInstant(ns2));
+  MOZ_ASSERT(largestUnit > TemporalUnit::Day);
+  MOZ_ASSERT(largestUnit <= smallestUnit);
+  MOZ_ASSERT(roundingIncrement <=
+             MaximumTemporalDurationRoundingIncrement(smallestUnit));
+
+  
+  auto diff = ns2 - ns1;
+  MOZ_ASSERT(IsValidInstantDifference(diff));
+
+  
+  auto [seconds, nanoseconds] = diff;
+  if (seconds < 0 && nanoseconds != 0) {
+    seconds += 1;
+    nanoseconds -= ToNanoseconds(TemporalUnit::Second);
+  }
+
+  
+  Duration duration = {
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      double(seconds),
+      double((nanoseconds / 1000'000) % 1000),
+      double((nanoseconds / 1000) % 1000),
+      double(nanoseconds % 1000),
+  };
+  MOZ_ASSERT(IsValidDuration(duration));
+
+  
+  Duration roundResult;
+  if (!temporal::RoundDuration(cx, duration, roundingIncrement, smallestUnit,
+                               roundingMode, &roundResult)) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(roundResult.days == 0);
+
+  
+  TimeDuration balanced;
+  if (!BalanceDuration(cx, roundResult, largestUnit, &balanced)) {
+    return false;
+  }
+  MOZ_ASSERT(balanced.days == 0);
+
+  *result = balanced.toDuration().time();
+  return true;
+}
+
+
+
+
 static bool RoundNumberToIncrementAsIfPositive(
     JSContext* cx, const Instant& x, int64_t increment,
     TemporalRoundingMode roundingMode, Instant* result) {
@@ -946,6 +1011,81 @@ static JSString* TemporalInstantToString(JSContext* cx,
 
   
   return ConcatStrings<CanGC>(cx, dateTimeString, timeZoneString);
+}
+
+
+
+
+static bool DifferenceTemporalInstant(JSContext* cx,
+                                      TemporalDifference operation,
+                                      const CallArgs& args) {
+  auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
+
+  
+
+  
+  Instant other;
+  if (!ToTemporalInstantEpochInstant(cx, args.get(0), &other)) {
+    return false;
+  }
+
+  
+  DifferenceSettings settings;
+  if (args.hasDefined(1)) {
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", ToName(operation), args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    Rooted<PlainObject*> resolvedOptions(cx,
+                                         NewPlainObjectWithProto(cx, nullptr));
+    if (!resolvedOptions) {
+      return false;
+    }
+
+    
+    if (!CopyDataProperties(cx, resolvedOptions, options)) {
+      return false;
+    }
+
+    
+    if (!GetDifferenceSettings(
+            cx, operation, resolvedOptions, TemporalUnitGroup::Time,
+            TemporalUnit::Nanosecond, TemporalUnit::Second, &settings)) {
+      return false;
+    }
+  } else {
+    
+    settings = {
+        TemporalUnit::Nanosecond,
+        TemporalUnit::Second,
+        TemporalRoundingMode::Trunc,
+        Increment{1},
+    };
+  }
+
+  
+  Duration difference;
+  if (!DifferenceInstant(cx, instant, other, settings.roundingIncrement,
+                         settings.smallestUnit, settings.largestUnit,
+                         settings.roundingMode, &difference)) {
+    return false;
+  }
+
+  
+  if (operation == TemporalDifference::Since) {
+    difference = difference.negate();
+  }
+
+  auto* obj = CreateTemporalDuration(cx, difference);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
 }
 
 enum class InstantDuration { Add, Subtract };
@@ -1359,6 +1499,38 @@ static bool Instant_subtract(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool Instant_until(JSContext* cx, const CallArgs& args) {
+  return DifferenceTemporalInstant(cx, TemporalDifference::Until, args);
+}
+
+
+
+
+static bool Instant_until(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_until>(cx, args);
+}
+
+
+
+
+static bool Instant_since(JSContext* cx, const CallArgs& args) {
+  return DifferenceTemporalInstant(cx, TemporalDifference::Since, args);
+}
+
+
+
+
+static bool Instant_since(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_since>(cx, args);
+}
+
+
+
+
 static bool Instant_round(JSContext* cx, const CallArgs& args) {
   auto instant = ToInstant(&args.thisv().toObject().as<InstantObject>());
 
@@ -1758,6 +1930,8 @@ static const JSFunctionSpec Instant_methods[] = {
 static const JSFunctionSpec Instant_prototype_methods[] = {
     JS_FN("add", Instant_add, 1, 0),
     JS_FN("subtract", Instant_subtract, 1, 0),
+    JS_FN("until", Instant_until, 1, 0),
+    JS_FN("since", Instant_since, 1, 0),
     JS_FN("round", Instant_round, 1, 0),
     JS_FN("equals", Instant_equals, 1, 0),
     JS_FN("toString", Instant_toString, 0, 0),
