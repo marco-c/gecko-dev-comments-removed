@@ -323,8 +323,10 @@ NS_IMETHODIMP
 nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable, int32_t aWhichClipboard) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  if ((aWhichClipboard != kGlobalClipboard && aWhichClipboard != kFindClipboard) || !aTransferable)
-    return NS_ERROR_FAILURE;
+  MOZ_DIAGNOSTIC_ASSERT(aTransferable);
+  
+  MOZ_DIAGNOSTIC_ASSERT(kSelectionCache != aWhichClipboard);
+  MOZ_DIAGNOSTIC_ASSERT(nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 
   NSPasteboard* cocoaPasteboard = GetPasteboard(aWhichClipboard);
   if (!cocoaPasteboard) {
@@ -335,34 +337,9 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable, int32_t aWhi
   
   nsTArray<nsCString> flavors;
   nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
-  if (NS_FAILED(rv)) return NS_ERROR_FAILURE;
-
-  
-  
-  if (mCachedClipboard == aWhichClipboard) {
-    const auto& clipboardCache = mCaches[aWhichClipboard];
-    MOZ_ASSERT(clipboardCache);
-    if (mChangeCount == [cocoaPasteboard changeCount]) {
-      if (nsITransferable* cachedTrans = clipboardCache->GetTransferable()) {
-        for (uint32_t i = 0; i < flavors.Length(); i++) {
-          nsCString& flavorStr = flavors[i];
-
-          nsCOMPtr<nsISupports> dataSupports;
-          rv = cachedTrans->GetTransferData(flavorStr.get(), getter_AddRefs(dataSupports));
-          if (NS_SUCCEEDED(rv)) {
-            aTransferable->SetTransferData(flavorStr.get(), dataSupports);
-            return NS_OK;  
-          }
-        }
-      }
-    } else {
-      
-      clipboardCache->Clear();
-    }
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
   }
-
-  
-  
 
   return nsClipboard::TransferableFromPasteboard(aTransferable, cocoaPasteboard);
 
