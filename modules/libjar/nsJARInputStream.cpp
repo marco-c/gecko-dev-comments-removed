@@ -300,19 +300,9 @@ nsresult nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
 
   
   
-  if (finished || mZs.total_out >= mOutSize) {
+  if (finished || mZs.total_out == mOutSize) {
     if (mMode == MODE_INFLATE) {
-      int zerr = inflateEnd(&mZs);
-      if (zerr != Z_OK) {
-        return NS_ERROR_FILE_CORRUPTED;
-      }
-
-      
-      
-      if (StaticPrefs::network_jar_require_size_match() &&
-          mZs.total_out != mOutSize) {
-        return NS_ERROR_FILE_CORRUPTED;
-      }
+      inflateEnd(&mZs);
     }
 
     
