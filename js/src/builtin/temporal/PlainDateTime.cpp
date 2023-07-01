@@ -2142,6 +2142,64 @@ static bool PlainDateTime_getISOFields(JSContext* cx, unsigned argc,
 
 
 
+
+static bool PlainDateTime_toZonedDateTime(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainDateTimeObject*> dateTime(
+      cx, &args.thisv().toObject().as<PlainDateTimeObject>());
+  Rooted<JSObject*> calendar(cx, dateTime->calendar());
+
+  
+  Rooted<JSObject*> timeZone(cx, ToTemporalTimeZone(cx, args.get(0)));
+  if (!timeZone) {
+    return false;
+  }
+
+  auto disambiguation = TemporalDisambiguation::Compatible;
+  if (args.hasDefined(1)) {
+    
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", "toZonedDateTime", args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!ToTemporalDisambiguation(cx, options, &disambiguation)) {
+      return false;
+    }
+  }
+
+  
+  Instant instant;
+  if (!GetInstantFor(cx, timeZone, dateTime, disambiguation, &instant)) {
+    return false;
+  }
+
+  
+  auto* result = CreateTemporalZonedDateTime(cx, instant, timeZone, calendar);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+
+static bool PlainDateTime_toZonedDateTime(JSContext* cx, unsigned argc,
+                                          Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_toZonedDateTime>(
+      cx, args);
+}
+
+
+
+
 static bool PlainDateTime_toPlainDate(JSContext* cx, const CallArgs& args) {
   auto* dateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
   Rooted<JSObject*> calendar(cx, dateTime->calendar());
@@ -2314,6 +2372,7 @@ static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
     JS_FN("toLocaleString", PlainDateTime_toLocaleString, 0, 0),
     JS_FN("toJSON", PlainDateTime_toJSON, 0, 0),
     JS_FN("valueOf", PlainDateTime_valueOf, 0, 0),
+    JS_FN("toZonedDateTime", PlainDateTime_toZonedDateTime, 1, 0),
     JS_FN("toPlainDate", PlainDateTime_toPlainDate, 0, 0),
     JS_FN("toPlainYearMonth", PlainDateTime_toPlainYearMonth, 0, 0),
     JS_FN("toPlainMonthDay", PlainDateTime_toPlainMonthDay, 0, 0),
