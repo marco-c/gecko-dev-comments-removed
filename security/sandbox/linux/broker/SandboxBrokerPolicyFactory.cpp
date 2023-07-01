@@ -1036,6 +1036,9 @@ SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
   policy->AddDir(rdonly, "/usr/share");
   policy->AddDir(rdonly, "/usr/local/share");
   policy->AddDir(rdonly, "/etc");
+  
+  
+  policy->AddDir(rdonly, "/nix/store");
 
   
   
