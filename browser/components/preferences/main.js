@@ -98,7 +98,6 @@ Preferences.addAll([
   { id: "font.language.group", type: "wstring" },
 
   
-  { id: "browser.translation.detectLanguage", type: "bool" },
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
 
   
@@ -439,17 +438,6 @@ var gMainPane = {
       makeDisableControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY)
     );
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
-    setEventListener(
-      "translationAttributionImage",
-      "click",
-      gMainPane.openTranslationProviderAttribution
-    );
-    
-    setEventListener(
-      "translateButton",
-      "command",
-      gMainPane.showTranslationExceptions
-    );
     
     setEventListener(
       "fxtranslateButton",
@@ -512,20 +500,6 @@ var gMainPane = {
     this._rebuildFonts();
 
     this.updateOnScreenKeyboardVisibility();
-
-    
-    const translationsPrefName = "browser.translation.ui.show";
-    if (Services.prefs.getBoolPref(translationsPrefName)) {
-      let row = document.getElementById("translationBox");
-      row.removeAttribute("hidden");
-      
-      var { Translation } = ChromeUtils.import(
-        "resource:///modules/translation/TranslationParent.jsm"
-      );
-      if (Translation.translationEngine == "Bing") {
-        document.getElementById("bingAttribution").removeAttribute("hidden");
-      }
-    }
 
     
     
@@ -749,14 +723,6 @@ var gMainPane = {
     Preferences.addSyncFromPrefListener(
       document.getElementById("defaultFont"),
       element => FontBuilder.readFontSelection(element)
-    );
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("translate"),
-      () =>
-        this.updateButtons(
-          "translateButton",
-          "browser.translation.detectLanguage"
-        )
     );
     Preferences.addSyncFromPrefListener(
       document.getElementById("checkSpelling"),
@@ -1930,13 +1896,6 @@ var gMainPane = {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/translations.xhtml"
     );
-  },
-
-  openTranslationProviderAttribution() {
-    var { Translation } = ChromeUtils.import(
-      "resource:///modules/translation/TranslationParent.jsm"
-    );
-    Translation.openProviderAttribution();
   },
 
   

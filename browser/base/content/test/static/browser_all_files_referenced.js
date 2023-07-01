@@ -91,11 +91,6 @@ if (AppConstants.MOZ_BACKGROUNDTASKS) {
 
 
 if (AppConstants.NIGHTLY_BUILD) {
-  gExceptionPaths.push("resource://builtin-addons/translations/");
-}
-
-
-if (AppConstants.NIGHTLY_BUILD) {
   gExceptionPaths.push("chrome://browser/content/shopping/shopping.html");
 }
 
@@ -211,11 +206,6 @@ var whitelist = [
   
   { file: "resource://pdf.js/web/debugger.js" },
   { file: "resource://pdf.js/web/debugger.css" },
-
-  
-  { file: "resource://app/modules/translation/BingTranslator.jsm" },
-  { file: "resource://app/modules/translation/GoogleTranslator.jsm" },
-  { file: "resource://app/modules/translation/YandexTranslator.jsm" },
 
   
   

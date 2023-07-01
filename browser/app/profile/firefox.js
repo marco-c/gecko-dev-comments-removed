@@ -1817,16 +1817,7 @@ pref("media.videocontrols.picture-in-picture.urlbar-button.enabled", true);
 
 
 
-
-
-
-pref("browser.translation.detectLanguage", false);
 pref("browser.translation.neverForLanguages", "");
-
-
-pref("browser.translation.ui.show", false);
-
-pref("browser.translation.engine", "Google");
 
 
 
