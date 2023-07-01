@@ -154,6 +154,7 @@ void ComposeCookieString(nsTArray<Cookie*>& aCookieList,
 bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
                                             Cookie* aCookie,
                                             bool aIsSafeTopLevelNav,
+                                            bool aHadCrossSiteRedirects,
                                             bool aLaxByDefault) {
   
   
@@ -165,6 +166,14 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
   
   if (aCookie->SameSite() == nsICookie::SAMESITE_NONE ||
       (!aLaxByDefault && aCookie->IsDefaultSameSite())) {
+    return true;
+  }
+
+  
+  
+  if (aLaxByDefault && aCookie->IsDefaultSameSite() && aHadCrossSiteRedirects &&
+      StaticPrefs::
+          network_cookie_sameSite_laxByDefault_allowBoomerangRedirect()) {
     return true;
   }
 
@@ -909,19 +918,6 @@ CookieService::RemoveNative(const nsACString& aHost, const nsACString& aName,
   return NS_OK;
 }
 
-enum class CookieProblem : uint32_t {
-  None = 0,
-  
-  RedirectDefault = 1 << 0,
-  RedirectExplicit = 1 << 1,
-  
-  RedirectGoogleAds = 1 << 2,
-  
-  OtherDefault = 1 << 3,
-  OtherExplicit = 1 << 4
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CookieProblem)
-
 void CookieService::GetCookiesForURI(
     nsIURI* aHostURI, nsIChannel* aChannel, bool aIsForeign,
     bool aIsThirdPartyTrackingResource,
@@ -1033,13 +1029,6 @@ void CookieService::GetCookiesForURI(
           aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
 
   
-  
-  
-  
-  
-  CookieProblem sameSiteProblems = CookieProblem::None;
-
-  
   for (Cookie* cookie : *cookies) {
     
     if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
@@ -1073,47 +1062,8 @@ void CookieService::GetCookiesForURI(
 
     if (aHttpBound && aIsSameSiteForeign) {
       bool blockCookie = !ProcessSameSiteCookieForForeignRequest(
-          aChannel, cookie, aIsSafeTopLevelNav, laxByDefault);
-
-      
-      
-      
-      if (blockCookie || (!laxByDefault && cookie->IsDefaultSameSite() &&
-                          !ProcessSameSiteCookieForForeignRequest(
-                              aChannel, cookie, aIsSafeTopLevelNav, true))) {
-        if (aHadCrossSiteRedirects) {
-          
-          
-          
-          if (StringBeginsWith(hostFromURI, "adservice.google."_ns)) {
-            sameSiteProblems |= CookieProblem::RedirectGoogleAds;
-          } else {
-            if (cookie->IsDefaultSameSite()) {
-              sameSiteProblems |= CookieProblem::RedirectDefault;
-            } else {
-              sameSiteProblems |= CookieProblem::RedirectExplicit;
-            }
-          }
-        } else {
-          if (cookie->IsDefaultSameSite()) {
-            sameSiteProblems |= CookieProblem::OtherDefault;
-          } else {
-            sameSiteProblems |= CookieProblem::OtherExplicit;
-          }
-        }
-      }
-
-      
-      
-      
-      
-      
-      if (blockCookie && aHadCrossSiteRedirects &&
-          cookie->IsDefaultSameSite() &&
-          StaticPrefs::
-              network_cookie_sameSite_laxByDefault_allowBoomerangRedirect()) {
-        blockCookie = false;
-      }
+          aChannel, cookie, aIsSafeTopLevelNav, aHadCrossSiteRedirects,
+          laxByDefault);
 
       if (blockCookie) {
         if (aHadCrossSiteRedirects) {
@@ -1135,9 +1085,6 @@ void CookieService::GetCookiesForURI(
       stale = true;
     }
   }
-
-  Telemetry::Accumulate(Telemetry::COOKIE_RETRIEVAL_SAMESITE_PROBLEM,
-                        static_cast<uint32_t>(sameSiteProblems));
 
   if (aCookieList.IsEmpty()) {
     return;
