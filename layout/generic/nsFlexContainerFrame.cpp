@@ -129,26 +129,6 @@ static StyleContentDistribution ConvertLegacyStyleToJustifyContent(
 
 
 
-
-
-
-
-static nscoord PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
-                                                  nscoord aContainerSize,
-                                                  mozilla::Side aStartSide) {
-  if (aStartSide == eSideLeft || aStartSide == eSideTop) {
-    return aFlexRelativeCoord;
-  }
-  return aContainerSize - aFlexRelativeCoord;
-}
-
-
-
-
-
-
-
-
 static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
   return aSize.IsAuto() || (!aIsInline && !aSize.IsLengthPercentage());
 }
@@ -272,6 +252,18 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
                                                nscoord aCrossSize) const {
     return IsRowOriented() ? LogicalSize(mWM, aMainSize, aCrossSize)
                            : LogicalSize(mWM, aCrossSize, aMainSize);
+  }
+
+  
+
+
+
+
+
+  nscoord LogicalAscentFromFlexRelativeAscent(
+      nscoord aFlexRelativeAscent, nscoord aContentBoxCrossSize) const {
+    return (IsCrossAxisReversed() ? aContentBoxCrossSize - aFlexRelativeAscent
+                                  : aFlexRelativeAscent);
   }
 
   bool IsMainAxisHorizontal() const {
@@ -4403,21 +4395,6 @@ void FlexLine::PositionItemsInMainAxis(
   }
 }
 
-
-
-
-
-
-
-static nscoord ComputePhysicalAscentFromFlexRelativeAscent(
-    nscoord aFlexRelativeAscent, nscoord aContentBoxCrossSize,
-    const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker) {
-  return aReflowInput.ComputedPhysicalBorderPadding().top +
-         PhysicalCoordFromFlexRelativeCoord(
-             aFlexRelativeAscent, aContentBoxCrossSize,
-             aAxisTracker.CrossAxisPhysicalStartSide());
-}
-
 void nsFlexContainerFrame::SizeItemInCrossAxis(ReflowInput& aChildReflowInput,
                                                FlexItem& aItem) {
   
@@ -5254,45 +5231,71 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
     
     
     if (lineForFirstBaseline && lineForFirstBaseline == &line) {
-      const nscoord firstBaselineOffset =
-          lineForFirstBaseline->FirstBaselineOffset();
-      if (firstBaselineOffset == nscoord_MIN) {
+      
+      nscoord baselineOffsetInLine;
+      if (const nscoord firstBaselineOffsetInLine =
+              lineForFirstBaseline->FirstBaselineOffset();
+          firstBaselineOffsetInLine != nscoord_MIN) {
+        baselineOffsetInLine = firstBaselineOffsetInLine;
+      } else if (const nscoord lastBaselineOffsetInLine =
+                     lineForFirstBaseline->LastBaselineOffset();
+                 lastBaselineOffsetInLine != nscoord_MIN) {
+        
+        baselineOffsetInLine =
+            lineForFirstBaseline->LineCrossSize() - lastBaselineOffsetInLine;
+      } else {
+        baselineOffsetInLine = nscoord_MIN;
+
+        
         
         
         flr.mAscent = nscoord_MIN;
-      } else {
-        
-        
-        
+      }
+
+      if (baselineOffsetInLine != nscoord_MIN) {
         MOZ_ASSERT(aAxisTracker.IsRowOriented(),
                    "This makes sense only if we are row-oriented!");
-        flr.mAscent = ComputePhysicalAscentFromFlexRelativeAscent(
-            crossAxisPosnTracker.Position() + firstBaselineOffset,
-            flr.mContentBoxCrossSize, aReflowInput, aAxisTracker);
+        const auto wm = aAxisTracker.GetWritingMode();
+        flr.mAscent =
+            aAxisTracker.LogicalAscentFromFlexRelativeAscent(
+                crossAxisPosnTracker.Position() + baselineOffsetInLine,
+                flr.mContentBoxCrossSize) +
+            aReflowInput.ComputedLogicalBorderPadding(wm).BStart(wm);
       }
     }
 
     if (lineForLastBaseline && lineForLastBaseline == &line) {
-      const nscoord lastBaselineOffset =
-          lineForLastBaseline->LastBaselineOffset();
-      if (lastBaselineOffset == nscoord_MIN) {
+      
+      nscoord baselineOffsetInLine;
+      if (const nscoord lastBaselineOffsetInLine =
+              lineForLastBaseline->LastBaselineOffset();
+          lastBaselineOffsetInLine != nscoord_MIN) {
+        
+        baselineOffsetInLine =
+            lineForLastBaseline->LineCrossSize() - lastBaselineOffsetInLine;
+      } else if (const nscoord firstBaselineOffsetInLine =
+                     lineForLastBaseline->FirstBaselineOffset();
+                 firstBaselineOffsetInLine != nscoord_MIN) {
+        baselineOffsetInLine = firstBaselineOffsetInLine;
+      } else {
+        baselineOffsetInLine = nscoord_MIN;
+
         
         
         
         flr.mAscentForLast = nscoord_MIN;
-      } else {
-        
-        
-        
+      }
+
+      if (baselineOffsetInLine != nscoord_MIN) {
         MOZ_ASSERT(aAxisTracker.IsRowOriented(),
                    "This makes sense only if we are row-oriented!");
+        const auto wm = aAxisTracker.GetWritingMode();
         flr.mAscentForLast =
-            PhysicalCoordFromFlexRelativeCoord(
-                crossAxisPosnTracker.Position() + line.LineCrossSize() -
-                    lastBaselineOffset,
-                flr.mContentBoxCrossSize,
-                aAxisTracker.CrossAxisPhysicalEndSide()) +
-            aReflowInput.ComputedPhysicalBorderPadding().bottom;
+            flr.mContentBoxCrossSize -
+            aAxisTracker.LogicalAscentFromFlexRelativeAscent(
+                crossAxisPosnTracker.Position() + baselineOffsetInLine,
+                flr.mContentBoxCrossSize) +
+            aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
       }
     }
 
