@@ -1341,17 +1341,16 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
   return res;
 }
 
-NS_IMETHODIMP
-nsClipboard::EmptyClipboard(int32_t aWhichClipboard) {
+nsresult nsClipboard::EmptyNativeClipboardData(int32_t aWhichClipboard) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
   
   
   
   
   
-  if (aWhichClipboard == kGlobalClipboard && !mEmptyingForSetData) {
-    RepeatedlyTryOleSetClipboard(nullptr);
-  }
-  return nsBaseClipboard::EmptyClipboard(aWhichClipboard);
+  RepeatedlyTryOleSetClipboard(nullptr);
+  return NS_OK;
 }
 
 mozilla::Result<int32_t, nsresult>
