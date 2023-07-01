@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebCodecsUtils.h"
 #include "nsReadableUtils.h"
@@ -225,8 +226,15 @@ void VideoDecoder::Reset(ErrorResult& aRv) {
   }
 }
 
+
 void VideoDecoder::Close(ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+  AssertIsOnOwningThread();
+
+  LOG("VideoDecoder %p, Close", this);
+
+  if (auto r = Close(NS_ERROR_DOM_ABORT_ERR); r.isErr()) {
+    aRv.Throw(r.unwrapErr());
+  }
 }
 
 
@@ -284,6 +292,29 @@ Result<Ok, nsresult> VideoDecoder::Reset(const nsresult& aResult) {
   mState = CodecState::Unconfigured;
 
   return Ok();
+}
+
+
+Result<Ok, nsresult> VideoDecoder::Close(const nsresult& aResult) {
+  AssertIsOnOwningThread();
+
+  MOZ_TRY(Reset(aResult));
+  mState = CodecState::Closed;
+  if (aResult != NS_ERROR_DOM_ABORT_ERR) {
+    LOGE("VideoDecoder %p Close on error: 0x%08" PRIx32, this,
+         static_cast<uint32_t>(aResult));
+    
+    ReportError(aResult);
+  }
+  return Ok();
+}
+
+void VideoDecoder::ReportError(const nsresult& aResult) {
+  AssertIsOnOwningThread();
+
+  RefPtr<DOMException> e = DOMException::Create(aResult);
+  RefPtr<WebCodecsErrorCallback> cb(mErrorCallback);
+  cb->Call(*e);
 }
 
 #undef LOG
