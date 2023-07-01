@@ -28,7 +28,7 @@ function getDetailRows(card) {
   );
 }
 
-function checkLabel(row, name) {
+async function checkLabel(row, name) {
   let id;
   if (name == "private-browsing") {
     
@@ -36,10 +36,56 @@ function checkLabel(row, name) {
   } else {
     id = `addon-detail-${name}-label`;
   }
+  const doc = row.ownerDocument;
+  await doc.l10n.translateElements([row]);
+  const rowHeaderEl = row.firstElementChild;
+  is(doc.l10n.getAttributes(rowHeaderEl).id, id, `The ${name} label is set`);
+  if (row.role === "group") {
+    
+    
+    
+    
+    
+    
+    
+    is(
+      row.getAttribute("aria-label"),
+      rowHeaderEl.textContent,
+      "expect an aria-label from role=group row to match row header el text"
+    );
+    
+    is(rowHeaderEl.tagName, "SPAN", "row header element should be a span");
+  } else {
+    
+    
+    is(
+      rowHeaderEl.tagName,
+      "LABEL",
+      "row header element expected to be a label"
+    );
+  }
+}
+
+async function checkRowScreenReaderAccessibility(
+  row,
+  { groupName, expectedFluentId }
+) {
+  const doc = row.ownerDocument;
+  
+  
+  
+  await doc.l10n.translateElements([row]);
+  is(row.role, "group", `Expect ${groupName} row to have role group`);
   is(
-    row.ownerDocument.l10n.getAttributes(row.querySelector("label")).id,
-    id,
-    `The ${name} label is set`
+    doc.l10n.getAttributes(row).id,
+    expectedFluentId,
+    `Got expected fluent id associated to the ${groupName} row`
+  );
+  
+  
+  ok(
+    !!row.getAttribute("aria-label")?.length,
+    `Expect non empty aria-label on the ${groupName} row`
   );
 }
 
@@ -472,7 +518,13 @@ add_task(async function testFullDetails() {
 
   
   let row = rows.shift();
-  checkLabel(row, "updates");
+
+  await checkLabel(row, "updates");
+  await checkRowScreenReaderAccessibility(row, {
+    groupName: "updates controls",
+    expectedFluentId: "addon-detail-group-label-updates",
+  });
+
   let expectedOptions = [
     { value: "1", label: "addon-detail-updates-radio-default", checked: false },
     { value: "2", label: "addon-detail-updates-radio-on", checked: true },
@@ -483,7 +535,11 @@ add_task(async function testFullDetails() {
 
   
   row = rows.shift();
-  checkLabel(row, "private-browsing");
+  await checkLabel(row, "private-browsing");
+  await checkRowScreenReaderAccessibility(row, {
+    groupName: "private browsing controls",
+    expectedFluentId: "addon-detail-group-label-private-browsing",
+  });
 
   
   row = rows.shift();
@@ -497,7 +553,7 @@ add_task(async function testFullDetails() {
 
   
   row = rows.shift();
-  checkLabel(row, "author");
+  await checkLabel(row, "author");
   let link = row.querySelector("a");
   let authorLink = formatUrl(
     "addons-manager-user-profile-link",
@@ -507,25 +563,25 @@ add_task(async function testFullDetails() {
 
   
   row = rows.shift();
-  checkLabel(row, "version");
+  await checkLabel(row, "version");
   let text = row.lastChild;
   is(text.textContent, "3.1", "The version is set");
 
   
   row = rows.shift();
-  checkLabel(row, "last-updated");
+  await checkLabel(row, "last-updated");
   text = row.lastChild;
   is(text.textContent, "March 7, 2019", "The last updated date is set");
 
   
   row = rows.shift();
-  checkLabel(row, "homepage");
+  await checkLabel(row, "homepage");
   link = row.querySelector("a");
   checkLink(link, "http://example.com/addon1");
 
   
   row = rows.shift();
-  checkLabel(row, "rating");
+  await checkLabel(row, "rating");
   let rating = row.lastElementChild;
   ok(rating.classList.contains("addon-detail-rating"), "Found the rating el");
   let mozFiveStar = rating.querySelector("moz-five-star");
@@ -643,11 +699,11 @@ add_task(async function testMinimalExtension() {
 
   
   let row = rows.shift();
-  checkLabel(row, "updates");
+  await checkLabel(row, "updates");
 
   
   row = rows.shift();
-  checkLabel(row, "private-browsing");
+  await checkLabel(row, "private-browsing");
 
   
   row = rows.shift();
@@ -661,7 +717,7 @@ add_task(async function testMinimalExtension() {
 
   
   row = rows.shift();
-  checkLabel(row, "author");
+  await checkLabel(row, "author");
   let text = row.lastChild;
   is(text.textContent, "I made it", "The author is set");
   ok(Text.isInstance(text), "The author is a text node");
@@ -699,18 +755,18 @@ add_task(async function testDefaultTheme() {
 
   
   let author = rows.shift();
-  checkLabel(author, "author");
+  await checkLabel(author, "author");
   let text = author.lastChild;
   is(text.textContent, "Mozilla", "The author is set");
 
   
   let version = rows.shift();
-  checkLabel(version, "version");
+  await checkLabel(version, "version");
   is(version.lastChild.textContent, "1.3", "It's always version 1.3");
 
   
   let lastUpdated = rows.shift();
-  checkLabel(lastUpdated, "last-updated");
+  await checkLabel(lastUpdated, "last-updated");
   let dateText = lastUpdated.lastChild.textContent;
   ok(dateText, "There is a date set");
   ok(!dateText.includes("Invalid Date"), `"${dateText}" should be a date`);
@@ -757,11 +813,11 @@ add_task(async function testStaticTheme() {
 
   
   let row = rows.shift();
-  checkLabel(row, "updates");
+  await checkLabel(row, "updates");
 
   
   let author = rows.shift();
-  checkLabel(author, "author");
+  await checkLabel(author, "author");
   let text = author.lastElementChild;
   is(text.textContent, "Artist", "The author is set");
 
@@ -795,7 +851,7 @@ add_task(async function testSitePermission() {
   );
 
   let [versionRow, ...restRows] = getDetailRows(card);
-  checkLabel(versionRow, "version");
+  await checkLabel(versionRow, "version");
 
   Assert.deepEqual(
     restRows.map(row => row.getAttribute("class")),
