@@ -7,6 +7,7 @@
 #include "ARIAMap.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessible.h"
+#include "RemoteAccessibleBase.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/a11y/Platform.h"
@@ -414,6 +415,59 @@ bool RemoteAccessibleBase<Derived>::ContainsPoint(int32_t aX, int32_t aY) {
 }
 
 template <class Derived>
+RemoteAccessible* RemoteAccessibleBase<Derived>::DoFuzzyHittesting() {
+  uint32_t childCount = ChildCount();
+  if (!childCount) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  RemoteAccessible* clippedContainer = nullptr;
+  for (uint32_t i = 0; i < childCount; i++) {
+    RemoteAccessible* child = RemoteChildAt(i);
+    if (child->Role() == roles::TEXT_CONTAINER) {
+      if (child->IsClipped()) {
+        clippedContainer = child;
+        break;
+      }
+    }
+  }
+  
+  
+  
+  RemoteAccessible* maybeTextLeaf = clippedContainer;
+  while (maybeTextLeaf) {
+    bool continueSearch = false;
+    childCount = maybeTextLeaf->ChildCount();
+    for (uint32_t i = 0; i < childCount; i++) {
+      RemoteAccessible* child = maybeTextLeaf->RemoteChildAt(i);
+      if (child->Role() == roles::TEXT_CONTAINER) {
+        maybeTextLeaf = child;
+        continueSearch = true;
+        break;
+      }
+      if (child->IsTextLeaf()) {
+        maybeTextLeaf = child;
+        
+        
+        
+      }
+    }
+    if (maybeTextLeaf && maybeTextLeaf->IsTextLeaf()) {
+      return maybeTextLeaf;
+    }
+    if (!continueSearch) {
+      
+      
+      break;
+    }
+  }
+  return nullptr;
+}
+
+template <class Derived>
 Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
     int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
   
@@ -486,6 +540,13 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           
           
           
+          if (!lastMatch &&
+              BoundsWithOffset(Nothing(), hitTesting).Contains(aX, aY)) {
+            
+            
+            
+            lastMatch = acc;
+          }
           break;
         }
 
@@ -494,24 +555,12 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           
           
           lastMatch = acc;
-          if (lastMatch->Role() == roles::TEXT_CONTAINER) {
-            
-            
-            
-            
-            while (lastMatch->ChildCount() == 1) {
-              if (lastMatch->Role() == roles::TEXT_CONTAINER) {
-                lastMatch = lastMatch->RemoteChildAt(0);
-              } else {
-                break;
-              }
-            }
-            
-            
-            lastMatch = lastMatch->IsTextLeaf() ? lastMatch : acc;
-          }
           break;
         }
+      }
+      if (lastMatch) {
+        RemoteAccessible* fuzzyMatch = lastMatch->DoFuzzyHittesting();
+        lastMatch = fuzzyMatch ? fuzzyMatch : lastMatch;
       }
     }
   }
@@ -676,6 +725,16 @@ bool RemoteAccessibleBase<Derived>::IsOverflowHidden() const {
   if (auto maybeOverflow =
           mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::overflow)) {
     return *maybeOverflow == nsGkAtoms::hidden;
+  }
+
+  return false;
+}
+
+template <class Derived>
+bool RemoteAccessibleBase<Derived>::IsClipped() const {
+  MOZ_ASSERT(mCachedFields);
+  if (mCachedFields->GetAttribute<bool>(nsGkAtoms::clip_rule)) {
+    return true;
   }
 
   return false;

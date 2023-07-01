@@ -455,6 +455,23 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   bool IsOverflowHidden() const;
 
   
+
+
+
+
+  bool IsClipped() const;
+
+  
+
+
+
+
+
+
+
+  RemoteAccessible* DoFuzzyHittesting();
+
+  
   bool ContainsPoint(int32_t aX, int32_t aY);
 
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
