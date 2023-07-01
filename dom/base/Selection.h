@@ -14,6 +14,7 @@
 #include "mozilla/SelectionChangeEventDispatcher.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/Highlight.h"
 #include "mozilla/dom/StyledRange.h"
 #include "nsDirection.h"
 #include "nsISelectionController.h"
@@ -468,7 +469,10 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-  void SetHighlightName(const nsAtom* aHighlightName);
+
+
+  void SetHighlightSelectionData(
+      HighlightSelectionData aHighlightSelectionData);
 
   
 
@@ -964,7 +968,7 @@ class Selection final : public nsSupportsWeakReference,
   CachedOffsetForFrame* mCachedOffsetForFrame;
   nsDirection mDirection;
   const SelectionType mSelectionType;
-  RefPtr<const nsAtom> mHighlightName;
+  HighlightSelectionData mHighlightData;
   UniquePtr<SelectionCustomColors> mCustomColors;
 
   
