@@ -33,24 +33,24 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
-  virtual void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                            const nsAttrValue* aValue,
-                            const nsAttrValue* aOldValue,
-                            nsIPrincipal* aSubjectPrincipal,
-                            bool aNotify) override;
-
-  virtual void InsertChildBefore(nsIContent* aChild, nsIContent* aBeforeThis,
-                                 bool aNotify, ErrorResult& aRv) override;
-  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify) override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
-  virtual bool IsDisabledForEvents(WidgetEvent* aEvent) override;
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                    const nsAttrValue* aValue, const nsAttrValue* aOldValue,
+                    nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
+
+  void InsertChildBefore(nsIContent* aChild, nsIContent* aBeforeThis,
+                         bool aNotify, ErrorResult& aRv) override;
+  void RemoveChildNode(nsIContent* aKid, bool aNotify) override;
+
+  
+  bool IsDisabledForEvents(WidgetEvent* aEvent) override;
 
   
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override { return NS_OK; }
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   const nsIContent* GetFirstLegend() const { return mFirstLegend; }
 
@@ -90,7 +90,7 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
 
   
 
-  virtual ElementState IntrinsicState() const override;
+  ElementState IntrinsicState() const override;
 
   
 
@@ -107,8 +107,8 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
  protected:
   virtual ~HTMLFieldSetElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx,
-                             JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* aCx,
+                     JS::Handle<JSObject*> aGivenProto) override;
 
  private:
   
