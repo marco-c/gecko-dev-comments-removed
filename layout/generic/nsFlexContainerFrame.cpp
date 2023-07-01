@@ -1012,8 +1012,6 @@ class nsFlexContainerFrame::FlexLine final {
 
 
 
-
-
   nscoord LastBaselineOffset() const { return mLastBaselineOffset; }
 
   
