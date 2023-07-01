@@ -82,7 +82,7 @@ class AudioSinkWrapper : public MediaSink {
     
     Paused
   } mLastClockSource = ClockSource::Paused;
-  static already_AddRefed<nsISerialEventTarget> CreateAsyncInitTaskQueue();
+  static already_AddRefed<TaskQueue> CreateAsyncInitTaskQueue();
   bool IsMuted() const;
   void OnMuted(bool aMuted);
   virtual ~AudioSinkWrapper();
@@ -124,7 +124,7 @@ class AudioSinkWrapper : public MediaSink {
   bool IsAudioSourceEnded(const MediaInfo& aInfo) const;
 
   const RefPtr<AbstractThread> mOwnerThread;
-  const nsCOMPtr<nsISerialEventTarget> mAsyncInitTaskQueue;
+  const RefPtr<TaskQueue> mAsyncInitTaskQueue;
   SinkCreator mSinkCreator;
   UniquePtr<AudioSink> mAudioSink;
   
