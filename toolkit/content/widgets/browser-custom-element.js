@@ -43,9 +43,9 @@
       
       
       
-      const kURL = "resource:///modules/ProcessHangMonitor.jsm";
-      if (Cu.isModuleLoaded(kURL)) {
-        let { ProcessHangMonitor } = ChromeUtils.import(kURL);
+      const kURL = "resource:///modules/ProcessHangMonitor.sys.mjs";
+      if (Cu.isESModuleLoaded(kURL)) {
+        let { ProcessHangMonitor } = ChromeUtils.importESModule(kURL);
         
         Object.defineProperty(lazy, "ProcessHangMonitor", {
           value: ProcessHangMonitor,

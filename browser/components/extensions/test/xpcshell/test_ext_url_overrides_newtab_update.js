@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { AboutNewTab } = ChromeUtils.import(
-  "resource:///modules/AboutNewTab.jsm"
+const { AboutNewTab } = ChromeUtils.importESModule(
+  "resource:///modules/AboutNewTab.sys.mjs"
 );
 
 const { AddonTestUtils } = ChromeUtils.importESModule(
