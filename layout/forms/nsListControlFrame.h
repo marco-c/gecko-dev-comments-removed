@@ -232,8 +232,7 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
   bool GetMultiple() const {
-    return mContent->AsElement()->HasAttr(kNameSpaceID_None,
-                                          nsGkAtoms::multiple);
+    return mContent->AsElement()->HasAttr(nsGkAtoms::multiple);
   }
 
   mozilla::dom::HTMLSelectElement& Select() const;

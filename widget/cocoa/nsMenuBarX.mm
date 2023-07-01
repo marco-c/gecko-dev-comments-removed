@@ -575,14 +575,14 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu, const nsAString&
     if (keyElement) {
       
       nsAutoString keyChar(u" "_ns);
-      keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::key, keyChar);
+      keyElement->GetAttr(nsGkAtoms::key, keyChar);
       if (!keyChar.EqualsLiteral(" ")) {
         keyEquiv = [[NSString stringWithCharacters:reinterpret_cast<const unichar*>(keyChar.get())
                                             length:keyChar.Length()] lowercaseString];
       }
       
       nsAutoString modifiersStr;
-      keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::modifiers, modifiersStr);
+      keyElement->GetAttr(nsGkAtoms::modifiers, modifiersStr);
       uint8_t geckoModifiers = nsMenuUtilsX::GeckoModifiersForNodeAttribute(modifiersStr);
       macKeyModifiers = nsMenuUtilsX::MacModifiersForGeckoModifiers(geckoModifiers);
     }

@@ -180,7 +180,7 @@ void XULBroadcastManager::SynchronizeBroadcastListener(Element* aBroadcaster,
     RefPtr<nsAtom> name = NS_Atomize(aAttr);
 
     nsAutoString value;
-    if (aBroadcaster->GetAttr(kNameSpaceID_None, name, value)) {
+    if (aBroadcaster->GetAttr(name, value)) {
       aListener->SetAttr(kNameSpaceID_None, name, value, notify);
     } else {
       aListener->UnsetAttr(kNameSpaceID_None, name, notify);
@@ -309,19 +309,17 @@ nsresult XULBroadcastManager::ExecuteOnBroadcastHandlerFor(
 
     
     nsAutoString listeningToID;
-    child->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::element,
-                                listeningToID);
+    child->AsElement()->GetAttr(nsGkAtoms::element, listeningToID);
 
     nsAutoString broadcasterID;
-    aBroadcaster->GetAttr(kNameSpaceID_None, nsGkAtoms::id, broadcasterID);
+    aBroadcaster->GetAttr(nsGkAtoms::id, broadcasterID);
 
     if (listeningToID != broadcasterID) continue;
 
     
     
     nsAutoString listeningToAttribute;
-    child->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::attribute,
-                                listeningToAttribute);
+    child->AsElement()->GetAttr(nsGkAtoms::attribute, listeningToAttribute);
 
     if (!aAttr->Equals(listeningToAttribute) &&
         !listeningToAttribute.EqualsLiteral("*")) {
@@ -358,7 +356,7 @@ void XULBroadcastManager::AttributeChanged(Element* aElement,
     if (entry) {
       
       nsAutoString value;
-      bool attrSet = aElement->GetAttr(kNameSpaceID_None, aAttribute, value);
+      bool attrSet = aElement->GetAttr(aAttribute, value);
 
       for (size_t i = entry->mListeners.Length() - 1; i != (size_t)-1; --i) {
         BroadcastListener* bl = entry->mListeners[i];
@@ -367,8 +365,7 @@ void XULBroadcastManager::AttributeChanged(Element* aElement,
           nsCOMPtr<Element> listenerEl = do_QueryReferent(bl->mListener);
           if (listenerEl) {
             nsAutoString currentValue;
-            bool hasAttr = listenerEl->GetAttr(kNameSpaceID_None, aAttribute,
-                                               currentValue);
+            bool hasAttr = listenerEl->GetAttr(aAttribute, currentValue);
             
             
             
@@ -472,22 +469,22 @@ nsresult XULBroadcastManager::FindBroadcaster(Element* aElement,
     *aListener = Element::FromNode(parent);
     NS_IF_ADDREF(*aListener);
 
-    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::element, aBroadcasterID);
+    aElement->GetAttr(nsGkAtoms::element, aBroadcasterID);
     if (aBroadcasterID.IsEmpty()) {
       return NS_FINDBROADCASTER_NOT_FOUND;
     }
-    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::attribute, aAttribute);
+    aElement->GetAttr(nsGkAtoms::attribute, aAttribute);
   } else {
     
     
     
     
-    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::observes, aBroadcasterID);
+    aElement->GetAttr(nsGkAtoms::observes, aBroadcasterID);
 
     
     if (aBroadcasterID.IsEmpty()) {
       
-      aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::command, aBroadcasterID);
+      aElement->GetAttr(nsGkAtoms::command, aBroadcasterID);
       if (!aBroadcasterID.IsEmpty()) {
         
         

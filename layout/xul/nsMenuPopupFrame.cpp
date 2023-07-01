@@ -288,7 +288,7 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
                                          nsGkAtoms::normal, eCaseMatters)) {
     widgetData.mBorderStyle = widget::BorderStyle::Title;
 
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, title);
+    mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::close,
                                            nsGkAtoms::_true, eCaseMatters)) {
       widgetData.mBorderStyle =
@@ -795,13 +795,10 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   
   if (aAnchorContent || aAnchorType == MenuPopupAnchorType_Rect) {
     nsAutoString anchor, align, position, flip;
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::popupanchor,
-                                   anchor);
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::popupalign,
-                                   align);
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::position,
-                                   position);
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::flip, flip);
+    mContent->AsElement()->GetAttr(nsGkAtoms::popupanchor, anchor);
+    mContent->AsElement()->GetAttr(nsGkAtoms::popupalign, align);
+    mContent->AsElement()->GetAttr(nsGkAtoms::position, position);
+    mContent->AsElement()->GetAttr(nsGkAtoms::flip, flip);
 
     if (aAttributesOverride) {
       
@@ -888,8 +885,8 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
     
     
     nsAutoString left, top;
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::left, left);
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::top, top);
+    mContent->AsElement()->GetAttr(nsGkAtoms::left, left);
+    mContent->AsElement()->GetAttr(nsGkAtoms::top, top);
 
     nsresult err;
     if (!left.IsEmpty()) {
@@ -2104,8 +2101,7 @@ nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
       nsIWidget* widget = view->GetWidget();
       if (widget) {
         nsAutoString title;
-        mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label,
-                                       title);
+        mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
         if (!title.IsEmpty()) {
           widget->SetTitle(title);
         }
@@ -2115,8 +2111,7 @@ nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
       nsAutoString ignorekeys;
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::ignorekeys,
-                                     ignorekeys);
+      mContent->AsElement()->GetAttr(nsGkAtoms::ignorekeys, ignorekeys);
       pm->UpdateIgnoreKeys(ignorekeys.EqualsLiteral("true"));
     }
   }
@@ -2130,8 +2125,8 @@ void nsMenuPopupFrame::MoveToAttributePosition() {
   
   
   nsAutoString left, top;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::left, left);
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::top, top);
+  mContent->AsElement()->GetAttr(nsGkAtoms::left, left);
+  mContent->AsElement()->GetAttr(nsGkAtoms::top, top);
   nsresult err1, err2;
   mozilla::CSSIntPoint pos(left.ToInteger(&err1), top.ToInteger(&err2));
 

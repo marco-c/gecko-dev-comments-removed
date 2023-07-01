@@ -71,8 +71,7 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 NS_IMETHODIMP ChangeAttributeTransaction::DoTransaction() {
   
   
-  mAttributeWasSet =
-      mElement->GetAttr(kNameSpaceID_None, mAttribute, mUndoValue);
+  mAttributeWasSet = mElement->GetAttr(mAttribute, mUndoValue);
 
   
   if (!mUndoValue.IsEmpty()) {

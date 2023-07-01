@@ -70,8 +70,7 @@ nsIFrame* nsMathMLsemanticsFrame::GetSelectedFrame() {
       
       
       
-      if (childContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::src))
-        continue;
+      if (childContent->AsElement()->HasAttr(nsGkAtoms::src)) continue;
 
       
       
@@ -81,8 +80,7 @@ nsIFrame* nsMathMLsemanticsFrame::GetSelectedFrame() {
 
     if (childContent->IsMathMLElement(nsGkAtoms::annotation_xml_)) {
       
-      if (childContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::src))
-        continue;
+      if (childContent->AsElement()->HasAttr(nsGkAtoms::src)) continue;
 
       
       
@@ -99,8 +97,7 @@ nsIFrame* nsMathMLsemanticsFrame::GetSelectedFrame() {
       
       
       nsAutoString value;
-      childContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::encoding,
-                                         value);
+      childContent->AsElement()->GetAttr(nsGkAtoms::encoding, value);
       if (value.EqualsLiteral("application/mathml-presentation+xml") ||
           value.EqualsLiteral("MathML-Presentation") ||
           value.EqualsLiteral(IMAGE_SVG_XML) || value.EqualsLiteral("SVG1.1") ||

@@ -438,7 +438,7 @@ void gfxSVGGlyphsDocument::InsertGlyphId(Element* aGlyphElement) {
   static const uint32_t glyphPrefixLength = 5;
   
   
-  if (!aGlyphElement->GetAttr(kNameSpaceID_None, nsGkAtoms::id, glyphIdStr) ||
+  if (!aGlyphElement->GetAttr(nsGkAtoms::id, glyphIdStr) ||
       !StringBeginsWith(glyphIdStr, u"glyph"_ns) ||
       glyphIdStr.Length() > glyphPrefixLength + 5) {
     return;

@@ -205,7 +205,7 @@ Result<bool, nsresult> HTMLLabelElement::PerformAccesskey(
 nsGenericHTMLElement* HTMLLabelElement::GetLabeledElement() const {
   nsAutoString elementId;
 
-  if (!GetAttr(kNameSpaceID_None, nsGkAtoms::_for, elementId)) {
+  if (!GetAttr(nsGkAtoms::_for, elementId)) {
     
     
     return GetFirstLabelableDescendant();

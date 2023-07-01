@@ -182,7 +182,7 @@ void HTMLScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
   
   
   nsAutoString src;
-  if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
+  if (GetAttr(nsGkAtoms::src, src)) {
     
     if (!src.IsEmpty()) {
       nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(mUri), src,
@@ -227,7 +227,7 @@ mozilla::dom::ReferrerPolicy HTMLScriptElement::GetReferrerPolicy() {
 }
 
 bool HTMLScriptElement::HasScriptContent() {
-  return (mFrozen ? mExternal : HasAttr(kNameSpaceID_None, nsGkAtoms::src)) ||
+  return (mFrozen ? mExternal : HasAttr(nsGkAtoms::src)) ||
          nsContentUtils::HasNonEmptyTextContent(this);
 }
 

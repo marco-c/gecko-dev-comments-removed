@@ -85,11 +85,11 @@ void LinkStyle::GetTitleAndMediaForElement(const Element& aSelf,
   
   
   if (aSelf.IsInUncomposedDoc()) {
-    aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle);
+    aSelf.GetAttr(nsGkAtoms::title, aTitle);
     aTitle.CompressWhitespace();
   }
 
-  aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::media, aMedia);
+  aSelf.GetAttr(nsGkAtoms::media, aMedia);
   
   
   
@@ -104,7 +104,7 @@ bool LinkStyle::IsCSSMimeTypeAttributeForStyleElement(const Element& aSelf) {
   
   
   nsAutoString type;
-  aSelf.GetAttr(kNameSpaceID_None, nsGkAtoms::type, type);
+  aSelf.GetAttr(nsGkAtoms::type, type);
   return type.IsEmpty() || type.LowerCaseEqualsLiteral("text/css");
 }
 
@@ -304,8 +304,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   }
   if (thisContent.IsElement()) {
     nsAutoString integrity;
-    thisContent.AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::integrity,
-                                     integrity);
+    thisContent.AsElement()->GetAttr(nsGkAtoms::integrity, integrity);
     if (!integrity.IsEmpty()) {
       MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
               ("LinkStyle::DoUpdateStyleSheet, integrity=%s",

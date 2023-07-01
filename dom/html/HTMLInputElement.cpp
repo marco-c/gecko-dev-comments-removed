@@ -562,7 +562,7 @@ HTMLInputElement::nsFilePickerShownCallback::Done(
       new DispatchChangeEventCallback(mInput);
 
   if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
-      mInput->HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+      mInput->HasAttr(nsGkAtoms::webkitdirectory)) {
     ErrorResult error;
     GetFilesHelper* helper = mInput->GetOrCreateGetFilesHelper(true, error);
     if (NS_WARN_IF(error.Failed())) {
@@ -1190,7 +1190,7 @@ void HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         if (container && ((aValue && !HasAttr(aNameSpaceID, aName)) ||
                           (!aValue && HasAttr(aNameSpaceID, aName)))) {
           nsAutoString name;
-          GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+          GetAttr(nsGkAtoms::name, name);
           container->RadioRequiredWillChange(name, !!aValue);
         }
       }
@@ -1416,7 +1416,7 @@ void HTMLInputElement::ResultForDialogSubmit(nsAString& aResult) {
     aResult.AppendLiteral(",");
     aResult.AppendInt(y);
   } else {
-    GetAttr(kNameSpaceID_None, nsGkAtoms::value, aResult);
+    GetAttr(nsGkAtoms::value, aResult);
   }
 }
 
@@ -1557,12 +1557,12 @@ void HTMLInputElement::GetNonFileValueInternal(nsAString& aValue) const {
 
     case VALUE_MODE_DEFAULT:
       
-      GetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue);
+      GetAttr(nsGkAtoms::value, aValue);
       return;
 
     case VALUE_MODE_DEFAULT_ON:
       
-      if (!GetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue)) {
+      if (!GetAttr(nsGkAtoms::value, aValue)) {
         aValue.AssignLiteral("on");
       }
       return;
@@ -1666,7 +1666,7 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
 
 HTMLDataListElement* HTMLInputElement::GetList() const {
   nsAutoString dataListId;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::list_, dataListId);
+  GetAttr(nsGkAtoms::list_, dataListId);
   if (dataListId.IsEmpty()) {
     return nullptr;
   }
@@ -1865,12 +1865,12 @@ Decimal HTMLInputElement::GetMinimum() const {
   Decimal defaultMinimum =
       mType == FormControlType::InputRange ? Decimal(0) : Decimal::nan();
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::min)) {
+  if (!HasAttr(nsGkAtoms::min)) {
     return defaultMinimum;
   }
 
   nsAutoString minStr;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::min, minStr);
+  GetAttr(nsGkAtoms::min, minStr);
 
   Decimal min;
   return mInputType->ConvertStringToNumber(minStr, min) ? min : defaultMinimum;
@@ -1885,12 +1885,12 @@ Decimal HTMLInputElement::GetMaximum() const {
   Decimal defaultMaximum =
       mType == FormControlType::InputRange ? Decimal(100) : Decimal::nan();
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::max)) {
+  if (!HasAttr(nsGkAtoms::max)) {
     return defaultMaximum;
   }
 
   nsAutoString maxStr;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::max, maxStr);
+  GetAttr(nsGkAtoms::max, maxStr);
 
   Decimal max;
   return mInputType->ConvertStringToNumber(maxStr, max) ? max : defaultMaximum;
@@ -1907,14 +1907,14 @@ Decimal HTMLInputElement::GetStepBase() const {
   
   
   nsAutoString minStr;
-  if (GetAttr(kNameSpaceID_None, nsGkAtoms::min, minStr) &&
+  if (GetAttr(nsGkAtoms::min, minStr) &&
       mInputType->ConvertStringToNumber(minStr, stepBase)) {
     return stepBase;
   }
 
   
   nsAutoString valueStr;
-  if (GetAttr(kNameSpaceID_None, nsGkAtoms::value, valueStr) &&
+  if (GetAttr(nsGkAtoms::value, valueStr) &&
       mInputType->ConvertStringToNumber(valueStr, stepBase)) {
     return stepBase;
   }
@@ -2409,11 +2409,11 @@ void HTMLInputElement::GetDisplayFileName(nsAString& aValue) const {
 
   if (mFileData->mFilesOrDirectories.IsEmpty()) {
     if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
-        HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+        HasAttr(nsGkAtoms::webkitdirectory)) {
       nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                               "NoDirSelected", OwnerDoc(),
                                               value);
-    } else if (HasAttr(kNameSpaceID_None, nsGkAtoms::multiple)) {
+    } else if (HasAttr(nsGkAtoms::multiple)) {
       nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                               "NoFilesSelected", OwnerDoc(),
                                               value);
@@ -2501,7 +2501,7 @@ void HTMLInputElement::MozSetDndFilesAndDirectories(
       new DispatchChangeEventCallback(this);
 
   if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
-      HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+      HasAttr(nsGkAtoms::webkitdirectory)) {
     ErrorResult rv;
     GetFilesHelper* helper =
         GetOrCreateGetFilesHelper(true , rv);
@@ -2833,7 +2833,7 @@ void HTMLInputElement::DoSetChecked(bool aChecked, bool aNotify,
   nsIRadioGroupContainer* container = GetRadioGroupContainer();
   if (container) {
     nsAutoString name;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    GetAttr(nsGkAtoms::name, name);
     container->SetCurrentRadioButton(name, nullptr);
   }
   
@@ -2857,7 +2857,7 @@ void HTMLInputElement::RadioSetChecked(bool aNotify) {
   nsIRadioGroupContainer* container = GetRadioGroupContainer();
   if (container) {
     nsAutoString name;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    GetAttr(nsGkAtoms::name, name);
     container->SetCurrentRadioButton(name, this);
   }
 
@@ -2872,7 +2872,7 @@ nsIRadioGroupContainer* HTMLInputElement::GetRadioGroupContainer() const {
       "GetRadioGroupContainer should only be called when type='radio'");
 
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   if (name.IsEmpty()) {
     return nullptr;
@@ -2903,7 +2903,7 @@ HTMLInputElement* HTMLInputElement::GetSelectedRadioButton() const {
   }
 
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   HTMLInputElement* selected = container->GetCurrentRadioButton(name);
   return selected;
@@ -3508,7 +3508,7 @@ nsresult HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor) {
         nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
     if (target && target->FindFirstNonChromeOnlyAccessContent() == this &&
         StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
-        HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+        HasAttr(nsGkAtoms::webkitdirectory)) {
       type = FILE_PICKER_DIRECTORY;
     }
     return InitFilePicker(type);
@@ -4065,7 +4065,7 @@ nsresult HTMLInputElement::MaybeHandleRadioButtonNavigation(
   RefPtr<HTMLInputElement> selectedRadioButton;
   if (nsIRadioGroupContainer* container = GetRadioGroupContainer()) {
     nsAutoString name;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    GetAttr(nsGkAtoms::name, name);
     container->GetNextRadioButton(name, move == RadioButtonMove::Back, this,
                                   getter_AddRefs(selectedRadioButton));
   }
@@ -4184,8 +4184,7 @@ void HTMLInputElement::MaybeLoadImage() {
   
   
   nsAutoString uri;
-  if (mType == FormControlType::InputImage &&
-      GetAttr(kNameSpaceID_None, nsGkAtoms::src, uri) &&
+  if (mType == FormControlType::InputImage && GetAttr(nsGkAtoms::src, uri) &&
       (NS_FAILED(LoadImage(uri, false, true, eImageLoadType_Normal,
                            mSrcTriggeringPrincipal)) ||
        !LoadingEnabled())) {
@@ -4203,7 +4202,7 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   if (mType == FormControlType::InputImage) {
     
     
-    if (HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
+    if (HasAttr(nsGkAtoms::src)) {
       
       
       mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
@@ -4442,7 +4441,7 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   
   
   if (DoesRequiredApply()) {
-    bool isRequired = HasAttr(kNameSpaceID_None, nsGkAtoms::required);
+    bool isRequired = HasAttr(nsGkAtoms::required);
     UpdateRequiredState(isRequired, aNotify);
   } else if (aNotify) {
     RemoveStates(ElementState::REQUIRED_STATES);
@@ -5763,7 +5762,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
 
   
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   
   if (mType == FormControlType::InputImage) {
@@ -5852,7 +5851,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
   GetValue(value, CallerType::System);
 
   if (mType == FormControlType::InputSubmit && value.IsEmpty() &&
-      !HasAttr(kNameSpaceID_None, nsGkAtoms::value)) {
+      !HasAttr(nsGkAtoms::value)) {
     
     nsAutoString defaultValue;
     nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
@@ -5956,7 +5955,7 @@ void HTMLInputElement::SaveState() {
     if (state) {
       
       
-      state->disabled() = HasAttr(kNameSpaceID_None, nsGkAtoms::disabled);
+      state->disabled() = HasAttr(nsGkAtoms::disabled);
       state->disabledSet() = true;
     }
   }
@@ -6226,7 +6225,7 @@ void HTMLInputElement::AddedToRadioGroup() {
   nsCOMPtr<nsIRadioGroupContainer> container = GetRadioGroupContainer();
   if (container) {
     nsAutoString name;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    GetAttr(nsGkAtoms::name, name);
     container->AddToRadioGroup(name, this);
 
     
@@ -6243,7 +6242,7 @@ void HTMLInputElement::WillRemoveFromRadioGroup() {
   }
 
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   
   
@@ -6322,7 +6321,7 @@ bool HTMLInputElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   if (container->GetCurrentRadioButton(name)) {
     *aTabIndex = -1;
@@ -6335,7 +6334,7 @@ nsresult HTMLInputElement::VisitGroup(nsIRadioVisitor* aVisitor) {
   nsIRadioGroupContainer* container = GetRadioGroupContainer();
   if (container) {
     nsAutoString name;
-    GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    GetAttr(nsGkAtoms::name, name);
     return container->WalkRadioGroup(name, aVisitor);
   }
 
@@ -6383,8 +6382,8 @@ HTMLInputElement::ValueModeType HTMLInputElement::GetValueMode() const {
 }
 
 bool HTMLInputElement::IsMutable() const {
-  return !IsDisabled() && !(DoesReadOnlyApply() &&
-                            HasAttr(kNameSpaceID_None, nsGkAtoms::readonly));
+  return !IsDisabled() &&
+         !(DoesReadOnlyApply() && HasAttr(nsGkAtoms::readonly));
 }
 
 bool HTMLInputElement::DoesRequiredApply() const {
@@ -6509,12 +6508,12 @@ bool HTMLInputElement::DoesAutocompleteApply() const {
 Decimal HTMLInputElement::GetStep() const {
   MOZ_ASSERT(DoesStepApply(), "GetStep() can only be called if @step applies");
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::step)) {
+  if (!HasAttr(nsGkAtoms::step)) {
     return GetDefaultStep() * GetStepScaleFactor();
   }
 
   nsAutoString stepStr;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::step, stepStr);
+  GetAttr(nsGkAtoms::step, stepStr);
 
   if (stepStr.LowerCaseEqualsLiteral("any")) {
     
@@ -6628,7 +6627,7 @@ void HTMLInputElement::UpdateValueMissingValidityStateForRadio(
   nsCOMPtr<nsIRadioGroupContainer> container = GetRadioGroupContainer();
 
   nsAutoString name;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+  GetAttr(nsGkAtoms::name, name);
 
   if (!container) {
     
@@ -6724,8 +6723,7 @@ void HTMLInputElement::UpdateBarredFromConstraintValidation() {
   SetBarredFromConstraintValidation(
       mType == FormControlType::InputHidden ||
       mType == FormControlType::InputButton ||
-      mType == FormControlType::InputReset ||
-      HasAttr(kNameSpaceID_None, nsGkAtoms::readonly) ||
+      mType == FormControlType::InputReset || HasAttr(nsGkAtoms::readonly) ||
       HasFlag(ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR) || IsDisabled());
 }
 
@@ -6878,7 +6876,7 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
   
   filePicker->AppendFilters(nsIFilePicker::filterAll);
 
-  NS_ASSERTION(HasAttr(kNameSpaceID_None, nsGkAtoms::accept),
+  NS_ASSERTION(HasAttr(nsGkAtoms::accept),
                "You should not call SetFilePickerFiltersFromAccept if the"
                " element has no accept attribute!");
 
@@ -6902,7 +6900,7 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
   }
 
   nsAutoString accept;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::accept, accept);
+  GetAttr(nsGkAtoms::accept, accept);
 
   HTMLSplitOnSpacesTokenizer tokenizer(accept, ',');
 

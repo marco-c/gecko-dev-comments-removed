@@ -62,10 +62,9 @@ static void BuildHandlerChain(nsIContent* aContent, KeyEventHandler** aResult) {
     
     nsAutoString valKey, valCharCode, valKeyCode;
     
-    keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::key, valKey) ||
-        keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::charcode,
-                            valCharCode) ||
-        keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::keycode, valKeyCode);
+    keyElement->GetAttr(nsGkAtoms::key, valKey) ||
+        keyElement->GetAttr(nsGkAtoms::charcode, valCharCode) ||
+        keyElement->GetAttr(nsGkAtoms::keycode, valKeyCode);
     
     if (valKey.IsEmpty() && valCharCode.IsEmpty() && valKeyCode.IsEmpty()) {
       continue;
@@ -564,7 +563,7 @@ bool XULKeySetGlobalKeyListener::GetElementForHandler(
 
   
   nsAutoString command;
-  keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+  keyElement->GetAttr(nsGkAtoms::command, command);
   if (command.IsEmpty()) {
     
     NS_WARNING_ASSERTION(keyElement->IsInUncomposedDoc(), "uncomposed");

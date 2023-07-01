@@ -191,8 +191,7 @@ void HTMLElement::UpdateFormOwner() {
   
   
   
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ? IsInComposedDoc()
-                                                  : !!GetParent()) {
+  if (HasAttr(nsGkAtoms::form) ? IsInComposedDoc() : !!GetParent()) {
     UpdateFormOwner(true, nullptr);
   }
   UpdateFieldSet(true);

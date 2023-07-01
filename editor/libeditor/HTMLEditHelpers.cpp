@@ -138,7 +138,7 @@ bool EditorInlineStyle::IsRepresentedBy(const nsIContent& aContent) const {
     if (mHTMLProperty == nsGkAtoms::a) {
       return true;
     }
-    return !mAttribute || element.HasAttr(kNameSpaceID_None, mAttribute);
+    return !mAttribute || element.HasAttr(mAttribute);
   }
   
   if ((mHTMLProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&element)) ||

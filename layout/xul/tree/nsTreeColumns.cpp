@@ -136,7 +136,7 @@ void nsTreeColumn::Invalidate(ErrorResult& aRv) {
   }
 
   
-  mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, mId);
+  mContent->GetAttr(nsGkAtoms::id, mId);
 
   
   if (!mId.IsEmpty()) {

@@ -73,7 +73,7 @@ MARKUPMAP(
         return nullptr;
       }
       
-      if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::id)) {
+      if (aElement->HasAttr(nsGkAtoms::id)) {
         return new HyperTextAccessibleWrap(aElement, aContext->Document());
       }
       
@@ -365,7 +365,7 @@ MARKUPMAP(
       if (!aContext->IsHTMLTableRow()) {
         return nullptr;
       }
-      if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::scope)) {
+      if (aElement->HasAttr(nsGkAtoms::scope)) {
         return new HTMLTableHeaderCellAccessible(aElement,
                                                  aContext->Document());
       }

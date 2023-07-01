@@ -535,8 +535,7 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
 #endif
 
   nsAutoString tooltipText;
-  aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext,
-                                tooltipText);
+  aTarget->AsElement()->GetAttr(nsGkAtoms::tooltiptext, tooltipText);
 
   if (!tooltipText.IsEmpty()) {
     
@@ -551,8 +550,7 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
   }
 
   nsAutoString tooltipId;
-  aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltip,
-                                tooltipId);
+  aTarget->AsElement()->GetAttr(nsGkAtoms::tooltip, tooltipId);
 
   
   if (tooltipId.EqualsLiteral("_child")) {

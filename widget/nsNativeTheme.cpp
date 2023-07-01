@@ -137,8 +137,7 @@ bool nsNativeTheme::CheckBooleanAttr(nsIFrame* aFrame, nsAtom* aAtom) {
   nsIContent* content = aFrame->GetContent();
   if (!content || !content->IsElement()) return false;
 
-  if (content->IsHTMLElement())
-    return content->AsElement()->HasAttr(kNameSpaceID_None, aAtom);
+  if (content->IsHTMLElement()) return content->AsElement()->HasAttr(aAtom);
 
   
   
@@ -156,7 +155,7 @@ int32_t nsNativeTheme::CheckIntAttr(nsIFrame* aFrame, nsAtom* aAtom,
   if (!content || !content->IsElement()) return defaultValue;
 
   nsAutoString attr;
-  content->AsElement()->GetAttr(kNameSpaceID_None, aAtom, attr);
+  content->AsElement()->GetAttr(aAtom, attr);
   nsresult err;
   int32_t value = attr.ToInteger(&err);
   if (attr.IsEmpty() || NS_FAILED(err)) return defaultValue;
@@ -331,8 +330,7 @@ bool nsNativeTheme::IsBottomTab(nsIFrame* aFrame) {
 
   nsAutoString classStr;
   if (aFrame->GetContent()->IsElement()) {
-    aFrame->GetContent()->AsElement()->GetAttr(kNameSpaceID_None,
-                                               nsGkAtoms::_class, classStr);
+    aFrame->GetContent()->AsElement()->GetAttr(nsGkAtoms::_class, classStr);
   }
   
   return !classStr.IsEmpty() && classStr.Find(u"tab-bottom") != kNotFound;

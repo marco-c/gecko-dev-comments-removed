@@ -104,7 +104,7 @@ nsresult SVGViewFrame::AttributeChanged(int32_t aNameSpaceID,
         static_cast<SVGSVGElement*>(outerSVGFrame->GetContent());
 
     nsAutoString viewID;
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::id, viewID);
+    mContent->AsElement()->GetAttr(nsGkAtoms::id, viewID);
 
     if (svgElement->IsOverriddenBy(viewID)) {
       

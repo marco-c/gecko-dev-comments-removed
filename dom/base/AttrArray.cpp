@@ -45,23 +45,29 @@ void AttrArray::SetMappedDeclarationBlock(
   MOZ_ASSERT(!IsPendingMappedAttributeEvaluation());
 }
 
-const nsAttrValue* AttrArray::GetAttr(const nsAtom* aLocalName,
-                                      int32_t aNamespaceID) const {
-  if (aNamespaceID == kNameSpaceID_None) {
-    
-    for (const InternalAttr& attr : Attrs()) {
-      if (attr.mName.Equals(aLocalName)) {
-        return &attr.mValue;
-      }
-    }
-  } else {
-    for (const InternalAttr& attr : Attrs()) {
-      if (attr.mName.Equals(aLocalName, aNamespaceID)) {
-        return &attr.mValue;
-      }
+const nsAttrValue* AttrArray::GetAttr(const nsAtom* aLocalName) const {
+  NS_ASSERTION(aLocalName, "Must have attr name");
+  for (const InternalAttr& attr : Attrs()) {
+    if (attr.mName.Equals(aLocalName)) {
+      return &attr.mValue;
     }
   }
+  return nullptr;
+}
 
+const nsAttrValue* AttrArray::GetAttr(const nsAtom* aLocalName,
+                                      int32_t aNamespaceID) const {
+  NS_ASSERTION(aLocalName, "Must have attr name");
+  NS_ASSERTION(aNamespaceID != kNameSpaceID_Unknown, "Must have namespace");
+  if (aNamespaceID == kNameSpaceID_None) {
+    
+    return GetAttr(aLocalName);
+  }
+  for (const InternalAttr& attr : Attrs()) {
+    if (attr.mName.Equals(aLocalName, aNamespaceID)) {
+      return &attr.mValue;
+    }
+  }
   return nullptr;
 }
 
@@ -194,35 +200,30 @@ const nsAttrName* AttrArray::GetExistingAttrNameFromQName(
   return nullptr;
 }
 
+int32_t AttrArray::IndexOfAttr(const nsAtom* aLocalName) const {
+  int32_t i = 0;
+  for (const InternalAttr& attr : Attrs()) {
+    if (attr.mName.Equals(aLocalName)) {
+      return i;
+    }
+    ++i;
+  }
+  return -1;
+}
+
 int32_t AttrArray::IndexOfAttr(const nsAtom* aLocalName,
                                int32_t aNamespaceID) const {
-  if (!mImpl) {
-    return -1;
-  }
-
-  uint32_t i = 0;
   if (aNamespaceID == kNameSpaceID_None) {
     
-    
-    
-    
-    
-    
-    for (const InternalAttr& attr : Attrs()) {
-      if (attr.mName.Equals(aLocalName)) {
-        return i;
-      }
-      ++i;
-    }
-  } else {
-    for (const InternalAttr& attr : Attrs()) {
-      if (attr.mName.Equals(aLocalName, aNamespaceID)) {
-        return i;
-      }
-      ++i;
-    }
+    return IndexOfAttr(aLocalName);
   }
-
+  int32_t i = 0;
+  for (const InternalAttr& attr : Attrs()) {
+    if (attr.mName.Equals(aLocalName, aNamespaceID)) {
+      return i;
+    }
+    ++i;
+  }
   return -1;
 }
 

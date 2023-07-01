@@ -1354,9 +1354,8 @@ void SVGElement::DidChangeValue(nsAtom* aName,
   bool hasListeners = nsContentUtils::HasMutationListeners(
       this, NS_EVENT_BITS_MUTATION_ATTRMODIFIED, this);
   uint8_t modType =
-      HasAttr(kNameSpaceID_None, aName)
-          ? static_cast<uint8_t>(MutationEvent_Binding::MODIFICATION)
-          : static_cast<uint8_t>(MutationEvent_Binding::ADDITION);
+      HasAttr(aName) ? static_cast<uint8_t>(MutationEvent_Binding::MODIFICATION)
+                     : static_cast<uint8_t>(MutationEvent_Binding::ADDITION);
 
   
   

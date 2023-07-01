@@ -59,7 +59,7 @@ uint64_t HTMLLinkAccessible::NativeInteractiveState() const {
   
   
   
-  if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::name)) {
+  if (mContent->AsElement()->HasAttr(nsGkAtoms::name)) {
     state |= states::SELECTABLE;
   }
 

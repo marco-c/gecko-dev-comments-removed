@@ -1212,8 +1212,8 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStyles(
 
 bool CSSEditUtils::DoStyledElementsHaveSameStyle(
     nsStyledElement& aStyledElement, nsStyledElement& aOtherStyledElement) {
-  if (aStyledElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id) ||
-      aOtherStyledElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id)) {
+  if (aStyledElement.HasAttr(nsGkAtoms::id) ||
+      aOtherStyledElement.HasAttr(nsGkAtoms::id)) {
     
     
     return false;
@@ -1221,7 +1221,7 @@ bool CSSEditUtils::DoStyledElementsHaveSameStyle(
 
   nsAutoString firstClass, otherClass;
   bool isElementClassSet =
-      aStyledElement.GetAttr(kNameSpaceID_None, nsGkAtoms::_class, firstClass);
+      aStyledElement.GetAttr(nsGkAtoms::_class, firstClass);
   bool isOtherElementClassSet = aOtherStyledElement.GetAttr(
       kNameSpaceID_None, nsGkAtoms::_class, otherClass);
   if (isElementClassSet && isOtherElementClassSet) {

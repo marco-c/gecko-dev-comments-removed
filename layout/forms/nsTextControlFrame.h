@@ -275,7 +275,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
 
   bool AttributeExists(nsAtom* aAtt) const {
-    return mContent && mContent->AsElement()->HasAttr(kNameSpaceID_None, aAtt);
+    return mContent && mContent->AsElement()->HasAttr(aAtt);
   }
 
   

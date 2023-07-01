@@ -1889,8 +1889,8 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   
   
   
-  if (mTextCtrlElement->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly) ||
-      mTextCtrlElement->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) {
+  if (mTextCtrlElement->HasAttr(nsGkAtoms::readonly) ||
+      mTextCtrlElement->HasAttr(nsGkAtoms::disabled)) {
     editorFlags |= nsIEditor::eEditorReadonlyMask;
   }
 

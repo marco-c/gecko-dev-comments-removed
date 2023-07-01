@@ -92,7 +92,7 @@ HTMLTableCellElement::GetMappedAttributesInheritedFromTable() const {
 }
 
 void HTMLTableCellElement::GetAlign(DOMString& aValue) {
-  if (!GetAttr(kNameSpaceID_None, nsGkAtoms::align, aValue)) {
+  if (!GetAttr(nsGkAtoms::align, aValue)) {
     
     HTMLTableRowElement* row = GetRow();
     if (row) {

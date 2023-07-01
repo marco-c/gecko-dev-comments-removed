@@ -377,7 +377,7 @@ void HTMLButtonElement::SaveState() {
   if (state) {
     
     
-    state->disabled() = HasAttr(kNameSpaceID_None, nsGkAtoms::disabled);
+    state->disabled() = HasAttr(nsGkAtoms::disabled);
     state->disabledSet() = true;
   }
 }

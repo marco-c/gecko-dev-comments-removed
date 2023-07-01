@@ -281,8 +281,7 @@ void nsGenericHTMLFrameElement::AfterMaybeChangeAttr(
     if (aName == nsGkAtoms::src) {
       mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
           this, aValue ? aValue->String() : u""_ns, aMaybeScriptedPrincipal);
-      if (!IsHTMLElement(nsGkAtoms::iframe) ||
-          !HasAttr(kNameSpaceID_None, nsGkAtoms::srcdoc)) {
+      if (!IsHTMLElement(nsGkAtoms::iframe) || !HasAttr(nsGkAtoms::srcdoc)) {
         
         
         LoadSrc();

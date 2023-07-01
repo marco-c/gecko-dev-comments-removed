@@ -191,8 +191,7 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
 
   
   nsAutoString value;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_,
-                                 value);
+  mContent->AsElement()->GetAttr(nsGkAtoms::linethickness_, value);
   mLineThickness =
       CalcLineThickness(presContext, mComputedStyle, value, onePixel,
                         defaultRuleThickness, fontSizeInflation);
