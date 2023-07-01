@@ -2,11 +2,13 @@
 
 
 
-#ifndef WAITFOR_H_
-#define WAITFOR_H_
+
+
+#ifndef TESTING_GTEST_MOZILLA_WAITFOR_H_
+#define TESTING_GTEST_MOZILLA_WAITFOR_H_
 
 #include "MediaEventSource.h"
-#include "MediaUtils.h"
+#include "mozilla/media/MediaUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ResultVariant.h"
