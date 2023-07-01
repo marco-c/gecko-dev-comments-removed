@@ -622,7 +622,7 @@ static nsresult FormatTime(
   
   
   
-  if (!nsContentUtils::ShouldResistFingerprinting(RFPTarget::Unknown)) {
+  if (!nsContentUtils::ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC)) {
     return mozilla::intl::AppDateTimeFormat::Format(aStyleBag, aPrTime,
                                                     aStringOut);
   }
