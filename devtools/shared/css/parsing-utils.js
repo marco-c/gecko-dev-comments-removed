@@ -23,7 +23,7 @@ loader.lazyRequireGetter(
 const SELECTOR_ATTRIBUTE = (exports.SELECTOR_ATTRIBUTE = 1);
 const SELECTOR_ELEMENT = (exports.SELECTOR_ELEMENT = 2);
 const SELECTOR_PSEUDO_CLASS = (exports.SELECTOR_PSEUDO_CLASS = 3);
-const CSS_BLOCKS = { "(": ")", "[": "]", "{": "}" };
+const CSS_BLOCKS = { "(": ")", "[": "]" };
 
 
 
@@ -316,7 +316,22 @@ function parseDeclarationsInternal(
   
   
   let importantWS = false;
+
+  
+  let isInNested = false;
+  let nestingLevel = 0;
+
   let current = "";
+
+  const resetStateForNextDeclaration = () => {
+    current = "";
+    currentBlocks = [];
+    importantState = 0;
+    importantWS = false;
+    declarations.push(getEmptyDeclaration());
+    lastProp = declarations.at(-1);
+  };
+
   while (true) {
     const token = lexer.nextToken();
     if (!token) {
@@ -344,19 +359,52 @@ function parseDeclarationsInternal(
     }
 
     if (
+      
+      !isInNested &&
       token.tokenType === "symbol" &&
-      currentBlocks[currentBlocks.length - 1] === token.text
+      
+      token.text == "{" &&
+      
+      !currentBlocks.length
+    ) {
+      
+      isInNested = true;
+      nestingLevel = 1;
+
+      continue;
+    } else if (isInNested) {
+      if (token.tokenType === "symbol") {
+        if (token.text == "{") {
+          nestingLevel++;
+        }
+        if (token.text == "}") {
+          nestingLevel--;
+        }
+      }
+
+      
+      
+      if (nestingLevel === 0) {
+        isInNested = false;
+        
+        declarations.pop();
+        resetStateForNextDeclaration();
+      }
+      continue;
+    } else if (
+      token.tokenType === "symbol" &&
+      CSS_BLOCKS[currentBlocks.at(-1)] === token.text
     ) {
       
       currentBlocks.pop();
       current += token.text;
     } else if (token.tokenType === "symbol" && CSS_BLOCKS[token.text]) {
       
-      currentBlocks.push(CSS_BLOCKS[token.text]);
+      currentBlocks.push(token.text);
       current += token.text;
     } else if (token.tokenType === "function") {
       
-      currentBlocks.push(CSS_BLOCKS["("]);
+      currentBlocks.push("(");
       current += token.text + "(";
     } else if (token.tokenType === "symbol" && token.text === ":") {
       
@@ -407,12 +455,7 @@ function parseDeclarationsInternal(
         }
       }
       lastProp.value = cssTrim(current);
-      current = "";
-      currentBlocks = [];
-      importantState = 0;
-      importantWS = false;
-      declarations.push(getEmptyDeclaration());
-      lastProp = declarations[declarations.length - 1];
+      resetStateForNextDeclaration();
     } else if (token.tokenType === "ident") {
       if (token.text === "important" && importantState === 1) {
         importantState = 2;
@@ -436,7 +479,7 @@ function parseDeclarationsInternal(
       importantState = 1;
     } else if (token.tokenType === "whitespace") {
       if (current !== "") {
-        current = current.trimRight() + " ";
+        current = current.trimEnd() + " ";
       }
     } else if (token.tokenType === "comment") {
       if (parseComments && !lastProp.name && !lastProp.value) {
@@ -455,7 +498,7 @@ function parseDeclarationsInternal(
         const lastDecl = declarations.pop();
         declarations = [...declarations, ...newDecls, lastDecl];
       } else {
-        current = current.trimRight() + " ";
+        current = current.trimEnd() + " ";
       }
     } else {
       if (importantState > 0) {
