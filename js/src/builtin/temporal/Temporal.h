@@ -29,6 +29,14 @@ class TemporalObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
+enum class CalendarOption { Auto, Always, Never, Critical };
+
+
+
+
+bool ToCalendarNameOption(JSContext* cx, JS::Handle<JSObject*> options,
+                          CalendarOption* result);
+
 
 
 

@@ -16,7 +16,8 @@
 
 namespace js {
 struct ClassSpec;
-}
+class JSStringBuilder;
+}  
 
 namespace js::temporal {
 
@@ -38,6 +39,7 @@ class CalendarObject : public NativeObject {
 
 struct PlainDate;
 struct PlainDateTime;
+enum class CalendarOption;
 
 
 
@@ -187,6 +189,20 @@ bool CalendarMonthsInYear(JSContext* cx, JS::Handle<JSObject*> calendar,
 bool CalendarInLeapYear(JSContext* cx, JS::Handle<JSObject*> calendar,
                         JS::Handle<JS::Value> dateLike,
                         JS::MutableHandle<JS::Value> result);
+
+
+
+
+bool MaybeFormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
+                                   JS::Handle<JSObject*> calendarObject,
+                                   CalendarOption showCalendar);
+
+
+
+
+bool FormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
+                              JS::Handle<JSString*> id,
+                              CalendarOption showCalendar);
 
 
 
