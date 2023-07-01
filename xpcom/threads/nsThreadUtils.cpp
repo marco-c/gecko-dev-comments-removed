@@ -480,12 +480,12 @@ bool NS_ProcessNextEvent(nsIThread* aThread, bool aMayWait) {
 }
 
 void NS_SetCurrentThreadName(const char* aName) {
-#if defined(ANDROID)
-  
-  
-  prctl(PR_SET_NAME, reinterpret_cast<unsigned long>(aName));
-#else
   PR_SetCurrentThreadName(aName);
+#if defined(ANDROID) && defined(DEBUG)
+  
+  char buffer[16] = {'\0'};
+  prctl(PR_GET_NAME, buffer);
+  MOZ_ASSERT(0 == strncmp(buffer, aName, 15));
 #endif
   if (nsThreadManager::get().IsNSThread()) {
     nsThread* thread = nsThreadManager::get().GetCurrentThread();
