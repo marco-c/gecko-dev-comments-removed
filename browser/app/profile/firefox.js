@@ -2168,8 +2168,10 @@ pref("browser.migrate.history.maxAgeInDays", 180);
 
 
 pref("browser.migrate.interactions.bookmarks", false);
+pref("browser.migrate.interactions.csvpasswords", false);
 pref("browser.migrate.interactions.history", false);
 pref("browser.migrate.interactions.passwords", false);
+
 pref("browser.migrate.preferences-entrypoint.enabled", true);
 
 pref("browser.device-migration.help-menu.hidden", false);
