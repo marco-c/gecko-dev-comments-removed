@@ -67,9 +67,6 @@ class EncodedVideoChunk final : public nsISupports, public nsWrapperCache {
       const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
       ErrorResult& aRv);
 
-  
-  uint8_t* Data() { return mBuffer.get(); }
-
  private:
   
   void AssertIsOnOwningThread() const {

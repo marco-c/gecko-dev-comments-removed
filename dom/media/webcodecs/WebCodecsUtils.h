@@ -10,29 +10,11 @@
 #include <tuple>
 
 #include "ErrorList.h"
-#include "js/TypeDecls.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/dom/UnionTypes.h"
 
-namespace mozilla {
-
-namespace gfx {
-enum class ColorRange : uint8_t;
-enum class ColorSpace2 : uint8_t;
-enum class SurfaceFormat : int8_t;
-enum class TransferFunction : uint8_t;
-enum class YUVColorSpace : uint8_t;
-}  
-
-namespace dom {
-
-
-
-
-
-nsTArray<nsCString> GuessContainers(const nsString& aCodec);
+namespace mozilla::dom {
 
 
 
@@ -47,54 +29,6 @@ Result<Span<uint8_t>, nsresult> GetSharedArrayBufferData(
 Result<Span<uint8_t>, nsresult> GetSharedArrayBufferData(
     const OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer);
 
-Result<OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer, nsresult>
-CloneBuffer(
-    JSContext* aCx,
-    const OwningMaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer);
-
-
-
-
-
-
-enum class VideoColorPrimaries : uint8_t;
-enum class VideoMatrixCoefficients : uint8_t;
-enum class VideoTransferCharacteristics : uint8_t;
-
-gfx::ColorRange ToColorRange(bool aIsFullRange);
-
-gfx::YUVColorSpace ToColorSpace(VideoMatrixCoefficients aMatrix);
-
-gfx::TransferFunction ToTransferFunction(
-    VideoTransferCharacteristics aTransfer);
-
-gfx::ColorSpace2 ToPrimaries(VideoColorPrimaries aPrimaries);
-
-bool ToFullRange(const gfx::ColorRange& aColorRange);
-
-Maybe<VideoMatrixCoefficients> ToMatrixCoefficients(
-    const gfx::YUVColorSpace& aColorSpace);
-
-Maybe<VideoTransferCharacteristics> ToTransferCharacteristics(
-    const gfx::TransferFunction& aTransferFunction);
-
-Maybe<VideoColorPrimaries> ToPrimaries(const gfx::ColorSpace2& aColorSpace);
-
-
-
-
-
-
-enum class ImageBitmapFormat : uint8_t;
-enum class VideoPixelFormat : uint8_t;
-
-Maybe<VideoPixelFormat> SurfaceFormatToVideoPixelFormat(
-    gfx::SurfaceFormat aFormat);
-
-Maybe<VideoPixelFormat> ImageBitmapFormatToVideoPixelFormat(
-    ImageBitmapFormat aFormat);
-
-}  
 }  
 
 #endif  

@@ -1397,8 +1397,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VideoColorSpace", insecureContext: true, nightly: true },
   
-  { name: "VideoDecoder", nightly: true },
-  
   { name: "VideoFrame", insecureContext: true, nightly: true },
   
   { name: "VideoPlaybackQuality", insecureContext: true },
