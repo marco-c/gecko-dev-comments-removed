@@ -184,8 +184,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "DOMStringList", insecureContext: true },
   
-  { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
-  
   { name: "ErrorEvent", insecureContext: true },
   
   { name: "Event", insecureContext: true },
