@@ -226,15 +226,7 @@ class MediaDecoderStateMachine
 
   void SetVideoDecodeModeInternal(VideoDecodeMode aMode);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<GenericPromise> SetSink(const RefPtr<AudioDeviceInfo>& aDevice);
+  RefPtr<GenericPromise> SetSink(RefPtr<AudioDeviceInfo> aDevice);
 
   
   void SuspendMediaSink();

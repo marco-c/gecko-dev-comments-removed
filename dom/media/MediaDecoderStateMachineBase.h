@@ -93,6 +93,15 @@ class MediaDecoderStateMachineBase {
   
   virtual void SetVideoDecodeMode(VideoDecodeMode aMode) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual RefPtr<GenericPromise> InvokeSetSink(
       const RefPtr<AudioDeviceInfo>& aSink) = 0;
   virtual void InvokeSuspendMediaSink() = 0;

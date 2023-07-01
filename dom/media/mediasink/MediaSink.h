@@ -95,6 +95,17 @@ class MediaSink {
 
   
   
+  
+  
+  
+  
+  
+  
+  virtual RefPtr<GenericPromise> SetAudioDevice(
+      RefPtr<AudioDeviceInfo> aDevice) = 0;
+
+  
+  
   virtual double PlaybackRate() const = 0;
 
   
@@ -120,10 +131,6 @@ class MediaSink {
   
   
   virtual bool IsPlaying() const = 0;
-
-  
-  
-  virtual const AudioDeviceInfo* AudioDevice() const = 0;
 
   
   
