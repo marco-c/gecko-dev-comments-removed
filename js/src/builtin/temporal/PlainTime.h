@@ -90,7 +90,10 @@ inline PlainTime ToPlainTime(const PlainTimeObject* time) {
           time->isoMicrosecond(), time->isoNanosecond()};
 }
 
+class Increment;
 enum class TemporalOverflow;
+enum class TemporalRoundingMode;
+enum class TemporalUnit;
 
 #ifdef DEBUG
 
@@ -166,6 +169,26 @@ struct BalancedTime final {
 
 
 BalancedTime BalanceTime(const PlainTime& time, int64_t nanoseconds);
+
+struct RoundedTime final {
+  int64_t days = 0;
+  PlainTime time;
+};
+
+
+
+
+
+RoundedTime RoundTime(const PlainTime& time, Increment increment,
+                      TemporalUnit unit, TemporalRoundingMode roundingMode);
+
+
+
+
+
+RoundedTime RoundTime(const PlainTime& time, Increment increment,
+                      TemporalUnit unit, TemporalRoundingMode roundingMode,
+                      const Instant& dayLengthNs);
 
 } 
 
