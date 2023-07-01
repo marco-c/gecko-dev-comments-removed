@@ -74,6 +74,7 @@ struct Instant;
 struct PlainDateTime;
 class InstantObject;
 class PlainDateTimeObject;
+enum class TemporalDisambiguation;
 
 
 
@@ -139,6 +140,13 @@ bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
 
 
 
+bool GetInstantFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+                   JS::Handle<Wrapped<PlainDateTimeObject*>> dateTime,
+                   TemporalDisambiguation disambiguation, Instant* result);
+
+
+
+
 JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant);
 
@@ -164,6 +172,16 @@ using InstantVector = JS::StackGCVector<Wrapped<InstantObject*>>;
 bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
                             JS::Handle<Wrapped<PlainDateTimeObject*>> dateTime,
                             JS::MutableHandle<InstantVector> list);
+
+
+
+
+
+Wrapped<InstantObject*> DisambiguatePossibleInstants(
+    JSContext* cx, JS::Handle<InstantVector> possibleInstants,
+    JS::Handle<JSObject*> timeZone,
+    JS::Handle<Wrapped<PlainDateTimeObject*>> dateTimeObj,
+    TemporalDisambiguation disambiguation);
 
 
 
