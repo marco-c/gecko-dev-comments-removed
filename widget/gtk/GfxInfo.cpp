@@ -1105,9 +1105,8 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         WindowProtocol::All, DriverVendor::MesaAll, DeviceFamily::AtiAll,
         nsIGfxInfo::FEATURE_HW_DECODED_VIDEO_ZERO_COPY,
-        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
-        V(0, 0, 0, 0), "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE",
-        "");
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_LESS_THAN, V(23, 1, 1, 0),
+        "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 23.1.1.0");
 
     
     
