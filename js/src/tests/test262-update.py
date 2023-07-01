@@ -26,7 +26,6 @@ UNSUPPORTED_FEATURES = set(
         "legacy-regexp",  
         "json-modules",  
         "resizable-arraybuffer",  
-        "Temporal",  
         "decorators",  
         "regexp-duplicate-named-groups",  
         "symbols-as-weakmap-keys",  
@@ -38,6 +37,7 @@ FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
     "FinalizationRegistry": "!this.hasOwnProperty('FinalizationRegistry')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
+    "Temporal": "!this.hasOwnProperty('Temporal')",
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
     "array-grouping": "!Array.prototype.group",  
     "change-array-by-copy": "!Array.prototype.with",  
@@ -509,6 +509,7 @@ def process_test262(test262Dir, test262OutDir, strictTests, externManifests):
     explicitIncludes[os.path.join("built-ins", "TypedArrays")] = [
         "detachArrayBuffer.js"
     ]
+    explicitIncludes[os.path.join("built-ins", "Temporal")] = ["temporalHelpers.js"]
 
     
     for (dirPath, dirNames, fileNames) in os.walk(testDir):
