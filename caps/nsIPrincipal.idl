@@ -276,7 +276,14 @@ interface nsIPrincipal : nsISupports
 
 
 
-    [noscript] readonly attribute ACString asciiOrigin;
+
+
+
+
+
+
+
+    [noscript] readonly attribute ACString webExposedOriginSerialization;
 
     
 

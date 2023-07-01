@@ -2269,9 +2269,15 @@ class nsContentUtils {
 
 
 
-  static nsresult GetASCIIOrigin(nsIURI* aURI, nsACString& aOrigin);
-  static nsresult GetUTFOrigin(nsIPrincipal* aPrincipal, nsAString& aOrigin);
-  static nsresult GetUTFOrigin(nsIURI* aURI, nsAString& aOrigin);
+
+
+
+  static nsresult GetWebExposedOriginSerialization(nsIURI* aURI,
+                                                   nsACString& aOrigin);
+  static nsresult GetWebExposedOriginSerialization(nsIPrincipal* aPrincipal,
+                                                   nsAString& aOrigin);
+  static nsresult GetWebExposedOriginSerialization(nsIURI* aURI,
+                                                   nsAString& aOrigin);
 
   
 

@@ -1763,7 +1763,7 @@ void nsContentSecurityManager::GetSerializedOrigin(
   
   
   if (!lastOrigin) {
-    aOrigin->GetAsciiOrigin(aSerializedOrigin);
+    aOrigin->GetWebExposedOriginSerialization(aSerializedOrigin);
     return;
   }
 
@@ -1773,7 +1773,7 @@ void nsContentSecurityManager::GetSerializedOrigin(
     return;
   }
 
-  aOrigin->GetAsciiOrigin(aSerializedOrigin);
+  aOrigin->GetWebExposedOriginSerialization(aSerializedOrigin);
 }
 
 

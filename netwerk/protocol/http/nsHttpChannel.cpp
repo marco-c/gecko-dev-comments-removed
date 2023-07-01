@@ -9208,7 +9208,7 @@ void nsHttpChannel::SetOriginHeader() {
     } else if (HasNullRequestOrigin(this, uri, isAddonRequest)) {
       serializedOrigin.AssignLiteral("null");
     } else {
-      nsContentUtils::GetASCIIOrigin(uri, serializedOrigin);
+      nsContentUtils::GetWebExposedOriginSerialization(uri, serializedOrigin);
     }
   }
 
@@ -9235,7 +9235,7 @@ void nsHttpChannel::SetOriginHeader() {
     } else if (StaticPrefs::network_http_sendOriginHeader() == 1) {
       
       nsAutoCString currentOrigin;
-      nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
+      nsContentUtils::GetWebExposedOriginSerialization(mURI, currentOrigin);
       if (!serializedOrigin.EqualsIgnoreCase(currentOrigin.get())) {
         
         serializedOrigin.AssignLiteral("null");

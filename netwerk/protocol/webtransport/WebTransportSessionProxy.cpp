@@ -134,7 +134,8 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   
   
   nsAutoCString serializedOrigin;
-  if (NS_FAILED(aPrincipal->GetAsciiOrigin(serializedOrigin))) {
+  if (NS_FAILED(
+          aPrincipal->GetWebExposedOriginSerialization(serializedOrigin))) {
     
     
     serializedOrigin = "null"_ns;
