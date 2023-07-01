@@ -86,6 +86,15 @@ bool ParseTemporalDateTimeString(JSContext* cx, JS::Handle<JSString*> str,
                                  PlainDateTime* result,
                                  JS::MutableHandle<JSString*> calendar);
 
+
+
+
+bool ParseTemporalZonedDateTimeString(JSContext* cx, JS::Handle<JSString*> str,
+                                      PlainDateTime* dateTime, bool* isUTC,
+                                      bool* hasOffset, int64_t* timeZoneOffset,
+                                      JS::MutableHandle<JSString*> timeZoneName,
+                                      JS::MutableHandle<JSString*> calendar);
+
 } 
 
 #endif 

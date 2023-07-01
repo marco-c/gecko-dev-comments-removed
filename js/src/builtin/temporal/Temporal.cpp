@@ -1284,6 +1284,48 @@ bool js::temporal::ToTemporalDisambiguation(
 
 
 
+bool js::temporal::ToTemporalOffset(JSContext* cx, Handle<JSObject*> options,
+                                    TemporalOffset* offset) {
+  
+
+  
+  Rooted<JSString*> string(cx);
+  if (!GetStringOption(cx, options, cx->names().offset, &string)) {
+    return false;
+  }
+
+  
+  if (!string) {
+    return true;
+  }
+
+  JSLinearString* linear = string->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  if (StringEqualsLiteral(linear, "prefer")) {
+    *offset = TemporalOffset::Prefer;
+  } else if (StringEqualsLiteral(linear, "use")) {
+    *offset = TemporalOffset::Use;
+  } else if (StringEqualsLiteral(linear, "ignore")) {
+    *offset = TemporalOffset::Ignore;
+  } else if (StringEqualsLiteral(linear, "reject")) {
+    *offset = TemporalOffset::Reject;
+  } else {
+    if (auto chars = QuoteString(cx, linear, '"')) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_INVALID_OPTION_VALUE, "offset",
+                               chars.get());
+    }
+    return false;
+  }
+  return true;
+}
+
+
+
+
 bool js::temporal::ToTimeZoneNameOption(JSContext* cx,
                                         Handle<JSObject*> options,
                                         TimeZoneNameOption* result) {
