@@ -4399,11 +4399,15 @@ void SVGTextFrame::AdjustPositionsForClusters() {
   gfxFloat partialAdvance = 0.0;
 
   CharIterator it(this, CharIterator::eUnskipped,  nullptr);
+  bool isFirst = true;
   while (!it.AtEnd()) {
-    if (it.IsClusterAndLigatureGroupStart()) {
+    if (it.IsClusterAndLigatureGroupStart() || isFirst) {
+      
+      
       
       
       partialAdvance = 0.0;
+      isFirst = false;
     } else {
       
       
