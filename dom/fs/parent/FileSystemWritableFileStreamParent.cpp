@@ -68,13 +68,13 @@ FileSystemWritableFileStreamParent::GetOrCreateStreamCallbacks() {
   return mStreamCallbacks.get();
 }
 
-void FileSystemWritableFileStreamParent::Close(bool ) {
+void FileSystemWritableFileStreamParent::Close(bool aAbort) {
   LOG(("Closing WritableFileStream"));
 
   mClosed.Flip();
 
-  
-  mManager->DataManagerStrongRef()->UnlockExclusive(mEntryId);
+  mManager->DataManagerStrongRef()->UnlockShared(mEntryId, mTemporaryFileId,
+                                                 aAbort);
 }
 
 }  

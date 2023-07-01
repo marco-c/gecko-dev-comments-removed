@@ -449,9 +449,8 @@ Result<FileId, QMResult> FileSystemDataManager::LockShared(
     return Err(QMResult(NS_ERROR_UNEXPECTED));
   }
 
-  
   QM_TRY_INSPECT(const FileId& fileId,
-                 mDatabaseManager->EnsureFileId(aEntryId));
+                 mDatabaseManager->EnsureTemporaryFileId(aEntryId));
 
   
   
