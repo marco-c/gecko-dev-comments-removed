@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_a11y_DocAccessibleParent_h
 #define mozilla_a11y_DocAccessibleParent_h
@@ -25,10 +25,10 @@ namespace a11y {
 class TextRange;
 class xpcAccessibleGeneric;
 
-/*
- * These objects live in the main process and comunicate with and represent
- * an accessible document in a content process.
- */
+
+
+
+
 class DocAccessibleParent : public RemoteAccessible,
                             public PDocAccessibleParent,
                             public nsIMemoryReporter {
@@ -42,42 +42,42 @@ class DocAccessibleParent : public RemoteAccessible,
  public:
   static already_AddRefed<DocAccessibleParent> New();
 
-  /**
-   * Set this as a top level document; i.e. it is not embedded by another remote
-   * document. This also means it is a top level document in its content
-   * process.
-   * Tab documents are top level documents.
-   */
+  
+
+
+
+
+
   void SetTopLevel() {
     mTopLevel = true;
     mTopLevelInContentProcess = true;
   }
   bool IsTopLevel() const { return mTopLevel; }
 
-  /**
-   * Set this as a top level document in its content process.
-   * Note that this could be an out-of-process iframe embedded by a remote
-   * embedder document. In that case, IsToplevel() will return false, but
-   * IsTopLevelInContentProcess() will return true.
-   */
+  
+
+
+
+
+
   void SetTopLevelInContentProcess() { mTopLevelInContentProcess = true; }
   bool IsTopLevelInContentProcess() const { return mTopLevelInContentProcess; }
 
-  /**
-   * Determine whether this is an out-of-process iframe document, embedded by a
-   * remote embedder document.
-   */
+  
+
+
+
   bool IsOOPIframeDoc() const {
     return !mTopLevel && mTopLevelInContentProcess;
   }
 
   bool IsShutdown() const { return mShutdown; }
 
-  /**
-   * Mark this actor as shutdown without doing any cleanup.  This should only
-   * be called on actors that have just been initialized, so probably only from
-   * RecvPDocAccessibleConstructor.
-   */
+  
+
+
+
+
   void MarkAsShutdown() {
     MOZ_ASSERT(mChildDocs.IsEmpty());
     MOZ_ASSERT(mAccessibles.Count() == 0);
@@ -91,10 +91,10 @@ class DocAccessibleParent : public RemoteAccessible,
     return mBrowsingContext;
   }
 
-  /*
-   * Called when a message from a document in a child process notifies the main
-   * process it is firing an event.
-   */
+  
+
+
+
   virtual mozilla::ipc::IPCResult RecvEvent(const uint64_t& aID,
                                             const uint32_t& aType) override;
 
@@ -120,14 +120,9 @@ class DocAccessibleParent : public RemoteAccessible,
       const bool& aFromUser) override;
 
 #if defined(XP_WIN)
-  virtual mozilla::ipc::IPCResult RecvSyncTextChangeEvent(
-      const uint64_t& aID, const nsAString& aStr, const int32_t& aStart,
-      const uint32_t& aLen, const bool& aIsInsert,
-      const bool& aFromUser) override;
-
   virtual mozilla::ipc::IPCResult RecvFocusEvent(
       const uint64_t& aID, const LayoutDeviceIntRect& aCaretRect) override;
-#endif  // defined(XP_WIN)
+#endif  
 
   virtual mozilla::ipc::IPCResult RecvSelectionEvent(
       const uint64_t& aID, const uint64_t& aWidgetID,
@@ -181,37 +176,37 @@ class DocAccessibleParent : public RemoteAccessible,
   void Destroy();
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  /*
-   * Return the main processes representation of the parent document (if any)
-   * of the document this object represents.
-   */
+  
+
+
+
   DocAccessibleParent* ParentDoc() const;
   static const uint64_t kNoParentDoc = UINT64_MAX;
 
-  /**
-   * Called when a document in a content process notifies the main process of a
-   * new child document.
-   * Although this is called internally for OOP child documents, these should be
-   * added via the BrowserBridgeParent version of this method, as the parent id
-   * might not exist yet in that case.
-   */
+  
+
+
+
+
+
+
   ipc::IPCResult AddChildDoc(DocAccessibleParent* aChildDoc, uint64_t aParentID,
                              bool aCreating = true);
 
-  /**
-   * Called when a document in a content process notifies the main process of a
-   * new OOP child document.
-   */
+  
+
+
+
   ipc::IPCResult AddChildDoc(dom::BrowserBridgeParent* aBridge);
 
   void RemovePendingOOPChildDoc(dom::BrowserBridgeParent* aBridge) {
     mPendingOOPChildDocs.Remove(aBridge);
   }
 
-  /*
-   * Called when the document in the content process this object represents
-   * notifies the main process a child document has been removed.
-   */
+  
+
+
+
   void RemoveChildDoc(DocAccessibleParent* aChildDoc) {
     RemoteAccessible* parent = aChildDoc->RemoteParent();
     MOZ_ASSERT(parent);
@@ -228,9 +223,9 @@ class DocAccessibleParent : public RemoteAccessible,
     mAccessibles.RemoveEntry(aAccessible->ID());
   }
 
-  /**
-   * Return the accessible for given id.
-   */
+  
+
+
   RemoteAccessible* GetAccessible(uintptr_t aID) {
     if (!aID) return this;
 
@@ -253,15 +248,15 @@ class DocAccessibleParent : public RemoteAccessible,
 #if defined(XP_WIN)
   void MaybeInitWindowEmulation();
 
-  /**
-   * Set emulated native window handle for a document.
-   * @param aWindowHandle emulated native window handle
-   */
+  
+
+
+
   void SetEmulatedWindowHandle(HWND aWindowHandle);
   HWND GetEmulatedWindowHandle() const { return mEmulatedWindowHandle; }
 #endif
 
-  // Accessible
+  
   virtual Accessible* Parent() const override {
     if (IsTopLevel()) {
       return OuterDocOfRemoteBrowser();
@@ -271,24 +266,24 @@ class DocAccessibleParent : public RemoteAccessible,
 
   virtual int32_t IndexInParent() const override {
     if (IsTopLevel() && OuterDocOfRemoteBrowser()) {
-      // An OuterDoc can only have 1 child.
+      
       return 0;
     }
     return RemoteAccessible::IndexInParent();
   }
 
-  /**
-   * Get the focused Accessible in this document, if any.
-   */
+  
+
+
   RemoteAccessible* GetFocusedAcc() const {
     return const_cast<DocAccessibleParent*>(this)->GetAccessible(mFocus);
   }
 
-  /**
-   * Get the HyperText Accessible containing the caret and the offset of the
-   * caret within. If there is no caret in this document, returns
-   * {nullptr, -1}.
-   */
+  
+
+
+
+
   std::pair<RemoteAccessible*, int32_t> GetCaret() const {
     if (mCaretOffset == -1) {
       return {nullptr, -1};
@@ -314,14 +309,14 @@ class DocAccessibleParent : public RemoteAccessible,
 
   virtual Relation RelationByType(RelationType aType) const override;
 
-  // Tracks cached reverse relations (ie. those not set explicitly by an
-  // attribute like aria-labelledby) for accessibles in this doc. This map is of
-  // the form: {accID, {relationType, [targetAccID, targetAccID, ...]}}
+  
+  
+  
   nsTHashMap<uint64_t, nsTHashMap<RelationType, nsTArray<uint64_t>>>
       mReverseRelations;
 
-  // Computed from the viewport cache, the accs referenced by these ids
-  // are currently on screen (making any acc not in this list offscreen).
+  
+  
   nsTHashSet<uint64_t> mOnScreenAccessibles;
 
   static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
@@ -363,24 +358,24 @@ class DocAccessibleParent : public RemoteAccessible,
 
   void FireEvent(RemoteAccessible* aAcc, const uint32_t& aType);
 
-  /**
-   * If this Accessible is being moved, prepare it for reuse. Otherwise, it is
-   * being removed, so shut it down.
-   */
+  
+
+
+
   void ShutdownOrPrepareForMove(RemoteAccessible* aAcc);
 
   nsTArray<uint64_t> mChildDocs;
   uint64_t mParentDoc;
 
 #if defined(XP_WIN)
-  // The handle associated with the emulated window that contains this document
+  
   HWND mEmulatedWindowHandle;
-#endif  // defined(XP_WIN)
+#endif  
 
-  /*
-   * Conceptually this is a map from IDs to proxies, but we store the ID in the
-   * proxy object so we can't use a real map.
-   */
+  
+
+
+
   nsTHashtable<ProxyEntry> mAccessibles;
   nsTHashSet<uint64_t> mMovingIDs;
   uint64_t mActorID;
@@ -404,7 +399,7 @@ class DocAccessibleParent : public RemoteAccessible,
   }
 };
 
-}  // namespace a11y
-}  // namespace mozilla
+}  
+}  
 
 #endif
