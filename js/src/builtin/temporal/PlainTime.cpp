@@ -1032,6 +1032,75 @@ static bool PlainTime_nanosecond(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainTime_with(JSContext* cx, const CallArgs& args) {
+  auto* temporalTime = &args.thisv().toObject().as<PlainTimeObject>();
+  auto time = ToPlainTime(temporalTime);
+
+  
+  Rooted<JSObject*> temporalTimeLike(
+      cx, RequireObjectArg(cx, "temporalTimeLike", "with", args.get(0)));
+  if (!temporalTimeLike) {
+    return false;
+  }
+
+  
+  if (!RejectObjectWithCalendarOrTimeZone(cx, temporalTimeLike)) {
+    return false;
+  }
+
+  auto overflow = TemporalOverflow::Constrain;
+  if (args.hasDefined(1)) {
+    
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", "with", args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!ToTemporalOverflow(cx, options, &overflow)) {
+      return false;
+    }
+  }
+
+  
+  TimeRecord partialTime = {
+      double(time.hour),        double(time.minute),
+      double(time.second),      double(time.millisecond),
+      double(time.microsecond), double(time.nanosecond),
+  };
+  if (!::ToTemporalTimeRecord(cx, temporalTimeLike, &partialTime)) {
+    return false;
+  }
+
+  
+  PlainTime result;
+  if (!RegulateTime(cx, partialTime, overflow, &result)) {
+    return false;
+  }
+
+  
+  auto* obj = CreateTemporalTime(cx, result);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainTime_with(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainTime, PlainTime_with>(cx, args);
+}
+
+
+
+
 static bool PlainTime_equals(JSContext* cx, const CallArgs& args) {
   auto temporalTime =
       ToPlainTime(&args.thisv().toObject().as<PlainTimeObject>());
@@ -1199,6 +1268,7 @@ static const JSFunctionSpec PlainTime_methods[] = {
 };
 
 static const JSFunctionSpec PlainTime_prototype_methods[] = {
+    JS_FN("with", PlainTime_with, 1, 0),
     JS_FN("equals", PlainTime_equals, 1, 0),
     JS_FN("toPlainDateTime", PlainTime_toPlainDateTime, 1, 0),
     JS_FN("getISOFields", PlainTime_getISOFields, 0, 0),

@@ -695,6 +695,96 @@ static bool PlainYearMonth_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
+  Rooted<PlainYearMonthObject*> yearMonth(
+      cx, &args.thisv().toObject().as<PlainYearMonthObject>());
+
+  
+  Rooted<JSObject*> temporalYearMonthLike(
+      cx, RequireObjectArg(cx, "temporalYearMonthLike", "with", args.get(0)));
+  if (!temporalYearMonthLike) {
+    return false;
+  }
+
+  
+  if (!RejectObjectWithCalendarOrTimeZone(cx, temporalYearMonthLike)) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> options(cx);
+  if (args.hasDefined(1)) {
+    options = RequireObjectArg(cx, "options", "with", args[1]);
+  } else {
+    options = NewPlainObjectWithProto(cx, nullptr);
+  }
+  if (!options) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> calendar(cx, yearMonth->calendar());
+
+  
+  JS::RootedVector<PropertyKey> fieldNames(cx);
+  if (!CalendarFields(
+          cx, calendar,
+          {CalendarField::Month, CalendarField::MonthCode, CalendarField::Year},
+          &fieldNames)) {
+    return false;
+  }
+
+  
+  Rooted<PlainObject*> fields(cx,
+                              PrepareTemporalFields(cx, yearMonth, fieldNames));
+  if (!fields) {
+    return false;
+  }
+
+  
+  Rooted<PlainObject*> partialYearMonth(
+      cx, PreparePartialTemporalFields(cx, temporalYearMonthLike, fieldNames));
+  if (!partialYearMonth) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> mergedFields(
+      cx, CalendarMergeFields(cx, calendar, fields, partialYearMonth));
+  if (!mergedFields) {
+    return false;
+  }
+
+  
+  fields = PrepareTemporalFields(cx, mergedFields, fieldNames);
+  if (!fields) {
+    return false;
+  }
+
+  
+  auto obj = CalendarYearMonthFromFields(cx, calendar, fields, options);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+
+static bool PlainYearMonth_with(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_with>(cx, args);
+}
+
+
+
+
 static bool PlainYearMonth_equals(JSContext* cx, const CallArgs& args) {
   auto* yearMonth = &args.thisv().toObject().as<PlainYearMonthObject>();
   auto date = ToPlainDate(yearMonth);
@@ -1011,6 +1101,7 @@ static const JSFunctionSpec PlainYearMonth_methods[] = {
 };
 
 static const JSFunctionSpec PlainYearMonth_prototype_methods[] = {
+    JS_FN("with", PlainYearMonth_with, 1, 0),
     JS_FN("equals", PlainYearMonth_equals, 1, 0),
     JS_FN("toString", PlainYearMonth_toString, 0, 0),
     JS_FN("toLocaleString", PlainYearMonth_toLocaleString, 0, 0),

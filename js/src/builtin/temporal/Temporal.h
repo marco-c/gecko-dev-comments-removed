@@ -49,6 +49,12 @@ bool ToTemporalOverflow(JSContext* cx, JS::Handle<JSObject*> options,
 
 
 
+bool RejectObjectWithCalendarOrTimeZone(JSContext* cx,
+                                        JS::Handle<JSObject*> object);
+
+
+
+
 bool ToPositiveIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
                                      const char* name, double* result);
 
