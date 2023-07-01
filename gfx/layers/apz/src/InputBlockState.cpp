@@ -54,13 +54,6 @@ bool InputBlockState::SetConfirmedTargetApzc(
   MOZ_ASSERT(aState == TargetConfirmationState::eConfirmed ||
              aState == TargetConfirmationState::eTimedOut);
 
-  if (mTargetConfirmed == TargetConfirmationState::eTimedOut &&
-      aState == TargetConfirmationState::eConfirmed) {
-    
-    
-    
-    mTargetConfirmed = TargetConfirmationState::eTimedOutAndMainThreadResponded;
-  }
   
   
   
@@ -145,12 +138,6 @@ uint64_t InputBlockState::GetBlockId() const { return mBlockId; }
 
 bool InputBlockState::IsTargetConfirmed() const {
   return mTargetConfirmed != TargetConfirmationState::eUnconfirmed;
-}
-
-bool InputBlockState::HasReceivedRealConfirmedTarget() const {
-  return mTargetConfirmed == TargetConfirmationState::eConfirmed ||
-         mTargetConfirmed ==
-             TargetConfirmationState::eTimedOutAndMainThreadResponded;
 }
 
 bool InputBlockState::ShouldDropEvents() const {
