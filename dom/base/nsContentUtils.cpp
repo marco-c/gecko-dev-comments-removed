@@ -74,6 +74,7 @@
 #include "mozilla/CallState.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Components.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/DebugOnly.h"
@@ -2176,11 +2177,8 @@ inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
            PromiseFlatCString(list).get()));
 }
 
-inline bool CookieJarSettingsSaysShouldResistFingerprinting(
+inline already_AddRefed<nsICookieJarSettings> GetCookieJarSettings(
     nsILoadInfo* aLoadInfo) {
-  
-  
-  
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   nsresult rv =
       aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
@@ -2188,12 +2186,64 @@ inline bool CookieJarSettingsSaysShouldResistFingerprinting(
     
     
     
-    return false;
+    return nullptr;
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called CookieJarSettingsSaysShouldResistFingerprinting but the "
              "loadinfo's CookieJarSettings couldn't be retrieved"));
+    return nullptr;
+  }
+
+  MOZ_ASSERT(cookieJarSettings);
+  return cookieJarSettings.forget();
+}
+
+bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
+                                          nsILoadInfo* aLoadInfo) {
+  
+  
+
+  
+  
+  
+  
+  
+  
+  if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
+    if (NS_UsePrivateBrowsing(aChannel)) {
+      
+      return false;
+    }
+  } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
+             StaticPrefs::
+                 privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
+    
+    
+    
+    
+    return false;
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      GetCookieJarSettings(aLoadInfo);
+  if (!cookieJarSettings) {
+    return false;
+  }
+
+  return ContentBlockingAllowList::Check(cookieJarSettings);
+}
+
+inline bool CookieJarSettingsSaysShouldResistFingerprinting(
+    nsILoadInfo* aLoadInfo) {
+  
+  
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
+      GetCookieJarSettings(aLoadInfo);
+  if (!cookieJarSettings) {
     return false;
   }
   return cookieJarSettings->GetShouldResistFingerprinting();
@@ -2281,20 +2331,24 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
     return false;
   }
 
+  if (ETPSaysShouldNotResistFingerprinting(aChannel, loadInfo)) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+            ("Inside ShouldResistFingerprinting(nsIChannel*)"
+             " ETPSaysShouldNotResistFingerprinting said false"));
+    return false;
+  }
+
+  if (CookieJarSettingsSaysShouldResistFingerprinting(loadInfo)) {
+    return true;
+  }
+
   
   
   
   auto contentType = loadInfo->GetExternalContentPolicyType();
+  
   if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
-    
-    
-    
-    
-    if (CookieJarSettingsSaysShouldResistFingerprinting(loadInfo)) {
-      return true;
-    }
-
     nsCOMPtr<nsIURI> channelURI;
     nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
     MOZ_ASSERT(
@@ -2335,7 +2389,16 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
   }
 
   
-  return ShouldResistFingerprinting(loadInfo, aTarget);
+  
+  
+  nsIPrincipal* principal = loadInfo->GetLoadingPrincipal();
+
+  MOZ_ASSERT_IF(principal && !principal->IsSystemPrincipal() &&
+                    !principal->GetIsAddonOrExpandedAddonPrincipal(),
+                BasePrincipal::Cast(principal)->OriginAttributesRef() ==
+                    loadInfo->GetOriginAttributes());
+  return ShouldResistFingerprinting_dangerous(principal, "Internal Call",
+                                              aTarget);
 }
 
 
@@ -2377,36 +2440,6 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   }
 
   return !isExemptDomain;
-}
-
-
-bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo,
-                                                RFPTarget aTarget) {
-  MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() !=
-                 ExtContentPolicy::TYPE_DOCUMENT &&
-             aLoadInfo->GetExternalContentPolicyType() !=
-                 ExtContentPolicy::TYPE_SUBDOCUMENT);
-
-  
-  
-  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
-    return false;
-  }
-
-  if (CookieJarSettingsSaysShouldResistFingerprinting(aLoadInfo)) {
-    return true;
-  }
-
-  
-  
-  nsIPrincipal* principal = aLoadInfo->GetLoadingPrincipal();
-
-  MOZ_ASSERT_IF(principal && !principal->IsSystemPrincipal() &&
-                    !principal->GetIsAddonOrExpandedAddonPrincipal(),
-                BasePrincipal::Cast(principal)->OriginAttributesRef() ==
-                    aLoadInfo->GetOriginAttributes());
-  return ShouldResistFingerprinting_dangerous(principal, "Internal Call",
-                                              aTarget);
 }
 
 

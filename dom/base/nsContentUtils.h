@@ -368,8 +368,6 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting(nsIChannel* aChannel,
                                          RFPTarget aTarget);
-  static bool ShouldResistFingerprinting(nsILoadInfo* aLoadInfo,
-                                         RFPTarget aTarget);
   
   
   
