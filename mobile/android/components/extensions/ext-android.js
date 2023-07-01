@@ -391,6 +391,12 @@ class Tab extends TabBase {
     return false;
   }
 
+  get autoDiscardable() {
+    
+    
+    return true;
+  }
+
   get sharingState() {
     return {
       screen: undefined,
