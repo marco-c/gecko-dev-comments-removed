@@ -1,1 +1,30 @@
-'use strict';
+
+
+
+
+class TestURLSelectionOperation {
+  async run(urls, data) {
+    if (data && data.hasOwnProperty('mockResult')) {
+      return data['mockResult'];
+    }
+
+    return -1;
+  }
+}
+
+class VerifyKeyValue {
+  async run(urls, data) {
+    if (data && data.hasOwnProperty('expectedKey') &&
+        data.hasOwnProperty('expectedValue')) {
+      const expectedValue = data['expectedValue'];
+      const value = await sharedStorage.get(data['expectedKey']);
+      if (value === expectedValue) {
+        return 1;
+      }
+    }
+    return -1;
+  }
+}
+
+register('test-url-selection-operation', TestURLSelectionOperation);
+register('verify-key-value', VerifyKeyValue);

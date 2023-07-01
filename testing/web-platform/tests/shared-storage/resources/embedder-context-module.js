@@ -1,0 +1,16 @@
+
+
+
+
+class ReportContext {
+  async run(data) {
+    if (!data || !data.hasOwnProperty('ancestorKey')) {
+      return;
+    }
+    const ancestorKey = data['ancestorKey'];
+    const context = sharedStorage.context;
+    await sharedStorage.set(ancestorKey, context);
+  }
+}
+
+register('report-context', ReportContext);
