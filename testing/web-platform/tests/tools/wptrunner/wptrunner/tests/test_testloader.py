@@ -141,7 +141,7 @@ def test_loader_filter_tags():
                         "abcdef123456",
                         [None, {}],
                     ],
-                    "bar.html": [
+                    "bar.html": [  
                         "uvwxyz987654",
                         [None, {}],
                     ],
@@ -162,9 +162,11 @@ def test_loader_filter_tags():
         with open(os.path.join(a_path, "bar.html.ini"), "w") as f:
             f.write("tags: [test-include]\n")
 
+        
         loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None)
         assert len(loader.tests["testharness"]) == 2
 
+        
         loader = TestLoader({manifest: {"metadata_path": metadata_path}}, ["testharness"], None,
                             test_filters=[TagFilter({"test-include"})])
         assert len(loader.tests["testharness"]) == 1
