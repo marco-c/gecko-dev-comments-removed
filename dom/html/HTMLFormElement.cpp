@@ -246,11 +246,23 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
     return;
   }
 
+  RefPtr<PresShell> presShell = doc->GetPresShell();
+  if (!presShell) {
+    
+    
+    
+    
+    
+    
+    doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
+    presShell = doc->GetPresShell();
+  }
+
   
   
   
   
-  if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
+  if (presShell) {
     SubmitEventInit init;
     init.mBubbles = true;
     init.mCancelable = true;
