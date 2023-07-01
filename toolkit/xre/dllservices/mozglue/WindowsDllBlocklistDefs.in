@@ -346,7 +346,7 @@ BROWSER_PROCESS += [
     DllBlocklistEntry("audiodevprops2.dll", (2, 6, 14, 0)),
 
     
-    DllBlocklistEntry("kisfdpro64.dll", (2023, 5, 31, 209)),
+    DllBlocklistEntry("kisfdpro64.dll", ALL_VERSIONS),
 
     
     DllBlocklistEntry("dghmpg64.dll", (2023, 5, 31, 1367)),
