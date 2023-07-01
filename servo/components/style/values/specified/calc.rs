@@ -69,6 +69,8 @@ pub enum MathFunction {
     Log,
     
     Exp,
+    
+    Abs,
 }
 
 
@@ -652,6 +654,10 @@ impl CalcNode {
                     let number = a.exp();
 
                     Ok(Self::Leaf(Leaf::Number(number)))
+                },
+                MathFunction::Abs => {
+                    let node = Self::parse_argument(context, input, allowed_units)?;
+                    Ok(Self::Abs(Box::new(node)))
                 },
             }
         })
