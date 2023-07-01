@@ -47,18 +47,6 @@ namespace mozilla {
 #endif  
 #define LOGV(msg, ...) LOG_INTERNAL(Verbose, msg, ##__VA_ARGS__)
 
-
-already_AddRefed<DecoderAgent> DecoderAgent::Create(
-    UniquePtr<TrackInfo>&& aInfo) {
-  MOZ_ASSERT(aInfo);
-
-  
-  
-  static std::atomic<Id> sNextId = None;
-  RefPtr<DecoderAgent> agent = new DecoderAgent(++sNextId, std::move(aInfo));
-  return agent.forget();
-}
-
 DecoderAgent::DecoderAgent(Id aId, UniquePtr<TrackInfo>&& aInfo)
     : mId(aId),
       mInfo(std::move(aInfo)),

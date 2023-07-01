@@ -42,7 +42,8 @@ class DecoderAgent final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecoderAgent);
 
-  static already_AddRefed<DecoderAgent> Create(UniquePtr<TrackInfo>&& aInfo);
+  using Id = uint32_t;
+  DecoderAgent(Id aId, UniquePtr<TrackInfo>&& aInfo);
 
   
 
@@ -57,13 +58,10 @@ class DecoderAgent final {
   
   RefPtr<DecodePromise> DrainAndFlush();
 
-  using Id = uint32_t;
-  static constexpr Id None = 0;
   const Id mId;  
   const UniquePtr<TrackInfo> mInfo;
 
  private:
-  DecoderAgent(Id aId, UniquePtr<TrackInfo>&& aInfo);
   ~DecoderAgent();
 
   
