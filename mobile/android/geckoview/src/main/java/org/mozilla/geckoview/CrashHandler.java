@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -16,6 +16,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
+import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,8 +31,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mozilla.geckoview.BuildConfig;
-import org.mozilla.geckoview.GeckoRuntime;
+import org.mozilla.gecko.GeckoAppShell;
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
@@ -39,15 +41,15 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
       "https://crash-reports.mozilla.com/submit?id=%1$s&version=%2$s&buildid=%3$s";
 
   
-  protected final Context appContext;
+  private @Nullable final Context mAppContext;
   
-  protected final Thread handlerThread;
-  protected final Thread.UncaughtExceptionHandler systemUncaughtHandler;
+  private @Nullable final Thread mHandlerThread;
+  private final @Nullable Thread.UncaughtExceptionHandler systemUncaughtHandler;
 
-  protected boolean crashing;
-  protected boolean unregistered;
+  private boolean mCrashing;
+  private boolean mUnregistered;
 
-  protected final Class<? extends Service> handlerService;
+  private @Nullable final Class<? extends Service> mHandlerService;
 
   
 
@@ -55,7 +57,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  public static Throwable getRootException(final Throwable exc) {
+  @AnyThread
+  @NonNull
+  public static Throwable getRootException(@NonNull final Throwable exc) {
     Throwable cause;
     Throwable result = exc;
     for (cause = exc; cause != null; cause = cause.getCause()) {
@@ -71,7 +75,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  public static String getExceptionStackTrace(final Throwable exc) {
+  @AnyThread
+  @NonNull
+  public static String getExceptionStackTrace(@NonNull final Throwable exc) {
     final StringWriter sw = new StringWriter();
     final PrintWriter pw = new PrintWriter(sw);
     exc.printStackTrace(pw);
@@ -80,12 +86,17 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
   }
 
   
+  @AnyThread
   public static void terminateProcess() {
     Process.killProcess(Process.myPid());
   }
 
   
-  public CrashHandler(final Class<? extends Service> handlerService) {
+
+
+
+
+  public CrashHandler(@Nullable final Class<? extends Service> handlerService) {
     this((Context) null, handlerService);
   }
 
@@ -94,15 +105,19 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  public CrashHandler(final Context appContext, final Class<? extends Service> handlerService) {
-    this.appContext = appContext;
-    this.handlerThread = null;
-    this.handlerService = handlerService;
+
+  public CrashHandler(
+      @Nullable final Context aAppContext,
+      @Nullable final Class<? extends Service> aHandlerService) {
+    this.mAppContext = aAppContext;
+    this.mHandlerThread = null;
+    this.mHandlerService = aHandlerService;
     this.systemUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler();
     Thread.setDefaultUncaughtExceptionHandler(this);
   }
 
   
+
 
 
 
@@ -117,28 +132,30 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
+
   public CrashHandler(
-      final Thread thread,
-      final Context appContext,
-      final Class<? extends Service> handlerService) {
-    this.appContext = appContext;
-    this.handlerThread = thread;
-    this.handlerService = handlerService;
+      @Nullable final Thread thread,
+      final Context aAppContext,
+      final Class<? extends Service> aHandlerService) {
+    this.mAppContext = aAppContext;
+    this.mHandlerThread = thread;
+    this.mHandlerService = aHandlerService;
     this.systemUncaughtHandler = thread.getUncaughtExceptionHandler();
     thread.setUncaughtExceptionHandler(this);
   }
 
   
+  @AnyThread
   public void unregister() {
-    unregistered = true;
+    mUnregistered = true;
 
     
     
     
 
-    if (handlerThread != null) {
-      if (handlerThread.getUncaughtExceptionHandler() == this) {
-        handlerThread.setUncaughtExceptionHandler(systemUncaughtHandler);
+    if (mHandlerThread != null) {
+      if (mHandlerThread.getUncaughtExceptionHandler() == this) {
+        mHandlerThread.setUncaughtExceptionHandler(systemUncaughtHandler);
       }
     } else {
       if (Thread.getDefaultUncaughtExceptionHandler() == this) {
@@ -153,7 +170,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  public static void logException(final Thread thread, final Throwable exc) {
+  @AnyThread
+  public static void logException(@NonNull final Thread thread, @NonNull final Throwable exc) {
     try {
       Log.e(
           LOGTAG,
@@ -193,6 +211,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     return CrashHandler.class.getPackage().getName();
   }
 
+  @Nullable
   private static String getProcessName() {
     try {
       final FileReader reader = new FileReader("/proc/self/cmdline");
@@ -212,7 +231,13 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     return null;
   }
 
-  protected String getAppPackageName() {
+  
+
+
+
+  @Nullable
+  @AnyThread
+  public String getAppPackageName() {
     final Context context = getAppContext();
 
     if (context != null) {
@@ -229,8 +254,13 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     return getJavaPackageName();
   }
 
-  protected Context getAppContext() {
-    return appContext;
+  
+
+
+  @AnyThread
+  @Nullable
+  public Context getAppContext() {
+    return mAppContext;
   }
 
   
@@ -240,7 +270,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
+  @AnyThread
+  @NonNull
+  public Bundle getCrashExtras(@NonNull final Thread thread, @NonNull final Throwable exc) {
     final Context context = getAppContext();
     final Bundle extras = new Bundle();
     final String pkgName = getAppPackageName();
@@ -278,11 +310,15 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  protected byte[] getCrashDump(final Thread thread, final Throwable exc) {
+  @NonNull
+  @AnyThread
+  public byte[] getCrashDump(@Nullable final Thread thread, @Nullable final Throwable exc) {
     return new byte[0]; 
   }
 
-  protected static String normalizeUrlString(final String str) {
+  @AnyThread
+  @NonNull
+  private static String normalizeUrlString(@Nullable final String str) {
     if (str == null) {
       return "";
     }
@@ -294,7 +330,10 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  protected String getServerUrl(final Bundle extras) {
+
+  @NonNull
+  @AnyThread
+  public String getServerUrl(@NonNull final Bundle extras) {
     return String.format(
         DEFAULT_SERVER_URL,
         normalizeUrlString(extras.getString("ProductID")),
@@ -309,12 +348,14 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-  protected boolean launchCrashReporter(final String dumpFile, final String extraFile) {
+  @AnyThread
+  public boolean launchCrashReporter(
+      @NonNull final String dumpFile, @NonNull final String extraFile) {
     try {
       final Context context = getAppContext();
       final ProcessBuilder pb;
 
-      if (handlerService == null) {
+      if (mHandlerService == null) {
         Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
         return false;
       }
@@ -325,7 +366,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         intent.putExtra(GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile);
         intent.putExtra(
             GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, GeckoRuntime.CRASHED_PROCESS_TYPE_MAIN);
-        intent.setClass(context, handlerService);
+        intent.setClass(context, mHandlerService);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
           context.startForegroundService(intent);
@@ -344,7 +385,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
                 "-a",
                 GeckoRuntime.ACTION_CRASHED,
                 "-n",
-                getAppPackageName() + '/' + handlerService.getName(),
+                getAppPackageName() + '/' + mHandlerService.getName(),
                 "--es",
                 GeckoRuntime.EXTRA_MINIDUMP_PATH,
                 dumpFile,
@@ -371,7 +412,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
                 "-a",
                 GeckoRuntime.ACTION_CRASHED,
                 "-n",
-                getAppPackageName() + '/' + handlerService.getName(),
+                getAppPackageName() + '/' + mHandlerService.getName(),
                 "--es",
                 GeckoRuntime.EXTRA_MINIDUMP_PATH,
                 dumpFile,
@@ -403,8 +444,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
+  @AnyThread
   @SuppressLint("SdCardPath")
-  protected boolean reportException(final Thread thread, final Throwable exc) {
+  public boolean reportException(@NonNull final Thread thread, @NonNull final Throwable exc) {
     final Context context = getAppContext();
     final String id = UUID.randomUUID().toString();
 
@@ -473,8 +515,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
   @Override
-  public void uncaughtException(final Thread thread, final Throwable exc) {
-    if (this.crashing) {
+  public void uncaughtException(@Nullable final Thread thread, @NonNull final Throwable exc) {
+    if (this.mCrashing) {
       
       return;
     }
@@ -487,10 +529,10 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     try {
       Throwable rootException = exc;
-      if (!this.unregistered) {
+      if (!this.mUnregistered) {
         
 
-        this.crashing = true;
+        this.mCrashing = true;
         rootException = getRootException(exc);
         logException(resolvedThread, rootException);
 
@@ -509,10 +551,18 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     }
   }
 
-  public static CrashHandler createDefaultCrashHandler(final Context context) {
+  
+
+
+
+
+
+  @AnyThread
+  @NonNull
+  public static CrashHandler createDefaultCrashHandler(@NonNull final Context context) {
     return new CrashHandler(context, null) {
       @Override
-      protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
+      public Bundle getCrashExtras(final Thread thread, final Throwable exc) {
         final Bundle extras = super.getCrashExtras(thread, exc);
 
         extras.putString("ProductName", BuildConfig.MOZ_APP_BASENAME);
