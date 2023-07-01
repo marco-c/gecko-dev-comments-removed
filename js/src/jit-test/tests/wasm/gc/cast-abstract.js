@@ -1,5 +1,10 @@
 
 
+load(libdir + "wasm-binary.js");
+
+
+const specificTest = '';
+
 const preamble = `
   (type $s1 (struct))
   (type $s2 (sub $s1 (struct (field i32))))
@@ -10,6 +15,12 @@ const preamble = `
   (func $f (type $f1))
   (elem declare func $f) ;; allow $f to be ref.func'd
 `;
+const preambleTypesV5 = [
+  { kind: StructCode, fields: [] },
+  { kind: StructCode, sub: 0, fields: [I32Code] },
+  { kind: ArrayCode, elem: [OptRefCode, ...varU32(0)] },
+  { kind: ArrayCode, sub: 2, elem: [OptRefCode, ...varU32(1)] },
+]
 
 
 
@@ -18,30 +29,61 @@ const subtypes = [
   ['$a2', '$a1'],
 ];
 
+const s1 = {
+  index: 0,
+  name: '$s1',
+  make: 'struct.new_default $s1',
+  makeV5: [0xfb, 0x08, ...varU32(0)], 
+};
+const s2 = {
+  index: 1,
+  name: '$s2',
+  make: 'struct.new_default $s2',
+  makeV5: [0xfb, 0x08, ...varU32(1)], 
+};
+const a1 = {
+  index: 2,
+  name: '$a1',
+  make: '(array.new_default $a1 (i32.const 10))',
+  makeV5: [
+    I32ConstCode, ...varS32(10), 
+    0xfb, 0x1c, ...varU32(2), 
+  ],
+};
+const a2 = {
+  index: 3,
+  name: '$a2',
+  make: '(array.new_default $a2 (i32.const 10))',
+  makeV5: [
+    I32ConstCode, ...varS32(10), 
+    0xfb, 0x1c, ...varU32(3), 
+  ],
+};
+
 const typeSets = [
   [
     { name: 'any' },
     { name: 'eq' },
     { name: 'struct' },
-    { name: '$s1', make: 'struct.new_default $s1' },
-    { name: '$s2', make: 'struct.new_default $s2' },
+    s1,
+    s2,
     { name: 'none', none: true },
   ],
   [
     { name: 'any' },
     { name: 'eq' },
     { name: 'array' },
-    { name: '$a1', make: '(array.new_default $a1 (i32.const 10))' },
-    { name: '$a2', make: '(array.new_default $a2 (i32.const 10))' },
+    a1,
+    a2,
     { name: 'none', none: true },
   ],
   [
     { name: 'any' },
     { name: 'eq' },
-    { name: '$s1', make: 'struct.new_default $s1' },
-    { name: '$s2', make: 'struct.new_default $s2' },
-    { name: '$a1', make: '(array.new_default $a1 (i32.const 10))' },
-    { name: '$a2', make: '(array.new_default $a2 (i32.const 10))' },
+    s1,
+    s2,
+    a1,
+    a2,
     { name: 'none', none: true },
   ],
   
@@ -80,9 +122,6 @@ function isSubtype(src, dest) {
 }
 
 let numCases = 0;
-
-
-const specificTest = '';
 
 
 
@@ -139,6 +178,13 @@ for (const typeSet of typeSets) {
               if (concrete2 && !isSubtype(start, end)) {
                 good2 = false;
               }
+            }
+
+            
+            let doV5 = concrete0 && concrete1 && concrete2;
+            if ((nullable0 && !nullable1) || (nullable1 && !nullable2)) {
+              
+              doV5 = false;
             }
 
             let emoji1 = good1 ? '✅' : '❌';
@@ -221,6 +267,63 @@ for (const typeSet of typeSets) {
               )
             )`;
 
+            
+            
+            let v5ModuleBytes;
+            if (doV5) {
+              const makeV5 = makeNull ? [RefNullCode, ...varS32(start.index)] : start.makeV5;
+              const type1v5 = [nullable1 ? OptRefCode : RefCode, ...varS32(middle.index)];
+              const type2v5 = [nullable2 ? OptRefCode : RefCode, ...varS32(end.index)];
+              print("t2", type2v5)
+              v5ModuleBytes = moduleWithSections([
+                typeSection([
+                  ...preambleTypesV5,
+                   { kind: FuncCode, args: [], ret: [type1v5] },
+                   { kind: FuncCode, args: [type1v5], ret: [type2v5] },
+                   { kind: FuncCode, args: [], ret: [I32Code] },
+                   { kind: FuncCode, args: [type1v5], ret: [I32Code] },
+                ]),
+                declSection([4, 5, 6, 7]),
+                exportSection([
+                  { funcIndex: 0, name: "cast1V5" },
+                  { funcIndex: 1, name: "cast2V5" },
+                  { funcIndex: 2, name: "test1V5" },
+                  { funcIndex: 3, name: "test2V5" },
+                ]),
+                bodySection([
+                  
+                  funcBody({ locals: [], body: [
+                    ...makeV5,
+                    0xfb, 0x45, ...varU32(middle.index) 
+                  ] }),
+                  
+                  funcBody({ locals: [], body: [
+                    LocalGetCode, ...varU32(0), 
+                    0xfb, 0x45, ...varU32(end.index) 
+                  ] }),
+                  
+                  funcBody({ locals: [], body: [
+                    ...makeV5,
+                    0xfb, 0x44, ...varU32(middle.index) 
+                  ] }),
+                  
+                  funcBody({ locals: [], body: [
+                    LocalGetCode, ...varU32(0), 
+                    0xfb, 0x44, ...varU32(end.index) 
+                  ] }),
+                ]),
+              ]);
+            }
+
+            function assertCast(func, good) {
+              if (good) {
+                return [func(), true];
+              } else {
+                assertErrorMessage(func, WebAssembly.RuntimeError, /bad cast/);
+                return [null, false];
+              }
+            }
+
             try {
               
               const {
@@ -229,15 +332,6 @@ for (const typeSet of typeSets) {
                 branch1, branch2,
                 branchfail1, branchfail2,
               } = wasmEvalText(moduleText).exports;
-
-              function assertCast(func, good) {
-                if (good) {
-                  return [func(), true];
-                } else {
-                  assertErrorMessage(func, WebAssembly.RuntimeError, /bad cast/);
-                  return [null, false];
-                }
-              }
 
               const [res1, ok1] = assertCast(cast1, good1);
               assertEq(test1(), good1 ? 1 : 0);
@@ -253,6 +347,31 @@ for (const typeSet of typeSets) {
               print("Failed! Module text was:");
               print(moduleText);
               throw e;
+            }
+
+            
+            if (doV5) {
+              try {
+                const {
+                  cast1V5, cast2V5,
+                  test1V5, test2V5,
+                } = new WebAssembly.Instance(new WebAssembly.Module(v5ModuleBytes)).exports;
+
+                
+                
+                
+
+                const [res1, ok1] = assertCast(cast1V5, good1);
+                assertEq(test1V5(), (good1 && !makeNull) ? 1 : 0);
+                if (ok1) {
+                  assertCast(() => cast2V5(res1), good2);
+                  assertEq(test2V5(res1), (good2 && !makeNull) ? 1 : 0);
+                }
+              } catch (e) {
+                print("Failed v5 encoding test! Sadly we have no module text for you, but here are the bytes:");
+                print(v5ModuleBytes);
+                throw e;
+              }
             }
           }
         }

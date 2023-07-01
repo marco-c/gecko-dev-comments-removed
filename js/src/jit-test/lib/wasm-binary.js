@@ -45,8 +45,11 @@ const V128Code         = 0x7b;
 const AnyFuncCode      = 0x70;
 const ExternRefCode    = 0x6f;
 const EqRefCode        = 0x6d;
-const OptRefCode       = 0x6c;
+const OptRefCode       = 0x6c; 
+const RefCode          = 0x6b; 
 const FuncCode         = 0x60;
+const StructCode       = 0x5f;
+const ArrayCode        = 0x5e;
 const VoidCode         = 0x40;
 
 
@@ -243,8 +246,8 @@ function toU8(array) {
 }
 
 function varU32(u32) {
-    assertEq(u32 >= 0, true);
-    assertEq(u32 < Math.pow(2,32), true);
+    assertEq(u32 >= 0, true, `varU32 input must be number between 0 and 2^32-1, got ${u32}`);
+    assertEq(u32 < Math.pow(2,32), true, `varU32 input must be number between 0 and 2^32-1, got ${u32}`);
     var bytes = [];
     do {
         var byte = u32 & 0x7f;
@@ -299,26 +302,210 @@ function moduleWithSections(sectionArray) {
     return toU8(bytes);
 }
 
-function sigSection(sigs) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function typeSection(types) {
     var body = [];
-    body.push(...varU32(sigs.length));
-    for (let sig of sigs) {
-        body.push(...varU32(FuncCode));
-        body.push(...varU32(sig.args.length));
-        for (let arg of sig.args)
-            body.push(...varU32(arg));
-        if (sig.ret == VoidCode) {
-            body.push(...varU32(0));
-        } else if (typeof sig.ret == "number") {
-            body.push(...varU32(1));
-            body.push(...varU32(sig.ret));
+    body.push(...varU32(types.length)); 
+    for (const type of types) {
+        if (type.isRecursionGroup) {
+            body.push(0x4f);
+            body.push(...varU32(type.types.length));
+            for (const t of type.types) {
+                body.push(..._encodeType(t));
+            }
         } else {
-            body.push(...varU32(sig.ret.length));
-            for (let r of sig.ret)
-                body.push(...varU32(r));
+            body.push(..._encodeType(type));
         }
     }
     return { name: typeId, body };
+}
+
+function recGroup(types) {
+    return { isRecursionGroup: true, types };
+}
+
+
+
+
+
+function _resultType(input) {
+    if (input === VoidCode) {
+        return [];
+    }
+    if (typeof input === "number") {
+        input = [input];
+    }
+    input = input.map(valType => Array.isArray(valType) ? valType : [valType]);
+    return input;
+}
+
+
+
+
+
+function _fieldType(input) {
+    if (typeof input !== "object" || Array.isArray(input)) {
+        input = { mut: false, type: input };
+    }
+    if (!Array.isArray(input.type)) {
+        input.type = [input.type];
+    }
+    return input;
+}
+
+
+
+
+
+function _encodeType(typeObj) {
+    const typeBytes = [];
+    if (typeObj.sub !== undefined) {
+        
+        const final = typeObj.final ?? false;
+        if (final) {
+            throw new Error("We do not support final types yet. If final types are in fact supported, remove this exception and default final to true :)");
+        }
+        typeBytes.push(final ? 0x4e : 0x50);
+        typeBytes.push(...varU32(1), ...varU32(typeObj.sub));
+    }
+    typeBytes.push(typeObj.kind);
+    switch (typeObj.kind) {
+    case FuncCode: {
+        const args = _resultType(typeObj.args);
+        const ret = _resultType(typeObj.ret);
+        typeBytes.push(...varU32(args.length));
+        for (const t of args) {
+            typeBytes.push(...t);
+        }
+        typeBytes.push(...varU32(ret.length));
+        for (const t of ret) {
+            typeBytes.push(...t);
+        }
+    } break;
+    case StructCode: {
+        
+        typeBytes.push(...varU32(typeObj.fields.length));
+        for (const f of typeObj.fields) {
+            typeBytes.push(..._encodeFieldType(f));
+        }
+    } break;
+    case ArrayCode: {
+        
+        typeBytes.push(..._encodeFieldType(typeObj.elem));
+    } break;
+    default:
+        throw new Error(`unknown type kind ${typeObj.kind} in type section`);
+    }
+    return typeBytes;
+}
+
+function _encodeFieldType(fieldTypeObj) {
+    fieldTypeObj = _fieldType(fieldTypeObj);
+    return [...fieldTypeObj.type, fieldTypeObj.mut ? 0x01 : 0x00];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sigSection(sigs) {
+    return typeSection(sigs.map(sig => ({ kind: FuncCode, ...sig })));
 }
 
 function declSection(decls) {
