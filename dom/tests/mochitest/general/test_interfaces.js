@@ -402,6 +402,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ElementInternals", insecureContext: true },
   
+  { name: "EncodedVideoChunk", insecureContext: true, nightly: true },
+  
   { name: "ErrorEvent", insecureContext: true },
   
   { name: "Event", insecureContext: true },
