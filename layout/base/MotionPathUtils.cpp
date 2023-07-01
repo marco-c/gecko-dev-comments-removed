@@ -284,8 +284,8 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
   
   double directionAngle = 0.0;
   gfx::Point point;
-  if (aPath.IsPath()) {
-    const auto& path = aPath.AsPath();
+  if (aPath.IsShape()) {
+    const auto& path = aPath.AsShape();
     if (!path.mGfxPath) {
       
       return Nothing();
@@ -404,7 +404,7 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
         aFrame->GetProperty(nsIFrame::OffsetPathCache());
     MOZ_ASSERT(gfxPath || pathData._0.IsEmpty(),
                "Should have a valid cached gfx::Path or an empty path string");
-    return OffsetPathData::Path(pathData, gfxPath.forget());
+    return OffsetPathData::Shape(pathData, gfxPath.forget());
   }
 
   
@@ -459,7 +459,7 @@ static OffsetPathData GenerateOffsetPathData(
           MotionPathUtils::GetCompositorPathBuilder();
       path = MotionPathUtils::BuildPath(pathData, builder);
     }
-    return OffsetPathData::Path(pathData, path.forget());
+    return OffsetPathData::Shape(pathData, path.forget());
   }
 
   
