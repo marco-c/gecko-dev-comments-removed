@@ -2,5 +2,6 @@
 
 
 
+export * from "./frame";
 export * from "./source-tree-item";
 export * from "./tab";
