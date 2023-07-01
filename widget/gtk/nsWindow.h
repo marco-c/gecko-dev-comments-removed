@@ -659,6 +659,8 @@ class nsWindow final : public nsBaseWidget {
   
   bool mTitlebarBackdropState : 1;
   
+  bool mIsPIPWindow : 1;
+  
   
   
   bool mIsWaylandPanelWindow : 1;
