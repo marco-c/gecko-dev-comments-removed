@@ -18,6 +18,12 @@ namespace js::temporal {
 
 
 
+bool ParseTimeZoneOffsetString(JSContext* cx, JS::Handle<JSString*> str,
+                               int64_t* result);
+
+
+
+
 JSLinearString* ParseTemporalCalendarString(JSContext* cx,
                                             JS::Handle<JSString*> str);
 
