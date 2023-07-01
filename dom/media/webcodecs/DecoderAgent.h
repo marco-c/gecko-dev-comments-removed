@@ -52,6 +52,10 @@ class DecoderAgent final {
   RefPtr<ShutdownPromise> Shutdown();
   using DecodePromise = MediaDataDecoder::DecodePromise;
   RefPtr<DecodePromise> Decode(MediaRawData* aSample);
+  
+  
+  
+  RefPtr<DecodePromise> DrainAndFlush();
 
   using Id = uint32_t;
   static constexpr Id None = 0;
@@ -62,11 +66,18 @@ class DecoderAgent final {
   DecoderAgent(Id aId, UniquePtr<TrackInfo>&& aInfo);
   ~DecoderAgent();
 
+  
+  
+  
+  RefPtr<DecodePromise> Dry();
+  void DrainUntilDry();
+
   enum class State {
     Unconfigured,
     Configuring,
     Configured,
     Decoding,
+    Flushing,
     ShuttingDown,
     Error,
   };
@@ -91,6 +102,16 @@ class DecoderAgent final {
   
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseRequestHolder<DecodePromise> mDecodeRequest;
+
+  
+  MozPromiseHolder<DecodePromise> mDrainAndFlushPromise;
+  MediaDataDecoder::DecodedData mDrainAndFlushData;
+  MozPromiseRequestHolder<DecodePromise> mDryRequest;
+  MozPromiseHolder<DecodePromise> mDryPromise;
+  MediaDataDecoder::DecodedData mDryData;
+  MozPromiseRequestHolder<DecodePromise> mDrainRequest;
+  using FlushPromise = MediaDataDecoder::FlushPromise;
+  MozPromiseRequestHolder<FlushPromise> mFlushRequest;
 };
 
 }  
