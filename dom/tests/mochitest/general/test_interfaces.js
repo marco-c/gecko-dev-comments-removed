@@ -316,6 +316,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSPageRule", insecureContext: true },
   
+  { name: "CSSPropertyRule", insecureContext: true, nightly: true },
+  
   { name: "CSSPseudoElement", insecureContext: true, disabled: true },
   
   { name: "CSSRule", insecureContext: true },
