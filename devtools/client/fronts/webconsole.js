@@ -31,35 +31,12 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     
     this.formAttributeName = "consoleActor";
 
-    this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
-
     this.before("consoleAPICall", this.beforeConsoleAPICall);
     this.before("pageError", this.beforePageError);
-    this.before("serverNetworkEvent", this.beforeServerNetworkEvent);
-
-    this._client.on("networkEventUpdate", this._onNetworkEventUpdate);
   }
 
   get actor() {
     return this.actorID;
-  }
-
-  
-
-
-
-
-
-
-
-  _onNetworkEventUpdate(packet) {
-    this.emit("serverNetworkUpdateEvent", packet);
-  }
-
-  beforeServerNetworkEvent(packet) {
-    
-    
-    this.emit("serverNetworkStackTrace", packet);
   }
 
   beforeConsoleAPICall(packet) {
@@ -117,192 +94,11 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-
-
-
-
-
-
-  getRequestHeaders(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getRequestHeaders",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getRequestCookies(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getRequestCookies",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getRequestPostData(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getRequestPostData",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getResponseHeaders(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getResponseHeaders",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getResponseCookies(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getResponseCookies",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getResponseContent(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getResponseContent",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getResponseCache(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getResponseCache",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getEventTimings(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getEventTimings",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getSecurityInfo(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getSecurityInfo",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  getStackTrace(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "getStackTrace",
-    };
-    return this._client.request(packet, onResponse);
-  }
-
-  
-
-
-
   destroy() {
     if (!this._client) {
       return null;
     }
 
-    this._client.off("networkEventUpdate", this._onNetworkEventUpdate);
     
     
     this._client = null;
