@@ -54,34 +54,23 @@ class ShutdownBlockingTicket;
 
 namespace mozilla::dom {
 
-struct ConfigureMessage final {
-  explicit ConfigureMessage(UniquePtr<VideoDecoderConfig>&& aConfig);
+class ConfigureMessage;
+class DecodeMessage;
+class FlushMessage;
+
+class ControlMessage {
+ public:
+  explicit ControlMessage(const nsACString& aTitle);
+  virtual ~ControlMessage() = default;
+  virtual void Cancel() = 0;
+  virtual bool IsProcessing() = 0;
+
+  virtual const nsCString& ToString() const { return mTitle; }
+  virtual ConfigureMessage* AsConfigureMessage() { return nullptr; }
+  virtual DecodeMessage* AsDecodeMessage() { return nullptr; }
+  virtual FlushMessage* AsFlushMessage() { return nullptr; }
+
   const nsCString mTitle;  
-  MozPromiseRequestHolder<DecoderAgent::ConfigurePromise> mRequest;
-  UniquePtr<VideoDecoderConfig> mConfig;
-};
-
-struct DecodeMessage final {
-  using Id = size_t;
-
-  
-  
-  struct ChunkData;
-  DecodeMessage(Id aId, UniquePtr<ChunkData>&& aData);
-  const nsCString mTitle;  
-  MozPromiseRequestHolder<DecoderAgent::DecodePromise> mRequest;
-  const Id mId;  
-  UniquePtr<ChunkData> mData;
-};
-
-struct FlushMessage final {
-  using Id = size_t;
-
-  FlushMessage(Id aId, Promise* aPromise);
-  const nsCString mTitle;  
-  MozPromiseRequestHolder<DecoderAgent::DecodePromise> mRequest;
-  const Id mId;  
-  RefPtr<Promise> mPromise;
 };
 
 class VideoDecoder final : public DOMEventTargetHelper {
@@ -147,20 +136,22 @@ class VideoDecoder final : public DOMEventTargetHelper {
 
   void ScheduleDequeueEvent();
 
-  void SchedulePromiseResolveOrReject(Promise* aPromise,
+  void SchedulePromiseResolveOrReject(already_AddRefed<Promise> aPromise,
                                       const nsresult& aResult);
 
   void ProcessControlMessageQueue();
   void CancelPendingControlMessages(const nsresult& aResult);
 
-  using ControlMessage = Variant<ConfigureMessage, DecodeMessage, FlushMessage>;
   enum class MessageProcessedResult { NotProcessed, Processed };
 
-  MessageProcessedResult ProcessConfigureMessage(ControlMessage& aMessage);
+  MessageProcessedResult ProcessConfigureMessage(
+      UniquePtr<ControlMessage>& aMessage);
 
-  MessageProcessedResult ProcessDecodeMessage(ControlMessage& aMessage);
+  MessageProcessedResult ProcessDecodeMessage(
+      UniquePtr<ControlMessage>& aMessage);
 
-  MessageProcessedResult ProcessFlushMessage(ControlMessage& aMessage);
+  MessageProcessedResult ProcessFlushMessage(
+      UniquePtr<ControlMessage>& aMessage);
 
   
   bool CreateDecoderAgent(UniquePtr<VideoDecoderConfig>&& aConfig,
@@ -175,8 +166,8 @@ class VideoDecoder final : public DOMEventTargetHelper {
   bool mKeyChunkRequired;
 
   bool mMessageQueueBlocked;
-  std::queue<ControlMessage> mControlMessageQueue;
-  Maybe<ControlMessage> mProcessingMessage;
+  std::queue<UniquePtr<ControlMessage>> mControlMessageQueue;
+  UniquePtr<ControlMessage> mProcessingMessage;
 
   
   
@@ -186,8 +177,12 @@ class VideoDecoder final : public DOMEventTargetHelper {
   uint32_t mDecodeQueueSize;
   bool mDequeueEventScheduled;
 
-  DecodeMessage::Id mDecodeMessageCounter;
-  FlushMessage::Id mFlushMessageCounter;
+  
+  
+  size_t mDecodeCounter;
+  
+  
+  size_t mFlushCounter;
 
   
   
