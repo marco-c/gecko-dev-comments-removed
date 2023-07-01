@@ -36,9 +36,7 @@ constexpr static uint32_t scMinimumNumberOfChunks = 4;
 constexpr static uint32_t scMaximumChunkSize = 1024 * 1024;
 
 
-
-constexpr static uint32_t scMinimumBufferSize =
-    scMinimumNumberOfChunks * scMinimumChunkSize;
+constexpr static uint32_t scMinimumBufferSize = 128u * 1024u * 1024u;
 
 
 constexpr static uint32_t scMinimumBufferEntries =

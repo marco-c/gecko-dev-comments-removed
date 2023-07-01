@@ -695,9 +695,7 @@ public class GeckoThread extends Thread {
     
     
     int interval = 1;
-    
-    int capacity = 8 * 1024 * 1024;
-    
+
     
     
     
@@ -706,9 +704,12 @@ public class GeckoThread extends Thread {
     
     
     
+    final int minCapacity = 16777216;
+
     
     
-    final int minCapacity = 65536;
+    
+    int capacity = minCapacity;
 
     
     
