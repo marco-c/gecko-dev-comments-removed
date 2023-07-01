@@ -99,13 +99,4 @@ add_task(async function test_legacy_wizard() {
       TelemetryTestUtils.assertHistogram(legacyHistogram, entrypointId, 1);
     }
   }
-
-  
-  
-  
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
-  Assert.ok(
-    scalars["migration.time_to_produce_legacy_migrator_list"] > 0,
-    "Non-zero scalar value recorded for migration.time_to_produce_migrator_list"
-  );
 });

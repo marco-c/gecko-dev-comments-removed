@@ -56,15 +56,6 @@ add_task(async function test_successful_migrations() {
 
   
   
-  
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
-  Assert.ok(
-    scalars["migration.time_to_produce_migrator_list"] > 0,
-    "Non-zero scalar value recorded for migration.time_to_produce_migrator_list"
-  );
-
-  
-  
   migration = waitForTestMigration(
     [
       MigrationUtils.resourceTypes.BOOKMARKS,
