@@ -37,7 +37,7 @@ exported_symbols.test0 = async function () {
 
 exported_symbols.quotaTest = async function () {
   const shrinkedStorageSizeKB = 5 * 1024;
-  const defaultDatabaseSize = 458752;
+  const defaultDatabaseSize = 458779;
 
   
   await Utils.shrinkStorageSize(shrinkedStorageSizeKB);
