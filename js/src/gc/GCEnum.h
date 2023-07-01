@@ -16,6 +16,23 @@
 #include "js/MemoryFunctions.h"  
 
 namespace js {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum AllowGC { NoGC = 0, CanGC = 1 };
+
 namespace gc {
 
 
