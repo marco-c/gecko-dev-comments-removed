@@ -42,6 +42,9 @@
 #undef JS_HAS_INTL_API
 
 
+#undef JS_HAS_TEMPORAL_API
+
+
 
 #undef JS_OOM_BREAKPOINT
 
