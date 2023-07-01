@@ -16,6 +16,11 @@ struct nsPoint;
 struct nsRect;
 
 namespace mozilla {
+namespace gfx {
+class Path;
+class PathBuilder;
+}  
+
 
 
 
@@ -87,6 +92,42 @@ struct ShapeUtils final {
   
   static nsTArray<nsPoint> ComputePolygonVertices(const StyleBasicShape&,
                                                   const nsRect& aRefBox);
+
+  
+  
+  
+  
+  static already_AddRefed<gfx::Path> BuildCirclePath(const StyleBasicShape&,
+                                                     const nsRect& aRefBox,
+                                                     const nsPoint& aCenter,
+                                                     nscoord aAppUnitsPerPixel,
+                                                     gfx::PathBuilder*);
+
+  
+  
+  
+  
+  static already_AddRefed<gfx::Path> BuildEllipsePath(const StyleBasicShape&,
+                                                      const nsRect& aRefBox,
+                                                      const nsPoint& aCenter,
+                                                      nscoord aAppUnitsPerPixel,
+                                                      gfx::PathBuilder*);
+
+  
+  
+  
+  static already_AddRefed<gfx::Path> BuildPolygonPath(const StyleBasicShape&,
+                                                      const nsRect& aRefBox,
+                                                      nscoord aAppUnitsPerPixel,
+                                                      gfx::PathBuilder*);
+
+  
+  
+  
+  static already_AddRefed<gfx::Path> BuildInsetPath(const StyleBasicShape&,
+                                                    const nsRect& aRefBox,
+                                                    nscoord aAppUnitsPerPixel,
+                                                    gfx::PathBuilder*);
 };
 
 }  
