@@ -98,7 +98,8 @@ class FileSystemDatabaseManager {
   
 
 
-  virtual nsresult GetFile(const EntryId& aEntryId, ContentType& aType,
+  virtual nsresult GetFile(const EntryId& aEntryId, const FileId& aFileId,
+                           bool aAsCopy, ContentType& aType,
                            TimeStamp& lastModifiedMilliSeconds, Path& aPath,
                            nsCOMPtr<nsIFile>& aFile) const = 0;
 
