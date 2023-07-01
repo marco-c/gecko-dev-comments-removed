@@ -156,6 +156,11 @@ class APZEventState final {
   bool mEndTouchIsClick;
   bool mFirstTouchCancelled;
   bool mTouchEndCancelled;
+  
+  
+  
+  bool mReceivedNonTouchStart;
+  bool mTouchStartPrevented;
 
   
   

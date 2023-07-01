@@ -106,6 +106,8 @@ APZEventState::APZEventState(nsIWidget* aWidget,
       mEndTouchIsClick(false),
       mFirstTouchCancelled(false),
       mTouchEndCancelled(false),
+      mReceivedNonTouchStart(false),
+      mTouchStartPrevented(false),
       mSingleTapsPendingTargetInfo(),
       mLastTouchIdentifier(0) {
   nsresult rv;
@@ -365,6 +367,7 @@ void APZEventState::ProcessTouchEvent(
   switch (aEvent.mMessage) {
     case eTouchStart: {
       mTouchEndCancelled = false;
+      mReceivedNonTouchStart = false;
       mTouchRollup = do_GetWeakReference(widget::nsAutoRollup::GetLastRollup());
 
       SendPendingTouchPreventedResponse(false);
@@ -391,6 +394,7 @@ void APZEventState::ProcessTouchEvent(
         isTouchPrevented |= mFirstTouchCancelled;
       }
 
+      mTouchStartPrevented = isTouchPrevented;
       if (isTouchPrevented) {
         mContentReceivedInputBlockCallback(aInputBlockId, isTouchPrevented);
       } else {
@@ -413,12 +417,15 @@ void APZEventState::ProcessTouchEvent(
       mActiveElementManager->HandleTouchEndEvent(mEndTouchIsClick);
       [[fallthrough]];
     case eTouchMove: {
+      if (!mReceivedNonTouchStart) {
+        
+        
+        mayNeedPointerCancelEvent = !isTouchPrevented && !mTouchStartPrevented;
+        mReceivedNonTouchStart = true;
+      }
+
       if (mPendingTouchPreventedResponse) {
         MOZ_ASSERT(aGuid == mPendingTouchPreventedGuid);
-        
-        
-        
-        mayNeedPointerCancelEvent = !isTouchPrevented;
       }
       SendPendingTouchPreventedResponse(isTouchPrevented);
       break;
