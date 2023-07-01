@@ -152,7 +152,8 @@ mozilla::ipc::IPCResult Transaction<Context>::CommitFromIPC(
     nsCString error = FormatValidationError<Context>(
         failedFields,
         "Invalid Transaction from Child - CanSet failed for field(s): ");
-    return IPC_FAIL(aSource, error.get());
+    
+    return IPC_FAIL_UNSAFE_PRINTF(aSource, "%s", error.get());
   }
 
   

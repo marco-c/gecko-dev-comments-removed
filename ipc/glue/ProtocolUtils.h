@@ -5,7 +5,7 @@
 
 
 #ifndef mozilla_ipc_ProtocolUtils_h
-#define mozilla_ipc_ProtocolUtils_h 1
+#define mozilla_ipc_ProtocolUtils_h
 
 #include <cstddef>
 #include <cstdint>
@@ -28,6 +28,7 @@
 #include "mozilla/ipc/MessageLink.h"
 #include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/ipc/Shmem.h"
+#include "nsPrintfCString.h"
 #include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsISupports.h"
@@ -349,14 +350,55 @@ class IProtocol : public HasResultCodes {
 
 
 
+
+
+
+#define IPC_FAIL_UNSAFE_PRINTF(actor, format, ...) \
+  mozilla::ipc::IPCResult::FailUnsafePrintfImpl(   \
+      WrapNotNull(actor), __func__, nsPrintfCString(format, ##__VA_ARGS__))
+
+
+
+
+
+
+
+
+
+
+
 class IPCResult {
  public:
   static IPCResult Ok() { return IPCResult(true); }
-  static IPCResult Fail(NotNull<IProtocol*> aActor, const char* aWhere,
-                        const char* aWhy = "");
+
+  
+  
+  
+  template <size_t N, size_t M>
+  static IPCResult Fail(NotNull<IProtocol*> aActor, const char (&aWhere)[N],
+                        const char (&aWhy)[M]) {
+    return FailImpl(aActor, aWhere, aWhy);
+  }
+  template <size_t N>
+  static IPCResult Fail(NotNull<IProtocol*> aActor, const char (&aWhere)[N]) {
+    return FailImpl(aActor, aWhere, "");
+  }
+
   MOZ_IMPLICIT operator bool() const { return mSuccess; }
 
+  
+  
+  template <size_t N>
+  static IPCResult FailUnsafePrintfImpl(NotNull<IProtocol*> aActor,
+                                        const char (&aWhere)[N],
+                                        nsPrintfCString const& aWhy) {
+    return FailImpl(aActor, aWhere, aWhy.get());
+  }
+
  private:
+  static IPCResult FailImpl(NotNull<IProtocol*> aActor, const char* aWhere,
+                            const char* aWhy);
+
   explicit IPCResult(bool aResult) : mSuccess(aResult) {}
   bool mSuccess;
 };

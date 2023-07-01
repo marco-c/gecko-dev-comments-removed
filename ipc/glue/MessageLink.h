@@ -6,7 +6,7 @@
 
 
 #ifndef ipc_glue_MessageLink_h
-#define ipc_glue_MessageLink_h 1
+#define ipc_glue_MessageLink_h
 
 #include <cstdint>
 #include "base/message_loop.h"
