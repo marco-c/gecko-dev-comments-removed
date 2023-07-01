@@ -18,6 +18,13 @@ namespace js::temporal {
 
 
 
+bool ParseTemporalTimeZoneString(JSContext* cx, JS::Handle<JSString*> str,
+                                 JS::MutableHandle<JSString*> timeZoneName,
+                                 int64_t* offsetNanoseconds);
+
+
+
+
 bool ParseTimeZoneOffsetString(JSContext* cx, JS::Handle<JSString*> str,
                                int64_t* result);
 

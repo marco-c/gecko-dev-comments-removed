@@ -31,6 +31,8 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "builtin/temporal/TemporalParser.h"
+#include "builtin/temporal/TemporalTypes.h"
+#include "builtin/temporal/ZonedDateTime.h"
 #include "gc/Allocator.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
@@ -335,6 +337,41 @@ static TimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
 
 
 
+static TimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
+                                              int64_t offsetNanoseconds) {
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  Rooted<JSString*> identifier(
+      cx, FormatTimeZoneOffsetString(cx, offsetNanoseconds));
+  if (!identifier) {
+    return nullptr;
+  }
+
+  
+  auto* object = NewBuiltinClassInstance<TimeZoneObject>(cx);
+  if (!object) {
+    return nullptr;
+  }
+
+  
+
+  
+  object->setFixedSlot(TimeZoneObject::IDENTIFIER_SLOT,
+                       StringValue(identifier));
+
+  
+  object->setFixedSlot(TimeZoneObject::OFFSET_NANOSECONDS_SLOT,
+                       NumberValue(offsetNanoseconds));
+
+  
+
+  
+  return object;
+}
+
+
+
+
 TimeZoneObject* js::temporal::CreateTemporalTimeZone(
     JSContext* cx, Handle<JSString*> identifier) {
   return ::CreateTemporalTimeZone(cx, identifier);
@@ -348,6 +385,139 @@ TimeZoneObject* js::temporal::CreateTemporalTimeZone(
 TimeZoneObject* js::temporal::CreateTemporalTimeZoneUTC(JSContext* cx) {
   Handle<JSString*> identifier = cx->names().UTC.toHandle();
   return ::CreateTemporalTimeZone(cx, identifier);
+}
+
+
+
+
+TimeZoneObject* js::temporal::ToTemporalTimeZone(JSContext* cx,
+                                                 Handle<JSString*> string) {
+  
+
+  
+  Rooted<JSString*> timeZoneName(cx);
+  int64_t offsetNanoseconds = 0;
+  if (!ParseTemporalTimeZoneString(cx, string, &timeZoneName,
+                                   &offsetNanoseconds)) {
+    return nullptr;
+  }
+
+  
+  if (timeZoneName) {
+    
+
+    
+    timeZoneName = ValidateAndCanonicalizeTimeZoneName(cx, timeZoneName);
+    if (!timeZoneName) {
+      return nullptr;
+    }
+
+    
+    return ::CreateTemporalTimeZone(cx, timeZoneName);
+  }
+
+  
+  return ::CreateTemporalTimeZone(cx, offsetNanoseconds);
+}
+
+
+
+
+JSObject* js::temporal::ToTemporalTimeZone(JSContext* cx,
+                                           Handle<Value> temporalTimeZoneLike) {
+  
+  Rooted<Value> timeZoneLike(cx, temporalTimeZoneLike);
+  if (timeZoneLike.isObject()) {
+    Rooted<JSObject*> obj(cx, &timeZoneLike.toObject());
+
+    
+    if (obj->canUnwrapAs<TimeZoneObject>()) {
+      return obj;
+    }
+
+    
+    if (auto* zonedDateTime = obj->maybeUnwrapIf<ZonedDateTimeObject>()) {
+      Rooted<JSObject*> timeZone(cx, zonedDateTime->timeZone());
+      if (!cx->compartment()->wrap(cx, &timeZone)) {
+        return nullptr;
+      }
+      return timeZone;
+    }
+
+    
+    if (obj->canUnwrapAs<CalendarObject>()) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_TEMPORAL_INVALID_OBJECT,
+                               "Temporal.TimeZone", "Temporal.Calendar");
+      return nullptr;
+    }
+
+    
+    bool hasTimeZone;
+    if (!HasProperty(cx, obj, cx->names().timeZone, &hasTimeZone)) {
+      return nullptr;
+    }
+    if (!hasTimeZone) {
+      return obj;
+    }
+
+    
+    if (!GetProperty(cx, obj, obj, cx->names().timeZone, &timeZoneLike)) {
+      return nullptr;
+    }
+
+    
+    if (timeZoneLike.isObject()) {
+      obj = &timeZoneLike.toObject();
+
+      
+      
+
+      
+      if (obj->canUnwrapAs<CalendarObject>()) {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_TEMPORAL_INVALID_OBJECT,
+                                 "Temporal.TimeZone", "Temporal.Calendar");
+        return nullptr;
+      }
+
+      
+      
+
+      
+      if (!HasProperty(cx, obj, cx->names().timeZone, &hasTimeZone)) {
+        return nullptr;
+      }
+      if (!hasTimeZone) {
+        return obj;
+      }
+    }
+  }
+
+  
+  Rooted<JSString*> identifier(cx, JS::ToString(cx, timeZoneLike));
+  if (!identifier) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!timeZoneLike.isString() && !timeZoneLike.isObject() &&
+      !timeZoneLike.isNumeric()) {
+    ReportValueError(cx, JSMSG_TEMPORAL_TIMEZONE_PARSE_BAD_TYPE,
+                     JSDVG_IGNORE_STACK, timeZoneLike, nullptr);
+    return nullptr;
+  }
+
+  
+  return ToTemporalTimeZone(cx, identifier);
 }
 
 
