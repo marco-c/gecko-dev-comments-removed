@@ -23,7 +23,6 @@ import { fetchScopes } from "./fetchScopes";
 
 
 
-
 export function paused(pauseInfo) {
   return async function ({ dispatch, getState }) {
     const { thread, frame, why } = pauseInfo;

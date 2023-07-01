@@ -181,9 +181,11 @@ function update(state = initialPauseState(), action) {
 
       return updateThreadState({
         isWaitingOnBreak: false,
-        selectedFrameId: frame ? frame.id : undefined,
+        selectedFrameId: frame.id,
         isPaused: true,
-        frames: frame ? [frame] : undefined,
+        
+        
+        frames: [frame],
         framesLoading: true,
         frameScopes: { ...resumedPauseState.frameScopes },
         why,

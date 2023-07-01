@@ -31,10 +31,6 @@ export function setupCreate(dependencies) {
 }
 
 export async function createFrame(thread, frame, index = 0) {
-  if (!frame) {
-    return null;
-  }
-
   
   const sourceActor = await waitForSourceActorToBeRegisteredInStore(
     frame.where.actor
@@ -320,12 +316,16 @@ export function createSourceActor(sourceResource, sourceObject) {
   };
 }
 
-export async function createPause(thread, packet) {
-  const frame = await createFrame(thread, packet.frame);
+
+
+
+
+export async function createPause(threadActorID, pausedThreadState) {
+  const frame = await createFrame(threadActorID, pausedThreadState.frame);
   return {
-    ...packet,
-    thread,
+    thread: threadActorID,
     frame,
+    why: pausedThreadState.why,
   };
 }
 
