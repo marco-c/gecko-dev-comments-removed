@@ -1158,11 +1158,31 @@ var TranslationsPanel = new (class {
             
             button.setAttribute("translationsactive", true);
             if (isEngineReady) {
+              const displayNames = new Services.intl.DisplayNames(undefined, {
+                type: "language",
+              });
+
+              document.l10n.setAttributes(
+                button,
+                "urlbar-translations-button-translated",
+                {
+                  fromLanguage: displayNames.of(
+                    requestedTranslationPair.fromLanguage
+                  ),
+                  toLanguage: displayNames.of(
+                    requestedTranslationPair.toLanguage
+                  ),
+                }
+              );
               
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
               buttonLocale.innerText = requestedTranslationPair.toLanguage;
             } else {
+              document.l10n.setAttributes(
+                button,
+                "urlbar-translations-button-loading"
+              );
               
               
               buttonCircleArrows.hidden = false;
@@ -1171,6 +1191,7 @@ var TranslationsPanel = new (class {
           } else {
             
             button.removeAttribute("translationsactive");
+            document.l10n.setAttributes(button, "urlbar-translations-button");
             buttonLocale.hidden = true;
             buttonCircleArrows.hidden = true;
           }
