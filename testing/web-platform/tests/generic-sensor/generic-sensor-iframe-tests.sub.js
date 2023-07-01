@@ -136,17 +136,22 @@ function run_generic_sensor_iframe_tests(sensorName) {
     iframe.src = 'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
 
     
-    
     const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
     await iframeLoadWatcher.wait_for('load');
+    
+    
     await send_message_to_iframe(iframe, {command: 'create_sensor',
                                           type: sensorName});
     iframe.contentWindow.focus();
-    await send_message_to_iframe(iframe, {command: 'start_sensor'});
+    const iframeSensor = new iframe.contentWindow[sensorName]();
+    t.add_cleanup(() => {
+      iframeSensor.stop();
+    });
+    const sensorWatcher = new EventWatcher(t, iframeSensor, ['activate']);
+    iframeSensor.start();
+    await sensorWatcher.wait_for('activate');
 
-    
-    
     
     
     
