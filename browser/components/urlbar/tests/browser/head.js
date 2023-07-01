@@ -1,13 +1,14 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/**
- * These tests unit test the result/url loading functionality of UrlbarController.
- */
+
+
+
+
+
 
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
@@ -25,7 +26,6 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
 });
 
@@ -43,8 +43,8 @@ Services.scriptloader.loadSubScript(
 );
 
 registerCleanupFunction(async () => {
-  // Ensure the Urlbar popup is always closed at the end of a test, to save having
-  // to do it within each test.
+  
+  
   await UrlbarTestUtils.promisePopupClose(window);
 });
 
@@ -58,18 +58,18 @@ async function selectAndPaste(str, win = window) {
     .doCommand("cmd_paste");
 }
 
-/**
- * Waits for a load in any browser or a timeout, whichever comes first.
- *
- * @param {window} win
- *   The top-level browser window to listen in.
- * @param {number} timeoutMs
- *   The timeout in ms.
- * @returns {event|null}
- *   If a load event was detected before the timeout fired, then the event is
- *   returned.  event.target will be the browser in which the load occurred.  If
- *   the timeout fired before a load was detected, null is returned.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 async function waitForLoadOrTimeout(win = window, timeoutMs = 1000) {
   let event;
   let listener;
@@ -92,13 +92,13 @@ async function waitForLoadOrTimeout(win = window, timeoutMs = 1000) {
   return event || null;
 }
 
-/**
- * Opens the url bar context menu by synthesizing a click.
- * Returns a menu item that is specified by an id.
- *
- * @param {string} anonid - Identifier of a menu item of the url bar context menu.
- * @returns {string} - The element that has the corresponding identifier.
- */
+
+
+
+
+
+
+
 async function promiseContextualMenuitem(anonid) {
   let textBox = gURLBar.querySelector("moz-input-box");
   let cxmenu = textBox.menupopup;
@@ -111,14 +111,14 @@ async function promiseContextualMenuitem(anonid) {
   return textBox.getMenuItem(anonid);
 }
 
-/**
- * Puts all CustomizableUI widgetry back to their default locations, and
- * then fires the `aftercustomization` toolbox event so that UrlbarInput
- * knows to reinitialize itself.
- *
- * @param {window} [win=window]
- *   The top-level browser window to fire the `aftercustomization` event in.
- */
+
+
+
+
+
+
+
+
 function resetCUIAndReinitUrlbarInput(win = window) {
   CustomizableUI.reset();
   CustomizableUI.dispatchToolboxEvent("aftercustomization", {}, win);

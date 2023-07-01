@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -12,13 +12,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  EveryWindow: "resource:///modules/EveryWindow.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
@@ -28,7 +25,7 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new Logger("ASRouterTriggerListeners");
 });
 
-const FEW_MINUTES = 15 * 60 * 1000; // 15 mins
+const FEW_MINUTES = 15 * 60 * 1000; 
 
 function isPrivateWindow(win) {
   return (
@@ -38,24 +35,24 @@ function isPrivateWindow(win) {
   );
 }
 
-/**
- * Check current location against the list of allowed hosts
- * Additionally verify for redirects and check original request URL against
- * the list.
- *
- * @returns {object} - {host, url} pair that matched the list of allowed hosts
- */
+
+
+
+
+
+
+
 function checkURLMatch(aLocationURI, { hosts, matchPatternSet }, aRequest) {
-  // If checks pass we return a match
+  
   let match;
   try {
     match = { host: aLocationURI.host, url: aLocationURI.spec };
   } catch (e) {
-    // nsIURI.host can throw for non-nsStandardURL nsIURIs
+    
     return false;
   }
 
-  // Check current location against allowed hosts
+  
   if (hosts.has(match.host)) {
     return match;
   }
@@ -66,14 +63,14 @@ function checkURLMatch(aLocationURI, { hosts, matchPatternSet }, aRequest) {
     }
   }
 
-  // Nothing else to check, return early
+  
   if (!aRequest) {
     return false;
   }
 
-  // The original URL at the start of the request
+  
   const originalLocation = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
-  // We have been redirected
+  
   if (originalLocation.spec !== aLocationURI.spec) {
     return (
       hosts.has(originalLocation.host) && {
@@ -95,10 +92,10 @@ function createMatchPatternSet(patterns, flags) {
   return new MatchPatternSet([]);
 }
 
-/**
- * A Map from trigger IDs to singleton trigger listeners. Each listener must
- * have idempotent `init` and `uninit` methods.
- */
+
+
+
+
 const ASRouterTriggerListeners = new Map([
   [
     "openArticleURL",
@@ -233,15 +230,15 @@ const ASRouterTriggerListeners = new Map([
         if (this._hosts) {
           hosts.forEach(h => this._hosts.add(h));
         } else {
-          this._hosts = new Set(hosts); // Clone the hosts to avoid unexpected behaviour
+          this._hosts = new Set(hosts); 
         }
       },
 
-      /* _updateVisits - Record visit timestamps for websites that match `this._hosts` and only
-       * if it's been more than FEW_MINUTES since the last visit.
-       * @param {string} host - Location host of current selected tab
-       * @returns {boolean} - If the new visit has been recorded
-       */
+      
+
+
+
+
       _updateVisits(host) {
         const visits = this._visits.get(host);
 
@@ -275,8 +272,8 @@ const ASRouterTriggerListeners = new Map([
       triggerHandler(aBrowser, match) {
         const updated = this._updateVisits(match.host);
 
-        // If the previous visit happend less than FEW_MINUTES ago
-        // no updates were made, no need to trigger the handler
+        
+        
         if (!updated) {
           return;
         }
@@ -285,8 +282,8 @@ const ASRouterTriggerListeners = new Map([
           id: this.id,
           param: match,
           context: {
-            // Remapped to {host, timestamp} because JEXL operators can only
-            // filter over collections (arrays of objects)
+            
+            
             recentVisits: this._visits
               .get(match.host)
               .map(timestamp => ({ host: match.host, timestamp })),
@@ -295,9 +292,9 @@ const ASRouterTriggerListeners = new Map([
       },
 
       onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
-        // Some websites trigger redirect events after they finish loading even
-        // though the location remains the same. This results in onLocationChange
-        // events to be fired twice.
+        
+        
+        
         const isSameDocument = !!(
           aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
         );
@@ -327,11 +324,11 @@ const ASRouterTriggerListeners = new Map([
     },
   ],
 
-  /**
-   * Attach listeners to every browser window to detect location changes, and
-   * notify the trigger handler whenever we navigate to a URL with a hostname
-   * we're looking for.
-   */
+  
+
+
+
+
   [
     "openURL",
     {
@@ -342,10 +339,10 @@ const ASRouterTriggerListeners = new Map([
       _matchPatternSet: null,
       _visits: null,
 
-      /*
-       * If the listener is already initialised, `init` will replace the trigger
-       * handler and add any new hosts to `this._hosts`.
-       */
+      
+
+
+
       init(triggerHandler, hosts = [], patterns) {
         if (!this._initialized) {
           this.onLocationChange = this.onLocationChange.bind(this);
@@ -378,7 +375,7 @@ const ASRouterTriggerListeners = new Map([
         if (this._hosts) {
           hosts.forEach(h => this._hosts.add(h));
         } else {
-          this._hosts = new Set(hosts); // Clone the hosts to avoid unexpected behaviour
+          this._hosts = new Set(hosts); 
         }
       },
 
@@ -395,9 +392,9 @@ const ASRouterTriggerListeners = new Map([
       },
 
       onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
-        // Some websites trigger redirect events after they finish loading even
-        // though the location remains the same. This results in onLocationChange
-        // events to be fired twice.
+        
+        
+        
         const isSameDocument = !!(
           aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
         );
@@ -421,20 +418,20 @@ const ASRouterTriggerListeners = new Map([
     },
   ],
 
-  /**
-   * Add an observer notification to notify the trigger handler whenever the user
-   * saves or updates a login via the login capture doorhanger.
-   */
+  
+
+
+
   [
     "newSavedLogin",
     {
       _initialized: false,
       _triggerHandler: null,
 
-      /**
-       * If the listener is already initialised, `init` will replace the trigger
-       * handler.
-       */
+      
+
+
+
       init(triggerHandler) {
         if (!this._initialized) {
           Services.obs.addObserver(this, "LoginStats:NewSavedPassword");
@@ -456,9 +453,9 @@ const ASRouterTriggerListeners = new Map([
 
       observe(aSubject, aTopic, aData) {
         if (aSubject.currentURI.asciiHost === "accounts.firefox.com") {
-          // Don't notify about saved logins on the FxA login origin since this
-          // trigger is used to promote login Sync and getting a recommendation
-          // to enable Sync during the sign up process is a bad UX.
+          
+          
+          
           return;
         }
 
@@ -490,10 +487,10 @@ const ASRouterTriggerListeners = new Map([
       id: "formAutofill",
       _initialized: false,
       _triggerHandler: null,
-      _triggerDelay: 10000, // 10 second delay before triggering
+      _triggerDelay: 10000, 
       _topic: "formautofill-storage-changed",
-      _events: ["add", "update", "notifyUsed"] /** @see AutofillRecords */,
-      _collections: ["addresses", "creditCards"] /** @see AutofillRecords */,
+      _events: ["add", "update", "notifyUsed"] ,
+      _collections: ["addresses", "creditCards"] ,
 
       init(triggerHandler) {
         if (!this._initialized) {
@@ -518,14 +515,14 @@ const ASRouterTriggerListeners = new Map([
           !browser ||
           topic !== this._topic ||
           !subject.wrappedJSObject ||
-          // Ignore changes caused by manual edits in the credit card/address
-          // managers in about:preferences.
+          
+          
           browser.contentWindow?.gSubDialog?.dialogs.length
         ) {
           return;
         }
         let { sourceSync, collectionName } = subject.wrappedJSObject;
-        // Ignore changes from sync and changes to untracked collections.
+        
         if (sourceSync || !this._collections.includes(collectionName)) {
           return;
         }
@@ -544,7 +541,7 @@ const ASRouterTriggerListeners = new Map([
           lazy.setTimeout(() => {
             if (
               this._initialized &&
-              // Make sure the browser still exists and is still selected.
+              
               browser.isConnectedAndReady &&
               browser ===
                 Services.wm.getMostRecentBrowserWindow()?.gBrowser
@@ -662,9 +659,9 @@ const ASRouterTriggerListeners = new Map([
         aLocationURI,
         aFlags
       ) {
-        // Some websites trigger redirect events after they finish loading even
-        // though the location remains the same. This results in onLocationChange
-        // events to be fired twice.
+        
+        
+        
         const isSameDocument = !!(
           aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
         );
@@ -702,11 +699,11 @@ const ASRouterTriggerListeners = new Map([
         switch (aTopic) {
           case "captive-portal-login-success":
             const browser = Services.wm.getMostRecentBrowserWindow();
-            // The check is here rather than in init because some
-            // folks leave their browsers running for a long time,
-            // eg from before leaving on a plane trip to after landing
-            // in the new destination, and the current region may have
-            // changed since init time.
+            
+            
+            
+            
+            
             if (browser && this._shouldShowCaptivePortalVPNPromo()) {
               this._triggerHandler(browser.gBrowser.selectedBrowser, {
                 id: this.id,
@@ -779,7 +776,7 @@ const ASRouterTriggerListeners = new Map([
       id: "nthTabClosed",
       _initialized: false,
       _triggerHandler: null,
-      // Number of tabs the user closed this session
+      
       _closedTabs: 0,
 
       init(triggerHandler) {
@@ -827,29 +824,29 @@ const ASRouterTriggerListeners = new Map([
       _initialized: false,
       _triggerHandler: null,
       _idleService: null,
-      // Optimization - only report idle state after one minute of idle time.
-      // This represents a minimum idleForMilliseconds of 60000.
+      
+      
       _idleThreshold: 60,
       _idleSince: null,
       _quietSince: null,
       _awaitingVisibilityChange: false,
-      // Fire the trigger 2 seconds after activity resumes to ensure user is
-      // actively using the browser when it fires.
+      
+      
       _triggerDelay: 2000,
       _triggerTimeout: null,
-      // We may get an idle notification immediately after waking from sleep.
-      // The idle time in such a case will be the amount of time since the last
-      // user interaction, which was before the computer went to sleep. We want
-      // to ignore them in that case, so we ignore idle notifications that
-      // happen within 1 second of the last wake notification.
+      
+      
+      
+      
+      
       _wakeDelay: 1000,
       _lastWakeTime: null,
       _listenedEvents: ["visibilitychange", "TabClose", "TabAttrModified"],
-      // When the OS goes to sleep or the process is suspended, we want to drop
-      // the idle time, since the time between sleep and wake is expected to be
-      // very long (e.g. overnight). Otherwise, this would trigger on the first
-      // activity after waking/resuming, counting sleep as idle time. This
-      // basically means each session starts with a fresh idle time.
+      
+      
+      
+      
+      
       _observedTopics: [
         "sleep_notification",
         "suspend_process_notification",
@@ -870,9 +867,9 @@ const ASRouterTriggerListeners = new Map([
       },
       init(triggerHandler) {
         this._triggerHandler = triggerHandler;
-        // Instantiate this here instead of with a lazy service getter so we can
-        // stub it in tests (otherwise we'd have to wait up to 6 minutes for an
-        // idle notification in certain test environments).
+        
+        
+        
         if (!this._idleService) {
           this._idleService = Cc[
             "@mozilla.org/widget/useridleservice;1"
@@ -923,9 +920,9 @@ const ASRouterTriggerListeners = new Map([
           switch (topic) {
             case "idle":
               const now = Date.now();
-              // If the idle notification is within 1 second of the last wake
-              // notification, ignore it. We do this to avoid counting time the
-              // computer spent asleep as "idle time"
+              
+              
+              
               const isImmediatelyAfterWake =
                 this._lastWakeTime &&
                 now - this._lastWakeTime < this._wakeDelay;
@@ -934,23 +931,23 @@ const ASRouterTriggerListeners = new Map([
               }
               break;
             case "active":
-              // Trigger when user returns from being idle.
+              
               if (this._isVisible) {
                 this._onActive();
                 this._idleSince = null;
                 this._lastWakeTime = null;
               } else if (this._idleSince) {
-                // If the window is not visible, we want to wait until it is
-                // visible before triggering.
+                
+                
                 this._awaitingVisibilityChange = true;
               }
               break;
-            // OS/process notifications
+            
             case "wake_notification":
             case "resume_process_notification":
             case "mac_app_activate":
               this._lastWakeTime = Date.now();
-            // Fall through to reset idle time.
+            
             default:
               this._idleSince = null;
           }
@@ -968,11 +965,11 @@ const ASRouterTriggerListeners = new Map([
               }
               break;
             case "TabAttrModified":
-              // Listen for DOMAudioPlayback* events.
+              
               if (!event.detail?.changed?.includes("soundplaying")) {
                 break;
               }
-            // fall through
+            
             case "TabClose":
               this.log("Tab sound changed: ", {
                 event,
@@ -980,7 +977,7 @@ const ASRouterTriggerListeners = new Map([
                 idleSince: this._idleSince,
                 quietSince: this._quietSince,
               });
-              // Maybe update time if a tab closes with sound playing.
+              
               if (this._soundPlaying) {
                 this._quietSince = null;
               } else if (!this._quietSince) {
@@ -999,7 +996,7 @@ const ASRouterTriggerListeners = new Map([
         if (this._idleSince && this._quietSince) {
           const win = Services.wm.getMostRecentBrowserWindow();
           if (win && !isPrivateWindow(win) && !this._triggerTimeout) {
-            // Number of ms since the last user interaction/audio playback
+            
             const idleForMilliseconds =
               Date.now() - Math.min(this._idleSince, this._quietSince);
             this._triggerTimeout = lazy.setTimeout(() => {

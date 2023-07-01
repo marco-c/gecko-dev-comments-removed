@@ -1,19 +1,19 @@
-/* - This Source Code Form is subject to the terms of the Mozilla Public
-   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
-   - You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Import globals from the files imported by the .xul files.
-/* import-globals-from main.js */
-/* import-globals-from home.js */
-/* import-globals-from search.js */
-/* import-globals-from containers.js */
-/* import-globals-from privacy.js */
-/* import-globals-from sync.js */
-/* import-globals-from experimental.js */
-/* import-globals-from moreFromMozilla.js */
-/* import-globals-from findInPage.js */
-/* import-globals-from /browser/base/content/utilityOverlay.js */
-/* import-globals-from /toolkit/content/preferencesBindings.js */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "use strict";
 
@@ -27,7 +27,7 @@ var { Downloads } = ChromeUtils.importESModule(
 var { Integration } = ChromeUtils.importESModule(
   "resource://gre/modules/Integration.sys.mjs"
 );
-/* global DownloadIntegration */
+
 Integration.downloads.defineESModuleGetter(
   this,
   "DownloadIntegration",
@@ -91,13 +91,18 @@ ChromeUtils.defineESModuleGetters(this, {
   FeatureGate: "resource://featuregates/FeatureGate.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
+  HomePage: "resource:///modules/HomePage.sys.mjs",
   LangPackMatcher: "resource://gre/modules/LangPackMatcher.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
+  SelectionChangedMenulist:
+    "resource:///modules/SelectionChangedMenulist.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+  SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
+  TransientPrefs: "resource:///modules/TransientPrefs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -107,7 +112,6 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  HomePage: "resource:///modules/HomePage.jsm",
   SelectionChangedMenulist: "resource:///modules/SelectionChangedMenulist.jsm",
   SiteDataManager: "resource:///modules/SiteDataManager.jsm",
   TransientPrefs: "resource:///modules/TransientPrefs.jsm",
@@ -126,19 +130,19 @@ XPCOMUtils.defineLazyGetter(this, "gSubDialog", function () {
         "chrome://browser/skin/preferences/preferences.css",
       ],
       resizeCallback: async ({ title, frame }) => {
-        // Search within main document and highlight matched keyword.
+        
         await gSearchResultsPane.searchWithinNode(
           title,
           gSearchResultsPane.query
         );
 
-        // Search within sub-dialog document and highlight matched keyword.
+        
         await gSearchResultsPane.searchWithinNode(
           frame.contentDocument.firstElementChild,
           gSearchResultsPane.query
         );
 
-        // Creating tooltips for all the instances found
+        
         for (let node of gSearchResultsPane.listSearchTooltips) {
           if (!node.tooltipNode) {
             gSearchResultsPane.createSearchTooltip(
@@ -169,13 +173,13 @@ function register_module(categoryName, categoryObject) {
       this._initted = true;
       let template = document.getElementById("template-" + categoryName);
       if (template) {
-        // Replace the template element with the nodes inside of it.
+        
         template.replaceWith(template.content);
 
-        // We've inserted elements that rely on 'preference' attributes.
-        // So we need to update those by reading from the prefs.
-        // The bindings will do this using idle dispatch and avoid
-        // repeated runs if called multiple times before the task runs.
+        
+        
+        
+        
         Preferences.queueUpdateOfAllElements();
       }
 
@@ -194,8 +198,8 @@ document.addEventListener("DOMContentLoaded", init_all, { once: true });
 function init_all() {
   Preferences.forceEnableInstantApply();
 
-  // Asks Preferences to queue an update of the attribute values of
-  // the entire document.
+  
+  
   Preferences.queueUpdateOfAllElements();
   Services.telemetry.setEventRecordingEnabled("aboutpreferences", true);
 
@@ -205,7 +209,7 @@ function init_all() {
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
   if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
-    // Set hidden based on previous load's hidden value.
+    
     document.getElementById("category-experimental").hidden =
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
@@ -221,9 +225,9 @@ function init_all() {
       NimbusFeatures.moreFromMozilla.getVariable("template");
     register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
   }
-  // The Sync category needs to be the last of the "real" categories
-  // registered and inititalized since many tests wait for the
-  // "sync-pane-loaded" observer notification before starting the test.
+  
+  
+  
   if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     document.getElementById("category-sync").hidden = false;
     register_module("paneSync", gSyncPane);
@@ -256,7 +260,7 @@ function init_all() {
     document.getElementById("addonsButton").addEventListener("click", e => {
       e.preventDefault();
       if (e.button >= 2) {
-        // Ignore right clicks.
+        
         return;
       }
       let mainWindow = window.browsingContext.topChromeWindow;
@@ -303,8 +307,8 @@ async function gotoPref(
   let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
 
   let breakIndex = category.indexOf("-");
-  // Subcategories allow for selecting smaller sections of the preferences
-  // until proper search support is enabled (bug 1353954).
+  
+  
   let subcategory = breakIndex != -1 && category.substring(breakIndex + 1);
   if (subcategory) {
     category = category.substring(0, breakIndex);
@@ -315,22 +319,22 @@ async function gotoPref(
     gSearchResultsPane.searchInput.value = "";
     gSearchResultsPane.removeAllSearchIndicators(window, true);
   } else if (!gSearchResultsPane.searchInput.value) {
-    // Something tried to send us to the search results pane without
-    // a query string. Default to the General pane instead.
+    
+    
     category = kDefaultCategoryInternalName;
     document.location.hash = kDefaultCategory;
     gSearchResultsPane.query = null;
   }
 
-  // Updating the hash (below) or changing the selected category
-  // will re-enter gotoPref.
+  
+  
   if (gLastCategory.category == category && !subcategory) {
     return;
   }
 
   let item;
   if (category != "paneSearchResults") {
-    // Hide second level headers in normal view
+    
     for (let element of document.querySelectorAll(".search-header")) {
       element.hidden = true;
     }
@@ -348,17 +352,17 @@ async function gotoPref(
     subcategory
   ) {
     let friendlyName = internalPrefCategoryNameToFriendlyName(category);
-    // Overwrite the hash, unless there is no hash and we're switching to the
-    // default category, e.g. by using the 'back' button after navigating to
-    // a different category.
+    
+    
+    
     if (
       !(!document.location.hash && category == kDefaultCategoryInternalName)
     ) {
       document.location.hash = friendlyName;
     }
   }
-  // Need to set the gLastCategory before setting categories.selectedItem since
-  // the categories 'select' event will re-enter the gotoPref codepath.
+  
+  
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
   if (item) {
@@ -382,8 +386,8 @@ async function gotoPref(
     await new Promise(r =>
       document.addEventListener("L10nMutationsFinished", r, { once: true })
     );
-    // Bail out of this goToPref if the category
-    // or subcategory changed during async operation.
+    
+    
     if (
       gLastCategory.category !== category ||
       gLastCategory.subcategory !== subcategory
@@ -398,16 +402,16 @@ async function gotoPref(
     document.querySelector(".main-content").scrollTop = 0;
   }
 
-  // Check to see if the category module wants to do any special
-  // handling of the subcategory - for example, opening a SubDialog.
-  //
-  // If not, just do a normal spotlight on the subcategory.
+  
+  
+  
+  
   let categoryModule = gCategoryModules.get(category);
   if (!categoryModule.handleSubcategory?.(subcategory)) {
     spotlight(subcategory, category);
   }
 
-  // Record which category is shown
+  
   Services.telemetry.recordEvent(
     "aboutpreferences",
     "show",
@@ -420,8 +424,8 @@ function search(aQuery, aAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
   let elements = mainPrefPane.children;
   for (let element of elements) {
-    // If the "data-hidden-from-search" is "true", the
-    // element will not get considered during search.
+    
+    
     if (
       element.getAttribute("data-hidden-from-search") != "true" ||
       element.getAttribute("data-subpanel") == "true"
@@ -475,11 +479,11 @@ async function scrollAndHighlight(subcategory, category) {
   element.classList.add("spotlight");
 }
 
-/**
- * If there is no visible second level header it will return first level header,
- * otherwise return second level header.
- * @returns {Element} - The closest displayed header.
- */
+
+
+
+
+
 function getClosestDisplayedHeader(element) {
   let header = element.closest("groupbox");
   let searchHeader = header.querySelector(".search-header");
@@ -511,19 +515,19 @@ function friendlyPrefCategoryNameToInternalName(aName) {
   return "pane" + aName.substring(0, 1).toUpperCase() + aName.substr(1);
 }
 
-// This function is duplicated inside of utilityOverlay.js's openPreferences.
+
 function internalPrefCategoryNameToFriendlyName(aName) {
   return (aName || "").replace(/^pane./, function (toReplace) {
     return toReplace[4].toLowerCase();
   });
 }
 
-// Put up a confirm dialog with "ok to restart", "revert without restarting"
-// and "restart later" buttons and returns the index of the button chosen.
-// We can choose not to display the "restart later", or "revert" buttons,
-// altough the later still lets us revert by using the escape key.
-//
-// The constants are useful to interpret the return value of the function.
+
+
+
+
+
+
 const CONFIRM_RESTART_PROMPT_RESTART_NOW = 0;
 const CONFIRM_RESTART_PROMPT_CANCEL = 1;
 const CONFIRM_RESTART_PROMPT_RESTART_LATER = 2;
@@ -551,11 +555,11 @@ async function confirmRestartPrompt(
     { id: "restart-later" },
   ]);
 
-  // Set up the first (index 0) button:
+  
   let buttonFlags =
     Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING;
 
-  // Set up the second (index 1) button:
+  
   if (aWantRevertAsCancelButton) {
     buttonFlags +=
       Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_IS_STRING;
@@ -565,7 +569,7 @@ async function confirmRestartPrompt(
       Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL;
   }
 
-  // Set up the third (index 2) button:
+  
   if (aWantRestartLaterButton) {
     buttonFlags +=
       Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_IS_STRING;
@@ -599,8 +603,8 @@ async function confirmRestartPrompt(
     {}
   );
 
-  // If we have the second confirmation dialog for restart, see if the user
-  // cancels out at that point.
+  
+  
   if (buttonIndex == CONFIRM_RESTART_PROMPT_RESTART_NOW) {
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
       Ci.nsISupportsPRBool
@@ -617,8 +621,8 @@ async function confirmRestartPrompt(
   return buttonIndex;
 }
 
-// This function is used to append search keywords found
-// in the related subdialog to the button that will activate the subdialog.
+
+
 function appendSearchKeywords(aId, keywords) {
   let element = document.getElementById(aId);
   let searchKeywords = element.getAttribute("searchkeywords");
@@ -632,12 +636,12 @@ async function ensureScrollPadding() {
   let stickyContainer = document.querySelector(".sticky-container");
   let height = await window.browsingContext.topChromeWindow
     .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(err => Cu.reportError); // Can reject if the window goes away.
+    .catch(err => Cu.reportError); 
 
-  // Make it a bit more, to ensure focus rectangles etc. don't get cut off.
-  // This being 8px causes us to end up with 90px if the policies container
-  // is not visible (the common case), which matches the CSS and thus won't
-  // cause a style change, repaint, or other changes.
+  
+  
+  
+  
   height += 8;
   stickyContainer
     .closest(".main-content")

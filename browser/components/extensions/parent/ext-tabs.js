@@ -1,17 +1,13 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "BrowserUIUtils",
-  "resource:///modules/BrowserUIUtils.jsm"
-);
 ChromeUtils.defineESModuleGetters(this, {
+  BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   DownloadPaths: "resource://gre/modules/DownloadPaths.sys.mjs",
   ExtensionControlledPopup:
     "resource:///modules/ExtensionControlledPopup.sys.mjs",
@@ -73,9 +69,9 @@ function showHiddenTabs(id) {
 
 let tabListener = {
   tabReadyInitialized: false,
-  // Map[tab -> Promise]
+  
   tabBlockedPromises: new WeakMap(),
-  // Map[tab -> Deferred]
+  
   tabReadyPromises: new WeakMap(),
   initializingTabs: new WeakSet(),
 
@@ -92,10 +88,10 @@ let tabListener = {
       let { gBrowser } = browser.ownerGlobal;
       let nativeTab = gBrowser.getTabForBrowser(browser);
 
-      // Now we are certain that the first page in the tab was loaded.
+      
       this.initializingTabs.delete(nativeTab);
 
-      // browser.innerWindowID is now set, resolve the promises if any.
+      
       let deferred = this.tabReadyPromises.get(nativeTab);
       if (deferred) {
         deferred.resolve(nativeTab);
@@ -115,15 +111,15 @@ let tabListener = {
     this.tabBlockedPromises.set(nativeTab, promise);
   },
 
-  /**
-   * Returns a promise that resolves when the tab is ready.
-   * Tabs created via the `tabs.create` method are "ready" once the location
-   * changes to the requested URL. Other tabs are assumed to be ready once their
-   * inner window ID is known.
-   *
-   * @param {XULElement} nativeTab The <tab> element.
-   * @returns {Promise} Resolves with the given tab once ready.
-   */
+  
+
+
+
+
+
+
+
+
   awaitTabReady(nativeTab) {
     let deferred = this.tabReadyPromises.get(nativeTab);
     if (!deferred) {
@@ -284,7 +280,7 @@ this.tabs = class extends ExtensionAPIPersistent {
     onHighlighted({ fire, context }) {
       let { windowManager } = this.extension;
       let highlightListener = (eventName, event) => {
-        // TODO see if we can avoid "context" here
+        
         let window = windowTracker.getWindow(event.windowId, context, false);
         if (!window) {
           return;
@@ -324,7 +320,7 @@ this.tabs = class extends ExtensionAPIPersistent {
       }
       let needsModified = true;
       if (filter.properties) {
-        // Default is to listen for all events.
+        
         needsModified = filter.properties.some(p => allAttrs.has(p));
         filter.properties = new Set(filter.properties);
       } else {
@@ -335,11 +331,11 @@ this.tabs = class extends ExtensionAPIPersistent {
         let result = {};
         let nonempty = false;
         for (let prop in changeInfo) {
-          // In practice, changeInfo contains at most one property from
-          // restricted. Therefore it is not necessary to cache the value
-          // of tab.hasTabPermission outside the loop.
-          // Unnecessarily accessing tab.hasTabPermission can cause bugs, see
-          // https://bugzilla.mozilla.org/show_bug.cgi?id=1694699#c21
+          
+          
+          
+          
+          
           if (!restricted.has(prop) || tab.hasTabPermission) {
             nonempty = true;
             result[prop] = changeInfo[prop];
@@ -379,7 +375,7 @@ this.tabs = class extends ExtensionAPIPersistent {
       }
 
       let fireForTab = (tab, changed, nativeTab) => {
-        // Tab may be null if private and not_allowed.
+        
         if (!tab || !matchFilters(tab, changed)) {
           return;
         }
@@ -388,7 +384,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         if (changeInfo) {
           tabTracker.maybeWaitForTabOpen(nativeTab).then(() => {
             if (!nativeTab.parentNode) {
-              // If the tab is already be destroyed, do nothing.
+              
               return;
             }
             fire.async(tab.id, changeInfo, tab.convert());
@@ -397,8 +393,8 @@ this.tabs = class extends ExtensionAPIPersistent {
       };
 
       let listener = event => {
-        // Ignore any events prior to TabOpen
-        // and events that are triggered while tabs are swapped between windows.
+        
+        
         if (event.originalTarget.initializingTab) {
           return;
         }
@@ -443,8 +439,8 @@ this.tabs = class extends ExtensionAPIPersistent {
         } else if (event.type == "TabUnpinned") {
           needed.push("pinned");
         } else if (event.type == "TabBrowserInserted") {
-          // This may be an adopted tab. Bail early to avoid asking tabManager
-          // about the tab before we run the adoption logic in ext-browser.js.
+          
+          
           if (event.detail.insertedOnTabCreation) {
             return;
           }
@@ -594,10 +590,10 @@ this.tabs = class extends ExtensionAPIPersistent {
     }
 
     function setContentTriggeringPrincipal(url, browser, options) {
-      // For urls that we want to allow an extension to open in a tab, but
-      // that it may not otherwise have access to, we set the triggering
-      // principal to the url that is being opened.  This is used for newtab,
-      // about: and moz-extension: protocols.
+      
+      
+      
+      
       options.triggeringPrincipal =
         Services.scriptSecurityManager.createContentPrincipal(
           Services.io.newURI(url),
@@ -708,7 +704,7 @@ this.tabs = class extends ExtensionAPIPersistent {
 
             let options = { triggeringPrincipal: context.principal };
             if (createProperties.cookieStoreId) {
-              // May throw if validation fails.
+              
               options.userContextId = getUserContextIdForCookieStoreId(
                 extension,
                 createProperties.cookieStoreId,
@@ -733,7 +729,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               url = window.BROWSER_NEW_TAB_URL;
             }
             let discardable = url && !url.startsWith("about:");
-            // Handle moz-ext separately from the discardable flag to retain prior behavior.
+            
             if (!discardable || url.startsWith("moz-extension://")) {
               setContentTriggeringPrincipal(url, window.gBrowser, options);
             }
@@ -759,7 +755,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
 
-            // Simple properties
+            
             const properties = ["index", "pinned"];
             for (let prop of properties) {
               if (createProperties[prop] != null) {
@@ -808,14 +804,14 @@ this.tabs = class extends ExtensionAPIPersistent {
               createProperties.url &&
               createProperties.url !== window.BROWSER_NEW_TAB_URL
             ) {
-              // We can't wait for a location change event for about:newtab,
-              // since it may be pre-rendered, in which case its initial
-              // location change event has already fired.
+              
+              
+              
 
-              // Mark the tab as initializing, so that operations like
-              // `executeScript` wait until the requested URL is loaded in
-              // the tab before dispatching messages to the inner window
-              // that contains the URL we're attempting to load.
+              
+              
+              
+              
               tabListener.initializingTabs.add(nativeTab);
             }
 
@@ -835,17 +831,17 @@ this.tabs = class extends ExtensionAPIPersistent {
             return;
           }
 
-          // Or for multiple tabs, first group them by window
+          
           let windowTabMap = new DefaultMap(() => []);
           for (let nativeTab of nativeTabs) {
             windowTabMap.get(nativeTab.ownerGlobal).push(nativeTab);
           }
 
-          // Then make one call to removeTabs() for each window, to keep the
-          // count accurate for SessionStore.getLastClosedTabCount().
-          // Note: always pass options to disable animation and the warning
-          // dialogue box, so that way all tabs are actually closed when the
-          // browser.tabs.remove() promise resolves
+          
+          
+          
+          
+          
           for (let [eachWindow, tabsToClose] of windowTabMap.entries()) {
             eachWindow.gBrowser.removeTabs(tabsToClose, {
               animate: false,
@@ -876,7 +872,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             };
 
             if (!context.checkLoadURL(url, { dontReportErrors: true })) {
-              // We allow loading top level tabs for "other" extensions.
+              
               if (url.startsWith("moz-extension://")) {
                 setContentTriggeringPrincipal(url, tabbrowser, options);
               } else {
@@ -888,8 +884,8 @@ this.tabs = class extends ExtensionAPIPersistent {
             if (nativeTab.linkedPanel) {
               browser.fixupAndLoadURIString(url, options);
             } else {
-              // Shift to fully loaded browser and make
-              // sure load handler is instantiated.
+              
+              
               nativeTab.addEventListener(
                 "SSTabRestoring",
                 () => browser.fixupAndLoadURIString(url, options),
@@ -906,8 +902,8 @@ this.tabs = class extends ExtensionAPIPersistent {
             if (updateProperties.highlighted) {
               if (!nativeTab.selected && !nativeTab.multiselected) {
                 tabbrowser.addToMultiSelectedTabs(nativeTab);
-                // Select the highlighted tab unless active:false is provided.
-                // Note that Chrome selects it even in that case.
+                
+                
                 if (updateProperties.active !== false) {
                   tabbrowser.lockClearMultiSelectionOnce();
                   tabbrowser.selectedTab = nativeTab;
@@ -949,7 +945,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               if (!successor) {
                 throw new ExtensionError("Invalid successorTabId");
               }
-              // This also ensures "privateness" matches.
+              
               if (successor.ownerDocument !== nativeTab.ownerDocument) {
                 throw new ExtensionError(
                   "Successor tab must be in the same window as the tab being updated"
@@ -1059,7 +1055,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               moveProperties.windowId,
               context
             );
-            // Fail on an invalid window.
+            
             if (!destinationWindow) {
               return Promise.reject({
                 message: `Invalid window ID: ${moveProperties.windowId}`,
@@ -1067,29 +1063,29 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
           }
 
-          /*
-            Indexes are maintained on a per window basis so that a call to
-              move([tabA, tabB], {index: 0})
-                -> tabA to 0, tabB to 1 if tabA and tabB are in the same window
-              move([tabA, tabB], {index: 0})
-                -> tabA to 0, tabB to 0 if tabA and tabB are in different windows
-          */
+          
+
+
+
+
+
+
           let lastInsertionMap = new Map();
 
           for (let nativeTab of getNativeTabsFromIDArray(tabIds)) {
-            // If the window is not specified, use the window from the tab.
+            
             let window = destinationWindow || nativeTab.ownerGlobal;
             let isSameWindow = nativeTab.ownerGlobal == window;
             let gBrowser = window.gBrowser;
 
-            // If we are not moving the tab to a different window, and the window
-            // only has one tab, do nothing.
+            
+            
             if (isSameWindow && gBrowser.tabs.length === 1) {
               lastInsertionMap.set(window, 0);
               continue;
             }
-            // If moving between windows, be sure privacy matches.  While gBrowser
-            // prevents this, we want to silently ignore it.
+            
+            
             if (
               !isSameWindow &&
               PrivateBrowsingUtils.isBrowserPrivate(gBrowser) !=
@@ -1106,28 +1102,28 @@ this.tabs = class extends ExtensionAPIPersistent {
               insertionPoint = moveProperties.index;
               let maxIndex = gBrowser.tabs.length - (isSameWindow ? 1 : 0);
               if (insertionPoint == -1) {
-                // If the index is -1 it should go to the end of the tabs.
+                
                 insertionPoint = maxIndex;
               } else {
                 insertionPoint = Math.min(insertionPoint, maxIndex);
               }
             } else if (isSameWindow && nativeTab._tPos <= lastInsertion) {
-              // lastInsertion is the current index of the last inserted tab.
-              // insertionPoint is the desired index of the current tab *after* moving it.
-              // When the tab is moved, the last inserted tab will no longer be at index
-              // lastInsertion, but (lastInsertion - 1). To position the tabs adjacent to
-              // each other, the tab should therefore be at index (lastInsertion - 1 + 1).
+              
+              
+              
+              
+              
               insertionPoint = lastInsertion;
             } else {
-              // In this case the last inserted tab will stay at index lastInsertion,
-              // so we should move the current tab to index (lastInsertion + 1).
+              
+              
               insertionPoint = lastInsertion + 1;
             }
 
-            // We can only move pinned tabs to a point within, or just after,
-            // the current set of pinned tabs. Unpinned tabs, likewise, can only
-            // be moved to a position after the current set of pinned tabs.
-            // Attempts to move a tab to an illegal position are ignored.
+            
+            
+            
+            
             let numPinned = gBrowser._numPinnedTabs;
             let ok = nativeTab.pinned
               ? insertionPoint <= numPinned
@@ -1137,11 +1133,11 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
 
             if (isSameWindow) {
-              // If the window we are moving is the same, just move the tab.
+              
               gBrowser.moveTabTo(nativeTab, insertionPoint);
             } else {
-              // If the window we are moving the tab in is different, then move the tab
-              // to the new window.
+              
+              
               nativeTab = gBrowser.adoptTab(nativeTab, insertionPoint, false);
             }
             lastInsertionMap.set(window, nativeTab._tPos);
@@ -1155,7 +1151,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           const { active, index } = duplicateProperties || {};
           const inBackground = active === undefined ? false : !active;
 
-          // Schema requires tab id.
+          
           let nativeTab = getTabOrActive(tabId);
 
           let gBrowser = nativeTab.ownerGlobal.gBrowser;
@@ -1166,8 +1162,8 @@ this.tabs = class extends ExtensionAPIPersistent {
 
           tabListener.blockTabUntilRestored(newTab);
           return new Promise(resolve => {
-            // Use SSTabRestoring to ensure that the tab's URL is ready before
-            // resolving the promise.
+            
+            
             newTab.addEventListener(
               "SSTabRestoring",
               () => resolve(tabManager.convert(newTab)),
@@ -1191,7 +1187,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           let { FullZoom, ZoomManager } = nativeTab.ownerGlobal;
 
           if (zoom === 0) {
-            // A value of zero means use the default zoom factor.
+            
             return FullZoom.reset(nativeTab.linkedBrowser);
           } else if (zoom >= ZoomManager.MIN && zoom <= ZoomManager.MAX) {
             FullZoom.setZoom(zoom, nativeTab.linkedBrowser);
@@ -1244,11 +1240,11 @@ this.tabs = class extends ExtensionAPIPersistent {
               return ZoomManager.getZoomForBrowser(browser);
             };
 
-            // Stores the last known zoom level for each tab's browser.
-            // WeakMap[<browser> -> number]
+            
+            
             let zoomLevels = new WeakMap();
 
-            // Store the zoom level for all existing tabs.
+            
             for (let window of windowTracker.browserWindows()) {
               if (!context.canAccessWindow(window)) {
                 continue;
@@ -1269,8 +1265,8 @@ this.tabs = class extends ExtensionAPIPersistent {
             let zoomListener = async event => {
               let browser = event.originalTarget;
 
-              // For non-remote browsers, this event is dispatched on the document
-              // rather than on the <browser>.  But either way we have a node here.
+              
+              
               if (browser.nodeType == browser.DOCUMENT_NODE) {
                 browser = browser.docShell.chromeEventHandler;
               }
@@ -1282,7 +1278,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               let { gBrowser } = browser.ownerGlobal;
               let nativeTab = gBrowser.getTabForBrowser(browser);
               if (!nativeTab) {
-                // We only care about zoom events in the top-level browser of a tab.
+                
                 return;
               }
 
@@ -1323,7 +1319,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           PrintUtils.startPrintWindow(activeTab.linkedBrowser.browsingContext);
         },
 
-        // Legacy API
+        
         printPreview() {
           return Promise.resolve(this.print());
         },
@@ -1363,15 +1359,15 @@ this.tabs = class extends ExtensionAPIPersistent {
           return new Promise(resolve => {
             picker.open(function (retval) {
               if (retval == 0 || retval == 2) {
-                // OK clicked (retval == 0) or replace confirmed (retval == 2)
+                
 
-                // Workaround: When trying to replace an existing file that is open in another application (i.e. a locked file),
-                // the print progress listener is never called. This workaround ensures that a correct status is always returned.
+                
+                
                 try {
                   let fstream = Cc[
                     "@mozilla.org/network/file-output-stream;1"
                   ].createInstance(Ci.nsIFileOutputStream);
-                  fstream.init(picker.file, 0x2a, 0o666, 0); // ioflags = write|create|truncate, file permissions = rw-rw-rw-
+                  fstream.init(picker.file, 0x2a, 0o666, 0); 
                   fstream.close();
                 } catch (e) {
                   resolve(retval == 0 ? "not_saved" : "not_replaced");
@@ -1472,7 +1468,7 @@ this.tabs = class extends ExtensionAPIPersistent {
                     resolve(retval == 0 ? "not_saved" : "not_replaced")
                   );
               } else {
-                // Cancel clicked (retval == 1)
+                
                 resolve("canceled");
               }
             });

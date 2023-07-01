@@ -2,7 +2,9 @@
 
 
 
-const { webrtcUI } = ChromeUtils.import("resource:///modules/webrtcUI.jsm");
+const { webrtcUI } = ChromeUtils.importESModule(
+  "resource:///modules/webrtcUI.sys.mjs"
+);
 
 function init(event) {
   for (let id of ["audioVideoButton", "screenSharePopup"]) {

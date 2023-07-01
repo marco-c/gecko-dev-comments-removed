@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 "use strict";
 
-const { TabUnloader } = ChromeUtils.import(
-  "resource:///modules/TabUnloader.jsm"
+const { TabUnloader } = ChromeUtils.importESModule(
+  "resource:///modules/TabUnloader.sys.mjs"
 );
 
 async function refreshData() {
@@ -25,8 +25,8 @@ async function refreshData() {
     );
   };
 
-  // Reset the table
-  // Don't delete the first row showing the "no unloadable tab" message
+  
+  
   while (tabTable.rows.length > 1) {
     tabTable.deleteRow(1);
   }
@@ -78,7 +78,7 @@ async function refreshData() {
     if (tabInfo.processes) {
       for (const [pid, procEntry] of tabInfo.processes) {
         if (pid < 0) {
-          // Tab is hosted by the main process
+          
           continue;
         }
 

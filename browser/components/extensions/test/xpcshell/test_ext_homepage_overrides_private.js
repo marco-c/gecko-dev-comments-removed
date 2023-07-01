@@ -1,11 +1,13 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
+
+
 "use strict";
 
 const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
-const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
+const { HomePage } = ChromeUtils.importESModule(
+  "resource:///modules/HomePage.sys.mjs"
+);
 const { ExtensionPermissions } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPermissions.sys.mjs"
 );
@@ -107,7 +109,7 @@ add_task(async function test_overrides_private() {
   await promiseUpdatePrivatePermission(true, extension.extension);
   info("remove permission from extension");
   await promiseUpdatePrivatePermission(false, extension.extension);
-  // set back to true to test upgrade removing extension control
+  
   info("add permission back to prepare for upgrade test");
   await promiseUpdatePrivatePermission(true, extension.extension);
 

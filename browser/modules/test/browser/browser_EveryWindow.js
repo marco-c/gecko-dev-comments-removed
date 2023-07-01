@@ -6,8 +6,8 @@
 
 
 
-const { EveryWindow } = ChromeUtils.import(
-  "resource:///modules/EveryWindow.jsm"
+const { EveryWindow } = ChromeUtils.importESModule(
+  "resource:///modules/EveryWindow.sys.mjs"
 );
 
 async function windowInited(aId, aWin) {

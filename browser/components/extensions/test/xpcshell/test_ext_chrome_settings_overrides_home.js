@@ -1,5 +1,5 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
+
+
 "use strict";
 
 const { AddonTestUtils } = ChromeUtils.importESModule(
@@ -7,13 +7,10 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
+  HomePage: "resource:///modules/HomePage.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  HomePage: "resource:///modules/HomePage.jsm",
 });
 
 function promisePrefChanged(expectedValue) {
@@ -52,7 +49,7 @@ add_task(async function setup() {
 });
 
 add_task(async function test_overriding_with_ignored_url() {
-  // Manually poke into the ignore list a value to be ignored.
+  
   HomePage._ignoreList.push("ignore=me");
   Services.prefs.setBoolPref(HOMEPAGE_EXTENSION_CONTROLLED, false);
 
@@ -210,9 +207,9 @@ add_task(async function test_overriding_homepage_locale() {
     "Should have overridden the new homepage"
   );
 
-  // Set the new locale now, and disable the L10nRegistry reset
-  // when shutting down the addon mananger.  This allows us to
-  // restart under a new locale without a lot of fuss.
+  
+  
+  
   let reqLoc = Services.locale.requestedLocales;
   Services.locale.requestedLocales = ["es-ES"];
 

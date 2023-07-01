@@ -3,8 +3,8 @@
 
 
 
-const { SiteDataManager } = ChromeUtils.import(
-  "resource:///modules/SiteDataManager.jsm"
+const { SiteDataManager } = ChromeUtils.importESModule(
+  "resource:///modules/SiteDataManager.sys.mjs"
 );
 const { DownloadUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/DownloadUtils.sys.mjs"
