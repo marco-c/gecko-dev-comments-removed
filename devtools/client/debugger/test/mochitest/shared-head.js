@@ -59,6 +59,10 @@ const {
   originalToGeneratedId,
 } = require("devtools/client/shared/source-map-loader/index");
 
+const DEBUGGER_L10N = new LocalizationHelper(
+  "devtools/client/locales/debugger.properties"
+);
+
 
 
 
@@ -249,7 +253,13 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         );
         return allSourceActorsProcessed;
       }
-      return getBreakableLines(location.source.id);
+
+      if (!getBreakableLines(location.source.id)) {
+        return false;
+      }
+
+      
+      return getCM(dbg).getValue() !== DEBUGGER_L10N.getStr("loadingText");
     },
     "selected source"
   );

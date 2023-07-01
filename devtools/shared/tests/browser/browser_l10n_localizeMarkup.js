@@ -5,10 +5,9 @@
 
 
 
-const {
-  localizeMarkup,
-  LocalizationHelper,
-} = require("resource://devtools/shared/l10n.js");
+
+
+const { localizeMarkup } = require("resource://devtools/shared/l10n.js");
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 add_task(async function () {

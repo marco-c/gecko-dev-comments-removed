@@ -4,7 +4,6 @@
 
 const TEST_URL = URL_ROOT + "sjs_cache_controle_header.sjs";
 
-const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
