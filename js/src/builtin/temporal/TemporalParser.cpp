@@ -665,6 +665,9 @@ class TemporalParser final {
   explicit TemporalParser(mozilla::Span<const CharT> str) : reader_(str) {}
 
   mozilla::Result<ZonedDateTimeString, ParserError>
+  parseTemporalInstantString();
+
+  mozilla::Result<ZonedDateTimeString, ParserError>
   parseTemporalCalendarString();
 
   mozilla::Result<ZonedDateTimeString, ParserError>
@@ -1084,6 +1087,62 @@ bool TemporalParser<CharT>::timeZoneIANANameComponent() {
 }
 
 template <typename CharT>
+mozilla::Result<ZonedDateTimeString, ParserError>
+TemporalParser<CharT>::parseTemporalInstantString() {
+  
+  ZonedDateTimeString result = {};
+
+  
+  
+  
+  
+  
+  
+
+  auto dt = date();
+  if (dt.isErr()) {
+    return dt.propagateErr();
+  }
+  result.date = dt.unwrap();
+
+  if (!dateTimeSeparator()) {
+    return mozilla::Err(JSMSG_TEMPORAL_PARSER_MISSING_DATE_TIME_SEPARATOR);
+  }
+
+  auto time = timeSpec();
+  if (time.isErr()) {
+    return time.propagateErr();
+  }
+  result.time = time.unwrap();
+
+  auto tz = timeZoneUTCOffset();
+  if (tz.isErr()) {
+    return tz.propagateErr();
+  }
+  result.timeZone = tz.unwrap();
+
+  if (hasTimeZoneAnnotationStart()) {
+    auto annotation = timeZoneAnnotation();
+    if (annotation.isErr()) {
+      return annotation.propagateErr();
+    }
+    result.timeZone.annotation = annotation.unwrap();
+  }
+
+  if (hasAnnotationStart()) {
+    if (auto cal = annotations(); cal.isErr()) {
+      return cal.propagateErr();
+    }
+  }
+
+  if (!reader_.atEnd()) {
+    return mozilla::Err(JSMSG_TEMPORAL_PARSER_GARBAGE_AFTER_INPUT);
+  }
+
+  return result;
+}
+
+template <typename CharT>
 bool TemporalParser<CharT>::annotationValueComponent() {
   
   
@@ -1271,6 +1330,13 @@ TemporalParser<CharT>::parseTemporalCalendarString() {
   
 
   if (auto dt = parseTemporalDateTimeString(); dt.isOk()) {
+    return dt.unwrap();
+  }
+
+  
+  reader_.reset();
+
+  if (auto dt = parseTemporalInstantString(); dt.isOk()) {
     return dt.unwrap();
   }
 
