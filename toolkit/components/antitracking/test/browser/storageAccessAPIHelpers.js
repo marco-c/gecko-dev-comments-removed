@@ -146,9 +146,11 @@ async function callRequestStorageAccess(callback, expectFail) {
     
     
     
+    let originURI = SpecialPowers.Services.io.newURI(window.origin);
+    let site = SpecialPowers.Services.eTLD.getSite(originURI);
     await waitUntilPermission(
       `${protocol}://example.net/browser/toolkit/components/antitracking/test/browser/page.html`,
-      "3rdPartyStorage^" + window.origin
+      "3rdPartyFrameStorage^" + site
     );
   }
 

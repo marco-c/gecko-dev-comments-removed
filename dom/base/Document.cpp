@@ -17164,21 +17164,23 @@ Document::GetContentBlockingEvents() {
 StorageAccessAPIHelper::PerformPermissionGrant
 Document::CreatePermissionGrantPromise(
     nsPIDOMWindowInner* aInnerWindow, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain) {
+    bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain,
+    bool aFrameOnly) {
   MOZ_ASSERT(aInnerWindow);
   MOZ_ASSERT(aPrincipal);
   RefPtr<Document> self(this);
   RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
   RefPtr<nsIPrincipal> principal(aPrincipal);
 
-  return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain]() {
+  return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain,
+          aFrameOnly]() {
     
     RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::Private>
         p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
             Private(__func__);
     RefPtr<StorageAccessPermissionRequest> sapr =
         StorageAccessPermissionRequest::Create(
-            inner, principal, aTopLevelBaseDomain, false,
+            inner, principal, aTopLevelBaseDomain, aFrameOnly,
             
             [p] {
               Telemetry::AccumulateCategorical(
@@ -17403,7 +17405,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-      this, inner, bc, NodePrincipal(), true,
+      this, inner, bc, NodePrincipal(), true, true,
       ContentBlockingNotifier::eStorageAccessAPI, true)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -17567,7 +17569,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
             
             
             return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, hasUserActivation,
+                self, inner, bc, principal, hasUserActivation, false,
                 ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
                 true);
           },
@@ -17729,7 +17731,7 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
             }
             return self->CreatePermissionGrantPromise(
                 self->GetInnerWindow(), self->NodePrincipal(), true,
-                Some(serializedSite))();
+                Some(serializedSite), false)();
           },
           [](const ContentChild::TestStorageAccessPermissionPromise::
                  RejectValueType& aResult) {
@@ -17902,7 +17904,7 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
             
             
             return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, true,
+                self, inner, bc, principal, true, false,
                 ContentBlockingNotifier::eStorageAccessAPI, false);
           },
           
