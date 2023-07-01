@@ -1958,9 +1958,6 @@ class AddonInstall {
       
       this.addon.sourceBundle = stagedAddon;
 
-      
-      this.location.stageAddon(this.addon.id, this.addon.toJSON());
-
       logger.debug(
         `Staged install of ${this.addon.id} from ${this.sourceURI.spec} ready; waiting for restart.`
       );
@@ -1968,6 +1965,14 @@ class AddonInstall {
         delete this.existingAddon.pendingUpgrade;
         this.existingAddon.pendingUpgrade = this.addon;
       }
+    }
+
+    if (this.state === AddonManager.STATE_POSTPONED) {
+      
+      
+      
+      
+      this.location.stageAddon(this.addon.id, this.addon.toJSON());
     }
   }
 
