@@ -2192,9 +2192,34 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       
       
       
-      mBaselineSharingGroup = usingItemFirstBaseline
-                                  ? BaselineSharingGroup::First
-                                  : BaselineSharingGroup::Last;
+      
+      
+      
+      mozilla::Side itemBlockStartSide = mWM.PhysicalSide(eLogicalSideBStart);
+
+      
+      
+      mozilla::Side containerStartSideInCrossAxis = mCBWM.PhysicalSide(
+          MakeLogicalSide(aAxisTracker.CrossAxis(), eLogicalEdgeStart));
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bool itemBlockAxisFlowDirMatchesContainer =
+          (itemBlockStartSide == containerStartSideInCrossAxis);
+      mBaselineSharingGroup =
+          (itemBlockAxisFlowDirMatchesContainer == usingItemFirstBaseline)
+              ? BaselineSharingGroup::First
+              : BaselineSharingGroup::Last;
     } else {
       
       
