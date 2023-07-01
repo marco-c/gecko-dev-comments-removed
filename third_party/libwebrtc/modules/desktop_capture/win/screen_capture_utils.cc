@@ -10,8 +10,10 @@
 
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 
+#include <libloaderapi.h>
 #include <shellscalingapi.h>
 #include <windows.h>
+#include <winnt.h>
 
 #include <string>
 #include <vector>
@@ -23,7 +25,31 @@
 #include "rtc_base/string_utils.h"
 #include "rtc_base/win32.h"
 
+#include "mozilla/WindowsVersion.h" 
+
 namespace webrtc {
+
+
+
+
+HRESULT TryGetDpiForMonitor(HMONITOR hmonitor, MONITOR_DPI_TYPE dpiType, UINT *dpiX, UINT *dpiY) {
+  static HRESULT (*plat_fn)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+#ifdef _WIN64
+  
+  
+  if (!plat_fn) {
+      if(auto *module = ::GetModuleHandle(L"Shcore.dll"); module) {
+        plat_fn = reinterpret_cast<decltype(plat_fn)>(
+            ::GetProcAddress(module, "GetDpiForMonitor"));
+      }
+  }
+#endif
+  
+  
+  return plat_fn
+          ? ((*plat_fn)(hmonitor, dpiType, dpiX, dpiY))
+          : -1;
+}
 
 bool HasActiveDisplay() {
   DesktopCapturer::SourceList screens;
@@ -147,14 +173,9 @@ DesktopRect GetFullscreenRect() {
 }
 
 DesktopVector GetDpiForMonitor(HMONITOR monitor) {
-
-
-
-
-#if 0
   UINT dpi_x, dpi_y;
   
-  HRESULT hr = ::GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+  HRESULT hr = TryGetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
   if (SUCCEEDED(hr)) {
     return {static_cast<INT>(dpi_x), static_cast<INT>(dpi_y)};
   }
@@ -168,7 +189,6 @@ DesktopVector GetDpiForMonitor(HMONITOR monitor) {
     ReleaseDC(nullptr, hdc);
     return dpi;
   }
-#endif
 
   
   return {96, 96};
