@@ -342,242 +342,263 @@ var OperatorCode;
     OperatorCode[OperatorCode["i64_atomic_rmw8_cmpxchg_u"] = 65100] = "i64_atomic_rmw8_cmpxchg_u";
     OperatorCode[OperatorCode["i64_atomic_rmw16_cmpxchg_u"] = 65101] = "i64_atomic_rmw16_cmpxchg_u";
     OperatorCode[OperatorCode["i64_atomic_rmw32_cmpxchg_u"] = 65102] = "i64_atomic_rmw32_cmpxchg_u";
-    OperatorCode[OperatorCode["v128_load"] = 64768] = "v128_load";
-    OperatorCode[OperatorCode["i16x8_load8x8_s"] = 64769] = "i16x8_load8x8_s";
-    OperatorCode[OperatorCode["i16x8_load8x8_u"] = 64770] = "i16x8_load8x8_u";
-    OperatorCode[OperatorCode["i32x4_load16x4_s"] = 64771] = "i32x4_load16x4_s";
-    OperatorCode[OperatorCode["i32x4_load16x4_u"] = 64772] = "i32x4_load16x4_u";
-    OperatorCode[OperatorCode["i64x2_load32x2_s"] = 64773] = "i64x2_load32x2_s";
-    OperatorCode[OperatorCode["i64x2_load32x2_u"] = 64774] = "i64x2_load32x2_u";
-    OperatorCode[OperatorCode["v8x16_load_splat"] = 64775] = "v8x16_load_splat";
-    OperatorCode[OperatorCode["v16x8_load_splat"] = 64776] = "v16x8_load_splat";
-    OperatorCode[OperatorCode["v32x4_load_splat"] = 64777] = "v32x4_load_splat";
-    OperatorCode[OperatorCode["v64x2_load_splat"] = 64778] = "v64x2_load_splat";
-    OperatorCode[OperatorCode["v128_store"] = 64779] = "v128_store";
-    OperatorCode[OperatorCode["v128_const"] = 64780] = "v128_const";
-    OperatorCode[OperatorCode["i8x16_shuffle"] = 64781] = "i8x16_shuffle";
-    OperatorCode[OperatorCode["i8x16_swizzle"] = 64782] = "i8x16_swizzle";
-    OperatorCode[OperatorCode["i8x16_splat"] = 64783] = "i8x16_splat";
-    OperatorCode[OperatorCode["i16x8_splat"] = 64784] = "i16x8_splat";
-    OperatorCode[OperatorCode["i32x4_splat"] = 64785] = "i32x4_splat";
-    OperatorCode[OperatorCode["i64x2_splat"] = 64786] = "i64x2_splat";
-    OperatorCode[OperatorCode["f32x4_splat"] = 64787] = "f32x4_splat";
-    OperatorCode[OperatorCode["f64x2_splat"] = 64788] = "f64x2_splat";
-    OperatorCode[OperatorCode["i8x16_extract_lane_s"] = 64789] = "i8x16_extract_lane_s";
-    OperatorCode[OperatorCode["i8x16_extract_lane_u"] = 64790] = "i8x16_extract_lane_u";
-    OperatorCode[OperatorCode["i8x16_replace_lane"] = 64791] = "i8x16_replace_lane";
-    OperatorCode[OperatorCode["i16x8_extract_lane_s"] = 64792] = "i16x8_extract_lane_s";
-    OperatorCode[OperatorCode["i16x8_extract_lane_u"] = 64793] = "i16x8_extract_lane_u";
-    OperatorCode[OperatorCode["i16x8_replace_lane"] = 64794] = "i16x8_replace_lane";
-    OperatorCode[OperatorCode["i32x4_extract_lane"] = 64795] = "i32x4_extract_lane";
-    OperatorCode[OperatorCode["i32x4_replace_lane"] = 64796] = "i32x4_replace_lane";
-    OperatorCode[OperatorCode["i64x2_extract_lane"] = 64797] = "i64x2_extract_lane";
-    OperatorCode[OperatorCode["i64x2_replace_lane"] = 64798] = "i64x2_replace_lane";
-    OperatorCode[OperatorCode["f32x4_extract_lane"] = 64799] = "f32x4_extract_lane";
-    OperatorCode[OperatorCode["f32x4_replace_lane"] = 64800] = "f32x4_replace_lane";
-    OperatorCode[OperatorCode["f64x2_extract_lane"] = 64801] = "f64x2_extract_lane";
-    OperatorCode[OperatorCode["f64x2_replace_lane"] = 64802] = "f64x2_replace_lane";
-    OperatorCode[OperatorCode["i8x16_eq"] = 64803] = "i8x16_eq";
-    OperatorCode[OperatorCode["i8x16_ne"] = 64804] = "i8x16_ne";
-    OperatorCode[OperatorCode["i8x16_lt_s"] = 64805] = "i8x16_lt_s";
-    OperatorCode[OperatorCode["i8x16_lt_u"] = 64806] = "i8x16_lt_u";
-    OperatorCode[OperatorCode["i8x16_gt_s"] = 64807] = "i8x16_gt_s";
-    OperatorCode[OperatorCode["i8x16_gt_u"] = 64808] = "i8x16_gt_u";
-    OperatorCode[OperatorCode["i8x16_le_s"] = 64809] = "i8x16_le_s";
-    OperatorCode[OperatorCode["i8x16_le_u"] = 64810] = "i8x16_le_u";
-    OperatorCode[OperatorCode["i8x16_ge_s"] = 64811] = "i8x16_ge_s";
-    OperatorCode[OperatorCode["i8x16_ge_u"] = 64812] = "i8x16_ge_u";
-    OperatorCode[OperatorCode["i16x8_eq"] = 64813] = "i16x8_eq";
-    OperatorCode[OperatorCode["i16x8_ne"] = 64814] = "i16x8_ne";
-    OperatorCode[OperatorCode["i16x8_lt_s"] = 64815] = "i16x8_lt_s";
-    OperatorCode[OperatorCode["i16x8_lt_u"] = 64816] = "i16x8_lt_u";
-    OperatorCode[OperatorCode["i16x8_gt_s"] = 64817] = "i16x8_gt_s";
-    OperatorCode[OperatorCode["i16x8_gt_u"] = 64818] = "i16x8_gt_u";
-    OperatorCode[OperatorCode["i16x8_le_s"] = 64819] = "i16x8_le_s";
-    OperatorCode[OperatorCode["i16x8_le_u"] = 64820] = "i16x8_le_u";
-    OperatorCode[OperatorCode["i16x8_ge_s"] = 64821] = "i16x8_ge_s";
-    OperatorCode[OperatorCode["i16x8_ge_u"] = 64822] = "i16x8_ge_u";
-    OperatorCode[OperatorCode["i32x4_eq"] = 64823] = "i32x4_eq";
-    OperatorCode[OperatorCode["i32x4_ne"] = 64824] = "i32x4_ne";
-    OperatorCode[OperatorCode["i32x4_lt_s"] = 64825] = "i32x4_lt_s";
-    OperatorCode[OperatorCode["i32x4_lt_u"] = 64826] = "i32x4_lt_u";
-    OperatorCode[OperatorCode["i32x4_gt_s"] = 64827] = "i32x4_gt_s";
-    OperatorCode[OperatorCode["i32x4_gt_u"] = 64828] = "i32x4_gt_u";
-    OperatorCode[OperatorCode["i32x4_le_s"] = 64829] = "i32x4_le_s";
-    OperatorCode[OperatorCode["i32x4_le_u"] = 64830] = "i32x4_le_u";
-    OperatorCode[OperatorCode["i32x4_ge_s"] = 64831] = "i32x4_ge_s";
-    OperatorCode[OperatorCode["i32x4_ge_u"] = 64832] = "i32x4_ge_u";
-    OperatorCode[OperatorCode["f32x4_eq"] = 64833] = "f32x4_eq";
-    OperatorCode[OperatorCode["f32x4_ne"] = 64834] = "f32x4_ne";
-    OperatorCode[OperatorCode["f32x4_lt"] = 64835] = "f32x4_lt";
-    OperatorCode[OperatorCode["f32x4_gt"] = 64836] = "f32x4_gt";
-    OperatorCode[OperatorCode["f32x4_le"] = 64837] = "f32x4_le";
-    OperatorCode[OperatorCode["f32x4_ge"] = 64838] = "f32x4_ge";
-    OperatorCode[OperatorCode["f64x2_eq"] = 64839] = "f64x2_eq";
-    OperatorCode[OperatorCode["f64x2_ne"] = 64840] = "f64x2_ne";
-    OperatorCode[OperatorCode["f64x2_lt"] = 64841] = "f64x2_lt";
-    OperatorCode[OperatorCode["f64x2_gt"] = 64842] = "f64x2_gt";
-    OperatorCode[OperatorCode["f64x2_le"] = 64843] = "f64x2_le";
-    OperatorCode[OperatorCode["f64x2_ge"] = 64844] = "f64x2_ge";
-    OperatorCode[OperatorCode["v128_not"] = 64845] = "v128_not";
-    OperatorCode[OperatorCode["v128_and"] = 64846] = "v128_and";
-    OperatorCode[OperatorCode["v128_andnot"] = 64847] = "v128_andnot";
-    OperatorCode[OperatorCode["v128_or"] = 64848] = "v128_or";
-    OperatorCode[OperatorCode["v128_xor"] = 64849] = "v128_xor";
-    OperatorCode[OperatorCode["v128_bitselect"] = 64850] = "v128_bitselect";
-    OperatorCode[OperatorCode["v128_any_true"] = 64851] = "v128_any_true";
-    OperatorCode[OperatorCode["v128_load8_lane"] = 64852] = "v128_load8_lane";
-    OperatorCode[OperatorCode["v128_load16_lane"] = 64853] = "v128_load16_lane";
-    OperatorCode[OperatorCode["v128_load32_lane"] = 64854] = "v128_load32_lane";
-    OperatorCode[OperatorCode["v128_load64_lane"] = 64855] = "v128_load64_lane";
-    OperatorCode[OperatorCode["v128_store8_lane"] = 64856] = "v128_store8_lane";
-    OperatorCode[OperatorCode["v128_store16_lane"] = 64857] = "v128_store16_lane";
-    OperatorCode[OperatorCode["v128_store32_lane"] = 64858] = "v128_store32_lane";
-    OperatorCode[OperatorCode["v128_store64_lane"] = 64859] = "v128_store64_lane";
-    OperatorCode[OperatorCode["v128_load32_zero"] = 64860] = "v128_load32_zero";
-    OperatorCode[OperatorCode["v128_load64_zero"] = 64861] = "v128_load64_zero";
-    OperatorCode[OperatorCode["f32x4_demote_f64x2_zero"] = 64862] = "f32x4_demote_f64x2_zero";
-    OperatorCode[OperatorCode["f64x2_promote_low_f32x4"] = 64863] = "f64x2_promote_low_f32x4";
-    OperatorCode[OperatorCode["i8x16_abs"] = 64864] = "i8x16_abs";
-    OperatorCode[OperatorCode["i8x16_neg"] = 64865] = "i8x16_neg";
-    OperatorCode[OperatorCode["i8x16_popcnt"] = 64866] = "i8x16_popcnt";
-    OperatorCode[OperatorCode["i8x16_all_true"] = 64867] = "i8x16_all_true";
-    OperatorCode[OperatorCode["i8x16_bitmask"] = 64868] = "i8x16_bitmask";
-    OperatorCode[OperatorCode["i8x16_narrow_i16x8_s"] = 64869] = "i8x16_narrow_i16x8_s";
-    OperatorCode[OperatorCode["i8x16_narrow_i16x8_u"] = 64870] = "i8x16_narrow_i16x8_u";
-    OperatorCode[OperatorCode["f32x4_ceil"] = 64871] = "f32x4_ceil";
-    OperatorCode[OperatorCode["f32x4_floor"] = 64872] = "f32x4_floor";
-    OperatorCode[OperatorCode["f32x4_trunc"] = 64873] = "f32x4_trunc";
-    OperatorCode[OperatorCode["f32x4_nearest"] = 64874] = "f32x4_nearest";
-    OperatorCode[OperatorCode["i8x16_shl"] = 64875] = "i8x16_shl";
-    OperatorCode[OperatorCode["i8x16_shr_s"] = 64876] = "i8x16_shr_s";
-    OperatorCode[OperatorCode["i8x16_shr_u"] = 64877] = "i8x16_shr_u";
-    OperatorCode[OperatorCode["i8x16_add"] = 64878] = "i8x16_add";
-    OperatorCode[OperatorCode["i8x16_add_sat_s"] = 64879] = "i8x16_add_sat_s";
-    OperatorCode[OperatorCode["i8x16_add_sat_u"] = 64880] = "i8x16_add_sat_u";
-    OperatorCode[OperatorCode["i8x16_sub"] = 64881] = "i8x16_sub";
-    OperatorCode[OperatorCode["i8x16_sub_sat_s"] = 64882] = "i8x16_sub_sat_s";
-    OperatorCode[OperatorCode["i8x16_sub_sat_u"] = 64883] = "i8x16_sub_sat_u";
-    OperatorCode[OperatorCode["f64x2_ceil"] = 64884] = "f64x2_ceil";
-    OperatorCode[OperatorCode["f64x2_floor"] = 64885] = "f64x2_floor";
-    OperatorCode[OperatorCode["i8x16_min_s"] = 64886] = "i8x16_min_s";
-    OperatorCode[OperatorCode["i8x16_min_u"] = 64887] = "i8x16_min_u";
-    OperatorCode[OperatorCode["i8x16_max_s"] = 64888] = "i8x16_max_s";
-    OperatorCode[OperatorCode["i8x16_max_u"] = 64889] = "i8x16_max_u";
-    OperatorCode[OperatorCode["f64x2_trunc"] = 64890] = "f64x2_trunc";
-    OperatorCode[OperatorCode["i8x16_avgr_u"] = 64891] = "i8x16_avgr_u";
-    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_s"] = 64892] = "i16x8_extadd_pairwise_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_u"] = 64893] = "i16x8_extadd_pairwise_i8x16_u";
-    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_s"] = 64894] = "i32x4_extadd_pairwise_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_u"] = 64895] = "i32x4_extadd_pairwise_i16x8_u";
-    OperatorCode[OperatorCode["i16x8_abs"] = 64896] = "i16x8_abs";
-    OperatorCode[OperatorCode["i16x8_neg"] = 64897] = "i16x8_neg";
-    OperatorCode[OperatorCode["i16x8_q15mulr_sat_s"] = 64898] = "i16x8_q15mulr_sat_s";
-    OperatorCode[OperatorCode["i16x8_all_true"] = 64899] = "i16x8_all_true";
-    OperatorCode[OperatorCode["i16x8_bitmask"] = 64900] = "i16x8_bitmask";
-    OperatorCode[OperatorCode["i16x8_narrow_i32x4_s"] = 64901] = "i16x8_narrow_i32x4_s";
-    OperatorCode[OperatorCode["i16x8_narrow_i32x4_u"] = 64902] = "i16x8_narrow_i32x4_u";
-    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_s"] = 64903] = "i16x8_extend_low_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_s"] = 64904] = "i16x8_extend_high_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_u"] = 64905] = "i16x8_extend_low_i8x16_u";
-    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_u"] = 64906] = "i16x8_extend_high_i8x16_u";
-    OperatorCode[OperatorCode["i16x8_shl"] = 64907] = "i16x8_shl";
-    OperatorCode[OperatorCode["i16x8_shr_s"] = 64908] = "i16x8_shr_s";
-    OperatorCode[OperatorCode["i16x8_shr_u"] = 64909] = "i16x8_shr_u";
-    OperatorCode[OperatorCode["i16x8_add"] = 64910] = "i16x8_add";
-    OperatorCode[OperatorCode["i16x8_add_sat_s"] = 64911] = "i16x8_add_sat_s";
-    OperatorCode[OperatorCode["i16x8_add_sat_u"] = 64912] = "i16x8_add_sat_u";
-    OperatorCode[OperatorCode["i16x8_sub"] = 64913] = "i16x8_sub";
-    OperatorCode[OperatorCode["i16x8_sub_sat_s"] = 64914] = "i16x8_sub_sat_s";
-    OperatorCode[OperatorCode["i16x8_sub_sat_u"] = 64915] = "i16x8_sub_sat_u";
-    OperatorCode[OperatorCode["f64x2_nearest"] = 64916] = "f64x2_nearest";
-    OperatorCode[OperatorCode["i16x8_mul"] = 64917] = "i16x8_mul";
-    OperatorCode[OperatorCode["i16x8_min_s"] = 64918] = "i16x8_min_s";
-    OperatorCode[OperatorCode["i16x8_min_u"] = 64919] = "i16x8_min_u";
-    OperatorCode[OperatorCode["i16x8_max_s"] = 64920] = "i16x8_max_s";
-    OperatorCode[OperatorCode["i16x8_max_u"] = 64921] = "i16x8_max_u";
-    OperatorCode[OperatorCode["i16x8_avgr_u"] = 64923] = "i16x8_avgr_u";
-    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_s"] = 64924] = "i16x8_extmul_low_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_s"] = 64925] = "i16x8_extmul_high_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_u"] = 64926] = "i16x8_extmul_low_i8x16_u";
-    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_u"] = 64927] = "i16x8_extmul_high_i8x16_u";
-    OperatorCode[OperatorCode["i32x4_abs"] = 64928] = "i32x4_abs";
-    OperatorCode[OperatorCode["i32x4_neg"] = 64929] = "i32x4_neg";
-    OperatorCode[OperatorCode["i32x4_all_true"] = 64931] = "i32x4_all_true";
-    OperatorCode[OperatorCode["i32x4_bitmask"] = 64932] = "i32x4_bitmask";
-    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_s"] = 64935] = "i32x4_extend_low_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_s"] = 64936] = "i32x4_extend_high_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_u"] = 64937] = "i32x4_extend_low_i16x8_u";
-    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_u"] = 64938] = "i32x4_extend_high_i16x8_u";
-    OperatorCode[OperatorCode["i32x4_shl"] = 64939] = "i32x4_shl";
-    OperatorCode[OperatorCode["i32x4_shr_s"] = 64940] = "i32x4_shr_s";
-    OperatorCode[OperatorCode["i32x4_shr_u"] = 64941] = "i32x4_shr_u";
-    OperatorCode[OperatorCode["i32x4_add"] = 64942] = "i32x4_add";
-    OperatorCode[OperatorCode["i32x4_sub"] = 64945] = "i32x4_sub";
-    OperatorCode[OperatorCode["i32x4_mul"] = 64949] = "i32x4_mul";
-    OperatorCode[OperatorCode["i32x4_min_s"] = 64950] = "i32x4_min_s";
-    OperatorCode[OperatorCode["i32x4_min_u"] = 64951] = "i32x4_min_u";
-    OperatorCode[OperatorCode["i32x4_max_s"] = 64952] = "i32x4_max_s";
-    OperatorCode[OperatorCode["i32x4_max_u"] = 64953] = "i32x4_max_u";
-    OperatorCode[OperatorCode["i32x4_dot_i16x8_s"] = 64954] = "i32x4_dot_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_s"] = 64956] = "i32x4_extmul_low_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_s"] = 64957] = "i32x4_extmul_high_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_u"] = 64958] = "i32x4_extmul_low_i16x8_u";
-    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_u"] = 64959] = "i32x4_extmul_high_i16x8_u";
-    OperatorCode[OperatorCode["i64x2_abs"] = 64960] = "i64x2_abs";
-    OperatorCode[OperatorCode["i64x2_neg"] = 64961] = "i64x2_neg";
-    OperatorCode[OperatorCode["i64x2_all_true"] = 64963] = "i64x2_all_true";
-    OperatorCode[OperatorCode["i64x2_bitmask"] = 64964] = "i64x2_bitmask";
-    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_s"] = 64967] = "i64x2_extend_low_i32x4_s";
-    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_s"] = 64968] = "i64x2_extend_high_i32x4_s";
-    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_u"] = 64969] = "i64x2_extend_low_i32x4_u";
-    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_u"] = 64970] = "i64x2_extend_high_i32x4_u";
-    OperatorCode[OperatorCode["i64x2_shl"] = 64971] = "i64x2_shl";
-    OperatorCode[OperatorCode["i64x2_shr_s"] = 64972] = "i64x2_shr_s";
-    OperatorCode[OperatorCode["i64x2_shr_u"] = 64973] = "i64x2_shr_u";
-    OperatorCode[OperatorCode["i64x2_add"] = 64974] = "i64x2_add";
-    OperatorCode[OperatorCode["i64x2_sub"] = 64977] = "i64x2_sub";
-    OperatorCode[OperatorCode["i64x2_mul"] = 64981] = "i64x2_mul";
-    OperatorCode[OperatorCode["i64x2_eq"] = 64982] = "i64x2_eq";
-    OperatorCode[OperatorCode["i64x2_ne"] = 64983] = "i64x2_ne";
-    OperatorCode[OperatorCode["i64x2_lt_s"] = 64984] = "i64x2_lt_s";
-    OperatorCode[OperatorCode["i64x2_gt_s"] = 64985] = "i64x2_gt_s";
-    OperatorCode[OperatorCode["i64x2_le_s"] = 64986] = "i64x2_le_s";
-    OperatorCode[OperatorCode["i64x2_ge_s"] = 64987] = "i64x2_ge_s";
-    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_s"] = 64988] = "i64x2_extmul_low_i32x4_s";
-    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_s"] = 64989] = "i64x2_extmul_high_i32x4_s";
-    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_u"] = 64990] = "i64x2_extmul_low_i32x4_u";
-    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_u"] = 64991] = "i64x2_extmul_high_i32x4_u";
-    OperatorCode[OperatorCode["f32x4_abs"] = 64992] = "f32x4_abs";
-    OperatorCode[OperatorCode["f32x4_neg"] = 64993] = "f32x4_neg";
-    OperatorCode[OperatorCode["f32x4_sqrt"] = 64995] = "f32x4_sqrt";
-    OperatorCode[OperatorCode["f32x4_add"] = 64996] = "f32x4_add";
-    OperatorCode[OperatorCode["f32x4_sub"] = 64997] = "f32x4_sub";
-    OperatorCode[OperatorCode["f32x4_mul"] = 64998] = "f32x4_mul";
-    OperatorCode[OperatorCode["f32x4_div"] = 64999] = "f32x4_div";
-    OperatorCode[OperatorCode["f32x4_min"] = 65000] = "f32x4_min";
-    OperatorCode[OperatorCode["f32x4_max"] = 65001] = "f32x4_max";
-    OperatorCode[OperatorCode["f32x4_pmin"] = 65002] = "f32x4_pmin";
-    OperatorCode[OperatorCode["f32x4_pmax"] = 65003] = "f32x4_pmax";
-    OperatorCode[OperatorCode["f64x2_abs"] = 65004] = "f64x2_abs";
-    OperatorCode[OperatorCode["f64x2_neg"] = 65005] = "f64x2_neg";
-    OperatorCode[OperatorCode["f64x2_sqrt"] = 65007] = "f64x2_sqrt";
-    OperatorCode[OperatorCode["f64x2_add"] = 65008] = "f64x2_add";
-    OperatorCode[OperatorCode["f64x2_sub"] = 65009] = "f64x2_sub";
-    OperatorCode[OperatorCode["f64x2_mul"] = 65010] = "f64x2_mul";
-    OperatorCode[OperatorCode["f64x2_div"] = 65011] = "f64x2_div";
-    OperatorCode[OperatorCode["f64x2_min"] = 65012] = "f64x2_min";
-    OperatorCode[OperatorCode["f64x2_max"] = 65013] = "f64x2_max";
-    OperatorCode[OperatorCode["f64x2_pmin"] = 65014] = "f64x2_pmin";
-    OperatorCode[OperatorCode["f64x2_pmax"] = 65015] = "f64x2_pmax";
-    OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_s"] = 65016] = "i32x4_trunc_sat_f32x4_s";
-    OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_u"] = 65017] = "i32x4_trunc_sat_f32x4_u";
-    OperatorCode[OperatorCode["f32x4_convert_i32x4_s"] = 65018] = "f32x4_convert_i32x4_s";
-    OperatorCode[OperatorCode["f32x4_convert_i32x4_u"] = 65019] = "f32x4_convert_i32x4_u";
-    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_s_zero"] = 65020] = "i32x4_trunc_sat_f64x2_s_zero";
-    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_u_zero"] = 65021] = "i32x4_trunc_sat_f64x2_u_zero";
-    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_s"] = 65022] = "f64x2_convert_low_i32x4_s";
-    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_u"] = 65023] = "f64x2_convert_low_i32x4_u";
+    OperatorCode[OperatorCode["v128_load"] = 1036288] = "v128_load";
+    OperatorCode[OperatorCode["i16x8_load8x8_s"] = 1036289] = "i16x8_load8x8_s";
+    OperatorCode[OperatorCode["i16x8_load8x8_u"] = 1036290] = "i16x8_load8x8_u";
+    OperatorCode[OperatorCode["i32x4_load16x4_s"] = 1036291] = "i32x4_load16x4_s";
+    OperatorCode[OperatorCode["i32x4_load16x4_u"] = 1036292] = "i32x4_load16x4_u";
+    OperatorCode[OperatorCode["i64x2_load32x2_s"] = 1036293] = "i64x2_load32x2_s";
+    OperatorCode[OperatorCode["i64x2_load32x2_u"] = 1036294] = "i64x2_load32x2_u";
+    OperatorCode[OperatorCode["v8x16_load_splat"] = 1036295] = "v8x16_load_splat";
+    OperatorCode[OperatorCode["v16x8_load_splat"] = 1036296] = "v16x8_load_splat";
+    OperatorCode[OperatorCode["v32x4_load_splat"] = 1036297] = "v32x4_load_splat";
+    OperatorCode[OperatorCode["v64x2_load_splat"] = 1036298] = "v64x2_load_splat";
+    OperatorCode[OperatorCode["v128_store"] = 1036299] = "v128_store";
+    OperatorCode[OperatorCode["v128_const"] = 1036300] = "v128_const";
+    OperatorCode[OperatorCode["i8x16_shuffle"] = 1036301] = "i8x16_shuffle";
+    OperatorCode[OperatorCode["i8x16_swizzle"] = 1036302] = "i8x16_swizzle";
+    OperatorCode[OperatorCode["i8x16_splat"] = 1036303] = "i8x16_splat";
+    OperatorCode[OperatorCode["i16x8_splat"] = 1036304] = "i16x8_splat";
+    OperatorCode[OperatorCode["i32x4_splat"] = 1036305] = "i32x4_splat";
+    OperatorCode[OperatorCode["i64x2_splat"] = 1036306] = "i64x2_splat";
+    OperatorCode[OperatorCode["f32x4_splat"] = 1036307] = "f32x4_splat";
+    OperatorCode[OperatorCode["f64x2_splat"] = 1036308] = "f64x2_splat";
+    OperatorCode[OperatorCode["i8x16_extract_lane_s"] = 1036309] = "i8x16_extract_lane_s";
+    OperatorCode[OperatorCode["i8x16_extract_lane_u"] = 1036310] = "i8x16_extract_lane_u";
+    OperatorCode[OperatorCode["i8x16_replace_lane"] = 1036311] = "i8x16_replace_lane";
+    OperatorCode[OperatorCode["i16x8_extract_lane_s"] = 1036312] = "i16x8_extract_lane_s";
+    OperatorCode[OperatorCode["i16x8_extract_lane_u"] = 1036313] = "i16x8_extract_lane_u";
+    OperatorCode[OperatorCode["i16x8_replace_lane"] = 1036314] = "i16x8_replace_lane";
+    OperatorCode[OperatorCode["i32x4_extract_lane"] = 1036315] = "i32x4_extract_lane";
+    OperatorCode[OperatorCode["i32x4_replace_lane"] = 1036316] = "i32x4_replace_lane";
+    OperatorCode[OperatorCode["i64x2_extract_lane"] = 1036317] = "i64x2_extract_lane";
+    OperatorCode[OperatorCode["i64x2_replace_lane"] = 1036318] = "i64x2_replace_lane";
+    OperatorCode[OperatorCode["f32x4_extract_lane"] = 1036319] = "f32x4_extract_lane";
+    OperatorCode[OperatorCode["f32x4_replace_lane"] = 1036320] = "f32x4_replace_lane";
+    OperatorCode[OperatorCode["f64x2_extract_lane"] = 1036321] = "f64x2_extract_lane";
+    OperatorCode[OperatorCode["f64x2_replace_lane"] = 1036322] = "f64x2_replace_lane";
+    OperatorCode[OperatorCode["i8x16_eq"] = 1036323] = "i8x16_eq";
+    OperatorCode[OperatorCode["i8x16_ne"] = 1036324] = "i8x16_ne";
+    OperatorCode[OperatorCode["i8x16_lt_s"] = 1036325] = "i8x16_lt_s";
+    OperatorCode[OperatorCode["i8x16_lt_u"] = 1036326] = "i8x16_lt_u";
+    OperatorCode[OperatorCode["i8x16_gt_s"] = 1036327] = "i8x16_gt_s";
+    OperatorCode[OperatorCode["i8x16_gt_u"] = 1036328] = "i8x16_gt_u";
+    OperatorCode[OperatorCode["i8x16_le_s"] = 1036329] = "i8x16_le_s";
+    OperatorCode[OperatorCode["i8x16_le_u"] = 1036330] = "i8x16_le_u";
+    OperatorCode[OperatorCode["i8x16_ge_s"] = 1036331] = "i8x16_ge_s";
+    OperatorCode[OperatorCode["i8x16_ge_u"] = 1036332] = "i8x16_ge_u";
+    OperatorCode[OperatorCode["i16x8_eq"] = 1036333] = "i16x8_eq";
+    OperatorCode[OperatorCode["i16x8_ne"] = 1036334] = "i16x8_ne";
+    OperatorCode[OperatorCode["i16x8_lt_s"] = 1036335] = "i16x8_lt_s";
+    OperatorCode[OperatorCode["i16x8_lt_u"] = 1036336] = "i16x8_lt_u";
+    OperatorCode[OperatorCode["i16x8_gt_s"] = 1036337] = "i16x8_gt_s";
+    OperatorCode[OperatorCode["i16x8_gt_u"] = 1036338] = "i16x8_gt_u";
+    OperatorCode[OperatorCode["i16x8_le_s"] = 1036339] = "i16x8_le_s";
+    OperatorCode[OperatorCode["i16x8_le_u"] = 1036340] = "i16x8_le_u";
+    OperatorCode[OperatorCode["i16x8_ge_s"] = 1036341] = "i16x8_ge_s";
+    OperatorCode[OperatorCode["i16x8_ge_u"] = 1036342] = "i16x8_ge_u";
+    OperatorCode[OperatorCode["i32x4_eq"] = 1036343] = "i32x4_eq";
+    OperatorCode[OperatorCode["i32x4_ne"] = 1036344] = "i32x4_ne";
+    OperatorCode[OperatorCode["i32x4_lt_s"] = 1036345] = "i32x4_lt_s";
+    OperatorCode[OperatorCode["i32x4_lt_u"] = 1036346] = "i32x4_lt_u";
+    OperatorCode[OperatorCode["i32x4_gt_s"] = 1036347] = "i32x4_gt_s";
+    OperatorCode[OperatorCode["i32x4_gt_u"] = 1036348] = "i32x4_gt_u";
+    OperatorCode[OperatorCode["i32x4_le_s"] = 1036349] = "i32x4_le_s";
+    OperatorCode[OperatorCode["i32x4_le_u"] = 1036350] = "i32x4_le_u";
+    OperatorCode[OperatorCode["i32x4_ge_s"] = 1036351] = "i32x4_ge_s";
+    OperatorCode[OperatorCode["i32x4_ge_u"] = 1036352] = "i32x4_ge_u";
+    OperatorCode[OperatorCode["f32x4_eq"] = 1036353] = "f32x4_eq";
+    OperatorCode[OperatorCode["f32x4_ne"] = 1036354] = "f32x4_ne";
+    OperatorCode[OperatorCode["f32x4_lt"] = 1036355] = "f32x4_lt";
+    OperatorCode[OperatorCode["f32x4_gt"] = 1036356] = "f32x4_gt";
+    OperatorCode[OperatorCode["f32x4_le"] = 1036357] = "f32x4_le";
+    OperatorCode[OperatorCode["f32x4_ge"] = 1036358] = "f32x4_ge";
+    OperatorCode[OperatorCode["f64x2_eq"] = 1036359] = "f64x2_eq";
+    OperatorCode[OperatorCode["f64x2_ne"] = 1036360] = "f64x2_ne";
+    OperatorCode[OperatorCode["f64x2_lt"] = 1036361] = "f64x2_lt";
+    OperatorCode[OperatorCode["f64x2_gt"] = 1036362] = "f64x2_gt";
+    OperatorCode[OperatorCode["f64x2_le"] = 1036363] = "f64x2_le";
+    OperatorCode[OperatorCode["f64x2_ge"] = 1036364] = "f64x2_ge";
+    OperatorCode[OperatorCode["v128_not"] = 1036365] = "v128_not";
+    OperatorCode[OperatorCode["v128_and"] = 1036366] = "v128_and";
+    OperatorCode[OperatorCode["v128_andnot"] = 1036367] = "v128_andnot";
+    OperatorCode[OperatorCode["v128_or"] = 1036368] = "v128_or";
+    OperatorCode[OperatorCode["v128_xor"] = 1036369] = "v128_xor";
+    OperatorCode[OperatorCode["v128_bitselect"] = 1036370] = "v128_bitselect";
+    OperatorCode[OperatorCode["v128_any_true"] = 1036371] = "v128_any_true";
+    OperatorCode[OperatorCode["v128_load8_lane"] = 1036372] = "v128_load8_lane";
+    OperatorCode[OperatorCode["v128_load16_lane"] = 1036373] = "v128_load16_lane";
+    OperatorCode[OperatorCode["v128_load32_lane"] = 1036374] = "v128_load32_lane";
+    OperatorCode[OperatorCode["v128_load64_lane"] = 1036375] = "v128_load64_lane";
+    OperatorCode[OperatorCode["v128_store8_lane"] = 1036376] = "v128_store8_lane";
+    OperatorCode[OperatorCode["v128_store16_lane"] = 1036377] = "v128_store16_lane";
+    OperatorCode[OperatorCode["v128_store32_lane"] = 1036378] = "v128_store32_lane";
+    OperatorCode[OperatorCode["v128_store64_lane"] = 1036379] = "v128_store64_lane";
+    OperatorCode[OperatorCode["v128_load32_zero"] = 1036380] = "v128_load32_zero";
+    OperatorCode[OperatorCode["v128_load64_zero"] = 1036381] = "v128_load64_zero";
+    OperatorCode[OperatorCode["f32x4_demote_f64x2_zero"] = 1036382] = "f32x4_demote_f64x2_zero";
+    OperatorCode[OperatorCode["f64x2_promote_low_f32x4"] = 1036383] = "f64x2_promote_low_f32x4";
+    OperatorCode[OperatorCode["i8x16_abs"] = 1036384] = "i8x16_abs";
+    OperatorCode[OperatorCode["i8x16_neg"] = 1036385] = "i8x16_neg";
+    OperatorCode[OperatorCode["i8x16_popcnt"] = 1036386] = "i8x16_popcnt";
+    OperatorCode[OperatorCode["i8x16_all_true"] = 1036387] = "i8x16_all_true";
+    OperatorCode[OperatorCode["i8x16_bitmask"] = 1036388] = "i8x16_bitmask";
+    OperatorCode[OperatorCode["i8x16_narrow_i16x8_s"] = 1036389] = "i8x16_narrow_i16x8_s";
+    OperatorCode[OperatorCode["i8x16_narrow_i16x8_u"] = 1036390] = "i8x16_narrow_i16x8_u";
+    OperatorCode[OperatorCode["f32x4_ceil"] = 1036391] = "f32x4_ceil";
+    OperatorCode[OperatorCode["f32x4_floor"] = 1036392] = "f32x4_floor";
+    OperatorCode[OperatorCode["f32x4_trunc"] = 1036393] = "f32x4_trunc";
+    OperatorCode[OperatorCode["f32x4_nearest"] = 1036394] = "f32x4_nearest";
+    OperatorCode[OperatorCode["i8x16_shl"] = 1036395] = "i8x16_shl";
+    OperatorCode[OperatorCode["i8x16_shr_s"] = 1036396] = "i8x16_shr_s";
+    OperatorCode[OperatorCode["i8x16_shr_u"] = 1036397] = "i8x16_shr_u";
+    OperatorCode[OperatorCode["i8x16_add"] = 1036398] = "i8x16_add";
+    OperatorCode[OperatorCode["i8x16_add_sat_s"] = 1036399] = "i8x16_add_sat_s";
+    OperatorCode[OperatorCode["i8x16_add_sat_u"] = 1036400] = "i8x16_add_sat_u";
+    OperatorCode[OperatorCode["i8x16_sub"] = 1036401] = "i8x16_sub";
+    OperatorCode[OperatorCode["i8x16_sub_sat_s"] = 1036402] = "i8x16_sub_sat_s";
+    OperatorCode[OperatorCode["i8x16_sub_sat_u"] = 1036403] = "i8x16_sub_sat_u";
+    OperatorCode[OperatorCode["f64x2_ceil"] = 1036404] = "f64x2_ceil";
+    OperatorCode[OperatorCode["f64x2_floor"] = 1036405] = "f64x2_floor";
+    OperatorCode[OperatorCode["i8x16_min_s"] = 1036406] = "i8x16_min_s";
+    OperatorCode[OperatorCode["i8x16_min_u"] = 1036407] = "i8x16_min_u";
+    OperatorCode[OperatorCode["i8x16_max_s"] = 1036408] = "i8x16_max_s";
+    OperatorCode[OperatorCode["i8x16_max_u"] = 1036409] = "i8x16_max_u";
+    OperatorCode[OperatorCode["f64x2_trunc"] = 1036410] = "f64x2_trunc";
+    OperatorCode[OperatorCode["i8x16_avgr_u"] = 1036411] = "i8x16_avgr_u";
+    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_s"] = 1036412] = "i16x8_extadd_pairwise_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_u"] = 1036413] = "i16x8_extadd_pairwise_i8x16_u";
+    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_s"] = 1036414] = "i32x4_extadd_pairwise_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_u"] = 1036415] = "i32x4_extadd_pairwise_i16x8_u";
+    OperatorCode[OperatorCode["i16x8_abs"] = 1036416] = "i16x8_abs";
+    OperatorCode[OperatorCode["i16x8_neg"] = 1036417] = "i16x8_neg";
+    OperatorCode[OperatorCode["i16x8_q15mulr_sat_s"] = 1036418] = "i16x8_q15mulr_sat_s";
+    OperatorCode[OperatorCode["i16x8_all_true"] = 1036419] = "i16x8_all_true";
+    OperatorCode[OperatorCode["i16x8_bitmask"] = 1036420] = "i16x8_bitmask";
+    OperatorCode[OperatorCode["i16x8_narrow_i32x4_s"] = 1036421] = "i16x8_narrow_i32x4_s";
+    OperatorCode[OperatorCode["i16x8_narrow_i32x4_u"] = 1036422] = "i16x8_narrow_i32x4_u";
+    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_s"] = 1036423] = "i16x8_extend_low_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_s"] = 1036424] = "i16x8_extend_high_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_u"] = 1036425] = "i16x8_extend_low_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_u"] = 1036426] = "i16x8_extend_high_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_shl"] = 1036427] = "i16x8_shl";
+    OperatorCode[OperatorCode["i16x8_shr_s"] = 1036428] = "i16x8_shr_s";
+    OperatorCode[OperatorCode["i16x8_shr_u"] = 1036429] = "i16x8_shr_u";
+    OperatorCode[OperatorCode["i16x8_add"] = 1036430] = "i16x8_add";
+    OperatorCode[OperatorCode["i16x8_add_sat_s"] = 1036431] = "i16x8_add_sat_s";
+    OperatorCode[OperatorCode["i16x8_add_sat_u"] = 1036432] = "i16x8_add_sat_u";
+    OperatorCode[OperatorCode["i16x8_sub"] = 1036433] = "i16x8_sub";
+    OperatorCode[OperatorCode["i16x8_sub_sat_s"] = 1036434] = "i16x8_sub_sat_s";
+    OperatorCode[OperatorCode["i16x8_sub_sat_u"] = 1036435] = "i16x8_sub_sat_u";
+    OperatorCode[OperatorCode["f64x2_nearest"] = 1036436] = "f64x2_nearest";
+    OperatorCode[OperatorCode["i16x8_mul"] = 1036437] = "i16x8_mul";
+    OperatorCode[OperatorCode["i16x8_min_s"] = 1036438] = "i16x8_min_s";
+    OperatorCode[OperatorCode["i16x8_min_u"] = 1036439] = "i16x8_min_u";
+    OperatorCode[OperatorCode["i16x8_max_s"] = 1036440] = "i16x8_max_s";
+    OperatorCode[OperatorCode["i16x8_max_u"] = 1036441] = "i16x8_max_u";
+    OperatorCode[OperatorCode["i16x8_avgr_u"] = 1036443] = "i16x8_avgr_u";
+    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_s"] = 1036444] = "i16x8_extmul_low_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_s"] = 1036445] = "i16x8_extmul_high_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_u"] = 1036446] = "i16x8_extmul_low_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_u"] = 1036447] = "i16x8_extmul_high_i8x16_u";
+    OperatorCode[OperatorCode["i32x4_abs"] = 1036448] = "i32x4_abs";
+    OperatorCode[OperatorCode["i32x4_neg"] = 1036449] = "i32x4_neg";
+    OperatorCode[OperatorCode["i32x4_all_true"] = 1036451] = "i32x4_all_true";
+    OperatorCode[OperatorCode["i32x4_bitmask"] = 1036452] = "i32x4_bitmask";
+    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_s"] = 1036455] = "i32x4_extend_low_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_s"] = 1036456] = "i32x4_extend_high_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_u"] = 1036457] = "i32x4_extend_low_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_u"] = 1036458] = "i32x4_extend_high_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_shl"] = 1036459] = "i32x4_shl";
+    OperatorCode[OperatorCode["i32x4_shr_s"] = 1036460] = "i32x4_shr_s";
+    OperatorCode[OperatorCode["i32x4_shr_u"] = 1036461] = "i32x4_shr_u";
+    OperatorCode[OperatorCode["i32x4_add"] = 1036462] = "i32x4_add";
+    OperatorCode[OperatorCode["i32x4_sub"] = 1036465] = "i32x4_sub";
+    OperatorCode[OperatorCode["i32x4_mul"] = 1036469] = "i32x4_mul";
+    OperatorCode[OperatorCode["i32x4_min_s"] = 1036470] = "i32x4_min_s";
+    OperatorCode[OperatorCode["i32x4_min_u"] = 1036471] = "i32x4_min_u";
+    OperatorCode[OperatorCode["i32x4_max_s"] = 1036472] = "i32x4_max_s";
+    OperatorCode[OperatorCode["i32x4_max_u"] = 1036473] = "i32x4_max_u";
+    OperatorCode[OperatorCode["i32x4_dot_i16x8_s"] = 1036474] = "i32x4_dot_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_s"] = 1036476] = "i32x4_extmul_low_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_s"] = 1036477] = "i32x4_extmul_high_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_u"] = 1036478] = "i32x4_extmul_low_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_u"] = 1036479] = "i32x4_extmul_high_i16x8_u";
+    OperatorCode[OperatorCode["i64x2_abs"] = 1036480] = "i64x2_abs";
+    OperatorCode[OperatorCode["i64x2_neg"] = 1036481] = "i64x2_neg";
+    OperatorCode[OperatorCode["i64x2_all_true"] = 1036483] = "i64x2_all_true";
+    OperatorCode[OperatorCode["i64x2_bitmask"] = 1036484] = "i64x2_bitmask";
+    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_s"] = 1036487] = "i64x2_extend_low_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_s"] = 1036488] = "i64x2_extend_high_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_u"] = 1036489] = "i64x2_extend_low_i32x4_u";
+    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_u"] = 1036490] = "i64x2_extend_high_i32x4_u";
+    OperatorCode[OperatorCode["i64x2_shl"] = 1036491] = "i64x2_shl";
+    OperatorCode[OperatorCode["i64x2_shr_s"] = 1036492] = "i64x2_shr_s";
+    OperatorCode[OperatorCode["i64x2_shr_u"] = 1036493] = "i64x2_shr_u";
+    OperatorCode[OperatorCode["i64x2_add"] = 1036494] = "i64x2_add";
+    OperatorCode[OperatorCode["i64x2_sub"] = 1036497] = "i64x2_sub";
+    OperatorCode[OperatorCode["i64x2_mul"] = 1036501] = "i64x2_mul";
+    OperatorCode[OperatorCode["i64x2_eq"] = 1036502] = "i64x2_eq";
+    OperatorCode[OperatorCode["i64x2_ne"] = 1036503] = "i64x2_ne";
+    OperatorCode[OperatorCode["i64x2_lt_s"] = 1036504] = "i64x2_lt_s";
+    OperatorCode[OperatorCode["i64x2_gt_s"] = 1036505] = "i64x2_gt_s";
+    OperatorCode[OperatorCode["i64x2_le_s"] = 1036506] = "i64x2_le_s";
+    OperatorCode[OperatorCode["i64x2_ge_s"] = 1036507] = "i64x2_ge_s";
+    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_s"] = 1036508] = "i64x2_extmul_low_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_s"] = 1036509] = "i64x2_extmul_high_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_u"] = 1036510] = "i64x2_extmul_low_i32x4_u";
+    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_u"] = 1036511] = "i64x2_extmul_high_i32x4_u";
+    OperatorCode[OperatorCode["f32x4_abs"] = 1036512] = "f32x4_abs";
+    OperatorCode[OperatorCode["f32x4_neg"] = 1036513] = "f32x4_neg";
+    OperatorCode[OperatorCode["f32x4_sqrt"] = 1036515] = "f32x4_sqrt";
+    OperatorCode[OperatorCode["f32x4_add"] = 1036516] = "f32x4_add";
+    OperatorCode[OperatorCode["f32x4_sub"] = 1036517] = "f32x4_sub";
+    OperatorCode[OperatorCode["f32x4_mul"] = 1036518] = "f32x4_mul";
+    OperatorCode[OperatorCode["f32x4_div"] = 1036519] = "f32x4_div";
+    OperatorCode[OperatorCode["f32x4_min"] = 1036520] = "f32x4_min";
+    OperatorCode[OperatorCode["f32x4_max"] = 1036521] = "f32x4_max";
+    OperatorCode[OperatorCode["f32x4_pmin"] = 1036522] = "f32x4_pmin";
+    OperatorCode[OperatorCode["f32x4_pmax"] = 1036523] = "f32x4_pmax";
+    OperatorCode[OperatorCode["f64x2_abs"] = 1036524] = "f64x2_abs";
+    OperatorCode[OperatorCode["f64x2_neg"] = 1036525] = "f64x2_neg";
+    OperatorCode[OperatorCode["f64x2_sqrt"] = 1036527] = "f64x2_sqrt";
+    OperatorCode[OperatorCode["f64x2_add"] = 1036528] = "f64x2_add";
+    OperatorCode[OperatorCode["f64x2_sub"] = 1036529] = "f64x2_sub";
+    OperatorCode[OperatorCode["f64x2_mul"] = 1036530] = "f64x2_mul";
+    OperatorCode[OperatorCode["f64x2_div"] = 1036531] = "f64x2_div";
+    OperatorCode[OperatorCode["f64x2_min"] = 1036532] = "f64x2_min";
+    OperatorCode[OperatorCode["f64x2_max"] = 1036533] = "f64x2_max";
+    OperatorCode[OperatorCode["f64x2_pmin"] = 1036534] = "f64x2_pmin";
+    OperatorCode[OperatorCode["f64x2_pmax"] = 1036535] = "f64x2_pmax";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_s"] = 1036536] = "i32x4_trunc_sat_f32x4_s";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_u"] = 1036537] = "i32x4_trunc_sat_f32x4_u";
+    OperatorCode[OperatorCode["f32x4_convert_i32x4_s"] = 1036538] = "f32x4_convert_i32x4_s";
+    OperatorCode[OperatorCode["f32x4_convert_i32x4_u"] = 1036539] = "f32x4_convert_i32x4_u";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_s_zero"] = 1036540] = "i32x4_trunc_sat_f64x2_s_zero";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_u_zero"] = 1036541] = "i32x4_trunc_sat_f64x2_u_zero";
+    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_s"] = 1036542] = "f64x2_convert_low_i32x4_s";
+    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_u"] = 1036543] = "f64x2_convert_low_i32x4_u";
+    
+    OperatorCode[OperatorCode["i8x16_relaxed_swizzle"] = 1036544] = "i8x16_relaxed_swizzle";
+    OperatorCode[OperatorCode["i32x4_relaxed_trunc_f32x4_s"] = 1036545] = "i32x4_relaxed_trunc_f32x4_s";
+    OperatorCode[OperatorCode["i32x4_relaxed_trunc_f32x4_u"] = 1036546] = "i32x4_relaxed_trunc_f32x4_u";
+    OperatorCode[OperatorCode["i32x4_relaxed_trunc_f64x2_s_zero"] = 1036547] = "i32x4_relaxed_trunc_f64x2_s_zero";
+    OperatorCode[OperatorCode["i32x4_relaxed_trunc_f64x2_u_zero"] = 1036548] = "i32x4_relaxed_trunc_f64x2_u_zero";
+    OperatorCode[OperatorCode["f32x4_relaxed_madd"] = 1036549] = "f32x4_relaxed_madd";
+    OperatorCode[OperatorCode["f32x4_relaxed_nmadd"] = 1036550] = "f32x4_relaxed_nmadd";
+    OperatorCode[OperatorCode["f64x2_relaxed_madd"] = 1036551] = "f64x2_relaxed_madd";
+    OperatorCode[OperatorCode["f64x2_relaxed_nmadd"] = 1036552] = "f64x2_relaxed_nmadd";
+    OperatorCode[OperatorCode["i8x16_relaxed_laneselect"] = 1036553] = "i8x16_relaxed_laneselect";
+    OperatorCode[OperatorCode["i16x8_relaxed_laneselect"] = 1036554] = "i16x8_relaxed_laneselect";
+    OperatorCode[OperatorCode["i32x4_relaxed_laneselect"] = 1036555] = "i32x4_relaxed_laneselect";
+    OperatorCode[OperatorCode["i64x2_relaxed_laneselect"] = 1036556] = "i64x2_relaxed_laneselect";
+    OperatorCode[OperatorCode["f32x4_relaxed_min"] = 1036557] = "f32x4_relaxed_min";
+    OperatorCode[OperatorCode["f32x4_relaxed_max"] = 1036558] = "f32x4_relaxed_max";
+    OperatorCode[OperatorCode["f64x2_relaxed_min"] = 1036559] = "f64x2_relaxed_min";
+    OperatorCode[OperatorCode["f64x2_relaxed_max"] = 1036560] = "f64x2_relaxed_max";
+    OperatorCode[OperatorCode["i16x8_relaxed_q15mulr_s"] = 1036561] = "i16x8_relaxed_q15mulr_s";
+    OperatorCode[OperatorCode["i16x8_dot_i8x16_i7x16_s"] = 1036562] = "i16x8_dot_i8x16_i7x16_s";
+    OperatorCode[OperatorCode["i32x4_dot_i8x16_i7x16_add_s"] = 1036563] = "i32x4_dot_i8x16_i7x16_add_s";
     
     OperatorCode[OperatorCode["struct_new_with_rtt"] = 64257] = "struct_new_with_rtt";
     OperatorCode[OperatorCode["struct_new_default_with_rtt"] = 64258] = "struct_new_default_with_rtt";
@@ -1182,8 +1203,28 @@ exports.OperatorCodeNames = [
     "i32x4.trunc_sat_f64x2_u_zero",
     "f64x2.convert_low_i32x4_s",
     "f64x2.convert_low_i32x4_u",
+    "i8x16.relaxed_swizzle",
+    "i32x4.relaxed_trunc_f32x4_s",
+    "i32x4.relaxed_trunc_f32x4_u",
+    "i32x4.relaxed_trunc_f64x2_s_zero",
+    "i32x4.relaxed_trunc_f64x2_u_zero",
+    "f32x4.relaxed_madd",
+    "f32x4.relaxed_nmadd",
+    "f64x2.relaxed_madd",
+    "f64x2.relaxed_nmadd",
+    "i8x16.relaxed_laneselect",
+    "i16x8.relaxed_laneselect",
+    "i32x4.relaxed_laneselect",
+    "i64x2.relaxed_laneselect",
+    "f32x4.relaxed_min",
+    "f32x4.relaxed_max",
+    "f64x2.relaxed_min",
+    "f64x2.relaxed_max",
+    "i16x8.relaxed_q15mulr_s",
+    "i16x8.dot_i8x16_i7x16_s",
+    "i32x4.dot_i8x16_i7x16_add_s",
 ].forEach(function (s, i) {
-    exports.OperatorCodeNames[0xfd00 | i] = s;
+    exports.OperatorCodeNames[0xfd000 | i] = s;
 });
 [
     "memory.atomic.notify",
@@ -2702,252 +2743,273 @@ var BinaryReader =  (function () {
         if (!this.hasVarIntBytes()) {
             return false;
         }
-        var code = this.readVarUint32() | 0xfd00;
+        var code = this.readVarUint32() | 0xfd000;
         var memoryAddress;
         var literal;
         var lineIndex;
         var lines;
         switch (code) {
-            case 64768 :
-            case 64769 :
-            case 64770 :
-            case 64771 :
-            case 64772 :
-            case 64773 :
-            case 64774 :
-            case 64775 :
-            case 64776 :
-            case 64777 :
-            case 64778 :
-            case 64779 :
-            case 64860 :
-            case 64861 :
+            case 1036288 :
+            case 1036289 :
+            case 1036290 :
+            case 1036291 :
+            case 1036292 :
+            case 1036293 :
+            case 1036294 :
+            case 1036295 :
+            case 1036296 :
+            case 1036297 :
+            case 1036298 :
+            case 1036299 :
+            case 1036380 :
+            case 1036381 :
                 memoryAddress = this.readMemoryImmediate();
                 break;
-            case 64780 :
+            case 1036300 :
                 literal = this.readBytes(16);
                 break;
-            case 64781 :
+            case 1036301 :
                 lines = new Uint8Array(16);
                 for (var i = 0; i < lines.length; i++) {
                     lines[i] = this.readUint8();
                 }
                 break;
-            case 64789 :
-            case 64790 :
-            case 64791 :
-            case 64792 :
-            case 64793 :
-            case 64794 :
-            case 64795 :
-            case 64796 :
-            case 64797 :
-            case 64798 :
-            case 64799 :
-            case 64800 :
-            case 64801 :
-            case 64802 :
+            case 1036309 :
+            case 1036310 :
+            case 1036311 :
+            case 1036312 :
+            case 1036313 :
+            case 1036314 :
+            case 1036315 :
+            case 1036316 :
+            case 1036317 :
+            case 1036318 :
+            case 1036319 :
+            case 1036320 :
+            case 1036321 :
+            case 1036322 :
                 lineIndex = this.readUint8();
                 break;
-            case 64782 :
-            case 64783 :
-            case 64784 :
-            case 64785 :
-            case 64786 :
-            case 64787 :
-            case 64788 :
-            case 64803 :
-            case 64804 :
-            case 64805 :
-            case 64806 :
-            case 64807 :
-            case 64808 :
-            case 64809 :
-            case 64810 :
-            case 64811 :
-            case 64812 :
-            case 64813 :
-            case 64814 :
-            case 64815 :
-            case 64816 :
-            case 64817 :
-            case 64818 :
-            case 64819 :
-            case 64820 :
-            case 64821 :
-            case 64822 :
-            case 64823 :
-            case 64824 :
-            case 64825 :
-            case 64826 :
-            case 64827 :
-            case 64828 :
-            case 64829 :
-            case 64830 :
-            case 64831 :
-            case 64832 :
-            case 64833 :
-            case 64834 :
-            case 64835 :
-            case 64836 :
-            case 64837 :
-            case 64838 :
-            case 64839 :
-            case 64840 :
-            case 64841 :
-            case 64842 :
-            case 64843 :
-            case 64844 :
-            case 64845 :
-            case 64846 :
-            case 64847 :
-            case 64848 :
-            case 64849 :
-            case 64850 :
-            case 64851 :
-            case 64862 :
-            case 64863 :
-            case 64864 :
-            case 64865 :
-            case 64866 :
-            case 64867 :
-            case 64868 :
-            case 64869 :
-            case 64870 :
-            case 64871 :
-            case 64872 :
-            case 64873 :
-            case 64874 :
-            case 64875 :
-            case 64876 :
-            case 64877 :
-            case 64878 :
-            case 64879 :
-            case 64880 :
-            case 64881 :
-            case 64882 :
-            case 64883 :
-            case 64884 :
-            case 64885 :
-            case 64886 :
-            case 64887 :
-            case 64888 :
-            case 64889 :
-            case 64890 :
-            case 64891 :
-            case 64892 :
-            case 64893 :
-            case 64894 :
-            case 64895 :
-            case 64896 :
-            case 64897 :
-            case 64898 :
-            case 64899 :
-            case 64900 :
-            case 64901 :
-            case 64902 :
-            case 64903 :
-            case 64904 :
-            case 64905 :
-            case 64906 :
-            case 64907 :
-            case 64908 :
-            case 64909 :
-            case 64910 :
-            case 64911 :
-            case 64912 :
-            case 64913 :
-            case 64914 :
-            case 64915 :
-            case 64916 :
-            case 64917 :
-            case 64918 :
-            case 64919 :
-            case 64920 :
-            case 64921 :
-            case 64923 :
-            case 64924 :
-            case 64925 :
-            case 64926 :
-            case 64927 :
-            case 64928 :
-            case 64929 :
-            case 64931 :
-            case 64932 :
-            case 64935 :
-            case 64936 :
-            case 64937 :
-            case 64938 :
-            case 64939 :
-            case 64940 :
-            case 64941 :
-            case 64942 :
-            case 64945 :
-            case 64949 :
-            case 64950 :
-            case 64951 :
-            case 64952 :
-            case 64953 :
-            case 64954 :
-            case 64956 :
-            case 64957 :
-            case 64958 :
-            case 64959 :
-            case 64960 :
-            case 64961 :
-            case 64963 :
-            case 64964 :
-            case 64967 :
-            case 64968 :
-            case 64969 :
-            case 64970 :
-            case 64971 :
-            case 64972 :
-            case 64973 :
-            case 64974 :
-            case 64977 :
-            case 64981 :
-            case 64982 :
-            case 64983 :
-            case 64984 :
-            case 64985 :
-            case 64986 :
-            case 64987 :
-            case 64988 :
-            case 64989 :
-            case 64988 :
-            case 64989 :
-            case 64992 :
-            case 64992 :
-            case 64993 :
-            case 64995 :
-            case 64996 :
-            case 64997 :
-            case 64998 :
-            case 64999 :
-            case 65000 :
-            case 65001 :
-            case 65002 :
-            case 65003 :
-            case 65004 :
-            case 65005 :
-            case 65007 :
-            case 65008 :
-            case 65009 :
-            case 65010 :
-            case 65011 :
-            case 65012 :
-            case 65013 :
-            case 65014 :
-            case 65015 :
-            case 65016 :
-            case 65017 :
-            case 65018 :
-            case 65019 :
-            case 65020 :
-            case 65021 :
-            case 65022 :
-            case 65023 :
+            case 1036302 :
+            case 1036303 :
+            case 1036304 :
+            case 1036305 :
+            case 1036306 :
+            case 1036307 :
+            case 1036308 :
+            case 1036323 :
+            case 1036324 :
+            case 1036325 :
+            case 1036326 :
+            case 1036327 :
+            case 1036328 :
+            case 1036329 :
+            case 1036330 :
+            case 1036331 :
+            case 1036332 :
+            case 1036333 :
+            case 1036334 :
+            case 1036335 :
+            case 1036336 :
+            case 1036337 :
+            case 1036338 :
+            case 1036339 :
+            case 1036340 :
+            case 1036341 :
+            case 1036342 :
+            case 1036343 :
+            case 1036344 :
+            case 1036345 :
+            case 1036346 :
+            case 1036347 :
+            case 1036348 :
+            case 1036349 :
+            case 1036350 :
+            case 1036351 :
+            case 1036352 :
+            case 1036353 :
+            case 1036354 :
+            case 1036355 :
+            case 1036356 :
+            case 1036357 :
+            case 1036358 :
+            case 1036359 :
+            case 1036360 :
+            case 1036361 :
+            case 1036362 :
+            case 1036363 :
+            case 1036364 :
+            case 1036365 :
+            case 1036366 :
+            case 1036367 :
+            case 1036368 :
+            case 1036369 :
+            case 1036370 :
+            case 1036371 :
+            case 1036382 :
+            case 1036383 :
+            case 1036384 :
+            case 1036385 :
+            case 1036386 :
+            case 1036387 :
+            case 1036388 :
+            case 1036389 :
+            case 1036390 :
+            case 1036391 :
+            case 1036392 :
+            case 1036393 :
+            case 1036394 :
+            case 1036395 :
+            case 1036396 :
+            case 1036397 :
+            case 1036398 :
+            case 1036399 :
+            case 1036400 :
+            case 1036401 :
+            case 1036402 :
+            case 1036403 :
+            case 1036404 :
+            case 1036405 :
+            case 1036406 :
+            case 1036407 :
+            case 1036408 :
+            case 1036409 :
+            case 1036410 :
+            case 1036411 :
+            case 1036412 :
+            case 1036413 :
+            case 1036414 :
+            case 1036415 :
+            case 1036416 :
+            case 1036417 :
+            case 1036418 :
+            case 1036419 :
+            case 1036420 :
+            case 1036421 :
+            case 1036422 :
+            case 1036423 :
+            case 1036424 :
+            case 1036425 :
+            case 1036426 :
+            case 1036427 :
+            case 1036428 :
+            case 1036429 :
+            case 1036430 :
+            case 1036431 :
+            case 1036432 :
+            case 1036433 :
+            case 1036434 :
+            case 1036435 :
+            case 1036436 :
+            case 1036437 :
+            case 1036438 :
+            case 1036439 :
+            case 1036440 :
+            case 1036441 :
+            case 1036443 :
+            case 1036444 :
+            case 1036445 :
+            case 1036446 :
+            case 1036447 :
+            case 1036448 :
+            case 1036449 :
+            case 1036451 :
+            case 1036452 :
+            case 1036455 :
+            case 1036456 :
+            case 1036457 :
+            case 1036458 :
+            case 1036459 :
+            case 1036460 :
+            case 1036461 :
+            case 1036462 :
+            case 1036465 :
+            case 1036469 :
+            case 1036470 :
+            case 1036471 :
+            case 1036472 :
+            case 1036473 :
+            case 1036474 :
+            case 1036476 :
+            case 1036477 :
+            case 1036478 :
+            case 1036479 :
+            case 1036480 :
+            case 1036481 :
+            case 1036483 :
+            case 1036484 :
+            case 1036487 :
+            case 1036488 :
+            case 1036489 :
+            case 1036490 :
+            case 1036491 :
+            case 1036492 :
+            case 1036493 :
+            case 1036494 :
+            case 1036497 :
+            case 1036501 :
+            case 1036502 :
+            case 1036503 :
+            case 1036504 :
+            case 1036505 :
+            case 1036506 :
+            case 1036507 :
+            case 1036508 :
+            case 1036509 :
+            case 1036508 :
+            case 1036509 :
+            case 1036512 :
+            case 1036512 :
+            case 1036513 :
+            case 1036515 :
+            case 1036516 :
+            case 1036517 :
+            case 1036518 :
+            case 1036519 :
+            case 1036520 :
+            case 1036521 :
+            case 1036522 :
+            case 1036523 :
+            case 1036524 :
+            case 1036525 :
+            case 1036527 :
+            case 1036528 :
+            case 1036529 :
+            case 1036530 :
+            case 1036531 :
+            case 1036532 :
+            case 1036533 :
+            case 1036534 :
+            case 1036535 :
+            case 1036536 :
+            case 1036537 :
+            case 1036538 :
+            case 1036539 :
+            case 1036540 :
+            case 1036541 :
+            case 1036542 :
+            case 1036543 :
+                break;
+            case 1036544 :
+            case 1036545 :
+            case 1036546 :
+            case 1036547 :
+            case 1036548 :
+            case 1036549 :
+            case 1036550 :
+            case 1036551 :
+            case 1036552 :
+            case 1036553 :
+            case 1036554 :
+            case 1036555 :
+            case 1036556 :
+            case 1036557 :
+            case 1036558 :
+            case 1036559 :
+            case 1036560 :
+            case 1036561 :
+            case 1036562 :
+            case 1036563 :
                 break;
             default:
                 this.error = new Error("Unknown operator: 0x".concat(code.toString(16).padStart(4, "0")));

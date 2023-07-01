@@ -90,18 +90,18 @@ function formatI8Array(bytes, count) {
 function memoryAddressToString(address, code) {
     var defaultAlignFlags;
     switch (code) {
-        case 64768 :
-        case 64769 :
-        case 64770 :
-        case 64771 :
-        case 64772 :
-        case 64773 :
-        case 64774 :
-        case 64775 :
-        case 64776 :
-        case 64777 :
-        case 64778 :
-        case 64779 :
+        case 1036288 :
+        case 1036289 :
+        case 1036290 :
+        case 1036291 :
+        case 1036292 :
+        case 1036293 :
+        case 1036294 :
+        case 1036295 :
+        case 1036296 :
+        case 1036297 :
+        case 1036298 :
+        case 1036299 :
             defaultAlignFlags = 4;
             break;
         case 41 :
@@ -118,7 +118,7 @@ function memoryAddressToString(address, code) {
         case 65083 :
         case 65090 :
         case 65097 :
-        case 64861 :
+        case 1036381 :
             defaultAlignFlags = 3;
             break;
         case 40 :
@@ -148,7 +148,7 @@ function memoryAddressToString(address, code) {
         case 65095 :
         case 65096 :
         case 65102 :
-        case 64860 :
+        case 1036380 :
             defaultAlignFlags = 2;
             break;
         case 46 :
@@ -832,20 +832,20 @@ var WasmDisassembler =  (function () {
             case 65100 :
             case 65101 :
             case 65102 :
-            case 64768 :
-            case 64769 :
-            case 64770 :
-            case 64771 :
-            case 64772 :
-            case 64773 :
-            case 64774 :
-            case 64775 :
-            case 64776 :
-            case 64777 :
-            case 64778 :
-            case 64779 :
-            case 64860 :
-            case 64861 :
+            case 1036288 :
+            case 1036289 :
+            case 1036290 :
+            case 1036291 :
+            case 1036292 :
+            case 1036293 :
+            case 1036294 :
+            case 1036295 :
+            case 1036296 :
+            case 1036297 :
+            case 1036298 :
+            case 1036299 :
+            case 1036380 :
+            case 1036381 :
                 var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
                 if (memoryAddress !== null) {
                     this.appendBuffer(" ");
@@ -867,26 +867,26 @@ var WasmDisassembler =  (function () {
             case 68 :
                 this.appendBuffer(" ".concat(formatFloat64(operator.literal)));
                 break;
-            case 64780 :
+            case 1036300 :
                 this.appendBuffer(" i32x4 ".concat(formatI32Array(operator.literal, 4)));
                 break;
-            case 64781 :
+            case 1036301 :
                 this.appendBuffer(" ".concat(formatI8Array(operator.lines, 16)));
                 break;
-            case 64789 :
-            case 64790 :
-            case 64791 :
-            case 64792 :
-            case 64793 :
-            case 64794 :
-            case 64795 :
-            case 64796 :
-            case 64799 :
-            case 64800 :
-            case 64797 :
-            case 64798 :
-            case 64801 :
-            case 64802 :
+            case 1036309 :
+            case 1036310 :
+            case 1036311 :
+            case 1036312 :
+            case 1036313 :
+            case 1036314 :
+            case 1036315 :
+            case 1036316 :
+            case 1036319 :
+            case 1036320 :
+            case 1036317 :
+            case 1036318 :
+            case 1036321 :
+            case 1036322 :
                 this.appendBuffer(" ".concat(operator.lineIndex));
                 break;
             case 64520 :
