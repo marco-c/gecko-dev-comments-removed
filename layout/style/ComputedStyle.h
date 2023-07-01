@@ -126,6 +126,11 @@ class ComputedStyle {
   }
 
   
+  bool HasAuthorSpecifiedTextColor() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
+  }
+
+  
   
   
   

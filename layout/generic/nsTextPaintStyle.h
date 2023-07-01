@@ -55,8 +55,10 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   void GetHighlightColors(nscolor* aForeColor, nscolor* aBackColor);
   
   
-  bool GetCustomHighlightColors(const nsAtom* aHighlightName,
-                                nscolor* aForeColor, nscolor* aBackColor);
+  bool GetCustomHighlightTextColor(const nsAtom* aHighlightName,
+                                   nscolor* aForeColor);
+  bool GetCustomHighlightBackgroundColor(const nsAtom* aHighlightName,
+                                         nscolor* aBackColor);
   void GetURLSecondaryColor(nscolor* aForeColor);
   void GetIMESelectionColors(int32_t aIndex, nscolor* aForeColor,
                              nscolor* aBackColor);

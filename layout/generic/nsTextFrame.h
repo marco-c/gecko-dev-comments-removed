@@ -587,10 +587,11 @@ class nsTextFrame : public nsIFrame {
   struct PaintShadowParams;
   struct PaintDecorationLineParams;
 
-  struct SelectionRange {
-    const SelectionDetails* mDetails;
-    gfxTextRun::Range mRange;
-    uint32_t mPriority;
+  struct PriorityOrderedSelectionsForRange {
+    
+    
+    nsTArray<const SelectionDetails*> mSelectionRanges;
+    Range mRange;
   };
 
   
@@ -620,11 +621,10 @@ class nsTextFrame : public nsIFrame {
       const mozilla::UniquePtr<SelectionDetails>& aDetails,
       SelectionType aSelectionType);
 
-  SelectionTypeMask ResolveSelections(const PaintTextSelectionParams& aParams,
-                                      const SelectionDetails* aDetails,
-                                      nsTArray<SelectionRange>& aResult,
-                                      SelectionType aSelectionType,
-                                      bool* aAnyBackgrounds = nullptr) const;
+  SelectionTypeMask ResolveSelections(
+      const PaintTextSelectionParams& aParams, const SelectionDetails* aDetails,
+      nsTArray<PriorityOrderedSelectionsForRange>& aResult,
+      SelectionType aSelectionType, bool* aAnyBackgrounds = nullptr) const;
 
   void DrawEmphasisMarks(gfxContext* aContext, mozilla::WritingMode aWM,
                          const mozilla::gfx::Point& aTextBaselinePt,
@@ -996,6 +996,53 @@ class nsTextFrame : public nsIFrame {
   static gfxFloat ComputeSelectionUnderlineHeight(
       nsPresContext* aPresContext, const gfxFont::Metrics& aFontMetrics,
       SelectionType aSelectionType);
+
+  
+
+
+
+  struct SelectionRange {
+    const SelectionDetails* mDetails{nullptr};
+    gfxTextRun::Range mRange;
+    
+    uint32_t mPriority{0};
+  };
+  
+
+
+
+
+  static SelectionTypeMask CreateSelectionRangeList(
+      const SelectionDetails* aDetails, SelectionType aSelectionType,
+      const PaintTextSelectionParams& aParams,
+      nsTArray<SelectionRange>& aSelectionRanges, bool* aAnyBackgrounds);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void CombineSelectionRanges(
+      const nsTArray<SelectionRange>& aSelectionRanges,
+      nsTArray<PriorityOrderedSelectionsForRange>& aCombinedSelectionRanges);
 
   ContentOffsets GetCharacterOffsetAtFramePointInternal(
       const nsPoint& aPoint, bool aForInsertionPoint);
