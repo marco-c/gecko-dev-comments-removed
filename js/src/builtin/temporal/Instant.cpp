@@ -26,6 +26,7 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Calendar.h"
+#include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/Temporal.h"
 #include "builtin/temporal/TemporalParser.h"
@@ -419,6 +420,123 @@ BigInt* js::temporal::ToEpochDifferenceNanoseconds(JSContext* cx,
 
 
 
+static mozilla::Maybe<Instant> NanosecondsToInstantDifference(
+    double nanoseconds) {
+  MOZ_ASSERT(IsInteger(nanoseconds));
+
+  constexpr int64_t differenceLimit = SecondsMaxInstant * 2;
+  constexpr int64_t secToNanos = ToNanoseconds(TemporalUnit::Second);
+
+  
+  if (nanoseconds == 0) {
+    return mozilla::Some(Instant{});
+  }
+
+  
+  if (std::abs(nanoseconds) > double(differenceLimit) * double(secToNanos)) {
+    return mozilla::Nothing();
+  }
+
+  
+  
+  constexpr size_t DigitBits = 32;
+
+  
+  
+  std::array<uint32_t, 3> digits = {};
+
+  int exponent = mozilla::ExponentComponent(nanoseconds);
+  MOZ_ASSERT(0 <= exponent && exponent <= 73,
+             "exponent can't exceed exponent of maximum instant difference");
+
+  int length = exponent / DigitBits + 1;
+  MOZ_ASSERT(1 <= length && length <= 3);
+
+  using Double = mozilla::FloatingPoint<double>;
+  uint64_t mantissa =
+      mozilla::BitwiseCast<uint64_t>(nanoseconds) & Double::kSignificandBits;
+
+  
+  mantissa |= 1ull << Double::kSignificandWidth;
+
+  
+  int msdTopBit = exponent % DigitBits;
+
+  
+  int remainingMantissaBits = Double::kSignificandWidth - msdTopBit;
+  digits[--length] = mantissa >> remainingMantissaBits;
+
+  
+  mantissa = mantissa << (64 - remainingMantissaBits);
+  if (mantissa) {
+    MOZ_ASSERT(length > 0);
+    digits[--length] = uint32_t(mantissa >> 32);
+
+    if (uint32_t(mantissa)) {
+      MOZ_ASSERT(length > 0);
+      digits[--length] = uint32_t(mantissa);
+    }
+  }
+
+  auto result = ToInstant(digits, nanoseconds < 0);
+  MOZ_ASSERT(IsValidInstantDifference(result));
+  return mozilla::Some(result);
+}
+
+
+
+
+
+static mozilla::Maybe<Instant> MicrosecondsToInstantDifference(
+    double microseconds) {
+  MOZ_ASSERT(IsInteger(microseconds));
+
+  constexpr int64_t differenceLimit = SecondsMaxInstant * 2;
+  constexpr int64_t secToMicros = ToNanoseconds(TemporalUnit::Second) /
+                                  ToNanoseconds(TemporalUnit::Microsecond);
+  constexpr int32_t microToNanos = ToNanoseconds(TemporalUnit::Microsecond);
+
+  
+  if (microseconds == 0) {
+    return mozilla::Some(Instant{});
+  }
+
+  
+  if (std::abs(microseconds) > double(differenceLimit) * double(secToMicros)) {
+    return mozilla::Nothing();
+  }
+
+  
+  
+  static_assert(double(differenceLimit) * double(secToMicros) <=
+                double(UINT64_MAX));
+
+  
+  uint64_t absMicros = uint64_t(std::abs(microseconds));
+
+  
+  int64_t seconds = absMicros / uint64_t(secToMicros);
+  int32_t remainder = absMicros % uint64_t(secToMicros);
+
+  
+  
+  if (microseconds < 0) {
+    seconds *= -1;
+    if (remainder != 0) {
+      seconds -= 1;
+      remainder = secToMicros - remainder;
+    }
+  }
+
+  Instant result = {seconds, remainder * microToNanos};
+  MOZ_ASSERT(IsValidInstantDifference(result));
+  return mozilla::Some(result);
+}
+
+
+
+
+
 Instant js::temporal::GetUTCEpochNanoseconds(const PlainDateTime& dateTime) {
   auto& [date, time] = dateTime;
 
@@ -658,6 +776,89 @@ bool js::temporal::ToTemporalInstantEpochInstant(JSContext* cx,
 
 
 
+
+bool js::temporal::AddInstant(JSContext* cx, const Instant& instant,
+                              const Duration& duration, Instant* result) {
+  MOZ_ASSERT(IsValidEpochInstant(instant));
+  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT(duration.years == 0);
+  MOZ_ASSERT(duration.months == 0);
+  MOZ_ASSERT(duration.weeks == 0);
+  MOZ_ASSERT(duration.days == 0);
+
+  do {
+    auto nanoseconds = NanosecondsToInstantDifference(duration.nanoseconds);
+    if (!nanoseconds) {
+      break;
+    }
+    MOZ_ASSERT(IsValidInstantDifference(*nanoseconds));
+
+    auto microseconds = MicrosecondsToInstantDifference(duration.microseconds);
+    if (!microseconds) {
+      break;
+    }
+    MOZ_ASSERT(IsValidInstantDifference(*microseconds));
+
+    
+    
+
+    int64_t milliseconds;
+    if (!mozilla::NumberEqualsInt64(duration.milliseconds, &milliseconds)) {
+      break;
+    }
+
+    int64_t seconds;
+    if (!mozilla::NumberEqualsInt64(duration.seconds, &seconds)) {
+      break;
+    }
+
+    int64_t minutes;
+    if (!mozilla::NumberEqualsInt64(duration.minutes, &minutes)) {
+      break;
+    }
+
+    int64_t hours;
+    if (!mozilla::NumberEqualsInt64(duration.hours, &hours)) {
+      break;
+    }
+
+    
+    mozilla::CheckedInt64 millis = hours;
+    millis *= 60;
+    millis += minutes;
+    millis *= 60;
+    millis += seconds;
+    millis *= 1000;
+    millis += milliseconds;
+    if (!millis.isValid()) {
+      break;
+    }
+
+    auto milli = Instant::fromMilliseconds(millis.value());
+    if (!IsValidInstantDifference(milli)) {
+      break;
+    }
+
+    
+    auto diff = milli + *microseconds + *nanoseconds;
+    if (!IsValidInstantDifference(diff)) {
+      break;
+    }
+
+    *result = instant + diff;
+    if (IsValidEpochInstant(*result)) {
+      return true;
+    }
+  } while (false);
+
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_TEMPORAL_INSTANT_INVALID);
+  return false;
+}
+
+
+
+
 static bool RoundNumberToIncrementAsIfPositive(
     JSContext* cx, const Instant& x, int64_t increment,
     TemporalRoundingMode roundingMode, Instant* result) {
@@ -745,6 +946,57 @@ static JSString* TemporalInstantToString(JSContext* cx,
 
   
   return ConcatStrings<CanGC>(cx, dateTimeString, timeZoneString);
+}
+
+enum class InstantDuration { Add, Subtract };
+
+
+
+
+
+static bool AddDurationToOrSubtractDurationFromInstant(
+    JSContext* cx, InstantDuration operation, const CallArgs& args) {
+  auto* instant = &args.thisv().toObject().as<InstantObject>();
+  auto epochNanoseconds = ToInstant(instant);
+
+  
+
+  
+  Duration duration;
+  if (!ToTemporalDurationRecord(cx, args.get(0), &duration)) {
+    return false;
+  }
+
+  
+  if (duration.years != 0 || duration.months != 0 || duration.weeks != 0 ||
+      duration.days != 0) {
+    const char* part = duration.years != 0    ? "years"
+                       : duration.months != 0 ? "months"
+                       : duration.weeks != 0  ? "weeks"
+                                              : "days";
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_INSTANT_BAD_DURATION, part);
+    return false;
+  }
+
+  
+  if (operation == InstantDuration::Subtract) {
+    duration = duration.negate();
+  }
+
+  Instant ns;
+  if (!AddInstant(cx, epochNanoseconds, duration, &ns)) {
+    return false;
+  }
+
+  
+  auto* result = CreateTemporalInstant(cx, ns);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
 }
 
 
@@ -1068,6 +1320,40 @@ static bool Instant_epochNanoseconds(JSContext* cx, unsigned argc, Value* vp) {
   
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsInstant, Instant_epochNanoseconds>(cx, args);
+}
+
+
+
+
+static bool Instant_add(JSContext* cx, const CallArgs& args) {
+  return AddDurationToOrSubtractDurationFromInstant(cx, InstantDuration::Add,
+                                                    args);
+}
+
+
+
+
+static bool Instant_add(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_add>(cx, args);
+}
+
+
+
+
+static bool Instant_subtract(JSContext* cx, const CallArgs& args) {
+  return AddDurationToOrSubtractDurationFromInstant(
+      cx, InstantDuration::Subtract, args);
+}
+
+
+
+
+static bool Instant_subtract(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsInstant, Instant_subtract>(cx, args);
 }
 
 
@@ -1470,6 +1756,8 @@ static const JSFunctionSpec Instant_methods[] = {
 };
 
 static const JSFunctionSpec Instant_prototype_methods[] = {
+    JS_FN("add", Instant_add, 1, 0),
+    JS_FN("subtract", Instant_subtract, 1, 0),
     JS_FN("round", Instant_round, 1, 0),
     JS_FN("equals", Instant_equals, 1, 0),
     JS_FN("toString", Instant_toString, 0, 0),

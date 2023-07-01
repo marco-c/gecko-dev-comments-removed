@@ -132,6 +132,13 @@ bool RoundTemporalInstant(JSContext* cx, const Instant& ns, Increment increment,
                           TemporalUnit unit, TemporalRoundingMode roundingMode,
                           Instant* result);
 
+
+
+
+
+bool AddInstant(JSContext* cx, const Instant& instant, const Duration& duration,
+                Instant* result);
+
 } 
 
 #endif 
