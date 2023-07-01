@@ -615,6 +615,46 @@ bool js::temporal::ToTemporalTime(JSContext* cx, Handle<Value> item,
 
 
 
+
+int32_t js::temporal::CompareTemporalTime(const PlainTime& one,
+                                          const PlainTime& two) {
+  
+  if (int32_t diff = one.hour - two.hour) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  if (int32_t diff = one.minute - two.minute) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  if (int32_t diff = one.second - two.second) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  if (int32_t diff = one.millisecond - two.millisecond) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  if (int32_t diff = one.microsecond - two.microsecond) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  if (int32_t diff = one.nanosecond - two.nanosecond) {
+    return diff < 0 ? -1 : 1;
+  }
+
+  
+  return 0;
+}
+
+
+
+
 static bool ToTemporalTimeRecord(JSContext* cx,
                                  Handle<JSObject*> temporalTimeLike,
                                  TimeRecord* result) {
@@ -829,6 +869,29 @@ static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainTime_compare(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  PlainTime one;
+  if (!ToTemporalTime(cx, args.get(0), &one)) {
+    return false;
+  }
+
+  
+  PlainTime two;
+  if (!ToTemporalTime(cx, args.get(1), &two)) {
+    return false;
+  }
+
+  
+  args.rval().setInt32(CompareTemporalTime(one, two));
+  return true;
+}
+
+
+
+
 static bool PlainTime_calendar(JSContext* cx, const CallArgs& args) {
   Rooted<PlainTimeObject*> temporalTime(
       cx, &args.thisv().toObject().as<PlainTimeObject>());
@@ -969,6 +1032,39 @@ static bool PlainTime_nanosecond(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainTime_equals(JSContext* cx, const CallArgs& args) {
+  auto temporalTime =
+      ToPlainTime(&args.thisv().toObject().as<PlainTimeObject>());
+
+  
+  PlainTime other;
+  if (!ToTemporalTime(cx, args.get(0), &other)) {
+    return false;
+  }
+
+  
+  bool equals = temporalTime.hour == other.hour &&
+                temporalTime.minute == other.minute &&
+                temporalTime.second == other.second &&
+                temporalTime.millisecond == other.millisecond &&
+                temporalTime.microsecond == other.microsecond &&
+                temporalTime.nanosecond == other.nanosecond;
+  args.rval().setBoolean(equals);
+  return true;
+}
+
+
+
+
+static bool PlainTime_equals(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainTime, PlainTime_equals>(cx, args);
+}
+
+
+
+
 static bool PlainTime_toPlainDateTime(JSContext* cx, const CallArgs& args) {
   auto* temporalTime = &args.thisv().toObject().as<PlainTimeObject>();
   auto time = ToPlainTime(temporalTime);
@@ -1098,10 +1194,12 @@ const JSClass& PlainTimeObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec PlainTime_methods[] = {
     JS_FN("from", PlainTime_from, 1, 0),
+    JS_FN("compare", PlainTime_compare, 2, 0),
     JS_FS_END,
 };
 
 static const JSFunctionSpec PlainTime_prototype_methods[] = {
+    JS_FN("equals", PlainTime_equals, 1, 0),
     JS_FN("toPlainDateTime", PlainTime_toPlainDateTime, 1, 0),
     JS_FN("getISOFields", PlainTime_getISOFields, 0, 0),
     JS_FN("valueOf", PlainTime_valueOf, 0, 0),

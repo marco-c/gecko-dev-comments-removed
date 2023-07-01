@@ -645,6 +645,39 @@ bool js::temporal::ToTemporalDateTime(JSContext* cx, Handle<Value> item,
 
 
 
+static bool ToTemporalDateTime(JSContext* cx, Handle<Value> item,
+                               PlainDateTime* result,
+                               MutableHandle<JSObject*> calendar) {
+  auto* obj = ::ToTemporalDateTime(cx, item, nullptr).unwrapOrNull();
+  if (!obj) {
+    return false;
+  }
+
+  *result = ToPlainDateTime(obj);
+  calendar.set(obj->calendar());
+  return cx->compartment()->wrap(cx, calendar);
+}
+
+
+
+
+
+static int32_t CompareISODateTime(const PlainDateTime& one,
+                                  const PlainDateTime& two) {
+  
+
+  
+  if (int32_t dateResult = CompareISODate(one.date, two.date)) {
+    return dateResult;
+  }
+
+  
+  return CompareTemporalTime(one.time, two.time);
+}
+
+
+
+
 
 
 static bool PlainDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
@@ -792,6 +825,29 @@ static bool PlainDateTime_from(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool PlainDateTime_compare(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  PlainDateTime one;
+  if (!ToTemporalDateTime(cx, args.get(0), &one)) {
+    return false;
+  }
+
+  
+  PlainDateTime two;
+  if (!ToTemporalDateTime(cx, args.get(1), &two)) {
+    return false;
+  }
+
+  
+  args.rval().setInt32(CompareISODateTime(one, two));
   return true;
 }
 
@@ -1219,6 +1275,42 @@ static bool PlainDateTime_inLeapYear(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainDateTime_equals(JSContext* cx, const CallArgs& args) {
+  auto* temporalDateTime = &args.thisv().toObject().as<PlainDateTimeObject>();
+  auto dateTime = ToPlainDateTime(temporalDateTime);
+  Rooted<JSObject*> calendar(cx, temporalDateTime->calendar());
+
+  
+  PlainDateTime other;
+  Rooted<JSObject*> otherCalendar(cx);
+  if (!::ToTemporalDateTime(cx, args.get(0), &other, &otherCalendar)) {
+    return false;
+  }
+
+  
+  bool equals = false;
+  if (CompareISODateTime(dateTime, other) == 0) {
+    if (!CalendarEquals(cx, calendar, otherCalendar, &equals)) {
+      return false;
+    }
+  }
+
+  args.rval().setBoolean(equals);
+  return true;
+}
+
+
+
+
+static bool PlainDateTime_equals(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainDateTime, PlainDateTime_equals>(cx, args);
+}
+
+
+
+
 static bool PlainDateTime_valueOf(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
                             "PlainDateTime", "primitive type");
@@ -1476,10 +1568,12 @@ const JSClass& PlainDateTimeObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec PlainDateTime_methods[] = {
     JS_FN("from", PlainDateTime_from, 1, 0),
+    JS_FN("compare", PlainDateTime_compare, 2, 0),
     JS_FS_END,
 };
 
 static const JSFunctionSpec PlainDateTime_prototype_methods[] = {
+    JS_FN("equals", PlainDateTime_equals, 1, 0),
     JS_FN("valueOf", PlainDateTime_valueOf, 0, 0),
     JS_FN("toPlainDate", PlainDateTime_toPlainDate, 0, 0),
     JS_FN("toPlainYearMonth", PlainDateTime_toPlainYearMonth, 0, 0),

@@ -346,6 +346,22 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
 
 
 
+static bool ToTemporalMonthDay(JSContext* cx, Handle<Value> item,
+                               PlainDate* result,
+                               MutableHandle<JSObject*> calendar) {
+  auto* obj = ToTemporalMonthDay(cx, item).unwrapOrNull();
+  if (!obj) {
+    return false;
+  }
+
+  *result = ToPlainDate(obj);
+  calendar.set(obj->calendar());
+  return cx->compartment()->wrap(cx, calendar);
+}
+
+
+
+
 static JSString* TemporalMonthDayToString(JSContext* cx,
                                           Handle<PlainMonthDayObject*> monthDay,
                                           CalendarOption showCalendar) {
@@ -585,6 +601,43 @@ static bool PlainMonthDay_day(JSContext* cx, unsigned argc, Value* vp) {
   
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsPlainMonthDay, PlainMonthDay_day>(cx, args);
+}
+
+
+
+
+static bool PlainMonthDay_equals(JSContext* cx, const CallArgs& args) {
+  auto* monthDay = &args.thisv().toObject().as<PlainMonthDayObject>();
+  auto date = ToPlainDate(monthDay);
+  Rooted<JSObject*> calendar(cx, monthDay->calendar());
+
+  
+  PlainDate other;
+  Rooted<JSObject*> otherCalendar(cx);
+  if (!ToTemporalMonthDay(cx, args.get(0), &other, &otherCalendar)) {
+    return false;
+  }
+
+  
+  bool equals = false;
+  if (date.year == other.year && date.month == other.month &&
+      date.day == other.day) {
+    if (!CalendarEquals(cx, calendar, otherCalendar, &equals)) {
+      return false;
+    }
+  }
+
+  args.rval().setBoolean(equals);
+  return true;
+}
+
+
+
+
+static bool PlainMonthDay_equals(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainMonthDay, PlainMonthDay_equals>(cx, args);
 }
 
 
@@ -862,6 +915,7 @@ static const JSFunctionSpec PlainMonthDay_methods[] = {
 };
 
 static const JSFunctionSpec PlainMonthDay_prototype_methods[] = {
+    JS_FN("equals", PlainMonthDay_equals, 1, 0),
     JS_FN("toString", PlainMonthDay_toString, 0, 0),
     JS_FN("toLocaleString", PlainMonthDay_toLocaleString, 0, 0),
     JS_FN("toJSON", PlainMonthDay_toJSON, 0, 0),

@@ -2582,6 +2582,33 @@ JSObject* js::temporal::CalendarMergeFields(
 
 
 
+bool js::temporal::CalendarEquals(JSContext* cx, Handle<JSObject*> one,
+                                  Handle<JSObject*> two, bool* equals) {
+  
+  if (one == two) {
+    *equals = true;
+    return true;
+  }
+
+  
+  Rooted<JSString*> calendarOne(cx, CalendarToString(cx, one));
+  if (!calendarOne) {
+    return false;
+  }
+
+  
+  JSString* calendarTwo = CalendarToString(cx, two);
+  if (!calendarTwo) {
+    return false;
+  }
+
+  
+  return EqualStrings(cx, calendarOne, calendarTwo, equals);
+}
+
+
+
+
 bool js::temporal::MaybeFormatCalendarAnnotation(
     JSContext* cx, JSStringBuilder& result, Handle<JSObject*> calendarObject,
     CalendarOption showCalendar) {
