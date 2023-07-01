@@ -574,11 +574,15 @@
 
   
   
-  if (!runningInBrowser)
+  if (!runningInBrowser) {
     shellOptionsClear();
+  }
+
+  if (!runningInBrowser) {
+    
+    
+    gcparam('parallelMarkingThresholdKB', 0);
+  }
 })(this);
-
-
-gcparam('parallelMarkingThresholdKB', 0);
 
 var DESCRIPTION;
