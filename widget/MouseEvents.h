@@ -370,6 +370,8 @@ class WidgetDragEvent : public WidgetMouseEvent {
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
   }
 
+  void UpdateDefaultPreventedOnContent(dom::EventTarget* aTarget);
+
   
 
 

@@ -1555,4 +1555,33 @@ void EventDispatcher::GetComposedPathFor(WidgetEvent* aEvent,
   }
 }
 
+void EventChainPreVisitor::IgnoreCurrentTargetBecauseOfShadowDOMRetargeting() {
+  mCanHandle = false;
+  mIgnoreBecauseOfShadowDOM = true;
+
+  EventTarget* target = nullptr;
+
+  auto getWindow = [this]() -> nsPIDOMWindowOuter* {
+    nsINode* node = nsINode::FromEventTargetOrNull(this->mParentTarget);
+    if (!node) {
+      return nullptr;
+    }
+    Document* doc = node->GetComposedDoc();
+    if (!doc) {
+      return nullptr;
+    }
+
+    return doc->GetWindow();
+  };
+
+  
+  
+  if (nsCOMPtr<nsPIDOMWindowOuter> win = getWindow()) {
+    target = win->GetParentTarget();
+  }
+  SetParentTarget(target, false);
+
+  mEventTargetAtParent = nullptr;
+}
+
 }  

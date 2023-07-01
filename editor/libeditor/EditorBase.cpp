@@ -5609,8 +5609,9 @@ nsresult EditorBase::FinalizeSelection() {
   
   
   focusManager->UpdateCaretForCaretBrowsingMode();
-  if (nsCOMPtr<nsINode> node = do_QueryInterface(GetDOMEventTarget())) {
-    if (node->OwnerDoc()->GetUnretargetedFocusedContent() != node) {
+  if (Element* rootElement = GetExposedRoot()) {
+    if (rootElement->OwnerDoc()->GetUnretargetedFocusedContent() !=
+        rootElement) {
       selectionController->SelectionWillLoseFocus();
     } else {
       
@@ -5916,6 +5917,19 @@ bool EditorBase::CanKeepHandlingFocusEvent(
   if (!focusManager->GetFocusedElement()) {
     return false;
   }
+
+  
+  
+  
+  if (IsHTMLEditor()) {
+    const HTMLEditor* precedentHTMLEditor =
+        aOriginalEventTargetNode.OwnerDoc()->GetHTMLEditor();
+
+    if (precedentHTMLEditor && precedentHTMLEditor != this) {
+      return false;
+    }
+  }
+
   const nsIContent* exposedTargetContent =
       aOriginalEventTargetNode.AsContent()
           ->FindFirstNonChromeOnlyAccessContent();

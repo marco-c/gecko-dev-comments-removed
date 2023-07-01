@@ -54,6 +54,8 @@
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/HTMLButtonElement.h"
+#include "mozilla/dom/HTMLSummaryElement.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/Selection.h"
 
@@ -6890,7 +6892,19 @@ EventTarget* HTMLEditor::GetDOMEventTarget() const {
   
   
   MOZ_ASSERT(IsInitialized(), "The HTMLEditor has not been initialized yet");
-  return GetDocument();
+  Document* doc = GetDocument();
+  if (!doc) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
+    return win->GetParentTarget();
+  }
+  return nullptr;
 }
 
 bool HTMLEditor::ShouldReplaceRootElement() const {
@@ -7049,6 +7063,20 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
     }
   }
 
+  
+  
+  if (aGUIEvent->mMessage == eKeyPress &&
+      aGUIEvent->AsKeyboardEvent()->ShouldWorkAsSpaceKey()) {
+    nsGenericHTMLElement* element =
+        HTMLButtonElement::FromNode(eventTargetNode);
+    if (!element) {
+      element = HTMLSummaryElement::FromNode(eventTargetNode);
+    }
+
+    if (element && element->IsContentEditable()) {
+      return false;
+    }
+  }
   
   
   if (NS_WARN_IF(!eventTargetNode->IsContent())) {
