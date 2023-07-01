@@ -371,8 +371,6 @@ class MediaDecoderStateMachine
   
   
   
-  
-  
   media::TimeUnit GetMediaTime() const {
     MOZ_ASSERT(OnTaskQueue());
     return mCurrentPosition;
