@@ -47,17 +47,16 @@ static void RecordingSourceSurfaceUserDataFunc(void* aUserData) {
   });
 }
 
-static void EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
+static bool EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
                                          SourceSurface* aSurface,
                                          const char* reason) {
-  if (aRecorder->HasStoredObject(aSurface)) {
-    return;
+  
+  
+  
+  if (!aRecorder->TryAddStoredObject(aSurface)) {
+    
+    return false;
   }
-
-  
-  
-  
-  aRecorder->AddStoredObject(aSurface);
   aRecorder->StoreSourceSurfaceRecording(aSurface, reason);
   aRecorder->AddSourceSurface(aSurface);
 
@@ -66,6 +65,7 @@ static void EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
   userData->recorder = aRecorder;
   aSurface->AddUserData(reinterpret_cast<UserDataKey*>(aRecorder), userData,
                         &RecordingSourceSurfaceUserDataFunc);
+  return true;
 }
 
 class SourceSurfaceRecording : public SourceSurface {
@@ -572,27 +572,26 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
     if (strongRef) {
       return do_AddRef(strongRef);
     }
-  }
+  } else {
+    if (!EnsureSurfaceStoredRecording(mRecorder, aSurface,
+                                      "OptimizeSourceSurface")) {
+      
+      
+      MOZ_ASSERT(aSurface->GetType() == SurfaceType::RECORDING);
+      return do_AddRef(aSurface);
+    }
 
-  if (aSurface->GetType() == SurfaceType::RECORDING &&
-      mRecorder->HasStoredObject(aSurface)) {
-    
-    return do_AddRef(aSurface);
+    userData = static_cast<RecordingSourceSurfaceUserData*>(
+        aSurface->GetUserData(reinterpret_cast<UserDataKey*>(mRecorder.get())));
+    MOZ_ASSERT(userData,
+               "User data should always have been set by "
+               "EnsureSurfaceStoredRecording.");
   }
-
-  EnsureSurfaceStoredRecording(mRecorder, aSurface, "OptimizeSourceSurface");
 
   RefPtr<SourceSurface> retSurf = new SourceSurfaceRecording(
       aSurface->GetSize(), aSurface->GetFormat(), mRecorder, aSurface);
-
   mRecorder->RecordEvent(
       RecordedOptimizeSourceSurface(aSurface, this, retSurf));
-
-  userData = static_cast<RecordingSourceSurfaceUserData*>(
-      aSurface->GetUserData(reinterpret_cast<UserDataKey*>(mRecorder.get())));
-  MOZ_ASSERT(
-      userData,
-      "User data should always have been set by EnsureSurfaceStoredRecording.");
   userData->optimizedSurface = retSurf;
 
   return retSurf.forget();
@@ -715,7 +714,8 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
   if (aPath->GetBackendType() == BackendType::RECORDING) {
     pathRecording =
         const_cast<PathRecording*>(static_cast<const PathRecording*>(aPath));
-    if (mRecorder->HasStoredObject(aPath)) {
+    if (!mRecorder->TryAddStoredObject(pathRecording)) {
+      
       return pathRecording.forget();
     }
   } else {
@@ -725,12 +725,12 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
         new PathBuilderRecording(mFinalDT->GetBackendType(), fillRule);
     aPath->StreamToSink(builderRecording);
     pathRecording = builderRecording->Finish().downcast<PathRecording>();
+    mRecorder->AddStoredObject(pathRecording);
   }
 
   
   
   
-  mRecorder->AddStoredObject(pathRecording);
   mRecorder->RecordEvent(RecordedPathCreation(pathRecording.get()));
   pathRecording->mStoredRecorders.push_back(mRecorder);
 

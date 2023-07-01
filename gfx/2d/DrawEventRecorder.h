@@ -79,6 +79,22 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
     mStoredObjects.insert(aObject);
   }
 
+  
+
+
+
+
+
+  bool TryAddStoredObject(const ReferencePtr aObject) {
+    ProcessPendingDeletions();
+    if (mStoredObjects.find(aObject) != mStoredObjects.end()) {
+      return false;
+    }
+
+    mStoredObjects.insert(aObject);
+    return true;
+  }
+
   void AddPendingDeletion(std::function<void()>&& aPendingDeletion) {
     auto lockedPendingDeletions = mPendingDeletions.Lock();
     lockedPendingDeletions->emplace_back(std::move(aPendingDeletion));
@@ -120,9 +136,13 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
     mStoredSurfaces.erase(aSurface);
   }
 
+#if defined(DEBUG)
+  
   bool HasStoredObject(const ReferencePtr aObject) {
+    ProcessPendingDeletions();
     return mStoredObjects.find(aObject) != mStoredObjects.end();
   }
+#endif
 
   void AddStoredFontData(const uint64_t aFontDataKey) {
     mStoredFontData.insert(aFontDataKey);
