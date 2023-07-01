@@ -1342,16 +1342,16 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
 }
 
 NS_IMETHODIMP
-nsClipboard::EmptyClipboard(int32_t aWhichClipboard) {
+nsClipboard::EmptyNativeClipboardData(int32_t aWhichClipboard) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
   
   
   
   
   
-  if (aWhichClipboard == kGlobalClipboard && !mEmptyingForSetData) {
-    RepeatedlyTryOleSetClipboard(nullptr);
-  }
-  return nsBaseClipboard::EmptyClipboard(aWhichClipboard);
+  RepeatedlyTryOleSetClipboard(nullptr);
+  return NS_OK;
 }
 
 Result<int32_t, nsresult> nsClipboard::GetNativeClipboardSequenceNumber(

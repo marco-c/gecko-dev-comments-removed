@@ -34,9 +34,6 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   NS_DECL_NSIOBSERVER
 
   
-  NS_IMETHOD EmptyClipboard(int32_t aWhichClipboard) override;
-
-  
   enum class MightNeedToFlush : bool { No, Yes };
   static nsresult CreateNativeDataObject(nsITransferable* aTransferable,
                                          IDataObject** aDataObj, nsIURI* aUri,
@@ -79,6 +76,7 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
                                     int32_t aWhichClipboard) override;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
+  NS_IMETHOD EmptyNativeClipboardData(int32_t aWhichClipboard) override;
   mozilla::Result<int32_t, nsresult> GetNativeClipboardSequenceNumber(
       int32_t aWhichClipboard) override;
   mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
