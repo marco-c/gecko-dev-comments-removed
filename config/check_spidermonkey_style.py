@@ -125,8 +125,10 @@ oddly_ordered_inclnames = set(
         "gc/StatsPhasesGenerated.inc",  
         "psapi.h",  
         "machine/endian.h",  
+        "process.h",  
         "winbase.h",  
         "windef.h",  
+        "windows.h",  
     ]
 )
 

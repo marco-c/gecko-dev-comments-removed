@@ -76,7 +76,21 @@ class FrontendContext {
 
   JS::ImportAssertionVector supportedImportAssertions_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   JS::NativeStackLimit stackLimit_ = JS::NativeStackLimitMax;
+
+#ifdef DEBUG
+  
+  mozilla::Maybe<size_t> stackLimitThreadId_;
+#endif
 
  protected:
   
@@ -176,6 +190,11 @@ class FrontendContext {
   void decWasiRecursionDepth();
   bool checkWasiRecursionLimit();
 #endif  
+
+#ifdef DEBUG
+  void setNativeStackLimitThread();
+  void assertNativeStackLimitThread();
+#endif
 
  private:
   void ReportOutOfMemory();

@@ -34,6 +34,11 @@ JS_PUBLIC_API JS::FrontendContext* NewFrontendContext();
 
 JS_PUBLIC_API void DestroyFrontendContext(JS::FrontendContext* fc);
 
+
+
+
+
+
 JS_PUBLIC_API void SetNativeStackQuota(JS::FrontendContext* fc,
                                        JS::NativeStackSize stackSize);
 
