@@ -31,16 +31,6 @@ const POLICIES_TESTS = [
 
   
   {
-    policies: { OfferToSaveLogins: false },
-    lockedPrefs: { "signon.rememberSignons": false },
-  },
-  {
-    policies: { OfferToSaveLogins: true },
-    lockedPrefs: { "signon.rememberSignons": true },
-  },
-
-  
-  {
     policies: {
       DisableSecurityBypass: {
         InvalidCertificate: true,
@@ -459,14 +449,13 @@ const POLICIES_TESTS = [
   {
     policies: {
       DNSOverHTTPS: {
-        Enabled: true,
+        Enabled: false,
         ProviderURL: "https://example.com/provider",
         ExcludedDomains: ["example.com", "example.org"],
-        Locked: true,
       },
     },
-    lockedPrefs: {
-      "network.trr.mode": 2,
+    unlockedPrefs: {
+      "network.trr.mode": 5,
       "network.trr.uri": "https://example.com/provider",
       "network.trr.excluded-domains": "example.com,example.org",
     },
@@ -476,13 +465,14 @@ const POLICIES_TESTS = [
   {
     policies: {
       DNSOverHTTPS: {
-        Enabled: false,
+        Enabled: true,
         ProviderURL: "https://example.com/provider",
         ExcludedDomains: ["example.com", "example.org"],
+        Locked: true,
       },
     },
-    unlockedPrefs: {
-      "network.trr.mode": 5,
+    lockedPrefs: {
+      "network.trr.mode": 2,
       "network.trr.uri": "https://example.com/provider",
       "network.trr.excluded-domains": "example.com,example.org",
     },
@@ -602,6 +592,16 @@ const POLICIES_TESTS = [
 
   
   {
+    policies: { OfferToSaveLogins: false },
+    lockedPrefs: { "signon.rememberSignons": false },
+  },
+  {
+    policies: { OfferToSaveLogins: true },
+    lockedPrefs: { "signon.rememberSignons": true },
+  },
+
+  
+  {
     policies: {
       UserMessaging: {
         WhatsNew: false,
@@ -620,6 +620,7 @@ const POLICIES_TESTS = [
     policies: {
       UserMessaging: {
         SkipOnboarding: false,
+        Locked: false,
       },
     },
     unlockedPrefs: {
@@ -631,6 +632,7 @@ const POLICIES_TESTS = [
     policies: {
       UserMessaging: {
         ExtensionRecommendations: false,
+        Locked: false,
       },
     },
     unlockedPrefs: {
@@ -642,6 +644,7 @@ const POLICIES_TESTS = [
     policies: {
       UserMessaging: {
         FeatureRecommendations: false,
+        Locked: false,
       },
     },
     unlockedPrefs: {
@@ -650,6 +653,19 @@ const POLICIES_TESTS = [
   },
 
   
+  {
+    policies: {
+      Permissions: {
+        Autoplay: {
+          Default: "block-audio-video",
+        },
+      },
+    },
+    unlockedPrefs: {
+      "media.autoplay.default": 5,
+    },
+  },
+
   {
     policies: {
       Permissions: {
@@ -669,24 +685,12 @@ const POLICIES_TESTS = [
       Permissions: {
         Autoplay: {
           Default: "block-audio",
+          Locked: false,
         },
       },
     },
     unlockedPrefs: {
       "media.autoplay.default": 1,
-    },
-  },
-
-  {
-    policies: {
-      Permissions: {
-        Autoplay: {
-          Default: "block-audio-video",
-        },
-      },
-    },
-    unlockedPrefs: {
-      "media.autoplay.default": 5,
     },
   },
 
@@ -988,6 +992,33 @@ const POLICIES_TESTS = [
     unlockedPrefs: {
       "pdfjs.cursorToolOnLoad": 1,
       "pdfjs.sidebarViewOnLoad": 0,
+    },
+  },
+
+  
+  {
+    policies: {
+      DisableFirefoxStudies: true,
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons": false,
+      "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": false,
+    },
+  },
+  {
+    policies: {
+      Preferences: {
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons": {
+          Value: true,
+        },
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": {
+          Value: true,
+        },
+      },
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons": true,
+      "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": true,
     },
   },
 ];
