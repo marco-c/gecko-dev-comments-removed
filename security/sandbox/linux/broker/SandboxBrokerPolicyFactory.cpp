@@ -1043,6 +1043,7 @@ SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
   policy->AddDir(access, "/");
 
   AddLdconfigPaths(policy.get());
+  AddLdLibraryEnvPaths(policy.get());
 
   
   
