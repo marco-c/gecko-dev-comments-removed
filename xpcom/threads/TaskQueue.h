@@ -104,11 +104,6 @@ class TaskQueue final : public AbstractThread,
   
   
   
-  RefPtr<CancelPromise> CancelDelayedRunnables();
-
-  
-  
-  
   
   
   
