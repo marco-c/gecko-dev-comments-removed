@@ -1383,7 +1383,7 @@ void js::Nursery::freeTrailerBlocks(void) {
   
   
   
-  mallocedBlockCache_.preen(0.05 * float(capacity() / (1024 * 1024)));
+  mallocedBlockCache_.preen(0.05 * double(capacity()) / (1024.0 * 1024.0));
 }
 
 size_t Nursery::sizeOfTrailerBlockSets(

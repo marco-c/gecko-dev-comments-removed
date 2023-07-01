@@ -75,24 +75,25 @@ enum Stat {
 
 struct ZoneGCStats {
   
-  int collectedZoneCount = 0;
+  size_t collectedZoneCount = 0;
 
   
-  int zoneCount = 0;
+  size_t zoneCount = 0;
 
   
-  int sweptZoneCount = 0;
+  size_t sweptZoneCount = 0;
 
   
-  int collectedCompartmentCount = 0;
+  size_t collectedCompartmentCount = 0;
 
   
-  int compartmentCount = 0;
+  size_t compartmentCount = 0;
 
   
-  int sweptCompartmentCount = 0;
+  size_t sweptCompartmentCount = 0;
 
-  int realmCount = 0;
+  
+  size_t realmCount = 0;
 
   ZoneGCStats() = default;
 };

@@ -77,7 +77,7 @@ class MallocedBlockCache {
   
   
   
-  void preen(float percentOfBlocksToDiscard);
+  void preen(double percentOfBlocksToDiscard);
 
   
   void clear();
