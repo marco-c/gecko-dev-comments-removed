@@ -45,6 +45,7 @@
 #include "nsHTMLDocument.h"
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
+#include "nsMappedAttributes.h"
 #include "nsView.h"
 #include "nsBaseWidget.h"
 #include "nsQueryObject.h"
@@ -1066,10 +1067,19 @@ void nsFrameLoader::MarginsChanged() {
   
   if (Document* doc = docShell->GetDocument()) {
     for (nsINode* cur = doc; cur; cur = cur->GetNextNode()) {
-      if (auto* body = HTMLBodyElement::FromNode(cur)) {
-        body->FrameMarginsChanged();
+      if (cur->IsHTMLElement(nsGkAtoms::body)) {
+        static_cast<HTMLBodyElement*>(cur)->ClearMappedServoStyle();
       }
     }
+  }
+
+  
+  
+  if (nsPresContext* presContext = docShell->GetPresContext()) {
+    
+    
+    presContext->RebuildAllStyleData(nsChangeHint(0),
+                                     RestyleHint::RestyleSubtree());
   }
 }
 

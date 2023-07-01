@@ -558,6 +558,14 @@ class ServoStyleSet {
 
 
 
+  void ResolveMappedAttrDeclarationBlocks();
+
+  
+
+
+
+
+
 
   void ClearNonInheritingComputedStyles();
 

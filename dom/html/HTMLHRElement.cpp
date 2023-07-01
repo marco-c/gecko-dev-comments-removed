@@ -9,7 +9,7 @@
 
 #include "nsCSSProps.h"
 #include "nsStyleConsts.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
+#include "mozilla/MappedDeclarations.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(HR)
 
@@ -52,55 +52,56 @@ bool HTMLHRElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                               aMaybeScriptedPrincipal, aResult);
 }
 
-void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
+void HTMLHRElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
+                                          MappedDeclarations& aDecls) {
   bool noshade = false;
 
-  const nsAttrValue* colorValue = aBuilder.GetAttr(nsGkAtoms::color);
+  const nsAttrValue* colorValue = aAttributes->GetAttr(nsGkAtoms::color);
   nscolor color;
   bool colorIsSet = colorValue && colorValue->GetColorValue(color);
 
   if (colorIsSet) {
     noshade = true;
   } else {
-    noshade = !!aBuilder.GetAttr(nsGkAtoms::noshade);
+    noshade = !!aAttributes->GetAttr(nsGkAtoms::noshade);
   }
 
   
-  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::align);
+  const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::align);
   if (value && value->Type() == nsAttrValue::eEnum) {
     
     switch (StyleTextAlign(value->GetEnumValue())) {
       case StyleTextAlign::Left:
-        aBuilder.SetPixelValueIfUnset(eCSSProperty_margin_left, 0.0f);
-        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_right);
+        aDecls.SetPixelValueIfUnset(eCSSProperty_margin_left, 0.0f);
+        aDecls.SetAutoValueIfUnset(eCSSProperty_margin_right);
         break;
       case StyleTextAlign::Right:
-        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_left);
-        aBuilder.SetPixelValueIfUnset(eCSSProperty_margin_right, 0.0f);
+        aDecls.SetAutoValueIfUnset(eCSSProperty_margin_left);
+        aDecls.SetPixelValueIfUnset(eCSSProperty_margin_right, 0.0f);
         break;
       case StyleTextAlign::Center:
-        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_left);
-        aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_right);
+        aDecls.SetAutoValueIfUnset(eCSSProperty_margin_left);
+        aDecls.SetAutoValueIfUnset(eCSSProperty_margin_right);
         break;
       default:
         MOZ_ASSERT_UNREACHABLE("Unknown <hr align> value");
         break;
     }
   }
-  if (!aBuilder.PropertyIsSet(eCSSProperty_height)) {
+  if (!aDecls.PropertyIsSet(eCSSProperty_height)) {
     
     if (noshade) {
       
-      aBuilder.SetAutoValue(eCSSProperty_height);
+      aDecls.SetAutoValue(eCSSProperty_height);
     } else {
       
       
       
       
-      const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::size);
+      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::size);
       if (value && value->Type() == nsAttrValue::eInteger) {
-        aBuilder.SetPixelValue(eCSSProperty_height,
-                               (float)value->GetIntegerValue());
+        aDecls.SetPixelValue(eCSSProperty_height,
+                             (float)value->GetIntegerValue());
       }  
     }
   }
@@ -111,7 +112,7 @@ void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
     
     float sizePerSide;
     bool allSides = true;
-    value = aBuilder.GetAttr(nsGkAtoms::size);
+    value = aAttributes->GetAttr(nsGkAtoms::size);
     if (value && value->Type() == nsAttrValue::eInteger) {
       sizePerSide = (float)value->GetIntegerValue() / 2.0f;
       if (sizePerSide < 1.0f) {
@@ -124,27 +125,24 @@ void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
     } else {
       sizePerSide = 1.0f;  
     }
-    aBuilder.SetPixelValueIfUnset(eCSSProperty_border_top_width, sizePerSide);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_border_top_width, sizePerSide);
     if (allSides) {
-      aBuilder.SetPixelValueIfUnset(eCSSProperty_border_right_width,
-                                    sizePerSide);
-      aBuilder.SetPixelValueIfUnset(eCSSProperty_border_bottom_width,
-                                    sizePerSide);
-      aBuilder.SetPixelValueIfUnset(eCSSProperty_border_left_width,
-                                    sizePerSide);
+      aDecls.SetPixelValueIfUnset(eCSSProperty_border_right_width, sizePerSide);
+      aDecls.SetPixelValueIfUnset(eCSSProperty_border_bottom_width,
+                                  sizePerSide);
+      aDecls.SetPixelValueIfUnset(eCSSProperty_border_left_width, sizePerSide);
     }
 
-    if (!aBuilder.PropertyIsSet(eCSSProperty_border_top_style)) {
-      aBuilder.SetKeywordValue(eCSSProperty_border_top_style,
-                               StyleBorderStyle::Solid);
-    }
+    if (!aDecls.PropertyIsSet(eCSSProperty_border_top_style))
+      aDecls.SetKeywordValue(eCSSProperty_border_top_style,
+                             StyleBorderStyle::Solid);
     if (allSides) {
-      aBuilder.SetKeywordValueIfUnset(eCSSProperty_border_right_style,
-                                      StyleBorderStyle::Solid);
-      aBuilder.SetKeywordValueIfUnset(eCSSProperty_border_bottom_style,
-                                      StyleBorderStyle::Solid);
-      aBuilder.SetKeywordValueIfUnset(eCSSProperty_border_left_style,
-                                      StyleBorderStyle::Solid);
+      aDecls.SetKeywordValueIfUnset(eCSSProperty_border_right_style,
+                                    StyleBorderStyle::Solid);
+      aDecls.SetKeywordValueIfUnset(eCSSProperty_border_bottom_style,
+                                    StyleBorderStyle::Solid);
+      aDecls.SetKeywordValueIfUnset(eCSSProperty_border_left_style,
+                                    StyleBorderStyle::Solid);
 
       
       
@@ -153,17 +151,18 @@ void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
       for (const nsCSSPropertyID* props =
                nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_radius);
            *props != eCSSProperty_UNKNOWN; ++props) {
-        aBuilder.SetPixelValueIfUnset(*props, 10000.0f);
+        aDecls.SetPixelValueIfUnset(*props, 10000.0f);
       }
     }
   }
   
   
   if (colorIsSet) {
-    aBuilder.SetColorValueIfUnset(eCSSProperty_color, color);
+    aDecls.SetColorValueIfUnset(eCSSProperty_color, color);
   }
-  MapWidthAttributeInto(aBuilder);
-  MapCommonAttributesInto(aBuilder);
+
+  nsGenericHTMLElement::MapWidthAttributeInto(aAttributes, aDecls);
+  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aDecls);
 }
 
 NS_IMETHODIMP_(bool)

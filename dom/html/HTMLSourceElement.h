@@ -103,7 +103,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
     SetUnsignedIntAttr(nsGkAtoms::height, aHeight, 0, aRv);
   }
 
-  const StyleLockedDeclarationBlock* GetAttributesMappedForImage() const {
+  const nsMappedAttributes* GetAttributesMappedForImage() const {
     return mMappedAttributesForImage;
   }
 
@@ -149,7 +149,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
 
   
   
-  RefPtr<StyleLockedDeclarationBlock> mMappedAttributesForImage;
+  RefPtr<nsMappedAttributes> mMappedAttributesForImage;
 };
 
 }  

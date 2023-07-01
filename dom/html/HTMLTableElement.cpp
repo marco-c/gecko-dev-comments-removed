@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/HTMLTableElement.h"
 #include "mozilla/AttributeStyles.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
-#include "mozilla/DeclarationBlock.h"
+#include "mozilla/MappedDeclarations.h"
 #include "nsAttrValueInlines.h"
+#include "nsMappedAttributes.h"
 #include "nsWrapperCacheInlines.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
@@ -499,7 +499,8 @@ void TableRowsCollection::NodeWillBeDestroyed(nsINode* aNode) {
 
 HTMLTableElement::HTMLTableElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)) {
+    : nsGenericHTMLElement(std::move(aNodeInfo)),
+      mTableInheritedAttributes(nullptr) {
   SetHasWeirdParserInsertionMode();
 }
 
@@ -839,7 +840,7 @@ bool HTMLTableElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 }
 
 void HTMLTableElement::MapAttributesIntoRule(
-    MappedDeclarationsBuilder& aBuilder) {
+    const nsMappedAttributes* aAttributes, MappedDeclarations& aDecls) {
   
   
   
@@ -851,55 +852,56 @@ void HTMLTableElement::MapAttributesIntoRule(
   
 
   
-  const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::cellspacing);
+  const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::cellspacing);
   if (value && value->Type() == nsAttrValue::eInteger &&
-      !aBuilder.PropertyIsSet(eCSSProperty_border_spacing)) {
-    aBuilder.SetPixelValue(eCSSProperty_border_spacing,
-                           float(value->GetIntegerValue()));
+      !aDecls.PropertyIsSet(eCSSProperty_border_spacing)) {
+    aDecls.SetPixelValue(eCSSProperty_border_spacing,
+                         float(value->GetIntegerValue()));
   }
   
   
-  value = aBuilder.GetAttr(nsGkAtoms::align);
+  value = aAttributes->GetAttr(nsGkAtoms::align);
   if (value && value->Type() == nsAttrValue::eEnum) {
     if (value->GetEnumValue() == uint8_t(StyleTextAlign::Center) ||
         value->GetEnumValue() == uint8_t(StyleTextAlign::MozCenter)) {
-      aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_left);
-      aBuilder.SetAutoValueIfUnset(eCSSProperty_margin_right);
+      aDecls.SetAutoValueIfUnset(eCSSProperty_margin_left);
+      aDecls.SetAutoValueIfUnset(eCSSProperty_margin_right);
     }
   }
 
   
-  value = aBuilder.GetAttr(nsGkAtoms::bordercolor);
+  value = aAttributes->GetAttr(nsGkAtoms::bordercolor);
   nscolor color;
   if (value && value->GetColorValue(color)) {
-    aBuilder.SetColorValueIfUnset(eCSSProperty_border_top_color, color);
-    aBuilder.SetColorValueIfUnset(eCSSProperty_border_left_color, color);
-    aBuilder.SetColorValueIfUnset(eCSSProperty_border_bottom_color, color);
-    aBuilder.SetColorValueIfUnset(eCSSProperty_border_right_color, color);
+    aDecls.SetColorValueIfUnset(eCSSProperty_border_top_color, color);
+    aDecls.SetColorValueIfUnset(eCSSProperty_border_left_color, color);
+    aDecls.SetColorValueIfUnset(eCSSProperty_border_bottom_color, color);
+    aDecls.SetColorValueIfUnset(eCSSProperty_border_right_color, color);
   }
 
   
-  if (const nsAttrValue* borderValue = aBuilder.GetAttr(nsGkAtoms::border)) {
+  const nsAttrValue* borderValue = aAttributes->GetAttr(nsGkAtoms::border);
+  if (borderValue) {
     
     int32_t borderThickness = 1;
-    if (borderValue->Type() == nsAttrValue::eInteger) {
+
+    if (borderValue->Type() == nsAttrValue::eInteger)
       borderThickness = borderValue->GetIntegerValue();
-    }
 
     
-    aBuilder.SetPixelValueIfUnset(eCSSProperty_border_top_width,
-                                  (float)borderThickness);
-    aBuilder.SetPixelValueIfUnset(eCSSProperty_border_left_width,
-                                  (float)borderThickness);
-    aBuilder.SetPixelValueIfUnset(eCSSProperty_border_bottom_width,
-                                  (float)borderThickness);
-    aBuilder.SetPixelValueIfUnset(eCSSProperty_border_right_width,
-                                  (float)borderThickness);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_border_top_width,
+                                (float)borderThickness);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_border_left_width,
+                                (float)borderThickness);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_border_bottom_width,
+                                (float)borderThickness);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_border_right_width,
+                                (float)borderThickness);
   }
 
-  nsGenericHTMLElement::MapImageSizeAttributesInto(aBuilder);
-  nsGenericHTMLElement::MapBackgroundAttributesInto(aBuilder);
-  nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
+  nsGenericHTMLElement::MapImageSizeAttributesInto(aAttributes, aDecls);
+  nsGenericHTMLElement::MapBackgroundAttributesInto(aAttributes, aDecls);
+  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aDecls);
 }
 
 NS_IMETHODIMP_(bool)
@@ -927,30 +929,66 @@ nsMapRuleToAttributesFunc HTMLTableElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
+static void MapInheritedTableAttributesIntoRule(
+    const nsMappedAttributes* aAttributes, MappedDeclarations& aDecls) {
+  const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::cellpadding);
+  if (value && value->Type() == nsAttrValue::eInteger) {
+    
+    
+    float pad = float(value->GetIntegerValue());
+
+    aDecls.SetPixelValueIfUnset(eCSSProperty_padding_top, pad);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_padding_right, pad);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_padding_bottom, pad);
+    aDecls.SetPixelValueIfUnset(eCSSProperty_padding_left, pad);
+  }
+}
+
+nsMappedAttributes* HTMLTableElement::GetAttributesMappedForCell() {
+  return mTableInheritedAttributes;
+}
+
 void HTMLTableElement::BuildInheritedAttributes() {
-  MOZ_ASSERT(!mTableInheritedAttributes, "potential leak, plus waste of work");
+  NS_ASSERTION(!mTableInheritedAttributes,
+               "potential leak, plus waste of work");
   MOZ_ASSERT(NS_IsMainThread());
   Document* document = GetComposedDoc();
   if (!document) {
     return;
   }
-  const nsAttrValue* value = GetParsedAttr(nsGkAtoms::cellpadding);
-  if (!value) {
+  AttributeStyles* attrStyles = document->GetAttributeStyles();
+  if (!attrStyles) {
     return;
   }
-  
-  
-  float pad = float(value->GetIntegerValue());
-  MappedDeclarationsBuilder builder(*this, *document);
-  builder.SetPixelValue(eCSSProperty_padding_top, pad);
-  builder.SetPixelValue(eCSSProperty_padding_right, pad);
-  builder.SetPixelValue(eCSSProperty_padding_bottom, pad);
-  builder.SetPixelValue(eCSSProperty_padding_left, pad);
-  mTableInheritedAttributes = builder.TakeDeclarationBlock();
+  RefPtr<nsMappedAttributes> newAttrs;
+  if (const nsAttrValue* value = mAttrs.GetAttr(nsGkAtoms::cellpadding)) {
+    RefPtr<nsMappedAttributes> modifiableMapped =
+        new nsMappedAttributes(attrStyles, MapInheritedTableAttributesIntoRule);
+
+    if (modifiableMapped) {
+      nsAttrValue val(*value);
+      bool oldValueSet;
+      modifiableMapped->SetAndSwapAttr(nsGkAtoms::cellpadding, val,
+                                       &oldValueSet);
+    }
+    newAttrs = attrStyles->UniqueMappedAttributes(modifiableMapped);
+    NS_ASSERTION(newAttrs, "out of memory, but handling gracefully");
+
+    if (newAttrs != modifiableMapped) {
+      
+      
+      
+      
+      
+      modifiableMapped->DropAttributeStylesReference();
+    }
+  }
+  mTableInheritedAttributes = newAttrs;
+  NS_IF_ADDREF(mTableInheritedAttributes);
 }
 
 void HTMLTableElement::ReleaseInheritedAttributes() {
-  mTableInheritedAttributes = nullptr;
+  NS_IF_RELEASE(mTableInheritedAttributes);
 }
 
 nsresult HTMLTableElement::BindToTree(BindContext& aContext, nsINode& aParent) {

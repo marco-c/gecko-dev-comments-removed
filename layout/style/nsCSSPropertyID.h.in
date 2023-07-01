@@ -18,7 +18,7 @@
 
 
 
-enum nsCSSPropertyID : int32_t {
+enum nsCSSPropertyID {
   eCSSProperty_UNKNOWN = -1,
 
 $property_ids

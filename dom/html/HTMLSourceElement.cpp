@@ -16,10 +16,10 @@
 
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/AttributeStyles.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Preferences.h"
 
 #include "nsGkAtoms.h"
+#include "nsMappedAttributes.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Source)
 
@@ -178,12 +178,6 @@ JSObject* HTMLSourceElement::WrapNode(JSContext* aCx,
   return HTMLSourceElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-
-
-
-
-
-
 void HTMLSourceElement::BuildMappedAttributesForImage() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -197,6 +191,10 @@ void HTMLSourceElement::BuildMappedAttributesForImage() {
   if (!document) {
     return;
   }
+  AttributeStyles* attrStyles = document->GetAttributeStyles();
+  if (!attrStyles) {
+    return;
+  }
 
   const nsAttrValue* width = mAttrs.GetAttr(nsGkAtoms::width);
   const nsAttrValue* height = mAttrs.GetAttr(nsGkAtoms::height);
@@ -204,33 +202,36 @@ void HTMLSourceElement::BuildMappedAttributesForImage() {
     return;
   }
 
-  MappedDeclarationsBuilder builder(*this, *document);
-  
-  
-  
-  
-  
-  
-  
-  
-  if (width) {
-    MapDimensionAttributeInto(builder, eCSSProperty_width, *width);
-  } else {
-    builder.SetAutoValue(eCSSProperty_width);
+  const size_t count = (width ? 1 : 0) + (height ? 1 : 0);
+  RefPtr<nsMappedAttributes> modifiableMapped(new (count) nsMappedAttributes(
+      attrStyles, nsGenericHTMLElement::MapPictureSourceSizeAttributesInto));
+  MOZ_ASSERT(modifiableMapped);
+
+  auto maybeSetAttr = [&](nsAtom* aName, const nsAttrValue* aValue) {
+    if (!aValue) {
+      return;
+    }
+    nsAttrValue val(*aValue);
+    bool oldValueSet = false;
+    modifiableMapped->SetAndSwapAttr(aName, val, &oldValueSet);
+  };
+  maybeSetAttr(nsGkAtoms::width, width);
+  maybeSetAttr(nsGkAtoms::height, height);
+
+  RefPtr<nsMappedAttributes> newAttrs =
+      attrStyles->UniqueMappedAttributes(modifiableMapped);
+  NS_ENSURE_TRUE_VOID(newAttrs);
+
+  if (newAttrs != modifiableMapped) {
+    
+    
+    
+    
+    
+    modifiableMapped->DropAttributeStylesReference();
   }
 
-  if (height) {
-    MapDimensionAttributeInto(builder, eCSSProperty_height, *height);
-  } else {
-    builder.SetAutoValue(eCSSProperty_height);
-  }
-
-  if (width && height) {
-    DoMapAspectRatio(*width, *height, builder);
-  } else {
-    builder.SetAutoValue(eCSSProperty_aspect_ratio);
-  }
-  mMappedAttributesForImage = builder.TakeDeclarationBlock();
+  mMappedAttributesForImage = std::move(newAttrs);
 }
 
 }  

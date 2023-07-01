@@ -191,7 +191,8 @@ class HTMLVideoElement final : public HTMLMediaElement {
   
   RefPtr<HTMLVideoElement> mVisualCloneSource;
 
-  static void MapAttributesIntoRule(MappedDeclarationsBuilder&);
+  static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
+                                    MappedDeclarations&);
 
   static bool IsVideoStatsEnabled();
   double TotalPlayTime() const;
