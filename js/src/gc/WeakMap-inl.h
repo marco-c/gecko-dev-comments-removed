@@ -196,7 +196,7 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
 
   if (trc->isMarkingTracer()) {
     MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
-    auto marker = GCMarker::fromTracer(trc);
+    auto* marker = GCMarker::fromTracer(trc);
 
     
     
