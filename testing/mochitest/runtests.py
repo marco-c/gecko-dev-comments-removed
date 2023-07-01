@@ -3342,6 +3342,7 @@ toolbar#nav-bar {
                 "fission": not options.disable_fission,
                 "headless": options.headless,
                 "http3": options.useHttp3Server,
+                "http2": options.useHttp2Server,
                 
                 
                 
