@@ -829,6 +829,39 @@ static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+static bool PlainTime_toPlainDateTime(JSContext* cx, const CallArgs& args) {
+  auto* temporalTime = &args.thisv().toObject().as<PlainTimeObject>();
+  auto time = ToPlainTime(temporalTime);
+
+  
+  PlainDate date;
+  Rooted<JSObject*> calendar(cx);
+  if (!ToTemporalDate(cx, args.get(0), &date, &calendar)) {
+    return false;
+  }
+
+  
+  auto* result = CreateTemporalDateTime(cx, {date, time}, calendar);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool PlainTime_toPlainDateTime(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainTime, PlainTime_toPlainDateTime>(cx, args);
+}
+
+
+
+
 static bool PlainTime_getISOFields(JSContext* cx, const CallArgs& args) {
   Rooted<PlainTimeObject*> temporalTime(
       cx, &args.thisv().toObject().as<PlainTimeObject>());
@@ -929,6 +962,7 @@ static const JSFunctionSpec PlainTime_methods[] = {
 };
 
 static const JSFunctionSpec PlainTime_prototype_methods[] = {
+    JS_FN("toPlainDateTime", PlainTime_toPlainDateTime, 1, 0),
     JS_FN("getISOFields", PlainTime_getISOFields, 0, 0),
     JS_FN("valueOf", PlainTime_valueOf, 0, 0),
     JS_FS_END,
