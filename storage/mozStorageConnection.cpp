@@ -707,8 +707,15 @@ nsIEventTarget* Connection::getAsyncExecutionTarget() {
 
   
   if (!mAsyncExecutionThread) {
+    
+    
+    
+    
+    
+    nsAutoCString name("sqldb:"_ns);
+    name.Append(mTelemetryFilename);
     static nsThreadPoolNaming naming;
-    nsresult rv = NS_NewNamedThread(naming.GetNextThreadName("mozStorage"),
+    nsresult rv = NS_NewNamedThread(naming.GetNextThreadName(name),
                                     getter_AddRefs(mAsyncExecutionThread));
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to create async thread.");
