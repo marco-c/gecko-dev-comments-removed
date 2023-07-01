@@ -25,7 +25,7 @@ use std::{cmp, ops};
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SizednessResult {
+pub(crate) enum SizednessResult {
     
     
     
@@ -70,7 +70,7 @@ impl Default for SizednessResult {
 
 impl SizednessResult {
     
-    pub fn join(self, rhs: Self) -> Self {
+    pub(crate) fn join(self, rhs: Self) -> Self {
         cmp::max(self, rhs)
     }
 }
@@ -102,7 +102,7 @@ impl ops::BitOrAssign for SizednessResult {
 
 
 #[derive(Debug)]
-pub struct SizednessAnalysis<'ctx> {
+pub(crate) struct SizednessAnalysis<'ctx> {
     ctx: &'ctx BindgenContext,
     dependencies: HashMap<TypeId, Vec<TypeId>>,
     
@@ -350,7 +350,7 @@ impl<'ctx> From<SizednessAnalysis<'ctx>> for HashMap<TypeId, SizednessResult> {
 
 
 
-pub trait Sizedness {
+pub(crate) trait Sizedness {
     
     fn sizedness(&self, ctx: &BindgenContext) -> SizednessResult;
 

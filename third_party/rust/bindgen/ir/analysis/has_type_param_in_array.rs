@@ -22,7 +22,7 @@ use crate::{HashMap, HashSet};
 
 
 #[derive(Debug, Clone)]
-pub struct HasTypeParameterInArray<'ctx> {
+pub(crate) struct HasTypeParameterInArray<'ctx> {
     ctx: &'ctx BindgenContext,
 
     

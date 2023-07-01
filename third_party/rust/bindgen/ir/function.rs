@@ -10,8 +10,7 @@ use crate::callbacks::{ItemInfo, ItemKind};
 use crate::clang::{self, Attribute};
 use crate::parse::{ClangSubItemParser, ParseError, ParseResult};
 use clang_sys::{self, CXCallingConv};
-use proc_macro2;
-use quote;
+
 use quote::TokenStreamExt;
 use std::io;
 use std::str::FromStr;
@@ -20,7 +19,7 @@ const RUST_DERIVE_FUNPTR_LIMIT: usize = 12;
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum FunctionKind {
+pub(crate) enum FunctionKind {
     
     Function,
     
@@ -30,7 +29,7 @@ pub enum FunctionKind {
 impl FunctionKind {
     
     
-    pub fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
+    pub(crate) fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
         
         Some(match cursor.kind() {
             clang_sys::CXCursor_FunctionDecl => FunctionKind::Function,
@@ -64,7 +63,7 @@ impl FunctionKind {
 
 
 #[derive(Debug, Clone, Copy)]
-pub enum Linkage {
+pub(crate) enum Linkage {
     
     External,
     
@@ -76,7 +75,7 @@ pub enum Linkage {
 
 
 #[derive(Debug)]
-pub struct Function {
+pub(crate) struct Function {
     
     name: String,
 
@@ -84,10 +83,10 @@ pub struct Function {
     mangled_name: Option<String>,
 
     
-    signature: TypeId,
+    link_name: Option<String>,
 
     
-    comment: Option<String>,
+    signature: TypeId,
 
     
     kind: FunctionKind,
@@ -98,51 +97,51 @@ pub struct Function {
 
 impl Function {
     
-    pub fn new(
+    pub(crate) fn new(
         name: String,
         mangled_name: Option<String>,
+        link_name: Option<String>,
         signature: TypeId,
-        comment: Option<String>,
         kind: FunctionKind,
         linkage: Linkage,
     ) -> Self {
         Function {
             name,
             mangled_name,
+            link_name,
             signature,
-            comment,
             kind,
             linkage,
         }
     }
 
     
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
 
     
-    pub fn mangled_name(&self) -> Option<&str> {
+    pub(crate) fn mangled_name(&self) -> Option<&str> {
         self.mangled_name.as_deref()
     }
 
     
-    pub fn signature(&self) -> TypeId {
+    pub fn link_name(&self) -> Option<&str> {
+        self.link_name.as_deref()
+    }
+
+    
+    pub(crate) fn signature(&self) -> TypeId {
         self.signature
     }
 
     
-    pub fn comment(&self) -> Option<&str> {
-        self.comment.as_deref()
-    }
-
-    
-    pub fn kind(&self) -> FunctionKind {
+    pub(crate) fn kind(&self) -> FunctionKind {
         self.kind
     }
 
     
-    pub fn linkage(&self) -> Linkage {
+    pub(crate) fn linkage(&self) -> Linkage {
         self.linkage
     }
 }
@@ -178,6 +177,8 @@ pub enum Abi {
     
     Stdcall,
     
+    EfiApi,
+    
     Fastcall,
     
     ThisCall,
@@ -198,6 +199,7 @@ impl FromStr for Abi {
         match s {
             "C" => Ok(Self::C),
             "stdcall" => Ok(Self::Stdcall),
+            "efiapi" => Ok(Self::EfiApi),
             "fastcall" => Ok(Self::Fastcall),
             "thiscall" => Ok(Self::ThisCall),
             "vectorcall" => Ok(Self::Vectorcall),
@@ -214,6 +216,7 @@ impl std::fmt::Display for Abi {
         let s = match *self {
             Self::C => "C",
             Self::Stdcall => "stdcall",
+            Self::EfiApi => "efiapi",
             Self::Fastcall => "fastcall",
             Self::ThisCall => "thiscall",
             Self::Vectorcall => "vectorcall",
@@ -236,6 +239,7 @@ impl quote::ToTokens for Abi {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum ClangAbi {
+    
     Known(Abi),
     
     Unknown(CXCallingConv),
@@ -262,7 +266,10 @@ impl quote::ToTokens for ClangAbi {
 
 
 #[derive(Debug)]
-pub struct FunctionSig {
+pub(crate) struct FunctionSig {
+    
+    name: String,
+
     
     return_type: TypeId,
 
@@ -297,7 +304,7 @@ fn get_abi(cc: CXCallingConv) -> ClangAbi {
 }
 
 
-pub fn cursor_mangling(
+pub(crate) fn cursor_mangling(
     ctx: &BindgenContext,
     cursor: &clang::Cursor,
 ) -> Option<String> {
@@ -399,7 +406,12 @@ fn args_from_ty_and_cursor(
 
 impl FunctionSig {
     
-    pub fn from_ty(
+    pub(crate) fn name(&self) -> &str {
+        &self.name
+    }
+
+    
+    pub(crate) fn from_ty(
         ty: &clang::Type,
         cursor: &clang::Cursor,
         ctx: &mut BindgenContext,
@@ -572,7 +584,8 @@ impl FunctionSig {
             warn!("Unknown calling convention: {:?}", call_conv);
         }
 
-        Ok(FunctionSig {
+        Ok(Self {
+            name: spelling,
             return_type: ret,
             argument_types: args,
             is_variadic: ty.is_variadic(),
@@ -583,12 +596,12 @@ impl FunctionSig {
     }
 
     
-    pub fn return_type(&self) -> TypeId {
+    pub(crate) fn return_type(&self) -> TypeId {
         self.return_type
     }
 
     
-    pub fn argument_types(&self) -> &[(Option<String>, TypeId)] {
+    pub(crate) fn argument_types(&self) -> &[(Option<String>, TypeId)] {
         &self.argument_types
     }
 
@@ -597,10 +610,10 @@ impl FunctionSig {
         &self,
         ctx: &BindgenContext,
         name: Option<&str>,
-    ) -> ClangAbi {
+    ) -> crate::codegen::error::Result<ClangAbi> {
         
         
-        if let Some(name) = name {
+        let abi = if let Some(name) = name {
             if let Some((abi, _)) = ctx
                 .options()
                 .abi_overrides
@@ -611,13 +624,47 @@ impl FunctionSig {
             } else {
                 self.abi
             }
+        } else if let Some((abi, _)) = ctx
+            .options()
+            .abi_overrides
+            .iter()
+            .find(|(_, regex_set)| regex_set.matches(&self.name))
+        {
+            ClangAbi::Known(*abi)
         } else {
             self.abi
+        };
+
+        match abi {
+            ClangAbi::Known(Abi::ThisCall)
+                if !ctx.options().rust_features().thiscall_abi =>
+            {
+                Err(crate::codegen::error::Error::UnsupportedAbi("thiscall"))
+            }
+            ClangAbi::Known(Abi::Vectorcall)
+                if !ctx.options().rust_features().vectorcall_abi =>
+            {
+                Err(crate::codegen::error::Error::UnsupportedAbi("vectorcall"))
+            }
+            ClangAbi::Known(Abi::CUnwind)
+                if !ctx.options().rust_features().c_unwind_abi =>
+            {
+                Err(crate::codegen::error::Error::UnsupportedAbi("C-unwind"))
+            }
+            ClangAbi::Known(Abi::EfiApi)
+                if !ctx.options().rust_features().abi_efiapi =>
+            {
+                Err(crate::codegen::error::Error::UnsupportedAbi("efiapi"))
+            }
+            ClangAbi::Known(Abi::Win64) if self.is_variadic() => {
+                Err(crate::codegen::error::Error::UnsupportedAbi("Win64"))
+            }
+            abi => Ok(abi),
         }
     }
 
     
-    pub fn is_variadic(&self) -> bool {
+    pub(crate) fn is_variadic(&self) -> bool {
         
         
         
@@ -625,7 +672,7 @@ impl FunctionSig {
     }
 
     
-    pub fn must_use(&self) -> bool {
+    pub(crate) fn must_use(&self) -> bool {
         self.must_use
     }
 
@@ -638,7 +685,7 @@ impl FunctionSig {
     
     
     
-    pub fn function_pointers_can_derive(&self) -> bool {
+    pub(crate) fn function_pointers_can_derive(&self) -> bool {
         if self.argument_types.len() > RUST_DERIVE_FUNPTR_LIMIT {
             return false;
         }
@@ -646,6 +693,7 @@ impl FunctionSig {
         matches!(self.abi, ClangAbi::Known(Abi::C) | ClangAbi::Unknown(..))
     }
 
+    
     pub(crate) fn is_divergent(&self) -> bool {
         self.is_divergent
     }
@@ -734,10 +782,22 @@ impl ClangSubItemParser for Function {
         assert!(!name.is_empty(), "Empty function name.");
 
         let mangled_name = cursor_mangling(context, &cursor);
-        let comment = cursor.raw_comment();
 
-        let function =
-            Self::new(name.clone(), mangled_name, sig, comment, kind, linkage);
+        let link_name = context.options().last_callback(|callbacks| {
+            callbacks.generated_link_name_override(ItemInfo {
+                name: name.as_str(),
+                kind: ItemKind::Function,
+            })
+        });
+
+        let function = Self::new(
+            name.clone(),
+            mangled_name,
+            link_name,
+            sig,
+            kind,
+            linkage,
+        );
 
         Ok(ParseResult::New(function, Some(cursor)))
     }

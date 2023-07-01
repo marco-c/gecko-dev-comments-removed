@@ -12,14 +12,14 @@ use std::collections::{BTreeMap, VecDeque};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Edge {
+pub(crate) struct Edge {
     to: ItemId,
     kind: EdgeKind,
 }
 
 impl Edge {
     
-    pub fn new(to: ItemId, kind: EdgeKind) -> Edge {
+    pub(crate) fn new(to: ItemId, kind: EdgeKind) -> Edge {
         Edge { to, kind }
     }
 }
@@ -33,7 +33,7 @@ impl From<Edge> for ItemId {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum EdgeKind {
+pub(crate) enum EdgeKind {
     
     Generic,
 
@@ -182,12 +182,13 @@ pub enum EdgeKind {
 
 
 
-pub type TraversalPredicate = for<'a> fn(&'a BindgenContext, Edge) -> bool;
+pub(crate) type TraversalPredicate =
+    for<'a> fn(&'a BindgenContext, Edge) -> bool;
 
 
 
 
-pub fn all_edges(_: &BindgenContext, _: Edge) -> bool {
+pub(crate) fn all_edges(_: &BindgenContext, _: Edge) -> bool {
     true
 }
 
@@ -196,14 +197,14 @@ pub fn all_edges(_: &BindgenContext, _: Edge) -> bool {
 
 
 
-pub fn only_inner_type_edges(_: &BindgenContext, edge: Edge) -> bool {
+pub(crate) fn only_inner_type_edges(_: &BindgenContext, edge: Edge) -> bool {
     edge.kind == EdgeKind::InnerType
 }
 
 
 
 
-pub fn codegen_edges(ctx: &BindgenContext, edge: Edge) -> bool {
+pub(crate) fn codegen_edges(ctx: &BindgenContext, edge: Edge) -> bool {
     let cc = &ctx.options().codegen_config;
     match edge.kind {
         EdgeKind::Generic => {
@@ -233,7 +234,7 @@ pub fn codegen_edges(ctx: &BindgenContext, edge: Edge) -> bool {
 
 
 
-pub trait TraversalStorage<'ctx> {
+pub(crate) trait TraversalStorage<'ctx> {
     
     fn new(ctx: &'ctx BindgenContext) -> Self;
 
@@ -259,7 +260,7 @@ impl<'ctx> TraversalStorage<'ctx> for ItemSet {
 
 
 #[derive(Debug)]
-pub struct Paths<'ctx>(BTreeMap<ItemId, ItemId>, &'ctx BindgenContext);
+pub(crate) struct Paths<'ctx>(BTreeMap<ItemId, ItemId>, &'ctx BindgenContext);
 
 impl<'ctx> TraversalStorage<'ctx> for Paths<'ctx> {
     fn new(ctx: &'ctx BindgenContext) -> Self {
@@ -300,7 +301,7 @@ impl<'ctx> TraversalStorage<'ctx> for Paths<'ctx> {
 
 
 
-pub trait TraversalQueue: Default {
+pub(crate) trait TraversalQueue: Default {
     
     fn push(&mut self, item: ItemId);
 
@@ -329,7 +330,7 @@ impl TraversalQueue for VecDeque<ItemId> {
 }
 
 
-pub trait Tracer {
+pub(crate) trait Tracer {
     
     fn visit_kind(&mut self, item: ItemId, kind: EdgeKind);
 
@@ -351,7 +352,7 @@ where
 
 
 
-pub trait Trace {
+pub(crate) trait Trace {
     
     
     
@@ -371,7 +372,7 @@ pub trait Trace {
 
 
 
-pub struct ItemTraversal<'ctx, Storage, Queue>
+pub(crate) struct ItemTraversal<'ctx, Storage, Queue>
 where
     Storage: TraversalStorage<'ctx>,
     Queue: TraversalQueue,
@@ -397,7 +398,7 @@ where
     Queue: TraversalQueue,
 {
     
-    pub fn new<R>(
+    pub(crate) fn new<R>(
         ctx: &'ctx BindgenContext,
         roots: R,
         predicate: TraversalPredicate,
@@ -474,5 +475,5 @@ where
 
 
 
-pub type AssertNoDanglingItemsTraversal<'ctx> =
+pub(crate) type AssertNoDanglingItemsTraversal<'ctx> =
     ItemTraversal<'ctx, Paths<'ctx>, VecDeque<ItemId>>;

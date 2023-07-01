@@ -8,7 +8,7 @@ use std::path::Path;
 
 
 
-pub trait DotAttributes {
+pub(crate) trait DotAttributes {
     
     
     fn dot_attributes<W>(
@@ -21,7 +21,7 @@ pub trait DotAttributes {
 }
 
 
-pub fn write_dot_file<P>(ctx: &BindgenContext, path: P) -> io::Result<()>
+pub(crate) fn write_dot_file<P>(ctx: &BindgenContext, path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
 {

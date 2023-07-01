@@ -1,4 +1,5 @@
 
+#![deny(clippy::missing_docs_in_private_items)]
 
 use crate::clang;
 use crate::ir::context::{BindgenContext, ItemId};
@@ -6,7 +7,7 @@ use crate::ir::context::{BindgenContext, ItemId};
 
 
 #[derive(Debug)]
-pub enum ParseError {
+pub(crate) enum ParseError {
     
     Recurse,
     
@@ -16,7 +17,7 @@ pub enum ParseError {
 
 
 #[derive(Debug)]
-pub enum ParseResult<T> {
+pub(crate) enum ParseResult<T> {
     
     
     AlreadyResolved(ItemId),
@@ -28,7 +29,7 @@ pub enum ParseResult<T> {
 
 
 
-pub trait ClangSubItemParser: Sized {
+pub(crate) trait ClangSubItemParser: Sized {
     
     
     

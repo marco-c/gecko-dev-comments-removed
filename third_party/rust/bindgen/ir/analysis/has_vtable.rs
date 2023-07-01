@@ -10,7 +10,7 @@ use std::ops;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum HasVtableResult {
+pub(crate) enum HasVtableResult {
     
     No,
 
@@ -30,7 +30,7 @@ impl Default for HasVtableResult {
 
 impl HasVtableResult {
     
-    pub fn join(self, rhs: Self) -> Self {
+    pub(crate) fn join(self, rhs: Self) -> Self {
         cmp::max(self, rhs)
     }
 }
@@ -60,7 +60,7 @@ impl ops::BitOrAssign for HasVtableResult {
 
 
 #[derive(Debug, Clone)]
-pub struct HasVtableAnalysis<'ctx> {
+pub(crate) struct HasVtableAnalysis<'ctx> {
     ctx: &'ctx BindgenContext,
 
     
@@ -230,7 +230,7 @@ impl<'ctx> From<HasVtableAnalysis<'ctx>> for HashMap<ItemId, HasVtableResult> {
 
 
 
-pub trait HasVtable {
+pub(crate) trait HasVtable {
     
     fn has_vtable(&self, ctx: &BindgenContext) -> bool;
 

@@ -6,11 +6,12 @@ use super::item::ItemSet;
 use crate::clang;
 use crate::parse::{ClangSubItemParser, ParseError, ParseResult};
 use crate::parse_one;
+
 use std::io;
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ModuleKind {
+pub(crate) enum ModuleKind {
     
     Normal,
     
@@ -19,7 +20,7 @@ pub enum ModuleKind {
 
 
 #[derive(Clone, Debug)]
-pub struct Module {
+pub(crate) struct Module {
     
     name: Option<String>,
     
@@ -30,7 +31,7 @@ pub struct Module {
 
 impl Module {
     
-    pub fn new(name: Option<String>, kind: ModuleKind) -> Self {
+    pub(crate) fn new(name: Option<String>, kind: ModuleKind) -> Self {
         Module {
             name,
             kind,
@@ -39,22 +40,22 @@ impl Module {
     }
 
     
-    pub fn name(&self) -> Option<&str> {
+    pub(crate) fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
 
     
-    pub fn children_mut(&mut self) -> &mut ItemSet {
+    pub(crate) fn children_mut(&mut self) -> &mut ItemSet {
         &mut self.children
     }
 
     
-    pub fn children(&self) -> &ItemSet {
+    pub(crate) fn children(&self) -> &ItemSet {
         &self.children
     }
 
     
-    pub fn is_inline(&self) -> bool {
+    pub(crate) fn is_inline(&self) -> bool {
         self.kind == ModuleKind::Inline
     }
 }
@@ -82,8 +83,8 @@ impl ClangSubItemParser for Module {
             CXCursor_Namespace => {
                 let module_id = ctx.module(cursor);
                 ctx.with_module(module_id, |ctx| {
-                    cursor.visit(|cursor| {
-                        parse_one(ctx, cursor, Some(module_id.into()))
+                    cursor.visit_sorted(ctx, |ctx, child| {
+                        parse_one(ctx, child, Some(module_id.into()))
                     })
                 });
 

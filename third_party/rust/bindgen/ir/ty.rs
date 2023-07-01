@@ -5,7 +5,6 @@ use super::context::{BindgenContext, ItemId, TypeId};
 use super::dot::DotAttributes;
 use super::enum_ty::Enum;
 use super::function::FunctionSig;
-use super::int::IntKind;
 use super::item::{IsOpaque, Item};
 use super::layout::{Layout, Opaque};
 use super::objc::ObjCInterface;
@@ -18,13 +17,15 @@ use crate::parse::{ParseError, ParseResult};
 use std::borrow::Cow;
 use std::io;
 
+pub use super::int::IntKind;
+
 
 
 
 
 
 #[derive(Debug)]
-pub struct Type {
+pub(crate) struct Type {
     
     name: Option<String>,
     
@@ -39,21 +40,12 @@ pub struct Type {
 
 
 
-pub const RUST_DERIVE_IN_ARRAY_LIMIT: usize = 32;
+pub(crate) const RUST_DERIVE_IN_ARRAY_LIMIT: usize = 32;
 
 impl Type {
     
     
-    pub fn as_comp(&self) -> Option<&CompInfo> {
-        match self.kind {
-            TypeKind::Comp(ref ci) => Some(ci),
-            _ => None,
-        }
-    }
-
-    
-    
-    pub fn as_comp_mut(&mut self) -> Option<&mut CompInfo> {
+    pub(crate) fn as_comp_mut(&mut self) -> Option<&mut CompInfo> {
         match self.kind {
             TypeKind::Comp(ref mut ci) => Some(ci),
             _ => None,
@@ -61,7 +53,7 @@ impl Type {
     }
 
     
-    pub fn new(
+    pub(crate) fn new(
         name: Option<String>,
         layout: Option<Layout>,
         kind: TypeKind,
@@ -76,37 +68,37 @@ impl Type {
     }
 
     
-    pub fn kind(&self) -> &TypeKind {
+    pub(crate) fn kind(&self) -> &TypeKind {
         &self.kind
     }
 
     
-    pub fn kind_mut(&mut self) -> &mut TypeKind {
+    pub(crate) fn kind_mut(&mut self) -> &mut TypeKind {
         &mut self.kind
     }
 
     
-    pub fn name(&self) -> Option<&str> {
+    pub(crate) fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
 
     
-    pub fn is_block_pointer(&self) -> bool {
+    pub(crate) fn is_block_pointer(&self) -> bool {
         matches!(self.kind, TypeKind::BlockPointer(..))
     }
 
     
-    pub fn is_int(&self) -> bool {
+    pub(crate) fn is_int(&self) -> bool {
         matches!(self.kind, TypeKind::Int(_))
     }
 
     
-    pub fn is_comp(&self) -> bool {
+    pub(crate) fn is_comp(&self) -> bool {
         matches!(self.kind, TypeKind::Comp(..))
     }
 
     
-    pub fn is_union(&self) -> bool {
+    pub(crate) fn is_union(&self) -> bool {
         match self.kind {
             TypeKind::Comp(ref comp) => comp.is_union(),
             _ => false,
@@ -114,32 +106,31 @@ impl Type {
     }
 
     
-    pub fn is_type_param(&self) -> bool {
+    pub(crate) fn is_type_param(&self) -> bool {
         matches!(self.kind, TypeKind::TypeParam)
     }
 
     
-    pub fn is_template_instantiation(&self) -> bool {
+    pub(crate) fn is_template_instantiation(&self) -> bool {
         matches!(self.kind, TypeKind::TemplateInstantiation(..))
     }
 
     
-    pub fn is_template_alias(&self) -> bool {
-        matches!(self.kind, TypeKind::TemplateAlias(..))
-    }
-
-    
-    pub fn is_function(&self) -> bool {
+    pub(crate) fn is_function(&self) -> bool {
         matches!(self.kind, TypeKind::Function(..))
     }
 
     
-    pub fn is_enum(&self) -> bool {
+    pub(crate) fn is_enum(&self) -> bool {
         matches!(self.kind, TypeKind::Enum(..))
     }
 
     
-    pub fn is_builtin_or_type_param(&self) -> bool {
+    pub(crate) fn is_void(&self) -> bool {
+        matches!(self.kind, TypeKind::Void)
+    }
+    
+    pub(crate) fn is_builtin_or_type_param(&self) -> bool {
         matches!(
             self.kind,
             TypeKind::Void |
@@ -155,29 +146,29 @@ impl Type {
     }
 
     
-    pub fn named(name: String) -> Self {
+    pub(crate) fn named(name: String) -> Self {
         let name = if name.is_empty() { None } else { Some(name) };
         Self::new(name, None, TypeKind::TypeParam, false)
     }
 
     
-    pub fn is_float(&self) -> bool {
+    pub(crate) fn is_float(&self) -> bool {
         matches!(self.kind, TypeKind::Float(..))
     }
 
     
-    pub fn is_bool(&self) -> bool {
+    pub(crate) fn is_bool(&self) -> bool {
         matches!(self.kind, TypeKind::Int(IntKind::Bool))
     }
 
     
-    pub fn is_integer(&self) -> bool {
+    pub(crate) fn is_integer(&self) -> bool {
         matches!(self.kind, TypeKind::Int(..))
     }
 
     
     
-    pub fn as_integer(&self) -> Option<IntKind> {
+    pub(crate) fn as_integer(&self) -> Option<IntKind> {
         match self.kind {
             TypeKind::Int(int_kind) => Some(int_kind),
             _ => None,
@@ -185,25 +176,20 @@ impl Type {
     }
 
     
-    pub fn is_const(&self) -> bool {
+    pub(crate) fn is_const(&self) -> bool {
         self.is_const
     }
 
     
-    pub fn is_type_ref(&self) -> bool {
-        matches!(
-            self.kind,
-            TypeKind::ResolvedTypeRef(_) | TypeKind::UnresolvedTypeRef(_, _, _)
-        )
-    }
-
-    
-    pub fn is_unresolved_ref(&self) -> bool {
+    pub(crate) fn is_unresolved_ref(&self) -> bool {
         matches!(self.kind, TypeKind::UnresolvedTypeRef(_, _, _))
     }
 
     
-    pub fn is_incomplete_array(&self, ctx: &BindgenContext) -> Option<ItemId> {
+    pub(crate) fn is_incomplete_array(
+        &self,
+        ctx: &BindgenContext,
+    ) -> Option<ItemId> {
         match self.kind {
             TypeKind::Array(item, len) => {
                 if len == 0 {
@@ -220,7 +206,7 @@ impl Type {
     }
 
     
-    pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
+    pub(crate) fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
         self.layout.or_else(|| {
             match self.kind {
                 TypeKind::Comp(ref ci) => ci.layout(ctx),
@@ -245,7 +231,7 @@ impl Type {
     
     
     
-    pub fn is_invalid_type_param(&self) -> bool {
+    pub(crate) fn is_invalid_type_param(&self) -> bool {
         match self.kind {
             TypeKind::TypeParam => {
                 let name = self.name().expect("Unnamed named type?");
@@ -266,7 +252,7 @@ impl Type {
     }
 
     
-    pub fn sanitized_name<'a>(
+    pub(crate) fn sanitized_name<'a>(
         &'a self,
         ctx: &BindgenContext,
     ) -> Option<Cow<'a, str>> {
@@ -289,7 +275,7 @@ impl Type {
     }
 
     
-    pub fn canonical_type<'tr>(
+    pub(crate) fn canonical_type<'tr>(
         &'tr self,
         ctx: &'tr BindgenContext,
     ) -> &'tr Type {
@@ -302,7 +288,7 @@ impl Type {
     
     
     
-    pub fn safe_canonical_type<'tr>(
+    pub(crate) fn safe_canonical_type<'tr>(
         &'tr self,
         ctx: &'tr BindgenContext,
     ) -> Option<&'tr Type> {
@@ -341,7 +327,7 @@ impl Type {
 
     
     
-    pub fn should_be_traced_unconditionally(&self) -> bool {
+    pub(crate) fn should_be_traced_unconditionally(&self) -> bool {
         matches!(
             self.kind,
             TypeKind::Comp(..) |
@@ -570,7 +556,7 @@ impl TemplateParameters for TypeKind {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum FloatKind {
+pub(crate) enum FloatKind {
     
     Float,
     
@@ -583,7 +569,7 @@ pub enum FloatKind {
 
 
 #[derive(Debug)]
-pub enum TypeKind {
+pub(crate) enum TypeKind {
     
     Void,
 
@@ -680,7 +666,7 @@ impl Type {
     
     
     
-    pub fn from_clang_ty(
+    pub(crate) fn from_clang_ty(
         potential_id: ItemId,
         ty: &clang::Type,
         location: Cursor,

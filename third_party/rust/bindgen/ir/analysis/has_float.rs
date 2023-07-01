@@ -22,7 +22,7 @@ use crate::{HashMap, HashSet};
 
 
 #[derive(Debug, Clone)]
-pub struct HasFloat<'ctx> {
+pub(crate) struct HasFloat<'ctx> {
     ctx: &'ctx BindgenContext,
 
     

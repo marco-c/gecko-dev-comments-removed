@@ -3,7 +3,7 @@ use crate::ir::context::BindgenContext;
 use crate::ir::item::{HasTypeParamInArray, IsOpaque, Item, ItemCanonicalName};
 use crate::ir::ty::{TypeKind, RUST_DERIVE_IN_ARRAY_LIMIT};
 
-pub fn gen_debug_impl(
+pub(crate) fn gen_debug_impl(
     ctx: &BindgenContext,
     fields: &[Field],
     item: &Item,
@@ -51,7 +51,7 @@ pub fn gen_debug_impl(
 
 
 
-pub trait ImplDebug<'a> {
+pub(crate) trait ImplDebug<'a> {
     
     type Extra;
 

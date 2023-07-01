@@ -22,7 +22,7 @@ use std::mem;
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum CompKind {
+pub(crate) enum CompKind {
     
     Struct,
     
@@ -31,7 +31,7 @@ pub enum CompKind {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum MethodKind {
+pub(crate) enum MethodKind {
     
     
     Constructor,
@@ -55,7 +55,7 @@ pub enum MethodKind {
 
 impl MethodKind {
     
-    pub fn is_destructor(&self) -> bool {
+    pub(crate) fn is_destructor(&self) -> bool {
         matches!(
             *self,
             MethodKind::Destructor | MethodKind::VirtualDestructor { .. }
@@ -63,7 +63,7 @@ impl MethodKind {
     }
 
     
-    pub fn is_pure_virtual(&self) -> bool {
+    pub(crate) fn is_pure_virtual(&self) -> bool {
         match *self {
             MethodKind::Virtual { pure_virtual } |
             MethodKind::VirtualDestructor { pure_virtual } => pure_virtual,
@@ -74,7 +74,7 @@ impl MethodKind {
 
 
 #[derive(Debug)]
-pub struct Method {
+pub(crate) struct Method {
     kind: MethodKind,
     
     
@@ -86,7 +86,7 @@ pub struct Method {
 
 impl Method {
     
-    pub fn new(
+    pub(crate) fn new(
         kind: MethodKind,
         signature: FunctionId,
         is_const: bool,
@@ -99,17 +99,17 @@ impl Method {
     }
 
     
-    pub fn kind(&self) -> MethodKind {
+    pub(crate) fn kind(&self) -> MethodKind {
         self.kind
     }
 
     
-    pub fn is_constructor(&self) -> bool {
+    pub(crate) fn is_constructor(&self) -> bool {
         self.kind == MethodKind::Constructor
     }
 
     
-    pub fn is_virtual(&self) -> bool {
+    pub(crate) fn is_virtual(&self) -> bool {
         matches!(
             self.kind,
             MethodKind::Virtual { .. } | MethodKind::VirtualDestructor { .. }
@@ -117,23 +117,23 @@ impl Method {
     }
 
     
-    pub fn is_static(&self) -> bool {
+    pub(crate) fn is_static(&self) -> bool {
         self.kind == MethodKind::Static
     }
 
     
-    pub fn signature(&self) -> FunctionId {
+    pub(crate) fn signature(&self) -> FunctionId {
         self.signature
     }
 
     
-    pub fn is_const(&self) -> bool {
+    pub(crate) fn is_const(&self) -> bool {
         self.is_const
     }
 }
 
 
-pub trait FieldMethods {
+pub(crate) trait FieldMethods {
     
     fn name(&self) -> Option<&str>;
 
@@ -161,7 +161,7 @@ pub trait FieldMethods {
 
 
 #[derive(Debug)]
-pub struct BitfieldUnit {
+pub(crate) struct BitfieldUnit {
     nth: usize,
     layout: Layout,
     bitfields: Vec<Bitfield>,
@@ -171,24 +171,24 @@ impl BitfieldUnit {
     
     
     
-    pub fn nth(&self) -> usize {
+    pub(crate) fn nth(&self) -> usize {
         self.nth
     }
 
     
-    pub fn layout(&self) -> Layout {
+    pub(crate) fn layout(&self) -> Layout {
         self.layout
     }
 
     
-    pub fn bitfields(&self) -> &[Bitfield] {
+    pub(crate) fn bitfields(&self) -> &[Bitfield] {
         &self.bitfields
     }
 }
 
 
 #[derive(Debug)]
-pub enum Field {
+pub(crate) enum Field {
     
     DataMember(FieldData),
 
@@ -198,7 +198,7 @@ pub enum Field {
 
 impl Field {
     
-    pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
+    pub(crate) fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
         match *self {
             Field::Bitfields(BitfieldUnit { layout, .. }) => Some(layout),
             Field::DataMember(ref data) => {
@@ -307,7 +307,7 @@ impl DotAttributes for Bitfield {
 
 
 #[derive(Debug)]
-pub struct Bitfield {
+pub(crate) struct Bitfield {
     
     
     offset_into_unit: usize,
@@ -341,27 +341,12 @@ impl Bitfield {
 
     
     
-    pub fn offset_into_unit(&self) -> usize {
+    pub(crate) fn offset_into_unit(&self) -> usize {
         self.offset_into_unit
     }
 
     
-    
-    pub fn mask(&self) -> u64 {
-        use std::u64;
-
-        let unoffseted_mask =
-            if self.width() as u64 == mem::size_of::<u64>() as u64 * 8 {
-                u64::MAX
-            } else {
-                (1u64 << self.width()) - 1u64
-            };
-
-        unoffseted_mask << self.offset_into_unit()
-    }
-
-    
-    pub fn width(&self) -> u32 {
+    pub(crate) fn width(&self) -> u32 {
         self.data.bitfield_width().unwrap()
     }
 
@@ -369,7 +354,7 @@ impl Bitfield {
     
     
     
-    pub fn getter_name(&self) -> &str {
+    pub(crate) fn getter_name(&self) -> &str {
         assert!(
             self.name().is_some(),
             "`Bitfield::getter_name` called on anonymous field"
@@ -384,7 +369,7 @@ impl Bitfield {
     
     
     
-    pub fn setter_name(&self) -> &str {
+    pub(crate) fn setter_name(&self) -> &str {
         assert!(
             self.name().is_some(),
             "`Bitfield::setter_name` called on anonymous field"
@@ -866,7 +851,7 @@ impl Trace for CompFields {
 
 
 #[derive(Clone, Debug)]
-pub struct FieldData {
+pub(crate) struct FieldData {
     
     name: Option<String>,
 
@@ -921,7 +906,7 @@ impl FieldMethods for FieldData {
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum BaseKind {
+pub(crate) enum BaseKind {
     
     
     
@@ -938,25 +923,25 @@ pub enum BaseKind {
 
 
 #[derive(Clone, Debug)]
-pub struct Base {
+pub(crate) struct Base {
     
-    pub ty: TypeId,
+    pub(crate) ty: TypeId,
     
-    pub kind: BaseKind,
+    pub(crate) kind: BaseKind,
     
-    pub field_name: String,
+    pub(crate) field_name: String,
     
-    pub is_pub: bool,
+    pub(crate) is_pub: bool,
 }
 
 impl Base {
     
-    pub fn is_virtual(&self) -> bool {
+    pub(crate) fn is_virtual(&self) -> bool {
         self.kind == BaseKind::Virtual
     }
 
     
-    pub fn requires_storage(&self, ctx: &BindgenContext) -> bool {
+    pub(crate) fn requires_storage(&self, ctx: &BindgenContext) -> bool {
         
         
         
@@ -976,7 +961,7 @@ impl Base {
     }
 
     
-    pub fn is_public(&self) -> bool {
+    pub(crate) fn is_public(&self) -> bool {
         self.is_pub
     }
 }
@@ -987,7 +972,7 @@ impl Base {
 
 
 #[derive(Debug)]
-pub struct CompInfo {
+pub(crate) struct CompInfo {
     
     kind: CompKind,
 
@@ -1067,7 +1052,7 @@ pub struct CompInfo {
 
 impl CompInfo {
     
-    pub fn new(kind: CompKind) -> Self {
+    pub(crate) fn new(kind: CompKind) -> Self {
         CompInfo {
             kind,
             fields: CompFields::default(),
@@ -1097,7 +1082,7 @@ impl CompInfo {
     
     
     
-    pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
+    pub(crate) fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
         
         if self.kind == CompKind::Struct {
             return None;
@@ -1126,7 +1111,7 @@ impl CompInfo {
     }
 
     
-    pub fn fields(&self) -> &[Field] {
+    pub(crate) fn fields(&self) -> &[Field] {
         match self.fields {
             CompFields::Error => &[],
             CompFields::After { ref fields, .. } => fields,
@@ -1184,7 +1169,7 @@ impl CompInfo {
     
     
     
-    pub fn has_too_large_bitfield_unit(&self) -> bool {
+    pub(crate) fn has_too_large_bitfield_unit(&self) -> bool {
         if !self.has_bitfields() {
             return false;
         }
@@ -1198,53 +1183,53 @@ impl CompInfo {
 
     
     
-    pub fn has_non_type_template_params(&self) -> bool {
+    pub(crate) fn has_non_type_template_params(&self) -> bool {
         self.has_non_type_template_params
     }
 
     
     
-    pub fn has_own_virtual_method(&self) -> bool {
+    pub(crate) fn has_own_virtual_method(&self) -> bool {
         self.has_own_virtual_method
     }
 
     
-    pub fn has_own_destructor(&self) -> bool {
+    pub(crate) fn has_own_destructor(&self) -> bool {
         self.has_destructor
     }
 
     
-    pub fn methods(&self) -> &[Method] {
+    pub(crate) fn methods(&self) -> &[Method] {
         &self.methods
     }
 
     
-    pub fn constructors(&self) -> &[FunctionId] {
+    pub(crate) fn constructors(&self) -> &[FunctionId] {
         &self.constructors
     }
 
     
-    pub fn destructor(&self) -> Option<(MethodKind, FunctionId)> {
+    pub(crate) fn destructor(&self) -> Option<(MethodKind, FunctionId)> {
         self.destructor
     }
 
     
-    pub fn kind(&self) -> CompKind {
+    pub(crate) fn kind(&self) -> CompKind {
         self.kind
     }
 
     
-    pub fn is_union(&self) -> bool {
+    pub(crate) fn is_union(&self) -> bool {
         self.kind() == CompKind::Union
     }
 
     
-    pub fn base_members(&self) -> &[Base] {
+    pub(crate) fn base_members(&self) -> &[Base] {
         &self.base_members
     }
 
     
-    pub fn from_ty(
+    pub(crate) fn from_ty(
         potential_id: ItemId,
         ty: &clang::Type,
         location: Option<clang::Cursor>,
@@ -1611,23 +1596,23 @@ impl CompInfo {
 
     
     
-    pub fn inner_types(&self) -> &[TypeId] {
+    pub(crate) fn inner_types(&self) -> &[TypeId] {
         &self.inner_types
     }
 
     
-    pub fn inner_vars(&self) -> &[VarId] {
+    pub(crate) fn inner_vars(&self) -> &[VarId] {
         &self.inner_vars
     }
 
     
     
-    pub fn found_unknown_attr(&self) -> bool {
+    pub(crate) fn found_unknown_attr(&self) -> bool {
         self.found_unknown_attr
     }
 
     
-    pub fn is_packed(
+    pub(crate) fn is_packed(
         &self,
         ctx: &BindgenContext,
         layout: Option<&Layout>,
@@ -1657,12 +1642,12 @@ impl CompInfo {
     }
 
     
-    pub fn is_forward_declaration(&self) -> bool {
+    pub(crate) fn is_forward_declaration(&self) -> bool {
         self.is_forward_declaration
     }
 
     
-    pub fn compute_bitfield_units(
+    pub(crate) fn compute_bitfield_units(
         &mut self,
         ctx: &BindgenContext,
         layout: Option<&Layout>,
@@ -1672,7 +1657,7 @@ impl CompInfo {
     }
 
     
-    pub fn deanonymize_fields(&mut self, ctx: &BindgenContext) {
+    pub(crate) fn deanonymize_fields(&mut self, ctx: &BindgenContext) {
         self.fields.deanonymize_fields(ctx, &self.methods);
     }
 
@@ -1685,7 +1670,7 @@ impl CompInfo {
     
     
     
-    pub fn is_rust_union(
+    pub(crate) fn is_rust_union(
         &self,
         ctx: &BindgenContext,
         layout: Option<&Layout>,
@@ -1695,7 +1680,7 @@ impl CompInfo {
             return (false, false);
         }
 
-        if !ctx.options().rust_features().untagged_union {
+        if !ctx.options().untagged_union {
             return (false, false);
         }
 

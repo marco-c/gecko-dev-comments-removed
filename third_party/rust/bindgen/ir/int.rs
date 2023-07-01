@@ -87,7 +87,7 @@ pub enum IntKind {
 
 impl IntKind {
     
-    pub fn is_signed(&self) -> bool {
+    pub(crate) fn is_signed(&self) -> bool {
         use self::IntKind::*;
         match *self {
             
@@ -108,7 +108,7 @@ impl IntKind {
     
     
     
-    pub fn known_size(&self) -> Option<usize> {
+    pub(crate) fn known_size(&self) -> Option<usize> {
         use self::IntKind::*;
         Some(match *self {
             Bool | UChar | SChar | U8 | I8 | Char { .. } => 1,
@@ -121,7 +121,7 @@ impl IntKind {
     }
 
     
-    pub fn signedness_matches(&self, val: i64) -> bool {
+    pub(crate) fn signedness_matches(&self, val: i64) -> bool {
         val >= 0 || self.is_signed()
     }
 }

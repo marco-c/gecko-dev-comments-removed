@@ -22,7 +22,7 @@ pub enum EnumVariantCustomBehavior {
 
 
 #[derive(Debug)]
-pub struct Enum {
+pub(crate) struct Enum {
     
     
     
@@ -36,22 +36,25 @@ pub struct Enum {
 
 impl Enum {
     
-    pub fn new(repr: Option<TypeId>, variants: Vec<EnumVariant>) -> Self {
+    pub(crate) fn new(
+        repr: Option<TypeId>,
+        variants: Vec<EnumVariant>,
+    ) -> Self {
         Enum { repr, variants }
     }
 
     
-    pub fn repr(&self) -> Option<TypeId> {
+    pub(crate) fn repr(&self) -> Option<TypeId> {
         self.repr
     }
 
     
-    pub fn variants(&self) -> &[EnumVariant] {
+    pub(crate) fn variants(&self) -> &[EnumVariant] {
         &self.variants
     }
 
     
-    pub fn from_ty(
+    pub(crate) fn from_ty(
         ty: &clang::Type,
         ctx: &mut BindgenContext,
     ) -> Result<Self, ParseError> {
@@ -169,7 +172,7 @@ impl Enum {
     }
 
     
-    pub fn computed_enum_variation(
+    pub(crate) fn computed_enum_variation(
         &self,
         ctx: &BindgenContext,
         item: &Item,
@@ -236,7 +239,7 @@ impl Enum {
 
 
 #[derive(Debug)]
-pub struct EnumVariant {
+pub(crate) struct EnumVariant {
     
     name: String,
 
@@ -268,7 +271,7 @@ pub enum EnumVariantValue {
 
 impl EnumVariant {
     
-    pub fn new(
+    pub(crate) fn new(
         name: String,
         name_for_allowlisting: String,
         comment: Option<String>,
@@ -285,35 +288,35 @@ impl EnumVariant {
     }
 
     
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
 
     
-    pub fn name_for_allowlisting(&self) -> &str {
+    pub(crate) fn name_for_allowlisting(&self) -> &str {
         &self.name_for_allowlisting
     }
 
     
-    pub fn val(&self) -> EnumVariantValue {
+    pub(crate) fn val(&self) -> EnumVariantValue {
         self.val
     }
 
     
-    pub fn comment(&self) -> Option<&str> {
+    pub(crate) fn comment(&self) -> Option<&str> {
         self.comment.as_deref()
     }
 
     
     
-    pub fn force_constification(&self) -> bool {
+    pub(crate) fn force_constification(&self) -> bool {
         self.custom_behavior
             .map_or(false, |b| b == EnumVariantCustomBehavior::Constify)
     }
 
     
     
-    pub fn hidden(&self) -> bool {
+    pub(crate) fn hidden(&self) -> bool {
         self.custom_behavior
             .map_or(false, |b| b == EnumVariantCustomBehavior::Hide)
     }

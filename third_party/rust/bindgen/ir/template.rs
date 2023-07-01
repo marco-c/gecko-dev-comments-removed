@@ -98,7 +98,7 @@ use crate::clang;
 
 
 
-pub trait TemplateParameters: Sized {
+pub(crate) trait TemplateParameters: Sized {
     
     
     
@@ -163,7 +163,7 @@ pub trait TemplateParameters: Sized {
 }
 
 
-pub trait AsTemplateParam {
+pub(crate) trait AsTemplateParam {
     
     type Extra;
 
@@ -186,7 +186,7 @@ pub trait AsTemplateParam {
 
 
 #[derive(Clone, Debug)]
-pub struct TemplateInstantiation {
+pub(crate) struct TemplateInstantiation {
     
     definition: TypeId,
     
@@ -196,7 +196,7 @@ pub struct TemplateInstantiation {
 
 impl TemplateInstantiation {
     
-    pub fn new<I>(definition: TypeId, args: I) -> TemplateInstantiation
+    pub(crate) fn new<I>(definition: TypeId, args: I) -> TemplateInstantiation
     where
         I: IntoIterator<Item = TypeId>,
     {
@@ -207,17 +207,17 @@ impl TemplateInstantiation {
     }
 
     
-    pub fn template_definition(&self) -> TypeId {
+    pub(crate) fn template_definition(&self) -> TypeId {
         self.definition
     }
 
     
-    pub fn template_arguments(&self) -> &[TypeId] {
+    pub(crate) fn template_arguments(&self) -> &[TypeId] {
         &self.args[..]
     }
 
     
-    pub fn from_ty(
+    pub(crate) fn from_ty(
         ty: &clang::Type,
         ctx: &mut BindgenContext,
     ) -> Option<TemplateInstantiation> {

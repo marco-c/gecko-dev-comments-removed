@@ -8,13 +8,13 @@ use std::cmp;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Layout {
+pub(crate) struct Layout {
     
-    pub size: usize,
+    pub(crate) size: usize,
     
-    pub align: usize,
+    pub(crate) align: usize,
     
-    pub packed: bool,
+    pub(crate) packed: bool,
 }
 
 #[test]
@@ -34,23 +34,25 @@ fn test_layout_for_size() {
 
 impl Layout {
     
-    pub fn known_type_for_size(
+    pub(crate) fn known_type_for_size(
         ctx: &BindgenContext,
         size: usize,
-    ) -> Option<&'static str> {
+    ) -> Option<syn::Type> {
         Some(match size {
-            16 if ctx.options().rust_features.i128_and_u128 => "u128",
-            8 => "u64",
-            4 => "u32",
-            2 => "u16",
-            1 => "u8",
+            16 if ctx.options().rust_features.i128_and_u128 => {
+                syn::parse_quote! { u128 }
+            }
+            8 => syn::parse_quote! { u64 },
+            4 => syn::parse_quote! { u32 },
+            2 => syn::parse_quote! { u16 },
+            1 => syn::parse_quote! { u8 },
             _ => return None,
         })
     }
 
     
     
-    pub fn new(size: usize, align: usize) -> Self {
+    pub(crate) fn new(size: usize, align: usize) -> Self {
         Layout {
             size,
             align,
@@ -72,33 +74,26 @@ impl Layout {
 
     
     
-    pub fn for_size(ctx: &BindgenContext, size: usize) -> Self {
+    pub(crate) fn for_size(ctx: &BindgenContext, size: usize) -> Self {
         Self::for_size_internal(ctx.target_pointer_size(), size)
     }
 
     
-    pub fn is_zero(&self) -> bool {
-        self.size == 0 && self.align == 0
-    }
-
-    
-    pub fn zero() -> Self {
-        Self::new(0, 0)
-    }
-
-    
-    pub fn opaque(&self) -> Opaque {
+    pub(crate) fn opaque(&self) -> Opaque {
         Opaque(*self)
     }
 }
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Opaque(pub Layout);
+pub(crate) struct Opaque(pub(crate) Layout);
 
 impl Opaque {
     
-    pub fn from_clang_ty(ty: &clang::Type, ctx: &BindgenContext) -> Type {
+    pub(crate) fn from_clang_ty(
+        ty: &clang::Type,
+        ctx: &BindgenContext,
+    ) -> Type {
         let layout = Layout::new(ty.size(ctx), ty.align(ctx));
         let ty_kind = TypeKind::Opaque;
         let is_const = ty.is_const();
@@ -107,16 +102,16 @@ impl Opaque {
 
     
     
-    pub fn known_rust_type_for_array(
+    pub(crate) fn known_rust_type_for_array(
         &self,
         ctx: &BindgenContext,
-    ) -> Option<&'static str> {
+    ) -> Option<syn::Type> {
         Layout::known_type_for_size(ctx, self.0.align)
     }
 
     
     
-    pub fn array_size(&self, ctx: &BindgenContext) -> Option<usize> {
+    pub(crate) fn array_size(&self, ctx: &BindgenContext) -> Option<usize> {
         if self.known_rust_type_for_array(ctx).is_some() {
             Some(self.0.size / cmp::max(self.0.align, 1))
         } else {
@@ -127,7 +122,7 @@ impl Opaque {
     
     
     
-    pub fn array_size_within_derive_limit(
+    pub(crate) fn array_size_within_derive_limit(
         &self,
         ctx: &BindgenContext,
     ) -> CanDerive {

@@ -25,7 +25,7 @@ impl Default for MacroParsingBehavior {
 
 
 pub trait ParseCallbacks: fmt::Debug {
-    #[cfg(feature = "cli")]
+    #[cfg(feature = "__cli")]
     #[doc(hidden)]
     fn cli_args(&self) -> Vec<String> {
         vec![]
@@ -39,6 +39,15 @@ pub trait ParseCallbacks: fmt::Debug {
     
     
     fn generated_name_override(
+        &self,
+        _item_info: ItemInfo<'_>,
+    ) -> Option<String> {
+        None
+    }
+
+    
+    
+    fn generated_link_name_override(
         &self,
         _item_info: ItemInfo<'_>,
     ) -> Option<String> {
@@ -95,6 +104,10 @@ pub trait ParseCallbacks: fmt::Debug {
 
     
     
+    fn read_env_var(&self, _key: &str) {}
+
+    
+    
     
     
     
@@ -120,6 +133,27 @@ pub trait ParseCallbacks: fmt::Debug {
 
     
     fn process_comment(&self, _comment: &str) -> Option<String> {
+        None
+    }
+
+    
+    
+    
+    
+    fn field_visibility(
+        &self,
+        _info: FieldInfo<'_>,
+    ) -> Option<crate::FieldVisibilityKind> {
+        None
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "experimental")]
+    fn wrap_as_variadic_fn(&self, _name: &str) -> Option<String> {
         None
     }
 }
@@ -162,4 +196,15 @@ pub enum ItemKind {
     Function,
     
     Var,
+}
+
+
+
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct FieldInfo<'a> {
+    
+    pub type_name: &'a str,
+    
+    pub field_name: &'a str,
 }

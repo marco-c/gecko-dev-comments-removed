@@ -146,7 +146,7 @@ use crate::{HashMap, HashSet};
 
 
 #[derive(Debug, Clone)]
-pub struct UsedTemplateParameters<'ctx> {
+pub(crate) struct UsedTemplateParameters<'ctx> {
     ctx: &'ctx BindgenContext,
 
     
@@ -459,7 +459,7 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
             }
         }
 
-        if cfg!(feature = "testing_only_extra_assertions") {
+        if cfg!(feature = "__testing_only_extra_assertions") {
             
             
             

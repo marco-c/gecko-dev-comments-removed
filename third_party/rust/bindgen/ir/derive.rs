@@ -18,7 +18,7 @@ use std::ops;
 
 
 
-pub trait CanDeriveDebug {
+pub(crate) trait CanDeriveDebug {
     
     
     fn can_derive_debug(&self, ctx: &BindgenContext) -> bool;
@@ -26,7 +26,7 @@ pub trait CanDeriveDebug {
 
 
 
-pub trait CanDeriveCopy {
+pub(crate) trait CanDeriveCopy {
     
     
     fn can_derive_copy(&self, ctx: &BindgenContext) -> bool;
@@ -34,7 +34,7 @@ pub trait CanDeriveCopy {
 
 
 
-pub trait CanDeriveDefault {
+pub(crate) trait CanDeriveDefault {
     
     
     fn can_derive_default(&self, ctx: &BindgenContext) -> bool;
@@ -42,7 +42,7 @@ pub trait CanDeriveDefault {
 
 
 
-pub trait CanDeriveHash {
+pub(crate) trait CanDeriveHash {
     
     
     fn can_derive_hash(&self, ctx: &BindgenContext) -> bool;
@@ -50,7 +50,7 @@ pub trait CanDeriveHash {
 
 
 
-pub trait CanDerivePartialEq {
+pub(crate) trait CanDerivePartialEq {
     
     
     fn can_derive_partialeq(&self, ctx: &BindgenContext) -> bool;
@@ -58,7 +58,7 @@ pub trait CanDerivePartialEq {
 
 
 
-pub trait CanDerivePartialOrd {
+pub(crate) trait CanDerivePartialOrd {
     
     
     fn can_derive_partialord(&self, ctx: &BindgenContext) -> bool;
@@ -66,14 +66,14 @@ pub trait CanDerivePartialOrd {
 
 
 
-pub trait CanDeriveEq {
+pub(crate) trait CanDeriveEq {
     
     fn can_derive_eq(&self, ctx: &BindgenContext) -> bool;
 }
 
 
 
-pub trait CanDeriveOrd {
+pub(crate) trait CanDeriveOrd {
     
     fn can_derive_ord(&self, ctx: &BindgenContext) -> bool;
 }
@@ -115,7 +115,7 @@ impl Default for CanDerive {
 
 impl CanDerive {
     
-    pub fn join(self, rhs: Self) -> Self {
+    pub(crate) fn join(self, rhs: Self) -> Self {
         cmp::max(self, rhs)
     }
 }

@@ -22,7 +22,7 @@ use crate::{HashMap, HashSet};
 
 
 #[derive(Debug, Clone)]
-pub struct HasDestructorAnalysis<'ctx> {
+pub(crate) struct HasDestructorAnalysis<'ctx> {
     ctx: &'ctx BindgenContext,
 
     

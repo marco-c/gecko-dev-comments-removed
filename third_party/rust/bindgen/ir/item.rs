@@ -19,9 +19,9 @@ use super::traversal::{EdgeKind, Trace, Tracer};
 use super::ty::{Type, TypeKind};
 use crate::clang;
 use crate::parse::{ClangSubItemParser, ParseError, ParseResult};
-use clang_sys;
+
 use lazycell::LazyCell;
-use regex;
+
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::fmt::Write;
@@ -38,7 +38,7 @@ use std::iter;
 
 
 
-pub trait ItemCanonicalName {
+pub(crate) trait ItemCanonicalName {
     
     fn canonical_name(&self, ctx: &BindgenContext) -> String;
 }
@@ -55,7 +55,7 @@ pub trait ItemCanonicalName {
 
 
 
-pub trait ItemCanonicalPath {
+pub(crate) trait ItemCanonicalPath {
     
     
     
@@ -69,7 +69,7 @@ pub trait ItemCanonicalPath {
 }
 
 
-pub trait IsOpaque {
+pub(crate) trait IsOpaque {
     
     type Extra;
 
@@ -80,31 +80,31 @@ pub trait IsOpaque {
 }
 
 
-pub trait HasTypeParamInArray {
+pub(crate) trait HasTypeParamInArray {
     
     fn has_type_param_in_array(&self, ctx: &BindgenContext) -> bool;
 }
 
 
-pub trait HasFloat {
+pub(crate) trait HasFloat {
     
     fn has_float(&self, ctx: &BindgenContext) -> bool;
 }
 
 
 
-pub trait ItemAncestors {
+pub(crate) trait ItemAncestors {
     
     fn ancestors<'a>(&self, ctx: &'a BindgenContext) -> ItemAncestorsIter<'a>;
 }
 
-#[cfg(testing_only_extra_assertions)]
+#[cfg(__testing_only_extra_assertions)]
 type DebugOnlyItemSet = ItemSet;
 
-#[cfg(not(testing_only_extra_assertions))]
+#[cfg(not(__testing_only_extra_assertions))]
 struct DebugOnlyItemSet;
 
-#[cfg(not(testing_only_extra_assertions))]
+#[cfg(not(__testing_only_extra_assertions))]
 impl DebugOnlyItemSet {
     fn new() -> Self {
         DebugOnlyItemSet
@@ -118,7 +118,7 @@ impl DebugOnlyItemSet {
 }
 
 
-pub struct ItemAncestorsIter<'a> {
+pub(crate) struct ItemAncestorsIter<'a> {
     item: ItemId,
     ctx: &'a BindgenContext,
     seen: DebugOnlyItemSet,
@@ -375,7 +375,7 @@ impl CanDeriveOrd for Item {
 
 
 #[derive(Debug)]
-pub struct Item {
+pub(crate) struct Item {
     
     id: ItemId,
 
@@ -426,7 +426,7 @@ impl AsRef<ItemId> for Item {
 
 impl Item {
     
-    pub fn new(
+    pub(crate) fn new(
         id: ItemId,
         comment: Option<String>,
         annotations: Option<Annotations>,
@@ -450,7 +450,7 @@ impl Item {
     }
 
     
-    pub fn new_opaque_type(
+    pub(crate) fn new_opaque_type(
         with_id: ItemId,
         ty: &clang::Type,
         ctx: &mut BindgenContext,
@@ -468,28 +468,31 @@ impl Item {
     }
 
     
-    pub fn id(&self) -> ItemId {
+    pub(crate) fn id(&self) -> ItemId {
         self.id
     }
 
     
     
     
-    pub fn parent_id(&self) -> ItemId {
+    pub(crate) fn parent_id(&self) -> ItemId {
         self.parent_id
     }
 
     
     
     
-    pub fn set_parent_for_replacement<Id: Into<ItemId>>(&mut self, id: Id) {
+    pub(crate) fn set_parent_for_replacement<Id: Into<ItemId>>(
+        &mut self,
+        id: Id,
+    ) {
         self.parent_id = id.into();
     }
 
     
     
     
-    pub fn codegen_depth(&self, ctx: &BindgenContext) -> usize {
+    pub(crate) fn codegen_depth(&self, ctx: &BindgenContext) -> usize {
         if !ctx.options().enable_cxx_namespaces {
             return 0;
         }
@@ -507,7 +510,7 @@ impl Item {
 
     
     
-    pub fn comment(&self, ctx: &BindgenContext) -> Option<String> {
+    pub(crate) fn comment(&self, ctx: &BindgenContext) -> Option<String> {
         if !ctx.options().generate_comments {
             return None;
         }
@@ -518,17 +521,17 @@ impl Item {
     }
 
     
-    pub fn kind(&self) -> &ItemKind {
+    pub(crate) fn kind(&self) -> &ItemKind {
         &self.kind
     }
 
     
-    pub fn kind_mut(&mut self) -> &mut ItemKind {
+    pub(crate) fn kind_mut(&mut self) -> &mut ItemKind {
         &mut self.kind
     }
 
     
-    pub fn location(&self) -> Option<&clang::SourceLocation> {
+    pub(crate) fn location(&self) -> Option<&clang::SourceLocation> {
         self.location.as_ref()
     }
 
@@ -537,7 +540,7 @@ impl Item {
     
     
     
-    pub fn local_id(&self, ctx: &BindgenContext) -> usize {
+    pub(crate) fn local_id(&self, ctx: &BindgenContext) -> usize {
         *self.local_id.borrow_with(|| {
             let parent = ctx.resolve_item(self.parent_id);
             parent.next_child_local_id()
@@ -550,7 +553,7 @@ impl Item {
     
     
     
-    pub fn next_child_local_id(&self) -> usize {
+    pub(crate) fn next_child_local_id(&self) -> usize {
         let local_id = self.next_child_local_id.get();
         self.next_child_local_id.set(local_id + 1);
         local_id
@@ -574,7 +577,7 @@ impl Item {
     
     
     
-    pub fn is_toplevel(&self, ctx: &BindgenContext) -> bool {
+    pub(crate) fn is_toplevel(&self, ctx: &BindgenContext) -> bool {
         
         
         if ctx.options().enable_cxx_namespaces &&
@@ -605,36 +608,36 @@ impl Item {
 
     
     
-    pub fn expect_type(&self) -> &Type {
+    pub(crate) fn expect_type(&self) -> &Type {
         self.kind().expect_type()
     }
 
     
     
-    pub fn as_type(&self) -> Option<&Type> {
+    pub(crate) fn as_type(&self) -> Option<&Type> {
         self.kind().as_type()
     }
 
     
     
-    pub fn expect_function(&self) -> &Function {
+    pub(crate) fn expect_function(&self) -> &Function {
         self.kind().expect_function()
     }
 
     
-    pub fn is_module(&self) -> bool {
+    pub(crate) fn is_module(&self) -> bool {
         matches!(self.kind, ItemKind::Module(..))
     }
 
     
-    pub fn annotations(&self) -> &Annotations {
+    pub(crate) fn annotations(&self) -> &Annotations {
         &self.annotations
     }
 
     
     
     
-    pub fn is_blocklisted(&self, ctx: &BindgenContext) -> bool {
+    pub(crate) fn is_blocklisted(&self, ctx: &BindgenContext) -> bool {
         debug_assert!(
             ctx.in_codegen_phase(),
             "You're not supposed to call this yet"
@@ -671,17 +674,10 @@ impl Item {
     }
 
     
-    pub fn is_type_ref(&self) -> bool {
-        self.as_type().map_or(false, |ty| ty.is_type_ref())
-    }
-
-    
-    pub fn is_var(&self) -> bool {
-        matches!(*self.kind(), ItemKind::Var(..))
-    }
-
-    
-    pub fn name<'a>(&'a self, ctx: &'a BindgenContext) -> NameOptions<'a> {
+    pub(crate) fn name<'a>(
+        &'a self,
+        ctx: &'a BindgenContext,
+    ) -> NameOptions<'a> {
         NameOptions::new(self, ctx)
     }
 
@@ -715,7 +711,10 @@ impl Item {
 
     
     
-    pub fn full_disambiguated_name(&self, ctx: &BindgenContext) -> String {
+    pub(crate) fn full_disambiguated_name(
+        &self,
+        ctx: &BindgenContext,
+    ) -> String {
         let mut s = String::new();
         let level = 0;
         self.push_disambiguated_name(ctx, &mut s, level);
@@ -839,7 +838,7 @@ impl Item {
     
     
     
-    pub fn real_canonical_name(
+    pub(crate) fn real_canonical_name(
         &self,
         ctx: &BindgenContext,
         opt: &NameOptions,
@@ -941,7 +940,7 @@ impl Item {
 
     
     
-    pub fn exposed_id(&self, ctx: &BindgenContext) -> String {
+    pub(crate) fn exposed_id(&self, ctx: &BindgenContext) -> String {
         
         
         let ty_kind = self.kind().as_type().map(|t| t.kind());
@@ -962,7 +961,7 @@ impl Item {
 
     
     
-    pub fn as_module(&self) -> Option<&Module> {
+    pub(crate) fn as_module(&self) -> Option<&Module> {
         match self.kind {
             ItemKind::Module(ref module) => Some(module),
             _ => None,
@@ -971,7 +970,7 @@ impl Item {
 
     
     
-    pub fn as_module_mut(&mut self) -> Option<&mut Module> {
+    pub(crate) fn as_module_mut(&mut self) -> Option<&mut Module> {
         match self.kind {
             ItemKind::Module(ref mut module) => Some(module),
             _ => None,
@@ -1010,7 +1009,7 @@ impl Item {
     }
 
     
-    pub fn is_enabled_for_codegen(&self, ctx: &BindgenContext) -> bool {
+    pub(crate) fn is_enabled_for_codegen(&self, ctx: &BindgenContext) -> bool {
         let cc = &ctx.options().codegen_config;
         match *self.kind() {
             ItemKind::Module(..) => true,
@@ -1036,7 +1035,10 @@ impl Item {
 
     
     
-    pub fn path_for_allowlisting(&self, ctx: &BindgenContext) -> &Vec<String> {
+    pub(crate) fn path_for_allowlisting(
+        &self,
+        ctx: &BindgenContext,
+    ) -> &Vec<String> {
         self.path_for_allowlisting
             .borrow_with(|| self.compute_path(ctx, UserMangled::No))
     }
@@ -1095,7 +1097,7 @@ impl Item {
     }
 
     
-    pub fn must_use(&self, ctx: &BindgenContext) -> bool {
+    pub(crate) fn must_use(&self, ctx: &BindgenContext) -> bool {
         self.annotations().must_use_type() || ctx.must_use_type_by_name(self)
     }
 }
@@ -1222,7 +1224,7 @@ impl HasFloat for Item {
 }
 
 
-pub type ItemSet = BTreeSet<ItemId>;
+pub(crate) type ItemSet = BTreeSet<ItemId>;
 
 impl DotAttributes for Item {
     fn dot_attributes<W>(
@@ -1306,6 +1308,7 @@ fn visit_child(
 }
 
 impl Item {
+    
     pub(crate) fn builtin_type(
         kind: TypeKind,
         is_const: bool,
@@ -1331,6 +1334,7 @@ impl Item {
         id.as_type_id_unchecked()
     }
 
+    
     pub(crate) fn parse(
         cursor: clang::Cursor,
         parent_id: Option<ItemId>,
@@ -1349,6 +1353,7 @@ impl Item {
         let current_module = ctx.current_module().into();
         let relevant_parent_id = parent_id.unwrap_or(current_module);
 
+        #[allow(clippy::missing_docs_in_private_items)]
         macro_rules! try_parse {
             ($what:ident) => {
                 match $what::parse(cursor, ctx) {
@@ -1455,8 +1460,12 @@ impl Item {
                                 cursor
                             );
                         }
-                        Some(filename) => {
-                            ctx.include_file(filename);
+                        Some(included_file) => {
+                            for cb in &ctx.options().parse_callbacks {
+                                cb.include_file(&included_file);
+                            }
+
+                            ctx.add_dep(included_file);
                         }
                     }
                 }
@@ -1477,6 +1486,8 @@ impl Item {
         }
     }
 
+    
+    
     pub(crate) fn from_ty_or_ref(
         ty: clang::Type,
         location: clang::Cursor,
@@ -1552,6 +1563,7 @@ impl Item {
         potential_id.as_type_id_unchecked()
     }
 
+    
     pub(crate) fn from_ty(
         ty: &clang::Type,
         location: clang::Cursor,
@@ -1617,7 +1629,11 @@ impl Item {
             canonical_def.unwrap_or_else(|| ty.declaration())
         };
 
-        let comment = decl.raw_comment().or_else(|| location.raw_comment());
+        let comment = location
+            .raw_comment()
+            .or_else(|| decl.raw_comment())
+            .or_else(|| location.raw_comment());
+
         let annotations =
             Annotations::new(&decl).or_else(|| Annotations::new(&location));
 
@@ -1737,7 +1753,6 @@ impl Item {
         ret
     }
 
-    
     
     
     pub(crate) fn type_param(
@@ -1978,7 +1993,7 @@ enum UserMangled {
 
 
 #[derive(Debug)]
-pub struct NameOptions<'a> {
+pub(crate) struct NameOptions<'a> {
     item: &'a Item,
     ctx: &'a BindgenContext,
     within_namespaces: bool,
@@ -1987,7 +2002,7 @@ pub struct NameOptions<'a> {
 
 impl<'a> NameOptions<'a> {
     
-    pub fn new(item: &'a Item, ctx: &'a BindgenContext) -> Self {
+    pub(crate) fn new(item: &'a Item, ctx: &'a BindgenContext) -> Self {
         NameOptions {
             item,
             ctx,
@@ -1998,7 +2013,7 @@ impl<'a> NameOptions<'a> {
 
     
     
-    pub fn within_namespaces(&mut self) -> &mut Self {
+    pub(crate) fn within_namespaces(&mut self) -> &mut Self {
         self.within_namespaces = true;
         self
     }
@@ -2009,7 +2024,7 @@ impl<'a> NameOptions<'a> {
     }
 
     
-    pub fn get(&self) -> String {
+    pub(crate) fn get(&self) -> String {
         self.item.real_canonical_name(self.ctx, self)
     }
 }

@@ -5,7 +5,7 @@ use proc_macro2::Ident;
 
 
 #[derive(Default)]
-pub struct DynamicItems {
+pub(crate) struct DynamicItems {
     
     
     
@@ -69,11 +69,11 @@ pub struct DynamicItems {
 }
 
 impl DynamicItems {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    pub fn get_tokens(
+    pub(crate) fn get_tokens(
         &self,
         lib_ident: Ident,
         ctx: &BindgenContext,

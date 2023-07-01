@@ -21,7 +21,7 @@ use proc_macro2::{Ident, Span, TokenStream};
 
 
 #[derive(Debug)]
-pub struct ObjCInterface {
+pub(crate) struct ObjCInterface {
     
     
     name: String,
@@ -31,13 +31,13 @@ pub struct ObjCInterface {
     is_protocol: bool,
 
     
-    pub template_names: Vec<String>,
+    pub(crate) template_names: Vec<String>,
 
     
-    pub conforms_to: Vec<ItemId>,
+    pub(crate) conforms_to: Vec<ItemId>,
 
     
-    pub parent_class: Option<ItemId>,
+    pub(crate) parent_class: Option<ItemId>,
 
     
     methods: Vec<ObjCMethod>,
@@ -47,7 +47,7 @@ pub struct ObjCInterface {
 
 
 #[derive(Debug)]
-pub struct ObjCMethod {
+pub(crate) struct ObjCMethod {
     
     
     name: String,
@@ -78,14 +78,14 @@ impl ObjCInterface {
 
     
     
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         self.name.as_ref()
     }
 
     
     
     
-    pub fn rust_name(&self) -> String {
+    pub(crate) fn rust_name(&self) -> String {
         if let Some(ref cat) = self.category {
             format!("{}_{}", self.name(), cat)
         } else if self.is_protocol {
@@ -96,32 +96,32 @@ impl ObjCInterface {
     }
 
     
-    pub fn is_template(&self) -> bool {
+    pub(crate) fn is_template(&self) -> bool {
         !self.template_names.is_empty()
     }
 
     
-    pub fn methods(&self) -> &Vec<ObjCMethod> {
+    pub(crate) fn methods(&self) -> &Vec<ObjCMethod> {
         &self.methods
     }
 
     
-    pub fn is_protocol(&self) -> bool {
+    pub(crate) fn is_protocol(&self) -> bool {
         self.is_protocol
     }
 
     
-    pub fn is_category(&self) -> bool {
+    pub(crate) fn is_category(&self) -> bool {
         self.category.is_some()
     }
 
     
-    pub fn class_methods(&self) -> &Vec<ObjCMethod> {
+    pub(crate) fn class_methods(&self) -> &Vec<ObjCMethod> {
         &self.class_methods
     }
 
     
-    pub fn from_ty(
+    pub(crate) fn from_ty(
         cursor: &clang::Cursor,
         ctx: &mut BindgenContext,
     ) -> Option<Self> {
@@ -231,28 +231,25 @@ impl ObjCMethod {
 
     
     
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
-    }
-
-    
-    
-    pub fn rust_name(&self) -> &str {
+    pub(crate) fn rust_name(&self) -> &str {
         self.rust_name.as_ref()
     }
 
     
-    pub fn signature(&self) -> &FunctionSig {
+    pub(crate) fn signature(&self) -> &FunctionSig {
         &self.signature
     }
 
     
-    pub fn is_class_method(&self) -> bool {
+    pub(crate) fn is_class_method(&self) -> bool {
         self.is_class_method
     }
 
     
-    pub fn format_method_call(&self, args: &[TokenStream]) -> TokenStream {
+    pub(crate) fn format_method_call(
+        &self,
+        args: &[TokenStream],
+    ) -> TokenStream {
         let split_name: Vec<Option<Ident>> = self
             .name
             .split(':')
