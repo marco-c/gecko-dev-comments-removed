@@ -262,20 +262,18 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
   double directionAngle = 0.0;
   gfx::Point point;
   if (aPath.IsShape()) {
-    const auto& path = aPath.AsShape();
-    if (!path.mGfxPath) {
-      
-      return Nothing();
-    }
+    const auto& data = aPath.AsShape();
+    RefPtr<gfx::Path> path = data.mGfxPath;
+    MOZ_ASSERT(path, "The empty path is not allowed");
 
     
     
     
     
-    gfx::Float pathLength = path.mGfxPath->ComputeLength();
+    gfx::Float pathLength = path->ComputeLength();
     gfx::Float usedDistance =
         aDistance.ResolveToCSSPixels(CSSCoord(pathLength));
-    if (path.mIsClosedIntervals) {
+    if (data.mIsClosedIntervals) {
       
       
       
@@ -291,8 +289,14 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
       usedDistance = clamped(usedDistance, 0.0f, pathLength);
     }
     gfx::Point tangent;
-    point = path.mGfxPath->ComputePointAtLength(usedDistance, &tangent);
-    directionAngle = (double)atan2(tangent.y, tangent.x);  
+    point = path->ComputePointAtLength(usedDistance, &tangent);
+    
+    
+    
+    
+    
+    point -= NSPointToPoint(data.mCurrentPosition, AppUnitsPerCSSPixel());
+    directionAngle = atan2((double)tangent.y, (double)tangent.x);  
   } else if (aPath.IsRay()) {
     const auto& ray = aPath.AsRay();
     MOZ_ASSERT(ray.mRay);
@@ -360,6 +364,12 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
                                      angle, shift});
 }
 
+static inline bool IsClosedPath(const StyleSVGPathData& aPathData) {
+  return !aPathData._0.AsSpan().empty() &&
+         aPathData._0.AsSpan().rbegin()->IsClosePath();
+}
+
+
 static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const StyleOffsetPath& offsetPath = aFrame->StyleDisplay()->mOffsetPath;
   if (offsetPath.IsNone()) {
@@ -389,13 +399,36 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
         aFrame->GetProperty(nsIFrame::OffsetPathCache());
     MOZ_ASSERT(gfxPath || pathData._0.IsEmpty(),
                "Should have a valid cached gfx::Path or an empty path string");
-    return OffsetPathData::Shape(pathData, gfxPath.forget());
+    
+    
+    return OffsetPathData::Shape(gfxPath.forget(), {}, IsClosedPath(pathData));
   }
 
   
   MOZ_ASSERT(offsetPath.IsBasicShapeOrCoordBox());
+
+  nsRect coordBox;
+  const nsIFrame* containingFrame =
+      MotionPathUtils::GetOffsetPathReferenceBox(aFrame, coordBox);
+  if (!containingFrame || coordBox.IsEmpty()) {
+    return OffsetPathData::None();
+  }
+
+  const nsStyleDisplay* disp = aFrame->StyleDisplay();
+  nsPoint currentPosition = aFrame->GetOffsetTo(containingFrame);
+  RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
   
-  return OffsetPathData::None();
+  
+  
+  const StyleBasicShape& shape =
+      disp->mOffsetPath.AsOffsetPath().path->AsShape();
+  RefPtr<gfx::Path> path = MotionPathUtils::BuildPath(
+      shape, disp->mOffsetPosition, coordBox, currentPosition, builder);
+  if (!path) {
+    return OffsetPathData::None();
+  }
+
+  return OffsetPathData::Shape(path.forget(), std::move(currentPosition), true);
 }
 
 
@@ -416,6 +449,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
       display->mOffsetRotate, display->mOffsetAnchor, display->mOffsetPosition,
       transformOrigin, aRefBox, ComputeAnchorPointAdjustment(*aFrame));
 }
+
 
 static OffsetPathData GenerateOffsetPathData(
     const StyleOffsetPath& aOffsetPath,
@@ -444,9 +478,11 @@ static OffsetPathData GenerateOffsetPathData(
     if (!path) {
       RefPtr<gfx::PathBuilder> builder =
           MotionPathUtils::GetCompositorPathBuilder();
-      path = MotionPathUtils::BuildPath(pathData, builder);
+      path = MotionPathUtils::BuildSVGPath(pathData, builder);
     }
-    return OffsetPathData::Shape(pathData, path.forget());
+    
+    
+    return OffsetPathData::Shape(path.forget(), {}, IsClosedPath(pathData));
   }
 
   
@@ -482,7 +518,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
 }
 
 
-already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
+already_AddRefed<gfx::Path> MotionPathUtils::BuildSVGPath(
     const StyleSVGPathData& aPath, gfx::PathBuilder* aPathBuilder) {
   if (!aPathBuilder) {
     return nullptr;
@@ -491,6 +527,60 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
   const Span<const StylePathCommand>& path = aPath._0.AsSpan();
   return SVGPathData::BuildPath(path, aPathBuilder, StyleStrokeLinecap::Butt,
                                 0.0);
+}
+
+
+already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
+    const StyleBasicShape& aBasicShape,
+    const StyleOffsetPosition& aOffsetPosition, const nsRect& aCoordBox,
+    const nsPoint& aCurrentPosition, gfx::PathBuilder* aPathBuilder) {
+  if (!aPathBuilder) {
+    return nullptr;
+  }
+
+  switch (aBasicShape.tag) {
+    case StyleBasicShape::Tag::Circle: {
+      const nsPoint center =
+          ComputePosition(aBasicShape.AsCircle().position, aOffsetPosition,
+                          aCoordBox, aCurrentPosition);
+      return ShapeUtils::BuildCirclePath(aBasicShape, aCoordBox, center,
+                                         AppUnitsPerCSSPixel(), aPathBuilder);
+    }
+    case StyleBasicShape::Tag::Ellipse: {
+      const nsPoint center =
+          ComputePosition(aBasicShape.AsEllipse().position, aOffsetPosition,
+                          aCoordBox, aCurrentPosition);
+      return ShapeUtils::BuildEllipsePath(aBasicShape, aCoordBox, center,
+                                          AppUnitsPerCSSPixel(), aPathBuilder);
+    }
+    case StyleBasicShape::Tag::Inset:
+      return ShapeUtils::BuildInsetPath(aBasicShape, aCoordBox,
+                                        AppUnitsPerCSSPixel(), aPathBuilder);
+    case StyleBasicShape::Tag::Polygon:
+      return ShapeUtils::BuildPolygonPath(aBasicShape, aCoordBox,
+                                          AppUnitsPerCSSPixel(), aPathBuilder);
+    case StyleBasicShape::Tag::Path:
+      
+      
+      
+      
+      return BuildSVGPath(aBasicShape.AsPath().path, aPathBuilder);
+  }
+
+  return nullptr;
+}
+
+
+already_AddRefed<gfx::PathBuilder> MotionPathUtils::GetPathBuilder() {
+  
+  
+  
+  
+  RefPtr<gfx::PathBuilder> builder =
+      gfxPlatform::GetPlatform()
+          ->ScreenReferenceDrawTarget()
+          ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
+  return builder.forget();
 }
 
 

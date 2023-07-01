@@ -1389,16 +1389,9 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   if (!oldPath || *oldPath != newPath) {
     
     if (newPath.IsPath()) {
-      
-      
-      
-      
-      RefPtr<gfx::PathBuilder> builder =
-          gfxPlatform::GetPlatform()
-              ->ScreenReferenceDrawTarget()
-              ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
+      RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
       RefPtr<gfx::Path> path =
-          MotionPathUtils::BuildPath(newPath.AsSVGPathData(), builder);
+          MotionPathUtils::BuildSVGPath(newPath.AsSVGPathData(), builder);
       if (path) {
         
         
