@@ -288,7 +288,7 @@ void ResolveCallback(FileSystemGetWritableFileStreamResponse&& aResponse,
                          if (stream->IsOpen()) {
                            
                            
-                           Unused << stream->BeginClose();
+                           Unused << stream->BeginAbort();
                          }
                        });
 
