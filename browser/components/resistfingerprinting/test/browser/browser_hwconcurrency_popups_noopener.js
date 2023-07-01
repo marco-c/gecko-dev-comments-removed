@@ -12,6 +12,7 @@
 
 
 
+
 "use strict";
 
 const SPOOFED_HW_CONCURRENCY = 2;
@@ -62,6 +63,11 @@ add_task(
 expectedResults = structuredClone(allSpoofed);
 add_task(
   simpleRFPTest.bind(null, uri, testHWConcurrency, expectedResults, extraData)
+);
+
+expectedResults = structuredClone(allSpoofed);
+add_task(
+  simpleFPPTest.bind(null, uri, testHWConcurrency, expectedResults, extraData)
 );
 
 
