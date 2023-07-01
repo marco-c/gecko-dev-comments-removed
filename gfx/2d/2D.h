@@ -1581,6 +1581,17 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   
 
 
+
+
+
+
+  virtual void FillCircle(const Point& aOrigin, float radius,
+                          const Pattern& aPattern,
+                          const DrawOptions& aOptions = DrawOptions());
+
+  
+
+
   virtual void FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
                           const Pattern& aPattern,
                           const DrawOptions& aOptions = DrawOptions()) = 0;
