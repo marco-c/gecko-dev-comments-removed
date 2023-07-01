@@ -73,7 +73,7 @@ class ScrollPositionUpdate {
   
   
   static ScrollPositionUpdate NewSmoothScroll(
-      ScrollOrigin aOrigin, nsPoint aDestination,
+      ScrollMode aMode, ScrollOrigin aOrigin, nsPoint aDestination,
       ScrollTriggeredByScript aTriggeredByScript,
       UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
   

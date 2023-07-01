@@ -1068,7 +1068,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   
   void ApzSmoothScrollTo(
-      const nsPoint& aDestination, ScrollOrigin,
+      const nsPoint& aDestination, ScrollMode, ScrollOrigin,
       mozilla::ScrollTriggeredByScript,
       mozilla::UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
 
