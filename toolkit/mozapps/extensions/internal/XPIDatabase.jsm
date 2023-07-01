@@ -41,6 +41,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionData: "resource://gre/modules/Extension.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   PermissionsUtils: "resource://gre/modules/PermissionsUtils.sys.mjs",
+  QuarantinedDomains: "resource://gre/modules/ExtensionPermissions.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
@@ -102,6 +103,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   BuiltInThemesHelpers,
   "isColorwayMigrationEnabled",
   "browser.theme.colorway-migration",
+  false
+);
+
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "isQuarantineUIDisabled",
+  "extensions.quarantinedDomains.uiDisabled",
   false
 );
 
@@ -960,6 +975,33 @@ AddonWrapper = class {
 
   get __AddonInternal__() {
     return addonFor(this);
+  }
+
+  get quarantineIgnoredByApp() {
+    return this.isPrivileged || !!this.recommendationStates?.length;
+  }
+
+  get quarantineIgnoredByUser() {
+    
+    
+    
+    
+    return lazy.QuarantinedDomains.isUserAllowedAddonId(this.id);
+  }
+
+  set quarantineIgnoredByUser(val) {
+    lazy.QuarantinedDomains.setUserAllowedAddonIdPref(this.id, !!val);
+  }
+
+  get canChangeQuarantineIgnored() {
+    
+    
+    return (
+      WebExtensionPolicy.quarantinedDomainsEnabled &&
+      !lazy.isQuarantineUIDisabled &&
+      this.type === "extension" &&
+      !this.quarantineIgnoredByApp
+    );
   }
 
   get seen() {
