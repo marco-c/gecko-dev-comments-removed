@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/PWebGLChild.h"
 #include "mozilla/ipc/BigBuffer.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
 
 #include <string>
@@ -20,6 +21,11 @@ namespace dom {
 
 struct FlushedCmdInfo final {
   size_t flushes = 0;
+  
+  
+  Maybe<size_t> flushesSinceLastCongestionCheck;
+  
+  size_t congestionCheckGeneration = 0;
   size_t flushedCmdBytes = 0;
   size_t overhead = 0;
 };
@@ -42,7 +48,7 @@ class WebGLChild final : public PWebGLChild, public SupportsWeakPtr {
   void FlushPendingCmds();
   void ActorDestroy(ActorDestroyReason why) override;
 
-  FlushedCmdInfo GetFlushedCmdInfo() const { return mFlushedCmdInfo; }
+  FlushedCmdInfo& GetFlushedCmdInfo() { return mFlushedCmdInfo; }
 
  private:
   friend PWebGLChild;

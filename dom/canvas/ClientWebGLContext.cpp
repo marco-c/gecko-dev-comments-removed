@@ -541,14 +541,23 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   const auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
   auto& needsSync = fb ? fb->mNeedsRemoteTextureSync : mNeedsRemoteTextureSync;
   if (ownerId && textureId) {
-    const auto tooManyFlushes = 10;
-    auto info = child->GetFlushedCmdInfo();
-    
-    
-    if ((info.flushes - mLastFlushes) > tooManyFlushes) {
-      needsSync = true;
+    auto& info = child->GetFlushedCmdInfo();
+    if (!gfx::gfxVars::WebglOopAsyncPresentForceSync() &&
+        info.flushesSinceLastCongestionCheck.isNothing()) {
+      
+      info.flushesSinceLastCongestionCheck = Some(0);
     }
-    mLastFlushes = info.flushes;
+    const auto tooManyFlushes = 10;
+    if (info.flushesSinceLastCongestionCheck.isSome()) {
+      
+      
+      if (info.flushesSinceLastCongestionCheck.ref() > tooManyFlushes) {
+        needsSync = true;
+      }
+      
+      info.flushesSinceLastCongestionCheck = Some(0);
+      info.congestionCheckGeneration++;
+    }
     if (XRE_IsParentProcess() ||
         gfx::gfxVars::WebglOopAsyncPresentForceSync() || needsSync) {
       needsSync = false;

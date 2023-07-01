@@ -74,6 +74,48 @@ void WebGLChild::FlushPendingCmds() {
   mFlushedCmdInfo.flushes += 1;
   mFlushedCmdInfo.flushedCmdBytes += byteSize;
   mFlushedCmdInfo.overhead += mPendingCmdsAlignmentOverhead;
+  if (mFlushedCmdInfo.flushesSinceLastCongestionCheck.isSome()) {
+    mFlushedCmdInfo.flushesSinceLastCongestionCheck.ref() += 1;
+    const auto startCongestionCheck = 20;
+    const auto maybeIPCMessageCongestion = 70;
+    const auto eventTarget = GetCurrentSerialEventTarget();
+    MOZ_ASSERT(eventTarget);
+    RefPtr<WebGLChild> self = this;
+    size_t generation = self->mFlushedCmdInfo.congestionCheckGeneration;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mFlushedCmdInfo.flushesSinceLastCongestionCheck.ref() ==
+        startCongestionCheck) {
+      SendPing()->Then(eventTarget, __func__, [self, generation]() {
+        if (generation == self->mFlushedCmdInfo.congestionCheckGeneration) {
+          
+          
+          self->mFlushedCmdInfo.flushesSinceLastCongestionCheck = Some(0);
+          self->mFlushedCmdInfo.congestionCheckGeneration++;
+        }
+      });
+    } else if (mFlushedCmdInfo.flushesSinceLastCongestionCheck.ref() >
+               maybeIPCMessageCongestion) {
+      
+      
+      SendSyncPing();
+      
+      mFlushedCmdInfo.flushesSinceLastCongestionCheck = Some(0);
+      mFlushedCmdInfo.congestionCheckGeneration++;
+    }
+  }
 
   if (gl::GLContext::ShouldSpew()) {
     const auto overheadRatio = float(mPendingCmdsAlignmentOverhead) /
