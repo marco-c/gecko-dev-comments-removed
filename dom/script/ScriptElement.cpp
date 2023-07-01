@@ -182,3 +182,29 @@ bool ScriptElement::MaybeProcessScript() {
   RefPtr<ScriptLoader> loader = ownerDoc->ScriptLoader();
   return loader->ProcessScriptElement(this, type);
 }
+
+bool ScriptElement::GetScriptType(nsAString& aType) {
+  Element* element = GetAsContent()->AsElement();
+
+  nsAutoString type;
+  if (!element->GetAttr(nsGkAtoms::type, type)) {
+    return false;
+  }
+
+  
+  
+  static const char kASCIIWhitespace[] = "\t\n\f\r ";
+
+  const bool wasEmptyBeforeTrim = type.IsEmpty();
+  type.Trim(kASCIIWhitespace);
+
+  
+  
+  
+  if (!wasEmptyBeforeTrim && type.IsEmpty()) {
+    return element->GetAttr(nsGkAtoms::type, aType);
+  }
+
+  aType.Assign(type);
+  return true;
+}

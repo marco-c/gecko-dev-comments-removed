@@ -142,30 +142,6 @@ void HTMLScriptElement::SetText(const nsAString& aValue, ErrorResult& aRv) {
 
 
 
-bool HTMLScriptElement::GetScriptType(nsAString& aType) {
-  nsAutoString type;
-  if (!GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
-    return false;
-  }
-
-  
-  
-  static const char kASCIIWhitespace[] = "\t\n\f\r ";
-
-  const bool wasEmptyBeforeTrim = type.IsEmpty();
-  type.Trim(kASCIIWhitespace);
-
-  
-  
-  
-  if (!wasEmptyBeforeTrim && type.IsEmpty()) {
-    return GetAttr(kNameSpaceID_None, nsGkAtoms::type, aType);
-  }
-
-  aType.Assign(type);
-  return true;
-}
-
 void HTMLScriptElement::GetScriptText(nsAString& text) const {
   GetText(text, IgnoreErrors());
 }
