@@ -987,7 +987,10 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
   
   
   
-  if (request && request->IsModuleRequest() &&
+  
+  
+  
+  if (request && mModuleLoader->IsModuleFetched(request->mURI) &&
       mModuleLoader->HasImportMapRegistered()) {
     DebugOnly<bool> removed = mModuleLoader->RemoveFetchedModule(request->mURI);
     MOZ_ASSERT(removed);
