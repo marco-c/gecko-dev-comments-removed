@@ -398,6 +398,7 @@ var gEditItemOverlay = {
         
         
         
+
         let elt;
         if (focusedElement === "preferred") {
           elt = this._element(
@@ -405,9 +406,16 @@ var gEditItemOverlay = {
               "browser.bookmarks.editDialog.firstEditField"
             )
           );
-        } else if (focusedElement === "first") {
-          elt = document.querySelector('input:not([hidden="true"])');
+          if (elt.parentNode.hidden) {
+            focusedElement = "first";
+          }
         }
+        if (focusedElement === "first") {
+          elt = document
+            .getElementById("editBookmarkPanelContent")
+            .querySelector('input:not([hidden="true"])');
+        }
+
         if (elt) {
           elt.focus({ preventScroll: true });
           elt.select();
