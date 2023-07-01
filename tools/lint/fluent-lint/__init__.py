@@ -75,6 +75,44 @@ class Linter(visitor.Visitor):
             "variables": [],
         }
 
+        attributes = [
+            "label",
+            "value",
+            "accesskey",
+            "alt",
+            "title",
+            "tooltiptext",
+            "placeholder",
+            "aria-label",
+            "aria-description",
+            "aria-valuetext",
+            "style",
+            
+            "key",
+            "keycode",
+            
+            "download",
+            
+            "searchkeywords",
+            
+            "searchbuttonlabel",
+            
+            "toolbarname",
+            
+            "buttonlabelaccept",
+            "buttonaccesskeyaccept",
+            "buttonlabelcancel",
+            "buttonaccesskeycancel",
+            "buttonlabelextra2",
+            "buttonaccesskeyextra2",
+            
+            "buttonlabel",
+            "buttonaccesskey",
+            "secondarybuttonlabel",
+            "secondarybuttonaccesskey",
+        ]
+        self.known_attribute_list = [a.lower() for a in attributes]
+
         
         
         self.debug_print_json = False
@@ -116,6 +154,21 @@ class Linter(visitor.Visitor):
         self.last_message_id = node.id.name
 
         super().generic_visit(node)
+
+        
+        
+        for attr in node.attributes:
+            if not attr.id.name.lower() in self.known_attribute_list:
+                comment = self.state["comment"] + self.state["group_comment"]
+                if not f".{attr.id.name}" in comment:
+                    self.add_error(
+                        attr,
+                        "VA01",
+                        "Use attributes designed for localized content directly."
+                        " If script-based processing is necessary, add a comment"
+                        f" explaining why. The linter didn't recognize: .{attr.id.name}",
+                        "warning",
+                    )
 
         
         if self.state["variables"]:
@@ -349,7 +402,7 @@ class Linter(visitor.Visitor):
         if node.id.name not in self.state["variables"]:
             self.state["variables"].append(node.id.name)
 
-    def add_error(self, node, rule, msg):
+    def add_error(self, node, rule, msg, level=None):
         (col, line) = self.span_to_line_and_col(node.span)
         res = {
             "path": self.path,
@@ -358,6 +411,9 @@ class Linter(visitor.Visitor):
             "rule": rule,
             "message": msg,
         }
+        if level:
+            res["level"] = level
+
         self.results.append(result.from_config(self.config, **res))
 
     def span_to_line_and_col(self, span):
