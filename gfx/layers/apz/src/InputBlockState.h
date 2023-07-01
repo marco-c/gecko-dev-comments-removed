@@ -500,7 +500,19 @@ class TouchBlockState : public CancelableBlockState {
   void SetLongTapProcessed() {
     MOZ_ASSERT(!mForLongTap);
     mLongTapWasProcessed = true;
+    mIsWaitingLongTapResult = false;
   }
+
+  void SetWaitingLongTapResult() {
+    MOZ_ASSERT(!mForLongTap);
+    mIsWaitingLongTapResult = true;
+  }
+  bool IsWaitingLongTapResult() const { return mIsWaitingLongTapResult; }
+
+  void SetNeedsToWaitTouchMove(bool aNeedsWaitTouchMove) {
+    mNeedsWaitTouchMove = aNeedsWaitTouchMove;
+  }
+  bool IsReadyForCallback() const { return !mNeedsWaitTouchMove; };
 
   
 
@@ -534,6 +546,17 @@ class TouchBlockState : public CancelableBlockState {
   
   bool mForLongTap;
   bool mLongTapWasProcessed;
+
+  
+  
+  
+  
+  
+  bool mIsWaitingLongTapResult;
+  
+  
+  
+  bool mNeedsWaitTouchMove;
   ScreenIntPoint mSlopOrigin;
   
   TouchCounter& mTouchCounter;

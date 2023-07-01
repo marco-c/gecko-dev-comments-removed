@@ -233,7 +233,11 @@ class InputQueue {
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(uint64_t aInputBlockId);
   void MaybeLongTapTimeout(uint64_t aInputBlockId);
-  void ProcessQueue();
+
+  
+  
+  
+  bool ProcessQueue();
   bool CanDiscardBlock(InputBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 

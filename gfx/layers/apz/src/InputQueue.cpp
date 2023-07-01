@@ -216,7 +216,8 @@ APZEventResult InputQueue::ReceiveTouchInput(
       
       
       
-      if (wasInSlop && block->WasLongTapProcessed() &&
+      if (wasInSlop &&
+          (block->WasLongTapProcessed() || block->IsWaitingLongTapResult()) &&
           !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
         INPQ_LOG(
             "bailing out from in-stop state in block %p after a long-tap "
@@ -225,6 +226,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
         block->ResetContentResponseTimerExpired();
         ScheduleMainThreadTimeout(aTarget, block);
       }
+      block->SetNeedsToWaitTouchMove(false);
       result.SetStatusForTouchEvent(*block, aFlags, consumableFlags, target);
     }
   }
@@ -658,6 +660,14 @@ TouchBlockState* InputQueue::StartNewTouchBlockForLongTap(
 
   
   
+  
+  
+  
+  
+  currentBlock->SetWaitingLongTapResult();
+
+  
+  
   mPrevActiveTouchBlock = currentBlock;
   mActiveTouchBlock = newBlock;
   return newBlock;
@@ -842,6 +852,13 @@ void InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
     NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
+    if (inputBlock->AsTouchBlock() && inputBlock->AsTouchBlock()->IsInSlop()) {
+      
+      
+      
+      
+      inputBlock->AsTouchBlock()->SetNeedsToWaitTouchMove(true);
+    }
     ProcessQueue();
   }
 }
@@ -884,7 +901,14 @@ void InputQueue::ContentReceivedInputBlock(uint64_t aInputBlockId,
     INPQ_LOG("couldn't find block=%" PRIu64 "\n", aInputBlockId);
   }
   if (success) {
-    ProcessQueue();
+    if (ProcessQueue()) {
+      
+      
+      
+      
+      
+      ProcessQueue();
+    }
   }
 }
 
@@ -1021,7 +1045,7 @@ static APZHandledResult GetHandledResultFor(
   return APZHandledResult{APZHandledPlace::HandledByRoot, rootApzc};
 }
 
-void InputQueue::ProcessQueue() {
+bool InputQueue::ProcessQueue() {
   APZThreadUtils::AssertOnControllerThread();
 
   while (!mQueuedInputs.IsEmpty()) {
@@ -1040,13 +1064,23 @@ void InputQueue::ProcessQueue() {
 
     
     
-    auto it = mInputBlockCallbacks.find(curBlock->GetBlockId());
-    if (it != mInputBlockCallbacks.end()) {
-      APZHandledResult handledResult =
-          GetHandledResultFor(target, *curBlock, it->second.mEagerStatus);
-      it->second.mCallback(curBlock->GetBlockId(), handledResult);
-      
-      mInputBlockCallbacks.erase(it);
+    
+    
+    
+    
+    if (!curBlock->AsTouchBlock() ||
+        curBlock->AsTouchBlock()->IsReadyForCallback()) {
+      auto it = mInputBlockCallbacks.find(curBlock->GetBlockId());
+      if (it != mInputBlockCallbacks.end()) {
+        INPQ_LOG("invoking the callback for input from block %p id %" PRIu64
+                 "\n",
+                 curBlock, curBlock->GetBlockId());
+        APZHandledResult handledResult =
+            GetHandledResultFor(target, *curBlock, it->second.mEagerStatus);
+        it->second.mCallback(curBlock->GetBlockId(), handledResult);
+        
+        mInputBlockCallbacks.erase(it);
+      }
     }
 
     
@@ -1073,6 +1107,7 @@ void InputQueue::ProcessQueue() {
     mQueuedInputs.RemoveElementAt(0);
   }
 
+  bool processQueueAgain = false;
   if (CanDiscardBlock(mActiveTouchBlock)) {
     const bool forLongTap = mActiveTouchBlock->ForLongTap();
     INPQ_LOG("discarding a touch block %p id %" PRIu64 "\n",
@@ -1087,6 +1122,7 @@ void InputQueue::ProcessQueue() {
       mPrevActiveTouchBlock->SetLongTapProcessed();
       mActiveTouchBlock = mPrevActiveTouchBlock;
       mPrevActiveTouchBlock = nullptr;
+      processQueueAgain = true;
     }
   }
   if (CanDiscardBlock(mActiveWheelBlock)) {
@@ -1104,6 +1140,8 @@ void InputQueue::ProcessQueue() {
   if (CanDiscardBlock(mActiveKeyboardBlock)) {
     mActiveKeyboardBlock = nullptr;
   }
+
+  return processQueueAgain;
 }
 
 bool InputQueue::CanDiscardBlock(InputBlockState* aBlock) {
