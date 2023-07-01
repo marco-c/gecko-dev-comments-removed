@@ -17,7 +17,7 @@ add_task(async function mainTest() {
 
   
   for (let i = 0; i < verdicts.length; i++) {
-    await openPanel();
+    await task_openPanel();
 
     
     
@@ -70,7 +70,7 @@ add_task(async function mainTest() {
     await SimpleTest.promiseFocus(window);
 
     info("Reopen the panel and show the subview again.");
-    await openPanel();
+    await task_openPanel();
     viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
     EventUtils.synthesizeMouseAtCenter(item, {});
     await viewPromise;
@@ -86,7 +86,7 @@ add_task(async function mainTest() {
     await hidePromise;
 
     info("Open the panel again and check the item is gone.");
-    await openPanel();
+    await task_openPanel();
     Assert.ok(!item.parentNode);
 
     hidePromise = promisePanelHidden();
@@ -96,61 +96,6 @@ add_task(async function mainTest() {
 
   await task_resetState();
 });
-
-async function openPanel() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  await promiseFocus();
-  await new Promise(resolve => {
-    let verifyCount = 5;
-    let backoff = 0;
-    let iBackoff = 0;
-    let interval = setInterval(() => {
-      if (DownloadsPanel.panel && DownloadsPanel.panel.state == "open") {
-        if (verifyCount > 0) {
-          verifyCount--;
-        } else {
-          clearInterval(interval);
-          resolve();
-        }
-      } else if (iBackoff < backoff) {
-        
-        iBackoff++;
-      } else {
-        
-        verifyCount = 5;
-        backoff = Math.max(1, 2 * backoff);
-        iBackoff = 0;
-        if (DownloadsPanel._state != DownloadsPanel.kStateUninitialized) {
-          DownloadsPanel._state = DownloadsPanel.kStateHidden;
-        }
-        DownloadsPanel.showPanel();
-      }
-    }, 100);
-  });
-}
 
 function promisePanelHidden() {
   return BrowserTestUtils.waitForEvent(DownloadsPanel.panel, "popuphidden");

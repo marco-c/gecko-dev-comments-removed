@@ -68,27 +68,10 @@ var DownloadsPanel = {
   _delayTimeout: null,
 
   
-
-
-
-  _state: 0,
+  _initialized: false,
 
   
-  get kStateUninitialized() {
-    return 0;
-  },
-  
-  get kStateHidden() {
-    return 1;
-  },
-  
-  get kStateWaitingData() {
-    return 2;
-  },
-  
-  get kStateShown() {
-    return 3;
-  },
+  _waitingDataForOpen: false,
 
   
 
@@ -106,11 +89,11 @@ var DownloadsPanel = {
       );
     }
 
-    if (this._state != this.kStateUninitialized) {
+    if (this._initialized) {
       DownloadsCommon.log("DownloadsPanel is already initialized.");
       return;
     }
-    this._state = this.kStateHidden;
+    this._initialized = true;
 
     window.addEventListener("unload", this.onWindowUnload);
 
@@ -144,7 +127,7 @@ var DownloadsPanel = {
 
   terminate() {
     DownloadsCommon.log("Attempting to terminate DownloadsPanel for a window.");
-    if (this._state == this.kStateUninitialized) {
+    if (!this._initialized) {
       DownloadsCommon.log(
         "DownloadsPanel was never initialized. Nothing to do."
       );
@@ -168,7 +151,7 @@ var DownloadsPanel = {
       DownloadIntegration.downloadSpamProtection.unregister(window);
     }
 
-    this._state = this.kStateUninitialized;
+    this._initialized = false;
 
     DownloadsSummary.active = false;
     DownloadsCommon.log("DownloadsPanel terminated.");
@@ -214,7 +197,7 @@ var DownloadsPanel = {
     setTimeout(() => this._openPopupIfDataReady(), 0);
 
     DownloadsCommon.log("Waiting for the downloads panel to appear.");
-    this._state = this.kStateWaitingData;
+    this._waitingDataForOpen = true;
   },
 
   
@@ -230,21 +213,15 @@ var DownloadsPanel = {
     }
 
     PanelMultiView.hidePopup(this.panel);
-
-    
-    
-    
-    this._state = this.kStateHidden;
     DownloadsCommon.log("Downloads panel is now closed.");
   },
 
   
 
 
+
   get isPanelShowing() {
-    return (
-      this._state == this.kStateWaitingData || this._state == this.kStateShown
-    );
+    return this._waitingDataForOpen || this.panel.state != "closed";
   },
 
   handleEvent(aEvent) {
@@ -299,7 +276,6 @@ var DownloadsPanel = {
     }
 
     DownloadsCommon.log("Downloads panel has shown.");
-    this._state = this.kStateShown;
 
     
     DownloadsCommon.getIndicatorData(window).attentionSuppressed |=
@@ -336,9 +312,6 @@ var DownloadsPanel = {
 
     
     DownloadsButton.releaseAnchor();
-
-    
-    this._state = this.kStateHidden;
   },
 
   
@@ -505,7 +478,7 @@ var DownloadsPanel = {
 
   _focusPanel() {
     
-    if (this._state != this.kStateShown) {
+    if (this.panel.state != "open") {
       return;
     }
 
@@ -580,16 +553,16 @@ var DownloadsPanel = {
   _openPopupIfDataReady() {
     
     
-    if (this._state != this.kStateWaitingData || DownloadsView.loading) {
+    if (!this._waitingDataForOpen || DownloadsView.loading) {
       return;
     }
+    this._waitingDataForOpen = false;
 
     
     
     
     
     if (window.windowState == window.STATE_MINIMIZED) {
-      this._state = this.kStateHidden;
       return;
     }
 
@@ -599,7 +572,6 @@ var DownloadsPanel = {
 
     if (!anchor) {
       DownloadsCommon.error("Downloads button cannot be found.");
-      this._state = this.kStateHidden;
       return;
     }
 
@@ -629,14 +601,11 @@ var DownloadsPanel = {
         0,
         false,
         null
-      ).catch(e => {
-        console.error(e);
-        this._state = this.kStateHidden;
-      });
-
-      if (!this._openedManually) {
-        this._delayPopupItems();
-      }
+      ).then(() => {
+        if (!this._openedManually) {
+          this._delayPopupItems();
+        }
+      }, console.error);
     }, 0);
   },
 };
