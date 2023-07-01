@@ -50,6 +50,10 @@ const {
 } = require("devtools/client/debugger/src/utils/prefs");
 
 const {
+  safeDecodeItemName,
+} = require("devtools/client/debugger/src/utils/sources-tree/utils");
+
+const {
   isGeneratedId,
   isOriginalId,
   originalToGeneratedId,
@@ -704,8 +708,9 @@ function findSource(
   const source = sources.find(s => {
     
     const sourceFileName = s.url
-      ? decodeURI(s.url.substring(s.url.lastIndexOf("/") + 1))
+      ? safeDecodeItemName(s.url.substring(s.url.lastIndexOf("/") + 1))
       : "";
+
     
     
     return (

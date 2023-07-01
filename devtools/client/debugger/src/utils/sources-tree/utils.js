@@ -28,3 +28,17 @@ export function getRelativePath(url) {
   }
   return "";
 }
+
+
+
+
+
+
+
+export function safeDecodeItemName(name) {
+  try {
+    return decodeURI(name);
+  } catch (e) {
+    return name;
+  }
+}
