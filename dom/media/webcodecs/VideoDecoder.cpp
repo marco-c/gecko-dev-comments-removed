@@ -535,12 +535,10 @@ static RefPtr<VideoFrame> CreateVideoFrame(
     
   }
 
-  
-  return MakeRefPtr<VideoFrame>(
-      aGlobalObject, aData->mImage,
-      format ? format.ref() : VideoPixelFormat::EndGuard_,
-      aData->mImage->GetSize(), aData->mImage->GetPictureRect(), displaySize,
-      Some(aDuration), aTimestamp, aColorSpace);
+  return MakeRefPtr<VideoFrame>(aGlobalObject, aData->mImage, format,
+                                aData->mImage->GetSize(),
+                                aData->mImage->GetPictureRect(), displaySize,
+                                Some(aDuration), aTimestamp, aColorSpace);
 }
 
 static nsTArray<RefPtr<VideoFrame>> DecodedDataToVideoFrames(
