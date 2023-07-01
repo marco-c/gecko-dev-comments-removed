@@ -28,8 +28,7 @@
 #include "mozilla/dom/Element.h"      
 #include "mozilla/dom/Event.h"        
 #include "mozilla/dom/EventTarget.h"  
-#include "mozilla/dom/HTMLTextAreaElement.h"
-#include "mozilla/dom/MouseEvent.h"  
+#include "mozilla/dom/MouseEvent.h"   
 #include "mozilla/dom/Selection.h"
 
 #include "nsAString.h"
@@ -155,21 +154,20 @@ nsresult EditorEventListener::InstallToEditor() {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  EventListenerFlags flags = mEditorBase->IsHTMLEditor()
-                                 ? TrustedEventsAtSystemGroupCapture()
-                                 : TrustedEventsAtSystemGroupBubble();
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
-  eventListenerManager->AddEventListenerByType(this, u"keydown"_ns, flags);
-  eventListenerManager->AddEventListenerByType(this, u"keyup"_ns, flags);
+  eventListenerManager->AddEventListenerByType(
+      this, u"keydown"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->AddEventListenerByType(
+      this, u"keyup"_ns, TrustedEventsAtSystemGroupBubble());
 #endif
-
-  eventListenerManager->AddEventListenerByType(this, u"keypress"_ns, flags);
-  eventListenerManager->AddEventListenerByType(this, u"dragover"_ns, flags);
-  eventListenerManager->AddEventListenerByType(this, u"dragleave"_ns, flags);
-  eventListenerManager->AddEventListenerByType(this, u"drop"_ns, flags);
+  eventListenerManager->AddEventListenerByType(
+      this, u"keypress"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->AddEventListenerByType(
+      this, u"dragover"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->AddEventListenerByType(
+      this, u"dragleave"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->AddEventListenerByType(
+      this, u"drop"_ns, TrustedEventsAtSystemGroupBubble());
   
   
   
@@ -238,17 +236,20 @@ void EditorEventListener::UninstallFromEditor() {
     return;
   }
 
-  EventListenerFlags flags = mEditorBase->IsHTMLEditor()
-                                 ? TrustedEventsAtSystemGroupCapture()
-                                 : TrustedEventsAtSystemGroupBubble();
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
-  eventListenerManager->RemoveEventListenerByType(this, u"keydown"_ns, flags);
-  eventListenerManager->RemoveEventListenerByType(this, u"keyup"_ns, flags);
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"keydown"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"keyup"_ns, TrustedEventsAtSystemGroupBubble());
 #endif
-  eventListenerManager->RemoveEventListenerByType(this, u"keypress"_ns, flags);
-  eventListenerManager->RemoveEventListenerByType(this, u"dragover"_ns, flags);
-  eventListenerManager->RemoveEventListenerByType(this, u"dragleave"_ns, flags);
-  eventListenerManager->RemoveEventListenerByType(this, u"drop"_ns, flags);
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"keypress"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"dragover"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"dragleave"_ns, TrustedEventsAtSystemGroupBubble());
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"drop"_ns, TrustedEventsAtSystemGroupBubble());
   eventListenerManager->RemoveEventListenerByType(this, u"mousedown"_ns,
                                                   TrustedEventsAtCapture());
   eventListenerManager->RemoveEventListenerByType(this, u"mouseup"_ns,
@@ -314,36 +315,10 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
   
   
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
-
-  if (DetachedFromEditor()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (mEditorBase->IsHTMLEditor()) {
-    nsCOMPtr<nsINode> originalEventTargetNode =
-        nsINode::FromEventTargetOrNull(aEvent->GetOriginalTarget());
-
-    if (originalEventTargetNode &&
-        mEditorBase != originalEventTargetNode->OwnerDoc()->GetHTMLEditor()) {
-      return NS_OK;
-    }
-  }
-
   switch (internalEvent->mMessage) {
     
     case eDragOver:
     case eDrop: {
-      
-      
-      
-      if (aEvent->GetCurrentTarget()->IsRootWindow() &&
-          TextControlElement::FromEventTargetOrNull(
-              internalEvent->GetDOMEventTarget())) {
-        return NS_OK;
-      }
       
       
       
@@ -878,13 +853,9 @@ nsresult EditorEventListener::DragOverOrDrop(DragEvent* aDragEvent) {
   }
 
   aDragEvent->PreventDefault();
-
-  WidgetDragEvent* asWidgetEvent = aDragEvent->WidgetEventPtr()->AsDragEvent();
-  asWidgetEvent->UpdateDefaultPreventedOnContent(asWidgetEvent->mTarget);
-
   aDragEvent->StopImmediatePropagation();
 
-  if (asWidgetEvent->mMessage == eDrop) {
+  if (aDragEvent->WidgetEventPtr()->mMessage == eDrop) {
     RefPtr<EditorBase> editorBase = mEditorBase;
     nsresult rv = editorBase->HandleDropEvent(aDragEvent);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -892,7 +863,7 @@ nsresult EditorEventListener::DragOverOrDrop(DragEvent* aDragEvent) {
     return rv;
   }
 
-  MOZ_ASSERT(asWidgetEvent->mMessage == eDragOver);
+  MOZ_ASSERT(aDragEvent->WidgetEventPtr()->mMessage == eDragOver);
 
   
   
