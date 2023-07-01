@@ -54,6 +54,49 @@ inline Instant ToInstant(const InstantObject* instant) {
   return {instant->seconds(), instant->nanoseconds()};
 }
 
+
+
+
+bool IsValidEpochNanoseconds(const JS::BigInt* epochNanoseconds);
+
+
+
+
+bool IsValidEpochInstant(const Instant& instant);
+
+
+
+
+bool IsValidInstantDifference(const Instant& ns);
+
+
+
+
+bool IsValidInstantDifference(const JS::BigInt* ns);
+
+
+
+
+
+Instant ToInstant(const JS::BigInt* epochNanoseconds);
+
+
+
+
+
+Instant ToInstantDifference(const JS::BigInt* epochNanoseconds);
+
+
+
+
+JS::BigInt* ToEpochNanoseconds(JSContext* cx, const Instant& instant);
+
+
+
+
+
+JS::BigInt* ToEpochDifferenceNanoseconds(JSContext* cx, const Instant& instant);
+
 } 
 
 #endif 
