@@ -10,6 +10,7 @@ typedef short PivotMoveReason;
 
 interface nsIAccessible;
 interface nsIAccessibleTraversalRule;
+interface nsIAccessiblePivotObserver;
 
 
 
@@ -20,7 +21,6 @@ interface nsIAccessibleTraversalRule;
 [scriptable, uuid(81fe5144-059b-42db-bd3a-f6ce3158d5e9)]
 interface nsIAccessiblePivot : nsISupports
 {
-  
   const PivotMoveReason REASON_NONE = 0;
   const PivotMoveReason REASON_NEXT = 1;
   const PivotMoveReason REASON_PREV = 2;
@@ -31,16 +31,17 @@ interface nsIAccessiblePivot : nsISupports
   
 
 
+  attribute nsIAccessible position;
+
+  
 
 
+  readonly attribute nsIAccessible root;
+
+  
 
 
-
-
-
-  [optional_argc] nsIAccessible next(in nsIAccessible aAnchor,
-                                     in nsIAccessibleTraversalRule aRule,
-                                     [optional] in boolean aIncludeStart);
+  attribute nsIAccessible modalRoot;
 
   
 
@@ -52,25 +53,12 @@ interface nsIAccessiblePivot : nsISupports
 
 
 
-  [optional_argc] nsIAccessible prev(in nsIAccessible aAnchor,
-                                     in nsIAccessibleTraversalRule aRule,
-                                     [optional] in boolean aIncludeStart);
-
-  
 
 
-
-
-
-  nsIAccessible first(in nsIAccessibleTraversalRule aRule);
-
-  
-
-
-
-
-
-  nsIAccessible last(in nsIAccessibleTraversalRule aRule);
+  [optional_argc] boolean moveNext(in nsIAccessibleTraversalRule aRule,
+                                   [optional] in nsIAccessible aAnchor,
+                                   [optional] in boolean aIncludeStart,
+                                   [optional] in boolean aIsFromUserInput);
 
   
 
@@ -80,8 +68,89 @@ interface nsIAccessiblePivot : nsISupports
 
 
 
-  nsIAccessible atPoint(in long aX, in long aY,
-                        in nsIAccessibleTraversalRule aRule);
+
+
+
+
+  [optional_argc] boolean movePrevious(in nsIAccessibleTraversalRule aRule,
+                                       [optional] in nsIAccessible aAnchor,
+                                       [optional] in boolean aIncludeStart,
+                                       [optional] in boolean aIsFromUserInput);
+
+  
+
+
+
+
+
+
+
+  [optional_argc] boolean moveFirst(in nsIAccessibleTraversalRule aRule,
+                                    [optional] in boolean aIsFromUserInput);
+
+  
+
+
+
+
+
+
+  [optional_argc] boolean moveLast(in nsIAccessibleTraversalRule aRule,
+                                   [optional] in boolean aIsFromUserInput);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [optional_argc] boolean moveToPoint(in nsIAccessibleTraversalRule aRule,
+                                      in long aX, in long aY,
+                                      in boolean aIgnoreNoMatch,
+                                      [optional] in boolean aIsFromUserInput);
+
+  
+
+
+
+
+  void addObserver(in nsIAccessiblePivotObserver aObserver);
+
+  
+
+
+
+
+  void removeObserver(in nsIAccessiblePivotObserver aObserver);
+};
+
+
+
+
+[scriptable, uuid(6006e502-3861-49bd-aba1-fa6d2e74e237)]
+interface nsIAccessiblePivotObserver : nsISupports
+{
+  
+
+
+
+
+
+
+
+
+
+  void onPivotChanged(in nsIAccessiblePivot aPivot,
+                      in nsIAccessible aOldAccessible,
+                      in nsIAccessible aNewAccessible,
+                      in PivotMoveReason aReason,
+                      in boolean aIsFromUserInput);
 };
 
 [scriptable, uuid(e197460d-1eff-4247-b4bb-a43be1840dae)]
@@ -93,6 +162,29 @@ interface nsIAccessibleTraversalRule : nsISupports
   const unsigned short FILTER_MATCH = 0x1;
   
   const unsigned short FILTER_IGNORE_SUBTREE = 0x2;
+
+  
+  const unsigned long PREFILTER_INVISIBLE         = 0x00000001;
+  const unsigned long PREFILTER_OFFSCREEN         = 0x00000002;
+  const unsigned long PREFILTER_NOT_FOCUSABLE     = 0x00000004;
+  const unsigned long PREFILTER_TRANSPARENT       = 0x00000008;
+  const unsigned long PREFILTER_PLATFORM_PRUNED   = 0x00000010;
+  
+
+
+
+  readonly attribute unsigned long preFilter;
+
+  
+
+
+
+
+
+
+
+
+  Array<unsigned long> getMatchRoles();
 
   
 
