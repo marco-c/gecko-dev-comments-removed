@@ -169,9 +169,6 @@ pref("dom.text-recognition.enabled", true);
 pref("browser.sessionhistory.max_total_viewers", -1);
 
 
-pref("browser.display.auto_quality_min_font_size", 20);
-
-
 pref("browser.send_pings", false);
 pref("browser.send_pings.max_per_link", 1);           
 pref("browser.send_pings.require_same_host", false);  
