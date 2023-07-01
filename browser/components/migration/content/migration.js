@@ -42,6 +42,7 @@ var MigrationWizard = {
   _autoMigrate: null,
   _receivedPermissions: new Set(),
   _succeededMigrationEventArgs: null,
+  _openedTime: null,
 
   init() {
     Services.telemetry.setEventRecordingEnabled("browser.migration", true);
@@ -70,6 +71,14 @@ var MigrationWizard = {
     Services.telemetry
       .getHistogramById("FX_MIGRATION_ENTRY_POINT")
       .add(entryPointId);
+
+    
+    
+    
+    
+    if (args.openedTime) {
+      this._openedTime = args.openedTime;
+    }
 
     this.isInitialMigration =
       entrypoint == MigrationUtils.MIGRATION_ENTRYPOINTS.FIRSTRUN;
@@ -287,6 +296,17 @@ var MigrationWizard = {
       this._wiz.canAdvance = false;
 
       document.getElementById("importAll").hidden = true;
+    }
+
+    
+    
+    
+    if (this._openedTime !== null) {
+      let elapsed = Cu.now() - this._openedTime;
+      Services.telemetry.scalarSet(
+        "migration.time_to_produce_legacy_migrator_list",
+        elapsed
+      );
     }
 
     
