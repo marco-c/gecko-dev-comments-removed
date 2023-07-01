@@ -250,7 +250,7 @@ class GeckoProfile(object):
                 
                 "enableTracing": 0,
                 
-                "remoteSymbolServer": "https://symbols.mozilla.org/symbolicate/v4",
+                "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
                 
                 "maxCacheEntries": 2000000,
                 

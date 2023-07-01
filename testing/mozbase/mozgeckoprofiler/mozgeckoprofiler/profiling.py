@@ -39,7 +39,7 @@ def symbolicate_profile_json(profile_path, objdir_path):
             
             "enableTracing": 0,
             
-            "remoteSymbolServer": "https://symbols.mozilla.org/symbolicate/v4",
+            "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
             
             "maxCacheEntries": 2000000,
             
