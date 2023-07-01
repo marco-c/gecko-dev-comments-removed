@@ -1787,8 +1787,6 @@ pref("identity.mobilepromo.ios", "https://www.mozilla.org/firefox/ios/?utm_sourc
 #endif
 
 
-pref("identity.fxaccounts.commands.enabled", true);
-
 
 pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 
