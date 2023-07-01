@@ -167,14 +167,4 @@ void AsyncEventDispatcher::RequireNodeInDocument() {
   mCheckStillInDoc = true;
 }
 
-
-
-
-
-LoadBlockingAsyncEventDispatcher::~LoadBlockingAsyncEventDispatcher() {
-  if (mBlockedDoc) {
-    mBlockedDoc->UnblockOnload(true);
-  }
-}
-
 }  
