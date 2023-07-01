@@ -50,6 +50,14 @@ inline PlainDate ToPlainDate(const PlainMonthDayObject* monthDay) {
   return {monthDay->isoYear(), monthDay->isoMonth(), monthDay->isoDay()};
 }
 
+
+
+
+
+PlainMonthDayObject* CreateTemporalMonthDay(JSContext* cx,
+                                            const PlainDate& date,
+                                            JS::Handle<JSObject*> calendar);
+
 } 
 
 #endif 

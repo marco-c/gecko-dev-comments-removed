@@ -25,6 +25,8 @@
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainTime.h"
+#include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalTypes.h"
 #include "ds/IdValuePair.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
@@ -176,8 +178,144 @@ bool js::temporal::ThrowIfInvalidISODate(JSContext* cx, double year,
   return ::ThrowIfInvalidISODate(cx, year, month, day);
 }
 
+
+
+
+static PlainDateObject* CreateTemporalDate(JSContext* cx, const CallArgs& args,
+                                           double isoYear, double isoMonth,
+                                           double isoDay,
+                                           Handle<JSObject*> calendar) {
+  MOZ_ASSERT(IsInteger(isoYear));
+  MOZ_ASSERT(IsInteger(isoMonth));
+  MOZ_ASSERT(IsInteger(isoDay));
+
+  
+  if (!ThrowIfInvalidISODate(cx, isoYear, isoMonth, isoDay)) {
+    return nullptr;
+  }
+
+  
+  if (!ISODateTimeWithinLimits(isoYear, isoMonth, isoDay)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
+    return nullptr;
+  }
+
+  
+  Rooted<JSObject*> proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_PlainDate,
+                                          &proto)) {
+    return nullptr;
+  }
+
+  auto* object = NewObjectWithClassProto<PlainDateObject>(cx, proto);
+  if (!object) {
+    return nullptr;
+  }
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_YEAR_SLOT, Int32Value(isoYear));
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_MONTH_SLOT, Int32Value(isoMonth));
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_DAY_SLOT, Int32Value(isoDay));
+
+  
+  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, ObjectValue(*calendar));
+
+  
+  return object;
+}
+
+
+
+
+PlainDateObject* js::temporal::CreateTemporalDate(JSContext* cx,
+                                                  const PlainDate& date,
+                                                  Handle<JSObject*> calendar) {
+  auto& [isoYear, isoMonth, isoDay] = date;
+
+  
+  if (!ThrowIfInvalidISODate(cx, date)) {
+    return nullptr;
+  }
+
+  
+  if (!ISODateTimeWithinLimits(date)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_INVALID);
+    return nullptr;
+  }
+
+  
+  auto* object = NewBuiltinClassInstance<PlainDateObject>(cx);
+  if (!object) {
+    return nullptr;
+  }
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_YEAR_SLOT, Int32Value(isoYear));
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_MONTH_SLOT, Int32Value(isoMonth));
+
+  
+  object->setFixedSlot(PlainDateObject::ISO_DAY_SLOT, Int32Value(isoDay));
+
+  
+  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, ObjectValue(*calendar));
+
+  
+  return object;
+}
+
+
+
+
 static bool PlainDateConstructor(JSContext* cx, unsigned argc, Value* vp) {
-  MOZ_CRASH("NYI");
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (!ThrowIfNotConstructing(cx, args, "Temporal.PlainDate")) {
+    return false;
+  }
+
+  
+  double isoYear;
+  if (!ToIntegerWithTruncation(cx, args.get(0), "year", &isoYear)) {
+    return false;
+  }
+
+  
+  double isoMonth;
+  if (!ToIntegerWithTruncation(cx, args.get(1), "month", &isoMonth)) {
+    return false;
+  }
+
+  
+  double isoDay;
+  if (!ToIntegerWithTruncation(cx, args.get(2), "day", &isoDay)) {
+    return false;
+  }
+
+  
+  Rooted<JSObject*> calendar(cx,
+                             ToTemporalCalendarWithISODefault(cx, args.get(3)));
+  if (!calendar) {
+    return false;
+  }
+
+  
+  auto* temporalDate =
+      CreateTemporalDate(cx, args, isoYear, isoMonth, isoDay, calendar);
+  if (!temporalDate) {
+    return false;
+  }
+
+  args.rval().setObject(*temporalDate);
+  return true;
 }
 
 const JSClass PlainDateObject::class_ = {

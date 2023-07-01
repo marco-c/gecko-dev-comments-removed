@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include "jstypes.h"
+
 #include "js/TypeDecls.h"
 #include "vm/NativeObject.h"
 
@@ -25,6 +27,18 @@ class TemporalObject : public NativeObject {
  private:
   static const ClassSpec classSpec_;
 };
+
+
+
+
+bool ToPositiveIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
+                                     const char* name, double* result);
+
+
+
+
+bool ToIntegerWithTruncation(JSContext* cx, JS::Handle<JS::Value> value,
+                             const char* name, double* result);
 
 } 
 

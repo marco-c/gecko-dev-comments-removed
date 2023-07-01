@@ -78,6 +78,12 @@ bool ThrowIfInvalidISODate(JSContext* cx, const PlainDate& date);
 bool ThrowIfInvalidISODate(JSContext* cx, double year, double month,
                            double day);
 
+
+
+
+PlainDateObject* CreateTemporalDate(JSContext* cx, const PlainDate& date,
+                                    JS::Handle<JSObject*> calendar);
+
 } 
 
 #endif 

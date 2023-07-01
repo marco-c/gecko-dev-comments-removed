@@ -115,6 +115,12 @@ bool ThrowIfInvalidTime(JSContext* cx, double hour, double minute,
                         double second, double millisecond, double microsecond,
                         double nanosecond);
 
+
+
+
+
+PlainTimeObject* CreateTemporalTime(JSContext* cx, const PlainTime& time);
+
 } 
 
 #endif 
