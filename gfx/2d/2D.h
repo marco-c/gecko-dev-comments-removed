@@ -1551,6 +1551,18 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+  virtual void StrokeCircle(
+      const Point& aOrigin, float radius, const Pattern& aPattern,
+      const StrokeOptions& aStrokeOptions = StrokeOptions(),
+      const DrawOptions& aOptions = DrawOptions());
+
+  
+
+
+
+
+
+
 
   virtual void Stroke(const Path* aPath, const Pattern& aPattern,
                       const StrokeOptions& aStrokeOptions = StrokeOptions(),
