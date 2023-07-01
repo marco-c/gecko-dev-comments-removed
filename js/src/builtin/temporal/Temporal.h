@@ -7,10 +7,14 @@
 #ifndef builtin_temporal_Temporal_h
 #define builtin_temporal_Temporal_h
 
+#include "mozilla/Assertions.h"
+
 #include <stdint.h>
 
 #include "jstypes.h"
 
+#include "builtin/temporal/TemporalRoundingMode.h"
+#include "builtin/temporal/TemporalUnit.h"
 #include "js/TypeDecls.h"
 #include "vm/NativeObject.h"
 
@@ -18,6 +22,7 @@ namespace js {
 struct ClassSpec;
 class PlainObject;
 class PropertyName;
+class JSStringBuilder;
 }  
 
 namespace js::temporal {
@@ -30,6 +35,116 @@ class TemporalObject : public NativeObject {
   static const ClassSpec classSpec_;
 };
 
+struct Instant;
+struct PlainTime;
+
+
+
+
+
+
+class Increment final {
+  uint32_t value_;
+
+ public:
+  constexpr explicit Increment(uint32_t value) : value_(value) {
+    MOZ_ASSERT(1 <= value && value <= 1'000'000'000);
+  }
+
+  
+
+
+  static constexpr auto min() { return Increment{1}; }
+
+  
+
+
+  static constexpr auto max() { return Increment{1'000'000'000}; }
+
+  
+
+
+  uint32_t value() const { return value_; }
+
+  bool operator==(const Increment& other) const {
+    return value_ == other.value_;
+  }
+
+  bool operator<(const Increment& other) const { return value_ < other.value_; }
+
+  
+  bool operator!=(const Increment& other) const { return !(*this == other); }
+  bool operator>(const Increment& other) const { return other < *this; }
+  bool operator<=(const Increment& other) const { return !(other < *this); }
+  bool operator>=(const Increment& other) const { return !(*this < other); }
+};
+
+
+
+
+constexpr Increment MaximumTemporalDurationRoundingIncrement(
+    TemporalUnit unit) {
+  
+  MOZ_ASSERT(unit > TemporalUnit::Day);
+
+  
+  if (unit == TemporalUnit::Hour) {
+    return Increment{24};
+  }
+
+  
+  if (unit <= TemporalUnit::Second) {
+    return Increment{60};
+  }
+
+  
+  return Increment{1000};
+}
+
+PropertyName* TemporalUnitToString(JSContext* cx, TemporalUnit unit);
+
+enum class TemporalUnitGroup {
+  
+  Date,
+
+  
+  Time,
+
+  
+  DateTime,
+
+  
+  DayTime,
+};
+
+enum class TemporalUnitKey {
+  SmallestUnit,
+  LargestUnit,
+  Unit,
+};
+
+
+
+
+
+bool GetTemporalUnit(JSContext* cx, JS::Handle<JSObject*> options,
+                     TemporalUnitKey key, TemporalUnitGroup unitGroup,
+                     TemporalUnit* unit);
+
+
+
+
+
+bool GetTemporalUnit(JSContext* cx, JS::Handle<JSString*> value,
+                     TemporalUnitKey key, TemporalUnitGroup unitGroup,
+                     TemporalUnit* unit);
+
+
+
+
+bool ToTemporalRoundingMode(JSContext* cx, JS::Handle<JSObject*> options,
+                            TemporalRoundingMode* mode);
+
 enum class CalendarOption { Auto, Always, Never, Critical };
 
 
@@ -37,6 +152,76 @@ enum class CalendarOption { Auto, Always, Never, Critical };
 
 bool ToCalendarNameOption(JSContext* cx, JS::Handle<JSObject*> options,
                           CalendarOption* result);
+
+
+
+
+
+
+class Precision final {
+  int8_t value_;
+
+  enum class Tag {};
+  constexpr Precision(int8_t value, Tag) : value_(value) {}
+
+ public:
+  constexpr explicit Precision(uint8_t value) : value_(value) {
+    MOZ_ASSERT(value < 10);
+  }
+
+  
+
+
+  uint8_t value() const {
+    MOZ_ASSERT(value_ >= 0, "auto and minute precision don't have a value");
+    return uint8_t(value_);
+  }
+
+  
+
+
+  bool isAuto() const { return value_ == -1; }
+
+  
+
+
+  bool isMinute() const { return value_ == -2; }
+
+  
+
+
+  static constexpr Precision Auto() { return {-1, Tag{}}; }
+
+  
+
+
+  static constexpr Precision Minute() { return {-2, Tag{}}; }
+};
+
+
+
+
+bool ToFractionalSecondDigits(JSContext* cx, JS::Handle<JSObject*> options,
+                              Precision* precision);
+
+struct SecondsStringPrecision final {
+  Precision precision = Precision{0};
+  TemporalUnit unit = TemporalUnit::Auto;
+  Increment increment = Increment{1};
+};
+
+
+
+
+SecondsStringPrecision ToSecondsStringPrecision(TemporalUnit smallestUnit,
+                                                Precision fractionalDigitCount);
+
+
+
+
+
+void FormatSecondsStringPart(JSStringBuilder& result, const PlainTime& time,
+                             Precision precision);
 
 enum class TemporalOverflow { Constrain, Reject };
 
