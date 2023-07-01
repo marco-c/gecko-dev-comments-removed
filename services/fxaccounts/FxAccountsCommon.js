@@ -104,9 +104,6 @@ exports.SCOPE_OLD_SYNC = "https://identity.mozilla.com/apps/oldsync";
 
 
 
-exports.LEGACY_SCOPE_WEBEXT_SYNC = "sync:addon_storage";
-
-
 
 
 
@@ -272,7 +269,7 @@ exports.ERROR_MSG_METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED";
 
 
 
-exports.LEGACY_DERIVED_KEYS_NAMES = ["kSync", "kXCS", "kExtSync", "kExtKbHash"];
+exports.LEGACY_DERIVED_KEYS_NAMES = ["kSync", "kXCS"];
 
 
 

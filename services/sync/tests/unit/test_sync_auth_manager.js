@@ -603,8 +603,6 @@ add_task(async function test_getKeysErrorWithBackoff() {
   delete config.fxaccount.user.scopedKeys;
   delete config.fxaccount.user.kSync;
   delete config.fxaccount.user.kXCS;
-  delete config.fxaccount.user.kExtSync;
-  delete config.fxaccount.user.kExtKbHash;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -645,8 +643,6 @@ add_task(async function test_getKeysErrorWithRetry() {
   delete config.fxaccount.user.scopedKeys;
   delete config.fxaccount.user.kSync;
   delete config.fxaccount.user.kXCS;
-  delete config.fxaccount.user.kExtSync;
-  delete config.fxaccount.user.kExtKbHash;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -739,8 +735,6 @@ add_task(async function test_getGetKeysFailing401() {
   delete config.fxaccount.user.scopedKeys;
   delete config.fxaccount.user.kSync;
   delete config.fxaccount.user.kXCS;
-  delete config.fxaccount.user.kExtSync;
-  delete config.fxaccount.user.kExtKbHash;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -766,8 +760,6 @@ add_task(async function test_getGetKeysFailing503() {
   delete config.fxaccount.user.scopedKeys;
   delete config.fxaccount.user.kSync;
   delete config.fxaccount.user.kXCS;
-  delete config.fxaccount.user.kExtSync;
-  delete config.fxaccount.user.kExtKbHash;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -800,8 +792,6 @@ add_task(async function test_getKeysMissing() {
   delete identityConfig.fxaccount.user.scopedKeys;
   delete identityConfig.fxaccount.user.kSync;
   delete identityConfig.fxaccount.user.kXCS;
-  delete identityConfig.fxaccount.user.kExtSync;
-  delete identityConfig.fxaccount.user.kExtKbHash;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
   configureFxAccountIdentity(syncAuthManager, identityConfig);
@@ -847,8 +837,6 @@ add_task(async function test_getKeysUnexpecedError() {
   delete identityConfig.fxaccount.user.scopedKeys;
   delete identityConfig.fxaccount.user.kSync;
   delete identityConfig.fxaccount.user.kXCS;
-  delete identityConfig.fxaccount.user.kExtSync;
-  delete identityConfig.fxaccount.user.kExtKbHash;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
   configureFxAccountIdentity(syncAuthManager, identityConfig);
@@ -892,8 +880,6 @@ add_task(async function test_signedInUserMissing() {
   delete globalIdentityConfig.fxaccount.user.scopedKeys;
   delete globalIdentityConfig.fxaccount.user.kSync;
   delete globalIdentityConfig.fxaccount.user.kXCS;
-  delete globalIdentityConfig.fxaccount.user.kExtSync;
-  delete globalIdentityConfig.fxaccount.user.kExtKbHash;
   delete globalIdentityConfig.fxaccount.user.keyFetchToken;
 
   configureFxAccountIdentity(syncAuthManager, globalIdentityConfig);
