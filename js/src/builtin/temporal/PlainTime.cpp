@@ -25,8 +25,12 @@
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/Temporal.h"
+#include "builtin/temporal/TemporalParser.h"
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/TemporalUnit.h"
+#include "builtin/temporal/TimeZone.h"
+#include "builtin/temporal/Wrapped.h"
+#include "builtin/temporal/ZonedDateTime.h"
 #include "ds/IdValuePair.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
@@ -233,6 +237,73 @@ bool js::temporal::ThrowIfInvalidTime(JSContext* cx, double hour, double minute,
 
 
 
+static PlainTime ConstrainTime(double hour, double minute, double second,
+                               double millisecond, double microsecond,
+                               double nanosecond) {
+  
+  MOZ_ASSERT(IsInteger(hour));
+  MOZ_ASSERT(IsInteger(minute));
+  MOZ_ASSERT(IsInteger(second));
+  MOZ_ASSERT(IsInteger(millisecond));
+  MOZ_ASSERT(IsInteger(microsecond));
+  MOZ_ASSERT(IsInteger(nanosecond));
+
+  
+  return {
+      int32_t(std::clamp(hour, 0.0, 23.0)),
+      int32_t(std::clamp(minute, 0.0, 59.0)),
+      int32_t(std::clamp(second, 0.0, 59.0)),
+      int32_t(std::clamp(millisecond, 0.0, 999.0)),
+      int32_t(std::clamp(microsecond, 0.0, 999.0)),
+      int32_t(std::clamp(nanosecond, 0.0, 999.0)),
+  };
+}
+
+
+
+
+
+bool js::temporal::RegulateTime(JSContext* cx, const TimeRecord& time,
+                                TemporalOverflow overflow, PlainTime* result) {
+  auto& [hour, minute, second, millisecond, microsecond, nanosecond] = time;
+
+  
+  MOZ_ASSERT(IsInteger(hour));
+  MOZ_ASSERT(IsInteger(minute));
+  MOZ_ASSERT(IsInteger(second));
+  MOZ_ASSERT(IsInteger(millisecond));
+  MOZ_ASSERT(IsInteger(microsecond));
+  MOZ_ASSERT(IsInteger(nanosecond));
+
+  
+
+  
+  if (overflow == TemporalOverflow::Constrain) {
+    *result = ConstrainTime(hour, minute, second, millisecond, microsecond,
+                            nanosecond);
+    return true;
+  }
+
+  
+  MOZ_ASSERT(overflow == TemporalOverflow::Reject);
+
+  
+  if (!ThrowIfInvalidTime(cx, hour, minute, second, millisecond, microsecond,
+                          nanosecond)) {
+    return false;
+  }
+
+  
+  *result = {
+      int32_t(hour),        int32_t(minute),      int32_t(second),
+      int32_t(millisecond), int32_t(microsecond), int32_t(nanosecond),
+  };
+  return true;
+}
+
+
+
+
 
 static PlainTimeObject* CreateTemporalTime(JSContext* cx, const CallArgs& args,
                                            double hour, double minute,
@@ -403,6 +474,229 @@ BalancedTime js::temporal::BalanceTime(const PlainTime& time,
                                 time.nanosecond + nanoseconds);
 }
 
+
+
+
+static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
+                                                Handle<Value> item,
+                                                TemporalOverflow overflow) {
+  
+
+  
+  PlainTime result;
+  if (item.isObject()) {
+    
+    Rooted<JSObject*> itemObj(cx, &item.toObject());
+
+    
+    if (itemObj->canUnwrapAs<PlainTimeObject>()) {
+      return itemObj;
+    }
+
+    
+    if (auto* zonedDateTime = itemObj->maybeUnwrapIf<ZonedDateTimeObject>()) {
+      auto epochInstant = ToInstant(zonedDateTime);
+      Rooted<JSObject*> timeZone(cx, zonedDateTime->timeZone());
+      Rooted<JSObject*> calendar(cx, zonedDateTime->calendar());
+
+      if (!cx->compartment()->wrap(cx, &timeZone)) {
+        return nullptr;
+      }
+      if (!cx->compartment()->wrap(cx, &calendar)) {
+        return nullptr;
+      }
+
+      
+      PlainDateTime dateTime;
+      if (!GetPlainDateTimeFor(cx, timeZone, epochInstant, &dateTime)) {
+        return nullptr;
+      }
+
+      
+      return CreateTemporalTime(cx, dateTime.time);
+    }
+
+    
+    if (auto* dateTime = itemObj->maybeUnwrapIf<PlainDateTimeObject>()) {
+      return CreateTemporalTime(cx, ToPlainTime(dateTime));
+    }
+
+    
+    Rooted<JSObject*> calendar(cx,
+                               GetTemporalCalendarWithISODefault(cx, itemObj));
+    if (!calendar) {
+      return nullptr;
+    }
+
+    
+    JSString* calendarId = CalendarToString(cx, calendar);
+    if (!calendarId) {
+      return nullptr;
+    }
+
+    JSLinearString* linear = calendarId->ensureLinear(cx);
+    if (!linear) {
+      return nullptr;
+    }
+
+    if (!StringEqualsLiteral(linear, "iso8601")) {
+      if (auto chars = QuoteString(cx, linear, '"')) {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_TEMPORAL_PLAIN_TIME_CALENDAR_NOT_ISO8601,
+                                 chars.get());
+      }
+      return nullptr;
+    }
+
+    
+    TimeRecord timeResult;
+    if (!ToTemporalTimeRecord(cx, itemObj, &timeResult)) {
+      return nullptr;
+    }
+
+    
+    if (!RegulateTime(cx, timeResult, overflow, &result)) {
+      return nullptr;
+    }
+  } else {
+    
+
+    
+    Rooted<JSString*> string(cx, JS::ToString(cx, item));
+    if (!string) {
+      return nullptr;
+    }
+
+    
+    Rooted<JSString*> calendar(cx);
+    if (!ParseTemporalTimeString(cx, string, &result, &calendar)) {
+      return nullptr;
+    }
+
+    
+    MOZ_ASSERT(IsValidTime(result));
+
+    
+    if (calendar) {
+      JSLinearString* linear = calendar->ensureLinear(cx);
+      if (!linear) {
+        return nullptr;
+      }
+
+      if (!StringEqualsAscii(linear, "iso8601")) {
+        if (auto chars = QuoteString(cx, linear)) {
+          JS_ReportErrorNumberUTF8(
+              cx, GetErrorMessage, nullptr,
+              JSMSG_TEMPORAL_PLAIN_TIME_CALENDAR_NOT_ISO8601, chars.get());
+        }
+        return nullptr;
+      }
+    }
+  }
+
+  
+  return CreateTemporalTime(cx, result);
+}
+
+
+
+
+bool js::temporal::ToTemporalTime(JSContext* cx, Handle<Value> item,
+                                  PlainTime* result) {
+  auto obj = ::ToTemporalTime(cx, item, TemporalOverflow::Constrain);
+  if (!obj) {
+    return false;
+  }
+
+  *result = ToPlainTime(&obj.unwrap());
+  return true;
+}
+
+
+
+
+static bool ToTemporalTimeRecord(JSContext* cx,
+                                 Handle<JSObject*> temporalTimeLike,
+                                 TimeRecord* result) {
+  
+
+  
+  
+
+  
+  bool any = false;
+
+  
+  Rooted<Value> value(cx);
+  auto getTimeProperty = [&](Handle<PropertyName*> property, const char* name,
+                             double* num) {
+    
+    if (!GetProperty(cx, temporalTimeLike, temporalTimeLike, property,
+                     &value)) {
+      return false;
+    }
+
+    
+    if (!value.isUndefined()) {
+      
+      any = true;
+
+      
+      if (!ToIntegerWithTruncation(cx, value, name, num)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (!getTimeProperty(cx->names().hour, "hour", &result->hour)) {
+    return false;
+  }
+  if (!getTimeProperty(cx->names().microsecond, "microsecond",
+                       &result->microsecond)) {
+    return false;
+  }
+  if (!getTimeProperty(cx->names().millisecond, "millisecond",
+                       &result->millisecond)) {
+    return false;
+  }
+  if (!getTimeProperty(cx->names().minute, "minute", &result->minute)) {
+    return false;
+  }
+  if (!getTimeProperty(cx->names().nanosecond, "nanosecond",
+                       &result->nanosecond)) {
+    return false;
+  }
+  if (!getTimeProperty(cx->names().second, "second", &result->second)) {
+    return false;
+  }
+
+  
+  if (!any) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_TIME_MISSING_UNIT);
+    return false;
+  }
+
+  
+
+  
+  return true;
+}
+
+
+
+
+bool js::temporal::ToTemporalTimeRecord(JSContext* cx,
+                                        Handle<JSObject*> temporalTimeLike,
+                                        TimeRecord* result) {
+  
+  *result = {};
+
+  
+  return ::ToTemporalTimeRecord(cx, temporalTimeLike, result);
+}
+
 JSObject* js::temporal::PlainTimeObject::createCalendar(
     JSContext* cx, Handle<PlainTimeObject*> obj) {
   auto* calendar = GetISO8601Calendar(cx);
@@ -482,6 +776,53 @@ static bool PlainTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setObject(*temporalTime);
+  return true;
+}
+
+
+
+
+static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+
+  auto overflow = TemporalOverflow::Constrain;
+  if (args.hasDefined(1)) {
+    
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", "from", args[1]));
+    if (!options) {
+      return false;
+    }
+
+    
+    if (!ToTemporalOverflow(cx, options, &overflow)) {
+      return false;
+    }
+  }
+
+  
+  if (args.get(0).isObject()) {
+    JSObject* item = &args[0].toObject();
+    if (auto* time = item->maybeUnwrapIf<PlainTimeObject>()) {
+      auto* result = CreateTemporalTime(cx, ToPlainTime(time));
+      if (!result) {
+        return false;
+      }
+
+      args.rval().setObject(*result);
+      return true;
+    }
+  }
+
+  
+  auto result = ToTemporalTime(cx, args.get(0), overflow);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
   return true;
 }
 
@@ -583,6 +924,7 @@ const JSClass PlainTimeObject::class_ = {
 const JSClass& PlainTimeObject::protoClass_ = PlainObject::class_;
 
 static const JSFunctionSpec PlainTime_methods[] = {
+    JS_FN("from", PlainTime_from, 1, 0),
     JS_FS_END,
 };
 
