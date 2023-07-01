@@ -20,10 +20,35 @@ interface nsIAccessibleVirtualCursorChangeEvent : nsIAccessibleEvent
   
 
 
+  readonly attribute long oldStartOffset;
+
+  
+
+
+  readonly attribute long oldEndOffset;
+
+  
+
+
   readonly attribute nsIAccessible newAccessible;
 
   
 
 
+  readonly attribute long newStartOffset;
+
+  
+
+
+  readonly attribute long newEndOffset;
+
+  
+
+
   readonly attribute short reason;
+
+  
+
+
+  readonly attribute short boundaryType;
 };
