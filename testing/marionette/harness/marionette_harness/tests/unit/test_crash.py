@@ -90,16 +90,10 @@ class BaseCrashTestCase(MarionetteTestCase):
         super(BaseCrashTestCase, self).tearDown()
 
     def crash(self, parent=True):
-        socket_timeout = self.marionette.client.socket_timeout
-        self.marionette.client.socket_timeout = self.socket_timeout
-
-        self.marionette.set_context("content")
-        try:
+        with self.marionette.using_socket_timeout(self.socket_timeout):
             self.marionette.navigate(
                 "about:crash{}".format("parent" if parent else "content")
             )
-        finally:
-            self.marionette.client.socket_timeout = socket_timeout
 
 
 class TestCrash(BaseCrashTestCase):
@@ -147,16 +141,18 @@ class TestCrash(BaseCrashTestCase):
         
         
         
-        with self.assertRaisesRegexp(IOError, "Content process crashed"):
-            self.crash(parent=False)
-            Wait(
-                self.marionette,
-                timeout=self.socket_timeout,
-                ignored_exceptions=NoSuchWindowException,
-            ).until(
-                lambda _: self.marionette.get_url(),
-                message="Expected IOError exception for content crash not raised.",
-            )
+        
+        with self.marionette.using_socket_timeout(self.socket_timeout):
+            with self.assertRaisesRegexp(IOError, "Content process crashed"):
+                self.crash(parent=False)
+                Wait(
+                    self.marionette,
+                    timeout=self.socket_timeout,
+                    ignored_exceptions=NoSuchWindowException,
+                ).until(
+                    lambda _: self.marionette.get_url(),
+                    message="Expected IOError exception for content crash not raised.",
+                )
 
         
         self.assertEqual(self.marionette.instance.runner.returncode, 245)
