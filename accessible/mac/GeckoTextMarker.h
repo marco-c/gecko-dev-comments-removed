@@ -127,7 +127,7 @@ class GeckoTextMarkerRange final {
 
 
 
-  bool Crop(Accessible* aContainer);
+  bool Crop(Accessible* aContainer) { return mRange.Crop(aContainer); }
 
   TextLeafRange mRange;
 };

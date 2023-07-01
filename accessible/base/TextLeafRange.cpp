@@ -1768,6 +1768,31 @@ bool TextLeafPoint::ContainsPoint(int32_t aX, int32_t aY) {
   return CharBounds().Contains(aX, aY);
 }
 
+bool TextLeafRange::Crop(Accessible* aContainer) {
+  TextLeafPoint containerStart(aContainer, 0);
+  TextLeafPoint containerEnd(aContainer,
+                             nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
+
+  if (mEnd < containerStart || containerEnd < mStart) {
+    
+    return false;
+  }
+
+  if (mStart < containerStart) {
+    
+    
+    mStart = containerStart;
+  }
+
+  if (containerEnd < mEnd) {
+    
+    
+    mEnd = containerEnd;
+  }
+
+  return true;
+}
+
 LayoutDeviceIntRect TextLeafRange::Bounds() const {
   if (mEnd == mStart || mEnd < mStart) {
     return LayoutDeviceIntRect();

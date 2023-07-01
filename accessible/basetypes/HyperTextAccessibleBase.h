@@ -187,6 +187,17 @@ class HyperTextAccessibleBase {
   
 
 
+
+
+
+
+  std::pair<bool, int32_t> TransformOffset(Accessible* aDescendant,
+                                           int32_t aOffset,
+                                           bool aIsEndOffset) const;
+
+  
+
+
   already_AddRefed<AccAttributes> TextAttributes(bool aIncludeDefAttrs,
                                                  int32_t aOffset,
                                                  int32_t* aStartOffset,
@@ -276,17 +287,6 @@ class HyperTextAccessibleBase {
   virtual nsTArray<int32_t>& GetCachedHyperTextOffsets() = 0;
 
  private:
-  
-
-
-
-
-
-
-  std::pair<bool, int32_t> TransformOffset(Accessible* aDescendant,
-                                           int32_t aOffset,
-                                           bool aIsEndOffset) const;
-
   
 
 

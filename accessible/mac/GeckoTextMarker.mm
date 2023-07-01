@@ -509,29 +509,5 @@ NSValue* GeckoTextMarkerRange::Bounds() const {
 
 void GeckoTextMarkerRange::Select() const { mRange.SetSelection(0); }
 
-bool GeckoTextMarkerRange::Crop(Accessible* aContainer) {
-  TextLeafPoint containerStart(aContainer, 0);
-  TextLeafPoint containerEnd(aContainer,
-                             nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
-
-  if (mRange.End() < containerStart || containerEnd < mRange.Start()) {
-    
-    return false;
-  }
-
-  if (mRange.Start() < containerStart) {
-    
-    
-    mRange.SetStart(containerStart);
-  }
-
-  if (containerEnd < mRange.End()) {
-    
-    
-    mRange.SetEnd(containerEnd);
-  }
-
-  return true;
-}
 }  
 }  

@@ -297,18 +297,7 @@ public class SessionAccessibility {
                     AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
             final boolean next =
                 action == AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY;
-            
-            if (next) {
-              if (mAtEndOfText) {
-                return false;
-              }
-              if (granularity == AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD && mAtLastWord) {
-                return false;
-              }
-            } else if (mAtStartOfText) {
-              return false;
-            }
-            nativeProvider.navigateText(
+            return nativeProvider.navigateText(
                 virtualViewId, granularity, mStartOffset, mEndOffset, next, extendSelection);
           }
           return true;
@@ -401,9 +390,6 @@ public class SessionAccessibility {
   private int mFocusedNode = 0;
   private int mStartOffset = -1;
   private int mEndOffset = -1;
-  private boolean mAtStartOfText = false;
-  private boolean mAtEndOfText = false;
-  private boolean mAtLastWord = false;
   private boolean mViewFocusRequested = false;
 
    SessionAccessibility(final GeckoSession session) {
@@ -623,9 +609,6 @@ public class SessionAccessibility {
       case AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED:
         mStartOffset = -1;
         mEndOffset = -1;
-        mAtStartOfText = false;
-        mAtEndOfText = false;
-        mAtLastWord = false;
         mAccessibilityFocusedNode = sourceId;
         break;
       case AccessibilityEvent.TYPE_VIEW_FOCUSED:
@@ -638,24 +621,6 @@ public class SessionAccessibility {
       case AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY:
         mStartOffset = event.getFromIndex();
         mEndOffset = event.getToIndex();
-        
-        
-        
-        
-        
-        mAtStartOfText = mStartOffset == 0;
-        final CharSequence text = event.getText().get(0);
-        mAtEndOfText = mEndOffset >= text.length();
-        mAtLastWord = mAtEndOfText;
-        if (!mAtLastWord) {
-          
-          
-          
-          final CharSequence afterText = text.subSequence(mEndOffset, text.length());
-          if (TextUtils.getTrimmedLength(afterText) == 0) {
-            mAtLastWord = true;
-          }
-        }
         break;
     }
 
@@ -716,8 +681,8 @@ public class SessionAccessibility {
     @WrapForJNI(dispatchTo = "gecko")
     public native void exploreByTouch(int id, float x, float y);
 
-    @WrapForJNI(dispatchTo = "gecko")
-    public native void navigateText(
+    @WrapForJNI(dispatchTo = "current")
+    public native boolean navigateText(
         int id, int granularity, int startOffset, int endOffset, boolean forward, boolean select);
 
     @WrapForJNI(dispatchTo = "gecko")
