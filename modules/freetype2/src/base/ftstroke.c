@@ -2055,7 +2055,9 @@
     FT_Error    error;
 
     FT_Int      n;         
-    FT_UInt     first;     
+    FT_Int      first;     
+    FT_Int      last;      
+
     FT_Int      tag;       
 
 
@@ -2067,22 +2069,17 @@
 
     FT_Stroker_Rewind( stroker );
 
-    first = 0;
-
+    last = -1;
     for ( n = 0; n < outline->n_contours; n++ )
     {
-      FT_UInt  last;  
-
-
-      last  = (FT_UInt)outline->contours[n];
-      limit = outline->points + last;
+      first = last + 1;
+      last  = outline->contours[n];
 
       
       if ( last <= first )
-      {
-        first = last + 1;
         continue;
-      }
+
+      limit = outline->points + last;
 
       v_start = outline->points[first];
       v_last  = outline->points[last];
@@ -2231,8 +2228,6 @@
         if ( error )
           goto Exit;
       }
-
-      first = last + 1;
     }
 
     return FT_Err_Ok;

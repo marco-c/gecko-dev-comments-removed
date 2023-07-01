@@ -798,68 +798,15 @@ FT_BEGIN_HEADER
 
 
 
-  typedef struct  TT_Post_20Rec_
-  {
-    FT_UShort   num_glyphs;
-    FT_UShort   num_names;
-    FT_UShort*  glyph_indices;
-    FT_Char**   glyph_names;
-
-  } TT_Post_20Rec, *TT_Post_20;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  typedef struct  TT_Post_25_
-  {
-    FT_UShort  num_glyphs;
-    FT_Char*   offsets;
-
-  } TT_Post_25Rec, *TT_Post_25;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   typedef struct  TT_Post_NamesRec_
   {
-    FT_Bool  loaded;
-
-    union
-    {
-      TT_Post_20Rec  format_20;
-      TT_Post_25Rec  format_25;
-
-    } names;
+    FT_Bool     loaded;
+    FT_UShort   num_glyphs;
+    FT_UShort   num_names;
+    FT_UShort*  glyph_indices;
+    FT_Byte**   glyph_names;
 
   } TT_Post_NamesRec, *TT_Post_Names;
 
@@ -1459,6 +1406,20 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   typedef struct  TT_FaceRec_
   {
     FT_FaceRec            root;
@@ -1509,7 +1470,13 @@ FT_BEGIN_HEADER
 
     
     
-    void*                 var;
+    
+    void*                 tt_var;
+
+    
+    
+    
+    void*                 face_var;             
 #endif
 
     
@@ -1591,6 +1558,9 @@ FT_BEGIN_HEADER
     const char*           var_postscript_prefix;     
     FT_UInt               var_postscript_prefix_len; 
 
+    FT_UInt               var_default_named_instance;  
+
+    const char*           non_var_style_name;  
 #endif
 
     

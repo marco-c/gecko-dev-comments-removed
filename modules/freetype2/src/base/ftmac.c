@@ -1082,7 +1082,7 @@
 #else 
 
   
-  typedef int  _ft_mac_dummy;
+  typedef int  ft_mac_dummy_;
 
 #endif 
 

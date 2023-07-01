@@ -57,7 +57,7 @@
   
   
   
-  static FT_UInt32
+  FT_CALLBACK_DEF( FT_UInt32 )
   ps_unicode_value( const char*  glyph_name )
   {
     
@@ -309,7 +309,7 @@
 
 
   
-  static FT_Error
+  FT_CALLBACK_DEF( FT_Error )
   ps_unicodes_init( FT_Memory             memory,
                     PS_Unicodes           table,
                     FT_UInt               num_glyphs,
@@ -408,7 +408,7 @@
   }
 
 
-  static FT_UInt
+  FT_CALLBACK_DEF( FT_UInt )
   ps_unicodes_char_index( PS_Unicodes  table,
                           FT_UInt32    unicode )
   {
@@ -453,7 +453,7 @@
   }
 
 
-  static FT_UInt32
+  FT_CALLBACK_DEF( FT_UInt )
   ps_unicodes_char_next( PS_Unicodes  table,
                          FT_UInt32   *unicode )
   {
@@ -518,7 +518,7 @@
 #endif 
 
 
-  static const char*
+  FT_CALLBACK_DEF( const char* )
   ps_get_macintosh_name( FT_UInt  name_index )
   {
     if ( name_index >= FT_NUM_MAC_NAMES )
@@ -528,7 +528,7 @@
   }
 
 
-  static const char*
+  FT_CALLBACK_DEF( const char* )
   ps_get_standard_strings( FT_UInt  sid )
   {
     if ( sid >= FT_NUM_SID_NAMES )
@@ -543,13 +543,13 @@
   FT_DEFINE_SERVICE_PSCMAPSREC(
     pscmaps_interface,
 
-    (PS_Unicode_ValueFunc)     ps_unicode_value,        
-    (PS_Unicodes_InitFunc)     ps_unicodes_init,        
-    (PS_Unicodes_CharIndexFunc)ps_unicodes_char_index,  
-    (PS_Unicodes_CharNextFunc) ps_unicodes_char_next,   
+    ps_unicode_value,         
+    ps_unicodes_init,         
+    ps_unicodes_char_index,   
+    ps_unicodes_char_next,    
 
-    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,   
-    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings, 
+    ps_get_macintosh_name,    
+    ps_get_standard_strings,  
 
     t1_standard_encoding,                               
     t1_expert_encoding                                  
@@ -560,13 +560,13 @@
   FT_DEFINE_SERVICE_PSCMAPSREC(
     pscmaps_interface,
 
-    NULL,                                               
-    NULL,                                               
-    NULL,                                               
-    NULL,                                               
+    NULL,                     
+    NULL,                     
+    NULL,                     
+    NULL,                     
 
-    (PS_Macintosh_NameFunc)    ps_get_macintosh_name,   
-    (PS_Adobe_Std_StringsFunc) ps_get_standard_strings, 
+    ps_get_macintosh_name,    
+    ps_get_standard_strings,  
 
     t1_standard_encoding,                               
     t1_expert_encoding                                  
@@ -612,9 +612,9 @@
     PUT_PS_NAMES_SERVICE(
       (void*)&pscmaps_interface ),   
 
-    (FT_Module_Constructor)NULL,                                       
-    (FT_Module_Destructor) NULL,                                       
-    (FT_Module_Requester)  PUT_PS_NAMES_SERVICE( psnames_get_service ) 
+    NULL,                                        
+    NULL,                                        
+    PUT_PS_NAMES_SERVICE( psnames_get_service )  
   )
 
 

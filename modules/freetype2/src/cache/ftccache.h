@@ -72,11 +72,12 @@ FT_BEGIN_HEADER
 #define FTC_NODE_NEXT( x )  FTC_NODE( (x)->mru.next )
 #define FTC_NODE_PREV( x )  FTC_NODE( (x)->mru.prev )
 
+  
 #ifdef FTC_INLINE
-#define FTC_NODE_TOP_FOR_HASH( cache, hash )                      \
-        ( ( cache )->buckets +                                    \
-            ( ( ( ( hash ) &   ( cache )->mask ) < ( cache )->p ) \
-              ? ( ( hash ) & ( ( cache )->mask * 2 + 1 ) )        \
+#define FTC_NODE_TOP_FOR_HASH( cache, hash )                       \
+        ( ( cache )->buckets +                                     \
+            ( ( ( ( hash ) &   ( cache )->mask ) >= ( cache )->p ) \
+              ? ( ( hash ) & ( ( cache )->mask >> 1 ) )            \
               : ( ( hash ) &   ( cache )->mask ) ) )
 #else
   FT_LOCAL( FTC_Node* )
@@ -140,10 +141,12 @@ FT_BEGIN_HEADER
 
 
   
+  
+  
   typedef struct  FTC_CacheRec_
   {
-    FT_UFast           p;
-    FT_UFast           mask;
+    FT_UFast           p;           
+    FT_UFast           mask;        
     FT_Long            slack;
     FTC_Node*          buckets;
 

@@ -111,7 +111,7 @@
 #else 
 
   
-  typedef int  _woff2tags_dummy;
+  typedef int  woff2tags_dummy_;
 
 #endif 
 

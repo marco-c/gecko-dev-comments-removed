@@ -417,16 +417,14 @@
 
         {
           FT_Int  nn;
-          FT_Int  first = 0;
-          FT_Int  last  = -1;
+          FT_Int  pp, first, last;
 
 
-          for ( nn = 0; nn < outline.n_contours; first = last + 1, nn++ )
+          last = -1;
+          for ( nn = 0; nn < outline.n_contours; nn++ )
           {
-            FT_Int  pp;
-
-
-            last = outline.contours[nn];
+            first = last + 1;
+            last  = outline.contours[nn];
 
             
             
@@ -569,8 +567,8 @@
   af_cjk_metrics_check_digits( AF_CJKMetrics  metrics,
                                FT_Face        face )
   {
-    FT_Bool   started = 0, same_width = 1;
-    FT_Fixed  advance = 0, old_advance = 0;
+    FT_Bool  started = 0, same_width = 1;
+    FT_Long  advance = 0, old_advance = 0;
 
     
     
@@ -635,10 +633,11 @@
   
 
   FT_LOCAL_DEF( FT_Error )
-  af_cjk_metrics_init( AF_CJKMetrics  metrics,
-                       FT_Face        face )
+  af_cjk_metrics_init( AF_StyleMetrics  metrics_,  
+                       FT_Face          face )
   {
-    FT_CharMap  oldmap = face->charmap;
+    AF_CJKMetrics  metrics = (AF_CJKMetrics)metrics_;
+    FT_CharMap     oldmap  = face->charmap;
 
 
     metrics->units_per_em = face->units_per_EM;
@@ -756,9 +755,12 @@
   
 
   FT_LOCAL_DEF( void )
-  af_cjk_metrics_scale( AF_CJKMetrics  metrics,
-                        AF_Scaler      scaler )
+  af_cjk_metrics_scale( AF_StyleMetrics  metrics_,   
+                        AF_Scaler        scaler )
   {
+    AF_CJKMetrics  metrics = (AF_CJKMetrics)metrics_;
+
+
     
     
     metrics->root.scaler = *scaler;
@@ -771,11 +773,14 @@
   
   
 
-  FT_LOCAL_DEF( void )
-  af_cjk_get_standard_widths( AF_CJKMetrics  metrics,
-                              FT_Pos*        stdHW,
-                              FT_Pos*        stdVW )
+  FT_CALLBACK_DEF( void )
+  af_cjk_get_standard_widths( AF_StyleMetrics  metrics_,  
+                              FT_Pos*          stdHW,
+                              FT_Pos*          stdVW )
   {
+    AF_CJKMetrics  metrics = (AF_CJKMetrics)metrics_;
+
+
     if ( stdHW )
       *stdHW = metrics->axis[AF_DIMENSION_VERT].standard_width;
 
@@ -1376,9 +1381,10 @@
   
 
   FT_LOCAL_DEF( FT_Error )
-  af_cjk_hints_init( AF_GlyphHints  hints,
-                     AF_CJKMetrics  metrics )
+  af_cjk_hints_init( AF_GlyphHints    hints,
+                     AF_StyleMetrics  metrics_ )   
   {
+    AF_CJKMetrics   metrics = (AF_CJKMetrics)metrics_;
     FT_Render_Mode  mode;
     FT_UInt32       scaler_flags, other_flags;
 
@@ -2268,11 +2274,13 @@
   
 
   FT_LOCAL_DEF( FT_Error )
-  af_cjk_hints_apply( FT_UInt        glyph_index,
-                      AF_GlyphHints  hints,
-                      FT_Outline*    outline,
-                      AF_CJKMetrics  metrics )
+  af_cjk_hints_apply( FT_UInt          glyph_index,
+                      AF_GlyphHints    hints,
+                      FT_Outline*      outline,
+                      AF_StyleMetrics  metrics_ )   
   {
+    AF_CJKMetrics  metrics = (AF_CJKMetrics)metrics_;
+
     FT_Error  error;
     int       dim;
 

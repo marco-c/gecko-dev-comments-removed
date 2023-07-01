@@ -356,14 +356,16 @@
 
 #ifdef FT_CONFIG_OPTION_SVG
     
-    if ( ( load_flags & FT_LOAD_COLOR ) && face->svg )
+    if ( ( load_flags & FT_LOAD_NO_SVG ) == 0 &&
+         ( load_flags & FT_LOAD_COLOR )       &&
+         face->svg                            )
     {
       
 
 
 
 
-      SFNT_Service  sfnt  = (SFNT_Service)face->sfnt;
+      SFNT_Service  sfnt = (SFNT_Service)face->sfnt;
 
 
       if ( size && (size->root.metrics.x_ppem < 1 ||

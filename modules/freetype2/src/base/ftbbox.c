@@ -82,10 +82,13 @@
 
 
 
-  static int
-  BBox_Move_To( FT_Vector*  to,
-                TBBox_Rec*  user )
+  FT_CALLBACK_DEF( int )
+  BBox_Move_To( const FT_Vector*  to,
+                void*             user_ )
   {
+    TBBox_Rec*  user = (TBBox_Rec*)user_;
+
+
     FT_UPDATE_BBOX( to, user->bbox );
 
     user->last = *to;
@@ -116,10 +119,13 @@
 
 
 
-  static int
-  BBox_Line_To( FT_Vector*  to,
-                TBBox_Rec*  user )
+  FT_CALLBACK_DEF( int )
+  BBox_Line_To( const FT_Vector*  to,
+                void*             user_ )
   {
+    TBBox_Rec*  user = (TBBox_Rec*)user_;
+
+
     user->last = *to;
 
     return 0;
@@ -205,11 +211,14 @@
 
 
 
-  static int
-  BBox_Conic_To( FT_Vector*  control,
-                 FT_Vector*  to,
-                 TBBox_Rec*  user )
+  FT_CALLBACK_DEF( int )
+  BBox_Conic_To( const FT_Vector*  control,
+                 const FT_Vector*  to,
+                 void*             user_ )
   {
+    TBBox_Rec*  user = (TBBox_Rec*)user_;
+
+
     
     FT_UPDATE_BBOX( to, user->bbox );
 
@@ -410,12 +419,15 @@
 
 
 
-  static int
-  BBox_Cubic_To( FT_Vector*  control1,
-                 FT_Vector*  control2,
-                 FT_Vector*  to,
-                 TBBox_Rec*  user )
+  FT_CALLBACK_DEF( int )
+  BBox_Cubic_To( const FT_Vector*  control1,
+                 const FT_Vector*  control2,
+                 const FT_Vector*  to,
+                 void*             user_ )
   {
+    TBBox_Rec*  user = (TBBox_Rec*)user_;
+
+
     
     
     

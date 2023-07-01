@@ -70,10 +70,9 @@
   
   
 
-#if defined( __GNUC__ ) ||  defined( __clang__ )
 #define ZEXPORT
-#define ZEXTERN      static
-#endif
+
+#define ZEXTERN  static
 
 #define HAVE_MEMCPY  1
 #define Z_SOLO       1

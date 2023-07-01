@@ -243,14 +243,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
   typedef unsigned long
   (*FT_Stream_IoFunc)( FT_Stream       stream,
                        unsigned long   offset,

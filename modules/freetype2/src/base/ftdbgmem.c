@@ -963,7 +963,7 @@
 #else  
 
   
-  typedef int  _debug_mem_dummy;
+  typedef int  debug_mem_dummy_;
 
 #endif 
 

@@ -161,6 +161,7 @@ FT_BEGIN_HEADER
 
 
 
+
   typedef struct  FT_Driver_ClassRec_
   {
     FT_Module_Class          root;

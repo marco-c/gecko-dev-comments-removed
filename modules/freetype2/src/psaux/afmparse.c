@@ -1086,7 +1086,7 @@
 #else 
 
   
-  typedef int  _afm_parse_dummy;
+  typedef int  afm_parse_dummy_;
 
 #endif 
 

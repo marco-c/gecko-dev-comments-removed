@@ -1004,7 +1004,7 @@
       
 
   
-  typedef int  _tt_subpix_dummy;
+  typedef int  tt_subpix_dummy_;
 
 #endif 
        

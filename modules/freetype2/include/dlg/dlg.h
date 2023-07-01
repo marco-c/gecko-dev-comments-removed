@@ -88,6 +88,13 @@
 
 
 
+#ifndef DLG_FAILED_ASSERTION_TEXT
+	#define DLG_FAILED_ASSERTION_TEXT(x) x
+#endif
+
+
+
+
 #ifdef __cplusplus
 	#include <initializer_list>
 	#define DLG_CREATE_TAGS(...) std::initializer_list<const char*> \
@@ -131,83 +138,12 @@ struct dlg_origin {
 
 typedef void(*dlg_handler)(const struct dlg_origin* origin, const char* string, void* data);
 
-#ifdef DLG_DISABLE
-	
-	
-	#define dlg_log(level, ...)
-	#define dlg_logt(level, tags, ...)
-
-	
-	#define dlg_assertl(level, expr)
-	#define dlg_assertlt(level, tags, expr) // assert with tags
-	#define dlg_assertlm(level, expr, ...)
-	#define dlg_assertltm(level, tags, expr, ...) // assert with tags & message
-
+#ifndef DLG_DISABLE
 	
 	
 	
 	
 	
-	
-	
-	
-	
-	inline void dlg_set_handler(dlg_handler handler, void* data) {
-		(void) handler;
-		(void) data;
-	}
-
-	
-	
-	
-	
-	
-	
-	inline dlg_handler dlg_get_handler(void** data) {
-		*data = NULL;
-		return NULL;
-	}
-
-	
-	
-	
-	
-	inline void dlg_default_output(const struct dlg_origin* o, const char* str, void* data) {
-		(void) o;
-		(void) str;
-		(void) data;
-	}
-
-	
-	
-	
-	
-	inline void dlg_add_tag(const char* tag, const char* func) {
-		(void) tag;
-		(void) func;
-	}
-
-	
-	
-	
-	
-	
-	inline bool dlg_remove_tag(const char* tag, const char* func) {
-		(void) tag;
-		(void) func;
-		return true;
-	}
-
-	
-	
-	
-	
-	inline char** dlg_thread_buffer(size_t** size) {
-		(void) size;
-		return NULL;
-	}
-
-#else 
 	#define dlg_log(level, ...) if(level >= DLG_LOG_LEVEL) \
 		dlg__do_log(level, DLG_CREATE_TAGS(NULL), DLG_FILE, __LINE__, __func__,  \
 		DLG_FMT_FUNC(__VA_ARGS__), NULL)
@@ -215,23 +151,31 @@ typedef void(*dlg_handler)(const struct dlg_origin* origin, const char* string, 
 		dlg__do_log(level, DLG_CREATE_TAGS tags, DLG_FILE, __LINE__, __func__, \
 		DLG_FMT_FUNC(__VA_ARGS__), NULL)
 
+	
+	
+	
+	
+	
+	
 	#define dlg_assertl(level, expr) if(level >= DLG_ASSERT_LEVEL && !(expr)) \
-		dlg__do_log(level, DLG_CREATE_TAGS(NULL), DLG_FILE, __LINE__, __func__, NULL, #expr)
+		dlg__do_log(level, DLG_CREATE_TAGS(NULL), DLG_FILE, __LINE__, __func__, NULL, \
+			DLG_FAILED_ASSERTION_TEXT(#expr))
 	#define dlg_assertlt(level, tags, expr) if(level >= DLG_ASSERT_LEVEL && !(expr)) \
-		dlg__do_log(level, DLG_CREATE_TAGS tags, DLG_FILE, __LINE__, __func__, NULL, #expr)
+		dlg__do_log(level, DLG_CREATE_TAGS tags, DLG_FILE, __LINE__, __func__, NULL, \
+			DLG_FAILED_ASSERTION_TEXT(#expr))
 	#define dlg_assertlm(level, expr, ...) if(level >= DLG_ASSERT_LEVEL && !(expr)) \
 		dlg__do_log(level, DLG_CREATE_TAGS(NULL), DLG_FILE, __LINE__, __func__,  \
-		DLG_FMT_FUNC(__VA_ARGS__), #expr)
+			DLG_FMT_FUNC(__VA_ARGS__), DLG_FAILED_ASSERTION_TEXT(#expr))
 	#define dlg_assertltm(level, tags, expr, ...) if(level >= DLG_ASSERT_LEVEL && !(expr)) \
 		dlg__do_log(level, DLG_CREATE_TAGS tags, DLG_FILE, __LINE__,  \
-		__func__, DLG_FMT_FUNC(__VA_ARGS__), #expr)
+			__func__, DLG_FMT_FUNC(__VA_ARGS__), DLG_FAILED_ASSERTION_TEXT(#expr))
 
-	DLG_API void dlg_set_handler(dlg_handler handler, void* data);
-	DLG_API dlg_handler dlg_get_handler(void** data);
-	DLG_API void dlg_default_output(const struct dlg_origin*, const char* string, void*);
-	DLG_API void dlg_add_tag(const char* tag, const char* func);
-	DLG_API bool dlg_remove_tag(const char* tag, const char* func);
-	DLG_API char** dlg_thread_buffer(size_t** size);
+	#define dlg__assert_or(level, tags, expr, code, msg) if(!(expr)) {\
+			if(level >= DLG_ASSERT_LEVEL) \
+				dlg__do_log(level, tags, DLG_FILE, __LINE__, __func__, msg, \
+					DLG_FAILED_ASSERTION_TEXT(#expr)); \
+			code; \
+		} (void) NULL
 
 	
 	
@@ -239,7 +183,65 @@ typedef void(*dlg_handler)(const struct dlg_origin* origin, const char* string, 
 	DLG_API void dlg__do_log(enum dlg_level lvl, const char* const*, const char*, int,
 		const char*, const char*, const char*);
 	DLG_API const char* dlg__strip_root_path(const char* file, const char* base);
+
+#else 
+
+	#define dlg_log(level, ...)
+	#define dlg_logt(level, tags, ...)
+
+	#define dlg_assertl(level, expr)
+	#define dlg_assertlt(level, tags, expr) // assert with tags
+	#define dlg_assertlm(level, expr, ...)
+	#define dlg_assertltm(level, tags, expr, ...) // assert with tags & message
+
+	#define dlg__assert_or(level, tags, expr, code, msg) if(!(expr)) { code; } (void) NULL
 #endif 
+
+
+
+
+
+
+
+
+
+
+
+
+DLG_API void dlg_set_handler(dlg_handler handler, void* data);
+
+
+
+
+
+DLG_API void dlg_default_output(const struct dlg_origin*, const char* string, void*);
+
+
+
+
+
+
+
+DLG_API dlg_handler dlg_get_handler(void** data);
+
+
+
+
+
+DLG_API void dlg_add_tag(const char* tag, const char* func);
+
+
+
+
+
+
+DLG_API bool dlg_remove_tag(const char* tag, const char* func);
+
+
+
+
+
+DLG_API char** dlg_thread_buffer(size_t** size);
 
 
 #define dlg_trace(...) dlg_log(dlg_level_trace, __VA_ARGS__)
@@ -262,6 +264,24 @@ typedef void(*dlg_handler)(const struct dlg_origin* origin, const char* string, 
 #define dlg_assertt(tags, expr) dlg_assertlt(DLG_DEFAULT_ASSERT, tags, expr)
 #define dlg_assertm(expr, ...) dlg_assertlm(DLG_DEFAULT_ASSERT, expr, __VA_ARGS__)
 #define dlg_asserttm(tags, expr, ...) dlg_assertltm(DLG_DEFAULT_ASSERT, tags, expr, __VA_ARGS__)
+
+
+
+
+
+
+
+
+
+#define dlg_assertltm_or(level, tags, expr, code, ...) dlg__assert_or(level, \
+		DLG_CREATE_TAGS tags, expr, code, DLG_FMT_FUNC(__VA_ARGS__))
+#define dlg_assertlm_or(level, expr, code, ...) dlg__assert_or(level, \
+		DLG_CREATE_TAGS(NULL), expr, code, DLG_FMT_FUNC(__VA_ARGS__))
+#define dlg_assertl_or(level, expr, code) dlg__assert_or(level, \
+		DLG_CREATE_TAGS(NULL), expr, code, NULL)
+
+#define dlg_assert_or(expr, code) dlg_assertl_or(DLG_DEFAULT_ASSERT, expr, code)
+#define dlg_assertm_or(expr, code, ...) dlg_assertlm_or(DLG_DEFAULT_ASSERT, expr, code, __VA_ARGS__)
 
 #ifdef __cplusplus
 }

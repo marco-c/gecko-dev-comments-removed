@@ -167,8 +167,7 @@
       FT_Module  module;
 
 
-      module = FT_Get_Module( slot->face->driver->root.library,
-                              "pshinter" );
+      module = FT_Get_Module( slot->library, "pshinter" );
       if ( module )
       {
         T1_Hints_Funcs  funcs;
@@ -227,7 +226,7 @@
       face->len_buildchar = 0;
     }
 
-    T1_Done_Blend( face );
+    T1_Done_Blend( t1face );
     face->blend = NULL;
 #endif
 
@@ -281,6 +280,7 @@
 
 
   
+
 
 
 

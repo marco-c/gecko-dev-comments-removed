@@ -614,6 +614,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   FT_EXPORT( FT_Error )
   FT_Set_MM_WeightVector( FT_Face    face,
                           FT_UInt    len,
@@ -752,6 +754,45 @@ FT_BEGIN_HEADER
   FT_EXPORT( FT_Error )
   FT_Set_Named_Instance( FT_Face  face,
                          FT_UInt  instance_index );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( FT_Error )
+  FT_Get_Default_Named_Instance( FT_Face   face,
+                                 FT_UInt  *instance_index );
 
   
 

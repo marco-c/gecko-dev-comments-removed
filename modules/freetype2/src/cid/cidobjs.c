@@ -69,8 +69,7 @@
       FT_Module  module;
 
 
-      module = FT_Get_Module( slot->face->driver->root.library,
-                              "pshinter" );
+      module = FT_Get_Module( slot->library, "pshinter" );
       if ( module )
       {
         T1_Hints_Funcs  funcs;
@@ -286,6 +285,7 @@
 
 
 
+
   FT_LOCAL_DEF( FT_Error )
   cid_face_init( FT_Stream      stream,
                  FT_Face        cidface,        
@@ -374,6 +374,14 @@
 
       if ( info->is_fixed_pitch )
         cidface->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
+
+      
+
+
+
+
+
+      cidface->face_flags |= FT_FACE_FLAG_CID_KEYED;
 
       
 

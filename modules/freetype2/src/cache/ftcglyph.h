@@ -179,19 +179,6 @@ FT_BEGIN_HEADER
                   FT_UInt     gindex,  
                   FTC_Family  family );
 
-#ifdef FTC_INLINE
-
-  
-  
-  
-  FT_LOCAL( FT_Bool )
-  FTC_GNode_Compare( FTC_GNode   gnode,
-                     FTC_GQuery  gquery,
-                     FTC_Cache   cache,
-                     FT_Bool*    list_changed );
-
-#endif
-
   
   
   FT_LOCAL( void )

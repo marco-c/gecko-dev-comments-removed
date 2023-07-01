@@ -299,7 +299,7 @@
       
       
       if ( fi->Ascender > fi->Descender )
-      {  
+      {
         
         t1_face->ascender  = (FT_Short)( ( fi->Ascender  + 0x8000 ) >> 16 );
         t1_face->descender = (FT_Short)( ( fi->Descender + 0x8000 ) >> 16 );
@@ -405,7 +405,7 @@
 #else 
 
   
-  typedef int  _t1_afm_dummy;
+  typedef int  t1_afm_dummy_;
 
 #endif 
 

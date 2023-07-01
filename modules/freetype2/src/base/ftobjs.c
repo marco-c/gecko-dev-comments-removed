@@ -1019,7 +1019,8 @@
       
 
       
-      if ( FT_HAS_SVG( face ) )
+      if ( ( load_flags & FT_LOAD_NO_SVG ) == 0 &&
+           FT_HAS_SVG( face )                   )
       {
         error = driver->clazz->load_glyph( slot, face->size,
                                            glyph_index,
@@ -1245,9 +1246,13 @@
   
   static void
   destroy_size( FT_Memory  memory,
-                FT_Size    size,
-                FT_Driver  driver )
+                void*      size_,
+                void*      driver_ )
   {
+    FT_Size    size   = (FT_Size)size_;
+    FT_Driver  driver = (FT_Driver)driver_;
+
+
     
     if ( size->generic.finalizer )
       size->generic.finalizer( size );
@@ -1293,10 +1298,12 @@
   
   static void
   destroy_face( FT_Memory  memory,
-                FT_Face    face,
-                FT_Driver  driver )
+                void*      face_,
+                void*      driver_ )
   {
-    FT_Driver_Class  clazz = driver->clazz;
+    FT_Face          face   = (FT_Face)face_;
+    FT_Driver        driver = (FT_Driver)driver_;
+    FT_Driver_Class  clazz  = driver->clazz;
 
 
     
@@ -1310,7 +1317,7 @@
 
     
     FT_List_Finalize( &face->sizes_list,
-                      (FT_List_Destructor)destroy_size,
+                      destroy_size,
                       memory,
                       driver );
     face->size = NULL;
@@ -1346,7 +1353,7 @@
   Destroy_Driver( FT_Driver  driver )
   {
     FT_List_Finalize( &driver->faces_list,
-                      (FT_List_Destructor)destroy_face,
+                      destroy_face,
                       driver->root.memory,
                       driver );
   }

@@ -27,8 +27,11 @@
 
   
   static FT_Error
-  ft_raster1_init( FT_Renderer  render )
+  ft_raster1_init( FT_Module  module )   
   {
+    FT_Renderer  render = (FT_Renderer)module;
+
+
     render->clazz->raster_class->raster_reset( render->raster, NULL, 0 );
 
     return FT_Err_Ok;
@@ -188,18 +191,18 @@
 
       NULL,    
 
-      (FT_Module_Constructor)ft_raster1_init,  
-      (FT_Module_Destructor) NULL,             
-      (FT_Module_Requester)  NULL,             
+      ft_raster1_init,  
+      NULL,             
+      NULL,             
 
     FT_GLYPH_FORMAT_OUTLINE,
 
-    (FT_Renderer_RenderFunc)   ft_raster1_render,     
-    (FT_Renderer_TransformFunc)ft_raster1_transform,  
-    (FT_Renderer_GetCBoxFunc)  ft_raster1_get_cbox,   
-    (FT_Renderer_SetModeFunc)  ft_raster1_set_mode,   
+    ft_raster1_render,     
+    ft_raster1_transform,  
+    ft_raster1_get_cbox,   
+    ft_raster1_set_mode,   
 
-    (FT_Raster_Funcs*)&ft_standard_raster             
+    &ft_standard_raster    
   )
 
 

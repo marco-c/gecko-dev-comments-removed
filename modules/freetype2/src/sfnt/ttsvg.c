@@ -405,7 +405,7 @@
 #else 
 
   
-  typedef int  _tt_svg_dummy;
+  typedef int  tt_svg_dummy_;
 
 #endif 
 

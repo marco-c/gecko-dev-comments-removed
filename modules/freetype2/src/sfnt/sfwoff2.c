@@ -2378,7 +2378,7 @@
 #else 
 
   
-  typedef int  _sfwoff2_dummy;
+  typedef int  sfwoff2_dummy_;
 
 #endif 
 

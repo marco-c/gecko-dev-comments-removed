@@ -2719,7 +2719,8 @@
     FT_Error  error = FT_Err_Ok;
 
     FT_26D6_Vec   aA, bB, cC, dD; 
-    FT_16D16_Vec  nearest_point;  
+    FT_16D16_Vec  nearest_point = { 0, 0 };
+                                  
     FT_16D16_Vec  direction;      
 
     FT_26D6_Vec  p0, p1, p2, p3;  
@@ -3761,9 +3762,13 @@
 
 
   static FT_Error
-  sdf_raster_new( FT_Memory     memory,
-                  SDF_PRaster*  araster )
+  sdf_raster_new( void*       memory_,   
+                  FT_Raster*  araster_ ) 
   {
+    FT_Memory     memory  = (FT_Memory)memory_;
+    SDF_PRaster*  araster = (SDF_PRaster*)araster_;
+
+
     FT_Error     error;
     SDF_PRaster  raster = NULL;
 

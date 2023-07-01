@@ -257,6 +257,12 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
   typedef struct  FT_Bitmap_
   {
     unsigned int    rows;

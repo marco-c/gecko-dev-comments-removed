@@ -1677,7 +1677,7 @@
 #else 
 
   
-  typedef int  _tt_sbit_dummy;
+  typedef int  tt_sbit_dummy_;
 
 #endif 
 

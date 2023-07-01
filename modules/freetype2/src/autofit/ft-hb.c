@@ -108,7 +108,7 @@ hb_ft_font_create_ (FT_Face           ft_face,
 #else 
 
 
-typedef int  _ft_hb_dummy;
+typedef int  ft_hb_dummy_;
 
 #endif 
 

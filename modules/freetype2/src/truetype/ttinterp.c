@@ -302,66 +302,15 @@
 
 
 
-
-
-  FT_LOCAL_DEF( FT_Error )
-  Update_Max( FT_Memory  memory,
-              FT_ULong*  size,
-              FT_ULong   multiplier,
-              void*      _pbuff,
-              FT_ULong   new_max )
-  {
-    FT_Error  error;
-    void**    pbuff = (void**)_pbuff;
-
-
-    if ( *size < new_max )
-    {
-      if ( FT_QREALLOC( *pbuff, *size * multiplier, new_max * multiplier ) )
-        return error;
-      *size = new_max;
-    }
-
-    return FT_Err_Ok;
-  }
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   FT_LOCAL_DEF( FT_Error )
   TT_Load_Context( TT_ExecContext  exec,
                    TT_Face         face,
                    TT_Size         size )
   {
     FT_Int          i;
-    FT_ULong        tmp;
     TT_MaxProfile*  maxp;
     FT_Error        error;
+    FT_Memory       memory = exec->memory;
 
 
     exec->face = face;
@@ -406,25 +355,15 @@
 
     
     
-    tmp = (FT_ULong)exec->stackSize;
-    error = Update_Max( exec->memory,
-                        &tmp,
-                        sizeof ( FT_F26Dot6 ),
-                        (void*)&exec->stack,
-                        maxp->maxStackElements + 32 );
-    exec->stackSize = (FT_Long)tmp;
-    if ( error )
+    if ( FT_QRENEW_ARRAY( exec->stack,
+                          exec->stackSize,
+                          maxp->maxStackElements + 32 ) )
       return error;
+    exec->stackSize = maxp->maxStackElements + 32;
 
-    tmp = (FT_ULong)exec->glyphSize;
-    error = Update_Max( exec->memory,
-                        &tmp,
-                        sizeof ( FT_Byte ),
-                        (void*)&exec->glyphIns,
-                        maxp->maxSizeOfInstructions );
-    exec->glyphSize = (FT_UInt)tmp;
-    if ( error )
-      return error;
+    
+    FT_FREE( exec->glyphIns );
+    exec->glyphSize = 0;
 
     exec->pts.n_points   = 0;
     exec->pts.n_contours = 0;
@@ -1530,14 +1469,16 @@
     if ( exc->iniRange == tt_coderange_glyph &&
          exc->cvt != exc->glyfCvt            )
     {
-      exc->error = Update_Max( exc->memory,
-                               &exc->glyfCvtSize,
-                               sizeof ( FT_Long ),
-                               (void*)&exc->glyfCvt,
-                               exc->cvtSize );
-      if ( exc->error )
+      FT_Memory  memory = exc->memory;
+      FT_Error   error;
+
+
+      FT_MEM_QRENEW_ARRAY( exc->glyfCvt, exc->glyfCvtSize, exc->cvtSize );
+      exc->error = error;
+      if ( error )
         return;
 
+      exc->glyfCvtSize = exc->cvtSize;
       FT_ARRAY_COPY( exc->glyfCvt, exc->cvt, exc->glyfCvtSize );
       exc->cvt = exc->glyfCvt;
     }
@@ -3117,18 +3058,18 @@
       if ( exc->iniRange == tt_coderange_glyph &&
            exc->storage != exc->glyfStorage    )
       {
-        FT_ULong  tmp = (FT_ULong)exc->glyfStoreSize;
+        FT_Memory  memory = exc->memory;
+        FT_Error   error;
 
 
-        exc->error = Update_Max( exc->memory,
-                                 &tmp,
-                                 sizeof ( FT_Long ),
-                                 (void*)&exc->glyfStorage,
-                                 exc->storeSize );
-        exc->glyfStoreSize = (FT_UShort)tmp;
-        if ( exc->error )
+        FT_MEM_QRENEW_ARRAY( exc->glyfStorage,
+                             exc->glyfStoreSize,
+                             exc->storeSize );
+        exc->error  = error;
+        if ( error )
           return;
 
+        exc->glyfStoreSize = exc->storeSize;
         FT_ARRAY_COPY( exc->glyfStorage, exc->storage, exc->glyfStoreSize );
         exc->storage = exc->glyfStorage;
       }
@@ -3606,7 +3547,8 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     
-    FT_Byte    opcode_pattern[9][12] = {
+    FT_Byte    opcode_pattern[9][12] =
+               {
                  
                  {
                    0x4B, 
@@ -7381,14 +7323,6 @@
 
 
 
-
-
-
-
-
-
-
-
   static void
   Ins_GETINFO( TT_ExecContext  exc,
                FT_Long*        args )
@@ -7443,8 +7377,6 @@
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     
-
-
 
 
 
@@ -7739,20 +7671,23 @@
   
 
   FT_EXPORT_DEF( FT_Error )
-  TT_RunIns( TT_ExecContext  exc )
+  TT_RunIns( void*  exec )
   {
+    TT_ExecContext  exc = (TT_ExecContext)exec;
+
     FT_ULong   ins_counter = 0;  
     FT_ULong   num_twilight_points;
     FT_UShort  i;
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    FT_Byte    opcode_pattern[1][2] = {
-                  
-                  {
-                    0x06, 
-                    0x7D, 
-                  },
-                };
+    FT_Byte    opcode_pattern[1][2] =
+               {
+                 
+                 {
+                   0x06, 
+                   0x7D, 
+                 },
+               };
     FT_UShort  opcode_patterns   = 1;
     FT_UShort  opcode_pointer[1] = { 0 };
     FT_UShort  opcode_size[1]    = { 1 };
@@ -8604,7 +8539,7 @@
 #else 
 
   
-  typedef int  _tt_interp_dummy;
+  typedef int  tt_interp_dummy_;
 
 #endif 
 

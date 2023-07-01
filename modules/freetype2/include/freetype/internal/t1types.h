@@ -201,30 +201,30 @@ FT_BEGIN_HEADER
 
   typedef struct  T1_FaceRec_
   {
-    FT_FaceRec      root;
-    T1_FontRec      type1;
-    const void*     psnames;
-    const void*     psaux;
-    const void*     afm_data;
-    FT_CharMapRec   charmaprecs[2];
-    FT_CharMap      charmaps[2];
+    FT_FaceRec     root;
+    T1_FontRec     type1;
+    const void*    psnames;
+    const void*    psaux;
+    const void*    afm_data;
+    FT_CharMapRec  charmaprecs[2];
+    FT_CharMap     charmaps[2];
 
     
-    PS_Blend        blend;
-
-    
-    
-    
-    FT_Int           ndv_idx;
-    FT_Int           cdv_idx;
+    PS_Blend       blend;
 
     
     
-    FT_UInt          len_buildchar;
-    FT_Long*         buildchar;
+    
+    FT_Int         ndv_idx;
+    FT_Int         cdv_idx;
 
     
-    const void*     pshinter;
+    
+    FT_UInt        len_buildchar;
+    FT_Long*       buildchar;
+
+    
+    const void*    pshinter;
 
   } T1_FaceRec;
 

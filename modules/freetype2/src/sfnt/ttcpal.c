@@ -303,7 +303,7 @@
 #else 
 
   
-  typedef int  _tt_cpal_dummy;
+  typedef int  tt_cpal_dummy_;
 
 #endif 
 

@@ -25,7 +25,7 @@
 #include "dlg.c"
 #else
   
-  typedef int  _dlg_dummy;
+  typedef int  dlg_dummy_;
 #endif
 
 

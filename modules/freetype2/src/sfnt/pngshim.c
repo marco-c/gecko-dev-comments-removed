@@ -406,10 +406,7 @@
 
     switch ( color_type )
     {
-    default:
-      
-      FALL_THROUGH;
-
+    default:  
     case PNG_COLOR_TYPE_RGB_ALPHA:
       png_set_read_user_transform_fn( png, premultiply_data );
       break;
@@ -457,7 +454,7 @@
 #else 
 
   
-  typedef int  _pngshim_dummy;
+  typedef int  pngshim_dummy_;
 
 #endif 
 

@@ -312,7 +312,8 @@
 #define TRICK_SFNT_IDS_NUM_FACES  31
 
     static const tt_sfnt_id_rec sfnt_id[TRICK_SFNT_IDS_NUM_FACES]
-                                       [TRICK_SFNT_IDS_PER_FACE] = {
+                                       [TRICK_SFNT_IDS_PER_FACE] =
+    {
 
 #define TRICK_SFNT_ID_cvt   0
 #define TRICK_SFNT_ID_fpgm  1
@@ -581,7 +582,7 @@
     FT_Bool   result = FALSE;
 
     TT_Face   face = (TT_Face)ttface;
-    FT_UInt   asize;
+    FT_ULong  asize;
     FT_ULong  i;
     FT_ULong  glyph_index = 0;
     FT_UInt   count       = 0;
@@ -589,7 +590,7 @@
 
     for( i = 0; i < face->num_locations; i++ )
     {
-      tt_face_get_location( face, i, &asize );
+      tt_face_get_location( ttface, i, &asize );
       if ( asize > 0 )
       {
         count += 1;
@@ -777,7 +778,6 @@
     }
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-
     {
       FT_UInt  instance_index = (FT_UInt)face_index >> 16;
 
@@ -785,14 +785,11 @@
       if ( FT_HAS_MULTIPLE_MASTERS( ttface ) &&
            instance_index > 0                )
       {
-        error = TT_Set_Named_Instance( face, instance_index );
+        error = FT_Set_Named_Instance( ttface, instance_index );
         if ( error )
           goto Exit;
-
-        tt_apply_mvar( face );
       }
     }
-
 #endif 
 
     
@@ -858,7 +855,7 @@
     face->cvt_program_size  = 0;
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-    tt_done_blend( face );
+    tt_done_blend( ttface );
     face->blend = NULL;
 #endif
   }
@@ -1352,24 +1349,14 @@
 
 
 
-
   FT_LOCAL_DEF( FT_Error )
-  tt_size_reset( TT_Size  size,
-                 FT_Bool  only_height )
+  tt_size_reset_height( FT_Size  ft_size )
   {
-    TT_Face           face;
-    FT_Size_Metrics*  size_metrics;
-
-
-    face = (TT_Face)size->root.face;
-
-    
-    if ( face->is_cff2 )
-      return FT_Err_Ok;
+    TT_Size           size         = (TT_Size)ft_size;
+    TT_Face           face         = (TT_Face)size->root.face;
+    FT_Size_Metrics*  size_metrics = &size->hinted_metrics;
 
     size->ttmetrics.valid = FALSE;
-
-    size_metrics = &size->hinted_metrics;
 
     
     *size_metrics = size->root.metrics;
@@ -1397,12 +1384,34 @@
 
     size->ttmetrics.valid = TRUE;
 
-    if ( only_height )
-    {
-      
-      
-      return FT_Err_Ok;
-    }
+    return FT_Err_Ok;
+  }
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_LOCAL_DEF( FT_Error )
+  tt_size_reset( TT_Size  size )
+  {
+    FT_Error          error;
+    TT_Face           face         = (TT_Face)size->root.face;
+    FT_Size_Metrics*  size_metrics = &size->hinted_metrics;
+
+
+    error = tt_size_reset_height( (FT_Size)size );
+    if ( error )
+      return error;
 
     if ( face->header.Flags & 8 )
     {

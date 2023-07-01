@@ -40,26 +40,31 @@
 
   
   static FT_Error
-  ft_svg_init( SVG_Renderer  svg_module )
+  ft_svg_init( FT_Module  module )
   {
+    SVG_Renderer  render = (SVG_Renderer)module;
+
     FT_Error  error = FT_Err_Ok;
 
 
-    svg_module->loaded    = FALSE;
-    svg_module->hooks_set = FALSE;
+    render->loaded    = FALSE;
+    render->hooks_set = FALSE;
 
     return error;
   }
 
 
   static void
-  ft_svg_done( SVG_Renderer  svg_module )
+  ft_svg_done( FT_Module  module )
   {
-    if ( svg_module->loaded    == TRUE &&
-         svg_module->hooks_set == TRUE )
-      svg_module->hooks.free_svg( &svg_module->state );
+    SVG_Renderer  render = (SVG_Renderer)module;
 
-    svg_module->loaded = FALSE;
+
+    if ( render->loaded    == TRUE &&
+         render->hooks_set == TRUE )
+      render->hooks.free_svg( &render->state );
+
+    render->loaded = FALSE;
   }
 
 
@@ -148,7 +153,7 @@
 
   static const SVG_Interface  svg_interface =
   {
-    (Preset_Bitmap_Func)ft_svg_preset_slot
+    ft_svg_preset_slot  
   };
 
 
@@ -203,7 +208,7 @@
   static FT_Error
   ft_svg_property_get( FT_Module    module,
                        const char*  property_name,
-                       const void*  value )
+                       void*        value )
   {
     FT_Error      error    = FT_Err_Ok;
     SVG_Renderer  renderer = (SVG_Renderer)module;
@@ -226,8 +231,8 @@
   FT_DEFINE_SERVICE_PROPERTIESREC(
     ft_svg_service_properties,
 
-    (FT_Properties_SetFunc)ft_svg_property_set, 
-    (FT_Properties_GetFunc)ft_svg_property_get  
+    ft_svg_property_set,  
+    ft_svg_property_get   
   )
 
 
@@ -333,17 +338,17 @@
 
       (const void*)PUT_SVG_MODULE( &svg_interface ), 
 
-      (FT_Module_Constructor)PUT_SVG_MODULE( ft_svg_init ), 
-      (FT_Module_Destructor)PUT_SVG_MODULE( ft_svg_done ),  
-      PUT_SVG_MODULE( ft_svg_get_interface ),               
+      PUT_SVG_MODULE( ft_svg_init ),           
+      PUT_SVG_MODULE( ft_svg_done ),           
+      PUT_SVG_MODULE( ft_svg_get_interface ),  
 
       SVG_GLYPH_FORMAT,
 
-      (FT_Renderer_RenderFunc)   PUT_SVG_MODULE( ft_svg_render ),    
-      (FT_Renderer_TransformFunc)PUT_SVG_MODULE( ft_svg_transform ), 
-      NULL,                                                          
-      NULL,                                                          
-      NULL                                                           
+      PUT_SVG_MODULE( ft_svg_render ),     
+      PUT_SVG_MODULE( ft_svg_transform ),  
+      NULL,                                
+      NULL,                                
+      NULL                                 
   )
 
 

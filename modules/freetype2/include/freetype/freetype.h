@@ -102,16 +102,6 @@ FT_BEGIN_HEADER
 
 
 
-
-  
-  
-  
-  
-  
-  
-  
-
-
   
 
 
@@ -153,6 +143,7 @@ FT_BEGIN_HEADER
 
 
 
+  
 
 
 
@@ -181,6 +172,7 @@ FT_BEGIN_HEADER
 
 
 
+  
 
 
 
@@ -216,6 +208,7 @@ FT_BEGIN_HEADER
 
 
 
+  
 
 
 
@@ -251,6 +244,7 @@ FT_BEGIN_HEADER
 
 
 
+  
 
 
 
@@ -276,6 +270,120 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+
+
+  
 
 
 
@@ -356,6 +464,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -408,6 +523,13 @@ FT_BEGIN_HEADER
   
   
   
+
+  
+
+
+
+
+
 
   
 
@@ -526,6 +648,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -558,6 +687,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -568,6 +704,13 @@ FT_BEGIN_HEADER
 
 
   typedef struct FT_GlyphSlotRec_*  FT_GlyphSlot;
+
+
+  
+
+
+
+
 
 
   
@@ -884,12 +1027,26 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
 
 
   typedef struct FT_Face_InternalRec_*  FT_Face_Internal;
+
+
+  
+
+
+
+
 
 
   
@@ -1123,8 +1280,6 @@ FT_BEGIN_HEADER
 
     FT_Face_Internal  internal;
 
-    
-
   } FT_FaceRec;
 
 
@@ -1279,6 +1434,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -1388,9 +1550,23 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 #define FT_HAS_FAST_GLYPHS( face )  0
+
+
+  
+
+
+
+
 
 
   
@@ -1635,6 +1811,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -1661,9 +1844,23 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
   typedef struct FT_Size_InternalRec_*  FT_Size_Internal;
+
+
+  
+
+
+
+
 
 
   
@@ -1824,6 +2021,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -1846,6 +2050,13 @@ FT_BEGIN_HEADER
 
 
   typedef struct FT_Slot_InternalRec_*  FT_Slot_Internal;
+
+
+  
+
+
+
+
 
 
   
@@ -2099,6 +2310,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -2147,6 +2365,13 @@ FT_BEGIN_HEADER
 
   FT_EXPORT( FT_Error )
   FT_Done_FreeType( FT_Library  library );
+
+
+  
+
+
+
+
 
 
   
@@ -2657,6 +2882,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -2949,6 +3181,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -2997,6 +3236,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -3034,6 +3280,17 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
+  
+
+
+
+
 
 
 
@@ -3254,6 +3511,7 @@ FT_BEGIN_HEADER
 #define FT_LOAD_COLOR                        ( 1L << 20 )
 #define FT_LOAD_COMPUTE_METRICS              ( 1L << 21 )
 #define FT_LOAD_BITMAP_METRICS_ONLY          ( 1L << 22 )
+#define FT_LOAD_NO_SVG                       ( 1L << 24 )
 
   
 
@@ -3379,6 +3637,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -3445,6 +3710,13 @@ FT_BEGIN_HEADER
   FT_Get_Transform( FT_Face     face,
                     FT_Matrix*  matrix,
                     FT_Vector*  delta );
+
+
+  
+
+
+
+
 
 
   
@@ -3848,6 +4120,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -4064,6 +4343,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -4162,6 +4448,13 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
 
 
 
@@ -4239,6 +4532,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -4904,28 +5198,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
 
 
@@ -4950,7 +5222,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  13
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   
@@ -4990,6 +5262,13 @@ FT_BEGIN_HEADER
                       FT_Int      *amajor,
                       FT_Int      *aminor,
                       FT_Int      *apatch );
+
+
+  
+
+
+
+
 
 
   

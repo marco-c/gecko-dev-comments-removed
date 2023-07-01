@@ -56,28 +56,32 @@
 
 
 
-  static FT_Error
-  t1_get_glyph_name( T1_Face     face,
+  FT_CALLBACK_DEF( FT_Error )
+  t1_get_glyph_name( FT_Face     face,        
                      FT_UInt     glyph_index,
                      FT_Pointer  buffer,
                      FT_UInt     buffer_max )
   {
-    FT_STRCPYN( buffer, face->type1.glyph_names[glyph_index], buffer_max );
+    T1_Face  t1face = (T1_Face)face;
+
+
+    FT_STRCPYN( buffer, t1face->type1.glyph_names[glyph_index], buffer_max );
 
     return FT_Err_Ok;
   }
 
 
-  static FT_UInt
-  t1_get_name_index( T1_Face           face,
+  FT_CALLBACK_DEF( FT_UInt )
+  t1_get_name_index( FT_Face           face,        
                      const FT_String*  glyph_name )
   {
-    FT_Int  i;
+    T1_Face  t1face = (T1_Face)face;
+    FT_Int   i;
 
 
-    for ( i = 0; i < face->type1.num_glyphs; i++ )
+    for ( i = 0; i < t1face->type1.num_glyphs; i++ )
     {
-      FT_String*  gname = face->type1.glyph_names[i];
+      FT_String*  gname = t1face->type1.glyph_names[i];
 
 
       if ( !ft_strcmp( glyph_name, gname ) )
@@ -90,8 +94,8 @@
 
   static const FT_Service_GlyphDictRec  t1_service_glyph_dict =
   {
-    (FT_GlyphDict_GetNameFunc)  t1_get_glyph_name,    
-    (FT_GlyphDict_NameIndexFunc)t1_get_name_index     
+    t1_get_glyph_name,  
+    t1_get_name_index   
   };
 
 
@@ -101,9 +105,12 @@
 
 
   static const char*
-  t1_get_ps_name( T1_Face  face )
+  t1_get_ps_name( FT_Face  face )    
   {
-    return (const char*) face->type1.font_name;
+    T1_Face  t1face = (T1_Face)face;
+
+
+    return (const char*) t1face->type1.font_name;
   }
 
 
@@ -121,30 +128,28 @@
 #ifndef T1_CONFIG_OPTION_NO_MM_SUPPORT
   static const FT_Service_MultiMastersRec  t1_service_multi_masters =
   {
-    (FT_Get_MM_Func)        T1_Get_Multi_Master,    
-    (FT_Set_MM_Design_Func) T1_Set_MM_Design,       
-    (FT_Set_MM_Blend_Func)  T1_Set_MM_Blend,        
-    (FT_Get_MM_Blend_Func)  T1_Get_MM_Blend,        
-    (FT_Get_MM_Var_Func)    T1_Get_MM_Var,          
-    (FT_Set_Var_Design_Func)T1_Set_Var_Design,      
-    (FT_Get_Var_Design_Func)T1_Get_Var_Design,      
-    (FT_Set_Instance_Func)  T1_Reset_MM_Blend,      
-    (FT_Set_MM_WeightVector_Func)
-                            T1_Set_MM_WeightVector, 
-    (FT_Get_MM_WeightVector_Func)
-                            T1_Get_MM_WeightVector, 
-    (FT_Var_Load_Delta_Set_Idx_Map_Func)
-                            NULL,                   
-    (FT_Var_Load_Item_Var_Store_Func)
-                            NULL,                   
-    (FT_Var_Get_Item_Delta_Func)
-                            NULL,                   
-    (FT_Var_Done_Item_Var_Store_Func)
-                            NULL,                   
-    (FT_Var_Done_Delta_Set_Idx_Map_Func)
-                            NULL,                   
-    (FT_Get_Var_Blend_Func) NULL,                   
-    (FT_Done_Blend_Func)    T1_Done_Blend           
+    T1_Get_Multi_Master,    
+    T1_Set_MM_Design,       
+    T1_Set_MM_Blend,        
+    T1_Get_MM_Blend,        
+    T1_Get_MM_Var,          
+    T1_Set_Var_Design,      
+    T1_Get_Var_Design,      
+    T1_Reset_MM_Blend,      
+    NULL,   
+    T1_Set_MM_WeightVector,
+            
+    T1_Get_MM_WeightVector,
+            
+
+    NULL,   
+    NULL,   
+    NULL,   
+    NULL,   
+    NULL,   
+    NULL,   
+    NULL,           
+    T1_Done_Blend   
   };
 #endif
 
@@ -632,11 +637,11 @@
 
   static const FT_Service_PsInfoRec  t1_service_ps_info =
   {
-    (PS_GetFontInfoFunc)   t1_ps_get_font_info,    
-    (PS_GetFontExtraFunc)  t1_ps_get_font_extra,   
-    (PS_HasGlyphNamesFunc) t1_ps_has_glyph_names,  
-    (PS_GetFontPrivateFunc)t1_ps_get_font_private, 
-    (PS_GetFontValueFunc)  t1_ps_get_font_value,   
+    t1_ps_get_font_info,     
+    t1_ps_get_font_extra,    
+    t1_ps_has_glyph_names,   
+    t1_ps_get_font_private,  
+    t1_ps_get_font_value,    
   };
 
 
@@ -656,9 +661,9 @@
   FT_DEFINE_SERVICE_PROPERTIESREC(
     t1_service_properties,
 
-    (FT_Properties_SetFunc)ps_property_set,      
-    (FT_Properties_GetFunc)ps_property_get )     
-
+    ps_property_set,  
+    ps_property_get   
+  )
 
   
 

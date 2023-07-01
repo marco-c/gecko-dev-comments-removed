@@ -28,13 +28,19 @@ FT_BEGIN_HEADER
 
   typedef struct  GX_ItemVarDataRec_
   {
-    FT_UInt            itemCount;       
-    FT_UInt            regionIdxCount;  
-    FT_UInt*           regionIndices;   
-                                        
-    FT_ItemVarDelta*   deltaSet;        
-                                        
-
+    FT_UInt            itemCount;      
+    FT_UInt            regionIdxCount; 
+    FT_UInt*           regionIndices;  
+                                       
+    FT_Byte*           deltaSet;       
+                                       
+    FT_UShort          wordDeltaCount; 
+                                       
+                                       
+    FT_Bool            longWords;      
+                                       
+                                       
+                                       
   } GX_ItemVarDataRec, *GX_ItemVarData;
 
 
