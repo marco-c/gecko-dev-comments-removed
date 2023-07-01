@@ -67,22 +67,7 @@ void Nyx::start(void) {
     std::ifstream is;
     is.open(testFile, std::ios::binary);
 
-    uint64_t chksum, num_ops, num_data, op_offset, data_offset;
-
     
-    is.read(reinterpret_cast<char*>(&chksum), sizeof(uint64_t));
-    is.read(reinterpret_cast<char*>(&num_ops), sizeof(uint64_t));
-    is.read(reinterpret_cast<char*>(&num_data), sizeof(uint64_t));
-    is.read(reinterpret_cast<char*>(&op_offset), sizeof(uint64_t));
-    is.read(reinterpret_cast<char*>(&data_offset), sizeof(uint64_t));
-
-    if (!is.good()) {
-      MOZ_FUZZING_NYX_PRINT("[Replay Mode] Error reading input file.\n");
-      _exit(1);
-    }
-
-    is.seekg(data_offset);
-
     
     
     
@@ -91,6 +76,8 @@ void Nyx::start(void) {
     while (is.good()) {
       uint16_t pktsize;
       is.read(reinterpret_cast<char*>(&pktsize), sizeof(uint16_t));
+
+      pktsize &= 0x7ff;
 
       if (!is.good()) {
         break;
