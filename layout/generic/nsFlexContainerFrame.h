@@ -658,9 +658,15 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   nscoord mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
   nscoord mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
 
-  nscoord mBaselineFromLastReflow = NS_INTRINSIC_ISIZE_UNKNOWN;
   
-  nscoord mLastBaselineFromLastReflow = NS_INTRINSIC_ISIZE_UNKNOWN;
+
+
+
+  
+  
+  nscoord mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
+  
+  nscoord mLastBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
 };
 
 #endif 
