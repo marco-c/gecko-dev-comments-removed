@@ -106,26 +106,31 @@ async function assertOwnershipTrees(walker) {
 }
 
 
-async function checkMissing({ client }, actorID) {
-  const front = client.getFrontByID(actorID);
-  ok(
-    !front,
-    "Front shouldn't be accessible from the client for actorID: " + actorID
-  );
-
-  try {
-    await client.request({
-      to: actorID,
-      type: "request",
-    });
-    ok(false, "The actor wasn't missing as the request worked");
-  } catch (e) {
-    is(
-      e.error,
-      "noSuchActor",
-      "node list actor should no longer be contactable."
+function checkMissing({ client }, actorID) {
+  return new Promise(resolve => {
+    const front = client.getFrontByID(actorID);
+    ok(
+      !front,
+      "Front shouldn't be accessible from the client for actorID: " + actorID
     );
-  }
+
+    client
+      .request(
+        {
+          to: actorID,
+          type: "request",
+        },
+        response => {
+          is(
+            response.error,
+            "noSuchActor",
+            "node list actor should no longer be contactable."
+          );
+          resolve(undefined);
+        }
+      )
+      .catch(() => {});
+  });
 }
 
 
