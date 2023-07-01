@@ -21,6 +21,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfileBufferControlledChunkManager.h"
+#include "mozilla/ProfilerBufferSize.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
 #include "nsTArray.h"
@@ -537,7 +538,8 @@ void ProfilerParentTracker::StartTracking(ProfilerParent* aProfilerParent) {
     
     
     
-    tracker->mMaybeController.emplace(size_t(tracker->mEntries) * 8u);
+    tracker->mMaybeController.emplace(size_t(tracker->mEntries) *
+                                      scBytesPerEntry);
   }
 
   tracker->mProfilerParents.AppendElement(aProfilerParent);
@@ -560,13 +562,14 @@ void ProfilerParentTracker::ProfilerStarted(uint32_t aEntries) {
     return;
   }
 
-  tracker->mEntries = aEntries;
+  tracker->mEntries = ClampToAllowedEntries(aEntries);
 
   if (tracker->mMaybeController.isNothing() &&
       !tracker->mProfilerParents.IsEmpty()) {
     
     
-    tracker->mMaybeController.emplace(size_t(tracker->mEntries) * 8u);
+    tracker->mMaybeController.emplace(size_t(tracker->mEntries) *
+                                      scBytesPerEntry);
   }
 }
 

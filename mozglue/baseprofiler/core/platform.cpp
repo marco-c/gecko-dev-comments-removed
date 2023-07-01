@@ -43,6 +43,7 @@
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/DoubleConversion.h"
 #include "mozilla/Printf.h"
+#include "mozilla/ProfilerBufferSize.h"
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
 #include "mozilla/ProfileChunkedBuffer.h"
@@ -535,52 +536,6 @@ constexpr static uint32_t scBytesPerEntry = 8;
 
 
 class ActivePS {
- private:
-  
-  
-  
-  
-
-  
-  constexpr static uint32_t scMinimumChunkSize =
-      2 * ProfileBufferChunkManager::scExpectedMaximumStackSize;
-
-  
-  
-  
-  constexpr static uint32_t scMinimumNumberOfChunks = 4;
-
-  
-  
-  
-  
-  
-  
-  constexpr static uint32_t scMaximumChunkSize = 1024 * 1024;
-
- public:
-  
-  
-  constexpr static uint32_t scMinimumBufferSize =
-      scMinimumNumberOfChunks * scMinimumChunkSize;
-  constexpr static uint32_t scMinimumBufferEntries =
-      scMinimumBufferSize / scBytesPerEntry;
-
-  
-  constexpr static uint32_t scMaximumBufferSize = 2u * 1024u * 1024u * 1024u;
-  constexpr static uint32_t scMaximumBufferEntries =
-      scMaximumBufferSize / scBytesPerEntry;
-
-  constexpr static uint32_t ClampToAllowedEntries(uint32_t aEntries) {
-    if (aEntries <= scMinimumBufferEntries) {
-      return scMinimumBufferEntries;
-    }
-    if (aEntries >= scMaximumBufferEntries) {
-      return scMaximumBufferEntries;
-    }
-    return aEntries;
-  }
-
  private:
   constexpr static uint32_t ChunkSizeForEntries(uint32_t aEntries) {
     return uint32_t(std::min(size_t(ClampToAllowedEntries(aEntries)) *
@@ -2097,8 +2052,7 @@ static void PrintUsage() {
       "    Features: (x=unavailable, D/d=default/unavailable,\n"
       "               S/s=MOZ_PROFILER_STARTUP extra "
       "default/unavailable)\n",
-      unsigned(ActivePS::scMinimumBufferEntries),
-      unsigned(ActivePS::scMaximumBufferEntries),
+      unsigned(scMinimumBufferEntries), unsigned(scMaximumBufferEntries),
       unsigned(BASE_PROFILER_DEFAULT_ENTRIES.Value()),
       unsigned(BASE_PROFILER_DEFAULT_STARTUP_ENTRIES.Value()),
       unsigned(scBytesPerEntry),
@@ -2717,8 +2671,8 @@ void profiler_init(void* aStackTop) {
       if (errno == 0 && capacityLong > 0 &&
           static_cast<uint64_t>(capacityLong) <=
               static_cast<uint64_t>(INT32_MAX)) {
-        capacity = PowerOfTwo32(ActivePS::ClampToAllowedEntries(
-            static_cast<uint32_t>(capacityLong)));
+        capacity = PowerOfTwo32(
+            ClampToAllowedEntries(static_cast<uint32_t>(capacityLong)));
         LOG("- MOZ_PROFILER_STARTUP_ENTRIES = %u", unsigned(capacity.Value()));
       } else {
         PrintToConsole("- MOZ_PROFILER_STARTUP_ENTRIES not a valid integer: %s",
