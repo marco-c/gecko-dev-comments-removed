@@ -35,9 +35,13 @@ def generate(output, idlFilename, dataFile):
                 
                 continue
 
+            propId = p.prop_id
+        else:
+            propId = p.id
         
         
         extendedAttrs = [
+            "BindingTemplate=(CSS2Property, eCSSProperty_%s)" % propId,
             "CEReactions",
             "Throws",
             "SetterNeedsSubjectPrincipal=NonSystem",

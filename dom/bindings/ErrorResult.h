@@ -464,6 +464,11 @@ class TErrorResult {
   
   friend class dom::Promise;
 
+  
+  
+  
+  void SetPendingException(JSContext* cx, const char* context);
+
  private:
 #ifdef DEBUG
   enum UnionState {
@@ -566,11 +571,6 @@ class TErrorResult {
   
   
   void ClearUnionData();
-
-  
-  
-  
-  void SetPendingException(JSContext* cx, const char* context);
 
   
   
@@ -828,12 +828,46 @@ class CopyableErrorResult
 inline ErrorResult::ErrorResult(CopyableErrorResult&& aRHS)
     : ErrorResult(reinterpret_cast<ErrorResult&&>(aRHS)) {}
 
-namespace dom {
-namespace binding_detail {
+namespace dom::binding_detail {
+
+enum class ErrorFor {
+  getter,
+  setter,
+};
+
+template <ErrorFor ErrorType>
+struct ErrorDescriptionFor {
+  const char* mInterface;
+  const char* mMember;
+};
+
 class FastErrorResult : public mozilla::binding_danger::TErrorResult<
                             mozilla::binding_danger::JustAssertCleanupPolicy> {
+ public:
+  using TErrorResult::MaybeSetPendingException;
+
+  template <ErrorFor ErrorType>
+  [[nodiscard]] bool MaybeSetPendingException(
+      JSContext* aCx, const ErrorDescriptionFor<ErrorType>& aDescription) {
+    WouldReportJSException();
+    if (!Failed()) {
+      return false;
+    }
+
+    nsAutoCString description(aDescription.mInterface);
+    description.Append('.');
+    description.Append(aDescription.mMember);
+    if constexpr (ErrorType == ErrorFor::getter) {
+      description.AppendLiteral(" getter");
+    } else {
+      static_assert(ErrorType == ErrorFor::setter);
+      description.AppendLiteral(" setter");
+    }
+    SetPendingException(aCx, description.get());
+    return true;
+  }
 };
-}  
+
 }  
 
 
