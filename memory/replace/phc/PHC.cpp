@@ -424,6 +424,12 @@ class GAtomic {
 
   static void SetAllocDelay(Delay aAllocDelay) { sAllocDelay = aAllocDelay; }
 
+  static bool AllocDelayHasWrapped() {
+    
+    
+    return sAllocDelay > 2 * std::max(kAvgAllocDelay, kAvgFirstAllocDelay);
+  }
+
  private:
   
   
@@ -493,105 +499,6 @@ class GConst {
 };
 
 static GConst* gConst;
-
-
-
-
-#if !defined(XP_DARWIN)
-#  define PHC_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
-#else
-#  define PHC_THREAD_LOCAL(T) \
-    detail::ThreadLocal<T, detail::ThreadLocalKeyStorage>
-#endif
-
-
-class GTls {
-  GTls(const GTls&) = delete;
-
-  const GTls& operator=(const GTls&) = delete;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static PHC_THREAD_LOCAL(bool) tlsIsDisabled;
-
- public:
-  static void Init() {
-    if (!tlsIsDisabled.init()) {
-      MOZ_CRASH();
-    }
-  }
-
-  static void DisableOnCurrentThread() {
-    MOZ_ASSERT(!GTls::tlsIsDisabled.get());
-    tlsIsDisabled.set(true);
-  }
-
-  static void EnableOnCurrentThread() {
-    MOZ_ASSERT(GTls::tlsIsDisabled.get());
-    tlsIsDisabled.set(false);
-  }
-
-  static bool IsDisabledOnCurrentThread() { return tlsIsDisabled.get(); }
-};
-
-PHC_THREAD_LOCAL(bool) GTls::tlsIsDisabled;
-
-class AutoDisableOnCurrentThread {
-  AutoDisableOnCurrentThread(const AutoDisableOnCurrentThread&) = delete;
-
-  const AutoDisableOnCurrentThread& operator=(
-      const AutoDisableOnCurrentThread&) = delete;
-
- public:
-  explicit AutoDisableOnCurrentThread() { GTls::DisableOnCurrentThread(); }
-  ~AutoDisableOnCurrentThread() { GTls::EnableOnCurrentThread(); }
-};
 
 
 
@@ -1004,6 +911,113 @@ class GMut {
 Mutex GMut::sMutex;
 
 static GMut* gMut;
+
+
+
+
+#if !defined(XP_DARWIN)
+#  define PHC_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
+#else
+#  define PHC_THREAD_LOCAL(T) \
+    detail::ThreadLocal<T, detail::ThreadLocalKeyStorage>
+#endif
+
+
+class GTls {
+  GTls(const GTls&) = delete;
+
+  const GTls& operator=(const GTls&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static PHC_THREAD_LOCAL(bool) tlsIsDisabled;
+
+ public:
+  static void Init() {
+    if (!tlsIsDisabled.init()) {
+      MOZ_CRASH();
+    }
+  }
+
+  static void DisableOnCurrentThread() {
+    MOZ_ASSERT(!GTls::tlsIsDisabled.get());
+    tlsIsDisabled.set(true);
+  }
+
+  static void EnableOnCurrentThread() {
+    MOZ_ASSERT(GTls::tlsIsDisabled.get());
+    uint64_t rand;
+    if (GAtomic::AllocDelayHasWrapped()) {
+      {
+        MutexAutoLock lock(GMut::sMutex);
+        rand = gMut->Random64(lock);
+      }
+      GAtomic::SetAllocDelay(Rnd64ToDelay<kAvgAllocDelay>(rand));
+    }
+    tlsIsDisabled.set(false);
+  }
+
+  static bool IsDisabledOnCurrentThread() { return tlsIsDisabled.get(); }
+};
+
+PHC_THREAD_LOCAL(bool) GTls::tlsIsDisabled;
+
+class AutoDisableOnCurrentThread {
+  AutoDisableOnCurrentThread(const AutoDisableOnCurrentThread&) = delete;
+
+  const AutoDisableOnCurrentThread& operator=(
+      const AutoDisableOnCurrentThread&) = delete;
+
+ public:
+  explicit AutoDisableOnCurrentThread() { GTls::DisableOnCurrentThread(); }
+  ~AutoDisableOnCurrentThread() { GTls::EnableOnCurrentThread(); }
+};
 
 
 

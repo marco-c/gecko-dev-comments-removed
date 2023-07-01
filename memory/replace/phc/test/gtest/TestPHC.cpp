@@ -302,4 +302,10 @@ TEST(PHC, TestPHCDisabling)
 
   ReplaceMalloc::ReenablePHCOnCurrentThread();
   ASSERT_TRUE(ReplaceMalloc::IsPHCEnabledOnCurrentThread());
+
+  
+  
+  uint8_t* s = GetPHCAllocation(32);  
+  ASSERT_TRUE(!!s);
+  free(s);
 }
