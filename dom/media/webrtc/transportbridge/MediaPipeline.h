@@ -59,11 +59,11 @@ class RTCStatsTimestampMaker;
 }  
 
 struct MediaPipelineReceiveControlInterface {
-  virtual Canonical<bool>& CanonicalReceiving() = 0;
+  virtual AbstractCanonical<bool>* CanonicalReceiving() = 0;
 };
 
 struct MediaPipelineTransmitControlInterface {
-  virtual Canonical<bool>& CanonicalTransmitting() = 0;
+  virtual AbstractCanonical<bool>* CanonicalTransmitting() = 0;
 };
 
 

@@ -279,6 +279,7 @@ class MediaDecoderStateMachine
 
   void StreamNameChanged();
   void UpdateOutputCaptured();
+  void OutputTracksChanged();
   void OutputPrincipalChanged();
 
   MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
@@ -562,6 +563,7 @@ class MediaDecoderStateMachine
   
   Mirror<PrincipalHandle> mOutputPrincipal;
 
+  Canonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>> mCanonicalOutputTracks;
   Canonical<PrincipalHandle> mCanonicalOutputPrincipal;
 
   
@@ -570,6 +572,10 @@ class MediaDecoderStateMachine
   bool mIsMediaSinkSuspended = false;
 
  public:
+  AbstractCanonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>>*
+  CanonicalOutputTracks() {
+    return &mCanonicalOutputTracks;
+  }
   AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
     return &mCanonicalOutputPrincipal;
   }
