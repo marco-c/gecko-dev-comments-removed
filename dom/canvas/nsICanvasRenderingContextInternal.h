@@ -216,12 +216,7 @@ class nsICanvasRenderingContextInternal : public nsISupports,
                        bool CORSUsed);
 
   
-  
-  
-  
-  
-  bool ShouldResistFingerprinting(
-      mozilla::RFPTarget aTarget = mozilla::RFPTarget::Unknown) const;
+  bool ShouldResistFingerprinting(mozilla::RFPTarget aTarget) const;
 
  protected:
   RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
