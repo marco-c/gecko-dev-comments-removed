@@ -455,7 +455,7 @@ class ElementStyle {
       
       
       const isStyleRule =
-        rule.pseudoElement === "" && !!rule.matchedSelectors.length;
+        rule.pseudoElement === "" && !!rule.matchedDesugaredSelectors.length;
 
       
       
