@@ -66,10 +66,5 @@ interface nsIAccessibleDocument : nsISupports
   
 
 
-  readonly attribute nsIAccessiblePivot virtualCursor;
-
-  
-
-
   nsIAccessibleDocument getChildDocumentAt(in unsigned long index);
 };
