@@ -882,7 +882,12 @@ class StyleRuleActor extends Actor {
         { kind: UPDATE_PRESERVING_RULES }
       );
     } else {
-      const cssRules = parentStyleSheet.cssRules;
+      
+      
+      
+      
+      const parent = this.rawRule.parentRule || parentStyleSheet;
+      const cssRules = parent.cssRules;
       const cssText = rule.cssText;
       const selectorText = rule.selectorText;
 
@@ -892,8 +897,8 @@ class StyleRuleActor extends Actor {
             
             
             const ruleText = cssText.slice(selectorText.length).trim();
-            parentStyleSheet.insertRule(value + " " + ruleText, i);
-            parentStyleSheet.deleteRule(i + 1);
+            parent.insertRule(value + " " + ruleText, i);
+            parent.deleteRule(i + 1);
             break;
           } catch (e) {
             
