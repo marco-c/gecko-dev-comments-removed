@@ -121,6 +121,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "hasMigratedCSVPasswords",
+  "browser.migrate.interactions.csvpasswords",
+  false
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "hasMigratedHistory",
   "browser.migrate.interactions.history",
   false
@@ -923,6 +929,16 @@ const TargetingGetters = {
 
   get hasMigratedBookmarks() {
     return lazy.hasMigratedBookmarks;
+  },
+
+  
+
+
+
+
+
+  get hasMigratedCSVPasswords() {
+    return lazy.hasMigratedCSVPasswords;
   },
 
   
