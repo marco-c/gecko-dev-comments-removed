@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["TransientPrefs"];
+
+var prefVisibility = new Map();
+
+
+
+
+
+var TransientPrefs = {
+  prefShouldBeVisible(prefName) {
+    if (Services.prefs.prefHasUserValue(prefName)) {
+      prefVisibility.set(prefName, true);
+    }
+
+    return !!prefVisibility.get(prefName);
+  },
+};

@@ -104,7 +104,7 @@ const EXPECTED_REQUESTS = [
     
     stack: [
       {
-        file: "resource:///modules/FaviconLoader.sys.mjs",
+        file: "resource:///modules/FaviconLoader.jsm",
         line: Number.MAX_SAFE_INTEGER,
       },
     ],

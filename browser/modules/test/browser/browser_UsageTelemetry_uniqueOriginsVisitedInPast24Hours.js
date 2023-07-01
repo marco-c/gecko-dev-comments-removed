@@ -5,9 +5,11 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  URICountListener: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "URICountListener",
+  "resource:///modules/BrowserUsageTelemetry.jsm"
+);
 
 add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
   

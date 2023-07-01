@@ -3,17 +3,25 @@
 
 
 
+"use strict";
 
 
 
 
 
+
+
+var EXPORTED_SYMBOLS = ["TabUnloader"];
 
 const lazy = {};
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "webrtcUI",
+  "resource:///modules/webrtcUI.jsm"
+);
 ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
 });
 
 
@@ -158,7 +166,7 @@ let DefaultTabUnloaderMethods = {
 
 
 
-export var TabUnloader = {
+var TabUnloader = {
   
 
 

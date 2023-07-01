@@ -5,9 +5,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  TabsPanel: "resource:///modules/TabsList.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "TabsPanel",
+  "resource:///modules/TabsList.jsm"
+);
 
 var gTabsPanel = {
   kElements: {

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -23,15 +23,22 @@ const { classifySite } = ChromeUtils.import(
 
 const lazy = {};
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "PingCentre",
+  "resource:///modules/PingCentre.jsm"
+);
 ChromeUtils.defineESModuleGetters(lazy, {
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
-  HomePage: "resource:///modules/HomePage.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  PingCentre: "resource:///modules/PingCentre.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
@@ -39,6 +46,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   pktApi: "chrome://pocket/content/pktApi.sys.mjs",
 });
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "HomePage",
+  "resource:///modules/HomePage.jsm"
+);
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AboutWelcomeTelemetry:
     "resource://activity-stream/aboutwelcome/lib/AboutWelcomeTelemetry.jsm",
@@ -54,7 +66,7 @@ const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
 const DOMWINDOW_UNLOAD_TOPIC = "unload";
 const TAB_PINNED_EVENT = "TabPinned";
 
-
+// This is a mapping table between the user preferences and its encoding code
 const USER_PREFS_ENCODING = {
   showSearch: 1 << 0,
   "feeds.topsites": 1 << 1,
@@ -72,17 +84,17 @@ const TELEMETRY_PREF = "telemetry";
 const EVENTS_TELEMETRY_PREF = "telemetry.ut.events";
 const STRUCTURED_INGESTION_ENDPOINT_PREF =
   "telemetry.structuredIngestion.endpoint";
-
-
+// List of namespaces for the structured ingestion system.
+// They are defined in https://github.com/mozilla-services/mozilla-pipeline-schemas
 const STRUCTURED_INGESTION_NAMESPACE_AS = "activity-stream";
 const STRUCTURED_INGESTION_NAMESPACE_MS = "messaging-system";
 const STRUCTURED_INGESTION_NAMESPACE_CS = "contextual-services";
 
-
+// Used as the missing value for timestamps in the session ping
 const TIMESTAMP_MISSING_VALUE = -1;
 
-
-
+// Page filter for onboarding telemetry, any value other than these will
+// be set as "other"
 const ONBOARDING_ALLOWED_PAGE_VALUES = [
   "about:welcome",
   "about:home",
@@ -95,9 +107,9 @@ XPCOMUtils.defineLazyGetter(
   () => lazy.TelemetrySession.getMetadata("").sessionId
 );
 
-
+// The scalar category for TopSites of Contextual Services
 const SCALAR_CATEGORY_TOPSITES = "contextual.services.topsites";
-
+// `contextId` is a unique identifier used by Contextual Services
 const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
 XPCOMUtils.defineLazyGetter(lazy, "contextId", () => {
   let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
@@ -155,13 +167,13 @@ class TelemetryFeed {
       this.browserOpenNewtabStart,
       "browser-open-newtab-start"
     );
-    
+    // Add pin tab event listeners on future windows
     Services.obs.addObserver(this._addWindowListeners, DOMWINDOW_OPENED_TOPIC);
-    
+    // Listen for pin tab events on all open windows
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       this._addWindowListeners(win);
     }
-    
+    // Set two scalars for the "deletion-request" ping (See bug 1602064 and 1729474)
     Services.telemetry.scalarSet(
       "deletion.request.impression_id",
       this._impressionId
@@ -201,7 +213,7 @@ class TelemetryFeed {
       event: TAB_PINNED_EVENT.toUpperCase(),
       value: { total_pinned_tabs: this.countTotalPinnedTabs() },
       source,
-      
+      // These fields are required but not relevant for this ping
       page: "n/a",
       session_id: "n/a",
     });
@@ -243,26 +255,26 @@ class TelemetryFeed {
   }
 
   setLoadTriggerInfo(port) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // XXX note that there is a race condition here; we're assuming that no
+    // other tab will be interleaving calls to browserOpenNewtabStart and
+    // when at.NEW_TAB_INIT gets triggered by RemotePages and calls this
+    // method.  For manually created windows, it's hard to imagine us hitting
+    // this race condition.
+    //
+    // However, for session restore, where multiple windows with multiple tabs
+    // might be restored much closer together in time, it's somewhat less hard,
+    // though it should still be pretty rare.
+    //
+    // The fix to this would be making all of the load-trigger notifications
+    // return some data with their notifications, and somehow propagate that
+    // data through closures into the tab itself so that we could match them
+    //
+    // As of this writing (very early days of system add-on perf telemetry),
+    // the hypothesis is that hitting this race should be so rare that makes
+    // more sense to live with the slight data inaccuracy that it would
+    // introduce, rather than doing the correct but complicated thing.  It may
+    // well be worth reexamining this hypothesis after we have more experience
+    // with the data.
 
     let data_to_save;
     try {
@@ -274,15 +286,15 @@ class TelemetryFeed {
         load_trigger_type: "menu_plus_or_keyboard",
       };
     } catch (e) {
-      
+      // if no mark was returned, we have nothing to save
       return;
     }
     this.saveSessionPerfData(port, data_to_save);
   }
 
-  
-
-
+  /**
+   * Lazily initialize PingCentre for Activity Stream to send pings
+   */
   get pingCentre() {
     Object.defineProperty(this, "pingCentre", {
       value: new lazy.PingCentre({ topic: ACTIVITY_STREAM_ID }),
@@ -290,9 +302,9 @@ class TelemetryFeed {
     return this.pingCentre;
   }
 
-  
-
-
+  /**
+   * Lazily initialize UTEventReporting to send pings
+   */
   get utEvents() {
     Object.defineProperty(this, "utEvents", {
       value: new lazy.UTEventReporting(),
@@ -300,9 +312,9 @@ class TelemetryFeed {
     return this.utEvents;
   }
 
-  
-
-
+  /**
+   * Get encoded user preferences, multiple prefs will be combined via bitwise OR operator
+   */
   get userPreferences() {
     let prefs = 0;
 
@@ -314,12 +326,12 @@ class TelemetryFeed {
     return prefs;
   }
 
-  
-
-
-
-
-
+  /**
+   *  Check if it is in the CFR experiment cohort by querying against the
+   *  experiment manager of Messaging System
+   *
+   *  @return {bool}
+   */
   get isInCFRCohort() {
     const experimentData = lazy.ExperimentAPI.getExperimentMetaData({
       featureId: "cfr",
@@ -331,47 +343,47 @@ class TelemetryFeed {
     return false;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * addSession - Start tracking a new session
+   *
+   * @param  {string} id the portID of the open session
+   * @param  {string} the URL being loaded for this session (optional)
+   * @return {obj}    Session object
+   */
   addSession(id, url) {
-    
+    // XXX refactor to use setLoadTriggerInfo or saveSessionPerfData
 
-    
+    // "unexpected" will be overwritten when appropriate
     let load_trigger_type = "unexpected";
     let load_trigger_ts;
 
     if (!this._aboutHomeSeen && url === "about:home") {
       this._aboutHomeSeen = true;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // XXX note that this will be incorrectly set in the following cases:
+      // session_restore following by clicking on the toolbar button,
+      // or someone who has changed their default home page preference to
+      // something else and later clicks the toolbar.  It will also be
+      // incorrectly unset if someone changes their "Home Page" preference to
+      // about:newtab.
+      //
+      // That said, the ratio of these mistakes to correct cases should
+      // be very small, and these issues should follow away as we implement
+      // the remaining load_trigger_type values for about:home in issue 3556.
+      //
+      // XXX file a bug to implement remaining about:home cases so this
+      // problem will go away and link to it here.
       load_trigger_type = "first_window_opened";
 
-      
-      
-      
+      // The real perceived trigger of first_window_opened is the OS-level
+      // clicking of the icon. We express this by using the process start
+      // absolute timestamp.
       load_trigger_ts = this.processStartTs;
     }
 
     const session = {
       session_id: String(Services.uuid.generateUUID()),
-      
+      // "unknown" will be overwritten when appropriate
       page: url ? url : "unknown",
       perf: {
         load_trigger_type,
@@ -387,16 +399,16 @@ class TelemetryFeed {
     return session;
   }
 
-  
-
-
-
-
+  /**
+   * endSession - Stop tracking a session
+   *
+   * @param  {string} portID the portID of the session that just closed
+   */
   endSession(portID) {
     const session = this.sessions.get(portID);
 
     if (!session) {
-      
+      // It's possible the tab was never visible – in which case, there was no user session.
       return;
     }
 
@@ -417,8 +429,8 @@ class TelemetryFeed {
         absNow - session.perf.visibility_event_rcvd_ts
       );
 
-      
-      
+      // Rounding all timestamps in perf to ease the data processing on the backend.
+      // NB: use `TIMESTAMP_MISSING_VALUE` if the value is missing.
       session.perf.visibility_event_rcvd_ts = Math.round(
         session.perf.visibility_event_rcvd_ts
       );
@@ -429,7 +441,7 @@ class TelemetryFeed {
         session.perf.topsites_first_painted_ts || TIMESTAMP_MISSING_VALUE
       );
     } else {
-      
+      // This session was never shown (i.e. the hidden preloaded newtab), there was no user session either.
       this.sessions.delete(portID);
       return;
     }
@@ -440,15 +452,15 @@ class TelemetryFeed {
     this.sessions.delete(portID);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Send impression pings for Discovery Stream for a given session.
+   *
+   * @note the impression reports are stored in session.impressionSets for different
+   * sources, and will be sent separately accordingly.
+   *
+   * @param {String} port  The session port with which this is associated
+   * @param {Object} session  The session object
+   */
   sendDiscoveryStreamImpressions(port, session) {
     const { impressionSets } = session;
 
@@ -474,15 +486,15 @@ class TelemetryFeed {
     });
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Send loaded content pings for Discovery Stream for a given session.
+   *
+   * @note the loaded content reports are stored in session.loadedContentSets for different
+   * sources, and will be sent separately accordingly.
+   *
+   * @param {String} port  The session port with which this is associated
+   * @param {Object} session  The session object
+   */
   sendDiscoveryStreamLoadedContent(port, session) {
     const { loadedContentSets } = session;
 
@@ -506,12 +518,12 @@ class TelemetryFeed {
     });
   }
 
-  
-
-
-
-
-
+  /**
+   * handleNewTabInit - Handle NEW_TAB_INIT, which creates a new session and sets the a flag
+   *                    for session.perf based on whether or not this new tab is preloaded
+   *
+   * @param  {obj} action the Action object
+   */
   handleNewTabInit(action) {
     const session = this.addSession(
       au.getPortIdOfSender(action),
@@ -521,12 +533,12 @@ class TelemetryFeed {
       action.data.browser.getAttribute("preloadedState") === "preloaded";
   }
 
-  
-
-
-
-
-
+  /**
+   * createPing - Create a ping with common properties
+   *
+   * @param  {string} id The portID of the session, if a session is relevant (optional)
+   * @return {obj}    A telemetry ping
+   */
   createPing(portID) {
     const ping = {
       addon_version: Services.appinfo.appBuildID,
@@ -534,7 +546,7 @@ class TelemetryFeed {
       user_prefs: this.userPreferences,
     };
 
-    
+    // If the ping is part of a user session, add session-related info
     if (portID) {
       const session = this.sessions.get(portID) || this.addSession(portID);
       Object.assign(ping, { session_id: session.session_id });
@@ -546,18 +558,18 @@ class TelemetryFeed {
     return ping;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * createImpressionStats - Create a ping for an impression stats
+   *
+   * @param  {string} portID The portID of the open session
+   * @param  {ob} data The data object to be included in the ping.
+   * @return {obj}    A telemetry ping
+   */
   createImpressionStats(portID, data) {
     let ping = Object.assign(this.createPing(portID), data, {
       impression_id: this._impressionId,
     });
-    
+    // Make sure `session_id` and `client_id` are not in the ping.
     delete ping.session_id;
     delete ping.client_id;
     return ping;
@@ -584,10 +596,10 @@ class TelemetryFeed {
     });
   }
 
-  
-
-
-
+  /**
+   * Create a ping for AS router event. The client_id is set to "n/a" by default,
+   * different component can override this by its own telemetry collection policy.
+   */
   async createASRouterEvent(action) {
     let event = {
       ...action.data,
@@ -635,13 +647,13 @@ class TelemetryFeed {
     return event;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Per Bug 1484035, CFR metrics comply with following policies:
+   * 1). In release, it collects impression_id and bucket_id
+   * 2). In prerelease, it collects client_id and message_id
+   * 3). In shield experiments conducted in release, it collects client_id and message_id
+   * 4). In Private Browsing windows, unless in experiment, collects impression_id and bucket_id
+   */
   async applyCFRPolicy(ping) {
     if (
       (lazy.UpdateUtils.getUpdateChannel(true) === "release" ||
@@ -658,14 +670,14 @@ class TelemetryFeed {
     return { ping, pingType: "cfr" };
   }
 
-  
-
-
-
+  /**
+   * Per Bug 1482134, all the metrics for What's New panel use client_id in
+   * all the release channels
+   */
   async applyWhatsNewPolicy(ping) {
     ping.client_id = await this.telemetryClientId;
     ping.browser_session_id = lazy.browserSessionId;
-    
+    // Attach page info to `event_context` if there is a session associated with this ping
     delete ping.action;
     return { ping, pingType: "whats-new-panel" };
   }
@@ -691,12 +703,12 @@ class TelemetryFeed {
     return { ping, pingType: "toast_notification" };
   }
 
-  
-
-
-
-
-
+  /**
+   * Per Bug 1484035, Moments metrics comply with following policies:
+   * 1). In release, it collects impression_id, and treats bucket_id as message_id
+   * 2). In prerelease, it collects client_id and message_id
+   * 3). In shield experiments conducted in release, it collects client_id and message_id
+   */
   async applyMomentsPolicy(ping) {
     if (
       lazy.UpdateUtils.getUpdateChannel(true) === "release" &&
@@ -711,24 +723,24 @@ class TelemetryFeed {
     return { ping, pingType: "moments" };
   }
 
-  
-
-
-
+  /**
+   * Per Bug 1485069, all the metrics for Snippets in AS router use client_id in
+   * all the release channels
+   */
   async applySnippetsPolicy(ping) {
     ping.client_id = await this.telemetryClientId;
     delete ping.action;
     return { ping, pingType: "snippets" };
   }
 
-  
-
-
-
+  /**
+   * Per Bug 1482134, all the metrics for Onboarding in AS router use client_id in
+   * all the release channels
+   */
   async applyOnboardingPolicy(ping, session) {
     ping.client_id = await this.telemetryClientId;
     ping.browser_session_id = lazy.browserSessionId;
-    
+    // Attach page info to `event_context` if there is a session associated with this ping
     if (ping.action === "onboarding_user_event" && session && session.page) {
       let event_context;
 
@@ -737,8 +749,8 @@ class TelemetryFeed {
           ? JSON.parse(ping.event_context)
           : {};
       } catch (e) {
-        
-        
+        // If `ping.event_context` is not a JSON serialized string, then we create a `value`
+        // key for it
         event_context = { value: ping.event_context };
       }
 
@@ -802,20 +814,20 @@ class TelemetryFeed {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Generates an endpoint for Structured Ingestion telemetry pipeline. Note that
+   * Structured Ingestion requires a different endpoint for each ping. See more
+   * details about endpoint schema at:
+   * https://github.com/mozilla/gcp-ingestion/blob/master/docs/edge.md#postput-request
+   *
+   * @param {String} namespace Namespace of the ping, such as "activity-stream" or "messaging-system".
+   * @param {String} pingType  Type of the ping, such as "impression-stats".
+   * @param {String} version   Endpoint version for this ping type.
+   */
   _generateStructuredIngestionEndpoint(namespace, pingType, version) {
     const uuid = Services.uuid.generateUUID().toString();
-    
-    
+    // Structured Ingestion does not support the UUID generated by Services.uuid,
+    // because it contains leading and trailing braces. Need to trim them first.
     const docID = uuid.slice(1, -1);
     const extension = `${namespace}/${pingType}/${version}/${docID}`;
     return `${this.structuredIngestionEndpointBase}/${extension}`;
@@ -853,8 +865,8 @@ class TelemetryFeed {
       advertiser: advertiser_name,
       tile_id,
     } = data;
-    
-    
+    // Legacy telemetry (scalars and PingCentre payloads) expects 1-based tile
+    // positions.
     const legacyTelemetryPosition = position + 1;
 
     let pingType;
@@ -994,7 +1006,7 @@ class TelemetryFeed {
       return;
     }
 
-    
+    // Now that the action has become a ping, we can echo it to Glean.
     if (this.telemetryEnabled) {
       lazy.Telemetry.submitGleanPingForPing({ ...ping, pingType });
     }
@@ -1007,10 +1019,10 @@ class TelemetryFeed {
     );
   }
 
-  
-
-
-
+  /**
+   * This function is used by ActivityStreamStorage to report errors
+   * trying to access IndexedDB.
+   */
   SendASRouterUndesiredEvent(data) {
     this.handleASRouterUserEvent({
       data: { ...data, action: "asrouter_undesired_event" },
@@ -1025,8 +1037,8 @@ class TelemetryFeed {
       let newtabCategory = "disabled";
       let homePageCategory = "disabled";
 
-      
-      
+      // Check whether or not about:home and about:newtab are set to a custom URL.
+      // If so, classify them.
       if (Services.prefs.getBoolPref("browser.newtabpage.enabled")) {
         newtabCategory = "enabled";
         if (
@@ -1040,7 +1052,7 @@ class TelemetryFeed {
           newtabCategory = value.newtab_url_category;
         }
       }
-      
+      // Check if the newtab page setting is controlled by an extension.
       await lazy.ExtensionSettingsStore.initialize();
       const newtabExtensionInfo = lazy.ExtensionSettingsStore.getSetting(
         "url_overrides",
@@ -1137,22 +1149,22 @@ class TelemetryFeed {
       case at.TELEMETRY_USER_EVENT:
         this.handleUserEvent(action);
         break;
-      
-      
+      // The next few action types come from ASRouter, which doesn't use
+      // Actions from Actions.jsm, but uses these other custom strings.
       case msg.TOOLBAR_BADGE_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.TOOLBAR_PANEL_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.MOMENTS_PAGE_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.DOORHANGER_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.INFOBAR_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.SPOTLIGHT_TELEMETRY:
-      
+      // Intentional fall-through
       case msg.TOAST_NOTIFICATION_TELEMETRY:
-      
+      // Intentional fall-through
       case at.AS_ROUTER_TELEMETRY_USER_EVENT:
         this.handleASRouterUserEvent(action);
         break;
@@ -1168,18 +1180,18 @@ class TelemetryFeed {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Handle impression stats actions from Discovery Stream. The data will be
+   * stored into the session.impressionSets object for the given port, so that
+   * it is sent to the server when the session ends.
+   *
+   * @note session.impressionSets will be keyed on `source` of the `data`,
+   * all the data will be appended to an array for the same source.
+   *
+   * @param {String} port  The session port with which this is associated
+   * @param {Object} data  The impression data structured as {source: "SOURCE", tiles: [{id: 123}]}
+   *
+   */
   handleDiscoveryStreamImpressionStats(port, data) {
     let session = this.sessions.get(port);
 
@@ -1194,7 +1206,7 @@ class TelemetryFeed {
       window_inner_width,
       window_inner_height,
     };
-    
+    // The payload might contain other properties, we need `id`, `pos` and potentially `shim` here.
     tiles.forEach(tile => {
       impressions.tiles.push({
         id: tile.id,
@@ -1211,18 +1223,18 @@ class TelemetryFeed {
     session.impressionSets = impressionSets;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Handle loaded content actions from Discovery Stream. The data will be
+   * stored into the session.loadedContentSets object for the given port, so that
+   * it is sent to the server when the session ends.
+   *
+   * @note session.loadedContentSets will be keyed on `source` of the `data`,
+   * all the data will be appended to an array for the same source.
+   *
+   * @param {String} port  The session port with which this is associated
+   * @param {Object} data  The loaded content structured as {source: "SOURCE", tiles: [{id: 123}]}
+   *
+   */
   handleDiscoveryStreamLoadedContent(port, data) {
     let session = this.sessions.get(port);
 
@@ -1232,7 +1244,7 @@ class TelemetryFeed {
 
     const loadedContentSets = session.loadedContentSets || {};
     const loadedContents = loadedContentSets[data.source] || [];
-    
+    // The payload might contain other properties, we need `id` and `pos` here.
     data.tiles.forEach(tile =>
       loadedContents.push({ id: tile.id, pos: tile.pos })
     );
@@ -1240,35 +1252,35 @@ class TelemetryFeed {
     session.loadedContentSets = loadedContentSets;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Take all enumerable members of the data object and merge them into
+   * the session.perf object for the given port, so that it is sent to the
+   * server when the session ends.  All members of the data object should
+   * be valid values of the perf object, as defined in pings.js and the
+   * data*.md documentation.
+   *
+   * @note Any existing keys with the same names already in the
+   * session perf object will be overwritten by values passed in here.
+   *
+   * @param {String} port  The session with which this is associated
+   * @param {Object} data  The perf data to be
+   */
   saveSessionPerfData(port, data) {
-    
-    
+    // XXX should use try/catch and send a bad state indicator if this
+    // get blows up.
     let session = this.sessions.get(port);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // XXX Partial workaround for #3118; avoids the worst incorrect associations
+    // of times with browsers, by associating the load trigger with the
+    // visibility event as the user is most likely associating the trigger to
+    // the tab just shown. This helps avoid associating with a preloaded
+    // browser as those don't get the event until shown. Better fix for more
+    // cases forthcoming.
+    //
+    // XXX the about:home check (and the corresponding test) should go away
+    // once the load_trigger stuff in addSession is refactored into
+    // setLoadTriggerInfo.
+    //
     if (data.visibility_event_rcvd_ts && session.page !== "about:home") {
       this.setLoadTriggerInfo(port);
     }
@@ -1365,11 +1377,11 @@ class TelemetryFeed {
         DOMWINDOW_OPENED_TOPIC
       );
     } catch (e) {
-      
-      
+      // Operation can fail when uninit is called before
+      // init has finished setting up the observer
     }
 
-    
+    // Only uninit if the getter has initialized it
     if (Object.prototype.hasOwnProperty.call(this, "pingCentre")) {
       this.pingCentre.uninit();
     }
@@ -1377,7 +1389,7 @@ class TelemetryFeed {
       this.utEvents.uninit();
     }
 
-    
+    // TODO: Send any unfinished sessions
   }
 }
 

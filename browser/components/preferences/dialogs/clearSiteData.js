@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { SiteDataManager } = ChromeUtils.importESModule(
-  "resource:///modules/SiteDataManager.sys.mjs"
+const { SiteDataManager } = ChromeUtils.import(
+  "resource:///modules/SiteDataManager.jsm"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -23,8 +23,8 @@ var gClearSiteDataDialog = {
     this._clearSiteDataCheckbox = document.getElementById("clearSiteData");
     this._clearCacheCheckbox = document.getElementById("clearCache");
 
-    
-    
+    // We'll block init() on this because the result values may impact
+    // subdialog sizing.
     await Promise.all([
       SiteDataManager.getTotalUsage().then(bytes => {
         let [amount, unit] = DownloadUtils.convertByteUnits(bytes);
@@ -70,10 +70,10 @@ var gClearSiteDataDialog = {
     let clearCache = this._clearCacheCheckbox.checked;
 
     if (clearSiteData) {
-      
+      // Ask for confirmation before clearing site data
       if (!SiteDataManager.promptSiteDataRemoval(window)) {
         clearSiteData = false;
-        
+        // Prevent closing the dialog when the data removal wasn't allowed.
         event.preventDefault();
       }
     }
@@ -84,8 +84,8 @@ var gClearSiteDataDialog = {
     if (clearCache) {
       SiteDataManager.removeCache();
 
-      
-      
+      // If we're not clearing site data, we need to tell the
+      // SiteDataManager to signal that it's updating.
       if (!clearSiteData) {
         SiteDataManager.updateSites();
       }

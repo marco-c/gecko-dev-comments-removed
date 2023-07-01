@@ -3,9 +3,15 @@
 
 
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+"use strict";
 
-export var BrowserUIUtils = {
+var { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+var EXPORTED_SYMBOLS = ["BrowserUIUtils"];
+
+var BrowserUIUtils = {
   
 
 

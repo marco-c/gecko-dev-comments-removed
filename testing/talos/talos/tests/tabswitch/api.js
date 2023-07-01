@@ -2,9 +2,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
 
 this.tabswitch = class extends ExtensionAPI {
   getAPI(context) {

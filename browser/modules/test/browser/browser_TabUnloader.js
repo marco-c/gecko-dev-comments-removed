@@ -1,8 +1,8 @@
 
 
 
-const { TabUnloader } = ChromeUtils.importESModule(
-  "resource:///modules/TabUnloader.sys.mjs"
+const { TabUnloader } = ChromeUtils.import(
+  "resource:///modules/TabUnloader.jsm"
 );
 
 const BASE_URL = "https://example.com/browser/browser/modules/test/browser/";

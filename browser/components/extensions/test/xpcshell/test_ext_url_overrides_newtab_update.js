@@ -1,9 +1,9 @@
-
-
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-const { AboutNewTab } = ChromeUtils.importESModule(
-  "resource:///modules/AboutNewTab.sys.mjs"
+const { AboutNewTab } = ChromeUtils.import(
+  "resource:///modules/AboutNewTab.jsm"
 );
 
 const { AddonTestUtils } = ChromeUtils.importESModule(
@@ -21,7 +21,7 @@ const {
 
 AddonTestUtils.init(this);
 
-
+// Allow for unsigned addons.
 AddonTestUtils.overrideCertDB();
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
@@ -34,7 +34,7 @@ add_task(async function test_url_overrides_newtab_update() {
   const testServer = createHttpServer();
   const port = testServer.identity.primaryPort;
 
-  
+  // The test extension uses an insecure update url.
   Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
   testServer.registerPathHandler("/test_update.json", (request, response) => {

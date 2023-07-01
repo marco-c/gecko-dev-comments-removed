@@ -1,14 +1,32 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { EventEmitter } from "resource:///modules/syncedtabs/EventEmitter.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = [
+  "webrtcUI",
+  "showStreamSharingMenu",
+  "MacOSWebRTCStatusbarIndicator",
+];
+
+const { EventEmitter } = ChromeUtils.importESModule(
+  "resource:///modules/syncedtabs/EventEmitter.sys.mjs"
+);
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const lazy = {};
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "BrowserWindowTracker",
+  "resource:///modules/BrowserWindowTracker.jsm"
+);
 ChromeUtils.defineESModuleGetters(lazy, {
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
 });
 XPCOMUtils.defineLazyGetter(
@@ -67,7 +85,7 @@ const SHARING_L10NID_BY_TYPE = new Map([
   ],
 ]);
 
-// These identifiers are defined in MediaStreamTrack.webidl
+
 const MEDIA_SOURCE_L10NID_BY_TYPE = new Map([
   ["camera", "webrtc-item-camera"],
   ["screen", "webrtc-item-screen"],
@@ -78,7 +96,7 @@ const MEDIA_SOURCE_L10NID_BY_TYPE = new Map([
   ["audioCapture", "webrtc-item-audio-capture"],
 ]);
 
-export var webrtcUI = {
+var webrtcUI = {
   initialized: false,
 
   peerConnectionBlockers: new Set(),
@@ -124,26 +142,26 @@ export var webrtcUI = {
   SHARING_WINDOW: 1,
   SHARING_SCREEN: 2,
 
-  // Set of browser windows that are being shared over WebRTC.
+  
   sharedBrowserWindows: new WeakSet(),
 
-  // True if one or more screens is being shared.
+  
   sharingScreen: false,
 
   allowedSharedBrowsers: new WeakSet(),
   allowTabSwitchesForSession: false,
   tabSwitchCountForSession: 0,
 
-  // True if a window or screen is being shared.
+  
   sharingDisplay: false,
 
-  // The session ID is used to try to differentiate between instances
-  // where the user is sharing their display somehow. If the user
-  // transitions from a state of not sharing their display, to sharing a
-  // display, we bump the ID.
+  
+  
+  
+  
   sharingDisplaySessionId: 0,
 
-  // Map of browser elements to indicator data.
+  
   perTabIndicators: new Map(),
   activePerms: new Map(),
 
@@ -196,7 +214,7 @@ export var webrtcUI = {
   },
 
   _streams: [],
-  // The boolean parameters indicate which streams should be included in the result.
+  
   getActiveStreams(aCamera, aMicrophone, aScreen, aWindow = false) {
     return webrtcUI._streams
       .filter(aStream => {
@@ -217,9 +235,9 @@ export var webrtcUI = {
           window: state.window,
         };
         let browser = aStream.topBrowsingContext.embedderElement;
-        // browser can be null when we are in the process of closing a tab
-        // and our stream list hasn't been updated yet.
-        // gBrowser will be null if a stream is used outside a tabbrowser window.
+        
+        
+        
         let tab = browser?.ownerGlobal.gBrowser?.getTabForBrowser(browser);
         return {
           uri: state.documentURI,
@@ -231,9 +249,9 @@ export var webrtcUI = {
       });
   },
 
-  /**
-   * Returns true if aBrowser has an active WebRTC stream.
-   */
+  
+
+
   browserHasStreams(aBrowser) {
     for (let stream of this._streams) {
       if (stream.topBrowsingContext.embedderElement == aBrowser) {
@@ -244,10 +262,10 @@ export var webrtcUI = {
     return false;
   },
 
-  /**
-   * Determine the combined state of all the active streams associated with
-   * the specified top-level browsing context.
-   */
+  
+
+
+
   getCombinedStateForBrowser(aTopBrowsingContext) {
     function combine(x, y) {
       if (
@@ -297,9 +315,9 @@ export var webrtcUI = {
     let microphoneEnabled =
       tabState.microphone == Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED;
 
-    // tabState.sharing controls which global indicator should be shown
-    // for the tab. It should always be set to the _enabled_ device which
-    // we consider most intrusive (screen > camera > microphone).
+    
+    
+    
     if (screenEnabled) {
       tabState.sharing = "screen";
     } else if (cameraEnabled) {
@@ -314,8 +332,8 @@ export var webrtcUI = {
       tabState.sharing = "microphone";
     }
 
-    // The stream is considered paused when we're sharing something
-    // but all devices are off or set to disabled.
+    
+    
     tabState.paused =
       tabState.sharing &&
       !screenEnabled &&
@@ -353,12 +371,12 @@ export var webrtcUI = {
     return tabState;
   },
 
-  /*
-   * Indicate that a stream has been added or removed from the given
-   * browsing context. If it has been added, aData specifies the
-   * specific indicator types it uses. If aData is null or has no
-   * documentURI assigned, then the stream has been removed.
-   */
+  
+
+
+
+
+
   streamAddedOrRemoved(aBrowsingContext, aData) {
     this.init();
 
@@ -369,8 +387,8 @@ export var webrtcUI = {
         break;
       }
     }
-    // The update is a removal of the stream, triggered by the
-    // recording-window-ended notification.
+    
+    
     if (aData.remove) {
       if (index < this._streams.length) {
         this._streams.splice(index, 1);
@@ -385,18 +403,18 @@ export var webrtcUI = {
 
     let wasSharingDisplay = this.sharingDisplay;
 
-    // Reset our internal notion of whether or not we're sharing
-    // a screen or browser window. Now we'll go through the shared
-    // devices and re-determine what's being shared.
+    
+    
+    
     let sharingBrowserWindow = false;
     let sharedWindowRawDeviceIds = new Set();
     this.sharingDisplay = false;
     this.sharingScreen = false;
     let suppressNotifications = false;
 
-    // First, go through the streams and collect the counts on things
-    // like the total number of shared windows, and whether or not we're
-    // sharing screens.
+    
+    
+    
     for (let stream of this._streams) {
       let { state } = stream;
       suppressNotifications |= state.suppressNotifications;
@@ -418,14 +436,14 @@ export var webrtcUI = {
           this.sharingScreen = true;
         }
 
-        // If the user has granted a particular site the ability
-        // to get a stream from a window or screen, we will
-        // presume that it's exempt from the tab switch warning.
-        //
-        // We use the permanentKey here so that the allowing of
-        // the tab survives tab tear-in and tear-out. We ignore
-        // browsers that don't have permanentKey, since those aren't
-        // tabbrowser browsers.
+        
+        
+        
+        
+        
+        
+        
+        
         let browser = stream.topBrowsingContext.embedderElement;
         if (browser.permanentKey) {
           this.allowedSharedBrowsers.add(browser.permanentKey);
@@ -433,8 +451,8 @@ export var webrtcUI = {
       }
     }
 
-    // Next, go through the list of shared windows, and map them
-    // to our browser windows so that we know which ones are shared.
+    
+    
     this.sharedBrowserWindows = new WeakSet();
 
     for (let win of lazy.BrowserWindowTracker.orderedWindows) {
@@ -442,17 +460,17 @@ export var webrtcUI = {
       try {
         rawDeviceId = win.windowUtils.webrtcRawDeviceId;
       } catch (e) {
-        // This can theoretically throw if some of the underlying
-        // window primitives don't exist. In that case, we can skip
-        // to the next window.
+        
+        
+        
         continue;
       }
       if (sharedWindowRawDeviceIds.has(rawDeviceId)) {
         this.sharedBrowserWindows.add(win);
 
-        // If we've shared a window, then the initially selected tab
-        // in that window should be exempt from tab switch warnings,
-        // since it's already been shared.
+        
+        
+        
         let selectedBrowser = win.gBrowser.selectedBrowser;
         this.allowedSharedBrowsers.add(selectedBrowser.permanentKey);
 
@@ -460,22 +478,22 @@ export var webrtcUI = {
       }
     }
 
-    // If we weren't sharing a window or screen, and now are, bump
-    // the sharingDisplaySessionId. We use this ID for Event
-    // telemetry, and consider a transition from no shared displays
-    // to some shared displays as a new session.
+    
+    
+    
+    
     if (!wasSharingDisplay && this.sharingDisplay) {
       this.sharingDisplaySessionId++;
     }
 
-    // If we were adding a new display stream, record some Telemetry for
-    // it with the most recent sharedDisplaySessionId. We do this separately
-    // from the loops above because those take into account the pre-existing
-    // streams that might already have been shared.
+    
+    
+    
+    
     if (aData.devices) {
-      // The mixture of camelCase with under_score notation here is due to
-      // an unfortunate collision of conventions between this file and
-      // Event Telemetry.
+      
+      
+      
       let silence_notifs = suppressNotifications ? "true" : "false";
       for (let device of aData.devices) {
         if (device.mediaSource == "screen") {
@@ -496,11 +514,11 @@ export var webrtcUI = {
       }
     }
 
-    // Since we're not sharing a screen or browser window,
-    // we can clear these state variables, which are used
-    // to warn users on tab switching when sharing. These
-    // are safe to reset even if we hadn't been sharing
-    // the screen or browser window already.
+    
+    
+    
+    
+    
     if (!this.sharingScreen && !sharingBrowserWindow) {
       this.allowedSharedBrowsers = new WeakSet();
       this.allowTabSwitchesForSession = false;
@@ -521,10 +539,10 @@ export var webrtcUI = {
     }
   },
 
-  /**
-   * Remove all the streams associated with a given
-   * browsing context.
-   */
+  
+
+
+
   forgetStreamsFromBrowserContext(aBrowsingContext) {
     for (let index = 0; index < webrtcUI._streams.length; ) {
       let stream = this._streams[index];
@@ -535,7 +553,7 @@ export var webrtcUI = {
       }
     }
 
-    // Remove the per-tab indicator if it no longer needs to be displayed.
+    
     let topBC = aBrowsingContext.top;
     if (this.perTabIndicators.has(topBC)) {
       let tabState = this.getCombinedStateForBrowser(topBC);
@@ -552,24 +570,24 @@ export var webrtcUI = {
     this._setSharedData();
   },
 
-  /**
-   * Given some set of streams, stops device access for those streams.
-   * Optionally, it's possible to stop a subset of the devices on those
-   * streams by passing in optional arguments.
-   *
-   * Once the streams have been stopped, this method will also find the
-   * newest stream's <xul:browser> and window, focus the window, and
-   * select the browser.
-   *
-   * For camera and microphone streams, this will also revoke any associated
-   * permissions from SitePermissions.
-   *
-   * @param {Array<Object>} activeStreams - An array of streams obtained via webrtcUI.getActiveStreams.
-   * @param {boolean} stopCameras - True to stop the camera streams (defaults to true)
-   * @param {boolean} stopMics - True to stop the microphone streams (defaults to true)
-   * @param {boolean} stopScreens - True to stop the screen streams (defaults to true)
-   * @param {boolean} stopWindows - True to stop the window streams (defaults to true)
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   stopSharingStreams(
     activeStreams,
     stopCameras = true,
@@ -610,7 +628,7 @@ export var webrtcUI = {
       this.clearPermissionsAndStopSharing(ids, tab);
     }
 
-    // Switch to the newest stream's browser.
+    
     let mostRecentStream = activeStreams[activeStreams.length - 1];
     let { browser: browserToSelect } = mostRecentStream;
 
@@ -621,13 +639,13 @@ export var webrtcUI = {
     gBrowser.selectedTab = tab;
   },
 
-  /**
-   * Clears permissions and stops sharing (if active) for a list of device types
-   * and a specific tab.
-   * @param {("camera"|"microphone"|"screen")[]} types - Device types to stop
-   * and clear permissions for.
-   * @param tab - Tab of the devices to stop and clear permissions.
-   */
+  
+
+
+
+
+
+
   clearPermissionsAndStopSharing(types, tab) {
     let invalidTypes = types.filter(
       type => !["camera", "screen", "microphone", "speaker"].includes(type)
@@ -638,12 +656,12 @@ export var webrtcUI = {
     let browser = tab.linkedBrowser;
     let sharingState = tab._sharingState?.webRTC;
 
-    // If we clear a WebRTC permission we need to remove all permissions of
-    // the same type across device ids. We also need to stop active WebRTC
-    // devices related to the permission.
+    
+    
+    
     let perms = lazy.SitePermissions.getAllForBrowser(browser);
 
-    // If capturing, don't revoke one of camera/microphone without the other.
+    
     let sharingCameraOrMic =
       (sharingState?.camera || sharingState?.microphone) &&
       (types.includes("camera") || types.includes("microphone"));
@@ -668,8 +686,8 @@ export var webrtcUI = {
       return;
     }
 
-    // If the device of the permission we're clearing is currently active,
-    // tell the WebRTC implementation to stop sharing it.
+    
+    
     let { windowId } = sharingState;
 
     let windowIds = [];
@@ -687,9 +705,9 @@ export var webrtcUI = {
     let actor =
       sharingState.browsingContext.currentWindowGlobal.getActor("WebRTC");
 
-    // Delete activePerms for all outerWindowIds under the current browser. We
-    // need to do this prior to sending the stopSharing message, so WebRTCParent
-    // can skip adding grace periods for these devices.
+    
+    
+    
     webrtcUI.forgetActivePermissionsFromBrowser(browser);
 
     windowIds.forEach(id => actor.sendAsyncMessage("webrtc:StopSharing", id));
@@ -722,13 +740,13 @@ export var webrtcUI = {
     }
   },
 
-  /**
-   * Remove all entries from the activePerms map for a browser, including all
-   * child frames.
-   * Note: activePerms is an internal WebRTC UI permission map and does not
-   * reflect the PermissionManager or SitePermissions state.
-   * @param aBrowser - Browser to clear active permissions for.
-   */
+  
+
+
+
+
+
+
   forgetActivePermissionsFromBrowser(aBrowser) {
     let browserWindowIds = aBrowser.browsingContext
       .getAllBrowsingContextsInSubtree()
@@ -738,13 +756,13 @@ export var webrtcUI = {
     browserWindowIds.forEach(id => this.activePerms.delete(id));
   },
 
-  /**
-   * Shows the Permission Panel for the tab associated with the provided
-   * active stream.
-   * @param aActiveStream - The stream that the user wants to see permissions for.
-   * @param aEvent - The user input event that is invoking the panel. This can be
-   *        undefined / null if no such event exists.
-   */
+  
+
+
+
+
+
+
   showSharingDoorhanger(aActiveStream, aEvent) {
     let browserWindow = aActiveStream.browser.ownerGlobal;
     if (aActiveStream.tab) {
@@ -779,30 +797,30 @@ export var webrtcUI = {
       type != "screen";
   },
 
-  // Add-ons can override stock permission behavior by doing:
-  //
-  //   webrtcUI.addPeerConnectionBlocker(function(aParams) {
-  //     // new permission checking logic
-  //   }));
-  //
-  // The blocking function receives an object with origin, callID, and windowID
-  // parameters.  If it returns the string "deny" or a Promise that resolves
-  // to "deny", the connection is immediately blocked.  With any other return
-  // value (though the string "allow" is suggested for consistency), control
-  // is passed to other registered blockers.  If no registered blockers block
-  // the connection (or of course if there are no registered blockers), then
-  // the connection is allowed.
-  //
-  // Add-ons may also use webrtcUI.on/off to listen to events without
-  // blocking anything:
-  //   peer-request-allowed is emitted when a new peer connection is
-  //                        established (and not blocked).
-  //   peer-request-blocked is emitted when a peer connection request is
-  //                        blocked by some blocking connection handler.
-  //   peer-request-cancel is emitted when a peer-request connection request
-  //                       is canceled.  (This would typically be used in
-  //                       conjunction with a blocking handler to cancel
-  //                       a user prompt or other work done by the handler)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   addPeerConnectionBlocker(aCallback) {
     this.peerConnectionBlockers.add(aCallback);
   },
@@ -832,10 +850,10 @@ export var webrtcUI = {
 
     if (!host) {
       if (uri && uri.scheme.toLowerCase() == "about") {
-        // For about URIs, just use the full spec, without any #hash parts.
+        
         host = uri.specIgnoringRef;
       } else {
-        // This is unfortunate, but we should display *something*...
+        
         host = lazy.syncL10n.formatValueSync(
           "webrtc-sharing-menuitem-unknown-host"
         );
@@ -880,11 +898,11 @@ export var webrtcUI = {
         !webrtcUI.useLegacyGlobalIndicator &&
         gIndicatorWindow.closingInternally
       ) {
-        // Before calling .close(), we call .closingInternally() to allow us to
-        // differentiate between situations where the indicator closes because
-        // we no longer want to show the indicator (this case), and cases where
-        // the user has found a way to close the indicator via OS window control
-        // mechanisms.
+        
+        
+        
+        
+        
         gIndicatorWindow.closingInternally();
       }
       gIndicatorWindow.close();
@@ -911,15 +929,15 @@ export var webrtcUI = {
     }
 
     let browser = tab.linkedBrowser;
-    // We want the user to be able to switch to one tab after starting
-    // to share their window or screen. The presumption here is that
-    // most users will have a single window with multiple tabs, where
-    // the selected tab will be the one with the screen or window
-    // sharing web application, and it's most likely that the contents
-    // that the user wants to share are in another tab that they'll
-    // switch to immediately upon sharing. These presumptions are based
-    // on research that our user research team did with users using
-    // video conferencing web applications.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!this.tabSwitchCountForSession) {
       this.allowedSharedBrowsers.add(browser.permanentKey);
     }
@@ -950,14 +968,14 @@ export var webrtcUI = {
     );
   },
 
-  /**
-   * Updates the sharedData structure to reflect shared screen and window
-   * state. This sets the following key: data pairs on sharedData.
-   * - "webrtcUI:isSharingScreen": a boolean value reflecting
-   * this.sharingScreen.
-   * - "webrtcUI:sharedTopInnerWindowIds": a set containing the inner window
-   * ids of each top level browser window that is in sharedBrowserWindows.
-   */
+  
+
+
+
+
+
+
+
   _setSharedData() {
     let sharedTopInnerWindowIds = new Set();
     for (let win of lazy.BrowserWindowTracker.orderedWindows) {
@@ -1010,14 +1028,14 @@ function getGlobalIndicator() {
   return new MacOSWebRTCStatusbarIndicator();
 }
 
-/**
- * Add a localized stream sharing menu to the event target
- *
- * @param {Window} win - The parent `window`
- * @param {Event} event - The popupshowing event for the <menu>.
- * @param {boolean} inclWindow - Should the window stream be included in the active streams.
- */
-export function showStreamSharingMenu(win, event, inclWindow = false) {
+
+
+
+
+
+
+
+function showStreamSharingMenu(win, event, inclWindow = false) {
   win.MozXULElement.insertFTLIfNeeded("browser/webrtcIndicator.ftl");
   const doc = win.document;
   const menu = event.target;
@@ -1058,7 +1076,7 @@ export function showStreamSharingMenu(win, event, inclWindow = false) {
 
     menu.appendChild(controlItem);
   } else {
-    // We show a different menu when there are several active streams.
+    
     const sharingItem = doc.createXULElement("menuitem");
     doc.l10n.setAttributes(sharingItem, l10nIds[1], {
       tabCount: activeStreams.length,
@@ -1081,16 +1099,16 @@ export function showStreamSharingMenu(win, event, inclWindow = false) {
   }
 }
 
-/**
- * Controls the visibility of screen, camera and microphone sharing indicators
- * in the macOS global menu bar. This class should only ever be instantiated
- * on macOS.
- *
- * The public methods on this class intentionally match the interface for the
- * WebRTC global sharing indicator, because the MacOSWebRTCStatusbarIndicator
- * acts as the indicator when in the legacy indicator configuration.
- */
-export class MacOSWebRTCStatusbarIndicator {
+
+
+
+
+
+
+
+
+
+class MacOSWebRTCStatusbarIndicator {
   constructor() {
     this._camera = null;
     this._microphone = null;
@@ -1104,20 +1122,20 @@ export class MacOSWebRTCStatusbarIndicator {
     this.updateIndicatorState();
   }
 
-  /**
-   * Public method that will determine the most appropriate
-   * set of indicators to show, and then show them or hide
-   * them as necessary.
-   */
+  
+
+
+
+
   updateIndicatorState() {
     this._setIndicatorState("Camera", webrtcUI.showCameraIndicator);
     this._setIndicatorState("Microphone", webrtcUI.showMicrophoneIndicator);
     this._setIndicatorState("Screen", webrtcUI.showScreenSharingIndicator);
   }
 
-  /**
-   * Public method that will hide all indicators.
-   */
+  
+
+
   close() {
     this._setIndicatorState("Camera", false);
     this._setIndicatorState("Microphone", false);
@@ -1141,34 +1159,34 @@ export class MacOSWebRTCStatusbarIndicator {
     }
   }
 
-  /**
-   * Handler for command events fired by the <menuitem> elements
-   * inside any of the indicator <menu>'s.
-   *
-   * @param {Event} aEvent - The command event for the <menuitem>.
-   */
+  
+
+
+
+
+
   _command(aEvent) {
     webrtcUI.showSharingDoorhanger(aEvent.target.stream, aEvent);
   }
 
-  /**
-   * Handler for the popupshowing event for one of the status
-   * bar indicator menus.
-   *
-   * @param {Event} aEvent - The popupshowing event for the <menu>.
-   */
+  
+
+
+
+
+
   _popupShowing(aEvent) {
     const menu = aEvent.target;
     showStreamSharingMenu(menu.ownerGlobal, aEvent);
     return true;
   }
 
-  /**
-   * Handler for the popuphiding event for one of the status
-   * bar indicator menus.
-   *
-   * @param {Event} aEvent - The popuphiding event for the <menu>.
-   */
+  
+
+
+
+
+
   _popupHiding(aEvent) {
     let menu = aEvent.target;
     while (menu.firstChild) {
@@ -1176,22 +1194,22 @@ export class MacOSWebRTCStatusbarIndicator {
     }
   }
 
-  /**
-   * Updates the status bar to show or hide a screen, camera or
-   * microphone indicator.
-   *
-   * @param {String} aName - One of the following: "screen", "camera",
-   *   "microphone"
-   * @param {boolean} aState - True to show the indicator for the aName
-   *   type of stream, false ot hide it.
-   */
+  
+
+
+
+
+
+
+
+
   _setIndicatorState(aName, aState) {
     let field = "_" + aName.toLowerCase();
     if (aState && !this[field]) {
       let menu = this._hiddenDoc.createXULElement("menu");
       menu.setAttribute("id", "webRTC-sharing" + aName + "-menu");
 
-      // The CSS will only be applied if the menu is actually inserted in the DOM.
+      
       this._hiddenDoc.documentElement.appendChild(menu);
 
       this._statusBar.addItem(menu);

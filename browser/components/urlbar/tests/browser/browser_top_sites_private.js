@@ -1,23 +1,26 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
+});
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
 });
 
 const EN_US_TOPSITES =
   "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/";
 
 async function addTestVisits() {
-  
+  // Add some visits to a URL.
   for (let i = 0; i < 5; i++) {
     await PlacesTestUtils.addVisits("http://example.com/");
   }
 
-  
+  // Wait for example.com to be listed first.
   await updateTopSites(sites => {
     return sites && sites[0] && sites[0].url == "http://example.com/";
   });
@@ -53,7 +56,7 @@ add_setup(async function () {
 });
 
 add_task(async function topSitesPrivateWindow() {
-  
+  // Top Sites should also be shown in private windows.
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
@@ -80,8 +83,8 @@ add_task(async function topSitesPrivateWindow() {
     "The number of results should be the same as the number of Top Sites (7)."
   );
 
-  
-  
+  // Top sites should also be shown in a private window if the search string
+  // gets cleared.
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window: privateWin,
     value: "example",
@@ -106,15 +109,15 @@ add_task(async function topSitesPrivateWindow() {
 });
 
 add_task(async function topSitesTabSwitch() {
-  
+  // Add some visits
   for (let i = 0; i < 5; i++) {
     await PlacesTestUtils.addVisits(["http://example.com/"]);
   }
 
-  
+  // Switch to the originating tab, to check for switch to the current tab.
   gBrowser.selectedTab = gBrowser.tabs[0];
 
-  
+  // Wait for the expected number of Top sites.
   await updateTopSites(sites => sites?.length == 7);
   Assert.equal(
     AboutNewTab.getTopSites().length,
@@ -148,7 +151,7 @@ add_task(async function topSitesTabSwitch() {
   await UrlbarTestUtils.promisePopupClose(window);
 
   info("Test in a private window, switch to tab should not be offered");
-  
+  // Top Sites should also be shown in private windows.
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });

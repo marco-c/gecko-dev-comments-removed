@@ -1396,9 +1396,7 @@ var BookmarkingUI = {
   isOnNewTabPage({ currentURI }) {
     
     
-    let newTabURL = Cu.isESModuleLoaded(
-      "resource:///modules/AboutNewTab.sys.mjs"
-    )
+    let newTabURL = Cu.isModuleLoaded("resource:///modules/AboutNewTab.jsm")
       ? AboutNewTab.newTabURL
       : "about:newtab";
     

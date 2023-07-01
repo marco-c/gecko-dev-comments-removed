@@ -1,8 +1,14 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+
+
+"use strict";
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+var EXPORTED_SYMBOLS = ["SiteDataManager"];
 
 const lazy = {};
 
@@ -18,17 +24,17 @@ XPCOMUtils.defineLazyGetter(lazy, "gBrandBundle", function () {
   );
 });
 
-export var SiteDataManager = {
-  // A Map of sites and their disk usage according to Quota Manager.
-  // Key is base domain (group sites based on base domain across scheme, port,
-  // origin attributes) or host if the entry does not have a base domain.
-  // Value is one object holding:
-  //   - baseDomainOrHost: Same as key.
-  //   - principals: instances of nsIPrincipal (only when the site has
-  //     quota storage).
-  //   - persisted: the persistent-storage status.
-  //   - quotaUsage: the usage of indexedDB and localStorage.
-  //   - containersData: a map containing cookiesBlocked,lastAccessed and quotaUsage by userContextID.
+var SiteDataManager = {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   _sites: new Map(),
 
   _getCacheSizeObserver: null,
@@ -39,40 +45,40 @@ export var SiteDataManager = {
 
   _quotaUsageRequest: null,
 
-  /**
-   *  Retrieve the latest site data and store it in SiteDataManager.
-   *
-   *  Updating site data is a *very* expensive operation. This method exists so that
-   *  consumers can manually decide when to update, most methods on SiteDataManager
-   *  will not trigger updates automatically.
-   *
-   *  It is *highly discouraged* to await on this function to finish before showing UI.
-   *  Either trigger the update some time before the data is needed or use the
-   *  entryUpdatedCallback parameter to update the UI async.
-   *
-   * @param {entryUpdatedCallback} a function to be called whenever a site is added or
-   *        updated. This can be used to e.g. fill a UI that lists sites without
-   *        blocking on the entire update to finish.
-   * @returns a Promise that resolves when updating is done.
-   **/
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async updateSites(entryUpdatedCallback) {
     Services.obs.notifyObservers(null, "sitedatamanager:updating-sites");
-    // Clear old data and requests first
+    
     this._sites.clear();
     this._getAllCookies(entryUpdatedCallback);
     await this._getQuotaUsage(entryUpdatedCallback);
     Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
-  /**
-   * Get the base domain of a host on a best-effort basis.
-   * @param {string} host - Host to convert.
-   * @returns {string} Computed base domain. If the base domain cannot be
-   * determined, because the host is an IP address or does not have enough
-   * domain levels we will return the original host. This includes the empty
-   * string.
-   * @throws {Error} Throws for unexpected conversion errors from eTLD service.
-   */
+  
+
+
+
+
+
+
+
+
   getBaseDomainFromHost(host) {
     let result = host;
     try {
@@ -82,9 +88,9 @@ export var SiteDataManager = {
         e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
         e.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
       ) {
-        // For these 2 expected errors, just take the host as the result.
-        // - NS_ERROR_HOST_IS_IP_ADDRESS: the host is in ipv4/ipv6.
-        // - NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS: not enough domain parts to extract.
+        
+        
+        
         result = host;
       } else {
         throw e;
@@ -126,21 +132,21 @@ export var SiteDataManager = {
     return containerData;
   },
 
-  /**
-   * Retrieves the amount of space currently used by disk cache.
-   *
-   * You can use DownloadUtils.convertByteUnits to convert this to
-   * a user-understandable size/unit combination.
-   *
-   * @returns a Promise that resolves with the cache size on disk in bytes.
-   */
+  
+
+
+
+
+
+
+
   getCacheSize() {
     if (this._getCacheSizePromise) {
       return this._getCacheSizePromise;
     }
 
     this._getCacheSizePromise = new Promise((resolve, reject) => {
-      // Needs to root the observer since cache service keeps only a weak reference.
+      
       this._getCacheSizeObserver = {
         onNetworkCacheDiskConsumption: consumption => {
           resolve(consumption);
@@ -174,7 +180,7 @@ export var SiteDataManager = {
           let items = request.result;
           for (let item of items) {
             if (!item.persisted && item.usage <= 0) {
-              // An non-persistent-storage site with 0 byte quota usage is redundant for us so skip it.
+              
               continue;
             }
             let principal =
@@ -182,9 +188,9 @@ export var SiteDataManager = {
                 item.origin
               );
             if (principal.schemeIs("http") || principal.schemeIs("https")) {
-              // Group dom storage by first party. If an entry is partitioned
-              // the first party site will be in the partitionKey, instead of
-              // the principal baseDomain.
+              
+              
+              
               let pkBaseDomain;
               try {
                 pkBaseDomain = ChromeUtils.getBaseDomainFromPartitionKey(
@@ -196,13 +202,13 @@ export var SiteDataManager = {
               let site = this._getOrInsertSite(
                 pkBaseDomain || principal.baseDomain
               );
-              // Assume 3 sites:
-              //   - Site A (not persisted): https://www.foo.com
-              //   - Site B (not persisted): https://www.foo.com^userContextId=2
-              //   - Site C (persisted):     https://www.foo.com:1234
-              //     Although only C is persisted, grouping by base domain, as a
-              //     result, we still mark as persisted here under this base
-              //     domain group.
+              
+              
+              
+              
+              
+              
+              
               if (item.persisted) {
                 site.persisted = true;
               }
@@ -230,9 +236,9 @@ export var SiteDataManager = {
         }
         resolve();
       };
-      // XXX: The work of integrating localStorage into Quota Manager is in progress.
-      //      After the bug 742822 and 1286798 landed, localStorage usage will be included.
-      //      So currently only get indexedDB usage.
+      
+      
+      
       this._quotaUsageRequest = Services.qms.getUsage(onUsageResult);
     });
     return this._getQuotaUsagePromise;
@@ -240,9 +246,9 @@ export var SiteDataManager = {
 
   _getAllCookies(entryUpdatedCallback) {
     for (let cookie of Services.cookies.cookies) {
-      // Group cookies by first party. If a cookie is partitioned the
-      // partitionKey will contain the first party site, instead of the host
-      // field.
+      
+      
+      
       let pkBaseDomain;
       try {
         pkBaseDomain = ChromeUtils.getBaseDomainFromPartitionKey(
@@ -282,17 +288,17 @@ export var SiteDataManager = {
     }
   },
 
-  /**
-   * Checks if the site with the provided ASCII host is using any site data at all.
-   * This will check for:
-   *   - Cookies (incl. subdomains)
-   *   - Quota Usage
-   * in that order. This function is meant to be fast, and thus will
-   * end searching and return true once the first trace of site data is found.
-   *
-   * @param {String} the ASCII host to check
-   * @returns {Boolean} whether the site has any data associated with it
-   */
+  
+
+
+
+
+
+
+
+
+
+
   async hasSiteData(asciiHost) {
     if (Services.cookies.countCookiesFromHost(asciiHost)) {
       return true;
@@ -341,25 +347,25 @@ export var SiteDataManager = {
     });
   },
 
-  /**
-   * Gets all sites that are currently storing site data. Entries are grouped by
-   * parent base domain if applicable. For example "foo.example.com",
-   * "example.com" and "bar.example.com" will have one entry with the baseDomain
-   * "example.com".
-   * A base domain entry will represent all data of its storage jar. The storage
-   * jar holds all first party data of the domain as well as any third party
-   * data partitioned under the domain. Additionally we will add data which
-   * belongs to the domain but is part of other domains storage jars . That is
-   * data third-party partitioned under other domains.
-   * Sites which cannot be associated with a base domain, for example IP hosts,
-   * are not grouped.
-   *
-   * The list is not automatically up-to-date. You need to call
-   * {@link updateSites} before you can use this method for the first time (and
-   * whenever you want to get an updated set of list.)
-   *
-   * @returns {Promise} Promise that resolves with the list of all sites.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async getSites() {
     await this._getQuotaUsagePromise;
 
@@ -373,18 +379,18 @@ export var SiteDataManager = {
     }));
   },
 
-  /**
-   * Get site, which stores data, by base domain or host.
-   *
-   * The list is not automatically up-to-date. You need to call
-   * {@link updateSites} before you can use this method for the first time (and
-   * whenever you want to get an updated set of list.)
-   *
-   * @param {String} baseDomainOrHost - Base domain or host of the site to get.
-   *
-   * @returns {Promise<Object|null>} Promise that resolves with the site object
-   * or null if no site with given base domain or host stores data.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   async getSite(baseDomainOrHost) {
     let baseDomain = this.getBaseDomainFromHost(baseDomainOrHost);
 
@@ -407,10 +413,10 @@ export var SiteDataManager = {
     for (let principal of site.principals) {
       let { originNoSuffix } = principal;
       if (removals.has(originNoSuffix)) {
-        // In case of encountering
-        //   - https://www.foo.com
-        //   - https://www.foo.com^userContextId=2
-        // because setting/removing permission is across OAs already so skip the same origin without suffix
+        
+        
+        
+        
         continue;
       }
       removals.add(originNoSuffix);
@@ -424,17 +430,17 @@ export var SiteDataManager = {
     for (let principal of site.principals) {
       let { originNoSuffix } = principal;
       if (removals.has(originNoSuffix)) {
-        // In case of encountering
-        //   - https://www.foo.com
-        //   - https://www.foo.com^userContextId=2
-        // below we have already removed across OAs so skip the same origin without suffix
+        
+        
+        
+        
         continue;
       }
       removals.add(originNoSuffix);
       promises.push(
         new Promise(resolve => {
-          // We are clearing *All* across OAs so need to ensure a principal without suffix here,
-          // or the call of `clearStoragesForPrincipal` would fail.
+          
+          
           principal =
             Services.scriptSecurityManager.createContentPrincipalFromOrigin(
               originNoSuffix
@@ -464,8 +470,8 @@ export var SiteDataManager = {
     site.cookies = [];
   },
 
-  // Returns a list of permissions from the permission manager that
-  // we consider part of "site data and cookies".
+  
+  
   _getDeletablePermissions() {
     let perms = [];
 
@@ -481,24 +487,24 @@ export var SiteDataManager = {
     return perms;
   },
 
-  /**
-   * Removes all site data for the specified list of domains and hosts.
-   * This includes site data of subdomains belonging to the domains or hosts and
-   * partitioned storage. Data is cleared per storage jar, which means if we
-   * clear "example.com", we will also clear third parties embedded on
-   * "example.com". Additionally we will clear all data of "example.com" (as a
-   * third party) from other jars.
-   *
-   * @param {string|string[]} domainsOrHosts - List of domains and hosts or
-   * single domain or host to remove.
-   * @returns {Promise} Promise that resolves when data is removed and the site
-   * data manager has been updated.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async remove(domainsOrHosts) {
     if (domainsOrHosts == null) {
       throw new Error("domainsOrHosts is required.");
     }
-    // Allow the caller to pass a single base domain or host.
+    
     if (!Array.isArray(domainsOrHosts)) {
       domainsOrHosts = [domainsOrHosts];
     }
@@ -514,8 +520,8 @@ export var SiteDataManager = {
         new Promise(function (resolve) {
           const { clearData } = Services;
           if (domainOrHost) {
-            // First try to clear by base domain for aDomainOrHost. If we can't
-            // get a base domain, fall back to clearing by just host.
+            
+            
             try {
               clearData.deleteDataFromBaseDomain(
                 domainOrHost,
@@ -539,7 +545,7 @@ export var SiteDataManager = {
       );
 
       for (let perm of perms) {
-        // Specialcase local file permissions.
+        
         if (!domainOrHost) {
           if (perm.principal.schemeIs("file")) {
             Services.perms.removePermission(perm);
@@ -557,16 +563,16 @@ export var SiteDataManager = {
     return this.updateSites();
   },
 
-  /**
-   * In the specified window, shows a prompt for removing all site data or the
-   * specified list of base domains or hosts, warning the user that this may log
-   * them out of websites.
-   *
-   * @param {mozIDOMWindowProxy} win - a parent DOM window to host the dialog.
-   * @param {string[]} [removals] - an array of base domain or host strings that
-   * will be removed.
-   * @returns {boolean} whether the user confirmed the prompt.
-   */
+  
+
+
+
+
+
+
+
+
+
   promptSiteDataRemoval(win, removals) {
     if (removals) {
       let args = {
@@ -611,21 +617,21 @@ export var SiteDataManager = {
     return result == 0;
   },
 
-  /**
-   * Clears all site data and cache
-   *
-   * @returns a Promise that resolves when the data is cleared.
-   */
+  
+
+
+
+
   async removeAll() {
     await this.removeCache();
     return this.removeSiteData();
   },
 
-  /**
-   * Clears all caches.
-   *
-   * @returns a Promise that resolves when the data is cleared.
-   */
+  
+
+
+
+
   removeCache() {
     return new Promise(function (resolve) {
       Services.clearData.deleteData(
@@ -635,12 +641,12 @@ export var SiteDataManager = {
     });
   },
 
-  /**
-   * Clears all site data, but not cache, because the UI offers
-   * that functionality separately.
-   *
-   * @returns a Promise that resolves when the data is cleared.
-   */
+  
+
+
+
+
+
   async removeSiteData() {
     await new Promise(function (resolve) {
       Services.clearData.deleteData(

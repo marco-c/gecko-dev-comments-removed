@@ -1,5 +1,5 @@
-
-
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
 const { AddonTestUtils } = ChromeUtils.importESModule(
@@ -10,22 +10,20 @@ const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
 );
 
-const { AboutNewTab } = ChromeUtils.importESModule(
-  "resource:///modules/AboutNewTab.sys.mjs"
+const { AboutNewTab } = ChromeUtils.import(
+  "resource:///modules/AboutNewTab.jsm"
 );
 
-
+// Lazy load to avoid having Services.appinfo cached first.
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
 });
 
-const { HomePage } = ChromeUtils.importESModule(
-  "resource:///modules/HomePage.sys.mjs"
-);
+const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 
 AddonTestUtils.init(this);
 
-
+// Allow for unsigned addons.
 AddonTestUtils.overrideCertDB();
 
 AddonTestUtils.createAppInfo(
@@ -37,7 +35,7 @@ AddonTestUtils.createAppInfo(
 
 add_task(async function test_settings_modules_not_loaded() {
   await ExtensionParent.apiManager.lazyInit();
-  
+  // Test that no settings modules are loaded.
   let modules = Array.from(ExtensionParent.apiManager.settingsModules);
   ok(modules.length, "we have settings modules");
   for (let name of modules) {
@@ -82,7 +80,7 @@ add_task(async function test_settings_validated() {
   );
 
   await AddonTestUtils.promiseShutdownManager();
-  
+  // After shutdown, delete the xpi file.
   Services.obs.notifyObservers(xpi, "flush-cache-entry");
   try {
     file.remove(true);
@@ -91,7 +89,7 @@ add_task(async function test_settings_validated() {
   }
   await AddonTestUtils.cleanupTempXPIs();
 
-  
+  // Restart everything, the ExtensionAddonObserver should handle updating state.
   let prefChanged = TestUtils.waitForPrefChange("browser.startup.homepage");
   await AddonTestUtils.promiseStartupManager();
   await prefChanged;
@@ -158,19 +156,19 @@ add_task(async function test_settings_validated_safemode() {
 
   isExtensionSettings("on extension startup");
 
-  
+  // Disable in safemode and verify settings are removed in normal mode.
   let addon = await switchSafeMode(true);
   await addon.disable();
   addon = await switchSafeMode(false);
   isDefaultSettings("after disabling addon during safemode");
 
-  
+  // Enable in safemode and verify settings are back in normal mode.
   addon = await switchSafeMode(true);
   await addon.enable();
   addon = await switchSafeMode(false);
   isExtensionSettings("after enabling addon during safemode");
 
-  
+  // Uninstall in safemode and verify settings are removed in normal mode.
   addon = await switchSafeMode(true);
   await addon.uninstall();
   addon = await switchSafeMode(false);
@@ -180,11 +178,11 @@ add_task(async function test_settings_validated_safemode() {
   await AddonTestUtils.cleanupTempXPIs();
 });
 
-
-
-
+// There are more settings modules than used in this test file, they should have been
+// loaded during the test extensions uninstall.  Ensure that all settings modules have
+// been loaded.
 add_task(async function test_settings_modules_loaded() {
-  
+  // Test that all settings modules are loaded.
   let modules = Array.from(ExtensionParent.apiManager.settingsModules);
   ok(modules.length, "we have settings modules");
   for (let name of modules) {

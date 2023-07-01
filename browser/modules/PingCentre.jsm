@@ -1,9 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
@@ -18,14 +19,14 @@ const LOGGING_PREF = `${PREF_BRANCH}log`;
 
 const FHR_UPLOAD_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 
-/**
- * Observe various notifications and send them to a telemetry endpoint.
- *
- * @param {Object} options
- * @param {string} options.topic - a unique ID for users of PingCentre to distinguish
- *                  their data on the server side.
- */
-export class PingCentre {
+
+
+
+
+
+
+
+class PingCentre {
   constructor(options) {
     if (!options.topic) {
       throw new Error("Must specify topic.");
@@ -93,24 +94,24 @@ export class PingCentre {
     return payload;
   }
 
-  // We route through this helper because it gets hooked in testing.
+  
   static _sendStandalonePing(endpoint, payload) {
     return lazy.sendStandalonePing(endpoint, payload);
   }
 
-  /**
-   * Sends a ping to the Structured Ingestion telemetry pipeline.
-   *
-   * The payload would be compressed using gzip.
-   *
-   * @param {Object} data      The payload to be sent.
-   * @param {String} endpoint  The destination endpoint. Note that Structured Ingestion
-   *                           requires a different endpoint for each ping. It's up to the
-   *                           caller to provide that. See more details at
-   *                           https://github.com/mozilla/gcp-ingestion/blob/master/docs/edge.md#postput-request
-   * @param {String} namespace Optional. The structured ingestion namespace.
-   *                           Used for data collection.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
   sendStructuredIngestionPing(data, endpoint, namespace = undefined) {
     if (!this.enabled) {
       return Promise.resolve();
@@ -166,8 +167,9 @@ export class PingCentre {
   }
 }
 
-export const PingCentreConstants = {
+const PingCentreConstants = {
   FHR_UPLOAD_ENABLED_PREF,
   TELEMETRY_PREF,
   LOGGING_PREF,
 };
+const EXPORTED_SYMBOLS = ["PingCentre", "PingCentreConstants"];

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- indent-tabs-mode: nil; js-indent-level: 4 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -9,18 +9,22 @@ var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "SiteDataManager",
+  "resource:///modules/SiteDataManager.jsm"
+);
 ChromeUtils.defineESModuleGetters(this, {
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
-  SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
 });
 
 let gSiteDataSettings = {
-  
-  
-  
-  
-  
-  
+  // Array of metadata of sites. Each array element is object holding:
+  // - uri: uri of site; instance of nsIURI
+  // - baseDomain: base domain of the site
+  // - cookies: array of cookies of that site
+  // - usage: disk usage which site uses
+  // - userAction: "remove" or "update-permission"; the action user wants to take.
   _sites: null,
 
   _list: null,
@@ -31,7 +35,7 @@ let gSiteDataSettings = {
     item.setAttribute("host", site.baseDomain);
     let container = document.createXULElement("hbox");
 
-    
+    // Creates a new column item with the specified relative width.
     function addColumnItem(l10n, flexWidth, tooltipText) {
       let box = document.createXULElement("hbox");
       box.className = "item-box";
@@ -53,16 +57,16 @@ let gSiteDataSettings = {
       container.appendChild(box);
     }
 
-    
+    // Add "Host" column.
     let hostData = site.baseDomain
       ? { raw: site.baseDomain }
       : { id: "site-data-local-file-host" };
     addColumnItem(hostData, "4");
 
-    
+    // Add "Cookies" column.
     addColumnItem({ raw: site.cookies.length }, "1");
 
-    
+    // Add "Storage" column
     if (site.usage > 0 || site.persisted) {
       let [value, unit] = DownloadUtils.convertByteUnits(site.usage);
       let strName = site.persisted
@@ -76,11 +80,11 @@ let gSiteDataSettings = {
         "2"
       );
     } else {
-      
+      // Pass null to avoid showing "0KB" when there is no site data stored.
       addColumnItem(null, "2");
     }
 
-    
+    // Add "Last Used" column.
     let formattedLastAccessed =
       site.lastAccessed > 0
         ? this._relativeTimeFormat.formatBestUnit(site.lastAccessed)
@@ -153,16 +157,16 @@ let gSiteDataSettings = {
     document.l10n.setAttributes(removeAllBtn, l10nId);
   },
 
-  
-
-
-
+  /**
+   * @param sites {Array}
+   * @param col {XULElement} the <treecol> being sorted on
+   */
   _sortSites(sites, col) {
     let isCurrentSortCol = col.getAttribute("data-isCurrentSortCol");
     let sortDirection =
       col.getAttribute("data-last-sortDirection") || "ascending";
     if (isCurrentSortCol) {
-      
+      // Sort on the current column, flip the sorting direction
       sortDirection =
         sortDirection === "ascending" ? "descending" : "ascending";
     }
@@ -205,11 +209,11 @@ let gSiteDataSettings = {
     col.setAttribute("data-last-sortDirection", sortDirection);
   },
 
-  
-
-
+  /**
+   * @param sites {Array} array of metadata of sites
+   */
   _buildSitesList(sites) {
-    
+    // Clear old entries.
     let oldItems = this._list.querySelectorAll("richlistitem");
     for (let item of oldItems) {
       item.remove();
@@ -257,8 +261,8 @@ let gSiteDataSettings = {
       let removeAll = removals.length == this._sites.length;
       let promptArg = removeAll ? undefined : removals;
       if (!SiteDataManager.promptSiteDataRemoval(window, promptArg)) {
-        
-        
+        // If the user cancelled the confirm dialog keep the site data window open,
+        // they can still press cancel again to exit.
         event.preventDefault();
         return;
       }
@@ -317,10 +321,10 @@ let gSiteDataSettings = {
         e.keyCode == KeyEvent.DOM_VK_BACK_SPACE)
     ) {
       if (!e.target.closest("#sitesList")) {
-        
+        // The user is typing or has not selected an item from the list to remove
         return;
       }
-      
+      // The users intention is to delete site data
       this.removeSelected();
     }
   },

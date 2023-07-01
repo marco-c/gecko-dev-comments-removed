@@ -56,9 +56,9 @@ const startupPhases = {
   "before first paint": {
     denylist: {
       modules: new Set([
-        "resource:///modules/AboutNewTab.sys.mjs",
-        "resource:///modules/BrowserUsageTelemetry.sys.mjs",
-        "resource:///modules/ContentCrashHandlers.sys.mjs",
+        "resource:///modules/AboutNewTab.jsm",
+        "resource:///modules/BrowserUsageTelemetry.jsm",
+        "resource:///modules/ContentCrashHandlers.jsm",
         "resource:///modules/ShellService.sys.mjs",
         "resource://gre/modules/NewTabUtils.sys.mjs",
         "resource://gre/modules/PageThumbs.sys.mjs",

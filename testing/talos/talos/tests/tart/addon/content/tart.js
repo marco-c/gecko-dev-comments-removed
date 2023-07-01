@@ -27,9 +27,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
 
 
 
