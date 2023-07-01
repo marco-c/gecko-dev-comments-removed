@@ -175,7 +175,7 @@ class FileSystemDatabaseManager {
 
 
 
-  virtual nsresult EnsureFileId(const EntryId& aEntryId) = 0;
+  virtual Result<FileId, QMResult> EnsureFileId(const EntryId& aEntryId) = 0;
 
   
 
