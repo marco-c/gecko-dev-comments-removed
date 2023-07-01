@@ -98,4 +98,24 @@ TEST_F(StateMirroringTest, MirrorInitiatedEventOrdering) {
       })));
 }
 
+TEST_F(StateMirroringTest, CanonicalInitiatedEventOrdering) {
+  
+  
+  ASSERT_FALSE(AbstractThread::GetCurrent()->IsTailDispatcherAvailable());
+
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchAndSpinEventLoopUntilComplete(
+      "NeedTailDispatcher"_ns, GetCurrentSerialEventTarget(),
+      NS_NewRunnableFunction(__func__, [&] {
+        ASSERT_TRUE(AbstractThread::GetCurrent()->IsTailDispatcherAvailable());
+
+        mCanonical.ConnectMirror(&mMirror);
+
+        
+        mCanonical = 1;
+        EXPECT_EQ(WaitFor(ReadMirrorAsync()).unwrap(), 1);
+
+        mCanonical.DisconnectAll();
+      })));
+}
+
 }  
