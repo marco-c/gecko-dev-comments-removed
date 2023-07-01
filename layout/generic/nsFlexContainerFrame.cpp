@@ -4566,7 +4566,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   PopulateReflowOutput(aReflowOutput, aReflowInput, aStatus, contentBoxSize,
                        borderPadding, consumedBSize, mayNeedNextInFlow,
                        maxBlockEndEdgeOfChildren, anyChildIncomplete,
-                       flr.mAscent, flr.mLines, axisTracker);
+                       axisTracker, flr);
 
   if (wm.IsVerticalRL()) {
     
@@ -5504,8 +5504,8 @@ void nsFlexContainerFrame::PopulateReflowOutput(
     nsReflowStatus& aStatus, const LogicalSize& aContentBoxSize,
     const LogicalMargin& aBorderPadding, const nscoord aConsumedBSize,
     const bool aMayNeedNextInFlow, const nscoord aMaxBlockEndEdgeOfChildren,
-    const bool aAnyChildIncomplete, nscoord aFlexContainerAscent,
-    nsTArray<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
+    const bool aAnyChildIncomplete, const FlexboxAxisTracker& aAxisTracker,
+    FlexLayoutResult& aFlr) {
   const WritingMode flexWM = aReflowInput.GetWritingMode();
 
   
@@ -5578,13 +5578,13 @@ void nsFlexContainerFrame::PopulateReflowOutput(
     desiredSizeInFlexWM.BSize(flexWM) = effectiveContentBSizeWithBStartBP;
   }
 
-  if (aFlexContainerAscent == nscoord_MIN) {
+  if (aFlr.mAscent == nscoord_MIN) {
     
     
     
     
     NS_WARNING_ASSERTION(
-        HidesContentForLayout() || aLines[0].IsEmpty(),
+        HidesContentForLayout() || aFlr.mLines[0].IsEmpty(),
         "Have flex items but didn't get an ascent - that's odd (or there are "
         "just gigantic sizes involved)");
     
@@ -5592,7 +5592,7 @@ void nsFlexContainerFrame::PopulateReflowOutput(
     
     
     
-    aFlexContainerAscent = desiredSizeInFlexWM.BSize(flexWM);
+    aFlr.mAscent = desiredSizeInFlexWM.BSize(flexWM);
   }
 
   if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
@@ -5602,7 +5602,7 @@ void nsFlexContainerFrame::PopulateReflowOutput(
   } else {
     
     
-    aReflowOutput.SetBlockStartAscent(aFlexContainerAscent);
+    aReflowOutput.SetBlockStartAscent(aFlr.mAscent);
   }
 
   
@@ -5651,13 +5651,13 @@ void nsFlexContainerFrame::PopulateReflowOutput(
   }
 
   
-  mBaselineFromLastReflow = aFlexContainerAscent;
-  mLastBaselineFromLastReflow = aLines.LastElement().LastBaselineOffset();
+  mBaselineFromLastReflow = aFlr.mAscent;
+  mLastBaselineFromLastReflow = aFlr.mLines.LastElement().LastBaselineOffset();
   if (mLastBaselineFromLastReflow == nscoord_MIN) {
     
     
     mLastBaselineFromLastReflow =
-        desiredSizeInFlexWM.BSize(flexWM) - aFlexContainerAscent;
+        desiredSizeInFlexWM.BSize(flexWM) - aFlr.mAscent;
   }
 
   
