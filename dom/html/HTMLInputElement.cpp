@@ -6171,12 +6171,6 @@ bool HTMLInputElement::RestoreState(PresState* aState) {
   return restoredCheckedState;
 }
 
-bool HTMLInputElement::AllowDrop() {
-  
-
-  return mType != FormControlType::InputFile;
-}
-
 
 
 

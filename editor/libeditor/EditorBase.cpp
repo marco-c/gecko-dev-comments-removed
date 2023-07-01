@@ -4701,18 +4701,6 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
     }
   }
 
-  if (IsInPlaintextMode()) {
-    for (nsIContent* content = droppedAt.ContainerAs<nsIContent>(); content;
-         content = content->GetParent()) {
-      nsCOMPtr<nsIFormControl> formControl(do_QueryInterface(content));
-      if (formControl && !formControl->AllowDrop()) {
-        
-        
-        return NS_OK;
-      }
-    }
-  }
-
   
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);

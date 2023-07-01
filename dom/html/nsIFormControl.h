@@ -147,8 +147,6 @@ class nsIFormControl : public nsISupports {
   NS_IMETHOD
   SubmitNamesValues(mozilla::dom::FormData* aFormData) = 0;
 
-  virtual bool AllowDrop() = 0;
-
   
 
 
