@@ -82,10 +82,32 @@ class ElementInternals final : public nsIFormControl,
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(mozilla::dom::FormData* aFormData) override;
   bool AllowDrop() override { return true; }
+  int32_t GetParserInsertedControlNumberForStateKey() const override {
+    return mControlNumber;
+  }
 
   void SetFieldSet(mozilla::dom::HTMLFieldSetElement* aFieldSet) {
     mFieldSet = aFieldSet;
   }
+
+  const Nullable<OwningFileOrUSVStringOrFormData>& GetFormSubmissionValue()
+      const {
+    return mSubmissionValue;
+  }
+
+  const Nullable<OwningFileOrUSVStringOrFormData>& GetFormState() const {
+    return mState;
+  }
+
+  void RestoreFormValue(Nullable<OwningFileOrUSVStringOrFormData>&& aValue,
+                        Nullable<OwningFileOrUSVStringOrFormData>&& aState);
+
+  const nsCString& GetStateKey() const { return mStateKey; }
+  void SetStateKey(nsCString&& key) {
+    MOZ_ASSERT(mStateKey.IsEmpty(), "FACE state key should only be set once!");
+    mStateKey = key;
+  }
+  void InitializeControlNumber();
 
   void UpdateFormOwner();
   void UpdateBarredFromConstraintValidation();
@@ -177,6 +199,15 @@ class ElementInternals final : public nsIFormControl,
   RefPtr<nsGenericHTMLElement> mValidationAnchor;
 
   AttrArray mAttrs;
+
+  
+  
+  nsCString mStateKey;
+
+  
+  
+  
+  int32_t mControlNumber;
 };
 
 }  
