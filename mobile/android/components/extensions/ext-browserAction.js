@@ -152,6 +152,14 @@ this.browserAction = class extends ExtensionAPIPersistent {
           extensionApi: this,
         }).api(),
 
+        getUserSettings: () => {
+          return {
+            
+            
+            
+            
+          };
+        },
         openPopup: options => {
           const isHandlingUserInput =
             context.callContextData?.isHandlingUserInput;
