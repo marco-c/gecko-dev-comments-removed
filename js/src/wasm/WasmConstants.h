@@ -115,16 +115,13 @@ enum class TypeCode {
   BlockVoid = 0x40,  
 
   
-  RecGroup = 0x4f,  
+  RecGroup = 0x4f,
 
   
   RecGroupOld = 0x45,
 
   
-  SubNoFinalType = 0x50,  
-
-  
-  SubFinalType = 0x4e,  
+  SubType = 0x50,
 
   Limit = 0x80
 };
