@@ -1,33 +1,7 @@
 
 
 
-
-
-
-add_task(async function detach() {
-  
-  
-  
-  
-  
-  
-  if (AppConstants.platform == "macosx" && Services.env.get("MOZ_CHAOSMODE")) {
-    Assert.ok(true, "Skipping test in chaos mode on Mac");
-    return;
-  }
-
-  UrlbarPrefs.clear("formatting.enabled");
-  Assert.ok(
-    UrlbarPrefs.get("formatting.enabled"),
-    "Formatting is enabled by default"
-  );
-
-  info("Waiting for new tab");
-  let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    url: "https://example.com/detach",
-  });
-
+async function detachTab(tab) {
   let winPromise = BrowserTestUtils.waitForNewWindow();
   info("Detaching tab");
   let win = gBrowser.replaceTabWithWindow(tab, {});
@@ -41,36 +15,75 @@ add_task(async function detach() {
   info("Waiting for tick");
   await TestUtils.waitForTick();
 
-  assertValue("<https://>example.com</detach>", win);
+  return win;
+}
+
+add_task(async function detach() {
+  
+  
+
+  
+  
+  
+  
+  
+  
+  if (AppConstants.platform == "macosx" && Services.env.get("MOZ_CHAOSMODE")) {
+    Assert.ok(true, "Skipping test in chaos mode on Mac");
+    return;
+  }
+
+  let originalTab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: "https://example.com/original-tab",
+  });
+
+  let tabToDetach = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: "https://example.com/detach",
+  });
+
+  let win = await detachTab(tabToDetach);
+
+  UrlbarTestUtils.checkFormatting(win, "<https://>example.com</detach>");
   await BrowserTestUtils.closeWindow(win);
+
+  UrlbarTestUtils.checkFormatting(
+    window,
+    "<https://>example.com</original-tab>"
+  );
+  gBrowser.removeTab(originalTab);
 });
 
+add_task(async function detach_emptyTab() {
+  
+  
 
+  let originalTab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: "https://example.com/original-tab",
+  });
 
+  let emptyTab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url: "about:blank",
+  });
+  gURLBar.focus();
+  ok(gURLBar.focused, "urlbar is focused");
+  is(gURLBar.value, "", "urlbar is empty");
 
-
-
-
-
-
-
-function assertValue(expectedValue, win = window) {
-  let selectionController = win.gURLBar.editor.selectionController;
-  let selection = selectionController.getSelection(
-    selectionController.SELECTION_URLSECONDARY
+  let focusPromise = BrowserTestUtils.waitForEvent(
+    originalTab.linkedBrowser,
+    "focus"
   );
-  let value = win.gURLBar.editor.rootElement.textContent;
-  let result = "";
-  for (let i = 0; i < selection.rangeCount; i++) {
-    let range = selection.getRangeAt(i).toString();
-    let pos = value.indexOf(range);
-    result += value.substring(0, pos) + "<" + range + ">";
-    value = value.substring(pos + range.length);
-  }
-  result += value;
-  Assert.equal(
-    result,
-    expectedValue,
-    "Correct part of the url is de-emphasized"
+  let win = await detachTab(emptyTab);
+  await BrowserTestUtils.closeWindow(win);
+  await focusPromise;
+
+  ok(!gURLBar.focused, "urlbar is not focused");
+  UrlbarTestUtils.checkFormatting(
+    window,
+    "<https://>example.com</original-tab>"
   );
-}
+  gBrowser.removeTab(originalTab);
+});

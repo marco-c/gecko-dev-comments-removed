@@ -4922,7 +4922,6 @@
 
       
       
-      
       if (!gReduceMotion) {
         aTab.style.maxWidth = ""; 
         aTab.removeAttribute("fadein");
