@@ -384,6 +384,13 @@ bool FormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
 
 JSString* CalendarToString(JSContext* cx, JS::Handle<JSObject*> calendar);
 
+
+
+
+
+bool IsBuiltinAccess(JSContext* cx, JS::Handle<CalendarObject*> calendar,
+                     std::initializer_list<CalendarField> fieldNames);
+
 } 
 
 #endif 
