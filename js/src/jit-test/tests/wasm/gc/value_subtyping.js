@@ -100,12 +100,12 @@ assertSubtype(
 assertSubtype(
   '(ref 0)',
   '(ref 1)',
-  `(type (sub (struct)))
+  `(type (struct))
    (type (sub 0 (struct (field i32))))`);
 assertSubtype(
   '(ref 0)',
   '(ref 1)',
-  `(type (sub (struct)))
+  `(type (struct))
    (type (sub 0 (struct (field i32) (field i32))))`);
 
 
@@ -164,9 +164,9 @@ assertNotSubtype(
 assertSubtype(
   '(ref 2)',
   '(ref 3)',
-  `(type (sub (struct)))
+  `(type (struct))
    (type (sub 0 (struct (field i32))))
-   (type (sub (struct (field (ref 0)))))
+   (type (struct (field (ref 0))))
    (type (sub 2 (struct (field (ref 1)))))`);
 
 
@@ -260,11 +260,10 @@ assertNotSubtype(
 assertSubtype(
   '(ref 2)',
   '(ref 3)',
-  simpleTypeSection([
-  '(sub (struct))',
-  '(sub 0 (struct (field i32)))',
-  '(sub (array (ref 0)))',
-  '(sub 2 (array (ref 1)))']));
+  `(type (struct))
+   (type (sub 0 (struct (field i32))))
+   (type (array (ref 0)))
+   (type (sub 2 (array (ref 1))))`);
 
 
 assertSubtype('anyref', 'nullref');
