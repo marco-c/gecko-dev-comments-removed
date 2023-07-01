@@ -1,27 +1,42 @@
 
+function log(innerHTML) {
+  const li = document.createElement('li');
+  li.innerHTML = innerHTML;
+  document.getElementById('list').appendChild(li);
+}
 
 
+function screenLog(s) {
+  return `'${s.label}': (${s.left},${s.top} ${s.width}x${s.height})`;
+}
 
-function log(str) {
-  const entry = document.createElement('li');
-  entry.innerHTML = str;
-  const loggerElement = document.getElementById('logger');
-  loggerElement.appendChild(entry);
-  return entry;
+
+function windowLog(w) {
+  return `(${w.screenLeft},${w.screenTop} ${w.outerWidth}x${w.outerHeight})`;
 }
 
 
 
+async function buttonClick(test, innerHTML) {
+  const button = document.createElement('button');
+  button.innerHTML = innerHTML;
+  const li = document.createElement('li');
+  li.appendChild(button)
+  document.getElementById('list').appendChild(li);
+  const click = new EventWatcher(test, button, ['click']).wait_for('click');
+  try {  
+    await test_driver.click(button);
+  } catch {
+  }
+  await click;
+  button.disabled = true;
+}
 
 
-
-
-
-async function setUpWindowManagement(setUpTest, setUpButton) {
+async function setUpWindowManagement(test) {
   assert_true(
     'getScreenDetails' in self && 'isExtended' in screen,
-    `API not supported; use Chromium (not content_shell) and enable
-     chrome://flags/#enable-experimental-web-platform-features`);
+    `API not supported; use Chrome or Chromium (not content_shell)`);
   if (!screen.isExtended)
     log(`WARNING: Use multiple screens for full test coverage`);
   if (window.location.href.startsWith('file'))
@@ -31,38 +46,78 @@ async function setUpWindowManagement(setUpTest, setUpButton) {
     await test_driver.set_permission({ name: 'window-management' }, 'granted');
   } catch {
   }
-  const setUpWatcher = new EventWatcher(setUpTest, setUpButton, ['click']);
-  const setUpClick = setUpWatcher.wait_for('click');
-  try {  
-    await test_driver.click(setUpButton);
-  } catch {
-  }
-  await setUpClick;
-  setUpButton.disabled = true;
+  await buttonClick(test, 'Request screen details');
+  window.screenDetails = await window.getScreenDetails();
+  assert_true(!!window.screenDetails, 'Error getting screen details');
 }
 
 
 
-
-
-
-
-
-async function addTestTriggerButtonAndAwaitClick(buttonContainer, name, test) {
-  const button = document.createElement('button');
-  button.innerHTML = name;
-  const entry = document.createElement('li');
-  entry.appendChild(button);
-  buttonContainer.appendChild(entry);
-  const testWatcher = new EventWatcher(test, button, ['click']);
-  const buttonClick = testWatcher.wait_for('click');
-  
-  button.onclick = function() {
-    button.disabled = true;
-  };
-  try {  
-    await test_driver.click(button);
-  } catch {
+async function poll(condition, interval = 100, duration = 3000) {
+  const timeout = Date.now() + duration;
+  const loop = async (resolve) => {
+    if (condition() || Date.now() > timeout)
+      resolve();
+    else
+      step_timeout(loop, interval, resolve);
   }
-  await buttonClick;
+  return new Promise(loop);
+}
+
+
+async function openPopupOnScreen(screen, assertPlacement = true) {
+  const left = screen.availLeft + Math.floor(screen.availWidth / 2) - 150;
+  const top = screen.availTop + Math.floor(screen.availHeight / 2) - 50;
+  const features = `left=${left},top=${top},width=300,height=100`;
+  log(`Opening a popup with features '${features}' on ${screenLog(screen)}`);
+  
+  
+  let popup = window.open('/resources/blank.html', '', features);
+
+  if (assertPlacement) {
+    
+    
+    const initialBounds = windowLog(popup);
+    log(`<div style='margin-left: 40px'>Initial: ${initialBounds}</div>`);
+    await poll(() => { return popup.screenLeft == left &&
+                              popup.screenTop == top });
+    popup.document.write(`Requested: (${left},${top} 300x100) <br> \
+        Initial: ${initialBounds} <br> \
+        Resolved: ${windowLog(popup)}`);
+    log(`<div style='margin-left: 40px'>Resolved: ${windowLog(popup)}</div>`);
+    const context = `popup: ${windowLog(popup)}, ${screenLog(screen)}`;
+    assert_equals(popup.screenLeft, left, context);
+    assert_equals(popup.screenTop, top, context);
+  }
+
+  return popup;
+}
+
+
+function isWindowOnScreen(w, s, t = 100) {
+  return (w.screenLeft >= s.left - t) && (w.screenTop >= s.top - t) &&
+          (w.screenLeft + w.outerWidth <= s.left + s.width + t) &&
+          (w.screenTop + w.outerHeight <= s.top + s.height + t);
+}
+
+
+
+async function assertWindowHasCurrentScreen(w, s) {
+  log(`assertWindowHasCurrentScreen w: ${windowLog(w)} s: ${screenLog(s)}`);
+  await poll(() => { return s === w.screenDetails.currentScreen; });
+  assert_equals(screenLog(s), screenLog(w.screenDetails.currentScreen));
+}
+
+
+
+async function assertWindowBoundsOnScreen(w, s) {
+  log(`assertWindowBoundsOnScreen w: ${windowLog(w)} s: ${screenLog(s)}`);
+  await poll(() => { return isWindowOnScreen(w, s); });
+  assert_true(isWindowOnScreen(w, s), `${windowLog(w)} on ${screenLog(s)}`);
+}
+
+
+async function assertWindowOnScreen(w, s) {
+  await assertWindowHasCurrentScreen(w, s);
+  await assertWindowBoundsOnScreen(w, s);
 }
