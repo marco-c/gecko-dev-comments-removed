@@ -1260,8 +1260,8 @@ int do_relocation_section(Elf* elf, unsigned int rel_type,
     
     
     
-    unsigned int distance = second->getAddr() - first->getAddr();
-    unsigned int origAddr = eh_frame->getAddr();
+    Elf64_Off distance = second->getAddr() - first->getAddr();
+    Elf64_Addr origAddr = eh_frame->getAddr();
     ElfSection* previous = first->getPrevious();
     first->getShdr().sh_addr = (previous->getAddr() + previous->getSize() +
                                 first->getAddrAlign() - 1) &

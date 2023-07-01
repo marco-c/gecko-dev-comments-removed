@@ -285,7 +285,7 @@ class Elf {
   
   ElfSection* getSection(int index);
 
-  ElfSection* getSectionAt(unsigned int offset);
+  ElfSection* getSectionAt(Elf64_Off offset);
 
   ElfSegment* getSegmentByType(unsigned int type, ElfSegment* last = nullptr);
 
@@ -334,8 +334,8 @@ class ElfSection {
   const char* getName() { return name; }
   unsigned int getType() { return shdr.sh_type; }
   unsigned int getFlags() { return shdr.sh_flags; }
-  unsigned int getAddr();
-  unsigned int getSize() { return shdr.sh_size; }
+  Elf64_Addr getAddr();
+  Elf64_Off getSize() { return shdr.sh_size; }
   unsigned int getAddrAlign() { return shdr.sh_addralign; }
   unsigned int getEntSize() { return shdr.sh_entsize; }
   const char* getData() { return data; }
@@ -358,7 +358,7 @@ class ElfSection {
     }
   }
 
-  unsigned int getOffset();
+  Elf64_Off getOffset();
   int getIndex();
   Elf_Shdr& getShdr();
 
