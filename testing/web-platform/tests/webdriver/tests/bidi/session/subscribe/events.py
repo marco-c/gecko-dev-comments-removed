@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 
@@ -14,7 +12,7 @@ async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_even
     
     events = []
 
-    async def on_event(method, data):
+    async def on_event(method, _):
         events.append(method)
 
     remove_listener_contextCreated = bidi_session.add_event_listener(
