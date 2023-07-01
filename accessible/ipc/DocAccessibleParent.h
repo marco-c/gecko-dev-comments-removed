@@ -25,10 +25,6 @@ namespace a11y {
 class TextRange;
 class xpcAccessibleGeneric;
 
-#if !defined(XP_WIN)
-class DocAccessiblePlatformExtParent;
-#endif
-
 
 
 
@@ -265,16 +261,6 @@ class DocAccessibleParent : public RemoteAccessible,
 
   void SetEmulatedWindowHandle(HWND aWindowHandle);
   HWND GetEmulatedWindowHandle() const { return mEmulatedWindowHandle; }
-#endif
-
-#if !defined(XP_WIN)
-  virtual bool DeallocPDocAccessiblePlatformExtParent(
-      PDocAccessiblePlatformExtParent* aActor) override;
-
-  virtual PDocAccessiblePlatformExtParent*
-  AllocPDocAccessiblePlatformExtParent() override;
-
-  DocAccessiblePlatformExtParent* GetPlatformExtension();
 #endif
 
   

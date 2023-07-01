@@ -13,15 +13,12 @@ namespace mozilla {
 namespace a11y {
 
 class LocalAccessible;
-class DocAccessiblePlatformExtChild;
 
 
 
 
 
 class DocAccessibleChild : public DocAccessibleChildBase {
-  friend DocAccessiblePlatformExtChild;
-
  public:
   DocAccessibleChild(DocAccessible* aDoc, IProtocol* aManager)
       : DocAccessibleChildBase(aDoc) {
@@ -52,14 +49,6 @@ class DocAccessibleChild : public DocAccessibleChildBase {
       const uint64_t& aID, const int32_t& aStartOffset,
       const int32_t& aEndOffset, const uint32_t& aCoordinateType,
       const int32_t& aX, const int32_t& aY) override;
-
-  virtual bool DeallocPDocAccessiblePlatformExtChild(
-      PDocAccessiblePlatformExtChild* aActor) override;
-
-  virtual PDocAccessiblePlatformExtChild* AllocPDocAccessiblePlatformExtChild()
-      override;
-
-  DocAccessiblePlatformExtChild* GetPlatformExtension();
 };
 
 }  
