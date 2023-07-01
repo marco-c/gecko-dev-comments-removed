@@ -9,15 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 pub mod benchmarked;
 #[cfg(feature = "prio2")]
 pub mod client;
@@ -31,8 +22,6 @@ mod fft;
 pub mod field;
 pub mod flp;
 mod fp;
-#[cfg(feature = "experimental")]
-pub mod idpf;
 mod polynomial;
 mod prng;
 

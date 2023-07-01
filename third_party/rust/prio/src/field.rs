@@ -6,13 +6,11 @@
 
 
 
-
 #[cfg(feature = "crypto-dependencies")]
 use crate::prng::{Prng, PrngError};
 use crate::{
     codec::{CodecError, Decode, Encode},
-    fp::{FP128, FP32, FP64},
-    vdaf::prg::{CoinToss, SeedStream},
+    fp::{FP128, FP32, FP64, FP96},
 };
 use serde::{
     de::{DeserializeOwned, Visitor},
@@ -27,13 +25,6 @@ use std::{
     marker::PhantomData,
     ops::{Add, AddAssign, BitAnd, Div, DivAssign, Mul, MulAssign, Neg, Shl, Shr, Sub, SubAssign},
 };
-use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq};
-
-#[cfg(feature = "experimental")]
-mod field255;
-
-#[cfg(feature = "experimental")]
-pub use field255::Field255;
 
 
 #[derive(Debug, thiserror::Error)]
@@ -57,6 +48,18 @@ pub enum FieldError {
     
     #[error("Integer TryFrom error")]
     IntegerTryFrom,
+    
+    #[error("Integer TryInto error")]
+    IntegerTryInto,
+}
+
+
+#[derive(Clone, Copy, Debug)]
+enum ByteOrder {
+    
+    BigEndian,
+    
+    LittleEndian,
 }
 
 
@@ -66,9 +69,6 @@ pub trait FieldElement:
     + Copy
     + PartialEq
     + Eq
-    + ConstantTimeEq
-    + ConditionallySelectable
-    + ConditionallyNegatable
     + Add<Output = Self>
     + AddAssign
     + Sub<Output = Self>
@@ -79,6 +79,7 @@ pub trait FieldElement:
     + DivAssign
     + Neg<Output = Self>
     + Display
+    + From<<Self as FieldElement>::Integer>
     + for<'a> TryFrom<&'a [u8], Error = FieldError>
     
     
@@ -95,7 +96,34 @@ pub trait FieldElement:
     const ENCODED_SIZE: usize;
 
     
+    type IntegerTryFromError: std::error::Error;
+
+    
+    type TryIntoU64Error: std::error::Error;
+
+    
+    type Integer: Copy
+        + Debug
+        + Eq
+        + Ord
+        + BitAnd<Output = <Self as FieldElement>::Integer>
+        + Div<Output = <Self as FieldElement>::Integer>
+        + Shl<Output = <Self as FieldElement>::Integer>
+        + Shr<Output = <Self as FieldElement>::Integer>
+        + Add<Output = <Self as FieldElement>::Integer>
+        + Sub<Output = <Self as FieldElement>::Integer>
+        + From<Self>
+        + TryFrom<usize, Error = Self::IntegerTryFromError>
+        + TryInto<u64, Error = Self::TryIntoU64Error>;
+
+    
+    fn pow(&self, exp: Self::Integer) -> Self;
+
+    
     fn inv(&self) -> Self;
+
+    
+    fn modulus() -> Self::Integer;
 
     
     
@@ -115,6 +143,16 @@ pub trait FieldElement:
     fn try_from_random(bytes: &[u8]) -> Result<Self, FieldError>;
 
     
+    fn generator_order() -> Self::Integer;
+
+    
+    fn generator() -> Self;
+
+    
+    
+    fn root(l: usize) -> Option<Self>;
+
+    
     fn zero() -> Self;
 
     
@@ -129,7 +167,9 @@ pub trait FieldElement:
     
     fn slice_into_byte_vec(values: &[Self]) -> Vec<u8> {
         let mut vec = Vec::with_capacity(values.len() * Self::ENCODED_SIZE);
-        encode_fieldvec(values, &mut vec);
+        for elem in values {
+            vec.append(&mut (*elem).into());
+        }
         vec
     }
 
@@ -160,73 +200,7 @@ pub trait FieldElement:
 }
 
 
-
-
-
-
-
-pub trait FieldElementWithInteger: FieldElement + From<Self::Integer> {
-    
-    type IntegerTryFromError: std::error::Error;
-
-    
-    type TryIntoU64Error: std::error::Error;
-
-    
-    type Integer: Copy
-        + Debug
-        + Eq
-        + Ord
-        + BitAnd<Output = Self::Integer>
-        + Div<Output = Self::Integer>
-        + Shl<usize, Output = Self::Integer>
-        + Shr<usize, Output = Self::Integer>
-        + Add<Output = Self::Integer>
-        + Sub<Output = Self::Integer>
-        + From<Self>
-        + TryFrom<usize, Error = Self::IntegerTryFromError>
-        + TryInto<u64, Error = Self::TryIntoU64Error>;
-
-    
-    fn pow(&self, exp: Self::Integer) -> Self;
-
-    
-    fn modulus() -> Self::Integer;
-}
-
-
-pub(crate) trait FieldElementExt: FieldElementWithInteger {
-    
-    
-    
-    
-    
-    
-    
-    
-    fn fill_with_bitvector_representation(
-        input: &Self::Integer,
-        output: &mut [Self],
-    ) -> Result<(), FieldError> {
-        
-        
-        let mut i = *input;
-
-        let one = Self::Integer::from(Self::one());
-        for bit in output.iter_mut() {
-            let w = Self::from(i & one);
-            *bit = w;
-            i = i >> 1;
-        }
-
-        
-        if i != Self::Integer::from(Self::zero()) {
-            return Err(FieldError::InputSizeMismatch);
-        }
-
-        Ok(())
-    }
-
+pub(crate) trait FieldElementExt: FieldElement {
     
     
     
@@ -238,9 +212,24 @@ pub(crate) trait FieldElementExt: FieldElementWithInteger {
         input: &Self::Integer,
         bits: usize,
     ) -> Result<Vec<Self>, FieldError> {
-        let mut result = vec![Self::zero(); bits];
-        Self::fill_with_bitvector_representation(input, &mut result)?;
-        Ok(result)
+        
+        
+        let mut i = *input;
+
+        let one = Self::Integer::from(Self::one());
+        let mut encoded = Vec::with_capacity(bits);
+        for _ in 0..bits {
+            let w = Self::from(i & one);
+            encoded.push(w);
+            i = i >> one;
+        }
+
+        
+        if i != Self::Integer::from(Self::zero()) {
+            return Err(FieldError::InputSizeMismatch);
+        }
+
+        Ok(encoded)
     }
 
     
@@ -250,15 +239,13 @@ pub(crate) trait FieldElementExt: FieldElementWithInteger {
     
     
     fn decode_from_bitvector_representation(input: &[Self]) -> Result<Self, FieldError> {
-        let fi_one = Self::Integer::from(Self::one());
-
         if !Self::valid_integer_bitlength(input.len()) {
             return Err(FieldError::ModulusOverflow);
         }
 
         let mut decoded = Self::zero();
         for (l, bit) in input.iter().enumerate() {
-            let w = fi_one << l;
+            let w = Self::Integer::try_from(1 << l).map_err(|_| FieldError::IntegerTryFrom)?;
             decoded += Self::from(w) * *bit;
         }
         Ok(decoded)
@@ -280,22 +267,21 @@ pub(crate) trait FieldElementExt: FieldElementWithInteger {
     
     
     fn valid_integer_bitlength(bits: usize) -> bool {
-        if bits >= 8 * Self::ENCODED_SIZE {
-            return false;
-        }
-        if Self::modulus() >> bits != Self::Integer::from(Self::zero()) {
-            return true;
+        if let Ok(bits_int) = Self::Integer::try_from(bits) {
+            if Self::modulus() >> bits_int != Self::Integer::from(Self::zero()) {
+                return true;
+            }
         }
         false
     }
 }
 
-impl<F: FieldElementWithInteger> FieldElementExt for F {}
+impl<F: FieldElement> FieldElementExt for F {}
 
 
 
-pub(crate) struct FieldElementVisitor<F: FieldElement> {
-    pub(crate) phantom: PhantomData<F>,
+struct FieldElementVisitor<F: FieldElement> {
+    phantom: PhantomData<F>,
 }
 
 impl<'de, F: FieldElement> Visitor<'de> for FieldElementVisitor<F> {
@@ -325,40 +311,23 @@ impl<'de, F: FieldElement> Visitor<'de> for FieldElementVisitor<F> {
     }
 }
 
-
-
-
-pub trait FftFriendlyFieldElement: FieldElementWithInteger {
-    
-    
-    fn generator_order() -> Self::Integer;
-
-    
-    
-    fn generator() -> Self;
-
-    
-    
-    fn root(l: usize) -> Option<Self>;
-}
-
 macro_rules! make_field {
     (
         $(#[$meta:meta])*
-        $elem:ident, $int:ident, $fp:ident, $encoding_size:literal,
+        $elem:ident, $int:ident, $fp:ident, $encoding_size:literal, $encoding_order:expr,
     ) => {
         $(#[$meta])*
         ///
         /// This structure represents a field element in a prime order field. The concrete
-        /// representation of the element is via the Montgomery domain. For an element `n` in
-        
-        
-        
-        
-        
-        
-        
-        
+        /// representation of the element is via the Montgomery domain. For an element n in GF(p),
+        /// we store n * R^-1 mod p (where R is a given power of two). This representation enables
+        /// using a more efficient (and branchless) multiplication algorithm, at the expense of
+        /// having to convert elements between their Montgomery domain representation and natural
+        /// representation. For calculations with many multiplications or exponentiations, this is
+        /// worthwhile.
+        ///
+        /// As an invariant, this integer representing the field element in the Montgomery domain
+        /// must be less than the prime p.
         #[derive(Clone, Copy, PartialOrd, Ord, Default)]
         pub struct $elem(u128);
 
@@ -386,7 +355,12 @@ macro_rules! make_field {
 
                 let mut int = 0;
                 for i in 0..Self::ENCODED_SIZE {
-                    int |= (bytes[i] as u128) << (i << 3);
+                    let j = match $encoding_order {
+                        ByteOrder::LittleEndian => i,
+                        ByteOrder::BigEndian => Self::ENCODED_SIZE - i - 1,
+                    };
+
+                    int |= (bytes[j] as u128) << (i << 3);
                 }
 
                 int &= mask;
@@ -411,18 +385,6 @@ macro_rules! make_field {
                 debug_assert!(rhs.0 < $fp.p);
 
                 self.0 == rhs.0
-            }
-        }
-
-        impl ConstantTimeEq for $elem {
-            fn ct_eq(&self, rhs: &Self) -> Choice {
-                self.0.ct_eq(&rhs.0)
-            }
-        }
-
-        impl ConditionallySelectable for $elem {
-            fn conditional_select(a: &Self, b: &Self, choice: subtle::Choice) -> Self {
-                Self(u128::conditional_select(&a.0, &b.0, choice))
             }
         }
 
@@ -577,7 +539,12 @@ macro_rules! make_field {
                 let int = $fp.residue(elem.0);
                 let mut slice = [0; $elem::ENCODED_SIZE];
                 for i in 0..$elem::ENCODED_SIZE {
-                    slice[i] = ((int >> (i << 3)) & 0xff) as u8;
+                    let j = match $encoding_order {
+                        ByteOrder::LittleEndian => i,
+                        ByteOrder::BigEndian => $elem::ENCODED_SIZE - i - 1,
+                    };
+
+                    slice[j] = ((int >> (i << 3)) & 0xff) as u8;
                 }
                 slice
             }
@@ -623,10 +590,6 @@ macro_rules! make_field {
                 let slice = <[u8; $elem::ENCODED_SIZE]>::from(*self);
                 bytes.extend_from_slice(&slice);
             }
-
-            fn encoded_len(&self) -> Option<usize> {
-                Some(Self::ENCODED_SIZE)
-            }
         }
 
         impl Decode for $elem {
@@ -641,26 +604,6 @@ macro_rules! make_field {
 
         impl FieldElement for $elem {
             const ENCODED_SIZE: usize = $encoding_size;
-            fn inv(&self) -> Self {
-                // FieldParameters::inv() ultimately relies on mul(), and will always return a
-                // value less than p.
-                Self($fp.inv(self.0))
-            }
-
-            fn try_from_random(bytes: &[u8]) -> Result<Self, FieldError> {
-                $elem::try_from_bytes(bytes, $fp.bit_mask)
-            }
-
-            fn zero() -> Self {
-                Self(0)
-            }
-
-            fn one() -> Self {
-                Self($fp.roots[0])
-            }
-        }
-
-        impl FieldElementWithInteger for $elem {
             type Integer = $int;
             type IntegerTryFromError = <Self::Integer as TryFrom<usize>>::Error;
             type TryIntoU64Error = <Self::Integer as TryInto<u64>>::Error;
@@ -671,12 +614,20 @@ macro_rules! make_field {
                 Self($fp.pow(self.0, u128::try_from(exp).unwrap()))
             }
 
+            fn inv(&self) -> Self {
+                // FieldParameters::inv() ultimately relies on mul(), and will always return a
+                // value less than p.
+                Self($fp.inv(self.0))
+            }
+
             fn modulus() -> Self::Integer {
                 $fp.p as $int
             }
-        }
 
-        impl FftFriendlyFieldElement for $elem {
+            fn try_from_random(bytes: &[u8]) -> Result<Self, FieldError> {
+                $elem::try_from_bytes(bytes, $fp.bit_mask)
+            }
+
             fn generator() -> Self {
                 Self($fp.g)
             }
@@ -692,9 +643,26 @@ macro_rules! make_field {
                     None
                 }
             }
+
+            fn zero() -> Self {
+                Self(0)
+            }
+
+            fn one() -> Self {
+                Self($fp.roots[0])
+            }
         }
     };
 }
+
+make_field!(
+    /// `GF(4293918721)`, a 32-bit field.
+    Field32,
+    u32,
+    FP32,
+    4,
+    ByteOrder::BigEndian,
+);
 
 make_field!(
     /// Same as Field32, but encoded in little endian for compatibility with Prio v2.
@@ -702,6 +670,7 @@ make_field!(
     u32,
     FP32,
     4,
+    ByteOrder::LittleEndian,
 );
 
 make_field!(
@@ -710,48 +679,17 @@ make_field!(
     u64,
     FP64,
     8,
+    ByteOrder::BigEndian,
 );
 
-
-
-
-
-mod field96 {
-    #![allow(deprecated)]
-
-    use super::{
-        FftFriendlyFieldElement, FieldElement, FieldElementVisitor, FieldElementWithInteger,
-        FieldError,
-    };
-    use crate::{
-        codec::{CodecError, Decode, Encode},
-        fp::FP96,
-    };
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use std::{
-        cmp::min,
-        fmt::{Debug, Display, Formatter},
-        hash::{Hash, Hasher},
-        io::{Cursor, Read},
-        marker::PhantomData,
-        ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-    };
-    use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
-
-    make_field!(
-        #[deprecated]
-        /// `GF(79228148845226978974766202881)`, a 96-bit field.
-        ///
-        /// This is deprecated because it is not currently used by either Prio v2 or any VDAF.
-        Field96,
-        u128,
-        FP96,
-        12,
-    );
-}
-
-#[allow(deprecated)]
-pub use field96::Field96;
+make_field!(
+    /// `GF(79228148845226978974766202881)`, a 96-bit field.
+    Field96,
+    u128,
+    FP96,
+    12,
+    ByteOrder::BigEndian,
+);
 
 make_field!(
     /// `GF(340282366920938462946865773367900766209)`, a 128-bit field.
@@ -759,6 +697,7 @@ make_field!(
     u128,
     FP128,
     16,
+    ByteOrder::BigEndian,
 );
 
 
@@ -766,6 +705,7 @@ make_field!(
 
 
 
+#[cfg(any(test, feature = "prio2"))]
 pub(crate) fn merge_vector<F: FieldElement>(
     accumulator: &mut [F],
     other_vector: &[F],
@@ -781,7 +721,7 @@ pub(crate) fn merge_vector<F: FieldElement>(
 }
 
 
-#[cfg(all(feature = "crypto-dependencies", test))]
+#[cfg(feature = "crypto-dependencies")]
 pub(crate) fn split_vector<F: FieldElement>(
     inp: &[F],
     num_shares: usize,
@@ -810,124 +750,53 @@ pub fn random_vector<F: FieldElement>(len: usize) -> Result<Vec<F>, PrngError> {
     Ok(Prng::new()?.take(len).collect())
 }
 
-
-#[inline(always)]
-pub(crate) fn encode_fieldvec<F: FieldElement, T: AsRef<[F]>>(val: T, bytes: &mut Vec<u8>) {
-    for elem in val.as_ref() {
-        bytes.append(&mut (*elem).into());
-    }
-}
-
-
-
-pub(crate) fn decode_fieldvec<F: FieldElement>(
-    count: usize,
-    input: &mut Cursor<&[u8]>,
-) -> Result<Vec<F>, CodecError> {
-    let mut vec = Vec::with_capacity(count);
-    let mut buffer = [0u8; 64];
-    assert!(
-        buffer.len() >= F::ENCODED_SIZE,
-        "field is too big for buffer"
-    );
-    for _ in 0..count {
-        input.read_exact(&mut buffer[..F::ENCODED_SIZE])?;
-        vec.push(
-            F::try_from(&buffer[..F::ENCODED_SIZE]).map_err(|e| CodecError::Other(Box::new(e)))?,
-        );
-    }
-    Ok(vec)
-}
-
-impl<F> CoinToss for F
-where
-    F: FieldElement,
-{
-    fn sample<S>(seed_stream: &mut S) -> Self
-    where
-        S: SeedStream,
-    {
-        
-        
-        let mut buffer = [0u8; 64];
-        assert!(
-            buffer.len() >= F::ENCODED_SIZE,
-            "field is too big for buffer"
-        );
-        loop {
-            seed_stream.fill(&mut buffer[..F::ENCODED_SIZE]);
-            match Self::try_from_random(&buffer[..F::ENCODED_SIZE]) {
-                Ok(x) => return x,
-                Err(FieldError::ModulusOverflow) => continue,
-                Err(err) => panic!("unexpected error: {err}"),
-            }
-        }
-    }
-}
-
 #[cfg(test)]
-pub(crate) mod test_utils {
-    use super::{FieldElement, FieldElementWithInteger};
-    use crate::{codec::CodecError, field::FieldError, prng::Prng};
+mod tests {
+    use super::*;
+    use crate::fp::MAX_ROOTS;
+    use crate::prng::Prng;
     use assert_matches::assert_matches;
-    use std::{
-        collections::hash_map::DefaultHasher,
-        convert::{TryFrom, TryInto},
-        fmt::Debug,
-        hash::{Hash, Hasher},
-        io::Cursor,
-        ops::{Add, BitAnd, Div, Shl, Shr, Sub},
-    };
+    use std::collections::hash_map::DefaultHasher;
 
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) trait TestFieldElementWithInteger:
-        FieldElement + From<Self::Integer>
-    {
-        type IntegerTryFromError: std::error::Error;
-        type TryIntoU64Error: std::error::Error;
-        type Integer: Clone
-            + Debug
-            + Eq
-            + Ord
-            + BitAnd<Output = Self::Integer>
-            + Div<Output = Self::Integer>
-            + Shl<usize, Output = Self::Integer>
-            + Shr<usize, Output = Self::Integer>
-            + Add<Output = Self::Integer>
-            + Sub<Output = Self::Integer>
-            + From<Self>
-            + TryFrom<usize, Error = Self::IntegerTryFromError>
-            + TryInto<u64, Error = Self::TryIntoU64Error>;
+    #[test]
+    fn test_endianness() {
+        let little_endian_encoded: [u8; FieldPrio2::ENCODED_SIZE] =
+            FieldPrio2(0x12_34_56_78).into();
 
-        fn pow(&self, exp: Self::Integer) -> Self;
+        let mut big_endian_encoded: [u8; Field32::ENCODED_SIZE] = Field32(0x12_34_56_78).into();
+        big_endian_encoded.reverse();
 
-        fn modulus() -> Self::Integer;
+        assert_eq!(little_endian_encoded, big_endian_encoded);
     }
 
-    impl<F> TestFieldElementWithInteger for F
-    where
-        F: FieldElementWithInteger,
-    {
-        type IntegerTryFromError = <F as FieldElementWithInteger>::IntegerTryFromError;
-        type TryIntoU64Error = <F as FieldElementWithInteger>::TryIntoU64Error;
-        type Integer = <F as FieldElementWithInteger>::Integer;
+    #[test]
+    fn test_accumulate() {
+        let mut lhs = vec![Field32(1); 10];
+        let rhs = vec![Field32(2); 10];
 
-        fn pow(&self, exp: Self::Integer) -> Self {
-            <F as FieldElementWithInteger>::pow(self, exp)
-        }
+        merge_vector(&mut lhs, &rhs).unwrap();
 
-        fn modulus() -> Self::Integer {
-            <F as FieldElementWithInteger>::modulus()
-        }
+        lhs.iter().for_each(|f| assert_eq!(*f, Field32(3)));
+        rhs.iter().for_each(|f| assert_eq!(*f, Field32(2)));
+
+        let wrong_len = vec![Field32::zero(); 9];
+        let result = merge_vector(&mut lhs, &wrong_len);
+        assert_matches!(result, Err(FieldError::InputSizeMismatch));
     }
 
-    pub(crate) fn field_element_test_common<F: TestFieldElementWithInteger>() {
+    fn hash_helper<H: Hash>(input: H) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        input.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    
+    
+    
+    
+    
+    #[allow(clippy::eq_op)]
+    fn field_element_test<F: FieldElement + Hash>() {
         let mut prng: Prng<F, _> = Prng::new().unwrap();
         let int_modulus = F::modulus();
         let int_one = F::Integer::try_from(1).unwrap();
@@ -937,33 +806,15 @@ pub(crate) mod test_utils {
         let four = F::from(F::Integer::try_from(4).unwrap());
 
         
-        assert_eq!(F::from(int_modulus.clone() - int_one.clone()) + one, zero);
+        assert_eq!(F::from(int_modulus - int_one) + one, zero);
         assert_eq!(one + one, two);
-        assert_eq!(two + F::from(int_modulus.clone()), two);
+        assert_eq!(two + F::from(int_modulus), two);
 
         
-        let mut a = prng.get();
-        let b = prng.get();
-        let c = a + b;
-        a += b;
-        assert_eq!(a, c);
-
-        
-        assert_eq!(zero - one, F::from(int_modulus.clone() - int_one.clone()));
-        #[allow(clippy::eq_op)]
-        {
-            assert_eq!(one - one, zero);
-        }
-        assert_eq!(one + (-one), zero);
-        assert_eq!(two - F::from(int_modulus.clone()), two);
-        assert_eq!(one - F::from(int_modulus.clone() - int_one.clone()), two);
-
-        
-        let mut a = prng.get();
-        let b = prng.get();
-        let c = a - b;
-        a -= b;
-        assert_eq!(a, c);
+        assert_eq!(zero - one, F::from(int_modulus - int_one));
+        assert_eq!(one - one, zero);
+        assert_eq!(two - F::from(int_modulus), two);
+        assert_eq!(one - F::from(int_modulus - int_one), two);
 
         
         for _ in 0..100 {
@@ -978,158 +829,14 @@ pub(crate) mod test_utils {
         assert_eq!(two * two, four);
         assert_eq!(two * one, two);
         assert_eq!(two * zero, zero);
-        assert_eq!(one * F::from(int_modulus.clone()), zero);
-
-        
-        let mut a = prng.get();
-        let b = prng.get();
-        let c = a * b;
-        a *= b;
-        assert_eq!(a, c);
-
-        
-        assert_eq!(F::Integer::from(zero), F::Integer::try_from(0).unwrap());
-        assert_eq!(F::Integer::from(one), F::Integer::try_from(1).unwrap());
-        assert_eq!(F::Integer::from(two), F::Integer::try_from(2).unwrap());
-        assert_eq!(F::Integer::from(four), F::Integer::try_from(4).unwrap());
-
-        
-        let test_inputs = vec![
-            zero,
-            one,
-            prng.get(),
-            F::from(int_modulus.clone() - int_one.clone()),
-        ];
-        for want in test_inputs.iter() {
-            let mut bytes = vec![];
-            want.encode(&mut bytes);
-
-            assert_eq!(bytes.len(), F::ENCODED_SIZE);
-            assert_eq!(want.encoded_len().unwrap(), F::ENCODED_SIZE);
-
-            let got = F::get_decoded(&bytes).unwrap();
-            assert_eq!(got, *want);
-        }
-
-        let serialized_vec = F::slice_into_byte_vec(&test_inputs);
-        let deserialized = F::byte_slice_into_vec(&serialized_vec).unwrap();
-        assert_eq!(deserialized, test_inputs);
-
-        let test_input = prng.get();
-        let json = serde_json::to_string(&test_input).unwrap();
-        let deserialized = serde_json::from_str::<F>(&json).unwrap();
-        assert_eq!(deserialized, test_input);
-
-        let value = serde_json::from_str::<serde_json::Value>(&json).unwrap();
-        let array = value.as_array().unwrap();
-        for element in array {
-            element.as_u64().unwrap();
-        }
-
-        let err = F::byte_slice_into_vec(&[0]).unwrap_err();
-        assert_matches!(err, FieldError::ShortRead);
-
-        let err = F::byte_slice_into_vec(&vec![0xffu8; F::ENCODED_SIZE]).unwrap_err();
-        assert_matches!(err, FieldError::Codec(CodecError::Other(err)) => {
-            assert_matches!(err.downcast_ref::<FieldError>(), Some(FieldError::ModulusOverflow));
-        });
-
-        let insufficient = vec![0u8; F::ENCODED_SIZE - 1];
-        let err = F::try_from(insufficient.as_ref()).unwrap_err();
-        assert_matches!(err, FieldError::ShortRead);
-        let err = F::decode(&mut Cursor::new(&insufficient)).unwrap_err();
-        assert_matches!(err, CodecError::Io(_));
-
-        let err = F::decode(&mut Cursor::new(&vec![0xffu8; F::ENCODED_SIZE])).unwrap_err();
-        assert_matches!(err, CodecError::Other(err) => {
-            assert_matches!(err.downcast_ref::<FieldError>(), Some(FieldError::ModulusOverflow));
-        });
-
-        
-        
-        
-        
-        let three = F::from(F::Integer::try_from(3).unwrap());
-        let mut powers_of_three = Vec::with_capacity(500);
-        let mut power = one;
-        for _ in 0..500 {
-            powers_of_three.push(power);
-            power *= three;
-        }
-        
-        for i in 0..powers_of_three.len() {
-            let first = &powers_of_three[i];
-            for second in &powers_of_three[0..i] {
-                assert_ne!(first, second);
-            }
-        }
-
-        
-        
-        let p = F::from(int_modulus.clone());
-        assert_eq!(p, zero);
-        let p_plus_one = F::from(int_modulus + int_one);
-        assert_eq!(p_plus_one, one);
-    }
-
-    pub(super) fn hash_helper<H: Hash>(input: H) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        input.hash(&mut hasher);
-        hasher.finish()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::field::test_utils::{field_element_test_common, hash_helper};
-    use crate::fp::MAX_ROOTS;
-    use crate::prng::Prng;
-    use assert_matches::assert_matches;
-
-    #[test]
-    fn test_accumulate() {
-        let mut lhs = vec![FieldPrio2(1); 10];
-        let rhs = vec![FieldPrio2(2); 10];
-
-        merge_vector(&mut lhs, &rhs).unwrap();
-
-        lhs.iter().for_each(|f| assert_eq!(*f, FieldPrio2(3)));
-        rhs.iter().for_each(|f| assert_eq!(*f, FieldPrio2(2)));
-
-        let wrong_len = vec![FieldPrio2::zero(); 9];
-        let result = merge_vector(&mut lhs, &wrong_len);
-        assert_matches!(result, Err(FieldError::InputSizeMismatch));
-    }
-
-    fn field_element_test<F: FftFriendlyFieldElement + Hash>() {
-        field_element_test_common::<F>();
-
-        let mut prng: Prng<F, _> = Prng::new().unwrap();
-        let int_modulus = F::modulus();
-        let int_one = F::Integer::try_from(1).unwrap();
-        let zero = F::zero();
-        let one = F::one();
-        let two = F::from(F::Integer::try_from(2).unwrap());
-        let four = F::from(F::Integer::try_from(4).unwrap());
+        assert_eq!(one * F::from(int_modulus), zero);
 
         
         assert_eq!(four / two, two);
-        #[allow(clippy::eq_op)]
-        {
-            assert_eq!(two / two, one);
-        }
+        assert_eq!(two / two, one);
         assert_eq!(zero / two, zero);
         assert_eq!(two / zero, zero); 
         assert_eq!(zero.inv(), zero); 
-
-        
-        let mut a = prng.get();
-        let b = prng.get();
-        let c = a / b;
-        a /= b;
-        assert_eq!(a, c);
-        assert_eq!(hash_helper(a), hash_helper(c));
 
         
         for _ in 0..100 {
@@ -1154,23 +861,45 @@ mod tests {
             assert_eq!(
                 F::generator().pow(int_order),
                 F::root(l).unwrap(),
-                "failure for F::root({l})"
+                "failure for F::root({})",
+                l
             );
-            int_order = int_order >> 1;
+            int_order = int_order >> int_one;
         }
 
         
-        assert_eq!(format!("{zero}"), "0");
-        assert_eq!(format!("{one}"), "1");
-        assert_eq!(format!("{zero:?}"), "0");
-        assert_eq!(format!("{one:?}"), "1");
+        let test_inputs = vec![zero, one, prng.get(), F::from(int_modulus - int_one)];
+        for want in test_inputs.iter() {
+            let mut bytes = vec![];
+            want.encode(&mut bytes);
 
+            assert_eq!(bytes.len(), F::ENCODED_SIZE);
+
+            let got = F::get_decoded(&bytes).unwrap();
+            assert_eq!(got, *want);
+        }
+
+        let serialized_vec = F::slice_into_byte_vec(&test_inputs);
+        let deserialized = F::byte_slice_into_vec(&serialized_vec).unwrap();
+        assert_eq!(deserialized, test_inputs);
+
+        
+        
+        
+        
         let three = F::from(F::Integer::try_from(3).unwrap());
         let mut powers_of_three = Vec::with_capacity(500);
         let mut power = one;
         for _ in 0..500 {
             powers_of_three.push(power);
             power *= three;
+        }
+        
+        for i in 0..powers_of_three.len() {
+            let first = &powers_of_three[i];
+            for second in &powers_of_three[0..i] {
+                assert_ne!(first, second);
+            }
         }
 
         
@@ -1193,10 +922,24 @@ mod tests {
             assert_eq!(product, expected_product);
             assert_eq!(hash_helper(product), expected_hash);
         }
+
+        
+        
+        let p = F::from(int_modulus);
+        assert_eq!(p, zero);
+        assert_eq!(hash_helper(p), hash_helper(zero));
+        let p_plus_one = F::from(int_modulus + F::Integer::try_from(1).unwrap());
+        assert_eq!(p_plus_one, one);
+        assert_eq!(hash_helper(p_plus_one), hash_helper(one));
     }
 
     #[test]
-    fn test_field_prio2() {
+    fn test_field32() {
+        field_element_test::<Field32>();
+    }
+
+    #[test]
+    fn test_field_priov2() {
         field_element_test::<FieldPrio2>();
     }
 
@@ -1207,35 +950,11 @@ mod tests {
 
     #[test]
     fn test_field96() {
-        #[allow(deprecated)]
         field_element_test::<Field96>();
     }
 
     #[test]
     fn test_field128() {
         field_element_test::<Field128>();
-    }
-
-    #[test]
-    fn test_encode_into_bitvector() {
-        let zero = Field128::zero();
-        let one = Field128::one();
-        let zero_enc = Field128::encode_into_bitvector_representation(&0, 4).unwrap();
-        let one_enc = Field128::encode_into_bitvector_representation(&1, 4).unwrap();
-        let fifteen_enc = Field128::encode_into_bitvector_representation(&15, 4).unwrap();
-        assert_eq!(zero_enc, [zero; 4]);
-        assert_eq!(one_enc, [one, zero, zero, zero]);
-        assert_eq!(fifteen_enc, [one; 4]);
-        Field128::encode_into_bitvector_representation(&16, 4).unwrap_err();
-    }
-
-    #[test]
-    fn test_fill_bitvector() {
-        let zero = Field128::zero();
-        let one = Field128::one();
-        let mut output: Vec<Field128> = vec![zero; 6];
-        Field128::fill_with_bitvector_representation(&9, &mut output[1..5]).unwrap();
-        assert_eq!(output, [zero, one, zero, zero, one, zero]);
-        Field128::fill_with_bitvector_representation(&16, &mut output[1..5]).unwrap_err();
     }
 }

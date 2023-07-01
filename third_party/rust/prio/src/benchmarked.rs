@@ -1,25 +1,23 @@
 
 
-#![doc(hidden)]
-
 
 
 
 #[cfg(feature = "prio2")]
 use crate::client::Client;
 use crate::fft::discrete_fourier_transform;
-use crate::field::FftFriendlyFieldElement;
+use crate::field::FieldElement;
 use crate::flp::gadgets::Mul;
 use crate::flp::FlpError;
 use crate::polynomial::{poly_fft, PolyAuxMemory};
 
 
-pub fn benchmarked_iterative_fft<F: FftFriendlyFieldElement>(outp: &mut [F], inp: &[F]) {
+pub fn benchmarked_iterative_fft<F: FieldElement>(outp: &mut [F], inp: &[F]) {
     discrete_fourier_transform(outp, inp, inp.len()).unwrap();
 }
 
 
-pub fn benchmarked_recursive_fft<F: FftFriendlyFieldElement>(outp: &mut [F], inp: &[F]) {
+pub fn benchmarked_recursive_fft<F: FieldElement>(outp: &mut [F], inp: &[F]) {
     let mut mem = PolyAuxMemory::new(inp.len() / 2);
     poly_fft(
         outp,
@@ -33,7 +31,7 @@ pub fn benchmarked_recursive_fft<F: FftFriendlyFieldElement>(outp: &mut [F], inp
 
 
 
-pub fn benchmarked_gadget_mul_call_poly_fft<F: FftFriendlyFieldElement>(
+pub fn benchmarked_gadget_mul_call_poly_fft<F: FieldElement>(
     g: &mut Mul<F>,
     outp: &mut [F],
     inp: &[Vec<F>],
@@ -43,7 +41,7 @@ pub fn benchmarked_gadget_mul_call_poly_fft<F: FftFriendlyFieldElement>(
 
 
 
-pub fn benchmarked_gadget_mul_call_poly_direct<F: FftFriendlyFieldElement>(
+pub fn benchmarked_gadget_mul_call_poly_direct<F: FieldElement>(
     g: &mut Mul<F>,
     outp: &mut [F],
     inp: &[Vec<F>],
@@ -53,9 +51,6 @@ pub fn benchmarked_gadget_mul_call_poly_direct<F: FftFriendlyFieldElement>(
 
 
 #[cfg(feature = "prio2")]
-pub fn benchmarked_v2_prove<F: FftFriendlyFieldElement>(
-    data: &[F],
-    client: &mut Client<F>,
-) -> Vec<F> {
+pub fn benchmarked_v2_prove<F: FieldElement>(data: &[F], client: &mut Client<F>) -> Vec<F> {
     client.gen_proof(data)
 }

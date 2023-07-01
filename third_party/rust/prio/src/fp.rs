@@ -202,7 +202,7 @@ impl FieldParameters {
         
         
         let (s0, b0) = prod.overflowing_sub(self.p);
-        let (_s1, b1) = cc.overflowing_sub(b0 as u128);
+        let (_s1, b1) = (cc as u128).overflowing_sub(b0 as u128);
         
         
         let mask = 0u128.wrapping_sub(b1 as u128);

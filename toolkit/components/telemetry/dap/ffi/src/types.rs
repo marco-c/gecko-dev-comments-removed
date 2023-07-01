@@ -241,11 +241,6 @@ impl ReportID {
     }
 }
 
-impl AsRef<[u8; 16]> for ReportID {
-    fn as_ref(&self) -> &[u8; 16] {
-        &self.0
-    }
-}
 
 
 
@@ -256,14 +251,20 @@ impl AsRef<[u8; 16]> for ReportID {
 pub struct ReportMetadata {
     pub report_id: ReportID,
     pub time: Time,
+    pub extensions: Vec<Extension>,
 }
 
 impl Decode for ReportMetadata {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
         let report_id = ReportID::decode(bytes)?;
         let time = Time::decode(bytes)?;
+        let extensions = decode_u16_items(&(), bytes)?;
 
-        Ok(ReportMetadata { report_id, time })
+        Ok(ReportMetadata {
+            report_id,
+            time,
+            extensions,
+        })
     }
 }
 
@@ -271,8 +272,10 @@ impl Encode for ReportMetadata {
     fn encode(&self, bytes: &mut Vec<u8>) {
         self.report_id.encode(bytes);
         self.time.encode(bytes);
+        encode_u16_items(bytes, &(), &self.extensions);
     }
 }
+
 
 
 
@@ -282,6 +285,7 @@ impl Encode for ReportMetadata {
 
 #[derive(Debug, PartialEq)]
 pub struct Report {
+    pub task_id: TaskID,
     pub metadata: ReportMetadata,
     pub public_share: Vec<u8>,
     pub encrypted_input_shares: Vec<HpkeCiphertext>,
@@ -291,9 +295,11 @@ impl Report {
     
     pub fn new_dummy() -> Self {
         Report {
+            task_id: TaskID([0x12; 32]),
             metadata: ReportMetadata {
                 report_id: ReportID::generate(),
                 time: Time::generate(1),
+                extensions: vec![],
             },
             public_share: vec![],
             encrypted_input_shares: vec![],
@@ -303,6 +309,7 @@ impl Report {
 
 impl Decode for Report {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
+        let task_id = TaskID::decode(bytes)?;
         let metadata = ReportMetadata::decode(bytes)?;
         let public_share: Vec<u8> = decode_u32_items(&(), bytes)?;
         let encrypted_input_shares: Vec<HpkeCiphertext> = decode_u32_items(&(), bytes)?;
@@ -310,6 +317,7 @@ impl Decode for Report {
         let remaining_bytes = bytes.get_ref().len() - (bytes.position() as usize);
         if remaining_bytes == 0 {
             Ok(Report {
+                task_id,
                 metadata,
                 public_share,
                 encrypted_input_shares,
@@ -322,6 +330,7 @@ impl Decode for Report {
 
 impl Encode for Report {
     fn encode(&self, bytes: &mut Vec<u8>) {
+        self.task_id.encode(bytes);
         self.metadata.encode(bytes);
         encode_u32_items(bytes, &(), &self.public_share);
         encode_u32_items(bytes, &(), &self.encrypted_input_shares);

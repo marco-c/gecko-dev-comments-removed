@@ -3,7 +3,7 @@
 
 
 
-use crate::field::{FftFriendlyFieldElement, FieldError};
+use crate::field::{FieldElement, FieldError};
 
 
 #[derive(Debug, thiserror::Error)]
@@ -29,7 +29,7 @@ pub fn proof_length(dimension: usize) -> usize {
 
 
 #[derive(Debug)]
-pub struct UnpackedProof<'a, F: FftFriendlyFieldElement> {
+pub struct UnpackedProof<'a, F: FieldElement> {
     
     pub data: &'a [F],
     
@@ -44,7 +44,7 @@ pub struct UnpackedProof<'a, F: FftFriendlyFieldElement> {
 
 
 #[derive(Debug)]
-pub struct UnpackedProofMut<'a, F: FftFriendlyFieldElement> {
+pub struct UnpackedProofMut<'a, F: FieldElement> {
     
     pub data: &'a mut [F],
     
@@ -58,7 +58,7 @@ pub struct UnpackedProofMut<'a, F: FftFriendlyFieldElement> {
 }
 
 
-pub(crate) fn unpack_proof<F: FftFriendlyFieldElement>(
+pub(crate) fn unpack_proof<F: FieldElement>(
     proof: &[F],
     dimension: usize,
 ) -> Result<UnpackedProof<F>, SerializeError> {
@@ -85,7 +85,7 @@ pub(crate) fn unpack_proof<F: FftFriendlyFieldElement>(
 
 
 
-pub fn unpack_proof_mut<F: FftFriendlyFieldElement>(
+pub fn unpack_proof_mut<F: FieldElement>(
     proof: &mut [F],
     dimension: usize,
 ) -> Result<UnpackedProofMut<F>, SerializeError> {
@@ -111,10 +111,7 @@ pub fn unpack_proof_mut<F: FftFriendlyFieldElement>(
 
 
 
-pub fn reconstruct_shares<F: FftFriendlyFieldElement>(
-    share1: &[F],
-    share2: &[F],
-) -> Option<Vec<F>> {
+pub fn reconstruct_shares<F: FieldElement>(share1: &[F], share2: &[F]) -> Option<Vec<F>> {
     if share1.len() != share2.len() {
         return None;
     }
@@ -134,19 +131,19 @@ pub fn reconstruct_shares<F: FftFriendlyFieldElement>(
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::field::{Field64, FieldElement, FieldPrio2};
+    use crate::field::{Field32, Field64};
     use assert_matches::assert_matches;
 
-    pub fn secret_share(share: &mut [FieldPrio2]) -> Vec<FieldPrio2> {
+    pub fn secret_share(share: &mut [Field32]) -> Vec<Field32> {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let mut random = vec![0u32; share.len()];
-        let mut share2 = vec![FieldPrio2::zero(); share.len()];
+        let mut share2 = vec![Field32::zero(); share.len()];
 
         rng.fill(&mut random[..]);
 
         for (r, f) in random.iter().zip(share2.iter_mut()) {
-            *f = FieldPrio2::from(*r);
+            *f = Field32::from(*r);
         }
 
         for (f1, f2) in share.iter_mut().zip(share2.iter()) {
@@ -161,12 +158,12 @@ pub mod tests {
         let dim = 15;
         let len = proof_length(dim);
 
-        let mut share = vec![FieldPrio2::from(0); len];
+        let mut share = vec![Field32::from(0); len];
         let unpacked = unpack_proof_mut(&mut share, dim).unwrap();
-        *unpacked.f0 = FieldPrio2::from(12);
+        *unpacked.f0 = Field32::from(12);
         assert_eq!(share[dim], 12);
 
-        let mut short_share = vec![FieldPrio2::from(0); len - 1];
+        let mut short_share = vec![Field32::from(0); len - 1];
         assert_matches!(
             unpack_proof_mut(&mut short_share, dim),
             Err(SerializeError::UnpackInputSizeMismatch)
@@ -190,7 +187,7 @@ pub mod tests {
 
     #[test]
     fn secret_sharing() {
-        let mut share1 = vec![FieldPrio2::zero(); 10];
+        let mut share1 = vec![Field32::zero(); 10];
         share1[3] = 21.into();
         share1[8] = 123.into();
 
