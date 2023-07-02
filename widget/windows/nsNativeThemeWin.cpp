@@ -1799,10 +1799,10 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
     if (content && content->IsHTMLElement()) {
       
       
-      result.top++;
-      result.left++;
-      result.bottom++;
-      result.right++;
+      result.top.value++;
+      result.left.value++;
+      result.bottom.value++;
+      result.right.value++;
     }
   }
 

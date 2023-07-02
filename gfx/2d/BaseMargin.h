@@ -62,7 +62,7 @@ struct BaseMargin {
 
   
   
-  T top, right, bottom, left;
+  Coord top, right, bottom, left;
 
   
   BaseMargin() : top(0), right(0), bottom(0), left(0) {}
@@ -79,11 +79,11 @@ struct BaseMargin {
   T LeftRight() const { return left + right; }
   T TopBottom() const { return top + bottom; }
 
-  T& Side(SideT aSide) {
+  Coord& Side(SideT aSide) {
     
     return *(&top + int(aSide));
   }
-  T Side(SideT aSide) const {
+  Coord Side(SideT aSide) const {
     
     return *(&top + int(aSide));
   }
