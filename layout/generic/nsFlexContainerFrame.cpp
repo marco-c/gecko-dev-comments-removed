@@ -1027,6 +1027,17 @@ class nsFlexContainerFrame::FlexLine final {
   nscoord LastBaselineOffset() const { return mLastBaselineOffset; }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  nscoord ExtractBaselineOffset(BaselineSharingGroup aBaselineGroup) const;
+
+  
 
 
 
@@ -3758,6 +3769,32 @@ void FlexLine::ComputeCrossSizeAndBaseline(
       largestOuterCrossSize);
 }
 
+nscoord FlexLine::ExtractBaselineOffset(
+    BaselineSharingGroup aBaselineGroup) const {
+  auto LastBaselineOffsetFromStartEdge = [this]() {
+    
+    const nscoord offset = LastBaselineOffset();
+    return offset != nscoord_MIN ? LineCrossSize() - offset : offset;
+  };
+
+  auto PrimaryBaseline = [=]() {
+    return aBaselineGroup == BaselineSharingGroup::First
+               ? FirstBaselineOffset()
+               : LastBaselineOffsetFromStartEdge();
+  };
+  auto SecondaryBaseline = [=]() {
+    return aBaselineGroup == BaselineSharingGroup::First
+               ? LastBaselineOffsetFromStartEdge()
+               : FirstBaselineOffset();
+  };
+
+  const nscoord primaryBaseline = PrimaryBaseline();
+  if (primaryBaseline != nscoord_MIN) {
+    return primaryBaseline;
+  }
+  return SecondaryBaseline();
+}
+
 void FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize) {
   
   
@@ -5230,73 +5267,45 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
 
     
     
+    auto ComputeAscentFromLine = [&](const FlexLine& aLine,
+                                     BaselineSharingGroup aBaselineGroup) {
+      MOZ_ASSERT(aAxisTracker.IsRowOriented(),
+                 "This makes sense only if we are row-oriented!");
+
+      
+      const nscoord baselineOffsetInLine =
+          aLine.ExtractBaselineOffset(aBaselineGroup);
+
+      if (baselineOffsetInLine == nscoord_MIN) {
+        
+        
+        
+        return nscoord_MIN;
+      }
+
+      
+      
+      const nscoord ascent = aAxisTracker.LogicalAscentFromFlexRelativeAscent(
+          crossAxisPosnTracker.Position() + baselineOffsetInLine,
+          flr.mContentBoxCrossSize);
+
+      
+      
+      const auto wm = aAxisTracker.GetWritingMode();
+      if (aBaselineGroup == BaselineSharingGroup::First) {
+        return ascent +
+               aReflowInput.ComputedLogicalBorderPadding(wm).BStart(wm);
+      }
+      return flr.mContentBoxCrossSize - ascent +
+             aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
+    };
+
     if (lineForFirstBaseline && lineForFirstBaseline == &line) {
-      
-      nscoord baselineOffsetInLine;
-      if (const nscoord firstBaselineOffsetInLine =
-              lineForFirstBaseline->FirstBaselineOffset();
-          firstBaselineOffsetInLine != nscoord_MIN) {
-        baselineOffsetInLine = firstBaselineOffsetInLine;
-      } else if (const nscoord lastBaselineOffsetInLine =
-                     lineForFirstBaseline->LastBaselineOffset();
-                 lastBaselineOffsetInLine != nscoord_MIN) {
-        
-        baselineOffsetInLine =
-            lineForFirstBaseline->LineCrossSize() - lastBaselineOffsetInLine;
-      } else {
-        baselineOffsetInLine = nscoord_MIN;
-
-        
-        
-        
-        flr.mAscent = nscoord_MIN;
-      }
-
-      if (baselineOffsetInLine != nscoord_MIN) {
-        MOZ_ASSERT(aAxisTracker.IsRowOriented(),
-                   "This makes sense only if we are row-oriented!");
-        const auto wm = aAxisTracker.GetWritingMode();
-        flr.mAscent =
-            aAxisTracker.LogicalAscentFromFlexRelativeAscent(
-                crossAxisPosnTracker.Position() + baselineOffsetInLine,
-                flr.mContentBoxCrossSize) +
-            aReflowInput.ComputedLogicalBorderPadding(wm).BStart(wm);
-      }
+      flr.mAscent = ComputeAscentFromLine(line, BaselineSharingGroup::First);
     }
-
     if (lineForLastBaseline && lineForLastBaseline == &line) {
-      
-      nscoord baselineOffsetInLine;
-      if (const nscoord lastBaselineOffsetInLine =
-              lineForLastBaseline->LastBaselineOffset();
-          lastBaselineOffsetInLine != nscoord_MIN) {
-        
-        baselineOffsetInLine =
-            lineForLastBaseline->LineCrossSize() - lastBaselineOffsetInLine;
-      } else if (const nscoord firstBaselineOffsetInLine =
-                     lineForLastBaseline->FirstBaselineOffset();
-                 firstBaselineOffsetInLine != nscoord_MIN) {
-        baselineOffsetInLine = firstBaselineOffsetInLine;
-      } else {
-        baselineOffsetInLine = nscoord_MIN;
-
-        
-        
-        
-        flr.mAscentForLast = nscoord_MIN;
-      }
-
-      if (baselineOffsetInLine != nscoord_MIN) {
-        MOZ_ASSERT(aAxisTracker.IsRowOriented(),
-                   "This makes sense only if we are row-oriented!");
-        const auto wm = aAxisTracker.GetWritingMode();
-        flr.mAscentForLast =
-            flr.mContentBoxCrossSize -
-            aAxisTracker.LogicalAscentFromFlexRelativeAscent(
-                crossAxisPosnTracker.Position() + baselineOffsetInLine,
-                flr.mContentBoxCrossSize) +
-            aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
-      }
+      flr.mAscentForLast =
+          ComputeAscentFromLine(line, BaselineSharingGroup::Last);
     }
 
     crossAxisPosnTracker.TraverseLine(line);
