@@ -765,7 +765,7 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
             return False
 
         
-        if "windows7" in platform or "windows10-32" in platform:
+        if "windows10-32" in platform:
             return False
 
         

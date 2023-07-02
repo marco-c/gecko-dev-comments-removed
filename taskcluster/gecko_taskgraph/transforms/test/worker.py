@@ -13,21 +13,6 @@ LINUX_WORKER_TYPES = {
 
 
 WINDOWS_WORKER_TYPES = {
-    "windows7-32-qr": {
-        "virtual": "t-win7-32",
-        "virtual-with-gpu": "t-win7-32-gpu",
-        "hardware": "t-win10-64-1803-hw",
-    },
-    "windows7-32-shippable-qr": {
-        "virtual": "t-win7-32",
-        "virtual-with-gpu": "t-win7-32-gpu",
-        "hardware": "t-win10-64-1803-hw",
-    },
-    "windows7-32-devedition-qr": {  
-        "virtual": "t-win7-32",
-        "virtual-with-gpu": "t-win7-32-gpu",
-        "hardware": "t-win10-64-1803-hw",
-    },
     "windows10-64": {  
         "virtual": "t-win10-64",
         "virtual-with-gpu": "t-win10-64-gpu-s",
