@@ -44,7 +44,7 @@ async function checkLabel(row, name) {
   await doc.l10n.translateElements([row]);
   const rowHeaderEl = row.firstElementChild;
   is(doc.l10n.getAttributes(rowHeaderEl).id, id, `The ${name} label is set`);
-  if (row.role === "group") {
+  if (row.getAttribute("role") === "group") {
     
     
     
@@ -79,7 +79,11 @@ async function checkRowScreenReaderAccessibility(
   
   
   await doc.l10n.translateElements([row]);
-  is(row.role, "group", `Expect ${groupName} row to have role group`);
+  is(
+    row.getAttribute("role"),
+    "group",
+    `Expect ${groupName} row to have role group`
+  );
   is(
     doc.l10n.getAttributes(row).id,
     expectedFluentId,
