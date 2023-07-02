@@ -2759,7 +2759,7 @@ static void StreamMetaJSCustomObject(
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 27);
+  aWriter.IntProperty("version", GECKO_PROFILER_FORMAT_VERSION);
 
   
   

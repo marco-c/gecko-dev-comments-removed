@@ -722,6 +722,10 @@ class MarkerSchema {
 
     
     
+    UniqueString,
+
+    
+    
 
     
     
