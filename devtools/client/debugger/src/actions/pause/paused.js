@@ -57,10 +57,10 @@ export function paused(pauseInfo) {
     const selectedFrame = getSelectedFrame(getState(), thread);
     if (selectedFrame) {
       await dispatch(selectLocation(cx, selectedFrame.location));
-    }
 
-    
-    await dispatch(fetchScopes(cx));
+      
+      await dispatch(fetchScopes(selectedFrame));
+    }
 
     
     
