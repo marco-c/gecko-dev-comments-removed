@@ -1322,8 +1322,8 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
     } else {
       
       
-      if (aListener && aListener->mEventMessage == eKeyPress &&
-          mTarget && mTarget->IsRootWindow()) {
+      if (aListener && aListener->mEventMessage == eKeyPress && mTarget &&
+          mTarget->IsRootWindow()) {
         nsPIWindowRoot* root = mTarget->AsWindowRoot();
         if (nsPIDOMWindowOuter* outerWindow = root->GetWindow()) {
           innerWindow = outerWindow->GetCurrentInnerWindow();
