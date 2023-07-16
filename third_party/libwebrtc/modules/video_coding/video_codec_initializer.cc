@@ -283,8 +283,15 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       
       video_codec.width = spatial_layers.back().width;
       video_codec.height = spatial_layers.back().height;
-      video_codec.simulcastStream[0].width = spatial_layers.back().width;
-      video_codec.simulcastStream[0].height = spatial_layers.back().height;
+      
+      
+      
+      
+      
+      if (video_codec.numberOfSimulcastStreams == 1) {
+        video_codec.simulcastStream[0].width = spatial_layers.back().width;
+        video_codec.simulcastStream[0].height = spatial_layers.back().height;
+      }
 
       
       video_codec.VP9()->numberOfSpatialLayers =
