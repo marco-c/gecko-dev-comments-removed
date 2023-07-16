@@ -5766,9 +5766,11 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   masm.bind(&noRectifier);
   masm.jump(scratch2);
 
-  masm.bind(&noJitEntry);
   
-  masm.jump(&vmCall);
+  
+  
+  masm.bind(&noJitEntry);
+  generateIonGenericCallNativeFunction(masm, isConstructing);
 
   
   
@@ -5803,6 +5805,71 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   masm.push(returnAddrReg);
 #endif
   masm.jump(&invokeFunctionVMEntry);
+}
+
+void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
+                                                      bool isConstructing) {
+  Register calleeReg = IonGenericCallCalleeReg;
+  Register argcReg = IonGenericCallArgcReg;
+  Register scratch = IonGenericCallScratch;
+  Register scratch2 = IonGenericCallScratch2;
+  Register contextReg = IonGenericCallScratch3;
+#ifndef JS_USE_LINK_REGISTER
+  Register returnAddrReg = IonGenericCallReturnAddrReg;
+#endif
+
+  
+  masm.pushValue(JSVAL_TYPE_OBJECT, calleeReg);
+
+  
+#ifdef JS_SIMULATOR
+  masm.movePtr(ImmPtr(RedirectedCallAnyNative()), calleeReg);
+#else
+  masm.loadPrivate(Address(calleeReg, JSFunction::offsetOfNativeOrEnv()),
+                   calleeReg);
+#endif
+
+  
+  masm.moveStackPtrTo(scratch2);
+
+  
+  masm.push(argcReg);
+
+  masm.loadJSContext(contextReg);
+
+  
+  
+  masm.pushFrameDescriptor(FrameType::IonJS);
+#ifdef JS_USE_LINK_REGISTER
+  masm.pushReturnAddress();
+#else
+  masm.push(returnAddrReg);
+#endif
+
+  masm.push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
+  masm.enterFakeExitFrameForNative(contextReg, scratch, isConstructing);
+
+  masm.setupUnalignedABICall(scratch);
+  masm.passABIArg(contextReg);  
+  masm.passABIArg(argcReg);     
+  masm.passABIArg(scratch2);    
+
+  masm.callWithABI(calleeReg);
+
+  
+  masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
+
+  masm.loadValue(
+      Address(masm.getStackPointer(), NativeExitFrameLayout::offsetOfResult()),
+      JSReturnOperand);
+
+  
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
+
+  
+  masm.ret();
 }
 
 void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
