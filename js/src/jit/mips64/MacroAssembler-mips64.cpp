@@ -1785,7 +1785,7 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
   ma_move(a0, StackPointer);  
 
   
-  using Fn = void (*)(ResumeFromException * rfe);
+  using Fn = void (*)(ResumeFromException* rfe);
   asMasm().setupUnalignedABICall(a1);
   asMasm().passABIArg(a0);
   asMasm().callWithABI<Fn, HandleException>(
