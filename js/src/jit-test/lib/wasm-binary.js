@@ -444,14 +444,16 @@ function _fieldType(input) {
 
 function _encodeType(typeObj) {
     const typeBytes = [];
+    
+    const final = typeObj.final ?? true;
     if (typeObj.sub !== undefined) {
-        
-        const final = typeObj.final ?? false;
-        if (final) {
-            throw new Error("We do not support final types yet. If final types are in fact supported, remove this exception and default final to true :)");
-        }
         typeBytes.push(final ? 0x4e : 0x50);
         typeBytes.push(...varU32(1), ...varU32(typeObj.sub));
+    }
+    else if (final == false) {
+        
+        typeBytes.push(0x50);
+        typeBytes.push(0x00);
     }
     typeBytes.push(typeObj.kind);
     switch (typeObj.kind) {

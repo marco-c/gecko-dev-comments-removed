@@ -537,6 +537,8 @@ CoderResult CodeArrayType(Coder<mode>& coder, CoderArg<mode, ArrayType> item) {
 template <CoderMode mode>
 CoderResult CodeTypeDef(Coder<mode>& coder, CoderArg<mode, TypeDef> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::TypeDef, 376);
+  MOZ_TRY(CodePod(coder, &item->subTypingDepth_));
+  MOZ_TRY(CodePod(coder, &item->isFinal_));
   
   
   if constexpr (mode == MODE_DECODE) {
