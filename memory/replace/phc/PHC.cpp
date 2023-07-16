@@ -302,6 +302,15 @@ static const size_t kPageSize =
 
 
 
+static const size_t kPhcAlign = 1024 * 1024;
+
+static_assert(IsPowerOfTwo(kPhcAlign));
+static_assert((kPhcAlign % kPageSize) == 0);
+
+
+
+
+
 
 
 static const size_t kNumAllocPages = kPageSize == 4096 ? 4096 : 1024;
@@ -309,6 +318,10 @@ static const size_t kNumAllPages = kNumAllocPages * 2 + 1;
 
 
 static const size_t kAllPagesSize = kNumAllPages * kPageSize;
+
+
+
+static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
 
 
 
@@ -458,17 +471,29 @@ class GConst {
   uint8_t* AllocAllPages() {
     
     
+
     
-    void* pages =
-#ifdef XP_WIN
-        VirtualAlloc(nullptr, kAllPagesSize, MEM_RESERVE, PAGE_NOACCESS);
-#else
-        mmap(nullptr, kAllPagesSize, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1,
-             0);
-#endif
+    
+    
+    
+    
+    
+    void* pages = sMallocTable.memalign(kPhcAlign, kAllPagesJemallocSize);
     if (!pages) {
       MOZ_CRASH();
     }
+
+    
+#ifdef XP_WIN
+    if (!VirtualFree(pages, kAllPagesJemallocSize, MEM_DECOMMIT)) {
+      MOZ_CRASH("VirtualFree failed");
+    }
+#else
+    if (mmap(pages, kAllPagesJemallocSize, PROT_NONE,
+             MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0) == MAP_FAILED) {
+      MOZ_CRASH("mmap failed");
+    }
+#endif
 
     return static_cast<uint8_t*>(pages);
   }
@@ -1469,8 +1494,11 @@ void replace_jemalloc_stats(jemalloc_stats_t* aStats,
   sMallocTable.jemalloc_stats_internal(aStats, aBinStats);
 
   
-  size_t mapped = kAllPagesSize;
-  aStats->mapped += mapped;
+  
+  
+  
+
+  aStats->allocated -= kAllPagesJemallocSize;
 
   size_t allocated = 0;
   {
