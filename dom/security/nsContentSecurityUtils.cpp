@@ -1563,6 +1563,10 @@ long nsContentSecurityUtils::ClassifyDownload(
       loadingPrincipal, loadInfo->TriggeringPrincipal(), nullptr,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
       nsIContentPolicy::TYPE_FETCH);
+  
+  
+  
+  secCheckLoadInfo->SetHttpsOnlyStatus(nsILoadInfo::HTTPS_ONLY_EXEMPT);
 
   int16_t decission = nsIContentPolicy::ACCEPT;
   nsMixedContentBlocker::ShouldLoad(false,  

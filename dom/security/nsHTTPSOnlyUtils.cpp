@@ -164,12 +164,20 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
   }
 
   
-  if (aLoadInfo->GetExternalContentPolicyType() !=
-      ExtContentPolicy::TYPE_DOCUMENT) {
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
+  if (contentType != ExtContentPolicy::TYPE_DOCUMENT) {
     if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal())) {
       return false;
     }
+  }
+
+  
+  
+  
+  
+  if (contentType == ExtContentPolicyType::TYPE_SAVEAS_DOWNLOAD) {
+    return false;
   }
 
   
