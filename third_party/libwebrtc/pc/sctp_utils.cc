@@ -50,7 +50,7 @@ bool IsOpenMessage(const rtc::CopyOnWriteBuffer& payload) {
   
   
   if (payload.size() < 1) {
-    RTC_LOG(LS_WARNING) << "Could not read OPEN message type.";
+    RTC_DLOG(LS_WARNING) << "Could not read OPEN message type.";
     return false;
   }
 

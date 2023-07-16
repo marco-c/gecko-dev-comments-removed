@@ -114,9 +114,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   
   
-  bool HandleOpenMessage_s(const cricket::ReceiveDataParams& params,
+  bool HandleOpenMessage_n(const cricket::ReceiveDataParams& params,
                            const rtc::CopyOnWriteBuffer& buffer)
-      RTC_RUN_ON(signaling_thread());
+      RTC_RUN_ON(network_thread());
   
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config)
