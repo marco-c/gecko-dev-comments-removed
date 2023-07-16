@@ -470,6 +470,7 @@ class nsDocShellLoadState final {
 
   
   
+  
   bool mIsFormSubmission;
 
   

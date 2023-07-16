@@ -975,6 +975,19 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
     return nullptr;
   }
 
+  if (nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadState->Csp()) {
+    
+    bool allowsNavigateTo = false;
+    nsresult rv = csp->GetAllowsNavigateTo(aLoadState->URI(),
+                                           aLoadState->IsFormSubmission(),
+                                           false, 
+                                           false, 
+                                           &allowsNavigateTo);
+    if (NS_FAILED(rv) || !allowsNavigateTo) {
+      return nullptr;
+    }
+  }
+
   
   
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(*aLoadState);

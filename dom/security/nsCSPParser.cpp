@@ -467,6 +467,20 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
 
+  if (CSP_IsKeyword(mCurToken, CSP_UNSAFE_ALLOW_REDIRECTS)) {
+    if (!CSP_IsDirective(mCurDir[0],
+                         nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE)) {
+      
+      AutoTArray<nsString, 2> params = {u"unsafe-allow-redirects"_ns,
+                                        u"navigate-to"_ns};
+      logWarningErrorToConsole(nsIScriptError::warningFlag,
+                               "IgnoringSourceWithinDirective", params);
+      return nullptr;
+    }
+
+    return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
+  }
+
   return nullptr;
 }
 
@@ -869,6 +883,18 @@ nsCSPDirective* nsCSPParser::directiveName() {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "notSupportingDirective", params);
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  if (directive == nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE &&
+      !StaticPrefs::security_csp_enableNavigateTo()) {
+    AutoTArray<nsString, 1> params = {mCurToken};
+    logWarningErrorToConsole(nsIScriptError::warningFlag,
+                             "couldNotProcessUnknownDirective", params);
     return nullptr;
   }
 

@@ -674,6 +674,7 @@ interface nsILoadInfo : nsISupports
   
 
 
+
   [infallible] attribute boolean isFormSubmission;
 
   
