@@ -62,8 +62,6 @@ PayloadTypeMapper::PayloadTypeMapper()
            
            
            {{kIlbcCodecName, 8000, 1}, 102},
-           {{kIsacCodecName, 16000, 1}, 103},
-           {{kIsacCodecName, 32000, 1}, 104},
            {{kCnCodecName, 16000, 1}, 105},
            {{kCnCodecName, 32000, 1}, 106},
            {{kOpusCodecName,
