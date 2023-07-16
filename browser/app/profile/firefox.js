@@ -172,19 +172,6 @@ pref("app.update.langpack.enabled", true);
   
   
   pref("app.update.background.messaging.targeting.snapshot.intervalSec", 3600);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  pref("app.update.background.allowUpdatesForUnelevatedInstallations", false);
 #endif
 
 #ifdef XP_MACOSX
