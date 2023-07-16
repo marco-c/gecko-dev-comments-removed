@@ -155,10 +155,6 @@ add_task(async function test_fx_migration_errors() {
       "MigrationWizard:DoneMigration"
     );
 
-    
-    
-    
-    
     selectResourceTypesAndStartMigration(wizard, [
       MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.BOOKMARKS,
       MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
@@ -166,9 +162,13 @@ add_task(async function test_fx_migration_errors() {
     await migration;
     await wizardDone;
 
-    assertQuantitiesShown(wizard, [
-      MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.BOOKMARKS,
-      MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
-    ]);
+    assertQuantitiesShown(
+      wizard,
+      [
+        MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.BOOKMARKS,
+        MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+      ],
+      [MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS]
+    );
   });
 });

@@ -369,7 +369,15 @@ async function selectResourceTypesAndStartMigration(
 
 
 
-function assertQuantitiesShown(wizard, expectedResourceTypes) {
+
+
+
+
+function assertQuantitiesShown(
+  wizard,
+  expectedResourceTypes,
+  warningResourceTypes = []
+) {
   let shadow = wizard.openOrClosedShadowRoot;
 
   
@@ -378,6 +386,16 @@ function assertQuantitiesShown(wizard, expectedResourceTypes) {
     deck.selectedViewName,
     `page-${MigrationWizardConstants.PAGES.PROGRESS}`
   );
+
+  let headerL10nID = shadow.querySelector("#progress-header").dataset.l10nId;
+  if (warningResourceTypes.length) {
+    Assert.equal(
+      headerL10nID,
+      "migration-wizard-progress-done-with-warnings-header"
+    );
+  } else {
+    Assert.equal(headerL10nID, "migration-wizard-progress-done-header");
+  }
 
   
   
@@ -390,11 +408,19 @@ function assertQuantitiesShown(wizard, expectedResourceTypes) {
       let messageText =
         progressGroup.querySelector(".message-text").textContent;
 
-      Assert.notEqual(
-        progressIcon.getAttribute("state"),
-        "loading",
-        "Should no longer be in the loading state."
-      );
+      if (warningResourceTypes.includes(progressGroup.dataset.resourceType)) {
+        Assert.equal(
+          progressIcon.getAttribute("state"),
+          "warning",
+          "Should be showing the warning icon state."
+        );
+      } else {
+        Assert.equal(
+          progressIcon.getAttribute("state"),
+          "success",
+          "Should be showing the success icon state."
+        );
+      }
 
       if (
         RESOURCE_TYPES_WITH_QUANTITIES.includes(
