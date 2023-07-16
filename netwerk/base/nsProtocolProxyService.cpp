@@ -29,7 +29,6 @@
 #include "nsString.h"
 #include "nsNetUtil.h"
 #include "nsNetCID.h"
-#include "plstr.h"
 #include "prnetdb.h"
 #include "nsPACMan.h"
 #include "nsProxyRelease.h"
@@ -1750,8 +1749,9 @@ nsresult nsProtocolProxyService::InsertFilterLink(RefPtr<FilterLink>&& link) {
     return NS_ERROR_FAILURE;
   }
 
-  mFilters.AppendElement(link);
-  mFilters.Sort(ProxyFilterPositionComparator());
+  
+  
+  mFilters.InsertElementSorted(link, ProxyFilterPositionComparator());
 
   NotifyProxyConfigChangedInternal();
 
