@@ -1,8 +1,9 @@
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Instance};
+use crate::{Device, Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
+
 
 #[derive(Clone)]
 pub struct FullScreenExclusive {
@@ -11,12 +12,32 @@ pub struct FullScreenExclusive {
 }
 
 impl FullScreenExclusive {
+    
+    
+    
+    
+    
+    
+    
     pub fn new(instance: &Instance, device: &Device) -> Self {
         let handle = device.handle();
         let fp = vk::ExtFullScreenExclusiveFn::load(|name| unsafe {
             mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
+        let fp = vk::ExtFullScreenExclusiveFn::load(|name| unsafe {
+            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
+        });
+        Self { handle: device, fp }
     }
 
     
@@ -28,6 +49,10 @@ impl FullScreenExclusive {
         (self.fp.acquire_full_screen_exclusive_mode_ext)(self.handle, swapchain).result()
     }
 
+    
+    
+    
+    
     
     #[inline]
     pub unsafe fn get_physical_device_surface_present_modes2(

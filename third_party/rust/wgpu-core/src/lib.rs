@@ -3,6 +3,17 @@
 
 
 
+
+#![cfg_attr(
+    all(
+        not(all(feature = "vulkan", not(target_arch = "wasm32"))),
+        not(all(feature = "metal", any(target_os = "macos", target_os = "ios"))),
+        not(all(feature = "dx12", windows)),
+        not(all(feature = "dx11", windows)),
+        not(feature = "gles"),
+    ),
+    allow(unused, clippy::let_and_return)
+)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![allow(
     
@@ -42,13 +53,18 @@ pub mod command;
 mod conv;
 pub mod device;
 pub mod error;
+pub mod global;
+pub mod hal_api;
 pub mod hub;
 pub mod id;
+pub mod identity;
 mod init_tracker;
 pub mod instance;
 pub mod pipeline;
 pub mod present;
+pub mod registry;
 pub mod resource;
+pub mod storage;
 mod track;
 mod validation;
 
