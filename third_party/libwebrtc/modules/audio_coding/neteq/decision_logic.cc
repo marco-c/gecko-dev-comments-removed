@@ -378,51 +378,33 @@ NetEq::Operation DecisionLogic::FuturePacketAvailable(
   
   
   if (IsExpand(status.last_mode) && ShouldContinueExpand(status)) {
-    if (status.play_dtmf) {
-      
-      return NetEq::Operation::kDtmf;
-    } else {
-      
-      return NetEq::Operation::kExpand;
-    }
+    return NoPacket(status);
   }
 
-  if (status.last_mode == NetEq::Mode::kCodecPlc) {
-    return NetEq::Operation::kNormal;
-  }
-
-  
   if (IsCng(status.last_mode)) {
-    uint32_t timestamp_leap =
-        status.next_packet->timestamp - status.target_timestamp;
-    const bool generated_enough_noise =
-        status.generated_noise_samples >= timestamp_leap;
-
     int playout_delay_ms = GetNextPacketDelayMs(status);
     const bool above_target_delay = playout_delay_ms > HighThresholdCng();
     const bool below_target_delay = playout_delay_ms < LowThresholdCng();
-    
-    
-    if ((generated_enough_noise && !below_target_delay) || above_target_delay) {
-      time_stretched_cn_samples_ =
-          timestamp_leap - status.generated_noise_samples;
-      return NetEq::Operation::kNormal;
+    if ((PacketTooEarly(status) && !above_target_delay) || below_target_delay) {
+      return NoPacket(status);
     }
-
-    if (status.last_mode == NetEq::Mode::kRfc3389Cng) {
-      return NetEq::Operation::kRfc3389CngNoPacket;
-    }
-    return NetEq::Operation::kCodecInternalCng;
+    uint32_t timestamp_leap =
+        status.next_packet->timestamp - status.target_timestamp;
+    time_stretched_cn_samples_ =
+        timestamp_leap - status.generated_noise_samples;
   }
 
   
-  if (status.last_mode == NetEq::Mode::kExpand) {
-    return NetEq::Operation::kMerge;
-  } else if (status.play_dtmf) {
-    
-    return NetEq::Operation::kDtmf;
-  } else {
-    return NetEq::Operation::kExpand;
+  switch (status.last_mode) {
+    case NetEq::Mode::kExpand:
+      return NetEq::Operation::kMerge;
+    case NetEq::Mode::kCodecPlc:
+    case NetEq::Mode::kRfc3389Cng:
+    case NetEq::Mode::kCodecInternalCng:
+      return NetEq::Operation::kNormal;
+    default:
+      return status.play_dtmf ? NetEq::Operation::kDtmf
+                              : NetEq::Operation::kExpand;
   }
 }
 
