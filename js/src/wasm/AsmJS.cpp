@@ -64,6 +64,7 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/Warnings.h"  
 #include "wasm/WasmCompile.h"
+#include "wasm/WasmFeatures.h"
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmIonCompile.h"

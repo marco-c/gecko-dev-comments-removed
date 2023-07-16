@@ -11,6 +11,8 @@
 #include "jit/arm64/Assembler-arm64.h"
 #include "jit/Lowering.h"
 #include "jit/MIR.h"
+#include "wasm/WasmFeatures.h"  
+
 #include "jit/shared/Lowering-shared-inl.h"
 
 using namespace js;

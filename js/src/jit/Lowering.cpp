@@ -25,8 +25,8 @@
 #include "js/experimental/JitInfo.h"  
 #include "util/Memory.h"
 #include "wasm/WasmCodegenTypes.h"
+#include "wasm/WasmFeatures.h"  
 #include "wasm/WasmInstanceData.h"
-#include "wasm/WasmJS.h"  
 
 #include "jit/shared/Lowering-shared-inl.h"
 #include "vm/BytecodeUtil-inl.h"

@@ -37,6 +37,7 @@
 #include "vm/PlainObject.h"  
 #include "vm/Uint8Clamped.h"
 #include "wasm/WasmCode.h"
+#include "wasm/WasmFeatures.h"  
 
 #include "vm/JSAtom-inl.h"
 #include "wasm/WasmInstance-inl.h"
