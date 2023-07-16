@@ -2,11 +2,7 @@
 
 
 
-import {
-  getThreadContext,
-  getSelectedFrame,
-  getCurrentThread,
-} from "../selectors";
+import { getThreadContext } from "../selectors";
 
 
 
@@ -31,13 +27,7 @@ import {
 
 
 
-export class ContextError extends Error {
-  constructor(msg) {
-    
-    
-    super(`DebuggerContextError: ${msg}`);
-  }
-}
+export class ContextError extends Error {}
 
 export function validateNavigateContext(state, cx) {
   const newcx = getThreadContext(state);
@@ -64,19 +54,6 @@ export function validateContext(state, cx) {
 
   if ("thread" in cx) {
     validateThreadContext(state, cx);
-  }
-}
-
-export function validateSelectedFrame(state, selectedFrame) {
-  const newThread = getCurrentThread(state);
-  if (selectedFrame.thread != newThread) {
-    throw new ContextError("Selected thread has changed");
-  }
-
-  const newSelectedFrame = getSelectedFrame(state, newThread);
-  
-  if (selectedFrame.id != newSelectedFrame?.id) {
-    throw new ContextError("Selected frame changed");
   }
 }
 

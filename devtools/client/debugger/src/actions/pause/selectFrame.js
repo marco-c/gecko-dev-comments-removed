@@ -33,8 +33,7 @@ export function selectFrame(cx, frame) {
     
     await dispatch(selectLocation(cx, frame.location));
 
-    await dispatch(evaluateExpressions(cx));
-
-    await dispatch(fetchScopes(frame));
+    dispatch(evaluateExpressions(cx));
+    dispatch(fetchScopes(cx));
   };
 }

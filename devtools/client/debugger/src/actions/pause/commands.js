@@ -38,14 +38,11 @@ export function selectThread(thread) {
     
     
     
-    const selectedFrame = getSelectedFrame(getState(), thread);
-    if (selectedFrame) {
-      serverRequests.push(
-        dispatch(selectLocation(threadcx, selectedFrame.location))
-      );
+    const frame = getSelectedFrame(getState(), thread);
+    if (frame) {
+      serverRequests.push(dispatch(selectLocation(threadcx, frame.location)));
       serverRequests.push(dispatch(fetchFrames(threadcx)));
-
-      serverRequests.push(dispatch(fetchScopes(selectedFrame)));
+      serverRequests.push(dispatch(fetchScopes(threadcx)));
     }
 
     await Promise.all(serverRequests);
