@@ -94,7 +94,7 @@ bool TryEmitter::emitTryEnd() {
   return true;
 }
 
-bool TryEmitter::emitCatch(ExceptionStack stack) {
+bool TryEmitter::emitCatch() {
   MOZ_ASSERT(state_ == State::Try);
   if (!emitTryEnd()) {
     return false;
@@ -115,14 +115,8 @@ bool TryEmitter::emitCatch(ExceptionStack stack) {
     }
   }
 
-  if (stack == ExceptionStack::No) {
-    if (!bce_->emit1(JSOp::Exception)) {
-      return false;
-    }
-  } else {
-    if (!bce_->emit1(JSOp::ExceptionAndStack)) {
-      return false;
-    }
+  if (!bce_->emit1(JSOp::Exception)) {
+    return false;
   }
 
 #ifdef DEBUG
@@ -182,8 +176,7 @@ bool TryEmitter::emitFinally(
   
   
   
-  
-  bce_->bytecodeSection().setStackDepth(depth_ + 3);
+  bce_->bytecodeSection().setStackDepth(depth_ + 2);
 
   if (!bce_->emitJumpTarget(&finallyStart_)) {
     return false;
@@ -237,32 +230,21 @@ bool TryEmitter::emitFinallyEnd() {
     }
   }
 
-  
-
   InternalIfEmitter ifThrowing(bce_);
   if (!ifThrowing.emitThenElse()) {
-    
     return false;
   }
 
-  if (!bce_->emit1(JSOp::ThrowWithStack)) {
-    
+  if (!bce_->emit1(JSOp::Throw)) {
     return false;
   }
 
   if (!ifThrowing.emitElse()) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Pop)) {
-    
     return false;
   }
 
   if (controlInfo_ && !controlInfo_->continuations_.empty()) {
     if (!controlInfo_->emitContinuations(bce_)) {
-      
       return false;
     }
   } else {
@@ -271,7 +253,6 @@ bool TryEmitter::emitFinallyEnd() {
     
     
     if (!bce_->emit1(JSOp::Pop)) {
-      
       return false;
     }
   }

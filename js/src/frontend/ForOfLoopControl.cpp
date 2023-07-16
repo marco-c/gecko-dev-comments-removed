@@ -38,7 +38,7 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
 }
 
 bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
-  if (!tryCatch_->emitCatch(TryEmitter::ExceptionStack::Yes)) {
+  if (!tryCatch_->emitCatch()) {
     
     return false;
   }
@@ -53,7 +53,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;  
   }
 
-  if (!bce->emit1(JSOp::ThrowWithStack)) {
+  if (!bce->emit1(JSOp::Throw)) {
     
     return false;
   }
@@ -71,7 +71,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     }
     
     InternalIfEmitter ifGeneratorClosing(bce);
-    if (!bce->emitPickN(2)) {
+    if (!bce->emit1(JSOp::Swap)) {
       
       return false;
     }
@@ -96,7 +96,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       
       return false;
     }
-    if (!bce->emitUnpickN(2)) {
+    if (!bce->emit1(JSOp::Swap)) {
       
       return false;
     }

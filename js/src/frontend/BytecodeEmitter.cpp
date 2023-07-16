@@ -4810,11 +4810,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
   }
 
   
-  if (!emit1(JSOp::Null)) {
-    return false;
-  }
-
-  
   if (!emit1(JSOp::False)) {
     return false;
   }
