@@ -13,11 +13,11 @@ use foreign_types::ForeignType;
 
 foreign_type! {
     #[doc(hidden)]
-    pub unsafe type CGColorSpace {
-        type CType = ::sys::CGColorSpace;
-        fn drop = |p| CFRelease(p as *mut _);
-        fn clone = |p| CFRetain(p as *const _) as *mut _;
-    }
+    type CType = ::sys::CGColorSpace;
+    fn drop = |p| CFRelease(p as *mut _);
+    fn clone = |p| CFRetain(p as *const _) as *mut _;
+    pub struct CGColorSpace;
+    pub struct CGColorSpaceRef;
 }
 
 impl CGColorSpace {
@@ -53,61 +53,13 @@ impl CGColorSpace {
 
 #[link(name = "CoreGraphics", kind = "framework")]
 extern {
-    
-    pub static kCGColorSpaceDisplayP3: CFStringRef;
-    
-    pub static kCGColorSpaceDisplayP3_HLG: CFStringRef;
-    
-    
-    pub static kCGColorSpaceExtendedLinearDisplayP3: CFStringRef;
-    
     pub static kCGColorSpaceSRGB: CFStringRef;
-    
-    pub static kCGColorSpaceLinearSRGB: CFStringRef;
-    
-    pub static kCGColorSpaceExtendedSRGB: CFStringRef;
-    
-    
-    pub static kCGColorSpaceExtendedLinearSRGB: CFStringRef;
-    
-    
-    pub static kCGColorSpaceGenericGrayGamma2_2: CFStringRef;
-    
-    pub static kCGColorSpaceLinearGray: CFStringRef;
-    
-    pub static kCGColorSpaceExtendedGray: CFStringRef;
-    
-    pub static kCGColorSpaceExtendedLinearGray: CFStringRef;
-    
-    pub static kCGColorSpaceGenericRGBLinear: CFStringRef;
-    
-    pub static kCGColorSpaceGenericCMYK: CFStringRef;
-    
-    pub static kCGColorSpaceGenericXYZ: CFStringRef;
-    
-    pub static kCGColorSpaceGenericLab: CFStringRef;
-    
-    pub static kCGColorSpaceACESCGLinear: CFStringRef;
-    
     pub static kCGColorSpaceAdobeRGB1998: CFStringRef;
-    
-    pub static kCGColorSpaceDCIP3: CFStringRef;
-    
-    
-    pub static kCGColorSpaceITUR_709: CFStringRef;
-    
-    pub static kCGColorSpaceROMMRGB: CFStringRef;
-    
-    
-    pub static kCGColorSpaceITUR_2020: CFStringRef;
-    
-    
-    
-    pub static kCGColorSpaceExtendedLinearITUR_2020: CFStringRef;
-    
-    pub static kCGColorSpaceGenericRGB: CFStringRef;
-    
     pub static kCGColorSpaceGenericGray: CFStringRef;
+    pub static kCGColorSpaceGenericRGB: CFStringRef;
+    pub static kCGColorSpaceGenericCMYK: CFStringRef;
+    pub static kCGColorSpaceGenericRGBLinear: CFStringRef;
+    pub static kCGColorSpaceGenericGrayGamma2_2: CFStringRef;
 
     fn CGColorSpaceCreateDeviceRGB() -> ::sys::CGColorSpaceRef;
     fn CGColorSpaceCreateDeviceGray() -> ::sys::CGColorSpaceRef;

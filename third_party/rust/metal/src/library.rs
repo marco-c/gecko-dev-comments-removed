@@ -15,8 +15,6 @@ use std::os::raw::{c_char, c_void};
 use std::ptr;
 
 
-
-
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum MTLPatchType {
@@ -25,12 +23,12 @@ pub enum MTLPatchType {
     Quad = 2,
 }
 
-
 pub enum MTLVertexAttribute {}
 
 foreign_obj_type! {
     type CType = MTLVertexAttribute;
     pub struct VertexAttribute;
+    pub struct VertexAttributeRef;
 }
 
 impl VertexAttributeRef {
@@ -83,13 +81,12 @@ impl VertexAttributeRef {
 }
 
 
-
-
 pub enum MTLAttribute {}
 
 foreign_obj_type! {
     type CType = MTLAttribute;
     pub struct Attribute;
+    pub struct AttributeRef;
 }
 
 impl AttributeRef {
@@ -141,7 +138,6 @@ impl AttributeRef {
     }
 }
 
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLFunctionType {
@@ -155,13 +151,12 @@ pub enum MTLFunctionType {
 }
 
 
-
-
 pub enum MTLFunctionConstant {}
 
 foreign_obj_type! {
     type CType = MTLFunctionConstant;
     pub struct FunctionConstant;
+    pub struct FunctionConstantRef;
 }
 
 impl FunctionConstantRef {
@@ -193,8 +188,6 @@ impl FunctionConstantRef {
 
 bitflags! {
     /// Only available on (macos(11.0), ios(14.0))
-    ///
-    /// See <https://developer.apple.com/documentation/metal/mtlfunctionoptions/>
     pub struct MTLFunctionOptions: NSUInteger {
         const None = 0;
         const CompileToBinary = 1 << 0;
@@ -202,13 +195,12 @@ bitflags! {
 }
 
 
-
-
 pub enum MTLFunctionDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLFunctionDescriptor;
     pub struct FunctionDescriptor;
+    pub struct FunctionDescriptorRef;
 }
 
 impl FunctionDescriptor {
@@ -267,17 +259,14 @@ impl FunctionDescriptorRef {
 }
 
 
-
-
 pub enum MTLIntersectionFunctionDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLIntersectionFunctionDescriptor;
     pub struct IntersectionFunctionDescriptor;
-    type ParentType = FunctionDescriptor;
+    pub struct IntersectionFunctionDescriptorRef;
+    type ParentType = FunctionDescriptorRef;
 }
-
-
 
 
 pub enum MTLFunctionHandle {}
@@ -285,6 +274,7 @@ pub enum MTLFunctionHandle {}
 foreign_obj_type! {
     type CType = MTLFunctionHandle;
     pub struct FunctionHandle;
+    pub struct FunctionHandleRef;
 }
 
 impl FunctionHandleRef {
@@ -311,12 +301,12 @@ impl FunctionHandleRef {
 
 
 
-
 pub enum MTLFunction {}
 
 foreign_obj_type! {
     type CType = MTLFunction;
     pub struct Function;
+    pub struct FunctionRef;
 }
 
 impl FunctionRef {
@@ -388,7 +378,6 @@ impl FunctionRef {
     }
 }
 
-
 #[repr(u64)]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum MTLLanguageVersion {
@@ -404,12 +393,12 @@ pub enum MTLLanguageVersion {
     V2_4 = 0x20004,
 }
 
-
 pub enum MTLFunctionConstantValues {}
 
 foreign_obj_type! {
     type CType = MTLFunctionConstantValues;
     pub struct FunctionConstantValues;
+    pub struct FunctionConstantValuesRef;
 }
 
 impl FunctionConstantValues {
@@ -449,8 +438,6 @@ impl FunctionConstantValuesRef {
 }
 
 
-
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLLibraryType {
@@ -458,12 +445,12 @@ pub enum MTLLibraryType {
     Dynamic = 1,
 }
 
-
 pub enum MTLCompileOptions {}
 
 foreign_obj_type! {
     type CType = MTLCompileOptions;
     pub struct CompileOptions;
+    pub struct CompileOptionsRef;
 }
 
 impl CompileOptions {
@@ -590,7 +577,6 @@ impl CompileOptionsRef {
     }
 }
 
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLLibraryError {
@@ -604,12 +590,12 @@ pub enum MTLLibraryError {
     FileNotFound = 6,
 }
 
-
 pub enum MTLLibrary {}
 
 foreign_obj_type! {
     type CType = MTLLibrary;
     pub struct Library;
+    pub struct LibraryRef;
 }
 
 impl LibraryRef {
@@ -733,8 +719,6 @@ impl LibraryRef {
 }
 
 
-
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLDynamicLibraryError {
@@ -746,12 +730,12 @@ pub enum MTLDynamicLibraryError {
     Unsupported = 5,
 }
 
-
 pub enum MTLDynamicLibrary {}
 
 foreign_obj_type! {
     type CType = MTLDynamicLibrary;
     pub struct DynamicLibrary;
+    pub struct DynamicLibraryRef;
 }
 
 impl DynamicLibraryRef {
@@ -803,13 +787,12 @@ impl DynamicLibraryRef {
 }
 
 
-
-
 pub enum MTLBinaryArchiveDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLBinaryArchiveDescriptor;
     pub struct BinaryArchiveDescriptor;
+    pub struct BinaryArchiveDescriptorRef;
 }
 
 impl BinaryArchiveDescriptor {
@@ -831,13 +814,12 @@ impl BinaryArchiveDescriptorRef {
 }
 
 
-
-
 pub enum MTLBinaryArchive {}
 
 foreign_obj_type! {
     type CType = MTLBinaryArchive;
     pub struct BinaryArchive;
+    pub struct BinaryArchiveRef;
 }
 
 impl BinaryArchiveRef {
@@ -934,13 +916,12 @@ impl BinaryArchiveRef {
 }
 
 
-
-
 pub enum MTLLinkedFunctions {}
 
 foreign_obj_type! {
     type CType = MTLLinkedFunctions;
     pub struct LinkedFunctions;
+    pub struct LinkedFunctionsRef;
 }
 
 impl LinkedFunctions {

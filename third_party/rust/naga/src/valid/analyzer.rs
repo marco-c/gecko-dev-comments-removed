@@ -20,7 +20,6 @@ bitflags::bitflags! {
     /// Kinds of expressions that require uniform control flow.
     #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
     #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct UniformityRequirements: u8 {
         const WORK_GROUP_BARRIER = 0x1;
         const DERIVATIVE = 0x2;
@@ -60,7 +59,6 @@ impl Uniformity {
 }
 
 bitflags::bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq)]
     struct ExitFlags: u8 {
         /// Control flow may return from the function, which makes all the
         /// subsequent statements within the current function (only!)
@@ -119,7 +117,6 @@ bitflags::bitflags! {
     /// Indicates how a global variable is used.
     #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
     #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct GlobalUse: u8 {
         /// Data will be read from the variable.
         const READ = 0x1;
@@ -495,7 +492,7 @@ impl FunctionInfo {
                 requirements: UniformityRequirements::empty(),
             },
             
-            E::Literal(_) | E::Constant(_) | E::ZeroValue(_) => Uniformity::new(),
+            E::Constant(_) => Uniformity::new(),
             E::Splat { size: _, value } => Uniformity {
                 non_uniform_result: self.add_ref(value),
                 requirements: UniformityRequirements::empty(),
@@ -675,17 +672,12 @@ impl FunctionInfo {
                 requirements: UniformityRequirements::empty(),
             },
             E::Math {
-                fun: _,
-                arg,
-                arg1,
-                arg2,
-                arg3,
+                arg, arg1, arg2, ..
             } => {
                 let arg1_nur = arg1.and_then(|h| self.add_ref(h));
                 let arg2_nur = arg2.and_then(|h| self.add_ref(h));
-                let arg3_nur = arg3.and_then(|h| self.add_ref(h));
                 Uniformity {
-                    non_uniform_result: self.add_ref(arg).or(arg1_nur).or(arg2_nur).or(arg3_nur),
+                    non_uniform_result: self.add_ref(arg).or(arg1_nur).or(arg2_nur),
                     requirements: UniformityRequirements::empty(),
                 }
             }
@@ -696,13 +688,6 @@ impl FunctionInfo {
             E::CallResult(function) => other_functions[function.index()].uniformity.clone(),
             E::AtomicResult { .. } | E::RayQueryProceedResult => Uniformity {
                 non_uniform_result: Some(handle),
-                requirements: UniformityRequirements::empty(),
-            },
-            E::WorkGroupUniformLoadResult { .. } => Uniformity {
-                
-                non_uniform_result: None,
-                
-                
                 requirements: UniformityRequirements::empty(),
             },
             E::ArrayLength(expr) => Uniformity {
@@ -791,35 +776,6 @@ impl FunctionInfo {
                     },
                     exit: ExitFlags::empty(),
                 },
-                S::WorkGroupUniformLoad { pointer, .. } => {
-                    let _condition_nur = self.add_ref(pointer);
-
-                    
-                    
-                    
-                    
-
-                    
-
-
-
-
-
-
-
-
-
-
-
-
-                    FunctionUniformity {
-                        result: Uniformity {
-                            non_uniform_result: None,
-                            requirements: UniformityRequirements::WORK_GROUP_BARRIER,
-                        },
-                        exit: ExitFlags::empty(),
-                    }
-                }
                 S::Block(ref b) => {
                     self.process_block(b, other_functions, disruptor, expression_arena)?
                 }
@@ -873,7 +829,7 @@ impl FunctionInfo {
                 S::Loop {
                     ref body,
                     ref continuing,
-                    break_if,
+                    break_if: _,
                 } => {
                     let body_uniformity =
                         self.process_block(body, other_functions, disruptor, expression_arena)?;
@@ -884,9 +840,6 @@ impl FunctionInfo {
                         continuing_disruptor,
                         expression_arena,
                     )?;
-                    if let Some(expr) = break_if {
-                        let _ = self.add_ref(expr);
-                    }
                     body_uniformity | continuing_uniformity
                 }
                 S::Return { value } => FunctionUniformity {

@@ -9,7 +9,6 @@ use super::*;
 
 use block::Block;
 
-
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -21,7 +20,6 @@ pub enum MTLCommandBufferStatus {
     Completed = 4,
     Error = 5,
 }
-
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
@@ -39,7 +37,6 @@ pub enum MTLCommandBufferError {
     DeviceRemoved = 11,
 }
 
-
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -50,12 +47,12 @@ pub enum MTLDispatchType {
 
 type CommandBufferHandler<'a> = Block<(&'a CommandBufferRef,), ()>;
 
-
 pub enum MTLCommandBuffer {}
 
 foreign_obj_type! {
     type CType = MTLCommandBuffer;
     pub struct CommandBuffer;
+    pub struct CommandBufferRef;
 }
 
 impl CommandBufferRef {
@@ -101,10 +98,6 @@ impl CommandBufferRef {
         unsafe { msg_send![self, addCompletedHandler: block] }
     }
 
-    pub fn add_scheduled_handler(&self, block: &CommandBufferHandler) {
-        unsafe { msg_send![self, addScheduledHandler: block] }
-    }
-
     pub fn new_blit_command_encoder(&self) -> &BlitCommandEncoderRef {
         unsafe { msg_send![self, blitCommandEncoder] }
     }
@@ -127,24 +120,11 @@ impl CommandBufferRef {
         unsafe { msg_send![self, parallelRenderCommandEncoderWithDescriptor: descriptor] }
     }
 
-    pub fn new_acceleration_structure_command_encoder(
-        &self,
-    ) -> &AccelerationStructureCommandEncoderRef {
-        unsafe { msg_send![self, accelerationStructureCommandEncoder] }
-    }
-
     pub fn compute_command_encoder_with_dispatch_type(
         &self,
         ty: MTLDispatchType,
     ) -> &ComputeCommandEncoderRef {
         unsafe { msg_send![self, computeCommandEncoderWithDispatchType: ty] }
-    }
-
-    pub fn compute_command_encoder_with_descriptor(
-        &self,
-        descriptor: &ComputePassDescriptorRef,
-    ) -> &ComputeCommandEncoderRef {
-        unsafe { msg_send![self, computeCommandEncoderWithDescriptor: descriptor] }
     }
 
     pub fn encode_signal_event(&self, event: &EventRef, new_value: u64) {

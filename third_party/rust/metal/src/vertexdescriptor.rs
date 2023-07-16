@@ -7,7 +7,6 @@
 
 use super::NSUInteger;
 
-
 #[repr(u64)]
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -66,7 +65,6 @@ pub enum MTLVertexFormat {
     Half = 53,
 }
 
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLVertexStepFunction {
@@ -77,12 +75,12 @@ pub enum MTLVertexStepFunction {
     PerPatchControlPoint = 4,
 }
 
-
 pub enum MTLVertexBufferLayoutDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLVertexBufferLayoutDescriptor;
     pub struct VertexBufferLayoutDescriptor;
+    pub struct VertexBufferLayoutDescriptorRef;
 }
 
 impl VertexBufferLayoutDescriptor {
@@ -120,12 +118,12 @@ impl VertexBufferLayoutDescriptorRef {
     }
 }
 
-
 pub enum MTLVertexBufferLayoutDescriptorArray {}
 
 foreign_obj_type! {
     type CType = MTLVertexBufferLayoutDescriptorArray;
     pub struct VertexBufferLayoutDescriptorArray;
+    pub struct VertexBufferLayoutDescriptorArrayRef;
 }
 
 impl VertexBufferLayoutDescriptorArrayRef {
@@ -145,12 +143,12 @@ impl VertexBufferLayoutDescriptorArrayRef {
     }
 }
 
-
 pub enum MTLVertexAttributeDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLVertexAttributeDescriptor;
     pub struct VertexAttributeDescriptor;
+    pub struct VertexAttributeDescriptorRef;
 }
 
 impl VertexAttributeDescriptor {
@@ -188,12 +186,12 @@ impl VertexAttributeDescriptorRef {
     }
 }
 
-
 pub enum MTLVertexAttributeDescriptorArray {}
 
 foreign_obj_type! {
     type CType = MTLVertexAttributeDescriptorArray;
     pub struct VertexAttributeDescriptorArray;
+    pub struct VertexAttributeDescriptorArrayRef;
 }
 
 impl VertexAttributeDescriptorArrayRef {
@@ -213,12 +211,12 @@ impl VertexAttributeDescriptorArrayRef {
     }
 }
 
-
 pub enum MTLVertexDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLVertexDescriptor;
     pub struct VertexDescriptor;
+    pub struct VertexDescriptorRef;
 }
 
 impl VertexDescriptor {

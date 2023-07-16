@@ -14,15 +14,11 @@ use crate::{
         RenderPassCompatibilityCheckType, RenderPassCompatibilityError, RenderPassContext,
     },
     error::{ErrorFormatter, PrettyError},
-    global::Global,
-    hal_api::HalApi,
-    hub::Token,
+    hub::{Global, GlobalIdentityHandlerFactory, HalApi, Storage, Token},
     id,
-    identity::GlobalIdentityHandlerFactory,
     init_tracker::{MemoryInitKind, TextureInitRange, TextureInitTrackerAction},
     pipeline::{self, PipelineFlags},
     resource::{self, Buffer, Texture, TextureView, TextureViewNotRenderableReason},
-    storage::Storage,
     track::{TextureSelector, UsageConflict, UsageScope},
     validation::{
         check_buffer_usage, check_texture_usage, MissingBufferUsageError, MissingTextureUsageError,
@@ -1227,9 +1223,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             let cmd_buf: &mut CommandBuffer<A> =
                 CommandBuffer::get_encoder_mut(&mut *cmb_guard, encoder_id)
                     .map_pass_err(init_scope)?;
-
-            
-            
             
             cmd_buf.encoder.close();
             
@@ -2182,8 +2175,15 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             );
         }
 
+        
+        
+        
+        
+        
+        let pass_raw = cmd_buf.encoder.list.pop().unwrap();
+        cmd_buf.encoder.close();
+        cmd_buf.encoder.list.push(pass_raw);
         cmd_buf.status = CommandEncoderStatus::Recording;
-        cmd_buf.encoder.close_and_swap();
 
         Ok(())
     }

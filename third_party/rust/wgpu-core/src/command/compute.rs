@@ -11,15 +11,11 @@ use crate::{
     },
     device::{MissingDownlevelFlags, MissingFeatures},
     error::{ErrorFormatter, PrettyError},
-    global::Global,
-    hal_api::HalApi,
-    hub::Token,
+    hub::{Global, GlobalIdentityHandlerFactory, HalApi, Storage, Token},
     id,
-    identity::GlobalIdentityHandlerFactory,
     init_tracker::MemoryInitKind,
     pipeline,
     resource::{self, Buffer, Texture},
-    storage::Storage,
     track::{Tracker, UsageConflict, UsageScope},
     validation::{check_buffer_usage, MissingBufferUsageError},
     Label,
@@ -348,11 +344,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         let cmd_buf: &mut CommandBuffer<A> =
             CommandBuffer::get_encoder_mut(&mut *cmd_buf_guard, encoder_id)
                 .map_pass_err(init_scope)?;
-
-        
-        
-        
-        cmd_buf.encoder.close();
         
         cmd_buf.status = CommandEncoderStatus::Error;
         let raw = cmd_buf.encoder.open();
@@ -401,8 +392,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         unsafe {
             raw.begin_compute_pass(&hal_desc);
         }
-
-        let mut intermediate_trackers = Tracker::<A>::new();
 
         
         
@@ -591,11 +580,19 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                         pipeline: state.pipeline,
                     };
 
+                    fixup_discarded_surfaces(
+                        pending_discard_init_fixups.drain(..),
+                        raw,
+                        &texture_guard,
+                        &mut cmd_buf.trackers.textures,
+                        device,
+                    );
+
                     state.is_ready().map_pass_err(scope)?;
                     state
                         .flush_states(
                             raw,
-                            &mut intermediate_trackers,
+                            &mut cmd_buf.trackers,
                             &*bind_group_guard,
                             &*buffer_guard,
                             &*texture_guard,
@@ -671,7 +668,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                     state
                         .flush_states(
                             raw,
-                            &mut intermediate_trackers,
+                            &mut cmd_buf.trackers,
                             &*bind_group_guard,
                             &*buffer_guard,
                             &*texture_guard,
@@ -767,33 +764,20 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         unsafe {
             raw.end_compute_pass();
         }
-        
-        
         cmd_buf.status = CommandEncoderStatus::Recording;
 
         
-        cmd_buf.encoder.close();
-
         
         
         
-        let transit = cmd_buf.encoder.open();
+        
         fixup_discarded_surfaces(
             pending_discard_init_fixups.into_iter(),
-            transit,
+            raw,
             &texture_guard,
             &mut cmd_buf.trackers.textures,
             device,
         );
-        CommandBuffer::insert_barriers_from_tracker(
-            transit,
-            &mut cmd_buf.trackers,
-            &intermediate_trackers,
-            &*buffer_guard,
-            &*texture_guard,
-        );
-        
-        cmd_buf.encoder.close_and_swap();
 
         Ok(())
     }
