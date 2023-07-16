@@ -1591,6 +1591,8 @@ pref("intl.regional_prefs.use_os_locales",  false);
 pref("font.language.group",                 "chrome://global/locale/intl.properties");
 pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 
+pref("intl.uidirection", -1); 
+
 
 
 pref("intl.l10n.pseudo", "");
