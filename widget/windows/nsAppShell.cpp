@@ -356,6 +356,8 @@ static Atomic<size_t, ReleaseAcquire> sOutstandingNativeEventCallbacks;
  LRESULT CALLBACK nsAppShell::EventWindowProc(HWND hwnd, UINT uMsg,
                                                         WPARAM wParam,
                                                         LPARAM lParam) {
+  NativeEventLogger eventLogger("AppShell", hwnd, uMsg, wParam, lParam);
+
   if (uMsg == sAppShellGeckoMsgId) {
     
     
@@ -368,7 +370,10 @@ static Atomic<size_t, ReleaseAcquire> sOutstandingNativeEventCallbacks;
     --sOutstandingNativeEventCallbacks;
     return TRUE;
   }
-  return DefWindowProc(hwnd, uMsg, wParam, lParam);
+
+  LRESULT ret = DefWindowProc(hwnd, uMsg, wParam, lParam);
+  eventLogger.SetResult(ret, false);
+  return ret;
 }
 
 nsAppShell::~nsAppShell() {
