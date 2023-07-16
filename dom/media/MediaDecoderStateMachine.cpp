@@ -855,6 +855,10 @@ class MediaDecoderStateMachine::LoopingDecodingState
         mAudioEndedBeforeEnteringStateWithoutDuration(false),
         mVideoEndedBeforeEnteringStateWithoutDuration(false) {
     MOZ_ASSERT(mMaster->mLooping);
+    SLOG(
+        "LoopingDecodingState ctor, mIsReachingAudioEOS=%d, "
+        "mIsReachingVideoEOS=%d",
+        mIsReachingAudioEOS, mIsReachingVideoEOS);
     
     
     
@@ -863,8 +867,10 @@ class MediaDecoderStateMachine::LoopingDecodingState
           !mMaster->mAudioTrackDecodedDuration) {
         mMaster->mAudioTrackDecodedDuration.emplace(
             mMaster->mDecodedAudioEndTime);
+        SLOG("determine mAudioTrackDecodedDuration");
       } else {
         mAudioEndedBeforeEnteringStateWithoutDuration = true;
+        SLOG("still don't know mAudioTrackDecodedDuration");
       }
     }
 
@@ -873,9 +879,16 @@ class MediaDecoderStateMachine::LoopingDecodingState
           !mMaster->mVideoTrackDecodedDuration) {
         mMaster->mVideoTrackDecodedDuration.emplace(
             mMaster->mDecodedVideoEndTime);
+        SLOG("determine mVideoTrackDecodedDuration");
       } else {
         mVideoEndedBeforeEnteringStateWithoutDuration = true;
+        SLOG("still don't know mVideoTrackDecodedDuration");
       }
+    }
+
+    
+    if (mIsReachingAudioEOS || mIsReachingVideoEOS) {
+      Unused << DetermineOriginalDecodedDurationIfNeeded();
     }
 
     
@@ -894,7 +907,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
   }
 
   void Enter() {
-    UpdatePlaybackPositionToZeroIfNeeded();
     if (mMaster->HasAudio() && mIsReachingAudioEOS) {
       SLOG("audio has ended, request the data again.");
       RequestDataFromStartPosition(TrackInfo::TrackType::kAudioTrack);
@@ -1236,27 +1248,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
               HandleError(aError, false );
             })
         ->Track(mVideoDataRequest);
-  }
-
-  void UpdatePlaybackPositionToZeroIfNeeded() {
-    
-    if (!mIsReachingAudioEOS || !mIsReachingVideoEOS) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!mMaster->mMediaSink->IsStarted() &&
-        (mMaster->mCurrentPosition.Ref() > mMaster->mDecodedAudioEndTime ||
-         mMaster->mCurrentPosition.Ref() > mMaster->mDecodedVideoEndTime)) {
-      mMaster->UpdatePlaybackPositionInternal(TimeUnit::Zero());
-    }
   }
 
   void HandleError(const MediaResult& aError, bool aIsAudio);
@@ -4049,7 +4040,9 @@ nsresult MediaDecoderStateMachine::StartMediaSink() {
   }
 
   mAudioCompleted = false;
-  nsresult rv = mMediaSink->Start(GetMediaTime(), Info());
+  const auto startTime = GetMediaTime();
+  LOG("StartMediaSink, mediaTime=%" PRId64, startTime.ToMicroseconds());
+  nsresult rv = mMediaSink->Start(startTime, Info());
   StreamNameChanged();
 
   auto videoPromise = mMediaSink->OnEnded(TrackInfo::kVideoTrack);
