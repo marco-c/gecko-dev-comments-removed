@@ -27,17 +27,13 @@ class VideoCodecStatsImpl : public VideoCodecStats {
   std::vector<Frame> Slice(
       absl::optional<Filter> filter = absl::nullopt) const override;
 
-  Stream Aggregate(
-      const std::vector<Frame>& frames,
-      absl::optional<DataRate> bitrate = absl::nullopt,
-      absl::optional<Frequency> framerate = absl::nullopt) const override;
+  Stream Aggregate(const std::vector<Frame>& frames) const override;
 
   void LogMetrics(MetricsLogger* logger,
                   const Stream& stream,
                   std::string test_case_name) const override;
 
-  
-  Frame* AddFrame(int frame_num, uint32_t timestamp_rtp, int spatial_idx);
+  void AddFrame(const Frame& frame);
 
   
   
@@ -45,28 +41,21 @@ class VideoCodecStatsImpl : public VideoCodecStats {
 
  private:
   struct FrameId {
-    int frame_num;
+    uint32_t timestamp_rtp;
     int spatial_idx;
 
     bool operator==(const FrameId& o) const {
-      return frame_num == o.frame_num && spatial_idx == o.spatial_idx;
+      return timestamp_rtp == o.timestamp_rtp && spatial_idx == o.spatial_idx;
     }
 
     bool operator<(const FrameId& o) const {
-      if (frame_num < o.frame_num)
+      if (timestamp_rtp < o.timestamp_rtp)
         return true;
-      if (spatial_idx < o.spatial_idx)
+      if (timestamp_rtp == o.timestamp_rtp && spatial_idx < o.spatial_idx)
         return true;
       return false;
     }
   };
-
-  
-  
-  std::vector<Frame> Merge(const std::vector<Frame>& frames) const;
-
-  
-  std::map<uint32_t, int> frame_num_;
 
   std::map<FrameId, Frame> frames_;
 };
