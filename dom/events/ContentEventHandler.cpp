@@ -48,6 +48,10 @@
 #  undef small
 #endif  
 
+#if defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+#  define TRANSLATE_NEW_LINES
+#endif
+
 namespace mozilla {
 
 using namespace dom;
@@ -519,7 +523,7 @@ static bool IsPaddingBR(const nsIContent& aContent) {
 }
 
 static void ConvertToNativeNewlines(nsString& aString) {
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
   aString.ReplaceSubstring(u"\n"_ns, u"\r\n"_ns);
 #endif
 }
@@ -541,7 +545,7 @@ static void AppendSubString(nsString& aString, const Text& aTextNode,
   }
 }
 
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
 template <typename StringType>
 static uint32_t CountNewlinesInXPLength(const StringType& aString) {
   uint32_t count = 0;
@@ -628,7 +632,7 @@ uint32_t ContentEventHandler::GetNativeTextLength(const Text& aTextNode,
 
 
 uint32_t ContentEventHandler::GetBRLength(LineBreakType aLineBreakType) {
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
   
   return (aLineBreakType == LINE_BREAK_TYPE_NATIVE) ? 2 : 1;
 #else
@@ -641,7 +645,7 @@ uint32_t ContentEventHandler::GetTextLength(const Text& aTextNode,
                                             LineBreakType aLineBreakType,
                                             uint32_t aMaxLength) {
   const uint32_t textLengthDifference =
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
       
       
       
@@ -660,7 +664,7 @@ uint32_t ContentEventHandler::GetTextLength(const Text& aTextNode,
 
 static uint32_t ConvertToXPOffset(const Text& aTextNode,
                                   uint32_t aNativeOffset) {
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
   
   
   
@@ -674,7 +678,7 @@ static uint32_t ConvertToXPOffset(const Text& aTextNode,
 
 uint32_t ContentEventHandler::GetNativeTextLength(const nsAString& aText) {
   const uint32_t textLengthDifference =
-#if defined(XP_WIN)
+#if defined(TRANSLATE_NEW_LINES)
       
       
       
