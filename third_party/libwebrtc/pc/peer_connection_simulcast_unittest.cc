@@ -1163,7 +1163,6 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
 
 
-
 TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
        SendingThreeEncodings_VP9_Simulcast) {
   rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
@@ -1197,21 +1196,19 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   
   
   
-
   
   EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kLongTimeoutForRampingUp.ms());
-  
-  
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRTPStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRTPStreamStats>();
-  
   ASSERT_THAT(outbound_rtps, SizeIs(1u));
   EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[0]),
               StrCaseEq("video/VP9"));
   
   EXPECT_EQ(*outbound_rtps[0]->scalability_mode, "L1T3");
+  
+  
   parameters = sender->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 3u);
   EXPECT_THAT(parameters.encodings[0].scalability_mode,
