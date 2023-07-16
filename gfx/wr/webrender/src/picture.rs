@@ -3758,6 +3758,8 @@ pub struct SurfaceInfo {
     pub local_scale: (f32, f32),
     
     pub allow_snapping: bool,
+    
+    pub force_scissor_rect: bool,
 }
 
 impl SurfaceInfo {
@@ -3770,6 +3772,7 @@ impl SurfaceInfo {
         world_scale_factors: (f32, f32),
         local_scale: (f32, f32),
         allow_snapping: bool,
+        force_scissor_rect: bool,
     ) -> Self {
         let map_surface_to_world = SpaceMapper::new_with_target(
             spatial_tree.root_reference_frame_index(),
@@ -3799,6 +3802,7 @@ impl SurfaceInfo {
             world_scale_factors,
             local_scale,
             allow_snapping,
+            force_scissor_rect,
         }
     }
 
@@ -4253,6 +4257,7 @@ pub struct PrimitiveList {
     
     
     pub compositor_surface_count: usize,
+    pub needs_scissor_rect: bool,
 }
 
 impl PrimitiveList {
@@ -4265,6 +4270,7 @@ impl PrimitiveList {
             clusters: Vec::new(),
             child_pictures: Vec::new(),
             compositor_surface_count: 0,
+            needs_scissor_rect: false,
         }
     }
 
@@ -4272,6 +4278,7 @@ impl PrimitiveList {
         self.clusters.extend(other.clusters);
         self.child_pictures.extend(other.child_pictures);
         self.compositor_surface_count += other.compositor_surface_count;
+        self.needs_scissor_rect |= other.needs_scissor_rect;
     }
 
     
@@ -4291,6 +4298,9 @@ impl PrimitiveList {
         match prim_instance.kind {
             PrimitiveInstanceKind::Picture { pic_index, .. } => {
                 self.child_pictures.push(pic_index);
+            }
+            PrimitiveInstanceKind::TextRun { .. } => {
+                self.needs_scissor_rect = true;
             }
             _ => {}
         }
@@ -5165,9 +5175,10 @@ impl PicturePrimitive {
                 );
             }
             Some(ref mut raster_config) => {
-                let pic_rect = frame_state
-                    .surfaces[raster_config.surface_index.0]
-                    .clipped_local_rect;
+                let (pic_rect, force_scissor_rect) = {
+                    let surface = &frame_state.surfaces[raster_config.surface_index.0];
+                    (surface.clipped_local_rect, surface.force_scissor_rect)
+                };
 
                 let parent_surface_index = parent_surface_index.expect("bug: no parent for child surface");
 
@@ -5210,6 +5221,7 @@ impl PicturePrimitive {
                     &mut frame_state.surfaces,
                     frame_context.spatial_tree,
                     max_surface_size,
+                    force_scissor_rect,
                 ) {
                     Some(rects) => rects,
                     None => return None,
@@ -6006,6 +6018,16 @@ impl PicturePrimitive {
 
                 
                 
+                
+                
+                
+                
+                
+                
+                let force_scissor_rect = self.prim_list.needs_scissor_rect;
+
+                
+                
                 let (device_pixel_scale, raster_spatial_node_index, local_scale, world_scale_factors) = match composite_mode {
                     PictureCompositeMode::TileCache { slice_id } => {
                         let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
@@ -6094,6 +6116,7 @@ impl PicturePrimitive {
                     world_scale_factors,
                     local_scale,
                     allow_snapping,
+                    force_scissor_rect,
                 );
 
                 let surface_index = SurfaceIndex(surfaces.len());
@@ -6953,6 +6976,7 @@ fn get_surface_rects(
     surfaces: &mut [SurfaceInfo],
     spatial_tree: &SpatialTree,
     max_surface_size: f32,
+    force_scissor_rect: bool,
 ) -> Option<SurfaceAllocInfo> {
     let parent_surface = &surfaces[parent_surface_index.0];
 
@@ -7092,7 +7116,7 @@ fn get_surface_rects(
     
     
     
-    let needs_scissor_rect = !clipped_local.contains_box(&surface.unclipped_local_rect);
+    let needs_scissor_rect = force_scissor_rect || !clipped_local.contains_box(&surface.unclipped_local_rect);
 
     Some(SurfaceAllocInfo {
         task_size,
@@ -7167,6 +7191,7 @@ fn test_large_surface_scale_1() {
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
+            force_scissor_rect: false,
         },
         SurfaceInfo {
             unclipped_local_rect: PictureRect::new(
@@ -7183,6 +7208,7 @@ fn test_large_surface_scale_1() {
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
             allow_snapping: true,
+            force_scissor_rect: false,
         },
     ];
 
@@ -7193,5 +7219,6 @@ fn test_large_surface_scale_1() {
         &mut surfaces,
         &spatial_tree,
         MAX_SURFACE_SIZE as f32,
+        false,
     );
 }
