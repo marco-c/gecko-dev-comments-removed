@@ -18,10 +18,11 @@
 #include "mozilla/Span.h"             
 #include "mozilla/Variant.h"          
 
-#include <algorithm>  
-#include <stddef.h>   
-#include <stdint.h>   
-#include <utility>    
+#include <algorithm>    
+#include <stddef.h>     
+#include <stdint.h>     
+#include <type_traits>  
+#include <utility>      
 
 #include "ds/LifoAlloc.h"                 
 #include "frontend/FrontendContext.h"     
@@ -1569,6 +1570,98 @@ inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(
 }
 
 
+
+
+
+template <typename T>
+struct PreAllocateableGCArray {
+ private:
+  size_t length_ = 0;
+
+  
+  T inlineElem_;
+
+  
+  T* elems_ = nullptr;
+
+ public:
+  struct Preallocated {
+   private:
+    size_t length_ = 0;
+    uintptr_t* elems_ = nullptr;
+
+    friend struct PreAllocateableGCArray<T>;
+
+   public:
+    Preallocated() = default;
+    ~Preallocated();
+
+    bool empty() const { return length_ == 0; }
+
+    size_t length() const { return length_; }
+
+   private:
+    bool isInline() const { return length_ == 1; }
+
+   public:
+    bool allocate(size_t length);
+
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+      return sizeof(uintptr_t) * length_;
+    }
+  };
+
+  PreAllocateableGCArray() {
+    static_assert(std::is_pointer_v<T>,
+                  "PreAllocateableGCArray element must be a pointer");
+  }
+  ~PreAllocateableGCArray();
+
+  bool empty() const { return length_ == 0; }
+
+  size_t length() const { return length_; }
+
+ private:
+  bool isInline() const { return length_ == 1; }
+
+ public:
+  bool allocate(size_t length);
+  bool allocateWith(T init, size_t length);
+
+  
+  void steal(Preallocated&& buffer);
+
+  T& operator[](size_t index) {
+    MOZ_ASSERT(index < length_);
+
+    if (isInline()) {
+      return inlineElem_;
+    }
+
+    return elems_[index];
+  }
+  const T& operator[](size_t index) const {
+    MOZ_ASSERT(index < length_);
+
+    if (isInline()) {
+      return inlineElem_;
+    }
+
+    return elems_[index];
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    if (!elems_) {
+      return 0;
+    }
+
+    return sizeof(T) * length_;
+  }
+
+  void trace(JSTracer* trc);
+};
+
+
 struct CompilationGCOutput {
   
   
@@ -1581,11 +1674,11 @@ struct CompilationGCOutput {
   
   
   
-  JS::GCVector<JSFunction*, 1, js::SystemAllocPolicy> functions;
+  PreAllocateableGCArray<JSFunction*> functions;
 
   
   
-  JS::GCVector<js::Scope*, 1, js::SystemAllocPolicy> scopes;
+  PreAllocateableGCArray<js::Scope*> scopes;
 
   
   ScriptSourceObject* sourceObject = nullptr;
@@ -1632,16 +1725,20 @@ struct CompilationGCOutput {
   
   
   
-  [[nodiscard]] bool ensureReserved(FrontendContext* fc,
-                                    size_t scriptDataLength,
-                                    size_t scopeDataLength) {
-    if (!functions.reserve(scriptDataLength)) {
-      ReportOutOfMemory(fc);
-      return false;
+  [[nodiscard]] bool ensureAllocated(FrontendContext* fc,
+                                     size_t scriptDataLength,
+                                     size_t scopeDataLength) {
+    if (functions.empty()) {
+      if (!functions.allocate(scriptDataLength)) {
+        ReportOutOfMemory(fc);
+        return false;
+      }
     }
-    if (!scopes.reserve(scopeDataLength)) {
-      ReportOutOfMemory(fc);
-      return false;
+    if (scopes.empty()) {
+      if (!scopes.allocate(scopeDataLength)) {
+        ReportOutOfMemory(fc);
+        return false;
+      }
     }
     return true;
   }
@@ -1650,16 +1747,16 @@ struct CompilationGCOutput {
   
   
   
-  [[nodiscard]] bool ensureReservedWithBaseIndex(FrontendContext* fc,
-                                                 ScriptIndex scriptStart,
-                                                 ScriptIndex scriptLimit,
-                                                 ScopeIndex scopeStart,
-                                                 ScopeIndex scopeLimit) {
+  [[nodiscard]] bool ensureAllocatedWithBaseIndex(FrontendContext* fc,
+                                                  ScriptIndex scriptStart,
+                                                  ScriptIndex scriptLimit,
+                                                  ScopeIndex scopeStart,
+                                                  ScopeIndex scopeLimit) {
     this->functionsBaseIndex = scriptStart;
     this->scopesBaseIndex = scopeStart;
 
-    return ensureReserved(fc, scriptLimit - scriptStart,
-                          scopeLimit - scopeStart);
+    return ensureAllocated(fc, scriptLimit - scriptStart,
+                           scopeLimit - scopeStart);
   }
 
   
