@@ -8,6 +8,12 @@
 "use strict";
 
 
+const DISMISS_ONE_COMMAND = "dismiss-one";
+
+
+const DISMISS_ALL_COMMAND = "dismiss-all";
+
+
 
 const FEEDBACK_COMMAND = "show_less_frequently";
 
@@ -52,7 +58,10 @@ add_task(async function acknowledgeDismissal_rowNotSelected() {
     window,
     value: "test",
   });
-  await doDismissTest({ shouldBeSelected: false });
+  await doDismissTest({
+    command: DISMISS_ONE_COMMAND,
+    shouldBeSelected: false,
+  });
 });
 
 
@@ -68,7 +77,11 @@ add_task(async function acknowledgeDismissal_rowSelected() {
     this.EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
-  await doDismissTest({ resultIndex, shouldBeSelected: true });
+  await doDismissTest({
+    resultIndex,
+    command: DISMISS_ONE_COMMAND,
+    shouldBeSelected: true,
+  });
 });
 
 
@@ -107,7 +120,23 @@ add_task(async function acknowledgeFeedbackAndDismissal() {
   );
 
   info("Doing dismissal");
-  await doDismissTest({ resultIndex, shouldBeSelected: true });
+  await doDismissTest({
+    resultIndex,
+    command: DISMISS_ONE_COMMAND,
+    shouldBeSelected: true,
+  });
+});
+
+
+add_task(async function acknowledgeDismissal_all() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await doDismissTest({
+    command: DISMISS_ALL_COMMAND,
+    shouldBeSelected: false,
+  });
 });
 
 
@@ -128,7 +157,9 @@ add_task(async function acknowledgeFeedbackAndDismissal() {
 
 
 
-async function doDismissTest({ shouldBeSelected, resultIndex = -1 }) {
+
+
+async function doDismissTest({ command, shouldBeSelected, resultIndex = -1 }) {
   if (resultIndex < 0) {
     resultIndex = await getTestResultIndex();
   }
@@ -153,17 +184,17 @@ async function doDismissTest({ shouldBeSelected, resultIndex = -1 }) {
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
   
-  await UrlbarTestUtils.openResultMenuAndClickItem(window, "dismiss", {
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
     resultIndex,
     openByMouse: true,
   });
 
   Assert.equal(
-    gTestProvider.commandCount.dismiss,
+    gTestProvider.commandCount[command],
     1,
     "One dismissal should have happened"
   );
-  gTestProvider.commandCount.dismiss = 0;
+  gTestProvider.commandCount[command] = 0;
 
   
   Assert.ok(gURLBar.view.isOpen, "The view should remain open after dismissal");
@@ -183,6 +214,13 @@ async function doDismissTest({ shouldBeSelected, resultIndex = -1 }) {
     details.result.payload.type,
     "dismissalAcknowledgment",
     "Tip type should be dismissalAcknowledgment"
+  );
+  Assert.equal(
+    details.displayed.title,
+    command == DISMISS_ONE_COMMAND
+      ? "Thanks for your feedback. You won’t see this suggestion again."
+      : "Thanks for your feedback. You won’t see these suggestions anymore.",
+    "Tip text should be correct for the dismiss type"
   );
   Assert.ok(
     !details.element.row.hasAttribute("selected"),
@@ -254,6 +292,7 @@ async function doDismissTest({ shouldBeSelected, resultIndex = -1 }) {
 
 class TestProvider extends UrlbarTestUtils.TestProvider {
   getResultCommands(result) {
+    
     return [
       {
         name: FEEDBACK_COMMAND,
@@ -262,7 +301,13 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
         },
       },
       {
-        name: "dismiss",
+        name: DISMISS_ONE_COMMAND,
+        l10n: {
+          id: "firefox-suggest-weather-command-not-interested",
+        },
+      },
+      {
+        name: DISMISS_ALL_COMMAND,
         l10n: {
           id: "firefox-suggest-weather-command-not-interested",
         },
@@ -281,10 +326,16 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
       }
       this.commandCount[selType]++;
 
-      if (selType == FEEDBACK_COMMAND) {
-        queryContext.view.acknowledgeFeedback(details.result);
-      } else if (selType == "dismiss") {
-        queryContext.view.acknowledgeDismissal(details.result);
+      switch (selType) {
+        case FEEDBACK_COMMAND:
+          queryContext.view.acknowledgeFeedback(details.result);
+          break;
+        case DISMISS_ONE_COMMAND:
+          queryContext.view.acknowledgeDismissal(details.result, false);
+          break;
+        case DISMISS_ALL_COMMAND:
+          queryContext.view.acknowledgeDismissal(details.result, true);
+          break;
       }
     }
   }

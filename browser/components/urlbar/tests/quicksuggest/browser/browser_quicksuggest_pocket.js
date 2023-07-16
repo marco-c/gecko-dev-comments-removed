@@ -214,6 +214,15 @@ async function doShowLessFrequently({ input, expected }) {
 
 add_task(async function resultMenu_notInterested() {
   await doDismissTest("not_interested");
+
+  
+  
+  UrlbarPrefs.set("suggest.pocket", true);
+  let feature = QuickSuggest.getFeature("PocketSuggestions");
+  await TestUtils.waitForCondition(async () => {
+    let suggestions = await feature.queryRemoteSettings("pocket suggestion");
+    return !!suggestions.length;
+  }, "Waiting for PocketSuggestions to serve remote settings suggestions");
 });
 
 
