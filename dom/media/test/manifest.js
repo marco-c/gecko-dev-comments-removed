@@ -2288,6 +2288,13 @@ function Log(token, msg) {
 var PARALLEL_TESTS = 2;
 
 
+if (
+  SpecialPowers.Services.prefs.getIntPref("media.wmf.media-engine.enabled", 0)
+) {
+  PARALLEL_TESTS = 1;
+}
+
+
 
 var gTestPrefs = [
   ["media.recorder.max_memory", 1024],
