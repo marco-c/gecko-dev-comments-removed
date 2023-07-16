@@ -13,7 +13,7 @@
 #include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "builtin/WrappedFunctionObject.h"
-#include "frontend/BytecodeCompilation.h"
+#include "frontend/BytecodeCompiler.h"  
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
 #include "js/GlobalObject.h"
