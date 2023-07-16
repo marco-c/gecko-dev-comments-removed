@@ -337,8 +337,8 @@ struct BaseCompiler final {
   inline const FuncType& funcType() const;
   inline bool usesMemory() const;
   inline bool usesSharedMemory() const;
-  inline bool isMem32() const;
-  inline bool isMem64() const;
+  inline bool isMem32(uint32_t memoryIndex = 0) const;
+  inline bool isMem64(uint32_t memoryIndex = 0) const;
 
   
   operator MacroAssembler&() const { return masm; }
