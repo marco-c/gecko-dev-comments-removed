@@ -75,9 +75,9 @@ impl Default for StrokeStyle {
 }
 #[derive(Debug)]
 pub struct Vertex {
-    x: f32,
-    y: f32,
-    coverage: f32
+    pub x: f32,
+    pub y: f32,
+    pub coverage: f32
 }
 
 
@@ -323,13 +323,22 @@ fn bisect(a: Vector, b: Vector) -> Vector {
     return mid / len;
 }
 
+
 fn arc(path: &mut PathBuilder, xc: f32, yc: f32, radius: f32, a: Vector, b: Vector) {
     
-    let mid_v = bisect(a, b);
+    if dot(a, b) == 1.0 {
+        
+    } else if dot(a, b) >= 0. {
+        
+        arc_segment_tri(path, xc, yc, radius, a, b);
+    } else {
+        
+        let mid_v = bisect(a, b);
 
-    
-    arc_segment_tri(path, xc, yc, radius, a, mid_v);
-    arc_segment_tri(path, xc, yc, radius, mid_v, b);
+        
+        arc_segment_tri(path, xc, yc, radius, a, mid_v);
+        arc_segment_tri(path, xc, yc, radius, mid_v, b);
+    }
 }
 
 
@@ -423,6 +432,8 @@ fn cap_line(dest: &mut PathBuilder, style: &StrokeStyle, pt: Point, normal: Vect
                     end.x + normal.x * (half_width - 0.5), 
                     end.y + normal.y * (half_width - 0.5),
                 );
+
+                
                 dest.tri_ramp(
                     end.x + v.x - normal.x * (half_width - 0.5),
                 end.y + v.y - normal.y * (half_width - 0.5),
@@ -889,6 +900,19 @@ fn width_one_radius_arc() {
     stroker.line_to(Point::new(30., 160.));
     stroker.line_to_capped(Point::new(40., 20.));
     stroker.finish();
+}
+
+#[test]
+fn round_join_less_than_90deg() {
+    let mut stroker = Stroker::new(&StrokeStyle{
+        cap: LineCap::Round,
+        join: LineJoin::Round,
+        width: 1.,
+        ..Default::default()});
+    stroker.move_to(Point::new(20., 20.), false);
+    stroker.line_to(Point::new(20., 40.));
+    stroker.line_to_capped(Point::new(30., 50.));
+    assert_eq!(stroker.finish().len(), 81);
 }
 
 #[test]
