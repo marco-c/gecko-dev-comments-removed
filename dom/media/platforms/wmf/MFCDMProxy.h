@@ -23,7 +23,7 @@ namespace mozilla {
 class MFCDMProxy {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMProxy);
 
-  explicit MFCDMProxy(IMFContentDecryptionModule* aCDM) : mCDM(aCDM) {}
+  explicit MFCDMProxy(IMFContentDecryptionModule* aCDM);
 
  public:
   
@@ -51,7 +51,7 @@ class MFCDMProxy {
   
 
  private:
-  ~MFCDMProxy() = default;
+  ~MFCDMProxy();
 
   Microsoft::WRL::ComPtr<IMFContentDecryptionModule> mCDM;
 
