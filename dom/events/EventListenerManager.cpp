@@ -56,6 +56,7 @@
 #include "xpcpublic.h"
 #include "nsIFrame.h"
 #include "nsDisplayList.h"
+#include "nsPIWindowRoot.h"
 
 namespace mozilla {
 
@@ -1321,9 +1322,19 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
     } else {
       
       
-      
-      
-      innerWindow = GetInnerWindowForTarget();  
+      if (aListener && aListener->mEventMessage == eKeyPress &&
+          mTarget && mTarget->IsRootWindow()) {
+        nsPIWindowRoot* root = mTarget->AsWindowRoot();
+        if (nsPIDOMWindowOuter* outerWindow = root->GetWindow()) {
+          innerWindow = outerWindow->GetCurrentInnerWindow();
+        }
+      } else {
+        
+        
+        
+        
+        innerWindow = GetInnerWindowForTarget();  
+      }
     }
   }
   return innerWindow.forget();
