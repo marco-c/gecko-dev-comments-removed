@@ -48,6 +48,8 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
   
   
   
+  
+  
 
   if (iterKind_ == IteratorKind::Async) {
     if (!bce_->emitAsyncIterator(selfHostedIter_)) {

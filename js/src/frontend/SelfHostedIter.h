@@ -24,6 +24,9 @@ enum class SelfHostedIter {
 
   
   AllowContentWith,
+
+  
+  AllowContentWithNext,
 };
 
 } 
