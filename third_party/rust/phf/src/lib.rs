@@ -69,9 +69,7 @@
 
 
 
-
-
-#![doc(html_root_url = "https://docs.rs/phf/0.10")]
+#![doc(html_root_url = "https://docs.rs/phf/0.11")]
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -102,14 +100,13 @@ extern crate std as core;
 
 
 
-#[proc_macro_hack::proc_macro_hack]
+
 pub use phf_macros::phf_map;
 
 #[cfg(feature = "macros")]
 
 
 
-#[proc_macro_hack::proc_macro_hack]
 pub use phf_macros::phf_ordered_map;
 
 #[cfg(feature = "macros")]
@@ -131,14 +128,12 @@ pub use phf_macros::phf_ordered_map;
 
 
 
-#[proc_macro_hack::proc_macro_hack]
 pub use phf_macros::phf_set;
 
 #[cfg(feature = "macros")]
 
 
 
-#[proc_macro_hack::proc_macro_hack]
 pub use phf_macros::phf_ordered_set;
 
 #[doc(inline)]

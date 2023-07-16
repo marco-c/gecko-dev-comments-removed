@@ -1,4 +1,8 @@
-#![doc(html_root_url = "https://docs.rs/phf_generator/0.9")]
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/phf_generator/0.11")]
 use phf_shared::{HashKey, PhfHash};
 use rand::distributions::Standard;
 use rand::rngs::SmallRng;
