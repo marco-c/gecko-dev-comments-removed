@@ -3957,7 +3957,7 @@ void SdpOfferAnswerHandler::GetOptionsForPlanBOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
   bool offer_new_data_description =
-      data_channel_controller()->HasDataChannels();
+      data_channel_controller()->HasUsedDataChannels();
   bool send_audio = false;
   bool send_video = false;
   bool recv_audio = false;
@@ -4176,7 +4176,7 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
   }
   
   
-  if (!pc_->GetDataMid() && data_channel_controller()->HasDataChannels()) {
+  if (!pc_->GetDataMid() && data_channel_controller()->HasUsedDataChannels()) {
     session_options->media_description_options.push_back(
         GetMediaDescriptionOptionsForActiveData(
             mid_generator_.GenerateString()));

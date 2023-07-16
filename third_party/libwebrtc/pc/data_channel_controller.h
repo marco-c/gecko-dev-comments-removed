@@ -89,7 +89,10 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void AllocateSctpSids(rtc::SSLRole role);
 
   
+  
   bool HasDataChannels() const;
+  
+  bool HasUsedDataChannels() const;
   bool HasSctpDataChannels() const {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return !sctp_data_channels_.empty();
@@ -148,6 +151,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   SctpSidAllocator sid_allocator_ ;
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_
       RTC_GUARDED_BY(signaling_thread());
+  bool has_used_data_channels_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   
   PeerConnectionInternal* const pc_;
