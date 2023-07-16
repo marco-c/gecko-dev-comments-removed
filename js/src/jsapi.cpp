@@ -2419,9 +2419,6 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
   }
 
   
-  forceStrictMode_ = cx->options().strictMode();
-
-  
   if (coverage::IsLCovEnabled()) {
     eagerDelazificationStrategy_ = DelazificationOption::ParseEverythingEagerly;
   }
