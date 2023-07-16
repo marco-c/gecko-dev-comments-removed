@@ -373,6 +373,10 @@ async function createAndMockRemoteSettings({
     ),
   };
 
+  
+  
+  TranslationsParent.clearCache();
+
   TranslationsParent.mockTranslationsEngine(
     remoteClients.translationModels.client,
     remoteClients.translationsWasm.client
@@ -395,6 +399,7 @@ async function createAndMockRemoteSettings({
 
       TranslationsParent.unmockTranslationsEngine();
       TranslationsParent.unmockLanguageIdentification();
+      TranslationsParent.clearCache();
     },
     remoteClients,
   };
