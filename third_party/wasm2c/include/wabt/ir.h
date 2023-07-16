@@ -1245,6 +1245,14 @@ struct Module {
   BindingHash memory_bindings;
   BindingHash data_segment_bindings;
   BindingHash elem_segment_bindings;
+
+  
+  
+  
+  struct {
+    bool simd = false;
+    bool exceptions = false;
+  } features_used;
 };
 
 enum class ScriptModuleType {
