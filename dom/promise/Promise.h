@@ -369,6 +369,13 @@ class Promise : public SupportsWeakPtr {
   static already_AddRefed<Promise> CreateRejectedWithErrorResult(
       nsIGlobalObject* aGlobal, ErrorResult& aRejectionError);
 
+  
+  
+  
+  
+  static nsresult TryExtractNSResultFromRejectionValue(
+      JS::Handle<JS::Value> aValue);
+
  protected:
   template <typename ResolveCallback, typename RejectCallback, typename... Args,
             typename... JSArgs>
