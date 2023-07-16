@@ -169,8 +169,6 @@ class nsTextControlFrame : public nsContainerFrame,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult AttributeChanged(
       int32_t aNameSpaceID, nsAtom* aAttribute, int32_t aModType) override;
 
-  void GetText(nsString& aText);
-
   
 
 
