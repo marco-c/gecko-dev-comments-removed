@@ -1,5 +1,0 @@
-
-
-extractIntroType = function () {
-  debugger;
-};

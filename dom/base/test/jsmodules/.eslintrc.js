@@ -1,7 +1,15 @@
 "use strict";
 
 module.exports = {
-  parserOptions: {
-    sourceType: "module",
-  },
+  overrides: [
+    {
+      
+      
+      
+      files: ["*.html"],
+      parserOptions: {
+        sourceType: "module",
+      },
+    },
+  ],
 };
