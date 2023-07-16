@@ -76,7 +76,13 @@ class PeerConnectionSdpMethods {
   virtual LegacyStatsCollector* legacy_stats() = 0;
   
   virtual PeerConnectionObserver* Observer() const = 0;
+  
+  
+  
+  
   virtual bool GetSctpSslRole(rtc::SSLRole* role) = 0;
+  virtual absl::optional<rtc::SSLRole> GetSctpSslRole_n(
+      absl::optional<bool> is_caller) = 0;
   virtual PeerConnectionInterface::IceConnectionState
   ice_connection_state_internal() = 0;
   virtual void SetIceConnectionState(

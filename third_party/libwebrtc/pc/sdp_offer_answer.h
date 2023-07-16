@@ -159,6 +159,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   absl::optional<bool> is_caller();
   bool HasNewIceCredentials();
   void UpdateNegotiationNeeded();
+  void AllocateSctpSids();
 
   
   void DestroyAllChannels();
