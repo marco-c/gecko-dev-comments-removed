@@ -17,6 +17,7 @@
 #include "pc/test/mock_peer_connection_internal.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 
@@ -33,7 +34,9 @@ class DataChannelControllerTest : public ::testing::Test {
         .WillByDefault(Return(rtc::Thread::Current()));
   }
 
-  rtc::AutoThread main_thread_;
+  ~DataChannelControllerTest() override { run_loop_.Flush(); }
+
+  test::RunLoop run_loop_;
   rtc::scoped_refptr<NiceMock<MockPeerConnectionInternal>> pc_;
 };
 
@@ -70,6 +73,47 @@ TEST_F(DataChannelControllerTest, CloseAfterControllerDestroyed) {
   dcc->ConnectDataChannel(inner_channel);
   dcc.reset();
   channel->Close();
+}
+
+TEST_F(DataChannelControllerTest, AsyncChannelCloseTeardown) {
+  DataChannelController dcc(pc_.get());
+  rtc::scoped_refptr<DataChannelInterface> channel =
+      dcc.InternalCreateDataChannelWithProxy(
+          "label",
+          std::make_unique<InternalDataChannelInit>(DataChannelInit()).get());
+  SctpDataChannel* inner_channel =
+      DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
+          channel.get());
+  
+  inner_channel->AddRef();
+
+  channel = nullptr;  
+  EXPECT_TRUE(dcc.HasDataChannels());
+
+  
+  dcc.ConnectDataChannel(inner_channel);
+
+  
+  
+  
+  
+  inner_channel->Close();
+  
+  EXPECT_FALSE(dcc.HasDataChannels());
+  
+  
+  ASSERT_NE(inner_channel->Release(),
+            rtc::RefCountReleaseStatus::kDroppedLastRef);
+  
+  
+  inner_channel->AddRef();
+  
+  
+  
+  run_loop_.Flush();
+  
+  EXPECT_EQ(inner_channel->Release(),
+            rtc::RefCountReleaseStatus::kDroppedLastRef);
 }
 
 }  

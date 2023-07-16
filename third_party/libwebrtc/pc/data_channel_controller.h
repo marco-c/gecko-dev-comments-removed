@@ -150,8 +150,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   SctpSidAllocator sid_allocator_ ;
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_
       RTC_GUARDED_BY(signaling_thread());
-  std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_to_free_
-      RTC_GUARDED_BY(signaling_thread());
 
   
   

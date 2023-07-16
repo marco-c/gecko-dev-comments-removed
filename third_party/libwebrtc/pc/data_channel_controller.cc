@@ -331,14 +331,13 @@ void DataChannelController::OnSctpDataChannelClosed(SctpDataChannel* channel) {
         
         sid_allocator_.ReleaseSid(channel->id());
       }
+
       
       
-      sctp_data_channels_to_free_.push_back(*it);
+      rtc::scoped_refptr<SctpDataChannel> release = std::move(*it);
       sctp_data_channels_.erase(it);
-      signaling_thread()->PostTask(SafeTask(signaling_safety_.flag(), [this] {
-        RTC_DCHECK_RUN_ON(signaling_thread());
-        sctp_data_channels_to_free_.clear();
-      }));
+      signaling_thread()->PostTask(SafeTask(signaling_safety_.flag(),
+                                            [release = std::move(release)] {}));
       return;
     }
   }
