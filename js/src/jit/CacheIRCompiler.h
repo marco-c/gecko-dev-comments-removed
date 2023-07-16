@@ -990,8 +990,6 @@ class MOZ_RAII AutoOutputRegister {
   operator TypedOrValueRegister() const { return output_; }
 };
 
-enum class CallCanGC { CanGC, CanNotGC };
-
 
 
 
@@ -1008,8 +1006,7 @@ class MOZ_RAII AutoStubFrame {
  public:
   explicit AutoStubFrame(BaselineCacheIRCompiler& compiler);
 
-  void enter(MacroAssembler& masm, Register scratch,
-             CallCanGC canGC = CallCanGC::CanGC);
+  void enter(MacroAssembler& masm, Register scratch);
   void leave(MacroAssembler& masm);
 
 #ifdef DEBUG
