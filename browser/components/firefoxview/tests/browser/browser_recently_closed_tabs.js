@@ -11,6 +11,9 @@ requestLongerTimeout(10);
 
 
 
+
+
+
 ChromeUtils.defineESModuleGetters(globalThis, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
 });
@@ -113,7 +116,7 @@ add_task(async function test_empty_list() {
 add_task(async function test_list_ordering() {
   Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
-    SessionStore.getClosedTabCount(),
+    SessionStore.getClosedTabCountForWindow(window),
     0,
     "Closed tab count after purging session history"
   );

@@ -591,7 +591,7 @@ class HistoryMenu extends PlacesMenu {
 
   _getClosedTabCount() {
     try {
-      return SessionStore.getClosedTabCount();
+      return SessionStore.getClosedTabCountForWindow(window);
     } catch (ex) {
       
       return 0;

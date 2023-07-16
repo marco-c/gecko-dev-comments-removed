@@ -6434,7 +6434,7 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
     document.getElementById("toolbar-context-selectAllTabs").disabled =
       gBrowser.allTabsSelected();
     document.getElementById("toolbar-context-undoCloseTab").disabled =
-      SessionStore.getClosedTabCount() == 0;
+      SessionStore.getClosedTabCountForWindow(window) == 0;
     return;
   }
 
@@ -8112,53 +8112,28 @@ function restoreLastClosedTabOrWindowOrSession() {
 
 
 
-
-
-
-
-
-function undoCloseTab(aIndex, sourceWindowSSId) {
-  
-  let targetWindow = window;
-  
-  let sourceWindow;
-  if (sourceWindowSSId) {
-    sourceWindow = SessionStore.getWindowById(sourceWindowSSId);
-    if (!sourceWindow) {
-      throw new Error(
-        "sourceWindowSSId argument to undoCloseTab didn't resolve to a window"
-      );
-    }
-  } else {
-    sourceWindow = window;
-  }
-
+function undoCloseTab(aIndex) {
   
   let blankTabToRemove = null;
-  if (
-    targetWindow.gBrowser.visibleTabs.length == 1 &&
-    targetWindow.gBrowser.selectedTab.isEmpty
-  ) {
-    blankTabToRemove = targetWindow.gBrowser.selectedTab;
+  if (gBrowser.tabs.length == 1 && gBrowser.selectedTab.isEmpty) {
+    blankTabToRemove = gBrowser.selectedTab;
   }
 
-  
-  
-  let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
+  let closedTabCount = SessionStore.getLastClosedTabCount(window);
   let tab = null;
   
   let tabsToRemove =
-    aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
+    aIndex !== undefined ? [aIndex] : new Array(closedTabCount).fill(0);
   let tabsRemoved = false;
   for (let index of tabsToRemove) {
-    if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
-      tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
+    if (SessionStore.getClosedTabCountForWindow(window) > index) {
+      tab = SessionStore.undoCloseTab(window, index);
       tabsRemoved = true;
     }
   }
 
   if (tabsRemoved && blankTabToRemove) {
-    targetWindow.gBrowser.removeTab(blankTabToRemove);
+    gBrowser.removeTab(blankTabToRemove);
   }
 
   return tab;

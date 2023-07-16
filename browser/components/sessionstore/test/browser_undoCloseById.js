@@ -19,20 +19,12 @@ async function closeWindow(win) {
   await new Promise(resolve => setTimeout(resolve, 20));
 }
 
-function getLastClosedTabData(win) {
-  const closedTabs = SessionStore.getClosedTabData(win);
-  return closedTabs[closedTabs.length - 1];
-}
-
 add_task(async function test_undoCloseById() {
   
   forgetClosedWindows();
-  for (const win of SessionStore.getWindows()) {
-    while (SessionStore.getClosedTabCountForWindow(win)) {
-      SessionStore.forgetClosedTab(win, 0);
-    }
+  while (SessionStore.getClosedTabCountForWindow(window)) {
+    SessionStore.forgetClosedTab(window, 0);
   }
-  SessionStore.resetNextClosedId();
 
   
   let win = await openWindow("about:robots");
@@ -46,7 +38,6 @@ add_task(async function test_undoCloseById() {
   );
 
   
-  is(1, SessionStore.getClosedTabCount(), "We have 1 closed tab");
   let initialClosedId = SessionStore.getClosedTabDataForWindow(win)[0].closedId;
 
   
