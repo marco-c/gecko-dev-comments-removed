@@ -192,6 +192,13 @@ pref("pdfjs.enableScripting", true);
 pref("pdfjs.enableXfa", true);
 
 
+#if defined(EARLY_BETA_OR_EARLIER)
+  pref("pdfjs.enableStampEditor", true);
+#else
+  pref("pdfjs.enableStampEditor", false);
+#endif
+
+
 pref("mathml.disabled",    false);
 
 
