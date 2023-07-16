@@ -91,11 +91,6 @@ def may_strip(path):
     """
     from buildconfig import substs
 
-    
-    
-    
-    if "d3dcompiler" in path:
-        return False
     return bool(substs.get("PKG_STRIP"))
 
 

@@ -111,9 +111,7 @@ def dependentlibs(lib, libpaths, func):
                 
                 
                 
-                
-                
-                if not dep.startswith(("icu", "d3dcompiler_47")):
+                if not dep.startswith(("icu")):
                     deps[dep] = deppath
                 break
 
