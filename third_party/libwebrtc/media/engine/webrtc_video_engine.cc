@@ -1741,34 +1741,23 @@ void WebRtcVideoChannel::FillReceiveCodecStats(
 
 void WebRtcVideoChannel::OnPacketReceived(
     const webrtc::RtpPacketReceived& packet) {
+  
+  
+  
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
 
   
   
-  
-  
-  
-  worker_thread_->PostTask(
-      SafeTask(task_safety_.flag(), [this, packet = packet]() mutable {
-        RTC_DCHECK_RUN_ON(&thread_checker_);
-
-        
-        
-        
-        
-        
-        
-        packet.IdentifyExtensions(recv_rtp_extension_map_);
-        packet.set_payload_type_frequency(webrtc::kVideoPayloadTypeFrequency);
-        if (!packet.arrival_time().IsFinite()) {
-          packet.set_arrival_time(webrtc::Timestamp::Micros(rtc::TimeMicros()));
-        }
-
-        call_->Receiver()->DeliverRtpPacket(
-            webrtc::MediaType::VIDEO, std::move(packet),
-            absl::bind_front(
-                &WebRtcVideoChannel::MaybeCreateDefaultReceiveStream, this));
-      }));
+  if (webrtc::TaskQueueBase::Current() != worker_thread_) {
+    worker_thread_->PostTask(
+        SafeTask(task_safety_.flag(), [this, packet = packet]() mutable {
+          RTC_DCHECK_RUN_ON(&thread_checker_);
+          ProcessReceivedPacket(std::move(packet));
+        }));
+  } else {
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+    ProcessReceivedPacket(packet);
+  }
 }
 
 bool WebRtcVideoChannel::MaybeCreateDefaultReceiveStream(
@@ -3553,6 +3542,32 @@ WebRtcVideoChannel::FindReceiveStream(uint32_t ssrc) {
     return it->second;
   }
   return nullptr;
+}
+
+
+void WebRtcVideoChannel::ProcessReceivedPacket(
+    webrtc::RtpPacketReceived packet) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  packet.IdentifyExtensions(recv_rtp_extension_map_);
+  packet.set_payload_type_frequency(webrtc::kVideoPayloadTypeFrequency);
+  if (!packet.arrival_time().IsFinite()) {
+    packet.set_arrival_time(webrtc::Timestamp::Micros(rtc::TimeMicros()));
+  }
+
+  call_->Receiver()->DeliverRtpPacket(
+      webrtc::MediaType::VIDEO, std::move(packet),
+      absl::bind_front(&WebRtcVideoChannel::MaybeCreateDefaultReceiveStream,
+                       this));
 }
 
 void WebRtcVideoChannel::SetRecordableEncodedFrameCallback(

@@ -234,11 +234,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
  private:
   class WebRtcVideoReceiveStream;
 
-  
-  
-  WebRtcVideoReceiveStream* FindReceiveStream(uint32_t ssrc)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
-
   struct VideoCodecSettings {
     VideoCodecSettings();
 
@@ -280,6 +275,14 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     
     absl::optional<int> flexfec_payload_type;
   };
+
+  
+  
+  WebRtcVideoReceiveStream* FindReceiveStream(uint32_t ssrc)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
+
+  void ProcessReceivedPacket(webrtc::RtpPacketReceived packet)
+      RTC_RUN_ON(thread_checker_);
 
   bool GetChangedSendParameters(const VideoSendParameters& params,
                                 ChangedSendParameters* changed_params) const

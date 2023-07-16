@@ -1715,8 +1715,8 @@ TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
                               true));
   EXPECT_TRUE(channel_->SetSink(kSsrc + 1, &renderer_));
   channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
-  DeliverKeyFrame(kSsrc);  
   channel_->SetDefaultSink(&renderer_);
+  DeliverKeyFrame(kSsrc);  
   DeliverKeyFrameAndWait(kSsrc + 1);
   receive_channel_->RemoveRecvStream(kSsrc + 1);
 }
@@ -2217,8 +2217,8 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSink) {
   EXPECT_TRUE(SetDefaultCodec());
   EXPECT_TRUE(SetSend(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(packet);
   channel_->SetDefaultSink(&renderer_);
+  channel_->OnPacketReceived(packet);
   SendFrame();
   EXPECT_FRAME_WAIT(1, kVideoWidth, kVideoHeight, kTimeout);
 }
