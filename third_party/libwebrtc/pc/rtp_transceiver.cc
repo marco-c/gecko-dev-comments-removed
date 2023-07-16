@@ -745,47 +745,34 @@ bool IsMandatoryHeaderExtension(const std::string& uri) {
 
 RTCError RtpTransceiver::SetHeaderExtensionsToNegotiate(
     rtc::ArrayView<const RtpHeaderExtensionCapability> header_extensions) {
-  for (const auto& entry : header_extensions) {
-    
-    
-    
-    
-    
-    
-
-    
-    
-    auto it = std::find_if(
-        header_extensions_to_negotiate_.begin(),
-        header_extensions_to_negotiate_.end(),
-        [&entry](const auto& offered) { return entry.uri == offered.uri; });
-    if (it == header_extensions_to_negotiate_.end()) {
-      return RTCError(RTCErrorType::UNSUPPORTED_PARAMETER,
-                      "Attempted to modify an unoffered extension.");
+  
+  if (header_extensions.size() != header_extensions_to_negotiate_.size()) {
+    return RTCError(RTCErrorType::INVALID_MODIFICATION,
+                    "Size of extensions to negotiate does not match.");
+  }
+  
+  for (size_t i = 0; i < header_extensions.size(); i++) {
+    const auto& extension = header_extensions[i];
+    if (extension.uri != header_extensions_to_negotiate_[i].uri) {
+      return RTCError(RTCErrorType::INVALID_MODIFICATION,
+                      "Reordering extensions is not allowed.");
     }
-
-    
-    if (IsMandatoryHeaderExtension(entry.uri) &&
-        entry.direction != RtpTransceiverDirection::kSendRecv) {
+    if (IsMandatoryHeaderExtension(extension.uri) &&
+        extension.direction != RtpTransceiverDirection::kSendRecv) {
       return RTCError(RTCErrorType::INVALID_MODIFICATION,
                       "Attempted to stop a mandatory extension.");
     }
+
+    
+    
+    
+    
   }
 
   
-  
-  for (auto& entry : header_extensions_to_negotiate_) {
-    if (!IsMandatoryHeaderExtension(entry.uri)) {
-      entry.direction = RtpTransceiverDirection::kStopped;
-    }
-  }
-  
-  for (const auto& entry : header_extensions) {
-    auto it = std::find_if(
-        header_extensions_to_negotiate_.begin(),
-        header_extensions_to_negotiate_.end(),
-        [&entry](const auto& offered) { return entry.uri == offered.uri; });
-    it->direction = entry.direction;
+  for (size_t i = 0; i < header_extensions.size(); i++) {
+    header_extensions_to_negotiate_[i].direction =
+        header_extensions[i].direction;
   }
 
   return RTCError::OK();
