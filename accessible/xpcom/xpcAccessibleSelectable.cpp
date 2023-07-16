@@ -4,8 +4,6 @@
 
 
 
-#include "Accessible.h"
-
 #include "nsComponentManagerUtils.h"
 #include "nsIAccessible.h"
 #include "nsIMutableArray.h"
