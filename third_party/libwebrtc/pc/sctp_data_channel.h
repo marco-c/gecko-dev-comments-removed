@@ -55,6 +55,9 @@ class SctpDataChannelControllerInterface {
   virtual void RemoveSctpDataStream(int sid) = 0;
   
   virtual bool ReadyToSendData() const = 0;
+  
+  virtual void OnChannelStateChanged(SctpDataChannel* data_channel,
+                                     DataChannelInterface::DataState state) = 0;
 
  protected:
   virtual ~SctpDataChannelControllerInterface() {}
@@ -213,12 +216,6 @@ class SctpDataChannel : public DataChannelInterface,
   void OnTransportChannelClosed(RTCError error);
 
   DataChannelStats GetStats() const;
-
-  
-  sigslot::signal1<DataChannelInterface*> SignalOpened;
-  
-  
-  sigslot::signal1<DataChannelInterface*> SignalClosed;
 
   
   
