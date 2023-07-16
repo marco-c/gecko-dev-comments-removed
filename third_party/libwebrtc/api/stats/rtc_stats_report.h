@@ -60,24 +60,13 @@ class RTC_EXPORT RTCStatsReport final
     StatsMap::const_iterator it_;
   };
 
-  
-  
-  
-  ABSL_DEPRECATED("Call Create with Timestamp instead")
-  static rtc::scoped_refptr<RTCStatsReport> Create(int64_t timestamp_us = 0);
   static rtc::scoped_refptr<RTCStatsReport> Create(Timestamp timestamp);
 
-  
-  ABSL_DEPRECATED("Use constructor with Timestamp instead")
-  explicit RTCStatsReport(int64_t timestamp_us);
   explicit RTCStatsReport(Timestamp timestamp);
 
   RTCStatsReport(const RTCStatsReport& other) = delete;
   rtc::scoped_refptr<RTCStatsReport> Copy() const;
 
-  
-  ABSL_DEPRECATED("Call timestamp() instead")
-  int64_t timestamp_us() const { return timestamp_.us_or(-1); }
   Timestamp timestamp() const { return timestamp_; }
   void AddStats(std::unique_ptr<const RTCStats> stats);
   
