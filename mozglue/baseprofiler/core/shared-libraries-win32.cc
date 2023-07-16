@@ -124,9 +124,9 @@ void SharedLibraryInfo::AddSharedLibraryFromModuleInfo(
   
   
   
-  nsModuleHandle handleLock(::LoadLibraryExW(
-      aModulePath, NULL,
-      LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+  
+  nsModuleHandle handleLock(
+      ::LoadLibraryExW(aModulePath, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE));
   if (!handleLock) {
     return;
   }
