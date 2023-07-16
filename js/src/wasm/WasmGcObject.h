@@ -113,14 +113,6 @@ class WasmGcObject : public JSObject {
   [[nodiscard]] static bool obj_newEnumerate(JSContext* cx, HandleObject obj,
                                              MutableHandleIdVector properties,
                                              bool enumerableOnly);
-
- protected:
-  
-  
-  
-  static WasmGcObject* create(JSContext* cx,
-                              wasm::TypeDefInstanceData* typeDefData,
-                              js::gc::Heap initialHeap);
 };
 
 
@@ -226,6 +218,13 @@ class WasmStructObject : public WasmGcObject {
   static WasmStructObject* createStruct(JSContext* cx,
                                         wasm::TypeDefInstanceData* typeDefData,
                                         js::gc::Heap initialHeap);
+
+  
+  
+  template <bool ZeroFields>
+  static MOZ_NEVER_INLINE WasmStructObject* createStructOOL(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::Heap initialHeap, uint32_t outlineBytes);
 
   
   
