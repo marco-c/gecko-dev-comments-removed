@@ -350,10 +350,13 @@ nsDirIndexParser::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
                                   uint64_t aSourceOffset, uint32_t aCount) {
   if (aCount < 1) return NS_OK;
 
-  int32_t len = mBuf.Length();
+  uint32_t len = mBuf.Length();
 
   
   
+  
+  
+  NS_ENSURE_TRUE((UINT32_MAX - aCount) >= len, NS_ERROR_FAILURE);
   if (!mBuf.SetLength(len + aCount, fallible)) return NS_ERROR_OUT_OF_MEMORY;
 
   
