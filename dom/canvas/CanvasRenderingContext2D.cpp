@@ -991,7 +991,6 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       textBaseline(aOther.textBaseline),
       textDirection(aOther.textDirection),
       fontKerning(aOther.fontKerning),
-      fontVariantCaps(aOther.fontVariantCaps),
       textRendering(aOther.textRendering),
       letterSpacing(aOther.letterSpacing),
       wordSpacing(aOther.wordSpacing),
@@ -3695,10 +3694,6 @@ void CanvasRenderingContext2D::SetFont(const nsACString& aFont,
 
   
   
-  SetFontVariantCaps(CanvasFontVariantCaps::Normal);
-
-  
-  
   UpdateSpacing();
 }
 
@@ -3755,38 +3750,6 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
       QuantizeFontSize(resizedFont.size.ToCSSPixels()));
 
   resizedFont.kerning = CanvasToGfx(CurrentState().fontKerning);
-
-  
-  
-  
-  
-  
-  switch (CurrentState().fontVariantCaps) {
-    case CanvasFontVariantCaps::Normal:
-      
-      break;
-    case CanvasFontVariantCaps::Small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_SMALLCAPS;
-      break;
-    case CanvasFontVariantCaps::All_small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALLSMALL;
-      break;
-    case CanvasFontVariantCaps::Petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_PETITECAPS;
-      break;
-    case CanvasFontVariantCaps::All_petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALLPETITE;
-      break;
-    case CanvasFontVariantCaps::Unicase:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
-      break;
-    case CanvasFontVariantCaps::Titling_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_TITLING;
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unknown caps value");
-      break;
-  }
 
   c->Document()->FlushUserFontSet();
 
@@ -3893,42 +3856,8 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   }
 
   fontStyle.size = QuantizeFontSize(size);
-
-  
-  
-  
-  
-  
-  switch (CurrentState().fontVariantCaps) {
-    case CanvasFontVariantCaps::Normal:
-      fontStyle.variantCaps = smallCaps ? NS_FONT_VARIANT_CAPS_SMALLCAPS
-                                        : NS_FONT_VARIANT_CAPS_NORMAL;
-      break;
-    case CanvasFontVariantCaps::Small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_SMALLCAPS;
-      break;
-    case CanvasFontVariantCaps::All_small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALLSMALL;
-      break;
-    case CanvasFontVariantCaps::Petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_PETITECAPS;
-      break;
-    case CanvasFontVariantCaps::All_petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALLPETITE;
-      break;
-    case CanvasFontVariantCaps::Unicase:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
-      break;
-    case CanvasFontVariantCaps::Titling_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_TITLING;
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unknown caps value");
-      break;
-  }
-  
-  fontStyle.noFallbackVariantFeatures =
-      (fontStyle.variantCaps == NS_FONT_VARIANT_CAPS_NORMAL);
+  fontStyle.variantCaps =
+      smallCaps ? NS_FONT_VARIANT_CAPS_SMALLCAPS : NS_FONT_VARIANT_CAPS_NORMAL;
 
   
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
@@ -3977,7 +3906,6 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   SerializeFontForCanvas(list, fontStyle, CurrentState().font);
   CurrentState().fontFont = nsFont(StyleFontFamily{list, false, false},
                                    StyleCSSPixelLength::FromPixels(size));
-  CurrentState().fontFont.variantCaps = fontStyle.variantCaps;
   CurrentState().fontLanguage = nullptr;
   CurrentState().fontExplicitLanguage = false;
   return true;
