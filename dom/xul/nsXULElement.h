@@ -20,11 +20,13 @@
 #include "js/SourceText.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/Utility.h"  
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FragmentOrElement.h"
@@ -213,7 +215,8 @@ class nsXULPrototypeScript : public nsXULPrototypeNode {
  private:
   virtual ~nsXULPrototypeScript() = default;
 
-  void FillCompileOptions(JS::CompileOptions& options);
+  void FillCompileOptions(JS::CompileOptions& aOptions, const char* aFilename,
+                          uint32_t aLineNo);
 
  public:
   virtual nsresult Serialize(
@@ -228,11 +231,31 @@ class nsXULPrototypeScript : public nsXULPrototypeNode {
   nsresult DeserializeOutOfLine(nsIObjectInputStream* aInput,
                                 nsXULPrototypeDocument* aProtoDoc);
 
-  template <typename Unit>
-  nsresult Compile(const Unit* aText, size_t aTextLength,
-                   JS::SourceOwnership aOwnership, nsIURI* aURI,
-                   uint32_t aLineNo, mozilla::dom::Document* aDocument,
-                   nsIOffThreadScriptReceiver* aOffThreadReceiver = nullptr);
+  
+  
+  
+  
+  
+  
+  nsresult Compile(const char16_t* aText, size_t aTextLength, nsIURI* aURI,
+                   uint32_t aLineNo, mozilla::dom::Document* aDocument);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult CompileMaybeOffThread(
+      mozilla::UniquePtr<mozilla::Utf8Unit[], JS::FreePolicy>&& aText,
+      size_t aTextLength, nsIURI* aURI, uint32_t aLineNo,
+      mozilla::dom::Document* aDocument,
+      nsIOffThreadScriptReceiver* aOffThreadReceiver);
 
   void Set(JS::Stencil* aStencil);
 
