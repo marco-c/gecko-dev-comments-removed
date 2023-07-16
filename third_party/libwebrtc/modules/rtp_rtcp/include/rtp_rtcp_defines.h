@@ -350,7 +350,7 @@ struct RtpPacketCounter {
   size_t header_bytes;   
   size_t payload_bytes;  
   size_t padding_bytes;  
-  uint32_t packets;      
+  size_t packets;        
   
   
   webrtc::TimeDelta total_packet_delay = webrtc::TimeDelta::Zero();

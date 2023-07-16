@@ -547,7 +547,7 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   
   absl::optional<int64_t> last_sender_report_timestamp_ms;
   absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
-  uint32_t sender_reports_packets_sent = 0;
+  uint64_t sender_reports_packets_sent = 0;
   uint64_t sender_reports_bytes_sent = 0;
   uint64_t sender_reports_reports_count = 0;
   absl::optional<webrtc::TimeDelta> round_trip_time;

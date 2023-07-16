@@ -398,7 +398,7 @@ class RTC_EXPORT RTCSentRtpStreamStats : public RTCRtpStreamStats {
   RTCSentRtpStreamStats(const RTCSentRtpStreamStats& other);
   ~RTCSentRtpStreamStats() override;
 
-  RTCStatsMember<uint32_t> packets_sent;
+  RTCStatsMember<uint64_t> packets_sent;
   RTCStatsMember<uint64_t> bytes_sent;
 
  protected:
@@ -414,8 +414,6 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   RTCInboundRtpStreamStats(std::string id, Timestamp timestamp);
   RTCInboundRtpStreamStats(const RTCInboundRtpStreamStats& other);
   ~RTCInboundRtpStreamStats() override;
-
-  
 
   RTCStatsMember<std::string> playout_id;
   RTCStatsMember<std::string> track_identifier;
@@ -464,7 +462,6 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   
   
   RTCStatsMember<double> estimated_playout_timestamp;
-  
   
   RTCRestrictedStatsMember<std::string,
                            StatExposureCriteria::kHardwareCapability>
