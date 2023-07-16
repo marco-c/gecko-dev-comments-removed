@@ -3,5 +3,6 @@
 
 
 export * from "./frame";
+export * from "./editor-breakpoint";
 export * from "./source-tree-item";
 export * from "./tab";
