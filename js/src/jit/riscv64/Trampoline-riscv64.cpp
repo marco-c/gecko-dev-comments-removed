@@ -779,8 +779,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
         break;
       case VMFunctionData::DoubleByValue:
       case VMFunctionData::DoubleByRef:
-        MOZ_CRASH(
-            "NYI: LOONG64 callVM should not be used with 128bits values.");
+        MOZ_CRASH("NYI: riscv callVM should not be used with 128bits values.");
         break;
     }
   }

@@ -210,7 +210,8 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
               "checking for overflow against OffsetGuardLimit is enough.");
 
 
-#  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64))
+#  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || \
+        defined(JS_CODEGEN_RISCV64))
 #    error "Not an expected configuration"
 #  endif
 
