@@ -274,10 +274,17 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(Label* profilerExitTail,
 
   
   
+  
   bind(&finally);
   ARMRegister exception = x1;
   Ldr(exception, MemOperand(PseudoStackPointer64,
                             ResumeFromException::offsetOfException()));
+
+  ARMRegister exceptionStack = x2;
+  Ldr(exceptionStack,
+      MemOperand(PseudoStackPointer64,
+                 ResumeFromException::offsetOfExceptionStack()));
+
   Ldr(x0,
       MemOperand(PseudoStackPointer64, ResumeFromException::offsetOfTarget()));
   Ldr(ARMRegister(FramePointer, 64),
@@ -288,6 +295,7 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(Label* profilerExitTail,
                  ResumeFromException::offsetOfStackPointer()));
   syncStackPtr();
   push(exception);
+  push(exceptionStack);
   pushValue(BooleanValue(true));
   Br(x0);
 

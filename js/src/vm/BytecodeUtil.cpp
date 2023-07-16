@@ -925,7 +925,8 @@ bool BytecodeParser::parse() {
               
               offsetStack[stackDepth].set(offset, 0);
               offsetStack[stackDepth + 1].set(offset, 1);
-              if (!addJump(catchOffset, stackDepth + 2, offsetStack, pc,
+              offsetStack[stackDepth + 2].set(offset, 2);
+              if (!addJump(catchOffset, stackDepth + 3, offsetStack, pc,
                            JumpKind::TryFinally)) {
                 return false;
               }
@@ -2104,7 +2105,10 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         if (defIndex == 0) {
           return write("PC");
         }
-        MOZ_ASSERT(defIndex == 1);
+        if (defIndex == 1) {
+          return write("STACK");
+        }
+        MOZ_ASSERT(defIndex == 2);
         return write("THROWING");
 
       case JSOp::FunctionThis:

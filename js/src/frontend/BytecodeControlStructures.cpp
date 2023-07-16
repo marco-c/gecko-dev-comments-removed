@@ -274,9 +274,9 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
 
 
           if (bce_->sc->noScriptRval()) {
-            npops += 2;
-          } else {
             npops += 3;
+          } else {
+            npops += 4;
           }
         } else {
           jumpingToFinally = true;

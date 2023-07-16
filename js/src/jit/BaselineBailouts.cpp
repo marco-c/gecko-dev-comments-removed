@@ -835,6 +835,9 @@ bool BaselineStackBuilder::buildFinallyException() {
   if (!writeValue(excInfo_->finallyException(), "Exception")) {
     return false;
   }
+  if (!writeValue(excInfo_->finallyExceptionStack(), "ExceptionStack")) {
+    return false;
+  }
   if (!writeValue(BooleanValue(true), "throwing")) {
     return false;
   }
@@ -1279,7 +1282,7 @@ bool BaselineStackBuilder::validateFrame() {
     
     
     
-    expectedSlots += 2;
+    expectedSlots += 3;
   }
   return AssertBailoutStackDepth(cx_, script_, pc_, resumeMode(),
                                  expectedSlots);
