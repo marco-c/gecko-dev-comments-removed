@@ -2905,10 +2905,17 @@ void nsFocusManager::ScrollIntoView(PresShell* aPresShell, nsIContent* aContent,
   if (aFlags & FLAG_NOSCROLL) {
     return;
   }
+
+  
+  WhereToScroll whereToScroll(WhereToScroll::Nearest);
+  if (aFlags & FLAG_BYKEY) {
+    whereToScroll = WhereToScroll::Center;
+  }
+
   
   aPresShell->ScrollContentIntoView(
-      aContent, ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
-      ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+      aContent, ScrollAxis(whereToScroll, WhenToScroll::IfNotVisible),
+      ScrollAxis(whereToScroll, WhenToScroll::IfNotVisible),
       ScrollFlags::ScrollOverflowHidden);
   
   
