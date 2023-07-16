@@ -333,8 +333,12 @@ const MultiStageAboutWelcome = props => {
   }, []); 
   
   
+  
+  
+  
+  
 
-  const [activeMultiSelect, setActiveMultiSelect] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null); 
+  const [activeMultiSelects, setActiveMultiSelects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({}); 
   
 
   const [activeTheme, setActiveTheme] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -364,6 +368,11 @@ const MultiStageAboutWelcome = props => {
     const isLastScreen = screen === screens[screens.length - 1];
     const totalNumberOfScreens = screens.length;
     const isSingleScreen = totalNumberOfScreens === 1;
+
+    const setActiveMultiSelect = valueOrFn => setActiveMultiSelects(prevState => ({ ...prevState,
+      [screen.id]: typeof valueOrFn === "function" ? valueOrFn(prevState[screen.id]) : valueOrFn
+    }));
+
     return index === order ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(WelcomeScreen, {
       key: screen.id + order,
       id: screen.id,
@@ -382,7 +391,7 @@ const MultiStageAboutWelcome = props => {
       initialTheme: initialTheme,
       setActiveTheme: setActiveTheme,
       setInitialTheme: setInitialTheme,
-      activeMultiSelect: activeMultiSelect,
+      activeMultiSelect: activeMultiSelects[screen.id],
       setActiveMultiSelect: setActiveMultiSelect,
       autoAdvance: screen.auto_advance,
       negotiatedLanguage: negotiatedLanguage,
@@ -526,11 +535,11 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       };
 
       for (const checkbox of ((_props$content = props.content) === null || _props$content === void 0 ? void 0 : (_props$content$tiles = _props$content.tiles) === null || _props$content$tiles === void 0 ? void 0 : _props$content$tiles.data) ?? []) {
-        var _props$content, _props$content$tiles;
+        var _props$content, _props$content$tiles, _this$props$activeMul;
 
         let checkboxAction;
 
-        if (this.props.activeMultiSelect.includes(checkbox.id)) {
+        if ((_this$props$activeMul = this.props.activeMultiSelect) !== null && _this$props$activeMul !== void 0 && _this$props$activeMul.includes(checkbox.id)) {
           checkboxAction = checkbox.checkedAction ?? checkbox.action;
         } else {
           checkboxAction = checkbox.uncheckedAction;
@@ -627,6 +636,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "CONFIGURABLE_STYLES": () => ( CONFIGURABLE_STYLES),
    "Localized": () => ( Localized)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
@@ -1350,49 +1360,84 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const MultiSelect = props => {
-  let handleChange = event => {
-    if (event.currentTarget.checked) {
-      props.setActiveMultiSelect([...props.activeMultiSelect, event.currentTarget.value]);
-    } else {
-      props.setActiveMultiSelect(props.activeMultiSelect.filter(id => id !== event.currentTarget.value));
-    }
-  };
+const MULTI_SELECT_STYLES = [..._MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES, "flexDirection", "flexWrap", "flexFlow", "flexGrow", "flexShrink", "justifyContent", "alignItems", "gap"];
+const MULTI_SELECT_ICON_STYLES = [..._MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES, "width", "height", "background", "backgroundColor", "backgroundImage", "backgroundSize", "backgroundPosition", "backgroundRepeat", "backgroundOrigin", "backgroundClip", "border", "borderRadius", "appearance", "fill", "stroke", "outline", "outlineOffset", "boxShadow"];
 
-  let {
+function getValidStyle(style, validStyles, allowVars) {
+  if (!style) return null;
+  return Object.keys(style).filter(key => validStyles.includes(key) || allowVars && key.startsWith("--")).reduce((obj, key) => {
+    obj[key] = style[key];
+    return obj;
+  }, {});
+}
+
+const MultiSelect = ({
+  content,
+  activeMultiSelect,
+  setActiveMultiSelect
+}) => {
+  const {
     data
-  } = props.content.tiles; 
+  } = content.tiles;
+  const refs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)({});
+  const handleChange = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    const newActiveMultiSelect = [];
+    Object.keys(refs.current).forEach(key => {
+      var _refs$current$key;
+
+      if ((_refs$current$key = refs.current[key]) !== null && _refs$current$key !== void 0 && _refs$current$key.checked) {
+        newActiveMultiSelect.push(key);
+      }
+    });
+    setActiveMultiSelect(newActiveMultiSelect);
+  }, [setActiveMultiSelect]);
+  const containerStyle = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => getValidStyle(content.tiles.style, MULTI_SELECT_STYLES, true), [content.tiles.style]); 
   
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (!props.activeMultiSelect) {
-      props.setActiveMultiSelect(data.map(item => item.defaultValue && item.id).filter(item => !!item));
-    } 
+    if (!activeMultiSelect) {
+      let newActiveMultiSelect = [];
+      data.forEach(({
+        id,
+        defaultValue
+      }) => {
+        if (defaultValue && id) {
+          newActiveMultiSelect.push(id);
+        }
+      });
+      setActiveMultiSelect(newActiveMultiSelect);
+    }
+  }, []); 
 
-  }, []);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "multi-select-container"
-  }, props.content.tiles.data.map(({
+    className: "multi-select-container",
+    style: containerStyle
+  }, data.map(({
+    id,
     label,
-    id
-  }) => {
-    var _props$activeMultiSel;
-
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      key: id + label,
-      className: "checkbox-container multi-select-item"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
-      type: "checkbox",
-      id: id,
-      value: id,
-      checked: (_props$activeMultiSel = props.activeMultiSelect) === null || _props$activeMultiSel === void 0 ? void 0 : _props$activeMultiSel.includes(id),
-      onChange: handleChange
-    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: label
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-      htmlFor: id
-    })));
-  }));
+    icon,
+    type = "checkbox",
+    group,
+    style
+  }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    key: id + label,
+    className: "checkbox-container multi-select-item",
+    style: getValidStyle(style, MULTI_SELECT_STYLES)
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
+    type: type 
+    ,
+    id: id,
+    value: id,
+    name: group,
+    checked: activeMultiSelect === null || activeMultiSelect === void 0 ? void 0 : activeMultiSelect.includes(id),
+    style: getValidStyle(icon === null || icon === void 0 ? void 0 : icon.style, MULTI_SELECT_ICON_STYLES),
+    onChange: handleChange,
+    ref: el => refs.current[id] = el
+  }), label ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
+    htmlFor: id
+  })) : null)));
 };
 
  }),
