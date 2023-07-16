@@ -118,7 +118,13 @@ struct Coverage : public OT::Layout::Common::Coverage
     }
 
     hb_bytes_t coverage_copy = serializer.copy_bytes ();
-    c.add_buffer ((char *) coverage_copy.arrayZ); 
+    if (!coverage_copy.arrayZ) return false;
+    
+    if (!c.add_buffer ((char *) coverage_copy.arrayZ))
+    {
+      hb_free ((char *) coverage_copy.arrayZ);
+      return false;
+    }
 
     auto& obj = c.graph.vertices_[dest_obj].obj;
     obj.head = (char *) coverage_copy.arrayZ;

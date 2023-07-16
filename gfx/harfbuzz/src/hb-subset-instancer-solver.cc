@@ -22,7 +22,7 @@
 
 
 
-#include "hb.hh"
+#include "hb-subset-instancer-solver.hh"
 
 
 
@@ -34,26 +34,6 @@
 
 constexpr static float EPSILON = 1.f / (1 << 14);
 constexpr static float MAX_F2DOT14 = float (0x7FFF) / (1 << 14);
-
-struct Triple {
-
-  Triple () :
-    minimum (0.f), middle (0.f), maximum (0.f) {}
-
-  Triple (float minimum_, float middle_, float maximum_) :
-    minimum (minimum_), middle (middle_), maximum (maximum_) {}
-
-  bool operator == (const Triple &o) const
-  {
-    return minimum == o.minimum &&
-	   middle  == o.middle  &&
-	   maximum == o.maximum;
-  }
-
-  float minimum;
-  float middle;
-  float maximum;
-};
 
 static inline Triple _reverse_negate(const Triple &v)
 { return {-v.maximum, -v.middle, -v.minimum}; }
@@ -81,10 +61,6 @@ static inline float supportScalar (float coord, const Triple &tent)
   else
     return  (end - coord) / (end - peak);
 }
-
-
-using result_item_t = hb_pair_t<float, Triple>;
-using result_t = hb_vector_t<result_item_t>;
 
 static inline result_t
 _solve (Triple tent, Triple axisLimit, bool negative = false)
@@ -195,9 +171,9 @@ _solve (Triple tent, Triple axisLimit, bool negative = false)
   if (gain > outGain)
   {
     
-    float crossing = peak + ((1 - gain) * (upper - peak) / (1 - outGain));
+    float crossing = peak + (1 - gain) * (upper - peak);
 
-    Triple loc{peak, peak, crossing};
+    Triple loc{axisDef, peak, crossing};
     float scalar = 1.f;
 
     
@@ -213,7 +189,7 @@ _solve (Triple tent, Triple axisLimit, bool negative = false)
     if (upper >= axisMax)
     {
       Triple loc {crossing, axisMax, axisMax};
-      float scalar = supportScalar (axisMax, tent);
+      float scalar = outGain;
 
       out.push (hb_pair (scalar - gain, loc));
     }
@@ -247,89 +223,83 @@ _solve (Triple tent, Triple axisLimit, bool negative = false)
 
       
       Triple loc2 {upper, axisMax, axisMax};
-      float scalar2 = 1.f; 
+      float scalar2 = 0.f;
 
       out.push (hb_pair (scalar1 - gain, loc1));
       out.push (hb_pair (scalar2 - gain, loc2));
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  else if (axisDef + (axisMax - axisDef) * 2 >= upper)
+  else
   {
-    if (!negative && axisDef + (axisMax - axisDef) * MAX_F2DOT14 < upper)
-    {
-      
-      upper = axisDef + (axisMax - axisDef) * MAX_F2DOT14;
-      assert (peak < upper);
-    }
-
     
     if (axisMax == peak)
 	upper = peak;
 
-    Triple loc1 {hb_max (axisDef, lower), peak, upper};
-    float scalar1 = 1.f;
+    
 
-    Triple loc2 {peak, upper, upper};
-    float scalar2 = 0.f;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    float newUpper = peak + (1 - gain) * (upper - peak);
+    
+    
+    if (axisMax <= newUpper && newUpper <= axisDef + (axisMax - axisDef) * 2)
+    {
+      upper = newUpper;
+      if (!negative && axisDef + (axisMax - axisDef) * MAX_F2DOT14 < upper)
+      {
+	
+	upper = axisDef + (axisMax - axisDef) * MAX_F2DOT14;
+	assert (peak < upper);
+      }
+
+      Triple loc {hb_max (axisDef, lower), peak, upper};
+      float scalar = 1.f;
+
+      out.push (hb_pair (scalar - gain, loc));
+    }
 
     
-    if (axisDef < upper)
-	out.push (hb_pair (scalar1 - gain, loc1));
-    if (peak < upper)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    else
+    {
+      Triple loc1 {hb_max (axisDef, lower), peak, axisMax};
+      float scalar1 = 1.f;
+
+      Triple loc2 {peak, axisMax, axisMax};
+      float scalar2 = outGain;
+
+      out.push (hb_pair (scalar1 - gain, loc1));
+      
+      if (peak < axisMax)
 	out.push (hb_pair (scalar2 - gain, loc2));
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  else
-  {
-    Triple loc1 {hb_max (axisDef, lower), peak, axisMax};
-    float scalar1 = 1.f;
-
-    Triple loc2 {peak, axisMax, axisMax};
-    float scalar2 = supportScalar (axisMax, tent);
-
-    out.push (hb_pair (scalar1 - gain, loc1));
-    
-    if (peak < axisMax)
-      out.push (hb_pair (scalar2 - gain, loc2));
+    }
   }
 
   
@@ -422,19 +392,6 @@ static inline float normalizeValue (float v, const Triple &triple, bool extrapol
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-HB_INTERNAL result_t rebase_tent (Triple tent, Triple axisLimit);
-
 result_t
 rebase_tent (Triple tent, Triple axisLimit)
 {
@@ -460,5 +417,5 @@ rebase_tent (Triple tent, Triple axisLimit)
 		       Triple{n (t.minimum), n (t.middle), n (t.maximum)}));
   }
 
-  return sols;
+  return out;
 }

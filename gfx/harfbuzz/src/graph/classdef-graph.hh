@@ -94,7 +94,13 @@ struct ClassDef : public OT::ClassDef
     }
 
     hb_bytes_t class_def_copy = serializer.copy_bytes ();
-    c.add_buffer ((char *) class_def_copy.arrayZ); 
+    if (!class_def_copy.arrayZ) return false;
+    
+    if (!c.add_buffer ((char *) class_def_copy.arrayZ))
+    {
+      hb_free ((char *) class_def_copy.arrayZ);
+      return false;
+    }
 
     auto& obj = c.graph.vertices_[dest_obj].obj;
     obj.head = (char *) class_def_copy.arrayZ;

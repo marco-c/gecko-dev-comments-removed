@@ -28,7 +28,7 @@ struct MarkArray : Array16Of<MarkRecord>
 
     const Anchor& mark_anchor = this + record.markAnchor;
     bool found;
-    const Anchor& glyph_anchor = anchors.get_anchor (glyph_index, mark_class, class_count, &found);
+    const Anchor& glyph_anchor = anchors.get_anchor (c, glyph_index, mark_class, class_count, &found);
     
 
     if (unlikely (!found)) return_trace (false);

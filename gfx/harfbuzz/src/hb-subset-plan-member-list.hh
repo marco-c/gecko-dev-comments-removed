@@ -33,7 +33,9 @@
 
 
 HB_SUBSET_PLAN_MEMBER (hb_set_t, unicodes)
-HB_SUBSET_PLAN_MEMBER (hb_sorted_vector_t E(<hb_pair_t<hb_codepoint_t, hb_codepoint_t>>), unicode_to_new_gid_list)
+HB_SUBSET_PLAN_MEMBER (hb_sorted_vector_t<hb_codepoint_pair_t>, unicode_to_new_gid_list)
+
+HB_SUBSET_PLAN_MEMBER (hb_sorted_vector_t<hb_codepoint_pair_t>, new_to_old_gid_list)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_set_t, name_ids)
@@ -98,11 +100,11 @@ HB_SUBSET_PLAN_MEMBER (hb_vector_t<hb_inc_bimap_t>, gdef_varstore_inner_maps)
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, hb::unique_ptr<hb_blob_t>>), sanitized_table_cache)
 
 
-HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, int>), axes_location)
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, Triple>), axes_location)
 HB_SUBSET_PLAN_MEMBER (hb_vector_t<int>, normalized_coords)
 
 
-HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, float>), user_axes_location)
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, Triple>), user_axes_location)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, axes_index_map)
@@ -115,9 +117,9 @@ HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<hb_codepoint_t, hb_pair_t E(<unsi
 
 HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<hb_codepoint_t, hb_pair_t E(<unsigned, int>)>), vmtx_map)
 
-HB_SUBSET_PLAN_MEMBER (mutable hb_map_t, bounds_width_map)
+HB_SUBSET_PLAN_MEMBER (mutable hb_vector_t<unsigned>, bounds_width_vec)
 
-HB_SUBSET_PLAN_MEMBER (mutable hb_map_t, bounds_height_map)
+HB_SUBSET_PLAN_MEMBER (mutable hb_vector_t<unsigned>, bounds_height_vec)
 
 #ifdef HB_EXPERIMENTAL_API
 

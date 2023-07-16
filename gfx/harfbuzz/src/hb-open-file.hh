@@ -131,7 +131,7 @@ typedef struct OpenTypeOffsetTable
     sfnt_version = sfnt_tag;
     
 
-    unsigned num_items = it.len ();
+    unsigned num_items = hb_len (it);
     if (unlikely (!tables.serialize (c, num_items))) return_trace (false);
 
     const char *dir_end = (const char *) c->head;
@@ -145,7 +145,7 @@ typedef struct OpenTypeOffsetTable
       unsigned len = blob->length;
 
       
-      char *start = (char *) c->allocate_size<void> (len);
+      char *start = (char *) c->allocate_size<void> (len, false);
       if (unlikely (!start)) return false;
 
       TableRecord &rec = tables.arrayZ[i];

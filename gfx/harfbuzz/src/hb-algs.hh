@@ -87,6 +87,19 @@ static inline constexpr uint16_t hb_uint16_swap (uint16_t v)
 static inline constexpr uint32_t hb_uint32_swap (uint32_t v)
 { return (hb_uint16_swap (v) << 16) | hb_uint16_swap (v >> 16); }
 
+#ifndef HB_FAST_INT_ACCESS
+#if defined(__OPTIMIZE__) && \
+    defined(__BYTE_ORDER) && \
+    (__BYTE_ORDER == __BIG_ENDIAN || \
+     (__BYTE_ORDER == __LITTLE_ENDIAN && \
+      hb_has_builtin(__builtin_bswap16) && \
+      hb_has_builtin(__builtin_bswap32)))
+#define HB_FAST_INT_ACCESS 1
+#else
+#define HB_FAST_INT_ACCESS 0
+#endif
+#endif
+
 template <typename Type, int Bytes = sizeof (Type)>
 struct BEInt;
 template <typename Type>
@@ -101,21 +114,25 @@ struct BEInt<Type, 1>
 template <typename Type>
 struct BEInt<Type, 2>
 {
+  struct __attribute__((packed)) packed_uint16_t { uint16_t v; };
+
   public:
   BEInt () = default;
-  constexpr BEInt (Type V) : v {uint8_t ((V >>  8) & 0xFF),
-			        uint8_t ((V      ) & 0xFF)} {}
 
-  struct __attribute__((packed)) packed_uint16_t { uint16_t v; };
-  constexpr operator Type () const
-  {
-#if defined(__OPTIMIZE__) && !defined(HB_NO_PACKED) && \
-    defined(__BYTE_ORDER) && \
-    (__BYTE_ORDER == __BIG_ENDIAN || \
-     (__BYTE_ORDER == __LITTLE_ENDIAN && \
-      hb_has_builtin(__builtin_bswap16)))
-    
+  BEInt (Type V)
+#if HB_FAST_INT_ACCESS
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+  { ((packed_uint16_t *) v)->v = __builtin_bswap16 (V); }
+#else 
+  { ((packed_uint16_t *) v)->v = V; }
+#endif
+#else
+    : v {uint8_t ((V >>  8) & 0xFF),
+	 uint8_t ((V      ) & 0xFF)} {}
+#endif
 
+  constexpr operator Type () const {
+#if HB_FAST_INT_ACCESS
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     return __builtin_bswap16 (((packed_uint16_t *) v)->v);
 #else 
@@ -146,22 +163,27 @@ struct BEInt<Type, 3>
 template <typename Type>
 struct BEInt<Type, 4>
 {
+  struct __attribute__((packed)) packed_uint32_t { uint32_t v; };
+
   public:
   BEInt () = default;
-  constexpr BEInt (Type V) : v {uint8_t ((V >> 24) & 0xFF),
-			        uint8_t ((V >> 16) & 0xFF),
-			        uint8_t ((V >>  8) & 0xFF),
-			        uint8_t ((V      ) & 0xFF)} {}
 
-  struct __attribute__((packed)) packed_uint32_t { uint32_t v; };
+  BEInt (Type V)
+#if HB_FAST_INT_ACCESS
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+  { ((packed_uint32_t *) v)->v = __builtin_bswap32 (V); }
+#else 
+  { ((packed_uint32_t *) v)->v = V; }
+#endif
+#else
+    : v {uint8_t ((V >> 24) & 0xFF),
+	 uint8_t ((V >> 16) & 0xFF),
+	 uint8_t ((V >>  8) & 0xFF),
+	 uint8_t ((V      ) & 0xFF)} {}
+#endif
+
   constexpr operator Type () const {
-#if defined(__OPTIMIZE__) && !defined(HB_NO_PACKED) && \
-    defined(__BYTE_ORDER) && \
-    (__BYTE_ORDER == __BIG_ENDIAN || \
-     (__BYTE_ORDER == __LITTLE_ENDIAN && \
-      hb_has_builtin(__builtin_bswap32)))
-    
-
+#if HB_FAST_INT_ACCESS
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     return __builtin_bswap32 (((packed_uint32_t *) v)->v);
 #else 
@@ -231,12 +253,119 @@ struct
 }
 HB_FUNCOBJ (hb_bool);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define mix(h) (					\
+			(h) ^= (h) >> 23,		\
+			(h) *= 0x2127599bf4325c37ULL,	\
+			(h) ^= (h) >> 47)
+
+static inline uint64_t fasthash64(const void *buf, size_t len, uint64_t seed)
+{
+	struct __attribute__((packed)) packed_uint64_t { uint64_t v; };
+	const uint64_t    m = 0x880355f21e6d1965ULL;
+	const packed_uint64_t *pos = (const packed_uint64_t *)buf;
+	const packed_uint64_t *end = pos + (len / 8);
+	const unsigned char *pos2;
+	uint64_t h = seed ^ (len * m);
+	uint64_t v;
+
+#ifndef HB_OPTIMIZE_SIZE
+	if (((uintptr_t) pos & 7) == 0)
+	{
+	  while (pos != end)
+	  {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+	    v  = * (const uint64_t *) (pos++);
+#pragma GCC diagnostic pop
+	    h ^= mix(v);
+	    h *= m;
+	  }
+	}
+	else
+#endif
+	{
+	  while (pos != end)
+	  {
+	    v  = pos++->v;
+	    h ^= mix(v);
+	    h *= m;
+	  }
+	}
+
+	pos2 = (const unsigned char*)pos;
+	v = 0;
+
+	switch (len & 7) {
+	case 7: v ^= (uint64_t)pos2[6] << 48; HB_FALLTHROUGH;
+	case 6: v ^= (uint64_t)pos2[5] << 40; HB_FALLTHROUGH;
+	case 5: v ^= (uint64_t)pos2[4] << 32; HB_FALLTHROUGH;
+	case 4: v ^= (uint64_t)pos2[3] << 24; HB_FALLTHROUGH;
+	case 3: v ^= (uint64_t)pos2[2] << 16; HB_FALLTHROUGH;
+	case 2: v ^= (uint64_t)pos2[1] <<  8; HB_FALLTHROUGH;
+	case 1: v ^= (uint64_t)pos2[0];
+		h ^= mix(v);
+		h *= m;
+	}
+
+	return mix(h);
+}
+
+static inline uint32_t fasthash32(const void *buf, size_t len, uint32_t seed)
+{
+	
+	
+	
+        uint64_t h = fasthash64(buf, len, seed);
+	return h - (h >> 32);
+}
+
 struct
 {
   private:
 
   template <typename T> constexpr auto
-  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, hb_deref (v).hash ())
+  impl (const T& v, hb_priority<2>) const HB_RETURN (uint32_t, hb_deref (v).hash ())
+
+  
+  
+  
+  
+  
+  template <typename T,
+	    hb_enable_if (std::is_integral<T>::value && sizeof (T) <= sizeof (uint32_t))> constexpr auto
+  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, v * 2654435761u )
+  template <typename T,
+	    hb_enable_if (std::is_integral<T>::value && sizeof (T) > sizeof (uint32_t))> constexpr auto
+  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, (v ^ (v >> 32)) * 2654435761u )
 
   template <typename T> constexpr auto
   impl (const T& v, hb_priority<0>) const HB_RETURN (uint32_t, std::hash<hb_decay<decltype (hb_deref (v))>>{} (hb_deref (v)))
@@ -551,6 +680,8 @@ struct hb_pair_t
 template <typename T1, typename T2> static inline hb_pair_t<T1, T2>
 hb_pair (T1&& a, T2&& b) { return hb_pair_t<T1, T2> (a, b); }
 
+typedef hb_pair_t<hb_codepoint_t, hb_codepoint_t> hb_codepoint_pair_t;
+
 struct
 {
   template <typename Pair> constexpr typename Pair::first_t
@@ -853,7 +984,7 @@ static inline void *
 hb_memset (void *s, int c, unsigned int n)
 {
   
-  if (unlikely (!n)) return 0;
+  if (unlikely (!n)) return s;
   return memset (s, c, n);
 }
 
