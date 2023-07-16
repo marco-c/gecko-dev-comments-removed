@@ -17,9 +17,7 @@ add_setup(async function () {
   });
 
   
-  
   let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
-  UrlbarView.removeStaleRowsTimeout = 1000;
   registerCleanupFunction(() => {
     UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
   });
@@ -28,6 +26,22 @@ add_setup(async function () {
 
 
 add_task(async function viewContainsStaleRows() {
+  
+  
+  UrlbarView.removeStaleRowsTimeout = 10000;
+
+  
+  
+  let slowProvider = new UrlbarTestUtils.TestProvider({
+    results: [],
+    name: "emptySlowProvider",
+    addTimeout: 1000,
+  });
+  UrlbarProvidersManager.registerProvider(slowProvider);
+  registerCleanupFunction(() => {
+    UrlbarProvidersManager.unregisterProvider(slowProvider);
+  });
+
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
 
@@ -64,28 +78,21 @@ add_task(async function viewContainsStaleRows() {
 
   
   
-  let row = UrlbarTestUtils.getRowAt(window, halfResults);
+  Assert.ok(
+    !UrlbarTestUtils.getRowAt(window, halfResults).hasAttribute("stale"),
+    "Should not be stale"
+  );
 
-  
-  
-  let mutationPromise = new Promise(resolve => {
-    let observer = new MutationObserver(mutations => {
-      for (let mut of mutations) {
-        if (mut.attributeName == "stale" && !row.hasAttribute("stale")) {
-          observer.disconnect();
-          resolve();
-          break;
-        }
-      }
-    });
-    observer.observe(row, { attributes: true });
-  });
+  let lastMatchingResultUpdatedPromise = TestUtils.waitForCondition(() => {
+    let row = UrlbarTestUtils.getRowAt(window, halfResults);
+    console.log(row.result.title);
+    return row.result.title.startsWith("xx");
+  }, "Wait for the result to be updated");
 
   
   
   EventUtils.synthesizeKey("x");
-  info("Waiting for 'stale' attribute to be removed... ");
-  await mutationPromise;
+  await lastMatchingResultUpdatedPromise;
 
   
   
@@ -94,6 +101,16 @@ add_task(async function viewContainsStaleRows() {
   
   info("Waiting for the search to stop... ");
   await gURLBar.lastQueryContextPromise;
+
+  
+  Assert.ok(
+    !UrlbarTestUtils.getRowAt(window, halfResults).hasAttribute("stale"),
+    "Should not be stale"
+  );
+  Assert.ok(
+    UrlbarTestUtils.getRowAt(window, halfResults + 1).hasAttribute("stale"),
+    "Should be stale"
+  );
 
   
   
@@ -131,6 +148,7 @@ add_task(async function viewContainsStaleRows() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  UrlbarProvidersManager.unregisterProvider(slowProvider);
 });
 
 
@@ -155,7 +173,7 @@ add_task(async function staleReplacedWithFresh() {
   
   
   
-  
+  UrlbarView.removeStaleRowsTimeout = 1000;
 
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
