@@ -1458,10 +1458,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         flushCharacters();
 
         
+        boolean wasSelfClosing = selfClosing;
+        boolean voidElement = false;
         if (errorHandler != null) {
             
             @IdType String id = attributes.getId();
-            if (id != null) {
+            if (id != null && !isTemplateContents()) {
                 LocatorImpl oldLoc = idLocations.get(id);
                 if (oldLoc != null) {
                     err("Duplicate ID \u201C" + id + "\u201D.");
@@ -1580,6 +1582,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         case TITLE:
@@ -1592,6 +1597,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         case SCRIPT:
@@ -1778,6 +1786,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         attributes,
                                         formPointer);
                                 selfClosing = false;
+                                
+                                voidElement = true;
+                                
                                 attributes = null; 
                                 break starttagloop;
                             case FORM:
@@ -2124,6 +2135,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         elementName,
                                         attributes);
                                 selfClosing = false;
+                                
+                                voidElement = true;
+                                
                                 attributes = null; 
                                 break starttagloop;
                             case HR:
@@ -2132,6 +2146,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         elementName,
                                         attributes);
                                 selfClosing = false;
+                                
+                                voidElement = true;
+                                
                                 attributes = null; 
                                 break starttagloop;
                             case IMAGE:
@@ -2145,6 +2162,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         elementName, attributes,
                                         formPointer);
                                 selfClosing = false;
+                                
+                                voidElement = true;
+                                
                                 attributes = null; 
                                 break starttagloop;
                             case TEXTAREA:
@@ -2324,6 +2344,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         elementName,
                                         attributes);
                                 selfClosing = false;
+                                
+                                voidElement = true;
+                                
                                 attributes = null; 
                                 break starttagloop;
                             case META:
@@ -2391,6 +2414,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         case META:
@@ -2399,6 +2425,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         case STYLE:
@@ -2438,6 +2467,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         case TEMPLATE:
@@ -2572,6 +2604,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             attributes = null; 
                             break starttagloop;
                         default:
@@ -2745,6 +2780,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             pop(); 
                             attributes = null; 
                             break starttagloop;
@@ -2756,6 +2794,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     elementName,
                                     attributes);
                             selfClosing = false;
+                            
+                            voidElement = true;
+                            
                             pop(); 
                             attributes = null; 
                             break starttagloop;
@@ -2844,6 +2885,13 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         }
         if (selfClosing) {
             errSelfClosing();
+        
+        } else if (wasSelfClosing && voidElement
+                && tokenizer.getErrorProfile() != null
+                && tokenizer.getErrorProfile().get("html-strict") != null) {
+            warn("Trailing slash on void elements has no effect and interacts"
+                    + " badly with unquoted attribute values.");
+        
         }
         
         
