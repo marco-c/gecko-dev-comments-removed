@@ -1755,6 +1755,11 @@ static bool commitRadialGradient(sampler2D sampler, int address, float size,
       if (b > 0) {
         b = fastSqrt<false>(b);
         endT = min(endT, t >= middleT ? middleT + b : middleT - b);
+      } else {
+        
+        
+        
+        endT = min(endT, middleT);
       }
     }
     
