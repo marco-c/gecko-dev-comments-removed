@@ -4170,16 +4170,28 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
           std::min(aMetrics->underlineOffset,
                    aMetrics->underlineSize - aMetrics->emDescent);
     }
-  }
-  
-  
-  else if (aMetrics->underlineSize - aMetrics->underlineOffset >
-           aMetrics->maxDescent) {
-    if (aMetrics->underlineSize > aMetrics->maxDescent)
-      aMetrics->underlineSize = std::max(aMetrics->maxDescent, 1.0);
+  } else {
     
     
-    aMetrics->underlineOffset = aMetrics->underlineSize - aMetrics->maxDescent;
+    
+    
+    
+    
+    
+    
+    int prefValue = StaticPrefs::gfx_font_metrics_adjust_distant_underline();
+    if (prefValue == 2 || (prefValue == 1 && GetFontEntry()->IsUserFont()) ||
+        aIsBadUnderlineFont) {
+      if (aMetrics->underlineSize - aMetrics->underlineOffset >
+          aMetrics->maxDescent) {
+        if (aMetrics->underlineSize > aMetrics->maxDescent)
+          aMetrics->underlineSize = std::max(aMetrics->maxDescent, 1.0);
+        
+        
+        aMetrics->underlineOffset =
+            aMetrics->underlineSize - aMetrics->maxDescent;
+      }
+    }
   }
 
   
