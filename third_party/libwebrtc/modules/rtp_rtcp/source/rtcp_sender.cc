@@ -816,20 +816,14 @@ std::vector<rtcp::ReportBlock> RTCPSender::CreateReportBlocks(
   if (!receive_statistics_)
     return result;
 
-  
-  
-  
   result = receive_statistics_->RtcpReportBlocks(RTCP_MAX_REPORT_BLOCKS);
 
   if (!result.empty() && feedback_state.last_rr.Valid()) {
     
     uint32_t now = CompactNtp(clock_->CurrentNtpTime());
     uint32_t receive_time = CompactNtp(feedback_state.last_rr);
-
     uint32_t delay_since_last_sr = now - receive_time;
-    
-    
-    
+
     for (auto& report_block : result) {
       report_block.SetLastSr(feedback_state.remote_sr);
       report_block.SetDelayLastSr(delay_since_last_sr);
