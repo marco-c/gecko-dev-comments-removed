@@ -588,12 +588,33 @@ js::gc::AllocKind js::WasmStructObject::allocKindForTypeDef(
 
 
 template <bool ZeroFields>
-WasmStructObject* WasmStructObject::createStructOOL(
+WasmStructObject* WasmStructObject::createStruct(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-    js::gc::Heap initialHeap, uint32_t inlineBytes, uint32_t outlineBytes) {
+    js::gc::Heap initialHeap) {
+  const wasm::TypeDef* typeDef = typeDefData->typeDef;
+  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
+
+  uint32_t totalBytes = typeDef->structType().size_;
+  uint32_t inlineBytes, outlineBytes;
+  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+
   
-  
-  
+  if (MOZ_LIKELY(outlineBytes == 0)) {
+    
+    
+    WasmStructObject* structObj =
+        (WasmStructObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
+    if (MOZ_UNLIKELY(!structObj)) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    structObj->outlineData_ = nullptr;
+    if constexpr (ZeroFields) {
+      memset(&(structObj->inlineData_[0]), 0, inlineBytes);
+    }
+    return structObj;
+  }
 
   
   
