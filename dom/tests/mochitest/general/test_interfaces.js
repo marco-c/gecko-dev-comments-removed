@@ -1933,7 +1933,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "setTimeout", insecureContext: true },
   
-  { name: "sizeToContent", insecureContext: true },
+  { name: "sizeToContent", insecureContext: true, nightly: false },
   
   { name: "speechSynthesis", insecureContext: true },
   
