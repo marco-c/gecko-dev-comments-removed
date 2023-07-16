@@ -194,13 +194,16 @@
 
 
 
+
+
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro,
     clippy::collapsible_if,
     clippy::derive_partial_eq_without_eq,
-    clippy::needless_borrowed_reference
+    clippy::needless_borrowed_reference,
+    clippy::single_match
 )]
 #![warn(
     trivial_casts,
@@ -212,7 +215,17 @@
     clippy::rest_pat_in_fully_bound_structs,
     clippy::match_wildcard_for_single_variants
 )]
-#![cfg_attr(not(test), deny(clippy::panic))]
+#![deny(clippy::exit)]
+#![cfg_attr(
+    not(test),
+    warn(
+        clippy::dbg_macro,
+        clippy::panic,
+        clippy::print_stderr,
+        clippy::print_stdout,
+        clippy::todo
+    )
+)]
 
 mod arena;
 pub mod back;
@@ -410,7 +423,7 @@ pub enum ScalarKind {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum ArraySize {
     
-    Constant(Handle<Constant>),
+    Constant(std::num::NonZeroU32),
     
     Dynamic,
 }
@@ -488,7 +501,7 @@ bitflags::bitflags! {
     #[cfg_attr(feature = "serialize", derive(Serialize))]
     #[cfg_attr(feature = "deserialize", derive(Deserialize))]
     #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct StorageAccess: u32 {
         /// Storage can be used as a source for load ops.
         const LOAD = 0x1;
@@ -775,8 +788,6 @@ pub enum TypeInner {
     
     
     
-    
-    
     BindingArray { base: Handle<Type>, size: ArraySize },
 }
 
@@ -790,6 +801,18 @@ pub struct Constant {
     pub name: Option<String>,
     pub specialization: Option<u32>,
     pub inner: ConstantInner,
+}
+
+#[derive(Debug, Clone, Copy, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum Literal {
+    F64(f64),
+    F32(f32),
+    U32(u32),
+    I32(i32),
+    Bool(bool),
 }
 
 
@@ -1172,7 +1195,7 @@ bitflags::bitflags! {
     #[cfg_attr(feature = "serialize", derive(Serialize))]
     #[cfg_attr(feature = "deserialize", derive(Deserialize))]
     #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub struct Barrier: u32 {
         /// Barrier affects all `AddressSpace::Storage` accesses.
         const STORAGE = 0x1;
@@ -1190,6 +1213,13 @@ bitflags::bitflags! {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum Expression {
+    
+    Literal(Literal),
+    
+    Constant(Handle<Constant>),
+    
+    ZeroValue(Handle<Type>),
+
     
     
     
@@ -1248,8 +1278,6 @@ pub enum Expression {
         base: Handle<Expression>,
         index: u32,
     },
-    
-    Constant(Handle<Constant>),
     
     Splat {
         size: VectorSize,
@@ -1448,6 +1476,13 @@ pub enum Expression {
     
     
     
+    WorkGroupUniformLoadResult {
+        
+        ty: Handle<Type>,
+    },
+    
+    
+    
     
     
     ArrayLength(Handle<Expression>),
@@ -1612,6 +1647,8 @@ pub enum Statement {
     
     
     
+    
+    
     Loop {
         body: Block,
         continuing: Block,
@@ -1697,6 +1734,21 @@ pub enum Statement {
         fun: AtomicFunction,
         
         value: Handle<Expression>,
+        
+        
+        
+        result: Handle<Expression>,
+    },
+    
+    
+    
+    
+    WorkGroupUniformLoad {
+        
+        
+        
+        
+        pointer: Handle<Expression>,
         
         
         

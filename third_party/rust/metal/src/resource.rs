@@ -5,8 +5,9 @@
 
 
 
-use super::{DeviceRef, HeapRef, NSUInteger};
+use super::*;
 use objc::runtime::{NO, YES};
+
 
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -17,12 +18,14 @@ pub enum MTLPurgeableState {
     Empty = 4,
 }
 
+
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum MTLCPUCacheMode {
     DefaultCache = 0,
     WriteCombined = 1,
 }
+
 
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -33,6 +36,8 @@ pub enum MTLStorageMode {
     
     Memoryless = 3,
 }
+
+
 
 
 #[repr(u64)]
@@ -51,6 +56,7 @@ pub const MTLResourceHazardTrackingModeShift: NSUInteger = 8;
 pub const MTLResourceHazardTrackingModeMask: NSUInteger = 0x3 << MTLResourceHazardTrackingModeShift;
 
 bitflags! {
+    /// See <https://developer.apple.com/documentation/metal/mtlresourceoptions>
     #[allow(non_upper_case_globals)]
     pub struct MTLResourceOptions: NSUInteger {
         const CPUCacheModeDefaultCache  = (MTLCPUCacheMode::DefaultCache as NSUInteger) << MTLResourceCPUCacheModeShift;
@@ -75,6 +81,8 @@ bitflags! {
     ///
     /// Enabling certain options for certain resources determines whether the Metal driver should
     /// convert the resource to another format (for example, whether to decompress a color render target).
+    ///
+    /// See <https://developer.apple.com/documentation/metal/mtlresourceusage>
     pub struct MTLResourceUsage: NSUInteger {
         /// An option that enables reading from the resource.
         const Read   = 1 << 0;
@@ -87,6 +95,7 @@ bitflags! {
     }
 }
 
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[repr(C)]
 pub struct MTLSizeAndAlign {
@@ -94,12 +103,13 @@ pub struct MTLSizeAndAlign {
     pub align: NSUInteger,
 }
 
+
 pub enum MTLResource {}
 
 foreign_obj_type! {
     type CType = MTLResource;
     pub struct Resource;
-    pub struct ResourceRef;
+    type ParentType = NsObject;
 }
 
 impl ResourceRef {

@@ -8,6 +8,7 @@
 use crate::DeviceRef;
 use objc::runtime::{NO, YES};
 
+
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLCompareFunction {
@@ -20,6 +21,7 @@ pub enum MTLCompareFunction {
     GreaterEqual = 6,
     Always = 7,
 }
+
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -34,12 +36,12 @@ pub enum MTLStencilOperation {
     DecrementWrap = 7,
 }
 
+
 pub enum MTLStencilDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLStencilDescriptor;
     pub struct StencilDescriptor;
-    pub struct StencilDescriptorRef;
 }
 
 impl StencilDescriptor {
@@ -101,12 +103,12 @@ impl StencilDescriptorRef {
     }
 }
 
+
 pub enum MTLDepthStencilDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLDepthStencilDescriptor;
     pub struct DepthStencilDescriptor;
-    pub struct DepthStencilDescriptorRef;
 }
 
 impl DepthStencilDescriptor {
@@ -172,12 +174,12 @@ impl DepthStencilDescriptorRef {
     }
 }
 
+
 pub enum MTLDepthStencilState {}
 
 foreign_obj_type! {
     type CType = MTLDepthStencilState;
     pub struct DepthStencilState;
-    pub struct DepthStencilStateRef;
 }
 
 impl DepthStencilStateRef {

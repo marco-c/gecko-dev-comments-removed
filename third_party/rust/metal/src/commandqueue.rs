@@ -7,12 +7,12 @@
 
 use super::*;
 
+
 pub enum MTLCommandQueue {}
 
 foreign_obj_type! {
     type CType = MTLCommandQueue;
     pub struct CommandQueue;
-    pub struct CommandQueueRef;
 }
 
 impl CommandQueueRef {
