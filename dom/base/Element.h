@@ -597,7 +597,7 @@ class Element : public FragmentOrElement {
   
 
 
-  mozilla::dom::Element* GetTopmostPopoverAncestor() const;
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker) const;
 
   ElementAnimationData* GetAnimationData() const {
     if (!MayHaveAnimations()) {
