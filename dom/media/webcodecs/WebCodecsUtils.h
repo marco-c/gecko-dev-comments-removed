@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_webcodecs_Utils
-#define mozilla_webcodecs_Utils
+#ifndef MOZILLA_DOM_WEBCODECS_WEBCODECSUTILS_H
+#define MOZILLA_DOM_WEBCODECS_WEBCODECSUTILS_H
 
 #include <tuple>
 
