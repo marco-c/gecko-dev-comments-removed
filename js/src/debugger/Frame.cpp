@@ -31,6 +31,7 @@
 #include "debugger/Object.h"               
 #include "debugger/Script.h"               
 #include "frontend/BytecodeCompilation.h"  
+#include "frontend/BytecodeCompiler.h"     
 #include "frontend/FrontendContext.h"      
 #include "gc/Barrier.h"                    
 #include "gc/GC.h"                         

@@ -101,6 +101,7 @@
 
 class JSFunction;
 class JSLinearString;
+class JSScript;
 struct JSContext;
 
 namespace js {
@@ -149,6 +150,18 @@ CompileGlobalScriptToExtensibleStencil(
                                               CompilationInput& input,
                                               const CompilationStencil& stencil,
                                               CompilationGCOutput& gcOutput);
+
+
+
+extern JSScript* CompileGlobalScript(JSContext* cx, FrontendContext* fc,
+                                     const JS::ReadOnlyCompileOptions& options,
+                                     JS::SourceText<char16_t>& srcBuf,
+                                     ScopeKind scopeKind);
+
+extern JSScript* CompileGlobalScript(JSContext* cx, FrontendContext* fc,
+                                     const JS::ReadOnlyCompileOptions& options,
+                                     JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+                                     ScopeKind scopeKind);
 
 
 ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,

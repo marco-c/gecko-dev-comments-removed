@@ -17,7 +17,6 @@
 #include "jstypes.h"  
 
 #include "debugger/DebugAPI.h"
-#include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
