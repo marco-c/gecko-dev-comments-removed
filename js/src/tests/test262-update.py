@@ -31,7 +31,6 @@ UNSUPPORTED_FEATURES = set(
         "symbols-as-weakmap-keys",  
         "arraybuffer-transfer",  
         "json-parse-with-source",  
-        "iterator-helpers",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
@@ -45,6 +44,7 @@ FEATURE_CHECK_NEEDED = {
     "Array.fromAsync": "!Array.fromAsync",  
     "String.prototype.isWellFormed": "!String.prototype.isWellFormed",
     "String.prototype.toWellFormed": "!String.prototype.toWellFormed",
+    "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
 }
 RELEASE_OR_BETA = set([])
 SHELL_OPTIONS = {
@@ -55,6 +55,7 @@ SHELL_OPTIONS = {
     "Array.fromAsync": "--enable-array-from-async",
     "String.prototype.isWellFormed": "--enable-well-formed-unicode-strings",
     "String.prototype.toWellFormed": "--enable-well-formed-unicode-strings",
+    "iterator-helpers": "--enable-iterator-helpers",
 }
 
 
