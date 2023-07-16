@@ -10896,7 +10896,7 @@ BaseCompiler::~BaseCompiler() {
 
 bool BaseCompiler::init() {
   
-  MOZ_ASSERT_IF(usesMemory() && isMem64(), !moduleEnv_.hugeMemoryEnabled());
+  MOZ_ASSERT_IF(usesMemory() && isMem64(), !moduleEnv_.hugeMemoryEnabled(0));
   
   MOZ_ASSERT(!moduleEnv_.isAsmJS());
   
