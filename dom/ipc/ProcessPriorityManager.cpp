@@ -18,7 +18,6 @@
 #include "mozilla/ProfilerState.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_threads.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Logging.h"
@@ -772,21 +771,6 @@ ProcessPriority ParticularProcessPriorityManager::ComputePriority() {
   return PROCESS_PRIORITY_BACKGROUND;
 }
 
-#ifdef XP_MACOSX
-
-static bool PriorityUsesLowPowerMainThread(
-    const hal::ProcessPriority& aPriority) {
-  return aPriority == hal::PROCESS_PRIORITY_BACKGROUND ||
-         aPriority == hal::PROCESS_PRIORITY_PREALLOC;
-}
-
-
-static bool PrefsUseLowPriorityThreads() {
-  return StaticPrefs::threads_use_low_power_enabled() &&
-         StaticPrefs::threads_lower_mainthread_priority_in_background_enabled();
-}
-#endif
-
 void ParticularProcessPriorityManager::SetPriorityNow(
     ProcessPriority aPriority) {
   if (aPriority == PROCESS_PRIORITY_UNKNOWN) {
@@ -831,32 +815,6 @@ void ParticularProcessPriorityManager::SetPriorityNow(
   if (oldPriority != mPriority) {
     ProcessPriorityManagerImpl::GetSingleton()->NotifyProcessPriorityChanged(
         this, oldPriority);
-
-#ifdef XP_MACOSX
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (PriorityUsesLowPowerMainThread(mPriority) !=
-        (PriorityUsesLowPowerMainThread(oldPriority))) {
-      if (PriorityUsesLowPowerMainThread(mPriority) &&
-          PrefsUseLowPriorityThreads()) {
-        mContentParent->SetMainThreadQoSPriority(nsIThread::QOS_PRIORITY_LOW);
-      } else if (PriorityUsesLowPowerMainThread(oldPriority)) {
-        
-        
-        
-        
-        mContentParent->SetMainThreadQoSPriority(
-            nsIThread::QOS_PRIORITY_NORMAL);
-      }
-    }
-#endif
 
     Unused << mContentParent->SendNotifyProcessPriorityChanged(mPriority);
   }
