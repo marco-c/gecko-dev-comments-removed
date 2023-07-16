@@ -53,7 +53,7 @@ const COMPARE_TESTS = [
   
 ];
 
-const TEST_FIELD_NAME = "Tel";
+const TEST_FIELD_NAME = "tel";
 
 add_setup(async () => {
   Services.prefs.setBoolPref("browser.search.region", "US");

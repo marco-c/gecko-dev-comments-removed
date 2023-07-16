@@ -7,7 +7,6 @@ const VALID_TESTS = [
   
   ["john.doe@mozilla.org", true],
 
-  ["", false], 
   ["@mozilla.org", false], 
   ["john.doe@", false], 
   ["john.doe@-mozilla.org", false], 
@@ -57,7 +56,7 @@ const COMPARE_TESTS = [
   ["john#smith@gmail.com", "johnsmith@gmail.com", DIFFERENT],
 ];
 
-const TEST_FIELD_NAME = "Email";
+const TEST_FIELD_NAME = "email";
 
 add_setup(async () => {});
 

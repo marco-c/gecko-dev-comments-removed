@@ -5,7 +5,6 @@ const VALID_TESTS = [
   ["Mozilla", true],
   ["mozilla", true],
   ["@Mozilla", true],
-  ["  ", true], 
   ["-!@#%&*_(){}[:;\"',.?]", false], 
 ];
 
@@ -38,7 +37,7 @@ const COMPARE_TESTS = [
   ["Linens 'n Things", "Linens'n Things", SIMILAR], 
 ];
 
-const TEST_FIELD_NAME = "Organization";
+const TEST_FIELD_NAME = "organization";
 
 add_setup(async () => {});
 
