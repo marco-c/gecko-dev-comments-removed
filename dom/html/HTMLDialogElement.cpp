@@ -159,9 +159,7 @@ void HTMLDialogElement::FocusDialog() {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
-  RefPtr<Element> control = HasAttr(nsGkAtoms::autofocus)
-                                ? this
-                                : GetFocusDelegate(false );
+  RefPtr<Element> control = GetFocusDelegate(false );
 
   
   if (!control) {
@@ -170,8 +168,6 @@ void HTMLDialogElement::FocusDialog() {
 
   FocusCandidate(*control, IsInTopLayer());
 }
-
-int32_t HTMLDialogElement::TabIndexDefault() { return 0; }
 
 void HTMLDialogElement::QueueCancelDialog() {
   
