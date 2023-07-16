@@ -501,12 +501,12 @@ impl<H: ToShmem, T: ToShmem> ToShmem for ThinArc<H, T> {
 
 impl<T: ToShmem> ToShmem for ThinVec<T> {
     fn to_shmem(&self, builder: &mut SharedMemoryBuilder) -> Result<Self> {
-        let len = self.len();
-        if len == 0 {
-            return Ok(ManuallyDrop::new(Self::new()));
-        }
-
         assert_eq!(mem::size_of::<Self>(), mem::size_of::<*const ()>());
+
+        
+        
+        
+        let len = self.len();
 
         
         
