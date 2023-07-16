@@ -8,6 +8,7 @@
 use super::NSUInteger;
 use std::default::Default;
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub struct MTLOrigin {
@@ -15,6 +16,7 @@ pub struct MTLOrigin {
     pub y: NSUInteger,
     pub z: NSUInteger,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
@@ -33,6 +35,7 @@ impl MTLSize {
         }
     }
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
@@ -72,9 +75,16 @@ impl MTLRegion {
     }
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct MTLSamplePosition {
     pub x: f32,
     pub y: f32,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
+pub struct MTLResourceID {
+    pub _impl: u64,
 }

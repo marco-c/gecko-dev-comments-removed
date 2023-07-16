@@ -2,17 +2,29 @@
 
 #![no_std]
 #![warn(missing_docs)]
-#![doc(html_root_url="https://docs.rs/foreign-types-shared/0.1")]
+#![doc(html_root_url = "https://docs.rs/foreign-types-shared/0.3")]
 
 use core::cell::UnsafeCell;
+use core::marker::PhantomData;
+use core::mem;
 
 
 
 
-pub struct Opaque(UnsafeCell<()>);
+pub struct Opaque(PhantomData<UnsafeCell<*mut ()>>);
 
 
-pub trait ForeignType: Sized {
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait ForeignType: Sized {
     
     type CType;
 
@@ -20,26 +32,55 @@ pub trait ForeignType: Sized {
     type Ref: ForeignTypeRef<CType = Self::CType>;
 
     
+    
+    
+    
+    
     unsafe fn from_ptr(ptr: *mut Self::CType) -> Self;
 
     
     fn as_ptr(&self) -> *mut Self::CType;
+
+    
+    #[inline]
+    fn into_ptr(self) -> *mut Self::CType {
+        let ptr = self.as_ptr();
+        mem::forget(self);
+        ptr
+    }
 }
 
 
-pub trait ForeignTypeRef: Sized {
+
+
+
+
+
+
+
+pub unsafe trait ForeignTypeRef: Sized {
     
     type CType;
 
     
+    
+    
+    
+    
     #[inline]
     unsafe fn from_ptr<'a>(ptr: *mut Self::CType) -> &'a Self {
+        debug_assert!(!ptr.is_null());
         &*(ptr as *mut _)
     }
 
     
+    
+    
+    
+    
     #[inline]
     unsafe fn from_ptr_mut<'a>(ptr: *mut Self::CType) -> &'a mut Self {
+        debug_assert!(!ptr.is_null());
         &mut *(ptr as *mut _)
     }
 

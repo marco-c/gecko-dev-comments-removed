@@ -2,7 +2,7 @@
 use super::Swapchain;
 use crate::prelude::*;
 use crate::vk;
-use crate::{Device, Instance};
+use crate::{Device, Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
 
@@ -14,12 +14,32 @@ pub struct DeviceGroup {
 }
 
 impl DeviceGroup {
+    
+    
+    
+    
+    
+    
+    
     pub fn new(instance: &Instance, device: &Device) -> Self {
         let handle = device.handle();
         let fp = vk::KhrDeviceGroupFn::load(|name| unsafe {
             mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
+        let fp = vk::KhrDeviceGroupFn::load(|name| unsafe {
+            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
+        });
+        Self { handle: device, fp }
     }
 
     
@@ -104,6 +124,10 @@ impl DeviceGroup {
             .result_with_success(modes)
     }
 
+    
+    
+    
+    
     
     
     

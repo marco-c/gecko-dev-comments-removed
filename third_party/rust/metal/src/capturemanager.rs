@@ -8,12 +8,12 @@
 use super::*;
 use std::ffi::CStr;
 
+
 pub enum MTLCaptureScope {}
 
 foreign_obj_type! {
     type CType = MTLCaptureScope;
     pub struct CaptureScope;
-    pub struct CaptureScopeRef;
 }
 
 impl CaptureScopeRef {
@@ -33,12 +33,12 @@ impl CaptureScopeRef {
     }
 }
 
+
 pub enum MTLCaptureManager {}
 
 foreign_obj_type! {
     type CType = MTLCaptureManager;
     pub struct CaptureManager;
-    pub struct CaptureManagerRef;
 }
 
 impl CaptureManager {
@@ -71,12 +71,18 @@ impl CaptureManagerRef {
     }
 
     
+    
+    
+    
+    
+    
+    
     pub fn start_capture(&self, descriptor: &CaptureDescriptorRef) -> Result<(), String> {
         unsafe {
-            try_objc! { err =>
+            Ok(try_objc! { err =>
                 msg_send![self, startCaptureWithDescriptor: descriptor
                                 error: &mut err]
-            }
+            })
         }
     }
 

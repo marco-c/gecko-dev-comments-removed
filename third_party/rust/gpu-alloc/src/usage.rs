@@ -7,6 +7,7 @@ bitflags::bitflags! {
     /// Memory usage type.
     /// Bits set define intended usage for requested memory.
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct UsageFlags: u8 {
         /// Hints for allocator to find memory with faster device access.
         /// If no flags is specified than `FAST_DEVICE_ACCESS` is implied.
@@ -110,7 +111,7 @@ fn one_usage(usage: UsageFlags, memory_types: &[MemoryType]) -> MemoryForOneUsag
     }
 
     types[..types_count as usize]
-        .sort_unstable_by_key(|&index| priority(usage, memory_types[index as usize].props));
+        .sort_unstable_by_key(|&index| reverse_priority(usage, memory_types[index as usize].props));
 
     let mask = types[..types_count as usize]
         .iter()
@@ -139,7 +140,7 @@ fn compatible(usage: UsageFlags, flags: MemoryPropertyFlags) -> bool {
 
 
 
-fn priority(usage: UsageFlags, flags: MemoryPropertyFlags) -> u32 {
+fn reverse_priority(usage: UsageFlags, flags: MemoryPropertyFlags) -> u32 {
     type Flags = MemoryPropertyFlags;
 
     
@@ -154,14 +155,22 @@ fn priority(usage: UsageFlags, flags: MemoryPropertyFlags) -> u32 {
     );
 
     
-    
-    let cached: bool = flags.contains(Flags::HOST_CACHED) ^ usage.contains(UsageFlags::DOWNLOAD);
+    let host_visible: bool = flags.contains(Flags::HOST_VISIBLE)
+        ^ usage.intersects(UsageFlags::HOST_ACCESS | UsageFlags::UPLOAD | UsageFlags::DOWNLOAD);
 
     
     
-    let coherent: bool = flags.contains(Flags::HOST_COHERENT)
+    let host_cached: bool =
+        flags.contains(Flags::HOST_CACHED) ^ usage.contains(UsageFlags::DOWNLOAD);
+
+    
+    
+    let host_coherent: bool = flags.contains(Flags::HOST_COHERENT)
         ^ (usage.intersects(UsageFlags::UPLOAD | UsageFlags::DOWNLOAD));
 
     
-    device_local as u32 * 4 + cached as u32 * 2 + coherent as u32
+    device_local as u32 * 8
+        + host_visible as u32 * 4
+        + host_cached as u32 * 2
+        + host_coherent as u32
 }

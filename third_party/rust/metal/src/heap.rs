@@ -8,6 +8,8 @@
 use super::*;
 
 
+
+
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum MTLHeapType {
@@ -17,12 +19,12 @@ pub enum MTLHeapType {
     Sparse = 2,
 }
 
+
 pub enum MTLHeap {}
 
 foreign_obj_type! {
     type CType = MTLHeap;
     pub struct Heap;
-    pub struct HeapRef;
 }
 
 impl HeapRef {
@@ -148,12 +150,12 @@ impl HeapRef {
     }
 }
 
+
 pub enum MTLHeapDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLHeapDescriptor;
     pub struct HeapDescriptor;
-    pub struct HeapDescriptorRef;
 }
 
 impl HeapDescriptor {

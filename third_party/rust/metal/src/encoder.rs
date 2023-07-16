@@ -9,6 +9,7 @@ use super::*;
 
 use std::ops::Range;
 
+
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLPrimitiveType {
@@ -19,6 +20,7 @@ pub enum MTLPrimitiveType {
     TriangleStrip = 4,
 }
 
+
 #[repr(u64)]
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -26,6 +28,7 @@ pub enum MTLIndexType {
     UInt16 = 0,
     UInt32 = 1,
 }
+
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -35,6 +38,7 @@ pub enum MTLVisibilityResultMode {
     Counting = 2,
 }
 
+
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLCullMode {
@@ -43,6 +47,7 @@ pub enum MTLCullMode {
     Back = 2,
 }
 
+
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLWinding {
@@ -50,12 +55,14 @@ pub enum MTLWinding {
     CounterClockwise = 1,
 }
 
+
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLDepthClipMode {
     Clip = 0,
     Clamp = 1,
 }
+
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -79,6 +86,7 @@ bitflags! {
     }
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct MTLScissorRect {
@@ -87,6 +95,7 @@ pub struct MTLScissorRect {
     pub width: NSUInteger,
     pub height: NSUInteger,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -99,6 +108,7 @@ pub struct MTLViewport {
     pub zfar: f64,
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct MTLDrawPrimitivesIndirectArguments {
@@ -107,6 +117,7 @@ pub struct MTLDrawPrimitivesIndirectArguments {
     pub vertexStart: u32,
     pub baseInstance: u32,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -118,6 +129,7 @@ pub struct MTLDrawIndexedPrimitivesIndirectArguments {
     pub baseInstance: u32,
 }
 
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct VertexAmplificationViewMapping {
@@ -125,12 +137,15 @@ pub struct VertexAmplificationViewMapping {
     pub viewportArrayIndexOffset: u32,
 }
 
+#[allow(dead_code)]
+type MTLVertexAmplicationViewMapping = VertexAmplificationViewMapping;
+
+
 pub enum MTLCommandEncoder {}
 
 foreign_obj_type! {
     type CType = MTLCommandEncoder;
     pub struct CommandEncoder;
-    pub struct CommandEncoderRef;
 }
 
 impl CommandEncoderRef {
@@ -171,13 +186,13 @@ impl CommandEncoderRef {
     }
 }
 
+
 pub enum MTLParallelRenderCommandEncoder {}
 
 foreign_obj_type! {
     type CType = MTLParallelRenderCommandEncoder;
     pub struct ParallelRenderCommandEncoder;
-    pub struct ParallelRenderCommandEncoderRef;
-    type ParentType = CommandEncoderRef;
+    type ParentType = CommandEncoder;
 }
 
 impl ParallelRenderCommandEncoderRef {
@@ -186,13 +201,13 @@ impl ParallelRenderCommandEncoderRef {
     }
 }
 
+
 pub enum MTLRenderCommandEncoder {}
 
 foreign_obj_type! {
     type CType = MTLRenderCommandEncoder;
     pub struct RenderCommandEncoder;
-    pub struct RenderCommandEncoderRef;
-    type ParentType = CommandEncoderRef;
+    type ParentType = CommandEncoder;
 }
 
 impl RenderCommandEncoderRef {
@@ -396,6 +411,308 @@ impl RenderCommandEncoderRef {
     }
 
     
+    pub fn set_vertex_acceleration_structure(
+        &self,
+        index: NSUInteger,
+        accel: Option<&accelerator_structure::AccelerationStructureRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setVertexAccelerationStructure: accel
+                atBufferIndex: index
+            ]
+        }
+    }
+
+    
+    pub fn set_vertex_intersection_function_table(
+        &self,
+        index: NSUInteger,
+        table: Option<&IntersectionFunctionTableRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setVertexIntersectionFunctionTable: table
+                atBufferIndex: index
+            ]
+        }
+    }
+
+    
+
+    
+    pub fn set_object_buffer(
+        &self,
+        index: NSUInteger,
+        buffer: Option<&BufferRef>,
+        offset: NSUInteger,
+    ) {
+        unsafe {
+            msg_send![self,
+                setObjectBuffer:buffer
+                offset:offset
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_buffer_offset(&self, index: NSUInteger, offset: NSUInteger) {
+        unsafe {
+            msg_send![self,
+                setObjectBufferOffset:offset
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_bytes(
+        &self,
+        index: NSUInteger,
+        length: NSUInteger,
+        bytes: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            msg_send![self,
+                setObjectBytes:bytes
+                length:length
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_sampler_state(&self, index: NSUInteger, sampler: Option<&SamplerStateRef>) {
+        unsafe {
+            msg_send![self,
+                setObjectSamplerState:sampler
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_sampler_state_with_lod(
+        &self,
+        index: NSUInteger,
+        sampler: Option<&SamplerStateRef>,
+        lod_clamp: Range<f32>,
+    ) {
+        unsafe {
+            msg_send![self,
+                setObjectSamplerState:sampler
+                lodMinClamp:lod_clamp.start
+                lodMaxClamp:lod_clamp.end
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_texture(&self, index: NSUInteger, texture: Option<&TextureRef>) {
+        unsafe {
+            msg_send![self,
+                setObjectTexture:texture
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_threadgroup_memory_length(&self, index: NSUInteger, length: NSUInteger) {
+        unsafe {
+            msg_send![self,
+                setObjectThreadgroupMemoryLength: length
+                atIndex: index
+            ]
+        }
+    }
+
+    
+    pub fn set_object_buffers(
+        &self,
+        start_index: NSUInteger,
+        data: &[Option<&BufferRef>],
+        offsets: &[NSUInteger],
+    ) {
+        debug_assert_eq!(offsets.len(), data.len());
+        unsafe {
+            msg_send![self,
+                setObjectBuffers: data.as_ptr()
+                offsets: offsets.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
+    pub fn set_object_sampler_states(
+        &self,
+        start_index: NSUInteger,
+        data: &[Option<&SamplerStateRef>],
+    ) {
+        unsafe {
+            msg_send![self,
+                setObjectSamplerStates: data.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
+    pub fn set_object_textures(&self, start_index: NSUInteger, data: &[Option<&TextureRef>]) {
+        unsafe {
+            msg_send![self,
+                setObjectTextures: data.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
+
+    
+    pub fn set_mesh_buffer(
+        &self,
+        index: NSUInteger,
+        buffer: Option<&BufferRef>,
+        offset: NSUInteger,
+    ) {
+        unsafe {
+            msg_send![self,
+                setMeshBuffer:buffer
+                offset:offset
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_buffer_offset(&self, index: NSUInteger, offset: NSUInteger) {
+        unsafe {
+            msg_send![self,
+                setMeshBufferOffset:offset
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_bytes(
+        &self,
+        index: NSUInteger,
+        length: NSUInteger,
+        bytes: *const std::ffi::c_void,
+    ) {
+        unsafe {
+            msg_send![self,
+                setMeshBytes:bytes
+                length:length
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_sampler_state(&self, index: NSUInteger, sampler: Option<&SamplerStateRef>) {
+        unsafe {
+            msg_send![self,
+                setMeshSamplerState:sampler
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_sampler_state_with_lod(
+        &self,
+        index: NSUInteger,
+        sampler: Option<&SamplerStateRef>,
+        lod_clamp: Range<f32>,
+    ) {
+        unsafe {
+            msg_send![self,
+                setMeshSamplerState:sampler
+                lodMinClamp:lod_clamp.start
+                lodMaxClamp:lod_clamp.end
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_texture(&self, index: NSUInteger, texture: Option<&TextureRef>) {
+        unsafe {
+            msg_send![self,
+                setMeshTexture:texture
+                atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_buffers(
+        &self,
+        start_index: NSUInteger,
+        data: &[Option<&BufferRef>],
+        offsets: &[NSUInteger],
+    ) {
+        debug_assert_eq!(offsets.len(), data.len());
+        unsafe {
+            msg_send![self,
+                setMeshBuffers: data.as_ptr()
+                offsets: offsets.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_sampler_states(
+        &self,
+        start_index: NSUInteger,
+        data: &[Option<&SamplerStateRef>],
+    ) {
+        unsafe {
+            msg_send![self,
+                setMeshSamplerStates: data.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
+    pub fn set_mesh_textures(&self, start_index: NSUInteger, data: &[Option<&TextureRef>]) {
+        unsafe {
+            msg_send![self,
+                setMeshTextures: data.as_ptr()
+                withRange: NSRange {
+                    location: start_index,
+                    length: data.len() as _,
+                }
+            ]
+        }
+    }
+
+    
 
     pub fn set_fragment_bytes(
         &self,
@@ -511,6 +828,36 @@ impl RenderCommandEncoderRef {
                 lodMinClamp:lod_clamp.start
                 lodMaxClamp:lod_clamp.end
                 atIndex:index
+            ]
+        }
+    }
+
+    
+    pub fn set_fragment_acceleration_structure(
+        &self,
+        index: NSUInteger,
+        accel: Option<&accelerator_structure::AccelerationStructureRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setFragmentAccelerationStructure: accel
+                atBufferIndex: index
+            ]
+        }
+    }
+
+    
+    pub fn set_fragment_intersection_function_table(
+        &self,
+        index: NSUInteger,
+        table: Option<&IntersectionFunctionTableRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setFragmentIntersectionFunctionTable: table
+                atBufferIndex: index
             ]
         }
     }
@@ -675,6 +1022,56 @@ impl RenderCommandEncoderRef {
     
 
     
+    pub fn draw_mesh_threadgroups(
+        &self,
+        threadgroups_per_grid: MTLSize,
+        threads_per_object_threadgroup: MTLSize,
+        threads_per_mesh_threadgroup: MTLSize,
+    ) {
+        unsafe {
+            msg_send![self,
+                drawMeshThreadgroups: threadgroups_per_grid
+                threadsPerObjectThreadgroup: threads_per_object_threadgroup
+                threadsPerMeshThreadgroup: threads_per_mesh_threadgroup
+            ]
+        }
+    }
+
+    
+    pub fn draw_mesh_threadgroups_with_indirect_buffer(
+        &self,
+        indirect_buffer: &BufferRef,
+        indirect_buffer_offset: NSUInteger,
+        threads_per_object_threadgroup: MTLSize,
+        threads_per_mesh_threadgroup: MTLSize,
+    ) {
+        unsafe {
+            msg_send![self,
+                drawMeshThreadgroupsWithIndirectBuffer: indirect_buffer
+                indirectBufferOffset: indirect_buffer_offset
+                threadsPerObjectThreadgroup: threads_per_object_threadgroup
+                threadsPerMeshThreadgroup: threads_per_mesh_threadgroup
+            ]
+        }
+    }
+
+    
+    pub fn draw_mesh_threads(
+        &self,
+        threads_per_grid: MTLSize,
+        threads_per_object_threadgroup: MTLSize,
+        threads_per_mesh_threadgroup: MTLSize,
+    ) {
+        unsafe {
+            msg_send![self,
+                drawMeshThreads: threads_per_grid
+                threadsPerObjectThreadgroup: threads_per_object_threadgroup
+                threadsPerMeshThreadgroup: threads_per_mesh_threadgroup
+            ]
+        }
+    }
+
+    
     
     
     
@@ -819,13 +1216,13 @@ impl RenderCommandEncoderRef {
     }
 }
 
+
 pub enum MTLBlitCommandEncoder {}
 
 foreign_obj_type! {
     type CType = MTLBlitCommandEncoder;
     pub struct BlitCommandEncoder;
-    pub struct BlitCommandEncoderRef;
-    type ParentType = CommandEncoderRef;
+    type ParentType = CommandEncoder;
 }
 
 impl BlitCommandEncoderRef {
@@ -997,15 +1394,49 @@ impl BlitCommandEncoderRef {
     pub fn wait_for_fence(&self, fence: &FenceRef) {
         unsafe { msg_send![self, waitForFence: fence] }
     }
+
+    
+    pub fn sample_counters_in_buffer(
+        &self,
+        sample_buffer: &CounterSampleBufferRef,
+        sample_index: NSUInteger,
+        with_barrier: bool,
+    ) {
+        unsafe {
+            msg_send![self,
+                sampleCountersInBuffer: sample_buffer
+                atSampleIndex: sample_index
+                withBarrier: with_barrier
+            ]
+        }
+    }
+
+    
+    pub fn resolve_counters(
+        &self,
+        sample_buffer: &CounterSampleBufferRef,
+        range: crate::NSRange,
+        destination_buffer: &BufferRef,
+        destination_offset: NSUInteger,
+    ) {
+        unsafe {
+            msg_send![self,
+                resolveCounters: sample_buffer
+                inRange: range
+                destinationBuffer: destination_buffer
+                destinationOffset: destination_offset
+            ]
+        }
+    }
 }
+
 
 pub enum MTLComputeCommandEncoder {}
 
 foreign_obj_type! {
     type CType = MTLComputeCommandEncoder;
     pub struct ComputeCommandEncoder;
-    pub struct ComputeCommandEncoderRef;
-    type ParentType = CommandEncoderRef;
+    type ParentType = CommandEncoder;
 }
 
 impl ComputeCommandEncoderRef {
@@ -1157,6 +1588,22 @@ impl ComputeCommandEncoderRef {
     
     
     
+    pub fn memory_barrier_with_resources(&self, resources: &[&ResourceRef]) {
+        unsafe {
+            msg_send![self,
+                memoryBarrierWithResources: resources.as_ptr()
+                count: resources.len() as NSUInteger
+            ]
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
     pub fn use_resource(&self, resource: &ResourceRef, usage: MTLResourceUsage) {
         unsafe {
             msg_send![self,
@@ -1220,14 +1667,60 @@ impl ComputeCommandEncoderRef {
     pub fn wait_for_fence(&self, fence: &FenceRef) {
         unsafe { msg_send![self, waitForFence: fence] }
     }
+
+    
+    pub fn set_acceleration_structure(
+        &self,
+        index: NSUInteger,
+        accel: Option<&accelerator_structure::AccelerationStructureRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setAccelerationStructure: accel
+                atBufferIndex: index
+            ]
+        }
+    }
+
+    
+    pub fn set_intersection_function_table(
+        &self,
+        index: NSUInteger,
+        table: Option<&IntersectionFunctionTableRef>,
+    ) {
+        unsafe {
+            msg_send![
+                self,
+                setIntersectionFunctionTable: table
+                atBufferIndex: index
+            ]
+        }
+    }
+
+    
+    pub fn sample_counters_in_buffer(
+        &self,
+        sample_buffer: &CounterSampleBufferRef,
+        sample_index: NSUInteger,
+        with_barrier: bool,
+    ) {
+        unsafe {
+            msg_send![self,
+                sampleCountersInBuffer: sample_buffer
+                atSampleIndex: sample_index
+                withBarrier: with_barrier
+            ]
+        }
+    }
 }
+
 
 pub enum MTLArgumentEncoder {}
 
 foreign_obj_type! {
     type CType = MTLArgumentEncoder;
     pub struct ArgumentEncoder;
-    pub struct ArgumentEncoderRef;
 }
 
 impl ArgumentEncoderRef {

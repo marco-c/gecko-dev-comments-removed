@@ -104,7 +104,9 @@ impl<'a, T: Copy + 'a> Iterator for AlignIter<'a, T> {
 
 
 pub fn read_spv<R: io::Read + io::Seek>(x: &mut R) -> io::Result<Vec<u32>> {
+    
     let size = x.seek(io::SeekFrom::End(0))?;
+    x.rewind()?;
     if size % 4 != 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -119,7 +121,6 @@ pub fn read_spv<R: io::Read + io::Seek>(x: &mut R) -> io::Result<Vec<u32>> {
     
     
     let mut result = vec![0u32; words];
-    x.seek(io::SeekFrom::Start(0))?;
     x.read_exact(unsafe {
         slice::from_raw_parts_mut(result.as_mut_ptr().cast::<u8>(), words * 4)
     })?;
