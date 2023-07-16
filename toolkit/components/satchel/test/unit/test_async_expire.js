@@ -45,7 +45,7 @@ add_task(async function () {
   Assert.ok((await promiseCountEntries("name-A", "value-A")) > 0); 
   Assert.ok((await promiseCountEntries("name-B", "value-B")) > 0); 
 
-  Assert.equal(CURRENT_SCHEMA, getDBVersion(dbFile));
+  Assert.equal(CURRENT_SCHEMA, await getDBVersion(dbFile));
 
   
   Assert.equal(0, await promiseCountEntries("name-C", "value-C"));
