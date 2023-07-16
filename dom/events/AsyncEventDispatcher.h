@@ -151,8 +151,12 @@ class AsyncEventDispatcher : public CancelableRunnable {
   
   void RequireNodeInDocument();
 
- protected:
+  
+  
+  
   void RunDOMEventWhenSafe();
+
+ protected:
   MOZ_CAN_RUN_SCRIPT static void DispatchEventOnTarget(
       dom::EventTarget* aTarget, dom::Event* aEvent,
       ChromeOnlyDispatch aOnlyChromeDispatch, Composed aComposed);
@@ -187,11 +191,6 @@ class LoadBlockingAsyncEventDispatcher final : public AsyncEventDispatcher {
         mBlockedDoc(aEventNode->OwnerDoc()) {
     mBlockedDoc->BlockOnload();
   }
-
-  
-  
-  
-  using AsyncEventDispatcher::RunDOMEventWhenSafe;
 
   LoadBlockingAsyncEventDispatcher(nsINode* aEventNode, dom::Event* aEvent)
       : AsyncEventDispatcher(aEventNode, aEvent),

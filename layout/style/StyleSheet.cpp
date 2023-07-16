@@ -716,11 +716,10 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   
   auto* loader = mConstructorDocument->CSSLoader();
   auto loadData = MakeRefPtr<css::SheetLoadData>(
-      loader, nullptr, this,  false,
+      loader,  nullptr, this, css::SyncLoad::No,
       css::Loader::UseSystemPrincipal::No, css::StylePreloadKind::None,
-       nullptr,
-       nullptr, mConstructorDocument->NodePrincipal(),
-      GetReferrerInfo());
+       nullptr,  nullptr,
+      mConstructorDocument->NodePrincipal(), GetReferrerInfo());
 
   
   
