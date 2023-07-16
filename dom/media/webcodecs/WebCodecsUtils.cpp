@@ -45,6 +45,34 @@ nsTArray<nsCString> GuessContainers(const nsAString& aCodec) {
 
 
 
+
+template <typename T>
+Maybe<T> OptionalToMaybe(const Optional<T>& aOptional) {
+  if (aOptional.WasPassed()) {
+    return Some(aOptional.Value());
+  }
+  return Nothing();
+}
+
+template <typename T>
+Maybe<T> NullableToMaybe(const Nullable<T>& aNullable) {
+  if (!aNullable.IsNull()) {
+    return Some(aNullable.Value());
+  }
+  return Nothing();
+}
+
+template <typename T>
+Nullable<T> MaybeToNullable(const Maybe<T>& aOptional) {
+  if (aOptional.isSome()) {
+    return Nullable<T>(aOptional.value());
+  }
+  return Nullable<T>();
+}
+
+
+
+
 template <class T>
 Result<Span<uint8_t>, nsresult> GetArrayBufferData(const T& aBuffer) {
   
