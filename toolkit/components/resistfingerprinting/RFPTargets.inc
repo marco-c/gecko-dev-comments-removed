@@ -103,3 +103,15 @@ ITEM_VALUE(SiteSpecificZoom,            1llu << 60)
 
 
 ITEM_VALUE(IsAlwaysEnabledForPrecompute, 0)
+
+
+
+
+
+
+
+
+
+
+
+ITEM_VALUE(AllTargets, 0xFFFFFFFF)
