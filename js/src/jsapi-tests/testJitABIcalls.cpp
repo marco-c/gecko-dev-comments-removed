@@ -51,8 +51,7 @@ using namespace js::jit;
 #define ABIFUN_TO_ALLFUN(Fun) (#Fun, decltype(&::Fun))
 #define ABIFUN_AND_SIG_TO_ALLFUN(Fun, Sig) (#Fun " as " #Sig, Sig)
 #define ABISIG_TO_ALLFUN(Sig) ("(none) as " #Sig, Sig)
-#define VMFUN_TO_ALLFUN(Name, Fun) (#Fun, decltype(&::Fun))
-#define TC_VMFUN_TO_ALLFUN(Name, Fun, Pop) (#Fun, decltype(&::Fun))
+#define VMFUN_TO_ALLFUN(Name, Fun, Pop...) (#Fun, decltype(&::Fun))
 
 #define APPLY(A, B) A B
 
@@ -65,8 +64,7 @@ using namespace js::jit;
   ABIFUNCTION_LIST(PREFIX##_ABIFUN_TO_ALLFUN)                  \
   ABIFUNCTION_AND_TYPE_LIST(PREFIX##_ABIFUN_AND_SIG_TO_ALLFUN) \
   ABIFUNCTIONSIG_LIST(PREFIX##_ABISIG_TO_ALLFUN)               \
-  VMFUNCTION_LIST(PREFIX##_VMFUN_TO_ALLFUN)                    \
-  TAIL_CALL_VMFUNCTION_LIST(PREFIX##_TC_VMFUN_TO_ALLFUN)
+  VMFUNCTION_LIST(PREFIX##_VMFUN_TO_ALLFUN)
 
 
 
@@ -708,8 +706,6 @@ class JitABICall final : public JSAPIRuntimeTest, public DefineCheckArgs<Sig> {
   APPLY(TEST_INSTANCE, ABISIG_TO_ALLFUN(__VA_ARGS__))
 #define TEST_INSTANCE_VMFUN_TO_ALLFUN(...) \
   APPLY(TEST_INSTANCE, VMFUN_TO_ALLFUN(__VA_ARGS__))
-#define TEST_INSTANCE_TC_VMFUN_TO_ALLFUN(...) \
-  APPLY(TEST_INSTANCE, TC_VMFUN_TO_ALLFUN(__VA_ARGS__))
 
 ALL_FUNCTIONS(TEST_INSTANCE)
 

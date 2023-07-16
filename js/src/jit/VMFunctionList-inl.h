@@ -45,6 +45,8 @@ namespace jit {
 
 
 
+
+
 #define VMFUNCTION_LIST(_)                                                     \
   _(AddOrUpdateSparseElementHelper, js::AddOrUpdateSparseElementHelper)        \
   _(AddSlotAndCallAddPropHook, js::AddSlotAndCallAddPropHook)                  \
@@ -138,11 +140,36 @@ namespace jit {
   _(DelPropOperationNonStrict, js::DelPropOperation<false>)                    \
   _(DelPropOperationStrict, js::DelPropOperation<true>)                        \
   _(DeleteNameOperation, js::DeleteNameOperation)                              \
+  _(DoBinaryArithFallback, js::jit::DoBinaryArithFallback, 2)                  \
+  _(DoBindNameFallback, js::jit::DoBindNameFallback)                           \
   _(DoCallFallback, js::jit::DoCallFallback)                                   \
+  _(DoCheckPrivateFieldFallback, js::jit::DoCheckPrivateFieldFallback, 2)      \
+  _(DoCloseIterFallback, js::jit::DoCloseIterFallback)                         \
+  _(DoCompareFallback, js::jit::DoCompareFallback, 2)                          \
   _(DoConcatStringObject, js::jit::DoConcatStringObject)                       \
+  _(DoGetElemFallback, js::jit::DoGetElemFallback, 2)                          \
+  _(DoGetElemSuperFallback, js::jit::DoGetElemSuperFallback, 3)                \
+  _(DoGetIntrinsicFallback, js::jit::DoGetIntrinsicFallback)                   \
+  _(DoGetIteratorFallback, js::jit::DoGetIteratorFallback, 1)                  \
+  _(DoGetNameFallback, js::jit::DoGetNameFallback)                             \
+  _(DoGetPropFallback, js::jit::DoGetPropFallback, 1)                          \
+  _(DoGetPropSuperFallback, js::jit::DoGetPropSuperFallback)                   \
+  _(DoHasOwnFallback, js::jit::DoHasOwnFallback, 2)                            \
+  _(DoInFallback, js::jit::DoInFallback, 2)                                    \
+  _(DoInstanceOfFallback, js::jit::DoInstanceOfFallback, 2)                    \
+  _(DoNewArrayFallback, js::jit::DoNewArrayFallback)                           \
+  _(DoNewObjectFallback, js::jit::DoNewObjectFallback)                         \
+  _(DoOptimizeSpreadCallFallback, js::jit::DoOptimizeSpreadCallFallback)       \
+  _(DoRestFallback, js::jit::DoRestFallback)                                   \
+  _(DoSetElemFallback, js::jit::DoSetElemFallback, 2)                          \
+  _(DoSetPropFallback, js::jit::DoSetPropFallback, 1)                          \
   _(DoSpreadCallFallback, js::jit::DoSpreadCallFallback)                       \
   _(DoStringToInt64, js::jit::DoStringToInt64)                                 \
+  _(DoToBoolFallback, js::jit::DoToBoolFallback)                               \
+  _(DoToPropertyKeyFallback, js::jit::DoToPropertyKeyFallback)                 \
   _(DoTrialInlining, js::jit::DoTrialInlining)                                 \
+  _(DoTypeOfFallback, js::jit::DoTypeOfFallback)                               \
+  _(DoUnaryArithFallback, js::jit::DoUnaryArithFallback, 1)                    \
   _(EnterWith, js::jit::EnterWith)                                             \
   _(ExtractAwaitValue, js::ExtractAwaitValue)                                  \
   _(FinalSuspend, js::jit::FinalSuspend)                                       \
@@ -298,41 +325,8 @@ namespace jit {
   _(VarEnvironmentObjectCreateWithoutEnclosing,                                \
     js::VarEnvironmentObject::createWithoutEnclosing)
 
-
-
-
-
-
-#define TAIL_CALL_VMFUNCTION_LIST(_)                                        \
-  _(DoBinaryArithFallback, js::jit::DoBinaryArithFallback, 2)               \
-  _(DoBindNameFallback, js::jit::DoBindNameFallback, 0)                     \
-  _(DoCheckPrivateFieldFallback, js::jit::DoCheckPrivateFieldFallback, 2)   \
-  _(DoCloseIterFallback, js::jit::DoCloseIterFallback, 0)                   \
-  _(DoCompareFallback, js::jit::DoCompareFallback, 2)                       \
-  _(DoGetElemFallback, js::jit::DoGetElemFallback, 2)                       \
-  _(DoGetElemSuperFallback, js::jit::DoGetElemSuperFallback, 3)             \
-  _(DoGetIntrinsicFallback, js::jit::DoGetIntrinsicFallback, 0)             \
-  _(DoGetIteratorFallback, js::jit::DoGetIteratorFallback, 1)               \
-  _(DoGetNameFallback, js::jit::DoGetNameFallback, 0)                       \
-  _(DoGetPropFallback, js::jit::DoGetPropFallback, 1)                       \
-  _(DoGetPropSuperFallback, js::jit::DoGetPropSuperFallback, 0)             \
-  _(DoHasOwnFallback, js::jit::DoHasOwnFallback, 2)                         \
-  _(DoInFallback, js::jit::DoInFallback, 2)                                 \
-  _(DoInstanceOfFallback, js::jit::DoInstanceOfFallback, 2)                 \
-  _(DoNewArrayFallback, js::jit::DoNewArrayFallback, 0)                     \
-  _(DoNewObjectFallback, js::jit::DoNewObjectFallback, 0)                   \
-  _(DoOptimizeSpreadCallFallback, js::jit::DoOptimizeSpreadCallFallback, 0) \
-  _(DoRestFallback, js::jit::DoRestFallback, 0)                             \
-  _(DoSetElemFallback, js::jit::DoSetElemFallback, 2)                       \
-  _(DoSetPropFallback, js::jit::DoSetPropFallback, 1)                       \
-  _(DoToBoolFallback, js::jit::DoToBoolFallback, 0)                         \
-  _(DoToPropertyKeyFallback, js::jit::DoToPropertyKeyFallback, 0)           \
-  _(DoTypeOfFallback, js::jit::DoTypeOfFallback, 0)                         \
-  _(DoUnaryArithFallback, js::jit::DoUnaryArithFallback, 1)
-
 #define DEF_ID(name, ...) name,
 enum class VMFunctionId { VMFUNCTION_LIST(DEF_ID) Count };
-enum class TailCallVMFunctionId { TAIL_CALL_VMFUNCTION_LIST(DEF_ID) Count };
 #undef DEF_ID
 
 
@@ -340,9 +334,6 @@ enum class TailCallVMFunctionId { TAIL_CALL_VMFUNCTION_LIST(DEF_ID) Count };
 
 template <typename Function, Function fun>
 struct VMFunctionToId;  
-
-template <typename Function, Function fun>
-struct TailCallVMFunctionToId;  
 
 
 
@@ -353,20 +344,12 @@ struct TailCallVMFunctionToId;
 
 
 
-#define DEF_TEMPLATE(name, fp)                             \
+#define DEF_TEMPLATE(name, fp, ...)                        \
   template <>                                              \
   struct VMFunctionToId<decltype(&(::fp)), ::fp> {         \
     static constexpr VMFunctionId id = VMFunctionId::name; \
   };
 VMFUNCTION_LIST(DEF_TEMPLATE)
-#undef DEF_TEMPLATE
-
-#define DEF_TEMPLATE(name, fp, valuesToPop)                                \
-  template <>                                                              \
-  struct TailCallVMFunctionToId<decltype(&(::fp)), ::fp> {                 \
-    static constexpr TailCallVMFunctionId id = TailCallVMFunctionId::name; \
-  };
-TAIL_CALL_VMFUNCTION_LIST(DEF_TEMPLATE)
 #undef DEF_TEMPLATE
 
 #if MOZ_IS_GCC
