@@ -74,6 +74,20 @@ bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
 
 
 
+
+
+NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(
+    NtImpersonateAnonymousTokenFunction orig_ImpersonateAnonymousToken,
+    HANDLE thread) {
+  if (!SandboxFactory::GetTargetServices()->GetState()->RevertedToSelf()) {
+    return STATUS_ACCESS_DENIED;
+  }
+
+  return orig_ImpersonateAnonymousToken(thread);
+}
+
+
+
 NTSTATUS WINAPI TargetNtSetInformationThread(
     NtSetInformationThreadFunction orig_SetInformationThread,
     HANDLE thread,
@@ -85,16 +99,6 @@ NTSTATUS WINAPI TargetNtSetInformationThread(
       break;
     if (ThreadImpersonationToken != thread_info_class)
       break;
-    if (!thread_information)
-      break;
-    HANDLE token;
-    if (sizeof(token) > thread_information_bytes)
-      break;
-
-    NTSTATUS ret = CopyData(&token, thread_information, sizeof(token));
-    if (!NT_SUCCESS(ret) || NULL != token)
-      break;
-
     
     return STATUS_SUCCESS;
   } while (false);

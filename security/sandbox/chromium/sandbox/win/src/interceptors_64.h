@@ -38,6 +38,10 @@ SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtUnmapViewOfSection64(HANDLE process,
 
 
 SANDBOX_INTERCEPT NTSTATUS WINAPI
+TargetNtImpersonateAnonymousToken64(HANDLE thread);
+
+
+SANDBOX_INTERCEPT NTSTATUS WINAPI
 TargetNtSetInformationThread64(HANDLE thread,
                                NT_THREAD_INFORMATION_CLASS thread_info_class,
                                PVOID thread_information,

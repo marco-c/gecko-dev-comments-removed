@@ -21,6 +21,12 @@ extern "C" {
 
 
 
+SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(
+    NtImpersonateAnonymousTokenFunction orig_ImpersonateAnonymousToken,
+    HANDLE thread);
+
+
+
 SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtSetInformationThread(
     NtSetInformationThreadFunction orig_SetInformationThread, HANDLE thread,
     NT_THREAD_INFORMATION_CLASS thread_info_class, PVOID thread_information,
