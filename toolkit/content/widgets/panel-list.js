@@ -103,15 +103,23 @@
         this.toggleAttribute("inxulpanel", true);
         let panel = this.parentElement;
         panel.hidden = false;
-        panel.openPopup(
-          this.lastAnchorNode,
-          "after_start",
-          0,
-          0,
-          false,
-          false,
-          this.triggeringEvent
-        );
+        
+        
+        
+        
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            panel.openPopup(
+              this.lastAnchorNode,
+              "after_start",
+              0,
+              0,
+              false,
+              false,
+              this.triggeringEvent
+            );
+          }, 0);
+        });
       } else {
         this.toggleAttribute("inxulpanel", false);
       }
