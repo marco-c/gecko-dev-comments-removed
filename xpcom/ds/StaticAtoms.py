@@ -2407,6 +2407,8 @@ STATIC_ATOMS = [
     Atom("_moz_mathml_core_ms", "-moz-mathml-core-ms"),
     Atom("_moz_popover_enabled", "-moz-popover-enabled"),
     
+    Atom("_moz_mathml_core_mi", "-moz-mathml-core-mi"),
+    
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),
     
