@@ -558,10 +558,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "History", insecureContext: true },
   
-  { name: "Highlight", insecureContext: true, nightly: true },
-  
-  { name: "HighlightRegistry", insecureContext: true, nightly: true },
-  
   { name: "HTMLAllCollection", insecureContext: true },
   
   { name: "HTMLAnchorElement", insecureContext: true },
