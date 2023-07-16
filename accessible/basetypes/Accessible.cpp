@@ -4,7 +4,6 @@
 
 
 #include "Accessible.h"
-#include "AccGroupInfo.h"
 #include "ARIAMap.h"
 #include "nsAccUtils.h"
 #include "nsIURI.h"
