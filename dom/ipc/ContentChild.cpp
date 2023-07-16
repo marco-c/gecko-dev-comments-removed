@@ -2757,15 +2757,6 @@ mozilla::ipc::IPCResult ContentChild::RecvLastPrivateDocShellDestroyed() {
   return IPC_OK();
 }
 
-
-#ifdef XP_MACOSX
-static bool PriorityUsesLowPowerMainThread(
-    const hal::ProcessPriority& aPriority) {
-  return aPriority == hal::PROCESS_PRIORITY_BACKGROUND ||
-         aPriority == hal::PROCESS_PRIORITY_PREALLOC;
-}
-#endif
-
 mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
     const hal::ProcessPriority& aPriority) {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
@@ -2786,24 +2777,6 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
   if (mProcessPriority != hal::PROCESS_PRIORITY_UNKNOWN) {
     glean::RecordPowerMetrics();
   }
-
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  
-  
-  if (StaticPrefs::threads_use_low_power_enabled() &&
-      StaticPrefs::threads_lower_mainthread_priority_in_background_enabled()) {
-    if (PriorityUsesLowPowerMainThread(aPriority)) {
-      pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
-    } else if (PriorityUsesLowPowerMainThread(mProcessPriority)) {
-      pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-    }
-  }
-#endif
 
   mProcessPriority = aPriority;
 
