@@ -2401,7 +2401,7 @@ struct FramesWithDepth {
       
       return mDepth > aOther.mDepth;
     }
-    return this < &aOther;
+    return false;
   }
   bool operator==(const FramesWithDepth& aOther) const {
     return this == &aOther;
@@ -2418,7 +2418,7 @@ static void FlushFramesArray(nsTArray<FramesWithDepth>& aSource,
   if (aSource.IsEmpty()) {
     return;
   }
-  aSource.Sort();
+  aSource.StableSort();
   uint32_t length = aSource.Length();
   for (uint32_t i = 0; i < length; i++) {
     aDest->AppendElements(std::move(aSource[i].mFrames));
