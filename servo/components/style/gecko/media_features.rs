@@ -694,7 +694,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 68] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -1025,4 +1025,9 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 67] = [
     ),
     
     bool_pref_feature!(atom!("-moz-popover-enabled"), "dom.element.popover.enabled"),
+    
+    bool_pref_feature!(
+        atom!("-moz-mathml-core-mi"),
+        "mathml.legacy_mathvariant_attribute.disabled"
+    ),
 ];
