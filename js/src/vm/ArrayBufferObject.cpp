@@ -456,25 +456,14 @@ static ArrayBufferObject* ArrayBufferCopyAndDetach(
   }
 
   
-  auto* newBuffer = ArrayBufferObject::createZeroed(cx, newByteLength);
-  if (!newBuffer) {
+  
+  
+  
+  if (!CheckArrayBufferTooLarge(cx, newByteLength)) {
     return nullptr;
   }
-
-  
-  size_t copyLength = std::min(newByteLength, arrayBuffer->byteLength());
-
-  
-  ArrayBufferObject::copyData(newBuffer, 0, arrayBuffer, 0, copyLength);
-
-  
-  
-
-  
-  ArrayBufferObject::detach(cx, arrayBuffer);
-
-  
-  return newBuffer;
+  return ArrayBufferObject::copyAndDetach(cx, size_t(newByteLength),
+                                          arrayBuffer);
 }
 
 
@@ -646,6 +635,27 @@ static ArrayBufferContents AllocateArrayBufferContents(JSContext* cx,
     
     p = static_cast<uint8_t*>(cx->runtime()->onOutOfMemoryCanGC(
         js::AllocFunction::Calloc, js::ArrayBufferContentsArena, nbytes));
+    if (!p) {
+      ReportOutOfMemory(cx);
+    }
+  }
+
+  return ArrayBufferContents(p);
+}
+
+static ArrayBufferContents ReallocateArrayBufferContents(JSContext* cx,
+                                                         uint8_t* old,
+                                                         size_t oldSize,
+                                                         size_t newSize) {
+  
+  uint8_t* p = cx->maybe_pod_arena_realloc<uint8_t>(
+      js::ArrayBufferContentsArena, old, oldSize, newSize);
+  if (MOZ_UNLIKELY(!p)) {
+    
+    
+    p = static_cast<uint8_t*>(cx->runtime()->onOutOfMemoryCanGC(
+        js::AllocFunction::Realloc, js::ArrayBufferContentsArena, newSize,
+        old));
     if (!p) {
       ReportOutOfMemory(cx);
     }
@@ -1624,25 +1634,149 @@ ArrayBufferObject::createBufferAndData(
 }
 
  ArrayBufferObject* ArrayBufferObject::copy(
-    JSContext* cx, JS::Handle<ArrayBufferObject*> unwrappedArrayBuffer) {
-  if (unwrappedArrayBuffer->isDetached()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
-    return nullptr;
+    JSContext* cx, size_t newByteLength,
+    JS::Handle<ArrayBufferObject*> source) {
+  MOZ_ASSERT(!source->isDetached());
+  MOZ_ASSERT(newByteLength <= ArrayBufferObject::MaxByteLength,
+             "caller must validate the byte count it passes");
+
+  size_t sourceByteLength = source->byteLength();
+
+  if (newByteLength > sourceByteLength) {
+    
+    AutoSetNewObjectMetadata metadata(cx);
+    auto [buffer, toFill] = createBufferAndData<FillContents::Zero>(
+        cx, newByteLength, metadata, nullptr);
+    if (!buffer) {
+      return nullptr;
+    }
+
+    std::copy_n(source->dataPointer(), sourceByteLength, toFill);
+
+    return buffer;
   }
 
-  size_t nbytes = unwrappedArrayBuffer->byteLength();
-
+  
   AutoSetNewObjectMetadata metadata(cx);
   auto [buffer, toFill] = createBufferAndData<FillContents::Uninitialized>(
-      cx, nbytes, metadata, nullptr);
+      cx, newByteLength, metadata, nullptr);
   if (!buffer) {
     return nullptr;
   }
 
-  std::uninitialized_copy_n(unwrappedArrayBuffer->dataPointer(), nbytes,
-                            toFill);
+  std::uninitialized_copy_n(source->dataPointer(), newByteLength, toFill);
+
   return buffer;
+}
+
+ ArrayBufferObject* ArrayBufferObject::copyAndDetach(
+    JSContext* cx, size_t newByteLength,
+    JS::Handle<ArrayBufferObject*> source) {
+  MOZ_ASSERT(!source->isDetached());
+  MOZ_ASSERT(newByteLength <= ArrayBufferObject::MaxByteLength,
+             "caller must validate the byte count it passes");
+
+  if (newByteLength > ArrayBufferObject::MaxInlineBytes &&
+      source->bufferKind() == ArrayBufferObject::MALLOCED) {
+    if (newByteLength == source->byteLength()) {
+      return copyAndDetachSteal(cx, source);
+    }
+    return copyAndDetachRealloc(cx, newByteLength, source);
+  }
+
+  auto* newBuffer = ArrayBufferObject::copy(cx, newByteLength, source);
+  if (!newBuffer) {
+    return nullptr;
+  }
+  ArrayBufferObject::detach(cx, source);
+
+  return newBuffer;
+}
+
+ ArrayBufferObject* ArrayBufferObject::copyAndDetachSteal(
+    JSContext* cx, JS::Handle<ArrayBufferObject*> source) {
+  MOZ_ASSERT(!source->isDetached());
+  MOZ_ASSERT(source->bufferKind() == MALLOCED);
+
+  size_t byteLength = source->byteLength();
+  MOZ_ASSERT(byteLength > ArrayBufferObject::MaxInlineBytes,
+             "prefer copying small buffers");
+
+  auto* newBuffer = ArrayBufferObject::createEmpty(cx);
+  if (!newBuffer) {
+    return nullptr;
+  }
+
+  
+  BufferContents contents = source->contents();
+  MOZ_ASSERT(contents);
+  MOZ_ASSERT(contents.kind() == MALLOCED);
+
+  
+  source->setDataPointer(BufferContents::createNoData());
+
+  
+  RemoveCellMemory(source, byteLength, MemoryUse::ArrayBufferContents);
+  ArrayBufferObject::detach(cx, source);
+
+  
+  newBuffer->initialize(byteLength, contents);
+  AddCellMemory(newBuffer, byteLength, MemoryUse::ArrayBufferContents);
+
+  return newBuffer;
+}
+
+ ArrayBufferObject* ArrayBufferObject::copyAndDetachRealloc(
+    JSContext* cx, size_t newByteLength,
+    JS::Handle<ArrayBufferObject*> source) {
+  MOZ_ASSERT(!source->isDetached());
+  MOZ_ASSERT(source->bufferKind() == MALLOCED);
+  MOZ_ASSERT(newByteLength > ArrayBufferObject::MaxInlineBytes,
+             "prefer copying small buffers");
+  MOZ_ASSERT(newByteLength <= ArrayBufferObject::MaxByteLength,
+             "caller must validate the byte count it passes");
+
+  size_t oldByteLength = source->byteLength();
+  MOZ_ASSERT(oldByteLength != newByteLength,
+             "steal instead of realloc same size buffers");
+
+  Rooted<ArrayBufferObject*> newBuffer(cx, ArrayBufferObject::createEmpty(cx));
+  if (!newBuffer) {
+    return nullptr;
+  }
+
+  
+  BufferContents contents = source->contents();
+  MOZ_ASSERT(contents);
+  MOZ_ASSERT(contents.kind() == MALLOCED);
+
+  
+  auto newData = ReallocateArrayBufferContents(cx, contents.data(),
+                                               oldByteLength, newByteLength);
+  if (!newData) {
+    
+    return nullptr;
+  }
+  auto newContents = BufferContents::createMalloced(newData.release());
+
+  
+  source->setDataPointer(BufferContents::createNoData());
+
+  
+  RemoveCellMemory(source, oldByteLength, MemoryUse::ArrayBufferContents);
+  ArrayBufferObject::detach(cx, source);
+
+  
+  newBuffer->initialize(newByteLength, newContents);
+  AddCellMemory(newBuffer, newByteLength, MemoryUse::ArrayBufferContents);
+
+  
+  if (newByteLength > oldByteLength) {
+    size_t count = newByteLength - oldByteLength;
+    std::uninitialized_fill_n(newContents.data() + oldByteLength, count, 0);
+  }
+
+  return newBuffer;
 }
 
 ArrayBufferObject* ArrayBufferObject::createZeroed(
@@ -2141,7 +2275,14 @@ JS_PUBLIC_API JSObject* JS::CopyArrayBuffer(JSContext* cx,
     return nullptr;
   }
 
-  return ArrayBufferObject::copy(cx, unwrappedSource);
+  if (unwrappedSource->isDetached()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return nullptr;
+  }
+
+  return ArrayBufferObject::copy(cx, unwrappedSource->byteLength(),
+                                 unwrappedSource);
 }
 
 JS_PUBLIC_API JSObject* JS::NewExternalArrayBuffer(
