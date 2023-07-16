@@ -172,7 +172,7 @@ def virtualenv_python3():
     return namespace(
         
         
-        path=normsep(PythonVirtualenv(realpath(sys.prefix)).python_path),
+        path=normalize_path(PythonVirtualenv(realpath(sys.prefix)).python_path),
         str_version=".".join(str(i) for i in sys.version_info[0:3]),
     )
 
