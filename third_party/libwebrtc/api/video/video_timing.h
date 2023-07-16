@@ -124,9 +124,6 @@ struct VideoPlayoutDelay {
   }
 };
 
-
-using PlayoutDelay = VideoPlayoutDelay;
-
 }  
 
 #endif  
