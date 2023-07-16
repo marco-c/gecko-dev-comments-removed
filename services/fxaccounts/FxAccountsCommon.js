@@ -269,6 +269,15 @@ exports.ERROR_MSG_METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED";
 
 
 
+exports.LEGACY_DERIVED_KEYS_NAMES = ["kSync", "kXCS"];
+
+
+
+
+
+
+
+
 exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set([
   "email",
   "verified",
@@ -284,6 +293,7 @@ exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set([
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set([
+  ...exports.LEGACY_DERIVED_KEYS_NAMES,
   "keyFetchToken",
   "unwrapBKey",
   "scopedKeys",
