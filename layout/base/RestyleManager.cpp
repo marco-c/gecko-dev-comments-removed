@@ -3700,23 +3700,6 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
   Element* ourElement = isElement ? aFrame->GetContent()->AsElement() : nullptr;
   ComputedStyle* newParent = newParentStyle;
 
-  ComputedStyle* newParentIgnoringFirstLine;
-  if (newParent->GetPseudoType() == PseudoStyleType::firstLine) {
-    MOZ_ASSERT(
-        providerFrame && providerFrame->GetParent()->IsBlockFrameOrSubclass(),
-        "How could we get a ::first-line parent style without having "
-        "a ::first-line provider frame?");
-    
-    
-    
-    nsIFrame* blockFrame = providerFrame->GetParent();
-    nsIFrame* correctedFrame = nsIFrame::CorrectStyleParentFrame(
-        blockFrame, oldStyle->GetPseudoType());
-    newParentIgnoringFirstLine = correctedFrame->Style();
-  } else {
-    newParentIgnoringFirstLine = newParent;
-  }
-
   if (!providerFrame) {
     
     
@@ -3734,8 +3717,7 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
   ComputedStyle* layoutParent = providerFrame->Style();
 
   RefPtr<ComputedStyle> newStyle = aStyleSet.ReparentComputedStyle(
-      oldStyle, newParent, newParentIgnoringFirstLine, layoutParent,
-      ourElement);
+      oldStyle, newParent, layoutParent, ourElement);
   aFrame->SetComputedStyle(newStyle);
 
   
@@ -3749,7 +3731,7 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
                aFrame->GetAdditionalComputedStyle(index)) {
       RefPtr<ComputedStyle> newAdditionalContext =
           aStyleSet.ReparentComputedStyle(oldAdditionalStyle, newStyle,
-                                          newStyle, newStyle, nullptr);
+                                          newStyle, nullptr);
       aFrame->SetAdditionalComputedStyle(index, newAdditionalContext);
       ++index;
     }
