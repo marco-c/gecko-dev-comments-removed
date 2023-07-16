@@ -27,7 +27,9 @@ function context({ dispatch, getState }) {
     if ("cx" in action) {
       validateActionContext(getState, action);
     }
-    if ("selectedFrame" in action) {
+    
+    
+    if (action.selectedFrame) {
       validateSelectedFrame(getState(), action.selectedFrame);
     }
     return next(action);

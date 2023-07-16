@@ -5,14 +5,13 @@
 import {
   getExpression,
   getExpressions,
-  getSelectedFrame,
-  getSelectedFrameId,
   getSelectedSource,
   getSelectedScopeMappings,
   getSelectedFrameBindings,
   getIsPaused,
+  getSelectedFrame,
+  getCurrentThread,
   isMapScopesEnabled,
-  getThreadContext,
 } from "../selectors";
 import { PROMISE } from "./utils/middleware/promise";
 import { wrapExpression } from "../utils/expressions";
@@ -49,14 +48,16 @@ export function addExpression(input) {
   };
 }
 
-export function autocomplete(cx, input, cursor) {
+export function autocomplete(input, cursor) {
   return async ({ dispatch, getState, client }) => {
     if (!input) {
       return;
     }
-    const frameId = getSelectedFrameId(getState(), cx.thread);
-    const result = await client.autocomplete(input, cursor, frameId);
-    dispatch({ type: "AUTOCOMPLETE", cx, input, result });
+    const thread = getCurrentThread(getState());
+    const selectedFrame = getSelectedFrame(getState(), thread);
+    const result = await client.autocomplete(input, cursor, selectedFrame?.id);
+    
+    dispatch({ type: "AUTOCOMPLETE", selectedFrame, thread, input, result });
   };
 }
 
@@ -99,9 +100,10 @@ export function deleteExpression(expression) {
 }
 
 export function evaluateExpressionsForCurrentContext() {
-  return async ({ getState, dispatch, parserWorker }) => {
-    const threadcx = getThreadContext(getState());
-    await dispatch(evaluateExpressions(threadcx));
+  return async ({ getState, dispatch }) => {
+    const thread = getCurrentThread(getState());
+    const selectedFrame = getSelectedFrame(getState(), thread);
+    await dispatch(evaluateExpressions(selectedFrame));
   };
 }
 
@@ -110,58 +112,76 @@ export function evaluateExpressionsForCurrentContext() {
 
 
 
-export function evaluateExpressions(cx) {
+
+
+export function evaluateExpressions(selectedFrame) {
   return async function ({ dispatch, getState, client }) {
     const expressions = getExpressions(getState());
     const inputs = expressions.map(({ input }) => input);
-    const frameId = getSelectedFrameId(getState(), cx.thread);
+    
+    const thread = selectedFrame?.thread || getCurrentThread(getState());
     const results = await client.evaluateExpressions(inputs, {
-      frameId,
-      threadId: cx.thread,
+      
+      frameId: selectedFrame?.id,
+      threadId: thread,
     });
-    dispatch({ type: "EVALUATE_EXPRESSIONS", cx, inputs, results });
+    
+    dispatch({
+      type: "EVALUATE_EXPRESSIONS",
+
+      selectedFrame,
+      
+      
+      thread,
+
+      inputs,
+      results,
+    });
   };
 }
 
 function evaluateExpression(expression) {
   return async function (thunkArgs) {
-    if (!expression.input) {
+    let { input } = expression;
+    if (!input) {
       console.warn("Expressions should not be empty");
       return null;
     }
+
     const { dispatch, getState, client } = thunkArgs;
-    const cx = getThreadContext(getState());
-    let { input } = expression;
-    const frame = getSelectedFrame(getState(), cx.thread);
+    const thread = getCurrentThread(getState());
+    const selectedFrame = getSelectedFrame(getState(), thread);
 
-    if (frame) {
-      const selectedSource = getSelectedSource(getState());
-
-      if (
-        selectedSource &&
-        frame.location.source.isOriginal &&
-        selectedSource.isOriginal
-      ) {
-        const mapResult = await getMappedExpression(
-          input,
-          cx.thread,
-          thunkArgs
-        );
-        if (mapResult) {
-          input = mapResult.expression;
-        }
+    const selectedSource = getSelectedSource(getState());
+    
+    
+    if (
+      selectedFrame &&
+      selectedSource &&
+      selectedFrame.location.source.isOriginal &&
+      selectedSource.isOriginal
+    ) {
+      const mapResult = await getMappedExpression(
+        input,
+        selectedFrame.thread,
+        thunkArgs
+      );
+      if (mapResult) {
+        input = mapResult.expression;
       }
     }
 
-    const frameId = getSelectedFrameId(getState(), cx.thread);
-
+    
     return dispatch({
       type: "EVALUATE_EXPRESSION",
-      cx,
-      thread: cx.thread,
+      selectedFrame,
+      
+      thread: selectedFrame ? null : thread,
       input: expression.input,
       [PROMISE]: client.evaluate(wrapExpression(input), {
-        frameId,
+        
+        
+        frameId: selectedFrame?.id,
       }),
     });
   };
