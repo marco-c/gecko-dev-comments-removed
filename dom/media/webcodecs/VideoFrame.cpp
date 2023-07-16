@@ -942,7 +942,8 @@ static Result<RefPtr<VideoFrame>, nsCString> CreateVideoFrameFromBuffer(
   
   
 
-  Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
+  Maybe<uint64_t> duration =
+      aInit.mDuration.WasPassed() ? Some(aInit.mDuration.Value()) : Nothing();
 
   VideoColorSpaceInit colorSpace = PickColorSpace(
       aInit.mColorSpace.WasPassed() ? &aInit.mColorSpace.Value() : nullptr,
@@ -1034,7 +1035,8 @@ InitializeFrameWithResourceAndSize(
                                       gfx::IntRect({0, 0}, image->GetSize()),
                                       image->GetSize());
 
-  Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
+  Maybe<uint64_t> duration =
+      aInit.mDuration.WasPassed() ? Some(aInit.mDuration.Value()) : Nothing();
 
   
   const VideoColorSpaceInit colorSpace{};
@@ -1070,8 +1072,9 @@ InitializeFrameFromOtherFrame(nsIGlobalObject* aGlobal, VideoFrameData&& aData,
   InitializeVisibleRectAndDisplaySize(visibleRect, displaySize,
                                       aData.mVisibleRect, aData.mDisplaySize);
 
-  Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
-
+  Maybe<uint64_t> duration = aInit.mDuration.WasPassed()
+                                 ? Some(aInit.mDuration.Value())
+                                 : aData.mDuration;
   int64_t timestamp = aInit.mTimestamp.WasPassed() ? aInit.mTimestamp.Value()
                                                    : aData.mTimestamp;
 
@@ -1541,8 +1544,9 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
 Nullable<VideoPixelFormat> VideoFrame::GetFormat() const {
   AssertIsOnOwningThread();
 
-  return mResource ? MaybeToNullable(mResource->TryPixelFormat())
-                   : Nullable<VideoPixelFormat>();
+  return mResource && mResource->mFormat
+             ? Nullable<VideoPixelFormat>(mResource->mFormat->PixelFormat())
+             : Nullable<VideoPixelFormat>();
 }
 
 
@@ -1599,7 +1603,8 @@ uint32_t VideoFrame::DisplayHeight() const {
 
 Nullable<uint64_t> VideoFrame::GetDuration() const {
   AssertIsOnOwningThread();
-  return MaybeToNullable(mDuration);
+
+  return mDuration ? Nullable<uint64_t>(*mDuration) : Nullable<uint64_t>();
 }
 
 
