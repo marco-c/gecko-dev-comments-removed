@@ -58,11 +58,12 @@ static void ReleaseData(void* aData, nsAString::DataFlags aFlags) {
   if (aFlags & nsAString::DataFlags::REFCOUNTED) {
     nsStringBuffer::FromData(aData)->Release();
   } else if (aFlags & nsAString::DataFlags::OWNED) {
-    free(aData);
-    STRING_STAT_INCREMENT(AdoptFree);
     
     
     MOZ_LOG_DTOR(aData, "StringAdopt", 1);
+
+    free(aData);
+    STRING_STAT_INCREMENT(AdoptFree);
   }
   
 }
