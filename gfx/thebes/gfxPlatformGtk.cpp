@@ -991,7 +991,8 @@ gfxPlatformGtk::CreateGlobalHardwareVsyncSource() {
   
   
   
-  if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING) && !isXwayland &&
+  if (StaticPrefs::gfx_x11_glx_sgi_video_sync_AtStartup() &&
+      gfxConfig::IsEnabled(Feature::HW_COMPOSITING) && !isXwayland &&
       (!gfxVars::UseEGL() || isMesa) &&
       gl::sGLXLibrary.SupportsVideoSync(DefaultXDisplay())) {
     RefPtr<GtkVsyncSource> vsyncSource = new GtkVsyncSource();
