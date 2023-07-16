@@ -288,7 +288,12 @@ function assert_rotate3d_equals(actual, expected, description) {
 
 function assert_phase_at_time(animation, phase, currentTime) {
   animation.currentTime = currentTime;
+  assert_phase(animation, phase);
+}
+
+function assert_phase(animation, phase) {
   const fillMode = animation.effect.getTiming().fill;
+  const currentTime = animation.currentTime;
 
   if (phase === 'active') {
     
