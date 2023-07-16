@@ -152,6 +152,17 @@ class VideoQualityAnalyzerInterface
 
   
   
+  virtual void OnPeerStartedReceiveVideoStream(absl::string_view peer_name,
+                                               absl::string_view stream_label) {
+  }
+  
+  
+  virtual void OnPeerStoppedReceiveVideoStream(absl::string_view peer_name,
+                                               absl::string_view stream_label) {
+  }
+
+  
+  
   virtual void Stop() {}
 
   

@@ -12,11 +12,13 @@
 #define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_STREAM_STATE_H_
 
 #include <limits>
-#include <map>
 #include <set>
+#include <unordered_map>
 
 #include "absl/types/optional.h"
 #include "api/units/timestamp.h"
+#include "system_wrappers/include/clock.h"
+#include "test/pc/e2e/analyzer/video/dvqa/pausable_state.h"
 #include "test/pc/e2e/analyzer/video/multi_reader_queue.h"
 
 namespace webrtc {
@@ -37,7 +39,8 @@ class StreamState {
  public:
   StreamState(size_t sender,
               std::set<size_t> receivers,
-              Timestamp stream_started_time);
+              Timestamp stream_started_time,
+              Clock* clock);
 
   size_t sender() const { return sender_; }
   Timestamp stream_started_time() const { return stream_started_time_; }
@@ -59,9 +62,14 @@ class StreamState {
   
   void RemovePeer(size_t peer);
 
+  
+  
+  PausableState* GetPausableState(size_t peer);
+
   size_t GetAliveFramesCount() const {
     return frame_ids_.size(kAliveFramesQueueIndex);
   }
+  
   uint16_t MarkNextAliveFrameAsDead();
 
   void SetLastRenderedFrameTime(size_t peer, Timestamp time);
@@ -78,6 +86,7 @@ class StreamState {
   
   const size_t sender_;
   const Timestamp stream_started_time_;
+  Clock* const clock_;
   std::set<size_t> receivers_;
   
   
@@ -92,7 +101,9 @@ class StreamState {
   
   
   MultiReaderQueue<uint16_t> frame_ids_;
-  std::map<size_t, Timestamp> last_rendered_frame_time_;
+  std::unordered_map<size_t, Timestamp> last_rendered_frame_time_;
+  
+  std::unordered_map<size_t, PausableState> pausable_state_;
 };
 
 }  
