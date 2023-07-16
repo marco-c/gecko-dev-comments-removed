@@ -1701,9 +1701,6 @@ pref("nimbus.qa.pref-1", "default");
 pref("nimbus.qa.pref-2", "default");
 
 
-pref("full-screen-api.enabled", true);
-
-
 
 
 pref("toolkit.startup.max_resumed_crashes", 3);

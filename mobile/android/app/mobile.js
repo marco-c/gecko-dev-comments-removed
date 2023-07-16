@@ -283,8 +283,6 @@ pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,mozte
 pref("browser.dom.window.dump.enabled", true);
 pref("devtools.console.stdout.chrome", true);
 
-pref("full-screen-api.enabled", true);
-
 
 
 pref("network.tickle-wifi.enabled", true);
