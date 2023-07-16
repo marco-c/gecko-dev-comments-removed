@@ -128,10 +128,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct TreeBuildingState;
 
  public:
+  explicit APZCTreeManager(LayersId aRootLayersId,
+                           UniquePtr<IAPZHitTester> aHitTester = nullptr);
+
   static mozilla::LazyLogModule sLog;
 
-  static already_AddRefed<APZCTreeManager> Create(
-      LayersId aRootLayersId, UniquePtr<IAPZHitTester> aHitTester = nullptr);
   void SetSampler(APZSampler* aSampler);
   void SetUpdater(APZUpdater* aUpdater);
 
@@ -510,10 +511,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
 
  protected:
-  APZCTreeManager(LayersId aRootLayersId, UniquePtr<IAPZHitTester> aHitTester);
-
-  void Init();
-
   
   virtual ~APZCTreeManager();
 
@@ -524,7 +521,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
  private:
-  friend class TestAPZCTreeManager;
   friend class APZUpdater;
   void LockTree() MOZ_CAPABILITY_ACQUIRE(mTreeLock);
   void UnlockTree() MOZ_CAPABILITY_RELEASE(mTreeLock);

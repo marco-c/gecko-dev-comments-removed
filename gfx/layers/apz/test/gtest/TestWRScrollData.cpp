@@ -160,7 +160,7 @@ class WebRenderScrollDataWrapperTester : public ::testing::Test {
     
     gfxPlatform::GetPlatform();
 
-    mManager = APZCTreeManager::Create(LayersId{0});
+    mManager = new APZCTreeManager(LayersId{0});
     mUpdater = new APZUpdater(mManager, false);
   }
 
