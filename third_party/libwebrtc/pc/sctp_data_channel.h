@@ -71,6 +71,11 @@ struct InternalDataChannelInit : public DataChannelInit {
   
   InternalDataChannelInit() : open_handshake_role(kOpener) {}
   explicit InternalDataChannelInit(const DataChannelInit& base);
+
+  
+  
+  bool IsValid() const;
+
   OpenHandshakeRole open_handshake_role;
 };
 
@@ -237,7 +242,7 @@ class SctpDataChannel : public DataChannelInterface,
     kHandshakeReady
   };
 
-  bool Init();
+  void Init();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromTransport();
