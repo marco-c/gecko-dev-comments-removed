@@ -1110,6 +1110,7 @@ var snapshotFormatters = {
     insertEnumerateDatabase();
 
     
+    let supportInfo = null;
     if (data.codecSupportInfo.length) {
       const [
         supportText,
@@ -1194,10 +1195,15 @@ var snapshotFormatters = {
         $.new("tbody", codecSupportRows),
       ]);
       codecSupportTable.id = "codec-table";
-
-      if (["win", "macosx", "linux"].includes(AppConstants.platform)) {
-        insertBasicInfo("media-codec-support-info", [codecSupportTable]);
-      }
+      supportInfo = [codecSupportTable];
+    } else {
+      
+      supportInfo = await document.l10n.formatValue(
+        "media-codec-support-error"
+      );
+    }
+    if (["win", "macosx", "linux"].includes(AppConstants.platform)) {
+      insertBasicInfo("media-codec-support-info", supportInfo);
     }
   },
 
