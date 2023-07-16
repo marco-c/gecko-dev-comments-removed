@@ -122,9 +122,16 @@ async def test_primitive_values(bidi_session, top_context, expression, expected)
         ("new WeakMap()", {"type": "weakmap", },),
         ("new WeakSet()", {"type": "weakset", },),
         ("new Error('SOME_ERROR_TEXT')", {"type": "error"},),
+        ("([1, 2][Symbol.iterator]())", {
+            "type": "iterator",
+        }),
+        ("new Proxy({}, {})", {
+            "type": "proxy"
+        }),
         
-        
-        
+        ("(function*() { yield 'a'; })", {
+            "type": "generator"
+        }),
         ("Promise.resolve()", {"type": "promise", },),
         ("new Int32Array()", {"type": "typedarray", },),
         ("new ArrayBuffer()", {"type": "arraybuffer", },),
