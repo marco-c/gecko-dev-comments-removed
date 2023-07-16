@@ -146,6 +146,9 @@ int32_t VerifyCodecSettings(const VideoCodec& codec_settings) {
   if (codec_settings.maxFramerate < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
+  if (codec_settings.qpMax < kQpMin || codec_settings.qpMax > 63) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -440,6 +443,9 @@ bool LibaomAv1Encoder::SetSvcParams(
     svc_params.scaling_factor_num[sid] = svc_config.scaling_factor_num[sid];
     svc_params.scaling_factor_den[sid] = svc_config.scaling_factor_den[sid];
   }
+
+  
+  
 
   return true;
 }
