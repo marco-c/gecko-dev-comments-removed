@@ -39,6 +39,8 @@ namespace a11y {
 static const wchar_t kLazyInstantiatorProp[] =
     L"mozilla::a11y::LazyInstantiator";
 
+Maybe<bool> LazyInstantiator::sShouldBlockUia;
+
 
 already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
   RefPtr<IAccessible> result;
@@ -152,14 +154,13 @@ void LazyInstantiator::ClearProp() {
 
 
 
-DWORD
-LazyInstantiator::GetClientPid(const DWORD aClientTid) {
+DWORD LazyInstantiator::GetRemoteMsaaClientPid() {
   nsAutoHandle callingThread(
-      ::OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, aClientTid));
+      ::OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE,
+                   mscom::ProcessRuntime::GetClientThreadId()));
   if (!callingThread) {
     return 0;
   }
-
   return ::GetProcessIdOfThread(callingThread);
 }
 
@@ -170,6 +171,7 @@ static const char* gBlockedRemoteClients[] = {
     "tbnotifier.exe",  
     "flow.exe",        
     "rtop_bg.exe",     
+    "osk.exe",         
 };
 
 
@@ -181,11 +183,6 @@ static const char* gBlockedRemoteClients[] = {
 bool LazyInstantiator::IsBlockedInjection() {
   
   if (PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
-    return false;
-  }
-
-  if (Compatibility::HasKnownNonUiaConsumer()) {
-    
     return false;
   }
 
@@ -212,24 +209,8 @@ bool LazyInstantiator::IsBlockedInjection() {
 
 
 
-bool LazyInstantiator::ShouldInstantiate(const DWORD aClientTid) {
-  if (Compatibility::IsA11ySuppressedForClipboardCopy()) {
-    
-    
-    
-    
-    return false;
-  }
-
-  if (!aClientTid) {
-    
-    
-    
-    
-    return !IsBlockedInjection();
-  }
-
-  a11y::SetInstantiator(GetClientPid(aClientTid));
+bool LazyInstantiator::ShouldInstantiate(const DWORD aClientPid) {
+  a11y::SetInstantiator(aClientPid);
 
   nsCOMPtr<nsIFile> clientExe;
   if (!a11y::GetInstantiator(getter_AddRefs(clientExe))) {
@@ -252,6 +233,57 @@ bool LazyInstantiator::ShouldInstantiate(const DWORD aClientTid) {
     }
   }
 
+  return true;
+}
+
+
+
+
+
+bool LazyInstantiator::ShouldInstantiate() {
+  if (Compatibility::IsA11ySuppressedForClipboardCopy()) {
+    
+    
+    
+    
+    return false;
+  }
+  if (DWORD pid = GetRemoteMsaaClientPid()) {
+    return ShouldInstantiate(pid);
+  }
+  if (Compatibility::HasKnownNonUiaConsumer()) {
+    
+    return true;
+  }
+  
+  
+  if (sShouldBlockUia.isNothing()) {
+    
+    
+    
+    AutoTArray<DWORD, 1> uiaPids;
+    Compatibility::GetUiaClientPids(uiaPids);
+    if (uiaPids.IsEmpty()) {
+      
+      
+      sShouldBlockUia = Some(false);
+    } else {
+      for (const DWORD pid : uiaPids) {
+        if (ShouldInstantiate(pid)) {
+          return true;
+        }
+      }
+      
+      
+      sShouldBlockUia = Some(true);
+    }
+  }
+  if (*sShouldBlockUia) {
+    return false;
+  }
+  if (IsBlockedInjection()) {
+    return false;
+  }
   return true;
 }
 
@@ -314,8 +346,7 @@ LazyInstantiator::MaybeResolveRoot() {
     return S_OK;
   }
 
-  if (GetAccService() ||
-      ShouldInstantiate(mscom::ProcessRuntime::GetClientThreadId())) {
+  if (GetAccService() || ShouldInstantiate()) {
     mWeakMsaaRoot = ResolveMsaaRoot();
     if (!mWeakMsaaRoot) {
       return E_POINTER;

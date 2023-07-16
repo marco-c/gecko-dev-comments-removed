@@ -8,6 +8,7 @@
 #define mozilla_a11y_LazyInstantiator_h
 
 #include "IUnknownImpl.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsString.h"
 
@@ -82,14 +83,25 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
   STDMETHODIMP QueryService(REFGUID aServiceId, REFIID aServiceIid,
                             void** aOutInterface) override;
 
+  
+
+
+
+
+
+
+
+  static void ResetUiaDetectionCache() { sShouldBlockUia = Nothing(); }
+
  private:
   explicit LazyInstantiator(HWND aHwnd);
   ~LazyInstantiator();
 
   bool IsBlockedInjection();
-  bool ShouldInstantiate(const DWORD aClientTid);
+  bool ShouldInstantiate(const DWORD aClientPid);
+  bool ShouldInstantiate();
 
-  DWORD GetClientPid(const DWORD aClientTid);
+  DWORD GetRemoteMsaaClientPid();
 
   
 
@@ -121,6 +133,7 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
   MsaaRootAccessible* mWeakMsaaRoot;
   IAccessible* mWeakAccessible;
   IDispatch* mWeakDispatch;
+  static Maybe<bool> sShouldBlockUia;
 };
 
 }  

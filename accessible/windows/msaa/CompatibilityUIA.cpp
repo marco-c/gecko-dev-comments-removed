@@ -7,201 +7,30 @@
 #include "Compatibility.h"
 
 #include "mozilla/a11y/Platform.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/WindowsVersion.h"
 #include "mozilla/UniquePtr.h"
-#include "nsdefs.h"
-#include "nspr/prenv.h"
-
-#include "nsIFile.h"
-#include "nsTHashMap.h"
-#include "nsTHashSet.h"
-#include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
-#include "nsTHashtable.h"
-#include "nsUnicharUtils.h"
-#include "nsWindowsHelpers.h"
-#include "nsWinUtils.h"
 
 #include "NtUndoc.h"
 
-#if defined(UIA_LOGGING)
-
-#  define LOG_ERROR(FuncName)                                       \
-    {                                                               \
-      DWORD err = ::GetLastError();                                 \
-      nsPrintfCString msg(#FuncName " failed with code %u\n", err); \
-      ::OutputDebugStringA(msg.get());                              \
-    }
-
-#else
-
-#  define LOG_ERROR(FuncName)
-
-#endif  
-
 using namespace mozilla;
-
-struct ByteArrayDeleter {
-  void operator()(void* aBuf) { delete[] reinterpret_cast<char*>(aBuf); }
-};
-
-typedef UniquePtr<OBJECT_DIRECTORY_INFORMATION, ByteArrayDeleter> ObjDirInfoPtr;
-
-
-
-template <typename ComparatorFnT>
-static bool FindNamedObject(const ComparatorFnT& aComparator) {
-  
-  
-  
-  DWORD sessionId;
-  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &sessionId)) {
-    return false;
-  }
-
-  nsAutoString path;
-  path.AppendPrintf("\\Sessions\\%lu\\BaseNamedObjects", sessionId);
-
-  UNICODE_STRING baseNamedObjectsName;
-  ::RtlInitUnicodeString(&baseNamedObjectsName, path.get());
-
-  OBJECT_ATTRIBUTES attributes;
-  InitializeObjectAttributes(&attributes, &baseNamedObjectsName, 0, nullptr,
-                             nullptr);
-
-  HANDLE rawBaseNamedObjects;
-  NTSTATUS ntStatus = ::NtOpenDirectoryObject(
-      &rawBaseNamedObjects, DIRECTORY_QUERY | DIRECTORY_TRAVERSE, &attributes);
-  if (!NT_SUCCESS(ntStatus)) {
-    return false;
-  }
-
-  nsAutoHandle baseNamedObjects(rawBaseNamedObjects);
-
-  ULONG context = 0, returnedLen;
-
-  ULONG objDirInfoBufLen = 1024 * sizeof(OBJECT_DIRECTORY_INFORMATION);
-  ObjDirInfoPtr objDirInfo(reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(
-      new char[objDirInfoBufLen]));
-
-  
-
-  BOOL firstCall = TRUE;
-
-  do {
-    ntStatus = ::NtQueryDirectoryObject(baseNamedObjects, objDirInfo.get(),
-                                        objDirInfoBufLen, FALSE, firstCall,
-                                        &context, &returnedLen);
-#if defined(HAVE_64BIT_BUILD)
-    if (!NT_SUCCESS(ntStatus)) {
-      return false;
-    }
-#else
-    if (ntStatus == STATUS_BUFFER_TOO_SMALL) {
-      
-      
-      objDirInfo.reset(reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(
-          new char[returnedLen]));
-      objDirInfoBufLen = returnedLen;
-      continue;
-    } else if (!NT_SUCCESS(ntStatus)) {
-      return false;
-    }
-#endif
-
-    
-    
-    OBJECT_DIRECTORY_INFORMATION* curDir = objDirInfo.get();
-    while (curDir->mName.Length && curDir->mTypeName.Length) {
-      
-      
-      nsDependentSubstring objName(curDir->mName.Buffer,
-                                   curDir->mName.Length / sizeof(wchar_t));
-      nsDependentSubstring typeName(curDir->mTypeName.Buffer,
-                                    curDir->mTypeName.Length / sizeof(wchar_t));
-
-      if (!aComparator(objName, typeName)) {
-        return true;
-      }
-
-      ++curDir;
-    }
-
-    firstCall = FALSE;
-  } while (ntStatus == STATUS_MORE_ENTRIES);
-
-  return false;
-}
-
-static const char* gBlockedUiaClients[] = {"osk.exe"};
-
-static bool ShouldBlockUIAClient(nsIFile* aClientExe) {
-  if (PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
-    return false;
-  }
-
-  nsAutoString leafName;
-  nsresult rv = aClientExe->GetLeafName(leafName);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  for (size_t index = 0, len = ArrayLength(gBlockedUiaClients); index < len;
-       ++index) {
-    if (leafName.EqualsIgnoreCase(gBlockedUiaClients[index])) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 namespace mozilla {
 namespace a11y {
 
-Maybe<DWORD> Compatibility::sUiaRemotePid;
-
-Maybe<bool> Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam) {
-  auto clearUiaRemotePid = MakeScopeExit([]() { sUiaRemotePid = Nothing(); });
-
-  Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
-
-  
-  constexpr auto kStrHookShmem = u"HOOK_SHMEM_"_ns;
-
-  
-  
-  nsAutoString partialSectionSuffix;
-  partialSectionSuffix.AppendPrintf("_%08lx_%08" PRIxLPTR "_%08zx",
-                                    ::GetCurrentThreadId(), aLParam, aWParam);
-
-  
-  
-  nsAutoHandle section;
-  auto comparator = [&](const nsDependentSubstring& aName,
-                        const nsDependentSubstring& aType) -> bool {
-    if (aType.Equals(u"Section"_ns) && FindInReadable(kStrHookShmem, aName) &&
-        StringEndsWith(aName, partialSectionSuffix)) {
-      section.own(::OpenFileMapping(GENERIC_READ, FALSE,
-                                    PromiseFlatString(aName).get()));
-      return false;
-    }
-
-    return true;
-  };
-
-  if (!FindNamedObject(comparator) || !section) {
-    return Nothing();
+void Compatibility::GetUiaClientPids(nsTArray<DWORD>& aPids) {
+  if (!::GetModuleHandleW(L"uiautomationcore.dll")) {
+    
+    return;
   }
+  Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
 
   NTSTATUS ntStatus;
 
   
-  UniquePtr<char[]> handleInfoBuf;
+  UniquePtr<std::byte[]> handleInfoBuf;
   ULONG handleInfoBufLen = sizeof(SYSTEM_HANDLE_INFORMATION_EX) +
                            1024 * sizeof(SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX);
 
@@ -211,9 +40,9 @@ Maybe<bool> Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam) {
   while (true) {
     
     
-    handleInfoBuf = MakeUniqueFallible<char[]>(handleInfoBufLen);
+    handleInfoBuf = MakeUniqueFallible<std::byte[]>(handleInfoBufLen);
     if (!handleInfoBuf) {
-      return Nothing();
+      return;
     }
 
     ntStatus = ::NtQuerySystemInformation(
@@ -224,121 +53,56 @@ Maybe<bool> Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam) {
     }
 
     if (!NT_SUCCESS(ntStatus)) {
-      return Nothing();
+      return;
     }
 
     break;
   }
 
   const DWORD ourPid = ::GetCurrentProcessId();
-  Maybe<PVOID> kernelObject;
-  static Maybe<USHORT> sectionObjTypeIndex;
-  nsTHashSet<uint32_t> nonSectionObjTypes;
-  nsTHashMap<nsVoidPtrHashKey, DWORD> objMap;
-
   auto handleInfo =
       reinterpret_cast<SYSTEM_HANDLE_INFORMATION_EX*>(handleInfoBuf.get());
-
   for (ULONG index = 0; index < handleInfo->mHandleCount; ++index) {
     SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX& curHandle = handleInfo->mHandles[index];
-
+    if (curHandle.mPid != ourPid) {
+      
+      continue;
+    }
     HANDLE handle = reinterpret_cast<HANDLE>(curHandle.mHandle);
 
     
-    
-    
-    
-    if (sectionObjTypeIndex) {
-      
-      if (sectionObjTypeIndex.value() != curHandle.mObjectTypeIndex) {
-        
-        continue;
-      }
-    } else if (nonSectionObjTypes.Contains(
-                   static_cast<uint32_t>(curHandle.mObjectTypeIndex))) {
-      
-      
+    ULONG objNameBufLen;
+    ntStatus =
+        ::NtQueryObject(handle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
+                        nullptr, 0, &objNameBufLen);
+    if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
       continue;
-    } else if (ourPid == curHandle.mPid) {
-      
-      
-      ULONG objTypeBufLen;
-      ntStatus = ::NtQueryObject(handle, ObjectTypeInformation, nullptr, 0,
-                                 &objTypeBufLen);
-      if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
-        continue;
-      }
-
-      auto objTypeBuf = MakeUnique<char[]>(objTypeBufLen);
-      ntStatus =
-          ::NtQueryObject(handle, ObjectTypeInformation, objTypeBuf.get(),
-                          objTypeBufLen, &objTypeBufLen);
-      if (!NT_SUCCESS(ntStatus)) {
-        continue;
-      }
-
-      auto objType =
-          reinterpret_cast<PUBLIC_OBJECT_TYPE_INFORMATION*>(objTypeBuf.get());
-
-      
-      nsDependentSubstring objTypeName(
-          objType->TypeName.Buffer, objType->TypeName.Length / sizeof(wchar_t));
-      if (!objTypeName.Equals(u"Section"_ns)) {
-        nonSectionObjTypes.Insert(
-            static_cast<uint32_t>(curHandle.mObjectTypeIndex));
-        continue;
-      }
-
-      sectionObjTypeIndex = Some(curHandle.mObjectTypeIndex);
     }
+    auto objNameBuf = MakeUnique<std::byte[]>(objNameBufLen);
+    ntStatus =
+        ::NtQueryObject(handle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
+                        objNameBuf.get(), objNameBufLen, &objNameBufLen);
+    if (!NT_SUCCESS(ntStatus)) {
+      continue;
+    }
+    auto objNameInfo =
+        reinterpret_cast<OBJECT_NAME_INFORMATION*>(objNameBuf.get());
+    if (!objNameInfo->Name.Length) {
+      continue;
+    }
+    nsDependentString objName(objNameInfo->Name.Buffer,
+                              objNameInfo->Name.Length / sizeof(wchar_t));
 
     
     
-
-    if (ourPid != curHandle.mPid) {
-      if (kernelObject && kernelObject.value() == curHandle.mObject) {
-        
-        sUiaRemotePid = Some(curHandle.mPid);
-        break;
-      }
-
+    if (StringBeginsWith(objName, u"\\Device\\NamedPipe\\UIA_PIPE_"_ns)) {
       
       
-      objMap.InsertOrUpdate(curHandle.mObject, curHandle.mPid);
-    } else if (handle == section.get()) {
-      
-      
-      kernelObject = Some(curHandle.mObject);
+      ULONG pid = 0;
+      ::GetNamedPipeServerProcessId(handle, &pid);
+      aPids.AppendElement(pid);
     }
   }
-
-  if (!kernelObject) {
-    return Nothing();
-  }
-
-  if (!sUiaRemotePid) {
-    
-    
-    DWORD pid;
-    if (objMap.Get(kernelObject.value(), &pid)) {
-      sUiaRemotePid = Some(pid);
-    }
-  }
-
-  if (!sUiaRemotePid) {
-    return Nothing();
-  }
-
-  a11y::SetInstantiator(sUiaRemotePid.value());
-
-  
-  nsCOMPtr<nsIFile> instantiator;
-  if (a11y::GetInstantiator(getter_AddRefs(instantiator)) &&
-      ShouldBlockUIAClient(instantiator)) {
-    return Some(false);
-  }
-
-  return Some(true);
 }
 
 }  
