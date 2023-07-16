@@ -3143,7 +3143,10 @@ void WorkerPrivate::RunLoopNeverRan() {
   }
 
   
-  MOZ_DIAGNOSTIC_ASSERT(!HasActiveWorkerRefs());
+  
+  
+  
+  NotifyWorkerRefs(Dead);
 
   ScheduleDeletion(WorkerPrivate::WorkerRan);
 }
