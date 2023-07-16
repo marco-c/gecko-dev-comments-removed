@@ -1349,16 +1349,19 @@ void nsLineLayout::PlaceFrame(PerFrameData* pfd, ReflowOutput& aMetrics) {
                        ? lineWM.IsLineInverted() ? 0 : aMetrics.BSize(lineWM)
                        : aMetrics.BSize(lineWM) / 2;
   } else {
-    if (pfd->mFrame->StyleDisplay()->mBaselineSource ==
-        StyleBaselineSource::Auto) {
+    
+    
+    const auto baselineSource = pfd->mFrame->StyleDisplay()->mBaselineSource;
+    if (baselineSource == StyleBaselineSource::Auto ||
+        pfd->mFrame->IsFrameOfType(nsIFrame::eLineParticipant)) {
       if (aMetrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
         pfd->mAscent = pfd->mFrame->GetLogicalBaseline(lineWM);
       } else {
         pfd->mAscent = aMetrics.BlockStartAscent();
       }
     } else {
-      const auto sourceGroup = [pfd]() {
-        switch (pfd->mFrame->StyleDisplay()->mBaselineSource) {
+      const auto sourceGroup = [baselineSource]() {
+        switch (baselineSource) {
           case StyleBaselineSource::First:
             return BaselineSharingGroup::First;
           case StyleBaselineSource::Last:
