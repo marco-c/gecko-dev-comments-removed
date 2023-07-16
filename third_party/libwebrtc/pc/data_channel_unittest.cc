@@ -620,6 +620,15 @@ TEST_F(SctpDataChannelTest, NeverOpened) {
 
 
 
+
+TEST_F(SctpDataChannelTest, UnusedTransitionsDirectlyToClosed) {
+  webrtc_data_channel_->Close();
+  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
+            webrtc_data_channel_->state());
+}
+
+
+
 TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
   SetChannelReady();
 

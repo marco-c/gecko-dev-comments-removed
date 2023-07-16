@@ -539,18 +539,25 @@ void SctpDataChannel::UpdateState() {
       break;
     }
     case kClosing: {
-      
-      
-      if (queued_send_data_.Empty() && queued_control_data_.Empty()) {
+      if (connected_to_transport_) {
         
         
-        
-        
-        if (connected_to_transport_ && !started_closing_procedure_ &&
-            controller_ && config_.id >= 0) {
-          started_closing_procedure_ = true;
-          controller_->RemoveSctpDataStream(config_.id);
+        if (queued_send_data_.Empty() && queued_control_data_.Empty()) {
+          
+          
+          
+          
+          if (!started_closing_procedure_ && controller_ && config_.id >= 0) {
+            started_closing_procedure_ = true;
+            controller_->RemoveSctpDataStream(config_.id);
+          }
         }
+      } else {
+        
+        
+        queued_send_data_.Clear();
+        queued_control_data_.Clear();
+        SetState(kClosed);
       }
       break;
     }
