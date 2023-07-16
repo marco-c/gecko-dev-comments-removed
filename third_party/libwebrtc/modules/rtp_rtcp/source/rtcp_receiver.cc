@@ -157,10 +157,6 @@ RTCPReceiver::RTCPReceiver(const RtpRtcpInterface::Configuration& config,
                                            : kDefaultVideoReportInterval)),
       
       remote_ssrc_(0),
-      remote_sender_rtp_time_(0),
-      remote_sender_packet_count_(0),
-      remote_sender_octet_count_(0),
-      remote_sender_reports_count_(0),
       xr_rrtr_status_(config.non_sender_rtt_measurement),
       xr_rr_rtt_ms_(0),
       oldest_tmmbr_info_ms_(0),
@@ -191,10 +187,6 @@ RTCPReceiver::RTCPReceiver(const RtpRtcpInterface::Configuration& config,
                                            : kDefaultVideoReportInterval)),
       
       remote_ssrc_(0),
-      remote_sender_rtp_time_(0),
-      remote_sender_packet_count_(0),
-      remote_sender_octet_count_(0),
-      remote_sender_reports_count_(0),
       xr_rrtr_status_(config.non_sender_rtt_measurement),
       xr_rr_rtt_ms_(0),
       oldest_tmmbr_info_ms_(0),
@@ -243,7 +235,7 @@ int64_t RTCPReceiver::LastReceivedReportBlockMs() const {
 void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
   MutexLock lock(&rtcp_receiver_lock_);
   
-  last_received_sr_ntp_.Reset();
+  remote_sender_.last_arrival_timestamp.Reset();
   remote_ssrc_ = ssrc;
 }
 
@@ -370,42 +362,14 @@ absl::optional<TimeDelta> RTCPReceiver::OnPeriodicRttUpdate(
   return rtt;
 }
 
-bool RTCPReceiver::NTP(uint32_t* received_ntp_secs,
-                       uint32_t* received_ntp_frac,
-                       uint32_t* rtcp_arrival_time_secs,
-                       uint32_t* rtcp_arrival_time_frac,
-                       uint32_t* rtcp_timestamp,
-                       uint32_t* remote_sender_packet_count,
-                       uint64_t* remote_sender_octet_count,
-                       uint64_t* remote_sender_reports_count) const {
+absl::optional<RtpRtcpInterface::SenderReportStats>
+RTCPReceiver::GetSenderReportStats() const {
   MutexLock lock(&rtcp_receiver_lock_);
-  if (!last_received_sr_ntp_.Valid())
-    return false;
+  if (!remote_sender_.last_arrival_timestamp.Valid()) {
+    return absl::nullopt;
+  }
 
-  
-  if (received_ntp_secs)
-    *received_ntp_secs = remote_sender_ntp_time_.seconds();
-  if (received_ntp_frac)
-    *received_ntp_frac = remote_sender_ntp_time_.fractions();
-  
-  if (rtcp_timestamp)
-    *rtcp_timestamp = remote_sender_rtp_time_;
-
-  
-  if (rtcp_arrival_time_secs)
-    *rtcp_arrival_time_secs = last_received_sr_ntp_.seconds();
-  if (rtcp_arrival_time_frac)
-    *rtcp_arrival_time_frac = last_received_sr_ntp_.fractions();
-
-  
-  if (remote_sender_packet_count)
-    *remote_sender_packet_count = remote_sender_packet_count_;
-  if (remote_sender_octet_count)
-    *remote_sender_octet_count = remote_sender_octet_count_;
-  if (remote_sender_reports_count)
-    *remote_sender_reports_count = remote_sender_reports_count_;
-
-  return true;
+  return remote_sender_;
 }
 
 std::vector<rtcp::ReceiveTimeInfo>
@@ -597,12 +561,12 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
     
     packet_information->packet_type_flags |= kRtcpSr;
 
-    remote_sender_ntp_time_ = sender_report.ntp();
-    remote_sender_rtp_time_ = sender_report.rtp_timestamp();
-    last_received_sr_ntp_ = clock_->CurrentNtpTime();
-    remote_sender_packet_count_ = sender_report.sender_packet_count();
-    remote_sender_octet_count_ = sender_report.sender_octet_count();
-    remote_sender_reports_count_++;
+    remote_sender_.last_remote_timestamp = sender_report.ntp();
+    remote_sender_.last_remote_rtp_timestamp = sender_report.rtp_timestamp();
+    remote_sender_.last_arrival_timestamp = clock_->CurrentNtpTime();
+    remote_sender_.packets_sent = sender_report.sender_packet_count();
+    remote_sender_.bytes_sent = sender_report.sender_octet_count();
+    remote_sender_.reports_count++;
   } else {
     
     

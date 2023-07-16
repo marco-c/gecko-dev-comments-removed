@@ -162,19 +162,19 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     NtpTime last_remote_timestamp;
     
-    uint32_t last_remote_rtp_timestamp;
+    uint32_t last_remote_rtp_timestamp = 0;
     
     
     
-    uint32_t packets_sent;
+    uint32_t packets_sent = 0;
     
     
     
     
-    uint64_t bytes_sent;
+    uint64_t bytes_sent = 0;
     
     
-    uint64_t reports_count;
+    uint64_t reports_count = 0;
   };
   
   
