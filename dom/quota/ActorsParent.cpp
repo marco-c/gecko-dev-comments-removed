@@ -947,7 +947,7 @@ class QuotaUsageRequestBase : public NormalOriginOperationBase,
  public:
   
   
-  virtual void Init(Quota& aQuota);
+  virtual void Init(Quota& aQuota) = 0;
 
  protected:
   QuotaUsageRequestBase(const char* aRunnableName)
@@ -1011,6 +1011,8 @@ class GetUsageOp final : public QuotaUsageRequestBase,
  public:
   explicit GetUsageOp(const UsageRequestParams& aParams);
 
+  void Init(Quota& aQuota) override { mNeedsStorageInit = true; }
+
  private:
   ~GetUsageOp() = default;
 
@@ -1043,6 +1045,8 @@ class GetOriginUsageOp final : public QuotaUsageRequestBase {
 
  public:
   explicit GetOriginUsageOp(const UsageRequestParams& aParams);
+
+  void Init(Quota& aQuota) override { mNeedsStorageInit = true; }
 
  private:
   ~GetOriginUsageOp() = default;
@@ -7767,12 +7771,6 @@ mozilla::ipc::IPCResult Quota::RecvAbortOperationsForProcess(
   quotaManager->AbortOperationsForProcess(aContentParentId);
 
   return IPC_OK();
-}
-
-void QuotaUsageRequestBase::Init(Quota& aQuota) {
-  AssertIsOnOwningThread();
-
-  mNeedsStorageInit = true;
 }
 
 Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOrigin(
