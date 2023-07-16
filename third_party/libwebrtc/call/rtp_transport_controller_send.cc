@@ -181,12 +181,19 @@ void RtpTransportControllerSend::UpdateControlState() {
 }
 
 void RtpTransportControllerSend::UpdateCongestedState() {
+  if (auto update = GetCongestedStateUpdate()) {
+    is_congested_ = update.value();
+    pacer_.SetCongested(update.value());
+  }
+}
+
+absl::optional<bool> RtpTransportControllerSend::GetCongestedStateUpdate()
+    const {
   bool congested = transport_feedback_adapter_.GetOutstandingData() >=
                    congestion_window_size_;
-  if (congested != is_congested_) {
-    is_congested_ = congested;
-    pacer_.SetCongested(congested);
-  }
+  if (congested != is_congested_)
+    return congested;
+  return absl::nullopt;
 }
 
 MaybeWorkerThread* RtpTransportControllerSend::GetWorkerQueue() {
@@ -392,27 +399,73 @@ void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
 void RtpTransportControllerSend::OnSentPacket(
     const rtc::SentPacket& sent_packet) {
   
+  
+  
+  
+  if (TaskQueueBase::Current() != task_queue_.TaskQueueForPost()) {
+    
+    
+    
+    
+    
+    task_queue_.TaskQueueForPost()->PostTask(
+        task_queue_.MaybeSafeTask(safety_.flag(), [this, sent_packet]() {
+          RTC_DCHECK_RUN_ON(&task_queue_);
+          ProcessSentPacket(sent_packet, true);
+        }));
+    return;
+  }
 
+  RTC_DCHECK_RUN_ON(&task_queue_);
+  ProcessSentPacket(sent_packet, false);
+}
+
+
+void RtpTransportControllerSend::ProcessSentPacket(
+    const rtc::SentPacket& sent_packet,
+    bool posted_to_worker) {
+  absl::optional<SentPacket> packet_msg =
+      transport_feedback_adapter_.ProcessSentPacket(sent_packet);
+  if (!packet_msg)
+    return;
+
+  auto congestion_update = GetCongestedStateUpdate();
+  NetworkControlUpdate control_update;
+  if (controller_)
+    control_update = controller_->OnSentPacket(*packet_msg);
+  if (!congestion_update && !control_update.has_updates())
+    return;
+  if (posted_to_worker) {
+    ProcessSentPacketUpdates(std::move(control_update));
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    task_queue_.TaskQueueForPost()->PostTask(task_queue_.MaybeSafeTask(
+        safety_.flag(),
+        [this, control_update = std::move(control_update)]() mutable {
+          RTC_DCHECK_RUN_ON(&task_queue_);
+          ProcessSentPacketUpdates(std::move(control_update));
+        }));
+  }
+}
+
+
+void RtpTransportControllerSend::ProcessSentPacketUpdates(
+    NetworkControlUpdate updates) {
   
   
   
   
-  
-  task_queue_.TaskQueueForPost()->PostTask(
-      task_queue_.MaybeSafeTask(safety_.flag(), [this, sent_packet]() {
-        RTC_DCHECK_RUN_ON(&task_queue_);
-        absl::optional<SentPacket> packet_msg =
-            transport_feedback_adapter_.ProcessSentPacket(sent_packet);
-        if (packet_msg) {
-          
-          
-          
-          
-          UpdateCongestedState();
-          if (controller_)
-            PostUpdates(controller_->OnSentPacket(*packet_msg));
-        }
-      }));
+  UpdateCongestedState();
+  if (controller_) {
+    PostUpdates(std::move(updates));
+  }
 }
 
 void RtpTransportControllerSend::OnReceivedPacket(
