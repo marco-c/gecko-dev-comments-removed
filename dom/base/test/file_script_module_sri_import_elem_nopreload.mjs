@@ -1,15 +1,14 @@
-const { f } = await import(
-  "./file_script_module_sri_dynamic_elem_nopreload_imported.js"
-);
+import { f } from "./file_script_module_sri_import_elem_nopreload_imported.mjs";
+
 f();
 
-
+// Dynamically insert the script element in order to suppress preload.
 const script = document.createElement("script");
 script.id = "watchme2";
 script.setAttribute("type", "module");
 script.setAttribute(
   "src",
-  "file_script_module_sri_dynamic_elem_nopreload_imported.js"
+  "file_script_module_sri_import_elem_nopreload_imported.mjs"
 );
 script.setAttribute(
   "integrity",
