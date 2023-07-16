@@ -134,12 +134,10 @@ TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
 
   EXPECT_TRUE(controller_->IsConnected(dc.get()));
   
-  EXPECT_FALSE(controller_->IsSendStreamAdded(dc->id()));
-  EXPECT_FALSE(controller_->IsRecvStreamAdded(dc->id()));
+  EXPECT_FALSE(controller_->IsStreamAdded(dc->sid()));
 
   dc->SetSctpSid(StreamId(0));
-  EXPECT_TRUE(controller_->IsSendStreamAdded(dc->id()));
-  EXPECT_TRUE(controller_->IsRecvStreamAdded(dc->id()));
+  EXPECT_TRUE(controller_->IsStreamAdded(dc->sid()));
 }
 
 

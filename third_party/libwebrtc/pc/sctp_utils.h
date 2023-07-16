@@ -14,13 +14,12 @@
 #include <string>
 
 #include "api/data_channel_interface.h"
-#include "api/sequence_checker.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "media/base/media_channel.h"
+#include "media/sctp/sctp_transport_internal.h"
 #include "net/dcsctp/public/types.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ssl_stream_adapter.h"  
-#include "rtc_base/system/no_unique_address.h"
 
 namespace rtc {
 class CopyOnWriteBuffer;
@@ -36,9 +35,13 @@ struct DataChannelInit;
 
 class StreamId {
  public:
-  StreamId();
-  explicit StreamId(int id);
-  explicit StreamId(const StreamId& sid);
+  StreamId() = default;
+  explicit StreamId(int id)
+      : id_(id >= cricket::kMinSctpSid && id <= cricket::kSpecMaxSctpSid
+                ? absl::optional<uint16_t>(static_cast<uint16_t>(id))
+                : absl::nullopt) {}
+  StreamId(const StreamId& sid) = default;
+  StreamId& operator=(const StreamId& sid) = default;
 
   
   
@@ -46,22 +49,23 @@ class StreamId {
   
   
   
-  bool HasValue() const;
+  bool HasValue() const { return id_.has_value(); }
 
   
   
   
-  int stream_id_int() const;
-  void reset();
+  int stream_id_int() const {
+    return id_.has_value() ? static_cast<int>(id_.value().value()) : -1;
+  }
 
-  StreamId& operator=(const StreamId& sid);
-  bool operator==(const StreamId& sid) const;
-  bool operator<(const StreamId& sid) const;
+  void reset() { id_ = absl::nullopt; }
+
+  bool operator==(const StreamId& sid) const { return id_ == sid.id_; }
+  bool operator<(const StreamId& sid) const { return id_ < sid.id_; }
   bool operator!=(const StreamId& sid) const { return !(operator==(sid)); }
 
  private:
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker thread_checker_;
-  absl::optional<dcsctp::StreamID> id_ RTC_GUARDED_BY(thread_checker_);
+  absl::optional<dcsctp::StreamID> id_;
 };
 
 

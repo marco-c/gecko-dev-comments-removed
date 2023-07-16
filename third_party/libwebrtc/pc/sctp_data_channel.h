@@ -39,15 +39,15 @@ class SctpDataChannel;
 class SctpDataChannelControllerInterface {
  public:
   
-  virtual bool SendData(int sid,
+  virtual bool SendData(StreamId sid,
                         const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
                         cricket::SendDataResult* result) = 0;
   
-  virtual void AddSctpDataStream(int sid) = 0;
+  virtual void AddSctpDataStream(StreamId sid) = 0;
   
   
-  virtual void RemoveSctpDataStream(int sid) = 0;
+  virtual void RemoveSctpDataStream(StreamId sid) = 0;
   
   virtual bool ReadyToSendData() const = 0;
   
