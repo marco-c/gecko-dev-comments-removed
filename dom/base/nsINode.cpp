@@ -1532,7 +1532,7 @@ static void AdoptNodeIntoOwnerDoc(nsINode* aParent, nsINode* aNode,
 
   Document* doc = aParent->OwnerDoc();
 
-  DebugOnly<nsINode*> adoptedNode = doc->AdoptNode(*aNode, aError);
+  DebugOnly<nsINode*> adoptedNode = doc->AdoptNode(*aNode, aError, true);
 
 #ifdef DEBUG
   if (!aError.Failed()) {
@@ -2762,7 +2762,7 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   
   
   Document* doc = OwnerDoc();
-  if (doc != newContent->OwnerDoc()) {
+  if (doc != newContent->OwnerDoc() && nodeType != DOCUMENT_FRAGMENT_NODE) {
     AdoptNodeIntoOwnerDoc(this, aNewChild, aError);
     if (aError.Failed()) {
       return nullptr;
