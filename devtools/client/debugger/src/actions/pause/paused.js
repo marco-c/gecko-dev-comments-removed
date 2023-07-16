@@ -46,11 +46,11 @@ export function paused(pauseInfo) {
     
     
     
-    await dispatch(fetchFrames(cx));
+    await dispatch(fetchFrames(thread));
     
     
     
-    await dispatch(mapFrames(cx));
+    await dispatch(mapFrames(thread));
 
     
     

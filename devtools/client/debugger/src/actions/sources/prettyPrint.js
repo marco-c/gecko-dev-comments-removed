@@ -33,7 +33,6 @@ import {
   getFirstSourceActorForGeneratedSource,
   getSourceByURL,
   getSelectedLocation,
-  getThreadContext,
 } from "../../selectors";
 
 import { selectSource } from "./select";
@@ -328,9 +327,8 @@ export function togglePrettyPrint(cx, sourceId) {
     
     await dispatch(selectPrettyLocation(cx, newPrettySource));
 
-    const threadcx = getThreadContext(getState());
     
-    await dispatch(mapFrames(threadcx));
+    await dispatch(mapFrames(sourceActor.thread));
     
     await dispatch(updateBreakpointsForNewPrettyPrintedSource(sourceId));
 

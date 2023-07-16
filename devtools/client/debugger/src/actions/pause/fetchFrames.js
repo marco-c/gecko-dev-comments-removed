@@ -2,11 +2,10 @@
 
 
 
-import { isValidThreadContext } from "../../utils/context";
+import { getIsPaused } from "../../selectors";
 
-export function fetchFrames(cx) {
+export function fetchFrames(thread) {
   return async function ({ dispatch, client, getState }) {
-    const { thread } = cx;
     let frames;
     try {
       frames = await client.getFrames(thread);
@@ -14,10 +13,10 @@ export function fetchFrames(cx) {
       
       
       
-      if (isValidThreadContext(getState(), cx)) {
+      if (getIsPaused(getState(), thread)) {
         throw e;
       }
     }
-    dispatch({ type: "FETCHED_FRAMES", thread, frames, cx });
+    dispatch({ type: "FETCHED_FRAMES", thread, frames });
   };
 }
