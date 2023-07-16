@@ -1376,7 +1376,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   bool is_svc = false;
   
   
-  if (encoder_config_.codec_type == kVideoCodecVP9) {
+  if (encoder_config_.codec_type == kVideoCodecVP9 &&
+      encoder_config_.number_of_streams == 1) {
     
     streams[0].max_bitrate_bps =
         std::min(streams[0].max_bitrate_bps,

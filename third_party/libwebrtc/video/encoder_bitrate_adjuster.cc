@@ -51,9 +51,8 @@ EncoderBitrateAdjuster::EncoderBitrateAdjuster(const VideoCodec& codec_settings)
   
   
   
-  
-  
-  if (codec_settings.codecType == VideoCodecType::kVideoCodecVP9) {
+  if (codec_settings.codecType == VideoCodecType::kVideoCodecVP9 &&
+      codec_settings.numberOfSimulcastStreams <= 1) {
     for (size_t si = 0; si < codec_settings.VP9().numberOfSpatialLayers; ++si) {
       if (codec_settings.spatialLayers[si].active) {
         min_bitrates_bps_[si] =
