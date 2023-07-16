@@ -5498,10 +5498,26 @@ template <typename T>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
                                      CompletionKind completionKind) {
   
   HandleValue thisVal = args.thisv();
+
+  
+  
+  MOZ_ASSERT(thisVal.isObject());
+  MOZ_ASSERT(thisVal.toObject().is<AsyncFromSyncIteratorObject>());
 
   
   Rooted<PromiseObject*> resultPromise(
@@ -5510,35 +5526,15 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     return false;
   }
 
-  
-  
-  if (!thisVal.isObject() ||
-      !thisVal.toObject().is<AsyncFromSyncIteratorObject>()) {
-    
-    
-    
-    
-
-    
-    RootedValue badGeneratorError(cx);
-    if (!GetTypeError(cx, JSMSG_NOT_AN_ASYNC_ITERATOR, &badGeneratorError)) {
-      return false;
-    }
-
-    
-    
-    if (!RejectPromiseInternal(cx, resultPromise, badGeneratorError)) {
-      return false;
-    }
-
-    
-    args.rval().setObject(*resultPromise);
-    return true;
-  }
-
   Rooted<AsyncFromSyncIteratorObject*> asyncIter(
       cx, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
 
+  
+  
+  
+  
+  
+  
   
   RootedObject iter(cx, asyncIter->iterator());
 
@@ -5610,6 +5606,20 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RootedValue iterVal(cx, ObjectValue(*iter));
   RootedValue resultVal(cx);
   bool ok;
@@ -5619,9 +5629,18 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     ok = Call(cx, func, iterVal, args[0], &resultVal);
   }
   if (!ok) {
+    
+    
+    
+    
+    
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
+  
+  
+  
+  
   
   
   
@@ -5654,7 +5673,14 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
+  
 
+  
+  
+  
+  
+  
   
   
   RootedValue doneVal(cx);

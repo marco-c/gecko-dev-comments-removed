@@ -1223,6 +1223,10 @@ const JSClass AsyncFromSyncIteratorObject::class_ = {
 
 
 
+
+
+
+
 JSObject* js::CreateAsyncFromSyncIterator(JSContext* cx, HandleObject iter,
                                           HandleValue nextMethod) {
   
@@ -1232,8 +1236,14 @@ JSObject* js::CreateAsyncFromSyncIterator(JSContext* cx, HandleObject iter,
 
 
 
+
+
+
+
 JSObject* AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter,
                                               HandleValue nextMethod) {
+  
+  
   
   RootedObject proto(cx,
                      GlobalObject::getOrCreateAsyncFromSyncIteratorPrototype(
@@ -1249,15 +1259,20 @@ JSObject* AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter,
   }
 
   
-  asyncIter->init(iter, nextMethod);
+  
 
   
   
   
-  
+  asyncIter->init(iter, nextMethod);
+
   
   return asyncIter;
 }
+
+
+
+
 
 
 
@@ -1268,11 +1283,19 @@ static bool AsyncFromSyncIteratorNext(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+
 static bool AsyncFromSyncIteratorReturn(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return AsyncFromSyncIteratorMethod(cx, args, CompletionKind::Return);
 }
+
+
+
+
 
 
 
@@ -1299,6 +1322,9 @@ bool GlobalObject::initAsyncFromSyncIteratorProto(
     return false;
   }
 
+  
+  
+  
   
   RootedObject asyncFromSyncIterProto(
       cx, GlobalObject::createBlankPrototypeInheriting(cx, &PlainObject::class_,
