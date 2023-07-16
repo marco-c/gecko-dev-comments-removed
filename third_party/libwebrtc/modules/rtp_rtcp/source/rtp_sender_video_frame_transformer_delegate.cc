@@ -216,14 +216,14 @@ std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(
       original->GetData().data(), original->GetData().size());
   EncodedImage encoded_image;
   encoded_image.SetEncodedData(encoded_image_buffer);
-  RTPVideoHeader new_header =
-      RTPVideoHeader::FromMetadata(original->GetMetadata());
+  VideoFrameMetadata metadata = original->Metadata();
+  RTPVideoHeader new_header = RTPVideoHeader::FromMetadata(metadata);
   
   return std::make_unique<TransformableVideoSenderFrame>(
       encoded_image, new_header, original->GetPayloadType(), new_header.codec,
       original->GetTimestamp(),
       absl::nullopt,  
-      original->GetSsrc(), original->GetMetadata().GetCsrcs());
+      original->GetSsrc(), metadata.GetCsrcs());
 }
 
 }  
