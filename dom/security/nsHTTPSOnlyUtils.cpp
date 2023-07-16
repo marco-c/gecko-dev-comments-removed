@@ -642,10 +642,11 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   } else {
     
     
-    
-    
-    
-    if (isHttpsOnly) httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
+  }
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT_NEXT_LOAD) {
+    httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT_NEXT_LOAD;
+    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
   }
   loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 }
@@ -814,29 +815,6 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
   }
 
   return uriEquals;
-}
-
-
-void nsHTTPSOnlyUtils::PotentiallyClearExemptFlag(nsILoadInfo* aLoadInfo) {
-  
-  
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
-      !IsHttpsFirstModeEnabled(isPrivateWin)) {
-    return;
-  }
-  
-  if (aLoadInfo->GetExternalContentPolicyType() !=
-      ExtContentPolicy::TYPE_DOCUMENT) {
-    return;
-  }
-  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-  
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
-    
-    httpsOnlyStatus ^= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-    aLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-  }
 }
 
 

@@ -163,13 +163,6 @@ class nsHTTPSOnlyUtils {
                                            nsIURI* aOtherURI,
                                            nsILoadInfo* aLoadInfo);
 
-  
-
-
-
-
-  static void PotentiallyClearExemptFlag(nsILoadInfo* aLoadInfo);
-
  private:
   
 

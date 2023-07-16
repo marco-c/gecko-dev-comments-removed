@@ -286,7 +286,10 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
   
   
   
-  aLoadState.SetIsExemptFromHTTPSOnlyMode(true);
+  
+  if ((mLoadType & nsIDocShell::LOAD_CMD_RELOAD) == 0) {
+    aLoadState.SetIsExemptFromHTTPSOnlyMode(true);
+  }
 }
 
 SessionHistoryInfo::SharedState SessionHistoryInfo::SharedState::Create(
@@ -496,7 +499,8 @@ SessionHistoryEntry::~SessionHistoryEntry() {
   }
 }
 
-NS_IMPL_ISUPPORTS(SessionHistoryEntry, nsISHEntry, SessionHistoryEntry)
+NS_IMPL_ISUPPORTS(SessionHistoryEntry, nsISHEntry, SessionHistoryEntry,
+                  nsISupportsWeakReference)
 
 NS_IMETHODIMP
 SessionHistoryEntry::GetURI(nsIURI** aURI) {
@@ -743,14 +747,14 @@ SessionHistoryEntry::SetLayoutHistoryState(
 
 NS_IMETHODIMP
 SessionHistoryEntry::GetParent(nsISHEntry** aParent) {
-  nsCOMPtr<nsISHEntry> parent = mParent;
+  nsCOMPtr<nsISHEntry> parent = do_QueryReferent(mParent);
   parent.forget(aParent);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 SessionHistoryEntry::SetParent(nsISHEntry* aParent) {
-  mParent = aParent;
+  mParent = do_GetWeakReference(aParent);
   return NS_OK;
 }
 

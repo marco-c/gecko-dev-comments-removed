@@ -5140,11 +5140,6 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
 
   
   
-  nsCOMPtr<nsILoadInfo> newLoadInfo = newChannel->LoadInfo();
-  nsHTTPSOnlyUtils::PotentiallyClearExemptFlag(newLoadInfo);
-
-  
-  
   if (mEarlyHintObserver) {
     if (RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(newChannel)) {
       httpChannelImpl->SetEarlyHintObserver(mEarlyHintObserver);

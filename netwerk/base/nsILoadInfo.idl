@@ -508,6 +508,12 @@ interface nsILoadInfo : nsISupports
 
 
 
+  const unsigned long HTTPS_ONLY_EXEMPT_NEXT_LOAD = (1 << 9);
+
+  
+
+
+
   [infallible] attribute unsigned long httpsOnlyStatus;
 
   
