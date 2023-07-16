@@ -361,6 +361,21 @@ TEST(SvcRateAllocatorTest, UsesScalabilityModeToGetNumberOfLayers) {
   EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0u);
 }
 
+TEST(SvcRateAllocatorTest, CapsAllocationToMaxBitrate) {
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
+  codec.maxBitrate = 70;  
+  SvcRateAllocator allocator = SvcRateAllocator(codec);
+
+  
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(3'000'000, 30));
+
+  
+  EXPECT_EQ(allocation.GetSpatialLayerSum(0), 70'000u);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0u);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0u);
+}
+
 class SvcRateAllocatorTestParametrizedContentType
     : public ::testing::Test,
       public ::testing::WithParamInterface<bool> {
