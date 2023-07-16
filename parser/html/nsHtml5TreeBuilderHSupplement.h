@@ -34,6 +34,8 @@ bool mPreventScriptExecution;
 
 
 bool mGenerateSpeculativeLoads;
+
+bool mHasSeenImportMap;
 #ifdef DEBUG
 bool mActive;
 #endif
