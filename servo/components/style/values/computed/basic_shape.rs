@@ -34,4 +34,7 @@ pub type Circle = generic::Circle<Position, NonNegativeLengthPercentage>;
 pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
 
 
+pub type Xywh = generic::Xywh<LengthPercentage, NonNegativeLengthPercentage>;
+
+
 pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
