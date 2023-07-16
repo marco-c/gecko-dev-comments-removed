@@ -2,7 +2,7 @@
 
 
 
-import { getFrames, getSymbols } from "../../selectors";
+import { getFrames, getSymbols, getCurrentThread } from "../../selectors";
 
 import { findClosestFunction } from "../../utils/ast";
 
@@ -27,9 +27,10 @@ function mapDisplayName(frame, { getState }) {
   return { ...frame, originalDisplayName };
 }
 
-export function mapDisplayNames(cx) {
+export function mapDisplayNames() {
   return function ({ dispatch, getState }) {
-    const frames = getFrames(getState(), cx.thread);
+    const thread = getCurrentThread(getState());
+    const frames = getFrames(getState(), thread);
 
     if (!frames) {
       return;
@@ -41,8 +42,7 @@ export function mapDisplayNames(cx) {
 
     dispatch({
       type: "MAP_FRAME_DISPLAY_NAMES",
-      cx,
-      thread: cx.thread,
+      thread,
       frames: mappedFrames,
     });
   };
