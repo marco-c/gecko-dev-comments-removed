@@ -1348,7 +1348,7 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
-    if (initialState != State::NotActive) {
+    if (!haveDiscardedJITCodeThisSlice) {
       
       
       
@@ -1363,7 +1363,7 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
     jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   }
 
-  if (initialState != State::NotActive) {
+  if (!haveDiscardedJITCodeThisSlice) {
     gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
       zone->discardJitCode(gcx);
