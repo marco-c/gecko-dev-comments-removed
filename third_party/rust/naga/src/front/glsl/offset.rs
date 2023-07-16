@@ -16,7 +16,7 @@ use super::{
     error::{Error, ErrorKind},
     Span,
 };
-use crate::{proc::Alignment, Arena, Constant, Handle, Type, TypeInner, UniqueArena};
+use crate::{proc::Alignment, Handle, Type, TypeInner, UniqueArena};
 
 
 
@@ -43,7 +43,6 @@ pub fn calculate_offset(
     meta: Span,
     layout: StructLayout,
     types: &mut UniqueArena<Type>,
-    constants: &Arena<Constant>,
     errors: &mut Vec<Error>,
 ) -> TypeAlignSpan {
     
@@ -68,7 +67,7 @@ pub fn calculate_offset(
         
         
         TypeInner::Array { base, size, .. } => {
-            let info = calculate_offset(base, meta, layout, types, constants, errors);
+            let info = calculate_offset(base, meta, layout, types, errors);
 
             let name = types[ty].name.clone();
 
@@ -81,9 +80,7 @@ pub fn calculate_offset(
             };
 
             let span = match size {
-                crate::ArraySize::Constant(s) => {
-                    constants[s].to_array_length().unwrap_or(1) * stride
-                }
+                crate::ArraySize::Constant(size) => size.get() * stride,
                 crate::ArraySize::Dynamic => stride,
             };
 
@@ -135,7 +132,7 @@ pub fn calculate_offset(
             let name = types[ty].name.clone();
 
             for member in members.iter_mut() {
-                let info = calculate_offset(member.ty, meta, layout, types, constants, errors);
+                let info = calculate_offset(member.ty, meta, layout, types, errors);
 
                 let member_alignment = info.align;
                 span = member_alignment.round_up(span);

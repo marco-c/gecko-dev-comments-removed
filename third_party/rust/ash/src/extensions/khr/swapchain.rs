@@ -3,9 +3,10 @@ use super::DeviceGroup;
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use crate::{Device, Instance};
+use crate::{Device, Entry, Instance};
 use std::ffi::CStr;
 use std::mem;
+
 
 #[derive(Clone)]
 pub struct Swapchain {
@@ -14,12 +15,32 @@ pub struct Swapchain {
 }
 
 impl Swapchain {
+    
+    
+    
+    
+    
+    
+    
     pub fn new(instance: &Instance, device: &Device) -> Self {
         let handle = device.handle();
         let fp = vk::KhrSwapchainFn::load(|name| unsafe {
             mem::transmute(instance.get_device_proc_addr(handle, name.as_ptr()))
         });
         Self { handle, fp }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn new_from_instance(entry: &Entry, instance: &Instance, device: vk::Device) -> Self {
+        let fp = vk::KhrSwapchainFn::load(|name| unsafe {
+            mem::transmute(entry.get_instance_proc_addr(instance.handle(), name.as_ptr()))
+        });
+        Self { handle: device, fp }
     }
 
     
@@ -144,6 +165,10 @@ impl Swapchain {
             .result_with_success(modes)
     }
 
+    
+    
+    
+    
     
     
     
