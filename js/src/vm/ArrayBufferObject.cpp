@@ -1356,9 +1356,10 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
   } else if (contents.kind() == EXTERNAL) {
     
     
-    size_t freeInfoSlots = HowMany(sizeof(FreeInfo), sizeof(Value));
-    MOZ_ASSERT(reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
-               "FreeInfo must fit in inline slots");
+    constexpr size_t freeInfoSlots = HowMany(sizeof(FreeInfo), sizeof(Value));
+    static_assert(
+        reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
+        "FreeInfo must fit in inline slots");
     nslots += freeInfoSlots;
   } else {
     
