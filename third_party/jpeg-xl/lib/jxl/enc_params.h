@@ -90,7 +90,8 @@ struct CompressParams {
   bool modular_mode = false;
 
   
-  size_t modular_group_size_shift = 1;
+  
+  int modular_group_size_shift = -1;
 
   Override preview = Override::kDefault;
   Override noise = Override::kDefault;

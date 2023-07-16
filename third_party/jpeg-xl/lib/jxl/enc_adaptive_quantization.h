@@ -34,12 +34,6 @@ struct AuxOut;
 
 
 
-ImageBundle RoundtripImage(const Image3F& opsin, PassesEncoderState* enc_state,
-                           const JxlCmsInterface& cms, ThreadPool* pool);
-
-
-
-
 
 
 

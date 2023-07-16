@@ -53,10 +53,6 @@ typedef struct JxlEncoderFrameSettingsStruct JxlEncoderFrameSettings;
 
 
 
-typedef JxlEncoderFrameSettings JxlEncoderOptions;
-
-
-
 
 typedef enum {
   
@@ -71,13 +67,6 @@ typedef enum {
   
 
   JXL_ENC_NEED_MORE_OUTPUT = 2,
-
-  
-
-
-
-
-  JXL_ENC_NOT_SUPPORTED = 3,
 
 } JxlEncoderStatus;
 
@@ -1086,37 +1075,6 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameLossless(
 
 
 
-JXL_EXPORT JxlEncoderStatus
-JxlEncoderOptionsSetLossless(JxlEncoderFrameSettings*, JXL_BOOL);
-
-
-
-
-
-
-
-
-
-
-
-JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus
-JxlEncoderOptionsSetEffort(JxlEncoderFrameSettings* frame_settings, int effort);
-
-
-
-
-
-
-
-
-
-
-
-JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetDecodingSpeed(
-    JxlEncoderFrameSettings* frame_settings, int tier);
-
-
-
 
 
 
@@ -1131,11 +1089,6 @@ JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetDecodingSpeed(
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameDistance(
     JxlEncoderFrameSettings* frame_settings, float distance);
-
-
-
-JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus
-JxlEncoderOptionsSetDistance(JxlEncoderFrameSettings*, float);
 
 
 
@@ -1170,11 +1123,6 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelDistance(
 
 JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderFrameSettingsCreate(
     JxlEncoder* enc, const JxlEncoderFrameSettings* source);
-
-
-
-JXL_DEPRECATED JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderOptionsCreate(
-    JxlEncoder*, const JxlEncoderFrameSettings*);
 
 
 

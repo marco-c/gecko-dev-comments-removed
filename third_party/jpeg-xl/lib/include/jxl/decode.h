@@ -206,16 +206,6 @@ typedef enum {
 
 
 
-  JXL_DEC_EXTENSIONS = 0x80,
-
-  
-
-
-
-
-
-
-
   JXL_DEC_COLOR_ENCODING = 0x100,
 
   
@@ -388,23 +378,6 @@ JXL_EXPORT void JxlDecoderSkipFrames(JxlDecoder* dec, size_t amount);
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderSkipCurrentFrame(JxlDecoder* dec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_DEPRECATED JXL_EXPORT JxlDecoderStatus
-JxlDecoderDefaultPixelFormat(const JxlDecoder* dec, JxlPixelFormat* format);
 
 
 
@@ -746,11 +719,9 @@ typedef enum {
 
 
 
-
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsEncodedProfile(
-    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
-    JxlColorProfileTarget target, JxlColorEncoding* color_encoding);
-
+    const JxlDecoder* dec, JxlColorProfileTarget target,
+    JxlColorEncoding* color_encoding);
 
 
 
@@ -775,9 +746,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsEncodedProfile(
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetICCProfileSize(
-    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
-    JxlColorProfileTarget target, size_t* size);
-
+    const JxlDecoder* dec, JxlColorProfileTarget target, size_t* size);
 
 
 
@@ -795,8 +764,8 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetICCProfileSize(
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsICCProfile(
-    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
-    JxlColorProfileTarget target, uint8_t* icc_profile, size_t size);
+    const JxlDecoder* dec, JxlColorProfileTarget target, uint8_t* icc_profile,
+    size_t size);
 
 
 

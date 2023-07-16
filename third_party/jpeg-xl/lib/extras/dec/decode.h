@@ -40,8 +40,10 @@ std::vector<Codec> AvailableCodecs();
 
 
 
-Codec CodecFromExtension(std::string extension,
-                         size_t* JXL_RESTRICT bits_per_sample = nullptr);
+Codec CodecFromPath(std::string path,
+                    size_t* JXL_RESTRICT bits_per_sample = nullptr,
+                    std::string* basename = nullptr,
+                    std::string* extension = nullptr);
 
 
 

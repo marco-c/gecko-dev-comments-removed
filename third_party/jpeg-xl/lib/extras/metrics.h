@@ -3,8 +3,8 @@
 
 
 
-#ifndef LIB_JXL_ENC_BUTTERAUGLI_PNORM_H_
-#define LIB_JXL_ENC_BUTTERAUGLI_PNORM_H_
+#ifndef LIB_EXTRAS_METRICS_H_
+#define LIB_EXTRAS_METRICS_H_
 
 #include <stdint.h>
 

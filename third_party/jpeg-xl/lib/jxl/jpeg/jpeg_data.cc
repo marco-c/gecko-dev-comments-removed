@@ -302,14 +302,7 @@ Status JPEGData::VisitFields(Visitor* visitor) {
                                        BitsOffset(5, 9), BitsOffset(28, 41), 0,
                                        &block_idx));
       block_idx += last_block_idx + 1;
-      if (static_cast<int>(block_idx) < last_block_idx + 1) {
-        return JXL_FAILURE("Invalid block ID: %u, last block was %d", block_idx,
-                           last_block_idx);
-      }
-      
-      
-      if (block_idx > (1u << 30)) {
-        
+      if (block_idx >= (3u << 26)) {
         
         
         return JXL_FAILURE("Invalid block ID: %u", block_idx);
@@ -335,14 +328,7 @@ Status JPEGData::VisitFields(Visitor* visitor) {
                                        BitsOffset(5, 9), BitsOffset(28, 41), 0,
                                        &block_idx));
       block_idx += last_block_idx + 1;
-      if (static_cast<int>(block_idx) < last_block_idx + 1) {
-        return JXL_FAILURE("Invalid block ID: %u, last block was %d", block_idx,
-                           last_block_idx);
-      }
-      if (block_idx > (1u << 30)) {
-        
-        
-        
+      if (block_idx > (3u << 26)) {
         return JXL_FAILURE("Invalid block ID: %u", block_idx);
       }
       last_block_idx = block_idx;

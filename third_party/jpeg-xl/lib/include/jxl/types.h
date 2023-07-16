@@ -56,14 +56,6 @@ typedef enum {
 
 
 
-JXL_DEPRECATED static const int JXL_TYPE_BOOLEAN = 1;
-
-
-
-JXL_DEPRECATED static const int JXL_TYPE_UINT32 = 4;
-
-
-
 typedef enum {
   
 
@@ -108,6 +100,7 @@ typedef struct {
 
   size_t align;
 } JxlPixelFormat;
+
 
 
 

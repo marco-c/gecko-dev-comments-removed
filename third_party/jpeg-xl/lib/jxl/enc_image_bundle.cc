@@ -130,13 +130,17 @@ Status TransformIfNeeded(const ImageBundle& in, const ColorEncoding& c_desired,
   }
   
   
-  store->SetFromImage(CopyImage(in.color()), in.c_current());
+  Image3F color(in.color().xsize(), in.color().ysize());
+  CopyImageTo(in.color(), &color);
+  store->SetFromImage(std::move(color), in.c_current());
 
   
   if (in.HasExtraChannels()) {
     std::vector<ImageF> extra_channels;
     for (const ImageF& extra_channel : in.extra_channels()) {
-      extra_channels.emplace_back(CopyImage(extra_channel));
+      ImageF ec(extra_channel.xsize(), extra_channel.ysize());
+      CopyImageTo(extra_channel, &ec);
+      extra_channels.emplace_back(std::move(ec));
     }
     store->SetExtraChannels(std::move(extra_channels));
   }

@@ -45,25 +45,18 @@ JXL_INLINE Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
 }
 
 
-Status SetFromFile(const std::string& pathname,
-                   const extras::ColorHints& color_hints, CodecInOut* io,
-                   ThreadPool* pool = nullptr,
-                   const SizeConstraints* constraints = nullptr,
-                   extras::Codec* orig_codec = nullptr);
-
-
 
 Status Encode(const CodecInOut& io, extras::Codec codec,
               const ColorEncoding& c_desired, size_t bits_per_sample,
               std::vector<uint8_t>* bytes, ThreadPool* pool = nullptr);
 
 
-Status EncodeToFile(const CodecInOut& io, const ColorEncoding& c_desired,
-                    size_t bits_per_sample, const std::string& pathname,
-                    ThreadPool* pool = nullptr);
+Status Encode(const CodecInOut& io, const ColorEncoding& c_desired,
+              size_t bits_per_sample, const std::string& pathname,
+              std::vector<uint8_t>* bytes, ThreadPool* pool = nullptr);
 
-Status EncodeToFile(const CodecInOut& io, const std::string& pathname,
-                    ThreadPool* pool = nullptr);
+Status Encode(const CodecInOut& io, const std::string& pathname,
+              std::vector<uint8_t>* bytes, ThreadPool* pool = nullptr);
 
 }  
 

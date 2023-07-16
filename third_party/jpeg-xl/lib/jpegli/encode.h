@@ -123,6 +123,10 @@ void jpegli_set_distance(j_compress_ptr cinfo, float distance,
 float jpegli_quality_to_distance(int quality);
 
 
+void jpegli_set_psnr(j_compress_ptr cinfo, float psnr, float tolerance,
+                     float min_distance, float max_distance);
+
+
 
 
 void jpegli_set_xyb_mode(j_compress_ptr cinfo);

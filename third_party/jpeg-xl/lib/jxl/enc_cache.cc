@@ -170,8 +170,10 @@ Status InitializePassesEncoder(const Image3F& opsin, const JxlCmsInterface& cms,
     
     
     
-    shared.dc_storage =
-        CopyImage(dec_state->shared->dc_frames[shared.frame_header.dc_level]);
+    const Image3F& dc_frame =
+        dec_state->shared->dc_frames[shared.frame_header.dc_level];
+    shared.dc_storage = Image3F(dc_frame.xsize(), dc_frame.ysize());
+    CopyImageTo(dc_frame, &shared.dc_storage);
     ZeroFillImage(&shared.quant_dc);
     shared.dc = &shared.dc_storage;
     JXL_CHECK(encoded_size == 0);

@@ -48,6 +48,7 @@ struct JXLCompressParams {
   
   
   float intensity_target = 0;
+  int already_downsampled = 1;
   
   size_t override_bitdepth = 0;
   int32_t codestream_level = -1;

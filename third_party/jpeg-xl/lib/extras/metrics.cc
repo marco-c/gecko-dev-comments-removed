@@ -3,7 +3,7 @@
 
 
 
-#include "lib/jxl/enc_butteraugli_pnorm.h"
+#include "lib/extras/metrics.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 #include <atomic>
 
 #undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "lib/jxl/enc_butteraugli_pnorm.cc"
+#define HWY_TARGET_INCLUDE "lib/extras/metrics.cc"
 #include <hwy/foreach_target.h>
 #include <hwy/highway.h>
 
