@@ -132,12 +132,13 @@ module.exports = {
         GetBuiltinSymbol: "readonly",
         getPropertySuper: "readonly",
         hasOwn: "readonly",
+        IsNullOrUndefined: "readonly",
+        IteratorClose: "readonly",
         resumeGenerator: "readonly",
         SetCanonicalName: "readonly",
         SetIsInlinableLargeFunction: "readonly",
         ToNumeric: "readonly",
         ToString: "readonly",
-        IsNullOrUndefined: "readonly",
 
         
         

@@ -26,20 +26,6 @@ function IteratorNext(iteratorRecord, value) {
 }
 
 
-function IteratorClose(iterator) {
-  
-  const returnMethod = iterator.return;
-  
-  if (!IsNullOrUndefined(returnMethod)) {
-    const result = callContentFunction(returnMethod, iterator);
-    
-    if (!IsObject(result)) {
-      ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
-    }
-  }
-}
-
-
 
 
 
