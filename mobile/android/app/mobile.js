@@ -294,12 +294,6 @@ pref("browser.urlbar.trimURLs", true);
 
 
 
-pref("dom.phonenumber.substringmatching.BR", 8);
-pref("dom.phonenumber.substringmatching.CO", 10);
-pref("dom.phonenumber.substringmatching.VE", 7);
-
-
-
 
 pref("home.sync.updateMode", 0);
 
