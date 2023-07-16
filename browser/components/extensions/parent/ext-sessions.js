@@ -123,6 +123,16 @@ this.sessions = class extends ExtensionAPIPersistent {
       return { encodedKey, win };
     }
 
+    function getClosedIdFromSessionId(sessionId) {
+      
+      
+      let closedId = parseInt(sessionId, 10);
+      if (Number.isInteger(closedId)) {
+        return closedId;
+      }
+      throw new ExtensionError(`Invalid sessionId: ${sessionId}.`);
+    }
+
     return {
       sessions: {
         async getRecentlyClosed(filter) {
@@ -138,9 +148,10 @@ this.sessions = class extends ExtensionAPIPersistent {
           await SessionStore.promiseInitialized;
           let window = windowTracker.getWindow(windowId, context);
           let closedTabData = SessionStore.getClosedTabDataForWindow(window);
+          let closedId = getClosedIdFromSessionId(sessionId);
 
           let closedTabIndex = closedTabData.findIndex(closedTab => {
-            return closedTab.closedId === parseInt(sessionId, 10);
+            return closedTab.closedId === closedId;
           });
 
           if (closedTabIndex < 0) {
@@ -155,9 +166,9 @@ this.sessions = class extends ExtensionAPIPersistent {
         async forgetClosedWindow(sessionId) {
           await SessionStore.promiseInitialized;
           let closedWindowData = SessionStore.getClosedWindowData();
-
+          let closedId = getClosedIdFromSessionId(sessionId);
           let closedWindowIndex = closedWindowData.findIndex(closedWindow => {
-            return closedWindow.closedId === parseInt(sessionId, 10);
+            return closedWindow.closedId === closedId;
           });
 
           if (closedWindowIndex < 0) {
@@ -171,12 +182,26 @@ this.sessions = class extends ExtensionAPIPersistent {
 
         async restore(sessionId) {
           await SessionStore.promiseInitialized;
-          let session, closedId;
+          let session;
+          let closedId;
           if (sessionId) {
-            closedId = sessionId;
+            closedId = getClosedIdFromSessionId(sessionId);
+          }
+          let targetWindow;
+
+          
+          if (closedId !== undefined) {
+            if (SessionStore.getObjectTypeForClosedId(closedId) == "tab") {
+              
+              targetWindow = SessionStore.getWindowForTabClosedId(
+                closedId,
+                extension.privateBrowsingAllowed
+              );
+            }
             session = SessionStore.undoCloseById(
               closedId,
-              extension.privateBrowsingAllowed
+              extension.privateBrowsingAllowed,
+              targetWindow 
             );
           } else if (SessionStore.lastClosedObjectType == "window") {
             
@@ -199,9 +224,15 @@ this.sessions = class extends ExtensionAPIPersistent {
 
               
               closedId = recentlyClosedTabs[0].closedId;
-              session = SessionStore.undoCloseById(
+              
+              targetWindow = SessionStore.getWindowForTabClosedId(
                 closedId,
                 extension.privateBrowsingAllowed
+              );
+              session = SessionStore.undoCloseById(
+                closedId,
+                extension.privateBrowsingAllowed,
+                targetWindow
               );
             }
           }
