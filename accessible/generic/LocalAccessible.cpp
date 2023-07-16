@@ -1142,15 +1142,17 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
     return attributes.forget();
   }
 
+  
+  if (RefPtr<nsAtom> display = DisplayStyle()) {
+    attributes->SetAttribute(nsGkAtoms::display, display);
+  }
+
   const ComputedStyle& style = *f->Style();
   auto Atomize = [&](nsCSSPropertyID aId) -> RefPtr<nsAtom> {
     nsAutoCString value;
     style.GetComputedPropertyValue(aId, value);
     return NS_Atomize(value);
   };
-
-  
-  attributes->SetAttribute(nsGkAtoms::display, Atomize(eCSSProperty_display));
 
   
   attributes->SetAttribute(nsGkAtoms::textAlign,
@@ -3925,6 +3927,17 @@ already_AddRefed<nsAtom> LocalAccessible::DisplayStyle() const {
     return nullptr;
   }
   if (elm->IsHTMLElement(nsGkAtoms::area)) {
+    
+    return nullptr;
+  }
+  static const dom::Element::AttrValuesArray presentationRoles[] = {
+      nsGkAtoms::none, nsGkAtoms::presentation, nullptr};
+  if (nsAccUtils::FindARIAAttrValueIn(elm, nsGkAtoms::role, presentationRoles,
+                                      eIgnoreCase) != AttrArray::ATTR_MISSING &&
+      IsGeneric()) {
+    
+    
+    
     
     return nullptr;
   }
