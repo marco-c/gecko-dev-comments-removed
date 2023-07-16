@@ -129,15 +129,6 @@ void DecisionLogic::SetSampleRate(int fs_hz, size_t output_size_samples) {
 
 NetEq::Operation DecisionLogic::GetDecision(const NetEqStatus& status,
                                             bool* reset_decoder) {
-  
-  
-  
-  if (status.last_mode == NetEq::Mode::kRfc3389Cng) {
-    cng_state_ = kCngRfc3389On;
-  } else if (status.last_mode == NetEq::Mode::kCodecInternalCng) {
-    cng_state_ = kCngInternalOn;
-  }
-
   if (!IsExpand(status.last_mode) && !IsCng(status.last_mode)) {
     last_playout_delay_ms_ = GetPlayoutDelayMs(status);
   }
@@ -311,22 +302,21 @@ NetEq::Operation DecisionLogic::CngOperation(
 }
 
 NetEq::Operation DecisionLogic::NoPacket(NetEqController::NetEqStatus status) {
-  if (cng_state_ == kCngRfc3389On) {
-    
-    return NetEq::Operation::kRfc3389CngNoPacket;
-  } else if (cng_state_ == kCngInternalOn) {
-    
-    if (config_.cng_timeout_ms &&
-        status.generated_noise_samples >
-            static_cast<size_t>(*config_.cng_timeout_ms * sample_rate_khz_)) {
-      return NetEq::Operation::kExpand;
+  switch (status.last_mode) {
+    case NetEq::Mode::kRfc3389Cng:
+      return NetEq::Operation::kRfc3389CngNoPacket;
+    case NetEq::Mode::kCodecInternalCng: {
+      
+      if (config_.cng_timeout_ms &&
+          status.generated_noise_samples >
+              static_cast<size_t>(*config_.cng_timeout_ms * sample_rate_khz_)) {
+        return NetEq::Operation::kExpand;
+      }
+      return NetEq::Operation::kCodecInternalCng;
     }
-    return NetEq::Operation::kCodecInternalCng;
-  } else if (status.play_dtmf) {
-    return NetEq::Operation::kDtmf;
-  } else {
-    
-    return NetEq::Operation::kExpand;
+    default:
+      return status.play_dtmf ? NetEq::Operation::kDtmf
+                              : NetEq::Operation::kExpand;
   }
 }
 

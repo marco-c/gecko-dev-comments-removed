@@ -1046,7 +1046,7 @@ int NetEqImpl::GetDecision(Operation* operation,
                                        controller_->noise_fast_forward()
                                  : 0;
 
-  if (controller_->CngRfc3389On() || last_mode_ == Mode::kRfc3389Cng) {
+  if (last_mode_ == Mode::kRfc3389Cng) {
     
     
     
@@ -1280,12 +1280,6 @@ int NetEqImpl::GetDecision(Operation* operation,
   int extracted_samples = 0;
   if (packet) {
     sync_buffer_->IncreaseEndTimestamp(packet->timestamp - end_timestamp);
-
-    if (*operation != Operation::kRfc3389Cng) {
-      
-      controller_->SetCngOff();
-    }
-
     extracted_samples = ExtractPackets(required_samples, packet_list);
     if (extracted_samples < 0) {
       return kPacketBufferCorruption;

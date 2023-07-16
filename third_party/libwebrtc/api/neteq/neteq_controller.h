@@ -145,13 +145,6 @@ class NetEqController {
   virtual int GetBaseMinimumDelay() const = 0;
 
   
-  virtual bool CngRfc3389On() const = 0;
-  virtual bool CngOff() const = 0;
-
-  
-  virtual void SetCngOff() = 0;
-
-  
   
   
   

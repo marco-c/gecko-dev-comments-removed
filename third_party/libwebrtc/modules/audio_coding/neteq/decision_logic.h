@@ -58,13 +58,6 @@ class DecisionLogic : public NetEqController {
   NetEq::Operation GetDecision(const NetEqController::NetEqStatus& status,
                                bool* reset_decoder) override;
 
-  
-  bool CngRfc3389On() const override { return cng_state_ == kCngRfc3389On; }
-  bool CngOff() const override { return cng_state_ == kCngOff; }
-
-  
-  void SetCngOff() override { cng_state_ = kCngOff; }
-
   void ExpandDecision(NetEq::Operation operation) override {}
 
   
@@ -110,8 +103,6 @@ class DecisionLogic : public NetEqController {
  private:
   
   static const int kMinTimescaleInterval = 5;
-
-  enum CngState { kCngOff, kCngRfc3389On, kCngInternalOn };
 
   
   
@@ -178,8 +169,6 @@ class DecisionLogic : public NetEqController {
   const TickTimer* tick_timer_;
   int sample_rate_khz_;
   size_t output_size_samples_;
-  CngState cng_state_ = kCngOff;  
-                                  
   size_t noise_fast_forward_ = 0;
   size_t packet_length_samples_ = 0;
   int sample_memory_ = 0;
