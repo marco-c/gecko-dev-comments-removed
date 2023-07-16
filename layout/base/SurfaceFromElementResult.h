@@ -22,8 +22,7 @@ namespace mozilla {
 
 namespace dom {
 class CanvasRenderingContext2D;
-class ImageBitmap;
-}  
+}
 
 namespace gfx {
 class SourceSurface;
@@ -40,7 +39,6 @@ struct DirectDrawInfo {
 
 struct SurfaceFromElementResult {
   friend class mozilla::dom::CanvasRenderingContext2D;
-  friend class mozilla::dom::ImageBitmap;
   friend class ::nsLayoutUtils;
 
   
@@ -67,9 +65,6 @@ struct SurfaceFromElementResult {
   mozilla::gfx::IntSize mSize;
   
   mozilla::gfx::IntSize mIntrinsicSize;
-  
-
-  mozilla::Maybe<mozilla::gfx::IntRect> mCropRect;
   
 
   nsCOMPtr<nsIPrincipal> mPrincipal;

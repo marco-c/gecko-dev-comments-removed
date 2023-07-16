@@ -1754,13 +1754,6 @@ void VideoFrame::Close() {
   mDisplaySize = gfx::IntSize();
 }
 
-already_AddRefed<layers::Image> VideoFrame::GetImage() const {
-  if (!mResource) {
-    return nullptr;
-  }
-  return do_AddRef(mResource->mImage);
-}
-
 
 
 JSObject* VideoFrame::ReadStructuredClone(

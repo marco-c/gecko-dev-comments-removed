@@ -100,7 +100,6 @@ class ImageBitmap;
 class InspectorFontFace;
 class OffscreenCanvas;
 class Selection;
-class VideoFrame;
 }  
 namespace gfx {
 struct RectCornerRadii;
@@ -2198,9 +2197,7 @@ class nsLayoutUtils {
 
     SFE_EXACT_SIZE_SURFACE = 1 << 6,
     
-    SFE_ORIENTATION_FROM_IMAGE = 1 << 7,
-    
-    SFE_ALLOW_UNCROPPED_UNSCALED = 1 << 8,
+    SFE_ORIENTATION_FROM_IMAGE = 1 << 7
   };
 
   
@@ -2213,16 +2210,6 @@ class nsLayoutUtils {
     RefPtr<DrawTarget> target = nullptr;
     return SurfaceFromOffscreenCanvas(aOffscreenCanvas, aSurfaceFlags, target);
   }
-  
-  static mozilla::SurfaceFromElementResult SurfaceFromVideoFrame(
-      mozilla::dom::VideoFrame* aVideoFrame, uint32_t aSurfaceFlags,
-      RefPtr<DrawTarget>& aTarget);
-  static mozilla::SurfaceFromElementResult SurfaceFromVideoFrame(
-      mozilla::dom::VideoFrame* aVideoFrame, uint32_t aSurfaceFlags = 0) {
-    RefPtr<DrawTarget> target = nullptr;
-    return SurfaceFromVideoFrame(aVideoFrame, aSurfaceFlags, target);
-  }
-  
   static mozilla::SurfaceFromElementResult SurfaceFromImageBitmap(
       mozilla::dom::ImageBitmap* aImageBitmap, uint32_t aSurfaceFlags);
 
