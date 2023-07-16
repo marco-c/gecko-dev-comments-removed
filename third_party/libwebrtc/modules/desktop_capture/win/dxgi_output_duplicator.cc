@@ -25,6 +25,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/win32.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -146,6 +147,30 @@ bool DxgiOutputDuplicator::ReleaseFrame() {
   return true;
 }
 
+void DxgiOutputDuplicator::LogMouseCursor(
+    const DXGI_OUTDUPL_FRAME_INFO& frame_info) {
+  
+  const bool new_pointer_shape = (frame_info.PointerShapeBufferSize != 0);
+  if (new_pointer_shape)
+    return;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool cursor_embedded_in_frame = !frame_info.PointerPosition.Visible;
+  RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.Win.DirectXCursorEmbedded",
+                        cursor_embedded_in_frame);
+}
+
 bool DxgiOutputDuplicator::Duplicate(Context* context,
                                      DesktopVector offset,
                                      SharedDesktopFrame* target) {
@@ -167,6 +192,13 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     RTC_LOG(LS_ERROR) << "Failed to capture frame: "
                       << desktop_capture::utils::ComErrorToString(error);
     return false;
+  }
+
+  
+  
+  
+  if (frame_info.LastMouseUpdateTime.QuadPart != 0) {
+    LogMouseCursor(frame_info);
   }
 
   

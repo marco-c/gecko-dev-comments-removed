@@ -97,6 +97,11 @@ class DxgiOutputDuplicator {
   bool DoDetectUpdatedRegion(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
                              DesktopRegion* updated_region);
 
+  
+  
+  
+  void LogMouseCursor(const DXGI_OUTDUPL_FRAME_INFO& frame_info);
+
   bool ReleaseFrame();
 
   
