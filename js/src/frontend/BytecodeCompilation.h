@@ -31,15 +31,6 @@ struct CompilationStencil;
 struct ExtensibleCompilationStencil;
 class ScopeBindingCache;
 
-
-
-
-
-
-[[nodiscard]] extern bool PrepareForInstantiate(
-    JSContext* maybeCx, FrontendContext* fc, CompilationInput& input,
-    const CompilationStencil& stencil, CompilationGCOutput& gcOutput);
-
 [[nodiscard]] extern bool InstantiateStencils(JSContext* cx,
                                               CompilationInput& input,
                                               const CompilationStencil& stencil,
