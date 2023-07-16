@@ -9,6 +9,9 @@
 #include "mozilla/Span.h"
 
 class nsHtml5OwningUTF16Buffer : public nsHtml5UTF16Buffer {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHtml5OwningUTF16Buffer)
+
  private:
   
 
@@ -56,12 +59,6 @@ class nsHtml5OwningUTF16Buffer : public nsHtml5UTF16Buffer {
 
 
   void AdvanceEnd(int32_t aNumberOfCodeUnits);
-
-  nsrefcnt AddRef();
-  nsrefcnt Release();
-
- private:
-  mozilla::ThreadSafeAutoRefCnt mRefCnt;
 };
 
 #endif  
