@@ -549,13 +549,6 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  if (!(aProtectionFlags & kPageExecutable)) {
-    
-    
-    
-    return stubStatus;
-  }
-
   return AfterMapExecutableViewOfSection(aProcess, aBaseAddress, stubStatus);
 }
 
