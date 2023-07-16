@@ -1806,8 +1806,7 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
       
       Rooted<PromiseObject*> promise(cx, generator->promise());
       if (promise->state() == JS::PromiseState::Pending) {
-        if (!AsyncFunctionResolve(cx, generator, vp,
-                                  AsyncFunctionResolveKind::Fulfill)) {
+        if (!AsyncFunctionResolve(cx, generator, vp)) {
           return false;
         }
       }

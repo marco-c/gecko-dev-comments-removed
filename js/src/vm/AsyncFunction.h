@@ -8,7 +8,6 @@
 #define vm_AsyncFunction_h
 
 #include "js/Class.h"
-#include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/GeneratorObject.h"
 #include "vm/JSObject.h"
 #include "vm/PromiseObject.h"
@@ -294,8 +293,7 @@ extern const JSClass AsyncFunctionClass;
 
 JSObject* AsyncFunctionResolve(JSContext* cx,
                                Handle<AsyncFunctionGeneratorObject*> generator,
-                               HandleValue valueOrReason,
-                               AsyncFunctionResolveKind resolveKind);
+                               HandleValue value);
 
 
 
