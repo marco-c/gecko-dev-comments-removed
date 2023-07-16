@@ -385,18 +385,11 @@ async function doEngagementWithoutAddingResultToView(
   
   
   
-  let originalHeuristicTimeout =
-    UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS;
-  UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS = 30000;
-  let originalOtherTimeout =
-    UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS;
-  UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS = 30000;
-  const cleanup = () => {
-    UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS =
-      originalHeuristicTimeout;
-    UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS = originalOtherTimeout;
-  };
-  registerCleanupFunction(cleanup);
+  let originalChunkDelayMs = UrlbarProvidersManager._chunkResultsDelayMs;
+  UrlbarProvidersManager._chunkResultsDelayMs = 30000;
+  registerCleanupFunction(() => {
+    UrlbarProvidersManager._chunkResultsDelayMs = originalChunkDelayMs;
+  });
 
   
   let sandbox = sinon.createSandbox();
@@ -490,7 +483,7 @@ async function doEngagementWithoutAddingResultToView(
   
   resolveQuery();
   UrlbarProvidersManager.unregisterProvider(provider);
-  cleanup();
+  UrlbarProvidersManager._chunkResultsDelayMs = originalChunkDelayMs;
   sandboxCleanup();
 }
 
