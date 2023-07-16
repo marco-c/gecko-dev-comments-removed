@@ -20,6 +20,7 @@
 #include "mozilla/loader/AutoMemMap.h"
 #include "MainThreadUtils.h"
 #include "nsClassHashtable.h"
+#include "nsThreadUtils.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
@@ -27,19 +28,14 @@
 #include "nsIThread.h"
 #include "nsITimer.h"
 
-#include "js/CompileOptions.h"  
-#include "js/experimental/JSStencil.h"
-#include "js/GCAnnotations.h"  
-#include "js/RootingAPI.h"     
+#include "js/CompileOptions.h"          
+#include "js/experimental/JSStencil.h"  
+#include "js/GCAnnotations.h"           
+#include "js/RootingAPI.h"              
 #include "js/Transcoding.h"  
 #include "js/TypeDecls.h"  
 
 #include <prio.h>
-
-namespace JS {
-class CompileOptions;
-class OffThreadToken;
-}  
 
 namespace mozilla {
 namespace dom {
@@ -159,9 +155,6 @@ class ScriptPreloader : public nsIObserver,
     Saved,
   };
 
-  
-  
-  
   
   
   
@@ -399,11 +392,6 @@ class ScriptPreloader : public nsIObserver,
   
   
   
-  
-  
-  
-  
-  
   static constexpr int SMALL_SCRIPT_CHUNK_THRESHOLD = 128 * 1024;
 
   
@@ -455,8 +443,38 @@ class ScriptPreloader : public nsIObserver,
 
   void DecodeNextBatch(size_t chunkSize, JS::Handle<JSObject*> scope = nullptr);
 
-  static void OffThreadDecodeCallback(JS::OffThreadToken* token, void* context);
-  void FinishOffThreadDecode(JS::OffThreadToken* token);
+ private:
+  bool StartDecodeTask(JS::DecodeOptions decodeOptions,
+                       JS::TranscodeSources&& parsingSources);
+
+  class DecodeTask : public Runnable {
+    ScriptPreloader* mPreloader;
+    JS::DecodeOptions mDecodeOptions;
+    JS::TranscodeSources mParsingSources;
+
+   public:
+    DecodeTask(ScriptPreloader* preloader, JS::DecodeOptions decodeOptions,
+               JS::TranscodeSources&& parsingSources)
+        : Runnable("ScriptPreloaderDecodeTask"),
+          mPreloader(preloader),
+          mDecodeOptions(decodeOptions),
+          mParsingSources(std::move(parsingSources)) {
+      
+      
+      
+      MOZ_ASSERT(!decodeOptions.hasExternalData());
+    }
+
+    NS_IMETHOD Run() override;
+  };
+
+  friend class DecodeTask;
+
+  void OnDecodeTaskFinished(UniquePtr<Vector<RefPtr<JS::Stencil>>>&& stencils);
+  void OnDecodeTaskFailed();
+
+ public:
+  void FinishOffThreadDecode(Vector<RefPtr<JS::Stencil>>* stencils);
   void DoFinishOffThreadDecode();
 
   already_AddRefed<nsIAsyncShutdownClient> GetShutdownBarrier();
@@ -497,11 +515,10 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  JS::TranscodeSources mParsingSources;
-  Vector<CachedStencil*> mParsingScripts;
+  Vector<CachedStencil*> mDecodingScripts;
 
   
-  Atomic<JS::OffThreadToken*, ReleaseAcquire> mToken{nullptr};
+  Atomic<Vector<RefPtr<JS::Stencil>>*, ReleaseAcquire> mDecodedStencils;
 
   
   
