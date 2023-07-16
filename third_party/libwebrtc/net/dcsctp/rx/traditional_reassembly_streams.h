@@ -107,7 +107,7 @@ class TraditionalReassemblyStreams : public ReassemblyStreams {
     UnwrappedSSN next_ssn_;
   };
 
-  const std::string log_prefix_;
+  const absl::string_view log_prefix_;
 
   
   const OnAssembledMessage on_assembled_message_;

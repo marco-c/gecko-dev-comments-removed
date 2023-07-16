@@ -157,8 +157,9 @@ class StreamScheduler {
 
   
   
-  explicit StreamScheduler(size_t mtu)
-      : max_payload_bytes_(mtu - SctpPacket::kHeaderSize -
+  StreamScheduler(absl::string_view log_prefix, size_t mtu)
+      : log_prefix_(log_prefix),
+        max_payload_bytes_(mtu - SctpPacket::kHeaderSize -
                            IDataChunk::kHeaderSize) {}
 
   std::unique_ptr<Stream> CreateStream(StreamProducer* producer,
@@ -198,6 +199,7 @@ class StreamScheduler {
 
   bool IsConsistent() const;
 
+  const absl::string_view log_prefix_;
   const size_t max_payload_bytes_;
 
   

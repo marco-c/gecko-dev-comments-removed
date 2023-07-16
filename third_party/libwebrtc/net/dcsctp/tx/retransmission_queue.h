@@ -221,7 +221,7 @@ class RetransmissionQueue {
   const size_t min_bytes_required_to_send_;
   
   const bool partial_reliability_;
-  const std::string log_prefix_;
+  const absl::string_view log_prefix_;
   
   const size_t data_chunk_header_size_;
   
