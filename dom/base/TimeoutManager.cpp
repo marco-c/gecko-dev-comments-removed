@@ -811,22 +811,6 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
       
       
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-#ifdef DEBUG
-      if (timeout->mFiringIndex == -1) {
-        timeout->mFiringIndex = mFiringIndex++;
-      }
-#endif
-
       if (mIsLoading && !aProcessIdle) {
         
         
@@ -849,6 +833,22 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
         }
         MOZ_ALWAYS_SUCCEEDS(mIdleExecutor->MaybeSchedule(now, TimeDuration()));
       } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+#ifdef DEBUG
+        if (timeout->mFiringIndex == -1) {
+          timeout->mFiringIndex = mFiringIndex++;
+        }
+#endif
+
         
         
         nsCOMPtr<nsIScriptContext> scx = mWindow.GetContextInternal();
