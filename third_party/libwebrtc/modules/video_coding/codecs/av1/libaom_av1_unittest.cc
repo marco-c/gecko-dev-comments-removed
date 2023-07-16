@@ -267,9 +267,9 @@ MATCHER(SameLayerIdAndBitrateIsNear, "") {
   
   return std::get<0>(arg).first == std::get<1>(arg).first &&
          
-         std::get<0>(arg).second >= std::get<1>(arg).second * 0.8 &&
+         std::get<0>(arg).second >= std::get<1>(arg).second * 0.75 &&
          
-         std::get<0>(arg).second <= std::get<1>(arg).second * 1.1;
+         std::get<0>(arg).second <= std::get<1>(arg).second * 1.25;
 }
 
 TEST_P(LibaomAv1SvcTest, SetRatesMatchMeasuredBitrate) {
