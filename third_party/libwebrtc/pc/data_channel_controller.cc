@@ -275,9 +275,10 @@ DataChannelController::InternalCreateSctpDataChannel(
     
     
     
-    if (pc_->GetSctpSslRole(&role) && !sid_allocator_.AllocateSid(role, &sid)) {
-      RTC_LOG(LS_ERROR) << "No id can be allocated for the SCTP data channel.";
-      return nullptr;
+    if (pc_->GetSctpSslRole(&role)) {
+      sid = sid_allocator_.AllocateSid(role);
+      if (!sid.HasValue())
+        return nullptr;
     }
     
   } else if (!sid_allocator_.ReserveSid(sid)) {
@@ -325,9 +326,8 @@ void DataChannelController::AllocateSctpSids(rtc::SSLRole role) {
   std::vector<rtc::scoped_refptr<SctpDataChannel>> channels_to_close;
   for (const auto& channel : sctp_data_channels_) {
     if (!channel->sid().HasValue()) {
-      StreamId sid;
-      if (!sid_allocator_.AllocateSid(role, &sid)) {
-        RTC_LOG(LS_ERROR) << "Failed to allocate SCTP sid, closing channel.";
+      StreamId sid = sid_allocator_.AllocateSid(role);
+      if (!sid.HasValue()) {
         channels_to_close.push_back(channel);
         continue;
       }
