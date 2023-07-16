@@ -1348,13 +1348,6 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
-    if (!haveDiscardedJITCodeThisSlice) {
-      
-      
-      
-      js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
-    }
-
     
     
 
@@ -1507,6 +1500,12 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   }
   cellsToAssertNotGray.ref().clearAndFree();
 #endif
+
+  
+  
+  if (!haveDiscardedJITCodeThisSlice) {
+    js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
+  }
 
   
   
