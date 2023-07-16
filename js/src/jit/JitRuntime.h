@@ -111,6 +111,8 @@ enum class ArgumentsRectifierKind { Normal, TrialInlining };
 
 enum class DebugTrapHandlerKind { Interpreter, Compiler, Count };
 
+enum class IonGenericCallKind { Call, Construct, Count };
+
 using EnterJitCode = void (*)(void*, unsigned int, Value*, InterpreterFrame*,
                               CalleeToken, JSObject*, size_t, Value*);
 
@@ -168,6 +170,11 @@ class JitRuntime {
   
   
   WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_{0};
+
+  
+  mozilla::EnumeratedArray<IonGenericCallKind, IonGenericCallKind::Count,
+                           WriteOnceData<uint32_t>>
+      ionGenericCallStubOffset_;
 
   
   mozilla::EnumeratedArray<DebugTrapHandlerKind, DebugTrapHandlerKind::Count,
@@ -249,6 +256,8 @@ class JitRuntime {
   uint32_t generatePreBarrier(JSContext* cx, MacroAssembler& masm,
                               MIRType type);
   void generateFreeStub(MacroAssembler& masm);
+  void generateIonGenericCallStub(MacroAssembler& masm,
+                                  IonGenericCallKind kind);
   JitCode* generateDebugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 
   bool generateVMWrapper(JSContext* cx, MacroAssembler& masm,
@@ -376,6 +385,10 @@ class JitRuntime {
 
   TrampolinePtr getDoubleToInt32ValueStub() const {
     return trampolineCode(doubleToInt32ValueStubOffset_);
+  }
+
+  TrampolinePtr getIonGenericCallStub(IonGenericCallKind kind) const {
+    return trampolineCode(ionGenericCallStubOffset_[kind]);
   }
 
   bool hasJitcodeGlobalTable() const { return jitcodeGlobalTable_ != nullptr; }
