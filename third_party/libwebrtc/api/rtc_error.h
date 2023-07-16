@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>  
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -108,8 +109,8 @@ class RTC_EXPORT RTCError {
   RTCError() {}
   explicit RTCError(RTCErrorType type) : type_(type) {}
 
-  RTCError(RTCErrorType type, std::string message)
-      : type_(type), message_(std::move(message)) {}
+  RTCError(RTCErrorType type, absl::string_view message)
+      : type_(type), message_(message) {}
 
   
   
@@ -133,7 +134,7 @@ class RTC_EXPORT RTCError {
   
   const char* message() const;
 
-  void set_message(std::string message);
+  void set_message(absl::string_view message);
 
   RTCErrorDetailType error_detail() const { return error_detail_; }
   void set_error_detail(RTCErrorDetailType detail) { error_detail_ = detail; }
@@ -158,8 +159,8 @@ class RTC_EXPORT RTCError {
 
 
 
-RTC_EXPORT const char* ToString(RTCErrorType error);
-RTC_EXPORT const char* ToString(RTCErrorDetailType error);
+RTC_EXPORT absl::string_view ToString(RTCErrorType error);
+RTC_EXPORT absl::string_view ToString(RTCErrorDetailType error);
 
 #ifdef WEBRTC_UNIT_TEST
 inline std::ostream& operator<<(  
