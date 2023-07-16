@@ -10103,23 +10103,28 @@ void nsCSSFrameConstructor::CreateLetterFrame(
       aParentFrame, PseudoStyleType::firstLetter);
 
   ComputedStyle* parentComputedStyle = parentFrame->Style();
+  ComputedStyle* parentComputedStyleIgnoringFirstLine = parentComputedStyle;
+  if (parentFrame->IsLineFrame()) {
+    parentComputedStyleIgnoringFirstLine =
+        nsIFrame::CorrectStyleParentFrame(aBlockFrame,
+                                          PseudoStyleType::firstLetter)
+            ->Style();
+  }
 
   
   
   nsIContent* blockContent = aBlockFrame->GetContent();
 
   
+  
   RefPtr<ComputedStyle> sc =
-      GetFirstLetterStyle(blockContent, parentComputedStyle);
+      GetFirstLetterStyle(blockContent, parentComputedStyleIgnoringFirstLine);
 
   if (sc) {
-    if (parentFrame->IsLineFrame()) {
-      nsIFrame* parentIgnoringFirstLine = nsIFrame::CorrectStyleParentFrame(
-          aBlockFrame, PseudoStyleType::firstLetter);
-
+    if (parentComputedStyleIgnoringFirstLine != parentComputedStyle) {
       sc = mPresShell->StyleSet()->ReparentComputedStyle(
-          sc, parentComputedStyle, parentIgnoringFirstLine->Style(),
-          parentComputedStyle, blockContent->AsElement());
+          sc, parentComputedStyle, parentComputedStyle,
+          blockContent->AsElement());
     }
 
     RefPtr<ComputedStyle> textSC =
