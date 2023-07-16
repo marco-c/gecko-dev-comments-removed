@@ -39,6 +39,21 @@ add_task(async function testButtons() {
     "HTTPS-Only exception button should be enabled when HTTPS-Only Mode enabled everywhere."
   );
 
+  await setHttpsOnlyPref("off");
+  await setHttpsFirstPref("private");
+  is(
+    exceptionButton.disabled,
+    true,
+    "HTTPS-Only exception button should be disabled when HTTPS-Only Mode is disabled and HTTPS-First Mode is only enabled in private browsing."
+  );
+
+  await setHttpsFirstPref("everywhere");
+  is(
+    exceptionButton.disabled,
+    false,
+    "HTTPS-Only exception button should be enabled when HTTPS-Only Mode is disabled and HTTPS-First Mode enabled everywhere."
+  );
+
   
   
   let promiseSubDialogLoaded = promiseLoadSubDialog(
@@ -205,6 +220,19 @@ async function setHttpsOnlyPref(state) {
     set: [
       ["dom.security.https_only_mode", state === "everywhere"],
       ["dom.security.https_only_mode_pbm", state === "private"],
+    ],
+  });
+}
+
+
+
+
+
+async function setHttpsFirstPref(state) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.security.https_first", state === "everywhere"],
+      ["dom.security.https_first_pbm", state === "private"],
     ],
   });
 }
