@@ -181,6 +181,12 @@ main-context-menu-copy-link-simple =
     .label = Copy Link
     .accesskey = L
 
+# This command copies the link, removing additional
+# query parameters used to track users across sites.
+main-context-menu-strip-on-share-link =
+    .label = Copy Link Without Site Tracking
+    .accesskey = y
+
 ## Media (video/audio) controls
 ##
 ## The accesskey for "Play" and "Pause" are the
@@ -326,14 +332,6 @@ main-context-menu-video-email =
 main-context-menu-audio-email =
     .label = Email Audio…
     .accesskey = a
-
-main-context-menu-plugin-play =
-    .label = Activate this plugin
-    .accesskey = c
-
-main-context-menu-plugin-hide =
-    .label = Hide this plugin
-    .accesskey = H
 
 main-context-menu-save-to-pocket =
     .label = Save Page to { -pocket-brand-name }
