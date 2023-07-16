@@ -9408,7 +9408,8 @@ void nsWindow::FrameState::OnFrameChanged() {
   EnsureSizeMode(newSizeMode, DoShowWindow::No);
 
   
-  if (mWindow->mIsVisible && mLastSizeMode != mSizeMode &&
+  if (mWindow->mIsVisible && mWindow->IsForegroundWindow() &&
+      mLastSizeMode == nsSizeMode_Minimized &&
       mSizeMode != nsSizeMode_Minimized) {
     mWindow->DispatchFocusToTopLevelWindow(true);
   }
