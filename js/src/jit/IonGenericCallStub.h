@@ -21,6 +21,13 @@ static constexpr Register IonGenericCallScratch = CallTempReg3;
 static constexpr Register IonGenericCallScratch2 = CallTempReg4;
 static constexpr Register IonGenericCallScratch3 = CallTempReg5;
 
+#ifdef JS_CODEGEN_ARM
+
+
+static_assert(CallTempReg0 == CallTempNonArgRegs[0]);
+static constexpr Register IonGenericSecondScratchReg = CallTempReg0;
+#endif
+
 }  
 
 #endif 
