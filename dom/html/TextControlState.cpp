@@ -2532,18 +2532,16 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
     } else {
       mBoundFrame->ClearCachedValue();
     }
+  } else if (!mTextCtrlElement->ValueChanged() || mValue.IsVoid()) {
+    
+    nsString value;
+    mTextCtrlElement->GetDefaultValueFromContent(value);
+    
+    nsContentUtils::PlatformToDOMLineBreaks(value);
+    aValue = std::move(value);
   } else {
-    if (!mTextCtrlElement->ValueChanged() || mValue.IsVoid()) {
-      
-      nsString value;
-      mTextCtrlElement->GetDefaultValueFromContent(value);
-      
-      nsContentUtils::PlatformToDOMLineBreaks(value);
-      aValue = value;
-    } else {
-      aValue = mValue;
-      MOZ_ASSERT(aValue.FindChar(u'\r') == -1);
-    }
+    aValue = mValue;
+    MOZ_ASSERT(aValue.FindChar(u'\r') == -1);
   }
 }
 

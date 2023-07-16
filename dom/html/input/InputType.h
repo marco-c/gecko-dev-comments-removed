@@ -85,10 +85,15 @@ class InputType {
 
 
 
-
-
-  virtual bool ConvertStringToNumber(nsAString& aValue,
-                                     Decimal& aResultValue) const;
+  struct StringToNumberResult {
+    
+    Decimal mResult = Decimal::nan();
+    
+    
+    bool mLocalized = false;
+  };
+  virtual StringToNumberResult ConvertStringToNumber(
+      const nsAString& aValue) const;
 
   
 

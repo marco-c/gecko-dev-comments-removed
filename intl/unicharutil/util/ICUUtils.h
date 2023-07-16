@@ -63,7 +63,7 @@ class ICUUtils {
 
 
 
-  static double ParseNumber(nsAString& aValue,
+  static double ParseNumber(const nsAString& aValue,
                             LanguageTagIterForContent& aLangTags);
 
   static void AssignUCharArrayToString(UChar* aICUString, int32_t aLength,
