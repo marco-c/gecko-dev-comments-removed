@@ -267,7 +267,9 @@ LoadInfo::LoadInfo(
 
     if (nsMixedContentBlocker::IsUpgradableContentType(
             mInternalContentPolicyType)) {
-      if (mLoadingPrincipal->SchemeIs("https")) {
+      
+      if (mLoadingPrincipal->GetIsOriginPotentiallyTrustworthy() &&
+          !mLoadingPrincipal->GetIsLoopbackHost()) {
         if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
           mBrowserUpgradeInsecureRequests = true;
         } else {

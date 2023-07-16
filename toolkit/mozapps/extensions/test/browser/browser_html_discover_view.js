@@ -221,6 +221,8 @@ add_setup(async function () {
       
       
       ["browser.discovery.enabled", false],
+      
+      ["security.mixed_content.upgrade_display_content", false],
     ],
   });
 });
@@ -641,6 +643,8 @@ add_task(async function checkDiscopaneNotice() {
       ["datareporting.healthreport.uploadEnabled", true],
       ["extensions.htmlaboutaddons.recommendations.enabled", true],
       ["extensions.recommendations.hideNotice", false],
+      
+      ["security.mixed_content.upgrade_display_content", false],
     ],
   });
 
