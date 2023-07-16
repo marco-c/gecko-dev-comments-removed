@@ -66,7 +66,7 @@ add_task(
 
     
     
-    await dbg.actions.stepIn(getThreadContext(dbg));
+    await dbg.actions.stepIn();
     await assertNotPaused(dbg);
   }
 );
