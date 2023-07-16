@@ -2,7 +2,11 @@
 
 
 
-import { getSelectedFrame, getGeneratedFrameScope } from "../../selectors";
+import {
+  getSelectedFrame,
+  getGeneratedFrameScope,
+  getOriginalFrameScope,
+} from "../../selectors";
 import { mapScopes } from "./mapScopes";
 import { generateInlinePreview } from "./inlinePreview";
 import { PROMISE } from "../utils/middleware/promise";
@@ -10,21 +14,33 @@ import { PROMISE } from "../utils/middleware/promise";
 export function fetchScopes(cx) {
   return async function ({ dispatch, getState, client }) {
     const frame = getSelectedFrame(getState(), cx.thread);
-    if (!frame || getGeneratedFrameScope(getState(), frame.id)) {
+    
+    
+    if (!frame) {
       return;
     }
+    
+    
+    
+    
+    
+    let scopes = getGeneratedFrameScope(getState(), frame);
+    if (!scopes?.scope) {
+      scopes = dispatch({
+        type: "ADD_SCOPES",
+        cx,
+        thread: cx.thread,
+        frame,
+        [PROMISE]: client.getFrameScopes(frame),
+      });
 
-    const scopes = dispatch({
-      type: "ADD_SCOPES",
-      cx,
-      thread: cx.thread,
-      frame,
-      [PROMISE]: client.getFrameScopes(frame),
-    });
+      scopes.then(() => {
+        dispatch(generateInlinePreview(cx, frame));
+      });
+    }
 
-    scopes.then(() => {
-      dispatch(generateInlinePreview(cx, frame));
-    });
-    await dispatch(mapScopes(cx, scopes, frame));
+    if (!getOriginalFrameScope(getState(), frame)) {
+      await dispatch(mapScopes(cx, scopes, frame));
+    }
   };
 }
