@@ -1316,17 +1316,22 @@ impl Frontend {
         ),
     ) {
         match self.module.types[ty].inner {
-            
-            
-            
             TypeInner::Array {
                 base,
-                size: crate::ArraySize::Constant(size),
+                size: crate::ArraySize::Constant(constant),
                 ..
             } => {
                 let mut location = match binding {
                     crate::Binding::Location { location, .. } => location,
                     crate::Binding::BuiltIn(_) => return,
+                };
+
+                
+                
+                
+                let size = match self.module.constants[constant].to_array_length() {
+                    Some(val) => val,
+                    None => return f(name, pointer, ty, binding, expressions),
                 };
 
                 let interpolation =
@@ -1338,7 +1343,7 @@ impl Frontend {
                             _ => crate::Interpolation::Flat,
                         });
 
-                for index in 0..size.get() {
+                for index in 0..size {
                     let member_pointer = expressions.append(
                         Expression::AccessIndex {
                             base: pointer,
@@ -1496,7 +1501,7 @@ impl Frontend {
                         offset: span,
                     });
 
-                    span += self.module.types[ty].inner.size(self.module.to_ctx());
+                    span += self.module.types[ty].inner.size(&self.module.constants);
 
                     let len = expressions.len();
                     let load = expressions.append(Expression::Load { pointer }, Default::default());

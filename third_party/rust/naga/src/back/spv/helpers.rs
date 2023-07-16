@@ -102,7 +102,6 @@ pub fn global_needs_wrapper(ir_module: &crate::Module, var: &crate::GlobalVariab
             },
             None => false,
         },
-        crate::TypeInner::BindingArray { .. } => false,
         
         _ => true,
     }

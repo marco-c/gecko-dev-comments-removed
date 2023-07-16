@@ -9,7 +9,6 @@ use super::*;
 
 use objc::runtime::{NO, YES};
 
-
 #[repr(u64)]
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -68,7 +67,6 @@ pub enum MTLAttributeFormat {
     Half = 53,
 }
 
-
 #[repr(u64)]
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -84,12 +82,12 @@ pub enum MTLStepFunction {
     ThreadPositionInGridYIndexed = 8,
 }
 
-
 pub enum MTLComputePipelineDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLComputePipelineDescriptor;
     pub struct ComputePipelineDescriptor;
+    pub struct ComputePipelineDescriptorRef;
 }
 
 impl ComputePipelineDescriptor {
@@ -270,12 +268,12 @@ impl ComputePipelineDescriptorRef {
     }
 }
 
-
 pub enum MTLComputePipelineState {}
 
 foreign_obj_type! {
     type CType = MTLComputePipelineState;
     pub struct ComputePipelineState;
+    pub struct ComputePipelineStateRef;
 }
 
 impl ComputePipelineStateRef {
@@ -329,22 +327,17 @@ impl ComputePipelineStateRef {
     
     
     
-
     
-    pub fn new_intersection_function_table_with_descriptor(
-        &self,
-        descriptor: &IntersectionFunctionTableDescriptorRef,
-    ) -> IntersectionFunctionTable {
-        unsafe { msg_send![self, newIntersectionFunctionTableWithDescriptor: descriptor] }
-    }
+    
+    
 }
-
 
 pub enum MTLStageInputOutputDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLStageInputOutputDescriptor;
     pub struct StageInputOutputDescriptor;
+    pub struct StageInputOutputDescriptorRef;
 }
 
 impl StageInputOutputDescriptor {
@@ -386,12 +379,12 @@ impl StageInputOutputDescriptorRef {
     }
 }
 
-
 pub enum MTLAttributeDescriptorArray {}
 
 foreign_obj_type! {
     type CType = MTLAttributeDescriptorArray;
     pub struct AttributeDescriptorArray;
+    pub struct AttributeDescriptorArrayRef;
 }
 
 impl AttributeDescriptorArrayRef {
@@ -404,12 +397,12 @@ impl AttributeDescriptorArrayRef {
     }
 }
 
-
 pub enum MTLAttributeDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLAttributeDescriptor;
     pub struct AttributeDescriptor;
+    pub struct AttributeDescriptorRef;
 }
 
 impl AttributeDescriptorRef {
@@ -438,12 +431,12 @@ impl AttributeDescriptorRef {
     }
 }
 
-
 pub enum MTLBufferLayoutDescriptorArray {}
 
 foreign_obj_type! {
     type CType = MTLBufferLayoutDescriptorArray;
     pub struct BufferLayoutDescriptorArray;
+    pub struct BufferLayoutDescriptorArrayRef;
 }
 
 impl BufferLayoutDescriptorArrayRef {
@@ -460,12 +453,12 @@ impl BufferLayoutDescriptorArrayRef {
     }
 }
 
-
 pub enum MTLBufferLayoutDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLBufferLayoutDescriptor;
     pub struct BufferLayoutDescriptor;
+    pub struct BufferLayoutDescriptorRef;
 }
 
 impl BufferLayoutDescriptorRef {

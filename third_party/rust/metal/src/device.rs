@@ -14,12 +14,7 @@ use objc::runtime::{Object, NO, YES};
 use std::{ffi::CStr, os::raw::c_char, path::Path, ptr};
 
 
-
-
 #[allow(non_camel_case_types)]
-#[deprecated(
-    note = "Since iOS 8.0–16.0 iPadOS 8.0–16.0 macOS 10.11–13.0 Mac Catalyst 13.1–16.0 tvOS 9.0–16.0"
-)]
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLFeatureSet {
@@ -58,8 +53,6 @@ pub enum MTLFeatureSet {
 }
 
 
-
-
 #[repr(i64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[non_exhaustive]
@@ -80,9 +73,7 @@ pub enum MTLGPUFamily {
     Mac2 = 2002,
     MacCatalyst1 = 4001,
     MacCatalyst2 = 4002,
-    Metal3 = 5001,
 }
-
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -1389,14 +1380,12 @@ impl MTLFeatureSet {
     }
 }
 
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MTLArgumentBuffersTier {
     Tier1 = 0,
     Tier2 = 1,
 }
-
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -1405,8 +1394,6 @@ pub enum MTLReadWriteTextureTier {
     Tier1 = 1,
     Tier2 = 2,
 }
-
-
 
 
 #[repr(u64)]
@@ -1418,9 +1405,6 @@ pub enum MTLCounterSamplingPoint {
     AtTileDispatchBoundary = 3,
     AtBlitBoundary = 4,
 }
-
-
-
 
 
 #[repr(u64)]
@@ -1446,7 +1430,6 @@ bitflags! {
         const FailOnBinaryArchiveMiss   = 1 << 2;
     }
 }
-
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[repr(C)]
@@ -1497,22 +1480,18 @@ extern "C" {
 
 
 
-
 pub enum MTLDevice {}
 
 foreign_obj_type! {
     type CType = MTLDevice;
     pub struct Device;
+    pub struct DeviceRef;
 }
 
 impl Device {
     pub fn system_default() -> Option<Self> {
         
-        unsafe {
-            MTLCreateSystemDefaultDevice()
-                .as_mut()
-                .map(|x| Self(x.into()))
-        }
+        unsafe { MTLCreateSystemDefaultDevice().as_mut().map(|x| Self(x)) }
     }
 
     pub fn all() -> Vec<Self> {
@@ -1899,45 +1878,6 @@ impl DeviceRef {
         }
     }
 
-    
-    pub fn new_mesh_render_pipeline_state_with_reflection(
-        &self,
-        descriptor: &MeshRenderPipelineDescriptorRef,
-        reflection_options: MTLPipelineOption,
-    ) -> Result<(RenderPipelineState, RenderPipelineReflection), String> {
-        unsafe {
-            let mut reflection: *mut Object = ptr::null_mut();
-            let pipeline_state: *mut MTLRenderPipelineState = try_objc! { err =>
-                msg_send![self, newRenderPipelineStateWithMeshDescriptor:descriptor
-                                                             options:reflection_options
-                                                          reflection:&mut reflection
-                                                               error:&mut err]
-            };
-
-            let state = RenderPipelineState::from_ptr(pipeline_state);
-
-            let () = msg_send![reflection, retain];
-            let reflection = RenderPipelineReflection::from_ptr(reflection as _);
-
-            Ok((state, reflection))
-        }
-    }
-
-    
-    pub fn new_mesh_render_pipeline_state(
-        &self,
-        descriptor: &MeshRenderPipelineDescriptorRef,
-    ) -> Result<RenderPipelineState, String> {
-        unsafe {
-            let pipeline_state: *mut MTLRenderPipelineState = try_objc! { err =>
-                msg_send![self, newRenderPipelineStateWithMeshDescriptor:descriptor
-                                                               error:&mut err]
-            };
-
-            Ok(RenderPipelineState::from_ptr(pipeline_state))
-        }
-    }
-
     pub fn new_compute_pipeline_state_with_function(
         &self,
         function: &FunctionRef,
@@ -2023,20 +1963,6 @@ impl DeviceRef {
             msg_send![self, newBufferWithBytes:bytes
                                         length:length
                                        options:options]
-        }
-    }
-
-    pub fn new_counter_sample_buffer_with_descriptor(
-        &self,
-        descriptor: &CounterSampleBufferDescriptorRef,
-    ) -> Result<CounterSampleBuffer, String> {
-        unsafe {
-            let counter_sample_buffer: *mut MTLCounterSampleBuffer = try_objc! { err =>
-                msg_send![self, newCounterSampleBufferWithDescriptor: descriptor error:&mut err]
-            };
-
-            assert!(!counter_sample_buffer.is_null());
-            Ok(CounterSampleBuffer::from_ptr(counter_sample_buffer))
         }
     }
 
@@ -2187,38 +2113,5 @@ impl DeviceRef {
     
     pub fn max_buffer_length(&self) -> NSUInteger {
         unsafe { msg_send![self, maxBufferLength] }
-    }
-
-    pub fn acceleration_structure_sizes_with_descriptor(
-        &self,
-        desc: &AccelerationStructureDescriptorRef,
-    ) -> MTLAccelerationStructureSizes {
-        unsafe { msg_send![self, accelerationStructureSizesWithDescriptor: desc] }
-    }
-
-    pub fn new_acceleration_structure_with_size(
-        &self,
-        size: NSUInteger,
-    ) -> accelerator_structure::AccelerationStructure {
-        unsafe { msg_send![self, newAccelerationStructureWithSize: size] }
-    }
-
-    pub fn sample_timestamps(&self, cpu_timestamp: &mut u64, gpu_timestamp: &mut u64) {
-        unsafe { msg_send![self, sampleTimestamps: cpu_timestamp gpuTimestamp: gpu_timestamp] }
-    }
-
-    pub fn counter_sets(&self) -> Vec<CounterSet> {
-        unsafe {
-            let counter_sets: *mut Object = msg_send![self, counterSets];
-            let count: NSUInteger = msg_send![counter_sets, count];
-            let ret = (0..count)
-                .map(|i| {
-                    let csp: *mut MTLCounterSet = msg_send![counter_sets, objectAtIndex: i];
-                    let () = msg_send![csp, retain];
-                    CounterSet::from_ptr(csp)
-                })
-                .collect();
-            ret
-        }
     }
 }

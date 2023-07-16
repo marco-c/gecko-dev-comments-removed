@@ -7,7 +7,6 @@
 
 use super::*;
 
-
 #[repr(u64)]
 #[derive(Copy, Clone, Debug)]
 pub enum MTLLoadAction {
@@ -15,7 +14,6 @@ pub enum MTLLoadAction {
     Load = 1,
     Clear = 2,
 }
-
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug)]
@@ -27,7 +25,6 @@ pub enum MTLStoreAction {
     Unknown = 4,
     CustomSampleDepthStore = 5,
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -50,7 +47,6 @@ impl MTLClearColor {
     }
 }
 
-
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 pub enum MTLMultisampleStencilResolveFilter {
@@ -58,12 +54,12 @@ pub enum MTLMultisampleStencilResolveFilter {
     DepthResolvedSample = 1,
 }
 
-
 pub enum MTLRenderPassAttachmentDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassAttachmentDescriptor;
     pub struct RenderPassAttachmentDescriptor;
+    pub struct RenderPassAttachmentDescriptorRef;
 }
 
 impl RenderPassAttachmentDescriptorRef {
@@ -148,13 +144,13 @@ impl RenderPassAttachmentDescriptorRef {
     }
 }
 
-
 pub enum MTLRenderPassColorAttachmentDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassColorAttachmentDescriptor;
     pub struct RenderPassColorAttachmentDescriptor;
-    type ParentType = RenderPassAttachmentDescriptor;
+    pub struct RenderPassColorAttachmentDescriptorRef;
+    type ParentType = RenderPassAttachmentDescriptorRef;
 }
 
 impl RenderPassColorAttachmentDescriptor {
@@ -176,13 +172,13 @@ impl RenderPassColorAttachmentDescriptorRef {
     }
 }
 
-
 pub enum MTLRenderPassDepthAttachmentDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassDepthAttachmentDescriptor;
     pub struct RenderPassDepthAttachmentDescriptor;
-    type ParentType = RenderPassAttachmentDescriptor;
+    pub struct RenderPassDepthAttachmentDescriptorRef;
+    type ParentType = RenderPassAttachmentDescriptorRef;
 }
 
 impl RenderPassDepthAttachmentDescriptorRef {
@@ -195,13 +191,13 @@ impl RenderPassDepthAttachmentDescriptorRef {
     }
 }
 
-
 pub enum MTLRenderPassStencilAttachmentDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassStencilAttachmentDescriptor;
     pub struct RenderPassStencilAttachmentDescriptor;
-    type ParentType = RenderPassAttachmentDescriptor;
+    pub struct RenderPassStencilAttachmentDescriptorRef;
+    type ParentType = RenderPassAttachmentDescriptorRef;
 }
 
 impl RenderPassStencilAttachmentDescriptorRef {
@@ -225,12 +221,12 @@ impl RenderPassStencilAttachmentDescriptorRef {
     }
 }
 
-
 pub enum MTLRenderPassColorAttachmentDescriptorArray {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassColorAttachmentDescriptorArray;
     pub struct RenderPassColorAttachmentDescriptorArray;
+    pub struct RenderPassColorAttachmentDescriptorArrayRef;
 }
 
 impl RenderPassColorAttachmentDescriptorArrayRef {
@@ -250,117 +246,12 @@ impl RenderPassColorAttachmentDescriptorArrayRef {
     }
 }
 
-
-pub enum MTLRenderPassSampleBufferAttachmentDescriptor {}
-
-foreign_obj_type! {
-    type CType = MTLRenderPassSampleBufferAttachmentDescriptor;
-    pub struct RenderPassSampleBufferAttachmentDescriptor;
-}
-
-impl RenderPassSampleBufferAttachmentDescriptor {
-    pub fn new() -> Self {
-        let class = class!(MTLRenderPassSampleBufferAttachmentDescriptor);
-        unsafe { msg_send![class, new] }
-    }
-}
-
-impl RenderPassSampleBufferAttachmentDescriptorRef {
-    pub fn sample_buffer(&self) -> &CounterSampleBufferRef {
-        unsafe { msg_send![self, sampleBuffer] }
-    }
-
-    pub fn set_sample_buffer(&self, sample_buffer: &CounterSampleBufferRef) {
-        unsafe { msg_send![self, setSampleBuffer: sample_buffer] }
-    }
-
-    pub fn start_of_vertex_sample_index(&self) -> NSUInteger {
-        unsafe { msg_send![self, startOfVertexSampleIndex] }
-    }
-
-    pub fn set_start_of_vertex_sample_index(&self, start_of_vertex_sample_index: NSUInteger) {
-        unsafe {
-            msg_send![
-                self,
-                setStartOfVertexSampleIndex: start_of_vertex_sample_index
-            ]
-        }
-    }
-
-    pub fn end_of_vertex_sample_index(&self) -> NSUInteger {
-        unsafe { msg_send![self, endOfVertexSampleIndex] }
-    }
-
-    pub fn set_end_of_vertex_sample_index(&self, end_of_vertex_sample_index: NSUInteger) {
-        unsafe { msg_send![self, setEndOfVertexSampleIndex: end_of_vertex_sample_index] }
-    }
-
-    pub fn start_of_fragment_sample_index(&self) -> NSUInteger {
-        unsafe { msg_send![self, startOfFragmentSampleIndex] }
-    }
-
-    pub fn set_start_of_fragment_sample_index(&self, start_of_fragment_sample_index: NSUInteger) {
-        unsafe {
-            msg_send![
-                self,
-                setStartOfFragmentSampleIndex: start_of_fragment_sample_index
-            ]
-        }
-    }
-
-    pub fn end_of_fragment_sample_index(&self) -> NSUInteger {
-        unsafe { msg_send![self, endOfFragmentSampleIndex] }
-    }
-
-    pub fn set_end_of_fragment_sample_index(&self, end_of_fragment_sample_index: NSUInteger) {
-        unsafe {
-            msg_send![
-                self,
-                setEndOfFragmentSampleIndex: end_of_fragment_sample_index
-            ]
-        }
-    }
-}
-
-
-pub enum MTLRenderPassSampleBufferAttachmentDescriptorArray {}
-
-foreign_obj_type! {
-    type CType = MTLRenderPassSampleBufferAttachmentDescriptorArray;
-    pub struct RenderPassSampleBufferAttachmentDescriptorArray;
-}
-
-impl RenderPassSampleBufferAttachmentDescriptorArrayRef {
-    pub fn object_at(
-        &self,
-        index: NSUInteger,
-    ) -> Option<&RenderPassSampleBufferAttachmentDescriptorRef> {
-        unsafe { msg_send![self, objectAtIndexedSubscript: index] }
-    }
-
-    pub fn set_object_at(
-        &self,
-        index: NSUInteger,
-        attachment: Option<&RenderPassSampleBufferAttachmentDescriptorRef>,
-    ) {
-        unsafe {
-            msg_send![self, setObject:attachment
-                     atIndexedSubscript:index]
-        }
-    }
-}
-
-
-
-
-
-
-
 pub enum MTLRenderPassDescriptor {}
 
 foreign_obj_type! {
     type CType = MTLRenderPassDescriptor;
     pub struct RenderPassDescriptor;
+    pub struct RenderPassDescriptorRef;
 }
 
 impl RenderPassDescriptor {
@@ -435,9 +326,5 @@ impl RenderPassDescriptorRef {
 
     pub fn set_default_raster_sample_count(&self, count: NSUInteger) {
         unsafe { msg_send![self, setDefaultRasterSampleCount: count] }
-    }
-
-    pub fn sample_buffer_attachments(&self) -> &RenderPassSampleBufferAttachmentDescriptorArrayRef {
-        unsafe { msg_send![self, sampleBufferAttachments] }
     }
 }

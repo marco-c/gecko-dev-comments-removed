@@ -1,5 +1,3 @@
-#[cfg(doc)]
-use super::Entry;
 use crate::device::Device;
 use crate::prelude::*;
 use crate::vk;
@@ -334,14 +332,6 @@ impl Instance {
         &self.instance_fn_1_0
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
