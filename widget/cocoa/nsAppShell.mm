@@ -856,9 +856,7 @@ nsAppShell::Exit(void) {
   
   
   
-  
   if (mTerminated) {
-    NS_WARNING("nsAppShell::Exit() called redundantly");
     return NS_OK;
   }
 
