@@ -48,7 +48,7 @@ add_task(async function () {
   await waitForPaused(dbg, "original.js");
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "original.js").id, 8);
   
-  await dbg.actions.jumpToMappedSelectedLocation(getContext(dbg));
+  await dbg.actions.jumpToMappedSelectedLocation();
   await waitForSelectedSource(dbg, "bundle.js");
 
   

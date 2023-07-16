@@ -290,8 +290,7 @@ class DebuggerPanel {
     
     await this.toolbox.selectTool("jsdebugger", reason);
 
-    const cx = this._selectors.getContext(this._getState());
-    await this._actions.selectSpecificLocation(cx, originalLocation);
+    await this._actions.selectSpecificLocation(originalLocation);
 
     
     if (this._selectors.hasLogpoint(this._getState(), originalLocation)) {
@@ -333,8 +332,7 @@ class DebuggerPanel {
       source.id,
       threadActorID
     );
-    const cx = this._selectors.getContext(this._getState());
-    await this._actions.selectSource(cx, source, sourceActor);
+    await this._actions.selectSource(source, sourceActor);
   }
 
   selectThread(threadActorID) {

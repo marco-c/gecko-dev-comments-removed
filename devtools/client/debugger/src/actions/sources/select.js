@@ -33,17 +33,14 @@ import {
   getIsCurrentThreadPaused,
   getSourceTextContent,
   tabExists,
-  getContext,
 } from "../../selectors";
 
 
 export const setSelectedLocation = (
-  cx,
   location,
   shouldSelectOriginalLocation
 ) => ({
   type: "SET_SELECTED_LOCATION",
-  cx,
   location,
   shouldSelectOriginalLocation,
 });
@@ -76,9 +73,8 @@ export function selectSourceURL(url, options) {
       return dispatch(setPendingSelectedLocation(url, options));
     }
 
-    const cx = getContext(getState());
     const location = createLocation({ ...options, source });
-    return dispatch(selectLocation(cx, location));
+    return dispatch(selectLocation(location));
   };
 }
 
@@ -93,14 +89,13 @@ export function selectSourceURL(url, options) {
 
 
 
-
-export function selectSource(cx, source, sourceActor) {
+export function selectSource(source, sourceActor) {
   return async ({ dispatch }) => {
     
     
     const location = source ? createLocation({ source, sourceActor }) : {};
 
-    return dispatch(selectSpecificLocation(cx, location));
+    return dispatch(selectSpecificLocation(location));
   };
 }
 
@@ -120,8 +115,7 @@ export function selectSource(cx, source, sourceActor) {
 
 
 
-
-export function selectLocation(cx, location, { keepContext = true } = {}) {
+export function selectLocation(location, { keepContext = true } = {}) {
   return async thunkArgs => {
     const { dispatch, getState, client } = thunkArgs;
 
@@ -180,7 +174,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       dispatch(addTab(source, sourceActor));
     }
 
-    dispatch(setSelectedLocation(cx, location, shouldSelectOriginalLocation));
+    dispatch(setSelectedLocation(location, shouldSelectOriginalLocation));
 
     await dispatch(loadSourceText(source, sourceActor));
 
@@ -202,8 +196,8 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       canPrettyPrintSource(getState(), location) &&
       isMinified(source, sourceTextContent)
     ) {
-      await dispatch(togglePrettyPrint(cx, loadedSource.id));
-      dispatch(closeTab(cx, loadedSource));
+      await dispatch(togglePrettyPrint(loadedSource.id));
+      dispatch(closeTab(loadedSource));
     }
 
     await dispatch(setSymbols(location));
@@ -225,9 +219,8 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
 
 
 
-
-export function selectSpecificLocation(cx, location) {
-  return selectLocation(cx, location, { keepContext: false });
+export function selectSpecificLocation(location) {
+  return selectLocation(location, { keepContext: false });
 }
 
 
@@ -238,7 +231,7 @@ export function selectSpecificLocation(cx, location) {
 
 
 
-export function jumpToMappedLocation(cx, location) {
+export function jumpToMappedLocation(location) {
   return async function (thunkArgs) {
     const { client, dispatch } = thunkArgs;
     if (!client) {
@@ -248,18 +241,18 @@ export function jumpToMappedLocation(cx, location) {
     
     const pairedLocation = await getRelatedMapLocation(location, thunkArgs);
 
-    return dispatch(selectSpecificLocation(cx, pairedLocation));
+    return dispatch(selectSpecificLocation(pairedLocation));
   };
 }
 
 
-export function jumpToMappedSelectedLocation(cx) {
+export function jumpToMappedSelectedLocation() {
   return async function ({ dispatch, getState }) {
     const location = getSelectedLocation(getState());
     if (!location) {
       return;
     }
 
-    await dispatch(jumpToMappedLocation(cx, location));
+    await dispatch(jumpToMappedLocation(location));
   };
 }

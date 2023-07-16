@@ -4,7 +4,6 @@
 
 import {
   getSelectedFrame,
-  getThreadContext,
   getCurrentThread,
   getIsCurrentThreadPaused,
   getIsPaused,
@@ -15,7 +14,6 @@ import { selectLocation } from "../sources";
 import { fetchScopes } from "./fetchScopes";
 import { fetchFrames } from "./fetchFrames";
 import { recordEvent } from "../../utils/telemetry";
-import assert from "../../utils/assert";
 import { validateFrame } from "../../utils/context";
 
 export function selectThread(thread) {
@@ -24,11 +22,6 @@ export function selectThread(thread) {
       return;
     }
     dispatch({ type: "SELECT_THREAD", thread });
-
-    
-    const threadcx = getThreadContext(getState());
-    
-    assert(threadcx.thread == thread, "Thread mismatch");
 
     const selectedFrame = getSelectedFrame(getState(), thread);
 
@@ -44,9 +37,7 @@ export function selectThread(thread) {
     
     
     if (selectedFrame) {
-      serverRequests.push(
-        dispatch(selectLocation(threadcx, selectedFrame.location))
-      );
+      serverRequests.push(dispatch(selectLocation(selectedFrame.location)));
       serverRequests.push(dispatch(fetchFrames(thread)));
 
       serverRequests.push(dispatch(fetchScopes(selectedFrame)));

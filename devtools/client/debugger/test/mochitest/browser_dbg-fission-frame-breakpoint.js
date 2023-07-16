@@ -40,7 +40,7 @@ add_task(async function () {
 
   
   
-  await dbg.actions.stepIn(getThreadContext(dbg));
+  await dbg.actions.stepIn();
   assertNotPaused(dbg, "Stepping in two times resumes");
 
   info("Wait for reload to complete after resume");

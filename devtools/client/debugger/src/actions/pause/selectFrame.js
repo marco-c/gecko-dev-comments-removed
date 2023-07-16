@@ -5,21 +5,18 @@
 import { selectLocation } from "../sources";
 import { evaluateExpressions } from "../expressions";
 import { fetchScopes } from "./fetchScopes";
-import assert from "../../utils/assert";
 import { validateSelectedFrame } from "../../utils/context";
 
 
 
 
 
-export function selectFrame(cx, frame) {
+export function selectFrame(frame) {
   return async ({ dispatch, getState }) => {
-    assert(cx.thread == frame.thread, "Thread mismatch");
-
     
     
     if (frame.state !== "on-stack") {
-      dispatch(selectLocation(cx, frame.location));
+      dispatch(selectLocation(frame.location));
       return;
     }
 
@@ -30,7 +27,7 @@ export function selectFrame(cx, frame) {
 
     
     
-    await dispatch(selectLocation(cx, frame.location));
+    await dispatch(selectLocation(frame.location));
     validateSelectedFrame(getState(), frame);
 
     await dispatch(evaluateExpressions(frame));

@@ -205,10 +205,9 @@ async function selectSource(dbg, url) {
   dump(`Selecting source: ${url}\n`);
   const line = 1;
   const source = findSource(dbg, url);
-  const cx = dbg.selectors.getContext(dbg.getState());
   
   
-  await dbg.actions.selectLocation(cx, createLocation({ source, line }), {
+  await dbg.actions.selectLocation(createLocation({ source, line }), {
     keepContext: false,
   });
   return waitForState(

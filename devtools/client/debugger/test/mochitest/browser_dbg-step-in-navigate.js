@@ -17,7 +17,7 @@ add_task(async function () {
 
   await clickElement(dbg, "blackbox");
   await waitForDispatch(dbg.store, "BLACKBOX_WHOLE_SOURCES");
-  await dbg.actions.stepIn(getThreadContext(dbg));
+  await dbg.actions.stepIn();
 
   
   await selectSource(dbg, "long.js");

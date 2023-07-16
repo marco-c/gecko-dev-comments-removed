@@ -246,7 +246,7 @@ function createPrettySource(source, sourceActor) {
   };
 }
 
-function selectPrettyLocation(cx, prettySource) {
+function selectPrettyLocation(prettySource) {
   return async thunkArgs => {
     const { dispatch, getState } = thunkArgs;
     let location = getSelectedLocation(getState());
@@ -262,13 +262,12 @@ function selectPrettyLocation(cx, prettySource) {
 
       return dispatch(
         selectSpecificLocation(
-          cx,
           createLocation({ ...location, source: prettySource })
         )
       );
     }
 
-    return dispatch(selectSource(cx, prettySource));
+    return dispatch(selectSource(prettySource));
   };
 }
 
@@ -281,8 +280,7 @@ function selectPrettyLocation(cx, prettySource) {
 
 
 
-
-export function togglePrettyPrint(cx, sourceId) {
+export function togglePrettyPrint(sourceId) {
   return async ({ dispatch, getState }) => {
     const source = getSource(getState(), sourceId);
     if (!source) {
@@ -309,7 +307,7 @@ export function togglePrettyPrint(cx, sourceId) {
     const prettySource = getSourceByURL(getState(), url);
 
     if (prettySource) {
-      return dispatch(selectPrettyLocation(cx, prettySource));
+      return dispatch(selectPrettyLocation(prettySource));
     }
 
     const newPrettySource = await dispatch(
@@ -327,7 +325,7 @@ export function togglePrettyPrint(cx, sourceId) {
     
     
     
-    await dispatch(selectPrettyLocation(cx, newPrettySource));
+    await dispatch(selectPrettyLocation(newPrettySource));
 
     
     await dispatch(mapFrames(sourceActor.thread));

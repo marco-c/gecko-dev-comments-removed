@@ -6,14 +6,13 @@ import {
   getHiddenBreakpoint,
   isEvaluatingExpression,
   getSelectedFrame,
-  getThreadContext,
 } from "../../selectors";
 
 import { mapFrames, fetchFrames } from ".";
 import { removeBreakpoint } from "../breakpoints";
 import { evaluateExpressions } from "../expressions";
 import { selectLocation } from "../sources";
-import assert from "../../utils/assert";
+import { validateSelectedFrame } from "../../utils/context";
 
 import { fetchScopes } from "./fetchScopes";
 
@@ -28,11 +27,6 @@ export function paused(pauseInfo) {
     const { thread, frame, why } = pauseInfo;
 
     dispatch({ type: "PAUSED", thread, why, topFrame: frame });
-
-    
-    const cx = getThreadContext(getState());
-    
-    assert(cx.thread == thread, "Thread mismatch");
 
     
     
@@ -56,7 +50,10 @@ export function paused(pauseInfo) {
     
     const selectedFrame = getSelectedFrame(getState(), thread);
     if (selectedFrame) {
-      await dispatch(selectLocation(cx, selectedFrame.location));
+      await dispatch(selectLocation(selectedFrame.location));
+      
+      
+      validateSelectedFrame(getState(), selectedFrame);
 
       
       await dispatch(fetchScopes(selectedFrame));

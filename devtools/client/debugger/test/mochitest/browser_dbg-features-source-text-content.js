@@ -487,11 +487,9 @@ add_task(async function testFailingHtmlSource() {
   
   
   const source = findSource(dbg, "200-then-connection-reset.html");
-  await dbg.actions.selectLocation(
-    getContext(dbg),
-    createLocation({ source }),
-    { keepContext: false }
-  );
+  await dbg.actions.selectLocation(createLocation({ source }), {
+    keepContext: false,
+  });
 
   ok(
     getCM(dbg).getValue().includes("Could not load the source"),
