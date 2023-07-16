@@ -584,7 +584,8 @@ impl EdgeInfo {
 
 fn compute_half_dash(side_width: f32, total_size: f32) -> (f32, u32) {
     let half_dash = side_width * 1.5;
-    let num_half_dashes = (total_size / half_dash).ceil() as u32;
+    
+    let num_half_dashes = (total_size / half_dash).ceil().min(16.0 * 1024.0) as u32;
 
     if num_half_dashes == 0 {
         return (0., 0);
