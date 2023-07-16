@@ -1064,6 +1064,28 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
     }
   }
 
+  
+  
+  
+  
+  if (aType == RelationType::LABELLED_BY && TagName() == nsGkAtoms::figure) {
+    uint32_t count = ChildCount();
+    for (uint32_t c = 0; c < count; ++c) {
+      RemoteAccessible* child = RemoteChildAt(c);
+      MOZ_ASSERT(child);
+      if (child->TagName() == nsGkAtoms::figcaption) {
+        rel.AppendTarget(child);
+      }
+    }
+  } else if (aType == RelationType::LABEL_FOR &&
+             TagName() == nsGkAtoms::figcaption) {
+    if (RemoteAccessible* parent = RemoteParent()) {
+      if (parent->TagName() == nsGkAtoms::figure) {
+        rel.AppendTarget(parent);
+      }
+    }
+  }
+
   return rel;
 }
 
