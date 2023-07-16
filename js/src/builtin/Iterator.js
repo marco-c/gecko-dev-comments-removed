@@ -26,9 +26,7 @@ function IteratorNext(iteratorRecord, value) {
 }
 
 
-function IteratorClose(iteratorRecord, value) {
-  
-  const iterator = iteratorRecord.iterator;
+function IteratorClose(iterator) {
   
   const returnMethod = iterator.return;
   
@@ -39,8 +37,6 @@ function IteratorClose(iteratorRecord, value) {
       ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
     }
   }
-  
-  return value;
 }
 
 
@@ -129,251 +125,189 @@ function GetIterator(obj, isAsync, method) {
 }
 
 
-function GetIteratorDirect(obj) {
+
+
+
+
+function GetIteratorFlattenable(obj) {
   
   if (!IsObject(obj)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, obj));
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, obj === null ? "null" : typeof obj);
   }
 
   
-  const nextMethod = obj.next;
-  
-  if (!IsCallable(nextMethod)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, nextMethod));
-  }
+  var method = obj[GetBuiltinSymbol("iterator")];
 
   
-  return {
-    iterator: obj,
-    nextMethod,
-    done: false,
-  };
-}
-
-function GetIteratorDirectWrapper(obj) {
-  
-  if (!IsObject(obj)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, obj);
-  }
-
-  
-  const nextMethod = obj.next;
-  
-  if (!IsCallable(nextMethod)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, nextMethod);
-  }
-
-  
-  return {
-    
-    
-    [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
-      return this;
-    },
-    next(value) {
-      return callContentFunction(nextMethod, obj, value);
-    },
-    return(value) {
-      const returnMethod = obj.return;
-      if (!IsNullOrUndefined(returnMethod)) {
-        return callContentFunction(returnMethod, obj, value);
-      }
-      return { done: true, value };
-    },
-  };
-}
-
-
-function IteratorStep(iteratorRecord, value) {
-  
-  let result;
-  if (ArgumentsLength() === 2) {
-    result = callContentFunction(
-      iteratorRecord.nextMethod,
-      iteratorRecord.iterator,
-      value
-    );
+  var iterator;
+  if (IsNullOrUndefined(method)) {
+    iterator = obj;
   } else {
-    result = callContentFunction(
-      iteratorRecord.nextMethod,
-      iteratorRecord.iterator
-    );
+    iterator = callContentFunction(method, obj);
   }
 
   
-  if (!IsObject(result)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
   }
 
   
-  return result.done ? false : result;
+  return iterator;
 }
+
+
+
+
 
 
 function IteratorFrom(O) {
   
-  const usingIterator = O[GetBuiltinSymbol("iterator")];
-
-  let iteratorRecord;
-  
-  if (!IsNullOrUndefined(usingIterator)) {
-    
-    
-    const iterator = callContentFunction(usingIterator, O);
-    iteratorRecord = GetIteratorDirect(iterator);
-    
-    if (iteratorRecord.iterator instanceof GetBuiltinConstructor("Iterator")) {
-      return iteratorRecord.iterator;
-    }
-  } else {
-    
-    iteratorRecord = GetIteratorDirect(O);
+  if (typeof O === "string") {
+    O = ToObject(O);
   }
 
   
-  const wrapper = NewWrapForValidIterator();
+  var iterator = GetIteratorFlattenable(O);
+  var nextMethod = iterator.next;
+
   
-  UnsafeSetReservedSlot(wrapper, ITERATED_SLOT, iteratorRecord);
+  
+  
+  
+  var hasInstance = callFunction(
+    std_Object_isPrototypeOf,
+    GetBuiltinPrototype("Iterator"),
+    iterator
+  );
+
+  
+  if (hasInstance) {
+    return iterator;
+  }
+
+  
+  var wrapper = NewWrapForValidIterator();
+
+  
+  UnsafeSetReservedSlot(
+    wrapper,
+    WRAP_FOR_VALID_ITERATOR_ITERATOR_SLOT,
+    iterator
+  );
+  UnsafeSetReservedSlot(
+    wrapper,
+    WRAP_FOR_VALID_ITERATOR_NEXT_METHOD_SLOT,
+    nextMethod
+  );
+
   
   return wrapper;
 }
 
 
-function WrapForValidIteratorNext(value) {
+
+
+
+
+function WrapForValidIteratorNext() {
   
-  let O = this;
+  var O = this;
   if (!IsObject(O) || (O = GuardToWrapForValidIterator(O)) === null) {
-    if (ArgumentsLength() === 0) {
-      return callFunction(
-        CallWrapForValidIteratorMethodIfWrapped,
-        this,
-        "WrapForValidIteratorNext"
-      );
-    }
     return callFunction(
       CallWrapForValidIteratorMethodIfWrapped,
       this,
-      value,
       "WrapForValidIteratorNext"
     );
   }
-  const iterated = UnsafeGetReservedSlot(O, ITERATED_SLOT);
+
   
-  let result;
-  if (ArgumentsLength() === 0) {
-    result = callContentFunction(iterated.nextMethod, iterated.iterator);
-  } else {
-    
-    result = callContentFunction(iterated.nextMethod, iterated.iterator, value);
-  }
+  var iterator = UnsafeGetReservedSlot(O, WRAP_FOR_VALID_ITERATOR_ITERATOR_SLOT);
+  var nextMethod = UnsafeGetReservedSlot(O, WRAP_FOR_VALID_ITERATOR_NEXT_METHOD_SLOT);
+
   
-  if (!IsObject(result)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
-  }
-  return result;
+  return callContentFunction(nextMethod, iterator);
 }
 
 
-function WrapForValidIteratorReturn(value) {
+
+
+
+
+function WrapForValidIteratorReturn() {
   
-  let O = this;
+  var O = this;
   if (!IsObject(O) || (O = GuardToWrapForValidIterator(O)) === null) {
     return callFunction(
       CallWrapForValidIteratorMethodIfWrapped,
       this,
-      value,
       "WrapForValidIteratorReturn"
     );
   }
-  const iterated = UnsafeGetReservedSlot(O, ITERATED_SLOT);
 
   
+  var iterator = UnsafeGetReservedSlot(O, WRAP_FOR_VALID_ITERATOR_ITERATOR_SLOT);
+
   
-  const iterator = iterated.iterator;
-  const returnMethod = iterator.return;
-  if (!IsNullOrUndefined(returnMethod)) {
-    let innerResult = callContentFunction(returnMethod, iterator);
-    if (!IsObject(innerResult)) {
-      ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, innerResult));
-    }
+  assert(IsObject(iterator), "iterator is an object");
+
+  
+  var returnMethod = iterator.return;
+
+  
+  if (IsNullOrUndefined(returnMethod)) {
+    return {
+      value: undefined,
+      done: true,
+    };
   }
+
   
-  return {
-    done: true,
-    value,
-  };
+  return callContentFunction(returnMethod, iterator);
 }
 
 
-function WrapForValidIteratorThrow(value) {
-  
-  let O = this;
-  if (!IsObject(O) || (O = GuardToWrapForValidIterator(O)) === null) {
-    return callFunction(
-      CallWrapForValidIteratorMethodIfWrapped,
-      this,
-      value,
-      "WrapForValidIteratorThrow"
-    );
-  }
-  const iterated = UnsafeGetReservedSlot(O, ITERATED_SLOT);
-  
-  const iterator = iterated.iterator;
-  
-  const throwMethod = iterator.throw;
-  
-  if (IsNullOrUndefined(throwMethod)) {
-    throw value;
-  }
-  
-  return callContentFunction(throwMethod, iterator, value);
-}
 
 
-function IteratorHelperNext(value) {
-  let O = this;
+
+
+function IteratorHelperNext() {
+  
+  var O = this;
   if (!IsObject(O) || (O = GuardToIteratorHelper(O)) === null) {
     return callFunction(
       CallIteratorHelperMethodIfWrapped,
       this,
-      value,
       "IteratorHelperNext"
     );
   }
-  const generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
-  return callContentFunction(GeneratorNext, generator, value);
+  var generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
+  return callFunction(GeneratorNext, generator, undefined);
 }
 
-function IteratorHelperReturn(value) {
+
+
+
+
+
+function IteratorHelperReturn() {
+  
   let O = this;
+
+  
   if (!IsObject(O) || (O = GuardToIteratorHelper(O)) === null) {
     return callFunction(
       CallIteratorHelperMethodIfWrapped,
       this,
-      value,
       "IteratorHelperReturn"
     );
   }
+
+  
+
+  
   const generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
-  return callContentFunction(GeneratorReturn, generator, value);
+  return callFunction(GeneratorReturn, generator, undefined);
 }
-
-function IteratorHelperThrow(value) {
-  let O = this;
-  if (!IsObject(O) || (O = GuardToIteratorHelper(O)) === null) {
-    return callFunction(
-      CallIteratorHelperMethodIfWrapped,
-      this,
-      value,
-      "IteratorHelperThrow"
-    );
-  }
-  const generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
-  return callContentFunction(GeneratorThrow, generator, value);
-}
-
-
-
 
 
 
@@ -401,321 +335,439 @@ function IteratorHelperThrow(value) {
 
 function IteratorMap(mapper) {
   
-  const iterated = GetIteratorDirect(this);
+  var iterator = this;
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
 
   
   if (!IsCallable(mapper)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapper));
   }
 
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorMapGenerator(iterated, mapper);
-  callContentFunction(GeneratorNext, generator);
+  
+  var nextMethod = iterator.next;
+
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorMapGenerator(iterator, nextMethod, mapper);
   UnsafeSetReservedSlot(
-    iteratorHelper,
+    result,
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-  return iteratorHelper;
+
+  
+  callFunction(GeneratorNext, generator);
+
+  
+  return result;
 }
 
 
-function* IteratorMapGenerator(iterated, mapper) {
-  
-  let lastValue;
-  
-  let needClose = true;
+
+
+
+
+
+
+function* IteratorMapGenerator(iterator, nextMethod, mapper) {
+  var isReturnCompletion = true;
   try {
+    
+    
     yield;
-    needClose = false;
 
-    for (
-      let next = IteratorStep(iterated, lastValue);
-      next;
-      next = IteratorStep(iterated, lastValue)
-    ) {
-      
-      const value = next.value;
-
-      
-      needClose = true;
-      lastValue = yield callContentFunction(mapper, undefined, value);
-      needClose = false;
-    }
+    
+    isReturnCompletion = false;
   } finally {
-    if (needClose) {
-      IteratorClose(iterated);
+    
+    if (isReturnCompletion) {
+      IteratorClose(iterator);
     }
+  }
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+
+    
+    var mapped = callContentFunction(mapper, undefined, value, counter);
+
+    
+
+    
+    yield mapped;
+
+    
+
+    
+    counter += 1;
   }
 }
 
 
-function IteratorFilter(filterer) {
+
+
+
+
+function IteratorFilter(predicate) {
   
-  const iterated = GetIteratorDirect(this);
+  var iterator = this;
 
   
-  if (!IsCallable(filterer)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, filterer));
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
   }
 
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorFilterGenerator(iterated, filterer);
-  callContentFunction(GeneratorNext, generator);
+  
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorFilterGenerator(iterator, nextMethod, predicate);
   UnsafeSetReservedSlot(
-    iteratorHelper,
+    result,
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-  return iteratorHelper;
+
+  
+  callFunction(GeneratorNext, generator);
+
+  
+  return result;
 }
 
 
-function* IteratorFilterGenerator(iterated, filterer) {
-  
-  let lastValue;
-  
-  let needClose = true;
+
+
+
+
+
+
+function* IteratorFilterGenerator(iterator, nextMethod, predicate) {
+  var isReturnCompletion = true;
   try {
+    
+    
     yield;
-    needClose = false;
 
-    for (
-      let next = IteratorStep(iterated, lastValue);
-      next;
-      next = IteratorStep(iterated, lastValue)
-    ) {
-      
-      const value = next.value;
-
-      
-      needClose = true;
-      if (callContentFunction(filterer, undefined, value)) {
-        lastValue = yield value;
-      }
-      needClose = false;
-    }
+    
+    isReturnCompletion = false;
   } finally {
-    if (needClose) {
-      IteratorClose(iterated);
+    
+    if (isReturnCompletion) {
+      IteratorClose(iterator);
     }
   }
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+
+    
+    var selected = callContentFunction(predicate, undefined, value, counter);
+
+    
+
+    
+    if (selected) {
+      
+      yield value;
+
+      
+    }
+
+    
+    counter += 1;
+  }
 }
+
+
+
+
 
 
 function IteratorTake(limit) {
   
-  const iterated = GetIteratorDirect(this);
+  var iterator = this;
 
   
-  const remaining = ToInteger(limit);
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
+
   
-  if (remaining < 0) {
+  var integerLimit = std_Math_trunc(limit);
+  if (!(integerLimit >= 0)) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorTakeGenerator(iterated, remaining);
-  callContentFunction(GeneratorNext, generator);
+  
+  var nextMethod = iterator.next;
+
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorTakeGenerator(iterator, nextMethod, integerLimit);
   UnsafeSetReservedSlot(
-    iteratorHelper,
+    result,
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-  return iteratorHelper;
+
+  
+  callFunction(GeneratorNext, generator);
+
+  
+  return result;
 }
 
 
-function* IteratorTakeGenerator(iterated, remaining) {
-  
-  let lastValue;
-  
-  let needClose = true;
+
+
+
+
+
+
+function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
+  var isReturnCompletion = true;
   try {
+    
+    
     yield;
-    needClose = false;
 
-    for (; remaining > 0; remaining--) {
-      const next = IteratorStep(iterated, lastValue);
-      if (!next) {
-        return;
-      }
-
-      const value = next.value;
-      needClose = true;
-      lastValue = yield value;
-      needClose = false;
-    }
+    
+    isReturnCompletion = false;
   } finally {
-    if (needClose) {
-      IteratorClose(iterated);
+    
+    if (isReturnCompletion) {
+      IteratorClose(iterator);
     }
   }
 
-  IteratorClose(iterated);
+  
+
+  
+  if (remaining === 0) {
+    IteratorClose(iterator);
+    return;
+  }
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+
+    
+    yield value;
+
+    
+
+    
+    if (--remaining === 0) {
+      
+      break;
+    }
+  }
 }
+
+
+
+
 
 
 function IteratorDrop(limit) {
   
-  const iterated = GetIteratorDirect(this);
+  var iterator = this;
 
   
-  const remaining = ToInteger(limit);
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
+
   
-  if (remaining < 0) {
+  var integerLimit = std_Math_trunc(limit);
+  if (!(integerLimit >= 0)) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorDropGenerator(iterated, remaining);
-  callContentFunction(GeneratorNext, generator);
+  
+  var nextMethod = iterator.next;
+
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorDropGenerator(iterator, nextMethod, integerLimit);
   UnsafeSetReservedSlot(
-    iteratorHelper,
+    result,
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-  return iteratorHelper;
+
+  
+  callFunction(GeneratorNext, generator);
+
+  
+  return result;
 }
 
 
-function* IteratorDropGenerator(iterated, remaining) {
-  let needClose = true;
+
+
+
+
+
+
+function* IteratorDropGenerator(iterator, nextMethod, remaining) {
+  var isReturnCompletion = true;
   try {
+    
+    
     yield;
-    needClose = false;
 
     
-    for (; remaining > 0; remaining--) {
-      if (!IteratorStep(iterated)) {
-        return;
-      }
-    }
-
-    
-    let lastValue;
-    
-    for (
-      let next = IteratorStep(iterated, lastValue);
-      next;
-      next = IteratorStep(iterated, lastValue)
-    ) {
-      
-      const value = next.value;
-
-      needClose = true;
-      lastValue = yield value;
-      needClose = false;
-    }
+    isReturnCompletion = false;
   } finally {
-    if (needClose) {
-      IteratorClose(iterated);
+    
+    if (isReturnCompletion) {
+      IteratorClose(iterator);
+    }
+  }
+
+  
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+    if (remaining-- <= 0) {
+      
+      
+
+      
+      yield value;
+
+      
     }
   }
 }
 
 
-function IteratorAsIndexedPairs() {
-  
-  const iterated = GetIteratorDirect(this);
-
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorAsIndexedPairsGenerator(iterated);
-  callContentFunction(GeneratorNext, generator);
-  UnsafeSetReservedSlot(
-    iteratorHelper,
-    ITERATOR_HELPER_GENERATOR_SLOT,
-    generator
-  );
-  return iteratorHelper;
-}
 
 
-function* IteratorAsIndexedPairsGenerator(iterated) {
-  
-  let lastValue;
-  
-  let needClose = true;
-  try {
-    yield;
-    needClose = false;
-
-    for (
-      let next = IteratorStep(iterated, lastValue), index = 0;
-      next;
-      next = IteratorStep(iterated, lastValue), index++
-    ) {
-      
-      const value = next.value;
-
-      needClose = true;
-      lastValue = yield [index, value];
-      needClose = false;
-    }
-  } finally {
-    if (needClose) {
-      IteratorClose(iterated);
-    }
-  }
-}
 
 
 function IteratorFlatMap(mapper) {
   
-  const iterated = GetIteratorDirect(this);
+  var iterator = this;
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
 
   
   if (!IsCallable(mapper)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapper));
   }
 
-  const iteratorHelper = NewIteratorHelper();
-  const generator = IteratorFlatMapGenerator(iterated, mapper);
-  callContentFunction(GeneratorNext, generator);
+  
+  var nextMethod = iterator.next;
+
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorFlatMapGenerator(iterator, nextMethod, mapper);
   UnsafeSetReservedSlot(
-    iteratorHelper,
+    result,
     ITERATOR_HELPER_GENERATOR_SLOT,
     generator
   );
-  return iteratorHelper;
+
+  
+  callFunction(GeneratorNext, generator);
+
+  
+  return result;
 }
 
 
-function* IteratorFlatMapGenerator(iterated, mapper) {
-  
-  let needClose = true;
+
+
+
+
+function* IteratorFlatMapGenerator(iterator, nextMethod, mapper) {
+  var isReturnCompletion = true;
   try {
+    
+    
     yield;
-    needClose = false;
 
-    for (
-      let next = IteratorStep(iterated);
-      next;
-      next = IteratorStep(iterated)
-    ) {
-      
-      const value = next.value;
-
-      needClose = true;
-      
-      const mapped = callContentFunction(mapper, undefined, value);
-      
-      for (const innerValue of allowContentIter(mapped)) {
-        yield innerValue;
-      }
-      needClose = false;
-    }
+    
+    isReturnCompletion = false;
   } finally {
-    if (needClose) {
-      IteratorClose(iterated);
+    
+    if (isReturnCompletion) {
+      IteratorClose(iterator);
     }
+  }
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+
+    
+    var mapped = callContentFunction(mapper, undefined, value, counter);
+
+    
+
+    
+    var innerIterator = GetIteratorFlattenable(mapped);
+    var innerIteratorNextMethod = innerIterator.next;
+
+    
+
+    
+    for (var innerValue of allowContentIterWithNext(innerIterator, innerIteratorNextMethod)) {
+      
+
+      
+      yield innerValue;
+
+      
+    }
+
+    
+    counter += 1;
   }
 }
 
 
+
+
+
+
 function IteratorReduce(reducer ) {
   
-  const iterated = GetIteratorDirectWrapper(this);
+  var iterator = this;
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
 
   
   if (!IsCallable(reducer)) {
@@ -723,45 +775,83 @@ function IteratorReduce(reducer ) {
   }
 
   
-  let accumulator;
+  var nextMethod = iterator.next;
+
+  
+  var accumulator;
+  var counter;
   if (ArgumentsLength() === 1) {
     
-    const next = callContentFunction(iterated.next, iterated);
-    if (!IsObject(next)) {
-      ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, next));
-    }
-    
-    if (next.done) {
-      ThrowTypeError(JSMSG_EMPTY_ITERATOR_REDUCE);
-    }
-    
-    accumulator = next.value;
+    counter = -1;
   } else {
     
     accumulator = GetArgument(1);
+
+    
+    counter = 0;
   }
 
   
-  for (const value of allowContentIter(iterated)) {
-    accumulator = callContentFunction(reducer, undefined, accumulator, value);
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    if (counter < 0) {
+      
+
+      
+      accumulator = value;
+
+      
+      counter = 1;
+    } else {
+      
+
+      
+      accumulator = callContentFunction(reducer, undefined, accumulator, value, counter++);
+    }
   }
+
+  
+  if (counter < 0) {
+    ThrowTypeError(JSMSG_EMPTY_ITERATOR_REDUCE);
+  }
+
+  
   return accumulator;
 }
 
 
+
+
+
+
 function IteratorToArray() {
   
-  const iterated = {
-    [GetBuiltinSymbol("iterator")]: () => this,
-  };
+  var iterator = this;
+
   
-  return [...allowContentIter(iterated)];
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  return [...allowContentIterWithNext(iterator, nextMethod)];
 }
+
+
+
+
 
 
 function IteratorForEach(fn) {
   
-  const iterated = GetIteratorDirectWrapper(this);
+  var iterator = this;
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
 
   
   if (!IsCallable(fn)) {
@@ -769,67 +859,131 @@ function IteratorForEach(fn) {
   }
 
   
-  for (const value of allowContentIter(iterated)) {
-    callContentFunction(fn, undefined, value);
+  var nextMethod = iterator.next;
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+
+    
+    callContentFunction(fn, undefined, value, counter++);
+
+    
   }
 }
 
 
-function IteratorSome(fn) {
+
+
+
+
+function IteratorSome(predicate) {
   
-  const iterated = GetIteratorDirectWrapper(this);
+  var iterator = this;
 
   
-  if (!IsCallable(fn)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
   }
 
   
-  for (const value of allowContentIter(iterated)) {
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
     
-    if (callContentFunction(fn, undefined, value)) {
+
+    
+    if (callContentFunction(predicate, undefined, value, counter++)) {
       return true;
     }
   }
+
   
   return false;
 }
 
 
-function IteratorEvery(fn) {
+
+
+
+
+function IteratorEvery(predicate) {
   
-  const iterated = GetIteratorDirectWrapper(this);
+  var iterator = this;
 
   
-  if (!IsCallable(fn)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
   }
 
   
-  for (const value of allowContentIter(iterated)) {
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
     
-    if (!callContentFunction(fn, undefined, value)) {
+
+    
+    if (!callContentFunction(predicate, undefined, value, counter++)) {
       return false;
     }
   }
+
   
   return true;
 }
 
 
-function IteratorFind(fn) {
+
+
+
+
+function IteratorFind(predicate) {
   
-  const iterated = GetIteratorDirectWrapper(this);
+  var iterator = this;
 
   
-  if (!IsCallable(fn)) {
-    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
   }
 
   
-  for (const value of allowContentIter(iterated)) {
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var counter = 0;
+
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
     
-    if (callContentFunction(fn, undefined, value)) {
+
+    
+    if (callContentFunction(predicate, undefined, value, counter++)) {
       return value;
     }
   }

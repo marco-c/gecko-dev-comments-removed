@@ -8,7 +8,7 @@
 
 
 
-assertThrowsInstanceOf(() => Iterator.prototype.map.call([], x => x), TypeError);
+Iterator.prototype.map.call([], x => x);
 
 if (typeof reportCompare == 'function')
   reportCompare(0, 0);

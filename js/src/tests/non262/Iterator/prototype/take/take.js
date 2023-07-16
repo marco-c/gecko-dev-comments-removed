@@ -19,8 +19,7 @@ for (const v of [1, 2]) {
 assertEq(iter.next().done, true);
 
 
-
-assertEq(['test'].values().take().next().done, true);
+assertThrowsInstanceOf(() => ['test'].values().take(), RangeError);
 
 if (typeof reportCompare === 'function')
   reportCompare(0, 0);
