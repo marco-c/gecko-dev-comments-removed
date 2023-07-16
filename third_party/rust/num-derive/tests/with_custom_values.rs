@@ -8,8 +8,6 @@
 
 
 
-#![cfg(feature = "full-syntax")]
-
 extern crate num as num_renamed;
 #[macro_use]
 extern crate num_derive;
