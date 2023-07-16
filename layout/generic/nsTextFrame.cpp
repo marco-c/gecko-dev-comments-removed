@@ -7450,27 +7450,31 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
   
   properties.InitializeForDisplay(false);
 
+  
+  
   UpdateIteratorFromOffset(properties, aInOffset, iter);
+  nsPoint point = GetPointFromIterator(iter, properties);
 
   const int32_t kContentEnd = GetContentEnd();
   const int32_t kEndOffset = std::min(aInOffset + aLength, kContentEnd);
-  while (aInOffset < kEndOffset) {
-    if (!iter.IsOriginalCharSkipped() &&
-        !mTextRun->IsClusterStart(iter.GetSkippedOffset())) {
-      FindClusterStart(mTextRun,
-                       properties.GetStart().GetOriginalOffset() +
-                           properties.GetOriginalLength(),
-                       &iter);
-    }
 
-    nsPoint point = GetPointFromIterator(iter, properties);
-    nsRect rect;
-    rect.x = point.x;
-    rect.y = point.y;
+  if (aInOffset >= kEndOffset) {
+    return NS_OK;
+  }
 
+  if (!aRects.SetCapacity(aRects.Length() + kEndOffset - aInOffset,
+                          mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  do {
+    MOZ_ASSERT(point == GetPointFromIterator(iter, properties),
+               "character position error!");
+
+    
     nscoord iSize = 0;
+    gfxSkipCharsIterator nextIter(iter);
     if (aInOffset < kContentEnd) {
-      gfxSkipCharsIterator nextIter(iter);
       nextIter.AdvanceOriginal(1);
       if (!nextIter.IsOriginalCharSkipped() &&
           !mTextRun->IsClusterStart(nextIter.GetSkippedOffset()) &&
@@ -7484,6 +7488,12 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
       iSize = NSToCoordCeilClamped(advance);
     }
 
+    
+    
+    nsRect rect;
+    rect.x = point.x;
+    rect.y = point.y;
+
     if (mTextRun->IsVertical()) {
       rect.width = mRect.width;
       rect.height = iSize;
@@ -7492,6 +7502,9 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
         
         
         rect.y -= rect.height;
+        point.y -= iSize;
+      } else {
+        point.y += iSize;
       }
     } else {
       rect.width = iSize;
@@ -7505,15 +7518,22 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
         
         
         rect.x -= rect.width;
+        point.x -= iSize;
+      } else {
+        point.x += iSize;
       }
     }
-    aRects.AppendElement(rect);
-    aInOffset++;
+
     
-    if (aInOffset < kEndOffset) {
-      iter.AdvanceOriginal(1);
+    int32_t end = std::min(kEndOffset, nextIter.GetOriginalOffset());
+    while (aInOffset < end) {
+      aRects.AppendElement(rect);
+      aInOffset++;
     }
-  }
+
+    
+    iter = nextIter;
+  } while (aInOffset < kEndOffset);
 
   return NS_OK;
 }
