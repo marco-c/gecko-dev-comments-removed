@@ -11,6 +11,7 @@
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/BytecodeUtil.h"
+#include "vm/Opcodes.h"
 
 #include "vm/BytecodeIterator-inl.h"
 #include "vm/BytecodeLocation-inl.h"
@@ -18,6 +19,93 @@
 
 using namespace js;
 using namespace js::jit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class YieldAnalyzer {
+  struct LoopInfo {
+    bool hasInnerLoop = false;
+    bool sawYield = false;
+    size_t bytecodeOps = 0;
+  };
+
+  
+  
+  
+  
+  static const size_t BYTECODE_MINIUM = 40;
+
+  Vector<LoopInfo, 0, JitAllocPolicy> loopInfos;
+  bool allowIon = true;
+
+ public:
+  explicit YieldAnalyzer(TempAllocator& alloc) : loopInfos(alloc) {}
+
+  [[nodiscard]] bool init() {
+    
+    return loopInfos.emplaceBack();
+  }
+
+  void analyzeBackedgeForIon() {
+    const LoopInfo& loopInfo = loopInfos.back();
+    if (loopInfo.sawYield) {
+      if (!loopInfo.hasInnerLoop && loopInfo.bytecodeOps < BYTECODE_MINIUM) {
+        allowIon = false;
+      }
+    }
+
+    loopInfos.popBack();
+  }
+
+  bool canIon() {
+    
+    
+    
+    
+    analyzeBackedgeForIon();
+
+    MOZ_ASSERT(loopInfos.empty());
+
+    return allowIon;
+  }
+
+  [[nodiscard]] bool handleBytecode(BytecodeLocation loc) {
+    LoopInfo& loopInfo = loopInfos.back();
+
+    loopInfo.bytecodeOps++;
+
+    if (loc.is(JSOp::LoopHead)) {
+      loopInfo.hasInnerLoop = true;
+
+      
+      return loopInfos.emplaceBack();
+    }
+
+    if (loc.is(JSOp::Yield) || loc.is(JSOp::FinalYieldRval)) {
+      loopInfo.sawYield = true;
+    }
+
+    if (loc.isBackedge()) {
+      analyzeBackedgeForIon();
+    }
+
+    return true;
+  }
+};
 
 BytecodeAnalysis::BytecodeAnalysis(TempAllocator& alloc, JSScript* script)
     : script_(script), infos_(alloc) {}
@@ -69,8 +157,17 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
   bool normallyReachable = true;
   bool normallyReachableReturn = false;
 
+  YieldAnalyzer analyzer(alloc);
+  if (!analyzer.init()) {
+    return false;
+  }
+
   for (const BytecodeLocation& it : AllBytecodesIterable(script_)) {
     JSOp op = it.getOp();
+    if (!analyzer.handleBytecode(it)) {
+      return false;
+    }
+
     uint32_t offset = it.bytecodeToOffset(script_);
 
     JitSpew(JitSpew_BaselineOp, "Analyzing op @ %u (end=%u): %s",
@@ -216,6 +313,16 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 
   if (!normallyReachableReturn) {
     script_->setUninlineable();
+  }
+
+  if (!analyzer.canIon()) {
+    if (script_->canIonCompile()) {
+      JitSpew(
+          JitSpew_IonAbort,
+          "Disabling Warp support for %s:%d:%d due to Yield being in a loop",
+          script_->filename(), script_->lineno(), script_->column());
+      script_->disableIon();
+    }
   }
 
   return true;
