@@ -23,7 +23,7 @@ add_task(async function () {
   
   
   await runTest({
-    name: "Disable HTTPS-Only",
+    name: "Add HTTPS-Only exemption",
     initialScheme: "http",
     initialPermission: 0,
     permissionScheme: "https",
@@ -37,7 +37,7 @@ add_task(async function () {
   
   
   await runTest({
-    name: "Switch between off states",
+    name: "Switch between HTTPS-Only exemption modes",
     initialScheme: "http",
     initialPermission: 1,
     permissionScheme: "http",
@@ -51,7 +51,63 @@ add_task(async function () {
   
   
   await runTest({
-    name: "Enable HTTPS-Only again",
+    name: "Remove HTTPS-Only exemption again",
+    initialScheme: "http",
+    initialPermission: 2,
+    permissionScheme: "http",
+    isUiVisible: true,
+    selectPermission: 0,
+    expectReload: true,
+    finalScheme: "https",
+  });
+
+  await SpecialPowers.flushPrefEnv();
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", true]],
+  });
+
+  
+  await runTest({
+    name: "No HTTPS-Only UI",
+    initialScheme: "https",
+    initialPermission: 0,
+    permissionScheme: "https",
+    isUiVisible: false,
+  });
+
+  
+  
+  
+  await runTest({
+    name: "Add HTTPS-Only exemption",
+    initialScheme: "http",
+    initialPermission: 0,
+    permissionScheme: "https",
+    isUiVisible: true,
+    selectPermission: 1,
+    expectReload: true,
+    finalScheme: "https",
+  });
+
+  
+  
+  
+  await runTest({
+    name: "Switch between HTTPS-Only exemption modes",
+    initialScheme: "http",
+    initialPermission: 1,
+    permissionScheme: "http",
+    isUiVisible: true,
+    selectPermission: 2,
+    expectReload: false,
+    finalScheme: "http",
+  });
+
+  
+  
+  
+  await runTest({
+    name: "Remove HTTPS-Only exemption again",
     initialScheme: "http",
     initialPermission: 2,
     permissionScheme: "http",
