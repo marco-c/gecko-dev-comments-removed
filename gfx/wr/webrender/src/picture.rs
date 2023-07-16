@@ -2888,7 +2888,7 @@ impl TileCacheInstance {
         let prim_clip_chain = &prim_instance.vis.clip_chain;
 
         
-        let mut surface = &mut surfaces[prim_surface_index.0];
+        let surface = &mut surfaces[prim_surface_index.0];
         surface.clipped_local_rect = surface.clipped_local_rect.union(&prim_clip_chain.pic_coverage_rect);
 
         
