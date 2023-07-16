@@ -12,11 +12,16 @@
 
 #include <stdint.h>
 
+#include <limits>
+
 #include "absl/types/optional.h"
 #include "api/priority.h"
+#include "media/sctp/sctp_transport_internal.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "test/gtest.h"
+
+using webrtc::StreamId;
 
 class SctpUtilsTest : public ::testing::Test {
  public:
@@ -193,4 +198,45 @@ TEST_F(SctpUtilsTest, TestIsOpenMessage) {
 
   rtc::CopyOnWriteBuffer empty;
   EXPECT_FALSE(webrtc::IsOpenMessage(empty));
+}
+
+TEST(SctpSidTest, Basics) {
+  
+  
+  static_assert(cricket::kMinSctpSid == 0, "Min stream id should be 0");
+  static_assert(cricket::kMaxSctpSid <= cricket::kSpecMaxSctpSid, "");
+  static_assert(
+      cricket::kSpecMaxSctpSid == std::numeric_limits<uint16_t>::max(),
+      "Max legal sctp stream value should be 0xffff");
+
+  
+  
+  
+  
+
+  EXPECT_TRUE(!StreamId(-1).HasValue());
+  EXPECT_TRUE(!StreamId(-2).HasValue());
+  EXPECT_TRUE(StreamId(cricket::kMinSctpSid).HasValue());
+  EXPECT_TRUE(StreamId(cricket::kMinSctpSid + 1).HasValue());
+  EXPECT_TRUE(StreamId(cricket::kSpecMaxSctpSid).HasValue());
+  EXPECT_TRUE(StreamId(cricket::kMaxSctpSid).HasValue());
+
+  
+  EXPECT_EQ(StreamId(-1), StreamId(-2));
+  
+  EXPECT_NE(StreamId(1), StreamId(2));
+  
+  EXPECT_LT(StreamId(1), StreamId(2));
+
+  
+  StreamId sid1;
+  StreamId sid2(cricket::kMaxSctpSid);
+  EXPECT_NE(sid1, sid2);
+  sid1 = sid2;
+  EXPECT_EQ(sid1, sid2);
+
+  EXPECT_EQ(sid1.stream_id_int(), cricket::kMaxSctpSid);
+  EXPECT_TRUE(sid1.HasValue());
+  sid1.reset();
+  EXPECT_FALSE(sid1.HasValue());
 }
