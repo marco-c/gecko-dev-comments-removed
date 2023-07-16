@@ -2,7 +2,7 @@
 
 
 
-import parseScriptTags from "parse-script-tags";
+import { parseScriptTags } from "./parse-script-tags";
 import * as babelParser from "@babel/parser";
 import * as t from "@babel/types";
 import { getSource } from "../sources";
