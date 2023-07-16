@@ -36,7 +36,8 @@ class BlackboxLines extends Component {
       editor.codeMirror.operation(() => {
         blackboxedRangesForSelectedSource.forEach(range => {
           const start = toEditorLine(selectedSource.id, range.start.line);
-          const end = toEditorLine(selectedSource.id, range.end.line);
+          
+          const end = toEditorLine(selectedSource.id, range.end.line) + 1;
           editor.codeMirror.eachLine(start, end, lineHandle => {
             this.setBlackboxLine(editor, lineHandle);
           });
