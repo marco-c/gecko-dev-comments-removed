@@ -95,33 +95,5 @@ TEST(StreamStateTest, RemovePeerForLastExpectedReceiverUpdatesAliveFrames) {
   EXPECT_EQ(state.GetAliveFramesCount(), 1lu);
 }
 
-TEST(StreamStateTest, MarkNextAliveFrameAsDeadDecreseAliveFramesCount) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
-  state.PushBack(1);
-  state.PushBack(2);
-
-  EXPECT_EQ(state.GetAliveFramesCount(), 2lu);
-
-  state.MarkNextAliveFrameAsDead();
-
-  EXPECT_EQ(state.GetAliveFramesCount(), 1lu);
-}
-
-TEST(StreamStateTest, MarkNextAliveFrameAsDeadDoesntAffectFrontFrameForPeer) {
-  StreamState state(0,
-                    std::set<size_t>{1, 2}, Timestamp::Seconds(1),
-                    Clock::GetRealTimeClock());
-  state.PushBack(1);
-  state.PushBack(2);
-
-  EXPECT_EQ(state.Front(1), 1);
-
-  state.MarkNextAliveFrameAsDead();
-
-  EXPECT_EQ(state.Front(1), 1);
-}
-
 }  
 }  

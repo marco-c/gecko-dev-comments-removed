@@ -22,15 +22,14 @@
 
 #include "absl/types/optional.h"
 #include "api/numerics/samples_stats_counter.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
 
-
-
-constexpr size_t kDefaultMaxFramesInFlightPerStream = 270;
+constexpr TimeDelta kDefaultMaxFramesStorageDuration = TimeDelta::Seconds(3);
 
 class SamplesRateCounter {
  public:
@@ -272,9 +271,7 @@ struct DefaultVideoQualityAnalyzerOptions {
   bool adjust_cropping_before_comparing_frames = false;
   
   
-  
-  size_t max_frames_in_flight_per_stream_count =
-      kDefaultMaxFramesInFlightPerStream;
+  TimeDelta max_frames_storage_duration = kDefaultMaxFramesStorageDuration;
   
   bool enable_receive_own_stream = false;
 };
