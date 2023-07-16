@@ -36,7 +36,21 @@ void EncoderSimulcastProxy::SetFecControllerOverride(
 
 int EncoderSimulcastProxy::InitEncode(const VideoCodec* inst,
                                       const VideoEncoder::Settings& settings) {
-  int ret = encoder_->InitEncode(inst, settings);
+  int ret;
+  if (inst->numberOfSimulcastStreams <= 1 ||
+      encoder_->GetEncoderInfo().supports_simulcast) {
+    
+    
+    
+    ret = encoder_->InitEncode(inst, settings);
+  } else {
+    
+    
+    
+    
+    
+    ret = WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
+  }
   if (ret == WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED) {
     encoder_.reset(new SimulcastEncoderAdapter(factory_, video_format_));
     if (callback_) {
