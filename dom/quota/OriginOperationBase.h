@@ -16,6 +16,10 @@ namespace mozilla::dom::quota {
 
 class QuotaManager;
 
+
+
+
+
 class OriginOperationBase : public BackgroundThreadObject, public Runnable {
  protected:
   nsresult mResultCode;
@@ -56,6 +60,15 @@ class OriginOperationBase : public BackgroundThreadObject, public Runnable {
 
     return mActorDestroyed;
   }
+
+  void RunImmediately() {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(GetState() == State_Initial);
+
+    MOZ_ALWAYS_SUCCEEDS(this->Run());
+  }
+
+  void Dispatch();
 
  protected:
   explicit OriginOperationBase(nsISerialEventTarget* aOwningThread,
