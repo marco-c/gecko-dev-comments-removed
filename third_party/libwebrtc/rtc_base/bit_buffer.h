@@ -14,6 +14,9 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "absl/strings/string_view.h"
+#include "api/units/data_size.h"
+
 namespace rtc {
 
 
@@ -22,6 +25,9 @@ namespace rtc {
 
 class BitBufferWriter {
  public:
+  static constexpr webrtc::DataSize kMaxLeb128Length =
+      webrtc::DataSize::Bytes(10);
+
   
   BitBufferWriter(uint8_t* bytes, size_t byte_count);
 
@@ -71,6 +77,12 @@ class BitBufferWriter {
   
   
   bool WriteSignedExponentialGolomb(int32_t val);
+
+  
+  bool WriteLeb128(uint64_t val);
+
+  
+  bool WriteString(absl::string_view data);
 
  private:
   

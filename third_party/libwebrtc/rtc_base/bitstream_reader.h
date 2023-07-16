@@ -104,6 +104,12 @@ class BitstreamReader {
   
   int ReadSignedExponentialGolomb();
 
+  
+  
+  uint64_t ReadLeb128();
+
+  std::string ReadString(int num_bytes);
+
  private:
   void set_last_read_is_verified(bool value) const;
 
