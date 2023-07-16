@@ -73,6 +73,7 @@ Nullable<T> MaybeToNullable(const Maybe<T>& aOptional) {
 
 
 
+
 template <class T>
 Result<Span<uint8_t>, nsresult> GetArrayBufferData(const T& aBuffer) {
   
@@ -160,6 +161,7 @@ Result<Ok, nsresult> CloneBuffer(
   }
   return Ok();
 }
+
 
 
 
