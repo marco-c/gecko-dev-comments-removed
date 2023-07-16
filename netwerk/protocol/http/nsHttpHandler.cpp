@@ -813,7 +813,13 @@ void nsHttpHandler::BuildUserAgent() {
 }
 
 #ifdef XP_WIN
-#  define OSCPU_WINDOWS "Windows NT %ld.%ld"
+
+
+
+
+
+
+#  define OSCPU_WINDOWS "Windows NT 10.0"
 #  define OSCPU_WIN64 OSCPU_WINDOWS "; Win64; x64"
 #endif
 
@@ -884,39 +890,29 @@ void nsHttpHandler::InitUserAgentComponents() {
 
   
 #if defined(XP_WIN)
-  OSVERSIONINFO info = {sizeof(OSVERSIONINFO)};
-  if (!GetVersionEx(&info) || info.dwMajorVersion >= 10) {
-    
-    
-    
-    
-    
-    
-    
-    info.dwMajorVersion = 10;
-    info.dwMinorVersion = 0;
-  }
 
-  const char* format;
 #  if defined _M_X64 || defined _M_AMD64
-  format = OSCPU_WIN64;
+  mOscpu.AssignLiteral(OSCPU_WIN64);
 #  elif defined(_ARM64_)
   
   
-  format = IsWin11OrLater() ? OSCPU_WIN64 : OSCPU_WINDOWS;
+  if (IsWin11OrLater()) {
+    mOscpu.AssignLiteral(OSCPU_WIN64);
+  } else {
+    mOscpu.AssignLiteral(OSCPU_WINDOWS);
+  }
 #  else
   BOOL isWow64 = FALSE;
   if (!IsWow64Process(GetCurrentProcess(), &isWow64)) {
     isWow64 = FALSE;
   }
-  format = isWow64 ? OSCPU_WIN64 : OSCPU_WINDOWS;
+  if (isWow64) {
+    mOscpu.AssignLiteral(OSCPU_WIN64);
+  } else {
+    mOscpu.AssignLiteral(OSCPU_WINDOWS);
+  }
 #  endif
 
-  SmprintfPointer buf =
-      mozilla::Smprintf(format, info.dwMajorVersion, info.dwMinorVersion);
-  if (buf) {
-    mOscpu = buf.get();
-  }
 #elif defined(XP_MACOSX)
   mOscpu.AssignLiteral("Intel Mac OS X 10.15");
 #elif defined(XP_UNIX)
