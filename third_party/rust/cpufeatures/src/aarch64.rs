@@ -38,7 +38,7 @@ pub fn getauxval_hwcap() -> u64 {
 }
 
 
-#[cfg(target_os = "macos")]
+#[cfg(target_vendor = "apple")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
@@ -98,7 +98,7 @@ pub mod hwcaps {
 
 
 
-#[cfg(target_os = "macos")]
+#[cfg(target_vendor = "apple")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! check {
@@ -118,7 +118,7 @@ macro_rules! check {
 }
 
 
-#[cfg(target_os = "macos")]
+#[cfg(target_vendor = "apple")]
 pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     assert_eq!(
         name.last().cloned(),
@@ -144,35 +144,7 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
 }
 
 
-
-
-
-
-
-
-
-#[cfg(target_os = "ios")]
-#[macro_export]
-#[doc(hidden)]
-macro_rules! check {
-    ("aes") => {
-        true
-    };
-    ("sha2") => {
-        true
-    };
-    ("sha3") => {
-        false
-    };
-}
-
-
-#[cfg(not(any(
-    target_os = "ios",
-    target_os = "linux",
-    target_os = "android",
-    target_os = "macos"
-)))]
+#[cfg(not(any(target_vendor = "apple", target_os = "linux", target_os = "android",)))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
