@@ -3,19 +3,19 @@
 
 
 
-#include "ValidationError.h"
+#include "InternalError.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
 
-GPU_IMPL_JS_WRAP(ValidationError)
+GPU_IMPL_JS_WRAP(InternalError)
 
-already_AddRefed<ValidationError> ValidationError::Constructor(
+already_AddRefed<InternalError> InternalError::Constructor(
     const dom::GlobalObject& aGlobal, const nsAString& aString,
     ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_RELEASE_ASSERT(global);
-  return MakeAndAddRef<ValidationError>(global, aString);
+  return MakeAndAddRef<InternalError>(global, aString);
 }
 
 }  

@@ -514,6 +514,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "GPUDeviceLostInfo", nightly: true },
   
+  { name: "GPUError", nightly: true },
+  
+  { name: "GPUInternalError", nightly: true },
+  
   { name: "GPUMapMode", nightly: true },
   
   { name: "GPUOutOfMemoryError", nightly: true },
