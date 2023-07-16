@@ -7,13 +7,19 @@ use crate::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum TypeBounds {
     
-    Eq,
+    Eq(u32),
+    
+    SubResource,
 }
 
 impl Encode for TypeBounds {
     fn encode(&self, sink: &mut Vec<u8>) {
         match self {
-            Self::Eq => sink.push(0x00),
+            Self::Eq(i) => {
+                sink.push(0x00);
+                i.encode(sink);
+            }
+            Self::SubResource => sink.push(0x01),
         }
     }
 }
@@ -32,9 +38,7 @@ pub enum ComponentTypeRef {
     
     Value(ComponentValType),
     
-    
-    
-    Type(TypeBounds, u32),
+    Type(TypeBounds),
     
     
     
@@ -68,13 +72,11 @@ impl Encode for ComponentTypeRef {
                 idx.encode(sink);
             }
             Self::Value(ty) => ty.encode(sink),
-            Self::Type(bounds, idx) => {
-                bounds.encode(sink);
-                idx.encode(sink);
-            }
+            Self::Type(bounds) => bounds.encode(sink),
         }
     }
 }
+
 
 
 
@@ -129,9 +131,8 @@ impl ComponentImportSection {
     }
 
     
-    pub fn import(&mut self, name: &str, url: &str, ty: ComponentTypeRef) -> &mut Self {
-        name.encode(&mut self.bytes);
-        url.encode(&mut self.bytes);
+    pub fn import(&mut self, name: impl AsComponentExternName, ty: ComponentTypeRef) -> &mut Self {
+        name.as_component_extern_name().encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -147,5 +148,53 @@ impl Encode for ComponentImportSection {
 impl ComponentSection for ComponentImportSection {
     fn id(&self) -> u8 {
         ComponentSectionId::Import.into()
+    }
+}
+
+
+#[derive(Debug, Copy, Clone)]
+pub enum ComponentExternName<'a> {
+    
+    Kebab(&'a str),
+    
+    Interface(&'a str),
+}
+
+impl Encode for ComponentExternName<'_> {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        match self {
+            ComponentExternName::Kebab(name) => {
+                sink.push(0x00);
+                name.encode(sink);
+            }
+            ComponentExternName::Interface(name) => {
+                sink.push(0x01);
+                name.encode(sink);
+            }
+        }
+    }
+}
+
+
+
+pub trait AsComponentExternName {
+    
+    fn as_component_extern_name(&self) -> ComponentExternName<'_>;
+}
+
+impl AsComponentExternName for ComponentExternName<'_> {
+    fn as_component_extern_name(&self) -> ComponentExternName<'_> {
+        *self
+    }
+}
+
+impl<S: AsRef<str>> AsComponentExternName for S {
+    fn as_component_extern_name(&self) -> ComponentExternName<'_> {
+        let s = self.as_ref();
+        if s.contains("/") {
+            ComponentExternName::Interface(s)
+        } else {
+            ComponentExternName::Kebab(s)
+        }
     }
 }

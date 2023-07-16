@@ -1,3 +1,4 @@
+use crate::binary_reader::WASM_MAGIC_NUMBER;
 use crate::CoreTypeSectionReader;
 use crate::{
     limits::MAX_WASM_MODULE_SIZE, BinaryReader, BinaryReaderError, ComponentCanonicalSectionReader,
@@ -20,7 +21,12 @@ pub(crate) const WASM_MODULE_VERSION: u16 = 0x1;
 
 
 
-pub(crate) const WASM_COMPONENT_VERSION: u16 = 0xc;
+
+
+pub(crate) const WASM_COMPONENT_VERSION: u16 = 0xd;
+
+const KIND_MODULE: u16 = 0x00;
+const KIND_COMPONENT: u16 = 0x01;
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -336,6 +342,42 @@ impl Parser {
     
     
     
+    pub fn is_core_wasm(bytes: &[u8]) -> bool {
+        const HEADER: [u8; 8] = [
+            WASM_MAGIC_NUMBER[0],
+            WASM_MAGIC_NUMBER[1],
+            WASM_MAGIC_NUMBER[2],
+            WASM_MAGIC_NUMBER[3],
+            WASM_MODULE_VERSION.to_le_bytes()[0],
+            WASM_MODULE_VERSION.to_le_bytes()[1],
+            KIND_MODULE.to_le_bytes()[0],
+            KIND_MODULE.to_le_bytes()[1],
+        ];
+        bytes.starts_with(&HEADER)
+    }
+
+    
+    
+    
+    
+    pub fn is_component(bytes: &[u8]) -> bool {
+        const HEADER: [u8; 8] = [
+            WASM_MAGIC_NUMBER[0],
+            WASM_MAGIC_NUMBER[1],
+            WASM_MAGIC_NUMBER[2],
+            WASM_MAGIC_NUMBER[3],
+            WASM_COMPONENT_VERSION.to_le_bytes()[0],
+            WASM_COMPONENT_VERSION.to_le_bytes()[1],
+            KIND_COMPONENT.to_le_bytes()[0],
+            KIND_COMPONENT.to_le_bytes()[1],
+        ];
+        bytes.starts_with(&HEADER)
+    }
+
+    
+    
+    
+    
     
     
     
@@ -520,9 +562,6 @@ impl Parser {
 
         match self.state {
             State::Header => {
-                const KIND_MODULE: u16 = 0x00;
-                const KIND_COMPONENT: u16 = 0x01;
-
                 let start = reader.original_position();
                 let header_version = reader.read_header_version()?;
                 self.encoding = match (header_version >> 16) as u16 {
@@ -1167,7 +1206,7 @@ mod tests {
     fn parser_after_component_header() -> Parser {
         let mut p = Parser::default();
         assert_matches!(
-            p.parse(b"\0asm\x0c\0\x01\0", false),
+            p.parse(b"\0asm\x0d\0\x01\0", false),
             Ok(Chunk::Parsed {
                 consumed: 8,
                 payload: Payload::Version {

@@ -240,11 +240,14 @@ pub trait WasmModuleResources {
         
         
         self.check_value_type(
-            RefType {
-                nullable: true,
-                heap_type,
-            }
-            .into(),
+            RefType::new(true, heap_type)
+                .ok_or_else(|| {
+                    BinaryReaderError::new(
+                        "heap type index beyond this crate's implementation limits",
+                        offset,
+                    )
+                })?
+                .into(),
             features,
             offset,
         )

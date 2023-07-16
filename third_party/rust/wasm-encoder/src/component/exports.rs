@@ -2,7 +2,10 @@ use super::{
     COMPONENT_SORT, CORE_MODULE_SORT, CORE_SORT, FUNCTION_SORT, INSTANCE_SORT, TYPE_SORT,
     VALUE_SORT,
 };
-use crate::{encode_section, ComponentSection, ComponentSectionId, ComponentTypeRef, Encode};
+use crate::{
+    encode_section, AsComponentExternName, ComponentSection, ComponentSectionId, ComponentTypeRef,
+    Encode,
+};
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -63,6 +66,7 @@ impl Encode for ComponentExportKind {
 
 
 
+
 #[derive(Clone, Debug, Default)]
 pub struct ComponentExportSection {
     bytes: Vec<u8>,
@@ -88,14 +92,12 @@ impl ComponentExportSection {
     
     pub fn export(
         &mut self,
-        name: &str,
-        url: &str,
+        name: impl AsComponentExternName,
         kind: ComponentExportKind,
         index: u32,
         ty: Option<ComponentTypeRef>,
     ) -> &mut Self {
-        name.encode(&mut self.bytes);
-        url.encode(&mut self.bytes);
+        name.as_component_extern_name().encode(&mut self.bytes);
         kind.encode(&mut self.bytes);
         index.encode(&mut self.bytes);
         match ty {

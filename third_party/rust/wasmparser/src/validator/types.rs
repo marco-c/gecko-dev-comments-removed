@@ -1,21 +1,26 @@
 
 
-use super::{component::ComponentState, core::Module};
+use super::{
+    component::{ComponentState, ExternKind},
+    core::Module,
+};
+use crate::validator::names::KebabString;
 use crate::{
-    Export, ExternalKind, FuncType, GlobalType, Import, MemoryType, PrimitiveValType, RefType,
-    TableType, TypeRef, ValType,
+    ArrayType, BinaryReaderError, Export, ExternalKind, FuncType, GlobalType, Import, MemoryType,
+    PrimitiveValType, RefType, Result, TableType, TypeRef, ValType,
 };
 use indexmap::{IndexMap, IndexSet};
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std::ops::Index;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::{
     borrow::Borrow,
-    fmt,
     hash::{Hash, Hasher},
     mem,
     ops::{Deref, DerefMut},
     sync::Arc,
 };
-use url::Url;
 
 
 
@@ -30,199 +35,6 @@ const MAX_FLAT_FUNC_RESULTS: usize = 1;
 
 
 const MAX_LOWERED_TYPES: usize = MAX_FLAT_FUNC_PARAMS + 1;
-
-
-
-
-
-
-
-
-
-#[derive(Debug, Eq)]
-#[repr(transparent)]
-pub struct KebabStr(str);
-
-impl KebabStr {
-    
-    
-    
-    pub fn new<'a>(s: impl AsRef<str> + 'a) -> Option<&'a Self> {
-        let s = Self::new_unchecked(s);
-        if s.is_kebab_case() {
-            Some(s)
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn new_unchecked<'a>(s: impl AsRef<str> + 'a) -> &'a Self {
-        
-        
-        unsafe { std::mem::transmute::<_, &Self>(s.as_ref()) }
-    }
-
-    
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    
-    pub fn to_kebab_string(&self) -> KebabString {
-        KebabString(self.to_string())
-    }
-
-    fn is_kebab_case(&self) -> bool {
-        let mut lower = false;
-        let mut upper = false;
-        for c in self.chars() {
-            match c {
-                'a'..='z' if !lower && !upper => lower = true,
-                'A'..='Z' if !lower && !upper => upper = true,
-                'a'..='z' if lower => {}
-                'A'..='Z' if upper => {}
-                '0'..='9' if lower || upper => {}
-                '-' if lower || upper => {
-                    lower = false;
-                    upper = false;
-                }
-                _ => return false,
-            }
-        }
-
-        !self.is_empty() && !self.ends_with('-')
-    }
-}
-
-impl Deref for KebabStr {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl PartialEq for KebabStr {
-    fn eq(&self, other: &Self) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-
-        self.chars()
-            .zip(other.chars())
-            .all(|(a, b)| a.to_ascii_lowercase() == b.to_ascii_lowercase())
-    }
-}
-
-impl PartialEq<KebabString> for KebabStr {
-    fn eq(&self, other: &KebabString) -> bool {
-        self.eq(other.as_kebab_str())
-    }
-}
-
-impl Hash for KebabStr {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.len().hash(state);
-
-        for b in self.chars() {
-            b.to_ascii_lowercase().hash(state);
-        }
-    }
-}
-
-impl fmt::Display for KebabStr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        (self as &str).fmt(f)
-    }
-}
-
-impl ToOwned for KebabStr {
-    type Owned = KebabString;
-
-    fn to_owned(&self) -> Self::Owned {
-        self.to_kebab_string()
-    }
-}
-
-
-
-
-
-
-
-
-
-#[derive(Debug, Clone, Eq)]
-pub struct KebabString(String);
-
-impl KebabString {
-    
-    
-    
-    pub fn new(s: impl Into<String>) -> Option<Self> {
-        let s = s.into();
-        if KebabStr::new(&s).is_some() {
-            Some(Self(s))
-        } else {
-            None
-        }
-    }
-
-    
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-
-    
-    pub fn as_kebab_str(&self) -> &KebabStr {
-        
-        KebabStr::new_unchecked(self.as_str())
-    }
-}
-
-impl Deref for KebabString {
-    type Target = KebabStr;
-
-    fn deref(&self) -> &Self::Target {
-        self.as_kebab_str()
-    }
-}
-
-impl Borrow<KebabStr> for KebabString {
-    fn borrow(&self) -> &KebabStr {
-        self.as_kebab_str()
-    }
-}
-
-impl PartialEq for KebabString {
-    fn eq(&self, other: &Self) -> bool {
-        self.as_kebab_str().eq(other.as_kebab_str())
-    }
-}
-
-impl PartialEq<KebabStr> for KebabString {
-    fn eq(&self, other: &KebabStr) -> bool {
-        self.as_kebab_str().eq(other)
-    }
-}
-
-impl Hash for KebabString {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.as_kebab_str().hash(state)
-    }
-}
-
-impl fmt::Display for KebabString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_kebab_str().fmt(f)
-    }
-}
-
-impl From<KebabString> for String {
-    fn from(s: KebabString) -> String {
-        s.0
-    }
-}
 
 
 pub(crate) struct LoweredTypes {
@@ -329,6 +141,7 @@ fn push_primitive_wasm_types(ty: &PrimitiveValType, lowered_types: &mut LoweredT
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)] 
 pub struct TypeId {
     
     pub(crate) index: usize,
@@ -358,21 +171,23 @@ pub enum Type {
     
     Func(FuncType),
     
-    
-    
-    Module(ModuleType),
-    
-    
-    
-    Instance(InstanceType),
+    Array(ArrayType),
     
     
     
-    Component(ComponentType),
+    Module(Box<ModuleType>),
     
     
     
-    ComponentInstance(ComponentInstanceType),
+    Instance(Box<InstanceType>),
+    
+    
+    
+    Component(Box<ComponentType>),
+    
+    
+    
+    ComponentInstance(Box<ComponentInstanceType>),
     
     
     
@@ -381,6 +196,10 @@ pub enum Type {
     
     
     Defined(ComponentDefinedType),
+    
+    
+    
+    Resource(ResourceId),
 }
 
 impl Type {
@@ -388,6 +207,14 @@ impl Type {
     pub fn as_func_type(&self) -> Option<&FuncType> {
         match self {
             Self::Func(ty) => Some(ty),
+            _ => None,
+        }
+    }
+
+    
+    pub fn as_array_type(&self) -> Option<&ArrayType> {
+        match self {
+            Self::Array(ty) => Some(ty),
             _ => None,
         }
     }
@@ -440,15 +267,25 @@ impl Type {
         }
     }
 
+    
+    pub fn as_resource(&self) -> Option<ResourceId> {
+        match self {
+            Self::Resource(id) => Some(*id),
+            _ => None,
+        }
+    }
+
     pub(crate) fn type_size(&self) -> u32 {
         match self {
             Self::Func(ty) => 1 + (ty.params().len() + ty.results().len()) as u32,
+            Self::Array(_) => 2, 
             Self::Module(ty) => ty.type_size,
             Self::Instance(ty) => ty.type_size,
             Self::Component(ty) => ty.type_size,
             Self::ComponentInstance(ty) => ty.type_size,
             Self::ComponentFunc(ty) => ty.type_size,
             Self::Defined(ty) => ty.type_size(),
+            Self::Resource(_) => 1,
         }
     }
 }
@@ -470,39 +307,6 @@ impl ComponentValType {
                 .as_defined_type()
                 .unwrap()
                 .requires_realloc(types),
-        }
-    }
-
-    
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        match (a, b) {
-            (ComponentValType::Primitive(a), ComponentValType::Primitive(b)) => {
-                PrimitiveValType::is_subtype_of(*a, *b)
-            }
-            (ComponentValType::Type(a), ComponentValType::Type(b)) => {
-                ComponentDefinedType::internal_is_subtype_of(
-                    at[*a].as_defined_type().unwrap(),
-                    at,
-                    bt[*b].as_defined_type().unwrap(),
-                    bt,
-                )
-            }
-            (ComponentValType::Primitive(a), ComponentValType::Type(b)) => {
-                match bt[*b].as_defined_type().unwrap() {
-                    ComponentDefinedType::Primitive(b) => PrimitiveValType::is_subtype_of(*a, *b),
-                    _ => false,
-                }
-            }
-            (ComponentValType::Type(a), ComponentValType::Primitive(b)) => {
-                match at[*a].as_defined_type().unwrap() {
-                    ComponentDefinedType::Primitive(a) => PrimitiveValType::is_subtype_of(*a, *b),
-                    _ => false,
-                }
-            }
         }
     }
 
@@ -540,48 +344,9 @@ pub enum EntityType {
 }
 
 impl EntityType {
-    
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        macro_rules! limits_match {
-            ($a:expr, $b:expr) => {{
-                let a = $a;
-                let b = $b;
-                a.initial >= b.initial
-                    && match b.maximum {
-                        Some(b_max) => match a.maximum {
-                            Some(a_max) => a_max <= b_max,
-                            None => false,
-                        },
-                        None => true,
-                    }
-            }};
-        }
-
-        match (a, b) {
-            (EntityType::Func(a), EntityType::Func(b)) => {
-                at[*a].as_func_type().unwrap() == bt[*b].as_func_type().unwrap()
-            }
-            (EntityType::Table(a), EntityType::Table(b)) => {
-                a.element_type == b.element_type && limits_match!(a, b)
-            }
-            (EntityType::Memory(a), EntityType::Memory(b)) => {
-                a.shared == b.shared && a.memory64 == b.memory64 && limits_match!(a, b)
-            }
-            (EntityType::Global(a), EntityType::Global(b)) => a == b,
-            (EntityType::Tag(a), EntityType::Tag(b)) => {
-                at[*a].as_func_type().unwrap() == bt[*b].as_func_type().unwrap()
-            }
-            _ => false,
-        }
-    }
-
     pub(crate) fn desc(&self) -> &'static str {
         match self {
-            Self::Func(_) => "function",
+            Self::Func(_) => "func",
             Self::Table(_) => "table",
             Self::Memory(_) => "memory",
             Self::Global(_) => "global",
@@ -661,26 +426,6 @@ impl ModuleType {
     pub fn lookup_import(&self, module: &str, name: &str) -> Option<&EntityType> {
         self.imports.get(&(module, name) as &dyn ModuleImportKey)
     }
-
-    
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        
-        
-        
-        
-        
-        a.imports.iter().all(|(k, a)| match b.imports.get(k) {
-            Some(b) => EntityType::internal_is_subtype_of(b, bt, a, at),
-            None => false,
-        }) && b.exports.iter().all(|(k, b)| match a.exports.get(k) {
-            Some(a) => EntityType::internal_is_subtype_of(a, at, b, bt),
-            None => false,
-        })
-    }
 }
 
 
@@ -749,56 +494,15 @@ pub enum ComponentEntityType {
 impl ComponentEntityType {
     
     pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        match (a, b) {
-            (Self::Module(a), Self::Module(b)) => ModuleType::internal_is_subtype_of(
-                at[*a].as_module_type().unwrap(),
-                at,
-                bt[*b].as_module_type().unwrap(),
-                bt,
-            ),
-            (Self::Func(a), Self::Func(b)) => ComponentFuncType::internal_is_subtype_of(
-                at[*a].as_component_func_type().unwrap(),
-                at,
-                bt[*b].as_component_func_type().unwrap(),
-                bt,
-            ),
-            (Self::Value(a), Self::Value(b)) => {
-                ComponentValType::internal_is_subtype_of(a, at, b, bt)
-            }
-            (Self::Type { referenced: a, .. }, Self::Type { referenced: b, .. }) => {
-                ComponentDefinedType::internal_is_subtype_of(
-                    at[*a].as_defined_type().unwrap(),
-                    at,
-                    bt[*b].as_defined_type().unwrap(),
-                    bt,
-                )
-            }
-            (Self::Instance(a), Self::Instance(b)) => {
-                ComponentInstanceType::internal_is_subtype_of(
-                    at[*a].as_component_instance_type().unwrap(),
-                    at,
-                    bt[*b].as_component_instance_type().unwrap(),
-                    bt,
-                )
-            }
-            (Self::Component(a), Self::Component(b)) => ComponentType::internal_is_subtype_of(
-                at[*a].as_component_type().unwrap(),
-                at,
-                bt[*b].as_component_type().unwrap(),
-                bt,
-            ),
-            _ => false,
-        }
+        SubtypeCx::new(at.list, bt.list)
+            .component_entity_type(a, b, 0)
+            .is_ok()
     }
 
     pub(crate) fn desc(&self) -> &'static str {
         match self {
             Self::Module(_) => "module",
-            Self::Func(_) => "function",
+            Self::Func(_) => "func",
             Self::Value(_) => "value",
             Self::Type { .. } => "type",
             Self::Instance(_) => "instance",
@@ -823,43 +527,55 @@ impl ComponentEntityType {
 pub struct ComponentType {
     
     pub(crate) type_size: u32,
-    
-    pub imports: IndexMap<KebabString, (Option<Url>, ComponentEntityType)>,
-    
-    pub exports: IndexMap<KebabString, (Option<Url>, ComponentEntityType)>,
-}
 
-impl ComponentType {
     
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
+    
+    
+    
+    pub imports: IndexMap<String, ComponentEntityType>,
 
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        
-        
-        
-        
-        
-        a.imports.iter().all(|(k, (_, a))| match b.imports.get(k) {
-            Some((_, b)) => ComponentEntityType::internal_is_subtype_of(b, bt, a, at),
-            None => false,
-        }) && b.exports.iter().all(|(k, (_, b))| match a.exports.get(k) {
-            Some((_, a)) => ComponentEntityType::internal_is_subtype_of(a, at, b, bt),
-            None => false,
-        })
-    }
-}
+    
+    
+    
+    
+    pub exports: IndexMap<String, ComponentEntityType>,
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub imported_resources: Vec<(ResourceId, Vec<usize>)>,
 
-#[derive(Debug, Clone)]
-pub enum ComponentInstanceTypeKind {
     
-    Defined(IndexMap<KebabString, (Option<Url>, ComponentEntityType)>),
     
-    Instantiated(TypeId),
     
-    Exports(IndexMap<KebabString, (Option<Url>, ComponentEntityType)>),
+    
+    
+    
+    
+    
+    pub defined_resources: Vec<(ResourceId, Vec<usize>)>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub explicit_resources: IndexMap<ResourceId, Vec<usize>>,
 }
 
 
@@ -867,53 +583,49 @@ pub enum ComponentInstanceTypeKind {
 pub struct ComponentInstanceType {
     
     pub(crate) type_size: u32,
-    
-    pub kind: ComponentInstanceTypeKind,
-}
-
-impl ComponentInstanceType {
-    
-    pub fn exports<'a>(
-        &'a self,
-        types: TypesRef<'a>,
-    ) -> impl ExactSizeIterator<Item = (&'a KebabStr, &'a Option<Url>, ComponentEntityType)> + Clone
-    {
-        self.internal_exports(types.list)
-            .iter()
-            .map(|(n, (u, t))| (n.as_kebab_str(), u, *t))
-    }
-
-    pub(crate) fn internal_exports<'a>(
-        &'a self,
-        types: &'a TypeList,
-    ) -> &'a IndexMap<KebabString, (Option<Url>, ComponentEntityType)> {
-        match &self.kind {
-            ComponentInstanceTypeKind::Defined(exports)
-            | ComponentInstanceTypeKind::Exports(exports) => exports,
-            ComponentInstanceTypeKind::Instantiated(id) => {
-                &types[*id].as_component_type().unwrap().exports
-            }
-        }
-    }
 
     
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
+    
+    
+    pub exports: IndexMap<String, ComponentEntityType>,
 
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        let exports = a.internal_exports(at);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub defined_resources: Vec<ResourceId>,
 
-        
-        
-        
-        b.internal_exports(bt)
-            .iter()
-            .all(|(k, (_, b))| match exports.get(k) {
-                Some((_, a)) => ComponentEntityType::internal_is_subtype_of(a, at, b, bt),
-                None => false,
-            })
-    }
+    
+    
+    pub explicit_resources: IndexMap<ResourceId, Vec<usize>>,
 }
 
 
@@ -928,54 +640,6 @@ pub struct ComponentFuncType {
 }
 
 impl ComponentFuncType {
-    
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        a.params.len() == b.params.len()
-            && a.results.len() == b.results.len()
-            && a.params
-                .iter()
-                .zip(b.params.iter())
-                .all(|((an, a), (bn, b))| {
-                    an == bn && ComponentValType::internal_is_subtype_of(a, at, b, bt)
-                })
-            && a.results
-                .iter()
-                .zip(b.results.iter())
-                .all(|((an, a), (bn, b))| {
-                    an == bn && ComponentValType::internal_is_subtype_of(a, at, b, bt)
-                })
-    }
-
     
     
     pub(crate) fn lower(&self, types: &TypeList, import: bool) -> LoweringInfo {
@@ -1106,6 +770,10 @@ pub enum ComponentDefinedType {
         
         err: Option<ComponentValType>,
     },
+    
+    Own(TypeId),
+    
+    Borrow(TypeId),
 }
 
 impl ComponentDefinedType {
@@ -1121,7 +789,7 @@ impl ComponentDefinedType {
             Self::List(_) => true,
             Self::Tuple(t) => t.types.iter().any(|ty| ty.requires_realloc(types)),
             Self::Union(u) => u.types.iter().any(|ty| ty.requires_realloc(types)),
-            Self::Flags(_) | Self::Enum(_) => false,
+            Self::Flags(_) | Self::Enum(_) | Self::Own(_) | Self::Borrow(_) => false,
             Self::Option(ty) => ty.requires_realloc(types),
             Self::Result { ok, err } => {
                 ok.map(|ty| ty.requires_realloc(types)).unwrap_or(false)
@@ -1130,78 +798,13 @@ impl ComponentDefinedType {
         }
     }
 
-    
-    pub fn is_subtype_of(a: &Self, at: TypesRef, b: &Self, bt: TypesRef) -> bool {
-        Self::internal_is_subtype_of(a, at.list, b, bt.list)
-    }
-
-    pub(crate) fn internal_is_subtype_of(a: &Self, at: &TypeList, b: &Self, bt: &TypeList) -> bool {
-        
-        
-        
-        match (a, b) {
-            (Self::Primitive(a), Self::Primitive(b)) => PrimitiveValType::is_subtype_of(*a, *b),
-            (Self::Record(a), Self::Record(b)) => {
-                a.fields.len() == b.fields.len()
-                    && a.fields
-                        .iter()
-                        .zip(b.fields.iter())
-                        .all(|((aname, a), (bname, b))| {
-                            aname == bname && ComponentValType::internal_is_subtype_of(a, at, b, bt)
-                        })
-            }
-            (Self::Variant(a), Self::Variant(b)) => {
-                a.cases.len() == b.cases.len()
-                    && a.cases
-                        .iter()
-                        .zip(b.cases.iter())
-                        .all(|((aname, a), (bname, b))| {
-                            aname == bname
-                                && match (&a.ty, &b.ty) {
-                                    (Some(a), Some(b)) => {
-                                        ComponentValType::internal_is_subtype_of(a, at, b, bt)
-                                    }
-                                    (None, None) => true,
-                                    _ => false,
-                                }
-                        })
-            }
-            (Self::List(a), Self::List(b)) | (Self::Option(a), Self::Option(b)) => {
-                ComponentValType::internal_is_subtype_of(a, at, b, bt)
-            }
-            (Self::Tuple(a), Self::Tuple(b)) => {
-                if a.types.len() != b.types.len() {
-                    return false;
-                }
-                a.types
-                    .iter()
-                    .zip(b.types.iter())
-                    .all(|(a, b)| ComponentValType::internal_is_subtype_of(a, at, b, bt))
-            }
-            (Self::Union(a), Self::Union(b)) => {
-                if a.types.len() != b.types.len() {
-                    return false;
-                }
-                a.types
-                    .iter()
-                    .zip(b.types.iter())
-                    .all(|(a, b)| ComponentValType::internal_is_subtype_of(a, at, b, bt))
-            }
-            (Self::Flags(a), Self::Flags(b)) | (Self::Enum(a), Self::Enum(b)) => {
-                a.len() == b.len() && a.iter().eq(b.iter())
-            }
-            (Self::Result { ok: ao, err: ae }, Self::Result { ok: bo, err: be }) => {
-                Self::is_optional_subtype_of(*ao, at, *bo, bt)
-                    && Self::is_optional_subtype_of(*ae, at, *be, bt)
-            }
-            _ => false,
-        }
-    }
-
     pub(crate) fn type_size(&self) -> u32 {
         match self {
-            Self::Primitive(_) => 1,
-            Self::Flags(_) | Self::Enum(_) => 1,
+            Self::Primitive(_)
+            | Self::Flags(_)
+            | Self::Enum(_)
+            | Self::Own(_)
+            | Self::Borrow(_) => 1,
             Self::Record(r) => r.type_size,
             Self::Variant(v) => v.type_size,
             Self::Tuple(t) => t.type_size,
@@ -1213,18 +816,6 @@ impl ComponentDefinedType {
         }
     }
 
-    fn is_optional_subtype_of(
-        a: Option<ComponentValType>,
-        at: &TypeList,
-        b: Option<ComponentValType>,
-        bt: &TypeList,
-    ) -> bool {
-        match (a, b) {
-            (None, None) => true,
-            (Some(a), Some(b)) => ComponentValType::internal_is_subtype_of(&a, at, &b, bt),
-            _ => false,
-        }
-    }
     fn push_wasm_types(&self, types: &TypeList, lowered_types: &mut LoweredTypes) -> bool {
         match self {
             Self::Primitive(ty) => push_primitive_wasm_types(ty, lowered_types),
@@ -1245,7 +836,7 @@ impl ComponentDefinedType {
             Self::Flags(names) => {
                 (0..(names.len() + 31) / 32).all(|_| lowered_types.push(ValType::I32))
             }
-            Self::Enum(_) => lowered_types.push(ValType::I32),
+            Self::Enum(_) | Self::Own(_) | Self::Borrow(_) => lowered_types.push(ValType::I32),
             Self::Union(u) => Self::push_variant_wasm_types(u.types.iter(), types, lowered_types),
             Self::Option(ty) => {
                 Self::push_variant_wasm_types([ty].into_iter(), types, lowered_types)
@@ -1300,6 +891,50 @@ impl ComponentDefinedType {
             _ => panic!("unexpected wasm type for canonical ABI"),
         }
     }
+
+    fn desc(&self) -> &'static str {
+        match self {
+            ComponentDefinedType::Record(_) => "record",
+            ComponentDefinedType::Primitive(_) => "primitive",
+            ComponentDefinedType::Variant(_) => "variant",
+            ComponentDefinedType::Tuple(_) => "tuple",
+            ComponentDefinedType::Enum(_) => "enum",
+            ComponentDefinedType::Flags(_) => "flags",
+            ComponentDefinedType::Option(_) => "option",
+            ComponentDefinedType::List(_) => "list",
+            ComponentDefinedType::Union(_) => "union",
+            ComponentDefinedType::Result { .. } => "result",
+            ComponentDefinedType::Own(_) => "own",
+            ComponentDefinedType::Borrow(_) => "borrow",
+        }
+    }
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Copy)]
+#[repr(packed(4))] 
+pub struct ResourceId {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    globally_unique_id: u64,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    contextually_unique_id: u32,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -1385,7 +1020,7 @@ impl<'a> TypesRef<'a> {
     
     
     pub fn type_at(&self, index: u32, core: bool) -> Option<&'a Type> {
-        self.type_from_id(*self.types(core)?.get(index as usize)?)
+        self.type_from_id(self.id_from_type_index(index, core)?)
     }
 
     
@@ -1550,16 +1185,10 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn component_instance_at(&self, index: u32) -> Option<&'a ComponentInstanceType> {
+    pub fn component_instance_at(&self, index: u32) -> Option<TypeId> {
         match &self.kind {
             TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => {
-                let id = component.instances.get(index as usize)?;
-                match &self.list[*id] {
-                    Type::ComponentInstance(ty) => Some(ty),
-                    _ => None,
-                }
-            }
+            TypesRefKind::Component(component) => component.instances.get(index as usize).copied(),
         }
     }
 
@@ -1615,13 +1244,18 @@ impl<'a> TypesRef<'a> {
     }
 
     
-    pub fn component_entity_type_of_extern(&self, name: &str) -> Option<ComponentEntityType> {
+    pub fn component_entity_type_of_import(&self, name: &str) -> Option<ComponentEntityType> {
         match &self.kind {
             TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => {
-                let key = KebabStr::new(name)?;
-                Some(component.externs.get(key)?.1)
-            }
+            TypesRefKind::Component(component) => Some(*component.imports.get(name)?),
+        }
+    }
+
+    
+    pub fn component_entity_type_of_export(&self, name: &str) -> Option<ComponentEntityType> {
+        match &self.kind {
+            TypesRefKind::Module(_) => None,
+            TypesRefKind::Component(component) => Some(*component.exports.get(name)?),
         }
     }
 }
@@ -1846,7 +1480,7 @@ impl Types {
     
     
     
-    pub fn component_instance_at(&self, index: u32) -> Option<&ComponentInstanceType> {
+    pub fn component_instance_at(&self, index: u32) -> Option<TypeId> {
         self.as_ref().component_instance_at(index)
     }
 
@@ -1884,9 +1518,13 @@ impl Types {
     }
 
     
+    pub fn component_entity_type_of_import(&self, name: &str) -> Option<ComponentEntityType> {
+        self.as_ref().component_entity_type_of_import(name)
+    }
+
     
-    pub fn component_entity_type_of_extern(&self, name: &str) -> Option<ComponentEntityType> {
-        self.as_ref().component_entity_type_of_extern(name)
+    pub fn component_entity_type_of_export(&self, name: &str) -> Option<ComponentEntityType> {
+        self.as_ref().component_entity_type_of_export(name)
     }
 
     
@@ -1956,22 +1594,6 @@ impl<T> SnapshotList<T> {
         };
         let snapshot = &self.snapshots[i];
         Some(&snapshot.items[index - snapshot.prior_types])
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn get_mut(&mut self, index: usize) -> Option<&mut T> {
-        if index >= self.snapshots_total {
-            return self.cur.get_mut(index - self.snapshots_total);
-        }
-        panic!("cannot get a mutable reference in snapshotted part of list")
     }
 
     
@@ -2066,7 +1688,7 @@ impl<T> SnapshotList<T> {
     }
 }
 
-impl<T> std::ops::Index<usize> for SnapshotList<T> {
+impl<T> Index<usize> for SnapshotList<T> {
     type Output = T;
 
     #[inline]
@@ -2075,26 +1697,12 @@ impl<T> std::ops::Index<usize> for SnapshotList<T> {
     }
 }
 
-impl<T> std::ops::IndexMut<usize> for SnapshotList<T> {
-    #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut T {
-        self.get_mut(index).unwrap()
-    }
-}
-
-impl<T> std::ops::Index<TypeId> for SnapshotList<T> {
+impl<T> Index<TypeId> for SnapshotList<T> {
     type Output = T;
 
     #[inline]
     fn index(&self, id: TypeId) -> &T {
         self.get(id.index).unwrap()
-    }
-}
-
-impl<T> std::ops::IndexMut<TypeId> for SnapshotList<T> {
-    #[inline]
-    fn index_mut(&mut self, id: TypeId) -> &mut T {
-        self.get_mut(id.index).unwrap()
     }
 }
 
@@ -2117,6 +1725,25 @@ pub(crate) type TypeList = SnapshotList<Type>;
 
 pub(crate) struct TypeAlloc {
     list: TypeList,
+
+    
+    
+    globally_unique_id: u64,
+
+    
+    
+    next_resource_id: u32,
+}
+
+impl Default for TypeAlloc {
+    fn default() -> TypeAlloc {
+        static NEXT_GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
+        TypeAlloc {
+            list: TypeList::default(),
+            globally_unique_id: NEXT_GLOBAL_ID.fetch_add(1, Ordering::Relaxed),
+            next_resource_id: 0,
+        }
+    }
 }
 
 impl Deref for TypeAlloc {
@@ -2135,7 +1762,10 @@ impl DerefMut for TypeAlloc {
 impl TypeAlloc {
     
     
-    pub fn push_anon(&mut self, ty: Type) -> TypeId {
+    
+    
+    
+    pub fn push_ty(&mut self, ty: Type) -> TypeId {
         let index = self.list.len();
         let type_size = ty.type_size();
         self.list.push(ty);
@@ -2149,18 +1779,1292 @@ impl TypeAlloc {
     
     
     
+    pub fn alloc_resource_id(&mut self) -> ResourceId {
+        let contextually_unique_id = self.next_resource_id;
+        self.next_resource_id = self.next_resource_id.checked_add(1).unwrap();
+        ResourceId {
+            globally_unique_id: self.globally_unique_id,
+            contextually_unique_id,
+        }
+    }
+
     
     
-    pub fn push_defined(&mut self, ty: Type) -> TypeId {
-        let id = self.push_anon(ty);
-        self.with_unique(id)
+    
+    
+    
+    
+    pub fn free_variables_type_id(&self, id: TypeId, set: &mut IndexSet<ResourceId>) {
+        match &self[id] {
+            
+            Type::Func(_) | Type::Array(_) | Type::Module(_) | Type::Instance(_) => {}
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            Type::Component(i) => {
+                for ty in i.imports.values().chain(i.exports.values()) {
+                    self.free_variables_component_entity(ty, set);
+                }
+                for (id, _path) in i.imported_resources.iter().chain(&i.defined_resources) {
+                    set.remove(id);
+                }
+            }
+
+            
+            
+            
+            Type::ComponentInstance(i) => {
+                for ty in i.exports.values() {
+                    self.free_variables_component_entity(ty, set);
+                }
+                for id in i.defined_resources.iter() {
+                    set.remove(id);
+                }
+            }
+
+            Type::Resource(r) => {
+                set.insert(*r);
+            }
+
+            Type::ComponentFunc(i) => {
+                for ty in i
+                    .params
+                    .iter()
+                    .map(|(_, ty)| ty)
+                    .chain(i.results.iter().map(|(_, ty)| ty))
+                {
+                    self.free_variables_valtype(ty, set);
+                }
+            }
+
+            Type::Defined(i) => match i {
+                ComponentDefinedType::Primitive(_)
+                | ComponentDefinedType::Flags(_)
+                | ComponentDefinedType::Enum(_) => {}
+                ComponentDefinedType::Record(r) => {
+                    for ty in r.fields.values() {
+                        self.free_variables_valtype(ty, set);
+                    }
+                }
+                ComponentDefinedType::Tuple(r) => {
+                    for ty in r.types.iter() {
+                        self.free_variables_valtype(ty, set);
+                    }
+                }
+                ComponentDefinedType::Union(r) => {
+                    for ty in r.types.iter() {
+                        self.free_variables_valtype(ty, set);
+                    }
+                }
+                ComponentDefinedType::Variant(r) => {
+                    for ty in r.cases.values() {
+                        if let Some(ty) = &ty.ty {
+                            self.free_variables_valtype(ty, set);
+                        }
+                    }
+                }
+                ComponentDefinedType::List(ty) | ComponentDefinedType::Option(ty) => {
+                    self.free_variables_valtype(ty, set);
+                }
+                ComponentDefinedType::Result { ok, err } => {
+                    if let Some(ok) = ok {
+                        self.free_variables_valtype(ok, set);
+                    }
+                    if let Some(err) = err {
+                        self.free_variables_valtype(err, set);
+                    }
+                }
+                ComponentDefinedType::Own(id) | ComponentDefinedType::Borrow(id) => {
+                    self.free_variables_type_id(*id, set);
+                }
+            },
+        }
+    }
+
+    
+    pub fn free_variables_component_entity(
+        &self,
+        ty: &ComponentEntityType,
+        set: &mut IndexSet<ResourceId>,
+    ) {
+        match ty {
+            ComponentEntityType::Module(id)
+            | ComponentEntityType::Func(id)
+            | ComponentEntityType::Instance(id)
+            | ComponentEntityType::Component(id) => self.free_variables_type_id(*id, set),
+            ComponentEntityType::Type { created, .. } => {
+                self.free_variables_type_id(*created, set);
+            }
+            ComponentEntityType::Value(ty) => self.free_variables_valtype(ty, set),
+        }
+    }
+
+    
+    fn free_variables_valtype(&self, ty: &ComponentValType, set: &mut IndexSet<ResourceId>) {
+        match ty {
+            ComponentValType::Primitive(_) => {}
+            ComponentValType::Type(id) => self.free_variables_type_id(*id, set),
+        }
+    }
+
+    
+    
+    
+    
+    pub(crate) fn type_named_type_id(&self, id: TypeId, set: &HashSet<TypeId>) -> bool {
+        let ty = self[id].as_defined_type().unwrap();
+        match ty {
+            
+            ComponentDefinedType::Primitive(_) => true,
+
+            
+            
+            ComponentDefinedType::Flags(_)
+            | ComponentDefinedType::Enum(_)
+            | ComponentDefinedType::Record(_)
+            | ComponentDefinedType::Union(_)
+            | ComponentDefinedType::Variant(_) => set.contains(&id),
+
+            
+            
+            ComponentDefinedType::Tuple(r) => {
+                r.types.iter().all(|t| self.type_named_valtype(t, set))
+            }
+            ComponentDefinedType::Result { ok, err } => {
+                ok.as_ref()
+                    .map(|t| self.type_named_valtype(t, set))
+                    .unwrap_or(true)
+                    && err
+                        .as_ref()
+                        .map(|t| self.type_named_valtype(t, set))
+                        .unwrap_or(true)
+            }
+            ComponentDefinedType::List(ty) | ComponentDefinedType::Option(ty) => {
+                self.type_named_valtype(ty, set)
+            }
+
+            
+            
+            ComponentDefinedType::Own(id) | ComponentDefinedType::Borrow(id) => set.contains(id),
+        }
+    }
+
+    pub(crate) fn type_named_valtype(&self, ty: &ComponentValType, set: &HashSet<TypeId>) -> bool {
+        match ty {
+            ComponentValType::Primitive(_) => true,
+            ComponentValType::Type(id) => self.type_named_type_id(*id, set),
+        }
     }
 }
 
-impl Default for TypeAlloc {
-    fn default() -> TypeAlloc {
-        TypeAlloc {
-            list: Default::default(),
+
+
+
+
+
+pub(crate) trait Remap: Index<TypeId, Output = Type> {
+    
+    
+    fn push_ty(&mut self, ty: Type) -> TypeId;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn remap_type_id(&mut self, id: &mut TypeId, map: &mut Remapping) -> bool {
+        if let Some(new) = map.types.get(id) {
+            let changed = *new != *id;
+            *id = *new;
+            return changed;
         }
+
+        
+        
+        
+        
+        
+        let mut any_changed = false;
+
+        let map_map = |tmp: &mut IndexMap<ResourceId, Vec<usize>>,
+                       any_changed: &mut bool,
+                       map: &mut Remapping| {
+            for (id, path) in mem::take(tmp) {
+                let id = match map.resources.get(&id) {
+                    Some(id) => {
+                        *any_changed = true;
+                        *id
+                    }
+                    None => id,
+                };
+                tmp.insert(id, path);
+            }
+        };
+
+        let ty = match &self[*id] {
+            
+            
+            Type::Func(_) | Type::Array(_) | Type::Module(_) | Type::Instance(_) => return false,
+
+            Type::Component(i) => {
+                let mut tmp = i.clone();
+                for ty in tmp.imports.values_mut().chain(tmp.exports.values_mut()) {
+                    if self.remap_component_entity(ty, map) {
+                        any_changed = true;
+                    }
+                }
+                for (id, _) in tmp
+                    .imported_resources
+                    .iter_mut()
+                    .chain(&mut tmp.defined_resources)
+                {
+                    if let Some(new) = map.resources.get(id) {
+                        *id = *new;
+                        any_changed = true;
+                    }
+                }
+                map_map(&mut tmp.explicit_resources, &mut any_changed, map);
+                Type::Component(tmp)
+            }
+
+            Type::ComponentInstance(i) => {
+                let mut tmp = i.clone();
+                for ty in tmp.exports.values_mut() {
+                    if self.remap_component_entity(ty, map) {
+                        any_changed = true;
+                    }
+                }
+                for id in tmp.defined_resources.iter_mut() {
+                    if let Some(new) = map.resources.get(id) {
+                        *id = *new;
+                        any_changed = true;
+                    }
+                }
+                map_map(&mut tmp.explicit_resources, &mut any_changed, map);
+                Type::ComponentInstance(tmp)
+            }
+
+            Type::Resource(id) => {
+                let id = match map.resources.get(id).copied() {
+                    Some(id) => id,
+                    None => return false,
+                };
+                any_changed = true;
+                Type::Resource(id)
+            }
+
+            Type::ComponentFunc(i) => {
+                let mut tmp = i.clone();
+                for ty in tmp
+                    .params
+                    .iter_mut()
+                    .map(|(_, ty)| ty)
+                    .chain(tmp.results.iter_mut().map(|(_, ty)| ty))
+                {
+                    if self.remap_valtype(ty, map) {
+                        any_changed = true;
+                    }
+                }
+                Type::ComponentFunc(tmp)
+            }
+            Type::Defined(i) => {
+                let mut tmp = i.clone();
+                match &mut tmp {
+                    ComponentDefinedType::Primitive(_)
+                    | ComponentDefinedType::Flags(_)
+                    | ComponentDefinedType::Enum(_) => {}
+                    ComponentDefinedType::Record(r) => {
+                        for ty in r.fields.values_mut() {
+                            if self.remap_valtype(ty, map) {
+                                any_changed = true;
+                            }
+                        }
+                    }
+                    ComponentDefinedType::Tuple(r) => {
+                        for ty in r.types.iter_mut() {
+                            if self.remap_valtype(ty, map) {
+                                any_changed = true;
+                            }
+                        }
+                    }
+                    ComponentDefinedType::Union(r) => {
+                        for ty in r.types.iter_mut() {
+                            if self.remap_valtype(ty, map) {
+                                any_changed = true;
+                            }
+                        }
+                    }
+                    ComponentDefinedType::Variant(r) => {
+                        for ty in r.cases.values_mut() {
+                            if let Some(ty) = &mut ty.ty {
+                                if self.remap_valtype(ty, map) {
+                                    any_changed = true;
+                                }
+                            }
+                        }
+                    }
+                    ComponentDefinedType::List(ty) | ComponentDefinedType::Option(ty) => {
+                        if self.remap_valtype(ty, map) {
+                            any_changed = true;
+                        }
+                    }
+                    ComponentDefinedType::Result { ok, err } => {
+                        if let Some(ok) = ok {
+                            if self.remap_valtype(ok, map) {
+                                any_changed = true;
+                            }
+                        }
+                        if let Some(err) = err {
+                            if self.remap_valtype(err, map) {
+                                any_changed = true;
+                            }
+                        }
+                    }
+                    ComponentDefinedType::Own(id) | ComponentDefinedType::Borrow(id) => {
+                        if self.remap_type_id(id, map) {
+                            any_changed = true;
+                        }
+                    }
+                }
+                Type::Defined(tmp)
+            }
+        };
+
+        let new = if any_changed { self.push_ty(ty) } else { *id };
+        let prev = map.types.insert(*id, new);
+        assert!(prev.is_none());
+        let changed = *id != new;
+        *id = new;
+        changed
+    }
+
+    
+    fn remap_component_entity(
+        &mut self,
+        ty: &mut ComponentEntityType,
+        map: &mut Remapping,
+    ) -> bool {
+        match ty {
+            ComponentEntityType::Module(id)
+            | ComponentEntityType::Func(id)
+            | ComponentEntityType::Instance(id)
+            | ComponentEntityType::Component(id) => self.remap_type_id(id, map),
+            ComponentEntityType::Type {
+                referenced,
+                created,
+            } => {
+                let changed = self.remap_type_id(referenced, map);
+                if *referenced == *created {
+                    *created = *referenced;
+                    changed
+                } else {
+                    self.remap_type_id(created, map) || changed
+                }
+            }
+            ComponentEntityType::Value(ty) => self.remap_valtype(ty, map),
+        }
+    }
+
+    
+    fn remap_valtype(&mut self, ty: &mut ComponentValType, map: &mut Remapping) -> bool {
+        match ty {
+            ComponentValType::Primitive(_) => false,
+            ComponentValType::Type(id) => self.remap_type_id(id, map),
+        }
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct Remapping {
+    
+    pub(crate) resources: HashMap<ResourceId, ResourceId>,
+
+    
+    
+    
+    types: HashMap<TypeId, TypeId>,
+}
+
+impl Remap for TypeAlloc {
+    fn push_ty(&mut self, ty: Type) -> TypeId {
+        <TypeAlloc>::push_ty(self, ty)
+    }
+}
+
+impl Index<TypeId> for TypeAlloc {
+    type Output = Type;
+
+    #[inline]
+    fn index(&self, id: TypeId) -> &Type {
+        &self.list[id]
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) struct SubtypeCx<'a> {
+    pub(crate) a: SubtypeArena<'a>,
+    pub(crate) b: SubtypeArena<'a>,
+}
+
+impl<'a> SubtypeCx<'a> {
+    pub(crate) fn new(a: &'a TypeList, b: &'a TypeList) -> SubtypeCx<'a> {
+        SubtypeCx {
+            a: SubtypeArena::new(a),
+            b: SubtypeArena::new(b),
+        }
+    }
+
+    fn swap(&mut self) {
+        mem::swap(&mut self.a, &mut self.b);
+    }
+
+    
+    
+    
+    
+    
+    fn mark<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        let a_len = self.a.list.len();
+        let b_len = self.b.list.len();
+        let result = f(self);
+        self.a.list.truncate(a_len);
+        self.b.list.truncate(b_len);
+        result
+    }
+
+    
+    
+    
+    pub fn component_entity_type(
+        &mut self,
+        a: &ComponentEntityType,
+        b: &ComponentEntityType,
+        offset: usize,
+    ) -> Result<()> {
+        use ComponentEntityType::*;
+
+        match (a, b) {
+            (Module(a), Module(b)) => {
+                
+                
+                
+                
+                
+                self.swap();
+                let a_imports = &self.b[*a].as_module_type().unwrap().imports;
+                let b_imports = &self.a[*b].as_module_type().unwrap().imports;
+                for (k, a) in a_imports {
+                    match b_imports.get(k) {
+                        Some(b) => self.entity_type(b, a, offset).with_context(|| {
+                            format!("type mismatch in import `{}::{}`", k.0, k.1)
+                        })?,
+                        None => bail!(offset, "missing expected import `{}::{}`", k.0, k.1),
+                    }
+                }
+                self.swap();
+                let a = self.a[*a].as_module_type().unwrap();
+                let b = self.b[*b].as_module_type().unwrap();
+                for (k, b) in b.exports.iter() {
+                    match a.exports.get(k) {
+                        Some(a) => self
+                            .entity_type(a, b, offset)
+                            .with_context(|| format!("type mismatch in export `{k}`"))?,
+                        None => bail!(offset, "missing expected export `{k}`"),
+                    }
+                }
+                Ok(())
+            }
+            (Module(_), b) => bail!(offset, "expected {}, found module", b.desc()),
+
+            (Func(a), Func(b)) => {
+                let a = self.a[*a].as_component_func_type().unwrap();
+                let b = self.b[*b].as_component_func_type().unwrap();
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if a.params.len() != b.params.len() {
+                    bail!(
+                        offset,
+                        "expected {} parameters, found {}",
+                        b.params.len(),
+                        a.params.len(),
+                    );
+                }
+                if a.results.len() != b.results.len() {
+                    bail!(
+                        offset,
+                        "expected {} results, found {}",
+                        b.results.len(),
+                        a.results.len(),
+                    );
+                }
+                for ((an, a), (bn, b)) in a.params.iter().zip(b.params.iter()) {
+                    if an != bn {
+                        bail!(offset, "expected parameter named `{bn}`, found `{an}`");
+                    }
+                    self.component_val_type(a, b, offset)
+                        .with_context(|| format!("type mismatch in function parameter `{an}`"))?;
+                }
+                for ((an, a), (bn, b)) in a.results.iter().zip(b.results.iter()) {
+                    if an != bn {
+                        bail!(offset, "mismatched result names");
+                    }
+                    self.component_val_type(a, b, offset)
+                        .with_context(|| "type mismatch with result type")?;
+                }
+                Ok(())
+            }
+            (Func(_), b) => bail!(offset, "expected {}, found func", b.desc()),
+
+            (Value(a), Value(b)) => self.component_val_type(a, b, offset),
+            (Value(_), b) => bail!(offset, "expected {}, found value", b.desc()),
+
+            (Type { referenced: a, .. }, Type { referenced: b, .. }) => {
+                use self::Type::*;
+                match (&self.a[*a], &self.b[*b]) {
+                    (Defined(a), Defined(b)) => self.component_defined_type(a, b, offset),
+                    (Defined(_), Resource(_)) => bail!(offset, "expected resource, found type"),
+                    (Resource(a), Resource(b)) => {
+                        if a == b {
+                            Ok(())
+                        } else {
+                            bail!(offset, "resource types are not the same")
+                        }
+                    }
+                    (Resource(_), Defined(_)) => bail!(offset, "expected type, found resource"),
+                    _ => unreachable!(),
+                }
+            }
+            (Type { .. }, b) => bail!(offset, "expected {}, found type", b.desc()),
+
+            (Instance(a_id), Instance(b_id)) => {
+                
+                
+                
+                
+                let a = self.a[*a_id].as_component_instance_type().unwrap();
+                let b = self.b[*b_id].as_component_instance_type().unwrap();
+
+                let mut exports = Vec::with_capacity(b.exports.len());
+                for (k, b) in b.exports.iter() {
+                    match a.exports.get(k) {
+                        Some(a) => exports.push((*a, *b)),
+                        None => bail!(offset, "missing expected export `{k}`"),
+                    }
+                }
+                for (i, (a, b)) in exports.iter().enumerate() {
+                    let err = match self.component_entity_type(a, b, offset) {
+                        Ok(()) => continue,
+                        Err(e) => e,
+                    };
+                    
+                    
+                    let (name, _) = self.b[*b_id]
+                        .as_component_instance_type()
+                        .unwrap()
+                        .exports
+                        .get_index(i)
+                        .unwrap();
+                    return Err(
+                        err.with_context(|| format!("type mismatch in instance export `{name}`"))
+                    );
+                }
+                Ok(())
+            }
+            (Instance(_), b) => bail!(offset, "expected {}, found instance", b.desc()),
+
+            (Component(a), Component(b)) => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let b_imports = self.b[*b]
+                    .as_component_type()
+                    .unwrap()
+                    .imports
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), ty.clone()))
+                    .collect();
+                self.swap();
+                let mut import_mapping =
+                    self.open_instance_type(&b_imports, *a, ExternKind::Import, offset)?;
+                self.swap();
+                self.mark(|this| {
+                    let mut a_exports = this.a[*a]
+                        .as_component_type()
+                        .unwrap()
+                        .exports
+                        .iter()
+                        .map(|(name, ty)| (name.clone(), ty.clone()))
+                        .collect::<IndexMap<_, _>>();
+                    for ty in a_exports.values_mut() {
+                        this.a.remap_component_entity(ty, &mut import_mapping);
+                    }
+                    this.open_instance_type(&a_exports, *b, ExternKind::Export, offset)?;
+                    Ok(())
+                })
+            }
+            (Component(_), b) => bail!(offset, "expected {}, found component", b.desc()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn open_instance_type(
+        &mut self,
+        a: &IndexMap<String, ComponentEntityType>,
+        b: TypeId,
+        kind: ExternKind,
+        offset: usize,
+    ) -> Result<Remapping> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let component_type = self.b[b].as_component_type().unwrap();
+        let entities = match kind {
+            ExternKind::Import => &component_type.imports,
+            ExternKind::Export => &component_type.exports,
+        };
+        let resources = match kind {
+            ExternKind::Import => &component_type.imported_resources,
+            ExternKind::Export => &component_type.defined_resources,
+        };
+        let mut mapping = Remapping::default();
+        'outer: for (resource, path) in resources.iter() {
+            
+            
+            let (name, ty) = entities.get_index(path[0]).unwrap();
+            let mut ty = *ty;
+            let mut arg = a.get(name);
+
+            
+            
+            
+            for i in path.iter().skip(1).copied() {
+                let id = match ty {
+                    ComponentEntityType::Instance(id) => id,
+                    _ => unreachable!(),
+                };
+                let (name, next_ty) = self.b[id]
+                    .as_component_instance_type()
+                    .unwrap()
+                    .exports
+                    .get_index(i)
+                    .unwrap();
+                ty = *next_ty;
+                arg = match arg {
+                    Some(ComponentEntityType::Instance(id)) => self.a[*id]
+                        .as_component_instance_type()
+                        .unwrap()
+                        .exports
+                        .get(name),
+                    _ => continue 'outer,
+                };
+            }
+
+            
+            
+            if cfg!(debug_assertions) {
+                let id = match ty {
+                    ComponentEntityType::Type { created, .. } => match &self.a[created] {
+                        Type::Resource(r) => *r,
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                };
+                assert_eq!(id, *resource);
+            }
+
+            
+            
+            
+            if let Some(ComponentEntityType::Type { created, .. }) = arg {
+                if let Type::Resource(r) = &self.b[*created] {
+                    mapping.resources.insert(*resource, *r);
+                }
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut to_typecheck = Vec::new();
+        for (name, expected) in entities.iter() {
+            match a.get(name) {
+                Some(arg) => to_typecheck.push((arg.clone(), expected.clone())),
+                None => bail!(offset, "missing {} named `{name}`", kind.desc()),
+            }
+        }
+        let mut type_map = HashMap::new();
+        for (i, (actual, expected)) in to_typecheck.into_iter().enumerate() {
+            let result = self.mark(|this| {
+                let mut expected = expected;
+                this.b.remap_component_entity(&mut expected, &mut mapping);
+                mapping.types.clear();
+                this.component_entity_type(&actual, &expected, offset)
+            });
+            let err = match result {
+                Ok(()) => {
+                    
+                    
+                    
+                    
+                    
+                    match (expected, actual) {
+                        (
+                            ComponentEntityType::Type {
+                                created: expected, ..
+                            },
+                            ComponentEntityType::Type {
+                                created: actual, ..
+                            },
+                        ) => {
+                            let prev = type_map.insert(expected, actual);
+                            assert!(prev.is_none());
+                        }
+                        _ => {}
+                    }
+                    continue;
+                }
+                Err(e) => e,
+            };
+
+            
+            
+            let component_type = self.b[b].as_component_type().unwrap();
+            let entities = match kind {
+                ExternKind::Import => &component_type.imports,
+                ExternKind::Export => &component_type.exports,
+            };
+            let (name, _) = entities.get_index(i).unwrap();
+            return Err(err.with_context(|| format!("type mismatch for {} `{name}`", kind.desc())));
+        }
+        mapping.types = type_map;
+        Ok(mapping)
+    }
+
+    pub(crate) fn entity_type(&self, a: &EntityType, b: &EntityType, offset: usize) -> Result<()> {
+        macro_rules! limits_match {
+            ($a:expr, $b:expr) => {{
+                let a = $a;
+                let b = $b;
+                a.initial >= b.initial
+                    && match b.maximum {
+                        Some(b_max) => match a.maximum {
+                            Some(a_max) => a_max <= b_max,
+                            None => false,
+                        },
+                        None => true,
+                    }
+            }};
+        }
+
+        match (a, b) {
+            (EntityType::Func(a), EntityType::Func(b)) => self.func_type(
+                self.a[*a].as_func_type().unwrap(),
+                self.b[*b].as_func_type().unwrap(),
+                offset,
+            ),
+            (EntityType::Func(_), b) => bail!(offset, "expected {}, found func", b.desc()),
+            (EntityType::Table(a), EntityType::Table(b)) => {
+                if a.element_type != b.element_type {
+                    bail!(
+                        offset,
+                        "expected table element type {}, found {}",
+                        b.element_type,
+                        a.element_type,
+                    )
+                }
+                if limits_match!(a, b) {
+                    Ok(())
+                } else {
+                    bail!(offset, "mismatch in table limits")
+                }
+            }
+            (EntityType::Table(_), b) => bail!(offset, "expected {}, found table", b.desc()),
+            (EntityType::Memory(a), EntityType::Memory(b)) => {
+                if a.shared != b.shared {
+                    bail!(offset, "mismatch in the shared flag for memories")
+                }
+                if a.memory64 != b.memory64 {
+                    bail!(offset, "mismatch in index type used for memories")
+                }
+                if limits_match!(a, b) {
+                    Ok(())
+                } else {
+                    bail!(offset, "mismatch in memory limits")
+                }
+            }
+            (EntityType::Memory(_), b) => bail!(offset, "expected {}, found memory", b.desc()),
+            (EntityType::Global(a), EntityType::Global(b)) => {
+                if a.mutable != b.mutable {
+                    bail!(offset, "global types differ in mutability")
+                }
+                if a.content_type == b.content_type {
+                    Ok(())
+                } else {
+                    bail!(
+                        offset,
+                        "expected global type {}, found {}",
+                        b.content_type,
+                        a.content_type,
+                    )
+                }
+            }
+            (EntityType::Global(_), b) => bail!(offset, "expected {}, found global", b.desc()),
+            (EntityType::Tag(a), EntityType::Tag(b)) => self.func_type(
+                self.a[*a].as_func_type().unwrap(),
+                self.b[*b].as_func_type().unwrap(),
+                offset,
+            ),
+            (EntityType::Tag(_), b) => bail!(offset, "expected {}, found tag", b.desc()),
+        }
+    }
+
+    fn func_type(&self, a: &FuncType, b: &FuncType, offset: usize) -> Result<()> {
+        if a == b {
+            Ok(())
+        } else {
+            bail!(
+                offset,
+                "expected: {}\n\
+                 found:    {}",
+                b.desc(),
+                a.desc(),
+            )
+        }
+    }
+
+    pub(crate) fn component_val_type(
+        &self,
+        a: &ComponentValType,
+        b: &ComponentValType,
+        offset: usize,
+    ) -> Result<()> {
+        match (a, b) {
+            (ComponentValType::Primitive(a), ComponentValType::Primitive(b)) => {
+                self.primitive_val_type(*a, *b, offset)
+            }
+            (ComponentValType::Type(a), ComponentValType::Type(b)) => self.component_defined_type(
+                self.a[*a].as_defined_type().unwrap(),
+                self.b[*b].as_defined_type().unwrap(),
+                offset,
+            ),
+            (ComponentValType::Primitive(a), ComponentValType::Type(b)) => {
+                match self.b[*b].as_defined_type().unwrap() {
+                    ComponentDefinedType::Primitive(b) => self.primitive_val_type(*a, *b, offset),
+                    b => bail!(offset, "expected {}, found {a}", b.desc()),
+                }
+            }
+            (ComponentValType::Type(a), ComponentValType::Primitive(b)) => {
+                match self.a[*a].as_defined_type().unwrap() {
+                    ComponentDefinedType::Primitive(a) => self.primitive_val_type(*a, *b, offset),
+                    a => bail!(offset, "expected {b}, found {}", a.desc()),
+                }
+            }
+        }
+    }
+
+    fn component_defined_type(
+        &self,
+        a: &ComponentDefinedType,
+        b: &ComponentDefinedType,
+        offset: usize,
+    ) -> Result<()> {
+        use ComponentDefinedType::*;
+
+        
+        
+        
+        match (a, b) {
+            (Primitive(a), Primitive(b)) => self.primitive_val_type(*a, *b, offset),
+            (Primitive(a), b) => bail!(offset, "expected {}, found {a}", b.desc()),
+            (Record(a), Record(b)) => {
+                if a.fields.len() != b.fields.len() {
+                    bail!(
+                        offset,
+                        "expected {} fields, found {}",
+                        b.fields.len(),
+                        a.fields.len(),
+                    );
+                }
+
+                for ((aname, a), (bname, b)) in a.fields.iter().zip(b.fields.iter()) {
+                    if aname != bname {
+                        bail!(offset, "expected field name `{bname}`, found `{aname}`");
+                    }
+                    self.component_val_type(a, b, offset)
+                        .with_context(|| format!("type mismatch in record field `{aname}`"))?;
+                }
+                Ok(())
+            }
+            (Record(_), b) => bail!(offset, "expected {}, found record", b.desc()),
+            (Variant(a), Variant(b)) => {
+                if a.cases.len() != b.cases.len() {
+                    bail!(
+                        offset,
+                        "expected {} cases, found {}",
+                        b.cases.len(),
+                        a.cases.len(),
+                    );
+                }
+                for ((aname, a), (bname, b)) in a.cases.iter().zip(b.cases.iter()) {
+                    if aname != bname {
+                        bail!(offset, "expected case named `{bname}`, found `{aname}`");
+                    }
+                    match (&a.ty, &b.ty) {
+                        (Some(a), Some(b)) => self
+                            .component_val_type(a, b, offset)
+                            .with_context(|| format!("type mismatch in variant case `{aname}`"))?,
+                        (None, None) => {}
+                        (None, Some(_)) => {
+                            bail!(offset, "expected case `{aname}` to have a type, found none")
+                        }
+                        (Some(_), None) => bail!(offset, "expected case `{aname}` to have no type"),
+                    }
+                }
+                Ok(())
+            }
+            (Variant(_), b) => bail!(offset, "expected {}, found variant", b.desc()),
+            (List(a), List(b)) | (Option(a), Option(b)) => self.component_val_type(a, b, offset),
+            (List(_), b) => bail!(offset, "expected {}, found list", b.desc()),
+            (Option(_), b) => bail!(offset, "expected {}, found option", b.desc()),
+            (Tuple(a), Tuple(b)) => {
+                if a.types.len() != b.types.len() {
+                    bail!(
+                        offset,
+                        "expected {} types, found {}",
+                        b.types.len(),
+                        a.types.len(),
+                    );
+                }
+                for (i, (a, b)) in a.types.iter().zip(b.types.iter()).enumerate() {
+                    self.component_val_type(a, b, offset)
+                        .with_context(|| format!("type mismatch in tuple field {i}"))?;
+                }
+                Ok(())
+            }
+            (Tuple(_), b) => bail!(offset, "expected {}, found tuple", b.desc()),
+            (Union(a), Union(b)) => {
+                if a.types.len() != b.types.len() {
+                    bail!(
+                        offset,
+                        "expected {} types, found {}",
+                        b.types.len(),
+                        a.types.len(),
+                    );
+                }
+                for (i, (a, b)) in a.types.iter().zip(b.types.iter()).enumerate() {
+                    self.component_val_type(a, b, offset)
+                        .with_context(|| format!("type mismatch in tuple field {i}"))?;
+                }
+                Ok(())
+            }
+            (Union(_), b) => bail!(offset, "expected {}, found union", b.desc()),
+            (at @ Flags(a), Flags(b)) | (at @ Enum(a), Enum(b)) => {
+                let desc = match at {
+                    Flags(_) => "flags",
+                    _ => "enum",
+                };
+                if a.len() == b.len() && a.iter().eq(b.iter()) {
+                    Ok(())
+                } else {
+                    bail!(offset, "mismatch in {desc} elements")
+                }
+            }
+            (Flags(_), b) => bail!(offset, "expected {}, found flags", b.desc()),
+            (Enum(_), b) => bail!(offset, "expected {}, found enum", b.desc()),
+            (Result { ok: ao, err: ae }, Result { ok: bo, err: be }) => {
+                match (ao, bo) {
+                    (None, None) => {}
+                    (Some(a), Some(b)) => self
+                        .component_val_type(a, b, offset)
+                        .with_context(|| "type mismatch in ok variant")?,
+                    (None, Some(_)) => bail!(offset, "expected ok type, but found none"),
+                    (Some(_), None) => bail!(offset, "expected ok type to not be present"),
+                }
+                match (ae, be) {
+                    (None, None) => {}
+                    (Some(a), Some(b)) => self
+                        .component_val_type(a, b, offset)
+                        .with_context(|| "type mismatch in err variant")?,
+                    (None, Some(_)) => bail!(offset, "expected err type, but found none"),
+                    (Some(_), None) => bail!(offset, "expected err type to not be present"),
+                }
+                Ok(())
+            }
+            (Result { .. }, b) => bail!(offset, "expected {}, found result", b.desc()),
+            (Own(a), Own(b)) | (Borrow(a), Borrow(b)) => {
+                let a = self.a[*a].as_resource().unwrap();
+                let b = self.b[*b].as_resource().unwrap();
+                if a == b {
+                    Ok(())
+                } else {
+                    bail!(offset, "resource types are not the same")
+                }
+            }
+            (Own(_), b) => bail!(offset, "expected {}, found own", b.desc()),
+            (Borrow(_), b) => bail!(offset, "expected {}, found borrow", b.desc()),
+        }
+    }
+
+    fn primitive_val_type(
+        &self,
+        a: PrimitiveValType,
+        b: PrimitiveValType,
+        offset: usize,
+    ) -> Result<()> {
+        
+        
+        
+        
+        
+        
+        if a == b {
+            Ok(())
+        } else {
+            bail!(offset, "expected primitive `{b}` found primitive `{a}`")
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+pub(crate) struct SubtypeArena<'a> {
+    types: &'a TypeList,
+    list: Vec<Type>,
+}
+
+impl<'a> SubtypeArena<'a> {
+    fn new(types: &'a TypeList) -> SubtypeArena<'a> {
+        SubtypeArena {
+            types,
+            list: Vec::new(),
+        }
+    }
+}
+
+impl Index<TypeId> for SubtypeArena<'_> {
+    type Output = Type;
+
+    fn index(&self, id: TypeId) -> &Type {
+        if id.index < self.types.len() {
+            &self.types[id]
+        } else {
+            &self.list[id.index - self.types.len()]
+        }
+    }
+}
+
+impl Remap for SubtypeArena<'_> {
+    fn push_ty(&mut self, ty: Type) -> TypeId {
+        let index = self.list.len() + self.types.len();
+        let type_size = ty.type_size();
+        self.list.push(ty);
+        TypeId {
+            index,
+            type_size,
+            unique_id: 0,
+        }
+    }
+}
+
+
+
+pub(crate) trait Context {
+    fn with_context<S>(self, context: impl FnOnce() -> S) -> Self
+    where
+        S: Into<String>;
+}
+
+impl<T> Context for Result<T> {
+    fn with_context<S>(self, context: impl FnOnce() -> S) -> Self
+    where
+        S: Into<String>,
+    {
+        match self {
+            Ok(val) => Ok(val),
+            Err(e) => Err(e.with_context(context)),
+        }
+    }
+}
+
+impl Context for BinaryReaderError {
+    fn with_context<S>(mut self, context: impl FnOnce() -> S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.add_context(context().into());
+        self
     }
 }

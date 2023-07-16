@@ -3,6 +3,7 @@ use rand::{rngs::SmallRng, RngCore, SeedableRng};
 use wasm_smith::Component;
 
 #[test]
+#[ignore] 
 fn smoke_test_component() {
     const NUM_RUNS: usize = 4096;
 

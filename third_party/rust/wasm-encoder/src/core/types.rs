@@ -2,6 +2,17 @@ use crate::{encode_section, Encode, Section, SectionId};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub enum StorageType {
+    
+    I8,
+    
+    I16,
+    
+    Val(ValType),
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum ValType {
     
     I32,
@@ -28,6 +39,16 @@ impl ValType {
     pub const FUNCREF: ValType = ValType::Ref(RefType::FUNCREF);
     
     pub const EXTERNREF: ValType = ValType::Ref(RefType::EXTERNREF);
+}
+
+impl Encode for StorageType {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        match self {
+            StorageType::I8 => sink.push(0x7A),
+            StorageType::I16 => sink.push(0x79),
+            StorageType::Val(vt) => vt.encode(sink),
+        }
+    }
 }
 
 impl Encode for ValType {
@@ -104,7 +125,24 @@ pub enum HeapType {
     
     Extern,
     
-    TypedFunc(u32),
+    Any,
+    
+    None,
+    
+    NoExtern,
+    
+    NoFunc,
+    
+    
+    Eq,
+    
+    Struct,
+    
+    Array,
+    
+    I31,
+    
+    Indexed(u32),
 }
 
 impl Encode for HeapType {
@@ -112,9 +150,17 @@ impl Encode for HeapType {
         match self {
             HeapType::Func => sink.push(0x70),
             HeapType::Extern => sink.push(0x6F),
+            HeapType::Any => sink.push(0x6E),
+            HeapType::None => sink.push(0x65),
+            HeapType::NoExtern => sink.push(0x69),
+            HeapType::NoFunc => sink.push(0x68),
+            HeapType::Eq => sink.push(0x6D),
+            HeapType::Struct => sink.push(0x67),
+            HeapType::Array => sink.push(0x66),
+            HeapType::I31 => sink.push(0x6A),
             
             
-            HeapType::TypedFunc(i) => i64::from(*i).encode(sink),
+            HeapType::Indexed(i) => i64::from(*i).encode(sink),
         }
     }
 }
@@ -173,6 +219,15 @@ impl TypeSection {
         params.for_each(|p| p.encode(&mut self.bytes));
         results.len().encode(&mut self.bytes);
         results.for_each(|p| p.encode(&mut self.bytes));
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn array(&mut self, ty: StorageType, mutable: bool) -> &mut Self {
+        self.bytes.push(0x5e);
+        ty.encode(&mut self.bytes);
+        self.bytes.push(mutable as u8);
         self.num_added += 1;
         self
     }

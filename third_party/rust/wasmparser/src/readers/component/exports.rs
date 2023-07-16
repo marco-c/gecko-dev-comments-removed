@@ -1,4 +1,6 @@
-use crate::{BinaryReader, ComponentTypeRef, FromReader, Result, SectionLimited};
+use crate::{
+    BinaryReader, ComponentExternName, ComponentTypeRef, FromReader, Result, SectionLimited,
+};
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -48,15 +50,26 @@ impl ComponentExternalKind {
             }
         })
     }
+
+    
+    pub fn desc(&self) -> &'static str {
+        use ComponentExternalKind::*;
+        match self {
+            Module => "module",
+            Func => "func",
+            Value => "value",
+            Type => "type",
+            Instance => "instance",
+            Component => "component",
+        }
+    }
 }
 
 
 #[derive(Debug, Clone)]
 pub struct ComponentExport<'a> {
     
-    pub name: &'a str,
-    
-    pub url: &'a str,
+    pub name: ComponentExternName<'a>,
     
     pub kind: ComponentExternalKind,
     
@@ -72,7 +85,6 @@ impl<'a> FromReader<'a> for ComponentExport<'a> {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
         Ok(ComponentExport {
             name: reader.read()?,
-            url: reader.read()?,
             kind: reader.read()?,
             index: reader.read()?,
             ty: match reader.read_u8()? {

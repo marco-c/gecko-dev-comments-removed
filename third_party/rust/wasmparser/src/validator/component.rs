@@ -4,24 +4,25 @@ use super::{
     check_max, combine_type_sizes,
     core::Module,
     types::{
-        ComponentFuncType, ComponentInstanceType, ComponentInstanceTypeKind, ComponentType,
-        ComponentValType, EntityType, InstanceType, KebabString, ModuleType, RecordType, Type,
-        TypeAlloc, TypeId, TypeList, VariantCase,
+        ComponentFuncType, ComponentInstanceType, ComponentType, ComponentValType, EntityType,
+        InstanceType, ModuleType, RecordType, Remapping, ResourceId, Type, TypeAlloc, TypeId,
+        TypeList, VariantCase,
     },
 };
+use crate::validator::names::{KebabName, KebabNameKind, KebabStr, KebabString};
 use crate::{
     limits::*,
     types::{
-        ComponentDefinedType, ComponentEntityType, InstanceTypeKind, KebabStr, LoweringInfo,
-        TupleType, UnionType, VariantType,
+        ComponentDefinedType, ComponentEntityType, Context, InstanceTypeKind, LoweringInfo, Remap,
+        SubtypeCx, TupleType, UnionType, VariantType,
     },
-    BinaryReaderError, CanonicalOption, ComponentExternalKind, ComponentOuterAliasKind,
-    ComponentTypeRef, ExternalKind, FuncType, GlobalType, InstantiationArgKind, MemoryType, Result,
-    TableType, TypeBounds, ValType, WasmFeatures,
+    BinaryReaderError, CanonicalOption, ComponentExternName, ComponentExternalKind,
+    ComponentOuterAliasKind, ComponentTypeRef, ExternalKind, FuncType, GlobalType,
+    InstantiationArgKind, MemoryType, Result, TableType, TypeBounds, ValType, WasmFeatures,
 };
 use indexmap::{map::Entry, IndexMap, IndexSet};
-use std::{collections::HashSet, mem};
-use url::Url;
+use std::collections::{HashMap, HashSet};
+use std::mem;
 
 fn to_kebab_str<'a>(s: &'a str, desc: &str, offset: usize) -> Result<&'a KebabStr> {
     match KebabStr::new(s) {
@@ -36,17 +37,11 @@ fn to_kebab_str<'a>(s: &'a str, desc: &str, offset: usize) -> Result<&'a KebabSt
     }
 }
 
-fn parse_url(url: &str, offset: usize) -> Result<Option<Url>> {
-    if url.is_empty() {
-        return Ok(None);
-    }
-
-    Url::parse(url)
-        .map(Some)
-        .map_err(|e| BinaryReaderError::new(e.to_string(), offset))
-}
-
 pub(crate) struct ComponentState {
+    
+    
+    kind: ComponentKind,
+
     
     pub core_types: Vec<TypeId>,
     pub core_modules: Vec<TypeId>,
@@ -64,25 +59,144 @@ pub(crate) struct ComponentState {
     pub instances: Vec<TypeId>,
     pub components: Vec<TypeId>,
 
-    
-    pub externs: IndexMap<KebabString, (Option<Url>, ComponentEntityType, ExternKind)>,
-
-    
-    
-    import_urls: HashSet<String>,
-    export_urls: HashSet<String>,
+    pub imports: IndexMap<String, ComponentEntityType>,
+    pub exports: IndexMap<String, ComponentEntityType>,
+    pub kebab_named_externs: IndexSet<KebabName>,
 
     has_start: bool,
     type_size: u32,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    imported_resources: IndexMapAppendOnly<ResourceId, Vec<usize>>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    defined_resources: IndexMapAppendOnly<ResourceId, Option<ValType>>,
+
+    
+    
+    
+    
+    
+    
+    explicit_resources: IndexMap<ResourceId, Vec<usize>>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    exported_types: HashSet<TypeId>,
+
+    
+    imported_types: HashSet<TypeId>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    toplevel_exported_resources: KebabNameContext,
+
+    
+    toplevel_imported_resources: KebabNameContext,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ComponentKind {
+    Component,
+    InstanceType,
+    ComponentType,
+}
+
+
+
+#[derive(Default)]
+struct KebabNameContext {
+    
+    
+    resource_name_map: HashMap<TypeId, usize>,
+
+    
+    
+    
+    all_resource_names: IndexSet<String>,
+}
+
+#[derive(Debug, Copy, Clone)]
 pub enum ExternKind {
     Import,
     Export,
 }
 
 impl ExternKind {
-    fn desc(&self) -> &'static str {
+    pub fn desc(&self) -> &'static str {
         match self {
             ExternKind::Import => "import",
             ExternKind::Export => "export",
@@ -91,6 +205,37 @@ impl ExternKind {
 }
 
 impl ComponentState {
+    pub fn new(kind: ComponentKind) -> Self {
+        Self {
+            kind,
+            core_types: Default::default(),
+            core_modules: Default::default(),
+            core_instances: Default::default(),
+            core_funcs: Default::default(),
+            core_memories: Default::default(),
+            core_tables: Default::default(),
+            core_globals: Default::default(),
+            core_tags: Default::default(),
+            types: Default::default(),
+            funcs: Default::default(),
+            values: Default::default(),
+            instances: Default::default(),
+            components: Default::default(),
+            imports: Default::default(),
+            exports: Default::default(),
+            kebab_named_externs: Default::default(),
+            has_start: Default::default(),
+            type_size: 1,
+            imported_resources: Default::default(),
+            defined_resources: Default::default(),
+            explicit_resources: Default::default(),
+            exported_types: Default::default(),
+            imported_types: Default::default(),
+            toplevel_exported_resources: Default::default(),
+            toplevel_imported_resources: Default::default(),
+        }
+    }
+
     pub fn type_count(&self) -> usize {
         self.core_types.len() + self.types.len()
     }
@@ -113,13 +258,13 @@ impl ComponentState {
     ) -> Result<()> {
         let ty = match ty {
             crate::CoreType::Func(ty) => Type::Func(ty),
-            crate::CoreType::Module(decls) => Type::Module(Self::create_module_type(
+            crate::CoreType::Module(decls) => Type::Module(Box::new(Self::create_module_type(
                 components,
                 decls.into_vec(),
                 features,
                 types,
                 offset,
-            )?),
+            )?)),
         };
 
         let current = components.last_mut().unwrap();
@@ -128,7 +273,7 @@ impl ComponentState {
             check_max(current.type_count(), 1, MAX_WASM_TYPES, "types", offset)?;
         }
 
-        let id = types.push_defined(ty);
+        let id = types.push_ty(ty);
         current.core_types.push(id);
 
         Ok(())
@@ -145,13 +290,13 @@ impl ComponentState {
         
         
         
-        let ty = Type::Module(ModuleType {
+        let ty = Type::Module(Box::new(ModuleType {
             type_size: module.type_size,
             imports,
             exports: module.exports.clone(),
-        });
+        }));
 
-        let id = types.push_anon(ty);
+        let id = types.push_ty(ty);
         self.core_modules.push(id);
 
         Ok(())
@@ -199,16 +344,51 @@ impl ComponentState {
                     .unwrap()
                     .create_function_type(ty, types, offset)?,
             ),
-            crate::ComponentType::Component(decls) => Type::Component(Self::create_component_type(
-                components,
-                decls.into_vec(),
-                features,
-                types,
-                offset,
-            )?),
-            crate::ComponentType::Instance(decls) => Type::ComponentInstance(
+            crate::ComponentType::Component(decls) => Type::Component(Box::new(
+                Self::create_component_type(components, decls.into_vec(), features, types, offset)?,
+            )),
+            crate::ComponentType::Instance(decls) => Type::ComponentInstance(Box::new(
                 Self::create_instance_type(components, decls.into_vec(), features, types, offset)?,
-            ),
+            )),
+            crate::ComponentType::Resource { rep, dtor } => {
+                let component = components.last_mut().unwrap();
+
+                
+                
+                if component.kind != ComponentKind::Component {
+                    bail!(
+                        offset,
+                        "resources can only be defined within a concrete component"
+                    );
+                }
+
+                
+                if rep != ValType::I32 {
+                    bail!(offset, "resources can only be represented by `i32`");
+                }
+
+                
+                
+                if let Some(dtor) = dtor {
+                    let ty = component.core_function_at(dtor, offset)?;
+                    let ty = types[ty].as_func_type().unwrap();
+                    if ty.params() != [rep] || ty.results() != [] {
+                        bail!(
+                            offset,
+                            "core function {dtor} has wrong signature for a destructor"
+                        );
+                    }
+                }
+
+                
+                
+                
+                
+                
+                let id = types.alloc_resource_id();
+                component.defined_resources.insert(id, Some(rep));
+                Type::Resource(id)
+            }
         };
 
         let current = components.last_mut().unwrap();
@@ -216,7 +396,7 @@ impl ComponentState {
             check_max(current.type_count(), 1, MAX_WASM_TYPES, "types", offset)?;
         }
 
-        let id = types.push_defined(ty);
+        let id = types.push_ty(ty);
         current.types.push(id);
 
         Ok(())
@@ -228,116 +408,483 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<()> {
-        let entity = self.check_type_ref(&import.ty, types, offset)?;
-        self.add_entity(entity, false, offset)?;
-        let name = to_kebab_str(import.name, "import", offset)?;
-
-        match self.externs.entry(name.to_owned()) {
-            Entry::Occupied(e) => {
-                bail!(
-                    offset,
-                    "import name `{name}` conflicts with previous {desc} name `{prev}`",
-                    name = import.name,
-                    prev = e.key(),
-                    desc = e.get().2.desc(),
-                );
-            }
-            Entry::Vacant(e) => {
-                let url = parse_url(import.url, offset)?;
-                if let Some(url) = url.as_ref() {
-                    if !self.import_urls.insert(url.to_string()) {
-                        bail!(offset, "duplicate import URL `{url}`");
-                    }
-                }
-
-                self.type_size = combine_type_sizes(self.type_size, entity.type_size(), offset)?;
-                e.insert((url, entity, ExternKind::Import));
-            }
-        }
-
+        let mut entity = self.check_type_ref(&import.ty, types, offset)?;
+        self.add_entity(
+            &mut entity,
+            Some((import.name.as_str(), ExternKind::Import)),
+            types,
+            offset,
+        )?;
+        self.toplevel_imported_resources.validate_extern(
+            import.name,
+            "import",
+            &entity,
+            types,
+            offset,
+            &mut self.kebab_named_externs,
+            &mut self.imports,
+            &mut self.type_size,
+        )?;
         Ok(())
     }
 
     fn add_entity(
         &mut self,
-        ty: ComponentEntityType,
-        value_used: bool,
+        ty: &mut ComponentEntityType,
+        name_and_kind: Option<(&str, ExternKind)>,
+        types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<()> {
+        let kind = name_and_kind.map(|(_, k)| k);
         let (len, max, desc) = match ty {
             ComponentEntityType::Module(id) => {
-                self.core_modules.push(id);
+                self.core_modules.push(*id);
                 (self.core_modules.len(), MAX_WASM_MODULES, "modules")
             }
             ComponentEntityType::Component(id) => {
-                self.components.push(id);
+                self.components.push(*id);
                 (self.components.len(), MAX_WASM_COMPONENTS, "components")
             }
             ComponentEntityType::Instance(id) => {
-                self.instances.push(id);
+                match kind {
+                    Some(ExternKind::Import) => self.prepare_instance_import(id, types),
+                    Some(ExternKind::Export) => self.prepare_instance_export(id, types),
+                    None => {}
+                }
+                self.instances.push(*id);
                 (self.instance_count(), MAX_WASM_INSTANCES, "instances")
             }
             ComponentEntityType::Func(id) => {
-                self.funcs.push(id);
+                self.funcs.push(*id);
                 (self.function_count(), MAX_WASM_FUNCTIONS, "functions")
             }
             ComponentEntityType::Value(ty) => {
-                self.values.push((ty, value_used));
+                let value_used = match kind {
+                    Some(ExternKind::Import) | None => false,
+                    Some(ExternKind::Export) => true,
+                };
+                self.values.push((*ty, value_used));
                 (self.values.len(), MAX_WASM_VALUES, "values")
             }
-            ComponentEntityType::Type { created, .. } => {
-                self.types.push(created);
+            ComponentEntityType::Type {
+                created,
+                referenced,
+            } => {
+                self.types.push(*created);
+
+                
+                
+                
+                
+                if let Type::Resource(id) = types[*created] {
+                    match kind {
+                        Some(ExternKind::Import) => {
+                            
+                            
+                            
+                            
+                            
+                            
+                            if created == referenced {
+                                self.imported_resources.insert(id, vec![self.imports.len()]);
+                            }
+                        }
+
+                        Some(ExternKind::Export) => {
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            if created == referenced {
+                                self.defined_resources.insert(id, None);
+                            }
+
+                            
+                            
+                            
+                            
+                            self.explicit_resources.insert(id, vec![self.exports.len()]);
+                        }
+
+                        None => {}
+                    }
+                }
                 (self.types.len(), MAX_WASM_TYPES, "types")
             }
         };
 
         check_max(len, 0, max, desc, offset)?;
+
+        
+        
+        
+        if let Some((name, kind)) = name_and_kind {
+            if !self.validate_and_register_named_types(Some(name), kind, ty, types) {
+                bail!(
+                    offset,
+                    "{} not valid to be used as {}",
+                    ty.desc(),
+                    kind.desc()
+                );
+            }
+        }
         Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn validate_and_register_named_types(
+        &mut self,
+        toplevel_name: Option<&str>,
+        kind: ExternKind,
+        ty: &ComponentEntityType,
+        types: &TypeAlloc,
+    ) -> bool {
+        match self.kind {
+            ComponentKind::Component | ComponentKind::ComponentType => {}
+            ComponentKind::InstanceType => return true,
+        }
+        let set = match kind {
+            ExternKind::Import => &self.imported_types,
+            ExternKind::Export => &self.exported_types,
+        };
+        match ty {
+            
+            
+            
+            
+            
+            
+            ComponentEntityType::Type {
+                created,
+                referenced,
+            } => {
+                if !self.all_valtypes_named(types, *referenced, set) {
+                    return false;
+                }
+                match kind {
+                    
+                    
+                    ExternKind::Import => {
+                        self.imported_types.insert(*created);
+                        self.exported_types.insert(*created);
+                    }
+                    ExternKind::Export => {
+                        self.exported_types.insert(*created);
+                    }
+                }
+
+                
+                
+                
+                if let Some(name) = toplevel_name {
+                    if let Type::Resource(_) = types[*created] {
+                        let cx = match kind {
+                            ExternKind::Import => &mut self.toplevel_imported_resources,
+                            ExternKind::Export => &mut self.toplevel_exported_resources,
+                        };
+                        cx.register(name, *created);
+                    }
+                }
+
+                true
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            ComponentEntityType::Instance(i) => {
+                let ty = types[*i].as_component_instance_type().unwrap();
+                ty.exports
+                    .values()
+                    .all(|ty| self.validate_and_register_named_types(None, kind, ty, types))
+            }
+
+            
+            ComponentEntityType::Func(id) => self.all_valtypes_named(types, *id, set),
+
+            ComponentEntityType::Value(ty) => types.type_named_valtype(ty, set),
+
+            
+            
+            ComponentEntityType::Component(_) | ComponentEntityType::Module(_) => true,
+        }
+    }
+    fn all_valtypes_named(&self, types: &TypeAlloc, id: TypeId, set: &HashSet<TypeId>) -> bool {
+        match &types[id] {
+            Type::Defined(i) => match i {
+                
+                
+                ComponentDefinedType::Primitive(_)
+                | ComponentDefinedType::Flags(_)
+                | ComponentDefinedType::Enum(_) => true,
+
+                
+                
+                ComponentDefinedType::Record(r) => {
+                    r.fields.values().all(|t| types.type_named_valtype(t, set))
+                }
+                ComponentDefinedType::Tuple(r) => {
+                    r.types.iter().all(|t| types.type_named_valtype(t, set))
+                }
+                ComponentDefinedType::Union(r) => {
+                    r.types.iter().all(|t| types.type_named_valtype(t, set))
+                }
+                ComponentDefinedType::Variant(r) => r
+                    .cases
+                    .values()
+                    .filter_map(|t| t.ty.as_ref())
+                    .all(|t| types.type_named_valtype(t, set)),
+                ComponentDefinedType::Result { ok, err } => {
+                    ok.as_ref()
+                        .map(|t| types.type_named_valtype(t, set))
+                        .unwrap_or(true)
+                        && err
+                            .as_ref()
+                            .map(|t| types.type_named_valtype(t, set))
+                            .unwrap_or(true)
+                }
+                ComponentDefinedType::List(ty) | ComponentDefinedType::Option(ty) => {
+                    types.type_named_valtype(ty, set)
+                }
+
+                
+                ComponentDefinedType::Own(id) | ComponentDefinedType::Borrow(id) => {
+                    set.contains(id)
+                }
+            },
+
+            
+            
+            Type::Module(_) | Type::Instance(_) | Type::Func(_) | Type::Array(_) => true,
+
+            
+            
+            
+            
+            
+            
+            Type::Resource(_) => true,
+
+            
+            
+            
+            Type::Component(_) => true,
+
+            
+            Type::ComponentFunc(ty) => ty
+                .params
+                .iter()
+                .map(|(_, ty)| ty)
+                .chain(ty.results.iter().map(|(_, ty)| ty))
+                .all(|ty| types.type_named_valtype(ty, set)),
+
+            
+            Type::ComponentInstance(ty) => ty.exports.values().all(|ty| {
+                let id = match ty {
+                    ComponentEntityType::Module(id)
+                    | ComponentEntityType::Func(id)
+                    | ComponentEntityType::Value(ComponentValType::Type(id))
+                    | ComponentEntityType::Type { created: id, .. }
+                    | ComponentEntityType::Instance(id)
+                    | ComponentEntityType::Component(id) => *id,
+                    ComponentEntityType::Value(ComponentValType::Primitive(_)) => return true,
+                };
+                self.all_valtypes_named(types, id, set)
+            }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn prepare_instance_import(&mut self, id: &mut TypeId, types: &mut TypeAlloc) {
+        let ty = types[*id].as_component_instance_type().unwrap();
+
+        
+        
+        if ty.defined_resources.is_empty() {
+            return;
+        }
+
+        let mut new_ty = ComponentInstanceType {
+            
+            type_size: ty.type_size,
+
+            
+            
+            exports: ty.exports.clone(),
+            explicit_resources: ty.explicit_resources.clone(),
+
+            
+            
+            defined_resources: Default::default(),
+        };
+
+        
+        let resources = (0..ty.defined_resources.len())
+            .map(|_| types.alloc_resource_id())
+            .collect::<IndexSet<_>>();
+
+        
+        
+        
+        
+        
+        
+        let mut mapping = Remapping::default();
+        let ty = types[*id].as_component_instance_type().unwrap();
+        for (old, new) in ty.defined_resources.iter().zip(&resources) {
+            let prev = mapping.resources.insert(*old, *new);
+            assert!(prev.is_none());
+
+            let mut base = vec![self.imports.len()];
+            base.extend(ty.explicit_resources[old].iter().copied());
+            self.imported_resources.insert(*new, base);
+        }
+
+        
+        
+        for ty in new_ty.exports.values_mut() {
+            types.remap_component_entity(ty, &mut mapping);
+        }
+        for (id, path) in mem::take(&mut new_ty.explicit_resources) {
+            let id = *mapping.resources.get(&id).unwrap_or(&id);
+            new_ty.explicit_resources.insert(id, path);
+        }
+
+        
+        
+        *id = types.push_ty(Type::ComponentInstance(Box::new(new_ty)));
+    }
+
+    
+    
+    
+    
+    
+    
+    fn prepare_instance_export(&mut self, id: &mut TypeId, types: &mut TypeAlloc) {
+        
+        
+        
+        
+        
+        let ty = types[*id].as_component_instance_type().unwrap();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if !ty.defined_resources.is_empty() {
+            let mut new_ty = ty.clone();
+            let mut mapping = Remapping::default();
+            for old in mem::take(&mut new_ty.defined_resources) {
+                let new = types.alloc_resource_id();
+                mapping.resources.insert(old, new);
+                self.defined_resources.insert(new, None);
+            }
+            for ty in new_ty.exports.values_mut() {
+                types.remap_component_entity(ty, &mut mapping);
+            }
+            for (id, path) in mem::take(&mut new_ty.explicit_resources) {
+                new_ty
+                    .explicit_resources
+                    .insert(mapping.resources[&id], path);
+            }
+            *id = types.push_ty(Type::ComponentInstance(Box::new(new_ty)));
+        }
+
+        
+        
+        
+        
+        
+        
+        let ty = types[*id].as_component_instance_type().unwrap();
+        for (id, path) in ty.explicit_resources.iter() {
+            let mut new_path = vec![self.exports.len()];
+            new_path.extend(path);
+            self.explicit_resources.insert(*id, new_path);
+        }
     }
 
     pub fn add_export(
         &mut self,
-        name: &str,
-        url: &str,
-        ty: ComponentEntityType,
+        name: ComponentExternName<'_>,
+        mut ty: ComponentEntityType,
+        types: &mut TypeAlloc,
         offset: usize,
         check_limit: bool,
     ) -> Result<()> {
         if check_limit {
-            check_max(
-                self.externs.len(),
-                1,
-                MAX_WASM_EXPORTS,
-                "imports and exports",
-                offset,
-            )?;
+            check_max(self.exports.len(), 1, MAX_WASM_EXPORTS, "exports", offset)?;
         }
-        self.add_entity(ty, true, offset)?;
-
-        let name = to_kebab_str(name, "export", offset)?;
-
-        match self.externs.entry(name.to_owned()) {
-            Entry::Occupied(e) => {
-                bail!(
-                    offset,
-                    "export name `{name}` conflicts with previous {desc} name `{prev}`",
-                    prev = e.key(),
-                    desc = e.get().2.desc(),
-                );
-            }
-            Entry::Vacant(e) => {
-                let url = parse_url(url, offset)?;
-                if let Some(url) = url.as_ref() {
-                    if !self.export_urls.insert(url.to_string()) {
-                        bail!(offset, "duplicate export URL `{url}`");
-                    }
-                }
-
-                self.type_size = combine_type_sizes(self.type_size, ty.type_size(), offset)?;
-                e.insert((url, ty, ExternKind::Export));
-            }
-        }
-
+        self.add_entity(
+            &mut ty,
+            Some((name.as_str(), ExternKind::Export)),
+            types,
+            offset,
+        )?;
+        self.toplevel_exported_resources.validate_extern(
+            name.into(),
+            "export",
+            &ty,
+            types,
+            offset,
+            &mut self.kebab_named_externs,
+            &mut self.exports,
+            &mut self.type_size,
+        )?;
         Ok(())
     }
 
@@ -403,16 +950,80 @@ impl ComponentState {
 
         let lowered_ty = Type::Func(info.into_func_type());
 
-        let id = types.push_anon(lowered_ty);
+        let id = types.push_ty(lowered_ty);
         self.core_funcs.push(id);
 
         Ok(())
     }
 
-    pub fn add_component(&mut self, component: &mut Self, types: &mut TypeAlloc) {
-        let ty = Type::Component(component.take_component_type());
-        let id = types.push_anon(ty);
+    pub fn resource_new(
+        &mut self,
+        resource: u32,
+        types: &mut TypeAlloc,
+        offset: usize,
+    ) -> Result<()> {
+        let rep = self.check_local_resource(resource, types, offset)?;
+        let core_ty = Type::Func(FuncType::new([rep], [ValType::I32]));
+        self.core_funcs.push(types.push_ty(core_ty));
+        Ok(())
+    }
+
+    pub fn resource_drop(
+        &mut self,
+        ty: crate::ComponentValType,
+        types: &mut TypeAlloc,
+        offset: usize,
+    ) -> Result<()> {
+        let idx = match ty {
+            crate::ComponentValType::Primitive(_) => {
+                bail!(offset, "type-to-drop must be an own or borrow type")
+            }
+            crate::ComponentValType::Type(idx) => idx,
+        };
+        let ty = self.defined_type_at(idx, types, offset)?;
+        match types[ty].as_defined_type().unwrap() {
+            ComponentDefinedType::Own(_) | ComponentDefinedType::Borrow(_) => {}
+            _ => bail!(offset, "type-to-drop must be an own or borrow type"),
+        }
+        let core_ty = Type::Func(FuncType::new([ValType::I32], []));
+        self.core_funcs.push(types.push_ty(core_ty));
+        Ok(())
+    }
+
+    pub fn resource_rep(
+        &mut self,
+        resource: u32,
+        types: &mut TypeAlloc,
+        offset: usize,
+    ) -> Result<()> {
+        let rep = self.check_local_resource(resource, types, offset)?;
+        let core_ty = Type::Func(FuncType::new([ValType::I32], [rep]));
+        self.core_funcs.push(types.push_ty(core_ty));
+        Ok(())
+    }
+
+    fn check_local_resource(&self, idx: u32, types: &TypeList, offset: usize) -> Result<ValType> {
+        let id = self.resource_at(idx, types, offset)?;
+        let resource = types[id].as_resource().unwrap();
+        match self.defined_resources.get(&resource).and_then(|rep| *rep) {
+            Some(ty) => Ok(ty),
+            None => bail!(offset, "type {idx} is not a local resource"),
+        }
+    }
+
+    fn resource_at<'a>(&self, idx: u32, types: &'a TypeList, offset: usize) -> Result<TypeId> {
+        let id = self.type_at(idx, false, offset)?;
+        match &types[id] {
+            Type::Resource(_) => Ok(id),
+            _ => bail!(offset, "type index {} is not a resource type", idx),
+        }
+    }
+
+    pub fn add_component(&mut self, component: ComponentType, types: &mut TypeAlloc) -> Result<()> {
+        let ty = Type::Component(Box::new(component));
+        let id = types.push_ty(ty);
         self.components.push(id);
+        Ok(())
     }
 
     pub fn add_instance(
@@ -470,7 +1081,7 @@ impl ComponentState {
                     Self::alias_module(components, count, index, offset)
                 }
                 ComponentOuterAliasKind::CoreType => {
-                    Self::alias_core_type(components, count, index, types, offset)
+                    Self::alias_core_type(components, count, index, offset)
                 }
                 ComponentOuterAliasKind::Type => {
                     Self::alias_type(components, count, index, types, offset)
@@ -519,19 +1130,13 @@ impl ComponentState {
             );
         }
 
+        let cx = SubtypeCx::new(types, types);
         for (i, ((_, ty), arg)) in ft.params.iter().zip(args).enumerate() {
             
-            if !ComponentValType::internal_is_subtype_of(
-                self.value_at(*arg, offset)?,
-                types,
-                ty,
-                types,
-            ) {
-                bail!(
-                    offset,
-                    "value type mismatch for component start function argument {i}"
-                );
-            }
+            cx.component_val_type(self.value_at(*arg, offset)?, ty, offset)
+                .with_context(|| {
+                    format!("value type mismatch for component start function argument {i}")
+                })?;
         }
 
         for (_, ty) in ft.results.iter() {
@@ -672,7 +1277,7 @@ impl ComponentState {
     }
 
     fn check_type_ref(
-        &self,
+        &mut self,
         ty: &ComponentTypeRef,
         types: &mut TypeAlloc,
         offset: usize,
@@ -701,12 +1306,20 @@ impl ComponentState {
                 };
                 ComponentEntityType::Value(ty)
             }
-            ComponentTypeRef::Type(TypeBounds::Eq, index) => {
+            ComponentTypeRef::Type(TypeBounds::Eq(index)) => {
                 let referenced = self.type_at(*index, false, offset)?;
                 let created = types.with_unique(referenced);
                 ComponentEntityType::Type {
                     referenced,
                     created,
+                }
+            }
+            ComponentTypeRef::Type(TypeBounds::SubResource) => {
+                let id = types.alloc_resource_id();
+                let id = types.push_ty(Type::Resource(id));
+                ComponentEntityType::Type {
+                    referenced: id,
+                    created: id,
                 }
             }
             ComponentTypeRef::Instance(index) => {
@@ -763,12 +1376,9 @@ impl ComponentState {
             None => return Ok(actual),
         };
 
-        if !ComponentEntityType::internal_is_subtype_of(&actual, types, &ascribed, types) {
-            bail!(
-                offset,
-                "ascribed type of export is not compatible with item's type"
-            );
-        }
+        SubtypeCx::new(types, types)
+            .component_entity_type(&actual, &ascribed, offset)
+            .with_context(|| "ascribed type of export is not compatible with item's type")?;
 
         Ok(ascribed)
     }
@@ -802,7 +1412,7 @@ impl ComponentState {
                         crate::OuterAliasKind::Type => {
                             let ty = if count == 0 {
                                 
-                                state.type_at(index, offset)?
+                                state.type_id_at(index, offset)?
                             } else {
                                 
                                 let component =
@@ -838,7 +1448,7 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<ComponentType> {
-        components.push(ComponentState::default());
+        components.push(ComponentState::new(ComponentKind::ComponentType));
 
         for decl in decls {
             match decl {
@@ -848,10 +1458,10 @@ impl ComponentState {
                 crate::ComponentTypeDeclaration::Type(ty) => {
                     Self::add_type(components, ty, features, types, offset, true)?;
                 }
-                crate::ComponentTypeDeclaration::Export { name, url, ty } => {
+                crate::ComponentTypeDeclaration::Export { name, ty } => {
                     let current = components.last_mut().unwrap();
                     let ty = current.check_type_ref(&ty, types, offset)?;
-                    current.add_export(name, url, ty, offset, true)?;
+                    current.add_export(name, ty, types, offset, true)?;
                 }
                 crate::ComponentTypeDeclaration::Import(import) => {
                     components
@@ -865,9 +1475,7 @@ impl ComponentState {
             };
         }
 
-        let mut state = components.pop().unwrap();
-
-        Ok(state.take_component_type())
+        components.pop().unwrap().finish(types, offset)
     }
 
     fn create_instance_type(
@@ -877,7 +1485,7 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<ComponentInstanceType> {
-        components.push(ComponentState::default());
+        components.push(ComponentState::new(ComponentKind::InstanceType));
 
         for decl in decls {
             match decl {
@@ -887,10 +1495,10 @@ impl ComponentState {
                 crate::InstanceTypeDeclaration::Type(ty) => {
                     Self::add_type(components, ty, features, types, offset, true)?;
                 }
-                crate::InstanceTypeDeclaration::Export { name, url, ty } => {
+                crate::InstanceTypeDeclaration::Export { name, ty } => {
                     let current = components.last_mut().unwrap();
                     let ty = current.check_type_ref(&ty, types, offset)?;
-                    current.add_export(name, url, ty, offset, true)?;
+                    current.add_export(name, ty, types, offset, true)?;
                 }
                 crate::InstanceTypeDeclaration::Alias(alias) => {
                     Self::add_alias(components, alias, types, offset)?;
@@ -898,20 +1506,35 @@ impl ComponentState {
             };
         }
 
-        let state = components.pop().unwrap();
+        let mut state = components.pop().unwrap();
+
+        assert!(state.imported_resources.is_empty());
 
         Ok(ComponentInstanceType {
             type_size: state.type_size,
-            kind: ComponentInstanceTypeKind::Defined(
-                state
-                    .externs
-                    .into_iter()
-                    .filter_map(|(name, (url, ty, kind))| match kind {
-                        ExternKind::Export => Some((name, (url, ty))),
-                        ExternKind::Import => None,
-                    })
-                    .collect(),
-            ),
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            defined_resources: mem::take(&mut state.defined_resources)
+                .into_iter()
+                .map(|(id, rep)| {
+                    assert!(rep.is_none());
+                    id
+                })
+                .collect(),
+
+            
+            
+            explicit_resources: mem::take(&mut state.explicit_resources),
+
+            exports: mem::take(&mut state.exports),
         })
     }
 
@@ -1019,6 +1642,7 @@ impl ComponentState {
 
         
         let module_type = types[module_type_id].as_module_type().unwrap();
+        let cx = SubtypeCx::new(types, types);
         for ((module, name), expected) in module_type.imports.iter() {
             let instance = args.get(module.as_str()).ok_or_else(|| {
                 format_err!(
@@ -1038,41 +1662,23 @@ impl ComponentState {
                     )
                 })?;
 
-            match (arg, expected) {
-                (EntityType::Func(_), EntityType::Func(_))
-                | (EntityType::Table(_), EntityType::Table(_))
-                | (EntityType::Memory(_), EntityType::Memory(_))
-                | (EntityType::Global(_), EntityType::Global(_))
-                | (EntityType::Tag(_), EntityType::Tag(_)) => {}
-                _ => {
-                    bail!(
-                        offset,
-                        "module instantiation argument `{module}` exports \
-                         an item named `{name}` but it is not a {}",
-                        expected.desc()
-                    )
-                }
-            }
-
-            if !EntityType::internal_is_subtype_of(arg, types, expected, types) {
-                bail!(
-                    offset,
-                    "{} type mismatch for export `{name}` of module \
-                     instantiation argument `{module}`",
-                    expected.desc(),
-                );
-            }
+            cx.entity_type(arg, expected, offset).with_context(|| {
+                format!(
+                    "type mismatch for export `{name}` of module \
+                         instantiation argument `{module}`"
+                )
+            })?;
         }
 
-        let ty = Type::Instance(InstanceType {
+        let ty = Type::Instance(Box::new(InstanceType {
             type_size: module_type
                 .exports
                 .iter()
                 .fold(1, |acc, (_, ty)| acc + ty.type_size()),
             kind: InstanceTypeKind::Instantiated(module_type_id),
-        });
+        }));
 
-        Ok(types.push_anon(ty))
+        Ok(types.push_ty(ty))
     }
 
     fn instantiate_component(
@@ -1082,140 +1688,265 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<TypeId> {
-        fn insert_arg<'a>(
-            name: &'a str,
-            arg: ComponentEntityType,
-            args: &mut IndexMap<&'a KebabStr, ComponentEntityType>,
-            offset: usize,
-        ) -> Result<()> {
-            let name = to_kebab_str(name, "instantiation argument", offset)?;
-            match args.entry(name) {
-                Entry::Occupied(e) => {
-                    bail!(
-                        offset,
-                        "instantiation argument `{name}` conflicts with previous argument `{prev}`",
-                        prev = e.key()
-                    );
-                }
-                Entry::Vacant(e) => {
-                    e.insert(arg);
-                }
-            }
-
-            Ok(())
-        }
-
         let component_type_id = self.component_at(component_index, offset)?;
         let mut args = IndexMap::new();
 
         
         for component_arg in component_args {
-            match component_arg.kind {
+            let ty = match component_arg.kind {
                 ComponentExternalKind::Module => {
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Module(self.module_at(component_arg.index, offset)?),
-                        &mut args,
-                        offset,
-                    )?;
+                    ComponentEntityType::Module(self.module_at(component_arg.index, offset)?)
                 }
                 ComponentExternalKind::Component => {
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Component(
-                            self.component_at(component_arg.index, offset)?,
-                        ),
-                        &mut args,
-                        offset,
-                    )?;
+                    ComponentEntityType::Component(self.component_at(component_arg.index, offset)?)
                 }
                 ComponentExternalKind::Instance => {
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Instance(
-                            self.instance_at(component_arg.index, offset)?,
-                        ),
-                        &mut args,
-                        offset,
-                    )?;
+                    ComponentEntityType::Instance(self.instance_at(component_arg.index, offset)?)
                 }
                 ComponentExternalKind::Func => {
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Func(self.function_at(component_arg.index, offset)?),
-                        &mut args,
-                        offset,
-                    )?;
+                    ComponentEntityType::Func(self.function_at(component_arg.index, offset)?)
                 }
                 ComponentExternalKind::Value => {
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Value(*self.value_at(component_arg.index, offset)?),
-                        &mut args,
-                        offset,
-                    )?;
+                    ComponentEntityType::Value(*self.value_at(component_arg.index, offset)?)
                 }
                 ComponentExternalKind::Type => {
                     let ty = self.type_at(component_arg.index, false, offset)?;
-                    insert_arg(
-                        component_arg.name,
-                        ComponentEntityType::Type {
-                            referenced: ty,
-                            created: ty,
-                        },
-                        &mut args,
+                    ComponentEntityType::Type {
+                        referenced: ty,
+                        created: ty,
+                    }
+                }
+            };
+            match args.entry(component_arg.name.to_string()) {
+                Entry::Occupied(e) => {
+                    bail!(
                         offset,
-                    )?;
+                        "instantiation argument `{name}` conflicts with previous argument `{prev}`",
+                        prev = e.key(),
+                        name = component_arg.name
+                    );
+                }
+                Entry::Vacant(e) => {
+                    e.insert(ty);
                 }
             }
         }
 
         
-        let component_type = types[component_type_id].as_component_type().unwrap();
-        for (name, (_, expected)) in component_type.imports.iter() {
-            match args.get(&name.as_kebab_str()) {
-                Some(arg) => {
-                    match (arg, expected) {
-                        (ComponentEntityType::Module(_), ComponentEntityType::Module(_))
-                        | (ComponentEntityType::Component(_), ComponentEntityType::Component(_))
-                        | (ComponentEntityType::Instance(_), ComponentEntityType::Instance(_))
-                        | (ComponentEntityType::Func(_), ComponentEntityType::Func(_))
-                        | (ComponentEntityType::Value(_), ComponentEntityType::Value(_))
-                        | (ComponentEntityType::Type { .. }, ComponentEntityType::Type { .. }) => {}
-                        _ => {
-                            bail!(
-                                offset,
-                                "expected component instantiation argument `{name}` to be a {desc}",
-                                desc = expected.desc()
-                            )
-                        }
-                    };
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-                    if !ComponentEntityType::internal_is_subtype_of(arg, types, expected, types) {
-                        bail!(
-                            offset,
-                            "type mismatch for component instantiation argument `{name}`"
-                        );
-                    }
-                }
-                None => {
-                    bail!(
-                        offset,
-                        "missing component instantiation argument named `{name}`"
-                    );
-                }
+        let component_type = types[component_type_id].as_component_type().unwrap();
+        let mut exports = component_type.exports.clone();
+        let type_size = component_type
+            .exports
+            .iter()
+            .fold(1, |acc, (_, ty)| acc + ty.type_size());
+
+        
+        
+        
+        
+        
+        
+        
+        let mut mapping = SubtypeCx::new(types, types).open_instance_type(
+            &args,
+            component_type_id,
+            ExternKind::Import,
+            offset,
+        )?;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let fresh_defined_resources = (0..component_type.defined_resources.len())
+            .map(|_| types.alloc_resource_id())
+            .collect::<IndexSet<_>>();
+        let component_type = types[component_type_id].as_component_type().unwrap();
+        for ((old, _path), new) in component_type
+            .defined_resources
+            .iter()
+            .zip(&fresh_defined_resources)
+        {
+            let prev = mapping.resources.insert(*old, *new);
+            assert!(prev.is_none());
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for entity in exports.values_mut() {
+            types.remap_component_entity(entity, &mut mapping);
+        }
+        let component_type = types[component_type_id].as_component_type().unwrap();
+        let explicit_resources = component_type
+            .explicit_resources
+            .iter()
+            .map(|(id, path)| {
+                (
+                    mapping.resources.get(id).copied().unwrap_or(*id),
+                    path.clone(),
+                )
+            })
+            .collect::<IndexMap<_, _>>();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if cfg!(debug_assertions) {
+            let mut free = IndexSet::new();
+            for ty in exports.values() {
+                types.free_variables_component_entity(ty, &mut free);
+            }
+            assert!(fresh_defined_resources.is_subset(&free));
+            for resource in fresh_defined_resources.iter() {
+                assert!(explicit_resources.contains_key(resource));
             }
         }
 
-        let ty = Type::ComponentInstance(ComponentInstanceType {
-            type_size: component_type
-                .exports
-                .iter()
-                .fold(1, |acc, (_, (_, ty))| acc + ty.type_size()),
-            kind: ComponentInstanceTypeKind::Instantiated(component_type_id),
-        });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for resource in fresh_defined_resources {
+            self.defined_resources.insert(resource, None);
+        }
 
-        Ok(types.push_anon(ty))
+        let ty = Type::ComponentInstance(Box::new(ComponentInstanceType {
+            type_size,
+            defined_resources: Default::default(),
+            explicit_resources,
+            exports,
+        }));
+        Ok(types.push_ty(ty))
     }
 
     fn instantiate_exports(
@@ -1224,106 +1955,122 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<TypeId> {
-        fn insert_export(
-            name: &str,
-            export: ComponentEntityType,
-            exports: &mut IndexMap<KebabString, (Option<Url>, ComponentEntityType)>,
-            type_size: &mut u32,
-            offset: usize,
-        ) -> Result<()> {
-            let name = to_kebab_str(name, "instance export", offset)?;
-            match exports.entry(name.to_owned()) {
-                Entry::Occupied(e) => bail!(
-                    offset,
-                    "instance export name `{name}` conflicts with previous export name `{prev}`",
-                    prev = e.key()
-                ),
-                Entry::Vacant(e) => {
-                    *type_size = combine_type_sizes(*type_size, export.type_size(), offset)?;
-                    e.insert((None, export));
-                }
-            }
-
-            Ok(())
-        }
-
         let mut type_size = 1;
         let mut inst_exports = IndexMap::new();
+        let mut explicit_resources = IndexMap::new();
+        let mut kebab_names = IndexSet::new();
+
+        
+        
+        
+        let names = KebabNameContext::default();
+
         for export in exports {
             assert!(export.ty.is_none());
-            match export.kind {
+            let ty = match export.kind {
                 ComponentExternalKind::Module => {
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Module(self.module_at(export.index, offset)?),
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    ComponentEntityType::Module(self.module_at(export.index, offset)?)
                 }
                 ComponentExternalKind::Component => {
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Component(self.component_at(export.index, offset)?),
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    ComponentEntityType::Component(self.component_at(export.index, offset)?)
                 }
                 ComponentExternalKind::Instance => {
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Instance(self.instance_at(export.index, offset)?),
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    let ty = self.instance_at(export.index, offset)?;
+
+                    
+                    
+                    
+                    
+                    explicit_resources.extend(
+                        types[ty]
+                            .as_component_instance_type()
+                            .unwrap()
+                            .explicit_resources
+                            .iter()
+                            .map(|(id, path)| {
+                                let mut new_path = vec![inst_exports.len()];
+                                new_path.extend(path);
+                                (*id, new_path)
+                            }),
+                    );
+                    ComponentEntityType::Instance(ty)
                 }
                 ComponentExternalKind::Func => {
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Func(self.function_at(export.index, offset)?),
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    ComponentEntityType::Func(self.function_at(export.index, offset)?)
                 }
                 ComponentExternalKind::Value => {
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Value(*self.value_at(export.index, offset)?),
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    ComponentEntityType::Value(*self.value_at(export.index, offset)?)
                 }
                 ComponentExternalKind::Type => {
                     let ty = self.type_at(export.index, false, offset)?;
-                    insert_export(
-                        export.name,
-                        ComponentEntityType::Type {
-                            referenced: ty,
-                            
-                            
-                            
-                            
-                            
-                            created: ty,
-                        },
-                        &mut inst_exports,
-                        &mut type_size,
-                        offset,
-                    )?;
+                    
+                    
+                    
+                    
+                    if let Type::Resource(id) = &types[ty] {
+                        explicit_resources.insert(*id, vec![inst_exports.len()]);
+                    }
+                    ComponentEntityType::Type {
+                        referenced: ty,
+                        
+                        
+                        
+                        
+                        
+                        created: ty,
+                    }
                 }
-            }
+            };
+
+            names.validate_extern(
+                export.name.into(),
+                "instance export",
+                &ty,
+                types,
+                offset,
+                &mut kebab_names,
+                &mut inst_exports,
+                &mut type_size,
+            )?;
         }
 
-        let ty = Type::ComponentInstance(ComponentInstanceType {
+        let ty = Type::ComponentInstance(Box::new(ComponentInstanceType {
             type_size,
-            kind: ComponentInstanceTypeKind::Exports(inst_exports),
-        });
+            explicit_resources,
+            exports: inst_exports,
 
-        Ok(types.push_anon(ty))
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            defined_resources: Default::default(),
+        }));
+
+        Ok(types.push_ty(ty))
     }
 
     fn instantiate_core_exports(
@@ -1397,12 +2144,12 @@ impl ComponentState {
             }
         }
 
-        let ty = Type::Instance(InstanceType {
+        let ty = Type::Instance(Box::new(InstanceType {
             type_size,
             kind: InstanceTypeKind::Exports(inst_exports),
-        });
+        }));
 
-        Ok(types.push_anon(ty))
+        Ok(types.push_ty(ty))
     }
 
     fn alias_core_instance_export(
@@ -1481,97 +2228,43 @@ impl ComponentState {
         types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<()> {
-        let name = to_kebab_str(name, "alias export", offset)?;
+        let mut ty = match types[self.instance_at(instance_index, offset)?]
+            .as_component_instance_type()
+            .unwrap()
+            .exports
+            .get(name)
+        {
+            Some(ty) => *ty,
+            None => bail!(
+                offset,
+                "instance {instance_index} has no export named `{name}`"
+            ),
+        };
 
-        macro_rules! push_component_export {
-            ($expected:path, $collection:ident, $ty:literal) => {{
-                match self.instance_export(instance_index, name, types, offset)? {
-                    $expected(ty) => {
-                        self.$collection.push(*ty);
-                        Ok(())
-                    }
-                    _ => {
-                        bail!(
-                            offset,
-                            "export `{name}` for instance {instance_index} is not a {}",
-                            $ty
-                        )
-                    }
-                }
-            }};
+        let ok = match (&ty, kind) {
+            (ComponentEntityType::Module(_), ComponentExternalKind::Module) => true,
+            (ComponentEntityType::Module(_), _) => false,
+            (ComponentEntityType::Component(_), ComponentExternalKind::Component) => true,
+            (ComponentEntityType::Component(_), _) => false,
+            (ComponentEntityType::Func(_), ComponentExternalKind::Func) => true,
+            (ComponentEntityType::Func(_), _) => false,
+            (ComponentEntityType::Instance(_), ComponentExternalKind::Instance) => true,
+            (ComponentEntityType::Instance(_), _) => false,
+            (ComponentEntityType::Value(_), ComponentExternalKind::Value) => true,
+            (ComponentEntityType::Value(_), _) => false,
+            (ComponentEntityType::Type { .. }, ComponentExternalKind::Type) => true,
+            (ComponentEntityType::Type { .. }, _) => false,
+        };
+        if !ok {
+            bail!(
+                offset,
+                "export `{name}` for instance {instance_index} is not a {}",
+                kind.desc(),
+            );
         }
 
-        match kind {
-            ComponentExternalKind::Module => {
-                check_max(
-                    self.core_modules.len(),
-                    1,
-                    MAX_WASM_MODULES,
-                    "modules",
-                    offset,
-                )?;
-                push_component_export!(ComponentEntityType::Module, core_modules, "module")
-            }
-            ComponentExternalKind::Component => {
-                check_max(
-                    self.components.len(),
-                    1,
-                    MAX_WASM_COMPONENTS,
-                    "components",
-                    offset,
-                )?;
-                push_component_export!(ComponentEntityType::Component, components, "component")
-            }
-            ComponentExternalKind::Instance => {
-                check_max(
-                    self.instance_count(),
-                    1,
-                    MAX_WASM_INSTANCES,
-                    "instances",
-                    offset,
-                )?;
-                push_component_export!(ComponentEntityType::Instance, instances, "instance")
-            }
-            ComponentExternalKind::Func => {
-                check_max(
-                    self.function_count(),
-                    1,
-                    MAX_WASM_FUNCTIONS,
-                    "functions",
-                    offset,
-                )?;
-                push_component_export!(ComponentEntityType::Func, funcs, "function")
-            }
-            ComponentExternalKind::Value => {
-                check_max(self.values.len(), 1, MAX_WASM_VALUES, "values", offset)?;
-                match self.instance_export(instance_index, name, types, offset)? {
-                    ComponentEntityType::Value(ty) => {
-                        self.values.push((*ty, false));
-                        Ok(())
-                    }
-                    _ => bail!(
-                        offset,
-                        "export `{name}` for instance {instance_index} is not a value",
-                    ),
-                }
-            }
-            ComponentExternalKind::Type => {
-                check_max(self.type_count(), 1, MAX_WASM_TYPES, "types", offset)?;
-                match *self.instance_export(instance_index, name, types, offset)? {
-                    ComponentEntityType::Type { created, .. } => {
-                        let id = types.with_unique(created);
-                        self.types.push(id);
-                        Ok(())
-                    }
-                    _ => {
-                        bail!(
-                            offset,
-                            "export `{name}` for instance {instance_index} is not a type",
-                        )
-                    }
-                }
-            }
-        }
+        self.add_entity(&mut ty, None, types, offset)?;
+        Ok(())
     }
 
     fn alias_module(components: &mut [Self], count: u32, index: u32, offset: usize) -> Result<()> {
@@ -1617,7 +2310,6 @@ impl ComponentState {
         components: &mut [Self],
         count: u32,
         index: u32,
-        types: &mut TypeAlloc,
         offset: usize,
     ) -> Result<()> {
         let component = Self::check_alias_count(components, count, offset)?;
@@ -1626,8 +2318,7 @@ impl ComponentState {
         let current = components.last_mut().unwrap();
         check_max(current.type_count(), 1, MAX_WASM_TYPES, "types", offset)?;
 
-        let id = types.with_unique(ty);
-        current.core_types.push(id);
+        current.core_types.push(ty);
 
         Ok(())
     }
@@ -1642,11 +2333,47 @@ impl ComponentState {
         let component = Self::check_alias_count(components, count, offset)?;
         let ty = component.type_at(index, false, offset)?;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let pos_after_component = components.len() - (count as usize);
+        if let Some(component) = components.get(pos_after_component) {
+            if component.kind == ComponentKind::Component {
+                let mut free = IndexSet::new();
+                types.free_variables_type_id(ty, &mut free);
+                if !free.is_empty() {
+                    bail!(
+                        offset,
+                        "cannot alias outer type which transitively refers \
+                         to resources not defined in the current component"
+                    );
+                }
+            }
+        }
+
         let current = components.last_mut().unwrap();
         check_max(current.type_count(), 1, MAX_WASM_TYPES, "types", offset)?;
 
-        let id = types.with_unique(ty);
-        current.types.push(id);
+        current.types.push(ty);
 
         Ok(())
     }
@@ -1700,6 +2427,12 @@ impl ComponentState {
                     .map(|ty| self.create_component_val_type(ty, types, offset))
                     .transpose()?,
             }),
+            crate::ComponentDefinedType::Own(idx) => Ok(ComponentDefinedType::Own(
+                self.resource_at(idx, types, offset)?,
+            )),
+            crate::ComponentDefinedType::Borrow(idx) => Ok(ComponentDefinedType::Borrow(
+                self.resource_at(idx, types, offset)?,
+            )),
         }
     }
 
@@ -1946,27 +2679,6 @@ impl ComponentState {
         })
     }
 
-    fn instance_export<'a>(
-        &self,
-        instance_index: u32,
-        name: &KebabStr,
-        types: &'a TypeList,
-        offset: usize,
-    ) -> Result<&'a ComponentEntityType> {
-        match types[self.instance_at(instance_index, offset)?]
-            .as_component_instance_type()
-            .unwrap()
-            .internal_exports(types)
-            .get(name)
-        {
-            Some((_, ty)) => Ok(ty),
-            None => bail!(
-                offset,
-                "instance {instance_index} has no export named `{name}`"
-            ),
-        }
-    }
-
     fn value_at(&mut self, idx: u32, offset: usize) -> Result<&ComponentValType> {
         match self.values.get_mut(idx as usize) {
             Some((ty, used)) if !*used => {
@@ -2055,47 +2767,316 @@ impl ComponentState {
         }
     }
 
-    fn take_component_type(&mut self) -> ComponentType {
+    
+    
+    
+    
+    
+    
+    
+    pub fn finish(&mut self, types: &TypeAlloc, offset: usize) -> Result<ComponentType> {
         let mut ty = ComponentType {
+            
             type_size: self.type_size,
-            imports: Default::default(),
-            exports: Default::default(),
+            imports: self.imports.clone(),
+            exports: self.exports.clone(),
+
+            
+            
+            
+            defined_resources: Default::default(),
+
+            
+            
+            imported_resources: mem::take(&mut self.imported_resources)
+                .into_iter()
+                .collect(),
+            explicit_resources: mem::take(&mut self.explicit_resources),
         };
 
-        for (name, (url, t, kind)) in mem::take(&mut self.externs) {
-            let map = match kind {
-                ExternKind::Import => &mut ty.imports,
-                ExternKind::Export => &mut ty.exports,
-            };
-            let prev = map.insert(name, (url, t));
-            assert!(prev.is_none());
+        
+        
+        
+        
+        let mut free = IndexSet::default();
+        for ty in ty.imports.values() {
+            types.free_variables_component_entity(ty, &mut free);
+        }
+        for (resource, _path) in self.defined_resources.iter() {
+            
+            
+            
+            
+            
+            
+            
+            if free.contains(resource) {
+                bail!(offset, "local resource type found in imports");
+            }
         }
 
-        ty
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        free.clear();
+        for ty in ty.exports.values() {
+            types.free_variables_component_entity(ty, &mut free);
+        }
+        for (id, _rep) in mem::take(&mut self.defined_resources) {
+            if !free.contains(&id) {
+                continue;
+            }
+
+            let path = match ty.explicit_resources.get(&id).cloned() {
+                Some(path) => path,
+                
+                
+                
+                
+                
+                
+                
+                None => bail!(
+                    offset,
+                    "local resource type found in export but not exported itself"
+                ),
+            };
+
+            ty.defined_resources.push((id, path));
+        }
+
+        Ok(ty)
     }
 }
 
-impl Default for ComponentState {
-    fn default() -> Self {
-        Self {
-            core_types: Default::default(),
-            core_modules: Default::default(),
-            core_instances: Default::default(),
-            core_funcs: Default::default(),
-            core_memories: Default::default(),
-            core_tables: Default::default(),
-            core_globals: Default::default(),
-            core_tags: Default::default(),
-            types: Default::default(),
-            funcs: Default::default(),
-            values: Default::default(),
-            instances: Default::default(),
-            components: Default::default(),
-            externs: Default::default(),
-            export_urls: Default::default(),
-            import_urls: Default::default(),
-            has_start: Default::default(),
-            type_size: 1,
+impl KebabNameContext {
+    
+    fn register(&mut self, name: &str, id: TypeId) {
+        let idx = self.all_resource_names.len();
+        let prev = self.resource_name_map.insert(id, idx);
+        assert!(prev.is_none());
+        self.all_resource_names.insert(name.to_string());
+    }
+
+    fn validate_extern(
+        &self,
+        name: ComponentExternName<'_>,
+        desc: &str,
+        ty: &ComponentEntityType,
+        types: &TypeAlloc,
+        offset: usize,
+        kebab_names: &mut IndexSet<KebabName>,
+        items: &mut IndexMap<String, ComponentEntityType>,
+        type_size: &mut u32,
+    ) -> Result<()> {
+        
+        
+        let kebab = KebabName::new(name, offset).with_context(|| {
+            format!("{desc} name `{}` is not a valid extern name", name.as_str())
+        })?;
+
+        
+        
+        self.validate(&kebab, ty, types, offset)
+            .with_context(|| format!("{desc} name `{kebab}` is not valid"))?;
+
+        
+        
+        
+        if let ComponentExternName::Kebab(_) = name {
+            if let Some(prev) = kebab_names.replace(kebab.clone()) {
+                bail!(
+                    offset,
+                    "{desc} name `{kebab}` conflicts with previous name `{prev}`",
+                );
+            }
+        }
+
+        
+        
+        
+        match items.entry(kebab.into()) {
+            Entry::Occupied(e) => {
+                bail!(
+                    offset,
+                    "{desc} name `{name}` conflicts with previous name `{prev}`",
+                    name = name.as_str(),
+                    prev = e.key(),
+                );
+            }
+            Entry::Vacant(e) => {
+                e.insert(*ty);
+                *type_size = combine_type_sizes(*type_size, ty.type_size(), offset)?;
+            }
+        }
+        Ok(())
+    }
+
+    
+    fn validate(
+        &self,
+        name: &KebabName,
+        ty: &ComponentEntityType,
+        types: &TypeAlloc,
+        offset: usize,
+    ) -> Result<()> {
+        let func = || {
+            let id = match ty {
+                ComponentEntityType::Func(id) => *id,
+                _ => bail!(offset, "item is not a func"),
+            };
+            Ok(types[id].as_component_func_type().unwrap())
+        };
+        match name.kind() {
+            
+            KebabNameKind::Normal(_) | KebabNameKind::Id { .. } => {}
+
+            
+            
+            KebabNameKind::Constructor(rname) => {
+                let ty = func()?;
+                if ty.results.len() != 1 {
+                    bail!(offset, "function should return one value");
+                }
+                let ty = ty.results[0].1;
+                let resource = match ty {
+                    ComponentValType::Primitive(_) => None,
+                    ComponentValType::Type(ty) => match &types[ty] {
+                        Type::Defined(ComponentDefinedType::Own(id)) => Some(id),
+                        _ => None,
+                    },
+                };
+                let resource = match resource {
+                    Some(id) => id,
+                    None => bail!(offset, "function should return `(own $T)`"),
+                };
+                self.validate_resource_name(*resource, rname, offset)?;
+            }
+
+            
+            
+            
+            KebabNameKind::Method { resource, .. } => {
+                let ty = func()?;
+                if ty.params.len() == 0 {
+                    bail!(offset, "function should have at least one argument");
+                }
+                let (pname, pty) = &ty.params[0];
+                if pname.as_str() != "self" {
+                    bail!(
+                        offset,
+                        "function should have a first argument called `self`",
+                    );
+                }
+                let id = match pty {
+                    ComponentValType::Primitive(_) => None,
+                    ComponentValType::Type(ty) => match &types[*ty] {
+                        Type::Defined(ComponentDefinedType::Borrow(id)) => Some(id),
+                        _ => None,
+                    },
+                };
+                let id = match id {
+                    Some(id) => id,
+                    None => bail!(
+                        offset,
+                        "function should take a first argument of `(borrow $T)`"
+                    ),
+                };
+                self.validate_resource_name(*id, resource, offset)?;
+            }
+
+            
+            
+            
+            KebabNameKind::Static { resource, .. } => {
+                func()?;
+                if !self.all_resource_names.contains(resource.as_str()) {
+                    bail!(offset, "static resource name is not known in this context");
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_resource_name(&self, id: TypeId, name: &KebabStr, offset: usize) -> Result<()> {
+        let expected_name_idx = match self.resource_name_map.get(&id) {
+            Some(idx) => *idx,
+            None => {
+                bail!(
+                    offset,
+                    "resource used in function does not have a name in this context"
+                )
+            }
+        };
+        let expected_name = &self.all_resource_names[expected_name_idx];
+        if name.as_str() != expected_name {
+            bail!(
+                offset,
+                "function does not match expected \
+                         resource name `{expected_name}`"
+            );
+        }
+        Ok(())
+    }
+}
+
+use self::append_only::*;
+
+mod append_only {
+    use indexmap::IndexMap;
+    use std::hash::Hash;
+    use std::ops::Deref;
+
+    pub struct IndexMapAppendOnly<K, V>(IndexMap<K, V>);
+
+    impl<K, V> IndexMapAppendOnly<K, V>
+    where
+        K: Hash + Eq + PartialEq,
+    {
+        pub fn insert(&mut self, key: K, value: V) {
+            let prev = self.0.insert(key, value);
+            assert!(prev.is_none());
+        }
+    }
+
+    impl<K, V> Deref for IndexMapAppendOnly<K, V> {
+        type Target = IndexMap<K, V>;
+        fn deref(&self) -> &IndexMap<K, V> {
+            &self.0
+        }
+    }
+
+    impl<K, V> Default for IndexMapAppendOnly<K, V> {
+        fn default() -> Self {
+            Self(Default::default())
+        }
+    }
+
+    impl<K, V> IntoIterator for IndexMapAppendOnly<K, V> {
+        type IntoIter = <IndexMap<K, V> as IntoIterator>::IntoIter;
+        type Item = <IndexMap<K, V> as IntoIterator>::Item;
+        fn into_iter(self) -> Self::IntoIter {
+            self.0.into_iter()
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{encode_section, ComponentSection, ComponentSectionId, Encode};
+use crate::{encode_section, ComponentSection, ComponentSectionId, ComponentValType, Encode};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,6 +115,32 @@ impl CanonicalFunctionSection {
         for option in options {
             option.encode(&mut self.bytes);
         }
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn resource_new(&mut self, ty_index: u32) -> &mut Self {
+        self.bytes.push(0x02);
+        ty_index.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn resource_drop(&mut self, ty: ComponentValType) -> &mut Self {
+        self.bytes.push(0x03);
+        ty.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn resource_rep(&mut self, ty_index: u32) -> &mut Self {
+        self.bytes.push(0x04);
+        ty_index.encode(&mut self.bytes);
         self.num_added += 1;
         self
     }

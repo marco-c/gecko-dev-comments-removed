@@ -1,5 +1,5 @@
 use crate::limits::MAX_WASM_CANONICAL_OPTIONS;
-use crate::{BinaryReader, FromReader, Result, SectionLimited};
+use crate::{BinaryReader, ComponentValType, FromReader, Result, SectionLimited};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +43,23 @@ pub enum CanonicalFunction {
         
         options: Box<[CanonicalOption]>,
     },
+    
+    ResourceNew {
+        
+        resource: u32,
+    },
+    
+    ResourceDrop {
+        
+        
+        ty: ComponentValType,
+    },
+    
+    
+    ResourceRep {
+        
+        resource: u32,
+    },
 }
 
 
@@ -74,6 +91,13 @@ impl<'a> FromReader<'a> for CanonicalFunction {
                         .collect::<Result<_>>()?,
                 },
                 x => return reader.invalid_leading_byte(x, "canonical function lower"),
+            },
+            0x02 => CanonicalFunction::ResourceNew {
+                resource: reader.read()?,
+            },
+            0x03 => CanonicalFunction::ResourceDrop { ty: reader.read()? },
+            0x04 => CanonicalFunction::ResourceRep {
+                resource: reader.read()?,
             },
             x => return reader.invalid_leading_byte(x, "canonical function"),
         })
