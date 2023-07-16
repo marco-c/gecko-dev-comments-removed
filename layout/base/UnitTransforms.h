@@ -210,6 +210,10 @@ Maybe<gfx::Matrix4x4> ToUnknownMatrix(
 
 
 template <class TargetUnits>
+gfx::CoordTyped<TargetUnits> ViewAs(const gfx::Coord& aCoord) {
+  return gfx::CoordTyped<TargetUnits>(aCoord.value);
+}
+template <class TargetUnits>
 gfx::PointTyped<TargetUnits> ViewAs(const gfxPoint& aPoint) {
   return gfx::PointTyped<TargetUnits>(aPoint.x, aPoint.y);
 }
