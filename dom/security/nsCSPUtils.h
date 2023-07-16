@@ -89,7 +89,6 @@ static const char* CSPStrDirectives[] = {
     "block-all-mixed-content",    
     "sandbox",                    
     "worker-src",                 
-    "navigate-to",                
     "script-src-elem",            
     "script-src-attr",            
     "style-src-elem",             
@@ -113,16 +112,15 @@ inline CSPDirective CSP_StringToCSPDirective(const nsAString& aDir) {
   return nsIContentSecurityPolicy::NO_DIRECTIVE;
 }
 
-#define FOR_EACH_CSP_KEYWORD(MACRO)                             \
-  MACRO(CSP_SELF, "'self'")                                     \
-  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")                   \
-  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")                       \
-  MACRO(CSP_UNSAFE_HASHES, "'unsafe-hashes'")                   \
-  MACRO(CSP_NONE, "'none'")                                     \
-  MACRO(CSP_NONCE, "'nonce-")                                   \
-  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")                   \
-  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")                 \
-  MACRO(CSP_UNSAFE_ALLOW_REDIRECTS, "'unsafe-allow-redirects'") \
+#define FOR_EACH_CSP_KEYWORD(MACRO)             \
+  MACRO(CSP_SELF, "'self'")                     \
+  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")   \
+  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")       \
+  MACRO(CSP_UNSAFE_HASHES, "'unsafe-hashes'")   \
+  MACRO(CSP_NONE, "'none'")                     \
+  MACRO(CSP_NONCE, "'nonce-")                   \
+  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")   \
+  MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'") \
   MACRO(CSP_WASM_UNSAFE_EVAL, "'wasm-unsafe-eval'")
 
 enum CSPKeyword {
@@ -691,9 +689,6 @@ class nsCSPPolicy {
   inline uint32_t getNumDirectives() const { return mDirectives.Length(); }
 
   bool visitDirectiveSrcs(CSPDirective aDir, nsCSPSrcVisitor* aVisitor) const;
-
-  bool allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
-                        bool aEnforceAllowlist) const;
 
  private:
   nsUpgradeInsecureDirective* mUpgradeInsecDir;

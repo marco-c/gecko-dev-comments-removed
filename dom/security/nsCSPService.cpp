@@ -313,25 +313,6 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
-      aLoadInfo->GetCspToInherit();
-  if (cspToInherit) {
-    bool allowsNavigateTo = false;
-    nsresult rv = cspToInherit->GetAllowsNavigateTo(
-        aNewURI, aLoadInfo->GetIsFormSubmission(), true, 
-        false,                                           
-        &allowsNavigateTo);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!allowsNavigateTo) {
-      aCancelCode = Some(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
   
   
   nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
