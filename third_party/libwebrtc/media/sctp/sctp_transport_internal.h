@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "api/rtc_error.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "media/base/media_channel.h"
 #include "p2p/base/packet_transport_internal.h"
@@ -120,10 +121,10 @@ class SctpTransportInternal {
   virtual bool ResetStream(int sid) = 0;
   
   
-  virtual bool SendData(int sid,
-                        const webrtc::SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer& payload,
-                        SendDataResult* result = nullptr) = 0;
+  
+  virtual webrtc::RTCError SendData(int sid,
+                                    const webrtc::SendDataParams& params,
+                                    const rtc::CopyOnWriteBuffer& payload) = 0;
 
   
   

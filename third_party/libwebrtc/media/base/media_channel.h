@@ -995,8 +995,6 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
                                              absl::optional<int> rtx_time) = 0;
 };
 
-enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
-
 }  
 
 #endif  

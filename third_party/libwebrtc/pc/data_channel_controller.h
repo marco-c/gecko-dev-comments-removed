@@ -47,10 +47,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   
   
-  bool SendData(StreamId sid,
-                const SendDataParams& params,
-                const rtc::CopyOnWriteBuffer& payload,
-                cricket::SendDataResult* result) override;
+  RTCError SendData(StreamId sid,
+                    const SendDataParams& params,
+                    const rtc::CopyOnWriteBuffer& payload) override;
   void AddSctpDataStream(StreamId sid) override;
   void RemoveSctpDataStream(StreamId sid) override;
   bool ReadyToSendData() const override;
@@ -124,10 +123,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
       RTC_RUN_ON(signaling_thread());
 
   
-  bool DataChannelSendData(StreamId sid,
-                           const SendDataParams& params,
-                           const rtc::CopyOnWriteBuffer& payload,
-                           cricket::SendDataResult* result);
+  RTCError DataChannelSendData(StreamId sid,
+                               const SendDataParams& params,
+                               const rtc::CopyOnWriteBuffer& payload);
 
   
   
