@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/event_wrapper.h"
+#include "modules/video_coding/deprecated/event_wrapper.h"
 
 #include "rtc_base/event.h"
 
