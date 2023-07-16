@@ -248,11 +248,28 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(
   }
 
   if (capture_timestamp_ns) {
-    capture_timestamp_ns_ =
-        rtc::kNumNanosecsPerMicrosec *
-        timestamp_aligner_.TranslateTimestamp(
-            *capture_timestamp_ns / rtc::kNumNanosecsPerMicrosec,
-            rtc::TimeMicros());
+    int64_t align_offsync_estimation_time = rtc::TimeMicros();
+    if (align_offsync_estimation_time -
+            rtc::TimestampAligner::kMinFrameIntervalUs >
+        align_offsync_estimation_time_) {
+      align_offsync_estimation_time_ = align_offsync_estimation_time;
+      capture_timestamp_ns_ =
+          rtc::kNumNanosecsPerMicrosec *
+          timestamp_aligner_.TranslateTimestamp(
+              *capture_timestamp_ns / rtc::kNumNanosecsPerMicrosec,
+              align_offsync_estimation_time);
+    } else {
+      
+      
+      
+      
+      
+      
+      capture_timestamp_ns_ =
+          rtc::kNumNanosecsPerMicrosec *
+          timestamp_aligner_.TranslateTimestamp(*capture_timestamp_ns /
+                                                rtc::kNumNanosecsPerMicrosec);
+    }
   }
   
   int16_t max_abs = 0;

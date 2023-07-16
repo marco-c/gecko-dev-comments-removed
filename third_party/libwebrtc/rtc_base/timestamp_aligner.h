@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 
@@ -38,6 +39,12 @@ class RTC_EXPORT TimestampAligner {
   TimestampAligner& operator=(const TimestampAligner&) = delete;
 
  public:
+  
+  
+  
+  
+  static constexpr int64_t kMinFrameIntervalUs = rtc::kNumMicrosecsPerMillisec;
+
   
   
   

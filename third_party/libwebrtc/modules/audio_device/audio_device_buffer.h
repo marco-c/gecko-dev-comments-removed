@@ -196,6 +196,10 @@ class AudioDeviceBuffer {
 
   
   absl::optional<int64_t> capture_timestamp_ns_;
+  
+  
+  
+  absl::optional<int64_t> align_offsync_estimation_time_;
 
   
   size_t num_stat_reports_ RTC_GUARDED_BY(task_queue_);
