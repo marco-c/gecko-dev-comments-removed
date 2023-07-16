@@ -2,12 +2,18 @@
 
 
 
-use once_cell::sync::Lazy;
 use std::path::Path;
 
-pub static TOPOBJDIR: Lazy<&'static Path> = Lazy::new(|| Path::new(config::TOPOBJDIR));
 
-pub static TOPSRCDIR: Lazy<&'static Path> = Lazy::new(|| Path::new(config::TOPSRCDIR));
+
+#[inline(always)]
+const fn const_path(s: &'static str) -> &'static std::path::Path {
+    unsafe { &*(s as *const str as *const std::path::Path) }
+}
+
+pub const TOPOBJDIR: &Path = const_path(config::TOPOBJDIR);
+
+pub const TOPSRCDIR: &Path = const_path(config::TOPSRCDIR);
 
 pub mod config {
     include!(env!("BUILDCONFIG_RS"));
