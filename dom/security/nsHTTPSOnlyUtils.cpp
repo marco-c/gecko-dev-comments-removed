@@ -15,6 +15,7 @@
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIHttpsOnlyModePermission.h"
+#include "nsILoadInfo.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIRedirectHistoryEntry.h"
@@ -608,9 +609,12 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   NS_ENSURE_TRUE_VOID(aChannel);
 
   
+  
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+  bool isHttpsOnly = IsHttpsOnlyModeEnabled(isPrivateWin);
+  bool isHttpsFirst = IsHttpsFirstModeEnabled(isPrivateWin);
+  if (!isHttpsOnly && !isHttpsFirst) {
     return;
   }
 
@@ -631,13 +635,17 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
       aChannel, getter_AddRefs(principal));
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  
-  
   uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-  if (TestIfPrincipalIsExempt(principal)) {
+  bool isPrincipalExempt = TestIfPrincipalIsExempt(principal);
+  if (isPrincipalExempt) {
     httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
   } else {
-    httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    
+    
+    
+    
+    
+    if (isHttpsOnly) httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
   }
   loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 }
