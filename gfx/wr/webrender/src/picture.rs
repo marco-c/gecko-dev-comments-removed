@@ -3211,7 +3211,7 @@ impl TileCacheInstance {
                     opaque_rect: pic_coverage_rect,
                     spanning_opaque_color: None,
                     kind: Some(BackdropKind::Clear),
-                    backdrop_rect: pic_coverage_rect,
+                    backdrop_rect: pic_coverage_rect,        
                 });
             }
             PrimitiveInstanceKind::LinearGradient { data_handle, .. }
@@ -4423,11 +4423,6 @@ pub struct PicturePrimitive {
 
     
     pub flags: PictureFlags,
-
-    
-    
-    
-    pub clip_root: Option<ClipNodeId>,
 }
 
 impl PicturePrimitive {
@@ -4536,7 +4531,6 @@ impl PicturePrimitive {
             is_opaque: false,
             raster_space,
             flags,
-            clip_root: None,
         }
     }
 
