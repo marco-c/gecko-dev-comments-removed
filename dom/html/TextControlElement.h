@@ -44,7 +44,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   
 
 
-  virtual nsresult SetValueChanged(bool changed) = 0;
+  virtual void SetValueChanged(bool) = 0;
 
   
 
@@ -101,10 +101,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
 
-
-
-  virtual void GetTextEditorValue(nsAString& aValue,
-                                  bool aIgnoreWrap) const = 0;
+  virtual void GetTextEditorValue(nsAString& aValue) const = 0;
 
   
 
@@ -183,7 +180,15 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   
 
 
-  virtual void OnValueChanged(ValueChangeKind) = 0;
+
+
+
+  virtual void OnValueChanged(ValueChangeKind, bool aNewValueEmpty,
+                              const nsAString* aKnownNewValue) = 0;
+
+  void OnValueChanged(ValueChangeKind aKind, const nsAString& aNewValue) {
+    return OnValueChanged(aKind, aNewValue.IsEmpty(), &aNewValue);
+  }
 
   
 
