@@ -8,11 +8,14 @@
 #ifndef js_ArrayBuffer_h
 #define js_ArrayBuffer_h
 
+#include "mozilla/UniquePtr.h"
+
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -27,6 +30,22 @@ class JS_PUBLIC_API AutoRequireNoGC;
 
 
 extern JS_PUBLIC_API JSObject* NewArrayBuffer(JSContext* cx, size_t nbytes);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
+    JSContext* cx, size_t nbytes,
+    mozilla::UniquePtr<void, JS::FreePolicy> contents);
+
 
 
 
@@ -68,6 +87,58 @@ extern JS_PUBLIC_API JSObject* CopyArrayBuffer(
     JSContext* cx, JS::Handle<JSObject*> maybeArrayBuffer);
 
 using BufferContentsFreeFunc = void (*)(void* contents, void* userData);
+
+
+
+
+class JS_PUBLIC_API BufferContentsDeleter {
+  BufferContentsFreeFunc freeFunc_ = nullptr;
+  void* userData_ = nullptr;
+
+ public:
+  MOZ_IMPLICIT BufferContentsDeleter(BufferContentsFreeFunc freeFunc,
+                                     void* userData = nullptr)
+      : freeFunc_(freeFunc), userData_(userData) {}
+
+  void operator()(void* contents) const { freeFunc_(contents, userData_); }
+
+  BufferContentsFreeFunc freeFunc() const { return freeFunc_; }
+  void* userData() const { return userData_; }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* NewExternalArrayBuffer(
+    JSContext* cx, size_t nbytes,
+    mozilla::UniquePtr<void, BufferContentsDeleter> contents);
+
+
+
+
 
 
 
