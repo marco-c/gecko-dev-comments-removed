@@ -592,16 +592,17 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
     
     
     
-    mDisplayWidth = width;
-    mDisplayHeight = height;
-    RECT rect = {0, 0, (LONG)mDisplayWidth, (LONG)mDisplayHeight};
+    LOG("Update video size [%lux%lu] -> [%lux%lu] ", mDisplayWidth,
+        mDisplayHeight, width, height);
+    ENGINE_MARKER_TEXT("MFMediaEngineParent,UpdateVideoSize",
+                       nsPrintfCString("%lux%lu", width, height));
+    RECT rect = {0, 0, (LONG)width, (LONG)height};
     RETURN_VOID_IF_FAILED(mediaEngineEx->UpdateVideoStream(
         nullptr , &rect, nullptr ));
-    LOG("Updated video size for engine=[%lux%lu]", mDisplayWidth,
+    mDisplayWidth = width;
+    mDisplayHeight = height;
+    LOG("Updated video size [%lux%lu] correctly", mDisplayWidth,
         mDisplayHeight);
-    ENGINE_MARKER_TEXT(
-        "MFMediaEngineParent,UpdateVideoSize",
-        nsPrintfCString("%lux%lu", mDisplayWidth, mDisplayHeight));
   }
 
   HANDLE surfaceHandle = INVALID_HANDLE_VALUE;
