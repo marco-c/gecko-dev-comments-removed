@@ -20,12 +20,12 @@ inline JitHintsMap::ScriptKey JitHintsMap::getScriptKey(
   return 0;
 }
 
-inline void JitHintsMap::incrementBaselineEntryCount() {
+inline void JitHintsMap::incrementEntryCount() {
   
   
-  if (++baselineEntryCount_ > MaxEntries_) {
-    baselineHintMap_.clear();
-    baselineEntryCount_ = 0;
+  if (++entryCount_ > MaxEntries_) {
+    map_.clear();
+    entryCount_ = 0;
   }
 }
 
@@ -36,20 +36,20 @@ inline void JitHintsMap::setEagerBaselineHint(JSScript* script) {
   }
 
   
-  if (baselineHintMap_.mightContain(key)) {
+  if (map_.mightContain(key)) {
     return;
   }
 
   
-  incrementBaselineEntryCount();
+  incrementEntryCount();
 
   script->setNoEagerBaselineHint(false);
-  baselineHintMap_.add(key);
+  map_.add(key);
 }
 
 inline bool JitHintsMap::mightHaveEagerBaselineHint(JSScript* script) const {
   if (ScriptKey key = getScriptKey(script)) {
-    return baselineHintMap_.mightContain(key);
+    return map_.mightContain(key);
   }
   script->setNoEagerBaselineHint(true);
   return false;
