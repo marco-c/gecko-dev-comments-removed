@@ -67,6 +67,9 @@ struct SurfaceFromElementResult {
   mozilla::gfx::IntSize mIntrinsicSize;
   
 
+  mozilla::Maybe<mozilla::gfx::IntRect> mCropRect;
+  
+
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
   nsCOMPtr<imgIRequest> mImageRequest;
