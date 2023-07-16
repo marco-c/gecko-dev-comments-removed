@@ -2413,7 +2413,7 @@ void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
     }
   }
 
-  bool wasRestyled = false;
+  bool wasRestyled;
   Unused << Servo_TakeChangeHint(aElement, &wasRestyled);
   aElement->UnsetFlags(Element::kAllServoDescendantBits);
 }
@@ -2729,7 +2729,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
       primaryFrame && primaryFrame->IsColumnSpanInMulticolSubtree();
 
   
-  bool wasRestyled = false;
+  bool wasRestyled;
   nsChangeHint changeHint =
       static_cast<nsChangeHint>(Servo_TakeChangeHint(aElement, &wasRestyled));
 
@@ -3603,23 +3603,9 @@ void RestyleManager::ReparentComputedStyleForFirstLine(nsIFrame* aFrame) {
   DoReparentComputedStyleForFirstLine(aFrame, *StyleSet());
 }
 
-static bool IsFrameAboutToGoAway(nsIFrame* aFrame) {
-  auto* element = Element::FromNode(aFrame->GetContent());
-  if (!element) {
-    return false;
-  }
-  return !element->HasServoData();
-}
-
 void RestyleManager::DoReparentComputedStyleForFirstLine(
     nsIFrame* aFrame, ServoStyleSet& aStyleSet) {
   if (aFrame->IsBackdropFrame()) {
-    
-    
-    return;
-  }
-
-  if (IsFrameAboutToGoAway(aFrame)) {
     
     
     return;
@@ -3700,6 +3686,23 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
   Element* ourElement = isElement ? aFrame->GetContent()->AsElement() : nullptr;
   ComputedStyle* newParent = newParentStyle;
 
+  ComputedStyle* newParentIgnoringFirstLine;
+  if (newParent->GetPseudoType() == PseudoStyleType::firstLine) {
+    MOZ_ASSERT(
+        providerFrame && providerFrame->GetParent()->IsBlockFrameOrSubclass(),
+        "How could we get a ::first-line parent style without having "
+        "a ::first-line provider frame?");
+    
+    
+    
+    nsIFrame* blockFrame = providerFrame->GetParent();
+    nsIFrame* correctedFrame = nsIFrame::CorrectStyleParentFrame(
+        blockFrame, oldStyle->GetPseudoType());
+    newParentIgnoringFirstLine = correctedFrame->Style();
+  } else {
+    newParentIgnoringFirstLine = newParent;
+  }
+
   if (!providerFrame) {
     
     
@@ -3717,7 +3720,8 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
   ComputedStyle* layoutParent = providerFrame->Style();
 
   RefPtr<ComputedStyle> newStyle = aStyleSet.ReparentComputedStyle(
-      oldStyle, newParent, layoutParent, ourElement);
+      oldStyle, newParent, newParentIgnoringFirstLine, layoutParent,
+      ourElement);
   aFrame->SetComputedStyle(newStyle);
 
   
@@ -3726,12 +3730,12 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
     
     
     
-    int32_t index = 0;
+    uint32_t index = 0;
     while (auto* oldAdditionalStyle =
                aFrame->GetAdditionalComputedStyle(index)) {
       RefPtr<ComputedStyle> newAdditionalContext =
           aStyleSet.ReparentComputedStyle(oldAdditionalStyle, newStyle,
-                                          newStyle, nullptr);
+                                          newStyle, newStyle, nullptr);
       aFrame->SetAdditionalComputedStyle(index, newAdditionalContext);
       ++index;
     }
@@ -3757,6 +3761,12 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
 void RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
                                               nsIFrame* aProviderChild,
                                               ServoStyleSet& aStyleSet) {
+  if (aFrame->GetContent()->IsElement() &&
+      !aFrame->GetContent()->AsElement()->HasServoData()) {
+    
+    
+    return;
+  }
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
