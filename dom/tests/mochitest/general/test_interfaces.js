@@ -1064,6 +1064,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCDTMFToneChangeEvent", insecureContext: true },
   
+  { name: "RTCEncodedAudioFrame", insecureContext: true },
+  
+  { name: "RTCEncodedVideoFrame", insecureContext: true },
+  
   { name: "RTCIceCandidate", insecureContext: true },
   
   { name: "RTCPeerConnection", insecureContext: true },
@@ -1071,6 +1075,8 @@ let interfaceNamesInGlobalScope = [
   { name: "RTCPeerConnectionIceEvent", insecureContext: true },
   
   { name: "RTCRtpReceiver", insecureContext: true },
+  
+  { name: "RTCRtpScriptTransform", insecureContext: true },
   
   { name: "RTCRtpSender", insecureContext: true },
   
