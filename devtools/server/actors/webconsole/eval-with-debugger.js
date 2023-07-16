@@ -115,7 +115,6 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
     };
   }
 
-  const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
 
   const { dbgGlobal, bindSelf } = getDbgGlobal(options, dbg, webConsole);
@@ -170,6 +169,7 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
 
   let result;
   try {
+    const evalString = getEvalInput(string, bindings);
     result = getEvalResult(
       dbg,
       evalString,
@@ -517,10 +517,10 @@ function updateConsoleInputEvaluation(dbg, webConsole) {
   }
 }
 
-function getEvalInput(string) {
+function getEvalInput(string, bindings) {
   const trimmedString = string.trim();
   
-  if (trimmedString === "help" || trimmedString === "?") {
+  if (bindings?.help && (trimmedString === "help" || trimmedString === "?")) {
     return "help()";
   }
   
