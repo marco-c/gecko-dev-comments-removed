@@ -6,6 +6,7 @@
 
 class PictureInPictureVideoWrapper {
   setCaptionContainerObserver(video, updateCaptionsFunction) {
+    
     let container = document.querySelector(".dss-hls-subtitle-overlay");
 
     if (container) {
@@ -28,6 +29,35 @@ class PictureInPictureVideoWrapper {
       callback();
 
       let captionsObserver = new MutationObserver(callback);
+      captionsObserver.observe(container, {
+        attributes: false,
+        childList: true,
+        subtree: true,
+      });
+      return;
+    }
+
+    
+    container = document.querySelector(".shaka-text-container");
+    if (container) {
+      updateCaptionsFunction("");
+      const callback = function (mutationsList, observer) {
+        let textNodeList = container?.querySelectorAll("span");
+        if (!textNodeList) {
+          updateCaptionsFunction("");
+          return;
+        }
+
+        updateCaptionsFunction(
+          Array.from(textNodeList, x => x.textContent).join("\n")
+        );
+      };
+
+      
+      callback([1], null);
+
+      let captionsObserver = new MutationObserver(callback);
+
       captionsObserver.observe(container, {
         attributes: false,
         childList: true,
