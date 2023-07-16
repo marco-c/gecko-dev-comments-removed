@@ -15,19 +15,18 @@ const methods = [
   next => Iterator.prototype.filter.bind({next}, x => x),
   next => Iterator.prototype.take.bind({next}, 1),
   next => Iterator.prototype.drop.bind({next}, 0),
-  next => Iterator.prototype.asIndexedPairs.bind({next}),
   next => Iterator.prototype.flatMap.bind({next}, x => [x]),
 ];
 
 for (const method of methods) {
-  assertThrowsInstanceOf(method(0), TypeError);
-  assertThrowsInstanceOf(method(false), TypeError);
-  assertThrowsInstanceOf(method(undefined), TypeError);
-  assertThrowsInstanceOf(method(null), TypeError);
-  assertThrowsInstanceOf(method(''), TypeError);
-  assertThrowsInstanceOf(method(Symbol('')), TypeError);
-  assertThrowsInstanceOf(method({}), TypeError);
-  assertThrowsInstanceOf(method([]), TypeError);
+  method(0);
+  method(false);
+  method(undefined);
+  method(null);
+  method('');
+  method(Symbol(''));
+  method({});
+  method([]);
 }
 
 if (typeof reportCompare == 'function')
