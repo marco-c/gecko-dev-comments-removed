@@ -335,12 +335,12 @@ async function selectResourceTypesAndStartMigration(
   selector.click();
 
   await new Promise(resolve => {
-    shadow
+    wizard
       .querySelector("panel-list")
       .addEventListener("shown", resolve, { once: true });
   });
 
-  let panelItem = shadow.querySelector(`panel-item[key="${migratorKey}"]`);
+  let panelItem = wizard.querySelector(`panel-item[key="${migratorKey}"]`);
   panelItem.click();
 
   
