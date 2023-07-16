@@ -8320,7 +8320,8 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(
       
       
       
-      if (mouseEvent->IsShift()) {
+      if (mouseEvent->IsShift() &&
+          StaticPrefs::dom_event_contextmenu_shift_suppresses_event()) {
         aEvent->mFlags.mOnlyChromeDispatch = true;
         aEvent->mFlags.mRetargetToNonNativeAnonymous = true;
       }
