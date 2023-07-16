@@ -203,7 +203,20 @@ class MOZ_STACK_CLASS TryEmitter {
   TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind);
 
   [[nodiscard]] bool emitTry();
-  [[nodiscard]] bool emitCatch();
+
+  enum class ExceptionStack : bool {
+    
+
+
+    No,
+
+    
+
+
+    Yes,
+  };
+
+  [[nodiscard]] bool emitCatch(ExceptionStack stack = ExceptionStack::No);
 
   
   
