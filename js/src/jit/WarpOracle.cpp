@@ -898,11 +898,9 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     }
   }
 
+  
+  
   JS::AutoAssertNoGC nogc;
-  Zone* zone = cx_->zone();
-  if (zone->needsIncrementalBarrier()) {
-    TraceWeakCacheIRStub(zone->barrierTracer(), stub, stub->stubInfo());
-  }
 
   
   
@@ -1145,6 +1143,9 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
   
   
   
+  
+  
+  
 
   uint32_t field = 0;
   size_t offset = 0;
@@ -1157,10 +1158,17 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
       case StubField::Type::Double:
         break;
       case StubField::Type::Shape:
-      case StubField::Type::WeakShape:
         static_assert(std::is_convertible_v<Shape*, gc::TenuredCell*>,
                       "Code assumes shapes are tenured");
         break;
+      case StubField::Type::WeakShape: {
+        static_assert(std::is_convertible_v<Shape*, gc::TenuredCell*>,
+                      "Code assumes shapes are tenured");
+        Shape* shape =
+            stubInfo->getStubField<ICCacheIRStub, Shape*>(stub, offset);
+        gc::ExposeGCThingToActiveJS(JS::GCCellPtr(shape));
+        break;
+      }
       case StubField::Type::GetterSetter:
         static_assert(std::is_convertible_v<GetterSetter*, gc::TenuredCell*>,
                       "Code assumes GetterSetters are tenured");
@@ -1181,6 +1189,9 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
       case StubField::Type::WeakObject: {
         JSObject* obj =
             stubInfo->getStubField<ICCacheIRStub, JSObject*>(stub, offset);
+        if (fieldType == StubField::Type::WeakObject) {
+          gc::ExposeGCThingToActiveJS(JS::GCCellPtr(obj));
+        }
         if (IsInsideNursery(obj)) {
           uint32_t nurseryIndex;
           if (!oracle_->registerNurseryObject(obj, &nurseryIndex)) {
