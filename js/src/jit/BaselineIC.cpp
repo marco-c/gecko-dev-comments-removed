@@ -178,6 +178,55 @@ void ICEntry::trace(JSTracer* trc) {
   MOZ_ASSERT(stub->usesTrampolineCode());
 }
 
+inline ICFallbackStub* GetFallbackStub(ICEntry* entry) {
+  ICStub* stub = entry->firstStub();
+  while (!stub->isFallback()) {
+    stub = stub->toCacheIRStub()->next();
+  }
+  return stub->toFallbackStub();
+}
+
+bool ICEntry::traceWeak(JSTracer* trc) {
+  
+  
+
+  ICFallbackStub* fallbackStub = GetFallbackStub(this);
+
+  ICStub* stub = firstStub();
+  ICCacheIRStub* prev = nullptr;
+  bool allSurvived = true;
+  while (!stub->isFallback()) {
+    ICCacheIRStub* cacheIRStub = stub->toCacheIRStub();
+    if (!cacheIRStub->traceWeak(trc)) {
+      fallbackStub->unlinkStubUnbarriered(this, prev, cacheIRStub);
+      allSurvived = false;
+    } else {
+      prev = cacheIRStub;
+    }
+
+    stub = cacheIRStub->next();
+    MOZ_ASSERT_IF(prev, prev->next() == stub);
+  }
+
+  
+  
+  
+   if (fallbackStub->numOptimizedStubs() == 0 && fallbackStub->hasFoldedStub()) {
+    fallbackStub->clearHasFoldedStub();
+  }
+
+#ifdef DEBUG
+  size_t count = 0;
+  for (ICStub* stub = firstStub(); stub != fallbackStub;
+       stub = stub->toCacheIRStub()->next()) {
+    count++;
+  }
+  MOZ_ASSERT(count == fallbackStub->state().numOptimizedStubs());
+#endif
+
+  return allSurvived;
+}
+
 
 
 
@@ -401,6 +450,10 @@ void ICCacheIRStub::trace(JSTracer* trc) {
   TraceCacheIRStub(trc, this, stubInfo());
 }
 
+bool ICCacheIRStub::traceWeak(JSTracer* trc) {
+  return TraceWeakCacheIRStub(trc, this, stubInfo());
+}
+
 static void MaybeTransition(JSContext* cx, BaselineFrame* frame,
                             ICFallbackStub* stub) {
   if (stub->state().shouldTransition()) {
@@ -461,6 +514,16 @@ static void TryAttachStub(const char* name, JSContext* cx, BaselineFrame* frame,
 
 void ICFallbackStub::unlinkStub(Zone* zone, ICEntry* icEntry,
                                 ICCacheIRStub* prev, ICCacheIRStub* stub) {
+  
+  
+  PreWriteBarrier(zone, stub);
+
+  unlinkStubUnbarriered(icEntry, prev, stub);
+}
+
+void ICFallbackStub::unlinkStubUnbarriered(ICEntry* icEntry,
+                                           ICCacheIRStub* prev,
+                                           ICCacheIRStub* stub) {
   if (prev) {
     MOZ_ASSERT(prev->next() == stub);
     prev->setNext(stub->next());
@@ -470,10 +533,6 @@ void ICFallbackStub::unlinkStub(Zone* zone, ICEntry* icEntry,
   }
 
   state_.trackUnlinkedStub();
-
-  
-  
-  PreWriteBarrier(zone, stub);
 
 #ifdef DEBUG
   
