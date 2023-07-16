@@ -241,13 +241,7 @@ add_task(async function blockButton() {
 
   
   let onEngagementCallCount = 0;
-  provider.onEngagement = (
-    isPrivate,
-    state,
-    queryContext,
-    details,
-    controller
-  ) => {
+  provider.onEngagement = (state, queryContext, details, controller) => {
     onEngagementCallCount++;
     controller.removeResult(details.result);
   };

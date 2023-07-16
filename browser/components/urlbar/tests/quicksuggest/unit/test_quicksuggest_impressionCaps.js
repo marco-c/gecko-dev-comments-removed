@@ -3869,11 +3869,26 @@ async function checkSearch({ name, searchString, expectedResults }) {
   
   
   
-  let isPrivate = true;
+  context.isPrivate = true;
   if (UrlbarProviderQuickSuggest._resultFromLastQuery) {
     UrlbarProviderQuickSuggest._resultFromLastQuery.isVisible = true;
   }
-  const controller = UrlbarTestUtils.newMockController();
+  const controller = UrlbarTestUtils.newMockController({
+    input: {
+      isPrivate: true,
+      onFirstResult() {
+        return false;
+      },
+      getSearchSource() {
+        return "dummy-search-source";
+      },
+      window: {
+        location: {
+          href: AppConstants.BROWSER_CHROME_URL,
+        },
+      },
+    },
+  });
   controller.setView({
     get visibleResults() {
       return context.results;
@@ -3884,7 +3899,6 @@ async function checkSearch({ name, searchString, expectedResults }) {
     acknowledgeDismissal() {},
   });
   UrlbarProviderQuickSuggest.onEngagement(
-    isPrivate,
     "engagement",
     context,
     {
