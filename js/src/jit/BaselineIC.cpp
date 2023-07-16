@@ -211,7 +211,7 @@ bool ICEntry::traceWeak(JSTracer* trc) {
   
   
   
-   if (fallbackStub->numOptimizedStubs() == 0 &&
+  if (fallbackStub->numOptimizedStubs() == 0 &&
       fallbackStub->mayHaveFoldedStub()) {
     fallbackStub->clearMayHaveFoldedStub();
   }
