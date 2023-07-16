@@ -85,8 +85,8 @@ struct ShapeUtils final {
   
   
   
-  static bool ComputeInsetRadii(const StyleBasicShape&, const nsRect& aRefBox,
-                                const nsRect& aInsetRect, nscoord aRadii[8]);
+  static bool ComputeRectRadii(const StyleBorderRadius&, const nsRect& aRefBox,
+                               const nsRect& aRect, nscoord aRadii[8]);
 
   
   
@@ -138,12 +138,11 @@ struct ShapeUtils final {
   
   
   
-  
-  static already_AddRefed<gfx::Path> BuildInsetPath(const nsRect& aInsetRect,
-                                                    const nscoord aRadii[8],
-                                                    const nsRect& aRefBox,
-                                                    nscoord aAppUnitsPerPixel,
-                                                    gfx::PathBuilder*);
+  static already_AddRefed<gfx::Path> BuildRectPath(const nsRect& aRect,
+                                                   const nscoord aRadii[8],
+                                                   const nsRect& aRefBox,
+                                                   nscoord aAppUnitsPerPixel,
+                                                   gfx::PathBuilder*);
 };
 
 }  
