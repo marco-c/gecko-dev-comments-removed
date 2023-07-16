@@ -443,6 +443,7 @@ NS_EVENT_MESSAGE(eToggle)
 
 
 NS_EVENT_MESSAGE(eClose)
+NS_EVENT_MESSAGE(eCancel)
 
 
 NS_EVENT_MESSAGE(eMarqueeBounce)

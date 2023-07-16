@@ -1625,6 +1625,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onblur", insecureContext: true },
   
+  { name: "oncancel", insecureContext: true },
+  
   { name: "oncanplay", insecureContext: true },
   
   { name: "oncanplaythrough", insecureContext: true },
