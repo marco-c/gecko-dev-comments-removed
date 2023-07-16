@@ -1,18 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewChildModule"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const { debug, warn } = GeckoViewUtils.initLogging("Module[C]");
 
-class GeckoViewChildModule {
+export class GeckoViewChildModule {
   static initLogging(aModuleName) {
     this._moduleName = aModuleName;
     const tag = aModuleName.replace("GeckoView", "") + "[C]";
@@ -76,12 +70,12 @@ class GeckoViewChildModule {
     });
   }
 
-  
+  // Override to initialize module.
   onInit() {}
 
-  
+  // Override to enable module after setting a Java delegate.
   onEnable() {}
 
-  
+  // Override to disable module after clearing the Java delegate.
   onDisable() {}
 }
