@@ -29,7 +29,6 @@ UNSUPPORTED_FEATURES = set(
         "decorators",  
         "regexp-duplicate-named-groups",  
         "symbols-as-weakmap-keys",  
-        "arraybuffer-transfer",  
         "json-parse-with-source",  
     ]
 )
@@ -45,6 +44,7 @@ FEATURE_CHECK_NEEDED = {
     "String.prototype.isWellFormed": "!String.prototype.isWellFormed",
     "String.prototype.toWellFormed": "!String.prototype.toWellFormed",
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
+    "arraybuffer-transfer": "!ArrayBuffer.prototype.transfer",  
 }
 RELEASE_OR_BETA = set([])
 SHELL_OPTIONS = {
@@ -56,6 +56,7 @@ SHELL_OPTIONS = {
     "String.prototype.isWellFormed": "--enable-well-formed-unicode-strings",
     "String.prototype.toWellFormed": "--enable-well-formed-unicode-strings",
     "iterator-helpers": "--enable-iterator-helpers",
+    "arraybuffer-transfer": "--enable-arraybuffer-transfer",
 }
 
 
