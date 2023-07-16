@@ -3,8 +3,10 @@
 
 
 use crate::{
-    identity::IdentityRecyclerFactory, wgpu_string, AdapterInformation, ByteBuf,
-    CommandEncoderAction, DeviceAction, DropAction, QueueWriteAction, TextureAction,
+    error::{ErrMsg, ErrorBufferType, HasErrorBufferType},
+    identity::IdentityRecyclerFactory,
+    wgpu_string, AdapterInformation, ByteBuf, CommandEncoderAction, DeviceAction, DropAction,
+    QueueWriteAction, TextureAction,
 };
 
 use nsstring::{nsACString, nsCString, nsString};
@@ -14,7 +16,7 @@ use wgc::{gfx_select, id};
 
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::{error::Error, os::raw::c_char, ptr, slice};
+use std::{os::raw::c_char, ptr, slice};
 
 
 
@@ -33,13 +35,18 @@ const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
 
 
 
-
-
-
-
-
 #[repr(C)]
 pub struct ErrorBuffer {
+    
+    
+    
+    
+    r#type: *mut ErrorBufferType,
+    
+    
+    
+    
+    
     string: *mut c_char,
     capacity: usize,
 }
@@ -54,8 +61,7 @@ impl ErrorBuffer {
     
     
     
-    
-    fn init(&mut self, error: impl Error) {
+    fn init(&mut self, error: impl HasErrorBufferType) {
         use std::fmt::Write;
 
         let mut string = format!("{}", error);
@@ -63,6 +69,15 @@ impl ErrorBuffer {
         while let Some(source) = e {
             write!(string, ", caused by: {}", source).unwrap();
             e = source.source();
+        }
+
+        let err_ty = error.error_type();
+        
+        unsafe { *self.r#type = err_ty };
+
+        if matches!(err_ty, ErrorBufferType::None) {
+            log::warn!("{string}");
+            return;
         }
 
         self.init_str(&string);
@@ -347,7 +362,10 @@ pub extern "C" fn wgpu_server_device_create_buffer(
 
     
     if size > MAX_BUFFER_SIZE {
-        error_buf.init_str("Out of memory");
+        error_buf.init(ErrMsg {
+            message: "Out of memory",
+            r#type: ErrorBufferType::OutOfMemory,
+        });
         gfx_select!(self_id => global.create_buffer_error(buffer_id, label));
         return;
     }
@@ -462,7 +480,10 @@ impl Global {
                     || desc.size.depth_or_array_layers > max
                 {
                     gfx_select!(self_id => self.create_texture_error(id, desc.label));
-                    error_buf.init_str("Out of memory");
+                    error_buf.init(ErrMsg {
+                        message: "Out of memory",
+                        r#type: ErrorBufferType::OutOfMemory,
+                    });
                     return;
                 }
                 let (_, error) = self.device_create_texture::<A>(self_id, &desc, id);
@@ -542,8 +563,11 @@ impl Global {
                     error_buf.init(err);
                 }
             }
-            DeviceAction::Error(message) => {
-                error_buf.init_str(&message);
+            DeviceAction::Error { message, r#type } => {
+                error_buf.init(ErrMsg {
+                    message: &message,
+                    r#type,
+                });
             }
         }
     }
