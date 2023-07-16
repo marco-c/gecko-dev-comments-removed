@@ -9,7 +9,19 @@
 
 #include "nsLiteralString.h"
 
+
+
+
+#define METADATA_FILE_NAME u".metadata"
+#define METADATA_TMP_FILE_NAME u".metadata-tmp"
+#define METADATA_V2_FILE_NAME u".metadata-v2"
+#define METADATA_V2_TMP_FILE_NAME u".metadata-v2-tmp"
+
 namespace mozilla::dom::quota {
+
+const char kChromeOrigin[] = "chrome";
+
+constexpr auto kSQLiteSuffix = u".sqlite"_ns;
 
 constexpr nsLiteralCString kUUIDOriginScheme = "uuid"_ns;
 
