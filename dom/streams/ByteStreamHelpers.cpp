@@ -26,7 +26,8 @@ JSObject* TransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject) {
   size_t bufferLength = JS::GetArrayBufferByteLength(aObject);
 
   
-  void* bufferData = JS::StealArrayBufferContents(aCx, aObject);
+  UniquePtr<void, JS::FreePolicy> bufferData{
+      JS::StealArrayBufferContents(aCx, aObject)};
 
   
   if (!JS::DetachArrayBuffer(aCx, aObject)) {
@@ -34,7 +35,8 @@ JSObject* TransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject) {
   }
 
   
-  return JS::NewArrayBufferWithContents(aCx, bufferLength, bufferData);
+  return JS::NewArrayBufferWithContents(aCx, bufferLength,
+                                        std::move(bufferData));
 }
 
 
