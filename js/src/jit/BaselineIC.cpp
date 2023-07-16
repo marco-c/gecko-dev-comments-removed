@@ -211,8 +211,9 @@ bool ICEntry::traceWeak(JSTracer* trc) {
   
   
   
-   if (fallbackStub->numOptimizedStubs() == 0 && fallbackStub->hasFoldedStub()) {
-    fallbackStub->clearHasFoldedStub();
+   if (fallbackStub->numOptimizedStubs() == 0 &&
+      fallbackStub->mayHaveFoldedStub()) {
+    fallbackStub->clearMayHaveFoldedStub();
   }
 
 #ifdef DEBUG
@@ -552,7 +553,7 @@ void ICFallbackStub::discardStubs(JSContext* cx, ICEntry* icEntry) {
                stub->toCacheIRStub());
     stub = stub->toCacheIRStub()->next();
   }
-  clearHasFoldedStub();
+  clearMayHaveFoldedStub();
 }
 
 static void InitMacroAssemblerForICStub(StackMacroAssembler& masm) {

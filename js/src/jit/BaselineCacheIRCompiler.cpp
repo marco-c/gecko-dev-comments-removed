@@ -2280,7 +2280,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
   }
   MOZ_ASSERT(result == ICAttachResult::Attached);
 
-  fallback->setHasFoldedStub();
+  fallback->setMayHaveFoldedStub();
   return true;
 }
 
@@ -2496,7 +2496,8 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
   }
 
   
-  if (stub->hasFoldedStub() && AddToFoldedStub(cx, writer, icScript, stub)) {
+  if (stub->mayHaveFoldedStub() &&
+      AddToFoldedStub(cx, writer, icScript, stub)) {
     
     
     
