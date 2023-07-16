@@ -201,11 +201,7 @@ void FileReader::OnLoadEndArrayBuffer() {
 
   JSContext* cx = jsapi.cx();
 
-  
-  
-  mResultArrayBuffer = JS::NewArrayBufferWithContents(
-      cx, mDataLen, mFileData,
-      JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
+  mResultArrayBuffer = JS::NewArrayBufferWithContents(cx, mDataLen, mFileData);
   if (mResultArrayBuffer) {
     mFileData = nullptr;  
     FreeDataAndDispatchSuccess();

@@ -8,14 +8,11 @@
 #ifndef js_ArrayBuffer_h
 #define js_ArrayBuffer_h
 
-#include "mozilla/UniquePtr.h"
-
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
 #include "js/TypeDecls.h"
-#include "js/Utility.h"
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -42,71 +39,12 @@ extern JS_PUBLIC_API JSObject* NewArrayBuffer(JSContext* cx, size_t nbytes);
 
 
 
-extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
-    JSContext* cx, size_t nbytes,
-    mozilla::UniquePtr<void, JS::FreePolicy> contents);
 
 
 
-
-
-
-
-
-
-
-
-
-inline JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
-    JSContext* cx, size_t nbytes,
-    mozilla::UniquePtr<char[], JS::FreePolicy> contents) {
-  
-  mozilla::UniquePtr<void, JS::FreePolicy> ptr{contents.release()};
-  return NewArrayBufferWithContents(cx, nbytes, std::move(ptr));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-inline JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
-    JSContext* cx, size_t nbytes,
-    mozilla::UniquePtr<uint8_t[], JS::FreePolicy> contents) {
-  
-  mozilla::UniquePtr<void, JS::FreePolicy> ptr{contents.release()};
-  return NewArrayBufferWithContents(cx, nbytes, std::move(ptr));
-}
-
-
-
-
-
-enum class NewArrayBufferOutOfMemory { CallerMustFreeMemory };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
-    JSContext* cx, size_t nbytes, void* contents, NewArrayBufferOutOfMemory);
+extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(JSContext* cx,
+                                                          size_t nbytes,
+                                                          void* contents);
 
 
 
@@ -130,24 +68,6 @@ extern JS_PUBLIC_API JSObject* CopyArrayBuffer(
     JSContext* cx, JS::Handle<JSObject*> maybeArrayBuffer);
 
 using BufferContentsFreeFunc = void (*)(void* contents, void* userData);
-
-
-
-
-class JS_PUBLIC_API BufferContentsDeleter {
-  BufferContentsFreeFunc freeFunc_ = nullptr;
-  void* userData_ = nullptr;
-
- public:
-  MOZ_IMPLICIT BufferContentsDeleter(BufferContentsFreeFunc freeFunc,
-                                     void* userData = nullptr)
-      : freeFunc_(freeFunc), userData_(userData) {}
-
-  void operator()(void* contents) const { freeFunc_(contents, userData_); }
-
-  BufferContentsFreeFunc freeFunc() const { return freeFunc_; }
-  void* userData() const { return userData_; }
-};
 
 
 
@@ -176,8 +96,8 @@ class JS_PUBLIC_API BufferContentsDeleter {
 
 
 extern JS_PUBLIC_API JSObject* NewExternalArrayBuffer(
-    JSContext* cx, size_t nbytes,
-    mozilla::UniquePtr<void, BufferContentsDeleter> contents);
+    JSContext* cx, size_t nbytes, void* contents,
+    BufferContentsFreeFunc freeFunc, void* freeUserData = nullptr);
 
 
 

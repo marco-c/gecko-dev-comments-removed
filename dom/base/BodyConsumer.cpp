@@ -651,7 +651,7 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
   AssertIsOnTargetThread();
 
   
-  UniquePtr<uint8_t[], JS::FreePolicy> resultPtr{aResult};
+  auto autoFree = mozilla::MakeScopeExit([&] { free(aResult); });
 
   if (mBodyConsumed) {
     return;
@@ -689,7 +689,7 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
   }
 
   
-  MOZ_ASSERT(resultPtr);
+  MOZ_ASSERT(aResult);
 
   AutoJSAPI jsapi;
   if (!jsapi.Init(mGlobal)) {
@@ -703,14 +703,16 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
   switch (mConsumeType) {
     case CONSUME_ARRAYBUFFER: {
       JS::Rooted<JSObject*> arrayBuffer(cx);
-      BodyUtil::ConsumeArrayBuffer(cx, &arrayBuffer, aResultLength,
-                                   std::move(resultPtr), error);
+      BodyUtil::ConsumeArrayBuffer(cx, &arrayBuffer, aResultLength, aResult,
+                                   error);
 
       if (!error.Failed()) {
         JS::Rooted<JS::Value> val(cx);
         val.setObjectOrNull(arrayBuffer);
 
         localPromise->MaybeResolve(val);
+        
+        aResult = nullptr;
       }
       break;
     }
@@ -720,7 +722,8 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
     }
     case CONSUME_FORMDATA: {
       nsCString data;
-      data.Adopt(reinterpret_cast<char*>(resultPtr.release()), aResultLength);
+      data.Adopt(reinterpret_cast<char*>(aResult), aResultLength);
+      aResult = nullptr;
 
       RefPtr<dom::FormData> fd = BodyUtil::ConsumeFormData(
           mGlobal, mBodyMimeType, mMixedCaseMimeType, data, error);
@@ -734,7 +737,7 @@ void BodyConsumer::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength,
     case CONSUME_JSON: {
       nsString decoded;
       if (NS_SUCCEEDED(
-              BodyUtil::ConsumeText(aResultLength, resultPtr.get(), decoded))) {
+              BodyUtil::ConsumeText(aResultLength, aResult, decoded))) {
         if (mConsumeType == CONSUME_TEXT) {
           localPromise->MaybeResolve(decoded);
         } else {

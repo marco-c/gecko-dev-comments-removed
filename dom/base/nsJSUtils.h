@@ -21,7 +21,6 @@
 #include "js/Conversions.h"
 #include "js/SourceText.h"
 #include "js/String.h"  
-#include "js/Utility.h"  
 #include "nsString.h"
 #include "xpcpublic.h"
 
@@ -88,9 +87,8 @@ class nsJSUtils {
   
   
   
-  static JSObject* MoveBufferAsUint8Array(
-      JSContext* aCx, size_t aSize,
-      mozilla::UniquePtr<uint8_t[], JS::FreePolicy> aBuffer);
+  static JSObject* MoveBufferAsUint8Array(JSContext* aCx, size_t aSize,
+                                          mozilla::UniquePtr<uint8_t>& aBuffer);
 };
 
 inline void AssignFromStringBuffer(nsStringBuffer* buffer, size_t len,
