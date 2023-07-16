@@ -553,12 +553,6 @@ DataSize PacingController::PaddingToAdd(DataSize recommended_probe_size,
     return DataSize::Zero();
   }
 
-  if (!seen_first_packet_) {
-    
-    
-    return DataSize::Zero();
-  }
-
   if (!recommended_probe_size.IsZero()) {
     if (recommended_probe_size > data_sent) {
       return recommended_probe_size - data_sent;
