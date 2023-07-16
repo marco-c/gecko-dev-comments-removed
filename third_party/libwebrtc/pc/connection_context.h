@@ -122,7 +122,7 @@ class ConnectionContext final
   
   std::unique_ptr<FieldTrialsView> const trials_;
 
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
+  const std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
 
   
   

@@ -173,8 +173,15 @@ ConnectionContext::ConnectionContext(
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  
-  worker_thread_->PostTask([media_engine = std::move(media_engine_)] {});
+  worker_thread_->BlockingCall([&] {
+    RTC_DCHECK_RUN_ON(worker_thread());
+    
+    
+    
+    
+    const_cast<std::unique_ptr<cricket::MediaEngineInterface>&>(media_engine_)
+        .reset();
+  });
 
   
   
