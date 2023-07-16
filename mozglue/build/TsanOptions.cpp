@@ -60,6 +60,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "mutex:libffi.so\n"
          "mutex:wl_registry_destroy\n"
          
+         "mutex:libdbus-1\n"
+         "mutex:swrast_dri.so\n"
+         
          "race:libavcodec.so*\n"
          "race:libavutil.so*\n"
          
@@ -80,6 +83,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          "race:fire_glxtest_process\n"
+         "race:iris_dri\n"
+         
+         "race:libLLVM-12\n"
+         "race:radeonsi_dri\n"
          
          "race:swrast_dri.so\n"
          
