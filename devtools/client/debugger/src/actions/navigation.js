@@ -6,8 +6,8 @@ import { clearDocuments } from "../utils/editor";
 import sourceQueue from "../utils/source-queue";
 
 import { clearWasmStates } from "../utils/wasm";
-import { getMainThread, getThreadContext } from "../selectors";
-import { evaluateExpressions } from "../actions/expressions";
+import { getMainThread } from "../selectors";
+import { evaluateExpressionsForCurrentContext } from "../actions/expressions";
 
 
 
@@ -47,8 +47,7 @@ export function navigated() {
   return async function ({ getState, dispatch, panel }) {
     try {
       
-      const threadcx = getThreadContext(getState());
-      await dispatch(evaluateExpressions(threadcx));
+      await dispatch(evaluateExpressionsForCurrentContext());
     } catch (e) {
       
       
