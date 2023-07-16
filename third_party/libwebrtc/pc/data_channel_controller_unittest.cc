@@ -98,11 +98,6 @@ TEST_F(DataChannelControllerTest, CloseAfterControllerDestroyed) {
   auto channel = dcc->InternalCreateDataChannelWithProxy(
       "label",
       std::make_unique<InternalDataChannelInit>(DataChannelInit()).get());
-  
-  auto inner_channel =
-      DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
-          channel.get());
-  dcc->ConnectDataChannel(inner_channel);
   dcc.reset();
   channel->Close();
 }
@@ -121,9 +116,6 @@ TEST_F(DataChannelControllerTest, AsyncChannelCloseTeardown) {
 
   channel = nullptr;  
   EXPECT_TRUE(dcc.HasDataChannels());
-
-  
-  dcc.ConnectDataChannel(inner_channel);
 
   
   

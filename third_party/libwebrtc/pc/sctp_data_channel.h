@@ -36,8 +36,6 @@ namespace webrtc {
 
 class SctpDataChannel;
 
-
-
 class SctpDataChannelControllerInterface {
  public:
   
@@ -45,8 +43,6 @@ class SctpDataChannelControllerInterface {
                         const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
                         cricket::SendDataResult* result) = 0;
-  
-  virtual bool ConnectDataChannel(SctpDataChannel* data_channel) = 0;
   
   virtual void AddSctpDataStream(int sid) = 0;
   
@@ -123,6 +119,7 @@ class SctpDataChannel : public DataChannelInterface {
   static rtc::scoped_refptr<SctpDataChannel> Create(
       rtc::WeakPtr<SctpDataChannelControllerInterface> controller,
       const std::string& label,
+      bool connected_to_transport,
       const InternalDataChannelInit& config,
       rtc::Thread* signaling_thread,
       rtc::Thread* network_thread);
@@ -175,7 +172,7 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   
-  void OnTransportReady(bool writable);
+  void OnTransportReady();
 
   void OnDataReceived(DataMessageType type,
                       const rtc::CopyOnWriteBuffer& payload);
@@ -191,7 +188,6 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   void OnClosingProcedureComplete();
-  
   
   void OnTransportChannelCreated();
   
@@ -211,6 +207,7 @@ class SctpDataChannel : public DataChannelInterface {
   SctpDataChannel(const InternalDataChannelInit& config,
                   rtc::WeakPtr<SctpDataChannelControllerInterface> controller,
                   const std::string& label,
+                  bool connected_to_transport,
                   rtc::Thread* signaling_thread,
                   rtc::Thread* network_thread);
   ~SctpDataChannel() override;
@@ -228,7 +225,6 @@ class SctpDataChannel : public DataChannelInterface {
   void Init();
   void UpdateState();
   void SetState(DataState state);
-  void DisconnectFromTransport();
 
   void DeliverQueuedReceivedData();
 

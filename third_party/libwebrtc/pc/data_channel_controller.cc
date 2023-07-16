@@ -43,14 +43,6 @@ bool DataChannelController::SendData(int sid,
   return false;
 }
 
-bool DataChannelController::ConnectDataChannel(
-    SctpDataChannel* webrtc_data_channel) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  
-  
-  return data_channel_transport() ? true : false;
-}
-
 void DataChannelController::AddSctpDataStream(int sid) {
   if (data_channel_transport()) {
     network_thread()->BlockingCall([this, sid] {
@@ -144,7 +136,7 @@ void DataChannelController::OnReadyToSend() {
     data_channel_transport_ready_to_send_ = true;
     auto copy = sctp_data_channels_;
     for (const auto& channel : copy)
-      channel->OnTransportReady(true);
+      channel->OnTransportReady();
   }));
 }
 
@@ -289,9 +281,19 @@ DataChannelController::InternalCreateSctpDataChannel(
   }
   
   new_config.id = sid.stream_id_int();
-  rtc::scoped_refptr<SctpDataChannel> channel(
-      SctpDataChannel::Create(weak_factory_.GetWeakPtr(), label, new_config,
-                              signaling_thread(), network_thread()));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  rtc::scoped_refptr<SctpDataChannel> channel(SctpDataChannel::Create(
+      weak_factory_.GetWeakPtr(), label, data_channel_transport() != nullptr,
+      new_config, signaling_thread(), network_thread()));
   if (!channel) {
     sid_allocator_.ReleaseSid(sid);
     return nullptr;
@@ -402,6 +404,7 @@ bool DataChannelController::DataChannelSendData(
 
 void DataChannelController::NotifyDataChannelsOfTransportCreated() {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(data_channel_transport());
   signaling_thread()->PostTask(SafeTask(signaling_safety_.flag(), [this] {
     RTC_DCHECK_RUN_ON(signaling_thread());
     auto copy = sctp_data_channels_;
