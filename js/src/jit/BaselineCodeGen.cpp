@@ -4553,6 +4553,19 @@ bool BaselineCodeGen<Handler>::emit_Throw() {
 }
 
 template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_ThrowWithStack() {
+  
+  frame.popRegsAndSync(2);
+
+  prepareVMCall();
+  pushArg(R1);
+  pushArg(R0);
+
+  using Fn = bool (*)(JSContext*, HandleValue, HandleValue);
+  return callVM<Fn, js::ThrowWithStackOperation>();
+}
+
+template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_Try() {
   return true;
 }
@@ -4847,6 +4860,40 @@ bool BaselineCodeGen<Handler>::emit_Exception() {
   }
 
   frame.push(R0);
+  return true;
+}
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_ExceptionAndStack() {
+  
+  {
+    prepareVMCall();
+
+    using Fn = bool (*)(JSContext*, MutableHandleValue);
+    if (!callVM<Fn, GetPendingExceptionStack>()) {
+      return false;
+    }
+
+    frame.push(R0);
+  }
+
+  
+  {
+    prepareVMCall();
+
+    using Fn = bool (*)(JSContext*, MutableHandleValue);
+    if (!callVM<Fn, GetAndClearException>()) {
+      return false;
+    }
+
+    frame.push(R0);
+  }
+
+  
+  frame.popRegsAndSync(2);
+  frame.push(R1);
+  frame.push(R0);
+
   return true;
 }
 

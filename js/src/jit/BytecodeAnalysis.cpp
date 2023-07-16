@@ -246,6 +246,7 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 
 #ifdef DEBUG
       case JSOp::Exception:
+      case JSOp::ExceptionAndStack:
         
         
         MOZ_ASSERT(!normallyReachable);
