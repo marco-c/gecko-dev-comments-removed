@@ -979,8 +979,11 @@ decltype(&DetouredCallCode) gDetouredCall =
   }
 
   DWORD oldProtect{};
+  
+  
+  
   if (!VirtualProtect(reinterpret_cast<void*>(DetouredCallJumper), sizeof bytes,
-                      PAGE_READWRITE, &oldProtect)) {
+                      PAGE_EXECUTE_READWRITE, &oldProtect)) {
     return nullptr;
   }
 
