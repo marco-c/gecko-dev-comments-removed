@@ -35,8 +35,6 @@ struct TranscodeSource final {
   const uint32_t lineno;
 };
 
-using TranscodeSources = mozilla::Vector<TranscodeSource>;
-
 enum class TranscodeResult : uint8_t {
   
   Ok = 0,
@@ -126,11 +124,6 @@ extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
 
 extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSScript*> script);
 extern JS_PUBLIC_API void AbortIncrementalEncoding(Handle<JSObject*> module);
-
-
-
-
-
 
 
 

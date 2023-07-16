@@ -442,16 +442,16 @@ class ScriptPreloader : public nsIObserver,
 
  private:
   bool StartDecodeTask(JS::DecodeOptions decodeOptions,
-                       JS::TranscodeSources&& decodingSources);
+                       Vector<JS::TranscodeSource>&& decodingSources);
 
   class DecodeTask : public Runnable {
     ScriptPreloader* mPreloader;
     JS::DecodeOptions mDecodeOptions;
-    JS::TranscodeSources mDecodingSources;
+    Vector<JS::TranscodeSource> mDecodingSources;
 
    public:
     DecodeTask(ScriptPreloader* preloader, JS::DecodeOptions decodeOptions,
-               JS::TranscodeSources&& decodingSources)
+               Vector<JS::TranscodeSource>&& decodingSources)
         : Runnable("ScriptPreloaderDecodeTask"),
           mPreloader(preloader),
           mDecodeOptions(decodeOptions),

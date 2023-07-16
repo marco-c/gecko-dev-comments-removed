@@ -241,11 +241,6 @@ JS::OffThreadToken* StartOffThreadDecodeStencil(
     const JS::TranscodeRange& range, JS::OffThreadCompileCallback callback,
     void* callbackData);
 
-JS::OffThreadToken* StartOffThreadDecodeMultiStencils(
-    JSContext* cx, const JS::DecodeOptions& options,
-    JS::TranscodeSources& sources, JS::OffThreadCompileCallback callback,
-    void* callbackData);
-
 
 
 void StartOffThreadDelazification(JSContext* cx,
