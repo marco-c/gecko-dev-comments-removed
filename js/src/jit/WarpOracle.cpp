@@ -898,12 +898,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     }
   }
 
-  JS::AutoAssertNoGC nogc;
-  Zone* zone = cx_->zone();
-  if (zone->needsIncrementalBarrier()) {
-    TraceWeakCacheIRStub(zone->barrierTracer(), stub, stub->stubInfo());
-  }
-
   
   
   
@@ -1020,12 +1014,6 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
       WarpCacheIR(offset, jitCode, stubInfo, stubDataCopy);
   if (!cacheIRSnapshot) {
     return abort(AbortReason::Alloc);
-  }
-
-  
-  Zone* zone = jitCode->zone();
-  if (zone->needsIncrementalBarrier()) {
-    TraceWeakCacheIRStub(zone->barrierTracer(), stub, stub->stubInfo());
   }
 
   
@@ -1157,7 +1145,6 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
       case StubField::Type::Double:
         break;
       case StubField::Type::Shape:
-      case StubField::Type::WeakShape:
         static_assert(std::is_convertible_v<Shape*, gc::TenuredCell*>,
                       "Code assumes shapes are tenured");
         break;
@@ -1177,8 +1164,7 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
         static_assert(std::is_convertible_v<JitCode*, gc::TenuredCell*>,
                       "Code assumes JitCodes are tenured");
         break;
-      case StubField::Type::JSObject:
-      case StubField::Type::WeakObject: {
+      case StubField::Type::JSObject: {
         JSObject* obj =
             stubInfo->getStubField<ICCacheIRStub, JSObject*>(stub, offset);
         if (IsInsideNursery(obj)) {

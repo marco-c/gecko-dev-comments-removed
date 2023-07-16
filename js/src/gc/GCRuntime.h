@@ -840,7 +840,6 @@ class GCRuntime {
   void sweepCompressionTasks();
   void sweepWeakMaps();
   void sweepUniqueIds();
-  void sweepObjectsWithWeakPointers();
   void sweepDebuggerOnMainThread(JS::GCContext* gcx);
   void sweepJitDataOnMainThread(JS::GCContext* gcx);
   void sweepFinalizationObserversOnMainThread();
@@ -1131,10 +1130,6 @@ class GCRuntime {
   
   
   MainThreadData<bool> useBackgroundThreads;
-
-  
-  
-  MainThreadData<bool> haveDiscardedJITCodeThisSlice;
 
 #ifdef DEBUG
   

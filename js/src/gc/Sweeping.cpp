@@ -1348,6 +1348,13 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
+    if (initialState != State::NotActive) {
+      
+      
+      
+      js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
+    }
+
     
     
 
@@ -1356,19 +1363,10 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
     jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   }
 
-  
-  
-  
-  {
+  if (initialState != State::NotActive) {
     gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
-    Zone::DiscardOptions options;
-    options.traceWeakJitScripts = &trc;
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-      if (!haveDiscardedJITCodeThisSlice && !zone->isPreservingCode()) {
-        zone->forceDiscardJitCode(gcx, options);
-      } else {
-        zone->traceWeakJitScripts(&trc);
-      }
+      zone->discardJitCode(gcx);
     }
   }
 
@@ -1383,33 +1381,10 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
 
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
       if (jit::JitZone* jitZone = zone->jitZone()) {
-        jitZone->traceWeak(&trc, zone);
+        jitZone->traceWeak(&trc);
       }
     }
   }
-}
-
-void GCRuntime::sweepObjectsWithWeakPointers() {
-  SweepingTracer trc(rt);
-  for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-    AutoSetThreadIsSweeping threadIsSweeping(zone);
-    zone->sweepObjectsWithWeakPointers(&trc);
-  }
-}
-
-void JS::Zone::sweepObjectsWithWeakPointers(JSTracer* trc) {
-  MOZ_ASSERT(trc->traceWeakEdges());
-
-  objectsWithWeakPointers.ref().mutableEraseIf([&](JSObject*& obj) {
-    if (!TraceManuallyBarrieredWeakEdge(trc, &obj, "objectsWithWeakPointers")) {
-      
-      return true;
-    }
-
-    
-    obj->getClass()->doTrace(trc, obj);
-    return false;
-  });
 }
 
 using WeakCacheTaskVector =
@@ -1535,12 +1510,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
 
   
   
-  if (!haveDiscardedJITCodeThisSlice) {
-    js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
-  }
-
-  
-  
   
   if (sweepingAtoms) {
     AutoPhase ap(stats(), PhaseKind::UPDATE_ATOMS_BITMAP);
@@ -1586,9 +1555,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     AutoRunParallelTask sweepUniqueIds(this, &GCRuntime::sweepUniqueIds,
                                        PhaseKind::SWEEP_UNIQUEIDS,
                                        GCUse::Sweeping, lock);
-    AutoRunParallelTask sweepWeakPointers(
-        this, &GCRuntime::sweepObjectsWithWeakPointers,
-        PhaseKind::SWEEP_WEAK_POINTERS, GCUse::Sweeping, lock);
 
     WeakCacheTaskVector sweepCacheTasks;
     bool canSweepWeakCachesOffThread =

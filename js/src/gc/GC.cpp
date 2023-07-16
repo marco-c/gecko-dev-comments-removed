@@ -2749,7 +2749,6 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
     
     
     discardJITCodeForGC();
-    haveDiscardedJITCodeThisSlice = true;
 
     
 
@@ -3530,7 +3529,6 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
   initialState = incrementalState;
   isIncremental = !budget.isUnlimited();
   useBackgroundThreads = ShouldUseBackgroundThreads(isIncremental, reason);
-  haveDiscardedJITCodeThisSlice = false;
 
 #ifdef JS_GC_ZEAL
   
