@@ -9,7 +9,7 @@ function test() {
 
   
   
-  ChromeUtils.import("resource://testing-common/httpd.js");
+  ChromeUtils.importESModule("resource://testing-common/httpd.sys.mjs");
 
   nextTest();
 }

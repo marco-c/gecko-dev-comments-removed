@@ -2,7 +2,9 @@
 
 
 
-var { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+var { HttpServer } = ChromeUtils.importESModule(
+  "resource://testing-common/httpd.sys.mjs"
+);
 
 var server = new HttpServer();
 server.start(-1);
