@@ -2,12 +2,9 @@
 
 
 
-import { isStepping, getPauseReason, getThreadContext } from "../../selectors";
+import { isStepping, getPauseReason, getSelectedFrame } from "../../selectors";
 import { evaluateExpressions } from "../expressions";
 import { inDebuggerEval } from "../../utils/pause";
-
-
-
 
 
 
@@ -20,9 +17,11 @@ export function resumed(thread) {
 
     dispatch({ type: "RESUME", thread, wasStepping });
 
-    const cx = getThreadContext(getState());
-    if (!wasStepping && !wasPausedInEval && cx.thread == thread) {
-      await dispatch(evaluateExpressions(cx));
+    
+    
+    if (!wasStepping && !wasPausedInEval) {
+      const selectedFrame = getSelectedFrame(getState(), thread);
+      await dispatch(evaluateExpressions(selectedFrame));
     }
   };
 }

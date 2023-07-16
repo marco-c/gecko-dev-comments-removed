@@ -28,9 +28,12 @@ export function selectThread(thread) {
     
     assert(threadcx.thread == thread, "Thread mismatch");
 
+    const selectedFrame = getSelectedFrame(getState(), thread);
+
     const serverRequests = [];
     
-    serverRequests.push(dispatch(evaluateExpressions(threadcx)));
+    
+    serverRequests.push(dispatch(evaluateExpressions(selectedFrame)));
 
     
     
@@ -38,7 +41,6 @@ export function selectThread(thread) {
     
     
     
-    const selectedFrame = getSelectedFrame(getState(), thread);
     if (selectedFrame) {
       serverRequests.push(
         dispatch(selectLocation(threadcx, selectedFrame.location))
