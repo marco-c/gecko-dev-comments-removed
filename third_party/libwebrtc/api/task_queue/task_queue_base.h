@@ -63,10 +63,9 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
-  
-  
-  virtual void PostTask(absl::AnyInvocable<void() &&> task) {
-    PostTaskImpl(std::move(task), PostTaskTraits{}, Location::Current());
+  void PostTask(absl::AnyInvocable<void() &&> task,
+                const Location& location = Location::Current()) {
+    PostTaskImpl(std::move(task), PostTaskTraits{}, location);
   }
 
   
@@ -92,13 +91,12 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
-  
-  
-  virtual void PostDelayedTask(absl::AnyInvocable<void() &&> task,
-                               TimeDelta delay) {
+  void PostDelayedTask(absl::AnyInvocable<void() &&> task,
+                       TimeDelta delay,
+                       const Location& location = Location::Current()) {
     PostDelayedTaskImpl(std::move(task), delay,
                         PostDelayedTaskTraits{.high_precision = false},
-                        Location::Current());
+                        location);
   }
 
   
@@ -117,26 +115,28 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
-  
-  
-  virtual void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> task,
-                                            TimeDelta delay) {
+  void PostDelayedHighPrecisionTask(
+      absl::AnyInvocable<void() &&> task,
+      TimeDelta delay,
+      const Location& location = Location::Current()) {
     PostDelayedTaskImpl(std::move(task), delay,
                         PostDelayedTaskTraits{.high_precision = true},
-                        Location::Current());
+                        location);
   }
 
   
   
-  void PostDelayedTaskWithPrecision(DelayPrecision precision,
-                                    absl::AnyInvocable<void() &&> task,
-                                    TimeDelta delay) {
+  void PostDelayedTaskWithPrecision(
+      DelayPrecision precision,
+      absl::AnyInvocable<void() &&> task,
+      TimeDelta delay,
+      const Location& location = Location::Current()) {
     switch (precision) {
       case DelayPrecision::kLow:
-        PostDelayedTask(std::move(task), delay);
+        PostDelayedTask(std::move(task), delay, location);
         break;
       case DelayPrecision::kHigh:
-        PostDelayedHighPrecisionTask(std::move(task), delay);
+        PostDelayedHighPrecisionTask(std::move(task), delay, location);
         break;
     }
   }
@@ -173,19 +173,17 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
 
   
   
-  
   virtual void PostTaskImpl(absl::AnyInvocable<void() &&> task,
                             const PostTaskTraits& traits,
-                            const Location& location) {}
+                            const Location& location) = 0;
 
-  
   
   
   
   virtual void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
                                    TimeDelta delay,
                                    const PostDelayedTaskTraits& traits,
-                                   const Location& location) {}
+                                   const Location& location) = 0;
 
   
   
