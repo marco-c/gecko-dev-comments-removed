@@ -82,6 +82,8 @@ class WgcCaptureSession final {
 
   void RemoveEventHandlers();
 
+  bool allow_zero_hertz() const { return allow_zero_hertz_; }
+
   std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
   std::unique_ptr<EventRegistrationToken> item_closed_token_;
 
@@ -139,6 +141,17 @@ class WgcCaptureSession final {
   
   
   int empty_frame_credit_count_ = 0;
+
+  
+  
+  
+  bool allow_zero_hertz_ = false;
+
+  
+  
+  
+  
+  DesktopRegion damage_region_;
 
   SequenceChecker sequence_checker_;
 };

@@ -192,6 +192,8 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
     }
   }
 
+  allow_zero_hertz_ = options.allow_wgc_zero_hertz();
+
   hr = session_->StartCapture();
   if (FAILED(hr)) {
     RTC_LOG(LS_ERROR) << "Failed to start CaptureSession: " << hr;
@@ -236,10 +238,19 @@ bool WgcCaptureSession::GetFrame(std::unique_ptr<DesktopFrame>* output_frame) {
 
   
   
-  if (!queue_.current_frame()) {
+  
+  DesktopFrame* current_frame = queue_.current_frame();
+  if (!current_frame) {
     RTC_LOG(LS_ERROR) << "GetFrame failed.";
     return false;
   }
+
+  
+  
+  
+  
+  current_frame->mutable_updated_region()->Swap(&damage_region_);
+  damage_region_.Clear();
 
   
   std::unique_ptr<DesktopFrame> new_frame = queue_.current_frame()->Share();
@@ -294,7 +305,7 @@ HRESULT WgcCaptureSession::ProcessFrame() {
 
   queue_.MoveToNextFrame();
   if (queue_.current_frame() && queue_.current_frame()->IsShared()) {
-    RTC_DLOG(LS_WARNING) << "Overwriting frame that is still shared.";
+    RTC_DLOG(LS_VERBOSE) << "Overwriting frame that is still shared.";
   }
 
   ComPtr<WGC::IDirect3D11CaptureFrame> capture_frame;
@@ -432,6 +443,32 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   }
 
   d3d_context->Unmap(mapped_texture_.Get(), 0);
+
+  if (allow_zero_hertz()) {
+    DesktopFrame* previous_frame = queue_.previous_frame();
+    if (previous_frame) {
+      const int previous_frame_size =
+          previous_frame->stride() * previous_frame->size().height();
+      const int current_frame_size =
+          current_frame->stride() * current_frame->size().height();
+
+      
+      
+      if (current_frame_size == previous_frame_size) {
+        const bool frames_are_equal = !memcmp(
+            current_frame->data(), previous_frame->data(), current_frame_size);
+        if (!frames_are_equal) {
+          
+          
+          
+          damage_region_.SetRect(DesktopRect::MakeSize(current_frame->size()));
+        }
+      } else {
+        
+        damage_region_.SetRect(DesktopRect::MakeSize(current_frame->size()));
+      }
+    }
+  }
 
   if (empty_frame_credit_count_ > 0)
     --empty_frame_credit_count_;
