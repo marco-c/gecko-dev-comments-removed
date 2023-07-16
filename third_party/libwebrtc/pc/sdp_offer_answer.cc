@@ -3265,7 +3265,7 @@ bool SdpOfferAnswerHandler::CheckIfNegotiationIsNeeded() {
 
   
   
-  if (data_channel_controller()->HasSctpDataChannels()) {
+  if (data_channel_controller()->HasDataChannels()) {
     if (!cricket::GetFirstDataContent(description->description()->contents()))
       return true;
   }

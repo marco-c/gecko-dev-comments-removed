@@ -91,10 +91,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   bool HasDataChannels() const;
   
   bool HasUsedDataChannels() const;
-  bool HasSctpDataChannels() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return !sctp_data_channels_.empty();
-  }
 
   
   DataChannelTransportInterface* data_channel_transport() const;
