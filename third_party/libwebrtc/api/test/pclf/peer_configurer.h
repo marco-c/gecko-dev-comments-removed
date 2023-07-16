@@ -152,10 +152,10 @@ class PeerConfigurer {
 
   
   
-  PeerConfigurer* SetRtcEventLogPath(std::string path);
+  PeerConfigurer* SetRtcEventLogPath(absl::string_view path);
   
   
-  PeerConfigurer* SetAecDumpPath(std::string path);
+  PeerConfigurer* SetAecDumpPath(absl::string_view path);
   PeerConfigurer* SetRTCConfiguration(
       PeerConnectionInterface::RTCConfiguration configuration);
   PeerConfigurer* SetRTCOfferAnswerOptions(
