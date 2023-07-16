@@ -810,6 +810,7 @@ inline double js::Nursery::calcPromotionRate(bool* validForTenuring) const {
   
   *validForTenuring = used > capacity * 0.9;
 
+  MOZ_ASSERT(tenured <= used);
   return tenured / used;
 }
 
