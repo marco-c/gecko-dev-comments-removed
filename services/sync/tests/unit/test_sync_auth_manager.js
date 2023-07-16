@@ -601,8 +601,6 @@ add_task(async function test_getKeysErrorWithBackoff() {
   let config = makeIdentityConfig();
   
   delete config.fxaccount.user.scopedKeys;
-  delete config.fxaccount.user.kSync;
-  delete config.fxaccount.user.kXCS;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -641,8 +639,6 @@ add_task(async function test_getKeysErrorWithRetry() {
   let config = makeIdentityConfig();
   
   delete config.fxaccount.user.scopedKeys;
-  delete config.fxaccount.user.kSync;
-  delete config.fxaccount.user.kXCS;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -733,8 +729,6 @@ add_task(async function test_getGetKeysFailing401() {
   let config = makeIdentityConfig();
   
   delete config.fxaccount.user.scopedKeys;
-  delete config.fxaccount.user.kSync;
-  delete config.fxaccount.user.kXCS;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -758,8 +752,6 @@ add_task(async function test_getGetKeysFailing503() {
   let config = makeIdentityConfig();
   
   delete config.fxaccount.user.scopedKeys;
-  delete config.fxaccount.user.kSync;
-  delete config.fxaccount.user.kXCS;
   config.fxaccount.user.keyFetchToken = "keyfetchtoken";
   await initializeIdentityWithHAWKResponseFactory(
     config,
@@ -790,8 +782,6 @@ add_task(async function test_getKeysMissing() {
   
   
   delete identityConfig.fxaccount.user.scopedKeys;
-  delete identityConfig.fxaccount.user.kSync;
-  delete identityConfig.fxaccount.user.kXCS;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
   configureFxAccountIdentity(syncAuthManager, identityConfig);
@@ -835,8 +825,6 @@ add_task(async function test_getKeysUnexpecedError() {
   
   
   delete identityConfig.fxaccount.user.scopedKeys;
-  delete identityConfig.fxaccount.user.kSync;
-  delete identityConfig.fxaccount.user.kXCS;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
   configureFxAccountIdentity(syncAuthManager, identityConfig);
@@ -878,8 +866,6 @@ add_task(async function test_signedInUserMissing() {
   let syncAuthManager = new SyncAuthManager();
   
   delete globalIdentityConfig.fxaccount.user.scopedKeys;
-  delete globalIdentityConfig.fxaccount.user.kSync;
-  delete globalIdentityConfig.fxaccount.user.kXCS;
   delete globalIdentityConfig.fxaccount.user.keyFetchToken;
 
   configureFxAccountIdentity(syncAuthManager, globalIdentityConfig);
