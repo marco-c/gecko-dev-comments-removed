@@ -2769,6 +2769,34 @@ class nsContentUtils {
 
 
   static bool ContainsForbiddenMethod(const nsACString& headerValue);
+
+  class ParsedRange {
+   public:
+    explicit ParsedRange(mozilla::Maybe<uint32_t> aStart,
+                         mozilla::Maybe<uint32_t> aEnd)
+        : mStart(aStart), mEnd(aEnd) {}
+
+    mozilla::Maybe<uint32_t> Start() const { return mStart; }
+    mozilla::Maybe<uint32_t> End() const { return mEnd; }
+
+    bool operator==(const ParsedRange& aOther) const {
+      return Start() == aOther.Start() && End() == aOther.End();
+    }
+
+   private:
+    mozilla::Maybe<uint32_t> mStart;
+    mozilla::Maybe<uint32_t> mEnd;
+  };
+
+  
+
+
+
+
+
+  static mozilla::Maybe<ParsedRange> ParseSingleRangeRequest(
+      const nsACString& aHeaderValue, bool aAllowWhitespace);
+
   
 
 
@@ -2791,6 +2819,12 @@ class nsContentUtils {
 
 
   static bool IsAllowedNonCorsLanguage(const nsACString& aHeaderValue);
+
+  
+
+
+
+  static bool IsAllowedNonCorsRange(const nsACString& aHeaderValue);
 
   
 
