@@ -6754,8 +6754,15 @@ bool BaseCompiler::emitStructNew() {
 
   
   
+  SymbolicAddressSignature calleeSASig =
+      WasmStructObject::requiresOutlineBytes(structType.size_)
+          ? SASigStructNewOOL_false
+          : SASigStructNewIL_false;
+
+  
+  
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigStructNewUninit)) {
+  if (!emitInstanceCall(calleeSASig)) {
     return false;
   }
 
@@ -6848,10 +6855,19 @@ bool BaseCompiler::emitStructNewDefault() {
     return true;
   }
 
+  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
+
+  
+  
+  SymbolicAddressSignature calleeSASig =
+      WasmStructObject::requiresOutlineBytes(structType.size_)
+          ? SASigStructNewOOL_true
+          : SASigStructNewIL_true;
+
   
   
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  return emitInstanceCall(SASigStructNew);
+  return emitInstanceCall(calleeSASig);
 }
 
 bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
@@ -6981,7 +6997,7 @@ bool BaseCompiler::emitArrayNew() {
   
   
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigArrayNewUninit)) {
+  if (!emitInstanceCall(SASigArrayNew_false)) {
     return false;
   }
 
@@ -7053,7 +7069,7 @@ bool BaseCompiler::emitArrayNewFixed() {
   
   pushI32(numElements);
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigArrayNew)) {
+  if (!emitInstanceCall(SASigArrayNew_true)) {
     return false;
   }
 
@@ -7124,7 +7140,7 @@ bool BaseCompiler::emitArrayNewDefault() {
   
   
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  return emitInstanceCall(SASigArrayNew);
+  return emitInstanceCall(SASigArrayNew_true);
 }
 
 bool BaseCompiler::emitArrayNewData() {

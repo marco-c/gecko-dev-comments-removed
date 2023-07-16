@@ -140,7 +140,7 @@ class WasmArrayObject : public WasmGcObject {
   
   
   
-  template <bool ZeroFields = true>
+  template <bool ZeroFields>
   static WasmArrayObject* createArray(JSContext* cx,
                                       wasm::TypeDefInstanceData* typeDefData,
                                       js::gc::Heap initialHeap,
@@ -214,23 +214,29 @@ class WasmStructObject : public WasmGcObject {
   
   
   
+  
+  
   template <bool ZeroFields>
-  static WasmStructObject* createStruct(JSContext* cx,
-                                        wasm::TypeDefInstanceData* typeDefData,
-                                        js::gc::Heap initialHeap);
+  static WasmStructObject* createStructIL(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::Heap initialHeap);
 
   
   
   template <bool ZeroFields>
-  static MOZ_NEVER_INLINE WasmStructObject* createStructOOL(
+  static WasmStructObject* createStructOOL(
       JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
-      js::gc::Heap initialHeap, uint32_t outlineBytes);
+      js::gc::Heap initialHeap);
 
   
   
   static inline void getDataByteSizes(uint32_t totalBytes,
                                       uint32_t* inlineBytes,
                                       uint32_t* outlineBytes);
+
+  
+  
+  static inline bool requiresOutlineBytes(uint32_t totalBytes);
 
   
   
@@ -284,6 +290,13 @@ inline void WasmStructObject::getDataByteSizes(uint32_t totalBytes,
     *inlineBytes = totalBytes;
     *outlineBytes = 0;
   }
+}
+
+
+inline bool WasmStructObject::requiresOutlineBytes(uint32_t totalBytes) {
+  uint32_t inlineBytes, outlineBytes;
+  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+  return outlineBytes > 0;
 }
 
 

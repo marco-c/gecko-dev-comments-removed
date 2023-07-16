@@ -3983,8 +3983,9 @@ class FunctionCompiler {
     
     
     
+    
     MDefinition* arrayObject;
-    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew, numElements,
+    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew_true, numElements,
                            typeDefData, &arrayObject)) {
       return nullptr;
     }
@@ -4003,8 +4004,9 @@ class FunctionCompiler {
     
     
     
+    
     MDefinition* arrayObject;
-    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNewUninit, numElements,
+    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew_false, numElements,
                            typeDefData, &arrayObject)) {
       return nullptr;
     }
@@ -6728,8 +6730,15 @@ static bool EmitStructNew(FunctionCompiler& f) {
   }
 
   
+  
+  SymbolicAddressSignature calleeSASig =
+      WasmStructObject::requiresOutlineBytes(structType.size_)
+          ? SASigStructNewOOL_false
+          : SASigStructNewIL_false;
+
+  
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNewUninit, typeDefData,
+  if (!f.emitInstanceCall1(lineOrBytecode, calleeSASig, typeDefData,
                            &structObject)) {
     return false;
   }
@@ -6764,6 +6773,8 @@ static bool EmitStructNewDefault(FunctionCompiler& f) {
     return true;
   }
 
+  const StructType& structType = (*f.moduleEnv().types)[typeIndex].structType();
+
   
   
   MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
@@ -6772,8 +6783,15 @@ static bool EmitStructNewDefault(FunctionCompiler& f) {
   }
 
   
+  
+  SymbolicAddressSignature calleeSASig =
+      WasmStructObject::requiresOutlineBytes(structType.size_)
+          ? SASigStructNewOOL_true
+          : SASigStructNewIL_true;
+
+  
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
+  if (!f.emitInstanceCall1(lineOrBytecode, calleeSASig, typeDefData,
                            &structObject)) {
     return false;
   }
