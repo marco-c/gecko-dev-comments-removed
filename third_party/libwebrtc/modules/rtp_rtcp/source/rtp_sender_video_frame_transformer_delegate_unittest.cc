@@ -163,8 +163,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest, CloneSenderVideoFrame) {
   EXPECT_EQ(video_frame->GetPayloadType(), clone->GetPayloadType());
   EXPECT_EQ(video_frame->GetSsrc(), clone->GetSsrc());
   EXPECT_EQ(video_frame->GetTimestamp(), clone->GetTimestamp());
-  
-  
+  EXPECT_EQ(video_frame->GetMetadata(), clone->GetMetadata());
 }
 
 TEST_F(RtpSenderVideoFrameTransformerDelegateTest, MetadataEqualsGetMetadata) {
