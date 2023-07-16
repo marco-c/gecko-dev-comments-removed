@@ -11,21 +11,22 @@
 
 
 class TestError extends Error {}
+
 class TestIterator extends Iterator {
   next() { 
     return {done: false, value: 1};
   }
 
   closed = false;
-  return() {
+  return(value) {
     this.closed = true;
-    return {done: true};
+    return {done: true, value};
   }
 }
 
 const methods = [
   iter => iter.map(x => x),
-  iter => iter.filter(x => true),
+  iter => iter.filter(x => x),
   iter => iter.take(1),
   iter => iter.drop(0),
   iter => iter.asIndexedPairs(),
@@ -33,12 +34,16 @@ const methods = [
 ];
 
 for (const method of methods) {
-  const iterator = new TestIterator();
-  assertEq(iterator.closed, false);
-  const iteratorHelper = method(iterator);
-  iteratorHelper.next();
-  assertThrowsInstanceOf(() => iteratorHelper.throw(new TestError()), TestError);
-  assertEq(iterator.closed, true); 
+  const iter = new TestIterator();
+  const iterHelper = method(iter);
+
+  assertEq(iter.closed, false);
+  assertThrowsInstanceOf(() => iterHelper.throw(new TestError()), TestError);
+  assertEq(iter.closed, true);
+
+  const result = iterHelper.next();
+  assertEq(result.done, true);
+  assertEq(result.value, undefined);
 }
 
 if (typeof reportCompare == 'function')

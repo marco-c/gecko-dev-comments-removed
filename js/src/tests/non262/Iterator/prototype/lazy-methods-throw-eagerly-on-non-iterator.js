@@ -15,6 +15,7 @@ const methods = [
   iter => Iterator.prototype.filter.bind(iter, x => x),
   iter => Iterator.prototype.take.bind(iter, 1),
   iter => Iterator.prototype.drop.bind(iter, 0),
+  iter => Iterator.prototype.asIndexedPairs.bind(iter),
   iter => Iterator.prototype.flatMap.bind(iter, x => [x]),
 ];
 
@@ -25,10 +26,8 @@ for (const method of methods) {
   assertThrowsInstanceOf(method(false), TypeError);
   assertThrowsInstanceOf(method(''), TypeError);
   assertThrowsInstanceOf(method(Symbol('')), TypeError);
-
-  
-  method({});
-  method([]);
+  assertThrowsInstanceOf(method({}), TypeError);
+  assertThrowsInstanceOf(method([]), TypeError);
 }
 
 if (typeof reportCompare == 'function')

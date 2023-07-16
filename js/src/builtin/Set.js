@@ -23,32 +23,6 @@ function SetConstructorInit(iterable) {
 
 #ifdef ENABLE_NEW_SET_METHODS
 
-function IteratorStep(iteratorRecord, value) {
-  
-  let result;
-  if (ArgumentsLength() === 2) {
-    result = callContentFunction(
-      iteratorRecord.nextMethod,
-      iteratorRecord.iterator,
-      value
-    );
-  } else {
-    result = callContentFunction(
-      iteratorRecord.nextMethod,
-      iteratorRecord.iterator
-    );
-  }
-
-  
-  if (!IsObject(result)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
-  }
-
-  
-  return result.done ? false : result;
-}
-
-
 
 
 
@@ -140,7 +114,7 @@ function SetIntersection(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
 
@@ -155,7 +129,7 @@ function SetIntersection(iterable) {
         if (needClose) {
           
           
-          IteratorClose(iteratorRecord.iterator);
+          IteratorClose(iteratorRecord);
         }
       }
     }
@@ -213,7 +187,7 @@ function SetDifference(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
   }
@@ -279,7 +253,7 @@ function SetSymmetricDifference(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
 
@@ -294,7 +268,7 @@ function SetSymmetricDifference(iterable) {
         if (needClose) {
           
           
-          IteratorClose(iteratorRecord.iterator);
+          IteratorClose(iteratorRecord);
         }
       }
     }
@@ -360,7 +334,7 @@ function SetIsSubsetOf(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
 
@@ -417,7 +391,7 @@ function SetIsSupersetOf(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
 
@@ -474,7 +448,7 @@ function SetIsDisjointFrom(iterable) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
 
@@ -516,7 +490,7 @@ function AddEntryFromIterable(target, iterable, adder) {
       if (needClose) {
         
         
-        IteratorClose(iteratorRecord.iterator);
+        IteratorClose(iteratorRecord);
       }
     }
   }

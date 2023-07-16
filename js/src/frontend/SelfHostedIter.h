@@ -20,13 +20,7 @@ enum class SelfHostedIter {
   Deny,
 
   
-  AllowContent,
-
-  
-  AllowContentWith,
-
-  
-  AllowContentWithNext,
+  Allow,
 };
 
 } 

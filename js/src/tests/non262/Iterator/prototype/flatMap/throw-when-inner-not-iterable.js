@@ -14,6 +14,12 @@
 
 
 
+class NotIterable {
+  next() {
+    return {done: true};
+  }
+}
+
 class InvalidIterable {
   [Symbol.iterator]() {
     return {};
@@ -33,6 +39,7 @@ class TestIterator extends Iterator {
 }
 
 const nonIterables = [
+  new NotIterable(),
   new InvalidIterable(),
   undefined,
   null,

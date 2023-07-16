@@ -810,15 +810,14 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   JSOp getIterCallOp(JSOp callOp, SelfHostedIter selfHostedIter);
 
   
-  [[nodiscard]] bool emitIterable(ParseNode* value,
-                                  SelfHostedIter selfHostedIter,
-                                  IteratorKind iterKind = IteratorKind::Sync);
-
   
-  
-  [[nodiscard]] bool emitIterator(SelfHostedIter selfHostedIter);
+  [[nodiscard]] bool emitIterator(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny,
+      bool isIteratorMethodOnStack = false);
 
-  [[nodiscard]] bool emitAsyncIterator(SelfHostedIter selfHostedIter);
+  [[nodiscard]] bool emitAsyncIterator(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny,
+      bool isIteratorMethodOnStack = false);
 
   
   
@@ -936,14 +935,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitSelfHostedForceInterpreter();
   [[nodiscard]] bool emitSelfHostedAllowContentIter(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedAllowContentIterWith(CallNode* callNode);
-  [[nodiscard]] bool emitSelfHostedAllowContentIterWithNext(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedDefineDataProperty(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetPropertySuper(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedHasOwn(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedToNumeric(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedToString(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedIsNullOrUndefined(CallNode* callNode);
-  [[nodiscard]] bool emitSelfHostedIteratorClose(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetBuiltinConstructor(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetBuiltinPrototype(CallNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetBuiltinSymbol(CallNode* callNode);
@@ -997,7 +994,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
-  [[nodiscard]] bool emitSpread(SelfHostedIter selfHostedIter);
+  [[nodiscard]] bool emitSpread(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
 
   enum class ClassNameKind {
     
@@ -1020,7 +1018,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitSuperGetElem(PropertyByValue* elem,
                                       bool isCall = false);
 
-  [[nodiscard]] bool emitCalleeAndThis(ParseNode* callee, CallNode* call,
+  [[nodiscard]] bool emitCalleeAndThis(ParseNode* callee, ParseNode* call,
                                        CallOrNewEmitter& cone);
 
   [[nodiscard]] bool emitOptionalCalleeAndThis(ParseNode* callee,

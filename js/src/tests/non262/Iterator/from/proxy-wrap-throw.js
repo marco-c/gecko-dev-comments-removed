@@ -12,18 +12,19 @@ const handlerProxy = new Proxy({}, {
 });
 const iter = new Proxy({
   next: () => ({ done: false, value: 0 }),
+  throw: (value) => ({ done: true, value }),
 }, handlerProxy);
 
 const wrap = Iterator.from(iter);
-
-wrap.next();
-wrap.next();
-wrap.next();
+wrap.throw();
+wrap.throw();
 
 assertEq(
   log.join('\n'),
   `get: Symbol(Symbol.iterator)
-get: next`
+get: next
+get: throw
+get: throw`
 );
 
 if (typeof reportCompare === 'function')
