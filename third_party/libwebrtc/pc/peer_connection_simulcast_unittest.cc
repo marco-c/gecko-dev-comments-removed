@@ -850,6 +850,8 @@ INSTANTIATE_TEST_SUITE_P(NumberOfSendEncodings,
 
 
 
+
+
 class PeerConnectionSimulcastWithMediaFlowTests
     : public PeerConnectionSimulcastTests {
  public:
@@ -1361,6 +1363,59 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   EXPECT_FALSE(encodings[0].scalability_mode.has_value());
   EXPECT_FALSE(encodings[1].scalability_mode.has_value());
   EXPECT_FALSE(encodings[2].scalability_mode.has_value());
+}
+
+
+
+TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
+       SendingOneEncoding_VP9_StandardSVC) {
+  rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
+  rtc::scoped_refptr<PeerConnectionTestWrapper> remote_pc_wrapper = CreatePc();
+  ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
+
+  std::vector<SimulcastLayer> layers = CreateLayers({"f"}, true);
+  rtc::scoped_refptr<RtpTransceiverInterface> transceiver =
+      AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
+                                        layers);
+  std::vector<RtpCodecCapability> codecs =
+      GetCapabilitiesAndRestrictToCodec(local_pc_wrapper, "VP9");
+  transceiver->SetCodecPreferences(codecs);
+  
+  rtc::scoped_refptr<RtpSenderInterface> sender = transceiver->sender();
+  RtpParameters parameters = sender->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 1u);
+  parameters.encodings[0].scalability_mode = "L3T3_KEY";
+  EXPECT_TRUE(sender->SetParameters(parameters).ok());
+
+  NegotiateWithSimulcastTweaks(local_pc_wrapper, remote_pc_wrapper, layers);
+  local_pc_wrapper->WaitForConnection();
+  remote_pc_wrapper->WaitForConnection();
+
+  
+  
+  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+                   kDefaultTimeout.ms());
+  
+  
+  
+  EXPECT_TRUE_WAIT(
+      HasOutboundRtpExpectedResolutions(local_pc_wrapper, {{"", 1280, 720}},
+                                        false),
+      kLongTimeoutForRampingUp.ms());
+  
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
+  std::vector<const RTCOutboundRTPStreamStats*> outbound_rtps =
+      report->GetStatsOfType<RTCOutboundRTPStreamStats>();
+  ASSERT_THAT(outbound_rtps, SizeIs(1u));
+  EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[0]),
+              StrCaseEq("video/VP9"));
+  EXPECT_THAT(*outbound_rtps[0]->scalability_mode, StrEq("L3T3_KEY"));
+
+  
+  parameters = sender->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 1u);
+  EXPECT_THAT(parameters.encodings[0].scalability_mode,
+              Optional(std::string("L3T3_KEY")));
 }
 
 
