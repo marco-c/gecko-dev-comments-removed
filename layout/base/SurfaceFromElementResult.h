@@ -23,7 +23,7 @@ namespace mozilla {
 namespace dom {
 class CanvasRenderingContext2D;
 class ImageBitmap;
-}
+}  
 
 namespace gfx {
 class SourceSurface;
