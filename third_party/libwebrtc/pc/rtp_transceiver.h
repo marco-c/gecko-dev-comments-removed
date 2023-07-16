@@ -43,7 +43,6 @@
 #include "pc/rtp_sender_proxy.h"
 #include "pc/rtp_transport_internal.h"
 #include "pc/session_description.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace cricket {
@@ -82,8 +81,7 @@ class PeerConnectionSdpMethods;
 
 
 
-class RtpTransceiver : public RtpTransceiverInterface,
-                       public sigslot::has_slots<> {
+class RtpTransceiver : public RtpTransceiverInterface {
  public:
   
   
@@ -256,10 +254,6 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   void StopTransceiverProcedure();
-
-  
-  
-  
 
   
   cricket::MediaType media_type() const override;
