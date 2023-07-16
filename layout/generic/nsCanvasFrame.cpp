@@ -74,6 +74,39 @@ void nsCanvasFrame::HideCustomContentContainer() {
   }
 }
 
+
+
+void InsertAnonymousContentInContainer(Document& aDoc, Element& aContainer) {
+  if (!aContainer.IsInComposedDoc() || aDoc.GetAnonymousContents().IsEmpty()) {
+    return;
+  }
+  for (RefPtr<AnonymousContent>& anonContent : aDoc.GetAnonymousContents()) {
+    if (nsCOMPtr<nsINode> parent = anonContent->Host()->GetParentNode()) {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(parent != &aContainer);
+      MOZ_ASSERT(parent->IsElement());
+      MOZ_ASSERT(parent->AsElement()->IsRootOfNativeAnonymousSubtree());
+      MOZ_ASSERT(!parent->IsInComposedDoc());
+      MOZ_ASSERT(!parent->GetParentNode());
+
+      parent->RemoveChildNode(anonContent->Host(), true);
+    }
+    aContainer.AppendChildTo(anonContent->Host(), true, IgnoreErrors());
+  }
+  
+  
+  
+  
+  
+  
+  aDoc.FlushPendingNotifications(FlushType::Frames);
+}
+
 nsresult nsCanvasFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   MOZ_ASSERT(!mCustomContentContainer);
@@ -82,19 +115,7 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
     return NS_OK;
   }
 
-  nsCOMPtr<Document> doc = mContent->OwnerDoc();
-
-  RefPtr<AccessibleCaretEventHub> eventHub =
-      PresShell()->GetAccessibleCaretEventHub();
-
-  
-  
-  
-  
-  
-  if (eventHub) {
-    eventHub->Init();
-  }
+  Document* doc = mContent->OwnerDoc();
 
   
   mCustomContentContainer = doc->CreateHTMLElement(nsGkAtoms::div);
@@ -129,27 +150,12 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
   
   if (doc->GetAnonymousContents().IsEmpty()) {
     HideCustomContentContainer();
-  }
-
-  for (RefPtr<AnonymousContent>& anonContent : doc->GetAnonymousContents()) {
-    if (nsCOMPtr<nsINode> parent = anonContent->ContentNode().GetParentNode()) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(parent != mCustomContentContainer);
-      MOZ_ASSERT(parent->IsElement());
-      MOZ_ASSERT(parent->AsElement()->IsRootOfNativeAnonymousSubtree());
-      MOZ_ASSERT(!parent->IsInComposedDoc());
-      MOZ_ASSERT(!parent->GetParentNode());
-
-      parent->RemoveChildNode(&anonContent->ContentNode(), false);
-    }
-
-    mCustomContentContainer->AppendChildTo(&anonContent->ContentNode(), false,
-                                           IgnoreErrors());
+  } else {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "InsertAnonymousContentInContainer",
+        [doc = RefPtr{doc}, container = RefPtr{mCustomContentContainer.get()}] {
+          InsertAnonymousContentInContainer(*doc, *container);
+        }));
   }
 
   

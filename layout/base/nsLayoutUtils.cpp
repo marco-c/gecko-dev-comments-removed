@@ -731,7 +731,7 @@ static bool HasVisibleAnonymousContents(Document* aDoc) {
     
     
     
-    if (ac->ContentNode().GetPrimaryFrame()) {
+    if (ac->Host()->GetPrimaryFrame()) {
       return true;
     }
   }
