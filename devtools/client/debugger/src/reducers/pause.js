@@ -69,7 +69,8 @@ function update(state = initialPauseState(), action) {
   
   
   const getActionThread = () => {
-    const thread = action.thread || action.selectedFrame?.thread;
+    const thread =
+      action.thread || action.selectedFrame?.thread || action.frame?.thread;
     if (!thread) {
       throw new Error(`Missing thread in action ${action.type}`);
     }
@@ -172,7 +173,7 @@ function update(state = initialPauseState(), action) {
     }
 
     case "PAUSED": {
-      const { thread, frame, why } = action;
+      const { thread, topFrame, why } = action;
       state = {
         ...state,
         threadcx: {
@@ -184,11 +185,11 @@ function update(state = initialPauseState(), action) {
 
       return updateThreadState({
         isWaitingOnBreak: false,
-        selectedFrameId: frame.id,
+        selectedFrameId: topFrame.id,
         isPaused: true,
         
         
-        frames: [frame],
+        frames: [topFrame],
         framesLoading: true,
         frameScopes: { ...resumedPauseState.frameScopes },
         why,

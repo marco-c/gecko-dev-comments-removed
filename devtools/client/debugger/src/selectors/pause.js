@@ -247,6 +247,16 @@ export function getCurrentlyFetchedTopFrame(state, thread) {
   return frames?.[0];
 }
 
+export function hasFrame(state, frame) {
+  
+  const { frames } = getThreadPauseState(state.pause, frame.thread);
+  if (!frames) {
+    return false;
+  }
+  
+  return frames.some(f => f.id == frame.id);
+}
+
 export function getSkipPausing(state) {
   return state.pause.skipPausing;
 }
