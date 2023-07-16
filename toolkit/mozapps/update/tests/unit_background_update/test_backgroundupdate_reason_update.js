@@ -6,6 +6,12 @@
 
 "use strict";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+});
+
 const { BackgroundUpdate } = ChromeUtils.importESModule(
   "resource://gre/modules/BackgroundUpdate.sys.mjs"
 );
@@ -232,6 +238,114 @@ add_task(async function test_reasons_update_manual_update_only() {
   result = await checkGleanPing();
   Assert.ok(!result.includes(REASON.MANUAL_UPDATE_ONLY));
 });
+
+
+
+
+
+add_task(
+  {
+    skip_if: () => AppConstants.platform != "win",
+  },
+  async function test_unelevated_nimbus_default() {
+    
+    Assert.equal(
+      false,
+      lazy.NimbusFeatures.backgroundUpdate.getVariable(
+        "allowUpdatesForUnelevatedInstallions"
+      ),
+      "default is disabled"
+    );
+
+    let r = await reasons();
+    Assert.ok(
+      r.includes(BackgroundUpdate.REASON.SERVICE_REGISTRY_KEY_MISSING),
+      `SERVICE_REGISTRY_KEY_MISSING in ${JSON.stringify(r)}`
+    );
+  }
+);
+
+add_task(
+  {
+    skip_if: () => AppConstants.platform != "win",
+  },
+  async function test_unelevated_nimbus_enabled() {
+    let r;
+
+    
+    Services.prefs.setBoolPref(
+      "app.update.background.allowUpdatesForUnelevatedInstallations",
+      true
+    );
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(
+        "app.update.background.allowUpdatesForUnelevatedInstallations"
+      );
+    });
+
+    
+    r = await reasons();
+    Assert.ok(
+      !r.includes(BackgroundUpdate.REASON.SERVICE_REGISTRY_KEY_MISSING),
+      `no SERVICE_REGISTRY_KEY_MISSING in ${JSON.stringify(r)}`
+    );
+    Assert.ok(
+      !r.includes(BackgroundUpdate.REASON.APPBASEDIR_NOT_WRITABLE),
+      `no APPBASEDIR_NOT_WRITABLE in ${JSON.stringify(r)}`
+    );
+
+    
+    
+    
+    
+    let appDirTestFile = Services.dirsvc.get(
+      XRE_EXECUTABLE_FILE,
+      Ci.nsIFile
+    ).parent;
+    appDirTestFile.append(FILE_UPDATE_TEST);
+    appDirTestFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+
+    var outputStream = Cc[
+      "@mozilla.org/network/file-output-stream;1"
+    ].createInstance(Ci.nsIFileOutputStream);
+    
+    outputStream.init(appDirTestFile, 0x02 | 0x08 | 0x20, 0o644, null);
+    registerCleanupFunction(() => {
+      outputStream.close();
+      appDirTestFile.remove(false);
+    });
+    
+    r = await reasons();
+    Assert.ok(
+      r.includes(BackgroundUpdate.REASON.APPBASEDIR_NOT_WRITABLE),
+      `no APPBASEDIR_NOT_WRITABLE in ${JSON.stringify(r)}`
+    );
+  }
+);
+
+add_task(
+  {
+    skip_if: () => AppConstants.platform != "win",
+  },
+  async function test_unelevated_nimbus_disabled() {
+    
+    Services.prefs.setBoolPref(
+      "app.update.background.allowUpdatesForUnelevatedInstallations",
+      false
+    );
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(
+        "app.update.background.allowUpdatesForUnelevatedInstallations"
+      );
+    });
+
+    let r = await reasons();
+    Assert.ok(
+      r.includes(BackgroundUpdate.REASON.SERVICE_REGISTRY_KEY_MISSING),
+      `SERVICE_REGISTRY_KEY_MISSING in ${JSON.stringify(r)}`
+    );
+  }
+);
 
 add_task(() => {
   
