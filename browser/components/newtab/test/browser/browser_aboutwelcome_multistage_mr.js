@@ -516,7 +516,7 @@ add_task(async function test_aboutwelcome_embedded_migration() {
       Assert.ok(true, "Selection page is being shown in the migration wizard.");
 
       
-      let panelList = shadow.querySelector("panel-list");
+      let panelList = wizard.querySelector("panel-list");
       Assert.ok(panelList, "Found the <panel-list>.");
 
       
@@ -569,7 +569,7 @@ add_task(async function test_aboutwelcome_embedded_migration() {
         "Panel should be tightly anchored to the bottom of the button shadow node."
       );
 
-      let panelItem = shadow.querySelector(menuitemSelector);
+      let panelItem = wizard.querySelector(menuitemSelector);
       panelItem.click();
 
       let importButton = shadow.querySelector("#import");
