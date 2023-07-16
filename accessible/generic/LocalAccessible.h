@@ -422,10 +422,8 @@ class LocalAccessible : public nsISupports, public Accessible {
   MOZ_CAN_RUN_SCRIPT
   virtual void ScrollTo(uint32_t aHow) const override;
 
-  
-
-
-  void ScrollToPoint(uint32_t aCoordinateType, int32_t aX, int32_t aY);
+  virtual void ScrollToPoint(uint32_t aCoordinateType, int32_t aX,
+                             int32_t aY) override;
 
   
 

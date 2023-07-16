@@ -375,6 +375,12 @@ class Accessible {
   
 
 
+  virtual void ScrollToPoint(uint32_t aCoordinateType, int32_t aX,
+                             int32_t aY) = 0;
+
+  
+
+
   virtual nsAtom* TagName() const = 0;
 
   
