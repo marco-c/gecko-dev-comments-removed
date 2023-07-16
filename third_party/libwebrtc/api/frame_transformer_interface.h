@@ -60,14 +60,6 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
 
   
   
-  
-  
-  
-  [[deprecated("https://crbug.com/1414370")]] virtual std::vector<uint8_t>
-  GetAdditionalData() const = 0;
-
-  
-  
   virtual const VideoFrameMetadata& GetMetadata() const = 0;
   virtual VideoFrameMetadata Metadata() const = 0;
 
