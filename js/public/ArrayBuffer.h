@@ -50,6 +50,7 @@ extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
 
 
 
+enum class NewArrayBufferOutOfMemory { CallerMustFreeMemory };
 
 
 
@@ -61,9 +62,13 @@ extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
 
 
 
-extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(JSContext* cx,
-                                                          size_t nbytes,
-                                                          void* contents);
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
+    JSContext* cx, size_t nbytes, void* contents, NewArrayBufferOutOfMemory);
 
 
 

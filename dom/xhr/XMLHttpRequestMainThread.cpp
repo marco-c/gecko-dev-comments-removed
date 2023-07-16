@@ -3927,7 +3927,11 @@ JSObject* ArrayBufferBuilder::TakeArrayBuffer(JSContext* aCx) {
     }
   }
 
-  JSObject* obj = JS::NewArrayBufferWithContents(aCx, mLength, mDataPtr);
+  
+  
+  JSObject* obj = JS::NewArrayBufferWithContents(
+      aCx, mLength, mDataPtr,
+      JS::NewArrayBufferOutOfMemory::CallerMustFreeMemory);
   if (!obj) {
     return nullptr;
   }
