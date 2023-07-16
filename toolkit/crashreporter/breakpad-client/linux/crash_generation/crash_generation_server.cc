@@ -297,12 +297,7 @@ CrashGenerationServer::ClientEvent(short revents)
   
   bool res = write_minidump_linux_with_context(
       minidump_filename.c_str(), crashing_pid, &breakpad_cc->context,
-#  ifndef __arm__
-      reinterpret_cast<const fpregset_t *>(&breakpad_cc->float_state),
-#  else
-      nullptr,
-#  endif  
-      &signalfd_si, breakpad_cc->tid, &error_msg);
+      &breakpad_cc->float_state, &signalfd_si, breakpad_cc->tid, &error_msg);
 #else
   if (!google_breakpad::WriteMinidump(minidump_filename.c_str(),
                                       crashing_pid, crash_context,

@@ -23,8 +23,6 @@ pub const PT_LOOS: u32 = 0x6000_0000;
 
 pub const PT_GNU_EH_FRAME: u32 = 0x6474_e550;
 
-pub const PT_GNU_PROPERTY: u32 = 0x6474_e553;
-
 pub const PT_GNU_STACK: u32 = 0x6474_e551;
 
 pub const PT_GNU_RELRO: u32 = 0x6474_e552;
@@ -71,7 +69,6 @@ pub fn pt_to_str(pt: u32) -> &'static str {
         PT_NUM => "PT_NUM",
         PT_LOOS => "PT_LOOS",
         PT_GNU_EH_FRAME => "PT_GNU_EH_FRAME",
-        PT_GNU_PROPERTY => "PT_GNU_PROPERTY",
         PT_GNU_STACK => "PT_GNU_STACK",
         PT_GNU_RELRO => "PT_GNU_RELRO",
         PT_SUNWBSS => "PT_SUNWBSS",

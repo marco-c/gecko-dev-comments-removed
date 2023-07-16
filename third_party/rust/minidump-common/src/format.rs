@@ -372,7 +372,7 @@ pub struct MINIDUMP_MODULE {
 
 
 
-#[derive(Debug, Clone, Default, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Default, Pread, SizeWith)]
 pub struct MINIDUMP_UNLOADED_MODULE {
     
     pub base_of_image: u64,
@@ -659,7 +659,7 @@ impl<'a> scroll::ctx::TryFromCtx<'a, Endian> for CV_INFO_ELF {
 }
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct IMAGE_DEBUG_MISC {
     pub data_type: u32,
     pub length: u32,
@@ -921,7 +921,7 @@ pub struct XMM_SAVE_AREA32 {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct SSE_REGISTERS {
     pub header: [u128; 2],
     pub legacy: [u128; 8],
@@ -1120,7 +1120,7 @@ pub struct CONTEXT_ARM64_OLD {
 
 
 
-#[derive(Debug, Default, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Default, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CONTEXT_ARM64 {
     pub context_flags: u32,
@@ -1159,7 +1159,7 @@ impl Arm64RegisterNumbers {
 }
 
 
-#[derive(Debug, Default, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Default, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct FLOATING_SAVE_AREA_MIPS {
     pub regs: [u64; 32],
@@ -1170,7 +1170,7 @@ pub struct FLOATING_SAVE_AREA_MIPS {
 
 
 
-#[derive(Debug, Default, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Default, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CONTEXT_MIPS {
     pub context_flags: u32,
@@ -1227,7 +1227,7 @@ impl MipsRegisterNumbers {
 }
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct FLOATING_SAVE_AREA_PPC {
     pub fpregs: [u64; 32],
@@ -1236,7 +1236,7 @@ pub struct FLOATING_SAVE_AREA_PPC {
 }
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct VECTOR_SAVE_AREA_PPC {
     pub save_vr: [u128; 32],
@@ -1249,7 +1249,7 @@ pub struct VECTOR_SAVE_AREA_PPC {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CONTEXT_PPC {
     pub context_flags: u32,
@@ -1276,7 +1276,7 @@ pub enum PpcRegisterNumbers {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CONTEXT_PPC64 {
     pub context_flags: u64,
@@ -1300,7 +1300,7 @@ pub enum Ppc64RegisterNumbers {
 }
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct FLOATING_SAVE_AREA_SPARC {
     pub regs: [u64; 32],
@@ -1311,7 +1311,7 @@ pub struct FLOATING_SAVE_AREA_SPARC {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CONTEXT_SPARC {
     pub context_flags: u32,
@@ -1403,7 +1403,7 @@ pub struct CPU_INFORMATION {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct X86CpuInfo {
     pub vendor_id: [u32; 3],
     pub version_information: u32,
@@ -1412,7 +1412,7 @@ pub struct X86CpuInfo {
 }
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct ARMCpuInfo {
     pub cpuid: u32,
     
@@ -1425,7 +1425,7 @@ pub struct ARMCpuInfo {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct OtherCpuInfo {
     pub processor_features: [u64; 2],
 }
@@ -1816,7 +1816,7 @@ bitflags! {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct MINIDUMP_MEMORY_INFO_LIST {
     
     pub size_of_header: u32,
@@ -1831,7 +1831,7 @@ pub struct MINIDUMP_MEMORY_INFO_LIST {
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, PartialEq, Eq, Pread, SizeWith)]
 pub struct MINIDUMP_MEMORY_INFO {
     
     pub base_address: u64,
@@ -1930,7 +1930,7 @@ bitflags! {
 
 
 
-#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Clone, Pread, SizeWith)]
 pub struct MINIDUMP_ASSERTION_INFO {
     
     pub expression: [u16; 128],
@@ -2055,7 +2055,7 @@ impl<'a> scroll::ctx::TryFromCtx<'a, Endian> for MINIDUMP_UTF8_STRING {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread, SizeWith)]
 pub struct MINIDUMP_SIMPLE_STRING_DICTIONARY_ENTRY {
     
     pub key: RVA,
@@ -2066,7 +2066,7 @@ pub struct MINIDUMP_SIMPLE_STRING_DICTIONARY_ENTRY {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread)]
 pub struct MINIDUMP_SIMPLE_STRING_DICTIONARY {
     
     pub count: u32,
@@ -2075,7 +2075,7 @@ pub struct MINIDUMP_SIMPLE_STRING_DICTIONARY {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread)]
 pub struct MINIDUMP_RVA_LIST {
     
     pub count: u32,
@@ -2084,7 +2084,7 @@ pub struct MINIDUMP_RVA_LIST {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread)]
 pub struct MINIDUMP_ANNOTATION {
     
     pub name: RVA,
@@ -2125,7 +2125,7 @@ impl MINIDUMP_ANNOTATION {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread)]
 pub struct MINIDUMP_MODULE_CRASHPAD_INFO {
     
     
@@ -2172,7 +2172,7 @@ impl MINIDUMP_MODULE_CRASHPAD_INFO {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread, SizeWith)]
 pub struct MINIDUMP_MODULE_CRASHPAD_INFO_LINK {
     
     
@@ -2200,7 +2200,7 @@ pub struct MINIDUMP_MODULE_CRASHPAD_INFO_LINK {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread)]
 pub struct MINIDUMP_MODULE_CRASHPAD_INFO_LIST {
     
     pub count: u32,
@@ -2215,7 +2215,7 @@ pub struct MINIDUMP_MODULE_CRASHPAD_INFO_LIST {
 
 
 
-#[derive(Clone, Debug, Pread, Pwrite, SizeWith)]
+#[derive(Clone, Debug, Pread, SizeWith)]
 pub struct MINIDUMP_CRASHPAD_INFO {
     
     
@@ -2258,7 +2258,7 @@ impl MINIDUMP_CRASHPAD_INFO {
 
 
 
-#[derive(Debug, Pread, Pwrite, SizeWith)]
+#[derive(Debug, Pread, SizeWith)]
 pub struct MINIDUMP_MAC_CRASH_INFO {
     pub stream_type: u32,
     

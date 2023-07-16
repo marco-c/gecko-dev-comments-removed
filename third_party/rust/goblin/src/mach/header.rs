@@ -140,8 +140,6 @@ pub const MH_DSYM: u32 = 0xa;
 
 pub const MH_KEXT_BUNDLE: u32 = 0xb;
 
-pub const MH_FILESET: u32 = 0xc;
-
 pub fn filetype_to_str(filetype: u32) -> &'static str {
     match filetype {
         MH_OBJECT => "OBJECT",
@@ -155,7 +153,6 @@ pub fn filetype_to_str(filetype: u32) -> &'static str {
         MH_DYLIB_STUB => "DYLIB_STUB",
         MH_DSYM => "DSYM",
         MH_KEXT_BUNDLE => "KEXT_BUNDLE",
-        MH_FILESET => "FILESET",
         _ => "UNKNOWN FILETYPE",
     }
 }

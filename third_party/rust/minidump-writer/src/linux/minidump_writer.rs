@@ -156,16 +156,15 @@ impl MinidumpWriter {
             return true;
         }
 
-        let (valid_stack_pointer, stack_len) = match dumper.get_stack_info(stack_pointer) {
+        let (stack_ptr, stack_len) = match dumper.get_stack_info(stack_pointer) {
             Ok(x) => x,
             Err(_) => {
                 return false;
             }
         };
-
         let stack_copy = match PtraceDumper::copy_from_process(
             self.blamed_thread,
-            valid_stack_pointer as *mut libc::c_void,
+            stack_ptr as *mut libc::c_void,
             stack_len,
         ) {
             Ok(x) => x,
@@ -174,7 +173,7 @@ impl MinidumpWriter {
             }
         };
 
-        let sp_offset = stack_pointer.saturating_sub(valid_stack_pointer);
+        let sp_offset = stack_pointer - stack_ptr;
         self.principal_mapping
             .as_ref()
             .unwrap()
@@ -189,7 +188,7 @@ impl MinidumpWriter {
     ) -> Result<()> {
         
         
-        let num_writers = 15u32;
+        let num_writers = 14u32;
 
         let mut header_section = MemoryWriter::<MDRawHeader>::alloc(buffer)?;
 
@@ -235,10 +234,6 @@ impl MinidumpWriter {
         dir_section.write_to_file(buffer, Some(dirent))?;
 
         let dirent = systeminfo_stream::write(buffer)?;
-        
-        dir_section.write_to_file(buffer, Some(dirent))?;
-
-        let dirent = memory_info_list_stream::write(self, buffer)?;
         
         dir_section.write_to_file(buffer, Some(dirent))?;
 
@@ -327,6 +322,7 @@ impl MinidumpWriter {
         
         dir_section.write_to_file(buffer, Some(dirent))?;
 
+        
         
         Ok(())
     }

@@ -121,8 +121,6 @@ pub struct WindowsFields32 {
 
 pub const SIZEOF_WINDOWS_FIELDS_32: usize = 68;
 
-pub const OFFSET_WINDOWS_FIELDS_32_CHECKSUM: usize = 36;
-
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
@@ -151,8 +149,6 @@ pub struct WindowsFields64 {
 }
 
 pub const SIZEOF_WINDOWS_FIELDS_64: usize = 88;
-
-pub const OFFSET_WINDOWS_FIELDS_64_CHECKSUM: usize = 40;
 
 
 

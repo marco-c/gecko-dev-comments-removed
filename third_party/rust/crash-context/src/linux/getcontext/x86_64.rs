@@ -32,7 +32,7 @@
 
 
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 
 
 

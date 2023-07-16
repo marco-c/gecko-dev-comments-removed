@@ -1,12 +1,10 @@
 #[cfg(target_os = "android")]
 use crate::linux::android::late_process_mappings;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::thread_info;
 use crate::{
     linux::{
         auxv_reader::{AuxvType, ProcfsAuxvIter},
         errors::{DumperError, InitError, ThreadInfoError},
-        maps_reader::MappingInfo,
+        maps_reader::{MappingInfo, MappingInfoParsingResult, DELETED_SUFFIX},
         thread_info::{Pid, ThreadInfo},
         LINUX_GATE_LIBRARY_NAME,
     },
@@ -17,8 +15,13 @@ use nix::{
     errno::Errno,
     sys::{ptrace, wait},
 };
-use procfs_core::process::MMPermissions;
-use std::{collections::HashMap, ffi::c_void, io::BufReader, path, result::Result};
+use std::{
+    collections::HashMap,
+    ffi::c_void,
+    io::{BufRead, BufReader},
+    path,
+    result::Result,
+};
 
 #[derive(Debug, Clone)]
 pub struct Thread {
@@ -33,7 +36,6 @@ pub struct PtraceDumper {
     pub threads: Vec<Thread>,
     pub auxv: HashMap<AuxvType, AuxvType>,
     pub mappings: Vec<MappingInfo>,
-    pub page_size: usize,
 }
 
 #[cfg(target_pointer_width = "32")]
@@ -74,7 +76,6 @@ impl PtraceDumper {
             threads: Vec::new(),
             auxv: HashMap::new(),
             mappings: Vec::new(),
-            page_size: 0,
         };
         dumper.init()?;
         Ok(dumper)
@@ -85,10 +86,6 @@ impl PtraceDumper {
         self.read_auxv()?;
         self.enumerate_threads()?;
         self.enumerate_mappings()?;
-        self.page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)?
-            .expect("page size apparently unlimited: doesn't make sense.")
-            as usize;
-
         Ok(())
     }
 
@@ -149,7 +146,7 @@ impl PtraceDumper {
             
             
             let skip_thread;
-            let regs = thread_info::ThreadInfo::getregs(pid.into());
+            let regs = ptrace::getregs(pid);
             if let Ok(regs) = regs {
                 #[cfg(target_arch = "x86_64")]
                 {
@@ -283,11 +280,15 @@ impl PtraceDumper {
         let maps_path = path::PathBuf::from(&filename);
         let maps_file = std::fs::File::open(maps_path).map_err(errmap)?;
 
-        use procfs_core::FromRead;
-        self.mappings = procfs_core::process::MemoryMaps::from_read(maps_file)
-            .ok()
-            .and_then(|maps| MappingInfo::aggregate(maps, linux_gate_loc).ok())
-            .unwrap_or_default();
+        for line in BufReader::new(maps_file).lines() {
+            
+            
+            let line = line.map_err(errmap)?;
+            match MappingInfo::parse_from_line(&line, linux_gate_loc, self.mappings.last_mut()) {
+                Ok(MappingInfoParsingResult::Success(map)) => self.mappings.push(map),
+                Ok(MappingInfoParsingResult::SkipLine) | Err(_) => continue,
+            }
+        }
 
         if entry_point_loc != 0 {
             let mut swap_idx = None;
@@ -326,49 +327,25 @@ impl PtraceDumper {
     
     
     
-    
     pub fn get_stack_info(&self, int_stack_pointer: usize) -> Result<(usize, usize), DumperError> {
         
         
-        let mut stack_pointer = int_stack_pointer & !(self.page_size - 1);
-        let mut mapping = self.find_mapping(stack_pointer);
+        
+        let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)?
+            .expect("page size apparently unlimited: doesn't make sense.");
+        let stack_pointer = int_stack_pointer & !(page_size as usize - 1);
 
         
-        
-        let guard_page_max_addr = stack_pointer + (1024 * 1024);
+        let stack_to_capture = 32 * 1024;
 
-        
-        
-        
-        
-        
-        while !Self::may_be_stack(mapping) && (stack_pointer <= guard_page_max_addr) {
-            stack_pointer += self.page_size;
-            mapping = self.find_mapping(stack_pointer);
-        }
+        let mapping = self
+            .find_mapping(stack_pointer)
+            .ok_or(DumperError::NoStackPointerMapping)?;
+        let offset = stack_pointer - mapping.start_address;
+        let distance_to_end = mapping.size - offset;
+        let stack_len = std::cmp::min(distance_to_end, stack_to_capture);
 
-        mapping
-            .map(|mapping| {
-                let valid_stack_pointer = if mapping.contains_address(stack_pointer) {
-                    stack_pointer
-                } else {
-                    mapping.start_address
-                };
-
-                let stack_len = mapping.size - (valid_stack_pointer - mapping.start_address);
-                (valid_stack_pointer, stack_len)
-            })
-            .ok_or(DumperError::NoStackPointerMapping)
-    }
-
-    fn may_be_stack(mapping: Option<&MappingInfo>) -> bool {
-        if let Some(mapping) = mapping {
-            return mapping
-                .permissions
-                .intersects(MMPermissions::READ | MMPermissions::WRITE);
-        }
-
-        false
+        Ok((stack_pointer, stack_len))
     }
 
     pub fn sanitize_stack_copy(
@@ -397,7 +374,7 @@ impl PtraceDumper {
         
         let test_bits = 11;
         
-        let array_size: usize = 1 << (test_bits - 3);
+        let array_size = 1 << (test_bits - 3);
         let array_mask = array_size - 1;
         
         
@@ -417,7 +394,7 @@ impl PtraceDumper {
         
         
         for mapping in &self.mappings {
-            if !mapping.is_executable() {
+            if !mapping.executable {
                 continue;
             }
             
@@ -464,7 +441,7 @@ impl PtraceDumper {
             let test = addr >> shift;
             if could_hit_mapping[(test >> 3) & array_mask] & (1 << (test & 7)) != 0 {
                 if let Some(hit_mapping) = self.find_mapping_no_bias(addr) {
-                    if hit_mapping.is_executable() {
+                    if hit_mapping.executable {
                         last_hit_mapping = Some(hit_mapping);
                         continue;
                     }
@@ -576,7 +553,7 @@ impl PtraceDumper {
         }
 
         
-        if mapping.name.as_deref() == Some(LINUX_GATE_LIBRARY_NAME.as_ref()) {
+        if mapping.name.as_deref() == Some(LINUX_GATE_LIBRARY_NAME) {
             if pid == std::process::id().try_into()? {
                 let mem_slice = unsafe {
                     std::slice::from_raw_parts(mapping.start_address as *const u8, mapping.size)
@@ -591,16 +568,26 @@ impl PtraceDumper {
                 return Self::elf_file_identifier_from_mapped_file(&mem_slice);
             }
         }
+        let new_name = MappingInfo::handle_deleted_file_in_mapping(
+            mapping.name.as_deref().unwrap_or_default(),
+            pid,
+        )?;
 
-        let (filename, old_name) = mapping.fixup_deleted_file(pid)?;
-
-        let mem_slice = MappingInfo::get_mmap(&Some(filename), mapping.offset)?;
+        let mem_slice = MappingInfo::get_mmap(&Some(new_name.clone()), mapping.offset)?;
         let build_id = Self::elf_file_identifier_from_mapped_file(&mem_slice)?;
 
         
         
-        if let Some(old_name) = old_name {
-            mapping.name = Some(old_name.into());
+        
+        if let Some(old_name) = &mapping.name {
+            if &new_name != old_name {
+                mapping.name = Some(
+                    old_name
+                        .trim_end_matches(DELETED_SUFFIX)
+                        .trim_end()
+                        .to_string(),
+                );
+            }
         }
         Ok(build_id)
     }
