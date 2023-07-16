@@ -121,9 +121,6 @@ void UpdateConnectionAddress(
 
 }  
 
-const int JsepSessionDescription::kDefaultVideoCodecId = 100;
-const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
-
 
 
 SdpType SessionDescriptionInterface::GetType() const {
