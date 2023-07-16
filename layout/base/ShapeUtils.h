@@ -76,7 +76,9 @@ struct ShapeUtils final {
   
   
   
-  static nsRect ComputeInsetRect(const StyleBasicShape&, const nsRect& aRefBox);
+  
+  
+  static nsRect ComputeRect(const StyleBasicShape&, const nsRect& aRefBox);
   static nsRect ComputeInsetRect(const StyleRect<LengthPercentage>& aStyleRect,
                                  const nsRect& aRefBox);
 

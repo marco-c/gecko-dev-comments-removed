@@ -2525,8 +2525,8 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   nsRect physicalShapeBoxRect =
       aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
-  const nsRect insetRect =
-      ShapeUtils::ComputeInsetRect(aBasicShape, physicalShapeBoxRect);
+  const nsRect insetRect = ShapeUtils::ComputeInsetRect(
+      aBasicShape.AsInset().rect, physicalShapeBoxRect);
 
   nsRect logicalInsetRect = ConvertToFloatLogical(
       LogicalRect(aWM, insetRect, aContainerSize), aWM, aContainerSize);

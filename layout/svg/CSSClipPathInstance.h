@@ -57,6 +57,9 @@ class MOZ_STACK_CLASS CSSClipPathInstance {
 
   already_AddRefed<Path> CreateClipPathPath(DrawTarget* aDrawTarget);
 
+  already_AddRefed<Path> CreateClipPathXywh(DrawTarget* aDrawTarget,
+                                            const nsRect& aRefBox);
+
   
 
 
