@@ -39,7 +39,6 @@
 #include "debugger/Object.h"              
 #include "debugger/Script.h"              
 #include "debugger/Source.h"              
-#include "frontend/BytecodeCompiler.h"    
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
 #include "frontend/Parser.h"              
@@ -77,6 +76,7 @@
 #include "js/UbiNode.h"               
 #include "js/UbiNodeBreadthFirst.h"   
 #include "js/Wrapper.h"               
+#include "util/Identifier.h"          
 #include "util/Text.h"                
 #include "vm/ArrayObject.h"           
 #include "vm/AsyncFunction.h"         
@@ -155,7 +155,6 @@ using JS::SourceOwnership;
 using JS::SourceText;
 using JS::dbg::AutoEntryMonitor;
 using JS::dbg::Builder;
-using js::frontend::IsIdentifier;
 using mozilla::AsVariant;
 using mozilla::DebugOnly;
 using mozilla::MakeScopeExit;

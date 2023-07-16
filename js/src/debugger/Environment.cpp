@@ -13,15 +13,15 @@
 #include <string.h>  
 #include <utility>   
 
-#include "debugger/Debugger.h"          
-#include "debugger/Object.h"            
-#include "debugger/Script.h"            
-#include "frontend/BytecodeCompiler.h"  
+#include "debugger/Debugger.h"  
+#include "debugger/Object.h"    
+#include "debugger/Script.h"    
 #include "gc/Tracer.h"    
 #include "js/CallArgs.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/HeapAPI.h"               
 #include "js/RootingAPI.h"            
+#include "util/Identifier.h"          
 #include "vm/Compartment.h"           
 #include "vm/JSAtom.h"                
 #include "vm/JSContext.h"             
@@ -45,7 +45,6 @@ class GlobalObject;
 
 using namespace js;
 
-using js::frontend::IsIdentifier;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;

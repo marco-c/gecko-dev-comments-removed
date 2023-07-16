@@ -18,7 +18,7 @@
 
 #include "debugger/DebugAPI.h"
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/BytecodeCompiler.h"     
+#include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
 #include "frontend/Parser.h"  
@@ -31,6 +31,7 @@
 #include "js/Utility.h"            
 #include "js/Value.h"              
 #include "util/CompleteFile.h"     
+#include "util/Identifier.h"       
 #include "util/StringBuffer.h"     
 #include "vm/EnvironmentObject.h"  
 #include "vm/ErrorReporting.h"  
@@ -261,8 +262,8 @@ class FunctionCompiler {
 
       
       
-      nameIsIdentifier_ = js::frontend::IsIdentifier(
-          reinterpret_cast<const Latin1Char*>(name), nameLen);
+      nameIsIdentifier_ =
+          IsIdentifier(reinterpret_cast<const Latin1Char*>(name), nameLen);
       if (nameIsIdentifier_) {
         if (!funStr_.append(nameAtom_)) {
           return false;

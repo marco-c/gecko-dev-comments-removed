@@ -12,10 +12,10 @@
 
 #include "jsnum.h"  
 
-#include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"
 #include "js/GCAPI.h"           
 #include "js/Printer.h"         
+#include "util/Identifier.h"    
 #include "util/StringBuffer.h"  
 #include "util/Text.h"          
 #include "util/Unicode.h"

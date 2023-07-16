@@ -18,12 +18,12 @@
 
 #include "builtin/Eval.h"
 #include "builtin/SelfHostingDefines.h"
-#include "frontend/BytecodeCompiler.h"
 #include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/PropertySpec.h"
 #include "js/UniquePtr.h"
+#include "util/Identifier.h"  
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/BooleanObject.h"
@@ -56,8 +56,6 @@
 #endif
 
 using namespace js;
-
-using js::frontend::IsIdentifier;
 
 using mozilla::Maybe;
 using mozilla::Range;
