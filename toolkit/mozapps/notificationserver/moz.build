@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "Notifications and Alerts")
+    BUG_COMPONENT = ("Toolkit", "Alerts Service")
 
 SharedLibrary("notificationserver")
 
