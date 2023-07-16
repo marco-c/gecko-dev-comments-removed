@@ -338,3 +338,31 @@ async function doDismissTest(command) {
   await UrlbarTestUtils.promisePopupClose(window);
   await QuickSuggest.blockedSuggestions.clear();
 }
+
+
+add_task(async function rowLabel() {
+  const testCases = [
+    
+    {
+      searchString: "high",
+      expected: "Recommended reads",
+    },
+    
+    {
+      searchString: "pocket suggestion",
+      expected: "Firefox Suggest",
+    },
+  ];
+
+  for (const { searchString, expected } of testCases) {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: searchString,
+    });
+    Assert.equal(UrlbarTestUtils.getResultCount(window), 2);
+
+    const { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+    const row = element.row;
+    Assert.equal(row.getAttribute("label"), expected);
+  }
+});
