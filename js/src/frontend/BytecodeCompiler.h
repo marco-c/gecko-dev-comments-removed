@@ -7,6 +7,7 @@
 #ifndef frontend_BytecodeCompiler_h
 #define frontend_BytecodeCompiler_h
 
+#include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Utf8.h"  
 
@@ -14,7 +15,9 @@
 
 #include "ds/LifoAlloc.h"
 #include "frontend/FunctionSyntaxKind.h"
-#include "js/CompileOptions.h"  
+#include "frontend/ScriptIndex.h"  
+#include "js/CompileOptions.h"     
+#include "js/RootingAPI.h"         
 #include "js/SourceText.h"
 #include "js/UniquePtr.h"  
 
@@ -95,7 +98,9 @@
 
 
 
+class JSFunction;
 class JSLinearString;
+struct JSContext;
 
 namespace js {
 
@@ -185,6 +190,14 @@ UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
     JS::SourceText<char16_t>& srcBuf,
     const mozilla::Maybe<uint32_t>& parameterListEnd,
     frontend::FunctionSyntaxKind syntaxKind, Handle<Scope*> enclosingScope);
+
+extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
+                                              FrontendContext* fc,
+                                              JS::Handle<JSFunction*> fun);
+
+extern already_AddRefed<CompilationStencil> DelazifyCanonicalScriptedFunction(
+    JSContext* cx, FrontendContext* fc, ScopeBindingCache* scopeCache,
+    CompilationStencil& context, ScriptIndex scriptIndex);
 
 
 inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {
