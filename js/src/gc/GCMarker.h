@@ -274,7 +274,7 @@ enum ShouldReportMarkTime : bool {
 
 } 
 
-class alignas(TypicalCacheLineSize) GCMarker {
+class GCMarker {
   enum MarkingState : uint8_t {
     
     NotActive,
