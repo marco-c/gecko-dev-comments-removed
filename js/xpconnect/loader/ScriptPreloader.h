@@ -15,6 +15,7 @@
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Range.h"
+#include "mozilla/SPSCQueue.h"
 #include "mozilla/Vector.h"
 #include "mozilla/Result.h"
 #include "mozilla/loader/AutoMemMap.h"
@@ -155,6 +156,23 @@ class ScriptPreloader : public nsIObserver,
     Saved,
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -378,27 +396,6 @@ class ScriptPreloader : public nsIObserver,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  static constexpr int OFF_THREAD_FIRST_CHUNK_SIZE = 128 * 1024;
-  static constexpr int OFF_THREAD_CHUNK_SIZE = 512 * 1024;
-
-  
-  
-  
-  
-  static constexpr int SMALL_SCRIPT_CHUNK_THRESHOLD = 128 * 1024;
-
-  
-  
-  
-  
-  
   static constexpr int MAX_MAINTHREAD_DECODE_SIZE = 50 * 1024;
 
   explicit ScriptPreloader(AutoMemMap* cacheData);
@@ -441,24 +438,24 @@ class ScriptPreloader : public nsIObserver,
   already_AddRefed<JS::Stencil> WaitForCachedStencil(
       JSContext* cx, const JS::DecodeOptions& options, CachedStencil* script);
 
-  void DecodeNextBatch(size_t chunkSize, JS::Handle<JSObject*> scope = nullptr);
+  void StartDecodeTask(JS::Handle<JSObject*> scope);
 
  private:
   bool StartDecodeTask(JS::DecodeOptions decodeOptions,
-                       JS::TranscodeSources&& parsingSources);
+                       JS::TranscodeSources&& decodingSources);
 
   class DecodeTask : public Runnable {
     ScriptPreloader* mPreloader;
     JS::DecodeOptions mDecodeOptions;
-    JS::TranscodeSources mParsingSources;
+    JS::TranscodeSources mDecodingSources;
 
    public:
     DecodeTask(ScriptPreloader* preloader, JS::DecodeOptions decodeOptions,
-               JS::TranscodeSources&& parsingSources)
+               JS::TranscodeSources&& decodingSources)
         : Runnable("ScriptPreloaderDecodeTask"),
           mPreloader(preloader),
           mDecodeOptions(decodeOptions),
-          mParsingSources(std::move(parsingSources)) {
+          mDecodingSources(std::move(decodingSources)) {
       
       
       
@@ -470,11 +467,12 @@ class ScriptPreloader : public nsIObserver,
 
   friend class DecodeTask;
 
-  void OnDecodeTaskFinished(UniquePtr<Vector<RefPtr<JS::Stencil>>>&& stencils);
+  void onDecodedStencilQueued();
+  void OnDecodeTaskFinished();
   void OnDecodeTaskFailed();
 
  public:
-  void FinishOffThreadDecode(Vector<RefPtr<JS::Stencil>>* stencils);
+  void FinishOffThreadDecode();
   void DoFinishOffThreadDecode();
 
   already_AddRefed<nsIAsyncShutdownClient> GetShutdownBarrier();
@@ -510,19 +508,15 @@ class ScriptPreloader : public nsIObserver,
   bool mCacheInvalidated MOZ_GUARDED_BY(mSaveMonitor) = false;
 
   
-  
-  LinkedList<CachedStencil> mPendingScripts;
+  LinkedList<CachedStencil> mDecodingScripts;
 
   
   
-  Vector<CachedStencil*> mDecodingScripts;
-
-  
-  Atomic<Vector<RefPtr<JS::Stencil>>*, ReleaseAcquire> mDecodedStencils;
-
   
   
-  bool mFinishDecodeRunnablePending MOZ_GUARDED_BY(mMonitor) = false;
+  
+  
+  Maybe<SPSCQueue<RefPtr<JS::Stencil>>> mDecodedStencils;
 
   
   
