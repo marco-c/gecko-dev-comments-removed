@@ -12,10 +12,21 @@
 #define RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 
 #include "api/units/time_delta.h"
-#if defined(WEBRTC_POSIX) && defined(WEBRTC_LINUX)
+
+#if defined(WEBRTC_POSIX)
+#if defined(WEBRTC_LINUX)
+
 #include <sys/epoll.h>
 #define WEBRTC_USE_EPOLL 1
-#endif
+#elif defined(WEBRTC_FUCHSIA)
+
+
+#include <poll.h>
+#define WEBRTC_USE_POLL 1
+#else
+
+#endif  
+#endif  
 
 #include <array>
 #include <memory>
@@ -89,15 +100,16 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   static constexpr int kForeverMs = -1;
 
   static int ToCmsWait(webrtc::TimeDelta max_wait_duration);
+
 #if defined(WEBRTC_POSIX)
   bool WaitSelect(int cmsWait, bool process_io);
-#endif  
+
 #if defined(WEBRTC_USE_EPOLL)
   void AddEpoll(Dispatcher* dispatcher, uint64_t key);
   void RemoveEpoll(Dispatcher* dispatcher);
   void UpdateEpoll(Dispatcher* dispatcher, uint64_t key);
   bool WaitEpoll(int cmsWait);
-  bool WaitPoll(int cmsWait, Dispatcher* dispatcher);
+  bool WaitPollOneDispatcher(int cmsWait, Dispatcher* dispatcher);
 
   
   
@@ -105,7 +117,16 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   
   std::array<epoll_event, kNumEpollEvents> epoll_events_;
   const int epoll_fd_ = INVALID_SOCKET;
+
+#elif defined(WEBRTC_USE_POLL)
+  void AddPoll(Dispatcher* dispatcher, uint64_t key);
+  void RemovePoll(Dispatcher* dispatcher);
+  void UpdatePoll(Dispatcher* dispatcher, uint64_t key);
+  bool WaitPoll(int cmsWait, bool process_io);
+
 #endif  
+#endif  
+
   
   
   
