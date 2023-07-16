@@ -31,6 +31,7 @@
 #include "absl/base/attributes.h"
 #include "absl/functional/any_invocable.h"
 #include "api/function_view.h"
+#include "api/location.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
@@ -308,7 +309,11 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
-  virtual void BlockingCall(FunctionView<void()> functor);
+  
+  
+  virtual void BlockingCall(FunctionView<void()> functor) {
+    BlockingCallImpl(std::move(functor), webrtc::Location::Current());
+  }
 
   template <typename Functor,
             typename ReturnT = std::invoke_result_t<Functor>,
@@ -336,11 +341,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   void Delete() override;
-  void PostTask(absl::AnyInvocable<void() &&> task) override;
-  void PostDelayedTask(absl::AnyInvocable<void() &&> task,
-                       webrtc::TimeDelta delay) override;
-  void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> task,
-                                    webrtc::TimeDelta delay) override;
 
   
   
@@ -411,6 +411,18 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
     
     mutable absl::AnyInvocable<void() &&> functor;
   };
+
+  
+  void PostTaskImpl(absl::AnyInvocable<void() &&> task,
+                    const PostTaskTraits& traits,
+                    const webrtc::Location& location) override;
+  void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
+                           webrtc::TimeDelta delay,
+                           const PostDelayedTaskTraits& traits,
+                           const webrtc::Location& location) override;
+
+  virtual void BlockingCallImpl(FunctionView<void()> functor,
+                                const webrtc::Location& location);
 
   
   

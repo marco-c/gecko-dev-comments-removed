@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "api/location.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
@@ -62,8 +63,14 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
-  virtual void PostTask(absl::AnyInvocable<void() &&> task) = 0;
+  
+  
+  virtual void PostTask(absl::AnyInvocable<void() &&> task) {
+    PostTaskImpl(std::move(task), PostTaskTraits{}, Location::Current());
+  }
 
+  
+  
   
   
   
@@ -88,7 +95,11 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   virtual void PostDelayedTask(absl::AnyInvocable<void() &&> task,
-                               TimeDelta delay) = 0;
+                               TimeDelta delay) {
+    PostDelayedTaskImpl(std::move(task), delay,
+                        PostDelayedTaskTraits{.high_precision = false},
+                        Location::Current());
+  }
 
   
   
@@ -106,8 +117,14 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
+  
+  
   virtual void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> task,
-                                            TimeDelta delay) = 0;
+                                            TimeDelta delay) {
+    PostDelayedTaskImpl(std::move(task), delay,
+                        PostDelayedTaskTraits{.high_precision = true},
+                        Location::Current());
+  }
 
   
   
@@ -131,6 +148,18 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   bool IsCurrent() const { return Current() == this; }
 
  protected:
+  
+  
+  struct PostTaskTraits {};
+
+  struct PostDelayedTaskTraits {
+    
+    
+    
+    
+    bool high_precision = false;
+  };
+
   class RTC_EXPORT CurrentTaskQueueSetter {
    public:
     explicit CurrentTaskQueueSetter(TaskQueueBase* task_queue);
@@ -141,6 +170,22 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
    private:
     TaskQueueBase* const previous_;
   };
+
+  
+  
+  
+  virtual void PostTaskImpl(absl::AnyInvocable<void() &&> task,
+                            const PostTaskTraits& traits,
+                            const Location& location) {}
+
+  
+  
+  
+  
+  virtual void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> task,
+                                   TimeDelta delay,
+                                   const PostDelayedTaskTraits& traits,
+                                   const Location& location) {}
 
   
   
