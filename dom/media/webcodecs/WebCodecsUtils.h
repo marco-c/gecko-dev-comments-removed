@@ -32,7 +32,7 @@ namespace dom {
 
 
 
-nsTArray<nsCString> GuessContainers(const nsString& aCodec);
+nsTArray<nsCString> GuessContainers(const nsAString& aCodec);
 
 
 

@@ -160,17 +160,18 @@ static bool IsValid(const VideoDecoderConfig& aConfig) {
   return true;
 }
 
-static nsTArray<nsCString> GuessMIMETypes(
-    const VideoDecoderConfigInternal& aConfig) {
-  const auto codec = NS_ConvertUTF16toUTF8(aConfig.mCodec);
+static nsTArray<nsCString> GuessMIMETypes(const nsAString& aCodec,
+                                          const uint32_t* aCodedWidth,
+                                          const uint32_t* aCodedHeight) {
+  const auto codec = NS_ConvertUTF16toUTF8(aCodec);
   nsTArray<nsCString> types;
-  for (const nsCString& container : GuessContainers(aConfig.mCodec)) {
+  for (const nsCString& container : GuessContainers(aCodec)) {
     nsPrintfCString mime("video/%s; codecs=%s", container.get(), codec.get());
-    if (aConfig.mCodedWidth.isSome()) {
-      mime.Append(nsPrintfCString("; width=%d", aConfig.mCodedWidth.value()));
+    if (aCodedWidth) {
+      mime.Append(nsPrintfCString("; width=%d", *aCodedWidth));
     }
-    if (aConfig.mCodedHeight.isSome()) {
-      mime.Append(nsPrintfCString("; height=%d", aConfig.mCodedHeight.value()));
+    if (aCodedHeight) {
+      mime.Append(nsPrintfCString("; height=%d", *aCodedHeight));
     }
     types.AppendElement(mime);
   }
@@ -186,7 +187,8 @@ static bool IsOnLinux() {
 }
 
 
-static bool CanDecode(const VideoDecoderConfigInternal& aConfig) {
+static bool CanDecode(const nsAString& aCodec, const uint32_t* aCodecWidth,
+                      const uint32_t* aCodecHeight) {
   
   
   if (!IsOnLinux()) {
@@ -195,7 +197,8 @@ static bool CanDecode(const VideoDecoderConfigInternal& aConfig) {
   
   
   
-  for (const nsCString& mime : GuessMIMETypes(aConfig)) {
+  for (const nsCString& mime :
+       GuessMIMETypes(aCodec, aCodecWidth, aCodecHeight)) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (DecoderTraits::CanHandleContainerType(
@@ -208,11 +211,28 @@ static bool CanDecode(const VideoDecoderConfigInternal& aConfig) {
   return false;
 }
 
+static bool CanDecode(const VideoDecoderConfigInternal& aConfig) {
+  return CanDecode(aConfig.mCodec, aConfig.mCodedWidth.ptrOr(nullptr),
+                   aConfig.mCodedHeight.ptrOr(nullptr));
+}
+
+static bool CanDecode(const VideoDecoderConfig& aConfig) {
+  
+  
+  return CanDecode(
+      aConfig.mCodec,
+      aConfig.mCodedWidth.WasPassed() ? &aConfig.mCodedWidth.Value() : nullptr,
+      aConfig.mCodedHeight.WasPassed() ? &aConfig.mCodedHeight.Value()
+                                       : nullptr);
+}
+
 static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
     const VideoDecoderConfigInternal& aConfig) {
   
   
-  for (const nsCString& mime : GuessMIMETypes(aConfig)) {
+  for (const nsCString& mime :
+       GuessMIMETypes(aConfig.mCodec, aConfig.mCodedWidth.ptrOr(nullptr),
+                      aConfig.mCodedHeight.ptrOr(nullptr))) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (nsTArray<UniquePtr<TrackInfo>> tracks =
@@ -1074,16 +1094,7 @@ already_AddRefed<Promise> VideoDecoder::IsConfigSupported(
     return p.forget();
   }
 
-  
-  
-  UniquePtr<VideoDecoderConfigInternal> conf =
-      VideoDecoderConfigInternal::Create(config);
-  if (!conf) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);  
-    return p.forget();
-  }
-
-  bool canDecode = CanDecode(*conf);
+  bool canDecode = CanDecode(config);
   RootedDictionary<VideoDecoderSupport> s(aGlobal.Context());
   s.mConfig.Construct(std::move(config));
   s.mSupported.Construct(canDecode);
