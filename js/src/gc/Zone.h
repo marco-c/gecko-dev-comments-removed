@@ -309,6 +309,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   friend class js::WeakRefObject;
   js::MainThreadOrGCTaskData<KeptAliveSet> keptObjects;
 
+  
+  
+  
+  
+  using ObjectVector = js::GCVector<JSObject*, 0, js::SystemAllocPolicy>;
+  js::MainThreadOrGCTaskData<ObjectVector> objectsWithWeakPointers;
+
  public:
   static JS::Zone* from(ZoneAllocator* zoneAlloc) {
     return static_cast<Zone*>(zoneAlloc);
@@ -343,6 +350,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
                                     bool resetPretenuredSites);
 
   void traceWeakJitScripts(JSTracer* trc);
+
+  bool registerObjectWithWeakPointers(JSObject* obj);
+  void sweepObjectsWithWeakPointers(JSTracer* trc);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               JS::CodeSizes* code, size_t* regexpZone,
