@@ -1609,7 +1609,7 @@ nsresult TextControlState::BindToFrame(nsTextControlFrame* aFrame) {
   
   nsAutoString currentValue;
   if (mTextEditor) {
-    GetValue(currentValue, true);
+    GetValue(currentValue, true,  false);
   }
 
   mBoundFrame = aFrame;
@@ -1776,7 +1776,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   if (aValue) {
     defaultValue = *aValue;
   } else {
-    GetValue(defaultValue, true);
+    GetValue(defaultValue, true,  true);
   }
 
   if (!mEditorInitialized) {
@@ -2083,7 +2083,7 @@ void TextControlState::SetSelectionRange(uint32_t aStart, uint32_t aEnd,
   if (!props.HasMaxLength()) {
     
     nsAutoString value;
-    GetValue(value, false);
+    GetValue(value, false,  true);
     props.SetMaxLength(value.Length());
   }
 
@@ -2368,7 +2368,7 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
   
   
   nsAutoString value;
-  GetValue(value, true);
+  GetValue(value, true,  false);
 
   if (mRestoringSelection) {
     mRestoringSelection->Revoke();
@@ -2468,7 +2468,8 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
   }
 }
 
-void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
+void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap,
+                                bool aForDisplay) const {
   
   
   
@@ -2535,7 +2536,7 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
   } else if (!mTextCtrlElement->ValueChanged() || mValue.IsVoid()) {
     
     nsString value;
-    mTextCtrlElement->GetDefaultValueFromContent(value);
+    mTextCtrlElement->GetDefaultValueFromContent(value, aForDisplay);
     
     nsContentUtils::PlatformToDOMLineBreaks(value);
     aValue = std::move(value);
@@ -2549,7 +2550,7 @@ bool TextControlState::ValueEquals(const nsAString& aValue) const {
   
   
   nsString value;
-  GetValue(value, true);
+  GetValue(value, true,  true);
   return aValue.Equals(value);
 }
 
@@ -2612,7 +2613,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
     
     if (auto* input = HTMLInputElement::FromNode(mTextCtrlElement)) {
       if (input->LastValueChangeWasInteractive()) {
-        GetValue(mLastInteractiveValue,  true);
+        GetValue(mLastInteractiveValue,  true,
+                  true);
       }
     }
   }

@@ -1507,7 +1507,7 @@ void HTMLInputElement::GetValue(nsAString& aValue, CallerType aCallerType) {
   
   
   if (SanitizesOnValueGetter()) {
-    SanitizeValue(aValue, ForValueGetter::Yes);
+    SanitizeValue(aValue, SanitizationKind::ForValueGetter);
   }
 }
 
@@ -1543,7 +1543,7 @@ void HTMLInputElement::GetNonFileValueInternal(nsAString& aValue) const {
   switch (GetValueMode()) {
     case VALUE_MODE_VALUE:
       if (IsSingleLineTextControl(false)) {
-        mInputData.mState->GetValue(aValue, true);
+        mInputData.mState->GetValue(aValue, true,  false);
       } else if (!aValue.Assign(mInputData.mValue, fallible)) {
         aValue.Truncate();
       }
@@ -4560,7 +4560,7 @@ void HTMLInputElement::MaybeSnapToTickMark(Decimal& aValue) {
 }
 
 void HTMLInputElement::SanitizeValue(nsAString& aValue,
-                                     ForValueGetter aForGetter) {
+                                     SanitizationKind aKind) {
   NS_ASSERTION(mDoneCreating, "The element creation should be finished!");
 
   switch (mType) {
@@ -4610,7 +4610,7 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
         return;
       }
 
-      if (aForGetter == ForValueGetter::Yes) {
+      if (aKind == SanitizationKind::ForValueGetter) {
         
         
         
@@ -4624,7 +4624,7 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
         DebugOnly<bool> ok = result.mResult.toString(buf, ArrayLength(buf));
         aValue.AssignASCII(buf);
         MOZ_ASSERT(ok, "buf not big enough");
-      } else {
+      } else if (aKind == SanitizationKind::ForDisplay) {
         
         
         
@@ -4632,12 +4632,14 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
         
         
         
-        nsAutoString localizedValue;
+        nsString localizedValue;
         mInputType->ConvertNumberToString(result.mResult, localizedValue);
         if (StringToDecimal(localizedValue).isFinite()) {
           return;
         }
-        aValue.Assign(localizedValue);
+        aValue = std::move(localizedValue);
+      } else {
+        
       }
     } break;
     case FormControlType::InputRange: {
@@ -6760,7 +6762,8 @@ int32_t HTMLInputElement::GetWrapCols() {
 
 int32_t HTMLInputElement::GetRows() { return DEFAULT_ROWS; }
 
-void HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue) {
+void HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue,
+                                                  bool aForDisplay) {
   if (!GetEditorState()) {
     return;
   }
@@ -6768,9 +6771,9 @@ void HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue) {
   
   
   
-  
   if (mDoneCreating) {
-    SanitizeValue(aValue);
+    SanitizeValue(aValue, aForDisplay ? SanitizationKind::ForDisplay
+                                      : SanitizationKind::Other);
   }
 }
 
@@ -6778,7 +6781,7 @@ bool HTMLInputElement::ValueChanged() const { return mValueChanged; }
 
 void HTMLInputElement::GetTextEditorValue(nsAString& aValue) const {
   if (TextControlState* state = GetEditorState()) {
-    state->GetValue(aValue,  true);
+    state->GetValue(aValue,  true,  true);
   }
 }
 

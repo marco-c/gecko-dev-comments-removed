@@ -288,7 +288,8 @@ class TextControlState final : public SupportsWeakPtr {
 
 
 
-  void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
+  void GetValue(nsAString& aValue, bool aIgnoreWrap, bool aForDisplay) const;
+
   
 
 
