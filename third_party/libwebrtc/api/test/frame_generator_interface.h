@@ -49,6 +49,12 @@ class FrameGeneratorInterface {
   virtual void ChangeResolution(size_t width, size_t height) = 0;
 
   virtual Resolution GetResolution() const = 0;
+
+  
+  
+  
+  
+  virtual absl::optional<int> fps() const { return absl::nullopt; }
 };
 
 }  
