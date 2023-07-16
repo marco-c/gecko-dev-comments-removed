@@ -418,7 +418,10 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     
     rv = aHostURI->GetAsciiHost(aBaseDomain);
   }
-  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   
   if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.')
