@@ -50,6 +50,7 @@ impl<'a> TestHarness<'a> {
         
         self.test_basic();
         self.test_composite_nop();
+        self.test_scroll_subpic();
     }
 
     
@@ -103,6 +104,29 @@ impl<'a> TestHarness<'a> {
 
         
         assert!(results.composite_needed);
+    }
+
+    
+    fn test_scroll_subpic(
+        &mut self,
+    ) {
+        
+        let results = self.render_yaml("scroll_subpic_1");
+
+        
+        assert!(
+            matches!(results.pc_debug.slice(0).tile(0, 0), TileDebugInfo::Dirty(..)),
+            "Ensure the first test frame actually rendered something",
+        );
+
+        
+        let results = self.render_yaml("scroll_subpic_2");
+
+        
+        assert!(
+            results.pc_debug.slice(0).tile(0, 0).is_valid(),
+            "Ensure the cache tile was not invalidated after scrolling",
+        );
     }
 
     
