@@ -88,6 +88,13 @@ class LibvpxVp9EncoderInfoSettings : public EncoderInfoSettings {
   ~LibvpxVp9EncoderInfoSettings() override {}
 };
 
+
+class LibaomAv1EncoderInfoSettings : public EncoderInfoSettings {
+ public:
+  LibaomAv1EncoderInfoSettings();
+  ~LibaomAv1EncoderInfoSettings() override {}
+};
+
 }  
 
 #endif  
