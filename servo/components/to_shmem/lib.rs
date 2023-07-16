@@ -20,7 +20,7 @@ extern crate smallvec;
 extern crate string_cache;
 extern crate thin_vec;
 
-use servo_arc::{Arc, ThinArc};
+use servo_arc::{Arc, HeaderSlice};
 use smallbitvec::{InternalStorage, SmallBitVec};
 use smallvec::{Array, SmallVec};
 use std::alloc::Layout;
@@ -463,7 +463,7 @@ impl<T: ToShmem> ToShmem for Arc<T> {
     }
 }
 
-impl<H: ToShmem, T: ToShmem> ToShmem for ThinArc<H, T> {
+impl<H: ToShmem, T: ToShmem> ToShmem for Arc<HeaderSlice<H, T>> {
     fn to_shmem(&self, builder: &mut SharedMemoryBuilder) -> Result<Self> {
         
         
@@ -476,26 +476,27 @@ impl<H: ToShmem, T: ToShmem> ToShmem for ThinArc<H, T> {
 
         
         
-        let header = self.header.header.to_shmem(builder)?;
-        let mut values = Vec::with_capacity(self.slice.len());
-        for v in self.slice.iter() {
+        let header = self.header.to_shmem(builder)?;
+        let mut values = Vec::with_capacity(self.len());
+        for v in self.slice().iter() {
             values.push(v.to_shmem(builder)?);
         }
 
         
         
-        unsafe {
-            let static_arc = ThinArc::static_from_header_and_iter(
-                |layout| builder.alloc(layout),
-                ManuallyDrop::into_inner(header),
-                values.into_iter().map(ManuallyDrop::into_inner),
-            );
+        let len = values.len();
+        let static_arc = Self::from_header_and_iter_alloc(
+            |layout| builder.alloc(layout),
+            ManuallyDrop::into_inner(header),
+            values.into_iter().map(ManuallyDrop::into_inner),
+            len,
+             true,
+        );
 
-            #[cfg(debug_assertions)]
-            builder.shared_values.insert(self.heap_ptr());
+        #[cfg(debug_assertions)]
+        builder.shared_values.insert(self.heap_ptr());
 
-            Ok(ManuallyDrop::new(static_arc))
-        }
+        Ok(ManuallyDrop::new(static_arc))
     }
 }
 

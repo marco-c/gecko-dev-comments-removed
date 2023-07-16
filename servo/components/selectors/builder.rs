@@ -19,7 +19,7 @@
 
 use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl};
 use crate::sink::Push;
-use servo_arc::{Arc, HeaderWithLength, ThinArc};
+use servo_arc::{Arc, ThinArc};
 use smallvec::{self, SmallVec};
 use std::cmp;
 use std::iter;
@@ -107,30 +107,20 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
     ) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
         
         
-        let full_len = self.simple_selectors.len() + self.combinators.len();
-
         
-        let header = HeaderWithLength::new(spec, full_len);
-
-        
-
-        
-        
-        
-        let raw_simple_selectors: *const [Component<Impl>] = &*self.simple_selectors;
-        unsafe {
-            
-            
-            self.simple_selectors.set_len(0)
-        }
-        let (rest, current) = split_from_end(unsafe { &*raw_simple_selectors }, self.current_len);
+        let raw_simple_selectors = unsafe {
+            let simple_selectors_len = self.simple_selectors.len();
+            self.simple_selectors.set_len(0);
+            std::slice::from_raw_parts(self.simple_selectors.as_ptr(), simple_selectors_len)
+        };
+        let (rest, current) = split_from_end(raw_simple_selectors, self.current_len);
         let iter = SelectorBuilderIter {
             current_simple_selectors: current.iter(),
             rest_of_simple_selectors: rest,
             combinators: self.combinators.drain(..).rev(),
         };
 
-        Arc::into_thin(Arc::from_header_and_iter(header, iter))
+        Arc::from_header_and_iter(spec, iter)
     }
 }
 
