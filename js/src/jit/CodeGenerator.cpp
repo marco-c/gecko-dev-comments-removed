@@ -34,6 +34,7 @@
 #include "jit/CompileInfo.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/Invalidation.h"
+#include "jit/IonGenericCallStub.h"
 #include "jit/IonIC.h"
 #include "jit/IonScript.h"
 #include "jit/JitcodeMap.h"
@@ -5608,91 +5609,30 @@ void CodeGenerator::emitCallInvokeFunction(
 }
 
 void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
-  Register calleereg = ToRegister(call->getFunction());
-  Register objreg = ToRegister(call->getTempObject());
-  Register nargsreg = ToRegister(call->getNargsReg());
+  
+  MOZ_ASSERT(ToRegister(call->getCallee()) == IonGenericCallCalleeReg);
+
+  Register argcReg = ToRegister(call->getArgc());
   uint32_t unusedStack =
       UnusedStackBytesForCall(call->mir()->paddedNumStackArgs());
-  Label invoke, thunk, makeCall, end;
 
   
   MOZ_ASSERT(!call->hasSingleTarget());
 
   masm.checkStackAlignment();
 
-  
-  if (call->mir()->needsClassCheck()) {
-    masm.branchTestObjIsFunction(Assembler::NotEqual, calleereg, nargsreg,
-                                 calleereg, &invoke);
-  }
-
-  
-  if (call->mir()->isConstructing()) {
-    masm.branchTestFunctionFlags(calleereg, FunctionFlags::CONSTRUCTOR,
-                                 Assembler::Zero, &invoke);
-  } else {
-    masm.branchFunctionKind(Assembler::Equal, FunctionFlags::ClassConstructor,
-                            calleereg, objreg, &invoke);
-  }
-
-  
-  if (call->mir()->needsThisCheck()) {
-    MOZ_ASSERT(call->mir()->isConstructing());
-    Address thisAddr(masm.getStackPointer(), unusedStack);
-    masm.branchTestNull(Assembler::Equal, thisAddr, &invoke);
-  } else {
-#ifdef DEBUG
-    if (call->mir()->isConstructing()) {
-      Address thisAddr(masm.getStackPointer(), unusedStack);
-      Label ok;
-      masm.branchTestNull(Assembler::NotEqual, thisAddr, &ok);
-      masm.assumeUnreachable("Unexpected null this-value");
-      masm.bind(&ok);
-    }
-#endif
-  }
-
-  
-  masm.branchIfFunctionHasNoJitEntry(calleereg, call->mir()->isConstructing(),
-                                     &invoke);
-  masm.loadJitCodeRaw(calleereg, objreg);
-
-  
-  if (call->mir()->maybeCrossRealm()) {
-    masm.switchToObjectRealm(calleereg, nargsreg);
-  }
+  masm.move32(Imm32(call->numActualArgs()), argcReg);
 
   
   masm.freeStack(unusedStack);
-
-  
-  masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
-  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
-
-  
-  
-  
-  
-  DebugOnly<unsigned> numNonArgsOnStack = 1 + call->isConstructing();
-  MOZ_ASSERT(call->numActualArgs() ==
-             call->mir()->numStackArgs() - numNonArgsOnStack);
-  masm.loadFunctionArgCount(calleereg, nargsreg);
-  masm.branch32(Assembler::Above, nargsreg, Imm32(call->numActualArgs()),
-                &thunk);
-  masm.jump(&makeCall);
-
-  
-  masm.bind(&thunk);
-  {
-    TrampolinePtr argumentsRectifier =
-        gen->jitRuntime()->getArgumentsRectifier();
-    masm.movePtr(argumentsRectifier, objreg);
-  }
-
-  
-  masm.bind(&makeCall);
   ensureOsiSpace();
-  uint32_t callOffset = masm.callJit(objreg);
+
+  auto kind = call->mir()->isConstructing() ? IonGenericCallKind::Construct
+                                            : IonGenericCallKind::Call;
+
+  TrampolinePtr genericCallStub =
+      gen->jitRuntime()->getIonGenericCallStub(kind);
+  uint32_t callOffset = masm.callJit(genericCallStub);
   markSafepointAt(callOffset, call);
 
   if (call->mir()->maybeCrossRealm()) {
@@ -5702,19 +5642,8 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   }
 
   
-  
-  int prefixGarbage =
-      sizeof(JitFrameLayout) - JitFrameLayout::bytesPoppedAfterCall();
-  masm.adjustStack(prefixGarbage - unusedStack);
-  masm.jump(&end);
-
-  
-  masm.bind(&invoke);
-  emitCallInvokeFunction(call, calleereg, call->isConstructing(),
-                         call->ignoresReturnValue(), call->numActualArgs(),
-                         unusedStack);
-
-  masm.bind(&end);
+  masm.setFramePushed(frameSize());
+  emitRestoreStackPointerFromFP();
 
   
   
@@ -5737,6 +5666,135 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
                                             IonGenericCallKind kind) {
   AutoCreatedBy acb(masm, "JitRuntime::generateIonGenericCallStub");
   ionGenericCallStubOffset_[kind] = startTrampolineCode(masm);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Register calleeReg = IonGenericCallCalleeReg;
+  Register argcReg = IonGenericCallArgcReg;
+  Register scratch = IonGenericCallScratch;
+  Register scratch2 = IonGenericCallScratch2;
+
+#ifndef JS_USE_LINK_REGISTER
+  Register returnAddrReg = IonGenericCallReturnAddrReg;
+  masm.pop(returnAddrReg);
+#endif
+
+  bool isConstructing = kind == IonGenericCallKind::Construct;
+
+  Label notFunction, noJitEntry, vmCall;
+
+  
+  masm.branchTestObjIsFunction(Assembler::NotEqual, calleeReg, scratch,
+                               calleeReg, &notFunction);
+
+  
+  
+  if (isConstructing) {
+    masm.branchTestFunctionFlags(calleeReg, FunctionFlags::CONSTRUCTOR,
+                                 Assembler::Zero, &vmCall);
+  } else {
+    masm.branchFunctionKind(Assembler::Equal, FunctionFlags::ClassConstructor,
+                            calleeReg, scratch, &vmCall);
+  }
+
+  if (isConstructing) {
+    
+    Address thisAddr(masm.getStackPointer(), 0);
+    masm.branchTestNull(Assembler::Equal, thisAddr, &vmCall);
+  }
+
+  masm.switchToObjectRealm(calleeReg, scratch);
+
+  
+  masm.branchIfFunctionHasNoJitEntry(calleeReg, isConstructing, &noJitEntry);
+
+  
+  
+  
+  masm.loadJitCodeRaw(calleeReg, scratch2);
+
+  
+  masm.PushCalleeToken(calleeReg, isConstructing);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcReg, scratch);
+#ifndef JS_USE_LINK_REGISTER
+  masm.push(returnAddrReg);
+#endif
+
+  
+  Label noRectifier;
+  masm.loadFunctionArgCount(calleeReg, scratch);
+  masm.branch32(Assembler::BelowOrEqual, scratch, argcReg, &noRectifier);
+  {
+    
+    
+    
+    
+    
+    Label rectifier;
+    bindLabelToOffset(&rectifier, argumentsRectifierOffset_);
+
+    masm.jump(&rectifier);
+  }
+
+  
+  masm.bind(&noRectifier);
+  masm.jump(scratch2);
+
+  masm.bind(&noJitEntry);
+  
+
+  masm.bind(&notFunction);
+  
+  
+
+  
+  
+  
+  masm.bind(&vmCall);
+
+  masm.push(masm.getStackPointer());  
+  masm.push(argcReg);                 
+  masm.push(Imm32(false));            
+  masm.push(Imm32(isConstructing));   
+  masm.push(calleeReg);               
+
+  using Fn = bool (*)(JSContext*, HandleObject, bool, bool, uint32_t, Value*,
+                      MutableHandleValue);
+  VMFunctionId id = VMFunctionToId<Fn, jit::InvokeFunction>::id;
+  uint32_t invokeFunctionOffset = functionWrapperOffsets_[size_t(id)];
+  Label invokeFunctionVMEntry;
+  bindLabelToOffset(&invokeFunctionVMEntry, invokeFunctionOffset);
+
+  masm.pushFrameDescriptor(FrameType::IonJS);
+#ifndef JS_USE_LINK_REGISTER
+  masm.push(returnAddrReg);
+#endif
+  masm.jump(&invokeFunctionVMEntry);
 }
 
 void CodeGenerator::visitCallKnown(LCallKnown* call) {
