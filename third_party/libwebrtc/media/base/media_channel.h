@@ -995,17 +995,6 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
                                              absl::optional<int> rtx_time) = 0;
 };
 
-
-
-
-struct ReceiveDataParams {
-  
-  
-  int sid = 0;
-  
-  webrtc::DataMessageType type = webrtc::DataMessageType::kText;
-};
-
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
 
 }  

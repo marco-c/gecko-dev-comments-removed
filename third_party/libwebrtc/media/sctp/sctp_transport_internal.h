@@ -19,9 +19,6 @@
 #include <vector>
 
 #include "api/transport/data_channel_transport_interface.h"
-
-
-
 #include "media/base/media_channel.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -121,8 +118,6 @@ class SctpTransportInternal {
   
   
   virtual bool ResetStream(int sid) = 0;
-  
-  
   
   
   virtual bool SendData(int sid,
