@@ -578,8 +578,7 @@ MFMediaEngineStream* MFMediaSource::GetStreamByIndentifier(
 
 #ifdef MOZ_WMF_CDM
 void MFMediaSource::SetCDMProxy(MFCDMProxy* aCDMProxy) {
-  
-  
+  AssertOnManagerThread();
   mCDMProxy = aCDMProxy;
   
 }
