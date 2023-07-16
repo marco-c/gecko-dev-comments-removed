@@ -194,7 +194,7 @@ class SctpDataChannel : public DataChannelInterface,
   
   
   
-  void OnClosingProcedureComplete(int sid);
+  void OnClosingProcedureComplete();
   
   
   void OnTransportChannelCreated();

@@ -345,11 +345,7 @@ bool SctpDataChannel::Send(const DataBuffer& buffer) {
   
   
   if (!queued_send_data_.Empty()) {
-    if (!QueueSendDataMessage(buffer)) {
-      
-      return false;
-    }
-    return true;
+    return QueueSendDataMessage(buffer);
   }
 
   SendDataMessage(buffer, true);
@@ -389,16 +385,14 @@ void SctpDataChannel::OnClosingProcedureStartedRemotely(int sid) {
   }
 }
 
-void SctpDataChannel::OnClosingProcedureComplete(int sid) {
+void SctpDataChannel::OnClosingProcedureComplete() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  if (id_.stream_id_int() == sid) {
-    
-    
-    RTC_DCHECK_EQ(state_, kClosing);
-    RTC_DCHECK(queued_send_data_.Empty());
-    DisconnectFromTransport();
-    SetState(kClosed);
-  }
+  
+  
+  RTC_DCHECK_EQ(state_, kClosing);
+  RTC_DCHECK(queued_send_data_.Empty());
+
+  SetState(kClosed);
 }
 
 void SctpDataChannel::OnTransportChannelCreated() {
@@ -515,9 +509,7 @@ void SctpDataChannel::CloseAbruptlyWithError(RTCError error) {
     return;
   }
 
-  if (connected_to_transport_) {
-    DisconnectFromTransport();
-  }
+  DisconnectFromTransport();
 
   
   queued_send_data_.Clear();
