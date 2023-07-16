@@ -280,6 +280,7 @@ class StyleRuleActor extends Actor {
       type: this.type,
       line: this.line || undefined,
       column: this.column,
+      ancestorData: [],
       traits: {
         
         
@@ -287,15 +288,88 @@ class StyleRuleActor extends Actor {
       },
     };
 
-    const { computeDesugaredSelector, ancestorData } =
-      this._getAncestorDataForForm();
-    form.ancestorData = ancestorData;
+    
+    let computeDesugaredSelector = false;
+
+    
+    
+    for (const ancestorRule of this.ancestorRules) {
+      const rawRule = ancestorRule.rawRule;
+      const ruleClassName = ChromeUtils.getClassName(rawRule);
+      const type = SharedCssLogic.CSSAtRuleClassNameType[ruleClassName];
+
+      if (ruleClassName === "CSSMediaRule" && rawRule.media?.length) {
+        form.ancestorData.push({
+          type,
+          value: Array.from(rawRule.media).join(", "),
+        });
+      } else if (ruleClassName === "CSSLayerBlockRule") {
+        form.ancestorData.push({
+          type,
+          value: rawRule.name,
+        });
+      } else if (ruleClassName === "CSSContainerRule") {
+        form.ancestorData.push({
+          type,
+          
+          
+          containerName: rawRule.containerName,
+          containerQuery: rawRule.containerQuery,
+        });
+      } else if (ruleClassName === "CSSSupportsRule") {
+        form.ancestorData.push({
+          type,
+          conditionText: rawRule.conditionText,
+        });
+      } else if (rawRule.selectorText) {
+        
+        
+        
+        form.ancestorData.push({
+          type,
+          selectorText: rawRule.selectorText,
+        });
+        computeDesugaredSelector = true;
+      }
+    }
 
     if (this._parentSheet) {
       form.parentStyleSheet =
         this.pageStyle.styleSheetsManager.getStyleSheetResourceId(
           this._parentSheet
         );
+
+      if (this._parentSheet.ownerRule) {
+        
+        
+        if (this._parentSheet.ownerRule.layerName !== null) {
+          form.ancestorData.unshift({
+            type: "layer",
+            value: this._parentSheet.ownerRule.layerName,
+          });
+        }
+
+        
+        
+        if (
+          this._parentSheet.ownerRule.media?.mediaText ||
+          this._parentSheet.ownerRule.supportsText
+        ) {
+          const parts = [];
+          if (this._parentSheet.ownerRule.supportsText) {
+            parts.push(`supports(${this._parentSheet.ownerRule.supportsText})`);
+          }
+
+          if (this._parentSheet.ownerRule.media?.mediaText) {
+            parts.push(this._parentSheet.ownerRule.media.mediaText);
+          }
+
+          form.ancestorData.unshift({
+            type: "import",
+            value: parts.join(" "),
+          });
+        }
+      }
     }
 
     
@@ -425,99 +499,6 @@ class StyleRuleActor extends Actor {
     }
 
     return form;
-  }
-
-  
-
-
-
-
-
-
-  _getAncestorDataForForm() {
-    const ancestorData = [];
-    
-    let computeDesugaredSelector = false;
-
-    
-    
-    for (const ancestorRule of this.ancestorRules) {
-      const rawRule = ancestorRule.rawRule;
-      const ruleClassName = ChromeUtils.getClassName(rawRule);
-      const type = SharedCssLogic.CSSAtRuleClassNameType[ruleClassName];
-
-      if (ruleClassName === "CSSMediaRule" && rawRule.media?.length) {
-        ancestorData.push({
-          type,
-          value: Array.from(rawRule.media).join(", "),
-        });
-      } else if (ruleClassName === "CSSLayerBlockRule") {
-        ancestorData.push({
-          type,
-          value: rawRule.name,
-        });
-      } else if (ruleClassName === "CSSContainerRule") {
-        ancestorData.push({
-          type,
-          
-          
-          containerName: rawRule.containerName,
-          containerQuery: rawRule.containerQuery,
-        });
-      } else if (ruleClassName === "CSSSupportsRule") {
-        ancestorData.push({
-          type,
-          conditionText: rawRule.conditionText,
-        });
-      } else if (rawRule.selectorText) {
-        
-        
-        
-        ancestorData.push({
-          type,
-          selectorText: rawRule.selectorText,
-        });
-        computeDesugaredSelector = true;
-      }
-    }
-
-    if (this._parentSheet) {
-      
-      let rule = this.rawRule;
-      while ((rule = rule.parentStyleSheet?.ownerRule)) {
-        
-        if (rule.layerName !== null) {
-          
-          
-          
-          ancestorData.unshift({
-            type: "layer",
-            value: rule.layerName,
-          });
-        }
-
-        
-        if (rule.media?.mediaText || rule.supportsText) {
-          const parts = [];
-          if (rule.supportsText) {
-            parts.push(`supports(${rule.supportsText})`);
-          }
-
-          if (rule.media?.mediaText) {
-            parts.push(rule.media.mediaText);
-          }
-
-          
-          
-          
-          ancestorData.unshift({
-            type: "import",
-            value: parts.join(" "),
-          });
-        }
-      }
-    }
-    return { ancestorData, computeDesugaredSelector };
   }
 
   

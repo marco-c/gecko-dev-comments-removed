@@ -562,44 +562,37 @@ class CssLogic {
       }
 
       
-      
-      if (element.style && element.style.length) {
-        const rule = new CssRule(null, { style: element.style }, element);
+      for (const domRule of domRules || []) {
+        if (domRule.type !== CSSRule.STYLE_RULE) {
+          continue;
+        }
+
+        const sheet = this.getSheet(domRule.parentStyleSheet, -1);
+        if (sheet._passId !== this._passId) {
+          sheet.index = sheetIndex++;
+          sheet._passId = this._passId;
+        }
+
+        if (filter === FILTER.USER && !sheet.authorSheet) {
+          continue;
+        }
+
+        const rule = sheet.getRule(domRule);
+        if (rule._passId === this._passId) {
+          continue;
+        }
+
         rule._matchId = this._matchId;
         rule._passId = this._passId;
         this._matchedRules.push([rule, status, distance]);
       }
 
       
-      if (domRules !== null) {
-        
-        
-        
-        for (let i = domRules.length - 1; i >= 0; i--) {
-          const domRule = domRules[i];
-          if (domRule.type !== CSSRule.STYLE_RULE) {
-            continue;
-          }
-
-          const sheet = this.getSheet(domRule.parentStyleSheet, -1);
-          if (sheet._passId !== this._passId) {
-            sheet.index = sheetIndex++;
-            sheet._passId = this._passId;
-          }
-
-          if (filter === FILTER.USER && !sheet.authorSheet) {
-            continue;
-          }
-
-          const rule = sheet.getRule(domRule);
-          if (rule._passId === this._passId) {
-            continue;
-          }
-
-          rule._matchId = this._matchId;
-          rule._passId = this._passId;
-          this._matchedRules.push([rule, status, distance]);
-        }
+      if (element.style && element.style.length) {
+        const rule = new CssRule(null, { style: element.style }, element);
+        rule._matchId = this._matchId;
+        rule._passId = this._passId;
+        this._matchedRules.push([rule, status, distance]);
       }
 
       distance--;
@@ -1300,9 +1293,9 @@ class CssPropertyInfo {
     this._cssLogic.processMatchedSelectors(this._processMatchedSelector, this);
 
     
-    this._matchedSelectors.sort((selectorInfo1, selectorInfo2) =>
-      selectorInfo1.compareTo(selectorInfo2, this._matchedSelectors)
-    );
+    this._matchedSelectors.sort(function (selectorInfo1, selectorInfo2) {
+      return selectorInfo1.compareTo(selectorInfo2);
+    });
 
     
     if (
@@ -1394,28 +1387,6 @@ class CssSelectorInfo {
     this.value = value;
     const priority = this.selector.cssRule.getPropertyPriority(this.property);
     this.important = priority === "important";
-
-    
-    this.parentLayers = [];
-
-    
-    let rule = selector.cssRule.domRule;
-    while (rule) {
-      const className = ChromeUtils.getClassName(rule);
-      if (className == "CSSLayerBlockRule") {
-        
-        
-        
-        this.parentLayers.push(rule.name || rule);
-      } else if (className == "CSSImportRule" && rule.layerName !== null) {
-        
-        this.parentLayers.push(rule.layerName || rule);
-      }
-
-      
-      
-      rule = rule.parentRule || rule.parentStyleSheet?.ownerRule;
-    }
   }
 
   
@@ -1552,54 +1523,99 @@ class CssSelectorInfo {
 
 
 
-  compareTo(that, selectorInfos) {
-    const originalOrder =
-      selectorInfos.indexOf(this) < selectorInfos.indexOf(that) ? -1 : 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  compareTo(that) {
+    let current = null;
 
     
-    if (!this.important && !that.important) {
-      return originalOrder;
+    
+    current = this.compare(that, "distance", COMPAREMODE.INTEGER);
+    if (current) {
+      return current;
+    }
+
+    if (this.important) {
+      
+      
+      
+      for (const propName of ["agentRule", "userRule", "authorRule"]) {
+        current = this.compare(that, propName, COMPAREMODE.BOOLEAN);
+        if (current) {
+          return current;
+        }
+      }
     }
 
     
-    if (this.important !== that.important) {
-      return this.important ? -1 : 1;
-    }
-
     
-
-    const thisIsInLayer = !!this.parentLayers.length;
-    const thatIsInLayer = !!that.parentLayers.length;
-
     
-    if (!thisIsInLayer && !thatIsInLayer) {
-      return originalOrder;
-    }
-
-    
-    if (this.selector.inlineStyle || that.selector.inlineStyle) {
-      return this.selector.inlineStyle ? -1 : 1;
-    }
-
-    
-    if (!thisIsInLayer || !thatIsInLayer) {
-      return thisIsInLayer ? -1 : 1;
-    }
-
-    const inSameLayers =
-      this.parentLayers.length === that.parentLayers.length &&
-      this.parentLayers.every((layer, i) => layer === that.parentLayers[i]);
-    
-    if (inSameLayers) {
-      return originalOrder;
+    for (const propName of ["authorRule", "userRule", "agentRule"]) {
+      current = this.compare(that, propName, COMPAREMODE.BOOLEAN);
+      if (current) {
+        return current;
+      }
     }
 
     
     
     
     
+    for (const propName of [
+      "specificity",
+      "sheetIndex",
+      "ruleLine",
+      "ruleColumn",
+    ]) {
+      current = this.compare(that, propName, COMPAREMODE.INTEGER);
+      if (current) {
+        return current;
+      }
+    }
+
     
-    return originalOrder * -1;
+    return 0;
   }
 
   compare(that, propertyName, type) {
