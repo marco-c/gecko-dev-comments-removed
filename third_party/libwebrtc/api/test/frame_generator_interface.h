@@ -53,8 +53,7 @@ class FrameGeneratorInterface {
   
   
   
-  
-  virtual absl::optional<int> fps() const { return absl::nullopt; }
+  virtual absl::optional<int> fps() const = 0;
 };
 
 }  
