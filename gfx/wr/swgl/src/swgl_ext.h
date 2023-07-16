@@ -1524,16 +1524,26 @@ static bool commitLinearGradient(sampler2D sampler, int address, float size,
       
       
       auto deltaColor = repeat4(CONVERT(round_pixel(deltaColorF, 1), U16));
-      auto color =
-          combine(CONVERT(round_pixel(colorF, 1), U16),
-                  CONVERT(round_pixel(colorF + deltaColorF * 0.25f, 1), U16),
-                  CONVERT(round_pixel(colorF + deltaColorF * 0.5f, 1), U16),
-                  CONVERT(round_pixel(colorF + deltaColorF * 0.75f, 1), U16));
-      
-      
-      for (auto* end = buf + inside * 4; buf < end; buf += 4) {
-        commit_blend_span<BLEND>(buf, bit_cast<WideRGBA8>(color >> 8));
-        color += deltaColor;
+      for (int remaining = inside;;) {
+        auto color =
+            combine(CONVERT(round_pixel(colorF, 1), U16),
+                    CONVERT(round_pixel(colorF + deltaColorF * 0.25f, 1), U16),
+                    CONVERT(round_pixel(colorF + deltaColorF * 0.5f, 1), U16),
+                    CONVERT(round_pixel(colorF + deltaColorF * 0.75f, 1), U16));
+        
+        
+        
+        
+        int segment = min(remaining, 256 / 4);
+        for (auto* end = buf + segment * 4; buf < end; buf += 4) {
+          commit_blend_span<BLEND>(buf, bit_cast<WideRGBA8>(color >> 8));
+          color += deltaColor;
+        }
+        remaining -= segment;
+        if (remaining <= 0) {
+          break;
+        }
+        colorF += deltaColorF * segment;
       }
       
       
