@@ -36,32 +36,45 @@ JSObject* LockManager::WrapObject(JSContext* aCx,
 LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
   Maybe<ClientInfo> clientInfo = aGlobal->GetClientInfo();
   if (!clientInfo) {
+    
     return;
   }
 
   nsCOMPtr<nsIPrincipal> principal =
       clientInfo->GetPrincipal().unwrapOr(nullptr);
   if (!principal || !principal->GetIsContentPrincipal()) {
+    
     return;
   }
 
   mozilla::ipc::PBackgroundChild* backgroundActor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
   mActor = new locks::LockManagerChild(aGlobal);
-  backgroundActor->SendPLockManagerConstructor(mActor, WrapNotNull(principal),
-                                               clientInfo->Id());
+
+  if (!backgroundActor->SendPLockManagerConstructor(
+          mActor, WrapNotNull(principal), clientInfo->Id())) {
+    
+    
+    mActor = nullptr;
+    return;
+  }
+}
+
+already_AddRefed<LockManager> LockManager::Create(nsIGlobalObject& aGlobal) {
+  RefPtr<LockManager> manager = new LockManager(&aGlobal);
 
   if (!NS_IsMainThread()) {
-    mWorkerRef = WeakWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
-                                       [self = RefPtr(this)]() {
-                                         
-                                         
-                                         
-                                         
-                                         self->Shutdown();
-                                         self->mWorkerRef = nullptr;
-                                       });
+    
+    manager->mWorkerRef =
+        WeakWorkerRef::Create(GetCurrentThreadWorkerPrivate(), [manager]() {
+          
+          
+          manager->Shutdown();
+          manager->mWorkerRef = nullptr;
+        });
   }
+
+  return manager.forget();
 }
 
 static bool ValidateRequestArguments(const nsAString& name,
@@ -152,6 +165,11 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
     return nullptr;
   }
 
+  if (!NS_IsMainThread() && !mWorkerRef) {
+    aRv.ThrowInvalidStateError("request() is not allowed at this point");
+    return nullptr;
+  }
+
   if (!ValidateRequestArguments(aName, aOptions, aRv)) {
     return nullptr;
   }
@@ -180,6 +198,11 @@ already_AddRefed<Promise> LockManager::Query(ErrorResult& aRv) {
   if (!mActor) {
     aRv.ThrowNotSupportedError(
         "Web Locks API is not enabled for this kind of document");
+    return nullptr;
+  }
+
+  if (!NS_IsMainThread() && !mWorkerRef) {
+    aRv.ThrowInvalidStateError("query() is not allowed at this point");
     return nullptr;
   }
 
