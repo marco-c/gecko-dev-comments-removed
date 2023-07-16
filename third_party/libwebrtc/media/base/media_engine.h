@@ -109,7 +109,15 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
       webrtc::AudioCodecPairId codec_pair_id) {
     
     
-    RTC_CHECK_NOTREACHED();
+    
+    
+    RTC_CHECK(!recursion_guard_);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    RTC_LOG(LS_ERROR)
+        << "Override of deprecated declaration detected - please update!";
+    return CreateMediaChannel(call, config, options, crypto_options);
+#pragma clang diagnostic pop
   }
 
   
@@ -118,9 +126,12 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
                      const MediaConfig& config,
                      const AudioOptions& options,
                      const webrtc::CryptoOptions& crypto_options) {
-    return CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
-                              crypto_options,
-                              webrtc::AudioCodecPairId::Create());
+    recursion_guard_ = true;
+    auto new_channel =
+        CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
+                           crypto_options, webrtc::AudioCodecPairId::Create());
+    recursion_guard_ = false;
+    return new_channel;
   }
 
   virtual const std::vector<AudioCodec>& send_codecs() const = 0;
@@ -137,6 +148,11 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
 
   virtual absl::optional<webrtc::AudioDeviceModule::Stats>
   GetAudioDeviceStats() = 0;
+
+ private:
+  
+  
+  bool recursion_guard_ = false;
 };
 
 class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
@@ -158,8 +174,16 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
       webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
     
     
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
+    
+    
+    RTC_CHECK(!recursion_guard_);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    RTC_LOG(LS_ERROR)
+        << "Override of deprecated declaration detected - please update!";
+    return CreateMediaChannel(call, config, options, crypto_options,
+                              video_bitrate_allocator_factory);
+#pragma clang diagnostic pop
   }
 
   
@@ -172,8 +196,12 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
       const VideoOptions& options,
       const webrtc::CryptoOptions& crypto_options,
       webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
-    return CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
-                              crypto_options, video_bitrate_allocator_factory);
+    recursion_guard_ = true;
+    auto new_channel =
+        CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
+                           crypto_options, video_bitrate_allocator_factory);
+    recursion_guard_ = false;
+    return new_channel;
   }
 
   
@@ -190,6 +218,11 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
     RTC_DCHECK(include_rtx);
     return recv_codecs();
   }
+
+ private:
+  
+  
+  bool recursion_guard_ = false;
 };
 
 
