@@ -53,8 +53,6 @@ class ChannelInterface {
   virtual VideoChannel* AsVideoChannel() = 0;
   virtual VoiceChannel* AsVoiceChannel() = 0;
 
-  
-  virtual MediaChannel* media_channel() = 0;
   virtual MediaSendChannelInterface* media_send_channel() = 0;
   
   
