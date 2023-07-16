@@ -71,6 +71,8 @@ pub enum MathFunction {
     Exp,
     
     Abs,
+    
+    Sign,
 }
 
 
@@ -201,6 +203,10 @@ impl generic::CalcNodeLeaf for Leaf {
             Self::Angle(ref a) => a.degrees(),
             Self::Time(ref t) => t.seconds(),
         }
+    }
+
+    fn new_number(value: f32) -> Self {
+        Self::Number(value)
     }
 
     fn as_number(&self) -> Option<f32> {
@@ -678,6 +684,10 @@ impl CalcNode {
                 MathFunction::Abs => {
                     let node = Self::parse_argument(context, input, allowed_units)?;
                     Ok(Self::Abs(Box::new(node)))
+                },
+                MathFunction::Sign => {
+                    let node = Self::parse_argument(context, input, CalcUnits::all())?;
+                    Ok(Self::Sign(Box::new(node)))
                 },
             }
         })
