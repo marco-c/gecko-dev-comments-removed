@@ -77,7 +77,7 @@ function parseStoriesFromMarkdown(source) {
   
   return source.replace(
     storiesRegex,
-    "<Canvas withSource='none'><with-common-styles>\n$<code></with-common-styles></Canvas>"
+    "<Canvas withSource='none'><with-common-styles>$<code></with-common-styles></Canvas>"
   );
 }
 
@@ -96,11 +96,10 @@ module.exports = function markdownStoryLoader(source) {
   let relativePath = path
     .relative(projectRoot, this.resourcePath)
     .replaceAll(path.sep, "/");
-  let componentName;
 
   if (relativePath.includes("toolkit/content/widgets")) {
     let storyNameRegex = /(?<=\/widgets\/)(?<name>.*?)(?=\/)/g;
-    componentName = storyNameRegex.exec(relativePath)?.groups?.name;
+    let componentName = storyNameRegex.exec(relativePath)?.groups?.name;
     if (componentName) {
       
       storyPath =
@@ -113,28 +112,13 @@ module.exports = function markdownStoryLoader(source) {
     ? storyTitle
     : `${storyPath}/${storyTitle}`;
 
-  let componentStories;
-  if (componentName) {
-    componentStories = this.resourcePath
-      .replace("README", componentName)
-      .replace(".md", ".mjs");
-    try {
-      fs.statSync(componentStories);
-      componentStories = "./" + path.basename(componentStories);
-    } catch {
-      componentStories = null;
-    }
-  }
-
   
   
   let mdxSource = `
-import { Meta, Description, Canvas, Story } from "@storybook/addon-docs";
-${componentStories ? `import * as Stories from "${componentStories}";` : ""}
+import { Meta, Description, Canvas } from "@storybook/addon-docs";
 
 <Meta
   title="${title}"
-  ${componentStories ? `of={Stories}` : ""}
   parameters={{
     previewTabs: {
       canvas: { hidden: true },
