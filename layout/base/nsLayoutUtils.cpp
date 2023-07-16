@@ -7279,31 +7279,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromVideoFrame(
 
 SurfaceFromElementResult nsLayoutUtils::SurfaceFromImageBitmap(
     mozilla::dom::ImageBitmap* aImageBitmap, uint32_t aSurfaceFlags) {
-  SurfaceFromElementResult result;
-  RefPtr<DrawTarget> dt = Factory::CreateDrawTarget(
-      BackendType::SKIA, IntSize(1, 1), SurfaceFormat::B8G8R8A8);
-
-  
-  
-  
-  result.mCORSUsed = true;
-  result.mIsWriteOnly = aImageBitmap->IsWriteOnly();
-  result.mSourceSurface = aImageBitmap->PrepareForDrawTarget(dt);
-
-  if (result.mSourceSurface) {
-    result.mSize = result.mIntrinsicSize = result.mSourceSurface->GetSize();
-    result.mHasSize = true;
-    result.mAlphaType = IsOpaque(result.mSourceSurface->GetFormat())
-                            ? gfxAlphaType::Opaque
-                            : gfxAlphaType::Premult;
-  }
-
-  nsCOMPtr<nsIGlobalObject> global = aImageBitmap->GetParentObject();
-  if (global) {
-    result.mPrincipal = global->PrincipalOrNull();
-  }
-
-  return result;
+  return aImageBitmap->SurfaceFrom(aSurfaceFlags);
 }
 
 static RefPtr<SourceSurface> ScaleSourceSurface(SourceSurface& aSurface,
@@ -7436,12 +7412,15 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
     if (!result.mSourceSurface) {
       return result;
     }
-    if (exactSize && result.mSourceSurface->GetSize() != result.mSize) {
+    IntSize surfSize = result.mSourceSurface->GetSize();
+    if (exactSize && surfSize != result.mSize) {
       result.mSourceSurface =
           ScaleSourceSurface(*result.mSourceSurface, result.mSize);
       if (!result.mSourceSurface) {
         return result;
       }
+    } else {
+      result.mSize = surfSize;
     }
     
     
