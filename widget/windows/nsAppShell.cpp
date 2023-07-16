@@ -390,12 +390,104 @@ nsAppShell::~nsAppShell() {
   sOutstandingNativeEventCallbacks = 0;
 }
 
+#if defined(ACCESSIBILITY)
+
+static ULONG gUiaMsg;
+static HHOOK gUiaHook;
+static uint32_t gUiaAttempts;
+static const uint32_t kMaxUiaAttempts = 5;
+
+static void InitUIADetection();
+
+static LRESULT CALLBACK UiaHookProc(int aCode, WPARAM aWParam, LPARAM aLParam) {
+  if (aCode < 0) {
+    return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+  }
+
+  auto cwp = reinterpret_cast<CWPSTRUCT*>(aLParam);
+  if (gUiaMsg && cwp->message == gUiaMsg) {
+    if (gUiaAttempts < kMaxUiaAttempts) {
+      ++gUiaAttempts;
+
+      Maybe<bool> shouldCallNextHook =
+          a11y::Compatibility::OnUIAMessage(cwp->wParam, cwp->lParam);
+      if (shouldCallNextHook.isSome()) {
+        
+        if (!shouldCallNextHook.value()) {
+          
+          
+          return 0;
+        }
+
+        
+        
+        if (::UnhookWindowsHookEx(gUiaHook)) {
+          gUiaHook = nullptr;
+        }
+      } else {
+        
+        InitUIADetection();
+      }
+    } else {
+      
+      if (::UnhookWindowsHookEx(gUiaHook)) {
+        gUiaHook = nullptr;
+      }
+    }
+  }
+
+  return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+}
+
+static void InitUIADetection() {
+  if (gUiaHook) {
+    
+    
+    if (::UnhookWindowsHookEx(gUiaHook)) {
+      gUiaHook = nullptr;
+    }
+  }
+
+  if (!gUiaMsg) {
+    
+    
+    
+    gUiaMsg = ::RegisterWindowMessageW(L"HOOKUTIL_MSG");
+  }
+
+  if (!gUiaHook) {
+    gUiaHook = ::SetWindowsHookEx(WH_CALLWNDPROC, &UiaHookProc, nullptr,
+                                  ::GetCurrentThreadId());
+  }
+}
+
+#endif  
+
 NS_IMETHODIMP
 nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
                     const char16_t* aData) {
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIObserverService> obsServ(
         mozilla::services::GetObserverService());
+
+#if defined(ACCESSIBILITY)
+    if (!strcmp(aTopic, "dll-loaded-main-thread")) {
+      if (a11y::PlatformDisabledState() != a11y::ePlatformIsDisabled &&
+          !gUiaHook) {
+        nsDependentString dllName(aData);
+
+        if (StringEndsWith(dllName, u"uiautomationcore.dll"_ns,
+                           nsCaseInsensitiveStringComparator)) {
+          InitUIADetection();
+
+          
+          obsServ->RemoveObserver(this, "dll-loaded-main-thread");
+        }
+      }
+
+      return NS_OK;
+    }
+#endif  
 
     if (!strcmp(aTopic, "sessionstore-restoring-on-startup")) {
       nsWindow::SetIsRestoringSession(true);
@@ -488,6 +580,14 @@ nsresult nsAppShell::Init() {
 
     obsServ->AddObserver(this, "sessionstore-restoring-on-startup", false);
     obsServ->AddObserver(this, "sessionstore-windows-restored", false);
+
+#if defined(ACCESSIBILITY)
+    if (::GetModuleHandleW(L"uiautomationcore.dll")) {
+      InitUIADetection();
+    } else {
+      obsServ->AddObserver(this, "dll-loaded-main-thread", false);
+    }
+#endif  
   }
 
   if (!WinUtils::GetTimezoneName(mTimezoneName)) {
@@ -528,6 +628,23 @@ nsAppShell::Run(void) {
   }
 
   return rv;
+}
+
+NS_IMETHODIMP
+nsAppShell::Exit(void) {
+#if defined(ACCESSIBILITY)
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIObserverService> obsServ(
+        mozilla::services::GetObserverService());
+    obsServ->RemoveObserver(this, "dll-loaded-main-thread");
+
+    if (gUiaHook && ::UnhookWindowsHookEx(gUiaHook)) {
+      gUiaHook = nullptr;
+    }
+  }
+#endif  
+
+  return nsBaseAppShell::Exit();
 }
 
 void nsAppShell::DoProcessMoreGeckoEvents() {
