@@ -218,6 +218,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     wellFormedUnicodeStrings_ = flag;
     return *this;
   }
+
+  bool getArrayBufferTransferEnabled() const { return arrayBufferTransfer_; }
+  RealmCreationOptions& setArrayBufferTransferEnabled(bool flag) {
+    arrayBufferTransfer_ = flag;
+    return *this;
+  }
 #endif
 
   bool getArrayFromAsyncEnabled() const { return arrayFromAsync_; }
@@ -304,6 +310,8 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool arrayGrouping_ = false;
   
   bool wellFormedUnicodeStrings_ = false;
+  
+  bool arrayBufferTransfer_ = false;
 #endif
   bool arrayFromAsync_ = true;
   bool changeArrayByCopy_ = false;
