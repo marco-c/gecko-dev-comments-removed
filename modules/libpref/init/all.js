@@ -3991,8 +3991,6 @@ pref("extensions.formautofill.addresses.capture.v2.enabled", false);
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 
 pref("extensions.formautofill.addresses.supportedCountries", "US,CA");
-
-pref("extensions.formautofill.creditCards.available", true);
 pref("extensions.formautofill.creditCards.supported", "detect");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
