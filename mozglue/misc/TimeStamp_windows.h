@@ -30,6 +30,8 @@ MFBT_API uint64_t GetQueryPerformanceFrequencyPerSec();
 
 class TimeStamp;
 class TimeStampValue;
+class TimeStampValueTests;
+class TimeStampTests;
 
 TimeStampValue NowInternal(bool aHighResolution);
 
@@ -38,6 +40,8 @@ class TimeStampValue {
   friend bool IsCanonicalTimeStamp(TimeStampValue);
   friend struct IPC::ParamTraits<mozilla::TimeStampValue>;
   friend class TimeStamp;
+  friend class TimeStampValueTests;
+  friend class TimeStampTests;
 
   
   uint64_t mGTC;
@@ -46,14 +50,19 @@ class TimeStampValue {
   bool mIsNull;
   bool mHasQPC;
 
-  MFBT_API TimeStampValue(uint64_t aGTC, uint64_t aQPC, bool aHasQPC);
-
-  MFBT_API uint64_t CheckQPC(const TimeStampValue& aOther) const;
+  constexpr MFBT_API TimeStampValue(uint64_t aGTC, uint64_t aQPC, bool aHasQPC)
+      : mGTC(aGTC),
+        mQPC(aQPC),
+        mIsNull(aGTC == 0 && aQPC == 0),
+        mHasQPC(aHasQPC) {}
 
   
-  struct _SomethingVeryRandomHere;
-  constexpr MOZ_IMPLICIT TimeStampValue(_SomethingVeryRandomHere* aNullValue)
-      : mGTC(0), mQPC(0), mIsNull(true), mHasQPC(false) {}
+  
+  
+  constexpr MOZ_IMPLICIT MFBT_API TimeStampValue(uint64_t aGTCAndQPC)
+      : TimeStampValue(aGTCAndQPC, aGTCAndQPC, true) {}
+
+  MFBT_API uint64_t CheckQPC(const TimeStampValue& aOther) const;
 
  public:
   MFBT_API uint64_t operator-(const TimeStampValue& aOther) const;

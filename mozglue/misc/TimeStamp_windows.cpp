@@ -254,12 +254,6 @@ static void InitResolution() {
 
 
 
-MFBT_API
-TimeStampValue::TimeStampValue(ULONGLONG aGTC, ULONGLONG aQPC, bool aHasQPC)
-    : mGTC(aGTC), mQPC(aQPC), mHasQPC(aHasQPC) {
-  mIsNull = aGTC == 0 && aQPC == 0;
-}
-
 MFBT_API TimeStampValue& TimeStampValue::operator+=(const int64_t aOther) {
   mGTC += aOther;
   mQPC += aOther;
@@ -356,6 +350,62 @@ TimeStampValue::operator-(const TimeStampValue& aOther) const {
 
   return CheckQPC(aOther);
 }
+
+class TimeStampValueTests {
+  
+  static_assert(TimeStampValue{0}.IsNull());
+  static_assert(!TimeStampValue{1}.IsNull());
+
+  
+  
+  static_assert(TimeStampValue{1, 2, true} < TimeStampValue{1, 3, true});
+  static_assert(!(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, true}));
+
+  static_assert(TimeStampValue{2, 2, true} < TimeStampValue{1, 3, true});
+  static_assert(TimeStampValue{2, 2, true} <= TimeStampValue{1, 3, true});
+  static_assert(!(TimeStampValue{2, 2, true} > TimeStampValue{1, 3, true}));
+
+  static_assert(TimeStampValue{1, 3, true} > TimeStampValue{1, 2, true});
+  static_assert(!(TimeStampValue{1, 3, true} == TimeStampValue{1, 2, true}));
+
+  static_assert(TimeStampValue{1, 3, true} > TimeStampValue{2, 2, true});
+  static_assert(TimeStampValue{1, 3, true} >= TimeStampValue{2, 2, true});
+  static_assert(!(TimeStampValue{1, 3, true} < TimeStampValue{2, 2, true}));
+
+  static_assert(TimeStampValue{1, 3, true} == TimeStampValue{2, 3, true});
+  static_assert(!(TimeStampValue{1, 3, true} < TimeStampValue{2, 3, true}));
+
+  static_assert(TimeStampValue{1, 2, true} != TimeStampValue{1, 3, true});
+  static_assert(!(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, true}));
+
+  
+  
+  
+  
+  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, true});
+  static_assert(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, false});
+  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, false});
+
+  static_assert(TimeStampValue{2, 2, false} > TimeStampValue{1, 3, true});
+  static_assert(TimeStampValue{2, 2, true} > TimeStampValue{1, 3, false});
+  static_assert(TimeStampValue{2, 2, false} > TimeStampValue{1, 3, false});
+
+  static_assert(TimeStampValue{1, 3, false} == TimeStampValue{1, 2, true});
+  static_assert(TimeStampValue{1, 3, true} == TimeStampValue{1, 2, false});
+  static_assert(TimeStampValue{1, 3, false} == TimeStampValue{1, 2, false});
+
+  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 2, true});
+  static_assert(TimeStampValue{1, 3, true} < TimeStampValue{2, 2, false});
+  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 2, false});
+
+  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 3, true});
+  static_assert(TimeStampValue{1, 3, true} < TimeStampValue{2, 3, false});
+  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 3, false});
+
+  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, true});
+  static_assert(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, false});
+  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, false});
+};
 
 
 
