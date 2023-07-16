@@ -144,7 +144,7 @@ fn out_of_process_exception_event_callback(
             
             
             
-            if exception_information.exceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT {
+            if exception_information.exceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT {
                 if let Ok(thread_id) = find_hung_window_thread(exception_information.hProcess) {
                     
                     
