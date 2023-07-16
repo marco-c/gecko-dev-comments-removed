@@ -105,7 +105,8 @@ AutoStubFrame::AutoStubFrame(BaselineCacheIRCompiler& compiler)
 #endif
 {
 }
-void AutoStubFrame::enter(MacroAssembler& masm, Register scratch) {
+void AutoStubFrame::enter(MacroAssembler& masm, Register scratch,
+                          CallCanGC canGC) {
   MOZ_ASSERT(compiler.allocator.stackPushed() == 0);
 
   if (JitOptions.enableICFramePointers) {
@@ -121,9 +122,9 @@ void AutoStubFrame::enter(MacroAssembler& masm, Register scratch) {
 
   MOZ_ASSERT(!compiler.enteredStubFrame_);
   compiler.enteredStubFrame_ = true;
-
-  
-  compiler.makesGCCalls_ = true;
+  if (canGC == CallCanGC::CanGC) {
+    compiler.makesGCCalls_ = true;
+  }
 }
 void AutoStubFrame::leave(MacroAssembler& masm) {
   MOZ_ASSERT(compiler.enteredStubFrame_);
@@ -2096,67 +2097,6 @@ static ICStubSpace* StubSpaceForStub(bool makesGCCalls, JSScript* script,
 
 static const uint32_t MaxFoldedShapes = 16;
 
-const JSClass ShapeListObject::class_ = {"JIT ShapeList", 0, &classOps_};
-
-const JSClassOps ShapeListObject::classOps_ = {
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    nullptr,                 
-    ShapeListObject::trace,  
-};
-
- ShapeListObject* ShapeListObject::create(JSContext* cx) {
-  NativeObject* obj = NewTenuredObjectWithGivenProto(cx, &class_, nullptr);
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  if (!cx->zone()->registerObjectWithWeakPointers(obj)) {
-    return nullptr;
-  }
-
-  return &obj->as<ShapeListObject>();
-}
-
-Shape* ShapeListObject::get(uint32_t index) {
-  Value value = ListObject::get(index);
-  return static_cast<Shape*>(value.toPrivate());
-}
-
-void ShapeListObject::trace(JSTracer* trc, JSObject* obj) {
-  if (trc->traceWeakEdges()) {
-    obj->as<ShapeListObject>().traceWeak(trc);
-  }
-}
-
-bool ShapeListObject::traceWeak(JSTracer* trc) {
-  const HeapSlot* src = elements_;
-  const HeapSlot* end = src + getDenseInitializedLength();
-  HeapSlot* dst = elements_;
-  while (src != end) {
-    Shape* shape = static_cast<Shape*>(src->toPrivate());
-    MOZ_ASSERT(shape->is<Shape>());
-    if (TraceManuallyBarrieredWeakEdge(trc, &shape, "ShapeListObject shape")) {
-      dst->unbarrieredSet(PrivateValue(shape));
-      dst++;
-    }
-    src++;
-  }
-
-  MOZ_ASSERT(dst <= end);
-  size_t length = dst - elements_;
-  setDenseInitializedLength(length);
-
-  return length != 0;
-}
-
 bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
                               JSScript* script, ICScript* icScript) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
@@ -2197,9 +2137,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
       return false;
     }
 
-    gc::ReadBarrier(shape);
-
-    if (!shapeList.append(PrivateValue(shape))) {
+    if (!shapeList.append(PrivateGCThingValue(shape))) {
       cx->recoverFromOutOfMemory();
       return false;
     }
@@ -2228,7 +2166,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
         uintptr_t otherRaw = stubInfo->getStubRawWord(otherStubData, offset);
 
         if (firstRaw != otherRaw) {
-          if (fieldType != StubField::Type::WeakShape) {
+          if (fieldType != StubField::Type::Shape) {
             
             
             return true;
@@ -2296,7 +2234,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
           
           gc::AutoSuppressGC suppressGC(cx);
 
-          Rooted<ShapeListObject*> shapeObj(cx, ShapeListObject::create(cx));
+          Rooted<ListObject*> shapeObj(cx, ListObject::create(cx));
           if (!shapeObj) {
             return false;
           }
@@ -2306,8 +2244,9 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
               return false;
             }
 
-            MOZ_ASSERT(static_cast<Shape*>(shapeList[i].toPrivate())->realm() ==
-                       shapeObj->realm());
+            MOZ_ASSERT(
+                reinterpret_cast<Shape*>(shapeList[i].toGCThing())->realm() ==
+                shapeObj->realm());
           }
 
           writer.guardMultipleShapes(objId, shapeObj);
@@ -2363,7 +2302,7 @@ static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
 
   Maybe<uint32_t> shapeFieldOffset;
   RootedValue newShape(cx);
-  Rooted<ShapeListObject*> foldedShapes(cx);
+  Rooted<ListObject*> foldedShapes(cx);
 
   CacheIRReader stubReader(stubInfo);
   CacheIRReader newReader(writer);
@@ -2393,14 +2332,14 @@ static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
 
         
         StubField shapeField =
-            writer.readStubField(newShapeOffset, StubField::Type::WeakShape);
+            writer.readStubField(newShapeOffset, StubField::Type::Shape);
         Shape* shape = reinterpret_cast<Shape*>(shapeField.asWord());
-        newShape = PrivateValue(shape);
+        newShape = PrivateGCThingValue(shape);
 
         
         JSObject* shapeList =
             stubInfo->getStubField<JSObject*>(stub, stubShapesOffset);
-        foldedShapes = &shapeList->as<ShapeListObject>();
+        foldedShapes = &shapeList->as<ListObject>();
         MOZ_ASSERT(foldedShapes->compartment() == shape->compartment());
 
         
@@ -2413,8 +2352,8 @@ static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         
         
         
-        MOZ_ASSERT_IF(!foldedShapes->isEmpty(),
-                      foldedShapes->get(0)->realm() == foldedShapes->realm());
+        MOZ_ASSERT(reinterpret_cast<Shape*>(foldedShapes->get(0).toGCThing())
+                       ->realm() == foldedShapes->realm());
         if (foldedShapes->realm() != shape->realm()) {
           return false;
         }

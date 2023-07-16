@@ -4456,7 +4456,12 @@ void MacroAssembler::branchTestObjShapeList(
   
   
   
+#ifdef JS_PUNBOX64
+  loadPtr(Address(obj, JSObject::offsetOfShape()), endScratch);
+  tagValue(JSVAL_TYPE_PRIVATE_GCTHING, endScratch, ValueOperand(shapeScratch));
+#else
   loadPtr(Address(obj, JSObject::offsetOfShape()), shapeScratch);
+#endif
 
   
   Address lengthAddr(shapeElements,

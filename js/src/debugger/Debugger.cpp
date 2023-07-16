@@ -60,7 +60,6 @@
 #include "jit/JitContext.h"           
 #include "jit/JitOptions.h"           
 #include "jit/JitScript.h"            
-#include "jit/JitZone.h"              
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  
 #include "js/CallAndConstruct.h"      
@@ -3188,19 +3187,18 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
           return false;
         }
       }
-    } else if (zone->jitZone()) {
-      if (!zone->jitZone()->forEachJitScriptFallible(
-              [&](jit::JitScript* jitScript) {
-                JSScript* script = jitScript->owningScript();
-                if (obs.shouldRecompileOrInvalidate(script)) {
-                  if (!AppendAndInvalidateScript(cx, zone, script, invalid,
-                                                 scripts)) {
-                    return false;
-                  }
-                }
-                return true;
-              })) {
-        return false;
+    } else {
+      for (auto base = zone->cellIter<BaseScript>(); !base.done();
+           base.next()) {
+        if (!base->hasJitScript()) {
+          continue;
+        }
+        JSScript* script = base->asJSScript();
+        if (obs.shouldRecompileOrInvalidate(script)) {
+          if (!AppendAndInvalidateScript(cx, zone, script, invalid, scripts)) {
+            return false;
+          }
+        }
       }
     }
     Invalidate(cx, invalid);
