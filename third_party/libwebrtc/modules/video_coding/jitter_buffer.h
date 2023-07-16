@@ -25,7 +25,7 @@
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/jitter_buffer_common.h"
-#include "modules/video_coding/timing/inter_frame_delay.h"
+#include "modules/video_coding/timing/inter_frame_delay_variation_calculator.h"
 #include "modules/video_coding/timing/jitter_estimator.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
@@ -254,7 +254,7 @@ class VCMJitterBuffer {
   
   JitterEstimator jitter_estimate_;
   
-  InterFrameDelay inter_frame_delay_;
+  InterFrameDelayVariationCalculator inter_frame_delay_;
   VCMJitterSample waiting_for_completion_;
 
   

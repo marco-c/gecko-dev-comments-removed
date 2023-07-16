@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_VIDEO_CODING_TIMING_INTER_FRAME_DELAY_VARIATION_CALCULATOR_H_
+#define MODULES_VIDEO_CODING_TIMING_INTER_FRAME_DELAY_VARIATION_CALCULATOR_H_
+
+#include <stdint.h>
+
+#include "absl/types/optional.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "rtc_base/numerics/sequence_number_unwrapper.h"
+
+namespace webrtc {
+
+
+
+
+class InterFrameDelayVariationCalculator {
+ public:
+  InterFrameDelayVariationCalculator();
+
+  
+  void Reset();
+
+  
+  
+  absl::optional<TimeDelta> Calculate(uint32_t rtp_timestamp, Timestamp now);
+
+ private:
+  
+  absl::optional<Timestamp> prev_wall_clock_;
+  
+  int64_t prev_rtp_timestamp_unwrapped_;
+
+  RtpTimestampUnwrapper unwrapper_;
+};
+
+}  
+
+#endif  
