@@ -50,6 +50,44 @@ extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
 
 
 
+
+
+
+
+
+
+
+inline JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
+    JSContext* cx, size_t nbytes,
+    mozilla::UniquePtr<char[], JS::FreePolicy> contents) {
+  
+  mozilla::UniquePtr<void, JS::FreePolicy> ptr{contents.release()};
+  return NewArrayBufferWithContents(cx, nbytes, std::move(ptr));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+inline JS_PUBLIC_API JSObject* NewArrayBufferWithContents(
+    JSContext* cx, size_t nbytes,
+    mozilla::UniquePtr<uint8_t[], JS::FreePolicy> contents) {
+  
+  mozilla::UniquePtr<void, JS::FreePolicy> ptr{contents.release()};
+  return NewArrayBufferWithContents(cx, nbytes, std::move(ptr));
+}
+
+
+
+
+
 enum class NewArrayBufferOutOfMemory { CallerMustFreeMemory };
 
 
