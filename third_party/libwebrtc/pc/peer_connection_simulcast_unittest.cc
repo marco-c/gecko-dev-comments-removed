@@ -1007,15 +1007,31 @@ class PeerConnectionSimulcastWithMediaFlowTests
   bool HasOutboundRtpWithRidAndScalabilityMode(
       rtc::scoped_refptr<PeerConnectionTestWrapper> pc_wrapper,
       absl::string_view rid,
-      absl::string_view expected_scalability_mode) {
+      absl::string_view expected_scalability_mode,
+      uint32_t frame_height) {
     rtc::scoped_refptr<const RTCStatsReport> report = GetStats(pc_wrapper);
     std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
         report->GetStatsOfType<RTCOutboundRtpStreamStats>();
     auto* outbound_rtp = FindOutboundRtpByRid(outbound_rtps, rid);
-    if (!outbound_rtp || !outbound_rtp->scalability_mode.is_defined()) {
+    if (!outbound_rtp || !outbound_rtp->scalability_mode.is_defined() ||
+        *outbound_rtp->scalability_mode != expected_scalability_mode) {
       return false;
     }
-    return *outbound_rtp->scalability_mode == expected_scalability_mode;
+    if (outbound_rtp->frame_height.is_defined()) {
+      RTC_LOG(LS_INFO) << "Waiting for target resolution (" << frame_height
+                       << "p). Currently at " << *outbound_rtp->frame_height
+                       << "p...";
+    } else {
+      RTC_LOG(LS_INFO)
+          << "Waiting for target resolution. No frames encoded yet...";
+    }
+    if (!outbound_rtp->frame_height.is_defined() ||
+        *outbound_rtp->frame_height != frame_height) {
+      
+      rtc::Thread::Current()->SleepMs(1000);
+      return false;
+    }
+    return true;
   }
 
   bool OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
@@ -1364,16 +1380,11 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   
   EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
-  EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
-      local_pc_wrapper, {{"f", 1280, 720}}));
   
-  rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
-  std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
-      report->GetStatsOfType<RTCOutboundRtpStreamStats>();
-  ASSERT_THAT(outbound_rtps, SizeIs(1u));
-  EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[0]),
-              StrCaseEq("video/VP9"));
-  EXPECT_THAT(*outbound_rtps[0]->scalability_mode, StrEq("L3T3_KEY"));
+  
+  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+                       local_pc_wrapper, "f", "L3T3_KEY", 720),
+                   (2 * kLongTimeoutForRampingUp).ms());
 
   
   
@@ -1387,6 +1398,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   EXPECT_FALSE(encodings[1].scalability_mode.has_value());
   EXPECT_FALSE(encodings[2].scalability_mode.has_value());
 }
+
 
 
 
@@ -1434,6 +1446,58 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   ASSERT_EQ(parameters.encodings.size(), 1u);
   EXPECT_THAT(parameters.encodings[0].scalability_mode,
               Optional(std::string("L3T3_KEY")));
+}
+
+
+
+
+
+
+TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
+       SendingThreeEncodings_VP9_StandardSVC) {
+  rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
+  rtc::scoped_refptr<PeerConnectionTestWrapper> remote_pc_wrapper = CreatePc();
+  ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
+
+  std::vector<SimulcastLayer> layers =
+      CreateLayers({"f", "h", "q"}, true);
+  rtc::scoped_refptr<RtpTransceiverInterface> transceiver =
+      AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
+                                        layers);
+  std::vector<RtpCodecCapability> codecs =
+      GetCapabilitiesAndRestrictToCodec(local_pc_wrapper, "VP9");
+  transceiver->SetCodecPreferences(codecs);
+  
+  rtc::scoped_refptr<RtpSenderInterface> sender = transceiver->sender();
+  RtpParameters parameters = sender->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 3u);
+  parameters.encodings[0].scalability_mode = "L3T3_KEY";
+  parameters.encodings[0].scale_resolution_down_by = 1;
+  parameters.encodings[1].active = false;
+  parameters.encodings[2].active = false;
+  EXPECT_TRUE(sender->SetParameters(parameters).ok());
+
+  NegotiateWithSimulcastTweaks(local_pc_wrapper, remote_pc_wrapper, layers);
+  local_pc_wrapper->WaitForConnection();
+  remote_pc_wrapper->WaitForConnection();
+
+  
+  
+  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
+                   kDefaultTimeout.ms());
+  
+  
+  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+                       local_pc_wrapper, "f", "L3T3_KEY", 720),
+                   (2 * kLongTimeoutForRampingUp).ms());
+
+  
+  parameters = sender->GetParameters();
+  ASSERT_EQ(parameters.encodings.size(), 3u);
+  EXPECT_THAT(parameters.encodings[0].scalability_mode,
+              Optional(std::string("L3T3_KEY")));
+  EXPECT_FALSE(parameters.encodings[1].scalability_mode.has_value());
+  EXPECT_FALSE(parameters.encodings[2].scalability_mode.has_value());
 }
 
 TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
@@ -1532,7 +1596,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   ASSERT_EQ(parameters.encodings.size(), 3u);
   parameters.encodings[0].active = true;
   parameters.encodings[0].scalability_mode = "L2T2_KEY";
-  parameters.encodings[0].scale_resolution_down_by = 4.0;
+  parameters.encodings[0].scale_resolution_down_by = 2.0;
   parameters.encodings[1].active = false;
   parameters.encodings[1].scalability_mode = absl::nullopt;
   parameters.encodings[2].active = false;
@@ -1542,11 +1606,12 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   
   
   EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
-                   kLongTimeoutForRampingUp.ms());
+                   kDefaultTimeout.ms());
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(local_pc_wrapper,
-                                                           "f", "L2T2_KEY"),
-                   kLongTimeoutForRampingUp.ms());
+  
+  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+                       local_pc_wrapper, "f", "L2T2_KEY", 720 / 2),
+                   (2 * kLongTimeoutForRampingUp).ms());
 
   
   parameters = sender->GetParameters();
