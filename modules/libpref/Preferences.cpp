@@ -6035,6 +6035,7 @@ struct PrefListEntry {
 
 
 
+
 static const PrefListEntry sRestrictFromWebContentProcesses[] = {
     
     PREF_LIST_ENTRY("datareporting.policy."),
@@ -6143,11 +6144,8 @@ static const PrefListEntry sDynamicPrefOverrideList[]{
     PREF_LIST_ENTRY("print_printer"),
     PREF_LIST_ENTRY("places.interactions.customBlocklist"),
     PREF_LIST_ENTRY("remote.log.level"),
-    PREF_LIST_ENTRY("services.settings.loglevel"),
-    PREF_LIST_ENTRY(
-        "services.settings.preview_enabled"),  
-                                               
-                                               
+    
+    
     PREF_LIST_ENTRY("spellchecker.dictionary"),
     PREF_LIST_ENTRY("test.char"),
     PREF_LIST_ENTRY("Test.IPC."),
@@ -6184,6 +6182,10 @@ static bool ShouldSanitizePreference(const Pref* const aPref) {
       const auto* p = prefName;  
       return !(strncmp("services.settings.clock_skew_seconds", p, 36) == 0 ||
                strncmp("services.settings.last_update_seconds", p, 37) == 0 ||
+               strncmp("services.settings.loglevel", p, 26) == 0 ||
+               
+               
+               strncmp("services.settings.preview_enabled", p, 33) == 0 ||
                strncmp("services.settings.server", p, 24) == 0);
     }
   }
