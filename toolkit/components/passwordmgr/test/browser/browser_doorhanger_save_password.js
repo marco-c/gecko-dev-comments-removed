@@ -150,7 +150,7 @@ async function test_save_change(testData) {
       await cleanupDoorhanger(notif); 
 
       
-      await verifyLogins(expectOutcome);
+      verifyLogins(expectOutcome);
     }
   );
 
