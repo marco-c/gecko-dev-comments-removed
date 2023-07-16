@@ -997,6 +997,9 @@ enum ABIFunctionType : uint64_t {
   Args_Int32_GeneralInt64Int64Int64General = detail::MakeABIFunctionType(
       ArgType_Int32, {ArgType_General, ArgType_Int64, ArgType_Int64,
                       ArgType_Int64, ArgType_General}),
+  Args_Int32_GeneralInt64Int64Int64GeneralGeneral = detail::MakeABIFunctionType(
+      ArgType_Int32, {ArgType_General, ArgType_Int64, ArgType_Int64,
+                      ArgType_Int64, ArgType_General, ArgType_General}),
 
   
   

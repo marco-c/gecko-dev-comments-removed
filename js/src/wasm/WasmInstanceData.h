@@ -27,6 +27,7 @@
 #include "gc/Pretenuring.h"
 #include "js/Utility.h"
 #include "wasm/WasmInstance.h"
+#include "wasm/WasmMemory.h"
 #include "wasm/WasmTypeDecls.h"
 
 namespace js {
@@ -108,6 +109,9 @@ struct MemoryInstanceData {
   
   
   uintptr_t boundsCheckLimit;
+
+  
+  bool isShared;
 };
 
 
