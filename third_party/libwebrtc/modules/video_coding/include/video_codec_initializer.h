@@ -19,15 +19,10 @@
 
 namespace webrtc {
 
-class VideoBitrateAllocator;
 class VideoCodec;
 
 class VideoCodecInitializer {
  public:
-  
-  
-  
-  
   
   
   static bool SetupCodec(const VideoEncoderConfig& config,
