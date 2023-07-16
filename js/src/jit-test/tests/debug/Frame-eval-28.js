@@ -1,5 +1,5 @@
 
-options('strict_mode');
+"use strict";
 var g = newGlobal({newCompartment: true});
 var dbg = new Debugger(g);
 var hits = 0;

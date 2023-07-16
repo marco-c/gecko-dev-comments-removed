@@ -442,19 +442,6 @@
 
   function jsTestDriverBrowserInit() {
     
-    
-    for (var optionName of ["strict_mode"]) {
-      if (!HasOwnProperty(SpecialPowersCu, optionName))
-        throw "options is out of sync with Components.utils";
-
-      
-      
-      
-      if (SpecialPowersCu[optionName])
-        SpecialPowersCu[optionName] = false;
-    }
-
-    
     currentOptions = Object.create(null);
 
     if (document.location.search.indexOf("?") !== 0) {
