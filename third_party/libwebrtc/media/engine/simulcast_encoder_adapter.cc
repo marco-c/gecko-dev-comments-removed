@@ -784,7 +784,26 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   codec_params.maxFramerate = stream_params.maxFramerate;
   codec_params.qpMax = stream_params.qpMax;
   codec_params.active = stream_params.active;
-  codec_params.SetScalabilityMode(stream_params.GetScalabilityMode());
+  
+  
+  
+  ScalabilityMode scalability_mode = stream_params.GetScalabilityMode();
+  
+  
+  
+  if (codec.GetScalabilityMode().has_value()) {
+    bool only_active_stream = true;
+    for (int i = 0; i < codec.numberOfSimulcastStreams; ++i) {
+      if (i != stream_idx && codec.simulcastStream[i].active) {
+        only_active_stream = false;
+        break;
+      }
+    }
+    if (only_active_stream) {
+      scalability_mode = codec.GetScalabilityMode().value();
+    }
+  }
+  codec_params.SetScalabilityMode(scalability_mode);
   
   if (is_lowest_quality_stream) {
     

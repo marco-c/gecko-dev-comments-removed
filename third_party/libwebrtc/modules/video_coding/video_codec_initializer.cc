@@ -140,7 +140,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     
     
     
-    if (streams[0].scalability_mode != streams[i].scalability_mode) {
+    if (streams[i].active &&
+        streams[0].scalability_mode != streams[i].scalability_mode) {
       scalability_mode.reset();
       
       
