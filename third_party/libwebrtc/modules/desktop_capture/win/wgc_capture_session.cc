@@ -217,12 +217,19 @@ bool WgcCaptureSession::GetFrame(std::unique_ptr<DesktopFrame>* output_frame) {
   
   
   
+  
+  
+  
+  
+  
+  
   const int max_sleep_count = 10;
   const int sleep_time_ms = 20;
 
   int sleep_count = 0;
   while (!queue_.current_frame() && sleep_count < max_sleep_count) {
     sleep_count++;
+    empty_frame_credit_count_ = sleep_count + 1;
     webrtc::SleepMs(sleep_time_ms);
     ProcessFrame();
   }
@@ -299,8 +306,12 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   }
 
   if (!capture_frame) {
-    RTC_DLOG(LS_WARNING) << "Frame pool was empty.";
-    RecordGetFrameResult(GetFrameResult::kFrameDropped);
+    
+    
+    if (empty_frame_credit_count_ == 0) {
+      RTC_DLOG(LS_WARNING) << "Frame pool was empty => kFrameDropped.";
+      RecordGetFrameResult(GetFrameResult::kFrameDropped);
+    }
     return E_FAIL;
   }
 
@@ -422,6 +433,8 @@ HRESULT WgcCaptureSession::ProcessFrame() {
 
   d3d_context->Unmap(mapped_texture_.Get(), 0);
 
+  if (empty_frame_credit_count_ > 0)
+    --empty_frame_credit_count_;
   size_ = new_size;
   RecordGetFrameResult(GetFrameResult::kSuccess);
   return hr;

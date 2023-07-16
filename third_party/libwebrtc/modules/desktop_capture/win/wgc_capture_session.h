@@ -130,6 +130,16 @@ class WgcCaptureSession final {
   bool item_closed_ = false;
   bool is_capture_started_ = false;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  int empty_frame_credit_count_ = 0;
+
   SequenceChecker sequence_checker_;
 };
 
