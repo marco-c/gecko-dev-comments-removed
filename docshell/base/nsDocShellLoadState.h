@@ -334,6 +334,18 @@ class nsDocShellLoadState final {
   
   
   
+  
+  
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  void AssertProcessCouldTriggerLoadIfSystem();
+#else
+  void AssertProcessCouldTriggerLoadIfSystem() {}
+#endif
+
+  
+  
+  
+  
   void CalculateLoadURIFlags();
 
   
