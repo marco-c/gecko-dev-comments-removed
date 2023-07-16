@@ -1757,7 +1757,6 @@ void VideoFrame::Close() {
   mCodedSize = gfx::IntSize();
   mVisibleRect = gfx::IntRect();
   mDisplaySize = gfx::IntSize();
-  mDuration.reset();
 }
 
 
