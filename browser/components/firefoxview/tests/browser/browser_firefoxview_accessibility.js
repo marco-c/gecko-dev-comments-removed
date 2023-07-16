@@ -30,19 +30,6 @@ add_task(async function test_keyboard_focus_after_tab_pickup_opened() {
   );
 
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.firefox-view.feature-tour",
-        JSON.stringify({
-          screen: `FEATURE_CALLOUT_1`,
-          complete: true,
-        }),
-      ],
-    ],
-  });
-
-  
   const sandbox = setupMocks({
     state: UIState.STATUS_NOT_CONFIGURED,
     syncEnabled: false,
