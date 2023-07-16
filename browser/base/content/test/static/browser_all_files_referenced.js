@@ -167,9 +167,6 @@ var whitelist = [
   { file: "resource://gre/localization/en-US/toolkit/global/cspErrors.ftl" },
 
   
-  { file: "resource://content-accessible/accessiblecaret.css" },
-
-  
   {
     file: "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
     platforms: ["linux", "win"],
@@ -907,8 +904,6 @@ add_task(async function checkAllTheFiles() {
     "resource://devtools/",
     "resource://devtools-client-jsonview/",
     "resource://devtools-client-shared/",
-    "resource://devtools-shared-images/",
-    "resource://devtools-highlighter-styles/",
     "resource://app/modules/devtools",
     "resource://gre/modules/devtools",
     "resource://app/localization/en-US/startup/aboutDevTools.ftl",

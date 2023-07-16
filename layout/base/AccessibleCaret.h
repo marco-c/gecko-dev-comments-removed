@@ -130,7 +130,9 @@ class AccessibleCaret {
   
   
   
-  dom::Element& CaretElement() const { return *mCaretElementHolder->Host(); }
+  dom::Element& CaretElement() const {
+    return mCaretElementHolder->ContentNode();
+  }
 
   
   
@@ -148,10 +150,14 @@ class AccessibleCaret {
   float GetZoomLevel();
 
   
-  dom::Element* TextOverlayElement() const;
+  dom::Element* TextOverlayElement() const {
+    return mCaretElementHolder->GetElementById(sTextOverlayElementId);
+  }
 
   
-  dom::Element* CaretImageElement() const;
+  dom::Element* CaretImageElement() const {
+    return mCaretElementHolder->GetElementById(sCaretImageElementId);
+  }
 
   nsIFrame* RootFrame() const;
 
@@ -160,7 +166,7 @@ class AccessibleCaret {
   
   static nsAutoString AppearanceString(Appearance aAppearance);
 
-  void CreateCaretElement() const;
+  already_AddRefed<dom::Element> CreateCaretElement(dom::Document*) const;
 
   
   void InjectCaretElement(dom::Document*);
@@ -217,6 +223,11 @@ class AccessibleCaret {
   
   
   RefPtr<DummyTouchListener> mDummyTouchListener{new DummyTouchListener()};
+
+  
+  static const nsLiteralString sTextOverlayElementId;
+  static const nsLiteralString sCaretImageElementId;
+
 };  
 
 std::ostream& operator<<(std::ostream& aStream,
