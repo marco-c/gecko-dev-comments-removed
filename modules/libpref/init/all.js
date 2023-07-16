@@ -907,20 +907,16 @@ pref("privacy.purge_trackers.consider_entity_list", false);
 pref("dom.event.contextmenu.enabled",       true);
 
 pref("javascript.enabled",                  true);
-pref("javascript.options.asmjs",                  true);
 pref("javascript.options.wasm",                   true);
 pref("javascript.options.wasm_trustedprincipals", true);
 pref("javascript.options.wasm_verbose",           false);
 pref("javascript.options.wasm_baselinejit",       true);
-
-pref("javascript.options.source_pragmas",    true);
 
 pref("javascript.options.asyncstack", true);
 
 
 pref("javascript.options.asyncstack_capture_debuggee_only", true);
 
-pref("javascript.options.throw_on_asmjs_validation_failure", false);
 
 
 
