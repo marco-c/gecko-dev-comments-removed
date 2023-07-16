@@ -166,7 +166,7 @@ static Matrix GetPatternMatrix(nsIFrame* aSource,
 
   double scale = 1.0 / MaxExpansion(callerCTM);
   auto patternMatrix = patternTransform;
-  patternMatrix.PostScale(scale, scale);
+  patternMatrix.PreScale(scale, scale);
   patternMatrix.PreTranslate(minx, miny);
 
   
