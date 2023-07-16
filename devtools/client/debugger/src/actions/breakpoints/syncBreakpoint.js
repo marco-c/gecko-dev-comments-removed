@@ -105,9 +105,7 @@ export function syncPendingBreakpoint(cx, sourceId, pendingBreakpoint) {
       
       
       if (isPendingBreakpointWithSourceMap) {
-        dispatch(
-          removeBreakpointAtGeneratedLocation(cx, sourceGeneratedLocation)
-        );
+        dispatch(removeBreakpointAtGeneratedLocation(sourceGeneratedLocation));
       }
       return null;
     }
@@ -121,9 +119,7 @@ export function syncPendingBreakpoint(cx, sourceId, pendingBreakpoint) {
     
     
     if (!isSameLocation) {
-      dispatch(
-        removeBreakpointAtGeneratedLocation(cx, sourceGeneratedLocation)
-      );
+      dispatch(removeBreakpointAtGeneratedLocation(sourceGeneratedLocation));
     }
 
     return dispatch(

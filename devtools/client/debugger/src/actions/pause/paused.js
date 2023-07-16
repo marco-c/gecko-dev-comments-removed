@@ -39,7 +39,7 @@ export function paused(pauseInfo) {
     
     const hiddenBreakpoint = getHiddenBreakpoint(getState());
     if (hiddenBreakpoint) {
-      dispatch(removeBreakpoint(cx, hiddenBreakpoint));
+      dispatch(removeBreakpoint(hiddenBreakpoint));
     }
 
     
