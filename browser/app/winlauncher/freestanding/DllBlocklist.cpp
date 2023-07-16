@@ -387,26 +387,8 @@ constexpr DWORD kPageExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
 
 
 
-MOZ_NEVER_INLINE NTSTATUS AfterMapExecutableViewOfSection(
+MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableImageSection(
     HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
-  
-  MEMORY_BASIC_INFORMATION mbi;
-  NTSTATUS ntStatus =
-      ::NtQueryVirtualMemory(aProcess, *aBaseAddress, MemoryBasicInformation,
-                             &mbi, sizeof(mbi), nullptr);
-  if (!NT_SUCCESS(ntStatus)) {
-    ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
-    return STATUS_ACCESS_DENIED;
-  }
-
-  
-  
-  
-  
-  if (!(mbi.Type & MEM_IMAGE) || !(mbi.AllocationProtect & kPageExecutable)) {
-    return aStubStatus;
-  }
-
   
   nt::MemorySectionNameBuf sectionFileName(
       gLoaderPrivateAPI.GetSectionNameBuffer(*aBaseAddress));
@@ -531,6 +513,10 @@ MOZ_NEVER_INLINE NTSTATUS AfterMapExecutableViewOfSection(
 
 
 
+
+
+
+
 NTSTATUS NTAPI patched_NtMapViewOfSection(
     HANDLE aSection, HANDLE aProcess, PVOID* aBaseAddress, ULONG_PTR aZeroBits,
     SIZE_T aCommitSize, PLARGE_INTEGER aSectionOffset, PSIZE_T aViewSize,
@@ -549,7 +535,28 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  return AfterMapExecutableViewOfSection(aProcess, aBaseAddress, stubStatus);
+  
+  
+  
+  MEMORY_BASIC_INFORMATION mbi;
+  NTSTATUS ntStatus =
+      ::NtQueryVirtualMemory(aProcess, *aBaseAddress, MemoryBasicInformation,
+                             &mbi, sizeof(mbi), nullptr);
+  if (!NT_SUCCESS(ntStatus)) {
+    ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
+    return STATUS_ACCESS_DENIED;
+  }
+
+  
+  
+  
+  
+  if (!(mbi.Type & MEM_IMAGE) || !(mbi.AllocationProtect & kPageExecutable)) {
+    return stubStatus;
+  }
+
+  return AfterMapViewOfExecutableImageSection(aProcess, aBaseAddress,
+                                              stubStatus);
 }
 
 }  
