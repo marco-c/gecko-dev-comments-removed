@@ -38,6 +38,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/Document.h"
@@ -1403,21 +1404,17 @@ nsSliderFrame::HandlePress(nsPresContext* aPresContext, WidgetGUIEvent* aEvent,
 
   mRepeatDirection = change;
   DragThumb(true);
-  
-  
-  
-  
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  if (change > 0) {
-    mDestinationPoint = nsPoint(GetRect().width, GetRect().height);
+  if (StaticPrefs::layout_scrollbars_click_and_hold_track_continue_to_end()) {
+    
+    
+    if (change > 0) {
+      mDestinationPoint = nsPoint(GetRect().width, GetRect().height);
+    } else {
+      mDestinationPoint = nsPoint(0, 0);
+    }
   } else {
-    mDestinationPoint = nsPoint(0, 0);
+    mDestinationPoint = eventPoint;
   }
-#else
-  mDestinationPoint = eventPoint;
-#endif
   StartRepeat();
   PageScroll(false);
 
