@@ -13,6 +13,11 @@
 #include "nsWindowLoggedMessages.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
+#include "nsWindow.h"
+#include "GeckoProfiler.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/Document.h"
+
 #include <winuser.h>
 #include <dbt.h>
 #include <imm.h>
@@ -35,7 +40,103 @@ MSGFEventMsgInfo gMSGFEvents[] = {
 static long gEventCounter = 0;
 static UINT gLastEventMsg = 0;
 
+namespace geckoprofiler::markers {
+
+struct WindowProcMarker {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("WindowProc");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aMsgLoopName,
+                                   UINT aMsg, WPARAM aWParam, LPARAM aLParam) {
+    aWriter.StringProperty("messageLoop", aMsgLoopName);
+    aWriter.IntProperty("uMsg", aMsg);
+    const char* name;
+    if (aMsg < WM_USER) {
+      const auto eventMsgInfo = mozilla::widget::gAllEvents.find(aMsg);
+      if (eventMsgInfo != mozilla::widget::gAllEvents.end()) {
+        name = eventMsgInfo->second.mStr;
+      } else {
+        name = "ui message";
+      }
+    } else if (aMsg >= WM_USER && aMsg < WM_APP) {
+      name = "WM_USER message";
+    } else if (aMsg >= WM_APP && aMsg < 0xC000) {
+      name = "WM_APP message";
+    } else if (aMsg >= 0xC000 && aMsg < 0x10000) {
+      name = "registered windows message";
+    } else {
+      name = "system message";
+    }
+    aWriter.StringProperty("name", MakeStringSpan(name));
+
+    if (aWParam) {
+      aWriter.IntProperty("wParam", aWParam);
+    }
+    if (aLParam) {
+      aWriter.IntProperty("lParam", aLParam);
+    }
+  }
+
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.AddKeyFormat("uMsg", MS::Format::Integer);
+    schema.SetChartLabel(
+        "{marker.data.messageLoop} | {marker.data.name} ({marker.data.uMsg})");
+    schema.SetTableLabel(
+        "{marker.name} - {marker.data.messageLoop} - {marker.data.name} "
+        "({marker.data.uMsg})");
+    schema.SetTooltipLabel(
+        "{marker.data.messageLoop} - {marker.name} - {marker.data.name}");
+    schema.AddKeyFormat("wParam", MS::Format::Integer);
+    schema.AddKeyFormat("lParam", MS::Format::Integer);
+    return schema;
+  }
+};
+
+}  
+
 namespace mozilla::widget {
+
+AutoProfilerMessageMarker::AutoProfilerMessageMarker(
+    Span<const char> aMsgLoopName, HWND hWnd, UINT msg, WPARAM wParam,
+    LPARAM lParam)
+    : mMsgLoopName(aMsgLoopName), mMsg(msg), mWParam(wParam), mLParam(lParam) {
+  if (profiler_thread_is_being_profiled_for_markers()) {
+    mOptions.emplace(MarkerOptions(MarkerTiming::IntervalStart()));
+    nsWindow* win = WinUtils::GetNSWindowPtr(hWnd);
+    if (win) {
+      nsIWidgetListener* wl = win->GetWidgetListener();
+      if (wl) {
+        PresShell* presShell = wl->GetPresShell();
+        if (presShell) {
+          dom::Document* doc = presShell->GetDocument();
+          if (doc) {
+            mOptions->Set(MarkerInnerWindowId(doc->InnerWindowID()));
+          }
+        }
+      }
+    }
+  }
+}
+
+AutoProfilerMessageMarker::~AutoProfilerMessageMarker() {
+  if (!profiler_thread_is_being_profiled_for_markers()) {
+    return;
+  }
+
+  if (mOptions) {
+    mOptions->TimingRef().SetIntervalEnd();
+  } else {
+    mOptions.emplace(MarkerOptions(MarkerTiming::IntervalEnd()));
+  }
+  profiler_add_marker(
+      "WindowProc", ::mozilla::baseprofiler::category::OTHER,
+      std::move(*mOptions), geckoprofiler::markers::WindowProcMarker{},
+      ProfilerString8View::WrapNullTerminatedString(mMsgLoopName.data()), mMsg,
+      mWParam, mLParam);
+}
 
 
 
@@ -65,25 +166,28 @@ std::unordered_set<UINT> gEventsToRecordInAboutPage = {
     WM_GETMINMAXINFO,
 };
 
-PrintEvent::PrintEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-    : mHwnd(hwnd),
+NativeEventLogger::NativeEventLogger(Span<const char> aMsgLoopName, HWND hwnd,
+                                     UINT msg, WPARAM wParam, LPARAM lParam)
+    : mProfilerMarker(aMsgLoopName, hwnd, msg, wParam, lParam),
+      mMsgLoopName(aMsgLoopName.data()),
+      mHwnd(hwnd),
       mMsg(msg),
       mWParam(wParam),
       mLParam(lParam),
       mResult(mozilla::Nothing()),
       mShouldLogPostCall(false) {
-  if (PrintEventInternal()) {
+  if (NativeEventLoggerInternal()) {
     
     mEventCounter = mozilla::Some(gEventCounter);
     ++gEventCounter;
   }
 }
 
-PrintEvent::~PrintEvent() {
+NativeEventLogger::~NativeEventLogger() {
   
   
   if (mResult.isSome()) {
-    if (PrintEventInternal() && mEventCounter.isNothing()) {
+    if (NativeEventLoggerInternal() && mEventCounter.isNothing()) {
       
       ++gEventCounter;
     }
@@ -174,7 +278,7 @@ bool AppendFlagsInfo(nsCString& str, uint64_t flags,
 
 
 
-bool PrintEvent::PrintEventInternal() {
+bool NativeEventLogger::NativeEventLoggerInternal() {
   mozilla::LogLevel const targetLogLevel = [&] {
     
     if (mMsg == WM_SETCURSOR || mMsg == WM_MOUSEMOVE || mMsg == WM_NCHITTEST) {
@@ -232,8 +336,8 @@ bool PrintEvent::PrintEventInternal() {
                                   : "initial call";
       nsAutoCString logMessage;
       logMessage.AppendPrintf(
-          "%6ld %08" PRIX64 " - 0x%04X %s%s%s: 0x%08" PRIX64 " (%s)\n",
-          mEventCounter.valueOr(gEventCounter),
+          "%s | %6ld %08" PRIX64 " - 0x%04X %s%s%s: 0x%08" PRIX64 " (%s)\n",
+          mMsgLoopName, mEventCounter.valueOr(gEventCounter),
           reinterpret_cast<uint64_t>(mHwnd), mMsg,
           msgText ? msgText : "Unknown", paramInfo.IsEmpty() ? "" : " ",
           paramInfo.get(),
@@ -1032,32 +1136,26 @@ void ResolutionParamInfo(nsCString& result, uint64_t value, const char* name,
 }
 
 
-#define ENTRY(_msg)                 \
-  {                                 \
-    _msg, {                         \
-#      _msg, _msg, DefaultParamInfo \
-    }                               \
+#define ENTRY(_msg)                         \
+  {                                         \
+    _msg, { #_msg, _msg, DefaultParamInfo } \
   }
 
 #define ENTRY_WITH_NO_PARAM_INFO(_msg) \
   {                                    \
-    _msg, {                            \
-#      _msg, _msg, nullptr             \
-    }                                  \
+    _msg, { #_msg, _msg, nullptr }     \
   }
 
 #define ENTRY_WITH_CUSTOM_PARAM_INFO(_msg, paramInfoFn) \
   {                                                     \
-    _msg, {                                             \
-#      _msg, _msg, paramInfoFn                          \
-    }                                                   \
+    _msg, { #_msg, _msg, paramInfoFn }                  \
   }
 
 #define ENTRY_WITH_SPLIT_PARAM_INFOS(_msg, wParamInfoFn, wParamName,           \
                                      lParamInfoFn, lParamName)                 \
   {                                                                            \
     _msg, {                                                                    \
-#      _msg, _msg, nullptr, wParamInfoFn, wParamName, lParamInfoFn, lParamName \
+      #_msg, _msg, nullptr, wParamInfoFn, wParamName, lParamInfoFn, lParamName \
     }                                                                          \
   }
 std::unordered_map<UINT, EventMsgInfo> gAllEvents = {
