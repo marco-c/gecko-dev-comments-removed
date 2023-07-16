@@ -39,12 +39,17 @@ std::vector<VideoEncoder::ResolutionBitrateLimits>
 EncoderInfoSettings::GetDefaultSinglecastBitrateLimits(
     VideoCodecType codec_type) {
   
+  
   if (codec_type == kVideoCodecVP9) {
     return {{320 * 180, 0, 30000, 150000},
             {480 * 270, 120000, 30000, 300000},
             {640 * 360, 190000, 30000, 420000},
             {960 * 540, 350000, 30000, 1000000},
             {1280 * 720, 480000, 30000, 1500000}};
+  }
+  
+  if (codec_type == kVideoCodecAV1) {
+    return {};
   }
 
   return {{320 * 180, 0, 30000, 300000},
