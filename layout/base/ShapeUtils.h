@@ -134,6 +134,14 @@ struct ShapeUtils final {
   
   
   
+  static already_AddRefed<gfx::Path> BuildXywhPath(const StyleBasicShape&,
+                                                   const nsRect& aRefBox,
+                                                   nscoord aAppUnitsPerPixel,
+                                                   gfx::PathBuilder*);
+
+  
+  
+  
   
   
   
