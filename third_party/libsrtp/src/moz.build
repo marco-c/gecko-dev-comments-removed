@@ -61,7 +61,7 @@ DEFINES['NSS'] = 1
 
 
 
-if CONFIG['CPU_ARCH'] in ('arm', 'x86', 'x86_64', 'mips', 'mips64'):
+if CONFIG['CPU_ARCH'] in ('arm', 'x86', 'x86_64', 'mips32', 'mips64'):
     DEFINES['CPU_CISC'] = 1
 else:
     

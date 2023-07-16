@@ -225,29 +225,13 @@ def config_status(config, execute=True):
     
     
     
-    
-    
-    
-    def normalize(obj):
-        if isinstance(obj, dict):
-            return {k: normalize(v) for k, v in six.iteritems(obj)}
-        if isinstance(obj, six.text_type):
-            return six.text_type(obj)
-        if isinstance(obj, Iterable):
-            return [normalize(o) for o in obj]
-        return obj
-
-    sanitized_config = normalize(sanitized_config)
-
-    
-    
-    
     with codecs.open("config.status", "w", "utf-8") as fh:
         fh.write(
             textwrap.dedent(
                 """\
             #!%(python)s
             # coding=utf-8
+            from mozbuild.configure.constants import *
         """
             )
             % {"python": config["PYTHON3"]}
