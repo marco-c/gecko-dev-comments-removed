@@ -280,6 +280,14 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   }
 
   
+  for (MemoryDesc& memory : moduleEnv_->memories) {
+    if (!allocateInstanceDataBytes(sizeof(MemoryInstanceData), sizeof(void*),
+                                   &memory.globalDataOffset)) {
+      return false;
+    }
+  }
+
+  
   if (!allocateInstanceDataBytesN(
           sizeof(TableInstanceData), alignof(TableInstanceData),
           moduleEnv_->tables.length(), &moduleEnv_->tablesOffsetStart)) {
@@ -1057,7 +1065,6 @@ SharedMetadata ModuleGenerator::finishMetadata(const Bytes& bytecode) {
   metadata_->nameCustomSectionIndex = moduleEnv_->nameCustomSectionIndex;
   metadata_->moduleName = moduleEnv_->moduleName;
   metadata_->funcNames = std::move(moduleEnv_->funcNames);
-  metadata_->omitsBoundsChecks = moduleEnv_->hugeMemoryEnabled(0);
 
   
 

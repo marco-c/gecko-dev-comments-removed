@@ -95,6 +95,21 @@ struct FuncImportInstanceData {
   static_assert(sizeof(GCPtr<JSObject*>) == sizeof(void*), "for JIT access");
 };
 
+struct MemoryInstanceData {
+  
+  GCPtr<WasmMemoryObject*> memory;
+
+  
+  uint8_t* memoryBase;
+
+  
+  
+  
+  
+  
+  uintptr_t boundsCheckLimit;
+};
+
 
 
 
