@@ -48,8 +48,6 @@ class SctpDataChannelControllerInterface {
   
   virtual bool ConnectDataChannel(SctpDataChannel* data_channel) = 0;
   
-  virtual void DisconnectDataChannel(SctpDataChannel* data_channel) = 0;
-  
   virtual void AddSctpDataStream(int sid) = 0;
   
   

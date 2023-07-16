@@ -46,13 +46,6 @@ bool DataChannelController::ConnectDataChannel(
   return data_channel_transport() ? true : false;
 }
 
-void DataChannelController::DisconnectDataChannel(
-    SctpDataChannel* webrtc_data_channel) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  
-  
-}
-
 void DataChannelController::AddSctpDataStream(int sid) {
   if (data_channel_transport()) {
     network_thread()->BlockingCall([this, sid] {
