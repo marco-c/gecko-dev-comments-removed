@@ -67,6 +67,12 @@ class SamplesStatsCounter {
   }
   
   
+  double GetSum() const {
+    RTC_DCHECK(!IsEmpty());
+    return *stats_.GetSum();
+  }
+  
+  
   double GetAverage() const {
     RTC_DCHECK(!IsEmpty());
     return *stats_.GetMean();

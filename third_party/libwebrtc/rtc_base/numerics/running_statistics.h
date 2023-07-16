@@ -51,6 +51,7 @@ class RunningStatistics {
   void AddSample(T sample) {
     max_ = std::max(max_, sample);
     min_ = std::min(min_, sample);
+    sum_ += sample;
     ++size_;
     
     const double delta = sample - mean_;
@@ -124,6 +125,14 @@ class RunningStatistics {
   }
 
   
+  absl::optional<double> GetSum() const {
+    if (size_ == 0) {
+      return absl::nullopt;
+    }
+    return sum_;
+  }
+
+  
   absl::optional<double> GetMean() const {
     if (size_ == 0) {
       return absl::nullopt;
@@ -153,6 +162,7 @@ class RunningStatistics {
   T max_ = minus_infinity_or_min<T>();
   double mean_ = 0;
   double cumul_ = 0;  
+  double sum_ = 0;
 };
 
 }  
