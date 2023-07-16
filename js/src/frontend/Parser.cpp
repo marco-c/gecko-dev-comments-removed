@@ -34,7 +34,6 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
-#include "frontend/BytecodeCompiler.h"
 #include "frontend/FoldConstants.h"
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ModuleSharedContext.h"
@@ -42,7 +41,7 @@
 #include "frontend/ParseNodeVerify.h"
 #include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  
-#include "frontend/TokenStream.h"
+#include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"

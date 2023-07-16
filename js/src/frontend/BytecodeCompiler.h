@@ -189,9 +189,6 @@ UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
     const mozilla::Maybe<uint32_t>& parameterListEnd,
     frontend::FunctionSyntaxKind syntaxKind, Handle<Scope*> enclosingScope);
 
-
-bool IsKeyword(TaggedParserAtomIndex atom);
-
 } 
 } 
 
