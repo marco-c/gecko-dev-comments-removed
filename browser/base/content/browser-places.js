@@ -812,6 +812,8 @@ var BookmarksEventHandler = {
       
       
       this.onCommand(aEvent);
+      aEvent.preventDefault();
+      aEvent.stopPropagation();
     }
   },
 
