@@ -1960,6 +1960,14 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
       
       typeDefData->allocSite.initWasm(zone);
+
+      
+      
+      if (typeDef.kind() == TypeDefKind::Struct) {
+        typeDefData->structTypeSize = typeDef.structType().size_;
+      } else {
+        MOZ_ASSERT(typeDefData->structTypeSize == 0);
+      }
     } else if (typeDef.kind() == TypeDefKind::Func) {
       
     } else {

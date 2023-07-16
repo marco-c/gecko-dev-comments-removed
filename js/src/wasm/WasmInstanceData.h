@@ -53,7 +53,8 @@ struct TypeDefInstanceData {
         superTypeVector(nullptr),
         shape(nullptr),
         clasp(nullptr),
-        allocKind(gc::AllocKind::LIMIT) {}
+        allocKind(gc::AllocKind::LIMIT),
+        structTypeSize(0) {}
 
   
   
@@ -71,6 +72,12 @@ struct TypeDefInstanceData {
   
   gc::AllocSite allocSite;
   gc::AllocKind allocKind;
+
+  
+  
+  
+  
+  uint32_t structTypeSize;
 };
 
 
