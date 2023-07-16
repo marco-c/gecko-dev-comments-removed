@@ -397,6 +397,20 @@ class ZoneUnorderedMap
             ZoneAllocator<std::pair<const K, V>>(zone)) {}
 };
 
+
+
+template <typename T, size_t kSize>
+class SmallZoneVector : public base::SmallVector<T, kSize, ZoneAllocator<T>> {
+ public:
+  
+  explicit SmallZoneVector(Zone* zone)
+      : base::SmallVector<T, kSize, ZoneAllocator<T>>(ZoneAllocator<T>(zone)) {}
+
+  explicit SmallZoneVector(size_t size, Zone* zone)
+      : base::SmallVector<T, kSize, ZoneAllocator<T>>(
+            size, ZoneAllocator<T>(ZoneAllocator<T>(zone))) {}
+};
+
 }  
 }  
 
