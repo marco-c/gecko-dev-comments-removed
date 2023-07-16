@@ -187,6 +187,8 @@ imply_option("MOZ_LD64_KNOWN_GOOD", depends_if("MOZ_AUTOMATION")(lambda _: True)
     target,
     "--enable-profile-generate",
     pass_manager.enabled,
+    "--enable-profile-use",
+    "MOZ_AUTOMATION",
 )
 @imports("multiprocessing")
 def lto(
@@ -197,6 +199,8 @@ def lto(
     target,
     instrumented_build,
     pass_manager,
+    pgo_build,
+    moz_automation,
 ):
     cflags = []
     ldflags = []
@@ -213,8 +217,19 @@ def lto(
     
     
     
+    
+    
+    
+    
     if values == () or values == ("cross",):
         if c_compiler.type == "gcc":
+            values += ("full",)
+        elif (
+            pgo_build
+            and moz_automation
+            and target.os in ("WINNT", "GNU")
+            and target.cpu == "x86_64"
+        ):
             values += ("full",)
         else:
             values += ("thin",)
