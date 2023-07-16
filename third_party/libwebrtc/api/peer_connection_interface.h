@@ -1553,8 +1553,17 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
+      rtc::scoped_refptr<VideoTrackSourceInterface> source,
+      absl::string_view label) = 0;
+  
+  
+  
+  virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       const std::string& label,
-      VideoTrackSourceInterface* source) = 0;
+      VideoTrackSourceInterface* source) {
+    return CreateVideoTrack(
+        rtc::scoped_refptr<VideoTrackSourceInterface>(source), label);
+  }
 
   
   virtual rtc::scoped_refptr<AudioTrackInterface> CreateAudioTrack(
