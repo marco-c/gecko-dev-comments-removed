@@ -1,7 +1,11 @@
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
+// This file expectes the SpecialPowers to be available in the scope
+// it is loaded into.
+/* global SpecialPowers */
 
 class RequestError extends Error {
   constructor(resultCode, resultName) {
@@ -14,8 +18,8 @@ class RequestError extends Error {
 
 export async function setStoragePrefs(optionalPrefsToSet) {
   const prefsToSet = [
-    
-    
+    // Not needed right now, but might be needed in future.
+    // ["dom.quotaManager.testing", true],
   ];
 
   if (SpecialPowers.Services.appinfo.OS === "WINNT") {

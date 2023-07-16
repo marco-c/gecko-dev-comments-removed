@@ -1,7 +1,7 @@
-
-
-
-
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 export async function runTestInWorker(script, base, listener) {
   return new Promise(function (resolve) {
@@ -21,9 +21,9 @@ export async function runTestInWorker(script, base, listener) {
 
       if (moduleName && objectName) {
         if (!modules[moduleName]) {
-          
+          // eslint-disable-next-line no-unsanitized/method
           modules[moduleName] = await import(
-            "/tests/dom/quota/test/modules/" + moduleName + ".js"
+            "/tests/dom/quota/test/modules/" + moduleName + ".mjs"
           );
         }
         await modules[moduleName][objectName].OnMessageReceived(worker, data);

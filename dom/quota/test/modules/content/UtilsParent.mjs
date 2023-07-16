@@ -1,9 +1,9 @@
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
-import { Utils } from "/tests/dom/quota/test/modules/Utils.js";
+import { Utils } from "./Utils.mjs";
 
 export const UtilsParent = {
   async OnMessageReceived(worker, msg) {

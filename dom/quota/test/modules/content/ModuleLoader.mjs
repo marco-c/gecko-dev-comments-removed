@@ -1,7 +1,11 @@
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
+// This file expectes the SpecialPowers to be available in the scope
+// it is loaded into.
+/* global SpecialPowers */
 
 export function ModuleLoader(base, depth, proto) {
   const modules = {};
@@ -40,8 +44,8 @@ export function ModuleLoader(base, depth, proto) {
       exported_symbols: module.exported_symbols,
     };
 
-    
-    
+    // Create a new object in this sandbox, that will be used as the scope
+    // object for this particular module.
     const sandbox = sharedGlobalSandbox.Object();
     Object.assign(sandbox, properties);
 
