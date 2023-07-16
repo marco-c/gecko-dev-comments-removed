@@ -936,9 +936,6 @@ GetOriginUsageOp::GetOriginUsageOp(const UsageRequestParams& aParams)
   MOZ_ASSERT(aParams.type() == UsageRequestParams::TOriginUsageParams);
 
   
-  mNeedsStorageInit = true;
-
-  
   mFromMemory = mParams.fromMemory();
 }
 
@@ -1031,9 +1028,6 @@ void GetOriginUsageOp::GetResponse(UsageRequestResponse& aResponse) {
 StorageNameOp::StorageNameOp()
     : QuotaRequestBase("dom::quota::StorageNameOp",  false) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 }
 
 RefPtr<DirectoryLock> StorageNameOp::CreateDirectoryLock() { return nullptr; }
@@ -1062,9 +1056,6 @@ InitializedRequestBase::InitializedRequestBase(const char* aRunnableName)
     : QuotaRequestBase(aRunnableName,  false),
       mInitialized(false) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 }
 
 RefPtr<DirectoryLock> InitializedRequestBase::CreateDirectoryLock() {
@@ -1115,9 +1106,6 @@ void TemporaryStorageInitializedOp::GetResponse(RequestResponse& aResponse) {
 InitOp::InitOp()
     : QuotaRequestBase("dom::quota::InitOp",  false) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 }
 
 nsresult InitOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
@@ -1140,9 +1128,6 @@ InitTemporaryStorageOp::InitTemporaryStorageOp()
     : QuotaRequestBase("dom::quota::InitTemporaryStorageOp",
                         false) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 }
 
 nsresult InitTemporaryStorageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
@@ -1171,9 +1156,6 @@ InitializeOriginRequestBase::InitializeOriginRequestBase(
       mPrincipalInfo(aPrincipalInfo),
       mCreated(false) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 
   
   mPersistenceType.SetValue(aPersistenceType);
@@ -1333,9 +1315,6 @@ ResetOrClearOp::ResetOrClearOp(bool aClear)
     : QuotaRequestBase("dom::quota::ResetOrClearOp",  true),
       mClear(aClear) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = false;
 }
 
 void ResetOrClearOp::DeleteFiles(QuotaManager& aQuotaManager) {
@@ -1702,9 +1681,6 @@ ResetOriginOp::ResetOriginOp(const RequestParams& aParams)
       QuotaManager::GetOriginFromValidatedPrincipalInfo(params.principalInfo());
 
   
-  mNeedsStorageInit = false;
-
-  
   if (params.persistenceTypeIsExplicit()) {
     mPersistenceType.SetValue(params.persistenceType());
   }
@@ -1906,9 +1882,6 @@ EstimateOp::EstimateOp(const EstimateParams& aParams)
     : QuotaRequestBase("dom::quota::EstimateOp",  false),
       mParams(aParams) {
   AssertIsOnOwningThread();
-
-  
-  mNeedsStorageInit = true;
 }
 
 nsresult EstimateOp::DoInit(QuotaManager& aQuotaManager) {
