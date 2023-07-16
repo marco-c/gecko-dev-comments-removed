@@ -2,6 +2,7 @@
 
 
 
+import { getCurrentThread } from "../../selectors";
 
 
 
@@ -10,9 +11,10 @@
 
 
 
-export function breakOnNext(cx) {
+export function breakOnNext() {
   return async ({ dispatch, getState, client }) => {
-    await client.breakOnNext(cx.thread);
-    return dispatch({ type: "BREAK_ON_NEXT", thread: cx.thread });
+    const thread = getCurrentThread(getState());
+    await client.breakOnNext(thread);
+    return dispatch({ type: "BREAK_ON_NEXT", thread });
   };
 }
