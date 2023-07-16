@@ -1139,7 +1139,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
                        local_pc_wrapper,
                        {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}},
                        true),
-                   kDefaultTimeout.ms());
+                   kLongTimeoutForRampingUp.ms());
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
@@ -1290,7 +1290,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
                        local_pc_wrapper,
                        {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}},
                        true),
-                   kDefaultTimeout.ms());
+                   kLongTimeoutForRampingUp.ms());
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
