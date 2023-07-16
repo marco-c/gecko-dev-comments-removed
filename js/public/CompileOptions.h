@@ -488,11 +488,9 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
   }
 
   
-  
-  explicit CompileOptions(const PrefableCompileOptions& prefableOptions)
-      : ReadOnlyCompileOptions() {
-    prefableOptions_ = prefableOptions;
-  }
+  struct ForFrontendContext {};
+  explicit CompileOptions(const ForFrontendContext&)
+      : ReadOnlyCompileOptions() {}
 
   CompileOptions& setFile(const char* f) {
     filename_ = JS::ConstUTF8CharsZ(f);
