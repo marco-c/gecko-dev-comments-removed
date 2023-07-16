@@ -1935,8 +1935,6 @@ STATIC_ATOMS = [
     
     Atom("ondevicechange", "ondevicechange"),
     
-    Atom("onrtctransform", "onrtctransform"),
-    
     Atom("onmozvisualresize", "onmozvisualresize"),
     Atom("onmozvisualscroll", "onmozvisualscroll"),
     

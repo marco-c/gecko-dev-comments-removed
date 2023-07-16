@@ -55,7 +55,6 @@ enum class MediaSessionConduitLocalDirection : int { kSend, kRecv };
 class VideoSessionConduit;
 class AudioSessionConduit;
 class WebrtcCallWrapper;
-class FrameTransformerProxy;
 
 
 
@@ -413,10 +412,6 @@ class VideoSessionConduit : public MediaSessionConduit {
     size_t height;
   };
   virtual Maybe<Resolution> GetLastResolution() const = 0;
-
-  virtual void RequestKeyFrame(FrameTransformerProxy* aProxy) = 0;
-  virtual void GenerateKeyFrame(const Maybe<std::string>& aRid,
-                                FrameTransformerProxy* aProxy) = 0;
 
  protected:
   

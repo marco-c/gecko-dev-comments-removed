@@ -256,8 +256,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
     Mirror<RtpExtList> mLocalSendRtpExtensions;
     Mirror<Maybe<AudioCodecConfig>> mSendCodec;
     Mirror<std::vector<AudioCodecConfig>> mRecvCodecs;
-    Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxySend;
-    Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxyRecv;
     MediaEventListener mOnDtmfEventListener;
 
     
@@ -267,10 +265,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
     Maybe<AudioCodecConfig> mConfiguredSendCodec;
     
     std::vector<AudioCodecConfig> mConfiguredRecvCodecs;
-
-    
-    RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxySend;
-    RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxyRecv;
 
     Control() = delete;
     explicit Control(const RefPtr<AbstractThread>& aCallThread);
