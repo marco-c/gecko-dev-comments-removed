@@ -5,12 +5,6 @@
 
 "use strict";
 
-if (typeof Components !== "undefined") {
-  
-  Cc["@mozilla.org/net/osfileconstantsservice;1"]
-    .getService(Ci.nsIOSFileConstantsService)
-    .init();
-}
 
 
 
@@ -20,8 +14,7 @@ if (typeof Components !== "undefined") {
 
 
 
-
-var LIBC = OS.Constants.libc;
+var LIBC = ChromeUtils.getLibcConstants();
 
 const LIBC_CHOICES = ["libc.so", "libSystem.B.dylib", "a.out"];
 
