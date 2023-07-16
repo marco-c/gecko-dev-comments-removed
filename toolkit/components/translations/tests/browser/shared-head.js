@@ -330,7 +330,7 @@ async function setupActorTest({
   
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    BLANK_PAGE,
+    TRANSLATIONS_TESTER_EN,
     true 
   );
 
