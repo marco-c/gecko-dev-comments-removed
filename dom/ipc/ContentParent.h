@@ -570,6 +570,8 @@ class ContentParent final : public PContentParent,
       nsIRemoteTab::NavigationType aNavigationType,
       const CancelContentJSOptions& aCancelContentJSOptions);
 
+  void SetMainThreadQoSPriority(nsIThread::QoSPriority aQoSPriority);
+
   
   
   
