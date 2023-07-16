@@ -565,7 +565,7 @@ class AccessibilityTest : BaseSessionTest() {
 
     @Test fun testClipboard() {
         
-        assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
+        assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             
             activityRule.scenario?.onActivity { activity ->
