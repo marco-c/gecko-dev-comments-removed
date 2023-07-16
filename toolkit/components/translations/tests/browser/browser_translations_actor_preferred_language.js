@@ -64,12 +64,12 @@ add_task(async function test_preferred_language() {
         TranslationsParent.getPreferredLanguages(),
         [
           
+          "cs",
+          "hu",
+          
           "pt",
           "pl",
           "en",
-          
-          "cs",
-          "hu",
           
           "zh",
           "de",
