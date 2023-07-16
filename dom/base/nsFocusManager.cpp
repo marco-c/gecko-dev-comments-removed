@@ -29,7 +29,6 @@
 #include "nsTextControlFrame.h"
 #include "nsViewManager.h"
 #include "nsFrameSelection.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "nsXULPopupManager.h"
 #include "nsMenuPopupFrame.h"
@@ -48,6 +47,8 @@
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLImageElement.h"
@@ -70,6 +71,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
+#include "mozilla/widget/IMEData.h"
 #include <algorithm>
 
 #include "nsIDOMXULMenuListElement.h"
@@ -843,7 +845,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   NS_ENSURE_ARG(aDocument);
   NS_ENSURE_ARG(aContent);
 
-  nsPIDOMWindowOuter* window = aDocument->GetWindow();
+  RefPtr<nsPIDOMWindowOuter> window = aDocument->GetWindow();
   if (!window) {
     return NS_OK;
   }
@@ -851,16 +853,17 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   
   
   
-  Element* content = window->GetFocusedElement();
-  if (!content) {
+  RefPtr<Element> previousFocusedElement = window->GetFocusedElement();
+  if (!previousFocusedElement) {
     return NS_OK;
   }
 
-  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
+          previousFocusedElement, aContent)) {
     return NS_OK;
   }
 
-  Element* newFocusedElement = [&]() -> Element* {
+  RefPtr<Element> newFocusedElement = [&]() -> Element* {
     if (auto* sr = ShadowRoot::FromNode(aContent)) {
       if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
         return sr->Host();
@@ -875,7 +878,8 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   
   if (window->GetBrowsingContext() == GetFocusedBrowsingContext()) {
     mFocusedElement = newFocusedElement;
-  } else if (Document* subdoc = aDocument->GetSubDocumentFor(content)) {
+  } else if (Document* subdoc =
+                 aDocument->GetSubDocumentFor(previousFocusedElement)) {
     
     
     
@@ -910,12 +914,13 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   
-  if (content->IsEditable()) {
+  if (previousFocusedElement->IsEditable()) {
     if (nsCOMPtr<nsIDocShell> docShell = aDocument->GetDocShell()) {
       if (RefPtr<HTMLEditor> htmlEditor = docShell->GetHTMLEditor()) {
         RefPtr<Selection> selection = htmlEditor->GetSelection();
         if (selection && selection->GetFrameSelection() &&
-            content == selection->GetFrameSelection()->GetAncestorLimiter()) {
+            previousFocusedElement ==
+                selection->GetFrameSelection()->GetAncestorLimiter()) {
           htmlEditor->FinalizeSelection();
         }
       }
@@ -923,13 +928,24 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
-    NotifyFocusStateChange(content, newFocusedElement, 0,
+    NotifyFocusStateChange(previousFocusedElement, newFocusedElement, 0,
                             false, false);
   } else {
     
     
     MOZ_ASSERT(newFocusedElement->State().HasState(ElementState::FOCUS));
   }
+
+  
+  
+  
+  
+  if (mFocusedElement == newFocusedElement && mFocusedWindow == window) {
+    RefPtr<nsPresContext> presContext(aDocument->GetPresContext());
+    IMEStateManager::OnChangeFocus(presContext, newFocusedElement,
+                                   InputContextAction::Cause::CAUSE_UNKNOWN);
+  }
+
   return NS_OK;
 }
 
