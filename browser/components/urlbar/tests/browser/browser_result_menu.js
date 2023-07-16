@@ -209,9 +209,15 @@ add_task(async function firefoxSuggest() {
 
   
   let onEngagementCallCount = 0;
-  provider.onEngagement = (isPrivate, state, queryContext, details) => {
+  provider.onEngagement = (
+    isPrivate,
+    state,
+    queryContext,
+    details,
+    controller
+  ) => {
     onEngagementCallCount++;
-    queryContext.view.controller.removeResult(details.result);
+    controller.removeResult(details.result);
   };
 
   UrlbarProvidersManager.registerProvider(provider);

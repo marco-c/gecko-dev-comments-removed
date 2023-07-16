@@ -50,7 +50,7 @@ add_task(async function singleEngagement() {
   }
 
   
-  endEngagement();
+  endEngagement({ controller });
 });
 
 
@@ -86,7 +86,7 @@ async function doManyEngagementsTest(state) {
       },
     ]);
 
-    endEngagement(context, state);
+    endEngagement({ context, state, controller });
   }
 }
 
@@ -146,10 +146,10 @@ add_task(async function canceledQueries() {
   }
 
   
-  endEngagement();
+  endEngagement({ controller });
 });
 
-function endEngagement(context = null, state = "engagement") {
+function endEngagement({ controller, context = null, state = "engagement" }) {
   UrlbarProviderQuickSuggest.onEngagement(
     false,
     state,
@@ -158,7 +158,8 @@ function endEngagement(context = null, state = "engagement") {
         providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
-    { selIndex: -1 }
+    { selIndex: -1 },
+    controller
   );
 
   Assert.strictEqual(
