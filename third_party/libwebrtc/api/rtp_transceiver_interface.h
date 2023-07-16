@@ -153,21 +153,45 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   
   
   
+  
+  
+  virtual std::vector<RtpHeaderExtensionCapability>
+  GetHeaderExtensionsToNegotiate() const {
+    return {};
+  }
   virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer()
-      const = 0;
+      const {
+    return GetHeaderExtensionsToNegotiate();
+  }
 
   
   
   
+  
+  
+  virtual std::vector<RtpHeaderExtensionCapability>
+  GetNegotiatedHeaderExtensions() const {
+    return {};
+  }
   virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsNegotiated()
-      const = 0;
+      const {
+    return GetNegotiatedHeaderExtensions();
+  }
 
   
   
   
+  
+  
+  virtual webrtc::RTCError SetHeaderExtensionsToNegotiate(
+      rtc::ArrayView<const RtpHeaderExtensionCapability> header_extensions) {
+    return RTCError::OK();
+  }
   virtual webrtc::RTCError SetOfferedRtpHeaderExtensions(
       rtc::ArrayView<const RtpHeaderExtensionCapability>
-          header_extensions_to_offer) = 0;
+          header_extensions_to_offer) {
+    return SetHeaderExtensionsToNegotiate(header_extensions_to_offer);
+  }
 
  protected:
   ~RtpTransceiverInterface() override = default;

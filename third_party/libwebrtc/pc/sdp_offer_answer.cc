@@ -694,7 +694,7 @@ cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForTransceiver(
   media_description_options.codec_preferences =
       transceiver->codec_preferences();
   media_description_options.header_extensions =
-      transceiver->HeaderExtensionsToOffer();
+      transceiver->GetHeaderExtensionsToNegotiate();
   
   
   

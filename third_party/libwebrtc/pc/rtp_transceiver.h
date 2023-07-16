@@ -98,7 +98,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
           receiver,
       ConnectionContext* context,
-      std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer,
+      std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToNegotiate,
       std::function<void()> on_negotiation_needed);
   ~RtpTransceiver() override;
 
@@ -274,13 +274,13 @@ class RtpTransceiver : public RtpTransceiverInterface {
   std::vector<RtpCodecCapability> codec_preferences() const override {
     return codec_preferences_;
   }
-  std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer()
+  std::vector<RtpHeaderExtensionCapability> GetHeaderExtensionsToNegotiate()
       const override;
-  std::vector<RtpHeaderExtensionCapability> HeaderExtensionsNegotiated()
+  std::vector<RtpHeaderExtensionCapability> GetNegotiatedHeaderExtensions()
       const override;
-  RTCError SetOfferedRtpHeaderExtensions(
-      rtc::ArrayView<const RtpHeaderExtensionCapability>
-          header_extensions_to_offer) override;
+  RTCError SetHeaderExtensionsToNegotiate(
+      rtc::ArrayView<const RtpHeaderExtensionCapability> header_extensions)
+      override;
 
   
   
@@ -333,7 +333,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   std::unique_ptr<cricket::ChannelInterface> channel_ = nullptr;
   ConnectionContext* const context_;
   std::vector<RtpCodecCapability> codec_preferences_;
-  std::vector<RtpHeaderExtensionCapability> header_extensions_to_offer_;
+  std::vector<RtpHeaderExtensionCapability> header_extensions_to_negotiate_;
 
   
   
@@ -364,11 +364,11 @@ PROXY_METHOD1(webrtc::RTCError,
               rtc::ArrayView<RtpCodecCapability>)
 PROXY_CONSTMETHOD0(std::vector<RtpCodecCapability>, codec_preferences)
 PROXY_CONSTMETHOD0(std::vector<RtpHeaderExtensionCapability>,
-                   HeaderExtensionsToOffer)
+                   GetHeaderExtensionsToNegotiate)
 PROXY_CONSTMETHOD0(std::vector<RtpHeaderExtensionCapability>,
-                   HeaderExtensionsNegotiated)
+                   GetNegotiatedHeaderExtensions)
 PROXY_METHOD1(webrtc::RTCError,
-              SetOfferedRtpHeaderExtensions,
+              SetHeaderExtensionsToNegotiate,
               rtc::ArrayView<const RtpHeaderExtensionCapability>)
 END_PROXY_MAP(RtpTransceiver)
 
