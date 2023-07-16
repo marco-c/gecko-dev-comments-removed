@@ -21,15 +21,15 @@ promise_test(async t => {
   await useWebSocket(rc1);
 
   
-  let [rc1_redirected, saveUrl] =
-      await rcHelper.createContextWithUrl( {
+  let rc1_redirected =
+      await rcHelper.createContext( {
         origin: 'HTTP_ORIGIN',
         scripts: [],
         headers: [],
       });
 
   const redirectUrl =
-      `${ORIGIN}/common/redirect.py?location=${encodeURIComponent(saveUrl)}`;
+      `${ORIGIN}/common/redirect.py?location=${encodeURIComponent(rc1_redirected.url)}`;
   
   await rc1.executeScript((url) => {
     window.history.replaceState(null, '', url);

@@ -189,6 +189,10 @@
 
 
 
+
+
+
+
     async createContext({
       executorCreator,
       extraConfig,
@@ -216,7 +220,10 @@
         url.searchParams.append('startOn', config.startOn);
       }
 
-      await executorCreator(url.href);
+      if (executorCreator) {
+        await executorCreator(url.href);
+      }
+
       return new RemoteContextWrapper(new RemoteContext(uuid), this, url.href);
     }
 
@@ -236,15 +243,6 @@
         executorCreator: windowExecutorCreator(options),
         extraConfig,
       });
-    }
-
-    async createContextWithUrl(extraConfig) {
-      let saveUrl;
-      let wrapper = await this.createContext({
-        executorCreator: (url) => {saveUrl = url},
-        extraConfig,
-      });
-      return [wrapper, saveUrl];
     }
   }
   
@@ -314,9 +312,10 @@
 
 
 
-    constructor(context, helper) {
+    constructor(context, helper, url) {
       this.context = context;
       this.helper = helper;
+      this.url = url;
     }
 
     
