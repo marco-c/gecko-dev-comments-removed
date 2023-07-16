@@ -154,40 +154,6 @@ extern JS_PUBLIC_API JSObject* NewExternalArrayBuffer(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* NewExternalArrayBuffer(
-    JSContext* cx, size_t nbytes, void* contents,
-    BufferContentsFreeFunc freeFunc, void* freeUserData = nullptr);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 extern JS_PUBLIC_API JSObject* NewArrayBufferWithUserOwnedContents(
     JSContext* cx, size_t nbytes, void* contents);
 
