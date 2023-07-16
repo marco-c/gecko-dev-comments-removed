@@ -411,9 +411,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   void AsyncOnExamineCachedResponse();
 
   
-  void ClearBogusContentEncodingIfNeeded();
-
-  
   [[nodiscard]] nsresult ProcessPartialContent(
       const std::function<nsresult(nsHttpChannel*, nsresult)>&
           aContinueProcessResponseFunc);

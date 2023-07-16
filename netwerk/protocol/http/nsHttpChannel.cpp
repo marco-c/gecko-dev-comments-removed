@@ -2675,8 +2675,6 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   
   StoreCachedContentIsPartial(false);
 
-  ClearBogusContentEncodingIfNeeded();
-
   UpdateInhibitPersistentCachingFlag();
 
   MaybeCreateCacheEntryWhenRCWN();
@@ -3256,9 +3254,6 @@ nsresult nsHttpChannel::ProcessPartialContent(
 
   NS_ENSURE_TRUE(mCachedResponseHead, NS_ERROR_NOT_INITIALIZED);
   NS_ENSURE_TRUE(mCacheEntry, NS_ERROR_NOT_INITIALIZED);
-
-  
-  ClearBogusContentEncodingIfNeeded();
 
   
   
@@ -5085,34 +5080,6 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
 
   mListener = tee;
   return NS_OK;
-}
-
-void nsHttpChannel::ClearBogusContentEncodingIfNeeded() {
-  if (!StaticPrefs::network_http_clear_bogus_content_encoding()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  nsAutoCString contentType;
-  mResponseHead->ContentType(contentType);
-  if (mResponseHead->HasHeaderValue(nsHttp::Content_Encoding, "gzip") &&
-      (contentType.EqualsLiteral(APPLICATION_GZIP) ||
-       contentType.EqualsLiteral(APPLICATION_GZIP2) ||
-       contentType.EqualsLiteral(APPLICATION_GZIP3))) {
-    
-    mResponseHead->ClearHeader(nsHttp::Content_Encoding);
-  } else if (mResponseHead->HasHeaderValue(nsHttp::Content_Encoding,
-                                           "compress") &&
-             (contentType.EqualsLiteral(APPLICATION_COMPRESS) ||
-              contentType.EqualsLiteral(APPLICATION_COMPRESS2))) {
-    
-    mResponseHead->ClearHeader(nsHttp::Content_Encoding);
-  }
 }
 
 
