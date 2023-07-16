@@ -11,7 +11,6 @@
 
 #include "jstypes.h"  
 
-#include "js/CompileOptions.h"  
 #include "js/WasmFeatures.h"
 
 struct JS_PUBLIC_API JSContext;
@@ -22,7 +21,8 @@ class JS_PUBLIC_API ContextOptions {
  public:
   
   ContextOptions()
-      : wasm_(true),
+      : asmJS_(true),
+        wasm_(true),
         wasmForTrustedPrinciples_(true),
         wasmVerbose_(false),
         wasmBaseline_(true),
@@ -33,30 +33,31 @@ class JS_PUBLIC_API ContextOptions {
 #undef WASM_DEFAULT_FEATURE
 #undef WASM_EXPERIMENTAL_FEATURE
         testWasmAwaitTier2_(false),
+        throwOnAsmJSValidationFailure_(false),
         disableIon_(false),
         disableEvalSecurityChecks_(false),
         asyncStack_(true),
         asyncStackCaptureDebuggeeOnly_(false),
+        sourcePragmas_(true),
         throwOnDebuggeeWouldRun_(true),
         dumpStackOnDebuggeeWouldRun_(false),
+        strictMode_(false),
 #ifdef JS_ENABLE_SMOOSH
         trackNotImplemented_(false),
         trySmoosh_(false),
 #endif
-        fuzzing_(false) {
+        fuzzing_(false),
+        importAssertions_(false) {
   }
   
 
-  bool asmJS() const {
-    return compileOptions_.asmJSOption() == AsmJSOption::Enabled;
-  }
-  AsmJSOption asmJSOption() const { return compileOptions_.asmJSOption(); }
+  bool asmJS() const { return asmJS_; }
   ContextOptions& setAsmJS(bool flag) {
-    compileOptions_.setAsmJS(flag);
+    asmJS_ = flag;
     return *this;
   }
-  ContextOptions& setAsmJSOption(AsmJSOption option) {
-    compileOptions_.setAsmJSOption(option);
+  ContextOptions& toggleAsmJS() {
+    asmJS_ = !asmJS_;
     return *this;
   }
 
@@ -110,14 +111,14 @@ class JS_PUBLIC_API ContextOptions {
 #undef WASM_FEATURE
 
   bool throwOnAsmJSValidationFailure() const {
-    return compileOptions_.throwOnAsmJSValidationFailure();
+    return throwOnAsmJSValidationFailure_;
   }
   ContextOptions& setThrowOnAsmJSValidationFailure(bool flag) {
-    compileOptions_.setThrowOnAsmJSValidationFailure(flag);
+    throwOnAsmJSValidationFailure_ = flag;
     return *this;
   }
   ContextOptions& toggleThrowOnAsmJSValidationFailure() {
-    compileOptions_.toggleThrowOnAsmJSValidationFailure();
+    throwOnAsmJSValidationFailure_ = !throwOnAsmJSValidationFailure_;
     return *this;
   }
 
@@ -130,9 +131,9 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  bool importAssertions() const { return compileOptions_.importAssertions(); }
+  bool importAssertions() const { return importAssertions_; }
   ContextOptions& setImportAssertions(bool enabled) {
-    compileOptions_.setImportAssertions(enabled);
+    importAssertions_ = enabled;
     return *this;
   }
 
@@ -159,9 +160,9 @@ class JS_PUBLIC_API ContextOptions {
   }
 
   
-  bool sourcePragmas() const { return compileOptions_.sourcePragmas(); }
+  bool sourcePragmas() const { return sourcePragmas_; }
   ContextOptions& setSourcePragmas(bool flag) {
-    compileOptions_.setSourcePragmas(flag);
+    sourcePragmas_ = flag;
     return *this;
   }
 
@@ -176,6 +177,16 @@ class JS_PUBLIC_API ContextOptions {
   }
   ContextOptions& setDumpStackOnDebuggeeWouldRun(bool flag) {
     dumpStackOnDebuggeeWouldRun_ = flag;
+    return *this;
+  }
+
+  bool strictMode() const { return strictMode_; }
+  ContextOptions& setStrictMode(bool flag) {
+    strictMode_ = flag;
+    return *this;
+  }
+  ContextOptions& toggleStrictMode() {
+    strictMode_ = !strictMode_;
     return *this;
   }
 
@@ -202,17 +213,12 @@ class JS_PUBLIC_API ContextOptions {
   ContextOptions& setFuzzing(bool flag);
 
   void disableOptionsForSafeMode() {
-    setAsmJSOption(AsmJSOption::DisabledByAsmJSPref);
+    setAsmJS(false);
     setWasmBaseline(false);
   }
 
-  PrefableCompileOptions& compileOptions() { return compileOptions_; }
-  const PrefableCompileOptions& compileOptions() const {
-    return compileOptions_;
-  }
-
  private:
-  
+  bool asmJS_ : 1;
   bool wasm_ : 1;
   bool wasmForTrustedPrinciples_ : 1;
   bool wasmVerbose_ : 1;
@@ -222,24 +228,21 @@ class JS_PUBLIC_API ContextOptions {
   JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE, WASM_FEATURE)
 #undef WASM_FEATURE
   bool testWasmAwaitTier2_ : 1;
-
-  
+  bool throwOnAsmJSValidationFailure_ : 1;
   bool disableIon_ : 1;
   bool disableEvalSecurityChecks_ : 1;
-
-  
   bool asyncStack_ : 1;
   bool asyncStackCaptureDebuggeeOnly_ : 1;
+  bool sourcePragmas_ : 1;
   bool throwOnDebuggeeWouldRun_ : 1;
   bool dumpStackOnDebuggeeWouldRun_ : 1;
+  bool strictMode_ : 1;
 #ifdef JS_ENABLE_SMOOSH
   bool trackNotImplemented_ : 1;
   bool trySmoosh_ : 1;
 #endif
   bool fuzzing_ : 1;
-
-  
-  PrefableCompileOptions compileOptions_;
+  bool importAssertions_ : 1;
 };
 
 JS_PUBLIC_API ContextOptions& ContextOptionsRef(JSContext* cx);
