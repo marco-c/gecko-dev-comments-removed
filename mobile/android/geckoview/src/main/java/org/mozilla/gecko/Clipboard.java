@@ -8,15 +8,21 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 public final class Clipboard {
   private static final String HTML_MIME = "text/html";
   private static final String PLAINTEXT_MIME = "text/plain";
   private static final String LOGTAG = "GeckoClipboard";
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   private Clipboard() {}
 
@@ -27,7 +33,7 @@ public final class Clipboard {
 
 
   public static String getText(final Context context) {
-    return getData(context, PLAINTEXT_MIME);
+    return getTextData(context, PLAINTEXT_MIME);
   }
 
   
@@ -39,7 +45,7 @@ public final class Clipboard {
 
 
   @WrapForJNI(calledFrom = "gecko")
-  public static String getData(final Context context, final String mimeType) {
+  private static String getTextData(final Context context, final String mimeType) {
     final ClipboardManager cm =
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
     if (cm.hasPrimaryClip()) {
@@ -74,6 +80,52 @@ public final class Clipboard {
 
 
 
+  @WrapForJNI(calledFrom = "gecko", exceptionMode = "nsresult")
+  private static byte[] getRawData(final String mimeType) {
+    final Context context = GeckoAppShell.getApplicationContext();
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    if (cm.hasPrimaryClip()) {
+      final ClipData clip = cm.getPrimaryClip();
+      if (clip == null || clip.getItemCount() == 0) {
+        return null;
+      }
+
+      final ClipDescription description = clip.getDescription();
+      if (description.hasMimeType(mimeType)) {
+        return getRawDataFromClipData(context, clip);
+      }
+    }
+    return null;
+  }
+
+  private static byte[] getRawDataFromClipData(final Context context, final ClipData clipData) {
+    try (final AssetFileDescriptor descriptor =
+            context
+                .getContentResolver()
+                .openAssetFileDescriptor(clipData.getItemAt(0).getUri(), "r");
+        final InputStream inputStream = new FileInputStream(descriptor.getFileDescriptor());
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+      final byte[] data = new byte[DEFAULT_BUFFER_SIZE];
+      int readed;
+      while ((readed = inputStream.read(data)) != -1) {
+        outputStream.write(data, 0, readed);
+      }
+      return outputStream.toByteArray();
+    } catch (final IOException e) {
+      Log.e(LOGTAG, "Couldn't get clip data from clipboard due to I/O error", e);
+    } catch (final OutOfMemoryError e) {
+      Log.e(LOGTAG, "Couldn't get clip data from clipboard due to OOM", e);
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
 
   @WrapForJNI(calledFrom = "gecko")
   public static boolean setText(final Context context, final CharSequence text) {
@@ -89,7 +141,7 @@ public final class Clipboard {
 
 
   @WrapForJNI(calledFrom = "gecko")
-  public static boolean setHTML(
+  private static boolean setHTML(
       final Context context, final CharSequence text, final String htmlText) {
     return setData(context, ClipData.newHtmlText("html", text, htmlText));
   }
@@ -128,12 +180,11 @@ public final class Clipboard {
 
 
   @WrapForJNI(calledFrom = "gecko")
-  public static boolean hasData(final Context context, final String mimeType) {
+  private static boolean hasData(final Context context, final String mimeType) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
       if (HTML_MIME.equals(mimeType) || PLAINTEXT_MIME.equals(mimeType)) {
-        return !TextUtils.isEmpty(getData(context, mimeType));
+        return !TextUtils.isEmpty(getTextData(context, mimeType));
       }
-      return false;
     }
 
     
@@ -161,12 +212,16 @@ public final class Clipboard {
           || description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN);
     }
 
-    return false;
+    return description.hasMimeType(mimeType);
   }
 
   
+
+
+
+
   @WrapForJNI(calledFrom = "gecko")
-  public static void clearText(final Context context) {
+  private static void clear(final Context context) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
       setText(context, null);
       return;
