@@ -194,7 +194,19 @@ function getMemoryMB() {
 
 async function getResult(url) {
   url = await UpdateUtils.formatUpdateURL(url);
-  return url.substr(URL_PREFIX.length).split("/")[0];
+  const component = url.substr(URL_PREFIX.length).split("/")[0];
+  
+  
+  
+  
+  
+  
+  const escapedCharRegex = new RegExp("^[A-Za-z0-9_.!~*'()%-]*$");
+  Assert.ok(
+    escapedCharRegex.test(component),
+    `URL component (${component}) should not have unescaped characters`
+  );
+  return decodeURIComponent(component);
 }
 
 
