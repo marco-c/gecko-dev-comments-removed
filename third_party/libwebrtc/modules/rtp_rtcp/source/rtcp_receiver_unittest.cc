@@ -191,9 +191,8 @@ TEST(RtcpReceiverTest, InvalidFeedbackPacketIsIgnored) {
   
   const uint8_t bad_packet[] = {0x81, rtcp::Rtpfb::kPacketType, 0, 0};
 
-  
-  
-  
+  EXPECT_CALL(mocks.packet_type_counter_observer, RtcpPacketTypesCounterUpdated)
+      .Times(0);
   receiver.IncomingPacket(bad_packet);
 }
 
