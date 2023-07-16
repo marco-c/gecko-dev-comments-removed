@@ -29,7 +29,6 @@
 #include "rtc_base/containers/flat_set.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ssl_stream_adapter.h"  
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
@@ -122,8 +121,7 @@ class SctpSidAllocator {
 
 
 
-class SctpDataChannel : public DataChannelInterface,
-                        public sigslot::has_slots<> {
+class SctpDataChannel : public DataChannelInterface {
  public:
   static rtc::scoped_refptr<SctpDataChannel> Create(
       rtc::WeakPtr<SctpDataChannelControllerInterface> controller,
@@ -188,9 +186,10 @@ class SctpDataChannel : public DataChannelInterface,
   
   
   void SetSctpSid(const StreamId& sid);
+
   
   
-  void OnClosingProcedureStartedRemotely(int sid);
+  void OnClosingProcedureStartedRemotely();
   
   
   

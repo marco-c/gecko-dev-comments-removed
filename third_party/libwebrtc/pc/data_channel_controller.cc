@@ -41,32 +41,16 @@ bool DataChannelController::SendData(int sid,
 bool DataChannelController::ConnectDataChannel(
     SctpDataChannel* webrtc_data_channel) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!data_channel_transport()) {
-    
-    
-    
-    return false;
-  }
-  SignalDataChannelTransportWritable_s.connect(
-      webrtc_data_channel, &SctpDataChannel::OnTransportReady);
-  SignalDataChannelTransportReceivedData_s.connect(
-      webrtc_data_channel, &SctpDataChannel::OnDataReceived);
-  SignalDataChannelTransportChannelClosing_s.connect(
-      webrtc_data_channel, &SctpDataChannel::OnClosingProcedureStartedRemotely);
-  return true;
+  
+  
+  return data_channel_transport() ? true : false;
 }
 
 void DataChannelController::DisconnectDataChannel(
     SctpDataChannel* webrtc_data_channel) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!data_channel_transport()) {
-    RTC_LOG(LS_ERROR)
-        << "DisconnectDataChannel called when sctp_transport_ is NULL.";
-    return;
-  }
-  SignalDataChannelTransportWritable_s.disconnect(webrtc_data_channel);
-  SignalDataChannelTransportReceivedData_s.disconnect(webrtc_data_channel);
-  SignalDataChannelTransportChannelClosing_s.disconnect(webrtc_data_channel);
+  
+  
 }
 
 void DataChannelController::AddSctpDataStream(int sid) {
@@ -121,9 +105,10 @@ void DataChannelController::OnDataReceived(
         RTC_DCHECK_RUN_ON(signaling_thread());
         
         
-        
-        
-        SignalDataChannelTransportReceivedData_s(params, buffer);
+        for (const auto& channel : sctp_data_channels_) {
+          if (channel->id() == params.sid)
+            channel->OnDataReceived(params, buffer);
+        }
       }));
 }
 
@@ -132,7 +117,11 @@ void DataChannelController::OnChannelClosing(int channel_id) {
   signaling_thread()->PostTask(
       SafeTask(signaling_safety_.flag(), [this, channel_id] {
         RTC_DCHECK_RUN_ON(signaling_thread());
-        SignalDataChannelTransportChannelClosing_s(channel_id);
+        
+        for (const auto& channel : sctp_data_channels_) {
+          if (channel->id() == channel_id)
+            channel->OnClosingProcedureStartedRemotely();
+        }
       }));
 }
 
@@ -151,8 +140,6 @@ void DataChannelController::OnChannelClosed(int channel_id) {
           
           
           sctp_data_channels_.erase(it);
-
-          DisconnectDataChannel(channel.get());
           sid_allocator_.ReleaseSid(channel->sid());
 
           channel->OnClosingProcedureComplete();
@@ -165,7 +152,8 @@ void DataChannelController::OnReadyToSend() {
   signaling_thread()->PostTask(SafeTask(signaling_safety_.flag(), [this] {
     RTC_DCHECK_RUN_ON(signaling_thread());
     data_channel_transport_ready_to_send_ = true;
-    SignalDataChannelTransportWritable_s(data_channel_transport_ready_to_send_);
+    for (const auto& channel : sctp_data_channels_)
+      channel->OnTransportReady(true);
   }));
 }
 
