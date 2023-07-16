@@ -1,37 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* This is a JavaScript module (JSM) to be imported via
+ * ChromeUtils.import() and acts as a singleton. Only the following
+ * listed symbols will exposed on import, and only when and where imported.
+ */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = [
-  "ACTIONS",
-  "Addons",
-  "Addresses",
-  "Bookmarks",
-  "CreditCards",
-  "ExtensionStorage",
-  "Formdata",
-  "History",
-  "Passwords",
-  "Prefs",
-  "Tabs",
-  "TPS",
-  "Windows",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { PromiseUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromiseUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { PromiseUtils } from "resource://gre/modules/PromiseUtils.sys.mjs";
 
 const lazy = {};
 
@@ -85,12 +64,12 @@ XPCOMUtils.defineLazyGetter(lazy, "gTextDecoder", () => {
   return new TextDecoder();
 });
 
-
+// Options for wiping data during a sync
 const SYNC_RESET_CLIENT = "resetClient";
 const SYNC_WIPE_CLIENT = "wipeClient";
 const SYNC_WIPE_REMOTE = "wipeRemote";
 
-
+// Actions a test can perform
 const ACTION_ADD = "add";
 const ACTION_DELETE = "delete";
 const ACTION_MODIFY = "modify";
@@ -101,19 +80,6 @@ const ACTION_SYNC_WIPE_CLIENT = SYNC_WIPE_CLIENT;
 const ACTION_SYNC_WIPE_REMOTE = SYNC_WIPE_REMOTE;
 const ACTION_VERIFY = "verify";
 const ACTION_VERIFY_NOT = "verify-not";
-
-const ACTIONS = [
-  ACTION_ADD,
-  ACTION_DELETE,
-  ACTION_MODIFY,
-  ACTION_SET_ENABLED,
-  ACTION_SYNC,
-  ACTION_SYNC_RESET_CLIENT,
-  ACTION_SYNC_WIPE_CLIENT,
-  ACTION_SYNC_WIPE_REMOTE,
-  ACTION_VERIFY,
-  ACTION_VERIFY_NOT,
-];
 
 const OBSERVER_TOPICS = [
   "fxaccounts:onlogin",
@@ -131,7 +97,7 @@ const OBSERVER_TOPICS = [
   "places-browser-init-complete",
 ];
 
-var TPS = {
+export var TPS = {
   _currentAction: -1,
   _currentPhase: -1,
   _enabledEngines: null,
@@ -156,6 +122,18 @@ var TPS = {
   shouldValidatePasswords: false,
   shouldValidateForms: false,
   _placesInitDeferred: PromiseUtils.defer(),
+  ACTIONS: [
+    ACTION_ADD,
+    ACTION_DELETE,
+    ACTION_MODIFY,
+    ACTION_SET_ENABLED,
+    ACTION_SYNC,
+    ACTION_SYNC_RESET_CLIENT,
+    ACTION_SYNC_WIPE_CLIENT,
+    ACTION_SYNC_WIPE_REMOTE,
+    ACTION_VERIFY,
+    ACTION_VERIFY_NOT,
+  ],
 
   _init: function TPS__init() {
     this.delayAutoSync();
@@ -164,10 +142,10 @@ var TPS = {
       Services.obs.addObserver(this, aTopic, true);
     }, this);
 
-    
-    
-    
-    
+    // Some engines bump their score during their sync, which then causes
+    // another sync immediately (notably, prefs and addons). We don't want
+    // this to happen, and there's no obvious preference to kill it - so
+    // we do this nasty hack to ensure the global score is always zero.
     Services.prefs.addObserver("services.sync.globalScore", () => {
       if (lazy.Weave.Service.scheduler.globalScore != 0) {
         lazy.Weave.Service.scheduler.globalScore = 0;
@@ -179,9 +157,9 @@ var TPS = {
     this._errors++;
     let errInfo;
     if (exc) {
-      errInfo = lazy.Log.exceptionStr(exc); 
+      errInfo = lazy.Log.exceptionStr(exc); // includes details and stack-trace.
     } else {
-      
+      // always write a stack even if no error passed.
       errInfo = lazy.Log.stackTrace(new Error());
     }
     lazy.Logger.logError(`[phase ${this._currentPhase}] ${msg} - ${errInfo}`);
@@ -229,7 +207,7 @@ var TPS = {
 
           this.delayAutoSync();
 
-          
+          // If this is the first sync error, retry...
           if (this._syncErrors === 0) {
             lazy.Logger.logInfo("Sync error; retrying...");
             this._syncErrors++;
@@ -255,7 +233,7 @@ var TPS = {
           break;
 
         case "weave:service:sync:start":
-          
+          // Ensure that the sync operation has been started by TPS
           if (!this._triggeredSync) {
             this.DumpError(
               "Automatic sync got triggered, which is not allowed."
@@ -274,8 +252,8 @@ var TPS = {
           break;
 
         case "fxaccounts:onlogin":
-          
-          
+          // A user signed in - for TPS that always means sync - so configure
+          // that.
           lazy.Weave.Service.configure().catch(e => {
             this.DumpError("Configuring sync failed.", e);
           });
@@ -289,11 +267,11 @@ var TPS = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Given that we cannot completely disable the automatic sync operations, we
+   * massively delay the next sync. Sync operations have to only happen when
+   * directly called via TPS.Sync()!
+   */
   delayAutoSync: function TPS_delayAutoSync() {
     lazy.Weave.Svc.PrefBranch.setIntPref("scheduler.immediateInterval", 7200);
     lazy.Weave.Svc.PrefBranch.setIntPref("scheduler.idleInterval", 7200);
@@ -572,7 +550,7 @@ var TPS = {
   },
 
   async HandleBookmarks(bookmarks, action) {
-    
+    // wait for default bookmarks to be created.
     await this._placesInitDeferred.promise;
     this.shouldValidateBookmarks = true;
     try {
@@ -760,7 +738,7 @@ var TPS = {
     }
     try {
       if (await lazy.Authentication.isLoggedIn()) {
-        
+        // signout and wait for Sync to completely reset itself.
         lazy.Logger.logInfo("signing out");
         let waiter = this.promiseObserver("weave:service:start-over:finish");
         await lazy.Authentication.signOut();
@@ -773,9 +751,9 @@ var TPS = {
     }
   },
 
-  
-
-
+  /**
+   * Use Sync's bookmark validation code to see if we've corrupted the tree.
+   */
   async ValidateBookmarks() {
     let getServerBookmarkState = async () => {
       let bookmarkEngine = lazy.Weave.Service.engineManager.get("bookmarks");
@@ -802,7 +780,7 @@ var TPS = {
         includeItemIds: true,
       });
       let serverRecords = await getServerBookmarkState();
-      
+      // We can't wait until catch to stringify this, since at that point it will have cycles.
       serverRecordDumpStr = JSON.stringify(serverRecords);
 
       let validator = new lazy.BookmarkValidator();
@@ -812,8 +790,8 @@ var TPS = {
       );
 
       for (let { name, count } of problemData.getSummary()) {
-        
-        
+        // Exclude mobile showing up on the server hackily so that we don't
+        // report it every time, see bug 1273234 and 1274394 for more information.
         if (
           name === "serverUnexpected" &&
           problemData.serverUnexpected.includes("mobile")
@@ -821,8 +799,8 @@ var TPS = {
           --count;
         }
         if (count) {
-          
-          
+          // Log this out before we assert. This is useful in the context of TPS logs, since we
+          // can see the IDs in the test files.
           lazy.Logger.logInfo(
             `Validation problem: "${name}": ${JSON.stringify(
               problemData[name]
@@ -836,9 +814,9 @@ var TPS = {
         );
       }
     } catch (e) {
-      
+      // Dump the client records (should always be doable)
       lazy.DumpBookmarks();
-      
+      // Dump the server records if gotten them already.
       if (serverRecordDumpStr) {
         lazy.Logger.logInfo(
           "Server bookmark records:\n" + serverRecordDumpStr + "\n"
@@ -859,23 +837,23 @@ var TPS = {
       let serverRecords = await validator.getServerItems(engine);
       let clientRecords = await validator.getClientItems();
       try {
-        
-        
+        // This substantially improves the logs for addons while not making a
+        // substantial difference for the other two
         clientRecordDumpStr = JSON.stringify(
           clientRecords.map(r => {
             let res = validator.normalizeClientItem(r);
-            delete res.original; 
+            delete res.original; // Try and prevent cyclic references
             return res;
           })
         );
       } catch (e) {
-        
+        // ignore the error, the dump string is just here to make debugging easier.
         clientRecordDumpStr = "<Cyclic value>";
       }
       try {
         serverRecordDumpStr = JSON.stringify(serverRecords);
       } catch (e) {
-        
+        // as above
         serverRecordDumpStr = "<Cyclic value>";
       }
       let { problemData } = await validator.compareClientWithServer(
@@ -897,13 +875,13 @@ var TPS = {
         );
       }
     } catch (e) {
-      
+      // Dump the client records if possible
       if (clientRecordDumpStr) {
         lazy.Logger.logInfo(
           `Client state for ${engineName}:\n${clientRecordDumpStr}\n`
         );
       }
-      
+      // Dump the server records if gotten them already.
       if (serverRecordDumpStr) {
         lazy.Logger.logInfo(
           `Server state for ${engineName}:\n${serverRecordDumpStr}\n`
@@ -930,7 +908,7 @@ var TPS = {
     lazy.Logger.logInfo("Running next test action");
     try {
       if (this._currentAction >= this._phaselist[this._currentPhase].length) {
-        
+        // Run necessary validations and then finish up
         lazy.Logger.logInfo("No more actions - running validations...");
         if (this.shouldValidateBookmarks) {
           await this.ValidateBookmarks();
@@ -944,11 +922,11 @@ var TPS = {
         if (this.shouldValidateAddons) {
           await this.ValidateAddons();
         }
-        
-        
-        
+        // Force this early so that we run the validation and detect missing pings
+        // *before* we start shutting down, since if we do it after, the python
+        // code won't notice the failure.
         lazy.SyncTelemetry.shutdown();
-        
+        // we're all done
         lazy.Logger.logInfo(
           "test phase " +
             this._currentPhase +
@@ -963,9 +941,9 @@ var TPS = {
         "tps.seconds_since_epoch"
       );
       if (this.seconds_since_epoch) {
-        
-        
-        
+        // Places dislikes it if we add visits in the future. We pretend the
+        // real time is 1 minute ago to avoid issues caused by places using a
+        // different clock than the one that set the seconds_since_epoch pref.
         this._msSinceEpoch = (this.seconds_since_epoch - 60) * 1000;
       } else {
         this.DumpError("seconds-since-epoch not set");
@@ -997,7 +975,7 @@ var TPS = {
 
   _getFileRelativeToSourceRoot(testFileURL, relativePath) {
     let file = lazy.fileProtocolHandler.getFileFromURLSpec(testFileURL);
-    let root = file.parent.parent.parent.parent.parent; 
+    let root = file.parent.parent.parent.parent.parent; // <root>/services/sync/tests/tps/test_foo.js // <root>/services/sync/tests/tps // <root>/services/sync/tests // <root>/services/sync // <root>/services // <root>
     root.appendRelativePath(relativePath);
     root.normalize();
     return root;
@@ -1005,8 +983,8 @@ var TPS = {
 
   _pingValidator: null,
 
-  
-  
+  // Default ping validator that always says the ping passes. This should be
+  // overridden unless the `testing.tps.skipPingValidation` pref is true.
   get pingValidator() {
     return this._pingValidator
       ? this._pingValidator
@@ -1020,9 +998,9 @@ var TPS = {
         };
   },
 
-  
-  
-  
+  // Attempt to load the sync_ping_schema.json and initialize `this.pingValidator`
+  // based on the source of the tps file. Assumes that it's at "../unit/sync_ping_schema.json"
+  // relative to the directory the tps test file (testFile) is contained in.
   _tryLoadPingSchema(testFile) {
     if (Services.prefs.getBoolPref("testing.tps.skipPingValidation", false)) {
       return;
@@ -1057,31 +1035,31 @@ var TPS = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Runs a single test phase.
+   *
+   * This is the main entry point for each phase of a test. The TPS command
+   * line driver loads this module and calls into the function with the
+   * arguments from the command line.
+   *
+   * When a phase is executed, the file is loaded as JavaScript into the
+   * current object.
+   *
+   * The following keys in the options argument have meaning:
+   *
+   *   - ignoreUnusedEngines  If true, unused engines will be unloaded from
+   *                          Sync. This makes output easier to parse and is
+   *                          useful for debugging test failures.
+   *
+   * @param  file
+   *         String URI of the file to open.
+   * @param  phase
+   *         String name of the phase to run.
+   * @param  logpath
+   *         String path of the log file to write to.
+   * @param  options
+   *         Object defining addition run-time options.
+   */
   async RunTestPhase(file, phase, logpath, options) {
     try {
       let settings = options || {};
@@ -1096,25 +1074,25 @@ var TPS = {
       );
       lazy.Logger.logInfo("Firefox platform: " + AppConstants.platform);
 
-      
+      // do some sync housekeeping
       if (lazy.Weave.Service.isLoggedIn) {
         this.DumpError("Sync logged in on startup...profile may be dirty");
         return;
       }
 
-      
+      // Wait for Sync service to become ready.
       if (!lazy.Weave.Status.ready) {
         this.waitForEvent("weave:service:ready");
       }
 
       await lazy.Weave.Service.promiseInitialized;
 
-      
+      // We only want to do this if we modified the bookmarks this phase.
       this.shouldValidateBookmarks = false;
 
-      
-      
-      
+      // Always give Sync an extra tick to initialize. If we waited for the
+      // service:ready event, this is required to ensure all handlers have
+      // executed.
       await lazy.Async.promiseYield();
       await this._executeTestPhase(file, phase, settings);
     } catch (e) {
@@ -1122,24 +1100,24 @@ var TPS = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Executes a single test phase.
+   *
+   * This is called by RunTestPhase() after the environment is validated.
+   */
   async _executeTestPhase(file, phase, settings) {
     try {
       this.config = JSON.parse(Services.prefs.getCharPref("tps.config"));
-      
+      // parse the test file
       Services.scriptloader.loadSubScript(file, this);
       this._currentPhase = phase;
-      
+      // cleanup phases are in the format `cleanup-${profileName}`.
       if (this._currentPhase.startsWith("cleanup-")) {
         let profileToClean = this._currentPhase.slice("cleanup-".length);
         this.phases[this._currentPhase] = profileToClean;
         this.Phase(this._currentPhase, [[this.Cleanup]]);
       } else {
-        
+        // Don't bother doing this for cleanup phases.
         this._tryLoadPingSchema(file);
       }
       let this_phase = this._phaselist[this._currentPhase];
@@ -1154,8 +1132,8 @@ var TPS = {
         return;
       }
 
-      
-      
+      // If we have restricted the active engines, unregister engines we don't
+      // care about.
       if (settings.ignoreUnusedEngines && Array.isArray(this._enabledEngines)) {
         let names = {};
         for (let name of this._enabledEngines) {
@@ -1180,7 +1158,7 @@ var TPS = {
 
       this._interceptSyncTelemetry();
 
-      
+      // start processing the test actions
       this._currentAction = 0;
       await lazy.SessionStore.promiseAllWindowsRestored;
       await this.RunNextTestAction();
@@ -1189,10 +1167,10 @@ var TPS = {
     }
   },
 
-  
-
-
-
+  /**
+   * Override sync telemetry functions so that we can detect errors generating
+   * the sync ping, and count how many pings we report.
+   */
   _interceptSyncTelemetry() {
     let originalObserve = lazy.SyncTelemetry.observe;
     let self = this;
@@ -1216,10 +1194,10 @@ var TPS = {
           );
         }
       }
-      
+      // If this is the shutdown ping, check and see that the telemetry saw all the syncs.
       if (record.why === "shutdown") {
-        
-        
+        // If we happen to sync outside of tps manually causing it, its not an
+        // error in the telemetry, so we only complain if we didn't see all of them.
         if (this._syncsReportedViaTelemetry < this._syncCount) {
           this.DumpError(
             `Telemetry missed syncs: Saw ${this._syncsReportedViaTelemetry}, should have >= ${this._syncCount}.`
@@ -1227,18 +1205,18 @@ var TPS = {
         }
       }
       if (!record.syncs.length) {
-        
-        
-        
+        // Note: we're overwriting submit, so this is called even for pings that
+        // may have no data (which wouldn't be submitted to telemetry and would
+        // fail validation).
         return;
       }
-      
-      
-      
+      // Our ping may have some undefined values, which we rely on JSON stripping
+      // out as part of the ping submission - but our validator fails with them,
+      // so round-trip via JSON here to avoid that.
       record = JSON.parse(JSON.stringify(record));
       const result = this.pingValidator.validate(record);
       if (!result.valid) {
-        
+        // Note that we already logged the record.
         this.DumpError(
           "Sync ping validation failed with errors: " +
             JSON.stringify(result.errors)
@@ -1247,37 +1225,37 @@ var TPS = {
     };
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Register a single phase with the test harness.
+   *
+   * This is called when loading individual test files.
+   *
+   * @param  phasename
+   *         String name of the phase being loaded.
+   * @param  fnlist
+   *         Array of functions/actions to perform.
+   */
   Phase: function Test__Phase(phasename, fnlist) {
     if (Object.keys(this._phaselist).length === 0) {
-      
+      // This is the first phase we should force a log in
       fnlist.unshift([this.Login]);
     }
     this._phaselist[phasename] = fnlist;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Restrict enabled Sync engines to a specified set.
+   *
+   * This can be called by a test to limit what engines are enabled. It is
+   * recommended to call it to reduce the overhead and log clutter for the
+   * test.
+   *
+   * The "clients" engine is special and is always enabled, so there is no
+   * need to specify it.
+   *
+   * @param  names
+   *         Array of Strings for engines to make active during the test.
+   */
   EnableEngines: function EnableEngines(names) {
     if (!Array.isArray(names)) {
       throw new Error(
@@ -1288,26 +1266,26 @@ var TPS = {
     this._enabledEngines = names;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a promise that resolves when a specific observer notification is
+   * resolved. This is similar to the various waitFor* functions, although is
+   * typically safer if you need to do some other work that may make the event
+   * fire.
+   *
+   * eg:
+   *    doSomething(); // causes the event to be fired.
+   *    await promiseObserver("something");
+   * is risky as the call to doSomething may trigger the event before the
+   * promiseObserver call is made. Contrast with:
+   *
+   *   let waiter = promiseObserver("something");
+   *   doSomething(); // causes the event to be fired.
+   *   await waiter;  // will return as soon as the event fires, even if it fires
+   *                  // before this function is called.
+   *
+   * @param aEventName
+   *        String event to wait for.
+   */
   promiseObserver(aEventName) {
     return new Promise(resolve => {
       lazy.Logger.logInfo("Setting up wait for " + aEventName + "...");
@@ -1320,50 +1298,50 @@ var TPS = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Wait for the named event to be observed.
+   *
+   * Note that in general, you should probably use promiseObserver unless you
+   * are 100% sure that the event being waited on can only be sent after this
+   * call adds the listener.
+   *
+   * @param aEventName
+   *        String event to wait for.
+   */
   async waitForEvent(aEventName) {
     await this.promiseObserver(aEventName);
   },
 
-  
-
-
+  /**
+   * Waits for Sync to logged in before returning
+   */
   async waitForSetupComplete() {
     if (!this._setupComplete) {
       await this.waitForEvent("weave:service:setup-complete");
     }
   },
 
-  
-
-
+  /**
+   * Waits for Sync to be finished before returning
+   */
   async waitForSyncFinished() {
     if (lazy.Weave.Service.locked) {
       await this.waitForEvent("weave:service:resyncs-finished");
     }
   },
 
-  
-
-
+  /**
+   * Waits for Sync to start tracking before returning.
+   */
   async waitForTracking() {
     if (!this._isTracking) {
       await this.waitForEvent("weave:service:tracking-started");
     }
   },
 
-  
-
-
+  /**
+   * Login on the server
+   */
   async Login() {
     if (await lazy.Authentication.isReady()) {
       return;
@@ -1380,13 +1358,13 @@ var TPS = {
     await this.waitForTracking();
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Triggers a sync operation
+   *
+   * @param {String} [wipeAction]
+   *        Type of wipe to perform (resetClient, wipeClient, wipeRemote)
+   *
+   */
   async Sync(wipeAction) {
     if (this._syncActive) {
       this.DumpError("Sync currently active which should be impossible");
@@ -1396,9 +1374,9 @@ var TPS = {
       "Executing Sync" + (wipeAction ? ": " + wipeAction : "")
     );
 
-    
-    
-    
+    // Force a wipe action if requested. In case of an initial sync the pref
+    // will be overwritten by Sync itself (see bug 992198), so ensure that we
+    // also handle it via the "weave:service:setup-complete" notification.
     if (wipeAction) {
       this._syncWipeAction = wipeAction;
       lazy.Weave.Svc.PrefBranch.setCharPref("firstSync", wipeAction);
@@ -1406,7 +1384,7 @@ var TPS = {
       lazy.Weave.Svc.PrefBranch.clearUserPref("firstSync");
     }
     if (!(await lazy.Weave.Service.login())) {
-      
+      // We need to complete verification.
       lazy.Logger.logInfo("Logging in before performing sync");
       await this.Login();
     }
@@ -1418,7 +1396,7 @@ var TPS = {
     this._triggeredSync = true;
     await lazy.Weave.Service.sync();
     lazy.Logger.logInfo("Sync is complete");
-    
+    // wait a second for things to settle...
     await new Promise(resolve => {
       lazy.CommonUtils.namedTimer(resolve, 1000, this, "postsync");
     });
@@ -1432,184 +1410,178 @@ var TPS = {
     await lazy.Weave.Service.wipeServer();
   },
 
-  
-
-
+  /**
+   * Action which ensures changes are being tracked before returning.
+   */
   async EnsureTracking() {
     await this.Login();
     await this.waitForTracking();
   },
-};
 
-var Addons = {
-  async install(addons) {
-    await TPS.HandleAddons(addons, ACTION_ADD);
+  Addons: {
+    async install(addons) {
+      await TPS.HandleAddons(addons, ACTION_ADD);
+    },
+    async setEnabled(addons, state) {
+      await TPS.HandleAddons(addons, ACTION_SET_ENABLED, state);
+    },
+    async uninstall(addons) {
+      await TPS.HandleAddons(addons, ACTION_DELETE);
+    },
+    async verify(addons, state) {
+      await TPS.HandleAddons(addons, ACTION_VERIFY, state);
+    },
+    async verifyNot(addons) {
+      await TPS.HandleAddons(addons, ACTION_VERIFY_NOT);
+    },
+    skipValidation() {
+      TPS.shouldValidateAddons = false;
+    },
   },
-  async setEnabled(addons, state) {
-    await TPS.HandleAddons(addons, ACTION_SET_ENABLED, state);
-  },
-  async uninstall(addons) {
-    await TPS.HandleAddons(addons, ACTION_DELETE);
-  },
-  async verify(addons, state) {
-    await TPS.HandleAddons(addons, ACTION_VERIFY, state);
-  },
-  async verifyNot(addons) {
-    await TPS.HandleAddons(addons, ACTION_VERIFY_NOT);
-  },
-  skipValidation() {
-    TPS.shouldValidateAddons = false;
-  },
-};
 
-var Addresses = {
-  async add(addresses) {
-    await this.HandleAddresses(addresses, ACTION_ADD);
+  Addresses: {
+    async add(addresses) {
+      await this.HandleAddresses(addresses, ACTION_ADD);
+    },
+    async modify(addresses) {
+      await this.HandleAddresses(addresses, ACTION_MODIFY);
+    },
+    async delete(addresses) {
+      await this.HandleAddresses(addresses, ACTION_DELETE);
+    },
+    async verify(addresses) {
+      await this.HandleAddresses(addresses, ACTION_VERIFY);
+    },
+    async verifyNot(addresses) {
+      await this.HandleAddresses(addresses, ACTION_VERIFY_NOT);
+    },
   },
-  async modify(addresses) {
-    await this.HandleAddresses(addresses, ACTION_MODIFY);
-  },
-  async delete(addresses) {
-    await this.HandleAddresses(addresses, ACTION_DELETE);
-  },
-  async verify(addresses) {
-    await this.HandleAddresses(addresses, ACTION_VERIFY);
-  },
-  async verifyNot(addresses) {
-    await this.HandleAddresses(addresses, ACTION_VERIFY_NOT);
-  },
-};
 
-var Bookmarks = {
-  async add(bookmarks) {
-    await TPS.HandleBookmarks(bookmarks, ACTION_ADD);
+  Bookmarks: {
+    async add(bookmarks) {
+      await TPS.HandleBookmarks(bookmarks, ACTION_ADD);
+    },
+    async modify(bookmarks) {
+      await TPS.HandleBookmarks(bookmarks, ACTION_MODIFY);
+    },
+    async delete(bookmarks) {
+      await TPS.HandleBookmarks(bookmarks, ACTION_DELETE);
+    },
+    async verify(bookmarks) {
+      await TPS.HandleBookmarks(bookmarks, ACTION_VERIFY);
+    },
+    async verifyNot(bookmarks) {
+      await TPS.HandleBookmarks(bookmarks, ACTION_VERIFY_NOT);
+    },
+    skipValidation() {
+      TPS.shouldValidateBookmarks = false;
+    },
   },
-  async modify(bookmarks) {
-    await TPS.HandleBookmarks(bookmarks, ACTION_MODIFY);
+  CreditCards: {
+    async add(creditCards) {
+      await this.HandleCreditCards(creditCards, ACTION_ADD);
+    },
+    async modify(creditCards) {
+      await this.HandleCreditCards(creditCards, ACTION_MODIFY);
+    },
+    async delete(creditCards) {
+      await this.HandleCreditCards(creditCards, ACTION_DELETE);
+    },
+    async verify(creditCards) {
+      await this.HandleCreditCards(creditCards, ACTION_VERIFY);
+    },
+    async verifyNot(creditCards) {
+      await this.HandleCreditCards(creditCards, ACTION_VERIFY_NOT);
+    },
   },
-  async delete(bookmarks) {
-    await TPS.HandleBookmarks(bookmarks, ACTION_DELETE);
-  },
-  async verify(bookmarks) {
-    await TPS.HandleBookmarks(bookmarks, ACTION_VERIFY);
-  },
-  async verifyNot(bookmarks) {
-    await TPS.HandleBookmarks(bookmarks, ACTION_VERIFY_NOT);
-  },
-  skipValidation() {
-    TPS.shouldValidateBookmarks = false;
-  },
-};
 
-var CreditCards = {
-  async add(creditCards) {
-    await this.HandleCreditCards(creditCards, ACTION_ADD);
+  Formdata: {
+    async add(formdata) {
+      await this.HandleForms(formdata, ACTION_ADD);
+    },
+    async delete(formdata) {
+      await this.HandleForms(formdata, ACTION_DELETE);
+    },
+    async verify(formdata) {
+      await this.HandleForms(formdata, ACTION_VERIFY);
+    },
+    async verifyNot(formdata) {
+      await this.HandleForms(formdata, ACTION_VERIFY_NOT);
+    },
   },
-  async modify(creditCards) {
-    await this.HandleCreditCards(creditCards, ACTION_MODIFY);
+  History: {
+    async add(history) {
+      await this.HandleHistory(history, ACTION_ADD);
+    },
+    async delete(history) {
+      await this.HandleHistory(history, ACTION_DELETE);
+    },
+    async verify(history) {
+      await this.HandleHistory(history, ACTION_VERIFY);
+    },
+    async verifyNot(history) {
+      await this.HandleHistory(history, ACTION_VERIFY_NOT);
+    },
   },
-  async delete(creditCards) {
-    await this.HandleCreditCards(creditCards, ACTION_DELETE);
+  Passwords: {
+    async add(passwords) {
+      await this.HandlePasswords(passwords, ACTION_ADD);
+    },
+    async modify(passwords) {
+      await this.HandlePasswords(passwords, ACTION_MODIFY);
+    },
+    async delete(passwords) {
+      await this.HandlePasswords(passwords, ACTION_DELETE);
+    },
+    async verify(passwords) {
+      await this.HandlePasswords(passwords, ACTION_VERIFY);
+    },
+    async verifyNot(passwords) {
+      await this.HandlePasswords(passwords, ACTION_VERIFY_NOT);
+    },
+    skipValidation() {
+      TPS.shouldValidatePasswords = false;
+    },
   },
-  async verify(creditCards) {
-    await this.HandleCreditCards(creditCards, ACTION_VERIFY);
+  Prefs: {
+    async modify(prefs) {
+      await TPS.HandlePrefs(prefs, ACTION_MODIFY);
+    },
+    async verify(prefs) {
+      await TPS.HandlePrefs(prefs, ACTION_VERIFY);
+    },
   },
-  async verifyNot(creditCards) {
-    await this.HandleCreditCards(creditCards, ACTION_VERIFY_NOT);
+  Tabs: {
+    async add(tabs) {
+      await TPS.HandleTabs(tabs, ACTION_ADD);
+    },
+    async verify(tabs) {
+      await TPS.HandleTabs(tabs, ACTION_VERIFY);
+    },
+    async verifyNot(tabs) {
+      await TPS.HandleTabs(tabs, ACTION_VERIFY_NOT);
+    },
   },
-};
+  Windows: {
+    async add(aWindow) {
+      await TPS.HandleWindows(aWindow, ACTION_ADD);
+    },
+  },
 
-var Formdata = {
-  async add(formdata) {
-    await this.HandleForms(formdata, ACTION_ADD);
-  },
-  async delete(formdata) {
-    await this.HandleForms(formdata, ACTION_DELETE);
-  },
-  async verify(formdata) {
-    await this.HandleForms(formdata, ACTION_VERIFY);
-  },
-  async verifyNot(formdata) {
-    await this.HandleForms(formdata, ACTION_VERIFY_NOT);
-  },
-};
-
-var History = {
-  async add(history) {
-    await this.HandleHistory(history, ACTION_ADD);
-  },
-  async delete(history) {
-    await this.HandleHistory(history, ACTION_DELETE);
-  },
-  async verify(history) {
-    await this.HandleHistory(history, ACTION_VERIFY);
-  },
-  async verifyNot(history) {
-    await this.HandleHistory(history, ACTION_VERIFY_NOT);
-  },
-};
-
-var Passwords = {
-  async add(passwords) {
-    await this.HandlePasswords(passwords, ACTION_ADD);
-  },
-  async modify(passwords) {
-    await this.HandlePasswords(passwords, ACTION_MODIFY);
-  },
-  async delete(passwords) {
-    await this.HandlePasswords(passwords, ACTION_DELETE);
-  },
-  async verify(passwords) {
-    await this.HandlePasswords(passwords, ACTION_VERIFY);
-  },
-  async verifyNot(passwords) {
-    await this.HandlePasswords(passwords, ACTION_VERIFY_NOT);
-  },
-  skipValidation() {
-    TPS.shouldValidatePasswords = false;
-  },
-};
-
-var Prefs = {
-  async modify(prefs) {
-    await TPS.HandlePrefs(prefs, ACTION_MODIFY);
-  },
-  async verify(prefs) {
-    await TPS.HandlePrefs(prefs, ACTION_VERIFY);
-  },
-};
-
-var Tabs = {
-  async add(tabs) {
-    await TPS.HandleTabs(tabs, ACTION_ADD);
-  },
-  async verify(tabs) {
-    await TPS.HandleTabs(tabs, ACTION_VERIFY);
-  },
-  async verifyNot(tabs) {
-    await TPS.HandleTabs(tabs, ACTION_VERIFY_NOT);
-  },
-};
-
-var Windows = {
-  async add(aWindow) {
-    await TPS.HandleWindows(aWindow, ACTION_ADD);
-  },
-};
-
-
-
-
-var ExtStorage = {
-  async set(id, data) {
-    lazy.Logger.logInfo(`setting data for '${id}': ${data}`);
-    await lazy.extensionStorageSync.set({ id }, data);
-  },
-  async verify(id, keys, data) {
-    let got = await lazy.extensionStorageSync.get({ id }, keys);
-    lazy.Logger.AssertEqual(got, data, `data for '${id}'/${keys}`);
+  // Jumping through loads of hoops via calling back into a "HandleXXX" method
+  // and adding an ACTION_XXX indirection adds no value - let's KISS!
+  // eslint-disable-next-line no-unused-vars
+  ExtStorage: {
+    async set(id, data) {
+      lazy.Logger.logInfo(`setting data for '${id}': ${data}`);
+      await lazy.extensionStorageSync.set({ id }, data);
+    },
+    async verify(id, keys, data) {
+      let got = await lazy.extensionStorageSync.get({ id }, keys);
+      lazy.Logger.AssertEqual(got, data, `data for '${id}'/${keys}`);
+    },
   },
 };
 
-
+// Initialize TPS
 TPS._init();
