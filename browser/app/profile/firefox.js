@@ -692,7 +692,11 @@ pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.search.serpEventTelemetry.enabled", true);
+#else
 pref("browser.search.serpEventTelemetry.enabled", false);
+#endif
 
 
 

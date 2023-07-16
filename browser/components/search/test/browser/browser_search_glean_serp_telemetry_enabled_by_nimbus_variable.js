@@ -9,6 +9,8 @@ const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
 
 const lazy = {};
 
+const TELEMETRY_PREF = "browser.search.serpEventTelemetry.enabled";
+
 ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
@@ -17,7 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "serpEventsEnabled",
-  "browser.search.serpEventTelemetry.enabled",
+  TELEMETRY_PREF,
   false
 );
 
@@ -119,7 +121,17 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_enable_experiment() {
+add_task(async function test_enable_experiment_when_pref_is_not_enabled() {
+  let prefBranch = Services.prefs.getDefaultBranch("");
+  let originalPrefValue = prefBranch.getBoolPref(TELEMETRY_PREF);
+
+  
+  
+  
+  
+  
+  prefBranch.setBoolPref(TELEMETRY_PREF, false);
+
   Assert.equal(
     lazy.serpEventsEnabled,
     false,
@@ -156,4 +168,7 @@ add_task(async function test_enable_experiment() {
     false,
     "serpEventsEnabled should be false after experiment."
   );
+
+  
+  prefBranch.setBoolPref(TELEMETRY_PREF, originalPrefValue);
 });
