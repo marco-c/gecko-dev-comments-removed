@@ -623,7 +623,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   uint32_t mLastUniqueID;
-  uint32_t mSessionStartTime{0};
+  Atomic<uint32_t, Relaxed> mSessionStartTime{0};
 
   
   nsCString mLegacyAppName{"Mozilla"};
