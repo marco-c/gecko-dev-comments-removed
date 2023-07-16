@@ -8,42 +8,55 @@
 #define frontend_CompilationStencil_h
 
 #include "mozilla/AlreadyAddRefed.h"  
-#include "mozilla/Assertions.h"       
-#include "mozilla/Atomics.h"          
-#include "mozilla/Attributes.h"       
-#include "mozilla/HashTable.h"        
-#include "mozilla/Maybe.h"            
+#include "mozilla/Assertions.h"  
+#include "mozilla/Atomics.h"     
+#include "mozilla/Attributes.h"  
+#include "mozilla/HashTable.h"   
+#include "mozilla/Maybe.h"       
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/RefPtr.h"           
-#include "mozilla/Span.h"
-#include "mozilla/Variant.h"  
+#include "mozilla/Span.h"             
+#include "mozilla/Variant.h"          
 
-#include "ds/LifoAlloc.h"
-#include "frontend/FrontendContext.h"    
-#include "frontend/NameAnalysisTypes.h"  
-#include "frontend/ParserAtom.h"   
-#include "frontend/ScriptIndex.h"  
-#include "frontend/SharedContext.h"
-#include "frontend/Stencil.h"
+#include <algorithm>  
+#include <stddef.h>   
+#include <stdint.h>   
+#include <utility>    
+
+#include "ds/LifoAlloc.h"                 
+#include "frontend/FrontendContext.h"     
+#include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/NameAnalysisTypes.h"   
+#include "frontend/ParserAtom.h"  
+#include "frontend/ScopeIndex.h"     
+#include "frontend/ScriptIndex.h"    
+#include "frontend/SharedContext.h"  
+#include "frontend/Stencil.h"  
 #include "frontend/TaggedParserAtomIndexHasher.h"  
-#include "frontend/UsedNameTracker.h"
-#include "js/GCVector.h"
-#include "js/HashTable.h"
-#include "js/RefCounted.h"  
-#include "js/Transcoding.h"
-#include "js/UniquePtr.h"  
-#include "js/Vector.h"
-#include "js/WasmModule.h"
-#include "vm/GlobalObject.h"  
-#include "vm/JSContext.h"
-#include "vm/JSFunction.h"  
-#include "vm/JSScript.h"    
-#include "vm/Realm.h"
+#include "frontend/UsedNameTracker.h"              
+#include "js/AllocPolicy.h"    
+#include "js/GCVector.h"       
+#include "js/RefCounted.h"     
+#include "js/RootingAPI.h"     
+#include "js/Transcoding.h"    
+#include "js/UniquePtr.h"      
+#include "js/Vector.h"         
+#include "js/WasmModule.h"     
+#include "vm/FunctionFlags.h"  
+#include "vm/GlobalObject.h"   
+#include "vm/JSContext.h"      
+#include "vm/JSFunction.h"     
+#include "vm/JSScript.h"       
+#include "vm/Realm.h"          
+#include "vm/Scope.h"          
 #include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
 
 class JSAtom;
+class JSFunction;
+class JSObject;
 class JSString;
+class JSTracer;
 
 namespace JS {
 class JS_PUBLIC_API ReadOnlyCompileOptions;
@@ -679,9 +692,9 @@ struct CompilationInput {
   }
 
   bool initForStandaloneFunctionInNonSyntacticScope(
-      FrontendContext* fc, Handle<Scope*> functionEnclosingScope);
+      FrontendContext* fc, JS::Handle<Scope*> functionEnclosingScope);
 
-  bool initForEval(FrontendContext* fc, Handle<Scope*> evalEnclosingScope) {
+  bool initForEval(FrontendContext* fc, JS::Handle<Scope*> evalEnclosingScope) {
     target = CompilationTarget::Eval;
     if (!initScriptSource(fc)) {
       return false;
@@ -909,8 +922,9 @@ class CompilationSyntaxParseCache {
 
 
 using StencilAsmJSMap =
-    HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
-            mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
+    mozilla::HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
+                     mozilla::DefaultHasher<ScriptIndex>,
+                     js::SystemAllocPolicy>;
 
 struct StencilAsmJSContainer
     : public js::AtomicRefCounted<StencilAsmJSContainer> {
@@ -937,8 +951,9 @@ struct SharedDataContainer {
   using SharedDataVectorPtr = SharedDataVector*;
 
   using SharedDataMap =
-      HashMap<ScriptIndex, RefPtr<js::SharedImmutableScriptData>,
-              mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
+      mozilla::HashMap<ScriptIndex, RefPtr<js::SharedImmutableScriptData>,
+                       mozilla::DefaultHasher<ScriptIndex>,
+                       js::SystemAllocPolicy>;
   using SharedDataMapPtr = SharedDataMap*;
 
  private:
@@ -1209,11 +1224,11 @@ struct CompilationStencil {
       JSContext* cx, CompilationInput& input);
   [[nodiscard]] JSFunction* instantiateSelfHostedLazyFunction(
       JSContext* cx, CompilationAtomCache& atomCache, ScriptIndex index,
-      Handle<JSAtom*> name);
+      JS::Handle<JSAtom*> name);
   [[nodiscard]] bool delazifySelfHostedFunction(JSContext* cx,
                                                 CompilationAtomCache& atomCache,
                                                 ScriptIndexRange range,
-                                                HandleFunction fun);
+                                                JS::Handle<JSFunction*> fun);
 
   [[nodiscard]] bool serializeStencils(JSContext* cx, CompilationInput& input,
                                        JS::TranscodeBuffer& buf,
@@ -1776,8 +1791,9 @@ struct CompilationStencilMerger {
 
   
   using FunctionKeyToScriptIndexMap =
-      HashMap<FunctionKey, ScriptIndex, mozilla::DefaultHasher<FunctionKey>,
-              js::SystemAllocPolicy>;
+      mozilla::HashMap<FunctionKey, ScriptIndex,
+                       mozilla::DefaultHasher<FunctionKey>,
+                       js::SystemAllocPolicy>;
   FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
 
   [[nodiscard]] bool buildFunctionKeyToIndex(FrontendContext* fc);
