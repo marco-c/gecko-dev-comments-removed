@@ -166,7 +166,7 @@ const webrtc::RTCOutboundRTPStreamStats* FindOutboundRtpByRid(
 namespace webrtc {
 
 constexpr TimeDelta kDefaultTimeout = TimeDelta::Seconds(5);
-constexpr TimeDelta kLongTimeoutForRampingUp = TimeDelta::Seconds(20);
+constexpr TimeDelta kLongTimeoutForRampingUp = TimeDelta::Seconds(30);
 
 class PeerConnectionSimulcastTests : public ::testing::Test {
  public:
@@ -977,7 +977,8 @@ class PeerConnectionSimulcastWithMediaFlowTests
 
   bool HasOutboundRtpExpectedResolutions(
       rtc::scoped_refptr<PeerConnectionTestWrapper> pc_wrapper,
-      std::vector<RidAndResolution> resolutions) {
+      std::vector<RidAndResolution> resolutions,
+      bool log_during_ramp_up) {
     rtc::scoped_refptr<const RTCStatsReport> report = GetStats(pc_wrapper);
     std::vector<const RTCOutboundRTPStreamStats*> outbound_rtps =
         report->GetStatsOfType<RTCOutboundRTPStreamStats>();
@@ -995,12 +996,14 @@ class PeerConnectionSimulcastWithMediaFlowTests
       EXPECT_THAT(*outbound_rtp->frame_height, Le(resolution.height));
       if (*outbound_rtp->frame_width != resolution.width ||
           *outbound_rtp->frame_height != resolution.height) {
-        
-        RTC_LOG(LS_ERROR) << "rid=" << resolution.rid << " is "
-                          << *outbound_rtp->frame_width << "x"
-                          << *outbound_rtp->frame_height << " (want "
-                          << resolution.width << "x" << resolution.height
-                          << ")";
+        if (log_during_ramp_up) {
+          
+          RTC_LOG(LS_ERROR)
+              << "rid=" << resolution.rid << " is "
+              << *outbound_rtp->frame_width << "x"
+              << *outbound_rtp->frame_height << " (want " << resolution.width
+              << "x" << resolution.height << ")";
+        }
         return false;
       }
     }
@@ -1083,11 +1086,15 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   remote_pc_wrapper->WaitForConnection();
 
   
+  
   EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    kLongTimeoutForRampingUp.ms());
+  
+  
   EXPECT_TRUE_WAIT(HasOutboundRtpExpectedResolutions(
                        local_pc_wrapper,
-                       {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}),
+                       {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}},
+                       true),
                    kDefaultTimeout.ms());
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
@@ -1130,15 +1137,15 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   remote_pc_wrapper->WaitForConnection();
 
   
+  
   EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
-                   kLongTimeoutForRampingUp.ms());
+                   kDefaultTimeout.ms());
   
   
-  
-  
-  
-  
-  
+  EXPECT_TRUE_WAIT(
+      HasOutboundRtpExpectedResolutions(local_pc_wrapper, {{"f", 1280, 720}},
+                                        false),
+      kLongTimeoutForRampingUp.ms());
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
   std::vector<const RTCOutboundRTPStreamStats*> outbound_rtps =
