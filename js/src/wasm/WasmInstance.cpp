@@ -1965,6 +1965,8 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       
       if (typeDef.kind() == TypeDefKind::Struct) {
         typeDefData->structTypeSize = typeDef.structType().size_;
+        
+        MOZ_ASSERT((typeDefData->structTypeSize % sizeof(uintptr_t)) == 0);
       } else {
         MOZ_ASSERT(typeDefData->structTypeSize == 0);
       }

@@ -293,7 +293,17 @@ CheckedInt32 StructLayout::addField(FieldType type) {
 }
 
 CheckedInt32 StructLayout::close() {
-  return RoundUpToAlignment(sizeSoFar, structAlignment);
+  CheckedInt32 size = RoundUpToAlignment(sizeSoFar, structAlignment);
+  
+  
+  
+  
+  
+  
+  if (structAlignment < sizeof(uintptr_t)) {
+    size = RoundUpToAlignment(size, sizeof(uintptr_t));
+  }
+  return size;
 }
 
 bool StructType::init() {
