@@ -362,9 +362,8 @@ void RemoteBitrateEstimatorAbsSendTime::TimeoutStreams(Timestamp now) {
   if (ssrcs_.empty()) {
     
     inter_arrival_ = std::make_unique<InterArrival>(
-        (kTimestampGroupLengthMs << kInterArrivalShift) / 1000, kTimestampToMs,
-        true);
-    estimator_ = std::make_unique<OveruseEstimator>(OverUseDetectorOptions());
+        (kTimestampGroupLengthMs << kInterArrivalShift) / 1000, kTimestampToMs);
+    estimator_ = std::make_unique<OveruseEstimator>();
     
     
   }
