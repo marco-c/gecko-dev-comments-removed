@@ -85,13 +85,11 @@ class BitrateProber {
     
     kDisabled,
     
+    
     kInactive,
     
     
     kActive,
-    
-    
-    kSuspended,
   };
 
   
@@ -107,6 +105,7 @@ class BitrateProber {
   };
 
   Timestamp CalculateNextProbeTime(const ProbeCluster& cluster) const;
+  bool ReadyToSetActiveState(DataSize packet_size) const;
 
   ProbingState probing_state_;
 
