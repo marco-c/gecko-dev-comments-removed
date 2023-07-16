@@ -456,8 +456,6 @@ class BaseMatrix {
 
 
 
-
-
   BaseMatrixScales<T> ScaleFactors() const {
     T det = Determinant();
 
