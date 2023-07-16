@@ -814,11 +814,6 @@ function waitForStyleEditor(toolbox, href) {
       
       
       const gotEditor = editor => {
-        if (!editor) {
-          info("Editor went away after selected?");
-          return false;
-        }
-
         const currentHref = editor.styleSheet.href;
         if (!href || (href && currentHref.endsWith(href))) {
           info("Stylesheet editor selected");
