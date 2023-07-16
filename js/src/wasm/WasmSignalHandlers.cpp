@@ -1040,7 +1040,7 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
     case Trap::IndirectCallToNull:
       
       if (addr !=
-          reinterpret_cast<uint8_t*>(wasm::Instance::offsetOfMemoryBase())) {
+          reinterpret_cast<uint8_t*>(wasm::Instance::offsetOfMemory0Base())) {
         return false;
       }
       break;

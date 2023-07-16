@@ -79,7 +79,8 @@ class alignas(16) Instance {
   
 
   
-  uint8_t* memoryBase_;
+  
+  uint8_t* memory0Base_;
 
   
   
@@ -87,7 +88,7 @@ class alignas(16) Instance {
   
   
   
-  uintptr_t boundsCheckLimit_;
+  uintptr_t memory0BoundsCheckLimit_;
 
   
   
@@ -199,7 +200,7 @@ class alignas(16) Instance {
   TypeDefInstanceData* typeDefInstanceData(uint32_t typeIndex) const;
   const void* addressOfGlobalCell(const GlobalDesc& globalDesc) const;
   FuncImportInstanceData& funcImportInstanceData(const FuncImport& fi);
-  MemoryInstanceData& memoryInstanceData(const MemoryDesc& md) const;
+  MemoryInstanceData& memoryInstanceData(uint32_t memoryIndex) const;
   TableInstanceData& tableInstanceData(uint32_t tableIndex) const;
   TagInstanceData& tagInstanceData(uint32_t tagIndex) const;
 
@@ -241,11 +242,11 @@ class alignas(16) Instance {
                        uint8_t* nextPC,
                        uintptr_t highestByteVisitedInPrevFrame);
 
-  static constexpr size_t offsetOfMemoryBase() {
-    return offsetof(Instance, memoryBase_);
+  static constexpr size_t offsetOfMemory0Base() {
+    return offsetof(Instance, memory0Base_);
   }
-  static constexpr size_t offsetOfBoundsCheckLimit() {
-    return offsetof(Instance, boundsCheckLimit_);
+  static constexpr size_t offsetOfMemory0BoundsCheckLimit() {
+    return offsetof(Instance, memory0BoundsCheckLimit_);
   }
   static constexpr size_t offsetOfDebugTrapHandler() {
     return offsetof(Instance, debugTrapHandler_);

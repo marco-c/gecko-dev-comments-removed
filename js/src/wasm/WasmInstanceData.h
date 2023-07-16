@@ -101,7 +101,7 @@ struct MemoryInstanceData {
   GCPtr<WasmMemoryObject*> memory;
 
   
-  uint8_t* memoryBase;
+  uint8_t* base;
 
   
   
