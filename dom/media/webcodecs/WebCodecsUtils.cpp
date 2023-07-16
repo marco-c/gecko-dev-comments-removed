@@ -45,6 +45,7 @@ nsTArray<nsCString> GuessContainers(const nsAString& aCodec) {
 
 
 
+
 template <class T>
 Result<Span<uint8_t>, nsresult> GetArrayBufferData(const T& aBuffer) {
   
@@ -132,6 +133,7 @@ Result<Ok, nsresult> CloneBuffer(
   }
   return Ok();
 }
+
 
 
 
