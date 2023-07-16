@@ -141,6 +141,9 @@ class WidgetRenderingContext;
   BOOL mIsUpdatingLayer;
 
   
+  BOOL mPerformedDrag;
+
+  
   
   
   
