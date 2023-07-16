@@ -5505,6 +5505,20 @@ nsresult EventStateManager::HandleMiddleClickPaste(
     if (NS_WARN_IF(!selection)) {
       return NS_ERROR_FAILURE;
     }
+
+    const nsRange* range = selection->GetRangeAt(0);
+    if (range) {
+      nsINode* target = range->GetStartContainer();
+      if (target && target->OwnerDoc()->IsInChromeDocShell()) {
+        
+        
+        
+        
+        
+        
+        return NS_OK;
+      }
+    }
   }
 
   
