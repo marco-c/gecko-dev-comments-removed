@@ -78,7 +78,6 @@ struct ShapeUtils final {
   
   
   
-  static nsRect ComputeRect(const StyleBasicShape&, const nsRect& aRefBox);
   static nsRect ComputeInsetRect(const StyleRect<LengthPercentage>& aStyleRect,
                                  const nsRect& aRefBox);
 
@@ -132,14 +131,6 @@ struct ShapeUtils final {
                                                     const nsRect& aRefBox,
                                                     nscoord aAppUnitsPerPixel,
                                                     gfx::PathBuilder*);
-
-  
-  
-  
-  static already_AddRefed<gfx::Path> BuildXywhPath(const StyleBasicShape&,
-                                                   const nsRect& aRefBox,
-                                                   nscoord aAppUnitsPerPixel,
-                                                   gfx::PathBuilder*);
 
   
   

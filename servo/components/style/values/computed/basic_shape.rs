@@ -22,19 +22,16 @@ pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 
 pub type BasicShape =
-    generic::GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage>;
+    generic::GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage, InsetRect>;
 
 
-pub type InsetRect = generic::InsetRect<LengthPercentage, NonNegativeLengthPercentage>;
+pub type InsetRect = generic::GenericInsetRect<LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type Circle = generic::Circle<Position, NonNegativeLengthPercentage>;
 
 
 pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
-
-
-pub type Xywh = generic::Xywh<LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;

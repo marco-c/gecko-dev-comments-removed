@@ -10,7 +10,6 @@ use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::border::GenericBorderRadius;
 use crate::values::generics::position::GenericPositionOrAuto;
 use crate::values::generics::rect::Rect;
-use crate::values::generics::size::Size2D;
 use crate::values::specified::SVGPathData;
 use crate::Zero;
 use std::fmt::{self, Write};
@@ -173,13 +172,10 @@ pub use self::GenericShapeOutside as ShapeOutside;
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage> {
+pub enum GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercentage, BasicShapeRect>
+{
     
-    Inset(
-        #[css(field_bound)]
-        #[shmem(field_bound)]
-        InsetRect<LengthPercentage, NonNegativeLengthPercentage>,
-    ),
+    Rect(BasicShapeRect),
     
     Circle(
         #[css(field_bound)]
@@ -196,13 +192,6 @@ pub enum GenericBasicShape<Position, LengthPercentage, NonNegativeLengthPercenta
     Polygon(GenericPolygon<LengthPercentage>),
     
     Path(Path),
-    
-    Xywh(
-        #[css(field_bound)]
-        #[shmem(field_bound)]
-        Xywh<LengthPercentage, NonNegativeLengthPercentage>,
-    ),
-    
     
     
 }
@@ -228,11 +217,13 @@ pub use self::GenericBasicShape as BasicShape;
 )]
 #[css(function = "inset")]
 #[repr(C)]
-pub struct InsetRect<LengthPercentage, NonNegativeLengthPercentage> {
+pub struct GenericInsetRect<LengthPercentage, NonNegativeLengthPercentage> {
     pub rect: Rect<LengthPercentage>,
     #[shmem(field_bound)]
     pub round: GenericBorderRadius<NonNegativeLengthPercentage>,
 }
+
+pub use self::GenericInsetRect as InsetRect;
 
 
 #[allow(missing_docs)]
@@ -426,43 +417,6 @@ pub struct Path {
     pub path: SVGPathData,
 }
 
-
-
-
-
-
-
-
-
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Debug,
-    Deserialize,
-    MallocSizeOf,
-    PartialEq,
-    Serialize,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-pub struct Xywh<LengthPercentage, NonNegativeLengthPercentage> {
-    
-    pub x: LengthPercentage,
-    
-    pub y: LengthPercentage,
-    
-    pub size: Size2D<NonNegativeLengthPercentage>,
-    
-    
-    #[shmem(field_bound)]
-    pub round: GenericBorderRadius<NonNegativeLengthPercentage>,
-}
-
 impl<B, U> ToAnimatedZero for ClipPath<B, U> {
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())
@@ -550,31 +504,6 @@ where
             }
             dest.write_str("at ")?;
             self.position.to_css(dest)?;
-        }
-        dest.write_char(')')
-    }
-}
-
-impl<LP, NonNegativeLP> ToCss for Xywh<LP, NonNegativeLP>
-where
-    LP: ToCss + PartialEq,
-    NonNegativeLP: ToCss + PartialEq + Zero,
-{
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        dest.write_str("xywh(")?;
-        self.x.to_css(dest)?;
-        dest.write_char(' ')?;
-        self.y.to_css(dest)?;
-        dest.write_char(' ')?;
-        self.size.width.to_css(dest)?;
-        dest.write_char(' ')?;
-        self.size.height.to_css(dest)?;
-        if !self.round.is_zero() {
-            dest.write_str(" round ")?;
-            self.round.to_css(dest)?;
         }
         dest.write_char(')')
     }

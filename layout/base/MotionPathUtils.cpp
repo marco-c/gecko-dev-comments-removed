@@ -619,7 +619,7 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
       return ShapeUtils::BuildEllipsePath(aBasicShape, aCoordBox, center,
                                           AppUnitsPerCSSPixel(), aPathBuilder);
     }
-    case StyleBasicShape::Tag::Inset:
+    case StyleBasicShape::Tag::Rect:
       return ShapeUtils::BuildInsetPath(aBasicShape, aCoordBox,
                                         AppUnitsPerCSSPixel(), aPathBuilder);
     case StyleBasicShape::Tag::Polygon:
@@ -631,9 +631,6 @@ already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
       
       
       return BuildSVGPath(aBasicShape.AsPath().path, aPathBuilder);
-    case StyleBasicShape::Tag::Xywh:
-      return ShapeUtils::BuildXywhPath(aBasicShape, aCoordBox,
-                                       AppUnitsPerCSSPixel(), aPathBuilder);
   }
 
   return nullptr;
