@@ -304,7 +304,7 @@ export function togglePrettyPrint(cx, sourceId) {
       source.id
     );
 
-    await dispatch(loadGeneratedSourceText({ cx, sourceActor }));
+    await dispatch(loadGeneratedSourceText(sourceActor));
 
     const url = getPrettySourceURL(source.url);
     const prettySource = getSourceByURL(getState(), url);
@@ -318,7 +318,7 @@ export function togglePrettyPrint(cx, sourceId) {
     
     
     
-    await dispatch(loadOriginalSourceText({ cx, source: newPrettySource }));
+    await dispatch(loadOriginalSourceText(newPrettySource));
     
     
     
@@ -332,7 +332,7 @@ export function togglePrettyPrint(cx, sourceId) {
     
     await dispatch(mapFrames(threadcx));
     
-    await dispatch(updateBreakpointsForNewPrettyPrintedSource(cx, sourceId));
+    await dispatch(updateBreakpointsForNewPrettyPrintedSource(sourceId));
 
     return newPrettySource;
   };

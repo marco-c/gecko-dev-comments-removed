@@ -72,8 +72,7 @@ export async function blackboxSourceActorsForSource(
 
 
 
-
-export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
+export function toggleBlackBox(source, shouldBlackBox, ranges = []) {
   return async thunkArgs => {
     const { dispatch, getState } = thunkArgs;
 
@@ -97,7 +96,6 @@ export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
         dispatch({ type: "BLACKBOX_WHOLE_SOURCES", sources: [source] });
         await toggleBreakpointsInBlackboxedSources({
           thunkArgs,
-          cx,
           shouldDisable: true,
           sources: [source],
         });
@@ -116,7 +114,6 @@ export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
         dispatch({ type: "BLACKBOX_SOURCE_RANGES", source, ranges });
         await toggleBreakpointsInRangesForBlackboxedSource({
           thunkArgs,
-          cx,
           shouldDisable: true,
           source,
           ranges,
@@ -130,7 +127,6 @@ export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
         dispatch({ type: "UNBLACKBOX_WHOLE_SOURCES", sources: [source] });
         toggleBreakpointsInBlackboxedSources({
           thunkArgs,
-          cx,
           shouldDisable: false,
           sources: [source],
         });
@@ -142,7 +138,6 @@ export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
         }
         await toggleBreakpointsInRangesForBlackboxedSource({
           thunkArgs,
-          cx,
           shouldDisable: false,
           source,
           ranges,
@@ -154,7 +149,6 @@ export function toggleBlackBox(cx, source, shouldBlackBox, ranges = []) {
 
 async function toggleBreakpointsInRangesForBlackboxedSource({
   thunkArgs,
-  cx,
   shouldDisable,
   source,
   ranges,
@@ -168,7 +162,6 @@ async function toggleBreakpointsInRangesForBlackboxedSource({
 
 async function toggleBreakpointsInBlackboxedSources({
   thunkArgs,
-  cx,
   shouldDisable,
   sources,
 }) {
@@ -186,8 +179,7 @@ async function toggleBreakpointsInBlackboxedSources({
 
 
 
-
-export function blackBoxSources(cx, sourcesToBlackBox, shouldBlackBox) {
+export function blackBoxSources(sourcesToBlackBox, shouldBlackBox) {
   return async thunkArgs => {
     const { dispatch, getState } = thunkArgs;
 
@@ -215,7 +207,6 @@ export function blackBoxSources(cx, sourcesToBlackBox, shouldBlackBox) {
     });
     await toggleBreakpointsInBlackboxedSources({
       thunkArgs,
-      cx,
       shouldDisable: shouldBlackBox,
       sources,
     });

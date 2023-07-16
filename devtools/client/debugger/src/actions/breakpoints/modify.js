@@ -109,7 +109,6 @@ export function enableBreakpoint(initialBreakpoint) {
 }
 
 export function addBreakpoint(
-  cx,
   initialLocation,
   options = {},
   disabled,
@@ -296,12 +295,12 @@ export function disableBreakpoint(initialBreakpoint) {
 
 
 
-export function setBreakpointOptions(cx, location, options = {}) {
+export function setBreakpointOptions(location, options = {}) {
   return thunkArgs => {
     const { dispatch, getState, client } = thunkArgs;
     let breakpoint = getBreakpoint(getState(), location);
     if (!breakpoint) {
-      return dispatch(addBreakpoint(cx, location, options));
+      return dispatch(addBreakpoint(location, options));
     }
 
     
