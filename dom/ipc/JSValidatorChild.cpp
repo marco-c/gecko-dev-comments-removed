@@ -16,6 +16,7 @@
 #include "js/SourceText.h"
 #include "js/experimental/CompileScript.h"
 #include "js/experimental/JSStencil.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 using Encoding = mozilla::Encoding;
@@ -195,7 +196,12 @@ JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS(
   }
 
   
-  JS::CompileOptions options((JS::CompileOptions::ForFrontendContext()));
+  JS::PrefableCompileOptions prefableOptions;
+  xpc::SetPrefableCompileOptions(prefableOptions);
+  
+  prefableOptions.setAsmJSOption(JS::AsmJSOption::DisabledByAsmJSPref);
+
+  JS::CompileOptions options(prefableOptions);
   JS::CompilationStorage storage;
   RefPtr<JS::Stencil> stencil =
       JS::CompileGlobalScriptToStencil(fc, options, srcBuf, storage);
