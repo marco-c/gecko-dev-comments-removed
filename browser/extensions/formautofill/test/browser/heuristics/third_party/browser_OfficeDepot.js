@@ -41,6 +41,9 @@ add_heuristic_tests(
           fields: [
             { fieldName: "cc-exp-month" },
             { fieldName: "cc-exp-year" },
+            
+            { fieldName: "cc-given-name", reason: "update-heuristic" },
+            { fieldName: "cc-family-name", reason: "update-heuristic" },
             { fieldName: "cc-number" },
           ],
         },
@@ -49,8 +52,6 @@ add_heuristic_tests(
             reason: "regex-heuristic",
           },
           fields: [
-            { fieldName: "given-name" },
-            { fieldName: "family-name" },
             { fieldName: "organization" },
             { fieldName: "address-line1" },
             { fieldName: "address-line2" },
