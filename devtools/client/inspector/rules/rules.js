@@ -243,6 +243,8 @@ function CssRuleView(inspector, document, store) {
     this._handleDefaultColorUnitPrefChange
   );
   this._prefObserver.on(PREF_DRAGGABLE, this._handleDraggablePrefChange);
+  
+  this._handleDraggablePrefChange();
 
   this.pseudoClassCheckboxes = this._createPseudoClassCheckboxes();
   this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
@@ -724,6 +726,10 @@ CssRuleView.prototype = {
   },
 
   _handleDraggablePrefChange() {
+    this.draggablePropertiesEnabled = Services.prefs.getBoolPref(
+      PREF_DRAGGABLE,
+      false
+    );
     
     
     

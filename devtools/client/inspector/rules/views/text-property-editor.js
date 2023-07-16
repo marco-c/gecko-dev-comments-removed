@@ -1389,12 +1389,7 @@ TextPropertyEditor.prototype = {
 
   _isDraggableProperty(textProperty) {
     
-    if (
-      !Services.prefs.getBoolPref(
-        "devtools.inspector.draggable_properties",
-        false
-      )
-    ) {
+    if (!this.ruleView.draggablePropertiesEnabled) {
       return false;
     }
     
