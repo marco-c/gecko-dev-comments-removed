@@ -718,7 +718,7 @@ pub struct CalcLengthPercentage {
 impl CalcLengthPercentage {
     
     #[inline]
-    fn resolve(&self, basis: Length) -> Length {
+    pub fn resolve(&self, basis: Length) -> Length {
         
         let px = self
             .node
