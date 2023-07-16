@@ -1829,15 +1829,13 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   nsresult rv = NS_OK;
   if (!SuppressEventHandlers(presContext)) {
     nsCOMPtr<nsIControllers> controllers;
-    if (HTMLInputElement* inputElement =
-            HTMLInputElement::FromNodeOrNull(mTextCtrlElement)) {
+    if (auto* inputElement = HTMLInputElement::FromNode(mTextCtrlElement)) {
       nsresult rv = inputElement->GetControllers(getter_AddRefs(controllers));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else {
-      HTMLTextAreaElement* textAreaElement =
-          HTMLTextAreaElement::FromNodeOrNull(mTextCtrlElement);
+      auto* textAreaElement = HTMLTextAreaElement::FromNode(mTextCtrlElement);
       if (!textAreaElement) {
         return NS_ERROR_FAILURE;
       }
@@ -2404,12 +2402,10 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
   
   if (!SuppressEventHandlers(mBoundFrame->PresContext())) {
     nsCOMPtr<nsIControllers> controllers;
-    if (HTMLInputElement* inputElement =
-            HTMLInputElement::FromNodeOrNull(mTextCtrlElement)) {
+    if (auto* inputElement = HTMLInputElement::FromNode(mTextCtrlElement)) {
       inputElement->GetControllers(getter_AddRefs(controllers));
     } else {
-      HTMLTextAreaElement* textAreaElement =
-          HTMLTextAreaElement::FromNodeOrNull(mTextCtrlElement);
+      auto* textAreaElement = HTMLTextAreaElement::FromNode(mTextCtrlElement);
       if (textAreaElement) {
         textAreaElement->GetControllers(getter_AddRefs(controllers));
       }
@@ -2646,11 +2642,10 @@ bool TextControlState::SetValue(const nsAString& aValue,
       } else {
         
         
-        MOZ_ASSERT(!aOldValue || mBoundFrame->TextEquals(*aOldValue));
+        MOZ_ASSERT(!aOldValue || ValueEquals(*aOldValue));
         bool isSameAsCurrentValue =
-            aOldValue
-                ? aOldValue->Equals(handlingSetValue.GetSettingValue())
-                : mBoundFrame->TextEquals(handlingSetValue.GetSettingValue());
+            aOldValue ? aOldValue->Equals(handlingSetValue.GetSettingValue())
+                      : ValueEquals(handlingSetValue.GetSettingValue());
         if (isSameAsCurrentValue) {
           
           
@@ -2728,12 +2723,12 @@ bool TextControlState::SetValueWithTextEditor(
 #endif
 
   MOZ_ASSERT(!aHandlingSetValue.GetOldValue() ||
-             mBoundFrame->TextEquals(*aHandlingSetValue.GetOldValue()));
-  bool isSameAsCurrentValue =
+             ValueEquals(*aHandlingSetValue.GetOldValue()));
+  const bool isSameAsCurrentValue =
       aHandlingSetValue.GetOldValue()
           ? aHandlingSetValue.GetOldValue()->Equals(
                 aHandlingSetValue.GetSettingValue())
-          : mBoundFrame->TextEquals(aHandlingSetValue.GetSettingValue());
+          : ValueEquals(aHandlingSetValue.GetSettingValue());
 
   
   if (isSameAsCurrentValue) {

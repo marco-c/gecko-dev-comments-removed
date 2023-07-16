@@ -251,13 +251,6 @@ class HTMLInputElement final : public TextControlElement,
   bool RevealPassword() const;
 
   
-
-
-
-
-  bool TextEditorValueEquals(const nsAString& aValue) const;
-
-  
   
   uint32_t GetSelectionStartIgnoringType(ErrorResult& aRv);
   uint32_t GetSelectionEndIgnoringType(ErrorResult& aRv);

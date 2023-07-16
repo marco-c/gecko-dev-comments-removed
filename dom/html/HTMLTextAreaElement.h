@@ -243,12 +243,6 @@ class HTMLTextAreaElement final : public TextControlElement,
   void GetDefaultValue(nsAString& aDefaultValue, ErrorResult& aError) const;
   void SetDefaultValue(const nsAString& aDefaultValue, ErrorResult& aError);
   void GetValue(nsAString& aValue);
-  
-
-
-
-
-  bool ValueEquals(const nsAString& aValue) const;
   MOZ_CAN_RUN_SCRIPT void SetValue(const nsAString&, ErrorResult&);
 
   uint32_t GetTextLength();

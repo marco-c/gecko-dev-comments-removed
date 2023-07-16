@@ -169,13 +169,6 @@ class nsTextControlFrame : public nsContainerFrame,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult AttributeChanged(
       int32_t aNameSpaceID, nsAtom* aAttribute, int32_t aModType) override;
 
-  
-
-
-
-
-  bool TextEquals(const nsAString& aText) const;
-
   nsresult PeekOffset(mozilla::PeekOffsetStruct* aPos) override;
 
   NS_DECL_QUERYFRAME
