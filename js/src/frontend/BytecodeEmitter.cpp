@@ -5148,6 +5148,31 @@ bool BytecodeEmitter::emitIterable(ParseNode* value,
       
       return true;
     }
+
+    case SelfHostedIter::AllowContentWithNext: {
+      
+      
+      
+      
+      
+      
+      
+      ListNode* argsList = value->as<CallNode>().args();
+      MOZ_ASSERT(argsList->count() == 2);
+
+      if (!emitTree(argsList->head()->pn_next)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Swap)) {
+        
+        return false;
+      }
+
+      
+      return true;
+    }
   }
 
   MOZ_CRASH("invalid self-hosted iteration kind");
@@ -5158,6 +5183,13 @@ bool BytecodeEmitter::emitIterator(SelfHostedIter selfHostedIter) {
                  emitterMode != BytecodeEmitter::SelfHosting,
              "[Symbol.iterator]() call is prohibited in self-hosted code "
              "because it can run user-modifiable iteration code");
+
+  if (selfHostedIter == SelfHostedIter::AllowContentWithNext) {
+    
+
+    
+    return true;
+  }
 
   if (selfHostedIter != SelfHostedIter::AllowContentWith) {
     
@@ -5205,6 +5237,7 @@ bool BytecodeEmitter::emitIterator(SelfHostedIter selfHostedIter) {
 }
 
 bool BytecodeEmitter::emitAsyncIterator(SelfHostedIter selfHostedIter) {
+  MOZ_ASSERT(selfHostedIter != SelfHostedIter::AllowContentWithNext);
   MOZ_ASSERT(selfHostedIter != SelfHostedIter::Deny ||
                  emitterMode != BytecodeEmitter::SelfHosting,
              "[Symbol.asyncIterator]() call is prohibited in self-hosted code "
@@ -7315,6 +7348,16 @@ bool BytecodeEmitter::emitSelfHostedAllowContentIterWith(CallNode* callNode) {
   return emitTree(argsList->head());
 }
 
+bool BytecodeEmitter::emitSelfHostedAllowContentIterWithNext(
+    CallNode* callNode) {
+  ListNode* argsList = callNode->args();
+
+  MOZ_ASSERT(argsList->count() == 2);
+
+  
+  return emitTree(argsList->head());
+}
+
 bool BytecodeEmitter::emitSelfHostedDefineDataProperty(CallNode* callNode) {
   ListNode* argsList = callNode->args();
 
@@ -8077,6 +8120,10 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     if (calleeName ==
         TaggedParserAtomIndex::WellKnown::allowContentIterWith()) {
       return emitSelfHostedAllowContentIterWith(callNode);
+    }
+    if (calleeName ==
+        TaggedParserAtomIndex::WellKnown::allowContentIterWithNext()) {
+      return emitSelfHostedAllowContentIterWithNext(callNode);
     }
     if (calleeName ==
             TaggedParserAtomIndex::WellKnown::defineDataPropertyIntrinsic() &&
@@ -12042,6 +12089,10 @@ SelfHostedIter BytecodeEmitter::getSelfHostedIterFor(ParseNode* parseNode) {
     if (callee->isName(
             TaggedParserAtomIndex::WellKnown::allowContentIterWith())) {
       return SelfHostedIter::AllowContentWith;
+    }
+    if (callee->isName(
+            TaggedParserAtomIndex::WellKnown::allowContentIterWithNext())) {
+      return SelfHostedIter::AllowContentWithNext;
     }
   }
 
