@@ -992,6 +992,7 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       textBaseline(aOther.textBaseline),
       textDirection(aOther.textDirection),
       fontKerning(aOther.fontKerning),
+      fontStretch(aOther.fontStretch),
       fontVariantCaps(aOther.fontVariantCaps),
       textRendering(aOther.textRendering),
       letterSpacing(aOther.letterSpacing),
@@ -3713,7 +3714,9 @@ void CanvasRenderingContext2D::SetFont(const nsACString& aFont,
 
   
   
+  
   SetFontVariantCaps(CanvasFontVariantCaps::Normal);
+  SetFontStretch(CanvasFontStretch::Normal);
 
   
   
@@ -3773,6 +3776,44 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
       QuantizeFontSize(resizedFont.size.ToCSSPixels()));
 
   resizedFont.kerning = CanvasToGfx(CurrentState().fontKerning);
+
+  
+  
+  
+  
+  
+  switch (CurrentState().fontStretch) {
+    case CanvasFontStretch::Normal:
+      
+      break;
+    case CanvasFontStretch::Ultra_condensed:
+      resizedFont.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      break;
+    case CanvasFontStretch::Extra_condensed:
+      resizedFont.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      break;
+    case CanvasFontStretch::Condensed:
+      resizedFont.stretch = StyleFontStretch::CONDENSED;
+      break;
+    case CanvasFontStretch::Semi_condensed:
+      resizedFont.stretch = StyleFontStretch::SEMI_CONDENSED;
+      break;
+    case CanvasFontStretch::Semi_expanded:
+      resizedFont.stretch = StyleFontStretch::SEMI_EXPANDED;
+      break;
+    case CanvasFontStretch::Expanded:
+      resizedFont.stretch = StyleFontStretch::EXPANDED;
+      break;
+    case CanvasFontStretch::Extra_expanded:
+      resizedFont.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      break;
+    case CanvasFontStretch::Ultra_expanded:
+      resizedFont.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      break;
+  }
 
   
   
@@ -3911,6 +3952,39 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   }
 
   fontStyle.size = QuantizeFontSize(size);
+
+  switch (CurrentState().fontStretch) {
+    case CanvasFontStretch::Normal:
+      
+      break;
+    case CanvasFontStretch::Ultra_condensed:
+      fontStyle.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      break;
+    case CanvasFontStretch::Extra_condensed:
+      fontStyle.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      break;
+    case CanvasFontStretch::Condensed:
+      fontStyle.stretch = StyleFontStretch::CONDENSED;
+      break;
+    case CanvasFontStretch::Semi_condensed:
+      fontStyle.stretch = StyleFontStretch::SEMI_CONDENSED;
+      break;
+    case CanvasFontStretch::Semi_expanded:
+      fontStyle.stretch = StyleFontStretch::SEMI_EXPANDED;
+      break;
+    case CanvasFontStretch::Expanded:
+      fontStyle.stretch = StyleFontStretch::EXPANDED;
+      break;
+    case CanvasFontStretch::Extra_expanded:
+      fontStyle.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      break;
+    case CanvasFontStretch::Ultra_expanded:
+      fontStyle.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      break;
+  }
 
   
   
