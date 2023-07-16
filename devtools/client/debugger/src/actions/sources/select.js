@@ -33,7 +33,6 @@ import {
   getIsCurrentThreadPaused,
   getSourceTextContent,
   tabExists,
-  getContext,
 } from "../../selectors";
 
 
@@ -49,16 +48,18 @@ export const setSelectedLocation = (
 });
 
 
-export const setPendingSelectedLocation = (url, options) => ({
+export const setPendingSelectedLocation = (cx, url, options) => ({
   type: "SET_PENDING_SELECTED_LOCATION",
+  cx,
   url,
   line: options?.line,
   column: options?.column,
 });
 
 
-export const clearSelectedLocation = () => ({
+export const clearSelectedLocation = cx => ({
   type: "CLEAR_SELECTED_LOCATION",
+  cx,
 });
 
 
@@ -69,14 +70,13 @@ export const clearSelectedLocation = () => ({
 
 
 
-export function selectSourceURL(url, options) {
+export function selectSourceURL(cx, url, options) {
   return async ({ dispatch, getState }) => {
     const source = getSourceByURL(getState(), url);
     if (!source) {
-      return dispatch(setPendingSelectedLocation(url, options));
+      return dispatch(setPendingSelectedLocation(cx, url, options));
     }
 
-    const cx = getContext(getState());
     const location = createLocation({ ...options, source });
     return dispatch(selectLocation(cx, location));
   };
@@ -135,7 +135,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
 
     if (!source) {
       
-      dispatch(clearSelectedLocation());
+      dispatch(clearSelectedLocation(cx));
       return;
     }
 
