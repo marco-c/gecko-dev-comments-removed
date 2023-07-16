@@ -264,7 +264,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     masm.push(r0);  
 
-    using Fn = bool (*)(BaselineFrame * frame, InterpreterFrame * interpFrame,
+    using Fn = bool (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
     masm.passABIArg(framePtrScratch);  
@@ -385,8 +385,7 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   
   masm.reserveStack(sizeof(void*) * 2);
   masm.mov(sp, r1);
-  using Fn =
-      bool (*)(InvalidationBailoutStack * sp, BaselineBailoutInfo * *info);
+  using Fn = bool (*)(InvalidationBailoutStack* sp, BaselineBailoutInfo** info);
   masm.setupAlignedABICall();
   masm.passABIArg(r0);
   masm.passABIArg(r1);
@@ -561,7 +560,7 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
   
   masm.reserveStack(sizeof(void*));
   masm.mov(sp, r1);
-  using Fn = bool (*)(BailoutStack * sp, BaselineBailoutInfo * *info);
+  using Fn = bool (*)(BailoutStack* sp, BaselineBailoutInfo** info);
   masm.setupAlignedABICall();
 
   masm.passABIArg(r0);
@@ -608,12 +607,9 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
+  masm.pushReturnAddress();
+
   
-  
-  
-  if (f.expectTailCall == NonTailCall) {
-    masm.pushReturnAddress();
-  }
   masm.Push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);

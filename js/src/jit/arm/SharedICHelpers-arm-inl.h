@@ -32,12 +32,14 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 #endif
 
   
-  
-  
-  
-  static_assert(ICTailCallReg == lr);
   masm.pushFrameDescriptor(FrameType::BaselineJS);
-  masm.push(lr);
+
+  static_assert(ICTailCallReg == lr);
+  
+  
+  
+  
+
   masm.jump(target);
 }
 
