@@ -22,7 +22,7 @@ DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     DecoratorEmitter::Kind kind, ParseNode* key, ListNode* decorators,
     bool isStatic) {
-  MOZ_ASSERT(kind != Kind::Field);
+  MOZ_ASSERT(kind != Kind::Field && kind != Kind::Accessor);
 
   
   
@@ -92,24 +92,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       
       return false;
     }
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     
     
     
@@ -122,6 +105,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       
       return false;
     }
+    
     
     
     
@@ -254,6 +238,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
     
     
     
+    
     if (!ie.emitElse()) {
       return false;
     }
@@ -265,6 +250,194 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
 
     if (!bce_->emit2(JSOp::ThrowMsg,
                      uint8_t(ThrowMsgKind::DecoratorInvalidReturnType))) {
+      return false;
+    }
+
+    if (!ie.emitEnd()) {
+      return false;
+    }
+  }
+
+  
+  return bce_->emitPopN(1);
+  
+}
+
+bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
+    ParseNode* key, ListNode* decorators, bool isStatic) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(key->is<NameNode>());
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!decorators->empty());
+
+  
+  
+  if (!bce_->emitUint32Operand(JSOp::NewArray, 1)) {
+    
+    return false;
+  }
+
+  if (!bce_->emitGetPrivateName(&key->as<NameNode>())) {
+    
+    return false;
+  }
+
+  if (!bce_->emitUint32Operand(JSOp::InitElemArray, 0)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit1(JSOp::One)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  for (ParseNode* decorator : decorators->contents()) {
+    
+    if (!emitDecorationState()) {
+      return false;
+    }
+
+    
+    ObjectEmitter oe(bce_);
+    if (!oe.emitObject(2)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!oe.prepareForPropValue(decorator->pn_pos.begin,
+                                PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!bce_->emitDupAt(4)) {
+      
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::get())) {
+      
+      return false;
+    }
+
+    
+    
+    if (!oe.prepareForPropValue(decorator->pn_pos.begin,
+                                PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (!bce_->emitDupAt(3)) {
+      
+      return false;
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::set())) {
+      
+      return false;
+    }
+
+    if (!oe.emitEnd()) {
+      
+      return false;
+    }
+
+    
+    
+    if (!emitCallDecorator(Kind::Accessor, key, isStatic, decorator)) {
+      
+      return false;
+    }
+
+    
+    if (!emitUpdateDecorationState()) {
+      
+      return false;
+    }
+
+    
+    
+    IfEmitter ie(bce_);
+    if (!ie.emitIf(mozilla::Nothing())) {
+      return false;
+    }
+
+    if (!emitCheckIsUndefined()) {
+      
+      return false;
+    }
+
+    if (!ie.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+
+    if (!ie.emitElse()) {
+      return false;
+    }
+
+    
+    
+    
+    if (!bce_->emit2(JSOp::CheckIsObj,
+                     uint8_t(CheckIsObjectKind::DecoratorReturn))) {
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (!emitHandleNewValueField(
+            frontend::TaggedParserAtomIndex::WellKnown::get(), 5)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (!emitHandleNewValueField(
+            frontend::TaggedParserAtomIndex::WellKnown::set(), 4)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (!emitHandleNewValueField(
+            frontend::TaggedParserAtomIndex::WellKnown::init(), 0)) {
+      return false;
+    }
+
+    
+    if (!bce_->emitPopN(1)) {
+      
       return false;
     }
 
@@ -403,13 +576,11 @@ bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
 
   if (!bce_->emitDupAt(6)) {
     
-    
     return false;
   }
 
   
   if (!bce_->emit2(JSOp::Pick, 5)) {
-    
     
     return false;
   }
@@ -508,6 +679,11 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
                                                        bool isStatic,
                                                        ParseNode* decorator) {
   
+  
+  
+  
+  
+  
   CallOrNewEmitter cone(bce_, JSOp::Call,
                         CallOrNewEmitter::ArgumentsKind::Other,
                         ValueUsage::WantValue);
@@ -596,24 +772,25 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
       
       return false;
     }
+  } else {
+    
+    
+    
+    
+    MOZ_ASSERT(kind == Kind::Accessor);
+    if (!bce_->emitPickN(2)) {
+      
+      return false;
+    }
   }
-  
-  
-  
-  
-  
-  
-  
   
   
   if (!emitCreateDecoratorContextObject(kind, key, isStatic,
                                         decorator->pn_pos)) {
     
-    
     return false;
   }
 
-  
   
   return cone.emitEnd(2, decorator->pn_pos.begin);
   
@@ -712,6 +889,14 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
       
       return false;
     }
+  } else if (kind == Kind::Accessor) {
+    
+    if (!bce_->emitStringOp(
+            JSOp::String,
+            frontend::TaggedParserAtomIndex::WellKnown::accessor())) {
+      
+      return false;
+    }
   } else if (kind == Kind::Field) {
     
     if (!bce_->emitStringOp(
@@ -721,11 +906,6 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
       return false;
     }
   } else {
-    
-
-
-    
-    
     
     
     
@@ -770,7 +950,6 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
       
       return false;
     }
-    
     
     
     
@@ -836,4 +1015,121 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
   }
   
   return oe.emitEnd();
+}
+
+bool DecoratorEmitter::emitHandleNewValueField(TaggedParserAtomIndex atom,
+                                               int8_t offset) {
+  
+  
+  
+  
+  
+  
+  
+
+  if (!bce_->emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+  if (!bce_->emitStringOp(JSOp::String, atom)) {
+    
+    return false;
+  }
+  if (!bce_->emit1(JSOp::GetElem)) {
+    
+    
+    return false;
+  }
+
+  IfEmitter ifCallable(bce_);
+  if (!ifCallable.emitIf(mozilla::Nothing())) {
+    return false;
+  }
+
+  if (!emitCheckIsUndefined()) {
+    
+    
+    return false;
+  }
+
+  if (!ifCallable.emitThenElse()) {
+    
+    
+    return false;
+  }
+
+  
+  
+  if (!bce_->emitPopN(1)) {
+    
+    return false;
+  }
+
+  if (!ifCallable.emitElseIf(mozilla::Nothing())) {
+    return false;
+  }
+  if (!emitCheckIsCallable()) {
+    
+    
+    return false;
+  }
+  if (!ifCallable.emitThenElse()) {
+    
+    
+    return false;
+  }
+  if (offset != 0) {
+    if (!bce_->emitPickN(offset)) {
+      
+      
+      return false;
+    }
+    if (!bce_->emitPopN(1)) {
+      
+      
+      return false;
+    }
+    if (!bce_->emitUnpickN(offset - 1)) {
+      
+      return false;
+    }
+  } else {
+    
+    
+    if (!bce_->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+
+    if (!bce_->emitUnpickN(3)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::InitElemInc)) {
+      
+      return false;
+    }
+
+    if (!bce_->emitPickN(2)) {
+      
+      return false;
+    }
+  }
+
+  if (!ifCallable.emitElse()) {
+    return false;
+  }
+
+  if (!bce_->emitPopN(1)) {
+    
+    return false;
+  }
+
+  if (!bce_->emit2(JSOp::ThrowMsg,
+                   uint8_t(ThrowMsgKind::DecoratorInvalidReturnType))) {
+    return false;
+  }
+
+  return ifCallable.emitEnd();
 }

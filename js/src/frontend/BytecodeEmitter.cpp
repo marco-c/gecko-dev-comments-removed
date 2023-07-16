@@ -9678,14 +9678,31 @@ static FunctionNode* GetInitializer(ParseNode* node, bool isStaticContext) {
                                 : node->as<StaticClassBlock>().function();
 }
 
+static bool IsPrivateInstanceAccessor(const ClassMethod* classMethod) {
+  return !classMethod->isStatic() &&
+         classMethod->name().isKind(ParseNodeKind::PrivateName) &&
+         classMethod->accessorType() != AccessorType::None;
+}
+
 bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
                                                    ListNode* obj,
-                                                   FieldPlacement placement) {
+                                                   FieldPlacement placement
+#ifdef ENABLE_DECORATORS
+                                                   ,
+                                                   bool hasHeritage
+#endif
+) {
   
   
   
   
   
+  
+  
+  
+#ifdef ENABLE_DECORATORS
+  MOZ_ASSERT_IF(placement == FieldPlacement::Static, !hasHeritage);
+#endif
   mozilla::Maybe<MemberInitializers> memberInitializers =
       setupMemberInitializers(obj, placement);
   if (!memberInitializers) {
@@ -9769,14 +9786,248 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
     }
     if (field->decorators() && !field->decorators()->empty()) {
       DecoratorEmitter de(this);
-      if (!de.emitApplyDecoratorsToFieldDefinition(
-              &field->name(), field->decorators(), field->isStatic())) {
-        
-        
-        
-        return false;
-      }
+      if (!field->hasAccessor()) {
+        if (!de.emitApplyDecoratorsToFieldDefinition(
+                &field->name(), field->decorators(), field->isStatic())) {
+          
+          
+          
+          return false;
+        }
+      } else {
+        ClassMethod* accessorGetterNode = field->accessorGetterNode();
+        auto accessorGetterKeyAtom =
+            accessorGetterNode->left()->as<NameNode>().atom();
+        ClassMethod* accessorSetterNode = field->accessorSetterNode();
+        auto accessorSetterKeyAtom =
+            accessorSetterNode->left()->as<NameNode>().atom();
+        if (!IsPrivateInstanceAccessor(accessorGetterNode)) {
+          if (!emitTree(&accessorGetterNode->method())) {
+            
+            
+            
+            return false;
+          }
+          if (!emitTree(&accessorSetterNode->method())) {
+            
+            
+            
+            return false;
+          }
+        } else {
+          MOZ_ASSERT(IsPrivateInstanceAccessor(accessorSetterNode));
+          auto getAccessor = [this](
+                                 ClassMethod* classMethod,
+                                 TaggedParserAtomIndex& updatedAtom) -> bool {
+            
 
+            
+            
+            TaggedParserAtomIndex name =
+                classMethod->name().as<NameNode>().atom();
+            AccessorType accessorType = classMethod->accessorType();
+            StringBuffer storedMethodName(fc);
+            if (!storedMethodName.append(parserAtoms(), name)) {
+              return false;
+            }
+            if (!storedMethodName.append(accessorType == AccessorType::Getter
+                                             ? ".getter"
+                                             : ".setter")) {
+              return false;
+            }
+            updatedAtom = storedMethodName.finishParserAtom(parserAtoms(), fc);
+            if (!updatedAtom) {
+              return false;
+            }
+
+            return emitGetName(updatedAtom);
+            
+          };
+
+          if (!getAccessor(accessorGetterNode, accessorGetterKeyAtom)) {
+            
+            
+            
+            return false;
+          };
+
+          if (!getAccessor(accessorSetterNode, accessorSetterKeyAtom)) {
+            
+            
+            
+            return false;
+          };
+        }
+
+        if (!de.emitApplyDecoratorsToAccessorDefinition(
+                &field->name(), field->decorators(), field->isStatic())) {
+          
+          
+          
+          return false;
+        }
+
+        if (!emitUnpickN(2)) {
+          
+          
+          
+          return false;
+        }
+
+        if (!IsPrivateInstanceAccessor(accessorGetterNode)) {
+          if (!isStatic) {
+            if (!emitPickN(hasHeritage ? 6 : 5)) {
+              
+              return false;
+            }
+          } else {
+            if (!emitPickN(6)) {
+              
+              return false;
+            }
+            if (!emitPickN(6)) {
+              
+              return false;
+            }
+          }
+
+          PropertyEmitter::Kind kind = field->isStatic()
+                                           ? PropertyEmitter::Kind::Static
+                                           : PropertyEmitter::Kind::Prototype;
+          if (!accessorGetterNode->name().isKind(ParseNodeKind::PrivateName)) {
+            MOZ_ASSERT(
+                !accessorSetterNode->name().isKind(ParseNodeKind::PrivateName));
+
+            if (!ce.prepareForPropValue(propdef->pn_pos.begin, kind)) {
+              
+              
+              
+              return false;
+            }
+            if (!emitPickN(isStatic ? 3 : 1)) {
+              
+              
+              
+              return false;
+            }
+            if (!ce.emitInit(AccessorType::Setter, accessorSetterKeyAtom)) {
+              
+              
+              
+              return false;
+            }
+
+            if (!ce.prepareForPropValue(propdef->pn_pos.begin, kind)) {
+              
+              
+              
+              return false;
+            }
+            if (!emitPickN(isStatic ? 3 : 1)) {
+              
+              
+              
+              return false;
+            }
+            if (!ce.emitInit(AccessorType::Getter, accessorGetterKeyAtom)) {
+              
+              
+              
+              return false;
+            }
+          } else {
+            MOZ_ASSERT(isStatic);
+            
+            if (!emitNewPrivateName(accessorSetterKeyAtom,
+                                    accessorSetterKeyAtom)) {
+              return false;
+            }
+            if (!ce.prepareForPrivateStaticMethod(propdef->pn_pos.begin)) {
+              
+              return false;
+            }
+            if (!emitGetPrivateName(
+                    &accessorSetterNode->name().as<NameNode>())) {
+              
+              
+              return false;
+            }
+            if (!emitPickN(4)) {
+              
+              
+              return false;
+            }
+            if (!ce.emitPrivateStaticMethod(AccessorType::Setter)) {
+              
+              return false;
+            }
+
+            if (!ce.prepareForPrivateStaticMethod(propdef->pn_pos.begin)) {
+              
+              return false;
+            }
+            if (!emitGetPrivateName(
+                    &accessorGetterNode->name().as<NameNode>())) {
+              
+              return false;
+            }
+            if (!emitPickN(4)) {
+              
+              return false;
+            }
+            if (!ce.emitPrivateStaticMethod(AccessorType::Getter)) {
+              
+              return false;
+            }
+          }
+
+          if (!isStatic) {
+            if (!emitUnpickN(hasHeritage ? 4 : 3)) {
+              
+              return false;
+            }
+          } else {
+            if (!emitUnpickN(4)) {
+              
+              return false;
+            }
+            if (!emitUnpickN(4)) {
+              
+              return false;
+            }
+          }
+        } else {
+          MOZ_ASSERT(IsPrivateInstanceAccessor(accessorSetterNode));
+
+          if (!emitLexicalInitialization(accessorSetterKeyAtom)) {
+            
+            
+            
+            return false;
+          }
+
+          if (!emitPopN(1)) {
+            
+            
+            
+            return false;
+          }
+
+          if (!emitLexicalInitialization(accessorGetterKeyAtom)) {
+            
+            
+            
+            return false;
+          }
+
+          if (!emitPopN(1)) {
+            
+            
+            
+            return false;
+          }
+        }
+      }
       if (!emit1(JSOp::InitElemInc)) {
         
         
@@ -9803,12 +10054,6 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
   }
 
   return true;
-}
-
-static bool IsPrivateInstanceAccessor(const ClassMethod* classMethod) {
-  return !classMethod->isStatic() &&
-         classMethod->name().isKind(ParseNodeKind::PrivateName) &&
-         classMethod->accessorType() != AccessorType::None;
 }
 
 bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
@@ -11345,7 +11590,12 @@ bool BytecodeEmitter::emitClass(
 
       
       if (!emitCreateMemberInitializers(ce, classMembers,
-                                        FieldPlacement::Instance)) {
+                                        FieldPlacement::Instance
+#ifdef ENABLE_DECORATORS
+                                        ,
+                                        isDerived
+#endif
+                                        )) {
         return false;
       }
     }
@@ -11383,7 +11633,12 @@ bool BytecodeEmitter::emitClass(
     return false;
   }
 
-  if (!emitCreateMemberInitializers(ce, classMembers, FieldPlacement::Static)) {
+  if (!emitCreateMemberInitializers(ce, classMembers, FieldPlacement::Static
+#ifdef ENABLE_DECORATORS
+                                    ,
+                                    false
+#endif
+                                    )) {
     return false;
   }
 

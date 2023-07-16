@@ -2299,6 +2299,16 @@ class ClassMethod : public BinaryNode {
 class ClassField : public BinaryNode {
   bool isStatic_;
 #ifdef ENABLE_DECORATORS
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ClassMethod* accessorGetterNode_;
   ClassMethod* accessorSetterNode_;
   ListNode* decorators_;
@@ -2325,7 +2335,6 @@ class ClassField : public BinaryNode {
 #ifdef ENABLE_DECORATORS
     MOZ_ASSERT((accessorGetterNode_ == nullptr) ==
                (accessorSetterNode_ == nullptr));
-    MOZ_ASSERT_IF(!decorators_, !accessorGetterNode_);
 #endif
   }
 
