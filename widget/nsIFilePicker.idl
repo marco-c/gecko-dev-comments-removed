@@ -149,6 +149,7 @@ interface nsIFilePicker : nsISupports
 
 
 
+
   readonly attribute nsIFile file;
 
  
