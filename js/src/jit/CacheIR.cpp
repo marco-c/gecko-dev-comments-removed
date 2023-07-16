@@ -13199,4 +13199,16 @@ bool js::jit::CallAnyNative(JSContext* cx, unsigned argc, Value* vp) {
   JSNative native = calleeFunc->native();
   return native(cx, args.length(), args.base());
 }
+
+const void* js::jit::RedirectedCallAnyNative() {
+  
+  
+  
+  
+  
+  JSNative target = CallAnyNative;
+  void* rawPtr = JS_FUNC_TO_DATA_PTR(void*, target);
+  void* redirected = Simulator::RedirectNativeFunction(rawPtr, Args_General3);
+  return redirected;
+}
 #endif
