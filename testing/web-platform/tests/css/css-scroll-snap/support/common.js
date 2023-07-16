@@ -77,8 +77,31 @@ function waitForWheelEvent(eventTarget) {
 
 
 
-function waitForScrollEnd(eventTarget, getValue, targetValue) {
-  return waitForScrollTo(eventTarget, getValue, targetValue);
+
+function waitForScrollEnd(eventTarget) {
+  const MAX_UNCHANGED_FRAMES = 15;
+
+  return new Promise(resolve => {
+    let unchanged_frames = 0;
+    let lastScrollEventTime;
+
+    const scrollListener = () => {
+      lastScrollEventTime = document.timeline.currentTime;
+    };
+    eventTarget.addEventListener('scroll', scrollListener);
+
+    const animationFrame = () => {
+      if (lastScrollEventTime == document.timeline.currentTime) {
+        unchanged_frames = 0;
+      } else if (++unchanged_frames >= MAX_UNCHANGED_FRAMES) {
+        eventTarget.removeEventListener('scroll', scrollListener);
+        resolve();
+        return;
+      }
+      requestAnimationFrame(animationFrame); 
+    }
+    requestAnimationFrame(animationFrame);
+  });
 }
 
 function waitForScrollTo(eventTarget, getValue, targetValue) {
