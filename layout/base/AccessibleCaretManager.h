@@ -117,10 +117,6 @@ class AccessibleCaretManager {
 
   
   
-  virtual void OnFrameReconstruction();
-
-  
-  
   void SetLastInputSource(uint16_t aInputSource);
 
   

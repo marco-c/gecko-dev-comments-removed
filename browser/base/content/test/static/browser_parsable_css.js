@@ -18,12 +18,6 @@ let whitelist = [
   },
   
   {
-    sourceName: /highlighters\.css$/i,
-    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
-    isFromDevTools: true,
-  },
-  
-  {
     sourceName: /\b(autocomplete-item)\.css$/,
     errorMessage: /Expected media feature name but found \u2018-moz.*/i,
     isFromDevTools: false,
@@ -66,11 +60,6 @@ let whitelist = [
     sourceName: /web\/viewer\.css$/i,
     errorMessage:
       /Unknown property ‘text-size-adjust’\. {2}Declaration dropped\./i,
-    isFromDevTools: false,
-  },
-  {
-    sourceName: /overlay\.css$/i,
-    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
     isFromDevTools: false,
   },
 ];
@@ -147,6 +136,7 @@ let propNameWhitelist = [
   
   
   { propName: "--bezier-diagonal-color", isFromDevTools: true },
+  { propName: "--highlighter-font-family", isFromDevTools: true },
 
   
   { propName: "--icon-url", isFromDevTools: false },

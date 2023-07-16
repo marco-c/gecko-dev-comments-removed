@@ -663,7 +663,17 @@ class StyleSheetsManager extends EventEmitter {
       this._targetActor.window.document,
       true
     );
-    return styleSheets.indexOf(styleSheet);
+    let i = 0;
+    for (const sheet of styleSheets) {
+      if (!this._shouldListSheet(sheet)) {
+        continue;
+      }
+      if (sheet == styleSheet) {
+        return i;
+      }
+      i++;
+    }
+    return -1;
   }
 
   
@@ -818,10 +828,15 @@ class StyleSheetsManager extends EventEmitter {
     
     
     
-    if (styleSheet.href?.toLowerCase() === "about:preferencestylesheet") {
+    const href = styleSheet.href?.toLowerCase();
+    if (href === "about:preferencestylesheet") {
       return false;
     }
-
+    
+    
+    if (href === "resource://content-accessible/accessiblecaret.css") {
+      return false;
+    }
     return true;
   }
 

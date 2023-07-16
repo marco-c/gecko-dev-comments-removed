@@ -903,11 +903,12 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   
   UpdatePreferenceStyles();
 
-  bool accessibleCaretEnabled =
+  const bool accessibleCaretEnabled =
       AccessibleCaretEnabled(mDocument->GetDocShell());
   if (accessibleCaretEnabled) {
     
     mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
+    mAccessibleCaretEventHub->Init();
   }
 
   mSelection = new nsFrameSelection(this, nullptr, accessibleCaretEnabled);
