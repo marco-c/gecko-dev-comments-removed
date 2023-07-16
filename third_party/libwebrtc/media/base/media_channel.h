@@ -1004,8 +1004,6 @@ struct ReceiveDataParams {
   int sid = 0;
   
   webrtc::DataMessageType type = webrtc::DataMessageType::kText;
-  
-  int seq_num = 0;
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
