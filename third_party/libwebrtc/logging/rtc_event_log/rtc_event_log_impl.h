@@ -18,7 +18,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log_output.h"
@@ -60,11 +59,23 @@ class RtcEventLogImpl final : public RtcEventLog {
   void StopLogging() override;
   void StopLogging(std::function<void()> callback) override;
 
+  
+  
   void Log(std::unique_ptr<RtcEvent> event) override;
 
  private:
-  void LogToMemory(std::unique_ptr<RtcEvent> event) RTC_RUN_ON(task_queue_);
-  void LogEventsFromMemoryToOutput() RTC_RUN_ON(task_queue_);
+  using EventDeque = std::deque<std::unique_ptr<RtcEvent>>;
+
+  struct EventHistories {
+    EventDeque config_history;
+    EventDeque history;
+  };
+
+  
+  EventHistories ExtractRecentHistories() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void LogToMemory(std::unique_ptr<RtcEvent> event)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void LogEventsToOutput(EventHistories histories) RTC_RUN_ON(task_queue_);
 
   void StopOutput() RTC_RUN_ON(task_queue_);
 
@@ -75,6 +86,7 @@ class RtcEventLogImpl final : public RtcEventLog {
 
   void StopLoggingInternal() RTC_RUN_ON(task_queue_);
 
+  bool ShouldOutputImmediately() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void ScheduleOutput() RTC_RUN_ON(task_queue_);
 
   
@@ -84,29 +96,31 @@ class RtcEventLogImpl final : public RtcEventLog {
   const size_t max_config_events_in_history_;
 
   
-  std::deque<std::unique_ptr<RtcEvent>> config_history_
-      RTC_GUARDED_BY(*task_queue_);
+  EventDeque all_config_history_ RTC_GUARDED_BY(task_queue_);
 
   
-  std::deque<std::unique_ptr<RtcEvent>> history_ RTC_GUARDED_BY(*task_queue_);
+  
+  EventHistories recent_ RTC_GUARDED_BY(mutex_);
 
   std::unique_ptr<RtcEventLogEncoder> event_encoder_
-      RTC_GUARDED_BY(*task_queue_);
-  std::unique_ptr<RtcEventLogOutput> event_output_ RTC_GUARDED_BY(*task_queue_);
+      RTC_GUARDED_BY(task_queue_);
+  std::unique_ptr<RtcEventLogOutput> event_output_ RTC_GUARDED_BY(task_queue_);
 
-  size_t num_config_events_written_ RTC_GUARDED_BY(*task_queue_);
-  absl::optional<int64_t> output_period_ms_ RTC_GUARDED_BY(*task_queue_);
-  int64_t last_output_ms_ RTC_GUARDED_BY(*task_queue_);
-  bool output_scheduled_ RTC_GUARDED_BY(*task_queue_);
+  int64_t output_period_ms_ RTC_GUARDED_BY(task_queue_);
+  int64_t last_output_ms_ RTC_GUARDED_BY(task_queue_);
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker logging_state_checker_;
-  bool logging_state_started_ RTC_GUARDED_BY(logging_state_checker_);
+  bool logging_state_started_ RTC_GUARDED_BY(mutex_) = false;
+  bool immediately_output_mode_ RTC_GUARDED_BY(mutex_) = false;
+  bool need_schedule_output_ RTC_GUARDED_BY(mutex_) = false;
 
   
   
   
   
   std::unique_ptr<rtc::TaskQueue> task_queue_;
+
+  Mutex mutex_;
 };
 
 }  
