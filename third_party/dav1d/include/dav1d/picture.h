@@ -91,7 +91,7 @@ typedef struct Dav1dPicture {
 
     size_t n_itut_t35;
 
-    uintptr_t reserved[3]; 
+    uintptr_t reserved[4]; 
 
     struct Dav1dRef *frame_hdr_ref; 
     struct Dav1dRef *seq_hdr_ref; 

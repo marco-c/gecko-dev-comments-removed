@@ -108,6 +108,15 @@ DAV1D_API const char *dav1d_version(void);
 
 
 
+
+
+DAV1D_API unsigned dav1d_version_api(void);
+
+
+
+
+
+
 DAV1D_API void dav1d_default_settings(Dav1dSettings *s);
 
 
