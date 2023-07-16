@@ -47,7 +47,7 @@ function copyStackTrace() {
   };
 }
 
-export function showFrameContextMenu(event, frame, cx, hideRestart = false) {
+export function showFrameContextMenu(event, frame, hideRestart = false) {
   return async ({ dispatch, getState }) => {
     const items = [];
 
@@ -55,7 +55,7 @@ export function showFrameContextMenu(event, frame, cx, hideRestart = false) {
     
     if (!hideRestart && isValidRestartFrame(frame)) {
       items.push(
-        formatMenuElement("restartFrame", () => dispatch(restart(cx, frame)))
+        formatMenuElement("restartFrame", () => dispatch(restart(frame)))
       );
     }
 
