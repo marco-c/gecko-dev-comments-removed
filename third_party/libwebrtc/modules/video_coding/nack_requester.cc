@@ -14,7 +14,6 @@
 #include <limits>
 
 #include "api/sequence_checker.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -220,14 +219,16 @@ int NackRequester::OnReceivedPacket(uint16_t seq_num,
 
 void NackRequester::ClearUpTo(uint16_t seq_num) {
   
-  worker_thread_->PostTask(SafeTask(task_safety_.flag(), [seq_num, this]() {
-    RTC_DCHECK_RUN_ON(worker_thread_);
-    nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
-    keyframe_list_.erase(keyframe_list_.begin(),
-                         keyframe_list_.lower_bound(seq_num));
-    recovered_list_.erase(recovered_list_.begin(),
-                          recovered_list_.lower_bound(seq_num));
-  }));
+  
+  
+  
+  
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
+  keyframe_list_.erase(keyframe_list_.begin(),
+                       keyframe_list_.lower_bound(seq_num));
+  recovered_list_.erase(recovered_list_.begin(),
+                        recovered_list_.lower_bound(seq_num));
 }
 
 void NackRequester::UpdateRtt(int64_t rtt_ms) {
