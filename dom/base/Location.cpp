@@ -81,14 +81,10 @@ nsresult Location::GetURI(nsIURI** aURI, bool aGetInnermostURI) {
     return NS_OK;
   }
 
-  nsresult rv;
-  nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(docShell, &rv));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsIWebNavigation* webNav = nsDocShell::Cast(docShell);
 
   nsCOMPtr<nsIURI> uri;
-  rv = webNav->GetCurrentURI(getter_AddRefs(uri));
+  nsresult rv = webNav->GetCurrentURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -633,11 +629,11 @@ bool Location::CallerSubsumes(nsIPrincipal* aSubjectPrincipal) {
   
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> outer = bc->GetDOMWindow();
+  nsPIDOMWindowOuter* outer = bc->GetDOMWindow();
   MOZ_DIAGNOSTIC_ASSERT(outer);
   if (MOZ_UNLIKELY(!outer)) return false;
 
-  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(outer);
+  nsIScriptObjectPrincipal* sop = nsGlobalWindowOuter::Cast(outer);
   bool subsumes = false;
   nsresult rv = aSubjectPrincipal->SubsumesConsideringDomain(
       sop->GetPrincipal(), &subsumes);
