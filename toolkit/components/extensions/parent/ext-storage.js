@@ -73,16 +73,27 @@ this.storage = class extends ExtensionAPIPersistent {
   }
 
   PERSISTENT_EVENTS = {
-    onChanged({ fire }) {
+    onChanged({ context, fire }) {
       let unregisterLocal = this.registerLocalChangedListener(changes => {
         
         
         fire.raw(changes, "local");
       });
-      let unregisterSession = extensionStorageSession.registerListener(
-        this.extension,
-        changes => fire.async(changes, "session")
-      );
+
+      
+      
+      let unregisterSession;
+      if (
+        !context ||
+        context.envType === "addon_parent" ||
+        context.envType === "devtools_parent"
+      ) {
+        unregisterSession = extensionStorageSession.registerListener(
+          this.extension,
+          changes => fire.async(changes, "session")
+        );
+      }
+
       let unregisterSync = this.registerSyncChangedListener(changes => {
         fire.async(changes, "sync");
       });
@@ -90,7 +101,7 @@ this.storage = class extends ExtensionAPIPersistent {
       return {
         unregister() {
           unregisterLocal();
-          unregisterSession();
+          unregisterSession?.();
           unregisterSync();
         },
         convert(_fire) {
