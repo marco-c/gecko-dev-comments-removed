@@ -50,13 +50,18 @@ add_task(async function () {
   ]);
 
   
+  await checkInlinePreview(dbg, "runInModule", [
+    { identifier: "val:", value: "4" },
+  ]);
+
+  
   invokeInTab("btnClick");
   await checkInspectorIcon(dbg);
 
   const { toolbox } = dbg;
   await toolbox.selectTool("jsdebugger");
 
-  await waitForPaused(dbg);
+  await waitForSelectedSource(dbg);
 
   
   
