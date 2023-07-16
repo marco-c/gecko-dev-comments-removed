@@ -35,9 +35,6 @@ function waitForAcceptButtonToGetEnabled(doc) {
 }
 
 async function waitForPdfJS(browser, url) {
-  await SpecialPowers.pushPrefEnv({
-    set: [["pdfjs.eventBusDispatchToDOM", true]],
-  });
   
   let loadPromise = BrowserTestUtils.waitForContentEvent(
     browser,
