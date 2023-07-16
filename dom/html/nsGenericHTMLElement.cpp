@@ -668,42 +668,45 @@ constexpr PopoverAttributeState ToPopoverAttributeState(
 }  
 
 void nsGenericHTMLElement::AfterSetPopoverAttr() {
-  auto mapPopoverState = [](const nsAttrValue* value) -> PopoverAttributeState {
-    if (value) {
-      MOZ_ASSERT(value->Type() == nsAttrValue::eEnum);
+  const nsAttrValue* newValue = GetParsedAttr(nsGkAtoms::popover);
+
+  const PopoverAttributeState newState = [&newValue]() {
+    if (newValue) {
+      MOZ_ASSERT(newValue->Type() == nsAttrValue::eEnum);
       const auto popoverAttributeKeyword =
-          static_cast<PopoverAttributeKeyword>(value->GetEnumValue());
+          static_cast<PopoverAttributeKeyword>(newValue->GetEnumValue());
       return ToPopoverAttributeState(popoverAttributeKeyword);
     }
 
     
     
     return PopoverAttributeState::None;
-  };
-
-  PopoverAttributeState newState =
-      mapPopoverState(GetParsedAttr(nsGkAtoms::popover));
+  }();
 
   const PopoverAttributeState oldState = GetPopoverAttributeState();
 
   if (newState != oldState) {
-    PopoverPseudoStateUpdate(false, true);
+    EnsurePopoverData().SetPopoverAttributeState(newState);
 
-    if (IsPopoverOpen()) {
-      HidePopoverInternal( true,
-                           true, IgnoreErrors());
-      
-      
-      newState = mapPopoverState(GetParsedAttr(nsGkAtoms::popover));
-    }
+    HidePopoverInternal( true,
+                         true, IgnoreErrors());
 
-    if (newState == PopoverAttributeState::None) {
-      OwnerDoc()->RemovePopoverFromTopLayer(*this);
-      ClearPopoverData();
-      RemoveStates(ElementState::POPOVER_OPEN);
-    } else {
-      
-      EnsurePopoverData().SetPopoverAttributeState(newState);
+    
+    
+    if (newState == GetPopoverAttributeState()) {
+      if (newState == PopoverAttributeState::None) {
+        
+        
+        
+        
+        OwnerDoc()->RemovePopoverFromTopLayer(*this);
+
+        ClearPopoverData();
+        RemoveStates(ElementState::POPOVER_OPEN);
+      } else {
+        
+        PopoverPseudoStateUpdate(false, true);
+      }
     }
   }
 }
