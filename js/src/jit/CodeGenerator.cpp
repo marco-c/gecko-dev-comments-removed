@@ -14162,6 +14162,12 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
 #endif
 
   
+  if (cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+    jitHints->recordIonCompilation(script);
+  }
+
+  
   if (safepointIndices_.length()) {
     ionScript->copySafepointIndices(&safepointIndices_[0]);
   }

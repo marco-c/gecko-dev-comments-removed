@@ -7,6 +7,8 @@
 #include "jit/IonOptimizationLevels.h"
 
 #include "jit/Ion.h"
+#include "jit/JitHints.h"
+#include "jit/JitRuntime.h"
 #include "vm/JSScript.h"
 
 #include "vm/JSScript-inl.h"
@@ -59,7 +61,8 @@ void OptimizationInfo::initWasmOptimizationInfo() {
   sink_ = false;
 }
 
-uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
+uint32_t OptimizationInfo::compilerWarmUpThreshold(JSContext* cx,
+                                                   JSScript* script,
                                                    jsbytecode* pc) const {
   MOZ_ASSERT(pc == nullptr || pc == script->code() ||
              JSOp(*pc) == JSOp::LoopHead);
@@ -68,11 +71,20 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
   
   MOZ_ASSERT_IF(pc && JSOp(*pc) == JSOp::LoopHead, pc > script->code());
 
+  uint32_t warmUpThreshold = baseCompilerWarmUpThreshold();
+
+  
+  if (cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+    uint32_t hintThreshold;
+    if (jitHints->getIonThresholdHint(script, hintThreshold)) {
+      warmUpThreshold = hintThreshold;
+    }
+  }
+
   if (pc == script->code()) {
     pc = nullptr;
   }
-
-  uint32_t warmUpThreshold = baseCompilerWarmUpThreshold();
 
   
   
@@ -102,11 +114,12 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
   return warmUpThreshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
 }
 
-uint32_t OptimizationInfo::recompileWarmUpThreshold(JSScript* script,
+uint32_t OptimizationInfo::recompileWarmUpThreshold(JSContext* cx,
+                                                    JSScript* script,
                                                     jsbytecode* pc) const {
   MOZ_ASSERT(pc == script->code() || JSOp(*pc) == JSOp::LoopHead);
 
-  uint32_t threshold = compilerWarmUpThreshold(script, pc);
+  uint32_t threshold = compilerWarmUpThreshold(cx, script, pc);
   if (JSOp(*pc) != JSOp::LoopHead || JitOptions.eagerIonCompilation()) {
     return threshold;
   }
@@ -127,10 +140,12 @@ OptimizationLevelInfo::OptimizationLevelInfo() {
   infos_[OptimizationLevel::Wasm].initWasmOptimizationInfo();
 }
 
-OptimizationLevel OptimizationLevelInfo::levelForScript(JSScript* script,
+OptimizationLevel OptimizationLevelInfo::levelForScript(JSContext* cx,
+                                                        JSScript* script,
                                                         jsbytecode* pc) const {
   const OptimizationInfo* info = get(OptimizationLevel::Normal);
-  if (script->getWarmUpCount() < info->compilerWarmUpThreshold(script, pc)) {
+  if (script->getWarmUpCount() <
+      info->compilerWarmUpThreshold(cx, script, pc)) {
     return OptimizationLevel::DontCompile;
   }
 

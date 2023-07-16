@@ -8,6 +8,9 @@
 #define jit_JitHints_h
 
 #include "mozilla/BloomFilter.h"
+#include "mozilla/HashTable.h"
+#include "mozilla/LinkedList.h"
+#include "jit/JitOptions.h"
 #include "vm/JSScript.h"
 
 namespace js::jit {
@@ -28,9 +31,86 @@ namespace js::jit {
 class JitHintsMap {
   
   using ScriptKey = HashNumber;
+  ScriptKey getScriptKey(JSScript* script) const;
 
-  static constexpr uint32_t CacheSize_ = 16;
-  mozilla::BitBloomFilter<CacheSize_, ScriptKey> map_;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class IonHint : public mozilla::LinkedListElement<IonHint> {
+    ScriptKey key_ = 0;
+    uint32_t threshold_ = 0;
+
+   public:
+    explicit IonHint(ScriptKey key) {
+      key_ = key;
+      threshold_ = IonHintEagerThresholdValue();
+    }
+
+    uint32_t threshold() { return threshold_; }
+
+    void incThreshold(uint32_t inc) {
+      uint32_t newThreshold = threshold() + inc;
+      threshold_ = (newThreshold > JitOptions.normalIonWarmUpThreshold)
+                       ? JitOptions.normalIonWarmUpThreshold
+                       : newThreshold;
+    }
+
+    ScriptKey key() {
+      MOZ_ASSERT(key_ != 0, "Should have valid key.");
+      return key_;
+    }
+  };
+
+  using ScriptToHintMap =
+      HashMap<ScriptKey, IonHint*, js::DefaultHasher<ScriptKey>,
+              js::SystemAllocPolicy>;
+  using IonHintPriorityQueue = mozilla::LinkedList<IonHint>;
+
+  static constexpr uint32_t InvalidationThresholdIncrement = 500;
+  static constexpr uint32_t IonHintMaxEntries = 5000;
+  static constexpr uint32_t InitialIonHintThresholdModifier = 50;
+
+  static uint32_t IonHintEagerThresholdValue() {
+    uint32_t eagerThreshold = JitOptions.trialInliningWarmUpThreshold +
+                              InitialIonHintThresholdModifier;
+
+    
+    
+    return (eagerThreshold > JitOptions.normalIonWarmUpThreshold)
+               ? JitOptions.normalIonWarmUpThreshold
+               : eagerThreshold;
+  }
+
+  ScriptToHintMap ionHintMap_;
+  IonHintPriorityQueue ionHintQueue_;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static constexpr uint32_t EagerBaselineCacheSize_ = 16;
+  mozilla::BitBloomFilter<EagerBaselineCacheSize_, ScriptKey> baselineHintMap_;
 
   
 
@@ -39,17 +119,25 @@ class JitHintsMap {
 
 
   static constexpr uint32_t MaxEntries_ = 4281;
-  static_assert(CacheSize_ == 16 && MaxEntries_ == 4281,
+  static_assert(EagerBaselineCacheSize_ == 16 && MaxEntries_ == 4281,
                 "MaxEntries should be recalculated for given CacheSize.");
 
-  uint32_t entryCount_ = 0;
+  uint32_t baselineEntryCount_ = 0;
+  void incrementBaselineEntryCount();
 
-  ScriptKey getScriptKey(JSScript* script) const;
-  void incrementEntryCount();
+  void updateAsRecentlyUsed(IonHint* hint);
+  IonHint* addIonHint(ScriptKey key, ScriptToHintMap::AddPtr& p);
 
  public:
+  ~JitHintsMap();
+
   void setEagerBaselineHint(JSScript* script);
   bool mightHaveEagerBaselineHint(JSScript* script) const;
+
+  bool recordIonCompilation(JSScript* script);
+  bool getIonThresholdHint(JSScript* script, uint32_t& thresholdOut);
+
+  void recordInvalidation(JSScript* script);
 };
 
 }  
