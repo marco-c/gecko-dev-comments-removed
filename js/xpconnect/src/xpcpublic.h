@@ -715,7 +715,7 @@ void AddGCCallback(xpcGCCallback cb);
 void RemoveGCCallback(xpcGCCallback cb);
 
 
-#if defined(XP_DARWIN) && defined(__aarch64__)
+#if (defined(XP_DARWIN) && defined(__aarch64__)) || defined(__loongarch__)
 const size_t kAutomationPageSize = 16384;
 #else
 const size_t kAutomationPageSize = 4096;
