@@ -41,25 +41,26 @@ static const wchar_t kLazyInstantiatorProp[] =
 
 
 already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
-  
-  
-  
-  
-  LazyInstantiator* existingInstantiator = reinterpret_cast<LazyInstantiator*>(
-      ::GetProp(aHwnd, kLazyInstantiatorProp));
-
   RefPtr<IAccessible> result;
-  if (existingInstantiator) {
-    
-    
-    existingInstantiator->mAllowBlindAggregation = false;
-    result = existingInstantiator;
-    return result.forget();
-  }
-
   
   
   if (!GetAccService()) {
+    
+    
+    
+    
+    LazyInstantiator* existingInstantiator =
+        reinterpret_cast<LazyInstantiator*>(
+            ::GetProp(aHwnd, kLazyInstantiatorProp));
+
+    if (existingInstantiator) {
+      
+      
+      existingInstantiator->mAllowBlindAggregation = false;
+      result = existingInstantiator;
+      return result.forget();
+    }
+
     
     
     
