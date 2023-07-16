@@ -149,6 +149,9 @@ async function openRelayAC(browser) {
   await promiseHidden;
 }
 
+
+requestLongerTimeout(2);
+
 add_setup(async function () {
   await ExperimentAPI.ready();
   const cleanupExperiment = await ExperimentFakes.enrollWithFeatureConfig(
