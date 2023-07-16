@@ -495,7 +495,7 @@ function pedanticChecks(report) {
         
         if (stat.qpSum !== undefined) {
           ok(
-            stat.qpSum > 0,
+            stat.qpSum >= 0,
             `${stat.type}.qpSum is at least 0 ` +
               `${stat.kind} test. value=${stat.qpSum}`
           );
