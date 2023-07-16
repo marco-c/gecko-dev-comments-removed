@@ -25,8 +25,8 @@ namespace rtc {
 
 
 
-static bool IsScmTimeStampExperimentEnabled() {
-  return webrtc::field_trial::IsEnabled("WebRTC-SCM-Timestamp");
+static bool IsScmTimeStampExperimentDisabled() {
+  return webrtc::field_trial::IsDisabled("WebRTC-SCM-Timestamp");
 }
 
 AsyncUDPSocket* AsyncUDPSocket::Create(Socket* socket,
@@ -133,7 +133,7 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
   } else {
     if (!socket_time_offset_) {
       socket_time_offset_ =
-          IsScmTimeStampExperimentEnabled() ? TimeMicros() - timestamp : 0;
+          !IsScmTimeStampExperimentDisabled() ? TimeMicros() - timestamp : 0;
     }
     timestamp += *socket_time_offset_;
   }

@@ -127,8 +127,8 @@ class ScopedSetTrue {
 
 
 
-bool IsScmTimeStampExperimentEnabled() {
-  return webrtc::field_trial::IsEnabled("WebRTC-SCM-Timestamp");
+bool IsScmTimeStampExperimentDisabled() {
+  return webrtc::field_trial::IsDisabled("WebRTC-SCM-Timestamp");
 }
 }  
 
@@ -140,7 +140,7 @@ PhysicalSocket::PhysicalSocket(PhysicalSocketServer* ss, SOCKET s)
       error_(0),
       state_((s == INVALID_SOCKET) ? CS_CLOSED : CS_CONNECTED),
       resolver_(nullptr),
-      read_scm_timestamp_experiment_(IsScmTimeStampExperimentEnabled()) {
+      read_scm_timestamp_experiment_(!IsScmTimeStampExperimentDisabled()) {
   if (s_ != INVALID_SOCKET) {
     SetEnabledEvents(DE_READ | DE_WRITE);
 
@@ -723,7 +723,7 @@ bool SocketDispatcher::Initialize() {
   ioctlsocket(s_, FIONBIO, &argp);
 #elif defined(WEBRTC_POSIX)
   fcntl(s_, F_SETFL, fcntl(s_, F_GETFL, 0) | O_NONBLOCK);
-  if (IsScmTimeStampExperimentEnabled()) {
+  if (!IsScmTimeStampExperimentDisabled()) {
     int value = 1;
     
     if (::setsockopt(s_, SOL_SOCKET, SO_TIMESTAMP, &value, sizeof(value)) !=
