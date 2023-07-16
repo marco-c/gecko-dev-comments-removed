@@ -2280,11 +2280,6 @@ void CodeGenerator::visitShiftI64(LShiftI64* lir) {
   }
 }
 
-void CodeGenerator::visitWasmHeapBase(LWasmHeapBase* ins) {
-  MOZ_ASSERT(ins->instance()->isBogus());
-  masm.movePtr(HeapReg, ToRegister(ins->output()));
-}
-
 
 
 
