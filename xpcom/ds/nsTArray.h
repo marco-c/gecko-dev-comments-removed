@@ -2398,6 +2398,12 @@ class nsTArray_Impl
   }
 
   
+  
+  void StableSort() {
+    StableSort(nsDefaultComparator<value_type, value_type>());
+  }
+
+  
   void Reverse() {
     value_type* elements = Elements();
     const size_type len = Length();
