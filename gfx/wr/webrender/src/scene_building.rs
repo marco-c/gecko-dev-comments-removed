@@ -47,7 +47,7 @@ use api::{ClipMode, PrimitiveKeyKind, TransformStyle, YuvColorSpace, ColorRange,
 use api::{ReferenceTransformBinding, Rotation, FillRule, SpatialTreeItem, ReferenceFrameDescriptor};
 use api::units::*;
 use crate::image_tiling::simplify_repeated_primitive;
-use crate::clip::{ClipItemKey, ClipStore, ClipItemKeyKind};
+use crate::clip::{ClipItemKey, ClipStore, ClipItemKeyKind, ClipIntern};
 use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
 use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
 use crate::segment::EdgeAaSegmentMask;
@@ -603,8 +603,12 @@ impl<'a> SceneBuilder<'a> {
             builder.picture_graph.add_root(*pic_index);
             SceneBuilder::finalize_picture(
                 *pic_index,
+                None,
                 &mut builder.prim_store.pictures,
                 None,
+                &builder.clip_tree_builder,
+                &builder.prim_instances,
+                &builder.interners.clip,
             );
         }
 
@@ -633,10 +637,16 @@ impl<'a> SceneBuilder<'a> {
     
     
     
+    
+    
     fn finalize_picture(
         pic_index: PictureIndex,
+        prim_index: Option<usize>,
         pictures: &mut [PicturePrimitive],
         parent_spatial_node_index: Option<SpatialNodeIndex>,
+        clip_tree_builder: &ClipTreeBuilder,
+        prim_instances: &[PrimitiveInstance],
+        clip_interner: &Interner<ClipIntern>,
     ) {
         
         
@@ -668,22 +678,79 @@ impl<'a> SceneBuilder<'a> {
         }
 
         
-        for child_pic_index in &prim_list.child_pictures {
-            let child_pic = &mut pictures[child_pic_index.0];
+        
+        
+        
+        
+        
+        
+        
+        let mut shared_clip_node_id = None;
+        for cluster in &prim_list.clusters {
+            for prim_instance in &prim_instances[cluster.prim_range()] {
+                let leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
 
-            if child_pic.spatial_node_index == SpatialNodeIndex::UNKNOWN {
-                child_pic.spatial_node_index = spatial_node_index;
+                shared_clip_node_id = match shared_clip_node_id {
+                    Some(current) => {
+                        Some(clip_tree_builder.find_lowest_common_ancestor(
+                            current,
+                            leaf.node_id,
+                        ))
+                    }
+                    None => Some(leaf.node_id)
+                };
             }
+        }
 
+        let lca_node = shared_clip_node_id
+            .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id))
+            .map(|node_id| clip_tree_builder.get_node(node_id))
+            .map(|tree_node| &clip_interner[tree_node.handle]);
+        let pic_node = prim_index
+            .map(|prim_index| clip_tree_builder.get_leaf(prim_instances[prim_index].clip_leaf_id).node_id)
+            .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id))
+            .map(|node_id| clip_tree_builder.get_node(node_id))
+            .map(|tree_node| &clip_interner[tree_node.handle]);
+
+        if let Some((lca_node, pic_node)) = lca_node.zip(pic_node) {
             
-            SceneBuilder::finalize_picture(
-                *child_pic_index,
-                pictures,
-                Some(spatial_node_index),
-            );
+            
+            
+            
+            
+            
+            
+            
+            if lca_node.key == pic_node.key {
+                pictures[pic_index.0].clip_root = shared_clip_node_id;
+            }
+        }
 
-            if pictures[child_pic_index.0].flags.contains(PictureFlags::DISABLE_SNAPPING) {
-                pictures[pic_index.0].flags |= PictureFlags::DISABLE_SNAPPING;
+        
+        for cluster in &prim_list.clusters {
+            for prim_instance_index in cluster.prim_range() {
+                if let PrimitiveInstanceKind::Picture { pic_index: child_pic_index, .. } = prim_instances[prim_instance_index].kind {
+                    let child_pic = &mut pictures[child_pic_index.0];
+
+                    if child_pic.spatial_node_index == SpatialNodeIndex::UNKNOWN {
+                        child_pic.spatial_node_index = spatial_node_index;
+                    }
+
+                    
+                    SceneBuilder::finalize_picture(
+                        child_pic_index,
+                        Some(prim_instance_index),
+                        pictures,
+                        Some(spatial_node_index),
+                        clip_tree_builder,
+                        prim_instances,
+                        clip_interner,
+                    );
+
+                    if pictures[child_pic_index.0].flags.contains(PictureFlags::DISABLE_SNAPPING) {
+                        pictures[pic_index.0].flags |= PictureFlags::DISABLE_SNAPPING;
+                    }
+                }
             }
         }
 
