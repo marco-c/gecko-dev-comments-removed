@@ -39,9 +39,6 @@ pref("network.http.http2.push-allowance", 32768);
 pref("network.http.http2.default-hpack-buffer", 4096); 
 
 
-pref("network.http.http3.default-qpack-table-size", 0);
-
-
 pref("network.buffer.cache.size",  16384);
 
 
