@@ -5662,6 +5662,27 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   }
 }
 
+void JitRuntime::generateIonGenericCallArgumentsShift(
+    MacroAssembler& masm, Register argc, Register curr, Register end,
+    Register scratch, Label* done) {
+  static_assert(sizeof(Value) == 8);
+  
+  
+
+  
+  
+  masm.moveStackPtrTo(curr);
+  masm.computeEffectiveAddress(BaseValueIndex(curr, argc), end);
+
+  Label loop;
+  masm.bind(&loop);
+  masm.branchPtr(Assembler::Equal, curr, end, done);
+  masm.loadPtr(Address(curr, 8), scratch);
+  masm.storePtr(scratch, Address(curr, 0));
+  masm.addPtr(Imm32(sizeof(uintptr_t)), curr);
+  masm.jump(&loop);
+}
+
 void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
                                             IonGenericCallKind kind) {
   AutoCreatedBy acb(masm, "JitRuntime::generateIonGenericCallStub");
@@ -5770,6 +5791,9 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   
   
   masm.bind(&noJitEntry);
+  if (!isConstructing) {
+    generateIonGenericCallFunCall(masm, &entry, &vmCall);
+  }
   generateIonGenericCallNativeFunction(masm, isConstructing);
 
   
@@ -5872,6 +5896,62 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
   masm.ret();
 }
 
+void JitRuntime::generateIonGenericCallFunCall(MacroAssembler& masm,
+                                               Label* entry, Label* vmCall) {
+  Register calleeReg = IonGenericCallCalleeReg;
+  Register argcReg = IonGenericCallArgcReg;
+  Register scratch = IonGenericCallScratch;
+  Register scratch2 = IonGenericCallScratch2;
+  Register scratch3 = IonGenericCallScratch3;
+
+  Label notFunCall;
+  masm.branchPtr(Assembler::NotEqual,
+                 Address(calleeReg, JSFunction::offsetOfNativeOrEnv()),
+                 ImmPtr(js::fun_call), &notFunCall);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  masm.fallibleUnboxObject(Address(masm.getStackPointer(), 0), scratch, vmCall);
+  masm.movePtr(scratch, calleeReg);
+
+  Label hasArgs;
+  masm.branch32(Assembler::NotEqual, argcReg, Imm32(0), &hasArgs);
+
+  
+  masm.storeValue(UndefinedValue(), Address(masm.getStackPointer(), 0));
+  masm.jump(entry);
+
+  masm.bind(&hasArgs);
+
+  Label doneSliding;
+  generateIonGenericCallArgumentsShift(masm, argcReg, scratch, scratch2,
+                                       scratch3, &doneSliding);
+  masm.bind(&doneSliding);
+  masm.sub32(Imm32(1), argcReg);
+
+  masm.jump(entry);
+
+  masm.bind(&notFunCall);
+}
+
 void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
                                                      Label* entry,
                                                      Label* vmCall) {
@@ -5915,21 +5995,8 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
 
     
     
-
-    
-    
-    Register curr = scratch;
-    Register end = scratch2;
-    masm.moveStackPtrTo(curr);
-    masm.computeEffectiveAddress(BaseValueIndex(curr, argcReg), end);
-
-    Label loop;
-    masm.bind(&loop);
-    masm.branchPtr(Assembler::Equal, curr, end, &poppedThis);
-    masm.loadPtr(Address(curr, 8), scratch3);
-    masm.storePtr(scratch3, Address(curr, 0));
-    masm.addPtr(Imm32(sizeof(uintptr_t)), curr);
-    masm.jump(&loop);
+    generateIonGenericCallArgumentsShift(masm, argcReg, scratch, scratch2,
+                                         scratch3, &poppedThis);
     masm.bind(&alreadyAligned);
   }
 
