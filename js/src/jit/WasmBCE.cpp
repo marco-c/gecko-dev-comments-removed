@@ -47,7 +47,7 @@ bool jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph) {
 
           
           
-          if (!bc->isMemory()) {
+          if (!bc->isMemory0()) {
             continue;
           }
 
@@ -60,10 +60,10 @@ bool jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph) {
           if (addr->isConstant() &&
               ((addr->toConstant()->type() == MIRType::Int32 &&
                 uint64_t(addr->toConstant()->toInt32()) <
-                    mir->minWasmHeapLength()) ||
+                    mir->minWasmMemory0Length()) ||
                (addr->toConstant()->type() == MIRType::Int64 &&
                 uint64_t(addr->toConstant()->toInt64()) <
-                    mir->minWasmHeapLength()))) {
+                    mir->minWasmMemory0Length()))) {
             bc->setRedundant();
             if (JitOptions.spectreIndexMasking) {
               bc->replaceAllUsesWith(addr);

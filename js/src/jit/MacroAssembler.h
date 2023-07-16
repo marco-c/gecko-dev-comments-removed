@@ -393,16 +393,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   static bool MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask);
 #endif
 
- private:
-  
-  uint32_t wasmMaxOffsetGuardLimit_;
-
- public:
-  uint32_t wasmMaxOffsetGuardLimit() const { return wasmMaxOffsetGuardLimit_; }
-  void setWasmMaxOffsetGuardLimit(uint32_t limit) {
-    wasmMaxOffsetGuardLimit_ = limit;
-  }
-
   
  public:
   
