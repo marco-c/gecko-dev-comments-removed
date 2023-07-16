@@ -52,11 +52,13 @@ class RepeatingTaskHandle {
   
   
   
-  static RepeatingTaskHandle Start(TaskQueueBase* task_queue,
-                                   absl::AnyInvocable<TimeDelta()> closure,
-                                   TaskQueueBase::DelayPrecision precision =
-                                       TaskQueueBase::DelayPrecision::kLow,
-                                   Clock* clock = Clock::GetRealTimeClockRaw());
+  static RepeatingTaskHandle Start(
+      TaskQueueBase* task_queue,
+      absl::AnyInvocable<TimeDelta()> closure,
+      TaskQueueBase::DelayPrecision precision =
+          TaskQueueBase::DelayPrecision::kLow,
+      Clock* clock = Clock::GetRealTimeClockRaw(),
+      const Location& location = Location::Current());
 
   
   
@@ -66,7 +68,8 @@ class RepeatingTaskHandle {
       absl::AnyInvocable<TimeDelta()> closure,
       TaskQueueBase::DelayPrecision precision =
           TaskQueueBase::DelayPrecision::kLow,
-      Clock* clock = Clock::GetRealTimeClockRaw());
+      Clock* clock = Clock::GetRealTimeClockRaw(),
+      const Location& location = Location::Current());
 
   
   
