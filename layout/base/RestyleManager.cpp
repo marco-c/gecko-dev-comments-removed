@@ -3603,9 +3603,23 @@ void RestyleManager::ReparentComputedStyleForFirstLine(nsIFrame* aFrame) {
   DoReparentComputedStyleForFirstLine(aFrame, *StyleSet());
 }
 
+static bool IsFrameAboutToGoAway(nsIFrame* aFrame) {
+  auto* element = Element::FromNode(aFrame->GetContent());
+  if (!element) {
+    return false;
+  }
+  return !element->HasServoData();
+}
+
 void RestyleManager::DoReparentComputedStyleForFirstLine(
     nsIFrame* aFrame, ServoStyleSet& aStyleSet) {
   if (aFrame->IsBackdropFrame()) {
+    
+    
+    return;
+  }
+
+  if (IsFrameAboutToGoAway(aFrame)) {
     
     
     return;
@@ -3730,7 +3744,7 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
     
     
     
-    uint32_t index = 0;
+    int32_t index = 0;
     while (auto* oldAdditionalStyle =
                aFrame->GetAdditionalComputedStyle(index)) {
       RefPtr<ComputedStyle> newAdditionalContext =
@@ -3761,12 +3775,6 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
 void RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
                                               nsIFrame* aProviderChild,
                                               ServoStyleSet& aStyleSet) {
-  if (aFrame->GetContent()->IsElement() &&
-      !aFrame->GetContent()->AsElement()->HasServoData()) {
-    
-    
-    return;
-  }
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
