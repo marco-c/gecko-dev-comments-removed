@@ -401,8 +401,7 @@ bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
     return false;
   }
 
-  
-  if (!bce_->emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+  if (!bce_->emitDupAt(6)) {
     
     
     return false;

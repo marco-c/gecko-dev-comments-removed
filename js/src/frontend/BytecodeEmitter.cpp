@@ -9763,7 +9763,7 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
       continue;
     }
     ClassField* field = &propdef->as<ClassField>();
-    if (placement == FieldPlacement::Static && !field->isStatic()) {
+    if (field->isStatic() != isStatic) {
       continue;
     }
     if (field->decorators() && !field->decorators()->empty()) {
@@ -10284,6 +10284,116 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
       return false;
     }
   }
+
+#ifdef ENABLE_DECORATORS
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotStaticInitializers())) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!emitAtomOp(JSOp::GetProp, TaggedParserAtomIndex::WellKnown::length())) {
+    
+    return false;
+  }
+
+  if (!emitNumberOp(static_cast<double>(numFields))) {
+    
+    return false;
+  }
+
+  WhileEmitter wh(this);
+  
+  
+  
+  if (!wh.emitCond(0, 0, 0)) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Dup)) {
+    
+    return false;
+  }
+
+  if (!emitDupAt(2)) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Lt)) {
+    
+    return false;
+  }
+
+  if (!wh.emitBody()) {
+    
+    return false;
+  }
+
+  if (!emitDupAt(2)) {
+    
+    return false;
+  }
+
+  if (!emitDupAt(1)) {
+    
+    return false;
+  }
+
+  
+  if (!emit1(JSOp::GetElem)) {
+    
+    return false;
+  }
+
+  if (!emitDupAt(4)) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Swap)) {
+    
+    return false;
+  }
+
+  DecoratorEmitter de(this);
+  if (!de.emitInitializeFieldOrAccessor()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Inc)) {
+    
+    return false;
+  }
+
+  if (!wh.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!emitPopN(3)) {
+    
+    return false;
+  }
+  
+#endif
 
   
   
