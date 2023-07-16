@@ -190,7 +190,7 @@ export function addBreakpoint(
 
 
 
-export function removeBreakpoint(cx, initialBreakpoint) {
+export function removeBreakpoint(initialBreakpoint) {
   return ({ dispatch, getState, client }) => {
     recordEvent("remove_breakpoint");
 
@@ -202,7 +202,6 @@ export function removeBreakpoint(cx, initialBreakpoint) {
     dispatch(setSkipPausing(false));
     return dispatch({
       type: "REMOVE_BREAKPOINT",
-      cx,
       breakpoint,
       
       [PROMISE]: breakpoint.disabled
@@ -223,7 +222,7 @@ export function removeBreakpoint(cx, initialBreakpoint) {
 
 
 
-export function removeBreakpointAtGeneratedLocation(cx, target) {
+export function removeBreakpointAtGeneratedLocation(target) {
   return ({ dispatch, getState, client }) => {
     
     const onBreakpointRemoved = clientRemoveBreakpoint(
@@ -241,7 +240,6 @@ export function removeBreakpointAtGeneratedLocation(cx, target) {
       ) {
         dispatch({
           type: "REMOVE_BREAKPOINT",
-          cx,
           breakpoint,
           [PROMISE]: onBreakpointRemoved,
         });
@@ -258,7 +256,6 @@ export function removeBreakpointAtGeneratedLocation(cx, target) {
       ) {
         dispatch({
           type: "REMOVE_PENDING_BREAKPOINT",
-          cx,
           pendingBreakpoint,
         });
       }
