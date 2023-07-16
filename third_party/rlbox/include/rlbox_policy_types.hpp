@@ -48,9 +48,8 @@ private:
   
   
   
-  using T_Interceptor =
-    decltype(callback_detail::interceptor_type_helper<T_Sbx>(
-      std::declval<T>()));
+  using T_Interceptor = decltype(
+    callback_detail::interceptor_type_helper<T_Sbx>(std::declval<T>()));
   T_Interceptor callback_interceptor;
 
   
@@ -293,7 +292,10 @@ public:
     val = rhs;
     return *this;
   }
-  inline tainted_boolean_hint operator!() const { return tainted_boolean_hint(!val); }
+  inline tainted_boolean_hint operator!() const
+  {
+    return tainted_boolean_hint(!val);
+  }
   template<size_t N>
   inline bool unverified_safe_because(const char (&reason)[N]) const
   {
@@ -349,7 +351,10 @@ public:
     val = rhs;
     return *this;
   }
-  inline tainted_boolean_hint operator!() const { return tainted_boolean_hint(!val); }
+  inline tainted_boolean_hint operator!() const
+  {
+    return tainted_boolean_hint(!val);
+  }
   template<size_t N>
   inline int unverified_safe_because(const char (&reason)[N]) const
   {
