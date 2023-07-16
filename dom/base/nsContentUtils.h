@@ -2469,14 +2469,6 @@ class nsContentUtils {
 
 
 
-
-
-  static bool HasPluginWithUncontrolledEventDispatch(nsIContent* aContent);
-
-  
-
-
-
   static Document* GetInProcessSubtreeRootDocument(Document* aDoc) {
     return const_cast<Document*>(
         GetInProcessSubtreeRootDocument(const_cast<const Document*>(aDoc)));

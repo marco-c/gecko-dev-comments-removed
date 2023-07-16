@@ -7247,12 +7247,6 @@ bool nsContentUtils::HaveEqualPrincipals(Document* aDoc1, Document* aDoc2) {
 }
 
 
-bool nsContentUtils::HasPluginWithUncontrolledEventDispatch(
-    nsIContent* aContent) {
-  return false;
-}
-
-
 void nsContentUtils::FireMutationEventsForDirectParsing(
     Document* aDoc, nsIContent* aDest, int32_t aOldChildCount) {
   

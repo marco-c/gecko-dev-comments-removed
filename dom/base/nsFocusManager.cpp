@@ -1691,25 +1691,6 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
   
   
   
-  
-  
-#ifndef XP_MACOSX
-  if (elementToFocus &&
-      nsContentUtils::GetInProcessSubtreeRootDocument(
-          elementToFocus->OwnerDoc())
-          ->GetFullscreenElement() &&
-      nsContentUtils::HasPluginWithUncontrolledEventDispatch(elementToFocus)) {
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                    elementToFocus->OwnerDoc(),
-                                    nsContentUtils::eDOM_PROPERTIES,
-                                    "FocusedWindowedPluginWhileFullscreen");
-    Document::AsyncExitFullscreen(elementToFocus->OwnerDoc());
-  }
-#endif
-
-  
-  
-  
   bool allowFrameSwitch = !(aFlags & FLAG_NOSWITCHFRAME) ||
                           IsSameOrAncestor(newWindow, focusedBrowsingContext);
 
