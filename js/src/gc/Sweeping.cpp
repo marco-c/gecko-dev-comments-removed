@@ -1356,10 +1356,19 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
     jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   }
 
-  if (!haveDiscardedJITCodeThisSlice) {
+  
+  
+  
+  {
     gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
+    Zone::DiscardOptions options;
+    options.traceWeakJitScripts = &trc;
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-      zone->discardJitCode(gcx);
+      if (!haveDiscardedJITCodeThisSlice && !zone->isPreservingCode()) {
+        zone->forceDiscardJitCode(gcx, options);
+      } else {
+        zone->traceWeakJitScripts(&trc);
+      }
     }
   }
 
