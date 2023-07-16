@@ -30,7 +30,7 @@ add_task(async function () {
   await wait;
 
   
-  await toggleUrlPreview(true, document, monitor);
+  await toggleUrlPreview(true, monitor);
 
   
   wait = waitForDOM(document, "#headers-panel .url-preview", 1);
@@ -50,7 +50,7 @@ add_task(async function () {
   );
 
   
-  await toggleUrlPreview(false, document, monitor);
+  await toggleUrlPreview(false, monitor);
 
   
   wait = waitForDOM(document, "#headers-panel .url-preview", 1);
@@ -144,7 +144,7 @@ add_task(async function () {
   );
 
   
-  await toggleUrlPreview(true, document, monitor);
+  await toggleUrlPreview(true, monitor);
 
   
   is(
@@ -156,7 +156,7 @@ add_task(async function () {
   );
 
   
-  await toggleUrlPreview(false, document, monitor);
+  await toggleUrlPreview(false, monitor);
 
   urlPreview = waitForDOM(document, "#headers-panel .url-preview", 1);
   EventUtils.sendMouseEvent(
@@ -171,7 +171,7 @@ add_task(async function () {
   );
 
   
-  await toggleUrlPreview(true, document, monitor);
+  await toggleUrlPreview(true, monitor);
 
   
   is(
@@ -184,20 +184,3 @@ add_task(async function () {
 
   return teardown(monitor);
 });
-
-async function toggleUrlPreview(shouldExpand, document, monitor) {
-  const wait = waitUntil(() => {
-    const rowSize = document.querySelectorAll(
-      "#headers-panel .url-preview tr.treeRow"
-    ).length;
-    return shouldExpand ? rowSize > 1 : rowSize == 1;
-  });
-
-  clickElement(
-    document.querySelector(
-      "#headers-panel .url-preview tr:first-child span.treeIcon.theme-twisty"
-    ),
-    monitor
-  );
-  return wait;
-}

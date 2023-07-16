@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -87,6 +88,14 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/link.js",
   true
 );
+
+loader.lazyGetter(this, "HEADERS_PROXY_STATUS", function () {
+  return L10N.getStr("netmonitor.headers.proxyStatus");
+});
+
+loader.lazyGetter(this, "HEADERS_PROXY_VERSION", function () {
+  return L10N.getStr("netmonitor.headers.proxyVersion");
+});
 
 const { div, input, label, span, textarea, tr, td, button } = dom;
 
@@ -286,11 +295,11 @@ class HeadersPanel extends Component {
   
 
 
-  renderSummary(summaryLabel, value) {
+  renderSummary(summaryLabel, value, summaryClass = "") {
     return div(
       {
         key: summaryLabel,
-        className: "tabpanel-summary-container headers-summary",
+        className: "tabpanel-summary-container headers-summary " + summaryClass,
       },
       span(
         { className: "tabpanel-summary-label headers-summary-label" },
@@ -557,6 +566,9 @@ class HeadersPanel extends Component {
         contentSize,
         transferredSize,
         isResolvedByTRR,
+        proxyHttpVersion,
+        proxyStatus,
+        proxyStatusText,
       },
       openRequestBlockingAndAddUrl,
       openHTTPCustomRequestTab,
@@ -717,6 +729,42 @@ class HeadersPanel extends Component {
       );
     }
 
+    let summaryProxyStatus;
+    if (proxyStatus) {
+      summaryProxyStatus = div(
+        {
+          key: "headers-summary ",
+          className:
+            "tabpanel-summary-container headers-summary headers-proxy-status",
+        },
+        span(
+          {
+            className: "tabpanel-summary-label headers-summary-label",
+          },
+          HEADERS_PROXY_STATUS
+        ),
+        span(
+          {
+            className: "tabpanel-summary-value status",
+            "data-code": proxyStatus,
+          },
+          StatusCode({
+            item: {
+              fromCache,
+              fromServiceWorker,
+              status: proxyStatus,
+              statusText: proxyStatusText,
+            },
+          }),
+          proxyStatusText,
+          MDNLink({
+            url: getHTTPStatusCodeURL(proxyStatus),
+            title: SUMMARY_STATUS_LEARN_MORE,
+          })
+        )
+      );
+    }
+
     let trackingProtectionStatus;
     let trackingProtectionDetails = "";
     if (isThirdPartyTrackingResource) {
@@ -748,6 +796,14 @@ class HeadersPanel extends Component {
       ? this.renderSummary(HEADERS_VERSION, httpVersion)
       : null;
 
+    const summaryProxyHttpVersion = proxyHttpVersion
+      ? this.renderSummary(
+          HEADERS_PROXY_VERSION,
+          proxyHttpVersion,
+          "headers-proxy-version"
+        )
+      : null;
+
     const summaryReferrerPolicy = referrerPolicy
       ? this.renderSummary(HEADERS_REFERRER, referrerPolicy)
       : null;
@@ -767,7 +823,9 @@ class HeadersPanel extends Component {
 
     const summaryItems = [
       summaryStatus,
+      summaryProxyStatus,
       summaryVersion,
+      summaryProxyHttpVersion,
       summarySize,
       summaryReferrerPolicy,
       summaryPriority,
@@ -829,6 +887,7 @@ class HeadersPanel extends Component {
               : null,
             shouldExpandPreview,
             onTogglePreview: expanded => setHeadersUrlPreviewExpanded(expanded),
+            proxyStatus,
           }),
           div(
             {

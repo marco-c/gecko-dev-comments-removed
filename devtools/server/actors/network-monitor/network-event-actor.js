@@ -433,7 +433,13 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseStart({ channel, fromCache, rawHeaders = "" }) {
+
+  addResponseStart({
+    channel,
+    fromCache,
+    rawHeaders = "",
+    proxyResponseRawHeaders,
+  }) {
     
     if (this.isDestroyed()) {
       return;
@@ -479,6 +485,13 @@ class NetworkEventActor extends Actor {
       (timedChannel.responseStartTime - timedChannel.requestStartTime) / 1000
     );
 
+    let proxyInfo = [];
+    if (proxyResponseRawHeaders) {
+      
+      
+      proxyInfo = proxyResponseRawHeaders.split("\r\n")[0].split(" ");
+    }
+
     this._onEventUpdate("responseStart", {
       httpVersion: lazy.NetworkUtils.getHttpVersion(channel),
       mimeType,
@@ -488,6 +501,9 @@ class NetworkEventActor extends Actor {
       statusText: channel.responseStatusText,
       waitingTime,
       isResolvedByTRR: channel.isResolvedByTRR,
+      proxyHttpVersion: proxyInfo[0],
+      proxyStatus: proxyInfo[1],
+      proxyStatusText: proxyInfo[2],
     });
   }
 
