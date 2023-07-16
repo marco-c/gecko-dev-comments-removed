@@ -2708,20 +2708,16 @@ JSObject* IOUtils::JsBuffer::IntoUint8Array(JSContext* aCx, JsBuffer aBuffer) {
     return JS_NewUint8Array(aCx, 0);
   }
 
-  char* rawBuffer = aBuffer.mBuffer.release();
+  UniquePtr<void, JS::FreePolicy> rawBuffer{aBuffer.mBuffer.release()};
   MOZ_RELEASE_ASSERT(rawBuffer);
   JS::Rooted<JSObject*> arrayBuffer(
       aCx, JS::NewArrayBufferWithContents(aCx, aBuffer.mLength,
-                                          reinterpret_cast<void*>(rawBuffer)));
+                                          std::move(rawBuffer)));
 
   if (!arrayBuffer) {
     
     
     
-    
-    
-    
-    js_free(rawBuffer);
     return nullptr;
   }
 
