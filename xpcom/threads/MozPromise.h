@@ -1127,12 +1127,6 @@ class MozPromise : public MozPromiseBase {
   
   
   
-  static RefPtr<MozPromise> FromDomPromise(dom::Promise* aDOMPromise);
-
-  
-  
-  
-  
   void AssertIsDead() override {
     PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic &&
                    mMagic3 == sMagic && mMagic4 == &mMutex);
