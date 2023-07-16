@@ -7,9 +7,6 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { CFRMessageProvider } = ChromeUtils.importESModule(
   "resource://activity-stream/lib/CFRMessageProvider.sys.mjs"
 );
-const { CFRPageActions } = ChromeUtils.import(
-  "resource://activity-stream/lib/CFRPageActions.jsm"
-);
 
 
 
@@ -74,6 +71,7 @@ add_setup(async function () {
 
 
 add_task(async function test_heartbeat_tactic_2() {
+  
   const TEST_URL = "http://example.com";
   const msg = ASRouter.state.messages.find(m =>
     m.groups.includes("messaging-experiments")

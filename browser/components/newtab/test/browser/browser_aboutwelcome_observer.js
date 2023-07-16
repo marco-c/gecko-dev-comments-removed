@@ -56,10 +56,12 @@ add_task(async function test_About_Welcome_Location_Change() {
   );
   BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
+    
     "http://example.com/#foo"
   );
   await BrowserTestUtils.waitForLocationChange(
     gBrowser,
+    
     "http://example.com/#foo"
   );
 

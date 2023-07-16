@@ -13,18 +13,15 @@ ChromeUtils.defineModuleGetter(
   "QueryCache",
   "resource://activity-stream/lib/ASRouterTargeting.jsm"
 );
-
 const { FxAccounts } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"
 );
-
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
 const ABOUT_WELCOME_OVERRIDE_CONTENT_PREF = "browser.aboutwelcome.screens";
-
 
 const win7Content = AppConstants.isPlatformAndVersionAtMost("win", "6.1");
 
@@ -34,16 +31,13 @@ function popPrefs() {
 function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({ set: prefs });
 }
-
 async function getAboutWelcomeParent(browser) {
   let windowGlobalParent = browser.browsingContext.currentWindowGlobal;
   return windowGlobalParent.getActor("AboutWelcome");
 }
-
 async function setAboutWelcomeMultiStage(value = "") {
   return pushPrefs([ABOUT_WELCOME_OVERRIDE_CONTENT_PREF, value]);
 }
-
 
 
 
@@ -92,7 +86,6 @@ async function test_screen_content(
   );
 }
 
-
 async function test_element_styles(
   browser,
   elementSelector,
@@ -125,7 +118,6 @@ async function test_element_styles(
   );
 }
 
-
 async function onButtonClick(browser, elementId) {
   await ContentTask.spawn(
     browser,
@@ -152,7 +144,6 @@ async function toggleTopsitesPref() {
   ]);
 }
 
-
 async function setDefaultTopSites() {
   
   await pushPrefs([
@@ -165,7 +156,6 @@ async function setDefaultTopSites() {
     true,
   ]);
 }
-
 
 async function setTestTopSites() {
   await pushPrefs([
@@ -181,11 +171,9 @@ async function setTestTopSites() {
   await toggleTopsitesPref();
 }
 
-
 async function setAboutWelcomePref(value) {
   return pushPrefs(["browser.aboutwelcome.enabled", value]);
 }
-
 
 async function openMRAboutWelcome() {
   await setAboutWelcomePref(true); 
@@ -203,7 +191,6 @@ async function openMRAboutWelcome() {
     },
   };
 }
-
 
 async function clearHistoryAndBookmarks() {
   await PlacesUtils.bookmarks.eraseEverything();
@@ -231,7 +218,6 @@ async function waitForPreloaded(browser) {
 
 
 
-
 async function waitForUrlLoad(url) {
   let browser = gBrowser.selectedBrowser;
   BrowserTestUtils.loadURIString(browser, url);
@@ -252,7 +238,6 @@ function refreshHighlightsFeed() {
     true
   );
 }
-
 
 
 
@@ -301,7 +286,6 @@ function addContentHelpers() {
     },
   });
 }
-
 
 
 

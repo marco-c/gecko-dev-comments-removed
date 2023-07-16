@@ -680,7 +680,10 @@ const Localized = ({
     const {
       current
     } = zapRef;
-    if (current) requestAnimationFrame(() => current === null || current === void 0 ? void 0 : current.classList.replace("short", current.getBoundingClientRect().width > ZAP_SIZE_THRESHOLD ? "long" : "short"));
+
+    if (current) {
+      requestAnimationFrame(() => current === null || current === void 0 ? void 0 : current.classList.replace("short", current.getBoundingClientRect().width > ZAP_SIZE_THRESHOLD ? "long" : "short"));
+    }
   }); 
 
   if (!text) {
@@ -701,7 +704,10 @@ const Localized = ({
     
     props.key = text.string_id;
     props["data-l10n-id"] = text.string_id;
-    if (text.args) props["data-l10n-args"] = JSON.stringify(text.args);
+
+    if (text.args) {
+      props["data-l10n-args"] = JSON.stringify(text.args);
+    }
   } else if (text.raw) {
     textNodes.push(text.raw);
   } else if (typeof text === "string") {
@@ -724,7 +730,9 @@ const Localized = ({
 
 
   CONFIGURABLE_STYLES.forEach(style => {
-    if (text[style] !== undefined) props.style[style] = text[style];
+    if (text[style] !== undefined) {
+      props.style[style] = text[style];
+    }
   });
   return react__WEBPACK_IMPORTED_MODULE_0___default().cloneElement( 
   children ?? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null), props, 
@@ -874,7 +882,11 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
 
   getScreenClassName(isFirstScreen, isLastScreen, includeNoodles, isVideoOnboarding) {
     const screenClass = `screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
-    if (isVideoOnboarding) return "with-video";
+
+    if (isVideoOnboarding) {
+      return "with-video";
+    }
+
     return `${isFirstScreen ? `dialog-initial` : ``} ${isLastScreen ? `dialog-last` : ``} ${includeNoodles ? `with-noodles` : ``} ${screenClass}`;
   }
 
@@ -1188,11 +1200,14 @@ function Colorways(props) {
   const [variationIndex, setVariationIndex] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(defaultVariationIndex);
 
   function revertToDefaultTheme() {
-    if (hasReverted) return; 
+    if (hasReverted) {
+      return;
+    } 
     
     
     
     
+
 
     const event = {
       currentTarget: {

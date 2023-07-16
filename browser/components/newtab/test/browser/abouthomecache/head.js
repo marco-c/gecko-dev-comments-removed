@@ -50,7 +50,6 @@ let { AboutHomeStartupCache } = ChromeUtils.importESModule(
 
 
 
-
 function withFullyLoadedAboutHome(taskFn) {
   return BrowserTestUtils.withNewTab("about:home", async browser => {
     await SpecialPowers.spawn(browser, [], async () => {
@@ -66,7 +65,6 @@ function withFullyLoadedAboutHome(taskFn) {
     await taskFn(browser);
   });
 }
-
 
 
 
@@ -205,7 +203,6 @@ async function simulateRestart(
 
 
 
-
 async function injectIntoCache(page, script) {
   if (!page || !script) {
     throw new Error("Cannot injectIntoCache with falsey values");
@@ -231,7 +228,6 @@ async function injectIntoCache(page, script) {
 
   await AboutHomeStartupCache.populateCache(pageInputStream, scriptInputStream);
 }
-
 
 
 
@@ -281,7 +277,6 @@ function assertCacheResultScalar(cacheResultScalar) {
 
 
 
-
 async function ensureCachedAboutHome(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
     let scripts = Array.from(content.document.querySelectorAll("script"));
@@ -309,7 +304,6 @@ async function ensureCachedAboutHome(browser) {
     AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
   );
 }
-
 
 
 

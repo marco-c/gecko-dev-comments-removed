@@ -39,6 +39,7 @@ add_task(async function test_process_crash() {
 
   let latestProcManager = AboutHomeStartupCache._procManager;
 
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     await BrowserTestUtils.crashFrame(browser);
     Assert.equal(

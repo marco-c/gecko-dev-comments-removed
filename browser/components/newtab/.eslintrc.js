@@ -5,29 +5,25 @@
 module.exports = {
   
   parserOptions: {
-    ecmaVersion: 2018,
     ecmaFeatures: {
       jsx: true,
     },
-    sourceType: "module",
   },
-  plugins: [
-    "import", 
-    "react", 
-    "jsx-a11y", 
-  ],
+  plugins: ["import", "react", "jsx-a11y"],
   settings: {
     react: {
       version: "16.2.0",
     },
   },
-  extends: [
-    "eslint:recommended",
-    "plugin:jsx-a11y/recommended", 
-    "plugin:mozilla/recommended", 
-    "prettier", 
-  ],
+  extends: ["plugin:jsx-a11y/recommended"],
   overrides: [
+    {
+      
+      files: ["content-src/**", "test/schemas/**", "test/unit/**"],
+      parserOptions: {
+        sourceType: "module",
+      },
+    },
     {
       
       files: [
@@ -68,46 +64,40 @@ module.exports = {
     },
     {
       
-      files: "**/*.jsm",
-      parserOptions: {
-        sourceType: "script",
-      },
+      
+      files: ["*.jsm", "lib/cache-worker.js", "test/**"],
       rules: {
         "no-implicit-globals": "off",
       },
     },
     {
-      files: "test/xpcshell/**",
-      extends: ["plugin:mozilla/xpcshell-test"],
-    },
-    {
-      files: "test/browser/**",
-      extends: ["plugin:mozilla/browser-test"],
-    },
-    {
-      
-      
-      files: "*",
-      excludedFiles: ["**/test**", "**/test*/**", "Test*/**"],
+      files: ["content-src/**", "test/unit/**"],
       rules: {
-        "@microsoft/sdl/no-insecure-url": "off",
+        
+        "import/no-commonjs": 2,
+        
+        "react/jsx-no-bind": 0,
       },
     },
     {
       
-      
-      
-      
-      files: [
-        "browser/components/newtab/test/browser/abouthomecache/browser_process_crash.js",
-        "browser/components/newtab/test/browser/browser_aboutwelcome_observer.js",
-        "browser/components/newtab/test/browser/browser_asrouter_cfr.js",
-        "browser/components/newtab/test/browser/browser_asrouter_group_frequency.js",
-        "browser/components/newtab/test/browser/browser_asrouter_group_userprefs.js",
-        "browser/components/newtab/test/browser/browser_trigger_listeners.js",
-      ],
+      files: "test/unit/**",
+      env: {
+        browser: true,
+        mocha: true,
+      },
+      globals: {
+        assert: true,
+        chai: true,
+        sinon: true,
+      },
+    },
+    {
+      files: "test/**",
       rules: {
-        "@microsoft/sdl/no-insecure-url": "off",
+        "func-name-matching": 0,
+        "lines-between-class-members": 0,
+        "require-await": 0,
       },
     },
   ],
