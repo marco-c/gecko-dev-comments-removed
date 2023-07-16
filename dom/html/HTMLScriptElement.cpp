@@ -150,33 +150,13 @@ void HTMLScriptElement::GetScriptCharset(nsAString& charset) {
   GetCharset(charset);
 }
 
-void HTMLScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
+void HTMLScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
   if (mFrozen) {
     return;
   }
 
-  MOZ_ASSERT((mKind != ScriptKind::eModule) &&
-             (mKind != ScriptKind::eImportMap) && !mAsync && !mDefer &&
-             !mExternal);
-
   
-  nsAutoString type;
-  GetScriptType(type);
-  if (!type.IsEmpty()) {
-    if (aOwnerDoc->ModuleScriptsEnabled() &&
-        type.LowerCaseEqualsASCII("module")) {
-      mKind = ScriptKind::eModule;
-    }
-
-    
-    
-    
-    
-    if (aOwnerDoc->ImportMapsEnabled() &&
-        type.LowerCaseEqualsASCII("importmap")) {
-      mKind = ScriptKind::eImportMap;
-    }
-  }
+  DetermineKindFromType(aOwnerDoc);
 
   
   

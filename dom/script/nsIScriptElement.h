@@ -106,7 +106,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  virtual void FreezeExecutionAttrs(mozilla::dom::Document*) = 0;
+  virtual void FreezeExecutionAttrs(const mozilla::dom::Document*) = 0;
 
   
 
@@ -275,6 +275,11 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
   virtual nsIContent* GetAsContent() = 0;
+
+  
+
+
+  void DetermineKindFromType(const mozilla::dom::Document* aOwnerDoc);
 
   
 

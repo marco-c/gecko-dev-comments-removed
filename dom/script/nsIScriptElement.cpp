@@ -7,9 +7,12 @@
 
 #include "nsIScriptElement.h"
 
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "nsIParser.h"
 #include "nsIWeakReference.h"
+
+using JS::loader::ScriptKind;
 
 void nsIScriptElement::SetCreatorParser(nsIParser* aParser) {
   mCreatorParser = do_GetWeakReference(aParser);
@@ -50,4 +53,30 @@ already_AddRefed<nsIParser> nsIScriptElement::GetCreatorParser() {
 
 mozilla::dom::ReferrerPolicy nsIScriptElement::GetReferrerPolicy() {
   return mozilla::dom::ReferrerPolicy::_empty;
+}
+
+void nsIScriptElement::DetermineKindFromType(
+    const mozilla::dom::Document* aOwnerDoc) {
+  MOZ_ASSERT((mKind != ScriptKind::eModule) &&
+             (mKind != ScriptKind::eImportMap) && !mAsync && !mDefer &&
+             !mExternal);
+
+  nsAutoString type;
+  GetScriptType(type);
+
+  if (!type.IsEmpty()) {
+    if (aOwnerDoc->ModuleScriptsEnabled() &&
+        type.LowerCaseEqualsASCII("module")) {
+      mKind = ScriptKind::eModule;
+    }
+
+    
+    
+    
+    
+    if (aOwnerDoc->ImportMapsEnabled() &&
+        type.LowerCaseEqualsASCII("importmap")) {
+      mKind = ScriptKind::eImportMap;
+    }
+  }
 }
