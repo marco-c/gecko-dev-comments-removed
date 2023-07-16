@@ -39,6 +39,7 @@ namespace frontend {
 struct CompilationStencil;
 struct CompilationGCOutput;
 struct CompilationInput;
+struct PreallocatedCompilationGCOutput;
 }  
 }  
 
@@ -63,7 +64,7 @@ struct InstantiationStorage {
   
   
   
-  js::frontend::CompilationGCOutput* gcOutput_ = nullptr;
+  js::frontend::PreallocatedCompilationGCOutput* gcOutput_ = nullptr;
 
   friend JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
       JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
@@ -94,8 +95,6 @@ struct InstantiationStorage {
 
  public:
   bool isValid() const { return !!gcOutput_; }
-
-  void trace(JSTracer* trc);
 };
 
 }  

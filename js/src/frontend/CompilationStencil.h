@@ -74,6 +74,7 @@ namespace frontend {
 struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
+struct PreallocatedCompilationGCOutput;
 class ScriptStencilIterable;
 struct InputName;
 class ScopeBindingCache;
@@ -1213,6 +1214,10 @@ struct CompilationStencil {
   [[nodiscard]] static bool prepareForInstantiate(
       FrontendContext* fc, CompilationAtomCache& atomCache,
       const CompilationStencil& stencil, CompilationGCOutput& gcOutput);
+  [[nodiscard]] static bool prepareForInstantiate(
+      FrontendContext* fc, CompilationAtomCache& atomCache,
+      const CompilationStencil& stencil,
+      PreallocatedCompilationGCOutput& gcOutput);
 
   [[nodiscard]] static bool instantiateStencils(
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
@@ -1661,6 +1666,38 @@ struct PreAllocateableGCArray {
   void trace(JSTracer* trc);
 };
 
+struct CompilationGCOutput;
+
+
+struct PreallocatedCompilationGCOutput {
+ private:
+  PreAllocateableGCArray<JSFunction*>::Preallocated functions;
+  PreAllocateableGCArray<js::Scope*>::Preallocated scopes;
+
+  friend struct CompilationGCOutput;
+
+ public:
+  PreallocatedCompilationGCOutput() = default;
+
+  [[nodiscard]] bool allocate(FrontendContext* fc, size_t scriptDataLength,
+                              size_t scopeDataLength) {
+    if (!functions.allocate(scriptDataLength)) {
+      ReportOutOfMemory(fc);
+      return false;
+    }
+    if (!scopes.allocate(scopeDataLength)) {
+      ReportOutOfMemory(fc);
+      return false;
+    }
+    return true;
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return functions.sizeOfExcludingThis(mallocSizeOf) +
+           scopes.sizeOfExcludingThis(mallocSizeOf);
+  }
+};
+
 
 struct CompilationGCOutput {
   
@@ -1723,8 +1760,6 @@ struct CompilationGCOutput {
   }
 
   
-  
-  
   [[nodiscard]] bool ensureAllocated(FrontendContext* fc,
                                      size_t scriptDataLength,
                                      size_t scopeDataLength) {
@@ -1741,6 +1776,12 @@ struct CompilationGCOutput {
       }
     }
     return true;
+  }
+
+  
+  void steal(PreallocatedCompilationGCOutput&& pre) {
+    functions.steal(std::move(pre.functions));
+    scopes.steal(std::move(pre.scopes));
   }
 
   
