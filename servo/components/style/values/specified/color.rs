@@ -229,8 +229,6 @@ pub enum SystemColor {
     
     MozMenuhovertext,
     
-    MozMenubartext,
-    
     MozMenubarhovertext,
 
     

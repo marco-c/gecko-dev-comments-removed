@@ -119,10 +119,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
   switch (aID) {
       
       
-    case ColorID::MozMenubartext:
-      aColor = mSystemColors.colorForeground;
-      break;
-
     case ColorID::ThemedScrollbarThumbInactive:
     case ColorID::ThemedScrollbarThumb:
       
