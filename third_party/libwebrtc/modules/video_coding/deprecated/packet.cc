@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/packet.h"
+#include "modules/video_coding/deprecated/packet.h"
 
 #include "api/rtp_headers.h"
 

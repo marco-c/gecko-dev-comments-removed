@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_PACKET_H_
-#define MODULES_VIDEO_CODING_PACKET_H_
+#ifndef MODULES_VIDEO_CODING_DEPRECATED_PACKET_H_
+#define MODULES_VIDEO_CODING_DEPRECATED_PACKET_H_
 
 #include <stddef.h>
 #include <stdint.h>
