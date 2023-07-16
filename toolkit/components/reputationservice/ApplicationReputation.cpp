@@ -180,7 +180,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".applescript",
     
-    ".appref-ms",  
+    
     
     
     ".as",  
