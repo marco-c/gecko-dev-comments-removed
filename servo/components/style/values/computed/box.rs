@@ -28,13 +28,10 @@ pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
 impl ContainIntrinsicSize {
     
     pub fn add_auto_if_needed(&self) -> Option<Self> {
-        use crate::Zero;
-        
-        
         Some(match *self {
-            Self::None => Self::AutoLength(Zero::zero()),
+            Self::None => Self::AutoNone,
             Self::Length(ref l) => Self::AutoLength(*l),
-            Self::AutoLength(..) => return None,
+            Self::AutoNone | Self::AutoLength(..) => return None,
         })
     }
 }
