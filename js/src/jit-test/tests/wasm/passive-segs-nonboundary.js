@@ -399,7 +399,7 @@ checkMiscPrefixed([0x13], true);
         )`;
         assertErrorMessage(() => wasmEvalText(text),
                            WebAssembly.CompileError,
-                           /(can't touch memory without memory)|(unknown memory)/);
+                           /memory index/);
     }
 }
 
