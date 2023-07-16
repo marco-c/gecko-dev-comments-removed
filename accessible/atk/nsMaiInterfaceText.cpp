@@ -26,48 +26,6 @@ using namespace mozilla::a11y;
 
 static const char* sAtkTextAttrNames[ATK_TEXT_ATTR_LAST_DEFINED];
 
-void ConvertTextAttributeToAtkAttribute(const nsACString& aName,
-                                        const nsAString& aValue,
-                                        AtkAttributeSet** aAttributeSet) {
-  
-  const char* atkName = nullptr;
-  nsAutoString atkValue;
-  if (aName.EqualsLiteral("color")) {
-    
-    
-    atkValue = Substring(aValue, 4, aValue.Length() - 5);
-    atkValue.StripWhitespace();
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_FG_COLOR];
-  } else if (aName.EqualsLiteral("background-color")) {
-    
-    
-    atkValue = Substring(aValue, 4, aValue.Length() - 5);
-    atkValue.StripWhitespace();
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_BG_COLOR];
-  } else if (aName.EqualsLiteral("font-family")) {
-    atkValue = aValue;
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_FAMILY_NAME];
-  } else if (aName.EqualsLiteral("font-size")) {
-    
-    atkValue = StringHead(aValue, aValue.Length() - 2);
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_SIZE];
-  } else if (aName.EqualsLiteral("font-weight")) {
-    atkValue = aValue;
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_WEIGHT];
-  } else if (aName.EqualsLiteral("invalid")) {
-    atkValue = aValue;
-    atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_INVALID];
-  }
-
-  if (atkName) {
-    AtkAttribute* objAttr =
-        static_cast<AtkAttribute*>(g_malloc(sizeof(AtkAttribute)));
-    objAttr->name = g_strdup(atkName);
-    objAttr->value = g_strdup(NS_ConvertUTF16toUTF8(atkValue).get());
-    *aAttributeSet = g_slist_prepend(*aAttributeSet, objAttr);
-  }
-}
-
 static AtkAttributeSet* ConvertToAtkTextAttributeSet(
     AccAttributes* aAttributes) {
   if (!aAttributes) {
@@ -76,23 +34,67 @@ static AtkAttributeSet* ConvertToAtkTextAttributeSet(
     return nullptr;
   }
 
-  AtkAttributeSet* objAttributeSet = nullptr;
+  AtkAttributeSet* atkAttributeSet = nullptr;
 
   for (auto iter : *aAttributes) {
-    nsAutoString name;
-    iter.NameAsString(name);
-
+    AtkAttribute* atkAttr = (AtkAttribute*)g_malloc(sizeof(AtkAttribute));
     nsAutoString value;
-    iter.ValueAsString(value);
+    
+    
+    
 
-    AtkAttribute* objAttr = (AtkAttribute*)g_malloc(sizeof(AtkAttribute));
-    objAttr->name = g_strdup(NS_ConvertUTF16toUTF8(name).get());
-    objAttr->value = g_strdup(NS_ConvertUTF16toUTF8(value).get());
-    objAttributeSet = g_slist_prepend(objAttributeSet, objAttr);
+    
+    auto atkName = [&atkAttr](AtkTextAttribute aAttrNum) {
+      atkAttr->name = g_strdup(sAtkTextAttrNames[aAttrNum]);
+    };
+    
+    auto colorValue = [&iter, &value] {
+      
+      
+      auto color = iter.Value<Color>();
+      MOZ_ASSERT(color);
+      value.AppendInt(NS_GET_R(color->mValue));
+      value.Append(',');
+      value.AppendInt(NS_GET_G(color->mValue));
+      value.Append(',');
+      value.AppendInt(NS_GET_B(color->mValue));
+    };
+
+    nsAtom* name = iter.Name();
+    if (name == nsGkAtoms::color) {
+      atkName(ATK_TEXT_ATTR_FG_COLOR);
+      colorValue();
+    } else if (name == nsGkAtoms::backgroundColor) {
+      atkName(ATK_TEXT_ATTR_BG_COLOR);
+      colorValue();
+    } else if (name == nsGkAtoms::font_family) {
+      atkName(ATK_TEXT_ATTR_FAMILY_NAME);
+      iter.ValueAsString(value);
+    } else if (name == nsGkAtoms::font_size) {
+      atkName(ATK_TEXT_ATTR_SIZE);
+      
+      auto fontSize = iter.Value<FontSize>();
+      MOZ_ASSERT(fontSize);
+      value.AppendInt(fontSize->mValue);
+    } else if (name == nsGkAtoms::fontWeight) {
+      atkName(ATK_TEXT_ATTR_WEIGHT);
+      iter.ValueAsString(value);
+    } else if (name == nsGkAtoms::invalid) {
+      atkName(ATK_TEXT_ATTR_INVALID);
+      iter.ValueAsString(value);
+    } else {
+      nsAutoString nameStr;
+      iter.NameAsString(nameStr);
+      atkAttr->name = g_strdup(NS_ConvertUTF16toUTF8(nameStr).get());
+      iter.ValueAsString(value);
+    }
+
+    atkAttr->value = g_strdup(NS_ConvertUTF16toUTF8(value).get());
+    atkAttributeSet = g_slist_prepend(atkAttributeSet, atkAttr);
   }
 
   
-  return objAttributeSet;
+  return atkAttributeSet;
 }
 
 extern "C" {
