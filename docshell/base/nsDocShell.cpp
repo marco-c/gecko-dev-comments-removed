@@ -3633,13 +3633,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         cssClass.AssignLiteral("badStsCert");
       }
 
-      
-      nsAutoCString alternateErrorPage;
-      nsresult rv = Preferences::GetCString(
-          "security.alternate_certificate_error_page", alternateErrorPage);
-      if (NS_SUCCEEDED(rv)) {
-        errorPage.Assign(alternateErrorPage);
-      }
+      errorPage.Assign("certerror");
     } else {
       error = "nssFailure2";
     }

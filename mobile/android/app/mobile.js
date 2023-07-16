@@ -192,9 +192,6 @@ pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%
 #endif
 
 
-pref("security.alternate_certificate_error_page", "certerror");
-
-
 pref("security.cert_pinning.enforcement_level", 1);
 
 

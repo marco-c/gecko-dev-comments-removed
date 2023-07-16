@@ -1256,9 +1256,6 @@ pref("app.support.baseURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS
 
 pref("app.feedback.baseURL", "https://ideas.mozilla.org/");
 
-
-pref("security.alternate_certificate_error_page", "certerror");
-
 pref("security.certerrors.recordEventTelemetry", true);
 pref("security.certerrors.permanentOverride", true);
 pref("security.certerrors.mitm.priming.enabled", true);
