@@ -1172,6 +1172,10 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'auto', 'smooth' ] ] }
     ]
   },
+  'scrollbar-color': {
+    
+    types: [ 'colorPair' ]
+  },
   'scrollbar-gutter': {
     
     types: [
