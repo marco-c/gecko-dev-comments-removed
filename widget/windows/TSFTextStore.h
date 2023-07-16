@@ -1102,6 +1102,10 @@ class TSFTextStore final : public ITextStoreACP,
   bool mBeingDestroyed = false;
   
   bool mInPrivateBrowsing = true;
+  
+  
+  bool mIsInitializingContentForTSF = false;
+  bool mIsInitializingSelectionForTSF = false;
 
   
   static StaticRefPtr<ITfThreadMgr> sThreadMgr;
