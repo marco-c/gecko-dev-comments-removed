@@ -99,8 +99,6 @@ pub enum GenericContainIntrinsicSize<L> {
     
     None,
     
-    AutoNone,
-    
     Length(L),
     
     AutoLength(L),
@@ -115,7 +113,6 @@ impl<L: ToCss> ToCss for ContainIntrinsicSize<L> {
     {
         match *self {
             Self::None => dest.write_str("none"),
-            Self::AutoNone => dest.write_str("auto none"),
             Self::Length(ref l) => l.to_css(dest),
             Self::AutoLength(ref l) => {
                 dest.write_str("auto ")?;
