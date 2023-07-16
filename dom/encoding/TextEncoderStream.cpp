@@ -98,9 +98,8 @@ static void EncodeNative(JSContext* aCx, mozilla::Decoder* aDecoder,
   
   
   
-  UniquePtr<void, JS::FreePolicy> dataPtr{buffer.release()};
   JS::Rooted<JSObject*> arrayBuffer(
-      aCx, JS::NewArrayBufferWithContents(aCx, written, std::move(dataPtr)));
+      aCx, JS::NewArrayBufferWithContents(aCx, written, std::move(buffer)));
   if (!arrayBuffer.get()) {
     JS_ClearPendingException(aCx);
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
