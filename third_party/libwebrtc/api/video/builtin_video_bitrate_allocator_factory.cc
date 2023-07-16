@@ -36,7 +36,7 @@ class BuiltinVideoBitrateAllocatorFactory
       case kVideoCodecVP9:
         
         
-        if (codec.numberOfSimulcastStreams <= 1) {
+        if (codec.IsSinglecastOrAllNonFirstLayersInactive()) {
           return std::make_unique<SvcRateAllocator>(codec);
         }
         ABSL_FALLTHROUGH_INTENDED;

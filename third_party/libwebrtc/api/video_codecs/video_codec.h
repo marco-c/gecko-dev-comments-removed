@@ -130,6 +130,8 @@ class RTC_EXPORT VideoCodec {
   bool GetFrameDropEnabled() const;
   void SetFrameDropEnabled(bool enabled);
 
+  bool IsSinglecastOrAllNonFirstLayersInactive() const;
+
   
   VideoCodecType codecType;
 
