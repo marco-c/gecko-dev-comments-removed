@@ -3362,12 +3362,19 @@ void nsGenericHTMLElement::ShowPopoverInternal(
   bool shouldRestoreFocus = false;
   nsWeakPtr originallyFocusedElement;
   if (IsAutoPopover()) {
+    auto originalState = GetPopoverAttributeState();
     RefPtr<nsINode> ancestor = GetTopmostPopoverAncestor();
     if (!ancestor) {
       ancestor = document;
     }
     document->HideAllPopoversUntil(*ancestor, false,
                                     !wasShowingOrHiding);
+    if (GetPopoverAttributeState() != originalState) {
+      aRv.ThrowInvalidStateError(
+          "The value of the popover attribute was changed while hiding the "
+          "popover.");
+      return;
+    }
 
     
     
