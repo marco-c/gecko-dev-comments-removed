@@ -494,8 +494,6 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   RTCNonStandardStatsMember<double> min_playout_delay;
 };
 
-using RTCInboundRTPStreamStats = RTCInboundRtpStreamStats;
-
 
 class RTC_EXPORT RTCOutboundRtpStreamStats final
     : public RTCSentRtpStreamStats {
@@ -546,8 +544,6 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
       power_efficient_encoder;
   RTCStatsMember<std::string> scalability_mode;
 };
-
-using RTCOutboundRTPStreamStats = RTCOutboundRtpStreamStats;
 
 
 class RTC_EXPORT RTCRemoteInboundRtpStreamStats final
