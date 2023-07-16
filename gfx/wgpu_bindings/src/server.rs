@@ -3,7 +3,7 @@
 
 
 use crate::{
-    error::{ErrMsg, ErrorBufferType, HasErrorBufferType},
+    error::{ErrMsg, ErrorBuffer, ErrorBufferType},
     identity::IdentityRecyclerFactory,
     wgpu_string, AdapterInformation, ByteBuf, CommandEncoderAction, DeviceAction, DropAction,
     QueueWriteAction, TextureAction,
@@ -15,8 +15,8 @@ use wgc::pipeline::CreateShaderModuleError;
 use wgc::{gfx_select, id};
 
 use std::borrow::Cow;
+use std::slice;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::{os::raw::c_char, ptr, slice};
 
 
 
@@ -26,77 +26,6 @@ use std::{os::raw::c_char, ptr, slice};
 const MAX_BUFFER_SIZE: wgt::BufferAddress = 1 << 30;
 
 const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
-
-
-
-
-
-
-
-
-
-#[repr(C)]
-pub struct ErrorBuffer {
-    
-    
-    
-    
-    r#type: *mut ErrorBufferType,
-    
-    
-    
-    
-    
-    message: *mut c_char,
-    message_capacity: usize,
-}
-
-impl ErrorBuffer {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn init(&mut self, error: impl HasErrorBufferType) {
-        use std::fmt::Write;
-
-        let mut message = format!("{}", error);
-        let mut e = error.source();
-        while let Some(source) = e {
-            write!(message, ", caused by: {}", source).unwrap();
-            e = source.source();
-        }
-
-        let err_ty = error.error_type();
-        
-        unsafe { *self.r#type = err_ty };
-
-        if matches!(err_ty, ErrorBufferType::None) {
-            log::warn!("{message}");
-            return;
-        }
-
-        assert_ne!(self.message_capacity, 0);
-        let length = if message.len() >= self.message_capacity {
-            log::warn!(
-                "Error message's length {} reached capacity {}, truncating",
-                message.len(),
-                self.message_capacity
-            );
-            self.message_capacity - 1
-        } else {
-            message.len()
-        };
-        unsafe {
-            ptr::copy_nonoverlapping(message.as_ptr(), self.message as *mut u8, length);
-            *self.message.add(length) = 0;
-        }
-    }
-}
 
 
 pub struct Global(wgc::global::Global<IdentityRecyclerFactory>);

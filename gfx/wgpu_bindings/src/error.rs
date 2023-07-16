@@ -8,9 +8,82 @@
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    os::raw::c_char,
+    ptr,
 };
 
 use serde::{Deserialize, Serialize};
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+pub struct ErrorBuffer {
+    
+    
+    
+    
+    r#type: *mut ErrorBufferType,
+    
+    
+    
+    
+    
+    message: *mut c_char,
+    message_capacity: usize,
+}
+
+impl ErrorBuffer {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn init(&mut self, error: impl HasErrorBufferType) {
+        use std::fmt::Write;
+
+        let mut message = format!("{}", error);
+        let mut e = error.source();
+        while let Some(source) = e {
+            write!(message, ", caused by: {}", source).unwrap();
+            e = source.source();
+        }
+
+        let err_ty = error.error_type();
+        
+        unsafe { *self.r#type = err_ty };
+
+        if matches!(err_ty, ErrorBufferType::None) {
+            log::warn!("{message}");
+            return;
+        }
+
+        assert_ne!(self.message_capacity, 0);
+        let length = if message.len() >= self.message_capacity {
+            log::warn!(
+                "Error message's length {} reached capacity {}, truncating",
+                message.len(),
+                self.message_capacity
+            );
+            self.message_capacity - 1
+        } else {
+            message.len()
+        };
+        unsafe {
+            ptr::copy_nonoverlapping(message.as_ptr(), self.message as *mut u8, length);
+            *self.message.add(length) = 0;
+        }
+    }
+}
 
 
 
