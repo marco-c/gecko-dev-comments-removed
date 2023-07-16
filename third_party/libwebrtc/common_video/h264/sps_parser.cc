@@ -117,7 +117,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   
   
   
-  const uint32_t kMaxLog2Minus4 = 32 - 4;
+  const uint32_t kMaxLog2Minus4 = 12;
 
   
   uint32_t log2_max_frame_num_minus4 = reader.ReadExponentialGolomb();
