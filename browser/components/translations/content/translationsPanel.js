@@ -483,7 +483,11 @@ var TranslationsPanel = new (class {
 
 
 
-  #updateViewFromTranslationStatus() {
+
+
+  #updateViewFromTranslationStatus(
+    languageState = this.#getTranslationsActor().languageState
+  ) {
     const {
       defaultTranslate,
       toMenuList,
@@ -492,8 +496,7 @@ var TranslationsPanel = new (class {
       cancelButton,
       restoreButton,
     } = this.elements;
-    const { requestedTranslationPair, isEngineReady } =
-      this.#getTranslationsActor().languageState;
+    const { requestedTranslationPair, isEngineReady } = languageState;
 
     if (
       requestedTranslationPair &&
@@ -1098,7 +1101,10 @@ var TranslationsPanel = new (class {
           TranslationsPanel.detectedLanguages = detectedLanguages;
         }
 
-        this.#updateViewFromTranslationStatus();
+        
+        
+        
+        this.#updateViewFromTranslationStatus(event.detail);
 
         if (
           
