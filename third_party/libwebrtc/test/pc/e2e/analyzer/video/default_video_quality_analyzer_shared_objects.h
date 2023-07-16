@@ -29,7 +29,8 @@
 namespace webrtc {
 
 
-constexpr TimeDelta kDefaultMaxFramesStorageDuration = TimeDelta::Seconds(3);
+
+constexpr TimeDelta kDefaultMaxFramesStorageDuration = TimeDelta::Seconds(9);
 
 class SamplesRateCounter {
  public:
