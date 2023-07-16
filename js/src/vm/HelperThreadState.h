@@ -13,25 +13,46 @@
 #ifndef vm_HelperThreadState_h
 #define vm_HelperThreadState_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/EnumeratedArray.h"
-#include "mozilla/RefPtr.h"  
-#include "mozilla/TimeStamp.h"
-#include "mozilla/Vector.h"  
+#include "mozilla/AlreadyAddRefed.h"  
+#include "mozilla/Assertions.h"       
+#include "mozilla/Attributes.h"       
+#include "mozilla/EnumeratedArray.h"  
+#include "mozilla/LinkedList.h"  
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/RefPtr.h"           
+#include "mozilla/TimeStamp.h"        
 
-#include "ds/Fifo.h"
+#include <stddef.h>  
+#include <stdint.h>  
+#include <utility>   
+
+#include "ds/Fifo.h"                      
 #include "frontend/CompilationStencil.h"  
-#include "frontend/FrontendContext.h"
-#include "js/CompileOptions.h"
+#include "frontend/FrontendContext.h"     
+#include "frontend/ScriptIndex.h"         
+#include "gc/GCRuntime.h"                 
+#include "js/AllocPolicy.h"               
+#include "js/CompileOptions.h"  
+#include "js/ContextOptions.h"              
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
-#include "js/HelperThreadAPI.h"
-#include "js/TypeDecls.h"
-#include "threading/ConditionVariable.h"
-#include "vm/HelperThreads.h"
-#include "vm/HelperThreadTask.h"
-#include "vm/JSContext.h"
-#include "vm/OffThreadPromiseRuntimeState.h"  
+#include "js/HelperThreadAPI.h"  
+#include "js/MemoryMetrics.h"  
+#include "js/ProfilingStack.h"  
+#include "js/RootingAPI.h"                
+#include "js/UniquePtr.h"                 
+#include "js/Utility.h"                   
+#include "threading/ConditionVariable.h"  
+#include "threading/ProtectedData.h"      
+#include "vm/HelperThreads.h"  
+#include "vm/HelperThreadTask.h"             
+#include "vm/JSContext.h"                    
+#include "vm/JSScript.h"                     
+#include "vm/Runtime.h"                      
+#include "vm/SharedImmutableStringsCache.h"  
+#include "wasm/WasmConstants.h"              
+
+class JSTracer;
 
 namespace js {
 
@@ -787,7 +808,7 @@ class SourceCompressionTask : public HelperThreadTask {
 
 
 struct PromiseHelperTask : OffThreadPromiseTask, public HelperThreadTask {
-  PromiseHelperTask(JSContext* cx, Handle<PromiseObject*> promise)
+  PromiseHelperTask(JSContext* cx, JS::Handle<PromiseObject*> promise)
       : OffThreadPromiseTask(cx, promise) {}
 
   
