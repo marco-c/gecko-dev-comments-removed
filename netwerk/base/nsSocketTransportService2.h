@@ -323,6 +323,12 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   void NotifyKeepaliveEnabledPrefChange(SocketContext* sock);
 
   
+#if defined(XP_WIN)
+  void ProbeMaxCount();
+#endif
+  bool mProbedMaxCount{false};
+
+  
   void AnalyzeConnection(nsTArray<SocketInfo>* data, SocketContext* context,
                          bool aActive);
 
