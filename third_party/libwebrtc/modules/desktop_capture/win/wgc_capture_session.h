@@ -20,6 +20,8 @@
 
 #include "api/sequence_checker.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/screen_capture_frame_queue.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
 #include "modules/desktop_capture/win/wgc_capture_source.h"
 #include "rtc_base/event.h"
 
@@ -42,7 +44,7 @@ class WgcCaptureSession final {
   HRESULT StartCapture(const DesktopCaptureOptions& options);
 
   
-  HRESULT GetFrame(std::unique_ptr<DesktopFrame>* output_frame);
+  bool GetFrame(std::unique_ptr<DesktopFrame>* output_frame);
 
   bool IsCaptureStarted() const {
     RTC_DCHECK_RUN_ON(&sequence_checker_);
@@ -52,8 +54,7 @@ class WgcCaptureSession final {
   
   
   
-  
-  static constexpr int kNumBuffers = 2;
+  static constexpr int kNumBuffers = 1;
 
  private:
   
@@ -76,15 +77,10 @@ class WgcCaptureSession final {
       ABI::Windows::Graphics::Capture::IDirect3D11CaptureFramePool* sender,
       IInspectable* event_args);
 
+  
+  HRESULT ProcessFrame();
+
   void RemoveEventHandlers();
-
-  
-  
-  rtc::Event wait_for_frame_event_;
-  int frames_in_pool_;
-
-  
-  bool first_frame_ = true;
 
   std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
   std::unique_ptr<EventRegistrationToken> item_closed_token_;
@@ -125,6 +121,11 @@ class WgcCaptureSession final {
   Microsoft::WRL::ComPtr<
       ABI::Windows::Graphics::Capture::IGraphicsCaptureSession>
       session_;
+
+  
+  
+  
+  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
   bool item_closed_ = false;
   bool is_capture_started_ = false;
