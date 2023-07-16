@@ -70,6 +70,20 @@ const REPLACED_ELEMENTS_NAMES = new Set([
   "video",
 ]);
 
+const HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL =
+  "https://www.w3.org/TR/css-pseudo-4/#highlight-styling";
+const HIGHLIGHT_PSEUDO_ELEMENTS = [
+  "::highlight",
+  "::selection",
+  
+  "::grammar-error",
+  "::spelling-error",
+  "::target-text",
+];
+const REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS = new RegExp(
+  `${HIGHLIGHT_PSEUDO_ELEMENTS.join("|")}`
+);
+
 class InactivePropertyHelper {
   
 
@@ -119,7 +133,7 @@ class InactivePropertyHelper {
 
 
 
-  get VALIDATORS() {
+  get INVALID_PROPERTIES_VALIDATORS() {
     return [
       
       {
@@ -425,9 +439,75 @@ class InactivePropertyHelper {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ACCEPTED_PROPERTIES_VALIDATORS = [
+    
+    {
+      acceptedProperties: new Set([
+        
+        
+        
+        "background",
+        "background-color",
+        "color",
+        "text-decoration",
+        "text-decoration-color",
+        "text-decoration-line",
+        "text-decoration-style",
+        "text-decoration-thickness",
+        "text-shadow",
+        "text-underline-offset",
+        "text-underline-position",
+        "-webkit-text-fill-color",
+        "-webkit-text-stroke-color",
+        "-webkit-text-stroke-width",
+        "-webkit-text-stroke",
+      ]),
+      when: () => {
+        const { selectorText } = this.cssRule;
+        return (
+          selectorText && REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS.test(selectorText)
+        );
+      },
+      msgId: "inactive-css-highlight-pseudo-elements-not-supported",
+      fixId: "learn-more",
+      learnMoreURL: HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL,
+    },
+  ];
+
+  
+
+
+
+
+
+
   get invalidProperties() {
     if (!this._invalidProperties) {
-      const allProps = this.VALIDATORS.map(v => v.invalidProperties).flat();
+      const allProps = this.INVALID_PROPERTIES_VALIDATORS.map(
+        v => v.invalidProperties
+      ).flat();
       this._invalidProperties = new Set(allProps);
     }
 
@@ -465,9 +545,7 @@ class InactivePropertyHelper {
 
   isPropertyUsed(el, elStyle, cssRule, property) {
     
-    
-    
-    if (!INACTIVE_CSS_ENABLED || !this.invalidProperties.has(property)) {
+    if (!INACTIVE_CSS_ENABLED) {
       return { used: true };
     }
 
@@ -476,12 +554,14 @@ class InactivePropertyHelper {
     let learnMoreURL = null;
     let used = true;
 
-    this.VALIDATORS.some(validator => {
+    const someFn = validator => {
       
       let isRuleConcerned = false;
 
       if (validator.invalidProperties) {
         isRuleConcerned = validator.invalidProperties.includes(property);
+      } else if (validator.acceptedProperties) {
+        isRuleConcerned = !validator.acceptedProperties.has(property);
       }
 
       if (!isRuleConcerned) {
@@ -498,11 +578,28 @@ class InactivePropertyHelper {
         learnMoreURL = validator.learnMoreURL;
         used = false;
 
+        
         return true;
       }
 
       return false;
-    });
+    };
+
+    
+    const isNotAccepted = this.ACCEPTED_PROPERTIES_VALIDATORS.some(someFn);
+
+    
+    
+    if (!isNotAccepted && !this.invalidProperties.has(property)) {
+      this.unselect();
+      return { used: true };
+    }
+
+    
+    
+    if (!isNotAccepted) {
+      this.INVALID_PROPERTIES_VALIDATORS.some(someFn);
+    }
 
     this.unselect();
 
