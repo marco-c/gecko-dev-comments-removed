@@ -406,12 +406,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
   if (options.discardBaselineCode || options.discardJitScripts) {
 #ifdef DEBUG
     
-    for (auto iter = cellIter<BaseScript>(); !iter.done(); iter.next()) {
-      BaseScript* base = iter.unbarrieredGet();
-      if (jit::JitScript* jitScript = base->maybeJitScript()) {
-        MOZ_ASSERT(!jitScript->active());
-      }
-    }
+    jitZone()->forEachJitScript(
+        [](jit::JitScript* jitScript) { MOZ_ASSERT(!jitScript->active()); });
 #endif
 
     
@@ -421,13 +417,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
   
   jit::InvalidateAll(gcx, this);
 
-  for (auto base = cellIterUnsafe<BaseScript>(); !base.done(); base.next()) {
-    jit::JitScript* jitScript = base->maybeJitScript();
-    if (!jitScript) {
-      continue;
-    }
-
-    JSScript* script = base->asJSScript();
+  jitZone()->forEachJitScript([&](jit::JitScript* jitScript) {
+    JSScript* script = jitScript->owningScript();
     jit::FinishInvalidation(gcx, script);
 
     
@@ -458,7 +449,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
             !gcx->runtime()->profilingScripts) {
           script->destroyScriptCounts();
         }
-        continue;
+        return;  
       }
     }
 
@@ -480,7 +471,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     if (options.traceWeakJitScripts) {
       jitScript->traceWeak(options.traceWeakJitScripts);
     }
-  }
+  });
 
   
   
@@ -533,35 +524,23 @@ void JS::Zone::resetAllocSitesAndInvalidate(bool resetNurserySites,
   }
 
   JSContext* cx = runtime_->mainContextFromOwnThread();
-  for (auto base = cellIterUnsafe<BaseScript>(); !base.done(); base.next()) {
-    jit::JitScript* jitScript = base->maybeJitScript();
-    if (!jitScript) {
-      continue;
+  jitZone()->forEachJitScript([&](jit::JitScript* jitScript) {
+    if (jitScript->resetAllocSites(resetNurserySites, resetPretenuredSites)) {
+      JSScript* script = jitScript->owningScript();
+      CancelOffThreadIonCompile(script);
+      if (script->hasIonScript()) {
+        jit::Invalidate(cx, script,
+                         true,
+                         true);
+      }
     }
-
-    if (!jitScript->resetAllocSites(resetNurserySites, resetPretenuredSites)) {
-      continue;
-    }
-
-    JSScript* script = base->asJSScript();
-    CancelOffThreadIonCompile(script);
-
-    if (!script->hasIonScript()) {
-      continue;
-    }
-
-    jit::Invalidate(cx, script,
-                     true,
-                     true);
-  }
+  });
 }
 
 void JS::Zone::traceWeakJitScripts(JSTracer* trc) {
-  for (auto base = cellIter<BaseScript>(); !base.done(); base.next()) {
-    jit::JitScript* jitScript = base->maybeJitScript();
-    if (jitScript) {
-      jitScript->traceWeak(trc);
-    }
+  if (jitZone()) {
+    jitZone()->forEachJitScript(
+        [&](jit::JitScript* jitScript) { jitScript->traceWeak(trc); });
   }
 }
 
