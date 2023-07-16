@@ -810,14 +810,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   JSOp getIterCallOp(JSOp callOp, SelfHostedIter selfHostedIter);
 
   
-  
-  [[nodiscard]] bool emitIterator(
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny,
-      bool isIteratorMethodOnStack = false);
+  [[nodiscard]] bool emitIterable(ParseNode* value,
+                                  SelfHostedIter selfHostedIter,
+                                  IteratorKind iterKind = IteratorKind::Sync);
 
-  [[nodiscard]] bool emitAsyncIterator(
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny,
-      bool isIteratorMethodOnStack = false);
+  
+  
+  [[nodiscard]] bool emitIterator(SelfHostedIter selfHostedIter);
+
+  [[nodiscard]] bool emitAsyncIterator(SelfHostedIter selfHostedIter);
 
   
   
@@ -994,8 +995,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
-  [[nodiscard]] bool emitSpread(
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
+  [[nodiscard]] bool emitSpread(SelfHostedIter selfHostedIter);
 
   enum class ClassNameKind {
     
