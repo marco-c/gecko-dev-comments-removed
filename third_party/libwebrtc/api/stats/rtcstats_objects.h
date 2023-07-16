@@ -406,14 +406,14 @@ class RTC_EXPORT RTCSentRtpStreamStats : public RTCRtpStreamStats {
 };
 
 
-class RTC_EXPORT RTCInboundRTPStreamStats final
+class RTC_EXPORT RTCInboundRtpStreamStats final
     : public RTCReceivedRtpStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
-  RTCInboundRTPStreamStats(std::string id, Timestamp timestamp);
-  RTCInboundRTPStreamStats(const RTCInboundRTPStreamStats& other);
-  ~RTCInboundRTPStreamStats() override;
+  RTCInboundRtpStreamStats(std::string id, Timestamp timestamp);
+  RTCInboundRtpStreamStats(const RTCInboundRtpStreamStats& other);
+  ~RTCInboundRtpStreamStats() override;
 
   
 
@@ -494,15 +494,17 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCNonStandardStatsMember<double> min_playout_delay;
 };
 
+using RTCInboundRTPStreamStats = RTCInboundRtpStreamStats;
 
-class RTC_EXPORT RTCOutboundRTPStreamStats final
+
+class RTC_EXPORT RTCOutboundRtpStreamStats final
     : public RTCSentRtpStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
-  RTCOutboundRTPStreamStats(std::string id, Timestamp timestamp);
-  RTCOutboundRTPStreamStats(const RTCOutboundRTPStreamStats& other);
-  ~RTCOutboundRTPStreamStats() override;
+  RTCOutboundRtpStreamStats(std::string id, Timestamp timestamp);
+  RTCOutboundRtpStreamStats(const RTCOutboundRtpStreamStats& other);
+  ~RTCOutboundRtpStreamStats() override;
 
   RTCStatsMember<std::string> media_source_id;
   RTCStatsMember<std::string> remote_id;
@@ -544,6 +546,8 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final
       power_efficient_encoder;
   RTCStatsMember<std::string> scalability_mode;
 };
+
+using RTCOutboundRTPStreamStats = RTCOutboundRtpStreamStats;
 
 
 class RTC_EXPORT RTCRemoteInboundRtpStreamStats final
