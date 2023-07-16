@@ -48,7 +48,8 @@ class ICState {
   
   
   
-  bool hasFoldedStub_ : 1;
+  
+  bool mayHaveFoldedStub_ : 1;
 
   
   uint8_t numOptimizedStubs_;
@@ -136,7 +137,7 @@ class ICState {
 #endif
     trialInliningState_ = uint32_t(TrialInliningState::Initial);
     usedByTranspiler_ = false;
-    hasFoldedStub_ = false;
+    mayHaveFoldedStub_ = false;
     numOptimizedStubs_ = 0;
     numFailures_ = 0;
   }
@@ -169,9 +170,9 @@ class ICState {
   void setUsedByTranspiler() { usedByTranspiler_ = true; }
   bool usedByTranspiler() const { return usedByTranspiler_; }
 
-  void clearHasFoldedStub() { hasFoldedStub_ = false; }
-  void setHasFoldedStub() { hasFoldedStub_ = true; }
-  bool hasFoldedStub() const { return hasFoldedStub_; }
+  void clearMayHaveFoldedStub() { mayHaveFoldedStub_ = false; }
+  void setMayHaveFoldedStub() { mayHaveFoldedStub_ = true; }
+  bool mayHaveFoldedStub() const { return mayHaveFoldedStub_; }
 
   TrialInliningState trialInliningState() const {
     return TrialInliningState(trialInliningState_);
