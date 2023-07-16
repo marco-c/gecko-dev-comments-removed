@@ -90,6 +90,23 @@ add_task(async function () {
     },
   ];
 
+  
+  
+  const observer = {
+    QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
+    observe(subject, topic, data) {
+      subject = subject.QueryInterface(Ci.nsIHttpChannel);
+      if (subject.URI.spec == STATUS_CODES_SJS + "?sts=ok&cached") {
+        subject.cancel(Cr.NS_BINDING_ABORTED);
+        Services.obs.removeObserver(
+          observer,
+          "http-on-examine-cached-response"
+        );
+      }
+    },
+  };
+  Services.obs.addObserver(observer, "http-on-examine-cached-response");
+
   info("Performing requests #1...");
   await performRequestsAndWait();
 
