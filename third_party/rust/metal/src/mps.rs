@@ -22,14 +22,13 @@ pub fn mps_supports_device(device: &DeviceRef) -> bool {
     b == YES
 }
 
-
 pub enum MPSKernel {}
 
 foreign_obj_type! {
     type CType = MPSKernel;
     pub struct Kernel;
+    pub struct KernelRef;
 }
-
 
 pub enum MPSRayDataType {
     OriginDirection = 0,
@@ -38,7 +37,6 @@ pub enum MPSRayDataType {
 }
 
 bitflags! {
-    /// See <https://developer.apple.com/documentation/metalperformanceshaders/mpsraymaskoptions>
     #[allow(non_upper_case_globals)]
     pub struct MPSRayMaskOptions: NSUInteger {
         /// Enable primitive masks
@@ -49,8 +47,6 @@ bitflags! {
 }
 
 
-
-
 pub enum MPSIntersectionDataType {
     Distance = 0,
     DistancePrimitiveIndex = 1,
@@ -58,7 +54,6 @@ pub enum MPSIntersectionDataType {
     DistancePrimitiveIndexInstanceIndex = 3,
     DistancePrimitiveIndexInstanceIndexCoordinates = 4,
 }
-
 
 pub enum MPSIntersectionType {
     
@@ -68,7 +63,6 @@ pub enum MPSIntersectionType {
     
     Any = 1,
 }
-
 
 pub enum MPSRayMaskOperator {
     
@@ -95,7 +89,6 @@ pub enum MPSRayMaskOperator {
     GreaterThanOrEqualTo = 9,
 }
 
-
 pub enum MPSTriangleIntersectionTestType {
     
     Default = 0,
@@ -105,7 +98,6 @@ pub enum MPSTriangleIntersectionTestType {
     Watertight = 1,
 }
 
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MPSAccelerationStructureStatus {
     Unbuilt = 0,
@@ -113,7 +105,6 @@ pub enum MPSAccelerationStructureStatus {
 }
 
 bitflags! {
-    /// See <https://developer.apple.com/documentation/metalperformanceshaders/mpsaccelerationstructureusage>
     #[allow(non_upper_case_globals)]
     pub struct MPSAccelerationStructureUsage: NSUInteger {
         /// No usage options specified
@@ -131,7 +122,6 @@ bitflags! {
 const MPSDataTypeFloatBit: isize = 0x10000000;
 const MPSDataTypeSignedBit: isize = 0x20000000;
 const MPSDataTypeNormalizedBit: isize = 0x40000000;
-
 
 pub enum MPSDataType {
     Invalid = 0,
@@ -155,14 +145,13 @@ pub enum MPSDataType {
 }
 
 
-
-
 pub enum MPSRayIntersector {}
 
 foreign_obj_type! {
     type CType = MPSRayIntersector;
     pub struct RayIntersector;
-    type ParentType = Kernel;
+    pub struct RayIntersectorRef;
+    type ParentType = KernelRef;
 }
 
 impl RayIntersector {
@@ -259,13 +248,12 @@ impl RayIntersectorRef {
 }
 
 
-
-
 pub enum MPSAccelerationStructureGroup {}
 
 foreign_obj_type! {
     type CType = MPSAccelerationStructureGroup;
     pub struct AccelerationStructureGroup;
+    pub struct AccelerationStructureGroupRef;
 }
 
 impl AccelerationStructureGroup {
@@ -290,13 +278,12 @@ impl AccelerationStructureGroupRef {
 }
 
 
-
-
 pub enum MPSAccelerationStructure {}
 
 foreign_obj_type! {
     type CType = MPSAccelerationStructure;
     pub struct AccelerationStructure;
+    pub struct AccelerationStructureRef;
 }
 
 impl AccelerationStructureRef {
@@ -325,13 +312,13 @@ impl AccelerationStructureRef {
     }
 }
 
-
 pub enum MPSPolygonAccelerationStructure {}
 
 foreign_obj_type! {
     type CType = MPSPolygonAccelerationStructure;
     pub struct PolygonAccelerationStructure;
-    type ParentType = AccelerationStructure;
+    pub struct PolygonAccelerationStructureRef;
+    type ParentType = AccelerationStructureRef;
 }
 
 impl PolygonAccelerationStructureRef {
@@ -369,14 +356,13 @@ impl PolygonAccelerationStructureRef {
 }
 
 
-
-
 pub enum MPSTriangleAccelerationStructure {}
 
 foreign_obj_type! {
     type CType = MPSTriangleAccelerationStructure;
     pub struct TriangleAccelerationStructure;
-    type ParentType = PolygonAccelerationStructure;
+    pub struct TriangleAccelerationStructureRef;
+    type ParentType = PolygonAccelerationStructureRef;
 }
 
 impl TriangleAccelerationStructure {
@@ -404,7 +390,6 @@ impl TriangleAccelerationStructureRef {
     }
 }
 
-
 #[repr(u64)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum MPSTransformType {
@@ -413,14 +398,13 @@ pub enum MPSTransformType {
 }
 
 
-
-
 pub enum MPSInstanceAccelerationStructure {}
 
 foreign_obj_type! {
     type CType = MPSInstanceAccelerationStructure;
     pub struct InstanceAccelerationStructure;
-    type ParentType = AccelerationStructure;
+    pub struct InstanceAccelerationStructureRef;
+    type ParentType = AccelerationStructureRef;
 }
 
 impl InstanceAccelerationStructure {
@@ -531,8 +515,6 @@ pub struct MPSPackedFloat3 {
 }
 
 
-
-
 #[repr(C)]
 pub struct MPSRayOriginMinDistanceDirectionMaxDistance {
     
@@ -548,8 +530,6 @@ pub struct MPSRayOriginMinDistanceDirectionMaxDistance {
     
     pub max_distance: f32,
 }
-
-
 
 
 

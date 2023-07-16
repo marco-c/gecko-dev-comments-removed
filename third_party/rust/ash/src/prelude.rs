@@ -34,6 +34,7 @@ impl vk::Result {
 
 
 
+
 pub(crate) unsafe fn read_into_uninitialized_vector<N: Copy + Default + TryInto<usize>, T>(
     f: impl Fn(&mut N, *mut T) -> vk::Result,
 ) -> VkResult<Vec<T>>
@@ -54,6 +55,7 @@ where
         }
     }
 }
+
 
 
 
@@ -114,7 +116,7 @@ pub(crate) fn debug_flags<Value: Into<u64> + Copy>(
         if !first {
             f.write_str(" | ")?;
         }
-        write!(f, "{accum:b}")?;
+        write!(f, "{:b}", accum)?;
     }
     Ok(())
 }

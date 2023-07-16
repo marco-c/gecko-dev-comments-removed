@@ -1,7 +1,7 @@
 
 
 use crate::{
-    hal_api::HalApi,
+    hub,
     id::{self, TypedId},
     Epoch, LifeGuard, RefCount,
 };
@@ -17,7 +17,7 @@ use wgt::strict_assert;
 
 
 #[derive(Debug)]
-pub(super) struct ResourceMetadata<A: HalApi> {
+pub(super) struct ResourceMetadata<A: hub::HalApi> {
     
     owned: BitVec<usize>,
 
@@ -31,7 +31,7 @@ pub(super) struct ResourceMetadata<A: HalApi> {
     _phantom: PhantomData<A>,
 }
 
-impl<A: HalApi> ResourceMetadata<A> {
+impl<A: hub::HalApi> ResourceMetadata<A> {
     pub(super) fn new() -> Self {
         Self {
             owned: BitVec::default(),
@@ -172,7 +172,7 @@ impl<A: HalApi> ResourceMetadata<A> {
 
 
 
-pub(super) enum ResourceMetadataProvider<'a, A: HalApi> {
+pub(super) enum ResourceMetadataProvider<'a, A: hub::HalApi> {
     
     Direct {
         epoch: Epoch,
@@ -183,7 +183,7 @@ pub(super) enum ResourceMetadataProvider<'a, A: HalApi> {
     
     Resource { epoch: Epoch },
 }
-impl<A: HalApi> ResourceMetadataProvider<'_, A> {
+impl<A: hub::HalApi> ResourceMetadataProvider<'_, A> {
     
     
     

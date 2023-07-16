@@ -55,12 +55,6 @@ impl Entry {
     
     
     
-    
-    
-    
-    
-    
-    
     #[cfg(feature = "loaded")]
     #[cfg_attr(docsrs, doc(cfg(feature = "loaded")))]
     pub unsafe fn load() -> Result<Self, LoadingError> {
@@ -107,11 +101,6 @@ impl Entry {
     
     
     
-    
-    
-    
-    
-    
     #[cfg(feature = "linked")]
     #[cfg_attr(docsrs, doc(cfg(feature = "linked")))]
     pub fn linked() -> Self {
@@ -124,10 +113,6 @@ impl Entry {
         }
     }
 
-    
-    
-    
-    
     
     
     
@@ -152,7 +137,6 @@ impl Entry {
         })
     }
 
-    
     
     
     
@@ -208,9 +192,6 @@ impl Entry {
     
     
     
-    
-    
-    
     #[inline]
     pub fn try_enumerate_instance_version(&self) -> VkResult<Option<u32>> {
         unsafe {
@@ -233,10 +214,6 @@ impl Entry {
         }
     }
 
-    
-    
-    
-    
     
     
     

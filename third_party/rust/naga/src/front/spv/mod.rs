@@ -168,7 +168,7 @@ impl crate::ImageDimension {
 type MemberIndex = u32;
 
 bitflags::bitflags! {
-    #[derive(Clone, Copy, Debug, Default)]
+    #[derive(Default)]
     struct DecorationFlags: u32 {
         const NON_READABLE = 0x1;
         const NON_WRITABLE = 0x2;
@@ -386,18 +386,8 @@ enum BodyFragment {
         reject: BodyIndex,
     },
     Loop {
-        
-        
         body: BodyIndex,
-
-        
-        
         continuing: BodyIndex,
-
-        
-        
-        
-        break_if: Option<Handle<crate::Expression>>,
     },
     Switch {
         selector: Handle<crate::Expression>,
@@ -439,21 +429,13 @@ struct PhiExpression {
     expressions: Vec<(spirv::Word, spirv::Word)>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Debug)]
 enum MergeBlockInformation {
     LoopMerge,
     LoopContinue,
     SelectionMerge,
     SwitchMerge,
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -497,25 +479,8 @@ struct BlockContext<'function> {
     
     
     
-    
-    
     blocks: FastHashMap<spirv::Word, crate::Block>,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     body_for_label: FastHashMap<spirv::Word, BodyIndex>,
@@ -523,8 +488,6 @@ struct BlockContext<'function> {
     
     mergers: FastHashMap<spirv::Word, MergeBlockInformation>,
 
-    
-    
     
     bodies: Vec<Body>,
 
@@ -1201,6 +1164,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         selections: &[spirv::Word],
         type_arena: &UniqueArena<crate::Type>,
         expressions: &mut Arena<crate::Expression>,
+        constants: &Arena<crate::Constant>,
         span: crate::Span,
     ) -> Result<Handle<crate::Expression>, Error> {
         let selection = match selections.first() {
@@ -1209,7 +1173,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         };
         let root_span = expressions.get_span(root_expr);
         let root_lookup = self.lookup_type.lookup(root_type_id)?;
-
         let (count, child_type_id) = match type_arena[root_lookup.handle].inner {
             crate::TypeInner::Struct { ref members, .. } => {
                 let child_member = self
@@ -1220,7 +1183,15 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             }
             crate::TypeInner::Array { size, .. } => {
                 let size = match size {
-                    crate::ArraySize::Constant(size) => size.get(),
+                    crate::ArraySize::Constant(handle) => match constants[handle] {
+                        crate::Constant {
+                            specialization: Some(_),
+                            ..
+                        } => return Err(Error::UnsupportedType(root_lookup.handle)),
+                        ref unspecialized => unspecialized
+                            .to_array_length()
+                            .ok_or(Error::InvalidArraySize(handle))?,
+                    },
                     
                     crate::ArraySize::Dynamic => {
                         return Err(Error::InvalidAccessType(root_type_id))
@@ -1261,6 +1232,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             &selections[1..],
             type_arena,
             expressions,
+            constants,
             span,
         )?;
 
@@ -1298,24 +1270,8 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         let mut body_idx = *ctx.body_for_label.entry(block_id).or_default();
-
-        
-        
-        
         let mut block = crate::Block::new();
-
         
         
         
@@ -1368,17 +1324,14 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                 Op::NoLine => inst.expect(1)?,
                 Op::Undef => {
                     inst.expect(3)?;
-                    let type_id = self.next()?;
-                    let id = self.next()?;
-                    let type_lookup = self.lookup_type.lookup(type_id)?;
-                    let ty = type_lookup.handle;
-
+                    let (type_id, id, handle) =
+                        self.parse_null_constant(inst, ctx.type_arena, ctx.const_arena)?;
                     self.lookup_expression.insert(
                         id,
                         LookupExpression {
                             handle: ctx
                                 .expressions
-                                .append(crate::Expression::ZeroValue(ty), span),
+                                .append(crate::Expression::Constant(handle), span),
                             type_id,
                             block_id,
                         },
@@ -1722,35 +1675,20 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     let root_type_lookup = self.lookup_type.lookup(root_lexp.type_id)?;
                     let index_lexp = self.lookup_expression.lookup(index_id)?;
                     let index_handle = get_expr_handle!(index_id, index_lexp);
-                    let index_type = self.lookup_type.lookup(index_lexp.type_id)?.handle;
 
                     let num_components = match ctx.type_arena[root_type_lookup.handle].inner {
-                        crate::TypeInner::Vector { size, .. } => size as u32,
+                        crate::TypeInner::Vector { size, .. } => size as usize,
                         _ => return Err(Error::InvalidVectorType(root_type_lookup.handle)),
                     };
 
-                    let mut make_index = |ctx: &mut BlockContext, index: u32| {
-                        make_index_literal(
-                            ctx,
-                            index,
-                            &mut block,
-                            &mut emitter,
-                            index_type,
-                            index_lexp.type_id,
-                            span,
-                        )
-                    };
-
-                    let index_expr = make_index(ctx, 0)?;
                     let mut handle = ctx.expressions.append(
                         crate::Expression::Access {
                             base: root_handle,
-                            index: index_expr,
+                            index: self.index_constant_expressions[0],
                         },
                         span,
                     );
-                    for index in 1..num_components {
-                        let index_expr = make_index(ctx, index)?;
+                    for &index_expr in self.index_constant_expressions[1..num_components].iter() {
                         let access_expr = ctx.expressions.append(
                             crate::Expression::Access {
                                 base: root_handle,
@@ -1800,25 +1738,31 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     let root_handle = get_expr_handle!(composite_id, root_lexp);
                     let root_type_lookup = self.lookup_type.lookup(root_lexp.type_id)?;
                     let index_lexp = self.lookup_expression.lookup(index_id)?;
-                    let index_handle = get_expr_handle!(index_id, index_lexp);
+                    let mut index_handle = get_expr_handle!(index_id, index_lexp);
                     let index_type = self.lookup_type.lookup(index_lexp.type_id)?.handle;
 
+                    
+                    
+                    
+                    if let Some(crate::ScalarKind::Uint) =
+                        ctx.type_arena[index_type].inner.scalar_kind()
+                    {
+                        index_handle = ctx.expressions.append(
+                            crate::Expression::As {
+                                expr: index_handle,
+                                kind: crate::ScalarKind::Sint,
+                                convert: None,
+                            },
+                            span,
+                        )
+                    }
+
                     let num_components = match ctx.type_arena[root_type_lookup.handle].inner {
-                        crate::TypeInner::Vector { size, .. } => size as u32,
+                        crate::TypeInner::Vector { size, .. } => size as usize,
                         _ => return Err(Error::InvalidVectorType(root_type_lookup.handle)),
                     };
-
-                    let mut components = Vec::with_capacity(num_components as usize);
-                    for index in 0..num_components {
-                        let index_expr = make_index_literal(
-                            ctx,
-                            index,
-                            &mut block,
-                            &mut emitter,
-                            index_type,
-                            index_lexp.type_id,
-                            span,
-                        )?;
+                    let mut components = Vec::with_capacity(num_components);
+                    for &index_expr in self.index_constant_expressions[..num_components].iter() {
                         let access_expr = ctx.expressions.append(
                             crate::Expression::Access {
                                 base: root_handle,
@@ -1936,6 +1880,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         &selections,
                         ctx.type_arena,
                         ctx.expressions,
+                        ctx.const_arena,
                         span,
                     )?;
 
@@ -2144,7 +2089,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     let result_ty = self.lookup_type.lookup(result_type_id)?;
                     let inner = &ctx.type_arena[result_ty.handle].inner;
                     let kind = inner.scalar_kind().unwrap();
-                    let size = inner.size(ctx.gctx()) as u8;
+                    let size = inner.size(ctx.const_arena) as u8;
 
                     let left_cast = ctx.expressions.append(
                         crate::Expression::As {
@@ -3136,12 +3081,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
 
                     
                     
-                    
-                    
-                    
-                    
-                    
-                    
                     if let Some(info) = ctx.mergers.get(&target_id) {
                         block.extend(emitter.finish(ctx.expressions));
                         ctx.blocks.insert(block_id, block);
@@ -3153,13 +3092,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         return Ok(());
                     }
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     
                     
                     
@@ -3182,101 +3114,15 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         get_expr_handle!(condition_id, lexp)
                     };
 
-                    
-                    
-                    #[derive(Copy, Clone)]
-                    struct BranchTarget {
-                        label_id: spirv::Word,
-                        merge_info: Option<MergeBlockInformation>,
-                    }
-                    let branch_target = |label_id| BranchTarget {
-                        label_id,
-                        merge_info: ctx.mergers.get(&label_id).copied(),
-                    };
-
-                    let true_target = branch_target(self.next()?);
-                    let false_target = branch_target(self.next()?);
-
-                    
-                    for _ in 4..inst.wc {
-                        let _ = self.next()?;
-                    }
-
-                    
-                    
-                    
-
-                    
-                    
-                    
-                    let parent_body_idx = ctx.bodies[body_idx].parent;
-                    let parent_parent_body_idx = ctx.bodies[parent_body_idx].parent;
-                    match ctx.bodies[parent_parent_body_idx].data[..] {
-                        
-                        
-                        
-                        [.., BodyFragment::Loop {
-                            body: loop_body_idx,
-                            continuing: loop_continuing_idx,
-                            break_if: ref mut break_if_slot @ None,
-                        }] if body_idx == loop_continuing_idx => {
-                            
-                            
-                            let break_if_cond = [true, false].into_iter().find_map(|true_breaks| {
-                                let (break_candidate, backedge_candidate) = if true_breaks {
-                                    (true_target, false_target)
-                                } else {
-                                    (false_target, true_target)
-                                };
-
-                                if break_candidate.merge_info
-                                    != Some(MergeBlockInformation::LoopMerge)
-                                {
-                                    return None;
-                                }
-
-                                
-                                
-                                
-                                let backedge_candidate_is_backedge =
-                                    backedge_candidate.merge_info.is_none()
-                                        && ctx.body_for_label.get(&backedge_candidate.label_id)
-                                            == Some(&loop_body_idx);
-                                if !backedge_candidate_is_backedge {
-                                    return None;
-                                }
-
-                                Some(if true_breaks {
-                                    condition
-                                } else {
-                                    ctx.expressions.append(
-                                        crate::Expression::Unary {
-                                            op: crate::UnaryOperator::Not,
-                                            expr: condition,
-                                        },
-                                        span,
-                                    )
-                                })
-                            });
-
-                            if let Some(break_if_cond) = break_if_cond {
-                                *break_if_slot = Some(break_if_cond);
-
-                                
-                                
-                                
-                                break None;
-                            }
-                        }
-                        _ => {}
-                    }
-
                     block.extend(emitter.finish(ctx.expressions));
                     ctx.blocks.insert(block_id, block);
                     let body = &mut ctx.bodies[body_idx];
                     body.data.push(BodyFragment::BlockId(block_id));
 
-                    let same_target = true_target.label_id == false_target.label_id;
+                    let true_id = self.next()?;
+                    let false_id = self.next()?;
+
+                    let same_target = true_id == false_id;
 
                     
                     let accept = ctx.bodies.len();
@@ -3285,18 +3131,18 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     
                     
                     
-                    if let Some(info) = true_target.merge_info {
+                    if let Some(info) = ctx.mergers.get(&true_id) {
                         merger(
                             match same_target {
                                 true => &mut ctx.bodies[body_idx],
                                 false => &mut accept_block,
                             },
-                            &info,
+                            info,
                         )
                     } else {
                         
                         let prev = ctx.body_for_label.insert(
-                            true_target.label_id,
+                            true_id,
                             match same_target {
                                 true => body_idx,
                                 false => accept,
@@ -3315,10 +3161,10 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     let reject = ctx.bodies.len();
                     let mut reject_block = Body::with_parent(body_idx);
 
-                    if let Some(info) = false_target.merge_info {
-                        merger(&mut reject_block, &info)
+                    if let Some(info) = ctx.mergers.get(&false_id) {
+                        merger(&mut reject_block, info)
                     } else {
-                        let prev = ctx.body_for_label.insert(false_target.label_id, reject);
+                        let prev = ctx.body_for_label.insert(false_id, reject);
                         debug_assert!(prev.is_none());
                     }
 
@@ -3330,6 +3176,11 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         accept,
                         reject,
                     });
+
+                    
+                    for _ in 4..inst.wc {
+                        let _ = self.next()?;
+                    }
 
                     return Ok(());
                 }
@@ -3500,7 +3351,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     parent_body.data.push(BodyFragment::Loop {
                         body: loop_body_idx,
                         continuing: continue_idx,
-                        break_if: None,
                     });
                     body_idx = loop_body_idx;
                 }
@@ -3645,12 +3495,20 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                     let semantics_id = self.next()?;
                     let exec_scope_const = self.lookup_constant.lookup(exec_scope_id)?;
                     let semantics_const = self.lookup_constant.lookup(semantics_id)?;
-
-                    let exec_scope = resolve_constant(ctx.gctx(), exec_scope_const.handle)
-                        .ok_or(Error::InvalidBarrierScope(exec_scope_id))?;
-                    let semantics = resolve_constant(ctx.gctx(), semantics_const.handle)
-                        .ok_or(Error::InvalidBarrierMemorySemantics(semantics_id))?;
-
+                    let exec_scope = match ctx.const_arena[exec_scope_const.handle].inner {
+                        crate::ConstantInner::Scalar {
+                            value: crate::ScalarValue::Uint(raw),
+                            width: _,
+                        } => raw as u32,
+                        _ => return Err(Error::InvalidBarrierScope(exec_scope_id)),
+                    };
+                    let semantics = match ctx.const_arena[semantics_const.handle].inner {
+                        crate::ConstantInner::Scalar {
+                            value: crate::ScalarValue::Uint(raw),
+                            width: _,
+                        } => raw as u32,
+                        _ => return Err(Error::InvalidBarrierMemorySemantics(semantics_id)),
+                    };
                     if exec_scope == spirv::Scope::Workgroup as u32 {
                         let mut flags = crate::Barrier::empty();
                         flags.set(
@@ -3845,7 +3703,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         }
                     }
                 }
-                S::WorkGroupUniformLoad { .. } => unreachable!(),
             }
             i += 1;
         }
@@ -4527,14 +4384,12 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         let length_id = self.next()?;
         let length_const = self.lookup_constant.lookup(length_id)?;
 
-        let size = resolve_constant(module.to_ctx(), length_const.handle)
-            .and_then(NonZeroU32::new)
-            .ok_or(Error::InvalidArraySize(length_const.handle))?;
-
         let decor = self.future_decor.remove(&id).unwrap_or_default();
         let base = self.lookup_type.lookup(type_id)?.handle;
 
-        self.layouter.update(module.to_ctx()).unwrap();
+        self.layouter
+            .update(&module.types, &module.constants)
+            .unwrap();
 
         
         
@@ -4572,12 +4427,12 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         {
             crate::TypeInner::BindingArray {
                 base,
-                size: crate::ArraySize::Constant(size),
+                size: crate::ArraySize::Constant(length_const.handle),
             }
         } else {
             crate::TypeInner::Array {
                 base,
-                size: crate::ArraySize::Constant(size),
+                size: crate::ArraySize::Constant(length_const.handle),
                 stride: match decor.array_stride {
                     Some(stride) => stride.get(),
                     None => self.layouter[base].to_stride(),
@@ -4615,7 +4470,9 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         let decor = self.future_decor.remove(&id).unwrap_or_default();
         let base = self.lookup_type.lookup(type_id)?.handle;
 
-        self.layouter.update(module.to_ctx()).unwrap();
+        self.layouter
+            .update(&module.types, &module.constants)
+            .unwrap();
 
         
         let inner = if let crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } =
@@ -4666,7 +4523,9 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             .as_ref()
             .map_or(false, |decor| decor.storage_buffer);
 
-        self.layouter.update(module.to_ctx()).unwrap();
+        self.layouter
+            .update(&module.types, &module.constants)
+            .unwrap();
 
         let mut members = Vec::<crate::StructMember>::with_capacity(inst.wc as usize - 2);
         let mut member_lookups = Vec::with_capacity(members.capacity());
@@ -4770,7 +4629,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         let id = self.next()?;
         let sample_type_id = self.next()?;
         let dim = self.next()?;
-        let is_depth = self.next()?;
+        let _is_depth = self.next()?;
         let is_array = self.next()? != 0;
         let is_msaa = self.next()? != 0;
         let _is_sampled = self.next()?;
@@ -4802,9 +4661,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
             .ok_or(Error::InvalidImageBaseType(base_handle))?;
 
         let inner = crate::TypeInner::Image {
-            class: if is_depth == 1 {
-                crate::ImageClass::Depth { multi: is_msaa }
-            } else if format != 0 {
+            class: if format != 0 {
                 crate::ImageClass::Storage {
                     format: map_image_format(format)?,
                     access: crate::StorageAccess::default(),
@@ -5292,37 +5149,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
         );
         Ok(())
     }
-}
-
-fn make_index_literal(
-    ctx: &mut BlockContext,
-    index: u32,
-    block: &mut crate::Block,
-    emitter: &mut super::Emitter,
-    index_type: Handle<crate::Type>,
-    index_type_id: spirv::Word,
-    span: crate::Span,
-) -> Result<Handle<crate::Expression>, Error> {
-    block.extend(emitter.finish(ctx.expressions));
-
-    let literal = match ctx.type_arena[index_type].inner.scalar_kind() {
-        Some(crate::ScalarKind::Uint) => crate::Literal::U32(index),
-        Some(crate::ScalarKind::Sint) => crate::Literal::I32(index as i32),
-        _ => return Err(Error::InvalidIndexType(index_type_id)),
-    };
-    let expr = ctx
-        .expressions
-        .append(crate::Expression::Literal(literal), span);
-
-    emitter.start(ctx.expressions);
-    Ok(expr)
-}
-
-fn resolve_constant(
-    gctx: crate::proc::GlobalCtx,
-    constant: Handle<crate::Constant>,
-) -> Option<u32> {
-    gctx.constants[constant].to_array_length()
 }
 
 pub fn parse_u8_slice(data: &[u8], options: &Options) -> Result<crate::Module, Error> {

@@ -75,27 +75,6 @@ impl crate::Api for Api {
 struct DebugUtils {
     extension: ext::DebugUtils,
     messenger: vk::DebugUtilsMessengerEXT,
-
-    
-    
-    
-    
-    
-    #[allow(dead_code)]
-    callback_data: Box<DebugUtilsMessengerUserData>,
-}
-
-
-
-
-
-#[derive(Debug)]
-pub struct DebugUtilsMessengerUserData {
-    
-    validation_layer_description: std::ffi::CString,
-
-    
-    validation_layer_spec_version: u32,
 }
 
 pub struct InstanceShared {

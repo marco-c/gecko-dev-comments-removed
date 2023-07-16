@@ -75,29 +75,6 @@ impl super::Adapter {
         profiling::scope!("feature queries");
 
         
-        let d3d_feature_level = [
-            d3d12::FeatureLevel::L12_1,
-            d3d12::FeatureLevel::L12_0,
-            d3d12::FeatureLevel::L11_1,
-            d3d12::FeatureLevel::L11_0,
-        ];
-        let mut device_levels: d3d12_ty::D3D12_FEATURE_DATA_FEATURE_LEVELS =
-            unsafe { mem::zeroed() };
-        device_levels.NumFeatureLevels = d3d_feature_level.len() as u32;
-        device_levels.pFeatureLevelsRequested = d3d_feature_level.as_ptr().cast();
-        unsafe {
-            device.CheckFeatureSupport(
-                d3d12_ty::D3D12_FEATURE_FEATURE_LEVELS,
-                &mut device_levels as *mut _ as *mut _,
-                mem::size_of::<d3d12_ty::D3D12_FEATURE_DATA_FEATURE_LEVELS>() as _,
-            )
-        };
-        
-        let max_feature_level =
-            d3d12::FeatureLevel::try_from(device_levels.MaxSupportedFeatureLevel)
-                .expect("Unexpected feature level");
-
-        
         
         let mut desc: dxgi1_2::DXGI_ADAPTER_DESC2 = unsafe { mem::zeroed() };
         unsafe {
@@ -205,18 +182,11 @@ impl super::Adapter {
         
         let tier3_practical_descriptor_limit = 1 << 20;
 
-        let (full_heap_count, uav_count) = match options.ResourceBindingTier {
-            d3d12_ty::D3D12_RESOURCE_BINDING_TIER_1 => {
-                let uav_count = match max_feature_level {
-                    d3d12::FeatureLevel::L11_0 => 8,
-                    _ => 64,
-                };
-
-                (
-                    d3d12_ty::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1,
-                    uav_count,
-                )
-            }
+        let (full_heap_count, _uav_count) = match options.ResourceBindingTier {
+            d3d12_ty::D3D12_RESOURCE_BINDING_TIER_1 => (
+                d3d12_ty::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1,
+                8, 
+            ),
             d3d12_ty::D3D12_RESOURCE_BINDING_TIER_2 => (
                 d3d12_ty::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
                 64,
@@ -314,10 +284,9 @@ impl super::Adapter {
                         _ => d3d12_ty::D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
                     },
                     
-                    
-                    
-                    max_storage_buffers_per_shader_stage: uav_count / 4,
-                    max_storage_textures_per_shader_stage: uav_count / 4,
+                    max_storage_buffers_per_shader_stage: base.max_storage_buffers_per_shader_stage,
+                    max_storage_textures_per_shader_stage: base
+                        .max_storage_textures_per_shader_stage,
                     max_uniform_buffers_per_shader_stage: full_heap_count,
                     max_uniform_buffer_binding_size:
                         d3d12_ty::D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16,

@@ -21,9 +21,9 @@ impl ExternalMemoryFd {
 
     
     #[inline]
-    pub unsafe fn get_memory_fd(&self, get_fd_info: &vk::MemoryGetFdInfoKHR) -> VkResult<i32> {
+    pub unsafe fn get_memory_fd(&self, create_info: &vk::MemoryGetFdInfoKHR) -> VkResult<i32> {
         let mut fd = -1;
-        (self.fp.get_memory_fd_khr)(self.handle, get_fd_info, &mut fd).result_with_success(fd)
+        (self.fp.get_memory_fd_khr)(self.handle, create_info, &mut fd).result_with_success(fd)
     }
 
     
