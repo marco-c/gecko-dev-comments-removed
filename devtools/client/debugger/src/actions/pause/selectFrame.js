@@ -6,7 +6,6 @@ import { selectLocation } from "../sources";
 import { evaluateExpressions } from "../expressions";
 import { fetchScopes } from "./fetchScopes";
 import assert from "../../utils/assert";
-import { validateSelectedFrame } from "../../utils/context";
 
 
 
@@ -33,10 +32,8 @@ export function selectFrame(cx, frame) {
     
     
     await dispatch(selectLocation(cx, frame.location));
-    validateSelectedFrame(getState(), frame);
 
-    await dispatch(evaluateExpressions(frame));
-
-    await dispatch(fetchScopes(frame));
+    dispatch(evaluateExpressions(cx));
+    dispatch(fetchScopes(cx));
   };
 }

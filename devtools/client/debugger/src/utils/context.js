@@ -2,12 +2,7 @@
 
 
 
-import {
-  getThreadContext,
-  getSelectedFrame,
-  getCurrentThread,
-  hasSource,
-} from "../selectors";
+import { getThreadContext } from "../selectors";
 
 
 
@@ -32,13 +27,7 @@ import {
 
 
 
-export class ContextError extends Error {
-  constructor(msg) {
-    
-    
-    super(`DebuggerContextError: ${msg}`);
-  }
-}
+export class ContextError extends Error {}
 
 export function validateNavigateContext(state, cx) {
   const newcx = getThreadContext(state);
@@ -65,45 +54,6 @@ export function validateContext(state, cx) {
 
   if ("thread" in cx) {
     validateThreadContext(state, cx);
-  }
-}
-
-export function validateSelectedFrame(state, selectedFrame) {
-  const newThread = getCurrentThread(state);
-  if (selectedFrame.thread != newThread) {
-    throw new ContextError("Selected thread has changed");
-  }
-
-  const newSelectedFrame = getSelectedFrame(state, newThread);
-  
-  if (selectedFrame.id != newSelectedFrame?.id) {
-    throw new ContextError("Selected frame changed");
-  }
-}
-
-export function validateBreakpoint(state, breakpoint) {
-  
-  if (!breakpoint.location) {
-    return;
-  }
-
-  if (!hasSource(state, breakpoint.location.source.id)) {
-    throw new ContextError(
-      `Breakpoint's location is obsolete (source '${breakpoint.location.source.id}' no longer exists)`
-    );
-  }
-  if (!hasSource(state, breakpoint.generatedLocation.source.id)) {
-    throw new ContextError(
-      `Breakpoint's generated location is obsolete (source '${breakpoint.generatedLocation.source.id}' no longer exists)`
-    );
-  }
-}
-
-export function validateSource(state, source) {
-  if (!hasSource(state, source.id)) {
-    throw new ContextError(
-      `Obsolete source (source '${source.id}' no longer exists)`
-    );
   }
 }
 

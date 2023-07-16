@@ -39,7 +39,7 @@ export function paused(pauseInfo) {
     
     const hiddenBreakpoint = getHiddenBreakpoint(getState());
     if (hiddenBreakpoint) {
-      dispatch(removeBreakpoint(hiddenBreakpoint));
+      dispatch(removeBreakpoint(cx, hiddenBreakpoint));
     }
 
     
@@ -57,16 +57,16 @@ export function paused(pauseInfo) {
     const selectedFrame = getSelectedFrame(getState(), thread);
     if (selectedFrame) {
       await dispatch(selectLocation(cx, selectedFrame.location));
+    }
 
-      
-      await dispatch(fetchScopes(selectedFrame));
+    
+    await dispatch(fetchScopes(cx));
 
-      
-      
-      const atException = why.type == "exception";
-      if (!atException || !isEvaluatingExpression(getState(), thread)) {
-        await dispatch(evaluateExpressions(selectedFrame));
-      }
+    
+    
+    const atException = why.type == "exception";
+    if (!atException || !isEvaluatingExpression(getState(), thread)) {
+      await dispatch(evaluateExpressions(cx));
     }
   };
 }
