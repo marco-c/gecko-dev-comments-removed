@@ -148,7 +148,6 @@ bool InternalHeaders::DeleteInternal(const nsCString& aLowerName,
 }
 
 void InternalHeaders::Delete(const nsACString& aName, ErrorResult& aRv) {
-  
   nsAutoCString lowerName;
   ToLowerCase(aName, lowerName);
 
@@ -157,10 +156,12 @@ void InternalHeaders::Delete(const nsACString& aName, ErrorResult& aRv) {
     return;
   }
 
+  
   if (IsImmutable(aRv)) {
     return;
   }
 
+  
   nsAutoCString value;
   GetInternal(lowerName, value, aRv);
   if (IsForbiddenRequestHeader(lowerName, value)) {
@@ -174,6 +175,7 @@ void InternalHeaders::Delete(const nsACString& aName, ErrorResult& aRv) {
     return;
   }
 
+  
   if (IsForbiddenResponseHeader(lowerName)) {
     return;
   }
@@ -350,9 +352,7 @@ bool InternalHeaders::IsSimpleHeader(const nsCString& aName,
          (aName.EqualsIgnoreCase("content-language") &&
           nsContentUtils::IsAllowedNonCorsLanguage(aValue)) ||
          (aName.EqualsIgnoreCase("content-type") &&
-          nsContentUtils::IsAllowedNonCorsContentType(aValue)) ||
-         (aName.EqualsIgnoreCase("range") &&
-          nsContentUtils::IsAllowedNonCorsRange(aValue));
+          nsContentUtils::IsAllowedNonCorsContentType(aValue));
 }
 
 
