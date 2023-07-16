@@ -1032,7 +1032,9 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
         
         
         ICEntry* entry = icScript_->icEntryForStub(fallbackStub);
-        fallbackStub->unlinkStub(cx_->zone(), entry, nullptr, stub);
+        if (entry->firstStub() == stub) {
+          fallbackStub->unlinkStub(cx_->zone(), entry, nullptr, stub);
+        }
         targetScript->setUninlineable();
         info_->inlineScriptTree()->removeCallee(inlineScriptTree);
         if (isTrialInlined) {
