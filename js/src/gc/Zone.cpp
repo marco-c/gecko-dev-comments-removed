@@ -18,6 +18,7 @@
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Invalidation.h"
+#include "jit/JitScript.h"
 #include "jit/JitZone.h"
 #include "vm/Runtime.h"
 #include "vm/Time.h"
@@ -473,6 +474,11 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
     
     jitScript->resetActive();
+
+    
+    if (options.traceWeakJitScripts) {
+      jitScript->traceWeak(options.traceWeakJitScripts);
+    }
   }
 
   
@@ -546,6 +552,15 @@ void JS::Zone::resetAllocSitesAndInvalidate(bool resetNurserySites,
     jit::Invalidate(cx, script,
                      true,
                      true);
+  }
+}
+
+void JS::Zone::traceWeakJitScripts(JSTracer* trc) {
+  for (auto base = cellIter<BaseScript>(); !base.done(); base.next()) {
+    jit::JitScript* jitScript = base->maybeJitScript();
+    if (jitScript) {
+      jitScript->traceWeak(trc);
+    }
   }
 }
 
