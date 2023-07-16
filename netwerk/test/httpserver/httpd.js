@@ -42,6 +42,7 @@ var EXPORTED_SYMBOLS = [
   "nsHttpHeaders",
   "overrideBinaryStreamsForTests",
   "WriteThroughCopier",
+  "setDebuggingStatus",
 ];
 
 const CC = Components.Constructor;
@@ -53,6 +54,19 @@ var DEBUG = false;
 
 
 var DEBUG_TIMESTAMP = false; 
+
+
+
+
+
+
+
+
+
+function setDebuggingStatus(debug, debugTimestamp) {
+  DEBUG = debug;
+  DEBUG_TIMESTAMP = debugTimestamp;
+}
 
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"

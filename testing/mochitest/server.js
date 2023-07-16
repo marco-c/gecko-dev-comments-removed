@@ -13,18 +13,41 @@
 
 
 
-
 let protocolHandler = Services.io
   .getProtocolHandler("resource")
   .QueryInterface(Ci.nsIResProtocolHandler);
-let httpdJSPath = __LOCATION__.parent;
-let modulesURI = Services.io.newFileURI(httpdJSPath);
-protocolHandler.setSubstitution("mochitest-server", modulesURI);
+let httpdJSPath = PathUtils.toFileURI(_HTTPD_PATH);
+protocolHandler.setSubstitution(
+  "httpd-server",
+  Services.io.newURI(httpdJSPath)
+);
+
+const { HttpServer, dumpn, setDebuggingStatus } = ChromeUtils.import(
+  "resource://httpd-server/httpd.js"
+);
+
+protocolHandler.setSubstitution(
+  "mochitest-server",
+  Services.io.newFileURI(__LOCATION__.parent)
+);
 
 
 Services.scriptloader.loadSubScript(
   "resource://mochitest-server/mochitestListingsUtils.js",
   this
+);
+
+const CC = Components.Constructor;
+
+const FileInputStream = CC(
+  "@mozilla.org/network/file-input-stream;1",
+  "nsIFileInputStream",
+  "init"
+);
+const ConverterInputStream = CC(
+  "@mozilla.org/intl/converter-input-stream;1",
+  "nsIConverterInputStream",
+  "init"
 );
 
 
@@ -44,22 +67,19 @@ function serverStopped() {
 }
 
 
-if (this.nsHttpServer) {
-  
-  
-  
-  runServer();
 
-  
-  if (_quitting) {
-    dumpn("HTTP server stopped, all pending requests complete");
-    quit(0);
-  }
 
-  
-  dumpn("TEST-UNEXPECTED-FAIL | failure to correctly shut down HTTP server");
-  quit(1);
+runServer();
+
+
+if (_quitting) {
+  dumpn("HTTP server stopped, all pending requests complete");
+  quit(0);
 }
+
+
+dumpn("TEST-UNEXPECTED-FAIL | failure to correctly shut down HTTP server");
+quit(1);
 
 var serverBasePath;
 var displayResults = true;
@@ -170,7 +190,7 @@ function runServer() {
 
 
 function createMochitestServer(serverBasePath) {
-  var server = new nsHttpServer();
+  var server = new HttpServer();
 
   server.registerDirectory("/", serverBasePath);
   server.registerPathHandler("/server/shutdown", serverShutdown);
@@ -308,16 +328,13 @@ function serverDebug(metadata, response) {
   if (metadata.queryString === "0") {
     
     dumpn("Server debug logs disabled.");
-    DEBUG = false;
-    DEBUG_TIMESTAMP = false;
+    setDebuggingStatus(false, false);
     mode = "disabled";
   } else if (metadata.queryString === "1") {
-    DEBUG = true;
-    DEBUG_TIMESTAMP = false;
+    setDebuggingStatus(true, false);
     mode = "enabled";
   } else if (metadata.queryString === "2") {
-    DEBUG = true;
-    DEBUG_TIMESTAMP = true;
+    setDebuggingStatus(true, true);
     mode = "enabled, with timestamps";
   } else {
     return;
