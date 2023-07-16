@@ -168,13 +168,6 @@ class ABSL_DEPRECATED("") ModuleRtpRtcpImpl
   int32_t SetCNAME(absl::string_view c_name) override;
 
   
-  int32_t RemoteNTP(uint32_t* received_ntp_secs,
-                    uint32_t* received_ntp_frac,
-                    uint32_t* rtcp_arrival_time_secs,
-                    uint32_t* rtcp_arrival_time_frac,
-                    uint32_t* rtcp_timestamp) const override;
-
-  
   int32_t RTT(uint32_t remote_ssrc,
               int64_t* rtt,
               int64_t* avg_rtt,

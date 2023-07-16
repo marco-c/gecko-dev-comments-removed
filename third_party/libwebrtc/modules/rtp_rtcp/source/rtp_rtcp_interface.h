@@ -162,6 +162,8 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     NtpTime last_remote_timestamp;
     
+    uint32_t last_remote_rtp_timestamp;
+    
     
     
     uint32_t packets_sent;
@@ -372,14 +374,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   virtual int32_t SetCNAME(absl::string_view cname) = 0;
-
-  
-  
-  virtual int32_t RemoteNTP(uint32_t* received_ntp_secs,
-                            uint32_t* received_ntp_frac,
-                            uint32_t* rtcp_arrival_time_secs,
-                            uint32_t* rtcp_arrival_time_frac,
-                            uint32_t* rtcp_timestamp) const = 0;
 
   
   
