@@ -2426,11 +2426,7 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-#ifdef NIGHTLY_BUILD
-  pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", true);
-#else
-  pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", false);
-#endif
+pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", true);
 
 pref("devtools.inspector.compatibility.enabled", true);
 

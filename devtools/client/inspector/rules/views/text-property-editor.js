@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
+
+
 const INLINE_COMPATIBILITY_WARNING_PREF =
   "devtools.inspector.ruleview.inline-compatibility-warning.enabled";
 
