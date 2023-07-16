@@ -6,6 +6,7 @@ import {
   getThreadContext,
   getSelectedFrame,
   getCurrentThread,
+  hasSource,
 } from "../selectors";
 
 
@@ -77,6 +78,24 @@ export function validateSelectedFrame(state, selectedFrame) {
   
   if (selectedFrame.id != newSelectedFrame?.id) {
     throw new ContextError("Selected frame changed");
+  }
+}
+
+export function validateBreakpoint(state, breakpoint) {
+  
+  if (!breakpoint.location) {
+    return;
+  }
+
+  if (!hasSource(state, breakpoint.location.source.id)) {
+    throw new ContextError(
+      `Breakpoint's location is obsolete (source '${breakpoint.location.source.id}' no longer exists)`
+    );
+  }
+  if (!hasSource(state, breakpoint.generatedLocation.source.id)) {
+    throw new ContextError(
+      `Breakpoint's generated location is obsolete (source '${breakpoint.generatedLocation.source.id}' no longer exists)`
+    );
   }
 }
 
