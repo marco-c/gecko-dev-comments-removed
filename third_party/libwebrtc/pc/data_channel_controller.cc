@@ -260,6 +260,12 @@ DataChannelController::InternalCreateSctpDataChannel(
     const std::string& label,
     const InternalDataChannelInit* config) {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  if (config && !config->IsValid()) {
+    RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
+                         "invalid DataChannelInit.";
+    return nullptr;
+  }
+
   InternalDataChannelInit new_config =
       config ? (*config) : InternalDataChannelInit();
   StreamId sid(new_config.id);
@@ -294,10 +300,21 @@ DataChannelController::InternalCreateSctpDataChannel(
   rtc::scoped_refptr<SctpDataChannel> channel(SctpDataChannel::Create(
       weak_factory_.GetWeakPtr(), label, data_channel_transport() != nullptr,
       new_config, signaling_thread(), network_thread()));
-  if (!channel) {
-    sid_allocator_.ReleaseSid(sid);
-    return nullptr;
+  RTC_DCHECK(channel);
+
+  if (ReadyToSendData()) {
+    
+    
+    
+    
+    
+    signaling_thread()->PostTask(
+        SafeTask(signaling_safety_.flag(), [channel = channel] {
+          if (channel->state() != DataChannelInterface::DataState::kClosed)
+            channel->OnTransportReady();
+        }));
   }
+
   sctp_data_channels_.push_back(channel);
   has_used_data_channels_ = true;
   return channel;
@@ -351,6 +368,12 @@ void DataChannelController::OnSctpDataChannelClosed(SctpDataChannel* channel) {
 
 void DataChannelController::OnTransportChannelClosed(RTCError error) {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  
+  
+  
+  
+  
+  
   
   
   std::vector<rtc::scoped_refptr<SctpDataChannel>> temp_sctp_dcs;
