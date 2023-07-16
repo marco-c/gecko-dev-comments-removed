@@ -25,7 +25,6 @@
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -215,7 +214,6 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacket(
     int64_t arrival_time_ms,
     size_t payload_size,
     const RTPHeader& header) {
-  RTC_DCHECK_RUNS_SERIALIZED(&network_race_);
   if (!header.extension.hasAbsoluteSendTime) {
     RTC_LOG(LS_WARNING)
         << "RemoteBitrateEstimatorAbsSendTimeImpl: Incoming packet "
@@ -271,85 +269,81 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
   int size_delta = 0;
   bool update_estimate = false;
   DataRate target_bitrate = DataRate::Zero();
-  std::vector<uint32_t> ssrcs;
-  {
-    MutexLock lock(&mutex_);
 
-    TimeoutStreams(now);
-    RTC_DCHECK(inter_arrival_);
-    RTC_DCHECK(estimator_);
-    ssrcs_.insert_or_assign(ssrc, now);
+  TimeoutStreams(now);
+  RTC_DCHECK(inter_arrival_);
+  RTC_DCHECK(estimator_);
+  ssrcs_.insert_or_assign(ssrc, now);
 
+  
+  
+  
+  static constexpr DataSize kMinProbePacketSize = DataSize::Bytes(200);
+  if (payload_size > kMinProbePacketSize &&
+      (!remote_rate_.ValidEstimate() ||
+       now - first_packet_time_ < kInitialProbingInterval)) {
     
-    
-    
-    static constexpr DataSize kMinProbePacketSize = DataSize::Bytes(200);
-    if (payload_size > kMinProbePacketSize &&
-        (!remote_rate_.ValidEstimate() ||
-         now - first_packet_time_ < kInitialProbingInterval)) {
-      
-      if (total_probes_received_ < kMaxProbePackets) {
-        TimeDelta send_delta = TimeDelta::Millis(-1);
-        TimeDelta recv_delta = TimeDelta::Millis(-1);
-        if (!probes_.empty()) {
-          send_delta = send_time - probes_.back().send_time;
-          recv_delta = arrival_time - probes_.back().recv_time;
-        }
-        RTC_LOG(LS_INFO) << "Probe packet received: send time="
-                         << send_time.ms()
-                         << " ms, recv time=" << arrival_time.ms()
-                         << " ms, send delta=" << send_delta.ms()
-                         << " ms, recv delta=" << recv_delta.ms() << " ms.";
+    if (total_probes_received_ < kMaxProbePackets) {
+      TimeDelta send_delta = TimeDelta::Millis(-1);
+      TimeDelta recv_delta = TimeDelta::Millis(-1);
+      if (!probes_.empty()) {
+        send_delta = send_time - probes_.back().send_time;
+        recv_delta = arrival_time - probes_.back().recv_time;
       }
-      probes_.emplace_back(send_time, arrival_time, payload_size);
-      ++total_probes_received_;
-      
-      
-      if (ProcessClusters(now) == ProbeResult::kBitrateUpdated)
-        update_estimate = true;
+      RTC_LOG(LS_INFO) << "Probe packet received: send time=" << send_time.ms()
+                       << " ms, recv time=" << arrival_time.ms()
+                       << " ms, send delta=" << send_delta.ms()
+                       << " ms, recv delta=" << recv_delta.ms() << " ms.";
     }
-    if (inter_arrival_->ComputeDeltas(timestamp, arrival_time.ms(), now.ms(),
-                                      payload_size.bytes(), &ts_delta, &t_delta,
-                                      &size_delta)) {
-      double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-      estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State(),
-                         arrival_time.ms());
-      detector_.Detect(estimator_->offset(), ts_delta_ms,
-                       estimator_->num_of_deltas(), arrival_time.ms());
-    }
+    probes_.emplace_back(send_time, arrival_time, payload_size);
+    ++total_probes_received_;
+    
+    
+    if (ProcessClusters(now) == ProbeResult::kBitrateUpdated)
+      update_estimate = true;
+  }
+  if (inter_arrival_->ComputeDeltas(timestamp, arrival_time.ms(), now.ms(),
+                                    payload_size.bytes(), &ts_delta, &t_delta,
+                                    &size_delta)) {
+    double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
+    estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State(),
+                       arrival_time.ms());
+    detector_.Detect(estimator_->offset(), ts_delta_ms,
+                     estimator_->num_of_deltas(), arrival_time.ms());
+  }
 
-    if (!update_estimate) {
-      
-      
-      if (last_update_.IsInfinite() ||
-          now.ms() - last_update_.ms() >
-              remote_rate_.GetFeedbackInterval().ms()) {
+  if (!update_estimate) {
+    
+    
+    if (last_update_.IsInfinite() ||
+        now.ms() - last_update_.ms() >
+            remote_rate_.GetFeedbackInterval().ms()) {
+      update_estimate = true;
+    } else if (detector_.State() == BandwidthUsage::kBwOverusing) {
+      absl::optional<uint32_t> incoming_rate =
+          incoming_bitrate_.Rate(arrival_time.ms());
+      if (incoming_rate && remote_rate_.TimeToReduceFurther(
+                               now, DataRate::BitsPerSec(*incoming_rate))) {
         update_estimate = true;
-      } else if (detector_.State() == BandwidthUsage::kBwOverusing) {
-        absl::optional<uint32_t> incoming_rate =
-            incoming_bitrate_.Rate(arrival_time.ms());
-        if (incoming_rate && remote_rate_.TimeToReduceFurther(
-                                 now, DataRate::BitsPerSec(*incoming_rate))) {
-          update_estimate = true;
-        }
       }
-    }
-
-    if (update_estimate) {
-      
-      
-      
-      const RateControlInput input(
-          detector_.State(), OptionalRateFromOptionalBps(
-                                 incoming_bitrate_.Rate(arrival_time.ms())));
-      target_bitrate = remote_rate_.Update(&input, now);
-      update_estimate = remote_rate_.ValidEstimate();
-      ssrcs = Keys(ssrcs_);
     }
   }
+
+  if (update_estimate) {
+    
+    
+    
+    const RateControlInput input(
+        detector_.State(),
+        OptionalRateFromOptionalBps(incoming_bitrate_.Rate(arrival_time.ms())));
+    target_bitrate = remote_rate_.Update(&input, now);
+    update_estimate = remote_rate_.ValidEstimate();
+  }
+
   if (update_estimate) {
     last_update_ = now;
-    observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate.bps<uint32_t>());
+    observer_->OnReceiveBitrateChanged(Keys(ssrcs_),
+                                       target_bitrate.bps<uint32_t>());
   }
 }
 
@@ -378,18 +372,15 @@ void RemoteBitrateEstimatorAbsSendTime::TimeoutStreams(Timestamp now) {
 
 void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t avg_rtt_ms,
                                                     int64_t ) {
-  MutexLock lock(&mutex_);
   remote_rate_.SetRtt(TimeDelta::Millis(avg_rtt_ms));
 }
 
 void RemoteBitrateEstimatorAbsSendTime::RemoveStream(uint32_t ssrc) {
-  MutexLock lock(&mutex_);
   ssrcs_.erase(ssrc);
 }
 
 DataRate RemoteBitrateEstimatorAbsSendTime::LatestEstimate() const {
   
-  MutexLock lock(&mutex_);
   if (!remote_rate_.ValidEstimate() || ssrcs_.empty()) {
     return DataRate::Zero();
   }
