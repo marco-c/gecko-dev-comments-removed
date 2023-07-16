@@ -52,7 +52,6 @@
 #include "builtin/MapObject.h"
 #include "builtin/Promise.h"
 #include "builtin/TestingUtility.h"  
-#include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     

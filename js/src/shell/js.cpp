@@ -76,8 +76,7 @@
 #include "builtin/TestingFunctions.h"
 #include "builtin/TestingUtility.h"  
 #include "debugger/DebugAPI.h"
-#include "frontend/BytecodeCompilation.h"
-#include "frontend/BytecodeCompiler.h"
+#include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"
 #ifdef JS_ENABLE_SMOOSH
 #  include "frontend/Frontend2.h"

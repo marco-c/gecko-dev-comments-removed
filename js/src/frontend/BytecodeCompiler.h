@@ -13,13 +13,14 @@
 
 #include "NamespaceImports.h"
 
-#include "ds/LifoAlloc.h"
+#include "ds/LifoAlloc.h"  
 #include "frontend/FunctionSyntaxKind.h"
 #include "frontend/ScriptIndex.h"  
 #include "js/CompileOptions.h"     
 #include "js/RootingAPI.h"         
-#include "js/SourceText.h"
-#include "js/UniquePtr.h"  
+#include "js/SourceText.h"         
+#include "js/UniquePtr.h"          
+#include "vm/ScopeKind.h"          
 
 
 
@@ -119,6 +120,30 @@ class FunctionBox;
 class ParseNode;
 class TaggedParserAtomIndex;
 class ScopeBindingCache;
+
+
+extern already_AddRefed<CompilationStencil> CompileGlobalScriptToStencil(
+    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<char16_t>& srcBuf, ScopeKind scopeKind);
+
+extern already_AddRefed<CompilationStencil> CompileGlobalScriptToStencil(
+    JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
+
+extern UniquePtr<ExtensibleCompilationStencil>
+CompileGlobalScriptToExtensibleStencil(JSContext* maybeCx, FrontendContext* fc,
+                                       CompilationInput& input,
+                                       ScopeBindingCache* scopeCache,
+                                       JS::SourceText<char16_t>& srcBuf,
+                                       ScopeKind scopeKind);
+
+extern UniquePtr<ExtensibleCompilationStencil>
+CompileGlobalScriptToExtensibleStencil(
+    JSContext* maybeCx, FrontendContext* fc, CompilationInput& input,
+    ScopeBindingCache* scopeCache, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+    ScopeKind scopeKind);
 
 
 ModuleObject* CompileModule(JSContext* cx, FrontendContext* fc,
