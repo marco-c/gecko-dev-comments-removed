@@ -32,29 +32,57 @@ function context({ dispatch, getState }) {
     if ("cx" in action) {
       validateActionContext(getState, action);
     }
+
+    
+    
+    
+    if ("source" in action) {
+      validateSource(getState(), action.source);
+    }
+
+    
+    
+    
+    if ("sourceActor" in action) {
+      validateSourceActor(getState(), action.sourceActor);
+    }
+
+    
+    if ("generatedSourceActor" in action) {
+      validateSourceActor(getState(), action.generatedSourceActor);
+    }
+
+    
+    
+    
+    if ("breakpoint" in action) {
+      validateBreakpoint(getState(), action.breakpoint);
+    }
+
+    
+    
+    
     
     
     if (action.selectedFrame) {
       validateSelectedFrame(getState(), action.selectedFrame);
     }
-    if ("breakpoint" in action) {
-      validateBreakpoint(getState(), action.breakpoint);
-    }
-    if ("source" in action) {
-      validateSource(getState(), action.source);
-    }
-    if ("sourceActor" in action) {
-      validateSourceActor(getState(), action.sourceActor);
-    }
+
+    
+    
+    
     if ("thread" in action && "frames" in action) {
       validateThreadFrames(getState(), action.thread, action.frames);
     }
+
+    
+    
+    
+    
     if ("frame" in action) {
       validateFrame(getState(), action.frame);
     }
-    if ("generatedSourceActor" in action) {
-      validateSourceActor(getState(), action.generatedSourceActor);
-    }
+
     return next(action);
   };
 }
