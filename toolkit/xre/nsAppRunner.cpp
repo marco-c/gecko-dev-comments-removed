@@ -3668,7 +3668,7 @@ class XREMain {
   int XRE_mainStartup(bool* aExitFlag);
   nsresult XRE_mainRun();
 
-  Result<bool, nsresult> CheckLastStartupWasCrash();
+  bool CheckLastStartupWasCrash();
 
   nsCOMPtr<nsINativeAppSupport> mNativeApp;
   RefPtr<nsToolkitProfileService> mProfileSvc;
@@ -4535,31 +4535,21 @@ Result<nsCOMPtr<nsIFile>, nsresult> GetIncompleteStartupFile(nsIFile* aProfLD) {
 
 
 
-
-Result<bool, nsresult> XREMain::CheckLastStartupWasCrash() {
-  constexpr int32_t MAX_TIME_SINCE_STARTUP = 6 * 60 * 60 * 1000;
-
-  nsCOMPtr<nsIFile> crashFile;
-  MOZ_TRY_VAR(crashFile, GetIncompleteStartupFile(mProfLD));
+bool XREMain::CheckLastStartupWasCrash() {
+  Result<nsCOMPtr<nsIFile>, nsresult> crashFile =
+      GetIncompleteStartupFile(mProfLD);
+  if (crashFile.isErr()) {
+    return true;
+  }
 
   
   
   
   
   AutoFDClose fd;
-  Unused << crashFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_EXCL,
-                                        0666, &fd.rwget());
-  if (fd) {
-    return false;
-  }
-
-  PRTime lastModifiedTime;
-  MOZ_TRY(crashFile->GetLastModifiedTime(&lastModifiedTime));
-
-  
-  
-  PRTime now = PR_Now() / PR_USEC_PER_MSEC;
-  return now - lastModifiedTime <= MAX_TIME_SINCE_STARTUP;
+  Unused << crashFile.inspect()->OpenNSPRFileDesc(
+      PR_WRONLY | PR_CREATE_FILE | PR_EXCL, 0666, &fd.rwget());
+  return !fd;
 }
 
 
@@ -5092,7 +5082,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   SaveFileToEnv("ASAN_REPORTER_PATH", mProfD);
 #endif
 
-  bool lastStartupWasCrash = CheckLastStartupWasCrash().unwrapOr(false);
+  bool lastStartupWasCrash = CheckLastStartupWasCrash();
 
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::LastStartupWasCrash, lastStartupWasCrash);
