@@ -10,6 +10,8 @@
 #include "prenv.h"
 
 #include "IMContextWrapper.h"
+
+#include "GRefPtr.h"
 #include "nsGtkKeyUtils.h"
 #include "nsWindow.h"
 #include "mozilla/AutoRestore.h"
@@ -1728,7 +1730,17 @@ void IMContextWrapper::OnEndCompositionNative(GtkIMContext* aContext) {
 
 void IMContextWrapper::OnChangeCompositionCallback(GtkIMContext* aContext,
                                                    IMContextWrapper* aModule) {
-  aModule->OnChangeCompositionNative(aContext);
+  RefPtr module = aModule;
+  module->OnChangeCompositionNative(aContext);
+
+  if (module->IsDestroyed()) {
+    
+    
+    
+    
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction(__func__, [context = RefPtr{aContext}]() {}));
+  }
 }
 
 void IMContextWrapper::OnChangeCompositionNative(GtkIMContext* aContext) {
