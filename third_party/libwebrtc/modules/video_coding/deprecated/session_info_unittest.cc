@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/session_info.h"
+#include "modules/video_coding/deprecated/session_info.h"
 
 #include <string.h>
 
