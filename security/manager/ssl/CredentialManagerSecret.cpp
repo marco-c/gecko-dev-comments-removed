@@ -39,17 +39,6 @@ CredentialManagerSecret::CredentialManagerSecret() {}
 
 CredentialManagerSecret::~CredentialManagerSecret() {}
 
-nsresult CredentialManagerSecret::Lock() {
-  
-  return NS_OK;
-}
-
-nsresult CredentialManagerSecret::Unlock() {
-  
-  
-  return NS_OK;
-}
-
 nsresult CredentialManagerSecret::StoreSecret(const nsACString& aSecret,
                                               const nsACString& aLabel) {
   if (aSecret.Length() > CRED_MAX_CREDENTIAL_BLOB_SIZE) {

@@ -21,32 +21,6 @@ KeychainSecret::KeychainSecret() {}
 
 KeychainSecret::~KeychainSecret() {}
 
-nsresult KeychainSecret::Lock() {
-  
-  
-  OSStatus rv = SecKeychainLock(nullptr);
-  if (rv != errSecSuccess) {
-    MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
-            ("SecKeychainLock failed: %d", rv));
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
-nsresult KeychainSecret::Unlock() {
-  
-  
-  
-  
-  OSStatus rv = SecKeychainUnlock(nullptr, 0, nullptr, false);
-  if (rv != errSecSuccess) {
-    MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
-            ("SecKeychainUnlock failed: %d", rv));
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
 ScopedCFType<CFStringRef> MozillaStringToCFString(const nsACString& stringIn) {
   
   ScopedCFType<CFStringRef> stringOut(CFStringCreateWithBytes(

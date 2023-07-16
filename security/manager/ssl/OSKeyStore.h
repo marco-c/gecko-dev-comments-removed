@@ -28,10 +28,6 @@ class AbstractOSKeyStore {
                                const nsACString& label) = 0;
   
   virtual nsresult DeleteSecret(const nsACString& label) = 0;
-  
-  virtual nsresult Lock() = 0;
-  
-  virtual nsresult Unlock() = 0;
   virtual ~AbstractOSKeyStore() = default;
 
   
@@ -92,14 +88,11 @@ class OSKeyStore final : public nsIOSKeyStore {
                         const nsACString& aEncryptedBase64Text,
                          uint32_t* outLen,
                          uint8_t** outBytes);
-  nsresult Lock();
-  nsresult Unlock();
 
  private:
   ~OSKeyStore() = default;
 
   std::unique_ptr<AbstractOSKeyStore> mKs;
-  bool mKsIsNSSKeyStore;
 };
 
 #endif  
