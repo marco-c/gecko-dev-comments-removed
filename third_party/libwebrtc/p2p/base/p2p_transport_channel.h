@@ -278,16 +278,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   bool ReadyToSend(const Connection* connection) const;
   bool PresumedWritable(const Connection* conn) const;
-  
-  void RequestSortAndStateUpdate(IceSwitchReason reason_to_sort);
-  
-  
-  
-  void MaybeStartPinging();
   void SendPingRequestInternal(Connection* connection);
 
-  
-  void SortConnectionsAndUpdateState(IceSwitchReason reason_to_sort);
   rtc::NetworkRoute ConfigureNetworkRoute(const Connection* conn);
   void SwitchSelectedConnectionInternal(Connection* conn,
                                         IceSwitchReason reason);
@@ -355,26 +347,13 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   void OnNominated(Connection* conn);
 
-  
-  void CheckAndPing();
-
   void LogCandidatePairConfig(Connection* conn,
                               webrtc::IceCandidatePairConfigType type);
 
   uint32_t GetNominationAttr(Connection* conn) const;
   bool GetUseCandidateAttr(Connection* conn) const;
 
-  
-  
-  bool MaybeSwitchSelectedConnection(const Connection* new_connection,
-                                     IceSwitchReason reason);
-  
-  bool MaybeSwitchSelectedConnection(
-      IceSwitchReason reason,
-      IceControllerInterface::SwitchResult result);
   bool AllowedToPruneConnections() const;
-  
-  void PruneConnections();
 
   
   
@@ -431,8 +410,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   void ParseFieldTrials(const webrtc::FieldTrialsView* field_trials);
 
-  
-  webrtc::ScopedTaskSafety task_safety_;
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
   PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
@@ -459,9 +436,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   std::vector<RemoteCandidate> remote_candidates_
       RTC_GUARDED_BY(network_thread_);
-  
-  bool sort_dirty_ RTC_GUARDED_BY(
-      network_thread_);  
   bool had_connection_ RTC_GUARDED_BY(network_thread_) =
       false;  
   typedef std::map<rtc::Socket::Option, int> OptionMap;
@@ -487,8 +461,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   int last_sent_packet_id_ RTC_GUARDED_BY(network_thread_) =
       -1;  
   
-  bool started_pinging_ RTC_GUARDED_BY(network_thread_) = false;
-  
   
   uint32_t nomination_ RTC_GUARDED_BY(network_thread_) = 0;
   bool receiving_ RTC_GUARDED_BY(network_thread_) = false;
@@ -500,53 +472,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       RTC_GUARDED_BY(network_thread_);
   webrtc::IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
 
-  
-  
-  
-  class IceControllerAdapter : public ActiveIceControllerInterface {
-   public:
-    IceControllerAdapter(
-        const IceControllerFactoryArgs& args,
-        IceControllerFactoryInterface* ice_controller_factory,
-        ActiveIceControllerFactoryInterface* active_ice_controller_factory,
-        const webrtc::FieldTrialsView* field_trials,
-        P2PTransportChannel* transport);
-    ~IceControllerAdapter() override;
-
-    
-    void SetIceConfig(const IceConfig& config) override;
-    void OnConnectionAdded(const Connection* connection) override;
-    void OnConnectionSwitched(const Connection* connection) override;
-    void OnConnectionPinged(const Connection* connection) override;
-    void OnConnectionDestroyed(const Connection* connection) override;
-    void OnConnectionUpdated(const Connection* connection) override;
-    void OnSortAndSwitchRequest(IceSwitchReason reason) override;
-    void OnImmediateSortAndSwitchRequest(IceSwitchReason reason) override;
-    bool OnImmediateSwitchRequest(IceSwitchReason reason,
-                                  const Connection* connection) override;
-    bool GetUseCandidateAttribute(const Connection* connection,
-                                  NominationMode mode,
-                                  IceMode remote_ice_mode) const override;
-    const Connection* FindNextPingableConnection() override;
-
-    
-    rtc::ArrayView<Connection*> LegacyConnections() const;
-    bool LegacyHasPingableConnection() const;
-    IceControllerInterface::PingResult LegacySelectConnectionToPing(
-        int64_t last_ping_sent_ms);
-    IceControllerInterface::SwitchResult LegacyShouldSwitchConnection(
-        IceSwitchReason reason,
-        const Connection* connection);
-    IceControllerInterface::SwitchResult LegacySortAndSwitchConnection(
-        IceSwitchReason reason);
-    std::vector<const Connection*> LegacyPruneConnections();
-
-   private:
-    P2PTransportChannel* transport_;
-    std::unique_ptr<IceControllerInterface> legacy_ice_controller_;
-    std::unique_ptr<ActiveIceControllerInterface> active_ice_controller_;
-  };
-  std::unique_ptr<IceControllerAdapter> ice_adapter_
+  std::unique_ptr<ActiveIceControllerInterface> ice_controller_
       RTC_GUARDED_BY(network_thread_);
 
   struct CandidateAndResolver final {
