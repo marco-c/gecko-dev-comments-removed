@@ -2,6 +2,7 @@
 
 
 
+export * from "./breakpoint-heading";
 export * from "./frame";
 export * from "./editor-breakpoint";
 export * from "./source-tree-item";
