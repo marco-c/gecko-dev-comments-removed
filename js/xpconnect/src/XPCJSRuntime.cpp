@@ -59,6 +59,7 @@
 #include "js/friend/UsageStatistics.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/friend/XrayJitInfo.h"  
+#include "js/Utility.h"             
 #include "mozilla/dom/AbortSignalBinding.h"
 #include "mozilla/dom/GeneratedAtomList.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -2729,14 +2730,17 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
     
 
     
+    JS::UniqueTwoByteChars chars;
     rv = ScriptLoader::ConvertToUTF16(
         scriptChannel, reinterpret_cast<const unsigned char*>(buf.get()),
-        rawLen, u"UTF-8"_ns, nullptr, *twoByteSource, *len);
+        rawLen, u"UTF-8"_ns, nullptr, chars, *len);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!*twoByteSource) {
+    if (!chars) {
       return NS_ERROR_FAILURE;
     }
+
+    *twoByteSource = chars.release();
   }
 
   return NS_OK;

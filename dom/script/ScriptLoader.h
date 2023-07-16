@@ -8,6 +8,7 @@
 #define mozilla_dom_ScriptLoader_h
 
 #include "js/TypeDecls.h"
+#include "js/Utility.h"  
 #include "js/loader/LoadedScript.h"
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
@@ -270,27 +271,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-
-  static nsresult ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
-                                 uint32_t aLength,
-                                 const nsAString& aHintCharset,
-                                 Document* aDocument, char16_t*& aBufOut,
-                                 size_t& aLengthOut);
-
   static nsresult ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
                                  uint32_t aLength,
                                  const nsAString& aHintCharset,
                                  Document* aDocument,
-                                 JS::UniqueTwoByteChars& aBufOut,
-                                 size_t& aLengthOut) {
-    char16_t* bufOut;
-    nsresult rv = ConvertToUTF16(aChannel, aData, aLength, aHintCharset,
-                                 aDocument, bufOut, aLengthOut);
-    if (NS_SUCCEEDED(rv)) {
-      aBufOut.reset(bufOut);
-    }
-    return rv;
-  };
+                                 UniquePtr<char16_t[], JS::FreePolicy>& aBufOut,
+                                 size_t& aLengthOut);
 
   
 
@@ -311,24 +297,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-
   static nsresult ConvertToUTF8(nsIChannel* aChannel, const uint8_t* aData,
                                 uint32_t aLength, const nsAString& aHintCharset,
-                                Document* aDocument, Utf8Unit*& aBufOut,
+                                Document* aDocument,
+                                UniquePtr<Utf8Unit[], JS::FreePolicy>& aBufOut,
                                 size_t& aLengthOut);
-
-  static inline nsresult ConvertToUTF8(
-      nsIChannel* aChannel, const uint8_t* aData, uint32_t aLength,
-      const nsAString& aHintCharset, Document* aDocument,
-      UniquePtr<Utf8Unit[], JS::FreePolicy>& aBufOut, size_t& aLengthOut) {
-    Utf8Unit* bufOut;
-    nsresult rv = ConvertToUTF8(aChannel, aData, aLength, aHintCharset,
-                                aDocument, bufOut, aLengthOut);
-    if (NS_SUCCEEDED(rv)) {
-      aBufOut.reset(bufOut);
-    }
-    return rv;
-  };
 
   
 
