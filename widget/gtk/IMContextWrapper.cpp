@@ -543,6 +543,8 @@ void IMContextWrapper::Init() {
 void IMContextWrapper::Shutdown() { SelectionStyleProvider::Shutdown(); }
 
 IMContextWrapper::~IMContextWrapper() {
+  MOZ_ASSERT(!mContext);
+  MOZ_ASSERT(!mComposingContext);
   if (this == sLastFocusedContext) {
     sLastFocusedContext = nullptr;
   }
@@ -654,12 +656,14 @@ void IMContextWrapper::OnDestroyWindow(nsWindow* aWindow) {
   if (mContext) {
     PrepareToDestroyContext(mContext);
     gtk_im_context_set_client_window(mContext, nullptr);
+    g_signal_handlers_disconnect_by_data(mContext, this);
     g_object_unref(mContext);
     mContext = nullptr;
   }
 
   if (mSimpleContext) {
     gtk_im_context_set_client_window(mSimpleContext, nullptr);
+    g_signal_handlers_disconnect_by_data(mSimpleContext, this);
     g_object_unref(mSimpleContext);
     mSimpleContext = nullptr;
   }
