@@ -5978,6 +5978,12 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
       calleeReg, BoundFunctionObject::offsetOfFirstInlineBoundArg());
 
   
+  masm.load32(flagsSlot, scratch);
+  masm.rshift32(Imm32(BoundFunctionObject::NumBoundArgsShift), scratch);
+  masm.add32(argcReg, scratch);
+  masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX), vmCall);
+
+  
   
   
   
