@@ -20,8 +20,9 @@ class RegExpBytecodePeepholeOptimization : public AllStatic {
   
   
   static Handle<ByteArray> OptimizeBytecode(
-      Isolate* isolate, Zone* zone, Handle<String> source, const byte* bytecode,
-      int length, const ZoneUnorderedMap<int, int>& jump_edges);
+      Isolate* isolate, Zone* zone, Handle<String> source,
+      const uint8_t* bytecode, int length,
+      const ZoneUnorderedMap<int, int>& jump_edges);
 };
 
 }  

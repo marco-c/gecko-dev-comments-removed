@@ -302,8 +302,8 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
                    int previous_index, Isolate* isolate);
 
   V8_EXPORT_PRIVATE static int ExecuteForTesting(String input, int start_offset,
-                                                 const byte* input_start,
-                                                 const byte* input_end,
+                                                 const uint8_t* input_start,
+                                                 const uint8_t* input_end,
                                                  int* output, int output_size,
                                                  Isolate* isolate,
                                                  JSRegExp regexp);
@@ -331,8 +331,8 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
                                   RegExp::CallOrigin call_origin,
                                   Address* return_address,
                                   InstructionStream re_code, Address* subject,
-                                  const byte** input_start,
-                                  const byte** input_end);
+                                  const uint8_t** input_start,
+                                  const uint8_t** input_end);
 
   static Address word_character_map_address() {
     return reinterpret_cast<Address>(&word_character_map[0]);
@@ -342,14 +342,14 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
   
   
   
-  static const byte word_character_map[256];
+  static const uint8_t word_character_map[256];
 
   Handle<ByteArray> GetOrAddRangeArray(const ZoneList<CharacterRange>* ranges);
 
  private:
   
-  static int Execute(String input, int start_offset, const byte* input_start,
-                     const byte* input_end, int* output, int output_size,
+  static int Execute(String input, int start_offset, const uint8_t* input_start,
+                     const uint8_t* input_end, int* output, int output_size,
                      Isolate* isolate, JSRegExp regexp);
 
   ZoneUnorderedMap<uint32_t, Handle<FixedUInt16Array>> range_array_cache_;

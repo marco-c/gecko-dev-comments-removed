@@ -93,7 +93,7 @@ class RegExpStack final {
   
   static constexpr size_t kStaticStackSize =
       2 * kStackLimitSlack * kSystemPointerSize;
-  byte static_stack_[kStaticStackSize] = {0};
+  uint8_t static_stack_[kStaticStackSize] = {0};
 
   static_assert(kStaticStackSize <= kMaximumStackSize);
 
@@ -108,10 +108,10 @@ class RegExpStack final {
     
     
     
-    byte* memory_ = nullptr;
-    byte* memory_top_ = nullptr;
+    uint8_t* memory_ = nullptr;
+    uint8_t* memory_top_ = nullptr;
     size_t memory_size_ = 0;
-    byte* stack_pointer_ = nullptr;
+    uint8_t* stack_pointer_ = nullptr;
     Address limit_ = kNullAddress;
     bool owns_memory_ = false;  
 
