@@ -509,17 +509,10 @@ bool ChannelWrapper::IsSystemLoad() const {
       return IsSystemPrincipal(prin);
     }
 
-    if (RefPtr<BrowsingContext> bc = loadInfo->GetBrowsingContext();
-        !bc || bc->IsTop()) {
-      return false;
-    }
-
-    if (nsIPrincipal* prin = loadInfo->PrincipalToInherit()) {
-      return IsSystemPrincipal(prin);
-    }
-    if (nsIPrincipal* prin = loadInfo->TriggeringPrincipal()) {
-      return IsSystemPrincipal(prin);
-    }
+    
+    
+    
+    MOZ_ASSERT(Type() == MozContentPolicyType::Main_frame);
   }
   return false;
 }
