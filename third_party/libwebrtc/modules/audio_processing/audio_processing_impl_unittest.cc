@@ -520,9 +520,6 @@ TEST(AudioProcessingImplTest,
   apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data());
 }
 
-
-
-
 TEST(AudioProcessingImplTest,
      ProcessWithAgc2AndTransientSuppressorVadModeDefault) {
   webrtc::test::ScopedFieldTrials field_trials(
@@ -552,9 +549,6 @@ TEST(AudioProcessingImplTest,
               kNoErr);
   }
 }
-
-
-
 
 TEST(AudioProcessingImplTest,
      ProcessWithAgc2AndTransientSuppressorVadModeRnnVad) {
