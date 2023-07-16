@@ -136,6 +136,10 @@ class DecisionLogic : public NetEqController {
 
   
   
+  bool PostponeDecode(NetEqController::NetEqStatus status) const;
+
+  
+  
   bool ReinitAfterExpands(NetEqController::NetEqStatus status) const;
 
   
@@ -157,7 +161,7 @@ class DecisionLogic : public NetEqController {
     Config();
 
     bool enable_stable_playout_delay = false;
-    int reinit_after_expand_ms = 1000;
+    bool combine_concealment_decision = false;
     int deceleration_target_level_offset_ms = 85;
     int packet_history_size_ms = 2000;
     absl::optional<int> cng_timeout_ms;

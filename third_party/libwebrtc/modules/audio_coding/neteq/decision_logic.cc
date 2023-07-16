@@ -38,6 +38,7 @@ constexpr int kMaxWaitForPacketMs = 100;
 
 
 constexpr int kDelayAdjustmentGranularityMs = 20;
+constexpr int kReinitAfterExpandsMs = 1000;
 
 std::unique_ptr<DelayManager> CreateDelayManager(
     const NetEqController::Config& neteq_config) {
@@ -68,10 +69,10 @@ bool IsExpand(NetEq::Mode mode) {
 
 DecisionLogic::Config::Config() {
   StructParametersParser::Create(
-      "enable_stable_playout_delay", &enable_stable_playout_delay,  
-      "reinit_after_expand_ms", &reinit_after_expand_ms,            
-      "packet_history_size_ms", &packet_history_size_ms,            
-      "cng_timeout_ms", &cng_timeout_ms,                            
+      "enable_stable_playout_delay", &enable_stable_playout_delay,    
+      "combine_concealment_decision", &combine_concealment_decision,  
+      "packet_history_size_ms", &packet_history_size_ms,              
+      "cng_timeout_ms", &cng_timeout_ms,                              
       "deceleration_target_level_offset_ms",
       &deceleration_target_level_offset_ms)
       ->Parse(webrtc::field_trial::FindFullName(
@@ -79,7 +80,8 @@ DecisionLogic::Config::Config() {
   RTC_LOG(LS_INFO) << "NetEq decision logic config:"
                    << " enable_stable_playout_delay="
                    << enable_stable_playout_delay
-                   << " reinit_after_expand_ms=" << reinit_after_expand_ms
+                   << " combine_concealment_decision="
+                   << combine_concealment_decision
                    << " packet_history_size_ms=" << packet_history_size_ms
                    << " cng_timeout_ms=" << cng_timeout_ms.value_or(-1)
                    << " deceleration_target_level_offset_ms="
@@ -137,7 +139,8 @@ NetEq::Operation DecisionLogic::GetDecision(const NetEqStatus& status,
   if (prev_time_scale_) {
     timescale_countdown_ = tick_timer_->GetNewCountdown(kMinTimescaleInterval);
   }
-  if (!IsCng(status.last_mode)) {
+  if (!IsCng(status.last_mode) &&
+      !(config_.combine_concealment_decision && IsExpand(status.last_mode))) {
     FilterBufferLevel(status.packet_buffer_info.span_samples);
   }
 
@@ -162,29 +165,15 @@ NetEq::Operation DecisionLogic::GetDecision(const NetEqStatus& status,
 
   
   
-  if (IsExpand(status.last_mode) &&
+  if (!config_.combine_concealment_decision && IsExpand(status.last_mode) &&
       status.generated_noise_samples >
-          static_cast<size_t>(config_.reinit_after_expand_ms *
-                              sample_rate_khz_)) {
+          static_cast<size_t>(kReinitAfterExpandsMs * sample_rate_khz_)) {
     *reset_decoder = true;
     return NetEq::Operation::kNormal;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  const int target_level_samples = TargetLevelMs() * sample_rate_khz_;
-  if (!config_.enable_stable_playout_delay && IsExpand(status.last_mode) &&
-      status.expand_mutefactor < 16384 / 2 &&
-      status.packet_buffer_info.span_samples <
-          static_cast<size_t>(target_level_samples * kPostponeDecodingLevel /
-                              100) &&
-      !status.packet_buffer_info.dtx_or_cng) {
-    return NetEq::Operation::kExpand;
+  if (PostponeDecode(status)) {
+    return NoPacket(status);
   }
 
   const uint32_t five_seconds_samples =
@@ -367,21 +356,29 @@ NetEq::Operation DecisionLogic::FuturePacketAvailable(
   
   
   
-  if (IsExpand(status.last_mode) && ShouldContinueExpand(status)) {
-    return NoPacket(status);
-  }
-
-  if (IsCng(status.last_mode)) {
-    int playout_delay_ms = GetNextPacketDelayMs(status);
-    const bool above_target_delay = playout_delay_ms > HighThresholdCng();
-    const bool below_target_delay = playout_delay_ms < LowThresholdCng();
-    if ((PacketTooEarly(status) && !above_target_delay) || below_target_delay) {
+  if (config_.combine_concealment_decision || IsCng(status.last_mode)) {
+    const int buffer_delay_ms =
+        status.packet_buffer_info.span_samples / sample_rate_khz_;
+    const bool above_target_delay = buffer_delay_ms > HighThresholdCng();
+    const bool below_target_delay = buffer_delay_ms < LowThresholdCng();
+    if ((PacketTooEarly(status) && !above_target_delay) ||
+        (below_target_delay && !config_.combine_concealment_decision)) {
       return NoPacket(status);
     }
     uint32_t timestamp_leap =
         status.next_packet->timestamp - status.target_timestamp;
-    time_stretched_cn_samples_ =
-        timestamp_leap - status.generated_noise_samples;
+    if (config_.combine_concealment_decision) {
+      if (timestamp_leap != status.generated_noise_samples) {
+        
+        buffer_level_filter_->SetFilteredBufferLevel(
+            status.packet_buffer_info.span_samples);
+      }
+    } else {
+      time_stretched_cn_samples_ =
+          timestamp_leap - status.generated_noise_samples;
+    }
+  } else if (IsExpand(status.last_mode) && ShouldContinueExpand(status)) {
+    return NoPacket(status);
   }
 
   
@@ -403,13 +400,38 @@ bool DecisionLogic::UnderTargetLevel() const {
          TargetLevelMs() * sample_rate_khz_;
 }
 
+bool DecisionLogic::PostponeDecode(NetEqController::NetEqStatus status) const {
+  
+  
+  const size_t min_buffer_level_samples =
+      TargetLevelMs() * sample_rate_khz_ * kPostponeDecodingLevel / 100;
+  if (status.packet_buffer_info.span_samples >= min_buffer_level_samples) {
+    return false;
+  }
+  
+  
+  if (status.packet_buffer_info.dtx_or_cng) {
+    return false;
+  }
+  
+  if (config_.combine_concealment_decision && IsCng(status.last_mode)) {
+    return true;
+  }
+  
+  
+  
+  if (IsExpand(status.last_mode) && status.expand_mutefactor < 16384 / 2) {
+    return true;
+  }
+  return false;
+}
+
 bool DecisionLogic::ReinitAfterExpands(
     NetEqController::NetEqStatus status) const {
   const uint32_t timestamp_leap =
       status.next_packet->timestamp - status.target_timestamp;
   return timestamp_leap >=
-         static_cast<uint32_t>(config_.reinit_after_expand_ms *
-                               sample_rate_khz_);
+         static_cast<uint32_t>(kReinitAfterExpandsMs * sample_rate_khz_);
 }
 
 bool DecisionLogic::PacketTooEarly(NetEqController::NetEqStatus status) const {
