@@ -8,19 +8,19 @@
 #define frontend_BytecodeCompiler_h
 
 #include "mozilla/AlreadyAddRefed.h"  
-#include "mozilla/Maybe.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/Maybe.h"            
+#include "mozilla/Utf8.h"             
 
-#include "NamespaceImports.h"
+#include <stdint.h>  
 
-#include "ds/LifoAlloc.h"  
-#include "frontend/FunctionSyntaxKind.h"
-#include "frontend/ScriptIndex.h"  
-#include "js/CompileOptions.h"     
-#include "js/RootingAPI.h"         
-#include "js/SourceText.h"         
-#include "js/UniquePtr.h"          
-#include "vm/ScopeKind.h"          
+#include "ds/LifoAlloc.h"                 
+#include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/ScriptIndex.h"         
+#include "js/CompileOptions.h"            
+#include "js/RootingAPI.h"                
+#include "js/SourceText.h"                
+#include "js/UniquePtr.h"                 
+#include "vm/ScopeKind.h"                 
 
 
 
@@ -100,7 +100,6 @@
 
 
 class JSFunction;
-class JSLinearString;
 class JSObject;
 class JSScript;
 struct JSContext;
@@ -108,7 +107,6 @@ struct JSContext;
 namespace js {
 
 class ModuleObject;
-class ScriptSourceObject;
 class FrontendContext;
 class Scope;
 
@@ -118,10 +116,6 @@ struct CompilationInput;
 struct CompilationStencil;
 struct ExtensibleCompilationStencil;
 struct CompilationGCOutput;
-class ErrorReporter;
-class FunctionBox;
-class ParseNode;
-class TaggedParserAtomIndex;
 class ScopeBindingCache;
 
 
@@ -242,7 +236,7 @@ UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     JS::SourceText<char16_t>& srcBuf,
     const mozilla::Maybe<uint32_t>& parameterListEnd,
-    frontend::FunctionSyntaxKind syntaxKind, Handle<Scope*> enclosingScope);
+    frontend::FunctionSyntaxKind syntaxKind, JS::Handle<Scope*> enclosingScope);
 
 extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
                                               FrontendContext* fc,
