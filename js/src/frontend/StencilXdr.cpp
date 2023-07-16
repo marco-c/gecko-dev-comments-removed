@@ -779,9 +779,6 @@ template <XDRMode mode>
   MOZ_TRY(xdr->codeUint8(&canLazilyParse));
   if (mode == XDR_DECODE) {
     stencil.canLazilyParse = canLazilyParse;
-    
-    
-    
   }
 
   MOZ_TRY(xdr->codeUint32(&stencil.functionKey));

@@ -92,12 +92,6 @@ extern already_AddRefed<CompilationStencil> DelazifyCanonicalScriptedFunction(
     JSContext* cx, FrontendContext* fc, ScopeBindingCache* scopeCache,
     CompilationStencil& context, ScriptIndex scriptIndex);
 
-
-inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {
-  return !options.discardSource && !options.sourceIsLazy &&
-         !options.forceFullParse();
-}
-
 }  
 
 }  
