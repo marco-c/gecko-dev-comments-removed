@@ -37,7 +37,7 @@ add_task(async function () {
   await waitSomeTime();
   ok(!scrolledToBottom(requestsContainer), "Not scrolled to bottom.");
   
-  const { scrollTop } = requestsContainer;
+  let { scrollTop } = requestsContainer;
   
   
   await waitForNetworkEvents(monitor, 8, { expectedEventTimings: 0 });
@@ -56,15 +56,10 @@ add_task(async function () {
   
   
   store.dispatch(Actions.selectRequestByIndex(0));
+  scrollTop = requestsContainer.scrollTop;
   await waitForNetworkEvents(monitor, 8);
   await waitSomeTime();
-  const requestsContainerHeaders = document.querySelector(
-    ".requests-list-headers"
-  );
-  const headersHeight = Math.floor(
-    requestsContainerHeaders.getBoundingClientRect().height
-  );
-  is(requestsContainer.scrollTop, headersHeight, "Did not scroll.");
+  is(requestsContainer.scrollTop, scrollTop, "Did not scroll.");
 
   
   await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
