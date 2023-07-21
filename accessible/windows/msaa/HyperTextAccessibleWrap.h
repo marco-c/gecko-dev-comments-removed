@@ -3,27 +3,15 @@
 
 
 
-
-
 #ifndef mozilla_a11y_HyperTextAccessibleWrap_h__
 #define mozilla_a11y_HyperTextAccessibleWrap_h__
 
 #include "HyperTextAccessible.h"
 
 namespace mozilla {
-
 namespace a11y {
 
-class HyperTextAccessibleWrap : public HyperTextAccessible {
- public:
-  using HyperTextAccessible::HyperTextAccessible;
-
-  
-  NS_DECL_ISUPPORTS_INHERITED
-
- protected:
-  ~HyperTextAccessibleWrap() {}
-};
+typedef class HyperTextAccessible HyperTextAccessibleWrap;
 
 }  
 }  

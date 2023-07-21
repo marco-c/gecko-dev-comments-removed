@@ -19,8 +19,8 @@ template <class T>
 class StaticRefPtr;
 
 namespace a11y {
+class HyperTextAccessible;
 class HyperTextAccessibleBase;
-class HyperTextAccessibleWrap;
 
 class ia2AccessibleText : public IAccessibleText {
  public:
@@ -146,7 +146,7 @@ class ia2AccessibleText : public IAccessibleText {
 
 
 
-  std::pair<HyperTextAccessibleWrap*, HRESULT> LocalTextAcc();
+  std::pair<HyperTextAccessible*, HRESULT> LocalTextAcc();
 };
 
 }  
