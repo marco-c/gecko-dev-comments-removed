@@ -81,10 +81,8 @@ void UtilityAudioDecoderParent::WMFPreloadForSandbox() {
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
   
   
-#  if defined(DEBUG)
   
   UtilityProcessImpl::LoadLibraryOrCrash(L"ole32.dll");
-#  endif  
 
   auto rv = wmf::MediaFoundationInitializer::HasInitialized();
   if (!rv) {
