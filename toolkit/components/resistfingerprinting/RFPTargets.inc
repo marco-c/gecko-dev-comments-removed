@@ -25,7 +25,9 @@ ITEM_VALUE(CanvasImageExtractionPrompt, 1llu << 9)
 ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 1llu << 10)
 ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked, 1llu << 11)
 
-ITEM_VALUE(NavigatorAppName,            1llu << 12)
+
+
+
 ITEM_VALUE(NavigatorAppVersion,         1llu << 13)
 ITEM_VALUE(NavigatorBuildID,            1llu << 14)
 ITEM_VALUE(NavigatorHWConcurrency,      1llu << 15)
