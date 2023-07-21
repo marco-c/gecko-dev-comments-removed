@@ -46,6 +46,14 @@ class SVGAnimatedPointList {
  public:
   SVGAnimatedPointList() = default;
 
+  SVGAnimatedPointList& operator=(const SVGAnimatedPointList& aOther) {
+    mBaseVal = aOther.mBaseVal;
+    if (aOther.mAnimVal) {
+      mAnimVal = MakeUnique<SVGPointList>(*aOther.mAnimVal);
+    }
+    return *this;
+  }
+
   
 
 

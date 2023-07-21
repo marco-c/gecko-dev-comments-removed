@@ -36,6 +36,15 @@ class SVGTransformList {
   SVGTransformList() = default;
   ~SVGTransformList() = default;
 
+  SVGTransformList& operator=(const SVGTransformList& aOther) {
+    mItems.ClearAndRetainStorage();
+    
+    Unused << mItems.AppendElements(aOther.mItems, fallible);
+    return *this;
+  }
+
+  SVGTransformList(const SVGTransformList& aOther) { *this = aOther; }
+
   
   
 

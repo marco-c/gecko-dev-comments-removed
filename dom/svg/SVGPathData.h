@@ -101,6 +101,15 @@ class SVGPathData {
   SVGPathData() = default;
   ~SVGPathData() = default;
 
+  SVGPathData& operator=(const SVGPathData& aOther) {
+    mData.ClearAndRetainStorage();
+    
+    Unused << mData.AppendElements(aOther.mData, fallible);
+    return *this;
+  }
+
+  SVGPathData(const SVGPathData& aOther) { *this = aOther; }
+
   
   
 

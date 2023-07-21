@@ -47,6 +47,16 @@ class SVGAnimatedTransformList {
   SVGAnimatedTransformList()
       : mIsAttrSet(false), mCreatedOrRemovedOnLastChange(true) {}
 
+  SVGAnimatedTransformList& operator=(const SVGAnimatedTransformList& aOther) {
+    mBaseVal = aOther.mBaseVal;
+    if (aOther.mAnimVal) {
+      mAnimVal = MakeUnique<SVGTransformList>(*aOther.mAnimVal);
+    }
+    mIsAttrSet = aOther.mIsAttrSet;
+    mCreatedOrRemovedOnLastChange = aOther.mCreatedOrRemovedOnLastChange;
+    return *this;
+  }
+
   
 
 

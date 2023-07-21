@@ -45,6 +45,14 @@ class SVGAnimatedPathSegList final {
  public:
   SVGAnimatedPathSegList() = default;
 
+  SVGAnimatedPathSegList& operator=(const SVGAnimatedPathSegList& aOther) {
+    mBaseVal = aOther.mBaseVal;
+    if (aOther.mAnimVal) {
+      mAnimVal = MakeUnique<SVGPathData>(*aOther.mAnimVal);
+    }
+    return *this;
+  }
+
   
 
 
