@@ -1,12 +1,17 @@
 
 
-const { test } = wasmEvalText(`
-  (module
-    (type $f (func (result i32)))
-    (func (export "test") (type $f)
-      ref.null $f
-      ref.test (ref null $f)
+
+
+
+assertErrorMessage(() => {
+  const { test } = wasmEvalText(`
+    (module
+      (type $f (func (result i32)))
+      (func (export "test") (type $f)
+        ref.null $f
+        ref.test (ref null $f)
+      )
     )
-  )
-`).exports;
-assertEq(test(), 1);
+  `).exports;
+  assertEq(test(), 1);
+}, WebAssembly.CompileError, /ref.test only supports the any hierarchy/);

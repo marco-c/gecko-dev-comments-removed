@@ -1704,8 +1704,8 @@ struct BaseCompiler final {
 
   
   
-  void branchIfRefSubtype(RegRef ref, RefType sourceType, RefType destType,
-                          Label* label, bool onSuccess);
+  void branchGcRefType(RegRef object, RefType sourceType, RefType destType,
+                       Label* label, bool onSuccess);
 
   
   
