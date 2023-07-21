@@ -88,6 +88,9 @@ class AddrInfo {
   mozilla::Maybe<StackTrace> mFreeStack;
 
   
+  bool mPhcWasLocked = false;
+
+  
   AddrInfo()
       : mKind(Kind::Unknown),
         mBaseAddr(nullptr),
