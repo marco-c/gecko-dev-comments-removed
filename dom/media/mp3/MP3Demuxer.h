@@ -177,6 +177,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   uint32_t mEncoderDelay = 0;
   
   uint32_t mEncoderPadding = 0;
+  int32_t mRemainingEncoderPadding = 0;
   
   bool mEOS = false;
 };
