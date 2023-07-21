@@ -2498,9 +2498,6 @@ pref("devtools.markup.collapseAttributeLength", 120);
 pref("devtools.markup.beautifyOnCopy", false);
 
 
-pref("devtools.markup.mutationBreakpoints.enabled", true);
-
-
 pref("devtools.defaultColorUnit", "authored");
 
 
