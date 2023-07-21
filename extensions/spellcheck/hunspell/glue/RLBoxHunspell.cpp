@@ -4,9 +4,6 @@
 
 
 #include "mozilla/Assertions.h"
-#ifdef MOZ_WASM_SANDBOXING_HUNSPELL
-#  include "mozilla/ipc/LibrarySandboxPreload.h"
-#endif
 #include "RLBoxHunspell.h"
 #include "mozHunspellRLBoxGlue.h"
 #include "mozHunspellRLBoxHost.h"
