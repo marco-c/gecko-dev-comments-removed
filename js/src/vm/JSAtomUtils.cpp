@@ -8,7 +8,7 @@
 
 
 
-#include "vm/JSAtom-inl.h"
+#include "vm/JSAtomUtils-inl.h"
 
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/RangedPtr.h"

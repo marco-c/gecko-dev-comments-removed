@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_JSAtom_h
-#define vm_JSAtom_h
+#ifndef vm_JSAtomUtils_h
+#define vm_JSAtomUtils_h
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"

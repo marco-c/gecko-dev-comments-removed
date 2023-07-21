@@ -20,7 +20,7 @@
 #include "vm/FunctionFlags.h"          
 #include "vm/FunctionPrefixKind.h"     
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSAtom.h"
+#include "vm/JSAtomUtils.h"            
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "wasm/WasmTypeDef.h"

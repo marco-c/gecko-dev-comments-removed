@@ -23,7 +23,7 @@
 #include "js/shadow/Zone.h"    
 #include "js/Value.h"
 #include "vm/GetterSetter.h"
-#include "vm/JSAtom.h"
+#include "vm/JSAtomUtils.h"  
 #include "vm/JSObject.h"
 #include "vm/Shape.h"
 #include "vm/StringType.h"

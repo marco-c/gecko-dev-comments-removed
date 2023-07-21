@@ -15,6 +15,7 @@
 #include "vm/ArgumentsObject.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  
+#include "vm/JSAtomUtils.h"   
 #include "vm/Realm.h"
 #include "vm/SharedStencil.h"  
 #include "vm/StaticStrings.h"
@@ -24,7 +25,7 @@
 #endif
 
 #include "vm/GlobalObject-inl.h"
-#include "vm/JSAtom-inl.h"
+#include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectOperations-inl.h"

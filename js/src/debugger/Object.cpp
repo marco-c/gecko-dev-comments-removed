@@ -51,7 +51,7 @@
 #include "vm/GeneratorObject.h"          
 #include "vm/GlobalObject.h"             
 #include "vm/Interpreter.h"              
-#include "vm/JSAtom.h"                   
+#include "vm/JSAtomUtils.h"              
 #include "vm/JSContext.h"                
 #include "vm/JSFunction.h"               
 #include "vm/JSObject.h"                 

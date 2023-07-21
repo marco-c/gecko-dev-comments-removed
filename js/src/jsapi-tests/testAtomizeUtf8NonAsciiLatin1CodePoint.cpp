@@ -11,7 +11,7 @@
 #include "js/Exception.h"   
 #include "js/RootingAPI.h"  
 #include "jsapi-tests/tests.h"  
-#include "vm/JSAtom.h"          
+#include "vm/JSAtomUtils.h"     
 #include "vm/StringType.h"      
 
 using mozilla::DecodeOneUtf8CodePoint;

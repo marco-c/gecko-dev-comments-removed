@@ -39,7 +39,7 @@
 #include "wasm/WasmCode.h"
 #include "wasm/WasmFeatures.h"  
 
-#include "vm/JSAtom-inl.h"
+#include "vm/JSAtomUtils-inl.h"  
 #include "wasm/WasmInstance-inl.h"
 
 using namespace js;

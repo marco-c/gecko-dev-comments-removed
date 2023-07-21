@@ -15,13 +15,14 @@
 #include "js/Context.h"           
 #include "js/Id.h"                
 #include "js/RootingAPI.h"        
-#include "vm/JSAtom.h"            
+#include "vm/JSAtomUtils.h"       
 #include "vm/JSContext.h"         
 #include "vm/JSObject.h"          
 #include "vm/ObjectOperations.h"  
+#include "vm/StringType.h"        
 
-#include "vm/JSAtom-inl.h"     
-#include "vm/JSContext-inl.h"  
+#include "vm/JSAtomUtils-inl.h"  
+#include "vm/JSContext-inl.h"    
 
 using namespace js;
 

@@ -50,7 +50,7 @@
 #include "wasm/WasmTypeDecls.h"       
 
 #include "vm/BytecodeUtil-inl.h"  
-#include "vm/JSAtom-inl.h"        
+#include "vm/JSAtomUtils-inl.h"   
 #include "vm/JSObject-inl.h"  
 #include "vm/JSScript-inl.h"  
 #include "vm/ObjectOperations-inl.h"  

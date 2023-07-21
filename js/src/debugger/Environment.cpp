@@ -23,7 +23,7 @@
 #include "js/RootingAPI.h"            
 #include "util/Identifier.h"          
 #include "vm/Compartment.h"           
-#include "vm/JSAtom.h"                
+#include "vm/JSAtomUtils.h"           
 #include "vm/JSContext.h"             
 #include "vm/JSFunction.h"            
 #include "vm/JSObject.h"              

@@ -39,12 +39,12 @@
 #include "util/StringBuffer.h"  
 #include "vm/ArrayObject.h"     
 #include "vm/ErrorReporting.h"  
-#include "vm/JSAtom.h"          
+#include "vm/JSAtomUtils.h"     
 #include "vm/JSContext.h"       
 #include "vm/PlainObject.h"     
 #include "vm/StringType.h"  
 
-#include "vm/JSAtom-inl.h"  
+#include "vm/JSAtomUtils-inl.h"  
 
 using namespace js;
 

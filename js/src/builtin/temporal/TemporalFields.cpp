@@ -43,7 +43,7 @@
 #include "vm/PlainObject.h"
 #include "vm/StringType.h"
 
-#include "vm/JSAtom-inl.h"
+#include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
 

@@ -30,7 +30,7 @@
 #include "vm/StringType.h"    
 #include "vm/SymbolType.h"    
 
-#include "vm/JSAtom-inl.h"  
+#include "vm/JSAtomUtils-inl.h"  
 
 namespace js {
 

@@ -4,10 +4,10 @@
 
 
 
-#ifndef vm_JSAtom_inl_h
-#define vm_JSAtom_inl_h
+#ifndef vm_JSAtomUtils_inl_h
+#define vm_JSAtomUtils_inl_h
 
-#include "vm/JSAtom.h"
+#include "vm/JSAtomUtils.h"
 
 #include "mozilla/RangedPtr.h"
 

@@ -25,7 +25,7 @@
 #include "js/Value.h"               
 #include "vm/FunctionPrefixKind.h"  
 #include "vm/GlobalObject.h"        
-#include "vm/JSAtom.h"              
+#include "vm/JSAtomUtils.h"         
 #include "vm/JSContext.h"           
 #include "vm/JSFunction.h"          
 #include "vm/JSObject.h"            
@@ -33,7 +33,7 @@
 #include "vm/PropertyResult.h"  
 #include "vm/StringType.h"      
 
-#include "vm/JSAtom-inl.h"            
+#include "vm/JSAtomUtils-inl.h"       
 #include "vm/JSContext-inl.h"         
 #include "vm/JSObject-inl.h"          
 #include "vm/NativeObject-inl.h"      

@@ -27,7 +27,7 @@
 #include "vm/PlainObject.h"                        
 
 #include "gc/ObjectKind-inl.h"    
-#include "vm/JSAtom-inl.h"        
+#include "vm/JSAtomUtils-inl.h"   
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
