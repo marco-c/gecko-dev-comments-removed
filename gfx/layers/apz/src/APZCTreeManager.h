@@ -748,7 +748,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  LayerToParentLayerMatrix4x4 ComputeTransformForNode(
+  LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumbNode(
       const HitTestingTreeNode* aNode) const MOZ_REQUIRES(mTreeLock);
 
   

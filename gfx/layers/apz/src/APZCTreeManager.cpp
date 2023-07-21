@@ -2209,8 +2209,10 @@ void APZCTreeManager::SetupScrollbarDrag(
     LayerToParentLayerMatrix4x4 thumbTransform;
     {
       RecursiveMutexAutoLock lock(mTreeLock);
-      thumbTransform = ComputeTransformForNode(aScrollThumbNode.Get(lock));
+      thumbTransform =
+          ComputeTransformForScrollThumbNode(aScrollThumbNode.Get(lock));
     }
+    
     
     
     OuterCSSCoord thumbStart =
@@ -3425,106 +3427,29 @@ SideBits APZCTreeManager::SidesStuckToRootContent(
   return result;
 }
 
-LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
+LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumbNode(
     const HitTestingTreeNode* aNode) const {
   mTreeLock.AssertCurrentThreadIn();
   
   
   
+  MOZ_ASSERT(aNode->IsScrollThumbNode());
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
-    
-    
-    bool visualTransformIsInheritedFromAncestor =
-        
-
-        apzc->IsRootContent() &&
-        
-        mAsyncZoomContainerSubtree == Some(aNode->GetLayersId()) &&
-        
-        !aNode->GetAsyncZoomContainerId();
-    AsyncTransformComponents components =
-        visualTransformIsInheritedFromAncestor
-            ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
-            : LayoutAndVisual;
-    return aNode->GetTransform() *
-           CompleteAsyncTransform(apzc->GetCurrentAsyncTransformWithOverscroll(
-               AsyncPanZoomController::eForHitTesting, components));
-  } else if (aNode->GetAsyncZoomContainerId()) {
-    if (AsyncPanZoomController* rootContent =
-            FindRootContentApzcForLayersId(aNode->GetLayersId())) {
-      return aNode->GetTransform() *
-             CompleteAsyncTransform(
-                 rootContent->GetCurrentAsyncTransformWithOverscroll(
-                     AsyncPanZoomController::eForHitTesting,
-                     {AsyncTransformComponent::eVisual}));
-    }
-  } else if (aNode->IsScrollThumbNode()) {
-    
-    
-    
-    ScrollableLayerGuid guid{aNode->GetLayersId(), 0,
-                             aNode->GetScrollTargetId()};
-    if (RefPtr<HitTestingTreeNode> scrollTargetNode = GetTargetNode(
-            guid, &ScrollableLayerGuid::EqualsIgnoringPresShell)) {
-      AsyncPanZoomController* scrollTargetApzc = scrollTargetNode->GetApzc();
-      MOZ_ASSERT(scrollTargetApzc);
-      return scrollTargetApzc->CallWithLastContentPaintMetrics(
-          [&](const FrameMetrics& aMetrics) {
-            return ComputeTransformForScrollThumb(
-                aNode->GetTransform() * AsyncTransformMatrix(),
-                scrollTargetNode->GetTransform().ToUnknownMatrix(),
-                scrollTargetApzc, aMetrics, aNode->GetScrollbarData(),
-                scrollTargetNode->IsAncestorOf(aNode));
-          });
-    }
-  } else if (IsFixedToRootContent(aNode)) {
-    ParentLayerPoint translation;
-    {
-      MutexAutoLock mapLock(mMapLock);
-      translation = ViewAs<ParentLayerPixel>(
-          apz::ComputeFixedMarginsOffset(
-              GetCompositorFixedLayerMargins(mapLock),
-              aNode->GetFixedPosSides(), mGeckoFixedLayerMargins),
-          PixelCastJustification::ScreenIsParentLayerForRoot);
-    }
-    return aNode->GetTransform() *
-           CompleteAsyncTransform(
-               AsyncTransformComponentMatrix::Translation(translation));
-  }
-  SideBits sides = SidesStuckToRootContent(aNode);
-  if (sides != SideBits::eNone) {
-    ParentLayerPoint translation;
-    {
-      MutexAutoLock mapLock(mMapLock);
-      translation = ViewAs<ParentLayerPixel>(
-          apz::ComputeFixedMarginsOffset(
-              GetCompositorFixedLayerMargins(mapLock), sides,
-              
-              
-              
-              ScreenMargin()),
-          PixelCastJustification::ScreenIsParentLayerForRoot);
-    }
-    return aNode->GetTransform() *
-           CompleteAsyncTransform(
-               AsyncTransformComponentMatrix::Translation(translation));
+  ScrollableLayerGuid guid{aNode->GetLayersId(), 0, aNode->GetScrollTargetId()};
+  if (RefPtr<HitTestingTreeNode> scrollTargetNode =
+          GetTargetNode(guid, &ScrollableLayerGuid::EqualsIgnoringPresShell)) {
+    AsyncPanZoomController* scrollTargetApzc = scrollTargetNode->GetApzc();
+    MOZ_ASSERT(scrollTargetApzc);
+    return scrollTargetApzc->CallWithLastContentPaintMetrics(
+        [&](const FrameMetrics& aMetrics) {
+          return ComputeTransformForScrollThumb(
+              aNode->GetTransform() * AsyncTransformMatrix(),
+              scrollTargetNode->GetTransform().ToUnknownMatrix(),
+              scrollTargetApzc, aMetrics, aNode->GetScrollbarData(),
+              scrollTargetNode->IsAncestorOf(aNode));
+        });
   }
   
   return aNode->GetTransform() * AsyncTransformMatrix();
