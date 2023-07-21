@@ -161,6 +161,16 @@ static void WlLogHandler(const char* format, va_list args) {
   char error[1000];
   VsprintfLiteral(error, format, args);
   gfxCriticalNote << "Wayland protocol error: " << error;
+
+  
+  
+  
+  if (strstr(error, "warning:") &&
+      strstr(error, "destroyed while proxies still attached")) {
+    return;
+  }
+
+  MOZ_CRASH_UNSAFE(error);
 }
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
