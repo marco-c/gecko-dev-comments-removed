@@ -75,8 +75,6 @@ class MOZ_RAII AutoCycleDetector {
 
 struct AutoResolving;
 
-struct FrontendErrors;  
-
 class InternalJobQueue : public JS::JobQueue {
  public:
   explicit InternalJobQueue(JSContext* cx)
@@ -171,8 +169,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::WriteOnceData<js::ContextKind> kind_;
 
   js::ContextData<JS::ContextOptions> options_;
-
-  js::FrontendErrors* errors_;
 
   
   
@@ -296,9 +292,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   inline void leaveRealm(JS::Realm* oldRealm);
 
-  void setFrontendErrors(js::FrontendErrors* errors) { errors_ = errors; }
-  js::FrontendErrors* frontendErrors() const { return errors_; }
-
   
   JS::Compartment* compartment() const {
     return realm_ ? JS::GetCompartmentForRealm(realm_) : nullptr;
@@ -338,10 +331,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   
   js::Metrics metrics() { return js::Metrics(runtime_); }
-
-  
-  void addPendingOverRecursed();
-  void addPendingOutOfMemory();
 
   JSRuntime* runtime() { return runtime_; }
   const JSRuntime* runtime() const { return runtime_; }
