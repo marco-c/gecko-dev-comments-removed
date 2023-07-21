@@ -917,8 +917,7 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement,
   
   
   
-  if (mDocument->ModuleScriptsEnabled() && scriptKind == ScriptKind::eClassic &&
-      scriptContent->IsHTMLElement() &&
+  if (scriptKind == ScriptKind::eClassic && scriptContent->IsHTMLElement() &&
       scriptContent->AsElement()->HasAttr(nsGkAtoms::nomodule)) {
     return false;
   }
@@ -3561,19 +3560,17 @@ void ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
 
   ScriptKind scriptKind = ScriptKind::eClassic;
 
-  if (mDocument->ModuleScriptsEnabled()) {
-    
-    if (aNoModule) {
-      return;
-    }
+  
+  if (aNoModule) {
+    return;
+  }
 
-    static const char kASCIIWhitespace[] = "\t\n\f\r ";
+  static const char kASCIIWhitespace[] = "\t\n\f\r ";
 
-    nsAutoString type(aType);
-    type.Trim(kASCIIWhitespace);
-    if (type.LowerCaseEqualsASCII("module")) {
-      scriptKind = ScriptKind::eModule;
-    }
+  nsAutoString type(aType);
+  type.Trim(kASCIIWhitespace);
+  if (type.LowerCaseEqualsASCII("module")) {
+    scriptKind = ScriptKind::eModule;
   }
 
   if (scriptKind == ScriptKind::eClassic && !aType.IsEmpty() &&
