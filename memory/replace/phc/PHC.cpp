@@ -940,6 +940,16 @@ static GMut* gMut;
 
 
 
+
+static void PHCCrash(GMutLock, const char* aMessage)
+    MOZ_REQUIRES(GMut::sMutex) {
+  GMut::sMutex.Unlock();
+  MOZ_CRASH_UNSAFE(aMessage);
+}
+
+
+
+
 #if !defined(XP_DARWIN)
 #  define PHC_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
 #else
@@ -1206,17 +1216,18 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 
 static void FreePage(GMutLock aLock, uintptr_t aIndex,
                      const Maybe<arena_id_t>& aArenaId,
-                     const StackTrace& aFreeStack, Delay aReuseDelay) {
+                     const StackTrace& aFreeStack, Delay aReuseDelay)
+    MOZ_REQUIRES(GMut::sMutex) {
   void* pagePtr = gConst->AllocPagePtr(aIndex);
 
 #ifdef XP_WIN
   if (!VirtualFree(pagePtr, kPageSize, MEM_DECOMMIT)) {
-    MOZ_CRASH("VirtualFree failed");
+    PHCCrash(aLock, "VirtualFree failed");
   }
 #else
   if (mmap(pagePtr, kPageSize, PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON,
            -1, 0) == MAP_FAILED) {
-    MOZ_CRASH("mmap failed");
+    PHCCrash(aLock, "mmap failed");
   }
 #endif
 
