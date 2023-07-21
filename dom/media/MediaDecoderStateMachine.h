@@ -559,6 +559,12 @@ class MediaDecoderStateMachine
   
   bool mIsMediaSinkSuspended = false;
 
+  
+  
+  
+  
+  Maybe<media::TimeUnit> mLastClockTimeBeforeStopSink;
+
  public:
   AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
     return &mCanonicalOutputPrincipal;
