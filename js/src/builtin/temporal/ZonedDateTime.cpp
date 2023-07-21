@@ -293,8 +293,7 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
     }
 
     
-    timeZone = ToTemporalTimeZone(cx, timeZoneValue);
-    if (!timeZone) {
+    if (!ToTemporalTimeZone(cx, timeZoneValue, &timeZone)) {
       return nullptr;
     }
 
@@ -399,8 +398,7 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
     }
 
     
-    timeZone = ToTemporalTimeZone(cx, timeZoneString);
-    if (!timeZone) {
+    if (!ToTemporalTimeZone(cx, timeZoneString, &timeZone)) {
       return nullptr;
     }
 
@@ -1527,8 +1525,8 @@ static bool ZonedDateTimeConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<TimeZoneValue> timeZone(cx, ToTemporalTimeZone(cx, args.get(1)));
-  if (!timeZone) {
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ToTemporalTimeZone(cx, args.get(1), &timeZone)) {
     return false;
   }
 
@@ -2799,8 +2797,8 @@ static bool ZonedDateTime_withTimeZone(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
 
   
-  Rooted<TimeZoneValue> timeZone(cx, ToTemporalTimeZone(cx, args.get(0)));
-  if (!timeZone) {
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ToTemporalTimeZone(cx, args.get(0), &timeZone)) {
     return false;
   }
 

@@ -2239,8 +2239,7 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
       
       if (timeZoneLike.isUndefined()) {
         
-        timeZone = ToTemporalTimeZone(cx, args[0]);
-        if (!timeZone) {
+        if (!ToTemporalTimeZone(cx, args[0], &timeZone)) {
           return false;
         }
 
@@ -2248,8 +2247,7 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
         temporalTime.setUndefined();
       } else {
         
-        timeZone = ToTemporalTimeZone(cx, timeZoneLike);
-        if (!timeZone) {
+        if (!ToTemporalTimeZone(cx, timeZoneLike, &timeZone)) {
           return false;
         }
 
@@ -2262,8 +2260,7 @@ static bool PlainDate_toZonedDateTime(JSContext* cx, const CallArgs& args) {
     }
   } else {
     
-    timeZone = ToTemporalTimeZone(cx, args.get(0));
-    if (!timeZone) {
+    if (!ToTemporalTimeZone(cx, args.get(0), &timeZone)) {
       return false;
     }
 

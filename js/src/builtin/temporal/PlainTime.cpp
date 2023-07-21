@@ -2509,9 +2509,8 @@ static bool PlainTime_toZonedDateTime(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<TimeZoneValue> timeZone(cx,
-                                 ToTemporalTimeZone(cx, temporalTimeZoneLike));
-  if (!timeZone) {
+  Rooted<TimeZoneValue> timeZone(cx);
+  if (!ToTemporalTimeZone(cx, temporalTimeZoneLike, &timeZone)) {
     return false;
   }
 
