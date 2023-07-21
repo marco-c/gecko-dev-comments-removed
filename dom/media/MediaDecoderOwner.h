@@ -34,6 +34,9 @@ class MediaDecoderOwner {
   virtual void DispatchAsyncEvent(const nsAString& aName) = 0;
 
   
+  virtual void DispatchAsyncTestingEvent(const nsAString& aName){};
+
+  
   virtual void UpdateReadyState() = 0;
 
   
