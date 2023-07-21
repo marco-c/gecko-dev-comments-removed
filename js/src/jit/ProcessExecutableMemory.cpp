@@ -191,10 +191,8 @@ static DWORD ExceptionHandler(PEXCEPTION_RECORD exceptionRecord,
   return ExceptionContinueSearch;
 }
 
-PRUNTIME_FUNCTION RuntimeFunctionCallback(DWORD64 ControlPc, PVOID Context);
 
-
-NTSYSAPI DWORD NTAPI RtlAddGrowableFunctionTable(
+extern "C" NTSYSAPI DWORD NTAPI RtlAddGrowableFunctionTable(
     PVOID* DynamicTable, PRUNTIME_FUNCTION FunctionTable, DWORD EntryCount,
     DWORD MaximumEntryCount, ULONG_PTR RangeBase, ULONG_PTR RangeEnd);
 
@@ -277,47 +275,28 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   r->thunk[11] = 0xe0;
 #    endif
 
-  BOOLEAN result = false;
+  
+  
 
   
   
-  HMODULE ntdll_module =
-      LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-
-  static decltype(&::RtlAddGrowableFunctionTable) addGrowableFunctionTable =
-      reinterpret_cast<decltype(&::RtlAddGrowableFunctionTable)>(
-          ::GetProcAddress(ntdll_module, "RtlAddGrowableFunctionTable"));
-
   
-  
-  if (addGrowableFunctionTable) {
-    
-    
-    
+  {
     AutoSuppressStackWalking suppress;
-    result = addGrowableFunctionTable(&r->dynamicTable, &r->runtimeFunction, 1,
-                                      1, (ULONG_PTR)p,
-                                      (ULONG_PTR)p + bytes - pageSize) == S_OK;
-  } else {
-    if (!sJitExceptionHandler) {
-      
+    DWORD result = RtlAddGrowableFunctionTable(
+        &r->dynamicTable, &r->runtimeFunction, 1, 1, (ULONG_PTR)p,
+        (ULONG_PTR)p + bytes - pageSize);
+    if (result != S_OK) {
       return false;
     }
-    
-    
-    
-    AutoSuppressStackWalking suppress;
-    result =
-        RtlInstallFunctionTableCallback((DWORD64)p | 0x3, (DWORD64)p, bytes,
-                                        RuntimeFunctionCallback, NULL, NULL);
   }
 
   DWORD oldProtect;
-  if (result && !VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
+  if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
     MOZ_CRASH();
   }
 
-  return result;
+  return true;
 }
 
 static void UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
@@ -979,22 +958,6 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
   execMemory.assertValidAddress(pageStart, size);
   return true;
 }
-
-#if defined(XP_WIN) && defined(NEED_JIT_UNWIND_HANDLING)
-static PRUNTIME_FUNCTION RuntimeFunctionCallback(DWORD64 ControlPc,
-                                                 PVOID Context) {
-  MOZ_ASSERT(sJitExceptionHandler);
-
-  
-  
-  uint8_t* p = execMemory.base();
-  if (!p) {
-    return nullptr;
-  }
-  return (PRUNTIME_FUNCTION)(p - gc::SystemPageSize() +
-                             offsetof(ExceptionHandlerRecord, runtimeFunction));
-}
-#endif
 
 #ifdef JS_USE_APPLE_FAST_WX
 void js::jit::AutoMarkJitCodeWritableForThread::markExecutable(
