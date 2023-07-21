@@ -643,8 +643,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
     
     if (dataObj->is<ArrayBufferObjectMaybeShared>()) {
-      HandleArrayBufferObjectMaybeShared buffer =
-          dataObj.as<ArrayBufferObjectMaybeShared>();
+      auto buffer = dataObj.as<ArrayBufferObjectMaybeShared>();
       return fromBufferSameCompartment(cx, buffer, byteOffset, length, proto);
     }
     return fromBufferWrapped(cx, dataObj, byteOffset, length, proto);
@@ -688,7 +687,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   
   
   static bool computeAndCheckLength(
-      JSContext* cx, HandleArrayBufferObjectMaybeShared bufferMaybeUnwrapped,
+      JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> bufferMaybeUnwrapped,
       uint64_t byteOffset, uint64_t lengthIndex, size_t* length) {
     MOZ_ASSERT(byteOffset % BYTES_PER_ELEMENT == 0);
     MOZ_ASSERT(byteOffset < uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT));
@@ -757,7 +756,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   
   
   static TypedArrayObject* fromBufferSameCompartment(
-      JSContext* cx, HandleArrayBufferObjectMaybeShared buffer,
+      JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> buffer,
       uint64_t byteOffset, uint64_t lengthIndex, HandleObject proto) {
     
     size_t length = 0;
@@ -798,7 +797,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
       return nullptr;
     }
 
-    RootedArrayBufferObjectMaybeShared unwrappedBuffer(cx);
+    Rooted<ArrayBufferObjectMaybeShared*> unwrappedBuffer(cx);
     unwrappedBuffer = &unwrapped->as<ArrayBufferObjectMaybeShared>();
 
     size_t length = 0;
@@ -853,8 +852,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
     uint64_t lengthIndex = lengthInt >= 0 ? uint64_t(lengthInt) : UINT64_MAX;
     if (bufobj->is<ArrayBufferObjectMaybeShared>()) {
-      HandleArrayBufferObjectMaybeShared buffer =
-          bufobj.as<ArrayBufferObjectMaybeShared>();
+      auto buffer = bufobj.as<ArrayBufferObjectMaybeShared>();
       return fromBufferSameCompartment(cx, buffer, byteOffset, lengthIndex,
                                        nullptr);
     }

@@ -144,13 +144,6 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   inline bool isWasm() const;
 };
 
-using RootedArrayBufferObjectMaybeShared =
-    Rooted<ArrayBufferObjectMaybeShared*>;
-using HandleArrayBufferObjectMaybeShared =
-    Handle<ArrayBufferObjectMaybeShared*>;
-using MutableHandleArrayBufferObjectMaybeShared =
-    MutableHandle<ArrayBufferObjectMaybeShared*>;
-
 
 
 
@@ -521,14 +514,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   }
 };
 
-using RootedArrayBufferObject = Rooted<ArrayBufferObject*>;
-using HandleArrayBufferObject = Handle<ArrayBufferObject*>;
-using MutableHandleArrayBufferObject = MutableHandle<ArrayBufferObject*>;
-
 
 
 bool CreateWasmBuffer(JSContext* cx, const wasm::MemoryDesc& memory,
-                      MutableHandleArrayBufferObjectMaybeShared buffer);
+                      MutableHandle<ArrayBufferObjectMaybeShared*> buffer);
 
 
 
