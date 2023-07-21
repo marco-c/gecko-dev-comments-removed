@@ -1,0 +1,11 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['captured-mouse-events.tentative'],
+  ['html', 'dom']
+);
