@@ -6427,10 +6427,6 @@ void EditorBase::AutoEditActionDataSetter::AppendTargetRange(
 }
 
 bool EditorBase::AutoEditActionDataSetter::IsBeforeInputEventEnabled() const {
-  if (!StaticPrefs::dom_input_events_beforeinput_enabled()) {
-    return false;
-  }
-
   
   
   if (mEditorBase.IsSuppressingDispatchingInputEvent()) {
