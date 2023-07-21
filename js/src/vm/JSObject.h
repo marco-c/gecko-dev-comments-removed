@@ -704,11 +704,11 @@ struct JSObject_Slots4 : JSObject {
   void* data[2];
   js::Value fslots[4];
 };
-struct JSObject_Slots6 : JSObject {
+struct JSObject_Slots7 : JSObject {
   
   
   void* data[2];
-  js::Value fslots[6];
+  js::Value fslots[7];
 };
 struct JSObject_Slots8 : JSObject {
   void* data[2];
