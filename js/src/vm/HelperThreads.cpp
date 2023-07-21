@@ -1051,9 +1051,19 @@ bool DelazifyTask::runTask(JSContext* cx) {
       MOZ_ASSERT(!scriptRef.scriptData().hasSharedData());
 
       
+      DelazifyFailureReason failureReason;
       innerStencil = DelazifyCanonicalScriptedFunction(
-          cx, &fc_, initialPrefableOptions, &scopeCache, borrow, scriptIndex);
+          cx, &fc_, initialPrefableOptions, &scopeCache, borrow, scriptIndex,
+          &failureReason);
       if (!innerStencil) {
+        if (failureReason == DelazifyFailureReason::Compressed) {
+          
+          
+          
+          strategy->clear();
+          return true;
+        }
+
         return false;
       }
 

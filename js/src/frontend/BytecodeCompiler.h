@@ -242,11 +242,16 @@ extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
                                               FrontendContext* fc,
                                               JS::Handle<JSFunction*> fun);
 
+enum class DelazifyFailureReason {
+  Compressed,
+  Other,
+};
+
 extern already_AddRefed<CompilationStencil> DelazifyCanonicalScriptedFunction(
     JSContext* cx, FrontendContext* fc,
     const JS::PrefableCompileOptions& prefableOptions,
     ScopeBindingCache* scopeCache, CompilationStencil& context,
-    ScriptIndex scriptIndex);
+    ScriptIndex scriptIndex, DelazifyFailureReason* failureReason);
 
 
 inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {
