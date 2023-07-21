@@ -163,13 +163,23 @@ class ScriptLoaderInterface : public nsISupports {
 
 
 class ModuleLoaderBase : public nsISupports {
- private:
-  using GenericNonExclusivePromise = mozilla::GenericNonExclusivePromise;
   using GenericPromise = mozilla::GenericPromise;
 
   
-  nsRefPtrHashtable<nsURIHashKey, GenericNonExclusivePromise::Private>
-      mFetchingModules;
+
+
+  class WaitingRequests final : public nsISupports {
+    virtual ~WaitingRequests() = default;
+
+   public:
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_CYCLE_COLLECTION_CLASS(WaitingRequests)
+
+    nsTArray<RefPtr<ModuleLoadRequest>> mWaiting;
+  };
+
+  
+  nsRefPtrHashtable<nsURIHashKey, WaitingRequests> mFetchingModules;
   nsRefPtrHashtable<nsURIHashKey, ModuleScript> mFetchedModules;
 
   
@@ -360,7 +370,7 @@ class ModuleLoaderBase : public nsISupports {
 
   bool ModuleMapContainsURL(nsIURI* aURL) const;
   bool IsModuleFetching(nsIURI* aURL) const;
-  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(nsIURI* aURL);
+  void WaitForModuleFetch(ModuleLoadRequest* aRequest);
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
   ModuleScript* GetFetchedModule(nsIURI* aURL) const;
@@ -373,6 +383,8 @@ class ModuleLoaderBase : public nsISupports {
 
   void SetModuleFetchFinishedAndResumeWaitingRequests(
       ModuleLoadRequest* aRequest, nsresult aResult);
+  void ResumeWaitingRequests(WaitingRequests* aWaitingRequests, bool aSuccess);
+  void ResumeWaitingRequest(ModuleLoadRequest* aRequest, bool aSuccess);
 
   void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
 
