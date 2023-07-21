@@ -593,7 +593,7 @@ CalendarObject* js::temporal::GetISO8601Calendar(JSContext* cx) {
 
 template <typename T, typename... Ts>
 static bool ToTemporalCalendar(JSContext* cx, Handle<JSObject*> object,
-                               MutableHandle<JSObject*> result) {
+                               MutableHandle<CalendarValue> result) {
   if (auto* unwrapped = object->maybeUnwrapIf<T>()) {
     if constexpr (std::is_same_v<T, PlainTimeObject>) {
       AutoRealm ar(cx, unwrapped);
@@ -635,7 +635,7 @@ JSObject* js::temporal::ToTemporalCalendar(JSContext* cx,
     }
 
     
-    Rooted<JSObject*> calendar(cx);
+    Rooted<CalendarValue> calendar(cx);
     if (!::ToTemporalCalendar<PlainDateObject, PlainDateTimeObject,
                               PlainMonthDayObject, PlainTimeObject,
                               PlainYearMonthObject, ZonedDateTimeObject>(
@@ -738,7 +738,7 @@ JSObject* js::temporal::ToTemporalCalendarWithISODefault(
 JSObject* js::temporal::GetTemporalCalendarWithISODefault(
     JSContext* cx, Handle<JSObject*> item) {
   
-  Rooted<JSObject*> calendar(cx);
+  Rooted<CalendarValue> calendar(cx);
   if (!::ToTemporalCalendar<PlainDateObject, PlainDateTimeObject,
                             PlainMonthDayObject, PlainTimeObject,
                             PlainYearMonthObject, ZonedDateTimeObject>(
@@ -909,7 +909,7 @@ static bool Calendar_fields(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool js::temporal::CalendarFields(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarValue> calendar,
     std::initializer_list<CalendarField> fieldNames,
     MutableHandle<JS::StackGCVector<PropertyKey>> result) {
   
@@ -1101,7 +1101,7 @@ static bool Calendar_year(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarYear(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
                                 Handle<Value> dateLike,
                                 MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1157,7 +1157,7 @@ static bool Calendar_month(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarMonth(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
                                  Handle<Value> dateLike,
                                  MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1211,7 +1211,8 @@ static bool Calendar_monthCode(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarMonthCode(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarMonthCode(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Value> dateLike,
                                      MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithMonth(dateLike));
@@ -1268,7 +1269,7 @@ static bool Calendar_day(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDay(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
                                Handle<Value> dateLike,
                                MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithDay(dateLike));
@@ -1316,7 +1317,8 @@ static bool Calendar_dayOfWeek(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDayOfWeek(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDayOfWeek(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Value> dateLike,
                                      MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLike(dateLike));
@@ -1365,7 +1367,8 @@ static bool Calendar_dayOfYear(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDayOfYear(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDayOfYear(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Value> dateLike,
                                      MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLike(dateLike));
@@ -1414,7 +1417,8 @@ static bool Calendar_weekOfYear(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarWeekOfYear(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarWeekOfYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
                                       Handle<Value> dateLike,
                                       MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLike(dateLike));
@@ -1463,7 +1467,8 @@ static bool Calendar_yearOfWeek(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarYearOfWeek(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarYearOfWeek(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
                                       Handle<Value> dateLike,
                                       MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLike(dateLike));
@@ -1512,7 +1517,8 @@ static bool Calendar_daysInWeek(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDaysInWeek(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDaysInWeek(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
                                       Handle<Value> dateLike,
                                       MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLike(dateLike));
@@ -1563,7 +1569,7 @@ static bool Calendar_daysInMonth(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool js::temporal::CalendarDaysInMonth(JSContext* cx,
-                                       Handle<JSObject*> calendar,
+                                       Handle<CalendarValue> calendar,
                                        Handle<Value> dateLike,
                                        MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1613,7 +1619,8 @@ static bool Calendar_daysInYear(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDaysInYear(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDaysInYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
                                       Handle<Value> dateLike,
                                       MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1664,7 +1671,7 @@ static bool Calendar_monthsInYear(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool js::temporal::CalendarMonthsInYear(JSContext* cx,
-                                        Handle<JSObject*> calendar,
+                                        Handle<CalendarValue> calendar,
                                         Handle<Value> dateLike,
                                         MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1714,7 +1721,8 @@ static bool Calendar_inLeapYear(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarInLeapYear(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarInLeapYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
                                       Handle<Value> dateLike,
                                       MutableHandle<Value> result) {
   MOZ_ASSERT(IsDateLikeWithYear(dateLike));
@@ -1932,7 +1940,7 @@ static bool Calendar_dateFromFields(JSContext* cx, unsigned argc, Value* vp);
 
 
 static Wrapped<PlainDateObject*> CalendarDateFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> maybeOptions) {
   
 
@@ -1980,7 +1988,7 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, nullptr);
 }
@@ -1989,7 +1997,7 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> options) {
   
   return ::CalendarDateFromFields(cx, calendar, fields, options);
@@ -2122,7 +2130,7 @@ static bool Calendar_yearMonthFromFields(JSContext* cx, unsigned argc,
 
 
 static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> maybeOptions) {
   
 
@@ -2171,7 +2179,7 @@ static Wrapped<PlainYearMonthObject*> CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, nullptr);
 }
@@ -2180,7 +2188,7 @@ Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
 
 
 Wrapped<PlainYearMonthObject*> js::temporal::CalendarYearMonthFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> options) {
   
   return ::CalendarYearMonthFromFields(cx, calendar, fields, options);
@@ -2285,7 +2293,7 @@ static bool Calendar_monthDayFromFields(JSContext* cx, unsigned argc,
 
 
 static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> maybeOptions) {
   
 
@@ -2333,7 +2341,7 @@ static Wrapped<PlainMonthDayObject*> CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields) {
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, nullptr);
 }
@@ -2342,7 +2350,7 @@ Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
 
 
 Wrapped<PlainMonthDayObject*> js::temporal::CalendarMonthDayFromFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<JSObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<JSObject*> fields,
     Handle<JSObject*> options) {
   
   return ::CalendarMonthDayFromFields(cx, calendar, fields, options);
@@ -2548,7 +2556,7 @@ static bool Calendar_mergeFields(JSContext* cx, unsigned argc, Value* vp);
 
 
 JSObject* js::temporal::CalendarMergeFields(
-    JSContext* cx, Handle<JSObject*> calendar, Handle<PlainObject*> fields,
+    JSContext* cx, Handle<CalendarValue> calendar, Handle<PlainObject*> fields,
     Handle<PlainObject*> additionalFields) {
   MOZ_ASSERT(IsPlainDataObject(fields));
   MOZ_ASSERT(IsPlainDataObject(additionalFields));
@@ -2654,7 +2662,7 @@ static bool Calendar_dateAdd(JSContext* cx, unsigned argc, Value* vp);
 
 
 static Wrapped<PlainDateObject*> CalendarDateAdd(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarValue> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
     Handle<Wrapped<DurationObject*>> duration, Handle<Value> options,
     Handle<Value> dateAdd) {
@@ -2708,7 +2716,7 @@ static Wrapped<PlainDateObject*> CalendarDateAdd(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarValue> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
     Handle<Wrapped<DurationObject*>> duration, Handle<Value> dateAdd) {
   
@@ -2722,7 +2730,7 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
 
 
 Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
-    JSContext* cx, Handle<JSObject*> calendar,
+    JSContext* cx, Handle<CalendarValue> calendar,
     Handle<Wrapped<PlainDateObject*>> date,
     Handle<Wrapped<DurationObject*>> duration, Handle<JSObject*> options) {
   
@@ -2741,7 +2749,8 @@ Wrapped<PlainDateObject*> js::temporal::CalendarDateAdd(
 
 
 
-bool js::temporal::CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateAdd(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
                                    Handle<PlainDateObject*> date,
                                    Handle<Wrapped<DurationObject*>> duration,
                                    Handle<JSObject*> options,
@@ -2758,7 +2767,8 @@ bool js::temporal::CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateAdd(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
                                    Handle<PlainDateObject*> date,
                                    Handle<Wrapped<DurationObject*>> duration,
                                    PlainDate* result) {
@@ -2784,7 +2794,8 @@ bool js::temporal::CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarDateAdd(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateAdd(JSContext* cx,
+                                   Handle<CalendarValue> calendar,
                                    Handle<Wrapped<PlainDateObject*>> date,
                                    Handle<Wrapped<DurationObject*>> duration,
                                    Handle<Value> dateAdd, PlainDate* result) {
@@ -2883,7 +2894,7 @@ static bool BuiltinCalendarDateUntil(JSContext* cx,
   return BuiltinCalendarDateUntil(cx, calendar, one, two, largestUnit, result);
 }
 
-static bool CalendarDateUntilSlow(JSContext* cx, Handle<JSObject*> calendar,
+static bool CalendarDateUntilSlow(JSContext* cx, Handle<CalendarValue> calendar,
                                   Handle<Wrapped<PlainDateObject*>> one,
                                   Handle<Wrapped<PlainDateObject*>> two,
                                   Handle<JSObject*> options,
@@ -2929,7 +2940,8 @@ static bool Calendar_dateUntil(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      Handle<JSObject*> options,
@@ -2950,7 +2962,8 @@ bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      TemporalUnit largestUnit,
@@ -2982,7 +2995,8 @@ bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      Handle<JSObject*> options,
@@ -3000,7 +3014,8 @@ bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
+bool js::temporal::CalendarDateUntil(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
                                      Handle<Wrapped<PlainDateObject*>> one,
                                      Handle<Wrapped<PlainDateObject*>> two,
                                      TemporalUnit largestUnit,
@@ -3021,8 +3036,8 @@ bool js::temporal::CalendarDateUntil(JSContext* cx, Handle<JSObject*> calendar,
 
 
 
-bool js::temporal::CalendarEquals(JSContext* cx, Handle<JSObject*> one,
-                                  Handle<JSObject*> two, bool* equals) {
+bool js::temporal::CalendarEquals(JSContext* cx, Handle<CalendarValue> one,
+                                  Handle<CalendarValue> two, bool* equals) {
   
   if (one == two) {
     *equals = true;
@@ -3048,8 +3063,9 @@ bool js::temporal::CalendarEquals(JSContext* cx, Handle<JSObject*> one,
 
 
 
-bool js::temporal::CalendarEqualsOrThrow(JSContext* cx, Handle<JSObject*> one,
-                                         Handle<JSObject*> two) {
+bool js::temporal::CalendarEqualsOrThrow(JSContext* cx,
+                                         Handle<CalendarValue> one,
+                                         Handle<CalendarValue> two) {
   
   if (one == two) {
     return true;
@@ -3092,8 +3108,8 @@ bool js::temporal::CalendarEqualsOrThrow(JSContext* cx, Handle<JSObject*> one,
 
 
 JSObject* js::temporal::ConsolidateCalendars(JSContext* cx,
-                                             Handle<JSObject*> one,
-                                             Handle<JSObject*> two) {
+                                             Handle<CalendarValue> one,
+                                             Handle<CalendarValue> two) {
   
   if (one == two) {
     return two;
@@ -3153,8 +3169,8 @@ JSObject* js::temporal::ConsolidateCalendars(JSContext* cx,
 
 
 bool js::temporal::MaybeFormatCalendarAnnotation(
-    JSContext* cx, JSStringBuilder& result, Handle<JSObject*> calendarObject,
-    CalendarOption showCalendar) {
+    JSContext* cx, JSStringBuilder& result,
+    Handle<CalendarValue> calendarObject, CalendarOption showCalendar) {
   
   if (showCalendar == CalendarOption::Never) {
     return true;
@@ -3221,7 +3237,7 @@ bool js::temporal::FormatCalendarAnnotation(JSContext* cx,
 static bool Calendar_toString(JSContext* cx, unsigned argc, Value* vp);
 
 JSString* js::temporal::CalendarToString(JSContext* cx,
-                                         Handle<JSObject*> calendar) {
+                                         Handle<CalendarValue> calendar) {
   if (calendar->is<CalendarObject>() &&
       HasNoToPrimitiveMethodPure(calendar, cx) &&
       HasNativeMethodPure(calendar, cx->names().toString, Calendar_toString,
@@ -4163,7 +4179,7 @@ static bool Calendar_toString(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_toJSON(JSContext* cx, const CallArgs& args) {
-  Rooted<JSObject*> calendar(cx, &args.thisv().toObject());
+  Rooted<CalendarValue> calendar(cx, &args.thisv().toObject());
 
   
   JSString* str = CalendarToString(cx, calendar);

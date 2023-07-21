@@ -1827,7 +1827,7 @@ static bool Instant_toZonedDateTime(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<JSObject*> calendar(cx, ToTemporalCalendar(cx, calendarLike));
+  Rooted<CalendarValue> calendar(cx, ToTemporalCalendar(cx, calendarLike));
   if (!calendar) {
     return false;
   }
