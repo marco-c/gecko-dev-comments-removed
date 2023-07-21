@@ -6,6 +6,7 @@ import {
   getFrames,
   getBlackBoxRanges,
   getSelectedFrame,
+  getSymbols,
 } from "../../selectors";
 
 import { isFrameBlackBoxed } from "../../utils/source";
@@ -19,6 +20,7 @@ import {
 import { isGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { annotateFramesWithLibrary } from "../../utils/pause/frames/annotateFrames";
 import { createWasmOriginalFrame } from "../../client/firefox/create";
+import { getOriginalDisplayNameForOriginalLocation } from "../../reducers/pause";
 
 function getSelectedFrameId(state, thread, frames) {
   let selectedFrame = getSelectedFrame(state, thread);
@@ -34,31 +36,33 @@ function getSelectedFrameId(state, thread, frames) {
   return selectedFrame?.id;
 }
 
-async function updateFrameLocation(frame, thunkArgs) {
+async function updateFrameLocationAndDisplayName(frame, thunkArgs) {
+  
   if (frame.isOriginal) {
-    return Promise.resolve(frame);
+    return frame;
   }
+
   const location = await getOriginalLocation(frame.location, thunkArgs, true);
   
   if (location == frame.location) {
     return frame;
   }
+
+  
+  
+  
+  const symbols = getSymbols(thunkArgs.getState(), location);
+  const originalDisplayName = symbols
+    ? getOriginalDisplayNameForOriginalLocation(symbols, location)
+    : null;
+
   
   return {
     ...frame,
     location,
     generatedLocation: frame.generatedLocation || frame.location,
+    originalDisplayName,
   };
-}
-
-function updateFrameLocations(frames, thunkArgs) {
-  if (!frames || !frames.length) {
-    return Promise.resolve(frames);
-  }
-
-  return Promise.all(
-    frames.map(frame => updateFrameLocation(frame, thunkArgs))
-  );
 }
 
 function isWasmOriginalSourceFrame(frame) {
@@ -126,17 +130,22 @@ export function mapFrames(thread) {
   return async function (thunkArgs) {
     const { dispatch, getState } = thunkArgs;
     const frames = getFrames(getState(), thread);
-    if (!frames) {
+    if (!frames || !frames.length) {
       return;
     }
 
-    let mappedFrames = await updateFrameLocations(frames, thunkArgs);
+    
+    let mappedFrames = await Promise.all(
+      frames.map(frame => updateFrameLocationAndDisplayName(frame, thunkArgs))
+    );
 
     mappedFrames = await expandWasmFrames(mappedFrames, thunkArgs);
 
     
     annotateFramesWithLibrary(mappedFrames);
 
+    
+    
     const selectedFrameId = getSelectedFrameId(
       getState(),
       thread,

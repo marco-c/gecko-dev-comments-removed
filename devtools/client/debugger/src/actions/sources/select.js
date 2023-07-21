@@ -14,7 +14,6 @@ import { setInScopeLines } from "../ast";
 import { togglePrettyPrint } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
-import { mapDisplayNames } from "../pause";
 import { setBreakableLines } from ".";
 
 import { prefs } from "../../utils/prefs";
@@ -30,7 +29,6 @@ import {
   getSelectedLocation,
   getShouldSelectOriginalLocation,
   canPrettyPrintSource,
-  getIsCurrentThreadPaused,
   getSourceTextContent,
   tabExists,
 } from "../../selectors";
@@ -203,13 +201,6 @@ export function selectLocation(location, { keepContext = true } = {}) {
     await dispatch(setSymbols(location));
     
     dispatch(setInScopeLines());
-
-    
-    
-    
-    if (getIsCurrentThreadPaused(getState())) {
-      await dispatch(mapDisplayNames());
-    }
   };
 }
 
