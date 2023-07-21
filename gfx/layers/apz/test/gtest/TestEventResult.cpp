@@ -462,7 +462,7 @@ TEST_F(APZEventResultTesterMock, HandledByRootApzcFlag) {
                                      false);
   EXPECT_EQ(delayedAnswer,
             (APZHandledResult{APZHandledPlace::Unhandled, SideBits::eNone,
-                              ScrollDirections()}));
+                              EitherScrollDirection}));
 
   
   
