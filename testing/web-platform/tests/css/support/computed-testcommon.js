@@ -51,7 +51,6 @@ function colorValuesAlmostEqual(color1, color2, float_epsilon, integer_epsilon) 
   
   function getNumbers(color) {
     const result = [];
-    
     color.split(colorElementDividers).forEach(element => {
       const numberElement = parseFloat(element);
       if (!isNaN(numberElement)) {
