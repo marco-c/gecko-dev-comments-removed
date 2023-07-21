@@ -528,21 +528,28 @@ static bool PlainMonthDay_from(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool PlainMonthDay_calendar(JSContext* cx, const CallArgs& args) {
-  
+static bool PlainMonthDay_calendarId(JSContext* cx, const CallArgs& args) {
   auto* monthDay = &args.thisv().toObject().as<PlainMonthDayObject>();
-  args.rval().setObject(*monthDay->calendar());
+
+  
+  Rooted<CalendarValue> calendar(cx, monthDay->calendar());
+  auto* calendarId = ToTemporalCalendarIdentifier(cx, calendar);
+  if (!calendarId) {
+    return false;
+  }
+
+  args.rval().setString(calendarId);
   return true;
 }
 
 
 
 
-static bool PlainMonthDay_calendar(JSContext* cx, unsigned argc, Value* vp) {
+static bool PlainMonthDay_calendarId(JSContext* cx, unsigned argc, Value* vp) {
   
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainMonthDay, PlainMonthDay_calendar>(cx,
-                                                                       args);
+  return CallNonGenericMethod<IsPlainMonthDay, PlainMonthDay_calendarId>(cx,
+                                                                         args);
 }
 
 
@@ -973,6 +980,33 @@ static bool PlainMonthDay_getISOFields(JSContext* cx, unsigned argc,
       cx, args);
 }
 
+
+
+
+static bool PlainMonthDay_getCalendar(JSContext* cx, const CallArgs& args) {
+  auto* monthDay = &args.thisv().toObject().as<PlainMonthDayObject>();
+  Rooted<CalendarValue> calendar(cx, monthDay->calendar());
+
+  
+  auto* obj = ToTemporalCalendarObject(cx, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainMonthDay_getCalendar(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainMonthDay, PlainMonthDay_getCalendar>(cx,
+                                                                          args);
+}
+
 const JSClass PlainMonthDayObject::class_ = {
     "Temporal.PlainMonthDay",
     JSCLASS_HAS_RESERVED_SLOTS(PlainMonthDayObject::SLOT_COUNT) |
@@ -997,11 +1031,12 @@ static const JSFunctionSpec PlainMonthDay_prototype_methods[] = {
     JS_FN("valueOf", PlainMonthDay_valueOf, 0, 0),
     JS_FN("toPlainDate", PlainMonthDay_toPlainDate, 1, 0),
     JS_FN("getISOFields", PlainMonthDay_getISOFields, 0, 0),
+    JS_FN("getCalendar", PlainMonthDay_getCalendar, 0, 0),
     JS_FS_END,
 };
 
 static const JSPropertySpec PlainMonthDay_prototype_properties[] = {
-    JS_PSG("calendar", PlainMonthDay_calendar, 0),
+    JS_PSG("calendarId", PlainMonthDay_calendarId, 0),
     JS_PSG("monthCode", PlainMonthDay_monthCode, 0),
     JS_PSG("day", PlainMonthDay_day, 0),
     JS_STRING_SYM_PS(toStringTag, "Temporal.PlainMonthDay", JSPROP_READONLY),

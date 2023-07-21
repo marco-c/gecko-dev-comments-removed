@@ -824,21 +824,28 @@ static bool PlainYearMonth_compare(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static bool PlainYearMonth_calendar(JSContext* cx, const CallArgs& args) {
-  
+static bool PlainYearMonth_calendarId(JSContext* cx, const CallArgs& args) {
   auto* yearMonth = &args.thisv().toObject().as<PlainYearMonthObject>();
-  args.rval().setObject(*yearMonth->calendar());
+  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+
+  
+  auto* calendarId = ToTemporalCalendarIdentifier(cx, calendar);
+  if (!calendarId) {
+    return false;
+  }
+
+  args.rval().setString(calendarId);
   return true;
 }
 
 
 
 
-static bool PlainYearMonth_calendar(JSContext* cx, unsigned argc, Value* vp) {
+static bool PlainYearMonth_calendarId(JSContext* cx, unsigned argc, Value* vp) {
   
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_calendar>(cx,
-                                                                         args);
+  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_calendarId>(
+      cx, args);
 }
 
 
@@ -1460,6 +1467,34 @@ static bool PlainYearMonth_getISOFields(JSContext* cx, unsigned argc,
       cx, args);
 }
 
+
+
+
+static bool PlainYearMonth_getCalendar(JSContext* cx, const CallArgs& args) {
+  auto* yearMonth = &args.thisv().toObject().as<PlainYearMonthObject>();
+  Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
+
+  
+  auto* obj = ToTemporalCalendarObject(cx, calendar);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+static bool PlainYearMonth_getCalendar(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsPlainYearMonth, PlainYearMonth_getCalendar>(
+      cx, args);
+}
+
 const JSClass PlainYearMonthObject::class_ = {
     "Temporal.PlainYearMonth",
     JSCLASS_HAS_RESERVED_SLOTS(PlainYearMonthObject::SLOT_COUNT) |
@@ -1489,11 +1524,12 @@ static const JSFunctionSpec PlainYearMonth_prototype_methods[] = {
     JS_FN("valueOf", PlainYearMonth_valueOf, 0, 0),
     JS_FN("toPlainDate", PlainYearMonth_toPlainDate, 1, 0),
     JS_FN("getISOFields", PlainYearMonth_getISOFields, 0, 0),
+    JS_FN("getCalendar", PlainYearMonth_getCalendar, 0, 0),
     JS_FS_END,
 };
 
 static const JSPropertySpec PlainYearMonth_prototype_properties[] = {
-    JS_PSG("calendar", PlainYearMonth_calendar, 0),
+    JS_PSG("calendarId", PlainYearMonth_calendarId, 0),
     JS_PSG("year", PlainYearMonth_year, 0),
     JS_PSG("month", PlainYearMonth_month, 0),
     JS_PSG("monthCode", PlainYearMonth_monthCode, 0),

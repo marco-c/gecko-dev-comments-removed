@@ -863,6 +863,18 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
 
 
 
+JSObject* js::temporal::ToTemporalTimeZoneObject(
+    JSContext* cx, Handle<TimeZoneValue> timeZone) {
+  
+  return timeZone;
+
+  
+  
+}
+
+
+
+
 static bool BuiltinGetOffsetNanosecondsFor(JSContext* cx,
                                            Handle<TimeZoneObject*> timeZone,
                                            const Instant& instant,
@@ -1725,7 +1737,13 @@ static bool TimeZone_from(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  args.rval().setObject(*timeZone);
+  
+  auto* obj = ToTemporalTimeZoneObject(cx, timeZone);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
   return true;
 }
 
