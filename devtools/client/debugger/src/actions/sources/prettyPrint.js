@@ -330,7 +330,7 @@ export function togglePrettyPrint(sourceId) {
     
     await dispatch(mapFrames(sourceActor.thread));
     
-    await dispatch(updateBreakpointsForNewPrettyPrintedSource(sourceId));
+    await dispatch(updateBreakpointsForNewPrettyPrintedSource(source));
 
     return newPrettySource;
   };

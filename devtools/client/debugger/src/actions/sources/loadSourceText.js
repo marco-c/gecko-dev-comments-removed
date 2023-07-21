@@ -142,7 +142,7 @@ async function onSourceTextContentAvailable(
   }
 
   
-  const breakpoints = getBreakpointsForSource(getState(), source.id);
+  const breakpoints = getBreakpointsForSource(getState(), source);
   for (const breakpoint of breakpoints) {
     await dispatch(
       addBreakpoint(
