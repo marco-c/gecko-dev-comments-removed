@@ -3,10 +3,8 @@
 
 
 import { getThreadPauseState } from "../reducers/pause";
-import { getSelectedSourceId, getSelectedLocation } from "./sources";
+import { getSelectedSource, getSelectedLocation } from "./sources";
 import { getBlackBoxRanges } from "./source-blackbox";
-
-import { isGeneratedId } from "devtools/client/shared/source-map-loader/index";
 
 
 import { getSelectedLocation as _getSelectedLocation } from "../utils/selected-location";
@@ -142,8 +140,8 @@ export function getOriginalFrameScope(state, frame) {
     return null;
   }
   
-  const sourceId = getSelectedSourceId(state);
-  if (!sourceId || isGeneratedId(sourceId)) {
+  const source = getSelectedSource(state);
+  if (!source || !source.isOriginal) {
     return null;
   }
 
