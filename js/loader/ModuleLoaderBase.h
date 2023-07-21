@@ -16,12 +16,14 @@
 #include "nsRefPtrHashtable.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
-#include "nsILoadInfo.h"  
-#include "nsINode.h"      
+#include "nsILoadInfo.h"    
+#include "nsINode.h"        
+#include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
 #include "ResolveResult.h"
 
@@ -161,21 +163,13 @@ class ScriptLoaderInterface : public nsISupports {
 
 
 class ModuleLoaderBase : public nsISupports {
-  
-
-
-  class WaitingRequests final : public nsISupports {
-    virtual ~WaitingRequests() = default;
-
-   public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_CLASS(WaitingRequests)
-
-    nsTArray<RefPtr<ModuleLoadRequest>> mWaiting;
-  };
+ private:
+  using GenericNonExclusivePromise = mozilla::GenericNonExclusivePromise;
+  using GenericPromise = mozilla::GenericPromise;
 
   
-  nsRefPtrHashtable<nsURIHashKey, WaitingRequests> mFetchingModules;
+  nsRefPtrHashtable<nsURIHashKey, GenericNonExclusivePromise::Private>
+      mFetchingModules;
   nsRefPtrHashtable<nsURIHashKey, ModuleScript> mFetchedModules;
 
   
@@ -191,6 +185,7 @@ class ModuleLoaderBase : public nsISupports {
  protected:
   
   
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
   RefPtr<ScriptLoaderInterface> mLoader;
 
   mozilla::UniquePtr<ImportMap> mImportMap;
@@ -201,7 +196,9 @@ class ModuleLoaderBase : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
-                            nsIGlobalObject* aGlobalObject);
+                            nsIGlobalObject* aGlobalObject,
+                            nsISerialEventTarget* aEventTarget =
+                                mozilla::GetMainThreadSerialEventTarget());
 
   
   void Shutdown();
@@ -363,7 +360,7 @@ class ModuleLoaderBase : public nsISupports {
 
   bool ModuleMapContainsURL(nsIURI* aURL) const;
   bool IsModuleFetching(nsIURI* aURL) const;
-  void WaitForModuleFetch(ModuleLoadRequest* aRequest);
+  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(nsIURI* aURL);
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
   ModuleScript* GetFetchedModule(nsIURI* aURL) const;
@@ -376,13 +373,11 @@ class ModuleLoaderBase : public nsISupports {
 
   void SetModuleFetchFinishedAndResumeWaitingRequests(
       ModuleLoadRequest* aRequest, nsresult aResult);
-  void ResumeWaitingRequests(WaitingRequests* aWaitingRequests, bool aSuccess);
-  void ResumeWaitingRequest(ModuleLoadRequest* aRequest, bool aSuccess);
 
   void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
 
-  void StartFetchingModuleAndDependencies(ModuleLoadRequest* aParent,
-                                          nsIURI* aURI);
+  RefPtr<GenericPromise> StartFetchingModuleAndDependencies(
+      ModuleLoadRequest* aParent, nsIURI* aURI);
 
   
 
