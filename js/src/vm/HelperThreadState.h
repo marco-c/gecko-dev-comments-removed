@@ -663,6 +663,8 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   const JS::ContextOptions contextOptions;
 
+  const JS::PrefableCompileOptions initialPrefableOptions;
+
   
   UniquePtr<DelazifyStrategy> strategy;
 
@@ -683,7 +685,8 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
       const JS::ReadOnlyCompileOptions& options,
       const frontend::CompilationStencil& stencil);
 
-  DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options);
+  DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options,
+               const JS::PrefableCompileOptions& initialPrefableOptions);
   ~DelazifyTask();
 
   [[nodiscard]] bool init(

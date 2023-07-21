@@ -16,11 +16,11 @@
 #include "ds/LifoAlloc.h"                 
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ScriptIndex.h"         
-#include "js/CompileOptions.h"            
-#include "js/RootingAPI.h"                
-#include "js/SourceText.h"                
-#include "js/UniquePtr.h"                 
-#include "vm/ScopeKind.h"                 
+#include "js/CompileOptions.h"  
+#include "js/RootingAPI.h"  
+#include "js/SourceText.h"  
+#include "js/UniquePtr.h"   
+#include "vm/ScopeKind.h"   
 
 
 
@@ -243,8 +243,10 @@ extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
                                               JS::Handle<JSFunction*> fun);
 
 extern already_AddRefed<CompilationStencil> DelazifyCanonicalScriptedFunction(
-    JSContext* cx, FrontendContext* fc, ScopeBindingCache* scopeCache,
-    CompilationStencil& context, ScriptIndex scriptIndex);
+    JSContext* cx, FrontendContext* fc,
+    const JS::PrefableCompileOptions& prefableOptions,
+    ScopeBindingCache* scopeCache, CompilationStencil& context,
+    ScriptIndex scriptIndex);
 
 
 inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {

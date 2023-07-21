@@ -895,7 +895,8 @@ UniquePtr<DelazifyTask> DelazifyTask::Create(
     const JS::ReadOnlyCompileOptions& options,
     const frontend::CompilationStencil& stencil) {
   UniquePtr<DelazifyTask> task;
-  task.reset(js_new<DelazifyTask>(runtime, contextOptions));
+  task.reset(
+      js_new<DelazifyTask>(runtime, contextOptions, options.prefableOptions()));
   if (!task) {
     return nullptr;
   }
@@ -924,9 +925,13 @@ UniquePtr<DelazifyTask> DelazifyTask::Create(
   return task;
 }
 
-DelazifyTask::DelazifyTask(JSRuntime* runtime,
-                           const JS::ContextOptions& options)
-    : runtime(runtime), contextOptions(options), merger() {}
+DelazifyTask::DelazifyTask(
+    JSRuntime* runtime, const JS::ContextOptions& options,
+    const JS::PrefableCompileOptions& initialPrefableOptions)
+    : runtime(runtime),
+      contextOptions(options),
+      initialPrefableOptions(initialPrefableOptions),
+      merger() {}
 
 DelazifyTask::~DelazifyTask() {
   
@@ -1046,8 +1051,8 @@ bool DelazifyTask::runTask(JSContext* cx) {
       MOZ_ASSERT(!scriptRef.scriptData().hasSharedData());
 
       
-      innerStencil = DelazifyCanonicalScriptedFunction(cx, &fc_, &scopeCache,
-                                                       borrow, scriptIndex);
+      innerStencil = DelazifyCanonicalScriptedFunction(
+          cx, &fc_, initialPrefableOptions, &scopeCache, borrow, scriptIndex);
       if (!innerStencil) {
         return false;
       }
