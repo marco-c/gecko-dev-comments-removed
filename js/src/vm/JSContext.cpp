@@ -190,9 +190,7 @@ JSContext* js::NewContext(uint32_t maxBytes, JSRuntime* parentRuntime) {
 
   
   
-  if (cx->isMainThreadContext()) {
-    InitDefaultStackQuota(cx);
-  }
+  InitDefaultStackQuota(cx);
 
   return cx;
 }
@@ -292,8 +290,6 @@ void JSContext::onOutOfMemory() {
 JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   MaybeReportOutOfMemoryForDifferentialTesting();
 
-  MOZ_ASSERT(cx->isMainThreadContext());
-
   cx->onOutOfMemory();
 }
 
@@ -338,7 +334,6 @@ JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
   if (!maybecx) {
     return;
   }
-  MOZ_ASSERT(maybecx->isMainThreadContext());
 
   maybecx->onOverRecursed();
 }
@@ -374,7 +369,6 @@ void js::ReportAllocationOverflow(JSContext* cx) {
   if (!cx) {
     return;
   }
-  MOZ_ASSERT(cx->isMainThreadContext());
 
   cx->reportAllocationOverflow();
 }
@@ -1214,7 +1208,6 @@ void JSContext::trace(JSTracer* trc) {
 }
 
 JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
-  MOZ_ASSERT(isMainThreadContext());
 #ifdef JS_SIMULATOR
   return simulator()->stackLimit();
 #else
@@ -1223,8 +1216,6 @@ JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
 }
 
 void JSContext::resetJitStackLimit() {
-  MOZ_ASSERT(isMainThreadContext());
-
   
   
   

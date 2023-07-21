@@ -405,8 +405,6 @@ bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
 static inline void FreeSlots(JSContext* cx, NativeObject* obj,
                              ObjectSlots* slots, size_t nbytes) {
   
-  MOZ_ASSERT(cx->isMainThreadContext());
-
   if (obj->isTenured()) {
     MOZ_ASSERT(!cx->nursery().isInside(slots));
     js_free(slots);
