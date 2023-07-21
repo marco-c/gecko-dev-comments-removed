@@ -340,7 +340,7 @@ this.backgroundPage = class extends ExtensionAPI {
     this.backgroundTimer = timer;
   }
 
-  async primeBackground(isInStartup = true) {
+  primeBackground(isInStartup = true) {
     let { extension } = this;
 
     if (this.bgInstance) {
@@ -565,26 +565,15 @@ this.backgroundPage = class extends ExtensionAPI {
 
       EventManager.clearPrimedListeners(this.extension, false);
       
-      await this.primeBackground(false);
+      this.primeBackground(false);
     };
-
-    
-    
-    
-    
-    if (
-      isInStartup &&
-      (extension.testNoDelayedStartup ||
-        extension.startupReason !== "APP_STARTUP" ||
-        extension.updateReason)
-    ) {
-      return this.build();
-    }
 
     EventManager.primeListeners(extension, isInStartup);
 
+    
+    
     extension.once("start-background-script", async () => {
-      if (!this.extension) {
+      if (!this.extension || this.extension.hasShutdown) {
         
         
         return;
@@ -592,9 +581,6 @@ this.backgroundPage = class extends ExtensionAPI {
       await this.build();
     });
 
-    
-    
-    
     
     
     
@@ -658,7 +644,26 @@ this.backgroundPage = class extends ExtensionAPI {
       extension.emit("background-first-run");
     });
 
-    await this.primeBackground();
+    this.primeBackground();
+
+    
+    
+    
+    
+    if (
+      extension.testNoDelayedStartup ||
+      extension.startupReason !== "APP_STARTUP" ||
+      extension.updateReason
+    ) {
+      
+      
+      await this.build();
+
+      
+      
+      
+      return;
+    }
 
     ExtensionParent.browserStartupPromise.then(() => {
       
