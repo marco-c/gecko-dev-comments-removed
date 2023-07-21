@@ -81,6 +81,8 @@ enum class UpdateAnimationsTasks : uint8_t {
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
 
 
+
+
 enum class ParsingMode : uint8_t {
   
   
@@ -93,6 +95,10 @@ enum class ParsingMode : uint8_t {
   
   
   AllowAllNumericValues = 1 << 1,
+  
+  
+  
+  DisallowFontRelative = 1 << 2,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ParsingMode)
