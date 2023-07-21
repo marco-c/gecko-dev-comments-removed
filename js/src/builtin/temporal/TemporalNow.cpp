@@ -55,7 +55,7 @@
 using namespace js;
 using namespace js::temporal;
 
-static bool DefaultTimeZoneOffset(JSContext* cx, int32_t* offset) {
+static bool SystemTimeZoneOffset(JSContext* cx, int32_t* offset) {
   auto timeZone = mozilla::intl::TimeZone::TryCreate();
   if (timeZone.isErr()) {
     intl::ReportInternalError(cx, timeZone.unwrapErr());
@@ -79,7 +79,7 @@ static bool DefaultTimeZoneOffset(JSContext* cx, int32_t* offset) {
 
 
 
-static JSString* DefaultTimeZone(JSContext* cx) {
+static JSString* SystemTimeZoneIdentifier(JSContext* cx) {
   intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> formatBuffer(cx);
   auto result = mozilla::intl::TimeZone::GetDefaultTimeZone(formatBuffer);
   if (result.isErr()) {
@@ -106,7 +106,7 @@ static JSString* DefaultTimeZone(JSContext* cx) {
   
   
   int32_t offset;
-  if (!DefaultTimeZoneOffset(cx, &offset)) {
+  if (!SystemTimeZoneOffset(cx, &offset)) {
     return nullptr;
   }
 
@@ -273,16 +273,16 @@ static ZonedDateTimeObject* SystemZonedDateTime(
 
 
 
-static bool Temporal_Now_timeZone(JSContext* cx, unsigned argc, Value* vp) {
+static bool Temporal_Now_timeZoneId(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  auto* result = SystemTimeZone(cx);
+  auto* result = SystemTimeZoneIdentifier(cx);
   if (!result) {
     return false;
   }
 
-  args.rval().setObject(*result);
+  args.rval().setString(result);
   return true;
 }
 
@@ -450,7 +450,7 @@ const JSClass TemporalNowObject::class_ = {
 };
 
 static const JSFunctionSpec TemporalNow_methods[] = {
-    JS_FN("timeZone", Temporal_Now_timeZone, 0, 0),
+    JS_FN("timeZoneId", Temporal_Now_timeZoneId, 0, 0),
     JS_FN("instant", Temporal_Now_instant, 0, 0),
     JS_FN("plainDateTime", Temporal_Now_plainDateTime, 1, 0),
     JS_FN("plainDateTimeISO", Temporal_Now_plainDateTimeISO, 0, 0),
