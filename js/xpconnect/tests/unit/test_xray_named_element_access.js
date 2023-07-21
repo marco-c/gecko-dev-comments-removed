@@ -1,7 +1,5 @@
 
-"use strict"
-
-ChromeUtils.importESModule("resource://gre/modules/Preferences.sys.mjs");
+"use strict";
 
 add_task(async function() {
   let webnav = Services.appShell.createWindowlessBrowser(false);

@@ -2,7 +2,6 @@
 
 
 
-ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
 const {NetUtil} = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
 const {TestUtils} = ChromeUtils.importESModule("resource://testing-common/TestUtils.sys.mjs");
 
