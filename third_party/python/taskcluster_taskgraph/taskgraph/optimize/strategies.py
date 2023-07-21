@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 @register_strategy("index-search")
 class IndexSearch(OptimizationStrategy):
-
     
     
     

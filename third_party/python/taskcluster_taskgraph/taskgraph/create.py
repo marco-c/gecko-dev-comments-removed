@@ -3,10 +3,10 @@
 
 
 
-import concurrent.futures as futures
 import json
 import logging
 import sys
+from concurrent import futures
 
 from slugid import nice as slugid
 
