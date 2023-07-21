@@ -516,8 +516,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
 
 
-bool CreateWasmBuffer(JSContext* cx, const wasm::MemoryDesc& memory,
-                      MutableHandle<ArrayBufferObjectMaybeShared*> buffer);
+ArrayBufferObjectMaybeShared* CreateWasmBuffer(JSContext* cx,
+                                               const wasm::MemoryDesc& memory);
 
 
 
