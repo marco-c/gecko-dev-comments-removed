@@ -54,6 +54,7 @@ using namespace js::temporal;
 
 
 
+
 struct StringName final {
   
   size_t start = 0;
@@ -2121,30 +2122,34 @@ TemporalParser<CharT>::annotations() {
 
   MOZ_ASSERT(hasAnnotationStart());
 
-  CalendarName cal;
+  CalendarName calendar;
+  bool calendarWasCritical = false;
   while (hasAnnotationStart()) {
     auto anno = annotation();
     if (anno.isErr()) {
       return anno.propagateErr();
     }
+    auto [key, value, critical] = anno.unwrap();
 
     
     
 
     static constexpr std::string_view ca = "u-ca";
 
-    auto key = anno.unwrap().key;
     auto keySpan = reader_.substring(key);
     if (keySpan.size() == ca.length() &&
         std::equal(ca.begin(), ca.end(), keySpan.data())) {
-      if (!cal.present()) {
-        cal = anno.unwrap().value;
+      if (!calendar.present()) {
+        calendar = value;
+        calendarWasCritical = critical;
+      } else if (critical || calendarWasCritical) {
+        return mozilla::Err(JSMSG_TEMPORAL_PARSER_INVALID_CRITICAL_ANNOTATION);
       }
-    } else if (anno.unwrap().critical) {
+    } else if (critical) {
       return mozilla::Err(JSMSG_TEMPORAL_PARSER_INVALID_CRITICAL_ANNOTATION);
     }
   }
-  return cal;
+  return calendar;
 }
 
 template <typename CharT>
@@ -2790,9 +2795,6 @@ TemporalParser<CharT>::parseTemporalMonthDayString() {
     auto result = monthDay.unwrap();
 
     
-    
-
-    
     if (result.calendar.present() &&
         !IsISO8601Calendar(reader_.substring(result.calendar))) {
       return mozilla::Err(JSMSG_TEMPORAL_PARSER_MONTH_DAY_CALENDAR_NOT_ISO8601);
@@ -2891,9 +2893,6 @@ TemporalParser<CharT>::parseTemporalYearMonthString() {
   if (auto yearMonth = annotatedYearMonth();
       yearMonth.isOk() && reader_.atEnd()) {
     auto result = yearMonth.unwrap();
-
-    
-    
 
     
     if (result.calendar.present() &&
