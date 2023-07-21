@@ -559,6 +559,31 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
 
 
 
+static JSString* ToTemporalTimeZoneIdentifier(JSContext* cx,
+                                              Handle<TimeZoneValue> timeZone) {
+  
+  
+
+  
+  Rooted<Value> identifier(cx);
+  if (!GetProperty(cx, timeZone, timeZone, cx->names().id, &identifier)) {
+    return nullptr;
+  }
+
+  
+  if (!identifier.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, identifier,
+                     nullptr, "not a string");
+    return nullptr;
+  }
+
+  
+  return identifier.toString();
+}
+
+
+
+
 
 static JSString* TemporalZonedDateTimeToString(
     JSContext* cx, Handle<ZonedDateTimeObject*> zonedDateTime,
@@ -641,11 +666,11 @@ static JSString* TemporalZonedDateTimeToString(
       }
     }
 
-    JSString* timeZoneString = TimeZoneToString(cx, timeZone);
-    if (!timeZoneString) {
+    JSString* timeZoneIdentifier = ToTemporalTimeZoneIdentifier(cx, timeZone);
+    if (!timeZoneIdentifier) {
       return nullptr;
     }
-    if (!result.append(timeZoneString)) {
+    if (!result.append(timeZoneIdentifier)) {
       return nullptr;
     }
 
@@ -1184,13 +1209,13 @@ static bool TimeZoneEquals(JSContext* cx, Handle<TimeZoneValue> one,
   }
 
   
-  Rooted<JSString*> timeZoneOne(cx, TimeZoneToString(cx, one));
+  Rooted<JSString*> timeZoneOne(cx, ToTemporalTimeZoneIdentifier(cx, one));
   if (!timeZoneOne) {
     return false;
   }
 
   
-  JSString* timeZoneTwo = TimeZoneToString(cx, two);
+  JSString* timeZoneTwo = ToTemporalTimeZoneIdentifier(cx, two);
   if (!timeZoneTwo) {
     return false;
   }
@@ -1210,13 +1235,13 @@ static bool TimeZoneEqualsOrThrow(JSContext* cx, Handle<TimeZoneValue> one,
   }
 
   
-  Rooted<JSString*> timeZoneOne(cx, TimeZoneToString(cx, one));
+  Rooted<JSString*> timeZoneOne(cx, ToTemporalTimeZoneIdentifier(cx, one));
   if (!timeZoneOne) {
     return false;
   }
 
   
-  JSString* timeZoneTwo = TimeZoneToString(cx, two);
+  JSString* timeZoneTwo = ToTemporalTimeZoneIdentifier(cx, two);
   if (!timeZoneTwo) {
     return false;
   }
