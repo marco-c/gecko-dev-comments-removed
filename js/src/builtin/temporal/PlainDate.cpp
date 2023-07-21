@@ -2057,7 +2057,7 @@ static bool PlainDate_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!RejectObjectWithCalendarOrTimeZone(cx, temporalDateLike)) {
+  if (!RejectTemporalLikeObject(cx, temporalDateLike)) {
     return false;
   }
 

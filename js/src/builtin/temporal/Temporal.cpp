@@ -1517,10 +1517,8 @@ static JSObject* MaybeUnwrapIf(JSObject* object) {
 
 
 
-bool js::temporal::RejectObjectWithCalendarOrTimeZone(
-    JSContext* cx, Handle<JSObject*> object) {
-  
-
+bool js::temporal::RejectTemporalLikeObject(JSContext* cx,
+                                            Handle<JSObject*> object) {
   
   if (auto* unwrapped =
           MaybeUnwrapIf<PlainDateObject, PlainDateTimeObject,
@@ -1558,6 +1556,7 @@ bool js::temporal::RejectObjectWithCalendarOrTimeZone(
     return false;
   }
 
+  
   return true;
 }
 
@@ -1885,7 +1884,7 @@ bool js::temporal::GetDifferenceSettings(
 }
 
 static JSObject* CreateTemporalObject(JSContext* cx, JSProtoKey key) {
-  RootedObject proto(cx, &cx->global()->getObjectPrototype());
+  Rooted<JSObject*> proto(cx, &cx->global()->getObjectPrototype());
 
   
   

@@ -1013,7 +1013,7 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!RejectObjectWithCalendarOrTimeZone(cx, temporalYearMonthLike)) {
+  if (!RejectTemporalLikeObject(cx, temporalYearMonthLike)) {
     return false;
   }
 

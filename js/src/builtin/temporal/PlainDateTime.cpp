@@ -1782,7 +1782,7 @@ static bool PlainDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!RejectObjectWithCalendarOrTimeZone(cx, temporalDateTimeLike)) {
+  if (!RejectTemporalLikeObject(cx, temporalDateTimeLike)) {
     return false;
   }
 

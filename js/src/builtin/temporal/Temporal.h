@@ -221,8 +221,6 @@ bool ToCalendarNameOption(JSContext* cx, JS::Handle<JSObject*> options,
 
 
 
-
-
 class Precision final {
   int8_t value_;
 
@@ -328,8 +326,7 @@ bool ToShowOffsetOption(JSContext* cx, JS::Handle<JSObject*> options,
 
 
 
-bool RejectObjectWithCalendarOrTimeZone(JSContext* cx,
-                                        JS::Handle<JSObject*> object);
+bool RejectTemporalLikeObject(JSContext* cx, JS::Handle<JSObject*> object);
 
 
 
