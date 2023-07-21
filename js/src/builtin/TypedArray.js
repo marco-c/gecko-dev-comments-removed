@@ -32,11 +32,6 @@ function IsDetachedBuffer(buffer) {
   );
 
   
-  
-  
-  
-  
-  
   if ((buffer = GuardToArrayBuffer(buffer)) === null) {
     return false;
   }
