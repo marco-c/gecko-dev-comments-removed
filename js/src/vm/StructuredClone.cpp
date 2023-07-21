@@ -48,6 +48,7 @@
 #include "js/Date.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
+#include "js/GCAPI.h"
 #include "js/GCHashTable.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
@@ -419,21 +420,8 @@ struct JSStructuredCloneReader {
   explicit JSStructuredCloneReader(SCInput& in, JS::StructuredCloneScope scope,
                                    const JS::CloneDataPolicy& cloneDataPolicy,
                                    const JSStructuredCloneCallbacks* cb,
-                                   void* cbClosure)
-      : in(in),
-        allowedScope(scope),
-        cloneDataPolicy(cloneDataPolicy),
-        objs(in.context()),
-        objState(in.context(), in.context()),
-        allObjs(in.context()),
-        numItemsRead(0),
-        callbacks(cb),
-        closure(cbClosure) {
-    
-    
-    
-    MOZ_ALWAYS_TRUE(objState.append(std::make_pair(nullptr, true)));
-  }
+                                   void* cbClosure);
+  ~JSStructuredCloneReader();
 
   SCInput& input() { return in; }
   bool read(MutableHandleValue vp, size_t nbytes);
@@ -486,6 +474,10 @@ struct JSStructuredCloneReader {
   [[nodiscard]] bool startRead(MutableHandleValue vp,
                                gc::Heap strHeap = gc::Heap::Default);
 
+  static void NurseryCollectionCallback(JSContext* cx,
+                                        JS::GCNurseryProgress progress,
+                                        JS::GCReason reason, void* data);
+
   SCInput& in;
 
   
@@ -531,6 +523,15 @@ struct JSStructuredCloneReader {
 
   
   void* closure;
+
+  
+  
+  
+  
+  
+  
+  
+  gc::Heap gcHeap = gc::Heap::Default;
 
   friend bool JS_ReadString(JSStructuredCloneReader* r,
                             JS::MutableHandleString str);
@@ -2437,6 +2438,45 @@ bool JSStructuredCloneWriter::write(HandleValue v) {
   return transferOwnership();
 }
 
+JSStructuredCloneReader::JSStructuredCloneReader(
+    SCInput& in, JS::StructuredCloneScope scope,
+    const JS::CloneDataPolicy& cloneDataPolicy,
+    const JSStructuredCloneCallbacks* cb, void* cbClosure)
+    : in(in),
+      allowedScope(scope),
+      cloneDataPolicy(cloneDataPolicy),
+      objs(in.context()),
+      objState(in.context(), in.context()),
+      allObjs(in.context()),
+      numItemsRead(0),
+      callbacks(cb),
+      closure(cbClosure) {
+  
+  
+  
+  MOZ_ALWAYS_TRUE(objState.append(std::make_pair(nullptr, true)));
+
+  JS::AddGCNurseryCollectionCallback(in.context(), &NurseryCollectionCallback,
+                                     this);
+}
+
+JSStructuredCloneReader::~JSStructuredCloneReader() {
+  JS::RemoveGCNurseryCollectionCallback(in.context(),
+                                        &NurseryCollectionCallback);
+}
+
+
+void JSStructuredCloneReader::NurseryCollectionCallback(
+    JSContext* cx, JS::GCNurseryProgress progress, JS::GCReason reason,
+    void* data) {
+  auto* reader = static_cast<JSStructuredCloneReader*>(data);
+
+  
+  if (progress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_END) {
+    reader->gcHeap = gc::Heap::Tenured;
+  }
+}
+
 template <typename CharT>
 JSString* JSStructuredCloneReader::readStringImpl(uint32_t nchars,
                                                   gc::Heap heap) {
@@ -2451,6 +2491,11 @@ JSString* JSStructuredCloneReader::readStringImpl(uint32_t nchars,
       !in.readChars(chars.get(), nchars)) {
     return nullptr;
   }
+
+  if (gcHeap == gc::Heap::Tenured) {
+    heap = gc::Heap::Tenured;
+  }
+
   return chars.toStringDontDeflate(context(), nchars, heap);
 }
 
@@ -2481,8 +2526,8 @@ BigInt* JSStructuredCloneReader::readBigInt(uint32_t data) {
   if (length == 0) {
     return BigInt::zero(context());
   }
-  RootedBigInt result(
-      context(), BigInt::createUninitialized(context(), length, isNegative));
+  RootedBigInt result(context(), BigInt::createUninitialized(
+                                     context(), length, isNegative, gcHeap));
   if (!result) {
     return nullptr;
   }
@@ -2964,8 +3009,9 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
         return false;
       }
 
-      RegExpObject* reobj =
-          RegExpObject::create(context(), atom, flags, GenericObject);
+      NewObjectKind kind =
+          gcHeap == gc::Heap::Tenured ? TenuredObject : GenericObject;
+      RegExpObject* reobj = RegExpObject::create(context(), atom, flags, kind);
       if (!reobj) {
         return false;
       }
@@ -2975,14 +3021,19 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
 
     case SCTAG_ARRAY_OBJECT:
     case SCTAG_OBJECT_OBJECT: {
-      JSObject* obj =
-          (tag == SCTAG_ARRAY_OBJECT)
-              ? (JSObject*)NewDenseUnallocatedArray(
-                    context(), NativeEndian::swapFromLittleEndian(data))
-              : (JSObject*)NewPlainObject(context());
+      NewObjectKind kind =
+          gcHeap == gc::Heap::Tenured ? TenuredObject : GenericObject;
+      JSObject* obj;
+      if (tag == SCTAG_ARRAY_OBJECT) {
+        obj = NewDenseUnallocatedArray(
+            context(), NativeEndian::swapFromLittleEndian(data), kind);
+      } else {
+        obj = NewPlainObject(context(), kind);
+      }
       if (!obj || !objs.append(ObjectValue(*obj))) {
         return false;
       }
+
       vp.setObject(*obj);
       break;
     }
