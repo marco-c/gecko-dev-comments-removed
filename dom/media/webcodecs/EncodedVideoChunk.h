@@ -73,6 +73,13 @@ class EncodedVideoChunk final : public nsISupports, public nsWrapperCache {
   
   uint8_t* Data();
 
+  
+  static already_AddRefed<EncodedVideoChunk> ReadStructuredClone(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      JSStructuredCloneReader* aReader);
+  bool WriteStructuredClone(JSContext* aCx,
+                            JSStructuredCloneWriter* aWriter) const;
+
  private:
   
   void AssertIsOnOwningThread() const {

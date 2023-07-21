@@ -160,6 +160,20 @@ uint8_t* EncodedVideoChunk::Data() {
   return mBuffer->Data();
 }
 
+
+
+already_AddRefed<EncodedVideoChunk> EncodedVideoChunk::ReadStructuredClone(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    JSStructuredCloneReader* aReader) {
+  return nullptr;
+}
+
+
+bool EncodedVideoChunk::WriteStructuredClone(
+    JSContext* aCx, JSStructuredCloneWriter* aWriter) const {
+  return false;
+}
+
 #undef LOGW
 #undef LOG_INTERNAL
 
