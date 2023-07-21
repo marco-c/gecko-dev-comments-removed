@@ -360,9 +360,6 @@ static PlainTimeObject* CreateTemporalTime(JSContext* cx, const CallArgs& args,
                        Int32Value(nanosecond));
 
   
-  object->setFixedSlot(PlainTimeObject::CALENDAR_SLOT, NullValue());
-
-  
   return object;
 }
 
@@ -405,9 +402,6 @@ PlainTimeObject* js::temporal::CreateTemporalTime(JSContext* cx,
   
   object->setFixedSlot(PlainTimeObject::ISO_NANOSECOND_SLOT,
                        Int32Value(nanosecond));
-
-  
-  object->setFixedSlot(PlainTimeObject::CALENDAR_SLOT, NullValue());
 
   
   return object;
@@ -1876,17 +1870,6 @@ static bool AddDurationToOrSubtractDurationFromPlainTime(
   return true;
 }
 
-JSObject* js::temporal::PlainTimeObject::createCalendar(
-    JSContext* cx, Handle<PlainTimeObject*> obj) {
-  auto* calendar = GetISO8601Calendar(cx);
-  if (!calendar) {
-    return nullptr;
-  }
-
-  obj->setCalendar(calendar);
-  return calendar;
-}
-
 
 
 
@@ -2026,32 +2009,6 @@ static bool PlainTime_compare(JSContext* cx, unsigned argc, Value* vp) {
   
   args.rval().setInt32(CompareTemporalTime(one, two));
   return true;
-}
-
-
-
-
-static bool PlainTime_calendar(JSContext* cx, const CallArgs& args) {
-  Rooted<PlainTimeObject*> temporalTime(
-      cx, &args.thisv().toObject().as<PlainTimeObject>());
-
-  
-  auto* calendar = PlainTimeObject::getOrCreateCalendar(cx, temporalTime);
-  if (!calendar) {
-    return false;
-  }
-
-  args.rval().setObject(*calendar);
-  return true;
-}
-
-
-
-
-static bool PlainTime_calendar(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsPlainTime, PlainTime_calendar>(cx, args);
 }
 
 
@@ -2555,19 +2512,8 @@ static bool PlainTime_getISOFields(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<PlainTimeObject>());
   auto time = ToPlainTime(temporalTime);
 
-  auto* calendar = PlainTimeObject::getOrCreateCalendar(cx, temporalTime);
-  if (!calendar) {
-    return false;
-  }
-
   
   Rooted<IdValueVector> fields(cx, IdValueVector(cx));
-
-  
-  if (!fields.emplaceBack(NameToId(cx->names().calendar),
-                          ObjectValue(*calendar))) {
-    return false;
-  }
 
   
   if (!fields.emplaceBack(NameToId(cx->names().isoHour),
@@ -2793,7 +2739,6 @@ static const JSFunctionSpec PlainTime_prototype_methods[] = {
 };
 
 static const JSPropertySpec PlainTime_prototype_properties[] = {
-    JS_PSG("calendar", PlainTime_calendar, 0),
     JS_PSG("hour", PlainTime_hour, 0),
     JS_PSG("minute", PlainTime_minute, 0),
     JS_PSG("second", PlainTime_second, 0),
