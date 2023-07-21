@@ -4,7 +4,7 @@ var array = [1, 2, 3];
 
 var calls = 0;
 
-var grouped = array.group(() => {
+var grouped = Object.groupBy(array, () => {
   calls++;
 
   return {
