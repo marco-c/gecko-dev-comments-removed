@@ -2,7 +2,6 @@
 
 
 #![cfg_attr(feature = "nightly", feature(proc_macro_expand))]
-#![warn(rust_2018_idioms, unused_qualifications)]
 
 
 
@@ -13,11 +12,11 @@ use camino::Utf8Path;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, LitStr};
+use util::rewrite_self_type;
 
 mod enum_;
 mod error;
 mod export;
-mod fnsig;
 mod object;
 mod record;
 mod test;
@@ -48,14 +47,21 @@ pub fn build_foreign_language_testcases(tokens: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn export(attr_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn export(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let input2 = proc_macro2::TokenStream::from(input.clone());
 
     let gen_output = || {
         let mod_path = util::mod_path()?;
-        let args = syn::parse(attr_args)?;
-        let item = syn::parse(input)?;
-        expand_export(item, args, mod_path)
+        let mut item = syn::parse(input)?;
+
+        
+        
+        
+        
+        rewrite_self_type(&mut item);
+
+        let metadata = export::gen_metadata(item, &mod_path)?;
+        Ok(expand_export(metadata, &mod_path))
     };
     let output = gen_output().unwrap_or_else(syn::Error::into_compile_error);
 
@@ -66,14 +72,26 @@ pub fn export(attr_args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-#[proc_macro_derive(Record, attributes(uniffi))]
+#[proc_macro_derive(Record)]
 pub fn derive_record(input: TokenStream) -> TokenStream {
-    expand_record(parse_macro_input!(input)).into()
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_record(input, mod_path).into()
 }
 
 #[proc_macro_derive(Enum)]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    expand_enum(parse_macro_input!(input)).into()
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_enum(input, mod_path).into()
 }
 
 #[proc_macro_derive(Object)]
@@ -89,66 +107,15 @@ pub fn derive_object(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(Error, attributes(uniffi))]
 pub fn derive_error(input: TokenStream) -> TokenStream {
-    expand_error(parse_macro_input!(input))
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_error(input, mod_path).into()
 }
 
-
-
-
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn ffi_converter_record(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    record::expand_record_ffi_converter(
-        syn::parse_macro_input!(attrs),
-        syn::parse_macro_input!(input),
-    )
-    .into()
-}
-
-
-
-
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn ffi_converter_enum(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    enum_::expand_enum_ffi_converter(
-        syn::parse_macro_input!(attrs),
-        syn::parse_macro_input!(input),
-    )
-    .into()
-}
-
-
-
-
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn ffi_converter_error(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    error::expand_ffi_converter_error(
-        syn::parse_macro_input!(attrs),
-        syn::parse_macro_input!(input),
-    )
-    .into()
-}
-
-
-
-
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn ffi_converter_interface(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    object::expand_ffi_converter_interface(
-        syn::parse_macro_input!(attrs),
-        syn::parse_macro_input!(input),
-    )
-    .into()
-}
 
 
 
@@ -165,30 +132,13 @@ pub fn ffi_converter_interface(attrs: TokenStream, input: TokenStream) -> TokenS
 
 #[proc_macro]
 pub fn include_scaffolding(component_name: TokenStream) -> TokenStream {
-    let name = syn::parse_macro_input!(component_name as LitStr);
+    let name = syn::parse_macro_input!(component_name as syn::LitStr);
     if std::env::var("OUT_DIR").is_err() {
         quote! {
             compile_error!("This macro assumes the crate has a build.rs script, but $OUT_DIR is not present");
         }
     } else {
-        let udl_name = name.value();
-        let mod_path = match util::mod_path() {
-            Ok(v) => quote! { #v },
-            Err(e) => e.into_compile_error()
-        };
-        let metadata = util::create_metadata_items(
-            "UDL",
-            &udl_name.replace('-', "_").to_ascii_uppercase(),
-            quote! {
-                    ::uniffi::MetadataBuffer::from_code(::uniffi::metadata::codes::UDL_FILE)
-                        .concat_str(#mod_path)
-                        .concat_str(#udl_name)
-            },
-            None,
-        );
         quote! {
-            #metadata
-
             include!(concat!(env!("OUT_DIR"), "/", #name, ".uniffi.rs"));
         }
     }.into()
@@ -204,19 +154,19 @@ pub fn include_scaffolding(component_name: TokenStream) -> TokenStream {
 
 
 
+
 #[proc_macro]
 pub fn generate_and_include_scaffolding(udl_file: TokenStream) -> TokenStream {
-    let udl_file = syn::parse_macro_input!(udl_file as LitStr);
+    let udl_file = syn::parse_macro_input!(udl_file as syn::LitStr);
     let udl_file_string = udl_file.value();
     let udl_file_path = Utf8Path::new(&udl_file_string);
     if std::env::var("OUT_DIR").is_err() {
         quote! {
             compile_error!("This macro assumes the crate has a build.rs script, but $OUT_DIR is not present");
         }
-    } else if let Err(e) = uniffi_build::generate_scaffolding(udl_file_path) {
-        let err = format!("{e:#}");
+    } else if uniffi_build::generate_scaffolding(udl_file_path).is_err() {
         quote! {
-            compile_error!(concat!("Failed to generate scaffolding from UDL file at ", #udl_file, ": ", #err));
+            compile_error!(concat!("Failed to generate scaffolding from UDL file at ", #udl_file));
         }
     } else {
         
@@ -226,17 +176,4 @@ pub fn generate_and_include_scaffolding(udl_file: TokenStream) -> TokenStream {
             uniffi_macros::include_scaffolding!(#name);
         }
     }.into()
-}
-
-
-
-
-
-
-
-
-
-#[proc_macro_attribute]
-pub fn constructor(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    input
 }

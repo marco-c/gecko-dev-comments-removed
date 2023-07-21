@@ -58,7 +58,7 @@ impl<T> OnceCell<T> {
             
             
             
-            let f = unsafe { f.take().unwrap_unchecked() };
+            let f = unsafe { crate::unwrap_unchecked(f.take()) };
             match f() {
                 Ok(value) => unsafe {
                     
@@ -101,7 +101,7 @@ impl<T> OnceCell<T> {
     pub(crate) unsafe fn get_unchecked(&self) -> &T {
         debug_assert!(self.is_initialized());
         let slot = &*self.value.get();
-        slot.as_ref().unwrap_unchecked()
+        crate::unwrap_unchecked(slot.as_ref())
     }
 
     

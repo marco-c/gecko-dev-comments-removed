@@ -41,31 +41,8 @@ def rust_call_with_error(error_ffi_converter, fn, *args):
 
     args_with_error = args + (ctypes.byref(call_status),)
     result = fn(*args_with_error)
-    uniffi_check_call_status(error_ffi_converter, call_status)
-    return result
-
-def rust_call_async(scaffolding_fn, callback_fn, *args):
-    
-    
-    uniffi_eventloop = asyncio.get_running_loop()
-    uniffi_py_future = uniffi_eventloop.create_future()
-    uniffi_call_status = RustCallStatus(code=RustCallStatus.CALL_SUCCESS, error_buf=RustBuffer(0, 0, None))
-    scaffolding_fn(*args,
-       FfiConverterForeignExecutor._pointer_manager.new_pointer(uniffi_eventloop),
-       callback_fn,
-       
-       
-       
-       
-       UniFfiPyFuturePointerManager.new_pointer(uniffi_py_future),
-       ctypes.byref(uniffi_call_status),
-    )
-    uniffi_check_call_status(None, uniffi_call_status)
-    return uniffi_py_future
-
-def uniffi_check_call_status(error_ffi_converter, call_status):
     if call_status.code == RustCallStatus.CALL_SUCCESS:
-        pass
+        return result
     elif call_status.code == RustCallStatus.CALL_ERROR:
         if error_ffi_converter is None:
             call_status.error_buf.free()
@@ -87,4 +64,4 @@ def uniffi_check_call_status(error_ffi_converter, call_status):
 
 
 
-FOREIGN_CALLBACK_T = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ulong, ctypes.POINTER(ctypes.c_char), ctypes.c_int, ctypes.POINTER(RustBuffer))
+FOREIGN_CALLBACK_T = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ulong, RustBuffer, ctypes.POINTER(RustBuffer))

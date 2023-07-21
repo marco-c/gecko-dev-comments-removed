@@ -1,9 +1,6 @@
 {%- match python_config.custom_types.get(name.as_str())  %}
 {% when None %}
 {
-
-{{ name }} = {{ builtin|type_name }}
-
 class FfiConverterType{{ name }}:
     @staticmethod
     def write(value, buf):
@@ -30,9 +27,6 @@ class FfiConverterType{{ name }}:
 {%- endfor %}
 {%- else %}
 {%- endmatch %}
-
-
-{{ name }} = {{ builtin|type_name }}
 
 {
 class FfiConverterType{{ name }}:

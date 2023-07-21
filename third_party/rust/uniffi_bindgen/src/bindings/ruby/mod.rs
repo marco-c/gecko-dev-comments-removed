@@ -2,16 +2,16 @@
 
 
 
-use std::process::Command;
+use std::{io::Write, process::Command};
 
 use anyhow::{Context, Result};
 use camino::Utf8Path;
-use fs_err as fs;
+use fs_err::File;
 
 pub mod gen_ruby;
 mod test;
 pub use gen_ruby::{Config, RubyWrapper};
-pub use test::{run_test, test_script_command};
+pub use test::run_test;
 
 use super::super::interface::ComponentInterface;
 
@@ -24,13 +24,15 @@ pub fn write_bindings(
     try_format_code: bool,
 ) -> Result<()> {
     let rb_file = out_dir.join(format!("{}.rb", ci.namespace()));
-    fs::write(&rb_file, generate_ruby_bindings(config, ci)?)?;
+    let mut f = File::create(&rb_file)?;
+    write!(f, "{}", generate_ruby_bindings(config, ci)?)?;
 
     if try_format_code {
         if let Err(e) = Command::new("rubocop").arg("-A").arg(&rb_file).output() {
             println!(
-                "Warning: Unable to auto-format {} using rubocop: {e:?}",
+                "Warning: Unable to auto-format {} using rubocop: {:?}",
                 rb_file.file_name().unwrap(),
+                e
             )
         }
     }

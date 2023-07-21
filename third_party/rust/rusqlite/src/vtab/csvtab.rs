@@ -1,26 +1,26 @@
-//! CSV Virtual Table.
-//!
-//! Port of [csv](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/csv.c) C
-//! extension: `https://www.sqlite.org/csv.html`
-//!
-//! # Example
-//!
-//! ```rust,no_run
-//! # use rusqlite::{Connection, Result};
-//! fn example() -> Result<()> {
-//!     // Note: This should be done once (usually when opening the DB).
-//!     let db = Connection::open_in_memory()?;
-//!     rusqlite::vtab::csvtab::load_module(&db)?;
-//!     // Assume my_csv.csv
-//!     let schema = "
-//!         CREATE VIRTUAL TABLE my_csv_data
-//!         USING csv(filename = 'my_csv.csv')
-//!     ";
-//!     db.execute_batch(schema)?;
-//!     // Now the `my_csv_data` (virtual) table can be queried as normal...
-//!     Ok(())
-//! }
-//! ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::fs::File;
 use std::marker::PhantomData;
 use std::os::raw::c_int;
@@ -35,33 +35,33 @@ use crate::vtab::{
 };
 use crate::{Connection, Error, Result};
 
-/// Register the "csv" module.
-/// ```sql
-/// CREATE VIRTUAL TABLE vtab USING csv(
-///   filename=FILENAME -- Name of file containing CSV content
-///   [, schema=SCHEMA] -- Alternative CSV schema. 'CREATE TABLE x(col1 TEXT NOT NULL, col2 INT, ...);'
-///   [, header=YES|NO] -- First row of CSV defines the names of columns if "yes". Default "no".
-///   [, columns=N] -- Assume the CSV file contains N columns.
-///   [, delimiter=C] -- CSV delimiter. Default ','.
-///   [, quote=C] -- CSV quote. Default '"'. 0 means no quote.
-/// );
-/// ```
+
+
+
+
+
+
+
+
+
+
+
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("csv", read_only_module::<CsvTab>(), aux)
 }
 
-/// An instance of the CSV virtual table
+
 #[repr(C)]
 struct CsvTab {
-    /// Base class. Must be first
+    
     base: ffi::sqlite3_vtab,
-    /// Name of the CSV file
+    
     filename: String,
     has_headers: bool,
     delimiter: u8,
     quote: u8,
-    /// Offset to start of data
+    
     offset_first_row: csv::Position,
 }
 
@@ -195,7 +195,7 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
             if vtab.has_headers {
                 {
                     let headers = reader.headers()?;
-                    // headers ignored if cols is not empty
+                    
                     if n_col.is_none() && schema.is_none() {
                         cols = headers
                             .into_iter()
@@ -208,13 +208,13 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
                 let mut record = csv::ByteRecord::new();
                 if reader.read_byte_record(&mut record)? {
                     for (i, _) in record.iter().enumerate() {
-                        cols.push(format!("c{i}"));
+                        cols.push(format!("c{}", i));
                     }
                 }
             }
         } else if let Some(n_col) = n_col {
             for i in 0..n_col {
-                cols.push(format!("c{i}"));
+                cols.push(format!("c{}", i));
             }
         }
 
@@ -240,7 +240,7 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
         Ok((schema.unwrap(), vtab))
     }
 
-    // Only a forward full table scan is supported.
+    
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         info.set_estimated_cost(1_000_000.);
         Ok(())
@@ -255,16 +255,16 @@ impl CreateVTab<'_> for CsvTab {
     const KIND: VTabKind = VTabKind::Default;
 }
 
-/// A cursor for the CSV virtual table
+
 #[repr(C)]
 struct CsvTabCursor<'vtab> {
-    /// Base class. Must be first
+    
     base: ffi::sqlite3_vtab_cursor,
-    /// The CSV reader object
+    
     reader: csv::Reader<File>,
-    /// Current cursor position used as rowid
+    
     row_number: usize,
-    /// Values of the current row
+    
     cols: csv::StringRecord,
     eof: bool,
     phantom: PhantomData<&'vtab CsvTab>,
@@ -282,15 +282,15 @@ impl CsvTabCursor<'_> {
         }
     }
 
-    /// Accessor to the associated virtual table.
+    
     fn vtab(&self) -> &CsvTab {
         unsafe { &*(self.base.pVtab as *const CsvTab) }
     }
 }
 
 unsafe impl VTabCursor for CsvTabCursor<'_> {
-    // Only a full table scan is supported.  So `filter` simply rewinds to
-    // the beginning.
+    
+    
     fn filter(
         &mut self,
         _idx_num: c_int,
@@ -333,7 +333,7 @@ unsafe impl VTabCursor for CsvTabCursor<'_> {
         if self.cols.is_empty() {
             return ctx.set_result(&Null);
         }
-        // TODO Affinity
+        
         ctx.set_result(&self.cols[col as usize].to_owned())
     }
 

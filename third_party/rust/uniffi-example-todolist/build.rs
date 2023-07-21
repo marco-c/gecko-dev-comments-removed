@@ -3,5 +3,5 @@
 
 
 fn main() {
-    uniffi::generate_scaffolding("src/todolist.udl").unwrap();
+    uniffi::generate_scaffolding("./src/todolist.udl").unwrap();
 }

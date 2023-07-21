@@ -6,25 +6,6 @@
 
 
 
-
-
-
-#[doc(hidden)]
-pub struct UniFfiTag;
-
-#[allow(clippy::missing_safety_doc, missing_docs)]
-#[doc(hidden)]
-#[no_mangle]
-pub extern "C" fn {{ ci.ffi_uniffi_contract_version().name() }}() -> u32 {
-    {{ ci.uniffi_contract_version() }}
-}
-
-{%- include "namespace_metadata.rs" %}
-
-
-
-
-
 uniffi::assert_compatible_version!("{{ uniffi_version }}"); 
 
 {% for ty in ci.iter_types() %}
@@ -38,14 +19,14 @@ uniffi::deps::static_assertions::assert_impl_all!({{ k|type_rs }}: ::std::cmp::E
 
 {% include "RustBuffer.rs" %}
 
-{% for e in ci.enum_definitions() %}
-{% if ci.is_name_used_as_error(e.name()) %}
 
+{% for e in ci.error_definitions() %}
 {% include "ErrorTemplate.rs" %}
-{% else %}
+{% endfor %}
 
+
+{% for e in ci.enum_definitions() %}
 {% include "EnumTemplate.rs" %}
-{% endif %}
 {% endfor %}
 
 
@@ -70,9 +51,6 @@ uniffi::deps::static_assertions::assert_impl_all!({{ k|type_rs }}: ::std::cmp::E
 
 
 {% include "ExternalTypesTemplate.rs" %}
-
-
-{% include "Checksums.rs" %}
 
 
 {% include "ReexportUniFFIScaffolding.rs" %}

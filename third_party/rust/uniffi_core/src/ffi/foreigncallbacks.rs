@@ -113,7 +113,7 @@
 
 
 
-use crate::{FfiConverter, RustBuffer};
+use super::RustBuffer;
 use std::fmt;
 use std::os::raw::c_int;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -139,21 +139,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 
 
-
 pub type ForeignCallback = unsafe extern "C" fn(
     handle: u64,
     method: u32,
-    args_data: *const u8,
-    args_len: i32,
+    args: RustBuffer,
     buf_ptr: *mut RustBuffer,
 ) -> c_int;
 
 
 
 pub const IDX_CALLBACK_FREE: u32 = 0;
-pub const CALLBACK_SUCCESS: i32 = 0;
-pub const CALLBACK_ERROR: i32 = 1;
-pub const CALLBACK_UNEXPECTED_ERROR: i32 = 2;
 
 
 
@@ -200,57 +195,9 @@ impl ForeignCallbackInternals {
         };
     }
 
-    fn call_callback(
-        &self,
-        handle: u64,
-        method: u32,
-        args: RustBuffer,
-        ret_rbuf: &mut RustBuffer,
-    ) -> c_int {
+    pub fn get_callback(&self) -> Option<ForeignCallback> {
         let ptr_value = self.callback_ptr.load(Ordering::SeqCst);
-        unsafe {
-            
-            
-            let callback = std::mem::transmute::<usize, Option<ForeignCallback>>(ptr_value)
-                .expect("Callback interface handler not set");
-            callback(
-                handle,
-                method,
-                args.data_pointer(),
-                args.len() as i32,
-                ret_rbuf,
-            )
-        }
-    }
-
-    
-    pub fn invoke_callback<R, UniFfiTag>(&self, handle: u64, method: u32, args: RustBuffer) -> R
-    where
-        R: FfiConverter<UniFfiTag>,
-    {
-        let mut ret_rbuf = RustBuffer::new();
-        let callback_result = self.call_callback(handle, method, args, &mut ret_rbuf);
-        match callback_result {
-            CALLBACK_SUCCESS => R::lift_callback_return(ret_rbuf),
-            CALLBACK_ERROR => R::lift_callback_error(ret_rbuf),
-            CALLBACK_UNEXPECTED_ERROR => {
-                let reason = if !ret_rbuf.is_empty() {
-                    match <String as FfiConverter<UniFfiTag>>::try_lift(ret_rbuf) {
-                        Ok(s) => s,
-                        Err(e) => {
-                            log::error!("{{ trait_name }} Error reading ret_buf: {e}");
-                            String::from("[Error reading reason]")
-                        }
-                    }
-                } else {
-                    RustBuffer::destroy(ret_rbuf);
-                    String::from("[Unknown Reason]")
-                };
-                R::handle_callback_unexpected_error(UnexpectedUniFFICallbackError { reason })
-            }
-            
-            _ => panic!("Callback failed with unexpected return code"),
-        }
+        unsafe { std::mem::transmute::<usize, Option<ForeignCallback>>(ptr_value) }
     }
 }
 

@@ -24,6 +24,7 @@
 use std::{collections::hash_map::Entry, collections::BTreeSet, collections::HashMap, iter};
 
 use anyhow::{bail, Result};
+use heck::ToUpperCamelCase;
 use uniffi_meta::Checksum;
 
 use super::ffi::FfiType;
@@ -32,36 +33,6 @@ mod finder;
 pub(super) use finder::TypeFinder;
 mod resolver;
 pub(super) use resolver::{resolve_builtin_type, TypeResolver};
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
-pub enum ObjectImpl {
-    Struct,
-    Trait,
-}
-
-impl ObjectImpl {
-    
-    
-    
-    
-    pub fn rust_name_for(&self, name: &str) -> String {
-        if self == &ObjectImpl::Trait {
-            format!("dyn r#{name}")
-        } else {
-            format!("r#{name}")
-        }
-    }
-
-    
-    
-    pub fn from_is_trait(is_trait: bool) -> Self {
-        if is_trait {
-            ObjectImpl::Trait
-        } else {
-            ObjectImpl::Struct
-        }
-    }
-}
 
 
 
@@ -81,45 +52,82 @@ pub enum Type {
     Float64,
     Boolean,
     String,
-    Bytes,
     Timestamp,
     Duration,
-    Object {
-        
-        name: String,
-        
-        imp: ObjectImpl,
-    },
-    ForeignExecutor,
     
+    Object(String),
     Record(String),
     Enum(String),
+    Error(String),
     CallbackInterface(String),
     
     Optional(Box<Type>),
     Sequence(Box<Type>),
     Map(Box<Type>, Box<Type>),
     
-    External {
-        name: String,
-        crate_name: String,
-        kind: ExternalKind,
-    },
+    External { name: String, crate_name: String },
     
-    Custom {
-        name: String,
-        builtin: Box<Type>,
-    },
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Checksum, Ord, PartialOrd)]
-pub enum ExternalKind {
-    Interface,
+    Custom { name: String, builtin: Box<Type> },
     
-    DataClass,
+    
+    Unresolved { name: String },
 }
 
 impl Type {
+    
+    
+    
+    
+    
+    
+    pub fn canonical_name(&self) -> String {
+        match self {
+            
+            Type::Int8 => "i8".into(),
+            Type::UInt8 => "u8".into(),
+            Type::Int16 => "i16".into(),
+            Type::UInt16 => "u16".into(),
+            Type::Int32 => "i32".into(),
+            Type::UInt32 => "u32".into(),
+            Type::Int64 => "i64".into(),
+            Type::UInt64 => "u64".into(),
+            Type::Float32 => "f32".into(),
+            Type::Float64 => "f64".into(),
+            Type::String => "string".into(),
+            Type::Boolean => "bool".into(),
+            
+            
+            
+            
+            
+            
+            Type::Object(nm) => format!("Type{nm}"),
+            Type::Error(nm) => format!("Type{nm}"),
+            Type::Enum(nm) => format!("Type{nm}"),
+            Type::Record(nm) => format!("Type{nm}"),
+            Type::CallbackInterface(nm) => format!("CallbackInterface{nm}"),
+            Type::Timestamp => "Timestamp".into(),
+            Type::Duration => "Duration".into(),
+            
+            
+            
+            
+            
+            Type::Optional(t) => format!("Optional{}", t.canonical_name()),
+            Type::Sequence(t) => format!("Sequence{}", t.canonical_name()),
+            Type::Map(k, v) => format!(
+                "Map{}{}",
+                k.canonical_name().to_upper_camel_case(),
+                v.canonical_name().to_upper_camel_case()
+            ),
+            
+            Type::External { name, .. } | Type::Custom { name, .. } => format!("Type{name}"),
+            Type::Unresolved { name } => {
+                unreachable!("Type `{name}` must be resolved before calling canonical_name")
+            }
+        }
+    }
+
     pub fn ffi_type(&self) -> FfiType {
         self.into()
     }
@@ -159,32 +167,23 @@ impl From<&Type> for FfiType {
             
             Type::String => FfiType::RustBuffer(None),
             
-            
-            Type::Bytes => FfiType::RustBuffer(None),
-            
-            Type::Object { name, .. } => FfiType::RustArcPtr(name.to_owned()),
+            Type::Object(name) => FfiType::RustArcPtr(name.to_owned()),
             
             Type::CallbackInterface(_) => FfiType::UInt64,
-            Type::ForeignExecutor => FfiType::ForeignExecutorHandle,
             
             Type::Enum(_)
+            | Type::Error(_)
             | Type::Record(_)
             | Type::Optional(_)
             | Type::Sequence(_)
             | Type::Map(_, _)
             | Type::Timestamp
             | Type::Duration => FfiType::RustBuffer(None),
-            Type::External {
-                name,
-                kind: ExternalKind::Interface,
-                ..
-            } => FfiType::RustArcPtr(name.clone()),
-            Type::External {
-                name,
-                kind: ExternalKind::DataClass,
-                ..
-            } => FfiType::RustBuffer(Some(name.clone())),
+            Type::External { name, .. } => FfiType::RustBuffer(Some(name.clone())),
             Type::Custom { builtin, .. } => FfiType::from(builtin.as_ref()),
+            Type::Unresolved { name } => {
+                unreachable!("Type `{name}` must be resolved before lowering to FfiType")
+            }
         }
     }
 }
@@ -193,84 +192,6 @@ impl From<&Type> for FfiType {
 impl From<&&Type> for FfiType {
     fn from(ty: &&Type) -> Self {
         (*ty).into()
-    }
-}
-
-
-pub trait AsType: core::fmt::Debug {
-    fn as_type(&self) -> Type;
-}
-
-impl AsType for Type {
-    fn as_type(&self) -> Type {
-        self.clone()
-    }
-}
-
-
-impl<T, C> AsType for T
-where
-    T: std::ops::Deref<Target = C> + std::fmt::Debug,
-    C: AsType,
-{
-    fn as_type(&self) -> Type {
-        self.deref().as_type()
-    }
-}
-
-impl From<uniffi_meta::Type> for Type {
-    fn from(ty: uniffi_meta::Type) -> Self {
-        use uniffi_meta::Type as Ty;
-
-        match ty {
-            Ty::U8 => Type::UInt8,
-            Ty::U16 => Type::UInt16,
-            Ty::U32 => Type::UInt32,
-            Ty::U64 => Type::UInt64,
-            Ty::I8 => Type::Int8,
-            Ty::I16 => Type::Int16,
-            Ty::I32 => Type::Int32,
-            Ty::I64 => Type::Int64,
-            Ty::F32 => Type::Float32,
-            Ty::F64 => Type::Float64,
-            Ty::Bool => Type::Boolean,
-            Ty::String => Type::String,
-            Ty::SystemTime => Type::Timestamp,
-            Ty::Duration => Type::Duration,
-            Ty::ForeignExecutor => Type::ForeignExecutor,
-            Ty::Record { name } => Type::Record(name),
-            Ty::Enum { name, .. } => Type::Enum(name),
-            Ty::ArcObject {
-                object_name,
-                is_trait,
-            } => Type::Object {
-                name: object_name,
-                imp: ObjectImpl::from_is_trait(is_trait),
-            },
-            Ty::CallbackInterface { name } => Type::CallbackInterface(name),
-            Ty::Custom { name, builtin } => Type::Custom {
-                name,
-                builtin: builtin.into(),
-            },
-            Ty::Option { inner_type } => Type::Optional(inner_type.into()),
-            Ty::Vec { inner_type } => Type::Sequence(inner_type.into()),
-            Ty::HashMap {
-                key_type,
-                value_type,
-            } => Type::Map(key_type.into(), value_type.into()),
-        }
-    }
-}
-
-impl From<uniffi_meta::Type> for Box<Type> {
-    fn from(ty: uniffi_meta::Type) -> Self {
-        Box::new(ty.into())
-    }
-}
-
-impl From<Box<uniffi_meta::Type>> for Box<Type> {
-    fn from(ty: Box<uniffi_meta::Type>) -> Self {
-        Box::new((*ty).into())
     }
 }
 
@@ -304,14 +225,24 @@ impl TypeUniverse {
     
     
     pub fn add_type_definition(&mut self, name: &str, type_: Type) -> Result<()> {
-        if resolve_builtin_type(name).is_some() {
-            bail!("please don't shadow builtin types ({name}, {:?})", type_,);
+        if let Type::Unresolved { name: name_ } = &type_ {
+            assert_eq!(name, name_);
+            bail!("attempted to add type definition of Unresolved for `{name}`");
         }
-        self.add_known_type(&type_);
+
+        if resolve_builtin_type(name).is_some() {
+            bail!(
+                "please don't shadow builtin types ({name}, {})",
+                type_.canonical_name(),
+            );
+        }
+        self.add_known_type(&type_)?;
         match self.type_definitions.entry(name.to_string()) {
             Entry::Occupied(o) => {
                 let existing_def = o.get();
-                if type_ == *existing_def && matches!(type_, Type::Record(_) | Type::Enum(_)) {
+                if type_ == *existing_def
+                    && matches!(type_, Type::Record(_) | Type::Enum(_) | Type::Error(_))
+                {
                     
                     
                     
@@ -345,7 +276,12 @@ impl TypeUniverse {
     }
 
     
-    pub fn add_known_type(&mut self, type_: &Type) {
+    pub fn add_known_type(&mut self, type_: &Type) -> Result<()> {
+        
+        if matches!(type_, Type::Unresolved { .. }) {
+            bail!("Unresolved types must be resolved before being added to known types");
+        }
+
         
         if !self.all_known_types.contains(type_) {
             self.all_known_types.insert(type_.to_owned());
@@ -355,20 +291,17 @@ impl TypeUniverse {
             
             
             match type_ {
-                Type::Optional(t) => self.add_known_type(t),
-                Type::Sequence(t) => self.add_known_type(t),
+                Type::Optional(t) => self.add_known_type(t)?,
+                Type::Sequence(t) => self.add_known_type(t)?,
                 Type::Map(k, v) => {
-                    self.add_known_type(k);
-                    self.add_known_type(v);
+                    self.add_known_type(k)?;
+                    self.add_known_type(v)?;
                 }
                 _ => {}
             }
         }
-    }
 
-    
-    pub fn contains(&self, type_: &Type) -> bool {
-        self.all_known_types.contains(type_)
+        Ok(())
     }
 
     
@@ -382,6 +315,25 @@ impl TypeUniverse {
 
 
 pub type TypeIterator<'a> = Box<dyn Iterator<Item = &'a Type> + 'a>;
+
+#[cfg(test)]
+mod test_type {
+    use super::*;
+
+    #[test]
+    fn test_canonical_names() {
+        
+        assert_eq!(Type::UInt8.canonical_name(), "u8");
+        assert_eq!(Type::String.canonical_name(), "string");
+        assert_eq!(
+            Type::Optional(Box::new(Type::Sequence(Box::new(Type::Object(
+                "Example".into()
+            )))))
+            .canonical_name(),
+            "OptionalSequenceTypeExample"
+        );
+    }
+}
 
 #[cfg(test)]
 mod test_type_universe {

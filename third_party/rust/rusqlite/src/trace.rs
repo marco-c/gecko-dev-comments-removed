@@ -1,4 +1,4 @@
-//! Tracing and profiling functions. Error and warning log.
+
 
 use std::ffi::{CStr, CString};
 use std::mem;
@@ -11,20 +11,20 @@ use super::ffi;
 use crate::error::error_from_sqlite_code;
 use crate::{Connection, Result};
 
-/// Set up the process-wide SQLite error logging callback.
-///
-/// # Safety
-///
-/// This function is marked unsafe for two reasons:
-///
-/// * The function is not threadsafe. No other SQLite calls may be made while
-///   `config_log` is running, and multiple threads may not call `config_log`
-///   simultaneously.
-/// * The provided `callback` itself function has two requirements:
-///     * It must not invoke any SQLite calls.
-///     * It must be threadsafe if SQLite is used in a multithreaded way.
-///
-/// cf [The Error And Warning Log](http://sqlite.org/errlog.html).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     extern "C" fn log_callback(p_arg: *mut c_void, err: c_int, msg: *const c_char) {
         let c_slice = unsafe { CStr::from_ptr(msg).to_bytes() };
@@ -52,8 +52,8 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     }
 }
 
-/// Write a message into the error log established by
-/// `config_log`.
+
+
 #[inline]
 pub fn log(err_code: c_int, msg: &str) {
     let msg = CString::new(msg).expect("SQLite log messages cannot contain embedded zeroes");
@@ -63,12 +63,12 @@ pub fn log(err_code: c_int, msg: &str) {
 }
 
 impl Connection {
-    /// Register or clear a callback function that can be
-    /// used for tracing the execution of SQL statements.
-    ///
-    /// Prepared statement placeholders are replaced/logged with their assigned
-    /// values. There can only be a single tracer defined for each database
-    /// connection. Setting a new tracer clears the old one.
+    
+    
+    
+    
+    
+    
     pub fn trace(&mut self, trace_fn: Option<fn(&str)>) {
         unsafe extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
             let trace_fn: fn(&str) = mem::transmute(p_arg);
@@ -88,11 +88,11 @@ impl Connection {
         }
     }
 
-    /// Register or clear a callback function that can be
-    /// used for profiling the execution of SQL statements.
-    ///
-    /// There can only be a single profiler defined for each database
-    /// connection. Setting a new profiler clears the old one.
+    
+    
+    
+    
+    
     pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
         unsafe extern "C" fn profile_callback(
             p_arg: *mut c_void,
@@ -120,7 +120,7 @@ impl Connection {
         };
     }
 
-    // TODO sqlite3_trace_v2 (https://sqlite.org/c3ref/trace_v2.html) // 3.14.0, #977
+    
 }
 
 #[cfg(test)]
@@ -144,13 +144,13 @@ mod test {
         let mut db = Connection::open_in_memory()?;
         db.trace(Some(tracer));
         {
-            let _ = db.query_row("SELECT ?1", [1i32], |_| Ok(()));
-            let _ = db.query_row("SELECT ?1", ["hello"], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", [1i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", ["hello"], |_| Ok(()));
         }
         db.trace(None);
         {
-            let _ = db.query_row("SELECT ?1", [2i32], |_| Ok(()));
-            let _ = db.query_row("SELECT ?1", ["goodbye"], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", [2i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?", ["goodbye"], |_| Ok(()));
         }
 
         let traced_stmts = TRACED_STMTS.lock().unwrap();

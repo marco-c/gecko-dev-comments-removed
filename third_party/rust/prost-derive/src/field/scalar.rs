@@ -4,13 +4,11 @@ use std::fmt;
 use anyhow::{anyhow, bail, Error};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{
-    parse_str, Ident, Index, Lit, LitByteStr, Meta, MetaList, MetaNameValue, NestedMeta, Path,
-};
+use syn::{parse_str, Ident, Lit, LitByteStr, Meta, MetaList, MetaNameValue, NestedMeta, Path};
 
 use crate::field::{bool_attr, set_option, tag_attr, Label};
 
-/// A scalar protobuf field.
+
 #[derive(Clone)]
 pub struct Field {
     pub ty: Ty,
@@ -137,8 +135,8 @@ impl Field {
         }
     }
 
-    /// Returns an expression which evaluates to the result of merging a decoded
-    /// scalar value into the field.
+    
+    
     pub fn merge(&self, ident: TokenStream) -> TokenStream {
         let module = self.ty.module();
         let merge_fn = match self.kind {
@@ -153,14 +151,14 @@ impl Field {
             },
             Kind::Optional(..) => quote! {
                 #merge_fn(wire_type,
-                          #ident.get_or_insert_with(::core::default::Default::default),
+                          #ident.get_or_insert_with(Default::default),
                           buf,
                           ctx)
             },
         }
     }
 
-    /// Returns an expression which evaluates to the encoded length of the field.
+    
     pub fn encoded_len(&self, ident: TokenStream) -> TokenStream {
         let module = self.ty.module();
         let encoded_len_fn = match self.kind {
@@ -205,7 +203,7 @@ impl Field {
         }
     }
 
-    /// Returns an expression which evaluates to the default value of the field.
+    
     pub fn default(&self) -> TokenStream {
         match self.kind {
             Kind::Plain(ref value) | Kind::Required(ref value) => value.owned(),
@@ -214,7 +212,7 @@ impl Field {
         }
     }
 
-    /// An inner debug wrapper, around the base type.
+    
     fn debug_inner(&self, wrap_name: TokenStream) -> TokenStream {
         if let Ty::Enumeration(ref ty) = self.ty {
             quote! {
@@ -235,7 +233,7 @@ impl Field {
         }
     }
 
-    /// Returns a fragment for formatting the field `ident` in `Debug`.
+    
     pub fn debug(&self, wrapper_name: TokenStream) -> TokenStream {
         let wrapper = self.debug_inner(quote!(Inner));
         let inner_ty = self.ty.rust_type();
@@ -268,21 +266,12 @@ impl Field {
         }
     }
 
-    /// Returns methods to embed in the message.
-    pub fn methods(&self, ident: &TokenStream) -> Option<TokenStream> {
+    
+    pub fn methods(&self, ident: &Ident) -> Option<TokenStream> {
         let mut ident_str = ident.to_string();
         if ident_str.starts_with("r#") {
             ident_str = ident_str[2..].to_owned();
         }
-
-        // Prepend `get_` for getter methods of tuple structs.
-        let get = match syn::parse_str::<Index>(&ident_str) {
-            Ok(index) => {
-                let get = Ident::new(&format!("get_{}", index.index), Span::call_site());
-                quote!(#get)
-            }
-            Err(_) => quote!(#ident),
-        };
 
         if let Ty::Enumeration(ref ty) = self.ty {
             let set = Ident::new(&format!("set_{}", ident_str), Span::call_site());
@@ -296,7 +285,7 @@ impl Field {
                     );
                     quote! {
                         #[doc=#get_doc]
-                        pub fn #get(&self) -> #ty {
+                        pub fn #ident(&self) -> #ty {
                             #ty::from_i32(self.#ident).unwrap_or(#default)
                         }
 
@@ -314,7 +303,7 @@ impl Field {
                     );
                     quote! {
                         #[doc=#get_doc]
-                        pub fn #get(&self) -> #ty {
+                        pub fn #ident(&self) -> #ty {
                             self.#ident.and_then(#ty::from_i32).unwrap_or(#default)
                         }
 
@@ -333,7 +322,7 @@ impl Field {
                     let push_doc = format!("Appends the provided enum value to `{}`.", ident_str);
                     quote! {
                         #[doc=#iter_doc]
-                        pub fn #get(&self) -> ::core::iter::FilterMap<
+                        pub fn #ident(&self) -> ::core::iter::FilterMap<
                             ::core::iter::Cloned<::core::slice::Iter<i32>>,
                             fn(i32) -> ::core::option::Option<#ty>,
                         > {
@@ -362,7 +351,7 @@ impl Field {
 
             Some(quote! {
                 #[doc=#get_doc]
-                pub fn #get(&self) -> #ty {
+                pub fn #ident(&self) -> #ty {
                     match self.#ident {
                         #match_some
                         ::core::option::Option::None => #default,
@@ -375,7 +364,7 @@ impl Field {
     }
 }
 
-/// A scalar protobuf field type.
+
 #[derive(Clone, PartialEq, Eq)]
 pub enum Ty {
     Double,
@@ -452,7 +441,7 @@ impl Ty {
                 ref nested,
                 ..
             }) if path.is_ident("enumeration") => {
-                // TODO(rustlang/rust#23121): slice pattern matching would make this much nicer.
+                
                 if nested.len() == 1 {
                     if let NestedMeta::Meta(Meta::Path(ref path)) = nested[0] {
                         Ty::Enumeration(path.clone())
@@ -505,7 +494,7 @@ impl Ty {
         Ok(ty)
     }
 
-    /// Returns the type as it appears in protobuf field declarations.
+    
     pub fn as_str(&self) -> &'static str {
         match *self {
             Ty::Double => "double",
@@ -527,7 +516,7 @@ impl Ty {
         }
     }
 
-    // TODO: rename to 'owned_type'.
+    
     pub fn rust_type(&self) -> TokenStream {
         match self {
             Ty::String => quote!(::prost::alloc::string::String),
@@ -536,7 +525,7 @@ impl Ty {
         }
     }
 
-    // TODO: rename to 'ref_type'
+    
     pub fn rust_ref_type(&self) -> TokenStream {
         match *self {
             Ty::Double => quote!(f64),
@@ -565,7 +554,7 @@ impl Ty {
         }
     }
 
-    /// Returns false if the scalar type is length delimited (i.e., `string` or `bytes`).
+    
     pub fn is_numeric(&self) -> bool {
         !matches!(self, Ty::String | Ty::Bytes(..))
     }
@@ -583,22 +572,22 @@ impl fmt::Display for Ty {
     }
 }
 
-/// Scalar Protobuf field types.
+
 #[derive(Clone)]
 pub enum Kind {
-    /// A plain proto3 scalar field.
+    
     Plain(DefaultValue),
-    /// An optional scalar field.
+    
     Optional(DefaultValue),
-    /// A required proto2 scalar field.
+    
     Required(DefaultValue),
-    /// A repeated scalar field.
+    
     Repeated,
-    /// A packed repeated scalar field.
+    
     Packed,
 }
 
-/// Scalar Protobuf field default value.
+
 #[derive(Clone, Debug)]
 pub enum DefaultValue {
     F64(f64),
@@ -675,7 +664,7 @@ impl DefaultValue {
                     return Ok(DefaultValue::Enumeration(quote!(#path::#variant)));
                 }
 
-                // Parse special floating point values.
+                
                 if *ty == Ty::Float {
                     match value {
                         "inf" => {
@@ -713,16 +702,16 @@ impl DefaultValue {
                     }
                 }
 
-                // Rust doesn't have a negative literals, so they have to be parsed specially.
+                
                 if let Some(Ok(lit)) = value.strip_prefix('-').map(syn::parse_str::<Lit>) {
                     match lit {
                         Lit::Int(ref lit) if is_i32 && empty_or_is("i32", lit.suffix()) => {
-                            // Initially parse into an i64, so that i32::MIN does not overflow.
+                            
                             let value: i64 = -lit.base10_parse()?;
                             return Ok(i32::try_from(value).map(DefaultValue::I32)?);
                         }
                         Lit::Int(ref lit) if is_i64 && empty_or_is("i64", lit.suffix()) => {
-                            // Initially parse into an i128, so that i64::MIN does not overflow.
+                            
                             let value: i128 = -lit.base10_parse()?;
                             return Ok(i64::try_from(value).map(DefaultValue::I64)?);
                         }
@@ -745,7 +734,7 @@ impl DefaultValue {
                         _ => (),
                     }
                 }
-                match syn::parse_str::<Lit>(value) {
+                match syn::parse_str::<Lit>(&value) {
                     Ok(Lit::Str(_)) => (),
                     Ok(lit) => return DefaultValue::from_lit(ty, lit),
                     _ => (),
@@ -780,9 +769,7 @@ impl DefaultValue {
                 quote!(::prost::alloc::string::String::new())
             }
             DefaultValue::String(ref value) => quote!(#value.into()),
-            DefaultValue::Bytes(ref value) if value.is_empty() => {
-                quote!(::core::default::Default::default())
-            }
+            DefaultValue::Bytes(ref value) if value.is_empty() => quote!(Default::default()),
             DefaultValue::Bytes(ref value) => {
                 let lit = LitByteStr::new(value, Span::call_site());
                 quote!(#lit.as_ref().into())

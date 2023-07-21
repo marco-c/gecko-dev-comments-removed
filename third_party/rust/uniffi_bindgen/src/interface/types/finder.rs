@@ -21,8 +21,8 @@ use std::convert::TryFrom;
 
 use anyhow::{bail, Result};
 
-use super::super::attributes::{InterfaceAttributes, TypedefAttributes};
-use super::{AsType, Type, TypeUniverse};
+use super::super::attributes::{EnumAttributes, InterfaceAttributes, TypedefAttributes};
+use super::{Type, TypeUniverse};
 
 
 
@@ -58,13 +58,13 @@ impl TypeFinder for weedle::Definition<'_> {
 impl TypeFinder for weedle::InterfaceDefinition<'_> {
     fn add_type_definitions_to(&self, types: &mut TypeUniverse) -> Result<()> {
         let name = self.identifier.0.to_string();
-        let attrs = InterfaceAttributes::try_from(self.attributes.as_ref())?;
         
-        if attrs.contains_enum_attr() || attrs.contains_error_attr() {
+        if InterfaceAttributes::try_from(self.attributes.as_ref())?.contains_enum_attr() {
             types.add_type_definition(self.identifier.0, Type::Enum(name))
+        } else if InterfaceAttributes::try_from(self.attributes.as_ref())?.contains_error_attr() {
+            types.add_type_definition(self.identifier.0, Type::Error(name))
         } else {
-            let obj = crate::interface::Object::new(name, attrs.object_impl());
-            types.add_type_definition(self.identifier.0, obj.as_type())
+            types.add_type_definition(self.identifier.0, Type::Object(name))
         }
     }
 }
@@ -80,7 +80,11 @@ impl TypeFinder for weedle::EnumDefinition<'_> {
     fn add_type_definitions_to(&self, types: &mut TypeUniverse) -> Result<()> {
         let name = self.identifier.0.to_string();
         
-        types.add_type_definition(self.identifier.0, Type::Enum(name))
+        if EnumAttributes::try_from(self.attributes.as_ref())?.contains_error_attr() {
+            types.add_type_definition(self.identifier.0, Type::Error(name))
+        } else {
+            types.add_type_definition(self.identifier.0, Type::Enum(name))
+        }
     }
 }
 
@@ -104,7 +108,6 @@ impl TypeFinder for weedle::TypedefDefinition<'_> {
                 },
             )
         } else {
-            let kind = attrs.external_kind().expect("ExternalKind missing");
             
             
             
@@ -113,7 +116,6 @@ impl TypeFinder for weedle::TypedefDefinition<'_> {
                 Type::External {
                     name: name.to_string(),
                     crate_name: attrs.get_crate_name(),
-                    kind,
                 },
             )
         }
@@ -133,7 +135,6 @@ impl TypeFinder for weedle::CallbackInterfaceDefinition<'_> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::interface::ExternalKind;
 
     
     fn test_a_finding<F>(udl: &str, tester: F)
@@ -186,7 +187,7 @@ mod test {
                     matches!(types.get_type_definition("TestItems").unwrap(), Type::Enum(nm) if nm == "TestItems")
                 );
                 assert!(
-                    matches!(types.get_type_definition("TestError").unwrap(), Type::Enum(nm) if nm == "TestError")
+                    matches!(types.get_type_definition("TestError").unwrap(), Type::Error(nm) if nm == "TestError")
                 );
             },
         );
@@ -199,7 +200,7 @@ mod test {
         "#,
             |types| {
                 assert!(
-                    matches!(types.get_type_definition("TestObject").unwrap(), Type::Object{ name, .. } if name == "TestObject")
+                    matches!(types.get_type_definition("TestObject").unwrap(), Type::Object(nm) if nm == "TestObject")
                 );
             },
         );
@@ -209,20 +210,13 @@ mod test {
             [External="crate-name"]
             typedef extern ExternalType;
 
-            [ExternalInterface="crate-name"]
-            typedef extern ExternalInterfaceType;
-
             [Custom]
             typedef string CustomType;
         "#,
             |types| {
                 assert!(
-                    matches!(types.get_type_definition("ExternalType").unwrap(), Type::External { name, crate_name, kind: ExternalKind::DataClass }
+                    matches!(types.get_type_definition("ExternalType").unwrap(), Type::External { name, crate_name }
                                                                                  if name == "ExternalType" && crate_name == "crate-name")
-                );
-                assert!(
-                    matches!(types.get_type_definition("ExternalInterfaceType").unwrap(), Type::External { name, crate_name, kind: ExternalKind::Interface }
-                                                                                 if name == "ExternalInterfaceType" && crate_name == "crate-name")
                 );
                 assert!(
                     matches!(types.get_type_definition("CustomType").unwrap(), Type::Custom { name, builtin }

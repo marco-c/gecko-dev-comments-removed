@@ -333,37 +333,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "alloc")]
@@ -389,6 +358,8 @@ pub mod unsync {
         ops::{Deref, DerefMut},
         panic::{RefUnwindSafe, UnwindSafe},
     };
+
+    use super::unwrap_unchecked;
 
     
     
@@ -561,7 +532,7 @@ pub mod unsync {
             
             
             *slot = Some(value);
-            Ok(unsafe { slot.as_ref().unwrap_unchecked() })
+            Ok(unsafe { unwrap_unchecked(slot.as_ref()) })
         }
 
         
@@ -634,7 +605,7 @@ pub mod unsync {
             
             
             assert!(self.set(val).is_ok(), "reentrant init");
-            Ok(unsafe { self.get().unwrap_unchecked() })
+            Ok(unsafe { unwrap_unchecked(self.get()) })
         }
 
         
@@ -667,7 +638,7 @@ pub mod unsync {
         
         
         pub fn take(&mut self) -> Option<T> {
-            mem::take(self).into_inner()
+            mem::replace(self, Self::default()).into_inner()
         }
 
         
@@ -794,14 +765,8 @@ pub mod unsync {
         
         
         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {
-            if this.cell.get_mut().is_none() {
-                let value = match this.init.get_mut().take() {
-                    Some(f) => f(),
-                    None => panic!("Lazy instance has previously been poisoned"),
-                };
-                this.cell = OnceCell::with_value(value);
-            }
-            this.cell.get_mut().unwrap_or_else(|| unreachable!())
+            Self::force(this);
+            Self::get_mut(this).unwrap_or_else(|| unreachable!())
         }
 
         
@@ -848,7 +813,8 @@ pub mod unsync {
 
     impl<T, F: FnOnce() -> T> DerefMut for Lazy<T, F> {
         fn deref_mut(&mut self) -> &mut T {
-            Lazy::force_mut(self)
+            Lazy::force(self);
+            self.cell.get_mut().unwrap_or_else(|| unreachable!())
         }
     }
 
@@ -870,7 +836,7 @@ pub mod sync {
         panic::RefUnwindSafe,
     };
 
-    use super::imp::OnceCell as Imp;
+    use super::{imp::OnceCell as Imp, unwrap_unchecked};
 
     
     
@@ -1081,7 +1047,7 @@ pub mod sync {
         
         pub fn try_insert(&self, value: T) -> Result<&T, (&T, T)> {
             let mut value = Some(value);
-            let res = self.get_or_init(|| unsafe { value.take().unwrap_unchecked() });
+            let res = self.get_or_init(|| unsafe { unwrap_unchecked(value.take()) });
             match value {
                 None => Ok(res),
                 Some(value) => Err((res, value)),
@@ -1197,7 +1163,7 @@ pub mod sync {
         
         
         pub fn take(&mut self) -> Option<T> {
-            mem::take(self).into_inner()
+            mem::replace(self, Self::default()).into_inner()
         }
 
         
@@ -1327,14 +1293,8 @@ pub mod sync {
         
         
         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {
-            if this.cell.get_mut().is_none() {
-                let value = match this.init.get_mut().take() {
-                    Some(f) => f(),
-                    None => panic!("Lazy instance has previously been poisoned"),
-                };
-                this.cell = OnceCell::with_value(value);
-            }
-            this.cell.get_mut().unwrap_or_else(|| unreachable!())
+            Self::force(this);
+            Self::get_mut(this).unwrap_or_else(|| unreachable!())
         }
 
         
@@ -1381,7 +1341,8 @@ pub mod sync {
 
     impl<T, F: FnOnce() -> T> DerefMut for Lazy<T, F> {
         fn deref_mut(&mut self) -> &mut T {
-            Lazy::force_mut(self)
+            Lazy::force(self);
+            self.cell.get_mut().unwrap_or_else(|| unreachable!())
         }
     }
 
@@ -1412,3 +1373,15 @@ pub mod sync {
 
 #[cfg(feature = "race")]
 pub mod race;
+
+
+#[inline]
+unsafe fn unwrap_unchecked<T>(val: Option<T>) -> T {
+    match val {
+        Some(value) => value,
+        None => {
+            debug_assert!(false);
+            core::hint::unreachable_unchecked()
+        }
+    }
+}

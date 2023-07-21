@@ -114,7 +114,7 @@ impl fmt::Display for EncodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "failed to encode Protobuf message; insufficient buffer capacity (required: {}, remaining: {})",
+            "failed to encode Protobuf messsage; insufficient buffer capacity (required: {}, remaining: {})",
             self.required, self.remaining
         )
     }

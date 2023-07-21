@@ -1,29 +1,30 @@
 use super::ffi;
 use super::StatementStatus;
 use crate::util::ParamIndexCache;
+#[cfg(feature = "modern_sqlite")]
 use crate::util::SqliteMallocString;
 use std::ffi::CStr;
 use std::os::raw::c_int;
 use std::ptr;
 use std::sync::Arc;
 
-// Private newtype for raw sqlite3_stmts that finalize themselves when dropped.
+
 #[derive(Debug)]
 pub struct RawStatement {
     ptr: *mut ffi::sqlite3_stmt,
     tail: usize,
-    // Cached indices of named parameters, computed on the fly.
+    
     cache: ParamIndexCache,
-    // Cached SQL (trimmed) that we use as the key when we're in the statement
-    // cache. This is None for statements which didn't come from the statement
-    // cache.
-    //
-    // This is probably the same as `self.sql()` in most cases, but we don't
-    // care either way -- It's a better cache key as it is anyway since it's the
-    // actual source we got from rust.
-    //
-    // One example of a case where the result of `sqlite_sql` and the value in
-    // `statement_cache_key` might differ is if the statement has a `tail`.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     statement_cache_key: Option<Arc<str>>,
 }
 
@@ -60,7 +61,7 @@ impl RawStatement {
 
     #[inline]
     pub fn column_count(&self) -> usize {
-        // Note: Can't cache this as it changes if the schema is altered.
+        
         unsafe { ffi::sqlite3_column_count(self.ptr) as usize }
     }
 
@@ -90,8 +91,8 @@ impl RawStatement {
         }
         unsafe {
             let ptr = ffi::sqlite3_column_name(self.ptr, idx);
-            // If ptr is null here, it's an OOM, so there's probably nothing
-            // meaningful we can do. Just assert instead of returning None.
+            
+            
             assert!(
                 !ptr.is_null(),
                 "Null pointer from sqlite3_column_name: Out of memory?"
@@ -113,10 +114,10 @@ impl RawStatement {
         loop {
             unsafe {
                 let mut rc = ffi::sqlite3_step(self.ptr);
-                // Bail out early for success and errors unrelated to locking. We
-                // still need check `is_locked` after this, but checking now lets us
-                // avoid one or two (admittedly cheap) calls into SQLite that we
-                // don't need to make.
+                
+                
+                
+                
                 if (rc & 0xff) != ffi::SQLITE_LOCKED {
                     break rc;
                 }
@@ -169,10 +170,8 @@ impl RawStatement {
     }
 
     #[inline]
-    pub fn clear_bindings(&self) {
-        unsafe {
-            ffi::sqlite3_clear_bindings(self.ptr);
-        } // rc is always SQLITE_OK
+    pub fn clear_bindings(&self) -> c_int {
+        unsafe { ffi::sqlite3_clear_bindings(self.ptr) }
     }
 
     #[inline]
@@ -196,13 +195,15 @@ impl RawStatement {
         r
     }
 
-    // does not work for PRAGMA
+    
     #[inline]
+    #[cfg(all(feature = "extra_check", feature = "modern_sqlite"))] 
     pub fn readonly(&self) -> bool {
         unsafe { ffi::sqlite3_stmt_readonly(self.ptr) != 0 }
     }
 
     #[inline]
+    #[cfg(feature = "modern_sqlite")] 
     pub(crate) fn expanded_sql(&self) -> Option<SqliteMallocString> {
         unsafe { SqliteMallocString::from_raw(ffi::sqlite3_expanded_sql(self.ptr)) }
     }
@@ -225,12 +226,12 @@ impl RawStatement {
     }
 
     #[inline]
-    #[cfg(feature = "modern_sqlite")] // 3.28.0
+    #[cfg(feature = "modern_sqlite")] 
     pub fn is_explain(&self) -> i32 {
         unsafe { ffi::sqlite3_stmt_isexplain(self.ptr) }
     }
 
-    // TODO sqlite3_normalized_sql (https://sqlite.org/c3ref/expanded_sql.html) // 3.27.0 + SQLITE_ENABLE_NORMALIZE
+    
 }
 
 impl Drop for RawStatement {

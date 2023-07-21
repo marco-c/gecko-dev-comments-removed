@@ -5,10 +5,7 @@
 #![allow(unknown_lints)]
 #![warn(rust_2018_idioms)]
 
-
-
 mod conn_ext;
-pub mod debug_tools;
 mod each_chunk;
 mod maybe_cached;
 pub mod open_database;

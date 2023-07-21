@@ -7,138 +7,138 @@ use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::str;
 
-/// Enum listing possible errors from rusqlite.
+
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 pub enum Error {
-    /// An error from an underlying SQLite call.
+    
     SqliteFailure(ffi::Error, Option<String>),
 
-    /// Error reported when attempting to open a connection when SQLite was
-    /// configured to allow single-threaded use only.
+    
+    
     SqliteSingleThreadedMode,
 
-    /// Error when the value of a particular column is requested, but it cannot
-    /// be converted to the requested Rust type.
+    
+    
     FromSqlConversionFailure(usize, Type, Box<dyn error::Error + Send + Sync + 'static>),
 
-    /// Error when SQLite gives us an integral value outside the range of the
-    /// requested type (e.g., trying to get the value 1000 into a `u8`).
-    /// The associated `usize` is the column index,
-    /// and the associated `i64` is the value returned by SQLite.
+    
+    
+    
+    
     IntegralValueOutOfRange(usize, i64),
 
-    /// Error converting a string to UTF-8.
+    
     Utf8Error(str::Utf8Error),
 
-    /// Error converting a string to a C-compatible string because it contained
-    /// an embedded nul.
+    
+    
     NulError(std::ffi::NulError),
 
-    /// Error when using SQL named parameters and passing a parameter name not
-    /// present in the SQL.
+    
+    
     InvalidParameterName(String),
 
-    /// Error converting a file path to a string.
+    
     InvalidPath(PathBuf),
 
-    /// Error returned when an [`execute`](crate::Connection::execute) call
-    /// returns rows.
+    
+    
     ExecuteReturnedResults,
 
-    /// Error when a query that was expected to return at least one row (e.g.,
-    /// for [`query_row`](crate::Connection::query_row)) did not return any.
+    
+    
     QueryReturnedNoRows,
 
-    /// Error when the value of a particular column is requested, but the index
-    /// is out of range for the statement.
+    
+    
     InvalidColumnIndex(usize),
 
-    /// Error when the value of a named column is requested, but no column
-    /// matches the name for the statement.
+    
+    
     InvalidColumnName(String),
 
-    /// Error when the value of a particular column is requested, but the type
-    /// of the result in that column cannot be converted to the requested
-    /// Rust type.
+    
+    
+    
     InvalidColumnType(usize, String, Type),
 
-    /// Error when a query that was expected to insert one row did not insert
-    /// any or insert many.
+    
+    
     StatementChangedRows(usize),
 
-    /// Error returned by
-    /// [`functions::Context::get`](crate::functions::Context::get) when the
-    /// function argument cannot be converted to the requested type.
+    
+    
+    
     #[cfg(feature = "functions")]
     #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     InvalidFunctionParameterType(usize, Type),
-    /// Error returned by [`vtab::Values::get`](crate::vtab::Values::get) when
-    /// the filter argument cannot be converted to the requested type.
+    
+    
     #[cfg(feature = "vtab")]
     #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     InvalidFilterParameterType(usize, Type),
 
-    /// An error case available for implementors of custom user functions (e.g.,
-    /// [`create_scalar_function`](crate::Connection::create_scalar_function)).
+    
+    
     #[cfg(feature = "functions")]
     #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     #[allow(dead_code)]
     UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
-    /// Error available for the implementors of the
-    /// [`ToSql`](crate::types::ToSql) trait.
+    
+    
     ToSqlConversionFailure(Box<dyn error::Error + Send + Sync + 'static>),
 
-    /// Error when the SQL is not a `SELECT`, is not read-only.
+    
     InvalidQuery,
 
-    /// An error case available for implementors of custom modules (e.g.,
-    /// [`create_module`](crate::Connection::create_module)).
+    
+    
     #[cfg(feature = "vtab")]
     #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     #[allow(dead_code)]
     ModuleError(String),
 
-    /// An unwinding panic occurs in an UDF (user-defined function).
+    
     #[cfg(feature = "functions")]
     #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     UnwindingPanic,
 
-    /// An error returned when
-    /// [`Context::get_aux`](crate::functions::Context::get_aux) attempts to
-    /// retrieve data of a different type than what had been stored using
-    /// [`Context::set_aux`](crate::functions::Context::set_aux).
+    
+    
+    
+    
     #[cfg(feature = "functions")]
     #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     GetAuxWrongType,
 
-    /// Error when the SQL contains multiple statements.
+    
     MultipleStatement,
-    /// Error when the number of bound parameters does not match the number of
-    /// parameters in the query. The first `usize` is how many parameters were
-    /// given, the 2nd is how many were expected.
+    
+    
+    
     InvalidParameterCount(usize, usize),
 
-    /// Returned from various functions in the Blob IO positional API. For
-    /// example,
-    /// [`Blob::raw_read_at_exact`](crate::blob::Blob::raw_read_at_exact) will
-    /// return it if the blob has insufficient data.
+    
+    
+    
+    
     #[cfg(feature = "blob")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     BlobSizeError,
-    /// Error referencing a specific token in the input SQL
-    #[cfg(feature = "modern_sqlite")] // 3.38.0
+    
+    #[cfg(feature = "modern_sqlite")] 
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     SqlInputError {
-        /// error code
+        
         error: ffi::Error,
-        /// error message
+        
         msg: String,
-        /// SQL input
+        
         sql: String,
-        /// byte offset of the start of invalid token
+        
         offset: c_int,
     },
 }
@@ -221,13 +221,13 @@ impl From<std::ffi::NulError> for Error {
 
 const UNKNOWN_COLUMN: usize = usize::MAX;
 
-/// The conversion isn't precise, but it's convenient to have it
-/// to allow use of `get_raw(…).as_…()?` in callbacks that take `Error`.
+
+
 impl From<FromSqlError> for Error {
     #[cold]
     fn from(err: FromSqlError) -> Error {
-        // The error type requires index and type fields, but they aren't known in this
-        // context.
+        
+        
         match err {
             FromSqlError::OutOfRange(val) => Error::IntegralValueOutOfRange(UNKNOWN_COLUMN, val),
             FromSqlError::InvalidBlobSize { .. } => {
@@ -245,7 +245,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::SqliteFailure(ref err, None) => err.fmt(f),
-            Error::SqliteFailure(_, Some(ref s)) => write!(f, "{s}"),
+            Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
             Error::SqliteSingleThreadedMode => write!(
                 f,
                 "SQLite was compiled or configured for single-threaded use only"
@@ -263,21 +263,21 @@ impl fmt::Display for Error {
             }
             Error::IntegralValueOutOfRange(col, val) => {
                 if col != UNKNOWN_COLUMN {
-                    write!(f, "Integer {val} out of range at index {col}")
+                    write!(f, "Integer {} out of range at index {}", val, col)
                 } else {
-                    write!(f, "Integer {val} out of range")
+                    write!(f, "Integer {} out of range", val)
                 }
             }
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
-            Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {name}"),
+            Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
             Error::InvalidPath(ref p) => write!(f, "Invalid path: {}", p.to_string_lossy()),
             Error::ExecuteReturnedResults => {
                 write!(f, "Execute returned results - did you mean to call query?")
             }
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
-            Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {i}"),
-            Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {name}"),
+            Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
+            Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
             Error::InvalidColumnType(i, ref name, ref t) => write!(
                 f,
                 "Invalid column type {} at index: {}, name: {}",
@@ -288,22 +288,22 @@ impl fmt::Display for Error {
                 "Wrong number of parameters passed to query. Got {}, needed {}",
                 i1, n1
             ),
-            Error::StatementChangedRows(i) => write!(f, "Query changed {i} rows"),
+            Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(i, ref t) => {
-                write!(f, "Invalid function parameter type {t} at index {i}")
+                write!(f, "Invalid function parameter type {} at index {}", t, i)
             }
             #[cfg(feature = "vtab")]
             Error::InvalidFilterParameterType(i, ref t) => {
-                write!(f, "Invalid filter parameter type {t} at index {i}")
+                write!(f, "Invalid filter parameter type {} at index {}", t, i)
             }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
             Error::InvalidQuery => write!(f, "Query is not read-only"),
             #[cfg(feature = "vtab")]
-            Error::ModuleError(ref desc) => write!(f, "{desc}"),
+            Error::ModuleError(ref desc) => write!(f, "{}", desc),
             #[cfg(feature = "functions")]
             Error::UnwindingPanic => write!(f, "unwinding panic"),
             #[cfg(feature = "functions")]
@@ -317,7 +317,7 @@ impl fmt::Display for Error {
                 offset,
                 ref sql,
                 ..
-            } => write!(f, "{msg} in {sql} at offset {offset}"),
+            } => write!(f, "{} in {} at offset {}", msg, sql, offset),
         }
     }
 }
@@ -372,7 +372,7 @@ impl error::Error for Error {
 }
 
 impl Error {
-    /// Returns the underlying SQLite error if this is [`Error::SqliteFailure`].
+    
     #[inline]
     pub fn sqlite_error(&self) -> Option<&ffi::Error> {
         match self {
@@ -381,19 +381,19 @@ impl Error {
         }
     }
 
-    /// Returns the underlying SQLite error code if this is
-    /// [`Error::SqliteFailure`].
+    
+    
     #[inline]
     pub fn sqlite_error_code(&self) -> Option<ffi::ErrorCode> {
         self.sqlite_error().map(|error| error.code)
     }
 }
 
-// These are public but not re-exported by lib.rs, so only visible within crate.
+
 
 #[cold]
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
-    // TODO sqlite3_error_offset // 3.38.0, #1130
+    
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 
@@ -408,13 +408,13 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
 }
 
 #[cold]
-#[cfg(not(feature = "modern_sqlite"))] // SQLite >= 3.38.0
+#[cfg(not(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher"))))] 
 pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, _sql: &str) -> Error {
     error_from_handle(db, code)
 }
 
 #[cold]
-#[cfg(feature = "modern_sqlite")] // SQLite >= 3.38.0
+#[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] 
 pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -> Error {
     if db.is_null() {
         error_from_sqlite_code(code, None)

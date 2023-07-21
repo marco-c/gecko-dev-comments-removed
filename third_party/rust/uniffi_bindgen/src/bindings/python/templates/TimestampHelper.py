@@ -1,6 +1,4 @@
 
-Timestamp = datetime.datetime
-
 
 
 

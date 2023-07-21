@@ -2,57 +2,41 @@
 
 
 
-use crate::{
-    bindings::{RunScriptOptions, TargetLanguage},
-    library_mode::generate_bindings,
-};
 use anyhow::{bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
+use heck::ToSnakeCase;
 use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
 use std::ffi::OsStr;
 use std::fs::{read_to_string, File};
 use std::io::Write;
-use std::process::{Command, Stdio};
-use uniffi_testing::UniFFITestHelper;
+use std::process::Command;
+use uniffi_testing::{CompileSource, UniFFITestHelper};
 
 
 pub fn run_test(tmp_dir: &str, fixture_name: &str, script_file: &str) -> Result<()> {
-    run_script(
-        tmp_dir,
-        fixture_name,
-        script_file,
-        vec![],
-        &RunScriptOptions::default(),
-    )
-}
-
-
-
-
-pub fn run_script(
-    tmp_dir: &str,
-    crate_name: &str,
-    script_file: &str,
-    args: Vec<String>,
-    options: &RunScriptOptions,
-) -> Result<()> {
     let script_path = Utf8Path::new(".").join(script_file).canonicalize_utf8()?;
-    let test_helper = UniFFITestHelper::new(crate_name)?;
-    let out_dir = test_helper.create_out_dir(tmp_dir, &script_path)?;
-    let cdylib_path = test_helper.copy_cdylib_to_out_dir(&out_dir)?;
-    let generated_sources = GeneratedSources::new(crate_name, &cdylib_path, &out_dir)?;
+    let test_helper = UniFFITestHelper::new(fixture_name).context("UniFFITestHelper::new")?;
+    let out_dir = test_helper
+        .create_out_dir(tmp_dir, &script_path)
+        .context("create_out_dir()")?;
+    test_helper
+        .copy_cdylibs_to_out_dir(&out_dir)
+        .context("copy_fixture_library_to_out_dir()")?;
+    let generated_sources =
+        GeneratedSources::new(&test_helper.cdylib_path()?, &out_dir, &test_helper)
+            .context("generate_sources()")?;
 
     
     compile_swift_module(
         &out_dir,
-        &generated_sources.main_module,
+        &calc_module_name(&generated_sources.main_source_filename),
         &generated_sources.generated_swift_files,
         &generated_sources.module_map,
-        options,
     )?;
 
     
-    let mut command = create_command("swift", options);
+
+    let mut command = Command::new("swift");
     command
         .current_dir(&out_dir)
         .arg("-I")
@@ -65,8 +49,7 @@ pub fn run_script(
             "-fmodule-map-file={}",
             generated_sources.module_map
         ))
-        .arg(&script_path)
-        .args(args);
+        .arg(&script_path);
     let status = command
         .spawn()
         .context("Failed to spawn `swiftc` when running test script")?
@@ -78,15 +61,18 @@ pub fn run_script(
     Ok(())
 }
 
+fn calc_module_name(filename: &str) -> String {
+    filename.strip_suffix(".swift").unwrap().to_snake_case()
+}
+
 fn compile_swift_module<T: AsRef<OsStr>>(
     out_dir: &Utf8Path,
     module_name: &str,
     sources: impl IntoIterator<Item = T>,
     module_map: &Utf8Path,
-    options: &RunScriptOptions,
 ) -> Result<()> {
     let output_filename = format!("{DLL_PREFIX}testmod_{module_name}{DLL_SUFFIX}");
-    let mut command = create_command("swiftc", options);
+    let mut command = Command::new("swiftc");
     command
         .current_dir(out_dir)
         .arg("-emit-module")
@@ -96,7 +82,7 @@ fn compile_swift_module<T: AsRef<OsStr>>(
         .arg(output_filename)
         .arg("-emit-library")
         .arg("-Xcc")
-        .arg(format!("-fmodule-map-file={module_map}"))
+        .arg(format!("-fmodule-map-file={}", module_map))
         .arg("-I")
         .arg(out_dir)
         .arg("-L")
@@ -119,61 +105,94 @@ fn compile_swift_module<T: AsRef<OsStr>>(
 
 
 struct GeneratedSources {
-    main_module: String,
     generated_swift_files: Vec<Utf8PathBuf>,
     module_map: Utf8PathBuf,
+    main_source_filename: String,
 }
 
 impl GeneratedSources {
-    fn new(crate_name: &str, cdylib_path: &Utf8Path, out_dir: &Utf8Path) -> Result<Self> {
-        let sources =
-            generate_bindings(cdylib_path, None, &[TargetLanguage::Swift], out_dir, false)?;
-        let main_source = sources
-            .iter()
-            .find(|s| s.package.name == crate_name)
-            .unwrap();
-        let main_module = main_source.config.bindings.swift.module_name();
-        let modulemap_glob = glob(&out_dir.join("*.modulemap"))?;
-        let module_map = match modulemap_glob.len() {
-            0 => bail!("No modulemap files found in {out_dir}"),
-            
-            1 => modulemap_glob.into_iter().next().unwrap(),
-            
-            
-            _ => {
-                let path = out_dir.join("combined.modulemap");
-                let mut f = File::create(&path)?;
-                write!(
-                    f,
-                    "{}",
-                    modulemap_glob
-                        .into_iter()
-                        .map(|path| Ok(read_to_string(path)?))
-                        .collect::<Result<Vec<String>>>()?
-                        .join("\n")
-                )?;
-                path
-            }
+    fn new(
+        library_path: &Utf8Path,
+        out_dir: &Utf8Path,
+        test_helper: &UniFFITestHelper,
+    ) -> Result<Self> {
+        
+        let main_compile_source = test_helper.get_main_compile_source()?;
+        Self::run_generate_bindings(&main_compile_source, library_path, out_dir)?;
+        let generated_files = glob(&out_dir.join("*.swift"))?;
+        let main_source_filename = match generated_files.len() {
+            0 => bail!(
+                "No .swift file generated for {}",
+                main_compile_source.udl_path
+            ),
+            1 => generated_files
+                .into_iter()
+                .next()
+                .unwrap()
+                .file_name()
+                .unwrap()
+                .to_string(),
+            n => bail!(
+                "{n} .swift files generated for {}",
+                main_compile_source.udl_path
+            ),
         };
 
+        
+        for source in test_helper.get_external_compile_sources()? {
+            crate::generate_bindings(
+                &source.udl_path,
+                source.config_path.as_deref(),
+                vec!["swift"],
+                Some(out_dir),
+                Some(library_path),
+                false,
+            )?;
+        }
+
+        let generated_module_maps = glob(&out_dir.join("*.modulemap"))?;
+
         Ok(GeneratedSources {
-            main_module,
+            main_source_filename,
             generated_swift_files: glob(&out_dir.join("*.swift"))?,
-            module_map,
+            module_map: match generated_module_maps.len() {
+                0 => bail!("No modulemap files found in {out_dir}"),
+                
+                1 => generated_module_maps.into_iter().next().unwrap(),
+                
+                
+                _ => {
+                    let path = out_dir.join("combined.modulemap");
+                    let mut f = File::create(&path)?;
+                    write!(
+                        f,
+                        "{}",
+                        generated_module_maps
+                            .into_iter()
+                            .map(|path| Ok(read_to_string(path)?))
+                            .collect::<Result<Vec<String>>>()?
+                            .join("\n")
+                    )?;
+                    path
+                }
+            },
         })
     }
-}
 
-fn create_command(program: &str, options: &RunScriptOptions) -> Command {
-    let mut command = Command::new(program);
-    if !options.show_compiler_messages {
-        
-        command.arg("-suppress-warnings");
-        
-        
-        command.stderr(Stdio::null());
+    fn run_generate_bindings(
+        source: &CompileSource,
+        library_path: &Utf8Path,
+        out_dir: &Utf8Path,
+    ) -> Result<()> {
+        crate::generate_bindings(
+            &source.udl_path,
+            source.config_path.as_deref(),
+            vec!["swift"],
+            Some(out_dir),
+            Some(library_path),
+            false,
+        )
     }
-    command
 }
 
 
@@ -184,7 +203,11 @@ fn glob(globspec: &Utf8Path) -> Result<Vec<Utf8PathBuf>> {
 }
 
 fn calc_library_args(out_dir: &Utf8Path) -> Result<Vec<String>> {
-    let results = glob::glob(out_dir.join(format!("{DLL_PREFIX}*{DLL_SUFFIX}")).as_str())?;
+    let results = glob::glob(
+        out_dir
+            .join(format!("{}*{}", DLL_PREFIX, DLL_SUFFIX))
+            .as_str(),
+    )?;
     results
         .map(|globresult| {
             let path = Utf8PathBuf::try_from(globresult.unwrap())?;

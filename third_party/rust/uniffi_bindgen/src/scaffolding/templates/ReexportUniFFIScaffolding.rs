@@ -11,11 +11,10 @@
 
 
 
-#[allow(missing_docs)]
 #[doc(hidden)]
-pub const fn uniffi_reexport_hack() {}
+pub fn uniffi_reexport_hack() {
+}
 
-#[doc(hidden)]
 #[macro_export]
 macro_rules! uniffi_reexport_scaffolding {
     () => {

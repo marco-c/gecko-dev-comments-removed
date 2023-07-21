@@ -27,5 +27,5 @@ pub fn generate_scaffolding(udl_file: impl AsRef<Utf8Path>) -> Result<()> {
     
     
     let out_dir = env::var("OUT_DIR").context("$OUT_DIR missing?!")?;
-    uniffi_bindgen::generate_component_scaffolding(udl_file, Some(out_dir.as_ref()), false)
+    uniffi_bindgen::generate_component_scaffolding(udl_file, None, Some(out_dir.as_ref()), false)
 }

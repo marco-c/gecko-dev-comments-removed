@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! This shouldn't exist, but does because if something isn't going to link
-//! against `nss` but has an `nss`-enabled `sqlcipher` turned on (for example,
-//! by a `cargo` feature activated by something else in the workspace).
-//! it might need to issue link commands for NSS.
+
+
+
+
+
+
+
 
 use std::{
     env,
@@ -74,7 +74,7 @@ fn determine_kind() -> LinkingKind {
 
 fn link_nss_libs(kind: LinkingKind) {
     let libs = get_nss_libs(kind);
-    // Emit -L flags
+    
     let kind_str = match kind {
         LinkingKind::Dynamic { .. } => "dylib",
         LinkingKind::Static => "static",
@@ -82,25 +82,12 @@ fn link_nss_libs(kind: LinkingKind) {
     for lib in libs {
         println!("cargo:rustc-link-lib={}={}", kind_str, lib);
     }
-    // Link against C++ stdlib (for mozpkix)
+    
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     if target_os == "android" || target_os == "linux" {
         println!("cargo:rustc-link-lib=stdc++");
     } else {
         println!("cargo:rustc-link-lib=c++");
-    }
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    if target_arch == "x86_64" && target_os == "android" {
-        let android_home = env::var("ANDROID_HOME").expect("ANDROID_HOME not set");
-        const ANDROID_NDK_VERSION: &str = "25.2.9519653";
-        // One of these will exist, depending on the host platform.
-        const DARWIN_X86_64_LIB_DIR: &str =
-            "/toolchains/llvm/prebuilt/darwin-x86_64/lib64/clang/14.0.7/lib/linux/";
-        println!("cargo:rustc-link-search={android_home}/ndk/{ANDROID_NDK_VERSION}/{DARWIN_X86_64_LIB_DIR}");
-        const LINUX_X86_64_LIB_DIR: &str =
-            "/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/14.0.7/lib/linux/";
-        println!("cargo:rustc-link-search={android_home}/ndk/{ANDROID_NDK_VERSION}/{LINUX_X86_64_LIB_DIR}");
-        println!("cargo:rustc-link-lib=static=clang_rt.builtins-x86_64-android");
     }
 }
 
@@ -124,10 +111,10 @@ fn get_nss_libs(kind: LinkingKind) -> Vec<&'static str> {
                 "plds4",
                 "softokn_static",
             ];
-            // Hardware specific libs.
+            
             let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
             let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-            // https://searchfox.org/nss/rev/0d5696b3edce5124353f03159d2aa15549db8306/lib/freebl/freebl.gyp#508-542
+            
             if target_arch == "arm" || target_arch == "aarch64" {
                 static_libs.push("armv8_c_lib");
             }
@@ -145,12 +132,12 @@ fn get_nss_libs(kind: LinkingKind) -> Vec<&'static str> {
                 static_libs.push("hw-acc-crypto-avx");
                 static_libs.push("hw-acc-crypto-avx2");
             }
-            // https://searchfox.org/nss/rev/08c4d05078d00089f8d7540651b0717a9d66f87e/lib/freebl/freebl.gyp#315-324
+            
             if ((target_os == "android" || target_os == "linux") && target_arch == "x86_64")
                 || target_os == "windows"
             {
                 static_libs.push("intel-gcm-wrap_c_lib");
-                // https://searchfox.org/nss/rev/08c4d05078d00089f8d7540651b0717a9d66f87e/lib/freebl/freebl.gyp#43-47
+                
                 if (target_os == "android" || target_os == "linux") && target_arch == "x86_64" {
                     static_libs.push("intel-gcm-s_lib");
                 }

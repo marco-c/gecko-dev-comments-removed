@@ -1,4 +1,4 @@
-//! Commit, Data Change and Rollback Notification Callbacks
+
 #![allow(non_camel_case_types)]
 
 use std::os::raw::{c_char, c_int, c_void};
@@ -9,19 +9,19 @@ use crate::ffi;
 
 use crate::{Connection, InnerConnection};
 
-/// Action Codes
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
 pub enum Action {
-    /// Unsupported / unexpected action
+    
     UNKNOWN = -1,
-    /// DELETE command
+    
     SQLITE_DELETE = ffi::SQLITE_DELETE,
-    /// INSERT command
+    
     SQLITE_INSERT = ffi::SQLITE_INSERT,
-    /// UPDATE command
+    
     SQLITE_UPDATE = ffi::SQLITE_UPDATE,
 }
 
@@ -37,38 +37,38 @@ impl From<i32> for Action {
     }
 }
 
-/// The context received by an authorizer hook.
-///
-/// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
+
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AuthContext<'c> {
-    /// The action to be authorized.
+    
     pub action: AuthAction<'c>,
 
-    /// The database name, if applicable.
+    
     pub database_name: Option<&'c str>,
 
-    /// The inner-most trigger or view responsible for the access attempt.
-    /// `None` if the access attempt was made by top-level SQL code.
+    
+    
     pub accessor: Option<&'c str>,
 }
 
-/// Actions and arguments found within a statement during
-/// preparation.
-///
-/// See <https://sqlite.org/c3ref/c_alter_table.html> for more info.
+
+
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub enum AuthAction<'c> {
-    /// This variant is not normally produced by SQLite. You may encounter it
-    // if you're using a different version than what's supported by this library.
+    
+    
     Unknown {
-        /// The unknown authorization action code.
+        
         code: i32,
-        /// The third arg to the authorizer callback.
+        
         arg1: Option<&'c str>,
-        /// The fourth arg to the authorizer callback.
+        
         arg2: Option<&'c str>,
     },
     CreateIndex {
@@ -135,7 +135,7 @@ pub enum AuthAction<'c> {
     },
     Pragma {
         pragma_name: &'c str,
-        /// The pragma value, if present (e.g., `PRAGMA name = value;`).
+        
         pragma_value: Option<&'c str>,
     },
     Read {
@@ -181,6 +181,7 @@ pub enum AuthAction<'c> {
         operation: TransactionOperation,
         savepoint_name: &'c str,
     },
+    #[cfg(feature = "modern_sqlite")]
     Recursive,
 }
 
@@ -284,6 +285,7 @@ impl<'c> AuthAction<'c> {
                 operation: TransactionOperation::from_str(operation_str),
                 savepoint_name,
             },
+            #[cfg(feature = "modern_sqlite")] 
             (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }
@@ -293,7 +295,7 @@ impl<'c> AuthAction<'c> {
 pub(crate) type BoxedAuthorizer =
     Box<dyn for<'c> FnMut(AuthContext<'c>) -> Authorization + Send + 'static>;
 
-/// A transaction operation.
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
@@ -315,15 +317,15 @@ impl TransactionOperation {
     }
 }
 
-/// [`authorizer`](Connection::authorizer) return code
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Authorization {
-    /// Authorize the action.
+    
     Allow,
-    /// Don't allow access, but don't trigger an error either.
+    
     Ignore,
-    /// Trigger an error.
+    
     Deny,
 }
 
@@ -338,10 +340,10 @@ impl Authorization {
 }
 
 impl Connection {
-    /// Register a callback function to be invoked whenever
-    /// a transaction is committed.
-    ///
-    /// The callback returns `true` to rollback.
+    
+    
+    
+    
     #[inline]
     pub fn commit_hook<F>(&self, hook: Option<F>)
     where
@@ -350,8 +352,8 @@ impl Connection {
         self.db.borrow_mut().commit_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever
-    /// a transaction is committed.
+    
+    
     #[inline]
     pub fn rollback_hook<F>(&self, hook: Option<F>)
     where
@@ -360,16 +362,16 @@ impl Connection {
         self.db.borrow_mut().rollback_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever
-    /// a row is updated, inserted or deleted in a rowid table.
-    ///
-    /// The callback parameters are:
-    ///
-    /// - the type of database update (`SQLITE_INSERT`, `SQLITE_UPDATE` or
-    /// `SQLITE_DELETE`),
-    /// - the name of the database ("main", "temp", ...),
-    /// - the name of the table that is updated,
-    /// - the ROWID of the row that is updated.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn update_hook<F>(&self, hook: Option<F>)
     where
@@ -378,14 +380,14 @@ impl Connection {
         self.db.borrow_mut().update_hook(hook);
     }
 
-    /// Register a query progress callback.
-    ///
-    /// The parameter `num_ops` is the approximate number of virtual machine
-    /// instructions that are evaluated between successive invocations of the
-    /// `handler`. If `num_ops` is less than one then the progress handler
-    /// is disabled.
-    ///
-    /// If the progress callback returns `true`, the operation is interrupted.
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn progress_handler<F>(&self, num_ops: c_int, handler: Option<F>)
     where
         F: FnMut() -> bool + Send + RefUnwindSafe + 'static,
@@ -393,8 +395,8 @@ impl Connection {
         self.db.borrow_mut().progress_handler(num_ops, handler);
     }
 
-    /// Register an authorizer callback that's invoked
-    /// as a statement is being prepared.
+    
+    
     #[inline]
     pub fn authorizer<'c, F>(&self, hook: Option<F>)
     where
@@ -426,12 +428,16 @@ impl InnerConnection {
                 let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)()
             });
-            c_int::from(r.unwrap_or_default())
+            if let Ok(true) = r {
+                1
+            } else {
+                0
+            }
         }
 
-        // unlike `sqlite3_create_function_v2`, we cannot specify a `xDestroy` with
-        // `sqlite3_commit_hook`. so we keep the `xDestroy` function in
-        // `InnerConnection.free_boxed_hook`.
+        
+        
+        
         let free_commit_hook = if hook.is_some() {
             Some(free_boxed_hook::<F> as unsafe fn(*mut c_void))
         } else {
@@ -564,7 +570,11 @@ impl InnerConnection {
                 let boxed_handler: *mut F = p_arg.cast::<F>();
                 (*boxed_handler)()
             });
-            c_int::from(r.unwrap_or_default())
+            if let Ok(true) = r {
+                1
+            } else {
+                0
+            }
         }
 
         if let Some(handler) = handler {
@@ -637,11 +647,11 @@ impl InnerConnection {
                 self.authorizer = boxed_authorizer.map(|ba| ba as _);
             }
             err_code => {
-                // The only error that `sqlite3_set_authorizer` returns is `SQLITE_MISUSE`
-                // when compiled with `ENABLE_API_ARMOR` and the db pointer is invalid.
-                // This library does not allow constructing a null db ptr, so if this branch
-                // is hit, something very bad has happened. Panicking instead of returning
-                // `Result` keeps this hook's API consistent with the others.
+                
+                
+                
+                
+                
                 panic!("unexpectedly failed to set_authorizer: {}", unsafe {
                     crate::error::error_from_handle(self.db(), err_code)
                 });
@@ -798,7 +808,7 @@ mod test {
         db.execute_batch("DROP TABLE foo").unwrap_err();
 
         db.authorizer(None::<fn(AuthContext<'_>) -> Authorization>);
-        db.execute_batch("PRAGMA user_version=1").unwrap(); // Disallowed by first authorizer, but it's now removed.
+        db.execute_batch("PRAGMA user_version=1").unwrap(); 
 
         Ok(())
     }

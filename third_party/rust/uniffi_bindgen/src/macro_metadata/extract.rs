@@ -134,16 +134,9 @@ pub fn extract_from_archive(
 
     let mut items = vec![];
     for member_name in members_to_check {
-        items.append(
-            &mut extract_from_bytes(
-                archive
-                    .extract(member_name, file_data)
-                    .with_context(|| format!("Failed to extract archive member `{member_name}`"))?,
-            )
-            .with_context(|| {
-                format!("Failed to extract data from archive member `{member_name}`")
-            })?,
-        );
+        items.append(&mut extract_from_bytes(
+            archive.extract(member_name, file_data)?,
+        )?);
     }
     Ok(items)
 }
@@ -175,7 +168,7 @@ impl ExtractedItems {
         
         
         let data = &file_data[offset..];
-        self.items.push(Metadata::read(data)?);
+        self.items.push(bincode::deserialize::<Metadata>(data)?);
         self.names.insert(name.to_string());
         Ok(())
     }

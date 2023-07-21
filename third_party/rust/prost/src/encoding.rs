@@ -1,6 +1,6 @@
-//! Utility functions and types for encoding and decoding Protobuf types.
-//!
-//! Meant to be used only from `Message` implementations.
+
+
+
 
 #![allow(clippy::implicit_hasher, clippy::ptr_arg)]
 
@@ -20,26 +20,47 @@ use ::bytes::{Buf, BufMut, Bytes};
 use crate::DecodeError;
 use crate::Message;
 
-/// Encodes an integer value into LEB128 variable length format, and writes it to the buffer.
-/// The buffer must have enough remaining space (maximum 10 bytes).
+
+
 #[inline]
 pub fn encode_varint<B>(mut value: u64, buf: &mut B)
 where
     B: BufMut,
 {
-    loop {
-        if value < 0x80 {
-            buf.put_u8(value as u8);
-            break;
-        } else {
-            buf.put_u8(((value & 0x7F) | 0x80) as u8);
-            value >>= 7;
+    
+    
+    
+    
+    
+    
+    
+    unsafe {
+        let mut i;
+        'outer: loop {
+            i = 0;
+
+            let uninit_slice = buf.chunk_mut();
+            for offset in 0..uninit_slice.len() {
+                i += 1;
+                let ptr = uninit_slice.as_mut_ptr().add(offset);
+                if value < 0x80 {
+                    ptr.write(value as u8);
+                    break 'outer;
+                } else {
+                    ptr.write(((value & 0x7F) | 0x80) as u8);
+                    value >>= 7;
+                }
+            }
+
+            buf.advance_mut(i);
+            debug_assert!(buf.has_remaining_mut());
         }
+
+        buf.advance_mut(i);
     }
 }
 
-/// Decodes a LEB128-encoded variable length integer from the buffer.
-#[inline]
+
 pub fn decode_varint<B>(buf: &mut B) -> Result<u64, DecodeError>
 where
     B: Buf,
@@ -50,12 +71,12 @@ where
         return Err(DecodeError::new("invalid varint"));
     }
 
-    let byte = bytes[0];
+    let byte = unsafe { *bytes.get_unchecked(0) };
     if byte < 0x80 {
         buf.advance(1);
         Ok(u64::from(byte))
     } else if len > 10 || bytes[len - 1] < 0x80 {
-        let (value, advance) = decode_varint_slice(bytes)?;
+        let (value, advance) = unsafe { decode_varint_slice(bytes) }?;
         buf.advance(advance);
         Ok(value)
     } else {
@@ -63,46 +84,42 @@ where
     }
 }
 
-/// Decodes a LEB128-encoded variable length integer from the slice, returning the value and the
-/// number of bytes read.
-///
-/// Based loosely on [`ReadVarint64FromArray`][1] with a varint overflow check from
-/// [`ConsumeVarint`][2].
-///
-/// ## Safety
-///
-/// The caller must ensure that `bytes` is non-empty and either `bytes.len() >= 10` or the last
-/// element in bytes is < `0x80`.
-///
-/// [1]: https://github.com/google/protobuf/blob/3.3.x/src/google/protobuf/io/coded_stream.cc#L365-L406
-/// [2]: https://github.com/protocolbuffers/protobuf-go/blob/v1.27.1/encoding/protowire/wire.go#L358
+
+
+
+
+
+
+
+
+
+
+
 #[inline]
-fn decode_varint_slice(bytes: &[u8]) -> Result<(u64, usize), DecodeError> {
-    // Fully unrolled varint decoding loop. Splitting into 32-bit pieces gives better performance.
+unsafe fn decode_varint_slice(bytes: &[u8]) -> Result<(u64, usize), DecodeError> {
+    
 
-    // Use assertions to ensure memory safety, but it should always be optimized after inline.
-    assert!(!bytes.is_empty());
-    assert!(bytes.len() > 10 || bytes[bytes.len() - 1] < 0x80);
-
-    let mut b: u8 = unsafe { *bytes.get_unchecked(0) };
-    let mut part0: u32 = u32::from(b);
+    let mut b: u8;
+    let mut part0: u32;
+    b = *bytes.get_unchecked(0);
+    part0 = u32::from(b);
     if b < 0x80 {
         return Ok((u64::from(part0), 1));
     };
     part0 -= 0x80;
-    b = unsafe { *bytes.get_unchecked(1) };
+    b = *bytes.get_unchecked(1);
     part0 += u32::from(b) << 7;
     if b < 0x80 {
         return Ok((u64::from(part0), 2));
     };
     part0 -= 0x80 << 7;
-    b = unsafe { *bytes.get_unchecked(2) };
+    b = *bytes.get_unchecked(2);
     part0 += u32::from(b) << 14;
     if b < 0x80 {
         return Ok((u64::from(part0), 3));
     };
     part0 -= 0x80 << 14;
-    b = unsafe { *bytes.get_unchecked(3) };
+    b = *bytes.get_unchecked(3);
     part0 += u32::from(b) << 21;
     if b < 0x80 {
         return Ok((u64::from(part0), 4));
@@ -110,25 +127,26 @@ fn decode_varint_slice(bytes: &[u8]) -> Result<(u64, usize), DecodeError> {
     part0 -= 0x80 << 21;
     let value = u64::from(part0);
 
-    b = unsafe { *bytes.get_unchecked(4) };
-    let mut part1: u32 = u32::from(b);
+    let mut part1: u32;
+    b = *bytes.get_unchecked(4);
+    part1 = u32::from(b);
     if b < 0x80 {
         return Ok((value + (u64::from(part1) << 28), 5));
     };
     part1 -= 0x80;
-    b = unsafe { *bytes.get_unchecked(5) };
+    b = *bytes.get_unchecked(5);
     part1 += u32::from(b) << 7;
     if b < 0x80 {
         return Ok((value + (u64::from(part1) << 28), 6));
     };
     part1 -= 0x80 << 7;
-    b = unsafe { *bytes.get_unchecked(6) };
+    b = *bytes.get_unchecked(6);
     part1 += u32::from(b) << 14;
     if b < 0x80 {
         return Ok((value + (u64::from(part1) << 28), 7));
     };
     part1 -= 0x80 << 14;
-    b = unsafe { *bytes.get_unchecked(7) };
+    b = *bytes.get_unchecked(7);
     part1 += u32::from(b) << 21;
     if b < 0x80 {
         return Ok((value + (u64::from(part1) << 28), 8));
@@ -136,33 +154,26 @@ fn decode_varint_slice(bytes: &[u8]) -> Result<(u64, usize), DecodeError> {
     part1 -= 0x80 << 21;
     let value = value + ((u64::from(part1)) << 28);
 
-    b = unsafe { *bytes.get_unchecked(8) };
-    let mut part2: u32 = u32::from(b);
+    let mut part2: u32;
+    b = *bytes.get_unchecked(8);
+    part2 = u32::from(b);
     if b < 0x80 {
         return Ok((value + (u64::from(part2) << 56), 9));
     };
     part2 -= 0x80;
-    b = unsafe { *bytes.get_unchecked(9) };
+    b = *bytes.get_unchecked(9);
     part2 += u32::from(b) << 7;
-    // Check for u64::MAX overflow. See [`ConsumeVarint`][1] for details.
-    // [1]: https://github.com/protocolbuffers/protobuf-go/blob/v1.27.1/encoding/protowire/wire.go#L358
-    if b < 0x02 {
+    if b < 0x80 {
         return Ok((value + (u64::from(part2) << 56), 10));
     };
 
-    // We have overrun the maximum size of a varint (10 bytes) or the final byte caused an overflow.
-    // Assume the data is corrupt.
+    
     Err(DecodeError::new("invalid varint"))
 }
 
-/// Decodes a LEB128-encoded variable length integer from the buffer, advancing the buffer as
-/// necessary.
-///
-/// Contains a varint overflow check from [`ConsumeVarint`][1].
-///
-/// [1]: https://github.com/protocolbuffers/protobuf-go/blob/v1.27.1/encoding/protowire/wire.go#L358
+
+
 #[inline(never)]
-#[cold]
 fn decode_varint_slow<B>(buf: &mut B) -> Result<u64, DecodeError>
 where
     B: Buf,
@@ -172,52 +183,51 @@ where
         let byte = buf.get_u8();
         value |= u64::from(byte & 0x7F) << (count * 7);
         if byte <= 0x7F {
-            // Check for u64::MAX overflow. See [`ConsumeVarint`][1] for details.
-            // [1]: https://github.com/protocolbuffers/protobuf-go/blob/v1.27.1/encoding/protowire/wire.go#L358
-            if count == 9 && byte >= 0x02 {
-                return Err(DecodeError::new("invalid varint"));
-            } else {
-                return Ok(value);
-            }
+            return Ok(value);
         }
     }
 
     Err(DecodeError::new("invalid varint"))
 }
 
-/// Additional information passed to every decode/merge function.
-///
-/// The context should be passed by value and can be freely cloned. When passing
-/// to a function which is decoding a nested object, then use `enter_recursion`.
+
+
+
+
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "no-recursion-limit", derive(Default))]
 pub struct DecodeContext {
-    /// How many times we can recurse in the current decode stack before we hit
-    /// the recursion limit.
-    ///
-    /// The recursion limit is defined by `RECURSION_LIMIT` and cannot be
-    /// customized. The recursion limit can be ignored by building the Prost
-    /// crate with the `no-recursion-limit` feature.
+    
+    
+    
+    
+    
+    
     #[cfg(not(feature = "no-recursion-limit"))]
     recurse_count: u32,
 }
 
-#[cfg(not(feature = "no-recursion-limit"))]
 impl Default for DecodeContext {
+    #[cfg(not(feature = "no-recursion-limit"))]
     #[inline]
     fn default() -> DecodeContext {
         DecodeContext {
             recurse_count: crate::RECURSION_LIMIT,
         }
     }
+
+    #[cfg(feature = "no-recursion-limit")]
+    #[inline]
+    fn default() -> DecodeContext {
+        DecodeContext {}
+    }
 }
 
 impl DecodeContext {
-    /// Call this function before recursively decoding.
-    ///
-    /// There is no `exit` function since this function creates a new `DecodeContext`
-    /// to be used at the next level of recursion. Continue to use the old context
-    // at the previous level of recursion.
+    
+    
+    
+    
+    
     #[cfg(not(feature = "no-recursion-limit"))]
     #[inline]
     pub(crate) fn enter_recursion(&self) -> DecodeContext {
@@ -232,11 +242,11 @@ impl DecodeContext {
         DecodeContext {}
     }
 
-    /// Checks whether the recursion limit has been reached in the stack of
-    /// decodes described by the `DecodeContext` at `self.ctx`.
-    ///
-    /// Returns `Ok<()>` if it is ok to continue recursing.
-    /// Returns `Err<DecodeError>` if the recursion limit has been reached.
+    
+    
+    
+    
+    
     #[cfg(not(feature = "no-recursion-limit"))]
     #[inline]
     pub(crate) fn limit_reached(&self) -> Result<(), DecodeError> {
@@ -249,22 +259,22 @@ impl DecodeContext {
 
     #[cfg(feature = "no-recursion-limit")]
     #[inline]
-    #[allow(clippy::unnecessary_wraps)] // needed in other features
+    #[allow(clippy::unnecessary_wraps)] 
     pub(crate) fn limit_reached(&self) -> Result<(), DecodeError> {
         Ok(())
     }
 }
 
-/// Returns the encoded length of the value in LEB128 variable length format.
-/// The returned value will be between 1 and 10, inclusive.
+
+
 #[inline]
 pub fn encoded_len_varint(value: u64) -> usize {
-    // Based on [VarintSize64][1].
-    // [1]: https://github.com/google/protobuf/blob/3.3.x/src/google/protobuf/io/coded_stream.h#L1301-L1309
+    
+    
     ((((value | 1).leading_zeros() ^ 63) * 9 + 73) / 64) as usize
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
 pub enum WireType {
     Varint = 0,
@@ -298,8 +308,8 @@ impl TryFrom<u64> for WireType {
     }
 }
 
-/// Encodes a Protobuf field key, which consists of a wire type designator and
-/// the field tag.
+
+
 #[inline]
 pub fn encode_key<B>(tag: u32, wire_type: WireType, buf: &mut B)
 where
@@ -310,8 +320,8 @@ where
     encode_varint(u64::from(key), buf);
 }
 
-/// Decodes a Protobuf field key, which consists of a wire type designator and
-/// the field tag.
+
+
 #[inline(always)]
 pub fn decode_key<B>(buf: &mut B) -> Result<(u32, WireType), DecodeError>
 where
@@ -331,15 +341,15 @@ where
     Ok((tag, wire_type))
 }
 
-/// Returns the width of an encoded Protobuf field key with the given tag.
-/// The returned width will be between 1 and 5 bytes (inclusive).
+
+
 #[inline]
 pub fn key_len(tag: u32) -> usize {
     encoded_len_varint(u64::from(tag << 3))
 }
 
-/// Checks that the expected wire type matches the actual wire type,
-/// or returns an error result.
+
+
 #[inline]
 pub fn check_wire_type(expected: WireType, actual: WireType) -> Result<(), DecodeError> {
     if expected != actual {
@@ -351,8 +361,8 @@ pub fn check_wire_type(expected: WireType, actual: WireType) -> Result<(), Decod
     Ok(())
 }
 
-/// Helper function which abstracts reading a length delimiter prefix followed
-/// by decoding values until the length of bytes is exhausted.
+
+
 pub fn merge_loop<T, M, B>(
     value: &mut T,
     buf: &mut B,
@@ -418,7 +428,7 @@ where
     Ok(())
 }
 
-/// Helper macro which emits an `encode_repeated` function for the type.
+
 macro_rules! encode_repeated {
     ($ty:ty) => {
         pub fn encode_repeated<B>(tag: u32, values: &[$ty], buf: &mut B)
@@ -432,7 +442,7 @@ macro_rules! encode_repeated {
     };
 }
 
-/// Helper macro which emits a `merge_repeated` function for the numeric type.
+
 macro_rules! merge_repeated_numeric {
     ($ty:ty,
      $wire_type:expr,
@@ -467,8 +477,8 @@ macro_rules! merge_repeated_numeric {
     };
 }
 
-/// Macro which emits a module containing a set of encoding functions for a
-/// variable width numeric type.
+
+
 macro_rules! varint {
     ($ty:ty,
      $proto_ty:ident) => (
@@ -575,7 +585,7 @@ macro_rules! varint {
     );
 }
 varint!(bool, bool,
-        to_uint64(value) u64::from(*value),
+        to_uint64(value) if *value { 1u64 } else { 0u64 },
         from_uint64(value) value != 0);
 varint!(i32, int32);
 varint!(i64, int64);
@@ -597,8 +607,8 @@ from_uint64(value) {
     ((value >> 1) as i64) ^ (-((value & 1) as i64))
 });
 
-/// Macro which emits a module containing a set of encoding functions for a
-/// fixed width numeric type.
+
+
 macro_rules! fixed_width {
     ($ty:ty,
      $width:expr,
@@ -754,7 +764,7 @@ fixed_width!(
     get_i64_le
 );
 
-/// Macro which emits encoding functions for a length-delimited type.
+
 macro_rules! length_delimited {
     ($ty:ty) => {
         encode_repeated!($ty);
@@ -811,19 +821,19 @@ pub mod string {
     where
         B: Buf,
     {
-        // ## Unsafety
-        //
-        // `string::merge` reuses `bytes::merge`, with an additional check of utf-8
-        // well-formedness. If the utf-8 is not well-formed, or if any other error occurs, then the
-        // string is cleared, so as to avoid leaking a string field with invalid data.
-        //
-        // This implementation uses the unsafe `String::as_mut_vec` method instead of the safe
-        // alternative of temporarily swapping an empty `String` into the field, because it results
-        // in up to 10% better performance on the protobuf message decoding benchmarks.
-        //
-        // It's required when using `String::as_mut_vec` that invalid utf-8 data not be leaked into
-        // the backing `String`. To enforce this, even in the event of a panic in `bytes::merge` or
-        // in the buf implementation, a drop guard is used.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
             struct DropGuard<'a>(&'a mut Vec<u8>);
             impl<'a> Drop for DropGuard<'a> {
@@ -834,10 +844,10 @@ pub mod string {
             }
 
             let drop_guard = DropGuard(value.as_mut_vec());
-            bytes::merge_one_copy(wire_type, drop_guard.0, buf, ctx)?;
+            bytes::merge(wire_type, drop_guard.0, buf, ctx)?;
             match str::from_utf8(drop_guard.0) {
                 Ok(_) => {
-                    // Success; do not clear the bytes.
+                    
                     mem::forget(drop_guard);
                     Ok(())
                 }
@@ -881,12 +891,12 @@ mod sealed {
     pub trait BytesAdapter: Default + Sized + 'static {
         fn len(&self) -> usize;
 
-        /// Replace contents of this buffer with the contents of another buffer.
+        
         fn replace_with<B>(&mut self, buf: B)
         where
             B: Buf;
 
-        /// Appends this buffer to the (contents of) other buffer.
+        
         fn append_to<B>(&self, buf: &mut B)
         where
             B: BufMut;
@@ -973,41 +983,15 @@ pub mod bytes {
         }
         let len = len as usize;
 
-        // Clear the existing value. This follows from the following rule in the encoding guide[1]:
-        //
-        // > Normally, an encoded message would never have more than one instance of a non-repeated
-        // > field. However, parsers are expected to handle the case in which they do. For numeric
-        // > types and strings, if the same field appears multiple times, the parser accepts the
-        // > last value it sees.
-        //
-        // [1]: https://developers.google.com/protocol-buffers/docs/encoding#optional
-        //
-        // This is intended for A and B both being Bytes so it is zero-copy.
-        // Some combinations of A and B types may cause a double-copy,
-        // in which case merge_one_copy() should be used instead.
+        
+        
+        
+        
+        
+        
+        
+        
         value.replace_with(buf.copy_to_bytes(len));
-        Ok(())
-    }
-
-    pub(super) fn merge_one_copy<A, B>(
-        wire_type: WireType,
-        value: &mut A,
-        buf: &mut B,
-        _ctx: DecodeContext,
-    ) -> Result<(), DecodeError>
-    where
-        A: BytesAdapter,
-        B: Buf,
-    {
-        check_wire_type(WireType::LengthDelimited, wire_type)?;
-        let len = decode_varint(buf)?;
-        if len > buf.remaining() as u64 {
-            return Err(DecodeError::new("buffer underflow"));
-        }
-        let len = len as usize;
-
-        // If we must copy, make sure to copy only once.
-        value.replace_with(buf.take(len));
         Ok(())
     }
 
@@ -1223,8 +1207,8 @@ pub mod group {
     }
 }
 
-/// Rust doesn't have a `Map` trait, so macros are currently the best way to be
-/// generic over `HashMap` and `BTreeMap`.
+
+
 macro_rules! map {
     ($map_ty:ident) => {
         use crate::encoding::*;
@@ -1294,7 +1278,7 @@ macro_rules! map {
             encoded_len_with_default(key_encoded_len, val_encoded_len, &V::default(), tag, values)
         }
 
-        /// Generic protobuf map encode function with an overridden value default.
+        /// Generic protobuf map encode function with an overriden value default.
         ///
         /// This is necessary because enumeration values can have a default value other
         /// than 0 in proto2.
@@ -1334,7 +1318,7 @@ macro_rules! map {
             }
         }
 
-        /// Generic protobuf map merge function with an overridden value default.
+        /// Generic protobuf map merge function with an overriden value default.
         ///
         /// This is necessary because enumeration values can have a default value other
         /// than 0 in proto2.
@@ -1373,7 +1357,7 @@ macro_rules! map {
             Ok(())
         }
 
-        /// Generic protobuf map encode function with an overridden value default.
+        /// Generic protobuf map encode function with an overriden value default.
         ///
         /// This is necessary because enumeration values can have a default value other
         /// than 0 in proto2.
@@ -1444,7 +1428,7 @@ mod test {
         T: Debug + Default + PartialEq + Borrow<B>,
         B: ?Sized,
     {
-        prop_assume!((MIN_TAG..=MAX_TAG).contains(&tag));
+        prop_assume!(MIN_TAG <= tag && tag <= MAX_TAG);
 
         let expected_len = encoded_len(tag, value.borrow());
 
@@ -1462,7 +1446,7 @@ mod test {
         );
 
         if !buf.has_remaining() {
-            // Short circuit for empty packed values.
+            
             return Ok(());
         }
 
@@ -1533,7 +1517,7 @@ mod test {
         M: FnMut(WireType, &mut T, &mut Bytes, DecodeContext) -> Result<(), DecodeError>,
         L: FnOnce(u32, &B) -> usize,
     {
-        prop_assume!((MIN_TAG..=MAX_TAG).contains(&tag));
+        prop_assume!(MIN_TAG <= tag && tag <= MAX_TAG);
 
         let expected_len = encoded_len(tag, value.borrow());
 
@@ -1603,20 +1587,22 @@ mod test {
     #[test]
     fn varint() {
         fn check(value: u64, mut encoded: &[u8]) {
-            // Small buffer.
+            
+            #![allow(clippy::clone_double_ref)]
+
+            
             let mut buf = Vec::with_capacity(1);
             encode_varint(value, &mut buf);
             assert_eq!(buf, encoded);
 
-            // Large buffer.
+            
             let mut buf = Vec::with_capacity(100);
             encode_varint(value, &mut buf);
             assert_eq!(buf, encoded);
 
             assert_eq!(encoded_len_varint(value), encoded.len());
 
-            let roundtrip_value =
-                decode_varint(&mut <&[u8]>::clone(&encoded)).expect("decoding failed");
+            let roundtrip_value = decode_varint(&mut encoded.clone()).expect("decoding failed");
             assert_eq!(value, roundtrip_value);
 
             let roundtrip_value = decode_varint_slow(&mut encoded).expect("slow decoding failed");
@@ -1678,19 +1664,9 @@ mod test {
         );
     }
 
-    #[test]
-    fn varint_overflow() {
-        let mut u64_max_plus_one: &[u8] =
-            &[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02];
-
-        decode_varint(&mut u64_max_plus_one).expect_err("decoding u64::MAX + 1 succeeded");
-        decode_varint_slow(&mut u64_max_plus_one)
-            .expect_err("slow decoding u64::MAX + 1 succeeded");
-    }
-
-    /// This big bowl o' macro soup generates an encoding property test for each combination of map
-    /// type, scalar map key, and value type.
-    /// TODO: these tests take a long time to compile, can this be improved?
+    
+    
+    
     #[cfg(feature = "std")]
     macro_rules! map_tests {
         (keys: $keys:tt,

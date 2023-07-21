@@ -4,6 +4,7 @@
 
 
 
+{%- let e = ci.get_enum_definition(name).unwrap() %}
 {% if e.is_flat() %}
 
 class {{ type_name }}(enum.Enum):
@@ -18,7 +19,7 @@ class {{ type_name }}:
 
     
     {% for variant in e.variants() -%}
-    class {{ variant.name()|enum_variant_py }}:
+    class {{ variant.name()|enum_variant_py }}(object):
         def __init__(self,{% for field in variant.fields() %}{{ field.name()|var_name }}{% if loop.last %}{% else %}, {% endif %}{% endfor %}):
             {% if variant.has_fields() %}
             {%- for field in variant.fields() %}
@@ -44,7 +45,7 @@ class {{ type_name }}:
     
     
     {% for variant in e.variants() -%}
-    def is_{{ variant.name()|var_name }}(self) -> bool:
+    def is_{{ variant.name()|var_name }}(self):
         return isinstance(self, {{ type_name }}.{{ variant.name()|enum_variant_py }})
     {% endfor %}
 
@@ -52,7 +53,7 @@ class {{ type_name }}:
 
 
 {% for variant in e.variants() -%}
-{{ type_name }}.{{ variant.name()|enum_variant_py }} = type("{{ type_name }}.{{ variant.name()|enum_variant_py }}", ({{ type_name }}.{{variant.name()|enum_variant_py}}, {{ type_name }},), {})  
+{{ type_name }}.{{ variant.name()|enum_variant_py }} = type("{{ type_name }}.{{ variant.name()|enum_variant_py }}", ({{ type_name }}.{{variant.name()|enum_variant_py}}, {{ type_name }},), {})
 {% endfor %}
 
 {% endif %}

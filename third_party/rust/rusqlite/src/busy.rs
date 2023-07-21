@@ -1,4 +1,4 @@
-///! Busy handler (when the database is locked)
+
 use std::convert::TryInto;
 use std::mem;
 use std::os::raw::{c_int, c_void};
@@ -10,20 +10,20 @@ use crate::ffi;
 use crate::{Connection, InnerConnection, Result};
 
 impl Connection {
-    /// Set a busy handler that sleeps for a specified amount of time when a
-    /// table is locked. The handler will sleep multiple times until at
-    /// least "ms" milliseconds of sleeping have accumulated.
-    ///
-    /// Calling this routine with an argument equal to zero turns off all busy
-    /// handlers.
-    ///
-    /// There can only be a single busy handler for a particular database
-    /// connection at any given moment. If another busy handler was defined
-    /// (using [`busy_handler`](Connection::busy_handler)) prior to calling this
-    /// routine, that other busy handler is cleared.
-    ///
-    /// Newly created connections currently have a default busy timeout of
-    /// 5000ms, but this may be subject to change.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn busy_timeout(&self, timeout: Duration) -> Result<()> {
         let ms: i32 = timeout
             .as_secs()
@@ -34,31 +34,35 @@ impl Connection {
         self.db.borrow_mut().busy_timeout(ms)
     }
 
-    /// Register a callback to handle `SQLITE_BUSY` errors.
-    ///
-    /// If the busy callback is `None`, then `SQLITE_BUSY` is returned
-    /// immediately upon encountering the lock. The argument to the busy
-    /// handler callback is the number of times that the
-    /// busy handler has been invoked previously for the
-    /// same locking event. If the busy callback returns `false`, then no
-    /// additional attempts are made to access the
-    /// database and `SQLITE_BUSY` is returned to the
-    /// application. If the callback returns `true`, then another attempt
-    /// is made to access the database and the cycle repeats.
-    ///
-    /// There can only be a single busy handler defined for each database
-    /// connection. Setting a new busy handler clears any previously set
-    /// handler. Note that calling [`busy_timeout()`](Connection::busy_timeout)
-    /// or evaluating `PRAGMA busy_timeout=N` will change the busy handler
-    /// and thus clear any previously set busy handler.
-    ///
-    /// Newly created connections default to a
-    /// [`busy_timeout()`](Connection::busy_timeout) handler with a timeout
-    /// of 5000ms, although this is subject to change.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
-            c_int::from(catch_unwind(|| handler_fn(count)).unwrap_or_default())
+            if let Ok(true) = catch_unwind(|| handler_fn(count)) {
+                1
+            } else {
+                0
+            }
         }
         let c = self.db.borrow_mut();
         let r = match callback {
@@ -105,7 +109,7 @@ mod test {
     }
 
     #[test]
-    #[ignore] // FIXME: unstable
+    #[ignore] 
     fn test_busy_timeout() {
         let temp_dir = tempfile::tempdir().unwrap();
         let path = temp_dir.path().join("test.db3");
@@ -133,7 +137,7 @@ mod test {
     }
 
     #[test]
-    #[ignore] // FIXME: unstable
+    #[ignore] 
     fn test_busy_handler() {
         static CALLED: AtomicBool = AtomicBool::new(false);
         fn busy_handler(_: i32) -> bool {

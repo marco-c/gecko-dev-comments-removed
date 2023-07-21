@@ -7,68 +7,212 @@
 
 
 
-use super::Literal;
-use std::fmt::Debug;
 
 
-pub trait CodeType: Debug {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use super::{CodeOracle, Literal};
+use crate::interface::*;
+
+
+
+
+
+pub trait CodeType {
     
     
-    fn type_label(&self) -> String;
+    fn type_label(&self, oracle: &dyn CodeOracle) -> String;
 
     
     
     
     
     
-    fn canonical_name(&self) -> String {
-        self.type_label()
-    }
-
-    fn literal(&self, _literal: &Literal) -> String {
-        unimplemented!("Unimplemented for {}", self.type_label())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn ffi_converter_name(&self) -> String {
-        format!("FfiConverter{}", self.canonical_name())
-    }
-
-    
-    fn lower(&self) -> String {
-        format!("{}.lower", self.ffi_converter_name())
-    }
-
-    
-    fn write(&self) -> String {
-        format!("{}.write", self.ffi_converter_name())
-    }
-
-    
-    fn lift(&self) -> String {
-        format!("{}.lift", self.ffi_converter_name())
-    }
-
-    
-    fn read(&self) -> String {
-        format!("{}.read", self.ffi_converter_name())
+    fn canonical_name(&self, oracle: &dyn CodeOracle) -> String {
+        self.type_label(oracle)
     }
 
     
     
-    fn imports(&self) -> Option<Vec<String>> {
+    fn literal(&self, oracle: &dyn CodeOracle, _literal: &Literal) -> String {
+        unimplemented!("Unimplemented for {}", self.type_label(oracle))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn ffi_converter_name(&self, oracle: &dyn CodeOracle) -> String {
+        oracle.class_name(&format!("FfiConverter{}", self.canonical_name(oracle)))
+    }
+
+    
+    fn lower(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.lower", self.ffi_converter_name(oracle))
+    }
+
+    
+    fn write(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.write", self.ffi_converter_name(oracle))
+    }
+
+    
+    fn lift(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.lift", self.ffi_converter_name(oracle))
+    }
+
+    
+    fn read(&self, oracle: &dyn CodeOracle) -> String {
+        format!("{}.read", self.ffi_converter_name(oracle))
+    }
+
+    
+    
+    fn imports(&self, _oracle: &dyn CodeOracle) -> Option<Vec<String>> {
         None
     }
 
     
-    fn initialization_fn(&self) -> Option<String> {
+    fn initialization_fn(&self, _oracle: &dyn CodeOracle) -> Option<String> {
         None
+    }
+
+    
+    fn coerce(&self, oracle: &dyn CodeOracle, _nm: &str) -> String {
+        panic!("Unimplemented for {}", self.type_label(oracle));
+    }
+}
+
+
+
+
+pub trait CodeTypeDispatch {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType>;
+}
+
+impl CodeTypeDispatch for Type {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(self)
+    }
+}
+
+impl CodeTypeDispatch for Record {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(&self.type_())
+    }
+}
+
+impl CodeTypeDispatch for Enum {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(&self.type_())
+    }
+}
+
+impl CodeTypeDispatch for Error {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(&self.type_())
+    }
+}
+
+impl CodeTypeDispatch for Object {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(&self.type_())
+    }
+}
+
+impl CodeTypeDispatch for CallbackInterface {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(&self.type_())
+    }
+}
+
+impl CodeTypeDispatch for Field {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(self.type_())
+    }
+}
+
+impl CodeTypeDispatch for Argument {
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        oracle.find(self.type_())
+    }
+}
+
+
+impl<T, C> CodeTypeDispatch for T
+where
+    T: std::ops::Deref<Target = C>,
+    C: CodeTypeDispatch,
+{
+    fn code_type_impl(&self, oracle: &dyn CodeOracle) -> Box<dyn CodeType> {
+        self.deref().code_type_impl(oracle)
+    }
+}
+
+impl<T: CodeTypeDispatch> CodeType for T {
+    
+    
+    
+    fn type_label(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).type_label(oracle)
+    }
+
+    fn canonical_name(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).canonical_name(oracle)
+    }
+
+    fn literal(&self, oracle: &dyn CodeOracle, literal: &Literal) -> String {
+        self.code_type_impl(oracle).literal(oracle, literal)
+    }
+
+    fn lower(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).lower(oracle)
+    }
+
+    fn write(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).write(oracle)
+    }
+
+    fn lift(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).lift(oracle)
+    }
+
+    fn read(&self, oracle: &dyn CodeOracle) -> String {
+        self.code_type_impl(oracle).read(oracle)
+    }
+
+    fn imports(&self, oracle: &dyn CodeOracle) -> Option<Vec<String>> {
+        self.code_type_impl(oracle).imports(oracle)
+    }
+
+    fn initialization_fn(&self, oracle: &dyn CodeOracle) -> Option<String> {
+        self.code_type_impl(oracle).initialization_fn(oracle)
+    }
+
+    fn coerce(&self, oracle: &dyn CodeOracle, nm: &str) -> String {
+        self.code_type_impl(oracle).coerce(oracle, nm)
     }
 }

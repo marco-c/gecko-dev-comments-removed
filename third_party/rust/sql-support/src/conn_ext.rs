@@ -77,14 +77,6 @@ pub trait ConnExt {
     }
 
     
-    fn exists<P: Params>(&self, sql: &str, params: P) -> SqlResult<bool> {
-        let conn = self.conn();
-        let mut stmt = conn.prepare(sql)?;
-        let exists = stmt.query(params)?.next()?.is_some();
-        Ok(exists)
-    }
-
-    
     
     fn try_query_one<T: FromSql, P: Params>(
         &self,

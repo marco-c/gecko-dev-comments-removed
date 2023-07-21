@@ -1,4 +1,4 @@
-//! [Session Extension](https://sqlite.org/sessionintro.html)
+
 #![allow(non_camel_case_types)]
 
 use std::ffi::CStr;
@@ -17,26 +17,24 @@ use crate::hooks::Action;
 use crate::types::ValueRef;
 use crate::{errmsg_to_string, str_to_cstring, Connection, DatabaseName, Result};
 
-// https://sqlite.org/session.html
 
-type Filter = Option<Box<dyn Fn(&str) -> bool>>;
 
-/// An instance of this object is a session that can be
-/// used to record changes to a database.
+
+
 pub struct Session<'conn> {
     phantom: PhantomData<&'conn Connection>,
     s: *mut ffi::sqlite3_session,
-    filter: Filter,
+    filter: Option<Box<dyn Fn(&str) -> bool>>,
 }
 
 impl Session<'_> {
-    /// Create a new session object
+    
     #[inline]
     pub fn new(db: &Connection) -> Result<Session<'_>> {
         Session::new_with_name(db, DatabaseName::Main)
     }
 
-    /// Create a new session object
+    
     #[inline]
     pub fn new_with_name<'conn>(
         db: &'conn Connection,
@@ -56,7 +54,7 @@ impl Session<'_> {
         })
     }
 
-    /// Set a table filter
+    
     pub fn table_filter<F>(&mut self, filter: Option<F>)
     where
         F: Fn(&str) -> bool + Send + RefUnwindSafe + 'static,
@@ -75,10 +73,13 @@ impl Session<'_> {
                 let c_slice = CStr::from_ptr(tbl_str).to_bytes();
                 str::from_utf8(c_slice)
             };
-            c_int::from(
+            if let Ok(true) =
                 catch_unwind(|| (*boxed_filter)(tbl_name.expect("non-utf8 table name")))
-                    .unwrap_or_default(),
-            )
+            {
+                1
+            } else {
+                0
+            }
         }
 
         match filter {
@@ -100,7 +101,7 @@ impl Session<'_> {
         };
     }
 
-    /// Attach a table. `None` means all tables.
+    
     pub fn attach(&mut self, table: Option<&str>) -> Result<()> {
         let table = if let Some(table) = table {
             Some(str_to_cstring(table)?)
@@ -111,7 +112,7 @@ impl Session<'_> {
         check(unsafe { ffi::sqlite3session_attach(self.s, table) })
     }
 
-    /// Generate a Changeset
+    
     pub fn changeset(&mut self) -> Result<Changeset> {
         let mut n = 0;
         let mut cs: *mut c_void = ptr::null_mut();
@@ -119,7 +120,7 @@ impl Session<'_> {
         Ok(Changeset { cs, n })
     }
 
-    /// Write the set of changes represented by this session to `output`.
+    
     #[inline]
     pub fn changeset_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
@@ -132,17 +133,17 @@ impl Session<'_> {
         })
     }
 
-    /// Generate a Patchset
+    
     #[inline]
     pub fn patchset(&mut self) -> Result<Changeset> {
         let mut n = 0;
         let mut ps: *mut c_void = ptr::null_mut();
         check(unsafe { ffi::sqlite3session_patchset(self.s, &mut n, &mut ps) })?;
-        // TODO Validate: same struct
+        
         Ok(Changeset { cs: ps, n })
     }
 
-    /// Write the set of patches represented by this session to `output`.
+    
     #[inline]
     pub fn patchset_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
@@ -155,7 +156,7 @@ impl Session<'_> {
         })
     }
 
-    /// Load the difference between tables.
+    
     pub fn diff(&mut self, from: DatabaseName<'_>, table: &str) -> Result<()> {
         let from = from.as_cstring()?;
         let table = str_to_cstring(table)?;
@@ -174,37 +175,37 @@ impl Session<'_> {
         Ok(())
     }
 
-    /// Test if a changeset has recorded any changes
+    
     #[inline]
     pub fn is_empty(&self) -> bool {
         unsafe { ffi::sqlite3session_isempty(self.s) != 0 }
     }
 
-    /// Query the current state of the session
+    
     #[inline]
     pub fn is_enabled(&self) -> bool {
         unsafe { ffi::sqlite3session_enable(self.s, -1) != 0 }
     }
 
-    /// Enable or disable the recording of changes
+    
     #[inline]
     pub fn set_enabled(&mut self, enabled: bool) {
         unsafe {
-            ffi::sqlite3session_enable(self.s, c_int::from(enabled));
+            ffi::sqlite3session_enable(self.s, if enabled { 1 } else { 0 });
         }
     }
 
-    /// Query the current state of the indirect flag
+    
     #[inline]
     pub fn is_indirect(&self) -> bool {
         unsafe { ffi::sqlite3session_indirect(self.s, -1) != 0 }
     }
 
-    /// Set or clear the indirect change flag
+    
     #[inline]
     pub fn set_indirect(&mut self, indirect: bool) {
         unsafe {
-            ffi::sqlite3session_indirect(self.s, c_int::from(indirect));
+            ffi::sqlite3session_indirect(self.s, if indirect { 1 } else { 0 });
         }
     }
 }
@@ -219,7 +220,7 @@ impl Drop for Session<'_> {
     }
 }
 
-/// Invert a changeset
+
 #[inline]
 pub fn invert_strm(input: &mut dyn Read, output: &mut dyn Write) -> Result<()> {
     let input_ref = &input;
@@ -234,7 +235,7 @@ pub fn invert_strm(input: &mut dyn Read, output: &mut dyn Write) -> Result<()> {
     })
 }
 
-/// Combine two changesets
+
 #[inline]
 pub fn concat_strm(
     input_a: &mut dyn Read,
@@ -256,14 +257,14 @@ pub fn concat_strm(
     })
 }
 
-/// Changeset or Patchset
+
 pub struct Changeset {
     cs: *mut c_void,
     n: c_int,
 }
 
 impl Changeset {
-    /// Invert a changeset
+    
     #[inline]
     pub fn invert(&self) -> Result<Changeset> {
         let mut n = 0;
@@ -274,7 +275,7 @@ impl Changeset {
         Ok(Changeset { cs, n })
     }
 
-    /// Create an iterator to traverse a changeset
+    
     #[inline]
     pub fn iter(&self) -> Result<ChangesetIter<'_>> {
         let mut it = ptr::null_mut();
@@ -286,7 +287,7 @@ impl Changeset {
         })
     }
 
-    /// Concatenate two changeset objects
+    
     #[inline]
     pub fn concat(a: &Changeset, b: &Changeset) -> Result<Changeset> {
         let mut n = 0;
@@ -307,8 +308,8 @@ impl Drop for Changeset {
     }
 }
 
-/// Cursor for iterating over the elements of a changeset
-/// or patchset.
+
+
 pub struct ChangesetIter<'changeset> {
     phantom: PhantomData<&'changeset Changeset>,
     it: *mut ffi::sqlite3_changeset_iter,
@@ -316,7 +317,7 @@ pub struct ChangesetIter<'changeset> {
 }
 
 impl ChangesetIter<'_> {
-    /// Create an iterator on `input`
+    
     #[inline]
     pub fn start_strm<'input>(input: &&'input mut dyn Read) -> Result<ChangesetIter<'input>> {
         let mut it = ptr::null_mut();
@@ -361,7 +362,7 @@ impl FallibleStreamingIterator for ChangesetIter<'_> {
     }
 }
 
-/// Operation
+
 pub struct Operation<'item> {
     table_name: &'item str,
     number_of_columns: i32,
@@ -370,25 +371,25 @@ pub struct Operation<'item> {
 }
 
 impl Operation<'_> {
-    /// Returns the table name.
+    
     #[inline]
     pub fn table_name(&self) -> &str {
         self.table_name
     }
 
-    /// Returns the number of columns in table
+    
     #[inline]
     pub fn number_of_columns(&self) -> i32 {
         self.number_of_columns
     }
 
-    /// Returns the action code.
+    
     #[inline]
     pub fn code(&self) -> Action {
         self.code
     }
 
-    /// Returns `true` for an 'indirect' change.
+    
     #[inline]
     pub fn indirect(&self) -> bool {
         self.indirect
@@ -404,19 +405,19 @@ impl Drop for ChangesetIter<'_> {
     }
 }
 
-/// An item passed to a conflict-handler by
-/// [`Connection::apply`](crate::Connection::apply), or an item generated by
-/// [`ChangesetIter::next`](ChangesetIter::next).
-// TODO enum ? Delete, Insert, Update, ...
+
+
+
+
 pub struct ChangesetItem {
     it: *mut ffi::sqlite3_changeset_iter,
 }
 
 impl ChangesetItem {
-    /// Obtain conflicting row values
-    ///
-    /// May only be called with an `SQLITE_CHANGESET_DATA` or
-    /// `SQLITE_CHANGESET_CONFLICT` conflict handler callback.
+    
+    
+    
+    
     #[inline]
     pub fn conflict(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
@@ -430,10 +431,10 @@ impl ChangesetItem {
         }
     }
 
-    /// Determine the number of foreign key constraint violations
-    ///
-    /// May only be called with an `SQLITE_CHANGESET_FOREIGN_KEY` conflict
-    /// handler callback.
+    
+    
+    
+    
     #[inline]
     pub fn fk_conflicts(&self) -> Result<i32> {
         unsafe {
@@ -443,10 +444,10 @@ impl ChangesetItem {
         }
     }
 
-    /// Obtain new.* Values
-    ///
-    /// May only be called if the type of change is either `SQLITE_UPDATE` or
-    /// `SQLITE_INSERT`.
+    
+    
+    
+    
     #[inline]
     pub fn new_value(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
@@ -456,10 +457,10 @@ impl ChangesetItem {
         }
     }
 
-    /// Obtain old.* Values
-    ///
-    /// May only be called if the type of change is either `SQLITE_DELETE` or
-    /// `SQLITE_UPDATE`.
+    
+    
+    
+    
     #[inline]
     pub fn old_value(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
@@ -469,7 +470,7 @@ impl ChangesetItem {
         }
     }
 
-    /// Obtain the current operation
+    
     #[inline]
     pub fn op(&self) -> Result<Operation<'_>> {
         let mut number_of_columns = 0;
@@ -495,7 +496,7 @@ impl ChangesetItem {
         })
     }
 
-    /// Obtain the primary key definition of a table
+    
     #[inline]
     pub fn pk(&self) -> Result<&[u8]> {
         let mut number_of_columns = 0;
@@ -511,14 +512,14 @@ impl ChangesetItem {
     }
 }
 
-/// Used to combine two or more changesets or
-/// patchsets
+
+
 pub struct Changegroup {
     cg: *mut ffi::sqlite3_changegroup,
 }
 
 impl Changegroup {
-    /// Create a new change group.
+    
     #[inline]
     pub fn new() -> Result<Self> {
         let mut cg = ptr::null_mut();
@@ -526,13 +527,13 @@ impl Changegroup {
         Ok(Changegroup { cg })
     }
 
-    /// Add a changeset
+    
     #[inline]
     pub fn add(&mut self, cs: &Changeset) -> Result<()> {
         check(unsafe { ffi::sqlite3changegroup_add(self.cg, cs.n, cs.cs) })
     }
 
-    /// Add a changeset read from `input` to this change group.
+    
     #[inline]
     pub fn add_stream(&mut self, input: &mut dyn Read) -> Result<()> {
         let input_ref = &input;
@@ -545,7 +546,7 @@ impl Changegroup {
         })
     }
 
-    /// Obtain a composite Changeset
+    
     #[inline]
     pub fn output(&mut self) -> Result<Changeset> {
         let mut n = 0;
@@ -554,7 +555,7 @@ impl Changegroup {
         Ok(Changeset { cs: output, n })
     }
 
-    /// Write the combined set of changes to `output`.
+    
     #[inline]
     pub fn output_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
@@ -578,7 +579,7 @@ impl Drop for Changegroup {
 }
 
 impl Connection {
-    /// Apply a changeset to a database
+    
     pub fn apply<F, C>(&self, cs: &Changeset, filter: Option<F>, conflict: C) -> Result<()>
     where
         F: Fn(&str) -> bool + Send + RefUnwindSafe + 'static,
@@ -611,7 +612,7 @@ impl Connection {
         })
     }
 
-    /// Apply a changeset to a database
+    
     pub fn apply_strm<F, C>(
         &self,
         input: &mut dyn Read,
@@ -651,11 +652,11 @@ impl Connection {
     }
 }
 
-/// Constants passed to the conflict handler
-/// See [here](https://sqlite.org/session.html#SQLITE_CHANGESET_CONFLICT) for details.
+
+
 #[allow(missing_docs)]
 #[repr(i32)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
 pub enum ConflictType {
@@ -679,11 +680,11 @@ impl From<i32> for ConflictType {
     }
 }
 
-/// Constants returned by the conflict handler
-/// See [here](https://sqlite.org/session.html#SQLITE_CHANGESET_ABORT) for details.
+
+
 #[allow(missing_docs)]
 #[repr(i32)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
 pub enum ConflictAction {
@@ -705,9 +706,13 @@ where
         str::from_utf8(c_slice)
     };
     match *tuple {
-        (Some(ref filter), _) => c_int::from(
-            catch_unwind(|| filter(tbl_name.expect("illegal table name"))).unwrap_or_default(),
-        ),
+        (Some(ref filter), _) => {
+            if let Ok(true) = catch_unwind(|| filter(tbl_name.expect("illegal table name"))) {
+                1
+            } else {
+                0
+            }
+        }
         _ => unimplemented!(),
     }
 }
@@ -739,11 +744,11 @@ unsafe extern "C" fn x_input(p_in: *mut c_void, data: *mut c_void, len: *mut c_i
     let input = p_in as *mut &mut dyn Read;
     match (*input).read(bytes) {
         Ok(n) => {
-            *len = n as i32; // TODO Validate: n = 0 may not mean the reader will always no longer be able to
-                             // produce bytes.
+            *len = n as i32; 
+                             
             ffi::SQLITE_OK
         }
-        Err(_) => ffi::SQLITE_IOERR_READ, // TODO check if err is a (ru)sqlite Error => propagate
+        Err(_) => ffi::SQLITE_IOERR_READ, 
     }
 }
 
@@ -751,13 +756,13 @@ unsafe extern "C" fn x_output(p_out: *mut c_void, data: *const c_void, len: c_in
     if p_out.is_null() {
         return ffi::SQLITE_MISUSE;
     }
-    // The sessions module never invokes an xOutput callback with the third
-    // parameter set to a value less than or equal to zero.
+    
+    
     let bytes: &[u8] = from_raw_parts(data as *const u8, len as usize);
     let output = p_out as *mut &mut dyn Write;
     match (*output).write_all(bytes) {
         Ok(_) => ffi::SQLITE_OK,
-        Err(_) => ffi::SQLITE_IOERR_WRITE, // TODO check if err is a (ru)sqlite Error => propagate
+        Err(_) => ffi::SQLITE_IOERR_WRITE, 
     }
 }
 
@@ -779,7 +784,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
 
         session.changeset()
     }
@@ -792,7 +797,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
 
         let mut output = Vec::new();
         session.changeset_strm(&mut output)?;
@@ -852,12 +857,12 @@ mod test {
         )?;
 
         assert!(!CALLED.load(Ordering::Relaxed));
-        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?1", ["bar"], |row| {
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", ["bar"], |row| {
             row.get::<_, i32>(0)
         })?;
         assert_eq!(1, check);
 
-        // conflict expected when same changeset applied again on the same db
+        
         db.apply(
             &changeset,
             None::<fn(&str) -> bool>,
@@ -887,7 +892,7 @@ mod test {
             |_conflict_type, _item| ConflictAction::SQLITE_CHANGESET_OMIT,
         )?;
 
-        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?1", ["bar"], |row| {
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", ["bar"], |row| {
             row.get::<_, i32>(0)
         })?;
         assert_eq!(1, check);
@@ -903,7 +908,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
 
         assert!(!session.is_empty());
         Ok(())

@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 import os
 import sys
 import ctypes
@@ -20,11 +24,6 @@ import enum
 import struct
 import contextlib
 import datetime
-import typing
-{%- if ci.has_async_fns() %}
-import asyncio
-{%- endif %}
-import platform
 {%- for req in self.imports() %}
 {{ req.render() }}
 {%- endfor %}
@@ -34,7 +33,6 @@ DEFAULT = object()
 
 {% include "RustBufferTemplate.py" %}
 {% include "Helpers.py" %}
-{% include "PointerManager.py" %}
 {% include "RustBufferHelper.py" %}
 
 
@@ -61,6 +59,9 @@ __all__ = [
     {%- endfor %}
     {%- for obj in ci.object_definitions() %}
     "{{ obj|type_name }}",
+    {%- endfor %}
+    {%- for e in ci.error_definitions() %}
+    "{{ e|type_name }}",
     {%- endfor %}
     {%- for c in ci.callback_interface_definitions() %}
     "{{ c.name()|class_name }}",

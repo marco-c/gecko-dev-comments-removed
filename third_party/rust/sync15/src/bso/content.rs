@@ -43,19 +43,8 @@ impl<T: std::fmt::Debug> std::fmt::Debug for IncomingKind<T> {
 impl IncomingBso {
     
     pub fn into_content<T: for<'de> serde::Deserialize<'de>>(self) -> IncomingContent<T> {
-        self.into_content_with_fixup(|_| {})
-    }
-
-    
-    
-    pub fn into_content_with_fixup<T: for<'de> serde::Deserialize<'de>>(
-        self,
-        fixup: impl FnOnce(&mut serde_json::Value),
-    ) -> IncomingContent<T> {
         match serde_json::from_str(&self.payload) {
-            Ok(mut json) => {
-                
-                fixup(&mut json);
+            Ok(json) => {
                 
                 let kind = json_to_kind(json, &self.envelope.id);
                 IncomingContent {
@@ -181,16 +170,10 @@ where
             }
         }
     };
-    match serde_path_to_error::deserialize(json) {
+    match serde_json::from_value(json) {
         Ok(v) => IncomingKind::Content(v),
         Err(e) => {
-            report_error!(
-                "invalid-incoming-content",
-                "{}.{}: {}",
-                std::any::type_name::<T>(),
-                e.path(),
-                e.inner()
-            );
+            report_error!("invalid-incoming-content", "Invalid incoming T: {}", e);
             IncomingKind::Malformed
         }
     }

@@ -1,8 +1,8 @@
-//! Generate series virtual table.
-//!
-//! Port of C [generate series
-//! "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c):
-//! `https://www.sqlite.org/series.html`
+
+
+
+
+
 use std::default::Default;
 use std::marker::PhantomData;
 use std::os::raw::c_int;
@@ -15,20 +15,19 @@ use crate::vtab::{
 };
 use crate::{Connection, Error, Result};
 
-/// Register the "generate_series" module.
+
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("generate_series", eponymous_only_module::<SeriesTab>(), aux)
 }
 
-// Column numbers
-// const SERIES_COLUMN_VALUE : c_int = 0;
+
+
 const SERIES_COLUMN_START: c_int = 1;
 const SERIES_COLUMN_STOP: c_int = 2;
 const SERIES_COLUMN_STEP: c_int = 3;
 
 bitflags::bitflags! {
-    #[derive(Clone, Copy)]
     #[repr(C)]
     struct QueryPlanFlags: ::std::os::raw::c_int {
         // start = $value  -- constraint exists
@@ -42,14 +41,14 @@ bitflags::bitflags! {
         // output in ascending order
         const ASC  = 16;
         // Both start and stop
-        const BOTH  = QueryPlanFlags::START.bits() | QueryPlanFlags::STOP.bits();
+        const BOTH  = QueryPlanFlags::START.bits | QueryPlanFlags::STOP.bits;
     }
 }
 
-/// An instance of the Series virtual table
+
 #[repr(C)]
 struct SeriesTab {
-    /// Base class. Must be first
+    
     base: ffi::sqlite3_vtab,
 }
 
@@ -73,11 +72,11 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
     }
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
-        // The query plan bitmask
+        
         let mut idx_num: QueryPlanFlags = QueryPlanFlags::empty();
-        // Mask of unusable constraints
+        
         let mut unusable_mask: QueryPlanFlags = QueryPlanFlags::empty();
-        // Constraints on start, stop, and step
+        
         let mut a_idx: [Option<usize>; 3] = [None, None, None];
         for (i, constraint) in info.constraints().enumerate() {
             if constraint.column() < SERIES_COLUMN_START {
@@ -98,7 +97,7 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
                 a_idx[i_col] = Some(i);
             }
         }
-        // Number of arguments that SeriesTabCursor::filter expects
+        
         let mut n_arg = 0;
         for j in a_idx.iter().flatten() {
             n_arg += 1;
@@ -115,8 +114,7 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
             ));
         }
         if idx_num.contains(QueryPlanFlags::BOTH) {
-            // Both start= and stop= boundaries are available.
-            #[allow(clippy::bool_to_int_with_if)]
+            
             info.set_estimated_cost(f64::from(
                 2 - if idx_num.contains(QueryPlanFlags::STEP) {
                     1
@@ -146,9 +144,9 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
                 info.set_order_by_consumed(true);
             }
         } else {
-            // If either boundary is missing, we have to generate a huge span
-            // of numbers.  Make this case very expensive so that the query
-            // planner will work hard to avoid it.
+            
+            
+            
             info.set_estimated_rows(2_147_483_647);
         }
         info.set_idx_num(idx_num.bits());
@@ -160,22 +158,22 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
     }
 }
 
-/// A cursor for the Series virtual table
+
 #[repr(C)]
 struct SeriesTabCursor<'vtab> {
-    /// Base class. Must be first
+    
     base: ffi::sqlite3_vtab_cursor,
-    /// True to count down rather than up
+    
     is_desc: bool,
-    /// The rowid
+    
     row_id: i64,
-    /// Current value ("value")
+    
     value: i64,
-    /// Minimum value ("start")
+    
     min_value: i64,
-    /// Maximum value ("stop")
+    
     max_value: i64,
-    /// Increment ("step")
+    
     step: i64,
     phantom: PhantomData<&'vtab SeriesTab>,
 }
@@ -226,7 +224,7 @@ unsafe impl VTabCursor for SeriesTabCursor<'_> {
         };
         for arg in args.iter() {
             if arg.data_type() == Type::Null {
-                // If any of the constraints have a NULL value, then return no rows.
+                
                 self.min_value = 1;
                 self.max_value = 0;
                 break;

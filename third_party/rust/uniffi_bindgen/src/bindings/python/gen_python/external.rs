@@ -2,9 +2,8 @@
 
 
 
-use crate::backend::CodeType;
+use crate::backend::{CodeOracle, CodeType};
 
-#[derive(Debug)]
 pub struct ExternalCodeType {
     name: String,
 }
@@ -16,11 +15,15 @@ impl ExternalCodeType {
 }
 
 impl CodeType for ExternalCodeType {
-    fn type_label(&self) -> String {
+    fn type_label(&self, _oracle: &dyn CodeOracle) -> String {
         self.name.clone()
     }
 
-    fn canonical_name(&self) -> String {
+    fn canonical_name(&self, _oracle: &dyn CodeOracle) -> String {
         format!("Type{}", self.name)
+    }
+
+    fn coerce(&self, _oracle: &dyn CodeOracle, nm: &str) -> String {
+        nm.into()
     }
 }
