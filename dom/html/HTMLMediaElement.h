@@ -656,9 +656,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool IsVideoDecodingSuspended() const;
 
   
-  void SetSuspend(bool aSuspend);
-
-  
   
   double TotalVideoPlayTime() const;
   double TotalVideoHDRPlayTime() const;

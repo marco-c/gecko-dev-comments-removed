@@ -154,7 +154,6 @@ RefPtr<MediaSink::EndedPromise> AudioSink::Start(
       mAudioPopped.Connect(mOwnerThread, this, &AudioSink::OnAudioPopped);
 
   mStartTime = aStartTime;
-  SINK_LOG("Start=%" PRId64, mStartTime.ToMicroseconds());
 
   
   
@@ -536,7 +535,7 @@ void AudioSink::NotifyAudioNeeded() {
 
       SINK_LOG("Gap in the audio input, push %" PRId64 " frames of silence",
                missingFrames.value());
-      mAudioGapEvent.Notify(missingFrames.value());
+
       RefPtr<AudioData> silenceData;
       AlignedAudioBuffer silenceBuffer(missingFrames.value() * data->mChannels);
       if (!silenceBuffer) {
