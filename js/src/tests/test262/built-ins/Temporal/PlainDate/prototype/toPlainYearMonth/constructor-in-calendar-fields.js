@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+const calendar = TemporalHelpers.calendarWithExtraFields(['constructor']);
+const date = new Temporal.PlainDate(2023, 5, 1, calendar);
+
+assert.throws(RangeError, () => date.toPlainYearMonth());
+
+reportCompare(0, 0);

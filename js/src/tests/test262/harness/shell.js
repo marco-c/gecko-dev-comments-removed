@@ -1468,6 +1468,26 @@ var TemporalHelpers = {
 
 
 
+  assertDateDuration(duration, years, months, weeks, days, description = "") {
+    assert(duration instanceof Temporal.Duration, `${description} instanceof`);
+    assert.sameValue(duration.years, years, `${description} years result`);
+    assert.sameValue(duration.months, months, `${description} months result`);
+    assert.sameValue(duration.weeks, weeks, `${description} weeks result`);
+    assert.sameValue(duration.days, days, `${description} days result`);
+    assert.sameValue(duration.hours, 0, `${description} hours result should be zero`);
+    assert.sameValue(duration.minutes, 0, `${description} minutes result should be zero`);
+    assert.sameValue(duration.seconds, 0, `${description} seconds result should be zero`);
+    assert.sameValue(duration.milliseconds, 0, `${description} milliseconds result should be zero`);
+    assert.sameValue(duration.microseconds, 0, `${description} microseconds result should be zero`);
+    assert.sameValue(duration.nanoseconds, 0, `${description} nanoseconds result should be zero`);
+  },
+
+  
+
+
+
+
+
   assertDurationsEqual(actual, expected, description = "") {
     assert(expected instanceof Temporal.Duration, `${description} expected value should be a Temporal.Duration`);
     TemporalHelpers.assertDuration(actual, expected.years, expected.months, expected.weeks, expected.days, expected.hours, expected.minutes, expected.seconds, expected.milliseconds, expected.microseconds, expected.nanoseconds, description);
@@ -2750,6 +2770,25 @@ var TemporalHelpers = {
 
 
 
+  calendarWithExtraFields(fields) {
+    class CalendarWithExtraFields extends Temporal.Calendar {
+      constructor(extraFields) {
+        super("iso8601");
+        this._extraFields = extraFields;
+      }
+
+      fields(fieldNames) {
+        return super.fields(fieldNames).concat(this._extraFields);
+      }
+    }
+
+    return new CalendarWithExtraFields(fields);
+  },
+
+  
+
+
+
 
 
 
@@ -3190,8 +3229,14 @@ var TemporalHelpers = {
         return this._offsetValue;
       }
 
-      getPossibleInstantsFor() {
-        return [];
+      getPossibleInstantsFor(dt) {
+        if (typeof this._offsetValue !== 'number' || Math.abs(this._offsetValue) >= 86400e9 || isNaN(this._offsetValue)) return [];
+        const zdt = dt.toZonedDateTime("UTC").add({ nanoseconds: -this._offsetValue });
+        return [zdt.toInstant()];
+      }
+
+      get id() {
+        return this.getOffsetStringFor(new Temporal.Instant(0n));
       }
     }
     return new SpecificOffsetTimeZone(offsetValue);
