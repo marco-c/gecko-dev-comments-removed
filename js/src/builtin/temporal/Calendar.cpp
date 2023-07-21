@@ -4190,15 +4190,10 @@ static bool Calendar_toString(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool Calendar_toJSON(JSContext* cx, const CallArgs& args) {
-  Rooted<CalendarValue> calendar(cx, &args.thisv().toObject());
+  auto* calendar = &args.thisv().toObject().as<CalendarObject>();
 
   
-  JSString* str = CalendarToString(cx, calendar);
-  if (!str) {
-    return false;
-  }
-
-  args.rval().setString(str);
+  args.rval().setString(calendar->identifier());
   return true;
 }
 
