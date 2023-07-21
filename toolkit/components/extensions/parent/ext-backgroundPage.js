@@ -349,16 +349,6 @@ this.backgroundPage = class extends ExtensionAPI {
     this.bgInstance = null;
 
     
-    
-    
-    if (
-      PrivateBrowsingUtils.permanentPrivateBrowsing &&
-      !extension.privateBrowsingAllowed
-    ) {
-      return;
-    }
-
-    
     let bgStartupPromise = new Promise(resolve => {
       let done = () => {
         extension.off("background-script-started", done);
@@ -649,6 +639,17 @@ this.backgroundPage = class extends ExtensionAPI {
 
   async onManifestEntry(entryName) {
     let { extension } = this;
+
+    
+    
+    
+    if (
+      PrivateBrowsingUtils.permanentPrivateBrowsing &&
+      !extension.privateBrowsingAllowed
+    ) {
+      return;
+    }
+
     extension.backgroundState = BACKGROUND_STATE.STOPPED;
 
     
