@@ -10,8 +10,13 @@ from .. import (
 )
 
 
-def assert_cookies(request_cookies, expected_cookies):
-    assert len(request_cookies) == len(expected_cookies)
+def assert_bytes_value(bytes_value):
+    assert bytes_value["type"] in ["string", "base64"]
+    any_string(bytes_value["value"])
+
+
+def assert_cookies(event_cookies, expected_cookies):
+    assert len(event_cookies) == len(expected_cookies)
 
     
     def match_cookie(cookie, expected):
@@ -22,15 +27,15 @@ def assert_cookies(request_cookies, expected_cookies):
         return True
 
     for cookie in expected_cookies:
-        assert next(c for c in request_cookies if match_cookie(c, cookie)) is not None
+        assert next(c for c in event_cookies if match_cookie(c, cookie)) is not None
 
 
-def assert_headers(request_headers, expected_headers):
+def assert_headers(event_headers, expected_headers):
     
     
-    assert len(request_headers) >= len(expected_headers)
+    assert len(event_headers) >= len(expected_headers)
     for header in expected_headers:
-        assert next(h for h in request_headers if header == h) is not None
+        assert next(h for h in event_headers if header == h) is not None
 
 
 def assert_timing_info(timing_info):
@@ -71,6 +76,9 @@ def assert_request_data(request_data, expected_request):
 
     assert_timing_info(request_data["timings"])
 
+    for cookie in request_data["cookies"]:
+        assert_bytes_value(cookie["value"])
+
     if "cookies" in expected_request:
         assert_cookies(request_data["cookies"], expected_request["cookies"])
         
@@ -78,6 +86,9 @@ def assert_request_data(request_data, expected_request):
         
         
         del expected_request["cookies"]
+
+    for header in request_data["headers"]:
+        assert_bytes_value(header["value"])
 
     if "headers" in expected_request:
         assert_headers(request_data["headers"], expected_request["headers"])
@@ -151,6 +162,12 @@ def assert_response_data(response_data, expected_response):
         },
         response_data,
     )
+
+    for header in response_data["headers"]:
+        assert_bytes_value(header["value"])
+
+    for header in response_data["headers"]:
+        assert_bytes_value(header["value"])
 
     if "headers" in expected_response:
         assert_headers(response_data["headers"], expected_response["headers"])
