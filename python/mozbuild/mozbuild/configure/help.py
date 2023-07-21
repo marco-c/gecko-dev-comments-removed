@@ -19,7 +19,32 @@ class HelpFormatter(object):
         if option.possible_origins == ("implied",):
             
             return
-        self.options.append(option)
+        if (
+            option.default
+            and len(option.default) == 0
+            and option.choices
+            and option.nargs in ("?", "*")
+        ):
+            
+            
+            
+            
+            
+            
+            option_1 = Option(
+                option.option,
+                default=False,
+                choices=option.choices,
+                help=option.help,
+                define_depth=1,
+            )
+            option_2 = Option(
+                option.option, default=True, help=option.help, define_depth=1
+            )
+            self.options.append(option_1)
+            self.options.append(option_2)
+        else:
+            self.options.append(option)
 
     def format_options_by_category(self, options_by_category):
         ret = []

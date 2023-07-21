@@ -153,6 +153,12 @@ set_config("CHOICES", returned_choices)
 
 
 
+
+option("--disable-foo", nargs="*", choices=("x", "y"), help="{Enable|Disable} Foo")
+
+
+
+
 @depends(
     "--without-thing",
     "--with-stuff",
@@ -160,6 +166,7 @@ set_config("CHOICES", returned_choices)
     "--option",
     "--enable-choices",
     "--with-other-default",
+    "--disable-foo",
 )
 def remainder(*args):
     return args
