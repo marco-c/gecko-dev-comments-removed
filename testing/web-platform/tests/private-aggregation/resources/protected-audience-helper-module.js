@@ -136,19 +136,21 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig) {
 
 
 
+async function runReportTest(test, codeToInsert) {
+  const uuid = generateUuid(test);
 
-
-async function runReportTest(test, uuid, reportResult, reportWin) {
-  assert_not_equals(reportResult, null)
-  assert_not_equals(reportWin, null)
+  let generateBid = codeToInsert.generateBid;
+  let scoreAd = codeToInsert.scoreAd;
+  let reportWin = codeToInsert.reportWin;
+  let reportResult = codeToInsert.reportResult;
 
   let interestGroupOverrides =
-    { biddingLogicUrl: createBiddingScriptUrl({ reportWin }) };
+    { biddingLogicUrl: createBiddingScriptUrl({ generateBid, reportWin }) };
 
   await joinInterestGroup(test, uuid, interestGroupOverrides);
   await runBasicFledgeAuctionAndNavigate(
       test, uuid,
       { decisionLogicUrl: createDecisionScriptUrl(
-        uuid, { reportResult })
+        uuid, { scoreAd, reportResult })
     });
 }
