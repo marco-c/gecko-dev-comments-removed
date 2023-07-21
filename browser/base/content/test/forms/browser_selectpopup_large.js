@@ -241,12 +241,7 @@ async function performLargePopupTests(win) {
     
     
     
-    
-    
-    
-    const fuzzFactor = matchMedia("(-moz-platform: windows-win7)").matches
-      ? 21
-      : 1;
+    const fuzzFactor = 1;
     SimpleTest.isfuzzy(
       selectPopup.children[selectedOption].getBoundingClientRect().bottom,
       selectPopup.getBoundingClientRect().bottom - bpBottom + marginBottom,

@@ -56,9 +56,7 @@ var suppressed_toggles = [
   "-moz-scrollbar-end-forward",
   "-moz-scrollbar-start-backward",
   "-moz-scrollbar-start-forward",
-  "-moz-windows-compositor",
   "-moz-windows-default-theme",
-  "-moz-windows-glass",
   "-moz-gtk-csd-available",
   "-moz-gtk-csd-minimize-button",
   "-moz-gtk-csd-maximize-button",
@@ -70,12 +68,6 @@ var toggles_enabled_in_content = [];
 
 
 var OS = SpecialPowers.Services.appinfo.OS;
-
-
-
-if (OS === "WINNT") {
-  suppressed_toggles.push("-moz-windows-classic");
-}
 
 
 
