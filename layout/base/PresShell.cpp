@@ -5442,14 +5442,8 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
   nscolor color = NS_RGBA(0, 0, 0, 0);
   bool drawBackgroundImage = false;
   bool drawBackgroundColor = false;
-  const nsStyleDisplay* disp = bgFrame->StyleDisplay();
-  StyleAppearance appearance = disp->EffectiveAppearance();
-  if (bgFrame->IsThemed(disp) &&
-      appearance != StyleAppearance::MozWinBorderlessGlass) {
+  if (!bgFrame->IsThemed()) {
     
-    
-    
-  } else {
     color = nsCSSRendering::DetermineBackgroundColor(
         mPresContext, bgFrame->Style(), canvas, drawBackgroundImage,
         drawBackgroundColor);

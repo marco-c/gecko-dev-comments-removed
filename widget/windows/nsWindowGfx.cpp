@@ -175,20 +175,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
   WebRenderLayerManager* layerManager = renderer->AsWebRender();
 
-  
-  
-  
-  if (HasGlass() && knowsCompositor && knowsCompositor->GetUseCompositorWnd()) {
-    HDC hdc;
-    RECT rect;
-    hdc = ::GetWindowDC(mWnd);
-    ::GetWindowRect(mWnd, &rect);
-    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-    ::FillRect(hdc, &rect,
-               reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
-    ReleaseDC(mWnd, hdc);
-  }
-
   if (mClearNCEdge) {
     
     HDC hdc;
@@ -326,16 +312,15 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
         
         BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
         switch (mTransparencyMode) {
-          case TransparencyMode::BorderlessGlass:
-          default:
-            
-            doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-            break;
           case TransparencyMode::Transparent:
             
             
             dt->ClearRect(
                 Rect(0.f, 0.f, dt->GetSize().width, dt->GetSize().height));
+            break;
+          default:
+            
+            doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
             break;
         }
 

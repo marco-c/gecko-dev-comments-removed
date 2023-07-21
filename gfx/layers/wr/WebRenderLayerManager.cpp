@@ -387,13 +387,6 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     }
   }
 
-  mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), *mDLBuilder,
-                                             resourceUpdates);
-  if (dumpEnabled) {
-    printf_stderr("(window overlay)\n");
-    Unused << mDLBuilder->Dump( 1, Some(builderDumpIndex), Nothing());
-  }
-
   if (AsyncPanZoomEnabled()) {
     if (mIsFirstPaint) {
       mScrollData.SetIsFirstPaint();

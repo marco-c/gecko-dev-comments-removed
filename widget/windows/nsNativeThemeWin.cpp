@@ -746,9 +746,6 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
     case StyleAppearance::MozWindowButtonMinimize:
     case StyleAppearance::MozWindowButtonMaximize:
     case StyleAppearance::MozWindowButtonRestore:
-    case StyleAppearance::MozWindowButtonBox:
-    case StyleAppearance::MozWindowButtonBoxMaximized:
-    case StyleAppearance::MozWinBorderlessGlass:
       return Some(eUXWindowFrame);
     default:
       return Nothing();
@@ -1299,12 +1296,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       aState = GetWindowFrameButtonState(aFrame,
                                          GetContentState(aFrame, aAppearance));
       return NS_OK;
-    case StyleAppearance::MozWindowButtonBox:
-    case StyleAppearance::MozWindowButtonBoxMaximized:
-    case StyleAppearance::MozWinBorderlessGlass:
-      aPart = -1;
-      aState = 0;
-      return NS_OK;
     default:
       aPart = 0;
       aState = 0;
@@ -1370,13 +1361,6 @@ nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
     case StyleAppearance::MozWindowButtonRestore:
       
       
-      
-      return NS_OK;
-    case StyleAppearance::MozWinBorderlessGlass:
-      
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonBox:
-    case StyleAppearance::MozWindowButtonBoxMaximized:
       
       return NS_OK;
     default:
@@ -1755,8 +1739,7 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
       aAppearance == StyleAppearance::Menuitemtext ||
       aAppearance == StyleAppearance::Separator ||
       aAppearance == StyleAppearance::MozWindowTitlebar ||
-      aAppearance == StyleAppearance::MozWindowTitlebarMaximized ||
-      aAppearance == StyleAppearance::MozWinBorderlessGlass)
+      aAppearance == StyleAppearance::MozWindowTitlebarMaximized)
     return result;  
 
   int32_t part, state;
@@ -1817,21 +1800,6 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
   }
 
   bool ok = true;
-
-  if (aAppearance == StyleAppearance::MozWindowButtonBox ||
-      aAppearance == StyleAppearance::MozWindowButtonBoxMaximized) {
-    aResult->SizeTo(0, 0, 0, 0);
-
-    
-    if (gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) return true;
-
-    
-    if (aAppearance == StyleAppearance::MozWindowButtonBox) {
-      aResult->top = GetSystemMetrics(SM_CXFRAME);
-    }
-    ScaleForFrameDPI(aResult, aFrame);
-    return ok;
-  }
 
   
   if (aAppearance == StyleAppearance::MozWindowTitlebar ||
@@ -2026,7 +1994,6 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
     case StyleAppearance::Listbox:
     case StyleAppearance::Treeview:
     case StyleAppearance::Menuitemtext:
-    case StyleAppearance::MozWinBorderlessGlass:
       return {};  
     default:
       break;
@@ -2145,8 +2112,7 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
       aAppearance == StyleAppearance::ProgressBar ||
       aAppearance == StyleAppearance::Tabpanels ||
       aAppearance == StyleAppearance::Tabpanel ||
-      aAppearance == StyleAppearance::Separator ||
-      aAppearance == StyleAppearance::MozWinBorderlessGlass) {
+      aAppearance == StyleAppearance::Separator) {
     *aShouldRepaint = false;
     return NS_OK;
   }
@@ -2269,17 +2235,6 @@ bool nsNativeThemeWin::WidgetAppearanceDependsOnWindowFocus(
   }
 }
 
-nsITheme::ThemeGeometryType nsNativeThemeWin::ThemeGeometryTypeForWidget(
-    nsIFrame* aFrame, StyleAppearance aAppearance) {
-  switch (aAppearance) {
-    case StyleAppearance::MozWindowButtonBox:
-    case StyleAppearance::MozWindowButtonBoxMaximized:
-      return eThemeGeometryTypeWindowButtons;
-    default:
-      return eThemeGeometryTypeUnknown;
-  }
-}
-
 nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
   if (IsWidgetNonNative(aFrame, aAppearance) != NonNative::No) {
@@ -2287,7 +2242,6 @@ nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
   }
 
   switch (aAppearance) {
-    case StyleAppearance::MozWinBorderlessGlass:
     case StyleAppearance::ProgressBar:
     case StyleAppearance::Progresschunk:
     case StyleAppearance::Range:
@@ -2364,8 +2318,6 @@ bool nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::MozWindowButtonMinimize:
     case StyleAppearance::MozWindowButtonMaximize:
     case StyleAppearance::MozWindowButtonRestore:
-    case StyleAppearance::MozWindowButtonBox:
-    case StyleAppearance::MozWindowButtonBoxMaximized:
       return true;
     default:
       return false;

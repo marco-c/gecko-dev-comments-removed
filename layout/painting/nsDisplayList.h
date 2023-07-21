@@ -1441,32 +1441,6 @@ class nsDisplayListBuilder {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  void AddWindowExcludeGlassRegion(nsIFrame* aFrame, const nsRect& aBounds) {
-    mWindowExcludeGlassRegion.Add(aFrame, aBounds);
-  }
-
-  
-
-
-  nsRegion GetWindowExcludeGlassRegion() const {
-    return mWindowExcludeGlassRegion.ToRegion();
-  }
-
-  
-
-
   void AddWindowOpaqueRegion(nsIFrame* aFrame, const nsRect& aBounds) {
     if (IsRetainingDisplayList()) {
       mRetainedWindowOpaqueRegion.Add(aFrame, aBounds);
@@ -1482,12 +1456,6 @@ class nsDisplayListBuilder {
     return IsRetainingDisplayList() ? mRetainedWindowOpaqueRegion.ToRegion()
                                     : mWindowOpaqueRegion;
   }
-
-  void SetGlassDisplayItem(nsDisplayItem* aItem);
-  void ClearGlassDisplayItem() { mGlassDisplayItem = nullptr; }
-  nsDisplayItem* GetGlassDisplayItem() { return mGlassDisplayItem; }
-
-  bool NeedToForceTransparentSurfaceForItem(nsDisplayItem* aItem);
 
   
 
@@ -1794,11 +1762,6 @@ class nsDisplayListBuilder {
   
   const nsIFrame* mCurrentReferenceFrame;
 
-  
-  
-  
-  nsDisplayItem* mGlassDisplayItem;
-
   nsIFrame* mCaretFrame;
   
   
@@ -1845,7 +1808,6 @@ class nsDisplayListBuilder {
   nsTHashSet<nsDisplayItem*> mReuseableItems;
 
   
-  WeakFrameRegion mWindowExcludeGlassRegion;
   WeakFrameRegion mRetainedWindowDraggingRegion;
   WeakFrameRegion mRetainedWindowNoDraggingRegion;
 
@@ -1884,10 +1846,6 @@ class nsDisplayListBuilder {
   Preserves3DContext mPreserves3DCtx;
 
   uint8_t mBuildingExtraPagesForPageNum;
-
-  
-  
-  bool mHasGlassItemDuringPartial;
 
   nsDisplayListBuilderMode mMode;
   static uint32_t sPaintSequenceNumber;
@@ -2599,9 +2557,6 @@ class nsDisplayItem {
   void SetPainted() { mItemFlags += ItemFlag::Painted; }
 #endif
 
-  void SetIsGlassItem() { mItemFlags += ItemFlag::IsGlassItem; }
-  bool IsGlassItem() { return mItemFlags.contains(ItemFlag::IsGlassItem); }
-
   
 
 
@@ -2849,7 +2804,6 @@ class nsDisplayItem {
     Combines3DTransformWithAncestors,
     ForceNotVisible,
     HasHitTestInfo,
-    IsGlassItem,
 #ifdef MOZ_DUMP_PAINTING
     
     Painted,

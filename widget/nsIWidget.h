@@ -1220,14 +1220,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void AddWindowOverlayWebRenderCommands(
-      mozilla::layers::WebRenderBridgeChild* aWrBridge,
-      mozilla::wr::DisplayListBuilder& aBuilder,
-      mozilla::wr::IpcResourceUpdateQueue& aResources) {}
-
-  
-
-
 
 
 

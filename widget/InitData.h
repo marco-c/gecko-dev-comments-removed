@@ -74,11 +74,8 @@ enum class BorderStyle : int16_t {
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(BorderStyle)
 
 enum class TransparencyMode : uint8_t {
-  Opaque = 0,       
-  Transparent,      
-  BorderlessGlass,  
-                    
-                    
+  Opaque = 0,   
+  Transparent,  
   
   
 };

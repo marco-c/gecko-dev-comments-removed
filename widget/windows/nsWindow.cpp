@@ -369,11 +369,6 @@ static WindowsDllInterceptor sUser32Intercept;
 
 
 
-static const int32_t kGlassMarginAdjustment = 2;
-
-
-
-
 
 static const int32_t kResizableBorderMinSize = 3;
 
@@ -1367,10 +1362,7 @@ DWORD nsWindow::WindowStyle() {
       break;
 
     case WindowType::Popup:
-      style = WS_POPUP;
-      if (!HasGlass()) {
-        style |= WS_OVERLAPPED;
-      }
+      style = WS_POPUP | WS_OVERLAPPED;
       break;
 
     default:
@@ -1851,9 +1843,8 @@ bool nsWindow::IsVisible() const { return mIsVisible; }
 
 
 void nsWindow::ClearThemeRegion() {
-  if (!HasGlass() &&
-      (mWindowType == WindowType::Popup && !IsPopupWithTitleBar() &&
-       (mPopupType == PopupType::Tooltip || mPopupType == PopupType::Panel))) {
+  if (mWindowType == WindowType::Popup && !IsPopupWithTitleBar() &&
+      (mPopupType == PopupType::Tooltip || mPopupType == PopupType::Panel)) {
     SetWindowRgn(mWnd, nullptr, false);
   }
 }
@@ -3253,30 +3244,6 @@ void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
   window->SetWindowTranslucencyInner(aMode);
 }
 
-void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {
-  if (!HasGlass() || GetParent()) return;
-
-  
-  
-  
-  MARGINS margins = {-1, -1, -1, -1};
-  if (!aOpaqueRegion.IsEmpty()) {
-    LayoutDeviceIntRect clientBounds = GetClientBounds();
-    
-    LayoutDeviceIntRect largest = aOpaqueRegion.GetLargestRectangle();
-    margins.cxLeftWidth = largest.X();
-    margins.cxRightWidth = clientBounds.Width() - largest.XMost();
-    margins.cyBottomHeight = clientBounds.Height() - largest.YMost();
-    margins.cyTopHeight = largest.Y();
-  }
-
-  
-  if (memcmp(&mGlassMargins, &margins, sizeof mGlassMargins)) {
-    mGlassMargins = margins;
-    UpdateGlass();
-  }
-}
-
 
 
 
@@ -3290,42 +3257,6 @@ void nsWindow::UpdateWindowDraggingRegion(
     const LayoutDeviceIntRegion& aRegion) {
   if (mDraggableRegion != aRegion) {
     mDraggableRegion = aRegion;
-  }
-}
-
-void nsWindow::UpdateGlass() {
-  MARGINS margins = mGlassMargins;
-
-  
-  
-  
-  
-  DWMNCRENDERINGPOLICY policy = DWMNCRP_USEWINDOWSTYLE;
-  switch (mTransparencyMode) {
-    case TransparencyMode::BorderlessGlass:
-      
-      if (margins.cxLeftWidth >= 0) {
-        margins.cxLeftWidth += kGlassMarginAdjustment;
-        margins.cyTopHeight += kGlassMarginAdjustment;
-        margins.cxRightWidth += kGlassMarginAdjustment;
-        margins.cyBottomHeight += kGlassMarginAdjustment;
-      }
-      policy = DWMNCRP_ENABLED;
-      break;
-    default:
-      break;
-  }
-
-  MOZ_LOG(gWindowsLog, LogLevel::Info,
-          ("glass margins: left:%d top:%d right:%d bottom:%d\n",
-           margins.cxLeftWidth, margins.cyTopHeight, margins.cxRightWidth,
-           margins.cyBottomHeight));
-
-  
-  if (gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
-    DwmExtendFrameIntoClientArea(mWnd, &margins);
-    DwmSetWindowAttribute(mWnd, DWMWA_NCRENDERING_POLICY, &policy,
-                          sizeof policy);
   }
 }
 
@@ -4244,47 +4175,6 @@ nsresult nsWindow::OnDefaultButtonLoaded(
   return NS_OK;
 }
 
-void nsWindow::UpdateThemeGeometries(
-    const nsTArray<ThemeGeometry>& aThemeGeometries) {
-  RefPtr<WebRenderLayerManager> layerManager =
-      GetWindowRenderer() ? GetWindowRenderer()->AsWebRender() : nullptr;
-  if (!layerManager) {
-    return;
-  }
-
-  if (!HasGlass() ||
-      !gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
-    return;
-  }
-
-  mWindowButtonsRect = Nothing();
-
-  if (!IsWin10OrLater()) {
-    for (size_t i = 0; i < aThemeGeometries.Length(); i++) {
-      if (aThemeGeometries[i].mType ==
-          nsNativeThemeWin::eThemeGeometryTypeWindowButtons) {
-        LayoutDeviceIntRect bounds = aThemeGeometries[i].mRect;
-        
-        
-        
-        bounds.SetWidth(bounds.Width() + 1);
-        if (!mWindowButtonsRect) {
-          mWindowButtonsRect = Some(bounds);
-        }
-      }
-    }
-  }
-}
-
-void nsWindow::AddWindowOverlayWebRenderCommands(
-    layers::WebRenderBridgeChild* aWrBridge, wr::DisplayListBuilder& aBuilder,
-    wr::IpcResourceUpdateQueue& aResources) {
-  if (mWindowButtonsRect) {
-    wr::LayoutRect rect = wr::ToLayoutRect(*mWindowButtonsRect);
-    aBuilder.PushClearRect(rect);
-  }
-}
-
 uint32_t nsWindow::GetMaxTouchPoints() const {
   return WinUtils::GetMaxTouchPoints();
 }
@@ -5108,10 +4998,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
   
   LRESULT dwmHitResult;
   if (mCustomNonClient &&
-      gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled() &&
-      
-
-      !(IsWin10OrLater() && HasGlass()) &&
       DwmDefWindowProc(mWnd, msg, wParam, lParam, &dwmHitResult)) {
     *aRetValue = dwmHitResult;
     return true;
@@ -6055,7 +5941,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
       }
 
-      if (IsWindowButton(wParam) && mCustomNonClient && !mWindowButtonsRect) {
+      if (IsWindowButton(wParam) && mCustomNonClient) {
         DispatchMouseEvent(eMouseDown, wParamFromGlobalMouseState(),
                            lParamToClient(lParam), false, MouseButton::ePrimary,
                            MOUSE_INPUT_SOURCE(), nullptr, true);
@@ -6261,7 +6147,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
-      UpdateGlass();
       Invalidate(true, true, true);
       break;
 
@@ -7819,27 +7704,10 @@ void nsWindow::SetWindowTranslucencyInner(TransparencyMode aMode) {
   ::SetWindowLongPtrW(hWnd, GWL_STYLE, style);
   ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
 
-  if (HasGlass()) memset(&mGlassMargins, 0, sizeof mGlassMargins);
   mTransparencyMode = aMode;
 
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->UpdateTransparency(aMode);
-  }
-  UpdateGlass();
-
-  
-  
-  
-  if (HasGlass() && GetWindowRenderer()->AsKnowsCompositor() &&
-      GetWindowRenderer()->AsKnowsCompositor()->GetUseCompositorWnd()) {
-    HDC hdc;
-    RECT rect;
-    hdc = ::GetWindowDC(mWnd);
-    ::GetWindowRect(mWnd, &rect);
-    ::MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
-    ::FillRect(hdc, &rect,
-               reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
-    ReleaseDC(mWnd, hdc);
   }
 }
 

@@ -1639,11 +1639,6 @@ pub enum Appearance {
     MozWinMediaToolbox,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinBrowsertabbarToolbox,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozWinBorderlessGlass,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozWinExcludeGlass,
 
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
@@ -1652,8 +1647,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonBox,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozWindowButtonBoxMaximized,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonClose,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
