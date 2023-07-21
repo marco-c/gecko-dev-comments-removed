@@ -1678,31 +1678,11 @@ bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
 
 
 
-PlainObject* js::temporal::CopyOptions(JSContext* cx,
-                                       JS::Handle<JSObject*> options) {
-  
-  Rooted<PlainObject*> optionsCopy(cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!optionsCopy) {
-    return nullptr;
-  }
-
-  
-  if (!CopyDataProperties(cx, optionsCopy, options)) {
-    return nullptr;
-  }
-
-  
-  return optionsCopy;
-}
-
-
-
-
 
 
 bool js::temporal::CopyDataProperties(JSContext* cx,
-                                      JS::Handle<PlainObject*> target,
-                                      JS::Handle<JSObject*> source) {
+                                      Handle<PlainObject*> target,
+                                      Handle<JSObject*> source) {
   
   if (source->is<NativeObject>()) {
     bool optimized = false;
@@ -1765,9 +1745,9 @@ bool js::temporal::CopyDataProperties(JSContext* cx,
 
 
 
-bool js::temporal::CopyDataPropertiesIgnoreUndefined(
-    JSContext* cx, JS::Handle<PlainObject*> target,
-    JS::Handle<JSObject*> source) {
+static bool CopyDataPropertiesIgnoreUndefined(JSContext* cx,
+                                              Handle<PlainObject*> target,
+                                              Handle<JSObject*> source) {
   
 
   
@@ -1813,6 +1793,49 @@ bool js::temporal::CopyDataPropertiesIgnoreUndefined(
 
   
   return true;
+}
+
+
+
+
+PlainObject* js::temporal::SnapshotOwnProperties(JSContext* cx,
+                                                 Handle<JSObject*> source) {
+  
+  Rooted<PlainObject*> copy(cx, NewPlainObjectWithProto(cx, nullptr));
+  if (!copy) {
+    return nullptr;
+  }
+
+  
+  if (!CopyDataProperties(cx, copy, source)) {
+    return nullptr;
+  }
+
+  
+  return copy;
+}
+
+
+
+
+
+
+
+PlainObject* js::temporal::SnapshotOwnPropertiesIgnoreUndefined(
+    JSContext* cx, Handle<JSObject*> source) {
+  
+  Rooted<PlainObject*> copy(cx, NewPlainObjectWithProto(cx, nullptr));
+  if (!copy) {
+    return nullptr;
+  }
+
+  
+  if (!CopyDataPropertiesIgnoreUndefined(cx, copy, source)) {
+    return nullptr;
+  }
+
+  
+  return copy;
 }
 
 

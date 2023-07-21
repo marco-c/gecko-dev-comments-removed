@@ -1340,7 +1340,7 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
     }
 
     
-    resolvedOptions = CopyOptions(cx, options);
+    resolvedOptions = SnapshotOwnProperties(cx, options);
     if (!resolvedOptions) {
       return false;
     }

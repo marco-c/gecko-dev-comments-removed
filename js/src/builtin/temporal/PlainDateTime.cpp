@@ -871,7 +871,8 @@ static bool DifferenceISODateTime(JSContext* cx, const PlainDateTime& one,
     
 
     
-    Rooted<PlainObject*> untilOptions(cx, CopyOptions(cx, maybeOptions));
+    Rooted<PlainObject*> untilOptions(cx,
+                                      SnapshotOwnProperties(cx, maybeOptions));
     if (!untilOptions) {
       return false;
     }
@@ -1014,7 +1015,8 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx, CopyOptions(cx, options));
+    Rooted<PlainObject*> resolvedOptions(cx,
+                                         SnapshotOwnProperties(cx, options));
     if (!resolvedOptions) {
       return false;
     }

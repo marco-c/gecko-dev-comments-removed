@@ -1043,7 +1043,8 @@ static bool DifferenceTemporalInstant(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx, CopyOptions(cx, options));
+    Rooted<PlainObject*> resolvedOptions(cx,
+                                         SnapshotOwnProperties(cx, options));
     if (!resolvedOptions) {
       return false;
     }

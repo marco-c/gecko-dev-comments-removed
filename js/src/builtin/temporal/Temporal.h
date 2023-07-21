@@ -357,20 +357,21 @@ bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
 
 
 
-PlainObject* CopyOptions(JSContext* cx, JS::Handle<JSObject*> options);
+
+PlainObject* SnapshotOwnProperties(JSContext* cx, JS::Handle<JSObject*> source);
+
+
+
+
+
+PlainObject* SnapshotOwnPropertiesIgnoreUndefined(JSContext* cx,
+                                                  JS::Handle<JSObject*> source);
 
 
 
 
 bool CopyDataProperties(JSContext* cx, JS::Handle<PlainObject*> target,
                         JS::Handle<JSObject*> source);
-
-
-
-
-bool CopyDataPropertiesIgnoreUndefined(JSContext* cx,
-                                       JS::Handle<PlainObject*> target,
-                                       JS::Handle<JSObject*> source);
 
 enum class TemporalDifference { Since, Until };
 

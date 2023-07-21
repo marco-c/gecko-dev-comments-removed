@@ -4379,14 +4379,9 @@ static bool Calendar_mergeFields(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  
-  Rooted<PlainObject*> fieldsCopy(cx, NewPlainObjectWithProto(cx, nullptr));
+  Rooted<PlainObject*> fieldsCopy(
+      cx, SnapshotOwnPropertiesIgnoreUndefined(cx, fields));
   if (!fieldsCopy) {
-    return false;
-  }
-
-  
-  if (!CopyDataPropertiesIgnoreUndefined(cx, fieldsCopy, fields)) {
     return false;
   }
 
@@ -4396,16 +4391,9 @@ static bool Calendar_mergeFields(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  
   Rooted<PlainObject*> additionalFieldsCopy(
-      cx, NewPlainObjectWithProto(cx, nullptr));
+      cx, SnapshotOwnPropertiesIgnoreUndefined(cx, additionalFields));
   if (!additionalFieldsCopy) {
-    return false;
-  }
-
-  
-  if (!CopyDataPropertiesIgnoreUndefined(cx, additionalFieldsCopy,
-                                         additionalFields)) {
     return false;
   }
 
