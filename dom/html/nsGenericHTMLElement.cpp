@@ -2056,16 +2056,15 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
              "aFormIdElement shouldn't be set if aBindToTree is true!");
 
   bool needStateUpdate = false;
+  HTMLFormElement* form = GetFormInternal();
   if (!aBindToTree) {
-    HTMLFormElement* form = GetFormInternal();
     needStateUpdate = form && form->IsDefaultSubmitElement(this);
     ClearForm(true, false);
+    form = nullptr;
   }
 
-  
-  
-  HTMLFormElement* oldForm = GetFormInternal();
-  if (!oldForm) {
+  HTMLFormElement* oldForm = form;
+  if (!form) {
     
     nsAutoString formId;
     if (GetAttr(nsGkAtoms::form, formId)) {
@@ -2086,7 +2085,8 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 
         if (element && element->IsHTMLElement(nsGkAtoms::form) &&
             nsContentUtils::IsInSameAnonymousTree(this, element)) {
-          SetFormInternal(static_cast<HTMLFormElement*>(element), aBindToTree);
+          form = static_cast<HTMLFormElement*>(element);
+          SetFormInternal(form, aBindToTree);
         }
       }
     } else {
@@ -2096,11 +2096,11 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
       
       
       
-      SetFormInternal(FindAncestorForm(), aBindToTree);
+      form = FindAncestorForm();
+      SetFormInternal(form, aBindToTree);
     }
   }
 
-  HTMLFormElement* form = GetFormInternal();
   if (form && !HasFlag(ADDED_TO_FORM)) {
     
     nsAutoString nameVal, idVal;
