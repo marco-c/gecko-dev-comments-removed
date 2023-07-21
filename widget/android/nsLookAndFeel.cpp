@@ -190,7 +190,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       break;
     case ColorID::Infotext:
     case ColorID::Threeddarkshadow:  
-    case ColorID::MozButtondefault:  
       aColor = NS_RGB(0x00, 0x00, 0x00);
       break;
     case ColorID::Menu:
