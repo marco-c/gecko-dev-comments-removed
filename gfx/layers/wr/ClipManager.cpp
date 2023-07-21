@@ -400,6 +400,9 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
   
   for (const DisplayItemClipChain* chain = aChain; chain;
        chain = chain->mParent) {
+    MOZ_DIAGNOSTIC_ASSERT(chain->mOnStack || !chain->mASR ||
+                          chain->mASR->mScrollableFrame);
+
     if (!chain->mClip.HasClip()) {
       
       continue;
