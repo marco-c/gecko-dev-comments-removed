@@ -83,55 +83,6 @@ auto nsNativeThemeWin::IsWidgetNonNative(nsIFrame* aFrame,
   return NonNative::No;
 }
 
-static int32_t GetTopLevelWindowActiveState(nsIFrame* aFrame) {
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return mozilla::widget::themeconst::FS_INACTIVE;
-  }
-  
-  if (gfxPlatform::IsHeadless()) {
-    return mozilla::widget::themeconst::FS_ACTIVE;
-  }
-  
-  
-  nsIWidget* widget = aFrame->GetNearestWidget();
-  nsWindow* window = static_cast<nsWindow*>(widget);
-  if (!window) return mozilla::widget::themeconst::FS_INACTIVE;
-  if (widget && !window->IsTopLevelWidget() &&
-      !(window = window->GetParentWindowBase(false)))
-    return mozilla::widget::themeconst::FS_INACTIVE;
-
-  if (window->GetWindowHandle() == ::GetActiveWindow())
-    return mozilla::widget::themeconst::FS_ACTIVE;
-  return mozilla::widget::themeconst::FS_INACTIVE;
-}
-
-static int32_t GetWindowFrameButtonState(nsIFrame* aFrame,
-                                         ElementState elementState) {
-  if (GetTopLevelWindowActiveState(aFrame) ==
-      mozilla::widget::themeconst::FS_INACTIVE) {
-    if (elementState.HasState(ElementState::HOVER))
-      return mozilla::widget::themeconst::BS_HOT;
-    return mozilla::widget::themeconst::BS_INACTIVE;
-  }
-
-  if (elementState.HasState(ElementState::HOVER)) {
-    if (elementState.HasState(ElementState::ACTIVE))
-      return mozilla::widget::themeconst::BS_PUSHED;
-    return mozilla::widget::themeconst::BS_HOT;
-  }
-  return mozilla::widget::themeconst::BS_NORMAL;
-}
-
-static int32_t GetClassicWindowFrameButtonState(ElementState elementState) {
-  if (elementState.HasState(ElementState::ACTIVE) &&
-      elementState.HasState(ElementState::HOVER))
-    return DFCS_BUTTONPUSH | DFCS_PUSHED;
-  return DFCS_BUTTONPUSH;
-}
-
 static bool IsTopLevelMenu(nsIFrame* aFrame) {
   auto* menu = dom::XULButtonElement::FromNodeOrNull(aFrame->GetContent());
   return menu && menu->IsOnMenuBar();
@@ -297,72 +248,6 @@ static HRESULT DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart,
   }
   return DrawThemeBackground(aTheme, aHdc, aPart, aState, aWidgetRect,
                              aClipRect);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum CaptionDesktopTheme {
-  CAPTION_CLASSIC = 0,
-  CAPTION_BASIC,
-};
-
-enum CaptionButton {
-  CAPTIONBUTTON_MINIMIZE = 0,
-  CAPTIONBUTTON_RESTORE,
-  CAPTIONBUTTON_CLOSE,
-};
-
-struct CaptionButtonPadding {
-  RECT hotPadding[3];
-};
-
-
-static CaptionButtonPadding buttonData[3] = {
-    {{{1, 2, 0, 1}, {0, 2, 1, 1}, {1, 2, 2, 1}}},
-    {{{1, 2, 0, 2}, {0, 2, 1, 2}, {1, 2, 2, 2}}},
-    {{{0, 2, 0, 2}, {0, 2, 1, 2}, {1, 2, 2, 2}}}};
-
-
-static void AddPaddingRect(LayoutDeviceIntSize* aSize, CaptionButton button) {
-  if (!aSize) return;
-  RECT offset = buttonData[CAPTION_BASIC].hotPadding[button];
-  aSize->width += offset.left + offset.right;
-  aSize->height += offset.top + offset.bottom;
-}
-
-
-
-static void OffsetBackgroundRect(RECT& rect, CaptionButton button) {
-  RECT offset = buttonData[CAPTION_BASIC].hotPadding[button];
-  rect.left += offset.left;
-  rect.top += offset.top;
-  rect.right -= offset.right;
-  rect.bottom -= offset.bottom;
 }
 
 
@@ -740,13 +625,6 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
     case StyleAppearance::Menuimage:
     case StyleAppearance::Menuitemtext:
       return Some(eUXMenu);
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized:
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
-      return Some(eUXWindowFrame);
     default:
       return Nothing();
   }
@@ -1267,35 +1145,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       aPart = -1;
       aState = 0;
       return NS_OK;
-
-    case StyleAppearance::MozWindowTitlebar:
-      aPart = mozilla::widget::themeconst::WP_CAPTION;
-      aState = GetTopLevelWindowActiveState(aFrame);
-      return NS_OK;
-    case StyleAppearance::MozWindowTitlebarMaximized:
-      aPart = mozilla::widget::themeconst::WP_MAXCAPTION;
-      aState = GetTopLevelWindowActiveState(aFrame);
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonClose:
-      aPart = mozilla::widget::themeconst::WP_CLOSEBUTTON;
-      aState = GetWindowFrameButtonState(aFrame,
-                                         GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonMinimize:
-      aPart = mozilla::widget::themeconst::WP_MINBUTTON;
-      aState = GetWindowFrameButtonState(aFrame,
-                                         GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonMaximize:
-      aPart = mozilla::widget::themeconst::WP_MAXBUTTON;
-      aState = GetWindowFrameButtonState(aFrame,
-                                         GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonRestore:
-      aPart = mozilla::widget::themeconst::WP_RESTOREBUTTON;
-      aState = GetWindowFrameButtonState(aFrame,
-                                         GetContentState(aFrame, aAppearance));
-      return NS_OK;
     default:
       aPart = 0;
       aState = 0;
@@ -1349,24 +1198,6 @@ nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                        aDirtyRect);
 
   
-  switch (aAppearance) {
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized:
-      
-      
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
-      
-      
-      
-      return NS_OK;
-    default:
-      break;
-  }
-
   int32_t part, state;
   nsresult rv = GetThemePartAndState(aFrame, aAppearance, part, state);
   if (NS_FAILED(rv)) return rv;
@@ -1416,17 +1247,7 @@ RENDER_AGAIN:
   }
 #endif
 
-  if (aAppearance == StyleAppearance::MozWindowTitlebar) {
-    
-    
-    widgetRect.left -= GetSystemMetrics(SM_CXFRAME);
-    widgetRect.right += GetSystemMetrics(SM_CXFRAME);
-  } else if (aAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
-    
-    
-    
-    widgetRect.top += GetSystemMetrics(SM_CYFRAME);
-  } else if (aAppearance == StyleAppearance::Tab) {
+  if (aAppearance == StyleAppearance::Tab) {
     
     
     bool isLeft = IsLeftToSelectedTab(aFrame);
@@ -1451,13 +1272,6 @@ RENDER_AGAIN:
         
         widgetRect.left -= edgeSize;
     }
-  } else if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
-    OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_MINIMIZE);
-  } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-             aAppearance == StyleAppearance::MozWindowButtonRestore) {
-    OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_RESTORE);
-  } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
-    OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_CLOSE);
   }
 
   
@@ -1737,9 +1551,7 @@ LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
       aAppearance == StyleAppearance::Menupopup ||
       aAppearance == StyleAppearance::Menuimage ||
       aAppearance == StyleAppearance::Menuitemtext ||
-      aAppearance == StyleAppearance::Separator ||
-      aAppearance == StyleAppearance::MozWindowTitlebar ||
-      aAppearance == StyleAppearance::MozWindowTitlebarMaximized)
+      aAppearance == StyleAppearance::Separator)
     return result;  
 
   int32_t part, state;
@@ -1800,33 +1612,6 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
   }
 
   bool ok = true;
-
-  
-  if (aAppearance == StyleAppearance::MozWindowTitlebar ||
-      aAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
-    aResult->SizeTo(0, 0, 0, 0);
-    
-    
-    
-    
-    
-    if (!IsWin10OrLater() &&
-        aAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
-      nsCOMPtr<nsIWidget> rootWidget;
-      if (WinUtils::HasSystemMetricsForDpi()) {
-        rootWidget = aFrame->PresContext()->GetRootWidget();
-      }
-      if (rootWidget) {
-        double dpi = rootWidget->GetDPI();
-        aResult->top = WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-                       WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
-      } else {
-        aResult->top =
-            GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
-      }
-    }
-    return ok;
-  }
 
   HANDLE theme = GetTheme(aAppearance);
   if (!theme) {
@@ -2070,16 +1855,6 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
       }
       break;
 
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized: {
-      LayoutDeviceIntSize result;
-      result.height = GetSystemMetrics(SM_CYCAPTION);
-      result.height += GetSystemMetrics(SM_CYFRAME);
-      result.height += GetSystemMetrics(SM_CXPADDEDBORDER);
-      ScaleForFrameDPI(&result, aFrame);
-      return result;
-    }
-
     default:
       break;
   }
@@ -2114,16 +1889,6 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
       aAppearance == StyleAppearance::Tabpanel ||
       aAppearance == StyleAppearance::Separator) {
     *aShouldRepaint = false;
-    return NS_OK;
-  }
-
-  if (aAppearance == StyleAppearance::MozWindowTitlebar ||
-      aAppearance == StyleAppearance::MozWindowTitlebarMaximized ||
-      aAppearance == StyleAppearance::MozWindowButtonClose ||
-      aAppearance == StyleAppearance::MozWindowButtonMinimize ||
-      aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-      aAppearance == StyleAppearance::MozWindowButtonRestore) {
-    *aShouldRepaint = true;
     return NS_OK;
   }
 
@@ -2187,7 +1952,7 @@ bool nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
 
   if (theme || ClassicThemeSupportsWidget(aFrame, aAppearance))
     
-    return (!IsWidgetStyled(aPresContext, aFrame, aAppearance));
+    return !IsWidgetStyled(aPresContext, aFrame, aAppearance);
 
   return false;
 }
@@ -2219,21 +1984,6 @@ bool nsNativeThemeWin::ThemeDrawsFocusForWidget(nsIFrame* aFrame,
 }
 
 bool nsNativeThemeWin::ThemeNeedsComboboxDropmarker() { return true; }
-
-bool nsNativeThemeWin::WidgetAppearanceDependsOnWindowFocus(
-    StyleAppearance aAppearance) {
-  switch (aAppearance) {
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized:
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
-      return true;
-    default:
-      return false;
-  }
-}
 
 nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
@@ -2312,12 +2062,6 @@ bool nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::Menuarrow:
     case StyleAppearance::Menuseparator:
     case StyleAppearance::Menuitemtext:
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized:
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
       return true;
     default:
       return false;
@@ -2444,31 +2188,6 @@ LayoutDeviceIntSize nsNativeThemeWin::ClassicGetMinimumWidgetSize(
       result.height = 10;
       break;
     }
-
-    case StyleAppearance::MozWindowTitlebarMaximized:
-    case StyleAppearance::MozWindowTitlebar:
-      result.height =
-          GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
-      break;
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
-      result.width = GetSystemMetrics(SM_CXSIZE);
-      result.height = GetSystemMetrics(SM_CYSIZE);
-      
-      
-      result.width -= 2;
-      result.height -= 4;
-      if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
-        AddPaddingRect(&result, CAPTIONBUTTON_MINIMIZE);
-      } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-                 aAppearance == StyleAppearance::MozWindowButtonRestore) {
-        AddPaddingRect(&result, CAPTIONBUTTON_RESTORE);
-      } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
-        AddPaddingRect(&result, CAPTIONBUTTON_CLOSE);
-      }
-      break;
 
     default:
       break;
@@ -2690,34 +2409,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(
     case StyleAppearance::Menuseparator:
       aPart = 0;
       aState = 0;
-      return NS_OK;
-    case StyleAppearance::MozWindowTitlebar:
-      aPart = mozilla::widget::themeconst::WP_CAPTION;
-      aState = GetTopLevelWindowActiveState(aFrame);
-      return NS_OK;
-    case StyleAppearance::MozWindowTitlebarMaximized:
-      aPart = mozilla::widget::themeconst::WP_MAXCAPTION;
-      aState = GetTopLevelWindowActiveState(aFrame);
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonClose:
-      aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONCLOSE | GetClassicWindowFrameButtonState(
-                                       GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonMinimize:
-      aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONMIN | GetClassicWindowFrameButtonState(
-                                     GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonMaximize:
-      aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONMAX | GetClassicWindowFrameButtonState(
-                                     GetContentState(aFrame, aAppearance));
-      return NS_OK;
-    case StyleAppearance::MozWindowButtonRestore:
-      aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONRESTORE | GetClassicWindowFrameButtonState(
-                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     default:
       return NS_ERROR_FAILURE;
@@ -3039,82 +2730,6 @@ RENDER_AGAIN:
       widgetRect.top++;
       widgetRect.bottom++;
       ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_3DHILIGHT + 1));
-      break;
-    }
-
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized: {
-      RECT rect = widgetRect;
-      int32_t offset = GetSystemMetrics(SM_CXFRAME);
-
-      
-      ::FillRect(hdc, &rect, (HBRUSH)(COLOR_3DFACE + 1));
-
-      
-      rect.top += offset;
-      
-      
-      BOOL bFlag = TRUE;
-      SystemParametersInfo(SPI_GETGRADIENTCAPTIONS, 0, &bFlag, 0);
-      if (!bFlag) {
-        if (state == mozilla::widget::themeconst::FS_ACTIVE)
-          ::FillRect(hdc, &rect, (HBRUSH)(COLOR_ACTIVECAPTION + 1));
-        else
-          ::FillRect(hdc, &rect, (HBRUSH)(COLOR_INACTIVECAPTION + 1));
-      } else {
-        DWORD startColor, endColor;
-        if (state == mozilla::widget::themeconst::FS_ACTIVE) {
-          startColor = GetSysColor(COLOR_ACTIVECAPTION);
-          endColor = GetSysColor(COLOR_GRADIENTACTIVECAPTION);
-        } else {
-          startColor = GetSysColor(COLOR_INACTIVECAPTION);
-          endColor = GetSysColor(COLOR_GRADIENTINACTIVECAPTION);
-        }
-
-        TRIVERTEX vertex[2];
-        vertex[0].x = rect.left;
-        vertex[0].y = rect.top;
-        vertex[0].Red = GetRValue(startColor) << 8;
-        vertex[0].Green = GetGValue(startColor) << 8;
-        vertex[0].Blue = GetBValue(startColor) << 8;
-        vertex[0].Alpha = 0;
-
-        vertex[1].x = rect.right;
-        vertex[1].y = rect.bottom;
-        vertex[1].Red = GetRValue(endColor) << 8;
-        vertex[1].Green = GetGValue(endColor) << 8;
-        vertex[1].Blue = GetBValue(endColor) << 8;
-        vertex[1].Alpha = 0;
-
-        GRADIENT_RECT gRect;
-        gRect.UpperLeft = 0;
-        gRect.LowerRight = 1;
-        
-        GradientFill(hdc, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
-      }
-
-      if (aAppearance == StyleAppearance::MozWindowTitlebar) {
-        
-        DrawEdge(hdc, &widgetRect, EDGE_RAISED, BF_TOP);
-      }
-      break;
-    }
-
-    case StyleAppearance::MozWindowButtonClose:
-    case StyleAppearance::MozWindowButtonMinimize:
-    case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore: {
-      if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
-        OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_MINIMIZE);
-      } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-                 aAppearance == StyleAppearance::MozWindowButtonRestore) {
-        OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_RESTORE);
-      } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
-        OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_CLOSE);
-      }
-      int32_t oldTA = SetTextAlign(hdc, TA_TOP | TA_LEFT | TA_NOUPDATECP);
-      DrawFrameControl(hdc, &widgetRect, part, state);
-      SetTextAlign(hdc, oldTA);
       break;
     }
 

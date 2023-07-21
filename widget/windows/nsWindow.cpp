@@ -2852,24 +2852,10 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int verticalResize = 0;
-    if (IsWin10OrLater()) {
-      verticalResize =
-          WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-          (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                      : 0);
-    }
+    int verticalResize =
+        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
 
     mNonClientOffset.top = mCaptionHeight - verticalResize;
     mNonClientOffset.bottom = 0;
@@ -4995,6 +4981,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     return true;
   }
 
+  
+  
+  
   
   LRESULT dwmHitResult;
   if (mCustomNonClient &&
