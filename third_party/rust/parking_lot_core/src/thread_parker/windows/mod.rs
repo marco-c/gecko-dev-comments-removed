@@ -9,8 +9,9 @@ use core::{
     ptr,
     sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
-use instant::Instant;
+use std::time::Instant;
 
+mod bindings;
 mod keyed_event;
 mod waitaddress;
 
@@ -60,7 +61,7 @@ impl Backend {
             Err(global_backend_ptr) => {
                 unsafe {
                     
-                    Box::from_raw(backend_ptr);
+                    let _ = Box::from_raw(backend_ptr);
                     &*global_backend_ptr
                 }
             }
@@ -163,26 +164,10 @@ impl UnparkHandle {
 
 #[inline]
 pub fn thread_yield() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    extern "system" {
-        fn Sleep(a: winapi::shared::minwindef::DWORD);
-    }
     unsafe {
         
         
         
-        Sleep(0);
+        bindings::Sleep(0);
     }
 }

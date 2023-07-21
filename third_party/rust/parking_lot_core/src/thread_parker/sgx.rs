@@ -6,7 +6,7 @@
 
 
 use core::sync::atomic::{AtomicBool, Ordering};
-use instant::Instant;
+use std::time::Instant;
 use std::{
     io,
     os::fortanix_sgx::{

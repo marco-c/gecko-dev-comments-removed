@@ -10,9 +10,9 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
     time::Duration,
 };
-use instant::Instant;
 use lock_api::RawMutex as RawMutex_;
 use parking_lot_core::{self, ParkResult, SpinWait, UnparkResult, UnparkToken, DEFAULT_PARK_TOKEN};
+use std::time::Instant;
 
 
 

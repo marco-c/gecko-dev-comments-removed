@@ -75,9 +75,6 @@ use lock_api;
 
 
 
-
-
-
 pub type FairMutex<T> = lock_api::Mutex<RawFairMutex, T>;
 
 

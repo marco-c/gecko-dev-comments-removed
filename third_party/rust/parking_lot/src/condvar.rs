@@ -12,10 +12,10 @@ use core::{
     fmt, ptr,
     sync::atomic::{AtomicPtr, Ordering},
 };
-use instant::Instant;
 use lock_api::RawMutex as RawMutex_;
 use parking_lot_core::{self, ParkResult, RequeueOp, UnparkResult, DEFAULT_PARK_TOKEN};
-use std::time::Duration;
+use std::ops::DerefMut;
+use std::time::{Duration, Instant};
 
 
 
@@ -137,10 +137,9 @@ impl Condvar {
 
     #[cold]
     fn notify_one_slow(&self, mutex: *mut RawMutex) -> bool {
-        unsafe {
-            
-            let from = self as *const _ as usize;
-            let to = mutex as usize;
+        
+        let from = self as *const _ as usize;
+        let to = mutex as usize;
             let validate = || {
                 
                 
@@ -157,7 +156,7 @@ impl Condvar {
                 
                 
                 
-                if (*mutex).mark_parked_if_locked() {
+                if unsafe { (*mutex).mark_parked_if_locked() } {
                     RequeueOp::RequeueOne
                 } else {
                     RequeueOp::UnparkOne
@@ -170,10 +169,9 @@ impl Condvar {
                 }
                 TOKEN_NORMAL
             };
-            let res = parking_lot_core::unpark_requeue(from, to, validate, callback);
+            let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
 
             res.unparked_threads + res.requeued_threads != 0
-        }
     }
 
     
@@ -198,7 +196,6 @@ impl Condvar {
 
     #[cold]
     fn notify_all_slow(&self, mutex: *mut RawMutex) -> usize {
-        unsafe {
             
             let from = self as *const _ as usize;
             let to = mutex as usize;
@@ -222,7 +219,7 @@ impl Condvar {
                 
                 
                 
-                if (*mutex).mark_parked_if_locked() {
+                if unsafe { (*mutex).mark_parked_if_locked() } {
                     RequeueOp::RequeueAll
                 } else {
                     RequeueOp::UnparkOneRequeueRest
@@ -232,14 +229,13 @@ impl Condvar {
                 
                 
                 if op == RequeueOp::UnparkOneRequeueRest && result.requeued_threads != 0 {
-                    (*mutex).mark_parked();
+                    unsafe { (*mutex).mark_parked() };
                 }
                 TOKEN_NORMAL
             };
-            let res = parking_lot_core::unpark_requeue(from, to, validate, callback);
+            let res = unsafe { parking_lot_core::unpark_requeue(from, to, validate, callback) };
 
             res.unparked_threads + res.requeued_threads
-        }
     }
 
     
@@ -298,7 +294,6 @@ impl Condvar {
     
     
     fn wait_until_internal(&self, mutex: &RawMutex, timeout: Option<Instant>) -> WaitTimeoutResult {
-        unsafe {
             let result;
             let mut bad_mutex = false;
             let mut requeued = false;
@@ -320,7 +315,7 @@ impl Condvar {
                 };
                 let before_sleep = || {
                     
-                    mutex.unlock();
+                    unsafe { mutex.unlock() };
                 };
                 let timed_out = |k, was_last_thread| {
                     
@@ -335,14 +330,14 @@ impl Condvar {
                         self.state.store(ptr::null_mut(), Ordering::Relaxed);
                     }
                 };
-                result = parking_lot_core::park(
+                result = unsafe { parking_lot_core::park(
                     addr,
                     validate,
                     before_sleep,
                     timed_out,
                     DEFAULT_PARK_TOKEN,
                     timeout,
-                );
+                ) };
             }
 
             
@@ -354,21 +349,14 @@ impl Condvar {
 
             
             if result == ParkResult::Unparked(TOKEN_HANDOFF) {
-                deadlock::acquire_resource(mutex as *const _ as usize);
+                unsafe { deadlock::acquire_resource(mutex as *const _ as usize) };
             } else {
                 mutex.lock();
             }
 
             WaitTimeoutResult(!(result.is_unparked() || requeued))
-        }
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -396,6 +384,127 @@ impl Condvar {
         let deadline = util::to_deadline(timeout);
         self.wait_until_internal(unsafe { MutexGuard::mutex(mutex_guard).raw() }, deadline)
     }
+
+    #[inline]
+    fn wait_while_until_internal<T, F>(
+        &self,
+        mutex_guard: &mut MutexGuard<'_, T>,
+        mut condition: F,
+        timeout: Option<Instant>,
+    ) -> WaitTimeoutResult
+    where
+        T: ?Sized,
+        F: FnMut(&mut T) -> bool,
+    {
+        let mut result = WaitTimeoutResult(false);
+
+        while !result.timed_out() && condition(mutex_guard.deref_mut()) {
+            result =
+                self.wait_until_internal(unsafe { MutexGuard::mutex(mutex_guard).raw() }, timeout);
+        }
+
+        result
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn wait_while<T, F>(&self, mutex_guard: &mut MutexGuard<'_, T>, condition: F)
+    where
+        T: ?Sized,
+        F: FnMut(&mut T) -> bool,
+    {
+        self.wait_while_until_internal(mutex_guard, condition, None);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn wait_while_until<T, F>(
+        &self,
+        mutex_guard: &mut MutexGuard<'_, T>,
+        condition: F,
+        timeout: Instant,
+    ) -> WaitTimeoutResult
+    where
+        T: ?Sized,
+        F: FnMut(&mut T) -> bool,
+    {
+        self.wait_while_until_internal(mutex_guard, condition, Some(timeout))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn wait_while_for<T: ?Sized, F>(
+        &self,
+        mutex_guard: &mut MutexGuard<'_, T>,
+        condition: F,
+        timeout: Duration,
+    ) -> WaitTimeoutResult
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        let deadline = util::to_deadline(timeout);
+        self.wait_while_until_internal(mutex_guard, condition, deadline)
+    }
 }
 
 impl Default for Condvar {
@@ -414,11 +523,13 @@ impl fmt::Debug for Condvar {
 #[cfg(test)]
 mod tests {
     use crate::{Condvar, Mutex, MutexGuard};
-    use instant::Instant;
     use std::sync::mpsc::channel;
     use std::sync::Arc;
     use std::thread;
+    use std::thread::sleep;
+    use std::thread::JoinHandle;
     use std::time::Duration;
+    use std::time::Instant;
 
     #[test]
     fn smoke() {
@@ -557,14 +668,7 @@ mod tests {
             let _g = m2.lock();
             c2.notify_one();
         });
-        
-        let very_long_timeout = if cfg!(feature = "nightly") {
-            Duration::from_secs(u64::max_value())
-        } else {
-            Duration::from_millis(u32::max_value() as u64)
-        };
-
-        let timeout_res = c.wait_for(&mut g, very_long_timeout);
+        let timeout_res = c.wait_for(&mut g, Duration::from_secs(u64::max_value()));
         assert!(!timeout_res.timed_out());
 
         drop(g);
@@ -590,6 +694,116 @@ mod tests {
         );
         assert!(!timeout_res.timed_out());
         drop(g);
+    }
+
+    fn spawn_wait_while_notifier(
+        mutex: Arc<Mutex<u32>>,
+        cv: Arc<Condvar>,
+        num_iters: u32,
+        timeout: Option<Instant>,
+    ) -> JoinHandle<()> {
+        thread::spawn(move || {
+            for epoch in 1..=num_iters {
+                
+                
+                
+                let mut sleep_backoff = Duration::from_millis(1);
+                let _mutex_guard = loop {
+                    let mutex_guard = mutex.lock();
+
+                    if let Some(timeout) = timeout {
+                        if Instant::now() >= timeout {
+                            return;
+                        }
+                    }
+
+                    if *mutex_guard == epoch {
+                        break mutex_guard;
+                    }
+
+                    drop(mutex_guard);
+
+                    
+                    
+                    sleep(sleep_backoff);
+                    sleep_backoff *= 2;
+                };
+
+                cv.notify_one();
+            }
+        })
+    }
+
+    #[test]
+    fn wait_while_until_internal_does_not_wait_if_initially_false() {
+        let mutex = Arc::new(Mutex::new(0));
+        let cv = Arc::new(Condvar::new());
+
+        let condition = |counter: &mut u32| {
+            *counter += 1;
+            false
+        };
+
+        let mut mutex_guard = mutex.lock();
+        let timeout_result = cv
+            .wait_while_until_internal(&mut mutex_guard, condition, None);
+
+        assert!(!timeout_result.timed_out());
+        assert!(*mutex_guard == 1);
+    }
+
+    #[test]
+    fn wait_while_until_internal_times_out_before_false() {
+        let mutex = Arc::new(Mutex::new(0));
+        let cv = Arc::new(Condvar::new());
+
+        let num_iters = 3;
+        let condition = |counter: &mut u32| {
+            *counter += 1;
+            true
+        };
+
+        let mut mutex_guard = mutex.lock();
+        let timeout = Some(Instant::now() + Duration::from_millis(500));
+        let handle = spawn_wait_while_notifier(mutex.clone(), cv.clone(), num_iters, timeout);
+
+        let timeout_result =
+            cv.wait_while_until_internal(&mut mutex_guard, condition, timeout);
+
+        assert!(timeout_result.timed_out());
+        assert!(*mutex_guard == num_iters + 1);
+
+        
+        drop(mutex_guard);
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn wait_while_until_internal() {
+        let mutex = Arc::new(Mutex::new(0));
+        let cv = Arc::new(Condvar::new());
+
+        let num_iters = 4;
+
+        let condition = |counter: &mut u32| {
+            *counter += 1;
+            *counter <= num_iters
+        };
+
+        let mut mutex_guard = mutex.lock();
+        let handle = spawn_wait_while_notifier(mutex.clone(), cv.clone(), num_iters, None);
+
+        let timeout_result =
+            cv.wait_while_until_internal(&mut mutex_guard, condition, None);
+
+        assert!(!timeout_result.timed_out());
+        assert!(*mutex_guard == num_iters + 1);
+
+        let timeout_result = cv.wait_while_until_internal(&mut mutex_guard, condition, None);
+        handle.join().unwrap();
+
+        assert!(!timeout_result.timed_out());
+        assert!(*mutex_guard == num_iters + 2);
     }
 
     #[test]

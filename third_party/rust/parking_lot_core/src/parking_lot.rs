@@ -12,9 +12,33 @@ use core::{
     ptr,
     sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
-use instant::Instant;
 use smallvec::SmallVec;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+
+cfg_if::cfg_if! {
+    if #[cfg(all(
+        target_family = "wasm",
+        target_os = "unknown",
+        target_vendor = "unknown"
+    ))] {
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+        struct TimeoutInstant;
+        impl TimeoutInstant {
+            fn now() -> TimeoutInstant {
+                TimeoutInstant
+            }
+        }
+        impl core::ops::Add<Duration> for TimeoutInstant {
+            type Output = Self;
+            fn add(self, _rhs: Duration) -> Self::Output {
+                TimeoutInstant
+            }
+        }
+    } else {
+        use std::time::Instant as TimeoutInstant;
+    }
+}
 
 static NUM_THREADS: AtomicUsize = AtomicUsize::new(0);
 
@@ -47,7 +71,7 @@ impl HashTable {
         let new_size = (num_threads * LOAD_FACTOR).next_power_of_two();
         let hash_bits = 0usize.leading_zeros() - new_size.leading_zeros() - 1;
 
-        let now = Instant::now();
+        let now = TimeoutInstant::now();
         let mut entries = Vec::with_capacity(new_size);
         for i in 0..new_size {
             
@@ -77,7 +101,7 @@ struct Bucket {
 
 impl Bucket {
     #[inline]
-    pub fn new(timeout: Instant, seed: u32) -> Self {
+    pub fn new(timeout: TimeoutInstant, seed: u32) -> Self {
         Self {
             mutex: WordLock::new(),
             queue_head: Cell::new(ptr::null()),
@@ -89,7 +113,7 @@ impl Bucket {
 
 struct FairTimeout {
     
-    timeout: Instant,
+    timeout: TimeoutInstant,
 
     
     seed: u32,
@@ -97,14 +121,14 @@ struct FairTimeout {
 
 impl FairTimeout {
     #[inline]
-    fn new(timeout: Instant, seed: u32) -> FairTimeout {
+    fn new(timeout: TimeoutInstant, seed: u32) -> FairTimeout {
         FairTimeout { timeout, seed }
     }
 
     
     #[inline]
     fn should_timeout(&mut self) -> bool {
-        let now = Instant::now();
+        let now = TimeoutInstant::now();
         if now > self.timeout {
             
             let nanos = self.gen_u32() % 1_000_000;
@@ -224,7 +248,7 @@ fn create_hashtable() -> &'static HashTable {
             
             
             unsafe {
-                Box::from_raw(new_table);
+                let _ = Box::from_raw(new_table);
             }
             old_table
         }
@@ -700,6 +724,10 @@ pub unsafe fn park(
 
 
 
+
+
+
+
 #[inline]
 pub unsafe fn unpark_one(
     key: usize,
@@ -765,6 +793,10 @@ pub unsafe fn unpark_one(
     bucket.mutex.unlock();
     result
 }
+
+
+
+
 
 
 

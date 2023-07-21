@@ -6,14 +6,14 @@
 
 
 use crate::thread_parker;
-use std::sync::atomic::spin_loop_hint;
+use core::hint::spin_loop;
 
 
 
 #[inline]
 fn cpu_relax(iterations: u32) {
     for _ in 0..iterations {
-        spin_loop_hint()
+        spin_loop()
     }
 }
 
