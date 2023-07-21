@@ -307,6 +307,14 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Response", insecureContext: true },
   
+  { name: "RTCEncodedAudioFrame", insecureContext: true },
+  
+  { name: "RTCEncodedVideoFrame", insecureContext: true },
+  
+  { name: "RTCRtpScriptTransformer", insecureContext: true },
+  
+  { name: "RTCTransformEvent", insecureContext: true },
+  
   { name: "Scheduler", insecureContext: true, nightly: true },
   
   { name: "StorageManager", fennec: false },
@@ -425,6 +433,8 @@ let interfaceNamesInGlobalScope = [
   { name: "onmessage", insecureContext: true },
   
   { name: "onmessageerror", insecureContext: true },
+  
+  { name: "onrtctransform", insecureContext: true },
   
   { name: "postMessage", insecureContext: true },
   

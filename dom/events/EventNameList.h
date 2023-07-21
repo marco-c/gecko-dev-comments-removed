@@ -295,6 +295,7 @@ WINDOW_EVENT(languagechange, eLanguageChange,
 
 
 WINDOW_EVENT(message, eMessage, EventNameType_None, eBasicEventClass)
+WINDOW_EVENT(rtctransform, eRTCTransform, EventNameType_None, eBasicEventClass)
 WINDOW_EVENT(messageerror, eMessageError, EventNameType_HTMLBodyOrFramesetOnly,
              eBasicEventClass)
 WINDOW_EVENT(offline, eOffline,
