@@ -575,7 +575,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
 
   
   TimeDuration balanceResult;
-  if (!BalanceDuration(cx, duration, TemporalUnit::Day, &balanceResult)) {
+  if (!BalanceTimeDuration(cx, duration, TemporalUnit::Day, &balanceResult)) {
     return false;
   }
 

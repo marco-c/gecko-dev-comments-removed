@@ -126,15 +126,15 @@ bool ToTemporalDurationRecord(JSContext* cx,
 
 
 
-bool BalanceDuration(JSContext* cx, const Duration& duration,
-                     TemporalUnit largestUnit, TimeDuration* result);
+bool BalanceTimeDuration(JSContext* cx, const Duration& duration,
+                         TemporalUnit largestUnit, TimeDuration* result);
 
 
 
 
 
-bool BalanceDuration(JSContext* cx, const InstantSpan& nanoseconds,
-                     TemporalUnit largestUnit, TimeDuration* result);
+bool BalanceTimeDuration(JSContext* cx, const InstantSpan& nanoseconds,
+                         TemporalUnit largestUnit, TimeDuration* result);
 
 
 
