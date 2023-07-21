@@ -4,20 +4,66 @@
 
 "use strict;"
 
-
-const FLEDGE_DIR = '/fledge/tentative/';
 const FULL_URL = window.location.href;
 let BASE_URL = FULL_URL.substring(0, FULL_URL.lastIndexOf('/') + 1)
 const BASE_PATH = (new URL(BASE_URL)).pathname;
 const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
 
-BASE_URL = BASE_URL.replace(BASE_PATH, FLEDGE_DIR);
+const FLEDGE_DIR = '/fledge/tentative/';
+const FLEDGE_BASE_URL = BASE_URL.replace(BASE_PATH, FLEDGE_DIR);
 
 
-function generateUuid(test) {
+const sleep = ms => new Promise(resolve => step_timeout(resolve, ms));
+
+
+function generateUuid() {
   let uuid = token();
   return uuid;
+}
+
+
+
+
+
+function createReportingUrl(uuid, operation, report = 'default-report') {
+  let url = new URL(`${window.location.origin}${BASE_PATH}resources/protected_audience_event_level_report_handler.py`);
+  url.searchParams.append('uuid', uuid);
+  url.searchParams.append('operation', operation);
+
+  if (report)
+    url.searchParams.append('report', report);
+
+  return url.toString();
+}
+
+function createWritingUrl(uuid, report) {
+  return createReportingUrl(uuid, 'write');
+}
+
+function createReadingUrl(uuid) {
+  return createReportingUrl(uuid, 'read');
+}
+
+async function waitForObservedReports(uuid, expectedNumReports, timeout = 1000 ) {
+  expectedReports = Array(expectedNumReports).fill('default-report');
+  const reportUrl = createReadingUrl(uuid);
+  let startTime = performance.now();
+
+  while (performance.now() - startTime < timeout) {
+    let response = await fetch(reportUrl, { credentials: 'omit', mode: 'cors' });
+    let actualReports = await response.json();
+
+    
+    
+    if (actualReports.length == expectedReports.length) {
+      assert_array_equals(actualReports.sort(), expectedReports);
+      return;
+    }
+
+    await sleep( 100);
+  }
+  assert_unreached("Report fetching timed out: " + uuid);
 }
 
 
@@ -27,7 +73,7 @@ function generateUuid(test) {
 
 
 function createBiddingScriptUrl(params = {}) {
-  let url = new URL(`${BASE_URL}resources/bidding-logic.sub.py`);
+  let url = new URL(`${FLEDGE_BASE_URL}resources/bidding-logic.sub.py`);
   if (params.generateBid)
     url.searchParams.append('generateBid', params.generateBid);
   if (params.reportWin)
@@ -47,7 +93,7 @@ function createBiddingScriptUrl(params = {}) {
 
 
 function createDecisionScriptUrl(uuid, params = {}) {
-  let url = new URL(`${BASE_URL}resources/decision-logic.sub.py`);
+  let url = new URL(`${FLEDGE_BASE_URL}resources/decision-logic.sub.py`);
   url.searchParams.append('uuid', uuid);
   if (params.scoreAd)
     url.searchParams.append('scoreAd', params.scoreAd);
@@ -63,7 +109,7 @@ function createDecisionScriptUrl(uuid, params = {}) {
 
 
 function createRenderUrl(uuid, script) {
-  let url = new URL(`${BASE_URL}resources/fenced-frame.sub.py`);
+  let url = new URL(`${FLEDGE_BASE_URL}resources/fenced-frame.sub.py`);
   if (script)
     url.searchParams.append('script', script);
   url.searchParams.append('uuid', uuid);
@@ -133,12 +179,7 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig) {
 
 
 
-
-
-
-async function runReportTest(test, codeToInsert) {
-  const uuid = generateUuid(test);
-
+async function runReportTest(test, uuid, codeToInsert, expectedNumReports = 0) {
   let generateBid = codeToInsert.generateBid;
   let scoreAd = codeToInsert.scoreAd;
   let reportWin = codeToInsert.reportWin;
@@ -153,4 +194,8 @@ async function runReportTest(test, codeToInsert) {
       { decisionLogicUrl: createDecisionScriptUrl(
         uuid, { scoreAd, reportResult })
     });
+
+  if (expectedNumReports) {
+    await waitForObservedReports(uuid, expectedNumReports);
+  }
 }
