@@ -129,6 +129,7 @@ Preferences.addAll([
   { id: "general.smoothScroll", type: "bool" },
   { id: "widget.gtk.overlay-scrollbars.enabled", type: "bool", inverted: true },
   { id: "layout.spellcheckDefault", type: "int" },
+  { id: "accessibility.tabfocus", type: "int" },
 
   {
     id: "browser.preferences.defaultPerformanceSettings.enabled",
@@ -725,6 +726,18 @@ var gMainPane = {
       document.getElementById("defaultFont"),
       element => FontBuilder.readFontSelection(element)
     );
+    if (AppConstants.platform == "macosx") {
+      
+      
+      Preferences.addSyncFromPrefListener(
+        document.getElementById("useFullKeyboardNavigation"),
+        () => this.readUseFullKeyboardNavigation()
+      );
+      Preferences.addSyncToPrefListener(
+        document.getElementById("useFullKeyboardNavigation"),
+        () => this.writeUseFullKeyboardNavigation()
+      );
+    }
     Preferences.addSyncFromPrefListener(
       document.getElementById("checkSpelling"),
       () => this.readCheckSpelling()
@@ -2179,6 +2192,50 @@ var gMainPane = {
     );
 
     migrationWizardDialog.showModal();
+  },
+
+  
+
+
+
+  _storedFullKeyboardNavigation: Preferences.get("accessibility.tabfocus"),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  readUseFullKeyboardNavigation() {
+    var pref = Preferences.get("accessibility.tabfocus");
+    this._storedFullKeyboardNavigation = pref.value;
+
+    return pref.value == 7;
+  },
+
+  
+
+
+
+
+  writeUseFullKeyboardNavigation() {
+    var checkbox = document.getElementById("useFullKeyboardNavigation");
+    if (checkbox.checked) {
+      return 7;
+    }
+    if (this._storedFullKeyboardNavigation != 7) {
+      
+      return this._storedFullKeyboardNavigation;
+    }
+    
+    
+    return undefined;
   },
 
   
