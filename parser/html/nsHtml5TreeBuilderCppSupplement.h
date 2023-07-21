@@ -230,18 +230,21 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
           nsHtml5String type =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
+          nsAutoString typeString;
+          type.ToString(typeString);
           if (!mHasSeenImportMap) {
             
             
             
-            nsAutoString typeString;
-            type.ToString(typeString);
+            
+            
             mHasSeenImportMap =
                 typeString.LowerCaseFindASCII("importmap") != kNotFound;
           }
           nsHtml5String url =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_SRC);
-          if (url) {
+          if (url && !(mHasSeenImportMap &&
+                       typeString.LowerCaseFindASCII("module") != kNotFound)) {
             nsHtml5String charset =
                 aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
             nsHtml5String crossOrigin =
