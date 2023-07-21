@@ -71,6 +71,8 @@ class TimeZoneObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
+using TimeZoneValue = JSObject*;
+
 struct Instant;
 struct PlainDateTime;
 class InstantObject;
@@ -121,47 +123,47 @@ TimeZoneObject* ToTemporalTimeZone(JSContext* cx, JS::Handle<JSString*> string);
 
 
 PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
-                                         JS::Handle<JSObject*> timeZone,
+                                         JS::Handle<TimeZoneValue> timeZone,
                                          const Instant& instant,
                                          JS::Handle<CalendarValue> calendar);
 
 
 
 
-bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                          JS::Handle<InstantObject*> instant,
                          PlainDateTime* result);
 
 
 
 
-bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                          const Instant& instant, PlainDateTime* result);
 
 
 
 
-bool GetInstantFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                    JS::Handle<Wrapped<PlainDateTimeObject*>> dateTime,
                    TemporalDisambiguation disambiguation, Instant* result);
 
 
 
 
-JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant);
 
 
 
 
-bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant,
                              int64_t* offsetNanoseconds);
 
 
 
 
-bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetOffsetNanosecondsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              const Instant& instant,
                              int64_t* offsetNanoseconds);
 
@@ -170,7 +172,7 @@ using InstantVector = JS::StackGCVector<Wrapped<InstantObject*>>;
 
 
 
-bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
+bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                             JS::Handle<Wrapped<PlainDateTimeObject*>> dateTime,
                             JS::MutableHandle<InstantVector> list);
 
@@ -180,7 +182,7 @@ bool GetPossibleInstantsFor(JSContext* cx, JS::Handle<JSObject*> timeZone,
 
 Wrapped<InstantObject*> DisambiguatePossibleInstants(
     JSContext* cx, JS::Handle<InstantVector> possibleInstants,
-    JS::Handle<JSObject*> timeZone,
+    JS::Handle<TimeZoneValue> timeZone,
     JS::Handle<Wrapped<PlainDateTimeObject*>> dateTimeObj,
     TemporalDisambiguation disambiguation);
 
@@ -198,7 +200,7 @@ JSString* FormatISOTimeZoneOffsetString(JSContext* cx,
 
 
 
-JSString* TimeZoneToString(JSContext* cx, JS::Handle<JSObject*> timeZone);
+JSString* TimeZoneToString(JSContext* cx, JS::Handle<TimeZoneValue> timeZone);
 
 } 
 
