@@ -5,27 +5,24 @@
 
 
 
-
-
 const objectProperty = /([\w\d\$#]+)$/;
 const arrayProperty = /\[(.*?)\]$/;
 const functionProperty = /([\w\d]+)[\/\.<]*?$/;
 const annonymousProperty = /([\w\d]+)\(\^\)$/;
-
+const displayNameScenarios = [
+  objectProperty,
+  arrayProperty,
+  functionProperty,
+  annonymousProperty,
+];
+const includeSpace = /\s/;
 export function simplifyDisplayName(displayName) {
   
-  if (!displayName || /\s/.exec(displayName)) {
+  if (!displayName || includeSpace.exec(displayName)) {
     return displayName;
   }
 
-  const scenarios = [
-    objectProperty,
-    arrayProperty,
-    functionProperty,
-    annonymousProperty,
-  ];
-
-  for (const reg of scenarios) {
+  for (const reg of displayNameScenarios) {
     const match = reg.exec(displayName);
     if (match) {
       return match[1];
@@ -35,7 +32,7 @@ export function simplifyDisplayName(displayName) {
   return displayName;
 }
 
-const displayNameMap = {
+const displayNameLibraryMap = {
   Babel: {
     tryCatch: "Async",
   },
@@ -61,28 +58,48 @@ const displayNameMap = {
   },
 };
 
-function mapDisplayNames(frame, library) {
-  const { displayName } = frame;
-  return displayNameMap[library]?.[displayName] || displayName;
-}
 
-function getFrameDisplayName(frame) {
-  const { displayName, originalDisplayName, userDisplayName, name } = frame;
-  return originalDisplayName || userDisplayName || displayName || name;
-}
+
+
+
+
+
+
+
+
+
+
+
 
 export function formatDisplayName(
-  frame,
+  frameOrFunc,
   { shouldMapDisplayName = true } = {},
   l10n
 ) {
-  const { library } = frame;
-  let displayName = getFrameDisplayName(frame);
+  
+  const { library, displayName, originalDisplayName } = frameOrFunc;
+  let displayedName;
+
+  
+  
   if (library && shouldMapDisplayName) {
-    displayName = mapDisplayNames(frame, library);
+    displayedName = displayNameLibraryMap[library]?.[displayName];
   }
 
-  return simplifyDisplayName(displayName) || l10n.getStr("anonymousFunction");
+  
+  
+  
+  
+  
+  if (!displayedName) {
+    displayedName = originalDisplayName || displayName || frameOrFunc.name;
+  }
+
+  if (!displayedName) {
+    return l10n.getStr("anonymousFunction");
+  }
+
+  return simplifyDisplayName(displayedName);
 }
 
 export function formatCopyName(frame, l10n, shouldDisplayOriginalLocation) {

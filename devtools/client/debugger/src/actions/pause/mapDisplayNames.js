@@ -6,8 +6,25 @@ import { getFrames, getSymbols, getCurrentThread } from "../../selectors";
 
 import { findClosestFunction } from "../../utils/ast";
 
+
+
+
+
+
+
 function mapDisplayName(frame, { getState }) {
+  
   if (frame.isOriginal) {
+    return frame;
+  }
+  
+  if (!frame.location.source.isOriginal) {
+    return frame;
+  }
+  
+  
+  
+  if (frame.originalDisplayName) {
     return frame;
   }
 
