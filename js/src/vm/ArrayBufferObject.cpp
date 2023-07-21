@@ -1333,9 +1333,9 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
 }
 
 
-bool ArrayBufferObject::wasmGrowToPagesInPlace(
+ArrayBufferObject* ArrayBufferObject::wasmGrowToPagesInPlace(
     wasm::IndexType t, Pages newPages, HandleArrayBufferObject oldBuf,
-    MutableHandleArrayBufferObject newBuf, JSContext* cx) {
+    JSContext* cx) {
   CheckStealPreconditions(oldBuf, cx);
 
   MOZ_ASSERT(oldBuf->isWasm());
@@ -1344,7 +1344,7 @@ bool ArrayBufferObject::wasmGrowToPagesInPlace(
   
   
   if (newPages > oldBuf->wasmClampedMaxPages()) {
-    return false;
+    return nullptr;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
              newPages.byteLength() <= ArrayBufferObject::MaxByteLength);
@@ -1358,16 +1358,16 @@ bool ArrayBufferObject::wasmGrowToPagesInPlace(
   
   
 
-  newBuf.set(ArrayBufferObject::createEmpty(cx));
+  auto* newBuf = ArrayBufferObject::createEmpty(cx);
   if (!newBuf) {
     cx->clearPendingException();
-    return false;
+    return nullptr;
   }
 
   MOZ_ASSERT(newBuf->isNoData());
 
   if (!oldBuf->contents().wasmBuffer()->growToPagesInPlace(newPages)) {
-    return false;
+    return nullptr;
   }
 
   
@@ -1385,13 +1385,13 @@ bool ArrayBufferObject::wasmGrowToPagesInPlace(
   newBuf->initialize(newSize, oldContents);
   AddCellMemory(newBuf, newSize, MemoryUse::ArrayBufferContents);
 
-  return true;
+  return newBuf;
 }
 
 
-bool ArrayBufferObject::wasmMovingGrowToPages(
+ArrayBufferObject* ArrayBufferObject::wasmMovingGrowToPages(
     IndexType t, Pages newPages, HandleArrayBufferObject oldBuf,
-    MutableHandleArrayBufferObject newBuf, JSContext* cx) {
+    JSContext* cx) {
   
   
 
@@ -1399,7 +1399,7 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
   
   
   if (newPages > oldBuf->wasmClampedMaxPages()) {
-    return false;
+    return nullptr;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
              newPages.byteLength() < ArrayBufferObject::MaxByteLength);
@@ -1410,13 +1410,13 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
 
   if (wasm::ComputeMappedSize(newPages) <= oldBuf->wasmMappedSize() ||
       oldBuf->contents().wasmBuffer()->extendMappedSize(newPages)) {
-    return wasmGrowToPagesInPlace(t, newPages, oldBuf, newBuf, cx);
+    return wasmGrowToPagesInPlace(t, newPages, oldBuf, cx);
   }
 
-  newBuf.set(ArrayBufferObject::createEmpty(cx));
+  Rooted<ArrayBufferObject*> newBuf(cx, ArrayBufferObject::createEmpty(cx));
   if (!newBuf) {
     cx->clearPendingException();
-    return false;
+    return nullptr;
   }
 
   Pages clampedMaxPages =
@@ -1424,7 +1424,7 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
   WasmArrayRawBuffer* newRawBuf = WasmArrayRawBuffer::AllocateWasm(
       oldBuf->wasmIndexType(), newPages, clampedMaxPages, Nothing(), Nothing());
   if (!newRawBuf) {
-    return false;
+    return nullptr;
   }
 
   AddCellMemory(newBuf, newSize, MemoryUse::ArrayBufferContents);
@@ -1435,7 +1435,8 @@ bool ArrayBufferObject::wasmMovingGrowToPages(
 
   memcpy(newBuf->dataPointer(), oldBuf->dataPointer(), oldBuf->byteLength());
   ArrayBufferObject::detach(cx, oldBuf);
-  return true;
+
+  return newBuf;
 }
 
 
