@@ -22,7 +22,7 @@ async def get_events(bidi_session, context):
         
         if "key" in e and e["key"].startswith("U+"):
             key = e["key"]
-            hex_suffix = key[key.index("+") + 1 :]
+            hex_suffix = key[key.index("+") + 1:]
             e["key"] = chr(int(hex_suffix, 16))
 
         
