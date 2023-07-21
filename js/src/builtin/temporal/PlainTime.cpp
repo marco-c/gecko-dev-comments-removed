@@ -613,12 +613,8 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
     if (auto* zonedDateTime = itemObj->maybeUnwrapIf<ZonedDateTimeObject>()) {
       auto epochInstant = ToInstant(zonedDateTime);
       Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
-      Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
 
       if (!cx->compartment()->wrap(cx, &timeZone)) {
-        return nullptr;
-      }
-      if (!cx->compartment()->wrap(cx, &calendar)) {
         return nullptr;
       }
 
@@ -635,32 +631,6 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
     
     if (auto* dateTime = itemObj->maybeUnwrapIf<PlainDateTimeObject>()) {
       return CreateTemporalTime(cx, ToPlainTime(dateTime));
-    }
-
-    
-    Rooted<CalendarValue> calendar(cx);
-    if (!GetTemporalCalendarWithISODefault(cx, itemObj, &calendar)) {
-      return nullptr;
-    }
-
-    
-    JSString* calendarId = CalendarToString(cx, calendar);
-    if (!calendarId) {
-      return nullptr;
-    }
-
-    JSLinearString* linear = calendarId->ensureLinear(cx);
-    if (!linear) {
-      return nullptr;
-    }
-
-    if (!StringEqualsLiteral(linear, "iso8601")) {
-      if (auto chars = QuoteString(cx, linear, '"')) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                 JSMSG_TEMPORAL_PLAIN_TIME_CALENDAR_NOT_ISO8601,
-                                 chars.get());
-      }
-      return nullptr;
     }
 
     
@@ -683,30 +653,12 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
     }
 
     
-    Rooted<JSString*> calendar(cx);
-    if (!ParseTemporalTimeString(cx, string, &result, &calendar)) {
+    if (!ParseTemporalTimeString(cx, string, &result)) {
       return nullptr;
     }
 
     
     MOZ_ASSERT(IsValidTime(result));
-
-    
-    if (calendar) {
-      JSLinearString* linear = calendar->ensureLinear(cx);
-      if (!linear) {
-        return nullptr;
-      }
-
-      if (!StringEqualsAscii(linear, "iso8601")) {
-        if (auto chars = QuoteString(cx, linear)) {
-          JS_ReportErrorNumberUTF8(
-              cx, GetErrorMessage, nullptr,
-              JSMSG_TEMPORAL_PLAIN_TIME_CALENDAR_NOT_ISO8601, chars.get());
-        }
-        return nullptr;
-      }
-    }
   }
 
   
