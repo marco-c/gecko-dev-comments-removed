@@ -7,6 +7,8 @@
 #include "chrome/common/ipc_channel_win.h"
 
 #include <windows.h>
+#include <winternl.h>
+#include <ntstatus.h>
 #include <sstream>
 
 #include "base/command_line.h"
@@ -253,7 +255,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
           input_state_.is_pending = this;
           return true;
         }
-        if (err != ERROR_BROKEN_PIPE) {
+        if (err != ERROR_BROKEN_PIPE && err != ERROR_NO_DATA) {
           CHROMIUM_LOG(ERROR)
               << "pipe error in connection to " << other_pid_ << ": " << err;
         }
@@ -378,7 +380,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
     DCHECK(context);
     if (!context || bytes_written == 0) {
       DWORD err = GetLastError();
-      if (err != ERROR_BROKEN_PIPE) {
+      if (err != ERROR_BROKEN_PIPE && err != ERROR_NO_DATA) {
         CHROMIUM_LOG(ERROR)
             << "pipe error in connection to " << other_pid_ << ": " << err;
       }
@@ -441,7 +443,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
 
       return true;
     }
-    if (err != ERROR_BROKEN_PIPE) {
+    if (err != ERROR_BROKEN_PIPE && err != ERROR_NO_DATA) {
       CHROMIUM_LOG(ERROR) << "pipe error in connection to " << other_pid_
                           << ": " << err;
     }
@@ -510,6 +512,39 @@ void Channel::ChannelImpl::StartAcceptingHandles(Mode mode) {
   }
 }
 
+
+
+
+
+
+static NTSTATUS GetLastNtStatus() {
+  using GetLastNtStatusFn = NTSTATUS NTAPI (*)();
+
+  static constexpr const wchar_t kNtDllName[] = L"ntdll.dll";
+  static constexpr const char kLastStatusFnName[] = "RtlGetLastNtStatus";
+
+  
+  
+  
+  
+  
+  static auto* get_last_nt_status = reinterpret_cast<GetLastNtStatusFn>(
+      ::GetProcAddress(::GetModuleHandle(kNtDllName), kLastStatusFnName));
+  return get_last_nt_status();
+}
+
+
+
+
+
+
+
+
+static bool WasOtherProcessExitingError(DWORD error) {
+  return error == ERROR_ACCESS_DENIED &&
+         GetLastNtStatus() == STATUS_PROCESS_IS_TERMINATING;
+}
+
 static uint32_t HandleToUint32(HANDLE h) {
   
   
@@ -575,10 +610,14 @@ bool Channel::ChannelImpl::AcceptHandles(Message& msg) {
                              getter_Transfers(local_handle), 0, FALSE,
                              DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
         DWORD err = GetLastError();
-        CHROMIUM_LOG(ERROR)
-            << "DuplicateHandle failed for handle " << ipc_handle
-            << " from process " << other_pid_ << " for message " << msg.name()
-            << " in AcceptHandles with error: " << err;
+        
+        
+        if (!WasOtherProcessExitingError(err)) {
+          CHROMIUM_LOG(ERROR)
+              << "DuplicateHandle failed for handle " << ipc_handle
+              << " from process " << other_pid_ << " for message " << msg.name()
+              << " in AcceptHandles with error: " << err;
+        }
         return false;
       }
     } else {
@@ -646,10 +685,14 @@ bool Channel::ChannelImpl::TransferHandles(Message& msg) {
                              other_process_, &ipc_handle, 0, FALSE,
                              DUPLICATE_SAME_ACCESS)) {
         DWORD err = GetLastError();
-        CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle "
-                            << (HANDLE)local_handle.get() << " to process "
-                            << other_pid_ << " for message " << msg.name()
-                            << " in TransferHandles with error: " << err;
+        
+        
+        if (!WasOtherProcessExitingError(err)) {
+          CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle "
+                              << (HANDLE)local_handle.get() << " to process "
+                              << other_pid_ << " for message " << msg.name()
+                              << " in TransferHandles with error: " << err;
+        }
         return false;
       }
     } else {
