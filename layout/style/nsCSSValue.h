@@ -49,9 +49,6 @@ bool Servo_CssUrlData_IsLocalRef(const RawServoCssUrlData* url);
 enum nsCSSUnit : uint32_t {
   eCSSUnit_Null = 0,  
 
-  eCSSUnit_Integer = 70,     
-  eCSSUnit_Enumerated = 71,  
-
   eCSSUnit_Percent = 100,  
                            
   eCSSUnit_Number = 101,   
@@ -73,20 +70,6 @@ enum nsCSSUnit : uint32_t {
   eCSSUnit_Pica = 904,        
   eCSSUnit_Quarter = 905,     
   eCSSUnit_Pixel = 906,       
-
-  
-  eCSSUnit_Degree = 1000,  
-
-  
-  eCSSUnit_Hertz = 2000,      
-  eCSSUnit_Kilohertz = 2001,  
-
-  
-  eCSSUnit_Seconds = 3000,       
-  eCSSUnit_Milliseconds = 3001,  
-
-  
-  eCSSUnit_FlexFraction = 4000,  
 };
 
 struct nsCSSValuePair;
@@ -101,17 +84,10 @@ class nsCSSValue {
  public:
   explicit nsCSSValue() : mUnit(eCSSUnit_Null) {}
 
-  nsCSSValue(int32_t aValue, nsCSSUnit aUnit);
   nsCSSValue(float aValue, nsCSSUnit aUnit);
   nsCSSValue(const nsCSSValue& aCopy);
   nsCSSValue(nsCSSValue&& aOther) : mUnit(aOther.mUnit), mValue(aOther.mValue) {
     aOther.mUnit = eCSSUnit_Null;
-  }
-  template <typename T, typename = std::enable_if_t<std::is_enum<T>::value>>
-  explicit nsCSSValue(T aValue) : mUnit(eCSSUnit_Enumerated) {
-    static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
-                  "aValue must be an enum that fits within mValue.mInt");
-    mValue.mInt = static_cast<int32_t>(aValue);
   }
 
   nsCSSValue& operator=(const nsCSSValue& aCopy);
@@ -124,21 +100,6 @@ class nsCSSValue {
   bool IsLengthUnit() const {
     return eCSSUnit_EM <= mUnit && mUnit <= eCSSUnit_Pixel;
   }
-  bool IsLengthPercentUnit() const {
-    return IsLengthUnit() || mUnit == eCSSUnit_Percent;
-  }
-  
-
-
-
-
-
-
-
-
-  bool IsRelativeLengthUnit() const {
-    return eCSSUnit_EM <= mUnit && mUnit <= eCSSUnit_RootEM;
-  }
   
 
 
@@ -149,43 +110,18 @@ class nsCSSValue {
   static bool IsPercentLengthUnit(nsCSSUnit aUnit) {
     return aUnit == eCSSUnit_Percent;
   }
-  bool IsPercentLengthUnit() { return IsPercentLengthUnit(mUnit); }
   static bool IsFloatUnit(nsCSSUnit aUnit) { return eCSSUnit_Number <= aUnit; }
-  bool IsAngularUnit() const { return eCSSUnit_Degree == mUnit; }
-  bool IsFrequencyUnit() const {
-    return eCSSUnit_Hertz <= mUnit && mUnit <= eCSSUnit_Kilohertz;
-  }
-  bool IsTimeUnit() const {
-    return eCSSUnit_Seconds <= mUnit && mUnit <= eCSSUnit_Milliseconds;
-  }
-
-  int32_t GetIntValue() const {
-    MOZ_ASSERT(mUnit == eCSSUnit_Integer || mUnit == eCSSUnit_Enumerated,
-               "not an int value");
-    return mValue.mInt;
-  }
 
   float GetPercentValue() const {
     MOZ_ASSERT(mUnit == eCSSUnit_Percent, "not a percent value");
-    return mValue.mFloat;
+    return mValue;
   }
 
   float GetFloatValue() const {
     MOZ_ASSERT(eCSSUnit_Number <= mUnit, "not a float value");
-    MOZ_ASSERT(!std::isnan(mValue.mFloat));
-    return mValue.mFloat;
+    MOZ_ASSERT(!std::isnan(mValue));
+    return mValue;
   }
-
-  float GetAngleValue() const {
-    MOZ_ASSERT(eCSSUnit_Degree == mUnit, "not an angle value");
-    return mValue.mFloat;
-  }
-
-  
-  double GetAngleValueInRadians() const;
-
-  
-  double GetAngleValueInDegrees() const;
 
   nscoord GetPixelLength() const;
 
@@ -193,24 +129,12 @@ class nsCSSValue {
   ~nsCSSValue() { Reset(); }
 
  public:
-  void SetIntValue(int32_t aValue, nsCSSUnit aUnit);
-  template <typename T, typename = std::enable_if_t<std::is_enum<T>::value>>
-  void SetEnumValue(T aValue) {
-    static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
-                  "aValue must be an enum that fits within mValue.mInt");
-    SetIntValue(static_cast<int32_t>(aValue), eCSSUnit_Enumerated);
-  }
   void SetPercentValue(float aValue);
   void SetFloatValue(float aValue, nsCSSUnit aUnit);
-  
-  void SetIntegerCoordValue(nscoord aCoord);
 
  protected:
   nsCSSUnit mUnit;
-  union {
-    int32_t mInt;
-    float mFloat;
-  } mValue;
+  float mValue;
 };
 
 #endif 

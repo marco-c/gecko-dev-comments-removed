@@ -64,6 +64,11 @@ bool SVGLength::IsAbsoluteUnit(uint8_t aUnit) {
 }
 
 
+bool SVGLength::IsFontRelativeUnit(uint8_t aUnit) {
+  return aUnit == SVG_LENGTHTYPE_EMS || aUnit == SVG_LENGTHTYPE_EXS;
+}
+
+
 
 
 
