@@ -1394,8 +1394,6 @@ bool js::temporal::GetPossibleInstantsFor(
     Handle<Wrapped<PlainDateTimeObject*>> dateTime,
     MutableHandle<InstantVector> list) {
   
-
-  
   if (timeZone.isString()) {
     return BuiltinGetPossibleInstantsFor(cx, timeZone.toString(), dateTime,
                                          list);
@@ -1433,6 +1431,7 @@ bool js::temporal::GetPossibleInstantsFor(
   
   
 
+  
   Rooted<Value> thisv(cx, ObjectValue(*timeZoneObj));
   Rooted<Value> arg(cx, ObjectValue(*dateTime));
   Rooted<Value> rval(cx);
