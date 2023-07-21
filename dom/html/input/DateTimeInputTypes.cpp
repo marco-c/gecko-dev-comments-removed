@@ -349,6 +349,17 @@ bool WeekInputType::ConvertNumberToString(Decimal aValue,
   double dayInYear = JS::DayWithinYear(aValue.toDouble(), year) + 1;
 
   
+  if (std::isnan(year) || std::isnan(month) || std::isnan(day) ||
+      std::isnan(dayInYear)) {
+    return false;
+  }
+
+  
+  if (year < 0) {
+    return false;
+  }
+
+  
   uint32_t isoWeekday = DayOfWeek(year, month + 1, day, true);
   
   

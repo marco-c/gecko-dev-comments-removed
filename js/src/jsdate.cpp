@@ -192,13 +192,6 @@ static inline bool IsLeapYear(double year) {
   return fmod(year, 4) == 0 && (fmod(year, 100) != 0 || fmod(year, 400) == 0);
 }
 
-static inline double DaysInYear(double year) {
-  if (!std::isfinite(year)) {
-    return GenericNaN();
-  }
-  return IsLeapYear(year) ? 366 : 365;
-}
-
 static inline double DayFromYear(double y) {
   return 365 * (y - 1970) + floor((y - 1969) / 4.0) -
          floor((y - 1901) / 100.0) + floor((y - 1601) / 400.0);
@@ -208,37 +201,154 @@ static inline double TimeFromYear(double y) {
   return DayFromYear(y) * msPerDay;
 }
 
+namespace {
+struct YearMonthDay {
+  int32_t year;
+  uint32_t month;
+  uint32_t day;
+};
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static YearMonthDay ToYearMonthDay(double t) {
+  MOZ_ASSERT(ToInteger(t) == t);
+
+  
+  
+  
+  constexpr uint32_t cycleInYears = 400;
+  constexpr uint32_t cycleInDays = cycleInYears * 365 + (cycleInYears / 4) -
+                                   (cycleInYears / 100) + (cycleInYears / 400);
+  static_assert(cycleInDays == 146097, "Wrong calculation of cycleInDays.");
+
+  
+  
+  
+  constexpr uint32_t rataDie1970Jan1 = 719468;
+
+  constexpr uint32_t maxU32 = std::numeric_limits<uint32_t>::max();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr uint32_t s = 3670;
+  constexpr uint32_t K = rataDie1970Jan1 + s * cycleInDays;
+  constexpr uint32_t L = s * cycleInYears;
+
+  
+  
+  constexpr int32_t minDays = -int32_t(K);
+  constexpr int32_t maxDays = (maxU32 - 3) / 4 - K;
+  static_assert(minDays == -536'895'458, "Wrong calculation of minDays or K.");
+  static_assert(maxDays == 536'846'365, "Wrong calculation of maxDays or K.");
+
+  
+  
+  
+  
+  constexpr int64_t minTime = minDays * int64_t(msPerDay);
+  [[maybe_unused]] constexpr int64_t maxTime = maxDays * int64_t(msPerDay);
+  MOZ_ASSERT(double(minTime) <= t && t <= double(maxTime));
+  const int64_t time = int64_t(t);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const uint64_t u = uint64_t(time - minTime);
+  const int32_t N_U = int32_t(u / uint64_t(msPerDay)) + minDays;
+  MOZ_ASSERT(minDays <= N_U && N_U <= maxDays);
+
+  const uint32_t N = uint32_t(N_U) + K;
+
+  
+  
+  
+  
+  
+
+  
+  const uint32_t N_1 = 4 * N + 3;
+  const uint32_t C = N_1 / 146097;
+  const uint32_t N_C = N_1 % 146097 / 4;
+
+  
+  const uint32_t N_2 = 4 * N_C + 3;
+  const uint64_t P_2 = uint64_t(2939745) * N_2;
+  const uint32_t Z = uint32_t(P_2 / 4294967296);
+  const uint32_t N_Y = uint32_t(P_2 % 4294967296) / 2939745 / 4;
+
+  
+  const uint32_t Y = 100 * C + Z;
+
+  
+  
+  
+  
+  
+  const uint32_t N_3 = 2141 * N_Y + 132377;  
+  const uint32_t M = N_3 / 65536;
+  const uint32_t D = N_3 % 65536 / 2141;
+
+  
+  
+  
+  constexpr uint32_t daysFromMar01ToJan01 = 306;
+  const uint32_t J = N_Y >= daysFromMar01ToJan01;
+  const int32_t Y_G = int32_t((Y - L) + J);
+  const uint32_t M_G = J ? M - 12 : M;
+  const uint32_t D_G = D + 1;
+
+  return {Y_G, M_G, D_G};
+}
+
 static double YearFromTime(double t) {
   if (!std::isfinite(t)) {
     return GenericNaN();
   }
-
-  MOZ_ASSERT(ToInteger(t) == t);
-
-  double y = floor(t / (msPerDay * 365.2425)) + 1970;
-  double t2 = TimeFromYear(y);
-
-  
-
-
-
-
-  if (t2 > t) {
-    y--;
-  } else {
-    if (t2 + msPerDay * DaysInYear(y) <= t) {
-      y++;
-    }
-  }
-  return y;
-}
-
-static inline int DaysInFebruary(double year) {
-  return IsLeapYear(year) ? 29 : 28;
+  auto const year = ToYearMonthDay(t).year;
+  return double(year);
 }
 
 
-static inline double DayWithinYear(double t, double year) {
+static double DayWithinYear(double t, double year) {
   MOZ_ASSERT_IF(std::isfinite(t), YearFromTime(t) == year);
   return Day(t) - DayFromYear(year);
 }
@@ -247,45 +357,8 @@ static double MonthFromTime(double t) {
   if (!std::isfinite(t)) {
     return GenericNaN();
   }
-
-  double year = YearFromTime(t);
-  double d = DayWithinYear(t, year);
-
-  int step;
-  if (d < (step = 31)) {
-    return 0;
-  }
-  if (d < (step += DaysInFebruary(year))) {
-    return 1;
-  }
-  if (d < (step += 31)) {
-    return 2;
-  }
-  if (d < (step += 30)) {
-    return 3;
-  }
-  if (d < (step += 31)) {
-    return 4;
-  }
-  if (d < (step += 30)) {
-    return 5;
-  }
-  if (d < (step += 31)) {
-    return 6;
-  }
-  if (d < (step += 31)) {
-    return 7;
-  }
-  if (d < (step += 30)) {
-    return 8;
-  }
-  if (d < (step += 31)) {
-    return 9;
-  }
-  if (d < (step += 30)) {
-    return 10;
-  }
-  return 11;
+  const auto month = ToYearMonthDay(t).month;
+  return double(month);
 }
 
 
@@ -293,56 +366,8 @@ static double DateFromTime(double t) {
   if (!std::isfinite(t)) {
     return GenericNaN();
   }
-
-  double year = YearFromTime(t);
-  double d = DayWithinYear(t, year);
-
-  int next;
-  if (d <= (next = 30)) {
-    return d + 1;
-  }
-  int step = next;
-  if (d <= (next += DaysInFebruary(year))) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 31)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 30)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 31)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 30)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 31)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 31)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 30)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 31)) {
-    return d - step;
-  }
-  step = next;
-  if (d <= (next += 30)) {
-    return d - step;
-  }
-  step = next;
-  return d - step;
+  const auto day = ToYearMonthDay(t).day;
+  return double(day);
 }
 
 
@@ -429,21 +454,39 @@ JS_PUBLIC_API double JS::MakeDate(double year, unsigned month, unsigned day,
 }
 
 JS_PUBLIC_API double JS::YearFromTime(double time) {
-  return ::YearFromTime(time);
+  const auto clipped = TimeClip(time);
+  if (!clipped.isValid()) {
+    return GenericNaN();
+  }
+  return ::YearFromTime(clipped.toDouble());
 }
 
 JS_PUBLIC_API double JS::MonthFromTime(double time) {
-  return ::MonthFromTime(time);
+  const auto clipped = TimeClip(time);
+  if (!clipped.isValid()) {
+    return GenericNaN();
+  }
+  return ::MonthFromTime(clipped.toDouble());
 }
 
-JS_PUBLIC_API double JS::DayFromTime(double time) { return DateFromTime(time); }
+JS_PUBLIC_API double JS::DayFromTime(double time) {
+  const auto clipped = TimeClip(time);
+  if (!clipped.isValid()) {
+    return GenericNaN();
+  }
+  return DateFromTime(clipped.toDouble());
+}
 
 JS_PUBLIC_API double JS::DayFromYear(double year) {
   return ::DayFromYear(year);
 }
 
 JS_PUBLIC_API double JS::DayWithinYear(double time, double year) {
-  return ::DayWithinYear(time, year);
+  const auto clipped = TimeClip(time);
+  if (!clipped.isValid()) {
+    return GenericNaN();
+  }
+  return ::DayWithinYear(clipped.toDouble(), year);
 }
 
 JS_PUBLIC_API void JS::SetReduceMicrosecondTimePrecisionCallback(
@@ -1766,101 +1809,18 @@ void DateObject::fillLocalTimeSlots() {
 
   setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
 
-  int year = (int)floor(localTime / (msPerDay * 365.2425)) + 1970;
-  double yearStartTime = TimeFromYear(year);
-
-  
-  int yearDays;
-  if (yearStartTime > localTime) {
-    year--;
-    yearStartTime -= (msPerDay * DaysInYear(year));
-    yearDays = DaysInYear(year);
-  } else {
-    yearDays = DaysInYear(year);
-    double nextStart = yearStartTime + (msPerDay * yearDays);
-    if (nextStart <= localTime) {
-      year++;
-      yearStartTime = nextStart;
-      yearDays = DaysInYear(year);
-    }
-  }
+  const auto [year, month, day] = ToYearMonthDay(localTime);
 
   setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
-
-  uint64_t yearTime = uint64_t(localTime - yearStartTime);
-  int yearSeconds = uint32_t(yearTime / 1000);
-
-  int day = yearSeconds / int(SecondsPerDay);
-
-  int step = -1, next = 30;
-  int month;
-
-  do {
-    if (day <= next) {
-      month = 0;
-      break;
-    }
-    step = next;
-    next += ((yearDays == 366) ? 29 : 28);
-    if (day <= next) {
-      month = 1;
-      break;
-    }
-    step = next;
-    if (day <= (next += 31)) {
-      month = 2;
-      break;
-    }
-    step = next;
-    if (day <= (next += 30)) {
-      month = 3;
-      break;
-    }
-    step = next;
-    if (day <= (next += 31)) {
-      month = 4;
-      break;
-    }
-    step = next;
-    if (day <= (next += 30)) {
-      month = 5;
-      break;
-    }
-    step = next;
-    if (day <= (next += 31)) {
-      month = 6;
-      break;
-    }
-    step = next;
-    if (day <= (next += 31)) {
-      month = 7;
-      break;
-    }
-    step = next;
-    if (day <= (next += 30)) {
-      month = 8;
-      break;
-    }
-    step = next;
-    if (day <= (next += 31)) {
-      month = 9;
-      break;
-    }
-    step = next;
-    if (day <= (next += 30)) {
-      month = 10;
-      break;
-    }
-    step = next;
-    month = 11;
-  } while (0);
-
-  setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(month));
-  setReservedSlot(LOCAL_DATE_SLOT, Int32Value(day - step));
+  setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(int32_t(month)));
+  setReservedSlot(LOCAL_DATE_SLOT, Int32Value(int32_t(day)));
 
   int weekday = WeekDay(localTime);
   setReservedSlot(LOCAL_DAY_SLOT, Int32Value(weekday));
 
+  double yearStartTime = TimeFromYear(year);
+  uint64_t yearTime = uint64_t(localTime - yearStartTime);
+  int32_t yearSeconds = int32_t(yearTime / 1000);
   setReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
 }
 
