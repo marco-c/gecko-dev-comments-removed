@@ -231,10 +231,6 @@ class WebrtcVideoConduit
 
   std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const override;
 
-  void RequestKeyFrame(FrameTransformerProxy* aProxy) override;
-  void GenerateKeyFrame(const Maybe<std::string>& aRid,
-                        FrameTransformerProxy* aProxy) override;
-
  private:
   
   WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
@@ -302,8 +298,6 @@ class WebrtcVideoConduit
     Mirror<std::vector<VideoCodecConfig>> mRecvCodecs;
     Mirror<Maybe<RtpRtcpConfig>> mRecvRtpRtcpConfig;
     Mirror<webrtc::VideoCodecMode> mCodecMode;
-    Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxySend;
-    Mirror<RefPtr<FrameTransformerProxy>> mFrameTransformerProxyRecv;
 
     
     
@@ -315,10 +309,6 @@ class WebrtcVideoConduit
     
     std::vector<VideoCodecConfig> mConfiguredRecvCodecs;
     Maybe<RtpRtcpConfig> mConfiguredRecvRtpRtcpConfig;
-
-    
-    RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxySend;
-    RefPtr<FrameTransformerProxy> mConfiguredFrameTransformerProxyRecv;
 
     Control() = delete;
     explicit Control(const RefPtr<AbstractThread>& aCallThread);

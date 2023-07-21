@@ -57,7 +57,6 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
       uint32_t ssrc,
       std::vector<uint32_t> csrcs,
-      const std::string& rid,
       TaskQueueFactory* send_transport_queue);
 
   void Init();
@@ -105,7 +104,6 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   const uint32_t ssrc_;
   std::vector<uint32_t> csrcs_;
-  const std::string rid_;
   
   
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> transformation_queue_;
