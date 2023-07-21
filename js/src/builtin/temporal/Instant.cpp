@@ -978,16 +978,16 @@ static JSString* TemporalInstantToString(JSContext* cx,
   }
 
   
-
-  
   PlainDateTime dateTime;
   if (!GetPlainDateTimeFor(cx, outputTimeZone, instant, &dateTime)) {
     return nullptr;
   }
 
   
+  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
   Rooted<JSString*> dateTimeString(
-      cx, TemporalDateTimeToString(cx, dateTime, precision));
+      cx, TemporalDateTimeToString(cx, dateTime, isoCalendar, precision,
+                                   CalendarOption::Never));
   if (!dateTimeString) {
     return nullptr;
   }
@@ -1882,12 +1882,7 @@ static bool Instant_toZonedDateTimeISO(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarObject*> calendar(cx, GetISO8601Calendar(cx));
-  if (!calendar) {
-    return false;
-  }
-
-  
+  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
   auto* result = CreateTemporalZonedDateTime(cx, instant, timeZone, calendar);
   if (!result) {
     return false;

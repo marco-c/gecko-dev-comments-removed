@@ -638,7 +638,7 @@ static bool CalculateOffsetShift(JSContext* cx, Handle<JSObject*> relativeTo,
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return false;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -738,7 +738,7 @@ static ZonedDateTimeObject* MoveRelativeZonedDateTime(
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return nullptr;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return nullptr;
   }
 
@@ -1715,7 +1715,7 @@ static bool BalancePossiblyInfiniteDuration(
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return false;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -2295,7 +2295,7 @@ static bool UnbalanceDurationRelative(JSContext* cx, const Duration& duration,
   Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, date);
 
   Rooted<CalendarValue> calendar(cx, date.unwrap().calendar());
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -2305,14 +2305,19 @@ static bool UnbalanceDurationRelative(JSContext* cx, const Duration& duration,
 
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethod(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
-    }
-
-    
     Rooted<Value> dateUntil(cx);
-    if (!GetMethod(cx, calendar, cx->names().dateUntil, &dateUntil)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+
+      
+      if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
+
+      
+      if (!GetMethod(cx, calendarObj, cx->names().dateUntil, &dateUntil)) {
+        return false;
+      }
     }
 
     
@@ -2366,8 +2371,11 @@ static bool UnbalanceDurationRelative(JSContext* cx, const Duration& duration,
 
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethod(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
     }
 
     
@@ -2435,8 +2443,11 @@ static bool UnbalanceDurationRelative(JSContext* cx, const Duration& duration,
 
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethod(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
     }
 
     
@@ -2715,7 +2726,7 @@ static bool BalanceDurationRelative(JSContext* cx, const Duration& duration,
 
   
   Rooted<CalendarValue> calendar(cx, date.unwrap().calendar());
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -2723,8 +2734,11 @@ static bool BalanceDurationRelative(JSContext* cx, const Duration& duration,
   if (largestUnit == TemporalUnit::Year) {
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
     }
 
     
@@ -2805,8 +2819,12 @@ static bool BalanceDurationRelative(JSContext* cx, const Duration& duration,
 
     
     Rooted<Value> dateUntil(cx);
-    if (!GetMethodForCall(cx, calendar, cx->names().dateUntil, &dateUntil)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethodForCall(cx, calendarObj, cx->names().dateUntil,
+                            &dateUntil)) {
+        return false;
+      }
     }
 
     
@@ -2887,8 +2905,11 @@ static bool BalanceDurationRelative(JSContext* cx, const Duration& duration,
   } else if (largestUnit == TemporalUnit::Month) {
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
     }
 
     
@@ -2934,8 +2955,11 @@ static bool BalanceDurationRelative(JSContext* cx, const Duration& duration,
 
     
     Rooted<Value> dateAdd(cx);
-    if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-      return false;
+    if (calendar.isObject()) {
+      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+      if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+        return false;
+      }
     }
 
     
@@ -3047,7 +3071,7 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   }
   Rooted<CalendarValue> calendar(cx, unwrappedRelativeTo->calendar());
 
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -3067,8 +3091,11 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
 
   
   Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-    return false;
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
   }
 
   
@@ -3144,7 +3171,7 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return false;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -3383,7 +3410,7 @@ bool js::temporal::AdjustRoundedDurationDays(
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return false;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -3912,7 +3939,7 @@ static bool ToRelativeTemporalObject(JSContext* cx, Handle<JSObject*> options,
       auto plainDateTime = ToPlainDate(dateTime);
 
       Rooted<CalendarValue> calendar(cx, dateTime->calendar());
-      if (!cx->compartment()->wrap(cx, &calendar)) {
+      if (!calendar.wrap(cx)) {
         return false;
       }
 
@@ -4038,35 +4065,35 @@ static bool ToRelativeTemporalObject(JSContext* cx, Handle<JSObject*> options,
     }
 
     
-    Rooted<Value> calendarValue(cx);
-    if (calendarString) {
-      calendarValue.setString(calendarString);
-    }
-
-    if (!ToTemporalCalendarWithISODefault(cx, calendarValue, &calendar)) {
-      return false;
-    }
-
-    
 
     
     if (timeZoneName) {
+      
       if (!ToTemporalTimeZone(cx, timeZoneName, &timeZone)) {
         return false;
       }
+
+      
+      if (isUTC) {
+        offsetBehaviour = OffsetBehaviour::Exact;
+      } else if (!hasOffset) {
+        offsetBehaviour = OffsetBehaviour::Wall;
+      }
+
+      
+      matchBehaviour = MatchBehaviour::MatchMinutes;
     } else {
       MOZ_ASSERT(!timeZone);
     }
 
     
-    if (isUTC) {
-      offsetBehaviour = OffsetBehaviour::Exact;
-    } else if (!hasOffset) {
-      offsetBehaviour = OffsetBehaviour::Wall;
+    if (calendarString) {
+      if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+        return false;
+      }
+    } else {
+      calendar.set(CalendarValue(cx->names().iso8601));
     }
-
-    
-    matchBehaviour = MatchBehaviour::MatchMinutes;
 
     
     if (timeZone) {
@@ -5014,8 +5041,11 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
 
   
   Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-    return false;
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
   }
 
   
@@ -5562,8 +5592,11 @@ static bool RoundDurationMonth(
 
   
   Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-    return false;
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
   }
 
   
@@ -5998,8 +6031,11 @@ static bool RoundDurationWeekSlow(
 
   
   Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-    return false;
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
   }
 
   
@@ -6096,8 +6132,11 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
 
   
   Rooted<Value> dateAdd(cx);
-  if (!GetMethodForCall(cx, calendar, cx->names().dateAdd, &dateAdd)) {
-    return false;
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethodForCall(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
   }
 
   
@@ -6459,8 +6498,8 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     zonedRelativeTo = relativeTo;
 
     
-    calendar = unwrapped->calendar();
-    if (!cx->compartment()->wrap(cx, &calendar)) {
+    calendar.set(unwrapped->calendar());
+    if (!calendar.wrap(cx)) {
       return false;
     }
 
@@ -6474,8 +6513,8 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     dateRelativeTo = relativeTo;
 
     
-    calendar = unwrapped->calendar();
-    if (!cx->compartment()->wrap(cx, &calendar)) {
+    calendar.set(unwrapped->calendar());
+    if (!calendar.wrap(cx)) {
       return false;
     }
   } else if (IsDeadProxyObject(relativeTo)) {

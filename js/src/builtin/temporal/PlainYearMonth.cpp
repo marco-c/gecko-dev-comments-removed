@@ -140,8 +140,7 @@ static PlainYearMonthObject* CreateTemporalYearMonth(
   obj->setFixedSlot(PlainYearMonthObject::ISO_MONTH_SLOT, Int32Value(isoMonth));
 
   
-  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                    ObjectValue(*calendar));
+  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT, calendar.toValue());
 
   
   obj->setFixedSlot(PlainYearMonthObject::ISO_DAY_SLOT, Int32Value(isoDay));
@@ -186,8 +185,7 @@ PlainYearMonthObject* js::temporal::CreateTemporalYearMonth(
   obj->setFixedSlot(PlainYearMonthObject::ISO_MONTH_SLOT, Int32Value(isoMonth));
 
   
-  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                    ObjectValue(*calendar));
+  obj->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT, calendar.toValue());
 
   
   obj->setFixedSlot(PlainYearMonthObject::ISO_DAY_SLOT, Int32Value(isoDay));
@@ -264,14 +262,11 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
   }
 
   
-  Rooted<Value> calendarLike(cx);
+  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
   if (calendarString) {
-    calendarLike.setString(calendarString);
-  }
-
-  Rooted<CalendarValue> calendar(cx);
-  if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendar)) {
-    return nullptr;
+    if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+      return nullptr;
+    }
   }
 
   
@@ -312,7 +307,7 @@ static bool ToTemporalYearMonth(JSContext* cx, Handle<Value> item,
 
   *result = ToPlainDate(obj);
   calendar.set(obj->calendar());
-  return cx->compartment()->wrap(cx, calendar);
+  return calendar.wrap(cx);
 }
 
 
@@ -409,7 +404,7 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
 
   Rooted<Wrapped<PlainYearMonthObject*>> other(cx, otherYearMonth);
   Rooted<CalendarValue> otherCalendar(cx, otherYearMonth.unwrap().calendar());
-  if (!cx->compartment()->wrap(cx, &otherCalendar)) {
+  if (!otherCalendar.wrap(cx)) {
     return false;
   }
 
@@ -765,7 +760,7 @@ static bool PlainYearMonth_from(JSContext* cx, unsigned argc, Value* vp) {
       auto date = ToPlainDate(yearMonth);
 
       Rooted<CalendarValue> calendar(cx, yearMonth->calendar());
-      if (!cx->compartment()->wrap(cx, &calendar)) {
+      if (!calendar.wrap(cx)) {
         return false;
       }
 
@@ -1423,7 +1418,7 @@ static bool PlainYearMonth_getISOFields(JSContext* cx, const CallArgs& args) {
 
   
   if (!fields.emplaceBack(NameToId(cx->names().calendar),
-                          ObjectValue(*yearMonth->calendar()))) {
+                          yearMonth->calendar().toValue())) {
     return false;
   }
 

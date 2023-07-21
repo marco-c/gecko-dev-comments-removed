@@ -104,12 +104,10 @@ bool js::temporal::InterpretISODateTimeOffset(
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-  Rooted<CalendarValue> calendar(cx, GetISO8601Calendar(cx));
-  if (!calendar) {
-    return false;
-  }
+  MOZ_ASSERT(IsValidISODate(dateTime.date));
 
   
+  Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
   Rooted<PlainDateTimeObject*> temporalDateTime(
       cx, CreateTemporalDateTime(cx, dateTime, calendar));
   if (!temporalDateTime) {
@@ -386,6 +384,11 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
     MOZ_ASSERT(timeZoneString);
 
     
+    if (!ToTemporalTimeZone(cx, timeZoneString, &timeZone)) {
+      return nullptr;
+    }
+
+    
 
     
     if (isUTC) {
@@ -398,18 +401,12 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
     }
 
     
-    if (!ToTemporalTimeZone(cx, timeZoneString, &timeZone)) {
-      return nullptr;
-    }
-
-    
-    Rooted<Value> calendarValue(cx);
     if (calendarString) {
-      calendarValue.setString(calendarString);
-    }
-
-    if (!ToTemporalCalendarWithISODefault(cx, calendarValue, &calendar)) {
-      return nullptr;
+      if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+        return nullptr;
+      }
+    } else {
+      calendar.set(CalendarValue(cx->names().iso8601));
     }
 
     
@@ -481,8 +478,7 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   *instant = ToInstant(obj);
   timeZone.set(obj->timeZone());
   calendar.set(obj->calendar());
-  return cx->compartment()->wrap(cx, timeZone) &&
-         cx->compartment()->wrap(cx, calendar);
+  return cx->compartment()->wrap(cx, timeZone) && calendar.wrap(cx);
 }
 
 
@@ -518,7 +514,7 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
   obj->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT, ObjectValue(*timeZone));
 
   
-  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, ObjectValue(*calendar));
+  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toValue());
 
   
   return obj;
@@ -550,7 +546,7 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   obj->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT, ObjectValue(*timeZone));
 
   
-  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, ObjectValue(*calendar));
+  obj->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT, calendar.toValue());
 
   
   return obj;
@@ -613,12 +609,6 @@ static JSString* TemporalZonedDateTimeToString(
   }
 
   
-  Rooted<CalendarObject*> isoCalendar(cx, GetISO8601Calendar(cx));
-  if (!isoCalendar) {
-    return nullptr;
-  }
-
-  
   PlainDateTime temporalDateTime;
   if (!js::temporal::GetPlainDateTimeFor(cx, timeZone, instant,
                                          &temporalDateTime)) {
@@ -626,6 +616,7 @@ static JSString* TemporalZonedDateTimeToString(
   }
 
   
+  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
   JSString* dateTimeString = TemporalDateTimeToString(
       cx, temporalDateTime, isoCalendar, precision, CalendarOption::Never);
   if (!dateTimeString) {
@@ -656,16 +647,19 @@ static JSString* TemporalZonedDateTimeToString(
 
   
   if (showTimeZone != TimeZoneNameOption::Never) {
+    
     if (!result.append('[')) {
       return nullptr;
     }
 
+    
     if (showTimeZone == TimeZoneNameOption::Critical) {
       if (!result.append('!')) {
         return nullptr;
       }
     }
 
+    
     JSString* timeZoneIdentifier = ToTemporalTimeZoneIdentifier(cx, timeZone);
     if (!timeZoneIdentifier) {
       return nullptr;
@@ -674,6 +668,7 @@ static JSString* TemporalZonedDateTimeToString(
       return nullptr;
     }
 
+    
     if (!result.append(']')) {
       return nullptr;
     }
@@ -826,7 +821,7 @@ bool js::temporal::NanosecondsToDays(
   if (!cx->compartment()->wrap(cx, &timeZone)) {
     return false;
   }
-  if (!cx->compartment()->wrap(cx, &calendar)) {
+  if (!calendar.wrap(cx)) {
     return false;
   }
 
@@ -1598,7 +1593,7 @@ static bool ZonedDateTime_from(JSContext* cx, unsigned argc, Value* vp) {
       if (!cx->compartment()->wrap(cx, &timeZone)) {
         return false;
       }
-      if (!cx->compartment()->wrap(cx, &calendar)) {
+      if (!calendar.wrap(cx)) {
         return false;
       }
 
@@ -2250,12 +2245,7 @@ static bool ZonedDateTime_hoursInDay(JSContext* cx, const CallArgs& args) {
 
   
   Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
-
-  
-  Rooted<CalendarObject*> isoCalendar(cx, GetISO8601Calendar(cx));
-  if (!isoCalendar) {
-    return false;
-  }
+  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
 
   
   PlainDateTime temporalDateTime;
@@ -3060,12 +3050,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<CalendarObject*> isoCalendar(cx, GetISO8601Calendar(cx));
-  if (!isoCalendar) {
-    return false;
-  }
-
-  
+  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
   Rooted<PlainDateTimeObject*> dtStart(
       cx, CreateTemporalDateTime(cx, {temporalDateTime.date}, isoCalendar));
   if (!dtStart) {
@@ -3673,8 +3658,7 @@ static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (!fields.emplaceBack(NameToId(cx->names().calendar),
-                          ObjectValue(*calendar))) {
+  if (!fields.emplaceBack(NameToId(cx->names().calendar), calendar.toValue())) {
     return false;
   }
 
