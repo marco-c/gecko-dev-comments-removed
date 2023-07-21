@@ -21,7 +21,7 @@
 
 
 
-[builtinclass, scriptable, rust_sync, uuid(9f982380-24b4-49f3-88f6-45e2952036c7)]
+[builtinclass, scriptable, uuid(9f982380-24b4-49f3-88f6-45e2952036c7)]
 interface nsISerialEventTarget : nsIEventTarget
 {
 };
