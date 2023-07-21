@@ -212,6 +212,13 @@ impl AbsoluteColor {
     }
 
     
+    #[inline]
+    pub fn into_modern_syntax(mut self) -> Self {
+        self.flags |= ColorFlags::AS_COLOR_FUNCTION;
+        self
+    }
+
+    
     pub fn srgb(red: f32, green: f32, blue: f32, alpha: f32) -> Self {
         Self::new(ColorSpace::Srgb, ColorComponents(red, green, blue), alpha)
     }
@@ -239,7 +246,7 @@ impl AbsoluteColor {
 
     
     #[inline]
-    pub fn is_legacy_color(&self) -> bool {
+    pub fn is_legacy_syntax(&self) -> bool {
         
         match self.color_space {
             ColorSpace::Srgb => !self.flags.contains(ColorFlags::AS_COLOR_FUNCTION),
@@ -391,16 +398,9 @@ impl ToCss for AbsoluteColor {
         let maybe_alpha = value_or_none!(self.alpha, ALPHA_IS_NONE);
 
         match self.color_space {
-            ColorSpace::Hsl => {
-                let rgb = convert::hsl_to_rgb(&self.components);
-                Self::new(ColorSpace::Srgb, rgb, self.alpha).to_css(dest)
-            },
+            ColorSpace::Hsl => self.to_color_space(ColorSpace::Srgb).to_css(dest),
 
-            ColorSpace::Hwb => {
-                let rgb = convert::hwb_to_rgb(&self.components);
-
-                Self::new(ColorSpace::Srgb, rgb, self.alpha).to_css(dest)
-            },
+            ColorSpace::Hwb => self.to_color_space(ColorSpace::Srgb).to_css(dest),
 
             ColorSpace::Srgb if !self.flags.contains(ColorFlags::AS_COLOR_FUNCTION) => {
                 

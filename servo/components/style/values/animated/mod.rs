@@ -378,6 +378,7 @@ trivial_to_animated_value!(bool);
 trivial_to_animated_value!(f32);
 trivial_to_animated_value!(i32);
 trivial_to_animated_value!(AbsoluteColor);
+trivial_to_animated_value!(crate::values::generics::color::ColorMixFlags);
 
 
 
