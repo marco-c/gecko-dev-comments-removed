@@ -1781,27 +1781,6 @@ TemporalParser<CharT>::parseTemporalDurationString(JSContext* cx) {
     return mozilla::Err(JSMSG_TEMPORAL_PARSER_MISSING_TIME_DESIGNATOR);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   double num;
   mozilla::Maybe<int32_t> frac;
   auto digitsAndFraction = [&]() {
@@ -1834,6 +1813,7 @@ TemporalParser<CharT>::parseTemporalDurationString(JSContext* cx) {
   
   
   
+  
   bool hasHoursFraction = false;
   if (hoursDesignator()) {
     hasHoursFraction = bool(frac);
@@ -1847,6 +1827,7 @@ TemporalParser<CharT>::parseTemporalDurationString(JSContext* cx) {
     }
   }
 
+  
   
   
   
@@ -1959,6 +1940,10 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
     MOZ_ASSERT(parsed.hoursFraction < 1'000'000'000);
 
     
+    MOZ_ASSERT(parsed.minutes == 0);
+    MOZ_ASSERT(parsed.minutesFraction == 0);
+    MOZ_ASSERT(parsed.seconds == 0);
+    MOZ_ASSERT(parsed.secondsFraction == 0);
 
     
     int64_t h = int64_t(parsed.hoursFraction) * 60;
@@ -1978,6 +1963,8 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
     MOZ_ASSERT(parsed.minutesFraction < 1'000'000'000);
 
     
+    MOZ_ASSERT(parsed.seconds == 0);
+    MOZ_ASSERT(parsed.secondsFraction == 0);
 
     
     minutes = parsed.minutes;
