@@ -114,6 +114,10 @@ class NodeChannel final : public IPC::Channel::Listener {
   const NodeName& GetName() { return mName; }
 #endif
 
+  
+  
+  void SetOtherPid(base::ProcessId aNewPid);
+
 #ifdef XP_MACOSX
   
   
@@ -125,9 +129,6 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   void Destroy();
   void FinalDestroy();
-
-  
-  void SetOtherPid(base::ProcessId aNewPid);
 
   void SendMessage(UniquePtr<IPC::Message> aMessage);
 

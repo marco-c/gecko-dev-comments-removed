@@ -15,6 +15,7 @@
 #include <string>
 
 #include "base/message_loop.h"
+#include "base/process.h"
 #include "base/task.h"
 #include "nsISupportsImpl.h"
 
@@ -34,18 +35,14 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   using ChannelHandle = Channel::ChannelHandle;
 
   
-  ChannelImpl(ChannelHandle pipe, Mode mode);
+  ChannelImpl(ChannelHandle pipe, Mode mode, base::ProcessId other_pid);
   bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex());
   void Close() MOZ_EXCLUDES(SendMutex());
   void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(SendMutex());
   
   bool Send(mozilla::UniquePtr<Message> message) MOZ_EXCLUDES(SendMutex());
 
-  int32_t OtherPid() {
-    IOThread().AssertOnCurrentThread();
-    chan_cap_.NoteOnIOThread();
-    return other_pid_;
-  }
+  void SetOtherPid(base::ProcessId other_pid);
 
   
   
@@ -70,8 +67,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
       MOZ_REQUIRES(SendMutex());
   void OutputQueuePop() MOZ_REQUIRES(SendMutex());
 
-  void SetOtherPid(int other_pid) MOZ_REQUIRES(IOThread())
-      MOZ_EXCLUDES(SendMutex());
   bool EnqueueHelloMessage() MOZ_REQUIRES(SendMutex(), IOThread());
   void CloseLocked() MOZ_REQUIRES(SendMutex(), IOThread());
 
@@ -151,7 +146,8 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
 
   
   
-  int32_t other_pid_ MOZ_GUARDED_BY(chan_cap_) = -1;
+  base::ProcessId other_pid_ MOZ_GUARDED_BY(chan_cap_) =
+      base::kInvalidProcessId;
 
   
   

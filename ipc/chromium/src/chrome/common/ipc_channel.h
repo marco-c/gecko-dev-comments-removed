@@ -86,7 +86,10 @@ class Channel {
   
   
   
-  Channel(ChannelHandle pipe, Mode mode);
+  
+  
+  
+  Channel(ChannelHandle pipe, Mode mode, base::ProcessId other_pid);
 
   ~Channel();
 
@@ -114,7 +117,11 @@ class Channel {
 
   
   
-  int32_t OtherPid() const;
+  
+  
+  
+  
+  void SetOtherPid(base::ProcessId other_pid);
 
   
   

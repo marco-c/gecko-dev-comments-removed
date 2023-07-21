@@ -100,7 +100,7 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
 
   
   static ScopedPort InitChildProcess(UniquePtr<IPC::Channel> aChannel,
-                                     int32_t aParentPid = -1);
+                                     base::ProcessId aParentPid);
 
   
   static void CleanUp();
