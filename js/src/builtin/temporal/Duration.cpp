@@ -7654,59 +7654,43 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  DateDuration balanceResult;
-  if (!BalanceDurationRelative(cx, adjustResult, largestUnit, relativeTo,
-                               &balanceResult)) {
-    return false;
-  }
-
-  
+  TimeDuration balanceResult;
   if (zonedRelativeTo) {
-    zonedRelativeTo = MoveRelativeZonedDateTime(
-        cx, zonedRelativeTo,
-        {balanceResult.years, balanceResult.months, balanceResult.weeks, 0});
-    if (!zonedRelativeTo) {
+    if (!BalanceDuration(cx, adjustResult, largestUnit, zonedRelativeTo,
+                         &balanceResult)) {
+      return false;
+    }
+  } else {
+    if (!BalanceDuration(cx, adjustResult, largestUnit, &balanceResult)) {
       return false;
     }
   }
 
   
   Duration balanceInput = {
-      0,
-      0,
-      0,
+      adjustResult.years,
+      adjustResult.months,
+      adjustResult.weeks,
       balanceResult.days,
-      adjustResult.hours,
-      adjustResult.minutes,
-      adjustResult.seconds,
-      adjustResult.milliseconds,
-      adjustResult.microseconds,
-      adjustResult.nanoseconds,
   };
-  TimeDuration result;
-  if (zonedRelativeTo) {
-    if (!BalanceDuration(cx, balanceInput, largestUnit, zonedRelativeTo,
-                         &result)) {
-      return false;
-    }
-  } else {
-    if (!BalanceDuration(cx, balanceInput, largestUnit, &result)) {
-      return false;
-    }
+  DateDuration result;
+  if (!BalanceDurationRelative(cx, balanceInput, largestUnit, relativeTo,
+                               &result)) {
+    return false;
   }
 
   
   auto* obj = CreateTemporalDuration(cx, {
-                                             balanceResult.years,
-                                             balanceResult.months,
-                                             balanceResult.weeks,
+                                             result.years,
+                                             result.months,
+                                             result.weeks,
                                              result.days,
-                                             result.hours,
-                                             result.minutes,
-                                             result.seconds,
-                                             result.milliseconds,
-                                             result.microseconds,
-                                             result.nanoseconds,
+                                             balanceResult.hours,
+                                             balanceResult.minutes,
+                                             balanceResult.seconds,
+                                             balanceResult.milliseconds,
+                                             balanceResult.microseconds,
+                                             balanceResult.nanoseconds,
                                          });
   if (!obj) {
     return false;
