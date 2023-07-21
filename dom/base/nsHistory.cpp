@@ -153,15 +153,8 @@ void nsHistory::Go(int32_t aDelta, nsIPrincipal& aSubjectPrincipal,
                               : CallerType::NonSystem;
 
   
-  
-  
-  if (StaticPrefs::dom_window_history_async()) {
-    session_history->AsyncGo(aDelta,  false,
-                             userActivation, callerType, aRv);
-  } else {
-    session_history->Go(aDelta,  false,
-                        userActivation, IgnoreErrors());
-  }
+  session_history->AsyncGo(aDelta,  false,
+                           userActivation, callerType, aRv);
 }
 
 void nsHistory::Back(CallerType aCallerType, ErrorResult& aRv) {
@@ -184,13 +177,8 @@ void nsHistory::Back(CallerType aCallerType, ErrorResult& aRv) {
           ? win->GetWindowContext()->HasValidTransientUserGestureActivation()
           : false;
 
-  if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(-1,  false, userActivation,
-                      aCallerType, aRv);
-  } else {
-    sHistory->Go(-1,  false, userActivation,
-                 IgnoreErrors());
-  }
+  sHistory->AsyncGo(-1,  false, userActivation,
+                    aCallerType, aRv);
 }
 
 void nsHistory::Forward(CallerType aCallerType, ErrorResult& aRv) {
@@ -213,13 +201,8 @@ void nsHistory::Forward(CallerType aCallerType, ErrorResult& aRv) {
           ? win->GetWindowContext()->HasValidTransientUserGestureActivation()
           : false;
 
-  if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(1,  false, userActivation,
-                      aCallerType, aRv);
-  } else {
-    sHistory->Go(1,  false, userActivation,
-                 IgnoreErrors());
-  }
+  sHistory->AsyncGo(1,  false, userActivation,
+                    aCallerType, aRv);
 }
 
 void nsHistory::PushState(JSContext* aCx, JS::Handle<JS::Value> aData,
