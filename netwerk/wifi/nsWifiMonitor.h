@@ -35,7 +35,7 @@ class nsWifiAccessPoint;
 #ifdef XP_MACOSX
 
 
-#  define kMacOS13MonitorStackSize (512 * 1024)
+#  define kMacOSWifiMonitorStackSize (512 * 1024)
 #endif
 
 struct WifiListenerHolder {

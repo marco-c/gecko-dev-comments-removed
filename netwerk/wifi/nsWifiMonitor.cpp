@@ -248,14 +248,12 @@ nsresult nsWifiMonitor::DispatchScanToBackgroundThread(uint64_t aPollingId,
 #else
     
     
-    static_assert(kMacOS13MonitorStackSize >
+    static_assert(kMacOSWifiMonitorStackSize >
                   nsIThreadManager::DEFAULT_STACK_SIZE);
 
     
     nsIThreadManager::ThreadCreationOptions options = {
-        .stackSize = nsCocoaFeatures::OnVenturaOrLater()
-                         ? kMacOS13MonitorStackSize
-                         : nsIThreadManager::DEFAULT_STACK_SIZE};
+        .stackSize = kMacOSWifiMonitorStackSize};
 #endif
 
     nsresult rv = NS_NewNamedThread("Wifi Monitor", getter_AddRefs(mThread),
