@@ -3308,22 +3308,16 @@ static bool AdjustRoundedDurationDaysSlow(
   MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
   
-  Rooted<BigInt*> diff(cx, BigInt::sub(cx, timeRemainderNs, dayLengthNs));
-  if (!diff) {
+  Rooted<BigInt*> oneDayLess(cx, BigInt::sub(cx, timeRemainderNs, dayLengthNs));
+  if (!oneDayLess) {
     return false;
-  }
-
-  if ((direction > 0 && diff->sign() < 0) ||
-      (direction < 0 && diff->sign() > 0)) {
-    *result = duration;
-    return true;
   }
 
   
-  timeRemainderNs =
-      RoundTemporalInstant(cx, diff, increment, unit, roundingMode);
-  if (!timeRemainderNs) {
-    return false;
+  if ((direction > 0 && oneDayLess->sign() < 0) ||
+      (direction < 0 && oneDayLess->sign() > 0)) {
+    *result = duration;
+    return true;
   }
 
   
@@ -3337,6 +3331,13 @@ static bool AdjustRoundedDurationDaysSlow(
                    },
                    {0, 0, 0, double(direction)}, relativeTo,
                    &adjustedDateDuration)) {
+    return false;
+  }
+
+  
+  timeRemainderNs =
+      RoundTemporalInstant(cx, oneDayLess, increment, unit, roundingMode);
+  if (!timeRemainderNs) {
     return false;
   }
 
@@ -3429,22 +3430,25 @@ bool js::temporal::AdjustRoundedDurationDays(
   }
 
   
-  auto checkedDiff = *timeRemainderNs - dayLength.toNanoseconds();
-  if (!checkedDiff.isValid()) {
+  auto checkedOneDayLess = *timeRemainderNs - dayLength.toNanoseconds();
+  if (!checkedOneDayLess.isValid()) {
     return AdjustRoundedDurationDaysSlow(cx, duration, increment, unit,
                                          roundingMode, relativeTo, dayLength,
                                          result);
   }
-  auto diff = checkedDiff.value();
+  auto oneDayLess = checkedOneDayLess.value();
 
-  if ((direction > 0 && diff < 0) || (direction < 0 && diff > 0)) {
+  
+  if ((direction > 0 && oneDayLess < 0) || (direction < 0 && oneDayLess > 0)) {
     *result = duration;
     return true;
   }
 
   
+
+  
   auto roundedTimeRemainderNs =
-      ::RoundTemporalInstant(diff, increment, unit, roundingMode);
+      ::RoundTemporalInstant(oneDayLess, increment, unit, roundingMode);
   if (!roundedTimeRemainderNs.isValid()) {
     return AdjustRoundedDurationDaysSlow(cx, duration, increment, unit,
                                          roundingMode, relativeTo, dayLength,
