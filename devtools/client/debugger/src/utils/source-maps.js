@@ -2,7 +2,6 @@
 
 
 
-import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
 import {
   debuggerToSourceMapLocation,
   sourceMapToDebuggerLocation,
@@ -23,7 +22,7 @@ import { waitForSourceToBeRegisteredInStore } from "../client/firefox/create";
 
 
 export async function getGeneratedLocation(location, thunkArgs) {
-  if (!isOriginalId(location.source.id)) {
+  if (!location.source.isOriginal) {
     return location;
   }
 
@@ -62,7 +61,7 @@ export async function getOriginalLocation(
   thunkArgs,
   waitForSource = false
 ) {
-  if (isOriginalId(location.source.id)) {
+  if (location.source.isOriginal) {
     return location;
   }
   const { getState, sourceMapLoader } = thunkArgs;
@@ -83,7 +82,7 @@ export async function getOriginalLocation(
 }
 
 export async function getMappedLocation(location, thunkArgs) {
-  if (isOriginalId(location.source.id)) {
+  if (location.source.isOriginal) {
     const generatedLocation = await getGeneratedLocation(location, thunkArgs);
     return { location, generatedLocation };
   }
@@ -110,7 +109,7 @@ export async function getRelatedMapLocation(location, thunkArgs) {
     return location;
   }
 
-  if (isOriginalId(location.source.id)) {
+  if (location.source.isOriginal) {
     return getGeneratedLocation(location, thunkArgs);
   }
 

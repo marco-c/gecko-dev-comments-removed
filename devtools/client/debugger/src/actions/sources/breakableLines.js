@@ -2,7 +2,6 @@
 
 
 
-import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
 import {
   getBreakableLines,
   getSourceActorBreakableLines,
@@ -28,7 +27,7 @@ function calculateBreakableLines(positions) {
 export function setBreakableLines(location) {
   return async ({ getState, dispatch, client }) => {
     let breakableLines;
-    if (isOriginalId(location.source.id)) {
+    if (location.source.isOriginal) {
       const positions = await dispatch(setBreakpointPositions(location));
       breakableLines = calculateBreakableLines(positions);
 
