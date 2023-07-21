@@ -16,9 +16,9 @@ setup(() => {
 
 function otherAddressSpaces(addressSpace) {
   switch (addressSpace) {
-    case "loopback": return ["unknown", "local", "public"];
-    case "local": return ["unknown", "loopback", "public"];
-    case "public": return ["unknown", "loopback", "local"];
+    case "local": return ["unknown", "private", "public"];
+    case "private": return ["unknown", "local", "public"];
+    case "public": return ["unknown", "local", "private"];
   }
 }
 
@@ -169,7 +169,7 @@ function makeNoBypassTests({ source, target }) {
     },
     fetchOptions: { targetAddressSpace: correctAddressSpace },
     expected: FetchTestResult.FAILURE,
-  }), prefix + 'not a local network request.');
+  }), prefix + 'not a private network request.');
 }
 
 
@@ -178,23 +178,8 @@ function makeNoBypassTests({ source, target }) {
 
 
 
-makeNoBypassTests({ source: "loopback", target: "loopback" });
-makeNoBypassTests({ source: "loopback", target: "local" });
-makeNoBypassTests({ source: "loopback", target: "public" });
-
-
-
-
-
-
-
-
-
-
-
-makeTests({ source: "local", target: "loopback" });
-
 makeNoBypassTests({ source: "local", target: "local" });
+makeNoBypassTests({ source: "local", target: "private" });
 makeNoBypassTests({ source: "local", target: "public" });
 
 
@@ -203,32 +188,29 @@ makeNoBypassTests({ source: "local", target: "public" });
 
 
 
-makeTests({ source: "public", target: "loopback" });
+
+
+
+
+makeTests({ source: "private", target: "local" });
+
+makeNoBypassTests({ source: "private", target: "private" });
+makeNoBypassTests({ source: "private", target: "public" });
+
+
+
+
+
+
+
 makeTests({ source: "public", target: "local" });
+makeTests({ source: "public", target: "private" });
 
 makeNoBypassTests({ source: "public", target: "public" });
 
 
 
 
-
-promise_test_parallel(
-    t => fetchTest(t, {
-      source: {
-        server: Server.HTTPS_LOCAL,
-        treatAsPublic: true,
-      },
-      target: {
-        server: Server.HTTP_LOCAL,
-        behavior: {
-          preflight: PreflightBehavior.optionalSuccess(token()),
-          response: ResponseBehavior.allowCrossOrigin(),
-        },
-      },
-      fetchOptions: {targetAddressSpace: 'local'},
-      expected: FetchTestResult.FAILURE,
-    }),
-    'https-treat-as-public to http-loopback: wrong targetAddressSpace "local".');
 
 promise_test_parallel(t => fetchTest(t, {
   source: {
@@ -242,9 +224,9 @@ promise_test_parallel(t => fetchTest(t, {
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  fetchOptions: { targetAddressSpace: "loopback" },
-  expected: FetchTestResult.SUCCESS,
-}), "https-treat-as-public to http-loopback: success.");
+  fetchOptions: { targetAddressSpace: "private" },
+  expected: FetchTestResult.FAILURE,
+}), 'https-treat-as-public to http-local: wrong targetAddressSpace "private".');
 
 promise_test_parallel(t => fetchTest(t, {
   source: {
@@ -252,15 +234,15 @@ promise_test_parallel(t => fetchTest(t, {
     treatAsPublic: true,
   },
   target: {
-    server: Server.HTTP_PRIVATE,
+    server: Server.HTTP_LOCAL,
     behavior: {
-      preflight: PreflightBehavior.success(token()),
+      preflight: PreflightBehavior.optionalSuccess(token()),
       response: ResponseBehavior.allowCrossOrigin(),
     },
   },
-  fetchOptions: { targetAddressSpace: "loopback" },
-  expected: FetchTestResult.FAILURE,
-}), 'https-treat-as-public to http-local: wrong targetAddressSpace "loopback".');
+  fetchOptions: { targetAddressSpace: "local" },
+  expected: FetchTestResult.SUCCESS,
+}), "https-treat-as-public to http-local: success.");
 
 promise_test_parallel(t => fetchTest(t, {
   source: {
@@ -275,5 +257,21 @@ promise_test_parallel(t => fetchTest(t, {
     },
   },
   fetchOptions: { targetAddressSpace: "local" },
+  expected: FetchTestResult.FAILURE,
+}), 'https-treat-as-public to http-private: wrong targetAddressSpace "local".');
+
+promise_test_parallel(t => fetchTest(t, {
+  source: {
+    server: Server.HTTPS_LOCAL,
+    treatAsPublic: true,
+  },
+  target: {
+    server: Server.HTTP_PRIVATE,
+    behavior: {
+      preflight: PreflightBehavior.success(token()),
+      response: ResponseBehavior.allowCrossOrigin(),
+    },
+  },
+  fetchOptions: { targetAddressSpace: "private" },
   expected: FetchTestResult.SUCCESS,
-}), "https-treat-as-public to http-local: success.");
+}), "https-treat-as-public to http-private: success.");
