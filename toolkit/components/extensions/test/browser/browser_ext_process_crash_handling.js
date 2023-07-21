@@ -85,7 +85,16 @@ add_task(async function test_ExtensionProcessCrashObserver() {
   await mv3Extension.awaitMessage("background_running");
   const bgPageBrowser = await promiseBackgroundBrowser;
 
+  Assert.ok(
+    Glean.extensions.processEvent.created.testGetValue() > 0,
+    "Expect glean processEvent.created to be set"
+  );
+
   info("Force extension process crash");
+  
+  
+  
+  Services.fog.testResetFOG();
   
   
   
@@ -109,6 +118,10 @@ add_task(async function test_ExtensionProcessCrashObserver() {
     "Got the expected childID notified as part of the extension-process-crash Management event"
   );
 
+  Assert.ok(
+    Glean.extensions.processEvent.crashed.testGetValue() > 0,
+    "Expect glean processEvent.crashed to be set"
+  );
   info("Wait for mv3 extension shutdown");
   await mv3Extension.unload();
   info("Wait for mv2 extension shutdown");
