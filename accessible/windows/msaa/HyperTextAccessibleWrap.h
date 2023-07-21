@@ -21,9 +21,6 @@ class HyperTextAccessibleWrap : public HyperTextAccessible {
   
   NS_DECL_ISUPPORTS_INHERITED
 
-  
-  virtual nsresult HandleAccEvent(AccEvent* aEvent);
-
  protected:
   ~HyperTextAccessibleWrap() {}
 };
