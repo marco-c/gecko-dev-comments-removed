@@ -53,7 +53,7 @@ extern "C" WINBASEAPI void WINAPI GetSystemTimePreciseAsFileTime(LPFILETIME);
 #  endif
 
 
-static double FileTimeToUnixMicroseconds(const FILETIME& ft) {
+static int64_t FileTimeToUnixMicroseconds(const FILETIME& ft) {
   
   int64_t t = (int64_t(ft.dwHighDateTime) << 32) | int64_t(ft.dwLowDateTime);
 
@@ -63,13 +63,13 @@ static double FileTimeToUnixMicroseconds(const FILETIME& ft) {
   t -= TimeToEpochIn100ns;
 
   
-  return double(t) * 0.1;
+  return t / 10;
 }
 
 int64_t PRMJ_Now() {
   FILETIME ft;
   GetSystemTimePreciseAsFileTime(&ft);
-  return int64_t(FileTimeToUnixMicroseconds(ft));
+  return FileTimeToUnixMicroseconds(ft);
 }
 #endif
 
