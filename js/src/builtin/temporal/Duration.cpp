@@ -3078,18 +3078,10 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
   }
 
   
-  Rooted<DurationObject*> dateDuration1(cx,
-                                        CreateTemporalDuration(cx, one.date()));
-  if (!dateDuration1) {
-    return false;
-  }
+  auto dateDuration1 = one.date();
 
   
-  Rooted<DurationObject*> dateDuration2(cx,
-                                        CreateTemporalDuration(cx, two.date()));
-  if (!dateDuration2) {
-    return false;
-  }
+  auto dateDuration2 = two.date();
 
   
   Rooted<Value> dateAdd(cx);
@@ -5065,11 +5057,7 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   const auto& oldRelativeToDate = yearsLaterDate;
 
   
-  Rooted<DurationObject*> yearsMonthsWeeks(
-      cx, CreateTemporalDuration(cx, {years, months, weeks}));
-  if (!yearsMonthsWeeks) {
-    return false;
-  }
+  Duration yearsMonthsWeeks = {years, months, weeks};
 
   
   PlainDate yearsMonthsWeeksLater;
@@ -5628,11 +5616,7 @@ static bool RoundDurationMonth(
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsMonthsLater);
 
   
-  Rooted<DurationObject*> yearsMonthsWeeks(
-      cx, CreateTemporalDuration(cx, {years, months, weeks}));
-  if (!yearsMonths) {
-    return false;
-  }
+  Duration yearsMonthsWeeks = {years, months, weeks};
 
   
   PlainDate yearsMonthsWeeksLater;

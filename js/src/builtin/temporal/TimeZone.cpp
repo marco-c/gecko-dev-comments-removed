@@ -1499,17 +1499,10 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
   auto timeResult = BalanceTime(time, nanoseconds);
 
   
-  Rooted<PlainDateObject*> datePart(cx, CreateTemporalDate(cx, date, calendar));
-  if (!datePart) {
-    return false;
-  }
+  const auto& datePart = date;
 
   
-  Rooted<DurationObject*> dateDuration(
-      cx, CreateTemporalDuration(cx, {0, 0, 0, double(timeResult.days)}));
-  if (!dateDuration) {
-    return false;
-  }
+  Duration dateDuration = {0, 0, 0, double(timeResult.days)};
 
   
   PlainDate addedDate;

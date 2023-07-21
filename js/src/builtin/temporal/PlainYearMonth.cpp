@@ -710,12 +710,8 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
-  Rooted<DurationObject*> durationToAdd(
-      cx, CreateTemporalDuration(cx, {duration.years, duration.months,
-                                      duration.weeks, balanceResult.days}));
-  if (!durationToAdd) {
-    return false;
-  }
+  Duration durationToAdd = {duration.years, duration.months, duration.weeks,
+                            balanceResult.days};
 
   
   

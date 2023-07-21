@@ -721,17 +721,10 @@ static bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
   auto& [date, time] = temporalDateTime;
 
   
-  Rooted<PlainDateObject*> datePart(cx, CreateTemporalDate(cx, date, calendar));
-  if (!datePart) {
-    return false;
-  }
+  const auto& datePart = date;
 
   
-  Rooted<DurationObject*> dateDuration(
-      cx, CreateTemporalDuration(cx, duration.date()));
-  if (!dateDuration) {
-    return false;
-  }
+  auto dateDuration = duration.date();
 
   
   PlainDate addedDate;
