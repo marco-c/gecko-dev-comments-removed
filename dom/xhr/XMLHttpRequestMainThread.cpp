@@ -111,6 +111,8 @@
 #  undef CreateFile
 #endif
 
+extern mozilla::LazyLogModule gXMLHttpRequestLog;
+
 using namespace mozilla::net;
 
 namespace mozilla::dom {
@@ -206,6 +208,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread(
       mRequestSentTime(0),
       mTimeoutMilliseconds(0),
       mErrorLoad(ErrorType::eOK),
+      mErrorLoadDetail(NS_OK),
       mErrorParsingXML(false),
       mWaitingForOnStopRequest(false),
       mProgressTimerIsActive(false),
@@ -909,29 +912,43 @@ void XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
   }
 }
 
-void XMLHttpRequestMainThread::TerminateOngoingFetch() {
+void XMLHttpRequestMainThread::TerminateOngoingFetch(nsresult detail) {
   if ((mState == XMLHttpRequest_Binding::OPENED && mFlagSend) ||
       mState == XMLHttpRequest_Binding::HEADERS_RECEIVED ||
       mState == XMLHttpRequest_Binding::LOADING) {
-    CloseRequest();
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Info,
+            ("%p TerminateOngoingFetch(0x%" PRIx32 ")", this,
+             static_cast<uint32_t>(detail)));
+    CloseRequest(detail);
   }
 }
 
-void XMLHttpRequestMainThread::CloseRequest() {
+void XMLHttpRequestMainThread::CloseRequest(nsresult detail) {
   mWaitingForOnStopRequest = false;
   mErrorLoad = ErrorType::eTerminated;
+  mErrorLoadDetail = detail;
   if (mChannel) {
     mChannel->CancelWithReason(NS_BINDING_ABORTED,
                                "XMLHttpRequestMainThread::CloseRequest"_ns);
   }
-  if (mTimeoutTimer) {
-    mTimeoutTimer->Cancel();
-  }
+  CancelTimeoutTimer();
 }
 
 void XMLHttpRequestMainThread::CloseRequestWithError(
     const ProgressEventType aType) {
-  CloseRequest();
+  MOZ_LOG(
+      gXMLHttpRequestLog, LogLevel::Debug,
+      ("%p CloseRequestWithError(%hhu)", this, static_cast<uint8_t>(aType)));
+  nsresult detail = NS_ERROR_DOM_UNKNOWN_ERR;
+  if (aType == ProgressEventType::abort) {
+    detail = NS_ERROR_DOM_ABORT_ERR;
+  } else if (aType == ProgressEventType::error) {
+    detail = NS_ERROR_DOM_NETWORK_ERR;
+  } else if (aType == ProgressEventType::timeout) {
+    detail = NS_ERROR_DOM_TIMEOUT_ERR;
+  }
+
+  CloseRequest(detail);
 
   ResetResponse();
 
@@ -968,10 +985,19 @@ void XMLHttpRequestMainThread::CloseRequestWithError(
 void XMLHttpRequestMainThread::RequestErrorSteps(
     const ProgressEventType aEventType, const nsresult aOptionalException,
     ErrorResult& aRv) {
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+          ("%p RequestErrorSteps(%hhu,0x%" PRIx32 ")", this,
+           static_cast<uint8_t>(aEventType),
+           static_cast<uint32_t>(aOptionalException)));
+
+  
+  
+  CancelTimeoutTimer();
+  CancelSyncTimeoutTimer();
+  StopProgressEventTimer();
+
   
   mState = XMLHttpRequest_Binding::DONE;
-
-  StopProgressEventTimer();
 
   
   mFlagSend = false;
@@ -1012,21 +1038,23 @@ void XMLHttpRequestMainThread::RequestErrorSteps(
 
 void XMLHttpRequestMainThread::Abort(ErrorResult& aRv) {
   NOT_CALLABLE_IN_SYNC_SEND_RV
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("%p Abort()", this));
   AbortInternal(aRv);
 }
 
 void XMLHttpRequestMainThread::AbortInternal(ErrorResult& aRv) {
+  MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("%p AbortInternal()", this));
   mFlagAborted = true;
   DisconnectDoneNotifier();
 
   
-  TerminateOngoingFetch();
+  TerminateOngoingFetch(NS_ERROR_DOM_ABORT_ERR);
 
   
   if ((mState == XMLHttpRequest_Binding::OPENED && mFlagSend) ||
       mState == XMLHttpRequest_Binding::HEADERS_RECEIVED ||
       mState == XMLHttpRequest_Binding::LOADING) {
-    RequestErrorSteps(ProgressEventType::abort, NS_OK, aRv);
+    RequestErrorSteps(ProgressEventType::abort, NS_ERROR_DOM_ABORT_ERR, aRv);
   }
 
   
@@ -1278,6 +1306,15 @@ void XMLHttpRequestMainThread::DispatchProgressEvent(
       ProgressEvent::Constructor(aTarget, typeString, init);
   event->SetTrusted(true);
 
+  if (MOZ_LOG_TEST(gXMLHttpRequestLog, LogLevel::Debug)) {
+    nsAutoString type;
+    event->GetType(type);
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+            ("firing %s event (%u,%u,%" PRIu64 ",%" PRIu64 ")",
+             NS_ConvertUTF16toUTF8(type).get(), aTarget == mUpload,
+             aTotal != -1, aLoaded, (aTotal == -1) ? 0 : aTotal));
+  }
+
   DispatchOrStoreEvent(aTarget, event);
 
   
@@ -1487,7 +1524,7 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   }
 
   
-  TerminateOngoingFetch();
+  TerminateOngoingFetch(NS_OK);
 
   
   
@@ -1835,6 +1872,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
   request->GetStatus(&status);
   if (mErrorLoad == ErrorType::eOK && NS_FAILED(status)) {
     mErrorLoad = ErrorType::eRequest;
+    mErrorLoadDetail = status;
   }
 
   
@@ -2105,7 +2143,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
   if (status == NS_BINDING_ABORTED) {
     mFlagParseBody = false;
     IgnoredErrorResult rv;
-    RequestErrorSteps(ProgressEventType::abort, NS_OK, rv);
+    RequestErrorSteps(ProgressEventType::abort, NS_ERROR_DOM_ABORT_ERR, rv);
     ChangeState(XMLHttpRequest_Binding::UNSENT, false);
     return NS_OK;
   }
@@ -2208,7 +2246,28 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
     
 
     mErrorLoad = ErrorType::eUnreachable;
+    mErrorLoadDetail = status;
     mResponseXML = nullptr;
+
+    
+    if (NS_ERROR_GET_MODULE(status) == NS_ERROR_MODULE_NETWORK) {
+      MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+              ("%p detected networking error 0x%" PRIx32 "\n", this,
+               static_cast<uint32_t>(status)));
+      IgnoredErrorResult rv;
+      mFlagParseBody = false;
+      RequestErrorSteps(ProgressEventType::error, NS_ERROR_DOM_NETWORK_ERR, rv);
+      
+      
+      if (mFlagSynchronous) {
+        ChangeStateToDone(wasSync);
+      }
+      return NS_OK;
+    }
+
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
+            ("%p detected unreachable error 0x%" PRIx32 "\n", this,
+             static_cast<uint32_t>(status)));
   }
 
   
@@ -2316,9 +2375,7 @@ void XMLHttpRequestMainThread::ChangeStateToDoneInternal() {
 
   mFlagSend = false;
 
-  if (mTimeoutTimer) {
-    mTimeoutTimer->Cancel();
-  }
+  CancelTimeoutTimer();
 
   
   
@@ -2706,6 +2763,7 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
     mChannel = nullptr;
 
     mErrorLoad = ErrorType::eChannelOpen;
+    mErrorLoadDetail = rv;
 
     
     if (mFlagSynchronous) {
@@ -2897,16 +2955,18 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
   
   if (!mChannel) {
     mErrorLoad = ErrorType::eChannelOpen;
+    mErrorLoadDetail = NS_ERROR_DOM_NETWORK_ERR;
     mFlagSend = true;  
-    aRv = MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
+    aRv = MaybeSilentSendFailure(mErrorLoadDetail);
     return;
   }
 
   
   if (IsBlobURI(mRequestURL) && !mRequestMethod.EqualsLiteral("GET")) {
     mErrorLoad = ErrorType::eChannelOpen;
+    mErrorLoadDetail = NS_ERROR_DOM_NETWORK_ERR;
     mFlagSend = true;  
-    aRv = MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
+    aRv = MaybeSilentSendFailure(mErrorLoadDetail);
     return;
   }
 
@@ -2919,6 +2979,7 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
   
   mUploadComplete = true;
   mErrorLoad = ErrorType::eOK;
+  mErrorLoadDetail = NS_OK;
   mLoadTotal = -1;
   nsCOMPtr<nsIInputStream> uploadStream;
   nsAutoCString uploadContentType;
@@ -3181,9 +3242,7 @@ void XMLHttpRequestMainThread::StartTimeoutTimer() {
     return;
   }
 
-  if (mTimeoutTimer) {
-    mTimeoutTimer->Cancel();
-  }
+  CancelTimeoutTimer();
 
   if (!mTimeoutMilliseconds) {
     return;
@@ -3364,6 +3423,7 @@ nsresult XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result,
     }
   } else {
     mErrorLoad = ErrorType::eRedirect;
+    mErrorLoadDetail = result;
   }
 
   mNewRedirectChannel = nullptr;
@@ -3522,6 +3582,13 @@ void XMLHttpRequestMainThread::HandleTimeoutCallback() {
   CloseRequestWithError(ProgressEventType::timeout);
 }
 
+void XMLHttpRequestMainThread::CancelTimeoutTimer() {
+  if (mTimeoutTimer) {
+    mTimeoutTimer->Cancel();
+    mTimeoutTimer = nullptr;
+  }
+}
+
 NS_IMETHODIMP
 XMLHttpRequestMainThread::Notify(nsITimer* aTimer) {
   if (mProgressNotifier == aTimer) {
@@ -3625,6 +3692,7 @@ void XMLHttpRequestMainThread::HandleSyncTimeoutTimer() {
 
   CancelSyncTimeoutTimer();
   Abort();
+  mErrorLoadDetail = NS_ERROR_DOM_TIMEOUT_ERR;
 }
 
 void XMLHttpRequestMainThread::CancelSyncTimeoutTimer() {
