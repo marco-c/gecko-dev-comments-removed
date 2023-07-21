@@ -5873,6 +5873,15 @@ var TabsProgressListener = {
 
   onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
     
+    if (!aWebProgress.isTopLevel) {
+      return;
+    }
+
+    
+    
+    ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI);
+
+    
     
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
       
@@ -5884,11 +5893,6 @@ var TabsProgressListener = {
         },
         "AboutReader"
       );
-      return;
-    }
-
-    
-    if (!aWebProgress.isTopLevel) {
       return;
     }
 
@@ -5908,7 +5912,6 @@ var TabsProgressListener = {
 
     FullZoom.onLocationChange(aLocationURI, false, aBrowser);
     CaptivePortalWatcher.onLocationChange(aBrowser);
-    ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI);
   },
 
   onLinkIconAvailable(browser, dataURI, iconURI) {
@@ -9986,6 +9989,12 @@ var ShoppingSidebarManager = {
   _isProductPage(locationURI) {
     return isProductURL(locationURI);
   },
+
+  
+
+
+
+
 
   onLocationChange(aBrowser, aLocationURI) {
     if (!this._enabled) {
