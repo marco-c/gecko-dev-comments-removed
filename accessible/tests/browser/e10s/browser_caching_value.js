@@ -5,11 +5,7 @@
 "use strict";
 
 
-
-loadScripts(
-  { name: "states.js", dir: MOCHITESTS_DIR },
-  { name: "value.js", dir: MOCHITESTS_DIR }
-);
+loadScripts({ name: "states.js", dir: MOCHITESTS_DIR });
 
 
 
@@ -205,6 +201,36 @@ const valueTests = [
 
 
 
+
+async function testValue(acc, value, currValue, minValue, maxValue, minIncr) {
+  const pretty = prettyName(acc);
+  await untilCacheIs(() => acc.value, value, `Wrong value of ${pretty}`);
+
+  await untilCacheIs(
+    () => acc.currentValue,
+    currValue,
+    `Wrong current value of ${pretty}`
+  );
+  await untilCacheIs(
+    () => acc.minimumValue,
+    minValue,
+    `Wrong minimum value of ${pretty}`
+  );
+  await untilCacheIs(
+    () => acc.maximumValue,
+    maxValue,
+    `Wrong maximum value of ${pretty}`
+  );
+  await untilCacheIs(
+    () => acc.minimumIncrement,
+    minIncr,
+    `Wrong minimum increment value of ${pretty}`
+  );
+}
+
+
+
+
 addAccessibleTask(
   `
   <div id="slider" role="slider" aria-valuenow="5"
@@ -239,7 +265,7 @@ addAccessibleTask(
       await onUpdate;
       if (Array.isArray(expected)) {
         acc.QueryInterface(nsIAccessibleValue);
-        testValue(acc, ...expected);
+        await testValue(acc, ...expected);
       } else {
         is(acc.value, expected, `Correct value for ${prettyName(acc)}`);
       }

@@ -456,7 +456,7 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
           }
 
           
-          acc->SendCache(CacheDomain::Actions, CacheUpdateType::Update);
+          document->QueueCacheUpdate(acc, CacheDomain::Actions);
         }
       }
     }
