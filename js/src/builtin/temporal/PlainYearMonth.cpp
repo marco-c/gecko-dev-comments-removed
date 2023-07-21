@@ -586,6 +586,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
         operation == PlainYearMonthDuration::Add ? "add" : "subtract";
     options = RequireObjectArg(cx, "options", name, args[1]);
   } else {
+    
     options = NewPlainObjectWithProto(cx, nullptr);
   }
   if (!options) {
@@ -611,32 +612,101 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
+  Rooted<PlainObject*> fieldsCopy(cx, CopyOptions(cx, fields));
+  if (!fieldsCopy) {
+    return false;
+  }
+
+  
+  Value one = Int32Value(1);
+  auto handleOne = Handle<Value>::fromMarkedLocation(&one);
+  if (!DefineDataProperty(cx, fields, cx->names().day, handleOne)) {
+    return false;
+  }
+
+  
+  Rooted<Wrapped<PlainDateObject*>> intermediateDate(
+      cx, CalendarDateFromFields(cx, calendar, fields));
+  if (!intermediateDate) {
+    return false;
+  }
+
+  
   int32_t sign = DurationSign(
       {duration.years, duration.months, duration.weeks, balanceResult.days});
 
   
-  Rooted<Value> day(cx);
+  
+
+  
+  Rooted<Value> dateAdd(cx);
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+
+    if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
+  }
+
+  
+  Rooted<Wrapped<PlainDateObject*>> date(cx);
   if (sign < 0) {
     
-    Rooted<Value> yearMonthValue(cx, ObjectValue(*yearMonth));
-    if (!CalendarDaysInMonth(cx, calendar, yearMonthValue, &day)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    Duration oneMonthDuration = {0, 1};
+
+    
+    Rooted<Wrapped<PlainDateObject*>> nextMonth(
+        cx, CalendarDateAdd(cx, calendar, intermediateDate, oneMonthDuration,
+                            dateAdd));
+    if (!nextMonth) {
+      return false;
+    }
+
+    
+    Duration minusDayDuration = {0, 0, 0, -1};
+
+    
+    Rooted<Wrapped<PlainDateObject*>> endOfMonth(
+        cx,
+        CalendarDateAdd(cx, calendar, nextMonth, minusDayDuration, dateAdd));
+    if (!endOfMonth) {
+      return false;
+    }
+
+    
+    Rooted<Value> endOfMonthValue(cx, ObjectValue(*endOfMonth));
+    Rooted<Value> day(cx);
+    if (!CalendarDay(cx, calendar, endOfMonthValue, &day)) {
+      return false;
+    }
+
+    
+    if (!DefineDataProperty(cx, fieldsCopy, cx->names().day, day)) {
+      return false;
+    }
+
+    
+    date = CalendarDateFromFields(cx, calendar, fieldsCopy);
+    if (!date) {
       return false;
     }
   } else {
     
-    day.setInt32(1);
-  }
-
-  
-  if (!DefineDataProperty(cx, fields, cx->names().day, day)) {
-    return false;
-  }
-
-  
-  Rooted<Wrapped<PlainDateObject*>> date(
-      cx, CalendarDateFromFields(cx, calendar, fields));
-  if (!date) {
-    return false;
+    date = intermediateDate;
   }
 
   
@@ -648,6 +718,9 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
+  
+
+  
   Rooted<PlainObject*> optionsCopy(cx, CopyOptions(cx, options));
   if (!optionsCopy) {
     return false;
@@ -655,7 +728,7 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
 
   
   Rooted<Wrapped<PlainDateObject*>> addedDate(
-      cx, CalendarDateAdd(cx, calendar, date, durationToAdd, options));
+      cx, CalendarDateAdd(cx, calendar, date, durationToAdd, options, dateAdd));
   if (!addedDate) {
     return false;
   }
