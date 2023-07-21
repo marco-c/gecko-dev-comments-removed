@@ -113,6 +113,12 @@ bool GetTemporalCalendarWithISODefault(JSContext* cx,
                                        JS::Handle<JSObject*> item,
                                        JS::MutableHandle<CalendarValue> result);
 
+
+
+
+JSString* ToTemporalCalendarIdentifier(JSContext* cx,
+                                       JS::Handle<CalendarValue> calendar);
+
 enum class CalendarField {
   Year,
   Month,
@@ -373,7 +379,7 @@ bool ConsolidateCalendars(JSContext* cx, JS::Handle<CalendarValue> one,
 
 
 bool MaybeFormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
-                                   JS::Handle<CalendarValue> calendarObject,
+                                   JS::Handle<CalendarValue> calendar,
                                    CalendarOption showCalendar);
 
 
@@ -382,12 +388,6 @@ bool MaybeFormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
 bool FormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
                               JS::Handle<JSString*> id,
                               CalendarOption showCalendar);
-
-
-
-
-
-JSString* CalendarToString(JSContext* cx, JS::Handle<CalendarValue> calendar);
 
 
 

@@ -366,20 +366,20 @@ static JSString* TemporalMonthDayToString(JSContext* cx,
 
   
   Rooted<CalendarValue> calendar(cx, monthDay->calendar());
-  JSString* str = CalendarToString(cx, calendar);
+  JSString* str = ToTemporalCalendarIdentifier(cx, calendar);
   if (!str) {
     return nullptr;
   }
 
-  Rooted<JSLinearString*> calendarID(cx, str->ensureLinear(cx));
-  if (!calendarID) {
+  Rooted<JSLinearString*> calendarIdentifier(cx, str->ensureLinear(cx));
+  if (!calendarIdentifier) {
     return nullptr;
   }
 
   
   if (showCalendar == CalendarOption::Always ||
       showCalendar == CalendarOption::Critical ||
-      !StringEqualsLiteral(calendarID, "iso8601")) {
+      !StringEqualsLiteral(calendarIdentifier, "iso8601")) {
     int32_t year = monthDay->isoYear();
     if (0 <= year && year <= 9999) {
       result.infallibleAppend(char('0' + (year / 1000)));
@@ -412,7 +412,7 @@ static JSString* TemporalMonthDayToString(JSContext* cx,
   result.infallibleAppend(char('0' + (day % 10)));
 
   
-  if (!FormatCalendarAnnotation(cx, result, calendarID, showCalendar)) {
+  if (!FormatCalendarAnnotation(cx, result, calendarIdentifier, showCalendar)) {
     return nullptr;
   }
 
