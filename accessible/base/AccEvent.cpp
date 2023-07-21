@@ -165,18 +165,6 @@ AccSelChangeEvent::AccSelChangeEvent(LocalAccessible* aWidget,
 
 
 
-AccTableChangeEvent::AccTableChangeEvent(LocalAccessible* aAccessible,
-                                         uint32_t aEventType,
-                                         int32_t aRowOrColIndex,
-                                         int32_t aNumRowsOrCols)
-    : AccEvent(aEventType, aAccessible),
-      mRowOrColIndex(aRowOrColIndex),
-      mNumRowsOrCols(aNumRowsOrCols) {}
-
-
-
-
-
 AccVCChangeEvent::AccVCChangeEvent(LocalAccessible* aAccessible,
                                    LocalAccessible* aOldAccessible,
                                    LocalAccessible* aNewAccessible,
