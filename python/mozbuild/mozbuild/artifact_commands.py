@@ -264,10 +264,6 @@ def artifact_toolchain(
     """Download, cache and install pre-built toolchains."""
     import time
 
-    
-    
-    
-    import gecko_taskgraph.main  
     import redo
     import requests
     from taskgraph.util.taskcluster import get_artifact_url
