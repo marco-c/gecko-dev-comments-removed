@@ -2183,6 +2183,7 @@ static Wrapped<PlainDateObject*> CalendarDateFromFields(
     return BuiltinCalendarDateFromFields(cx, fields, maybeOptions);
   }
 
+  
   Rooted<Value> thisv(cx, ObjectValue(*calendarObj));
   Rooted<Value> rval(cx);
 
