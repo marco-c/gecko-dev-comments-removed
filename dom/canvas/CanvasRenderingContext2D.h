@@ -643,6 +643,12 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   void UpdateIsOpaque();
 
   
+  void StrokeImpl(const mozilla::gfx::Path& aPath);
+
+  
+  void FillImpl(const mozilla::gfx::Path& aPath);
+
+  
 
 
   static void EnsureErrorTarget();
