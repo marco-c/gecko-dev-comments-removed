@@ -18,7 +18,8 @@ static const nsLiteralCString kPermissionTypes[] = {
     "persistent-storage"_ns,
     
     
-    "midi"_ns
+    "midi"_ns,
+    "storage-access"_ns
     
 };
 
@@ -37,6 +38,12 @@ Maybe<PermissionName> TypeToPermissionName(const nsACString& aType) {
   
   if (aType.Equals("midi-sysex"_ns)) {
     return Some(PermissionName::Midi);
+  }
+
+  
+  if (StringBeginsWith(aType, "3rdPartyStorage^"_ns) ||
+      StringBeginsWith(aType, "3rdPartyFrameStorage^"_ns)) {
+    return Some(PermissionName::Storage_access);
   }
 
   for (size_t i = 0; i < ArrayLength(kPermissionTypes); ++i) {
