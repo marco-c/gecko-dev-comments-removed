@@ -341,6 +341,7 @@ async function setupActorTest({
       await closeTranslationsPanelIfOpen();
       BrowserTestUtils.removeTab(tab);
       await removeMocks();
+      TestTranslationsTelemetry.reset();
       return SpecialPowers.popPrefEnv();
     },
   };
@@ -492,6 +493,7 @@ async function loadTestPage({
       TranslationsParent.testAutomaticPopup = false;
       TranslationsParent.resetHostsOffered();
       BrowserTestUtils.removeTab(tab);
+      TestTranslationsTelemetry.reset();
       return Promise.all([
         SpecialPowers.popPrefEnv(),
         SpecialPowers.popPermissions(),
@@ -940,6 +942,7 @@ async function setupAboutPreferences(languagePairs) {
     gBrowser.removeCurrentTab();
     await removeMocks();
     await SpecialPowers.popPrefEnv();
+    TestTranslationsTelemetry.reset();
   }
 
   return {
@@ -993,6 +996,12 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
 
 
 class TestTranslationsTelemetry {
+  static #previousFlowId = null;
+
+  static reset() {
+    TestTranslationsTelemetry.#previousFlowId = null;
+  }
+
   
 
 
@@ -1024,16 +1033,48 @@ class TestTranslationsTelemetry {
 
 
 
+
+
+
   static async assertEvent(
     name,
     event,
-    { expectedEventCount, allValuePredicates = [], finalValuePredicates = [] }
+    {
+      expectedEventCount,
+      expectNewFlowId = null,
+      allValuePredicates = [],
+      finalValuePredicates = [],
+    }
   ) {
     
     
     await Services.fog.testFlushAllChildren();
     const events = event.testGetValue() ?? [];
     const eventCount = events.length;
+
+    if (eventCount > 0 && expectNewFlowId !== null) {
+      const flowId = events[eventCount - 1].extra.flow_id;
+      if (expectNewFlowId) {
+        is(
+          events[eventCount - 1].extra.flow_id !==
+            TestTranslationsTelemetry.#previousFlowId,
+          true,
+          `The newest flowId ${flowId} should be different than the previous flowId ${
+            TestTranslationsTelemetry.#previousFlowId
+          }`
+        );
+      } else {
+        is(
+          events[eventCount - 1].extra.flow_id ===
+            TestTranslationsTelemetry.#previousFlowId,
+          true,
+          `The newest flowId ${flowId} should be equal to the previous flowId ${
+            TestTranslationsTelemetry.#previousFlowId
+          }`
+        );
+      }
+      TestTranslationsTelemetry.#previousFlowId = flowId;
+    }
 
     is(
       eventCount,
