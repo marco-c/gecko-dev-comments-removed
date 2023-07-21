@@ -77,9 +77,9 @@ const {
   NetworkEventMessage,
 } = require("resource://devtools/client/webconsole/types.js");
 
-function prepareMessage(resource, idGenerator) {
+function prepareMessage(resource, idGenerator, persistLogs) {
   if (!resource.source) {
-    resource = transformResource(resource);
+    resource = transformResource(resource, persistLogs);
   }
 
   resource.id = idGenerator.getNextId(resource);
@@ -92,10 +92,11 @@ function prepareMessage(resource, idGenerator) {
 
 
 
-function transformResource(resource) {
+
+function transformResource(resource, persistLogs) {
   switch (resource.resourceType || resource.type) {
     case ResourceCommand.TYPES.CONSOLE_MESSAGE: {
-      return transformConsoleAPICallResource(resource);
+      return transformConsoleAPICallResource(resource, persistLogs);
     }
 
     case ResourceCommand.TYPES.PLATFORM_MESSAGE: {
@@ -126,7 +127,7 @@ function transformResource(resource) {
 }
 
 
-function transformConsoleAPICallResource(consoleMessageResource) {
+function transformConsoleAPICallResource(consoleMessageResource, persistLogs) {
   const { message, targetFront } = consoleMessageResource;
 
   let parameters = message.arguments;
@@ -139,7 +140,9 @@ function transformConsoleAPICallResource(consoleMessageResource) {
   switch (type) {
     case "clear":
       
-      parameters = [l10n.getStr("consoleCleared")];
+      parameters = [
+        l10n.getStr(persistLogs ? "preventedConsoleClear" : "consoleCleared"),
+      ];
       break;
     case "count":
     case "countReset":
