@@ -779,6 +779,32 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
   nsresult rv;
 
   
+  int32_t method = NS_FORM_METHOD_GET;
+  if (aSubmitter && aSubmitter->HasAttr(nsGkAtoms::formmethod)) {
+    GetEnumAttr(aSubmitter, nsGkAtoms::formmethod, &method);
+  } else {
+    GetEnumAttr(aForm, nsGkAtoms::method, &method);
+  }
+
+  if (method == NS_FORM_METHOD_DIALOG) {
+    HTMLDialogElement* dialog = aForm->FirstAncestorOfType<HTMLDialogElement>();
+
+    
+    if (!dialog) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsAutoString result;
+    if (aSubmitter) {
+      aSubmitter->ResultForDialogSubmit(result);
+    }
+    *aFormSubmission = new DialogFormSubmission(result, aEncoding, dialog);
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(method != NS_FORM_METHOD_DIALOG);
+
+  
   nsCOMPtr<nsIURI> actionURL;
   rv = aForm->GetActionURL(getter_AddRefs(actionURL), aSubmitter);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -822,34 +848,6 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
   } else {
     GetEnumAttr(aForm, nsGkAtoms::enctype, &enctype);
   }
-
-  
-  int32_t method = NS_FORM_METHOD_GET;
-  if (aSubmitter && aSubmitter->HasAttr(nsGkAtoms::formmethod)) {
-    GetEnumAttr(aSubmitter, nsGkAtoms::formmethod, &method);
-  } else {
-    GetEnumAttr(aForm, nsGkAtoms::method, &method);
-  }
-
-  if (method == NS_FORM_METHOD_DIALOG) {
-    HTMLDialogElement* dialog = aForm->FirstAncestorOfType<HTMLDialogElement>();
-
-    
-    
-    if (!dialog || !dialog->Open()) {
-      return NS_ERROR_FAILURE;
-    }
-
-    nsAutoString result;
-    if (aSubmitter) {
-      aSubmitter->ResultForDialogSubmit(result);
-    }
-    *aFormSubmission =
-        new DialogFormSubmission(result, actionURL, target, aEncoding, dialog);
-    return NS_OK;
-  }
-
-  MOZ_ASSERT(method != NS_FORM_METHOD_DIALOG);
 
   
   if (method == NS_FORM_METHOD_POST && enctype == NS_FORM_ENCTYPE_MULTIPART) {

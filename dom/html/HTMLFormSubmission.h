@@ -41,6 +41,7 @@ class HTMLFormSubmission {
 
 
 
+
   static nsresult GetFromForm(HTMLFormElement* aForm,
                               nsGenericHTMLElement* aSubmitter,
                               NotNull<const Encoding*>& aEncoding,
@@ -168,11 +169,9 @@ class EncodingFormSubmission : public HTMLFormSubmission {
 
 class DialogFormSubmission final : public HTMLFormSubmission {
  public:
-  DialogFormSubmission(nsAString& aResult, nsIURI* aActionURL,
-                       const nsAString& aTarget,
-                       NotNull<const Encoding*> aEncoding,
+  DialogFormSubmission(nsAString& aResult, NotNull<const Encoding*> aEncoding,
                        HTMLDialogElement* aDialogElement)
-      : HTMLFormSubmission(aActionURL, aTarget, aEncoding),
+      : HTMLFormSubmission(nullptr, u""_ns, aEncoding),
         mDialogElement(aDialogElement),
         mReturnValue(aResult) {}
   nsresult AddNameValuePair(const nsAString& aName,
