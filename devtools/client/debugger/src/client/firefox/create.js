@@ -50,11 +50,50 @@ export async function createFrame(thread, frame, index = 0) {
     location,
     generatedLocation: location,
     this: frame.this,
-    source: null,
     index,
     asyncCause: frame.asyncCause,
     state: frame.state,
     type: frame.type,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function createWasmOriginalFrame(
+  generatedFrame,
+  id,
+  originalFrame,
+  originalFrameLocation
+) {
+  return {
+    id,
+    thread: generatedFrame.thread,
+    displayName: originalFrame.displayName,
+    location: originalFrameLocation,
+    generatedLocation: generatedFrame.generatedLocation,
+    this: generatedFrame.this,
+    index: generatedFrame.index,
+    asyncCause: generatedFrame.asyncCause,
+    state: generatedFrame.state,
+    type: generatedFrame.type,
+
+    
+    isOriginal: true,
+    originalDisplayName: originalFrame.displayName,
+    originalVariables: originalFrame.variables,
   };
 }
 

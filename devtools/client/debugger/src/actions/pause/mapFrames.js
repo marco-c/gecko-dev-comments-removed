@@ -18,6 +18,7 @@ import {
 } from "../../utils/location";
 import { isGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { annotateFramesWithLibrary } from "../../utils/pause/frames/annotateFrames";
+import { createWasmOriginalFrame } from "../../client/firefox/create";
 
 function getSelectedFrameId(state, thread, frames) {
   let selectedFrame = getSelectedFrame(state, thread);
@@ -42,6 +43,7 @@ async function updateFrameLocation(frame, thunkArgs) {
   if (location == frame.location) {
     return frame;
   }
+  
   return {
     ...frame,
     location,
@@ -67,7 +69,11 @@ function isWasmOriginalSourceFrame(frame) {
   return Boolean(frame.generatedLocation?.source.isWasm);
 }
 
-async function expandFrames(frames, { getState, sourceMapLoader }) {
+
+
+
+
+async function expandWasmFrames(frames, { getState, sourceMapLoader }) {
   const result = [];
   for (let i = 0; i < frames.length; ++i) {
     const frame = frames[i];
@@ -85,10 +91,7 @@ async function expandFrames(frames, { getState, sourceMapLoader }) {
 
     assert(!!originalFrames.length, "Expected at least one original frame");
     
-    originalFrames[0] = {
-      ...originalFrames[0],
-      location: frame.location,
-    };
+    originalFrames[0].location = frame.location;
 
     originalFrames.forEach((originalFrame, j) => {
       if (!originalFrame.location) {
@@ -98,27 +101,13 @@ async function expandFrames(frames, { getState, sourceMapLoader }) {
       
       
       const id = j == 0 ? frame.id : `${frame.id}-originalFrame${j}`;
-      result.push({
-        id,
-        displayName: originalFrame.displayName,
-        location: sourceMapToDebuggerLocation(
-          getState(),
-          originalFrame.location
-        ),
-        index: frame.index,
-        source: null,
-        thread: frame.thread,
-        scope: frame.scope,
-        this: frame.this,
-        isOriginal: true,
-        
-        
-        generatedLocation: frame.generatedLocation,
-        originalDisplayName: originalFrame.displayName,
-        originalVariables: originalFrame.variables,
-        asyncCause: frame.asyncCause,
-        state: frame.state,
-      });
+      const originalFrameLocation = sourceMapToDebuggerLocation(
+        getState(),
+        originalFrame.location
+      );
+      result.push(
+        createWasmOriginalFrame(frame, id, originalFrame, originalFrameLocation)
+      );
     });
   }
   return result;
@@ -143,7 +132,7 @@ export function mapFrames(thread) {
 
     let mappedFrames = await updateFrameLocations(frames, thunkArgs);
 
-    mappedFrames = await expandFrames(mappedFrames, thunkArgs);
+    mappedFrames = await expandWasmFrames(mappedFrames, thunkArgs);
 
     
     annotateFramesWithLibrary(mappedFrames);
