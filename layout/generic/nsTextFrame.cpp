@@ -7383,13 +7383,13 @@ nsPoint nsTextFrame::GetPointFromIterator(const gfxSkipCharsIterator& aIter,
     }
   } else {
     point.y = 0;
+    if (Style()->IsTextCombined()) {
+      iSize *= GetTextCombineScaleFactor(this);
+    }
     if (mTextRun->IsInlineReversed()) {
       point.x = mRect.width - iSize;
     } else {
       point.x = iSize;
-    }
-    if (Style()->IsTextCombined()) {
-      point.x *= GetTextCombineScaleFactor(this);
     }
   }
   return point;
@@ -7468,8 +7468,18 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
   }
 
   do {
-    MOZ_ASSERT(point == GetPointFromIterator(iter, properties),
-               "character position error!");
+    
+    
+    
+    
+    
+    
+    DebugOnly<nsPoint> p = GetPointFromIterator(iter, properties);
+    MOZ_ASSERT(
+        point == p || (Style()->IsTextCombined() &&
+                       std::abs(point.x - p.value.x) < AppUnitsPerCSSPixel() &&
+                       point.y == p.value.y),
+        "character position error!");
 
     
     nscoord iSize = 0;
@@ -7507,17 +7517,18 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
         point.y += iSize;
       }
     } else {
+      if (Style()->IsTextCombined()) {
+        
+        
+        iSize *= GetTextCombineScaleFactor(this);
+      }
       rect.width = iSize;
       rect.height = mRect.height;
-      if (Style()->IsTextCombined()) {
-        rect.width *= GetTextCombineScaleFactor(this);
-      }
       if (mTextRun->IsInlineReversed()) {
         
         
         
-        
-        rect.x -= rect.width;
+        rect.x -= iSize;
         point.x -= iSize;
       } else {
         point.x += iSize;
