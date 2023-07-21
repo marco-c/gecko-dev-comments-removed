@@ -1,16 +1,16 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
   <title>Bug 1151916 - Test principal is set on cached serviceworkers</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
-
-
-
+<!--
+  If the principal is not set, accessing self.caches in the worker will crash.
+-->
 </head>
 <body>
 <p id="display"></p>
@@ -96,7 +96,6 @@
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
-    ["dom.caches.enabled", true],
   ]}, runTest);
 </script>
 </pre>

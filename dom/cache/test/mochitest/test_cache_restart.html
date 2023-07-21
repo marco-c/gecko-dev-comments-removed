@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -32,8 +32,7 @@ function resetStorage() {
 
 SimpleTest.waitForExplicitFinish();
 SpecialPowers.pushPrefEnv({
-  "set": [["dom.caches.enabled", true],
-          ["dom.caches.testing.enabled", true],
+  "set": [["dom.caches.testing.enabled", true],
           ["dom.quotaManager.testing", true]],
 }, function() {
   var name = "foo";
