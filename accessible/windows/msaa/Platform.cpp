@@ -88,8 +88,7 @@ void a11y::PlatformFocusEvent(Accessible* aTarget,
     return;
   }
 
-  
-  AccessibleWrap::UpdateSystemCaretFor(aTarget->AsRemote(), aCaretRect);
+  AccessibleWrap::UpdateSystemCaretFor(aTarget, aCaretRect);
   MsaaAccessible::FireWinEvent(aTarget, nsIAccessibleEvent::EVENT_FOCUS);
 }
 
@@ -97,8 +96,7 @@ void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                                   bool aIsSelectionCollapsed,
                                   int32_t aGranularity,
                                   const LayoutDeviceIntRect& aCaretRect) {
-  
-  AccessibleWrap::UpdateSystemCaretFor(aTarget->AsRemote(), aCaretRect);
+  AccessibleWrap::UpdateSystemCaretFor(aTarget, aCaretRect);
   MsaaAccessible::FireWinEvent(aTarget,
                                nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED);
 }

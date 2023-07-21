@@ -45,7 +45,9 @@ class AccessibleWrap : public LocalAccessible {
 
 
 
-  void UpdateSystemCaretFor(LocalAccessible* aAccessible);
+  static void UpdateSystemCaretFor(Accessible* aAccessible,
+                                   const LayoutDeviceIntRect& aCaretRect);
+  static void UpdateSystemCaretFor(LocalAccessible* aAccessible);
   static void UpdateSystemCaretFor(RemoteAccessible* aProxy,
                                    const LayoutDeviceIntRect& aCaretRect);
 

@@ -104,6 +104,20 @@ bool AccessibleWrap::IsRootForHWND() {
   return thisHwnd != parentHwnd;
 }
 
+
+void AccessibleWrap::UpdateSystemCaretFor(
+    Accessible* aAccessible, const LayoutDeviceIntRect& aCaretRect) {
+  if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
+    
+    
+    
+    UpdateSystemCaretFor(localAcc);
+  } else {
+    UpdateSystemCaretFor(aAccessible->AsRemote(), aCaretRect);
+  }
+}
+
+
 void AccessibleWrap::UpdateSystemCaretFor(LocalAccessible* aAccessible) {
   
   
