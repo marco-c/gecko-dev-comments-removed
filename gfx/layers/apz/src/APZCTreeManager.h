@@ -823,11 +823,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
-  Maybe<LayersId> mAsyncZoomContainerSubtree;
-
-  
-
-
   mutable mozilla::Mutex mMapLock;
 
   
