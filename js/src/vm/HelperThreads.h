@@ -190,9 +190,6 @@ bool HasOffThreadIonCompile(JS::Realm* realm);
 #endif
 
 
-bool CurrentThreadIsParseThread();
-
-
 
 
 

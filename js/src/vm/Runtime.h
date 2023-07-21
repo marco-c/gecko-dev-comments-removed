@@ -1017,8 +1017,7 @@ struct JSRuntime {
 
   
   
-  js::MainThreadOrParseData<JS::ImportAssertionVector>
-      supportedImportAssertions;
+  js::MainThreadData<JS::ImportAssertionVector> supportedImportAssertions;
 
   
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateAddRefHook;
