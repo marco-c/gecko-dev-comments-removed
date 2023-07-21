@@ -18,7 +18,6 @@
 #include "nsCOMPtr.h"
 #include "nsILoadInfo.h"    
 #include "nsINode.h"        
-#include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/JSExecutionContext.h"
@@ -192,7 +191,6 @@ class ModuleLoaderBase : public nsISupports {
  protected:
   
   
-  nsCOMPtr<nsISerialEventTarget> mEventTarget;
   RefPtr<ScriptLoaderInterface> mLoader;
 
   mozilla::UniquePtr<ImportMap> mImportMap;
@@ -203,9 +201,7 @@ class ModuleLoaderBase : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
-                            nsIGlobalObject* aGlobalObject,
-                            nsISerialEventTarget* aEventTarget =
-                                mozilla::GetMainThreadSerialEventTarget());
+                            nsIGlobalObject* aGlobalObject);
 
   
   void Shutdown();
