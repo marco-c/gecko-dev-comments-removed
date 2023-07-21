@@ -2236,12 +2236,6 @@ void GCRuntime::purgeRuntime() {
 
   MOZ_ASSERT(marker().unmarkGrayStack.empty());
   marker().unmarkGrayStack.clearAndFree();
-
-  
-  
-  if (!rt->parentRuntime) {
-    HelperThreadState().triggerFreeUnusedMemory();
-  }
 }
 
 bool GCRuntime::shouldPreserveJITCode(Realm* realm,

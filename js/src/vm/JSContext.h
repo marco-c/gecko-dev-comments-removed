@@ -172,14 +172,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<JS::ContextOptions> options_;
 
-  
-  js::ThreadId currentThread_;
-
   js::FrontendErrors* errors_;
-
-  
-  
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> freeUnusedMemory;
 
   
   
@@ -193,17 +186,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   
   void setRuntime(JSRuntime* rt);
-
-  bool contextAvailable(js::AutoLockHelperThreadState& locked) {
-    MOZ_ASSERT(kind_ == js::ContextKind::HelperThread);
-    return currentThread_ == js::ThreadId();
-  }
-
-  void setFreeUnusedMemory(bool shouldFree) { freeUnusedMemory = shouldFree; }
-
-  bool shouldFreeUnusedMemory() const {
-    return kind_ == js::ContextKind::HelperThread && freeUnusedMemory;
-  }
 
   bool isMeasuringExecutionTime() const { return measuringExecutionTime_; }
   void setIsMeasuringExecutionTime(bool value) {
@@ -602,7 +584,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
  public:
   js::LifoAlloc& tempLifoAlloc() { return tempLifoAlloc_.ref(); }
   const js::LifoAlloc& tempLifoAlloc() const { return tempLifoAlloc_.ref(); }
-  js::LifoAlloc& tempLifoAllocNoCheck() { return tempLifoAlloc_.refNoCheck(); }
 
   js::ContextData<uint32_t> debuggerMutations;
 

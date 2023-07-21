@@ -128,7 +128,6 @@ class GlobalHelperThreadState {
       SourceCompressionTaskVector;
   typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy>
       PromiseHelperTaskVector;
-  typedef Vector<JSContext*, 0, SystemAllocPolicy> ContextVector;
 
   
   mozilla::EnumeratedArray<ThreadType, ThreadType::THREAD_TYPE_MAX, size_t>
@@ -187,9 +186,6 @@ class GlobalHelperThreadState {
   GCParallelTaskList gcParallelWorklist_;
   size_t gcParallelThreadCount;
 
-  
-  ContextVector helperContexts_;
-
   using HelperThreadTaskVector =
       Vector<HelperThreadTask*, 0, SystemAllocPolicy>;
   
@@ -241,7 +237,6 @@ class GlobalHelperThreadState {
                                size_t threadCount, size_t stackSize,
                                const AutoLockHelperThreadState& lock);
 
-  JSContext* getFirstUnusedContext(AutoLockHelperThreadState& locked);
   void destroyHelperContexts(AutoLockHelperThreadState& lock);
 
 #ifdef DEBUG
