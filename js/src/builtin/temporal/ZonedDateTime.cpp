@@ -789,17 +789,15 @@ void NanosecondsAndDays::trace(JSTracer* trc) {
 
 bool js::temporal::NanosecondsToDays(
     JSContext* cx, const InstantSpan& nanoseconds,
-    Handle<Wrapped<ZonedDateTimeObject*>> relativeTo,
+    Handle<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo,
     MutableHandle<NanosecondsAndDays> result) {
   MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
   
-  auto dayLengthNs =
-      InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day));
-
-  
   if (nanoseconds == InstantSpan{}) {
-    result.initialize(int64_t(0), InstantSpan{}, dayLengthNs);
+    result.initialize(
+        int64_t(0), InstantSpan{},
+        InstantSpan::fromNanoseconds(ToNanoseconds(TemporalUnit::Day)));
     return true;
   }
 
@@ -807,15 +805,13 @@ bool js::temporal::NanosecondsToDays(
   int32_t sign = nanoseconds < InstantSpan{} ? -1 : 1;
 
   
-
-  
-  auto* unwrappedRelativeTo = relativeTo.unwrap(cx);
-  if (!unwrappedRelativeTo) {
+  auto* unwrappedZonedRelativeTo = zonedRelativeTo.unwrap(cx);
+  if (!unwrappedZonedRelativeTo) {
     return false;
   }
-  auto startNs = ToInstant(unwrappedRelativeTo);
-  Rooted<TimeZoneValue> timeZone(cx, unwrappedRelativeTo->timeZone());
-  Rooted<CalendarValue> calendar(cx, unwrappedRelativeTo->calendar());
+  auto startNs = ToInstant(unwrappedZonedRelativeTo);
+  Rooted<TimeZoneValue> timeZone(cx, unwrappedZonedRelativeTo->timeZone());
+  Rooted<CalendarValue> calendar(cx, unwrappedZonedRelativeTo->calendar());
 
   if (!timeZone.wrap(cx)) {
     return false;
@@ -907,6 +903,7 @@ bool js::temporal::NanosecondsToDays(
   int64_t daysToAdd = -daysToSubtract;
 
   
+  InstantSpan dayLengthNs{};
   while (true) {
     
     

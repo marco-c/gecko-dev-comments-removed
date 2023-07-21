@@ -918,13 +918,11 @@ struct NanosecondsAndDays final {
 
 
 static ::NanosecondsAndDays NanosecondsToDays(int64_t nanoseconds) {
-  
   constexpr int64_t dayLengthNs = ToNanoseconds(TemporalUnit::Day);
 
   static_assert(INT64_MAX / dayLengthNs <= INT32_MAX,
                 "days doesn't exceed INT32_MAX");
 
-  
   return {int32_t(nanoseconds / dayLengthNs), nanoseconds % dayLengthNs};
 }
 
@@ -934,7 +932,6 @@ static ::NanosecondsAndDays NanosecondsToDays(int64_t nanoseconds) {
 static bool NanosecondsToDaysSlow(
     JSContext* cx, Handle<BigInt*> nanoseconds,
     MutableHandle<temporal::NanosecondsAndDays> result) {
-  
   constexpr int64_t dayLengthNs = ToNanoseconds(TemporalUnit::Day);
 
   Rooted<BigInt*> dayLength(cx, BigInt::createFromInt64(cx, dayLengthNs));
@@ -942,10 +939,6 @@ static bool NanosecondsToDaysSlow(
     return false;
   }
 
-  
-  
-
-  
   Rooted<BigInt*> days(cx);
   Rooted<BigInt*> nanos(cx);
   if (!BigInt::divmod(cx, nanoseconds, dayLength, &days, &nanos)) {
@@ -985,13 +978,13 @@ static bool NanosecondsToDays(
 
 
 
-static bool NanosecondsToDaysError(JSContext* cx,
-                                   Handle<ZonedDateTimeObject*> relativeTo) {
+static bool NanosecondsToDaysError(
+    JSContext* cx, Handle<ZonedDateTimeObject*> zonedRelativeTo) {
   
 
   
-  auto startNs = ToInstant(relativeTo);
-  Rooted<TimeZoneValue> timeZone(cx, relativeTo->timeZone());
+  auto startNs = ToInstant(zonedRelativeTo);
+  Rooted<TimeZoneValue> timeZone(cx, zonedRelativeTo->timeZone());
 
   
   
@@ -1018,13 +1011,13 @@ static bool NanosecondsToDaysError(JSContext* cx,
 
 static bool NanosecondsToDays(
     JSContext* cx, const Duration& duration,
-    Handle<ZonedDateTimeObject*> relativeTo,
+    Handle<ZonedDateTimeObject*> zonedRelativeTo,
     MutableHandle<temporal::NanosecondsAndDays> result) {
   if (auto total = TotalDurationNanoseconds(duration.time(), 0)) {
     auto nanoseconds = InstantSpan::fromNanoseconds(*total);
     MOZ_ASSERT(IsValidInstantSpan(nanoseconds));
 
-    return NanosecondsToDays(cx, nanoseconds, relativeTo, result);
+    return NanosecondsToDays(cx, nanoseconds, zonedRelativeTo, result);
   }
 
   auto* nanoseconds = TotalDurationNanosecondsSlow(cx, duration.time(), 0);
@@ -1033,9 +1026,10 @@ static bool NanosecondsToDays(
   }
 
   if (!IsValidInstantSpan(nanoseconds)) {
-    return NanosecondsToDaysError(cx, relativeTo);
+    return NanosecondsToDaysError(cx, zonedRelativeTo);
   }
-  return NanosecondsToDays(cx, ToInstantSpan(nanoseconds), relativeTo, result);
+  return NanosecondsToDays(cx, ToInstantSpan(nanoseconds), zonedRelativeTo,
+                           result);
 }
 
 
@@ -6561,9 +6555,9 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     if (!NanosecondsToDays(cx, duration, intermediate, &nanosAndDays)) {
       return false;
     }
-  } else {
-    
 
+    
+  } else {
     
     if (!::NanosecondsToDays(cx, duration, &nanosAndDays)) {
       return false;
