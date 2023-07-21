@@ -710,8 +710,6 @@ class TemporalParser final {
   
   
   
-  
-  
   bool tzCharLegacy() {
     if (!reader_.hasMore(1)) {
       return false;
@@ -770,17 +768,19 @@ class TemporalParser final {
   
   
   
-  bool aValChar() {
-    if (!reader_.hasMore(1)) {
+  bool annotationValueComponent() {
+    size_t index = reader_.index();
+    size_t i = 0;
+    for (; index + i < reader_.length(); i++) {
+      auto ch = reader_.at(index + i);
+      if (!mozilla::IsAsciiAlphanumeric(ch)) {
+        break;
+      }
+    }
+    if (i == 0) {
       return false;
     }
-
-    CharT ch = reader_.current();
-    if (!mozilla::IsAsciiAlphanumeric(ch)) {
-      return false;
-    }
-
-    reader_.advance(1);
+    reader_.advance(i);
     return true;
   }
 
@@ -843,7 +843,6 @@ class TemporalParser final {
   bool timeZoneIANANameComponent();
   mozilla::Result<TimeZoneName, ParserError> timeZoneIANAName();
 
-  bool annotationValueComponent();
   mozilla::Result<AnnotationKey, ParserError> annotationKey();
   mozilla::Result<AnnotationValue, ParserError> annotationValue();
   mozilla::Result<Annotation, ParserError> annotation();
@@ -935,11 +934,6 @@ mozilla::Result<PlainDate, ParserError> TemporalParser<CharT>::date() {
   
   
   
-
-  
-  
-  
-  
   if (auto year = digits(4)) {
     result.year = year.value();
   } else if (hasSign()) {
@@ -1004,6 +998,7 @@ mozilla::Result<PlainTime, ParserError> TemporalParser<CharT>::timeSpec() {
   
   PlainTime result = {};
 
+  
   
   
   
@@ -1201,6 +1196,7 @@ TemporalParser<CharT>::timeZoneAnnotation() {
   
   
   
+  
 
   if (!character('[')) {
     return mozilla::Err(JSMSG_TEMPORAL_PARSER_BRACKET_BEFORE_TIMEZONE);
@@ -1234,24 +1230,6 @@ TemporalParser<CharT>::timeZoneAnnotation() {
 template <typename CharT>
 mozilla::Result<TimeZoneName, ParserError>
 TemporalParser<CharT>::timeZoneIANAName() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -1439,6 +1417,7 @@ bool js::temporal::ParseTemporalInstantString(JSContext* cx,
 template <typename CharT>
 mozilla::Result<ZonedDateTimeString, ParserError>
 TemporalParser<CharT>::parseTemporalTimeZoneString() {
+  
   
   
   
@@ -2025,25 +2004,8 @@ bool js::temporal::ParseTemporalDurationString(JSContext* cx,
 }
 
 template <typename CharT>
-bool TemporalParser<CharT>::annotationValueComponent() {
-  
-  
-  
-  
-  
-  
-  bool hasOne = false;
-  while (aValChar()) {
-    hasOne = true;
-  }
-  return hasOne;
-}
-
-template <typename CharT>
 mozilla::Result<AnnotationKey, ParserError>
 TemporalParser<CharT>::annotationKey() {
-  
-  
   
   
   
@@ -2064,9 +2026,6 @@ TemporalParser<CharT>::annotationKey() {
 template <typename CharT>
 mozilla::Result<AnnotationValue, ParserError>
 TemporalParser<CharT>::annotationValue() {
-  
-  
-  
   
   
   
@@ -2425,11 +2384,6 @@ TemporalParser<CharT>::dateSpecYearMonth() {
   
   
   
-
-  
-  
-  
-  
   if (auto year = digits(4)) {
     result.year = year.value();
   } else if (hasSign()) {
@@ -2471,8 +2425,6 @@ TemporalParser<CharT>::dateSpecYearMonth() {
 template <typename CharT>
 mozilla::Result<PlainDate, ParserError>
 TemporalParser<CharT>::dateSpecMonthDay() {
-  
-  
   
   
   
