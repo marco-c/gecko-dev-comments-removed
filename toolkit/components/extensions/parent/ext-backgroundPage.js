@@ -76,6 +76,8 @@ function msSinceProcessStartExcludingSuspend() {
 
 
 
+
+
 const BACKGROUND_STATE = {
   STARTING: "starting",
   RUNNING: "running",
@@ -127,6 +129,7 @@ class BackgroundPage extends HiddenExtensionPage {
       });
 
       context = await contextPromise;
+      
 
       this.msSinceCreated = msSinceProcessStartExcludingSuspend();
 
@@ -179,6 +182,7 @@ class BackgroundWorker {
     const { extension } = this;
     let context;
     const contextPromise = new Promise(resolve => {
+      
       let unwatch = watchExtensionWorkerContextLoaded(
         { extension, viewType: "background_worker" },
         context => {
@@ -194,6 +198,10 @@ class BackgroundWorker {
     await serviceWorkerManager.registerForAddonPrincipal(
       this.extension.principal
     );
+
+    
+    
+    
 
     context = await contextPromise;
 
@@ -254,9 +262,288 @@ class BackgroundWorker {
   }
 }
 
-this.backgroundPage = class extends ExtensionAPI {
-  async build() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BackgroundContextOwner {
+  
+
+
+
+
+  backgroundBuilder;
+
+  
+
+
+
+
+
+  extension;
+
+  
+
+
+
+
+
+
+
+
+  bgInstance = null;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  context = null;
+
+  
+
+
+
+  constructor(backgroundBuilder, extension) {
+    this.backgroundBuilder = backgroundBuilder;
+    this.extension = extension;
+    this.onExtensionProcessCrashed = this.onExtensionProcessCrashed.bind(this);
+
+    extension.backgroundState = BACKGROUND_STATE.STOPPED;
+
+    extensions.on("extension-process-crash", this.onExtensionProcessCrashed);
+  }
+
+  
+
+
+
+
+  setBgStateStarting(bgInstance) {
+    if (!this.extension) {
+      throw new Error(`Cannot start background after extension shutdown.`);
+    }
     if (this.bgInstance) {
+      throw new Error(`Cannot start multiple background instances`);
+    }
+    this.extension.backgroundState = BACKGROUND_STATE.STARTING;
+    this.bgInstance = bgInstance;
+  }
+
+  
+
+
+
+
+
+
+
+
+  setBgStateRunning(context) {
+    if (!this.extension) {
+      
+      throw new Error(`Extension has shut down before startup completion.`);
+    }
+    if (this.context) {
+      
+      
+      throw new Error(`Context already set before at startup completion.`);
+    }
+    if (!context) {
+      throw new Error(`Context not found at startup completion.`);
+    }
+    if (context.unloaded) {
+      throw new Error(`Context has unloaded before startup completion.`);
+    }
+    this.extension.backgroundState = BACKGROUND_STATE.RUNNING;
+    this.context = context;
+    context.callOnClose(this);
+
+    
+    
+    EventManager.clearPrimedListeners(this.extension, true);
+
+    
+    notifyBackgroundScriptStatus(this.extension.id, true);
+
+    this.extension.emit("background-script-started");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  setBgStateStopped(isAppShutdown) {
+    const backgroundState = this.extension.backgroundState;
+    if (this.context) {
+      this.context.forgetOnClose(this);
+      this.context = null;
+      
+      notifyBackgroundScriptStatus(this.extension.id, false);
+    }
+
+    
+    
+    
+    
+    if (
+      backgroundState === BACKGROUND_STATE.STOPPED ||
+      backgroundState === BACKGROUND_STATE.STARTING
+    ) {
+      EventManager.clearPrimedListeners(this.extension, false);
+    }
+
+    
+    this.backgroundBuilder.clearIdleTimer();
+
+    const bgInstance = this.bgInstance;
+    if (bgInstance) {
+      this.bgInstance = null;
+      isAppShutdown ||= Services.startup.shuttingDown;
+      
+      bgInstance.shutdown(isAppShutdown);
+      this.backgroundBuilder.onBgInstanceShutdown(bgInstance);
+    }
+
+    this.extension.backgroundState = BACKGROUND_STATE.STOPPED;
+    if (backgroundState === BACKGROUND_STATE.STARTING) {
+      this.extension.emit("background-script-aborted");
+    }
+
+    if (this.extension.hasShutdown) {
+      this.extension = null;
+    } else if (this.extension.persistentBackground) {
+      
+      
+      
+    } else {
+      
+      
+      this.backgroundBuilder.primeBackground(false);
+    }
+  }
+
+  
+  close() {
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.context) {
+      this.context.forgetOnClose(this);
+      this.context = null;
+      
+      notifyBackgroundScriptStatus(this.extension.id, false);
+    }
+  }
+
+  onExtensionProcessCrashed(eventName, data) {
+    
+    
+
+    
+    
+    
+    if (this.bgInstance) {
+      this.setBgStateStopped();
+    }
+  }
+
+  
+  onShutdown(isAppShutdown) {
+    
+    
+    
+    if (this.extension) {
+      this.setBgStateStopped(isAppShutdown);
+    }
+    extensions.off("extension-process-crash", this.onExtensionProcessCrashed);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BackgroundBuilder {
+  constructor(extension) {
+    this.extension = extension;
+    this.backgroundContextOwner = new BackgroundContextOwner(this, extension);
+  }
+
+  async build() {
+    if (this.backgroundContextOwner.bgInstance) {
       return;
     }
 
@@ -268,23 +555,19 @@ this.backgroundPage = class extends ExtensionAPI {
 
     let BackgroundClass = this.isWorker ? BackgroundWorker : BackgroundPage;
 
-    this.bgInstance = new BackgroundClass(extension, manifest.background);
+    const bgInstance = new BackgroundClass(extension, manifest.background);
+    this.backgroundContextOwner.setBgStateStarting(bgInstance);
     let context;
     try {
-      context = await this.bgInstance.build();
-      
-      
-      if (context && this.extension) {
-        extension.backgroundState = BACKGROUND_STATE.RUNNING;
-      }
+      context = await bgInstance.build();
     } catch (e) {
       Cu.reportError(e);
-      if (extension.persistentListeners) {
-        
-        EventManager.clearPrimedListeners(extension, false);
+      
+      
+      
+      if (this.backgroundContextOwner.bgInstance === bgInstance) {
+        this.backgroundContextOwner.setBgStateStopped();
       }
-      extension.backgroundState = BACKGROUND_STATE.STOPPED;
-      extension.emit("background-script-aborted");
       return;
     }
 
@@ -296,28 +579,17 @@ this.backgroundPage = class extends ExtensionAPI {
       context.listenerPromises = null;
     }
 
-    if (extension.persistentListeners) {
+    if (this.backgroundContextOwner.bgInstance !== bgInstance) {
       
-      
-      
-      EventManager.clearPrimedListeners(extension, !!this.extension);
-    }
-
-    if (!context || !this.extension) {
-      extension.backgroundState = BACKGROUND_STATE.STOPPED;
-      extension.emit("background-script-aborted");
       return;
     }
-    if (!context.unloaded) {
-      notifyBackgroundScriptStatus(extension.id, true);
-      context.callOnClose({
-        close() {
-          notifyBackgroundScriptStatus(extension.id, false);
-        },
-      });
-    }
 
-    extension.emit("background-script-started");
+    try {
+      this.backgroundContextOwner.setBgStateRunning(context);
+    } catch (e) {
+      Cu.reportError(e);
+      this.backgroundContextOwner.setBgStateStopped();
+    }
   }
 
   observe(subject, topic, data) {
@@ -343,10 +615,11 @@ this.backgroundPage = class extends ExtensionAPI {
   primeBackground(isInStartup = true) {
     let { extension } = this;
 
-    if (this.bgInstance) {
-      Cu.reportError(`background script exists before priming ${extension.id}`);
+    if (this.backgroundContextOwner.bgInstance) {
+      
+      
+      throw new Error(`bgInstance exists before priming ${extension.id}`);
     }
-    this.bgInstance = null;
 
     
     let bgStartupPromise = new Promise(resolve => {
@@ -445,6 +718,10 @@ this.backgroundPage = class extends ExtensionAPI {
     
     extension.once("background-script-started", resetBackgroundIdle);
 
+    
+    
+    
+    
     extension.terminateBackground = async ({
       ignoreDevToolsAttached = false,
       disableResetIdleForTest = false, 
@@ -553,7 +830,6 @@ this.backgroundPage = class extends ExtensionAPI {
         return;
       }
       extension.off("background-script-reset-idle", resetBackgroundIdle);
-      this.onShutdown(false);
 
       
       if (!this.isWorker) {
@@ -563,9 +839,15 @@ this.backgroundPage = class extends ExtensionAPI {
         });
       }
 
-      EventManager.clearPrimedListeners(this.extension, false);
-      
-      this.primeBackground(false);
+      this.backgroundContextOwner.setBgStateStopped(false);
+      if (extension.persistentBackground && this.extension) {
+        
+        
+        
+        
+        
+        this.primeBackground(false);
+      }
     };
 
     EventManager.primeListeners(extension, isInStartup);
@@ -591,24 +873,16 @@ this.backgroundPage = class extends ExtensionAPI {
     });
   }
 
-  onShutdown(isAppShutdown) {
-    this.extension.backgroundState = BACKGROUND_STATE.STOPPED;
+  onBgInstanceShutdown(bgInstance) {
+    const { msSinceCreated } = bgInstance;
+    const { extension } = this;
+
     
-    this.clearIdleTimer();
+    extension.emit("shutdown-background-script");
 
-    if (this.bgInstance) {
-      const { msSinceCreated } = this.bgInstance;
-      this.bgInstance.shutdown(isAppShutdown);
-      this.bgInstance = null;
-
-      const { extension } = this;
-
-      
-      extension.emit("shutdown-background-script");
-
+    if (msSinceCreated) {
       const now = msSinceProcessStartExcludingSuspend();
       if (
-        msSinceCreated &&
         now &&
         
         !(this.isWorker || extension.persistentBackground)
@@ -618,11 +892,11 @@ this.backgroundPage = class extends ExtensionAPI {
           value: now - msSinceCreated,
         });
       }
-    } else {
-      EventManager.clearPrimedListeners(this.extension, false);
     }
   }
+}
 
+this.backgroundPage = class extends ExtensionAPI {
   async onManifestEntry(entryName) {
     let { extension } = this;
 
@@ -636,7 +910,7 @@ this.backgroundPage = class extends ExtensionAPI {
       return;
     }
 
-    extension.backgroundState = BACKGROUND_STATE.STOPPED;
+    this.backgroundBuilder = new BackgroundBuilder(extension);
 
     
     
@@ -644,7 +918,7 @@ this.backgroundPage = class extends ExtensionAPI {
       extension.emit("background-first-run");
     });
 
-    this.primeBackground();
+    this.backgroundBuilder.primeBackground();
 
     
     
@@ -657,7 +931,7 @@ this.backgroundPage = class extends ExtensionAPI {
     ) {
       
       
-      await this.build();
+      await this.backgroundBuilder.build();
 
       
       
@@ -668,7 +942,10 @@ this.backgroundPage = class extends ExtensionAPI {
     ExtensionParent.browserStartupPromise.then(() => {
       
       
-      if (this.bgInstance) {
+      if (
+        !this.backgroundBuilder ||
+        this.backgroundBuilder.backgroundContextOwner.bgInstance
+      ) {
         return;
       }
 
@@ -692,5 +969,12 @@ this.backgroundPage = class extends ExtensionAPI {
         EventManager.primeListeners(extension, false);
       }
     });
+  }
+
+  onShutdown(isAppShutdown) {
+    if (this.backgroundBuilder) {
+      this.backgroundBuilder.backgroundContextOwner.onShutdown(isAppShutdown);
+      this.backgroundBuilder = null;
+    }
   }
 };
