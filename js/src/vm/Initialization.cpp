@@ -129,8 +129,6 @@ JS_PUBLIC_API const char* JS::detail::InitWithFailureDiagnostic(
   install_rust_hooks();
 #endif
 
-  PRMJ_NowInit();
-
   if (frontendOnly == FrontendOnly::No) {
     
     
@@ -278,17 +276,6 @@ static void ShutdownImpl(JS::detail::FrontendOnly frontendOnly) {
   }
 
   js::wasm::ShutDown();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  PRMJ_NowShutdown();
 
 #if JS_HAS_INTL_API
   mozilla::intl::ICU4CLibrary::Cleanup();

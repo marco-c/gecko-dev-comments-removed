@@ -37,20 +37,6 @@ struct PRMJTime {
 
 extern int64_t PRMJ_Now();
 
-
-#if defined(XP_WIN)
-extern void PRMJ_NowInit();
-#else
-inline void PRMJ_NowInit() {}
-#endif
-
-
-#ifdef XP_WIN
-extern void PRMJ_NowShutdown();
-#else
-inline void PRMJ_NowShutdown() {}
-#endif
-
 #if !JS_HAS_INTL_API
 
 extern size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
