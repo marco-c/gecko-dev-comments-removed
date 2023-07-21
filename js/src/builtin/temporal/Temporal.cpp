@@ -1678,6 +1678,26 @@ bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
 
 
 
+PlainObject* js::temporal::CopyOptions(JSContext* cx,
+                                       JS::Handle<JSObject*> options) {
+  
+  Rooted<PlainObject*> optionsCopy(cx, NewPlainObjectWithProto(cx, nullptr));
+  if (!optionsCopy) {
+    return nullptr;
+  }
+
+  
+  if (!CopyDataProperties(cx, optionsCopy, options)) {
+    return nullptr;
+  }
+
+  
+  return optionsCopy;
+}
+
+
+
+
 
 
 bool js::temporal::CopyDataProperties(JSContext* cx,

@@ -427,13 +427,8 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
     }
 
     
-    resolvedOptions = NewPlainObjectWithProto(cx, nullptr);
+    resolvedOptions = CopyOptions(cx, options);
     if (!resolvedOptions) {
-      return false;
-    }
-
-    
-    if (!CopyDataProperties(cx, resolvedOptions, options)) {
       return false;
     }
 
@@ -653,13 +648,8 @@ static bool AddDurationToOrSubtractDurationFromPlainYearMonth(
   }
 
   
-  Rooted<PlainObject*> optionsCopy(cx, NewPlainObjectWithProto(cx, nullptr));
+  Rooted<PlainObject*> optionsCopy(cx, CopyOptions(cx, options));
   if (!optionsCopy) {
-    return false;
-  }
-
-  
-  if (!CopyDataProperties(cx, optionsCopy, options)) {
     return false;
   }
 

@@ -1198,14 +1198,8 @@ static bool DifferenceTemporalPlainDate(JSContext* cx,
     }
 
     
-    Rooted<PlainObject*> resolvedOptions(cx,
-                                         NewPlainObjectWithProto(cx, nullptr));
+    Rooted<PlainObject*> resolvedOptions(cx, CopyOptions(cx, options));
     if (!resolvedOptions) {
-      return false;
-    }
-
-    
-    if (!CopyDataProperties(cx, resolvedOptions, options)) {
       return false;
     }
 

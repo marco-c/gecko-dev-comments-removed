@@ -1347,13 +1347,8 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
     }
 
     
-    resolvedOptions = NewPlainObjectWithProto(cx, nullptr);
+    resolvedOptions = CopyOptions(cx, options);
     if (!resolvedOptions) {
-      return false;
-    }
-
-    
-    if (!CopyDataProperties(cx, resolvedOptions, options)) {
       return false;
     }
 

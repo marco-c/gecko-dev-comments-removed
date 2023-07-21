@@ -357,6 +357,11 @@ bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
 
 
 
+PlainObject* CopyOptions(JSContext* cx, JS::Handle<JSObject*> options);
+
+
+
+
 bool CopyDataProperties(JSContext* cx, JS::Handle<PlainObject*> target,
                         JS::Handle<JSObject*> source);
 
