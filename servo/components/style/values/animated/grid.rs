@@ -25,7 +25,15 @@ fn discrete<T: Clone>(from: &T, to: &T, procedure: Procedure) -> Result<T, ()> {
             to.clone()
         })
     } else {
-        Err(())
+        
+        
+        
+        
+        
+        
+        
+        
+        Ok(to.clone())
     }
 }
 
