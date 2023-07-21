@@ -997,8 +997,9 @@ const ASRouterTriggerListeners = new Map([
           const win = Services.wm.getMostRecentBrowserWindow();
           if (win && !isPrivateWindow(win) && !this._triggerTimeout) {
             
+            
             const idleForMilliseconds =
-              Date.now() - Math.min(this._idleSince, this._quietSince);
+              Date.now() - Math.max(this._idleSince, this._quietSince);
             this._triggerTimeout = lazy.setTimeout(() => {
               this._triggerHandler(win.gBrowser.selectedBrowser, {
                 id: this.id,
