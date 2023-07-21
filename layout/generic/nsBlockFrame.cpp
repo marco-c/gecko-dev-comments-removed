@@ -3420,8 +3420,12 @@ void nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   
   
   
+  
+  
+  
   nsIFrame* firstChild = aLine->mFirstChild;
-  if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+  if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
+      !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
     return;
   }
 
@@ -7726,10 +7730,25 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
 
   AutoTArray<nsIFrame*, 8> storedFloats;
   bool equal = true;
+  bool hasHiddenFloats = false;
   uint32_t i = 0;
   for (nsIFrame* f : mFloats) {
     if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
       continue;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!hasHiddenFloats &&
+        f->IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+      hasHiddenFloats = true;
     }
     storedFloats.AppendElement(f);
     if (i < lineFloats.Length() && lineFloats.ElementAt(i) != f) {
@@ -7739,7 +7758,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
   }
 
   if ((!equal || lineFloats.Length() != storedFloats.Length()) &&
-      !anyLineDirty) {
+      !anyLineDirty && !hasHiddenFloats) {
     NS_ERROR(
         "nsBlockFrame::CheckFloats: Explicit float list is out of sync with "
         "float cache");
