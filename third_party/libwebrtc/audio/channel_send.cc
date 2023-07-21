@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "audio/channel_send.h"
 
@@ -82,8 +82,8 @@ class RtcpCounterObserver : public RtcpPacketTypeCounterObserver {
 };
 
 class ChannelSend : public ChannelSendInterface,
-                    public AudioPacketizationCallback,  // receive encoded
-                                                        // packets from the ACM
+                    public AudioPacketizationCallback,  
+                                                        
                     public RtcpPacketTypeCounterObserver {
  public:
   ChannelSend(Clock* clock,
@@ -102,41 +102,41 @@ class ChannelSend : public ChannelSendInterface,
 
   ~ChannelSend() override;
 
-  // Send using this encoder, with this payload type.
+  
   void SetEncoder(int payload_type,
                   std::unique_ptr<AudioEncoder> encoder) override;
   void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                          modifier) override;
   void CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) override;
 
-  // API methods
+  
   void StartSend() override;
   void StopSend() override;
 
-  // Codecs
+  
   void OnBitrateAllocation(BitrateAllocationUpdate update) override;
   int GetTargetBitrate() const override;
 
-  // Network
+  
   void ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
 
-  // Muting, Volume and Level.
+  
   void SetInputMute(bool enable) override;
 
-  // Stats.
+  
   ANAStats GetANAStatistics() const override;
 
-  // Used by AudioSendStream.
+  
   RtpRtcpInterface* GetRtpRtcp() const override;
 
   void RegisterCngPayloadType(int payload_type, int payload_frequency) override;
 
-  // DTMF.
+  
   bool SendTelephoneEventOutband(int event, int duration_ms) override;
   void SetSendTelephoneEventPayloadType(int payload_type,
                                         int payload_frequency) override;
 
-  // RTP+RTCP
+  
   void SetSendAudioLevelIndicationStatus(bool enable, int id) override;
 
   void RegisterSenderCongestionControlObjects(
@@ -147,30 +147,30 @@ class ChannelSend : public ChannelSendInterface,
   std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const override;
   CallSendStatistics GetRTCPStatistics() const override;
 
-  // ProcessAndEncodeAudio() posts a task on the shared encoder task queue,
-  // which in turn calls (on the queue) ProcessAndEncodeAudioOnTaskQueue() where
-  // the actual processing of the audio takes place. The processing mainly
-  // consists of encoding and preparing the result for sending by adding it to a
-  // send queue.
-  // The main reason for using a task queue here is to release the native,
-  // OS-specific, audio capture thread as soon as possible to ensure that it
-  // can go back to sleep and be prepared to deliver an new captured audio
-  // packet.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame) override;
 
   int64_t GetRTT() const override;
 
-  // E2EE Custom Audio Frame Encryption
+  
   void SetFrameEncryptor(
       rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
 
-  // Sets a frame transformer between encoder and packetizer, to transform
-  // encoded frames before sending them out the network.
+  
+  
   void SetEncoderToPacketizerFrameTransformer(
       rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
       override;
 
-  // RtcpPacketTypeCounterObserver.
+  
   void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) override;
@@ -178,7 +178,7 @@ class ChannelSend : public ChannelSendInterface,
   void OnUplinkPacketLossRate(float packet_loss_rate);
 
  private:
-  // From AudioPacketizationCallback in the ACM
+  
   int32_t SendData(AudioFrameType frameType,
                    uint8_t payloadType,
                    uint32_t rtp_timestamp,
@@ -200,15 +200,15 @@ class ChannelSend : public ChannelSendInterface,
   void InitFrameTransformerDelegate(
       rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
 
-  // Thread checkers document and lock usage of some methods on voe::Channel to
-  // specific threads we know about. The goal is to eventually split up
-  // voe::Channel into parts with single-threaded semantics, and thereby reduce
-  // the need for locks.
+  
+  
+  
+  
   SequenceChecker worker_thread_checker_;
-  // Methods accessed from audio and video threads are checked for sequential-
-  // only access. We don't necessarily own and control these threads, so thread
-  // checkers cannot be used. E.g. Chromium may transfer "ownership" from one
-  // audio thread to another, but access is still sequential.
+  
+  
+  
+  
   rtc::RaceChecker audio_thread_race_checker_;
 
   mutable Mutex volume_settings_mutex_;
@@ -223,7 +223,7 @@ class ChannelSend : public ChannelSendInterface,
 
   std::unique_ptr<AudioCodingModule> audio_coding_;
 
-  // This is just an offset, RTP module will add its own random offset.
+  
   uint32_t timestamp_ RTC_GUARDED_BY(audio_thread_race_checker_) = 0;
   absl::optional<int64_t> last_capture_timestamp_ms_
       RTC_GUARDED_BY(audio_thread_race_checker_);
@@ -232,7 +232,7 @@ class ChannelSend : public ChannelSendInterface,
   bool input_mute_ RTC_GUARDED_BY(volume_settings_mutex_) = false;
   bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_) = false;
 
-  // RtcpBandwidthObserver
+  
   const std::unique_ptr<VoERtcpObserver> rtcp_observer_;
 
   const std::unique_ptr<RtcpCounterObserver> rtcp_counter_observer_;
@@ -249,15 +249,15 @@ class ChannelSend : public ChannelSendInterface,
   std::atomic<bool> encoder_queue_is_active_ = false;
   std::atomic<bool> first_frame_ = true;
 
-  // E2EE Audio Frame Encryption
+  
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_
       RTC_GUARDED_BY(encoder_queue_);
-  // E2EE Frame Encryption Options
+  
   const webrtc::CryptoOptions crypto_options_;
 
-  // Delegates calls to a frame transformer to transform audio, and
-  // receives callbacks with the transformed frames; delegates calls to
-  // ChannelSend::SendRtpAudio to send the transformed audio.
+  
+  
+  
   rtc::scoped_refptr<ChannelSendFrameTransformerDelegate>
       frame_transformer_delegate_ RTC_GUARDED_BY(encoder_queue_);
 
@@ -265,8 +265,8 @@ class ChannelSend : public ChannelSendInterface,
   RtcpPacketTypeCounter rtcp_packet_type_counter_
       RTC_GUARDED_BY(rtcp_counter_mutex_);
 
-  // Defined last to ensure that there are no running tasks when the other
-  // members are destroyed.
+  
+  
   rtc::TaskQueue encoder_queue_;
 };
 
@@ -285,12 +285,16 @@ class RtpPacketSenderProxy : public RtpPacketSender {
   void EnqueuePackets(
       std::vector<std::unique_ptr<RtpPacketToSend>> packets) override {
     MutexLock lock(&mutex_);
-    rtp_packet_pacer_->EnqueuePackets(std::move(packets));
+    if (rtp_packet_pacer_) {
+      rtp_packet_pacer_->EnqueuePackets(std::move(packets));
+    }
   }
 
   void RemovePacketsForSsrc(uint32_t ssrc) override {
     MutexLock lock(&mutex_);
-    rtp_packet_pacer_->RemovePacketsForSsrc(ssrc);
+    if (rtp_packet_pacer_) {
+      rtp_packet_pacer_->RemovePacketsForSsrc(ssrc);
+    }
   }
 
  private:
@@ -327,22 +331,22 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
                                                           now_ms);
       }
     }
-    // TODO(mflodman): Do we need to aggregate reports here or can we jut send
-    // what we get? I.e. do we ever get multiple reports bundled into one RTCP
-    // report for VoiceEngine?
+    
+    
+    
     if (report_blocks.empty())
       return;
 
     int fraction_lost_aggregate = 0;
     int total_number_of_packets = 0;
 
-    // If receiving multiple report blocks, calculate the weighted average based
-    // on the number of packets a report refers to.
+    
+    
     for (ReportBlockList::const_iterator block_it = report_blocks.begin();
          block_it != report_blocks.end(); ++block_it) {
-      // Find the previous extended high sequence number for this remote SSRC,
-      // to calculate the number of RTP packets this report refers to. Ignore if
-      // we haven't seen this SSRC before.
+      
+      
+      
       std::map<uint32_t, uint32_t>::iterator seq_num_it =
           extended_max_sequence_number_.find(block_it->source_ssrc);
       int number_of_packets = 0;
@@ -367,7 +371,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
 
  private:
   ChannelSend* owner_;
-  // Maps remote side ssrc to extended highest sequence number received.
+  
   std::map<uint32_t, uint32_t> extended_max_sequence_number_;
   Mutex mutex_;
   RtcpBandwidthObserver* bandwidth_observer_ RTC_GUARDED_BY(mutex_);
@@ -382,8 +386,8 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   rtc::ArrayView<const uint8_t> payload(payloadData, payloadSize);
   if (frame_transformer_delegate_) {
-    // Asynchronously transform the payload before sending it. After the payload
-    // is transformed, the delegate will call SendRtpAudio to send it.
+    
+    
     frame_transformer_delegate_->Transform(
         frameType, payloadType, rtp_timestamp, rtp_rtcp_->StartTimestamp(),
         payloadData, payloadSize, absolute_capture_timestamp_ms,
@@ -400,32 +404,32 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                   rtc::ArrayView<const uint8_t> payload,
                                   int64_t absolute_capture_timestamp_ms) {
   if (include_audio_level_indication_.load()) {
-    // Store current audio level in the RTP sender.
-    // The level will be used in combination with voice-activity state
-    // (frameType) to add an RTP header extension
+    
+    
+    
     rtp_sender_audio_->SetAudioLevel(rms_level_.Average());
   }
 
-  // E2EE Custom Audio Frame Encryption (This is optional).
-  // Keep this buffer around for the lifetime of the send call.
+  
+  
   rtc::Buffer encrypted_audio_payload;
-  // We don't invoke encryptor if payload is empty, which means we are to send
-  // DTMF, or the encoder entered DTX.
-  // TODO(minyue): see whether DTMF packets should be encrypted or not. In
-  // current implementation, they are not.
+  
+  
+  
+  
   if (!payload.empty()) {
     if (frame_encryptor_ != nullptr) {
-      // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
-      // Allocate a buffer to hold the maximum possible encrypted payload.
+      
+      
       size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
           cricket::MEDIA_TYPE_AUDIO, payload.size());
       encrypted_audio_payload.SetSize(max_ciphertext_size);
 
-      // Encrypt the audio payload into the buffer.
+      
       size_t bytes_written = 0;
       int encrypt_status = frame_encryptor_->Encrypt(
           cricket::MEDIA_TYPE_AUDIO, rtp_rtcp_->SSRC(),
-          /*additional_data=*/nullptr, payload, encrypted_audio_payload,
+          nullptr, payload, encrypted_audio_payload,
           &bytes_written);
       if (encrypt_status != 0) {
         RTC_DLOG(LS_ERROR)
@@ -433,9 +437,9 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
             << encrypt_status;
         return -1;
       }
-      // Resize the buffer to the exact number of bytes actually used.
+      
       encrypted_audio_payload.SetSize(bytes_written);
-      // Rewrite the payloadData and size to the new encrypted payload.
+      
       payload = encrypted_audio_payload;
     } else if (crypto_options_.sframe.require_frame_encryption) {
       RTC_DLOG(LS_ERROR) << "Channel::SendData() failed sending audio payload: "
@@ -444,24 +448,24 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
     }
   }
 
-  // Push data from ACM to RTP/RTCP-module to deliver audio frame for
-  // packetization.
+  
+  
   if (!rtp_rtcp_->OnSendingRtpFrame(rtp_timestamp,
-                                    // Leaving the time when this frame was
-                                    // received from the capture device as
-                                    // undefined for voice for now.
+                                    
+                                    
+                                    
                                     -1, payloadType,
-                                    /*force_sender_report=*/false)) {
+                                    false)) {
     return -1;
   }
 
-  // RTCPSender has it's own copy of the timestamp offset, added in
-  // RTCPSender::BuildSR, hence we must not add the in the offset for the above
-  // call.
-  // TODO(nisse): Delete RTCPSender:timestamp_offset_, and see if we can confine
-  // knowledge of the offset to a single place.
+  
+  
+  
+  
+  
 
-  // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
+  
   if (!rtp_sender_audio_->SendAudio(
           frameType, payloadType, rtp_timestamp + rtp_rtcp_->StartTimestamp(),
           payload.data(), payload.size(), absolute_capture_timestamp_ms)) {
@@ -529,7 +533,7 @@ ChannelSend::ChannelSend(
   rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(configuration.clock,
                                                        rtp_rtcp_->RtpSender());
 
-  // Ensure that RTCP is enabled by default for the created channel.
+  
   rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);
 
   int error = audio_coding_->RegisterTransportCallback(this);
@@ -539,7 +543,7 @@ ChannelSend::ChannelSend(
 ChannelSend::~ChannelSend() {
   RTC_DCHECK(construction_thread_.IsCurrent());
 
-  // Resets the delegate's callback to ChannelSend::SendRtpAudio.
+  
   if (frame_transformer_delegate_)
     frame_transformer_delegate_->Reset();
 
@@ -554,12 +558,12 @@ void ChannelSend::StartSend() {
   sending_ = true;
 
   RTC_DCHECK(packet_router_);
-  packet_router_->AddSendRtpModule(rtp_rtcp_.get(), /*remb_candidate=*/false);
+  packet_router_->AddSendRtpModule(rtp_rtcp_.get(), false);
   rtp_rtcp_->SetSendingMediaStatus(true);
   int ret = rtp_rtcp_->SetSendingStatus(true);
   RTC_DCHECK_EQ(0, ret);
 
-  // It is now OK to start processing on the encoder task queue.
+  
   first_frame_.store(true);
   encoder_queue_is_active_.store(true);
 }
@@ -572,8 +576,8 @@ void ChannelSend::StopSend() {
   sending_ = false;
   encoder_queue_is_active_.store(false);
 
-  // Wait until all pending encode tasks are executed and clear any remaining
-  // buffers in the encoder.
+  
+  
   rtc::Event flush;
   encoder_queue_.PostTask([this, &flush]() {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -582,8 +586,8 @@ void ChannelSend::StopSend() {
   });
   flush.Wait(rtc::Event::kForever);
 
-  // Reset sending SSRC and sequence number and triggers direct transmission
-  // of RTCP BYE
+  
+  
   if (rtp_rtcp_->SetSendingStatus(false) == -1) {
     RTC_DLOG(LS_ERROR) << "StartSend() RTP/RTCP failed to stop sending";
   }
@@ -600,8 +604,8 @@ void ChannelSend::SetEncoder(int payload_type,
   RTC_DCHECK_GE(payload_type, 0);
   RTC_DCHECK_LE(payload_type, 127);
 
-  // The RTP/RTCP module needs to know the RTP timestamp rate (i.e. clockrate)
-  // as well as some other things, so we collect this info and send it along.
+  
+  
   rtp_rtcp_->RegisterSendPayloadFrequency(payload_type,
                                           encoder->RtpTimestampRateHz());
   rtp_sender_audio_->RegisterAudioPayload("audio", payload_type,
@@ -613,9 +617,9 @@ void ChannelSend::SetEncoder(int payload_type,
 
 void ChannelSend::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
-  // This method can be called on the worker thread, module process thread
-  // or network thread. Audio coding is thread safe, so we do not need to
-  // enforce the calling thread.
+  
+  
+  
   audio_coding_->ModifyEncoder(modifier);
 }
 
@@ -630,12 +634,12 @@ void ChannelSend::CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) {
 }
 
 void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
-  // This method can be called on the worker thread, module process thread
-  // or on a TaskQueue via VideoSendStreamImpl::OnEncoderConfigurationChanged.
-  // TODO(solenberg): Figure out a good way to check this or enforce calling
-  // rules.
-  // RTC_DCHECK(worker_thread_checker_.IsCurrent() ||
-  //            module_process_thread_checker_.IsCurrent());
+  
+  
+  
+  
+  
+  
   CallEncoder([&](AudioEncoder* encoder) {
     encoder->OnReceivedUplinkAllocation(update);
   });
@@ -655,12 +659,12 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
 void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
 
-  // Deliver RTCP packet to RTP/RTCP module for parsing
+  
   rtp_rtcp_->IncomingRtcpPacket(rtc::MakeArrayView(data, length));
 
   int64_t rtt = GetRTT();
   if (rtt == 0) {
-    // Waiting for valid RTT.
+    
     return;
   }
 
@@ -757,7 +761,7 @@ void ChannelSend::ResetSenderCongestionControlObjects() {
 
 void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  // Note: SetCNAME() accepts a c string of length at most 255.
+  
   const std::string c_name_limited(c_name.substr(0, 255));
   int ret = rtp_rtcp_->SetCNAME(c_name_limited.c_str()) != 0;
   RTC_DCHECK_EQ(0, ret) << "SetRTCP_CNAME() failed to set RTCP CNAME";
@@ -765,9 +769,9 @@ void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {
 
 std::vector<ReportBlock> ChannelSend::GetRemoteRTCPReportBlocks() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  // Get the report blocks from the latest received RTCP Sender or Receiver
-  // Report. Each element in the vector contains the sender's SSRC and a
-  // report block according to RFC 3550.
+  
+  
+  
   std::vector<ReportBlock> report_blocks;
   for (const ReportBlockData& data : rtp_rtcp_->GetLatestReportBlockData()) {
     ReportBlock report_block;
@@ -802,8 +806,8 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
       rtp_stats.transmitted.padding_bytes + rtp_stats.transmitted.header_bytes +
       rtx_stats.transmitted.padding_bytes + rtx_stats.transmitted.header_bytes;
 
-  // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up in
-  // separate outbound-rtp stream objects.
+  
+  
   stats.retransmitted_bytes_sent = rtp_stats.retransmitted.payload_bytes;
   stats.packetsSent =
       rtp_stats.transmitted.packets + rtx_stats.transmitted.packets;
@@ -841,16 +845,16 @@ void ChannelSend::ProcessAndEncodeAudio(
     return;
   }
 
-  // Update `timestamp_` based on the capture timestamp for the first frame
-  // after sending is resumed.
+  
+  
   if (first_frame_.load()) {
     first_frame_.store(false);
     if (last_capture_timestamp_ms_ &&
         audio_frame->absolute_capture_timestamp_ms()) {
       int64_t diff_ms = *audio_frame->absolute_capture_timestamp_ms() -
                         *last_capture_timestamp_ms_;
-      // Truncate to whole frames and subtract one since `timestamp_` was
-      // incremented after the last frame.
+      
+      
       int64_t diff_frames = diff_ms * audio_frame->sample_rate_hz() / 1000 /
                                 audio_frame->samples_per_channel() -
                             1;
@@ -863,8 +867,8 @@ void ChannelSend::ProcessAndEncodeAudio(
   timestamp_ += audio_frame->samples_per_channel_;
   last_capture_timestamp_ms_ = audio_frame->absolute_capture_timestamp_ms();
 
-  // Profile time between when the audio frame is added to the task queue and
-  // when the task is actually executed.
+  
+  
   audio_frame->UpdateProfileTimeStamp();
   encoder_queue_.PostTask(
       [this, audio_frame = std::move(audio_frame)]() mutable {
@@ -872,9 +876,9 @@ void ChannelSend::ProcessAndEncodeAudio(
         if (!encoder_queue_is_active_.load()) {
           return;
         }
-        // Measure time between when the audio frame is added to the task queue
-        // and when the task is actually executed. Goal is to keep track of
-        // unwanted extra latency added by the task queue.
+        
+        
+        
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Audio.EncodingTaskQueueLatencyMs",
                                    audio_frame->ElapsedProfileTimeMs());
 
@@ -895,10 +899,10 @@ void ChannelSend::ProcessAndEncodeAudio(
         }
         previous_frame_muted_ = is_muted;
 
-        // This call will trigger AudioPacketizationCallback::SendData if
-        // encoding is done and payload is ready for packetization and
-        // transmission. Otherwise, it will return without invoking the
-        // callback.
+        
+        
+        
+        
         if (audio_coding_->Add10MsData(*audio_frame) < 0) {
           RTC_DLOG(LS_ERROR) << "ACM::Add10MsData() failed.";
           return;
@@ -922,8 +926,8 @@ int64_t ChannelSend::GetRTT() const {
     return 0;
   }
 
-  // We don't know in advance the remote ssrc used by the other end's receiver
-  // reports, so use the first report block for the RTT.
+  
+  
   return report_blocks.front().last_rtt_ms();
 }
 
@@ -950,7 +954,7 @@ void ChannelSend::SetEncoderToPacketizerFrameTransformer(
 }
 
 void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
-  // Invoke audio encoders OnReceivedRtt().
+  
   CallEncoder(
       [rtt_ms](AudioEncoder* encoder) { encoder->OnReceivedRtt(rtt_ms); });
 }
@@ -961,8 +965,8 @@ void ChannelSend::InitFrameTransformerDelegate(
   RTC_DCHECK(frame_transformer);
   RTC_DCHECK(!frame_transformer_delegate_);
 
-  // Pass a callback to ChannelSend::SendRtpAudio, to be called by the delegate
-  // to send the transformed audio.
+  
+  
   ChannelSendFrameTransformerDelegate::SendFrameCallback send_audio_callback =
       [this](AudioFrameType frameType, uint8_t payloadType,
              uint32_t rtp_timestamp, rtc::ArrayView<const uint8_t> payload,
@@ -978,7 +982,7 @@ void ChannelSend::InitFrameTransformerDelegate(
   frame_transformer_delegate_->Init();
 }
 
-}  // namespace
+}  
 
 std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     Clock* clock,
@@ -1001,5 +1005,5 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
       feedback_observer, field_trials);
 }
 
-}  // namespace voe
-}  // namespace webrtc
+}  
+}  
