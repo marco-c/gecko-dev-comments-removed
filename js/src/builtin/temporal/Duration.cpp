@@ -5113,11 +5113,26 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   days += monthsWeeksInDays;
 
   
-  MOZ_ASSERT(IsInteger(days));
+  
+
+  double truncatedDays = days;
+  if (nanosAndDays.nanoseconds() > InstantSpan{}) {
+    
+    
+    if (truncatedDays < 0) {
+      truncatedDays += 1;
+    }
+  } else if (nanosAndDays.nanoseconds() < InstantSpan{}) {
+    
+    
+    if (truncatedDays > 0) {
+      truncatedDays -= 1;
+    }
+  }
 
   
   Rooted<DurationObject*> wholeDaysDuration(
-      cx, CreateTemporalDuration(cx, {0, 0, 0, days}));
+      cx, CreateTemporalDuration(cx, {0, 0, 0, truncatedDays}));
   if (!wholeDaysDuration) {
     return false;
   }
