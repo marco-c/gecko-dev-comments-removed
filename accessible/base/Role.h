@@ -28,13 +28,13 @@ enum Role {
 
 
 
-  MENUBAR = 2,
+  MENUBAR = 1,
 
   
 
 
 
-  SCROLLBAR = 3,
+  SCROLLBAR = 2,
 
   
 
@@ -43,42 +43,42 @@ enum Role {
 
 
 
-  ALERT = 8,
+  ALERT = 3,
 
   
 
 
-  INTERNAL_FRAME = 10,
+  INTERNAL_FRAME = 4,
 
   
 
 
 
-  MENUPOPUP = 11,
+  MENUPOPUP = 5,
 
   
 
 
 
 
-  MENUITEM = 12,
+  MENUITEM = 6,
 
   
 
 
-  TOOLTIP = 13,
+  TOOLTIP = 7,
 
   
 
 
 
-  APPLICATION = 14,
+  APPLICATION = 8,
 
   
 
 
 
-  DOCUMENT = 15,
+  DOCUMENT = 9,
 
   
 
@@ -87,34 +87,34 @@ enum Role {
 
 
 
-  PANE = 16,
+  PANE = 10,
 
   
 
 
 
-  DIALOG = 18,
+  DIALOG = 11,
 
   
 
 
 
 
-  GROUPING = 20,
+  GROUPING = 12,
 
   
 
 
 
 
-  SEPARATOR = 21,
+  SEPARATOR = 13,
 
   
 
 
 
 
-  TOOLBAR = 22,
+  TOOLBAR = 14,
 
   
 
@@ -122,7 +122,7 @@ enum Role {
 
 
 
-  STATUSBAR = 23,
+  STATUSBAR = 15,
 
   
 
@@ -130,104 +130,104 @@ enum Role {
 
 
 
-  TABLE = 24,
+  TABLE = 16,
 
   
 
 
 
 
-  COLUMNHEADER = 25,
+  COLUMNHEADER = 17,
 
   
 
 
 
-  ROWHEADER = 26,
+  ROWHEADER = 18,
 
   
 
 
-  ROW = 28,
+  ROW = 19,
 
   
 
 
 
-  CELL = 29,
+  CELL = 20,
 
   
 
 
 
 
-  LINK = 30,
+  LINK = 21,
 
   
 
 
 
 
-  LIST = 33,
+  LIST = 22,
 
   
 
 
-  LISTITEM = 34,
+  LISTITEM = 23,
 
   
 
 
 
 
-  OUTLINE = 35,
+  OUTLINE = 24,
 
   
 
 
 
-  OUTLINEITEM = 36,
+  OUTLINEITEM = 25,
 
   
 
 
 
-  PAGETAB = 37,
+  PAGETAB = 26,
 
   
 
 
 
-  PROPERTYPAGE = 38,
+  PROPERTYPAGE = 27,
 
   
 
 
-  GRAPHIC = 40,
+  GRAPHIC = 28,
 
   
 
 
 
 
-  STATICTEXT = 41,
+  STATICTEXT = 29,
 
   
 
 
-  TEXT_LEAF = 42,
+  TEXT_LEAF = 30,
 
   
 
 
 
-  PUSHBUTTON = 43,
+  PUSHBUTTON = 31,
 
   
 
 
 
-  CHECKBUTTON = 44,
+  CHECKBUTTON = 32,
 
   
 
@@ -236,137 +236,137 @@ enum Role {
 
 
 
-  RADIOBUTTON = 45,
+  RADIOBUTTON = 33,
 
   
 
 
 
 
-  COMBOBOX = 46,
+  COMBOBOX = 34,
 
   
 
 
 
 
-  PROGRESSBAR = 48,
+  PROGRESSBAR = 35,
 
   
 
 
 
 
-  SLIDER = 51,
+  SLIDER = 36,
 
   
 
 
 
 
-  SPINBUTTON = 52,
+  SPINBUTTON = 37,
 
   
 
 
-  DIAGRAM = 53,
+  DIAGRAM = 38,
 
   
 
 
 
-  ANIMATION = 54,
+  ANIMATION = 39,
 
   
 
 
-  BUTTONDROPDOWN = 56,
+  BUTTONDROPDOWN = 40,
 
   
 
 
-  BUTTONMENU = 57,
+  BUTTONMENU = 41,
 
   
 
 
-  WHITESPACE = 59,
+  WHITESPACE = 42,
 
   
 
 
 
-  PAGETABLIST = 60,
+  PAGETABLIST = 43,
 
   
 
 
 
-  CANVAS = 66,
+  CANVAS = 44,
 
   
 
 
-  CHECK_MENU_ITEM = 67,
+  CHECK_MENU_ITEM = 45,
 
   
 
 
-  DATE_EDITOR = 69,
+  DATE_EDITOR = 46,
 
   
 
 
 
-  CHROME_WINDOW = 75,
+  CHROME_WINDOW = 47,
 
   
 
 
-  LABEL = 79,
+  LABEL = 48,
 
   
 
 
 
-  PASSWORD_TEXT = 82,
+  PASSWORD_TEXT = 49,
 
   
 
 
-  RADIO_MENU_ITEM = 84,
+  RADIO_MENU_ITEM = 50,
 
   
 
 
-  TEXT_CONTAINER = 92,
+  TEXT_CONTAINER = 51,
 
   
 
 
 
-  TOGGLE_BUTTON = 93,
+  TOGGLE_BUTTON = 52,
 
   
 
 
 
-  TREE_TABLE = 94,
+  TREE_TABLE = 53,
 
   
 
 
-  PARAGRAPH = 98,
+  PARAGRAPH = 54,
 
   
 
 
-  ENTRY = 102,
+  ENTRY = 55,
 
   
 
 
-  CAPTION = 103,
+  CAPTION = 56,
 
   
 
@@ -374,310 +374,310 @@ enum Role {
 
 
 
-  NON_NATIVE_DOCUMENT = 104,
+  NON_NATIVE_DOCUMENT = 57,
 
   
 
 
-  HEADING = 105,
+  HEADING = 58,
 
   
 
 
 
-  SECTION = 107,
+  SECTION = 59,
 
   
 
 
 
-  FORM = 109,
+  FORM = 60,
 
   
 
 
-  APP_ROOT = 111,
+  APP_ROOT = 61,
 
   
 
 
 
-  PARENT_MENUITEM = 112,
+  PARENT_MENUITEM = 62,
 
   
 
 
-  COMBOBOX_LIST = 114,
+  COMBOBOX_LIST = 63,
 
   
 
 
-  COMBOBOX_OPTION = 115,
+  COMBOBOX_OPTION = 64,
 
   
 
 
-  IMAGE_MAP = 116,
+  IMAGE_MAP = 65,
 
   
 
 
-  OPTION = 117,
+  OPTION = 66,
 
   
 
 
-  RICH_OPTION = 118,
+  RICH_OPTION = 67,
 
   
 
 
-  LISTBOX = 119,
+  LISTBOX = 68,
 
   
 
 
-  FLAT_EQUATION = 120,
+  FLAT_EQUATION = 69,
 
   
 
 
 
 
-  GRID_CELL = 121,
+  GRID_CELL = 70,
 
   
 
 
 
-  NOTE = 123,
+  NOTE = 71,
 
   
 
 
-  FIGURE = 124,
+  FIGURE = 72,
 
   
 
 
-  CHECK_RICH_OPTION = 125,
+  CHECK_RICH_OPTION = 73,
 
   
 
 
-  DEFINITION_LIST = 126,
+  DEFINITION_LIST = 74,
 
   
 
 
-  TERM = 127,
+  TERM = 75,
 
   
 
 
-  DEFINITION = 128,
+  DEFINITION = 76,
 
   
 
 
-  KEY = 129,
+  KEY = 77,
 
   
 
 
-  SWITCH = 130,
+  SWITCH = 78,
 
   
 
 
-  MATHML_MATH = 131,
+  MATHML_MATH = 79,
 
   
 
 
-  MATHML_IDENTIFIER = 132,
+  MATHML_IDENTIFIER = 80,
 
   
 
 
-  MATHML_NUMBER = 133,
+  MATHML_NUMBER = 81,
 
   
 
 
-  MATHML_OPERATOR = 134,
+  MATHML_OPERATOR = 82,
 
   
 
 
-  MATHML_TEXT = 135,
+  MATHML_TEXT = 83,
 
   
 
 
-  MATHML_STRING_LITERAL = 136,
+  MATHML_STRING_LITERAL = 84,
 
   
 
 
-  MATHML_GLYPH = 137,
+  MATHML_GLYPH = 85,
 
   
 
 
-  MATHML_ROW = 138,
+  MATHML_ROW = 86,
 
   
 
 
-  MATHML_FRACTION = 139,
+  MATHML_FRACTION = 87,
 
   
 
 
-  MATHML_SQUARE_ROOT = 140,
+  MATHML_SQUARE_ROOT = 88,
 
   
 
 
-  MATHML_ROOT = 141,
+  MATHML_ROOT = 89,
 
   
 
 
-  MATHML_ENCLOSED = 143,
+  MATHML_ENCLOSED = 90,
 
   
 
 
-  MATHML_STYLE = 144,
+  MATHML_STYLE = 91,
 
   
 
 
-  MATHML_SUB = 145,
+  MATHML_SUB = 92,
 
   
 
 
-  MATHML_SUP = 146,
+  MATHML_SUP = 93,
 
   
 
 
-  MATHML_SUB_SUP = 147,
+  MATHML_SUB_SUP = 94,
 
   
 
 
-  MATHML_UNDER = 148,
+  MATHML_UNDER = 95,
 
   
 
 
-  MATHML_OVER = 149,
+  MATHML_OVER = 96,
 
   
 
 
-  MATHML_UNDER_OVER = 150,
+  MATHML_UNDER_OVER = 97,
 
   
 
 
 
-  MATHML_MULTISCRIPTS = 151,
+  MATHML_MULTISCRIPTS = 98,
 
   
 
 
-  MATHML_TABLE = 152,
+  MATHML_TABLE = 99,
 
   
 
 
-  MATHML_LABELED_ROW = 153,
+  MATHML_LABELED_ROW = 100,
 
   
 
 
-  MATHML_TABLE_ROW = 154,
+  MATHML_TABLE_ROW = 101,
 
   
 
 
-  MATHML_CELL = 155,
+  MATHML_CELL = 102,
 
   
 
 
-  MATHML_ACTION = 156,
+  MATHML_ACTION = 103,
 
   
 
 
-  MATHML_ERROR = 157,
+  MATHML_ERROR = 104,
 
   
 
 
-  MATHML_STACK = 158,
+  MATHML_STACK = 105,
 
   
 
 
-  MATHML_LONG_DIVISION = 159,
+  MATHML_LONG_DIVISION = 106,
 
   
 
 
-  MATHML_STACK_GROUP = 160,
+  MATHML_STACK_GROUP = 107,
 
   
 
 
-  MATHML_STACK_ROW = 161,
+  MATHML_STACK_ROW = 108,
 
   
 
 
-  MATHML_STACK_CARRIES = 162,
+  MATHML_STACK_CARRIES = 109,
 
   
 
 
-  MATHML_STACK_CARRY = 163,
+  MATHML_STACK_CARRY = 110,
 
   
 
 
-  MATHML_STACK_LINE = 164,
+  MATHML_STACK_LINE = 111,
 
   
 
 
-  RADIO_GROUP = 165,
+  RADIO_GROUP = 112,
 
   
 
 
 
-  TEXT = 166,
+  TEXT = 113,
 
   
 
 
-  DETAILS = 167,
+  DETAILS = 114,
 
   
 
 
-  SUMMARY = 168,
+  SUMMARY = 115,
 
   
 
 
-  LANDMARK = 169,
+  LANDMARK = 116,
 
   
 
@@ -685,19 +685,19 @@ enum Role {
 
 
 
-  NAVIGATION = 170,
+  NAVIGATION = 117,
 
   
 
 
-  FOOTNOTE = 171,
+  FOOTNOTE = 118,
 
   
 
 
 
 
-  ARTICLE = 172,
+  ARTICLE = 119,
 
   
 
@@ -705,89 +705,89 @@ enum Role {
 
 
 
-  REGION = 173,
+  REGION = 120,
 
   
 
 
 
-  EDITCOMBOBOX = 174,
+  EDITCOMBOBOX = 121,
 
   
 
 
-  BLOCKQUOTE = 175,
+  BLOCKQUOTE = 122,
 
   
 
 
 
-  CONTENT_DELETION = 176,
+  CONTENT_DELETION = 123,
 
   
 
 
 
-  CONTENT_INSERTION = 177,
+  CONTENT_INSERTION = 124,
 
   
 
 
 
 
-  FORM_LANDMARK = 178,
+  FORM_LANDMARK = 125,
 
   
 
 
 
-  MARK = 179,
+  MARK = 126,
 
   
 
 
-  SUGGESTION = 180,
+  SUGGESTION = 127,
 
   
 
 
-  COMMENT = 181,
+  COMMENT = 128,
 
   
 
 
-  CODE = 182,
+  CODE = 129,
 
   
 
 
-  TIME_EDITOR = 183,
+  TIME_EDITOR = 130,
 
   
 
 
 
-  LISTITEM_MARKER = 184,
+  LISTITEM_MARKER = 131,
 
   
 
 
 
-  METER = 185,
+  METER = 132,
 
   
 
 
 
 
-  SUBSCRIPT = 186,
+  SUBSCRIPT = 133,
 
   
 
 
 
 
-  SUPERSCRIPT = 187,
+  SUPERSCRIPT = 134,
 
   LAST_ROLE = SUPERSCRIPT
 };

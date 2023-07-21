@@ -21,13 +21,13 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_MENUBAR = 2;
+  const unsigned long ROLE_MENUBAR = 1;
 
   
 
 
 
-  const unsigned long ROLE_SCROLLBAR = 3;
+  const unsigned long ROLE_SCROLLBAR = 2;
 
   
 
@@ -36,42 +36,42 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_ALERT = 8;
+  const unsigned long ROLE_ALERT = 3;
 
   
 
 
-  const unsigned long ROLE_INTERNAL_FRAME = 10;
+  const unsigned long ROLE_INTERNAL_FRAME = 4;
 
   
 
 
 
-  const unsigned long ROLE_MENUPOPUP = 11;
+  const unsigned long ROLE_MENUPOPUP = 5;
 
   
 
 
 
 
-  const unsigned long ROLE_MENUITEM = 12;
+  const unsigned long ROLE_MENUITEM = 6;
 
   
 
 
-  const unsigned long ROLE_TOOLTIP = 13;
+  const unsigned long ROLE_TOOLTIP = 7;
 
   
 
 
 
-  const unsigned long ROLE_APPLICATION = 14;
+  const unsigned long ROLE_APPLICATION = 8;
 
   
 
 
 
-  const unsigned long ROLE_DOCUMENT = 15;
+  const unsigned long ROLE_DOCUMENT = 9;
 
   
 
@@ -80,34 +80,34 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_PANE = 16;
+  const unsigned long ROLE_PANE = 10;
 
   
 
 
 
-  const unsigned long ROLE_DIALOG = 18;
+  const unsigned long ROLE_DIALOG = 11;
 
   
 
 
 
 
-  const unsigned long ROLE_GROUPING = 20;
+  const unsigned long ROLE_GROUPING = 12;
 
   
 
 
 
 
-  const unsigned long ROLE_SEPARATOR = 21;
+  const unsigned long ROLE_SEPARATOR = 13;
 
   
 
 
 
 
-  const unsigned long ROLE_TOOLBAR = 22;
+  const unsigned long ROLE_TOOLBAR = 14;
 
   
 
@@ -115,7 +115,7 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_STATUSBAR = 23;
+  const unsigned long ROLE_STATUSBAR = 15;
 
   
 
@@ -123,104 +123,104 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_TABLE = 24;
+  const unsigned long ROLE_TABLE = 16;
 
   
 
 
 
 
-  const unsigned long ROLE_COLUMNHEADER = 25;
+  const unsigned long ROLE_COLUMNHEADER = 17;
 
   
 
 
 
-  const unsigned long ROLE_ROWHEADER = 26;
+  const unsigned long ROLE_ROWHEADER = 18;
 
   
 
 
-  const unsigned long ROLE_ROW = 28;
+  const unsigned long ROLE_ROW = 19;
 
   
 
 
 
-  const unsigned long ROLE_CELL = 29;
+  const unsigned long ROLE_CELL = 20;
 
   
 
 
 
 
-  const unsigned long ROLE_LINK = 30;
+  const unsigned long ROLE_LINK = 21;
 
   
 
 
 
 
-  const unsigned long ROLE_LIST = 33;
+  const unsigned long ROLE_LIST = 22;
 
   
 
 
-  const unsigned long ROLE_LISTITEM = 34;
+  const unsigned long ROLE_LISTITEM = 23;
 
   
 
 
 
 
-  const unsigned long ROLE_OUTLINE = 35;
+  const unsigned long ROLE_OUTLINE = 24;
 
   
 
 
 
-  const unsigned long ROLE_OUTLINEITEM = 36;
+  const unsigned long ROLE_OUTLINEITEM = 25;
 
   
 
 
 
-  const unsigned long ROLE_PAGETAB = 37;
+  const unsigned long ROLE_PAGETAB = 26;
 
   
 
 
 
-  const unsigned long ROLE_PROPERTYPAGE = 38;
+  const unsigned long ROLE_PROPERTYPAGE = 27;
 
   
 
 
-  const unsigned long ROLE_GRAPHIC = 40;
+  const unsigned long ROLE_GRAPHIC = 28;
 
   
 
 
 
 
-  const unsigned long ROLE_STATICTEXT = 41;
+  const unsigned long ROLE_STATICTEXT = 29;
 
   
 
 
-  const unsigned long ROLE_TEXT_LEAF = 42;
+  const unsigned long ROLE_TEXT_LEAF = 30;
 
   
 
 
 
-  const unsigned long ROLE_PUSHBUTTON = 43;
+  const unsigned long ROLE_PUSHBUTTON = 31;
 
   
 
 
 
-  const unsigned long ROLE_CHECKBUTTON = 44;
+  const unsigned long ROLE_CHECKBUTTON = 32;
 
   
 
@@ -229,138 +229,138 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_RADIOBUTTON = 45;
+  const unsigned long ROLE_RADIOBUTTON = 33;
 
   
 
 
 
 
-  const unsigned long ROLE_COMBOBOX = 46;
+  const unsigned long ROLE_COMBOBOX = 34;
 
   
 
 
 
 
-  const unsigned long ROLE_PROGRESSBAR = 48;
+  const unsigned long ROLE_PROGRESSBAR = 35;
 
   
 
 
 
 
-  const unsigned long ROLE_SLIDER = 51;
+  const unsigned long ROLE_SLIDER = 36;
 
   
 
 
 
 
-  const unsigned long ROLE_SPINBUTTON = 52;
+  const unsigned long ROLE_SPINBUTTON = 37;
 
   
 
 
-  const unsigned long ROLE_DIAGRAM = 53;
+  const unsigned long ROLE_DIAGRAM = 38;
 
   
 
 
 
-  const unsigned long ROLE_ANIMATION = 54;
+  const unsigned long ROLE_ANIMATION = 39;
 
   
 
 
-  const unsigned long ROLE_BUTTONDROPDOWN = 56;
+  const unsigned long ROLE_BUTTONDROPDOWN = 40;
 
   
 
 
-  const unsigned long ROLE_BUTTONMENU = 57;
+  const unsigned long ROLE_BUTTONMENU = 41;
 
   
 
 
-  const unsigned long ROLE_WHITESPACE = 59;
+  const unsigned long ROLE_WHITESPACE = 42;
 
   
 
 
 
-  const unsigned long ROLE_PAGETABLIST = 60;
+  const unsigned long ROLE_PAGETABLIST = 43;
 
   
 
 
 
-  const unsigned long ROLE_CANVAS = 66;
+  const unsigned long ROLE_CANVAS = 44;
 
   
 
 
-  const unsigned long ROLE_CHECK_MENU_ITEM = 67;
+  const unsigned long ROLE_CHECK_MENU_ITEM = 45;
 
   
 
 
-  const unsigned long ROLE_DATE_EDITOR = 69;
+  const unsigned long ROLE_DATE_EDITOR = 46;
 
   
 
 
 
-  const unsigned long ROLE_CHROME_WINDOW = 75;
+  const unsigned long ROLE_CHROME_WINDOW = 47;
 
   
 
 
-  const unsigned long ROLE_LABEL = 79;
+  const unsigned long ROLE_LABEL = 48;
 
   
 
 
 
-  const unsigned long ROLE_PASSWORD_TEXT = 82;
+  const unsigned long ROLE_PASSWORD_TEXT = 49;
 
   
 
 
-  const unsigned long ROLE_RADIO_MENU_ITEM = 84;
+  const unsigned long ROLE_RADIO_MENU_ITEM = 50;
 
   
 
 
-  const unsigned long ROLE_TEXT_CONTAINER = 92;
+  const unsigned long ROLE_TEXT_CONTAINER = 51;
 
   
 
 
 
-  const unsigned long ROLE_TOGGLE_BUTTON = 93;
+  const unsigned long ROLE_TOGGLE_BUTTON = 52;
 
   
 
 
 
 
-  const unsigned long ROLE_TREE_TABLE = 94;
+  const unsigned long ROLE_TREE_TABLE = 53;
 
   
 
 
-  const unsigned long ROLE_PARAGRAPH = 98;
+  const unsigned long ROLE_PARAGRAPH = 54;
 
   
 
 
-  const unsigned long ROLE_ENTRY = 102;
+  const unsigned long ROLE_ENTRY = 55;
 
   
 
 
-  const unsigned long ROLE_CAPTION = 103;
+  const unsigned long ROLE_CAPTION = 56;
 
   
 
@@ -368,331 +368,331 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_NON_NATIVE_DOCUMENT = 104;
+  const unsigned long ROLE_NON_NATIVE_DOCUMENT = 57;
 
   
 
 
-  const unsigned long ROLE_HEADING = 105;
+  const unsigned long ROLE_HEADING = 58;
 
   
 
 
 
-  const unsigned long ROLE_SECTION = 107;
+  const unsigned long ROLE_SECTION = 59;
 
   
 
 
 
-  const unsigned long ROLE_FORM = 109;
+  const unsigned long ROLE_FORM = 60;
 
   
 
 
-  const unsigned long ROLE_APP_ROOT = 111;
+  const unsigned long ROLE_APP_ROOT = 61;
 
   
 
 
 
-  const unsigned long ROLE_PARENT_MENUITEM = 112;
+  const unsigned long ROLE_PARENT_MENUITEM = 62;
 
   
 
 
-  const unsigned long ROLE_COMBOBOX_LIST = 114;
+  const unsigned long ROLE_COMBOBOX_LIST = 63;
 
   
 
 
-  const unsigned long ROLE_COMBOBOX_OPTION = 115;
+  const unsigned long ROLE_COMBOBOX_OPTION = 64;
 
   
 
 
-  const unsigned long ROLE_IMAGE_MAP = 116;
+  const unsigned long ROLE_IMAGE_MAP = 65;
 
   
 
 
-  const unsigned long ROLE_OPTION = 117;
+  const unsigned long ROLE_OPTION = 66;
 
   
 
 
-  const unsigned long ROLE_RICH_OPTION = 118;
+  const unsigned long ROLE_RICH_OPTION = 67;
 
   
 
 
-  const unsigned long ROLE_LISTBOX = 119;
+  const unsigned long ROLE_LISTBOX = 68;
 
   
 
 
-  const unsigned long ROLE_FLAT_EQUATION = 120;
+  const unsigned long ROLE_FLAT_EQUATION = 69;
 
   
 
 
 
 
-  const unsigned long ROLE_GRID_CELL = 121;
+  const unsigned long ROLE_GRID_CELL = 70;
 
   
 
 
 
-  const unsigned long ROLE_NOTE = 123;
+  const unsigned long ROLE_NOTE = 71;
 
   
 
 
-  const unsigned long ROLE_FIGURE = 124;
+  const unsigned long ROLE_FIGURE = 72;
 
   
 
 
-  const unsigned long ROLE_CHECK_RICH_OPTION = 125;
+  const unsigned long ROLE_CHECK_RICH_OPTION = 73;
 
   
 
 
-  const unsigned long ROLE_DEFINITION_LIST = 126;
+  const unsigned long ROLE_DEFINITION_LIST = 74;
 
   
 
 
-  const unsigned long ROLE_TERM = 127;
+  const unsigned long ROLE_TERM = 75;
 
   
 
 
-  const unsigned long ROLE_DEFINITION = 128;
+  const unsigned long ROLE_DEFINITION = 76;
 
   
 
 
-  const unsigned long ROLE_KEY = 129;
+  const unsigned long ROLE_KEY = 77;
 
   
 
 
-  const unsigned long ROLE_SWITCH = 130;
+  const unsigned long ROLE_SWITCH = 78;
 
   
 
 
-  const unsigned long ROLE_MATHML_MATH = 131;
+  const unsigned long ROLE_MATHML_MATH = 79;
 
   
 
 
-  const unsigned long ROLE_MATHML_IDENTIFIER = 132;
+  const unsigned long ROLE_MATHML_IDENTIFIER = 80;
 
   
 
 
-  const unsigned long ROLE_MATHML_NUMBER = 133;
+  const unsigned long ROLE_MATHML_NUMBER = 81;
 
   
 
 
-  const unsigned long ROLE_MATHML_OPERATOR = 134;
+  const unsigned long ROLE_MATHML_OPERATOR = 82;
 
   
 
 
-  const unsigned long ROLE_MATHML_TEXT = 135;
+  const unsigned long ROLE_MATHML_TEXT = 83;
 
   
 
 
-  const unsigned long ROLE_MATHML_STRING_LITERAL = 136;
+  const unsigned long ROLE_MATHML_STRING_LITERAL = 84;
 
   
 
 
-  const unsigned long ROLE_MATHML_GLYPH = 137;
+  const unsigned long ROLE_MATHML_GLYPH = 85;
 
   
 
 
-  const unsigned long ROLE_MATHML_ROW = 138;
+  const unsigned long ROLE_MATHML_ROW = 86;
 
   
 
 
-  const unsigned long ROLE_MATHML_FRACTION = 139;
+  const unsigned long ROLE_MATHML_FRACTION = 87;
 
   
 
 
-  const unsigned long ROLE_MATHML_SQUARE_ROOT = 140;
+  const unsigned long ROLE_MATHML_SQUARE_ROOT = 88;
 
   
 
 
-  const unsigned long ROLE_MATHML_ROOT = 141;
+  const unsigned long ROLE_MATHML_ROOT = 89;
 
   
 
 
-  const unsigned long ROLE_MATHML_ENCLOSED = 143;
+  const unsigned long ROLE_MATHML_ENCLOSED = 90;
 
   
 
 
-  const unsigned long ROLE_MATHML_STYLE = 144;
+  const unsigned long ROLE_MATHML_STYLE = 91;
 
   
 
 
-  const unsigned long ROLE_MATHML_SUB = 145;
+  const unsigned long ROLE_MATHML_SUB = 92;
 
   
 
 
-  const unsigned long ROLE_MATHML_SUP = 146;
+  const unsigned long ROLE_MATHML_SUP = 93;
 
   
 
 
-  const unsigned long ROLE_MATHML_SUB_SUP = 147;
+  const unsigned long ROLE_MATHML_SUB_SUP = 94;
 
   
 
 
-  const unsigned long ROLE_MATHML_UNDER = 148;
+  const unsigned long ROLE_MATHML_UNDER = 95;
 
   
 
 
-  const unsigned long ROLE_MATHML_OVER = 149;
+  const unsigned long ROLE_MATHML_OVER = 96;
 
   
 
 
-  const unsigned long ROLE_MATHML_UNDER_OVER = 150;
+  const unsigned long ROLE_MATHML_UNDER_OVER = 97;
 
   
 
 
 
-  const unsigned long ROLE_MATHML_MULTISCRIPTS = 151;
+  const unsigned long ROLE_MATHML_MULTISCRIPTS = 98;
 
   
 
 
-  const unsigned long ROLE_MATHML_TABLE = 152;
+  const unsigned long ROLE_MATHML_TABLE = 99;
 
   
 
 
-  const unsigned long ROLE_MATHML_LABELED_ROW = 153;
+  const unsigned long ROLE_MATHML_LABELED_ROW = 100;
 
   
 
 
-  const unsigned long ROLE_MATHML_TABLE_ROW = 154;
+  const unsigned long ROLE_MATHML_TABLE_ROW = 101;
 
   
 
 
-  const unsigned long ROLE_MATHML_CELL = 155;
+  const unsigned long ROLE_MATHML_CELL = 102;
 
   
 
 
-  const unsigned long ROLE_MATHML_ACTION = 156;
+  const unsigned long ROLE_MATHML_ACTION = 103;
 
   
 
 
-  const unsigned long ROLE_MATHML_ERROR = 157;
+  const unsigned long ROLE_MATHML_ERROR = 104;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK = 158;
+  const unsigned long ROLE_MATHML_STACK = 105;
 
   
 
 
-  const unsigned long ROLE_MATHML_LONG_DIVISION = 159;
+  const unsigned long ROLE_MATHML_LONG_DIVISION = 106;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK_GROUP = 160;
+  const unsigned long ROLE_MATHML_STACK_GROUP = 107;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK_ROW = 161;
+  const unsigned long ROLE_MATHML_STACK_ROW = 108;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK_CARRIES = 162;
+  const unsigned long ROLE_MATHML_STACK_CARRIES = 109;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK_CARRY = 163;
+  const unsigned long ROLE_MATHML_STACK_CARRY = 110;
 
   
 
 
-  const unsigned long ROLE_MATHML_STACK_LINE = 164;
+  const unsigned long ROLE_MATHML_STACK_LINE = 111;
 
   
 
 
-  const unsigned long ROLE_RADIO_GROUP = 165;
+  const unsigned long ROLE_RADIO_GROUP = 112;
 
   
 
 
 
-  const unsigned long ROLE_TEXT = 166;
+  const unsigned long ROLE_TEXT = 113;
 
   
 
 
 
-  const unsigned long ROLE_DETAILS = 167;
+  const unsigned long ROLE_DETAILS = 114;
 
   
 
 
 
-  const unsigned long ROLE_SUMMARY = 168;
+  const unsigned long ROLE_SUMMARY = 115;
 
   
 
 
-  const unsigned long ROLE_LANDMARK = 169;
+  const unsigned long ROLE_LANDMARK = 116;
 
   
 
 
 
 
-  const unsigned long ROLE_NAVIGATION = 170;
+  const unsigned long ROLE_NAVIGATION = 117;
 
   
 
 
-  const unsigned long ROLE_FOOTNOTE = 171;
+  const unsigned long ROLE_FOOTNOTE = 118;
 
   
 
 
 
 
-  const unsigned long ROLE_ARTICLE = 172;
+  const unsigned long ROLE_ARTICLE = 119;
 
   
 
@@ -700,88 +700,88 @@ interface nsIAccessibleRole : nsISupports
 
 
 
-  const unsigned long ROLE_REGION = 173;
+  const unsigned long ROLE_REGION = 120;
 
   
 
 
 
-  const unsigned long ROLE_EDITCOMBOBOX = 174;
+  const unsigned long ROLE_EDITCOMBOBOX = 121;
 
   
 
 
-  const unsigned long ROLE_BLOCKQUOTE = 175;
+  const unsigned long ROLE_BLOCKQUOTE = 122;
 
   
 
 
 
-  const unsigned long ROLE_CONTENT_DELETION = 176;
+  const unsigned long ROLE_CONTENT_DELETION = 123;
 
   
 
 
 
-  const unsigned long ROLE_CONTENT_INSERTION = 177;
+  const unsigned long ROLE_CONTENT_INSERTION = 124;
 
   
 
 
 
 
-  const unsigned long ROLE_FORM_LANDMARK = 178;
+  const unsigned long ROLE_FORM_LANDMARK = 125;
 
   
 
 
 
-  const unsigned long ROLE_MARK = 179;
+  const unsigned long ROLE_MARK = 126;
 
   
 
 
-  const unsigned long ROLE_SUGGESTION = 180;
+  const unsigned long ROLE_SUGGESTION = 127;
 
   
 
 
-  const unsigned long ROLE_COMMENT = 181;
+  const unsigned long ROLE_COMMENT = 128;
 
   
 
 
-  const unsigned long ROLE_CODE = 182;
+  const unsigned long ROLE_CODE = 129;
 
   
 
 
-  const unsigned long ROLE_TIME_EDITOR = 183;
+  const unsigned long ROLE_TIME_EDITOR = 130;
 
   
 
 
 
-  const unsigned long ROLE_LISTITEM_MARKER = 184;
+  const unsigned long ROLE_LISTITEM_MARKER = 131;
 
   
 
 
 
-  const unsigned long ROLE_METER = 185;
+  const unsigned long ROLE_METER = 132;
 
   
 
 
 
 
-  const unsigned long ROLE_SUBSCRIPT = 186;
+  const unsigned long ROLE_SUBSCRIPT = 133;
 
   
 
 
 
 
-  const unsigned long ROLE_SUPERSCRIPT = 187;
+  const unsigned long ROLE_SUPERSCRIPT = 134;
 
 };
