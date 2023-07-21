@@ -8101,10 +8101,11 @@ function restoreLastClosedTabOrWindowOrSession() {
     }
   } else {
     let closedTabCount = SessionStore.getLastClosedTabCount(window);
-    if (closedTabCount) {
-      undoCloseTab();
-    } else if (SessionStore.canRestoreLastSession) {
+    if (SessionStore.canRestoreLastSession) {
       SessionStore.restoreLastSession();
+    } else if (closedTabCount) {
+      
+      undoCloseTab();
     }
   }
 }
