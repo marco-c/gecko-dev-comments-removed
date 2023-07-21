@@ -214,9 +214,8 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
     }
 
     
-    Rooted<CalendarValue> calendar(
-        cx, GetTemporalCalendarWithISODefault(cx, itemObj));
-    if (!calendar) {
+    Rooted<CalendarValue> calendar(cx);
+    if (!GetTemporalCalendarWithISODefault(cx, itemObj, &calendar)) {
       return nullptr;
     }
 
@@ -270,9 +269,8 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
     calendarLike.setString(calendarString);
   }
 
-  Rooted<CalendarValue> calendar(
-      cx, ToTemporalCalendarWithISODefault(cx, calendarLike));
-  if (!calendar) {
+  Rooted<CalendarValue> calendar(cx);
+  if (!ToTemporalCalendarWithISODefault(cx, calendarLike, &calendar)) {
     return nullptr;
   }
 
@@ -720,9 +718,8 @@ static bool PlainYearMonthConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<CalendarValue> calendar(
-      cx, ToTemporalCalendarWithISODefault(cx, args.get(2)));
-  if (!calendar) {
+  Rooted<CalendarValue> calendar(cx);
+  if (!ToTemporalCalendarWithISODefault(cx, args.get(2), &calendar)) {
     return false;
   }
 

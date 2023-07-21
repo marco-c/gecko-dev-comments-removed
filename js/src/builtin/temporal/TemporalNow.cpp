@@ -218,8 +218,8 @@ static PlainDateTimeObject* SystemDateTime(JSContext* cx,
   }
 
   
-  Rooted<CalendarValue> calendar(cx, ToTemporalCalendar(cx, calendarLike));
-  if (!calendar) {
+  Rooted<CalendarValue> calendar(cx);
+  if (!ToTemporalCalendar(cx, calendarLike, &calendar)) {
     return nullptr;
   }
 
@@ -251,8 +251,8 @@ static ZonedDateTimeObject* SystemZonedDateTime(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, ToTemporalCalendar(cx, calendarLike));
-  if (!calendar) {
+  Rooted<CalendarValue> calendar(cx);
+  if (!ToTemporalCalendar(cx, calendarLike, &calendar)) {
     return nullptr;
   }
 

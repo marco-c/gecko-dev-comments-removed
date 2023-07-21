@@ -95,20 +95,23 @@ CalendarObject* GetISO8601Calendar(JSContext* cx);
 
 
 
-JSObject* ToTemporalCalendar(JSContext* cx,
-                             JS::Handle<JS::Value> temporalCalendarLike);
+bool ToTemporalCalendar(JSContext* cx,
+                        JS::Handle<JS::Value> temporalCalendarLike,
+                        JS::MutableHandle<CalendarValue> result);
 
 
 
 
-JSObject* ToTemporalCalendarWithISODefault(
-    JSContext* cx, JS::Handle<JS::Value> temporalCalendarLike);
+bool ToTemporalCalendarWithISODefault(
+    JSContext* cx, JS::Handle<JS::Value> temporalCalendarLike,
+    JS::MutableHandle<CalendarValue> result);
 
 
 
 
-JSObject* GetTemporalCalendarWithISODefault(JSContext* cx,
-                                            JS::Handle<JSObject*> item);
+bool GetTemporalCalendarWithISODefault(JSContext* cx,
+                                       JS::Handle<JSObject*> item,
+                                       JS::MutableHandle<CalendarValue> result);
 
 enum class CalendarField {
   Year,
@@ -362,8 +365,9 @@ bool CalendarEqualsOrThrow(JSContext* cx, JS::Handle<CalendarValue> one,
 
 
 
-JSObject* ConsolidateCalendars(JSContext* cx, JS::Handle<CalendarValue> one,
-                               JS::Handle<CalendarValue> two);
+bool ConsolidateCalendars(JSContext* cx, JS::Handle<CalendarValue> one,
+                          JS::Handle<CalendarValue> two,
+                          JS::MutableHandle<CalendarValue> result);
 
 
 
