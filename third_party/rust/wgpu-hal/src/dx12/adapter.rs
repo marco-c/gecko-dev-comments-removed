@@ -200,6 +200,8 @@ impl super::Adapter {
             },
             heap_create_not_zeroed: false, 
             casting_fully_typed_format_supported,
+            
+            suballocation_supported: !info.name.contains("Iris(R) Xe"),
         };
 
         

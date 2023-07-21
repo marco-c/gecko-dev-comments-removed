@@ -3,6 +3,11 @@ pub(crate) use allocation::{
     free_buffer_allocation, free_texture_allocation, AllocationWrapper, GpuAllocatorWrapper,
 };
 
+#[cfg(not(feature = "windows_rs"))]
+use committed as allocation;
+#[cfg(feature = "windows_rs")]
+use placed as allocation;
+
 
 
 
@@ -10,7 +15,7 @@ pub(crate) use allocation::{
 
 
 #[cfg(feature = "windows_rs")]
-mod allocation {
+mod placed {
     use d3d12::WeakPtr;
     use parking_lot::Mutex;
     use std::ptr;
@@ -63,6 +68,13 @@ mod allocation {
     ) -> Result<(HRESULT, Option<AllocationWrapper>), crate::DeviceError> {
         let is_cpu_read = desc.usage.contains(crate::BufferUses::MAP_READ);
         let is_cpu_write = desc.usage.contains(crate::BufferUses::MAP_WRITE);
+
+        
+        if !device.private_caps.suballocation_supported {
+            return super::committed::create_buffer_resource(device, desc, raw_desc, resource)
+                .map(|(hr, _)| (hr, None));
+        }
+
         let location = match (is_cpu_read, is_cpu_write) {
             (true, true) => MemoryLocation::CpuToGpu,
             (true, false) => MemoryLocation::GpuToCpu,
@@ -111,6 +123,12 @@ mod allocation {
         raw_desc: d3d12_ty::D3D12_RESOURCE_DESC,
         resource: &mut WeakPtr<ID3D12Resource>,
     ) -> Result<(HRESULT, Option<AllocationWrapper>), crate::DeviceError> {
+        
+        if !device.private_caps.suballocation_supported {
+            return super::committed::create_texture_resource(device, desc, raw_desc, resource)
+                .map(|(hr, _)| (hr, None));
+        }
+
         let location = MemoryLocation::GpuOnly;
 
         let name = desc.label.unwrap_or("Unlabeled texture");
@@ -168,7 +186,6 @@ mod allocation {
         };
     }
 
-    #[cfg(feature = "windows_rs")]
     impl From<gpu_allocator::AllocationError> for crate::DeviceError {
         fn from(result: gpu_allocator::AllocationError) -> Self {
             match result {
@@ -203,8 +220,7 @@ mod allocation {
 
 
 
-#[cfg(not(feature = "windows_rs"))]
-mod allocation {
+mod committed {
     use d3d12::WeakPtr;
     use parking_lot::Mutex;
     use std::ptr;
@@ -216,7 +232,8 @@ mod allocation {
         Interface,
     };
 
-    const D3D12_HEAP_FLAG_CREATE_NOT_ZEROED: u32 = d3d12_ty::D3D12_HEAP_FLAG_NONE; 
+    
+    const D3D12_HEAP_FLAG_CREATE_NOT_ZEROED: d3d12_ty::D3D12_HEAP_FLAGS = 0x1000;
 
     
     #[derive(Debug)]
@@ -226,6 +243,7 @@ mod allocation {
     #[derive(Debug)]
     pub(crate) struct AllocationWrapper {}
 
+    #[allow(unused)]
     pub(crate) fn create_allocator_wrapper(
         _raw: &d3d12::Device,
     ) -> Result<Option<Mutex<GpuAllocatorWrapper>>, crate::DeviceError> {
@@ -315,6 +333,7 @@ mod allocation {
         Ok((hr, None))
     }
 
+    #[allow(unused)]
     pub(crate) fn free_buffer_allocation(
         _allocation: AllocationWrapper,
         _allocator: &Mutex<GpuAllocatorWrapper>,
@@ -322,6 +341,7 @@ mod allocation {
         
     }
 
+    #[allow(unused)]
     pub(crate) fn free_texture_allocation(
         _allocation: AllocationWrapper,
         _allocator: &Mutex<GpuAllocatorWrapper>,

@@ -26,7 +26,7 @@ pub mod math;
 
 macro_rules! impl_bitflags {
     ($name:ident) => {
-        #[cfg(feature = "trace")]
+        #[cfg(feature = "serde")]
         impl serde::Serialize for $name {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
@@ -36,7 +36,7 @@ macro_rules! impl_bitflags {
             }
         }
 
-        #[cfg(feature = "replay")]
+        #[cfg(feature = "serde")]
         impl<'de> serde::Deserialize<'de> for $name {
             fn deserialize<D>(deserializer: D) -> Result<$name, D::Error>
             where
@@ -92,8 +92,7 @@ pub const QUERY_SIZE: u32 = 8;
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Backend {
     
     Empty = 0,
@@ -825,8 +824,7 @@ impl Features {
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase", default))]
 pub struct Limits {
     
@@ -1116,6 +1114,7 @@ impl Limits {
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DownlevelLimits {}
 
 #[allow(unknown_lints)] 
@@ -1128,6 +1127,7 @@ impl Default for DownlevelLimits {
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DownlevelCapabilities {
     
     pub flags: DownlevelFlags,
@@ -1282,6 +1282,7 @@ impl DownlevelFlags {
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ShaderModel {
     
     Sm2,
@@ -1294,8 +1295,7 @@ pub enum ShaderModel {
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DeviceType {
     
     Other,
@@ -1313,8 +1313,7 @@ pub enum DeviceType {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AdapterInfo {
     
     pub name: String,
@@ -1865,6 +1864,7 @@ impl_bitflags!(TextureFormatFeatureFlags);
 
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextureFormatFeatures {
     
     pub allowed_usages: TextureUsages,
@@ -5917,9 +5917,17 @@ impl std::ops::Deref for ExternalImageSource {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
 unsafe impl Send for ExternalImageSource {}
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
 unsafe impl Sync for ExternalImageSource {}
 
 
@@ -6316,4 +6324,75 @@ impl Default for InstanceDescriptor {
             dx12_shader_compiler: Dx12Compiler::default(),
         }
     }
+}
+
+pub use send_sync::*;
+
+#[doc(hidden)]
+mod send_sync {
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    ))]
+    pub trait WasmNotSend: Send {}
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    ))]
+    impl<T: Send> WasmNotSend for T {}
+    #[cfg(not(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    )))]
+    pub trait WasmNotSend {}
+    #[cfg(not(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    )))]
+    impl<T> WasmNotSend for T {}
+
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    ))]
+    pub trait WasmNotSync: Sync {}
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    ))]
+    impl<T: Sync> WasmNotSync for T {}
+    #[cfg(not(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    )))]
+    pub trait WasmNotSync {}
+    #[cfg(not(any(
+        not(target_arch = "wasm32"),
+        all(
+            feature = "fragile-send-sync-non-atomic-wasm",
+            not(target_feature = "atomics")
+        )
+    )))]
+    impl<T> WasmNotSync for T {}
 }
