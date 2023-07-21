@@ -1,0 +1,5 @@
+# coding: utf-8
+
+
+version = '2.8.2'
+version_tuple = (2, 8, 2)
