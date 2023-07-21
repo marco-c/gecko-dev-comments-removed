@@ -99,7 +99,8 @@ static Result<Ok, nsCString> Validate(const VideoDecoderConfig& aConfig) {
 
   
   if (!IsAV1CodecString(codecs[0]) && !IsVP9CodecString(codecs[0]) &&
-      !IsVP8CodecString(codecs[0]) && !IsH264CodecString(codecs[0])) {
+      !IsVP8CodecString(codecs[0]) && !IsH264CodecString(codecs[0]) &&
+      !IsH265CodecString(codecs[0])) {
     return Err("unsupported codec"_ns);
   }
 
