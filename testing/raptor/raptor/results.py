@@ -572,41 +572,44 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 ):
                     bt_result["measurements"].setdefault("cpuTime", []).extend(cpu_vals)
 
-            custom_types = raw_result["extras"][0]
-            if custom_types:
-                for custom_type in custom_types:
-                    data = custom_types[custom_type]
-                    if handle_custom_data:
-                        if test_summary in ("flatten",):
-                            data = flatten(data, ())
-                        for k, v in data.items():
+            if any(raw_result["extras"]):
+                
+                for custom_types in raw_result["extras"]:
+                    for custom_type in custom_types:
+                        data = custom_types[custom_type]
+                        if handle_custom_data:
+                            if test_summary in ("flatten",):
+                                data = flatten(data, ())
+                            for k, v in data.items():
 
-                            def _ignore_metric(*args):
-                                if any(type(arg) not in (int, float) for arg in args):
-                                    return True
-                                return False
+                                def _ignore_metric(*args):
+                                    if any(
+                                        type(arg) not in (int, float) for arg in args
+                                    ):
+                                        return True
+                                    return False
 
-                            
-                            if _ignore_metric(v) and _ignore_metric(*v):
-                                continue
+                                
+                                if _ignore_metric(v) and _ignore_metric(*v):
+                                    continue
 
-                            
-                            filtered_k = k
-                            for name_filter in subtest_name_filters.split(","):
-                                filtered_k = filtered_k.replace(name_filter, "")
+                                
+                                filtered_k = k
+                                for name_filter in subtest_name_filters.split(","):
+                                    filtered_k = filtered_k.replace(name_filter, "")
 
-                            if isinstance(v, Iterable):
-                                bt_result["measurements"].setdefault(
-                                    filtered_k, []
-                                ).extend(v)
-                            else:
-                                bt_result["measurements"].setdefault(
-                                    filtered_k, []
-                                ).append(v)
-                        bt_result["custom_data"] = True
-                    else:
-                        for k, v in data.items():
-                            bt_result["measurements"].setdefault(k, []).append(v)
+                                if isinstance(v, Iterable):
+                                    bt_result["measurements"].setdefault(
+                                        filtered_k, []
+                                    ).extend(v)
+                                else:
+                                    bt_result["measurements"].setdefault(
+                                        filtered_k, []
+                                    ).append(v)
+                            bt_result["custom_data"] = True
+                        else:
+                            for k, v in data.items():
+                                bt_result["measurements"].setdefault(k, []).append(v)
                 if self.perfstats:
                     for cycle in raw_result["geckoPerfStats"]:
                         for metric in cycle:
