@@ -7,7 +7,6 @@
 #include "mozilla/FOG.h"
 
 #include "mozilla/AppShutdown.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/FOGIPC.h"
@@ -16,7 +15,6 @@
 #include "mozilla/glean/bindings/jog/jog_ffi_generated.h"
 #include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/glean/GleanMetrics.h"
-#include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ShutdownPhase.h"
 #include "mozilla/Unused.h"
@@ -26,9 +24,6 @@
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {
-
-using mozilla::LogLevel;
-static mozilla::LazyLogModule sLog("fog");
 
 using glean::LogToBrowserConsole;
 
@@ -49,7 +44,6 @@ extern "C" NS_EXPORT void _fog_force_reexport_donotcall(void) {
 #endif
 
 static StaticRefPtr<FOG> gFOG;
-static mozilla::Atomic<bool> gInitializeCalled(false);
 
 
 
@@ -61,8 +55,6 @@ already_AddRefed<FOG> FOG::GetSingleton() {
   if (gFOG) {
     return do_AddRef(gFOG);
   }
-
-  MOZ_LOG(sLog, LogLevel::Debug, ("FOG::GetSingleton()"));
 
   gFOG = new FOG();
 
@@ -84,17 +76,6 @@ already_AddRefed<FOG> FOG::GetSingleton() {
           if (NS_SUCCEEDED(rv)) {
             MOZ_ASSERT(idleService);
             Unused << idleService->RemoveIdleObserver(gFOG, kIdleSecs);
-          }
-          if (!gInitializeCalled) {
-            gInitializeCalled = true;
-            
-            
-            MOZ_LOG(sLog, LogLevel::Debug,
-                    ("Init not called. Init-ing in shutdown"));
-            glean::fog::inits_during_shutdown.Add(1);
-            
-            
-            glean::impl::fog_init(&VoidCString(), &VoidCString());
           }
           gFOG->Shutdown();
           gFOG = nullptr;
@@ -119,7 +100,6 @@ NS_IMETHODIMP
 FOG::InitializeFOG(const nsACString& aDataPathOverride,
                    const nsACString& aAppIdOverride) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  gInitializeCalled = true;
   RunOnShutdown(
       [&] {
         if (NimbusFeatures::GetBool("glean"_ns, "finalInactive"_ns, false)) {
