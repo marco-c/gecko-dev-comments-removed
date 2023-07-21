@@ -32,7 +32,6 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-const uint32_t USE_ROLE_STRING = 0;
 static const VARIANT kVarChildIdSelf = {{{VT_I4}}};
 
 MsaaIdGenerator MsaaAccessible::sIDGen;
@@ -760,72 +759,9 @@ MsaaAccessible::get_accRole(
       msaaRole = ROLE_SYSTEM_OUTLINEITEM;
   }
 
-  
-  if (msaaRole != USE_ROLE_STRING) {
-    pvarRole->vt = VT_I4;
-    pvarRole->lVal = msaaRole;  
-    return S_OK;
-  }
-
-  
-  
-  
-  
-  
-  if (mAcc->IsRemote()) {
-    
-    
-    
-    nsAtom* val = nullptr;
-    const nsRoleMapEntry* roleMap = mAcc->ARIARoleMap();
-    if (roleMap && roleMap->roleAtom != nsGkAtoms::_empty) {
-      val = roleMap->roleAtom;
-    } else {
-      val = mAcc->TagName();
-    }
-    if (!val) {
-      return E_FAIL;
-    }
-    pvarRole->vt = VT_BSTR;
-    pvarRole->bstrVal = ::SysAllocString(val->GetUTF16String());
-    return S_OK;
-  }
-
-  LocalAccessible* localAcc = mAcc->AsLocal();
-  MOZ_ASSERT(localAcc);
-  nsIContent* content = localAcc->GetContent();
-  if (!content) return E_FAIL;
-
-  if (content->IsElement()) {
-    nsAutoString roleString;
-    
-    nsAccUtils::GetARIAAttr(content->AsElement(), nsGkAtoms::role, roleString);
-
-    if (roleString.IsEmpty()) {
-      
-      
-      dom::Document* document = content->GetUncomposedDoc();
-      if (!document) return E_FAIL;
-
-      dom::NodeInfo* nodeInfo = content->NodeInfo();
-      nodeInfo->GetName(roleString);
-
-      
-      if (!nodeInfo->NamespaceEquals(document->GetDefaultNamespaceID())) {
-        nsAutoString nameSpaceURI;
-        nodeInfo->GetNamespaceURI(nameSpaceURI);
-        roleString += u", "_ns + nameSpaceURI;
-      }
-    }
-
-    if (!roleString.IsEmpty()) {
-      pvarRole->vt = VT_BSTR;
-      pvarRole->bstrVal = ::SysAllocString(roleString.get());
-      return S_OK;
-    }
-  }
-
-  return E_FAIL;
+  pvarRole->vt = VT_I4;
+  pvarRole->lVal = msaaRole;
+  return S_OK;
 }
 
 STDMETHODIMP
