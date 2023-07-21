@@ -201,9 +201,8 @@ impl ScaleOffset {
         
         
         
-        
         if self.scale.x.approx_eq(&0.0) || self.scale.y.approx_eq(&0.0) {
-            return ScaleOffset::identity();
+            return ScaleOffset::new(0.0, 0.0, 0.0, 0.0);
         }
 
         ScaleOffset {
@@ -867,11 +866,11 @@ pub mod test {
     fn scale_offset_invalid_scale() {
         let s0 = ScaleOffset::new(0.0, 1.0, 10.0, 20.0);
         let i0 = s0.inverse();
-        assert_eq!(i0, ScaleOffset::identity());
+        assert_eq!(i0, ScaleOffset::new(0.0, 0.0, 0.0, 0.0));
 
         let s1 = ScaleOffset::new(1.0, 0.0, 10.0, 20.0);
         let i1 = s1.inverse();
-        assert_eq!(i1, ScaleOffset::identity());
+        assert_eq!(i1, ScaleOffset::new(0.0, 0.0, 0.0, 0.0));
     }
 
     #[test]
