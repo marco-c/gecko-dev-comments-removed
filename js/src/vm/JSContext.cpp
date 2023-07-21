@@ -107,32 +107,31 @@ js::AutoCycleDetector::~AutoCycleDetector() {
   }
 }
 
-bool JSContext::init(ContextKind kind) {
-  
-  if (kind == ContextKind::MainThread) {
-    TlsContext.set(this);
-    nativeStackBase_.emplace(GetNativeStackBase());
+bool JSContext::init() {
+  TlsContext.set(this);
+  nativeStackBase_.emplace(GetNativeStackBase());
 
-    if (!fx.initInstance()) {
-      return false;
-    }
+  if (!fx.initInstance()) {
+    return false;
+  }
 
 #ifdef JS_SIMULATOR
-    simulator_ = jit::Simulator::Create();
-    if (!simulator_) {
-      return false;
-    }
-#endif
+  simulator_ = jit::Simulator::Create();
+  if (!simulator_) {
+    return false;
   }
+#endif
 
   isolate = irregexp::CreateIsolate(this);
   if (!isolate) {
     return false;
   }
 
+#ifdef DEBUG
   
   
-  kind_ = kind;
+  initialized_ = true;
+#endif
 
   return true;
 }
@@ -175,7 +174,7 @@ JSContext* js::NewContext(uint32_t maxBytes, JSRuntime* parentRuntime) {
     return nullptr;
   }
 
-  if (!cx->init(ContextKind::MainThread)) {
+  if (!cx->init()) {
     js_delete(cx);
     js_delete(runtime);
     return nullptr;
@@ -953,7 +952,6 @@ mozilla::GenericErrorResult<JS::Error> JSContext::alreadyReportedError() {
 JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
     : RootingContext(runtime ? &runtime->gc.nursery() : nullptr),
       runtime_(runtime),
-      kind_(ContextKind::Uninitialized),
       options_(this, options),
       measuringExecutionTime_(this, false),
       jitActivation(this, nullptr),
@@ -1029,9 +1027,11 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
 }
 
 JSContext::~JSContext() {
+#ifdef DEBUG
   
   
-  kind_ = ContextKind::Uninitialized;
+  initialized_ = false;
+#endif
 
   
   MOZ_ASSERT(!resolvingList);

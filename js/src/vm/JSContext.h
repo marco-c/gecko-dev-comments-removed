@@ -123,13 +123,6 @@ class AutoLockScriptData;
 
 extern MOZ_THREAD_LOCAL(JSContext*) TlsContext;
 
-enum class ContextKind {
-  Uninitialized,
-
-  
-  MainThread
-};
-
 #ifdef DEBUG
 JSContext* MaybeGetJSContext();
 #endif
@@ -155,7 +148,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   JSContext(JSRuntime* runtime, const JS::ContextOptions& options);
   ~JSContext();
 
-  bool init(js::ContextKind kind);
+  bool init();
 
   static JSContext* from(JS::RootingContext* rcx) {
     return static_cast<JSContext*>(rcx);
@@ -163,7 +156,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  private:
   js::UnprotectedData<JSRuntime*> runtime_;
-  js::WriteOnceData<js::ContextKind> kind_;
+#ifdef DEBUG
+  js::WriteOnceData<bool> initialized_;
+#endif
 
   js::ContextData<JS::ContextOptions> options_;
 
@@ -195,7 +190,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void setIsExecuting(bool value) { isExecuting_ = value; }
 
 #ifdef DEBUG
-  bool isInitialized() const { return kind_ != js::ContextKind::Uninitialized; }
+  bool isInitialized() const { return initialized_; }
 #endif
 
   template <typename T>
@@ -1135,4 +1130,4 @@ class MOZ_RAII AutoUnsafeCallWithABI {
     (target) = tmpResult_.unwrap();                     \
   } while (0)
 
-#endif
+#endif 
