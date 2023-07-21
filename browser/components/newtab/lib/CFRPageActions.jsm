@@ -803,29 +803,48 @@ class PageAction {
     }
   }
 
+  _getVisibleElement(id) {
+    const element = id && this.window.document.getElementById(id);
+    if (!element) {
+      return null; 
+    }
+    const { visibility, display } = this.window.getComputedStyle(element);
+    if (
+      !this.window.isElementVisible(element) ||
+      visibility !== "visible" ||
+      display === "none"
+    ) {
+      
+      
+      return null;
+    }
+    let widget = lazy.CustomizableUI.getWidget(id);
+    if (widget && (!widget.areaType || widget.areaType.includes("panel"))) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return null;
+    }
+    return element;
+  }
+
   async showPopup() {
     const browser = this.window.gBrowser.selectedBrowser;
     const message = RecommendationMap.get(browser);
     const { content } = message;
-    let anchor;
 
     
     
-    
-
-    if (
-      content.alt_anchor_id &&
-      lazy.CustomizableUI.getWidget(content.anchor_id).areaType.includes(
-        "panel"
-      )
-    ) {
-      anchor = this.window.document.getElementById(content.alt_anchor_id);
-    } else {
-      anchor =
-        this.window.document.getElementById(content.anchor_id) ||
-        this.container;
-    }
-    browser.cfrpopupnotificationanchor = anchor;
+    browser.cfrpopupnotificationanchor =
+      this._getVisibleElement(content.anchor_id) ||
+      this._getVisibleElement(content.alt_anchor_id) ||
+      this.container;
 
     await this._renderPopup(message, browser);
   }
