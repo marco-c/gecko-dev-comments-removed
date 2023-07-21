@@ -27,16 +27,19 @@ add_task(async function testDocumentOpenWriteClose() {
   is(events.length, 0, "No event recorded");
 
   info("Replace the document");
-  SpecialPowers.spawn(browser, [], () => {
+  await SpecialPowers.spawn(browser, [], async () => {
     
     
     content.eval(`
       document.open();
-      document.write("<h1>Replaced</h1>");
+      document.write("<h1 class='replaced'>Replaced</h1>");
       document.close();
     `);
+
+    await ContentTaskUtils.waitForCondition(() =>
+      content.document.querySelector(".replaced")
+    );
   });
-  await wait(500);
 
   
   
@@ -53,9 +56,3 @@ add_task(async function testDocumentOpenWriteClose() {
   navigationManager.off("navigation-stopped", onEvent);
   navigationManager.stopMonitoring();
 });
-
-function wait(ms) {
-  info(`Wait for ${ms} milliseconds`);
-  
-  return new Promise(r => setTimeout(r, ms));
-}
