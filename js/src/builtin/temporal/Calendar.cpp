@@ -1978,7 +1978,7 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
 
 
 
-static bool ResolveISOMonth(JSContext* cx, Handle<TemporalFields> fields,
+static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
                             double* result) {
   
 
@@ -2023,7 +2023,6 @@ static bool ResolveISOMonth(JSContext* cx, Handle<TemporalFields> fields,
     return false;
   }
 
-  
   char16_t chars[3] = {
       linear->latin1OrTwoByteChar(0),
       linear->latin1OrTwoByteChar(1),
@@ -2087,7 +2086,7 @@ static bool ISODateFromFields(JSContext* cx, Handle<TemporalFields> fields,
 
   
   double month;
-  if (!ResolveISOMonth(cx, fields, &month)) {
+  if (!ISOResolveMonth(cx, fields, &month)) {
     return false;
   }
 
@@ -2287,7 +2286,7 @@ static bool ISOYearMonthFromFields(JSContext* cx, Handle<TemporalFields> fields,
 
   
   double month;
-  if (!ResolveISOMonth(cx, fields, &month)) {
+  if (!ISOResolveMonth(cx, fields, &month)) {
     return false;
   }
 
@@ -2450,7 +2449,7 @@ static bool ISOMonthDayFromFields(JSContext* cx, Handle<TemporalFields> fields,
   }
 
   
-  if (!ResolveISOMonth(cx, fields, &month)) {
+  if (!ISOResolveMonth(cx, fields, &month)) {
     return false;
   }
 
