@@ -738,11 +738,6 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 [[nodiscard]] static bool MaybeValidateFilename(
     JSContext* cx, Handle<ScriptSourceObject*> sso,
     const JS::InstantiateOptions& options) {
-  
-  
-  
-  MOZ_ASSERT(!cx->isHelperThreadContext());
-
   if (!gFilenameValidationCallback) {
     return true;
   }
@@ -1428,8 +1423,6 @@ bool ScriptSource::tryCompressOffThread(JSContext* cx) {
 
   
   
-  
-  MOZ_ASSERT(!cx->isHelperThreadContext());
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 
   
@@ -1719,9 +1712,6 @@ void SourceCompressionTask::complete() {
 
 bool js::SynchronouslyCompressSource(JSContext* cx,
                                      JS::Handle<BaseScript*> script) {
-  MOZ_ASSERT(!cx->isHelperThreadContext(),
-             "should only sync-compress on the main thread");
-
   
   
   

@@ -1456,7 +1456,7 @@ bool TokenStreamAnyChars::fillExceptingContext(ErrorMetadata* err,
   
   if (!filename_) {
     JSContext* maybeCx = context()->maybeCurrentJSContext();
-    if (maybeCx && !maybeCx->isHelperThreadContext()) {
+    if (maybeCx) {
       NonBuiltinFrameIter iter(maybeCx,
                                FrameIter::FOLLOW_DEBUGGER_EVAL_PREV_LINK,
                                maybeCx->realm()->principals());

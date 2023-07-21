@@ -245,7 +245,6 @@ template <AllowGC allowGC>
 bool CellAllocator::PreAllocChecks(JS::RootingContext* rcx, AllocKind kind) {
   auto* cx = JSContext::from(rcx);
 
-  MOZ_ASSERT(!cx->isHelperThreadContext());
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 
   CheckAllocZone(cx->zone(), kind);
@@ -324,7 +323,6 @@ void GCRuntime::startBackgroundAllocTaskIfIdle() {
 
 void* GCRuntime::refillFreeList(JSContext* cx, AllocKind thingKind) {
   MOZ_ASSERT(cx->zone()->arenas.freeLists().isEmpty(thingKind));
-  MOZ_ASSERT(!cx->isHelperThreadContext());
 
   
   

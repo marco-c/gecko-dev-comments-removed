@@ -668,8 +668,6 @@ static MOZ_ALWAYS_INLINE bool CallResolveOp(JSContext* cx,
                                             Handle<NativeObject*> obj,
                                             HandleId id,
                                             PropertyResult* propp) {
-  MOZ_ASSERT(!cx->isHelperThreadContext());
-
   
   AutoResolving resolving(cx, obj, id);
   if (resolving.alreadyStarted()) {
@@ -846,7 +844,6 @@ static MOZ_ALWAYS_INLINE bool NativeLookupPropertyInline(
     
     if (proto->getOpsLookupProperty()) {
       if constexpr (allowGC) {
-        MOZ_ASSERT(!cx->isHelperThreadContext());
         RootedObject protoRoot(cx, proto);
         return LookupProperty(cx, protoRoot, id, objp, propp);
       } else {

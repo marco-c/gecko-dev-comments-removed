@@ -265,8 +265,6 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   
   AutoRealm ar(cx, global);
 
-  MOZ_ASSERT(!cx->isHelperThreadContext());
-
   
   
   
@@ -487,7 +485,6 @@ bool GlobalObject::maybeResolveGlobalThis(JSContext* cx,
 JSObject* GlobalObject::createBuiltinProto(JSContext* cx,
                                            Handle<GlobalObject*> global,
                                            ProtoKind kind, ObjectInitOp init) {
-  MOZ_ASSERT(!cx->isHelperThreadContext());
   if (!init(cx, global)) {
     return nullptr;
   }
@@ -499,7 +496,6 @@ JSObject* GlobalObject::createBuiltinProto(JSContext* cx,
                                            Handle<GlobalObject*> global,
                                            ProtoKind kind, Handle<JSAtom*> tag,
                                            ObjectInitWithTagOp init) {
-  MOZ_ASSERT(!cx->isHelperThreadContext());
   if (!init(cx, global, tag)) {
     return nullptr;
   }
