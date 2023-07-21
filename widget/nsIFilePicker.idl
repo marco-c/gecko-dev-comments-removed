@@ -52,6 +52,7 @@ interface nsIFilePicker : nsISupports
                                                 
                                                 
                                                 
+  const long filterPDF        = 0x400;          
 
   cenum CaptureTarget: 8 {
     captureNone     = 0,                        
