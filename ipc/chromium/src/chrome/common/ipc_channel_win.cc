@@ -254,7 +254,8 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
           return true;
         }
         if (err != ERROR_BROKEN_PIPE) {
-          CHROMIUM_LOG(ERROR) << "pipe error: " << err;
+          CHROMIUM_LOG(ERROR)
+              << "pipe error in connection to " << other_pid_ << ": " << err;
         }
         return false;
       }
@@ -378,7 +379,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
     if (!context || bytes_written == 0) {
       DWORD err = GetLastError();
       if (err != ERROR_BROKEN_PIPE) {
-        CHROMIUM_LOG(ERROR) << "pipe error: " << err;
+        CHROMIUM_LOG(ERROR)
+            << "pipe error in connection to " << other_pid_ << ": " << err;
       }
       return false;
     }
@@ -440,7 +442,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
       return true;
     }
     if (err != ERROR_BROKEN_PIPE) {
-      CHROMIUM_LOG(ERROR) << "pipe error: " << err;
+      CHROMIUM_LOG(ERROR) << "pipe error in connection to " << other_pid_
+                          << ": " << err;
     }
     return false;
   }
@@ -549,29 +552,45 @@ bool Channel::ChannelImpl::AcceptHandles(Message& msg) {
   
   nsTArray<mozilla::UniqueFileHandle> handles(num_handles);
   for (uint32_t handleValue : payload) {
-    HANDLE handle = Uint32ToHandle(handleValue);
-
-    
-    
-    
-    
-    if (privileged_) {
-      if (other_process_ == INVALID_HANDLE_VALUE) {
-        CHROMIUM_LOG(ERROR) << "other_process_ is invalid in AcceptHandles";
-        return false;
-      }
-      if (!::DuplicateHandle(other_process_, handle, GetCurrentProcess(),
-                             &handle, 0, FALSE,
-                             DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
-        CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle " << handle
-                            << " in AcceptHandles";
-        return false;
-      }
+    HANDLE ipc_handle = Uint32ToHandle(handleValue);
+    if (!ipc_handle || ipc_handle == INVALID_HANDLE_VALUE) {
+      CHROMIUM_LOG(ERROR)
+          << "Attempt to accept invalid or null handle from process "
+          << other_pid_ << " for message " << msg.name() << " in AcceptHandles";
+      return false;
     }
 
     
     
-    handles.AppendElement(mozilla::UniqueFileHandle(handle));
+    
+    
+    mozilla::UniqueFileHandle local_handle;
+    if (privileged_) {
+      MOZ_ASSERT(other_process_, "other_process_ cannot be null");
+      if (other_process_ == INVALID_HANDLE_VALUE) {
+        CHROMIUM_LOG(ERROR) << "other_process_ is invalid in AcceptHandles";
+        return false;
+      }
+      if (!::DuplicateHandle(other_process_, ipc_handle, GetCurrentProcess(),
+                             getter_Transfers(local_handle), 0, FALSE,
+                             DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
+        DWORD err = GetLastError();
+        CHROMIUM_LOG(ERROR)
+            << "DuplicateHandle failed for handle " << ipc_handle
+            << " from process " << other_pid_ << " for message " << msg.name()
+            << " in AcceptHandles with error: " << err;
+        return false;
+      }
+    } else {
+      local_handle.reset(ipc_handle);
+    }
+
+    MOZ_DIAGNOSTIC_ASSERT(
+        local_handle, "Accepting invalid or null handle from another process");
+
+    
+    
+    handles.AppendElement(std::move(local_handle));
   }
 
   
@@ -603,28 +622,48 @@ bool Channel::ChannelImpl::TransferHandles(Message& msg) {
   nsTArray<uint32_t> payload(num_handles);
   for (uint32_t i = 0; i < num_handles; ++i) {
     
-    
-    
-    HANDLE handle = msg.attached_handles_[i].release();
+    mozilla::UniqueFileHandle local_handle =
+        std::move(msg.attached_handles_[i]);
+    if (!local_handle) {
+      CHROMIUM_LOG(ERROR)
+          << "Attempt to transfer invalid or null handle to process "
+          << other_pid_ << " for message " << msg.name()
+          << " in TransferHandles";
+      return false;
+    }
 
     
     
     
+    HANDLE ipc_handle = NULL;
     if (privileged_) {
+      MOZ_ASSERT(other_process_, "other_process_ cannot be null");
       if (other_process_ == INVALID_HANDLE_VALUE) {
         CHROMIUM_LOG(ERROR) << "other_process_ is invalid in TransferHandles";
         return false;
       }
-      if (!::DuplicateHandle(GetCurrentProcess(), handle, other_process_,
-                             &handle, 0, FALSE,
-                             DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
-        CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle " << handle
-                            << " in TransferHandles";
+      if (!::DuplicateHandle(GetCurrentProcess(), local_handle.get(),
+                             other_process_, &ipc_handle, 0, FALSE,
+                             DUPLICATE_SAME_ACCESS)) {
+        DWORD err = GetLastError();
+        CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle "
+                            << (HANDLE)local_handle.get() << " to process "
+                            << other_pid_ << " for message " << msg.name()
+                            << " in TransferHandles with error: " << err;
         return false;
       }
+    } else {
+      
+      
+      
+      ipc_handle = local_handle.release();
     }
 
-    payload.AppendElement(HandleToUint32(handle));
+    MOZ_DIAGNOSTIC_ASSERT(
+        ipc_handle && ipc_handle != INVALID_HANDLE_VALUE,
+        "Transferring invalid or null handle to another process");
+
+    payload.AppendElement(HandleToUint32(ipc_handle));
   }
   msg.attached_handles_.Clear();
 
