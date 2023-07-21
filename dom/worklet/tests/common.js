@@ -1,13 +1,16 @@
-window.onload = function () {
+window.onload = async function () {
   
   if (parent == this || !location.search.includes("worklet_iframe")) {
     SimpleTest.waitForExplicitFinish();
 
-    configureTest().then(() => {
-      var iframe = document.createElement("iframe");
-      iframe.src = location.href + "?worklet_iframe";
-      document.body.appendChild(iframe);
-    });
+    
+    if (window.configureTest) {
+      await window.configureTest();
+    }
+
+    var iframe = document.createElement("iframe");
+    iframe.src = location.href + "?worklet_iframe";
+    document.body.appendChild(iframe);
 
     return;
   }
