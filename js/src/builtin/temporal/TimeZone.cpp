@@ -778,6 +778,38 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx, Handle<JSString*> string,
 
 
 
+static bool ObjectImplementsTemporalTimeZoneProtocol(JSContext* cx,
+                                                     Handle<JSObject*> object,
+                                                     bool* result) {
+  
+  MOZ_ASSERT(!object->canUnwrapAs<TimeZoneObject>(),
+             "TimeZone objects handled in the caller");
+
+  
+  for (auto key : {
+           &JSAtomState::getOffsetNanosecondsFor,
+           &JSAtomState::getPossibleInstantsFor,
+           &JSAtomState::id,
+       }) {
+    
+    bool has;
+    if (!HasProperty(cx, object, cx->names().*key, &has)) {
+      return false;
+    }
+    if (!has) {
+      *result = false;
+      return true;
+    }
+  }
+
+  
+  *result = true;
+  return true;
+}
+
+
+
+
 bool js::temporal::ToTemporalTimeZone(JSContext* cx,
                                       Handle<Value> temporalTimeZoneLike,
                                       MutableHandle<TimeZoneValue> result) {
@@ -803,55 +835,21 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
     }
 
     
-    if (obj->canUnwrapAs<CalendarObject>()) {
+    bool implementsTimeZoneProtocol;
+    if (!ObjectImplementsTemporalTimeZoneProtocol(
+            cx, obj, &implementsTimeZoneProtocol)) {
+      return false;
+    }
+    if (!implementsTimeZoneProtocol) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_TEMPORAL_INVALID_OBJECT,
-                               "Temporal.TimeZone", "Temporal.Calendar");
+                               "Temporal.TimeZone", obj->getClass()->name);
       return false;
     }
 
     
-    bool hasTimeZone;
-    if (!HasProperty(cx, obj, cx->names().timeZone, &hasTimeZone)) {
-      return false;
-    }
-    if (!hasTimeZone) {
-      result.set(obj);
-      return true;
-    }
-
-    
-    if (!GetProperty(cx, obj, obj, cx->names().timeZone, &timeZoneLike)) {
-      return false;
-    }
-
-    
-    if (timeZoneLike.isObject()) {
-      obj = &timeZoneLike.toObject();
-
-      
-      
-
-      
-      if (obj->canUnwrapAs<CalendarObject>()) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                 JSMSG_TEMPORAL_INVALID_OBJECT,
-                                 "Temporal.TimeZone", "Temporal.Calendar");
-        return false;
-      }
-
-      
-      
-
-      
-      if (!HasProperty(cx, obj, cx->names().timeZone, &hasTimeZone)) {
-        return false;
-      }
-      if (!hasTimeZone) {
-        result.set(obj);
-        return true;
-      }
-    }
+    result.set(obj);
+    return true;
   }
 
   
@@ -869,8 +867,7 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
   
   
   
-  if (!timeZoneLike.isString() && !timeZoneLike.isObject() &&
-      !timeZoneLike.isNumeric()) {
+  if (!timeZoneLike.isString() && !timeZoneLike.isNumeric()) {
     ReportValueError(cx, JSMSG_TEMPORAL_TIMEZONE_PARSE_BAD_TYPE,
                      JSDVG_IGNORE_STACK, timeZoneLike, nullptr);
     return false;
