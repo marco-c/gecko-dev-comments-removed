@@ -510,6 +510,19 @@ pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
     
+    
+    
+    
+    pub fn parse<'i, 't>(
+        input: &mut Parser<'i, 't>,
+        invalid: &[&str],
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        let ident = input.expect_ident()?;
+        CustomIdent::from_ident(location, ident, invalid)
+    }
+
+    
     pub fn from_ident<'i>(
         location: SourceLocation,
         ident: &CowRcStr<'i>,

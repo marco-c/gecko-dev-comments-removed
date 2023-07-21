@@ -6,6 +6,7 @@
 
 
 
-pub mod rule;
 pub mod registry;
+pub mod rule;
 pub mod syntax;
+pub mod value;

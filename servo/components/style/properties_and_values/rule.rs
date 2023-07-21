@@ -6,14 +6,18 @@
 
 
 
+use super::{
+    registry::PropertyRegistration,
+    syntax::{Descriptor, ParsedDescriptor},
+    value::ComputedValue,
+};
 use crate::custom_properties::{Name as CustomPropertyName, SpecifiedValue};
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
-use crate::properties_and_values::syntax::{Descriptor, ParsedDescriptor};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::str::CssStringWriter;
+use crate::stylesheets::UrlExtraData;
 use crate::values::serialize_atom_name;
-use super::registry::PropertyRegistration;
 use cssparser::{
     AtRuleParser, CowRcStr, DeclarationParser, ParseErrorKind, Parser, ParserInput,
     QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
@@ -201,7 +205,11 @@ impl PropertyRuleData {
 
     
     
-    pub fn validate_initial_value(syntax: &Descriptor, initial_value: Option<&InitialValue>) -> Result<(), ToRegistrationError> {
+    pub fn validate_initial_value(
+        syntax: &Descriptor,
+        initial_value: Option<&InitialValue>,
+        url_data: &UrlExtraData,
+    ) -> Result<(), ToRegistrationError> {
         use crate::properties::CSSWideKeyword;
         
         
@@ -227,16 +235,13 @@ impl PropertyRuleData {
         input.skip_whitespace();
 
         
-        
-        
-
-        
-        
-        
-        
-        
         if input.try_parse(CSSWideKeyword::parse).is_ok() {
             return Err(ToRegistrationError::InitialValueNotComputationallyIndependent);
+        }
+
+        match ComputedValue::parse(&mut input, syntax, url_data) {
+            Ok(_) => {},
+            Err(_) => return Err(ToRegistrationError::InvalidInitialValue),
         }
 
         Ok(())
@@ -248,7 +253,10 @@ impl PropertyRuleData {
     
     
     
-    pub fn to_valid_registration(&self) -> Result<PropertyRegistration, ToRegistrationError> {
+    pub fn to_valid_registration(
+        &self,
+        url_data: &UrlExtraData,
+    ) -> Result<PropertyRegistration, ToRegistrationError> {
         use self::ToRegistrationError::*;
 
         
@@ -263,7 +271,7 @@ impl PropertyRuleData {
         
         let Some(ref inherits) = self.inherits else { return Err(MissingInherits) };
 
-        Self::validate_initial_value(syntax.descriptor(), self.initial_value.as_ref())?;
+        Self::validate_initial_value(syntax.descriptor(), self.initial_value.as_ref(), url_data)?;
 
         Ok(PropertyRegistration {
             syntax: syntax.descriptor().clone(),

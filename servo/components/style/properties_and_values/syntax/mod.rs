@@ -13,6 +13,7 @@ use crate::parser::{Parse, ParserContext};
 use crate::values::CustomIdent;
 use cssparser::{Parser as CSSParser, ParserInput as CSSParserInput};
 use style_traits::{
+    arc_slice::ArcSlice,
     CssWriter, ParseError as StyleParseError, PropertySyntaxParseError as ParseError,
     StyleParseErrorKind, ToCss,
 };
@@ -20,11 +21,11 @@ use style_traits::{
 use self::data_type::DataType;
 
 mod ascii;
-mod data_type;
+pub mod data_type;
 
 
 #[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
-pub struct Descriptor(#[ignore_malloc_size_of = "arc"] crate::ArcSlice<Component>);
+pub struct Descriptor(#[ignore_malloc_size_of = "arc"] pub ArcSlice<Component>);
 
 impl Descriptor {
     
@@ -61,7 +62,7 @@ impl Descriptor {
             
             parser.parse()?;
         }
-        Ok(Self(crate::ArcSlice::from_iter(components.into_iter())))
+        Ok(Self(ArcSlice::from_iter(components.into_iter())))
     }
 }
 

@@ -2,6 +2,8 @@
 
 
 
+
+
 use super::{Component, ComponentName, Multiplier};
 
 
@@ -40,6 +42,9 @@ pub enum DataType {
 }
 
 impl DataType {
+    
+    
+    
     pub fn unpremultiply(&self) -> Option<Component> {
         match *self {
             DataType::TransformList => Some(Component {
@@ -50,6 +55,7 @@ impl DataType {
         }
     }
 
+    
     pub fn from_str(ty: &str) -> Option<Self> {
         Some(match ty.as_bytes() {
             b"length" => DataType::Length,
@@ -68,24 +74,5 @@ impl DataType {
             b"transform-list" => DataType::TransformList,
             _ => return None,
         })
-    }
-
-    pub fn to_str(&self) -> &str {
-        match self {
-            DataType::Length => "length",
-            DataType::Number => "number",
-            DataType::Percentage => "percentage",
-            DataType::LengthPercentage => "length-percentage",
-            DataType::Color => "color",
-            DataType::Image => "image",
-            DataType::Url => "url",
-            DataType::Integer => "integer",
-            DataType::Angle => "angle",
-            DataType::Time => "time",
-            DataType::Resolution => "resolution",
-            DataType::TransformFunction => "transform-function",
-            DataType::CustomIdent => "custom-ident",
-            DataType::TransformList => "transform-list",
-        }
     }
 }
