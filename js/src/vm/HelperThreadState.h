@@ -33,7 +33,6 @@
 #include "gc/GCRuntime.h"                 
 #include "js/AllocPolicy.h"               
 #include "js/CompileOptions.h"  
-#include "js/ContextOptions.h"              
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/HelperThreadAPI.h"  
@@ -502,9 +501,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   JS::OwningCompileOptions options;
 
   
-  const JS::ContextOptions contextOptions;
-
-  
   
   JSRuntime* runtime = nullptr;
 
@@ -643,9 +639,6 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   JSRuntime* runtime = nullptr;
 
-  
-  const JS::ContextOptions contextOptions;
-
   const JS::PrefableCompileOptions initialPrefableOptions;
 
   
@@ -664,11 +657,10 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   
   static UniquePtr<DelazifyTask> Create(
-      JSRuntime* runtime, const JS::ContextOptions& contextOptions,
-      const JS::ReadOnlyCompileOptions& options,
+      JSRuntime* runtime, const JS::ReadOnlyCompileOptions& options,
       const frontend::CompilationStencil& stencil);
 
-  DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options,
+  DelazifyTask(JSRuntime* runtime,
                const JS::PrefableCompileOptions& initialPrefableOptions);
   ~DelazifyTask();
 
