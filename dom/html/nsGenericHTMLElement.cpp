@@ -489,10 +489,8 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
 void nsGenericHTMLElement::UnbindFromTree(bool aNullParent) {
   if (IsInComposedDoc()) {
     
-    
-    
-    
-    if (GetPopoverData()) {
+    AssertPopoverAttributeStateCorrespondsToAttributePresence();
+    if (GetPopoverAttributeState() != PopoverAttributeState::None) {
       HidePopoverWithoutRunningScript();
     }
     RegUnRegAccessKey(false);
@@ -3211,15 +3209,13 @@ bool nsGenericHTMLElement::PopoverOpen() const {
 bool nsGenericHTMLElement::CheckPopoverValidity(
     PopoverVisibilityState aExpectedState, Document* aExpectedDocument,
     ErrorResult& aRv) {
+  AssertPopoverAttributeStateCorrespondsToAttributePresence();
   const PopoverData* data = GetPopoverData();
   if (!data ||
       data->GetPopoverAttributeState() == PopoverAttributeState::None) {
-    MOZ_ASSERT(!HasAttr(nsGkAtoms::popover));
     aRv.ThrowNotSupportedError("Element is in the no popover state");
     return false;
   }
-
-  MOZ_ASSERT(HasAttr(nsGkAtoms::popover));
 
   if (data->GetPopoverVisibilityState() != aExpectedState) {
     return false;
@@ -3248,6 +3244,20 @@ bool nsGenericHTMLElement::CheckPopoverValidity(
   }
 
   return true;
+}
+
+void nsGenericHTMLElement::
+    AssertPopoverAttributeStateCorrespondsToAttributePresence() const {
+#ifdef DEBUG
+  if (GetPopoverAttributeState() == PopoverAttributeState::None) {
+    MOZ_ASSERT(!HasAttr(nsGkAtoms::popover));
+  } else {
+    MOZ_ASSERT(HasAttr(nsGkAtoms::popover));
+  }
+#else
+  {
+  }
+#endif  
 }
 
 PopoverAttributeState nsGenericHTMLElement::GetPopoverAttributeState() const {
