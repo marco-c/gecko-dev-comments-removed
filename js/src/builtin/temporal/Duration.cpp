@@ -4772,12 +4772,9 @@ static bool RoundDurationYearSlow(
   
   double numMonths = 0;
   double numWeeks = 0;
-  double numDays = 0;
 
   
-
-  
-  Duration resultDuration = {numYears, numMonths, numWeeks, numDays};
+  Duration resultDuration = {numYears, numMonths, numWeeks};
   if (!ThrowIfInvalidDuration(cx, resultDuration)) {
     return false;
   }
@@ -4802,7 +4799,7 @@ static bool RoundDurationYearSlow(
   }
 
   
-  days = BigInt::add(cx, days, biDaysPassed);
+  days = BigInt::sub(cx, days, biDaysPassed);
   if (!days) {
     return false;
   }
@@ -4837,7 +4834,6 @@ static bool RoundDurationYearSlow(
     JSContext* cx, const Duration& duration, Handle<BigInt*> days,
     Handle<temporal::NanosecondsAndDays> nanosAndDays, double yearsPassed,
     Increment increment, TemporalRoundingMode roundingMode,
-    const PlainDate& oldRelativeToDate,
     Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
     Handle<CalendarValue> calendar, Handle<Value> dateAdd,
     ComputeRemainder computeRemainder, RoundedDuration* result) {
@@ -4858,8 +4854,6 @@ static bool RoundDurationYearSlow(
   }
 
   
-
-  
   Rooted<DurationObject*> yearsDuration(
       cx, CreateTemporalDuration(cx, {yearsPassed}));
   if (!yearsDuration) {
@@ -4867,16 +4861,12 @@ static bool RoundDurationYearSlow(
   }
 
   
-  auto newDate =
-      CalendarDateAdd(cx, calendar, dateRelativeTo, yearsDuration, dateAdd);
-  if (!newDate) {
+  Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx);
+  int32_t daysPassed;
+  if (!MoveRelativeDate(cx, calendar, dateRelativeTo, yearsDuration, dateAdd,
+                        &newRelativeTo, &daysPassed)) {
     return false;
   }
-  Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, newDate);
-  auto newRelativeToDate = ToPlainDate(&newDate.unwrap());
-
-  
-  int32_t daysPassed = DaysUntil(oldRelativeToDate, newRelativeToDate);
 
   
   return RoundDurationYearSlow(cx, days, years, nanosAndDays, daysPassed,
@@ -4908,7 +4898,7 @@ static bool RoundDurationYearSlow(
     JSContext* cx, const Duration& duration,
     Handle<temporal::NanosecondsAndDays> nanosAndDays,
     int32_t monthsWeeksInDays, Increment increment,
-    TemporalRoundingMode roundingMode, const PlainDate& oldRelativeToDate,
+    TemporalRoundingMode roundingMode,
     Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
     Handle<CalendarValue> calendar, Handle<Value> dateAdd,
     ComputeRemainder computeRemainder, RoundedDuration* result) {
@@ -4941,22 +4931,46 @@ static bool RoundDurationYearSlow(
   }
 
   
-  Rooted<DurationObject*> daysDuration(
-      cx, CreateTemporalDuration(cx, {0, 0, 0, BigInt::numberValue(days)}));
-  if (!daysDuration) {
+  
+
+  Rooted<BigInt*> truncatedDays(cx, days);
+  if (nanosAndDays.nanoseconds() > InstantSpan{}) {
+    
+    
+    if (truncatedDays->isNegative()) {
+      truncatedDays = BigInt::inc(cx, truncatedDays);
+      if (!truncatedDays) {
+        return false;
+      }
+    }
+  } else if (nanosAndDays.nanoseconds() < InstantSpan{}) {
+    
+    
+    truncatedDays = BigInt::dec(cx, truncatedDays);
+    if (!truncatedDays) {
+      return false;
+    }
+  }
+
+  
+  Rooted<DurationObject*> wholeDaysDuration(
+      cx, CreateTemporalDuration(
+              cx, {0, 0, 0, BigInt::numberValue(truncatedDays)}));
+  if (!wholeDaysDuration) {
     return false;
   }
 
   
-  Rooted<Wrapped<PlainDateObject*>> daysLater(
-      cx, CalendarDateAdd(cx, calendar, dateRelativeTo, daysDuration, dateAdd));
-  if (!daysLater) {
+  Rooted<Wrapped<PlainDateObject*>> wholeDaysLater(
+      cx, CalendarDateAdd(cx, calendar, dateRelativeTo, wholeDaysDuration,
+                          dateAdd));
+  if (!wholeDaysLater) {
     return false;
   }
 
   
   Duration timePassed;
-  if (!CalendarDateUntil(cx, calendar, dateRelativeTo, daysLater,
+  if (!CalendarDateUntil(cx, calendar, dateRelativeTo, wholeDaysLater,
                          TemporalUnit::Year, &timePassed)) {
     return false;
   }
@@ -4966,16 +4980,14 @@ static bool RoundDurationYearSlow(
 
   
   return RoundDurationYearSlow(cx, duration, days, nanosAndDays, yearsPassed,
-                               increment, roundingMode, oldRelativeToDate,
-                               dateRelativeTo, calendar, dateAdd,
-                               computeRemainder, result);
+                               increment, roundingMode, dateRelativeTo,
+                               calendar, dateAdd, computeRemainder, result);
 }
 
 static bool RoundDurationYearSlow(
     JSContext* cx, const Duration& duration, double days,
     Handle<temporal::NanosecondsAndDays> nanosAndDays, double yearsPassed,
     Increment increment, TemporalRoundingMode roundingMode,
-    const PlainDate& oldRelativeToDate,
     Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
     Handle<CalendarValue> calendar, Handle<Value> dateAdd,
     ComputeRemainder computeRemainder, RoundedDuration* result) {
@@ -4986,9 +4998,8 @@ static bool RoundDurationYearSlow(
 
   
   return RoundDurationYearSlow(cx, duration, biDays, nanosAndDays, yearsPassed,
-                               increment, roundingMode, oldRelativeToDate,
-                               dateRelativeTo, calendar, dateAdd,
-                               computeRemainder, result);
+                               increment, roundingMode, dateRelativeTo,
+                               calendar, dateAdd, computeRemainder, result);
 }
 
 static bool RoundDurationYearSlow(
@@ -5054,9 +5065,6 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   Rooted<Wrapped<PlainDateObject*>> newRelativeTo(cx, yearsLater);
 
   
-  const auto& oldRelativeToDate = yearsLaterDate;
-
-  
   Duration yearsMonthsWeeks = {years, months, weeks};
 
   
@@ -5087,18 +5095,16 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
 
   if (MOZ_UNLIKELY(!IsSafeInteger(days + extraDays))) {
     return RoundDurationYearSlow(cx, duration, nanosAndDays, monthsWeeksInDays,
-                                 increment, roundingMode, oldRelativeToDate,
-                                 newRelativeTo, calendar, dateAdd,
-                                 computeRemainder, result);
+                                 increment, roundingMode, newRelativeTo,
+                                 calendar, dateAdd, computeRemainder, result);
   }
   days += extraDays;
 
   
   if (MOZ_UNLIKELY(!IsSafeInteger(days + monthsWeeksInDays))) {
     return RoundDurationYearSlow(cx, duration, nanosAndDays, monthsWeeksInDays,
-                                 increment, roundingMode, oldRelativeToDate,
-                                 newRelativeTo, calendar, dateAdd,
-                                 computeRemainder, result);
+                                 increment, roundingMode, newRelativeTo,
+                                 calendar, dateAdd, computeRemainder, result);
   }
   days += monthsWeeksInDays;
 
@@ -5148,13 +5154,10 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   
   if (MOZ_UNLIKELY(!IsSafeInteger(years + yearsPassed))) {
     return RoundDurationYearSlow(cx, duration, days, nanosAndDays, yearsPassed,
-                                 increment, roundingMode, oldRelativeToDate,
-                                 newRelativeTo, calendar, dateAdd,
-                                 computeRemainder, result);
+                                 increment, roundingMode, newRelativeTo,
+                                 calendar, dateAdd, computeRemainder, result);
   }
   years += yearsPassed;
-
-  
 
   
   yearsDuration = CreateTemporalDuration(cx, {yearsPassed});
@@ -5163,16 +5166,11 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
   }
 
   
-  auto newDate =
-      CalendarDateAdd(cx, calendar, newRelativeTo, yearsDuration, dateAdd);
-  if (!newDate) {
+  int32_t daysPassed;
+  if (!MoveRelativeDate(cx, calendar, newRelativeTo, yearsDuration, dateAdd,
+                        &newRelativeTo, &daysPassed)) {
     return false;
   }
-  newRelativeTo = newDate;
-  auto newRelativeToDate = ToPlainDate(&newDate.unwrap());
-
-  
-  int32_t daysPassed = DaysUntil(oldRelativeToDate, newRelativeToDate);
 
   
   if (MOZ_UNLIKELY(!IsSafeInteger(days - daysPassed))) {
@@ -5271,12 +5269,9 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
     
     double numMonths = 0;
     double numWeeks = 0;
-    double numDays = 0;
 
     
-
-    
-    Duration resultDuration = {numYears, numMonths, numWeeks, numDays};
+    Duration resultDuration = {numYears, numMonths, numWeeks};
     if (!ThrowIfInvalidDuration(cx, resultDuration)) {
       return false;
     }
