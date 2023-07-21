@@ -7,16 +7,16 @@ use crate::unsync;
 
 pub(crate) struct OnceCell<T> {
     initialized: AtomicBool,
-    
-    
+    // Use `unsync::OnceCell` internally since `Mutex` does not provide
+    // interior mutability and to be able to re-use `get_or_try_init`.
     value: Mutex<unsync::OnceCell<T>>,
 }
 
-
-
-
-
-
+// Why do we need `T: Send`?
+// Thread A creates a `OnceCell` and shares it with
+// scoped thread B, which fills the cell, which is
+// then destroyed by A. That is, destructor observes
+// a sent value.
 unsafe impl<T: Sync + Send> Sync for OnceCell<T> {}
 unsafe impl<T: Send> Send for OnceCell<T> {}
 
@@ -53,17 +53,17 @@ impl<T> OnceCell<T> {
         })
     }
 
-    
-    
-    
-    
-    
-    
-    
+    /// Get the reference to the underlying value, without checking if the cell
+    /// is initialized.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure that the cell is in initialized state, and that
+    /// the contents are acquired by (synchronized to) this thread.
     pub(crate) unsafe fn get_unchecked(&self) -> &T {
         debug_assert!(self.is_initialized());
-        
-        crate::unwrap_unchecked(self.value.borrow(CriticalSection::new()).get())
+        // SAFETY: The caller ensures that the value is initialized and access synchronized.
+        self.value.borrow(CriticalSection::new()).get().unwrap_unchecked()
     }
 
     #[inline]

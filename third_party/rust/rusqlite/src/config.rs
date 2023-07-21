@@ -16,12 +16,12 @@ pub enum DbConfig {
     
     
     
-    SQLITE_DBCONFIG_ENABLE_FKEY = 1002,
+    SQLITE_DBCONFIG_ENABLE_FKEY = ffi::SQLITE_DBCONFIG_ENABLE_FKEY,
     
-    SQLITE_DBCONFIG_ENABLE_TRIGGER = 1003,
+    SQLITE_DBCONFIG_ENABLE_TRIGGER = ffi::SQLITE_DBCONFIG_ENABLE_TRIGGER,
     
     
-    SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER = 1004, 
+    SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER = ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 
     
     
     
@@ -115,7 +115,7 @@ impl Connection {
             check(ffi::sqlite3_db_config(
                 c.db(),
                 config as c_int,
-                if new_val { 1 } else { 0 },
+                new_val as c_int,
                 &mut val,
             ))?;
             Ok(val != 0)

@@ -41,6 +41,10 @@ class ConcurrentHandleMap:
 
 IDX_CALLBACK_FREE = 0
 
+UNIFFI_CALLBACK_SUCCESS = 0
+UNIFFI_CALLBACK_ERROR = 1
+UNIFFI_CALLBACK_UNEXPECTED_ERROR = 2
+
 class FfiConverterCallbackInterface:
     _handle_map = ConcurrentHandleMap()
 

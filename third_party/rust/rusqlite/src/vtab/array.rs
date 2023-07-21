@@ -206,9 +206,9 @@ mod test {
         let values: Vec<Value> = v.into_iter().map(Value::from).collect();
         let ptr = Rc::new(values);
         {
-            let mut stmt = db.prepare("SELECT value from rarray(?);")?;
+            let mut stmt = db.prepare("SELECT value from rarray(?1);")?;
 
-            let rows = stmt.query_map(&[&ptr], |row| row.get::<_, i64>(0))?;
+            let rows = stmt.query_map([&ptr], |row| row.get::<_, i64>(0))?;
             assert_eq!(2, Rc::strong_count(&ptr));
             let mut count = 0;
             for (i, value) in rows.enumerate() {

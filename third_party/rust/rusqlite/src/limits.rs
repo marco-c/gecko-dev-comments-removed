@@ -39,10 +39,10 @@ pub enum Limit {
     
     SQLITE_LIMIT_VARIABLE_NUMBER = ffi::SQLITE_LIMIT_VARIABLE_NUMBER,
     
-    SQLITE_LIMIT_TRIGGER_DEPTH = 10,
+    SQLITE_LIMIT_TRIGGER_DEPTH = ffi::SQLITE_LIMIT_TRIGGER_DEPTH,
     
     
-    SQLITE_LIMIT_WORKER_THREADS = 11,
+    SQLITE_LIMIT_WORKER_THREADS = ffi::SQLITE_LIMIT_WORKER_THREADS,
 }
 
 impl Connection {
@@ -71,55 +71,49 @@ mod test {
 
     #[test]
     fn test_limit_values() {
-        assert_eq!(
-            Limit::SQLITE_LIMIT_LENGTH as i32,
-            ffi::SQLITE_LIMIT_LENGTH as i32,
-        );
+        assert_eq!(Limit::SQLITE_LIMIT_LENGTH as i32, ffi::SQLITE_LIMIT_LENGTH,);
         assert_eq!(
             Limit::SQLITE_LIMIT_SQL_LENGTH as i32,
-            ffi::SQLITE_LIMIT_SQL_LENGTH as i32,
+            ffi::SQLITE_LIMIT_SQL_LENGTH,
         );
-        assert_eq!(
-            Limit::SQLITE_LIMIT_COLUMN as i32,
-            ffi::SQLITE_LIMIT_COLUMN as i32,
-        );
+        assert_eq!(Limit::SQLITE_LIMIT_COLUMN as i32, ffi::SQLITE_LIMIT_COLUMN,);
         assert_eq!(
             Limit::SQLITE_LIMIT_EXPR_DEPTH as i32,
-            ffi::SQLITE_LIMIT_EXPR_DEPTH as i32,
+            ffi::SQLITE_LIMIT_EXPR_DEPTH,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_COMPOUND_SELECT as i32,
-            ffi::SQLITE_LIMIT_COMPOUND_SELECT as i32,
+            ffi::SQLITE_LIMIT_COMPOUND_SELECT,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_VDBE_OP as i32,
-            ffi::SQLITE_LIMIT_VDBE_OP as i32,
+            ffi::SQLITE_LIMIT_VDBE_OP,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_FUNCTION_ARG as i32,
-            ffi::SQLITE_LIMIT_FUNCTION_ARG as i32,
+            ffi::SQLITE_LIMIT_FUNCTION_ARG,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_ATTACHED as i32,
-            ffi::SQLITE_LIMIT_ATTACHED as i32,
+            ffi::SQLITE_LIMIT_ATTACHED,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_LIKE_PATTERN_LENGTH as i32,
-            ffi::SQLITE_LIMIT_LIKE_PATTERN_LENGTH as i32,
+            ffi::SQLITE_LIMIT_LIKE_PATTERN_LENGTH,
         );
         assert_eq!(
             Limit::SQLITE_LIMIT_VARIABLE_NUMBER as i32,
-            ffi::SQLITE_LIMIT_VARIABLE_NUMBER as i32,
+            ffi::SQLITE_LIMIT_VARIABLE_NUMBER,
         );
         #[cfg(feature = "bundled")]
         assert_eq!(
             Limit::SQLITE_LIMIT_TRIGGER_DEPTH as i32,
-            ffi::SQLITE_LIMIT_TRIGGER_DEPTH as i32,
+            ffi::SQLITE_LIMIT_TRIGGER_DEPTH,
         );
         #[cfg(feature = "bundled")]
         assert_eq!(
             Limit::SQLITE_LIMIT_WORKER_THREADS as i32,
-            ffi::SQLITE_LIMIT_WORKER_THREADS as i32,
+            ffi::SQLITE_LIMIT_WORKER_THREADS,
         );
     }
 

@@ -172,8 +172,10 @@ impl DispatchGuard {
         
 
         let task = Command::Task(Box::new(move || {
-            tx.send(())
-                .expect("(worker) Can't send message on single-use channel");
+            
+            
+            
+            _ = tx.send(());
         }));
         self.sender
             .send(task)

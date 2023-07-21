@@ -2,7 +2,8 @@
 
 
 
-use super::{CollectionRequest, IncomingChangeset, OutgoingChangeset};
+use super::CollectionRequest;
+use crate::bso::{IncomingBso, OutgoingBso};
 use crate::client_types::ClientData;
 use crate::{telemetry, CollectionName, Guid, ServerTimestamp};
 use anyhow::Result;
@@ -103,6 +104,22 @@ impl TryFrom<&str> for SyncEngineId {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait SyncEngine {
     fn collection_name(&self) -> CollectionName;
 
@@ -145,6 +162,8 @@ pub trait SyncEngine {
     
     
     
+    
+    
     fn set_local_encryption_key(&mut self, _key: &str) -> Result<()> {
         unimplemented!("This engine does not support local encryption");
     }
@@ -155,21 +174,34 @@ pub trait SyncEngine {
     
     
     
-    fn apply_incoming(
+    fn stage_incoming(
         &self,
-        inbound: Vec<IncomingChangeset>,
+        inbound: Vec<IncomingBso>,
         telem: &mut telemetry::Engine,
-    ) -> Result<OutgoingChangeset>;
-
-    fn sync_finished(
-        &self,
-        new_timestamp: ServerTimestamp,
-        records_synced: Vec<Guid>,
     ) -> Result<()>;
 
     
     
     
+    fn apply(
+        &self,
+        timestamp: ServerTimestamp,
+        telem: &mut telemetry::Engine,
+    ) -> Result<Vec<OutgoingBso>>;
+
+    
+    
+    
+    fn set_uploaded(&self, new_timestamp: ServerTimestamp, ids: Vec<Guid>) -> Result<()>;
+
+    
+    
+    
+    
+    fn sync_finished(&self) -> Result<()> {
+        Ok(())
+    }
+
     
     
     
@@ -177,18 +209,10 @@ pub trait SyncEngine {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    fn get_collection_requests(
+    fn get_collection_request(
         &self,
         server_timestamp: ServerTimestamp,
-    ) -> Result<Vec<CollectionRequest>>;
+    ) -> Result<Option<CollectionRequest>>;
 
     
     

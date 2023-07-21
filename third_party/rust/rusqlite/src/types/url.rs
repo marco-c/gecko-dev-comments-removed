@@ -1,9 +1,9 @@
-
+//! [`ToSql`] and [`FromSql`] implementation for [`url::Url`].
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::Result;
 use url::Url;
 
-
+/// Serialize `Url` to text.
 impl ToSql for Url {
     #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
@@ -11,7 +11,7 @@ impl ToSql for Url {
     }
 }
 
-
+/// Deserialize text to `Url`.
 impl FromSql for Url {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
@@ -49,9 +49,9 @@ mod test {
         let url2 = "http://www.example2.com/👌";
 
         db.execute(
-            "INSERT INTO urls (i, v) VALUES (0, ?), (1, ?), (2, ?), (3, ?)",
-            
-            
+            "INSERT INTO urls (i, v) VALUES (0, ?1), (1, ?2), (2, ?3), (3, ?4)",
+            // also insert a non-hex encoded url (which might be present if it was
+            // inserted separately)
             params![url0, url1, url2, "illegal"],
         )?;
 
@@ -59,12 +59,12 @@ mod test {
 
         assert_eq!(get_url(db, 1)?, url1);
 
-        
-        
+        // Should successfully read it, even though it wasn't inserted as an
+        // escaped url.
         let out_url2: Url = get_url(db, 2)?;
         assert_eq!(out_url2, Url::parse(url2).unwrap());
 
-        
+        // Make sure the conversion error comes through correctly.
         let err = get_url(db, 3).unwrap_err();
         match err {
             Error::FromSqlConversionFailure(_, _, e) => {

@@ -32,7 +32,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub enum DeviceType {
     Desktop,
     Mobile,
@@ -40,13 +40,8 @@ pub enum DeviceType {
     VR,
     TV,
     
+    #[default]
     Unknown,
-}
-
-impl Default for DeviceType {
-    fn default() -> Self {
-        DeviceType::Unknown
-    }
 }
 
 impl<'de> Deserialize<'de> for DeviceType {
