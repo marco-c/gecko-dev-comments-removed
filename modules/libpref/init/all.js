@@ -3979,7 +3979,7 @@ pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
 
 #if defined(NIGHTLY_BUILD)
 
-pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES");
+pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES,AT,BE,PL");
 #else
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE");
 #endif
