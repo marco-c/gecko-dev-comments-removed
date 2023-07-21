@@ -373,7 +373,8 @@ void DoDrawImageSecurityCheck(dom::OffscreenCanvas* aOffscreenCanvas,
     return;
   }
 
-  if (aOffscreenCanvas->IsWriteOnly()) {
+  nsIPrincipal* expandedReader = aOffscreenCanvas->GetExpandedReader();
+  if (aOffscreenCanvas->IsWriteOnly() && !expandedReader) {
     return;
   }
 
@@ -399,6 +400,24 @@ void DoDrawImageSecurityCheck(dom::OffscreenCanvas* aOffscreenCanvas,
   if (canvasPrincipal->Subsumes(aPrincipal)) {
     
     return;
+  }
+
+  if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+    
+
+    if (expandedReader && expandedReader->Subsumes(aPrincipal)) {
+      
+      return;
+    }
+
+    if (!expandedReader) {
+      
+      aOffscreenCanvas->SetWriteOnly(aPrincipal);
+      return;
+    }
+
+    
+    
   }
 
   aOffscreenCanvas->SetWriteOnly();
