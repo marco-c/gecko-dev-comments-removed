@@ -604,8 +604,6 @@ impl<'a, W: Write> Writer<'a, W> {
             }
         }
 
-        let ep_info = self.info.get_entry_point(self.entry_point_idx as usize);
-
         
         
         
@@ -626,6 +624,23 @@ impl<'a, W: Write> Writer<'a, W> {
                 }
             }
         }
+
+        
+        let mut constants = self
+            .module
+            .constants
+            .iter()
+            .filter(|&(_, c)| c.name.is_some())
+            .peekable();
+        while let Some((handle, _)) = constants.next() {
+            self.write_global_constant(handle)?;
+            
+            if constants.peek().is_none() {
+                writeln!(self.out)?;
+            }
+        }
+
+        let ep_info = self.info.get_entry_point(self.entry_point_idx as usize);
 
         
         
@@ -722,31 +737,6 @@ impl<'a, W: Write> Writer<'a, W> {
             }
         }
 
-        if include_unused {
-            
-            for (handle, constant) in self.module.constants.iter() {
-                if let Some(name) = constant.name.as_ref() {
-                    write!(self.out, "const ")?;
-                    match constant.inner {
-                        crate::ConstantInner::Scalar { width, value } => {
-                            
-                            let inner = TypeInner::Scalar {
-                                width,
-                                kind: value.scalar_kind(),
-                            };
-                            self.write_value_type(&inner)?;
-                        }
-                        crate::ConstantInner::Composite { ty, .. } => {
-                            self.write_type(ty)?;
-                        }
-                    };
-                    write!(self.out, " {name} = ")?;
-                    self.write_constant(handle)?;
-                    writeln!(self.out, ";")?;
-                }
-            }
-        }
-
         for arg in self.entry_point.function.arguments.iter() {
             self.write_varying(arg.binding.as_ref(), arg.ty, false)?;
         }
@@ -818,12 +808,6 @@ impl<'a, W: Write> Writer<'a, W> {
     
     
     
-    
-    
-    
-    
-    
-    
     fn write_value_type(&mut self, inner: &TypeInner) -> BackendResult {
         match *inner {
             
@@ -870,8 +854,6 @@ impl<'a, W: Write> Writer<'a, W> {
             TypeInner::Array { base, size, .. } => self.write_array_size(base, size)?,
             
             
-            
-            
             TypeInner::Pointer { .. }
             | TypeInner::Struct { .. }
             | TypeInner::Image { .. }
@@ -886,12 +868,6 @@ impl<'a, W: Write> Writer<'a, W> {
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1050,7 +1026,7 @@ impl<'a, W: Write> Writer<'a, W> {
         if global.space.initializable() && is_value_init_supported(self.module, global.ty) {
             write!(self.out, " = ")?;
             if let Some(init) = global.init {
-                self.write_constant(init)?;
+                self.write_const_expr(init)?;
             } else {
                 self.write_zero_init_value(global.ty)?;
             }
@@ -1390,6 +1366,9 @@ impl<'a, W: Write> Writer<'a, W> {
             write!(self.out, "void")?;
         } else if let Some(ref result) = func.result {
             self.write_type(result.ty)?;
+            if let TypeInner::Array { base, size, .. } = self.module.types[result.ty].inner {
+                self.write_array_size(base, size)?
+            }
         } else {
             write!(self.out, "void")?;
         }
@@ -1547,7 +1526,7 @@ impl<'a, W: Write> Writer<'a, W> {
 
                 
                 
-                self.write_constant(init)?;
+                self.write_const_expr(init)?;
             } else if is_value_init_supported(self.module, local.ty) {
                 write!(self.out, " = ")?;
                 self.write_zero_init_value(local.ty)?;
@@ -1618,60 +1597,29 @@ impl<'a, W: Write> Writer<'a, W> {
         mut f: F,
     ) -> BackendResult {
         
-        for (i, item) in data.iter().enumerate() {
-            f(self, i as u32, item)?;
-
-            
-            if i != data.len().saturating_sub(1) {
-                
+        for (index, item) in data.iter().enumerate() {
+            if index != 0 {
                 write!(self.out, ", ")?;
             }
+            f(self, index as u32, item)?;
         }
 
         Ok(())
     }
 
     
-    
-    
-    
-    fn write_constant(&mut self, handle: Handle<crate::Constant>) -> BackendResult {
-        use crate::ScalarValue as Sv;
-
-        match self.module.constants[handle].inner {
-            crate::ConstantInner::Scalar {
-                width: _,
-                ref value,
-            } => match *value {
-                
-                Sv::Sint(int) => write!(self.out, "{int}")?,
-                
-                
-                
-                
-                Sv::Uint(int) => write!(self.out, "{int}u")?,
-                
-                
-                Sv::Float(float) => write!(self.out, "{float:?}")?,
-                
-                Sv::Bool(boolean) => write!(self.out, "{boolean}")?,
-            },
-            
-            
-            crate::ConstantInner::Composite { ty, ref components } => {
-                self.write_type(ty)?;
-                if let TypeInner::Array { base, size, .. } = self.module.types[ty].inner {
-                    self.write_array_size(base, size)?;
-                }
-                write!(self.out, "(")?;
-
-                
-                self.write_slice(components, |this, _, arg| this.write_constant(*arg))?;
-
-                write!(self.out, ")")?
-            }
+    fn write_global_constant(&mut self, handle: Handle<crate::Constant>) -> BackendResult {
+        write!(self.out, "const ")?;
+        let constant = &self.module.constants[handle];
+        self.write_type(constant.ty)?;
+        let name = &self.names[&NameKey::Constant(handle)];
+        write!(self.out, " {name}")?;
+        if let TypeInner::Array { base, size, .. } = self.module.types[constant.ty].inner {
+            self.write_array_size(base, size)?;
         }
-
+        write!(self.out, " = ")?;
+        self.write_const_expr(constant.init)?;
+        writeln!(self.out, ";")?;
         Ok(())
     }
 
@@ -1821,7 +1769,7 @@ impl<'a, W: Write> Writer<'a, W> {
                             ..
                         } = *ctx.info[image].ty.inner_with(&self.module.types)
                         {
-                            if let proc::BoundsCheckPolicy::Restrict = self.policies.image {
+                            if let proc::BoundsCheckPolicy::Restrict = self.policies.image_load {
                                 write!(self.out, "{level}")?;
                                 self.write_clamped_lod(ctx, handle, image, level_expr)?
                             }
@@ -2154,7 +2102,12 @@ impl<'a, W: Write> Writer<'a, W> {
                     let name = format!("{}{}", back::BAKE_PREFIX, expr.index());
                     let result = self.module.functions[function].result.as_ref().unwrap();
                     self.write_type(result.ty)?;
-                    write!(self.out, " {name} = ")?;
+                    write!(self.out, " {name}")?;
+                    if let TypeInner::Array { base, size, .. } = self.module.types[result.ty].inner
+                    {
+                        self.write_array_size(base, size)?
+                    }
+                    write!(self.out, " = ")?;
                     self.named_expressions.insert(expr, name);
                 }
                 write!(self.out, "{}(", &self.names[&NameKey::Function(function)])?;
@@ -2215,6 +2168,100 @@ impl<'a, W: Write> Writer<'a, W> {
     
     
     
+    
+    
+    
+    
+    
+    
+    fn write_const_expr(&mut self, expr: Handle<crate::Expression>) -> BackendResult {
+        self.write_possibly_const_expr(expr, &self.module.const_expressions, |writer, expr| {
+            writer.write_const_expr(expr)
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_possibly_const_expr<E>(
+        &mut self,
+        expr: Handle<crate::Expression>,
+        expressions: &crate::Arena<crate::Expression>,
+        write_expression: E,
+    ) -> BackendResult
+    where
+        E: Fn(&mut Self, Handle<crate::Expression>) -> BackendResult,
+    {
+        use crate::Expression;
+
+        match expressions[expr] {
+            Expression::Literal(literal) => {
+                match literal {
+                    
+                    
+                    crate::Literal::F64(value) => write!(self.out, "{:?}LF", value)?,
+                    crate::Literal::F32(value) => write!(self.out, "{:?}", value)?,
+                    
+                    
+                    
+                    
+                    crate::Literal::U32(value) => write!(self.out, "{}u", value)?,
+                    crate::Literal::I32(value) => write!(self.out, "{}", value)?,
+                    crate::Literal::Bool(value) => write!(self.out, "{}", value)?,
+                }
+            }
+            Expression::Constant(handle) => {
+                let constant = &self.module.constants[handle];
+                if constant.name.is_some() {
+                    write!(self.out, "{}", self.names[&NameKey::Constant(handle)])?;
+                } else {
+                    self.write_const_expr(constant.init)?;
+                }
+            }
+            Expression::ZeroValue(ty) => {
+                self.write_zero_init_value(ty)?;
+            }
+            Expression::Compose { ty, ref components } => {
+                self.write_type(ty)?;
+
+                if let TypeInner::Array { base, size, .. } = self.module.types[ty].inner {
+                    self.write_array_size(base, size)?;
+                }
+
+                write!(self.out, "(")?;
+                for (index, component) in components.iter().enumerate() {
+                    if index != 0 {
+                        write!(self.out, ", ")?;
+                    }
+                    write_expression(self, *component)?;
+                }
+                write!(self.out, ")")?
+            }
+            _ => unreachable!(),
+        }
+
+        Ok(())
+    }
+
+    
+    
+    
+    
     fn write_expr(
         &mut self,
         expr: Handle<crate::Expression>,
@@ -2228,6 +2275,14 @@ impl<'a, W: Write> Writer<'a, W> {
         }
 
         match ctx.expressions[expr] {
+            Expression::Literal(_)
+            | Expression::Constant(_)
+            | Expression::ZeroValue(_)
+            | Expression::Compose { .. } => {
+                self.write_possibly_const_expr(expr, ctx.expressions, |writer, expr| {
+                    writer.write_expr(expr, ctx)
+                })?;
+            }
             
             Expression::Access { base, index } => {
                 self.write_expr(base, ctx)?;
@@ -2274,26 +2329,6 @@ impl<'a, W: Write> Writer<'a, W> {
                 }
             }
             
-            Expression::Constant(constant) => self.write_constant(constant)?,
-            Expression::ZeroValue(ty) => {
-                self.write_zero_init_value(ty)?;
-            }
-            Expression::Literal(literal) => {
-                match literal {
-                    
-                    
-                    crate::Literal::F64(value) => write!(self.out, "{:?}LF", value)?,
-                    crate::Literal::F32(value) => write!(self.out, "{:?}", value)?,
-                    
-                    
-                    
-                    
-                    crate::Literal::U32(value) => write!(self.out, "{}u", value)?,
-                    crate::Literal::I32(value) => write!(self.out, "{}", value)?,
-                    crate::Literal::Bool(value) => write!(self.out, "{}", value)?,
-                }
-            }
-            
             Expression::Splat { size: _, value } => {
                 let resolved = ctx.info[expr].ty.inner_with(&self.module.types);
                 self.write_value_type(resolved)?;
@@ -2312,20 +2347,6 @@ impl<'a, W: Write> Writer<'a, W> {
                 for &sc in pattern[..size as usize].iter() {
                     self.out.write_char(back::COMPONENTS[sc as usize])?;
                 }
-            }
-            
-            
-            Expression::Compose { ty, ref components } => {
-                self.write_type(ty)?;
-
-                let resolved = ctx.info[expr].ty.inner_with(&self.module.types);
-                if let TypeInner::Array { base, size, .. } = *resolved {
-                    self.write_array_size(base, size)?;
-                }
-
-                write!(self.out, "(")?;
-                self.write_slice(components, |this, _, arg| this.write_expr(*arg, ctx))?;
-                write!(self.out, ")")?
             }
             
             Expression::FunctionArgument(pos) => {
@@ -2516,7 +2537,7 @@ impl<'a, W: Write> Writer<'a, W> {
                     if tex_1d_hack {
                         write!(self.out, "ivec2(")?;
                     }
-                    self.write_constant(constant)?;
+                    self.write_const_expr(constant)?;
                     if tex_1d_hack {
                         write!(self.out, ", 0)")?;
                     }
@@ -2581,8 +2602,25 @@ impl<'a, W: Write> Writer<'a, W> {
                                 write!(self.out, "textureSize(")?;
                                 self.write_expr(image, ctx)?;
                                 if let Some(expr) = level {
+                                    let cast_to_int = matches!(
+                                        *ctx.info[expr].ty.inner_with(&self.module.types),
+                                        crate::TypeInner::Scalar {
+                                            kind: crate::ScalarKind::Uint,
+                                            ..
+                                        }
+                                    );
+
                                     write!(self.out, ", ")?;
+
+                                    if cast_to_int {
+                                        write!(self.out, "int(")?;
+                                    }
+
                                     self.write_expr(expr, ctx)?;
+
+                                    if cast_to_int {
+                                        write!(self.out, ")")?;
+                                    }
                                 } else if !multi {
                                     
                                     
@@ -3524,11 +3562,22 @@ impl<'a, W: Write> Writer<'a, W> {
         
         let (fun_name, policy) = match class {
             
-            crate::ImageClass::Sampled { .. } => ("texelFetch", self.policies.image),
+            crate::ImageClass::Sampled { .. } => ("texelFetch", self.policies.image_load),
             crate::ImageClass::Storage { .. } => {
                 
                 
-                ("imageLoad", proc::BoundsCheckPolicy::Unchecked)
+                
+                
+                
+                
+                
+                
+                let policy = if self.options.version.is_es() {
+                    self.policies.image_load
+                } else {
+                    proc::BoundsCheckPolicy::Unchecked
+                };
+                ("imageLoad", policy)
             }
             
             crate::ImageClass::Depth { multi: _ } => {
@@ -3821,11 +3870,11 @@ impl<'a, W: Write> Writer<'a, W> {
             TypeInner::Struct { ref members, .. } => {
                 let name = &self.names[&NameKey::Type(ty)];
                 write!(self.out, "{name}(")?;
-                for (i, member) in members.iter().enumerate() {
-                    self.write_zero_init_value(member.ty)?;
-                    if i != members.len().saturating_sub(1) {
+                for (index, member) in members.iter().enumerate() {
+                    if index != 0 {
                         write!(self.out, ", ")?;
                     }
+                    self.write_zero_init_value(member.ty)?;
                 }
                 write!(self.out, ")")?;
             }

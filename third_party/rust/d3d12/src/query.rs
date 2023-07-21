@@ -1,4 +1,4 @@
-use crate::com::WeakPtr;
+use crate::com::ComPtr;
 use winapi::um::d3d12;
 
 #[repr(u32)]
@@ -12,4 +12,4 @@ pub enum QueryHeapType {
     
 }
 
-pub type QueryHeap = WeakPtr<d3d12::ID3D12QueryHeap>;
+pub type QueryHeap = ComPtr<d3d12::ID3D12QueryHeap>;

@@ -176,17 +176,19 @@ impl<'w> BlockContext<'w> {
         
         let max_index_id = match self.write_sequence_max_index(sequence, block)? {
             MaybeKnown::Known(known_max_index) => {
-                if let crate::Expression::Constant(index_k) = self.ir_function.expressions[index] {
-                    if let Some(known_index) = self.ir_module.constants[index_k].to_array_length() {
-                        
-                        
-                        
-                        
-                        
-                        
-                        let restricted = std::cmp::min(known_index, known_max_index);
-                        return Ok(BoundsCheckResult::KnownInBounds(restricted));
-                    }
+                if let Ok(known_index) = self
+                    .ir_module
+                    .to_ctx()
+                    .eval_expr_to_u32_from(index, &self.ir_function.expressions)
+                {
+                    
+                    
+                    
+                    
+                    
+                    
+                    let restricted = std::cmp::min(known_index, known_max_index);
+                    return Ok(BoundsCheckResult::KnownInBounds(restricted));
                 }
 
                 self.get_index_constant(known_max_index)
@@ -236,31 +238,33 @@ impl<'w> BlockContext<'w> {
         
         let length_id = match self.write_sequence_length(sequence, block)? {
             MaybeKnown::Known(known_length) => {
-                if let crate::Expression::Constant(index_k) = self.ir_function.expressions[index] {
-                    if let Some(known_index) = self.ir_module.constants[index_k].to_array_length() {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if known_index < known_length {
-                            return Ok(BoundsCheckResult::KnownInBounds(known_index));
-                        }
+                if let Ok(known_index) = self
+                    .ir_module
+                    .to_ctx()
+                    .eval_expr_to_u32_from(index, &self.ir_function.expressions)
+                {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if known_index < known_length {
+                        return Ok(BoundsCheckResult::KnownInBounds(known_index));
                     }
                 }
 

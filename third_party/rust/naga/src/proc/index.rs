@@ -113,10 +113,20 @@ pub struct BoundsCheckPolicies {
     
     
     
+    #[cfg_attr(feature = "deserialize", serde(default))]
+    pub image_load: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
     
     
     #[cfg_attr(feature = "deserialize", serde(default))]
-    pub image: BoundsCheckPolicy,
+    pub image_store: BoundsCheckPolicy,
 
     
     #[cfg_attr(feature = "deserialize", serde(default))]
@@ -163,7 +173,10 @@ impl BoundsCheckPolicies {
 
     
     pub fn contains(&self, policy: BoundsCheckPolicy) -> bool {
-        self.index == policy || self.buffer == policy || self.image == policy
+        self.index == policy
+            || self.buffer == policy
+            || self.image_load == policy
+            || self.image_store == policy
     }
 }
 
@@ -261,7 +274,7 @@ pub fn find_checked_indexes(
                     level,
                     ..
                 } => {
-                    if policies.image == BoundsCheckPolicy::ReadZeroSkipWrite {
+                    if policies.image_load == BoundsCheckPolicy::ReadZeroSkipWrite {
                         guarded_indices.insert(coordinate.index());
                         if let Some(array_index) = array_index {
                             guarded_indices.insert(array_index.index());
@@ -330,19 +343,13 @@ impl GuardedIndex {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     fn try_resolve_to_constant(&mut self, function: &crate::Function, module: &crate::Module) {
         if let GuardedIndex::Expression(expr) = *self {
-            if let crate::Expression::Constant(handle) = function.expressions[expr] {
-                if let Some(value) = module.constants[handle].to_array_length() {
-                    *self = GuardedIndex::Known(value);
-                }
+            if let Ok(value) = module
+                .to_ctx()
+                .eval_expr_to_u32_from(expr, &function.expressions)
+            {
+                *self = GuardedIndex::Known(value);
             }
         }
     }
@@ -353,7 +360,7 @@ pub enum IndexableLengthError {
     #[error("Type is not indexable, and has no length (validation error)")]
     TypeNotIndexable,
     #[error("Array length constant {0:?} is invalid")]
-    InvalidArrayLength(Handle<crate::Constant>),
+    InvalidArrayLength(Handle<crate::Expression>),
 }
 
 impl crate::TypeInner {

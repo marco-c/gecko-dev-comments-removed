@@ -196,6 +196,55 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
@@ -255,6 +304,11 @@ pub type FastHashMap<K, T> = rustc_hash::FxHashMap<K, T>;
 pub type FastHashSet<K> = rustc_hash::FxHashSet<K>;
 
 
+
+pub type FastIndexSet<K> =
+    indexmap::IndexSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+
+
 pub(crate) type NamedExpressions = indexmap::IndexMap<
     Handle<Expression>,
     String,
@@ -284,7 +338,7 @@ pub(crate) type NamedExpressions = indexmap::IndexMap<
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct EarlyDepthTest {
-    conservative: Option<ConservativeDepth>,
+    pub conservative: Option<ConservativeDepth>,
 }
 
 
@@ -791,18 +845,6 @@ pub enum TypeInner {
     BindingArray { base: Handle<Type>, size: ArraySize },
 }
 
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "clone", derive(Clone))]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub struct Constant {
-    pub name: Option<String>,
-    pub specialization: Option<u32>,
-    pub inner: ConstantInner,
-}
-
 #[derive(Debug, Clone, Copy, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -815,32 +857,42 @@ pub enum Literal {
     Bool(bool),
 }
 
-
-#[derive(Debug, Clone, Copy, PartialOrd)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum ScalarValue {
-    Sint(i64),
-    Uint(u64),
-    Float(f64),
-    Bool(bool),
+pub enum Override {
+    None,
+    ByName,
+    ByNameOrId(u32),
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum ConstantInner {
-    Scalar {
-        width: Bytes,
-        value: ScalarValue,
-    },
-    Composite {
-        ty: Handle<Type>,
-        components: Vec<Handle<Constant>>,
-    },
+pub struct Constant {
+    pub name: Option<String>,
+    pub r#override: Override,
+    pub ty: Handle<Type>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub init: Handle<Expression>,
 }
 
 
@@ -902,7 +954,9 @@ pub struct GlobalVariable {
     
     pub ty: Handle<Type>,
     
-    pub init: Option<Handle<Constant>>,
+    
+    
+    pub init: Option<Handle<Expression>>,
 }
 
 
@@ -916,7 +970,9 @@ pub struct LocalVariable {
     
     pub ty: Handle<Type>,
     
-    pub init: Option<Handle<Constant>>,
+    
+    
+    pub init: Option<Handle<Expression>>,
 }
 
 
@@ -1219,6 +1275,11 @@ pub enum Expression {
     Constant(Handle<Constant>),
     
     ZeroValue(Handle<Type>),
+    
+    Compose {
+        ty: Handle<Type>,
+        components: Vec<Handle<Expression>>,
+    },
 
     
     
@@ -1289,11 +1350,6 @@ pub enum Expression {
         vector: Handle<Expression>,
         pattern: [SwizzleComponent; 4],
     },
-    
-    Compose {
-        ty: Handle<Type>,
-        components: Vec<Handle<Expression>>,
-    },
 
     
     
@@ -1342,7 +1398,8 @@ pub enum Expression {
         gather: Option<SwizzleComponent>,
         coordinate: Handle<Expression>,
         array_index: Option<Handle<Expression>>,
-        offset: Option<Handle<Constant>>,
+        
+        offset: Option<Handle<Expression>>,
         level: SampleLevel,
         depth_ref: Option<Handle<Expression>>,
     },
@@ -1443,7 +1500,6 @@ pub enum Expression {
     Derivative {
         axis: DerivativeAxis,
         ctrl: DerivativeControl,
-        
         expr: Handle<Expression>,
     },
     
@@ -1503,7 +1559,6 @@ pub enum Expression {
 }
 
 pub use block::Block;
-
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1614,7 +1669,7 @@ pub enum Statement {
     
     
     Switch {
-        selector: Handle<Expression>, 
+        selector: Handle<Expression>,
         cases: Vec<SwitchCase>,
     },
 
@@ -1934,6 +1989,14 @@ pub struct Module {
     pub constants: Arena<Constant>,
     
     pub global_variables: Arena<GlobalVariable>,
+    
+    
+    
+    
+    
+    
+    
+    pub const_expressions: Arena<Expression>,
     
     
     

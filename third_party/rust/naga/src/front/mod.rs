@@ -55,16 +55,6 @@ impl Emitter {
     }
 }
 
-#[allow(dead_code)]
-impl super::ConstantInner {
-    const fn boolean(value: bool) -> Self {
-        Self::Scalar {
-            width: super::BOOL_WIDTH,
-            value: super::ScalarValue::Bool(value),
-        }
-    }
-}
-
 
 
 

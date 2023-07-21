@@ -107,7 +107,7 @@ pub struct EntryPoint {
 }
 
 #[cfg(doc)]
-use crate::front::wgsl::lower::{ExpressionContext, StatementContext};
+use crate::front::wgsl::lower::{RuntimeExpressionContext, StatementContext};
 
 #[derive(Debug)]
 pub struct Function<'a> {

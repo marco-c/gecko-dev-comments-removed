@@ -213,7 +213,10 @@ pub struct PipelineOptions {
     
     
     
-    pub allow_point_size: bool,
+    
+    
+    
+    pub allow_and_force_point_size: bool,
 }
 
 impl Options {

@@ -71,6 +71,14 @@ struct FunctionCtx<'a> {
 }
 
 impl FunctionCtx<'_> {
+    fn resolve_type<'a>(
+        &'a self,
+        handle: crate::Handle<crate::Expression>,
+        types: &'a crate::UniqueArena<crate::Type>,
+    ) -> &'a crate::TypeInner {
+        self.info[handle].ty.inner_with(types)
+    }
+
     
     const fn name_key(&self, local: crate::Handle<crate::LocalVariable>) -> crate::proc::NameKey {
         match self.ty {
