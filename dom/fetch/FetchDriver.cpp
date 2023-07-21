@@ -1147,18 +1147,23 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
   }
 
   
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIInputStream> pipeInputStream;
-  NS_NewPipe(getter_AddRefs(pipeInputStream), getter_AddRefs(mPipeOutputStream),
-             0, 
-             UINT32_MAX ,
-             true ,
-             false );
-  response->SetBody(pipeInputStream, contentLength);
+  nsAutoCString method;
+  mRequest->GetMethod(method);
+  if (!(method.EqualsLiteral("HEAD") || method.EqualsLiteral("CONNECT"))) {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIInputStream> pipeInputStream;
+    NS_NewPipe(getter_AddRefs(pipeInputStream),
+               getter_AddRefs(mPipeOutputStream), 0, 
+               UINT32_MAX ,
+               true ,
+               false );
+    response->SetBody(pipeInputStream, contentLength);
+  }
 
   
   
@@ -1311,6 +1316,16 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
   
   
   
+
+  if (!mPipeOutputStream) {
+    
+    
+    uint32_t totalRead;
+    nsresult rv = aInputStream->ReadSegments(NS_DiscardSegment, nullptr, aCount,
+                                             &totalRead);
+    NS_ENSURE_SUCCESS(rv, rv);
+    return NS_OK;
+  }
 
   if (mNeedToObserveOnDataAvailable) {
     mNeedToObserveOnDataAvailable = false;
