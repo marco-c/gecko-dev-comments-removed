@@ -113,10 +113,15 @@ bool js::temporal::WrapCalendarValue(JSContext* cx,
 }
 
 
+
+
+
+
+
+
 static bool IterableToListOfStrings(
     JSContext* cx, Handle<Value> items,
     MutableHandle<JS::StackGCVector<PropertyKey>> list) {
-  
   JS::ForOfIterator iterator(cx);
   if (!iterator.init(items)) {
     return false;
@@ -1059,7 +1064,6 @@ bool js::temporal::CalendarFields(
     if (arrayIterationSane) {
       return BuiltinCalendarFields(cx, fieldNames, result.get());
     }
-
     return BuiltinCalendarFieldsSlow(cx, calendar, fieldNames, result);
   }
 
@@ -1084,15 +1088,7 @@ bool js::temporal::CalendarFields(
     }
 
     if (arrayIterationSane) {
-      
-
-      
-      if (!BuiltinCalendarFields(cx, fieldNames, result.get())) {
-        return false;
-      }
-
-      
-      return true;
+      return BuiltinCalendarFields(cx, fieldNames, result.get());
     }
   }
 
