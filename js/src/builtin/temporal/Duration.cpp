@@ -3189,90 +3189,110 @@ static bool AddDuration(JSContext* cx, const Duration& one, const Duration& two,
                                  largestUnit, result);
 }
 
+static bool RoundDuration(JSContext* cx, int64_t totalNanoseconds,
+                          TemporalUnit unit, Increment increment,
+                          TemporalRoundingMode roundingMode, Duration* result) {
+  MOZ_ASSERT(unit >= TemporalUnit::Hour);
 
-
-
-static mozilla::CheckedInt64 RoundNumberToIncrement(
-    int64_t x, int64_t increment, TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(increment > 0);
-  MOZ_ASSERT(increment <= ToNanoseconds(TemporalUnit::Day));
-
-  
-  if (increment == 1) {
-    return x;
+  double rounded;
+  if (!RoundNumberToIncrement(cx, totalNanoseconds, unit, increment,
+                              roundingMode, &rounded)) {
+    return false;
   }
 
-  
-  int64_t rounded = Divide(x, increment, roundingMode);
+  double hours = 0;
+  double minutes = 0;
+  double seconds = 0;
+  double milliseconds = 0;
+  double microseconds = 0;
+  double nanoseconds = 0;
 
-  
-  return mozilla::CheckedInt64(rounded) * increment;
+  switch (unit) {
+    case TemporalUnit::Auto:
+    case TemporalUnit::Year:
+    case TemporalUnit::Week:
+    case TemporalUnit::Month:
+    case TemporalUnit::Day:
+      MOZ_CRASH("Unexpected temporal unit");
+
+    case TemporalUnit::Hour:
+      hours = rounded;
+      break;
+    case TemporalUnit::Minute:
+      minutes = rounded;
+      break;
+    case TemporalUnit::Second:
+      seconds = rounded;
+      break;
+    case TemporalUnit::Millisecond:
+      milliseconds = rounded;
+      break;
+    case TemporalUnit::Microsecond:
+      microseconds = rounded;
+      break;
+    case TemporalUnit::Nanosecond:
+      nanoseconds = rounded;
+      break;
+  }
+
+  *result = {
+      0,           0, 0, 0, hours, minutes, seconds, milliseconds, microseconds,
+      nanoseconds,
+  };
+  return ThrowIfInvalidDuration(cx, *result);
 }
 
+static bool RoundDuration(JSContext* cx, Handle<BigInt*> totalNanoseconds,
+                          TemporalUnit unit, Increment increment,
+                          TemporalRoundingMode roundingMode, Duration* result) {
+  MOZ_ASSERT(unit >= TemporalUnit::Hour);
 
+  double rounded;
+  if (!RoundNumberToIncrement(cx, totalNanoseconds, unit, increment,
+                              roundingMode, &rounded)) {
+    return false;
+  }
 
+  double hours = 0;
+  double minutes = 0;
+  double seconds = 0;
+  double milliseconds = 0;
+  double microseconds = 0;
+  double nanoseconds = 0;
 
-static auto RoundNumberToIncrementAsIfPositive(
-    int64_t x, int64_t increment, TemporalRoundingMode roundingMode) {
-  
-  
-  return RoundNumberToIncrement(x, increment,
-                                ToPositiveRoundingMode(roundingMode));
-}
+  switch (unit) {
+    case TemporalUnit::Auto:
+    case TemporalUnit::Year:
+    case TemporalUnit::Week:
+    case TemporalUnit::Month:
+    case TemporalUnit::Day:
+      MOZ_CRASH("Unexpected temporal unit");
 
+    case TemporalUnit::Hour:
+      hours = rounded;
+      break;
+    case TemporalUnit::Minute:
+      minutes = rounded;
+      break;
+    case TemporalUnit::Second:
+      seconds = rounded;
+      break;
+    case TemporalUnit::Millisecond:
+      milliseconds = rounded;
+      break;
+    case TemporalUnit::Microsecond:
+      microseconds = rounded;
+      break;
+    case TemporalUnit::Nanosecond:
+      nanoseconds = rounded;
+      break;
+  }
 
-
-
-static auto RoundTemporalInstant(int64_t ns, Increment increment,
-                                 TemporalUnit unit,
-                                 TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(increment >= Increment::min());
-  MOZ_ASSERT(increment < MaximumTemporalDurationRoundingIncrement(unit),
-             "upper limit restricted by AdjustRoundedDurationDays");
-  MOZ_ASSERT(unit > TemporalUnit::Day);
-
-  
-  int64_t toNanoseconds = ToNanoseconds(unit);
-  MOZ_ASSERT(
-      (increment.value() * toNanoseconds) <= ToNanoseconds(TemporalUnit::Day),
-      "increment * toNanoseconds shouldn't overflow instant resolution");
-
-  
-  return RoundNumberToIncrementAsIfPositive(
-      ns, increment.value() * toNanoseconds, roundingMode);
-}
-
-
-
-
-static auto* RoundNumberToIncrementAsIfPositive(
-    JSContext* cx, Handle<BigInt*> x, int64_t increment,
-    TemporalRoundingMode roundingMode) {
-  
-  
-  return RoundNumberToIncrement(cx, x, increment,
-                                ToPositiveRoundingMode(roundingMode));
-}
-
-
-
-
-static BigInt* RoundTemporalInstant(JSContext* cx, Handle<BigInt*> ns,
-                                    Increment increment, TemporalUnit unit,
-                                    TemporalRoundingMode roundingMode) {
-  MOZ_ASSERT(increment >= Increment::min());
-  MOZ_ASSERT(uint64_t(increment.value()) <= ToNanoseconds(TemporalUnit::Day));
-  MOZ_ASSERT(unit > TemporalUnit::Day);
-
-  
-  int64_t toNanoseconds = ToNanoseconds(unit);
-  MOZ_ASSERT(
-      (increment.value() * toNanoseconds) <= ToNanoseconds(TemporalUnit::Day),
-      "increment * toNanoseconds shouldn't overflow instant resolution");
-
-  
-  return RoundNumberToIncrementAsIfPositive(
-      cx, ns, increment.value() * toNanoseconds, roundingMode);
+  *result = {
+      0,           0, 0, 0, hours, minutes, seconds, milliseconds, microseconds,
+      nanoseconds,
+  };
+  return ThrowIfInvalidDuration(cx, *result);
 }
 
 
@@ -3335,16 +3355,16 @@ static bool AdjustRoundedDurationDaysSlow(
   }
 
   
-  timeRemainderNs =
-      RoundTemporalInstant(cx, oneDayLess, increment, unit, roundingMode);
-  if (!timeRemainderNs) {
+  Duration roundedTimeDuration;
+  if (!RoundDuration(cx, oneDayLess, unit, increment, roundingMode,
+                     &roundedTimeDuration)) {
     return false;
   }
 
   
   TimeDuration adjustedTimeDuration;
-  if (!::BalanceTimeDurationSlow(cx, timeRemainderNs, TemporalUnit::Hour,
-                                 &adjustedTimeDuration)) {
+  if (!BalanceTimeDuration(cx, roundedTimeDuration, TemporalUnit::Hour,
+                           &adjustedTimeDuration)) {
     return false;
   }
 
@@ -3445,17 +3465,6 @@ bool js::temporal::AdjustRoundedDurationDays(
   }
 
   
-
-  
-  auto roundedTimeRemainderNs =
-      ::RoundTemporalInstant(oneDayLess, increment, unit, roundingMode);
-  if (!roundedTimeRemainderNs.isValid()) {
-    return AdjustRoundedDurationDaysSlow(cx, duration, increment, unit,
-                                         roundingMode, relativeTo, dayLength,
-                                         result);
-  }
-
-  
   Duration adjustedDateDuration;
   if (!AddDuration(cx,
                    {
@@ -3470,8 +3479,20 @@ bool js::temporal::AdjustRoundedDurationDays(
   }
 
   
-  auto adjustedTimeDuration =
-      ::BalanceTimeDuration(roundedTimeRemainderNs.value(), TemporalUnit::Hour);
+
+  
+  Duration roundedTimeDuration;
+  if (!RoundDuration(cx, oneDayLess, unit, increment, roundingMode,
+                     &roundedTimeDuration)) {
+    return false;
+  }
+
+  
+  TimeDuration adjustedTimeDuration;
+  if (!BalanceTimeDuration(cx, roundedTimeDuration, TemporalUnit::Hour,
+                           &adjustedTimeDuration)) {
+    return false;
+  }
 
   
   
