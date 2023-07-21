@@ -11,7 +11,6 @@
 #include "ScriptLoadRequest.h"
 #include "ModuleLoaderBase.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/MozPromise.h"
 #include "js/RootingAPI.h"
 #include "js/Value.h"
 #include "nsURIHashKey.h"
@@ -36,7 +35,10 @@ class VisitedURLSet : public nsTHashtable<nsURIHashKey> {
 
 
 class ModuleLoadRequest final : public ScriptLoadRequest {
-  ~ModuleLoadRequest() = default;
+  ~ModuleLoadRequest() {
+    MOZ_ASSERT(!mWaitingParentRequest);
+    MOZ_ASSERT(mAwaitingImports == 0);
+  }
 
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
   ModuleLoadRequest(ModuleLoadRequest&& aOther) = delete;
@@ -46,10 +48,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleLoadRequest,
                                                          ScriptLoadRequest)
   using SRIMetadata = mozilla::dom::SRIMetadata;
-
-  template <typename T>
-  using MozPromiseHolder = mozilla::MozPromiseHolder<T>;
-  using GenericPromise = mozilla::GenericPromise;
 
   ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
@@ -114,6 +112,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void StartDynamicImport() { mLoader->StartDynamicImport(this); }
   void ProcessDynamicImport() { mLoader->ProcessDynamicImport(this); }
 
+  void ChildLoadComplete(bool aSuccess);
+
  private:
   void LoadFinished();
   void CancelImports();
@@ -147,12 +147,15 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   RefPtr<ModuleScript> mModuleScript;
 
   
-  
-  
-  MozPromiseHolder<GenericPromise> mReady;
+  nsTArray<RefPtr<ModuleLoadRequest>> mImports;
 
   
-  nsTArray<RefPtr<ModuleLoadRequest>> mImports;
+  
+  RefPtr<ModuleLoadRequest> mWaitingParentRequest;
+
+  
+  
+  size_t mAwaitingImports = 0;
 
   
   

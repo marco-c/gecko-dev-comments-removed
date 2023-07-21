@@ -23,7 +23,6 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
 #include "ResolveResult.h"
 
@@ -163,8 +162,6 @@ class ScriptLoaderInterface : public nsISupports {
 
 
 class ModuleLoaderBase : public nsISupports {
-  using GenericPromise = mozilla::GenericPromise;
-
   
 
 
@@ -388,8 +385,8 @@ class ModuleLoaderBase : public nsISupports {
 
   void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
 
-  RefPtr<GenericPromise> StartFetchingModuleAndDependencies(
-      ModuleLoadRequest* aParent, nsIURI* aURI);
+  void StartFetchingModuleAndDependencies(ModuleLoadRequest* aParent,
+                                          nsIURI* aURI);
 
   
 

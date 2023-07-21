@@ -27,14 +27,15 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleLoadRequest)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ModuleLoadRequest,
                                                 ScriptLoadRequest)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mLoader, mModuleScript, mImports, mRootModule)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mLoader, mRootModule, mModuleScript, mImports,
+                                  mWaitingParentRequest)
   tmp->ClearDynamicImport();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ModuleLoadRequest,
                                                   ScriptLoadRequest)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLoader, mModuleScript, mImports,
-                                    mRootModule)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLoader, mRootModule, mModuleScript,
+                                    mImports, mWaitingParentRequest)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ModuleLoadRequest,
@@ -81,17 +82,23 @@ void ModuleLoadRequest::Cancel() {
     return;
   }
 
+  if (IsReadyToRun()) {
+    return;
+  }
+
   ScriptLoadRequest::Cancel();
+
   mModuleScript = nullptr;
   CancelImports();
-  mReady.RejectIfExists(NS_ERROR_DOM_ABORT_ERR, __func__);
+
+  if (mWaitingParentRequest) {
+    ChildLoadComplete(false);
+  }
 }
 
 void ModuleLoadRequest::SetReady() {
-  
-  
-  
-  
+  MOZ_ASSERT(!IsReadyToRun());
+
   
   
   
@@ -99,7 +106,10 @@ void ModuleLoadRequest::SetReady() {
   AssertAllImportsReady();
 
   ScriptLoadRequest::SetReady();
-  mReady.ResolveIfExists(true, __func__);
+
+  if (mWaitingParentRequest) {
+    ChildLoadComplete(true);
+  }
 }
 
 void ModuleLoadRequest::ModuleLoaded() {
@@ -157,6 +167,11 @@ void ModuleLoadRequest::ModuleErrored() {
   MOZ_ASSERT(IsErrored());
 
   CancelImports();
+  if (IsReadyToRun()) {
+    
+    return;
+  }
+
   SetReady();
   LoadFinished();
 }
