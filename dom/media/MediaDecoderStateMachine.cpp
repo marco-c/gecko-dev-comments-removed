@@ -3441,10 +3441,12 @@ void MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder) {
 }
 
 void MediaDecoderStateMachine::AudioAudibleChanged(bool aAudible) {
+  LOG("AudioAudibleChanged=%d", aAudible);
   mIsAudioDataAudible = aAudible;
 }
 
 MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
+  MOZ_ASSERT(OnTaskQueue());
   if (mOutputCaptureState != MediaDecoder::OutputCaptureState::None) {
     DecodedStream* stream = new DecodedStream(
         this,
@@ -3454,6 +3456,8 @@ MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
         mOutputTracks, mVolume, mPlaybackRate, mPreservesPitch, mAudioQueue,
         mVideoQueue, mSinkDevice.Ref());
     mAudibleListener.DisconnectIfExists();
+    
+    AudioAudibleChanged(false);
     mAudibleListener = stream->AudibleEvent().Connect(
         OwnerThread(), this, &MediaDecoderStateMachine::AudioAudibleChanged);
     return stream;
@@ -3464,6 +3468,8 @@ MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
     UniquePtr<AudioSink> audioSink{new AudioSink(
         mTaskQueue, mAudioQueue, Info().mAudio, mShouldResistFingerprinting)};
     mAudibleListener.DisconnectIfExists();
+    
+    AudioAudibleChanged(false);
     mAudibleListener = audioSink->AudibleEvent().Connect(
         mTaskQueue, this, &MediaDecoderStateMachine::AudioAudibleChanged);
     return audioSink;
