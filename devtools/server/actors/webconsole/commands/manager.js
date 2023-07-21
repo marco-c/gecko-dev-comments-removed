@@ -260,8 +260,19 @@ exports.WebConsoleCommandsManager = WebConsoleCommandsManager;
 
 
 
-WebConsoleCommandsManager.register("$", function (owner, selector) {
+
+
+WebConsoleCommandsManager.register("$", function (owner, selector, element) {
   try {
+    if (
+      element &&
+      element.querySelector &&
+      (element.nodeType == Node.ELEMENT_NODE ||
+        element.nodeType == Node.DOCUMENT_NODE ||
+        element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
+    ) {
+      return element.querySelector(selector);
+    }
     return owner.window.document.querySelector(selector);
   } catch (err) {
     
@@ -277,22 +288,32 @@ WebConsoleCommandsManager.register("$", function (owner, selector) {
 
 
 
-WebConsoleCommandsManager.register("$$", function (owner, selector) {
-  let nodes;
+
+
+WebConsoleCommandsManager.register("$$", function (owner, selector, element) {
+  let scope = owner.window.document;
   try {
-    nodes = owner.window.document.querySelectorAll(selector);
+    if (
+      element &&
+      element.querySelectorAll &&
+      (element.nodeType == Node.ELEMENT_NODE ||
+        element.nodeType == Node.DOCUMENT_NODE ||
+        element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
+    ) {
+      scope = element;
+    }
+    const nodes = scope.querySelectorAll(selector);
+    const result = new owner.window.Array();
+    
+    
+    for (let i = 0; i < nodes.length; i++) {
+      result.push(nodes[i]);
+    }
+    return result;
   } catch (err) {
     
     throw new owner.window.DOMException(err.message, err.name);
   }
-
-  
-  
-  const result = new owner.window.Array();
-  for (let i = 0; i < nodes.length; i++) {
-    result.push(nodes[i]);
-  }
-  return result;
 });
 
 
