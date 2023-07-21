@@ -3454,13 +3454,20 @@ void nsGenericHTMLElement::FocusPreviousElementAfterHidingPopover() {
 }
 
 
-void nsGenericHTMLElement::TogglePopover(const Optional<bool>& aForce,
+bool nsGenericHTMLElement::TogglePopover(const Optional<bool>& aForce,
                                          ErrorResult& aRv) {
   if (PopoverOpen() && (!aForce.WasPassed() || !aForce.Value())) {
     HidePopover(aRv);
   } else if (!aForce.WasPassed() || aForce.Value()) {
     ShowPopover(aRv);
+  } else {
+    CheckPopoverValidity(GetPopoverData()
+                             ? GetPopoverData()->GetPopoverVisibilityState()
+                             : PopoverVisibilityState::Showing,
+                         nullptr, aRv);
   }
+
+  return PopoverOpen();
 }
 
 
