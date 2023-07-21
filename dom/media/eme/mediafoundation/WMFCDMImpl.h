@@ -25,12 +25,14 @@ class WMFCDMProxyCallback;
 
 
 
+
+
+
 class WMFCDMImpl final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WMFCDMImpl);
 
-  explicit WMFCDMImpl(const nsAString& aKeySystem)
-      : mCDM(MakeRefPtr<MFCDMChild>(aKeySystem)) {}
+  explicit WMFCDMImpl(const nsAString& aKeySystem) : mKeySystem(aKeySystem) {}
 
   static bool Supports(const nsAString& aKeySystem);
   
@@ -49,9 +51,11 @@ class WMFCDMImpl final {
 
   RefPtr<InitPromise> Init(const InitParams& aParams);
 
+  
   RefPtr<MFCDMChild::SessionPromise> CreateSession(
       uint32_t aPromiseId, const KeySystemConfig::SessionType aSessionType,
       const nsAString& aInitDataType, const nsTArray<uint8_t>& aInitData) {
+    MOZ_DIAGNOSTIC_ASSERT(mCDM);
     return mCDM->CreateSessionAndGenerateRequest(aPromiseId, aSessionType,
                                                  aInitDataType, aInitData);
   }
@@ -59,28 +63,34 @@ class WMFCDMImpl final {
   RefPtr<GenericPromise> LoadSession(
       uint32_t aPromiseId, const KeySystemConfig::SessionType aSessionType,
       const nsAString& aSessionId) {
+    MOZ_DIAGNOSTIC_ASSERT(mCDM);
     return mCDM->LoadSession(aPromiseId, aSessionType, aSessionId);
   }
 
   RefPtr<GenericPromise> UpdateSession(uint32_t aPromiseId,
                                        const nsAString& aSessionId,
                                        nsTArray<uint8_t>& aResponse) {
+    MOZ_DIAGNOSTIC_ASSERT(mCDM);
     return mCDM->UpdateSession(aPromiseId, aSessionId, aResponse);
   }
 
   RefPtr<GenericPromise> CloseSession(uint32_t aPromiseId,
                                       const nsAString& aSessionId) {
+    MOZ_DIAGNOSTIC_ASSERT(mCDM);
     return mCDM->CloseSession(aPromiseId, aSessionId);
   }
 
   RefPtr<GenericPromise> RemoveSession(uint32_t aPromiseId,
                                        const nsAString& aSessionId) {
+    MOZ_DIAGNOSTIC_ASSERT(mCDM);
     return mCDM->RemoveSession(aPromiseId, aSessionId);
   }
 
   uint64_t Id() {
-    MOZ_ASSERT(mCDM->Id() != 0,
-               "Should be called only after Init() is resolved");
+    MOZ_DIAGNOSTIC_ASSERT(mCDM,
+                          "Should be called only after Init() is resolved");
+    MOZ_DIAGNOSTIC_ASSERT(mCDM->Id() != 0,
+                          "Should be called only after Init() is resolved");
     return mCDM->Id();
   }
 
@@ -91,7 +101,8 @@ class WMFCDMImpl final {
     }
   };
 
-  const RefPtr<MFCDMChild> mCDM;
+  const nsString mKeySystem;
+  RefPtr<MFCDMChild> mCDM;
 
   MozPromiseHolder<InitPromise> mInitPromiseHolder;
 };
