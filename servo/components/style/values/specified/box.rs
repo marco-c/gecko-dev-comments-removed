@@ -1462,17 +1462,10 @@ pub enum Appearance {
     Groupbox,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menubar,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuitem,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Checkmenuitem,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Radiomenuitem,
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menuitemtext,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MenulistText,
@@ -1481,16 +1474,7 @@ pub enum Appearance {
     Menupopup,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menucheckbox,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menuradio,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menuseparator,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuarrow,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Menuimage,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Meterchunk,

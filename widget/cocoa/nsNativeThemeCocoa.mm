@@ -1158,41 +1158,6 @@ void nsNativeThemeCocoa::DrawMenuItem(CGContextRef cgContext, const CGRect& inBo
   }
 }
 
-void nsNativeThemeCocoa::DrawMenuSeparator(CGContextRef cgContext, const CGRect& inBoxRect,
-                                           const MenuItemParams& aParams) {
-  
-  
-  if (nsCocoaFeatures::OnBigSurOrLater()) {
-    CGRect separatorRect = inBoxRect;
-    separatorRect.size.height = 1;
-    separatorRect.size.width -= 42;
-    separatorRect.origin.x += 21;
-    if (!IsDarkAppearance(NSAppearance.currentAppearance)) {
-      
-      
-      
-      CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.0, (231 - 205) / 231.0);
-    } else {
-      
-      
-      
-      CGContextSetRGBFillColor(cgContext, 1.0, 1.0, 1.0, 1.0 + ((45 - 81) / 45.0));
-    }
-    CGContextFillRect(cgContext, separatorRect);
-    return;
-  }
-
-  ThemeMenuState menuState;
-  if (aParams.disabled) {
-    menuState = kThemeMenuDisabled;
-  } else {
-    menuState = aParams.selected ? kThemeMenuSelected : kThemeMenuActive;
-  }
-
-  HIThemeMenuItemDrawInfo midi = {0, kThemeMenuItemPlain, menuState};
-  HIThemeDrawMenuSeparator(&inBoxRect, &inBoxRect, &midi, cgContext, HITHEME_ORIENTATION);
-}
-
 static bool ShouldUnconditionallyDrawFocusRingIfFocused(nsIFrame* aFrame) {
   
   switch (aFrame->StyleDisplay()->EffectiveAppearance()) {
@@ -2246,9 +2211,6 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
       return Some(WidgetInfo::MenuItem(ComputeMenuItemParams(
           aFrame, elementState, aAppearance == StyleAppearance::Checkmenuitem)));
 
-    case StyleAppearance::Menuseparator:
-      return Some(WidgetInfo::MenuSeparator(ComputeMenuItemParams(aFrame, elementState, false)));
-
     case StyleAppearance::ButtonArrowUp:
     case StyleAppearance::ButtonArrowDown: {
       MenuIcon icon = aAppearance == StyleAppearance::ButtonArrowUp
@@ -2623,11 +2585,6 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo,
           DrawMenuItem(cgContext, macRect, params);
           break;
         }
-        case Widget::eMenuSeparator: {
-          MenuItemParams params = aWidgetInfo.Params<MenuItemParams>();
-          DrawMenuSeparator(cgContext, macRect, params);
-          break;
-        }
         case Widget::eCheckbox: {
           CheckboxOrRadioParams params = aWidgetInfo.Params<CheckboxOrRadioParams>();
           DrawCheckboxOrRadio(cgContext, true, macRect, params);
@@ -2782,7 +2739,6 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     case StyleAppearance::Menuarrow:
     case StyleAppearance::Menuitem:
     case StyleAppearance::Checkmenuitem:
-    case StyleAppearance::Menuseparator:
     case StyleAppearance::ButtonArrowUp:
     case StyleAppearance::ButtonArrowDown:
     case StyleAppearance::Checkbox:
@@ -3254,7 +3210,6 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
     case StyleAppearance::Menupopup:
     case StyleAppearance::Menuarrow:
     case StyleAppearance::Menuitem:
-    case StyleAppearance::Menuseparator:
     case StyleAppearance::Tooltip:
 
     case StyleAppearance::Checkbox:
@@ -3363,7 +3318,6 @@ bool nsNativeThemeCocoa::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aA
     case StyleAppearance::Menupopup:
     case StyleAppearance::Menuarrow:
     case StyleAppearance::Menuitem:
-    case StyleAppearance::Menuseparator:
     case StyleAppearance::Tooltip:
     case StyleAppearance::Spinner:
     case StyleAppearance::SpinnerUpbutton:
