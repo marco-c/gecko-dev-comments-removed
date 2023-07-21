@@ -18,6 +18,7 @@
 #include "vm/NativeObject.h"
 
 class JSLinearString;
+class JS_PUBLIC_API JSTracer;
 struct JSClassOps;
 
 namespace js {
@@ -30,11 +31,8 @@ class TimeZone;
 
 namespace js::temporal {
 
-class TimeZoneObject : public NativeObject {
+class TimeZoneObjectMaybeBuiltin : public NativeObject {
  public:
-  static const JSClass class_;
-  static const JSClass& protoClass_;
-
   static constexpr uint32_t IDENTIFIER_SLOT = 0;
   static constexpr uint32_t OFFSET_NANOSECONDS_SLOT = 1;
   static constexpr uint32_t INTL_TIMEZONE_SLOT = 2;
@@ -63,14 +61,163 @@ class TimeZoneObject : public NativeObject {
     setFixedSlot(INTL_TIMEZONE_SLOT, JS::PrivateValue(timeZone));
   }
 
- private:
-  static const JSClassOps classOps_;
-  static const ClassSpec classSpec_;
-
+ protected:
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-using TimeZoneValue = JSObject*;
+class TimeZoneObject : public TimeZoneObjectMaybeBuiltin {
+ public:
+  static const JSClass class_;
+  static const JSClass& protoClass_;
+
+ private:
+  static const JSClassOps classOps_;
+  static const ClassSpec classSpec_;
+};
+
+class BuiltinTimeZoneObject : public TimeZoneObjectMaybeBuiltin {
+ public:
+  static const JSClass class_;
+
+ private:
+  static const JSClassOps classOps_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TimeZoneValue final {
+  JSObject* object_ = nullptr;
+
+ public:
+  
+
+
+  TimeZoneValue() = default;
+
+  
+
+
+  explicit TimeZoneValue(BuiltinTimeZoneObject* timeZone) : object_(timeZone) {
+    MOZ_ASSERT(isString());
+  }
+
+  
+
+
+  explicit TimeZoneValue(JSObject* timeZone) : object_(timeZone) {
+    MOZ_ASSERT(isObject());
+  }
+
+  
+
+
+
+  explicit TimeZoneValue(const JS::Value& value) : object_(&value.toObject()) {}
+
+  
+
+
+  explicit operator bool() const { return !!object_; }
+
+  
+
+
+  bool isString() const {
+    return object_ && object_->is<BuiltinTimeZoneObject>();
+  }
+
+  
+
+
+  bool isObject() const { return object_ && !isString(); }
+
+  
+
+
+  auto* toString() const {
+    MOZ_ASSERT(isString());
+    return &object_->as<BuiltinTimeZoneObject>();
+  }
+
+  
+
+
+  JSObject* toObject() const {
+    MOZ_ASSERT(isObject());
+    return object_;
+  }
+
+  
+
+
+  JS::Value toValue() const {
+    if (isString()) {
+      return JS::StringValue(toString()->identifier());
+    }
+
+    MOZ_ASSERT(object_);
+    return JS::ObjectValue(*object_);
+  }
+
+  
+
+
+  JS::Value toSlotValue() const {
+    MOZ_ASSERT(object_);
+    return JS::ObjectValue(*object_);
+  }
+
+  
+  auto address() { return &object_; }
+  auto address() const { return &object_; }
+
+  
+  void trace(JSTracer* trc);
+};
 
 struct Instant;
 struct PlainDateTime;
@@ -103,13 +250,13 @@ JSString* ValidateAndCanonicalizeTimeZoneName(JSContext* cx,
 
 
 
-TimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
-                                       JS::Handle<JSString*> identifier);
+BuiltinTimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
+                                              JS::Handle<JSString*> identifier);
 
 
 
 
-TimeZoneObject* CreateTemporalTimeZoneUTC(JSContext* cx);
+BuiltinTimeZoneObject* CreateTemporalTimeZoneUTC(JSContext* cx);
 
 
 
@@ -207,6 +354,66 @@ JSString* FormatTimeZoneOffsetString(JSContext* cx, int64_t offsetNanoseconds);
 
 JSString* FormatISOTimeZoneOffsetString(JSContext* cx,
                                         int64_t offsetNanoseconds);
+
+
+bool WrapTimeZoneValueObject(JSContext* cx,
+                             JS::MutableHandle<JSObject*> timeZone);
+
+} 
+
+template <>
+inline bool JSObject::is<js::temporal::TimeZoneObjectMaybeBuiltin>() const {
+  return is<js::temporal::TimeZoneObject>() ||
+         is<js::temporal::BuiltinTimeZoneObject>();
+}
+
+namespace js {
+
+template <typename Wrapper>
+class WrappedPtrOperations<temporal::TimeZoneValue, Wrapper> {
+  const auto& container() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
+
+ public:
+  explicit operator bool() const { return !!container(); }
+
+  bool isString() const { return container().isString(); }
+
+  bool isObject() const { return container().isObject(); }
+
+  JS::Handle<temporal::BuiltinTimeZoneObject*> toString() const {
+    MOZ_ASSERT(container().isString());
+    auto h = JS::Handle<JSObject*>::fromMarkedLocation(container().address());
+    return h.template as<temporal::BuiltinTimeZoneObject>();
+  }
+
+  JS::Handle<JSObject*> toObject() const {
+    MOZ_ASSERT(container().isObject());
+    return JS::Handle<JSObject*>::fromMarkedLocation(container().address());
+  }
+
+  JS::Value toValue() const { return container().toValue(); }
+
+  JS::Value toSlotValue() const { return container().toSlotValue(); }
+};
+
+template <typename Wrapper>
+class MutableWrappedPtrOperations<temporal::TimeZoneValue, Wrapper>
+    : public WrappedPtrOperations<temporal::TimeZoneValue, Wrapper> {
+  auto& container() { return static_cast<Wrapper*>(this)->get(); }
+
+ public:
+  
+
+
+  bool wrap(JSContext* cx) {
+    MOZ_ASSERT(container().isString() || container().isObject());
+    auto mh =
+        JS::MutableHandle<JSObject*>::fromMarkedLocation(container().address());
+    return temporal::WrapTimeZoneValueObject(cx, mh);
+  }
+};
 
 } 
 
