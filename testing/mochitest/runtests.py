@@ -3811,13 +3811,23 @@ toolbar#nav-bar {
         """handle process output timeout"""
         
         
-        error_message = (
-            "TEST-UNEXPECTED-TIMEOUT | %s | application timed out after "
-            "%d seconds with no output"
-        ) % (self.lastTestSeen, int(timeout))
+        message = {
+            "action": "test_end",
+            "status": "TIMEOUT",
+            "expected": "PASS",
+            "thread": None,
+            "pid": None,
+            "source": "mochitest",
+            "time": int(time.time()) * 1000,
+            "test": self.lastTestSeen,
+            "message": "application timed out after %d seconds with no output"
+            % int(timeout),
+        }
+        
+        
+        self.message_logger.process_message(message)
         self.message_logger.dump_buffered()
         self.message_logger.buffering = False
-        self.log.info(error_message)
         self.log.warning("Force-terminating active process(es).")
 
         browser_pid = browser_pid or proc.pid
