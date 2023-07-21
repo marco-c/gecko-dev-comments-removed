@@ -115,10 +115,15 @@ function GetIterator(obj, isAsync, method) {
 
 
 
-function GetIteratorFlattenable(obj) {
+function GetIteratorFlattenable(obj, rejectStrings) {
+  assert(typeof rejectStrings === "boolean", "rejectStrings is a boolean");
+
   
   if (!IsObject(obj)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, obj === null ? "null" : typeof obj);
+    
+    if (rejectStrings || typeof obj !== "string") {
+      ThrowTypeError(JSMSG_OBJECT_REQUIRED, obj === null ? "null" : typeof obj);
+    }
   }
 
   
@@ -148,12 +153,7 @@ function GetIteratorFlattenable(obj) {
 
 function IteratorFrom(O) {
   
-  if (typeof O === "string") {
-    O = ToObject(O);
-  }
-
-  
-  var iterator = GetIteratorFlattenable(O);
+  var iterator = GetIteratorFlattenable(O,  false);
   var nextMethod = iterator.next;
 
   
@@ -721,7 +721,7 @@ function* IteratorFlatMapGenerator(iterator, nextMethod, mapper) {
     
 
     
-    var innerIterator = GetIteratorFlattenable(mapped);
+    var innerIterator = GetIteratorFlattenable(mapped,  true);
     var innerIteratorNextMethod = innerIterator.next;
 
     
