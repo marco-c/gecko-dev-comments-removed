@@ -19,6 +19,7 @@
 #include "mozilla/dom/FileSystemUtils.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/GetFilesHelper.h"
+#include "mozilla/dom/NumericInputTypes.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/InputType.h"
 #include "mozilla/dom/UserActivation.h"
@@ -1639,15 +1640,10 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
       
       
       nsAutoString currentValue;
-      GetValue(currentValue, aCallerType);
+      GetNonFileValueInternal(currentValue);
 
-      
-      
-      
-      
-      
       nsresult rv = SetValueInternal(
-          aValue, SanitizesOnValueGetter() ? nullptr : &currentValue,
+          aValue, &currentValue,
           {ValueSetterOption::ByContentAPI, ValueSetterOption::SetValueChanged,
            ValueSetterOption::MoveCursorToEndIfValueChanged});
       if (NS_FAILED(rv)) {
@@ -2653,7 +2649,14 @@ nsresult HTMLInputElement::SetValueInternal(
       
       nsAutoString value(aValue);
 
-      if (mDoneCreating) {
+      if (mDoneCreating &&
+          !(mType == FormControlType::InputNumber &&
+            aOptions.contains(ValueSetterOption::BySetUserInputAPI))) {
+        
+        
+        
+        
+        
         SanitizeValue(value);
       }
       
@@ -4594,7 +4597,7 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           aValue);
     } break;
     case FormControlType::InputNumber: {
-      if (!aValue.IsEmpty() &&
+      if (aKind == SanitizationKind::Other && !aValue.IsEmpty() &&
           (aValue.First() == '+' || aValue.Last() == '.')) {
         
         
