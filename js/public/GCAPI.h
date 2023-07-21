@@ -924,13 +924,15 @@ enum class GCNurseryProgress {
 
 using GCNurseryCollectionCallback = void (*)(JSContext* cx,
                                              GCNurseryProgress progress,
-                                             GCReason reason);
+                                             GCReason reason, void* data);
 
 
 
 
 
-extern JS_PUBLIC_API GCNurseryCollectionCallback SetGCNurseryCollectionCallback(
+extern JS_PUBLIC_API bool AddGCNurseryCollectionCallback(
+    JSContext* cx, GCNurseryCollectionCallback callback, void* data);
+extern JS_PUBLIC_API void RemoveGCNurseryCollectionCallback(
     JSContext* cx, GCNurseryCollectionCallback callback);
 
 typedef void (*DoCycleCollectionCallback)(JSContext* cx);
