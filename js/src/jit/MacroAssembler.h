@@ -3835,15 +3835,37 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void branchWasmGcObjectIsRefType(Register object, wasm::RefType sourceType,
-                                   wasm::RefType destType, Label* label,
-                                   bool onSuccess,
-                                   Register superSuperTypeVector,
-                                   Register scratch1, Register scratch2);
-  static bool needScratch1ForBranchWasmGcRefType(wasm::RefType type);
-  static bool needScratch2ForBranchWasmGcRefType(wasm::RefType type);
-  static bool needSuperSuperTypeVectorForBranchWasmGcRefType(
+  void branchWasmRefIsSubtypeAny(Register ref, wasm::RefType sourceType,
+                                 wasm::RefType destType, Label* label,
+                                 bool onSuccess, Register superSuperTypeVector,
+                                 Register scratch1, Register scratch2);
+  static bool needScratch1ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
+  static bool needScratch2ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
+  static bool needSuperSTVForBranchWasmRefIsSubtypeAny(wasm::RefType type);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void branchWasmRefIsSubtypeFunc(Register ref, wasm::RefType sourceType,
+                                  wasm::RefType destType, Label* label,
+                                  bool onSuccess, Register superSuperTypeVector,
+                                  Register scratch1, Register scratch2);
+  static bool needSuperSTVAndScratch1ForBranchWasmRefIsSubtypeFunc(
       wasm::RefType type);
+  static bool needScratch2ForBranchWasmRefIsSubtypeFunc(wasm::RefType type);
+
+  
+  
+  void branchWasmRefIsSubtypeExtern(Register ref, wasm::RefType sourceType,
+                                    wasm::RefType destType, Label* label,
+                                    bool onSuccess);
 
   
   
