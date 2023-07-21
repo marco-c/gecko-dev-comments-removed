@@ -10,6 +10,8 @@
 #include "mozilla/dom/PermissionsBinding.h"
 #include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/MozPromise.h"
+#include "nsIPermission.h"
 
 namespace mozilla::dom {
 
@@ -19,9 +21,11 @@ class PermissionStatus : public DOMEventTargetHelper {
   friend class PermissionObserver;
 
  public:
-  static already_AddRefed<PermissionStatus> Create(nsPIDOMWindowInner* aWindow,
-                                                   PermissionName aName,
-                                                   ErrorResult& aRv);
+  using CreatePromise = MozPromise<RefPtr<PermissionStatus>, nsresult, true>;
+  using SimplePromise = MozPromise<nsresult, nsresult, true>;
+
+  static RefPtr<CreatePromise> Create(nsPIDOMWindowInner* aWindow,
+                                      PermissionName aName);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -34,7 +38,7 @@ class PermissionStatus : public DOMEventTargetHelper {
 
   PermissionName Name() const { return mName; }
 
-  nsresult Init();
+  RefPtr<SimplePromise> Init();
 
  protected:
   ~PermissionStatus();
@@ -54,16 +58,26 @@ class PermissionStatus : public DOMEventTargetHelper {
   virtual nsLiteralCString GetPermissionType();
 
  private:
-  nsresult UpdateState();
+  virtual RefPtr<SimplePromise> UpdateState();
 
-  already_AddRefed<nsIPrincipal> GetPrincipal() const;
+  
+  
+  
+  
+  
+  
+  
+  virtual bool MaybeUpdatedBy(nsIPermission* aPermission) const;
+  virtual bool MaybeUpdatedByNotifyOnly(nsPIDOMWindowInner* aInnerWindow) const;
 
   void PermissionChanged();
 
   PermissionName mName;
-  PermissionState mState;
 
   RefPtr<PermissionObserver> mObserver;
+
+ protected:
+  PermissionState mState;
 };
 
 }  
