@@ -232,6 +232,12 @@ pub enum SystemColor {
     MozMenubarhovertext,
 
     
+    MozHeaderbar,
+    MozHeaderbartext,
+    MozHeaderbarinactive,
+    MozHeaderbarinactivetext,
+
+    
     
     MozEventreerow,
     MozOddtreerow,

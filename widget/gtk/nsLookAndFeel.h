@@ -52,14 +52,25 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   static bool ShouldHonorThemeScrollbarColors();
   mozilla::Maybe<ColorScheme> ComputeColorSchemeSetting();
 
+  enum class ThemeFamily : uint8_t {
+    
+    Adwaita,
+    
+    Breeze,
+    
+    Yaru,
+    Other,
+  };
+
   
   
   struct PerThemeData {
     nsCString mName;
-
     bool mIsDark = false;
     bool mHighContrast = false;
     bool mPreferDarkTheme = false;
+
+    ThemeFamily mFamily = ThemeFamily::Other;
 
     
     
@@ -80,6 +91,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     ColorPair mInfo;
     ColorPair mMenu;
     ColorPair mMenuHover;
+    ColorPair mHeaderBar;
+    ColorPair mHeaderBarInactive;
     ColorPair mButton;
     ColorPair mButtonHover;
     nscolor mButtonActiveText = kBlack;
