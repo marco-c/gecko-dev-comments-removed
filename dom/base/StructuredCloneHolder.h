@@ -165,6 +165,7 @@ class StructuredCloneHolderBase {
 };
 
 class BlobImpl;
+class EncodedVideoChunkData;
 class MessagePort;
 class MessagePortIdentifier;
 struct VideoFrameSerializedData;
@@ -211,7 +212,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   bool HasClonedDOMObjects() const {
     return !mBlobImplArray.IsEmpty() || !mWasmModuleArray.IsEmpty() ||
            !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty() ||
-           !mVideoFrames.IsEmpty();
+           !mVideoFrames.IsEmpty() || !mEncodedVideoChunks.IsEmpty();
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {
@@ -268,6 +269,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   }
 
   nsTArray<VideoFrameSerializedData>& VideoFrames() { return mVideoFrames; }
+
+  nsTArray<EncodedVideoChunkData>& EncodedVideoChunks() {
+    return mEncodedVideoChunks;
+  }
 
   
   
@@ -373,6 +378,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   nsTArray<VideoFrameSerializedData> mVideoFrames;
+
+  
+  nsTArray<EncodedVideoChunkData> mEncodedVideoChunks;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
