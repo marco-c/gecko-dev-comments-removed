@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "mozilla/dom/MediaKeySession.h"
+#include "mozilla/dom/KeySystemNames.h"
 
 namespace mozilla {
 
@@ -125,6 +126,13 @@ bool WMFCDMImpl::GetCapabilities(nsTArray<KeySystemConfig>& aOutConfigs) {
           KeySystemConfig* config = aOutConfigs.AppendElement();
           MFCDMCapabilitiesIPDLToKeySystemConfig(capabilities, *config);
           sKeySystemConfigs[keySystem].AppendElement(*config);
+          
+          
+          if (keySystem.compare(kPlayReadyKeySystemName) == 0 && isHWSecure) {
+            config->mKeySystem.AssignLiteral(kPlayReadyKeySystemHardware);
+            sKeySystemConfigs["com.microsoft.playready.recommendation.3000"]
+                .AppendElement(*config);
+          }
           ok = true;
         },
         [](nsresult rv) {
