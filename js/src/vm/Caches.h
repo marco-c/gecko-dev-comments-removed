@@ -526,15 +526,6 @@ class RuntimeCaches {
   
   frontend::RuntimeScopeBindingCache scopeCache;
 
-  
-  
-  
-  
-  
-  
-  
-  StencilCache delazificationCache;
-
   void sweepAfterMinorGC(JSTracer* trc) { evalCache.traceWeak(trc); }
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkEvalCacheAfterMinorGC();
@@ -553,7 +544,10 @@ class RuntimeCaches {
     scopeCache.purge();
   }
 
-  void purgeStencils() { delazificationCache.clearAndDisable(); }
+  void purgeStencils() {
+    DelazificationCache& cache = DelazificationCache::getSingleton();
+    cache.clearAndDisable();
+  }
 
   void purge() {
     purgeForCompaction();

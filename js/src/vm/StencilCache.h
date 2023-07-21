@@ -176,6 +176,22 @@ class StencilCache {
   void clearAndDisable();
 };
 
+
+
+
+
+
+
+
+class DelazificationCache : public StencilCache {
+  static DelazificationCache singleton;
+
+ public:
+  DelazificationCache() = default;
+
+  static DelazificationCache& getSingleton() { return singleton; }
+};
+
 } 
 
 #endif 

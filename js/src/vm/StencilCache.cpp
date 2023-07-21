@@ -65,3 +65,5 @@ void js::StencilCache::clearAndDisable() {
   guard->watched.clearAndCompact();
   enabled = false;
 }
+
+ js::DelazificationCache js::DelazificationCache::singleton;
