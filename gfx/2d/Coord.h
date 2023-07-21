@@ -37,28 +37,7 @@ struct CoordTyped;
 
 
 
-
-template <class Coord, class Primitive>
-struct CommonType;
-
-template <class Units, class Rep, class Primitive>
-struct CommonType<IntCoordTyped<Units, Rep>, Primitive> {
-  using type = decltype(Rep() + Primitive());
-};
-
-template <class Units, class F, class Primitive>
-struct CommonType<CoordTyped<Units, F>, Primitive> {
-  using type = decltype(F() + Primitive());
-};
-
-
-
-
-
-
-
-
-template <bool B, class Coord, class Primitive>
+template <bool Enable, class Coord, class Primitive>
 struct CoordOperatorsHelper {
   
   
@@ -71,19 +50,17 @@ struct CoordOperatorsHelper<true, Coord, Primitive> {
   friend bool operator!=(Coord aA, Primitive aB) { return aA.value != aB; }
   friend bool operator!=(Primitive aA, Coord aB) { return aA != aB.value; }
 
-  using result_type = typename CommonType<Coord, Primitive>::type;
-
-  friend result_type operator+(Coord aA, Primitive aB) { return aA.value + aB; }
-  friend result_type operator+(Primitive aA, Coord aB) { return aA + aB.value; }
-  friend result_type operator-(Coord aA, Primitive aB) { return aA.value - aB; }
-  friend result_type operator-(Primitive aA, Coord aB) { return aA - aB.value; }
-  friend result_type operator*(Coord aCoord, Primitive aScale) {
+  friend auto operator+(Coord aA, Primitive aB) { return aA.value + aB; }
+  friend auto operator+(Primitive aA, Coord aB) { return aA + aB.value; }
+  friend auto operator-(Coord aA, Primitive aB) { return aA.value - aB; }
+  friend auto operator-(Primitive aA, Coord aB) { return aA - aB.value; }
+  friend auto operator*(Coord aCoord, Primitive aScale) {
     return aCoord.value * aScale;
   }
-  friend result_type operator*(Primitive aScale, Coord aCoord) {
+  friend auto operator*(Primitive aScale, Coord aCoord) {
     return aScale * aCoord.value;
   }
-  friend result_type operator/(Coord aCoord, Primitive aScale) {
+  friend auto operator/(Coord aCoord, Primitive aScale) {
     return aCoord.value / aScale;
   }
   
