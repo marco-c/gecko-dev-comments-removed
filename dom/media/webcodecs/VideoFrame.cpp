@@ -160,14 +160,6 @@ class NV12BufferReader final : public YUVBufferReaderBase {
 
 
 
-static bool IsSameOrigin(nsIGlobalObject* aGlobal, nsIURI* aURI) {
-  MOZ_ASSERT(aGlobal);
-
-  nsIPrincipal* principal = aGlobal->PrincipalOrNull();
-  
-  
-  return !principal || !aURI || principal->IsSameOrigin(aURI);
-}
 
 static bool IsSameOrigin(nsIGlobalObject* aGlobal, const VideoFrame& aFrame) {
   MOZ_ASSERT(aGlobal);
@@ -1103,12 +1095,10 @@ VideoFrameSerializedData::VideoFrameSerializedData(
     layers::Image* aImage, const Maybe<VideoPixelFormat>& aFormat,
     gfx::IntSize aCodedSize, gfx::IntRect aVisibleRect,
     gfx::IntSize aDisplaySize, Maybe<uint64_t> aDuration, int64_t aTimestamp,
-    const VideoColorSpaceInit& aColorSpace,
-    already_AddRefed<nsIURI> aPrincipalURI)
+    const VideoColorSpaceInit& aColorSpace)
     : VideoFrameData(aImage, aFormat, aVisibleRect, aDisplaySize, aDuration,
                      aTimestamp, aColorSpace),
-      mCodedSize(aCodedSize),
-      mPrincipalURI(aPrincipalURI) {}
+      mCodedSize(aCodedSize) {}
 
 
 
@@ -1766,10 +1756,6 @@ already_AddRefed<layers::Image> VideoFrame::GetImage() const {
 JSObject* VideoFrame::ReadStructuredClone(
     JSContext* aCx, nsIGlobalObject* aGlobal, JSStructuredCloneReader* aReader,
     const VideoFrameSerializedData& aData) {
-  if (!IsSameOrigin(aGlobal, aData.mPrincipalURI.get())) {
-    return nullptr;
-  }
-
   JS::Rooted<JS::Value> value(aCx, JS::NullValue());
   
   
@@ -1804,7 +1790,7 @@ bool VideoFrame::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
   
   aHolder->VideoFrames().AppendElement(VideoFrameSerializedData(
       image.get(), mResource->TryPixelFormat(), mCodedSize, mVisibleRect,
-      mDisplaySize, mDuration, mTimestamp, mColorSpace, GetPrincipalURI()));
+      mDisplaySize, mDuration, mTimestamp, mColorSpace));
 
   return !NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_VIDEOFRAME, index));
 }
@@ -1820,7 +1806,7 @@ UniquePtr<VideoFrame::TransferredData> VideoFrame::Transfer() {
   Resource r = mResource.extract();
   auto frame = MakeUnique<TransferredData>(
       r.mImage.get(), r.TryPixelFormat(), mCodedSize, mVisibleRect,
-      mDisplaySize, mDuration, mTimestamp, mColorSpace, GetPrincipalURI());
+      mDisplaySize, mDuration, mTimestamp, mColorSpace);
   Close();
   return frame;
 }
@@ -1831,21 +1817,10 @@ already_AddRefed<VideoFrame> VideoFrame::FromTransferred(
     nsIGlobalObject* aGlobal, TransferredData* aData) {
   MOZ_ASSERT(aData);
 
-  if (!IsSameOrigin(aGlobal, aData->mPrincipalURI.get())) {
-    return nullptr;
-  }
-
   return MakeAndAddRef<VideoFrame>(aGlobal, aData->mImage, aData->mFormat,
                                    aData->mCodedSize, aData->mVisibleRect,
                                    aData->mDisplaySize, aData->mDuration,
                                    aData->mTimestamp, aData->mColorSpace);
-}
-
-already_AddRefed<nsIURI> VideoFrame::GetPrincipalURI() const {
-  AssertIsOnOwningThread();
-
-  nsIPrincipal* principal = mParent->PrincipalOrNull();
-  return principal ? principal->GetURI() : nullptr;
 }
 
 

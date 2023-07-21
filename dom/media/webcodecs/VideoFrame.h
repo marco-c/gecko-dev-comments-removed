@@ -75,11 +75,9 @@ struct VideoFrameSerializedData : VideoFrameData {
                            gfx::IntSize aCodedSize, gfx::IntRect aVisibleRect,
                            gfx::IntSize aDisplaySize, Maybe<uint64_t> aDuration,
                            int64_t aTimestamp,
-                           const VideoColorSpaceInit& aColorSpace,
-                           already_AddRefed<nsIURI> aPrincipalURI);
+                           const VideoColorSpaceInit& aColorSpace);
 
   const gfx::IntSize mCodedSize;
-  const nsCOMPtr<nsIURI> mPrincipalURI;
 };
 
 class VideoFrame final : public nsISupports, public nsWrapperCache {
@@ -216,8 +214,6 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
  private:
   
   void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(VideoFrame); }
-
-  already_AddRefed<nsIURI> GetPrincipalURI() const;
 
   
   class Resource final {
