@@ -107,8 +107,6 @@ uint64_t WasmReservedBytes();
 
 
 
-
-
 class ArrayBufferObjectMaybeShared;
 
 wasm::IndexType WasmArrayBufferIndexType(
@@ -152,7 +150,6 @@ using HandleArrayBufferObjectMaybeShared =
     Handle<ArrayBufferObjectMaybeShared*>;
 using MutableHandleArrayBufferObjectMaybeShared =
     MutableHandle<ArrayBufferObjectMaybeShared*>;
-
 
 
 
