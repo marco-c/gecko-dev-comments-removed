@@ -682,7 +682,7 @@ class gfxFontShaper {
   static void MergeFontFeatures(
       const gfxFontStyle* aStyle, const nsTArray<gfxFontFeature>& aFontFeatures,
       bool aDisableLigatures, const nsACString& aFamilyName, bool aAddSmallCaps,
-      void (*aHandleFeature)(uint32_t, uint32_t, void*),
+      void (*aHandleFeature)(const uint32_t&, uint32_t&, void*),
       void* aHandleFeatureData);
 
  protected:
@@ -2002,9 +2002,6 @@ class gfxFont {
   
   
   virtual int32_t GetGlyphWidth(uint16_t aGID) { return -1; }
-  virtual int32_t GetGlyphWidthLocked(uint16_t aGID) MOZ_REQUIRES(mLock) {
-    return -1;
-  }
 
   virtual bool GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
                               bool aTight = false) {
@@ -2031,16 +2028,14 @@ class gfxFont {
                  uint32_t aOffset,  
                  uint32_t aLength, Script aScript, nsAtom* aLanguage,
                  bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText* aShapedText)  
-      MOZ_REQUIRES(mLock);
+                 gfxShapedText* aShapedText);  
 
   
   
   virtual bool ShapeText(DrawTarget* aContext, const char16_t* aText,
                          uint32_t aOffset, uint32_t aLength, Script aScript,
                          nsAtom* aLanguage, bool aVertical,
-                         RoundingFlags aRounding, gfxShapedText* aShapedText)
-      MOZ_REQUIRES(mLock);
+                         RoundingFlags aRounding, gfxShapedText* aShapedText);
 
   
   
