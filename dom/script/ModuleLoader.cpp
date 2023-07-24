@@ -271,6 +271,9 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
   RefPtr<ScriptLoadContext> context = new ScriptLoadContext();
 
   if (aMaybeActiveScript) {
+    
+    
+    
     options = aMaybeActiveScript->GetFetchOptions();
     baseURL = aMaybeActiveScript->BaseURL();
   } else {
@@ -285,8 +288,18 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
                   BasePrincipal::Cast(principal)->ContentScriptAddonPolicy());
     MOZ_ASSERT_IF(GetKind() == Normal, principal == document->NodePrincipal());
 
-    options = new ScriptFetchOptions(
-        mozilla::CORS_NONE, document->GetReferrerPolicy(), principal, nullptr);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    options = new ScriptFetchOptions(mozilla::CORS_NONE,
+                                     document->GetReferrerPolicy(),
+                                      u""_ns, principal, nullptr);
     baseURL = document->GetDocBaseURI();
   }
 

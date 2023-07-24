@@ -89,9 +89,11 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
   
   
   
-  ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
+  
+  
   RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
-      CORSMode::CORS_NONE, referrerPolicy,  nullptr);
+      CORSMode::CORS_NONE, ReferrerPolicy::_empty,  u""_ns,
+       nullptr);
 
   WorkletModuleLoader* moduleLoader =
       static_cast<WorkletModuleLoader*>(globalScope->GetModuleLoader());

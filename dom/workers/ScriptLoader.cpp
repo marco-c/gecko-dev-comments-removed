@@ -641,8 +641,17 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     loadContext->mLoadResult = rv;
   }
 
-  RefPtr<ScriptFetchOptions> fetchOptions =
-      new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
+      CORSMode::CORS_NONE, referrerPolicy,  u""_ns, nullptr);
 
   RefPtr<ScriptLoadRequest> request = nullptr;
   
