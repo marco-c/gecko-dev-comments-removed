@@ -14748,6 +14748,14 @@ Result<PermissionValue, nsresult> FactoryOp::CheckPermission(
       if (StaticPrefs::dom_indexedDB_privateBrowsing_enabled()) {
         
         
+        
+        if (StringBeginsWith(contentPrincipalInfo.originNoSuffix(),
+                             "moz-extension:"_ns)) {
+          return Err(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
+        }
+
+        
+        
         mInPrivateBrowsing.Flip();
       } else {
         return Err(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
