@@ -1,5 +1,5 @@
 use crate::limits::MAX_WASM_CANONICAL_OPTIONS;
-use crate::{BinaryReader, ComponentValType, FromReader, Result, SectionLimited};
+use crate::{BinaryReader, FromReader, Result, SectionLimited};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,8 +51,7 @@ pub enum CanonicalFunction {
     
     ResourceDrop {
         
-        
-        ty: ComponentValType,
+        resource: u32,
     },
     
     
@@ -95,7 +94,9 @@ impl<'a> FromReader<'a> for CanonicalFunction {
             0x02 => CanonicalFunction::ResourceNew {
                 resource: reader.read()?,
             },
-            0x03 => CanonicalFunction::ResourceDrop { ty: reader.read()? },
+            0x03 => CanonicalFunction::ResourceDrop {
+                resource: reader.read()?,
+            },
             0x04 => CanonicalFunction::ResourceRep {
                 resource: reader.read()?,
             },

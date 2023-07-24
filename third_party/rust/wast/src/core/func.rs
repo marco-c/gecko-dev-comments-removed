@@ -38,7 +38,7 @@ pub enum FuncKind<'a> {
     
     Inline {
         
-        locals: Vec<Local<'a>>,
+        locals: Box<[Local<'a>]>,
 
         
         expression: Expression<'a>,
@@ -56,7 +56,7 @@ impl<'a> Parse<'a> for Func<'a> {
             (parser.parse()?, FuncKind::Import(import))
         } else {
             let ty = parser.parse()?;
-            let locals = Local::parse_remainder(parser)?;
+            let locals = Local::parse_remainder(parser)?.into();
             (
                 ty,
                 FuncKind::Inline {
@@ -95,7 +95,7 @@ pub struct Local<'a> {
 impl<'a> Local<'a> {
     pub(crate) fn parse_remainder(parser: Parser<'a>) -> Result<Vec<Local<'a>>> {
         let mut locals = Vec::new();
-        while parser.peek2::<kw::local>() {
+        while parser.peek2::<kw::local>()? {
             parser.parens(|p| {
                 p.parse::<kw::local>()?;
                 if p.is_empty() {

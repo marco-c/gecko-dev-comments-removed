@@ -26,6 +26,24 @@ impl Section for CustomSection<'_> {
     }
 }
 
+
+
+
+#[derive(Clone, Debug)]
+pub struct RawCustomSection<'a>(pub &'a [u8]);
+
+impl Encode for RawCustomSection<'_> {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        sink.extend(self.0);
+    }
+}
+
+impl Section for RawCustomSection<'_> {
+    fn id(&self) -> u8 {
+        SectionId::Custom.into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

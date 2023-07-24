@@ -64,9 +64,10 @@
 
 
 
-use crate::lexer::{Float, Integer, Lexer, Token};
+use crate::lexer::{Float, Integer, Lexer, Token, TokenKind};
 use crate::token::Span;
 use crate::Error;
+use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fmt;
@@ -120,7 +121,7 @@ pub(crate) const MAX_PARENS_DEPTH: usize = 100;
 pub fn parse<'a, T: Parse<'a>>(buf: &'a ParseBuffer<'a>) -> Result<T> {
     let parser = buf.parser();
     let result = parser.parse()?;
-    if parser.cursor().advance_token().is_none() {
+    if parser.cursor().token()?.is_none() {
         Ok(result)
     } else {
         Err(parser.error("extra tokens remaining after parse"))
@@ -243,6 +244,15 @@ pub trait Parse<'a>: Sized {
     fn parse(parser: Parser<'a>) -> Result<Self>;
 }
 
+impl<'a, T> Parse<'a> for Box<T>
+where
+    T: Parse<'a>,
+{
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        Ok(Box::new(parser.parse()?))
+    }
+}
+
 
 
 
@@ -264,16 +274,16 @@ pub trait Peek {
     
     
     
-    fn peek(cursor: Cursor<'_>) -> bool;
+    fn peek(cursor: Cursor<'_>) -> Result<bool>;
 
     
     
-    fn peek2(mut cursor: Cursor<'_>) -> bool {
-        if cursor.advance_token().is_some() {
-            Self::peek(cursor)
-        } else {
-            false
+    fn peek2(mut cursor: Cursor<'_>) -> Result<bool> {
+        match cursor.token()? {
+            Some(token) => cursor.advance_past(&token),
+            None => return Ok(false),
         }
+        Self::peek(cursor)
     }
 
     
@@ -291,24 +301,30 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 
 pub struct ParseBuffer<'a> {
-    
-    
-    
-    tokens: Box<[(Token<'a>, Cell<NextTokenAt>)]>,
-    input: &'a str,
-    cur: Cell<usize>,
+    lexer: Lexer<'a>,
+    cur: Cell<Position>,
     known_annotations: RefCell<HashMap<String, usize>>,
     depth: Cell<usize>,
+    strings: RefCell<Vec<Box<[u8]>>>,
 }
 
-#[derive(Copy, Clone, Debug)]
-enum NextTokenAt {
-    
-    Unknown,
-    
-    Index(usize),
-    
-    Eof,
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone)]
+struct Position {
+    offset: usize,
+    token: Option<Token>,
 }
 
 
@@ -341,7 +357,7 @@ pub struct Lookahead1<'a> {
 #[derive(Copy, Clone)]
 pub struct Cursor<'a> {
     parser: Parser<'a>,
-    cur: usize,
+    pos: Position,
 }
 
 impl ParseBuffer<'_> {
@@ -360,20 +376,16 @@ impl ParseBuffer<'_> {
     
     
     pub fn new_with_lexer(lexer: Lexer<'_>) -> Result<ParseBuffer<'_>> {
-        let mut tokens = Vec::new();
-        let input = lexer.input();
-        for token in lexer {
-            tokens.push((token?, Cell::new(NextTokenAt::Unknown)));
-        }
-        let ret = ParseBuffer {
-            tokens: tokens.into_boxed_slice(),
-            cur: Cell::new(0),
+        Ok(ParseBuffer {
+            lexer,
             depth: Cell::new(0),
-            input,
+            cur: Cell::new(Position {
+                offset: 0,
+                token: None,
+            }),
             known_annotations: Default::default(),
-        };
-        ret.validate_annotations()?;
-        Ok(ret)
+            strings: Default::default(),
+        })
     }
 
     fn parser(&self) -> Parser<'_> {
@@ -383,57 +395,81 @@ impl ParseBuffer<'_> {
     
     
     
-    fn validate_annotations(&self) -> Result<()> {
-        use crate::lexer::Token::*;
-        enum State {
-            None,
-            LParen,
-            Annotation { depth: usize, span: Span },
-        }
-        let mut state = State::None;
-        for token in self.tokens.iter() {
-            state = match (&token.0, state) {
-                
-                (LParen(_), State::None) => State::LParen,
-                
-                (_, State::None) => State::None,
-
-                
-                
-                (Reserved(s), State::LParen) if s.starts_with('@') && !s.is_empty() => {
-                    let offset = self.input_pos(s);
-                    State::Annotation {
-                        span: Span { offset },
-                        depth: 1,
-                    }
-                }
-                
-                
-                (_, State::LParen) => State::None,
-
-                
-                
-                (LParen(_), State::Annotation { span, depth }) => State::Annotation {
-                    span,
-                    depth: depth + 1,
-                },
-                (RParen(_), State::Annotation { depth: 1, .. }) => State::None,
-                (RParen(_), State::Annotation { span, depth }) => State::Annotation {
-                    span,
-                    depth: depth - 1,
-                },
-                
-                (_, s @ State::Annotation { .. }) => s,
-            };
-        }
-        if let State::Annotation { span, .. } = state {
-            return Err(Error::new(span, "unclosed annotation".to_string()));
-        }
-        Ok(())
+    
+    
+    fn push_str(&self, s: Vec<u8>) -> &[u8] {
+        let s = Box::from(s);
+        let ret = &*s as *const [u8];
+        self.strings.borrow_mut().push(s);
+        
+        
+        
+        
+        unsafe { &*ret }
     }
 
-    fn input_pos(&self, src: &str) -> usize {
-        src.as_ptr() as usize - self.input.as_ptr() as usize
+    
+    
+    
+    
+    fn advance_token(&self, mut pos: usize) -> Result<Option<Token>> {
+        let token = loop {
+            let token = match self.lexer.parse(&mut pos)? {
+                Some(token) => token,
+                None => return Ok(None),
+            };
+            match token.kind {
+                
+                TokenKind::Whitespace | TokenKind::LineComment | TokenKind::BlockComment => {
+                    continue
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                TokenKind::LParen => {
+                    if let Some(annotation) = self.lexer.annotation(pos) {
+                        match self.known_annotations.borrow().get(annotation) {
+                            Some(0) | None => {
+                                self.skip_annotation(&mut pos)?;
+                                continue;
+                            }
+                            Some(_) => {}
+                        }
+                    }
+                    break token;
+                }
+                _ => break token,
+            }
+        };
+        Ok(Some(token))
+    }
+
+    fn skip_annotation(&self, pos: &mut usize) -> Result<()> {
+        let mut depth = 1;
+        let span = Span { offset: *pos };
+        loop {
+            let token = match self.lexer.parse(pos)? {
+                Some(token) => token,
+                None => {
+                    break Err(Error::new(span, "unclosed annotation".to_string()));
+                }
+            };
+            match token.kind {
+                TokenKind::LParen => depth += 1,
+                TokenKind::RParen => {
+                    depth -= 1;
+                    if depth == 0 {
+                        break Ok(());
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 }
 
@@ -448,18 +484,20 @@ impl<'a> Parser<'a> {
     
     
     pub fn is_empty(self) -> bool {
-        match self.cursor().advance_token() {
-            Some(Token::RParen(_)) | None => true,
-            Some(_) => false, 
+        match self.cursor().token() {
+            Ok(Some(token)) => matches!(token.kind, TokenKind::RParen),
+            Ok(None) => true,
+            Err(_) => false,
         }
     }
 
     pub(crate) fn has_meaningful_tokens(self) -> bool {
-        self.buf.tokens[self.cursor().cur..].iter().any(|(t, _)| {
-            !matches!(
-                t,
-                Token::Whitespace(_) | Token::LineComment(_) | Token::BlockComment(_)
-            )
+        self.buf.lexer.iter(0).any(|t| match t {
+            Ok(token) => !matches!(
+                token.kind,
+                TokenKind::Whitespace | TokenKind::LineComment | TokenKind::BlockComment
+            ),
+            Err(_) => true,
         })
     }
 
@@ -568,30 +606,29 @@ impl<'a> Parser<'a> {
     
     
     
-    pub fn peek<T: Peek>(self) -> bool {
+    pub fn peek<T: Peek>(self) -> Result<bool> {
         T::peek(self.cursor())
     }
 
     
     
-    pub fn peek2<T: Peek>(self) -> bool {
-        let mut cursor = self.cursor();
-        if cursor.advance_token().is_some() {
-            T::peek(cursor)
-        } else {
-            false
-        }
+    pub fn peek2<T: Peek>(self) -> Result<bool> {
+        T::peek2(self.cursor())
     }
 
     
     
-    pub fn peek3<T: Peek>(self) -> bool {
+    pub fn peek3<T: Peek>(self) -> Result<bool> {
         let mut cursor = self.cursor();
-        if cursor.advance_token().is_some() && cursor.advance_token().is_some() {
-            T::peek(cursor)
-        } else {
-            false
+        match cursor.token()? {
+            Some(token) => cursor.advance_past(&token),
+            None => return Ok(false),
         }
+        match cursor.token()? {
+            Some(token) => cursor.advance_past(&token),
+            None => return Ok(false),
+        }
+        T::peek(cursor)
     }
 
     
@@ -698,14 +735,18 @@ impl<'a> Parser<'a> {
         self.buf.depth.set(self.buf.depth.get() + 1);
         let before = self.buf.cur.get();
         let res = self.step(|cursor| {
-            let mut cursor = match cursor.lparen() {
+            let mut cursor = match cursor.lparen()? {
                 Some(rest) => rest,
                 None => return Err(cursor.error("expected `(`")),
             };
-            cursor.parser.buf.cur.set(cursor.cur);
+            cursor.parser.buf.cur.set(cursor.pos);
             let result = f(cursor.parser)?;
-            cursor.cur = cursor.parser.buf.cur.get();
-            match cursor.rparen() {
+
+            
+            
+            cursor.pos = cursor.parser.buf.cur.get();
+
+            match cursor.rparen()? {
                 Some(rest) => Ok((result, rest)),
                 None => Err(cursor.error("expected `)`")),
             }
@@ -737,7 +778,7 @@ impl<'a> Parser<'a> {
     fn cursor(self) -> Cursor<'a> {
         Cursor {
             parser: self,
-            cur: self.buf.cur.get(),
+            pos: self.buf.cur.get(),
         }
     }
 
@@ -752,7 +793,7 @@ impl<'a> Parser<'a> {
         F: FnOnce(Cursor<'a>) -> Result<(T, Cursor<'a>)>,
     {
         let (result, cursor) = f(self.cursor())?;
-        self.buf.cur.set(cursor.cur);
+        self.buf.cur.set(cursor.pos);
         Ok(result)
     }
 
@@ -769,7 +810,7 @@ impl<'a> Parser<'a> {
     
     
     pub fn error_at(self, span: Span, msg: impl fmt::Display) -> Error {
-        Error::parse(span, self.buf.input, msg.to_string())
+        Error::parse(span, self.buf.lexer.input(), msg.to_string())
     }
 
     
@@ -943,9 +984,10 @@ impl<'a> Cursor<'a> {
     
     
     pub fn cur_span(&self) -> Span {
-        let offset = match self.clone().advance_token() {
-            Some(t) => self.parser.buf.input_pos(t.src()),
-            None => self.parser.buf.input.len(),
+        let offset = match self.token() {
+            Ok(Some(t)) => t.offset,
+            Ok(None) => self.parser.buf.lexer.input().len(),
+            Err(_) => self.pos.offset,
         };
         Span { offset }
     }
@@ -954,10 +996,14 @@ impl<'a> Cursor<'a> {
     
     
     pub(crate) fn prev_span(&self) -> Option<Span> {
-        let (token, _) = self.parser.buf.tokens.get(self.cur.checked_sub(1)?)?;
+        
         Some(Span {
-            offset: self.parser.buf.input_pos(token.src()),
+            offset: self.pos.offset,
         })
+        
+        
+        
+        
     }
 
     
@@ -967,17 +1013,91 @@ impl<'a> Cursor<'a> {
     }
 
     
+    pub fn peek_lparen(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::LParen,
+                ..
+            })
+        ))
+    }
+
     
+    pub fn peek_rparen(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::RParen,
+                ..
+            })
+        ))
+    }
+
     
+    pub fn peek_id(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::Id,
+                ..
+            })
+        ))
+    }
+
     
+    pub fn peek_reserved(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::Reserved,
+                ..
+            })
+        ))
+    }
+
     
+    pub fn peek_keyword(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::Keyword,
+                ..
+            })
+        ))
+    }
+
     
+    pub fn peek_integer(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::Integer(_),
+                ..
+            })
+        ))
+    }
+
     
-    pub fn lparen(mut self) -> Option<Self> {
-        match self.advance_token()? {
-            Token::LParen(_) => Some(self),
-            _ => None,
-        }
+    pub fn peek_float(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::Float(_),
+                ..
+            })
+        ))
+    }
+
+    
+    pub fn peek_string(self) -> Result<bool> {
+        Ok(matches!(
+            self.token()?,
+            Some(Token {
+                kind: TokenKind::String,
+                ..
+            })
+        ))
     }
 
     
@@ -987,11 +1107,37 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn rparen(mut self) -> Option<Self> {
-        match self.advance_token()? {
-            Token::RParen(_) => Some(self),
-            _ => None,
+    pub fn lparen(mut self) -> Result<Option<Self>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::LParen => {}
+            _ => return Ok(None),
         }
+        self.advance_past(&token);
+        Ok(Some(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn rparen(mut self) -> Result<Option<Self>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::RParen => {}
+            _ => return Ok(None),
+        }
+        self.advance_past(&token);
+        Ok(Some(self))
     }
 
     
@@ -1003,11 +1149,17 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn id(mut self) -> Option<(&'a str, Self)> {
-        match self.advance_token()? {
-            Token::Id(id) => Some((&id[1..], self)),
-            _ => None,
+    pub fn id(mut self) -> Result<Option<(&'a str, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::Id => {}
+            _ => return Ok(None),
         }
+        self.advance_past(&token);
+        Ok(Some((token.id(self.parser.buf.lexer.input()), self)))
     }
 
     
@@ -1019,11 +1171,17 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn keyword(mut self) -> Option<(&'a str, Self)> {
-        match self.advance_token()? {
-            Token::Keyword(id) => Some((id, self)),
-            _ => None,
+    pub fn keyword(mut self) -> Result<Option<(&'a str, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::Keyword => {}
+            _ => return Ok(None),
         }
+        self.advance_past(&token);
+        Ok(Some((token.keyword(self.parser.buf.lexer.input()), self)))
     }
 
     
@@ -1035,11 +1193,17 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn reserved(mut self) -> Option<(&'a str, Self)> {
-        match self.advance_token()? {
-            Token::Reserved(id) => Some((id, self)),
-            _ => None,
+    pub fn reserved(mut self) -> Result<Option<(&'a str, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::Reserved => {}
+            _ => return Ok(None),
         }
+        self.advance_past(&token);
+        Ok(Some((token.reserved(self.parser.buf.lexer.input()), self)))
     }
 
     
@@ -1051,11 +1215,20 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn integer(mut self) -> Option<(&'a Integer<'a>, Self)> {
-        match self.advance_token()? {
-            Token::Integer(i) => Some((i, self)),
-            _ => None,
-        }
+    pub fn integer(mut self) -> Result<Option<(Integer<'a>, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        let i = match token.kind {
+            TokenKind::Integer(i) => i,
+            _ => return Ok(None),
+        };
+        self.advance_past(&token);
+        Ok(Some((
+            token.integer(self.parser.buf.lexer.input(), i),
+            self,
+        )))
     }
 
     
@@ -1067,11 +1240,17 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn float(mut self) -> Option<(&'a Float<'a>, Self)> {
-        match self.advance_token()? {
-            Token::Float(f) => Some((f, self)),
-            _ => None,
-        }
+    pub fn float(mut self) -> Result<Option<(Float<'a>, Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        let f = match token.kind {
+            TokenKind::Float(f) => f,
+            _ => return Ok(None),
+        };
+        self.advance_past(&token);
+        Ok(Some((token.float(self.parser.buf.lexer.input(), f), self)))
     }
 
     
@@ -1083,11 +1262,21 @@ impl<'a> Cursor<'a> {
     
     
     
-    pub fn string(mut self) -> Option<(&'a [u8], Self)> {
-        match self.advance_token()? {
-            Token::String(s) => Some((s.val(), self)),
-            _ => None,
+    pub fn string(mut self) -> Result<Option<(&'a [u8], Self)>> {
+        let token = match self.token()? {
+            Some(token) => token,
+            None => return Ok(None),
+        };
+        match token.kind {
+            TokenKind::String => {}
+            _ => return Ok(None),
         }
+        let string = match token.string(self.parser.buf.lexer.input()) {
+            Cow::Borrowed(s) => s,
+            Cow::Owned(s) => self.parser.buf.push_str(s),
+        };
+        self.advance_past(&token);
+        Ok(Some((string, self)))
     }
 
     
@@ -1095,164 +1284,42 @@ impl<'a> Cursor<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn annotation(self) -> Option<(&'a str, Self)> {
-        let (token, cursor) = self.reserved()?;
-        if !token.starts_with('@') || token.len() <= 1 {
-            return None;
-        }
-        match &self.parser.buf.tokens.get(self.cur.wrapping_sub(1))?.0 {
-            Token::LParen(_) => Some((&token[1..], cursor)),
-            _ => None,
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn comment(mut self) -> Option<(&'a str, Self)> {
+    pub fn comment(mut self) -> Result<Option<(&'a str, Self)>> {
+        let start = self.pos.offset;
+        self.pos.token = None;
         let comment = loop {
-            match &self.parser.buf.tokens.get(self.cur)?.0 {
-                Token::LineComment(c) | Token::BlockComment(c) => {
-                    self.cur += 1;
-                    break c;
+            let token = match self.parser.buf.lexer.parse(&mut self.pos.offset)? {
+                Some(token) => token,
+                None => return Ok(None),
+            };
+            match token.kind {
+                TokenKind::LineComment | TokenKind::BlockComment => {
+                    break token.src(self.parser.buf.lexer.input());
                 }
-                Token::Whitespace(_) => {
-                    self.cur += 1;
+                TokenKind::Whitespace => {}
+                _ => {
+                    self.pos.offset = start;
+                    return Ok(None);
                 }
-                _ => return None,
             }
         };
-        Some((comment, self))
+        Ok(Some((comment, self)))
     }
 
-    fn advance_token(&mut self) -> Option<&'a Token<'a>> {
-        let known_annotations = self.parser.buf.known_annotations.borrow();
-        let is_known_annotation = |name: &str| match known_annotations.get(name) {
-            Some(0) | None => false,
-            Some(_) => true,
-        };
-
-        loop {
-            let (token, next) = self.parser.buf.tokens.get(self.cur)?;
-
-            
-            
-            
-            match token {
-                Token::Whitespace(_) | Token::LineComment(_) | Token::BlockComment(_) => {}
-                _ => match self.annotation_start() {
-                    Some(n) if !is_known_annotation(n) => {}
-                    _ => {
-                        self.cur += 1;
-                        return Some(token);
-                    }
-                },
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            match next.get() {
-                NextTokenAt::Unknown => match self.find_next() {
-                    Some(i) => {
-                        next.set(NextTokenAt::Index(i));
-                        self.cur = i;
-                    }
-                    None => {
-                        next.set(NextTokenAt::Eof);
-                        return None;
-                    }
-                },
-                NextTokenAt::Eof => return None,
-                NextTokenAt::Index(i) => self.cur = i,
-            }
+    fn token(&self) -> Result<Option<Token>> {
+        match self.pos.token {
+            Some(token) => Ok(Some(token)),
+            None => self.parser.buf.advance_token(self.pos.offset),
         }
     }
 
-    fn annotation_start(&self) -> Option<&'a str> {
-        match self.parser.buf.tokens.get(self.cur).map(|p| &p.0) {
-            Some(Token::LParen(_)) => {}
-            _ => return None,
-        }
-        let reserved = match self.parser.buf.tokens.get(self.cur + 1).map(|p| &p.0) {
-            Some(Token::Reserved(n)) => n,
-            _ => return None,
-        };
-        if reserved.starts_with('@') && reserved.len() > 1 {
-            Some(&reserved[1..])
-        } else {
-            None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    fn find_next(mut self) -> Option<usize> {
-        
-        
-        
-        if self.annotation_start().is_some() {
-            let mut depth = 1;
-            self.cur += 1;
-            while depth > 0 {
-                match &self.parser.buf.tokens.get(self.cur)?.0 {
-                    Token::LParen(_) => depth += 1,
-                    Token::RParen(_) => depth -= 1,
-                    _ => {}
-                }
-                self.cur += 1;
-            }
-            return Some(self.cur);
-        }
-
-        
-        
-        loop {
-            let (token, _) = self.parser.buf.tokens.get(self.cur)?;
-            
-            
-            match token {
-                Token::Whitespace(_) | Token::LineComment(_) | Token::BlockComment(_) => {
-                    self.cur += 1
-                }
-                _ => return Some(self.cur),
-            }
-        }
+    fn advance_past(&mut self, token: &Token) {
+        self.pos.offset = token.offset + (token.len as usize);
+        self.pos.token = self
+            .parser
+            .buf
+            .advance_token(self.pos.offset)
+            .unwrap_or(None);
     }
 }
 
@@ -1261,13 +1328,13 @@ impl Lookahead1<'_> {
     
     
     
-    pub fn peek<T: Peek>(&mut self) -> bool {
-        if self.parser.peek::<T>() {
+    pub fn peek<T: Peek>(&mut self) -> Result<bool> {
+        Ok(if self.parser.peek::<T>()? {
             true
         } else {
             self.attempts.push(T::display());
             false
-        }
+        })
     }
 
     
@@ -1306,7 +1373,7 @@ impl Lookahead1<'_> {
 
 impl<'a, T: Peek + Parse<'a>> Parse<'a> for Option<T> {
     fn parse(parser: Parser<'a>) -> Result<Option<T>> {
-        if parser.peek::<T>() {
+        if parser.peek::<T>()? {
             Ok(Some(parser.parse()?))
         } else {
             Ok(None)

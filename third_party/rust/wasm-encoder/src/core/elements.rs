@@ -34,7 +34,6 @@ use crate::{encode_section, ConstExpr, Encode, RefType, Section, SectionId};
 
 
 
-
 #[derive(Clone, Default, Debug)]
 pub struct ElementSection {
     bytes: Vec<u8>,
@@ -47,7 +46,7 @@ pub enum Elements<'a> {
     
     Functions(&'a [u32]),
     
-    Expressions(&'a [ConstExpr]),
+    Expressions(RefType, &'a [ConstExpr]),
 }
 
 
@@ -80,8 +79,6 @@ pub struct ElementSegment<'a> {
     
     pub mode: ElementMode<'a>,
     
-    pub element_type: RefType,
-    
     pub elements: Elements<'a>,
 }
 
@@ -104,50 +101,53 @@ impl ElementSection {
     
     pub fn segment<'a>(&mut self, segment: ElementSegment<'a>) -> &mut Self {
         let expr_bit = match segment.elements {
-            Elements::Expressions(_) => 0b100u32,
+            Elements::Expressions(..) => 0b100u32,
             Elements::Functions(_) => 0b000u32,
         };
+        let mut encode_type = false;
         match &segment.mode {
-            ElementMode::Active {
-                table: None,
-                offset,
-            } if segment.element_type == RefType::FUNCREF => {
-                (expr_bit).encode(&mut self.bytes);
-                offset.encode(&mut self.bytes);
-            }
             ElementMode::Passive => {
                 (0x01 | expr_bit).encode(&mut self.bytes);
-                if expr_bit == 0 {
-                    self.bytes.push(0x00); 
-                } else {
-                    segment.element_type.encode(&mut self.bytes);
-                }
+                encode_type = true;
             }
             ElementMode::Active { table, offset } => {
-                (0x02 | expr_bit).encode(&mut self.bytes);
-                table.unwrap_or(0).encode(&mut self.bytes);
-                offset.encode(&mut self.bytes);
-                if expr_bit == 0 {
-                    self.bytes.push(0x00); 
-                } else {
-                    segment.element_type.encode(&mut self.bytes);
+                match (table, &segment.elements) {
+                    
+                    
+                    
+                    (None, Elements::Functions(_) | Elements::Expressions(RefType::FUNCREF, _)) => {
+                        (expr_bit).encode(&mut self.bytes);
+                    }
+
+                    
+                    
+                    
+                    (None, Elements::Expressions(..)) | (Some(_), _) => {
+                        (0x02 | expr_bit).encode(&mut self.bytes);
+                        table.unwrap_or(0).encode(&mut self.bytes);
+                        encode_type = true;
+                    }
                 }
+                offset.encode(&mut self.bytes);
             }
             ElementMode::Declared => {
                 (0x03 | expr_bit).encode(&mut self.bytes);
-                if expr_bit == 0 {
-                    self.bytes.push(0x00); 
-                } else {
-                    segment.element_type.encode(&mut self.bytes);
-                }
+                encode_type = true;
             }
         }
 
         match segment.elements {
             Elements::Functions(fs) => {
+                if encode_type {
+                    
+                    self.bytes.push(0x00);
+                }
                 fs.encode(&mut self.bytes);
             }
-            Elements::Expressions(e) => {
+            Elements::Expressions(ty, e) => {
+                if encode_type {
+                    ty.encode(&mut self.bytes);
+                }
                 e.len().encode(&mut self.bytes);
                 for expr in e {
                     expr.encode(&mut self.bytes);
@@ -168,7 +168,6 @@ impl ElementSection {
         &mut self,
         table_index: Option<u32>,
         offset: &ConstExpr,
-        element_type: RefType,
         elements: Elements<'_>,
     ) -> &mut Self {
         self.segment(ElementSegment {
@@ -176,7 +175,6 @@ impl ElementSection {
                 table: table_index,
                 offset,
             },
-            element_type,
             elements,
         })
     }
@@ -184,10 +182,9 @@ impl ElementSection {
     
     
     
-    pub fn passive<'a>(&mut self, element_type: RefType, elements: Elements<'a>) -> &mut Self {
+    pub fn passive<'a>(&mut self, elements: Elements<'a>) -> &mut Self {
         self.segment(ElementSegment {
             mode: ElementMode::Passive,
-            element_type,
             elements,
         })
     }
@@ -195,10 +192,9 @@ impl ElementSection {
     
     
     
-    pub fn declared<'a>(&mut self, element_type: RefType, elements: Elements<'a>) -> &mut Self {
+    pub fn declared<'a>(&mut self, elements: Elements<'a>) -> &mut Self {
         self.segment(ElementSegment {
             mode: ElementMode::Declared,
-            element_type,
             elements,
         })
     }

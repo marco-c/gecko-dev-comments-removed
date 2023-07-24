@@ -454,16 +454,6 @@ assertErrorMessage(() => ins.pop(),
 
 
 
-assertErrorMessage(() => wasmTextToBinary(
-    `(module
-      (type $s (struct (field $x i32)))
-      (type $t (struct (field $x i32)))
-     )`),
-                  SyntaxError,
-                  /duplicate identifier for field/);
-
-
-
 
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(`

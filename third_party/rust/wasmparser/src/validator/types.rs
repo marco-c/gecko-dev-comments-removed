@@ -7,7 +7,8 @@ use super::{
 use crate::validator::names::KebabString;
 use crate::{
     ArrayType, BinaryReaderError, Export, ExternalKind, FuncType, GlobalType, Import, MemoryType,
-    PrimitiveValType, RefType, Result, TableType, TypeRef, ValType,
+    PrimitiveValType, RefType, Result, StructType, StructuralType, SubType, TableType, TypeRef,
+    ValType,
 };
 use indexmap::{IndexMap, IndexSet};
 use std::collections::HashMap;
@@ -169,9 +170,7 @@ const _: () = {
 #[derive(Debug)]
 pub enum Type {
     
-    Func(FuncType),
-    
-    Array(ArrayType),
+    Sub(SubType),
     
     
     
@@ -204,81 +203,104 @@ pub enum Type {
 
 impl Type {
     
-    pub fn as_func_type(&self) -> Option<&FuncType> {
+    pub fn unwrap_func(&self) -> &FuncType {
         match self {
-            Self::Func(ty) => Some(ty),
-            _ => None,
+            Type::Sub(SubType {
+                structural_type: StructuralType::Func(ft),
+                ..
+            }) => ft,
+            _ => panic!("not a function type"),
         }
     }
 
     
-    pub fn as_array_type(&self) -> Option<&ArrayType> {
+    pub fn unwrap_array(&self) -> &ArrayType {
         match self {
-            Self::Array(ty) => Some(ty),
-            _ => None,
+            Self::Sub(SubType {
+                structural_type: StructuralType::Array(ty),
+                ..
+            }) => ty,
+            _ => panic!("not an array type"),
         }
     }
 
     
-    pub fn as_module_type(&self) -> Option<&ModuleType> {
+    pub fn unwrap_struct(&self) -> &StructType {
         match self {
-            Self::Module(ty) => Some(ty),
-            _ => None,
+            Self::Sub(SubType {
+                structural_type: StructuralType::Struct(ty),
+                ..
+            }) => ty,
+            _ => panic!("not a struct type"),
         }
     }
 
     
-    pub fn as_instance_type(&self) -> Option<&InstanceType> {
+    pub fn unwrap_module(&self) -> &ModuleType {
         match self {
-            Self::Instance(ty) => Some(ty),
-            _ => None,
+            Self::Module(ty) => ty,
+            _ => panic!("not a module type"),
         }
     }
 
     
-    pub fn as_component_type(&self) -> Option<&ComponentType> {
+    pub fn unwrap_instance(&self) -> &InstanceType {
         match self {
-            Self::Component(ty) => Some(ty),
-            _ => None,
+            Self::Instance(ty) => ty,
+            _ => panic!("not an instance type"),
         }
     }
 
     
-    pub fn as_component_instance_type(&self) -> Option<&ComponentInstanceType> {
+    pub fn unwrap_component(&self) -> &ComponentType {
         match self {
-            Self::ComponentInstance(ty) => Some(ty),
-            _ => None,
+            Self::Component(ty) => ty,
+            _ => panic!("not a component type"),
         }
     }
 
     
-    pub fn as_component_func_type(&self) -> Option<&ComponentFuncType> {
+    pub fn unwrap_component_instance(&self) -> &ComponentInstanceType {
         match self {
-            Self::ComponentFunc(ty) => Some(ty),
-            _ => None,
+            Self::ComponentInstance(ty) => ty,
+            _ => panic!("not a component instance type"),
         }
     }
 
     
-    pub fn as_defined_type(&self) -> Option<&ComponentDefinedType> {
+    pub fn unwrap_component_func(&self) -> &ComponentFuncType {
         match self {
-            Self::Defined(ty) => Some(ty),
-            _ => None,
+            Self::ComponentFunc(ty) => ty,
+            _ => panic!("not a component function type"),
         }
     }
 
     
-    pub fn as_resource(&self) -> Option<ResourceId> {
+    pub fn unwrap_defined(&self) -> &ComponentDefinedType {
         match self {
-            Self::Resource(id) => Some(*id),
-            _ => None,
+            Self::Defined(ty) => ty,
+            _ => panic!("not a defined type"),
+        }
+    }
+
+    
+    pub fn unwrap_resource(&self) -> ResourceId {
+        match self {
+            Self::Resource(id) => *id,
+            _ => panic!("not a resource type"),
         }
     }
 
     pub(crate) fn type_size(&self) -> u32 {
+        
         match self {
-            Self::Func(ty) => 1 + (ty.params().len() + ty.results().len()) as u32,
-            Self::Array(_) => 2, 
+            Self::Sub(ty) => {
+                1 + match ty.clone().structural_type {
+                    StructuralType::Func(ty) => 1 + (ty.params().len() + ty.results().len()) as u32,
+                    StructuralType::Array(_) => 2,
+                    StructuralType::Struct(ty) => 1 + 2 * ty.fields.len() as u32,
+                }
+            }
             Self::Module(ty) => ty.type_size,
             Self::Instance(ty) => ty.type_size,
             Self::Component(ty) => ty.type_size,
@@ -303,10 +325,7 @@ impl ComponentValType {
     pub(crate) fn requires_realloc(&self, types: &TypeList) -> bool {
         match self {
             ComponentValType::Primitive(ty) => ty.requires_realloc(),
-            ComponentValType::Type(ty) => types[*ty]
-                .as_defined_type()
-                .unwrap()
-                .requires_realloc(types),
+            ComponentValType::Type(ty) => types[*ty].unwrap_defined().requires_realloc(types),
         }
     }
 
@@ -314,8 +333,7 @@ impl ComponentValType {
         match self {
             Self::Primitive(ty) => push_primitive_wasm_types(ty, lowered_types),
             Self::Type(id) => types[*id]
-                .as_defined_type()
-                .unwrap()
+                .unwrap_defined()
                 .push_wasm_types(types, lowered_types),
         }
     }
@@ -457,7 +475,7 @@ impl InstanceType {
         types: &'a TypeList,
     ) -> &'a IndexMap<String, EntityType> {
         match &self.kind {
-            InstanceTypeKind::Instantiated(id) => &types[*id].as_module_type().unwrap().exports,
+            InstanceTypeKind::Instantiated(id) => &types[*id].unwrap_module().exports,
             InstanceTypeKind::Exports(exports) => exports,
         }
     }
@@ -981,29 +999,10 @@ impl<'a> TypesRef<'a> {
         }
     }
 
-    fn types(&self, core: bool) -> Option<&'a [TypeId]> {
-        Some(match &self.kind {
-            TypesRefKind::Module(module) => {
-                if core {
-                    &module.types
-                } else {
-                    return None;
-                }
-            }
-            TypesRefKind::Component(component) => {
-                if core {
-                    &component.core_types
-                } else {
-                    &component.types
-                }
-            }
-        })
-    }
-
     
     
     
-    pub fn type_from_id(&self, id: TypeId) -> Option<&'a Type> {
+    pub fn get(&self, id: TypeId) -> Option<&'a Type> {
         self.list.get(id.index)
     }
 
@@ -1011,26 +1010,14 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn id_from_type_index(&self, index: u32, core: bool) -> Option<TypeId> {
-        self.types(core)?.get(index as usize).copied()
-    }
-
     
     
     
     
-    pub fn type_at(&self, index: u32, core: bool) -> Option<&'a Type> {
-        self.type_from_id(self.id_from_type_index(index, core)?)
-    }
-
-    
-    
-    
-    
-    pub fn func_type_at(&self, index: u32) -> Option<&'a FuncType> {
-        match self.type_at(index, true)? {
-            Type::Func(ty) => Some(ty),
-            _ => None,
+    pub fn core_type_at(&self, index: u32) -> TypeId {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.types[index as usize],
+            TypesRefKind::Component(component) => component.core_types[index as usize],
         }
     }
 
@@ -1038,73 +1025,114 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn table_at(&self, index: u32) -> Option<TableType> {
-        let tables = match &self.kind {
-            TypesRefKind::Module(module) => &module.tables,
-            TypesRefKind::Component(component) => &component.core_tables,
-        };
+    
+    
+    pub fn component_type_at(&self, index: u32) -> TypeId {
+        match &self.kind {
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.types[index as usize],
+        }
+    }
 
-        tables.get(index as usize).copied()
+    
+    pub fn core_type_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.types.len() as u32,
+            TypesRefKind::Component(component) => component.core_types.len() as u32,
+        }
+    }
+
+    
+    pub fn component_type_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.types.len() as u32,
+        }
     }
 
     
     
     
     
-    pub fn memory_at(&self, index: u32) -> Option<MemoryType> {
+    
+    pub fn table_at(&self, index: u32) -> TableType {
+        let tables = match &self.kind {
+            TypesRefKind::Module(module) => &module.tables,
+            TypesRefKind::Component(component) => &component.core_tables,
+        };
+        tables[index as usize]
+    }
+
+    
+    pub fn table_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.tables.len() as u32,
+            TypesRefKind::Component(component) => component.core_tables.len() as u32,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn memory_at(&self, index: u32) -> MemoryType {
         let memories = match &self.kind {
             TypesRefKind::Module(module) => &module.memories,
             TypesRefKind::Component(component) => &component.core_memories,
         };
 
-        memories.get(index as usize).copied()
+        memories[index as usize]
+    }
+
+    
+    pub fn memory_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.memories.len() as u32,
+            TypesRefKind::Component(component) => component.core_memories.len() as u32,
+        }
     }
 
     
     
     
     
-    pub fn global_at(&self, index: u32) -> Option<GlobalType> {
+    
+    pub fn global_at(&self, index: u32) -> GlobalType {
         let globals = match &self.kind {
             TypesRefKind::Module(module) => &module.globals,
             TypesRefKind::Component(component) => &component.core_globals,
         };
 
-        globals.get(index as usize).copied()
+        globals[index as usize]
+    }
+
+    
+    pub fn global_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.globals.len() as u32,
+            TypesRefKind::Component(component) => component.core_globals.len() as u32,
+        }
     }
 
     
     
     
     
-    pub fn tag_at(&self, index: u32) -> Option<&'a FuncType> {
+    
+    pub fn tag_at(&self, index: u32) -> TypeId {
         let tags = match &self.kind {
             TypesRefKind::Module(module) => &module.tags,
             TypesRefKind::Component(component) => &component.core_tags,
         };
-
-        Some(
-            self.list[*tags.get(index as usize)?]
-                .as_func_type()
-                .unwrap(),
-        )
+        tags[index as usize]
     }
 
     
-    
-    
-    
-    pub fn function_at(&self, index: u32) -> Option<&'a FuncType> {
-        let id = match &self.kind {
-            TypesRefKind::Module(module) => {
-                &module.types[*module.functions.get(index as usize)? as usize]
-            }
-            TypesRefKind::Component(component) => component.core_funcs.get(index as usize)?,
-        };
-
-        match &self.list[*id] {
-            Type::Func(ty) => Some(ty),
-            _ => None,
+    pub fn tag_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(module) => module.tags.len() as u32,
+            TypesRefKind::Component(component) => component.core_tags.len() as u32,
         }
     }
 
@@ -1112,10 +1140,11 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn element_at(&self, index: u32) -> Option<RefType> {
+    
+    pub fn function_at(&self, index: u32) -> TypeId {
         match &self.kind {
-            TypesRefKind::Module(module) => module.element_types.get(index as usize).copied(),
-            TypesRefKind::Component(_) => None,
+            TypesRefKind::Module(module) => module.types[module.functions[index as usize] as usize],
+            TypesRefKind::Component(component) => component.core_funcs[index as usize],
         }
     }
 
@@ -1123,14 +1152,10 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn component_function_at(&self, index: u32) -> Option<&'a ComponentFuncType> {
+    pub fn function_count(&self) -> u32 {
         match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => Some(
-                self.list[*component.funcs.get(index as usize)?]
-                    .as_component_func_type()
-                    .unwrap(),
-            ),
+            TypesRefKind::Module(module) => module.functions.len() as u32,
+            TypesRefKind::Component(component) => component.core_funcs.len() as u32,
         }
     }
 
@@ -1138,46 +1163,21 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn module_at(&self, index: u32) -> Option<&'a ModuleType> {
+    
+    pub fn element_at(&self, index: u32) -> RefType {
         match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => Some(
-                self.list[*component.core_modules.get(index as usize)?]
-                    .as_module_type()
-                    .unwrap(),
-            ),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn instance_at(&self, index: u32) -> Option<&'a InstanceType> {
-        match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => {
-                let id = component.core_instances.get(index as usize)?;
-                match &self.list[*id] {
-                    Type::Instance(ty) => Some(ty),
-                    _ => None,
-                }
+            TypesRefKind::Module(module) => module.element_types[index as usize],
+            TypesRefKind::Component(_) => {
+                panic!("no elements on a component")
             }
         }
     }
 
     
-    
-    
-    
-    pub fn component_at(&self, index: u32) -> Option<&'a ComponentType> {
+    pub fn element_count(&self) -> u32 {
         match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => Some(
-                self.list[*component.components.get(index as usize)?]
-                    .as_component_type()
-                    .unwrap(),
-            ),
+            TypesRefKind::Module(module) => module.element_types.len() as u32,
+            TypesRefKind::Component(_) => 0,
         }
     }
 
@@ -1185,10 +1185,20 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn component_instance_at(&self, index: u32) -> Option<TypeId> {
+    
+    
+    pub fn component_function_at(&self, index: u32) -> TypeId {
         match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => component.instances.get(index as usize).copied(),
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.funcs[index as usize],
+        }
+    }
+
+    
+    pub fn component_function_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.funcs.len() as u32,
         }
     }
 
@@ -1196,12 +1206,96 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn value_at(&self, index: u32) -> Option<ComponentValType> {
+    
+    
+    pub fn module_at(&self, index: u32) -> TypeId {
         match &self.kind {
-            TypesRefKind::Module(_) => None,
-            TypesRefKind::Component(component) => {
-                component.values.get(index as usize).map(|(r, _)| *r)
-            }
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.core_modules[index as usize],
+        }
+    }
+
+    
+    pub fn module_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.core_modules.len() as u32,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn instance_at(&self, index: u32) -> TypeId {
+        match &self.kind {
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.core_instances[index as usize],
+        }
+    }
+
+    
+    pub fn instance_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.core_instances.len() as u32,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn component_at(&self, index: u32) -> TypeId {
+        match &self.kind {
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.components[index as usize],
+        }
+    }
+
+    
+    pub fn component_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.components.len() as u32,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn component_instance_at(&self, index: u32) -> TypeId {
+        match &self.kind {
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.instances[index as usize],
+        }
+    }
+
+    
+    pub fn component_instance_count(&self) -> u32 {
+        match &self.kind {
+            TypesRefKind::Module(_module) => 0,
+            TypesRefKind::Component(component) => component.instances.len() as u32,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn value_at(&self, index: u32) -> ComponentValType {
+        match &self.kind {
+            TypesRefKind::Module(_) => panic!("not a component"),
+            TypesRefKind::Component(component) => component.values[index as usize].0,
         }
     }
 
@@ -1260,6 +1354,13 @@ impl<'a> TypesRef<'a> {
     }
 }
 
+impl Index<TypeId> for TypesRef<'_> {
+    type Output = Type;
+    fn index(&self, id: TypeId) -> &Type {
+        &self.list[id.index]
+    }
+}
+
 impl Types {
     pub(crate) fn from_module(types: TypeList, module: Arc<Module>) -> Self {
         Self {
@@ -1289,29 +1390,30 @@ impl Types {
     
     
     
-    pub fn type_from_id(&self, id: TypeId) -> Option<&Type> {
-        self.as_ref().type_from_id(id)
+    pub fn get(&self, id: TypeId) -> Option<&Type> {
+        self.as_ref().get(id)
     }
 
     
     
     
-    pub fn id_from_type_index(&self, index: u32, core: bool) -> Option<TypeId> {
-        self.as_ref().id_from_type_index(index, core)
+    
+    
+    
+    
+    
+    pub fn core_type_at(&self, index: u32) -> TypeId {
+        self.as_ref().core_type_at(index)
     }
 
     
     
     
-    pub fn type_at(&self, index: u32, core: bool) -> Option<&Type> {
-        self.as_ref().type_at(index, core)
-    }
-
     
     
     
-    pub fn func_type_at(&self, index: u32) -> Option<&FuncType> {
-        self.as_ref().func_type_at(index)
+    pub fn component_type_at(&self, index: u32) -> TypeId {
+        self.as_ref().component_type_at(index)
     }
 
     
@@ -1325,7 +1427,9 @@ impl Types {
     
     
     
-    pub fn table_at(&self, index: u32) -> Option<TableType> {
+    
+    
+    pub fn table_at(&self, index: u32) -> TableType {
         self.as_ref().table_at(index)
     }
 
@@ -1340,102 +1444,98 @@ impl Types {
     
     
     
-    pub fn memory_at(&self, index: u32) -> Option<MemoryType> {
+    
+    
+    pub fn memory_at(&self, index: u32) -> MemoryType {
         self.as_ref().memory_at(index)
     }
 
     
-    pub fn memory_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(module) => module.memories.len(),
-            TypesKind::Component(component) => component.core_memories.len(),
-        }
+    pub fn memory_count(&self) -> u32 {
+        self.as_ref().memory_count()
     }
 
     
     
     
-    pub fn global_at(&self, index: u32) -> Option<GlobalType> {
+    
+    
+    pub fn global_at(&self, index: u32) -> GlobalType {
         self.as_ref().global_at(index)
     }
 
     
-    pub fn global_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(module) => module.globals.len(),
-            TypesKind::Component(component) => component.core_globals.len(),
-        }
+    pub fn global_count(&self) -> u32 {
+        self.as_ref().global_count()
     }
 
     
     
     
-    pub fn tag_at(&self, index: u32) -> Option<&FuncType> {
+    
+    
+    pub fn tag_at(&self, index: u32) -> TypeId {
         self.as_ref().tag_at(index)
     }
 
     
-    pub fn tag_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(module) => module.tags.len(),
-            TypesKind::Component(component) => component.core_tags.len(),
-        }
+    pub fn tag_count(&self) -> u32 {
+        self.as_ref().tag_count()
     }
 
     
     
     
-    pub fn function_at(&self, index: u32) -> Option<&FuncType> {
+    
+    
+    pub fn function_at(&self, index: u32) -> TypeId {
         self.as_ref().function_at(index)
     }
 
     
     
     
-    pub fn function_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(module) => module.functions.len(),
-            TypesKind::Component(component) => component.core_funcs.len(),
-        }
+    
+    pub fn function_count(&self) -> u32 {
+        self.as_ref().function_count()
     }
 
     
     
     
-    pub fn element_at(&self, index: u32) -> Option<RefType> {
-        match &self.kind {
-            TypesKind::Module(module) => module.element_types.get(index as usize).copied(),
-            TypesKind::Component(_) => None,
-        }
+    
+    
+    pub fn element_at(&self, index: u32) -> RefType {
+        self.as_ref().element_at(index)
     }
 
     
-    pub fn element_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(module) => module.element_types.len(),
-            TypesKind::Component(_) => 0,
-        }
+    pub fn element_count(&self) -> u32 {
+        self.as_ref().element_count()
     }
 
     
     
     
-    pub fn component_function_at(&self, index: u32) -> Option<&ComponentFuncType> {
+    
+    
+    
+    pub fn component_function_at(&self, index: u32) -> TypeId {
         self.as_ref().component_function_at(index)
     }
 
     
-    pub fn component_function_count(&self) -> usize {
-        match &self.kind {
-            TypesKind::Module(_) => 0,
-            TypesKind::Component(component) => component.funcs.len(),
-        }
+    pub fn component_function_count(&self) -> u32 {
+        self.as_ref().component_function_count()
     }
 
     
     
     
-    pub fn module_at(&self, index: u32) -> Option<&ModuleType> {
+    
+    
+    
+    pub fn module_at(&self, index: u32) -> TypeId {
         self.as_ref().module_at(index)
     }
 
@@ -1450,7 +1550,10 @@ impl Types {
     
     
     
-    pub fn instance_at(&self, index: u32) -> Option<&InstanceType> {
+    
+    
+    
+    pub fn instance_at(&self, index: u32) -> TypeId {
         self.as_ref().instance_at(index)
     }
 
@@ -1465,7 +1568,10 @@ impl Types {
     
     
     
-    pub fn component_at(&self, index: u32) -> Option<&ComponentType> {
+    
+    
+    
+    pub fn component_at(&self, index: u32) -> TypeId {
         self.as_ref().component_at(index)
     }
 
@@ -1480,7 +1586,10 @@ impl Types {
     
     
     
-    pub fn component_instance_at(&self, index: u32) -> Option<TypeId> {
+    
+    
+    
+    pub fn component_instance_at(&self, index: u32) -> TypeId {
         self.as_ref().component_instance_at(index)
     }
 
@@ -1495,7 +1604,10 @@ impl Types {
     
     
     
-    pub fn value_at(&self, index: u32) -> Option<ComponentValType> {
+    
+    
+    
+    pub fn value_at(&self, index: u32) -> ComponentValType {
         self.as_ref().value_at(index)
     }
 
@@ -1532,6 +1644,14 @@ impl Types {
     
     pub fn peel_alias(&self, ty: TypeId) -> Option<TypeId> {
         self.list.peel_alias(ty)
+    }
+}
+
+impl Index<TypeId> for Types {
+    type Output = Type;
+
+    fn index(&self, id: TypeId) -> &Type {
+        &self.list[id.index]
     }
 }
 
@@ -1797,7 +1917,7 @@ impl TypeAlloc {
     pub fn free_variables_type_id(&self, id: TypeId, set: &mut IndexSet<ResourceId>) {
         match &self[id] {
             
-            Type::Func(_) | Type::Array(_) | Type::Module(_) | Type::Instance(_) => {}
+            Type::Sub(_) | Type::Module(_) | Type::Instance(_) => {}
 
             
             
@@ -1920,7 +2040,7 @@ impl TypeAlloc {
     
     
     pub(crate) fn type_named_type_id(&self, id: TypeId, set: &HashSet<TypeId>) -> bool {
-        let ty = self[id].as_defined_type().unwrap();
+        let ty = self[id].unwrap_defined();
         match ty {
             
             ComponentDefinedType::Primitive(_) => true,
@@ -2018,7 +2138,7 @@ pub(crate) trait Remap: Index<TypeId, Output = Type> {
         let ty = match &self[*id] {
             
             
-            Type::Func(_) | Type::Array(_) | Type::Module(_) | Type::Instance(_) => return false,
+            Type::Sub(_) | Type::Module(_) | Type::Instance(_) => return false,
 
             Type::Component(i) => {
                 let mut tmp = i.clone();
@@ -2282,8 +2402,8 @@ impl<'a> SubtypeCx<'a> {
                 
                 
                 self.swap();
-                let a_imports = &self.b[*a].as_module_type().unwrap().imports;
-                let b_imports = &self.a[*b].as_module_type().unwrap().imports;
+                let a_imports = &self.b[*a].unwrap_module().imports;
+                let b_imports = &self.a[*b].unwrap_module().imports;
                 for (k, a) in a_imports {
                     match b_imports.get(k) {
                         Some(b) => self.entity_type(b, a, offset).with_context(|| {
@@ -2293,8 +2413,8 @@ impl<'a> SubtypeCx<'a> {
                     }
                 }
                 self.swap();
-                let a = self.a[*a].as_module_type().unwrap();
-                let b = self.b[*b].as_module_type().unwrap();
+                let a = self.a[*a].unwrap_module();
+                let b = self.b[*b].unwrap_module();
                 for (k, b) in b.exports.iter() {
                     match a.exports.get(k) {
                         Some(a) => self
@@ -2308,8 +2428,8 @@ impl<'a> SubtypeCx<'a> {
             (Module(_), b) => bail!(offset, "expected {}, found module", b.desc()),
 
             (Func(a), Func(b)) => {
-                let a = self.a[*a].as_component_func_type().unwrap();
-                let b = self.b[*b].as_component_func_type().unwrap();
+                let a = self.a[*a].unwrap_component_func();
+                let b = self.b[*b].unwrap_component_func();
 
                 
                 
@@ -2401,8 +2521,8 @@ impl<'a> SubtypeCx<'a> {
                 
                 
                 
-                let a = self.a[*a_id].as_component_instance_type().unwrap();
-                let b = self.b[*b_id].as_component_instance_type().unwrap();
+                let a = self.a[*a_id].unwrap_component_instance();
+                let b = self.b[*b_id].unwrap_component_instance();
 
                 let mut exports = Vec::with_capacity(b.exports.len());
                 for (k, b) in b.exports.iter() {
@@ -2419,8 +2539,7 @@ impl<'a> SubtypeCx<'a> {
                     
                     
                     let (name, _) = self.b[*b_id]
-                        .as_component_instance_type()
-                        .unwrap()
+                        .unwrap_component_instance()
                         .exports
                         .get_index(i)
                         .unwrap();
@@ -2487,8 +2606,7 @@ impl<'a> SubtypeCx<'a> {
                 
                 
                 let b_imports = self.b[*b]
-                    .as_component_type()
-                    .unwrap()
+                    .unwrap_component()
                     .imports
                     .iter()
                     .map(|(name, ty)| (name.clone(), ty.clone()))
@@ -2499,8 +2617,7 @@ impl<'a> SubtypeCx<'a> {
                 self.swap();
                 self.mark(|this| {
                     let mut a_exports = this.a[*a]
-                        .as_component_type()
-                        .unwrap()
+                        .unwrap_component()
                         .exports
                         .iter()
                         .map(|(name, ty)| (name.clone(), ty.clone()))
@@ -2575,7 +2692,7 @@ impl<'a> SubtypeCx<'a> {
         
         
         
-        let component_type = self.b[b].as_component_type().unwrap();
+        let component_type = self.b[b].unwrap_component();
         let entities = match kind {
             ExternKind::Import => &component_type.imports,
             ExternKind::Export => &component_type.exports,
@@ -2601,18 +2718,15 @@ impl<'a> SubtypeCx<'a> {
                     _ => unreachable!(),
                 };
                 let (name, next_ty) = self.b[id]
-                    .as_component_instance_type()
-                    .unwrap()
+                    .unwrap_component_instance()
                     .exports
                     .get_index(i)
                     .unwrap();
                 ty = *next_ty;
                 arg = match arg {
-                    Some(ComponentEntityType::Instance(id)) => self.a[*id]
-                        .as_component_instance_type()
-                        .unwrap()
-                        .exports
-                        .get(name),
+                    Some(ComponentEntityType::Instance(id)) => {
+                        self.a[*id].unwrap_component_instance().exports.get(name)
+                    }
                     _ => continue 'outer,
                 };
             }
@@ -2673,20 +2787,7 @@ impl<'a> SubtypeCx<'a> {
                     
                     
                     
-                    match (expected, actual) {
-                        (
-                            ComponentEntityType::Type {
-                                created: expected, ..
-                            },
-                            ComponentEntityType::Type {
-                                created: actual, ..
-                            },
-                        ) => {
-                            let prev = type_map.insert(expected, actual);
-                            assert!(prev.is_none());
-                        }
-                        _ => {}
-                    }
+                    self.register_type_renamings(actual, expected, &mut type_map);
                     continue;
                 }
                 Err(e) => e,
@@ -2694,7 +2795,7 @@ impl<'a> SubtypeCx<'a> {
 
             
             
-            let component_type = self.b[b].as_component_type().unwrap();
+            let component_type = self.b[b].unwrap_component();
             let entities = match kind {
                 ExternKind::Import => &component_type.imports,
                 ExternKind::Export => &component_type.exports,
@@ -2723,11 +2824,9 @@ impl<'a> SubtypeCx<'a> {
         }
 
         match (a, b) {
-            (EntityType::Func(a), EntityType::Func(b)) => self.func_type(
-                self.a[*a].as_func_type().unwrap(),
-                self.b[*b].as_func_type().unwrap(),
-                offset,
-            ),
+            (EntityType::Func(a), EntityType::Func(b)) => {
+                self.func_type(self.a[*a].unwrap_func(), self.b[*b].unwrap_func(), offset)
+            }
             (EntityType::Func(_), b) => bail!(offset, "expected {}, found func", b.desc()),
             (EntityType::Table(a), EntityType::Table(b)) => {
                 if a.element_type != b.element_type {
@@ -2775,11 +2874,9 @@ impl<'a> SubtypeCx<'a> {
                 }
             }
             (EntityType::Global(_), b) => bail!(offset, "expected {}, found global", b.desc()),
-            (EntityType::Tag(a), EntityType::Tag(b)) => self.func_type(
-                self.a[*a].as_func_type().unwrap(),
-                self.b[*b].as_func_type().unwrap(),
-                offset,
-            ),
+            (EntityType::Tag(a), EntityType::Tag(b)) => {
+                self.func_type(self.a[*a].unwrap_func(), self.b[*b].unwrap_func(), offset)
+            }
             (EntityType::Tag(_), b) => bail!(offset, "expected {}, found tag", b.desc()),
         }
     }
@@ -2809,18 +2906,18 @@ impl<'a> SubtypeCx<'a> {
                 self.primitive_val_type(*a, *b, offset)
             }
             (ComponentValType::Type(a), ComponentValType::Type(b)) => self.component_defined_type(
-                self.a[*a].as_defined_type().unwrap(),
-                self.b[*b].as_defined_type().unwrap(),
+                self.a[*a].unwrap_defined(),
+                self.b[*b].unwrap_defined(),
                 offset,
             ),
             (ComponentValType::Primitive(a), ComponentValType::Type(b)) => {
-                match self.b[*b].as_defined_type().unwrap() {
+                match self.b[*b].unwrap_defined() {
                     ComponentDefinedType::Primitive(b) => self.primitive_val_type(*a, *b, offset),
                     b => bail!(offset, "expected {}, found {a}", b.desc()),
                 }
             }
             (ComponentValType::Type(a), ComponentValType::Primitive(b)) => {
-                match self.a[*a].as_defined_type().unwrap() {
+                match self.a[*a].unwrap_defined() {
                     ComponentDefinedType::Primitive(a) => self.primitive_val_type(*a, *b, offset),
                     a => bail!(offset, "expected {b}, found {}", a.desc()),
                 }
@@ -2958,8 +3055,8 @@ impl<'a> SubtypeCx<'a> {
             }
             (Result { .. }, b) => bail!(offset, "expected {}, found result", b.desc()),
             (Own(a), Own(b)) | (Borrow(a), Borrow(b)) => {
-                let a = self.a[*a].as_resource().unwrap();
-                let b = self.b[*b].as_resource().unwrap();
+                let a = self.a[*a].unwrap_resource();
+                let b = self.b[*b].unwrap_resource();
                 if a == b {
                     Ok(())
                 } else {
@@ -2987,6 +3084,36 @@ impl<'a> SubtypeCx<'a> {
             Ok(())
         } else {
             bail!(offset, "expected primitive `{b}` found primitive `{a}`")
+        }
+    }
+
+    fn register_type_renamings(
+        &self,
+        actual: ComponentEntityType,
+        expected: ComponentEntityType,
+        type_map: &mut HashMap<TypeId, TypeId>,
+    ) {
+        match (expected, actual) {
+            (
+                ComponentEntityType::Type {
+                    created: expected, ..
+                },
+                ComponentEntityType::Type {
+                    created: actual, ..
+                },
+            ) => {
+                let prev = type_map.insert(expected, actual);
+                assert!(prev.is_none());
+            }
+            (ComponentEntityType::Instance(expected), ComponentEntityType::Instance(actual)) => {
+                let actual = self.a[actual].unwrap_component_instance();
+                for (name, expected) in self.b[expected].unwrap_component_instance().exports.iter()
+                {
+                    let actual = actual.exports[name];
+                    self.register_type_renamings(actual, *expected, type_map);
+                }
+            }
+            _ => {}
         }
     }
 }
