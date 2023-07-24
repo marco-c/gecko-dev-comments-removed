@@ -3136,13 +3136,15 @@ bool gfxFont::ProcessShapedWordInternal(
     NS_WARNING("failed to create gfxShapedWord - expect missing text");
     return false;
   }
-  DebugOnly<bool> ok = ShapeText(aDrawTarget, aText, 0, aLength, aRunScript,
-                                 aLanguage, aVertical, aRounding, sw);
-  NS_WARNING_ASSERTION(ok, "failed to shape word - expect garbled text");
 
   {
     
     AutoWriteLock lock(mLock);
+
+    DebugOnly<bool> ok = ShapeText(aDrawTarget, aText, 0, aLength, aRunScript,
+                                   aLanguage, aVertical, aRounding, sw);
+    NS_WARNING_ASSERTION(ok, "failed to shape word - expect garbled text");
+
     if (!mWordCache) {
       mWordCache = MakeUnique<nsTHashtable<CacheHashEntry>>();
     } else {
@@ -3368,6 +3370,7 @@ bool gfxFont::ShapeFragmentWithoutWordCache(DrawTarget* aDrawTarget,
       }
     }
 
+    AutoWriteLock lock(mLock);
     ok = ShapeText(aDrawTarget, aText, aOffset, fragLen, aScript, aLanguage,
                    aVertical, aRounding, aTextRun);
 
