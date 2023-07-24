@@ -608,15 +608,17 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
 
   
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
-    bool allowed =
-        mPolicies[i]->allows(aDirective, CSP_UNSAFE_INLINE, u""_ns,
-                             aParserCreated) ||
-        mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce, aParserCreated);
+    
+    
+    
+    if (mPolicies[i]->allowsAllInlineBehavior(aDirective)) {
+      continue;
+    }
 
     
     
     
-    if (allowed) {
+    if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce, aParserCreated)) {
       continue;
     }
 
@@ -636,13 +638,27 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
 
     
     
+    bool unsafeHashesFlag = mPolicies[i]->allows(aDirective, CSP_UNSAFE_HASHES,
+                                                 u""_ns, aParserCreated);
+
     
     
     
-    if (!aHasUnsafeHash || mPolicies[i]->allows(aDirective, CSP_UNSAFE_HASHES,
-                                                u""_ns, aParserCreated)) {
-      allowed =
-          mPolicies[i]->allows(aDirective, CSP_HASH, content, aParserCreated);
+    
+    if (!aHasUnsafeHash || unsafeHashesFlag) {
+      if (mPolicies[i]->allows(aDirective, CSP_HASH, content, aParserCreated)) {
+        continue;
+      }
+    }
+
+    
+    
+    bool allowed = false;
+    if ((aDirective == SCRIPT_SRC_ELEM_DIRECTIVE ||
+         aDirective == SCRIPT_SRC_ATTR_DIRECTIVE) &&
+        mPolicies[i]->allows(aDirective, CSP_STRICT_DYNAMIC, u""_ns,
+                             aParserCreated)) {
+      allowed = !aParserCreated;
     }
 
     if (!allowed) {

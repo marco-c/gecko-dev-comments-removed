@@ -414,13 +414,14 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
         !CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) &&
         !CSP_IsDirective(mCurDir[0],
-                         nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE)) {
-      
+                         nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE) &&
+        !CSP_IsDirective(mCurDir[0],
+                         nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE)) {
       AutoTArray<nsString, 1> params = {u"strict-dynamic"_ns};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoringStrictDynamic", params);
-      return nullptr;
     }
+
     mStrictDynamic = true;
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
@@ -1074,39 +1075,25 @@ void nsCSPParser::directive() {
   }
 
   
-  if (mStrictDynamic) {
-    MOZ_ASSERT(
-        cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
-            cspDir->equals(
-                nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) ||
-            cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE),
-        "strict-dynamic only allowed within script-src(-elem|attr)");
+  if (mStrictDynamic &&
+      !CSP_IsDirective(mCurDir[0],
+                       nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE)) {
     for (uint32_t i = 0; i < srcs.Length(); i++) {
-      
-      
-      
-      
-      
-      srcs[i]->invalidate();
-      
       nsAutoString srcStr;
       srcs[i]->toString(srcStr);
       
       
-      
-      
-      
-      if (!srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_STRICT_DYNAMIC)) &&
-          !srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_UNSAFE_EVAL)) &&
-          !srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_UNSAFE_HASHES)) &&
-          !StringBeginsWith(
-              srcStr, nsDependentString(CSP_EnumToUTF16Keyword(CSP_NONCE))) &&
-          !StringBeginsWith(srcStr, u"'sha"_ns)) {
+      if (!srcs[i]->isKeyword(CSP_STRICT_DYNAMIC) &&
+          !srcs[i]->isKeyword(CSP_UNSAFE_EVAL) &&
+          !srcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
+          !srcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !srcs[i]->isNonce() &&
+          !srcs[i]->isHash()) {
         AutoTArray<nsString, 2> params = {srcStr, mCurDir[0]};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
                                  "ignoringScriptSrcForStrictDynamic", params);
       }
     }
+
     
     
     if (!mHasHashOrNonce) {
@@ -1127,8 +1114,6 @@ void nsCSPParser::directive() {
        cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE) ||
        cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE) ||
        cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE))) {
-    mUnsafeInlineKeywordSrc->invalidate();
-
     
     AutoTArray<nsString, 2> params = {u"'unsafe-inline'"_ns, mCurDir[0]};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
