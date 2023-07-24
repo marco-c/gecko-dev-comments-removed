@@ -890,6 +890,14 @@ extern bool LookupNameUnqualified(JSContext* cx, Handle<PropertyName*> name,
 
 namespace js {
 
+
+
+
+
+
+
+
+
 bool LookupPropertyPure(JSContext* cx, JSObject* obj, jsid id,
                         NativeObject** objp, PropertyResult* propp);
 

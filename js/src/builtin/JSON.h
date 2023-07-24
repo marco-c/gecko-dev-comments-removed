@@ -19,7 +19,30 @@ class StringBuffer;
 
 extern const JSClass JSONClass;
 
-enum class StringifyBehavior { Normal, RestrictedSafe };
+enum class StringifyBehavior {
+  
+  
+  
+  Normal,
+
+  
+  
+  
+  RestrictedSafe,
+
+  
+  
+  
+  FastOnly,
+
+  
+  SlowOnly,
+
+  
+  
+  
+  Compare
+};
 
 
 
