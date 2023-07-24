@@ -308,6 +308,27 @@ struct GlyphMetrics {
 };
 
 hb_position_t gfxHarfBuzzShaper::GetGlyphHAdvance(hb_codepoint_t glyph) const {
+  if (mUseFontGlyphWidths) {
+    if (!mWidthCache) {
+      mWidthCache = MakeUnique<WidthCache>();
+    }
+
+    auto cached = mWidthCache->Lookup(glyph);
+    if (cached) {
+      return cached.Data().mAdvance;
+    }
+
+    
+    
+    
+    MOZ_PUSH_IGNORE_THREAD_SAFETY
+    hb_position_t advance = GetFont()->GetGlyphWidthLocked(glyph);
+    MOZ_POP_THREAD_SAFETY
+    cached.Set(WidthCacheData{glyph, advance});
+    return advance;
+  }
+
+  
   
   
 
@@ -360,13 +381,7 @@ hb_position_t gfxHarfBuzzShaper::HBGetGlyphHAdvance(hb_font_t* font,
                                                     void* user_data) {
   const gfxHarfBuzzShaper::FontCallbackData* fcd =
       static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
-  const gfxHarfBuzzShaper* shaper = fcd->mShaper;
-  if (shaper->mUseFontGlyphWidths) {
-    MOZ_PUSH_IGNORE_THREAD_SAFETY
-    return shaper->GetFont()->GetGlyphWidthLocked(glyph);
-    MOZ_POP_THREAD_SAFETY
-  }
-  return shaper->GetGlyphHAdvance(glyph);
+  return fcd->mShaper->GetGlyphHAdvance(glyph);
 }
 
 
@@ -420,10 +435,7 @@ hb_bool_t gfxHarfBuzzShaper::HBGetGlyphVOrigin(hb_font_t* font, void* font_data,
 void gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
                                         hb_position_t* aX,
                                         hb_position_t* aY) const {
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
-  *aX = 0.5 * (mUseFontGlyphWidths ? mFont->GetGlyphWidthLocked(aGlyph)
-                                   : GetGlyphHAdvance(aGlyph));
-  MOZ_POP_THREAD_SAFETY
+  *aX = 0.5 * GetGlyphHAdvance(aGlyph);
 
   if (mVORGTable) {
     
