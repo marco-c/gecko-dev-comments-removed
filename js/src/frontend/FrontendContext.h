@@ -151,7 +151,10 @@ class FrontendContext {
 
   enum class Warning { Suppress, Report };
 
-  void convertToRuntimeError(JSContext* cx, Warning warning = Warning::Report);
+  
+  
+  
+  bool convertToRuntimeError(JSContext* cx, Warning warning = Warning::Report);
 
   mozilla::Maybe<CompileError>& maybeError() { return errors_.error; }
   Vector<CompileError, 0, SystemAllocPolicy>& warnings() {
@@ -222,9 +225,10 @@ class MOZ_STACK_CLASS AutoReportFrontendContext : public FrontendContext {
 
   void clearAutoReport() { cx_ = nullptr; }
 
-  void convertToRuntimeErrorAndClear() {
-    convertToRuntimeError(cx_, warning_);
+  bool convertToRuntimeErrorAndClear() {
+    bool result = convertToRuntimeError(cx_, warning_);
     cx_ = nullptr;
+    return result;
   }
 };
 
