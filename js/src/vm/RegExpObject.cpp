@@ -1237,12 +1237,14 @@ JS_PUBLIC_API bool JS::CheckRegExpSyntax(JSContext* cx, const char16_t* chars,
       dummyTokenStream, source, flags);
   error.set(UndefinedValue());
   if (!success) {
+    if (!fc.convertToRuntimeErrorAndClear()) {
+      return false;
+    }
     
-    if (fc.hadOutOfMemory() || fc.hadOverRecursed()) {
+    if (cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed()) {
       return false;
     }
 
-    fc.convertToRuntimeErrorAndClear();
     if (!cx->getPendingException(error)) {
       return false;
     }
