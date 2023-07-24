@@ -4543,6 +4543,17 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsRenderingObserverContainer() const {
+    
+    
+    return HasAllStateBits(NS_FRAME_SVG_LAYOUT |
+                           NS_STATE_SVG_RENDERING_OBSERVER_CONTAINER) ||
+           IsSVGOuterSVGFrame();
+  }
+
+  
+
+
 
 
   bool FrameMaintainsOverflow() const {

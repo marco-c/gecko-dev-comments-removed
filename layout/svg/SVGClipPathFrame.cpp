@@ -95,30 +95,9 @@ static void ComposeExtraMask(DrawTarget* aTarget, SourceSurface* aExtraMask) {
   aTarget->SetTransform(origin);
 }
 
-void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
+void SVGClipPathFrame::PaintChildren(gfxContext& aMaskContext,
                                      nsIFrame* aClippedFrame,
-                                     const gfxMatrix& aMatrix,
-                                     SourceSurface* aExtraMask) {
-  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
-
-  
-  
-  
-  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
-                                        &sRefChainLengthCounter);
-  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
-    return;  
-  }
-
-  DrawTarget* maskDT = aMaskContext.GetDrawTarget();
-  MOZ_ASSERT(maskDT->GetFormat() == SurfaceFormat::A8);
-
-  
-  
-  
-  
-  mMatrixForChildren = GetClipPathTransform(aClippedFrame) * aMatrix;
-
+                                     const gfxMatrix& aMatrix) {
   
   SVGClipPathFrame* clipPathThatClipsClipPath;
   
@@ -149,6 +128,33 @@ void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   if (maskUsage.shouldApplyClipPath) {
     aMaskContext.PopClip();
   }
+}
+
+void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
+                                     nsIFrame* aClippedFrame,
+                                     const gfxMatrix& aMatrix,
+                                     SourceSurface* aExtraMask) {
+  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
+
+  
+  
+  
+  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
+                                        &sRefChainLengthCounter);
+  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
+    return;  
+  }
+
+  DrawTarget* maskDT = aMaskContext.GetDrawTarget();
+  MOZ_ASSERT(maskDT->GetFormat() == SurfaceFormat::A8);
+
+  
+  
+  
+  
+  mMatrixForChildren = GetClipPathTransform(aClippedFrame) * aMatrix;
+
+  PaintChildren(aMaskContext, aClippedFrame, aMatrix);
 
   if (aExtraMask) {
     ComposeExtraMask(maskDT, aExtraMask);
@@ -370,12 +376,12 @@ nsresult SVGClipPathFrame::AttributeChanged(int32_t aNameSpaceID,
                                             int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::transform) {
-      SVGObserverUtils::InvalidateDirectRenderingObservers(this);
+      SVGObserverUtils::InvalidateRenderingObservers(this);
       SVGUtils::NotifyChildrenOfSVGChange(
           this, ISVGDisplayableFrame::TRANSFORM_CHANGED);
     }
     if (aAttribute == nsGkAtoms::clipPathUnits) {
-      SVGObserverUtils::InvalidateDirectRenderingObservers(this);
+      SVGObserverUtils::InvalidateRenderingObservers(this);
     }
   }
 

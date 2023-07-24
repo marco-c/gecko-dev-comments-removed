@@ -99,9 +99,15 @@ class SVGRenderingObserver : public nsStubMutationObserver {
   virtual ~SVGRenderingObserver() = default;
 
  public:
+  enum Flags : uint32_t {
+    OBSERVE_ATTRIBUTE_CHANGES = 0x01,
+    OBSERVE_CONTENT_CHANGES = 0x02
+  };
   using Element = dom::Element;
 
-  SVGRenderingObserver() : mInObserverSet(false) {}
+  SVGRenderingObserver(uint32_t aFlags = OBSERVE_ATTRIBUTE_CHANGES |
+                                         OBSERVE_CONTENT_CHANGES)
+      : mInObserverSet(false), mFlags(aFlags) {}
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -162,6 +168,9 @@ class SVGRenderingObserver : public nsStubMutationObserver {
 
   
   bool mInObserverSet;
+
+  
+  uint32_t mFlags;
 };
 
 class SVGObserverUtils {
