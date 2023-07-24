@@ -90,6 +90,10 @@ export async function bootstrap({
 }) {
   verifyPrefSchema();
 
+  
+  
+  setToolboxTelemetry(panel.toolbox.telemetry);
+
   const initialState = await loadInitialState(commands, panel.toolbox);
   const workers = bootstrapWorkers(panelWorkers);
 
@@ -119,8 +123,6 @@ export async function bootstrap({
     targetCommand: commands.targetCommand,
     client: firefox.clientCommands,
   });
-
-  setToolboxTelemetry(panel.toolbox.telemetry);
 
   bootstrapApp(store, panel.getToolboxStore(), {
     fluentBundles,
