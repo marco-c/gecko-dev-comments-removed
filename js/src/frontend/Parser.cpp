@@ -275,13 +275,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   SourceExtent extent;
   extent.toStringStart = toStringStart;
 
-  
-
-
-
-
-
-
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
       fc_, extent, compilationState_, inheritedDirectives, generatorKind,
       asyncKind, isInitialStencil, explicitName, flags, index);
@@ -309,13 +302,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   if (!compilationState_.appendScriptStencilAndData(fc_)) {
     return nullptr;
   }
-
-  
-
-
-
-
-
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
       fc_, cachedScriptExtra.extent, compilationState_,
