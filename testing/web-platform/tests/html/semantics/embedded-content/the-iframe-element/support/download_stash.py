@@ -4,6 +4,11 @@ def main(request, response):
     token = request.GET[b"token"]
     response.status = 200
     response.headers.append(b"Content-Type", b"text/html")
+
+    
+    
+    response.headers.append(b"X-Content-Type-Options", b"nosniff")
+
     if b"verify-token" in request.GET:
       if request.server.stash.take(token):
         return u'TOKEN_SET'
