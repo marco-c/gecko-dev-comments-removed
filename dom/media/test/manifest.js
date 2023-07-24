@@ -530,6 +530,10 @@ var gPlayTests = [
   
   
   
+  { name: "id3v1afterlongid3v2.mp3", type: "audio/mpeg", duration: 0.5 },
+  
+  
+  
   
   {
     name: "vbr-head.mp3",
