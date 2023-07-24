@@ -1282,7 +1282,7 @@ const gCSSProperties2 = {
   'text-autospace': {
     
     types: [
-      { type: 'discrete', options: [ [ 'auto', 'no-autospace' ] ] }
+      { type: 'discrete', options: [ [ 'normal', 'no-autospace' ] ] }
     ]
   },
   'text-decoration-color': {
