@@ -2004,7 +2004,7 @@ bool WarpCacheIRTranspiler::emitLoadDenseElementHoleExistsResult(
   add(length);
 
   
-  auto* ins = MInArray::New(alloc(), elements, index, length, obj);
+  auto* ins = MInArray::New(alloc(), elements, index, length);
   add(ins);
 
   pushResult(ins);
