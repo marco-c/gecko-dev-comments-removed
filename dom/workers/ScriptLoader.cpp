@@ -79,6 +79,7 @@
 
 #define MAX_CONCURRENT_SCRIPTS 1000
 
+using JS::loader::ParserMetadata;
 using JS::loader::ScriptKind;
 using JS::loader::ScriptLoadRequest;
 using mozilla::ipc::PrincipalInfo;
@@ -651,7 +652,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   
   RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
-      CORSMode::CORS_NONE, referrerPolicy,  u""_ns, nullptr);
+      CORSMode::CORS_NONE, referrerPolicy,  u""_ns,
+      ParserMetadata::NotParserInserted, nullptr);
 
   RefPtr<ScriptLoadRequest> request = nullptr;
   
