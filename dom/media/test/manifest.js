@@ -534,6 +534,13 @@ var gPlayTests = [
   
   
   
+  {
+    name: "padding-spanning-multiple-packets.mp3",
+    type: "audio/mpeg",
+  },
+  
+  
+  
   
   {
     name: "vbr-head.mp3",
