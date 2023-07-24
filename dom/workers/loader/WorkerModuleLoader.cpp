@@ -99,26 +99,12 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
   RefPtr<ScriptFetchOptions> options;
   nsIURI* baseURL = nullptr;
   if (aMaybeActiveScript) {
-    
-    
-    
     options = aMaybeActiveScript->GetFetchOptions();
     baseURL = aMaybeActiveScript->BaseURL();
   } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    
     ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
-    options = new ScriptFetchOptions(
-        CORSMode::CORS_NONE, referrerPolicy,
-         u""_ns, JS::loader::ParserMetadata::NotParserInserted,
-        nullptr);
+    options =
+        new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
     baseURL = GetBaseURI();
   }
 
