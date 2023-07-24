@@ -393,6 +393,17 @@ void mozilla::dom::SecFetch::AddSecFetchHeader(nsIHttpChannel* aHTTPChannel) {
     return;
   }
 
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aHTTPChannel->LoadInfo();
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+    ExtContentPolicy extType = loadInfo->GetExternalContentPolicyType();
+    if (extType == ExtContentPolicy::TYPE_FETCH ||
+        extType == ExtContentPolicy::TYPE_XMLHTTPREQUEST) {
+      return;
+    }
+  }
+
   AddSecFetchDest(aHTTPChannel);
   AddSecFetchMode(aHTTPChannel);
   AddSecFetchSite(aHTTPChannel);
