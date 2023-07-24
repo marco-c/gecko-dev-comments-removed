@@ -952,11 +952,7 @@ void AnimationInfo::AddAnimationsForDisplayItem(
                               ? AnimationDataType::WithMotionPath
                               : AnimationDataType::WithoutMotionPath,
                           aPosition);
-  
-  
   const bool hasMultipleTransformLikeProperties =
-      (StaticPrefs::layout_css_individual_transform_enabled() ||
-       StaticPrefs::layout_css_motion_path_enabled()) &&
       aType == DisplayItemType::TYPE_TRANSFORM;
   nsCSSPropertyIDSet nonAnimatingProperties =
       nsCSSPropertyIDSet::TransformLikeProperties();
