@@ -165,8 +165,9 @@ static void WlLogHandler(const char* format, va_list args) {
   
   
   
-  if (strstr(error, "warning:") &&
-      strstr(error, "destroyed while proxies still attached")) {
+  
+  
+  if (strstr(error, "still attached")) {
     return;
   }
 
