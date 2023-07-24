@@ -7554,16 +7554,15 @@ bool BaseCompiler::emitBrOnCastCommon(bool onSuccess,
   return true;
 }
 
-bool BaseCompiler::emitBrOnCast() {
+bool BaseCompiler::emitBrOnCast(bool onSuccess) {
   MOZ_ASSERT(!hasLatentOp());
 
-  bool onSuccess;
   uint32_t labelRelativeDepth;
   RefType sourceType;
   RefType destType;
   ResultType labelType;
   BaseNothingVector unused_values{};
-  if (!iter_.readBrOnCast(&onSuccess, &labelRelativeDepth, &sourceType,
+  if (!iter_.readBrOnCast(onSuccess, &labelRelativeDepth, &sourceType,
                           &destType, &labelType, &unused_values)) {
     return false;
   }
@@ -9838,7 +9837,9 @@ bool BaseCompiler::emitBody() {
           case uint32_t(GcOp::RefCastNull):
             CHECK_NEXT(emitRefCast(true));
           case uint32_t(GcOp::BrOnCast):
-            CHECK_NEXT(emitBrOnCast());
+            CHECK_NEXT(emitBrOnCast(true));
+          case uint32_t(GcOp::BrOnCastFail):
+            CHECK_NEXT(emitBrOnCast(false));
           case uint32_t(GcOp::BrOnCastV5):
             CHECK_NEXT(emitBrOnCastV5(true));
           case uint32_t(GcOp::BrOnCastFailV5):
