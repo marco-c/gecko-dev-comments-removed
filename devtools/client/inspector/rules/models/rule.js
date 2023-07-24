@@ -828,6 +828,43 @@ class Rule {
   
 
 
+  isInLayer() {
+    return this.domRule.ancestorData.some(({ type }) => type === "layer");
+  }
+
+  
+
+
+
+
+
+
+
+  isInDifferentLayer(otherRule) {
+    const filterLayer = ({ type }) => type === "layer";
+    const thisLayers = this.domRule.ancestorData.filter(filterLayer);
+    const otherRuleLayers = otherRule.domRule.ancestorData.filter(filterLayer);
+
+    if (thisLayers.length !== otherRuleLayers.length) {
+      return true;
+    }
+
+    return thisLayers.some((layer, i) => {
+      const otherRuleLayer = otherRuleLayers[i];
+      
+      
+      
+      
+      return (
+        (layer.value || layer.actorID) !==
+        (otherRuleLayer.value || otherRuleLayer.actorID)
+      );
+    });
+  }
+
+  
+
+
 
 
   hasAnyVisibleProperties() {

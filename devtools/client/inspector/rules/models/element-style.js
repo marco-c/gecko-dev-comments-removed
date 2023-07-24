@@ -324,9 +324,16 @@ class ElementStyle {
     
     
     
-    const taken = {};
+    
+    
+    
+    
+    
+    
+    
+    const taken = new Map();
     for (const computedProp of computedProps) {
-      const earlier = taken[computedProp.name];
+      const earlier = taken.get(computedProp.name);
 
       
       
@@ -342,7 +349,13 @@ class ElementStyle {
       if (
         earlier &&
         computedProp.priority === "important" &&
-        earlier.priority !== "important" &&
+        (earlier.priority !== "important" ||
+          
+          
+          (computedProp.textProp.rule?.isInLayer() &&
+            computedProp.textProp.rule.isInDifferentLayer(
+              earlier.textProp.rule
+            ))) &&
         
         computedProp.textProp.rule.inherited == earlier.textProp.rule.inherited
       ) {
@@ -359,7 +372,7 @@ class ElementStyle {
       computedProp.overridden = overridden;
 
       if (!computedProp.overridden && computedProp.textProp.enabled) {
-        taken[computedProp.name] = computedProp;
+        taken.set(computedProp.name, computedProp);
 
         if (isCssVariable(computedProp.name)) {
           variables.set(computedProp.name, computedProp.value);
