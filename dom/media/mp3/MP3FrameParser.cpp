@@ -92,7 +92,8 @@ Result<bool, nsresult> FrameParser::Parse(BufferReader* aReader,
     aReader->Read(128);
     *aBytesToSkip = 128;
     mID3v1MetadataFound = true;
-    return true;
+    MP3LOGV("ID3v1 tag detected, skipping 128 bytes past the current buffer");
+    return false;
   }
 
   if (ID3Parser::IsBufferStartingWithID3Tag(aReader) && !mFirstFrame.Length()) {
