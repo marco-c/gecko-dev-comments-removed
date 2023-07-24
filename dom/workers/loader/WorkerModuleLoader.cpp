@@ -115,8 +115,10 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
     
     
     ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
-    options = new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy,
-                                      u""_ns, nullptr);
+    options = new ScriptFetchOptions(
+        CORSMode::CORS_NONE, referrerPolicy,
+         u""_ns, JS::loader::ParserMetadata::NotParserInserted,
+        nullptr);
     baseURL = GetBaseURI();
   }
 

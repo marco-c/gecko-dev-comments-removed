@@ -58,7 +58,10 @@ class ScriptLoadRequestList;
 
 
 
-
+enum class ParserMetadata {
+  NotParserInserted,
+  ParserInserted,
+};
 
 
 
@@ -85,6 +88,7 @@ class ScriptFetchOptions {
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
                      const nsAString& aNonce,
+                     const ParserMetadata aParserMetadata,
                      nsIPrincipal* aTriggeringPrincipal,
                      mozilla::dom::Element* aElement = nullptr);
 
@@ -106,6 +110,12 @@ class ScriptFetchOptions {
 
 
   const nsString mNonce;
+
+  
+
+
+
+  const ParserMetadata mParserMetadata;
 
   
 
@@ -285,6 +295,10 @@ class ScriptLoadRequest
 
   enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return mFetchOptions->mReferrerPolicy;
+  }
+
+  ParserMetadata ParserMetadata() const {
+    return mFetchOptions->mParserMetadata;
   }
 
   const nsString& Nonce() const { return mFetchOptions->mNonce; }

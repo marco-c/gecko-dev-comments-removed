@@ -308,15 +308,6 @@ LoadInfo::LoadInfo(
       }
     }
   }
-
-  
-  
-  if (!nsContentUtils::IsPreloadType(mInternalContentPolicyType)) {
-    nsCOMPtr<nsIScriptElement> script = do_QueryInterface(aLoadingContext);
-    if (script && script->GetParserCreated() != mozilla::dom::NOT_FROM_PARSER) {
-      mParserCreatedScript = true;
-    }
-  }
 }
 
 

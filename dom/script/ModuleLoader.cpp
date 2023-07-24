@@ -297,9 +297,10 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
     
     
     
-    options = new ScriptFetchOptions(mozilla::CORS_NONE,
-                                     document->GetReferrerPolicy(),
-                                      u""_ns, principal, nullptr);
+    options = new ScriptFetchOptions(
+        mozilla::CORS_NONE, document->GetReferrerPolicy(),
+         u""_ns, ParserMetadata::NotParserInserted, principal,
+        nullptr);
     baseURL = document->GetDocBaseURI();
   }
 
