@@ -819,11 +819,11 @@ class PageAction {
       return null;
     }
     let widget = lazy.CustomizableUI.getWidget(id);
-    if (widget && (!widget.areaType || widget.areaType.includes("panel"))) {
-      
-      
-      
-      
+    if (
+      widget &&
+      (this.window.CustomizationHandler.isCustomizing() ||
+        widget.areaType?.includes("panel"))
+    ) {
       
       
       
