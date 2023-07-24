@@ -5,6 +5,8 @@
 
 
 #include "OffscreenCanvasDisplayHelper.h"
+#include "mozilla/dom/WorkerRef.h"
+#include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
 #include "mozilla/gfx/Swizzle.h"
@@ -27,11 +29,17 @@ OffscreenCanvasDisplayHelper::OffscreenCanvasDisplayHelper(
 
 OffscreenCanvasDisplayHelper::~OffscreenCanvasDisplayHelper() = default;
 
-void OffscreenCanvasDisplayHelper::Destroy() {
+void OffscreenCanvasDisplayHelper::DestroyElement() {
   MOZ_ASSERT(NS_IsMainThread());
 
   MutexAutoLock lock(mMutex);
   mCanvasElement = nullptr;
+}
+
+void OffscreenCanvasDisplayHelper::DestroyCanvas() {
+  MutexAutoLock lock(mMutex);
+  mOffscreenCanvas = nullptr;
+  mWorkerRef = nullptr;
 }
 
 CanvasContextType OffscreenCanvasDisplayHelper::GetContextType() const {
@@ -46,12 +54,15 @@ RefPtr<layers::ImageContainer> OffscreenCanvasDisplayHelper::GetImageContainer()
 }
 
 void OffscreenCanvasDisplayHelper::UpdateContext(
+    OffscreenCanvas* aOffscreenCanvas, RefPtr<ThreadSafeWorkerRef>&& aWorkerRef,
     CanvasContextType aType, const Maybe<int32_t>& aChildId) {
   RefPtr<layers::ImageContainer> imageContainer =
       MakeRefPtr<layers::ImageContainer>(layers::ImageContainer::ASYNCHRONOUS);
 
   MutexAutoLock lock(mMutex);
 
+  mOffscreenCanvas = aOffscreenCanvas;
+  mWorkerRef = std::move(aWorkerRef);
   mType = aType;
   mContextChildId = aChildId;
   mImageContainer = std::move(imageContainer);
@@ -63,6 +74,61 @@ void OffscreenCanvasDisplayHelper::UpdateContext(
   }
 
   MaybeQueueInvalidateElement();
+}
+
+void OffscreenCanvasDisplayHelper::FlushForDisplay() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MutexAutoLock lock(mMutex);
+
+  
+  
+  if (!mOffscreenCanvas) {
+    return;
+  }
+
+  
+  
+  
+  if (!mWorkerRef) {
+    
+    
+    mOffscreenCanvas->QueueCommitToCompositor();
+    return;
+  }
+
+  class FlushWorkerRunnable final : public WorkerRunnable {
+   public:
+    FlushWorkerRunnable(WorkerPrivate* aWorkerPrivate,
+                        OffscreenCanvasDisplayHelper* aDisplayHelper)
+        : WorkerRunnable(aWorkerPrivate), mDisplayHelper(aDisplayHelper) {}
+
+    bool WorkerRun(JSContext*, WorkerPrivate*) override {
+      
+      
+      
+      
+      
+      RefPtr<OffscreenCanvas> canvas;
+      {
+        MutexAutoLock lock(mDisplayHelper->mMutex);
+        canvas = mDisplayHelper->mOffscreenCanvas;
+      }
+
+      if (canvas) {
+        canvas->CommitFrameToCompositor();
+      }
+      return true;
+    }
+
+   private:
+    RefPtr<OffscreenCanvasDisplayHelper> mDisplayHelper;
+  };
+
+  
+  
+  auto task = MakeRefPtr<FlushWorkerRunnable>(mWorkerRef->Private(), this);
+  task->Dispatch();
 }
 
 bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(

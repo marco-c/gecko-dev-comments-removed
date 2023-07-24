@@ -112,6 +112,8 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
       
       
 
+      element->FlushOffscreenCanvas();
+
       nsHTMLCanvasFrame* canvasFrame = static_cast<nsHTMLCanvasFrame*>(mFrame);
       nsIntSize canvasSizeInPx = canvasFrame->GetCanvasSize();
       IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
