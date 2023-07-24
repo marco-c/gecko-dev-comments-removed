@@ -2,6 +2,7 @@
 
 
 
+
 "use strict;"
 
 
@@ -568,3 +569,59 @@ promise_test(async test => {
   
   await leaveInterestGroup({ name: 'Never join group' });
 }, 'Leave an interest group that was never joined.');
+
+
+
+
+
+promise_test(async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, {}, 0.2);
+
+  
+  
+  
+  
+  
+  while (await runBasicFledgeAuction(test, uuid) !== null);
+}, 'Interest group duration.');
+
+promise_test(async test => {
+  const uuid = generateUuid(test);
+
+  
+  
+  await joinInterestGroup(test, uuid, {}, -600);
+  assert_true(await runBasicFledgeAuction(test, uuid) === null);
+}, 'Interest group duration of -600.');
+
+promise_test(async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, {}, 600);
+
+  
+  assert_true(await runBasicFledgeAuction(test, uuid) !== null);
+
+  
+  await joinInterestGroup(test, uuid, {}, 0.2);
+
+  
+  while (await runBasicFledgeAuction(test, uuid) !== null);
+}, 'Interest group test with overwritten duration.');
+
+promise_test(async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid, {}, 600);
+
+  
+  
+  
+  await joinInterestGroup(test, uuid, {}, -600);
+  assert_true(await runBasicFledgeAuction(test, uuid) === null);
+}, 'Interest group test with overwritten duration of -600.');
