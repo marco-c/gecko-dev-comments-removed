@@ -75,13 +75,6 @@ class ScriptLoadRequestList;
 
 
 
-
-
-
-
-
-
-
 class ScriptFetchOptions {
   ~ScriptFetchOptions();
 
@@ -91,6 +84,7 @@ class ScriptFetchOptions {
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                     const nsAString& aNonce,
                      nsIPrincipal* aTriggeringPrincipal,
                      mozilla::dom::Element* aElement = nullptr);
 
@@ -106,6 +100,12 @@ class ScriptFetchOptions {
 
 
   const enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
+
+  
+
+
+
+  const nsString mNonce;
 
   
 
@@ -286,6 +286,8 @@ class ScriptLoadRequest
   enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return mFetchOptions->mReferrerPolicy;
   }
+
+  const nsString& Nonce() const { return mFetchOptions->mNonce; }
 
   nsIPrincipal* TriggeringPrincipal() const {
     return mFetchOptions->mTriggeringPrincipal;
