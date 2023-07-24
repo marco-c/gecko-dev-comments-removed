@@ -302,6 +302,11 @@ function checkTitleIndexContents(testCase, index, errorMessage) {
 
 function largeValue(size, seed) {
   const buffer = new Uint8Array(size);
+  
+  if (seed == 0) {
+    buffer.fill(0x11, 0, size - 1);
+    return buffer;
+  }
 
   
   let state = 1000 + seed;
