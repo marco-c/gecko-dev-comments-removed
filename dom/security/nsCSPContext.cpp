@@ -481,8 +481,7 @@ nsCSPContext::GetAllowsEval(bool* outShouldReportViolation,
   *outAllowsEval = true;
 
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
-    if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns,
-                              false)) {
+    if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns)) {
       
       
       *outShouldReportViolation = true;
@@ -509,9 +508,8 @@ nsCSPContext::GetAllowsWasmEval(bool* outShouldReportViolation,
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     
     if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_WASM_UNSAFE_EVAL,
-                              u""_ns, false) &&
-        !mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns,
-                              false)) {
+                              u""_ns) &&
+        !mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_UNSAFE_EVAL, u""_ns)) {
       
       
       *outShouldReportViolation = true;
@@ -618,7 +616,7 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     
     
     
-    if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce, aParserCreated)) {
+    if (mPolicies[i]->allows(aDirective, CSP_NONCE, aNonce)) {
       continue;
     }
 
@@ -638,15 +636,15 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
 
     
     
-    bool unsafeHashesFlag = mPolicies[i]->allows(aDirective, CSP_UNSAFE_HASHES,
-                                                 u""_ns, aParserCreated);
+    bool unsafeHashesFlag =
+        mPolicies[i]->allows(aDirective, CSP_UNSAFE_HASHES, u""_ns);
 
     
     
     
     
     if (!aHasUnsafeHash || unsafeHashesFlag) {
-      if (mPolicies[i]->allows(aDirective, CSP_HASH, content, aParserCreated)) {
+      if (mPolicies[i]->allows(aDirective, CSP_HASH, content)) {
         continue;
       }
     }
@@ -656,8 +654,7 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     bool allowed = false;
     if ((aDirective == SCRIPT_SRC_ELEM_DIRECTIVE ||
          aDirective == SCRIPT_SRC_ATTR_DIRECTIVE) &&
-        mPolicies[i]->allows(aDirective, CSP_STRICT_DYNAMIC, u""_ns,
-                             aParserCreated)) {
+        mPolicies[i]->allows(aDirective, CSP_STRICT_DYNAMIC, u""_ns)) {
       allowed = !aParserCreated;
     }
 
@@ -825,7 +822,7 @@ nsCSPContext::LogViolationDetails(
   for (uint32_t p = 0; p < mPolicies.Length(); p++) {
     NS_ASSERTION(mPolicies[p], "null pointer in nsTArray<nsCSPPolicy>");
 
-    if (mPolicies[p]->allows(SCRIPT_SRC_DIRECTIVE, keyword, u""_ns, false)) {
+    if (mPolicies[p]->allows(SCRIPT_SRC_DIRECTIVE, keyword, u""_ns)) {
       continue;
     }
 
