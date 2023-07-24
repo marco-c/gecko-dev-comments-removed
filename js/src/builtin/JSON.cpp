@@ -10,7 +10,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Variant.h"
 
 #include <algorithm>
 
@@ -18,7 +17,6 @@
 #include "jstypes.h"
 
 #include "builtin/Array.h"
-#include "builtin/BigInt.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Object.h"                
@@ -27,16 +25,13 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "util/StringBuffer.h"
-#include "vm/BooleanObject.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSAtomUtils.h"  
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/JSONParser.h"
 #include "vm/NativeObject.h"
-#include "vm/NumberObject.h"   
 #include "vm/PlainObject.h"    
-#include "vm/StringObject.h"   
 #include "vm/WellKnownAtom.h"  
 #ifdef ENABLE_RECORD_TUPLE
 #  include "builtin/RecordObject.h"
@@ -51,11 +46,9 @@
 
 using namespace js;
 
-using mozilla::AsVariant;
 using mozilla::CheckedInt;
 using mozilla::Maybe;
 using mozilla::RangedPtr;
-using mozilla::Variant;
 
 using JS::AutoStableStringChars;
 
@@ -394,8 +387,7 @@ static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
 
 
 static inline bool IsFilteredValue(const Value& v) {
-  MOZ_ASSERT_IF(v.isMagic(), v.isMagic(JS_ELEMENTS_HOLE));
-  return v.isUndefined() || v.isSymbol() || v.isMagic() || IsCallable(v);
+  return v.isUndefined() || v.isSymbol() || IsCallable(v);
 }
 
 class CycleDetector {
@@ -799,666 +791,6 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
   return isArray ? JA(cx, obj, scx) : JO(cx, obj, scx);
 }
 
-static bool CanFastStringifyObject(NativeObject* obj) {
-  if (ClassCanHaveExtraEnumeratedProperties(obj->getClass())) {
-    return false;
-  }
-
-  if (obj->is<ArrayObject>()) {
-    if (ProtoMayHaveEnumerableProperties(obj)) {
-      
-      
-      return false;
-    }
-    if (obj->isIndexed() && !obj->hasEnumerableProperty()) {
-      
-      
-      
-      
-      
-      
-      
-      return false;
-    }
-  }
-
-  
-  
-  MOZ_ASSERT(!obj->getOpsLookupProperty());
-
-#ifdef ENABLE_RECORD_TUPLE
-  if (ObjectValue(*obj).isExtendedPrimitive()) {
-    return false;
-  }
-#endif
-
-  return true;
-}
-
-#define FOR_EACH_STRINGIFY_BAIL_REASON(MACRO) \
-  MACRO(NO_REASON)                            \
-  MACRO(INELIGIBLE_OBJECT)                    \
-  MACRO(DEEP_RECURSION)                       \
-  MACRO(NON_DATA_PROPERTY)                    \
-  MACRO(TOO_MANY_PROPERTIES)                  \
-  MACRO(SPARSE_INDEX)                         \
-  MACRO(BIGINT)                               \
-  MACRO(API)                                  \
-  MACRO(HAVE_REPLACER)                        \
-  MACRO(HAVE_SPACE)                           \
-  MACRO(PRIMITIVE)                            \
-  MACRO(HAVE_TOJSON)                          \
-  MACRO(IMPURE_LOOKUP)                        \
-  MACRO(INTERRUPT)
-
-enum class BailReason : uint8_t {
-#define DECLARE_ENUM(name) name,
-  FOR_EACH_STRINGIFY_BAIL_REASON(DECLARE_ENUM)
-#undef DECLARE_ENUM
-};
-
-static const char* DescribeStringifyBailReason(BailReason whySlow) {
-  switch (whySlow) {
-#define ENUM_NAME(name)  \
-  case BailReason::name: \
-    return #name;
-    FOR_EACH_STRINGIFY_BAIL_REASON(ENUM_NAME)
-#undef ENUM_NAME
-    default:
-      return "Unknown";
-  }
-}
-
-
-
-class DenseElementsIteratorForJSON {
-  HeapSlotArray elements;
-  uint32_t element;
-
-  
-  
-  uint32_t numElements;
-  uint32_t length;
-
- public:
-  explicit DenseElementsIteratorForJSON(NativeObject* nobj)
-      : elements(nobj->getDenseElements()),
-        element(0),
-        numElements(nobj->getDenseInitializedLength()) {
-    length = nobj->is<ArrayObject>() ? nobj->as<ArrayObject>().length()
-                                     : numElements;
-  }
-
-  bool done() const { return element == length; }
-
-  Value next() {
-    
-    
-    
-    
-    
-    
-
-    MOZ_ASSERT(!done());
-    auto i = element++;
-    
-    
-    return i < numElements ? elements.begin()[i] : UndefinedValue();
-  }
-
-  uint32_t getIndex() const { return element; }
-};
-
-
-
-
-
-class ShapePropertyForwardIterNoGC {
-  
-  PropMap* map_;
-  uint32_t mapLength_;
-  uint32_t i_ = 0;
-
-  
-  
-  mozilla::Vector<PropMap*, 4> stack_;
-
-  const NativeShape* shape_;
-
-  MOZ_ALWAYS_INLINE void settle() {
-    while (true) {
-      if (MOZ_UNLIKELY(i_ == mapLength_)) {
-        i_ = 0;
-        if (stack_.empty()) {
-          mapLength_ = 0;  
-          return;
-        }
-        map_ = stack_.back();
-        stack_.popBack();
-        mapLength_ =
-            stack_.empty() ? shape_->propMapLength() : PropMap::Capacity;
-      } else if (MOZ_UNLIKELY(shape_->isDictionary() && !map_->hasKey(i_))) {
-        
-        
-        i_++;
-      } else {
-        return;
-      }
-    }
-  }
-
- public:
-  explicit ShapePropertyForwardIterNoGC(NativeShape* shape) : shape_(shape) {
-    
-    
-    map_ = shape->propMap();
-    if (!map_) {
-      
-      i_ = mapLength_ = 0;
-      return;
-    }
-    while (map_->hasPrevious()) {
-      if (!stack_.append(map_)) {
-        
-        i_ = mapLength_ = UINT32_MAX;
-        return;
-      }
-      map_ = map_->asLinked()->previous();
-    }
-
-    
-    
-    mapLength_ = stack_.empty() ? shape_->propMapLength() : PropMap::Capacity;
-
-    settle();
-  }
-
-  bool done() const { return i_ == mapLength_; }
-  bool isOverflowed() const { return i_ == UINT32_MAX; }
-
-  void operator++(int) {
-    MOZ_ASSERT(!done());
-    i_++;
-    settle();
-  }
-
-  PropertyInfoWithKey get() const {
-    MOZ_ASSERT(!done());
-    return map_->getPropertyInfoWithKey(i_);
-  }
-
-  PropertyInfoWithKey operator*() const { return get(); }
-
-  
-  
-  struct FakePtr {
-    PropertyInfoWithKey val_;
-    const PropertyInfoWithKey* operator->() const { return &val_; }
-  };
-  FakePtr operator->() const { return {get()}; }
-};
-
-
-
-
-
-class OwnNonIndexKeysIterForJSON {
-  ShapePropertyForwardIterNoGC shapeIter;
-  bool done_ = false;
-  BailReason fastFailed_ = BailReason::NO_REASON;
-
-  void settle() {
-    
-    
-    for (; !shapeIter.done(); shapeIter++) {
-      if (!shapeIter->enumerable()) {
-        continue;
-      }
-      if (!shapeIter->isDataProperty()) {
-        fastFailed_ = BailReason::NON_DATA_PROPERTY;
-        done_ = true;
-        return;
-      }
-      PropertyKey id = shapeIter->key();
-      if (!id.isSymbol()) {
-        return;
-      }
-    }
-    done_ = true;
-  }
-
- public:
-  explicit OwnNonIndexKeysIterForJSON(const NativeObject* nobj)
-      : shapeIter(nobj->shape()) {
-    if (MOZ_UNLIKELY(shapeIter.isOverflowed())) {
-      fastFailed_ = BailReason::TOO_MANY_PROPERTIES;
-      done_ = true;
-      return;
-    }
-    if (!nobj->hasEnumerableProperty()) {
-      
-      
-      done_ = true;
-      return;
-    }
-    settle();
-  }
-
-  bool done() const { return done_ || shapeIter.done(); }
-  BailReason cannotFastStringify() const { return fastFailed_; }
-
-  PropertyInfoWithKey next() {
-    MOZ_ASSERT(!done());
-    PropertyInfoWithKey prop = shapeIter.get();
-    shapeIter++;
-    settle();
-    return prop;
-  }
-};
-
-
-static bool EmitSimpleValue(JSContext* cx, StringBuffer& sb, const Value& v) {
-  
-  if (v.isString()) {
-    return Quote(cx, sb, v.toString());
-  }
-
-  
-  if (v.isNull()) {
-    return sb.append("null");
-  }
-
-  
-  if (v.isBoolean()) {
-    return v.toBoolean() ? sb.append("true") : sb.append("false");
-  }
-
-  
-  if (v.isNumber()) {
-    if (v.isDouble()) {
-      if (!std::isfinite(v.toDouble())) {
-        return sb.append("null");
-      }
-    }
-
-    return NumberValueToStringBuffer(v, sb);
-  }
-
-  
-  if (v.isUndefined() || v.isMagic()) {
-    MOZ_ASSERT_IF(v.isMagic(), v.isMagic(JS_ELEMENTS_HOLE));
-    return sb.append("null");
-  }
-
-  
-  MOZ_CRASH("should have validated printable simple value already");
-}
-
-
-
-static bool EmitQuotedIndexColon(StringBuffer& sb, uint32_t index) {
-  Int32ToCStringBuf cbuf;
-  size_t cstrlen;
-  const char* cstr = ::Int32ToCString(&cbuf, index, &cstrlen);
-  if (!sb.reserve(sb.length() + 1 + cstrlen + 1 + 1)) {
-    return false;
-  }
-  sb.infallibleAppend('"');
-  sb.infallibleAppend(cstr, cstrlen);
-  sb.infallibleAppend('"');
-  sb.infallibleAppend(':');
-  return true;
-}
-
-
-
-
-static bool PreprocessFastValue(JSContext* cx, Value* vp, StringifyContext* scx,
-                                BailReason* whySlow) {
-  MOZ_ASSERT(!scx->maybeSafely);
-
-  
-  
-
-  
-  if (vp->isBigInt()) {
-    *whySlow = BailReason::BIGINT;
-    return true;
-  }
-
-  if (!vp->isObject()) {
-    return true;
-  }
-
-  if (!vp->toObject().is<NativeObject>()) {
-    *whySlow = BailReason::INELIGIBLE_OBJECT;
-    return true;
-  }
-
-  
-  NativeObject* obj = &vp->toObject().as<NativeObject>();
-  PropertyResult toJSON;
-  NativeObject* holder;
-  PropertyKey id = NameToId(cx->names().toJSON);
-  if (!NativeLookupPropertyInline<NoGC, LookupResolveMode::CheckMayResolve>(
-          cx, obj, id, &holder, &toJSON)) {
-    
-    *whySlow = BailReason::IMPURE_LOOKUP;
-    return true;
-  }
-  if (toJSON.isFound()) {
-    *whySlow = BailReason::HAVE_TOJSON;
-    return true;
-  }
-
-  
-  
-  if (obj->is<NumberObject>() || obj->is<StringObject>() ||
-      obj->is<BooleanObject>() || obj->is<BigIntObject>() ||
-      IF_RECORD_TUPLE(obj->is<RecordObject>() || obj->is<TupleObject>(),
-                      false)) {
-    
-    
-    *whySlow = BailReason::INELIGIBLE_OBJECT;
-    return true;
-  }
-
-  if (obj->isCallable()) {
-    
-    vp->setUndefined();
-    return true;
-  }
-
-  if (!CanFastStringifyObject(obj)) {
-    *whySlow = BailReason::INELIGIBLE_OBJECT;
-    return true;
-  }
-
-  return true;
-}
-
-
-
-
-
-
-
-
-struct FastStackEntry {
-  NativeObject* nobj;
-  Variant<DenseElementsIteratorForJSON, OwnNonIndexKeysIterForJSON> iter;
-  bool isArray;  
-
-  
-  
-  
-  explicit FastStackEntry(NativeObject* obj)
-      : nobj(obj),
-        iter(AsVariant(DenseElementsIteratorForJSON(obj))),
-        isArray(obj->is<ArrayObject>()) {}
-
-  FastStackEntry(FastStackEntry&& other) noexcept
-      : nobj(other.nobj), iter(std::move(other.iter)), isArray(other.isArray) {}
-
-  void operator=(FastStackEntry&& other) noexcept {
-    new (this) FastStackEntry(std::move(other));
-  }
-
-  
-  void advanceToProperties() {
-    iter = AsVariant(OwnNonIndexKeysIterForJSON(nobj));
-  }
-};
-
-static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
-                    BailReason* whySlow) {
-  MOZ_ASSERT(*whySlow == BailReason::NO_REASON);
-  MOZ_ASSERT(v.isObject());
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  
-  
-  if (!CheckForInterrupt(cx)) {
-    return false;
-  }
-
-  constexpr size_t MAX_STACK_DEPTH = 20;
-  Vector<FastStackEntry, MAX_STACK_DEPTH - 1> stack(cx);
-  MOZ_ALWAYS_TRUE(stack.reserve(MAX_STACK_DEPTH - 1));
-  
-  
-  
-  
-  FastStackEntry top(&v.toObject().as<NativeObject>());
-  bool wroteMember = false;
-
-  if (!CanFastStringifyObject(top.nobj)) {
-    *whySlow = BailReason::INELIGIBLE_OBJECT;
-    return true;
-  }
-
-  while (true) {
-    if (!wroteMember) {
-      if (!scx->sb.append(top.isArray ? '[' : '{')) {
-        return false;
-      }
-    }
-
-    if (top.iter.is<DenseElementsIteratorForJSON>()) {
-      auto& iter = top.iter.as<DenseElementsIteratorForJSON>();
-      bool nestedObject = false;
-      while (!iter.done()) {
-        
-        if (cx->hasPendingInterrupt(InterruptReason::CallbackUrgent) ||
-            cx->hasPendingInterrupt(InterruptReason::CallbackCanWait)) {
-          *whySlow = BailReason::INTERRUPT;
-          return true;
-        }
-
-        uint32_t index = iter.getIndex();
-        Value val = iter.next();
-
-        if (!PreprocessFastValue(cx, &val, scx, whySlow)) {
-          return false;
-        }
-        if (*whySlow != BailReason::NO_REASON) {
-          return true;
-        }
-        if (IsFilteredValue(val)) {
-          if (top.isArray) {
-            
-            val = UndefinedValue();
-          } else {
-            
-            continue;
-          }
-        }
-
-        if (wroteMember && !scx->sb.append(',')) {
-          return false;
-        }
-        wroteMember = true;
-
-        if (!top.isArray) {
-          if (!EmitQuotedIndexColon(scx->sb, index)) {
-            return false;
-          }
-        }
-
-        if (val.isObject()) {
-          if (stack.length() >= MAX_STACK_DEPTH - 1) {
-            *whySlow = BailReason::DEEP_RECURSION;
-            return true;
-          }
-          
-          
-          stack.infallibleAppend(std::move(top));
-          top = FastStackEntry(&val.toObject().as<NativeObject>());
-          wroteMember = false;
-          nestedObject = true;  
-          break;
-        }
-        if (!EmitSimpleValue(cx, scx->sb, val)) {
-          return false;
-        }
-      }
-
-      if (nestedObject) {
-        continue;  
-      }
-
-      MOZ_ASSERT(iter.done());
-      top.advanceToProperties();
-    }
-
-    if (top.iter.is<OwnNonIndexKeysIterForJSON>()) {
-      auto& iter = top.iter.as<OwnNonIndexKeysIterForJSON>();
-      bool nesting = false;
-      while (!iter.done()) {
-        
-        if (cx->hasPendingInterrupt(InterruptReason::CallbackUrgent) ||
-            cx->hasPendingInterrupt(InterruptReason::CallbackCanWait)) {
-          *whySlow = BailReason::INTERRUPT;
-          return true;
-        }
-
-        PropertyInfoWithKey prop = iter.next();
-
-        uint32_t index = -1;
-        if (top.nobj->isIndexed() && IdIsIndex(prop.key(), &index)) {
-          
-          
-          *whySlow = BailReason::SPARSE_INDEX;
-          return true;
-        }
-
-        if (top.isArray) {
-          
-          continue;
-        }
-
-        Value val = top.nobj->getSlot(prop.slot());
-        if (!PreprocessFastValue(cx, &val, scx, whySlow)) {
-          return false;
-        }
-        if (*whySlow != BailReason::NO_REASON) {
-          return true;
-        }
-        if (IsFilteredValue(val)) {
-          
-          
-          
-          continue;
-        }
-
-        if (wroteMember && !scx->sb.append(",")) {
-          return false;
-        }
-        wroteMember = true;
-
-        if (prop.key().isString()) {
-          if (!Quote(cx, scx->sb, prop.key().toString())) {
-            return false;
-          }
-        } else {
-          MOZ_ASSERT(int32_t(index) >= 0, "not a string, not an index");
-          if (!EmitQuotedIndexColon(scx->sb, index)) {
-            return false;
-          }
-        }
-
-        if (!scx->sb.append(':')) {
-          return false;
-        }
-        if (val.isObject()) {
-          if (stack.length() >= MAX_STACK_DEPTH - 1) {
-            *whySlow = BailReason::DEEP_RECURSION;
-            return true;
-          }
-          
-          
-          stack.infallibleAppend(std::move(top));
-          top = FastStackEntry(&val.toObject().as<NativeObject>());
-          wroteMember = false;
-          nesting = true;  
-          break;
-        }
-        if (!EmitSimpleValue(cx, scx->sb, val)) {
-          return false;
-        }
-      }
-      *whySlow = iter.cannotFastStringify();
-      if (*whySlow != BailReason::NO_REASON) {
-        return true;
-      }
-      if (nesting) {
-        continue;  
-      }
-      MOZ_ASSERT(iter.done());
-    }
-
-    if (!scx->sb.append(top.isArray ? ']' : '}')) {
-      return false;
-    }
-    if (stack.empty()) {
-      return true;  
-    }
-    top = std::move(stack.back());
-
-    stack.popBack();
-    wroteMember = true;
-  }
-}
-
 
 bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
                    const Value& space_, StringBuffer& sb,
@@ -1474,20 +806,14 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 
 
 
-  MOZ_ASSERT(stringifyBehavior != StringifyBehavior::RestrictedSafe ||
+  MOZ_ASSERT(stringifyBehavior == StringifyBehavior::Normal ||
                  vp.toObject().is<PlainObject>() ||
                  vp.toObject().is<ArrayObject>(),
              "input to JS::ToJSONMaybeSafely must be a plain object or array");
 
   
   RootedIdVector propertyList(cx);
-  BailReason whySlow = BailReason::NO_REASON;
-  if (stringifyBehavior == StringifyBehavior::SlowOnly ||
-      stringifyBehavior == StringifyBehavior::RestrictedSafe) {
-    whySlow = BailReason::API;
-  }
   if (replacer) {
-    whySlow = BailReason::HAVE_REPLACER;
     bool isArray;
     if (replacer->isCallable()) {
       
@@ -1611,9 +937,6 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
     
     MOZ_ASSERT(gap.empty());
   }
-  if (!gap.empty()) {
-    whySlow = BailReason::HAVE_SPACE;
-  }
 
   Rooted<PlainObject*> wrapper(cx);
   RootedId emptyId(cx, NameToId(cx->names().empty));
@@ -1634,46 +957,6 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
   }
 
   
-  Rooted<JSAtom*> fastJSON(cx);
-  if (whySlow == BailReason::NO_REASON) {
-    MOZ_ASSERT(propertyList.empty());
-    MOZ_ASSERT(stringifyBehavior != StringifyBehavior::RestrictedSafe);
-    StringifyContext scx(cx, sb, gap, nullptr, propertyList, false);
-    if (!PreprocessFastValue(cx, vp.address(), &scx, &whySlow)) {
-      return false;
-    }
-    if (!vp.isObject()) {
-      
-      
-      whySlow = BailReason::PRIMITIVE;
-    }
-    if (whySlow == BailReason::NO_REASON) {
-      if (!FastStr(cx, vp, &scx, &whySlow)) {
-        return false;
-      }
-      if (whySlow == BailReason::NO_REASON) {
-        
-        if (stringifyBehavior != StringifyBehavior::Compare) {
-          return true;
-        }
-        fastJSON = scx.sb.finishAtom();
-        if (!fastJSON) {
-          return false;
-        }
-      }
-      scx.sb.clear();  
-    }
-  }
-
-  if (MOZ_UNLIKELY((stringifyBehavior == StringifyBehavior::FastOnly) &&
-                   (whySlow != BailReason::NO_REASON))) {
-    JS_ReportErrorASCII(cx, "JSON stringify failed mandatory fast path: %s",
-                        DescribeStringifyBailReason(whySlow));
-    return false;
-  }
-
-  
-
   StringifyContext scx(cx, sb, gap, replacer, propertyList,
                        stringifyBehavior == StringifyBehavior::RestrictedSafe);
   if (!PreprocessValue(cx, wrapper, HandleId(emptyId), vp, &scx)) {
@@ -1683,26 +966,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
     return true;
   }
 
-  if (!Str(cx, vp, &scx)) {
-    return false;
-  }
-
-  
-  if (MOZ_UNLIKELY(fastJSON)) {
-    JSAtom* slowJSON = scx.sb.finishAtom();
-    if (!slowJSON) {
-      return false;
-    }
-    if (fastJSON != slowJSON) {
-      MOZ_CRASH("JSON.stringify mismatch between fast and slow paths");
-    }
-    
-    if (!sb.append(slowJSON)) {
-      return false;
-    }
-  }
-
-  return true;
+  return Str(cx, vp, &scx);
 }
 
 
@@ -2074,14 +1338,8 @@ bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue value(cx, args.get(0));
   RootedValue space(cx, args.get(2));
 
-#ifdef DEBUG
-  StringifyBehavior behavior = StringifyBehavior::Compare;
-#else
-  StringifyBehavior behavior = StringifyBehavior::Normal;
-#endif
-
   JSStringBuilder sb(cx);
-  if (!Stringify(cx, &value, replacer, space, sb, behavior)) {
+  if (!Stringify(cx, &value, replacer, space, sb, StringifyBehavior::Normal)) {
     return false;
   }
 
