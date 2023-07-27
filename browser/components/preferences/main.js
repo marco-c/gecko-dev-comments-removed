@@ -1134,7 +1134,7 @@ var gMainPane = {
           this.markAllDownloadPhases("downloaded");
         } catch (error) {
           TranslationsView.showError(
-            "translations-manage-error-download",
+            "translations-manage-error-install",
             error
           );
           await this.reloadDownloadPhases();
@@ -1150,7 +1150,7 @@ var gMainPane = {
           await TranslationsParent.deleteAllLanguageFiles();
           this.markAllDownloadPhases("uninstalled");
         } catch (error) {
-          TranslationsView.showError("translations-manage-error-delete", error);
+          TranslationsView.showError("translations-manage-error-remove", error);
           
           await this.reloadDownloadPhases();
           console.error(error);
@@ -1171,7 +1171,7 @@ var gMainPane = {
             this.updateDownloadPhase(langTag, "downloaded");
           } catch (error) {
             TranslationsView.showError(
-              "translations-manage-error-download",
+              "translations-manage-error-install",
               error
             );
             this.updateDownloadPhase(langTag, "uninstalled");
@@ -1192,7 +1192,7 @@ var gMainPane = {
             this.updateDownloadPhase(langTag, "uninstalled");
           } catch (error) {
             TranslationsView.showError(
-              "translations-manage-error-delete",
+              "translations-manage-error-remove",
               error
             );
             
@@ -1225,11 +1225,11 @@ var gMainPane = {
 
           document.l10n.setAttributes(
             downloadButton,
-            "translations-manage-language-download-button"
+            "translations-manage-language-install-button"
           );
           document.l10n.setAttributes(
             deleteButton,
-            "translations-manage-language-delete-button"
+            "translations-manage-language-remove-button"
           );
 
           downloadButton.hidden = true;
