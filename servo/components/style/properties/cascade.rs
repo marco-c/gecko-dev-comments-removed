@@ -1093,19 +1093,15 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
     
     
     
-    
-    
     #[cfg(feature = "gecko")]
-    fn handle_mathml_scriptlevel_if_needed(&mut self) {
+    fn recompute_math_font_size_if_needed(&mut self) {
         use crate::values::generics::NonNegative;
 
-        if !self.seen.contains(LonghandId::MathDepth)
-        {
-            return;
-        }
-
         
-        if self.seen.contains(LonghandId::FontSize) {
+        if !self.seen.contains(LonghandId::MathDepth) ||
+           !self.seen.contains(LonghandId::FontSize) ||
+           self.context.builder.get_font().clone_font_size().keyword_info.kw !=
+           specified::FontSizeKeyword::Math {
             return;
         }
 
@@ -1236,7 +1232,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             self.recompute_initial_font_family_if_needed();
             self.prioritize_user_fonts_if_needed();
             self.recompute_keyword_font_size_if_needed();
-            self.handle_mathml_scriptlevel_if_needed();
+            self.recompute_math_font_size_if_needed();
             self.constrain_font_size_if_needed()
         }
     }
