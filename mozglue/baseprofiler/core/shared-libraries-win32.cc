@@ -10,7 +10,6 @@
 #include "mozilla/glue/WindowsUnicode.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/WindowsEnumProcessModules.h"
-#include "mozilla/WindowsVersion.h"
 
 #include <cctype>
 #include <string>
@@ -59,29 +58,6 @@ static bool IsModuleUnsafeToLoad(const std::string& aModuleName) {
   auto LowerCaseEqualsLiteral = [](char aModuleChar, char aDetouredChar) {
     return std::tolower(aModuleChar) == aDetouredChar;
   };
-
-#if defined(_M_AMD64) || defined(_M_IX86)
-  
-  
-  
-  
-  
-#  if defined(_M_AMD64)
-  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
-  LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
-#  elif defined(_M_IX86)
-  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
-  LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
-#  endif
-  constexpr std::string_view detoured_dll = "detoured.dll";
-  if (std::equal(aModuleName.cbegin(), aModuleName.cend(),
-                 detoured_dll.cbegin(), detoured_dll.cend(),
-                 LowerCaseEqualsLiteral) &&
-      !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
-      !::GetModuleHandleW(kNvidiaInitDriver)) {
-    return true;
-  }
-#endif  
 
   
   
