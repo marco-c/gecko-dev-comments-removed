@@ -8,7 +8,7 @@ const TEST_PERMISSION3 = "test/oastrip3";
 
 
 
-const STRIPPED_PERMS = ["cookie"];
+const STRIPPED_PERMS = ["cookie", "https-only-load-insecure"];
 
 let principal = Services.scriptSecurityManager.createContentPrincipal(
   TEST_URI,
@@ -204,10 +204,10 @@ function testOAIsolation(permIsolateUserContext, permIsolatePrivateBrowsing) {
         )
       );
     }
-  });
 
-  
-  pm.removeAll();
+    
+    pm.removeAll();
+  });
 }
 
 add_task(async function do_test() {

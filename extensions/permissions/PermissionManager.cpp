@@ -132,7 +132,7 @@ static const nsLiteralCString kPreloadPermissions[] = {
     
     
     
-    "cookie"_ns};
+    "cookie"_ns, "https-only-load-insecure"_ns};
 
 
 
@@ -156,8 +156,8 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 1> kStripOAPermissions = {
-    {"cookie"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kStripOAPermissions = {
+    {"cookie"_ns, "https-only-load-insecure"_ns}};
 
 bool IsOAForceStripPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {

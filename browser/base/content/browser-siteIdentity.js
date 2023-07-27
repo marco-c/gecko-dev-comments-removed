@@ -234,10 +234,10 @@ var gIdentityHandler = {
       "identity-popup-security-httpsonlymode-menulist"
     ));
   },
-  get _identityPopupHttpsOnlyModeMenuListTempItem() {
-    delete this._identityPopupHttpsOnlyModeMenuListTempItem;
-    return (this._identityPopupHttpsOnlyModeMenuListTempItem =
-      document.getElementById("identity-popup-security-menulist-tempitem"));
+  get _identityPopupHttpsOnlyModeMenuListOffItem() {
+    delete this._identityPopupHttpsOnlyModeMenuListOffItem;
+    return (this._identityPopupHttpsOnlyModeMenuListOffItem =
+      document.getElementById("identity-popup-security-menulist-off-item"));
   },
   get _identityPopupSecurityEVContentOwner() {
     delete this._identityPopupSecurityEVContentOwner;
@@ -549,12 +549,6 @@ var gIdentityHandler = {
     
     if (newValue === oldValue) {
       return;
-    }
-
-    
-    
-    if (newValue === 1 && PrivateBrowsingUtils.isWindowPrivate(window)) {
-      newValue = 2;
     }
 
     
@@ -1054,16 +1048,8 @@ var gIdentityHandler = {
       
       let value = this._getHttpsOnlyPermission();
 
-      
-      if (privateBrowsingWindow) {
-        if (value === 2) {
-          value = 1;
-        }
-        
-        this._identityPopupHttpsOnlyModeMenuListTempItem.style.display = "none";
-      } else {
-        this._identityPopupHttpsOnlyModeMenuListTempItem.style.display = "";
-      }
+      this._identityPopupHttpsOnlyModeMenuListOffItem.hidden =
+        privateBrowsingWindow && value != 1;
 
       this._identityPopupHttpsOnlyModeMenuList.value = value;
 

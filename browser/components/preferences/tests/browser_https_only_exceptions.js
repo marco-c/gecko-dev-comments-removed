@@ -8,6 +8,7 @@
 add_task(async function testButtons() {
   
   await setHttpsOnlyPref("off");
+  await setHttpsFirstPref("off");
 
   
   await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
@@ -28,8 +29,8 @@ add_task(async function testButtons() {
   await setHttpsOnlyPref("private");
   is(
     exceptionButton.disabled,
-    true,
-    "HTTPS-Only exception button should be disabled when HTTPS-Only Mode is only enabled in private browsing."
+    false,
+    "HTTPS-Only exception button should be enabled when HTTPS-Only Mode is only enabled in private browsing."
   );
 
   await setHttpsOnlyPref("everywhere");
@@ -40,11 +41,17 @@ add_task(async function testButtons() {
   );
 
   await setHttpsOnlyPref("off");
-  await setHttpsFirstPref("private");
   is(
     exceptionButton.disabled,
     true,
-    "HTTPS-Only exception button should be disabled when HTTPS-Only Mode is disabled and HTTPS-First Mode is only enabled in private browsing."
+    "Turning off HTTPS-Only should disable the exception button again."
+  );
+
+  await setHttpsFirstPref("private");
+  is(
+    exceptionButton.disabled,
+    false,
+    "HTTPS-Only exception button should be enabled when HTTPS-Only Mode is disabled and HTTPS-First Mode is only enabled in private browsing."
   );
 
   await setHttpsFirstPref("everywhere");
