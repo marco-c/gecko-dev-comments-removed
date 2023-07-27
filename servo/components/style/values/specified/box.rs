@@ -106,7 +106,7 @@ pub enum DisplayInside {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C)]
+#[repr(transparent)]
 pub struct Display(u16);
 
 
@@ -114,126 +114,94 @@ pub struct Display(u16);
 #[allow(non_upper_case_globals)]
 impl Display {
     
-    pub const LIST_ITEM_MASK: u16 = 0b1000000000000000;
-    pub const OUTSIDE_MASK: u16 = 0b0111111100000000;
-    pub const INSIDE_MASK: u16 = 0b0000000011111111;
-    pub const OUTSIDE_SHIFT: u16 = 8;
+    const LIST_ITEM_BIT: u16 = 0x8000; 
+    const DISPLAY_OUTSIDE_BITS: u16 = 7; 
+    const DISPLAY_INSIDE_BITS: u16 = 8; 
 
     
-    
-    pub const None: Self =
-        Self(((DisplayOutside::None as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::None as u16);
+    pub const None: Self = Self::new(DisplayOutside::None, DisplayInside::None);
     #[cfg(any(feature = "servo-layout-2020", feature = "gecko"))]
-    pub const Contents: Self = Self(
-        ((DisplayOutside::None as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Contents as u16,
-    );
-    pub const Inline: Self =
-        Self(((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flow as u16);
-    pub const InlineBlock: Self = Self(
-        ((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::FlowRoot as u16,
-    );
-    pub const Block: Self =
-        Self(((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flow as u16);
+    pub const Contents: Self = Self::new(DisplayOutside::None, DisplayInside::Contents);
+    pub const Inline: Self = Self::new(DisplayOutside::Inline, DisplayInside::Flow);
+    pub const InlineBlock: Self = Self::new(DisplayOutside::Inline, DisplayInside::FlowRoot);
+    pub const Block: Self = Self::new(DisplayOutside::Block, DisplayInside::Flow);
     #[cfg(feature = "gecko")]
-    pub const FlowRoot: Self =
-        Self(((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flow as u16);
-    pub const Flex: Self =
-        Self(((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flex as u16);
-    pub const InlineFlex: Self =
-        Self(((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flex as u16);
+    pub const FlowRoot: Self = Self::new(DisplayOutside::Block, DisplayInside::FlowRoot);
+    pub const Flex: Self = Self::new(DisplayOutside::Block, DisplayInside::Flex);
+    pub const InlineFlex: Self = Self::new(DisplayOutside::Inline, DisplayInside::Flex);
     #[cfg(feature = "gecko")]
-    pub const Grid: Self =
-        Self(((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Grid as u16);
+    pub const Grid: Self = Self::new(DisplayOutside::Block, DisplayInside::Grid);
     #[cfg(feature = "gecko")]
-    pub const InlineGrid: Self =
-        Self(((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Grid as u16);
+    pub const InlineGrid: Self = Self::new(DisplayOutside::Inline, DisplayInside::Grid);
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const Table: Self =
-        Self(((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Table as u16);
+    pub const Table: Self = Self::new(DisplayOutside::Block, DisplayInside::Table);
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const InlineTable: Self = Self(
-        ((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Table as u16,
-    );
+    pub const InlineTable: Self = Self::new(DisplayOutside::Inline, DisplayInside::Table);
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableCaption: Self = Self(
-        ((DisplayOutside::TableCaption as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Flow as u16,
-    );
+    pub const TableCaption: Self = Self::new(DisplayOutside::TableCaption, DisplayInside::Flow);
     #[cfg(feature = "gecko")]
-    pub const Ruby: Self =
-        Self(((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::Ruby as u16);
+    pub const Ruby: Self = Self::new(DisplayOutside::Inline, DisplayInside::Ruby);
     #[cfg(feature = "gecko")]
-    pub const WebkitBox: Self = Self(
-        ((DisplayOutside::Block as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::WebkitBox as u16,
-    );
+    pub const WebkitBox: Self = Self::new(DisplayOutside::Block, DisplayInside::WebkitBox);
     #[cfg(feature = "gecko")]
-    pub const WebkitInlineBox: Self = Self(
-        ((DisplayOutside::Inline as u16) << Self::OUTSIDE_SHIFT) | DisplayInside::WebkitBox as u16,
-    );
+    pub const WebkitInlineBox: Self = Self::new(DisplayOutside::Inline, DisplayInside::WebkitBox);
 
     
 
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableRowGroup: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableRowGroup as u16,
-    );
+    pub const TableRowGroup: Self =
+        Self::new(DisplayOutside::InternalTable, DisplayInside::TableRowGroup);
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableHeaderGroup: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableHeaderGroup as u16,
+    pub const TableHeaderGroup: Self = Self::new(
+        DisplayOutside::InternalTable,
+        DisplayInside::TableHeaderGroup,
     );
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableFooterGroup: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableFooterGroup as u16,
+    pub const TableFooterGroup: Self = Self::new(
+        DisplayOutside::InternalTable,
+        DisplayInside::TableFooterGroup,
     );
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableColumn: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableColumn as u16,
-    );
+    pub const TableColumn: Self =
+        Self::new(DisplayOutside::InternalTable, DisplayInside::TableColumn);
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableColumnGroup: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableColumnGroup as u16,
+    pub const TableColumnGroup: Self = Self::new(
+        DisplayOutside::InternalTable,
+        DisplayInside::TableColumnGroup,
     );
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableRow: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableRow as u16,
-    );
+    pub const TableRow: Self = Self::new(DisplayOutside::InternalTable, DisplayInside::TableRow);
+
     #[cfg(any(feature = "servo-layout-2013", feature = "gecko"))]
-    pub const TableCell: Self = Self(
-        ((DisplayOutside::InternalTable as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::TableCell as u16,
-    );
+    pub const TableCell: Self = Self::new(DisplayOutside::InternalTable, DisplayInside::TableCell);
 
     
     #[cfg(feature = "gecko")]
-    pub const RubyBase: Self = Self(
-        ((DisplayOutside::InternalRuby as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::RubyBase as u16,
+    pub const RubyBase: Self = Self::new(DisplayOutside::InternalRuby, DisplayInside::RubyBase);
+    #[cfg(feature = "gecko")]
+    pub const RubyBaseContainer: Self = Self::new(
+        DisplayOutside::InternalRuby,
+        DisplayInside::RubyBaseContainer,
     );
     #[cfg(feature = "gecko")]
-    pub const RubyBaseContainer: Self = Self(
-        ((DisplayOutside::InternalRuby as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::RubyBaseContainer as u16,
-    );
+    pub const RubyText: Self = Self::new(DisplayOutside::InternalRuby, DisplayInside::RubyText);
     #[cfg(feature = "gecko")]
-    pub const RubyText: Self = Self(
-        ((DisplayOutside::InternalRuby as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::RubyText as u16,
-    );
-    #[cfg(feature = "gecko")]
-    pub const RubyTextContainer: Self = Self(
-        ((DisplayOutside::InternalRuby as u16) << Self::OUTSIDE_SHIFT) |
-            DisplayInside::RubyTextContainer as u16,
+    pub const RubyTextContainer: Self = Self::new(
+        DisplayOutside::InternalRuby,
+        DisplayInside::RubyTextContainer,
     );
 
     
     #[inline]
     const fn new(outside: DisplayOutside, inside: DisplayInside) -> Self {
-        Self((outside as u16) << Self::OUTSIDE_SHIFT | inside as u16)
+        let o: u16 = ((outside as u8) as u16) << Self::DISPLAY_INSIDE_BITS;
+        let i: u16 = (inside as u8) as u16;
+        Self(o | i)
     }
 
     
@@ -243,19 +211,22 @@ impl Display {
         if !list_item {
             return v;
         }
-        Self(v.0 | Self::LIST_ITEM_MASK)
+        Self(v.0 | Self::LIST_ITEM_BIT)
     }
 
     
     #[inline]
     pub fn inside(&self) -> DisplayInside {
-        DisplayInside::from_u16(self.0 & Self::INSIDE_MASK).unwrap()
+        DisplayInside::from_u16(self.0 & ((1 << Self::DISPLAY_INSIDE_BITS) - 1)).unwrap()
     }
 
     
     #[inline]
     pub fn outside(&self) -> DisplayOutside {
-        DisplayOutside::from_u16((self.0 & Self::OUTSIDE_MASK) >> Self::OUTSIDE_SHIFT).unwrap()
+        DisplayOutside::from_u16(
+            (self.0 >> Self::DISPLAY_INSIDE_BITS) & ((1 << Self::DISPLAY_OUTSIDE_BITS) - 1),
+        )
+        .unwrap()
     }
 
     
@@ -273,7 +244,7 @@ impl Display {
     
     #[inline]
     pub const fn is_list_item(&self) -> bool {
-        (self.0 & Self::LIST_ITEM_MASK) != 0
+        (self.0 & Self::LIST_ITEM_BIT) != 0
     }
 
     
