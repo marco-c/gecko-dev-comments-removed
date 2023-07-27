@@ -17,14 +17,11 @@
 
 
 
-
 "use strict";
-
 
 if (typeof Components != "undefined") {
   throw new Error("This module is meant to be used from the worker thread");
 }
-
 if (typeof require == "undefined" || typeof module == "undefined") {
   throw new Error(
     "this module is meant to be imported using the implementation of require() at resource://gre/modules/workers/require.js"
@@ -33,7 +30,6 @@ if (typeof require == "undefined" || typeof module == "undefined") {
 
 
 importScripts("resource://gre/modules/workers/require.js");
-
 
 
 
@@ -68,7 +64,7 @@ function Meta(data, meta) {
   this.data = data;
   this.meta = meta;
 }
-
+exports.Meta = Meta;
 
 
 
@@ -240,4 +236,4 @@ AbstractWorker.prototype = {
     }
   },
 };
-
+exports.AbstractWorker = AbstractWorker;
