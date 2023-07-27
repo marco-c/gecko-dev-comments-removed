@@ -422,7 +422,6 @@ async function loadTestPage({
       
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
-      ["browser.translations.panelShown", true],
       ...(prefs ?? []),
     ],
   });

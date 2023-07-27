@@ -213,14 +213,6 @@ var TranslationsPanel = new (class {
 
 
 
-
-  #firstShowUriSpec = null;
-
-  
-
-
-
-
   #lazyElements;
 
   
@@ -295,7 +287,6 @@ var TranslationsPanel = new (class {
       getter("errorHintAction", "translations-panel-translate-hint-action");
       getter("fromMenuList", "translations-panel-from");
       getter("header", "translations-panel-header");
-      getter("intro", "translations-panel-intro");
       getter("langSelection", "translations-panel-lang-selection");
       getter("multiview", "translations-panel-multiview");
       getter("cancelButton", "translations-panel-cancel");
@@ -336,10 +327,9 @@ var TranslationsPanel = new (class {
     actionText: hintCommandText,
     actionCommand: hintCommand,
   }) {
-    const { error, errorMessage, errorMessageHint, errorHintAction, intro } =
+    const { error, errorMessage, errorMessageHint, errorHintAction } =
       this.elements;
     error.hidden = false;
-    intro.hidden = true;
     document.l10n.setAttributes(errorMessage, message);
 
     if (hint) {
@@ -555,14 +545,9 @@ var TranslationsPanel = new (class {
       toMenuList,
       defaultTranslate,
       langSelection,
-      intro,
-      header,
     } = this.elements;
 
     this.#updateViewFromTranslationStatus();
-
-    
-    intro.hidden = true;
 
     if (this.#langListsPhase === "error") {
       
@@ -607,22 +592,6 @@ var TranslationsPanel = new (class {
       restoreButton.hidden = true;
       cancelButton.hidden = false;
       multiview.setAttribute("mainViewId", "translations-panel-view-default");
-
-      if (!this._hasShownPanel) {
-        this.#firstShowUriSpec = gBrowser.currentURI.spec;
-      }
-
-      if (
-        this._hasShownPanel &&
-        gBrowser.currentURI.spec !== this.#firstShowUriSpec
-      ) {
-        document.l10n.setAttributes(header, "translations-panel-header");
-        this.#firstShowUriSpec === null;
-      } else {
-        Services.prefs.setBoolPref("browser.translations.panelShown", true);
-        intro.hidden = false;
-        document.l10n.setAttributes(header, "translations-panel-intro-header");
-      }
     } else {
       
       const { unsupportedHint } = this.elements;
@@ -804,8 +773,8 @@ var TranslationsPanel = new (class {
 
 
   async #showRevisitView({ fromLanguage, toLanguage }) {
-    const { fromMenuList, toMenuList, intro } = this.elements;
-    intro.hidden = true;
+    const { fromMenuList, toMenuList } = this.elements;
+
     fromMenuList.value = fromLanguage;
     toMenuList.value = toLanguage;
     this.onChangeLanguages();
@@ -825,31 +794,6 @@ var TranslationsPanel = new (class {
 
   onChangeLanguages() {
     this.#updateViewFromTranslationStatus();
-  }
-
-  
-
-
-  close() {
-    PanelMultiView.hidePopup(this.elements.panel);
-  }
-
-  
-
-
-  onLearnMore() {
-    PanelMultiView.hidePopup(this.elements.panel);
-    const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
-    window.openTrustedLinkIn(
-      "https://support.mozilla.org/kb/website-translation",
-      "tab",
-      {
-        forceForeground: true,
-        triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
-      }
-    );
   }
 
   
@@ -896,10 +840,6 @@ var TranslationsPanel = new (class {
       
       return;
     }
-
-    const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
-    window.ensureCustomElements("moz-support-link");
 
     const { panel, button } = this.elements;
 
@@ -1205,25 +1145,9 @@ var TranslationsPanel = new (class {
           } else {
             
             button.removeAttribute("translationsactive");
+            document.l10n.setAttributes(button, "urlbar-translations-button");
             buttonLocale.hidden = true;
             buttonCircleArrows.hidden = true;
-
-            
-            
-            if (
-              this._hasShownPanel &&
-              gBrowser.currentURI.spec !== this.#firstShowUriSpec
-            ) {
-              document.l10n.setAttributes(
-                button,
-                "urlbar-translations-button2"
-              );
-            } else {
-              document.l10n.setAttributes(
-                button,
-                "urlbar-translations-button-intro"
-              );
-            }
           }
         } else {
           if (handleEventId !== this.handleEventId) {
@@ -1259,10 +1183,3 @@ var TranslationsPanel = new (class {
     }
   };
 })();
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  TranslationsPanel,
-  "_hasShownPanel",
-  "browser.translations.panelShown",
-  false
-);

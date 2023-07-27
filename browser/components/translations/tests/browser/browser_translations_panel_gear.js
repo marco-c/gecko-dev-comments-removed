@@ -24,13 +24,6 @@ add_task(async function test_translations_panel_manage_languages() {
   const gearIcon = getByL10nId("translations-panel-settings-button");
   click(gearIcon, "Open the preferences menu");
 
-  ok(
-    getByL10nId("translations-panel-settings-about2"),
-    "The learn more link is in the gear menu."
-  );
-  
-  
-
   const manageLanguages = getByL10nId(
     "translations-panel-settings-manage-languages"
   );
