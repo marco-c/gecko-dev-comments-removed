@@ -5277,7 +5277,7 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
     bool isRootElement = false;
     uint16_t rawDisplayValue =
         Servo_ComputedValues_BlockifiedDisplay(&aStyle, isRootElement);
-    display.mDisplay = StyleDisplay(rawDisplayValue);
+    display.mDisplay = StyleDisplay{rawDisplayValue};
     return FindDisplayData(display, aElement);
   }
 
@@ -8808,8 +8808,7 @@ void nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
  nsCSSFrameConstructor::RubyWhitespaceType
 nsCSSFrameConstructor::ComputeRubyWhitespaceType(StyleDisplay aPrevDisplay,
                                                  StyleDisplay aNextDisplay) {
-  MOZ_ASSERT(nsStyleDisplay::IsRubyDisplayType(aPrevDisplay) &&
-             nsStyleDisplay::IsRubyDisplayType(aNextDisplay));
+  MOZ_ASSERT(aPrevDisplay.IsRuby() && aNextDisplay.IsRuby());
   if (aPrevDisplay == aNextDisplay &&
       (aPrevDisplay == StyleDisplay::RubyBase ||
        aPrevDisplay == StyleDisplay::RubyText)) {
@@ -9254,10 +9253,9 @@ void nsCSSFrameConstructor::WrapItemsInPseudoParent(
             pseudoType);
   }
 
-  FrameConstructionItem* newItem = new (this)
-      FrameConstructionItem(&pseudoData.mFCData,
-                            
-                            aParentContent, wrapperStyle.forget(), true);
+  
+  auto* newItem = new (this) FrameConstructionItem(
+      &pseudoData.mFCData, aParentContent, wrapperStyle.forget(), true);
 
   const nsStyleDisplay* disp = newItem->mComputedStyle->StyleDisplay();
   
