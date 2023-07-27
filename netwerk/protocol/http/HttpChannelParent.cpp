@@ -20,6 +20,7 @@
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/UniquePtr.h"
@@ -2105,6 +2106,17 @@ void HttpChannelParent::SetCookie(nsCString&& aCookie) {
   LOG(("HttpChannelParent::SetCookie [this=%p]", this));
   MOZ_ASSERT(!mAfterOnStartRequestBegun);
   MOZ_ASSERT(mCookie.IsEmpty());
+
+  
+  
+  
+  
+  
+  if (!Preferences::GetBool(
+          "network.cookie.skip_browsing_context_check_in_parent_for_testing") &&
+      mChannel->IsBrowsingContextDiscarded()) {
+    return;
+  }
   mCookie = std::move(aCookie);
 }
 

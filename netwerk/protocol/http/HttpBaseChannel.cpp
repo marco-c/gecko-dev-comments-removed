@@ -2397,7 +2397,23 @@ void HttpBaseChannel::NotifySetCookie(const nsACString& aCookie) {
 }
 
 bool HttpBaseChannel::IsBrowsingContextDiscarded() const {
-  return mLoadGroup && mLoadGroup->GetIsBrowsingContextDiscarded();
+  
+  
+  
+  
+  
+  
+  
+  if (!mLoadGroup) {
+    if (!XRE_IsParentProcess()) {
+      return false;
+    }
+
+    return mLoadInfo->GetOriginAttributes().mPrivateBrowsingId != 0 &&
+           !dom::CanonicalBrowsingContext::IsPrivateBrowsingActive();
+  }
+
+  return mLoadGroup->GetIsBrowsingContextDiscarded();
 }
 
 
