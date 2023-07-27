@@ -122,6 +122,25 @@ pub enum RelativeSelectorMatchingState {
     ConsideredAnchor,
 }
 
+impl RelativeSelectorMatchingState {
+    
+    
+    pub fn considered_anchor(&mut self) {
+        *self = Self::ConsideredAnchor;
+    }
+
+    
+    
+    pub fn considered(&mut self) {
+        
+        if *self == Self::ConsideredAnchor {
+            *self = Self::ConsideredAnchor;
+        } else {
+            *self = Self::Considered;
+        }
+    }
+}
+
 
 
 
@@ -372,7 +391,6 @@ where
             "Nesting should've been rejected at parse time"
         );
         self.current_relative_selector_anchor = Some(anchor);
-        self.considered_relative_selector = RelativeSelectorMatchingState::Considered;
         let result = self.nest(f);
         self.current_relative_selector_anchor = None;
         result
