@@ -424,15 +424,25 @@ NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR aDllPath, PULONG aFlags,
 
 CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
     stub_NtMapViewOfSection;
-constexpr DWORD kPageExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
-                                  PAGE_EXECUTE_READWRITE |
-                                  PAGE_EXECUTE_WRITECOPY;
 
 
 
 
-MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableImageSection(
+MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
     HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
+  
+  MEMORY_BASIC_INFORMATION mbi;
+  NTSTATUS ntStatus =
+      ::NtQueryVirtualMemory(aProcess, *aBaseAddress, MemoryBasicInformation,
+                             &mbi, sizeof(mbi), nullptr);
+  if (!NT_SUCCESS(ntStatus)) {
+    ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
+    return STATUS_ACCESS_DENIED;
+  }
+  if (!(mbi.Type & MEM_IMAGE)) {
+    return aStubStatus;
+  }
+
   
   nt::MemorySectionNameBuf sectionFileName(
       gLoaderPrivateAPI.GetSectionNameBuffer(*aBaseAddress));
@@ -579,13 +589,9 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  
-  
-  
-  MEMORY_BASIC_INFORMATION mbi;
-  NTSTATUS ntStatus =
-      ::NtQueryVirtualMemory(aProcess, *aBaseAddress, MemoryBasicInformation,
-                             &mbi, sizeof(mbi), nullptr);
+  PUBLIC_OBJECT_BASIC_INFORMATION obi;
+  NTSTATUS ntStatus = ::NtQueryObject(aSection, ObjectBasicInformation, &obi,
+                                      sizeof(obi), nullptr);
   if (!NT_SUCCESS(ntStatus)) {
     ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
     return STATUS_ACCESS_DENIED;
@@ -595,12 +601,15 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   
   
   
-  if (!(mbi.Type & MEM_IMAGE) || !(mbi.AllocationProtect & kPageExecutable)) {
+  
+  
+  
+  
+  if (!(obi.GrantedAccess & SECTION_MAP_EXECUTE)) {
     return stubStatus;
   }
 
-  return AfterMapViewOfExecutableImageSection(aProcess, aBaseAddress,
-                                              stubStatus);
+  return AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
 }
 
 }  
