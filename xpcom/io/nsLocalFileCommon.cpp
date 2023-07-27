@@ -134,7 +134,8 @@ const char* const sExecutableExts[] = {
   ".ws",
   ".wsc",
   ".wsf",
-  ".wsh"
+  ".wsh",
+  ".xll"         
     
 };
 
