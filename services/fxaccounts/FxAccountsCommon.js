@@ -2,9 +2,6 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { Log } = ChromeUtils.importESModule(
   "resource://gre/modules/Log.sys.mjs"
 );
@@ -24,36 +21,26 @@ const PREF_LOG_SENSITIVE_DETAILS = "identity.fxaccounts.log.sensitive";
 
 var exports = Object.create(null);
 
-XPCOMUtils.defineLazyGetter(exports, "log", function () {
-  let log = Log.repository.getLogger("FirefoxAccounts");
-  log.manageLevelFromPref(PREF_LOG_LEVEL);
-  return log;
-});
+exports.log = Log.repository.getLogger("FirefoxAccounts");
+exports.log.manageLevelFromPref(PREF_LOG_LEVEL);
 
-XPCOMUtils.defineLazyGetter(exports, "logManager", function () {
-  let logs = [
-    "Sync",
-    "Services.Common",
-    "FirefoxAccounts",
-    "Hawk",
-    "browserwindow.syncui",
-    "BookmarkSyncUtils",
-    "addons.xpi",
-  ];
+let logs = [
+  "Sync",
+  "Services.Common",
+  "FirefoxAccounts",
+  "Hawk",
+  "browserwindow.syncui",
+  "BookmarkSyncUtils",
+  "addons.xpi",
+];
 
-  
-  return new LogManager("services.sync.", logs, "sync");
-});
+
+exports.logManager = new LogManager("services.sync.", logs, "sync");
 
 
 
-XPCOMUtils.defineLazyGetter(exports, "logPII", function () {
-  try {
-    return Services.prefs.getBoolPref(PREF_LOG_SENSITIVE_DETAILS);
-  } catch (_) {
-    return false;
-  }
-});
+exports.logPII = () =>
+  Services.prefs.getBoolPref(PREF_LOG_SENSITIVE_DETAILS, false);
 
 exports.FXACCOUNTS_PERMISSION = "firefox-accounts";
 
