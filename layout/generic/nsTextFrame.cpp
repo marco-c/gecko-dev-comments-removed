@@ -4735,10 +4735,10 @@ void nsTextFrame::GetTextDecorations(
     
     
     mozilla::StyleDisplay display = f->GetDisplay();
-    if (!nsStyleDisplay::IsInlineFlow(display) &&
-        (!nsStyleDisplay::IsRubyDisplayType(display) ||
+    if (!display.IsInlineFlow() &&
+        (!display.IsRuby() ||
          display == mozilla::StyleDisplay::RubyTextContainer) &&
-        nsStyleDisplay::IsDisplayTypeInlineOutside(display)) {
+        display.IsInlineOutside()) {
       break;
     }
 
