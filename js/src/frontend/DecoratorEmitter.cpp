@@ -4,6 +4,8 @@
 
 #include "frontend/DecoratorEmitter.h"
 
+#include "mozilla/Assertions.h"
+
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/CallOrNewEmitter.h"
 #include "frontend/IfEmitter.h"
@@ -45,7 +47,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
       return false;
     }
 
-    if (!emitCallDecorator(kind, key, isStatic, decorator)) {
+    if (!emitCallDecoratorForElement(kind, key, isStatic, decorator)) {
       return false;
     }
 
@@ -177,7 +179,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
       return false;
     }
 
-    if (!emitCallDecorator(Kind::Field, key, isStatic, decorator)) {
+    if (!emitCallDecoratorForElement(Kind::Field, key, isStatic, decorator)) {
       
       return false;
     }
@@ -356,7 +358,8 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
 
     
     
-    if (!emitCallDecorator(Kind::Accessor, key, isStatic, decorator)) {
+    if (!emitCallDecoratorForElement(Kind::Accessor, key, isStatic,
+                                     decorator)) {
       
       return false;
     }
@@ -451,6 +454,135 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
   
 }
 
+bool DecoratorEmitter::emitApplyDecoratorsToClassDefinition(
+    ParseNode* key, ListNode* decorators) {
+  
+  
+  
+  
+
+  
+  
+  for (ParseNode* decorator : decorators->contents()) {
+    
+    
+    
+    if (!emitDecorationState()) {
+      return false;
+    }
+
+    CallOrNewEmitter cone(bce_, JSOp::Call,
+                          CallOrNewEmitter::ArgumentsKind::Other,
+                          ValueUsage::WantValue);
+
+    if (!emitDecoratorCallee(cone, decorator)) {
+      
+      return false;
+    }
+
+    if (!cone.emitThis()) {
+      
+      return false;
+    }
+
+    if (!cone.prepareForNonSpreadArguments()) {
+      return false;
+    }
+
+    
+    
+    if (!bce_->emitDupAt(2)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!emitCreateDecoratorContextObject(Kind::Class, key, false,
+                                          decorator->pn_pos)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!cone.emitEnd(2, decorator->pn_pos.begin)) {
+      
+      return false;
+    }
+
+    
+    if (!emitUpdateDecorationState()) {
+      return false;
+    }
+
+    if (!emitCheckIsUndefined()) {
+      
+      return false;
+    }
+
+    InternalIfEmitter ie(bce_);
+    if (!ie.emitThenElse()) {
+      
+      return false;
+    }
+
+    
+    
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+
+    if (!ie.emitElseIf(mozilla::Nothing())) {
+      return false;
+    }
+
+    
+    
+    if (!emitCheckIsCallable()) {
+      
+      return false;
+    }
+
+    if (!ie.emitThenElse()) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!ie.emitElse()) {
+      return false;
+    }
+
+    if (!bce_->emitPopN(1)) {
+      
+      return false;
+    }
+    if (!bce_->emit2(JSOp::ThrowMsg,
+                     uint8_t(ThrowMsgKind::DecoratorInvalidReturnType))) {
+      return false;
+    }
+
+    if (!ie.emitEnd()) {
+      return false;
+    }
+  }
+
+  
+  return true;
+}
+
 bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
   
 
@@ -526,11 +658,11 @@ bool DecoratorEmitter::emitInitializeFieldOrAccessor() {
   }
 
   
-  WhileEmitter wh(bce_);
+  InternalWhileEmitter wh(bce_);
   
   
   
-  if (!wh.emitCond(0, 0, 0)) {
+  if (!wh.emitCond()) {
     
     return false;
   }
@@ -674,24 +806,11 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
   return true;
 }
 
-[[nodiscard]] bool DecoratorEmitter::emitCallDecorator(Kind kind,
-                                                       ParseNode* key,
-                                                       bool isStatic,
-                                                       ParseNode* decorator) {
-  
-  
-  
-  
-  
-  
-  CallOrNewEmitter cone(bce_, JSOp::Call,
-                        CallOrNewEmitter::ArgumentsKind::Other,
-                        ValueUsage::WantValue);
-
+bool DecoratorEmitter::emitDecoratorCallee(CallOrNewEmitter& cone,
+                                           ParseNode* decorator) {
   
   if (decorator->is<NameNode>()) {
     if (!cone.emitNameCallee(decorator->as<NameNode>().name())) {
-      
       return false;
     }
   } else if (decorator->is<ListNode>()) {
@@ -744,6 +863,28 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
     if (!bce_->emitTree(decorator)) {
       return false;
     }
+  }
+
+  return true;
+}
+
+bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
+                                                   bool isStatic,
+                                                   ParseNode* decorator) {
+  MOZ_ASSERT(kind != Kind::Class);
+  
+  
+  
+  
+  
+  
+  CallOrNewEmitter cone(bce_, JSOp::Call,
+                        CallOrNewEmitter::ArgumentsKind::Other,
+                        ValueUsage::WantValue);
+
+  if (!emitDecoratorCallee(cone, decorator)) {
+    
+    return false;
   }
 
   if (!cone.emitThis()) {
@@ -857,7 +998,8 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
                                                         TokenPos pos) {
   
   ObjectEmitter oe(bce_);
-  if (!oe.emitObject( 6)) {
+  size_t propertyCount = kind == Kind::Class ? 3 : 6;
+  if (!oe.emitObject(propertyCount)) {
     
     return false;
   }
@@ -865,52 +1007,39 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
     return false;
   }
 
-  if (kind == Kind::Method) {
-    
-    if (!bce_->emitStringOp(
-            JSOp::String,
-            frontend::TaggedParserAtomIndex::WellKnown::method())) {
+  TaggedParserAtomIndex kindStr;
+  switch (kind) {
+    case Kind::Method:
       
-      return false;
-    }
-  } else if (kind == Kind::Getter) {
-    
-    if (!bce_->emitStringOp(
-            JSOp::String,
-            frontend::TaggedParserAtomIndex::WellKnown::getter())) {
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::method();
+      break;
+    case Kind::Getter:
       
-      return false;
-    }
-  } else if (kind == Kind::Setter) {
-    
-    if (!bce_->emitStringOp(
-            JSOp::String,
-            frontend::TaggedParserAtomIndex::WellKnown::setter())) {
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::getter();
+      break;
+    case Kind::Setter:
       
-      return false;
-    }
-  } else if (kind == Kind::Accessor) {
-    
-    if (!bce_->emitStringOp(
-            JSOp::String,
-            frontend::TaggedParserAtomIndex::WellKnown::accessor())) {
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::setter();
+      break;
+    case Kind::Accessor:
       
-      return false;
-    }
-  } else if (kind == Kind::Field) {
-    
-    if (!bce_->emitStringOp(
-            JSOp::String,
-            frontend::TaggedParserAtomIndex::WellKnown::field())) {
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::accessor();
+      break;
+    case Kind::Field:
       
-      return false;
-    }
-  } else {
-    
-    
-    
-    
-    
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::field();
+      break;
+    case Kind::Class:
+      
+      
+      
+      kindStr = frontend::TaggedParserAtomIndex::WellKnown::class_();
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown kind");
+      break;
+  }
+  if (!bce_->emitStringOp(JSOp::String, kindStr)) {
     
     return false;
   }
@@ -923,6 +1052,8 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
   }
   
   if (kind != Kind::Class) {
+    MOZ_ASSERT(key != nullptr, "Expect key to be present except for classes");
+
     
     
     if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
@@ -993,8 +1124,23 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
   } else {
     
     
-    
-    return false;
+    if (!oe.prepareForPropValue(pos.begin, PropertyEmitter::Kind::Prototype)) {
+      return false;
+    }
+    if (key != nullptr) {
+      if (!bce_->emitStringOp(JSOp::String, key->as<NameNode>().atom())) {
+        return false;
+      }
+    } else {
+      if (!bce_->emit1(JSOp::Undefined)) {
+        return false;
+      }
+    }
+    if (!oe.emitInit(frontend::AccessorType::None,
+                     frontend::TaggedParserAtomIndex::WellKnown::name())) {
+      
+      return false;
+    }
   }
   
   

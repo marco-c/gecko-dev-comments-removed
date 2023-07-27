@@ -10393,11 +10393,11 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
       return false;
     }
 
-    WhileEmitter wh(this);
+    InternalWhileEmitter wh(this);
     
     
     
-    if (!wh.emitCond(0, 0, 0)) {
+    if (!wh.emitCond()) {
       
       return false;
     }
@@ -11660,6 +11660,19 @@ bool BytecodeEmitter::emitClass(
     
     return false;
   }
+
+#if ENABLE_DECORATORS
+  if (classNode->decorators() != nullptr) {
+    DecoratorEmitter de(this);
+    NameNode* className =
+        classNode->names() ? classNode->names()->innerBinding() : nullptr;
+    if (!de.emitApplyDecoratorsToClassDefinition(className,
+                                                 classNode->decorators())) {
+      
+      return false;
+    }
+  }
+#endif
 
   if (!ce.emitEnd(kind)) {
     
