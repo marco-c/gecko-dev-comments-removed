@@ -50,7 +50,6 @@ var gExceptionPaths = [
 
   
   "resource://gre/modules/services-automation/",
-  "resource://services-automation/ServicesAutomation.jsm",
 
   
   
@@ -306,7 +305,7 @@ if (AppConstants.platform == "android") {
 if (AppConstants.MOZ_UPDATE_AGENT && !AppConstants.MOZ_BACKGROUNDTASKS) {
   
   whitelist.push({
-    file: "resource://gre/modules/TaskScheduler.jsm",
+    file: "resource://gre/modules/TaskScheduler.sys.mjs",
   });
 }
 
