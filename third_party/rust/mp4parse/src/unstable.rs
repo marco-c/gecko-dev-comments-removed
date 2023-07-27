@@ -465,7 +465,7 @@ impl<'a> SampleToChunkIterator<'a> {
 
 
 
-fn rational_scale<T, S>(numerator: T, denominator: T, scale2: S) -> Option<T>
+pub fn rational_scale<T, S>(numerator: T, denominator: T, scale2: S) -> Option<T>
 where
     T: PrimInt + Zero,
     S: PrimInt,
