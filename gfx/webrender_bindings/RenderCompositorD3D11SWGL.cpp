@@ -239,14 +239,16 @@ bool RenderCompositorD3D11SWGL::TileD3D11::Map(wr::DeviceIntRect aDirtyRect,
     *aStride = map.mStride;
     
     
-    uint32_t* probeData = (uint32_t*)map.mData +
-                          aDirtyRect.min.y * (map.mStride / 4) +
-                          aDirtyRect.min.x;
-    *probeData = 0;
-    uint32_t* probeDataEnd = (uint32_t*)map.mData +
-                             (aDirtyRect.max.y - 1) * (map.mStride / 4) +
-                             (aDirtyRect.max.x - 1);
-    *probeDataEnd = 0;
+    if (aDirtyRect.width() > 0 && aDirtyRect.height() > 0) {
+      uint32_t* probeData = (uint32_t*)map.mData +
+                            aDirtyRect.min.y * (map.mStride / 4) +
+                            aDirtyRect.min.x;
+      *probeData = 0;
+      uint32_t* probeDataEnd = (uint32_t*)map.mData +
+                               (aDirtyRect.max.y - 1) * (map.mStride / 4) +
+                               (aDirtyRect.max.x - 1);
+      *probeDataEnd = 0;
+    }
 
     mValidRect = gfx::Rect(aValidRect.min.x, aValidRect.min.y,
                            aValidRect.width(), aValidRect.height());
@@ -322,15 +324,17 @@ bool RenderCompositorD3D11SWGL::TileD3D11::Map(wr::DeviceIntRect aDirtyRect,
 
   
   
-  uint32_t* probeData = (uint32_t*)mappedSubresource.pData +
-                        aDirtyRect.min.y * (mappedSubresource.RowPitch / 4) +
-                        aDirtyRect.min.x;
-  *probeData = 0;
-  uint32_t* probeDataEnd =
-      (uint32_t*)mappedSubresource.pData +
-      (aDirtyRect.max.y - 1) * (mappedSubresource.RowPitch / 4) +
-      (aDirtyRect.max.x - 1);
-  *probeDataEnd = 0;
+  if (aDirtyRect.width() > 0 && aDirtyRect.height() > 0) {
+    uint32_t* probeData = (uint32_t*)mappedSubresource.pData +
+                          aDirtyRect.min.y * (mappedSubresource.RowPitch / 4) +
+                          aDirtyRect.min.x;
+    *probeData = 0;
+    uint32_t* probeDataEnd =
+        (uint32_t*)mappedSubresource.pData +
+        (aDirtyRect.max.y - 1) * (mappedSubresource.RowPitch / 4) +
+        (aDirtyRect.max.x - 1);
+    *probeDataEnd = 0;
+  }
 
   
   mValidRect = gfx::Rect(aValidRect.min.x, aValidRect.min.y, aValidRect.width(),
