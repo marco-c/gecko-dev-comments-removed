@@ -12,6 +12,10 @@ import os
 import shutil
 from collections import OrderedDict
 
+
+
+
+import gecko_taskgraph.main  
 import mozversioncontrol
 import six
 from mach.decorators import Command, CommandArgument, SubCommand
