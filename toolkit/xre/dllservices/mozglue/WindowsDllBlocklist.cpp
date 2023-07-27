@@ -69,47 +69,6 @@ typedef NTSTATUS(NTAPI* LdrLoadDll_func)(PWCHAR filePath, PULONG flags,
                                          PHANDLE handle);
 static WindowsDllInterceptor::FuncHookType<LdrLoadDll_func> stub_LdrLoadDll;
 
-#ifdef _M_AMD64
-typedef decltype(RtlInstallFunctionTableCallback)*
-    RtlInstallFunctionTableCallback_func;
-static WindowsDllInterceptor::FuncHookType<RtlInstallFunctionTableCallback_func>
-    stub_RtlInstallFunctionTableCallback;
-
-extern uint8_t* sMsMpegJitCodeRegionStart;
-extern size_t sMsMpegJitCodeRegionSize;
-
-BOOLEAN WINAPI patched_RtlInstallFunctionTableCallback(
-    DWORD64 TableIdentifier, DWORD64 BaseAddress, DWORD Length,
-    PGET_RUNTIME_FUNCTION_CALLBACK Callback, PVOID Context,
-    PCWSTR OutOfProcessCallbackDll) {
-  
-  
-  
-  
-  
-  
-  
-
-  
-  HMODULE callbackModule = nullptr;
-  DWORD moduleFlags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                      GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-
-  
-  AutoSuppressStackWalking suppress;
-
-  if (GetModuleHandleExW(moduleFlags, (LPWSTR)Callback, &callbackModule) &&
-      GetModuleHandleW(L"msmpeg2vdec.dll") == callbackModule) {
-    sMsMpegJitCodeRegionStart = (uint8_t*)BaseAddress;
-    sMsMpegJitCodeRegionSize = Length;
-  }
-
-  return stub_RtlInstallFunctionTableCallback(TableIdentifier, BaseAddress,
-                                              Length, Callback, Context,
-                                              OutOfProcessCallbackDll);
-}
-#endif
-
 template <class T>
 struct RVAMap {
   RVAMap(HANDLE map, DWORD offset) {
@@ -344,16 +303,6 @@ static bool ShouldBlockBasedOnBlockInfo(const DllBlockInfo& info,
     printf_stderr(
         "LdrLoadDll: "
         "Ignoring the REDIRECT_TO_NOOP_ENTRYPOINT flag\n");
-  }
-
-  if ((info.mFlags & DllBlockInfoFlags::BLOCK_WIN8_AND_OLDER) &&
-      IsWin8Point1OrLater()) {
-    return false;
-  }
-
-  if ((info.mFlags & DllBlockInfoFlags::BLOCK_WIN7_AND_OLDER) &&
-      IsWin8OrLater()) {
-    return false;
   }
 
   if ((info.mFlags & DllBlockInfoFlags::CHILD_PROCESSES_ONLY) &&
@@ -638,16 +587,6 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
   sInitFlags = aInitFlags;
 
   glue::ModuleLoadFrame::StaticInit(&gMozglueLoaderObserver, &gWinLauncher);
-
-#ifdef _M_AMD64
-  if (!IsWin8OrLater()) {
-    Kernel32Intercept.Init(L"kernel32.dll");
-    
-    stub_RtlInstallFunctionTableCallback.Set(
-        Kernel32Intercept, "RtlInstallFunctionTableCallback",
-        &patched_RtlInstallFunctionTableCallback);
-  }
-#endif
 
   
   
