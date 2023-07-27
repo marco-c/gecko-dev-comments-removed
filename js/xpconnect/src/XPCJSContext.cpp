@@ -1184,8 +1184,7 @@ class HelperThreadTaskHandler : public Task {
     JS::RunHelperThreadTask();
     return true;
   }
-  explicit HelperThreadTaskHandler()
-      : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal) {
+  explicit HelperThreadTaskHandler() : Task(false, EventQueuePriority::Normal) {
     
   }
 
