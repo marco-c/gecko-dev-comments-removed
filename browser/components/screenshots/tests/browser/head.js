@@ -128,7 +128,7 @@ class ScreenshotsHelper {
       let screenshotsChild = content.windowGlobalChild.getActor(
         "ScreenshotsComponent"
       );
-      return screenshotsChild?.overlay?.initialized;
+      return screenshotsChild?._overlay?._initialized;
     });
   }
 
@@ -137,7 +137,7 @@ class ScreenshotsHelper {
       let screenshotsChild = content.windowGlobalChild.getActor(
         "ScreenshotsComponent"
       );
-      return screenshotsChild.overlay.state;
+      return screenshotsChild._overlay.stateHandler.getState();
     });
   }
 
@@ -153,7 +153,7 @@ class ScreenshotsHelper {
       let screenshotsChild = content.windowGlobalChild.getActor(
         "ScreenshotsComponent"
       );
-      return screenshotsChild.overlay.hoverElementRegion.dimensions;
+      return screenshotsChild._overlay.stateHandler.getHoverElementBoxRect();
     });
   }
 
@@ -164,7 +164,7 @@ class ScreenshotsHelper {
     });
   }
 
-  async waitForSelectionRegionSizeChange(currentWidth) {
+  async waitForSelectionBoxSizeChange(currentWidth) {
     await ContentTask.spawn(
       this.browser,
       [currentWidth],
@@ -173,11 +173,13 @@ class ScreenshotsHelper {
           "ScreenshotsComponent"
         );
 
-        let dimensions = screenshotsChild.overlay.selectionRegion.dimensions;
+        let dimensions =
+          screenshotsChild._overlay.screenshotsContainer.getSelectionLayerDimensions();
         
         await ContentTaskUtils.waitForCondition(() => {
-          dimensions = screenshotsChild.overlay.selectionRegion.dimensions;
-          return dimensions.width !== currWidth;
+          dimensions =
+            screenshotsChild._overlay.screenshotsContainer.getSelectionLayerDimensions();
+          return dimensions.boxWidth !== currWidth;
         }, "Wait for selection box width change");
       }
     );
@@ -271,30 +273,28 @@ class ScreenshotsHelper {
   }
 
   clickDownloadButton() {
-    ContentTask.spawn(this.browser, null, async () => {
-      let screenshotsChild = content.windowGlobalChild.getActor(
-        "ScreenshotsComponent"
-      );
-      screenshotsChild.overlay.downloadButton.click();
-    });
+    
+    
+    
+    mouse.click(this.endX - 70, this.endY + 36);
   }
 
-  clickCopyButton() {
-    ContentTask.spawn(this.browser, null, async () => {
-      let screenshotsChild = content.windowGlobalChild.getActor(
-        "ScreenshotsComponent"
-      );
-      screenshotsChild.overlay.copyButton.click();
-    });
+  clickCopyButton(overrideX = null, overrideY = null) {
+    
+    
+    
+    if (overrideX && overrideY) {
+      mouse.click(overrideX - 183, overrideY + 36);
+    } else {
+      mouse.click(this.endX - 183, this.endY + 36);
+    }
   }
 
   clickCancelButton() {
-    ContentTask.spawn(this.browser, null, async () => {
-      let screenshotsChild = content.windowGlobalChild.getActor(
-        "ScreenshotsComponent"
-      );
-      screenshotsChild.overlay.cancelButton.click();
-    });
+    
+    
+    
+    mouse.click(this.endX - 259, this.endY + 36);
   }
 
   async clickTestPageElement() {
@@ -411,18 +411,14 @@ class ScreenshotsHelper {
     });
   }
 
-  getScreenshotsOverlayDimensions() {
+  getSelectionLayerDimensions() {
     return ContentTask.spawn(this.browser, null, async () => {
       let screenshotsChild = content.windowGlobalChild.getActor(
         "ScreenshotsComponent"
       );
-      Assert.ok(screenshotsChild.overlay.initialized, "The overlay exists");
+      Assert.ok(screenshotsChild._overlay._initialized, "The overlay exists");
 
-      return {
-        scrollWidth: screenshotsChild.overlay.screenshotsContainer.scrollWidth,
-        scrollHeight:
-          screenshotsChild.overlay.screenshotsContainer.scrollHeight,
-      };
+      return screenshotsChild._overlay.screenshotsContainer.getSelectionLayerDimensions();
     });
   }
 
@@ -436,29 +432,52 @@ class ScreenshotsHelper {
         );
 
         await ContentTaskUtils.waitForCondition(() => {
-          let screenshotsContainer =
-            screenshotsChild.overlay.screenshotsContainer;
+          let dimensions =
+            screenshotsChild._overlay.screenshotsContainer.getSelectionLayerDimensions();
           info(
-            `old height: ${prevHeight}. new height: ${screenshotsContainer.scrollHeight}.\nold width: ${prevWidth}. new width: ${screenshotsContainer.scrollWidth}`
+            `old height: ${prevHeight}. new height: ${dimensions.scrollHeight}.\nold width: ${prevWidth}. new width: ${dimensions.scrollWidth}`
           );
           return (
-            screenshotsContainer.scrollHeight !== prevHeight &&
-            screenshotsContainer.scrollWidth !== prevWidth
+            dimensions.scrollHeight !== prevHeight &&
+            dimensions.scrollWidth !== prevWidth
           );
         }, "Wait for selection box width change");
       }
     );
   }
 
-  getSelectionRegionDimensions() {
+  getSelectionBoxDimensions() {
     return ContentTask.spawn(this.browser, null, async () => {
       let screenshotsChild = content.windowGlobalChild.getActor(
         "ScreenshotsComponent"
       );
-      Assert.ok(screenshotsChild.overlay.initialized, "The overlay exists");
+      Assert.ok(screenshotsChild._overlay._initialized, "The overlay exists");
 
-      return screenshotsChild.overlay.selectionRegion.dimensions;
+      return screenshotsChild._overlay.screenshotsContainer.getSelectionLayerBoxDimensions();
     });
+  }
+
+  
+
+
+
+  async clickUIElement(eleSel) {
+    await SpecialPowers.spawn(
+      this.browser,
+      [eleSel],
+      async function (eleSelector) {
+        info(
+          `in clickScreenshotsUIElement content function, eleSelector: ${eleSelector}`
+        );
+        const EventUtils = ContentTaskUtils.getEventUtils(content);
+        let ele = content.document.querySelector(eleSelector);
+        info(`Found the thing to click: ${eleSelector}: ${!!ele}`);
+
+        EventUtils.synthesizeMouseAtCenter(ele, {});
+        
+        await new content.Promise(res => content.requestAnimationFrame(res));
+      }
+    );
   }
 
   
