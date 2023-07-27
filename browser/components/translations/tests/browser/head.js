@@ -267,6 +267,9 @@ function click(button, message) {
 
 
 function isVisible(element) {
+  if (element.offsetParent === null) {
+    return false;
+  }
   const win = element.ownerDocument.ownerGlobal;
   const { visibility, display } = win.getComputedStyle(element);
   return visibility === "visible" && display !== "none";
