@@ -442,17 +442,33 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
                      content == document->DocumentNode()->GetRootElement())) {
           acc = document;
         }
+        if (!acc && content->IsElement() &&
+            content->AsElement()->IsHTMLElement(nsGkAtoms::area)) {
+          
+          
+          
+          
+          LocalAccessible* areaAcc =
+              document->GetAccessibleEvenIfNotInMap(content);
+          if (areaAcc && areaAcc->LocalParent()) {
+            document->RecreateAccessible(areaAcc->LocalParent()->GetContent());
+          }
+        }
         if (!acc && nsCoreUtils::HasClickListener(content)) {
           
           
           document->ContentInserted(content, content->GetNextSibling());
         } else if (acc) {
-          if (acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) {
+          if ((acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) ||
+              (content->IsElement() &&
+               content->AsElement()->IsHTMLElement(nsGkAtoms::a) &&
+               !acc->IsHTMLLink())) {
             
             
-            RefPtr<AccEvent> linkedChangeEvent =
-                new AccStateChangeEvent(acc, states::LINKED);
-            document->FireDelayedEvent(linkedChangeEvent);
+            
+            
+            
+            document->RecreateAccessible(content);
           }
 
           

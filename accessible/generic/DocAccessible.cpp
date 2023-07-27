@@ -1803,6 +1803,33 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     return true;
   }
 
+  if (aAttribute == nsGkAtoms::href &&
+      !nsCoreUtils::HasClickListener(aElement)) {
+    
+    
+    
+    
+    if (aElement->IsHTMLElement(nsGkAtoms::a)) {
+      LocalAccessible* acc = GetAccessible(aElement);
+      if (!acc) {
+        return false;
+      }
+      if (acc->IsHTMLLink() != aElement->HasAttr(nsGkAtoms::href)) {
+        RecreateAccessible(aElement);
+        return true;
+      }
+    } else if (aElement->IsHTMLElement(nsGkAtoms::area)) {
+      
+      
+      LocalAccessible* areaAcc = GetAccessibleEvenIfNotInMap(aElement);
+      if (!areaAcc || !areaAcc->LocalParent()) {
+        return false;
+      }
+      RecreateAccessible(areaAcc->LocalParent()->GetContent());
+      return true;
+    }
+  }
+
   if (aElement->IsHTMLElement(nsGkAtoms::img) && aAttribute == nsGkAtoms::alt) {
     
     

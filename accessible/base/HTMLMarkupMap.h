@@ -10,6 +10,12 @@ MARKUPMAP(
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
       
       
+      if (!aElement->HasAttr(nsGkAtoms::href) &&
+          !nsCoreUtils::HasClickListener(aElement)) {
+        return new HyperTextAccessibleWrap(aElement, aContext->Document());
+      }
+      
+      
       const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aElement);
       if (roleMapEntry && roleMapEntry->role != roles::NOTHING &&
           roleMapEntry->role != roles::LINK) {
@@ -18,7 +24,7 @@ MARKUPMAP(
 
       return new HTMLLinkAccessible(aElement, aContext->Document());
     },
-    roles::LINK)
+    0)
 
 MARKUPMAP(abbr, New_HyperText, 0)
 

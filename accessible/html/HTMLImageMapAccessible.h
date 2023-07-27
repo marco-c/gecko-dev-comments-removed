@@ -61,6 +61,9 @@ class HTMLAreaAccessible final : public HTMLLinkAccessible {
     return false;
   }
 
+  
+  virtual role NativeRole() const override;
+
  protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
