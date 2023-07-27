@@ -3,9 +3,18 @@
 
 
 
+dictionary FluentTextElementItem {
+  UTF8String id;
+  UTF8String attr;
+  UTF8String text;
+};
+
 [ChromeOnly, Exposed=Window]
 interface FluentResource {
   constructor(UTF8String source);
+
+  [Throws]
+  sequence<FluentTextElementItem> textElements();
 };
 
 [ChromeOnly, Exposed=Window]
