@@ -82,12 +82,6 @@ static UniquePtr<nsTHashtable<nsCStringHashKey>> sLaunchErrors;
 
 static sandbox::ResultCode AddWin32kLockdownPolicy(
     sandbox::TargetPolicy* aPolicy, bool aEnableOpm) {
-  
-  
-  if (!IsWin8OrLater()) {
-    return sandbox::SBOX_ALL_OK;
-  }
-
   sandbox::MitigationFlags flags = aPolicy->GetProcessMitigations();
   MOZ_ASSERT(flags,
              "Mitigations should be set before AddWin32kLockdownPolicy.");
@@ -582,55 +576,6 @@ static sandbox::ResultCode AddCigToPolicy(
 }
 
 
-static bool CanUseJob() {
-  
-  if (IsWin8OrLater()) {
-    return true;
-  }
-
-  BOOL inJob = true;
-  
-  if (!::IsProcessInJob(::GetCurrentProcess(), nullptr, &inJob)) {
-    return true;
-  }
-
-  
-  if (!inJob) {
-    return true;
-  }
-
-  JOBOBJECT_EXTENDED_LIMIT_INFORMATION job_info = {};
-  
-  if (!::QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation,
-                                   &job_info, sizeof(job_info), nullptr)) {
-    return true;
-  }
-
-  
-  if (job_info.BasicLimitInformation.LimitFlags &
-      JOB_OBJECT_LIMIT_BREAKAWAY_OK) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString localRemote(::GetSystemMetrics(SM_REMOTESESSION) ? u"remote"
-                                                                : u"local");
-  Telemetry::ScalarSet(Telemetry::ScalarID::SANDBOX_NO_JOB, localRemote, true);
-
-  
-  
-  
-  
-  return false;
-}
-
-
 
 
 
@@ -653,17 +598,6 @@ static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
     return sandbox::MitigationFlags{};
   }();
   return dynamicCodeFlag;
-}
-
-static sandbox::ResultCode SetJobLevel(sandbox::TargetPolicy* aPolicy,
-                                       sandbox::JobLevel aJobLevel,
-                                       uint32_t aUiExceptions) {
-  static bool sCanUseJob = CanUseJob();
-  if (sCanUseJob) {
-    return aPolicy->SetJobLevel(aJobLevel, aUiExceptions);
-  }
-
-  return aPolicy->SetJobLevel(sandbox::JOB_NONE, 0);
 }
 
 static void HexEncode(const Span<const uint8_t>& aBytes, nsACString& aEncoded) {
@@ -909,7 +843,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
 #else
   DWORD uiExceptions = 0;
 #endif
-  sandbox::ResultCode result = SetJobLevel(mPolicy, jobLevel, uiExceptions);
+  sandbox::ResultCode result = mPolicy->SetJobLevel(jobLevel, uiExceptions);
   MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                      "Setting job level failed, have you set memory limit when "
                      "jobLevel == JOB_NONE?");
@@ -1155,8 +1089,8 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   
   
   
-  sandbox::ResultCode result = SetJobLevel(
-      mPolicy, sandbox::JOB_LIMITED_USER,
+  sandbox::ResultCode result = mPolicy->SetJobLevel(
+      sandbox::JOB_LIMITED_USER,
       JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS | JOB_OBJECT_UILIMIT_DESKTOP |
           JOB_OBJECT_UILIMIT_EXITWINDOWS | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS);
   MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
@@ -1255,7 +1189,7 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   }
 
   auto result =
-      SetJobLevel(mPolicy, sandbox::JOB_LOCKDOWN, 0 );
+      mPolicy->SetJobLevel(sandbox::JOB_LOCKDOWN, 0 );
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
@@ -1361,7 +1295,7 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
   }
 
   auto result =
-      SetJobLevel(mPolicy, sandbox::JOB_LOCKDOWN, 0 );
+      mPolicy->SetJobLevel(sandbox::JOB_LOCKDOWN, 0 );
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
@@ -1642,7 +1576,7 @@ bool BuildUtilitySandbox(sandbox::TargetPolicy* policy,
                          const UtilitySandboxProps& us) {
   LogUtilitySandboxProps(us);
 
-  auto result = SetJobLevel(policy, us.mJobLevel, 0 );
+  auto result = policy->SetJobLevel(us.mJobLevel, 0 );
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
@@ -1763,7 +1697,7 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
   }
 
   auto result =
-      SetJobLevel(mPolicy, sandbox::JOB_LOCKDOWN, 0 );
+      mPolicy->SetJobLevel(sandbox::JOB_LOCKDOWN, 0 );
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
@@ -1809,9 +1743,7 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
 
-  
-  
-  if (StaticPrefs::security_sandbox_gmp_win32k_disable() && IsWin10OrLater()) {
+  if (StaticPrefs::security_sandbox_gmp_win32k_disable()) {
     result = AddWin32kLockdownPolicy(mPolicy, true);
     SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
   }
