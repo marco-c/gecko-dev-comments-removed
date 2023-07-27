@@ -1046,10 +1046,6 @@ static ResourceTimingStructArgs GetTimingAttributes(HttpBaseChannel* aChannel) {
   
   
 
-  nsCString protocolVersion;
-  aChannel->GetProtocolVersion(protocolVersion);
-  args.protocolVersion() = protocolVersion;
-
   aChannel->GetCacheReadStart(&timeStamp);
   args.cacheReadStart() = timeStamp;
 
@@ -1137,6 +1133,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     httpChannelImpl->GetCacheEntryId(&args.cacheEntryId());
     httpChannelImpl->GetCacheTokenFetchCount(&args.cacheFetchCount());
     httpChannelImpl->GetCacheTokenExpirationTime(&args.cacheExpirationTime());
+    httpChannelImpl->GetProtocolVersion(args.protocolVersion());
 
     mDataSentToChildProcess = httpChannelImpl->DataSentToChildProcess();
 
