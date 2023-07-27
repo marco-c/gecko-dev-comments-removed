@@ -4645,7 +4645,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                      borderPadding, axisTracker, flr, fragmentData);
 
   bool mayNeedNextInFlow = false;
-  if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+  if (aReflowInput.IsInFragmentedContext()) {
     
     
     
@@ -5352,11 +5352,6 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
 
 
 
-
-
-
-
-
 struct FirstLineOrFirstItemBAxisMetrics final {
   
   
@@ -5394,9 +5389,6 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   const LogicalPoint containerContentBoxOrigin(
       flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
 
-  const FlexItem* firstItem =
-      aFlr.mLines[0].IsEmpty() ? nullptr : &aFlr.mLines[0].FirstItem();
-
   
   nscoord maxBlockEndEdgeOfChildren = containerContentBoxOrigin.B(flexWM);
 
@@ -5410,10 +5402,31 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   
   
-  for (const FlexLine& line : aFlr.mLines) {
-    const bool isInFirstLine = &line == &aFlr.mLines[0];
+  const FlexLine& startmostLine = StartmostLine(aFlr.mLines, aAxisTracker);
+  const FlexItem* startmostItem =
+      startmostLine.IsEmpty() ? nullptr
+                              : &startmostLine.StartmostItem(aAxisTracker);
 
-    for (const FlexItem& item : line.Items()) {
+  const size_t numLines = aFlr.mLines.Length();
+  for (size_t lineIdx = 0; lineIdx < numLines; ++lineIdx) {
+    
+    
+    const auto& line =
+        aFlr.mLines[aAxisTracker.IsCrossAxisReversed() ? numLines - lineIdx - 1
+                                                       : lineIdx];
+    MOZ_ASSERT(lineIdx != 0 || &line == &startmostLine,
+               "Logic for finding startmost line should be consistent!");
+
+    const size_t numItems = line.Items().Length();
+    for (size_t itemIdx = 0; itemIdx < numItems; ++itemIdx) {
+      
+      
+      const FlexItem& item = line.Items()[aAxisTracker.IsMainAxisReversed()
+                                              ? numItems - itemIdx - 1
+                                              : itemIdx];
+      MOZ_ASSERT(lineIdx != 0 || itemIdx != 0 || &item == startmostItem,
+                 "Logic for finding startmost item should be consistent!");
+
       LogicalPoint framePos = aAxisTracker.LogicalPointFromFlexRelativePoint(
           item.MainPosition(), item.CrossPosition(), aFlr.mContentBoxMainSize,
           aFlr.mContentBoxCrossSize);
@@ -5463,7 +5476,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         };
 
         if (aAxisTracker.IsRowOriented()) {
-          if (isInFirstLine) {
+          if (&line == &startmostLine) {
             frameBPosBeforePerItemShift.emplace(framePos.B(flexWM));
             framePos.B(flexWM) += GetPerItemPositionShiftToBEnd();
           } else {
@@ -5475,7 +5488,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         } else {
           MOZ_ASSERT(aAxisTracker.IsColumnOriented());
           if (isSingleLine) {
-            if (&item == firstItem) {
+            if (&item == startmostItem) {
               bAxisMetrics.mBEndEdgeShift = GetPerItemPositionShiftToBEnd();
             }
             framePos.B(flexWM) += bAxisMetrics.mBEndEdgeShift;
@@ -5617,8 +5630,8 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     
     
     
-    if (GetPrevInFlow() && aAxisTracker.IsRowOriented() && isInFirstLine &&
-        bAxisMetrics.mMaxBEndEdge) {
+    if (GetPrevInFlow() && aAxisTracker.IsRowOriented() &&
+        &line == &startmostLine && bAxisMetrics.mMaxBEndEdge) {
       auto& [before, after] = *bAxisMetrics.mMaxBEndEdge;
       bAxisMetrics.mBEndEdgeShift = after - before;
     }
