@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/layers/D3D11ShareHandleImage.h"
 #  include "mozilla/layers/D3D11YCbCrImage.h"
@@ -371,11 +370,9 @@ already_AddRefed<VideoData> VideoData::CreateAndCopyData(
 
   
   
-  
-  
-  if (IsWin8OrLater() && !XRE_IsParentProcess() && aAllocator &&
-      aAllocator->SupportsD3D11() && aBuffer.mPlanes[0].mSkip == 0 &&
-      aBuffer.mPlanes[1].mSkip == 0 && aBuffer.mPlanes[2].mSkip == 0) {
+  if (!XRE_IsParentProcess() && aAllocator && aAllocator->SupportsD3D11() &&
+      aBuffer.mPlanes[0].mSkip == 0 && aBuffer.mPlanes[1].mSkip == 0 &&
+      aBuffer.mPlanes[2].mSkip == 0) {
     RefPtr<layers::D3D11YCbCrImage> d3d11Image = new layers::D3D11YCbCrImage();
     PlanarYCbCrData data = ConstructPlanarYCbCrData(aInfo, aBuffer, aPicture);
     if (d3d11Image->SetData(layers::ImageBridgeChild::GetSingleton()

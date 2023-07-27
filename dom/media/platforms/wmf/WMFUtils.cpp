@@ -29,7 +29,6 @@
 #include "nsWindowsHelpers.h"
 #include "prenv.h"
 #include "mozilla/mscom/EnsureMTA.h"
-#include "mozilla/WindowsVersion.h"
 
 #ifndef WAVE_FORMAT_OPUS
 #  define WAVE_FORMAT_OPUS 0x704F
@@ -449,16 +448,6 @@ LoadDLLs() {
 
 HRESULT
 MediaFoundationInitializer::MFStartup() {
-  if (IsWin7AndPre2000Compatible()) {
-    
-
-
-
-
-
-    return E_FAIL;
-  }
-
   HRESULT hr = LoadDLLs();
   if (FAILED(hr)) {
     return hr;

@@ -13,7 +13,6 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/WindowsVersion.h"
 #include "nsTArray.h"
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
@@ -120,12 +119,6 @@ bool WMFMediaDataDecoder::ShouldGuardAgaintIncorrectFirstSample(
   
   
   if (mMFTManager->GetType() != TrackInfo::kVideoTrack) {
-    return false;
-  }
-
-  
-  
-  if (!IsWin10OrLater()) {
     return false;
   }
 
