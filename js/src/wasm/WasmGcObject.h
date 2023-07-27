@@ -144,11 +144,31 @@ class WasmArrayObject : public WasmGcObject {
   
   
   
+  
   template <bool ZeroFields>
-  static WasmArrayObject* createArray(JSContext* cx,
-                                      wasm::TypeDefInstanceData* typeDefData,
-                                      js::gc::Heap initialHeap,
-                                      uint32_t numElements);
+  static WasmArrayObject* createArrayNonEmpty(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::Heap initialHeap, uint32_t numElements);
+
+  
+  
+  
+  
+  
+  static WasmArrayObject* createArrayEmpty(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::Heap initialHeap);
+
+  
+  
+  template <bool ZeroFields>
+  static MOZ_ALWAYS_INLINE WasmArrayObject* createArray(
+      JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+      js::gc::Heap initialHeap, uint32_t numElements) {
+    return numElements == 0 ? createArrayEmpty(cx, typeDefData, initialHeap)
+                            : createArrayNonEmpty<ZeroFields>(
+                                  cx, typeDefData, initialHeap, numElements);
+  }
 
   
   static constexpr size_t offsetOfNumElements() {

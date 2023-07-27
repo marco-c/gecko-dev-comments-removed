@@ -355,7 +355,7 @@ gc::AllocKind WasmArrayObject::allocKind() {
 
 
 template <bool ZeroFields>
-WasmArrayObject* WasmArrayObject::createArray(
+WasmArrayObject* WasmArrayObject::createArrayNonEmpty(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::Heap initialHeap, uint32_t numElements) {
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
@@ -369,8 +369,13 @@ WasmArrayObject* WasmArrayObject::createArray(
 
   
   
+  MOZ_ASSERT(numElements > 0);
+
+  
+  
   
   uint32_t elementTypeSize = typeDefData->arrayElemSize;
+  MOZ_ASSERT(elementTypeSize > 0);
   MOZ_ASSERT(elementTypeSize == typeDef->arrayType().elementType_.size());
   CheckedUint32 outlineBytes = elementTypeSize;
   outlineBytes *= numElements;
@@ -384,14 +389,17 @@ WasmArrayObject* WasmArrayObject::createArray(
   
   
   
+  MOZ_ASSERT(outlineBytes.value() > 0);
+
+  
+  
+  
   Nursery& nursery = cx->nursery();
   PointerAndUint7 outlineData(nullptr, 0);
-  if (MOZ_LIKELY(outlineBytes.value() > 0)) {
-    outlineData = nursery.mallocedBlockCache().alloc(outlineBytes.value());
-    if (MOZ_UNLIKELY(!outlineData.pointer())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
+  outlineData = nursery.mallocedBlockCache().alloc(outlineBytes.value());
+  if (MOZ_UNLIKELY(!outlineData.pointer())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
   }
 
   
@@ -411,38 +419,73 @@ WasmArrayObject* WasmArrayObject::createArray(
 
   arrayObj->initShape(typeDefData->shape);
   arrayObj->superTypeVector_ = typeDefData->superTypeVector;
+  arrayObj->numElements_ = numElements;
+  arrayObj->data_ = (uint8_t*)outlineData.pointer();
+  if constexpr (ZeroFields) {
+    memset(outlineData.pointer(), 0, outlineBytes.value());
+  }
+
+  if (MOZ_LIKELY(js::gc::IsInsideNursery(arrayObj))) {
+    
+    
+    
+    if (MOZ_UNLIKELY(
+            !nursery.registerTrailer(outlineData, outlineBytes.value()))) {
+      nursery.mallocedBlockCache().free(outlineData);
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+  }
 
   js::gc::gcprobes::CreateObject(arrayObj);
   probes::CreateObject(cx, arrayObj);
 
-  arrayObj->numElements_ = numElements;
-  arrayObj->data_ = (uint8_t*)outlineData.pointer();
-  if (MOZ_LIKELY(outlineData.pointer())) {
-    if constexpr (ZeroFields) {
-      memset(outlineData.pointer(), 0, outlineBytes.value());
-    }
-    if (MOZ_LIKELY(js::gc::IsInsideNursery(arrayObj))) {
-      
-      
-      
-      if (MOZ_UNLIKELY(
-              !nursery.registerTrailer(outlineData, outlineBytes.value()))) {
-        nursery.mallocedBlockCache().free(outlineData);
-        ReportOutOfMemory(cx);
-        return nullptr;
-      }
-    }
-  }
-
   return arrayObj;
 }
 
-template WasmArrayObject* WasmArrayObject::createArray<true>(
+template WasmArrayObject* WasmArrayObject::createArrayNonEmpty<true>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::Heap initialHeap, uint32_t numElements);
-template WasmArrayObject* WasmArrayObject::createArray<false>(
+template WasmArrayObject* WasmArrayObject::createArrayNonEmpty<false>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::Heap initialHeap, uint32_t numElements);
+
+
+WasmArrayObject* WasmArrayObject::createArrayEmpty(
+    JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
+    js::gc::Heap initialHeap) {
+  STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
+
+  MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
+  MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
+  debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
+
+  mozilla::DebugOnly<const TypeDef*> typeDef = typeDefData->typeDef;
+  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Array);
+
+  
+  
+
+  
+  
+  WasmArrayObject* arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
+      typeDefData->allocKind, initialHeap, typeDefData->clasp,
+      &typeDefData->allocSite);
+  if (MOZ_UNLIKELY(!arrayObj)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  arrayObj->initShape(typeDefData->shape);
+  arrayObj->superTypeVector_ = typeDefData->superTypeVector;
+  arrayObj->numElements_ = 0;
+  arrayObj->data_ = nullptr;
+
+  js::gc::gcprobes::CreateObject(arrayObj);
+  probes::CreateObject(cx, arrayObj);
+
+  return arrayObj;
+}
 
 
 void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
