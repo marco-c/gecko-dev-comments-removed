@@ -104,7 +104,7 @@ if (AppConstants.NIGHTLY_BUILD) {
 
 
 
-var whitelist = [
+var allowlist = [
   
   { file: "chrome://pdf.js/locale/chrome.properties" },
   { file: "chrome://pdf.js/locale/viewer.properties" },
@@ -291,26 +291,26 @@ if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
   
   
   
-  whitelist.push({ file: "chrome://fxr/content/fxrui.html" });
+  allowlist.push({ file: "chrome://fxr/content/fxrui.html" });
 }
 
 if (AppConstants.platform == "android") {
   
   
-  whitelist.push({
+  allowlist.push({
     file: "resource://gre/localization/en-US/toolkit/about/aboutGlean.ftl",
   });
 }
 
 if (AppConstants.MOZ_UPDATE_AGENT && !AppConstants.MOZ_BACKGROUNDTASKS) {
   
-  whitelist.push({
+  allowlist.push({
     file: "resource://gre/modules/TaskScheduler.sys.mjs",
   });
 }
 
-whitelist = new Set(
-  whitelist
+allowlist = new Set(
+  allowlist
     .filter(
       item =>
         "isFromDevTools" in item == isDevtools &&
@@ -320,7 +320,7 @@ whitelist = new Set(
     .map(item => item.file)
 );
 
-const ignorableWhitelist = new Set([
+const ignorableAllowlist = new Set([
   
   
 
@@ -333,8 +333,8 @@ const ignorableWhitelist = new Set([
   
   "resource://gre/res/test.properties",
 ]);
-for (let entry of ignorableWhitelist) {
-  whitelist.add(entry);
+for (let entry of ignorableAllowlist) {
+  allowlist.add(entry);
 }
 
 if (!isDevtools) {
@@ -349,17 +349,17 @@ if (!isDevtools) {
     "tabs.sys.mjs",
     "extension-storage.sys.mjs",
   ]) {
-    whitelist.add("resource://services-sync/engines/" + module);
+    allowlist.add("resource://services-sync/engines/" + module);
   }
   
   
   if (!AppConstants.ENABLE_WEBDRIVER) {
-    whitelist.add("resource://gre/modules/jsdebugger.sys.mjs");
+    allowlist.add("resource://gre/modules/jsdebugger.sys.mjs");
   }
 }
 
 if (AppConstants.MOZ_CODE_COVERAGE) {
-  whitelist.add(
+  allowlist.add(
     "chrome://remote/content/marionette/PerTestCoverageUtils.sys.mjs"
   );
 }
@@ -953,8 +953,8 @@ add_task(async function checkAllTheFiles() {
           let refType = gReferencesFromCode.get(ref);
           if (
             refType === null || 
-            refType == "whitelist" ||
-            refType == "whitelist-direct"
+            refType == "allowlist" ||
+            refType == "allowlist-direct"
           ) {
             return false;
           }
@@ -966,7 +966,7 @@ add_task(async function checkAllTheFiles() {
 
   let unreferencedFiles = chromeFiles;
 
-  let removeReferenced = useWhitelist => {
+  let removeReferenced = useAllowlist => {
     let foundReference = false;
     unreferencedFiles = unreferencedFiles.filter(f => {
       let rv = isUnreferenced(f);
@@ -978,15 +978,15 @@ add_task(async function checkAllTheFiles() {
       }
       if (!rv) {
         foundReference = true;
-        if (useWhitelist) {
+        if (useAllowlist) {
           info(
-            "indirectly whitelisted file: " +
+            "indirectly allowlisted file: " +
               f +
               " used from " +
               listCodeReferences(gReferencesFromCode.get(f))
           );
         }
-        gReferencesFromCode.set(f, useWhitelist ? "whitelist" : null);
+        gReferencesFromCode.set(f, useAllowlist ? "allowlist" : null);
       }
       return rv;
     });
@@ -999,9 +999,9 @@ add_task(async function checkAllTheFiles() {
   }
   
   unreferencedFiles = unreferencedFiles.filter(file => {
-    if (whitelist.has(file)) {
-      whitelist.delete(file);
-      gReferencesFromCode.set(file, "whitelist-direct");
+    if (allowlist.has(file)) {
+      allowlist.delete(file);
+      gReferencesFromCode.set(file, "allowlist-direct");
       return false;
     }
     return true;
@@ -1040,11 +1040,11 @@ add_task(async function checkAllTheFiles() {
     }
   }
 
-  for (let file of whitelist) {
-    if (ignorableWhitelist.has(file)) {
-      info("ignored unused whitelist entry: " + file);
+  for (let file of allowlist) {
+    if (ignorableAllowlist.has(file)) {
+      info("ignored unused allowlist entry: " + file);
     } else {
-      ok(false, "unused whitelist entry: " + file);
+      ok(false, "unused allowlist entry: " + file);
     }
   }
 

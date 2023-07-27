@@ -9,7 +9,7 @@
 
 
 
-let whitelist = [
+let ignoreList = [
   
   { sourceName: /codemirror\.css$/i, isFromDevTools: true },
   {
@@ -66,7 +66,7 @@ let whitelist = [
 
 if (!Services.prefs.getBoolPref("layout.css.color-mix.enabled")) {
   
-  whitelist.push({
+  ignoreList.push({
     sourceName: /\b(autocomplete-item)\.css$/,
     errorMessage: /Expected color but found \u2018color-mix\u2019./i,
     isFromDevTools: false,
@@ -76,7 +76,7 @@ if (!Services.prefs.getBoolPref("layout.css.color-mix.enabled")) {
 
 if (!Services.prefs.getBoolPref("layout.css.math-depth.enabled")) {
   
-  whitelist.push({
+  ignoreList.push({
     sourceName: /\b(scrollbars|mathml)\.css$/i,
     errorMessage: /Unknown property .*\bmath-depth\b/i,
     isFromDevTools: false,
@@ -85,7 +85,7 @@ if (!Services.prefs.getBoolPref("layout.css.math-depth.enabled")) {
 
 if (!Services.prefs.getBoolPref("layout.css.math-style.enabled")) {
   
-  whitelist.push({
+  ignoreList.push({
     sourceName: /(?:res|gre-resources)\/mathml\.css$/i,
     errorMessage: /Unknown property .*\bmath-style\b/i,
     isFromDevTools: false,
@@ -93,7 +93,7 @@ if (!Services.prefs.getBoolPref("layout.css.math-style.enabled")) {
 }
 
 if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
-  whitelist.push({
+  ignoreList.push({
     sourceName: /webconsole\.css$/i,
     errorMessage: /Unknown property .*\boverflow-anchor\b/i,
     isFromDevTools: true,
@@ -101,7 +101,7 @@ if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
 }
 
 if (!Services.prefs.getBoolPref("layout.css.forced-colors.enabled")) {
-  whitelist.push({
+  ignoreList.push({
     sourceName: /pdf\.js\/web\/viewer\.css$/,
     errorMessage: /Expected media feature name but found ‘forced-colors’*/i,
     isFromDevTools: false,
@@ -110,7 +110,7 @@ if (!Services.prefs.getBoolPref("layout.css.forced-colors.enabled")) {
 
 if (!Services.prefs.getBoolPref("layout.css.forced-color-adjust.enabled")) {
   
-  whitelist.push({
+  ignoreList.push({
     sourceName: /web\/viewer\.css$/i,
     errorMessage:
       /Unknown property ‘forced-color-adjust’\. {2}Declaration dropped\./i,
@@ -118,7 +118,7 @@ if (!Services.prefs.getBoolPref("layout.css.forced-color-adjust.enabled")) {
   });
 }
 
-let propNameWhitelist = [
+let propNameAllowlist = [
   
   
   
@@ -154,7 +154,7 @@ let propNameWhitelist = [
 
 const kPathSuffix = "?always-parse-css-" + Math.random();
 
-function dumpWhitelistItem(item) {
+function dumpAllowlistItem(item) {
   return JSON.stringify(item, (key, value) => {
     return value instanceof RegExp ? value.toString() : value;
   });
@@ -168,13 +168,13 @@ function dumpWhitelistItem(item) {
 
 
 function ignoredError(aErrorObject) {
-  for (let whitelistItem of whitelist) {
+  for (let allowlistItem of ignoreList) {
     let matches = true;
     let catchAll = true;
     for (let prop of ["sourceName", "errorMessage"]) {
-      if (whitelistItem.hasOwnProperty(prop)) {
+      if (allowlistItem.hasOwnProperty(prop)) {
         catchAll = false;
-        if (!whitelistItem[prop].test(aErrorObject[prop] || "")) {
+        if (!allowlistItem[prop].test(aErrorObject[prop] || "")) {
           matches = false;
           break;
         }
@@ -183,18 +183,18 @@ function ignoredError(aErrorObject) {
     if (catchAll) {
       ok(
         false,
-        "A whitelist item is catching all errors. " +
-          dumpWhitelistItem(whitelistItem)
+        "An allowlist item is catching all errors. " +
+          dumpAllowlistItem(allowlistItem)
       );
       continue;
     }
     if (matches) {
-      whitelistItem.used = true;
+      allowlistItem.used = true;
       let { sourceName, errorMessage } = aErrorObject;
       info(
         `Ignored error "${errorMessage}" on ${sourceName} ` +
-          "because of whitelist item " +
-          dumpWhitelistItem(whitelistItem)
+          "because of allowlist item " +
+          dumpAllowlistItem(allowlistItem)
       );
       return true;
     }
@@ -517,7 +517,7 @@ add_task(async function checkAllTheCSS() {
   for (let [prop, refCount] of customPropsToReferencesMap) {
     if (!refCount) {
       let ignored = false;
-      for (let item of propNameWhitelist) {
+      for (let item of propNameAllowlist) {
         if (item.propName == prop && isDevtools == item.isFromDevTools) {
           item.used = true;
           if (
@@ -546,7 +546,7 @@ add_task(async function checkAllTheCSS() {
   );
 
   
-  function checkWhitelist(list) {
+  function checkAllowlist(list) {
     for (let item of list) {
       if (
         !item.used &&
@@ -554,12 +554,12 @@ add_task(async function checkAllTheCSS() {
         (!item.platforms || item.platforms.includes(AppConstants.platform)) &&
         !item.intermittent
       ) {
-        ok(false, "Unused whitelist item: " + dumpWhitelistItem(item));
+        ok(false, "Unused allowlist item: " + dumpAllowlistItem(item));
       }
     }
   }
-  checkWhitelist(whitelist);
-  checkWhitelist(propNameWhitelist);
+  checkAllowlist(ignoreList);
+  checkAllowlist(propNameAllowlist);
 
   
   doc.head.innerHTML = "";
