@@ -492,7 +492,7 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
 
   
   
-  if (IsWin10OrLater() && mIsSystemPrincipal) {
+  if (mIsSystemPrincipal) {
     ComPtr<IXmlNodeList> bindingElements;
     hr = toastXml->GetElementsByTagName(HStringReference(L"binding").Get(),
                                         &bindingElements);
@@ -769,19 +769,16 @@ bool ToastNotificationHandler::CreateWindowsNotificationFromXml(
       &mFailedToken);
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  
-  if (IsWin10OrLater()) {
-    ComPtr<IToastNotification2> notification2;
-    hr = mNotification.As(&notification2);
-    NS_ENSURE_TRUE(SUCCEEDED(hr), false);
+  ComPtr<IToastNotification2> notification2;
+  hr = mNotification.As(&notification2);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-    HString hTag;
-    hr = hTag.Set(mWindowsTag.get());
-    NS_ENSURE_TRUE(SUCCEEDED(hr), false);
+  HString hTag;
+  hr = hTag.Set(mWindowsTag.get());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-    hr = notification2->put_Tag(hTag.Get());
-    NS_ENSURE_TRUE(SUCCEEDED(hr), false);
-  }
+  hr = notification2->put_Tag(hTag.Get());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
   ComPtr<IToastNotificationManagerStatics> toastNotificationManagerStatics =
       GetToastNotificationManagerStatics();
@@ -958,24 +955,20 @@ HRESULT
 ToastNotificationHandler::OnDismiss(
     const ComPtr<IToastNotification>& notification,
     const ComPtr<IToastDismissedEventArgs>& aArgs) {
-  
-  
-  if (IsWin10OrLater()) {
-    ComPtr<IToastNotification2> notification2;
-    HRESULT hr = notification.As(&notification2);
-    NS_ENSURE_TRUE(SUCCEEDED(hr), E_FAIL);
+  ComPtr<IToastNotification2> notification2;
+  HRESULT hr = notification.As(&notification2);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), E_FAIL);
 
-    HString tagHString;
-    hr = notification2->get_Tag(tagHString.GetAddressOf());
-    NS_ENSURE_TRUE(SUCCEEDED(hr), E_FAIL);
+  HString tagHString;
+  hr = notification2->get_Tag(tagHString.GetAddressOf());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), E_FAIL);
 
-    unsigned int len;
-    const wchar_t* tagPtr = tagHString.GetRawBuffer(&len);
-    nsAutoString tag(tagPtr, len);
+  unsigned int len;
+  const wchar_t* tagPtr = tagHString.GetRawBuffer(&len);
+  nsAutoString tag(tagPtr, len);
 
-    if (FindNotificationByTag(tag, mAumid)) {
-      return S_OK;
-    }
+  if (FindNotificationByTag(tag, mAumid)) {
+    return S_OK;
   }
 
   SendFinished();
