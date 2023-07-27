@@ -1,5 +1,6 @@
 #include "gdb-tests.h"
 
+#include "js/Id.h"  
 #include "js/String.h"
 #include "js/Symbol.h"
 

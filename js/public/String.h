@@ -26,7 +26,6 @@
 #include "jstypes.h"  
 
 #include "js/CharacterEncoding.h"  
-#include "js/Id.h"                 
 #include "js/RootingAPI.h"         
 #include "js/TypeDecls.h"          
 #include "js/UniquePtr.h"          
