@@ -99,8 +99,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   
   mozilla::Maybe<nscolor> mColorMenuHoverText;
-  mozilla::Maybe<nscolor> mColorMediaText;
-  mozilla::Maybe<nscolor> mColorCommunicationsText;
 
   mozilla::Maybe<nscolor> mDarkHighlight;
   mozilla::Maybe<nscolor> mDarkHighlightText;

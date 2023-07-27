@@ -210,8 +210,6 @@ pub enum SystemColor {
     MozDialog,
     MozDialogtext,
     
-    MozDragtargetzone,
-    
     #[parse(aliases = "-moz-html-cellhighlight")]
     MozCellhighlight,
     
@@ -287,11 +285,6 @@ pub enum SystemColor {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozAutofillBackground,
-
-    
-    MozWinMediatext,
-    
-    MozWinCommunicationstext,
 
     
     
