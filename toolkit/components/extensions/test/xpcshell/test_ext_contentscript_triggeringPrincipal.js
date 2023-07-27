@@ -22,6 +22,9 @@ Services.prefs.setIntPref(
 );
 
 
+Services.prefs.setIntPref("security.csp.reporting.limit.count", 0);
+
+
 Services.prefs.setBoolPref(
   "security.csp.truncate_blocked_uri_for_frame_navigations",
   false
