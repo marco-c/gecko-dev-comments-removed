@@ -58,16 +58,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
 
     
     
-    IfEmitter ie(bce_);
-    if (!ie.emitIf(mozilla::Nothing())) {
-      return false;
-    }
-
     if (!emitCheckIsUndefined()) {
       
       return false;
     }
 
+    InternalIfEmitter ie(bce_);
     if (!ie.emitThenElse()) {
       
       return false;
@@ -192,16 +188,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
 
     
     
-    IfEmitter ie(bce_);
-    if (!ie.emitIf(mozilla::Nothing())) {
-      return false;
-    }
-
     if (!emitCheckIsUndefined()) {
       
       return false;
     }
 
+    InternalIfEmitter ie(bce_);
     if (!ie.emitThenElse()) {
       
       return false;
@@ -372,16 +364,12 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
 
     
     
-    IfEmitter ie(bce_);
-    if (!ie.emitIf(mozilla::Nothing())) {
-      return false;
-    }
-
     if (!emitCheckIsUndefined()) {
       
       return false;
     }
 
+    InternalIfEmitter ie(bce_);
     if (!ie.emitThenElse()) {
       
       return false;
@@ -1187,17 +1175,13 @@ bool DecoratorEmitter::emitHandleNewValueField(TaggedParserAtomIndex atom,
     return false;
   }
 
-  IfEmitter ifCallable(bce_);
-  if (!ifCallable.emitIf(mozilla::Nothing())) {
-    return false;
-  }
-
   if (!emitCheckIsUndefined()) {
     
     
     return false;
   }
 
+  InternalIfEmitter ifCallable(bce_);
   if (!ifCallable.emitThenElse()) {
     
     
