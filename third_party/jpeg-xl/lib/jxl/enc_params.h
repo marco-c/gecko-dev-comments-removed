@@ -8,6 +8,7 @@
 
 
 
+#include <jxl/encode.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -58,14 +59,6 @@ struct CompressParams {
   
   
   std::vector<float> ec_distance;
-  size_t target_size = 0;
-  float target_bitrate = 0.0f;
-
-  
-  
-  
-  float uniform_quant = 0.0f;
-  float quant_border_bias = 0.0f;
 
   
   bool max_error_mode = false;
@@ -79,12 +72,7 @@ struct CompressParams {
   
   size_t decoding_speed_tier = 0;
 
-  int max_butteraugli_iters = 4;
-
-  int max_butteraugli_iters_guetzli_mode = 100;
-
   ColorTransform color_transform = ColorTransform::kXYB;
-  YCbCrChromaSubsampling chroma_subsampling;
 
   
   bool modular_mode = false;
@@ -119,14 +107,12 @@ struct CompressParams {
   
   Override keep_invisible = Override::kDefault;
 
-  
-  bool clear_metadata = false;
-
-  
-  bool verbose = false;
-  bool log_search_state = false;
-
-  ButteraugliParams ba_params;
+  JxlCmsInterface cms;
+  bool cms_set = false;
+  void SetCms(const JxlCmsInterface& cms) {
+    this->cms = cms;
+    cms_set = true;
+  }
 
   
   
@@ -204,6 +190,9 @@ struct CompressParams {
 
   std::vector<float> manual_noise;
   std::vector<float> manual_xyb_factors;
+
+  JxlDebugImageCallback debug_image = nullptr;
+  void* debug_image_opaque;
 };
 
 static constexpr float kMinButteraugliForDynamicAR = 0.5f;

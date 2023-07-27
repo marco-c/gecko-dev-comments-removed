@@ -6,13 +6,9 @@
 #ifndef LIB_JPEGLI_RENDER_H_
 #define LIB_JPEGLI_RENDER_H_
 
-
 #include <stdint.h>
-#include <stdio.h>
-#include <jpeglib.h>
 
-
-#include <vector>
+#include "lib/jpegli/common.h"
 
 namespace jpegli {
 

@@ -7,6 +7,16 @@
 #define LIB_JXL_ENC_FAST_LOSSLESS_H_
 #include <stdlib.h>
 
+
+
+#ifndef FJXL_STANDALONE
+#ifdef JPEGXL_MAJOR_VERSION
+#define FJXL_STANDALONE 0
+#else
+#define FJXL_STANDALONE 1
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,12 +28,14 @@ extern "C" {
 typedef void(FJxlParallelRunner)(void* runner_opaque, void* opaque,
                                  void fun(void*, size_t), size_t count);
 
+#if FJXL_STANDALONE
 
 size_t JxlFastLosslessEncode(const unsigned char* rgba, size_t width,
                              size_t row_stride, size_t height, size_t nb_chans,
                              size_t bitdepth, int big_endian, int effort,
                              unsigned char** output, void* runner_opaque,
                              FJxlParallelRunner runner);
+#endif
 
 
 
@@ -37,6 +49,7 @@ JxlFastLosslessFrameState* JxlFastLosslessPrepareFrame(
     const unsigned char* rgba, size_t width, size_t row_stride, size_t height,
     size_t nb_chans, size_t bitdepth, int big_endian, int effort,
     void* runner_opaque, FJxlParallelRunner runner);
+
 
 
 

@@ -21,6 +21,8 @@ struct SizeConstraints;
 
 namespace extras {
 
+bool CanDecodeEXR();
+
 
 Status DecodeImageEXR(Span<const uint8_t> bytes, const ColorHints& color_hints,
                       PackedPixelFile* ppf,

@@ -27,6 +27,21 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+typedef JXL_BOOL (*jpegxl_cms_set_fields_from_icc_func)(void* user_data,
+                                                        const uint8_t* icc_data,
+                                                        size_t icc_size,
+                                                        JxlColorEncoding* c,
+                                                        JXL_BOOL* cmyk);
+
+
+
 typedef struct {
   
   struct {
@@ -207,6 +222,11 @@ typedef void (*jpegxl_cms_destroy_func)(void*);
 
 
 typedef struct {
+  
+  void* set_fields_data;
+  
+  jpegxl_cms_set_fields_from_icc_func set_fields_from_icc;
+
   
   void* init_data;
   

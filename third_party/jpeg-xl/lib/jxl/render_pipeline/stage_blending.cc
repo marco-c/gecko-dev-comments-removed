@@ -102,7 +102,8 @@ class BlendingStage : public RenderPipelineStage {
           break;
         }
         default: {
-          JXL_ABORT("Invalid blend mode");  
+          JXL_UNREACHABLE(
+              "Invalid blend mode");  
         }
       }
     };

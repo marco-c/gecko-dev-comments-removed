@@ -6,11 +6,9 @@
 #ifndef LIB_JPEGLI_DECODE_MARKER_H_
 #define LIB_JPEGLI_DECODE_MARKER_H_
 
-
 #include <stdint.h>
-#include <stdio.h>
-#include <jpeglib.h>
 
+#include "lib/jpegli/common.h"
 
 namespace jpegli {
 

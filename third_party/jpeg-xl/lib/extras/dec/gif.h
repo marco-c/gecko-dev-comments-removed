@@ -22,6 +22,8 @@ struct SizeConstraints;
 
 namespace extras {
 
+bool CanDecodeGIF();
+
 
 Status DecodeImageGIF(Span<const uint8_t> bytes, const ColorHints& color_hints,
                       PackedPixelFile* ppf,

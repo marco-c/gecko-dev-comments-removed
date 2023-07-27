@@ -41,8 +41,8 @@ Status PrepareCodecMetadataFromIO(const CompressParams& cparams,
   
   
   
-  if (!cparams.IsLossless() && !io->Main().IsJPEG()) {
-    metadata->m.color_encoding.DecideIfWantICC();
+  if (!cparams.IsLossless() && !io->Main().IsJPEG() && cparams.cms_set) {
+    metadata->m.color_encoding.DecideIfWantICC(cparams.cms);
   }
 
   metadata->m.xyb_encoded =

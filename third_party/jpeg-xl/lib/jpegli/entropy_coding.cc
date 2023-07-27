@@ -103,7 +103,10 @@ void TokenizeACProgressiveScan(j_compress_ptr cinfo, int scan_index,
     JBLOCKARRAY ba = (*cinfo->mem->access_virt_barray)(
         reinterpret_cast<j_common_ptr>(cinfo), m->coeff_buffers[comp_idx], by,
         1, false);
-    int max_tokens_per_row = comp->width_in_blocks * (Se - Ss + 1);
+    
+    
+    
+    int max_tokens_per_row = 1 + comp->width_in_blocks * (Se - Ss + 1);
     if (ta->num_tokens + max_tokens_per_row > m->num_tokens) {
       if (ta->tokens) {
         m->total_num_tokens += ta->num_tokens;

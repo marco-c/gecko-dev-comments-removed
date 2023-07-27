@@ -7,11 +7,6 @@
 
 
 
-
-#include <stdio.h>
-#include <jpeglib.h>
-
-
 #include "lib/jpegli/common.h"
 #include "lib/jpegli/decode.h"
 #include "lib/jpegli/encode.h"

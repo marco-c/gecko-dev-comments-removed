@@ -6,13 +6,7 @@
 #ifndef LIB_JPEGLI_IDCT_H_
 #define LIB_JPEGLI_IDCT_H_
 
-
-#include <stdio.h>
-#include <jpeglib.h>
-#include <stddef.h>
-#include <stdint.h>
-
-
+#include "lib/jpegli/common.h"
 #include "lib/jxl/base/compiler_specific.h"
 
 namespace jpegli {

@@ -18,6 +18,7 @@
 #include <jxl/jxl_export.h>
 #include <jxl/memory_manager.h>
 #include <jxl/parallel_runner.h>
+#include <jxl/stats.h>
 #include <jxl/version.h>
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -338,6 +339,19 @@ typedef enum {
   
 
 
+
+
+
+
+
+
+
+
+  JXL_ENC_FRAME_SETTING_BUFFERING = 34,
+
+  
+
+
   JXL_ENC_FRAME_SETTING_FILL_ENUM = 65535,
 
 } JxlEncoderFrameSettingId;
@@ -629,6 +643,49 @@ JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
 JXL_EXPORT JxlEncoderStatus JxlEncoderAddImageFrame(
     const JxlEncoderFrameSettings* frame_settings,
     const JxlPixelFormat* pixel_format, const void* buffer, size_t size);
+
+
+
+
+
+typedef void (*JxlEncoderOutputCallback)(void* run_opaque, size_t pos,
+                                         size_t num_bytes);
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus
+JxlEncoderSetOutputCallback(JxlEncoderOutputCallback callback);
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus
+JxlEncoderChunkedImageFrameStart(const JxlEncoderFrameSettings* frame_settings);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderChunkedImageFrameAddPart(
+    const JxlEncoderFrameSettings* frame_settings, size_t x, size_t y,
+    const JxlPixelFormat* pixel_format, const void* input_data,
+    size_t input_size);
 
 
 
@@ -1151,6 +1208,57 @@ JXL_EXPORT void JxlColorEncodingSetToLinearSRGB(
 
 
 JXL_EXPORT void JxlEncoderAllowExpertOptions(JxlEncoder* enc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*JxlDebugImageCallback)(void* opaque, const char* label,
+                                      size_t xsize, size_t ysize,
+                                      const JxlColorEncoding* color,
+                                      const uint16_t* pixels);
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderSetDebugImageCallback(
+    JxlEncoderFrameSettings* frame_settings, JxlDebugImageCallback callback,
+    void* opaque);
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderCollectStats(JxlEncoderFrameSettings* frame_settings,
+                                       JxlEncoderStats* stats);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

@@ -36,7 +36,7 @@ enum class Codec : uint32_t {
   kJXL
 };
 
-std::vector<Codec> AvailableCodecs();
+bool CanDecode(Codec codec);
 
 
 

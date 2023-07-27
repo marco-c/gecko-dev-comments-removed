@@ -6,11 +6,7 @@
 #ifndef LIB_JPEGLI_COLOR_TRANSFORM_H_
 #define LIB_JPEGLI_COLOR_TRANSFORM_H_
 
-
-#include <stdio.h>
-#include <jpeglib.h>
-
-
+#include "lib/jpegli/common.h"
 #include "lib/jxl/base/compiler_specific.h"
 
 namespace jpegli {

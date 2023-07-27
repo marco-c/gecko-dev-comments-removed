@@ -235,17 +235,7 @@ void StoreFloatRow(const float* JXL_RESTRICT* rows_in, size_t num_channels,
 
 void JXL_INLINE Store8(uint32_t value, uint8_t* dest) { *dest = value & 0xff; }
 
-
-const size_t kConvertMaxChannels = 4;
-
-
-
-
-
-
-
-
-
+}  
 
 Status ConvertChannelsToExternal(const ImageF* channels[], size_t num_channels,
                                  size_t bits_per_sample, bool float_out,
@@ -447,8 +437,6 @@ Status ConvertChannelsToExternal(const ImageF* channels[], size_t num_channels,
   }
   return true;
 }
-
-}  
 
 Status ConvertToExternal(const jxl::ImageBundle& ib, size_t bits_per_sample,
                          bool float_out, size_t num_channels,

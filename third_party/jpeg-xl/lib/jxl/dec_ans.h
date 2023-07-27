@@ -276,9 +276,10 @@ class ANSSymbolReader {
   }
 
   
-  void ReadHybridUintClusteredHuffRleOnly(size_t ctx,
-                                          BitReader* JXL_RESTRICT br,
-                                          uint32_t* value, uint32_t* run) {
+  JXL_INLINE void ReadHybridUintClusteredHuffRleOnly(size_t ctx,
+                                                     BitReader* JXL_RESTRICT br,
+                                                     uint32_t* value,
+                                                     uint32_t* run) {
     JXL_DASSERT(HuffRleOnly());
     br->Refill();  
     size_t token = ReadSymbolHuffWithoutRefill(ctx, br);
@@ -300,55 +301,80 @@ class ANSSymbolReader {
     if (configs[lz77_ctx_].split_token > 1) return false;
     return true;
   }
+  bool UsesLZ77() { return lz77_window_ != nullptr; }
 
   
-  size_t ReadHybridUintClustered(size_t ctx, BitReader* JXL_RESTRICT br) {
-    if (JXL_UNLIKELY(num_to_copy_ > 0)) {
-      size_t ret = lz77_window_[(copy_pos_++) & kWindowMask];
-      num_to_copy_--;
-      lz77_window_[(num_decoded_++) & kWindowMask] = ret;
-      return ret;
+  template <bool uses_lz77>
+  JXL_INLINE size_t ReadHybridUintClustered(size_t ctx,
+                                            BitReader* JXL_RESTRICT br) {
+    if (uses_lz77) {
+      if (JXL_UNLIKELY(num_to_copy_ > 0)) {
+        size_t ret = lz77_window_[(copy_pos_++) & kWindowMask];
+        num_to_copy_--;
+        lz77_window_[(num_decoded_++) & kWindowMask] = ret;
+        return ret;
+      }
     }
+
     br->Refill();  
     size_t token = ReadSymbolWithoutRefill(ctx, br);
-    if (JXL_UNLIKELY(token >= lz77_threshold_)) {
-      num_to_copy_ =
-          ReadHybridUintConfig(lz77_length_uint_, token - lz77_threshold_, br) +
-          lz77_min_length_;
-      br->Refill();  
-      
-      size_t token = ReadSymbolWithoutRefill(lz77_ctx_, br);
-      size_t distance = ReadHybridUintConfig(configs[lz77_ctx_], token, br);
-      if (JXL_LIKELY(distance < num_special_distances_)) {
-        distance = special_distances_[distance];
-      } else {
-        distance = distance + 1 - num_special_distances_;
-      }
-      if (JXL_UNLIKELY(distance > num_decoded_)) {
-        distance = num_decoded_;
-      }
-      if (JXL_UNLIKELY(distance > kWindowSize)) {
-        distance = kWindowSize;
-      }
-      copy_pos_ = num_decoded_ - distance;
-      if (JXL_UNLIKELY(distance == 0)) {
-        JXL_DASSERT(lz77_window_ != nullptr);
+    if (uses_lz77) {
+      if (JXL_UNLIKELY(token >= lz77_threshold_)) {
+        num_to_copy_ = ReadHybridUintConfig(lz77_length_uint_,
+                                            token - lz77_threshold_, br) +
+                       lz77_min_length_;
+        br->Refill();  
         
-        size_t to_fill = std::min<size_t>(num_to_copy_, kWindowSize);
-        memset(lz77_window_, 0, to_fill * sizeof(lz77_window_[0]));
+        size_t token = ReadSymbolWithoutRefill(lz77_ctx_, br);
+        size_t distance = ReadHybridUintConfig(configs[lz77_ctx_], token, br);
+        if (JXL_LIKELY(distance < num_special_distances_)) {
+          distance = special_distances_[distance];
+        } else {
+          distance = distance + 1 - num_special_distances_;
+        }
+        if (JXL_UNLIKELY(distance > num_decoded_)) {
+          distance = num_decoded_;
+        }
+        if (JXL_UNLIKELY(distance > kWindowSize)) {
+          distance = kWindowSize;
+        }
+        copy_pos_ = num_decoded_ - distance;
+        if (JXL_UNLIKELY(distance == 0)) {
+          JXL_DASSERT(lz77_window_ != nullptr);
+          
+          size_t to_fill = std::min<size_t>(num_to_copy_, kWindowSize);
+          memset(lz77_window_, 0, to_fill * sizeof(lz77_window_[0]));
+        }
+        
+        if (num_to_copy_ < lz77_min_length_) return 0;
+        
+        
+        
+
+        size_t ret = lz77_window_[(copy_pos_++) & kWindowMask];
+        num_to_copy_--;
+        lz77_window_[(num_decoded_++) & kWindowMask] = ret;
+        return ret;
       }
-      
-      if (num_to_copy_ < lz77_min_length_) return 0;
-      return ReadHybridUintClustered(ctx, br);  
     }
     size_t ret = ReadHybridUintConfig(configs[ctx], token, br);
-    if (lz77_window_) lz77_window_[(num_decoded_++) & kWindowMask] = ret;
+    if (uses_lz77 && lz77_window_)
+      lz77_window_[(num_decoded_++) & kWindowMask] = ret;
     return ret;
   }
 
-  JXL_INLINE size_t ReadHybridUint(size_t ctx, BitReader* JXL_RESTRICT br,
-                                   const std::vector<uint8_t>& context_map) {
-    return ReadHybridUintClustered(context_map[ctx], br);
+  
+  template <bool uses_lz77>
+  JXL_INLINE size_t
+  ReadHybridUintInlined(size_t ctx, BitReader* JXL_RESTRICT br,
+                        const std::vector<uint8_t>& context_map) {
+    return ReadHybridUintClustered<uses_lz77>(context_map[ctx], br);
+  }
+
+  
+  size_t ReadHybridUint(size_t ctx, BitReader* JXL_RESTRICT br,
+                        const std::vector<uint8_t>& context_map) {
+    return ReadHybridUintClustered<true>(context_map[ctx], br);
   }
 
   

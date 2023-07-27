@@ -8,6 +8,7 @@
 
 
 
+#include <jxl/cms_interface.h>
 #include <jxl/color_encoding.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -251,11 +252,17 @@ struct ColorEncoding : public Fields {
   
   
   
-  Status SetICC(PaddedBytes&& icc) {
+  Status SetICC(PaddedBytes&& icc, const JxlCmsInterface* cms) {
     if (icc.empty()) return false;
     icc_ = std::move(icc);
 
-    if (!SetFieldsFromICC()) {
+    if (cms == nullptr) {
+      want_icc_ = true;
+      have_fields_ = false;
+      return true;
+    }
+
+    if (!SetFieldsFromICC(*cms)) {
       InternalRemoveICC();
       return false;
     }
@@ -286,8 +293,7 @@ struct ColorEncoding : public Fields {
   bool HaveFields() const { return have_fields_; }
 
   
-  
-  void DecideIfWantICC();
+  void DecideIfWantICC(const JxlCmsInterface& cms);
 
   bool IsGray() const { return color_space_ == ColorSpace::kGray; }
   bool IsCMYK() const { return cmyk_; }
@@ -400,8 +406,7 @@ struct ColorEncoding : public Fields {
  private:
   
   
-  
-  Status SetFieldsFromICC();
+  Status SetFieldsFromICC(const JxlCmsInterface& cms);
 
   
   
@@ -428,13 +433,9 @@ struct ColorEncoding : public Fields {
 
 
 static inline bool ApproxEq(const double a, const double b,
-#if JPEGXL_ENABLE_SKCMS
                             double max_l1 = 1E-3) {
-#else
-                            double max_l1 = 8E-5) {
-#endif
-
-
+  
+  
   return std::abs(a - b) <= max_l1;
 }
 

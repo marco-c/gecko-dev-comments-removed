@@ -22,6 +22,26 @@
 namespace jxl {
 
 
+const size_t kConvertMaxChannels = 4;
+
+
+
+
+
+
+
+
+
+
+Status ConvertChannelsToExternal(const ImageF* channels[], size_t num_channels,
+                                 size_t bits_per_sample, bool float_out,
+                                 JxlEndianness endianness, size_t stride,
+                                 jxl::ThreadPool* pool, void* out_image,
+                                 size_t out_size,
+                                 const PixelCallback& out_callback,
+                                 jxl::Orientation undo_orientation);
+
+
 
 
 

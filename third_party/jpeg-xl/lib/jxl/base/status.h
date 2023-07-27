@@ -71,7 +71,7 @@ namespace jxl {
 
 
 #ifndef JXL_DEBUG_ON_ABORT
-#define JXL_DEBUG_ON_ABORT 1
+#define JXL_DEBUG_ON_ABORT JXL_DEBUG_ON_ERROR
 #endif  
 
 
@@ -150,6 +150,21 @@ JXL_NORETURN inline JXL_NOINLINE bool Abort() {
   ((JXL_DEBUG_ON_ABORT) && ::jxl::Debug(("%s:%d: JXL_ABORT: " format "\n"), \
                                         __FILE__, __LINE__, ##__VA_ARGS__), \
    ::jxl::Abort())
+
+
+
+
+
+#define JXL_UNREACHABLE(format, ...)                                   \
+  do {                                                                 \
+    if (JXL_DEBUG_WARNING) {                                           \
+      ::jxl::Debug(("%s:%d: JXL_UNREACHABLE: " format "\n"), __FILE__, \
+                   __LINE__, ##__VA_ARGS__);                           \
+      ::jxl::Abort();                                                  \
+    } else {                                                           \
+      JXL_UNREACHABLE_BUILTIN;                                         \
+    }                                                                  \
+  } while (0)
 
 
 #if JXL_ENABLE_ASSERT
