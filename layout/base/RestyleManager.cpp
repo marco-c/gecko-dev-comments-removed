@@ -1728,6 +1728,14 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
          nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
       ApplyRenderingChangeToTree(presContext->PresShell(), frame, hint);
     }
+
+    if (hint & (nsChangeHint_UpdateTransformLayer |
+                nsChangeHint_AddOrRemoveTransform)) {
+      
+      
+      ScrollSnapUtils::PostPendingResnapIfNeededFor(frame);
+    }
+
     if ((hint & nsChangeHint_RecomputePosition) && !didReflowThisFrame) {
       
       if (!RecomputePosition(frame)) {
