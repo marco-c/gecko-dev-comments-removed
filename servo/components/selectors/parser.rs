@@ -359,6 +359,18 @@ pub struct SelectorList<Impl: SelectorImpl>(
 );
 
 
+
+#[derive(Clone, Copy, Hash, Eq, PartialEq)]
+pub struct SelectorKey(usize);
+
+impl SelectorKey {
+    
+    pub fn new<Impl: SelectorImpl>(selector: &Selector<Impl>) -> Self {
+        Self(selector.0.slice().as_ptr() as usize)
+    }
+}
+
+
 enum ForgivingParsing {
     
     
@@ -1506,6 +1518,26 @@ pub enum RelativeSelectorMatchHint {
     InSibling,
     
     InSiblingSubtree,
+}
+
+impl RelativeSelectorMatchHint {
+    
+    pub fn is_descendant_direction(&self) -> bool {
+        matches!(*self, Self::InChild | Self::InSubtree)
+    }
+
+    
+    pub fn is_next_sibling(&self) -> bool {
+        matches!(*self, Self::InNextSibling | Self::InNextSiblingSubtree)
+    }
+
+    
+    pub fn is_subtree(&self) -> bool {
+        matches!(
+            *self,
+            Self::InSubtree | Self::InSiblingSubtree | Self::InNextSiblingSubtree
+        )
+    }
 }
 
 

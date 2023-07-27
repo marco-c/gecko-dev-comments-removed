@@ -30,7 +30,7 @@ use euclid::default::Size2D;
 use euclid::Scale;
 #[cfg(feature = "servo")]
 use fxhash::FxHashMap;
-use selectors::NthIndexCache;
+use selectors::context::SelectorCaches;
 #[cfg(feature = "gecko")]
 use servo_arc::Arc;
 #[cfg(feature = "servo")]
@@ -652,7 +652,7 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub stack_limit_checker: StackLimitChecker,
     
-    pub nth_index_cache: NthIndexCache,
+    pub selector_caches: SelectorCaches,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -667,7 +667,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             stack_limit_checker: StackLimitChecker::new(
                 (STYLE_THREAD_STACK_SIZE_KB - STACK_SAFETY_MARGIN_KB) * 1024,
             ),
-            nth_index_cache: NthIndexCache::default(),
+            selector_caches: SelectorCaches::default(),
         }
     }
 }

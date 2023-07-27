@@ -6,6 +6,7 @@ use crate::attr::CaseSensitivity;
 use crate::bloom::BloomFilter;
 use crate::nth_index_cache::{NthIndexCache, NthIndexCacheInner};
 use crate::parser::{Selector, SelectorImpl};
+use crate::relative_selector::cache::RelativeSelectorCache;
 use crate::tree::{Element, OpaqueElement};
 
 
@@ -142,6 +143,15 @@ impl RelativeSelectorMatchingState {
 }
 
 
+#[derive(Default)]
+pub struct SelectorCaches {
+    
+    pub nth_index: NthIndexCache,
+    
+    pub relative_selector: RelativeSelectorCache,
+}
+
+
 
 
 pub struct MatchingContext<'a, Impl>
@@ -152,8 +162,6 @@ where
     matching_mode: MatchingMode,
     
     pub bloom_filter: Option<&'a BloomFilter>,
-    
-    pub nth_index_cache: &'a mut NthIndexCache,
     
     
     
@@ -197,6 +205,9 @@ where
     
     ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
 
+    
+    pub selector_caches: &'a mut SelectorCaches,
+
     classes_and_ids_case_sensitivity: CaseSensitivity,
     _impl: ::std::marker::PhantomData<Impl>,
 }
@@ -209,7 +220,7 @@ where
     pub fn new(
         matching_mode: MatchingMode,
         bloom_filter: Option<&'a BloomFilter>,
-        nth_index_cache: &'a mut NthIndexCache,
+        selector_caches: &'a mut SelectorCaches,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
         ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
@@ -217,7 +228,7 @@ where
         Self::new_for_visited(
             matching_mode,
             bloom_filter,
-            nth_index_cache,
+            selector_caches,
             VisitedHandlingMode::AllLinksUnvisited,
             quirks_mode,
             needs_selector_flags,
@@ -229,7 +240,7 @@ where
     pub fn new_for_visited(
         matching_mode: MatchingMode,
         bloom_filter: Option<&'a BloomFilter>,
-        nth_index_cache: &'a mut NthIndexCache,
+        selector_caches: &'a mut SelectorCaches,
         visited_handling: VisitedHandlingMode,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
@@ -239,7 +250,6 @@ where
             matching_mode,
             bloom_filter,
             visited_handling,
-            nth_index_cache,
             quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             needs_selector_flags,
@@ -252,6 +262,7 @@ where
             extra_data: Default::default(),
             current_relative_selector_anchor: None,
             considered_relative_selector: RelativeSelectorMatchingState::None,
+            selector_caches,
             _impl: ::std::marker::PhantomData,
         }
     }
@@ -264,7 +275,9 @@ where
         is_from_end: bool,
         selectors: &[Selector<Impl>],
     ) -> &mut NthIndexCacheInner {
-        self.nth_index_cache.get(is_of_type, is_from_end, selectors)
+        self.selector_caches
+            .nth_index
+            .get(is_of_type, is_from_end, selectors)
     }
 
     
