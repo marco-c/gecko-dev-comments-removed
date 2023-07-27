@@ -499,9 +499,21 @@ var gIdentityHandler = {
 
 
 
+
   _getHttpsOnlyPermission() {
+    if (
+      !gBrowser.currentURI.schemeIs("http") &&
+      !gBrowser.currentURI.schemeIs("https")
+    ) {
+      return -1;
+    }
+    const httpURI = gBrowser.currentURI.mutate().setScheme("http").finalize();
+    const principal = Services.scriptSecurityManager.createContentPrincipal(
+      httpURI,
+      gBrowser.contentPrincipal.originAttributes
+    );
     const { state } = SitePermissions.getForPrincipal(
-      gBrowser.contentPrincipal,
+      principal,
       "https-only-load-insecure"
     );
     switch (state) {
@@ -522,6 +534,13 @@ var gIdentityHandler = {
     
     
     const oldValue = this._getHttpsOnlyPermission();
+    if (oldValue < 0) {
+      console.error(
+        "Did not update HTTPS-Only permission since scheme is incompatible"
+      );
+      return;
+    }
+
     let newValue = parseInt(
       this._identityPopupHttpsOnlyModeMenuList.selectedItem.value,
       10
@@ -540,18 +559,12 @@ var gIdentityHandler = {
 
     
     
-    let principal = gBrowser.contentPrincipal;
     
-    
-    
-    let newURI;
-    if (this._isAboutHttpsOnlyErrorPage) {
-      newURI = gBrowser.currentURI.mutate().setScheme("http").finalize();
-      principal = Services.scriptSecurityManager.createContentPrincipal(
-        newURI,
-        gBrowser.contentPrincipal.originAttributes
-      );
-    }
+    const newURI = gBrowser.currentURI.mutate().setScheme("http").finalize();
+    const principal = Services.scriptSecurityManager.createContentPrincipal(
+      newURI,
+      gBrowser.contentPrincipal.originAttributes
+    );
 
     
     if (newValue === 0) {

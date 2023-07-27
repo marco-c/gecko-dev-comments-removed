@@ -63,11 +63,23 @@ var gPermissionManager = {
   _list: null,
   _removeButton: null,
   _removeAllButton: null,
+  _forcedHTTP: null,
 
   onLoad() {
     let params = window.arguments[0];
     document.mozSubdialogReady = this.init(params);
   },
+
+  
+
+
+
+
+
+
+
+
+
 
   async init(params) {
     if (!this._isObserving) {
@@ -104,6 +116,8 @@ var gPermissionManager = {
     this._urlField = document.getElementById("url");
     this._urlField.value = params.prefilledHost;
     this._urlField.hidden = !urlFieldVisible;
+
+    this._forcedHTTP = params.forcedHTTP;
 
     await document.l10n.translateElements([
       permissionsText,
@@ -293,6 +307,9 @@ var gPermissionManager = {
       
       try {
         let uri = Services.io.newURI(input_url);
+        if (this._forcedHTTP && uri.schemeIs("https")) {
+          uri = uri.mutate().setScheme("http").finalize();
+        }
         let principal = Services.scriptSecurityManager.createContentPrincipal(
           uri,
           {}
@@ -306,10 +323,12 @@ var gPermissionManager = {
           principals,
           Services.io.newURI("http://" + input_url)
         );
-        this._addNewPrincipalToList(
-          principals,
-          Services.io.newURI("https://" + input_url)
-        );
+        if (!this._forcedHTTP) {
+          this._addNewPrincipalToList(
+            principals,
+            Services.io.newURI("https://" + input_url)
+          );
+        }
       }
     } catch (ex) {
       document.l10n
