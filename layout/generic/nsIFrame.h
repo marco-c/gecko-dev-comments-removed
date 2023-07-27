@@ -382,8 +382,7 @@ struct IntrinsicSize {
 };
 
 
-static const mozilla::intl::BidiEmbeddingLevel kBidiLevelNone =
-    mozilla::intl::BidiEmbeddingLevel(0xff);
+constexpr mozilla::intl::BidiEmbeddingLevel kBidiLevelNone(0xff);
 
 struct FrameBidiData {
   mozilla::intl::BidiEmbeddingLevel baseLevel;
