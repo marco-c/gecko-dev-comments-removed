@@ -101,7 +101,7 @@ class nsNavHistoryResult final
   nsresult OnVisit(nsIURI* aURI, int64_t aVisitId, PRTime aTime,
                    uint32_t aTransitionType, const nsACString& aGUID,
                    bool aHidden, uint32_t aVisitCount,
-                   const nsAString& aLastKnownTitle);
+                   const nsAString& aLastKnownTitle, int64_t aFrecency);
 
   void OnIconChanged(nsIURI* aURI, nsIURI* aFaviconURI,
                      const nsACString& aGUID);
@@ -410,7 +410,7 @@ class nsNavHistoryResultNode : public nsINavHistoryResultNode {
   int32_t mIndentLevel;
 
   
-  int32_t mFrecency;
+  int64_t mFrecency;
 
   
   bool mHidden;
@@ -710,7 +710,10 @@ class nsNavHistoryQueryResultNode final
   
   
   nsresult OnVisit(nsIURI* aURI, int64_t aVisitId, PRTime aTime,
-                   uint32_t aTransitionType, bool aHidden, uint32_t* aAdded);
+                   uint32_t aTransitionType, const nsACString& aGUID,
+                   bool aHidden, uint32_t aVisitCount,
+                   const nsAString& aLastKnownTitle, int64_t aFrecency,
+                   uint32_t* aAdded);
   nsresult OnTitleChanged(nsIURI* aURI, const nsAString& aPageTitle,
                           const nsACString& aGUID);
   nsresult OnClearHistory();
@@ -806,7 +809,8 @@ class nsNavHistoryFolderResultNode final
                        const nsACString& aURI, const nsACString& aTitle,
                        const nsAString& aTags, int64_t aFrecency, bool aHidden,
                        uint32_t aVisitCount, PRTime aLastVisitDate);
-  nsresult OnItemVisited(nsIURI* aURI, int64_t aVisitId, PRTime aTime);
+  nsresult OnItemVisited(nsIURI* aURI, int64_t aVisitId, PRTime aTime,
+                         int64_t aFrecency);
 
   virtual void OnRemoving() override;
 

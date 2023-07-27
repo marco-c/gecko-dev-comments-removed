@@ -2081,10 +2081,10 @@ static nsresult setHistoryDetailsCallback(nsNavHistoryResultNode* aNode,
 
 
 
-nsresult nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
-                                              PRTime aTime,
-                                              uint32_t aTransitionType,
-                                              bool aHidden, uint32_t* aAdded) {
+nsresult nsNavHistoryQueryResultNode::OnVisit(
+    nsIURI* aURI, int64_t aVisitId, PRTime aTime, uint32_t aTransitionType,
+    const nsACString& aGUID, bool aHidden, uint32_t aVisitCount,
+    const nsAString& aLastKnownTitle, int64_t aFrecency, uint32_t* aAdded) {
   if (aHidden && !mOptions->IncludeHidden()) return NS_OK;
   
   
@@ -2145,17 +2145,28 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
     }
 
     case QUERYUPDATE_SIMPLE: {
-      
-      
-      RefPtr<nsNavHistoryResultNode> addition;
-      nsresult rv = history->VisitIdToResultNode(aVisitId, mOptions,
-                                                 getter_AddRefs(addition));
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (!addition) {
+      if (mOptions->ResultType() !=
+              nsNavHistoryQueryOptions::RESULTS_AS_VISIT &&
+          mOptions->ResultType() != nsNavHistoryQueryOptions::RESULTS_AS_URI) {
         
         return NS_OK;
       }
+
+      nsAutoCString spec;
+      nsresult rv = aURI->GetSpec(spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      RefPtr<nsNavHistoryResultNode> addition = new nsNavHistoryResultNode(
+          spec, NS_ConvertUTF16toUTF8(aLastKnownTitle), aVisitCount, aTime);
+      addition->mPageGuid.Assign(aGUID);
+      addition->mFrecency = aFrecency;
+      addition->mHidden = aHidden;
       addition->mTransitionType = aTransitionType;
+
+      if (mOptions->ResultType() ==
+          nsNavHistoryQueryOptions::RESULTS_AS_VISIT) {
+        addition->mVisitId = aVisitId;
+      }
+
       if (!evaluateQueryForNode(mQuery, mOptions, addition))
         return NS_OK;  
 
@@ -3365,7 +3376,8 @@ nsresult nsNavHistoryResultNode::OnVisitsRemoved() {
 
 nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
                                                      int64_t aVisitId,
-                                                     PRTime aTime) {
+                                                     PRTime aTime,
+                                                     int64_t aFrecency) {
   if (mOptions->ExcludeItems())
     return NS_OK;  
 
@@ -3396,21 +3408,7 @@ nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
     PRTime nodeOldTime = node->mTime;
     node->mTime = aTime;
     ++node->mAccessCount;
-
-    
-    
-    
-    nsNavHistory* history = nsNavHistory::GetHistoryService();
-    NS_ENSURE_TRUE(history, NS_OK);
-    RefPtr<nsNavHistoryResultNode> visitNode;
-    rv = history->VisitIdToResultNode(aVisitId, mOptions,
-                                      getter_AddRefs(visitNode));
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!visitNode) {
-      
-      return NS_OK;
-    }
-    node->mFrecency = visitNode->mFrecency;
+    node->mFrecency = aFrecency;
 
     nsNavHistoryResult* result = GetResult();
     if (AreChildrenVisible() && !result->CanSkipHistoryDetailsNotifications()) {
@@ -4047,7 +4045,8 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
                                      PRTime aTime, uint32_t aTransitionType,
                                      const nsACString& aGUID, bool aHidden,
                                      uint32_t aVisitCount,
-                                     const nsAString& aLastKnownTitle) {
+                                     const nsAString& aLastKnownTitle,
+                                     int64_t aFrecency) {
   NS_ENSURE_ARG(aURI);
 
   
@@ -4057,8 +4056,9 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
 
   uint32_t added = 0;
 
-  ENUMERATE_HISTORY_OBSERVERS(
-      OnVisit(aURI, aVisitId, aTime, aTransitionType, aHidden, &added));
+  ENUMERATE_HISTORY_OBSERVERS(OnVisit(aURI, aVisitId, aTime, aTransitionType,
+                                      aGUID, aHidden, aVisitCount,
+                                      aLastKnownTitle, aFrecency, &added));
 
   
   
@@ -4135,7 +4135,8 @@ nsresult nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId,
       for (int32_t i = 0; i < nodes.Count(); ++i) {
         nsNavHistoryResultNode* node = nodes[i];
         ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(
-            node->mParent->mBookmarkGuid, OnItemVisited(aURI, aVisitId, aTime));
+            node->mParent->mBookmarkGuid,
+            OnItemVisited(aURI, aVisitId, aTime, aFrecency));
       }
     }
   }
@@ -4210,7 +4211,7 @@ void nsNavHistoryResult::HandlePlacesEvent(const PlacesEventSequence& aEvents) {
         }
         OnVisit(uri, visit->mVisitId, visit->mVisitTime * 1000,
                 visit->mTransitionType, visit->mPageGuid, visit->mHidden,
-                visit->mVisitCount, visit->mLastKnownTitle);
+                visit->mVisitCount, visit->mLastKnownTitle, visit->mFrecency);
         break;
       }
       case PlacesEventType::Bookmark_added: {
