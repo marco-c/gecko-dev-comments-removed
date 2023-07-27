@@ -8,7 +8,7 @@
 
 requestLongerTimeout(2);
 
-const kWhitelist = new Set([
+const kAllowlist = new Set([
   /browser\/content\/browser\/places\/controller.js$/,
 ]);
 
@@ -40,9 +40,9 @@ init();
 
 
 
-function uriIsWhiteListed(uri) {
-  for (let whitelistItem of kWhitelist) {
-    if (whitelistItem.test(uri.spec)) {
+function uriIsAllowed(uri) {
+  for (let allowlistItem of kAllowlist) {
+    if (allowlistItem.test(uri.spec)) {
       return true;
     }
   }
@@ -60,8 +60,8 @@ function uriIsESModule(uri) {
     return true;
   }
 
-  for (let whitelistItem of kESModuleList) {
-    if (whitelistItem.test(uri.spec)) {
+  for (let allowlistItem of kESModuleList) {
+    if (allowlistItem.test(uri.spec)) {
       return true;
     }
   }
@@ -153,8 +153,8 @@ add_task(async function checkAllTheJS() {
   
   
   await PerfTestHelpers.throttledMapPromises(uris, uri => {
-    if (uriIsWhiteListed(uri)) {
-      info("Not checking whitelisted " + uri.spec);
+    if (uriIsAllowed(uri)) {
+      info("Not checking allowlisted " + uri.spec);
       return undefined;
     }
     let target = "script";
