@@ -5,7 +5,6 @@
 
 #include "nsWindowsPackageManager.h"
 #include "mozilla/Logging.h"
-#include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/mscom/EnsureMTA.h"
 #ifndef __MINGW32__
@@ -49,11 +48,6 @@ nsWindowsPackageManager::FindUserInstalledPackages(
 #ifdef __MINGW32__
   return NS_ERROR_NOT_IMPLEMENTED;
 #else
-  
-  if (!mozilla::IsWin10OrLater()) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
   ComPtr<IInspectable> pmInspectable;
   ComPtr<Deployment::IPackageManager> pm;
   HRESULT hr = RoActivateInstance(
@@ -116,11 +110,6 @@ nsWindowsPackageManager::GetInstalledDate(uint64_t* ts) {
 #ifdef __MINGW32__
   return NS_ERROR_NOT_IMPLEMENTED;
 #else
-  
-  if (!mozilla::IsWin10OrLater()) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
   ComPtr<ApplicationModel::IPackageStatics> pkgStatics;
   HRESULT hr = RoGetActivationFactory(
       HStringReference(RuntimeClass_Windows_ApplicationModel_Package).Get(),
@@ -158,8 +147,7 @@ nsWindowsPackageManager::GetCampaignId(nsAString& aCampaignId) {
   return NS_ERROR_NOT_IMPLEMENTED;
 #else
   
-  
-  if (!mozilla::IsWin10OrLater() || !mozilla::HasPackageIdentity()) {
+  if (!mozilla::HasPackageIdentity()) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
