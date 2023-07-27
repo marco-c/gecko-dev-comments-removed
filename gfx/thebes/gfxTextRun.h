@@ -1427,11 +1427,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  already_AddRefed<gfxFont> GetFontAt(int32_t i, uint32_t aCh, bool* aLoading);
+  already_AddRefed<gfxFont> GetFontAt(uint32_t i, uint32_t aCh, bool* aLoading);
 
   
   
-  already_AddRefed<gfxFont> GetFontAt(int32_t i, uint32_t aCh = 0x20) {
+  already_AddRefed<gfxFont> GetFontAt(uint32_t i, uint32_t aCh = 0x20) {
     bool loading = false;
     return GetFontAt(i, aCh, &loading);
   }
