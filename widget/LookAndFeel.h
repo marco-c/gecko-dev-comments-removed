@@ -112,21 +112,6 @@ class LookAndFeel {
 
 
 
-
-
-
-    WindowsDefaultTheme,
-
-    
-
-
-
-    MacGraphiteTheme,
-
-    
-
-
-
     MacBigSurTheme,
 
     
