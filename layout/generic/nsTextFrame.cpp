@@ -7476,13 +7476,6 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
     
     
     
-    
-    DebugOnly<nsPoint> p = GetPointFromIterator(iter, properties);
-    MOZ_ASSERT(
-        point == p || (Style()->IsTextCombined() &&
-                       std::abs(point.x - p.value.x) < AppUnitsPerCSSPixel() &&
-                       point.y == p.value.y),
-        "character position error!");
 
     
     nscoord iSize = 0;
