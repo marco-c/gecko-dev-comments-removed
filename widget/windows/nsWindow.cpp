@@ -581,7 +581,8 @@ namespace mozilla {
 
 class InitializeVirtualDesktopManagerTask : public Task {
  public:
-  InitializeVirtualDesktopManagerTask() : Task(false, kDefaultPriorityValue) {}
+  InitializeVirtualDesktopManagerTask()
+      : Task(Kind::OffMainThreadOnly, kDefaultPriorityValue) {}
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
   bool GetName(nsACString& aName) override {
@@ -2296,7 +2297,7 @@ void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
 void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
   struct UpdateWorkspaceIdTask : public Task {
     explicit UpdateWorkspaceIdTask(nsWindow* aSelf)
-        : Task(false , EventQueuePriority::Normal),
+        : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
           mSelf(aSelf) {}
 
     bool Run() override {
