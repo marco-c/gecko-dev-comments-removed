@@ -2,28 +2,30 @@
 
 
 
-use crate::backend::{CodeOracle, CodeType};
+use crate::backend::CodeType;
 
+#[derive(Debug)]
 pub struct TimestampCodeType;
 
 impl CodeType for TimestampCodeType {
-    fn type_label(&self, _oracle: &dyn CodeOracle) -> String {
+    fn type_label(&self) -> String {
         "Date".into()
     }
 
-    fn canonical_name(&self, _oracle: &dyn CodeOracle) -> String {
+    fn canonical_name(&self) -> String {
         "Timestamp".into()
     }
 }
 
+#[derive(Debug)]
 pub struct DurationCodeType;
 
 impl CodeType for DurationCodeType {
-    fn type_label(&self, _oracle: &dyn CodeOracle) -> String {
+    fn type_label(&self) -> String {
         "TimeInterval".into()
     }
 
-    fn canonical_name(&self, _oracle: &dyn CodeOracle) -> String {
+    fn canonical_name(&self) -> String {
         "Duration".into()
     }
 }

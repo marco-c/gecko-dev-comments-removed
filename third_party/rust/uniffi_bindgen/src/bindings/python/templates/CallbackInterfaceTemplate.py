@@ -1,4 +1,4 @@
-{%- let cbi = ci.get_callback_interface_definition(id).unwrap() %}
+{%- let cbi = ci|get_callback_interface_definition(id) %}
 {%- let foreign_callback = format!("foreignCallback{}", canonical_type_name) %}
 
 {% if self.include_once_check("CallbackInterfaceRuntime.py") %}{% include "CallbackInterfaceRuntime.py" %}{% endif %}
@@ -7,38 +7,55 @@
 
 class {{ type_name }}:
     {% for meth in cbi.methods() -%}
-    def {{ meth.name()|fn_name }}({% call py::arg_list_decl(meth) %}):
+    def {{ meth.name()|fn_name }}(self, {% call py::arg_list_decl(meth) %}):
         raise NotImplementedError
 
     {% endfor %}
 
-def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
+def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
     {% for meth in cbi.methods() -%}
     {% let method_name = format!("invoke_{}", meth.name())|fn_name %}
-    def {{ method_name }}(python_callback, args):
+    def {{ method_name }}(python_callback, args_stream, buf_ptr):
         {
-        {%- if meth.arguments().len() != 0 -%}
-        {
-        with args.consumeWithStream() as buf:
-            rval = python_callback.{{ meth.name()|fn_name }}(
+        def makeCall():
+            {
+            {%- if meth.arguments().len() != 0 -%}
+            return python_callback.{{ meth.name()|fn_name }}(
                 {% for arg in meth.arguments() -%}
-                {{ arg|read_fn }}(buf)
+                {{ arg|read_fn }}(args_stream)
                 {%- if !loop.last %}, {% endif %}
                 {% endfor -%}
             )
-        {% else %}
-        rval = python_callback.{{ meth.name()|fn_name }}()
-        {% endif -%}
+            {%- else %}
+            return python_callback.{{ meth.name()|fn_name }}()
+            {%- endif %}
 
-        {
-        {%- match meth.return_type() -%}
-        {%- when Some with (return_type) -%}
-        with RustBuffer.allocWithBuilder() as builder:
-            {{ return_type|write_fn }}(rval, builder)
-            return builder.finalize()
-        {%- else -%}
-        return RustBuffer.alloc(0)
-        {% endmatch -%}
+        def makeCallAndHandleReturn():
+            {%- match meth.return_type() %}
+            {%- when Some(return_type) %}
+            rval = makeCall()
+            with RustBuffer.allocWithBuilder() as builder:
+                {{ return_type|write_fn }}(rval, builder)
+                buf_ptr[0] = builder.finalize()
+            {%- when None %}
+            makeCall()
+            {%- endmatch %}
+            return UNIFFI_CALLBACK_SUCCESS
+
+        {%- match meth.throws_type() %}
+        {%- when None %}
+        return makeCallAndHandleReturn()
+        {%- when Some(err) %}
+        try:
+            return makeCallAndHandleReturn()
+        except {{ err|type_name }} as e:
+            
+            with RustBuffer.allocWithBuilder() as builder:
+                {{ err|write_fn }}(e, builder)
+                buf_ptr[0] = builder.finalize()
+            return UNIFFI_CALLBACK_ERROR
+        {%- endmatch %}
+
     {% endfor %}
 
     cb = {{ ffi_converter_name }}.lift(handle)
@@ -49,7 +66,7 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
         {{ ffi_converter_name }}.drop(handle)
         
         
-        return 0
+        return UNIFFI_CALLBACK_SUCCESS
 
     {% for meth in cbi.methods() -%}
     {% let method_name = format!("invoke_{}", meth.name())|fn_name -%}
@@ -57,23 +74,7 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
         
         
         try:
-            {%- match meth.throws_type() %}
-            {%- when Some(err) %}
-            try:
-                
-                buf_ptr[0] = {{ method_name }}(cb, args)
-                return 1
-            except {{ err|type_name }} as e:
-                
-                with RustBuffer.allocWithBuilder() as builder:
-                    {{ err|write_fn }}(e, builder)
-                    buf_ptr[0] = builder.finalize()
-                return -2
-            {%- else %}
-            
-            buf_ptr[0] = {{ method_name }}(cb, args)
-            return 1
-            {%- endmatch %}
+            return {{ method_name }}(cb, RustBufferStream(args_data, args_len), buf_ptr)
         except BaseException as e:
             
             try:
@@ -82,7 +83,7 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
             except:
                 
                 pass
-            return -1
+            return UNIFFI_CALLBACK_UNEXPECTED_ERROR
     {% endfor %}
 
     
@@ -91,14 +92,14 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
 
     
     
-    return -1
+    return UNIFFI_CALLBACK_UNEXPECTED_ERROR
 
 
 
 
 
 {{ foreign_callback }} = FOREIGN_CALLBACK_T(py_{{ foreign_callback }})
-
-
 rust_call(lambda err: _UniFFILib.{{ cbi.ffi_init_callback().name() }}({{ foreign_callback }}, err))
+
+
 {{ ffi_converter_name }} = FfiConverterCallbackInterface({{ foreign_callback }})

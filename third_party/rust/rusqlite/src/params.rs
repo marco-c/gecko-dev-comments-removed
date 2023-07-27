@@ -177,8 +177,6 @@ use sealed::Sealed;
 
 
 
-
-
 pub trait Params: Sealed {
     
     
@@ -190,7 +188,6 @@ pub trait Params: Sealed {
     #[doc(hidden)]
     fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()>;
 }
-
 
 
 

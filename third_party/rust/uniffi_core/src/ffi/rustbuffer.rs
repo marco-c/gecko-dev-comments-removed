@@ -2,7 +2,7 @@
 
 
 
-use crate::ffi::{call_with_output, ForeignBytes, RustCallStatus};
+use crate::ffi::{rust_call, ForeignBytes, RustCallStatus};
 
 
 
@@ -99,6 +99,11 @@ impl RustBuffer {
         self.len
             .try_into()
             .expect("buffer length negative or overflowed")
+    }
+
+    
+    pub fn data_pointer(&self) -> *const u8 {
+        self.data
     }
 
     
@@ -207,8 +212,8 @@ pub extern "C" fn uniffi_rustbuffer_alloc(
     size: i32,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
-    call_with_output(call_status, || {
-        RustBuffer::new_with_size(size.max(0) as usize)
+    rust_call(call_status, || {
+        Ok(RustBuffer::new_with_size(size.max(0) as usize))
     })
 }
 
@@ -225,9 +230,9 @@ pub unsafe extern "C" fn uniffi_rustbuffer_from_bytes(
     bytes: ForeignBytes,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
-    call_with_output(call_status, || {
+    rust_call(call_status, || {
         let bytes = bytes.as_slice();
-        RustBuffer::from_vec(bytes.to_vec())
+        Ok(RustBuffer::from_vec(bytes.to_vec()))
     })
 }
 
@@ -239,7 +244,10 @@ pub unsafe extern "C" fn uniffi_rustbuffer_from_bytes(
 
 #[no_mangle]
 pub unsafe extern "C" fn uniffi_rustbuffer_free(buf: RustBuffer, call_status: &mut RustCallStatus) {
-    call_with_output(call_status, || RustBuffer::destroy(buf))
+    rust_call(call_status, || {
+        RustBuffer::destroy(buf);
+        Ok(())
+    })
 }
 
 
@@ -263,13 +271,13 @@ pub unsafe extern "C" fn uniffi_rustbuffer_reserve(
     additional: i32,
     call_status: &mut RustCallStatus,
 ) -> RustBuffer {
-    call_with_output(call_status, || {
+    rust_call(call_status, || {
         let additional: usize = additional
             .try_into()
             .expect("additional buffer length negative or overflowed");
         let mut v = buf.destroy_into_vec();
         v.reserve(additional);
-        RustBuffer::from_vec(v)
+        Ok(RustBuffer::from_vec(v))
     })
 }
 

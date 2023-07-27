@@ -97,7 +97,7 @@ const BINDGEN_VERSION: &str = env!("CARGO_PKG_VERSION");
 use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use fs_err::{self as fs, File};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::io::prelude::*;
 use std::io::ErrorKind;
 use std::{collections::HashMap, env, process::Command, str::FromStr};
@@ -105,9 +105,11 @@ use std::{collections::HashMap, env, process::Command, str::FromStr};
 pub mod backend;
 pub mod bindings;
 pub mod interface;
+pub mod library_mode;
 pub mod macro_metadata;
 pub mod scaffolding;
 
+use bindings::TargetLanguage;
 pub use interface::ComponentInterface;
 use scaffolding::RustScaffolding;
 
@@ -115,66 +117,50 @@ use scaffolding::RustScaffolding;
 
 
 
+pub trait BindingsConfig: DeserializeOwned {
+    
+    const TOML_KEY: &'static str;
 
-pub trait BindingGeneratorConfig: for<'de> Deserialize<'de> {
     
-    fn get_entry_from_bindings_table(bindings: &toml::Value) -> Option<toml::Value>;
+    fn update_from_ci(&mut self, ci: &ComponentInterface);
 
     
     
     
-    fn get_config_defaults(ci: &ComponentInterface) -> Vec<(String, toml::Value)>;
+    fn update_from_cdylib_name(&mut self, cdylib_name: &str);
+
+    
+    
+    
+    
+    fn update_from_dependency_configs(&mut self, config_map: HashMap<&str, &Self>);
 }
 
-fn load_bindings_config<BC: BindingGeneratorConfig>(
+fn load_bindings_config<BC: BindingsConfig>(
     ci: &ComponentInterface,
     crate_root: &Utf8Path,
     config_file_override: Option<&Utf8Path>,
 ) -> Result<BC> {
     
-    let mut config_map: toml::value::Table =
-        match load_bindings_config_toml::<BC>(crate_root, config_file_override)? {
-            Some(value) => value
-                .try_into()
-                .context("Bindings config must be a TOML table")?,
-            None => toml::map::Map::new(),
-        };
+    let toml_config = load_bindings_config_toml(crate_root, config_file_override)?
+        .and_then(|mut v| v.as_table_mut().and_then(|t| t.remove(BC::TOML_KEY)))
+        .unwrap_or_else(|| toml::Value::from(toml::value::Table::default()));
 
-    
-    for (key, value) in BC::get_config_defaults(ci) {
-        config_map.entry(key).or_insert(value);
-    }
-
-    
-    toml::Value::from(config_map)
-        .try_into()
-        .context("Generating bindings config from toml::Value")
+    let mut config: BC = toml_config.try_into()?;
+    config.update_from_ci(ci);
+    Ok(config)
 }
 
 
-#[derive(Clone, Debug, Hash, PartialEq, PartialOrd, Ord, Eq)]
-pub struct EmptyBindingGeneratorConfig;
+#[derive(Clone, Debug, Deserialize, Hash, PartialEq, PartialOrd, Ord, Eq)]
+pub struct EmptyBindingsConfig;
 
-impl BindingGeneratorConfig for EmptyBindingGeneratorConfig {
-    fn get_entry_from_bindings_table(_bindings: &toml::Value) -> Option<toml::Value> {
-        None
-    }
+impl BindingsConfig for EmptyBindingsConfig {
+    const TOML_KEY: &'static str = "";
 
-    fn get_config_defaults(_ci: &ComponentInterface) -> Vec<(String, toml::Value)> {
-        Vec::new()
-    }
-}
-
-
-
-
-impl<'de> Deserialize<'de> for EmptyBindingGeneratorConfig {
-    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        Ok(EmptyBindingGeneratorConfig)
-    }
+    fn update_from_ci(&mut self, _ci: &ComponentInterface) {}
+    fn update_from_cdylib_name(&mut self, _cdylib_name: &str) {}
+    fn update_from_dependency_configs(&mut self, _config_map: HashMap<&str, &Self>) {}
 }
 
 
@@ -184,7 +170,7 @@ impl<'de> Deserialize<'de> for EmptyBindingGeneratorConfig {
 
 
 
-fn load_bindings_config_toml<BC: BindingGeneratorConfig>(
+fn load_bindings_config_toml(
     crate_root: &Utf8Path,
     config_file_override: Option<&Utf8Path>,
 ) -> Result<Option<toml::Value>> {
@@ -199,12 +185,12 @@ fn load_bindings_config_toml<BC: BindingGeneratorConfig>(
 
     let contents = fs::read_to_string(&config_path)
         .with_context(|| format!("Failed to read config file from {config_path}"))?;
-    let full_config = toml::Value::from_str(&contents)
+    let mut full_config = toml::Value::from_str(&contents)
         .with_context(|| format!("Failed to parse config file {config_path}"))?;
 
     Ok(full_config
-        .get("bindings")
-        .and_then(BC::get_entry_from_bindings_table))
+        .as_table_mut()
+        .and_then(|t| t.remove("bindings")))
 }
 
 
@@ -213,8 +199,7 @@ fn load_bindings_config_toml<BC: BindingGeneratorConfig>(
 
 pub trait BindingGenerator: Sized {
     
-    
-    type Config: BindingGeneratorConfig;
+    type Config: BindingsConfig;
 
     
     
@@ -264,16 +249,10 @@ pub fn generate_external_bindings(
 
 pub fn generate_component_scaffolding(
     udl_file: &Utf8Path,
-    config_file_override: Option<&Utf8Path>,
     out_dir_override: Option<&Utf8Path>,
     format_code: bool,
 ) -> Result<()> {
     let component = parse_udl(udl_file)?;
-    let _config = get_config(
-        &component,
-        guess_crate_root(udl_file)?,
-        config_file_override,
-    );
     let file_stem = udl_file.file_stem().context("not a file")?;
     let filename = format!("{file_stem}.uniffi.rs");
     let out_path = get_out_dir(udl_file, out_dir_override)?.join(filename);
@@ -290,7 +269,7 @@ pub fn generate_component_scaffolding(
 pub fn generate_bindings(
     udl_file: &Utf8Path,
     config_file_override: Option<&Utf8Path>,
-    target_languages: Vec<&str>,
+    target_languages: Vec<TargetLanguage>,
     out_dir_override: Option<&Utf8Path>,
     library_file: Option<&Utf8Path>,
     try_format_code: bool,
@@ -299,16 +278,17 @@ pub fn generate_bindings(
     if let Some(library_file) = library_file {
         macro_metadata::add_to_ci_from_library(&mut component, library_file)?;
     }
-    let crate_root = &guess_crate_root(udl_file)?;
+    let crate_root = &guess_crate_root(udl_file).context("Failed to guess crate root")?;
 
-    let config = get_config(&component, crate_root, config_file_override)?;
+    let mut config = Config::load_initial(crate_root, config_file_override)?;
+    config.update_from_ci(&component);
     let out_dir = get_out_dir(udl_file, out_dir_override)?;
     for language in target_languages {
         bindings::write_bindings(
             &config.bindings,
             &component,
             &out_dir,
-            language.try_into()?,
+            language,
             try_format_code,
         )?;
     }
@@ -341,30 +321,6 @@ pub fn guess_crate_root(udl_file: &Utf8Path) -> Result<&Utf8Path> {
         bail!("UDL file does not appear to be inside a crate")
     }
     Ok(path_guess)
-}
-
-fn get_config(
-    component: &ComponentInterface,
-    crate_root: &Utf8Path,
-    config_file_override: Option<&Utf8Path>,
-) -> Result<Config> {
-    let default_config: Config = component.into();
-
-    let config_file = match config_file_override {
-        Some(cfg) => Some(cfg.to_owned()),
-        None => crate_root.join("uniffi.toml").canonicalize_utf8().ok(),
-    };
-
-    match config_file {
-        Some(path) => {
-            let contents = fs::read_to_string(&path)
-                .with_context(|| format!("Failed to read config file from {path}"))?;
-            let loaded_config: Config = toml::de::from_str(&contents)
-                .with_context(|| format!("Failed to generate config from file {path}"))?;
-            Ok(loaded_config.merge_with(&default_config))
-        }
-        None => Ok(default_config),
-    }
 }
 
 fn get_out_dir(udl_file: &Utf8Path, out_dir_override: Option<&Utf8Path>) -> Result<Utf8PathBuf> {
@@ -402,49 +358,69 @@ fn format_code_with_rustfmt(path: &Utf8Path) -> Result<()> {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct Config {
+pub struct Config {
     #[serde(default)]
     bindings: bindings::Config,
 }
 
-impl From<&ComponentInterface> for Config {
-    fn from(ci: &ComponentInterface) -> Self {
-        Config {
-            bindings: ci.into(),
-        }
+impl Config {
+    fn load_initial(
+        crate_root: &Utf8Path,
+        config_file_override: Option<&Utf8Path>,
+    ) -> Result<Self> {
+        let path = match config_file_override {
+            Some(cfg) => Some(cfg.to_owned()),
+            None => crate_root.join("uniffi.toml").canonicalize_utf8().ok(),
+        };
+        let toml_config = match path {
+            Some(path) => {
+                let contents = fs::read_to_string(path).context("Failed to read config file")?;
+                toml::de::from_str(&contents)?
+            }
+            None => toml::Value::from(toml::value::Table::default()),
+        };
+        Ok(toml_config.try_into()?)
     }
-}
 
-pub trait MergeWith {
-    fn merge_with(&self, other: &Self) -> Self;
-}
-
-impl MergeWith for Config {
-    fn merge_with(&self, other: &Self) -> Self {
-        Config {
-            bindings: self.bindings.merge_with(&other.bindings),
-        }
+    fn update_from_ci(&mut self, ci: &ComponentInterface) {
+        self.bindings.kotlin.update_from_ci(ci);
+        self.bindings.swift.update_from_ci(ci);
+        self.bindings.python.update_from_ci(ci);
+        self.bindings.ruby.update_from_ci(ci);
     }
-}
 
-impl<T: Clone> MergeWith for Option<T> {
-    fn merge_with(&self, other: &Self) -> Self {
-        match (self, other) {
-            (Some(_), _) => self.clone(),
-            (None, Some(_)) => other.clone(),
-            (None, None) => None,
-        }
+    fn update_from_cdylib_name(&mut self, cdylib_name: &str) {
+        self.bindings.kotlin.update_from_cdylib_name(cdylib_name);
+        self.bindings.swift.update_from_cdylib_name(cdylib_name);
+        self.bindings.python.update_from_cdylib_name(cdylib_name);
+        self.bindings.ruby.update_from_cdylib_name(cdylib_name);
     }
-}
 
-impl<V: Clone> MergeWith for HashMap<String, V> {
-    fn merge_with(&self, other: &Self) -> Self {
-        let mut merged = HashMap::new();
-        
-        for (key, value) in other.iter().chain(self) {
-            merged.insert(key.clone(), value.clone());
-        }
-        merged
+    fn update_from_dependency_configs(&mut self, config_map: HashMap<&str, &Self>) {
+        self.bindings.kotlin.update_from_dependency_configs(
+            config_map
+                .iter()
+                .map(|(key, config)| (*key, &config.bindings.kotlin))
+                .collect(),
+        );
+        self.bindings.swift.update_from_dependency_configs(
+            config_map
+                .iter()
+                .map(|(key, config)| (*key, &config.bindings.swift))
+                .collect(),
+        );
+        self.bindings.python.update_from_dependency_configs(
+            config_map
+                .iter()
+                .map(|(key, config)| (*key, &config.bindings.python))
+                .collect(),
+        );
+        self.bindings.ruby.update_from_dependency_configs(
+            config_map
+                .iter()
+                .map(|(key, config)| (*key, &config.bindings.ruby))
+                .collect(),
+        );
     }
 }
 
@@ -471,13 +447,13 @@ mod test {
         let example_crate_root = this_crate_root
             .parent()
             .expect("should have a parent directory")
-            .join("./examples/arithmetic");
+            .join("examples/arithmetic");
         assert_eq!(
-            guess_crate_root(&example_crate_root.join("./src/arthmetic.udl")).unwrap(),
+            guess_crate_root(&example_crate_root.join("src/arthmetic.udl")).unwrap(),
             example_crate_root
         );
 
-        let not_a_crate_root = &this_crate_root.join("./src/templates");
-        assert!(guess_crate_root(&not_a_crate_root.join("./src/example.udl")).is_err());
+        let not_a_crate_root = &this_crate_root.join("src/templates");
+        assert!(guess_crate_root(&not_a_crate_root.join("src/example.udl")).is_err());
     }
 }

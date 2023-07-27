@@ -181,7 +181,6 @@ pub enum AuthAction<'c> {
         operation: TransactionOperation,
         savepoint_name: &'c str,
     },
-    #[cfg(feature = "modern_sqlite")]
     Recursive,
 }
 
@@ -285,7 +284,6 @@ impl<'c> AuthAction<'c> {
                 operation: TransactionOperation::from_str(operation_str),
                 savepoint_name,
             },
-            #[cfg(feature = "modern_sqlite")] 
             (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }
@@ -428,11 +426,7 @@ impl InnerConnection {
                 let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)()
             });
-            if let Ok(true) = r {
-                1
-            } else {
-                0
-            }
+            c_int::from(r.unwrap_or_default())
         }
 
         
@@ -570,11 +564,7 @@ impl InnerConnection {
                 let boxed_handler: *mut F = p_arg.cast::<F>();
                 (*boxed_handler)()
             });
-            if let Ok(true) = r {
-                1
-            } else {
-                0
-            }
+            c_int::from(r.unwrap_or_default())
         }
 
         if let Some(handler) = handler {

@@ -474,6 +474,10 @@ fn initialize_inner(
             });
 
             
+            
+            
+            
+            
             match dispatcher::flush_init() {
                 Ok(task_count) if task_count > 0 => {
                     core::with_glean(|glean| {
@@ -567,15 +571,41 @@ pub fn shutdown() {
     
     
     
-    if !was_initialize_called() || core::global_glean().is_none() {
+    
+    
+    
+
+    
+    if !was_initialize_called() {
         log::warn!("Shutdown called before Glean is initialized");
         if let Err(e) = dispatcher::kill() {
             log::error!("Can't kill dispatcher thread: {:?}", e);
         }
-
         return;
     }
 
+    
+    if core::global_glean().is_none() {
+        log::warn!("Shutdown called before Glean is initialized. Waiting.");
+        
+        
+        
+
+        
+        
+        
+        let _ = dispatcher::block_on_queue_timeout(Duration::from_secs(10));
+    }
+    
+    if core::global_glean().is_none() {
+        log::warn!("Waiting for Glean initialization timed out. Exiting.");
+        if let Err(e) = dispatcher::kill() {
+            log::error!("Can't kill dispatcher thread: {:?}", e);
+        }
+        return;
+    }
+
+    
     crate::launch_with_glean_mut(|glean| {
         glean.cancel_metrics_ping_scheduler();
         glean.set_dirty_flag(false);
@@ -593,12 +623,9 @@ pub fn shutdown() {
             .shutdown_dispatcher_wait
             .start_sync()
     });
-    if dispatcher::block_on_queue_timeout(Duration::from_secs(10)).is_err() {
-        log::error!(
-            "Timeout while blocking on the dispatcher. No further shutdown cleanup will happen."
-        );
-        return;
-    }
+    let blocked = dispatcher::block_on_queue_timeout(Duration::from_secs(10));
+
+    
     let stop_time = time::precise_time_ns();
     core::with_glean(|glean| {
         glean
@@ -606,6 +633,12 @@ pub fn shutdown() {
             .shutdown_dispatcher_wait
             .set_stop_and_accumulate(glean, timer_id, stop_time);
     });
+    if blocked.is_err() {
+        log::error!(
+            "Timeout while blocking on the dispatcher. No further shutdown cleanup will happen."
+        );
+        return;
+    }
 
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);

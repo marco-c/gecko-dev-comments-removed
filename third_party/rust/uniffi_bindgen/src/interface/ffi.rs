@@ -18,7 +18,7 @@
 
 
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FfiType {
     
     UInt8,
@@ -46,8 +46,20 @@ pub enum FfiType {
     
     ForeignBytes,
     
-    
     ForeignCallback,
+    
+    
+    ForeignExecutorHandle,
+    
+    ForeignExecutorCallback,
+    
+    FutureCallback {
+        
+        
+        return_type: Box<FfiType>,
+    },
+    
+    FutureCallbackData,
     
     
 }
@@ -58,22 +70,88 @@ pub enum FfiType {
 
 
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct FfiFunction {
     pub(super) name: String,
+    pub(super) is_async: bool,
     pub(super) arguments: Vec<FfiArgument>,
     pub(super) return_type: Option<FfiType>,
+    pub(super) has_rust_call_status_arg: bool,
+    
+    
+    pub(super) is_object_free_function: bool,
 }
 
 impl FfiFunction {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    pub fn is_async(&self) -> bool {
+        self.is_async
+    }
+
     pub fn arguments(&self) -> Vec<&FfiArgument> {
         self.arguments.iter().collect()
     }
+
     pub fn return_type(&self) -> Option<&FfiType> {
         self.return_type.as_ref()
+    }
+
+    pub fn has_rust_call_status_arg(&self) -> bool {
+        self.has_rust_call_status_arg
+    }
+
+    pub fn is_object_free_function(&self) -> bool {
+        self.is_object_free_function
+    }
+
+    pub fn init(
+        &mut self,
+        return_type: Option<FfiType>,
+        args: impl IntoIterator<Item = FfiArgument>,
+    ) {
+        self.arguments = args.into_iter().collect();
+        if self.is_async() {
+            self.arguments.extend([
+                
+                FfiArgument {
+                    name: "uniffi_executor".into(),
+                    type_: FfiType::ForeignExecutorHandle,
+                },
+                
+                FfiArgument {
+                    name: "uniffi_callback".into(),
+                    type_: FfiType::FutureCallback {
+                        return_type: Box::new(return_type.unwrap_or(FfiType::UInt8)),
+                    },
+                },
+                
+                FfiArgument {
+                    name: "uniffi_callback_data".into(),
+                    type_: FfiType::FutureCallbackData,
+                },
+            ]);
+            
+            
+            self.return_type = None;
+        } else {
+            self.return_type = return_type;
+        }
+    }
+}
+
+impl Default for FfiFunction {
+    fn default() -> Self {
+        Self {
+            name: "".into(),
+            is_async: false,
+            arguments: Vec::new(),
+            return_type: None,
+            has_rust_call_status_arg: true,
+            is_object_free_function: false,
+        }
     }
 }
 

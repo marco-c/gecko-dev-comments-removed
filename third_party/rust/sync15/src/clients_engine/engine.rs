@@ -4,13 +4,13 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::bso::{IncomingKind, OutgoingBso, OutgoingEnvelope};
+use crate::bso::{IncomingBso, IncomingKind, OutgoingBso, OutgoingEnvelope};
 use crate::client::{
     CollState, CollectionKeys, CollectionUpdate, GlobalState, InfoConfiguration,
     Sync15StorageClient,
 };
 use crate::client_types::{ClientData, RemoteClient};
-use crate::engine::{CollectionRequest, IncomingChangeset, OutgoingChangeset};
+use crate::engine::CollectionRequest;
 use crate::{error::Result, Guid, KeyBundle};
 use interrupt_support::Interruptee;
 
@@ -51,16 +51,16 @@ impl<'a> Driver<'a> {
 
     fn sync(
         &mut self,
-        inbound: IncomingChangeset,
+        inbound: Vec<IncomingBso>,
         should_refresh_client: bool,
-    ) -> Result<OutgoingChangeset> {
+    ) -> Result<Vec<OutgoingBso>> {
         self.interruptee.err_if_interrupted()?;
         let outgoing_commands = self.command_processor.fetch_outgoing_commands()?;
 
         let mut has_own_client_record = false;
         let mut changes = Vec::new();
 
-        for bso in inbound.changes {
+        for bso in inbound {
             self.interruptee.err_if_interrupted()?;
 
             let content = bso.into_content();
@@ -188,7 +188,7 @@ impl<'a> Driver<'a> {
             changes.push(OutgoingBso::from_content(envelope, current_client_record)?);
         }
 
-        Ok(OutgoingChangeset::new(COLLECTION_NAME.into(), changes))
+        Ok(changes)
     }
 
     
@@ -305,9 +305,14 @@ impl<'a> Engine<'a> {
         self.recent_clients = driver.recent_clients;
 
         self.interruptee.err_if_interrupted()?;
-        let upload_info =
-            CollectionUpdate::new_from_changeset(storage_client, &coll_state, outgoing, true)?
-                .upload()?;
+        let upload_info = CollectionUpdate::new_from_changeset(
+            storage_client,
+            &coll_state,
+            COLLECTION_NAME.into(),
+            outgoing,
+            true,
+        )?
+        .upload()?;
 
         log::info!(
             "Upload success ({} records success, {} records failed)",
@@ -323,7 +328,7 @@ impl<'a> Engine<'a> {
         &self,
         storage_client: &Sync15StorageClient,
         coll_state: &CollState,
-    ) -> Result<IncomingChangeset> {
+    ) -> Result<Vec<IncomingBso>> {
         
         
         
@@ -354,7 +359,6 @@ mod tests {
     use super::super::{CommandStatus, DeviceType, Settings};
     use super::*;
     use crate::bso::IncomingBso;
-    use crate::ServerTimestamp;
     use anyhow::Result;
     use interrupt_support::NeverInterrupts;
     use serde_json::{json, Value};
@@ -387,17 +391,12 @@ mod tests {
         }
     }
 
-    fn inbound_from_clients(clients: Value) -> IncomingChangeset {
+    fn inbound_from_clients(clients: Value) -> Vec<IncomingBso> {
         if let Value::Array(clients) = clients {
-            let changes = clients
+            clients
                 .into_iter()
                 .map(IncomingBso::from_test_content)
-                .collect();
-            IncomingChangeset {
-                changes,
-                timestamp: ServerTimestamp(0),
-                collection: COLLECTION_NAME.into(),
-            }
+                .collect()
         } else {
             unreachable!("`clients` must be an array of client records")
         }
@@ -465,9 +464,7 @@ mod tests {
         
         
         let mut outgoing = driver.sync(inbound, false).expect("Should sync clients");
-        outgoing
-            .changes
-            .sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
+        outgoing.sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
 
         
         let expected_ids = &["deviceAAAAAA", "deviceBBBBBB", "deviceCCCCCC"];
@@ -544,17 +541,12 @@ mod tests {
             "fxaDeviceId": "deviceCCCCCC",
         }]);
         
-        let incoming = IncomingChangeset {
-            changes: outgoing
-                .changes
-                .into_iter()
-                .map(|c| OutgoingBso::to_test_incoming(&c))
-                .collect(),
-            timestamp: ServerTimestamp::default(),
-            collection: outgoing.collection,
-        };
+        let incoming = outgoing
+            .into_iter()
+            .map(|c| OutgoingBso::to_test_incoming(&c))
+            .collect::<Vec<IncomingBso>>();
         if let Value::Array(expected) = expected {
-            for (incoming_cleartext, exp_client) in zip(incoming.changes, expected) {
+            for (incoming_cleartext, exp_client) in zip(incoming, expected) {
                 let incoming_client: ClientRecord =
                     incoming_cleartext.into_content().content().unwrap();
                 assert_eq!(incoming_client, serde_json::from_value(exp_client).unwrap());
@@ -669,7 +661,7 @@ mod tests {
             .sync(inbound_from_clients(test_clients.clone()), false)
             .expect("Should sync clients");
         
-        assert_eq!(outgoing.changes.len(), 0);
+        assert_eq!(outgoing.len(), 0);
 
         
         
@@ -682,7 +674,7 @@ mod tests {
         let outgoing = driver
             .sync(inbound_from_clients(test_clients), true)
             .expect("Should sync clients");
-        assert_eq!(outgoing.changes.len(), 1);
+        assert_eq!(outgoing.len(), 1);
 
         
         
@@ -696,7 +688,7 @@ mod tests {
         }]));
         let outgoing = driver.sync(inbound, false).expect("Should sync clients");
         
-        assert_eq!(outgoing.changes.len(), 1);
+        assert_eq!(outgoing.len(), 1);
     }
 
     #[test]
@@ -728,15 +720,10 @@ mod tests {
         }]);
 
         let inbound = if let Value::Array(clients) = clients {
-            let changes = clients
+            clients
                 .into_iter()
                 .map(IncomingBso::from_test_content)
-                .collect();
-            IncomingChangeset {
-                changes,
-                timestamp: ServerTimestamp(0),
-                collection: COLLECTION_NAME.into(),
-            }
+                .collect()
         } else {
             unreachable!("`clients` must be an array of client records")
         };
@@ -744,9 +731,7 @@ mod tests {
         
         
         let mut outgoing = driver.sync(inbound, false).expect("Should sync clients");
-        outgoing
-            .changes
-            .sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
+        outgoing.sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
 
         
         let expected_ids = &["deviceAAAAAA", "deviceBBBBBB"];
@@ -783,16 +768,11 @@ mod tests {
         }]);
         if let Value::Array(expected) = expected {
             
-            let incoming = IncomingChangeset {
-                changes: outgoing
-                    .changes
-                    .into_iter()
-                    .map(|c| OutgoingBso::to_test_incoming(&c))
-                    .collect(),
-                timestamp: ServerTimestamp::default(),
-                collection: outgoing.collection,
-            };
-            for (incoming_cleartext, record) in zip(incoming.changes, expected) {
+            let incoming = outgoing
+                .into_iter()
+                .map(|c| OutgoingBso::to_test_incoming(&c))
+                .collect::<Vec<IncomingBso>>();
+            for (incoming_cleartext, record) in zip(incoming, expected) {
                 let incoming_client: ClientRecord =
                     incoming_cleartext.into_content().content().unwrap();
                 assert_eq!(incoming_client, serde_json::from_value(record).unwrap());

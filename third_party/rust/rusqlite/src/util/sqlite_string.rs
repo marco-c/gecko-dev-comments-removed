@@ -1,10 +1,7 @@
 
 
 
-#![cfg_attr(
-    not(all(feature = "vtab", feature = "modern-sqlite")),
-    allow(dead_code)
-)]
+#![cfg_attr(not(feature = "vtab"), allow(dead_code))]
 use crate::ffi;
 use std::marker::PhantomData;
 use std::os::raw::{c_char, c_int};
@@ -134,7 +131,8 @@ impl SqliteMallocString {
                     
                     
                     
-                    let layout = Layout::from_size_align_unchecked(s.len().saturating_add(1), 1);
+                    let len = s.len().saturating_add(1).min(isize::MAX as usize);
+                    let layout = Layout::from_size_align_unchecked(len, 1);
                     
                     handle_alloc_error(layout);
                 });
@@ -214,7 +212,7 @@ mod test {
         let mut v = vec![];
         for i in 0..1000 {
             v.push(SqliteMallocString::from_str(&i.to_string()).into_raw());
-            v.push(SqliteMallocString::from_str(&format!("abc {} 😀", i)).into_raw());
+            v.push(SqliteMallocString::from_str(&format!("abc {i} 😀")).into_raw());
         }
         unsafe {
             for (i, s) in v.chunks_mut(2).enumerate() {
@@ -226,7 +224,7 @@ mod test {
                 );
                 assert_eq!(
                     std::ffi::CStr::from_ptr(s1).to_str().unwrap(),
-                    &format!("abc {} 😀", i)
+                    &format!("abc {i} 😀")
                 );
                 let _ = SqliteMallocString::from_raw(s0).unwrap();
                 let _ = SqliteMallocString::from_raw(s1).unwrap();

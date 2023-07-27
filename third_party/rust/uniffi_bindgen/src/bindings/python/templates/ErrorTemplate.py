@@ -1,49 +1,44 @@
-{%- let e = ci.get_error_definition(name).unwrap() %}
 
 
 
 
 
 
+class {{ type_name }}(Exception):
+    pass
 
-class UniFFIExceptionTmpNamespace:
-    class {{ type_name }}(Exception):
-        pass
-    {% for variant in e.variants() %}
-    {%- let variant_type_name = variant.name()|class_name %}
+UniFFITemp{{ type_name }} = {{ type_name }}
 
+class {{ type_name }}:  
+    {%- for variant in e.variants() -%}
+    {%- let variant_type_name = variant.name()|class_name -%}
     {%- if e.is_flat() %}
-    class {{ variant_type_name }}({{ type_name }}):
-        def __str__(self):
-            return "{{ type_name }}.{{ variant_type_name }}({})".format(repr(super().__str__()))
+    class {{ variant_type_name }}(UniFFITemp{{ type_name }}):
+        def __repr__(self):
+            return "{{ type_name }}.{{ variant_type_name }}({})".format(repr(str(self)))
     {%- else %}
-    class {{ variant_type_name }}({{ type_name }}):
+    class {{ variant_type_name }}(UniFFITemp{{ type_name }}):
         def __init__(self{% for field in variant.fields() %}, {{ field.name()|var_name }}{% endfor %}):
             {%- if variant.has_fields() %}
+            super().__init__(", ".join([
+                {%- for field in variant.fields() %}
+                "{{ field.name()|var_name }}={!r}".format({{ field.name()|var_name }}),
+                {%- endfor %}
+            ]))
             {%- for field in variant.fields() %}
             self.{{ field.name()|var_name }} = {{ field.name()|var_name }}
             {%- endfor %}
             {%- else %}
             pass
             {%- endif %}
-
-        def __str__(self):
-            {%- if variant.has_fields() %}
-            field_parts = [
-                {%- for field in variant.fields() %}
-                '{{ field.name()|var_name }}={!r}'.format(self.{{ field.name()|var_name }}),
-                {%- endfor %}
-            ]
-            return "{{ type_name }}.{{ variant_type_name }}({})".format(', '.join(field_parts))
-            {%- else %}
-            return "{{ type_name }}.{{ variant_type_name }}()"
-            {%- endif %}
+        def __repr__(self):
+            return "{{ type_name }}.{{ variant_type_name }}({})".format(str(self))
     {%- endif %}
-
-    {{ type_name }}.{{ variant_type_name }} = {{ variant_type_name }}
+    UniFFITemp{{ type_name }}.{{ variant_type_name }} = {{ variant_type_name }}  
     {%- endfor %}
-{{ type_name }} = UniFFIExceptionTmpNamespace.{{ type_name }}
-del UniFFIExceptionTmpNamespace
+
+{{ type_name }} = UniFFITemp{{ type_name }}  
+del UniFFITemp{{ type_name }}
 
 
 class {{ ffi_converter_name }}(FfiConverterRustBuffer):

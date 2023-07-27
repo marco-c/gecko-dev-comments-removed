@@ -235,7 +235,7 @@ impl Connection {
                 table.as_ptr(),
                 column.as_ptr(),
                 row_id,
-                if read_only { 0 } else { 1 },
+                !read_only as std::os::raw::c_int,
                 &mut blob,
             )
         };
@@ -473,14 +473,14 @@ mod test {
         assert_eq!(&bytes, b"Clob5");
 
         
-        assert!(blob.seek(SeekFrom::Current(-20)).is_err());
-        assert!(blob.seek(SeekFrom::End(0)).is_ok());
-        assert!(blob.seek(SeekFrom::Current(1)).is_err());
+        blob.seek(SeekFrom::Current(-20)).unwrap_err();
+        blob.seek(SeekFrom::End(0)).unwrap();
+        blob.seek(SeekFrom::Current(1)).unwrap_err();
 
         
         
         blob.reopen(rowid)?;
-        assert!(blob.write_all(b"0123456789x").is_err());
+        blob.write_all(b"0123456789x").unwrap_err();
         Ok(())
     }
 
@@ -519,7 +519,7 @@ mod test {
             
             assert_eq!(8, writer.write(b"01234567").unwrap());
             assert_eq!(8, writer.write(b"01234567").unwrap());
-            assert!(writer.flush().is_err());
+            writer.flush().unwrap_err();
         }
 
         {
@@ -536,7 +536,7 @@ mod test {
 
             
             writer.write_all(b"aaaaaaaaaabbbbb").unwrap();
-            assert!(writer.flush().is_err());
+            writer.flush().unwrap_err();
         }
 
         {

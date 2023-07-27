@@ -187,7 +187,6 @@ pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, 
 
 #[repr(i32)]
 #[non_exhaustive]
-#[cfg(feature = "modern_sqlite")] 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum VTabConfig {
     
@@ -203,8 +202,6 @@ pub struct VTabConnection(*mut ffi::sqlite3);
 
 impl VTabConnection {
     
-    #[cfg(feature = "modern_sqlite")] 
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn config(&mut self, config: VTabConfig) -> Result<()> {
         crate::error::check(unsafe { ffi::sqlite3_vtab_config(self.0, config as c_int) })
     }
@@ -369,7 +366,6 @@ impl From<u8> for IndexConstraintOp {
     }
 }
 
-#[cfg(feature = "modern_sqlite")] 
 bitflags::bitflags! {
     /// Virtual table scan flags
     /// See [Function Flags](https://sqlite.org/c3ref/c_index_scan_unique.html) for details.
@@ -461,7 +457,7 @@ impl IndexInfo {
     #[inline]
     pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
         unsafe {
-            (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 };
+            (*self.0).orderByConsumed = order_by_consumed as c_int;
         }
     }
 
@@ -474,8 +470,6 @@ impl IndexInfo {
     }
 
     
-    #[cfg(feature = "modern_sqlite")] 
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
@@ -484,16 +478,12 @@ impl IndexInfo {
     }
 
     
-    #[cfg(feature = "modern_sqlite")] 
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn set_idx_flags(&mut self, flags: IndexFlags) {
         unsafe { (*self.0).idxFlags = flags.bits() };
     }
 
     
-    #[cfg(feature = "modern_sqlite")] 
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn col_used(&self) -> u64 {
         unsafe { (*self.0).colUsed }
@@ -509,7 +499,7 @@ impl IndexInfo {
         if collation.is_null() {
             return Err(Error::SqliteFailure(
                 ffi::Error::new(ffi::SQLITE_MISUSE),
-                Some(format!("{} is out of range", constraint_idx)),
+                Some(format!("{constraint_idx} is out of range")),
             ));
         }
         Ok(unsafe { CStr::from_ptr(collation) }.to_str()?)
@@ -623,13 +613,13 @@ impl IndexConstraintUsage<'_> {
     
     #[inline]
     pub fn set_omit(&mut self, omit: bool) {
-        self.0.omit = if omit { 1 } else { 0 };
+        self.0.omit = omit as std::os::raw::c_uchar;
     }
 }
 
 
 pub struct OrderByIter<'a> {
-    iter: slice::Iter<'a, ffi::sqlite3_index_info_sqlite3_index_orderby>,
+    iter: slice::Iter<'a, ffi::sqlite3_index_orderby>,
 }
 
 impl<'a> Iterator for OrderByIter<'a> {
@@ -647,7 +637,7 @@ impl<'a> Iterator for OrderByIter<'a> {
 }
 
 
-pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
+pub struct OrderBy<'a>(&'a ffi::sqlite3_index_orderby);
 
 impl OrderBy<'_> {
     
@@ -934,7 +924,7 @@ pub fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
             return Ok((param, value));
         }
     }
-    Err(Error::ModuleError(format!("illegal argument: '{}'", arg)))
+    Err(Error::ModuleError(format!("illegal argument: '{arg}'")))
 }
 
 
@@ -1334,7 +1324,7 @@ pub mod csvtab;
 #[cfg(feature = "series")]
 #[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; 
-#[cfg(test)]
+#[cfg(all(test, feature = "modern_sqlite"))]
 mod vtablog;
 
 #[cfg(test)]
