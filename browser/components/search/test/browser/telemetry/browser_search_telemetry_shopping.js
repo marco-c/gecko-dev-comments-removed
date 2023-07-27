@@ -9,15 +9,12 @@
 
 "use strict";
 
-const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
-  ChromeUtils.importESModule("resource:///modules/SearchSERPTelemetry.sys.mjs");
-
 
 
 const BASE_TEST_PROVIDER = {
   telemetryId: "example",
   searchPageRegexp:
-    /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/searchTelemetryAd/,
+    /^https:\/\/example.org\/browser\/browser\/components\/search\/test\/browser\/telemetry\/searchTelemetryAd/,
   queryParamName: "s",
   codeParamName: "abc",
   taggedCodes: ["ff"],
@@ -51,24 +48,6 @@ const TEST_PROVIDER_INFO_2 = [
     },
   },
 ];
-
-function getSERPUrl(page) {
-  let url =
-    getRootDirectory(gTestPath).replace(
-      "chrome://mochitests/content",
-      "https://example.org"
-    ) + page;
-  return `${url}?s=test&abc=ff`;
-}
-
-
-
-
-async function waitForIdle() {
-  for (let i = 0; i < 10; i++) {
-    await new Promise(resolve => Services.tm.idleDispatchToMainThread(resolve));
-  }
-}
 
 add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO_1);
