@@ -42,7 +42,7 @@ AVD_MANIFEST_ARM = Path(__file__).resolve().parent / "android-avds/arm.json"
 AVD_MANIFEST_ARM64 = Path(__file__).resolve().parent / "android-avds/arm64.json"
 
 JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.7"
+JAVA_VERSION_MINOR = "0.8"
 JAVA_VERSION_PATCH = "7"
 
 ANDROID_NDK_EXISTS = """
