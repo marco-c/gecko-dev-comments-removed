@@ -61,7 +61,7 @@ class ExceptionPopup extends Component {
   onTopWindowClick = e => {
     
     
-    if (!e.target.closest(POPUP_SELECTOR)) {
+    if (!e.target.closest(POPUP_SELECTOR) && this.props.clearPreview) {
       this.props.clearPreview();
     }
   };
