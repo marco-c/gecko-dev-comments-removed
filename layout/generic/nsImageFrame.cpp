@@ -1807,9 +1807,8 @@ void nsImageFrame::DisplayAltText(nsPresContext* aPresContext,
 }
 
 struct nsRecessedBorder : public nsStyleBorder {
-  nsRecessedBorder(nscoord aBorderWidth, nsPresContext* aPresContext)
-      : nsStyleBorder(*aPresContext->Document()) {
-    for (const auto side : mozilla::AllPhysicalSides()) {
+  explicit nsRecessedBorder(nscoord aBorderWidth) {
+    for (const auto side : AllPhysicalSides()) {
       BorderColorFor(side) = StyleColor::Black();
       mBorder.Side(side) = aBorderWidth;
       
@@ -1891,7 +1890,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
 
   
   if (!isLoading) {
-    nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
+    nsRecessedBorder recessedBorder(borderEdgeWidth);
 
     
     
@@ -2067,7 +2066,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
 
   
   if (!isLoading) {
-    nsRecessedBorder recessedBorder(borderEdgeWidth, PresContext());
+    nsRecessedBorder recessedBorder(borderEdgeWidth);
     
     
     

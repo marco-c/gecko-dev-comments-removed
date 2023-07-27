@@ -204,7 +204,7 @@ void nsColumnSetFrame::CreateBorderRenderers(
   
   
   
-  nsStyleBorder border(*pc->Document());
+  nsStyleBorder border;
   Sides skipSides;
   if (isVertical) {
     border.SetBorderWidth(eSideTop, ruleWidth, pc->AppUnitsPerDevPixel());
