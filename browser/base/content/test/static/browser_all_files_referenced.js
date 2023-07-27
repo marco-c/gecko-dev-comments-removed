@@ -284,6 +284,9 @@ var allowlist = [
 
   
   { file: "chrome://global/content/elements/moz-message-bar.mjs" },
+
+  
+  { file: "resource://gre/modules/workers/PromiseWorker.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
