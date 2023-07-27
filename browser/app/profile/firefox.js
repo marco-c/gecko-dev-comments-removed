@@ -2139,9 +2139,6 @@ pref("view_source.tab", true);
 pref("dom.serviceWorkers.enabled", true);
 
 
-pref("dom.push.enabled", true);
-
-
 
 
 pref("toolkit.pageThumbs.minWidth", 280);

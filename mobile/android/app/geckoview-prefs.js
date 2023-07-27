@@ -40,9 +40,6 @@ pref("dom.webshare.enabled", true);
 pref("dom.capture.enabled", true);
 
 
-pref("dom.push.enabled", true);
-
-
 pref("intl.locale.requested", "");
 
 
