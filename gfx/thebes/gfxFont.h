@@ -18,6 +18,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FontPropertyTypes.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/Mutex.h"
@@ -1348,6 +1349,8 @@ class gfxShapedWord final : public gfxShapedText {
     return (aHash >> 28) ^ (aHash << 4) ^ aCh;
   }
 
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
  private:
   
   friend class gfxTextRun;
@@ -1415,6 +1418,7 @@ class gfxFont {
   using SVGContextPaint = mozilla::SVGContextPaint;
 
   using RoundingFlags = gfxFontShaper::RoundingFlags;
+  using ShapedTextFlags = mozilla::gfx::ShapedTextFlags;
 
  public:
   using FontSlantStyle = mozilla::FontSlantStyle;
@@ -1840,7 +1844,7 @@ class gfxFont {
   }
   void ClearCachedWordsLocked() MOZ_REQUIRES(mLock) {
     MOZ_ASSERT(mWordCache);
-    mWordCache->Clear();
+    mWordCache->clear();
   }
 
   
@@ -2095,13 +2099,18 @@ class gfxFont {
   RefPtr<gfxFontEntry> mFontEntry;
   mutable mozilla::RWLock mLock;
 
-  struct CacheHashKey {
+  
+  
+  
+  
+  
+  struct WordCacheKey {
     union {
       const uint8_t* mSingle;
       const char16_t* mDouble;
     } mText;
     uint32_t mLength;
-    mozilla::gfx::ShapedTextFlags mFlags;
+    ShapedTextFlags mFlags;
     Script mScript;
     RefPtr<nsAtom> mLanguage;
     int32_t mAppUnitsPerDevUnit;
@@ -2109,10 +2118,10 @@ class gfxFont {
     bool mTextIs8Bit;
     RoundingFlags mRounding;
 
-    CacheHashKey(const uint8_t* aText, uint32_t aLength, uint32_t aStringHash,
+    WordCacheKey(const uint8_t* aText, uint32_t aLength, uint32_t aStringHash,
                  Script aScriptCode, nsAtom* aLanguage,
-                 int32_t aAppUnitsPerDevUnit,
-                 mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding)
+                 int32_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
+                 RoundingFlags aRounding)
         : mLength(aLength),
           mFlags(aFlags),
           mScript(aScriptCode),
@@ -2123,15 +2132,15 @@ class gfxFont {
                    int(aRounding) + (aLanguage ? aLanguage->hash() : 0)),
           mTextIs8Bit(true),
           mRounding(aRounding) {
-      NS_ASSERTION(aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
+      NS_ASSERTION(aFlags & ShapedTextFlags::TEXT_IS_8BIT,
                    "8-bit flag should have been set");
       mText.mSingle = aText;
     }
 
-    CacheHashKey(const char16_t* aText, uint32_t aLength, uint32_t aStringHash,
+    WordCacheKey(const char16_t* aText, uint32_t aLength, uint32_t aStringHash,
                  Script aScriptCode, nsAtom* aLanguage,
-                 int32_t aAppUnitsPerDevUnit,
-                 mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding)
+                 int32_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
+                 RoundingFlags aRounding)
         : mLength(aLength),
           mFlags(aFlags),
           mScript(aScriptCode),
@@ -2148,40 +2157,24 @@ class gfxFont {
       
       mText.mDouble = aText;
     }
+
+    bool Matches(const WordCacheKey& aLookup) const;
+
+    class HashPolicy {
+     public:
+      typedef WordCacheKey Key;
+      typedef WordCacheKey Lookup;
+      static mozilla::HashNumber hash(const Lookup& aLookup) {
+        return aLookup.mHashKey;
+      }
+      static bool match(const Key& aKey, const Lookup& aLookup);
+    };
   };
 
-  class CacheHashEntry : public PLDHashEntryHdr {
-   public:
-    typedef const CacheHashKey& KeyType;
-    typedef const CacheHashKey* KeyTypePointer;
-
-    
-    
-    explicit CacheHashEntry(KeyTypePointer aKey) {}
-    CacheHashEntry(const CacheHashEntry&) = delete;
-    CacheHashEntry& operator=(const CacheHashEntry&) = delete;
-    CacheHashEntry(CacheHashEntry&&) = default;
-    CacheHashEntry& operator=(CacheHashEntry&&) = default;
-
-    bool KeyEquals(const KeyTypePointer aKey) const;
-
-    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-
-    static PLDHashNumber HashKey(const KeyTypePointer aKey) {
-      return aKey->mHashKey;
-    }
-
-    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-      return aMallocSizeOf(mShapedWord.get());
-    }
-
-    enum { ALLOW_MEMMOVE = true };
-
-    mozilla::UniquePtr<gfxShapedWord> mShapedWord;
-  };
-
-  mozilla::UniquePtr<nsTHashtable<CacheHashEntry>> mWordCache
-      MOZ_GUARDED_BY(mLock);
+  mozilla::UniquePtr<
+      mozilla::HashMap<WordCacheKey, mozilla::UniquePtr<gfxShapedWord>,
+                       WordCacheKey::HashPolicy>>
+      mWordCache MOZ_GUARDED_BY(mLock);
 
   static const uint32_t kShapedWordCacheMaxAge = 3;
 
