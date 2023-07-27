@@ -175,7 +175,7 @@ class TouchSimulator {
     
     if (
       evt.button ||
-      evt.mozInputSource != evt.MOZ_SOURCE_MOUSE ||
+      evt.inputSource != evt.MOZ_SOURCE_MOUSE ||
       evt.isSynthesized
     ) {
       return;
