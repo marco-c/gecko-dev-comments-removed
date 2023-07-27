@@ -518,6 +518,9 @@ class WinUtils {
   static PointerCapabilities GetPrimaryPointerCapabilities();
   
   static PointerCapabilities GetAllPointerCapabilities();
+  
+  
+  static void GetPointerExplanation(nsAString* aExplanation);
 
   
 
