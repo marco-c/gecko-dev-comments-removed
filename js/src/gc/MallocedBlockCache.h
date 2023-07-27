@@ -71,8 +71,12 @@ class MallocedBlockCache {
   ~MallocedBlockCache();
 
   
-  [[nodiscard]] PointerAndUint7 alloc(size_t size);
-  void free(PointerAndUint7 blockAndListID);
+  
+  
+  [[nodiscard]] inline PointerAndUint7 alloc(size_t size);
+  [[nodiscard]] MOZ_NEVER_INLINE PointerAndUint7 allowSlow(size_t size);
+
+  inline void free(PointerAndUint7 blockAndListID);
 
   
   
@@ -84,6 +88,75 @@ class MallocedBlockCache {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
+
+inline PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  MOZ_ASSERT(size > 0);
+
+  size = js::RoundUp(size, STEP);
+  size_t i = size / STEP;
+  MOZ_ASSERT(i > 0);
+
+  
+  if (MOZ_LIKELY(i < NUM_LISTS &&       
+                 !lists[i].empty())) {  
+    
+    MOZ_ASSERT(i * STEP == size);
+    void* block = lists[i].popCopy();
+    return PointerAndUint7(block, i);
+  }
+
+  
+  return allowSlow(size);
+}
+
+inline void MallocedBlockCache::free(PointerAndUint7 blockAndListID) {
+  
+  
+  void* block = blockAndListID.pointer();
+  uint32_t listID = blockAndListID.uint7();
+  MOZ_ASSERT(block);
+  MOZ_ASSERT(listID < NUM_LISTS);
+  if (MOZ_UNLIKELY(listID == OVERSIZE_BLOCK_LIST_ID)) {
+    
+    js_free(block);
+    return;
+  }
+
+  
+  memset(block, JS_NOTINUSE_TRAILER_PATTERN, listID * STEP);
+  MOZ_MAKE_MEM_UNDEFINED(block, listID * STEP);
+  if (MOZ_UNLIKELY(!lists[listID].append(block))) {
+    
+    
+    js_free(block);
+  }
+}
 
 }  
 }  

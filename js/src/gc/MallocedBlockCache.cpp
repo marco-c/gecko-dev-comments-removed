@@ -13,37 +13,16 @@ using js::gc::MallocedBlockCache;
 
 MallocedBlockCache::~MallocedBlockCache() { clear(); }
 
-PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
+
+
+PointerAndUint7 MallocedBlockCache::allowSlow(size_t size) {
   
   MOZ_ASSERT(size > 0);
 
   size = js::RoundUp(size, STEP);
   size_t i = size / STEP;
+  MOZ_ASSERT(i > 0);
 
   
   if (MOZ_UNLIKELY(i >= NUM_LISTS)) {
@@ -58,10 +37,7 @@ PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
   MOZ_ASSERT(i >= 1 && i < NUM_LISTS);
   
   MOZ_ASSERT(i * STEP == size);
-  if (MOZ_LIKELY(!lists[i].empty())) {
-    void* block = lists[i].popCopy();
-    return PointerAndUint7(block, i);
-  }
+  MOZ_RELEASE_ASSERT(lists[i].empty());
 
   
   void* p = js_malloc(size);
@@ -69,29 +45,6 @@ PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
     return PointerAndUint7(nullptr, 0);  
   }
   return PointerAndUint7(p, i);
-}
-
-void MallocedBlockCache::free(PointerAndUint7 blockAndListID) {
-  
-  
-  void* block = blockAndListID.pointer();
-  uint32_t listID = blockAndListID.uint7();
-  MOZ_ASSERT(block);
-  MOZ_ASSERT(listID < NUM_LISTS);
-  if (MOZ_UNLIKELY(listID == OVERSIZE_BLOCK_LIST_ID)) {
-    
-    js_free(block);
-    return;
-  }
-
-  
-  memset(block, JS_NOTINUSE_TRAILER_PATTERN, listID * STEP);
-  MOZ_MAKE_MEM_UNDEFINED(block, listID * STEP);
-  if (MOZ_UNLIKELY(!lists[listID].append(block))) {
-    
-    
-    js_free(block);
-  }
 }
 
 void MallocedBlockCache::preen(double percentOfBlocksToDiscard) {

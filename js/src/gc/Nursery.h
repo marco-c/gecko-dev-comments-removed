@@ -278,8 +278,8 @@ class Nursery {
   
   
   
-  [[nodiscard]] bool registerTrailer(PointerAndUint7 blockAndListID,
-                                     size_t nBytes) {
+  [[nodiscard]] inline bool registerTrailer(PointerAndUint7 blockAndListID,
+                                            size_t nBytes) {
     MOZ_ASSERT(trailersAdded_.length() == trailersRemoved_.length());
     MOZ_ASSERT(nBytes > 0);
     if (MOZ_UNLIKELY(!trailersAdded_.append(blockAndListID))) {
@@ -300,7 +300,7 @@ class Nursery {
     return true;
   }
 
-  void unregisterTrailer(void* block) {
+  void inline unregisterTrailer(void* block) {
     MOZ_ASSERT(trailersRemovedUsed_ < trailersRemoved_.length());
     trailersRemoved_[trailersRemovedUsed_] = block;
     trailersRemovedUsed_++;
