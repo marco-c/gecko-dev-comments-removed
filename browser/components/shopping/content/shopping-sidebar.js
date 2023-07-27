@@ -11,10 +11,6 @@
     #browser;
     #initialized;
 
-    static get observedAttributes() {
-      return ["url"];
-    }
-
     static get markup() {
       return `
         <browser
@@ -24,7 +20,7 @@
           disablehistory="true"
           flex="1"
           message="true"
-          remotetype="privilegedabout"
+          remoteType="privilegedabout"
           remote="true"
           selectmenulist="contentselectdropdown"
           src="chrome://browser/content/shopping/shopping.html"
@@ -49,25 +45,6 @@
       this.#browser = this.querySelector(".shopping-sidebar");
 
       this.#initialized = true;
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      
-      if (newValue) {
-        this.initialize();
-      }
-
-      this.update(newValue);
-    }
-
-    
-    update(productURL) {
-      if (!productURL) {
-        this.#browser.src = "chrome://browser/content/shopping/shopping.html";
-        return;
-      }
-      this.#browser.src =
-        "chrome://browser/content/shopping/shopping.html?url=" + productURL;
     }
   }
 
