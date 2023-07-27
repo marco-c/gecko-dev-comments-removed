@@ -3283,8 +3283,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       nsLayoutUtils::GetFramesForArea(
           RelativeTo{rootFrame}, scrollPort, frames,
           {{
-            
-            
+            nsLayoutUtils::FrameForPointOption::OnlyVisible,
             
             
             nsLayoutUtils::FrameForPointOption::IgnorePaintSuppression,
