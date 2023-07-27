@@ -7951,12 +7951,6 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
     return false;
   }
 
-  
-  nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
-  if (!window || window->mPickerDisplayCount) {
-    return false;
-  }
-
   static bool sSendingNCACTIVATE = false;
   static bool sPendingNCACTIVATE = false;
   uint32_t popupsToRollup = UINT32_MAX;
@@ -8054,6 +8048,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       
       
       if (LOWORD(aWParam) == WA_ACTIVE && aLParam) {
+        nsWindow* window = WinUtils::GetNSWindowPtr(aWnd);
         if (window && window->IsPopup()) {
           
           
@@ -8195,14 +8190,6 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
 
     default:
       return false;
-  }
-
-  
-  
-  
-  
-  if (!EventIsInsideWindow(window, touchPoint)) {
-    return false;
   }
 
   
