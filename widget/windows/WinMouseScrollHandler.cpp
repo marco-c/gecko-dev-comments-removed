@@ -803,32 +803,6 @@ bool MouseScrollHandler::LastEventInfo::InitWheelEvent(
     
     
     aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
-#ifndef EARLY_BETA_OR_EARLIER
-  } else if (!MouseScrollHandler::sInstance->mSystemSettings
-                  .IsOverridingSystemScrollSpeedAllowed()) {
-    
-    
-    
-    aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
-  } else {
-    
-    
-    
-    double defaultScrollAmount = mIsVertical
-                                     ? SystemSettings::DefaultScrollLines()
-                                     : SystemSettings::DefaultScrollChars();
-    double maxDelta = WidgetWheelEvent::ComputeOverriddenDelta(
-        defaultScrollAmount, mIsVertical);
-    if (maxDelta != defaultScrollAmount) {
-      double overriddenDelta =
-          WidgetWheelEvent::ComputeOverriddenDelta(Abs(delta), mIsVertical);
-      if (overriddenDelta > maxDelta) {
-        
-        
-        aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
-      }
-    }
-#endif
   }
 
   MOZ_LOG(
@@ -1003,14 +977,6 @@ void MouseScrollHandler::SystemSettings::TrustedScrollSettingsDriver() {
 
   
 }
-
-#ifndef EARLY_BETA_OR_EARLIER
-bool MouseScrollHandler::SystemSettings::
-    IsOverridingSystemScrollSpeedAllowed() {
-  return mScrollLines == DefaultScrollLines() &&
-         mScrollChars == DefaultScrollChars();
-}
-#endif
 
 
 
