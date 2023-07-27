@@ -7590,10 +7590,36 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
   if (aGlobal) {
     mHasHadScriptHandlingObject = true;
 
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+    nsPIDOMWindowInner* window = aGlobal->AsInnerWindow();
     if (!window) {
       return;
     }
+
+    
+    
+    if (mLoadedAsData && window->GetExtantDoc() &&
+        window->GetExtantDoc()->NodePrincipal() == NodePrincipal()) {
+      DocGroup* docGroup = window->GetExtantDoc()->GetDocGroup();
+
+      if (docGroup) {
+        if (!mDocGroup) {
+          mDocGroup = docGroup;
+          mDocGroup->AddDocument(this);
+        } else {
+          MOZ_ASSERT(mDocGroup == docGroup,
+                     "Data document has a mismatched doc group?");
+        }
+#ifdef DEBUG
+        AssertDocGroupMatchesKey();
+#endif
+        return;
+      }
+
+      MOZ_ASSERT_UNREACHABLE(
+          "Scope window doesn't have DocGroup when creating data document?");
+      
+    }
+
     BrowsingContextGroup* browsingContextGroup =
         window->GetBrowsingContextGroup();
 
