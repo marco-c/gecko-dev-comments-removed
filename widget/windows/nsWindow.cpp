@@ -205,6 +205,8 @@
 
 #include <d3d11.h>
 
+#include "InkCollector.h"
+
 
 
 
@@ -298,7 +300,8 @@ static SystemTimeConverter<DWORD>& TimeConverter() {
 
 
 
-static mozilla::Maybe<HWINEVENTHOOK> sWinCloakEventHook = Nothing();
+static mozilla::Maybe<HWINEVENTHOOK> sWinCloakEventHook =
+    IsWin8OrLater() ? Nothing() : Some(HWINEVENTHOOK(nullptr));
 static mozilla::LazyLogModule sCloakingLog("DWMCloaking");
 
 namespace mozilla {
@@ -417,6 +420,10 @@ class TIPMessageHandler {
   }
 
   static void Initialize() {
+    if (!IsWin8OrLater()) {
+      return;
+    }
+
     if (sInstance) {
       return;
     }
@@ -449,6 +456,16 @@ class TIPMessageHandler {
     mHook = ::SetWindowsHookEx(WH_GETMESSAGE, &TIPHook, nullptr,
                                ::GetCurrentThreadId());
     MOZ_ASSERT(mHook);
+
+    
+    
+    if (!IsWin10OrLater() && GetModuleHandle(L"tiptsf.dll") &&
+        !sProcessCaretEventsStub) {
+      sTipTsfInterceptor.Init("tiptsf.dll");
+      DebugOnly<bool> ok = sProcessCaretEventsStub.Set(
+          sTipTsfInterceptor, "ProcessCaretEvents", &ProcessCaretEventsHook);
+      MOZ_ASSERT(ok);
+    }
 
     if (!sSendMessageTimeoutWStub) {
       sUser32Intercept.Init("user32.dll");
@@ -496,6 +513,16 @@ class TIPMessageHandler {
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
+  static void CALLBACK ProcessCaretEventsHook(HWINEVENTHOOK aWinEventHook,
+                                              DWORD aEvent, HWND aHwnd,
+                                              LONG aObjectId, LONG aChildId,
+                                              DWORD aGeneratingTid,
+                                              DWORD aEventTime) {
+    A11yInstantiationBlocker block;
+    sProcessCaretEventsStub(aWinEventHook, aEvent, aHwnd, aObjectId, aChildId,
+                            aGeneratingTid, aEventTime);
+  }
+
   static LRESULT WINAPI SendMessageTimeoutWHook(HWND aHwnd, UINT aMsgCode,
                                                 WPARAM aWParam, LPARAM aLParam,
                                                 UINT aFlags, UINT aTimeout,
@@ -519,6 +546,9 @@ class TIPMessageHandler {
     return static_cast<LRESULT>(TRUE);
   }
 
+  static WindowsDllInterceptor sTipTsfInterceptor;
+  static WindowsDllInterceptor::FuncHookType<WINEVENTPROC>
+      sProcessCaretEventsStub;
   static WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
       sSendMessageTimeoutWStub;
   static StaticAutoPtr<TIPMessageHandler> sInstance;
@@ -528,6 +558,9 @@ class TIPMessageHandler {
   uint32_t mA11yBlockCount;
 };
 
+WindowsDllInterceptor TIPMessageHandler::sTipTsfInterceptor;
+WindowsDllInterceptor::FuncHookType<WINEVENTPROC>
+    TIPMessageHandler::sProcessCaretEventsStub;
 WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
     TIPMessageHandler::sSendMessageTimeoutWStub;
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
@@ -558,6 +591,10 @@ class InitializeVirtualDesktopManagerTask : public Task {
 #endif
 
   virtual bool Run() override {
+    if (!IsWin10OrLater()) {
+      return true;
+    }
+
     RefPtr<IVirtualDesktopManager> desktopManager;
     HRESULT hr = ::CoCreateInstance(
         CLSID_VirtualDesktopManager, NULL, CLSCTX_INPROC_SERVER,
@@ -729,6 +766,9 @@ nsWindow::nsWindow(bool aIsChildWindow)
     
     nsUXThemeData::UpdateNativeThemeInfo();
     RedirectedKeyDownMessageManager::Forget();
+    if (mPointerEvents.ShouldEnableInkCollector()) {
+      InkCollector::sInkCollector = new InkCollector();
+    }
   }  
 
   sInstanceCount++;
@@ -753,6 +793,10 @@ nsWindow::~nsWindow() {
 
   
   if (sInstanceCount == 0) {
+    if (InkCollector::sInkCollector) {
+      InkCollector::sInkCollector->Shutdown();
+      InkCollector::sInkCollector = nullptr;
+    }
     IMEHandler::Terminate();
     sCurrentCursor = {};
     if (sIsOleInitialized) {
@@ -840,6 +884,13 @@ void nsWindow::RecreateDirectManipulationIfNeeded() {
     return;
   }
 
+  if (!IsWin10OrLater()) {
+    
+    
+    
+    return;
+  }
+
   mDmOwner = MakeUnique<DirectManipulationOwner>(this);
 
   LayoutDeviceIntRect bounds(mBounds.X(), mBounds.Y(), mBounds.Width(),
@@ -908,9 +959,23 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   DWORD style = WindowStyle();
   DWORD extendedStyle = WindowExStyle();
 
+  
+  
+  bool isPIPWindow = aInitData && aInitData->mPIPWindow;
+  if (isPIPWindow && !IsWin8OrLater() &&
+      gfxConfig::IsEnabled(gfx::Feature::HW_COMPOSITING) &&
+      WidgetTypeSupportsAcceleration()) {
+    extendedStyle |= WS_EX_COMPOSITED;
+  }
+
   if (mWindowType == WindowType::Popup) {
     if (!aParent) {
       parent = nullptr;
+    }
+
+    if (!IsWin8OrLater() && HasBogusPopupsDropShadowOnMultiMonitor() &&
+        ShouldUseOffMainThreadCompositing()) {
+      extendedStyle |= WS_EX_COMPOSITED;
     }
   } else if (mWindowType == WindowType::Invisible) {
     
@@ -2626,6 +2691,9 @@ void nsWindow::UpdateGetWindowInfoCaptionStatus(bool aActiveCaption) {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 
 void nsWindow::UpdateDarkModeToolbar() {
+  if (!IsWin10OrLater()) {
+    return;
+  }
   LookAndFeel::EnsureColorSchemesInitialized();
   BOOL dark = LookAndFeel::ColorSchemeForChrome() == ColorScheme::Dark;
   DwmSetWindowAttribute(mWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &dark,
@@ -2809,8 +2877,10 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
       
       
       
-      UINT clearEdge = (edge == ABE_TOP) ? ABE_BOTTOM : edge;
-      mClearNCEdge = Some(clearEdge);
+      if (IsWin10OrLater()) {
+        UINT clearEdge = (edge == ABE_TOP) ? ABE_BOTTOM : edge;
+        mClearNCEdge = Some(clearEdge);
+      }
     }
   } else {
     mNonClientOffset = NormalWindowNonClientOffset();
@@ -4348,6 +4418,17 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   uint32_t pointerId =
       aPointerInfo ? aPointerInfo->pointerId : MOUSE_POINTERID();
 
+  
+  
+  if (MouseEvent_Binding::MOZ_SOURCE_PEN == aInputSource
+      
+      && WindowType::TopLevel == mWindowType
+      
+      && InkCollector::sInkCollector) {
+    InkCollector::sInkCollector->SetTarget(mWnd);
+    InkCollector::sInkCollector->SetPointerId(pointerId);
+  }
+
   switch (aEventMessage) {
     case eMouseDown:
       CaptureMouse(true);
@@ -5512,6 +5593,21 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       LPARAM pos = lParamToClient(::GetMessagePos());
       DispatchMouseEvent(eMouseExitFromWidget, mouseState, pos, false,
                          MouseButton::ePrimary, MOUSE_INPUT_SOURCE());
+    } break;
+
+    case MOZ_WM_PEN_LEAVES_HOVER_OF_DIGITIZER: {
+      LPARAM pos = lParamToClient(::GetMessagePos());
+      MOZ_ASSERT(InkCollector::sInkCollector);
+      uint16_t pointerId = InkCollector::sInkCollector->GetPointerId();
+      if (pointerId != 0) {
+        WinPointerInfo pointerInfo;
+        pointerInfo.pointerId = pointerId;
+        DispatchMouseEvent(eMouseExitFromWidget, wParam, pos, false,
+                           MouseButton::ePrimary,
+                           MouseEvent_Binding::MOZ_SOURCE_PEN, &pointerInfo);
+        InkCollector::sInkCollector->ClearTarget();
+        InkCollector::sInkCollector->ClearPointerId();
+      }
     } break;
 
     case WM_CONTEXTMENU: {
@@ -7390,6 +7486,7 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
 
 void nsWindow::OnCloakEvent(HWND aWnd, bool aCloaked) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsWin8OrLater());
 
   const char* const kEventName = aCloaked ? "CLOAKED" : "UNCLOAKED";
   nsWindow* pWin = WinUtils::GetNSWindowPtr(aWnd);
@@ -8987,6 +9084,25 @@ nsresult nsWindow::RestoreHiDPIMode() { return WinUtils::RestoreHiDPIMode(); }
 
 mozilla::Maybe<UINT> nsWindow::GetHiddenTaskbarEdge() {
   HMONITOR windowMonitor = ::MonitorFromWindow(mWnd, MONITOR_DEFAULTTONEAREST);
+
+  if (!IsWin8OrLater()) {
+    
+    APPBARDATA appBarData;
+    appBarData.cbSize = sizeof(appBarData);
+    UINT taskbarState = SHAppBarMessage(ABM_GETSTATE, &appBarData);
+    if (ABS_AUTOHIDE & taskbarState) {
+      appBarData.hWnd = FindWindow(L"Shell_TrayWnd", nullptr);
+      if (appBarData.hWnd) {
+        HMONITOR taskbarMonitor =
+            ::MonitorFromWindow(appBarData.hWnd, MONITOR_DEFAULTTOPRIMARY);
+        if (taskbarMonitor == windowMonitor) {
+          SHAppBarMessage(ABM_GETTASKBARPOS, &appBarData);
+          return Some(appBarData.uEdge);
+        }
+      }
+    }
+    return Nothing();
+  }
 
   
   

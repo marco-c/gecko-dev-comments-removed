@@ -10,9 +10,30 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/WindowsEnumProcessModules.h"
 #include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsPrintfCString.h"
 
 static bool IsModuleUnsafeToLoad(const nsAString& aModuleName) {
+#if defined(_M_AMD64) || defined(_M_IX86)
+  
+  
+  
+  
+  
+#  if defined(_M_AMD64)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
+#  elif defined(_M_IX86)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
+#  endif
+  if (aModuleName.LowerCaseEqualsLiteral("detoured.dll") &&
+      !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
+      !::GetModuleHandleW(kNvidiaInitDriver)) {
+    return true;
+  }
+#endif  
+
   
   
   

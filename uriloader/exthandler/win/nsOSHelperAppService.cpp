@@ -17,6 +17,7 @@
 #include "nsIWindowsRegKey.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/WindowsVersion.h"
 
 
 #include <shellapi.h>
@@ -118,21 +119,23 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
 
   NS_ConvertASCIItoUTF16 buf(aScheme);
 
-  wchar_t result[1024];
-  DWORD resultSize = 1024;
-  HRESULT hr = AssocQueryString(0x1000 ,
-                                ASSOCSTR_FRIENDLYAPPNAME, buf.get(), NULL,
-                                result, &resultSize);
-  if (SUCCEEDED(hr)) {
-    _retval = result;
-    return NS_OK;
+  if (mozilla::IsWin8OrLater()) {
+    wchar_t result[1024];
+    DWORD resultSize = 1024;
+    HRESULT hr = AssocQueryString(0x1000 ,
+                                  ASSOCSTR_FRIENDLYAPPNAME, buf.get(), NULL,
+                                  result, &resultSize);
+    if (SUCCEEDED(hr)) {
+      _retval = result;
+      return NS_OK;
+    }
   }
 
   NS_ENSURE_TRUE(mAppAssoc, NS_ERROR_NOT_AVAILABLE);
   wchar_t* pResult = nullptr;
   
-  hr = mAppAssoc->QueryCurrentDefault(buf.get(), AT_URLPROTOCOL, AL_EFFECTIVE,
-                                      &pResult);
+  HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(), AT_URLPROTOCOL,
+                                              AL_EFFECTIVE, &pResult);
   if (SUCCEEDED(hr)) {
     nsCOMPtr<nsIFile> app;
     nsAutoString appInfo(pResult);

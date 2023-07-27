@@ -14,8 +14,10 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/WindowsVersion.h"
 
 #include <objidl.h>
+#include <shlwapi.h>
 #include <winnt.h>
 
 #include <utility>
@@ -188,20 +190,60 @@ long CreateStream(const uint8_t* aInitBuf, const uint32_t aInitBufSize,
   HRESULT hr;
   RefPtr<IStream> stream;
 
-  
-  UINT initSize = aInitBuf ? aInitBufSize : 0;
-  stream = already_AddRefed<IStream>(::SHCreateMemStream(aInitBuf, initSize));
-  if (!stream) {
-    return E_OUTOFMEMORY;
-  }
-
-  if (!aInitBuf) {
+  if (IsWin8OrLater()) {
     
-    ULARGE_INTEGER newSize;
-    newSize.QuadPart = aInitBufSize;
-    hr = stream->SetSize(newSize);
+    
+    
+
+    
+    UINT initSize = aInitBuf ? aInitBufSize : 0;
+    stream = already_AddRefed<IStream>(::SHCreateMemStream(aInitBuf, initSize));
+    if (!stream) {
+      return E_OUTOFMEMORY;
+    }
+
+    if (!aInitBuf) {
+      
+      ULARGE_INTEGER newSize;
+      newSize.QuadPart = aInitBufSize;
+      hr = stream->SetSize(newSize);
+      if (FAILED(hr)) {
+        return hr;
+      }
+    }
+  } else {
+    HGLOBAL hglobal = ::GlobalAlloc(GMEM_MOVEABLE, aInitBufSize);
+    if (!hglobal) {
+      return HRESULT_FROM_WIN32(::GetLastError());
+    }
+
+    
+    hr = ::CreateStreamOnHGlobal(hglobal, TRUE, getter_AddRefs(stream));
+    if (FAILED(hr)) {
+      ::GlobalFree(hglobal);
+      return hr;
+    }
+
+    
+    
+    
+    ULARGE_INTEGER streamSize;
+    streamSize.QuadPart = aInitBufSize;
+    hr = stream->SetSize(streamSize);
     if (FAILED(hr)) {
       return hr;
+    }
+
+    if (aInitBuf) {
+      ULONG bytesWritten;
+      hr = stream->Write(aInitBuf, aInitBufSize, &bytesWritten);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      if (bytesWritten != aInitBufSize) {
+        return E_UNEXPECTED;
+      }
     }
   }
 

@@ -38,6 +38,7 @@ using LibHandleResult = ::mozilla::Result<LibHandleType, DLErrorType>;
 
 #if defined(XP_WIN)
 #  include <mbstring.h>
+#  include "mozilla/WindowsVersion.h"
 #  include "mozilla/PreXULSkeletonUI.h"
 
 static LibHandleResult GetLibHandle(pathstr_t aDependentLib) {
@@ -300,6 +301,13 @@ static XPCOMGlueLoadResult XPCOMGlueLoad(
     if (l == 0 || *buffer == '#') {
       continue;
     }
+#  ifdef XP_WIN
+    
+    
+    if (IsWin10OrLater() && !strncmp(buffer, "api-", 4)) {
+      continue;
+    }
+#  endif
 
     
     if (buffer[l - 1] == '\n') {

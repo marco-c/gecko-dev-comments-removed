@@ -20,6 +20,7 @@
 #include "AssemblyPayloads.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsWindowsDllInterceptor.h"
 #include "nsWindowsHelpers.h"
 
@@ -295,6 +296,17 @@ class RedirectionResolver : public interceptor::WindowsDllPatcherBase<
                                 interceptor::VMSharingPolicyShared> {
  public:
   uintptr_t ResolveRedirectedAddressForTest(FARPROC aFunc) {
+    bool isWin8 = IsWin8OrLater() && (!IsWin8Point1OrLater());
+
+    bool isDuplicateHandle = (reinterpret_cast<void*>(aFunc) ==
+                              reinterpret_cast<void*>(&::DuplicateHandle));
+
+    
+    
+    if (isWin8 && isDuplicateHandle) {
+      return reinterpret_cast<uintptr_t>(aFunc);
+    }
+
     return ResolveRedirectedAddress(aFunc).GetAddress();
   }
 };
@@ -672,6 +684,10 @@ bool MaybeTestHook(const bool cond, const char (&dll)[N], const char* func,
           NULL))
 
 bool ShouldTestTipTsf() {
+  if (!IsWin8OrLater()) {
+    return false;
+  }
+
   mozilla::DynamicallyLinkedFunctionPtr<decltype(&SHGetKnownFolderPath)>
       pSHGetKnownFolderPath(L"shell32.dll", "SHGetKnownFolderPath");
   if (!pSHGetKnownFolderPath) {
@@ -1193,6 +1209,11 @@ bool TestDetouredCallUnwindInfo() {
 #endif  
 
 bool TestDynamicCodePolicy() {
+  if (!IsWin8Point1OrLater()) {
+    
+    return true;
+  }
+
   PROCESS_MITIGATION_DYNAMIC_CODE_POLICY policy = {};
   policy.ProhibitDynamicCode = true;
 
@@ -1352,7 +1373,8 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
                        &attributes, nullptr) &&
       TEST_DETOUR_SKIP_EXEC("ntdll.dll", LdrLoadDll) &&
       TEST_HOOK("ntdll.dll", LdrUnloadDll, NotEquals, 0) &&
-      TEST_HOOK_SKIP_EXEC("ntdll.dll", LdrResolveDelayLoadedAPI) &&
+      MAYBE_TEST_HOOK_SKIP_EXEC(IsWin8OrLater(), "ntdll.dll",
+                                LdrResolveDelayLoadedAPI) &&
       MAYBE_TEST_HOOK_PARAMS(HasApiSetQueryApiSetPresence(),
                              "Api-ms-win-core-apiquery-l1-1-0.dll",
                              ApiSetQueryApiSetPresence, Equals, FALSE,
@@ -1383,6 +1405,8 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
 #endif  
       TEST_DETOUR_SKIP_EXEC("kernel32.dll", BaseThreadInitThunk) &&
 #if defined(_M_X64) || defined(_M_ARM64)
+      MAYBE_TEST_HOOK(!IsWin8OrLater(), "kernel32.dll",
+                      RtlInstallFunctionTableCallback, Equals, FALSE) &&
       TEST_HOOK("user32.dll", GetKeyState, Ignore, 0) &&  
 #endif
       TEST_HOOK("user32.dll", GetWindowInfo, Equals, FALSE) &&

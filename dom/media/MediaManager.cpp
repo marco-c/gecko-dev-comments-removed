@@ -72,7 +72,12 @@
 #endif
 
 #if defined(XP_WIN)
+#  include <iphlpapi.h>
 #  include <objbase.h>
+#  include <tchar.h>
+#  include <winsock2.h>
+
+#  include "mozilla/WindowsVersion.h"
 #endif
 
 
@@ -2238,6 +2243,27 @@ media::Parent<media::NonE10s>* MediaManager::GetNonE10sParent() {
     mNonE10sParent = new media::Parent<media::NonE10s>();
   }
   return mNonE10sParent;
+}
+
+
+void MediaManager::StartupInit() {
+#ifdef WIN32
+  if (!IsWin8OrLater()) {
+    
+    
+    
+    unsigned long out_buf_len = sizeof(IP_ADAPTER_INFO);
+    PIP_ADAPTER_INFO pAdapterInfo = (IP_ADAPTER_INFO*)moz_xmalloc(out_buf_len);
+    if (GetAdaptersInfo(pAdapterInfo, &out_buf_len) == ERROR_BUFFER_OVERFLOW) {
+      free(pAdapterInfo);
+      pAdapterInfo = (IP_ADAPTER_INFO*)moz_xmalloc(out_buf_len);
+      GetAdaptersInfo(pAdapterInfo, &out_buf_len);
+    }
+    if (pAdapterInfo) {
+      free(pAdapterInfo);
+    }
+  }
+#endif
 }
 
 

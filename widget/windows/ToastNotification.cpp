@@ -23,6 +23,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/WidgetUtils.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsAppRunner.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
@@ -36,6 +37,7 @@
 #include "prenv.h"
 #include "ToastNotificationHandler.h"
 #include "ToastNotificationHeaderOnlyUtils.h"
+#include "WinTaskbar.h"
 #include "WinUtils.h"
 
 namespace mozilla {
@@ -65,6 +67,10 @@ ToastNotification::ToastNotification() = default;
 ToastNotification::~ToastNotification() = default;
 
 nsresult ToastNotification::Init() {
+  if (!IsWin8OrLater()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (!PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
     
     
@@ -99,6 +105,18 @@ bool ToastNotification::EnsureAumidRegistered() {
     MOZ_LOG(
         sWASLog, LogLevel::Info,
         ("Found MSIX AUMID: '%s'", NS_ConvertUTF16toUTF8(mAumid.ref()).get()));
+    return true;
+  }
+
+  
+  
+  if (!IsWin10OrLater()) {
+    nsAutoString aumid;
+    if (!WinTaskbar::GetAppUserModelID(aumid)) {
+      return false;
+    }
+
+    mAumid = Some(aumid);
     return true;
   }
 

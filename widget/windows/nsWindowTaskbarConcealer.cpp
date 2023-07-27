@@ -10,6 +10,7 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/WindowsVersion.h"
 #include "WinUtils.h"
 
 using namespace mozilla;
@@ -263,6 +264,69 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
 
 
 void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  static const bool kUseWin7MarkingHack = [&] {
+    switch (StaticPrefs::widget_windows_fullscreen_marking_workaround()) {
+      case -1:
+        return false;
+      case 1:
+        return true;
+      default:
+        
+        
+        return !mozilla::IsWin8Point1OrLater();
+    }
+  }();
+
+  if (kUseWin7MarkingHack) {
+    constexpr static LPCWSTR kPropName = L"NonRudeHWND";
+    if (aMark) {
+      ::RemovePropW(aWnd, kPropName);
+    } else {
+      ::SetPropW(aWnd, kPropName, reinterpret_cast<HANDLE>(TRUE));
+    }
+  }
+
   const char* const sMark = aMark ? "true" : "false";
 
   if (!mTaskbarInfo) {

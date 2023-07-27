@@ -54,6 +54,8 @@ DLL_BLOCKLIST_DEFINITIONS_BEGIN_NAMED(gBlockedInprocDlls)
 
 
 FLAGS_DEFAULT = "FLAGS_DEFAULT"
+BLOCK_WIN8_AND_OLDER = "BLOCK_WIN8_AND_OLDER"
+BLOCK_WIN7_AND_OLDER = "BLOCK_WIN7_AND_OLDER"
 USE_TIMESTAMP = "USE_TIMESTAMP"
 CHILD_PROCESSES_ONLY = "CHILD_PROCESSES_ONLY"
 BROWSER_PROCESS_ONLY = "BROWSER_PROCESS_ONLY"
@@ -63,6 +65,12 @@ UTILITY_PROCESSES_ONLY = "UTILITY_PROCESSES_ONLY"
 SOCKET_PROCESSES_ONLY = "SOCKET_PROCESSES_ONLY"
 GPU_PROCESSES_ONLY = "GPU_PROCESSES_ONLY"
 GMPLUGIN_PROCESSES_ONLY = "GMPLUGIN_PROCESSES_ONLY"
+
+
+INPUT_ONLY_FLAGS = {
+    BLOCK_WIN8_AND_OLDER,
+    BLOCK_WIN7_AND_OLDER,
+}
 
 
 def FILTER_ALLOW_ALL(entry):
@@ -735,6 +743,9 @@ def gen_blocklists(first_fd, defs_filename):
         exec_env[defname] = []
         
         exec_env[derive_test_key(defname)] = []
+
+    
+    exec_env.update({flag: flag for flag in INPUT_ONLY_FLAGS})
 
     
     exec_script_file(defs_filename, exec_env)

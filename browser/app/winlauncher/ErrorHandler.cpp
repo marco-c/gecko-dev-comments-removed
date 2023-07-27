@@ -15,6 +15,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WinTokenUtils.h"
+#include "mozilla/WindowsVersion.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/glue/WindowsDllServices.h"
 #include "mozilla/mscom/ProcessRuntime.h"
@@ -290,6 +291,12 @@ static const ProviderKey gProvKeys[] = {
     {WSC_SECURITY_PROVIDER_FIREWALL, "firewall"}};
 
 static bool AddWscInfo(mozilla::JSONWriter& aJson) {
+  if (!mozilla::IsWin8OrLater()) {
+    
+    
+    return true;
+  }
+
   
   
   mozilla::mscom::ProcessRuntime mscom(

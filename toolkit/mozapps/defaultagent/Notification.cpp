@@ -15,6 +15,7 @@
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsWindowsHelpers.h"
 #include "readstrings.h"
@@ -588,6 +589,12 @@ NotificationActivities MaybeShowNotification(
   NotificationActivities activitiesPerformed = {NotificationType::Initial,
                                                 NotificationShown::NotShown,
                                                 NotificationAction::NoAction};
+
+  if (!mozilla::IsWin10OrLater()) {
+    
+    
+    return activitiesPerformed;
+  }
 
   
   

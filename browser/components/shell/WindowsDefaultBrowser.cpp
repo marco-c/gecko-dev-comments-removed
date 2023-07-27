@@ -177,7 +177,7 @@ bool LaunchModernSettingsDialogDefaultApps() {
     return LaunchMsSettingsProtocol();
   }
 
-  if (!mozilla::IsWindows10BuildOrLater(14965) && !IsWindowsLogonConnected() &&
+  if (!mozilla::IsWindowsBuildOrLater(14965) && !IsWindowsLogonConnected() &&
       SettingsAppBelievesConnected()) {
     
     

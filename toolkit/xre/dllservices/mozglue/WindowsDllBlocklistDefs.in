@@ -202,6 +202,10 @@ ALL_PROCESSES += [
     DllBlocklistEntry("nahimicmsidevprops.dll", UNVERSIONED),
 
     
+    DllBlocklistEntry("klsihk64.dll", (14, 0, 456, 0xffff),
+                      BLOCK_WIN8_AND_OLDER),
+
+    
     DllBlocklistEntry("onepin-opensc-pkcs11.dll", (0, 19, 0, 448)),
 
     
@@ -240,6 +244,10 @@ ALL_PROCESSES += [
     DllBlocklistEntry("guard64.dll", (8, 4, 0, 65535)),
 
     
+    DllBlocklistEntry("PavLspHook64.dll", (9, 2, 2, 1), BLOCK_WIN7_AND_OLDER),
+    DllBlocklistEntry("PavSHook64.dll", (9, 2, 2, 1), BLOCK_WIN7_AND_OLDER),
+
+    
     DllBlocklistEntry("WRDll.x64.dll", (1, 1, 0, 227)),
     DllBlocklistEntry("WRDll.x86.dll", (1, 1, 0, 227)),
 
@@ -256,6 +264,9 @@ ALL_PROCESSES += [
 
     
     DllBlocklistEntry("CylanceMemDef64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("eoppbrowser.dll", (1, 0, 88, 0), BLOCK_WIN7_AND_OLDER),
 ]
 
 ALL_PROCESSES_TESTS += [
@@ -395,6 +406,9 @@ UTILITY_PROCESSES += [
     DllBlocklistEntry("ipseng32.dll", ALL_VERSIONS),
     DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
     DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("aswhook.dll", ALL_VERSIONS, BLOCK_WIN7_AND_OLDER),
 ]
 
 UTILITY_PROCESSES_TESTS += [
