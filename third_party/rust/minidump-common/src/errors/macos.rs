@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
 
-use enum_primitive_derive::Primitive;
+use num_derive::FromPrimitive;
 
 
 
@@ -12,7 +12,7 @@ use enum_primitive_derive::Primitive;
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMac {
     
     EXC_BAD_ACCESS = 1,
@@ -39,7 +39,7 @@ pub enum ExceptionCodeMac {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadAccessKernType {
     KERN_INVALID_ADDRESS = 1,
     KERN_PROTECTION_FAILURE = 2,
@@ -55,7 +55,7 @@ pub enum ExceptionCodeMacBadAccessKernType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadAccessArmType {
     EXC_ARM_DA_ALIGN = 0x0101,
     EXC_ARM_DA_DEBUG = 0x0102,
@@ -69,7 +69,7 @@ pub enum ExceptionCodeMacBadAccessArmType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadAccessPpcType {
     EXC_PPC_VM_PROT_READ = 0x0101,
     EXC_PPC_BADSPACE = 0x0102,
@@ -81,7 +81,7 @@ pub enum ExceptionCodeMacBadAccessPpcType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadAccessX86Type {
     EXC_I386_GPFLT = 13,
 }
@@ -91,7 +91,7 @@ pub enum ExceptionCodeMacBadAccessX86Type {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadInstructionArmType {
     EXC_ARM_UNDEFINED = 1,
 }
@@ -101,7 +101,7 @@ pub enum ExceptionCodeMacBadInstructionArmType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadInstructionPpcType {
     EXC_PPC_INVALID_SYSCALL = 1,
     EXC_PPC_UNIPL_INST = 2,
@@ -116,7 +116,7 @@ pub enum ExceptionCodeMacBadInstructionPpcType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBadInstructionX86Type {
     
     EXC_I386_INVOP = 1,
@@ -155,7 +155,7 @@ pub enum ExceptionCodeMacBadInstructionX86Type {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacArithmeticArmType {
     EXC_ARM_FP_IO = 1,
     EXC_ARM_FP_DZ = 2,
@@ -170,7 +170,7 @@ pub enum ExceptionCodeMacArithmeticArmType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacArithmeticPpcType {
     
     EXC_PPC_OVERFLOW = 1,
@@ -198,7 +198,7 @@ pub enum ExceptionCodeMacArithmeticPpcType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacArithmeticX86Type {
     EXC_I386_DIV = 1,
     EXC_I386_INTO = 2,
@@ -218,7 +218,7 @@ pub enum ExceptionCodeMacArithmeticX86Type {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacSoftwareType {
     SIGABRT = 0x00010002u32,
     UNCAUGHT_NS_EXCEPTION = 0xDEADC0DE,
@@ -234,7 +234,7 @@ pub enum ExceptionCodeMacSoftwareType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBreakpointArmType {
     EXC_ARM_BREAKPOINT = 1,
 }
@@ -244,7 +244,7 @@ pub enum ExceptionCodeMacBreakpointArmType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBreakpointPpcType {
     EXC_PPC_BREAKPOINT = 1,
 }
@@ -254,7 +254,7 @@ pub enum ExceptionCodeMacBreakpointPpcType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacBreakpointX86Type {
     EXC_I386_SGL = 1,
     EXC_I386_BPT = 2,
@@ -265,7 +265,7 @@ pub enum ExceptionCodeMacBreakpointX86Type {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceType {
     RESOURCE_TYPE_CPU = 1,
     RESOURCE_TYPE_WAKEUPS = 2,
@@ -279,7 +279,7 @@ pub enum ExceptionCodeMacResourceType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceCpuFlavor {
     FLAVOR_CPU_MONITOR = 1,
     FLAVOR_CPU_MONITOR_FATAL = 2,
@@ -290,7 +290,7 @@ pub enum ExceptionCodeMacResourceCpuFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceWakeupsFlavor {
     FLAVOR_WAKEUPS_MONITOR = 1,
 }
@@ -300,7 +300,7 @@ pub enum ExceptionCodeMacResourceWakeupsFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceMemoryFlavor {
     FLAVOR_HIGH_WATERMARK = 1,
 }
@@ -310,7 +310,7 @@ pub enum ExceptionCodeMacResourceMemoryFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceIOFlavor {
     FLAVOR_IO_PHYSICAL_WRITES = 1,
     FLAVOR_IO_LOGICAL_WRITES = 2,
@@ -321,7 +321,7 @@ pub enum ExceptionCodeMacResourceIOFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacResourceThreadsFlavor {
     FLAVOR_THREADS_HIGH_WATERMARK = 1,
 }
@@ -331,7 +331,7 @@ pub enum ExceptionCodeMacResourceThreadsFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacGuardType {
     GUARD_TYPE_NONE = 0,
     GUARD_TYPE_MACH_PORT = 1,
@@ -346,7 +346,7 @@ pub enum ExceptionCodeMacGuardType {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacGuardMachPortFlavor {
     GUARD_EXC_DESTROY = 0x00000001,
     GUARD_EXC_MOD_REFS = 0x00000002,
@@ -378,7 +378,7 @@ pub enum ExceptionCodeMacGuardMachPortFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacGuardFDFlavor {
     GUARD_EXC_CLOSE = 0x00000001,
     GUARD_EXC_DUP = 0x00000002,
@@ -394,7 +394,7 @@ pub enum ExceptionCodeMacGuardFDFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacGuardVNFlavor {
     GUARD_EXC_RENAME_TO = 0x00000001,
     GUARD_EXC_RENAME_FROM = 0x00000002,
@@ -410,7 +410,7 @@ pub enum ExceptionCodeMacGuardVNFlavor {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeMacGuardVirtMemoryFlavor {
     GUARD_EXC_DEALLOC_GAP = 0x00000001,
 }

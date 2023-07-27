@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
 
-use enum_primitive_derive::Primitive;
+use num_derive::FromPrimitive;
 
 
 
@@ -9,7 +9,7 @@ use enum_primitive_derive::Primitive;
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeWindows {
     EXCEPTION_GUARD_PAGE = 0x80000001u32,
     EXCEPTION_DATATYPE_MISALIGNMENT = 0x80000002,
@@ -55,7 +55,7 @@ pub enum ExceptionCodeWindows {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum WinErrorFacilityWindows {
     FACILITY_VISUALCPP = 109,
 }
@@ -72,7 +72,7 @@ pub enum WinErrorFacilityWindows {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum WinErrorWindows {
     ERROR_SUCCESS = 0,
     ERROR_INVALID_FUNCTION = 1,
@@ -2914,7 +2914,7 @@ pub enum WinErrorWindows {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum NtStatusWindows {
     STATUS_SUCCESS = 0x00000000u32,
     STATUS_WAIT_1 = 0x00000001,
@@ -5763,7 +5763,7 @@ pub enum NtStatusWindows {
 
 
 #[repr(u64)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum FastFailCode {
     FAST_FAIL_LEGACY_GS_VIOLATION = 0,
     FAST_FAIL_VTGUARD_CHECK_FAILURE = 1,
@@ -5842,7 +5842,7 @@ pub enum FastFailCode {
 
 
 #[repr(u64)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeWindowsAccessType {
     READ = 0,
     WRITE = 1,
@@ -5856,7 +5856,7 @@ pub enum ExceptionCodeWindowsAccessType {
 
 
 #[repr(u64)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ExceptionCodeWindowsInPageErrorType {
     READ = 0,
     WRITE = 1,

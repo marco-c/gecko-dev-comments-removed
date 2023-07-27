@@ -36,7 +36,7 @@
 use std::fmt;
 
 use bitflags::bitflags;
-use enum_primitive_derive::Primitive;
+use num_derive::FromPrimitive;
 use scroll::{Endian, Pread, Pwrite, SizeWith};
 use smart_default::SmartDefault;
 
@@ -152,7 +152,7 @@ pub struct MINIDUMP_DIRECTORY {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum MINIDUMP_STREAM_TYPE {
     
     UnusedStream = 0,
@@ -311,6 +311,12 @@ pub enum MINIDUMP_STREAM_TYPE {
     
     
     MozMacosCrashInfoStream = 0x4d7a0001,
+
+    
+    
+    
+    
+    MozMacosBootargsStream = 0x4d7a0002,
 }
 
 impl From<MINIDUMP_STREAM_TYPE> for u32 {
@@ -430,7 +436,7 @@ pub const VS_FFI_STRUCVERSION: u32 = 0x00010000;
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum CvSignature {
     
     Pdb20 = 0x3031424e,
@@ -1465,7 +1471,7 @@ pub struct MINIDUMP_SYSTEM_INFO {
 
 
 #[repr(u16)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ProcessorArchitecture {
     PROCESSOR_ARCHITECTURE_INTEL = 0,
     PROCESSOR_ARCHITECTURE_MIPS = 1,
@@ -1497,7 +1503,7 @@ pub enum ProcessorArchitecture {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum PlatformId {
     
     VER_PLATFORM_WIN32s = 1,
@@ -1949,7 +1955,7 @@ pub struct MINIDUMP_ASSERTION_INFO {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Primitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum AssertionType {
     Unknown = 0,
     InvalidParameter = 1,
@@ -2402,6 +2408,13 @@ pub const MAC_CRASH_INFO_STRING_MAX_SIZE: usize = 8192;
 
 
 pub const MAC_CRASH_INFOS_MAX: usize = 20;
+
+
+#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+pub struct MINIDUMP_MAC_BOOTARGS {
+    pub stream_type: u32,
+    pub bootargs: RVA64,
+}
 
 bitflags! {
     /// Possible values of [`ARMCpuInfo::elf_hwcaps`]
