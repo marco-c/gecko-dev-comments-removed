@@ -82,29 +82,6 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
 
 
 
-
-enum class ParsingMode : uint8_t {
-  
-  
-  
-  Default = 0,
-  
-  
-  
-  AllowUnitlessLength = 1 << 0,
-  
-  
-  AllowAllNumericValues = 1 << 1,
-  
-  
-  
-  DisallowFontRelative = 1 << 2,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ParsingMode)
-
-
-
 enum class InheritTarget {
   
   Text,

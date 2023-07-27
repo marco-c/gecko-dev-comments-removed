@@ -11,7 +11,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/ServoTypes.h"
 #include "nsColor.h"
 #include "nsCSSPropertyID.h"
 #include "nsDOMCSSDeclaration.h"
@@ -30,6 +29,7 @@ struct StyleFontStretch;
 struct StyleFontWeight;
 struct StyleFontStyle;
 struct StyleLockedDeclarationBlock;
+struct StyleParsingMode;
 union StyleComputedFontStyleDescriptor;
 
 template <typename Integer, typename Number, typename LinearStops>
@@ -93,7 +93,7 @@ class ServoCSSParser {
   static already_AddRefed<StyleLockedDeclarationBlock> ParseProperty(
       nsCSSPropertyID aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
-      ParsingMode aParsingMode = ParsingMode::Default);
+      const StyleParsingMode& aParsingMode);
 
   
 
