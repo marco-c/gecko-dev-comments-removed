@@ -68,6 +68,19 @@ def get_failures(task_id, task_definition):
                     
                     test_path = l["test"].split(" ")[0]
                     test_path = test_path.split(":")[-1]
+
+                    
+                    if test_path.endswith(".ini") or test_path.endswith(".list"):
+                        continue
+
+                    
+                    if (
+                        test_path is None
+                        or test_path == "None"
+                        or "SimpleTest" in test_path
+                    ):
+                        continue
+
                     if "web-platform" in task_definition["extra"]["suite"]:
                         test_path = fix_wpt_name(test_path)
                     else:
@@ -81,6 +94,18 @@ def get_failures(task_id, task_definition):
                     test_path = test_path.split(":")[-1]
                     if "==" in test_path or "!=" in test_path:
                         test_path = test_path.split(" ")[0]
+
+                    
+                    if test_path.endswith(".ini") or test_path.endswith(".list"):
+                        continue
+
+                    
+                    if (
+                        test_path is None
+                        or test_path == "None"
+                        or "SimpleTest" in test_path
+                    ):
+                        continue
 
                     if "status" not in l and "expected" not in l:
                         continue
@@ -100,7 +125,7 @@ def get_failures(task_id, task_definition):
                     dirs.remove(l["group"])
 
             
-            if len(tests) > 4:
+            if len(tests) > 10:
                 break
 
         
