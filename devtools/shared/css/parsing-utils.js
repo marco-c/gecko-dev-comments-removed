@@ -518,7 +518,11 @@ function parseDeclarationsInternal(
 
   
   if (current) {
-    if (!lastProp.name) {
+    
+    if (isInNested && nestingLevel > 0) {
+      
+      declarations.pop();
+    } else if (!lastProp.name) {
       
       if (!inComment) {
         
