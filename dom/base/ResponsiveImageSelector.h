@@ -57,8 +57,9 @@ class ResponsiveImageSelector {
   bool SetSizesFromDescriptor(const nsAString& aSizesDescriptor);
 
   
-  void SetDefaultSource(const nsAString& aURLString,
-                        nsIPrincipal* aPrincipal = nullptr);
+  void SetDefaultSource(const nsAString& aURLString, nsIPrincipal* = nullptr);
+  void SetDefaultSource(nsIURI* aURI, nsIPrincipal* = nullptr);
+  void ClearDefaultSource();
 
   uint32_t NumCandidates(bool aIncludeDefault = true);
 

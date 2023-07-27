@@ -121,10 +121,7 @@ class ImageLoadTask final : public MicroTaskRunnable {
 
 HTMLImageElement::HTMLImageElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)),
-      mForm(nullptr),
-      mInDocResponsiveContent(false),
-      mCurrentDensity(1.0) {
+    : nsGenericHTMLElement(std::move(aNodeInfo)) {
   
   AddStatesSilently(ElementState::BROKEN);
 }
@@ -299,7 +296,7 @@ void HTMLImageElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None && mForm &&
       (aName == nsGkAtoms::name || aName == nsGkAtoms::id)) {
     
-    if (auto* old = GetParsedAttr(aName); old && !old->IsEmptyString()) {
+    if (const auto* old = GetParsedAttr(aName); old && !old->IsEmptyString()) {
       mForm->RemoveImageElementFromTable(
           this, nsDependentAtomString(old->GetAtomValue()));
     }
@@ -321,6 +318,12 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   }
 
   nsAttrValueOrString attrVal(aValue);
+  if (aName == nsGkAtoms::src) {
+    mSrcURI = nullptr;
+    if (aValue && !aValue->IsEmptyString()) {
+      StringToURI(attrVal.String(), OwnerDoc(), getter_AddRefs(mSrcURI));
+    }
+  }
 
   if (aValue) {
     AfterMaybeChangeAttr(aNameSpaceID, aName, attrVal, aOldValue,
@@ -458,8 +461,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
 
   if (InResponsiveMode()) {
     if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
-      mResponsiveSelector->SetDefaultSource(aValue.String(),
-                                            mSrcTriggeringPrincipal);
+      mResponsiveSelector->SetDefaultSource(mSrcURI, mSrcTriggeringPrincipal);
     }
     UpdateSourceSyncAndQueueImageTask(true);
   } else if (aNotify && ShouldLoadImage()) {
@@ -655,6 +657,15 @@ ElementState HTMLImageElement::IntrinsicState() const {
 
 void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
+
+  
+  
+  
+  mSrcURI = nullptr;
+  nsAutoString src;
+  if (GetAttr(nsGkAtoms::src, src) && !src.IsEmpty()) {
+    StringToURI(src, OwnerDoc(), getter_AddRefs(mSrcURI));
+  }
 
   
   
@@ -911,12 +922,10 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     triggeringPrincipal =
         mResponsiveSelector->GetSelectedImageTriggeringPrincipal();
     type = eImageLoadType_Imageset;
-  } else {
-    nsAutoString src;
-    hasSrc = GetAttr(nsGkAtoms::src, src);
-    if (hasSrc && !src.IsEmpty()) {
-      Document* doc = OwnerDoc();
-      StringToURI(src, doc, getter_AddRefs(selectedSource));
+  } else if (mSrcURI || HasAttr(nsGkAtoms::src)) {
+    hasSrc = true;
+    if (mSrcURI) {
+      selectedSource = mSrcURI;
       if (HaveSrcsetOrInPicture()) {
         
         
@@ -1154,12 +1163,8 @@ bool HTMLImageElement::SourceElementMatches(Element* aSourceElement) {
   }
 
   nsAutoString type;
-  if (src->GetAttr(nsGkAtoms::type, type) &&
-      !SupportedPictureSourceType(type)) {
-    return false;
-  }
-
-  return true;
+  return !src->GetAttr(nsGkAtoms::type, type) ||
+         SupportedPictureSourceType(type);
 }
 
 already_AddRefed<ResponsiveImageSelector>
@@ -1205,9 +1210,8 @@ HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
   
   if (!isSourceTag) {
     MOZ_ASSERT(aSourceElement == this);
-    nsAutoString src;
-    if (GetAttr(nsGkAtoms::src, src) && !src.IsEmpty()) {
-      sel->SetDefaultSource(src, mSrcTriggeringPrincipal);
+    if (mSrcURI) {
+      sel->SetDefaultSource(mSrcURI, mSrcTriggeringPrincipal);
     }
   }
 

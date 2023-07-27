@@ -369,11 +369,11 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   nsIContent* AsContent() override { return this; }
 
   
-  
-  HTMLFormElement* mForm;
+  RefPtr<ResponsiveImageSelector> mResponsiveSelector;
 
   
-  RefPtr<ResponsiveImageSelector> mResponsiveSelector;
+  
+  HTMLFormElement* mForm = nullptr;
 
  private:
   bool SourceElementMatches(Element* aSourceElement);
@@ -419,16 +419,16 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   void QueueImageLoadTask(bool aAlwaysLoad);
 
-  bool mInDocResponsiveContent;
-
   RefPtr<ImageLoadTask> mPendingImageLoadTask;
+  nsCOMPtr<nsIURI> mSrcURI;
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mSrcsetTriggeringPrincipal;
 
   
   nsCOMPtr<nsIURI> mLastSelectedSource;
   
-  double mCurrentDensity;
+  double mCurrentDensity = 1.0;
+  bool mInDocResponsiveContent = false;
 };
 
 }  
