@@ -97,6 +97,8 @@ var DownloadsPanel = {
 
     window.addEventListener("unload", this.onWindowUnload);
 
+    window.ensureCustomElements("moz-button-group");
+
     
     
     DownloadsCommon.initializeAllDataLinks();
