@@ -81,7 +81,7 @@ nsresult GetFramesInfoForContainer(imgIContainer* aContainer,
           continue;
         }
         
-        auto end = std::end(gFaviconSizes);
+        const auto* end = std::end(gFaviconSizes);
         const uint16_t* matchingSize =
             std::find(std::begin(gFaviconSizes), end, nativeSize.width);
         if (matchingSize != end) {
@@ -381,12 +381,12 @@ nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  iconKey->created = PR_Now();
+  iconKey->created = now;
 
   
   
   
-  int32_t unassociatedCount = mUnassociatedIcons.Count();
+  uint32_t unassociatedCount = mUnassociatedIcons.Count();
   if (unassociatedCount == 1) {
     mExpireUnassociatedIconsTimer->Cancel();
     mExpireUnassociatedIconsTimer->InitWithCallback(
@@ -505,8 +505,9 @@ nsFaviconService::ReplaceFaviconDataFromDataURL(
   uint64_t available64;
   rv = stream->Available(&available64);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (available64 == 0 || available64 > UINT32_MAX / sizeof(uint8_t))
+  if (available64 == 0 || available64 > UINT32_MAX / sizeof(uint8_t)) {
     return NS_ERROR_FILE_TOO_BIG;
+  }
   uint32_t available = (uint32_t)available64;
 
   
@@ -629,16 +630,37 @@ nsFaviconService::CopyFavicons(nsIURI* aFromPageURI, nsIURI* aToPageURI,
 }
 
 nsresult nsFaviconService::GetFaviconLinkForIcon(nsIURI* aFaviconURI,
-                                                 nsIURI** aOutputURI) {
+                                                 nsIURI** _retval) {
   NS_ENSURE_ARG(aFaviconURI);
-  NS_ENSURE_ARG_POINTER(aOutputURI);
+  NS_ENSURE_ARG_POINTER(_retval);
 
   nsAutoCString spec;
   if (aFaviconURI) {
+    
+    
+    static constexpr nsLiteralCString sDirectRequestProtocols[] = {
+        
+        "about"_ns,
+        "chrome"_ns,
+        "data"_ns,
+        "file"_ns,
+        "moz-anno"_ns,
+        "resource"_ns,
+        
+    };
+    nsAutoCString iconURIScheme;
+    if (NS_SUCCEEDED(aFaviconURI->GetScheme(iconURIScheme)) &&
+        std::find(std::begin(sDirectRequestProtocols),
+                  std::end(sDirectRequestProtocols),
+                  iconURIScheme) != std::end(sDirectRequestProtocols)) {
+      
+      *_retval = do_AddRef(aFaviconURI).take();
+      return NS_OK;
+    }
     nsresult rv = aFaviconURI->GetSpec(spec);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-  return GetFaviconLinkForIconString(spec, aOutputURI);
+  return GetFaviconLinkForIconString(spec, _retval);
 }
 
 
@@ -760,7 +782,7 @@ nsresult nsFaviconService::OptimizeIconSizes(IconData& aIcon) {
 }
 
 nsresult nsFaviconService::GetFaviconDataAsync(
-    const nsCString& aFaviconURI, mozIStorageStatementCallback* aCallback) {
+    const nsCString& aFaviconSpec, mozIStorageStatementCallback* aCallback) {
   MOZ_ASSERT(aCallback, "Doesn't make sense to call this without a callback");
 
   nsCOMPtr<mozIStorageAsyncStatement> stmt = mDB->GetAsyncStatement(
@@ -770,7 +792,7 @@ nsresult nsFaviconService::GetFaviconDataAsync(
       "ORDER BY width DESC");
   NS_ENSURE_STATE(stmt);
 
-  nsresult rv = URIBinder::Bind(stmt, "url"_ns, aFaviconURI);
+  nsresult rv = URIBinder::Bind(stmt, "url"_ns, aFaviconSpec);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<mozIStoragePendingStatement> pendingStatement;
@@ -796,10 +818,11 @@ nsFaviconService::PreferredSizeFromURI(nsIURI* aURI, uint16_t* _size) {
   if (start >= 0 && ref.Length() > static_cast<uint32_t>(start) + 5) {
     nsDependentCSubstring size;
     
+    
     size.Rebind(ref, start + 5);
     
     auto begin = size.BeginReading(), end = size.EndReading();
-    for (auto ch = begin; ch < end; ++ch) {
+    for (const auto* ch = begin; ch < end; ++ch) {
       if (*ch < '0' || *ch > '9') {
         
         return NS_OK;
