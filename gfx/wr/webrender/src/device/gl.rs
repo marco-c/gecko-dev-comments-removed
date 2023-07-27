@@ -1841,11 +1841,19 @@ impl Device {
             true
         };
 
-        
-        
-        let supports_qcom_tiled_rendering =
+        let supports_qcom_tiled_rendering = if is_adreno && version_string.contains("V@0490") {
+            
+            
+            false
+        } else if renderer_name == "Adreno (TM) 308"
+            && (version_string.contains("V@331") || version_string.contains("V@415"))
+        {
+            
+            
+            false
+        } else {
             supports_extension(&extensions, "GL_QCOM_tiled_rendering")
-                && !(is_adreno && version_string.contains("V@0490"));
+        };
 
         
         
