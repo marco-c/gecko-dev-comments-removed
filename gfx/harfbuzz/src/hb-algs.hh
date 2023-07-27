@@ -283,8 +283,8 @@ HB_FUNCOBJ (hb_bool);
 
 
 #define mix(h) (					\
-			void((h) ^= (h) >> 23),		\
-			void((h) *= 0x2127599bf4325c37ULL),	\
+			(h) ^= (h) >> 23,		\
+			(h) *= 0x2127599bf4325c37ULL,	\
 			(h) ^= (h) >> 47)
 
 static inline uint64_t fasthash64(const void *buf, size_t len, uint64_t seed)
@@ -362,10 +362,10 @@ struct
   
   template <typename T,
 	    hb_enable_if (std::is_integral<T>::value && sizeof (T) <= sizeof (uint32_t))> constexpr auto
-  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, v * 2654435761u )
+  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, (uint32_t) v * 2654435761u )
   template <typename T,
 	    hb_enable_if (std::is_integral<T>::value && sizeof (T) > sizeof (uint32_t))> constexpr auto
-  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, (v ^ (v >> 32)) * 2654435761u )
+  impl (const T& v, hb_priority<1>) const HB_RETURN (uint32_t, (uint32_t) (v ^ (v >> 32)) * 2654435761u )
 
   template <typename T> constexpr auto
   impl (const T& v, hb_priority<0>) const HB_RETURN (uint32_t, std::hash<hb_decay<decltype (hb_deref (v))>>{} (hb_deref (v)))
