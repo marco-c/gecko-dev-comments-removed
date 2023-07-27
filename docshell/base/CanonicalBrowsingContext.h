@@ -204,6 +204,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       const Sequence<mozilla::OwningNonNull<BrowsingContext>>& aRoots);
 
   
+  static bool IsPrivateBrowsingActive();
+
+  
   
   void UpdateMediaControlAction(const MediaControlAction& aAction);
 
