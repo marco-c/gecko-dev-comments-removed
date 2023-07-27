@@ -122,12 +122,19 @@ const MESSAGING_EXPERIMENTS_DEFAULT_FEATURES = [
   "moments-page",
   "pbNewtab",
   "spotlight",
+  "featureCallout",
 ];
 
 
 
 
-const REACH_EVENT_GROUPS = ["cfr", "moments-page", "infobar", "spotlight"];
+const REACH_EVENT_GROUPS = [
+  "cfr",
+  "moments-page",
+  "infobar",
+  "spotlight",
+  "featureCallout",
+];
 const REACH_EVENT_CATEGORY = "messaging_experiments";
 const REACH_EVENT_METHOD = "reach";
 
