@@ -4,9 +4,17 @@
 
 
 
+GeneratedFile(
+    "Role.h",
+    script="/accessible/base/RoleHGen.py",
+    entry_point="generate",
+    inputs=["/accessible/interfaces/nsIAccessibleRole.idl"],
+)
+
 EXPORTS += ["AccEvent.h", "nsAccessibilityService.h"]
 
 EXPORTS.mozilla.a11y += [
+    "!Role.h",
     "AccAttributes.h",
     "AccGroupInfo.h",
     "AccTypes.h",
@@ -16,7 +24,6 @@ EXPORTS.mozilla.a11y += [
     "IDSet.h",
     "Platform.h",
     "RelationType.h",
-    "Role.h",
     "SelectionManager.h",
     "States.h",
 ]
