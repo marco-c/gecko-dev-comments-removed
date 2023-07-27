@@ -26,6 +26,9 @@ SOURCES += [
 
 
 
+WASM_CXXFLAGS += ["-msimd128"]
+
+
 DEFINES["WASM_RT_USE_MMAP"] = 1
 
 
