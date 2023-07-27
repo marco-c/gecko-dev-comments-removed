@@ -698,7 +698,7 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
     return true;
   }
 #endif  
-  if (!IsWin8OrLater() || !Preferences::GetBool(kOskEnabled, true) ||
+  if (!Preferences::GetBool(kOskEnabled, true) ||
       !IMEHandler::NeedOnScreenKeyboard()) {
     return false;
   }
@@ -706,7 +706,7 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
   
   
   
-  if (IsWin10OrLater() && !IsWin11OrLater()) {
+  if (!IsWin11OrLater()) {
     if (!IsInTabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
       return false;
     }
@@ -738,10 +738,6 @@ void IMEHandler::MaybeDismissOnScreenKeyboard(nsWindow* aWindow, Sync aSync) {
     OSKVRManager::DismissOnScreenKeyboard();
   }
 #endif  
-  if (!IsWin8OrLater()) {
-    return;
-  }
-
   if (aSync == Sync::Yes) {
     DismissOnScreenKeyboard(aWindow);
     return;
@@ -780,12 +776,6 @@ bool IMEHandler::WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
 
 
 bool IMEHandler::NeedOnScreenKeyboard() {
-  
-  if (!IsWin8OrLater()) {
-    Preferences::SetString(kOskDebugReason, L"IKPOS: Requires Win8+.");
-    return false;
-  }
-
   if (!Preferences::GetBool(kOskDetectPhysicalKeyboard, true)) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: Detection disabled.");
     return true;

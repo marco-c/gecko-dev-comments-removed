@@ -13,7 +13,6 @@
 #include "WinUtils.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/WindowsVersion.h"
 #include "mozilla/dom/MouseEventBinding.h"
 
 using namespace mozilla;
@@ -31,10 +30,6 @@ WinPointerEvents::WinPointerEvents() { InitLibrary(); }
 
 void WinPointerEvents::InitLibrary() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (!IsWin8OrLater()) {
-    
-    return;
-  }
   if (getPointerType) {
     
     return;
@@ -108,12 +103,6 @@ bool WinPointerEvents::GetPointerPenInfo(uint32_t aPointerId,
     return false;
   }
   return getPointerPenInfo(aPointerId, aPenInfo);
-}
-
-bool WinPointerEvents::ShouldEnableInkCollector() {
-  
-  
-  return !IsWin8OrLater();
 }
 
 bool WinPointerEvents::ShouldRollupOnPointerEvent(UINT aMsg, WPARAM aWParam) {

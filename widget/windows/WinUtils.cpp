@@ -28,7 +28,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
-#include "mozilla/WindowsVersion.h"
 #include "mozilla/Unused.h"
 #include "nsIContentPolicy.h"
 #include "WindowsUIUtils.h"
@@ -99,7 +98,7 @@ void WinUtils::Initialize() {
   
   
   
-  if (IsWin10OrLater() && !IsWin32kLockedDown()) {
+  if (!IsWin32kLockedDown()) {
     HMODULE user32Dll = ::GetModuleHandleW(L"user32");
     if (user32Dll) {
       auto getThreadDpiAwarenessContext =
@@ -128,9 +127,7 @@ void WinUtils::Initialize() {
     }
   }
 
-  if (IsWin8OrLater()) {
-    sHasPackageIdentity = mozilla::HasPackageIdentity();
-  }
+  sHasPackageIdentity = mozilla::HasPackageIdentity();
 }
 
 
@@ -1468,10 +1465,6 @@ static bool IsTabletDevice() {
   
   
 
-  if (!IsWin8OrLater()) {
-    return false;
-  }
-
   if (WindowsUIUtils::GetInTabletMode()) {
     return true;
   }
@@ -2043,10 +2036,6 @@ static LONG SetRelativeScaleStep(LUID aAdapterId, int32_t aRelativeScaleStep) {
 }
 
 nsresult WinUtils::SetHiDPIMode(bool aHiDPI) {
-  if (!IsWin10OrLater()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   auto config = GetDisplayConfig();
   if (!config) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -2102,10 +2091,6 @@ nsresult WinUtils::SetHiDPIMode(bool aHiDPI) {
 }
 
 nsresult WinUtils::RestoreHiDPIMode() {
-  if (!IsWin10OrLater()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   if (sCurRelativeScaleStep == std::numeric_limits<int>::max()) {
     
     return NS_ERROR_UNEXPECTED;
