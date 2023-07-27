@@ -96,8 +96,6 @@ const char* gInaccessibleProperties[] = {
     "-moz-default-appearance",
     "-moz-inert",
     "-moz-script-level",  
-    "-moz-script-size-multiplier",
-    "-moz-script-min-size",
     "-moz-math-variant",
     "-moz-math-display",                     
     "-moz-top-layer",                        

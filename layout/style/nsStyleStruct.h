@@ -158,7 +158,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   mozilla::NonNegativeLength mScriptUnconstrainedSize;
   mozilla::Length mScriptMinSize;
-  float mScriptSizeMultiplier;
   RefPtr<nsAtom> mLanguage;
 };
 

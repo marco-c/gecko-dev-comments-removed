@@ -137,11 +137,6 @@ class MOZ_STACK_CLASS MappedDeclarationsBuilder final {
   }
 
   
-  void SetNumberValue(nsCSSPropertyID aId, float aValue) {
-    Servo_DeclarationBlock_SetNumberValue(&EnsureDecls(), aId, aValue);
-  }
-
-  
   void SetPercentValue(nsCSSPropertyID aId, float aValue) {
     Servo_DeclarationBlock_SetPercentValue(&EnsureDecls(), aId, aValue);
   }
