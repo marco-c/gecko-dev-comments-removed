@@ -796,14 +796,6 @@ TestRunner.testFinished = function (tests) {
       );
       var runtime = new Date().valueOf() - TestRunner._currentTestStartTime;
 
-      TestRunner.structuredLogger.testEnd(
-        TestRunner.currentTestURL,
-        result,
-        "OK",
-        "Finished in " + runtime + "ms",
-        { runtime }
-      );
-
       if (
         TestRunner.slowestTestTime < runtime &&
         TestRunner._timeoutFactor >= 1
@@ -816,7 +808,7 @@ TestRunner.testFinished = function (tests) {
 
       
       if (TestRunner._urls.length == 1 && TestRunner.repeat <= 1) {
-        TestRunner.testUnloaded();
+        TestRunner.testUnloaded(result, runtime);
         return;
       }
 
@@ -825,9 +817,17 @@ TestRunner.testFinished = function (tests) {
         !testInXOriginFrame() &&
         $("testframe").contentWindow.location.protocol == "chrome:"
       ) {
-        interstitialURL = "tests/SimpleTest/iframe-between-tests.html";
+        interstitialURL =
+          "tests/SimpleTest/iframe-between-tests.html?result=" +
+          result +
+          "&runtime=" +
+          runtime;
       } else {
-        interstitialURL = "/tests/SimpleTest/iframe-between-tests.html";
+        interstitialURL =
+          "/tests/SimpleTest/iframe-between-tests.html?result=" +
+          result +
+          "&runtime=" +
+          runtime;
       }
       
       if (!testInXOriginFrame()) {
@@ -885,7 +885,7 @@ TestRunner.addAssertionCount = function (count) {
   }
 };
 
-TestRunner.testUnloaded = function () {
+TestRunner.testUnloaded = function (result, runtime) {
   
   
   
@@ -908,13 +908,41 @@ TestRunner.testUnloaded = function () {
       min += additionalAsserts;
       max += additionalAsserts;
     }
-    TestRunner.structuredLogger.assertionCount(
-      TestRunner.currentTestURL,
-      numAsserts,
-      min,
-      max
-    );
+
+    if (numAsserts < min || numAsserts > max) {
+      result = "ERROR";
+
+      var direction = "more";
+      var target = max;
+      if (numAsserts < min) {
+        direction = "less";
+        target = min;
+      }
+      TestRunner.structuredLogger.testStatus(
+        TestRunner.currentTestURL,
+        "Assertion Count",
+        "ERROR",
+        "PASS",
+        numAsserts +
+          " is " +
+          direction +
+          " than expected " +
+          target +
+          " assertions"
+      );
+
+      
+      result = "OK";
+    }
   }
+
+  TestRunner.structuredLogger.testEnd(
+    TestRunner.currentTestURL,
+    result,
+    "OK",
+    "Finished in " + runtime + "ms",
+    { runtime }
+  );
 
   
   SpecialPowers.comparePrefsToBaseline(
