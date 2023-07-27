@@ -1856,9 +1856,7 @@ pref("browser.translation.neverForLanguages", "");
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.translations.enable", true);
-#endif
 
 
 
