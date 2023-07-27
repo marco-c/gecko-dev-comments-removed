@@ -37,6 +37,42 @@ class PromiseNativeHandler : public nsISupports {
 
 
 
+class MozPromiseRejectOnDestructionBase : public PromiseNativeHandler {
+  NS_DECL_ISUPPORTS
+
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {}
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {}
+
+ protected:
+  ~MozPromiseRejectOnDestructionBase() override = default;
+};
+
+
+
+template <typename T>
+class MozPromiseRejectOnDestruction final
+    : public MozPromiseRejectOnDestructionBase {
+ public:
+  
+  
+  explicit MozPromiseRejectOnDestruction(const RefPtr<T>& aMozPromise)
+      : mMozPromise(aMozPromise) {
+    MOZ_ASSERT(aMozPromise);
+  }
+
+ protected:
+  ~MozPromiseRejectOnDestruction() override {
+    
+    mMozPromise->Reject(NS_BINDING_ABORTED, __func__);
+  }
+
+  RefPtr<T> mMozPromise;
+};
+
+
+
 class DomPromiseListener final : public PromiseNativeHandler {
   NS_DECL_ISUPPORTS
 
