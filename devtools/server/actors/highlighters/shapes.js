@@ -382,8 +382,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     
     if (
-      this.drawingNode.getBBox &&
-      getComputedStyle(this.drawingNode).stroke !== "none" &&
+      this.currentNode.getBBox &&
+      getComputedStyle(this.currentNode).stroke !== "none" &&
       !this.useStrokeBox
     ) {
       dims = getObjectBoundingBox(
@@ -391,7 +391,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         dims.left,
         dims.width,
         dims.height,
-        this.drawingNode
+        this.currentNode
       );
     }
 
@@ -407,11 +407,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     
     let dims =
-      this.highlighterEnv.window.document === this.drawingNode.ownerDocument
+      this.highlighterEnv.window.document === this.currentNode.ownerDocument
         ? this.currentQuads[this.referenceBox][0].bounds
         : getAdjustedQuads(
-            this.drawingNode.ownerGlobal,
-            this.drawingNode,
+            this.currentNode.ownerGlobal,
+            this.currentNode,
             this.referenceBox
           )[0].bounds;
     const zoom = getCurrentZoom(this.win);
@@ -422,8 +422,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     
     if (
-      this.drawingNode.getBBox &&
-      getComputedStyle(this.drawingNode).stroke !== "none" &&
+      this.currentNode.getBBox &&
+      getComputedStyle(this.currentNode).stroke !== "none" &&
       !this.useStrokeBox
     ) {
       dims = getObjectBoundingBox(
@@ -431,7 +431,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         dims.left,
         dims.width,
         dims.height,
-        this.drawingNode
+        this.currentNode
       );
     }
 
@@ -2046,14 +2046,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       },
     ];
     const geometryTypes = ["margin", "border", "padding", "content"];
-    
-    const defaultGeometryTypesByProperty = new Map([
-      ["clip-path", "border"],
-      ["offset-path", "border"],
-      ["shape-outside", "margin"],
-    ]);
 
-    let referenceBox = defaultGeometryTypesByProperty.get(this.property);
+    
+    let referenceBox = this.property === "clip-path" ? "border" : "margin";
     for (const geometry of geometryTypes) {
       if (definition.includes(geometry)) {
         referenceBox = geometry;
