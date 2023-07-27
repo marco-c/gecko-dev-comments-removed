@@ -704,7 +704,6 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
       
       
       
-      
 
       ParseContext::Scope* scope = pc_->innermostScope();
       if (AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name)) {
