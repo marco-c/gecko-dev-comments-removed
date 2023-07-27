@@ -518,19 +518,18 @@ static bool IsFontSizeInflationContainer(nsIFrame* aFrame,
 
   LayoutFrameType frameType = aFrame->Type();
   bool isInline =
-      (nsStyleDisplay::IsInlineFlow(aFrame->GetDisplay()) ||
-       RubyUtils::IsRubyBox(frameType) ||
-       (aStyleDisplay->IsFloatingStyle() &&
-        frameType == LayoutFrameType::Letter) ||
+      aFrame->GetDisplay().IsInlineFlow() || RubyUtils::IsRubyBox(frameType) ||
+      (aStyleDisplay->IsFloatingStyle() &&
+       frameType == LayoutFrameType::Letter) ||
+      
+      
+      
+      (aFrame->GetParent()->GetContent() == content) ||
+      (content &&
        
-       
-       
-       (aFrame->GetParent()->GetContent() == content) ||
-       (content &&
-        
-        (content->IsAnyOfHTMLElements(
-            nsGkAtoms::option, nsGkAtoms::optgroup, nsGkAtoms::select,
-            nsGkAtoms::input, nsGkAtoms::button, nsGkAtoms::textarea))));
+       (content->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup,
+                                     nsGkAtoms::select, nsGkAtoms::input,
+                                     nsGkAtoms::button, nsGkAtoms::textarea)));
   NS_ASSERTION(!aFrame->IsFrameOfType(nsIFrame::eLineParticipant) || isInline ||
                    
                    
@@ -2417,10 +2416,9 @@ static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
 }
 
 bool nsIFrame::CanBeDynamicReflowRoot() const {
-  auto& display = *StyleDisplay();
-  if (IsFrameOfType(nsIFrame::eLineParticipant) ||
-      nsStyleDisplay::IsRubyDisplayType(display.mDisplay) ||
-      display.DisplayOutside() == StyleDisplayOutside::InternalTable ||
+  const auto& display = *StyleDisplay();
+  if (IsFrameOfType(nsIFrame::eLineParticipant) || display.mDisplay.IsRuby() ||
+      display.IsInnerTableStyle() ||
       display.DisplayInside() == StyleDisplayInside::Table) {
     
     
@@ -2457,7 +2455,7 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
   
   
   
-  auto& pos = *StylePosition();
+  const auto& pos = *StylePosition();
   const auto& width = pos.mWidth;
   const auto& height = pos.mHeight;
   if (!width.IsLengthPercentage() || width.HasPercent() ||
