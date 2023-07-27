@@ -26,18 +26,16 @@ import type {Coverage} from '../common/Coverage.js';
 import {Device} from '../common/Device.js';
 import {DeviceRequestPrompt} from '../common/DeviceRequestPrompt.js';
 import type {Dialog} from '../common/Dialog.js';
+import {TargetCloseError} from '../common/Errors.js';
 import {EventEmitter, Handler} from '../common/EventEmitter.js';
 import type {FileChooser} from '../common/FileChooser.js';
-import type {
-  Frame,
-  FrameAddScriptTagOptions,
-  FrameAddStyleTagOptions,
-  FrameWaitForFunctionOptions,
-} from '../common/Frame.js';
-import type {Keyboard, Mouse, Touchscreen} from '../common/Input.js';
 import type {WaitForSelectorOptions} from '../common/IsolatedWorld.js';
 import type {PuppeteerLifeCycleEvent} from '../common/LifecycleWatcher.js';
-import type {Credentials, NetworkConditions} from '../common/NetworkManager.js';
+import {
+  Credentials,
+  NetworkConditions,
+  NetworkManagerEmittedEvents,
+} from '../common/NetworkManager.js';
 import {
   LowerCasePaperFormat,
   paperFormats,
@@ -53,14 +51,29 @@ import type {
   HandleFor,
   NodeFor,
 } from '../common/types.js';
-import {importFSPromises, isNumber, isString} from '../common/util.js';
+import {
+  importFSPromises,
+  isNumber,
+  isString,
+  waitForEvent,
+  withSourcePuppeteerURLIfNone,
+} from '../common/util.js';
 import type {WebWorker} from '../common/WebWorker.js';
 import {assert} from '../util/assert.js';
+import {Deferred} from '../util/Deferred.js';
 
 import type {Browser} from './Browser.js';
 import type {BrowserContext} from './BrowserContext.js';
 import type {ClickOptions, ElementHandle} from './ElementHandle.js';
+import type {
+  Frame,
+  FrameAddScriptTagOptions,
+  FrameAddStyleTagOptions,
+  FrameWaitForFunctionOptions,
+} from './Frame.js';
+import {Keyboard, Mouse, Touchscreen, KeyboardTypeOptions} from './Input.js';
 import type {JSHandle} from './JSHandle.js';
+import {Locator} from './Locator.js';
 
 
 
@@ -157,6 +170,10 @@ export interface ScreenshotClip {
 
 
 export interface ScreenshotOptions {
+  
+
+
+  optimizeForSpeed?: boolean;
   
 
 
@@ -388,6 +405,13 @@ export interface PageEventObject {
 
 
 
+export interface NewDocumentScriptEvaluation {
+  identifier: string;
+}
+
+
+
+
 
 
 
@@ -447,6 +471,13 @@ export class Page extends EventEmitter {
   
 
 
+  isServiceWorkerBypassed(): boolean {
+    throw new Error('Not implemented');
+  }
+
+  
+
+
   isDragInterceptionEnabled(): boolean {
     throw new Error('Not implemented');
   }
@@ -472,7 +503,7 @@ export class Page extends EventEmitter {
   override on<K extends keyof PageEventObject>(
     eventName: K,
     handler: (event: PageEventObject[K]) => void
-  ): EventEmitter {
+  ): this {
     if (eventName === 'request') {
       const wrap =
         this.#handlerMap.get(handler) ||
@@ -492,7 +523,7 @@ export class Page extends EventEmitter {
   override once<K extends keyof PageEventObject>(
     eventName: K,
     handler: (event: PageEventObject[K]) => void
-  ): EventEmitter {
+  ): this {
     
     
     return super.once(eventName, handler);
@@ -501,7 +532,7 @@ export class Page extends EventEmitter {
   override off<K extends keyof PageEventObject>(
     eventName: K,
     handler: (event: PageEventObject[K]) => void
-  ): EventEmitter {
+  ): this {
     if (eventName === 'request') {
       handler = this.#handlerMap.get(handler) || handler;
     }
@@ -691,6 +722,16 @@ export class Page extends EventEmitter {
 
 
 
+  async setBypassServiceWorker(bypass: boolean): Promise<void>;
+  async setBypassServiceWorker(): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  
+
+
+
+
 
 
 
@@ -790,13 +831,33 @@ export class Page extends EventEmitter {
 
 
 
+  locator<Selector extends string>(
+    selector: Selector
+  ): Locator<NodeFor<Selector>> {
+    return Locator.create(this, selector);
+  }
+
+  
+
+
+
+
+  locatorRace(locators: Array<Locator<Node>>): Locator<Node> {
+    return Locator.race(locators);
+  }
+
+  
+
+
+
+
+
+
+
   async $<Selector extends string>(
     selector: Selector
-  ): Promise<ElementHandle<NodeFor<Selector>> | null>;
-  async $<Selector extends string>(): Promise<ElementHandle<
-    NodeFor<Selector>
-  > | null> {
-    throw new Error('Not implemented');
+  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
+    return this.mainFrame().$(selector);
   }
 
   
@@ -808,11 +869,8 @@ export class Page extends EventEmitter {
 
   async $$<Selector extends string>(
     selector: Selector
-  ): Promise<Array<ElementHandle<NodeFor<Selector>>>>;
-  async $$<Selector extends string>(): Promise<
-    Array<ElementHandle<NodeFor<Selector>>>
-  > {
-    throw new Error('Not implemented');
+  ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
+    return this.mainFrame().$$(selector);
   }
 
   
@@ -874,14 +932,14 @@ export class Page extends EventEmitter {
 
   async evaluateHandle<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
   async evaluateHandle<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
     throw new Error('Not implemented');
   }
@@ -984,14 +1042,14 @@ export class Page extends EventEmitter {
     Func extends EvaluateFuncWith<NodeFor<Selector>, Params> = EvaluateFuncWith<
       NodeFor<Selector>,
       Params
-    >
+    >,
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  async $eval(): Promise<unknown> {
-    throw new Error('Not implemented');
+  ): Promise<Awaited<ReturnType<Func>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(this.$eval.name, pageFunction);
+    return this.mainFrame().$eval(selector, pageFunction, ...args);
   }
 
   
@@ -1062,14 +1120,14 @@ export class Page extends EventEmitter {
     Func extends EvaluateFuncWith<
       Array<NodeFor<Selector>>,
       Params
-    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>
+    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  async $$eval(): Promise<unknown> {
-    throw new Error('Not implemented');
+  ): Promise<Awaited<ReturnType<Func>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(this.$$eval.name, pageFunction);
+    return this.mainFrame().$$eval(selector, pageFunction, ...args);
   }
 
   
@@ -1082,9 +1140,8 @@ export class Page extends EventEmitter {
 
 
 
-  async $x(expression: string): Promise<Array<ElementHandle<Node>>>;
-  async $x(): Promise<Array<ElementHandle<Node>>> {
-    throw new Error('Not implemented');
+  async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
+    return this.mainFrame().$x(expression);
   }
 
   
@@ -1128,9 +1185,8 @@ export class Page extends EventEmitter {
 
   async addScriptTag(
     options: FrameAddScriptTagOptions
-  ): Promise<ElementHandle<HTMLScriptElement>>;
-  async addScriptTag(): Promise<ElementHandle<HTMLScriptElement>> {
-    throw new Error('Not implemented');
+  ): Promise<ElementHandle<HTMLScriptElement>> {
+    return this.mainFrame().addScriptTag(options);
   }
 
   
@@ -1151,11 +1207,8 @@ export class Page extends EventEmitter {
   ): Promise<ElementHandle<HTMLLinkElement>>;
   async addStyleTag(
     options: FrameAddStyleTagOptions
-  ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>>;
-  async addStyleTag(): Promise<
-    ElementHandle<HTMLStyleElement | HTMLLinkElement>
-  > {
-    throw new Error('Not implemented');
+  ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>> {
+    return this.mainFrame().addStyleTag(options);
   }
 
   
@@ -1233,6 +1286,15 @@ export class Page extends EventEmitter {
     pptrFunction: Function | {default: Function}
   ): Promise<void>;
   async exposeFunction(): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  
+
+
+
+  async removeExposedFunction(name: string): Promise<void>;
+  async removeExposedFunction(): Promise<void> {
     throw new Error('Not implemented');
   }
 
@@ -1497,10 +1559,9 @@ export class Page extends EventEmitter {
 
 
   async waitForNavigation(
-    options?: WaitForOptions
-  ): Promise<HTTPResponse | null>;
-  async waitForNavigation(): Promise<HTTPResponse | null> {
-    throw new Error('Not implemented');
+    options: WaitForOptions = {}
+  ): Promise<HTTPResponse | null> {
+    return await this.mainFrame().waitForNavigation(options);
   }
 
   
@@ -1581,6 +1642,73 @@ export class Page extends EventEmitter {
   }): Promise<void>;
   async waitForNetworkIdle(): Promise<void> {
     throw new Error('Not implemented');
+  }
+
+  
+
+
+  protected async _waitForNetworkIdle(
+    networkManager: EventEmitter & {
+      inFlightRequestsCount: () => number;
+    },
+    idleTime: number,
+    timeout: number,
+    closedDeferred: Deferred<TargetCloseError>
+  ): Promise<void> {
+    const idleDeferred = Deferred.create<void>();
+    const abortDeferred = Deferred.create<Error>();
+
+    let idleTimer: NodeJS.Timeout | undefined;
+    const cleanup = () => {
+      clearTimeout(idleTimer);
+      abortDeferred.reject(new Error('abort'));
+    };
+
+    const evaluate = () => {
+      clearTimeout(idleTimer);
+
+      if (networkManager.inFlightRequestsCount() === 0) {
+        idleTimer = setTimeout(() => {
+          return idleDeferred.resolve();
+        }, idleTime);
+      }
+    };
+
+    const listenToEvent = (event: symbol) => {
+      return waitForEvent(
+        networkManager,
+        event,
+        () => {
+          evaluate();
+          return false;
+        },
+        timeout,
+        abortDeferred
+      );
+    };
+
+    const eventPromises = [
+      listenToEvent(NetworkManagerEmittedEvents.Request),
+      listenToEvent(NetworkManagerEmittedEvents.Response),
+      listenToEvent(NetworkManagerEmittedEvents.RequestFailed),
+    ];
+
+    evaluate();
+
+    
+    
+    const closedPromise = closedDeferred.valueOrThrow();
+
+    await Deferred.race([idleDeferred, ...eventPromises, closedPromise]).then(
+      r => {
+        cleanup();
+        return r;
+      },
+      error => {
+        cleanup();
+        throw error;
+      }
+    );
   }
 
   
@@ -2037,14 +2165,14 @@ export class Page extends EventEmitter {
 
   async evaluate<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>>;
   async evaluate<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(): Promise<Awaited<ReturnType<Func>>> {
     throw new Error('Not implemented');
   }
@@ -2083,9 +2211,22 @@ export class Page extends EventEmitter {
 
   async evaluateOnNewDocument<
     Params extends unknown[],
-    Func extends (...args: Params) => unknown = (...args: Params) => unknown
-  >(pageFunction: Func | string, ...args: Params): Promise<void>;
-  async evaluateOnNewDocument(): Promise<void> {
+    Func extends (...args: Params) => unknown = (...args: Params) => unknown,
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<NewDocumentScriptEvaluation>;
+  async evaluateOnNewDocument(): Promise<NewDocumentScriptEvaluation> {
+    throw new Error('Not implemented');
+  }
+
+  
+
+
+
+
+  async removeScriptToEvaluateOnNewDocument(identifier: string): Promise<void>;
+  async removeScriptToEvaluateOnNewDocument(): Promise<void> {
     throw new Error('Not implemented');
   }
 
@@ -2314,9 +2455,8 @@ export class Page extends EventEmitter {
 
 
 
-  click(selector: string, options?: Readonly<ClickOptions>): Promise<void>;
-  click(): Promise<void> {
-    throw new Error('Not implemented');
+  click(selector: string, options?: Readonly<ClickOptions>): Promise<void> {
+    return this.mainFrame().click(selector, options);
   }
 
   
@@ -2332,29 +2472,8 @@ export class Page extends EventEmitter {
 
 
 
-  focus(selector: string): Promise<void>;
-  focus(): Promise<void> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  hover(selector: string): Promise<void>;
-  hover(): Promise<void> {
-    throw new Error('Not implemented');
+  focus(selector: string): Promise<void> {
+    return this.mainFrame().focus(selector);
   }
 
   
@@ -2372,17 +2491,8 @@ export class Page extends EventEmitter {
 
 
 
-
-
-
-
-
-
-
-
-  select(selector: string, ...values: string[]): Promise<string[]>;
-  select(): Promise<string[]> {
-    throw new Error('Not implemented');
+  hover(selector: string): Promise<void> {
+    return this.mainFrame().hover(selector);
   }
 
   
@@ -2398,9 +2508,35 @@ export class Page extends EventEmitter {
 
 
 
-  tap(selector: string): Promise<void>;
-  tap(): Promise<void> {
-    throw new Error('Not implemented');
+
+
+
+
+
+
+
+
+
+
+  select(selector: string, ...values: string[]): Promise<string[]> {
+    return this.mainFrame().select(selector, ...values);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  tap(selector: string): Promise<void> {
+    return this.mainFrame().tap(selector);
   }
 
   
@@ -2430,10 +2566,9 @@ export class Page extends EventEmitter {
   type(
     selector: string,
     text: string,
-    options?: {delay: number}
-  ): Promise<void>;
-  type(): Promise<void> {
-    throw new Error('Not implemented');
+    options?: Readonly<KeyboardTypeOptions>
+  ): Promise<void> {
+    return this.mainFrame().type(selector, text, options);
   }
 
   
@@ -2456,9 +2591,8 @@ export class Page extends EventEmitter {
 
 
 
-  waitForTimeout(milliseconds: number): Promise<void>;
-  waitForTimeout(): Promise<void> {
-    throw new Error('Not implemented');
+  waitForTimeout(milliseconds: number): Promise<void> {
+    return this.mainFrame().waitForTimeout(milliseconds);
   }
 
   
@@ -2514,12 +2648,9 @@ export class Page extends EventEmitter {
 
   async waitForSelector<Selector extends string>(
     selector: Selector,
-    options?: WaitForSelectorOptions
-  ): Promise<ElementHandle<NodeFor<Selector>> | null>;
-  async waitForSelector<Selector extends string>(): Promise<ElementHandle<
-    NodeFor<Selector>
-  > | null> {
-    throw new Error('Not implemented');
+    options: WaitForSelectorOptions = {}
+  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
+    return await this.mainFrame().waitForSelector(selector, options);
   }
 
   
@@ -2576,9 +2707,8 @@ export class Page extends EventEmitter {
   waitForXPath(
     xpath: string,
     options?: WaitForSelectorOptions
-  ): Promise<ElementHandle<Node> | null>;
-  waitForXPath(): Promise<ElementHandle<Node> | null> {
-    throw new Error('Not implemented');
+  ): Promise<ElementHandle<Node> | null> {
+    return this.mainFrame().waitForXPath(xpath, options);
   }
 
   
@@ -2640,17 +2770,13 @@ export class Page extends EventEmitter {
 
   waitForFunction<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     options?: FrameWaitForFunctionOptions,
     ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
-  waitForFunction<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
-  >(): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    throw new Error('Not implemented');
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+    return this.mainFrame().waitForFunction(pageFunction, options, ...args);
   }
 
   

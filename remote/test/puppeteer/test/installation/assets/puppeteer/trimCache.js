@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import puppeteer from 'puppeteer';
+
+(async () => {
+  await puppeteer.trimCache();
+})();

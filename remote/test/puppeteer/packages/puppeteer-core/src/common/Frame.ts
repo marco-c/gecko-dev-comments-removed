@@ -16,10 +16,12 @@
 
 import {Protocol} from 'devtools-protocol';
 
-import {type ClickOptions, ElementHandle} from '../api/ElementHandle.js';
+import {ElementHandle} from '../api/ElementHandle.js';
+import {Frame as BaseFrame} from '../api/Frame.js';
 import {HTTPResponse} from '../api/HTTPResponse.js';
 import {Page, WaitTimeoutOptions} from '../api/Page.js';
 import {assert} from '../util/assert.js';
+import {Deferred} from '../util/Deferred.js';
 import {isErrorLike} from '../util/ErrorLike.js';
 
 import {CDPSession} from './Connection.js';
@@ -29,191 +31,26 @@ import {
 } from './DeviceRequestPrompt.js';
 import {ExecutionContext} from './ExecutionContext.js';
 import {FrameManager} from './FrameManager.js';
-import {getQueryHandlerAndSelector} from './GetQueryHandler.js';
-import {
-  IsolatedWorld,
-  IsolatedWorldChart,
-  WaitForSelectorOptions,
-} from './IsolatedWorld.js';
+import {IsolatedWorld} from './IsolatedWorld.js';
 import {MAIN_WORLD, PUPPETEER_WORLD} from './IsolatedWorlds.js';
-import {LazyArg} from './LazyArg.js';
 import {LifecycleWatcher, PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
 import {EvaluateFunc, EvaluateFuncWith, HandleFor, NodeFor} from './types.js';
-import {importFSPromises} from './util.js';
+import {withSourcePuppeteerURLIfNone} from './util.js';
 
 
 
 
-export interface FrameWaitForFunctionOptions {
-  
-
-
-
-
-
-
-
-
-
-
-
-  polling?: 'raf' | 'mutation' | number;
-  
-
-
-
-
-  timeout?: number;
-  
-
-
-  signal?: AbortSignal;
-}
-
-
-
-
-export interface FrameAddScriptTagOptions {
-  
-
-
-  url?: string;
-  
-
-
-
-
-
-
-  path?: string;
-  
-
-
-  content?: string;
-  
-
-
-  type?: string;
-  
-
-
-  id?: string;
-}
-
-
-
-
-export interface FrameAddStyleTagOptions {
-  
-
-
-  url?: string;
-  
-
-
-
-
-
-  path?: string;
-  
-
-
-  content?: string;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class Frame {
+export class Frame extends BaseFrame {
   #url = '';
   #detached = false;
   #client!: CDPSession;
 
-  
-
-
-  worlds!: IsolatedWorldChart;
-  
-
-
   _frameManager: FrameManager;
-  
-
-
-  _id: string;
-  
-
-
+  override _id: string;
   _loaderId = '';
-  
-
-
-  _name?: string;
-  
-
-
-  _hasStartedLoading = false;
-  
-
-
+  override _hasStartedLoading = false;
   _lifecycleEvents = new Set<string>();
-  
-
-
-  _parentId?: string;
-
-  
-
+  override _parentId?: string;
 
   constructor(
     frameManager: FrameManager,
@@ -221,6 +58,7 @@ export class Frame {
     parentFrameId: string | undefined,
     client: CDPSession
   ) {
+    super();
     this._frameManager = frameManager;
     this.#url = '';
     this._id = frameId;
@@ -232,9 +70,6 @@ export class Frame {
     this.updateClient(client);
   }
 
-  
-
-
   updateClient(client: CDPSession): void {
     this.#client = client;
     this.worlds = {
@@ -243,59 +78,15 @@ export class Frame {
     };
   }
 
-  
-
-
-  page(): Page {
+  override page(): Page {
     return this._frameManager.page();
   }
 
-  
-
-
-
-  isOOPFrame(): boolean {
+  override isOOPFrame(): boolean {
     return this.#client !== this._frameManager.client;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async goto(
+  override async goto(
     url: string,
     options: {
       referer?: string;
@@ -320,7 +111,7 @@ export class Frame {
       waitUntil,
       timeout
     );
-    let error = await Promise.race([
+    let error = await Deferred.race([
       navigate(
         this.#client,
         url,
@@ -328,11 +119,11 @@ export class Frame {
         referrerPolicy as Protocol.Page.ReferrerPolicy,
         this._id
       ),
-      watcher.timeoutOrTerminationPromise(),
+      watcher.terminationPromise(),
     ]);
     if (!error) {
-      error = await Promise.race([
-        watcher.timeoutOrTerminationPromise(),
+      error = await Deferred.race([
+        watcher.terminationPromise(),
         ensureNewDocumentNavigation
           ? watcher.newDocumentNavigationPromise()
           : watcher.sameDocumentNavigationPromise(),
@@ -378,30 +169,7 @@ export class Frame {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForNavigation(
+  override async waitForNavigation(
     options: {
       timeout?: number;
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
@@ -417,8 +185,8 @@ export class Frame {
       waitUntil,
       timeout
     );
-    const error = await Promise.race([
-      watcher.timeoutOrTerminationPromise(),
+    const error = await Deferred.race([
+      watcher.terminationPromise(),
       watcher.sameDocumentNavigationPromise(),
       watcher.newDocumentNavigationPromise(),
     ]);
@@ -432,643 +200,141 @@ export class Frame {
     }
   }
 
-  
-
-
-  _client(): CDPSession {
+  override _client(): CDPSession {
     return this.#client;
   }
 
-  
-
-
-  executionContext(): Promise<ExecutionContext> {
+  override executionContext(): Promise<ExecutionContext> {
     return this.worlds[MAIN_WORLD].executionContext();
   }
 
   
 
 
+  override mainRealm(): IsolatedWorld {
+    return this.worlds[MAIN_WORLD];
+  }
+
+  
 
 
+  override isolatedRealm(): IsolatedWorld {
+    return this.worlds[PUPPETEER_WORLD];
+  }
 
-  async evaluateHandle<
+  override async evaluateHandle<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    return this.worlds[MAIN_WORLD].evaluateHandle(pageFunction, ...args);
+    pageFunction = withSourcePuppeteerURLIfNone(
+      this.evaluateHandle.name,
+      pageFunction
+    );
+    return this.mainRealm().evaluateHandle(pageFunction, ...args);
   }
 
-  
-
-
-
-
-
-  async evaluate<
+  override async evaluate<
     Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>> {
-    return this.worlds[MAIN_WORLD].evaluate(pageFunction, ...args);
+    pageFunction = withSourcePuppeteerURLIfNone(
+      this.evaluate.name,
+      pageFunction
+    );
+    return this.mainRealm().evaluate(pageFunction, ...args);
   }
 
-  
-
-
-
-
-
-
-  async $<Selector extends string>(
+  override async $<Selector extends string>(
     selector: Selector
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
-    return this.worlds[MAIN_WORLD].$(selector);
+    return this.mainRealm().$(selector);
   }
 
-  
-
-
-
-
-
-
-  async $$<Selector extends string>(
+  override async $$<Selector extends string>(
     selector: Selector
   ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
-    return this.worlds[MAIN_WORLD].$$(selector);
+    return this.mainRealm().$$(selector);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async $eval<
+  override async $eval<
     Selector extends string,
     Params extends unknown[],
     Func extends EvaluateFuncWith<NodeFor<Selector>, Params> = EvaluateFuncWith<
       NodeFor<Selector>,
       Params
-    >
+    >,
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>> {
-    return this.worlds[MAIN_WORLD].$eval(selector, pageFunction, ...args);
+    pageFunction = withSourcePuppeteerURLIfNone(this.$eval.name, pageFunction);
+    return this.mainRealm().$eval(selector, pageFunction, ...args);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async $$eval<
+  override async $$eval<
     Selector extends string,
     Params extends unknown[],
     Func extends EvaluateFuncWith<
       Array<NodeFor<Selector>>,
       Params
-    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>
+    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>> {
-    return this.worlds[MAIN_WORLD].$$eval(selector, pageFunction, ...args);
+    pageFunction = withSourcePuppeteerURLIfNone(this.$$eval.name, pageFunction);
+    return this.mainRealm().$$eval(selector, pageFunction, ...args);
   }
 
-  
-
-
-
-
-
-
-
-
-
-  async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
-    return this.worlds[MAIN_WORLD].$x(expression);
+  override async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
+    return this.mainRealm().$x(expression);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForSelector<Selector extends string>(
-    selector: Selector,
-    options: WaitForSelectorOptions = {}
-  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
-    const {updatedSelector, QueryHandler} =
-      getQueryHandlerAndSelector(selector);
-    return (await QueryHandler.waitFor(
-      this,
-      updatedSelector,
-      options
-    )) as ElementHandle<NodeFor<Selector>> | null;
+  override async content(): Promise<string> {
+    return this.isolatedRealm().content();
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForXPath(
-    xpath: string,
-    options: WaitForSelectorOptions = {}
-  ): Promise<ElementHandle<Node> | null> {
-    if (xpath.startsWith('//')) {
-      xpath = `.${xpath}`;
-    }
-    return this.waitForSelector(`xpath/${xpath}`, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForFunction<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
-  >(
-    pageFunction: Func | string,
-    options: FrameWaitForFunctionOptions = {},
-    ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    return this.worlds[MAIN_WORLD].waitForFunction(
-      pageFunction,
-      options,
-      ...args
-    ) as Promise<HandleFor<Awaited<ReturnType<Func>>>>;
-  }
-
-  
-
-
-  async content(): Promise<string> {
-    return this.worlds[PUPPETEER_WORLD].content();
-  }
-
-  
-
-
-
-
-
-
-  async setContent(
+  override async setContent(
     html: string,
     options: {
       timeout?: number;
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     } = {}
   ): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].setContent(html, options);
+    return this.isolatedRealm().setContent(html, options);
   }
 
-  
-
-
-
-
-
-
-
-
-
-  name(): string {
+  override name(): string {
     return this._name || '';
   }
 
-  
-
-
-  url(): string {
+  override url(): string {
     return this.#url;
   }
 
-  
-
-
-  parentFrame(): Frame | null {
+  override parentFrame(): Frame | null {
     return this._frameManager._frameTree.parentFrame(this._id) || null;
   }
 
-  
-
-
-  childFrames(): Frame[] {
+  override childFrames(): Frame[] {
     return this._frameManager._frameTree.childFrames(this._id);
   }
 
-  
-
-
-  isDetached(): boolean {
+  override isDetached(): boolean {
     return this.#detached;
   }
 
-  
-
-
-
-
-
-
-  async addScriptTag(
-    options: FrameAddScriptTagOptions
-  ): Promise<ElementHandle<HTMLScriptElement>> {
-    let {content = '', type} = options;
-    const {path} = options;
-    if (+!!options.url + +!!path + +!!content !== 1) {
-      throw new Error(
-        'Exactly one of `url`, `path`, or `content` must be specified.'
-      );
-    }
-
-    if (path) {
-      const fs = await importFSPromises();
-      content = await fs.readFile(path, 'utf8');
-      content += `//# sourceURL=${path.replace(/\n/g, '')}`;
-    }
-
-    type = type ?? 'text/javascript';
-
-    return this.worlds[MAIN_WORLD].transferHandle(
-      await this.worlds[PUPPETEER_WORLD].evaluateHandle(
-        async ({createDeferredPromise}, {url, id, type, content}) => {
-          const promise = createDeferredPromise<void>();
-          const script = document.createElement('script');
-          script.type = type;
-          script.text = content;
-          if (url) {
-            script.src = url;
-            script.addEventListener(
-              'load',
-              () => {
-                return promise.resolve();
-              },
-              {once: true}
-            );
-            script.addEventListener(
-              'error',
-              event => {
-                promise.reject(
-                  new Error(event.message ?? 'Could not load script')
-                );
-              },
-              {once: true}
-            );
-          } else {
-            promise.resolve();
-          }
-          if (id) {
-            script.id = id;
-          }
-          document.head.appendChild(script);
-          await promise;
-          return script;
-        },
-        LazyArg.create(context => {
-          return context.puppeteerUtil;
-        }),
-        {...options, type, content}
-      )
-    );
+  override async title(): Promise<string> {
+    return this.isolatedRealm().title();
   }
-
-  
-
-
-
-
-
-
-  async addStyleTag(
-    options: Omit<FrameAddStyleTagOptions, 'url'>
-  ): Promise<ElementHandle<HTMLStyleElement>>;
-  async addStyleTag(
-    options: FrameAddStyleTagOptions
-  ): Promise<ElementHandle<HTMLLinkElement>>;
-  async addStyleTag(
-    options: FrameAddStyleTagOptions
-  ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>> {
-    let {content = ''} = options;
-    const {path} = options;
-    if (+!!options.url + +!!path + +!!content !== 1) {
-      throw new Error(
-        'Exactly one of `url`, `path`, or `content` must be specified.'
-      );
-    }
-
-    if (path) {
-      const fs = await importFSPromises();
-
-      content = await fs.readFile(path, 'utf8');
-      content += '/*# sourceURL=' + path.replace(/\n/g, '') + '*/';
-      options.content = content;
-    }
-
-    return this.worlds[MAIN_WORLD].transferHandle(
-      await this.worlds[PUPPETEER_WORLD].evaluateHandle(
-        async ({createDeferredPromise}, {url, content}) => {
-          const promise = createDeferredPromise<void>();
-          let element: HTMLStyleElement | HTMLLinkElement;
-          if (!url) {
-            element = document.createElement('style');
-            element.appendChild(document.createTextNode(content!));
-          } else {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = url;
-            element = link;
-          }
-          element.addEventListener(
-            'load',
-            () => {
-              promise.resolve();
-            },
-            {once: true}
-          );
-          element.addEventListener(
-            'error',
-            event => {
-              promise.reject(
-                new Error(
-                  (event as ErrorEvent).message ?? 'Could not load style'
-                )
-              );
-            },
-            {once: true}
-          );
-          document.head.appendChild(element);
-          await promise;
-          return element;
-        },
-        LazyArg.create(context => {
-          return context.puppeteerUtil;
-        }),
-        options
-      )
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async click(
-    selector: string,
-    options: Readonly<ClickOptions> = {}
-  ): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].click(selector, options);
-  }
-
-  
-
-
-
-
-
-  async focus(selector: string): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].focus(selector);
-  }
-
-  
-
-
-
-
-
-
-  async hover(selector: string): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].hover(selector);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  select(selector: string, ...values: string[]): Promise<string[]> {
-    return this.worlds[PUPPETEER_WORLD].select(selector, ...values);
-  }
-
-  
-
-
-
-
-
-  async tap(selector: string): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].tap(selector);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async type(
-    selector: string,
-    text: string,
-    options?: {delay: number}
-  ): Promise<void> {
-    return this.worlds[PUPPETEER_WORLD].type(selector, text, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForTimeout(milliseconds: number): Promise<void> {
-    return new Promise(resolve => {
-      setTimeout(resolve, milliseconds);
-    });
-  }
-
-  
-
-
-  async title(): Promise<string> {
-    return this.worlds[PUPPETEER_WORLD].title();
-  }
-
-  
-
 
   _deviceRequestPromptManager(): DeviceRequestPromptManager {
     if (this.isOOPFrame()) {
@@ -1079,52 +345,20 @@ export class Frame {
     return parentFrame._deviceRequestPromptManager();
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForDevicePrompt(
+  override waitForDevicePrompt(
     options: WaitTimeoutOptions = {}
   ): Promise<DeviceRequestPrompt> {
     return this._deviceRequestPromptManager().waitForDevicePrompt(options);
   }
-
-  
-
 
   _navigated(framePayload: Protocol.Page.Frame): void {
     this._name = framePayload.name;
     this.#url = `${framePayload.url}${framePayload.urlFragment || ''}`;
   }
 
-  
-
-
   _navigatedWithinDocument(url: string): void {
     this.#url = url;
   }
-
-  
-
 
   _onLifecycleEvent(loaderId: string, name: string): void {
     if (name === 'init') {
@@ -1134,23 +368,14 @@ export class Frame {
     this._lifecycleEvents.add(name);
   }
 
-  
-
-
   _onLoadingStopped(): void {
     this._lifecycleEvents.add('DOMContentLoaded');
     this._lifecycleEvents.add('load');
   }
 
-  
-
-
   _onLoadingStarted(): void {
     this._hasStartedLoading = true;
   }
-
-  
-
 
   _detach(): void {
     this.#detached = true;

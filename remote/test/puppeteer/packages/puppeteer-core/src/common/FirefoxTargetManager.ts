@@ -18,7 +18,7 @@ import {Protocol} from 'devtools-protocol';
 
 import {TargetFilterCallback} from '../api/Browser.js';
 import {assert} from '../util/assert.js';
-import {createDeferredPromise} from '../util/DeferredPromise.js';
+import {Deferred} from '../util/Deferred.js';
 
 import {CDPSession, Connection} from './Connection.js';
 import {EventEmitter} from './EventEmitter.js';
@@ -59,19 +59,18 @@ export class FirefoxTargetManager
 
 
 
-  #discoveredTargetsByTargetId: Map<string, Protocol.Target.TargetInfo> =
-    new Map();
+  #discoveredTargetsByTargetId = new Map<string, Protocol.Target.TargetInfo>();
   
 
 
 
 
 
-  #availableTargetsByTargetId: Map<string, Target> = new Map();
+  #availableTargetsByTargetId = new Map<string, Target>();
   
 
 
-  #availableTargetsBySessionId: Map<string, Target> = new Map();
+  #availableTargetsBySessionId = new Map<string, Target>();
   
 
 
@@ -80,16 +79,18 @@ export class FirefoxTargetManager
   #targetFilterCallback: TargetFilterCallback | undefined;
   #targetFactory: TargetFactory;
 
-  #targetInterceptors: WeakMap<CDPSession | Connection, TargetInterceptor[]> =
-    new WeakMap();
+  #targetInterceptors = new WeakMap<
+    CDPSession | Connection,
+    TargetInterceptor[]
+  >();
 
-  #attachedToTargetListenersBySession: WeakMap<
+  #attachedToTargetListenersBySession = new WeakMap<
     CDPSession | Connection,
     (event: Protocol.Target.AttachedToTargetEvent) => Promise<void>
-  > = new WeakMap();
+  >();
 
-  #initializePromise = createDeferredPromise<void>();
-  #targetsIdsForInit: Set<string> = new Set();
+  #initializeDeferred = Deferred.create<void>();
+  #targetsIdsForInit = new Set<string>();
 
   constructor(
     connection: Connection,
@@ -169,7 +170,7 @@ export class FirefoxTargetManager
       filter: [{}],
     });
     this.#targetsIdsForInit = new Set(this.#discoveredTargetsByTargetId.keys());
-    await this.#initializePromise;
+    await this.#initializeDeferred.valueOrThrow();
   }
 
   #onTargetCreated = async (
@@ -253,7 +254,7 @@ export class FirefoxTargetManager
   #finishInitializationIfReady(targetId: string): void {
     this.#targetsIdsForInit.delete(targetId);
     if (this.#targetsIdsForInit.size === 0) {
-      this.#initializePromise.resolve();
+      this.#initializeDeferred.resolve();
     }
   }
 }

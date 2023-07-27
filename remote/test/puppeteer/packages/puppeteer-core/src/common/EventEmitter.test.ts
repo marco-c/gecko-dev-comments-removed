@@ -14,9 +14,12 @@
 
 
 
+import {describe, it, beforeEach} from 'node:test';
+
 import expect from 'expect';
-import {EventEmitter} from 'puppeteer-core/internal/common/EventEmitter.js';
 import sinon from 'sinon';
+
+import {EventEmitter} from './EventEmitter.js';
 
 describe('EventEmitter', () => {
   let emitter: EventEmitter;

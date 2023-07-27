@@ -68,5 +68,8 @@ export const enum TargetManagerEmittedEvents {
   TargetDiscovered = 'targetDiscovered',
   TargetAvailable = 'targetAvailable',
   TargetGone = 'targetGone',
+  
+
+
   TargetChanged = 'targetChanged',
 }

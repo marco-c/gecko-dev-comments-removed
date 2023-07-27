@@ -1,3 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import {homedir} from 'os';
 import {join} from 'path';
 
@@ -23,6 +39,12 @@ function isSupportedProduct(product: unknown): product is Product {
 export const getConfiguration = (): Configuration => {
   const result = cosmiconfigSync('puppeteer').search();
   const configuration: Configuration = result ? result.config : {};
+
+  configuration.logLevel = (process.env['PUPPETEER_LOGLEVEL'] ??
+    process.env['npm_config_LOGLEVEL'] ??
+    process.env['npm_package_config_LOGLEVEL'] ??
+    configuration.logLevel ??
+    'warn') as 'silent' | 'error' | 'warn';
 
   
   configuration.defaultProduct = (process.env['PUPPETEER_PRODUCT'] ??
@@ -57,11 +79,25 @@ export const getConfiguration = (): Configuration => {
       process.env['npm_config_puppeteer_browser_revision'] ??
       process.env['npm_package_config_puppeteer_browser_revision'] ??
       configuration.browserRevision;
-    configuration.downloadHost =
+
+    const downloadHost =
       process.env['PUPPETEER_DOWNLOAD_HOST'] ??
       process.env['npm_config_puppeteer_download_host'] ??
-      process.env['npm_package_config_puppeteer_download_host'] ??
-      configuration.downloadHost;
+      process.env['npm_package_config_puppeteer_download_host'];
+
+    if (downloadHost && configuration.logLevel === 'warn') {
+      console.warn(
+        `PUPPETEER_DOWNLOAD_HOST is deprecated. Use PUPPETEER_DOWNLOAD_BASE_URL instead.`
+      );
+    }
+
+    configuration.downloadBaseUrl =
+      process.env['PUPPETEER_DOWNLOAD_BASE_URL'] ??
+      process.env['npm_config_puppeteer_download_base_url'] ??
+      process.env['npm_package_config_puppeteer_download_base_url'] ??
+      configuration.downloadBaseUrl ??
+      downloadHost;
+
     configuration.downloadPath =
       process.env['PUPPETEER_DOWNLOAD_PATH'] ??
       process.env['npm_config_puppeteer_download_path'] ??
@@ -82,11 +118,6 @@ export const getConfiguration = (): Configuration => {
     configuration.temporaryDirectory;
 
   configuration.experiments ??= {};
-
-  configuration.logLevel = (process.env['PUPPETEER_LOGLEVEL'] ??
-    process.env['npm_config_LOGLEVEL'] ??
-    process.env['npm_package_config_LOGLEVEL'] ??
-    configuration.logLevel) as 'silent' | 'error' | 'warn';
 
   
   if (!isSupportedProduct(configuration.defaultProduct)) {

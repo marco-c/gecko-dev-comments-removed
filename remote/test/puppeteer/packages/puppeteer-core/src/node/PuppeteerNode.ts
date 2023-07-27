@@ -14,6 +14,14 @@
 
 
 
+import {
+  Browser as SupportedBrowser,
+  resolveBuildId,
+  detectBrowserPlatform,
+  getInstalledBrowsers,
+  uninstall,
+} from '@puppeteer/browsers';
+
 import {Browser} from '../api/Browser.js';
 import {BrowserConnectOptions} from '../common/BrowserConnector.js';
 import {Configuration} from '../common/Configuration.js';
@@ -121,6 +129,7 @@ export class PuppeteerNode extends Puppeteer {
     this.launch = this.launch.bind(this);
     this.executablePath = this.executablePath.bind(this);
     this.defaultArgs = this.defaultArgs.bind(this);
+    this.trimCache = this.trimCache.bind(this);
   }
 
   
@@ -263,5 +272,96 @@ export class PuppeteerNode extends Puppeteer {
 
   defaultArgs(options: BrowserLaunchArgumentOptions = {}): string[] {
     return this.#launcher.defaultArgs(options);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async trimCache(): Promise<void> {
+    const platform = detectBrowserPlatform();
+    if (!platform) {
+      throw new Error('The current platform is not supported.');
+    }
+
+    const cacheDir =
+      this.configuration.downloadPath ?? this.configuration.cacheDirectory!;
+    const installedBrowsers = await getInstalledBrowsers({
+      cacheDir,
+    });
+
+    const product = this.configuration.defaultProduct!;
+
+    const puppeteerBrowsers: Array<{
+      product: Product;
+      browser: SupportedBrowser;
+      currentBuildId: string;
+    }> = [
+      {
+        product: 'chrome',
+        browser: SupportedBrowser.CHROME,
+        currentBuildId: '',
+      },
+      {
+        product: 'firefox',
+        browser: SupportedBrowser.FIREFOX,
+        currentBuildId: '',
+      },
+    ];
+
+    
+    for (const item of puppeteerBrowsers) {
+      item.currentBuildId = await resolveBuildId(
+        item.browser,
+        platform,
+        (product === item.product
+          ? this.configuration.browserRevision
+          : null) || PUPPETEER_REVISIONS[item.product]
+      );
+    }
+
+    const currentBrowserBuilds = new Set(
+      puppeteerBrowsers.map(browser => {
+        return `${browser.browser}_${browser.currentBuildId}`;
+      })
+    );
+
+    const currentBrowsers = new Set(
+      puppeteerBrowsers.map(browser => {
+        return browser.browser;
+      })
+    );
+
+    for (const installedBrowser of installedBrowsers) {
+      
+      if (!currentBrowsers.has(installedBrowser.browser)) {
+        continue;
+      }
+      
+      if (
+        currentBrowserBuilds.has(
+          `${installedBrowser.browser}_${installedBrowser.buildId}`
+        )
+      ) {
+        continue;
+      }
+
+      await uninstall({
+        browser: SupportedBrowser.CHROME,
+        platform,
+        cacheDir,
+        buildId: installedBrowser.buildId,
+      });
+    }
   }
 }

@@ -46,7 +46,7 @@ export async function downloadBrowser(): Promise<void> {
     return;
   }
 
-  const downloadHost = configuration.downloadHost;
+  const downloadBaseUrl = configuration.downloadBaseUrl;
 
   const platform = detectBrowserPlatform();
   if (!platform) {
@@ -60,17 +60,17 @@ export async function downloadBrowser(): Promise<void> {
     configuration.browserRevision || PUPPETEER_REVISIONS[product] || 'latest';
 
   const buildId = await resolveBuildId(browser, platform, unresolvedBuildId);
+  
+  const cacheDir = configuration.downloadPath ?? configuration.cacheDirectory!;
 
   try {
     const result = await install({
       browser,
-      cacheDir: configuration.cacheDirectory!,
+      cacheDir,
       platform,
       buildId,
       downloadProgressCallback: makeProgressCallback(browser, buildId),
-      
-      
-      baseUrl: downloadHost,
+      baseUrl: downloadBaseUrl,
     });
 
     logPolitely(

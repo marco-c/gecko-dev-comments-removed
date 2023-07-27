@@ -23,8 +23,8 @@ import {
   ChromeReleaseChannel as BrowsersChromeReleaseChannel,
 } from '@puppeteer/browsers';
 
+import {Browser} from '../api/Browser.js';
 import {debugError} from '../common/util.js';
-import {Browser} from '../puppeteer-core.js';
 import {assert} from '../util/assert.js';
 
 import {
@@ -48,8 +48,7 @@ export class ChromeLauncher extends ProductLauncher {
     const headless = options.headless ?? true;
     if (
       headless === true &&
-      (!this.puppeteer.configuration.logLevel ||
-        this.puppeteer.configuration.logLevel === 'warn') &&
+      this.puppeteer.configuration.logLevel === 'warn' &&
       !Boolean(process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'])
     ) {
       console.warn(
@@ -179,8 +178,7 @@ export class ChromeLauncher extends ProductLauncher {
       '--disable-dev-shm-usage',
       '--disable-extensions',
       
-      
-      '--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter,OptimizationHints,DIPS',
+      '--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter,OptimizationHints',
       '--disable-hang-monitor',
       '--disable-ipc-flooding-protection',
       '--disable-popup-blocking',

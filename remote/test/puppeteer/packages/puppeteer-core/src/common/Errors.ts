@@ -77,6 +77,11 @@ export class ProtocolError extends CustomError {
 
 
 
+export class TargetCloseError extends ProtocolError {}
+
+
+
+
 
 
 export interface PuppeteerErrors {

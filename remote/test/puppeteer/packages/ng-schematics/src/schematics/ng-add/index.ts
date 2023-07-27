@@ -34,7 +34,7 @@ import {
   type NodePackage,
   updateAngularJsonScripts,
 } from '../utils/packages.js';
-import {type SchematicsOptions} from '../utils/types.js';
+import {TestingFramework, type SchematicsOptions} from '../utils/types.js';
 
 
 
@@ -101,7 +101,11 @@ function addPuppeteerFiles(options: SchematicsOptions): Rule {
 
     return addBaseFiles(tree, context, {
       projects,
-      options,
+      options: {
+        ...options,
+        ext:
+          options.testingFramework === TestingFramework.Node ? 'test' : 'e2e',
+      },
     });
   };
 }

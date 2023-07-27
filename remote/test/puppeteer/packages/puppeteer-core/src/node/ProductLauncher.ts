@@ -46,12 +46,12 @@ import {PuppeteerNode} from './PuppeteerNode.js';
 
 
 
-export type ResolvedLaunchArgs = {
+export interface ResolvedLaunchArgs {
   isTempUserDataDir: boolean;
   userDataDir: string;
   executablePath: string;
   args: string[];
-};
+}
 
 
 
@@ -143,6 +143,7 @@ export class ProductLauncher {
             protocolTimeout,
             slowMo,
             defaultViewport,
+            ignoreHTTPSErrors,
           }
         );
       } else {
@@ -169,6 +170,7 @@ export class ProductLauncher {
               protocolTimeout,
               slowMo,
               defaultViewport,
+              ignoreHTTPSErrors,
             }
           );
         } else {
@@ -329,6 +331,7 @@ export class ProductLauncher {
       protocolTimeout: number | undefined;
       slowMo: number;
       defaultViewport: Viewport | null;
+      ignoreHTTPSErrors?: boolean;
     }
   ): Promise<Browser> {
     
@@ -341,6 +344,7 @@ export class ProductLauncher {
       closeCallback,
       process: browserProcess.nodeProcess,
       defaultViewport: opts.defaultViewport,
+      ignoreHTTPSErrors: opts.ignoreHTTPSErrors,
     });
   }
 
@@ -355,6 +359,7 @@ export class ProductLauncher {
       protocolTimeout: number | undefined;
       slowMo: number;
       defaultViewport: Viewport | null;
+      ignoreHTTPSErrors?: boolean;
     }
   ): Promise<Browser> {
     const browserWSEndpoint =
@@ -367,6 +372,7 @@ export class ProductLauncher {
        '../common/bidi/bidi.js'
     );
     const bidiConnection = new BiDi.Connection(
+      browserWSEndpoint,
       transport,
       opts.slowMo,
       opts.protocolTimeout
@@ -377,6 +383,7 @@ export class ProductLauncher {
       closeCallback,
       process: browserProcess.nodeProcess,
       defaultViewport: opts.defaultViewport,
+      ignoreHTTPSErrors: opts.ignoreHTTPSErrors,
     });
   }
 

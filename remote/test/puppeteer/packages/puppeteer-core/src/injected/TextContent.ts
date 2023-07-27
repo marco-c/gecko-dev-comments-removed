@@ -57,12 +57,12 @@ export const isSuitableNodeForTextMatching = (node: Node): boolean => {
 
 
 
-export type TextContent = {
+export interface TextContent {
   
   full: string;
   
   immediate: string[];
-};
+}
 
 
 

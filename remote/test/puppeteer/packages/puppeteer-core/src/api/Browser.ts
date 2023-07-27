@@ -24,7 +24,7 @@ import {EventEmitter} from '../common/EventEmitter.js';
 import type {Target} from '../common/Target.js'; 
 
 import type {BrowserContext} from './BrowserContext.js';
-import type {Page} from './Page.js'; 
+import type {Page} from './Page.js';
 
 
 
@@ -84,6 +84,7 @@ export const WEB_PERMISSION_TO_PROTOCOL_PERMISSION = new Map<
   ['accessibility-events', 'accessibilityEvents'],
   ['clipboard-read', 'clipboardReadWrite'],
   ['clipboard-write', 'clipboardReadWrite'],
+  ['clipboard-sanitized-write', 'clipboardSanitizedWrite'],
   ['payment-handler', 'paymentHandler'],
   ['persistent-storage', 'durableStorage'],
   ['idle-detection', 'idleDetection'],
@@ -108,6 +109,7 @@ export type Permission =
   | 'accessibility-events'
   | 'clipboard-read'
   | 'clipboard-write'
+  | 'clipboard-sanitized-write'
   | 'payment-handler'
   | 'persistent-storage'
   | 'idle-detection'
@@ -395,11 +397,21 @@ export class Browser extends EventEmitter {
 
 
 
-  pages(): Promise<Page[]> {
-    throw new Error('Not implemented');
+  async pages(): Promise<Page[]> {
+    const contextPages = await Promise.all(
+      this.browserContexts().map(context => {
+        return context.pages();
+      })
+    );
+    
+    return contextPages.reduce((acc, x) => {
+      return acc.concat(x);
+    }, []);
   }
 
   
+
+
 
 
 

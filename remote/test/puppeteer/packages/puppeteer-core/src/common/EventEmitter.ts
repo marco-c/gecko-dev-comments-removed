@@ -29,19 +29,19 @@ export type Handler<T = unknown> = (event: T) => void;
 
 
 export interface CommonEventEmitter {
-  on(event: EventType, handler: Handler): CommonEventEmitter;
-  off(event: EventType, handler: Handler): CommonEventEmitter;
+  on(event: EventType, handler: Handler): this;
+  off(event: EventType, handler: Handler): this;
   
 
 
 
-  addListener(event: EventType, handler: Handler): CommonEventEmitter;
-  removeListener(event: EventType, handler: Handler): CommonEventEmitter;
+  addListener(event: EventType, handler: Handler): this;
+  removeListener(event: EventType, handler: Handler): this;
   emit(event: EventType, eventData?: unknown): boolean;
-  once(event: EventType, handler: Handler): CommonEventEmitter;
+  once(event: EventType, handler: Handler): this;
   listenerCount(event: string): number;
 
-  removeAllListeners(event?: EventType): CommonEventEmitter;
+  removeAllListeners(event?: EventType): this;
 }
 
 
@@ -73,7 +73,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  on(event: EventType, handler: Handler<any>): EventEmitter {
+  on(event: EventType, handler: Handler<any>): this {
     this.emitter.on(event, handler);
     return this;
   }
@@ -84,7 +84,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  off(event: EventType, handler: Handler<any>): EventEmitter {
+  off(event: EventType, handler: Handler<any>): this {
     this.emitter.off(event, handler);
     return this;
   }
@@ -93,7 +93,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  removeListener(event: EventType, handler: Handler<any>): EventEmitter {
+  removeListener(event: EventType, handler: Handler<any>): this {
     this.off(event, handler);
     return this;
   }
@@ -102,7 +102,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  addListener(event: EventType, handler: Handler<any>): EventEmitter {
+  addListener(event: EventType, handler: Handler<any>): this {
     this.on(event, handler);
     return this;
   }
@@ -125,7 +125,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  once(event: EventType, handler: Handler<any>): EventEmitter {
+  once(event: EventType, handler: Handler<any>): this {
     const onceHandler: Handler<any> = eventData => {
       handler(eventData);
       this.off(event, onceHandler);
@@ -150,7 +150,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  removeAllListeners(event?: EventType): EventEmitter {
+  removeAllListeners(event?: EventType): this {
     if (event) {
       this.eventsMap.delete(event);
     } else {

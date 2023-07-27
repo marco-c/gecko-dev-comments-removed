@@ -65,9 +65,8 @@ export interface Configuration {
 
 
 
-  downloadHost?: string;
+  downloadBaseUrl?: string;
   
-
 
 
 
@@ -107,8 +106,6 @@ export interface Configuration {
 
   skipDownload?: boolean;
   
-
-
 
 
 

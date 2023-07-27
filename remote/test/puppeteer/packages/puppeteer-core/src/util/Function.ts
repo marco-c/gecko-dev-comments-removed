@@ -82,7 +82,10 @@ export const interpolateFunction = <T extends (...args: never[]) => unknown>(
   for (const [name, jsValue] of Object.entries(replacements)) {
     value = value.replace(
       new RegExp(`PLACEHOLDER\\(\\s*(?:'${name}'|"${name}")\\s*\\)`, 'g'),
-      jsValue
+      
+      
+      
+      `(${jsValue})`
     );
   }
   return createFunction(value) as unknown as T;

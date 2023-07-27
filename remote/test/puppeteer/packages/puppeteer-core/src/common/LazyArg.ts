@@ -14,26 +14,34 @@
 
 
 
-import {ExecutionContext} from './ExecutionContext.js';
+import {JSHandle} from '../api/JSHandle.js';
+import PuppeteerUtil from '../injected/injected.js';
 
 
 
 
-export class LazyArg<T> {
+export interface PuppeteerUtilWrapper {
+  puppeteerUtil: Promise<JSHandle<PuppeteerUtil>>;
+}
+
+
+
+
+export class LazyArg<T, Context = PuppeteerUtilWrapper> {
   static create = <T>(
-    get: (context: ExecutionContext) => Promise<T> | T
+    get: (context: PuppeteerUtilWrapper) => Promise<T> | T
   ): T => {
     
     
     return new LazyArg(get) as unknown as T;
   };
 
-  #get: (context: ExecutionContext) => Promise<T> | T;
-  private constructor(get: (context: ExecutionContext) => Promise<T> | T) {
+  #get: (context: Context) => Promise<T> | T;
+  private constructor(get: (context: Context) => Promise<T> | T) {
     this.#get = get;
   }
 
-  async get(context: ExecutionContext): Promise<T> {
+  async get(context: Context): Promise<T> {
     return this.#get(context);
   }
 }

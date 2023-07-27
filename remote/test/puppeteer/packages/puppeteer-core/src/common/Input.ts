@@ -17,6 +17,19 @@
 import {Protocol} from 'devtools-protocol';
 
 import {Point} from '../api/ElementHandle.js';
+import {
+  Keyboard,
+  KeyDownOptions,
+  KeyPressOptions,
+  Mouse,
+  MouseButton,
+  MouseClickOptions,
+  MouseMoveOptions,
+  MouseOptions,
+  MouseWheelOptions,
+  Touchscreen,
+  KeyboardTypeOptions,
+} from '../api/Input.js';
 import {assert} from '../util/assert.js';
 
 import {CDPSession} from './Connection.js';
@@ -29,45 +42,7 @@ type KeyDescription = Required<
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class Keyboard {
+export class CDPKeyboard extends Keyboard {
   #client: CDPSession;
   #pressedKeys = new Set<string>();
 
@@ -80,39 +55,13 @@ export class Keyboard {
 
 
   constructor(client: CDPSession) {
+    super();
     this.#client = client;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async down(
+  override async down(
     key: KeyInput,
-    options: {text?: string; commands?: string[]} = {
+    options: Readonly<KeyDownOptions> = {
       text: undefined,
       commands: [],
     }
@@ -209,14 +158,7 @@ export class Keyboard {
     return description;
   }
 
-  
-
-
-
-
-
-
-  async up(key: KeyInput): Promise<void> {
+  override async up(key: KeyInput): Promise<void> {
     const description = this.#keyDescriptionForString(key);
 
     this._modifiers &= ~this.#modifierBit(description.key);
@@ -231,23 +173,7 @@ export class Keyboard {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async sendCharacter(char: string): Promise<void> {
+  override async sendCharacter(char: string): Promise<void> {
     await this.#client.send('Input.insertText', {text: char});
   }
 
@@ -255,30 +181,10 @@ export class Keyboard {
     return !!_keyDefinitions[char as KeyInput];
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async type(text: string, options: {delay?: number} = {}): Promise<void> {
+  override async type(
+    text: string,
+    options: Readonly<KeyboardTypeOptions> = {}
+  ): Promise<void> {
     const delay = options.delay || undefined;
     for (const char of text) {
       if (this.charIsKey(char)) {
@@ -294,31 +200,9 @@ export class Keyboard {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async press(
+  override async press(
     key: KeyInput,
-    options: {delay?: number; text?: string; commands?: string[]} = {}
+    options: Readonly<KeyPressOptions> = {}
   ): Promise<void> {
     const {delay = null} = options;
     await this.down(key, options);
@@ -330,82 +214,6 @@ export class Keyboard {
     await this.up(key);
   }
 }
-
-
-
-
-export interface MouseOptions {
-  
-
-
-
-
-  button?: MouseButton;
-  
-
-
-
-
-
-
-
-  clickCount?: number;
-}
-
-
-
-
-export interface MouseClickOptions extends MouseOptions {
-  
-
-
-  delay?: number;
-  
-
-
-
-
-  count?: number;
-}
-
-
-
-
-export interface MouseWheelOptions {
-  deltaX?: number;
-  deltaY?: number;
-}
-
-
-
-
-export interface MouseMoveOptions {
-  
-
-
-
-
-
-  steps?: number;
-}
-
-
-
-
-
-
-export const MouseButton = Object.freeze({
-  Left: 'left',
-  Right: 'right',
-  Middle: 'middle',
-  Back: 'back',
-  Forward: 'forward',
-}) satisfies Record<string, Protocol.Input.MouseButton>;
-
-
-
-
-export type MouseButton = (typeof MouseButton)[keyof typeof MouseButton];
 
 
 
@@ -469,82 +277,15 @@ interface MouseState {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class Mouse {
+export class CDPMouse extends Mouse {
   #client: CDPSession;
-  #keyboard: Keyboard;
+  #keyboard: CDPKeyboard;
 
   
 
 
-  constructor(client: CDPSession, keyboard: Keyboard) {
+  constructor(client: CDPSession, keyboard: CDPKeyboard) {
+    super();
     this.#client = client;
     this.#keyboard = keyboard;
   }
@@ -598,17 +339,29 @@ export class Mouse {
     }
   }
 
-  
+  override async reset(): Promise<void> {
+    const actions = [];
+    for (const [flag, button] of [
+      [MouseButtonFlag.Left, MouseButton.Left],
+      [MouseButtonFlag.Middle, MouseButton.Middle],
+      [MouseButtonFlag.Right, MouseButton.Right],
+      [MouseButtonFlag.Forward, MouseButton.Forward],
+      [MouseButtonFlag.Back, MouseButton.Back],
+    ] as const) {
+      if (this.#state.buttons & flag) {
+        actions.push(this.up({button: button}));
+      }
+    }
+    if (this.#state.position.x !== 0 || this.#state.position.y !== 0) {
+      actions.push(this.move(0, 0));
+    }
+    await Promise.all(actions);
+  }
 
-
-
-
-
-
-  async move(
+  override async move(
     x: number,
     y: number,
-    options: MouseMoveOptions = {}
+    options: Readonly<MouseMoveOptions> = {}
   ): Promise<void> {
     const {steps = 1} = options;
     const from = this.#state.position;
@@ -633,12 +386,7 @@ export class Mouse {
     }
   }
 
-  
-
-
-
-
-  async down(options: MouseOptions = {}): Promise<void> {
+  override async down(options: Readonly<MouseOptions> = {}): Promise<void> {
     const {button = MouseButton.Left, clickCount = 1} = options;
     const flag = getFlag(button);
     if (!flag) {
@@ -663,12 +411,7 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-  async up(options: MouseOptions = {}): Promise<void> {
+  override async up(options: Readonly<MouseOptions> = {}): Promise<void> {
     const {button = MouseButton.Left, clickCount = 1} = options;
     const flag = getFlag(button);
     if (!flag) {
@@ -693,14 +436,7 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-
-
-  async click(
+  override async click(
     x: number,
     y: number,
     options: Readonly<MouseClickOptions> = {}
@@ -730,29 +466,9 @@ export class Mouse {
     await Promise.all(actions);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async wheel(options: MouseWheelOptions = {}): Promise<void> {
+  override async wheel(
+    options: Readonly<MouseWheelOptions> = {}
+  ): Promise<void> {
     const {deltaX = 0, deltaY = 0} = options;
     const {position, buttons} = this.#state;
     await this.#client.send('Input.dispatchMouseEvent', {
@@ -766,12 +482,10 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-  async drag(start: Point, target: Point): Promise<Protocol.Input.DragData> {
+  override async drag(
+    start: Point,
+    target: Point
+  ): Promise<Protocol.Input.DragData> {
     const promise = new Promise<Protocol.Input.DragData>(resolve => {
       this.#client.once('Input.dragIntercepted', event => {
         return resolve(event.data);
@@ -783,12 +497,10 @@ export class Mouse {
     return promise;
   }
 
-  
-
-
-
-
-  async dragEnter(target: Point, data: Protocol.Input.DragData): Promise<void> {
+  override async dragEnter(
+    target: Point,
+    data: Protocol.Input.DragData
+  ): Promise<void> {
     await this.#client.send('Input.dispatchDragEvent', {
       type: 'dragEnter',
       x: target.x,
@@ -798,12 +510,10 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-  async dragOver(target: Point, data: Protocol.Input.DragData): Promise<void> {
+  override async dragOver(
+    target: Point,
+    data: Protocol.Input.DragData
+  ): Promise<void> {
     await this.#client.send('Input.dispatchDragEvent', {
       type: 'dragOver',
       x: target.x,
@@ -813,12 +523,10 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-  async drop(target: Point, data: Protocol.Input.DragData): Promise<void> {
+  override async drop(
+    target: Point,
+    data: Protocol.Input.DragData
+  ): Promise<void> {
     await this.#client.send('Input.dispatchDragEvent', {
       type: 'drop',
       x: target.x,
@@ -828,15 +536,7 @@ export class Mouse {
     });
   }
 
-  
-
-
-
-
-
-
-
-  async dragAndDrop(
+  override async dragAndDrop(
     start: Point,
     target: Point,
     options: {delay?: number} = {}
@@ -858,35 +558,25 @@ export class Mouse {
 
 
 
-
-export class Touchscreen {
+export class CDPTouchscreen extends Touchscreen {
   #client: CDPSession;
-  #keyboard: Keyboard;
+  #keyboard: CDPKeyboard;
 
   
 
 
-  constructor(client: CDPSession, keyboard: Keyboard) {
+  constructor(client: CDPSession, keyboard: CDPKeyboard) {
+    super();
     this.#client = client;
     this.#keyboard = keyboard;
   }
 
-  
-
-
-
-
-  async tap(x: number, y: number): Promise<void> {
+  override async tap(x: number, y: number): Promise<void> {
     await this.touchStart(x, y);
     await this.touchEnd();
   }
 
-  
-
-
-
-
-  async touchStart(x: number, y: number): Promise<void> {
+  override async touchStart(x: number, y: number): Promise<void> {
     const touchPoints = [{x: Math.round(x), y: Math.round(y)}];
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
@@ -894,12 +584,8 @@ export class Touchscreen {
       modifiers: this.#keyboard._modifiers,
     });
   }
-  
 
-
-
-
-  async touchMove(x: number, y: number): Promise<void> {
+  override async touchMove(x: number, y: number): Promise<void> {
     const movePoints = [{x: Math.round(x), y: Math.round(y)}];
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
@@ -907,10 +593,8 @@ export class Touchscreen {
       modifiers: this.#keyboard._modifiers,
     });
   }
-  
 
-
-  async touchEnd(): Promise<void> {
+  override async touchEnd(): Promise<void> {
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchEnd',
       touchPoints: [],
