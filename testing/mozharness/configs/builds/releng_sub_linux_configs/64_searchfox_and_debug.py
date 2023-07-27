@@ -27,9 +27,6 @@ config = {
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
         
-        
-        "SCCACHE_DISABLE": "1",
-        
         "PATH": "/usr/local/bin:/bin:\
 /usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
         

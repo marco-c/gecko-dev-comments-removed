@@ -23,9 +23,6 @@ config = {
         "LC_ALL": "C",
         "XPCOM_DEBUG_BREAK": "stack-and-abort",
         
-        
-        "SCCACHE_DISABLE": "1",
-        
         "PATH": "/tools/python/bin:/opt/local/bin:/usr/bin:"
         "/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin",
     },
