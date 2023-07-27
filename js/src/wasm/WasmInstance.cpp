@@ -1963,12 +1963,19 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
       
       
+      
+      
+      MOZ_ASSERT(typeDefData->unused == 0);
       if (typeDef.kind() == TypeDefKind::Struct) {
         typeDefData->structTypeSize = typeDef.structType().size_;
         
         MOZ_ASSERT((typeDefData->structTypeSize % sizeof(uintptr_t)) == 0);
       } else {
-        MOZ_ASSERT(typeDefData->structTypeSize == 0);
+        uint32_t arrayElemSize = typeDef.arrayType().elementType_.size();
+        typeDefData->arrayElemSize = arrayElemSize;
+        MOZ_ASSERT(arrayElemSize == 16 || arrayElemSize == 8 ||
+                   arrayElemSize == 4 || arrayElemSize == 2 ||
+                   arrayElemSize == 1);
       }
     } else if (typeDef.kind() == TypeDefKind::Func) {
       

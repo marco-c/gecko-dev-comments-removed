@@ -54,7 +54,7 @@ struct TypeDefInstanceData {
         shape(nullptr),
         clasp(nullptr),
         allocKind(gc::AllocKind::LIMIT),
-        structTypeSize(0) {}
+        unused(0) {}
 
   
   
@@ -77,7 +77,18 @@ struct TypeDefInstanceData {
   
   
   
-  uint32_t structTypeSize;
+  
+  
+  
+  
+  
+  
+  
+  union {
+    uint32_t structTypeSize;
+    uint32_t arrayElemSize;
+    uint32_t unused;
+  };
 };
 
 
