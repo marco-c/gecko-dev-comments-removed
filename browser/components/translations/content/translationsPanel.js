@@ -837,6 +837,24 @@ var TranslationsPanel = new (class {
   
 
 
+  onLearnMore() {
+    PanelMultiView.hidePopup(this.elements.panel);
+    const window =
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+    window.openTrustedLinkIn(
+      "https://support.mozilla.org/kb/website-translation",
+      "tab",
+      {
+        forceForeground: true,
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      }
+    );
+  }
+
+  
+
+
 
 
 
