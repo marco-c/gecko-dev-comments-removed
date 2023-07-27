@@ -116,11 +116,26 @@ class TaskManager {
 
 
 
+
+
+
 class Task {
  public:
+  enum class Kind : uint8_t {
+    
+    
+    OffMainThreadOnly,
+
+    
+    MainThreadOnly
+
+    
+    
+  };
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Task)
 
-  bool IsMainThreadOnly() { return mMainThreadOnly; }
+  Kind GetKind() { return mKind; }
 
   
   uint32_t GetPriority() { return mPriority + mPriorityModifier; }
@@ -148,7 +163,7 @@ class Task {
   
   
   void SetManager(TaskManager* aManager) {
-    MOZ_ASSERT(mMainThreadOnly);
+    MOZ_ASSERT(mKind == Kind::MainThreadOnly);
     MOZ_ASSERT(!mIsInGraph);
     mTaskManager = aManager;
   }
@@ -178,15 +193,12 @@ class Task {
 #endif
 
  protected:
-  Task(bool aMainThreadOnly,
+  Task(Kind aKind,
        uint32_t aPriority = static_cast<uint32_t>(kDefaultPriorityValue))
-      : mMainThreadOnly(aMainThreadOnly),
-        mSeqNo(sCurrentTaskSeqNo++),
-        mPriority(aPriority) {}
+      : mKind(aKind), mSeqNo(sCurrentTaskSeqNo++), mPriority(aPriority) {}
 
-  Task(bool aMainThreadOnly,
-       EventQueuePriority aPriority = kDefaultPriorityValue)
-      : mMainThreadOnly(aMainThreadOnly),
+  Task(Kind aKind, EventQueuePriority aPriority = kDefaultPriorityValue)
+      : mKind(aKind),
         mSeqNo(sCurrentTaskSeqNo++),
         mPriority(static_cast<uint32_t>(aPriority)) {}
 
@@ -220,7 +232,7 @@ class Task {
   RefPtr<TaskManager> mTaskManager;
 
   
-  bool mMainThreadOnly;
+  Kind mKind;
   bool mCompleted = false;
   bool mInProgress = false;
 #ifdef DEBUG
