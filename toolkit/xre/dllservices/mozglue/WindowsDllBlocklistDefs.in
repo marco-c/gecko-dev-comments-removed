@@ -389,7 +389,7 @@ SOCKET_PROCESSES += [
     DllBlocklistEntry("ipseng32.dll", (17, 2, 6, 25)),
 
     
-    DllBlocklistEntry("kwsui64.dll", (2022, 2, 8, 125)),
+    DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
 ]
 
 SOCKET_PROCESSES_TESTS += [
