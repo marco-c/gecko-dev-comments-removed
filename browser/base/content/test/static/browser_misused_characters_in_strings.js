@@ -57,17 +57,6 @@ let gExceptionsList = [
     key: "ImportMapExternalNotSupported",
     type: "single-quote",
   },
-  {
-    file: "dom.properties",
-    key: "MathML_DeprecatedMathVariantWarning",
-    type: "single-quote",
-  },
-  
-  {
-    file: "dom.properties",
-    key: "MathML_DeprecatedMathVariantWarning",
-    type: "single-quote",
-  },
 ];
 
 
