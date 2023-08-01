@@ -1487,16 +1487,9 @@ pub enum Appearance {
     Dualbutton,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Groupbox,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuitem,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Checkmenuitem,
-    
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MenulistText,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menupopup,
