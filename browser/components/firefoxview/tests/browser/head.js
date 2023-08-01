@@ -48,7 +48,7 @@ const TAB_PICKUP_STATE_PREF =
 
 const calloutId = "multi-stage-message-root";
 const calloutSelector = `#${calloutId}.featureCallout`;
-const primaryButtonSelector = `#${calloutId} .primary`;
+const CTASelector = `#${calloutId} :is(.primary, .secondary)`;
 
 
 
@@ -415,8 +415,8 @@ const waitForCalloutRemoved = async doc => {
 
 
 
-const clickPrimaryButton = async doc => {
-  doc.querySelector(primaryButtonSelector).click();
+const clickCTA = async doc => {
+  doc.querySelector(CTASelector).click();
 };
 
 
