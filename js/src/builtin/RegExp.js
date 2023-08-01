@@ -1094,10 +1094,29 @@ function RegExpSplit(string, limit) {
   
   var q = p;
 
+  var optimizableNoCaptures = optimizable && !RegExpHasCaptureGroups(splitter, S);
+
   
   while (q < size) {
     var e, z;
-    if (optimizable) {
+    if (optimizableNoCaptures) {
+      
+      
+      
+
+      
+      
+
+      
+      q = RegExpSearcher(splitter, S, q);
+      if (q === -1 || q >= size) {
+        break;
+      }
+
+      
+      e = RegExpSearcherLastLimit(S);
+      z = null;
+    } else if (optimizable) {
       
       
 
@@ -1154,26 +1173,28 @@ function RegExpSplit(string, limit) {
     
     p = e;
 
-    
-    var numberOfCaptures = std_Math_max(ToLength(z.length) - 1, 0);
-
-    
-    var i = 1;
-
-    
-    while (i <= numberOfCaptures) {
+    if (z !== null) {
       
-      DefineDataProperty(A, lengthA, z[i]);
+      var numberOfCaptures = std_Math_max(ToLength(z.length) - 1, 0);
 
       
-      i++;
+      var i = 1;
 
       
-      lengthA++;
+      while (i <= numberOfCaptures) {
+        
+        DefineDataProperty(A, lengthA, z[i]);
 
-      
-      if (lengthA === lim) {
-        return A;
+        
+        i++;
+
+        
+        lengthA++;
+
+        
+        if (lengthA === lim) {
+          return A;
+        }
       }
     }
 

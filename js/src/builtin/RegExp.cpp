@@ -1956,6 +1956,31 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
   return true;
 }
 
+bool js::RegExpHasCaptureGroups(JSContext* cx, Handle<RegExpObject*> obj,
+                                Handle<JSString*> input, bool* result) {
+  
+  if (!obj->hasShared() ||
+      obj->getShared()->kind() == RegExpShared::Kind::Unparsed) {
+    Rooted<RegExpShared*> shared(cx, RegExpObject::getShared(cx, obj));
+    if (!shared) {
+      return false;
+    }
+    Rooted<JSLinearString*> inputLinear(cx, input->ensureLinear(cx));
+    if (!inputLinear) {
+      return false;
+    }
+    if (!RegExpShared::compileIfNecessary(cx, &shared, inputLinear,
+                                          RegExpShared::CodeKind::Any)) {
+      return false;
+    }
+  }
+
+  MOZ_ASSERT(obj->getShared()->pairCount() >= 1);
+
+  *result = obj->getShared()->pairCount() > 1;
+  return true;
+}
+
 
 
 bool js::RegExpGetSubstitution(JSContext* cx, Handle<ArrayObject*> matchResult,
