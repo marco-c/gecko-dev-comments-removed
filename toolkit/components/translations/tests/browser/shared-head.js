@@ -287,8 +287,33 @@ function getTranslationsParent() {
 
 
 
-function closeTranslationsPanelIfOpen() {
-  return waitForCondition(() => {
+function closeSettingsMenuIfOpen() {
+  return waitForCondition(async () => {
+    const settings = document.getElementById(
+      "translations-panel-settings-menupopup"
+    );
+    if (!settings) {
+      return true;
+    }
+    if (settings.state === "closed") {
+      return true;
+    }
+    let popuphiddenPromise = BrowserTestUtils.waitForEvent(
+      settings,
+      "popuphidden"
+    );
+    PanelMultiView.hidePopup(settings);
+    await popuphiddenPromise;
+    return false;
+  });
+}
+
+
+
+
+async function closeTranslationsPanelIfOpen() {
+  await closeSettingsMenuIfOpen();
+  return waitForCondition(async () => {
     const panel = document.getElementById("translations-panel");
     if (!panel) {
       return true;
@@ -296,7 +321,12 @@ function closeTranslationsPanelIfOpen() {
     if (panel.state === "closed") {
       return true;
     }
+    let popuphiddenPromise = BrowserTestUtils.waitForEvent(
+      panel,
+      "popuphidden"
+    );
     PanelMultiView.hidePopup(panel);
+    await popuphiddenPromise;
     return false;
   });
 }
@@ -1043,6 +1073,7 @@ class TestTranslationsTelemetry {
     {
       expectedEventCount,
       expectNewFlowId = null,
+      expectFirstInteraction = null,
       allValuePredicates = [],
       finalValuePredicates = [],
     }
@@ -1052,6 +1083,14 @@ class TestTranslationsTelemetry {
     await Services.fog.testFlushAllChildren();
     const events = event.testGetValue() ?? [];
     const eventCount = events.length;
+
+    if (eventCount > 0 && expectFirstInteraction !== null) {
+      is(
+        events[eventCount - 1].extra.first_interaction,
+        expectFirstInteraction ? "true" : "false",
+        "The newest event should be match the given first-interaction expectation"
+      );
+    }
 
     if (eventCount > 0 && expectNewFlowId !== null) {
       const flowId = events[eventCount - 1].extra.flow_id;
