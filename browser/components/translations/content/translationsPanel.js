@@ -844,6 +844,32 @@ var TranslationsPanel = new (class {
   
 
 
+
+
+  onChangeFromLanguage(event) {
+    const { target } = event;
+    if (target?.value) {
+      TranslationsParent.telemetry().panel().onChangeFromLanguage(target.value);
+    }
+    this.onChangeLanguages();
+  }
+
+  
+
+
+
+
+  onChangeToLanguage(event) {
+    const { target } = event;
+    if (target?.value) {
+      TranslationsParent.telemetry().panel().onChangeToLanguage(target.value);
+    }
+    this.onChangeLanguages();
+  }
+
+  
+
+
   onChangeLanguages() {
     this.#updateViewFromTranslationStatus();
   }
