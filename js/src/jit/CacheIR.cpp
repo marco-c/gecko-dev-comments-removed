@@ -6825,6 +6825,30 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpSearcherLastLimit() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachRegExpHasCaptureGroups() {
+  
+  MOZ_ASSERT(argc_ == 2);
+  MOZ_ASSERT(args_[0].toObject().is<RegExpObject>());
+  MOZ_ASSERT(args_[1].isString());
+
+  
+  initializeInputOperand();
+
+  
+
+  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  ValOperandId arg1Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  StringOperandId inputId = writer.guardToString(arg1Id);
+
+  writer.regExpHasCaptureGroupsResult(objId, inputId);
+  writer.returnFromIC();
+
+  trackAttached("RegExpHasCaptureGroups");
+  return AttachDecision::Attach;
+}
+
 AttachDecision
 InlinableNativeIRGenerator::tryAttachRegExpPrototypeOptimizable() {
   
@@ -10677,6 +10701,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachRegExpMatcherSearcher(native);
     case InlinableNative::RegExpSearcherLastLimit:
       return tryAttachRegExpSearcherLastLimit();
+    case InlinableNative::RegExpHasCaptureGroups:
+      return tryAttachRegExpHasCaptureGroups();
     case InlinableNative::RegExpPrototypeOptimizable:
       return tryAttachRegExpPrototypeOptimizable();
     case InlinableNative::RegExpInstanceOptimizable:
