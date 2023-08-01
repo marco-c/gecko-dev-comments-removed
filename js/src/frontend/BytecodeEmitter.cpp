@@ -10563,11 +10563,11 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
     return false;
   }
 
-  WhileEmitter wh(this);
+  InternalWhileEmitter wh(this);
   
   
   
-  if (!wh.emitCond(0, 0, 0)) {
+  if (!wh.emitCond()) {
     
     return false;
   }
