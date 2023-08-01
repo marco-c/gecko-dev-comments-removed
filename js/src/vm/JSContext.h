@@ -496,6 +496,13 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<unsigned> compactingDisabledCount;
 
+  
+  js::ContextData<uint32_t> regExpSearcherLastLimit;
+
+  static constexpr size_t offsetOfRegExpSearcherLastLimit() {
+    return offsetof(JSContext, regExpSearcherLastLimit);
+  }
+
  private:
   
   

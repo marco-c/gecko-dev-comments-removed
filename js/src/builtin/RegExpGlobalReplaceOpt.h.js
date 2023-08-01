@@ -21,8 +21,6 @@
 
 
 
-
-
 function FUNC_NAME(
   rx,
   S,
@@ -126,7 +124,7 @@ function FUNC_NAME(
       );
     }
 #else
-    replacement = replaceValue;
+#error "Unexpected case"
 #endif
 
     

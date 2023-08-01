@@ -20,7 +20,6 @@
 
 
 
-
 function FUNC_NAME(
   rx,
   S,
@@ -57,7 +56,7 @@ function FUNC_NAME(
     lastIndex = 0;
   }
 
-#if !defined(SHORT_STRING)
+#if !defined(SIMPLE)
   
   var result = RegExpMatcher(rx, S, lastIndex);
 
@@ -73,10 +72,10 @@ function FUNC_NAME(
   }
 #else
   
-  var result = RegExpSearcher(rx, S, lastIndex);
+  var position = RegExpSearcher(rx, S, lastIndex);
 
   
-  if (result === -1) {
+  if (position === -1) {
     
     if (globalOrSticky) {
       rx.lastIndex = 0;
@@ -89,7 +88,7 @@ function FUNC_NAME(
 
   
 
-#if !defined(SHORT_STRING)
+#if !defined(SIMPLE)
   
   assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
 
@@ -109,10 +108,7 @@ function FUNC_NAME(
   
 
   
-  var position = result & 0x7fff;
-
-  
-  var nextSourcePosition = (result >> 15) & 0x7fff;
+  var nextSourcePosition = RegExpSearcherLastLimit(S);
 #endif
 
   

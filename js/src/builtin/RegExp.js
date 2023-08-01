@@ -363,10 +363,7 @@ function RegExpReplace(string, replaceValue) {
           firstDollarIndex
         );
       }
-      if (lengthS < 0x7fff) {
-        return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags);
-      }
-      return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue, flags);
+      return RegExpGlobalReplaceOptSimple(rx, S, lengthS, replaceValue, flags);
     }
 
     if (functionalReplace) {
@@ -381,10 +378,7 @@ function RegExpReplace(string, replaceValue) {
         firstDollarIndex
       );
     }
-    if (lengthS < 0x7fff) {
-      return RegExpLocalReplaceOptShort(rx, S, lengthS, replaceValue);
-    }
-    return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
+    return RegExpLocalReplaceOptSimple(rx, S, lengthS, replaceValue);
   }
 
   
@@ -775,8 +769,7 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
 
 
 
-
-function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
+function RegExpGlobalReplaceOptSimple(rx, S, lengthS, replaceValue, flags) {
   
   var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
 
@@ -793,15 +786,14 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
   
   while (true) {
     
-    var result = RegExpSearcher(rx, S, lastIndex);
+    var position = RegExpSearcher(rx, S, lastIndex);
 
     
-    if (result === -1) {
+    if (position === -1) {
       break;
     }
 
-    var position = result & 0x7fff;
-    lastIndex = (result >> 15) & 0x7fff;
+    lastIndex = RegExpSearcherLastLimit(S);
 
     
     accumulatedResult +=
@@ -842,14 +834,6 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
-#define FUNC_NAME RegExpGlobalReplaceOpt
-#include "RegExpGlobalReplaceOpt.h.js"
-#undef FUNC_NAME
-
-
-
-
-
 #define FUNC_NAME RegExpGlobalReplaceOptFunc
 #define FUNCTIONAL
 #include "RegExpGlobalReplaceOpt.h.js"
@@ -880,19 +864,10 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
-#define FUNC_NAME RegExpLocalReplaceOpt
+#define FUNC_NAME RegExpLocalReplaceOptSimple
+#define SIMPLE
 #include "RegExpLocalReplaceOpt.h.js"
-#undef FUNC_NAME
-
-
-
-
-
-
-#define FUNC_NAME RegExpLocalReplaceOptShort
-#define SHORT_STRING
-#include "RegExpLocalReplaceOpt.h.js"
-#undef SHORT_STRING
+#undef SIMPLE
 #undef FUNC_NAME
 
 
@@ -966,12 +941,7 @@ function RegExpSearch(string) {
     }
 
     
-    if (result === -1) {
-      return -1;
-    }
-
-    
-    return result & 0x7fff;
+    return result;
   }
 
   return RegExpSearchSlowPath(rx, S, previousLastIndex);
