@@ -9098,8 +9098,7 @@ void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode,
     return;
   }
 
-  if (::IsWin10OrLater() &&
-      StaticPrefs::widget_windows_fullscreen_remind_taskbar()) {
+  if (StaticPrefs::widget_windows_fullscreen_remind_taskbar()) {
     
     
     

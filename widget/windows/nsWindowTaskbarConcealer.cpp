@@ -363,18 +363,16 @@ void nsWindow::TaskbarConcealer::OnAsyncStateUpdateRequest(HWND hwnd) {
   
   
   
-  if (::IsWin10OrLater()) {
-    static UINT const shellHookMsg = ::RegisterWindowMessageW(L"SHELLHOOK");
-    if (shellHookMsg != 0) {
-      
-      
-      
-      
-      DWORD info = BSM_APPLICATIONS;
-      ::BroadcastSystemMessage(BSF_POSTMESSAGE | BSF_IGNORECURRENTTASK, &info,
-                               shellHookMsg, HSHELL_WINDOWACTIVATED,
-                               (LPARAM)hwnd);
-    }
+  static UINT const shellHookMsg = ::RegisterWindowMessageW(L"SHELLHOOK");
+  if (shellHookMsg != 0) {
+    
+    
+    
+    
+    DWORD info = BSM_APPLICATIONS;
+    ::BroadcastSystemMessage(BSF_POSTMESSAGE | BSF_IGNORECURRENTTASK, &info,
+                             shellHookMsg, HSHELL_WINDOWACTIVATED,
+                             (LPARAM)hwnd);
   }
 }
 
