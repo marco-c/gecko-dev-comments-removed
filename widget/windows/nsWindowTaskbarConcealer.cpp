@@ -362,6 +362,50 @@ void nsWindow::TaskbarConcealer::OnWindowPosChanged(nsWindow* aWin) {
   UpdateAllState();
 }
 
+void nsWindow::TaskbarConcealer::OnAsyncStateUpdateRequest(HWND hwnd) {
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnAsyncStateUpdateRequest()"));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (::IsWin10OrLater()) {
+    static UINT const shellHookMsg = ::RegisterWindowMessageW(L"SHELLHOOK");
+    if (shellHookMsg != 0) {
+      
+      
+      
+      
+      DWORD info = BSM_APPLICATIONS;
+      ::BroadcastSystemMessage(BSF_POSTMESSAGE | BSF_IGNORECURRENTTASK, &info,
+                               shellHookMsg, HSHELL_WINDOWACTIVATED,
+                               (LPARAM)hwnd);
+    }
+  }
+}
+
 void nsWindow::TaskbarConcealer::OnCloakChanged() {
   if (!UseAlternateFullscreenHeuristics()) {
     return;

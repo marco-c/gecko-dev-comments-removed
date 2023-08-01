@@ -35,6 +35,9 @@ class nsWindow::TaskbarConcealer {
   
   static void OnCloakChanged();
 
+  
+  static void OnAsyncStateUpdateRequest(HWND);
+
  private:
   static void UpdateAllState(HWND destroyedHwnd = nullptr);
 

@@ -34,8 +34,11 @@
 
 #define MOZ_WM_SKEWFIX (WM_APP + 0x0316)
 
-
 #define MOZ_WM_DMANIP (WM_APP + 0x0317)
+
+
+
+#define MOZ_WM_FULLSCREEN_STATE_UPDATE (WM_APP + 0x0318)
 
 
 
