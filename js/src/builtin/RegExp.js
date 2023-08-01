@@ -233,17 +233,17 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
   
   while (true) {
     
-    var result = RegExpMatcher(rx, S, lastIndex);
+    var position = RegExpSearcher(rx, S, lastIndex);
 
     
-    if (result === null) {
+    if (position === -1) {
       return n === 0 ? null : A;
     }
 
-    lastIndex = result.index + result[0].length;
+    lastIndex = RegExpSearcherLastLimit(S);
 
     
-    var matchStr = result[0];
+    var matchStr = SubstringKernel(S, position, lastIndex - position);
 
     
     DefineDataProperty(A, n, matchStr);
@@ -1074,16 +1074,14 @@ function RegExpSplit(string, limit) {
   
   if (size === 0) {
     
-    var z;
     if (optimizable) {
-      z = RegExpMatcher(splitter, S, 0);
+      if (RegExpSearcher(splitter, S, 0) !== -1) {
+        return A;
+      }
     } else {
-      z = RegExpExec(splitter, S);
-    }
-
-    
-    if (z !== null) {
-      return A;
+      if (RegExpExec(splitter, S) !== null) {
+        return A;
+      }
     }
 
     
@@ -1098,7 +1096,7 @@ function RegExpSplit(string, limit) {
 
   
   while (q < size) {
-    var e;
+    var e, z;
     if (optimizable) {
       
       
