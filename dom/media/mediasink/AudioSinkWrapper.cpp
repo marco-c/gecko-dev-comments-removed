@@ -405,24 +405,14 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
           [self = RefPtr<AudioSinkWrapper>(this), audioDevice = mAudioDevice,
            this](Promise::ResolveOrRejectValue&& aValue) mutable {
             LOG("AudioSink async init done, back on MDSM thread");
+            
+            
             ScopeExit decr([&] { --mAsyncCreateCount; });
-
-            if (aValue.IsReject()) {
-              if (audioDevice) {
-                
-                ScheduleRetrySink();
-                return GenericPromise::CreateAndResolve(true, __func__);
-              }
-              
-              mEndedPromiseHolder.RejectIfExists(aValue.RejectValue(),
-                                                 __func__);
-              return GenericPromise::CreateAndResolve(true, __func__);
+            UniquePtr<AudioSink> audioSink;
+            if (aValue.IsResolve()) {
+              audioSink = std::move(aValue.ResolveValue());
             }
-
-            UniquePtr audioSink = std::move(aValue.ResolveValue());
-            if (!audioSink) {
-              return GenericPromise::CreateAndResolve(true, __func__);
-            }
+            
             
             
             
@@ -436,9 +426,33 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
             
             
             if (mAudioSink || !NeedAudioSink() || audioDevice != mAudioDevice) {
-              LOG("AudioSink initialized async isn't needed, shutting "
-                  "it down.");
-              audioSink->ShutDown();
+              LOG("AudioSink async initialization isn't needed.");
+              if (audioSink) {
+                LOG("Shutting down unneeded AudioSink.");
+                audioSink->ShutDown();
+              }
+              return GenericPromise::CreateAndResolve(true, __func__);
+            }
+
+            if (aValue.IsReject()) {
+              if (audioDevice) {
+                
+                ScheduleRetrySink();
+              } else {
+                
+                MOZ_ASSERT(!mAudioSink);
+                mEndedPromiseHolder.RejectIfExists(aValue.RejectValue(),
+                                                   __func__);
+              }
+              return GenericPromise::CreateAndResolve(true, __func__);
+            }
+
+            if (!audioSink) {
+              
+              
+              
+              
+              
               return GenericPromise::CreateAndResolve(true, __func__);
             }
 
@@ -533,6 +547,9 @@ bool AudioSinkWrapper::IsPlaying() const {
 void AudioSinkWrapper::OnAudioEnded(
     const EndedPromise::ResolveOrRejectValue& aValue) {
   AssertOwnerThread();
+  
+  
+  MOZ_ASSERT(!mEndedPromiseHolder.IsEmpty());
   LOG("%p: AudioSinkWrapper::OnAudioEnded %i", this, aValue.IsResolve());
   mAudioSinkEndedRequest.Complete();
   ShutDownAudioSink();
