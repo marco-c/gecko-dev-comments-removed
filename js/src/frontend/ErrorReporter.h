@@ -9,6 +9,7 @@
 
 #include "mozilla/Variant.h"
 
+#include <optional>
 #include <stdarg.h>  
 #include <stddef.h>  
 #include <stdint.h>  
@@ -326,8 +327,8 @@ class ErrorReporter : public ErrorReportMixin {
   
   
   
-  virtual bool isOnThisLine(size_t offset, uint32_t lineNum,
-                            bool* onThisLine) const = 0;
+  virtual std::optional<bool> isOnThisLine(size_t offset,
+                                           uint32_t lineNum) const = 0;
 
   
   virtual uint32_t lineAt(size_t offset) const = 0;
