@@ -34,6 +34,7 @@ class nsNativeThemeWin : public Theme {
   
   
   enum class NonNative { No, Always, BecauseColorMismatch };
+  static bool IsWidgetAlwaysNonNative(nsIFrame*, StyleAppearance);
   NonNative IsWidgetNonNative(nsIFrame*, StyleAppearance);
 
   
@@ -76,8 +77,6 @@ class nsNativeThemeWin : public Theme {
 
   bool ThemeSupportsWidget(nsPresContext* aPresContext, nsIFrame* aFrame,
                            StyleAppearance aAppearance) override;
-
-  bool WidgetIsContainer(StyleAppearance aAppearance) override;
 
   bool ThemeDrawsFocusForWidget(nsIFrame*, StyleAppearance) override;
 

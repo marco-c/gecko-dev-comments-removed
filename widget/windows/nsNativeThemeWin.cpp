@@ -56,13 +56,19 @@ nsNativeThemeWin::nsNativeThemeWin()
       mProgressIndeterminateTimeStamp(TimeStamp::Now()),
       mBorderCacheValid(),
       mMinimumWidgetSizeCacheValid(),
-      mGutterSizeCacheValid(false) {
-  
-  
-  
-}
+      mGutterSizeCacheValid(false) {}
 
 nsNativeThemeWin::~nsNativeThemeWin() { nsUXThemeData::Invalidate(); }
+
+bool nsNativeThemeWin::IsWidgetAlwaysNonNative(nsIFrame* aFrame,
+                                               StyleAppearance aAppearance) {
+  return Theme::IsWidgetAlwaysNonNative(aFrame, aAppearance) ||
+         aAppearance == StyleAppearance::Checkbox ||
+         aAppearance == StyleAppearance::Radio ||
+         aAppearance == StyleAppearance::MozMenulistArrowButton ||
+         aAppearance == StyleAppearance::SpinnerUpbutton ||
+         aAppearance == StyleAppearance::SpinnerDownbutton;
+}
 
 auto nsNativeThemeWin::IsWidgetNonNative(nsIFrame* aFrame,
                                          StyleAppearance aAppearance)
@@ -461,17 +467,6 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
   aResult->width = sz.cx;
   aResult->height = sz.cy;
 
-  switch (aAppearance) {
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
-      aResult->width++;
-      aResult->height = aResult->height / 2 + 1;
-      break;
-
-    default:
-      break;
-  }
-
   ::ReleaseDC(nullptr, hdc);
 
   mMinimumWidgetSizeCacheValid[cacheBitIndex] |= cacheBit;
@@ -484,8 +479,6 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
     StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Button:
-    case StyleAppearance::Radio:
-    case StyleAppearance::Checkbox:
       return Some(eUXButton);
     case StyleAppearance::NumberInput:
     case StyleAppearance::Textfield:
@@ -507,12 +500,8 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
       return Some(eUXTrackbar);
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
-      return Some(eUXSpin);
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
-    case StyleAppearance::MozMenulistArrowButton:
       return Some(eUXCombobox);
     case StyleAppearance::Treeheadercell:
     case StyleAppearance::Treeheadersortarrow:
@@ -606,36 +595,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       
       
       if (aState == TS_NORMAL && IsDefaultButton(aFrame)) aState = TS_FOCUSED;
-      return NS_OK;
-    }
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio: {
-      bool isCheckbox = (aAppearance == StyleAppearance::Checkbox);
-      aPart = isCheckbox ? BP_CHECKBOX : BP_RADIO;
-
-      enum InputState { UNCHECKED = 0, CHECKED, INDETERMINATE };
-      InputState inputState = UNCHECKED;
-
-      if (!aFrame) {
-        aState = TS_NORMAL;
-      } else {
-        ElementState elementState = GetContentState(aFrame, aAppearance);
-        if (elementState.HasState(ElementState::CHECKED)) {
-          inputState = CHECKED;
-        }
-        if (isCheckbox && elementState.HasState(ElementState::INDETERMINATE)) {
-          inputState = INDETERMINATE;
-        }
-
-        if (elementState.HasState(ElementState::DISABLED)) {
-          aState = TS_DISABLED;
-        } else {
-          aState = StandardGetState(aFrame, aAppearance, false);
-        }
-      }
-
-      
-      aState += inputState * 4;
       return NS_OK;
     }
     case StyleAppearance::NumberInput:
@@ -761,20 +720,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       }
       return NS_OK;
     }
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton: {
-      aPart = (aAppearance == StyleAppearance::SpinnerUpbutton) ? SPNP_UP
-                                                                : SPNP_DOWN;
-      ElementState elementState = GetContentState(aFrame, aAppearance);
-      if (!aFrame) {
-        aState = TS_NORMAL;
-      } else if (elementState.HasState(ElementState::DISABLED)) {
-        aState = TS_DISABLED;
-      } else {
-        aState = StandardGetState(aFrame, aAppearance, false);
-      }
-      return NS_OK;
-    }
     case StyleAppearance::Toolbox: {
       aState = 0;
       aPart = RP_BACKGROUND;
@@ -882,75 +827,6 @@ nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
         aState = TS_NORMAL;
       }
 
-      return NS_OK;
-    }
-    case StyleAppearance::MozMenulistArrowButton: {
-      bool isOpen = false;
-
-      
-      
-      nsIFrame* parentFrame = aFrame->GetParent();
-      aFrame = parentFrame;
-
-      ElementState elementState = GetContentState(aFrame, aAppearance);
-      aPart = CBP_DROPMARKER_VISTA;
-
-      
-      
-      
-      if (IsWidgetStyled(aFrame->PresContext(), aFrame,
-                         StyleAppearance::Menulist)) {
-        aPart = CBP_DROPMARKER;
-      }
-
-      if (elementState.HasState(ElementState::DISABLED)) {
-        aState = TS_DISABLED;
-        return NS_OK;
-      }
-
-      if (nsComboboxControlFrame* ccf = do_QueryFrame(aFrame)) {
-        isOpen = ccf->IsDroppedDown();
-        if (isOpen) {
-          
-
-
-
-
-
-
-          aState = TS_HOVER;
-          return NS_OK;
-        }
-      } else {
-        
-
-
-
-        isOpen = IsOpenButton(aFrame);
-        aState = TS_NORMAL;
-        return NS_OK;
-      }
-
-      aState = TS_NORMAL;
-
-      
-      if (elementState.HasState(ElementState::ACTIVE)) {
-        if (isOpen) {
-          
-          
-          return NS_OK;
-        }
-        aState = TS_ACTIVE;
-      } else if (elementState.HasState(ElementState::HOVER)) {
-        
-        
-        if (isOpen) {
-          
-          
-          return NS_OK;
-        }
-        aState = TS_HOVER;
-      }
       return NS_OK;
     }
     default:
@@ -1277,20 +1153,11 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
                                         nsIFrame* aFrame,
                                         StyleAppearance aAppearance,
                                         LayoutDeviceIntMargin* aResult) {
-  switch (aAppearance) {
-    
-    
-    
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio:
-      aResult->SizeTo(0, 0, 0, 0);
-      return true;
-    default:
-      break;
+  if (IsWidgetNonNative(aFrame, aAppearance) == NonNative::Always) {
+    return Theme::GetWidgetPadding(aContext, aFrame, aAppearance, aResult);
   }
 
   bool ok = true;
-
   HANDLE theme = GetTheme(aAppearance);
   if (!theme) {
     ok = ClassicGetWidgetPadding(aContext, aFrame, aAppearance, aResult);
@@ -1431,11 +1298,6 @@ LayoutDeviceIntSize nsNativeThemeWin::GetMinimumWidgetSize(
   
   THEMESIZE sizeReq = TS_TRUE;  
   switch (aAppearance) {
-    case StyleAppearance::MozMenulistArrowButton: {
-      auto result = ClassicGetMinimumWidgetSize(aFrame, aAppearance);
-      ScaleForFrameDPI(&result, aFrame);
-      return result;
-    }
     case StyleAppearance::ProgressBar:
       
       
@@ -1507,8 +1369,7 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
   
   
   if ((aAppearance == StyleAppearance::Menulist ||
-       aAppearance == StyleAppearance::MenulistButton ||
-       aAppearance == StyleAppearance::MozMenulistArrowButton) &&
+       aAppearance == StyleAppearance::MenulistButton) &&
       nsNativeTheme::IsHTMLContent(aFrame)) {
     *aShouldRepaint = true;
     return NS_OK;
@@ -1554,28 +1415,12 @@ bool nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
     return Theme::ThemeSupportsWidget(aPresContext, aFrame, aAppearance);
   }
 
-  HANDLE theme = nullptr;
-  if (aAppearance == StyleAppearance::CheckboxContainer)
-    theme = GetTheme(StyleAppearance::Checkbox);
-  else if (aAppearance == StyleAppearance::RadioContainer)
-    theme = GetTheme(StyleAppearance::Radio);
-  else
-    theme = GetTheme(aAppearance);
-
+  HANDLE theme = GetTheme(aAppearance);
   if (theme || ClassicThemeSupportsWidget(aFrame, aAppearance))
     
     return !IsWidgetStyled(aPresContext, aFrame, aAppearance);
 
   return false;
-}
-
-bool nsNativeThemeWin::WidgetIsContainer(StyleAppearance aAppearance) {
-  
-  if (aAppearance == StyleAppearance::MozMenulistArrowButton ||
-      aAppearance == StyleAppearance::Radio ||
-      aAppearance == StyleAppearance::Checkbox)
-    return false;
-  return true;
 }
 
 bool nsNativeThemeWin::ThemeDrawsFocusForWidget(nsIFrame* aFrame,
@@ -1643,15 +1488,10 @@ bool nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::NumberInput:
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio:
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
-    case StyleAppearance::MozMenulistArrowButton:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
     case StyleAppearance::Listbox:
     case StyleAppearance::Treeview:
     case StyleAppearance::ProgressBar:
@@ -1710,18 +1550,9 @@ LayoutDeviceIntSize nsNativeThemeWin::ClassicGetMinimumWidgetSize(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
   LayoutDeviceIntSize result;
   switch (aAppearance) {
-    case StyleAppearance::Radio:
-    case StyleAppearance::Checkbox:
-      result.width = result.height = 13;
-      break;
     case StyleAppearance::Menuarrow:
       result.width = ::GetSystemMetrics(SM_CXMENUCHECK);
       result.height = ::GetSystemMetrics(SM_CYMENUCHECK);
-      break;
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
-      result.width = ::GetSystemMetrics(SM_CXVSCROLL);
-      result.height = 8;  
       break;
     case StyleAppearance::RangeThumb: {
       if (IsRangeHorizontal(aFrame)) {
@@ -1733,9 +1564,6 @@ LayoutDeviceIntSize nsNativeThemeWin::ClassicGetMinimumWidgetSize(
       }
       break;
     }
-    case StyleAppearance::MozMenulistArrowButton:
-      result.width = ::GetSystemMetrics(SM_CXVSCROLL);
-      break;
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
     case StyleAppearance::Button:
@@ -1797,46 +1625,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(
 
       return NS_OK;
     }
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio: {
-      ElementState contentState = GetContentState(aFrame, aAppearance);
-      aFocused = false;
-
-      aPart = DFC_BUTTON;
-      aState = 0;
-      nsIContent* content = aFrame->GetContent();
-      bool isCheckbox = (aAppearance == StyleAppearance::Checkbox);
-      bool isChecked = contentState.HasState(ElementState::CHECKED);
-      bool isIndeterminate = contentState.HasState(ElementState::INDETERMINATE);
-
-      if (isCheckbox) {
-        
-        if (isIndeterminate) {
-          aState = DFCS_BUTTON3STATE | DFCS_CHECKED;
-        } else {
-          aState = DFCS_BUTTONCHECK;
-        }
-      } else {
-        aState = DFCS_BUTTONRADIO;
-      }
-      if (isChecked) {
-        aState |= DFCS_CHECKED;
-      }
-
-      if (!content->IsXULElement() &&
-          contentState.HasState(ElementState::FOCUSRING)) {
-        aFocused = true;
-      }
-
-      if (contentState.HasState(ElementState::DISABLED)) {
-        aState |= DFCS_INACTIVE;
-      } else if (contentState.HasAllStates(ElementState::ACTIVE |
-                                           ElementState::HOVER)) {
-        aState |= DFCS_PUSHED;
-      }
-
-      return NS_OK;
-    }
     case StyleAppearance::Listbox:
     case StyleAppearance::Treeview:
     case StyleAppearance::NumberInput:
@@ -1853,67 +1641,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(
     case StyleAppearance::Tabpanels:
       
       return NS_OK;
-    case StyleAppearance::MozMenulistArrowButton: {
-      aPart = DFC_SCROLL;
-      aState = DFCS_SCROLLCOMBOBOX;
-
-      nsIFrame* parentFrame = aFrame->GetParent();
-      
-      
-      aFrame = parentFrame;
-
-      ElementState elementState = GetContentState(aFrame, aAppearance);
-
-      if (elementState.HasState(ElementState::DISABLED)) {
-        aState |= DFCS_INACTIVE;
-        return NS_OK;
-      }
-
-      bool isOpen = false;
-      if (nsComboboxControlFrame* ccf = do_QueryFrame(aFrame)) {
-        isOpen = ccf->IsDroppedDown();
-      } else {
-        isOpen = IsOpenButton(aFrame);
-      }
-
-      
-      
-      if (isOpen) {
-        return NS_OK;
-      }
-
-      
-      if (elementState.HasState(ElementState::ACTIVE))
-        aState |= DFCS_PUSHED | DFCS_FLAT;
-
-      return NS_OK;
-    }
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton: {
-      ElementState contentState = GetContentState(aFrame, aAppearance);
-
-      aPart = DFC_SCROLL;
-      switch (aAppearance) {
-        case StyleAppearance::SpinnerUpbutton:
-          aState = DFCS_SCROLLUP;
-          break;
-        case StyleAppearance::SpinnerDownbutton:
-          aState = DFCS_SCROLLDOWN;
-          break;
-        default:
-          break;
-      }
-
-      if (contentState.HasState(ElementState::DISABLED)) {
-        aState |= DFCS_INACTIVE;
-      } else {
-        if (contentState.HasAllStates(ElementState::HOVER |
-                                      ElementState::ACTIVE))
-          aState |= DFCS_PUSHED;
-      }
-
-      return NS_OK;
-    }
     default:
       return NS_ERROR_FAILURE;
   }
@@ -2079,22 +1806,13 @@ RENDER_AGAIN:
     case StyleAppearance::Button: {
       if (focused) {
         
-        HBRUSH brush;
-        brush = ::GetSysColorBrush(COLOR_3DDKSHADOW);
-        if (brush) ::FrameRect(hdc, &widgetRect, brush);
+        if (HBRUSH brush = ::GetSysColorBrush(COLOR_3DDKSHADOW)) {
+          ::FrameRect(hdc, &widgetRect, brush);
+        }
         InflateRect(&widgetRect, -1, -1);
       }
-      [[fallthrough]];
-    }
-    
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio:
-    case StyleAppearance::SpinnerUpbutton:
-    case StyleAppearance::SpinnerDownbutton:
-    case StyleAppearance::MozMenulistArrowButton: {
-      int32_t oldTA;
       
-      oldTA = ::SetTextAlign(hdc, TA_TOP | TA_LEFT | TA_NOUPDATECP);
+      int32_t oldTA = ::SetTextAlign(hdc, TA_TOP | TA_LEFT | TA_NOUPDATECP);
       ::DrawFrameControl(hdc, &widgetRect, part, state);
       ::SetTextAlign(hdc, oldTA);
       break;
@@ -2243,17 +1961,6 @@ uint32_t nsNativeThemeWin::GetWidgetNativeDrawingFlags(
     case StyleAppearance::MenulistButton:
       return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
              gfxWindowsNativeDrawing::CAN_AXIS_ALIGNED_SCALE |
-             gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
-
-    
-    
-    
-    case StyleAppearance::MozMenulistArrowButton:
-    
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio:
-      return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
-             gfxWindowsNativeDrawing::CANNOT_AXIS_ALIGNED_SCALE |
              gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
 
     
