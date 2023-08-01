@@ -79,9 +79,8 @@ pub enum NeedsSelectorFlags {
 }
 
 
-
 #[derive(PartialEq)]
-pub enum IgnoreNthChildForInvalidation {
+pub enum MatchingForInvalidation {
     No,
     Yes,
 }
@@ -205,8 +204,7 @@ where
     needs_selector_flags: NeedsSelectorFlags,
 
     
-    
-    ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
+    matching_for_invalidation: MatchingForInvalidation,
 
     
     pub selector_caches: &'a mut SelectorCaches,
@@ -226,7 +224,7 @@ where
         selector_caches: &'a mut SelectorCaches,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
-        ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
+        matching_for_invalidation: MatchingForInvalidation,
     ) -> Self {
         Self::new_for_visited(
             matching_mode,
@@ -235,7 +233,7 @@ where
             VisitedHandlingMode::AllLinksUnvisited,
             quirks_mode,
             needs_selector_flags,
-            ignores_nth_child_selectors_for_invalidation,
+            matching_for_invalidation,
         )
     }
 
@@ -247,7 +245,7 @@ where
         visited_handling: VisitedHandlingMode,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
-        ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
+        matching_for_invalidation: MatchingForInvalidation,
     ) -> Self {
         Self {
             matching_mode,
@@ -256,7 +254,7 @@ where
             quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             needs_selector_flags,
-            ignores_nth_child_selectors_for_invalidation,
+            matching_for_invalidation,
             scope_element: None,
             current_host: None,
             nesting_level: 0,
@@ -315,8 +313,8 @@ where
 
     
     #[inline]
-    pub fn ignores_nth_child_selectors_for_invalidation(&self) -> bool {
-        self.ignores_nth_child_selectors_for_invalidation == IgnoreNthChildForInvalidation::Yes
+    pub fn matching_for_invalidation(&self) -> bool {
+        self.matching_for_invalidation == MatchingForInvalidation::Yes
     }
 
     
