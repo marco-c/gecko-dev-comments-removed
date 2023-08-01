@@ -241,9 +241,20 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
                                                    uint32_t charnum,
                                                    uint32_t nchars,
                                                    ErrorResult& aRv);
-  MOZ_CAN_RUN_SCRIPT
-  float GetSubStringLength(nsIContent* aContent, uint32_t charnum,
-                           uint32_t nchars, ErrorResult& aRv);
+  bool RequiresSlowFallbackForSubStringLength();
+  float GetSubStringLengthFastPath(nsIContent* aContent, uint32_t charnum,
+                                   uint32_t nchars, ErrorResult& aRv);
+  
+
+
+
+
+
+
+
+  float GetSubStringLengthSlowFallback(nsIContent* aContent, uint32_t charnum,
+                                       uint32_t nchars, ErrorResult& aRv);
+
   int32_t GetCharNumAtPosition(nsIContent* aContent,
                                const dom::DOMPointInit& aPoint);
 
@@ -404,17 +415,6 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
   void DoGlyphPositioning();
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  float GetSubStringLengthSlowFallback(nsIContent* aContent, uint32_t charnum,
-                                       uint32_t nchars, ErrorResult& aRv);
 
   
 

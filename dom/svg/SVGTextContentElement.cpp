@@ -132,7 +132,20 @@ float SVGTextContentElement::GetSubStringLength(uint32_t charnum,
   SVGTextFrame* textFrame = GetSVGTextFrameForNonLayoutDependentQuery();
   if (!textFrame) return 0.0f;
 
-  return textFrame->GetSubStringLength(this, charnum, nchars, rv);
+  if (!textFrame->RequiresSlowFallbackForSubStringLength()) {
+    return textFrame->GetSubStringLengthFastPath(this, charnum, nchars, rv);
+  }
+  
+  
+  
+  
+  
+  
+  
+  textFrame = GetSVGTextFrame();
+  if (!textFrame) return 0.0f;
+
+  return textFrame->GetSubStringLengthSlowFallback(this, charnum, nchars, rv);
 }
 
 already_AddRefed<DOMSVGPoint> SVGTextContentElement::GetStartPositionOfChar(

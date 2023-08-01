@@ -3512,31 +3512,40 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
 
 
 
-float SVGTextFrame::GetSubStringLength(nsIContent* aContent, uint32_t charnum,
-                                       uint32_t nchars, ErrorResult& aRv) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool SVGTextFrame::RequiresSlowFallbackForSubStringLength() {
   TextFrameIterator frameIter(this);
   for (nsTextFrame* frame = frameIter.Current(); frame;
        frame = frameIter.Next()) {
     if (frameIter.TextPathFrame() || frame->GetNextContinuation()) {
-      return GetSubStringLengthSlowFallback(aContent, charnum, nchars, aRv);
+      return true;
     }
   }
+  return false;
+}
+
+
+
+
+
+float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
+                                               uint32_t charnum,
+                                               uint32_t nchars,
+                                               ErrorResult& aRv) {
+  MOZ_ASSERT(!RequiresSlowFallbackForSubStringLength());
 
   
   
@@ -3630,15 +3639,6 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
                                                    uint32_t charnum,
                                                    uint32_t nchars,
                                                    ErrorResult& aRv) {
-  
-  
-  
-  
-  
-  
-  RefPtr<mozilla::PresShell> presShell = PresShell();
-  presShell->FlushPendingNotifications(FlushType::Layout);
-
   UpdateGlyphPositioning();
 
   
