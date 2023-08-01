@@ -463,6 +463,25 @@ fn matches_relative_selectors<E: Element>(
             
             continue;
         }
+        
+        if context
+            .selector_caches
+            .relative_selector_filter_map
+            .fast_reject(
+                element,
+                relative_selector,
+                context.quirks_mode(),
+            )
+        {
+            
+            context.selector_caches.relative_selector.add(
+                element.opaque(),
+                relative_selector,
+                RelativeSelectorCachedMatch::NotMatched,
+            );
+            
+            continue;
+        }
 
         let matched = matches_relative_selector(relative_selector, element, context, rightmost);
         context.selector_caches.relative_selector.add(

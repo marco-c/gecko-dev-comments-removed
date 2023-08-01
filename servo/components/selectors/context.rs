@@ -7,6 +7,7 @@ use crate::bloom::BloomFilter;
 use crate::nth_index_cache::{NthIndexCache, NthIndexCacheInner};
 use crate::parser::{Selector, SelectorImpl};
 use crate::relative_selector::cache::RelativeSelectorCache;
+use crate::relative_selector::filter::RelativeSelectorFilterMap;
 use crate::tree::{Element, OpaqueElement};
 
 
@@ -149,6 +150,8 @@ pub struct SelectorCaches {
     pub nth_index: NthIndexCache,
     
     pub relative_selector: RelativeSelectorCache,
+    
+    pub relative_selector_filter_map: RelativeSelectorFilterMap,
 }
 
 
