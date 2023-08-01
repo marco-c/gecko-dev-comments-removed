@@ -106,3 +106,43 @@ add_task(async function () {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+
+
+add_task(async function () {
+  
+  const tabUrl = "https://example.com";
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl);
+
+  
+  gTabsPanel.init();
+  let allTabsView = document.getElementById("allTabsMenu-allTabsView");
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
+    allTabsView,
+    "ViewShown"
+  );
+  gTabsPanel.showAllTabsPanel();
+  await allTabsPopupShownPromise;
+
+  
+  let tabInPanel = Array.from(
+    gTabsPanel.allTabsViewTabs.querySelectorAll(".all-tabs-button")
+  ).at(-1).label;
+  let tabInTabStrip = tab.getAttribute("label");
+
+  is(
+    tabInPanel,
+    tabInTabStrip,
+    "Tooltip in tab manager panel matches tooltip in tab strip"
+  );
+
+  
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+    allTabsView.panelMultiView,
+    "PanelMultiViewHidden"
+  );
+  gTabsPanel.hideAllTabsPanel();
+  await allTabsPopupHiddenPromise;
+
+  BrowserTestUtils.removeTab(tab);
+});
