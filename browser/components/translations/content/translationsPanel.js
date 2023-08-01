@@ -988,6 +988,20 @@ var TranslationsPanel = new (class {
   
 
 
+  handleSettingsPopupShownEvent() {
+    TranslationsParent.telemetry().panel().onOpenSettingsMenu();
+  }
+
+  
+
+
+  handleSettingsPopupHiddenEvent() {
+    TranslationsParent.telemetry().panel().onCloseSettingsMenu();
+  }
+
+  
+
+
 
 
 
