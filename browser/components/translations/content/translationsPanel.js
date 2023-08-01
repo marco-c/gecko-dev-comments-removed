@@ -885,7 +885,17 @@ var TranslationsPanel = new (class {
   
 
 
-  onLearnMore() {
+
+  onLearnMoreLink() {
+    TranslationsParent.telemetry().panel().onLearnMoreLink();
+    TranslationsPanel.close();
+  }
+
+  
+
+
+  onAboutTranslations() {
+    TranslationsParent.telemetry().panel().onAboutTranslations();
     PanelMultiView.hidePopup(this.elements.panel);
     const window =
       gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
