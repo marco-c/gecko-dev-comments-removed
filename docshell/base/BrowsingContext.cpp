@@ -616,6 +616,7 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
   }
 
   RecomputeCanExecuteScripts();
+  ClearCachedValuesOfLocations();
 }
 
 
@@ -1047,6 +1048,8 @@ void BrowsingContext::PrepareForProcessChange() {
   mIsInProcess = false;
   mUserGestureStart = TimeStamp();
 
+  ClearCachedValuesOfLocations();
+
   
   
   
@@ -1413,6 +1416,9 @@ BrowsingContext::~BrowsingContext() {
     sBrowsingContexts->Remove(Id());
   }
   UnregisterBrowserId(this);
+
+  ClearCachedValuesOfLocations();
+  mLocations.clear();
 }
 
 
@@ -3751,6 +3757,17 @@ void BrowsingContext::ResetLocationChangeRateLimit() {
   
   
   mLocationChangeRateLimitSpanStart = TimeStamp();
+}
+
+void BrowsingContext::LocationCreated(dom::Location* aLocation) {
+  MOZ_ASSERT(!aLocation->isInList());
+  mLocations.insertBack(aLocation);
+}
+
+void BrowsingContext::ClearCachedValuesOfLocations() {
+  for (dom::Location* loc = mLocations.getFirst(); loc; loc = loc->getNext()) {
+    loc->ClearCachedValues();
+  }
 }
 
 }  

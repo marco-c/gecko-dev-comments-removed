@@ -45,10 +45,15 @@ Location::Location(nsPIDOMWindowInner* aWindow,
   
   if (aBrowsingContext) {
     mBrowsingContextId = aBrowsingContext->Id();
+    aBrowsingContext->LocationCreated(this);
   }
 }
 
-Location::~Location() = default;
+Location::~Location() {
+  if (isInList()) {
+    remove();
+  }
+}
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Location)
@@ -644,6 +649,10 @@ bool Location::CallerSubsumes(nsIPrincipal* aSubjectPrincipal) {
 JSObject* Location::WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) {
   return Location_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+void Location::ClearCachedValues() {
+  Location_Binding::ClearCachedHashValue(this);
 }
 
 }  
