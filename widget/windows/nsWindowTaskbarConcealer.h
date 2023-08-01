@@ -48,7 +48,6 @@ class nsWindow::TaskbarConcealer {
   static mozilla::Maybe<WindowState> GetWindowState(HWND);
 
   static nsTHashMap<HWND, HMONITOR> sKnownWindows;
-  struct Impl;
 };
 
 #endif  

@@ -87,17 +87,6 @@ nsTHashMap<HWND, HMONITOR> nsWindow::TaskbarConcealer::sKnownWindows;
 
 
 
-
-
-static bool UseAlternateFullscreenHeuristics() {
-  static const bool val =
-      StaticPrefs::widget_windows_alternate_fullscreen_heuristics();
-  return val;
-}
-
-
-
-
 Maybe<nsWindow::TaskbarConcealer::WindowState>
 nsWindow::TaskbarConcealer::GetWindowState(HWND aWnd) {
   
@@ -295,10 +284,6 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
 
 
 void nsWindow::TaskbarConcealer::OnWindowDestroyed(HWND aWnd) {
-  if (!UseAlternateFullscreenHeuristics()) {
-    return;
-  }
-
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
           ("==> OnWindowDestroyed() for HWND %p", aWnd));
 
@@ -306,10 +291,6 @@ void nsWindow::TaskbarConcealer::OnWindowDestroyed(HWND aWnd) {
 }
 
 void nsWindow::TaskbarConcealer::OnFocusAcquired(nsWindow* aWin) {
-  if (!UseAlternateFullscreenHeuristics()) {
-    return;
-  }
-
   
   
   
@@ -326,11 +307,6 @@ void nsWindow::TaskbarConcealer::OnFocusAcquired(nsWindow* aWin) {
 
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,
                                                      bool enteredFullscreen) {
-  if (!UseAlternateFullscreenHeuristics()) {
-    TaskbarConcealerImpl().MarkAsHidingTaskbar(aWin->mWnd, enteredFullscreen);
-    return;
-  }
-
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
           ("==> OnFullscreenChanged() for HWND %p on HMONITOR %p", aWin->mWnd,
            ::MonitorFromWindow(aWin->mWnd, MONITOR_DEFAULTTONULL)));
@@ -339,10 +315,6 @@ void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,
 }
 
 void nsWindow::TaskbarConcealer::OnWindowPosChanged(nsWindow* aWin) {
-  if (!UseAlternateFullscreenHeuristics()) {
-    return;
-  }
-
   
   
   const HWND myHwnd = aWin->mWnd;
@@ -407,10 +379,6 @@ void nsWindow::TaskbarConcealer::OnAsyncStateUpdateRequest(HWND hwnd) {
 }
 
 void nsWindow::TaskbarConcealer::OnCloakChanged() {
-  if (!UseAlternateFullscreenHeuristics()) {
-    return;
-  }
-
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info, ("==> OnCloakChanged()"));
 
   UpdateAllState();
