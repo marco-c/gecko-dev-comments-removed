@@ -616,10 +616,6 @@ pref("browser.urlbar.suggest.addons", true);
 
 
 
-pref("browser.urlbar.suggest.mdn", true);
-
-
-
 pref("browser.urlbar.addons.minKeywordLength", 0);
 
 
