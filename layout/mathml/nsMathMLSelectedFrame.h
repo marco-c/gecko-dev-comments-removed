@@ -47,6 +47,10 @@ class nsMathMLSelectedFrame : public nsMathMLContainerFrame {
         mInvalidMarkup(false) {}
   virtual ~nsMathMLSelectedFrame();
 
+  
+  
+  nsresult ReflowError(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
+
   virtual nsIFrame* GetSelectedFrame() = 0;
   nsIFrame* mSelectedFrame;
 

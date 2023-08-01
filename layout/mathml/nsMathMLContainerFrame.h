@@ -209,12 +209,9 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  nsresult PlaceForError(DrawTarget* aDrawTarget, bool aPlaceOrigin,
-                         ReflowOutput& aDesiredSize);
+  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+                       ReflowOutput& aDesiredSize);
 
-  
-  
-  nsresult ReflowError(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
   
 
 

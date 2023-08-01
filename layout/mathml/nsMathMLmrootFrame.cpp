@@ -7,7 +7,6 @@
 #include "nsMathMLmrootFrame.h"
 
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_mathml.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include <algorithm>
@@ -48,9 +47,6 @@ void nsMathMLmrootFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 bool nsMathMLmrootFrame::ShouldUseRowFallback() {
-  if (!StaticPrefs::mathml_error_message_layout_for_invalid_markup_disabled()) {
-    return false;
-  }
   nsIFrame* baseFrame = mFrames.FirstChild();
   if (!baseFrame) {
     return true;
@@ -209,16 +205,6 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
     count++;
     childFrame = childFrame->GetNextSibling();
   }
-  
-  
-  if (2 != count) {
-    
-    ReportChildCountError();
-    ReflowError(drawTarget, aDesiredSize);
-    
-    DidReflowChildren(mFrames.FirstChild(), childFrame);
-    return;
-  }
 
   
   
@@ -364,13 +350,12 @@ void nsMathMLmrootFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
     return;
   }
 
+  
   nsIFrame* baseFrame = mFrames.FirstChild();
-  nsIFrame* indexFrame = nullptr;
-  if (baseFrame) indexFrame = baseFrame->GetNextSibling();
-  if (!indexFrame || indexFrame->GetNextSibling()) {
-    ReflowError(aRenderingContext->GetDrawTarget(), aDesiredSize);
-    return;
-  }
+  MOZ_ASSERT(baseFrame);
+  nsIFrame* indexFrame = baseFrame->GetNextSibling();
+  MOZ_ASSERT(indexFrame);
+  MOZ_ASSERT(!indexFrame->GetNextSibling());
 
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
   nscoord baseWidth = nsLayoutUtils::IntrinsicForContainer(

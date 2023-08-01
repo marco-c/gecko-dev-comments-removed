@@ -10,7 +10,6 @@
 #include "gfxUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "nsLayoutUtils.h"
@@ -35,39 +34,6 @@ NS_QUERYFRAME_HEAD(nsMathMLContainerFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 
-
-
-
-
-nsresult nsMathMLContainerFrame::ReflowError(DrawTarget* aDrawTarget,
-                                             ReflowOutput& aDesiredSize) {
-  
-  mEmbellishData.flags = 0;
-  mPresentationData.flags = NS_MATHML_ERROR;
-
-  
-  
-  RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
-
-  
-  nsAutoString errorMsg;
-  errorMsg.AssignLiteral("invalid-markup");
-  mBoundingMetrics = nsLayoutUtils::AppUnitBoundsOfString(
-      errorMsg.get(), errorMsg.Length(), *fm, aDrawTarget);
-
-  
-  WritingMode wm = aDesiredSize.GetWritingMode();
-  aDesiredSize.SetBlockStartAscent(fm->MaxAscent());
-  nscoord descent = fm->MaxDescent();
-  aDesiredSize.BSize(wm) = aDesiredSize.BlockStartAscent() + descent;
-  aDesiredSize.ISize(wm) = mBoundingMetrics.width;
-
-  
-  aDesiredSize.mBoundingMetrics = mBoundingMetrics;
-
-  return NS_OK;
-}
 
 namespace mozilla {
 
@@ -992,7 +958,7 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
   nsresult rv =
       MeasureForWidth(aRenderingContext->GetDrawTarget(), aDesiredSize);
   if (NS_FAILED(rv)) {
-    PlaceForError(aRenderingContext->GetDrawTarget(), false, aDesiredSize);
+    PlaceAsMrow(aRenderingContext->GetDrawTarget(), false, aDesiredSize);
   }
 
   ClearSavedChildMetrics();
@@ -1244,13 +1210,10 @@ nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   return NS_OK;
 }
 
-nsresult nsMathMLContainerFrame::PlaceForError(DrawTarget* aDrawTarget,
-                                               bool aPlaceOrigin,
-                                               ReflowOutput& aDesiredSize) {
-  return StaticPrefs::mathml_error_message_layout_for_invalid_markup_disabled()
-             ? nsMathMLContainerFrame::Place(aDrawTarget, aPlaceOrigin,
-                                             aDesiredSize)
-             : ReflowError(aDrawTarget, aDesiredSize);
+nsresult nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
+                                             bool aPlaceOrigin,
+                                             ReflowOutput& aDesiredSize) {
+  return nsMathMLContainerFrame::Place(aDrawTarget, aPlaceOrigin, aDesiredSize);
 }
 
 void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,

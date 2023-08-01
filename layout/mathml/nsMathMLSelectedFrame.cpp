@@ -5,7 +5,15 @@
 
 
 #include "nsMathMLSelectedFrame.h"
+
+#include "mozilla/RefPtr.h"
+#include "mozilla/ReflowOutput.h"
+#include "mozilla/WritingModes.h"
+#include "nsCoord.h"
 #include "nsDisplayList.h"
+#include "nsFontMetrics.h"
+#include "nsLayoutUtils.h"
+#include "nsStringFwd.h"
 
 using namespace mozilla;
 
@@ -100,6 +108,36 @@ nsIFrame::SizeComputationResult nsMathMLSelectedFrame::ComputeSize(
     return {size.mLogicalSize + bpSize, size.mAspectRatioUsage};
   }
   return {LogicalSize(aWM), AspectRatioUsage::None};
+}
+
+nsresult nsMathMLSelectedFrame::ReflowError(DrawTarget* aDrawTarget,
+                                            ReflowOutput& aDesiredSize) {
+  
+  mEmbellishData.flags = 0;
+  mPresentationData.flags = NS_MATHML_ERROR;
+
+  
+  
+  RefPtr<nsFontMetrics> fm =
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+
+  
+  nsAutoString errorMsg;
+  errorMsg.AssignLiteral("invalid-markup");
+  mBoundingMetrics = nsLayoutUtils::AppUnitBoundsOfString(
+      errorMsg.get(), errorMsg.Length(), *fm, aDrawTarget);
+
+  
+  WritingMode wm = aDesiredSize.GetWritingMode();
+  aDesiredSize.SetBlockStartAscent(fm->MaxAscent());
+  nscoord descent = fm->MaxDescent();
+  aDesiredSize.BSize(wm) = aDesiredSize.BlockStartAscent() + descent;
+  aDesiredSize.ISize(wm) = mBoundingMetrics.width;
+
+  
+  aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+
+  return NS_OK;
 }
 
 
