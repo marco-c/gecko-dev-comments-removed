@@ -355,26 +355,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1628455",
-    platform: "android",
-    domain: "autotrader.ca",
-    bug: "1628455",
-    config: {
-      matches: ["https://*.autotrader.ca/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
 
 
     id: "bug1646791",
@@ -806,25 +786,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1803131",
-    platform: "android",
-    domain: "argaam.com",
-    bug: "1803131",
-    config: {
-      matches: ["*://*.argaam.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1819702",
     platform: "android",
     domain: "feelgoodcontacts.com",
@@ -863,22 +824,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1827678",
     config: {
       matches: ["*://*.admissions.nid.edu/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-    id: "bug1827678-webc66888",
-    platform: "android",
-    domain: "www.hepsiburada.com",
-    bug: "1827678",
-    config: {
-      matches: ["*://www.hepsiburada.com/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1139,7 +1084,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.captainjackcasino.com/*", 
         "*://*.casinoextreme.eu/*", 
         "*://*.cryptoloko.com/*", 
-        "*://*.heapsowins.com/*", 
+        "*://*.123lobbygames.com/*", 
         "*://*.planet7casino.com/*", 
         "*://*.yebocasino.co.za/*", 
         "*://*.yabbycasino.com/*", 
@@ -1348,6 +1293,27 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.flatsatshadowglen.com/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1843234",
+    platform: "desktop",
+    domain: "fdj.fr",
+    bug: "1843234",
+    config: {
+      matches: ["*://*.fdj.fr/*"],
+      uaTransformer: originalUA => {
+        if (originalUA.includes("Linux")) {
+          return UAHelpers.getWindowsUA(originalUA);
+        }
+        return originalUA;
       },
     },
   },
