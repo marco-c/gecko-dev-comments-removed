@@ -1620,6 +1620,22 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         
         
       }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      hint &= ~nsChangeHint_UpdateTransformLayer;
     }
 
     if (!frame->FrameMaintainsOverflow()) {
@@ -1639,25 +1655,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       hint &= ~(nsChangeHint_UpdatePostTransformOverflow |
                 nsChangeHint_UpdateTransformLayer);
-    }
-
-    if (hint & nsChangeHint_AddOrRemoveTransform) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      hint &= ~nsChangeHint_UpdateTransformLayer;
     }
 
     if ((hint & nsChangeHint_UpdateEffects) &&
