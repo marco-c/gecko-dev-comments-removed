@@ -6807,6 +6807,24 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcher(
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachRegExpSearcherLastLimit() {
+  
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isString());
+
+  
+  initializeInputOperand();
+
+  
+
+  writer.regExpSearcherLastLimitResult();
+  writer.returnFromIC();
+
+  trackAttached("RegExpSearcherLastLimit");
+  return AttachDecision::Attach;
+}
+
 AttachDecision
 InlinableNativeIRGenerator::tryAttachRegExpPrototypeOptimizable() {
   
@@ -10657,6 +10675,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     case InlinableNative::RegExpMatcher:
     case InlinableNative::RegExpSearcher:
       return tryAttachRegExpMatcherSearcher(native);
+    case InlinableNative::RegExpSearcherLastLimit:
+      return tryAttachRegExpSearcherLastLimit();
     case InlinableNative::RegExpPrototypeOptimizable:
       return tryAttachRegExpPrototypeOptimizable();
     case InlinableNative::RegExpInstanceOptimizable:
