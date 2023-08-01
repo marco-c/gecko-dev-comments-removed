@@ -36,71 +36,60 @@ void DocAccessibleChild::FlattenTree(LocalAccessible* aRoot,
 }
 
 
-void DocAccessibleChild::SerializeTree(nsTArray<LocalAccessible*>& aTree,
-                                       nsTArray<AccessibleData>& aData) {
-  for (LocalAccessible* acc : aTree) {
-    uint64_t id = reinterpret_cast<uint64_t>(acc->UniqueID());
-    a11y::role role = acc->Role();
-    uint32_t childCount = acc->IsOuterDoc() ? 0 : acc->ChildCount();
-
-    uint32_t genericTypes = acc->mGenericTypes;
-    if (acc->ARIAHasNumericValue()) {
-      
-      genericTypes |= eNumericValue;
-    }
-    if (acc->IsTextLeaf() || acc->IsImage()) {
-      
-      
-      
-      
-      
-      if (acc->ActionCount()) {
-        genericTypes |= eActionable;
-      }
-    } else if (acc->HasPrimaryAction()) {
+AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
+  uint32_t genericTypes = aAcc->mGenericTypes;
+  if (aAcc->ARIAHasNumericValue()) {
+    
+    genericTypes |= eNumericValue;
+  }
+  if (aAcc->IsTextLeaf() || aAcc->IsImage()) {
+    
+    
+    
+    
+    
+    if (aAcc->ActionCount()) {
       genericTypes |= eActionable;
     }
-
-    RefPtr<AccAttributes> fields;
-    
-    
-    if (!acc->Document()->IsAccessibleBeingMoved(acc)) {
-      fields =
-          acc->BundleFieldsForCache(CacheDomain::All, CacheUpdateType::Initial);
-      if (fields->Count() == 0) {
-        fields = nullptr;
-      }
-    }
-
-    aData.AppendElement(
-        AccessibleData(id, role, childCount, static_cast<AccType>(acc->mType),
-                       static_cast<AccGenericType>(genericTypes),
-                       acc->mRoleMapEntryIndex, fields));
+  } else if (aAcc->HasPrimaryAction()) {
+    genericTypes |= eActionable;
   }
+
+  RefPtr<AccAttributes> fields;
+  
+  
+  if (!aAcc->Document()->IsAccessibleBeingMoved(aAcc)) {
+    fields =
+        aAcc->BundleFieldsForCache(CacheDomain::All, CacheUpdateType::Initial);
+    if (fields->Count() == 0) {
+      fields = nullptr;
+    }
+  }
+
+  return AccessibleData(aAcc->ID(), aAcc->Role(), aAcc->LocalParent()->ID(),
+                        static_cast<int32_t>(aAcc->IndexInParent()),
+                        static_cast<AccType>(aAcc->mType),
+                        static_cast<AccGenericType>(genericTypes),
+                        aAcc->mRoleMapEntryIndex, fields);
 }
 
-void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aParent,
-                                           LocalAccessible* aChild,
-                                           uint32_t aIdxInParent,
+void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
                                            bool aSuppressShowEvent) {
-  uint64_t parentID =
-      aParent->IsDoc() ? 0 : reinterpret_cast<uint64_t>(aParent->UniqueID());
   nsTArray<LocalAccessible*> shownTree;
   FlattenTree(aChild, shownTree);
-  ShowEventData data(parentID, aIdxInParent,
-                     nsTArray<AccessibleData>(shownTree.Length()),
-                     aSuppressShowEvent);
-  SerializeTree(shownTree, data.NewTree());
+  nsTArray<AccessibleData> data(shownTree.Length());
+  for (LocalAccessible* child : shownTree) {
+    data.AppendElement(SerializeAcc(child));
+  }
   if (ipc::ProcessChild::ExpectingShutdown()) {
     return;
   }
-  MaybeSendShowEvent(data, false);
+  SendShowEvent(data, aSuppressShowEvent, false);
 }
 
 void DocAccessibleChild::ShowEvent(AccShowEvent* aShowEvent) {
   LocalAccessible* child = aShowEvent->GetAccessible();
-  InsertIntoIpcTree(aShowEvent->LocalParent(), child, child->IndexInParent(),
-                    false);
+  InsertIntoIpcTree(child, false);
 }
 
 mozilla::ipc::IPCResult DocAccessibleChild::RecvTakeFocus(const uint64_t& aID) {
