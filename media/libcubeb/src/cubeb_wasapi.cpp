@@ -452,6 +452,9 @@ struct cubeb_stream {
 
 
   LONG ref_count = 0;
+
+  
+  bool active = false;
 };
 
 class monitor_device_notifications {
@@ -1419,6 +1422,12 @@ static unsigned int __stdcall wasapi_stream_render_loop(LPVOID stream)
       continue;
     }
     case WAIT_OBJECT_0 + 1: { 
+      auto_lock lock(stm->stream_reset_lock);
+      if (!stm->active) {
+        
+        LOG("Stream is not active, ignoring reconfigure.");
+        continue;
+      }
       XASSERT(stm->output_client || stm->input_client);
       LOG("Reconfiguring the stream");
       
@@ -1431,23 +1440,20 @@ static unsigned int __stdcall wasapi_stream_render_loop(LPVOID stream)
         was_running = stm->input_client->Stop() == S_OK;
         LOG("Input stopped.");
       }
-      {
-        auto_lock lock(stm->stream_reset_lock);
-        close_wasapi_stream(stm);
-        LOG("Stream closed.");
+      close_wasapi_stream(stm);
+      LOG("Stream closed.");
+      
+
+      int r = setup_wasapi_stream(stm);
+      if (r != CUBEB_OK) {
+        LOG("Error setting up the stream during reconfigure.");
         
 
-        int r = setup_wasapi_stream(stm);
-        if (r != CUBEB_OK) {
-          LOG("Error setting up the stream during reconfigure.");
-          
-
-          is_playing = false;
-          hr = E_FAIL;
-          continue;
-        }
-        LOG("Stream setup successfuly.");
+        is_playing = false;
+        hr = E_FAIL;
+        continue;
       }
+      LOG("Stream setup successfuly.");
       XASSERT(stm->output_client || stm->input_client);
       if (was_running && stm->output_client) {
         hr = stm->output_client->Start();
@@ -2987,6 +2993,8 @@ wasapi_stream_start(cubeb_stream * stm)
     }
   }
 
+  stm->active = true;
+
   stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_STARTED);
 
   return CUBEB_OK;
@@ -3016,6 +3024,8 @@ wasapi_stream_stop(cubeb_stream * stm)
         return CUBEB_ERROR;
       }
     }
+
+    stm->active = false;
 
     wasapi_state_callback(stm, stm->user_ptr, CUBEB_STATE_STOPPED);
   }

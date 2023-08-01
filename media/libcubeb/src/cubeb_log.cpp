@@ -54,7 +54,7 @@ public:
   char const * get() { return storage; }
 
 private:
-  char storage[CUBEB_LOG_MESSAGE_MAX_SIZE];
+  char storage[CUBEB_LOG_MESSAGE_MAX_SIZE]{};
 };
 
 
@@ -70,7 +70,7 @@ public:
   void push(char const str[CUBEB_LOG_MESSAGE_MAX_SIZE])
   {
     cubeb_log_message msg(str);
-    auto owned_queue = msg_queue.load();
+    auto * owned_queue = msg_queue.load();
     
     
     if (!owned_queue ||
@@ -123,7 +123,7 @@ public:
     if (logging_thread.get_id() != std::thread::id()) {
       logging_thread.join();
       logging_thread = std::thread();
-      auto owned_queue = msg_queue.load();
+      auto * owned_queue = msg_queue.load();
       
       
       
