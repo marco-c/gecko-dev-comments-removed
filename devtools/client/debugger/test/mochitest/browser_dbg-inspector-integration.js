@@ -119,6 +119,12 @@ add_task(async function () {
   
   await tryHovering(dbg, 5, 8, "popup");
 
+  info("Wait for top level node to expand and child nodes to load");
+  await waitForElementWithSelector(
+    dbg,
+    ".preview-popup .node:first-of-type .arrow.expanded"
+  );
+
   
   await waitForElement(dbg, "openInspector");
 

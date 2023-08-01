@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 import React, { Component } from "react";
 import PropTypes from "prop-types";
@@ -14,62 +14,32 @@ const {
 import actions from "../../../actions";
 
 import AccessibleImage from "../../shared/AccessibleImage";
-
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const classnames = require("devtools/client/shared/classnames.js");
-
-const POPUP_SELECTOR = ".preview-popup.exception-popup";
 const ANONYMOUS_FN_NAME = "<anonymous>";
 
-
-
-
-
-
+// The exception popup works in two modes:
+// a. when the stacktrace is closed the exception popup
+// gets closed when the mouse leaves the popup.
+// b. when the stacktrace is opened the exception popup
+// gets closed only by clicking outside the popup.
 class ExceptionPopup extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isStacktraceExpanded: false,
+      isStacktraceExpanded: true,
     };
   }
 
   static get propTypes() {
     return {
-      clearPreview: PropTypes.func.isRequired,
       mouseout: PropTypes.func.isRequired,
       selectSourceURL: PropTypes.func.isRequired,
       exception: PropTypes.object.isRequired,
     };
   }
 
-  updateTopWindow() {
-    
-    
-    if (this.topWindow) {
-      this.topWindow.removeEventListener(
-        "mousedown",
-        this.onTopWindowClick,
-        true
-      );
-      this.topWindow = null;
-    }
-    this.topWindow = DevToolsUtils.getTopWindow(window.parent);
-    this.topWindow.addEventListener("mousedown", this.onTopWindowClick, true);
-  }
-
-  onTopWindowClick = e => {
-    
-    
-    if (!e.target.closest(POPUP_SELECTOR)) {
-      this.props.clearPreview();
-    }
-  };
-
   onExceptionMessageClick() {
     const isStacktraceExpanded = this.state.isStacktraceExpanded;
-
-    this.updateTopWindow();
     this.setState({ isStacktraceExpanded: !isStacktraceExpanded });
   }
 
