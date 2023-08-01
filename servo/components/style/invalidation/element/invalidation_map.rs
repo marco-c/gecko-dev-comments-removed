@@ -16,6 +16,7 @@ use selectors::attr::NamespaceConstraint;
 use selectors::parser::{Combinator, Component};
 use selectors::parser::{Selector, SelectorIter};
 use selectors::visitor::{SelectorListKind, SelectorVisitor};
+use servo_arc::Arc;
 use smallvec::SmallVec;
 
 
@@ -39,11 +40,7 @@ use smallvec::SmallVec;
 #[derive(Clone, Debug, MallocSizeOf)]
 pub struct Dependency {
     
-    #[cfg_attr(
-        feature = "gecko",
-        ignore_malloc_size_of = "CssRules have primary refs, we measure there"
-    )]
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
+    #[ignore_malloc_size_of = "CssRules have primary refs, we measure there"]
     pub selector: Selector<SelectorImpl>,
 
     
@@ -64,7 +61,8 @@ pub struct Dependency {
     
     
     
-    pub parent: Option<Box<Dependency>>,
+    #[ignore_malloc_size_of = "Arc"]
+    pub parent: Option<Arc<Dependency>>,
 }
 
 
@@ -306,6 +304,12 @@ impl PerCompoundState {
     }
 }
 
+struct ParentDependencyEntry {
+    selector: Selector<SelectorImpl>,
+    offset: usize,
+    cached_dependency: Option<Arc<Dependency>>,
+}
+
 
 struct SelectorDependencyCollector<'a> {
     map: &'a mut InvalidationMap,
@@ -324,7 +328,7 @@ struct SelectorDependencyCollector<'a> {
     
     
     
-    parent_selectors: &'a mut SmallVec<[(Selector<SelectorImpl>, usize); 5]>,
+    parent_selectors: &'a mut SmallVec<[ParentDependencyEntry; 5]>,
 
     
     quirks_mode: QuirksMode,
@@ -399,24 +403,35 @@ impl<'a> SelectorDependencyCollector<'a> {
         true
     }
 
-    fn dependency(&self) -> Dependency {
-        let mut parent = None;
-
-        
-        
-        for &(ref selector, ref selector_offset) in self.parent_selectors.iter() {
-            debug_assert_ne!(
-                self.compound_state.offset, 0,
-                "Shouldn't bother creating nested dependencies for the rightmost compound",
-            );
-            let new_parent = Dependency {
-                selector: selector.clone(),
-                selector_offset: *selector_offset,
-                parent,
-            };
-            parent = Some(Box::new(new_parent));
+    fn parent_dependency(&mut self) -> Option<Arc<Dependency>> {
+        if self.parent_selectors.is_empty() {
+            return None;
         }
 
+        fn dependencies_from(entries: &mut [ParentDependencyEntry]) -> Option<Arc<Dependency>> {
+            if entries.is_empty() {
+                return None
+            }
+
+            let last_index = entries.len() - 1;
+            let (previous, last) = entries.split_at_mut(last_index);
+            let last = &mut last[0];
+            let selector = &last.selector;
+            let selector_offset = last.offset;
+            Some(last.cached_dependency.get_or_insert_with(|| {
+                Arc::new(Dependency {
+                    selector: selector.clone(),
+                    selector_offset,
+                    parent: dependencies_from(previous),
+                })
+            }).clone())
+        }
+
+        dependencies_from(&mut self.parent_selectors)
+    }
+
+    fn dependency(&mut self) -> Dependency {
+        let parent = self.parent_dependency();
         Dependency {
             selector: self.selector.clone(),
             selector_offset: self.compound_state.offset,
@@ -456,8 +471,11 @@ impl<'a> SelectorVisitor for SelectorDependencyCollector<'a> {
 
             index += 1; 
 
-            self.parent_selectors
-                .push((self.selector.clone(), self.compound_state.offset));
+            self.parent_selectors.push(ParentDependencyEntry {
+                selector: self.selector.clone(),
+                offset: self.compound_state.offset,
+                cached_dependency: None,
+            });
             let mut nested = SelectorDependencyCollector {
                 map: &mut *self.map,
                 document_state: &mut *self.document_state,
