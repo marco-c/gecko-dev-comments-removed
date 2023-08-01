@@ -216,12 +216,14 @@ class ServoStyleSet {
   
   already_AddRefed<ComputedStyle> ResolvePseudoElementStyle(
       const dom::Element& aOriginatingElement, PseudoStyleType,
-      ComputedStyle* aParentStyle, IsProbe = IsProbe::No);
+      nsAtom* aFunctionalPseudoParameter, ComputedStyle* aParentStyle,
+      IsProbe = IsProbe::No);
 
   already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
       const dom::Element& aOriginatingElement, PseudoStyleType aType,
-      ComputedStyle* aParentStyle) {
-    return ResolvePseudoElementStyle(aOriginatingElement, aType, aParentStyle,
+      nsAtom* aFunctionalPseudoParameter, ComputedStyle* aParentStyle) {
+    return ResolvePseudoElementStyle(aOriginatingElement, aType,
+                                     aFunctionalPseudoParameter, aParentStyle,
                                      IsProbe::Yes);
   }
 
@@ -243,6 +245,7 @@ class ServoStyleSet {
   
   already_AddRefed<ComputedStyle> ResolveStyleLazily(
       const dom::Element&, PseudoStyleType = PseudoStyleType::NotPseudo,
+      nsAtom* aFunctionalPseudoParameter = nullptr,
       StyleRuleInclusion = StyleRuleInclusion::All);
 
   

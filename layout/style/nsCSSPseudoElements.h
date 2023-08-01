@@ -83,6 +83,14 @@ class nsCSSPseudoElements {
 
   
   
+  
+  
+  static std::tuple<mozilla::Maybe<Type>, RefPtr<nsAtom>> ParsePseudoElement(
+      const nsAString& aPseudoElement,
+      EnabledState = EnabledState::ForAllContent);
+
+  
+  
   static mozilla::Maybe<Type> GetPseudoType(
       const nsAString& aPseudoElement,
       EnabledState = EnabledState::ForAllContent);

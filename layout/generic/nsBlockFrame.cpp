@@ -6203,7 +6203,8 @@ void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
   ComputedStyle* parentStyle = styleParent->Style();
   RefPtr<ComputedStyle> firstLetterStyle =
       aRestyleState.StyleSet().ResolvePseudoElementStyle(
-          *mContent->AsElement(), PseudoStyleType::firstLetter, parentStyle);
+          *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr,
+          parentStyle);
   
   
   RefPtr<ComputedStyle> continuationStyle =
@@ -8113,7 +8114,8 @@ void nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState) {
     ComputedStyle* parentStyle = styleParent->Style();
     RefPtr<ComputedStyle> firstLineStyle =
         aRestyleState.StyleSet().ResolvePseudoElementStyle(
-            *mContent->AsElement(), PseudoStyleType::firstLine, parentStyle);
+            *mContent->AsElement(), PseudoStyleType::firstLine, nullptr,
+            parentStyle);
 
     
     
@@ -8313,6 +8315,6 @@ int32_t nsBlockFrame::GetDepth() const {
 already_AddRefed<ComputedStyle> nsBlockFrame::GetFirstLetterStyle(
     nsPresContext* aPresContext) {
   return aPresContext->StyleSet()->ProbePseudoElementStyle(
-      *mContent->AsElement(), PseudoStyleType::firstLetter, Style());
+      *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr, Style());
 }
 #endif
