@@ -234,12 +234,6 @@ pub enum SystemColor {
     MozMenubarhovertext,
 
     
-    MozHeaderbar,
-    MozHeaderbartext,
-    MozHeaderbarinactive,
-    MozHeaderbarinactivetext,
-
-    
     
     MozEventreerow,
     MozOddtreerow,
@@ -255,6 +249,17 @@ pub enum SystemColor {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozButtondisabledface,
+
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozHeaderbar,
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozHeaderbartext,
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozHeaderbarinactive,
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozHeaderbarinactivetext,
+
     
     MozMacDefaultbuttontext,
     
