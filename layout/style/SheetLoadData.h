@@ -62,7 +62,8 @@ class SheetLoadData final
   SheetLoadData(css::Loader*, const nsAString& aTitle, nsIURI*, StyleSheet*,
                 SyncLoad, nsINode* aOwningNode, IsAlternate, MediaMatched,
                 StylePreloadKind, nsICSSLoaderObserver* aObserver,
-                nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*);
+                nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*,
+                const nsAString& aNonce);
 
   
   SheetLoadData(css::Loader*, nsIURI*, StyleSheet*, SheetLoadData* aParentData,
@@ -74,9 +75,12 @@ class SheetLoadData final
                 UseSystemPrincipal, StylePreloadKind,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver,
-                nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*);
+                nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*,
+                const nsAString& aNonce);
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
+
+  const nsString& Nonce() const { return mNonce; }
 
   already_AddRefed<AsyncEventDispatcher> PrepareLoadEventIfNeeded();
 
@@ -220,6 +224,9 @@ class SheetLoadData final
 
   
   const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+
+  
+  const nsString mNonce;
 
   
   const NotNull<const Encoding*> mGuessedEncoding;
