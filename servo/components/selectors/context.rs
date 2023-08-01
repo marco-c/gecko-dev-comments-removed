@@ -7,7 +7,6 @@ use crate::bloom::BloomFilter;
 use crate::nth_index_cache::{NthIndexCache, NthIndexCacheInner};
 use crate::parser::{Selector, SelectorImpl};
 use crate::relative_selector::cache::RelativeSelectorCache;
-use crate::relative_selector::filter::RelativeSelectorFilterMap;
 use crate::tree::{Element, OpaqueElement};
 
 
@@ -79,8 +78,9 @@ pub enum NeedsSelectorFlags {
 }
 
 
+
 #[derive(PartialEq)]
-pub enum MatchingForInvalidation {
+pub enum IgnoreNthChildForInvalidation {
     No,
     Yes,
 }
@@ -149,8 +149,6 @@ pub struct SelectorCaches {
     pub nth_index: NthIndexCache,
     
     pub relative_selector: RelativeSelectorCache,
-    
-    pub relative_selector_filter_map: RelativeSelectorFilterMap,
 }
 
 
@@ -204,7 +202,8 @@ where
     needs_selector_flags: NeedsSelectorFlags,
 
     
-    matching_for_invalidation: MatchingForInvalidation,
+    
+    ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
 
     
     pub selector_caches: &'a mut SelectorCaches,
@@ -224,7 +223,7 @@ where
         selector_caches: &'a mut SelectorCaches,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
-        matching_for_invalidation: MatchingForInvalidation,
+        ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
     ) -> Self {
         Self::new_for_visited(
             matching_mode,
@@ -233,7 +232,7 @@ where
             VisitedHandlingMode::AllLinksUnvisited,
             quirks_mode,
             needs_selector_flags,
-            matching_for_invalidation,
+            ignores_nth_child_selectors_for_invalidation,
         )
     }
 
@@ -245,7 +244,7 @@ where
         visited_handling: VisitedHandlingMode,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
-        matching_for_invalidation: MatchingForInvalidation,
+        ignores_nth_child_selectors_for_invalidation: IgnoreNthChildForInvalidation,
     ) -> Self {
         Self {
             matching_mode,
@@ -254,7 +253,7 @@ where
             quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             needs_selector_flags,
-            matching_for_invalidation,
+            ignores_nth_child_selectors_for_invalidation,
             scope_element: None,
             current_host: None,
             nesting_level: 0,
@@ -313,8 +312,8 @@ where
 
     
     #[inline]
-    pub fn matching_for_invalidation(&self) -> bool {
-        self.matching_for_invalidation == MatchingForInvalidation::Yes
+    pub fn ignores_nth_child_selectors_for_invalidation(&self) -> bool {
+        self.ignores_nth_child_selectors_for_invalidation == IgnoreNthChildForInvalidation::Yes
     }
 
     
