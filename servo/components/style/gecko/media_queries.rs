@@ -488,6 +488,11 @@ impl Device {
     }
 
     
+    pub(crate) fn is_dark_color_scheme(&self, color_scheme: &ColorScheme) -> bool {
+        unsafe { bindings::Gecko_IsDarkColorScheme(self.document(), color_scheme) }
+    }
+
+    
     
     
     
