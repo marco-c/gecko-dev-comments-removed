@@ -4,6 +4,7 @@
 
 
 
+#include "chrome/common/ipc_channel.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/FocusManager.h"
@@ -77,14 +78,30 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
                                            bool aSuppressShowEvent) {
   nsTArray<LocalAccessible*> shownTree;
   FlattenTree(aChild, shownTree);
-  nsTArray<AccessibleData> data(shownTree.Length());
+  uint32_t totalAccs = shownTree.Length();
+  
+  
+  
+  
+  constexpr uint32_t kMaxAccsPerMessage =
+      IPC::Channel::kMaximumMessageSize / (2 * 1024);
+  nsTArray<AccessibleData> data(std::min(kMaxAccsPerMessage, totalAccs));
   for (LocalAccessible* child : shownTree) {
+    if (data.Length() == kMaxAccsPerMessage) {
+      if (ipc::ProcessChild::ExpectingShutdown()) {
+        return;
+      }
+      SendShowEvent(data, aSuppressShowEvent, false, false);
+      data.ClearAndRetainStorage();
+    }
     data.AppendElement(SerializeAcc(child));
   }
   if (ipc::ProcessChild::ExpectingShutdown()) {
     return;
   }
-  SendShowEvent(data, aSuppressShowEvent, false);
+  if (!data.IsEmpty()) {
+    SendShowEvent(data, aSuppressShowEvent, true, false);
+  }
 }
 
 void DocAccessibleChild::ShowEvent(AccShowEvent* aShowEvent) {

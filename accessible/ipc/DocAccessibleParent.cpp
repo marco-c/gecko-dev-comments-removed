@@ -81,7 +81,7 @@ void DocAccessibleParent::SetBrowsingContext(
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvShowEvent(
     nsTArray<AccessibleData>&& aNewTree, const bool& aEventSuppressed,
-    const bool& aFromUser) {
+    const bool& aComplete, const bool& aFromUser) {
   ACQUIRE_ANDROID_LOCK
   if (mShutdown) return IPC_OK();
 
@@ -125,15 +125,50 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvShowEvent(
       
       return IPC_FAIL(this, "failed to add children");
     }
-    if (!root) {
+    if (!root && !mPendingShowChild) {
       
       root = child;
       rootParent = parent;
     }
-    AttachChild(parent, childIdx, child);
+    
+    
+    
+    
+    if (aComplete || root != child) {
+      AttachChild(parent, childIdx, child);
+    }
   }
 
   MOZ_ASSERT(CheckDocTree());
+
+  if (!aComplete && !mPendingShowChild) {
+    
+    
+    const auto& accData = aNewTree[0];
+    mPendingShowChild = accData.ID();
+    mPendingShowParent = accData.ParentID();
+    mPendingShowIndex = accData.IndexInParent();
+    return IPC_OK();
+  }
+  if (!aComplete) {
+    
+    
+    return IPC_OK();
+  }
+  MOZ_ASSERT(aComplete);
+  if (mPendingShowChild) {
+    
+    
+    
+    rootParent = GetAccessible(mPendingShowParent);
+    MOZ_ASSERT(rootParent);
+    root = GetAccessible(mPendingShowChild);
+    MOZ_ASSERT(root);
+    AttachChild(rootParent, mPendingShowIndex, root);
+    mPendingShowChild = 0;
+    mPendingShowParent = 0;
+    mPendingShowIndex = 0;
+  }
 
   
   if (aEventSuppressed) {
