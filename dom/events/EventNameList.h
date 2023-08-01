@@ -436,22 +436,29 @@ NON_IDL_EVENT(SVGLoad, eSVGLoad, EventNameType_None, eBasicEventClass)
 NON_IDL_EVENT(SVGScroll, eSVGScroll, EventNameType_None, eBasicEventClass)
 
 
-#ifndef MESSAGE_TO_EVENT
-EVENT(begin, eSMILBeginEvent, EventNameType_SMIL, eBasicEventClass)
-#endif
+
+
+
+
+
 NON_IDL_EVENT(beginEvent, eSMILBeginEvent, EventNameType_None,
               eSMILTimeEventClass)
-
-#ifndef MESSAGE_TO_EVENT
-EVENT(end, eSMILEndEvent, EventNameType_SMIL, eBasicEventClass)
-#endif
 NON_IDL_EVENT(endEvent, eSMILEndEvent, EventNameType_None, eSMILTimeEventClass)
-
-#ifndef MESSAGE_TO_EVENT
-EVENT(repeat, eSMILRepeatEvent, EventNameType_SMIL, eBasicEventClass)
-#endif
 NON_IDL_EVENT(repeatEvent, eSMILRepeatEvent, EventNameType_None,
               eSMILTimeEventClass)
+
+#ifndef MESSAGE_TO_EVENT
+
+
+
+
+
+NON_IDL_EVENT(begin, eUnidentifiedEvent, EventNameType_SMIL,
+              eSMILTimeEventClass)
+NON_IDL_EVENT(end, eUnidentifiedEvent, EventNameType_SMIL, eSMILTimeEventClass)
+NON_IDL_EVENT(repeat, eUnidentifiedEvent, EventNameType_SMIL,
+              eSMILTimeEventClass)
+#endif
 
 NON_IDL_EVENT(MozAfterPaint, eAfterPaint, EventNameType_None, eBasicEventClass)
 
