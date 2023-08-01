@@ -171,7 +171,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  mozilla::a11y::role ARIARole();
+  inline mozilla::a11y::role ARIARole();
 
   
 
@@ -258,7 +258,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  void SetRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry);
+  inline void SetRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry);
 
   
 
@@ -273,7 +273,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  bool InsertAfter(LocalAccessible* aNewChild, LocalAccessible* aRefChild);
+  inline bool InsertAfter(LocalAccessible* aNewChild,
+                          LocalAccessible* aRefChild);
 
   virtual bool RemoveChild(LocalAccessible* aChild);
 
@@ -591,7 +592,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  bool IsDefunct() const;
+  inline bool IsDefunct() const;
 
   
 
@@ -615,12 +616,12 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  bool NativeHasNumericValue() const;
+  inline bool NativeHasNumericValue() const;
 
   
 
 
-  bool ARIAHasNumericValue() const;
+  inline bool ARIAHasNumericValue() const;
 
   
 
