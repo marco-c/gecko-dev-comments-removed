@@ -21,12 +21,14 @@ RELEASE_PROJECTS = {
     "comm-beta",
     "comm-esr102",
     "comm-esr115",
+    
+    
+    "pine",
 }
 
 RELEASE_PROMOTION_PROJECTS = {
     "jamun",
     "maple",
-    "pine",
     "try",
     "try-comm-central",
 } | RELEASE_PROJECTS
