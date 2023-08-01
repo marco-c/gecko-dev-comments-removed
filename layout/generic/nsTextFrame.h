@@ -984,7 +984,7 @@ class nsTextFrame : public nsIFrame {
 
 
   static bool GetSelectionTextColors(SelectionType aSelectionType,
-                                     const nsAtom* aHighlightName,
+                                     nsAtom* aHighlightName,
                                      nsTextPaintStyle& aTextPaintStyle,
                                      const TextRangeStyle& aRangeStyle,
                                      nscolor* aForeground,

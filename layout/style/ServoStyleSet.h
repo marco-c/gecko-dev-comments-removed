@@ -228,18 +228,6 @@ class ServoStyleSet {
   }
 
   
-
-
-
-
-
-
-
-  already_AddRefed<ComputedStyle> ProbeHighlightPseudoElementStyle(
-      const dom::Element& aOriginatingElement, const nsAtom* aHighlightName,
-      ComputedStyle* aParentStyle);
-
-  
   
   
   

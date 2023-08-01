@@ -148,8 +148,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  nsTArray<CompactPair<RefPtr<const nsAtom>, RefPtr<Highlight>>>
-      mHighlightsOrdered;
+  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> mHighlightsOrdered;
 };
 
 }  
