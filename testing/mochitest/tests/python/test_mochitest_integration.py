@@ -229,10 +229,9 @@ def test_output_assertion(flavor, runFailures, runtests, test_name):
     assert tbpl_status == results["tbpl_status"]
     assert log_level == results["log_level"]
 
+    
     test_end = filter_action("test_end", lines)
     assert len(test_end) == results["lines"]
-    
-    
     assert test_end[0]["status"] == "OK"
 
     assertions = filter_action("assertion_count", lines)
