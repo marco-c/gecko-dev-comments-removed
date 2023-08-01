@@ -171,6 +171,10 @@ void EnsureUnwoundJitExitFrame(JitActivation* act, JitFrameLayout* frame);
 
 void TraceJitActivations(JSContext* cx, JSTracer* trc);
 
+
+
+void TraceWeakJitActivationsInSweepingZones(JSContext* cx, JSTracer* trc);
+
 void UpdateJitActivationsForMinorGC(JSRuntime* rt);
 
 static inline uint32_t MakeFrameDescriptor(FrameType type) {
