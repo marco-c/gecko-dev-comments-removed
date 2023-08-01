@@ -400,17 +400,6 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
     }
 
     
-    pub fn to_shared(&self) -> ArcSelectorList<Impl> {
-        ThinArc::from_header_and_iter((), self.0.iter().cloned())
-    }
-
-    
-    
-    pub fn into_shared(&mut self) -> ArcSelectorList<Impl> {
-        ThinArc::from_header_and_iter((), self.0.drain(..))
-    }
-
-    
     
     
     
@@ -474,7 +463,7 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
     }
 
     
-    pub fn replace_parent_selector(&self, parent: &ArcSelectorList<Impl>) -> Self {
+    pub fn replace_parent_selector(&self, parent: &[Selector<Impl>]) -> Self {
         Self(self.0.iter().map(|selector| selector.replace_parent_selector(parent)).collect())
     }
 
@@ -590,7 +579,7 @@ where
                 
                 
                 if list.len() == 1 &&
-                    !collect_ancestor_hashes(list.slice()[0].iter(), quirks_mode, hashes, len)
+                    !collect_ancestor_hashes(list[0].iter(), quirks_mode, hashes, len)
                 {
                     return false;
                 }
@@ -901,13 +890,13 @@ impl<Impl: SelectorImpl> Selector<Impl> {
         Selector(builder.build_with_specificity_and_flags(spec))
     }
 
-    pub fn replace_parent_selector(&self, parent: &ArcSelectorList<Impl>) -> Self {
+    pub fn replace_parent_selector(&self, parent: &[Selector<Impl>]) -> Self {
         
         
         let flags = self.flags() - SelectorFlags::HAS_PARENT;
         let mut specificity = Specificity::from(self.specificity());
         let parent_specificity =
-            Specificity::from(selector_list_specificity_and_flags(parent.slice().iter()).specificity());
+            Specificity::from(selector_list_specificity_and_flags(parent.iter()).specificity());
 
         
         
@@ -918,43 +907,37 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
         fn replace_parent_on_selector_list<Impl: SelectorImpl>(
             orig: &[Selector<Impl>],
-            parent: &ArcSelectorList<Impl>,
+            parent: &[Selector<Impl>],
             specificity: &mut Specificity,
             with_specificity: bool,
-        ) -> Option<ArcSelectorList<Impl>> {
+        ) -> Vec<Selector<Impl>> {
             let mut any = false;
 
-            let result = ArcSelectorList::from_header_and_iter(
-                (),
-                orig
-                    .iter()
-                    .map(|s| {
-                        if !s.has_parent_selector() {
-                            return s.clone();
-                        }
-                        any = true;
-                        s.replace_parent_selector(parent)
-                    })
-            );
+            let result = orig
+                .iter()
+                .map(|s| {
+                    if !s.has_parent_selector() {
+                        return s.clone();
+                    }
+                    any = true;
+                    s.replace_parent_selector(parent)
+                })
+                .collect();
 
-            if !any {
-                return None;
-            }
-
-            if !with_specificity {
-                return Some(result);
+            if !any || !with_specificity {
+                return result;
             }
 
             *specificity += Specificity::from(
-                selector_list_specificity_and_flags(result.slice().iter()).specificity -
+                selector_list_specificity_and_flags(result.iter()).specificity -
                     selector_list_specificity_and_flags(orig.iter()).specificity,
             );
-            Some(result)
+            result
         }
 
         fn replace_parent_on_relative_selector_list<Impl: SelectorImpl>(
             orig: &[RelativeSelector<Impl>],
-            parent: &ArcSelectorList<Impl>,
+            parent: &[Selector<Impl>],
             specificity: &mut Specificity,
         ) -> Vec<RelativeSelector<Impl>> {
             let mut any = false;
@@ -986,7 +969,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
         fn replace_parent_on_selector<Impl: SelectorImpl>(
             orig: &Selector<Impl>,
-            parent: &ArcSelectorList<Impl>,
+            parent: &[Selector<Impl>],
             specificity: &mut Specificity,
         ) -> Selector<Impl> {
             if !orig.has_parent_selector() {
@@ -1008,7 +991,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
                     Combinator::Descendant,
                 )))
                 .chain(std::iter::once(Component::Is(
-                    parent.clone()
+                    parent.to_vec().into_boxed_slice(),
                 )));
             UniqueArc::from_header_and_iter_with_size(specificity_and_flags, iter, len)
         } else {
@@ -1038,31 +1021,38 @@ impl<Impl: SelectorImpl> Selector<Impl> {
                     RelativeSelectorAnchor => component.clone(),
                     ParentSelector => {
                         specificity += parent_specificity;
-                        Is(parent.clone())
+                        Is(parent.to_vec().into_boxed_slice())
                     },
                     Negation(ref selectors) => {
-                        Negation(replace_parent_on_selector_list(
-                            selectors.slice(),
-                            parent,
-                            &mut specificity,
-                             true,
-                        ).unwrap_or_else(|| selectors.clone()))
+                        Negation(
+                            replace_parent_on_selector_list(
+                                selectors,
+                                parent,
+                                &mut specificity,
+                                 true,
+                            )
+                            .into_boxed_slice(),
+                        )
                     },
                     Is(ref selectors) => {
                         Is(replace_parent_on_selector_list(
-                            selectors.slice(),
+                            selectors,
                             parent,
                             &mut specificity,
                              true,
-                        ).unwrap_or_else(|| selectors.clone()))
+                        )
+                        .into_boxed_slice())
                     },
                     Where(ref selectors) => {
-                        Where(replace_parent_on_selector_list(
-                            selectors.slice(),
-                            parent,
-                            &mut specificity,
-                             false,
-                        ).unwrap_or_else(|| selectors.clone()))
+                        Where(
+                            replace_parent_on_selector_list(
+                                selectors,
+                                parent,
+                                &mut specificity,
+                                 false,
+                            )
+                            .into_boxed_slice(),
+                        )
                     },
                     Has(ref selectors) => Has(replace_parent_on_relative_selector_list(
                         selectors,
@@ -1083,13 +1073,10 @@ impl<Impl: SelectorImpl> Selector<Impl> {
                             &mut specificity,
                              true,
                         );
-                        NthOf(match selectors {
-                            Some(s) => NthOfSelectorData::new(
-                                data.nth_data(),
-                                s.slice().iter().cloned(),
-                            ),
-                            None => data.clone(),
-                        })
+                        NthOf(NthOfSelectorData::new(
+                            data.nth_data(),
+                            selectors.into_iter(),
+                        ))
                     },
                     Slotted(ref selector) => Slotted(replace_parent_on_selector(
                         selector,
@@ -1672,9 +1659,6 @@ impl<Impl: SelectorImpl> RelativeSelector<Impl> {
 }
 
 
-pub type ArcSelectorList<Impl> = ThinArc<(), Selector<Impl>>;
-
-
 
 
 
@@ -1713,7 +1697,7 @@ pub enum Component<Impl: SelectorImpl> {
     ),
 
     
-    Negation(ArcSelectorList<Impl>),
+    Negation(Box<[Selector<Impl>]>),
     Root,
     Empty,
     Scope,
@@ -1752,13 +1736,13 @@ pub enum Component<Impl: SelectorImpl> {
     
     
     
-    Where(ArcSelectorList<Impl>),
+    Where(Box<[Selector<Impl>]>),
     
     
     
     
     
-    Is(ArcSelectorList<Impl>),
+    Is(Box<[Selector<Impl>]>),
     
     
     
@@ -1805,7 +1789,7 @@ impl<Impl: SelectorImpl> Component<Impl> {
             Component::NonTSPseudoClass(..) => true,
             Component::Negation(ref selectors) |
             Component::Is(ref selectors) |
-            Component::Where(ref selectors) => selectors.slice().iter().all(|selector| {
+            Component::Where(ref selectors) => selectors.iter().all(|selector| {
                 selector
                     .iter_raw_match_order()
                     .all(|c| c.maybe_allowed_after_pseudo_element())
@@ -1827,13 +1811,13 @@ impl<Impl: SelectorImpl> Component<Impl> {
             *self
         );
         match *self {
-            Component::Negation(ref selectors) => !selectors.slice().iter().all(|selector| {
+            Component::Negation(ref selectors) => !selectors.iter().all(|selector| {
                 selector
                     .iter_raw_match_order()
                     .all(|c| c.matches_for_stateless_pseudo_element())
             }),
             Component::Is(ref selectors) | Component::Where(ref selectors) => {
-                selectors.slice().iter().any(|selector| {
+                selectors.iter().any(|selector| {
                     selector
                         .iter_raw_match_order()
                         .all(|c| c.matches_for_stateless_pseudo_element())
@@ -1910,7 +1894,7 @@ impl<Impl: SelectorImpl> Component<Impl> {
             Negation(ref list) | Is(ref list) | Where(ref list) => {
                 let list_kind = SelectorListKind::from_component(self);
                 debug_assert!(!list_kind.is_empty());
-                if !visitor.visit_selector_list(list_kind, list.slice()) {
+                if !visitor.visit_selector_list(list_kind, &list) {
                     return false;
                 }
             },
@@ -2284,7 +2268,7 @@ impl<Impl: SelectorImpl> ToCss for Component<Impl> {
                     Negation(..) => dest.write_str(":not(")?,
                     _ => unreachable!(),
                 }
-                serialize_selector_list(list.slice().iter(), dest)?;
+                serialize_selector_list(list.iter(), dest)?;
                 dest.write_str(")")
             },
             Has(ref list) => {
@@ -2856,7 +2840,7 @@ where
     P: Parser<'i, Impl = Impl>,
     Impl: SelectorImpl,
 {
-    let mut list = SelectorList::parse_with_state(
+    let list = SelectorList::parse_with_state(
         parser,
         input,
         state |
@@ -2866,7 +2850,7 @@ where
         ParseRelative::No,
     )?;
 
-    Ok(Component::Negation(list.into_shared()))
+    Ok(Component::Negation(list.0.into_vec().into_boxed_slice()))
 }
 
 
@@ -2972,7 +2956,7 @@ fn parse_is_where<'i, 't, P, Impl>(
     parser: &P,
     input: &mut CssParser<'i, 't>,
     state: SelectorParsingState,
-    component: impl FnOnce(ArcSelectorList<Impl>) -> Component<Impl>,
+    component: impl FnOnce(Box<[Selector<Impl>]>) -> Component<Impl>,
 ) -> Result<Component<Impl>, ParseError<'i, P::Error>>
 where
     P: Parser<'i, Impl = Impl>,
@@ -2984,7 +2968,7 @@ where
     
     
     
-    let mut inner = SelectorList::parse_with_state(
+    let inner = SelectorList::parse_with_state(
         parser,
         input,
         state |
@@ -2993,7 +2977,7 @@ where
         ForgivingParsing::Yes,
         ParseRelative::No,
     )?;
-    Ok(component(inner.into_shared()))
+    Ok(component(inner.0.into_vec().into_boxed_slice()))
 }
 
 fn parse_has<'i, 't, P, Impl>(
