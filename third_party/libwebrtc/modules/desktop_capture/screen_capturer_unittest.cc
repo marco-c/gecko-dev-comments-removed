@@ -57,12 +57,6 @@ class ScreenCapturerTest : public ::testing::Test {
     MaybeCreateDirectxCapturer();
     return true;
   }
-
-  void CreateMagnifierCapturer() {
-    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-    options.set_allow_use_magnification_api(true);
-    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
-  }
 #endif  
 
   std::unique_ptr<DesktopCapturer> capturer_;
@@ -185,53 +179,10 @@ TEST_F(ScreenCapturerTest, GdiIsDefault) {
   EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinGdi);
 }
 
-TEST_F(ScreenCapturerTest, UseMagnifier) {
-  CreateMagnifierCapturer();
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(callback_,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
-
-  capturer_->Start(&callback_);
-  capturer_->CaptureFrame();
-  ASSERT_TRUE(frame);
-  
-  
-  EXPECT_TRUE(frame->capturer_id() ==
-                  DesktopCapturerId::kScreenCapturerWinMagnifier ||
-              frame->capturer_id() == DesktopCapturerId::kScreenCapturerWinGdi);
-}
-
 TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
   }
-
-  std::unique_ptr<DesktopFrame> frame;
-  EXPECT_CALL(callback_,
-              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-      .WillOnce(SaveUniquePtrArg(&frame));
-
-  capturer_->Start(&callback_);
-  capturer_->CaptureFrame();
-  ASSERT_TRUE(frame);
-  EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinDirectx);
-}
-
-TEST_F(ScreenCapturerTest, DirectxPrecedesMagnifier) {
-  
-  if (!CreateDirectxCapturer()) {
-    return;
-  }
-  CreateMagnifierCapturer();
-  EXPECT_TRUE(capturer_);
-
-  
-  
-  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-  options.set_allow_directx_capturer(true);
-  options.set_allow_use_magnification_api(true);
-  capturer_ = DesktopCapturer::CreateScreenCapturer(options);
 
   std::unique_ptr<DesktopFrame> frame;
   EXPECT_CALL(callback_,

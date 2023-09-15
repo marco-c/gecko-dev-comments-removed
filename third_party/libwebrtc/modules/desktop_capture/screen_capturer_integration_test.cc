@@ -171,12 +171,6 @@ class ScreenCapturerIntegrationTest : public ::testing::Test {
     MaybeCreateDirectxCapturer();
     return true;
   }
-
-  void CreateMagnifierCapturer() {
-    DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
-    options.set_allow_use_magnification_api(true);
-    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
-  }
 #endif  
 
   std::unique_ptr<DesktopCapturer> capturer_;
@@ -327,35 +321,6 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
 
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   RTC_CHECK(CreateDirectxCapturer());
-  TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
-}
-
-TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
-  
-  
-  
-  
-  
-  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
-    return;
-  }
-  CreateMagnifierCapturer();
-  TestCaptureUpdatedRegion();
-}
-
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
-  
-  
-  
-  
-  
-  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
-    return;
-  }
-  CreateMagnifierCapturer();
-  std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
-  CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 

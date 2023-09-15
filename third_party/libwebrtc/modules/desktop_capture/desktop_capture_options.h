@@ -135,12 +135,6 @@ class RTC_EXPORT DesktopCaptureOptions {
     enumerate_current_process_windows_ = enumerate_current_process_windows;
   }
 
-  bool allow_use_magnification_api() const {
-    return allow_use_magnification_api_;
-  }
-  void set_allow_use_magnification_api(bool allow) {
-    allow_use_magnification_api_ = allow;
-  }
   
   
   bool allow_directx_capturer() const { return allow_directx_capturer_; }
@@ -238,7 +232,6 @@ class RTC_EXPORT DesktopCaptureOptions {
 
 #if defined(WEBRTC_WIN)
   bool enumerate_current_process_windows_ = true;
-  bool allow_use_magnification_api_ = false;
   bool allow_directx_capturer_ = false;
   bool allow_cropping_window_capturer_ = false;
 #if defined(RTC_ENABLE_WIN_WGC)
