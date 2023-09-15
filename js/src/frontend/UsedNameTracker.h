@@ -251,6 +251,10 @@ class UsedNameTracker {
   
   
   void rewind(RewindToken token);
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump(ParserAtomsTable& table);
+#endif
 };
 
 }  
