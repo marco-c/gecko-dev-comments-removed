@@ -69,6 +69,8 @@ class AudioSinkWrapper : public MediaSink {
 
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) override;
 
+  void EnableTreatAudioUnderrunAsSilence(bool aEnabled) override;
+
  private:
   
   
@@ -163,6 +165,9 @@ class AudioSinkWrapper : public MediaSink {
   TimeStamp mRetrySinkTime;
   
   uint32_t mAsyncCreateCount = 0;
+  
+  
+  bool mTreatUnderrunAsSilence = false;
 };
 
 }  

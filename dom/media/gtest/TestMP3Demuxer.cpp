@@ -106,7 +106,7 @@ class MP3DemuxerTest : public ::testing::Test {
       
       
       
-      res.mDuration = Some(MP3Resource::Duration{30093063, 0.00015f});
+      res.mDuration = Some(MP3Resource::Duration{30093062, 0.00015f});
       res.mSeekError = 0.02f;
       res.mSampleRate = 44100;
       res.mSamplesPerFrame = 1152;
