@@ -94,7 +94,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   bool HasUsedDataChannels() const;
 
   
-  DataChannelTransportInterface* data_channel_transport() const;
   void set_data_channel_transport(DataChannelTransportInterface* transport);
 
   
@@ -136,20 +135,14 @@ class DataChannelController : public SctpDataChannelControllerInterface,
       RTC_RUN_ON(network_thread());
 
   
-  RTCError DataChannelSendData(StreamId sid,
-                               const SendDataParams& params,
-                               const rtc::CopyOnWriteBuffer& payload);
-
-  
   
   void NotifyDataChannelsOfTransportCreated();
 
   
   
   
-  
-  
-  DataChannelTransportInterface* data_channel_transport_ = nullptr;
+  DataChannelTransportInterface* data_channel_transport_
+      RTC_GUARDED_BY(network_thread()) = nullptr;
   SctpSidAllocator sid_allocator_ RTC_GUARDED_BY(network_thread());
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_n_
       RTC_GUARDED_BY(network_thread());
