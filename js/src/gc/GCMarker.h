@@ -235,6 +235,8 @@ static_assert(unsigned(SlotsOrElementsKind::Unused) ==
 
 namespace MarkingOptions {
 enum : uint32_t {
+  None = 0,
+
   
   MarkRootCompartments = 1,
 
@@ -246,6 +248,8 @@ enum : uint32_t {
   MarkImplicitEdges = 4,
 };
 }  
+
+
 
 constexpr uint32_t NormalMarkingOptions = MarkingOptions::MarkImplicitEdges;
 
@@ -263,8 +267,9 @@ class MarkingTracerT
   GCMarker* getMarker();
 };
 
-using MarkingTracer = MarkingTracerT<NormalMarkingOptions>;
+using MarkingTracer = MarkingTracerT<MarkingOptions::None>;
 using RootMarkingTracer = MarkingTracerT<MarkingOptions::MarkRootCompartments>;
+using WeakMarkingTracer = MarkingTracerT<MarkingOptions::MarkImplicitEdges>;
 using ParallelMarkingTracer = MarkingTracerT<MarkingOptions::ParallelMarking>;
 
 enum ShouldReportMarkTime : bool {
@@ -502,7 +507,7 @@ class GCMarker {
 
 
   mozilla::Variant<gc::MarkingTracer, gc::RootMarkingTracer,
-                   gc::ParallelMarkingTracer>
+                   gc::WeakMarkingTracer, gc::ParallelMarkingTracer>
       tracer_;
 
   JSRuntime* const runtime_;
