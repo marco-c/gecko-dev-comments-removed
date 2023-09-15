@@ -1,9 +1,55 @@
 
 
 
+
+
+
+const { QuarantinedDomains } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionPermissions.sys.mjs"
+);
+
+ChromeUtils.defineESModuleGetters(this, {
+  computeSha1HashAsString: "resource://gre/modules/addons/crypto-utils.sys.mjs",
+});
+
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 
 const QUARANTINE_LIST_PREF = "extensions.quarantinedDomains.list";
+
+function assertQuarantinedListPref(expectedPrefValue) {
+  Assert.equal(
+    Services.prefs.getPrefType(QUARANTINE_LIST_PREF),
+    Services.prefs.PREF_STRING,
+    `Expect ${QUARANTINE_LIST_PREF} preference type to be string`
+  );
+
+  Assert.equal(
+    Services.prefs.getStringPref(QUARANTINE_LIST_PREF),
+    expectedPrefValue,
+    `Got the expected value set on ${QUARANTINE_LIST_PREF}`
+  );
+}
+
+function assertQuarantinedListTelemetry(expectedTelemetryHash) {
+  Assert.deepEqual(
+    {
+      listhash: Glean.extensionsQuarantinedDomains.listhash.testGetValue(),
+      remotehash: Glean.extensionsQuarantinedDomains.remotehash.testGetValue(),
+    },
+    expectedTelemetryHash,
+    "Got the expected computed domains list probes recorded by the Glean metrics"
+  );
+
+  const scalars = Services.telemetry.getSnapshotForScalars().parent;
+  Assert.deepEqual(
+    {
+      listhash: scalars?.["extensions.quarantinedDomains.listhash"],
+      remotehash: scalars?.["extensions.quarantinedDomains.remotehash"],
+    },
+    expectedTelemetryHash,
+    "Got the expected metrics mirrored into the unified telemetry scalars"
+  );
+}
 
 async function testQuarantinedDomainsFromRemoteSettings() {
   
@@ -13,6 +59,10 @@ async function testQuarantinedDomainsFromRemoteSettings() {
     testSet1: "example.com,example.org",
     testSet2: "someothersite.org,testset2.org",
   };
+
+  
+  resetTelemetryData();
+
   await setAndEmitFakeRemoteSettingsData([
     {
       id: "quarantinedDomains-01-testSet-toolong",
@@ -57,11 +107,11 @@ async function testQuarantinedDomainsFromRemoteSettings() {
   
   
   
-  Assert.equal(
-    Services.prefs.getStringPref(QUARANTINE_LIST_PREF),
-    quarantinedDomainsSets.testSet2,
-    `Got the expected value set on ${QUARANTINE_LIST_PREF}`
-  );
+  assertQuarantinedListPref(quarantinedDomainsSets.testSet2);
+  assertQuarantinedListTelemetry({
+    listhash: computeSha1HashAsString(quarantinedDomainsSets.testSet2),
+    remotehash: computeSha1HashAsString(quarantinedDomainsSets.testSet2),
+  });
 
   
   
@@ -95,11 +145,11 @@ async function testQuarantinedDomainsFromRemoteSettings() {
       },
     },
   ]);
-  Assert.equal(
-    Services.prefs.getStringPref(QUARANTINE_LIST_PREF),
-    NEW_PREF_VALUE,
-    `Got the expected value set on ${QUARANTINE_LIST_PREF} on record`
-  );
+  assertQuarantinedListPref(NEW_PREF_VALUE);
+  assertQuarantinedListTelemetry({
+    listhash: computeSha1HashAsString(NEW_PREF_VALUE),
+    remotehash: computeSha1HashAsString(NEW_PREF_VALUE),
+  });
 
   await setAndEmitFakeRemoteSettingsData([
     {
@@ -112,15 +162,56 @@ async function testQuarantinedDomainsFromRemoteSettings() {
       someUnexpectedProperty: "some unexpected value",
     },
   ]);
-  Assert.equal(
-    Services.prefs.getStringPref(QUARANTINE_LIST_PREF),
-    quarantinedDomainsSets.testSet1,
-    `Got the expected value set on ${QUARANTINE_LIST_PREF} on record`
+  assertQuarantinedListPref(quarantinedDomainsSets.testSet1);
+  assertQuarantinedListTelemetry({
+    listhash: computeSha1HashAsString(quarantinedDomainsSets.testSet1),
+    remotehash: computeSha1HashAsString(quarantinedDomainsSets.testSet1),
+  });
+
+  info(
+    "Tamper with the domains list pref value, verify the remotesettings value is set back after restart"
   );
+  const MANUALLY_CHANGED_PREF_VALUE =
+    quarantinedDomainsSets.testSet1 + ",test123.example.org";
+  Services.prefs.setStringPref(
+    QUARANTINE_LIST_PREF,
+    MANUALLY_CHANGED_PREF_VALUE
+  );
+  
+  
+  assertQuarantinedListTelemetry({
+    listhash: computeSha1HashAsString(MANUALLY_CHANGED_PREF_VALUE),
+    remotehash: computeSha1HashAsString(quarantinedDomainsSets.testSet1),
+  });
+
+  
+  
+  
+  info("Mock browser restart");
+  
+  resetTelemetryData();
+  const promisePrefChanged = TestUtils.waitForPrefChange(QUARANTINE_LIST_PREF);
+  await AddonTestUtils.promiseRestartManager();
+  info(
+    `Wait for expected change notified for the ${QUARANTINE_LIST_PREF} pref`
+  );
+  await promisePrefChanged;
+
+  assertQuarantinedListPref(quarantinedDomainsSets.testSet1);
+  assertQuarantinedListTelemetry({
+    listhash: computeSha1HashAsString(quarantinedDomainsSets.testSet1),
+    remotehash: computeSha1HashAsString(quarantinedDomainsSets.testSet1),
+  });
 }
 
 add_setup(async () => {
+  setupTelemetryForTests();
   await AddonTestUtils.promiseStartupManager();
+
+  Assert.ok(
+    QuarantinedDomains._initialized,
+    "QuarantinedDomains is initialized"
+  );
 });
 
 add_task(testQuarantinedDomainsFromRemoteSettings);
