@@ -79,7 +79,7 @@ DocAccessible::DocAccessible(dom::Document* aDocument,
        
        
        
-      HyperTextAccessibleWrap(nullptr, nullptr),
+      HyperTextAccessible(nullptr, nullptr),
       
       mAccessibleCache(kDefaultCacheLength),
       mNodeToAccessibleMap(kDefaultCacheLength),
@@ -520,7 +520,7 @@ void DocAccessible::Shutdown() {
     iter.Remove();
   }
 
-  HyperTextAccessibleWrap::Shutdown();
+  HyperTextAccessible::Shutdown();
 
   MOZ_ASSERT(GetAccService());
   GetAccService()->NotifyOfDocumentShutdown(

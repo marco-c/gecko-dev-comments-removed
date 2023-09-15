@@ -7,7 +7,7 @@
 #define mozilla_a11y_XULTabAccessible_h__
 
 
-#include "HyperTextAccessibleWrap.h"
+#include "HyperTextAccessible.h"
 #include "XULMenuAccessible.h"
 #include "XULSelectControlAccessible.h"
 
@@ -17,7 +17,7 @@ namespace a11y {
 
 
 
-class XULTabAccessible : public HyperTextAccessibleWrap {
+class XULTabAccessible : public HyperTextAccessible {
  public:
   enum { eAction_Switch = 0 };
 

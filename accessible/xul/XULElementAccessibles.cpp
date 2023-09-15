@@ -33,13 +33,13 @@ using namespace mozilla::a11y;
 
 XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
                                        DocAccessible* aDoc)
-    : HyperTextAccessibleWrap(aContent, aDoc) {
+    : HyperTextAccessible(aContent, aDoc) {
   mType = eXULLabelType;
 }
 
 void XULLabelAccessible::Shutdown() {
   mValueTextLeaf = nullptr;
-  HyperTextAccessibleWrap::Shutdown();
+  HyperTextAccessible::Shutdown();
 }
 
 void XULLabelAccessible::DispatchClickEvent(nsIContent* aContent,
@@ -65,11 +65,11 @@ role XULLabelAccessible::NativeRole() const { return roles::LABEL; }
 uint64_t XULLabelAccessible::NativeState() const {
   
   
-  return HyperTextAccessibleWrap::NativeState() | states::READONLY;
+  return HyperTextAccessible::NativeState() | states::READONLY;
 }
 
 Relation XULLabelAccessible::RelationByType(RelationType aType) const {
-  Relation rel = HyperTextAccessibleWrap::RelationByType(aType);
+  Relation rel = HyperTextAccessible::RelationByType(aType);
 
   
   if (aType == RelationType::LABEL_FOR) {

@@ -46,13 +46,12 @@ class HTMLBRAccessible : public LeafAccessible {
 
 
 
-class HTMLLabelAccessible : public HyperTextAccessibleWrap {
+class HTMLLabelAccessible : public HyperTextAccessible {
  public:
   HTMLLabelAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLLabelAccessible,
-                                       HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLLabelAccessible, HyperTextAccessible)
 
   
   virtual Relation RelationByType(RelationType aType) const override;
@@ -73,13 +72,13 @@ class HTMLLabelAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLOutputAccessible : public HyperTextAccessibleWrap {
+class HTMLOutputAccessible : public HyperTextAccessible {
  public:
   HTMLOutputAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLOutputAccessible,
-                                       HyperTextAccessibleWrap)
+                                       HyperTextAccessible)
 
   
   virtual Relation RelationByType(RelationType aType) const override;
@@ -96,7 +95,7 @@ class HTMLOutputAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLSummaryAccessible : public HyperTextAccessibleWrap {
+class HTMLSummaryAccessible : public HyperTextAccessible {
  public:
   enum { eAction_Click = 0 };
 
@@ -121,13 +120,13 @@ class HTMLSummaryAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLHeaderOrFooterAccessible : public HyperTextAccessibleWrap {
+class HTMLHeaderOrFooterAccessible : public HyperTextAccessible {
  public:
   HTMLHeaderOrFooterAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLHeaderOrFooterAccessible,
-                                       HyperTextAccessibleWrap)
+                                       HyperTextAccessible)
 
   
   virtual a11y::role NativeRole() const override;
@@ -139,13 +138,13 @@ class HTMLHeaderOrFooterAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLSectionAccessible : public HyperTextAccessibleWrap {
+class HTMLSectionAccessible : public HyperTextAccessible {
  public:
   HTMLSectionAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLSectionAccessible,
-                                       HyperTextAccessibleWrap)
+                                       HyperTextAccessible)
 
   
   virtual a11y::role NativeRole() const override;

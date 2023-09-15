@@ -8,7 +8,7 @@
 #define mozilla_a11y_HTMLListAccessible_h__
 
 #include "BaseAccessibles.h"
-#include "HyperTextAccessibleWrap.h"
+#include "HyperTextAccessible.h"
 
 namespace mozilla {
 namespace a11y {
@@ -18,16 +18,15 @@ class HTMLListBulletAccessible;
 
 
 
-class HTMLListAccessible : public HyperTextAccessibleWrap {
+class HTMLListAccessible : public HyperTextAccessible {
  public:
   HTMLListAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {
+      : HyperTextAccessible(aContent, aDoc) {
     mGenericTypes |= eList;
   }
 
   
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLListAccessible,
-                                       HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLListAccessible, HyperTextAccessible)
 
   
   virtual a11y::role NativeRole() const override;
@@ -40,13 +39,12 @@ class HTMLListAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLLIAccessible : public HyperTextAccessibleWrap {
+class HTMLLIAccessible : public HyperTextAccessible {
  public:
   HTMLLIAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLLIAccessible,
-                                       HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLLIAccessible, HyperTextAccessible)
 
   
   virtual nsRect BoundsInAppUnits() const override;

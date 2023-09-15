@@ -26,7 +26,7 @@ using namespace mozilla::a11y;
 
 
 XULTabAccessible::XULTabAccessible(nsIContent* aContent, DocAccessible* aDoc)
-    : HyperTextAccessibleWrap(aContent, aDoc) {}
+    : HyperTextAccessible(aContent, aDoc) {}
 
 
 
@@ -105,7 +105,7 @@ Relation XULTabAccessible::RelationByType(RelationType aType) const {
 }
 
 void XULTabAccessible::ApplyARIAState(uint64_t* aState) const {
-  HyperTextAccessibleWrap::ApplyARIAState(aState);
+  HyperTextAccessible::ApplyARIAState(aState);
   
   
   

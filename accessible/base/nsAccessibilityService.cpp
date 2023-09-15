@@ -19,7 +19,7 @@
 #include "HTMLListAccessible.h"
 #include "HTMLSelectAccessible.h"
 #include "HTMLTableAccessible.h"
-#include "HyperTextAccessibleWrap.h"
+#include "HyperTextAccessible.h"
 #include "RootAccessible.h"
 #include "nsAccUtils.h"
 #include "nsArrayUtils.h"
@@ -317,7 +317,7 @@ LocalAccessible* CreateMenupopupAccessible(Element* aElement,
 
 static LocalAccessible* New_HyperText(Element* aElement,
                                       LocalAccessible* aContext) {
-  return new HyperTextAccessibleWrap(aElement, aContext->Document());
+  return new HyperTextAccessible(aElement, aContext->Document());
 }
 
 template <typename AccClass>
@@ -1128,7 +1128,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         !roleMapEntry->Is(nsGkAtoms::none);
     if (!newAcc && (hasNonPresentationalARIARole ||
                     AttributesMustBeAccessible(content, document))) {
-      newAcc = new HyperTextAccessibleWrap(content, document);
+      newAcc = new HyperTextAccessible(content, document);
     }
 
     
@@ -1136,7 +1136,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     if (!newAcc && markupMap &&
         (!roleMapEntry || hasNonPresentationalARIARole)) {
-      newAcc = new HyperTextAccessibleWrap(content, document);
+      newAcc = new HyperTextAccessible(content, document);
     }
 
     if (newAcc) {
@@ -1236,7 +1236,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       return nullptr;
     }
 
-    newAcc = new HyperTextAccessibleWrap(content, document);
+    newAcc = new HyperTextAccessible(content, document);
     document->BindToDocument(newAcc, aria::GetRoleMap(content->AsElement()));
     return newAcc;
   }
@@ -1357,7 +1357,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
           newAcc = new EnumRoleAccessible<roles::GRAPHIC>(content, document);
         }
       } else if (content->IsSVGElement(nsGkAtoms::text)) {
-        newAcc = new HyperTextAccessibleWrap(content->AsElement(), document);
+        newAcc = new HyperTextAccessible(content->AsElement(), document);
       } else if (content->IsSVGElement(nsGkAtoms::svg)) {
         
         
@@ -1387,7 +1387,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
                          nsGkAtoms::mpadded_, nsGkAtoms::mphantom_,
                          nsGkAtoms::maligngroup_, nsGkAtoms::malignmark_,
                          nsGkAtoms::mspace_, nsGkAtoms::semantics_)) {
-        newAcc = new HyperTextAccessibleWrap(content, document);
+        newAcc = new HyperTextAccessible(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
       if (aContext->IsHTMLListItem()) {
@@ -1414,7 +1414,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     if (content->IsHTMLElement() || content->IsMathMLElement()) {
       
       
-      newAcc = new HyperTextAccessibleWrap(content, document);
+      newAcc = new HyperTextAccessible(content, document);
     } else {  
       
       newAcc = new AccessibleWrap(content, document);
@@ -1614,7 +1614,7 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
         newAcc = new HTMLLIAccessible(aContent, document);
       } else {
         
-        newAcc = new HyperTextAccessibleWrap(aContent, document);
+        newAcc = new HyperTextAccessible(aContent, document);
       }
       break;
     case eHTMLSelectListType:
@@ -1636,7 +1636,7 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eHTMLTableCellType:
       
       
-      newAcc = new HyperTextAccessibleWrap(aContent, document);
+      newAcc = new HyperTextAccessible(aContent, document);
       break;
     case eHTMLTableRowType:
       
@@ -1654,7 +1654,7 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::dt, nsGkAtoms::dd,
                                          nsGkAtoms::div, nsGkAtoms::thead,
                                          nsGkAtoms::tfoot, nsGkAtoms::tbody)) {
-        newAcc = new HyperTextAccessibleWrap(aContent, document);
+        newAcc = new HyperTextAccessible(aContent, document);
       }
       break;
     }

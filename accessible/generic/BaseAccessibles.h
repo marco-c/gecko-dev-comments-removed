@@ -7,7 +7,7 @@
 #define mozilla_a11y_BaseAccessibles_h__
 
 #include "AccessibleWrap.h"
-#include "HyperTextAccessibleWrap.h"
+#include "HyperTextAccessible.h"
 
 class nsIContent;
 
@@ -95,10 +95,10 @@ class EnumRoleAccessible : public AccessibleWrap {
 
 
 template <a11y::role R>
-class EnumRoleHyperTextAccessible : public HyperTextAccessibleWrap {
+class EnumRoleHyperTextAccessible : public HyperTextAccessible {
  public:
   EnumRoleHyperTextAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
   
   virtual a11y::role NativeRole() const override { return R; }

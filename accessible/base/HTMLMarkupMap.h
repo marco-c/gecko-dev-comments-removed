@@ -12,14 +12,14 @@ MARKUPMAP(
       
       if (!aElement->HasAttr(nsGkAtoms::href) &&
           !nsCoreUtils::HasClickListener(aElement)) {
-        return new HyperTextAccessibleWrap(aElement, aContext->Document());
+        return new HyperTextAccessible(aElement, aContext->Document());
       }
       
       
       const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aElement);
       if (roleMapEntry && roleMapEntry->role != roles::NOTHING &&
           roleMapEntry->role != roles::LINK) {
-        return new HyperTextAccessibleWrap(aElement, aContext->Document());
+        return new HyperTextAccessible(aElement, aContext->Document());
       }
 
       return new HTMLLinkAccessible(aElement, aContext->Document());
@@ -62,7 +62,7 @@ MARKUPMAP(
 
 MARKUPMAP(code, New_HyperText, roles::CODE)
 
-MARKUPMAP(dd, New_HTMLDtOrDd<HyperTextAccessibleWrap>, roles::DEFINITION)
+MARKUPMAP(dd, New_HTMLDtOrDd<HyperTextAccessible>, roles::DEFINITION)
 
 MARKUPMAP(del, New_HyperText, roles::CONTENT_DELETION)
 
@@ -80,7 +80,7 @@ MARKUPMAP(
       }
       
       if (aElement->HasAttr(nsGkAtoms::id)) {
-        return new HyperTextAccessibleWrap(aElement, aContext->Document());
+        return new HyperTextAccessible(aElement, aContext->Document());
       }
       
       
@@ -98,7 +98,7 @@ MARKUPMAP(
       if (prevSibling) {
         nsIFrame* prevSiblingFrame = prevSibling->GetPrimaryFrame();
         if (prevSiblingFrame && prevSiblingFrame->IsInlineOutside()) {
-          return new HyperTextAccessibleWrap(aElement, aContext->Document());
+          return new HyperTextAccessible(aElement, aContext->Document());
         }
       }
       
@@ -118,7 +118,7 @@ MARKUPMAP(
         }
         
         if (firstChildFrame && firstChildFrame->IsInlineOutside()) {
-          return new HyperTextAccessibleWrap(aElement, aContext->Document());
+          return new HyperTextAccessible(aElement, aContext->Document());
         }
         nsIContent* lastChild = aElement->GetLastChild();
         MOZ_ASSERT(lastChild);
@@ -136,7 +136,7 @@ MARKUPMAP(
           }
           
           if (lastChildFrame && lastChildFrame->IsInlineOutside()) {
-            return new HyperTextAccessibleWrap(aElement, aContext->Document());
+            return new HyperTextAccessible(aElement, aContext->Document());
           }
         }
       }

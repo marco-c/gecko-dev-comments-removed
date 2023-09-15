@@ -7,7 +7,7 @@
 #define MOZILLA_A11Y_HTMLFormControlAccessible_H_
 
 #include "FormControlAccessible.h"
-#include "HyperTextAccessibleWrap.h"
+#include "HyperTextAccessible.h"
 #include "mozilla/a11y/AccTypes.h"
 #include "mozilla/dom/Element.h"
 #include "AccAttributes.h"
@@ -52,7 +52,7 @@ class HTMLRadioButtonAccessible : public RadioButtonAccessible {
 
 
 
-class HTMLButtonAccessible : public HyperTextAccessibleWrap {
+class HTMLButtonAccessible : public HyperTextAccessible {
  public:
   enum { eAction_Click = 0 };
 
@@ -84,14 +84,14 @@ class HTMLButtonAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
+class HTMLTextFieldAccessible : public HyperTextAccessible {
  public:
   enum { eAction_Click = 0 };
 
   HTMLTextFieldAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTextFieldAccessible,
-                                       HyperTextAccessibleWrap)
+                                       HyperTextAccessible)
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual already_AddRefed<EditorBase> GetEditor()
@@ -129,7 +129,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLFileInputAccessible : public HyperTextAccessibleWrap {
+class HTMLFileInputAccessible : public HyperTextAccessible {
  public:
   HTMLFileInputAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -188,7 +188,7 @@ class HTMLRangeAccessible : public LeafAccessible {
 
 
 
-class HTMLGroupboxAccessible : public HyperTextAccessibleWrap {
+class HTMLGroupboxAccessible : public HyperTextAccessible {
  public:
   HTMLGroupboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -207,7 +207,7 @@ class HTMLGroupboxAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLLegendAccessible : public HyperTextAccessibleWrap {
+class HTMLLegendAccessible : public HyperTextAccessible {
  public:
   HTMLLegendAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -218,7 +218,7 @@ class HTMLLegendAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLFigureAccessible : public HyperTextAccessibleWrap {
+class HTMLFigureAccessible : public HyperTextAccessible {
  public:
   HTMLFigureAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -236,7 +236,7 @@ class HTMLFigureAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLFigcaptionAccessible : public HyperTextAccessibleWrap {
+class HTMLFigcaptionAccessible : public HyperTextAccessible {
  public:
   HTMLFigcaptionAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -247,13 +247,12 @@ class HTMLFigcaptionAccessible : public HyperTextAccessibleWrap {
 
 
 
-class HTMLFormAccessible : public HyperTextAccessibleWrap {
+class HTMLFormAccessible : public HyperTextAccessible {
  public:
   HTMLFormAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessible(aContent, aDoc) {}
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLFormAccessible,
-                                       HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLFormAccessible, HyperTextAccessible)
 
   
   virtual a11y::role NativeRole() const override;
@@ -347,21 +346,20 @@ class HTMLMeterAccessible : public LeafAccessible {
 
 
 template <a11y::role R>
-class HTMLDateTimeAccessible : public HyperTextAccessibleWrap {
+class HTMLDateTimeAccessible : public HyperTextAccessible {
  public:
   HTMLDateTimeAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : HyperTextAccessibleWrap(aContent, aDoc) {
+      : HyperTextAccessible(aContent, aDoc) {
     mType = eHTMLDateTimeFieldType;
   }
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLDateTimeAccessible,
-                                       HyperTextAccessibleWrap)
+                                       HyperTextAccessible)
 
   
   virtual mozilla::a11y::role NativeRole() const override { return R; }
   virtual already_AddRefed<AccAttributes> NativeAttributes() override {
-    RefPtr<AccAttributes> attributes =
-        HyperTextAccessibleWrap::NativeAttributes();
+    RefPtr<AccAttributes> attributes = HyperTextAccessible::NativeAttributes();
     
     
     if (const nsAttrValue* attr =
