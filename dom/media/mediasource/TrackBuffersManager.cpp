@@ -2466,6 +2466,12 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
       DumpTimeRanges(aTrackData.mBufferedRanges).get(),
       DumpTimeRanges(aTrackData.mSanitizedBufferedRanges).get());
 
+  
+  MOZ_DIAGNOSTIC_ASSERT_IF(data.IsEmpty(),
+                           aTrackData.mBufferedRanges.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT_IF(aTrackData.mBufferedRanges.IsEmpty(),
+                           data.IsEmpty());
+
   return firstRemovedIndex.ref();
 }
 
