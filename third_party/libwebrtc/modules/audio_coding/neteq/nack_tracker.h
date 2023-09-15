@@ -73,7 +73,6 @@ class NackTracker {
   void UpdateSampleRate(int sample_rate_hz);
 
   
-  
   void UpdateLastDecodedPacket(uint16_t sequence_number, uint32_t timestamp);
 
   
@@ -148,10 +147,6 @@ class NackTracker {
   
   
   NackList GetNackList() const;
-
-  
-  
-  void UpdateEstimatedPlayoutTimeBy10ms();
 
   
   

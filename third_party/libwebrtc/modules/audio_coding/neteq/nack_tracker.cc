@@ -145,43 +145,22 @@ uint32_t NackTracker::EstimateTimestamp(uint16_t sequence_num,
   return sequence_num_diff * samples_per_packet + timestamp_last_received_rtp_;
 }
 
-void NackTracker::UpdateEstimatedPlayoutTimeBy10ms() {
-  while (!nack_list_.empty() &&
-         nack_list_.begin()->second.time_to_play_ms <= 10)
-    nack_list_.erase(nack_list_.begin());
-
-  for (NackList::iterator it = nack_list_.begin(); it != nack_list_.end(); ++it)
-    it->second.time_to_play_ms -= 10;
-}
-
 void NackTracker::UpdateLastDecodedPacket(uint16_t sequence_number,
                                           uint32_t timestamp) {
-  if (IsNewerSequenceNumber(sequence_number, sequence_num_last_decoded_rtp_) ||
-      !any_rtp_decoded_) {
-    sequence_num_last_decoded_rtp_ = sequence_number;
-    timestamp_last_decoded_rtp_ = timestamp;
-    
-    
-    
-    nack_list_.erase(nack_list_.begin(),
-                     nack_list_.upper_bound(sequence_num_last_decoded_rtp_));
-
-    
-    for (NackList::iterator it = nack_list_.begin(); it != nack_list_.end();
-         ++it)
-      it->second.time_to_play_ms = TimeToPlay(it->second.estimated_timestamp);
-  } else {
-    RTC_DCHECK_EQ(sequence_number, sequence_num_last_decoded_rtp_);
-
-    
-    
-    UpdateEstimatedPlayoutTimeBy10ms();
-
-    
-    
-    timestamp_last_decoded_rtp_ += sample_rate_khz_ * 10;
-  }
   any_rtp_decoded_ = true;
+  sequence_num_last_decoded_rtp_ = sequence_number;
+  timestamp_last_decoded_rtp_ = timestamp;
+  
+  
+  
+  nack_list_.erase(nack_list_.begin(),
+                   nack_list_.upper_bound(sequence_num_last_decoded_rtp_));
+
+  
+  for (NackList::iterator it = nack_list_.begin(); it != nack_list_.end();
+       ++it) {
+    it->second.time_to_play_ms = TimeToPlay(it->second.estimated_timestamp);
+  }
 }
 
 NackTracker::NackList NackTracker::GetNackList() const {
