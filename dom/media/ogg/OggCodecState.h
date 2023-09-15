@@ -3,6 +3,7 @@
 
 
 
+#include "Intervals.h"
 #if !defined(OggCodecState_h_)
 #  define OggCodecState_h_
 
@@ -132,28 +133,33 @@ class OggCodecState {
   
   virtual UniquePtr<MetadataTags> GetTags() { return nullptr; }
 
-  
-  virtual int64_t Time(int64_t granulepos) { return -1; }
+  using TimeUnit = media::TimeUnit;
 
   
-  virtual int64_t StartTime(int64_t granulepos) { return -1; }
+  virtual TimeUnit Time(int64_t aGranulepos) { return TimeUnit::Invalid(); }
 
   
-  virtual int64_t PacketDuration(ogg_packet* aPacket) { return -1; }
+  virtual TimeUnit StartTime(int64_t aGranulepos) {
+    return TimeUnit::Invalid();
+  }
 
   
-  virtual int64_t PacketStartTime(ogg_packet* aPacket) {
+  virtual TimeUnit PacketDuration(ogg_packet* aPacket) {
+    return TimeUnit::Invalid();
+  }
+
+  
+  virtual TimeUnit PacketStartTime(ogg_packet* aPacket) {
     if (aPacket->granulepos < 0) {
-      return -1;
+      return TimeUnit::Invalid();
     }
-    int64_t endTime = Time(aPacket->granulepos);
-    int64_t duration = PacketDuration(aPacket);
+    TimeUnit endTime = Time(aPacket->granulepos);
+    TimeUnit duration = PacketDuration(aPacket);
     if (duration > endTime) {
       
-      return 0;
-    } else {
-      return endTime - duration;
+      return TimeUnit::Zero();
     }
+    return endTime - duration;
   }
 
   
@@ -219,7 +225,7 @@ class OggCodecState {
 
   
   
-  virtual int64_t MaxKeyframeOffset() { return 0; }
+  virtual TimeUnit MaxKeyframeOffset() { return TimeUnit::Zero(); }
   
   virtual int32_t KeyFrameGranuleJobs() { return 0; }
 
@@ -301,8 +307,8 @@ class VorbisState : public OggCodecState {
 
   CodecType GetType() override { return TYPE_VORBIS; }
   bool DecodeHeader(OggPacketPtr aPacket) override;
-  int64_t Time(int64_t granulepos) override;
-  int64_t PacketDuration(ogg_packet* aPacket) override;
+  TimeUnit Time(int64_t aGranulepos) override;
+  TimeUnit PacketDuration(ogg_packet* aPacket) override;
   bool Init() override;
   nsresult Reset() override;
   bool IsHeader(ogg_packet* aPacket) override;
@@ -321,7 +327,7 @@ class VorbisState : public OggCodecState {
   OggPacketQueue mHeaders;
 
   
-  static int64_t Time(vorbis_info* aInfo, int64_t aGranulePos);
+  static TimeUnit Time(vorbis_info* aInfo, int64_t aGranulePos);
 
   
   
@@ -376,23 +382,23 @@ class TheoraState : public OggCodecState {
 
   CodecType GetType() override { return TYPE_THEORA; }
   bool DecodeHeader(OggPacketPtr aPacket) override;
-  int64_t Time(int64_t granulepos) override;
-  int64_t StartTime(int64_t granulepos) override;
-  int64_t PacketDuration(ogg_packet* aPacket) override;
+  TimeUnit Time(int64_t aGranulepos) override;
+  TimeUnit StartTime(int64_t aGranulepos) override;
+  TimeUnit PacketDuration(ogg_packet* aPacket) override;
   bool Init() override;
   nsresult Reset() override;
   bool IsHeader(ogg_packet* aPacket) override;
   bool IsKeyframe(ogg_packet* aPacket) override;
   nsresult PageIn(tainted_opaque_ogg<ogg_page*> aPage) override;
   const TrackInfo* GetInfo() const override { return &mInfo; }
-  int64_t MaxKeyframeOffset() override;
+  TimeUnit MaxKeyframeOffset() override;
   int32_t KeyFrameGranuleJobs() override {
     return mTheoraInfo.keyframe_granule_shift;
   }
 
  private:
   
-  static int64_t Time(th_info* aInfo, int64_t aGranulePos);
+  static TimeUnit Time(th_info* aInfo, int64_t aGranulePos);
 
   th_info mTheoraInfo;
   th_comment mComment;
@@ -418,8 +424,8 @@ class OpusState : public OggCodecState {
 
   CodecType GetType() override { return TYPE_OPUS; }
   bool DecodeHeader(OggPacketPtr aPacket) override;
-  int64_t Time(int64_t aGranulepos) override;
-  int64_t PacketDuration(ogg_packet* aPacket) override;
+  TimeUnit Time(int64_t aGranulepos) override;
+  TimeUnit PacketDuration(ogg_packet* aPacket) override;
   bool Init() override;
   nsresult Reset() override;
   nsresult Reset(bool aStart);
@@ -429,7 +435,7 @@ class OpusState : public OggCodecState {
   const TrackInfo* GetInfo() const override { return &mInfo; }
 
   
-  static int64_t Time(int aPreSkip, int64_t aGranulepos);
+  static TimeUnit Time(int aPreSkip, int64_t aGranulepos);
 
   
   UniquePtr<MetadataTags> GetTags() override;
@@ -494,7 +500,7 @@ class SkeletonState : public OggCodecState {
 
   CodecType GetType() override { return TYPE_SKELETON; }
   bool DecodeHeader(OggPacketPtr aPacket) override;
-  int64_t Time(int64_t granulepos) override { return -1; }
+  TimeUnit Time(int64_t aGranulepos) override { return TimeUnit::Invalid(); }
   bool IsHeader(ogg_packet* aPacket) override { return true; }
 
   
@@ -505,18 +511,18 @@ class SkeletonState : public OggCodecState {
   
   class nsKeyPoint {
    public:
-    nsKeyPoint() : mOffset(INT64_MAX), mTime(INT64_MAX) {}
+    nsKeyPoint() : mOffset(INT64_MAX), mTime(TimeUnit::Invalid()) {}
 
-    nsKeyPoint(int64_t aOffset, int64_t aTime)
+    nsKeyPoint(int64_t aOffset, TimeUnit aTime)
         : mOffset(aOffset), mTime(aTime) {}
 
     
     int64_t mOffset;
 
     
-    int64_t mTime;
+    TimeUnit mTime;
 
-    bool IsNull() { return mOffset == INT64_MAX && mTime == INT64_MAX; }
+    bool IsNull() { return mOffset == INT64_MAX && !mTime.IsValid(); }
   };
 
   
@@ -532,7 +538,8 @@ class SkeletonState : public OggCodecState {
   
   
   
-  nsresult IndexedSeekTarget(int64_t aTarget, nsTArray<uint32_t>& aTracks,
+  nsresult IndexedSeekTarget(const TimeUnit& aTarget,
+                             nsTArray<uint32_t>& aTracks,
                              nsSeekTarget& aResult);
 
   bool HasIndex() const { return mIndex.Count() > 0; }
@@ -541,7 +548,7 @@ class SkeletonState : public OggCodecState {
   
   
   
-  nsresult GetDuration(const nsTArray<uint32_t>& aTracks, int64_t& aDuration);
+  nsresult GetDuration(const nsTArray<uint32_t>& aTracks, TimeUnit& aDuration);
 
  private:
   
@@ -551,7 +558,8 @@ class SkeletonState : public OggCodecState {
 
   
   
-  nsresult IndexedSeekTargetForTrack(uint32_t aSerialno, int64_t aTarget,
+  nsresult IndexedSeekTargetForTrack(uint32_t aSerialno,
+                                     const TimeUnit& aTarget,
                                      nsKeyPoint& aResult);
 
   
@@ -567,15 +575,15 @@ class SkeletonState : public OggCodecState {
   
   class nsKeyFrameIndex {
    public:
-    nsKeyFrameIndex(int64_t aStartTime, int64_t aEndTime)
+    nsKeyFrameIndex(const TimeUnit& aStartTime, const TimeUnit& aEndTime)
         : mStartTime(aStartTime), mEndTime(aEndTime) {
       MOZ_COUNT_CTOR(nsKeyFrameIndex);
     }
 
     MOZ_COUNTED_DTOR(nsKeyFrameIndex)
 
-    void Add(int64_t aOffset, int64_t aTimeMs) {
-      mKeyPoints.AppendElement(nsKeyPoint(aOffset, aTimeMs));
+    void Add(int64_t aOffset, const TimeUnit& aTime) {
+      mKeyPoints.AppendElement(nsKeyPoint(aOffset, aTime));
     }
 
     const nsKeyPoint& Get(uint32_t aIndex) const { return mKeyPoints[aIndex]; }
@@ -583,10 +591,10 @@ class SkeletonState : public OggCodecState {
     uint32_t Length() const { return mKeyPoints.Length(); }
 
     
-    const int64_t mStartTime;
+    const TimeUnit mStartTime;
 
     
-    const int64_t mEndTime;
+    const TimeUnit mEndTime;
 
    private:
     nsTArray<nsKeyPoint> mKeyPoints;
@@ -603,8 +611,8 @@ class FlacState : public OggCodecState {
 
   CodecType GetType() override { return TYPE_FLAC; }
   bool DecodeHeader(OggPacketPtr aPacket) override;
-  int64_t Time(int64_t granulepos) override;
-  int64_t PacketDuration(ogg_packet* aPacket) override;
+  TimeUnit Time(int64_t aGranulepos) override;
+  TimeUnit PacketDuration(ogg_packet* aPacket) override;
   bool IsHeader(ogg_packet* aPacket) override;
   nsresult PageIn(tainted_opaque_ogg<ogg_page*> aPage) override;
 
