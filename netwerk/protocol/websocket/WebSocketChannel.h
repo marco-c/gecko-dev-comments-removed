@@ -20,6 +20,7 @@
 #include "nsIChannelEventSink.h"
 #include "nsIHttpChannelInternal.h"
 #include "mozilla/net/WebSocketConnectionListener.h"
+#include "mozilla/Mutex.h"
 #include "BaseWebSocketChannel.h"
 
 #include "nsCOMPtr.h"
@@ -346,7 +347,9 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   
   
-  UniquePtr<PMCECompression> mPMCECompressor;
+  
+  Mutex mCompressorMutex;
+  UniquePtr<PMCECompression> mPMCECompressor MOZ_GUARDED_BY(mCompressorMutex);
 
   
   uint32_t mDynamicOutputSize;
