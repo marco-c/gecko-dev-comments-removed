@@ -4154,9 +4154,6 @@ bool BaseCompiler::emitCatch() {
 #endif
       }
       case ValType::Ref: {
-        
-        
-        ASSERT_ANYREF_IS_JSOBJECT;
         RegRef reg = needRef();
         masm.loadPtr(Address(data, offset), reg);
         pushRef(reg);
@@ -6559,14 +6556,10 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
 
 void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
   
-  
-  ASSERT_ANYREF_IS_JSOBJECT;
-
-  
   emitPreBarrier(valueAddr);
 
   
-  masm.storePtr(ImmWord(0), Address(valueAddr, 0));
+  masm.storePtr(ImmWord(NULLREF_VALUE), Address(valueAddr, 0));
 
   
 }

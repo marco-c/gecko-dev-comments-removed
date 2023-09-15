@@ -52,6 +52,13 @@
 #include "builtin/Boolean-inl.h"  
 
 namespace js {
+
+namespace wasm {
+
+class AnyRef;
+
+}  
+
 namespace jit {
 
 
@@ -203,6 +210,7 @@ namespace jit {
   _(void (*)(JSRuntime * rt, JSObject * *objp))     \
   _(void (*)(JSRuntime * rt, JSString * *stringp))  \
   _(void (*)(JSRuntime * rt, Shape * *shapep))      \
+  _(void (*)(JSRuntime * rt, wasm::AnyRef * refp))  \
   _(void (*)(JSRuntime * rt, Value * vp))
 
 

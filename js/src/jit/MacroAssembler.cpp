@@ -5763,7 +5763,7 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
     unboxGCThingForGCBarrier(Address(PreBarrierReg, 0), temp1);
   } else {
     MOZ_ASSERT(type == MIRType::Object || type == MIRType::String ||
-               type == MIRType::Shape);
+               type == MIRType::Shape || type == MIRType::RefOrNull);
     loadPtr(Address(PreBarrierReg, 0), temp1);
   }
 
@@ -5781,7 +5781,7 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
 
   
   if (type == MIRType::Value || type == MIRType::Object ||
-      type == MIRType::String) {
+      type == MIRType::String || type == MIRType::RefOrNull) {
     branchPtr(Assembler::NotEqual, Address(temp2, gc::ChunkStoreBufferOffset),
               ImmWord(0), noBarrier);
   } else {

@@ -308,6 +308,9 @@ namespace js {
 
 class AbstractGeneratorObject;
 class SavedFrame;
+namespace wasm {
+class AnyRef;
+}  
 
 namespace gc {
 
@@ -378,6 +381,7 @@ JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(JS_DECLARE_TRACE_ROOT)
 
 JS_DECLARE_TRACE_ROOT(js::AbstractGeneratorObject*)
 JS_DECLARE_TRACE_ROOT(js::SavedFrame*)
+JS_DECLARE_TRACE_ROOT(js::wasm::AnyRef)
 
 #undef JS_DECLARE_TRACE_ROOT
 

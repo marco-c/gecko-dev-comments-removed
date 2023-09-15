@@ -107,9 +107,9 @@ class alignas(16) Instance {
   
   
   
-  GCPtr<JSObject*> pendingException_;
+  GCPtr<AnyRef> pendingException_;
   
-  GCPtr<JSObject*> pendingExceptionTag_;
+  GCPtr<AnyRef> pendingExceptionTag_;
 
   
   
@@ -479,13 +479,13 @@ class alignas(16) Instance {
   static int32_t wake_m64(Instance* instance, uint64_t byteOffset,
                           int32_t count, uint32_t memoryIndex);
   static void* refFunc(Instance* instance, uint32_t funcIndex);
-  static void postBarrier(Instance* instance, gc::Cell** location);
-  static void postBarrierPrecise(Instance* instance, JSObject** location,
-                                 JSObject* prev);
-  static void postBarrierPreciseWithOffset(Instance* instance, JSObject** base,
-                                           uint32_t offset, JSObject* prev);
-  static void* exceptionNew(Instance* instance, JSObject* tag);
-  static int32_t throwException(Instance* instance, JSObject* exn);
+  static void postBarrier(Instance* instance, void** location);
+  static void postBarrierPrecise(Instance* instance, void** location,
+                                 void* prev);
+  static void postBarrierPreciseWithOffset(Instance* instance, void** base,
+                                           uint32_t offset, void* prev);
+  static void* exceptionNew(Instance* instance, void* exceptionArg);
+  static int32_t throwException(Instance* instance, void* exceptionArg);
   template <bool ZeroFields>
   static void* structNewIL(Instance* instance,
                            TypeDefInstanceData* typeDefData);

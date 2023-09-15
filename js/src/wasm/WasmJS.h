@@ -150,10 +150,6 @@ class WasmModuleObject : public NativeObject {
 
 
 
-
-
-STATIC_ASSERT_ANYREF_IS_JSOBJECT;
-
 class WasmGlobalObject : public NativeObject {
   static const unsigned MUTABLE_SLOT = 0;
   static const unsigned VAL_SLOT = 1;

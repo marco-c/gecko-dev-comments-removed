@@ -22,6 +22,7 @@
 #include "js/Class.h"  
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"  
+#include "wasm/WasmAnyRef.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmTypeDef.h"
 
@@ -97,125 +98,6 @@ static_assert(sizeof(V128) == 16, "Invariant");
 
 
 
-
-
-class AnyRef {
-  
-  
-  mutable JSObject* value_;
-
-  explicit AnyRef() : value_((JSObject*)-1) {}
-  explicit AnyRef(JSObject* p) : value_(p) {
-    MOZ_ASSERT(((uintptr_t)p & 0x03) == 0);
-  }
-
- public:
-  
-  
-  static AnyRef invalid() { return AnyRef(); }
-
-  
-  static AnyRef fromCompiledCode(void* p) { return AnyRef((JSObject*)p); }
-
-  
-  static AnyRef fromJSObject(JSObject* p) { return AnyRef(p); }
-
-  
-  static AnyRef null() { return AnyRef(nullptr); }
-
-  bool isNull() const { return value_ == nullptr; }
-
-  bool operator==(const AnyRef& rhs) const {
-    return this->value_ == rhs.value_;
-  }
-
-  bool operator!=(const AnyRef& rhs) const { return !(*this == rhs); }
-
-  void* forCompiledCode() const { return value_; }
-
-  JSObject* asJSObject() const { return value_; }
-
-  JSObject** asJSObjectAddress() const { return &value_; }
-
-  void trace(JSTracer* trc);
-
-  
-  static constexpr uintptr_t AnyRefTagMask = 1;
-  static constexpr uintptr_t AnyRefObjTag = 0;
-};
-
-using RootedAnyRef = Rooted<AnyRef>;
-using HandleAnyRef = Handle<AnyRef>;
-using MutableHandleAnyRef = MutableHandle<AnyRef>;
-
-
-
-
-
-#define ASSERT_ANYREF_IS_JSOBJECT (void)(0)
-#define STATIC_ASSERT_ANYREF_IS_JSOBJECT static_assert(1, "AnyRef is JSObject")
-
-
-
-
-bool BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef result);
-
-
-
-
-
-
-
-JSObject* BoxBoxableValue(JSContext* cx, HandleValue val);
-
-
-
-
-
-Value UnboxAnyRef(AnyRef val);
-
-class WasmValueBox : public NativeObject {
-  static const unsigned VALUE_SLOT = 0;
-
- public:
-  static const unsigned RESERVED_SLOTS = 1;
-  static const JSClass class_;
-
-  static WasmValueBox* create(JSContext* cx, HandleValue val);
-  Value value() const { return getFixedSlot(VALUE_SLOT); }
-  static size_t offsetOfValue() {
-    return NativeObject::getFixedSlotOffset(VALUE_SLOT);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FuncRef {
   
   mutable JSFunction* value_;
@@ -236,7 +118,7 @@ class FuncRef {
   
   static FuncRef fromAnyRefUnchecked(AnyRef p);
 
-  AnyRef asAnyRef() { return AnyRef::fromJSObject((JSObject*)value_); }
+  AnyRef toAnyRef() { return AnyRef::fromJSObjectOrNull((JSObject*)value_); }
 
   void* forCompiledCode() const { return value_; }
 
@@ -270,7 +152,8 @@ class LitVal {
     float f32_;
     double f64_;
     wasm::V128 v128_;
-    wasm::AnyRef ref_;
+    
+    mutable wasm::AnyRef ref_;
 
     Cell() : v128_() {}
     ~Cell() = default;
@@ -312,7 +195,7 @@ class LitVal {
         break;
       }
       case ValType::Kind::Ref: {
-        cell_.ref_ = AnyRef::null();
+        cell_.ref_ = nullptr;
         break;
       }
     }
@@ -388,7 +271,7 @@ class MOZ_NON_PARAM Val : public LitVal {
   }
   explicit Val(ValType type, FuncRef val) : LitVal(type, AnyRef::null()) {
     MOZ_ASSERT(type.refType().isFuncHierarchy());
-    cell_.ref_ = val.asAnyRef();
+    cell_.ref_ = val.toAnyRef();
   }
 
   Val(const Val&) = default;
@@ -417,21 +300,12 @@ class MOZ_NON_PARAM Val : public LitVal {
   }
   bool operator!=(const Val& rhs) const { return !(*this == rhs); }
 
-  bool isJSObject() const {
-    return type_.isValid() && type_.isRefRepr() && !cell_.ref_.isNull();
+  bool isInvalid() const { return !type_.isValid(); }
+  bool isAnyRef() const { return type_.isValid() && type_.isRefRepr(); }
+  AnyRef& toAnyRef() const {
+    MOZ_ASSERT(isAnyRef());
+    return cell_.ref_;
   }
-
-  JSObject* asJSObject() const {
-    MOZ_ASSERT(isJSObject());
-    return cell_.ref_.asJSObject();
-  }
-
-  JSObject** asJSObjectAddress() const {
-    return cell_.ref_.asJSObjectAddress();
-  }
-
-  
-  void readFromRootedLocation(const void* loc);
 
   
   void initFromRootedLocation(ValType type, const void* loc);
@@ -570,75 +444,89 @@ extern bool ToJSValue(JSContext* cx, const void* src, ValType type,
 }  
 
 template <>
-struct InternalBarrierMethods<wasm::Val> {
-  STATIC_ASSERT_ANYREF_IS_JSOBJECT;
-
-  static bool isMarkable(const wasm::Val& v) { return v.isJSObject(); }
-
-  static void preBarrier(const wasm::Val& v) {
-    if (v.isJSObject()) {
-      gc::PreWriteBarrier(v.asJSObject());
-    }
-  }
-
-  static MOZ_ALWAYS_INLINE void postBarrier(wasm::Val* vp,
-                                            const wasm::Val& prev,
-                                            const wasm::Val& next) {
-    MOZ_RELEASE_ASSERT(!prev.type().isValid() || prev.type() == next.type());
-    JSObject* prevObj = prev.isJSObject() ? prev.asJSObject() : nullptr;
-    JSObject* nextObj = next.isJSObject() ? next.asJSObject() : nullptr;
-    if (nextObj) {
-      JSObject::postWriteBarrier(vp->asJSObjectAddress(), prevObj, nextObj);
-    }
-  }
-
-  static void readBarrier(const wasm::Val& v) {
-    if (v.isJSObject()) {
-      gc::ReadBarrier(v.asJSObject());
-    }
-  }
-
-#ifdef DEBUG
-  static void assertThingIsNotGray(const wasm::Val& v) {
-    if (v.isJSObject()) {
-      JS::AssertObjectIsNotGray(v.asJSObject());
-    }
-  }
-#endif
-};
-
-template <>
 struct InternalBarrierMethods<wasm::AnyRef> {
-  STATIC_ASSERT_ANYREF_IS_JSOBJECT;
-
-  static bool isMarkable(const wasm::AnyRef v) { return !v.isNull(); }
+  static bool isMarkable(const wasm::AnyRef v) { return v.isGCThing(); }
 
   static void preBarrier(const wasm::AnyRef v) {
-    if (!v.isNull()) {
-      gc::PreWriteBarrier(v.asJSObject());
+    if (v.isGCThing()) {
+      gc::PreWriteBarrierImpl(v.toGCThing());
     }
   }
 
   static MOZ_ALWAYS_INLINE void postBarrier(wasm::AnyRef* vp,
                                             const wasm::AnyRef prev,
                                             const wasm::AnyRef next) {
-    JSObject* prevObj = !prev.isNull() ? prev.asJSObject() : nullptr;
-    JSObject* nextObj = !next.isNull() ? next.asJSObject() : nullptr;
-    if (nextObj) {
-      JSObject::postWriteBarrier(vp->asJSObjectAddress(), prevObj, nextObj);
+    
+    gc::StoreBuffer* sb;
+    if (next.isGCThing() && (sb = next.toGCThing()->storeBuffer())) {
+      
+      
+      
+      
+      if (prev.isGCThing() && prev.toGCThing()->storeBuffer()) {
+        return;
+      }
+      sb->putWasmAnyRef(vp);
+      return;
+    }
+    
+    if (prev.isGCThing() && (sb = prev.toGCThing()->storeBuffer())) {
+      sb->unputWasmAnyRef(vp);
     }
   }
 
   static void readBarrier(const wasm::AnyRef v) {
-    if (!v.isNull()) {
-      gc::ReadBarrier(v.asJSObject());
+    if (v.isGCThing()) {
+      gc::ReadBarrierImpl(v.toGCThing());
     }
   }
 
 #ifdef DEBUG
   static void assertThingIsNotGray(const wasm::AnyRef v) {
-    if (!v.isNull()) {
-      JS::AssertObjectIsNotGray(v.asJSObject());
+    if (v.isGCThing()) {
+      JS::AssertCellIsNotGray(v.toGCThing());
+    }
+  }
+#endif
+};
+
+template <>
+struct InternalBarrierMethods<wasm::Val> {
+  static bool isMarkable(const wasm::Val& v) { return v.isAnyRef(); }
+
+  static void preBarrier(const wasm::Val& v) {
+    if (v.isAnyRef()) {
+      InternalBarrierMethods<wasm::AnyRef>::preBarrier(v.toAnyRef());
+    }
+  }
+
+  static MOZ_ALWAYS_INLINE void postBarrier(wasm::Val* vp,
+                                            const wasm::Val& prev,
+                                            const wasm::Val& next) {
+    
+    
+    MOZ_ASSERT_IF(next.isAnyRef(), prev.isAnyRef() || prev.isInvalid());
+    MOZ_ASSERT_IF(prev.isAnyRef(), next.isAnyRef());
+
+    if (next.isAnyRef()) {
+      InternalBarrierMethods<wasm::AnyRef>::postBarrier(
+          &vp->toAnyRef(),
+          prev.isAnyRef() ? prev.toAnyRef() : wasm::AnyRef::null(),
+          next.toAnyRef());
+      return;
+    }
+  }
+
+  static void readBarrier(const wasm::Val& v) {
+    if (v.isAnyRef()) {
+      InternalBarrierMethods<wasm::AnyRef>::readBarrier(v.toAnyRef());
+    }
+  }
+
+#ifdef DEBUG
+  static void assertThingIsNotGray(const wasm::Val& v) {
+    if (v.isAnyRef()) {
+      InternalBarrierMethods<wasm::AnyRef>::assertThingIsNotGray(v.toAnyRef());
     }
   }
 #endif

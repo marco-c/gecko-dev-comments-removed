@@ -34,11 +34,7 @@ namespace wasm {
 
 
 
-
-
-STATIC_ASSERT_ANYREF_IS_JSOBJECT;
-
-using TableAnyRefVector = GCVector<HeapPtr<JSObject*>, 0, SystemAllocPolicy>;
+using TableAnyRefVector = GCVector<HeapPtr<AnyRef>, 0, SystemAllocPolicy>;
 
 class Table : public ShareableBase<Table> {
   using InstanceSet = JS::WeakCache<GCHashSet<

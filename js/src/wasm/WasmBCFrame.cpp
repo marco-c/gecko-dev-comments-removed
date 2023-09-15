@@ -111,9 +111,6 @@ void BaseLocalIter::settle() {
       case ValType::V128:
 #endif
       case ValType::Ref:
-        
-        
-        ASSERT_ANYREF_IS_JSOBJECT;
         mirType_ = locals_[index_].toMIRType();
         frameOffset_ = pushLocal(MIRTypeToSize(mirType_));
         break;

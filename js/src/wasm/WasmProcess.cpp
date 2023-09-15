@@ -400,8 +400,11 @@ void ConfigureHugeMemory() {
 bool wasm::Init() {
   MOZ_RELEASE_ASSERT(!sProcessCodeSegmentMap);
 
+  
+  
   uintptr_t pageSize = gc::SystemPageSize();
   MOZ_RELEASE_ASSERT(wasm::NullPtrGuardSize <= pageSize);
+  MOZ_RELEASE_ASSERT(intptr_t(nullptr) == wasm::NULLREF_VALUE);
 
   ConfigureHugeMemory();
 
