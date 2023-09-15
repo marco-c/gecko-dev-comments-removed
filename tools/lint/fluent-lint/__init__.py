@@ -99,6 +99,8 @@ class Linter(visitor.Visitor):
             
             "toolbarname",
             
+            "message",
+            
             "buttonlabelaccept",
             "buttonaccesskeyaccept",
             "buttonlabelcancel",
