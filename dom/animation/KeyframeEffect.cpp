@@ -446,11 +446,6 @@ void KeyframeEffect::UpdateProperties(const ComputedStyle* aStyle,
     if (baseStylesChanged) {
       RequestRestyle(EffectCompositor::RestyleType::Layer);
     }
-    
-    
-    if (mNeedsStyleData && mTarget && mTarget.mElement->HasServoData()) {
-      CalculateCumulativeChangeHint(aStyle);
-    }
     return;
   }
 
@@ -466,22 +461,12 @@ void KeyframeEffect::UpdateProperties(const ComputedStyle* aStyle,
   mProperties = std::move(properties);
   UpdateEffectSet();
 
-  mHasCurrentColor = false;
-
+  mCumulativeChanges = {};
   for (AnimationProperty& property : mProperties) {
     property.mIsRunningOnCompositor =
         runningOnCompositorProperties.HasProperty(property.mProperty);
-
-    if (property.mProperty == eCSSProperty_background_color &&
-        !mHasCurrentColor) {
-      if (HasCurrentColor(property.mSegments)) {
-        mHasCurrentColor = true;
-        break;
-      }
-    }
+    CalculateCumulativeChangesForProperty(property);
   }
-
-  CalculateCumulativeChangeHint(aStyle);
 
   MarkCascadeNeedsUpdate();
 
@@ -1100,8 +1085,7 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
       new KeyframeEffect(doc, OwningAnimationTarget{aSource.mTarget}, aSource);
   
   
-  effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
-
+  effect->mCumulativeChanges = aSource.mCumulativeChanges;
   return effect.forget();
 }
 
@@ -1774,104 +1758,50 @@ void KeyframeEffect::SetPerformanceWarning(
   }
 }
 
-already_AddRefed<const ComputedStyle>
-KeyframeEffect::CreateComputedStyleForAnimationValue(
-    nsCSSPropertyID aProperty, const AnimationValue& aValue,
-    nsPresContext* aPresContext, const ComputedStyle* aBaseComputedStyle) {
-  MOZ_ASSERT(aBaseComputedStyle,
-             "CreateComputedStyleForAnimationValue needs to be called "
-             "with a valid ComputedStyle");
-
-  Element* elementForResolve = AnimationUtils::GetElementForRestyle(
-      mTarget.mElement, mTarget.mPseudoType);
-  
-  
-  if (!elementForResolve) {
-    return nullptr;
+void KeyframeEffect::CalculateCumulativeChangesForProperty(
+    const AnimationProperty& aProperty) {
+  constexpr auto kInterestingFlags =
+      CSSPropFlags::AffectsLayout | CSSPropFlags::AffectsOverflow;
+  if (aProperty.mProperty == eCSSProperty_opacity) {
+    mCumulativeChanges.mOpacity = true;
+    return;  
   }
 
-  ServoStyleSet* styleSet = aPresContext->StyleSet();
-  return styleSet->ResolveServoStyleByAddingAnimation(
-      elementForResolve, aBaseComputedStyle, aValue.mServo);
-}
+  if (aProperty.mProperty == eCSSProperty_visibility) {
+    mCumulativeChanges.mVisibility = true;
+    return;  
+  }
 
-void KeyframeEffect::CalculateCumulativeChangeHint(
-    const ComputedStyle* aComputedStyle) {
-  mCumulativeChangeHint = nsChangeHint(0);
-  mNeedsStyleData = false;
+  if (aProperty.mProperty == eCSSProperty_background_color) {
+    if (!mCumulativeChanges.mHasBackgroundColorCurrentColor) {
+      mCumulativeChanges.mHasBackgroundColorCurrentColor =
+          HasCurrentColor(aProperty.mSegments);
+    }
+    return;  
+  }
 
-  nsPresContext* presContext =
-      mTarget ? nsContentUtils::GetContextForContent(mTarget.mElement)
-              : nullptr;
-  if (!presContext) {
-    
-    
-    
-    mNeedsStyleData = true;
+  auto flags = nsCSSProps::PropFlags(aProperty.mProperty);
+  if (!(flags & kInterestingFlags)) {
+    return;  
+  }
+
+  bool anyChange = false;
+  for (const AnimationPropertySegment& segment : aProperty.mSegments) {
+    if (!segment.HasReplaceableValues() ||
+        segment.mFromValue != segment.mToValue) {
+      
+      
+      anyChange = true;
+      break;
+    }
+  }
+
+  if (!anyChange) {
     return;
   }
 
-  for (const AnimationProperty& property : mProperties) {
-    
-    
-    
-    
-    
-    if (property.mProperty == eCSSProperty_opacity) {
-      continue;
-    }
-
-    for (const AnimationPropertySegment& segment : property.mSegments) {
-      
-      
-      
-      
-      if (!segment.HasReplaceableValues()) {
-        if (!nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
-                property.mProperty)) {
-          mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
-          return;
-        }
-        
-        
-        
-        
-        
-        
-        mCumulativeChangeHint |=
-            nsChangeHint_ComprehensiveAddOrRemoveTransform |
-            nsChangeHint_UpdatePostTransformOverflow |
-            nsChangeHint_UpdateTransformLayer;
-        continue;
-      }
-
-      RefPtr<const ComputedStyle> fromContext =
-          CreateComputedStyleForAnimationValue(property.mProperty,
-                                               segment.mFromValue, presContext,
-                                               aComputedStyle);
-      if (!fromContext) {
-        mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
-        mNeedsStyleData = true;
-        return;
-      }
-
-      RefPtr<const ComputedStyle> toContext =
-          CreateComputedStyleForAnimationValue(property.mProperty,
-                                               segment.mToValue, presContext,
-                                               aComputedStyle);
-      if (!toContext) {
-        mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
-        mNeedsStyleData = true;
-        return;
-      }
-
-      uint32_t equalStructs = 0;
-      nsChangeHint changeHint =
-          fromContext->CalcStyleDifference(*toContext, &equalStructs);
-
-      mCumulativeChangeHint |= changeHint;
-    }
-  }
+  mCumulativeChanges.mOverflow |= bool(flags & CSSPropFlags::AffectsOverflow);
+  mCumulativeChanges.mLayout |= bool(flags & CSSPropFlags::AffectsLayout);
 }
 
 void KeyframeEffect::SetAnimation(Animation* aAnimation) {
@@ -1903,11 +1833,7 @@ bool KeyframeEffect::CanIgnoreIfNotVisible() const {
   if (!StaticPrefs::dom_animations_offscreen_throttling()) {
     return false;
   }
-
-  
-  
-  return NS_IsHintSubset(mCumulativeChangeHint,
-                         nsChangeHint_Hints_CanIgnoreIfNotVisible);
+  return !mCumulativeChanges.mLayout;
 }
 
 void KeyframeEffect::MarkCascadeNeedsUpdate() {
@@ -2104,7 +2030,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
 
   
   
-  if (mHasCurrentColor) {
+  if (mCumulativeChanges.mHasBackgroundColorCurrentColor) {
     aPerformanceWarning = AnimationPerformanceWarning::Type::HasCurrentColor;
     return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
   }

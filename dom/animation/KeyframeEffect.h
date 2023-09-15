@@ -313,7 +313,7 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  void CalculateCumulativeChangeHint(const ComputedStyle* aStyle);
+  void CalculateCumulativeChangesForProperty(const AnimationProperty&);
 
   
   
@@ -362,9 +362,7 @@ class KeyframeEffect : public AnimationEffect {
       const Nullable<double>& aProgressOnLastCompose,
       uint64_t aCurrentIterationOnLastCompose);
 
-  bool HasOpacityChange() const {
-    return mCumulativeChangeHint & nsChangeHint_UpdateOpacityLayer;
-  }
+  bool HasOpacityChange() const { return mCumulativeChanges.mOpacity; }
 
  protected:
   ~KeyframeEffect() override = default;
@@ -454,21 +452,32 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  
-  bool mNeedsStyleData = false;
-
-  
-  bool mHasCurrentColor = false;
-
-  
-  
-  
   using BaseValuesHashmap =
       nsRefPtrHashtable<nsUint32HashKey, StyleAnimationValue>;
   BaseValuesHashmap mBaseValues;
 
  private:
-  nsChangeHint mCumulativeChangeHint = nsChangeHint{0};
+  
+  struct CumulativeChanges {
+    
+    bool mOpacity : 1;
+    
+    bool mVisibility : 1;
+    
+    bool mLayout : 1;
+    
+    bool mOverflow : 1;
+    
+    bool mHasBackgroundColorCurrentColor : 1;
+
+    CumulativeChanges()
+        : mOpacity(false),
+          mVisibility(false),
+          mLayout(false),
+          mOverflow(false),
+          mHasBackgroundColorCurrentColor(false) {}
+  };
+  CumulativeChanges mCumulativeChanges;
 
   void ComposeStyleRule(StyleAnimationValueMap& aAnimationValues,
                         const AnimationProperty& aProperty,
@@ -510,17 +519,12 @@ class KeyframeEffect : public AnimationEffect {
   
   
   bool HasPropertiesThatMightAffectOverflow() const {
-    return mCumulativeChangeHint &
-           (nsChangeHint_AddOrRemoveTransform | nsChangeHint_UpdateOverflow |
-            nsChangeHint_UpdatePostTransformOverflow |
-            nsChangeHint_UpdateTransformLayer);
+    return mCumulativeChanges.mOverflow;
   }
 
   
   
-  bool HasVisibilityChange() const {
-    return mCumulativeChangeHint & nsChangeHint_VisibilityChange;
-  }
+  bool HasVisibilityChange() const { return mCumulativeChanges.mVisibility; }
 };
 
 }  

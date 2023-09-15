@@ -400,21 +400,6 @@ class ServoStyleSet {
       dom::Element* aElement, const ComputedStyle* aStyle);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  already_AddRefed<ComputedStyle> ResolveServoStyleByAddingAnimation(
-      dom::Element* aElement, const ComputedStyle* aStyle,
-      StyleAnimationValue* aAnimationValue);
-  
 
 
 
