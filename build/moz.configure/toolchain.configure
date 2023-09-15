@@ -59,7 +59,7 @@ with only_when(target_is_osx):
         
         
         
-        (lambda t, d: "11.0" if (t.cpu == "aarch64" and not d) else "10.12"),
+        (lambda t, d: "11.0" if (t.cpu == "aarch64" and not d) else "10.15"),
         help="Set the minimum MacOS version needed at runtime{|}",
     )
 
