@@ -46,6 +46,9 @@ class nsWindowRoot;
 
 
 
+
+
+
 #ifdef HAVE_64BIT_BUILD
 static_assert(sizeof(void*) == 8, "These architectures should be 64-bit");
 #  define BOOL_FLAGS_ON_WRAPPER_CACHE

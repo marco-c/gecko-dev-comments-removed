@@ -379,8 +379,7 @@ class RestyleManager {
   
 
 
-  void RestyleSiblings(dom::Element* aChild,
-                       nsBaseContentList::FlagsType aParentFlags);
+  void RestyleSiblings(dom::Element* aChild, NodeSelectorFlags aParentFlags);
 
   
 
