@@ -47,18 +47,12 @@ namespace {
   RTC_CHECK_NOTREACHED();
 }
 
-constexpr char kIncludeCaptureClockOffset[] =
-    "WebRTC-IncludeCaptureClockOffset";
-
 }  
 
 RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
     : clock_(clock),
       rtp_sender_(rtp_sender),
-      absolute_capture_time_sender_(clock),
-      include_capture_clock_offset_(
-          !absl::StartsWith(field_trials_.Lookup(kIncludeCaptureClockOffset),
-                            "Disabled")) {
+      absolute_capture_time_sender_(clock) {
   RTC_DCHECK(clock_);
 }
 
@@ -284,8 +278,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
         encoder_rtp_timestamp_frequency.value_or(0),
         Int64MsToUQ32x32(clock_->ConvertTimestampToNtpTimeInMilliseconds(
             absolute_capture_timestamp_ms)),
-        
-        include_capture_clock_offset_ ? absl::make_optional(0) : absl::nullopt);
+        0);
     if (absolute_capture_time) {
       
       
