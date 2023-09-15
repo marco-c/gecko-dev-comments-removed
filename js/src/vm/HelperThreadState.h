@@ -26,12 +26,11 @@
 #include <stdint.h>  
 #include <utility>   
 
-#include "ds/Fifo.h"                      
+#include "ds/Fifo.h"  
 #include "frontend/CompilationStencil.h"  
-#include "frontend/FrontendContext.h"     
-#include "frontend/ScriptIndex.h"         
-#include "gc/GCRuntime.h"                 
-#include "js/AllocPolicy.h"               
+#include "frontend/FrontendContext.h"  
+#include "gc/GCRuntime.h"              
+#include "js/AllocPolicy.h"            
 #include "js/CompileOptions.h"  
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
@@ -43,6 +42,7 @@
 #include "js/Utility.h"                   
 #include "threading/ConditionVariable.h"  
 #include "threading/ProtectedData.h"      
+#include "vm/ConcurrentDelazification.h"  
 #include "vm/HelperThreads.h"  
 #include "vm/HelperThreadTask.h"             
 #include "vm/JSContext.h"                    
@@ -546,83 +546,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
 
 
-struct DelazifyStrategy {
-  using ScriptIndex = frontend::ScriptIndex;
-  virtual ~DelazifyStrategy() = default;
-
-  
-  
-  virtual bool done() const = 0;
-
-  
-  
-  virtual ScriptIndex next() = 0;
-
-  
-  
-  virtual void clear() = 0;
-
-  
-  
-  
-  
-  [[nodiscard]] virtual bool insert(ScriptIndex index,
-                                    frontend::ScriptStencilRef& ref) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] bool add(FrontendContext* fc,
-                         const frontend::CompilationStencil& stencil,
-                         ScriptIndex index);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-struct DepthFirstDelazification final : public DelazifyStrategy {
-  Vector<ScriptIndex, 0, SystemAllocPolicy> stack;
-
-  bool done() const override { return stack.empty(); }
-  ScriptIndex next() override { return stack.popCopy(); }
-  void clear() override { return stack.clear(); }
-  bool insert(ScriptIndex index, frontend::ScriptStencilRef&) override {
-    return stack.append(index);
-  }
-};
-
-
-
-
-
-struct LargeFirstDelazification final : public DelazifyStrategy {
-  using SourceSize = uint32_t;
-  Vector<std::pair<SourceSize, ScriptIndex>, 0, SystemAllocPolicy> heap;
-
-  bool done() const override { return heap.empty(); }
-  ScriptIndex next() override;
-  void clear() override { return heap.clear(); }
-  bool insert(ScriptIndex, frontend::ScriptStencilRef&) override;
-};
-
-
-
-
-
-
-
 
 
 
@@ -634,17 +557,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   JSRuntime* runtime = nullptr;
 
-  const JS::PrefableCompileOptions initialPrefableOptions;
-
-  
-  UniquePtr<DelazifyStrategy> strategy;
-
-  
-  
-  frontend::CompilationStencilMerger merger;
-
-  
-  FrontendContext fc_;
+  DelazificationContext delazificationCx;
 
   
   
@@ -659,20 +572,8 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
                const JS::PrefableCompileOptions& initialPrefableOptions);
   ~DelazifyTask();
 
-  [[nodiscard]] bool init(
-      const JS::ReadOnlyCompileOptions& options,
-      UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isInterrupted() { return false; }
+  [[nodiscard]] bool init(const JS::ReadOnlyCompileOptions& options,
+                          const frontend::CompilationStencil& stencil);
 
   bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
 
@@ -684,6 +585,8 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
   [[nodiscard]] bool runTask();
   ThreadType threadType() override { return ThreadType::THREAD_TYPE_DELAZIFY; }
+
+  bool done() const;
 };
 
 
