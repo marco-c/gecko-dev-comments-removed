@@ -89,7 +89,7 @@ class SctpDataChannelTest : public ::testing::Test {
   void SetChannelReady() {
     controller_->set_transport_available(true);
     webrtc_data_channel_->OnTransportChannelCreated();
-    if (!webrtc_data_channel_->sid().HasValue()) {
+    if (!webrtc_data_channel_->sid_s().HasValue()) {
       SetChannelSid(webrtc_data_channel_, StreamId(0));
     }
     controller_->set_ready_to_send(true);
@@ -105,7 +105,7 @@ class SctpDataChannelTest : public ::testing::Test {
     RTC_DCHECK(sid.HasValue());
     network_thread_.BlockingCall(
         [&]() { controller_->AddSctpDataStream(sid); });
-    channel->SetSctpSid(sid);
+    channel->SetSctpSid_s(sid);
   }
 
   void AddObserver() {
@@ -141,11 +141,11 @@ TEST_F(SctpDataChannelTest, VerifyConfigurationGetters) {
 
   
   EXPECT_EQ(webrtc_data_channel_->id(), init_.id);
-  EXPECT_EQ(webrtc_data_channel_->sid(), StreamId());
+  EXPECT_EQ(webrtc_data_channel_->sid_s(), StreamId());
 
   SetChannelReady();
   EXPECT_EQ(webrtc_data_channel_->id(), 0);
-  EXPECT_EQ(webrtc_data_channel_->sid(), StreamId(0));
+  EXPECT_EQ(webrtc_data_channel_->sid_s(), StreamId(0));
 }
 
 
@@ -156,10 +156,10 @@ TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
 
   EXPECT_TRUE(controller_->IsConnected(dc.get()));
   
-  EXPECT_FALSE(controller_->IsStreamAdded(dc->sid()));
+  EXPECT_FALSE(controller_->IsStreamAdded(dc->sid_s()));
 
   SetChannelSid(dc, StreamId(0));
-  EXPECT_TRUE(controller_->IsStreamAdded(dc->sid()));
+  EXPECT_TRUE(controller_->IsStreamAdded(dc->sid_s()));
 }
 
 
