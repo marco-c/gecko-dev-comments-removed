@@ -926,10 +926,11 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   
 
+ public:
+  gfxFontGroup* GetCurrentFontStyle();
+
  protected:
   enum class TextDrawOperation : uint8_t { FILL, STROKE, MEASURE };
-
-  gfxFontGroup* GetCurrentFontStyle();
 
   
 
