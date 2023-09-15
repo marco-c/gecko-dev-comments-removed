@@ -32,10 +32,7 @@ namespace webrtc {
 
 namespace {
 
-
-
-
-constexpr size_t kDecoderFrameMemoryLength = 30;
+constexpr size_t kDecoderFrameMemoryLength = 10;
 
 }
 
