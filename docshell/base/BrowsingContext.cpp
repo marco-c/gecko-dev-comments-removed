@@ -3441,7 +3441,7 @@ ChildSHistory* BrowsingContext::GetChildSessionHistory() {
 void BrowsingContext::CreateChildSHistory() {
   MOZ_ASSERT(IsTop());
   MOZ_ASSERT(GetHasSessionHistory());
-  MOZ_DIAGNOSTIC_ASSERT(!mChildSessionHistory);
+  MOZ_ASSERT(!mChildSessionHistory);
 
   
   
