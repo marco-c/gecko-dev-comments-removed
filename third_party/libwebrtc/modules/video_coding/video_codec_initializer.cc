@@ -213,7 +213,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     case kVideoCodecVP9: {
       
       
-      if (video_codec.IsSinglecastOrAllNonFirstLayersInactive()) {
+      if (video_codec.numberOfSimulcastStreams <= 1) {
         video_codec.simulcastStream[0].active = codec_active;
       }
 

@@ -31,18 +31,14 @@ class BuiltinVideoBitrateAllocatorFactory
 
   std::unique_ptr<VideoBitrateAllocator> CreateVideoBitrateAllocator(
       const VideoCodec& codec) override {
-    switch (codec.codecType) {
-      case kVideoCodecAV1:
-      case kVideoCodecVP9:
-        
-        
-        if (codec.IsSinglecastOrAllNonFirstLayersInactive()) {
-          return std::make_unique<SvcRateAllocator>(codec);
-        }
-        ABSL_FALLTHROUGH_INTENDED;
-      default:
-        return std::make_unique<SimulcastRateAllocator>(codec);
+    
+    
+    if ((codec.codecType == kVideoCodecAV1 ||
+         codec.codecType == kVideoCodecVP9) &&
+        codec.numberOfSimulcastStreams <= 1) {
+      return std::make_unique<SvcRateAllocator>(codec);
     }
+    return std::make_unique<SimulcastRateAllocator>(codec);
   }
 };
 
