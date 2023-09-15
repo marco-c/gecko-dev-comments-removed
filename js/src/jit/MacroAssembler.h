@@ -569,6 +569,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void freeStack(uint32_t amount);
 
   
+  
+  void freeStackTo(uint32_t framePushed) DEFINED_ON(x86_shared, arm, arm64);
+
+  
   void freeStack(Register amount);
 
  private:

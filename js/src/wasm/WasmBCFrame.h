@@ -469,17 +469,15 @@ class BaseStackFrameAllocator {
   
 
   void freeArgAreaAndPopBytes(size_t argSize, size_t dropSize) {
+    
+    
 #ifdef RABALDR_CHUNKY_STACK
     
     
-    if (argSize) {
-      masm.freeStack(argSize);
-    }
+    masm.freeStackTo(masm.framePushed() - argSize);
     popChunkyBytes(dropSize);
 #else
-    if (argSize + dropSize) {
-      masm.freeStack(argSize + dropSize);
-    }
+    masm.freeStackTo(masm.framePushed() - (argSize + dropSize));
 #endif
   }
 };
