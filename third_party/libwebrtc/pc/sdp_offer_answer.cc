@@ -815,6 +815,35 @@ bool ContentHasHeaderExtension(const cricket::ContentInfo& content_info,
 
 }  
 
+void UpdateRtpHeaderExtensionPreferencesFromSdpMunging(
+    const cricket::SessionDescription* description,
+    TransceiverList* transceivers) {
+  
+  
+  
+  
+  RTC_DCHECK(description);
+  RTC_DCHECK(transceivers);
+  for (const auto& content : description->contents()) {
+    auto transceiver = transceivers->FindByMid(content.name);
+    if (!transceiver) {
+      continue;
+    }
+    auto extension_capabilities = transceiver->GetHeaderExtensionsToNegotiate();
+    
+    for (auto& ext : content.media_description()->rtp_header_extensions()) {
+      auto it = absl::c_find_if(extension_capabilities,
+                                [&ext](const RtpHeaderExtensionCapability c) {
+                                  return ext.uri == c.uri;
+                                });
+      if (it != extension_capabilities.end()) {
+        it->direction = RtpTransceiverDirection::kSendRecv;
+      }
+    }
+    transceiver->SetHeaderExtensionsToNegotiate(extension_capabilities);
+  }
+}
+
 
 
 
@@ -1814,6 +1843,11 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
       local_ice_credentials_to_replace_->SatisfiesIceRestart(
           *current_local_description_)) {
     local_ice_credentials_to_replace_->ClearIceCredentials();
+  }
+
+  if (IsUnifiedPlan()) {
+    UpdateRtpHeaderExtensionPreferencesFromSdpMunging(
+        local_description()->description(), transceivers());
   }
 
   return RTCError::OK();

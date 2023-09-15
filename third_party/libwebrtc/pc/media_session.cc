@@ -685,7 +685,9 @@ static bool CreateContentOffer(
         
         
         
-        extensions.push_back(extension_with_id);
+        if (extension.direction != RtpTransceiverDirection::kStopped) {
+          extensions.push_back(extension_with_id);
+        }
       }
     }
   }
