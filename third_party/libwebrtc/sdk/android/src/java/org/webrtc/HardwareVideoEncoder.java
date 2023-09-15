@@ -579,75 +579,81 @@ class HardwareVideoEncoder implements VideoEncoder {
         return;
       }
 
-      ByteBuffer codecOutputBuffer = codec.getOutputBuffer(index);
-      codecOutputBuffer.position(info.offset);
-      codecOutputBuffer.limit(info.offset + info.size);
+      ByteBuffer outputBuffer = codec.getOutputBuffer(index);
+      outputBuffer.position(info.offset);
+      outputBuffer.limit(info.offset + info.size);
 
       if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
         Logging.d(TAG, "Config frame generated. Offset: " + info.offset + ". Size: " + info.size);
-        configBuffer = ByteBuffer.allocateDirect(info.size);
-        configBuffer.put(codecOutputBuffer);
-      } else {
-        bitrateAdjuster.reportEncodedFrame(info.size);
-        if (adjustedBitrate != bitrateAdjuster.getAdjustedBitrateBps()) {
-          updateBitrate();
-        }
-
-        final boolean isKeyFrame = (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
-        if (isKeyFrame) {
-          Logging.d(TAG, "Sync frame generated");
-        }
-
-        final ByteBuffer frameBuffer;
-        if (isKeyFrame && codecType == VideoCodecMimeType.H264) {
-          Logging.d(TAG,
-              "Prepending config frame of size " + configBuffer.capacity()
-                  + " to output buffer with offset " + info.offset + ", size " + info.size);
+        if (info.size > 0
+            && (codecType == VideoCodecMimeType.H264 || codecType == VideoCodecMimeType.H265)) {
           
-          frameBuffer = ByteBuffer.allocateDirect(info.size + configBuffer.capacity());
-          configBuffer.rewind();
-          frameBuffer.put(configBuffer);
-          frameBuffer.put(codecOutputBuffer);
-          frameBuffer.rewind();
-        } else {
-          frameBuffer = codecOutputBuffer.slice();
+          
+          
+          configBuffer = ByteBuffer.allocateDirect(info.size);
+          configBuffer.put(outputBuffer);
         }
-
-        final EncodedImage.FrameType frameType = isKeyFrame
-            ? EncodedImage.FrameType.VideoFrameKey
-            : EncodedImage.FrameType.VideoFrameDelta;
-
-        outputBuffersBusyCount.increment();
-        EncodedImage.Builder builder = outputBuilders.poll();
-        builder
-            .setBuffer(frameBuffer,
-                () -> {
-                  
-                  
-                  
-                  try {
-                    codec.releaseOutputBuffer(index, false);
-                  } catch (Exception e) {
-                    Logging.e(TAG, "releaseOutputBuffer failed", e);
-                  }
-                  outputBuffersBusyCount.decrement();
-                })
-            .setFrameType(frameType);
-
-        if (isEncodingStatisticsEnabled) {
-          MediaFormat format = codec.getOutputFormat(index);
-          if (format != null && format.containsKey(MediaFormat.KEY_VIDEO_QP_AVERAGE)) {
-            int qp = format.getInteger(MediaFormat.KEY_VIDEO_QP_AVERAGE);
-            builder.setQp(qp);
-          }
-        }
-
-        EncodedImage encodedImage = builder.createEncodedImage();
-        
-        callback.onEncodedFrame(encodedImage, new CodecSpecificInfo());
-        
-        encodedImage.release();
+        return;
       }
+
+      bitrateAdjuster.reportEncodedFrame(info.size);
+      if (adjustedBitrate != bitrateAdjuster.getAdjustedBitrateBps()) {
+        updateBitrate();
+      }
+
+      final boolean isKeyFrame = (info.flags & MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
+      if (isKeyFrame) {
+        Logging.d(TAG, "Sync frame generated");
+      }
+
+      final ByteBuffer frameBuffer;
+      final Runnable releaseCallback;
+      if (isKeyFrame && configBuffer != null) {
+        Logging.d(TAG,
+            "Prepending config buffer of size " + configBuffer.capacity()
+                + " to output buffer with offset " + info.offset + ", size " + info.size);
+        frameBuffer = ByteBuffer.allocateDirect(info.size + configBuffer.capacity());
+        configBuffer.rewind();
+        frameBuffer.put(configBuffer);
+        frameBuffer.put(outputBuffer);
+        frameBuffer.rewind();
+        codec.releaseOutputBuffer(index,  false);
+        releaseCallback = null;
+      } else {
+        frameBuffer = outputBuffer.slice();
+        outputBuffersBusyCount.increment();
+        releaseCallback = () -> {
+          
+          
+          
+          try {
+            codec.releaseOutputBuffer(index,  false);
+          } catch (Exception e) {
+            Logging.e(TAG, "releaseOutputBuffer failed", e);
+          }
+          outputBuffersBusyCount.decrement();
+        };
+      }
+
+      final EncodedImage.FrameType frameType = isKeyFrame ? EncodedImage.FrameType.VideoFrameKey
+                                                          : EncodedImage.FrameType.VideoFrameDelta;
+
+      EncodedImage.Builder builder = outputBuilders.poll();
+      builder.setBuffer(frameBuffer, releaseCallback).setFrameType(frameType);
+
+      if (isEncodingStatisticsEnabled) {
+        MediaFormat format = codec.getOutputFormat(index);
+        if (format != null && format.containsKey(MediaFormat.KEY_VIDEO_QP_AVERAGE)) {
+          int qp = format.getInteger(MediaFormat.KEY_VIDEO_QP_AVERAGE);
+          builder.setQp(qp);
+        }
+      }
+
+      EncodedImage encodedImage = builder.createEncodedImage();
+      
+      callback.onEncodedFrame(encodedImage, new CodecSpecificInfo());
+      
+      encodedImage.release();
     } catch (IllegalStateException e) {
       Logging.e(TAG, "deliverOutput failed", e);
     }
