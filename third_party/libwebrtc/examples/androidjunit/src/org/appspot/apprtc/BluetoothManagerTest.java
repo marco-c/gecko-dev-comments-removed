@@ -33,12 +33,12 @@ import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.List;
 import org.appspot.apprtc.AppRTCBluetoothManager.State;
-import org.chromium.testing.local.LocalRobolectricTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
+import org.robolectric.RobolectricTestRunner;
 
 
 
@@ -46,7 +46,7 @@ import org.robolectric.shadows.ShadowLog;
 
 
 
-@RunWith(LocalRobolectricTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class BluetoothManagerTest {
   private static final String TAG = "BluetoothManagerTest";
