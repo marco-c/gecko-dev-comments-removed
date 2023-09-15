@@ -4,15 +4,11 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
 var ioService = Services.io;
 
 
 
-XPCOMUtils.defineLazyGetter(this, "uri", function () {
+ChromeUtils.defineLazyGetter(this, "uri", function () {
   return ioService.newURI(
     "http://localhost:" +
       server.identity.primaryPort +

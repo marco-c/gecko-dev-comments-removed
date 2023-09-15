@@ -8,7 +8,7 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "PREPATH", function () {
+ChromeUtils.defineLazyGetter(this, "PREPATH", function () {
   return "http://localhost:" + srv.identity.primaryPort;
 });
 
@@ -28,7 +28,7 @@ function run_test() {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "tests", function () {
+ChromeUtils.defineLazyGetter(this, "tests", function () {
   return [
     new Test(PREPATH + "/handleSync", null, start_handleSync, null),
     new Test(

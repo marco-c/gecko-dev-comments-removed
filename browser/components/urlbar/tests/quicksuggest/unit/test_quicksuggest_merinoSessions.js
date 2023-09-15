@@ -8,7 +8,7 @@
 
 
 
-XPCOMUtils.defineLazyGetter(
+ChromeUtils.defineLazyGetter(
   this,
   "gClient",
   () => UrlbarProviderQuickSuggest._test_merino

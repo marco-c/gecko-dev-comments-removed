@@ -243,7 +243,7 @@ global.TabContext = class extends EventEmitter {
 
 
 
-XPCOMUtils.defineLazyGetter(global, "searchInitialized", () => {
+ChromeUtils.defineLazyGetter(global, "searchInitialized", () => {
   if (Services.search.isInitialized) {
     return Promise.resolve();
   }

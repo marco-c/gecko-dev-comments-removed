@@ -13,7 +13,7 @@ AddonTestUtils.createAppInfo(
 Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 
 
-XPCOMUtils.defineLazyGetter(this, "directFailoverDisabled", () => {
+ChromeUtils.defineLazyGetter(this, "directFailoverDisabled", () => {
   return (
     Services.prefs.getPrefType("network.proxy.failover_direct") ==
     Ci.nsIPrefBranch.PREF_INVALID

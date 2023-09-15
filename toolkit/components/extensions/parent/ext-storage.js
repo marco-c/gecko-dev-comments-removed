@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
 var { ExtensionError } = ExtensionUtils;
 var { ignoreEvent } = ExtensionCommon;
 
-XPCOMUtils.defineLazyGetter(this, "extensionStorageSync", () => {
+ChromeUtils.defineLazyGetter(this, "extensionStorageSync", () => {
   
   if (Services.prefs.getBoolPref("webextensions.storage.sync.kinto")) {
     const { extensionStorageSyncKinto } = ChromeUtils.importESModule(

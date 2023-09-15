@@ -45,7 +45,7 @@ var listener_3 = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(this, "listener_2", function () {
+ChromeUtils.defineLazyGetter(this, "listener_2", function () {
   return {
     
     
@@ -77,7 +77,7 @@ XPCOMUtils.defineLazyGetter(this, "listener_2", function () {
   };
 });
 
-XPCOMUtils.defineLazyGetter(this, "listener_1", function () {
+ChromeUtils.defineLazyGetter(this, "listener_1", function () {
   return {
     
     

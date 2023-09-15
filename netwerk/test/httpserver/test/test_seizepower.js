@@ -8,7 +8,7 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "PORT", function () {
+ChromeUtils.defineLazyGetter(this, "PORT", function () {
   return srv.identity.primaryPort;
 });
 
@@ -136,7 +136,7 @@ function handleSeizeAfterAsync(request, response) {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "tests", function () {
+ChromeUtils.defineLazyGetter(this, "tests", function () {
   return [
     new RawTest("localhost", PORT, data0, checkRawData),
     new RawTest("localhost", PORT, data1, checkTooLate),

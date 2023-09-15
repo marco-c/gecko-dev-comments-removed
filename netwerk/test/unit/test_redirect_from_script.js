@@ -35,24 +35,24 @@ let redirectHook = "http-on-modify-request";
 var httpServer = null,
   httpServer2 = null;
 
-XPCOMUtils.defineLazyGetter(this, "port1", function () {
+ChromeUtils.defineLazyGetter(this, "port1", function () {
   return httpServer.identity.primaryPort;
 });
 
-XPCOMUtils.defineLazyGetter(this, "port2", function () {
+ChromeUtils.defineLazyGetter(this, "port2", function () {
   return httpServer2.identity.primaryPort;
 });
 
 
 
 var baitPath = "/bait";
-XPCOMUtils.defineLazyGetter(this, "baitURI", function () {
+ChromeUtils.defineLazyGetter(this, "baitURI", function () {
   return "http://localhost:" + port1 + baitPath;
 });
 var baitText = "you got the worm";
 
 var redirectedPath = "/switch";
-XPCOMUtils.defineLazyGetter(this, "redirectedURI", function () {
+ChromeUtils.defineLazyGetter(this, "redirectedURI", function () {
   return "http://localhost:" + port1 + redirectedPath;
 });
 var redirectedText = "worms are not tasty";
@@ -60,25 +60,25 @@ var redirectedText = "worms are not tasty";
 
 
 var bait2Path = "/bait2";
-XPCOMUtils.defineLazyGetter(this, "bait2URI", function () {
+ChromeUtils.defineLazyGetter(this, "bait2URI", function () {
   return "http://localhost:" + port1 + bait2Path;
 });
 
-XPCOMUtils.defineLazyGetter(this, "redirected2URI", function () {
+ChromeUtils.defineLazyGetter(this, "redirected2URI", function () {
   return "http://localhost:" + port2 + redirectedPath;
 });
 
 
 
 var bait3Path = "/bait3";
-XPCOMUtils.defineLazyGetter(this, "bait3URI", function () {
+ChromeUtils.defineLazyGetter(this, "bait3URI", function () {
   return "http://localhost:" + port1 + bait3Path;
 });
 
 
 
 var bait4Path = "/bait4";
-XPCOMUtils.defineLazyGetter(this, "bait4URI", function () {
+ChromeUtils.defineLazyGetter(this, "bait4URI", function () {
   return "http://localhost:" + port1 + bait4Path;
 });
 

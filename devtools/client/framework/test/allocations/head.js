@@ -38,7 +38,7 @@ let tracker, releaseTrackerLoader;
 
 
 
-XPCOMUtils.defineLazyGetter(this, "TrackedObjects", () => {
+ChromeUtils.defineLazyGetter(this, "TrackedObjects", () => {
   return ChromeUtils.importESModule(
     "resource://devtools/shared/test-helpers/tracked-objects.sys.mjs"
   );

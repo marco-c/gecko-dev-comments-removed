@@ -12,7 +12,9 @@ Services.scriptloader.loadSubScript(
 const lazy = {};
 
 
-XPCOMUtils.defineLazyGetter(lazy, "LIBC", () => ChromeUtils.getLibcConstants());
+ChromeUtils.defineLazyGetter(lazy, "LIBC", () =>
+  ChromeUtils.getLibcConstants()
+);
 
 
 

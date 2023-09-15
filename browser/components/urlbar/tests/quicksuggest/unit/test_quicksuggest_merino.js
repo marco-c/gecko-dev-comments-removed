@@ -98,7 +98,7 @@ const EXPECTED_MERINO_URLBAR_RESULT = {
 
 
 
-XPCOMUtils.defineLazyGetter(
+ChromeUtils.defineLazyGetter(
   this,
   "gClient",
   () => UrlbarProviderQuickSuggest._test_merino
