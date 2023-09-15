@@ -402,10 +402,9 @@ class PeerConnection : public PeerConnectionInternal,
   
   absl::optional<std::string> GetDataMid() const override;
 
-  void SetSctpDataInfo(absl::string_view mid,
-                       absl::string_view transport_name) override;
+  void SetSctpDataMid(const std::string& mid) override;
 
-  void ResetSctpDataInfo() override;
+  void ResetSctpDataMid() override;
 
   
   
@@ -433,8 +432,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   bool SrtpRequired() const override;
 
-  absl::optional<std::string> SetupDataChannelTransport_n(
-      absl::string_view mid) override RTC_RUN_ON(network_thread());
+  bool SetupDataChannelTransport_n(const std::string& mid) override
+      RTC_RUN_ON(network_thread());
   void TeardownDataChannelTransport_n(RTCError error) override
       RTC_RUN_ON(network_thread());
 

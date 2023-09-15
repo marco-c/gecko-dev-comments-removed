@@ -117,16 +117,10 @@ class PeerConnectionSdpMethods {
   
   
   virtual bool SrtpRequired() const = 0;
-  
-  
-  
-  
-  virtual absl::optional<std::string> SetupDataChannelTransport_n(
-      absl::string_view mid) = 0;
+  virtual bool SetupDataChannelTransport_n(const std::string& mid) = 0;
   virtual void TeardownDataChannelTransport_n(RTCError error) = 0;
-  virtual void SetSctpDataInfo(absl::string_view mid,
-                               absl::string_view transport_name) = 0;
-  virtual void ResetSctpDataInfo() = 0;
+  virtual void SetSctpDataMid(const std::string& mid) = 0;
+  virtual void ResetSctpDataMid() = 0;
 
   virtual const FieldTrialsView& trials() const = 0;
 
