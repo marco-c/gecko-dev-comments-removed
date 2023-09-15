@@ -128,27 +128,43 @@ static void BitwiseOrIntoChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap) {
 void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(JSRuntime* runtime) {
   MOZ_ASSERT(CurrentThreadIsPerformingGC());
 
-  
-  
-  
-  DenseBitmap markedUnion;
-  if (markedUnion.ensureSpace(allocatedWords)) {
-    for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
-      
-      
-      
-      if (!zone->isCollectingFromAnyThread()) {
-        zone->markedAtoms().bitwiseOrInto(markedUnion);
-      }
+  size_t uncollectedZones = 0;
+  for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
+    if (!zone->isCollecting()) {
+      uncollectedZones++;
     }
-    BitwiseOrIntoChunkMarkBits(runtime, markedUnion);
-  } else {
+  }
+
+  
+  if (uncollectedZones == 0) {
+    return;
+  }
+
+  
+  
+  
+  
+
+  DenseBitmap markedUnion;
+  if (uncollectedZones == 1 || !markedUnion.ensureSpace(allocatedWords)) {
     for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
-      if (!zone->isCollectingFromAnyThread()) {
+      if (!zone->isCollecting()) {
         BitwiseOrIntoChunkMarkBits(runtime, zone->markedAtoms());
       }
     }
+    return;
   }
+
+  for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
+    
+    
+    
+    if (!zone->isCollecting()) {
+      zone->markedAtoms().bitwiseOrInto(markedUnion);
+    }
+  }
+
+  BitwiseOrIntoChunkMarkBits(runtime, markedUnion);
 }
 
 template <typename T>
