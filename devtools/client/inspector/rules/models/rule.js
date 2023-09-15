@@ -51,13 +51,7 @@ class Rule {
     this.elementStyle = elementStyle;
     this.domRule = options.rule;
     this.compatibilityIssues = null;
-    this.matchedDesugaredSelectors =
-      options.matchedDesugaredSelectors ||
-      
-      
-      
-      options.matchedSelectors ||
-      [];
+    this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
     this.pseudoElement = options.pseudoElement || "";
     this.isSystem = options.isSystem;
     this.isUnmatched = options.isUnmatched || false;
@@ -634,13 +628,7 @@ class Rule {
 
 
   refresh(options) {
-    this.matchedDesugaredSelectors =
-      options.matchedDesugaredSelectors ||
-      
-      
-      
-      options.matchedSelectors ||
-      [];
+    this.matchedDesugaredSelectors = options.matchedDesugaredSelectors || [];
     const newTextProps = this._getTextProperties();
 
     
