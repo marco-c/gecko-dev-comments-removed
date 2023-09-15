@@ -794,9 +794,37 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
 
 
 
+class PeerConnectionEncodingsIntegrationParameterizedTest
+    : public PeerConnectionEncodingsIntegrationTest,
+      public ::testing::WithParamInterface<std::string> {
+ public:
+  PeerConnectionEncodingsIntegrationParameterizedTest()
+      : codec_name_(GetParam()), mime_type_("video/" + codec_name_) {}
 
-TEST_F(PeerConnectionEncodingsIntegrationTest, VP9_AllLayersInactive_L1T3) {
+  
+  
+  
+  
+  bool SkipTestDueToAv1Missing(
+      rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper) {
+    if (codec_name_ == "AV1" &&
+        !HasSenderVideoCodecCapability(local_pc_wrapper, "AV1")) {
+      RTC_LOG(LS_WARNING) << "\n***\nAV1 is not available, skipping test.\n***";
+      return true;
+    }
+    return false;
+  }
+
+ protected:
+  const std::string codec_name_;  
+  const std::string mime_type_;   
+};
+
+TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, AllLayersInactive) {
   rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
+  if (SkipTestDueToAv1Missing(local_pc_wrapper)) {
+    return;
+  }
   rtc::scoped_refptr<PeerConnectionTestWrapper> remote_pc_wrapper = CreatePc();
   ExchangeIceCandidates(local_pc_wrapper, remote_pc_wrapper);
 
@@ -806,7 +834,7 @@ TEST_F(PeerConnectionEncodingsIntegrationTest, VP9_AllLayersInactive_L1T3) {
       AddTransceiverWithSimulcastLayers(local_pc_wrapper, remote_pc_wrapper,
                                         layers);
   std::vector<RtpCodecCapability> codecs =
-      GetCapabilitiesAndRestrictToCodec(local_pc_wrapper, "VP9");
+      GetCapabilitiesAndRestrictToCodec(local_pc_wrapper, codec_name_);
   transceiver->SetCodecPreferences(codecs);
 
   
@@ -834,34 +862,6 @@ TEST_F(PeerConnectionEncodingsIntegrationTest, VP9_AllLayersInactive_L1T3) {
   EXPECT_EQ(*outbound_rtps[1]->bytes_sent, 0u);
   EXPECT_EQ(*outbound_rtps[2]->bytes_sent, 0u);
 }
-
-
-
-class PeerConnectionEncodingsIntegrationParameterizedTest
-    : public PeerConnectionEncodingsIntegrationTest,
-      public ::testing::WithParamInterface<std::string> {
- public:
-  PeerConnectionEncodingsIntegrationParameterizedTest()
-      : codec_name_(GetParam()), mime_type_("video/" + codec_name_) {}
-
-  
-  
-  
-  
-  bool SkipTestDueToAv1Missing(
-      rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper) {
-    if (codec_name_ == "AV1" &&
-        !HasSenderVideoCodecCapability(local_pc_wrapper, "AV1")) {
-      RTC_LOG(LS_WARNING) << "\n***\nAV1 is not available, skipping test.\n***";
-      return true;
-    }
-    return false;
-  }
-
- protected:
-  const std::string codec_name_;  
-  const std::string mime_type_;   
-};
 
 TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest, Simulcast) {
   rtc::scoped_refptr<PeerConnectionTestWrapper> local_pc_wrapper = CreatePc();
