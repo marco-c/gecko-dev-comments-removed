@@ -1509,18 +1509,6 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Progresschunk,
     
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    CheckboxContainer,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    RadioContainer,
-    
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    CheckboxLabel,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    RadioLabel,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Range,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
