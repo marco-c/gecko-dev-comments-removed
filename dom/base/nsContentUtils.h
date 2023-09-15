@@ -242,9 +242,6 @@ struct EventNameMapping {
   int32_t mType;
   mozilla::EventMessage mMessage;
   mozilla::EventClassID mEventClassID;
-  
-  
-  bool mMaybeSpecialSVGorSMILEvent;
 };
 
 namespace mozilla {

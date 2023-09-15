@@ -976,20 +976,13 @@ static nsAtom* GetEventTypeFromMessage(EventMessage aEventMessage) {
   }
 }
 
-
-
-static bool ShouldAddEventToStringEventTable(const EventNameMapping& aMapping) {
-  MOZ_ASSERT(aMapping.mAtom);
-  return GetEventTypeFromMessage(aMapping.mMessage) == aMapping.mAtom;
-}
-
 bool nsContentUtils::InitializeEventTable() {
   NS_ASSERTION(!sAtomEventTable, "EventTable already initialized!");
   NS_ASSERTION(!sStringEventTable, "EventTable already initialized!");
 
   static const EventNameMapping eventArray[] = {
 #define EVENT(name_, _message, _type, _class) \
-  {nsGkAtoms::on##name_, _type, _message, _class, false},
+  {nsGkAtoms::on##name_, _type, _message, _class},
 #define WINDOW_ONLY_EVENT EVENT
 #define DOCUMENT_ONLY_EVENT EVENT
 #define NON_IDL_EVENT EVENT
@@ -1010,11 +1003,9 @@ bool nsContentUtils::InitializeEventTable() {
     MOZ_ASSERT(!sAtomEventTable->Contains(eventArray[i].mAtom),
                "Double-defining event name; fix your EventNameList.h");
     sAtomEventTable->InsertOrUpdate(eventArray[i].mAtom, eventArray[i]);
-    if (ShouldAddEventToStringEventTable(eventArray[i])) {
-      sStringEventTable->InsertOrUpdate(
-          Substring(nsDependentAtomString(eventArray[i].mAtom), 2),
-          eventArray[i]);
-    }
+    sStringEventTable->InsertOrUpdate(
+        Substring(nsDependentAtomString(eventArray[i].mAtom), 2),
+        eventArray[i]);
   }
 
   return true;
@@ -4565,13 +4556,6 @@ nsAtom* nsContentUtils::GetEventMessageAndAtom(
   mapping.mMessage = eUnidentifiedEvent;
   mapping.mType = EventNameType_None;
   mapping.mEventClassID = eBasicEventClass;
-  
-  
-  
-  
-  
-  mapping.mMaybeSpecialSVGorSMILEvent =
-      GetEventMessage(atom) != eUnidentifiedEvent;
   sStringEventTable->InsertOrUpdate(aName, mapping);
   return mapping.mAtom;
 }
@@ -4583,31 +4567,20 @@ EventMessage nsContentUtils::GetEventMessageAndAtomForListener(
 
   
   
-  
-  
   EventNameMapping mapping;
-  EventMessage msg = eUnidentifiedEvent;
-  RefPtr<nsAtom> atom;
   if (sStringEventTable->Get(aName, &mapping)) {
-    if (mapping.mMaybeSpecialSVGorSMILEvent) {
-      
-      
-      atom = NS_AtomizeMainThread(u"on"_ns + aName);
-      msg = GetEventMessage(atom);
-    } else {
-      atom = mapping.mAtom;
-      msg = mapping.mMessage;
-    }
+    RefPtr<nsAtom> atom = mapping.mAtom;
     atom.forget(aOnName);
-    return msg;
+    return mapping.mMessage;
   }
 
   
-  GetEventMessageAndAtom(aName, eBasicEventClass, &msg);
-
   
   
-  return GetEventMessageAndAtomForListener(aName, aOnName);
+  EventMessage msg = eUnidentifiedEvent;
+  RefPtr<nsAtom> atom = GetEventMessageAndAtom(aName, eBasicEventClass, &msg);
+  atom.forget(aOnName);
+  return msg;
 }
 
 static nsresult GetEventAndTarget(Document* aDoc, nsISupports* aTarget,
