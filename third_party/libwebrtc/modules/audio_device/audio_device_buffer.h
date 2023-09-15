@@ -78,11 +78,7 @@ class AudioDeviceBuffer {
     int16_t max_play_level = 0;
   };
 
-  
-  
-  
-  explicit AudioDeviceBuffer(TaskQueueFactory* task_queue_factory,
-                             bool create_detached = false);
+  explicit AudioDeviceBuffer(TaskQueueFactory* task_queue_factory);
   virtual ~AudioDeviceBuffer();
 
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
