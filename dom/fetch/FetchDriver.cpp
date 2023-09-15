@@ -27,7 +27,6 @@
 #include "nsIPipe.h"
 #include "nsIRedirectHistoryEntry.h"
 
-#include "nsBaseChannel.h"
 #include "nsContentPolicyUtils.h"
 #include "nsDataHandler.h"
 #include "nsNetUtil.h"
@@ -846,21 +845,6 @@ nsresult FetchDriver::HttpFetch(
 
   
   
-  if (IsBlobURI(uri)) {
-    ErrorResult result;
-    nsAutoCString range;
-    mRequest->Headers()->Get("Range"_ns, range, result);
-    MOZ_ASSERT(!result.Failed());
-    if (!range.IsVoid()) {
-      rv = NS_SetChannelContentRangeForBlobURI(chan, uri, range);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    }
-  }
-
-  
-  
   
   if (!aPreferredAlternativeDataType.IsEmpty()) {
     nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(chan);
@@ -1073,30 +1057,8 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
     }
     MOZ_ASSERT(!result.Failed());
   } else {
-    
-    
-    nsAutoCString contentRange(VoidCString());
-    nsCOMPtr<nsIURI> uri;
-    channel->GetURI(getter_AddRefs(uri));
-    if (IsBlobURI(uri)) {
-      nsBaseChannel* bchan = static_cast<nsBaseChannel*>(channel.get());
-      MOZ_ASSERT(bchan);
-      Maybe<nsBaseChannel::ContentRange> range = bchan->GetContentRange();
-      if (range.isSome()) {
-        range->AsHeader(contentRange);
-      }
-    }
-
-    response = MakeSafeRefPtr<InternalResponse>(
-        contentRange.IsVoid() ? 200 : 206,
-        contentRange.IsVoid() ? "OK"_ns : "Partial Content"_ns,
-        mRequest->GetCredentialsMode());
-
-    IgnoredErrorResult result;
-    if (!contentRange.IsVoid()) {
-      response->Headers()->Append("Content-Range"_ns, contentRange, result);
-      MOZ_ASSERT(!result.Failed());
-    }
+    response = MakeSafeRefPtr<InternalResponse>(200, "OK"_ns,
+                                                mRequest->GetCredentialsMode());
 
     if (!contentType.IsEmpty()) {
       nsAutoCString contentCharset;
@@ -1106,6 +1068,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
       }
     }
 
+    IgnoredErrorResult result;
     response->Headers()->Append("Content-Type"_ns, contentType, result);
     MOZ_ASSERT(!result.Failed());
 
