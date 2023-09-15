@@ -378,9 +378,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               constructCommonInboundRtpStats(local);
               local.mJitter.Construct(audioStats->jitter_ms / 1000.0);
               local.mPacketsLost.Construct(audioStats->packets_lost);
-              local.mPacketsReceived.Construct(audioStats->packets_rcvd);
+              local.mPacketsReceived.Construct(audioStats->packets_received);
               local.mPacketsDiscarded.Construct(audioStats->packets_discarded);
-              local.mBytesReceived.Construct(audioStats->payload_bytes_rcvd);
+              local.mBytesReceived.Construct(audioStats->payload_bytes_received);
               
               
               
@@ -409,7 +409,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                         .ToDom());
               }
               local.mHeaderBytesReceived.Construct(
-                  audioStats->header_and_padding_bytes_rcvd);
+                  audioStats->header_and_padding_bytes_received);
               local.mFecPacketsReceived.Construct(
                   audioStats->fec_packets_received);
               local.mFecPacketsDiscarded.Construct(
