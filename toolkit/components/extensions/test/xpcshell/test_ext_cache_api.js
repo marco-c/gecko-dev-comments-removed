@@ -20,6 +20,19 @@ server.registerPathHandler("/dummy", (request, response) => {
   response.write("test_ext_cache_api.js");
 });
 
+add_setup(() => {
+  
+  
+  
+  
+  
+  
+  if (AppConstants.platform == "android" && Services.io.offline) {
+    info("Services.io.offline is set to true, flipping it to false");
+    Services.io.offline = false;
+  }
+});
+
 add_task(async function test_cache_api_http_resource_allowed() {
   async function background() {
     try {
