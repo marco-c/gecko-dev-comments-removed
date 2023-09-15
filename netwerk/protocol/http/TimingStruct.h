@@ -21,6 +21,7 @@ struct TimingStruct {
   TimeStamp requestStart;
   TimeStamp responseStart;
   TimeStamp responseEnd;
+  TimeStamp transactionPending;
 };
 
 struct ResourceTimingStruct : TimingStruct {
@@ -29,15 +30,12 @@ struct ResourceTimingStruct : TimingStruct {
   TimeStamp redirectEnd;
   uint64_t transferSize;
   uint64_t encodedBodySize;
-  nsCString protocolVersion;
 
   
   
   
   TimeStamp cacheReadStart;
   TimeStamp cacheReadEnd;
-
-  TimeStamp connectionPending;
 };
 
 }  

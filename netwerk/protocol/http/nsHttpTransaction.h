@@ -111,22 +111,22 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void SetPendingTime(bool now = true) {
     mozilla::MutexAutoLock lock(mLock);
-    if (!now && !mPendingTime.IsNull()) {
+    if (!now && !mTimings.transactionPending.IsNull()) {
       
       
       
-      mPendingDurationTime = TimeStamp::Now() - mPendingTime;
+      mPendingDurationTime = TimeStamp::Now() - mTimings.transactionPending;
     }
     
     
     
-    if (mPendingTime.IsNull()) {
-      mPendingTime = now ? TimeStamp::Now() : TimeStamp();
+    if (mTimings.transactionPending.IsNull()) {
+      mTimings.transactionPending = now ? TimeStamp::Now() : TimeStamp();
     }
   }
   TimeStamp GetPendingTime() override {
     mozilla::MutexAutoLock lock(mLock);
-    return mPendingTime;
+    return mTimings.transactionPending;
   }
 
   
@@ -477,7 +477,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   Atomic<bool> mRestarted{false};
 
   
-  TimeStamp mPendingTime;
   TimeDuration mPendingDurationTime;
 
   uint64_t mBrowserId{0};

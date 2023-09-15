@@ -447,6 +447,7 @@ static void TimingStructArgsToTimingsStruct(const TimingStructArgs& aArgs,
   aTimings.requestStart = aArgs.requestStart();
   aTimings.responseStart = aArgs.responseStart();
   aTimings.responseEnd = aArgs.responseEnd();
+  aTimings.transactionPending = aArgs.transactionPending();
 }
 
 void HttpTransactionParent::DoOnStartRequest(
@@ -907,9 +908,8 @@ void HttpTransactionParent::SetIsForWebTransport(bool SetIsForWebTransport) {
   
 }
 
-
 mozilla::TimeStamp HttpTransactionParent::GetPendingTime() {
-  return TimeStamp::Now();
+  return mTimings.transactionPending;
 }
 
 }  
