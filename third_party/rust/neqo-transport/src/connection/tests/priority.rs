@@ -4,16 +4,18 @@
 
 
 
-use super::super::{Connection, Error, Output};
-use super::{connect, default_client, default_server, fill_cwnd, maybe_authenticate};
-use crate::addr_valid::{AddressValidation, ValidateAddress};
-use crate::send_stream::{RetransmissionPriority, TransmissionPriority};
-use crate::{ConnectionEvent, StreamId, StreamType};
+use super::{
+    super::{Connection, Error, Output},
+    connect, default_client, default_server, fill_cwnd, maybe_authenticate,
+};
+use crate::{
+    addr_valid::{AddressValidation, ValidateAddress},
+    send_stream::{RetransmissionPriority, TransmissionPriority},
+    ConnectionEvent, StreamId, StreamType,
+};
 
 use neqo_common::event::Provider;
-use std::cell::RefCell;
-use std::mem;
-use std::rc::Rc;
+use std::{cell::RefCell, mem, rc::Rc};
 use test_fixture::{self, now};
 
 const BLOCK_SIZE: usize = 4_096;
@@ -169,7 +171,7 @@ fn repairing_loss() {
 
     
     let ack = server.process_output(now).dgram();
-    let _ = server.events().count(); 
+    _ = server.events().count(); 
 
     let id_normal = client.stream_create(StreamType::UniDi).unwrap();
     fill_stream(&mut client, id_normal);
@@ -181,7 +183,7 @@ fn repairing_loss() {
     
     
     for e in server.events() {
-        println!("Event: {:?}", e);
+        println!("Event: {e:?}");
         if let ConnectionEvent::RecvStreamReadable { stream_id } = e {
             assert_eq!(stream_id, id_low);
         }

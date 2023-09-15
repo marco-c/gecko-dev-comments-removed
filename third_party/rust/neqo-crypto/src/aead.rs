@@ -4,17 +4,22 @@
 
 
 
-use crate::constants::{Cipher, Version};
-use crate::err::Res;
-use crate::p11::{PK11SymKey, SymKey};
-use crate::ssl;
-use crate::ssl::{PRUint16, PRUint64, PRUint8, SSLAeadContext};
+use crate::{
+    constants::{Cipher, Version},
+    err::Res,
+    experimental_api,
+    p11::{PK11SymKey, SymKey},
+    scoped_ptr,
+    ssl::{self, PRUint16, PRUint64, PRUint8, SSLAeadContext},
+};
 
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-use std::os::raw::{c_char, c_uint};
-use std::ptr::null_mut;
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt,
+    ops::{Deref, DerefMut},
+    os::raw::{c_char, c_uint},
+    ptr::null_mut,
+};
 
 experimental_api!(SSL_MakeAead(
     version: PRUint16,
@@ -49,16 +54,22 @@ experimental_api!(SSL_AeadDecrypt(
 experimental_api!(SSL_DestroyAead(ctx: *mut SSLAeadContext));
 scoped_ptr!(AeadContext, SSLAeadContext, SSL_DestroyAead);
 
-pub struct Aead {
+pub struct RealAead {
     ctx: AeadContext,
 }
 
-impl Aead {
+impl RealAead {
     
     
     
     
-    pub fn new(version: Version, cipher: Cipher, secret: &SymKey, prefix: &str) -> Res<Self> {
+    pub fn new(
+        _fuzzing: bool,
+        version: Version,
+        cipher: Cipher,
+        secret: &SymKey,
+        prefix: &str,
+    ) -> Res<Self> {
         let s: *mut PK11SymKey = **secret;
         unsafe { Self::from_raw(version, cipher, s, prefix) }
     }
@@ -154,7 +165,7 @@ impl Aead {
     }
 }
 
-impl fmt::Debug for Aead {
+impl fmt::Debug for RealAead {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[AEAD Context]")
     }

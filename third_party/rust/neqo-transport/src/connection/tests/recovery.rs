@@ -788,7 +788,7 @@ fn fast_pto_persistent_congestion() {
     
     
     let pc_interval = expected_pto(DEFAULT_RTT) * 3;
-    println!("pc_interval {:?}", pc_interval);
+    println!("pc_interval {pc_interval:?}");
     let _drop1 = send_something(&mut client, now);
 
     

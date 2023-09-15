@@ -31,8 +31,8 @@ use neqo_common::{qdebug, qerror, qinfo, qtrace, qwarn, Decoder, Header, Message
 use neqo_qpack::decoder::QPackDecoder;
 use neqo_qpack::encoder::QPackEncoder;
 use neqo_transport::{
-    AppError, Connection, ConnectionError, DatagramTracking, State, StreamId, StreamType,
-    ZeroRttState,
+    streams::SendOrder, AppError, Connection, ConnectionError, DatagramTracking, State, StreamId,
+    StreamType, ZeroRttState,
 };
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap};
@@ -735,6 +735,14 @@ impl Http3Connection {
                     conn.stream_stop_sending(stream_id, Error::HttpStreamCreation.code())?;
                     return Ok(ReceiveOutput::NoOutput);
                 }
+                
+                conn.stream_fairness(stream_id, true).ok();
+                qinfo!(
+                    [self],
+                    "A new WebTransport stream {} for session {}.",
+                    stream_id,
+                    session_id
+                );
             }
             NewStreamType::Unknown => {
                 conn.stream_stop_sending(stream_id, Error::HttpStreamCreation.code())?;
@@ -995,6 +1003,32 @@ impl Http3Connection {
         Ok(())
     }
 
+    
+    
+    
+    pub fn stream_set_sendorder(
+        conn: &mut Connection,
+        stream_id: StreamId,
+        sendorder: Option<SendOrder>,
+    ) -> Res<()> {
+        conn.stream_sendorder(stream_id, sendorder)
+            .map_err(|_| Error::InvalidStreamId)
+    }
+
+    
+    
+    
+    
+    
+    pub fn stream_set_fairness(
+        conn: &mut Connection,
+        stream_id: StreamId,
+        fairness: bool,
+    ) -> Res<()> {
+        conn.stream_fairness(stream_id, fairness)
+            .map_err(|_| Error::InvalidStreamId)
+    }
+
     pub fn cancel_fetch(
         &mut self,
         stream_id: StreamId,
@@ -1238,6 +1272,9 @@ impl Http3Connection {
         let stream_id = conn
             .stream_create(stream_type)
             .map_err(|e| Error::map_stream_create_errors(&e))?;
+        
+        
+        conn.stream_fairness(stream_id, true).unwrap();
 
         self.webtransport_create_stream_internal(
             wt,
