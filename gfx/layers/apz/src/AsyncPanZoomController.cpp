@@ -993,7 +993,7 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
   ScrollDirection direction = *scrollbarData.mDirection;
 
   bool isMouseAwayFromThumb = false;
-  if (int snapMultiplier = StaticPrefs::slider_snapMultiplier_AtStartup()) {
+  if (int snapMultiplier = StaticPrefs::slider_snapMultiplier()) {
     
     
     
