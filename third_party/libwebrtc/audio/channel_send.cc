@@ -928,7 +928,7 @@ int64_t ChannelSend::GetRTT() const {
 
   
   
-  return report_blocks.front().last_rtt_ms();
+  return report_blocks.front().last_rtt().ms();
 }
 
 void ChannelSend::SetFrameEncryptor(

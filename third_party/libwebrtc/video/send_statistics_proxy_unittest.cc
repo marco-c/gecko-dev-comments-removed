@@ -194,14 +194,14 @@ TEST_F(SendStatisticsProxyTest, ReportBlockDataObserver) {
   for (uint32_t ssrc : config_.rtp.ssrcs) {
     
     uint32_t offset = ssrc * 4;
-    RTCPReportBlock report_block;
-    report_block.source_ssrc = ssrc;
-    report_block.packets_lost = offset;
-    report_block.extended_highest_sequence_number = offset + 1;
-    report_block.fraction_lost = offset + 2;
-    report_block.jitter = offset + 3;
+    rtcp::ReportBlock report_block;
+    report_block.SetMediaSsrc(ssrc);
+    report_block.SetCumulativeLost(offset);
+    report_block.SetExtHighestSeqNum(offset + 1);
+    report_block.SetFractionLost(offset + 2);
+    report_block.SetJitter(offset + 3);
     ReportBlockData data;
-    data.SetReportBlock(report_block, 0);
+    data.SetReportBlock(0, report_block, Timestamp::Zero());
     expected_.substreams[ssrc].report_block_data = data;
 
     callback->OnReportBlockDataUpdated(data);
@@ -209,14 +209,14 @@ TEST_F(SendStatisticsProxyTest, ReportBlockDataObserver) {
   for (uint32_t ssrc : config_.rtp.rtx.ssrcs) {
     
     uint32_t offset = ssrc * 4;
-    RTCPReportBlock report_block;
-    report_block.source_ssrc = ssrc;
-    report_block.packets_lost = offset;
-    report_block.extended_highest_sequence_number = offset + 1;
-    report_block.fraction_lost = offset + 2;
-    report_block.jitter = offset + 3;
+    rtcp::ReportBlock report_block;
+    report_block.SetMediaSsrc(ssrc);
+    report_block.SetCumulativeLost(offset);
+    report_block.SetExtHighestSeqNum(offset + 1);
+    report_block.SetFractionLost(offset + 2);
+    report_block.SetJitter(offset + 3);
     ReportBlockData data;
-    data.SetReportBlock(report_block, 0);
+    data.SetReportBlock(0, report_block, Timestamp::Zero());
     expected_.substreams[ssrc].report_block_data = data;
 
     callback->OnReportBlockDataUpdated(data);
@@ -2311,10 +2311,10 @@ TEST_F(SendStatisticsProxyTest, NoSubstreams) {
       1;
   
   ReportBlockDataObserver* rtcp_callback = statistics_proxy_.get();
-  RTCPReportBlock report_block;
-  report_block.source_ssrc = excluded_ssrc;
+  rtcp::ReportBlock report_block;
+  report_block.SetMediaSsrc(excluded_ssrc);
   ReportBlockData data;
-  data.SetReportBlock(report_block, 0);
+  data.SetReportBlock(0, report_block, Timestamp::Zero());
   rtcp_callback->OnReportBlockDataUpdated(data);
 
   
@@ -2363,10 +2363,10 @@ TEST_F(SendStatisticsProxyTest, EncodedResolutionTimesOut) {
   
   
   ReportBlockDataObserver* rtcp_callback = statistics_proxy_.get();
-  RTCPReportBlock report_block;
-  report_block.source_ssrc = config_.rtp.ssrcs[0];
+  rtcp::ReportBlock report_block;
+  report_block.SetMediaSsrc(config_.rtp.ssrcs[0]);
   ReportBlockData data;
-  data.SetReportBlock(report_block, 0);
+  data.SetReportBlock(0, report_block, Timestamp::Zero());
   rtcp_callback->OnReportBlockDataUpdated(data);
 
   
