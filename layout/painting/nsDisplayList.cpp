@@ -5166,10 +5166,10 @@ bool nsDisplayOwnLayer::IsScrollbarContainer() const {
 }
 
 bool nsDisplayOwnLayer::IsRootScrollbarContainer() const {
-  if (!IsScrollbarContainer()) {
-    return false;
-  }
+  return IsScrollbarContainer() && IsScrollbarLayerForRoot();
+}
 
+bool nsDisplayOwnLayer::IsScrollbarLayerForRoot() const {
   return mFrame->PresContext()->IsRootContentDocumentCrossProcess() &&
          mScrollbarData.mTargetViewId ==
              nsLayoutUtils::ScrollIdForRootScrollFrame(mFrame->PresContext());
@@ -5307,8 +5307,12 @@ bool nsDisplayOwnLayer::UpdateScrollData(WebRenderScrollData* aData,
     
     
     
+    const float resolution =
+        IsScrollbarLayerForRoot()
+            ? 1.0f
+            : mFrame->PresContext()->PresShell()->GetCumulativeResolution();
     LayerIntRect layerBounds =
-        RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
+        RoundedOut(bounds * LayoutDeviceToLayerScale(resolution));
     aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
   }
   return true;
