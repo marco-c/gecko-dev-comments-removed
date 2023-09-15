@@ -2710,6 +2710,22 @@ set_define("MOZ_NEW_NOTIFICATION_STORE", True, when=new_notification_store)
 
 
 
+option(
+    "--enable-disk-remnant-avoidance",
+    help="Prevent persistence of auxiliary files on application close",
+)
+
+
+set_config(
+    "MOZ_AVOID_DISK_REMNANT_ON_CLOSE",
+    True,
+    when="--enable-disk-remnant-avoidance",
+)
+
+
+
+
+
 
 @depends(target)
 def glean_android(target):
