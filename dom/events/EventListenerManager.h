@@ -271,9 +271,6 @@ class EventListenerManager final : public EventListenerManagerBase {
       }
     }
 
-    MOZ_ALWAYS_INLINE bool MatchesEventMessage(
-        const WidgetEvent* aEvent, EventMessage aEventMessage) const;
-
     MOZ_ALWAYS_INLINE bool MatchesEventGroup(const WidgetEvent* aEvent) const {
       return mFlags.mInSystemGroup == aEvent->mFlags.mInSystemGroup;
     }
@@ -289,6 +286,66 @@ class EventListenerManager final : public EventListenerManagerBase {
         const WidgetEvent* aEvent) const {
       return aEvent->IsTrusted() || mFlags.mAllowUntrustedEvents;
     }
+  };
+
+  
+
+
+  struct ListenerArray final : public nsAutoTObserverArray<Listener, 1> {
+    NS_INLINE_DECL_REFCOUNTING(EventListenerManager::ListenerArray);
+    size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
+   protected:
+    ~ListenerArray() = default;
+  };
+
+  
+
+
+
+  struct EventListenerMapEntry {
+    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
+
+    
+    RefPtr<nsAtom> mTypeAtom;
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<ListenerArray> mListeners;
+  };
+
+  
+
+
+  struct EventListenerMap {
+    bool IsEmpty() const { return mEntries.IsEmpty(); }
+    void Clear() { mEntries.Clear(); }
+
+    Maybe<size_t> EntryIndexForType(nsAtom* aTypeAtom) const;
+    Maybe<size_t> EntryIndexForAllEvents() const;
+
+    
+    RefPtr<ListenerArray> GetListenersForType(nsAtom* aTypeAtom) const;
+    RefPtr<ListenerArray> GetListenersForAllEvents() const;
+
+    
+    RefPtr<ListenerArray> GetOrCreateListenersForType(nsAtom* aTypeAtom);
+    RefPtr<ListenerArray> GetOrCreateListenersForAllEvents();
+
+    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
+
+    
+    
+    
+    
+    
+    
+    AutoTArray<EventListenerMapEntry, 2> mEntries;
   };
 
   explicit EventListenerManager(dom::EventTarget* aTarget);
@@ -405,7 +462,7 @@ class EventListenerManager final : public EventListenerManagerBase {
       return;
     }
 
-    if (mListeners.IsEmpty() || aEvent->PropagationStopped()) {
+    if (mListenerMap.IsEmpty() || aEvent->PropagationStopped()) {
       return;
     }
 
@@ -513,7 +570,7 @@ class EventListenerManager final : public EventListenerManagerBase {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  uint32_t ListenerCount() const { return mListeners.Length(); }
+  uint32_t ListenerCount() const;
 
   void MarkForCC();
 
@@ -542,6 +599,17 @@ class EventListenerManager final : public EventListenerManagerBase {
                            dom::Event** aDOMEvent,
                            dom::EventTarget* aCurrentTarget,
                            nsEventStatus* aEventStatus, bool aItemInShadowTree);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  bool HandleEventWithListenerArray(
+      ListenerArray* aListeners, nsAtom* aTypeAtom, EventMessage aEventMessage,
+      nsPresContext* aPresContext, WidgetEvent* aEvent, dom::Event** aDOMEvent,
+      dom::EventTarget* aCurrentTarget, bool aItemInShadowTree);
 
   
 
@@ -588,7 +656,7 @@ class EventListenerManager final : public EventListenerManagerBase {
   
 
 
-  Listener* FindEventHandler(EventMessage aEventMessage, nsAtom* aTypeAtom);
+  Listener* FindEventHandler(nsAtom* aTypeAtom);
 
   
 
@@ -699,7 +767,7 @@ class EventListenerManager final : public EventListenerManagerBase {
 
   void MaybeMarkPassive(EventMessage aMessage, EventListenerFlags& aFlags);
 
-  nsAutoTObserverArray<Listener, 2> mListeners;
+  EventListenerMap mListenerMap;
   dom::EventTarget* MOZ_NON_OWNING_REF mTarget;
   RefPtr<nsAtom> mNoListenerForEventAtom;
 
