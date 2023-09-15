@@ -173,6 +173,18 @@ TEST_F(ScreenCapturerTest, UseSharedBuffers) {
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
 }
 
+TEST_F(ScreenCapturerTest, GdiIsDefault) {
+  std::unique_ptr<DesktopFrame> frame;
+  EXPECT_CALL(callback_,
+              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .WillOnce(SaveUniquePtrArg(&frame));
+
+  capturer_->Start(&callback_);
+  capturer_->CaptureFrame();
+  ASSERT_TRUE(frame);
+  EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinGdi);
+}
+
 TEST_F(ScreenCapturerTest, UseMagnifier) {
   CreateMagnifierCapturer();
   std::unique_ptr<DesktopFrame> frame;
@@ -183,6 +195,11 @@ TEST_F(ScreenCapturerTest, UseMagnifier) {
   capturer_->Start(&callback_);
   capturer_->CaptureFrame();
   ASSERT_TRUE(frame);
+  
+  
+  EXPECT_TRUE(frame->capturer_id() ==
+                  DesktopCapturerId::kScreenCapturerWinMagnifier ||
+              frame->capturer_id() == DesktopCapturerId::kScreenCapturerWinGdi);
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
@@ -198,6 +215,33 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturer) {
   capturer_->Start(&callback_);
   capturer_->CaptureFrame();
   ASSERT_TRUE(frame);
+  EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinDirectx);
+}
+
+TEST_F(ScreenCapturerTest, DirectxPrecedesMagnifier) {
+  
+  if (!CreateDirectxCapturer()) {
+    return;
+  }
+  CreateMagnifierCapturer();
+  EXPECT_TRUE(capturer_);
+
+  
+  
+  DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
+  options.set_allow_directx_capturer(true);
+  options.set_allow_use_magnification_api(true);
+  capturer_ = DesktopCapturer::CreateScreenCapturer(options);
+
+  std::unique_ptr<DesktopFrame> frame;
+  EXPECT_CALL(callback_,
+              OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
+      .WillOnce(SaveUniquePtrArg(&frame));
+
+  capturer_->Start(&callback_);
+  capturer_->CaptureFrame();
+  ASSERT_TRUE(frame);
+  EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinDirectx);
 }
 
 TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
@@ -217,6 +261,7 @@ TEST_F(ScreenCapturerTest, UseDirectxCapturerWithSharedBuffers) {
   ASSERT_TRUE(frame);
   ASSERT_TRUE(frame->shared_memory());
   EXPECT_EQ(frame->shared_memory()->id(), kTestSharedMemoryId);
+  EXPECT_EQ(frame->capturer_id(), DesktopCapturerId::kScreenCapturerWinDirectx);
 }
 
 #endif  

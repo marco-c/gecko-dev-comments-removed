@@ -31,12 +31,20 @@ std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinDirectx() {
   return capturer;
 }
 
+std::unique_ptr<DesktopCapturer> CreateScreenCapturerWinMagnifier() {
+  std::unique_ptr<DesktopCapturer> capturer(new ScreenCapturerWinMagnifier());
+  return capturer;
+}
+
 }  
 
 
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
+  
   std::unique_ptr<DesktopCapturer> capturer(new ScreenCapturerWinGdi(options));
+
+  
   if (options.allow_directx_capturer()) {
     
     
@@ -44,18 +52,18 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     if (ScreenCapturerWinDirectx::IsSupported()) {
       capturer.reset(new FallbackDesktopCapturerWrapper(
           CreateScreenCapturerWinDirectx(), std::move(capturer)));
+      return capturer;
     }
-  }
-
-  if (options.allow_use_magnification_api()) {
+  } else if (options.allow_use_magnification_api()) {
     
     
     
     capturer.reset(new FallbackDesktopCapturerWrapper(
-        std::unique_ptr<DesktopCapturer>(new ScreenCapturerWinMagnifier()),
-        std::move(capturer)));
+        CreateScreenCapturerWinMagnifier(), std::move(capturer)));
+    return capturer;
   }
 
+  
   return capturer;
 }
 
