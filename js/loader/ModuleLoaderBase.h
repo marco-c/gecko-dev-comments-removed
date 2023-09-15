@@ -388,6 +388,8 @@ class ModuleLoaderBase : public nsISupports {
   void StartFetchingModuleAndDependencies(ModuleLoadRequest* aParent,
                                           nsIURI* aURI);
 
+  void InstantiateAndEvaluateDynamicImport(ModuleLoadRequest* aRequest);
+
   
 
 
