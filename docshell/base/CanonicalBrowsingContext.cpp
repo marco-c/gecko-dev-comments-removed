@@ -331,8 +331,13 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetDisplayMode(GetDisplayMode());
   txn.SetForceDesktopViewport(GetForceDesktopViewport());
   txn.SetIsUnderHiddenEmbedderElement(GetIsUnderHiddenEmbedderElement());
-  txn.SetFullZoom(GetFullZoom());
-  txn.SetTextZoom(GetTextZoom());
+
+  
+  
+  if (!StaticPrefs::browser_zoom_siteSpecific()) {
+    txn.SetFullZoom(GetFullZoom());
+    txn.SetTextZoom(GetTextZoom());
+  }
 
   
   
