@@ -15,8 +15,7 @@ EXPORTS.theora += [
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkcodecs'
-NoVisibilityFlags()
+FINAL_LIBRARY = 'gkmedias'
 
 
 DEFINES['THEORA_DISABLE_ENCODE'] = True

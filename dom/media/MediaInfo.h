@@ -37,7 +37,7 @@ class MetadataTag {
   }
 };
 
-using MetadataTags = nsTHashMap<nsCStringHashKey, nsCString>;
+typedef nsTHashMap<nsCStringHashKey, nsCString> MetadataTags;
 
 
 
@@ -128,7 +128,8 @@ struct Mp3CodecSpecificData {
 
 struct OpusCodecSpecificData {
   bool operator==(const OpusCodecSpecificData& rhs) const {
-    return mContainerCodecDelayFrames == rhs.mContainerCodecDelayFrames &&
+    return mContainerCodecDelayMicroSeconds ==
+               rhs.mContainerCodecDelayMicroSeconds &&
            *mHeadersBinaryBlob == *rhs.mHeadersBinaryBlob;
   }
   
@@ -139,7 +140,7 @@ struct OpusCodecSpecificData {
   
   
   
-  int64_t mContainerCodecDelayFrames{-1};
+  int64_t mContainerCodecDelayMicroSeconds{-1};
 
   
   
@@ -400,10 +401,10 @@ class VideoInfo : public TrackInfo {
       return imageRect;
     }
 
-    imageRect.x = AssertedCast<int>((imageRect.x * aWidth) / mImage.width);
-    imageRect.y = AssertedCast<int>((imageRect.y * aHeight) / mImage.height);
-    imageRect.SetWidth(AssertedCast<int>(w));
-    imageRect.SetHeight(AssertedCast<int>(h));
+    imageRect.x = (imageRect.x * aWidth) / mImage.width;
+    imageRect.y = (imageRect.y * aHeight) / mImage.height;
+    imageRect.SetWidth(w);
+    imageRect.SetHeight(h);
     return imageRect;
   }
 
@@ -540,7 +541,7 @@ class EncryptionInfo {
     
     CopyableTArray<uint8_t> mInitData;
   };
-  using InitDatas = CopyableTArray<InitData>;
+  typedef CopyableTArray<InitData> InitDatas;
 
   
   bool IsEncrypted() const { return mEncrypted; }

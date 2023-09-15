@@ -588,7 +588,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegVideoDecoder<LIBAV_VER>::Init() {
   }
 #endif  
 
-  rv = InitDecoder(nullptr);
+  rv = InitDecoder();
   if (NS_SUCCEEDED(rv)) {
     return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
   }

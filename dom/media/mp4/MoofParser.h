@@ -235,7 +235,7 @@ struct SampleDescriptionEntry {
 
 struct ParseAllTracks {};
 
-using TrackParseMode = Variant<ParseAllTracks, uint32_t>;
+typedef Variant<ParseAllTracks, uint32_t> TrackParseMode;
 
 class Moof final : public Atom {
  public:

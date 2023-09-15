@@ -437,8 +437,8 @@ enum class StringListRangeEmptyItems {
 template <typename String,
           StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip>
 class StringListRange {
-  using CharType = typename String::char_type;
-  using Pointer = const CharType*;
+  typedef typename String::char_type CharType;
+  typedef const CharType* Pointer;
 
  public:
   
@@ -453,7 +453,7 @@ class StringListRange {
     }
     
     
-    using DereferencedType = decltype(Substring(Pointer(), Pointer()));
+    typedef decltype(Substring(Pointer(), Pointer())) DereferencedType;
     DereferencedType operator*() { return Substring(mStart, mEnd); }
 
    private:

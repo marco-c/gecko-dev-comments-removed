@@ -472,17 +472,6 @@ typedef struct AVFrame {
     
 
 
-
-
-
-
-
-
-
-
-
-
-
     void *opaque;
 
     
@@ -622,17 +611,12 @@ typedef struct AVFrame {
 
     int64_t best_effort_timestamp;
 
-#if FF_API_FRAME_PKT
     
 
 
 
 
-
-
-    attribute_deprecated
     int64_t pkt_pos;
-#endif
 
 #if FF_API_PKT_DURATION
     
@@ -678,7 +662,6 @@ typedef struct AVFrame {
     int channels;
 #endif
 
-#if FF_API_FRAME_PKT
     
 
 
@@ -686,11 +669,7 @@ typedef struct AVFrame {
 
 
 
-
-
-    attribute_deprecated
     int pkt_size;
-#endif
 
     
 
@@ -699,11 +678,6 @@ typedef struct AVFrame {
     AVBufferRef *hw_frames_ctx;
 
     
-
-
-
-
-
 
 
 

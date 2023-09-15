@@ -32,7 +32,7 @@ class OpusParser {
   int mChannelMapping;  
   int mStreams;         
   int mCoupledStreams;  
-  unsigned char mMappingTable[255] = {};  
+  unsigned char mMappingTable[255];  
 
   
   

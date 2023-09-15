@@ -25,14 +25,12 @@ class FFmpegAudioDecoder<LIBAV_VER>
     : public FFmpegDataDecoder<LIBAV_VER>,
       public DecoderDoctorLifeLogger<FFmpegAudioDecoder<LIBAV_VER>> {
  public:
-  FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
-                     const CreateDecoderParams& aDecoderParams);
+  FFmpegAudioDecoder(FFmpegLibWrapper* aLib, const AudioInfo& aConfig);
   virtual ~FFmpegAudioDecoder();
 
   RefPtr<InitPromise> Init() override;
   void InitCodecContext() MOZ_REQUIRES(sMutex) override;
-  static AVCodecID GetCodecId(const nsACString& aMimeType,
-                              const AudioInfo& aInfo);
+  static AVCodecID GetCodecId(const nsACString& aMimeType);
   nsCString GetDescriptionName() const override {
 #ifdef USING_MOZFFVPX
     return "ffvpx audio decoder"_ns;
@@ -45,15 +43,21 @@ class FFmpegAudioDecoder<LIBAV_VER>
  private:
   MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                        bool* aGotFrame, DecodedData& aResults) override;
-  MediaResult DecodeUsingFFmpeg(AVPacket* aPacket, bool& aDecoded,
-                                MediaRawData* aSample, DecodedData& aResults,
-                                bool* aGotFrame);
-  MediaResult PostProcessOutput(bool aDecoded, MediaRawData* aSample,
-                                DecodedData& aResults, bool* aGotFrame,
-                                int32_t aSubmitted);
-  const AudioInfo mAudioInfo;
   
-  bool mDefaultPlaybackDeviceMono;
+  
+  uint64_t Padding() const;
+  
+  
+  
+  uint64_t TotalFrames() const;
+  
+  
+  uint32_t mEncoderDelay = 0;
+  
+  
+  
+  
+  uint64_t mEncoderPaddingOrTotalFrames = 0;
 };
 
 }  

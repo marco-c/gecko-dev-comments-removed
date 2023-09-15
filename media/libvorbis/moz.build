@@ -48,16 +48,10 @@ if CONFIG['OS_ARCH'] == 'AIX':
 if CONFIG['OS_ARCH'] == 'SunOS':
     DEFINES['HAVE_ALLOCA_H'] = True
 
-if CONFIG["OS_ARCH"] == "Linux":
-    OS_LIBS += [
-        "m",
-    ]
-
 
 AllowCompilerWarnings()
 
-FINAL_LIBRARY = 'gkcodecs'
-NoVisibilityFlags()
+FINAL_LIBRARY = 'gkmedias'
 
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):

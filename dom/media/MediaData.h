@@ -59,11 +59,10 @@ class TrackInfoSharedPtr;
 
 
 
-class InflatableShortBuffer;
+
 template <typename Type, int Alignment = 32>
 class AlignedBuffer {
  public:
-  friend InflatableShortBuffer;
   AlignedBuffer()
       : mData(nullptr), mLength(0), mBuffer(nullptr), mCapacity(0) {}
 
@@ -84,7 +83,7 @@ class AlignedBuffer {
   AlignedBuffer(const AlignedBuffer& aOther)
       : AlignedBuffer(aOther.Data(), aOther.Length()) {}
 
-  AlignedBuffer(AlignedBuffer&& aOther) noexcept
+  AlignedBuffer(AlignedBuffer&& aOther)
       : mData(aOther.mData),
         mLength(aOther.mLength),
         mBuffer(std::move(aOther.mBuffer)),
@@ -94,7 +93,7 @@ class AlignedBuffer {
     aOther.mCapacity = 0;
   }
 
-  AlignedBuffer& operator=(AlignedBuffer&& aOther) noexcept {
+  AlignedBuffer& operator=(AlignedBuffer&& aOther) {
     this->~AlignedBuffer();
     new (this) AlignedBuffer(std::move(aOther));
     return *this;
@@ -247,41 +246,10 @@ class AlignedBuffer {
   size_t mCapacity{};  
 };
 
-using AlignedByteBuffer = AlignedBuffer<uint8_t>;
-using AlignedFloatBuffer = AlignedBuffer<float>;
-using AlignedShortBuffer = AlignedBuffer<int16_t>;
-using AlignedAudioBuffer = AlignedBuffer<AudioDataValue>;
-
-
-
-
-
-class InflatableShortBuffer {
- public:
-  explicit InflatableShortBuffer(size_t aElementCount)
-      : mBuffer(aElementCount * 2) {}
-  AlignedFloatBuffer Inflate() {
-    
-    
-    
-    float* output = reinterpret_cast<float*>(mBuffer.mData);
-    for (size_t i = Length() - 1; i--;) {
-      output[i] = AudioSampleToFloat(mBuffer.mData[i]);
-    }
-    AlignedFloatBuffer rv;
-    rv.mBuffer = std::move(mBuffer.mBuffer);
-    rv.mCapacity = mBuffer.mCapacity;
-    rv.mLength = Length();
-    rv.mData = output;
-    return rv;
-  }
-  size_t Length() const { return mBuffer.mLength / 2; }
-  int16_t* get() const { return mBuffer.get(); }
-  explicit operator bool() const { return mBuffer.mData != nullptr; }
-
- protected:
-  AlignedShortBuffer mBuffer;
-};
+typedef AlignedBuffer<uint8_t> AlignedByteBuffer;
+typedef AlignedBuffer<float> AlignedFloatBuffer;
+typedef AlignedBuffer<int16_t> AlignedShortBuffer;
+typedef AlignedBuffer<AudioDataValue> AlignedAudioBuffer;
 
 
 class MediaData {
@@ -448,16 +416,16 @@ class VideoInfo;
 
 class VideoData : public MediaData {
  public:
-  using IntRect = gfx::IntRect;
-  using IntSize = gfx::IntSize;
-  using ColorDepth = gfx::ColorDepth;
-  using ColorRange = gfx::ColorRange;
-  using YUVColorSpace = gfx::YUVColorSpace;
-  using ColorSpace2 = gfx::ColorSpace2;
-  using ChromaSubsampling = gfx::ChromaSubsampling;
-  using ImageContainer = layers::ImageContainer;
-  using Image = layers::Image;
-  using PlanarYCbCrImage = layers::PlanarYCbCrImage;
+  typedef gfx::IntRect IntRect;
+  typedef gfx::IntSize IntSize;
+  typedef gfx::ColorDepth ColorDepth;
+  typedef gfx::ColorRange ColorRange;
+  typedef gfx::YUVColorSpace YUVColorSpace;
+  typedef gfx::ColorSpace2 ColorSpace2;
+  typedef gfx::ChromaSubsampling ChromaSubsampling;
+  typedef layers::ImageContainer ImageContainer;
+  typedef layers::Image Image;
+  typedef layers::PlanarYCbCrImage PlanarYCbCrImage;
 
   static const Type sType = Type::VIDEO_DATA;
   static const char* sTypeName;
@@ -475,7 +443,7 @@ class VideoData : public MediaData {
       uint32_t mSkip;
     };
 
-    Plane mPlanes[3]{};
+    Plane mPlanes[3];
     YUVColorSpace mYUVColorSpace = YUVColorSpace::Identity;
     ColorSpace2 mColorPrimaries = ColorSpace2::UNKNOWN;
     ColorDepth mColorDepth = ColorDepth::COLOR_8;
@@ -688,6 +656,10 @@ class MediaRawData final : public MediaData {
   
   
   bool mEOS = false;
+
+  
+  
+  uint32_t mDiscardPadding = 0;
 
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
