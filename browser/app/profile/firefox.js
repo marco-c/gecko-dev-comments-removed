@@ -395,7 +395,7 @@ pref("browser.urlbar.maxHistoricalSearchSuggestions", 2);
 
 
 pref("browser.urlbar.suggest.bookmark",             true);
-pref("browser.urlbar.suggest.clipboard",            false);
+pref("browser.urlbar.suggest.clipboard",            true);
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.remotetab",            true);
@@ -425,6 +425,9 @@ pref("browser.urlbar.suggest.calculator",           false);
 
 
 pref("browser.urlbar.weather.featureGate", false);
+
+
+pref("browser.urlbar.clipboard.featureGate", false);
 
 
 
