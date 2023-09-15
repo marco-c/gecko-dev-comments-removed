@@ -188,6 +188,8 @@ TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
   EXPECT_FALSE(ParseUrl("stun:/hostname"));  
   EXPECT_FALSE(ParseUrl("stun:?hostname"));  
   EXPECT_FALSE(ParseUrl("stun:#hostname"));  
+  
+  EXPECT_FALSE(ParseUrl("stun:hostname?transport=udp"));
 }
 
 

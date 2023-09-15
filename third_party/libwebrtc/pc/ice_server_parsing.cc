@@ -220,6 +220,15 @@ RTCError ParseIceServerUrl(
   
   RTC_DCHECK(!hoststring.empty());
 
+  
+  if ((service_type == ServiceType::STUN ||
+       service_type == ServiceType::STUNS) &&
+      tokens.size() > 1) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::SYNTAX_ERROR,
+        "ICE server parsing failed: Invalid stun url with query parameters");
+  }
+
   int default_port = kDefaultStunPort;
   if (service_type == ServiceType::TURNS) {
     default_port = kDefaultStunTlsPort;
