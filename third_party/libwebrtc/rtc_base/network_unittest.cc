@@ -1159,9 +1159,6 @@ TEST_F(NetworkTest, TestIPv6Selection) {
 
 
 TEST_F(NetworkTest, TestGetBestIPWithPreferGlobalIPv6ToLinkLocalEnabled) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
-      "WebRTC-IPv6NetworkResolutionFixes/"
-      "Enabled,PreferGlobalIPv6Address:true/");
   InterfaceAddress ip, link_local;
   std::string ipstr;
 
@@ -1170,7 +1167,7 @@ TEST_F(NetworkTest, TestGetBestIPWithPreferGlobalIPv6ToLinkLocalEnabled) {
 
   
   Network ipv6_network("test_eth0", "Test NetworkAdapter", TruncateIP(ip, 64),
-                       64, ADAPTER_TYPE_UNKNOWN, &field_trials);
+                       64, ADAPTER_TYPE_UNKNOWN, &field_trials_);
 
   
   

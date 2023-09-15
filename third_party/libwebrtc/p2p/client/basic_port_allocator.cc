@@ -157,16 +157,7 @@ std::string NetworksToString(const std::vector<const rtc::Network*>& networks) {
 bool IsDiversifyIpv6InterfacesEnabled(
     const webrtc::FieldTrialsView* field_trials) {
   
-  if (field_trials &&
-      field_trials->IsEnabled("WebRTC-IPv6NetworkResolutionFixes")) {
-    webrtc::FieldTrialParameter<bool> diversify_ipv6_interfaces(
-        "DiversifyIpv6Interfaces", false);
-    webrtc::ParseFieldTrial(
-        {&diversify_ipv6_interfaces},
-        field_trials->Lookup("WebRTC-IPv6NetworkResolutionFixes"));
-    return diversify_ipv6_interfaces;
-  }
-  return false;
+  return true;
 }
 
 }  

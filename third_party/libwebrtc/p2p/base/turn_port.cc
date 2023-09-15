@@ -38,18 +38,7 @@ namespace {
 
 bool ResolveTurnHostnameForFamily(const webrtc::FieldTrialsView& field_trials) {
   
-  
-  static constexpr char field_trial_name[] =
-      "WebRTC-IPv6NetworkResolutionFixes";
-  if (!field_trials.IsEnabled(field_trial_name)) {
-    return false;
-  }
-
-  webrtc::FieldTrialParameter<bool> resolve_turn_hostname_for_family(
-      "ResolveTurnHostnameForFamily", false);
-  webrtc::ParseFieldTrial({&resolve_turn_hostname_for_family},
-                          field_trials.Lookup(field_trial_name));
-  return resolve_turn_hostname_for_family;
+  return true;
 }
 
 }  
