@@ -871,7 +871,7 @@ TEST(PacketBuffer, GetSpanSamples) {
   constexpr int kPayloadSizeBytes = 1;  
   constexpr uint32_t kStartTimeStamp = 0xFFFFFFFE;  
   constexpr int kSampleRateHz = 48000;
-  constexpr bool KCountDtxWaitingTime = false;
+  constexpr bool kCountWaitingTime = false;
   TickTimer tick_timer;
   PacketBuffer buffer(3, &tick_timer);
   PacketGenerator gen(0, kStartTimeStamp, 0, kFrameSizeSamples);
@@ -903,7 +903,7 @@ TEST(PacketBuffer, GetSpanSamples) {
   
   EXPECT_EQ(kLastDecodedSizeSamples,
             buffer.GetSpanSamples(kLastDecodedSizeSamples, kSampleRateHz,
-                                  KCountDtxWaitingTime));
+                                  kCountWaitingTime));
 
   EXPECT_EQ(PacketBuffer::kOK,
             buffer.InsertPacket(std::move(packet_2),
@@ -914,13 +914,46 @@ TEST(PacketBuffer, GetSpanSamples) {
                                 decoder_database));
 
   EXPECT_EQ(kFrameSizeSamples * 2,
-            buffer.GetSpanSamples(0, kSampleRateHz, KCountDtxWaitingTime));
+            buffer.GetSpanSamples(0, kSampleRateHz, kCountWaitingTime));
 
   
   
   EXPECT_EQ(kFrameSizeSamples * 2,
             buffer.GetSpanSamples(kLastDecodedSizeSamples, kSampleRateHz,
-                                  KCountDtxWaitingTime));
+                                  kCountWaitingTime));
+}
+
+TEST(PacketBuffer, GetSpanSamplesCountWaitingTime) {
+  constexpr size_t kFrameSizeSamples = 10;
+  constexpr int kPayloadSizeBytes = 1;  
+  constexpr uint32_t kStartTimeStamp = 0xFFFFFFFE;  
+  constexpr int kSampleRateHz = 48000;
+  constexpr bool kCountWaitingTime = true;
+  constexpr size_t kLastDecodedSizeSamples = 0;
+  TickTimer tick_timer;
+  PacketBuffer buffer(3, &tick_timer);
+  PacketGenerator gen(0, kStartTimeStamp, 0, kFrameSizeSamples);
+  StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
+
+  Packet packet = gen.NextPacket(kPayloadSizeBytes, nullptr);
+
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer.InsertPacket(std::move(packet),
+                                &mock_stats,
+                                kFrameSizeSamples,
+                                kSampleRateHz,
+                                60,
+                                decoder_database));
+
+  EXPECT_EQ(0u, buffer.GetSpanSamples(kLastDecodedSizeSamples, kSampleRateHz,
+                                      kCountWaitingTime));
+
+  tick_timer.Increment();
+  EXPECT_EQ(480u, buffer.GetSpanSamples(0, kSampleRateHz, kCountWaitingTime));
+
+  tick_timer.Increment();
+  EXPECT_EQ(960u, buffer.GetSpanSamples(0, kSampleRateHz, kCountWaitingTime));
 }
 
 namespace {
