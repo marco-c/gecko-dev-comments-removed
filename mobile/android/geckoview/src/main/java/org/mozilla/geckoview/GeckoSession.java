@@ -528,7 +528,8 @@ public class GeckoSession {
             "GeckoView:CookieBannerEvent:Detected",
             "GeckoView:CookieBannerEvent:Handled",
             "GeckoView:SavePdf",
-            "GeckoView:GetNimbusFeature"
+            "GeckoView:GetNimbusFeature",
+            "GeckoView:OnProductUrl",
           }) {
         @Override
         public void handleMessage(
@@ -627,6 +628,8 @@ public class GeckoSession {
               callback.sendError(
                   "No Nimbus data for the feature " + featureId + ": conversion failed.");
             }
+          } else if ("GeckoView:OnProductUrl".equals(event)) {
+            delegate.onProductUrl(GeckoSession.this);
           }
         }
       };
@@ -2900,6 +2903,21 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<ReviewAnalysis> requestAnalysis(@NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher
+        .queryBundle("GeckoView:RequestAnalysis", bundle)
+        .map(analysisBundle -> new ReviewAnalysis(analysisBundle.getBundle("analysis")));
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {
@@ -3392,6 +3410,107 @@ public class GeckoSession {
     }
   }
 
+  
+  @AnyThread
+  public static class ReviewAnalysis {
+    @Retention(RetentionPolicy.SOURCE)
+    @StringDef({GRADE_A, GRADE_B, GRADE_C, GRADE_D, GRADE_E})
+    public @interface Grade {}
+
+    public static final String GRADE_A = "A";
+    public static final String GRADE_B = "B";
+    public static final String GRADE_C = "C";
+    public static final String GRADE_D = "D";
+    public static final String GRADE_E = "E";
+
+    
+    @Nullable public final String analysisURL;
+
+    
+    @Nullable public final String productId;
+
+    
+    @Nullable public final @Grade String grade;
+
+    
+    @NonNull public final Double adjustedRating;
+
+    
+    public final boolean needsAnalysis;
+
+    
+    @Nullable public final Highlight highlights;
+
+    
+    public final int lastAnalysisTime;
+
+    
+    public final boolean deletedProductReported;
+
+    
+    public final boolean deletedProduct;
+
+     ReviewAnalysis(final GeckoBundle message) {
+      analysisURL = message.getString("analysis_url");
+      productId = message.getString("product_id");
+      grade = message.getString("grade");
+      adjustedRating = message.getDouble("adjusted_rating");
+      needsAnalysis = message.getBoolean("needs_analysis", true);
+      highlights = new Highlight(message.getBundle("highlights"));
+      lastAnalysisTime = message.getInt("last_analysis_time");
+      deletedProductReported = message.getBoolean("deleted_product_reported");
+      deletedProduct = message.getBoolean("deleted_product");
+    }
+
+    
+    protected ReviewAnalysis() {
+      analysisURL = "";
+      productId = "";
+      grade = null;
+      adjustedRating = 0.0;
+      needsAnalysis = false;
+      highlights = null;
+      lastAnalysisTime = 0;
+      deletedProductReported = false;
+      deletedProduct = false;
+    }
+
+    
+    public class Highlight {
+      
+      @Nullable public final String[] quality;
+
+      
+      @Nullable public final String[] price;
+
+      
+      @Nullable public final String[] shipping;
+
+      
+      @Nullable public final String[] appearance;
+
+      
+      @Nullable public final String[] competitiveness;
+
+       Highlight(final GeckoBundle message) {
+        quality = message.getStringArray("quality");
+        price = message.getStringArray("price");
+        shipping = message.getStringArray("shipping");
+        appearance = message.getStringArray("appearance");
+        competitiveness = message.getStringArray("competitiveness");
+      }
+
+      
+      protected Highlight() {
+        quality = null;
+        price = null;
+        shipping = null;
+        appearance = null;
+        competitiveness = null;
+      }
+    }
+  }
+
   public interface ContentDelegate {
     
 
@@ -3450,6 +3569,14 @@ public class GeckoSession {
     @UiThread
     default void onMetaViewportFitChange(
         @NonNull final GeckoSession session, @NonNull final String viewportFit) {}
+
+    
+
+
+
+
+    @UiThread
+    default void onProductUrl(@NonNull final GeckoSession session) {}
 
     
     public static class ContextElement {
