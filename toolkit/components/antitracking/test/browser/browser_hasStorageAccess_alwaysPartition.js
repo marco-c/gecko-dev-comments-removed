@@ -1,29 +1,37 @@
 
 
 
+
+
 var settings = [
   
   {
     name: "Test whether same-origin non-tracker frame has storage access",
-    topPage: TEST_TOP_PAGE,
-    thirdPartyPage: TEST_DOMAIN + TEST_PATH + "3rdParty.html",
+    topPage: TEST_TOP_PAGE_HTTPS,
+    thirdPartyPage: TEST_DOMAIN_HTTPS + TEST_PATH + "3rdParty.html",
   },
   
   {
     name: "Test whether 3rd-party non-tracker frame has storage access",
-    topPage: TEST_TOP_PAGE,
-    thirdPartyPage: TEST_4TH_PARTY_PAGE,
+    topPage: TEST_TOP_PAGE_HTTPS,
+    thirdPartyPage: TEST_4TH_PARTY_PAGE_HTTPS,
   },
   
   {
     name: "Test whether 3rd-party non-tracker frame has storage access when storage permission is granted before",
-    topPage: TEST_TOP_PAGE,
-    thirdPartyPage: TEST_4TH_PARTY_PAGE,
+    topPage: TEST_TOP_PAGE_HTTPS,
+    thirdPartyPage: TEST_4TH_PARTY_PAGE_HTTPS,
     setup: () => {
-      let type = "3rdPartyFrameStorage^http://example.com";
+      let type = "3rdPartyStorage^https://not-tracking.example.com";
       let permission = Services.perms.ALLOW_ACTION;
       let expireType = Services.perms.EXPIRE_SESSION;
-      PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
+      PermissionTestUtils.add(
+        TEST_DOMAIN_HTTPS,
+        type,
+        permission,
+        expireType,
+        0
+      );
 
       registerCleanupFunction(_ => {
         Services.perms.removeAll();
@@ -33,19 +41,25 @@ var settings = [
   
   {
     name: "Test whether 3rd-party tracker frame has storage access",
-    topPage: TEST_TOP_PAGE,
+    topPage: TEST_TOP_PAGE_HTTPS,
     thirdPartyPage: TEST_3RD_PARTY_PAGE,
   },
   
   {
     name: "Test whether 3rd-party tracker frame has storage access when storage access permission is granted before",
-    topPage: TEST_TOP_PAGE,
+    topPage: TEST_TOP_PAGE_HTTPS,
     thirdPartyPage: TEST_3RD_PARTY_PAGE,
     setup: () => {
       let type = "3rdPartyFrameStorage^https://example.org";
       let permission = Services.perms.ALLOW_ACTION;
       let expireType = Services.perms.EXPIRE_SESSION;
-      PermissionTestUtils.add(TEST_DOMAIN, type, permission, expireType, 0);
+      PermissionTestUtils.add(
+        TEST_DOMAIN_HTTPS,
+        type,
+        permission,
+        expireType,
+        0
+      );
 
       registerCleanupFunction(_ => {
         Services.perms.removeAll();
@@ -55,14 +69,20 @@ var settings = [
   
   {
     name: "Test whether same-site 3rd-party tracker frame has storage access",
-    topPage: TEST_TOP_PAGE,
-    thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
+    topPage: TEST_TOP_PAGE_HTTPS,
+    thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE_HTTPS,
   },
   
   {
     name: "Test whether same-origin 3rd-party tracker frame has storage access",
-    topPage: TEST_ANOTHER_3RD_PARTY_DOMAIN + TEST_PATH + "page.html",
-    thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
+    topPage: TEST_ANOTHER_3RD_PARTY_DOMAIN_HTTPS + TEST_PATH + "page.html",
+    thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE_HTTPS,
+  },
+  
+  {
+    name: "Test whether insecure 3rd-party tracker frame has storage access",
+    topPage: TEST_TOP_PAGE + TEST_PATH + "page.html",
+    thirdPartyPage: TEST_3RD_PARTY_PAGE_HTTP,
   },
 ];
 
@@ -74,6 +94,7 @@ var testCases = [
   {
     behavior: BEHAVIOR_ACCEPT, 
     cases: [
+      [true] ,
       [true] ,
       [true] ,
       [true] ,
@@ -103,11 +124,13 @@ var testCases = [
       ] ,
       [true] ,
       [true] ,
+      [false, foreignBlocked] ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT, 
     cases: [
+      [false, allBlocked] ,
       [false, allBlocked] ,
       [false, allBlocked] ,
       [false, allBlocked] ,
@@ -127,6 +150,7 @@ var testCases = [
       [false, foreignBlocked] ,
       [true] ,
       [true] ,
+      [false, foreignBlocked] ,
     ],
   },
   {
@@ -139,6 +163,7 @@ var testCases = [
       [true] ,
       [true] ,
       [true] ,
+      [false, trackerBlocked] ,
     ],
   },
   {
@@ -151,6 +176,7 @@ var testCases = [
       [true] ,
       [true] ,
       [true] ,
+      [false, trackerBlocked] ,
     ],
   },
 ];
@@ -187,6 +213,8 @@ var testCases = [
             "privacy.partition.always_partition_third_party_non_cookie_storage",
             true,
           ],
+          
+          ["dom.storage_access.dont_grant_insecure_contexts", true],
         ],
         expectedBlockingNotifications,
         runInPrivateWindow: false,

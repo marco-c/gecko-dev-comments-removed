@@ -16,3 +16,9 @@ user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
 
 
 user_pref("general.smoothScroll", true);
+
+
+
+
+
+user_pref("dom.storage_access.dont_grant_insecure_contexts", false);
