@@ -516,6 +516,9 @@ function _parseModifiers(aEvent, aWindow = window) {
   if (aEvent.symbolLockKey) {
     mval |= nsIDOMWindowUtils.MODIFIER_SYMBOLLOCK;
   }
+  if (aEvent.osKey) {
+    mval |= nsIDOMWindowUtils.MODIFIER_OS;
+  }
 
   return mval;
 }
@@ -2164,6 +2167,7 @@ function _emulateToActivateModifiers(aTIP, aKeyEvent, aWindow = window) {
       { key: "Control", attr: "ctrlKey" },
       { key: "Fn", attr: "fnKey" },
       { key: "Meta", attr: "metaKey" },
+      { key: "OS", attr: "osKey" },
       { key: "Shift", attr: "shiftKey" },
       { key: "Symbol", attr: "symbolKey" },
       { key: _EU_isMac(aWindow) ? "Meta" : "Control", attr: "accelKey" },

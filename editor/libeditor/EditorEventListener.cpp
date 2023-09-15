@@ -554,7 +554,11 @@ bool IsCtrlShiftPressed(const WidgetKeyboardEvent* aKeyboardEvent,
 
   
   
-  return !aKeyboardEvent->IsAlt() && !aKeyboardEvent->IsMeta();
+  if (aKeyboardEvent->IsAlt() || aKeyboardEvent->IsOS()) {
+    return false;
+  }
+
+  return true;
 }
 
 

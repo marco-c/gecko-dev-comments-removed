@@ -524,14 +524,7 @@ nsresult HTMLSelectEventListener::KeyPress(dom::Event* aKeyEvent) {
     mControlSelectMode = false;
   }
 
-  const bool isControlOrMeta =
-      keyEvent->IsControl()
-#if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
-      
-      
-      || keyEvent->IsMeta()
-#endif
-      ;
+  bool isControlOrMeta = keyEvent->IsControl() || keyEvent->IsMeta();
   if (isControlOrMeta && keyEvent->mCharCode != ' ') {
     return NS_OK;
   }
@@ -714,14 +707,7 @@ nsresult HTMLSelectEventListener::KeyDown(dom::Event* aKeyEvent) {
   
   int32_t newIndex = kNothingSelected;
 
-  bool isControlOrMeta =
-      keyEvent->IsControl()
-#if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
-      
-      
-      || keyEvent->IsMeta()
-#endif
-      ;
+  bool isControlOrMeta = keyEvent->IsControl() || keyEvent->IsMeta();
   
   if (isControlOrMeta && !mElement->Multiple() &&
       (keyEvent->mKeyCode == NS_VK_PAGE_UP ||

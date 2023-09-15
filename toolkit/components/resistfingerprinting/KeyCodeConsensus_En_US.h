@@ -51,7 +51,8 @@ CONTROL(Escape,      Escape,      dom::KeyboardEvent_Binding::DOM_VK_ESCAPE)
 
 CONTROL(Home,        Home,        dom::KeyboardEvent_Binding::DOM_VK_HOME)
 CONTROL(Insert,      Insert,      dom::KeyboardEvent_Binding::DOM_VK_INSERT)
-CONTROL(Meta,        MetaLeft,    dom::KeyboardEvent_Binding::DOM_VK_WIN)
+CONTROL(Meta,        OSLeft,      dom::KeyboardEvent_Binding::DOM_VK_WIN)
+CONTROL(OS,          OSLeft,      dom::KeyboardEvent_Binding::DOM_VK_WIN)
 CONTROL(PageDown,    PageDown,    dom::KeyboardEvent_Binding::DOM_VK_PAGE_DOWN)
 CONTROL(PageUp,      PageUp,      dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP)
 

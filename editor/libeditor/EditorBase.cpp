@@ -5161,7 +5161,7 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 
     case NS_VK_BACK: {
       if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
-          aKeyboardEvent->IsMeta()) {
+          aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
         return NS_OK;
       }
       DebugOnly<nsresult> rvIgnored =
@@ -5177,7 +5177,8 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       
       
       if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
-          aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta()) {
+          aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
+          aKeyboardEvent->IsOS()) {
         return NS_OK;
       }
       DebugOnly<nsresult> rvIgnored =
