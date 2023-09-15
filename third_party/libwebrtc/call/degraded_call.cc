@@ -16,7 +16,7 @@
 #include "absl/strings/string_view.h"
 #include "api/sequence_checker.h"
 #include "modules/rtp_rtcp/source/rtp_util.h"
-#include "rtc_base/event.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -174,13 +174,10 @@ DegradedCall::~DegradedCall() {
   
   
   
-  rtc::Event event;
-  call_->network_thread()->PostTask(
-      [flag = std::move(call_alive_), &event]() mutable {
-        flag->SetNotAlive();
-        event.Set();
-      });
-  event.Wait(rtc::Event::kForever);
+  
+  static_cast<rtc::Thread*>(call_->network_thread())
+      ->BlockingCall(
+          [flag = std::move(call_alive_)]() mutable { flag->SetNotAlive(); });
 }
 
 AudioSendStream* DegradedCall::CreateAudioSendStream(
