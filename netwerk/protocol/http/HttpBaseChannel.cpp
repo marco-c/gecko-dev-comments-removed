@@ -2160,14 +2160,7 @@ HttpBaseChannel::GetResponseStatus(uint32_t* aValue) {
 NS_IMETHODIMP
 HttpBaseChannel::GetResponseStatusText(nsACString& aValue) {
   if (!mResponseHead) return NS_ERROR_NOT_AVAILABLE;
-  nsAutoCString version;
-  
-  
-  
-  if (NS_WARN_IF(NS_FAILED(GetProtocolVersion(version))) ||
-      !version.EqualsLiteral("h2")) {
-    mResponseHead->StatusText(aValue);
-  }
+  mResponseHead->StatusText(aValue);
   return NS_OK;
 }
 
