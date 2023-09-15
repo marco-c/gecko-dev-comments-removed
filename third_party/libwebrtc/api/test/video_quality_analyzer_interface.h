@@ -21,6 +21,7 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -170,6 +171,13 @@ class VideoQualityAnalyzerInterface
   
   
   virtual std::string GetStreamLabel(uint16_t frame_id) = 0;
+
+  
+  
+  
+  virtual std::string GetSenderPeerName(uint16_t frame_id) const {
+    RTC_CHECK(false) << "Not implemented.";
+  }
 };
 
 }  
