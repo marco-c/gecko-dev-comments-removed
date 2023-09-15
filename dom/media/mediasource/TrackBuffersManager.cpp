@@ -2079,10 +2079,8 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
       
       
       
-      
       TimeInterval previouslyDroppedSampleInterval =
-          TimeInterval(sampleInterval.mStart,
-                       sampleInterval.mStart + TimeUnit::FromMicroseconds(1));
+          TimeInterval(sampleInterval.mStart, sampleInterval.mStart);
       addToSamples(previouslyDroppedSample, previouslyDroppedSampleInterval);
       previouslyDroppedSample = nullptr;
       sampleInterval.mStart += previouslyDroppedSampleInterval.Length();
