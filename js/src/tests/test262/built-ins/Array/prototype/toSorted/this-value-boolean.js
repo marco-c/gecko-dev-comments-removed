@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toSorted.call(true), []);
 assert.compareArray(Array.prototype.toSorted.call(false), []);
 

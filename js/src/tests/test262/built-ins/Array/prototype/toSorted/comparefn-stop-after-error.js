@@ -17,7 +17,6 @@
 
 
 
-
 var arrayLike = {
   length: 1,
   get 0() { throw new Test262Error(); },

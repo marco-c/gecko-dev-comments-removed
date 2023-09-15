@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toReversed.call({ length: -2 }), []);
 assert.compareArray(Array.prototype.toReversed.call({ length: "dog" }), []);
 assert.compareArray(Array.prototype.toReversed.call({ length: NaN }), []);

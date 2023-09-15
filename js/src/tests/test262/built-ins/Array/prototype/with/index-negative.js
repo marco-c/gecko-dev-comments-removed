@@ -18,7 +18,6 @@
 
 
 
-
 var arr = [0, 1, 2];
 
 assert.compareArray(arr.with(-1, 4), [0, 1, 4]);

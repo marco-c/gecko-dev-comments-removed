@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(Array.prototype.toReversed),
   false,

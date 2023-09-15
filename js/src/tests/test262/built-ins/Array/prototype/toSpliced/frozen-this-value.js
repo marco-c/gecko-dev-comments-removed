@@ -9,7 +9,6 @@
 
 
 
-
 var arr = Object.freeze([2, 0, 1]);
 var result = arr.toSpliced();
 assert.compareArray(result, [2, 0, 1]);

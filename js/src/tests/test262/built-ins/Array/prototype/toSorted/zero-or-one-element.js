@@ -9,7 +9,6 @@
 
 
 
-
 var zero = [];
 var zeroReversed = zero.toSorted();
 assert.notSameValue(zero, zeroReversed);

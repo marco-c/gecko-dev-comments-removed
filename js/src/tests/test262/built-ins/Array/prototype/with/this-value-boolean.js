@@ -15,7 +15,6 @@
 
 
 
-
 Boolean.prototype.length = 2;
 Boolean.prototype[0] = 0;
 Boolean.prototype[1] = 1;

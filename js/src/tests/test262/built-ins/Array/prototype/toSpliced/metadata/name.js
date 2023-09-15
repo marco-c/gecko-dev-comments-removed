@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(Array.prototype.toSpliced, "name", {
   value: "toSpliced",
   writable: false,

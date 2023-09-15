@@ -16,7 +16,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toSpliced.call({ length: -2 }, 0, 0, 2, 3), [2, 3]);
 assert.compareArray(Array.prototype.toSpliced.call({ length: "dog" }, 0, 0, 2, 3), [2, 3]);
 assert.compareArray(Array.prototype.toSpliced.call({ length: NaN }, 0, 0, 2, 3), [2, 3]);

@@ -20,7 +20,6 @@
 
 
 
-
 var order = [];
 var arrayLike = {
   length: 3,

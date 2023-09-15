@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(Array.prototype.toSorted, "length", {
   value: 1,
   writable: false,

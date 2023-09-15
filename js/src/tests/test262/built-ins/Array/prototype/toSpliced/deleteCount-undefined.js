@@ -24,7 +24,6 @@
 
 
 
-
 var result = ["first", "second", "third"].toSpliced(1, undefined);
 
 assert.compareArray(result, ["first", "second", "third"]);

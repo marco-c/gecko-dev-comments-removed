@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(Array.prototype.toSpliced, "length", {
   value: 2,
   writable: false,

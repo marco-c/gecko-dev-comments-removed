@@ -21,7 +21,6 @@
 
 
 
-
 var arrayLike = {
   get "0"() {
     throw new Test262Error("Get 0");

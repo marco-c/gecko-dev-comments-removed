@@ -14,7 +14,6 @@
 
 
 
-
 var getLengthThrow = {
   get length() {
     throw new Test262Error("IsCallable(comparefn) should be observed before this.length");

@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   Array.prototype.toSpliced.call(null, 0, 0);
 }, '`Array.prototype.toSpliced.call(null)` throws TypeError');

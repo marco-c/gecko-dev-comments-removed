@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toSpliced.call({ length: "2", 0: 0, 1: 1, 2: 2 }, 0, 0), [0, 1]);
 
 var arrayLike = {

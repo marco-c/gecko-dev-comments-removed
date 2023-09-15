@@ -9,7 +9,6 @@
 
 
 
-
 var arr = Object.freeze([0, 1, 2]);
 var result = arr.toReversed();
 assert.compareArray(result, [2, 1, 0]);

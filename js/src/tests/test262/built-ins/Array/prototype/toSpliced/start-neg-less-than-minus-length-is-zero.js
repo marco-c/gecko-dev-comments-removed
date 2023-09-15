@@ -18,7 +18,6 @@
 
 
 
-
 var result = [0, 1, 2, 3, 4].toSpliced(-20, 2);
 assert.compareArray(result, [2, 3, 4]);
 

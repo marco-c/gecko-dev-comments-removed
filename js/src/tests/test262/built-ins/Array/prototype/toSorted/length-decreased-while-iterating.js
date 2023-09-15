@@ -18,7 +18,6 @@
 
 
 
-
 var arr = [5, 1, 4, 6, 3];
 Array.prototype[3] = 2;
 

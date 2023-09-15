@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toReversed.call(true), []);
 assert.compareArray(Array.prototype.toReversed.call(false), []);
 

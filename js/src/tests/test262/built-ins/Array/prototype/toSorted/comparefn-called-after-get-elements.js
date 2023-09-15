@@ -24,7 +24,6 @@
 
 
 
-
 var getCalls = [];
 
 var arrayLike = {

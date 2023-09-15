@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toReversed.call({ length: "2", 0: 1, 1: 2, 2: 3 }), [2, 1]);
 
 var arrayLike = {

@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   Array.prototype.toReversed.call(null);
 }, '`Array.prototype.toReversed.call(null)` throws TypeError');

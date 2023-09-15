@@ -16,7 +16,6 @@
 
 
 
-
 testWithBigIntTypedArrayConstructors(function(TA) {
   var arr = new TA([0n, 1n, 2n]);
 

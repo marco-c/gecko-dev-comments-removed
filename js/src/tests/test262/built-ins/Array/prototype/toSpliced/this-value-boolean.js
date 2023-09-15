@@ -15,7 +15,6 @@
 
 
 
-
 assert.compareArray(Array.prototype.toSpliced.call(true, 0, 0), []);
 assert.compareArray(Array.prototype.toSpliced.call(false, 0, 0), []);
 

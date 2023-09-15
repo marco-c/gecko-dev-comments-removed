@@ -9,7 +9,6 @@
 
 
 
-
 var arr = Object.freeze([0, 1, 2]);
 var result = arr.with(1, 3);
 assert.compareArray(result, [0, 3, 2]);

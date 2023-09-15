@@ -14,7 +14,6 @@
 
 
 
-
 var a = [1, 2, 3];
 a.constructor = {};
 a.constructor[Symbol.species] = function () {}

@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(Array.prototype.toReversed, "length", {
   value: 0,
   writable: false,

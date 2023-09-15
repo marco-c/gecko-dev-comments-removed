@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(Array.prototype.with, "length", {
   value: 2,
   writable: false,

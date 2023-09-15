@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   Array.prototype.with.call(null, 0, 0);
 }, '`Array.prototype.with.call(null, 0, 0)` throws TypeError');

@@ -18,7 +18,6 @@
 
 
 
-
 [0, 1, 2].with(-3, 7);
 
 assert.throws(RangeError, function() {

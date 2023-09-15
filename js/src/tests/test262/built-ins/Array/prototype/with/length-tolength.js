@@ -15,7 +15,6 @@
 
 
 
-
 var arrayLike = { length: "2", 0: 1, 1: 2, 2: 3 };
 assert.compareArray(Array.prototype.with.call(arrayLike, 0, 4), [4, 2]);
 

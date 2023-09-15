@@ -28,7 +28,6 @@
 
 
 
-
 var arr = [0, 1, 2, 3];
 var zerothElementStorage = arr[0];
 Object.defineProperty(arr, "0", {

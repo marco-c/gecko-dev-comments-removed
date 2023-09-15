@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.toSpliced, "function", "typeof");
 
 verifyProperty(Array.prototype, "toSpliced", {

@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(Array.prototype.with, "name", {
   value: "with",
   writable: false,

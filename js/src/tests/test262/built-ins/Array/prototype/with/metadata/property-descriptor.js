@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.with, "function", "typeof");
 
 verifyProperty(Array.prototype, "with", {
