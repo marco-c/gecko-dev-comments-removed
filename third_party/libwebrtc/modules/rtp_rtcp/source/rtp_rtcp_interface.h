@@ -126,7 +126,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     bool always_send_mid_and_rid = false;
 
     
-    
     const FieldTrialsView* field_trials = nullptr;
 
     
