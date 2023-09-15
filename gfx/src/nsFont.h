@@ -45,7 +45,7 @@ struct nsFont final {
   
   
   mozilla::StyleAbsoluteColor fontSmoothingBackgroundColor =
-      mozilla::StyleAbsoluteColor::TRANSPARENT;
+      mozilla::StyleAbsoluteColor::Transparent();
 
   
   

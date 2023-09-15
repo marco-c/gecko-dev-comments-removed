@@ -186,30 +186,6 @@ macro_rules! color_components_as {
 
 impl AbsoluteColor {
     
-    pub const TRANSPARENT: Self = Self {
-        components: ColorComponents(0.0, 0.0, 0.0),
-        alpha: 0.0,
-        color_space: ColorSpace::Srgb,
-        flags: ColorFlags { bits: 0 }, 
-    };
-
-    
-    pub const BLACK: Self = Self {
-        components: ColorComponents(0.0, 0.0, 0.0),
-        alpha: 1.0,
-        color_space: ColorSpace::Srgb,
-        flags: ColorFlags { bits: 0 }, 
-    };
-
-    
-    pub const WHITE: Self = Self {
-        components: ColorComponents(1.0, 1.0, 1.0),
-        alpha: 1.0,
-        color_space: ColorSpace::Srgb,
-        flags: ColorFlags { bits: 0 }, 
-    };
-
-    
     
     pub fn new(color_space: ColorSpace, components: ColorComponents, alpha: f32) -> Self {
         let mut components = components;
@@ -245,6 +221,21 @@ impl AbsoluteColor {
     
     pub fn srgb(red: f32, green: f32, blue: f32, alpha: f32) -> Self {
         Self::new(ColorSpace::Srgb, ColorComponents(red, green, blue), alpha)
+    }
+
+    
+    pub fn transparent() -> Self {
+        Self::srgb(0.0, 0.0, 0.0, 0.0)
+    }
+
+    
+    pub fn black() -> Self {
+        Self::srgb(0.0, 0.0, 0.0, 1.0)
+    }
+
+    
+    pub fn white() -> Self {
+        Self::srgb(1.0, 1.0, 1.0, 1.0)
     }
 
     
