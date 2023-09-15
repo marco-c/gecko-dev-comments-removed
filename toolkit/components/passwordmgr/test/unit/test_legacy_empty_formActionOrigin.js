@@ -77,6 +77,11 @@ add_task(function test_search_all_wildcard() {
   Assert.equal(Services.logins.searchLogins(matchData).length, 2);
 
   Assert.equal(
+    Services.logins.findLogins("", "http://www.example.com", null).length,
+    2
+  );
+
+  Assert.equal(
     Services.logins.countLogins("", "http://www.example.com", null),
     2
   );
@@ -84,6 +89,15 @@ add_task(function test_search_all_wildcard() {
   
   matchData.setProperty("origin", "http://any.example.com");
   Assert.equal(Services.logins.searchLogins(matchData).length, 1);
+
+  Assert.equal(
+    Services.logins.findLogins(
+      "http://any.example.com",
+      "http://www.example.com",
+      null
+    ).length,
+    1
+  );
 
   Assert.equal(
     Services.logins.countLogins(
