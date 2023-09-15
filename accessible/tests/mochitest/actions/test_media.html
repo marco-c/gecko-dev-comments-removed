@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=483573
+-->
 <head>
   <title>HTML5 audio/video tests</title>
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
@@ -21,6 +21,7 @@
           src="../states.js"></script>
 
   <script type="application/javascript">
+    SimpleTest.requestCompleteLog(); // To help diagnose bug 1845221
 
     // gA11yEventDumpID = "eventDump";
     // gA11yEventDumpToConsole = true; // debug stuff
