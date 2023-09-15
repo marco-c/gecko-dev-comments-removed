@@ -155,6 +155,12 @@ class OggCodecState {
     }
     TimeUnit endTime = Time(aPacket->granulepos);
     TimeUnit duration = PacketDuration(aPacket);
+    
+    
+    
+    if (!duration.IsValid()) {
+      return TimeUnit::Invalid();
+    }
     if (duration > endTime) {
       
       return TimeUnit::Zero();
