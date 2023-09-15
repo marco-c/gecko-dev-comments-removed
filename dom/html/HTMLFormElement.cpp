@@ -1086,44 +1086,6 @@ Element* HTMLFormElement::IndexedGetter(uint32_t aIndex, bool& aFound) {
   return element;
 }
 
-
-
-
-
-
-
-
-
-
-
-int32_t HTMLFormElement::CompareFormControlPosition(Element* aElement1,
-                                                    Element* aElement2,
-                                                    const nsIContent* aForm) {
-  NS_ASSERTION(aElement1 != aElement2, "Comparing a form control to itself");
-
-  
-  
-  NS_ASSERTION(
-      (aElement1->HasAttr(nsGkAtoms::form) || aElement1->GetParent()) &&
-          (aElement2->HasAttr(nsGkAtoms::form) || aElement2->GetParent()),
-      "Form controls should always have parents");
-
-  
-  
-  
-  
-#ifdef DEBUG
-  nsLayoutUtils::gPreventAssertInCompareTreePosition = true;
-  int32_t rVal =
-      nsLayoutUtils::CompareTreePosition(aElement1, aElement2, aForm);
-  nsLayoutUtils::gPreventAssertInCompareTreePosition = false;
-
-  return rVal;
-#else   
-  return nsLayoutUtils::CompareTreePosition(aElement1, aElement2, aForm);
-#endif  
-}
-
 #ifdef DEBUG
 
 
@@ -1206,58 +1168,6 @@ void HTMLFormElement::PostPossibleUsernameEvent() {
   mFormPossibleUsernameEventDispatcher->PostDOMEvent();
 }
 
-namespace {
-
-struct FormComparator {
-  Element* const mChild;
-  HTMLFormElement* const mForm;
-  FormComparator(Element* aChild, HTMLFormElement* aForm)
-      : mChild(aChild), mForm(aForm) {}
-  int operator()(Element* aElement) const {
-    return HTMLFormElement::CompareFormControlPosition(mChild, aElement, mForm);
-  }
-};
-
-}  
-
-
-
-template <typename ElementType>
-static bool AddElementToList(nsTArray<ElementType*>& aList, ElementType* aChild,
-                             HTMLFormElement* aForm) {
-  NS_ASSERTION(aList.IndexOf(aChild) == aList.NoIndex,
-               "aChild already in aList");
-
-  const uint32_t count = aList.Length();
-  ElementType* element;
-  bool lastElement = false;
-
-  
-  int32_t position = -1;
-  if (count > 0) {
-    element = aList[count - 1];
-    position =
-        HTMLFormElement::CompareFormControlPosition(aChild, element, aForm);
-  }
-
-  
-  
-  
-  if (position >= 0 || count == 0) {
-    
-    aList.AppendElement(aChild);
-    lastElement = true;
-  } else {
-    size_t idx;
-    BinarySearchIf(aList, 0, count, FormComparator(aChild, aForm), &idx);
-
-    
-    aList.InsertElementAt(idx, aChild);
-  }
-
-  return lastElement;
-}
-
 nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
                                      bool aUpdateValidity, bool aNotify) {
   
@@ -1272,7 +1182,8 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   nsTArray<nsGenericHTMLFormElement*>& controlList =
       childInElements ? mControls->mElements : mControls->mNotInElements;
 
-  bool lastElement = AddElementToList(controlList, aChild, this);
+  bool lastElement =
+      nsContentUtils::AddElementToListByTreeOrder(controlList, aChild, this);
 
 #ifdef DEBUG
   AssertDocumentOrder(controlList, this);
@@ -1308,16 +1219,16 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
     
     nsGenericHTMLFormElement* oldDefaultSubmit = mDefaultSubmitElement;
     if (!*firstSubmitSlot ||
-        (!lastElement &&
-         CompareFormControlPosition(aChild, *firstSubmitSlot, this) < 0)) {
+        (!lastElement && nsContentUtils::CompareTreePosition(
+                             aChild, *firstSubmitSlot, this) < 0)) {
       
       
       
       if ((mDefaultSubmitElement ||
            (!mFirstSubmitInElements && !mFirstSubmitNotInElements)) &&
           (*firstSubmitSlot == mDefaultSubmitElement ||
-           CompareFormControlPosition(aChild, mDefaultSubmitElement, this) <
-               0)) {
+           nsContentUtils::CompareTreePosition(aChild, mDefaultSubmitElement,
+                                               this) < 0)) {
         mDefaultSubmitElement = aChild;
       }
       *firstSubmitSlot = aChild;
@@ -1448,8 +1359,8 @@ void HTMLFormElement::HandleDefaultSubmitRemoval() {
                  "How did that happen?");
     
     mDefaultSubmitElement =
-        CompareFormControlPosition(mFirstSubmitInElements,
-                                   mFirstSubmitNotInElements, this) < 0
+        nsContentUtils::CompareTreePosition(mFirstSubmitInElements,
+                                            mFirstSubmitNotInElements, this) < 0
             ? mFirstSubmitInElements
             : mFirstSubmitNotInElements;
   }
@@ -1797,8 +1708,8 @@ bool HTMLFormElement::IsDefaultSubmitElement(
 
   
   nsGenericHTMLFormElement* defaultSubmit =
-      CompareFormControlPosition(mFirstSubmitInElements,
-                                 mFirstSubmitNotInElements, this) < 0
+      nsContentUtils::CompareTreePosition(mFirstSubmitInElements,
+                                          mFirstSubmitNotInElements, this) < 0
           ? mFirstSubmitInElements
           : mFirstSubmitNotInElements;
   return aElement == defaultSubmit;
@@ -2011,7 +1922,7 @@ HTMLFormElement::WalkRadioGroup(const nsAString& aName,
 
 void HTMLFormElement::AddToRadioGroup(const nsAString& aName,
                                       HTMLInputElement* aRadio) {
-  RadioGroupManager::AddToRadioGroup(aName, aRadio);
+  RadioGroupManager::AddToRadioGroup(aName, aRadio, this);
 }
 
 void HTMLFormElement::RemoveFromRadioGroup(const nsAString& aName,
@@ -2167,7 +2078,7 @@ nsresult HTMLFormElement::AddElementToTableInternal(
 }
 
 nsresult HTMLFormElement::AddImageElement(HTMLImageElement* aChild) {
-  AddElementToList(mImageElements, aChild, this);
+  nsContentUtils::AddElementToListByTreeOrder(mImageElements, aChild, this);
   return NS_OK;
 }
 
