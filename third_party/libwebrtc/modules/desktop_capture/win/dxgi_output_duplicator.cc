@@ -147,16 +147,19 @@ bool DxgiOutputDuplicator::ReleaseFrame() {
   return true;
 }
 
-void DxgiOutputDuplicator::LogMouseCursor(
+bool DxgiOutputDuplicator::ContainsMouseCursor(
     const DXGI_OUTDUPL_FRAME_INFO& frame_info) {
+  
+  
+  
+  if (frame_info.LastMouseUpdateTime.QuadPart == 0)
+    return false;
+
   
   const bool new_pointer_shape = (frame_info.PointerShapeBufferSize != 0);
   if (new_pointer_shape)
-    return;
+    return false;
 
-  
-  
-  
   
   
   
@@ -169,6 +172,7 @@ void DxgiOutputDuplicator::LogMouseCursor(
   const bool cursor_embedded_in_frame = !frame_info.PointerPosition.Visible;
   RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.Win.DirectXCursorEmbedded",
                         cursor_embedded_in_frame);
+  return cursor_embedded_in_frame;
 }
 
 bool DxgiOutputDuplicator::Duplicate(Context* context,
@@ -194,12 +198,7 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     return false;
   }
 
-  
-  
-  
-  if (frame_info.LastMouseUpdateTime.QuadPart != 0) {
-    LogMouseCursor(frame_info);
-  }
+  const bool cursor_embedded_in_frame = ContainsMouseCursor(frame_info);
 
   
   
@@ -239,6 +238,7 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     last_frame_offset_ = offset;
     updated_region.Translate(offset.x(), offset.y());
     target->mutable_updated_region()->AddRegion(updated_region);
+    target->set_may_contain_cursor(cursor_embedded_in_frame);
     num_frames_captured_++;
     return texture_->Release() && ReleaseFrame();
   }
@@ -258,6 +258,7 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     }
     updated_region.Translate(offset.x(), offset.y());
     target->mutable_updated_region()->AddRegion(updated_region);
+    target->set_may_contain_cursor(cursor_embedded_in_frame);
   } else {
     
     

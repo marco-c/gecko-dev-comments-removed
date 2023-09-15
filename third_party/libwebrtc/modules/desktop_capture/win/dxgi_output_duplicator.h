@@ -100,7 +100,7 @@ class DxgiOutputDuplicator {
   
   
   
-  void LogMouseCursor(const DXGI_OUTDUPL_FRAME_INFO& frame_info);
+  bool ContainsMouseCursor(const DXGI_OUTDUPL_FRAME_INFO& frame_info);
 
   bool ReleaseFrame();
 

@@ -104,6 +104,12 @@ int ScreenCapturerWinDirectx::GetIndexFromScreenId(
 ScreenCapturerWinDirectx::ScreenCapturerWinDirectx()
     : controller_(DxgiDuplicatorController::Instance()) {}
 
+ScreenCapturerWinDirectx::ScreenCapturerWinDirectx(
+    const DesktopCaptureOptions& options)
+    : ScreenCapturerWinDirectx() {
+  options_ = options;
+}
+
 ScreenCapturerWinDirectx::~ScreenCapturerWinDirectx() = default;
 
 void ScreenCapturerWinDirectx::Start(Callback* callback) {
@@ -191,6 +197,12 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
           capture_time_ms);
       frame->set_capture_time_ms(capture_time_ms);
       frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinDirectx);
+      
+      
+      
+      if (!options_.prefer_cursor_embedded()) {
+        frame->set_may_contain_cursor(false);
+      }
 
       
       
