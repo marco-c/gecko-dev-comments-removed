@@ -702,15 +702,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    public HashMap getErrorProfile() {
-        return null;
-    }
-
-    
-
-
-
-
 
     public void setCommentPolicy(XmlViolationPolicy commentPolicy) {
         this.commentPolicy = commentPolicy;
