@@ -280,7 +280,11 @@ function nodeHasEntries(item) {
     className === "Headers" ||
     className === "FormData" ||
     className === "MIDIInputMap" ||
-    className === "MIDIOutputMap"
+    className === "MIDIOutputMap" ||
+    
+    
+    
+    (className === "HighlightRegistry" && Array.isArray(value.preview?.entries))
   );
 }
 

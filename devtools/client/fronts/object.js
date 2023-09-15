@@ -24,6 +24,7 @@ const SUPPORT_ENUM_ENTRIES_SET = new Set([
   "FormData",
   "MIDIInputMap",
   "MIDIOutputMap",
+  "HighlightRegistry",
 ]);
 
 
@@ -343,12 +344,15 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
   
   
   
+  
   const isPacketAnObject = packet && typeof packet === "object";
   const isFront = !!packet.typeName;
   if (
     !isPacketAnObject ||
     packet.type == "symbol" ||
-    (packet.type !== "mapEntry" && !packet.actor) ||
+    (packet.type !== "mapEntry" &&
+      packet.type !== "highlightRegistryEntry" &&
+      !packet.actor) ||
     isFront
   ) {
     return packet;
@@ -376,7 +380,10 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
     return longStringFront;
   }
 
-  if (type === "mapEntry" && packet.preview) {
+  if (
+    (type === "mapEntry" || type === "highlightRegistryEntry") &&
+    packet.preview
+  ) {
     const { key, value } = packet.preview;
     packet.preview.key = getAdHocFrontOrPrimitiveGrip(
       key,
