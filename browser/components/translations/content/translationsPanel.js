@@ -198,12 +198,18 @@ var TranslationsPanel = new (class {
 
 
 
+
+
   get console() {
     if (!this.#console) {
-      this.#console = console.createInstance({
-        maxLogLevelPref: "browser.translations.logLevel",
-        prefix: "Translations",
-      });
+      try {
+        this.#console = console.createInstance({
+          maxLogLevelPref: "browser.translations.logLevel",
+          prefix: "Translations",
+        });
+      } catch {
+        
+      }
     }
     return this.#console;
   }
@@ -436,7 +442,7 @@ var TranslationsPanel = new (class {
         
         break;
       default:
-        this.console.error("Unknown langList phase", this.#langListsPhase);
+        this.console?.error("Unknown langList phase", this.#langListsPhase);
     }
 
     try {
@@ -477,7 +483,7 @@ var TranslationsPanel = new (class {
 
       this.#langListsPhase = "initialized";
     } catch (error) {
-      this.console.error(error);
+      this.console?.error(error);
       this.#langListsPhase = "error";
     }
   }
@@ -1064,7 +1070,7 @@ var TranslationsPanel = new (class {
     PanelMultiView.openPopup(panel, target, {
       position: "bottomright topright",
       triggerEvent: event,
-    }).catch(error => this.console.error(error));
+    }).catch(error => this.console?.error(error));
   }
 
   
@@ -1100,11 +1106,11 @@ var TranslationsPanel = new (class {
 
     if (requestedTranslationPair) {
       await this.#showRevisitView(requestedTranslationPair).catch(error => {
-        this.console.error(error);
+        this.console?.error(error);
       });
     } else {
       await this.#showDefaultView().catch(error => {
-        this.console.error(error);
+        this.console?.error(error);
       });
     }
 
