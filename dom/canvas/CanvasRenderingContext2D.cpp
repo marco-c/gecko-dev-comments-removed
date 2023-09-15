@@ -3734,7 +3734,14 @@ void CanvasRenderingContext2D::SetFont(const nsACString& aFont,
 
 static float QuantizeFontSize(float aSize) {
   
-  return NS_round(4.0 * aSize) * 0.25;
+  
+  
+  
+  constexpr int bitsToDrop = 17;  
+  constexpr int scale = 1 << bitsToDrop;
+  float d = aSize * (scale + 1);
+  float t = d - aSize;
+  return d - t;
 }
 
 bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
