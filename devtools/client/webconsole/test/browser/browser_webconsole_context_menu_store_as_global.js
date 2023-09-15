@@ -7,6 +7,9 @@
 "use strict";
 
 const TEST_URI = `data:text/html;charset=utf-8,<!DOCTYPE html><script>
+  /* Verify a conflicting global doesn't break the feature. */
+  var _self = "wrong value";
+
   window.bar = { baz: 1 };
   console.log("foo");
   console.log("foo", window.bar);

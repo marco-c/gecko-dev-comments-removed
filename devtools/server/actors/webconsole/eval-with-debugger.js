@@ -153,11 +153,15 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
     evalOptions.lineNumber = options.lineNumber;
   }
 
-  
-  
-  
   if (options.disableBreaks) {
+    
+    
+    
     evalOptions.hideFromDebugger = true;
+
+    
+    
+    evalOptions.useInnerBindings = true;
   }
 
   updateConsoleInputEvaluation(dbg, webConsole);

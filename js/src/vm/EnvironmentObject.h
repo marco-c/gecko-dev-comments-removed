@@ -443,6 +443,16 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
+
+
+
+
+
+
+
+
+
+
 class EnvironmentObject : public NativeObject {
  protected:
   
