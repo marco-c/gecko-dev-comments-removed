@@ -7598,6 +7598,7 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
     
     
     if (mLoadedAsData && window->GetExtantDoc() &&
+        window->GetExtantDoc() != this &&
         window->GetExtantDoc()->NodePrincipal() == NodePrincipal()) {
       DocGroup* docGroup = window->GetExtantDoc()->GetDocGroup();
 
