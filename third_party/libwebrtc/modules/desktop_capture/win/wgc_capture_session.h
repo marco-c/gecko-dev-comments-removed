@@ -131,9 +131,6 @@ class WgcCaptureSession final {
   bool is_capture_started_ = false;
 
   
-  bool is_frame_captured_ = false;
-
-  
   
   
   bool allow_zero_hertz_ = false;
