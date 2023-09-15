@@ -26,15 +26,14 @@ promise_test(t => {
 promise_test(t => {
   let encoder = new VideoEncoder(getDefaultCodecInit(t));
 
-  let badCodecsList = [
-    '',                         
+  let unsupportedCodecsList = [
     'bogus',                    
     'vorbis',                   
     'vp9',                      
     'video/webm; codecs="vp9"'  
   ]
 
-  testConfigurations(encoder, defaultConfig, badCodecsList);
+  testConfigurations(encoder, defaultConfig, unsupportedCodecsList);
 
   return endAfterEventLoopTurn();
 }, 'Test VideoEncoder.configure()');
@@ -261,6 +260,9 @@ promise_test(async t => {
   
   let badConfig = { ...defaultConfig };
   badConfig.codec = 'bogus';
+  assert_throws_dom('NotSupportedError', () => encoder.configure(badConfig));
+
+  delete badConfig['codec'];
   assert_throws_js(TypeError, () => encoder.configure(badConfig));
 
   encoder.encode(frame4);
