@@ -4522,10 +4522,7 @@ static int pref_CompareFileNames(nsIFile* aFile1, nsIFile* aFile2,
 
 
 
-
-static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
-                                    char const* const* aSpecialFiles,
-                                    uint32_t aSpecialFilesCount) {
+static nsresult pref_LoadPrefsInDir(nsIFile* aDir) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   nsresult rv, rv2;
@@ -4545,7 +4542,6 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
   }
 
   nsCOMArray<nsIFile> prefFiles(INITIAL_PREF_FILES);
-  nsCOMArray<nsIFile> specialFiles(aSpecialFilesCount);
   nsCOMPtr<nsIFile> prefFile;
 
   while (NS_SUCCEEDED(dirIterator->GetNextFile(getter_AddRefs(prefFile))) &&
@@ -4559,25 +4555,11 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
     
     if (StringEndsWith(leafName, ".js"_ns,
                        nsCaseInsensitiveCStringComparator)) {
-      bool shouldParse = true;
-
-      
-      for (uint32_t i = 0; i < aSpecialFilesCount; ++i) {
-        if (leafName.Equals(nsDependentCString(aSpecialFiles[i]))) {
-          shouldParse = false;
-          
-          
-          specialFiles.ReplaceObjectAt(prefFile, i);
-        }
-      }
-
-      if (shouldParse) {
-        prefFiles.AppendObject(prefFile);
-      }
+      prefFiles.AppendObject(prefFile);
     }
   }
 
-  if (prefFiles.Count() + specialFiles.Count() == 0) {
+  if (prefFiles.Count() == 0) {
     NS_WARNING("No default pref files found.");
     if (NS_SUCCEEDED(rv)) {
       rv = NS_SUCCESS_FILE_DIRECTORY_EMPTY;
@@ -4594,19 +4576,6 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
     if (NS_FAILED(rv2)) {
       NS_ERROR("Default pref file not parsed successfully.");
       rv = rv2;
-    }
-  }
-
-  arrayCount = specialFiles.Count();
-  for (i = 0; i < arrayCount; ++i) {
-    
-    nsIFile* file = specialFiles[i];
-    if (file) {
-      rv2 = openPrefFile(file, PrefValueKind::Default);
-      if (NS_FAILED(rv2)) {
-        NS_ERROR("Special default pref file not parsed successfully.");
-        rv = rv2;
-      }
     }
   }
 
@@ -4890,24 +4859,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
                               getter_AddRefs(defaultPrefDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  static const char* specialFiles[] = {
-#if defined(XP_MACOSX)
-    "macprefs.js"
-#elif defined(XP_WIN)
-    "winpref.js"
-#elif defined(XP_UNIX)
-    "unix.js"
-#  if defined(_AIX)
-    ,
-    "aix.js"
-#  endif
-#endif
-  };
-
-  rv = pref_LoadPrefsInDir(defaultPrefDir, specialFiles,
-                           ArrayLength(specialFiles));
+  rv = pref_LoadPrefsInDir(defaultPrefDir);
   if (NS_FAILED(rv)) {
     NS_WARNING("Error parsing application default preferences.");
   }
@@ -4980,7 +4932,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
       }
 
       
-      pref_LoadPrefsInDir(path, nullptr, 0);
+      pref_LoadPrefsInDir(path);
     }
   }
 
@@ -4996,7 +4948,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
   defaultSystemPrefDir->AppendNative("defaults"_ns);
   defaultSystemPrefDir->AppendNative("pref"_ns);
 
-  rv = pref_LoadPrefsInDir(defaultSystemPrefDir, nullptr, 0);
+  rv = pref_LoadPrefsInDir(defaultSystemPrefDir);
   if (NS_FAILED(rv)) {
     NS_WARNING("Error parsing application default preferences.");
   }
