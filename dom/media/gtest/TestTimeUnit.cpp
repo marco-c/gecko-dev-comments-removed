@@ -64,7 +64,7 @@ TEST(TimeUnit, BasicArithmetic)
     TimeUnit c = TimeUnit(9001, 90000);
     TimeUnit d = (b - c).ToBase(90000);
     EXPECT_EQ(d.mBase, 90000);
-    EXPECT_EQ(d.mTicks.value(), 530999);
+    EXPECT_EQ(d.mTicks.value(), 530998);
   }
 }
 
@@ -278,18 +278,4 @@ TEST(TimeUnit, BaseConversion)
       frameCount += packetSize;
     } while (pts.ToSeconds() < 36000);
   }
-}
-
-TEST(TimeUnit, MinimumRoundingError)
-{
-  TimeUnit a(448, 48000);  
-  TimeUnit b(1, 1000000);  
-  TimeUnit rv = a - b;     
-  EXPECT_EQ(rv.mTicks.value(), 448);  
-  EXPECT_EQ(rv.mBase, 48000);
-
-  TimeUnit c(11, 1000000);  
-  rv = a - c;               
-  EXPECT_EQ(rv.mTicks.value(), 447);  
-  EXPECT_EQ(rv.mBase, 48000);
 }

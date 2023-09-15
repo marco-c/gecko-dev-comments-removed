@@ -956,6 +956,10 @@ class MediaDecoderStateMachine::LoopingDecodingState
       VideoQueue().Finish();
     }
 
+    if (mWaitingAudioDataFromStart) {
+      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
+    }
+
     
     mDataWaitingTimestampAdjustment = nullptr;
 
@@ -978,6 +982,11 @@ class MediaDecoderStateMachine::LoopingDecodingState
   void HandleAudioDecoded(AudioData* aAudio) override {
     
 
+    if (mWaitingAudioDataFromStart) {
+      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
+      mWaitingAudioDataFromStart = false;
+    }
+
     
     DecodingState::HandleAudioDecoded(aAudio);
     mMaster->mDecodedAudioEndTime =
@@ -988,39 +997,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   void HandleVideoDecoded(VideoData* aVideo) override {
     
-
-    
-
-    
-    
-    
-    
-    
-    if (mMaster->mOriginalDecodedDuration == media::TimeUnit::Zero() &&
-        mMaster->mAudioTrackDecodedDuration &&
-        aVideo->GetEndTime() > *mMaster->mAudioTrackDecodedDuration) {
-      media::TimeUnit gap;
-      
-      if (auto prevVideo = VideoQueue().PeekBack();
-          prevVideo &&
-          prevVideo->GetEndTime() < *mMaster->mAudioTrackDecodedDuration) {
-        gap =
-            aVideo->GetEndTime().ToBase(*mMaster->mAudioTrackDecodedDuration) -
-            *mMaster->mAudioTrackDecodedDuration;
-      }
-      
-      else {
-        gap = aVideo->mDuration.ToBase(*mMaster->mAudioTrackDecodedDuration);
-      }
-      SLOG("Longer video %" PRId64 "%s (audio-durtaion=%" PRId64
-           "%s), insert silence to fill the gap %" PRId64 "%s",
-           aVideo->GetEndTime().ToMicroseconds(),
-           aVideo->GetEndTime().ToString().get(),
-           mMaster->mAudioTrackDecodedDuration->ToMicroseconds(),
-           mMaster->mAudioTrackDecodedDuration->ToString().get(),
-           gap.ToMicroseconds(), gap.ToString().get());
-      PushFakeAudioDataIfNeeded(gap);
-    }
 
     
     DecodingState::HandleVideoDecoded(aVideo);
@@ -1040,30 +1016,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
     if (DetermineOriginalDecodedDurationIfNeeded()) {
       AudioQueue().SetOffset(AudioQueue().GetOffset() +
                              mMaster->mOriginalDecodedDuration);
-    }
-
-    
-    
-    if (mMaster->mAudioTrackDecodedDuration &&
-        mMaster->mOriginalDecodedDuration >
-            *mMaster->mAudioTrackDecodedDuration) {
-      MOZ_ASSERT(mMaster->HasVideo());
-      MOZ_ASSERT(mMaster->mVideoTrackDecodedDuration);
-      MOZ_ASSERT(mMaster->mOriginalDecodedDuration ==
-                 *mMaster->mVideoTrackDecodedDuration);
-      auto gap = mMaster->mOriginalDecodedDuration.ToBase(
-                     *mMaster->mAudioTrackDecodedDuration) -
-                 *mMaster->mAudioTrackDecodedDuration;
-      SLOG(
-          "Audio track is shorter than the original decoded duration "
-          "(a=%" PRId64 "%s, t=%" PRId64
-          "%s), insert silence to fill the gap %" PRId64 "%s",
-          mMaster->mAudioTrackDecodedDuration->ToMicroseconds(),
-          mMaster->mAudioTrackDecodedDuration->ToString().get(),
-          mMaster->mOriginalDecodedDuration.ToMicroseconds(),
-          mMaster->mOriginalDecodedDuration.ToString().get(),
-          gap.ToMicroseconds(), gap.ToString().get());
-      PushFakeAudioDataIfNeeded(gap);
     }
 
     SLOG(
@@ -1303,17 +1255,14 @@ class MediaDecoderStateMachine::LoopingDecodingState
   bool ShouldRequestData(MediaData::Type aType) const {
     MOZ_DIAGNOSTIC_ASSERT(aType == MediaData::Type::AUDIO_DATA ||
                           aType == MediaData::Type::VIDEO_DATA);
-
     if (aType == MediaData::Type::AUDIO_DATA &&
         (mAudioSeekRequest.Exists() || mAudioDataRequest.Exists() ||
-         IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA) ||
-         mMaster->IsWaitingAudioData())) {
+         IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA))) {
       return false;
     }
     if (aType == MediaData::Type::VIDEO_DATA &&
         (mVideoSeekRequest.Exists() || mVideoDataRequest.Exists() ||
-         IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA) ||
-         mMaster->IsWaitingVideoData())) {
+         IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA))) {
       return false;
     }
     return true;
@@ -1549,59 +1498,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
     }
   }
 
-  void PushFakeAudioDataIfNeeded(const media::TimeUnit& aDuration) {
-    MOZ_ASSERT(Info().HasAudio());
-
-    const auto& audioInfo = Info().mAudio;
-    CheckedInt64 frames = aDuration.ToTicksAtRate(audioInfo.mRate);
-    if (!frames.isValid() || !audioInfo.mChannels || !audioInfo.mRate) {
-      NS_WARNING("Can't create fake audio, invalid frames/channel/rate?");
-      return;
-    }
-
-    if (!frames.value()) {
-      NS_WARNING(nsPrintfCString("Duration (%s) too short, no frame needed",
-                                 aDuration.ToString().get())
-                     .get());
-      return;
-    }
-
-    
-    int64_t typicalPacketFrameCount = 1024;
-    if (RefPtr<AudioData> audio = AudioQueue().PeekBack()) {
-      typicalPacketFrameCount = audio->Frames();
-    }
-
-    media::TimeUnit totalDuration = TimeUnit::Zero(audioInfo.mRate);
-    
-    while (frames.value()) {
-      int64_t packetFrameCount =
-          std::min(frames.value(), typicalPacketFrameCount);
-      frames -= packetFrameCount;
-      AlignedAudioBuffer samples(packetFrameCount * audioInfo.mChannels);
-      if (!samples) {
-        NS_WARNING("Can't create audio buffer, OOM?");
-        return;
-      }
-      
-      
-      
-      media::TimeUnit startTime = mMaster->mDecodedAudioEndTime;
-      if (AudioQueue().GetOffset() != media::TimeUnit::Zero()) {
-        startTime -= AudioQueue().GetOffset();
-      }
-      RefPtr<AudioData> data(new AudioData(0, startTime, std::move(samples),
-                                           audioInfo.mChannels,
-                                           audioInfo.mRate));
-      SLOG("Created fake audio data (duration=%s, frame-left=%" PRId64 ")",
-           data->mDuration.ToString().get(), frames.value());
-      totalDuration += data->mDuration;
-      HandleAudioDecoded(data);
-    }
-    SLOG("Pushed fake silence audio data in total duration=%" PRId64 "%s",
-         totalDuration.ToMicroseconds(), totalDuration.ToString().get());
-  }
-
   bool HasDecodedLastAudioFrame() const {
     
     
@@ -1710,6 +1606,12 @@ class MediaDecoderStateMachine::LoopingDecodingState
   
   bool mAudioEndedBeforeEnteringStateWithoutDuration;
   bool mVideoEndedBeforeEnteringStateWithoutDuration;
+
+  
+  
+  
+  
+  bool mWaitingAudioDataFromStart = false;
 };
 
 
@@ -3253,6 +3155,17 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
     case NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA:
       if (aIsAudio) {
         HandleWaitingForAudio();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mWaitingAudioDataFromStart = true;
+        mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(true);
       } else {
         HandleWaitingForVideo();
       }
