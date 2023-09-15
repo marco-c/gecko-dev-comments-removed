@@ -27,7 +27,7 @@ namespace dcsctp {
 
 class StateCookie {
  public:
-  static constexpr size_t kCookieSize = 36;
+  static constexpr size_t kCookieSize = 37;
 
   StateCookie(VerificationTag initiate_tag,
               TSN initial_tsn,
