@@ -3435,6 +3435,33 @@ class nsContentUtils {
 
   static bool IsExternalProtocol(nsIURI* aURI);
 
+  
+
+
+
+
+
+  template <typename ElementType, typename ElementPtr>
+  static bool AddElementToListByTreeOrder(nsTArray<ElementType>& aList,
+                                          ElementPtr aChild,
+                                          nsIContent* aCommonAncestor);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static int32_t CompareTreePosition(nsIContent* aContent1,
+                                     nsIContent* aContent2,
+                                     const nsIContent* aCommonAncestor);
+
  private:
   static bool InitializeEventTable();
 
