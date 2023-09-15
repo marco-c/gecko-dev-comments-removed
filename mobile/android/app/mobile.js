@@ -116,6 +116,9 @@ pref("extensions.webextOptionalPermissionPrompts", true);
 pref("extensions.experiments.enabled", false);
 
 
+pref("extensions.abuseReport.amWebAPI.enabled", false);
+
+
 pref("dom.disable_open_during_load", true);
 pref("privacy.popups.showBrowserMessage", true);
 
