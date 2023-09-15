@@ -1325,7 +1325,7 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     }
 
     
-    if (c <= ' ' || c == ',') {
+    if (c <= ' ' || c == '.' || c == ',') {
       continue;
     }
 
