@@ -445,7 +445,7 @@ fn tweak_when_ignoring_colors(
         
         color
             .to_computed_value(context)
-            .resolve_to_absolute(&AbsoluteColor::black())
+            .resolve_to_absolute(&AbsoluteColor::BLACK)
             .alpha
     }
 

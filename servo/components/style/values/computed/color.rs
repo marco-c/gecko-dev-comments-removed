@@ -43,6 +43,15 @@ impl ToCss for Color {
 
 impl Color {
     
+    pub const TRANSPARENT: Self = Self::Absolute(AbsoluteColor::TRANSPARENT);
+
+    
+    pub const BLACK: Self = Self::Absolute(AbsoluteColor::BLACK);
+
+    
+    pub const WHITE: Self = Self::Absolute(AbsoluteColor::WHITE);
+
+    
     
     pub fn from_color_mix(color_mix: ColorMix) -> Self {
         if let Some(absolute) = color_mix.mix_to_absolute() {
@@ -50,21 +59,6 @@ impl Color {
         } else {
             Self::ColorMix(Box::new(color_mix))
         }
-    }
-
-    
-    pub fn transparent() -> Color {
-        Color::Absolute(AbsoluteColor::transparent())
-    }
-
-    
-    pub fn black() -> Color {
-        Color::Absolute(AbsoluteColor::black())
-    }
-
-    
-    pub fn white() -> Color {
-        Color::Absolute(AbsoluteColor::white())
     }
 
     
@@ -93,7 +87,7 @@ impl Color {
 
 impl ToAnimatedZero for AbsoluteColor {
     fn to_animated_zero(&self) -> Result<Self, ()> {
-        Ok(Self::transparent())
+        Ok(Self::TRANSPARENT)
     }
 }
 
