@@ -156,10 +156,15 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   bool AddStream(MediaStreamInterface* local_stream);
   void RemoveStream(MediaStreamInterface* local_stream);
 
-  absl::optional<bool> is_caller();
+  absl::optional<bool> is_caller() const;
   bool HasNewIceCredentials();
   void UpdateNegotiationNeeded();
   void AllocateSctpSids();
+  
+  
+  
+  
+  absl::optional<rtc::SSLRole> GuessSslRole() const;
 
   
   void DestroyAllChannels();

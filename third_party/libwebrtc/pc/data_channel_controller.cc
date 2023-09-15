@@ -227,7 +227,7 @@ void DataChannelController::OnDataChannelOpenMessage(
     const std::string& label,
     const InternalDataChannelInit& config) {
   rtc::scoped_refptr<DataChannelInterface> channel(
-      InternalCreateDataChannelWithProxy(label, &config));
+      InternalCreateDataChannelWithProxy(label, config));
   if (!channel.get()) {
     RTC_LOG(LS_ERROR) << "Failed to create DataChannel from the OPEN message.";
     return;
@@ -240,7 +240,7 @@ void DataChannelController::OnDataChannelOpenMessage(
 rtc::scoped_refptr<DataChannelInterface>
 DataChannelController::InternalCreateDataChannelWithProxy(
     const std::string& label,
-    const InternalDataChannelInit* config) {
+    const InternalDataChannelInit& config) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   if (pc_->IsClosed()) {
     return nullptr;
@@ -258,26 +258,31 @@ DataChannelController::InternalCreateDataChannelWithProxy(
 rtc::scoped_refptr<SctpDataChannel>
 DataChannelController::InternalCreateSctpDataChannel(
     const std::string& label,
-    const InternalDataChannelInit* config) {
+    const InternalDataChannelInit& config) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (config && !config->IsValid()) {
+  if (!config.IsValid()) {
     RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
                          "invalid DataChannelInit.";
     return nullptr;
   }
 
-  InternalDataChannelInit new_config =
-      config ? (*config) : InternalDataChannelInit();
+  InternalDataChannelInit new_config = config;
   StreamId sid(new_config.id);
   if (!sid.HasValue()) {
-    rtc::SSLRole role;
     
     
     
     
-    
-    if (pc_->GetSctpSslRole(&role)) {
-      sid = sid_allocator_.AllocateSid(role);
+    absl::optional<rtc::SSLRole> role = network_thread()->BlockingCall([this] {
+      RTC_DCHECK_RUN_ON(network_thread());
+      return pc_->GetSctpSslRole_n();
+    });
+
+    if (!role)
+      role = new_config.fallback_ssl_role;
+
+    if (role) {
+      sid = sid_allocator_.AllocateSid(*role);
       if (!sid.HasValue())
         return nullptr;
     }

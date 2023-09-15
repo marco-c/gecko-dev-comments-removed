@@ -82,8 +82,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   rtc::scoped_refptr<DataChannelInterface> InternalCreateDataChannelWithProxy(
       const std::string& label,
-      const InternalDataChannelInit*
-          config) ;
+      const InternalDataChannelInit& config);
   void AllocateSctpSids(rtc::SSLRole role);
 
   
@@ -104,8 +103,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
  private:
   rtc::scoped_refptr<SctpDataChannel> InternalCreateSctpDataChannel(
       const std::string& label,
-      const InternalDataChannelInit*
-          config) ;
+      const InternalDataChannelInit& config);
 
   
   

@@ -70,6 +70,11 @@ struct InternalDataChannelInit : public DataChannelInit {
   bool IsValid() const;
 
   OpenHandshakeRole open_handshake_role;
+  
+  
+  
+  
+  absl::optional<rtc::SSLRole> fallback_ssl_role;
 };
 
 
