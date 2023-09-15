@@ -375,18 +375,12 @@ struct VideoConfig {
 
 
 struct AudioConfig {
-  enum Mode {
-    kGenerated,
-    kFile,
-  };
-
   AudioConfig() = default;
   explicit AudioConfig(absl::string_view stream_label);
 
   
   
   absl::optional<std::string> stream_label;
-  Mode mode = kGenerated;
   
   absl::optional<std::string> input_file_name;
   
