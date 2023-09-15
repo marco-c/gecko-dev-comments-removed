@@ -40,6 +40,7 @@ gecko_metrics = [
 
 firefox_desktop_metrics = [
     "browser/components/metrics.yaml",
+    "browser/components/migration/metrics.yaml",
     "browser/components/newtab/metrics.yaml",
     "browser/components/search/metrics.yaml",
     "browser/components/urlbar/metrics.yaml",
