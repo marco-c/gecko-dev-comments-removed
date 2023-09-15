@@ -38,6 +38,10 @@ namespace webrtc {
 
 class SctpDataChannel;
 
+
+
+
+
 class SctpDataChannelControllerInterface {
  public:
   
@@ -45,7 +49,9 @@ class SctpDataChannelControllerInterface {
                             const SendDataParams& params,
                             const rtc::CopyOnWriteBuffer& payload) = 0;
   
+  
   virtual void AddSctpDataStream(StreamId sid) = 0;
+  
   
   
   virtual void RemoveSctpDataStream(StreamId sid) = 0;
