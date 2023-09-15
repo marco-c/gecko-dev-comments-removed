@@ -1809,7 +1809,7 @@ void nsImageFrame::DisplayAltText(nsPresContext* aPresContext,
 struct nsRecessedBorder : public nsStyleBorder {
   explicit nsRecessedBorder(nscoord aBorderWidth) {
     for (const auto side : AllPhysicalSides()) {
-      BorderColorFor(side) = StyleColor::BLACK;
+      BorderColorFor(side) = StyleColor::Black();
       mBorder.Side(side) = aBorderWidth;
       
       
