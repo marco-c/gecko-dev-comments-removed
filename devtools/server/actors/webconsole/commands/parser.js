@@ -36,27 +36,14 @@ const COMMAND_DEFAULT_FLAG = {
 
 
 
-function formatCommand(string) {
+
+
+function getCommandAndArgs(string) {
   if (!isCommand(string)) {
-    throw Error("formatCommand was called without `:`");
+    throw Error("getCommandAndArgs was called without `:`");
   }
   const tokens = string.trim().split(/\s+/).map(createToken);
-  const { command, args } = parseCommand(tokens);
-  const argsString = formatArgs(args);
-  return `${command}(${argsString})`;
-}
-
-
-
-
-
-
-
-
-
-
-function formatArgs(args) {
-  return Object.keys(args).length ? JSON.stringify(args) : "";
+  return parseCommand(tokens);
 }
 
 
@@ -245,5 +232,5 @@ function getTypedValue(value) {
   return value;
 }
 
-exports.formatCommand = formatCommand;
+exports.getCommandAndArgs = getCommandAndArgs;
 exports.isCommand = isCommand;
