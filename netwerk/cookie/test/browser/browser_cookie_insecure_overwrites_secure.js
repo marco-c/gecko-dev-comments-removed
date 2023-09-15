@@ -12,7 +12,6 @@ const baseDomain = "example.com";
 
 
 const URL_INSECURE_COM = "http://" + baseDomain + urlPath;
-
 const URL_SECURE_COM = "https://" + baseDomain + urlPath;
 
 
@@ -30,6 +29,9 @@ registerCleanupFunction(() => {
 });
 
 async function setup() {
+  
+  Services.prefs.setBoolPref("dom.security.https_first", false);
+
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
 
   Services.prefs.setBoolPref(
