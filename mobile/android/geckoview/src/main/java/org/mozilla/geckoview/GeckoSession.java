@@ -2918,6 +2918,30 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<List<Recommendation>> requestRecommendations(
+      @NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher
+        .queryBundle("GeckoView:RequestRecommendations", bundle)
+        .map(
+            recommendationsBundle -> {
+              final GeckoBundle[] bundles = recommendationsBundle.getBundleArray("recommendations");
+              final ArrayList<Recommendation> recArray = new ArrayList<>(bundles.length);
+              for (final GeckoBundle b : bundles) {
+                recArray.add(new Recommendation(b));
+              }
+              return recArray;
+            });
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {
@@ -3413,16 +3437,6 @@ public class GeckoSession {
   
   @AnyThread
   public static class ReviewAnalysis {
-    @Retention(RetentionPolicy.SOURCE)
-    @StringDef({GRADE_A, GRADE_B, GRADE_C, GRADE_D, GRADE_E})
-    public @interface Grade {}
-
-    public static final String GRADE_A = "A";
-    public static final String GRADE_B = "B";
-    public static final String GRADE_C = "C";
-    public static final String GRADE_D = "D";
-    public static final String GRADE_E = "E";
-
     
     @Nullable public final String analysisURL;
 
@@ -3430,7 +3444,7 @@ public class GeckoSession {
     @Nullable public final String productId;
 
     
-    @Nullable public final @Grade String grade;
+    @Nullable public final String grade;
 
     
     @NonNull public final Double adjustedRating;
@@ -3508,6 +3522,67 @@ public class GeckoSession {
         appearance = null;
         competitiveness = null;
       }
+    }
+  }
+
+  
+  @AnyThread
+  public static class Recommendation {
+    
+    @Nullable public final String analysisUrl;
+
+    
+    @Nullable public final Double adjustedRating;
+
+    
+    @Nullable public final Boolean sponsored;
+
+    
+    @Nullable public final String imageUrl;
+
+    
+    @Nullable public final String aid;
+
+    
+    @Nullable public final String url;
+
+    
+    @Nullable public final String name;
+
+    
+    @Nullable public final String grade;
+
+    
+    @Nullable public final String price;
+
+    
+    @Nullable public final String currency;
+
+     Recommendation(@NonNull final GeckoBundle message) {
+      analysisUrl = message.getString("analysis_url");
+      adjustedRating = message.getDouble("adjusted_rating");
+      sponsored = message.getBoolean("sponsored");
+      imageUrl = message.getString("image_url");
+      aid = message.getString("aid");
+      url = message.getString("url");
+      name = message.getString("name");
+      grade = message.getString("grade");
+      price = message.getString("price");
+      currency = message.getString("currency");
+    }
+
+    
+    protected Recommendation() {
+      analysisUrl = "";
+      adjustedRating = 0.0;
+      sponsored = false;
+      imageUrl = "";
+      aid = "";
+      url = "";
+      name = "";
+      grade = "";
+      price = "";
+      currency = "";
     }
   }
 
