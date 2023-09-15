@@ -60,12 +60,12 @@ def run(
 
     
     if not full:
-        blacklisted_tasks = [
+        excluded_tasks = [
             label
             for label in tg.tasks.keys()
             if not filter_by_uncommon_try_tasks(label)
         ]
-        for task in blacklisted_tasks:
+        for task in excluded_tasks:
             tg.tasks.pop(task)
 
     app = create_application(tg)
