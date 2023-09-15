@@ -8,8 +8,6 @@
 
 "use strict";
 
-const LEGACY_ACTORS_PREF = "devtools.storage.test.forceLegacyActors";
-
 
 
 
@@ -19,11 +17,6 @@ const LEGACY_ACTORS_PREF = "devtools.storage.test.forceLegacyActors";
 
 
 async function openTabAndSetupStorage(url) {
-  
-  SpecialPowers.pushPrefEnv({
-    set: [[LEGACY_ACTORS_PREF, true]],
-  });
-
   await addTab(url);
 
   
