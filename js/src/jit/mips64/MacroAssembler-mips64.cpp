@@ -2072,6 +2072,13 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
   MOZ_ASSERT(diffF == 0);
 }
 
+void MacroAssembler::freeStackTo(uint32_t framePushed) {
+  MOZ_ASSERT(framePushed <= framePushed_);
+  ma_dsubu(StackPointer, FramePointer, Imm32(framePushed));
+  framePushed_ = framePushed;
+}
+
+
 
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
