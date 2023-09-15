@@ -158,12 +158,17 @@ bool ParallelMarkTask::hasWork() const {
 }
 
 void ParallelMarkTask::recordDuration() {
-  gc->stats().recordParallelPhase(gcstats::PhaseKind::PARALLEL_MARK,
-                                  duration());
+  
   gc->stats().recordParallelPhase(gcstats::PhaseKind::PARALLEL_MARK_MARK,
                                   markTime.ref());
   gc->stats().recordParallelPhase(gcstats::PhaseKind::PARALLEL_MARK_WAIT,
                                   waitTime.ref());
+  TimeDuration other = duration() - markTime.ref() - waitTime.ref();
+  if (other < TimeDuration::Zero()) {
+    other = TimeDuration::Zero();
+  }
+  gc->stats().recordParallelPhase(gcstats::PhaseKind::PARALLEL_MARK_OTHER,
+                                  other);
 }
 
 void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
