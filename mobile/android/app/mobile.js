@@ -144,9 +144,6 @@ pref("browser.search.update", false);
 pref("browser.search.suggest.enabled", false);
 
 
-pref("browser.search.noCurrentEngine", true);
-
-
 pref("chrome.override_package.global", "browser");
 pref("chrome.override_package.mozapps", "browser");
 pref("chrome.override_package.passwordmgr", "browser");
@@ -166,19 +163,11 @@ pref("browser.link.open_newwindow.restriction", 0);
 
 
 
-pref("javascript.options.mem.high_water_mark", 32);
-
 pref("dom.max_script_run_time", 20);
 
 
 
 pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-debugger-socket");
-
-pref("devtools.remote.usb.enabled", false);
-pref("devtools.remote.wifi.enabled", false);
-
-
-pref("plugin.disable", true);
 
 
 
@@ -203,8 +192,6 @@ pref("app.update.timerMinimumDelay", 30);
   pref("app.update.channel", "@MOZ_UPDATE_CHANNEL@");
 #endif
 
-pref("layers.async-video.enabled", true);
-
 
 
 pref("apz.axis_lock.breakout_angle", "0.7853982");    
@@ -224,8 +211,6 @@ pref("apz.overscroll.enabled", true);
 pref("apz.second_tap_tolerance", "0.3");
 pref("apz.touch_move_tolerance", "0.03");
 pref("apz.touch_start_tolerance", "0.06");
-
-pref("notification.feature.enabled", true);
 
 
 pref("browser.chrome.toolbar_tips", false);
@@ -288,9 +273,6 @@ pref("devtools.console.stdout.chrome", true);
 pref("network.tickle-wifi.enabled", true);
 
 
-pref("browser.urlbar.trimURLs", true);
-
-
 
 
 pref("home.sync.updateMode", 0);
@@ -348,10 +330,7 @@ pref("layout.accessiblecaret.extend_selection_for_phone_number", true);
 
 pref("dom.serviceWorkers.disable_open_click_delay", 5000);
 
-pref("dom.push.debug", false);
 pref("dom.push.maxRecentMessageIDsPerSubscription", 0);
-
-pref("dom.audiochannel.mediaControl", true);
 
 
 pref("media.navigator.permission.device", true);
