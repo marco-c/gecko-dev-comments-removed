@@ -1125,6 +1125,13 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
   
   aria::AttrIterator attribIter(mContent);
   while (attribIter.Next()) {
+    if (attribIter.AttrName() == nsGkAtoms::aria_placeholder &&
+        attributes->HasAttribute(nsGkAtoms::placeholder)) {
+      
+      
+      
+      continue;
+    }
     attribIter.ExposeAttr(attributes);
   }
 
@@ -3207,6 +3214,18 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(CacheKey::NameValueFlag, nameFlag);
     } else if (aUpdateType == CacheUpdateType::Update) {
       fields->SetAttribute(CacheKey::NameValueFlag, DeleteEntry());
+    }
+
+    if (IsTextField()) {
+      MOZ_ASSERT(mContent);
+      nsString placeholder;
+      
+      if (Elm()->GetAttr(nsGkAtoms::placeholder, placeholder) &&
+          name != placeholder) {
+        fields->SetAttribute(CacheKey::HTMLPlaceholder, std::move(placeholder));
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(CacheKey::HTMLPlaceholder, DeleteEntry());
+      }
     }
 
     if (!name.IsEmpty()) {

@@ -157,6 +157,8 @@ class CacheKey {
   
   
   static constexpr nsStaticAtom* HasLongdesc = nsGkAtoms::longdesc;
+  
+  static constexpr nsStaticAtom* HTMLPlaceholder = nsGkAtoms::placeholder;
 #ifdef XP_WIN
   
   static constexpr nsStaticAtom* InnerHTML = nsGkAtoms::html;
