@@ -755,7 +755,8 @@ void DcSctpSocket::ReceivePacket(rtc::ArrayView<const uint8_t> data) {
     packet_observer_->OnReceivedPacket(callbacks_.TimeMillis(), data);
   }
 
-  absl::optional<SctpPacket> packet = SctpPacket::Parse(data, options_);
+  absl::optional<SctpPacket> packet =
+      SctpPacket::Parse(data, options_.disable_checksum_verification);
   if (!packet.has_value()) {
     
     
@@ -797,7 +798,7 @@ void DcSctpSocket::ReceivePacket(rtc::ArrayView<const uint8_t> data) {
 }
 
 void DcSctpSocket::DebugPrintOutgoing(rtc::ArrayView<const uint8_t> payload) {
-  auto packet = SctpPacket::Parse(payload, options_);
+  auto packet = SctpPacket::Parse(payload);
   RTC_DCHECK(packet.has_value());
 
   for (const auto& desc : packet->descriptors()) {

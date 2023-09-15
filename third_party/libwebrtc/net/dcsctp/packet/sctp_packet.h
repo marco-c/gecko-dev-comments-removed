@@ -74,9 +74,7 @@ class SctpPacket {
 
     
     
-    
-    
-    std::vector<uint8_t> Build(bool write_checksum = true);
+    std::vector<uint8_t> Build();
 
    private:
     VerificationTag verification_tag_;
@@ -89,8 +87,9 @@ class SctpPacket {
   };
 
   
-  static absl::optional<SctpPacket> Parse(rtc::ArrayView<const uint8_t> data,
-                                          const DcSctpOptions& options);
+  static absl::optional<SctpPacket> Parse(
+      rtc::ArrayView<const uint8_t> data,
+      bool disable_checksum_verification = false);
 
   
   const CommonHeader& common_header() const { return common_header_; }

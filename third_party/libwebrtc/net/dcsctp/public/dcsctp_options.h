@@ -195,15 +195,6 @@ struct DcSctpOptions {
 
   
   bool disable_checksum_verification = false;
-
-  
-  
-  
-  
-  
-  
-  
-  bool enable_zero_checksum = false;
 };
 }  
 
