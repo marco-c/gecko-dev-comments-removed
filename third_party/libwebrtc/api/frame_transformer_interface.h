@@ -59,11 +59,6 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
   virtual bool IsKeyFrame() const = 0;
   virtual const std::string& GetRid() const = 0;
 
-  
-  
-  [[deprecated("Use Metadata() instead")]] virtual const VideoFrameMetadata&
-  GetMetadata() const = 0;
-
   virtual VideoFrameMetadata Metadata() const = 0;
 
   
