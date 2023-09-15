@@ -747,7 +747,19 @@ impl FontFamilyList {
 }
 
 
-pub type FontSizeAdjust = generics::GenericFontSizeAdjust<NonNegativeNumber>;
+
+pub type FontSizeAdjustFactor = generics::GenericNumberOrFromFont<NonNegativeNumber>;
+
+impl FontSizeAdjustFactor {
+    #[inline]
+    
+    pub fn new(val: f32) -> Self {
+        FontSizeAdjustFactor::Number(NonNegative(val))
+    }
+}
+
+
+pub type FontSizeAdjust = generics::GenericFontSizeAdjust<FontSizeAdjustFactor>;
 
 impl FontSizeAdjust {
     #[inline]

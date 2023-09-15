@@ -215,6 +215,31 @@ pub enum FontStyle<Angle> {
 
 
 
+#[repr(u8)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToCss,
+    ToShmem,
+)]
+pub enum GenericNumberOrFromFont<N> {
+    
+    Number(N),
+    
+    FromFont,
+}
+
 
 
 
@@ -236,22 +261,22 @@ pub enum FontStyle<Angle> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum GenericFontSizeAdjust<Number> {
+pub enum GenericFontSizeAdjust<Factor> {
     #[animation(error)]
     None,
     
-    ExHeight(Number),
+    ExHeight(Factor),
     #[value_info(starts_with_keyword)]
-    CapHeight(Number),
+    CapHeight(Factor),
     #[value_info(starts_with_keyword)]
-    ChWidth(Number),
+    ChWidth(Factor),
     #[value_info(starts_with_keyword)]
-    IcWidth(Number),
+    IcWidth(Factor),
     #[value_info(starts_with_keyword)]
-    IcHeight(Number),
+    IcHeight(Factor),
 }
 
-impl<Number: ToCss> ToCss for GenericFontSizeAdjust<Number> {
+impl<Factor: ToCss> ToCss for GenericFontSizeAdjust<Factor> {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,

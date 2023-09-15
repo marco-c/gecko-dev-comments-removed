@@ -11,9 +11,8 @@ use crate::values::computed::Percentage as ComputedPercentage;
 use crate::values::computed::{font as computed, Length, NonNegativeLength};
 use crate::values::computed::{CSSPixelLength, Context, ToComputedValue};
 use crate::values::generics::font::VariationValue;
-use crate::values::generics::font::{
-    self as generics, FeatureTagValue, FontSettings, FontTag, GenericFontSizeAdjust,
-};
+use crate::values::generics::font::{self as generics, FeatureTagValue, FontSettings, FontTag};
+use crate::values::generics::font::{GenericFontSizeAdjust, GenericNumberOrFromFont};
 use crate::values::generics::NonNegative;
 use crate::values::specified::length::{FontBaseSize, PX_PER_PT};
 use crate::values::specified::{AllowQuirks, Angle, Integer, LengthPercentage};
@@ -701,7 +700,14 @@ impl Parse for FamilyName {
 }
 
 
-pub type FontSizeAdjust = GenericFontSizeAdjust<NonNegativeNumber>;
+
+pub type FontSizeAdjustFactor = GenericNumberOrFromFont<NonNegativeNumber>;
+
+
+
+
+
+pub type FontSizeAdjust = GenericFontSizeAdjust<FontSizeAdjustFactor>;
 
 impl Parse for FontSizeAdjust {
     fn parse<'i, 't>(
@@ -709,26 +715,27 @@ impl Parse for FontSizeAdjust {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
-        if let Ok(ident) = input.try_parse(|i| i.expect_ident_cloned()) {
-            let basis = match_ignore_ascii_case! { &ident,
-                "none" => return Ok(Self::None),
-                // Check for size adjustment basis keywords.
-                "ex-height" => Self::ExHeight,
-                "cap-height" => Self::CapHeight,
-                "ch-width" => Self::ChWidth,
-                "ic-width" => Self::IcWidth,
-                "ic-height" => Self::IcHeight,
-                // Unknown keyword.
-                _ => return Err(location.new_custom_error(
-                    SelectorParseErrorKind::UnexpectedIdent(ident)
-                )),
-            };
-            let value = NonNegativeNumber::parse(context, input)?;
-            return Ok(basis(value));
-        }
         
-        let value = NonNegativeNumber::parse(context, input)?;
-        Ok(Self::ExHeight(value))
+        if let Ok(factor) = input.try_parse(|i| FontSizeAdjustFactor::parse(context, i)) {
+            return Ok(Self::ExHeight(factor));
+        }
+
+        let ident = input.expect_ident()?;
+        let basis = match_ignore_ascii_case! { &ident,
+            "none" => return Ok(Self::None),
+            // Check for size adjustment basis keywords.
+            "ex-height" => Self::ExHeight,
+            "cap-height" => Self::CapHeight,
+            "ch-width" => Self::ChWidth,
+            "ic-width" => Self::IcWidth,
+            "ic-height" => Self::IcHeight,
+            // Unknown keyword.
+            _ => return Err(location.new_custom_error(
+                SelectorParseErrorKind::UnexpectedIdent(ident.clone())
+            )),
+        };
+
+        Ok(basis(FontSizeAdjustFactor::parse(context, input)?))
     }
 }
 
