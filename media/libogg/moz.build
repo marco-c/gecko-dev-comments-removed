@@ -18,7 +18,8 @@ EXPORTS.ogg += [
 
 UNIFIED_SOURCES += ogg_sources
 
-FINAL_LIBRARY = 'gkmedias'
+FINAL_LIBRARY = 'gkcodecs'
+NoVisibilityFlags()
 
 
 include('/tools/fuzzing/libfuzzer-config.mozbuild')

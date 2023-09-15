@@ -22,6 +22,8 @@ if CONFIG['FFVPX_ASFLAGS']:
 
 LOCAL_INCLUDES += ['/media/ffvpx']
 
+USE_LIBS += [ 'gkcodecs' ]
+
 
 AllowCompilerWarnings()
 
