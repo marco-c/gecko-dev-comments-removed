@@ -519,6 +519,20 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
           StyleMathVariant::Stretched};
       for (uint32_t i = 0; i < ArrayLength(sizes); ++i) {
         if (str.LowerCaseEqualsASCII(sizes[i])) {
+          if (values[i] != StyleMathVariant::Normal) {
+            
+            
+            
+            
+            
+            
+            
+            AutoTArray<nsString, 1> params;
+            params.AppendElement(str);
+            aBuilder.Document().WarnOnceAbout(
+                dom::DeprecatedOperations::eMathML_DeprecatedMathVariant, false,
+                params);
+          }
           aBuilder.SetKeywordValue(eCSSProperty__moz_math_variant, values[i]);
           break;
         }
