@@ -240,7 +240,7 @@ JS::OffThreadToken* StartOffThreadDecodeStencil(
 
 
 
-void StartOffThreadDelazification(JSContext* cx,
+void StartOffThreadDelazification(JSContext* maybeCx,
                                   const JS::ReadOnlyCompileOptions& options,
                                   const frontend::CompilationStencil& stencil);
 

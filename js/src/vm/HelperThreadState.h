@@ -555,7 +555,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
                       public HelperThreadTask {
   
   
-  JSRuntime* runtime = nullptr;
+  JSRuntime* maybeRuntime = nullptr;
 
   DelazificationContext delazificationCx;
 
@@ -565,17 +565,19 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   
   static UniquePtr<DelazifyTask> Create(
-      JSRuntime* runtime, const JS::ReadOnlyCompileOptions& options,
+      JSRuntime* maybeRuntime, const JS::ReadOnlyCompileOptions& options,
       const frontend::CompilationStencil& stencil);
 
-  DelazifyTask(JSRuntime* runtime,
+  DelazifyTask(JSRuntime* maybeRuntime,
                const JS::PrefableCompileOptions& initialPrefableOptions);
   ~DelazifyTask();
 
   [[nodiscard]] bool init(const JS::ReadOnlyCompileOptions& options,
                           const frontend::CompilationStencil& stencil);
 
-  bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
+  bool runtimeMatchesOrNoRuntime(JSRuntime* rt) {
+    return !maybeRuntime || maybeRuntime == rt;
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {

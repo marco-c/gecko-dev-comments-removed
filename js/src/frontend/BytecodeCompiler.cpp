@@ -305,7 +305,8 @@ template <typename Unit>
     return false;
   }
 
-  if (input.options.populateDelazificationCache() && maybeCx) {
+  if (input.options.populateDelazificationCache()) {
+    
     BorrowingCompilationStencil borrowingStencil(compiler.stencil());
     StartOffThreadDelazification(maybeCx, input.options, borrowingStencil);
 
@@ -313,7 +314,10 @@ template <typename Unit>
     
     
     
-    if (input.options.waitForDelazificationCache()) {
+    
+    
+    
+    if (input.options.waitForDelazificationCache() && maybeCx) {
       WaitForAllDelazifyTasks(maybeCx->runtime());
     }
   }
