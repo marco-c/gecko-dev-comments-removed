@@ -92,8 +92,6 @@ class AudioSink : private AudioStream::DataSource {
     mStartTime = aStartTime;
   }
 
-  void EnableTreatAudioUnderrunAsSilence(bool aEnabled);
-
  private:
   
   
@@ -175,10 +173,6 @@ class AudioSink : private AudioStream::DataSource {
   Atomic<bool> mProcessedQueueFinished;
   MediaQueue<AudioData>& mAudioQueue;
   const float mProcessedQueueThresholdMS;
-
-  
-  
-  bool mTreatUnderrunAsSilence = false;
 };
 
 }  

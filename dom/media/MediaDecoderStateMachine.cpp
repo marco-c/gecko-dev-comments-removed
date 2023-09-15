@@ -956,10 +956,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
       VideoQueue().Finish();
     }
 
-    if (mWaitingAudioDataFromStart) {
-      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
-    }
-
     
     mDataWaitingTimestampAdjustment = nullptr;
 
@@ -981,11 +977,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   void HandleAudioDecoded(AudioData* aAudio) override {
     
-
-    if (mWaitingAudioDataFromStart) {
-      mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(false);
-      mWaitingAudioDataFromStart = false;
-    }
 
     
     DecodingState::HandleAudioDecoded(aAudio);
@@ -1698,12 +1689,6 @@ class MediaDecoderStateMachine::LoopingDecodingState
   
   bool mAudioEndedBeforeEnteringStateWithoutDuration;
   bool mVideoEndedBeforeEnteringStateWithoutDuration;
-
-  
-  
-  
-  
-  bool mWaitingAudioDataFromStart = false;
 };
 
 
@@ -3247,17 +3232,6 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
     case NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA:
       if (aIsAudio) {
         HandleWaitingForAudio();
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        mWaitingAudioDataFromStart = true;
-        mMaster->mMediaSink->EnableTreatAudioUnderrunAsSilence(true);
       } else {
         HandleWaitingForVideo();
       }
