@@ -169,20 +169,20 @@ void PathBuilderD2D::Close() {
 
 void PathBuilderD2D::Arc(const Point& aOrigin, Float aRadius, Float aStartAngle,
                          Float aEndAngle, bool aAntiClockwise) {
-  ArcToBezier(this, aOrigin, Size(aRadius, aRadius), aStartAngle, aEndAngle,
-              aAntiClockwise);
-#if 0
   MOZ_ASSERT(aRadius >= 0);
 
-  if (aAntiClockwise && aStartAngle < aEndAngle) {
+  
+  
+  
+  Float sweepDirection = aAntiClockwise ? -1.0f : 1.0f;
+
+  Float arcSweepLeft = (aEndAngle - aStartAngle) * sweepDirection;
+  if (arcSweepLeft < 0) {
     
     
     
-    
-    
-    Float oldStart = aStartAngle;
-    aStartAngle = aEndAngle;
-    aEndAngle = oldStart;
+    arcSweepLeft = Float(2.0f * M_PI) + fmodf(arcSweepLeft, Float(2.0f * M_PI));
+    aStartAngle = aEndAngle - arcSweepLeft * sweepDirection;
   }
 
   
@@ -256,7 +256,6 @@ void PathBuilderD2D::Arc(const Point& aOrigin, Float aRadius, Float aStartAngle,
 
   mCurrentPoint = endPoint;
   mFigureEmpty = false;
-#endif
 }
 
 void PathBuilderD2D::EnsureActive(const Point& aPoint) {
