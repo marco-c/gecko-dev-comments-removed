@@ -1,7 +1,7 @@
 "use strict";
 
-const { AddressParser } = ChromeUtils.import(
-  "resource://gre/modules/shared/AddressParser.jsm"
+const { AddressParser } = ChromeUtils.importESModule(
+  "resource://gre/modules/shared/AddressParser.sys.mjs"
 );
 
 
