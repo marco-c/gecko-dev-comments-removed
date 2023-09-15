@@ -1078,7 +1078,31 @@ var TranslationsPanel = new (class {
 
 
 
+  #openPromise = null;
+
+  
+
+
+
+
   async open(event) {
+    if (this.#openPromise) {
+      
+      return;
+    }
+
+    this.#openPromise = this.#openImpl(event);
+    this.#openPromise.finally(() => {
+      this.#openPromise = null;
+    });
+  }
+
+  
+
+
+
+
+  async #openImpl(event) {
     event.stopPropagation();
     if (
       (event.type == "click" && event.button != 0) ||
@@ -1096,13 +1120,13 @@ var TranslationsPanel = new (class {
 
     const { button } = this.elements;
 
-    await this.#ensureLangListsBuilt();
+    const { requestedTranslationPair, locationChangeId } =
+      this.#getTranslationsActor().languageState;
 
     
     const isFirstUserInteraction = !this._hasShownPanel;
 
-    const { requestedTranslationPair } =
-      this.#getTranslationsActor().languageState;
+    await this.#ensureLangListsBuilt();
 
     if (requestedTranslationPair) {
       await this.#showRevisitView(requestedTranslationPair).catch(error => {
@@ -1121,6 +1145,18 @@ var TranslationsPanel = new (class {
       event.type === "TranslationsParent:OfferTranslation"
         ? button
         : this.elements.appMenuButton;
+
+    if (!TranslationsParent.isActiveLocation(locationChangeId)) {
+      this.console?.log(`A translation panel open request was stale.`, {
+        locationChangeId,
+        newlocationChangeId:
+          this.#getTranslationsActor().languageState.locationChangeId,
+        currentURISpec: gBrowser.currentURI.spec,
+      });
+      return;
+    }
+
+    this.console?.log(`Showing a translation panel`, gBrowser.currentURI.spec);
 
     this.#openPanelPopup(targetButton, { event, isFirstUserInteraction });
   }
