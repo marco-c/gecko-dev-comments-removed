@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <vector>
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
@@ -125,7 +126,10 @@ class EventGenerator {
 
   
   
-  RtpHeaderExtensionMap NewRtpHeaderExtensionMap(bool configure_all = false);
+  
+  RtpHeaderExtensionMap NewRtpHeaderExtensionMap(
+      bool configure_all = false,
+      const std::vector<RTPExtensionType>& excluded_extensions = {});
 
   std::unique_ptr<RtcEventAudioReceiveStreamConfig> NewAudioReceiveStreamConfig(
       uint32_t ssrc,
