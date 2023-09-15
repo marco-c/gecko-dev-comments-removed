@@ -40,19 +40,15 @@ static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
 }
 
 - (NSAppearance*)appearance {
-  if (@available(macOS 10.14, *)) {
-    switch (self.toolbarTheme) {  
-      case 0:                     
-        return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-      case 1:  
-        return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-      case 2:  
-      default:
-        break;
-    }
+  switch (self.toolbarTheme) {  
+    case 0:                     
+      return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+    case 1:  
+      return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+    case 2:  
+    default:
+      return nil;  
   }
-  
-  return nil;
 }
 
 - (void)setAppearance:(NSAppearance*)aAppearance {
@@ -64,29 +60,22 @@ static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
 }
 
 + (NSSet*)keyPathsForValuesAffectingEffectiveAppearance {
-  if (@available(macOS 10.14, *)) {
-    
-    
-    return [NSSet setWithObjects:@"toolbarTheme", @"_app.effectiveAppearance", nil];
-  }
-  return [NSSet set];
+  
+  
+  return [NSSet setWithObjects:@"toolbarTheme", @"_app.effectiveAppearance", nil];
 }
 
 - (NSAppearance*)effectiveAppearance {
-  if (@available(macOS 10.14, *)) {
-    switch (self.toolbarTheme) {  
-      case 0:                     
-        return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-      case 1:  
-        return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-      case 2:  
-      default:
-        
-        return NSApp.effectiveAppearance;
-    }
+  switch (self.toolbarTheme) {  
+    case 0:                     
+      return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+    case 1:  
+      return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+    case 2:  
+    default:
+      
+      return NSApp.effectiveAppearance;
   }
-  
-  return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 }
 
 @end

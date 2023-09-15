@@ -763,23 +763,7 @@ NativeLayerCA::NativeLayerCA(bool aIsOpaque)
 
 CGColorRef CGColorCreateForDeviceColor(gfx::DeviceColor aColor) {
   if (StaticPrefs::gfx_color_management_native_srgb()) {
-    
-    
-    if (@available(macOS 10.15, iOS 13.0, *)) {
-      
-      
-      static auto CGColorCreateSRGBPtr = (CGColorRef(*)(CGFloat, CGFloat, CGFloat, CGFloat))dlsym(
-          RTLD_DEFAULT, "CGColorCreateSRGB");
-      if (CGColorCreateSRGBPtr) {
-        return CGColorCreateSRGBPtr(aColor.r, aColor.g, aColor.b, aColor.a);
-      }
-    }
-
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    CGFloat components[] = {aColor.r, aColor.g, aColor.b, aColor.a};
-    CGColorRef color = CGColorCreate(colorSpace, components);
-    CFRelease(colorSpace);
-    return color;
+    return CGColorCreateSRGB(aColor.r, aColor.g, aColor.b, aColor.a);
   }
 
   return CGColorCreateGenericRGB(aColor.r, aColor.g, aColor.b, aColor.a);
@@ -877,10 +861,8 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
 
   
   
-  if (@available(macOS 10.15, iOS 13.0, *)) {
-    if (mTextureHost->IsFromDRMSource()) {
-      return true;
-    }
+  if (mTextureHost->IsFromDRMSource()) {
+    return true;
   }
 
   
@@ -1691,10 +1673,8 @@ bool NativeLayerCA::Representation::ApplyChanges(
     }
   }
 
-  if (@available(macOS 10.15, iOS 13.0, *)) {
-    if (aSpecializeVideo && mMutatedIsDRM) {
-      ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
-    }
+  if (aSpecializeVideo && mMutatedIsDRM) {
+    ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
   }
 
   bool shouldTintOpaqueness = StaticPrefs::gfx_core_animation_tint_opaque();
