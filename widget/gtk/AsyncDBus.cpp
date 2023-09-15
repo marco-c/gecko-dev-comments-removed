@@ -4,8 +4,6 @@
 
 
 #include "AsyncDBus.h"
-
-#include <dbus/dbus-glib-lowlevel.h>
 #include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla::widget {
