@@ -843,7 +843,7 @@ void SctpDataChannel::SetState(DataState state) {
 
 
 void SctpDataChannel::DeliverQueuedReceivedData() {
-  if (!observer_) {
+  if (!observer_ || state_ != kOpen) {
     return;
   }
 
