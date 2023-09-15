@@ -14,48 +14,29 @@
 #include "debugger/DebugAPI.h"
 #include "ds/LifoAlloc.h"
 #include "frontend/BytecodeEmitter.h"
-#include "frontend/CompilationStencil.h"  
+#include "frontend/CompilationStencil.h"
 #include "frontend/EitherParser.h"
 #ifdef JS_ENABLE_SMOOSH
 #  include "frontend/Frontend2.h"  
 #endif
 #include "frontend/FrontendContext.h"  
 #include "frontend/ModuleSharedContext.h"
-#include "frontend/ParserAtom.h"     
-#include "frontend/SharedContext.h"  
-#include "frontend/Stencil.h"        
-#include "frontend/UsedNameTracker.h"  
-#include "js/AllocPolicy.h"        
-#include "js/CharacterEncoding.h"  
-#include "js/ErrorReport.h"        
 #include "js/experimental/JSStencil.h"
-#include "js/GCVector.h"    
-#include "js/Id.h"          
-#include "js/Modules.h"     
-#include "js/RootingAPI.h"  
-#include "js/SourceText.h"  
+#include "js/Modules.h"  
+#include "js/SourceText.h"
 #include "js/UniquePtr.h"
-#include "js/Utility.h"                
-#include "js/Value.h"                  
-#include "vm/EnvironmentObject.h"      
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/HelperThreads.h"  
-#include "vm/JSContext.h"      
-#include "vm/JSObject.h"       
+#include "vm/JSContext.h"
 #include "vm/JSScript.h"       
 #include "vm/ModuleBuilder.h"  
-#include "vm/NativeObject.h"   
-#include "vm/PlainObject.h"    
 #include "vm/StencilCache.h"   
 #include "vm/Time.h"           
 #include "wasm/AsmJS.h"
 
-#include "vm/Compartment-inl.h"  
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSContext-inl.h"
-#include "vm/JSObject-inl.h"  
-#include "vm/ObjectOperations-inl.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -195,9 +176,6 @@ class MOZ_STACK_CLASS ScriptCompiler : public SourceAwareCompiler<Unit> {
   using Base::stencil;
 
   [[nodiscard]] bool compile(JSContext* cx, SharedContext* sc);
-
- private:
-  [[nodiscard]] bool popupateExtraBindingsFields(GlobalSharedContext* globalsc);
 };
 
 #ifdef JS_ENABLE_SMOOSH
@@ -246,8 +224,6 @@ using BytecodeCompilerOutput =
     mozilla::Variant<UniquePtr<ExtensibleCompilationStencil>,
                      RefPtr<CompilationStencil>, CompilationGCOutput*>;
 
-static constexpr ExtraBindingInfoVector* NoExtraBindings = nullptr;
-
 
 
 
@@ -257,7 +233,6 @@ template <typename Unit>
     JSContext* maybeCx, FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
     CompilationInput& input, ScopeBindingCache* scopeCache,
     JS::SourceText<Unit>& srcBuf, ScopeKind scopeKind,
-    ExtraBindingInfoVector* maybeExtraBindings,
     BytecodeCompilerOutput& output) {
 #ifdef JS_ENABLE_SMOOSH
   if (maybeCx) {
@@ -304,10 +279,6 @@ template <typename Unit>
 
   if (input.options.selfHostingMode) {
     if (!input.initForSelfHostingGlobal(fc)) {
-      return false;
-    }
-  } else if (maybeExtraBindings) {
-    if (!input.initForGlobalWithExtraBindings(fc, maybeExtraBindings)) {
       return false;
     }
   } else {
@@ -403,7 +374,7 @@ static already_AddRefed<CompilationStencil> CompileGlobalScriptToStencilImpl(
   BytecodeCompilerOutput output((OutputType()));
   if (!CompileGlobalScriptToStencilAndMaybeInstantiate(
           maybeCx, fc, tempLifoAlloc, input, scopeCache, srcBuf, scopeKind,
-          NoExtraBindings, output)) {
+          output)) {
     return nullptr;
   }
   return output.as<OutputType>().forget();
@@ -437,7 +408,7 @@ CompileGlobalScriptToExtensibleStencilImpl(JSContext* maybeCx,
   BytecodeCompilerOutput output((OutputType()));
   if (!CompileGlobalScriptToStencilAndMaybeInstantiate(
           maybeCx, fc, maybeCx->tempLifoAlloc(), input, scopeCache, srcBuf,
-          scopeKind, NoExtraBindings, output)) {
+          scopeKind, output)) {
     return nullptr;
   }
   return std::move(output.as<OutputType>());
@@ -498,14 +469,14 @@ template <typename Unit>
 static JSScript* CompileGlobalScriptImpl(
     JSContext* cx, FrontendContext* fc,
     const JS::ReadOnlyCompileOptions& options, JS::SourceText<Unit>& srcBuf,
-    ScopeKind scopeKind, ExtraBindingInfoVector* maybeExtraBindings) {
+    ScopeKind scopeKind) {
   Rooted<CompilationInput> input(cx, CompilationInput(options));
   Rooted<CompilationGCOutput> gcOutput(cx);
   BytecodeCompilerOutput output(gcOutput.address());
   NoScopeBindingCache scopeCache;
   if (!CompileGlobalScriptToStencilAndMaybeInstantiate(
           cx, fc, cx->tempLifoAlloc(), input.get(), &scopeCache, srcBuf,
-          scopeKind, maybeExtraBindings, output)) {
+          scopeKind, output)) {
     return nullptr;
   }
   return gcOutput.get().script;
@@ -515,161 +486,14 @@ JSScript* frontend::CompileGlobalScript(
     JSContext* cx, FrontendContext* fc,
     const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
     ScopeKind scopeKind) {
-  return CompileGlobalScriptImpl(cx, fc, options, srcBuf, scopeKind,
-                                 NoExtraBindings);
-}
-
-static bool CreateExtraBindingInfoVector(
-    JSContext* cx,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> unwrappedBindingKeys,
-    JS::Handle<JS::StackGCVector<JS::Value>> unwrappedBindingValues,
-    ExtraBindingInfoVector& extraBindings) {
-  MOZ_ASSERT(unwrappedBindingKeys.length() == unwrappedBindingValues.length());
-
-  if (!extraBindings.reserve(unwrappedBindingKeys.length())) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  JS::Rooted<JSObject*> globalLexical(cx, &cx->global()->lexicalEnvironment());
-  JS::Rooted<JS::PropertyKey> id(cx);
-  for (size_t i = 0; i < unwrappedBindingKeys.length(); i++) {
-    if (!unwrappedBindingKeys[i].isString()) {
-      JS_ReportErrorASCII(cx, "The bindings key should be a string.");
-      return false;
-    }
-
-    JS::Rooted<JSString*> str(cx, unwrappedBindingKeys[i].toString());
-
-    UniqueChars utf8chars = JS_EncodeStringToUTF8(cx, str);
-    if (!utf8chars) {
-      return false;
-    }
-
-    bool isShadowed = false;
-
-    id = unwrappedBindingKeys[i];
-    cx->markId(id);
-
-    bool found;
-    if (!HasProperty(cx, cx->global(), id, &found)) {
-      return false;
-    }
-    if (found) {
-      isShadowed = true;
-    } else {
-      if (!HasProperty(cx, globalLexical, id, &found)) {
-        return false;
-      }
-      if (found) {
-        isShadowed = true;
-      }
-    }
-
-    extraBindings.infallibleEmplaceBack(std::move(utf8chars), isShadowed);
-  }
-
-  return true;
-}
-
-static WithEnvironmentObject* CreateExtraBindingsEnvironment(
-    JSContext* cx,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> unwrappedBindingKeys,
-    JS::Handle<JS::StackGCVector<JS::Value>> unwrappedBindingValues,
-    const ExtraBindingInfoVector& extraBindings) {
-  JS::Rooted<PlainObject*> extraBindingsObj(
-      cx, NewPlainObjectWithProto(cx, nullptr));
-  if (!extraBindingsObj) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(unwrappedBindingKeys.length() == extraBindings.length());
-
-  JS::Rooted<JS::PropertyKey> id(cx);
-  size_t i = 0;
-  for (const auto& bindingInfo : extraBindings) {
-    if (bindingInfo.isShadowed) {
-      i++;
-      continue;
-    }
-
-    id = unwrappedBindingKeys[i];
-    cx->markId(id);
-    JS::Rooted<JS::Value> val(cx, unwrappedBindingValues[i]);
-    if (!cx->compartment()->wrap(cx, &val) ||
-        !NativeDefineDataProperty(cx, extraBindingsObj, id, val, 0)) {
-      return nullptr;
-    }
-    i++;
-  }
-
-  
-  if (!SetIntegrityLevel(cx, extraBindingsObj, IntegrityLevel::Sealed)) {
-    return nullptr;
-  }
-
-  JS::Rooted<JSObject*> globalLexical(cx, &cx->global()->lexicalEnvironment());
-  return WithEnvironmentObject::createNonSyntactic(cx, extraBindingsObj,
-                                                   globalLexical);
-}
-
-JSScript* frontend::CompileGlobalScriptWithExtraBindings(
-    JSContext* cx, FrontendContext* fc,
-    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> unwrappedBindingKeys,
-    JS::Handle<JS::StackGCVector<JS::Value>> unwrappedBindingValues,
-    JS::MutableHandle<JSObject*> env) {
-  ExtraBindingInfoVector extraBindings;
-  if (!CreateExtraBindingInfoVector(cx, unwrappedBindingKeys,
-                                    unwrappedBindingValues, extraBindings)) {
-    return nullptr;
-  }
-
-  JS::Rooted<JSScript*> script(
-      cx, CompileGlobalScriptImpl(cx, fc, options, srcBuf,
-                                  ScopeKind::NonSyntactic, &extraBindings));
-  if (!script) {
-    if (fc->extraBindingsAreNotUsed()) {
-      
-
-      fc->clearNoExtraBindingReferencesFound();
-
-      
-      fc->clearWarnings();
-
-      
-      MOZ_ASSERT(!fc->hadErrors());
-      MOZ_ASSERT(!cx->isExceptionPending());
-
-      env.set(&cx->global()->lexicalEnvironment());
-
-      JS::CompileOptions copiedOptions(nullptr, options);
-      copiedOptions.setNonSyntacticScope(false);
-
-      return CompileGlobalScript(cx, fc, copiedOptions, srcBuf,
-                                 ScopeKind::Global);
-    }
-
-    return nullptr;
-  }
-
-  WithEnvironmentObject* extraBindingsEnv = CreateExtraBindingsEnvironment(
-      cx, unwrappedBindingKeys, unwrappedBindingValues, extraBindings);
-  if (!extraBindingsEnv) {
-    return nullptr;
-  }
-
-  env.set(extraBindingsEnv);
-
-  return script;
+  return CompileGlobalScriptImpl(cx, fc, options, srcBuf, scopeKind);
 }
 
 JSScript* frontend::CompileGlobalScript(
     JSContext* cx, FrontendContext* fc,
     const JS::ReadOnlyCompileOptions& options, JS::SourceText<Utf8Unit>& srcBuf,
     ScopeKind scopeKind) {
-  return CompileGlobalScriptImpl(cx, fc, options, srcBuf, scopeKind,
-                                 NoExtraBindings);
+  return CompileGlobalScriptImpl(cx, fc, options, srcBuf, scopeKind);
 }
 
 template <typename Unit>
@@ -854,85 +678,6 @@ void SourceAwareCompiler<Unit>::handleParseFailure(
   compilationState_.directives = newDirectives;
 }
 
-static bool UsesExtraBindings(GlobalSharedContext* globalsc,
-                              const ExtraBindingInfoVector& extraBindings,
-                              const UsedNameTracker::UsedNameMap& usedNameMap) {
-  for (const auto& bindingInfo : extraBindings) {
-    if (bindingInfo.isShadowed) {
-      continue;
-    }
-
-    for (auto r = usedNameMap.all(); !r.empty(); r.popFront()) {
-      const auto& item = r.front();
-      const auto& name = item.key();
-      if (bindingInfo.nameIndex != name) {
-        continue;
-      }
-
-      const auto& nameInfo = item.value();
-      if (nameInfo.empty()) {
-        continue;
-      }
-
-      
-      return true;
-    }
-  }
-
-  return false;
-}
-
-template <typename Unit>
-bool ScriptCompiler<Unit>::popupateExtraBindingsFields(
-    GlobalSharedContext* globalsc) {
-  if (!compilationState_.input.internExtraBindings(
-          this->fc_, compilationState_.parserAtoms)) {
-    return false;
-  }
-
-  bool hasNonShadowedBinding = false;
-  for (auto& bindingInfo : compilationState_.input.extraBindings()) {
-    if (bindingInfo.isShadowed) {
-      continue;
-    }
-
-    bool isShadowed = false;
-
-    if (globalsc->bindings) {
-      for (ParserBindingIter bi(*globalsc->bindings); bi; bi++) {
-        if (bindingInfo.nameIndex == bi.name()) {
-          isShadowed = true;
-          break;
-        }
-      }
-    }
-
-    bindingInfo.isShadowed = isShadowed;
-    if (!isShadowed) {
-      hasNonShadowedBinding = true;
-    }
-  }
-
-  if (!hasNonShadowedBinding) {
-    
-    this->fc_->reportExtraBindingsAreNotUsed();
-    return false;
-  }
-
-  if (globalsc->hasDirectEval()) {
-    
-    return true;
-  }
-
-  if (!UsesExtraBindings(globalsc, compilationState_.input.extraBindings(),
-                         parser->usedNames().map())) {
-    this->fc_->reportExtraBindingsAreNotUsed();
-    return false;
-  }
-
-  return true;
-}
-
 template <typename Unit>
 bool ScriptCompiler<Unit>::compile(JSContext* maybeCx, SharedContext* sc) {
   assertSourceParserAndScriptCreated();
@@ -967,12 +712,6 @@ bool ScriptCompiler<Unit>::compile(JSContext* maybeCx, SharedContext* sc) {
     
     MOZ_ASSERT(!canHandleParseFailure(compilationState_.directives));
     return false;
-  }
-
-  if (sc->isGlobalContext() && compilationState_.input.hasExtraBindings()) {
-    if (!popupateExtraBindingsFields(sc->asGlobalContext())) {
-      return false;
-    }
   }
 
   {

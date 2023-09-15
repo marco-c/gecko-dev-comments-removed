@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 loader.lazyRequireGetter(
   this,
-  ["getCommandAndArgs", "isCommand"],
+  ["formatCommand", "isCommand"],
   "resource://devtools/server/actors/webconsole/commands/parser.js",
   true
 );
@@ -169,27 +169,16 @@ exports.evalWithDebugger = function (string, options = {}, webConsole) {
 
   let result;
   try {
-    if (isCommand(string)) {
-      try {
-        const { command, args } = getCommandAndArgs(string);
-        const commandFunc = helpers.rawCommands.get(command);
-        result = commandFunc(helpers.rawOwner, args);
-      } catch (e) {
-        console.log(e);
-        return `throw "${e}"`;
-      }
-    } else {
-      const evalString = getEvalInput(string, bindings);
-      result = getEvalResult(
-        dbg,
-        evalString,
-        evalOptions,
-        bindings,
-        frame,
-        dbgGlobal,
-        noSideEffectDebugger
-      );
-    }
+    const evalString = getEvalInput(string, bindings);
+    result = getEvalResult(
+      dbg,
+      evalString,
+      evalOptions,
+      bindings,
+      frame,
+      dbgGlobal,
+      noSideEffectDebugger
+    );
   } finally {
     
     
@@ -533,6 +522,15 @@ function getEvalInput(string, bindings) {
   
   if (bindings?.help && (trimmedString === "help" || trimmedString === "?")) {
     return "help()";
+  }
+  
+  if (isCommand(string)) {
+    try {
+      return formatCommand(string);
+    } catch (e) {
+      console.log(e);
+      return `throw "${e}"`;
+    }
   }
 
   

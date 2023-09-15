@@ -16,7 +16,6 @@
 #include "mozilla/Sprintf.h"                
 
 #include <algorithm>  
-#include <string.h>   
 
 #include "ds/LifoAlloc.h"               
 #include "frontend/AbstractScopePtr.h"  
@@ -25,7 +24,6 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"
 #include "frontend/NameAnalysisTypes.h"  
-#include "frontend/ParserAtom.h"  
 #include "frontend/ScopeBindingCache.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/StencilXdr.h"        
@@ -1392,28 +1390,6 @@ FunctionSyntaxKind CompilationInput::functionSyntaxKind() const {
     return FunctionSyntaxKind::Arrow;
   }
   return FunctionSyntaxKind::Statement;
-}
-
-bool CompilationInput::internExtraBindings(FrontendContext* fc,
-                                           ParserAtomsTable& parserAtoms) {
-  MOZ_ASSERT(hasExtraBindings());
-
-  for (auto& bindingInfo : *maybeExtraBindings_) {
-    if (bindingInfo.isShadowed) {
-      continue;
-    }
-
-    const char* chars = bindingInfo.nameChars.get();
-    auto index = parserAtoms.internUtf8(
-        fc, reinterpret_cast<const mozilla::Utf8Unit*>(chars), strlen(chars));
-    if (!index) {
-      return false;
-    }
-
-    bindingInfo.nameIndex = index;
-  }
-
-  return true;
 }
 
 void InputScope::trace(JSTracer* trc) {

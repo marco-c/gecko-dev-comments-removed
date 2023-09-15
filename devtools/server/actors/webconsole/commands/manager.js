@@ -148,11 +148,6 @@ const WebConsoleCommandsManager = {
 
 
 
-
-
-
-
-
   getWebConsoleCommands(
     consoleActor,
     debuggerGlobal,
@@ -244,8 +239,6 @@ const WebConsoleCommandsManager = {
         return owner.helperResult;
       },
       bindings,
-      rawCommands: commands,
-      rawOwner: owner,
     };
   },
 };

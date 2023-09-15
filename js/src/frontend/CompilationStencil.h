@@ -632,25 +632,6 @@ struct CompilationAtomCache {
 };
 
 
-
-struct ExtraBindingInfo {
-  
-  UniqueChars nameChars;
-
-  TaggedParserAtomIndex nameIndex;
-
-  
-  
-  bool isShadowed = false;
-
-  ExtraBindingInfo(UniqueChars&& nameChars, bool isShadowed)
-      : nameChars(std::move(nameChars)), isShadowed(isShadowed) {}
-};
-
-using ExtraBindingInfoVector =
-    js::Vector<ExtraBindingInfo, 0, js::SystemAllocPolicy>;
-
-
 struct CompilationInput {
   enum class CompilationTarget {
     Global,
@@ -669,9 +650,6 @@ struct CompilationInput {
 
  private:
   InputScript lazy_ = InputScript(nullptr);
-
-  
-  ExtraBindingInfoVector* maybeExtraBindings_ = nullptr;
 
  public:
   RefPtr<ScriptSource> source;
@@ -698,14 +676,6 @@ struct CompilationInput {
  public:
   bool initForGlobal(FrontendContext* fc) {
     target = CompilationTarget::Global;
-    return initScriptSource(fc);
-  }
-
-  bool initForGlobalWithExtraBindings(
-      FrontendContext* fc, ExtraBindingInfoVector* maybeExtraBindings) {
-    MOZ_ASSERT(maybeExtraBindings);
-    target = CompilationTarget::Global;
-    maybeExtraBindings_ = maybeExtraBindings;
     return initScriptSource(fc);
   }
 
@@ -820,13 +790,6 @@ struct CompilationInput {
   
   
   bool isDelazifying() { return target == CompilationTarget::Delazification; }
-
-  bool hasExtraBindings() const { return !!maybeExtraBindings_; }
-  ExtraBindingInfoVector& extraBindings() { return *maybeExtraBindings_; }
-  const ExtraBindingInfoVector& extraBindings() const {
-    return *maybeExtraBindings_;
-  }
-  bool internExtraBindings(FrontendContext* fc, ParserAtomsTable& parserAtoms);
 
   void trace(JSTracer* trc);
 
