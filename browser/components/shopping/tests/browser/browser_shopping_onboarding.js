@@ -70,3 +70,37 @@ add_task(async function test_hideOnboarding_optedIn() {
     }
   );
 });
+
+
+
+
+add_task(async function test_hideOnboarding_onClose() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shopping.experience2023.optedIn", 0]],
+  });
+  await BrowserTestUtils.withNewTab(
+    {
+      url: "about:shoppingsidebar",
+      gBrowser,
+    },
+    async browser => {
+      await SpecialPowers.spawn(browser, [], async () => {
+        let shoppingContainer = await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector("shopping-container"),
+          "shopping-container"
+        );
+        
+        let secondaryButton = shoppingContainer.querySelector(".secondary");
+
+        secondaryButton.click();
+
+        
+        ok(
+          !shoppingContainer.length,
+          "Shopping container element does not exist"
+        );
+      });
+    }
+  );
+});
