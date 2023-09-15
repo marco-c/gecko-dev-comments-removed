@@ -16,6 +16,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "modules/audio_device/include/test_audio_device.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 
@@ -23,9 +24,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
-constexpr int kExtraRecordTimeMs = 500;
-
 constexpr int kSampleRate = 48000;
+
 }  
 
 AudioEndToEndTest::AudioEndToEndTest()
@@ -54,8 +54,8 @@ AudioEndToEndTest::CreateRenderer() {
 }
 
 void AudioEndToEndTest::OnFakeAudioDevicesCreated(
-    TestAudioDeviceModule* send_audio_device,
-    TestAudioDeviceModule* recv_audio_device) {
+    AudioDeviceModule* send_audio_device,
+    AudioDeviceModule* recv_audio_device) {
   send_audio_device_ = send_audio_device;
 }
 
@@ -81,11 +81,5 @@ void AudioEndToEndTest::OnAudioStreamsCreated(
   receive_stream_ = receive_streams[0];
 }
 
-void AudioEndToEndTest::PerformTest() {
-  
-  send_audio_device_->WaitForRecordingEnd();
-  
-  SleepMs(GetSendTransportConfig().queue_delay_ms + kExtraRecordTimeMs);
-}
 }  
 }  

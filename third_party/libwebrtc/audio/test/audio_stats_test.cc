@@ -17,6 +17,9 @@ namespace webrtc {
 namespace test {
 namespace {
 
+
+constexpr int kExtraRecordTimeMs = 500;
+
 bool IsNear(int reference, int v) {
   
   const int error = reference / 10 + 1;
@@ -41,7 +44,8 @@ class NoLossTest : public AudioEndToEndTest {
   void PerformTest() override {
     SleepMs(kTestDurationMs);
     send_audio_device()->StopRecording();
-    AudioEndToEndTest::PerformTest();
+    
+    SleepMs(GetSendTransportConfig().queue_delay_ms + kExtraRecordTimeMs);
   }
 
   void OnStreamsStopped() override {

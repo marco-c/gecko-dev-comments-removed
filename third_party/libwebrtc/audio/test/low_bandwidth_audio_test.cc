@@ -57,7 +57,8 @@ class AudioQualityTest : public AudioEndToEndTest {
       
       SleepMs(1000);
     } else {
-      AudioEndToEndTest::PerformTest();
+      
+      SleepMs(5400);
     }
   }
 

@@ -82,7 +82,7 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   
   
   
-  static rtc::scoped_refptr<TestAudioDeviceModule> Create(
+  static rtc::scoped_refptr<AudioDeviceModule> Create(
       TaskQueueFactory* task_queue_factory,
       std::unique_ptr<Capturer> capturer,
       std::unique_ptr<Renderer> renderer,
