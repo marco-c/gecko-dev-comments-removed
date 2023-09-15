@@ -239,7 +239,7 @@ pub use self::GenericOffsetPosition as OffsetPosition;
 impl<H, V> OffsetPosition<H, V> {
     
     #[inline]
-    pub fn auto() -> Self {
-        Self::Auto
+    pub fn normal() -> Self {
+        Self::Normal
     }
 }
