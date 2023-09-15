@@ -122,12 +122,10 @@ struct RTC_EXPORT RtcpFeedback {
   bool operator!=(const RtcpFeedback& o) const { return !(*this == o); }
 };
 
-
-
-
-struct RTC_EXPORT RtpCodecCapability {
-  RtpCodecCapability();
-  ~RtpCodecCapability();
+struct RTC_EXPORT RtpCodec {
+  RtpCodec();
+  RtpCodec(const RtpCodec&);
+  virtual ~RtpCodec();
 
   
   std::string mime_type() const { return MediaTypeToString(kind) + "/" + name; }
@@ -143,19 +141,12 @@ struct RTC_EXPORT RtpCodecCapability {
 
   
   
-  absl::optional<int> preferred_payload_type;
-
   
   
-  absl::optional<int> max_ptime;
-
-  
-  
-  absl::optional<int> ptime;
-
   
   absl::optional<int> num_channels;
 
+  
   
   std::vector<RtcpFeedback> rtcp_feedback;
 
@@ -168,39 +159,31 @@ struct RTC_EXPORT RtpCodecCapability {
   
   std::map<std::string, std::string> parameters;
 
-  
-  
-  
-  std::map<std::string, std::string> options;
+  bool operator==(const RtpCodec& o) const {
+    return name == o.name && kind == o.kind && clock_rate == o.clock_rate &&
+           num_channels == o.num_channels && rtcp_feedback == o.rtcp_feedback &&
+           parameters == o.parameters;
+  }
+  bool operator!=(const RtpCodec& o) const { return !(*this == o); }
+};
+
+
+
+
+struct RTC_EXPORT RtpCodecCapability : public RtpCodec {
+  RtpCodecCapability();
+  virtual ~RtpCodecCapability();
 
   
   
-  
-  int max_temporal_layer_extensions = 0;
-
-  
-  
-  
-  int max_spatial_layer_extensions = 0;
-
-  
-  
-  
-  
-  bool svc_multi_stream_support = false;
+  absl::optional<int> preferred_payload_type;
 
   
   absl::InlinedVector<ScalabilityMode, kScalabilityModeCount> scalability_modes;
 
   bool operator==(const RtpCodecCapability& o) const {
-    return name == o.name && kind == o.kind && clock_rate == o.clock_rate &&
+    return RtpCodec::operator==(o) &&
            preferred_payload_type == o.preferred_payload_type &&
-           max_ptime == o.max_ptime && ptime == o.ptime &&
-           num_channels == o.num_channels && rtcp_feedback == o.rtcp_feedback &&
-           parameters == o.parameters && options == o.options &&
-           max_temporal_layer_extensions == o.max_temporal_layer_extensions &&
-           max_spatial_layer_extensions == o.max_spatial_layer_extensions &&
-           svc_multi_stream_support == o.svc_multi_stream_support &&
            scalability_modes == o.scalability_modes;
   }
   bool operator!=(const RtpCodecCapability& o) const { return !(*this == o); }
@@ -554,63 +537,18 @@ struct RTC_EXPORT RtpEncodingParameters {
   }
 };
 
-struct RTC_EXPORT RtpCodecParameters {
+struct RTC_EXPORT RtpCodecParameters : public RtpCodec {
   RtpCodecParameters();
   RtpCodecParameters(const RtpCodecParameters&);
-  ~RtpCodecParameters();
-
-  
-  std::string mime_type() const { return MediaTypeToString(kind) + "/" + name; }
-
-  
-  std::string name;
-
-  
-  cricket::MediaType kind = cricket::MEDIA_TYPE_AUDIO;
+  virtual ~RtpCodecParameters();
 
   
   
   
   int payload_type = 0;
 
-  
-  absl::optional<int> clock_rate;
-
-  
-  
-  
-  
-  
-  absl::optional<int> num_channels;
-
-  
-  
-  
-  absl::optional<int> max_ptime;
-
-  
-  
-  
-  absl::optional<int> ptime;
-
-  
-  
-  std::vector<RtcpFeedback> rtcp_feedback;
-
-  
-  
-  
-  
-  
-  
-  
-  std::map<std::string, std::string> parameters;
-
   bool operator==(const RtpCodecParameters& o) const {
-    return name == o.name && kind == o.kind && payload_type == o.payload_type &&
-           clock_rate == o.clock_rate && num_channels == o.num_channels &&
-           max_ptime == o.max_ptime && ptime == o.ptime &&
-           rtcp_feedback == o.rtcp_feedback && parameters == o.parameters;
+    return RtpCodec::operator==(o) && payload_type == o.payload_type;
   }
   bool operator!=(const RtpCodecParameters& o) const { return !(*this == o); }
 };
