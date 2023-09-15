@@ -1155,7 +1155,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   remote_pc_wrapper->WaitForConnection();
 
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"", 1280, 720}}));
@@ -1190,7 +1190,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    kLongTimeoutForRampingUp.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}));
@@ -1242,7 +1242,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   remote_pc_wrapper->WaitForConnection();
 
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
   
   rtc::scoped_refptr<const RTCStatsReport> report = GetStats(local_pc_wrapper);
@@ -1302,7 +1302,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
   
   
@@ -1338,7 +1338,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    kLongTimeoutForRampingUp.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}));
@@ -1386,11 +1386,11 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+  ASSERT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
                        local_pc_wrapper, "f", "L3T3_KEY", 720),
                    (2 * kLongTimeoutForRampingUp).ms());
 
@@ -1437,7 +1437,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 1u),
                    kDefaultTimeout.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"", 1280, 720}}));
@@ -1492,11 +1492,11 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
                    kDefaultTimeout.ms());
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+  ASSERT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
                        local_pc_wrapper, "f", "L3T3_KEY", 720),
                    (2 * kLongTimeoutForRampingUp).ms());
 
@@ -1553,7 +1553,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    kLongTimeoutForRampingUp.ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}));
@@ -1614,11 +1614,11 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
 
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u, 1u),
                    kDefaultTimeout.ms());
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
+  ASSERT_TRUE_WAIT(HasOutboundRtpWithRidAndScalabilityMode(
                        local_pc_wrapper, "f", "L2T2_KEY", 720 / 2),
                    (2 * kLongTimeoutForRampingUp).ms());
 
@@ -1727,7 +1727,7 @@ TEST_F(PeerConnectionSimulcastWithMediaFlowTests,
   
   
   
-  EXPECT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
+  ASSERT_TRUE_WAIT(HasOutboundRtpBytesSent(local_pc_wrapper, 3u),
                    (2 * kLongTimeoutForRampingUp).ms());
   EXPECT_TRUE(OutboundRtpResolutionsAreLessThanOrEqualToExpectations(
       local_pc_wrapper, {{"f", 320, 180}, {"h", 640, 360}, {"q", 1280, 720}}));
