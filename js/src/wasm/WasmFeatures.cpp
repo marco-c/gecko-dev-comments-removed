@@ -197,13 +197,17 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
                                  JSStringBuilder* reason) {
   
   bool debug = WasmDebuggerActive(cx);
+  bool tailCalls = WasmTailCallsFlag(cx);
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
       return false;
     }
+    if (tailCalls && !Append(reason, "tail-calls", &sep)) {
+      return false;
+    }
   }
-  *isDisabled = debug;
+  *isDisabled = debug || tailCalls;
   return true;
 }
 

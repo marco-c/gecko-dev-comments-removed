@@ -294,6 +294,21 @@ struct AllocSiteInput
   explicit AllocSiteInput(Register reg) : Base(reg) {}
 };
 
+#ifdef ENABLE_WASM_TAIL_CALLS
+
+
+
+struct ReturnCallAdjustmentInfo {
+  uint32_t newSlotsAndStackArgBytes;
+  uint32_t oldSlotsAndStackArgBytes;
+
+  ReturnCallAdjustmentInfo(uint32_t newSlotsAndStackArgBytes,
+                           uint32_t oldSlotsAndStackArgBytes)
+      : newSlotsAndStackArgBytes(newSlotsAndStackArgBytes),
+        oldSlotsAndStackArgBytes(oldSlotsAndStackArgBytes) {}
+};
+#endif  
+
 
 
 
@@ -3796,6 +3811,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
                             const wasm::CalleeDesc& callee);
 
+#ifdef ENABLE_WASM_TAIL_CALLS
+  CodeOffset wasmReturnCallImport(const wasm::CallSiteDesc& desc,
+                                  const wasm::CalleeDesc& callee,
+                                  const ReturnCallAdjustmentInfo& retCallInfo);
+
+  CodeOffset wasmReturnCall(const wasm::CallSiteDesc& desc,
+                            uint32_t funcDefIndex,
+                            const ReturnCallAdjustmentInfo& retCallInfo);
+
+  void wasmCollapseFrameSlow(const ReturnCallAdjustmentInfo& retCallInfo,
+                             wasm::CallSiteDesc desc);
+
+  void wasmCollapseFrameFast(const ReturnCallAdjustmentInfo& retCallInfo);
+
+  void wasmCheckSlowCallsite(Register ra, Label* notSlow, Register temp1,
+                             Register temp2) DEFINED_ON(x86, x64, arm, arm64);
+
+  void wasmMarkSlowCall() DEFINED_ON(x86, x64, arm, arm64);
+#endif
+
   
   
   
@@ -3814,6 +3849,21 @@ class MacroAssembler : public MacroAssemblerSpecific {
                         Label* nullCheckFailedLabel,
                         mozilla::Maybe<uint32_t> tableSize,
                         CodeOffset* fastCallOffset, CodeOffset* slowCallOffset);
+
+#ifdef ENABLE_WASM_TAIL_CALLS
+  
+  
+  
+  
+  
+  
+  void wasmReturnCallIndirect(const wasm::CallSiteDesc& desc,
+                              const wasm::CalleeDesc& callee,
+                              Label* boundsCheckFailedLabel,
+                              Label* nullCheckFailedLabel,
+                              mozilla::Maybe<uint32_t> tableSize,
+                              const ReturnCallAdjustmentInfo& retCallInfo);
+#endif  
 
   
   

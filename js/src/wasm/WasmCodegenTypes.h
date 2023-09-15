@@ -419,6 +419,8 @@ class CallSiteDesc {
     IndirectFast,  
     FuncRef,       
     FuncRefFast,   
+    ReturnFunc,    
+    ReturnStub,    
     Symbolic,      
     EnterFrame,    
     LeaveFrame,    
@@ -443,8 +445,10 @@ class CallSiteDesc {
   bool isImportCall() const { return kind() == CallSiteDesc::Import; }
   bool isIndirectCall() const { return kind() == CallSiteDesc::Indirect; }
   bool isFuncRefCall() const { return kind() == CallSiteDesc::FuncRef; }
+  bool isReturnStub() const { return kind() == CallSiteDesc::ReturnStub; }
   bool mightBeCrossInstance() const {
-    return isImportCall() || isIndirectCall() || isFuncRefCall();
+    return isImportCall() || isIndirectCall() || isFuncRefCall() ||
+           isReturnStub();
   }
 };
 

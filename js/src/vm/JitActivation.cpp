@@ -228,7 +228,10 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   bool unwound;
   wasm::UnwindState unwindState;
   MOZ_RELEASE_ASSERT(wasm::StartUnwinding(state, &unwindState, &unwound));
-  MOZ_ASSERT(unwound == (trap == wasm::Trap::IndirectCallBadSig));
+  
+  
+  
+  MOZ_ASSERT_IF(unwound, trap == wasm::Trap::IndirectCallBadSig);
 
   void* pc = unwindState.pc;
   const wasm::Frame* fp = wasm::Frame::fromUntaggedWasmExitFP(unwindState.fp);

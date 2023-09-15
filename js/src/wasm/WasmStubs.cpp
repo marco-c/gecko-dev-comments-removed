@@ -553,8 +553,6 @@ static const LiveRegisterSet NonVolatileRegs =
                     FloatRegisterSet(FloatRegisters::NonVolatileMask));
 #endif
 
-static const unsigned NumExtraPushed = 2;  
-
 #ifdef JS_CODEGEN_ARM64
 static const unsigned WasmPushSize = 16;
 #else
@@ -793,9 +791,9 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.moveStackPtrTo(FramePointer);
   masm.setFramePushed(0);
 #ifdef JS_CODEGEN_ARM64
-  const size_t FakeFramePushed = 0;
+  DebugOnly<size_t> fakeFramePushed = 0;
 #else
-  const size_t FakeFramePushed = sizeof(void*);
+  DebugOnly<size_t> fakeFramePushed = sizeof(void*);
   masm.Push(scratch);
 #endif
 
@@ -827,14 +825,19 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   WasmPush(masm, argv);
 
-  MOZ_ASSERT(masm.framePushed() ==
-             NumExtraPushed * WasmPushSize + FakeFramePushed);
+  MOZ_ASSERT(masm.framePushed() == 2 * WasmPushSize + fakeFramePushed,
+             "expected instance, argv, and fake frame");
   uint32_t frameSizeBeforeCall = masm.framePushed();
 
   
+  
+  unsigned aligned =
+      AlignBytes(masm.framePushed() + FakeFrameSize, WasmStackAlignment);
+  masm.reserveStack(aligned - masm.framePushed() + FakeFrameSize);
+
+  
   unsigned argDecrement = StackDecrementForCall(
-      WasmStackAlignment, masm.framePushed() + FakeFrameSize,
-      StackArgBytesForWasmABI(funcType));
+      WasmStackAlignment, aligned, StackArgBytesForWasmABI(funcType));
   masm.reserveStack(argDecrement);
 
   
