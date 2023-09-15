@@ -815,9 +815,6 @@ bool XMLHttpRequestMainThread::IsDeniedCrossSiteCORSRequest() {
 Maybe<nsBaseChannel::ContentRange>
 XMLHttpRequestMainThread::GetRequestedContentRange() const {
   MOZ_ASSERT(mChannel);
-  if (!IsBlobURI(mRequestURL)) {
-    return mozilla::Nothing();
-  }
   nsBaseChannel* baseChan = static_cast<nsBaseChannel*>(mChannel.get());
   if (!baseChan) {
     return mozilla::Nothing();
@@ -1915,7 +1912,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
 
   
   
-  if (GetRequestedContentRange().isNothing() &&
+  if (IsBlobURI(mRequestURL) && GetRequestedContentRange().isNothing() &&
       mAuthorRequestHeaders.Has("range")) {
     return NS_ERROR_NET_PARTIAL_TRANSFER;
   }
