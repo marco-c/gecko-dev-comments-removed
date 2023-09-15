@@ -23,6 +23,26 @@ using namespace mozilla;
 @interface MOZVibrantLeafView : MOZVibrantView
 @end
 
+static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
+  if (@available(macOS 10.14, *)) {
+    
+    
+    return nil;
+  }
+
+  
+  
+  switch (aType) {
+    case VibrancyType::TOOLTIP:
+    case VibrancyType::MENU:
+    case VibrancyType::HIGHLIGHTED_MENUITEM:
+    case VibrancyType::SOURCE_LIST:
+    case VibrancyType::SOURCE_LIST_SELECTION:
+    case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
+      return [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+  }
+}
+
 static NSVisualEffectState VisualEffectStateForVibrancyType(VibrancyType aType) {
   switch (aType) {
     case VibrancyType::TOOLTIP:
@@ -40,7 +60,11 @@ static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType a
                                                                   BOOL* aOutIsEmphasized) {
   switch (aType) {
     case VibrancyType::TOOLTIP:
-      return (NSVisualEffectMaterial)NSVisualEffectMaterialToolTip;
+      if (@available(macOS 10.14, *)) {
+        return (NSVisualEffectMaterial)NSVisualEffectMaterialToolTip;
+      } else {
+        return NSVisualEffectMaterialMenu;
+      }
     case VibrancyType::MENU:
       return NSVisualEffectMaterialMenu;
     case VibrancyType::SOURCE_LIST:
@@ -54,13 +78,20 @@ static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType a
   }
 }
 
+static BOOL HasVibrantForeground(VibrancyType aType) {
+  if (@available(macOS 10.14, *)) {
+    return NO;
+  }
+  return aType == VibrancyType::MENU;
+}
+
 @implementation MOZVibrantView
 
 - (instancetype)initWithFrame:(NSRect)aRect vibrancyType:(VibrancyType)aType {
   self = [super initWithFrame:aRect];
   mType = aType;
 
-  self.appearance = nil;
+  self.appearance = AppearanceForVibrancyType(mType);
   self.state = VisualEffectStateForVibrancyType(mType);
 
   BOOL isEmphasized = NO;
@@ -86,7 +117,7 @@ static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType a
 
 
 - (BOOL)allowsVibrancy {
-  return NO;
+  return HasVibrantForeground(mType);
 }
 
 @end

@@ -275,12 +275,35 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
               ("SecTrustSetNetworkFetchAllowed failed"));
       continue;
     }
-
-    if (!SecTrustEvaluateWithError(trustHandle.get(), nullptr)) {
+    bool isTrusted = false;
+    bool fallBackToDeprecatedAPI = true;
+    if (nsCocoaFeatures::OnMojaveOrLater()) {
+      
+      
+      
+      if (__builtin_available(macOS 10.14, *)) {
+        isTrusted = SecTrustEvaluateWithError(trustHandle.get(), nullptr);
+        fallBackToDeprecatedAPI = false;
+      }
+    }
+    if (fallBackToDeprecatedAPI) {
+      SecTrustResultType result;
+      rv = SecTrustEvaluate(trustHandle.get(), &result);
+      if (rv != errSecSuccess) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("SecTrustEvaluate failed"));
+        continue;
+      }
+      
+      
+      
+      
+      isTrusted = result == kSecTrustResultProceed ||
+                  result == kSecTrustResultUnspecified;
+    }
+    if (!isTrusted) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping cert not trusted"));
       continue;
     }
-
     CFIndex count = SecTrustGetCertificateCount(trustHandle.get());
     bool isRoot = count == 1;
 

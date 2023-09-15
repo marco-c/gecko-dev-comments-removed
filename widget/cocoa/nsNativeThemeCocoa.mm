@@ -65,7 +65,10 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
 }
 
 static bool IsDarkAppearance(NSAppearance* appearance) {
-  return [appearance.name isEqualToString:NSAppearanceNameDarkAqua];
+  if (@available(macOS 10.14, *)) {
+    return [appearance.name isEqualToString:NSAppearanceNameDarkAqua];
+  }
+  return false;
 }
 
 
@@ -2154,7 +2157,7 @@ void nsNativeThemeCocoa::DrawSourceListSelection(CGContextRef aContext, const CG
   NSColor* fillColor;
   if (aSelectionIsActive) {
     
-    fillColor = [NSColor controlAccentColor];
+    fillColor = ControlAccentColor();
   } else {
     
     if (aWindowIsActive) {

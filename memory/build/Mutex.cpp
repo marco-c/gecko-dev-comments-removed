@@ -24,3 +24,23 @@ bool Mutex::TryLock() {
   }
 #endif
 }
+
+#if defined(XP_DARWIN)
+
+
+bool Mutex::SpinInKernelSpace() {
+#  ifdef __aarch64__
+  return true;
+#  else
+  if (__builtin_available(macOS 10.15, *)) {
+    return true;
+  }
+
+  return false;
+#  endif
+}
+
+
+const bool Mutex::gSpinInKernelSpace = SpinInKernelSpace();
+
+#endif  

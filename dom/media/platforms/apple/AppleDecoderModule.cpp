@@ -167,19 +167,23 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
   VideoInfo info(1920, 1080);
   bool checkSupport = false;
 
-  if (!VTIsHardwareDecodeSupported) {
-    return false;
-  }
-  switch (aCodec) {
-    case media::MediaCodec::VP9:
-      info.mMimeType = "video/vp9";
-      VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
-      checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
-      break;
-    default:
-      
-      checkSupport = false;
-      break;
+  
+  
+  if (__builtin_available(macOS 10.13, *)) {
+    if (!VTIsHardwareDecodeSupported) {
+      return false;
+    }
+    switch (aCodec) {
+      case media::MediaCodec::VP9:
+        info.mMimeType = "video/vp9";
+        VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
+        checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
+        break;
+      default:
+        
+        checkSupport = false;
+        break;
+    }
   }
   
   if (checkSupport) {

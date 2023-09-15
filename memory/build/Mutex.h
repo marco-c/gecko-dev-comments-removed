@@ -87,9 +87,40 @@ struct MOZ_CAPABILITY("mutex") Mutex {
     
     
     
-    os_unfair_lock_lock_with_options(
-        &mMutex,
-        OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION | OS_UNFAIR_LOCK_ADAPTIVE_SPIN);
+    
+    if (Mutex::gSpinInKernelSpace) {
+      os_unfair_lock_lock_with_options(
+          &mMutex,
+          OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION | OS_UNFAIR_LOCK_ADAPTIVE_SPIN);
+    } else {
+#  if defined(__x86_64__)
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uint32_t retries = 100;
+
+      do {
+        if (os_unfair_lock_trylock(&mMutex)) {
+          return;
+        }
+
+        __asm__ __volatile__("pause");
+      } while (retries--);
+
+      os_unfair_lock_lock_with_options(&mMutex,
+                                       OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION);
+#  else
+      MOZ_CRASH("User-space spin-locks should never be used on ARM");
+#  endif  
+    }
 #else
     pthread_mutex_lock(&mMutex);
 #endif
