@@ -82,7 +82,7 @@ void ModuleLoadRequest::Cancel() {
     return;
   }
 
-  if (IsReadyToRun()) {
+  if (IsFinished()) {
     return;
   }
 
@@ -97,13 +97,13 @@ void ModuleLoadRequest::Cancel() {
 }
 
 void ModuleLoadRequest::SetReady() {
-  MOZ_ASSERT(!IsReadyToRun());
+  MOZ_ASSERT(!IsFinished());
 
   
   
   
 
-  AssertAllImportsReady();
+  AssertAllImportsFinished();
 
   ScriptLoadRequest::SetReady();
 
@@ -161,13 +161,13 @@ void ModuleLoadRequest::ModuleErrored() {
     return;
   }
 
-  MOZ_ASSERT(!IsReadyToRun());
+  MOZ_ASSERT(!IsFinished());
 
   CheckModuleDependenciesLoaded();
   MOZ_ASSERT(IsErrored());
 
   CancelImports();
-  if (IsReadyToRun()) {
+  if (IsFinished()) {
     
     return;
   }
@@ -234,10 +234,10 @@ void ModuleLoadRequest::ClearDynamicImport() {
   mDynamicPromise = nullptr;
 }
 
-inline void ModuleLoadRequest::AssertAllImportsReady() const {
+inline void ModuleLoadRequest::AssertAllImportsFinished() const {
 #ifdef DEBUG
   for (const auto& request : mImports) {
-    MOZ_ASSERT(request->IsReadyToRun());
+    MOZ_ASSERT(request->IsFinished());
   }
 #endif
 }
