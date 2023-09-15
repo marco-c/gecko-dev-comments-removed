@@ -1,8 +1,7 @@
 
 
 
-
-import React from "react";
+import { div, input } from "react-dom-factories";
 import PropTypes from "prop-types";
 
 export default function ExceptionOption({
@@ -11,15 +10,22 @@ export default function ExceptionOption({
   label,
   onChange,
 }) {
-  return (
-    <div className={className} onClick={onChange}>
-      <input
-        type="checkbox"
-        checked={isChecked ? "checked" : ""}
-        onChange={e => e.stopPropagation() && onChange()}
-      />
-      <div className="breakpoint-exceptions-label">{label}</div>
-    </div>
+  return div(
+    {
+      className,
+      onClick: onChange,
+    },
+    input({
+      type: "checkbox",
+      checked: isChecked,
+      onChange: e => e.stopPropagation() && onChange(),
+    }),
+    div(
+      {
+        className: "breakpoint-exceptions-label",
+      },
+      label
+    )
   );
 }
 
