@@ -253,7 +253,7 @@ void RemoteEstimatorProxy::SendPeriodicFeedbacks() {
       packet_arrival_times_.end_sequence_number();
   while (periodic_window_start_seq_ < packet_arrival_times_end_seq) {
     auto feedback_packet = MaybeBuildFeedbackPacket(
-        true, periodic_window_start_seq_.value(),
+        true, *periodic_window_start_seq_,
         packet_arrival_times_end_seq,
         true);
 
@@ -317,7 +317,7 @@ RemoteEstimatorProxy::MaybeBuildFeedbackPacket(
 
   
   
-  std::unique_ptr<rtcp::TransportFeedback> feedback_packet = nullptr;
+  std::unique_ptr<rtcp::TransportFeedback> feedback_packet;
 
   int64_t next_sequence_number = begin_sequence_number_inclusive;
 
@@ -333,20 +333,38 @@ RemoteEstimatorProxy::MaybeBuildFeedbackPacket(
       feedback_packet =
           std::make_unique<rtcp::TransportFeedback>(include_timestamps);
       feedback_packet->SetMediaSsrc(media_ssrc_);
-      
-      
-      
-      feedback_packet->SetBase(
-          static_cast<uint16_t>(begin_sequence_number_inclusive & 0xFFFF),
-          packet.arrival_time);
-      feedback_packet->SetFeedbackSequenceNumber(feedback_packet_count_++);
-    }
 
-    if (!feedback_packet->AddReceivedPacket(static_cast<uint16_t>(seq & 0xFFFF),
-                                            packet.arrival_time)) {
       
       
-      break;
+      
+      static constexpr int kMaxMissingSequenceNumbers = 0x7FFE;
+      int64_t base_sequence_number = std::max(begin_sequence_number_inclusive,
+                                              seq - kMaxMissingSequenceNumbers);
+
+      
+      
+      
+      feedback_packet->SetBase(static_cast<uint16_t>(base_sequence_number),
+                               packet.arrival_time);
+      feedback_packet->SetFeedbackSequenceNumber(feedback_packet_count_++);
+
+      if (!feedback_packet->AddReceivedPacket(static_cast<uint16_t>(seq),
+                                              packet.arrival_time)) {
+        
+        RTC_DCHECK_NOTREACHED()
+            << "Failed to create an RTCP transport feedback with base sequence "
+               "number "
+            << base_sequence_number << " and 1st received " << seq;
+        periodic_window_start_seq_ = seq;
+        return nullptr;
+      }
+    } else {
+      if (!feedback_packet->AddReceivedPacket(static_cast<uint16_t>(seq),
+                                              packet.arrival_time)) {
+        
+        
+        break;
+      }
     }
 
     next_sequence_number = seq + 1;
