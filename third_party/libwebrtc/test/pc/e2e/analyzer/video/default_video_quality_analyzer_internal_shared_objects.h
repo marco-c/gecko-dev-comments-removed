@@ -57,9 +57,9 @@ struct FrameStats {
   Timestamp decode_start_time = Timestamp::MinusInfinity();
   Timestamp decode_end_time = Timestamp::MinusInfinity();
   Timestamp rendered_time = Timestamp::MinusInfinity();
-  Timestamp prev_frame_rendered_time = Timestamp::MinusInfinity();
 
   
+  absl::optional<Timestamp> prev_frame_rendered_time = absl::nullopt;
   absl::optional<TimeDelta> time_between_captured_frames = absl::nullopt;
   absl::optional<TimeDelta> time_between_encoded_frames = absl::nullopt;
   absl::optional<TimeDelta> time_between_rendered_frames = absl::nullopt;
