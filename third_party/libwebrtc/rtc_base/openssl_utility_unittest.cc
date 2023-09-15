@@ -184,7 +184,6 @@ enum ssl_verify_result_t DummyVerifyCallback(SSL* ssl, uint8_t* out_alert) {
 
 
 SSL* CreateSSLWithPeerCertificate(const unsigned char* cert, size_t cert_len) {
-
   const unsigned char* key_ptr = kFakeSSLPrivateKey;
   EVP_PKEY* key = d2i_PrivateKey(
       EVP_PKEY_EC, nullptr, &key_ptr,

@@ -61,17 +61,11 @@ TEST(EventTracerTest, ScopedTraceEvent) {
       [](const char* ) {
         return reinterpret_cast<const unsigned char*>("test");
       },
-      [](char ,
-         const unsigned char* ,
-         const char* ,
-         unsigned long long ,
-         int ,
-         const char** ,
-         const unsigned char* ,
+      [](char , const unsigned char* ,
+         const char* , unsigned long long , int ,
+         const char** , const unsigned char* ,
          const unsigned long long* ,
-         unsigned char ) {
-        TestStatistics::Get()->Increment();
-      });
+         unsigned char ) { TestStatistics::Get()->Increment(); });
   { TRACE_EVENT0("test", "ScopedTraceEvent"); }
   EXPECT_EQ(2, TestStatistics::Get()->Count());
   TestStatistics::Get()->Reset();

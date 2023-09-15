@@ -375,9 +375,8 @@ void LogMessage::OutputToDebug(const LogLineRef& log_line) {
   CFStringRef domain = CFBundleGetIdentifier(CFBundleGetMainBundle());
   if (domain != nullptr) {
     Boolean exists_and_is_valid;
-    Boolean should_log =
-        CFPreferencesGetAppBooleanValue(CFSTR("logToStdErr"), domain,
-                                        &exists_and_is_valid);
+    Boolean should_log = CFPreferencesGetAppBooleanValue(
+        CFSTR("logToStdErr"), domain, &exists_and_is_valid);
     
     
     log_to_stderr = exists_and_is_valid && should_log;

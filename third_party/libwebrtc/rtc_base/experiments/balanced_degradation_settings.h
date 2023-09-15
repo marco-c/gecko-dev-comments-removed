@@ -96,9 +96,9 @@ class BalancedDegradationSettings {
 
     int pixels = 0;  
     
-    int fps = 0;   
-    int kbps = 0;  
-    int kbps_res = 0;           
+    int fps = 0;       
+    int kbps = 0;      
+    int kbps_res = 0;  
     int fps_diff = kNoFpsDiff;  
                                 
                                 
