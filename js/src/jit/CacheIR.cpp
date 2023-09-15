@@ -9141,6 +9141,36 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<SetObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardClass(objId, GuardClassKind::Set);
+
+  writer.setSizeResult(objId);
+  writer.returnFromIC();
+
+  trackAttached("SetSize");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   
   if (!thisval_.isObject() || !thisval_.toObject().is<MapObject>()) {
@@ -10918,6 +10948,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     
     case InlinableNative::SetHas:
       return tryAttachSetHas();
+    case InlinableNative::SetSize:
+      return tryAttachSetSize();
 
     
     case InlinableNative::MapHas:
