@@ -110,8 +110,7 @@ void MouseCursorMonitorWin::Capture() {
   }
 
   if (!IsSameCursorShape(cursor_info, last_cursor_)) {
-    
-    if (cursor_info.flags != CURSOR_SHOWING) {
+    if (cursor_info.flags == CURSOR_SUPPRESSED) {
       
       last_cursor_ = cursor_info;
       callback_->OnMouseCursor(new MouseCursor(
