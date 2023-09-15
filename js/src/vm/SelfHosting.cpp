@@ -2795,6 +2795,13 @@ static bool GetComputedIntrinsic(JSContext* cx, Handle<PropertyName*> name,
     
     
     
+    bool hadInterruptsDisabled = JS_DisableInterruptCallback(cx);
+    auto resetInterrupts = mozilla::MakeScopeExit(
+        [&]() { JS_ResetInterruptCallback(cx, hadInterruptsDisabled); });
+
+    
+    
+    
     if (!JS_ExecuteScript(cx, script)) {
       return false;
     }
