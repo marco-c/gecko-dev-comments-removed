@@ -85,8 +85,8 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void AllocateSctpSids(rtc::SSLRole role);
 
   
-  
-  bool HasDataChannels() const;
+  bool HasDataChannelsForTest() const;
+
   
   bool HasUsedDataChannels() const;
 
