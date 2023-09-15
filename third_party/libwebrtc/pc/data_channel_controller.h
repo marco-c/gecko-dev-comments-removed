@@ -70,7 +70,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   void SetupDataChannelTransport_n();
   
-  void TeardownDataChannelTransport_n();
+  void TeardownDataChannelTransport_n(RTCError error);
 
   
   
@@ -95,9 +95,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   
   void set_data_channel_transport(DataChannelTransportInterface* transport);
-
-  
-  void OnTransportChannelClosed(RTCError error);
 
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 

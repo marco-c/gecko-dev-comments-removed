@@ -146,12 +146,17 @@ void DataChannelController::OnReadyToSend() {
 
 void DataChannelController::OnTransportClosed(RTCError error) {
   RTC_DCHECK_RUN_ON(network_thread());
+
   
   
   
-  auto copy = sctp_data_channels_n_;
-  for (const auto& channel : copy)
+  
+  std::vector<rtc::scoped_refptr<SctpDataChannel>> temp_sctp_dcs;
+  temp_sctp_dcs.swap(sctp_data_channels_n_);
+  for (const auto& channel : temp_sctp_dcs) {
     channel->OnTransportChannelClosed(error);
+    sid_allocator_.ReleaseSid(channel->sid_n());
+  }
 }
 
 void DataChannelController::SetupDataChannelTransport_n() {
@@ -168,13 +173,17 @@ void DataChannelController::PrepareForShutdown() {
   signaling_safety_.reset(PendingTaskSafetyFlag::CreateDetachedInactive());
 }
 
-void DataChannelController::TeardownDataChannelTransport_n() {
+void DataChannelController::TeardownDataChannelTransport_n(RTCError error) {
   RTC_DCHECK_RUN_ON(network_thread());
+
+  OnTransportClosed(error);
+
   if (data_channel_transport_) {
     data_channel_transport_->SetDataSink(nullptr);
     set_data_channel_transport(nullptr);
   }
-  sctp_data_channels_n_.clear();
+
+  RTC_DCHECK(sctp_data_channels_n_.empty());
   weak_factory_.InvalidateWeakPtrs();
 }
 
@@ -402,23 +411,6 @@ void DataChannelController::OnSctpDataChannelClosed(SctpDataChannel* channel) {
                             [&](const auto& c) { return c.get() == channel; });
   if (it != sctp_data_channels_n_.end())
     sctp_data_channels_n_.erase(it);
-}
-
-void DataChannelController::OnTransportChannelClosed(RTCError error) {
-  RTC_DCHECK_RUN_ON(network_thread());
-  
-  
-  
-  
-  
-  
-  
-  
-  std::vector<rtc::scoped_refptr<SctpDataChannel>> temp_sctp_dcs;
-  temp_sctp_dcs.swap(sctp_data_channels_n_);
-  for (const auto& channel : temp_sctp_dcs) {
-    channel->OnTransportChannelClosed(error);
-  }
 }
 
 void DataChannelController::set_data_channel_transport(
