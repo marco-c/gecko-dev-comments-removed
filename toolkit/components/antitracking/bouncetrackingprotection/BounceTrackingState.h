@@ -68,6 +68,14 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
+  
+  
+  
+  static nsresult HasBounceTrackingStateForSite(const nsACString& aSiteHost,
+                                                bool& aResult);
+
+  
+  
   already_AddRefed<dom::BrowsingContext> CurrentBrowsingContext();
 
   uint64_t GetBrowserId() { return mBrowserId; }

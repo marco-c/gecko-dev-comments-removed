@@ -5,10 +5,14 @@
 #define mozilla_BounceTrackingProtection_h__
 
 #include "mozilla/Logging.h"
+#include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
+#include "nsIClearDataService.h"
 #include "nsTHashMap.h"
 
 class nsIPrincipal;
+class nsITimer;
+
 namespace mozilla {
 
 class BounceTrackingState;
@@ -33,7 +37,7 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   nsresult RecordUserActivation(nsIPrincipal* aPrincipal);
 
  private:
-  BounceTrackingProtection() = default;
+  BounceTrackingProtection();
   ~BounceTrackingProtection() = default;
 
   
@@ -46,6 +50,34 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   
   
   nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers{};
+
+  
+  nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
+
+  
+  using PurgeBounceTrackersMozPromise = MozPromise<nsresult, nsresult, true>;
+  RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
+
+  
+  using ClearDataMozPromise = MozPromise<nsresult, uint32_t, true>;
+  nsTArray<RefPtr<ClearDataMozPromise>> mClearPromises;
+
+  
+  class ClearDataCallback final : public nsIClearDataCallback {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSICLEARDATACALLBACK
+
+    explicit ClearDataCallback(ClearDataMozPromise::Private* aPromise,
+                               const nsACString& aHost)
+        : mHost(aHost), mPromise(aPromise){};
+
+   private:
+    virtual ~ClearDataCallback() { mPromise->Reject(0, __func__); }
+
+    nsCString mHost;
+    RefPtr<ClearDataMozPromise::Private> mPromise;
+  };
 };
 
 }  
