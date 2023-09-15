@@ -205,3 +205,8 @@ if CONFIG["MOZ_NEEDS_LIBATOMIC"]:
     OS_LIBS += ["atomic"]
 
 DEFINES["LZ4LIB_VISIBILITY"] = ""
+
+
+
+
+DIRS += ["../build/pure_virtual"]
