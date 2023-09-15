@@ -28,8 +28,6 @@
 #include "nsWeakReference.h"
 #include "nsNetCID.h"
 
-#define NS_N(x) (sizeof(x) / sizeof(*(x)))
-
 
 
 
