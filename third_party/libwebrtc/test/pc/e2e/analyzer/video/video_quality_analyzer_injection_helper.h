@@ -75,9 +75,6 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   
   
   
-  
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
-      absl::string_view peer_name);
   std::unique_ptr<AnalyzingVideoSink> CreateVideoSink(
       absl::string_view peer_name,
       const VideoSubscription& subscription,
@@ -106,46 +103,6 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   void Stop();
 
  private:
-  
-  class AnalyzingVideoSink2 final : public rtc::VideoSinkInterface<VideoFrame> {
-   public:
-    explicit AnalyzingVideoSink2(absl::string_view peer_name,
-                                 VideoQualityAnalyzerInjectionHelper* helper)
-        : peer_name_(peer_name), helper_(helper) {}
-    ~AnalyzingVideoSink2() override = default;
-
-    void OnFrame(const VideoFrame& frame) override {
-      helper_->OnFrame(peer_name_, frame);
-    }
-
-   private:
-    const std::string peer_name_;
-    VideoQualityAnalyzerInjectionHelper* const helper_;
-  };
-
-  struct ReceiverStream {
-    ReceiverStream(absl::string_view peer_name, absl::string_view stream_label)
-        : peer_name(peer_name), stream_label(stream_label) {}
-
-    std::string peer_name;
-    std::string stream_label;
-
-    
-    bool operator==(const ReceiverStream& o) const {
-      return peer_name == o.peer_name && stream_label == o.stream_label;
-    }
-    bool operator<(const ReceiverStream& o) const {
-      return (peer_name == o.peer_name) ? stream_label < o.stream_label
-                                        : peer_name < o.peer_name;
-    }
-  };
-
-  
-  
-  void OnFrame(absl::string_view peer_name, const VideoFrame& frame);
-  std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>*
-  PopulateSinks(const ReceiverStream& receiver_stream);
-
   Clock* const clock_;
   std::unique_ptr<VideoQualityAnalyzerInterface> analyzer_;
   EncodedImageDataInjector* injector_;
@@ -154,14 +111,6 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
 
   AnalyzingVideoSinksHelper sinks_helper_;
-  Mutex mutex_;
-  int peers_count_ RTC_GUARDED_BY(mutex_);
-  
-  std::map<std::string, webrtc::webrtc_pc_e2e::VideoConfig> known_video_configs_
-      RTC_GUARDED_BY(mutex_);
-  std::map<ReceiverStream,
-           std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>>
-      sinks_ RTC_GUARDED_BY(mutex_);
 };
 
 }  
