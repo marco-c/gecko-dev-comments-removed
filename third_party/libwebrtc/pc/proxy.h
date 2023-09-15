@@ -455,7 +455,6 @@ class ConstMethodCall {
 
 
 
-
 #define BYPASS_PROXY_METHOD0(r, method) \
   r method() override {                 \
     TRACE_BOILERPLATE(method);          \

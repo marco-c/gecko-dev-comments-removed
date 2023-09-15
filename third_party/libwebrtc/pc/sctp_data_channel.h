@@ -40,8 +40,6 @@ class SctpDataChannel;
 
 
 
-
-
 class SctpDataChannelControllerInterface {
  public:
   
@@ -49,9 +47,7 @@ class SctpDataChannelControllerInterface {
                             const SendDataParams& params,
                             const rtc::CopyOnWriteBuffer& payload) = 0;
   
-  
   virtual void AddSctpDataStream(StreamId sid) = 0;
-  
   
   
   virtual void RemoveSctpDataStream(StreamId sid) = 0;
@@ -139,8 +135,14 @@ class SctpDataChannel : public DataChannelInterface {
 
   
   
+  
+  
+  
+  
+  
   static rtc::scoped_refptr<DataChannelInterface> CreateProxy(
-      rtc::scoped_refptr<SctpDataChannel> channel);
+      rtc::scoped_refptr<SctpDataChannel> channel,
+      rtc::scoped_refptr<PendingTaskSafetyFlag> signaling_safety);
 
   void RegisterObserver(DataChannelObserver* observer) override;
   void UnregisterObserver() override;
@@ -192,7 +194,6 @@ class SctpDataChannel : public DataChannelInterface {
 
   
   
-  void SetSctpSid_s(StreamId sid);
   void SetSctpSid_n(StreamId sid);
 
   
@@ -216,10 +217,6 @@ class SctpDataChannel : public DataChannelInterface {
   
   int internal_id() const { return internal_id_; }
 
-  StreamId sid_s() const {
-    RTC_DCHECK_RUN_ON(signaling_thread_);
-    return id_s_;
-  }
   StreamId sid_n() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     return id_n_;
@@ -239,6 +236,8 @@ class SctpDataChannel : public DataChannelInterface {
   ~SctpDataChannel() override;
 
  private:
+  class ObserverAdapter;
+
   
   enum HandshakeState {
     kHandshakeInit,
@@ -248,21 +247,23 @@ class SctpDataChannel : public DataChannelInterface {
     kHandshakeReady
   };
 
-  void UpdateState();
-  void SetState(DataState state);
+  void UpdateState() RTC_RUN_ON(network_thread_);
+  void SetState(DataState state) RTC_RUN_ON(network_thread_);
 
-  void DeliverQueuedReceivedData();
+  void DeliverQueuedReceivedData() RTC_RUN_ON(network_thread_);
 
-  void SendQueuedDataMessages();
-  bool SendDataMessage(const DataBuffer& buffer, bool queue_if_blocked);
-  bool QueueSendDataMessage(const DataBuffer& buffer);
+  void SendQueuedDataMessages() RTC_RUN_ON(network_thread_);
+  bool SendDataMessage(const DataBuffer& buffer, bool queue_if_blocked)
+      RTC_RUN_ON(network_thread_);
+  bool QueueSendDataMessage(const DataBuffer& buffer)
+      RTC_RUN_ON(network_thread_);
 
-  void SendQueuedControlMessages();
-  bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer);
+  void SendQueuedControlMessages() RTC_RUN_ON(network_thread_);
+  bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer)
+      RTC_RUN_ON(network_thread_);
 
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const network_thread_;
-  StreamId id_s_ RTC_GUARDED_BY(signaling_thread_);
   StreamId id_n_ RTC_GUARDED_BY(network_thread_);
   const int internal_id_;
   const std::string label_;
@@ -273,31 +274,27 @@ class SctpDataChannel : public DataChannelInterface {
   const bool negotiated_;
   const bool ordered_;
 
-  DataChannelObserver* observer_ RTC_GUARDED_BY(signaling_thread_) = nullptr;
-  DataState state_ RTC_GUARDED_BY(signaling_thread_) = kConnecting;
-  RTCError error_ RTC_GUARDED_BY(signaling_thread_);
-  uint32_t messages_sent_ RTC_GUARDED_BY(signaling_thread_) = 0;
-  uint64_t bytes_sent_ RTC_GUARDED_BY(signaling_thread_) = 0;
-  uint32_t messages_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
-  uint64_t bytes_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
+  DataChannelObserver* observer_ RTC_GUARDED_BY(network_thread_) = nullptr;
+  std::unique_ptr<ObserverAdapter> observer_adapter_;
+  DataState state_ RTC_GUARDED_BY(network_thread_) = kConnecting;
+  RTCError error_ RTC_GUARDED_BY(network_thread_);
+  uint32_t messages_sent_ RTC_GUARDED_BY(network_thread_) = 0;
+  uint64_t bytes_sent_ RTC_GUARDED_BY(network_thread_) = 0;
+  uint32_t messages_received_ RTC_GUARDED_BY(network_thread_) = 0;
+  uint64_t bytes_received_ RTC_GUARDED_BY(network_thread_) = 0;
   rtc::WeakPtr<SctpDataChannelControllerInterface> controller_
-      RTC_GUARDED_BY(signaling_thread_);
-  HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_) =
+      RTC_GUARDED_BY(network_thread_);
+  HandshakeState handshake_state_ RTC_GUARDED_BY(network_thread_) =
       kHandshakeInit;
-  bool connected_to_transport_ RTC_GUARDED_BY(signaling_thread_) = false;
+  bool connected_to_transport_ RTC_GUARDED_BY(network_thread_) = false;
   
-  bool started_closing_procedure_ RTC_GUARDED_BY(signaling_thread_) = false;
+  bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
   
   
-  PacketQueue queued_control_data_ RTC_GUARDED_BY(signaling_thread_);
-  PacketQueue queued_received_data_ RTC_GUARDED_BY(signaling_thread_);
-  PacketQueue queued_send_data_ RTC_GUARDED_BY(signaling_thread_);
+  PacketQueue queued_control_data_ RTC_GUARDED_BY(network_thread_);
+  PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
+  PacketQueue queued_send_data_ RTC_GUARDED_BY(network_thread_);
 };
-
-
-
-SctpDataChannel* DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
-    DataChannelInterface* channel);
 
 }  
 
