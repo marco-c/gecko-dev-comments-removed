@@ -543,9 +543,17 @@ class EventListenerManager final : public EventListenerManagerBase {
                            dom::EventTarget* aCurrentTarget,
                            nsEventStatus* aEventStatus, bool aItemInShadowTree);
 
+  
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
-  nsresult HandleEventSubType(Listener* aListener, dom::Event* aDOMEvent,
-                              dom::EventTarget* aCurrentTarget);
+  bool HandleEventSingleListener(Listener* aListener, WidgetEvent* aEvent,
+                                 dom::Event* aDOMEvent,
+                                 dom::EventTarget* aCurrentTarget,
+                                 bool aItemInShadowTree);
 
   
 
