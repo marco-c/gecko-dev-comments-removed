@@ -39,7 +39,6 @@
 
 const char* kOskEnabled = "ui.osk.enabled";
 const char* kOskDetectPhysicalKeyboard = "ui.osk.detect_physical_keyboard";
-const char* kOskRequireWin10 = "ui.osk.require_win10";
 const char* kOskDebugReason = "ui.osk.debug.keyboardDisplayReason";
 
 namespace mozilla {
@@ -704,14 +703,12 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
   }
 
   
-  
-  
   if (!IsWin11OrLater()) {
+    
+    
     if (!IsInTabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
       return false;
     }
-  } else if (Preferences::GetBool(kOskRequireWin10, true)) {
-    return false;
   }
 
   return true;

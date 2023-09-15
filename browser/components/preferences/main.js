@@ -501,8 +501,6 @@ var gMainPane = {
     
     this._rebuildFonts();
 
-    this.updateOnScreenKeyboardVisibility();
-
     
     
     const fxtranslationsDisabledPrefName = "extensions.translations.disabled";
@@ -2003,28 +2001,6 @@ var gMainPane = {
 
   showContainerSettings() {
     gotoPref("containers");
-  },
-
-  
-
-
-
-
-
-  updateOnScreenKeyboardVisibility() {
-    if (AppConstants.platform == "win") {
-      let minVersion = Services.prefs.getBoolPref("ui.osk.require_win10")
-        ? 10
-        : 6.2;
-      if (
-        Services.vc.compare(
-          Services.sysinfo.getProperty("version"),
-          minVersion
-        ) >= 0
-      ) {
-        document.getElementById("useOnScreenKeyboard").hidden = false;
-      }
-    }
   },
 
   updateHardwareAcceleration() {
