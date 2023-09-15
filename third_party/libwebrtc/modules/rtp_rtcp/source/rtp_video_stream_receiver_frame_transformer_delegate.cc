@@ -119,13 +119,44 @@ void RtpVideoStreamReceiverFrameTransformerDelegate::OnTransformedFrame(
 void RtpVideoStreamReceiverFrameTransformerDelegate::ManageFrame(
     std::unique_ptr<TransformableFrameInterface> frame) {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
-  RTC_CHECK_EQ(frame->GetDirection(),
-               TransformableFrameInterface::Direction::kReceiver);
   if (!receiver_)
     return;
-  auto transformed_frame = absl::WrapUnique(
-      static_cast<TransformableVideoReceiverFrame*>(frame.release()));
-  receiver_->ManageFrame(std::move(*transformed_frame).ExtractFrame());
+  if (frame->GetDirection() ==
+      TransformableFrameInterface::Direction::kReceiver) {
+    auto transformed_frame = absl::WrapUnique(
+        static_cast<TransformableVideoReceiverFrame*>(frame.release()));
+    receiver_->ManageFrame(std::move(*transformed_frame).ExtractFrame());
+  } else {
+    RTC_CHECK_EQ(frame->GetDirection(),
+                 TransformableFrameInterface::Direction::kSender);
+    
+    
+    
+    
+    
+    
+    
+    
+
+    auto transformed_frame = absl::WrapUnique(
+        static_cast<TransformableVideoFrameInterface*>(frame.release()));
+    VideoFrameMetadata metadata = transformed_frame->Metadata();
+    RTPVideoHeader video_header = RTPVideoHeader::FromMetadata(metadata);
+    VideoSendTiming timing;
+    rtc::ArrayView<const uint8_t> data = transformed_frame->GetData();
+    receiver_->ManageFrame(std::make_unique<RtpFrameObject>(
+        metadata.GetFrameId().value_or(0),
+        metadata.GetFrameId().value_or(0),
+        video_header.is_last_frame_in_picture,
+        0,
+        0,
+        0,
+        transformed_frame->GetTimestamp(),
+        0, timing, transformed_frame->GetPayloadType(),
+        metadata.GetCodec(), metadata.GetRotation(), metadata.GetContentType(),
+        video_header, video_header.color_space, RtpPacketInfos(),
+        EncodedImageBuffer::Create(data.data(), data.size())));
+  }
 }
 
 }  
