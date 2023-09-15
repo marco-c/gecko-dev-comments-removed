@@ -1423,8 +1423,9 @@ PeerConnection::CreateDataChannelOrError(const std::string& label,
   rtc::scoped_refptr<DataChannelInterface> channel = ret.MoveValue();
 
   
-  
-  if (first_datachannel) {
+  if (configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan ||
+      (configuration_.sdp_semantics == SdpSemantics::kPlanB_DEPRECATED &&
+       first_datachannel)) {
     sdp_handler_->UpdateNegotiationNeeded();
   }
   NoteUsageEvent(UsageEvent::DATA_ADDED);
