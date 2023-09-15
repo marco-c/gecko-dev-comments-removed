@@ -79,18 +79,23 @@ class SctpDataChannelTest : public ::testing::Test {
       : network_thread_(std::make_unique<rtc::NullSocketServer>()),
         controller_(new FakeDataChannelController(&network_thread_)) {
     network_thread_.Start();
-    webrtc_data_channel_ = controller_->CreateDataChannel("test", init_);
+    inner_channel_ = controller_->CreateDataChannel("test", init_);
+    channel_ = webrtc::SctpDataChannel::CreateProxy(inner_channel_);
   }
   ~SctpDataChannelTest() override {
     run_loop_.Flush();
+    inner_channel_ = nullptr;
+    channel_ = nullptr;
+    controller_.reset();
+    observer_.reset();
     network_thread_.Stop();
   }
 
   void SetChannelReady() {
     controller_->set_transport_available(true);
-    webrtc_data_channel_->OnTransportChannelCreated();
-    if (!webrtc_data_channel_->sid_s().HasValue()) {
-      SetChannelSid(webrtc_data_channel_, StreamId(0));
+    inner_channel_->OnTransportChannelCreated();
+    if (!inner_channel_->sid_s().HasValue()) {
+      SetChannelSid(inner_channel_, StreamId(0));
     }
     controller_->set_ready_to_send(true);
   }
@@ -110,7 +115,7 @@ class SctpDataChannelTest : public ::testing::Test {
 
   void AddObserver() {
     observer_.reset(new FakeDataChannelObserver());
-    webrtc_data_channel_->RegisterObserver(observer_.get());
+    channel_->RegisterObserver(observer_.get());
   }
 
   test::RunLoop run_loop_;
@@ -118,34 +123,34 @@ class SctpDataChannelTest : public ::testing::Test {
   InternalDataChannelInit init_;
   std::unique_ptr<FakeDataChannelController> controller_;
   std::unique_ptr<FakeDataChannelObserver> observer_;
-  rtc::scoped_refptr<SctpDataChannel> webrtc_data_channel_;
+  rtc::scoped_refptr<SctpDataChannel> inner_channel_;
+  rtc::scoped_refptr<DataChannelInterface> channel_;
 };
 
 TEST_F(SctpDataChannelTest, VerifyConfigurationGetters) {
-  EXPECT_EQ(webrtc_data_channel_->label(), "test");
-  EXPECT_EQ(webrtc_data_channel_->protocol(), init_.protocol);
+  EXPECT_EQ(channel_->label(), "test");
+  EXPECT_EQ(channel_->protocol(), init_.protocol);
 
   
   
   
   init_.reliable = (!init_.maxRetransmits && !init_.maxRetransmitTime);
-  EXPECT_EQ(webrtc_data_channel_->reliable(), init_.reliable);
-  EXPECT_EQ(webrtc_data_channel_->ordered(), init_.ordered);
-  EXPECT_EQ(webrtc_data_channel_->negotiated(), init_.negotiated);
-  EXPECT_EQ(webrtc_data_channel_->priority(), Priority::kLow);
-  EXPECT_EQ(webrtc_data_channel_->maxRetransmitTime(),
-            static_cast<uint16_t>(-1));
-  EXPECT_EQ(webrtc_data_channel_->maxPacketLifeTime(), init_.maxRetransmitTime);
-  EXPECT_EQ(webrtc_data_channel_->maxRetransmits(), static_cast<uint16_t>(-1));
-  EXPECT_EQ(webrtc_data_channel_->maxRetransmitsOpt(), init_.maxRetransmits);
+  EXPECT_EQ(channel_->reliable(), init_.reliable);
+  EXPECT_EQ(channel_->ordered(), init_.ordered);
+  EXPECT_EQ(channel_->negotiated(), init_.negotiated);
+  EXPECT_EQ(channel_->priority(), Priority::kLow);
+  EXPECT_EQ(channel_->maxRetransmitTime(), static_cast<uint16_t>(-1));
+  EXPECT_EQ(channel_->maxPacketLifeTime(), init_.maxRetransmitTime);
+  EXPECT_EQ(channel_->maxRetransmits(), static_cast<uint16_t>(-1));
+  EXPECT_EQ(channel_->maxRetransmitsOpt(), init_.maxRetransmits);
 
   
-  EXPECT_EQ(webrtc_data_channel_->id(), init_.id);
-  EXPECT_EQ(webrtc_data_channel_->sid_s(), StreamId());
+  EXPECT_EQ(channel_->id(), init_.id);
+  EXPECT_EQ(inner_channel_->sid_s(), StreamId());
 
   SetChannelReady();
-  EXPECT_EQ(webrtc_data_channel_->id(), 0);
-  EXPECT_EQ(webrtc_data_channel_->sid_s(), StreamId(0));
+  EXPECT_EQ(channel_->id(), 0);
+  EXPECT_EQ(inner_channel_->sid_s(), StreamId(0));
 }
 
 
@@ -166,25 +171,25 @@ TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
 TEST_F(SctpDataChannelTest, StateTransition) {
   AddObserver();
 
-  EXPECT_EQ(DataChannelInterface::kConnecting, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kConnecting, channel_->state());
   EXPECT_EQ(observer_->on_state_change_count(), 0u);
   SetChannelReady();
 
-  EXPECT_EQ(DataChannelInterface::kOpen, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
   EXPECT_EQ(observer_->on_state_change_count(), 1u);
 
   
   
-  webrtc_data_channel_->Close();
+  channel_->Close();
   
   
   
   run_loop_.Flush();
-  EXPECT_EQ(DataChannelInterface::kClosed, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kClosed, channel_->state());
   EXPECT_EQ(observer_->on_state_change_count(), 3u);
-  EXPECT_TRUE(webrtc_data_channel_->error().ok());
+  EXPECT_TRUE(channel_->error().ok());
   
-  EXPECT_FALSE(controller_->IsConnected(webrtc_data_channel_.get()));
+  EXPECT_FALSE(controller_->IsConnected(inner_channel_.get()));
 }
 
 
@@ -193,10 +198,10 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   AddObserver();
   SetChannelReady();
   DataBuffer buffer("abcd");
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_TRUE(channel_->Send(buffer));
   size_t successful_send_count = 1;
 
-  EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(0U, channel_->buffered_amount());
   EXPECT_EQ(successful_send_count,
             observer_->on_buffered_amount_change_count());
 
@@ -204,16 +209,16 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
 
   const int number_of_packets = 3;
   for (int i = 0; i < number_of_packets; ++i) {
-    EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+    EXPECT_TRUE(channel_->Send(buffer));
   }
   EXPECT_EQ(buffer.data.size() * number_of_packets,
-            webrtc_data_channel_->buffered_amount());
+            channel_->buffered_amount());
   EXPECT_EQ(successful_send_count,
             observer_->on_buffered_amount_change_count());
 
   controller_->set_send_blocked(false);
   successful_send_count += number_of_packets;
-  EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(0U, channel_->buffered_amount());
   EXPECT_EQ(successful_send_count,
             observer_->on_buffered_amount_change_count());
 }
@@ -225,13 +230,13 @@ TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
   SetChannelReady();
   DataBuffer buffer("abcd");
   controller_->set_send_blocked(true);
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_TRUE(channel_->Send(buffer));
 
   EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
 
   controller_->set_send_blocked(false);
   SetChannelReady();
-  EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(0U, channel_->buffered_amount());
   EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
 }
 
@@ -242,18 +247,18 @@ TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
   SetChannelReady();
   DataBuffer buffer("abcd");
   controller_->set_send_blocked(true);
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_TRUE(channel_->Send(buffer));
   EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
 
   
   SetChannelReady();
-  EXPECT_EQ(buffer.size(), webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(buffer.size(), channel_->buffered_amount());
   EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
 
   
   controller_->set_send_blocked(false);
   SetChannelReady();
-  EXPECT_EQ(0U, webrtc_data_channel_->buffered_amount());
+  EXPECT_EQ(0U, channel_->buffered_amount());
   EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
 }
 
@@ -272,48 +277,48 @@ TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesSent) {
   });
 
   
-  EXPECT_EQ(0U, webrtc_data_channel_->messages_sent());
-  EXPECT_EQ(0U, webrtc_data_channel_->bytes_sent());
+  EXPECT_EQ(0U, channel_->messages_sent());
+  EXPECT_EQ(0U, channel_->bytes_sent());
 
   
   controller_->set_send_blocked(false);
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[0]));
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[1]));
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[2]));
+  EXPECT_TRUE(channel_->Send(buffers[0]));
+  EXPECT_TRUE(channel_->Send(buffers[1]));
+  EXPECT_TRUE(channel_->Send(buffers[2]));
   size_t bytes_sent = buffers[0].size() + buffers[1].size() + buffers[2].size();
-  EXPECT_EQ_WAIT(0U, webrtc_data_channel_->buffered_amount(), kDefaultTimeout);
-  EXPECT_EQ(3U, webrtc_data_channel_->messages_sent());
-  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+  EXPECT_EQ_WAIT(0U, channel_->buffered_amount(), kDefaultTimeout);
+  EXPECT_EQ(3U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
 
   
   controller_->set_send_blocked(true);
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[3]));
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[4]));
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffers[5]));
+  EXPECT_TRUE(channel_->Send(buffers[3]));
+  EXPECT_TRUE(channel_->Send(buffers[4]));
+  EXPECT_TRUE(channel_->Send(buffers[5]));
   size_t bytes_queued =
       buffers[3].size() + buffers[4].size() + buffers[5].size();
-  EXPECT_EQ(bytes_queued, webrtc_data_channel_->buffered_amount());
-  EXPECT_EQ(3U, webrtc_data_channel_->messages_sent());
-  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+  EXPECT_EQ(bytes_queued, channel_->buffered_amount());
+  EXPECT_EQ(3U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
 
   
   controller_->set_send_blocked(false);
-  EXPECT_EQ_WAIT(0U, webrtc_data_channel_->buffered_amount(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(0U, channel_->buffered_amount(), kDefaultTimeout);
   bytes_sent += bytes_queued;
-  EXPECT_EQ(6U, webrtc_data_channel_->messages_sent());
-  EXPECT_EQ(bytes_sent, webrtc_data_channel_->bytes_sent());
+  EXPECT_EQ(6U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
 }
 
 
 TEST_F(SctpDataChannelTest, OpenMessageSent) {
   
-  EXPECT_EQ(-1, webrtc_data_channel_->id());
+  EXPECT_EQ(-1, channel_->id());
 
   SetChannelReady();
-  EXPECT_GE(webrtc_data_channel_->id(), 0);
+  EXPECT_GE(channel_->id(), 0);
   EXPECT_EQ(DataMessageType::kControl,
             controller_->last_send_data_params().type);
-  EXPECT_EQ(controller_->last_sid(), webrtc_data_channel_->id());
+  EXPECT_EQ(controller_->last_sid(), channel_->id());
 }
 
 TEST_F(SctpDataChannelTest, QueuedOpenMessageSent) {
@@ -323,7 +328,7 @@ TEST_F(SctpDataChannelTest, QueuedOpenMessageSent) {
 
   EXPECT_EQ(DataMessageType::kControl,
             controller_->last_send_data_params().type);
-  EXPECT_EQ(controller_->last_sid(), webrtc_data_channel_->id());
+  EXPECT_EQ(controller_->last_sid(), channel_->id());
 }
 
 
@@ -393,10 +398,9 @@ TEST_F(SctpDataChannelTest, OpenWaitsForOpenMesssage) {
 
   controller_->set_send_blocked(true);
   SetChannelReady();
-  EXPECT_EQ(DataChannelInterface::kConnecting, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kConnecting, channel_->state());
   controller_->set_send_blocked(false);
-  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, webrtc_data_channel_->state(),
-                 1000);
+  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, channel_->state(), 1000);
   EXPECT_EQ(DataMessageType::kControl,
             controller_->last_send_data_params().type);
 }
@@ -407,38 +411,36 @@ TEST_F(SctpDataChannelTest, QueuedCloseFlushes) {
 
   controller_->set_send_blocked(true);
   SetChannelReady();
-  EXPECT_EQ(DataChannelInterface::kConnecting, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kConnecting, channel_->state());
   controller_->set_send_blocked(false);
-  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, webrtc_data_channel_->state(),
-                 1000);
+  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, channel_->state(), 1000);
   controller_->set_send_blocked(true);
-  webrtc_data_channel_->Send(buffer);
-  webrtc_data_channel_->Close();
+  channel_->Send(buffer);
+  channel_->Close();
   controller_->set_send_blocked(false);
-  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, webrtc_data_channel_->state(),
-                 1000);
-  EXPECT_TRUE(webrtc_data_channel_->error().ok());
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, channel_->state(), 1000);
+  EXPECT_TRUE(channel_->error().ok());
   EXPECT_EQ(DataMessageType::kText, controller_->last_send_data_params().type);
 }
 
 
 TEST_F(SctpDataChannelTest, SendDataId) {
-  SetChannelSid(webrtc_data_channel_, StreamId(1));
+  SetChannelSid(inner_channel_, StreamId(1));
   SetChannelReady();
   DataBuffer buffer("data");
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_TRUE(channel_->Send(buffer));
   EXPECT_EQ(1, controller_->last_sid());
 }
 
 
 TEST_F(SctpDataChannelTest, ReceiveDataWithValidId) {
-  SetChannelSid(webrtc_data_channel_, StreamId(1));
+  SetChannelSid(inner_channel_, StreamId(1));
   SetChannelReady();
 
   AddObserver();
 
   DataBuffer buffer("abcd");
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffer.data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffer.data);
   EXPECT_EQ(1U, observer_->messages_received());
 }
 
@@ -471,36 +473,36 @@ TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesReceived) {
       DataBuffer("message of the beast"),
   });
 
-  SetChannelSid(webrtc_data_channel_, StreamId(1));
+  SetChannelSid(inner_channel_, StreamId(1));
 
   
-  EXPECT_EQ(0U, webrtc_data_channel_->messages_received());
-  EXPECT_EQ(0U, webrtc_data_channel_->bytes_received());
+  EXPECT_EQ(0U, channel_->messages_received());
+  EXPECT_EQ(0U, channel_->bytes_received());
 
   
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[0].data);
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[1].data);
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[2].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[0].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[1].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[2].data);
   EXPECT_EQ(0U, observer_->messages_received());
-  EXPECT_EQ(0U, webrtc_data_channel_->messages_received());
-  EXPECT_EQ(0U, webrtc_data_channel_->bytes_received());
+  EXPECT_EQ(0U, channel_->messages_received());
+  EXPECT_EQ(0U, channel_->bytes_received());
 
   
   SetChannelReady();
   size_t bytes_received =
       buffers[0].size() + buffers[1].size() + buffers[2].size();
   EXPECT_EQ(3U, observer_->messages_received());
-  EXPECT_EQ(3U, webrtc_data_channel_->messages_received());
-  EXPECT_EQ(bytes_received, webrtc_data_channel_->bytes_received());
+  EXPECT_EQ(3U, channel_->messages_received());
+  EXPECT_EQ(bytes_received, channel_->bytes_received());
 
   
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[3].data);
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[4].data);
-  webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffers[5].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[3].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[4].data);
+  inner_channel_->OnDataReceived(DataMessageType::kText, buffers[5].data);
   bytes_received += buffers[3].size() + buffers[4].size() + buffers[5].size();
   EXPECT_EQ(6U, observer_->messages_received());
-  EXPECT_EQ(6U, webrtc_data_channel_->messages_received());
-  EXPECT_EQ(bytes_received, webrtc_data_channel_->bytes_received());
+  EXPECT_EQ(6U, channel_->messages_received());
+  EXPECT_EQ(bytes_received, channel_->bytes_received());
 }
 
 
@@ -549,13 +551,13 @@ TEST_F(SctpDataChannelTest, OpenWhenSendBufferFull) {
 
   for (size_t i = 0; i < DataChannelInterface::MaxSendQueueSize() / packetSize;
        ++i) {
-    EXPECT_TRUE(webrtc_data_channel_->Send(packet));
+    EXPECT_TRUE(channel_->Send(packet));
   }
 
   
-  EXPECT_FALSE(webrtc_data_channel_->Send(packet));
+  EXPECT_FALSE(channel_->Send(packet));
 
-  EXPECT_TRUE(DataChannelInterface::kOpen == webrtc_data_channel_->state());
+  EXPECT_TRUE(DataChannelInterface::kOpen == channel_->state());
 }
 
 
@@ -564,13 +566,12 @@ TEST_F(SctpDataChannelTest, ClosedOnTransportError) {
   DataBuffer buffer("abcd");
   controller_->set_transport_error();
 
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
+  EXPECT_TRUE(channel_->Send(buffer));
 
-  EXPECT_EQ(DataChannelInterface::kClosed, webrtc_data_channel_->state());
-  EXPECT_FALSE(webrtc_data_channel_->error().ok());
-  EXPECT_EQ(RTCErrorType::NETWORK_ERROR, webrtc_data_channel_->error().type());
-  EXPECT_EQ(RTCErrorDetailType::NONE,
-            webrtc_data_channel_->error().error_detail());
+  EXPECT_EQ(DataChannelInterface::kClosed, channel_->state());
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::NETWORK_ERROR, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::NONE, channel_->error().error_detail());
 }
 
 
@@ -581,40 +582,38 @@ TEST_F(SctpDataChannelTest, ClosedWhenReceivedBufferFull) {
 
   
   for (size_t i = 0; i < 16 * 1024 + 1; ++i) {
-    webrtc_data_channel_->OnDataReceived(DataMessageType::kText, buffer);
+    inner_channel_->OnDataReceived(DataMessageType::kText, buffer);
   }
-  EXPECT_EQ(DataChannelInterface::kClosed, webrtc_data_channel_->state());
-  EXPECT_FALSE(webrtc_data_channel_->error().ok());
-  EXPECT_EQ(RTCErrorType::RESOURCE_EXHAUSTED,
-            webrtc_data_channel_->error().type());
-  EXPECT_EQ(RTCErrorDetailType::NONE,
-            webrtc_data_channel_->error().error_detail());
+  EXPECT_EQ(DataChannelInterface::kClosed, channel_->state());
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::RESOURCE_EXHAUSTED, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::NONE, channel_->error().error_detail());
 }
 
 
 TEST_F(SctpDataChannelTest, SendEmptyData) {
-  SetChannelSid(webrtc_data_channel_, StreamId(1));
+  SetChannelSid(inner_channel_, StreamId(1));
   SetChannelReady();
-  EXPECT_EQ(DataChannelInterface::kOpen, webrtc_data_channel_->state());
+  EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
 
   DataBuffer buffer("");
-  EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
-  EXPECT_EQ(DataChannelInterface::kOpen, webrtc_data_channel_->state());
+  EXPECT_TRUE(channel_->Send(buffer));
+  EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
 }
 
 
 TEST_F(SctpDataChannelTest, NeverOpened) {
   controller_->set_transport_available(true);
-  webrtc_data_channel_->OnTransportChannelCreated();
-  webrtc_data_channel_->Close();
+  inner_channel_->OnTransportChannelCreated();
+  channel_->Close();
 }
 
 
 
 
 TEST_F(SctpDataChannelTest, UnusedTransitionsDirectlyToClosed) {
-  webrtc_data_channel_->Close();
-  EXPECT_EQ(DataChannelInterface::kClosed, webrtc_data_channel_->state());
+  channel_->Close();
+  EXPECT_EQ(DataChannelInterface::kClosed, channel_->state());
 }
 
 
@@ -628,22 +627,20 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
 
   
   controller_->set_send_blocked(true);
-  EXPECT_TRUE(webrtc_data_channel_->Send(packet));
+  EXPECT_TRUE(channel_->Send(packet));
 
   
   
   
   RTCError error(RTCErrorType::OPERATION_ERROR_WITH_DATA, "");
   error.set_error_detail(RTCErrorDetailType::SCTP_FAILURE);
-  webrtc_data_channel_->OnTransportChannelClosed(error);
+  inner_channel_->OnTransportChannelClosed(error);
   controller_.reset(nullptr);
-  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, webrtc_data_channel_->state(),
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, channel_->state(),
                  kDefaultTimeout);
-  EXPECT_FALSE(webrtc_data_channel_->error().ok());
-  EXPECT_EQ(RTCErrorType::OPERATION_ERROR_WITH_DATA,
-            webrtc_data_channel_->error().type());
-  EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE,
-            webrtc_data_channel_->error().error_detail());
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::OPERATION_ERROR_WITH_DATA, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE, channel_->error().error_detail());
 }
 
 TEST_F(SctpDataChannelTest, TransportGotErrorCode) {
@@ -657,18 +654,16 @@ TEST_F(SctpDataChannelTest, TransportGotErrorCode) {
   error.set_error_detail(RTCErrorDetailType::SCTP_FAILURE);
   error.set_sctp_cause_code(
       static_cast<uint16_t>(cricket::SctpErrorCauseCode::kProtocolViolation));
-  webrtc_data_channel_->OnTransportChannelClosed(error);
+  inner_channel_->OnTransportChannelClosed(error);
   controller_.reset(nullptr);
-  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, webrtc_data_channel_->state(),
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, channel_->state(),
                  kDefaultTimeout);
-  EXPECT_FALSE(webrtc_data_channel_->error().ok());
-  EXPECT_EQ(RTCErrorType::OPERATION_ERROR_WITH_DATA,
-            webrtc_data_channel_->error().type());
-  EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE,
-            webrtc_data_channel_->error().error_detail());
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::OPERATION_ERROR_WITH_DATA, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE, channel_->error().error_detail());
   EXPECT_EQ(
       static_cast<uint16_t>(cricket::SctpErrorCauseCode::kProtocolViolation),
-      webrtc_data_channel_->error().sctp_cause_code());
+      channel_->error().sctp_cause_code());
 }
 
 class SctpSidAllocatorTest : public ::testing::Test {
