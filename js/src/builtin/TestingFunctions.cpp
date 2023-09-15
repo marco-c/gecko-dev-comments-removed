@@ -5796,9 +5796,11 @@ void ShapeSnapshot::checkSelf(JSContext* cx) const {
 
     
     
-    if (PropertySnapshot(propMap, propMapIndex) != propSnapshot) {
+    
+    if (!propMap->hasKey(propMapIndex) ||
+        PropertySnapshot(propMap, propMapIndex) != propSnapshot) {
       MOZ_RELEASE_ASSERT(propMap->isDictionary());
-      MOZ_RELEASE_ASSERT(prop.configurable());
+      MOZ_RELEASE_ASSERT(object_->shape() != shape_);
       continue;
     }
 
