@@ -321,7 +321,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvLoadURI(
     return IPC_FAIL(this, "Illegal cross-process javascript: load attempt");
   }
 
-  CanonicalBrowsingContext* targetBC = aTargetBC.get_canonical();
+  RefPtr<CanonicalBrowsingContext> targetBC = aTargetBC.get_canonical();
 
   
   
@@ -354,7 +354,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
     return IPC_FAIL(this, "Illegal cross-process javascript: load attempt");
   }
 
-  CanonicalBrowsingContext* targetBC =
+  RefPtr<CanonicalBrowsingContext> targetBC =
       aLoadState->TargetBrowsingContext().get_canonical();
 
   
@@ -1356,7 +1356,8 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvReloadWithHttpsOnlyException() {
   loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
   loadState->SetLoadType(LOAD_NORMAL_REPLACE);
 
-  BrowsingContext()->Top()->LoadURI(loadState,  true);
+  RefPtr<CanonicalBrowsingContext> topBC = BrowsingContext()->Top();
+  topBC->LoadURI(loadState,  true);
 
   return IPC_OK();
 }

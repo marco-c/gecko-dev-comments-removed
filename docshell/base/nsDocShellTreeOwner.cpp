@@ -930,7 +930,8 @@ nsDocShellTreeOwner::HandleEvent(Event* aEvent) {
           asWidgetDropEvent->mCurrentTarget);
     }
   } else if (eventType.EqualsLiteral("drop")) {
-    nsIWebNavigation* webnav = static_cast<nsIWebNavigation*>(mWebBrowser);
+    nsCOMPtr<nsIWebNavigation> webnav =
+        static_cast<nsIWebNavigation*>(mWebBrowser);
 
     
     

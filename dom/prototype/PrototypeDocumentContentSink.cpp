@@ -675,14 +675,15 @@ nsresult PrototypeDocumentContentSink::DoneWalking() {
   }
 
   mDocument->SetDelayFrameLoaderInitialization(false);
-  mDocument->MaybeInitializeFinalizeFrameLoaders();
+  RefPtr<Document> doc = mDocument;
+  doc->MaybeInitializeFinalizeFrameLoaders();
 
   
   
 
-  mDocument->SetScrollToRef(mDocument->GetDocumentURI());
+  doc->SetScrollToRef(mDocument->GetDocumentURI());
 
-  mDocument->EndLoad();
+  doc->EndLoad();
 
   return NS_OK;
 }
