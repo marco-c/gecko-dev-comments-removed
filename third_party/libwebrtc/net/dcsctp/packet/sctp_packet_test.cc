@@ -32,9 +32,13 @@
 
 namespace dcsctp {
 namespace {
+using ::testing::ElementsAre;
 using ::testing::SizeIs;
 
 constexpr VerificationTag kVerificationTag = VerificationTag(0x12345678);
+constexpr DcSctpOptions kVerifyChecksumOptions =
+    DcSctpOptions{.disable_checksum_verification = false,
+                  .enable_zero_checksum = false};
 
 TEST(SctpPacketTest, DeserializeSimplePacketFromCapture) {
   
@@ -87,7 +91,8 @@ TEST(SctpPacketTest, DeserializeSimplePacketFromCapture) {
       0x68, 0x2a, 0xc2, 0x97, 0x80, 0x04, 0x00, 0x06, 0x00, 0x01, 0x00, 0x00,
       0x80, 0x03, 0x00, 0x06, 0x80, 0xc1, 0x00, 0x00};
 
-  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet, SctpPacket::Parse(data));
+  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet,
+                              SctpPacket::Parse(data, kVerifyChecksumOptions));
   EXPECT_EQ(packet.common_header().source_port, 5000);
   EXPECT_EQ(packet.common_header().destination_port, 5000);
   EXPECT_EQ(packet.common_header().verification_tag, VerificationTag(0));
@@ -130,7 +135,8 @@ TEST(SctpPacketTest, DeserializePacketWithTwoChunks) {
                     0x03, 0x00, 0x00, 0x10, 0xae, 0xa9, 0x52, 0x52,
                     0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet, SctpPacket::Parse(data));
+  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet,
+                              SctpPacket::Parse(data, kVerifyChecksumOptions));
   EXPECT_EQ(packet.common_header().source_port, 1234);
   EXPECT_EQ(packet.common_header().destination_port, 4321);
   EXPECT_EQ(packet.common_header().verification_tag,
@@ -172,7 +178,7 @@ TEST(SctpPacketTest, DeserializePacketWithWrongChecksum) {
                     0xf5, 0x31, 0x03, 0x00, 0x00, 0x10, 0x55, 0x08, 0x36, 0x40,
                     0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-  EXPECT_FALSE(SctpPacket::Parse(data).has_value());
+  EXPECT_FALSE(SctpPacket::Parse(data, kVerifyChecksumOptions).has_value());
 }
 
 TEST(SctpPacketTest, DeserializePacketDontValidateChecksum) {
@@ -202,7 +208,8 @@ TEST(SctpPacketTest, DeserializePacketDontValidateChecksum) {
 
   ASSERT_HAS_VALUE_AND_ASSIGN(
       SctpPacket packet,
-      SctpPacket::Parse(data, true));
+      SctpPacket::Parse(data, {.disable_checksum_verification = true,
+                               .enable_zero_checksum = false}));
   EXPECT_EQ(packet.common_header().source_port, 5000);
   EXPECT_EQ(packet.common_header().destination_port, 5000);
   EXPECT_EQ(packet.common_header().verification_tag,
@@ -220,7 +227,8 @@ TEST(SctpPacketTest, SerializeAndDeserializeSingleChunk) {
   b.Add(init);
   std::vector<uint8_t> serialized = b.Build();
 
-  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet, SctpPacket::Parse(serialized));
+  ASSERT_HAS_VALUE_AND_ASSIGN(
+      SctpPacket packet, SctpPacket::Parse(serialized, kVerifyChecksumOptions));
 
   EXPECT_EQ(packet.common_header().verification_tag, kVerificationTag);
 
@@ -250,7 +258,8 @@ TEST(SctpPacketTest, SerializeAndDeserializeThreeChunks) {
 
   std::vector<uint8_t> serialized = b.Build();
 
-  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet, SctpPacket::Parse(serialized));
+  ASSERT_HAS_VALUE_AND_ASSIGN(
+      SctpPacket packet, SctpPacket::Parse(serialized, kVerifyChecksumOptions));
 
   EXPECT_EQ(packet.common_header().verification_tag, kVerificationTag);
 
@@ -279,7 +288,8 @@ TEST(SctpPacketTest, ParseAbortWithEmptyCause) {
       true,
       Parameters::Builder().Add(UserInitiatedAbortCause("")).Build()));
 
-  ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet, SctpPacket::Parse(b.Build()));
+  ASSERT_HAS_VALUE_AND_ASSIGN(
+      SctpPacket packet, SctpPacket::Parse(b.Build(), kVerifyChecksumOptions));
 
   EXPECT_EQ(packet.common_header().verification_tag, kVerificationTag);
 
@@ -298,7 +308,7 @@ TEST(SctpPacketTest, DetectPacketWithZeroSizeChunk) {
   uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0x0a, 0x0a, 0x0a, 0x5c,
                     0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00, 0x00};
 
-  EXPECT_FALSE(SctpPacket::Parse(data, true).has_value());
+  EXPECT_FALSE(SctpPacket::Parse(data, kVerifyChecksumOptions).has_value());
 }
 
 TEST(SctpPacketTest, ReturnsCorrectSpaceAvailableToStayWithinMTU) {
@@ -336,6 +346,96 @@ TEST(SctpPacketTest, ReturnsCorrectSpaceAvailableToStayWithinMTU) {
   EXPECT_EQ(builder.bytes_remaining(),
             kMaxPacketSize - kSctpHeaderSize - chunk1_size - chunk2_size);
   EXPECT_EQ(builder.bytes_remaining(), 0u);  
+}
+
+TEST(SctpPacketTest, AcceptsZeroSetZeroChecksum) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  uint8_t data[] = {0x13, 0x88, 0x13, 0x88, 0x0e, 0xdd, 0xca, 0x08, 0x00, 0x00,
+                    0x00, 0x00, 0x03, 0x00, 0x00, 0x10, 0x55, 0x08, 0x36, 0x40,
+                    0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+  ASSERT_HAS_VALUE_AND_ASSIGN(
+      SctpPacket packet,
+      SctpPacket::Parse(data, {.disable_checksum_verification = false,
+                               .enable_zero_checksum = true}));
+  EXPECT_EQ(packet.common_header().source_port, 5000);
+  EXPECT_EQ(packet.common_header().destination_port, 5000);
+  EXPECT_EQ(packet.common_header().verification_tag,
+            VerificationTag(0x0eddca08u));
+  EXPECT_EQ(packet.common_header().checksum, 0x00000000u);
+}
+
+TEST(SctpPacketTest, RejectsNonZeroIncorrectChecksumWhenZeroChecksumIsActive) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  uint8_t data[] = {0x13, 0x88, 0x13, 0x88, 0x0e, 0xdd, 0xca, 0x08, 0x01, 0x00,
+                    0x00, 0x00, 0x03, 0x00, 0x00, 0x10, 0x55, 0x08, 0x36, 0x40,
+                    0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+  EXPECT_FALSE(SctpPacket::Parse(data, {.disable_checksum_verification = false,
+                                        .enable_zero_checksum = true})
+                   .has_value());
+}
+
+TEST(SctpPacketTest, WritePacketWithCalculatedChecksum) {
+  SctpPacket::Builder b(kVerificationTag, {});
+  b.Add(SackChunk(TSN(999), 456,
+                  {},
+                  {}));
+  EXPECT_THAT(b.Build(),
+              ElementsAre(0x13, 0x88, 0x13, 0x88, 0x12, 0x34, 0x56, 0x78,  
+                          0x07, 0xe8, 0x38, 0x77,  
+                          0x03, 0x00, 0x00, 0x10, 0x00, 0x00, 0x03, 0xe7, 0x00,
+                          0x00, 0x01, 0xc8, 0x00, 0x00, 0x00, 0x00));
+}
+
+TEST(SctpPacketTest, WritePacketWithZeroChecksum) {
+  SctpPacket::Builder b(kVerificationTag, {});
+  b.Add(SackChunk(TSN(999), 456,
+                  {},
+                  {}));
+  EXPECT_THAT(b.Build(false),
+              ElementsAre(0x13, 0x88, 0x13, 0x88, 0x12, 0x34, 0x56, 0x78,  
+                          0x00, 0x00, 0x00, 0x00,  
+                          0x03, 0x00, 0x00, 0x10, 0x00, 0x00, 0x03, 0xe7, 0x00,
+                          0x00, 0x01, 0xc8, 0x00, 0x00, 0x00, 0x00));
 }
 
 }  
