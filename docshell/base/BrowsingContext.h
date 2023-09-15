@@ -68,6 +68,7 @@ class ChildSHistory;
 class ContentParent;
 class Element;
 struct LoadingSessionHistoryInfo;
+class Location;
 template <typename>
 struct Nullable;
 template <typename T>
@@ -948,6 +949,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return GetIsUnderHiddenEmbedderElement();
   }
 
+  void LocationCreated(dom::Location* aLocation);
+  void ClearCachedValuesOfLocations();
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -1023,7 +1027,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
           uintptr_t(this) - offsetof(BrowsingContext, mLocation));
     }
 
-    already_AddRefed<nsIDocShell> GetDocShell() override { return nullptr; }
+    nsIDocShell* GetDocShell() override { return nullptr; }
   };
 
   
@@ -1406,6 +1410,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   uint32_t mLocationChangeRateLimitCount;
   mozilla::TimeStamp mLocationChangeRateLimitSpanStart;
+
+  mozilla::LinkedList<dom::Location> mLocations;
 };
 
 

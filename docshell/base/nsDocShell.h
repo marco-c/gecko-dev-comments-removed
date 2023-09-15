@@ -1160,7 +1160,10 @@ class nsDocShell final : public nsDocLoader,
                                const nsAString& aTitle, bool aReplace,
                                nsIURI* aCurrentURI, bool aEqualURIs);
 
- private:  
+ private:
+  void SetCurrentURIInternal(nsIURI* aURI);
+
+  
   nsString mTitle;
   nsCString mOriginalUriString;
   nsTObserverArray<nsWeakPtr> mPrivacyObservers;
@@ -1204,6 +1207,7 @@ class nsDocShell final : public nsDocLoader,
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
 
+  
   
   nsCOMPtr<nsIURI> mCurrentURI;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
