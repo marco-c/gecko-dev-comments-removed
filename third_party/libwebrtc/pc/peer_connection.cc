@@ -545,6 +545,10 @@ PeerConnection::~PeerConnection() {
 
   
   
+  data_channel_controller_.PrepareForShutdown();
+
+  
+  
   
   if (rtp_manager()) {
     for (const auto& transceiver : rtp_manager()->transceivers()->List()) {
