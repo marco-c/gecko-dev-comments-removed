@@ -149,7 +149,7 @@ nsresult nsLayoutStatics::Initialize() {
 
   ContentParent::StartUp();
 
-  nsCSSProps::AddRefTable();
+  nsCSSProps::Init();
   nsColorNames::AddRefTable();
 
 #ifdef DEBUG
@@ -342,7 +342,6 @@ void nsLayoutStatics::Shutdown() {
 
   
   nsColorNames::ReleaseTable();
-  nsCSSProps::ReleaseTable();
   nsRepeatService::Shutdown();
 
   nsXULContentUtils::Finish();
