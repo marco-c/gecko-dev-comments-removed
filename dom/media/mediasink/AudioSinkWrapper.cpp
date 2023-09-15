@@ -405,19 +405,13 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
           [self = RefPtr<AudioSinkWrapper>(this), audioDevice = mAudioDevice,
            this](Promise::ResolveOrRejectValue&& aValue) mutable {
             LOG("AudioSink async init done, back on MDSM thread");
+            
+            
+            ScopeExit decr([&] { --mAsyncCreateCount; });
             UniquePtr<AudioSink> audioSink;
-            auto switchTime = TimeUnit::Invalid();
             if (aValue.IsResolve()) {
               audioSink = std::move(aValue.ResolveValue());
-              
-              
-              if (audioSink && !mAudioSink) {
-                switchTime = GetPosition();
-              }
             }
-            
-            
-            --mAsyncCreateCount;
             
             
             
@@ -461,6 +455,10 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
               
               return GenericPromise::CreateAndResolve(true, __func__);
             }
+
+            MOZ_ASSERT(!mAudioSink);
+            TimeUnit switchTime = GetPosition();
+            DropAudioPacketsIfNeeded(switchTime);
 
             LOG("AudioSink async, start");
             StartAudioSink(std::move(audioSink), switchTime);
