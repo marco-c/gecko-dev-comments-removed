@@ -28,10 +28,6 @@ var jan6_700 = (beginTime - HOUR_MSEC) * 1000;
 var dec27_800 = (beginTime - DAY_MSEC * 10) * 1000;
 
 
-beginTime *= 1000;
-endTime *= 1000;
-
-
 
 
 var goodAnnoName = "moz-test-places/testing123";
@@ -166,8 +162,9 @@ add_task(async function test_abstime_annotation_uri() {
 
   
   var query = PlacesUtils.history.getNewQuery();
-  query.beginTime = beginTime;
-  query.endTime = endTime;
+  
+  query.beginTime = beginTime * 1000;
+  query.endTime = endTime * 1000;
   query.beginTimeReference = PlacesUtils.history.TIME_RELATIVE_EPOCH;
   query.endTimeReference = PlacesUtils.history.TIME_RELATIVE_EPOCH;
   query.searchTerms = "moz";
@@ -202,12 +199,14 @@ add_task(async function test_abstime_annotation_uri() {
       isDetails: true,
       uri: "http://foo.com/",
       title: "moz",
-      lastvisit: endTime,
+      lastVisit: (endTime + 1) * 1000,
     },
   ];
   await task_populateDB(change2);
   dump_table("moz_places");
-  Assert.ok(!isInResult({ uri: "http://foo.com/" }, root));
+  
+  
+  Assert.ok(isInResult({ uri: "http://foo.com/" }, root));
 
   
   var change3 = [
@@ -220,7 +219,9 @@ add_task(async function test_abstime_annotation_uri() {
   ];
   await task_populateDB(change3);
   info("LiveUpdate by removing annotation");
-  Assert.ok(!isInResult({ uri: "http://foo.com/" }, root));
+  
+  
+  Assert.ok(isInResult({ uri: "http://foo.com/" }, root));
 
   root.containerOpen = false;
 });
