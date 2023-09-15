@@ -35,10 +35,14 @@ pub enum DataType {
     
     TransformFunction,
     
+    CustomIdent,
+    
     
     TransformList,
     
-    CustomIdent,
+    
+    
+    String,
 }
 
 impl DataType {
@@ -72,6 +76,7 @@ impl DataType {
             b"transform-function" => DataType::TransformFunction,
             b"custom-ident" => DataType::CustomIdent,
             b"transform-list" => DataType::TransformList,
+            b"string" => DataType::String,
             _ => return None,
         })
     }
