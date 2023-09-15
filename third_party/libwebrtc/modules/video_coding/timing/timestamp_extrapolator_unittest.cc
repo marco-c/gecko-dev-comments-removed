@@ -128,9 +128,22 @@ TEST(TimestampExtrapolatorTest, NegativeRtpTimestampWrapAround) {
   EXPECT_THAT(ts_extrapolator.ExtrapolateLocalTime(rtp),
               Optional(clock.CurrentTime()));
   
-  rtp -= kRtpHz.hertz();
+  rtp -= static_cast<uint32_t>(kRtpHz.hertz());
   EXPECT_THAT(ts_extrapolator.ExtrapolateLocalTime(rtp),
               Optional(clock.CurrentTime() - TimeDelta::Seconds(1)));
+}
+
+TEST(TimestampExtrapolatorTest, NegativeRtpTimestampWrapAroundSecondScenario) {
+  SimulatedClock clock(Timestamp::Millis(1337));
+  TimestampExtrapolator ts_extrapolator(clock.CurrentTime());
+  uint32_t rtp = 0;
+  ts_extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_THAT(ts_extrapolator.ExtrapolateLocalTime(rtp),
+              Optional(clock.CurrentTime()));
+  
+  rtp -= static_cast<uint32_t>(kRtpHz * TimeDelta::Seconds(10));
+  ts_extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_THAT(ts_extrapolator.ExtrapolateLocalTime(rtp), absl::nullopt);
 }
 
 TEST(TimestampExtrapolatorTest, Slow90KHzClock) {
