@@ -1812,8 +1812,24 @@ void nsLookAndFeel::PerThemeData::Init() {
   
   
   
-  if (mFamily == ThemeFamily::Adwaita || mFamily == ThemeFamily::Yaru ||
-      mFamily == ThemeFamily::Breeze) {
+  
+  
+  
+  
+  
+  
+  
+  const bool shouldUseTitlebarColorsForHeaderBar = [&] {
+    if (mFamily == ThemeFamily::Adwaita || mFamily == ThemeFamily::Yaru) {
+      return IsGnomeDesktopEnvironment();
+    }
+    if (mFamily == ThemeFamily::Breeze) {
+      return IsKdeDesktopEnvironment();
+    }
+    return false;
+  }();
+
+  if (shouldUseTitlebarColorsForHeaderBar) {
     mHeaderBar = mTitlebar;
     mHeaderBarInactive = mTitlebarInactive;
     if (mFamily == ThemeFamily::Breeze) {
