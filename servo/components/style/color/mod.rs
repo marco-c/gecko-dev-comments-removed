@@ -459,10 +459,8 @@ impl ToCss for AbsoluteColor {
 
             ColorSpace::Srgb if !self.flags.contains(ColorFlags::AS_COLOR_FUNCTION) => {
                 
-                
-                
                 cssparser::ToCss::to_css(
-                    &cssparser::RGBA::from_floats(maybe_c1, maybe_c2, maybe_c3, maybe_alpha),
+                    &cssparser::RgbaLegacy::from_floats(self.components.0, self.components.1, self.components.2, self.alpha),
                     dest,
                 )
             },
