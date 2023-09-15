@@ -67,7 +67,7 @@ class FakeClockForTest : public rtc::ScopedFakeClock {
     
     
     
-    AdvanceTime(webrtc::TimeDelta::Seconds(1));
+    AdvanceTime(webrtc::TimeDelta::Seconds(1000));
   }
 
   

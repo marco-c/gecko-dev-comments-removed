@@ -19,9 +19,11 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_packet_infos.h"
+#include "api/task_queue/pending_task_safety_flag.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 
@@ -36,7 +38,7 @@ class SourceTracker {
  public:
   
   
-  static constexpr int64_t kTimeoutMs = 10000;  
+  static constexpr TimeDelta kTimeout = TimeDelta::Seconds(10);
 
   explicit SourceTracker(Clock* clock);
 
@@ -47,7 +49,7 @@ class SourceTracker {
 
   
   
-  void OnFrameDelivered(const RtpPacketInfos& packet_infos);
+  void OnFrameDelivered(RtpPacketInfos packet_infos);
 
   
   
@@ -83,7 +85,7 @@ class SourceTracker {
     
     
     
-    int64_t timestamp_ms;
+    Timestamp timestamp = Timestamp::MinusInfinity();
 
     
     
@@ -105,7 +107,7 @@ class SourceTracker {
 
     
     
-    uint32_t rtp_timestamp;
+    uint32_t rtp_timestamp = 0;
   };
 
   using SourceList = std::list<std::pair<const SourceKey, SourceEntry>>;
@@ -114,23 +116,27 @@ class SourceTracker {
                                        SourceKeyHasher,
                                        SourceKeyComparator>;
 
-  
-  
-  SourceEntry& UpdateEntry(const SourceKey& key)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void OnFrameDeliveredInternal(Timestamp now,
+                                const RtpPacketInfos& packet_infos)
+      RTC_RUN_ON(worker_thread_);
 
   
   
-  void PruneEntries(int64_t now_ms) const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  SourceEntry& UpdateEntry(const SourceKey& key) RTC_RUN_ON(worker_thread_);
 
+  
+  
+  void PruneEntries(Timestamp now) const RTC_RUN_ON(worker_thread_);
+
+  TaskQueueBase* const worker_thread_;
   Clock* const clock_;
-  mutable Mutex lock_;
 
   
   
   
-  mutable SourceList list_ RTC_GUARDED_BY(lock_);
-  mutable SourceMap map_ RTC_GUARDED_BY(lock_);
+  mutable SourceList list_ RTC_GUARDED_BY(worker_thread_);
+  mutable SourceMap map_ RTC_GUARDED_BY(worker_thread_);
+  ScopedTaskSafety worker_safety_;
 };
 
 }  
