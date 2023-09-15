@@ -23,7 +23,7 @@ struct FlushedCmdInfo final {
   size_t flushes = 0;
   
   
-  Maybe<size_t> flushesSinceLastCongestionCheck;
+  size_t flushesSinceLastCongestionCheck = 0;
   
   size_t congestionCheckGeneration = 0;
   size_t flushedCmdBytes = 0;

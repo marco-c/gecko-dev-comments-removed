@@ -535,28 +535,18 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   child->FlushPendingCmds();
 
   Maybe<layers::SurfaceDescriptor> ret;
+  auto& info = child->GetFlushedCmdInfo();
 
   
   const auto& ownerId = fb ? fb->mRemoteTextureOwnerId : mRemoteTextureOwnerId;
   const auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
   auto& needsSync = fb ? fb->mNeedsRemoteTextureSync : mNeedsRemoteTextureSync;
   if (ownerId && textureId) {
-    auto& info = child->GetFlushedCmdInfo();
-    if (!gfx::gfxVars::WebglOopAsyncPresentForceSync() &&
-        info.flushesSinceLastCongestionCheck.isNothing()) {
-      
-      info.flushesSinceLastCongestionCheck = Some(0);
-    }
     const auto tooManyFlushes = 10;
-    if (info.flushesSinceLastCongestionCheck.isSome()) {
-      
-      
-      if (info.flushesSinceLastCongestionCheck.ref() > tooManyFlushes) {
-        needsSync = true;
-      }
-      
-      info.flushesSinceLastCongestionCheck = Some(0);
-      info.congestionCheckGeneration++;
+    
+    
+    if (info.flushesSinceLastCongestionCheck > tooManyFlushes) {
+      needsSync = true;
     }
     if (XRE_IsParentProcess() ||
         gfx::gfxVars::WebglOopAsyncPresentForceSync() || needsSync) {
@@ -565,10 +555,18 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
       
       (void)child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &ret);
     }
+    
+    info.flushesSinceLastCongestionCheck = 0;
+    info.congestionCheckGeneration++;
+
     return Some(layers::SurfaceDescriptorRemoteTexture(*textureId, *ownerId));
   }
 
   if (!child->SendGetFrontBuffer(fb ? fb->mId : 0, vr, &ret)) return {};
+
+  
+  info.flushesSinceLastCongestionCheck = 0;
+  info.congestionCheckGeneration++;
 
   return ret;
 }
