@@ -47,6 +47,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/ShutdownPhase.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPtr.h"
@@ -1923,25 +1924,6 @@ class ScriptCompileTask final : public Task {
 };
 
 class NotifyOffThreadScriptCompletedTask : public Task {
-  
-  
-  
-  
-  
-  
-  
-  
-  static StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
-      sReceivers;
-  static bool sSetupClearOnShutdown;
-
-  
-  
-  
-  nsIOffThreadScriptReceiver* mReceiver;
-
-  RefPtr<ScriptCompileTask> mCompileTask;
-
  public:
   NotifyOffThreadScriptCompletedTask(nsIOffThreadScriptReceiver* aReceiver,
                                      ScriptCompileTask* aCompileTask)
@@ -1949,37 +1931,18 @@ class NotifyOffThreadScriptCompletedTask : public Task {
         mReceiver(aReceiver),
         mCompileTask(aCompileTask) {}
 
-  static void NoteReceiver(nsIOffThreadScriptReceiver* aReceiver) {
-    if (!sSetupClearOnShutdown) {
-      ClearOnShutdown(&sReceivers);
-      sSetupClearOnShutdown = true;
-      sReceivers = new nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>();
-    }
-
-    
-    
-    sReceivers->AppendElement(aReceiver);
-  }
-
   bool Run() override {
     MOZ_ASSERT(NS_IsMainThread());
 
-    if (!sReceivers) {
-      
+    if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
       return true;
     }
-
-    auto index = sReceivers->IndexOf(mReceiver);
-    MOZ_RELEASE_ASSERT(index != sReceivers->NoIndex);
-    nsCOMPtr<nsIOffThreadScriptReceiver> receiver =
-        std::move((*sReceivers)[index]);
-    sReceivers->RemoveElementAt(index);
 
     RefPtr<JS::Stencil> stencil = mCompileTask->StealStencil();
     mCompileTask = nullptr;
 
-    (void)receiver->OnScriptCompileComplete(stencil,
-                                            stencil ? NS_OK : NS_ERROR_FAILURE);
+    (void)mReceiver->OnScriptCompileComplete(
+        stencil, stencil ? NS_OK : NS_ERROR_FAILURE);
 
     return true;
   }
@@ -1990,11 +1953,22 @@ class NotifyOffThreadScriptCompletedTask : public Task {
     return true;
   }
 #endif
-};
 
-StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
-    NotifyOffThreadScriptCompletedTask::sReceivers;
-bool NotifyOffThreadScriptCompletedTask::sSetupClearOnShutdown = false;
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIOffThreadScriptReceiver> mReceiver;
+
+  RefPtr<ScriptCompileTask> mCompileTask;
+};
 
 nsresult StartOffThreadCompile(JS::CompileOptions& aOptions,
                                UniquePtr<Utf8Unit[], JS::FreePolicy>&& aText,
@@ -2084,8 +2058,6 @@ nsresult nsXULPrototypeScript::CompileMaybeOffThread(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-
-    NotifyOffThreadScriptCompletedTask::NoteReceiver(aOffThreadReceiver);
   } else {
     JS::SourceText<Utf8Unit> srcBuf;
     if (NS_WARN_IF(!srcBuf.init(cx, aText.get(), aTextLength,
