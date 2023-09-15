@@ -75,6 +75,7 @@ const syncedTabsData1 = [
         url: "https://sinonjs.org/releases/latest/sandbox/",
         icon: "https://sinonjs.org/assets/images/favicon.png",
         lastUsed: 1655391592, 
+        client: 1,
       },
       {
         type: "tab",
@@ -82,6 +83,7 @@ const syncedTabsData1 = [
         url: "https://www.mozilla.org/",
         icon: "https://www.mozilla.org/media/img/favicons/mozilla/favicon.d25d81d39065.ico",
         lastUsed: 1655730486, 
+        client: 1,
       },
     ],
   },
@@ -98,6 +100,7 @@ const syncedTabsData1 = [
         url: "https://www.theguardian.com/",
         icon: "page-icon:https://www.theguardian.com/",
         lastUsed: 1655291890, 
+        client: 2,
       },
       {
         type: "tab",
@@ -105,6 +108,7 @@ const syncedTabsData1 = [
         url: "https://www.thetimes.co.uk/",
         icon: "page-icon:https://www.thetimes.co.uk/",
         lastUsed: 1655727485, 
+        client: 2,
       },
     ],
   },
@@ -336,11 +340,17 @@ function setupMocks({ fxaDevices = null, state, syncEnabled = true }) {
       }),
     };
   });
+  
+  
+  
+  
+  let tabClients = fxaDevices ? [...fxaDevices] : [];
+  for (let client of tabClients) {
+    client.clientType = client.type;
+  }
+  tabClients = tabClients.filter(device => !device.isCurrentDevice);
   sandbox.stub(SyncedTabs, "getTabClients").callsFake(() => {
-    
-    return Promise.resolve(
-      fxaDevices.filter(device => !device.isCurrentDevice)
-    );
+    return Promise.resolve(tabClients);
   });
   return sandbox;
 }
