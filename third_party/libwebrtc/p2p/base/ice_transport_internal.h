@@ -230,12 +230,6 @@ enum class IceTransportState {
 
 
 
-enum IceProtocolType {
-  ICEPROTO_RFC5245  
-};
-
-
-
 
 
 class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
@@ -255,10 +249,6 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   virtual void SetIceRole(IceRole role) = 0;
 
   virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
-
-  
-  
-  virtual void SetIceProtocolType(IceProtocolType type) {}
 
   virtual void SetIceCredentials(absl::string_view ice_ufrag,
                                  absl::string_view ice_pwd);
