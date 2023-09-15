@@ -17,6 +17,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
@@ -51,7 +52,16 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
 
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
-    return CreateVideoEncoderInternal<Ts...>(format);
+    
+    
+    
+    
+    
+    
+    
+    absl::optional<SdpVideoFormat> matched =
+        FuzzyMatchSdpVideoFormat(GetSupportedFormats(), format);
+    return CreateVideoEncoderInternal<Ts...>(matched.value_or(format));
   }
 
   CodecSupport QueryCodecSupport(
