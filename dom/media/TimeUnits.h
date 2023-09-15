@@ -270,6 +270,18 @@ class TimeIntervals : public IntervalSet<TimeUnit> {
   }
 
   
+  TimeIntervals ToBase(const TimeUnit& aBase) const {
+    TimeIntervals output;
+    for (const auto& interval : mIntervals) {
+      TimeInterval convertedInterval{interval.mStart.ToBase(aBase),
+                                     interval.mEnd.ToBase(aBase),
+                                     interval.mFuzz.ToBase(aBase)};
+      output += convertedInterval;
+    }
+    return output;
+  }
+
+  
   
   
   TimeIntervals ToMicrosecondResolution() const {

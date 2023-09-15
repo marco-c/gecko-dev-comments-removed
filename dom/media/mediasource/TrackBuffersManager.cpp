@@ -2310,6 +2310,9 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   Maybe<uint32_t> firstRemovedIndex;
   uint32_t lastRemovedIndex = 0;
 
+  TimeIntervals intervals =
+      aIntervals.ToBase(aTrackData.mHighestStartTimestamp);
+
   
   
   
@@ -2324,18 +2327,18 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   
   
-  TimeUnit intervalsEnd = aIntervals.GetEnd();
+  TimeUnit intervalsEnd = intervals.GetEnd();
   for (uint32_t i = aStartIndex; i < data.Length(); i++) {
     RefPtr<MediaRawData>& sample = data[i];
-    if (aIntervals.ContainsStrict(sample->mTime)) {
+    if (intervals.ContainsStrict(sample->mTime)) {
       
       
       MSE_DEBUGV("overridding start of frame [%" PRId64 ",%" PRId64
                  "] with [%" PRId64 ",%" PRId64 "] dropping",
                  sample->mTime.ToMicroseconds(),
                  sample->GetEndTime().ToMicroseconds(),
-                 aIntervals.GetStart().ToMicroseconds(),
-                 aIntervals.GetEnd().ToMicroseconds());
+                 intervals.GetStart().ToMicroseconds(),
+                 intervals.GetEnd().ToMicroseconds());
       if (firstRemovedIndex.isNothing()) {
         firstRemovedIndex = Some(i);
       }
@@ -2344,10 +2347,10 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
     }
     TimeInterval sampleInterval(sample->mTime, sample->GetEndTime());
     if (aMode == RemovalMode::kTruncateFrame &&
-        aIntervals.IntersectsStrict(sampleInterval)) {
+        intervals.IntersectsStrict(sampleInterval)) {
       
       TimeIntervals intersection =
-          Intersection(aIntervals, TimeIntervals(sampleInterval));
+          Intersection(intervals, TimeIntervals(sampleInterval));
       bool found = false;
       TimeUnit startTime = intersection.GetStart(&found);
       MOZ_DIAGNOSTIC_ASSERT(found, "Must intersect with added coded frames");
@@ -2365,8 +2368,8 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
                  "[%" PRId64 ",%" PRId64 "]",
                  sampleInterval.mStart.ToMicroseconds(),
                  sampleInterval.mEnd.ToMicroseconds(),
-                 aIntervals.GetStart().ToMicroseconds(),
-                 aIntervals.GetEnd().ToMicroseconds(),
+                 intervals.GetStart().ToMicroseconds(),
+                 intervals.GetEnd().ToMicroseconds(),
                  sample->mTime.ToMicroseconds(),
                  sample->GetEndTime().ToMicroseconds());
       continue;
