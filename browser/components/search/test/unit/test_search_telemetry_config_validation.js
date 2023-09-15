@@ -48,16 +48,6 @@ add_task(async function test_search_config_validates_to_schema() {
   );
   disallowAdditionalProperties(schema);
 
-  
-  
-  
-  schema.properties.extraPageRegexps = {
-    type: "array",
-    items: {
-      type: "string",
-    },
-  };
-
   let data = await RemoteSettings(TELEMETRY_SETTINGS_KEY).get();
 
   let validator = new JsonSchema.Validator(schema);
