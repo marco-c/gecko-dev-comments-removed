@@ -292,21 +292,6 @@ saveMathFont(f)
 
 
 
-f = newMathFont("fraction-1")
-f.math.FractionRuleThickness = 20 * em
-f.math.FractionNumeratorShiftUp = 0
-f.math.FractionNumeratorDisplayStyleShiftUp = 0
-f.math.FractionDenominatorShiftDown = 0
-f.math.FractionNumeratorGapMin = 0
-f.math.FractionDenominatorGapMin = 0
-f.math.FractionNumeratorDisplayStyleShiftUp = 0
-f.math.FractionDenominatorDisplayStyleShiftDown = 0
-f.math.FractionNumeratorDisplayStyleGapMin = 0
-f.math.FractionDenominatorDisplayStyleGapMin = 0
-saveMathFont(f)
-
-
-
 f = newMathFont("limits-5")
 f.math.UpperLimitGapMin = 0
 f.math.UpperLimitBaselineRiseMin = 0
