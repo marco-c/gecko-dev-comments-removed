@@ -19,6 +19,7 @@
 
 #include <string>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "api/priority.h"
 #include "api/rtc_error.h"
@@ -198,7 +199,20 @@ class RTC_EXPORT DataChannelInterface : public rtc::RefCountInterface {
   
   
   
-  virtual bool Send(const DataBuffer& buffer) = 0;
+  
+  
+  virtual bool Send(const DataBuffer& buffer);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void SendAsync(DataBuffer buffer,
+                         absl::AnyInvocable<void(RTCError) &&> on_complete);
 
   
   

@@ -32,6 +32,10 @@
 #include "test/gtest.h"
 #include "test/run_loop.h"
 
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+#include "test/testsupport/rtc_expect_death.h"
+#endif  
+
 namespace webrtc {
 
 namespace {
@@ -124,6 +128,20 @@ class SctpDataChannelTest : public ::testing::Test {
     channel_->RegisterObserver(observer_.get());
   }
 
+  
+  void FlushNetworkThread() {
+    RTC_DCHECK_RUN_ON(run_loop_.task_queue());
+    network_thread_.BlockingCall([] {});
+  }
+
+  
+  
+  
+  void FlushNetworkThreadAndPendingOperations() {
+    FlushNetworkThread();
+    run_loop_.Flush();
+  }
+
   test::RunLoop run_loop_;
   rtc::Thread network_thread_;
   InternalDataChannelInit init_;
@@ -210,6 +228,48 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   AddObserver();
   SetChannelReady();
   DataBuffer buffer("abcd");
+  size_t successful_sends = 0;
+  auto send_complete = [&](RTCError err) {
+    EXPECT_TRUE(err.ok());
+    ++successful_sends;
+  };
+  channel_->SendAsync(buffer, send_complete);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_EQ(channel_->buffered_amount(), 0u);
+  size_t successful_send_count = 1;
+  EXPECT_EQ(successful_send_count, successful_sends);
+  EXPECT_EQ(successful_send_count,
+            observer_->on_buffered_amount_change_count());
+
+  controller_->set_send_blocked(true);
+  const int number_of_packets = 3;
+  for (int i = 0; i < number_of_packets; ++i) {
+    channel_->SendAsync(buffer, send_complete);
+    ++successful_send_count;
+  }
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_EQ(buffer.data.size() * number_of_packets,
+            channel_->buffered_amount());
+  EXPECT_EQ(successful_send_count, successful_sends);
+
+  
+  EXPECT_EQ(1u, observer_->on_buffered_amount_change_count());
+
+  
+  
+  controller_->set_send_blocked(false);
+  run_loop_.Flush();
+  EXPECT_EQ(channel_->buffered_amount(), 0u);
+  EXPECT_EQ(successful_send_count, successful_sends);
+  EXPECT_EQ(successful_send_count,
+            observer_->on_buffered_amount_change_count());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedBufferedAmountWhenBlocked) {
+  AddObserver();
+  SetChannelReady();
+  DataBuffer buffer("abcd");
   EXPECT_TRUE(channel_->Send(buffer));
   size_t successful_send_count = 1;
 
@@ -232,7 +292,7 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   controller_->set_send_blocked(false);
   run_loop_.Flush();
   successful_send_count += number_of_packets;
-  EXPECT_EQ(0U, channel_->buffered_amount());
+  EXPECT_EQ(channel_->buffered_amount(), 0u);
   EXPECT_EQ(successful_send_count,
             observer_->on_buffered_amount_change_count());
 }
@@ -240,6 +300,28 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
 
 
 TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
+  AddObserver();
+  SetChannelReady();
+  DataBuffer buffer("abcd");
+  controller_->set_send_blocked(true);
+  size_t successful_send = 0u;
+  auto send_complete = [&](RTCError err) {
+    EXPECT_TRUE(err.ok());
+    ++successful_send;
+  };
+  channel_->SendAsync(buffer, send_complete);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_EQ(1U, successful_send);
+  EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
+
+  controller_->set_send_blocked(false);
+  SetChannelReady();
+  EXPECT_EQ(channel_->buffered_amount(), 0u);
+  EXPECT_EQ(observer_->on_buffered_amount_change_count(), 1u);
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedQueuedDataSentWhenUnblocked) {
   AddObserver();
   SetChannelReady();
   DataBuffer buffer("abcd");
@@ -257,6 +339,34 @@ TEST_F(SctpDataChannelTest, QueuedDataSentWhenUnblocked) {
 
 
 TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
+  AddObserver();
+  SetChannelReady();
+  DataBuffer buffer("abcd");
+  controller_->set_send_blocked(true);
+  size_t successful_send = 0u;
+  auto send_complete = [&](RTCError err) {
+    EXPECT_TRUE(err.ok());
+    ++successful_send;
+  };
+  channel_->SendAsync(buffer, send_complete);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_EQ(1U, successful_send);
+  EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
+
+  
+  SetChannelReady();
+  EXPECT_EQ(buffer.size(), channel_->buffered_amount());
+  EXPECT_EQ(0U, observer_->on_buffered_amount_change_count());
+
+  
+  controller_->set_send_blocked(false);
+  SetChannelReady();
+  EXPECT_EQ(0U, channel_->buffered_amount());
+  EXPECT_EQ(1U, observer_->on_buffered_amount_change_count());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedBlockedWhenSendQueuedDataNoCrash) {
   AddObserver();
   SetChannelReady();
   DataBuffer buffer("abcd");
@@ -279,6 +389,55 @@ TEST_F(SctpDataChannelTest, BlockedWhenSendQueuedDataNoCrash) {
 
 
 TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesSent) {
+  AddObserver();
+  SetChannelReady();
+  std::vector<DataBuffer> buffers({
+      DataBuffer("message 1"),
+      DataBuffer("msg 2"),
+      DataBuffer("message three"),
+      DataBuffer("quadra message"),
+      DataBuffer("fifthmsg"),
+      DataBuffer("message of the beast"),
+  });
+
+  
+  EXPECT_EQ(0U, channel_->messages_sent());
+  EXPECT_EQ(0U, channel_->bytes_sent());
+
+  
+  controller_->set_send_blocked(false);
+  for (int i : {0, 1, 2}) {
+    channel_->SendAsync(buffers[i], nullptr);
+  }
+  FlushNetworkThreadAndPendingOperations();
+
+  size_t bytes_sent = buffers[0].size() + buffers[1].size() + buffers[2].size();
+  EXPECT_EQ_WAIT(0U, channel_->buffered_amount(), kDefaultTimeout);
+  EXPECT_EQ(3U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
+
+  
+  controller_->set_send_blocked(true);
+  for (int i : {3, 4, 5}) {
+    channel_->SendAsync(buffers[i], nullptr);
+  }
+  FlushNetworkThreadAndPendingOperations();
+  size_t bytes_queued =
+      buffers[3].size() + buffers[4].size() + buffers[5].size();
+  EXPECT_EQ(bytes_queued, channel_->buffered_amount());
+  EXPECT_EQ(3U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
+
+  
+  controller_->set_send_blocked(false);
+  EXPECT_EQ_WAIT(0U, channel_->buffered_amount(), kDefaultTimeout);
+  bytes_sent += bytes_queued;
+  EXPECT_EQ(6U, channel_->messages_sent());
+  EXPECT_EQ(bytes_sent, channel_->bytes_sent());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedVerifyMessagesAndBytesSent) {
   AddObserver();
   SetChannelReady();
   std::vector<DataBuffer> buffers({
@@ -371,6 +530,35 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
 
   
   DataBuffer buffer("some data");
+  proxy->SendAsync(buffer, nullptr);
+  EXPECT_TRUE(controller_->last_send_data_params().ordered);
+
+  
+  rtc::CopyOnWriteBuffer payload;
+  WriteDataChannelOpenAckMessage(&payload);
+  network_thread_.BlockingCall(
+      [&] { dc->OnDataReceived(DataMessageType::kControl, payload); });
+
+  
+  proxy->SendAsync(buffer, nullptr);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_FALSE(controller_->last_send_data_params().ordered);
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedSendUnorderedAfterReceivesOpenAck) {
+  SetChannelReady();
+  InternalDataChannelInit init;
+  init.id = 1;
+  init.ordered = false;
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      controller_->CreateDataChannel("test1", init);
+  auto proxy = webrtc::SctpDataChannel::CreateProxy(dc, signaling_safety_);
+
+  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, proxy->state(), 1000);
+
+  
+  DataBuffer buffer("some data");
   ASSERT_TRUE(proxy->Send(buffer));
   EXPECT_TRUE(controller_->last_send_data_params().ordered);
 
@@ -388,6 +576,29 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
 
 
 TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
+  SetChannelReady();
+  InternalDataChannelInit init;
+  init.id = 1;
+  init.ordered = false;
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      controller_->CreateDataChannel("test1", init);
+  auto proxy = webrtc::SctpDataChannel::CreateProxy(dc, signaling_safety_);
+
+  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, proxy->state(), 1000);
+
+  
+  DataBuffer buffer("data");
+  network_thread_.BlockingCall(
+      [&] { dc->OnDataReceived(DataMessageType::kText, buffer.data); });
+
+  
+  proxy->SendAsync(buffer, nullptr);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_FALSE(controller_->last_send_data_params().ordered);
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedSendUnorderedAfterReceiveData) {
   SetChannelReady();
   InternalDataChannelInit init;
   init.id = 1;
@@ -432,6 +643,24 @@ TEST_F(SctpDataChannelTest, QueuedCloseFlushes) {
   controller_->set_send_blocked(false);
   EXPECT_EQ_WAIT(DataChannelInterface::kOpen, channel_->state(), 1000);
   controller_->set_send_blocked(true);
+  channel_->SendAsync(buffer, nullptr);
+  channel_->Close();
+  controller_->set_send_blocked(false);
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, channel_->state(), 1000);
+  EXPECT_TRUE(channel_->error().ok());
+  EXPECT_EQ(DataMessageType::kText, controller_->last_send_data_params().type);
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedQueuedCloseFlushes) {
+  DataBuffer buffer("foo");
+
+  controller_->set_send_blocked(true);
+  SetChannelReady();
+  EXPECT_EQ(DataChannelInterface::kConnecting, channel_->state());
+  controller_->set_send_blocked(false);
+  EXPECT_EQ_WAIT(DataChannelInterface::kOpen, channel_->state(), 1000);
+  controller_->set_send_blocked(true);
   channel_->Send(buffer);
   channel_->Close();
   controller_->set_send_blocked(false);
@@ -442,6 +671,16 @@ TEST_F(SctpDataChannelTest, QueuedCloseFlushes) {
 
 
 TEST_F(SctpDataChannelTest, SendDataId) {
+  SetChannelSid(inner_channel_, StreamId(1));
+  SetChannelReady();
+  DataBuffer buffer("data");
+  channel_->SendAsync(buffer, nullptr);
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_EQ(1, controller_->last_sid());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedSendDataId) {
   SetChannelSid(inner_channel_, StreamId(1));
   SetChannelReady();
   DataBuffer buffer("data");
@@ -564,6 +803,36 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
 
 
 TEST_F(SctpDataChannelTest, OpenWhenSendBufferFull) {
+  AddObserver();
+  SetChannelReady();
+
+  const size_t packetSize = 1024;
+
+  rtc::CopyOnWriteBuffer buffer(packetSize);
+  memset(buffer.MutableData(), 0, buffer.size());
+
+  DataBuffer packet(buffer, true);
+  controller_->set_send_blocked(true);
+  size_t successful_send = 0u, failed_send = 0u;
+  auto send_complete = [&](RTCError err) {
+    err.ok() ? ++successful_send : ++failed_send;
+  };
+
+  size_t count = DataChannelInterface::MaxSendQueueSize() / packetSize;
+  for (size_t i = 0; i < count; ++i) {
+    channel_->SendAsync(packet, send_complete);
+  }
+
+  
+  channel_->SendAsync(packet, std::move(send_complete));
+  FlushNetworkThreadAndPendingOperations();
+  EXPECT_TRUE(DataChannelInterface::kOpen == channel_->state());
+  EXPECT_EQ(successful_send, count);
+  EXPECT_EQ(failed_send, 1u);
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedOpenWhenSendBufferFull) {
   SetChannelReady();
 
   const size_t packetSize = 1024;
@@ -586,6 +855,20 @@ TEST_F(SctpDataChannelTest, OpenWhenSendBufferFull) {
 
 
 TEST_F(SctpDataChannelTest, ClosedOnTransportError) {
+  SetChannelReady();
+  DataBuffer buffer("abcd");
+  controller_->set_transport_error();
+
+  channel_->SendAsync(buffer, nullptr);
+
+  EXPECT_EQ(DataChannelInterface::kClosed, channel_->state());
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::NETWORK_ERROR, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::NONE, channel_->error().error_detail());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedClosedOnTransportError) {
   SetChannelReady();
   DataBuffer buffer("abcd");
   controller_->set_transport_error();
@@ -623,6 +906,17 @@ TEST_F(SctpDataChannelTest, SendEmptyData) {
   EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
 
   DataBuffer buffer("");
+  channel_->SendAsync(buffer, nullptr);
+  EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedSendEmptyData) {
+  SetChannelSid(inner_channel_, StreamId(1));
+  SetChannelReady();
+  EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
+
+  DataBuffer buffer("");
   EXPECT_TRUE(channel_->Send(buffer));
   EXPECT_EQ(DataChannelInterface::kOpen, channel_->state());
 }
@@ -646,6 +940,34 @@ TEST_F(SctpDataChannelTest, UnusedTransitionsDirectlyToClosed) {
 
 
 TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
+  AddObserver();
+  SetChannelReady();
+
+  rtc::CopyOnWriteBuffer buffer(1024);
+  memset(buffer.MutableData(), 0, buffer.size());
+  DataBuffer packet(buffer, true);
+
+  
+  controller_->set_send_blocked(true);
+  channel_->SendAsync(packet, nullptr);
+
+  
+  
+  
+  RTCError error(RTCErrorType::OPERATION_ERROR_WITH_DATA, "");
+  error.set_error_detail(RTCErrorDetailType::SCTP_FAILURE);
+  network_thread_.BlockingCall(
+      [&] { inner_channel_->OnTransportChannelClosed(error); });
+  controller_.reset(nullptr);
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, channel_->state(),
+                 kDefaultTimeout);
+  EXPECT_FALSE(channel_->error().ok());
+  EXPECT_EQ(RTCErrorType::OPERATION_ERROR_WITH_DATA, channel_->error().type());
+  EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE, channel_->error().error_detail());
+}
+
+
+TEST_F(SctpDataChannelTest, DeprecatedTransportDestroyedWhileDataBuffered) {
   SetChannelReady();
 
   rtc::CopyOnWriteBuffer buffer(1024);
@@ -761,6 +1083,70 @@ TEST_F(SctpSidAllocatorTest, SctpIdReusedForRemovedDataChannel) {
   allocated_id = allocator_.AllocateSid(rtc::SSL_CLIENT);
   EXPECT_EQ(even_id.stream_id_int() + 6, allocated_id.stream_id_int());
 }
+
+
+namespace {
+class NoImplDataChannel : public DataChannelInterface {
+ public:
+  NoImplDataChannel() = default;
+  
+  
+
+ private:
+  
+  void RegisterObserver(DataChannelObserver* observer) override {}
+  void UnregisterObserver() override {}
+  std::string label() const override { return ""; }
+  bool reliable() const override { return false; }
+  int id() const override { return -1; }
+  DataState state() const override { return DataChannelInterface::kClosed; }
+  uint32_t messages_sent() const override { return 0u; }
+  uint64_t bytes_sent() const override { return 0u; }
+  uint32_t messages_received() const override { return 0u; }
+  uint64_t bytes_received() const override { return 0u; }
+  uint64_t buffered_amount() const override { return 0u; }
+  void Close() override {}
+};
+
+class NoImplObserver : public DataChannelObserver {
+ public:
+  NoImplObserver() = default;
+
+ private:
+  void OnStateChange() override {}
+  void OnMessage(const DataBuffer& buffer) override {}
+};
+}  
+
+TEST(DataChannelInterfaceTest, Coverage) {
+  auto channel = rtc::make_ref_counted<NoImplDataChannel>();
+  EXPECT_FALSE(channel->ordered());
+  EXPECT_EQ(channel->maxRetransmitTime(), 0u);
+  EXPECT_EQ(channel->maxRetransmits(), 0u);
+  EXPECT_FALSE(channel->maxRetransmitsOpt());
+  EXPECT_FALSE(channel->maxPacketLifeTime());
+  EXPECT_TRUE(channel->protocol().empty());
+  EXPECT_FALSE(channel->negotiated());
+  EXPECT_EQ(channel->MaxSendQueueSize(), 16u * 1024u * 1024u);
+
+  NoImplObserver observer;
+  observer.OnBufferedAmountChange(0u);
+  EXPECT_FALSE(observer.IsOkToCallOnTheNetworkThread());
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+
+TEST(DataChannelInterfaceDeathTest, SendDefaultImplDchecks) {
+  auto channel = rtc::make_ref_counted<NoImplDataChannel>();
+  RTC_EXPECT_DEATH(channel->Send(DataBuffer("Foo")), "Check failed: false");
+}
+
+TEST(DataChannelInterfaceDeathTest, SendAsyncDefaultImplDchecks) {
+  auto channel = rtc::make_ref_counted<NoImplDataChannel>();
+  RTC_EXPECT_DEATH(channel->SendAsync(DataBuffer("Foo"), nullptr),
+                   "Check failed: false");
+}
+#endif  
 
 }  
 }  
