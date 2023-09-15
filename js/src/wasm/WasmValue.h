@@ -381,6 +381,10 @@ using RootedValVectorN = Rooted<ValVectorN<N>>;
                                           MutableHandleAnyRef vp);
 
 
+[[nodiscard]] extern bool CheckI31RefValue(JSContext* cx, HandleValue v,
+                                           MutableHandleAnyRef vp);
+
+
 [[nodiscard]] extern bool CheckStructRefValue(JSContext* cx, HandleValue v,
                                               MutableHandleAnyRef vp);
 

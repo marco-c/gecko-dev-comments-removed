@@ -5538,6 +5538,13 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
     return;
   }
 
+  if (destType.isI31()) {
+    branchWasmAnyRefIsI31(true, ref, successLabel);
+    jump(failLabel);
+    bind(&fallthrough);
+    return;
+  }
+
   
   
   MOZ_ASSERT(scratch1 != Register::Invalid());
@@ -5752,6 +5759,12 @@ void MacroAssembler::branchWasmAnyRefIsNull(bool isNull, Register src,
   branchTestPtr(isNull ? Assembler::Zero : Assembler::NonZero, src, src, label);
 }
 
+void MacroAssembler::branchWasmAnyRefIsI31(bool isI31, Register src,
+                                           Label* label) {
+  branchTestPtr(isI31 ? Assembler::NonZero : Assembler::Zero, src,
+                Imm32(int32_t(wasm::AnyRefTag::I31)), label);
+}
+
 void MacroAssembler::branchWasmAnyRefIsObjectOrNull(bool isObject, Register src,
                                                     Label* label) {
   branchTestPtr(isObject ? Assembler::Zero : Assembler::NonZero, src,
@@ -5760,45 +5773,137 @@ void MacroAssembler::branchWasmAnyRefIsObjectOrNull(bool isObject, Register src,
 
 void MacroAssembler::branchWasmAnyRefIsGCThing(bool isGCThing, Register src,
                                                Label* label) {
+  Label fallthrough;
+  Label* isGCThingLabel = isGCThing ? label : &fallthrough;
+  Label* isNotGCThingLabel = isGCThing ? &fallthrough : label;
+
   
-  branchWasmAnyRefIsNull(!isGCThing, src, label);
+  branchWasmAnyRefIsNull(true, src, isNotGCThingLabel);
+  branchWasmAnyRefIsI31(true, src, isNotGCThingLabel);
+  jump(isGCThingLabel);
+  bind(&fallthrough);
 }
 
-void MacroAssembler::branchWasmAnyRefIsNurseryCell(Condition cond, Register src,
+void MacroAssembler::branchWasmAnyRefIsNurseryCell(bool isNurseryCell, Register src,
                                                    Register temp,
                                                    Label* label) {
-  MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
-
   Label done;
   branchWasmAnyRefIsGCThing(false, src,
-                            cond == Assembler::Equal ? &done : label);
+                            isNurseryCell ? &done : label);
 
   getWasmAnyRefGCThingChunk(src, temp);
-  branchPtr(InvertCondition(cond), Address(temp, gc::ChunkStoreBufferOffset),
+  branchPtr(isNurseryCell ? Assembler::NotEqual : Assembler::Equal,
+            Address(temp, gc::ChunkStoreBufferOffset),
             ImmWord(0), label);
   bind(&done);
 }
 
+void MacroAssembler::truncate32ToWasmI31Ref(Register src, Register dest) {
+  
+  
+  
+  move32(src, dest);
+  
+  
+  lshift32(Imm32(1), dest);
+  
+  orPtr(Imm32(int32_t(wasm::AnyRefTag::I31)), dest);
+}
+
+void MacroAssembler::convertWasmI31RefTo32Signed(Register src, Register dest) {
+  
+  
+  
+  move32(src, dest);
+  
+  
+  rshift32Arithmetic(Imm32(1), dest);
+}
+
+void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
+                                                   Register dest) {
+  
+  
+  
+  move32(src, dest);
+  
+  
+  rshift32(Imm32(1), dest);
+}
+
 void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
-    ValueOperand src, Label* label) {
+    ValueOperand src, Register scratchInt, FloatRegister scratchFloat, Label* label) {
+  
+  Label checkInt32;
+  Label checkDouble;
+  Label fallthrough;
   ScratchTagScope tag(*this, src);
   splitTagForTest(src, tag);
   branchTestObject(Assembler::Equal, tag, label);
   branchTestString(Assembler::Equal, tag, label);
   branchTestNull(Assembler::Equal, tag, label);
+  branchTestInt32(Assembler::Equal, tag, &checkInt32);
+  branchTestDouble(Assembler::Equal, tag, &checkDouble);
+  jump(&fallthrough);
+
+  bind(&checkInt32);
+  unboxInt32(src, scratchInt);
+  branch32(Assembler::GreaterThan, scratchInt, Imm32(wasm::AnyRef::MaxI31Value),
+           &fallthrough);
+  branch32(Assembler::LessThan, scratchInt, Imm32(wasm::AnyRef::MinI31Value),
+           &fallthrough);
+  jump(label);
+
+  bind(&checkDouble);
+  {
+    ScratchTagScopeRelease _(&tag);
+    convertValueToInt32(src, scratchFloat, scratchInt, &fallthrough, true,
+                        IntConversionInputKind::NumbersOnly);
+  }
+  branch32(Assembler::GreaterThan, scratchInt, Imm32(wasm::AnyRef::MaxI31Value),
+           &fallthrough);
+  branch32(Assembler::LessThan, scratchInt, Imm32(wasm::AnyRef::MinI31Value),
+           &fallthrough);
+  jump(label);
+
+  bind(&fallthrough);
 }
 
 void MacroAssembler::convertValueToWasmAnyRef(ValueOperand src, Register dest,
+                                              FloatRegister scratchFloat,
                                               Label* oolConvert) {
-  Label nullValue, stringValue, objectValue, done;
+  Label doubleValue, int32Value, nullValue, stringValue, objectValue, done;
   {
     ScratchTagScope tag(*this, src);
     splitTagForTest(src, tag);
     branchTestObject(Assembler::Equal, tag, &objectValue);
     branchTestString(Assembler::Equal, tag, &stringValue);
     branchTestNull(Assembler::Equal, tag, &nullValue);
+    branchTestInt32(Assembler::Equal, tag, &int32Value);
+    branchTestDouble(Assembler::Equal, tag, &doubleValue);
     jump(oolConvert);
   }
+
+  bind(&doubleValue);
+  convertValueToInt32(src, scratchFloat, dest, oolConvert, true,
+                      IntConversionInputKind::NumbersOnly);
+  branch32(Assembler::GreaterThan, dest, Imm32(wasm::AnyRef::MaxI31Value),
+           oolConvert);
+  branch32(Assembler::LessThan, dest, Imm32(wasm::AnyRef::MinI31Value),
+           oolConvert);
+  lshiftPtr(Imm32(1), dest);
+  orPtr(Imm32((int32_t)wasm::AnyRefTag::I31), dest);
+  jump(&done);
+
+  bind(&int32Value);
+  unboxInt32(src, dest);
+  branch32(Assembler::GreaterThan, dest, Imm32(wasm::AnyRef::MaxI31Value),
+           oolConvert);
+  branch32(Assembler::LessThan, dest, Imm32(wasm::AnyRef::MinI31Value),
+           oolConvert);
+  lshiftPtr(Imm32(1), dest);
+  orPtr(Imm32((int32_t)wasm::AnyRefTag::I31), dest);
+  jump(&done);
 
   bind(&nullValue);
   static_assert(wasm::AnyRef::NullRefValue == 0);
@@ -5861,8 +5966,11 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
   MOZ_ASSERT(dst.valueReg() != scratch);
 #endif
 
-  Label isObjectOrNull, isObject, isWasmValueBox, done;
+  Label isI31, isObjectOrNull, isObject, isWasmValueBox, done;
 
+  
+  branchTest32(Assembler::NonZero, src, Imm32(int32_t(wasm::AnyRefTag::I31)),
+               &isI31);
   
   branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
 
@@ -5870,6 +5978,12 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
   rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
   lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
   moveValue(TypedOrValueRegister(MIRType::String, AnyRegister(src)), dst);
+  jump(&done);
+
+  
+  bind(&isI31);
+  rshift32Arithmetic(Imm32(1), src);
+  moveValue(TypedOrValueRegister(MIRType::Int32, AnyRegister(src)), dst);
   jump(&done);
 
   
@@ -5901,8 +6015,11 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
                                               Register scratch) {
   MOZ_ASSERT(src != scratch);
 
-  Label isObjectOrNull, isObject, isWasmValueBox, done;
+  Label isI31, isObjectOrNull, isObject, isWasmValueBox, done;
 
+  
+  branchTest32(Assembler::NonZero, src, Imm32(int32_t(wasm::AnyRefTag::I31)),
+               &isI31);
   
   branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
 
@@ -5910,6 +6027,12 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
   rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
   lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
   storeValue(JSVAL_TYPE_STRING, src, dst);
+  jump(&done);
+
+  
+  bind(&isI31);
+  rshift32Arithmetic(Imm32(1), src);
+  storeValue(JSVAL_TYPE_INT32, src, dst);
   jump(&done);
 
   

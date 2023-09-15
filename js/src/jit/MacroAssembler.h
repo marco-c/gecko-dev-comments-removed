@@ -3948,20 +3948,32 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void branchWasmAnyRefIsNull(bool isNull, Register src, Label* label);
   
+  void branchWasmAnyRefIsI31(bool isI31, Register src, Label* label);
+  
   void branchWasmAnyRefIsObjectOrNull(bool isObject, Register src, Label* label);
   
   void branchWasmAnyRefIsGCThing(bool isGCThing, Register src, Label* label);
   
-  void branchWasmAnyRefIsNurseryCell(Condition cond, Register src,
+  void branchWasmAnyRefIsNurseryCell(bool isNurseryCell, Register src,
                                      Register scratch, Label* label);
 
   
+  void truncate32ToWasmI31Ref(Register src, Register dest);
   
-  void branchValueConvertsToWasmAnyRefInline(ValueOperand src, Label* label);
+  void convertWasmI31RefTo32Signed(Register src, Register dest);
+  
+  void convertWasmI31RefTo32Unsigned(Register src, Register dest);
+
+  
+  
+  void branchValueConvertsToWasmAnyRefInline(ValueOperand src,
+                                             Register scratchInt,
+                                             FloatRegister scratchFloat,
+                                             Label* label);
   
   
   void convertValueToWasmAnyRef(ValueOperand src, Register dest,
-                                Label* oolConvert);
+                                FloatRegister scratchFloat, Label* oolConvert);
   
   void convertObjectToWasmAnyRef(Register src, Register dest);
   

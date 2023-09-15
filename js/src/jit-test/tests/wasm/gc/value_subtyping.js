@@ -31,6 +31,7 @@ assertSubtype('i64', 'i64');
 assertSubtype('f32', 'f32');
 assertSubtype('f64', 'f64');
 assertSubtype('eqref', 'eqref');
+assertSubtype('i31ref', 'i31ref');
 assertSubtype('funcref', 'funcref');
 
 
@@ -44,6 +45,10 @@ assertNotSubtype('anyref', 'externref');
 
 
 assertSubtype('anyref', 'eqref');
+
+
+assertSubtype('anyref', 'i31ref');
+assertSubtype('eqref', 'i31ref');
 
 
 assertSubtype('anyref', 'structref');

@@ -85,6 +85,9 @@ enum class TypeCode {
   Ref = 0x6b,  
 
   
+  I31Ref = 0x6a,  
+
+  
   NullExternRef = 0x69,  
 
   
@@ -504,6 +507,11 @@ enum class GcOp {
   ArrayLenWithTypeIndex = 0x17,
   ArrayCopy = 0x18,
   ArrayLen = 0x19,
+
+  
+  I31New = 0x20,
+  I31GetS = 0x21,
+  I31GetU = 0x22,
 
   
   RefTestV5 = 0x44,

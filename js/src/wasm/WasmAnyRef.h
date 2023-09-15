@@ -19,6 +19,8 @@
 #ifndef wasm_anyref_h
 #define wasm_anyref_h
 
+#include "mozilla/FloatingPoint.h"
+
 #include <utility>
 
 #include "js/HeapAPI.h"
@@ -64,10 +66,24 @@ namespace wasm {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class AnyRefKind : uint8_t {
   Null,
   Object,
   String,
+  I31,
 };
 
 
@@ -75,9 +91,10 @@ enum class AnyRefTag : uint8_t {
   
   ObjectOrNull = 0x0,
   
+  I31 = 0x1,
+  
   String = 0x2,
 };
-
 
 
 
@@ -99,7 +116,38 @@ class AnyRef {
     return value & ~TagMask;
   }
   static constexpr AnyRefTag GetUintptrTag(uintptr_t value) {
-    return (AnyRefTag)(value & TagMask);
+    
+    uintptr_t rawTag = value & TagMask;
+    
+    
+    uintptr_t normalizedI31 = rawTag & ~(value << 1);
+    return AnyRefTag(normalizedI31);
+  }
+
+  
+  
+  static AnyRef fromInt32(int32_t value) {
+    
+    
+    MOZ_ASSERT(!int32NeedsBoxing(value));
+    
+    
+    uintptr_t wideValue = (uintptr_t)value;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uintptr_t shiftedValue = wideValue << 1;
+    uintptr_t taggedValue = shiftedValue | (uintptr_t)AnyRefTag::I31;
+    return AnyRef(taggedValue);
   }
 
  public:
@@ -118,6 +166,11 @@ class AnyRef {
   
   static constexpr uintptr_t NullRefValue = 0;
   static constexpr uintptr_t InvalidRefValue = UINTPTR_MAX << TagShift;
+
+  
+  static constexpr int32_t MaxI31Value = (2 << 29) - 1;
+  
+  static constexpr int32_t MinI31Value = -(2 << 29);
 
   explicit AnyRef() : value_(NullRefValue) {}
   MOZ_IMPLICIT AnyRef(std::nullptr_t) : value_(NullRefValue) {}
@@ -157,9 +210,31 @@ class AnyRef {
   static bool fromJSValue(JSContext* cx, JS::HandleValue value,
                           JS::MutableHandle<AnyRef> result);
 
+  static bool int32NeedsBoxing(int32_t value) {
+    
+    return value < MinI31Value || value > MaxI31Value;
+  }
+
+  static bool doubleNeedsBoxing(double value) {
+    int32_t intValue;
+    if (!mozilla::NumberIsInt32(value, &intValue)) {
+      return true;
+    }
+    return int32NeedsBoxing(value);
+  }
+
   
   static bool valueNeedsBoxing(JS::HandleValue value) {
-    return !(value.isObjectOrNull() || value.isString());
+    if (value.isObjectOrNull() || value.isString()) {
+      return false;
+    }
+    if (value.isInt32()) {
+      return int32NeedsBoxing(value.toInt32());
+    }
+    if (value.isDouble()) {
+      return doubleNeedsBoxing(value.toDouble());
+    }
+    return true;
   }
 
   
@@ -189,6 +264,9 @@ class AnyRef {
       case AnyRefTag::String: {
         return AnyRefKind::String;
       }
+      case AnyRefTag::I31: {
+        return AnyRefKind::I31;
+      }
       default: {
         MOZ_CRASH("unknown AnyRef tag");
       }
@@ -196,9 +274,10 @@ class AnyRef {
   }
 
   bool isNull() const { return value_ == NullRefValue; }
-  bool isGCThing() const { return !isNull(); }
+  bool isGCThing() const { return !isNull() && !isI31(); }
   bool isJSObject() const { return kind() == AnyRefKind::Object; }
   bool isJSString() const { return kind() == AnyRefKind::String; }
+  bool isI31() const { return kind() == AnyRefKind::I31; }
 
   gc::Cell* toGCThing() const {
     MOZ_ASSERT(isGCThing());
@@ -216,6 +295,20 @@ class AnyRef {
   JSString* toJSString() const {
     MOZ_ASSERT(isJSString());
     return (JSString*)UntagUintptr(value_);
+  }
+  
+  int32_t toI31() const {
+    MOZ_ASSERT(isI31());
+    
+    uint32_t truncatedValue = *reinterpret_cast<const uint32_t*>(&value_);
+    
+    
+    uint32_t shiftedValue = value_ >> 1;
+    if ((truncatedValue & (1 << 31)) != 0) {
+      shiftedValue |= (1 << 31);
+    }
+    
+    return *reinterpret_cast<int32_t*>(&shiftedValue);
   }
 
   
@@ -238,13 +331,6 @@ using RootedAnyRef = JS::Rooted<AnyRef>;
 using HandleAnyRef = JS::Handle<AnyRef>;
 using MutableHandleAnyRef = JS::MutableHandle<AnyRef>;
 
-
-
-
-
-#define ASSERT_ANYREF_IS_JSOBJECT (void)(0)
-#define STATIC_ASSERT_ANYREF_IS_JSOBJECT static_assert(1, "AnyRef is JSObject")
-
 }  
 
 template <class Wrapper>
@@ -255,6 +341,9 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
 
  public:
   bool isNull() const { return value().isNull(); }
+  bool isI31() const { return value().isI31(); }
+  bool isJSObject() const { return value().isJSObject(); }
+  JSObject& toJSObject() const { return value().toJSObject(); }
 };
 
 
@@ -266,6 +355,7 @@ auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
       return mozilla::Some(f(&val.toJSObject()));
     case wasm::AnyRefKind::String:
       return mozilla::Some(f(val.toJSString()));
+    case wasm::AnyRefKind::I31:
     case wasm::AnyRefKind::Null: {
       using ReturnType = decltype(f(static_cast<JSObject*>(nullptr)));
       return mozilla::Maybe<ReturnType>();
