@@ -54,8 +54,8 @@ def register(graph_config):
         morph,  
         target_tasks,
     )
-    from gecko_taskgraph.loader import multi_dep  
     from gecko_taskgraph.parameters import register_parameters
+    from gecko_taskgraph.util import dependencies  
     from gecko_taskgraph.util.verify import verifications
 
     
