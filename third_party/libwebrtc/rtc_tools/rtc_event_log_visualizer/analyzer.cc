@@ -46,6 +46,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -337,6 +338,72 @@ std::string GetDirectionAsShortString(PacketDirection direction) {
   } else {
     return "Out";
   }
+}
+
+struct FakeExtensionSmall {
+  static constexpr RTPExtensionType kId = kRtpExtensionMid;
+  static constexpr absl::string_view Uri() { return "fake-extension-small"; }
+};
+struct FakeExtensionLarge {
+  static constexpr RTPExtensionType kId = kRtpExtensionRtpStreamId;
+  static constexpr absl::string_view Uri() { return "fake-extension-large"; }
+};
+
+RtpPacketReceived RtpPacketForBWEFromHeader(const RTPHeader& header) {
+  RtpHeaderExtensionMap rtp_header_extensions(true);
+  
+  
+  rtp_header_extensions.Register<TransmissionOffset>(1);
+  rtp_header_extensions.Register<AbsoluteSendTime>(2);
+  rtp_header_extensions.Register<TransportSequenceNumber>(3);
+  rtp_header_extensions.Register<FakeExtensionSmall>(4);
+  
+  rtp_header_extensions.Register<FakeExtensionLarge>(16);
+
+  RtpPacketReceived rtp_packet(&rtp_header_extensions);
+  
+  rtp_packet.SetSsrc(header.ssrc);
+  rtp_packet.SetTimestamp(header.timestamp);
+  size_t num_bwe_extensions = 0;
+  if (header.extension.hasTransmissionTimeOffset) {
+    rtp_packet.SetExtension<TransmissionOffset>(
+        header.extension.transmissionTimeOffset);
+    ++num_bwe_extensions;
+  }
+  if (header.extension.hasAbsoluteSendTime) {
+    rtp_packet.SetExtension<AbsoluteSendTime>(
+        header.extension.absoluteSendTime);
+    ++num_bwe_extensions;
+  }
+  if (header.extension.hasTransportSequenceNumber) {
+    rtp_packet.SetExtension<TransportSequenceNumber>(
+        header.extension.transportSequenceNumber);
+    ++num_bwe_extensions;
+  }
+
+  
+  RTC_CHECK_EQ(header.headerLength % 4, 0);
+
+  
+  
+  
+  
+  RTC_CHECK_GE(header.headerLength, rtp_packet.headers_size());
+  size_t bytes_to_add = header.headerLength - rtp_packet.headers_size();
+  if (bytes_to_add > 0) {
+    if (bytes_to_add <= 16) {
+      
+      rtp_packet.AllocateExtension(FakeExtensionSmall::kId, bytes_to_add - 1);
+    } else {
+      
+      
+      rtp_packet.AllocateExtension(FakeExtensionLarge::kId,
+                                   bytes_to_add - 2 - num_bwe_extensions);
+    }
+  }
+  RTC_CHECK_EQ(rtp_packet.headers_size(), header.headerLength);
+
+  return rtp_packet;
 }
 
 }  
@@ -1468,12 +1535,16 @@ void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) {
   int64_t last_update_us = 0;
   for (const auto& kv : incoming_rtp) {
     const RtpPacketType& packet = *kv.second;
-    int64_t arrival_time_ms = packet.rtp.log_time_us() / 1000;
-    size_t payload = packet.rtp.total_length; 
-    clock.AdvanceTimeMicroseconds(packet.rtp.log_time_us() -
-                                  clock.TimeInMicroseconds());
-    rscc.OnReceivedPacket(arrival_time_ms, payload, packet.rtp.header);
-    acked_bitrate.Update(payload, arrival_time_ms);
+
+    RtpPacketReceived rtp_packet = RtpPacketForBWEFromHeader(packet.rtp.header);
+    rtp_packet.set_arrival_time(packet.rtp.log_time());
+    rtp_packet.SetPayloadSize(packet.rtp.total_length -
+                              rtp_packet.headers_size());
+
+    clock.AdvanceTime(rtp_packet.arrival_time() - clock.CurrentTime());
+    rscc.OnReceivedPacket(rtp_packet, MediaType::VIDEO);
+    int64_t arrival_time_ms = packet.rtp.log_time().ms();
+    acked_bitrate.Update(packet.rtp.total_length, arrival_time_ms);
     absl::optional<uint32_t> bitrate_bps = acked_bitrate.Rate(arrival_time_ms);
     if (bitrate_bps) {
       uint32_t y = *bitrate_bps / 1000;
