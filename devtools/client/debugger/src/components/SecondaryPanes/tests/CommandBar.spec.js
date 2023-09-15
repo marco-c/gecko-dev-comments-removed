@@ -22,7 +22,9 @@ describe("CommandBar", () => {
     
     const context = { shortcuts: { on: jest.fn() } };
 
-    shallow(<CommandBar.WrappedComponent {...props} />, { context });
+    shallow(React.createElement(CommandBar.WrappedComponent, props), {
+      context,
+    });
 
     
     
@@ -55,7 +57,9 @@ describe("CommandBar", () => {
     
     const context = { shortcuts: { on: jest.fn() } };
 
-    shallow(<CommandBar.WrappedComponent {...props} />, { context });
+    shallow(React.createElement(CommandBar.WrappedComponent, props), {
+      context,
+    });
 
     
     
