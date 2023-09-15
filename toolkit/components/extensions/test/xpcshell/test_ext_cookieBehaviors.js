@@ -190,6 +190,14 @@ add_task(async function test_ext_page_allowed_storage() {
 });
 
 add_task(async function test_ext_page_3rdparty_cookies() {
+  if (AppConstants.platform === "android") {
+    
+    info("Skipped test_ext_page_3rdparty_cookies");
+    return;
+  }
+  
+  allow_unsafe_parent_loads_when_extensions_not_remote();
+
   
   
   
@@ -390,12 +398,24 @@ add_task(async function test_ext_page_3rdparty_cookies() {
 
   await extPage.close();
   await extension.unload();
+
+  revert_allow_unsafe_parent_loads_when_extensions_not_remote();
 });
 
 
 
 add_task(
   async function test_webpage_subframe_storage_respect_cookiesBehavior() {
+    if (Services.appinfo.fissionAutostart) {
+      
+      
+      
+      info("Skipped test_webpage_subframe_storage_respect_cookiesBehavior");
+      return;
+    }
+    
+    allow_unsafe_parent_loads_when_extensions_not_remote();
+
     let extension = ExtensionTestUtils.loadExtension({
       manifest: {
         permissions: ["http://example.com/*"],
@@ -448,6 +468,7 @@ add_task(
 
       return {
         extTopLevel: testIDB(this.content),
+        
         extSubFrame: testIDB(extFrame.contentWindow),
         webSubFrame: testIDB(webFrame.contentWindow),
         webServiceWorker: await testServiceWorker(webFrame.contentWindow),
@@ -510,6 +531,8 @@ add_task(
     await contentPage.close();
 
     await extension.unload();
+
+    revert_allow_unsafe_parent_loads_when_extensions_not_remote();
   }
 );
 
