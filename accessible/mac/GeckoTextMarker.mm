@@ -436,27 +436,28 @@ NSAttributedString* GeckoTextMarkerRange::AttributedText() const {
           : mRange;
 
   nsAutoString text;
-  RefPtr<AccAttributes> currentRun = nullptr;
+  RefPtr<AccAttributes> currentRun = range.Start().GetTextAttributes();
   Accessible* runAcc = range.Start().mAcc;
   for (TextLeafRange segment : range) {
     TextLeafPoint start = segment.Start();
-    if (start.mAcc->IsTextField() && start.mAcc->ChildCount() == 0) {
-      continue;
-    }
-    if (!currentRun) {
-      
-      currentRun = start.GetTextAttributes();
-    }
     TextLeafPoint attributesNext;
     do {
-      attributesNext = start.FindTextAttrsStart(eDirNext, false);
+      if (start.mAcc->IsText()) {
+        attributesNext = start.FindTextAttrsStart(eDirNext, false);
+      } else {
+        
+        
+        attributesNext = segment.End();
+      }
       if (attributesNext == start) {
         
         break;
       }
       RefPtr<AccAttributes> attributes = start.GetTextAttributes();
-      MOZ_ASSERT(attributes);
-      if (attributes && !attributes->Equal(currentRun)) {
+      if (!currentRun || !attributes || !attributes->Equal(currentRun)) {
+        
+        
+        
         AppendTextToAttributedString(str, runAcc, text, currentRun);
         text.Truncate();
         currentRun = attributes;

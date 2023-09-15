@@ -6,6 +6,7 @@
 
 
 #import "MacUtils.h"
+#include "mozAccessible.h"
 
 #include "LocalAccessible.h"
 #include "DocAccessible.h"
@@ -83,6 +84,12 @@ static NSColor* ColorFromColor(const Color& aColor) {
 NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
                                                 Accessible* aContainer) {
   if (!aAttributes) {
+    if (mozAccessible* mozAcc = GetNativeFromGeckoAccessible(aContainer)) {
+      
+      
+      
+      return @{@"AXAttachment" : mozAcc};
+    }
     return @{};
   }
 
