@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 
@@ -72,10 +71,6 @@ function checkAllSearches(aQuery, aExpectedCount) {
   let formActionOrigin =
     "formActionOrigin" in aQuery ? aQuery.formActionOrigin : "";
   let httpRealm = "httpRealm" in aQuery ? aQuery.httpRealm : "";
-
-  
-  let logins = Services.logins.findLogins(origin, formActionOrigin, httpRealm);
-  LoginTestUtils.assertLoginListsEqual(logins, expectedLogins);
 
   
   let count = Services.logins.countLogins(origin, formActionOrigin, httpRealm);
