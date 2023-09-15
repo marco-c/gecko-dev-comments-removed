@@ -112,6 +112,26 @@ impl ColorSpace {
     }
 
     
+    #[inline]
+    pub fn is_rgb_like(&self) -> bool {
+        matches!(
+            self,
+            Self::Srgb |
+                Self::SrgbLinear |
+                Self::DisplayP3 |
+                Self::A98Rgb |
+                Self::ProphotoRgb |
+                Self::Rec2020
+        )
+    }
+
+    
+    #[inline]
+    pub fn is_xyz_like(&self) -> bool {
+        matches!(self, Self::XyzD50 | Self::XyzD65)
+    }
+
+    
     
     #[inline]
     pub fn hue_index(&self) -> Option<usize> {
@@ -277,12 +297,16 @@ impl AbsoluteColor {
             cd!(c3, ColorFlags::C3_IS_NONE),
         );
 
+        let alpha = cd!(alpha, ColorFlags::ALPHA_IS_NONE);
+
         
-        if matches!(
-            color_space,
-            ColorSpace::Lab | ColorSpace::Lch | ColorSpace::Oklab | ColorSpace::Oklch
-        ) {
-            components.0 = components.0.max(0.0);
+        if matches!(color_space, ColorSpace::Lab | ColorSpace::Lch) {
+            components.0 = components.0.clamp(0.0, 100.0);
+        }
+
+        
+        if matches!(color_space, ColorSpace::Oklab | ColorSpace::Oklch) {
+            components.0 = components.0.clamp(0.0, 1.0);
         }
 
         
@@ -290,11 +314,12 @@ impl AbsoluteColor {
             components.1 = components.1.max(0.0);
         }
 
-        let alpha = cd!(alpha, ColorFlags::ALPHA_IS_NONE);
+        
+        let alpha = alpha.clamp(0.0, 1.0);
 
         Self {
             components,
-            alpha: alpha.clamp(0.0, 1.0),
+            alpha,
             color_space,
             flags,
         }
