@@ -80,55 +80,59 @@ class VCMJitterBuffer {
   VCMJitterBuffer& operator=(const VCMJitterBuffer&) = delete;
 
   
-  void Start();
+  void Start() RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  void Stop();
+  void Stop() RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  bool Running() const;
+  bool Running() const RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  void Flush();
+  void Flush() RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  int num_packets() const;
+  int num_packets() const RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  int num_duplicated_packets() const;
-
-  
-  
-  VCMEncodedFrame* NextCompleteFrame(uint32_t max_wait_time_ms);
+  int num_duplicated_packets() const RTC_LOCKS_EXCLUDED(mutex_);
 
   
   
-  VCMEncodedFrame* ExtractAndSetDecode(uint32_t timestamp);
+  VCMEncodedFrame* NextCompleteFrame(uint32_t max_wait_time_ms)
+      RTC_LOCKS_EXCLUDED(mutex_);
 
   
   
-  void ReleaseFrame(VCMEncodedFrame* frame);
+  VCMEncodedFrame* ExtractAndSetDecode(uint32_t timestamp)
+      RTC_LOCKS_EXCLUDED(mutex_);
+
+  
+  
+  void ReleaseFrame(VCMEncodedFrame* frame) RTC_LOCKS_EXCLUDED(mutex_);
 
   
   
   
   int64_t LastPacketTime(const VCMEncodedFrame* frame,
-                         bool* retransmitted) const;
+                         bool* retransmitted) const RTC_LOCKS_EXCLUDED(mutex_);
 
   
   
   
-  VCMFrameBufferEnum InsertPacket(const VCMPacket& packet, bool* retransmitted);
+  VCMFrameBufferEnum InsertPacket(const VCMPacket& packet, bool* retransmitted)
+      RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  uint32_t EstimatedJitterMs();
+  uint32_t EstimatedJitterMs() RTC_LOCKS_EXCLUDED(mutex_);
 
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
-                       int max_incomplete_time_ms);
+                       int max_incomplete_time_ms) RTC_LOCKS_EXCLUDED(mutex_);
 
   
-  std::vector<uint16_t> GetNackList(bool* request_key_frame);
+  std::vector<uint16_t> GetNackList(bool* request_key_frame)
+      RTC_LOCKS_EXCLUDED(mutex_);
 
  private:
   class SequenceNumberLessThan {
@@ -202,7 +206,8 @@ class VCMJitterBuffer {
   bool RecycleFramesUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
-  void UpdateAveragePacketsPerFrame(int current_number_packets_);
+  void UpdateAveragePacketsPerFrame(int current_number_packets_)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
@@ -228,6 +233,9 @@ class VCMJitterBuffer {
   
   void RecycleFrameBuffer(VCMFrameBuffer* frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
+  
+  void FlushInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   Clock* clock_;
   
