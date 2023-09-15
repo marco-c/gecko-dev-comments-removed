@@ -18,9 +18,9 @@ class AutoPrintEventDispatcher {
   
   
   static void CollectInProcessSubdocuments(
-      Document& aDoc, nsTArray<std::pair<nsCOMPtr<Document>, bool>>& aDocs) {
+      Document& aDoc, nsTArray<nsCOMPtr<Document>>& aDocs) {
     auto recurse = [&aDocs](Document& aSubDoc) {
-      aDocs.AppendElement(std::make_pair(&aSubDoc, false));
+      aDocs.AppendElement(&aSubDoc);
       CollectInProcessSubdocuments(aSubDoc, aDocs);
       return CallState::Continue;
     };
@@ -28,69 +28,22 @@ class AutoPrintEventDispatcher {
   }
 
   MOZ_CAN_RUN_SCRIPT void DispatchEvent(bool aBefore) {
-    for (auto& [doc, isTop] : mDocuments) {
+    for (auto& doc : mDocuments) {
       nsContentUtils::DispatchTrustedEvent(
           doc, doc->GetWindow(), aBefore ? u"beforeprint"_ns : u"afterprint"_ns,
           CanBubble::eNo, Cancelable::eNo, nullptr);
       if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
         presContext->EmulateMedium(aBefore ? nsGkAtoms::print : nullptr);
-        bool needResizeEvent = false;
-        if (isTop) {
-          
-          
-          
-          
-          
-          
-          
-          if (aBefore) {
-            mVisibleAreaToRestore = presContext->GetVisibleArea();
-            presContext->SetVisibleArea(
-                nsRect(mVisibleAreaToRestore.TopLeft(), mPageSize));
-            needResizeEvent = mVisibleAreaToRestore.Size() != mPageSize;
-          } else {
-            if (presContext->GetVisibleArea().Size() == mPageSize) {
-              presContext->SetVisibleArea(mVisibleAreaToRestore);
-              needResizeEvent = mVisibleAreaToRestore.Size() != mPageSize;
-            } else {
-              
-              
-              
-              
-              NS_WARNING(
-                  "Something changed our viewport size between firing "
-                  "before/afterprint?");
-            }
-          }
-        }
-
         
         doc->FlushPendingNotifications(FlushType::Style);
-
-        if (needResizeEvent) {
-          if (RefPtr ps = presContext->GetPresShell()) {
-            ps->FireResizeEventSync();
-          }
-        }
       }
     }
   }
 
-  static nsSize ComputePrintPageSize(nsIPrintSettings* aPrintSettings) {
-    double pageWidth = 0;
-    double pageHeight = 0;
-    aPrintSettings->GetEffectivePageSize(&pageWidth, &pageHeight);
-    return nsSize(nsPresContext::CSSTwipsToAppUnits(NSToIntFloor(pageWidth)),
-                  nsPresContext::CSSTwipsToAppUnits(NSToIntFloor(pageHeight)));
-  }
-
  public:
-  MOZ_CAN_RUN_SCRIPT AutoPrintEventDispatcher(Document& aDoc,
-                                              nsIPrintSettings* aPrintSettings,
-                                              bool aIsTop)
-      : mPageSize(ComputePrintPageSize(aPrintSettings)) {
+  MOZ_CAN_RUN_SCRIPT explicit AutoPrintEventDispatcher(Document& aDoc) {
     if (!aDoc.IsStaticDocument()) {
-      mDocuments.AppendElement(std::make_pair(&aDoc, aIsTop));
+      mDocuments.AppendElement(&aDoc);
       CollectInProcessSubdocuments(aDoc, mDocuments);
     }
 
@@ -99,8 +52,7 @@ class AutoPrintEventDispatcher {
 
   MOZ_CAN_RUN_SCRIPT ~AutoPrintEventDispatcher() { DispatchEvent(false); }
 
-  
-  AutoTArray<std::pair<nsCOMPtr<Document>, bool>, 8> mDocuments;
+  AutoTArray<nsCOMPtr<Document>, 8> mDocuments;
   const nsSize mPageSize;
   nsRect mVisibleAreaToRestore;
 };
