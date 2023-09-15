@@ -104,14 +104,6 @@ nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor, ColorScheme aS
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor& aColor) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK
 
-  if (@available(macOS 10.14, *)) {
-    
-    
-  } else {
-    
-    aScheme = ColorScheme::Light;
-  }
-
   NSAppearance.currentAppearance = NSAppearanceForColorScheme(aScheme);
 
   nscolor color = 0;
@@ -248,13 +240,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = GetColorFromNSColor(NSColor.windowFrameColor);
       break;
     case ColorID::Window: {
-      if (@available(macOS 10.14, *)) {
-        color = GetColorFromNSColor(NSColor.windowBackgroundColor);
-      } else {
-        
-        
-        color = NS_RGB(0xF6, 0xF6, 0xF6);
-      }
+      color = GetColorFromNSColor(NSColor.windowBackgroundColor);
       break;
     }
     case ColorID::Field:
@@ -319,7 +305,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
     case ColorID::MozMacActiveMenuitem:
     case ColorID::MozMacActiveSourceListSelection:
     case ColorID::Accentcolor:
-      color = GetColorFromNSColor(ControlAccentColor());
+      color = GetColorFromNSColor([NSColor controlAccentColor]);
       break;
     case ColorID::Marktext:
     case ColorID::Mark:
@@ -517,13 +503,9 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
 
 bool nsLookAndFeel::SystemWantsDarkTheme() {
   
-  
-  if (@available(macOS 10.14, *)) {
-    NSAppearanceName aquaOrDarkAqua = [NSApp.effectiveAppearance
-        bestMatchFromAppearancesWithNames:@[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
-    return [aquaOrDarkAqua isEqualToString:NSAppearanceNameDarkAqua];
-  }
-  return false;
+  NSAppearanceName aquaOrDarkAqua = [NSApp.effectiveAppearance
+      bestMatchFromAppearancesWithNames:@[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
+  return [aquaOrDarkAqua isEqualToString:NSAppearanceNameDarkAqua];
 }
 
 
@@ -578,19 +560,11 @@ void nsLookAndFeel::RecordAccessibilityTelemetry() {
                                              name:NSSystemColorsDidChangeNotification
                                            object:nil];
 
-  if (@available(macOS 10.14, *)) {
-    [NSWorkspace.sharedWorkspace.notificationCenter
-        addObserver:self
-           selector:@selector(mediaQueriesChanged)
-               name:NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification
-             object:nil];
-  } else {
-    [NSNotificationCenter.defaultCenter
-        addObserver:self
-           selector:@selector(mediaQueriesChanged)
-               name:NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification
-             object:nil];
-  }
+  [NSWorkspace.sharedWorkspace.notificationCenter
+      addObserver:self
+         selector:@selector(mediaQueriesChanged)
+             name:NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification
+           object:nil];
 
   [NSNotificationCenter.defaultCenter addObserver:self
                                          selector:@selector(scrollbarsChanged)

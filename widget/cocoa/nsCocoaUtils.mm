@@ -1263,32 +1263,28 @@ static void LogAuthorizationStatus(AVMediaType aType, int aState) {
 static nsresult GetPermissionState(AVMediaType aMediaType, uint16_t& aState) {
   MOZ_ASSERT(aMediaType == AVMediaTypeVideo || aMediaType == AVMediaTypeAudio);
 
-  
-  if (@available(macOS 10.14, *)) {
-    GeckoAVAuthorizationStatus authStatus = static_cast<GeckoAVAuthorizationStatus>(
-        [AVCaptureDevice authorizationStatusForMediaType:aMediaType]);
-    LogAuthorizationStatus(aMediaType, authStatus);
+  GeckoAVAuthorizationStatus authStatus = static_cast<GeckoAVAuthorizationStatus>(
+      [AVCaptureDevice authorizationStatusForMediaType:aMediaType]);
+  LogAuthorizationStatus(aMediaType, authStatus);
 
-    
-    switch (authStatus) {
-      case GeckoAVAuthorizationStatusAuthorized:
-        aState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
-        return NS_OK;
-      case GeckoAVAuthorizationStatusDenied:
-        aState = nsIOSPermissionRequest::PERMISSION_STATE_DENIED;
-        return NS_OK;
-      case GeckoAVAuthorizationStatusNotDetermined:
-        aState = nsIOSPermissionRequest::PERMISSION_STATE_NOTDETERMINED;
-        return NS_OK;
-      case GeckoAVAuthorizationStatusRestricted:
-        aState = nsIOSPermissionRequest::PERMISSION_STATE_RESTRICTED;
-        return NS_OK;
-      default:
-        MOZ_ASSERT(false, "Invalid authorization status");
-        return NS_ERROR_UNEXPECTED;
-    }
+  
+  switch (authStatus) {
+    case GeckoAVAuthorizationStatusAuthorized:
+      aState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
+      return NS_OK;
+    case GeckoAVAuthorizationStatusDenied:
+      aState = nsIOSPermissionRequest::PERMISSION_STATE_DENIED;
+      return NS_OK;
+    case GeckoAVAuthorizationStatusNotDetermined:
+      aState = nsIOSPermissionRequest::PERMISSION_STATE_NOTDETERMINED;
+      return NS_OK;
+    case GeckoAVAuthorizationStatusRestricted:
+      aState = nsIOSPermissionRequest::PERMISSION_STATE_RESTRICTED;
+      return NS_OK;
+    default:
+      MOZ_ASSERT(false, "Invalid authorization status");
+      return NS_ERROR_UNEXPECTED;
   }
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 nsresult nsCocoaUtils::GetVideoCapturePermissionState(uint16_t& aPermissionState) {
@@ -1308,93 +1304,86 @@ nsresult nsCocoaUtils::GetAudioCapturePermissionState(uint16_t& aPermissionState
 nsresult nsCocoaUtils::GetScreenCapturePermissionState(uint16_t& aPermissionState) {
   aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_NOTDETERMINED;
 
-  
-  
-  if (@available(macOS 10.15, *)) {
-    if (!StaticPrefs::media_macos_screenrecording_oscheck_enabled()) {
-      aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
-      LOG("screen authorization status: authorized (test disabled via pref)");
-      return NS_OK;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    AutoCFRelease<CFArrayRef> windowArray =
-        CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
-    if (!windowArray) {
-      LOG("GetScreenCapturePermissionState() ERROR: got NULL window info list");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    int32_t windowLevelDock = CGWindowLevelForKey(kCGDockWindowLevelKey);
-    int32_t windowLevelNormal = CGWindowLevelForKey(kCGNormalWindowLevelKey);
-    LOG("GetScreenCapturePermissionState(): DockWindowLevel: %d, "
-        "NormalWindowLevel: %d",
-        windowLevelDock, windowLevelNormal);
-
-    int32_t thisPid = [[NSProcessInfo processInfo] processIdentifier];
-
-    CFIndex windowCount = CFArrayGetCount(windowArray);
-    LOG("GetScreenCapturePermissionState() returned %ld windows", windowCount);
-    if (windowCount == 0) {
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    for (CFIndex i = 0; i < windowCount; i++) {
-      CFDictionaryRef windowDict =
-          reinterpret_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(windowArray, i));
-
-      
-      int32_t windowOwnerPid = -1;
-      CFNumberRef windowPidRef =
-          reinterpret_cast<CFNumberRef>(CFDictionaryGetValue(windowDict, kCGWindowOwnerPID));
-      if (!windowPidRef || !CFNumberGetValue(windowPidRef, kCFNumberIntType, &windowOwnerPid)) {
-        LOG("GetScreenCapturePermissionState() ERROR: failed to get window owner");
-        continue;
-      }
-
-      
-      
-      if (thisPid == windowOwnerPid) {
-        continue;
-      }
-
-      CFStringRef windowName =
-          reinterpret_cast<CFStringRef>(CFDictionaryGetValue(windowDict, kCGWindowName));
-      if (!windowName) {
-        continue;
-      }
-
-      CFNumberRef windowLayerRef =
-          reinterpret_cast<CFNumberRef>(CFDictionaryGetValue(windowDict, kCGWindowLayer));
-      int32_t windowLayer;
-      if (!windowLayerRef || !CFNumberGetValue(windowLayerRef, kCFNumberIntType, &windowLayer)) {
-        LOG("GetScreenCapturePermissionState() ERROR: failed to get layer");
-        continue;
-      }
-
-      
-      
-      LOG("GetScreenCapturePermissionState(): windowLayer: %d", windowLayer);
-      if (windowLayer == windowLevelDock || windowLayer == windowLevelNormal) {
-        aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
-        LOG("screen authorization status: authorized");
-        return NS_OK;
-      }
-    }
-
-    aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_DENIED;
-    LOG("screen authorization status: not authorized");
+  if (!StaticPrefs::media_macos_screenrecording_oscheck_enabled()) {
+    aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
+    LOG("screen authorization status: authorized (test disabled via pref)");
     return NS_OK;
   }
 
-  LOG("GetScreenCapturePermissionState(): nothing to do, not on 10.15+");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  
+  
+  
+  
+  
+  
+  
+  AutoCFRelease<CFArrayRef> windowArray =
+      CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
+  if (!windowArray) {
+    LOG("GetScreenCapturePermissionState() ERROR: got NULL window info list");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  int32_t windowLevelDock = CGWindowLevelForKey(kCGDockWindowLevelKey);
+  int32_t windowLevelNormal = CGWindowLevelForKey(kCGNormalWindowLevelKey);
+  LOG("GetScreenCapturePermissionState(): DockWindowLevel: %d, "
+      "NormalWindowLevel: %d",
+      windowLevelDock, windowLevelNormal);
+
+  int32_t thisPid = [[NSProcessInfo processInfo] processIdentifier];
+
+  CFIndex windowCount = CFArrayGetCount(windowArray);
+  LOG("GetScreenCapturePermissionState() returned %ld windows", windowCount);
+  if (windowCount == 0) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  for (CFIndex i = 0; i < windowCount; i++) {
+    CFDictionaryRef windowDict =
+        reinterpret_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(windowArray, i));
+
+    
+    int32_t windowOwnerPid = -1;
+    CFNumberRef windowPidRef =
+        reinterpret_cast<CFNumberRef>(CFDictionaryGetValue(windowDict, kCGWindowOwnerPID));
+    if (!windowPidRef || !CFNumberGetValue(windowPidRef, kCFNumberIntType, &windowOwnerPid)) {
+      LOG("GetScreenCapturePermissionState() ERROR: failed to get window owner");
+      continue;
+    }
+
+    
+    
+    if (thisPid == windowOwnerPid) {
+      continue;
+    }
+
+    CFStringRef windowName =
+        reinterpret_cast<CFStringRef>(CFDictionaryGetValue(windowDict, kCGWindowName));
+    if (!windowName) {
+      continue;
+    }
+
+    CFNumberRef windowLayerRef =
+        reinterpret_cast<CFNumberRef>(CFDictionaryGetValue(windowDict, kCGWindowLayer));
+    int32_t windowLayer;
+    if (!windowLayerRef || !CFNumberGetValue(windowLayerRef, kCFNumberIntType, &windowLayer)) {
+      LOG("GetScreenCapturePermissionState() ERROR: failed to get layer");
+      continue;
+    }
+
+    
+    
+    LOG("GetScreenCapturePermissionState(): windowLayer: %d", windowLayer);
+    if (windowLayer == windowLevelDock || windowLayer == windowLevelNormal) {
+      aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_AUTHORIZED;
+      LOG("screen authorization status: authorized");
+      return NS_OK;
+    }
+  }
+
+  aPermissionState = nsIOSPermissionRequest::PERMISSION_STATE_DENIED;
+  LOG("screen authorization status: not authorized");
+  return NS_OK;
 }
 
 nsresult nsCocoaUtils::RequestVideoCapturePermission(RefPtr<Promise>& aPromise) {
@@ -1425,49 +1414,43 @@ nsresult nsCocoaUtils::RequestCapturePermission(AVMediaType aType, RefPtr<Promis
   
   
   
-  if (@available(macOS 10.14, *)) {
-    static_assert(
-        (int)GeckoAVAuthorizationStatusNotDetermined == (int)AVAuthorizationStatusNotDetermined,
-        "GeckoAVAuthorizationStatusNotDetermined  does not match");
-    static_assert((int)GeckoAVAuthorizationStatusRestricted == (int)AVAuthorizationStatusRestricted,
-                  "GeckoAVAuthorizationStatusRestricted does not match");
-    static_assert((int)GeckoAVAuthorizationStatusDenied == (int)AVAuthorizationStatusDenied,
-                  "GeckoAVAuthorizationStatusDenied does not match");
-    static_assert((int)GeckoAVAuthorizationStatusAuthorized == (int)AVAuthorizationStatusAuthorized,
-                  "GeckoAVAuthorizationStatusAuthorized does not match");
-  }
+  static_assert(
+      (int)GeckoAVAuthorizationStatusNotDetermined == (int)AVAuthorizationStatusNotDetermined,
+      "GeckoAVAuthorizationStatusNotDetermined  does not match");
+  static_assert((int)GeckoAVAuthorizationStatusRestricted == (int)AVAuthorizationStatusRestricted,
+                "GeckoAVAuthorizationStatusRestricted does not match");
+  static_assert((int)GeckoAVAuthorizationStatusDenied == (int)AVAuthorizationStatusDenied,
+                "GeckoAVAuthorizationStatusDenied does not match");
+  static_assert((int)GeckoAVAuthorizationStatusAuthorized == (int)AVAuthorizationStatusAuthorized,
+                "GeckoAVAuthorizationStatusAuthorized does not match");
 #endif
   LOG("RequestCapturePermission(%s)", AVMediaTypeToString(aType));
 
+  sMediaCaptureMutex.Lock();
+
   
-  if (@available(macOS 10.14, *)) {
-    sMediaCaptureMutex.Lock();
+  if (aPromiseList == nullptr) {
+    aPromiseList = new nsTArray<RefPtr<Promise>>;
+    ClearOnShutdown(&aPromiseList);
+  }
 
-    
-    if (aPromiseList == nullptr) {
-      aPromiseList = new nsTArray<RefPtr<Promise>>;
-      ClearOnShutdown(&aPromiseList);
-    }
+  aPromiseList->AppendElement(aPromise);
+  size_t nPromises = aPromiseList->Length();
 
-    aPromiseList->AppendElement(aPromise);
-    size_t nPromises = aPromiseList->Length();
+  sMediaCaptureMutex.Unlock();
 
-    sMediaCaptureMutex.Unlock();
+  LOG("RequestCapturePermission(%s): %ld promise(s) unresolved", AVMediaTypeToString(aType),
+      nPromises);
 
-    LOG("RequestCapturePermission(%s): %ld promise(s) unresolved", AVMediaTypeToString(aType),
-        nPromises);
-
-    
-    
-    if (nPromises > 1) {
-      return NS_OK;
-    }
-
-    
-    [AVCaptureDevice requestAccessForMediaType:aType completionHandler:aHandler];
+  
+  
+  if (nPromises > 1) {
     return NS_OK;
   }
-  return NS_ERROR_NOT_IMPLEMENTED;
+
+  
+  [AVCaptureDevice requestAccessForMediaType:aType completionHandler:aHandler];
+  return NS_OK;
 }
 
 
