@@ -843,6 +843,10 @@ class WidgetEvent : public WidgetEventTime {
   
 
 
+  bool AllowFlushingPendingNotifications() const;
+  
+
+
   void SetDefaultComposed() {
     switch (mClass) {
       case eClipboardEventClass:

@@ -8141,7 +8141,8 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
     return NS_OK;
   }
 
-  if (mPresShell->mCurrentEventContent && aEvent->IsTargetedAtFocusedWindow()) {
+  if (mPresShell->mCurrentEventContent && aEvent->IsTargetedAtFocusedWindow() &&
+      aEvent->AllowFlushingPendingNotifications()) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       
       nsCOMPtr<nsIContent> currentEventContent =

@@ -523,6 +523,17 @@ bool WidgetEvent::IsBlockedForFingerprintingResistance() const {
   }
 }
 
+bool WidgetEvent::AllowFlushingPendingNotifications() const {
+  if (mClass != eQueryContentEventClass) {
+    return true;
+  }
+  
+  
+  
+  
+  return AsQueryContentEvent()->mNeedsToFlushLayout;
+}
+
 
 
 
