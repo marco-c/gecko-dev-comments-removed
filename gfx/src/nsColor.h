@@ -80,15 +80,4 @@ bool NS_LooseHexToRGB(const nsString& aBuf, nscolor* aResult);
 
 
 
-
-
-bool NS_ColorNameToRGB(const nsAString& aBuf, nscolor* aResult);
-
-
-
-
-
-
-const char* NS_RGBToColorName(nscolor aColor);
-
 #endif 
