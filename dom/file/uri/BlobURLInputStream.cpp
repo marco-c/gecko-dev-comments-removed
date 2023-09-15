@@ -481,11 +481,26 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
 nsresult BlobURLInputStream::StoreBlobImplStream(
     already_AddRefed<BlobImpl> aBlobImpl, const MutexAutoLock& aProofOfLock) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
-  const RefPtr<BlobImpl> blobImpl = aBlobImpl;
+  RefPtr<BlobImpl> blobImpl = aBlobImpl;
   nsAutoString blobContentType;
   nsAutoCString channelContentType;
 
+  
+  
   blobImpl->GetType(blobContentType);
+  const Maybe<nsBaseChannel::ContentRange>& contentRange =
+      mChannel->GetContentRange();
+  if (contentRange.isSome()) {
+    IgnoredErrorResult result;
+    uint64_t start = contentRange->Start();
+    uint64_t end = contentRange->End();
+    RefPtr<BlobImpl> slice =
+        blobImpl->CreateSlice(start, end - start + 1, blobContentType, result);
+    if (!result.Failed()) {
+      blobImpl = slice;
+    }
+  }
+
   mChannel->GetContentType(channelContentType);
   
   

@@ -7521,8 +7521,8 @@ Maybe<nsContentUtils::ParsedRange> nsContentUtils::ParseSingleRangeRequest(
     const nsACString& aHeaderValue, bool aAllowWhitespace) {
   
   mozilla::Tokenizer p(aHeaderValue);
-  Maybe<uint32_t> rangeStart;
-  Maybe<uint32_t> rangeEnd;
+  Maybe<uint64_t> rangeStart;
+  Maybe<uint64_t> rangeEnd;
 
   
   if (!p.CheckWord("bytes")) {
@@ -7545,7 +7545,7 @@ Maybe<nsContentUtils::ParsedRange> nsContentUtils::ParseSingleRangeRequest(
   }
 
   
-  int32_t res;
+  uint64_t res;
   if (p.ReadInteger(&res)) {
     rangeStart = Some(res);
   }

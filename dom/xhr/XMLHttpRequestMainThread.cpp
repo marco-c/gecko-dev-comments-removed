@@ -811,6 +811,28 @@ bool XMLHttpRequestMainThread::IsDeniedCrossSiteCORSRequest() {
   return false;
 }
 
+Maybe<nsBaseChannel::ContentRange>
+XMLHttpRequestMainThread::GetRequestedContentRange() const {
+  MOZ_ASSERT(mChannel);
+  if (!IsBlobURI(mRequestURL)) {
+    return mozilla::Nothing();
+  }
+  nsBaseChannel* baseChan = static_cast<nsBaseChannel*>(mChannel.get());
+  if (!baseChan) {
+    return mozilla::Nothing();
+  }
+  return baseChan->GetContentRange();
+}
+
+void XMLHttpRequestMainThread::GetContentRangeHeader(nsACString& out) const {
+  Maybe<nsBaseChannel::ContentRange> range = GetRequestedContentRange();
+  if (range.isSome()) {
+    range->AsHeader(out);
+  } else {
+    out.SetIsVoid(true);
+  }
+}
+
 void XMLHttpRequestMainThread::GetResponseURL(nsAString& aUrl) {
   aUrl.Truncate();
 
@@ -868,7 +890,7 @@ uint32_t XMLHttpRequestMainThread::GetStatus(ErrorResult& aRv) {
   nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
   if (!httpChannel) {
     
-    return 200;
+    return GetRequestedContentRange().isSome() ? 206 : 200;
   }
 
   uint32_t status;
@@ -1175,6 +1197,17 @@ void XMLHttpRequestMainThread::GetAllResponseHeaders(
       aResponseHeaders.AppendLiteral("\r\n");
     }
   }
+
+  
+  
+  
+  
+  GetContentRangeHeader(value);
+  if (!value.IsVoid()) {
+    aResponseHeaders.AppendLiteral("Content-Range: ");
+    aResponseHeaders.Append(value);
+    aResponseHeaders.AppendLiteral("\r\n");
+  }
 }
 
 void XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
@@ -1227,6 +1260,11 @@ void XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
       if (NS_SUCCEEDED(mChannel->GetContentLength(&length))) {
         _retval.AppendInt(length);
       }
+    }
+
+    
+    else if (header.LowerCaseEqualsASCII("content-range")) {
+      GetContentRangeHeader(_retval);
     }
 
     return;
@@ -1865,6 +1903,13 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
     return NS_OK;
   }
 
+  
+  
+  if (GetRequestedContentRange().isNothing() &&
+      mAuthorRequestHeaders.Has("range")) {
+    return NS_ERROR_NET_PARTIAL_TRANSFER;
+  }
+
   nsCOMPtr<nsIChannel> channel(do_QueryInterface(request));
   NS_ENSURE_TRUE(channel, NS_ERROR_UNEXPECTED);
 
@@ -1906,10 +1951,12 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
   }
 
   
-  nsAutoCString type;
-  channel->GetContentType(type);
-  if (type.IsEmpty() || type.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
-    channel->SetContentType(nsLiteralCString(APPLICATION_OCTET_STREAM));
+  if (!IsBlobURI(mRequestURL)) {
+    nsAutoCString type;
+    channel->GetContentType(type);
+    if (type.IsEmpty() || type.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
+      channel->SetContentType(nsLiteralCString(APPLICATION_OCTET_STREAM));
+    }
   }
 
   DetectCharset();
@@ -2667,6 +2714,21 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
   
   
+  if (IsBlobURI(mRequestURL)) {
+    nsAutoCString range;
+    mAuthorRequestHeaders.Get("range", range);
+    if (!range.IsVoid()) {
+      rv = NS_SetChannelContentRangeForBlobURI(mChannel, mRequestURL, range);
+      if (mFlagSynchronous && NS_FAILED(rv)) {
+        
+        mState = XMLHttpRequest_Binding::DONE;
+        return NS_ERROR_DOM_NETWORK_ERR;
+      }
+    }
+  }
+
+  
+  
   
   
   if (!IsSystemXHR() && !mIsAnon && mFlagACwithCredentials) {
@@ -2812,6 +2874,11 @@ already_AddRefed<PreloaderBase> XMLHttpRequestMainThread::FindPreload() {
 
 void XMLHttpRequestMainThread::EnsureChannelContentType() {
   MOZ_ASSERT(mChannel);
+
+  
+  if (IsBlobURI(mRequestURL)) {
+    return;
+  }
 
   
   
