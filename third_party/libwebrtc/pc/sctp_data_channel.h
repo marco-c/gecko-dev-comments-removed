@@ -211,6 +211,11 @@ class SctpDataChannel : public DataChannelInterface {
 
   DataChannelStats GetStats() const;
 
+  
+  
+  
+  int internal_id() const { return internal_id_; }
+
   const StreamId& sid() const { return id_; }
 
   

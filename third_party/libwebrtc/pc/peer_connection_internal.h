@@ -177,8 +177,11 @@ class PeerConnectionInternal : public PeerConnectionInterface,
   
   virtual void NoteDataAddedEvent() {}
   
+  
+  
+  
   virtual void OnSctpDataChannelStateChanged(
-      DataChannelInterface* channel,
+      int channel_id,
       DataChannelInterface::DataState state) {}
 };
 
