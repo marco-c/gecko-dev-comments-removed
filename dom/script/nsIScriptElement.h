@@ -29,6 +29,7 @@ class nsIURI;
 
 namespace mozilla::dom {
 class Document;
+enum class FetchPriority : uint8_t;
 enum class ReferrerPolicy : uint8_t;
 }  
 
@@ -235,6 +236,13 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
     
     return mozilla::CORS_NONE;
   }
+
+  
+
+
+
+
+  virtual mozilla::dom::FetchPriority GetFetchPriority() const = 0;
 
   
 
