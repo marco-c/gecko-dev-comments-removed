@@ -897,9 +897,12 @@ bool ParserBase::noteUsedNameInternal(TaggedParserAtomIndex name,
   
   
   
+  
+  
   ParseContext::Scope* scope = pc_->innermostScope();
   if (pc_->sc()->isGlobalContext() && scope == &pc_->varScope() &&
-      visibility == NameVisibility::Public) {
+      visibility == NameVisibility::Public &&
+      !this->compilationState_.input.hasExtraBindings()) {
     return true;
   }
 

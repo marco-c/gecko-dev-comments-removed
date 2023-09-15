@@ -176,6 +176,8 @@ extern JSScript* CompileGlobalScript(JSContext* cx, FrontendContext* fc,
 
 
 
+
+
 extern JSScript* CompileGlobalScriptWithExtraBindings(
     JSContext* cx, FrontendContext* fc,
     const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
