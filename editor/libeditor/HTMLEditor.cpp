@@ -1341,8 +1341,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       
       if (IsPlaintextMailComposer()) {
         if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
-            aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
-            aKeyboardEvent->IsOS()) {
+            aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta()) {
           return NS_OK;
         }
 
@@ -1357,7 +1356,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       
       
       if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
-          aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
+          aKeyboardEvent->IsMeta()) {
         return NS_OK;
       }
 

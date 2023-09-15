@@ -1053,7 +1053,6 @@ enum Modifier {
   MODIFIER_SHIFT = 0x0200,
   MODIFIER_SYMBOL = 0x0400,
   MODIFIER_SYMBOLLOCK = 0x0800,
-  MODIFIER_OS = 0x1000
 };
 
 
@@ -1130,10 +1129,6 @@ class MOZ_STACK_CLASS GetModifiersName final : public nsAutoCString {
       MaybeAppendSeparator();
       AppendLiteral(NS_DOM_KEYNAME_SYMBOLLOCK);
     }
-    if (aModifiers & MODIFIER_OS) {
-      MaybeAppendSeparator();
-      AppendLiteral(NS_DOM_KEYNAME_OS);
-    }
     if (IsEmpty()) {
       AssignLiteral("none");
     }
@@ -1198,10 +1193,8 @@ class WidgetInputEvent : public WidgetGUIEvent {
   
   bool IsAlt() const { return ((mModifiers & MODIFIER_ALT) != 0); }
   
+  
   bool IsMeta() const { return ((mModifiers & MODIFIER_META) != 0); }
-  
-  
-  bool IsOS() const { return ((mModifiers & MODIFIER_OS) != 0); }
   
   
   

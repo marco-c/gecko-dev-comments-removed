@@ -688,7 +688,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
       INDEX_CONTROL,
       INDEX_META,
       INDEX_SHIFT,
-      INDEX_OS,
       COUNT_OF_MULTIPLIERS
     };
 

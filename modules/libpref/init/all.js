@@ -86,8 +86,8 @@ pref("general.warnOnAboutConfig", true);
 pref("general.autoscroll.prevent_to_start.shiftKey", true); 
 pref("general.autoscroll.prevent_to_start.ctrlKey", false); 
 pref("general.autoscroll.prevent_to_start.altKey", false);  
-pref("general.autoscroll.prevent_to_start.metaKey", false); 
-pref("general.autoscroll.prevent_to_start.osKey", false);   
+
+pref("general.autoscroll.prevent_to_start.metaKey", false);
 
 
 
@@ -1915,9 +1915,9 @@ pref("middlemouse.scrollbarPosition", false);
 pref("mousewheel.default.action", 1);
 pref("mousewheel.with_alt.action", 2);
 pref("mousewheel.with_control.action", 3);
-pref("mousewheel.with_meta.action", 1);  
+
+pref("mousewheel.with_meta.action", 1);
 pref("mousewheel.with_shift.action", 4);
-pref("mousewheel.with_win.action", 1);
 
 
 
@@ -1928,9 +1928,9 @@ pref("mousewheel.with_win.action", 1);
 pref("mousewheel.default.action.override_x", -1);
 pref("mousewheel.with_alt.action.override_x", -1);
 pref("mousewheel.with_control.action.override_x", -1);
-pref("mousewheel.with_meta.action.override_x", -1);  
+
+pref("mousewheel.with_meta.action.override_x", -1);
 pref("mousewheel.with_shift.action.override_x", -1);
-pref("mousewheel.with_win.action.override_x", -1);
 
 
 
@@ -1945,15 +1945,13 @@ pref("mousewheel.with_alt.delta_multiplier_z", 100);
 pref("mousewheel.with_control.delta_multiplier_x", 100);
 pref("mousewheel.with_control.delta_multiplier_y", 100);
 pref("mousewheel.with_control.delta_multiplier_z", 100);
-pref("mousewheel.with_meta.delta_multiplier_x", 100);  
-pref("mousewheel.with_meta.delta_multiplier_y", 100);  
-pref("mousewheel.with_meta.delta_multiplier_z", 100);  
+
+pref("mousewheel.with_meta.delta_multiplier_x", 100);
+pref("mousewheel.with_meta.delta_multiplier_y", 100);
+pref("mousewheel.with_meta.delta_multiplier_z", 100);
 pref("mousewheel.with_shift.delta_multiplier_x", 100);
 pref("mousewheel.with_shift.delta_multiplier_y", 100);
 pref("mousewheel.with_shift.delta_multiplier_z", 100);
-pref("mousewheel.with_win.delta_multiplier_x", 100);
-pref("mousewheel.with_win.delta_multiplier_y", 100);
-pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
 

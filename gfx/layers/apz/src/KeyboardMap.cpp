@@ -105,8 +105,9 @@ bool KeyboardShortcut::MatchesModifiers(
   Modifiers modifiersMask = mModifiersMask;
 
   
-  if (aIgnore.mOS) {
-    modifiersMask &= ~MODIFIER_OS;
+  
+  if (aIgnore.mMeta) {
+    modifiersMask &= ~MODIFIER_META;
   }
   if (aIgnore.mShift) {
     modifiersMask &= ~MODIFIER_SHIFT;
@@ -156,9 +157,9 @@ Maybe<KeyboardShortcut> KeyboardMap::FindMatchInternal(
   
   
   
-  if (!aIgnore.mOS && (aEvent.modifiers & MODIFIER_OS)) {
+  if (!aIgnore.mMeta && (aEvent.modifiers & MODIFIER_META)) {
     IgnoreModifierState ignoreModifierState(aIgnore);
-    ignoreModifierState.mOS = true;
+    ignoreModifierState.mMeta = true;
     return FindMatchInternal(aEvent, ignoreModifierState, aOverrideCharCode);
   }
 #endif
