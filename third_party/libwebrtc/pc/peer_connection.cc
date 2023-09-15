@@ -588,6 +588,8 @@ PeerConnection::~PeerConnection() {
     
     event_log_.reset();
   });
+
+  data_channel_controller_.PrepareForShutdown();
 }
 
 RTCError PeerConnection::Initialize(

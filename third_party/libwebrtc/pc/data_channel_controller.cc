@@ -22,17 +22,10 @@
 namespace webrtc {
 
 DataChannelController::~DataChannelController() {
-#if RTC_DCHECK_IS_ON
-  
-  
-  
-  
-  
-  
-  if (!sctp_data_channels_n_.empty()) {
-    RTC_DCHECK_EQ(sctp_data_channels_n_.size(), sctp_data_channels_.size());
-  }
-#endif
+  RTC_DCHECK(sctp_data_channels_n_.empty())
+      << "Missing call to TeardownDataChannelTransport_n?";
+  RTC_DCHECK(!signaling_safety_.flag()->alive())
+      << "Missing call to PrepareForShutdown?";
 }
 
 bool DataChannelController::HasDataChannelsForTest() const {
@@ -167,7 +160,7 @@ void DataChannelController::SetupDataChannelTransport_n() {
 
 void DataChannelController::PrepareForShutdown() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  signaling_safety_.reset();
+  signaling_safety_.reset(PendingTaskSafetyFlag::CreateDetachedInactive());
 }
 
 void DataChannelController::TeardownDataChannelTransport_n() {

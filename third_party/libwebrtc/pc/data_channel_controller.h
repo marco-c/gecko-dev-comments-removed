@@ -102,6 +102,10 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 
+ protected:
+  rtc::Thread* network_thread() const;
+  rtc::Thread* signaling_thread() const;
+
  private:
   
   
@@ -137,9 +141,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   std::vector<rtc::scoped_refptr<SctpDataChannel>>::iterator FindChannel(
       StreamId stream_id);
-
-  rtc::Thread* network_thread() const;
-  rtc::Thread* signaling_thread() const;
 
   
   
