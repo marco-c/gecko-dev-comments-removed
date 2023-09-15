@@ -157,6 +157,10 @@ function defaultProfilePreferences(
     'browser.tabs.warnOnOpen': false,
 
     
+    
+    'browser.translations.enable': false,
+
+    
     'browser.uitour.enabled': false,
     
     
