@@ -16,7 +16,6 @@
 #ifdef MOZ_WIDGET_UIKIT
 #  include <CoreFoundation/CoreFoundation.h>
 #endif
-#include "nsCocoaFeatures.h"
 #include "mozilla/gfx/Logging.h"
 
 #ifdef MOZ_WIDGET_COCOA
@@ -95,8 +94,7 @@ static CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
   
   
   CTFontRef ctFont;
-  if (nsCocoaFeatures::OnSierraExactly() ||
-      (aInstalledFont && nsCocoaFeatures::OnHighSierraOrLater())) {
+  if (aInstalledFont) {
     CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
     if (vars) {
       CFDictionaryRef varAttr = CFDictionaryCreate(

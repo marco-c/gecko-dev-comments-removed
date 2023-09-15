@@ -56,10 +56,6 @@
 #  include <CoreServices/CoreServices.h>
 #endif
 
-#if defined(MOZ_WIDGET_COCOA)
-#  include "nsCocoaFeatures.h"
-#endif
-
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"
 #endif
@@ -874,23 +870,12 @@ bool GLContext::InitImpl() {
     int maxTexSize = INT32_MAX;
     int maxCubeSize = INT32_MAX;
 #ifdef XP_MACOSX
-    if (!nsCocoaFeatures::IsAtLeastVersion(10, 12)) {
-      if (mVendor == GLVendor::Intel) {
-        
-        maxTexSize = 4096;
-        maxCubeSize = 512;
-      } else if (mVendor == GLVendor::NVIDIA) {
-        
-        maxTexSize = 8191;
-      }
-    } else {
-      
-      
-      
-      
-      
-      maxTexSize = 8192;
-    }
+    
+    
+    
+    
+    
+    maxTexSize = 8192;
 #endif
 #ifdef MOZ_X11
     if (mVendor == GLVendor::Nouveau) {
