@@ -290,6 +290,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   std::map<uint32_t, uint16_t> mRtpSendBaseSeqs_n;
 
   
+  
+  std::vector<webrtc::RtpSource> mRtpSources;
+
+  
   Atomic<bool> mTransportActive = Atomic<bool>(false);
   MediaEventProducer<void> mRtcpByeEvent;
   MediaEventProducer<void> mRtcpTimeoutEvent;

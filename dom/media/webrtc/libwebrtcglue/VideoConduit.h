@@ -488,6 +488,10 @@ class WebrtcVideoConduit
   dom::RTCVideoFrameHistoryInternal mReceivedFrameHistory;
 
   
+  
+  std::vector<webrtc::RtpSource> mRtpSources;
+
+  
   Atomic<bool> mTransportActive = Atomic<bool>(false);
   MediaEventProducer<void> mRtcpByeEvent;
   MediaEventProducer<void> mRtcpTimeoutEvent;
