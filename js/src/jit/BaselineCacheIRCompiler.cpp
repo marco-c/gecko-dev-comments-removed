@@ -2189,6 +2189,9 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
   RootedValue shape(cx);
   RootedValueVector shapeList(cx);
 
+  
+  
+  
   auto addShape = [&shapeList, cx](uintptr_t rawShape) -> bool {
     Shape* shape = reinterpret_cast<Shape*>(rawShape);
     
@@ -2301,7 +2304,6 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
           }
           for (uint32_t i = 0; i < shapeList.length(); i++) {
             if (!shapeObj->append(cx, shapeList[i])) {
-              cx->recoverFromOutOfMemory();
               return false;
             }
 
